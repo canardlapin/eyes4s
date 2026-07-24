@@ -345,7 +345,21 @@ after erasure — and the named form reads better at call sites regardless.
 **G-1.** `Unit2D` has subtypes `Px`, `Deg`, `Norm`, `Mm`. `Frame[U <: Unit2D]` carries `FrameId`,
 `Extent`, and `YAxis`.
 
-**G-2.** Frames are carried by collections, never by individual points. `Pt` is a bare pair.
+**G-2.** Frame *identity* is carried by collections, never by individual points. The *unit*,
+however, is a phantom parameter on `Pt[U]`, `Vec2[U]`, `Bounds[U]` and `Extent[U]`. *Strengthened
+during implementation: the architecture note left points untagged on the grounds that per-point
+frames are slow, which is true of storing a `Frame` reference and false of an erased type parameter.
+Since tagging is free at runtime it closes a real hole -- `Bounds[Deg].contains` would otherwise
+accept a pixel position. Asserted with `typeCheckErrors` in `GeometrySuite`.*
+
+**G-2a.** `Pt[U]` and `Vec2[U]` form an affine space: the difference of two positions is a
+displacement, a position plus a displacement is a position, and two positions cannot be added.
+Summing two gaze positions is meaningless and does not compile. Saccade amplitude and direction are
+properties of the `Vec2` between two fixations.
+
+**G-2b.** `Bounds[U]` stores an explicit rectangle, not a width and height, because frames in this
+domain are not all anchored at zero. A y-axis flip is recorded in `YAxis`, never encoded in the sign
+of a bounds argument.
 
 **G-3.** `Warp[A, B]` is a sealed ADT retaining structure, with `render: String`. Every case has a
 private constructor; `Then` is reachable only through the checked `andThen`.
