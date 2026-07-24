@@ -229,10 +229,11 @@ the thing analysts actually write by hand — need no clock at all. `eyesim` has
 form, which is why its every window filter is expressed as raw onsets and why a stimulus-clock
 timestamp can silently enter a tracker-clock comparison.
 
-One honest limit remains, stated rather than discovered later: `Instant` and `Span` are both opaque
-over `Long`, so they are distinct to callers but freely interchangeable *inside* the defining file —
-which is where the library's own implementation lives. The discipline there is convention, not
-type-checking.
+The limit anticipated here — that `Instant` and `Span`, both opaque over `Long`, would be mutually
+assignable inside the library — turned out to be avoidable. Defining each in its **own compilation
+unit** means neither is transparent where the other is in scope, so the separation holds everywhere,
+including in the library's own implementation. `TimeSuite` asserts both directions with
+`typeCheckErrors`.
 
 ### Layer 1 — geometry: units, frames, warps
 

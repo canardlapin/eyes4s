@@ -330,11 +330,15 @@ filtering in the library.
 `Interval`. Conversion between clocks requires a `Sync` value, and every operation over two intervals
 checks clock identity.
 
-**T-6.** *Known limitation, accepted.* `Instant` and `Span` are both opaque over `Long`, so they are
-distinct to callers but mutually assignable inside their defining file — which is where the library's
-own implementation lives. The discipline there is convention, not type-checking, and it must be
-restated in the Scaladoc of both types. *The second half of this limitation, the untagged `Interval`,
-was eliminated by OD-1.*
+**T-6.** `Instant` and `Span` are each defined in their **own compilation unit**, so neither is
+ever transparent where the other is in scope. They are therefore not mutually assignable anywhere,
+including inside the library. *This is stronger than the limitation originally anticipated here,
+which assumed both would share a scope and accepted convention in its place. Implemented and tested:
+`TimeSuite` asserts both directions with `typeCheckErrors`.*
+
+**T-7.** `Instant` exposes no overloaded `-`. Subtracting a `Span` yields an `Instant`; the span
+between two instants is `a.until(b)`. Both operands erase to `Long`, so the overloads would collide
+after erasure — and the named form reads better at call sites regardless.
 
 ### Geometry
 
