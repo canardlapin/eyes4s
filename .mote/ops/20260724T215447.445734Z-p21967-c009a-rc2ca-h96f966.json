@@ -1,0 +1,1 @@
+{"actor":"bbuchsbaum","entity":"pl-display","kind":"create","op":"20260724T215447.445734Z-p21967-c009a-rc2ca-h96f966","set":{"body":"PRD APP-3. Every node carries a name, its parameters with units, and a one-line description, so an application can render it.","priority":2,"status":"open","title":"Plan node display metadata"},"ts":"2026-07-24T21:54:47.445734Z","v":1}

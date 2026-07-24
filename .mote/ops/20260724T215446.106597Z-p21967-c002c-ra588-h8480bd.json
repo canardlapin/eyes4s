@@ -1,0 +1,1 @@
+{"actor":"bbuchsbaum","entity":"k-grid","kind":"create","op":"20260724T215446.106597Z-p21967-c002c-ra588-h8480bd","set":{"body":"PRD O-3. GridId. Two grids of equal dimensions over different frames are not interchangeable. Follows linop4s SpaceId precedent.","priority":1,"status":"open","title":"Grid with nominal identity"},"ts":"2026-07-24T21:54:46.106597Z","v":1}

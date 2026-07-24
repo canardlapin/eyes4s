@@ -1,0 +1,1 @@
+{"actor":"bbuchsbaum","entity":"doc-mdoc","kind":"create","op":"20260724T215447.700002Z-p21967-c00ad-r2366-h3a0d13","set":{"body":"PRD DOC-R3, A-12. Every example in the documentation compiled and executed by CI. No sibling library has one yet; eyes4s establishes it.","priority":1,"status":"open","title":"mdoc documentation site"},"ts":"2026-07-24T21:54:47.700002Z","v":1}

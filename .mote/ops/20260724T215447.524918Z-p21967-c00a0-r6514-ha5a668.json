@@ -1,0 +1,1 @@
+{"actor":"bbuchsbaum","entity":"cd-roundtrip","kind":"create","op":"20260724T215447.524918Z-p21967-c00a0-r6514-ha5a668","set":{"body":"PRD APP-7, A-18. Via the ScalaCheck generators already required by V-5.","priority":1,"status":"open","title":"Law: decode(encode(x)) == x for every codec"},"ts":"2026-07-24T21:54:47.524918Z","v":1}

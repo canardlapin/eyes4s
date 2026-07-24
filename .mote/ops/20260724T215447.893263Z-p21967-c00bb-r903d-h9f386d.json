@@ -1,0 +1,1 @@
+{"actor":"bbuchsbaum","entity":"rel-mima","kind":"create","op":"20260724T215447.893263Z-p21967-c00bb-r903d-h9f386d","set":{"body":"PRD A-16. Adding a case to a sealed domain ADT is a binary-compatibility event (TY-4) and is treated as such.","priority":1,"status":"open","title":"MiMa and a published binary-compatibility policy"},"ts":"2026-07-24T21:54:47.893263Z","v":1}

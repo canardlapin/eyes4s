@@ -1,0 +1,1 @@
+{"actor":"bbuchsbaum","entity":"v-asc-e2e","kind":"create","op":"20260724T215447.317335Z-p21967-c0090-r3d86-h03086f","set":{"body":"PRD A-11, IO-6. Binary .edf is out of scope for v1.0; the README names edf2asc as the required preprocessing step.","priority":1,"status":"open","title":"End-to-end: real edf2asc output to Scanpath"},"ts":"2026-07-24T21:54:47.317335Z","v":1}

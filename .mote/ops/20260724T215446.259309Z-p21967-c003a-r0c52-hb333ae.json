@@ -1,0 +1,1 @@
+{"actor":"bbuchsbaum","entity":"ty-neg-entropy","kind":"create","op":"20260724T215446.259309Z-p21967-c003a-r0c52-hb333ae","set":{"body":"PRD TY-6, A-5. scala.compiletime.testing.typeCheckErrors. eyesim silently returns garbage here.","priority":1,"status":"open","title":"Negative type test: entropy on Signed does not compile"},"ts":"2026-07-24T21:54:46.259309Z","v":1}

@@ -1,0 +1,1 @@
+{"actor":"bbuchsbaum","entity":"app-errors","kind":"create","op":"20260724T215447.647260Z-p21967-c00a9-r65d1-h4b52e7","set":{"body":"PRD APP-14. Every error carries the trial key, and where applicable the source file and line, so an application can navigate to it.","priority":1,"status":"open","title":"Errors name the object that failed"},"ts":"2026-07-24T21:54:47.647260Z","v":1}

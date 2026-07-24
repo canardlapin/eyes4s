@@ -1,0 +1,16 @@
+target/
+project/target/
+project/project/
+.bsp/
+.bloop/
+.metals/
+.scala-build/
+.idea/
+.vscode/
+*.class
+*.log
+.DS_Store
+
+# mote op-log is intentionally committed: it is the project's decision record.
+.mote/tmp/
+.mote/local/

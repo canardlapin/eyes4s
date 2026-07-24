@@ -1,0 +1,1 @@
+{"actor":"bbuchsbaum","entity":"cd-blobs","kind":"create","op":"20260724T215447.564167Z-p21967-c00a3-r1f7b-h4e4328","set":{"body":"PRD APP-8. Surfaces and recordings excluded from JSON and persisted separately.","priority":2,"status":"open","title":"Large numeric payloads referenced by content hash"},"ts":"2026-07-24T21:54:47.564167Z","v":1}

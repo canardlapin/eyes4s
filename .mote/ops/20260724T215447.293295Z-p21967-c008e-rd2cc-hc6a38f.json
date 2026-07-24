@@ -1,0 +1,1 @@
+{"actor":"bbuchsbaum","entity":"io-export","kind":"create","op":"20260724T215447.293295Z-p21967-c008e-rd2cc-hc6a38f","set":{"body":"PRD IO-5. So R can read results without a bespoke bridge.","priority":1,"status":"open","title":"Export to CSV and (JVM) Arrow IPC"},"ts":"2026-07-24T21:54:47.293295Z","v":1}

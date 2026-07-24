@@ -1,0 +1,1 @@
+{"actor":"bbuchsbaum","entity":"v-rng-cross","kind":"create","op":"20260724T215447.149992Z-p21967-c0082-rc28d-h2cb791","set":{"body":"PRD A-8, DET-2.","priority":1,"status":"open","title":"Test: RNG streams identical on JVM and Scala.js"},"ts":"2026-07-24T21:54:47.149992Z","v":1}

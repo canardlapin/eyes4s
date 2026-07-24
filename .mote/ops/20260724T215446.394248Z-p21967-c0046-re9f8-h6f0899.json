@@ -1,0 +1,1 @@
+{"actor":"bbuchsbaum","entity":"d-runall","kind":"create","op":"20260724T215446.394248Z-p21967-c0046-re9f8-h6f0899","set":{"body":"PRD D-4. No effect dependency. Always calls flush.","priority":1,"status":"open","title":"Machine.runAll in a pure module"},"ts":"2026-07-24T21:54:46.394248Z","v":1}

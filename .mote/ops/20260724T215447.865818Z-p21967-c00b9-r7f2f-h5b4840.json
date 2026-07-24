@@ -1,0 +1,1 @@
+{"actor":"bbuchsbaum","entity":"v-generators","kind":"create","op":"20260724T215447.865818Z-p21967-c00b9-r7f2f-h5b4840","set":{"body":"PRD V-5, PKG-6. Frame, Warp, Scanpath, PointMeasure, Grid, Region, Mass. Main-scope so downstream authors can use them.","priority":1,"status":"open","title":"Publish ScalaCheck generators in eyes4s-laws"},"ts":"2026-07-24T21:54:47.865818Z","v":1}

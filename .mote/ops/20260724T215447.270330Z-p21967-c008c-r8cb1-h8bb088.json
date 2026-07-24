@@ -1,0 +1,1 @@
+{"actor":"bbuchsbaum","entity":"io-csv","kind":"create","op":"20260724T215447.270330Z-p21967-c008c-r8cb1-h8bb088","set":{"body":"PRD IO-4. Derivation against a user-supplied case class. No external dataframe or codec dependency required.","priority":1,"status":"open","title":"CSV ingest and Mirror-derived metadata decoders"},"ts":"2026-07-24T21:54:47.270330Z","v":1}
