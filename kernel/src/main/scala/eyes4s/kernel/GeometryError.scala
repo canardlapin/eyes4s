@@ -44,6 +44,13 @@ enum GeometryError derives CanEqual:
   /** A matrix offered as affine whose bottom row is not `(0, 0, 1)`. */
   case NotAffine(matrix: String)
 
+  case NonFiniteSigma(value: Double)
+  case NonPositiveSigma(value: Double)
+  case DegenerateGrid(nx: Int, ny: Int)
+  case DegenerateEllipse(rx: Double, ry: Double)
+  case DegeneratePolygon(vertices: Int)
+  case NonFiniteRegion(shape: String)
+
   def message: String = this match
     case DegenerateBounds(x0, y0, x1, y1) =>
       s"Bounds must have positive extent in both axes, got " +
@@ -63,5 +70,19 @@ enum GeometryError derives CanEqual:
     case NotAffine(m) =>
       s"Expected an affine matrix with bottom row (0, 0, 1), got $m. " +
         "Use Warp.homography for a full projective transform."
+    case NonFiniteSigma(v) =>
+      s"A bandwidth must be finite, was $v."
+    case NonPositiveSigma(v) =>
+      s"A bandwidth is a standard deviation and must be positive, was $v. " +
+        "If a backend expresses it as a full or quarter width, convert at " +
+        "that backend's boundary rather than passing its convention here."
+    case DegenerateGrid(nx, ny) =>
+      s"A grid needs at least one cell in each axis, got ${nx}x$ny."
+    case DegenerateEllipse(rx, ry) =>
+      s"An ellipse needs positive radii, got rx=$rx, ry=$ry."
+    case DegeneratePolygon(n) =>
+      s"A polygon needs at least 3 vertices, got $n."
+    case NonFiniteRegion(shape) =>
+      s"A $shape region was given non-finite coordinates."
 
 end GeometryError
