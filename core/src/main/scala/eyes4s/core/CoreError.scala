@@ -38,12 +38,14 @@ enum CoreError derives CanEqual:
   case OfGeometry(underlying: GeometryError)
   case OfSurface(underlying: SurfaceError)
   case OfRecording(underlying: RecordingError)
+  case OfScanpath(underlying: ScanpathError)
 
   def message: String = this match
     case OfTime(e)      => e.message
     case OfGeometry(e)  => e.message
     case OfSurface(e)   => e.message
     case OfRecording(e) => e.message
+    case OfScanpath(e)  => e.message
 
 object CoreError:
   extension [A](e: Either[TimeError, A])
@@ -57,3 +59,6 @@ object CoreError:
 
   extension [A](e: Either[RecordingError, A])
     def widenRecording: Either[CoreError, A] = e.left.map(CoreError.OfRecording.apply)
+
+  extension [A](e: Either[ScanpathError, A])
+    def widenScanpath: Either[CoreError, A] = e.left.map(CoreError.OfScanpath.apply)

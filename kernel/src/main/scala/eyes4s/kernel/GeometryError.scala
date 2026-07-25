@@ -50,6 +50,8 @@ enum GeometryError derives CanEqual:
   case DegenerateEllipse(rx: Double, ry: Double)
   case DegeneratePolygon(vertices: Int)
   case NonFiniteRegion(shape: String)
+  case NonFiniteVelocity(value: Double)
+  case NegativeVelocity(value: Double)
 
   def message: String = this match
     case DegenerateBounds(x0, y0, x1, y1) =>
@@ -84,5 +86,10 @@ enum GeometryError derives CanEqual:
       s"A polygon needs at least 3 vertices, got $n."
     case NonFiniteRegion(shape) =>
       s"A $shape region was given non-finite coordinates."
+    case NonFiniteVelocity(v) =>
+      s"A velocity must be finite, was $v."
+    case NegativeVelocity(v) =>
+      s"A velocity is a speed and cannot be negative, was $v. " +
+        "Direction belongs to the displacement, not to the magnitude."
 
 end GeometryError
