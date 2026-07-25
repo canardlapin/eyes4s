@@ -20,6 +20,7 @@ val munitV           = "1.3.4"
 val munitScalacheckV = "1.3.0"
 val disciplineMunitV = "2.0.0"
 val scalacheckV      = "1.19.0"
+val catsLawsV        = "2.13.0"
 val catsEffectV      = "3.7.0" // eyes4s-fs2 / eyes4s-io only
 val fs2V             = "3.13.0" // eyes4s-fs2 / eyes4s-io only
 
@@ -276,6 +277,7 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
       "org.scalameta"  %%% "munit"            % munitV,
       "org.scalameta"  %%% "munit-scalacheck" % munitScalacheckV,
       "org.typelevel"  %%% "discipline-munit" % disciplineMunitV,
+      "org.typelevel"  %%% "cats-laws"        % catsLawsV,
       "org.scalacheck" %%% "scalacheck"       % scalacheckV
     )
   )
