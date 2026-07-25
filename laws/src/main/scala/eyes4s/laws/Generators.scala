@@ -214,4 +214,90 @@ object Generators:
   given Arbitrary[Perspective]  = Arbitrary(genPerspective)
   given Arbitrary[TangentSetup] = Arbitrary(genTangentSetup)
 
+  // -------------------------------------------------------------------------
+  // Occupancy
+  // -------------------------------------------------------------------------
+
+  def genGrid[U <: Unit2D](frame: Frame[U]): Gen[Grid[U]] =
+    for
+      nx <- Gen.choose(2, 24)
+      ny <- Gen.choose(2, 24)
+    yield Grid.over(frame, nx, ny).toOption.get
+
+  /** Regions over a given frame, with bounded nesting.
+    *
+    * `Gen.sized` matters here: an unbounded recursive generator for a tree with
+    * three branching cases does not terminate reliably, and a law suite that
+    * intermittently stack-overflows is worse than one that does not run.
+    */
+  def genRegion[U <: Unit2D](frame: Frame[U]): Gen[Region[U]] =
+    def leaf: Gen[Region[U]] =
+      Gen.oneOf(
+        for
+          p <- genPtIn(frame)
+          q <- genPtIn(frame)
+        yield Region
+          .rect[U](
+            Pt(math.min(p.x, q.x), math.min(p.y, q.y)),
+            Pt(math.max(p.x, q.x) + 1e-6, math.max(p.y, q.y) + 1e-6)
+          )
+          .toOption
+          .get,
+        for
+          c  <- genPtIn(frame)
+          rx <- Gen.choose(0.05, 0.5).map(_ * frame.bounds.width)
+          ry <- Gen.choose(0.05, 0.5).map(_ * frame.bounds.height)
+        yield Region.ellipse[U](c, rx, ry).toOption.get,
+        Gen.const(Region.empty[U]),
+        Gen.const(Region.everything[U])
+      )
+
+    def sized(depth: Int): Gen[Region[U]] =
+      if depth <= 0 then leaf
+      else
+        Gen.frequency(
+          3 -> leaf,
+          1 -> (for
+            a <- Gen.lzy(sized(depth - 1))
+            b <- Gen.lzy(sized(depth - 1))
+          yield a || b),
+          1 -> (for
+            a <- Gen.lzy(sized(depth - 1))
+            b <- Gen.lzy(sized(depth - 1))
+          yield a && b),
+          1 -> Gen.lzy(sized(depth - 1)).map(r => !r)
+        )
+
+    Gen.choose(0, 3).flatMap(sized)
+
+  /** Non-negative values on a grid, at least one of them positive so that the
+    * result can be normalised.
+    */
+  def genIntensity[U <: Unit2D](g: Grid[U]): Gen[Intensity[U]] =
+    Gen.listOfN(g.size, Gen.choose(0.0, 10.0)).map { vs =>
+      val arr = if vs.forall(_ == 0.0) then 1.0 :: vs.tail else vs
+      Surface
+        .intensity(g, IArray.from(arr), Provenance.raw(ContentHash.of(IArray.from(arr))))
+        .toOption
+        .get
+    }
+
+  def genMass[U <: Unit2D](g: Grid[U]): Gen[Mass[U]] =
+    genIntensity(g).map(_.normalised.toOption.get)
+
+  def genSigned[U <: Unit2D](g: Grid[U]): Gen[Signed[U]] =
+    Gen.listOfN(g.size, Gen.choose(-10.0, 10.0)).map { vs =>
+      Surface
+        .signed(g, IArray.from(vs), Provenance.raw(ContentHash.of(IArray.from(vs))))
+        .toOption
+        .get
+    }
+
+  def genPointMeasure[U <: Unit2D](frame: Frame[U]): Gen[PointMeasure[U]] =
+    for
+      n  <- Gen.choose(1, 20)
+      ps <- Gen.listOfN(n, genPtIn(frame))
+      ws <- Gen.listOfN(n, Gen.choose(0.0, 100.0))
+    yield PointMeasure.of(frame, IArray.from(ps), IArray.from(ws)).toOption.get
+
 end Generators

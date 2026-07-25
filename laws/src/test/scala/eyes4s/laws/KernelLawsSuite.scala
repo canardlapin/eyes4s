@@ -36,6 +36,18 @@ class KernelLawsSuite extends munit.DisciplineSuite:
   checkAll("Warp.inverse", WarpLaws.inverses(Tolerance.exactish))
   checkAll("Warp.tangent", WarpLaws.tangentRoundTrip(Tolerance.roundTrip))
 
+  // Occupancy. Both suites take the grid they operate over, so coverage is the
+  // caller's choice rather than a hidden constant, and the module laws are
+  // stated against the specific module being tested -- its zero is dimensioned
+  // by that grid.
+  private val frame = Frame.unitSquare("laws-frame").toOption.get
+  private val grid  = Grid.over(frame, 12, 9).toOption.get
+
+  checkAll("Region.booleanAlgebra", RegionLaws.lattice(grid))
+  checkAll("Surface.module", SurfaceLaws.module(grid))
+  checkAll("Surface.mass", SurfaceLaws.mass(grid))
+  checkAll("Measure.integrate", SurfaceLaws.measure(grid))
+
   // Time: the algebraic structure claimed in Span's scaladoc, tested by the
   // standard cats bundles rather than by hand-rolled assertions.
   checkAll("Span.commutativeGroup", CommutativeGroupTests[Span].commutativeGroup)
