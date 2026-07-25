@@ -74,6 +74,20 @@ object Agreement:
             Left(GeometryError.FrameMismatch(head.id, bad.id))
           }
 
+  /** Require two grids to be the same, yielding it on success. */
+  def grids[U <: Unit2D](left: Grid[U], right: Grid[U]): Either[SurfaceError, Grid[U]] =
+    if left.id == right.id then Right(left)
+    else Left(SurfaceError.GridMismatch(left.id, right.id))
+
+  /** Require a whole collection to share one grid. */
+  def allGrids[U <: Unit2D](gs: Seq[Grid[U]]): Either[SurfaceError, Option[Grid[U]]] =
+    gs.headOption match
+      case None       => Right(None)
+      case Some(head) =>
+        gs.tail
+          .find(_.id != head.id)
+          .fold(Right(Some(head)))(bad => Left(SurfaceError.GridMismatch(head.id, bad.id)))
+
   /** Require a whole collection to share one timeline. */
   def allClocks(clocks: Seq[ClockId]): Either[TimeError, Option[ClockId]] =
     clocks.headOption match

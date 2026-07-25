@@ -1,0 +1,1 @@
+{"actor":"bbuchsbaum","entity":"k-grid","kind":"note","note_kind":"note","op":"20260725T142652.350353Z-p23405-c0000-r9378-h1b5e0c","text":"See commit d32f194. 22 tests in GridRegionSuite; typeCheckErrors asserts unit separation for both Sigma and Region.","ts":"2026-07-25T14:26:52.350353Z","v":1}
