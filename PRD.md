@@ -382,13 +382,26 @@ explicit interpolation mode, supporting dynamic stimuli and surface-mapped mobil
 `Either[FrameMismatch, _]`. The unit parameter proves both sides are in degrees; it does not prove
 they are in the *same* degrees.
 
-**G-10.** Ergonomic relief from G-9 comes from a **checked container, not a capability**. `Session[U]`
-validates frame membership on insertion — returning `Either` there — and its accessors are total,
-because membership was proven on the way in. There is no `Scope[U]`, no ambient given, and no total
-variant reachable without having passed the insertion check. *Per decision OD-2 (`bead q-scope`): a
-capability value is forgeable, since one obtained for frame A can be applied to objects from frame B —
-the exact bug class the design exists to prevent. `Session` is also the project object the
-application layer requires for APP-13.*
+**G-10.** Identity checks are performed by **one shared implementation**, `Agreement`, never
+re-inlined per call site. `Agreement.clocks` and `Agreement.frames` are the only places two
+coordinate systems are compared, with n-ary forms that anchor their error on the first element so a
+mismatch in a collection reports stably. *The seam this closes had already formed after a single
+file: `Interval` carried a private `sameClock` while `Overlap.selects` re-inlined the same
+comparison with the operands reversed. Both were correct; they would not have stayed so. This is
+`eyesim`'s copy-pasted-predicate failure in miniature.*
+
+**G-11.** Ergonomic relief from G-9 comes from a **checked container, not a capability**. `Session`
+validates frame and clock membership on insertion — returning `Either` there — and its accessors are
+total, because membership was proven on the way in. There is no `Scope[U]`, no ambient given, and no
+total variant reachable without having passed the insertion check. *Per decision OD-2 (`bead
+q-scope`): a capability value is forgeable, since one obtained for frame A can be applied to objects
+from frame B.*
+
+**G-11a.** `Session` lives in **`eyes4s-design`**, not in the kernel and not in `eyes4s-core`. *Forced
+by the dependency graph rather than by preference: a container worth having holds recordings, AOI
+sets and grids together, and `aoi` depends on `core`, so `core` cannot see `AoiSet`. The earliest
+module that sees all three is `design`. The kernel keeps only the mechanism (G-9, G-10). Tracked as
+bead `x-session`, and it is the project object APP-13's prerequisite query interrogates.*
 
 ### Trajectory
 

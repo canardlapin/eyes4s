@@ -60,8 +60,7 @@ sealed trait Warp[A <: Unit2D, B <: Unit2D]:
 
   /** Compose with a warp that starts where this one ends. */
   def andThen[C <: Unit2D](that: Warp[B, C]): Either[GeometryError, Warp[A, C]] =
-    if to.id == that.from.id then Right(Warp.Then(this, that))
-    else Left(GeometryError.FrameMismatch(to.id, that.from.id))
+    Agreement.frames(to, that.from).map(_ => Warp.Then(this, that))
 
 end Warp
 

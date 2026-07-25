@@ -59,19 +59,15 @@ final case class Interval private (clock: ClockId, onset: Instant, offset: Insta
 
   /** True when the two extents share any instant. Requires a common timeline. */
   def overlaps(that: Interval): Either[TimeError, Boolean] =
-    sameClock(that).map { _ =>
+    Agreement.clocks(clock, that.clock).map { _ =>
       onset.toMicros < that.offset.toMicros && that.onset.toMicros < offset.toMicros
     }
 
   /** True when `that` lies wholly inside this extent. Requires a common timeline. */
   def encloses(that: Interval): Either[TimeError, Boolean] =
-    sameClock(that).map { _ =>
+    Agreement.clocks(clock, that.clock).map { _ =>
       that.onset.toMicros >= onset.toMicros && that.offset.toMicros <= offset.toMicros
     }
-
-  private def sameClock(that: Interval): Either[TimeError, Unit] =
-    if clock == that.clock then Right(())
-    else Left(TimeError.ClockMismatch(clock, that.clock))
 
   def render: String = s"[${onset.render}, ${offset.render}) on $clock"
 
@@ -154,8 +150,7 @@ object Overlap:
     def selects(event: Interval, window: Interval): Either[TimeError, Boolean] =
       policy match
         case Overlap.OnsetInside =>
-          if event.clock == window.clock then Right(window.contains(event.onset))
-          else Left(TimeError.ClockMismatch(window.clock, event.clock))
+          Agreement.clocks(window.clock, event.clock).map(_ => window.contains(event.onset))
         case Overlap.FullyContained  => window.encloses(event)
         case Overlap.AnyIntersection => window.overlaps(event)
 
