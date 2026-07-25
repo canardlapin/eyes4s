@@ -37,6 +37,13 @@ enum GeometryError derives CanEqual:
     */
   case FrameMismatch(left: FrameId, right: FrameId)
 
+  case NonFinitePerspective(distanceMm: Double, widthMm: Double, heightMm: Double)
+
+  case NonPositivePerspective(distanceMm: Double, widthMm: Double, heightMm: Double)
+
+  /** A matrix offered as affine whose bottom row is not `(0, 0, 1)`. */
+  case NotAffine(matrix: String)
+
   def message: String = this match
     case DegenerateBounds(x0, y0, x1, y1) =>
       s"Bounds must have positive extent in both axes, got " +
@@ -48,5 +55,13 @@ enum GeometryError derives CanEqual:
       s"Cannot combine values from different frames: '$l' and '$r'. " +
         "Both are in the same unit, but not in the same coordinate system; " +
         "convert one with a Warp before combining them."
+    case NonFinitePerspective(d, w, h) =>
+      s"Perspective must be finite, got distance=${d}mm, surface=${w}x${h}mm."
+    case NonPositivePerspective(d, w, h) =>
+      s"Perspective needs a positive distance and surface size, got " +
+        s"distance=${d}mm, surface=${w}x${h}mm."
+    case NotAffine(m) =>
+      s"Expected an affine matrix with bottom row (0, 0, 1), got $m. " +
+        "Use Warp.homography for a full projective transform."
 
 end GeometryError
