@@ -745,43 +745,72 @@ Distribution measures ship as `Compare[Mass[U], Mass[U], _]`: Pearson, Spearman,
 Tanimoto, total variation, KL, Jensen–Shannon, χ², Hellinger, exact W₁ and Sinkhorn-regularised OT
 with λ exposed and its consequences documented.
 
-### Layer 5 — design: trials, pairings, baselines
+### Layer 5 — design: trials, relations, pairings, reductions
 
 The key insight, and the one that kills `eyesim`'s flagship bug: **the join key is a type, not a
 string naming a column.**
 
 ```scala
-final case class Trial[K, A](key: K, value: A)
-final case class Trials[K, A](rows: Vector[Trial[K, A]]):
-  def mapV[B](f: A => B): Trials[K, B]
-  def traverseV[E, B](f: A => Either[E, B]): (Trials[K, B], Vector[(K, E)])
+final case class Trial[K, M, A](key: K, meta: M, value: A)
+final case class Trials[K, M, A](rows: Vector[Trial[K, M, A]]):
+  def mapV[B](f: A => B): Trials[K, M, B]
+  def traverseV[E, B](f: A => Either[E, B])
+      : (Trials[K, M, B], Vector[(K, E)])
 
-sealed trait Pairing[K]
+sealed trait Relation[L, R]
+object Relation:
+  final case class All[L, R]() extends Relation[L, R]
+  final case class SameOn[L, R, J](
+      left: Projection[L, J], right: Projection[R, J]
+  ) extends Relation[L, R]
+  final case class DifferentOn[L, R, J](
+      left: Projection[L, J], right: Projection[R, J]
+  ) extends Relation[L, R]
+  final case class And[L, R](
+      left: Relation[L, R], right: Relation[L, R]
+  ) extends Relation[L, R]
+
+sealed trait PairDesign[L, R]
+object PairDesign:
+  final case class BetweenDirected[L, R](
+      relation: Relation[L, R], selection: DirectedSelection
+  ) extends PairDesign[L, R]
+  final case class WithinDirected[K](
+      relation: Relation[K, K], self: SelfPolicy, selection: DirectedSelection
+  ) extends PairDesign[K, K]
+  final case class WithinUndirected[K](
+      relation: Relation[K, K], self: SelfPolicy
+  ) extends PairDesign[K, K]
+
+/** Convenient constructors compile to Relation + PairDesign values. */
 object Pairing:
-  def matched[K]: Pairing[K]
-  def matchedOn[K, J](proj: K => J): Pairing[K]                    // must be written to be used
-  def mismatchedWithin[K, G](stratum: K => G): Pairing[K]
-  extension [K](p: Pairing[K]) def sampled(cap: Int, seed: Seed): Pairing[K]
+  def matched[K]: PairDesign[K, K]
+  def matchedOn[K, J](proj: Projection[K, J]): PairDesign[K, K]
+  def mismatchedWithin[K, G](stratum: Projection[K, G]): PairDesign[K, K]
 
 /** Unmatched and ambiguous keys are DATA, not a warning(). */
-final case class Paired[K, A, B](
-    pairs:          Vector[(Trial[K, A], Trial[K, B])],
-    unmatchedLeft:  Vector[K],
-    unmatchedRight: Vector[K],
-    ambiguous:      Vector[K])
+final case class Paired[KL, ML, KR, MR, A, B](
+    pairs:          Vector[(Trial[KL, ML, A], Trial[KR, MR, B])],
+    unmatchedLeft:  Vector[KL],
+    unmatchedRight: Vector[KR],
+    ambiguous:      Vector[PairingAmbiguity[KL, KR]])
 
-def analyse[K, A, B, S](
-    ref: Trials[K, A], src: Trials[K, B], p: Pairing[K], c: Compare[A, B, S]
-): Analysis[K, S]
+final case class PairScore[KL, KR, E, S](
+    left: KL, right: KR, result: Either[E, S])
+
+final case class PairwiseAnalysis[KL, KR, E, S](
+    rows: Vector[PairScore[KL, KR, E, S]],
+    diagnostics: PairingReport[KL, KR],
+    provenance: Provenance)
 
 final case class Analysis[K, S](
-    rows:        Vector[(K, Either[CompareError, S])],   // failures stay attached to their key
-    paired:      Paired[K, ?, ?],                        // unmatched and ambiguous keys, as data
-    provenance:  Provenance)                             // measure, pairing, seed, smoother, grid
+    rows: Vector[(K, Either[ReductionError, S])],
+    diagnostics: ReductionReport[K],
+    provenance: Provenance)
 
-/** Parameters alone cannot distinguish two datasets analysed identically, so a
-  * parameter record was never a valid cache key. `inputs` closes that. */
-final case class Provenance(inputs: ContentHash, /* ... parameter record ... */)
+def evaluatePairs[KL, ML, KR, MR, A, B, E, S](
+    pairs: Paired[KL, ML, KR, MR, A, B]
+)(f: (A, B) => Either[E, S]): PairwiseAnalysis[KL, KR, E, S]
 
 /** Contrast needs a difference on the score type; for MultiMatchScore it is per-field. */
 trait Contrastable[S]:
@@ -789,27 +818,55 @@ trait Contrastable[S]:
 def contrast[K, S: Contrastable](a: Analysis[K, S], b: Analysis[K, S]): Analysis[K, S]
 ```
 
-`CompareError` subsumes `EstimateError`, `GridMismatch`, and `FrameMismatch`, because lifted
-comparisons (`viaSmoothing`) can fail for any of those reasons. And note that typed results make
-contrast *harder*, not easier: `eye_sim_diff` is a subtraction only because `eyesim`'s score is
-always a bare `Double`. A `MultiMatchScore` contrasts field-by-field, which is why `Contrastable`
-exists rather than a `Group[S]` constraint that would not hold.
+`Relation` is structural, not a predicate hidden behind `accepts`. `SameOn` can therefore execute as
+a hash join, a plan can persist its named projections, and diagnostics can name the clause that
+excluded an edge. Pair-design inhabitants encode the semantic dependencies: self policy exists only
+within one collection, per-focal selection exists only for directed pairs, and canonical-undirected
+evaluation requires `SymmetricCompare`.
 
-With `case class Key(subject: SubjectId, image: ImageId)`, `Pairing.matched` pairs on the whole key.
-Reproducing `eyesim`'s vignette behaviour requires writing `Pairing.matchedOn(_.image)` — still
-available, now *visible*.
+`PairwiseAnalysis` is primary because a baseline audit and a repeated-view analysis both need to
+know the two observations behind a score. `Analysis[K, S]` is the reduced result. Directed reductions
+name their side; canonical-undirected reductions choose `meanEdges` or the explicitly mirrored
+`meanByEndpoint`. A reduction also chooses `RequireAll` or `SuccessfulOnly(minSuccessful)` and
+returns eligible, selected, successful, and failed counts.
 
-The permutation baseline is not a code path. It is the same function with a different pairing:
+The baseline is not a code path. It is the same evaluator applied to a different pair design:
 
 ```scala
-val matched    = analyse(templates, probes, Pairing.matched, cmp)
-val mismatched = analyse(templates, probes,
-                         Pairing.mismatchedWithin(_.subject).sampled(50, seed), cmp)
-val effect     = contrast(matched, mismatched)      // eye_sim_diff, with a realised n per row
+val target = PairDesign.between[Key, Key]
+  .sameOn(Projection.named("subject-image")(k => (k.subject, k.image)))
+
+val control = PairDesign.between[Key, Key]
+  .sameOn(Projection.named("subject")(_.subject))
+  .differentOn(Projection.named("image")(_.image))
+  .bottomK(50, Seed(1), SampleId("image-control"))
+
+val observed = evaluatePairs(pair(templates, probes, target))(cmp.compare).meanByRight
+val baseline = evaluatePairs(pair(templates, probes, control))(cmp.compare).meanByRight
+val effect   = contrast(observed, baseline)
 ```
 
-`eyesim` implements this three times with three different semantics. Here there is one
-implementation, the realised count is a value, and the seed is threaded rather than set globally.
+Every eligible directed pair receives a stable priority from `(Seed, SampleId, focal KeyDigest,
+candidate KeyDigest)`. The cap and eligibility relation do not enter the priority, so bottom-60
+contains bottom-50 and row order is irrelevant. `KeyDigest` derives through `Mirror`, obeys
+`Eq(a, b) => digest(a) == digest(b)`, and has JVM/Scala.js golden vectors.
+
+Repeated viewing uses the same pieces, but makes its scientific scope visible:
+
+```scala
+val repeated = PairDesign.within[Key]
+  .sameOn(Projection.named("subject-image")(k => (k.subject, k.image)))
+  .differentOn(Projection.named("phase")(_.phase))
+  .excludingSelf
+  .canonicalUndirected
+
+val perViewing = evaluatePairs(pair(viewings, repeated))(cmp.compare).meanByEndpoint
+```
+
+There is no participant default. Removing the named subject clause asks the distinct
+cross-participant-consistency question. This is the seam `eyesim` lacks: its repetitive-similarity
+vignette claims same-image, cross-phase scores while the implementation groups only on phase, mixes
+participants and images, and places the intended reinstatement pair in its `othersim` baseline.
 
 Domain adaptation (`eyesim`'s latent transforms) gets a real fit/apply split, with the change of
 representation in the type — which makes "EMD after PCA" *unrepresentable* rather than a runtime
@@ -834,6 +891,17 @@ object Adapter:
 Strata are keyed by a real type, not by the sentinel string `"__all__"` that `eyesim` then renames
 to `"all"` — a collision waiting for the first study with a condition called `all`.
 
+Surface decomposition reuses alignment and pair evaluation without pretending to be a `Compare`.
+OLS returns a `Signed` fit, intercept-free NNLS an `Intensity`, and simplex-constrained fitting a
+`Mass`; every residual is `Signed`. Only the simplex-constrained coefficients are mixture weights.
+Diagnostics are descriptive — rank, conditioning, convergence, residual norms, and R² — because
+cell-wise standard errors would falsely treat spatially autocorrelated cells as independent.
+Partial association is a different result type, not a coefficient.
+
+The convenient surface keeps distinct scientific verbs: matched similarity, repetition similarity,
+surface decomposition, and temporal reinstatement. They are thin functions over the algebra above,
+not a `Workflow` hierarchy or a single `TemplateAnalysis` engine.
+
 ---
 
 ## Modules and dependencies
@@ -846,7 +914,7 @@ to `"all"` — a collision waiting for the first study with a condition called `
 |---|---|---|
 | the fixations of one trial | tibble | `IArray[Fixation]` — a homogeneous sequence of a known record |
 | trials with a list-column | nested tibble | `Vector[Trial[K, M, A]]` — a keyed collection |
-| results with appended columns | tibble | `Analysis[K, S]`, plus an export at the edge |
+| results with appended columns | tibble | `PairwiseAnalysis`, reduced `Analysis`, plus an export at the edge |
 | study metadata (subject, block, accuracy, RT) | tibble | **genuinely tabular** — schema unknown at library-compile time |
 
 Modelling the first three as a dataframe is what produces `x[, 1:2]` silently meaning
@@ -857,11 +925,12 @@ The fourth is real, and the Scala answer is not a dataframe but the user's own p
 as a parameter:
 
 ```scala
-final case class Key(subject: SubjectId, image: ImageId)
-final case class Meta(phase: Phase, block: Int, correct: Boolean, rt: Span)
+final case class Key(
+    subject: SubjectId, image: ImageId, phase: Phase, repetition: RepetitionId)
+final case class Meta(block: Int, correct: Boolean, rt: Span)
 
 val trials: Trials[Key, Meta, Scanpath[Unit2D.Deg]] = ...
-trials.filter(_.meta.phase == Phase.Encoding)      // type-checked, not string-checked
+trials.filter(_.key.phase == Phase.Encoding)       // pairing dimensions live in the key
 ```
 
 eyes4s never inspects `Meta`; it carries it. Reading it from a study CSV is a `Mirror`-derived
@@ -952,8 +1021,8 @@ handles it.
 ```scala
 import eyes4s.*, eyes4s.surface.*, eyes4s.compare.*, eyes4s.design.*
 
-final case class Key(subject: SubjectId, image: ImageId)
-final case class Meta(phase: Phase, correct: Boolean)
+final case class Key(subject: SubjectId, image: ImageId, phase: Phase)
+final case class Meta(correct: Boolean)
 
 val screen = Frame.screen("bench", 1280, 1024)                     // Frame[Px], y-down
 val fovea  = Frame.angular("fovea", Extent(34.0, 27.0))            // Frame[Deg]
@@ -967,22 +1036,29 @@ def mapOf(sp: Scanpath[Unit2D.Deg]): Either[EstimateError, Mass[Unit2D.Deg]] =
           .flatMap(_.normalised)                                   // Intensity => Mass
 
 val trials: Trials[Key, Meta, Scanpath[Unit2D.Deg]] = load(...)
-val (templates, tErr) = trials.filter(_.meta.phase == Phase.Encoding).traverseV(mapOf)
-val (probes,    pErr) = trials.filter(_.meta.phase == Phase.Retrieval).traverseV(mapOf)
+val (templates, tErr) = trials.filter(_.key.phase == Phase.Encoding).traverseV(mapOf)
+val (probes,    pErr) = trials.filter(_.key.phase == Phase.Retrieval).traverseV(mapOf)
 
-val cmp        = Compare.fisherZ[Mass[Unit2D.Deg]]
-val matched    = analyse(templates, probes, Pairing.matched, cmp)
-val mismatched = analyse(templates, probes,
-                         Pairing.mismatchedWithin(_.subject).sampled(50, Seed(1)), cmp)
-val effect     = contrast(matched, mismatched)
+val cmp = Compare.fisherZ[Mass[Unit2D.Deg]]
+
+val target = PairDesign.between[Key, Key]
+  .sameOn(Projection.named("subject-image")(k => (k.subject, k.image)))
+val control = PairDesign.between[Key, Key]
+  .sameOn(Projection.named("subject")(_.subject))
+  .differentOn(Projection.named("image")(_.image))
+  .bottomK(50, Seed(1), SampleId("image-control"))
+
+val observed = evaluatePairs(pair(templates, probes, target))(cmp.compare).meanByRight
+val baseline = evaluatePairs(pair(templates, probes, control))(cmp.compare).meanByRight
+val effect   = contrast(observed, baseline)
 ```
 
-Read what is no longer possible. `Pairing.matched` pairs on the whole `Key`, so a retrieval trial
-cannot be compared against another participant's template unless you write `matchedOn(_.image)` and
-say so. Trials that failed density estimation are in `tErr`/`pErr`, not silently dropped with a
-warning that changes the row count. `Sigma.deg(1.0)` cannot be handed to a smoother over a pixel
-grid. And both map sets share `grid` by construction, so cell-by-cell correlation of incommensurable
-maps is not expressible.
+Read what is no longer possible. The target relation names subject and image, while the control
+relation names same-subject and different-image. Neither participant scope nor baseline semantics can
+be inherited accidentally from row order. Trials that failed density estimation are in `tErr`/`pErr`,
+not silently dropped with a warning that changes the row count. `Sigma.deg(1.0)` cannot be handed to
+a smoother over a pixel grid. And both map sets share `grid` by construction, so cell-by-cell
+correlation of incommensurable maps is not expressible.
 
 ### 2. Raw samples to AOI dwell, in degrees
 
@@ -1190,7 +1266,7 @@ Nothing is built. The proposed order, each milestone with an acceptance criterio
 | 2 | **Occupancy** (kernel): point measures, grids, surfaces, regions | Region Boolean-algebra laws (Discipline); `Signed` module laws per grid; `Mass` constructor proves non-negativity and unit sum; `integrate` against an indicator equals `massIn` |
 | 3 | **Detect**: I-VT, I-DT, Engbert–Kliegl, filters, `Machine` composition | Category laws for `Machine` stated as observational equality on output sequences; `runAll` and `toPipe` produce identical output on the same **finite** input (property test); agreement with published reference implementations on a shared fixture set |
 | 4 | **Surface + compare**: smoothers, bandwidth, pyramids; metric hierarchy, alignment kernel, MultiMatch, distribution measures | Metric axioms law-tested per instance; MultiMatch matches the `multimatch-gaze` Python reference on the `eyesim` parity fixtures at `grouping = FALSE`; `monotoneLattice` DP reproduces the Dijkstra path exactly |
-| 5 | **Design**: trials, pairings, baselines, contrasts, adapters | An R-parity harness (modelled on `tools/r-parity/` in `fmrihrf`) reproduces `eyesim`'s `template_similarity` output on `wynn_study`/`wynn_test` to stated tolerance, *including* its `match_on = "image"` behaviour via `matchedOn`, demonstrating the divergence explicitly |
+| 5 | **Design**: trials, relations, pair designs, edge results, reductions, decomposition | Relation truth tables and sampling mutants are green; cap-monotone keyed samples and `KeyDigest` golden vectors agree on JVM/JS; parity fixtures cover matched similarity and the deliberate repetitive-similarity divergence |
 | 6 | **IO**: EyeLink ASC, BIDS eye-tracking, CSV | Round-trip a real EDF-derived ASC; parse a BIDS eye-tracking dataset end to end |
 | 7 | **AOI + reading measures** | first-fixation duration, gaze duration, go-past time, regression-path duration and regression counts reproduced against a published reading corpus |
 | 8 | **Saliency metrics, viz, frame4s interop** | MIT/Tübingen benchmark metric values reproduced on a published fixture |

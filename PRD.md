@@ -872,10 +872,14 @@ in the domain layer.
 **DET-3.** Fold and stratum assignment is a deterministic function of the key, not of a shuffled
 global draw.
 
-**DET-4.** Reductions over floating-point values sum in a defined index order so that results are
+**DET-4.** Directed bottom-k sampling is a deterministic function of `Seed`, `SampleId`, focal key,
+and candidate key. Priorities are independent of row order, eligibility relation, and cap; increasing
+the cap preserves the smaller sample as a subset.
+
+**DET-5.** Reductions over floating-point values sum in a defined key order so that results are
 bit-reproducible across platforms, following `gale`'s precedent.
 
-**DET-5.** Parallelism, where introduced, does not alter results. v1.0 ships no implicit parallelism;
+**DET-6.** Parallelism, where introduced, does not alter results. v1.0 ships no implicit parallelism;
 any parallel execution is an explicit caller choice.
 
 ---
@@ -949,6 +953,8 @@ equivalent and naming the behavioural differences.
 - `Signed[U]`: module laws per grid;
 - `Mass`: non-negativity and unit sum preserved by every operation that returns a `Mass`;
 - `Metric` / `Semimetric` / `Divergence` / `Kernel`: the axioms each interface claims, per instance;
+- `SymmetricCompare`: symmetry per instance;
+- `KeyDigest`: `Eq`-consistent digests for derived and hand-written instances;
 - `Machine`: `Category` laws as observational equality;
 - `integrate`: integrating an indicator equals `massIn`.
 
@@ -967,7 +973,10 @@ inputs and `eyesim` outputs from R, and CI reports per-measure agreement on `wyn
 with its cause and a statement of which implementation is correct. The known divergences to expect,
 from the Evidence Base, are: kernel bandwidth (`ks` versus `MASS` semantics), join behaviour
 (first-match versus keyed), `Ops` semantics (`+` as mean, `/` as log-ratio), permutation baseline
-construction, and the treatment of signed maps as probability masses.
+construction, the treatment of signed maps as probability masses, and repetitive similarity. The
+repetitive fixture is a **divergence fixture**: it proves that the eyesim vignette places the intended
+same-participant, same-image, different-phase pair in `othersim`, and that eyes4s selects it only
+under the explicit target relation.
 
 **V-5. Property tests.** ScalaCheck generators for `Frame`, `Warp`, `Scanpath`, `PointMeasure`,
 `Grid`, `Region` and `Mass` are published in `eyes4s-laws` for downstream use.
@@ -975,11 +984,17 @@ construction, and the treatment of signed maps as probability masses.
 **V-6. Negative type tests.** As specified in TY-6.
 
 **V-7. Cross-platform equivalence.** A test asserts bit-identical output for a representative
-pipeline on JVM and Scala.js.
+pipeline on JVM and Scala.js, including `KeyDigest` golden vectors and directed bottom-k samples.
 
 **V-8. Coverage.** Every public entry point is exercised. The `eyesim` evidence includes a file with
 zero test coverage containing a live type error; this is the specific failure mode being guarded
 against.
+
+**V-9. Relationship conformance.** Truth-table tests cover every `Relation` constructor and legal
+`PairDesign` inhabitant. They distinguish canonical edge storage, mirrored endpoint reduction,
+directed left/right reduction, self exclusion, uniqueness diagnostics, and participant scope. A
+sampling mutant that includes the true match, derives priority from cap, shares a stream across
+focals, or depends on row order must fail.
 
 ---
 
@@ -1001,6 +1016,11 @@ deferred.
 
 **P-5.** Where an allocation-conscious inner loop is written with `while` and mutable arrays, the
 mutation is unobservable through the public API.
+
+**P-6.** `SameOn` enumeration uses a keyed join rather than testing the full cross product.
+Conjunctions use equality nodes to restrict candidate groups before residual relations are tested.
+Canonical-undirected evaluation computes each symmetric edge once; mirroring is a result view, not a
+second evaluator call.
 
 ---
 
@@ -1040,10 +1060,14 @@ OT. CRQA is **not** in v1.0 (OD-6).
 
 ### v0.5 — Design and inference
 
-`eyes4s-design`. `Trials`, `Pairing`, `Paired`, `analyse`, `contrast`, `Provenance`, the seeded RNG.
+`eyes4s-design`. `Trials[K, M, A]`; sealed `Relation`; legal `PairDesign` inhabitants; `Pairing`
+façades; `Paired`; primary `PairwiseAnalysis`; explicit reductions and contrasts; `KeyDigest`,
+`SampleId`, and the seeded RNG; matched/repetition/temporal conveniences; surface decomposition and
+partial association.
 
-*Exit:* V-4 parity harness runs in CI and `PARITY.md` is populated; DET-2 cross-platform RNG
-equivalence green.
+*Exit:* relation truth tables and sampling mutation tests are green; cap-monotone bottom-k samples
+and derived-key digests agree on JVM and Scala.js; V-4 parity and repetitive-divergence fixtures run
+in CI; `PARITY.md` names every expected disagreement.
 
 ### v0.6 — IO and AOI
 

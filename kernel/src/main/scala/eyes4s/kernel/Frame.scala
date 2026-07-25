@@ -16,6 +16,28 @@
 
 package eyes4s.kernel
 
+/** A size -- a width and a height -- in a known unit.
+  *
+  * Distinct from [[Bounds]], which is a size *and* a position. A dispersion
+  * threshold, a stimulus size or a tolerance box has extent but no location,
+  * and giving it one would invite the question of where it is.
+  */
+final case class Extent[U <: Unit2D] private (width: Double, height: Double) derives CanEqual:
+  def area: Double                          = width * height
+  def diagonal: Double                      = math.hypot(width, height)
+  def render(using u: UnitLabel[U]): String = f"$width%.3g x $height%.3g${u.symbol}"
+
+object Extent:
+  def of[U <: Unit2D](width: Double, height: Double): Either[GeometryError, Extent[U]] =
+    if !(width.isFinite && height.isFinite) then
+      Left(GeometryError.NonFiniteBounds(0, 0, width, height))
+    else if width <= 0.0 || height <= 0.0 then
+      Left(GeometryError.DegenerateBounds(0, 0, width, height))
+    else Right(Extent(width, height))
+
+  /** A square extent. */
+  def square[U <: Unit2D](side: Double): Either[GeometryError, Extent[U]] = of(side, side)
+
 /** An axis-aligned rectangular extent, in a known unit.
   *
   * Bounds are stored as an explicit rectangle rather than a width and height,
@@ -36,6 +58,9 @@ final case class Bounds[U <: Unit2D] private (
 
   def width: Double  = xMax - xMin
   def height: Double = yMax - yMin
+
+  /** The size, forgetting the position. */
+  def extent: Extent[U] = Extent.of[U](width, height).toOption.get
 
   /** The corner-to-corner distance.
     *
