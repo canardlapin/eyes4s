@@ -21,8 +21,8 @@ val munitScalacheckV = "1.3.0"
 val disciplineMunitV = "2.0.0"
 val scalacheckV      = "1.19.0"
 val catsLawsV        = "2.13.0"
-val catsEffectV      = "3.7.0" // eyes4s-fs2 / eyes4s-io only
-val fs2V             = "3.13.0" // eyes4s-fs2 / eyes4s-io only
+val catsEffectV      = "3.7.0"   // eyes4s-fs2 / eyes4s-io only
+val fs2V             = "3.13.0"  // eyes4s-fs2 / eyes4s-io only
 
 // ---------------------------------------------------------------------------
 // Build-wide settings
@@ -44,6 +44,14 @@ ThisBuild / tlJdkRelease       := Some(11)
 ThisBuild / githubWorkflowJavaVersions := Seq(
   JavaSpec.temurin("17"),
   JavaSpec.temurin("21")
+)
+
+// Both boundary invariants run in CI, not just on a developer's machine.
+// A rule that is only checked locally is a rule that is checked when it is
+// convenient. See bead fnd-boundaries, PRD B-9.
+ThisBuild / githubWorkflowBuild += WorkflowStep.Sbt(
+  List("checkBoundaries"),
+  name = Some("Check module and kernel boundaries")
 )
 
 // Scala Native is deferred post-1.0 (bead q-app-target: the application target
@@ -80,9 +88,24 @@ lazy val checkKernelPurity =
 // `Saccade` inside the kernel. That is a CONTENT violation, and it is what
 // PRD A-3 describes. This word list is that documented list, made executable.
 val ocularVocabulary = Set(
-  "gaze", "fixation", "saccade", "blink", "pursuit", "scanpath", "pupil",
-  "ocular", "fovea", "foveal", "microsaccade", "vergence", "eyetrack",
-  "eyelink", "tobii", "viewing", "cyclopean", "nystagmus"
+  "gaze",
+  "fixation",
+  "saccade",
+  "blink",
+  "pursuit",
+  "scanpath",
+  "pupil",
+  "ocular",
+  "fovea",
+  "foveal",
+  "microsaccade",
+  "vergence",
+  "eyetrack",
+  "eyelink",
+  "tobii",
+  "viewing",
+  "cyclopean",
+  "nystagmus"
 )
 
 def forbiddenInPureModules(org: String, name: String): Boolean =
@@ -133,13 +156,16 @@ ThisBuild / checkKernelPurity := {
   val sources =
     if (srcRoot.exists) (srcRoot ** "*.scala").get else Nil
 
-  val offenders = sources.flatMap { f =>
-    val body = stripComments(IO.read(f))
-    pattern.findAllMatchIn(body).map { m =>
-      val line = body.take(m.start).count(_ == '\n') + 1
-      s"  - ${f.getName}:$line  '${m.matched}'"
+  val offenders = sources
+    .flatMap { f =>
+      val body = stripComments(IO.read(f))
+      pattern.findAllMatchIn(body).map { m =>
+        val line = body.take(m.start).count(_ == '\n') + 1
+        s"  - ${f.getName}:$line  '${m.matched}'"
+      }
     }
-  }.distinct.sorted
+    .distinct
+    .sorted
 
   if (offenders.nonEmpty)
     sys.error(
@@ -173,7 +199,20 @@ lazy val commonSettings = Seq(
 // ---------------------------------------------------------------------------
 
 lazy val root = tlCrossRootProject
-  .aggregate(kernel, core, detect, surface, aoi, compare, design, plan, codec, laws, fs2Module, io)
+  .aggregate(
+    kernel,
+    core,
+    detect,
+    surface,
+    aoi,
+    compare,
+    design,
+    plan,
+    codec,
+    laws,
+    fs2Module,
+    io
+  )
 
 /** Geometry, time, trajectories, measures, grids, surfaces, regions, machines.
   *
@@ -184,7 +223,7 @@ lazy val kernel = crossProject(JVMPlatform, JSPlatform)
   .in(file("kernel"))
   .settings(commonSettings, pureModuleSettings)
   .settings(
-    name := "eyes4s-kernel",
+    name                                    := "eyes4s-kernel",
     libraryDependencies += "org.typelevel" %%% "cats-core" % catsV
   )
 
@@ -303,7 +342,7 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
   .dependsOn(fs2Module, codec)
   .settings(commonSettings)
   .settings(
-    name := "eyes4s-io",
+    name                             := "eyes4s-io",
     libraryDependencies += "co.fs2" %%% "fs2-io" % fs2V
   )
 
@@ -312,8 +351,18 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
 // ---------------------------------------------------------------------------
 
 lazy val allModules = Seq(
-  "kernel", "core", "detect", "surface", "aoi", "compare",
-  "design", "plan", "codec", "laws", "fs2Module", "io"
+  "kernel",
+  "core",
+  "detect",
+  "surface",
+  "aoi",
+  "compare",
+  "design",
+  "plan",
+  "codec",
+  "laws",
+  "fs2Module",
+  "io"
 )
 lazy val allPlatforms = Seq("JVM", "JS")
 
