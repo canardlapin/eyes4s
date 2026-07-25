@@ -97,6 +97,17 @@ verified against source. These are the requirements' primary motivation.
   participant's retrieval map is compared against participant s1's encoding map. The vignette
   demonstrates the `paste(participant, image)` workaround two sections later without noting that the
   earlier call required it. `vignettes/eyesim.Rmd`. *(measured)*
+- The repetitive-similarity vignette says it compares the same image across conditions, but calls
+  `repetitive_similarity(..., condition_var = "phase")`. The implementation defines `repsim` using
+  phase equality alone and `othersim` using phase inequality alone; it never reads image or
+  participant. Under the vignette design, the intended same-participant, same-image, different-phase
+  pair is placed in `othersim`, while `repsim` contains same-phase, cross-image and cross-participant
+  pairs. A real reinstatement effect therefore biases the documented `repsim - othersim` contrast
+  downward. `repetitive_similarity.R:147-150`, `vignettes/RepetitiveSimilarity.Rmd`. *(measured)*
+- `template_regression(method = "rank")` returns Spearman partial correlations from `ppcor::pcor`
+  but labels them beta weights, while `template_multireg(method = "logistic")` applies a binomial
+  GLM to continuous sum-normalised grid values with no observation model. `regression.R:45-46`,
+  `:124-129`. *(measured)*
 - `density_matrix` is exported, documented, carries a `\dontrun` example, and has zero methods; it
   always errors. The operation it names is separately reimplemented three times as private helpers
   with divergent NA and ragged-length behaviour. `all_generic.R`. *(measured)*
@@ -506,35 +517,105 @@ given a `Smoother` and a `Grid`.
 **C-8.** The map-versus-points slot (`Compare[Mass[U], PointMeasure[U], Score]`) exists in v1.0 as an
 interface with at least one instance, even though the saliency metric family ships in v1.1.
 
+**C-9.** `SymmetricCompare[A, S]` is the interface for a comparison that is symmetric but need not
+satisfy the stronger laws of `Metric`, `Semimetric`, or `Kernel`. Canonical-undirected pair
+evaluation requires this interface; it cannot silently choose an orientation for an asymmetric
+`Compare`. Every `SymmetricCompare` instance has a symmetry law suite.
+
 ### Design and inference
 
 **X-1.** `Trials[K, M, A]` is keyed by a user-supplied type `K` and carries user-supplied metadata
-`M` that the library never inspects. No public API takes a `String` naming a column.
+`M` that the library never inspects. Fields used to establish identity, matching, strata, occasions,
+or participant scope belong in `K`; outcomes and annotations belong in `M`. No public API takes a
+`String` naming a column.
 
-**X-2.** `Pairing[K]` has at minimum `matched`, `matchedOn(proj)`, `mismatchedWithin(stratum)`, and
-`sampled(cap, seed)`.
+**X-2.** `Relation[L, R]` is a sealed, inspectable ADT with at least `All`, `SameOn`,
+`DifferentOn`, and `And`. Its projections are named, typed values. A Boolean `accepts` function is a
+derived interpreter, not the representation, and there is no arbitrary-predicate core case. The
+structure lets execution use a hash join for `SameOn`, lets diagnostics explain exclusions, and lets
+plans persist projection identifiers through the typed extension registry.
 
-**X-3.** Matched and permuted analyses are the same `analyse` function applied to different
-pairings. There is exactly one baseline sampler in the library.
+**X-3.** `PairDesign` is a sum type whose inhabitants encode only meaningful combinations:
+`BetweenDirected(relation, selection)`, `WithinDirected(relation, self, selection)`, and
+`WithinUndirected(relation, self)`. `SelfPolicy` therefore exists only for a within-collection
+design. Per-focal sampling exists only for a directed design. A canonical-undirected design stores
+each edge once and requires `SymmetricCompare`.
 
-**X-4.** `Paired[K, A, B]` returns `unmatchedLeft`, `unmatchedRight`, and `ambiguous` as data.
-Ambiguity — a duplicate key on the reference side — is reported, never silently resolved to the
-first match.
+**X-4.** `Pairing.matched`, `matchedOn`, `mismatchedWithin`, and `sampled` remain convenient public
+constructors, but are façades that compile to `Relation` and `PairDesign`; they do not own separate
+execution paths.
 
-**X-5.** `Analysis[K, S]` holds `Vector[(K, Either[CompareError, S])]`, so a per-row failure stays
-attached to its key.
+**X-5.** `Paired[KL, KR, A, B]` returns eligible pairs plus `unmatchedLeft`, `unmatchedRight`, and
+`ambiguous` as data. Ambiguity — a duplicate key where uniqueness is required — is reported, never
+silently resolved to the first match.
 
-**X-6.** `Analysis` carries `Provenance`: measure, scale, pairing, seed, smoother, grid, realized
-baseline count, **and a `ContentHash` of its inputs**. *Per decision OD-9 (`bead q-provenance-cache`):
-a parameter record alone cannot distinguish two datasets analysed identically, so provenance without
-input identity was never a valid cache key. `ContentHash` is a fast non-cryptographic digest over the
-numeric payload plus geometry, computed once at ingest, memoized, propagated through derived objects,
-and identical on JVM and Scala.js per DET-2. It is cache invalidation, not a security boundary.*
+**X-6.** Pair evaluation first returns `PairwiseAnalysis[KL, KR, E, S]`, whose `PairScore` retains
+both keys and an `Either[E, S]`. A generic `evaluatePairs` function maps a total evaluator over
+`Paired`; `Compare.compare`, surface decomposition, and temporal sampling can reuse it without a
+vacuous universal operation typeclass. `Analysis[K, S]` is a reduced, derived result.
 
-**X-7.** `contrast` requires `Contrastable[S]`, because typed scores do not all form a group.
+**X-7.** Reduction states its orientation and failure policy. Directed results offer `meanByLeft`
+and `meanByRight`. Canonical-undirected results offer `meanEdges`, where each stored edge contributes
+once, and `meanByEndpoint`, an explicit mirrored view in which each edge contributes to both
+endpoints. Failed scores are never silently discarded: the caller chooses `RequireAll` or
+`SuccessfulOnly(minSuccessful)`, and the summary returns eligible, selected, successful, and failed
+counts.
 
-**X-8.** Randomness is threaded explicitly through a `Seed`. No library function mutates a global
-RNG. The RNG is a library-internal splittable generator producing identical streams on JVM and JS.
+**X-8.** Matched and control analyses evaluate different `PairDesign` values through the same
+function. There is exactly one baseline sampler and one reduction implementation. `contrast`
+combines compatible reduced analyses and requires `Contrastable[S]`, because typed scores do not all
+form a group.
+
+**X-9.** `Selection.BottomK(cap, seed, sampleId)` assigns each eligible directed candidate a stable
+priority derived from `(seed, sampleId, focalKeyDigest, candidateKeyDigest)`. Eligibility and
+selection parameters, including `cap`, do not enter the priority. Increasing the cap therefore
+produces a superset; changing row order or an unrelated stratum changes nothing. A distinct
+`SampleId` requests an independent priority field. Sampling excludes the true match before taking
+the bottom `k`.
+
+**X-10.** `KeyDigest[K]` is the only route from a key to sampling identity. It derives through
+`Mirror` for products of supported primitives and opaque identifiers, with domain and position
+separators. Neither `hashCode` nor `toString` is used. Its law is
+`Eq[K].eqv(a, b) => digest(a) == digest(b)`, and composite golden vectors agree bit-for-bit on JVM
+and Scala.js.
+
+**X-11.** Randomness is threaded explicitly through `Seed`; no library function mutates a global
+RNG. The library-internal splittable generator and `Seed.derive` produce identical streams on JVM and
+Scala.js.
+
+**X-12.** Every pairwise and reduced analysis carries `Provenance`: evaluator, measure scale,
+relation, pair space, self/orientation/selection policy, seed and sample identifier where present,
+realized counts, grid/smoother where present, and a `ContentHash` of its inputs. *Per decision OD-9
+(`bead q-provenance-cache`): a parameter record alone cannot distinguish two datasets analysed
+identically, so provenance without input identity was never a valid cache key. `ContentHash` is a
+fast non-cryptographic digest over the numeric payload plus geometry, computed once at ingest,
+memoized, propagated through derived objects, and identical on JVM and Scala.js per DET-2. It is
+cache invalidation, not a security boundary.*
+
+**X-13.** Surface decomposition aligns a response `Mass[U]` with a non-empty, nominally keyed
+`PredictorSet[Mass[U]]`. Solver output states the representation it proves: OLS produces a
+`Signed[U]` fit, intercept-free NNLS produces an `Intensity[U]` fit, and a simplex-constrained solver
+produces a `Mass[U]` fit whose non-negative coefficients sum to one and may therefore be called
+mixture weights. Every result carries a `Signed[U]` residual.
+
+**X-14.** Intercept policy is explicit and documented as scientifically consequential for
+simplex-constrained grid values. `FitDiagnostics` contains descriptive fit quality — rank,
+conditioning, convergence, residual norms, and R² where defined — but no per-cell coefficient
+standard errors or p-values, because treating autocorrelated grid cells as independent would make
+them invalid. Population inference remains outside this package.
+
+**X-15.** Partial Pearson or Spearman association is a separate `PartialAssociation` operation and
+result, never labelled as regression coefficients. A binomial GLM over continuous normalised grid
+mass is not an inhabitant.
+
+**X-16.** The convenient API uses distinct scientific verbs — matched similarity, repetition
+similarity, surface decomposition, and temporal reinstatement — implemented as thin façades over
+pair design, evaluation, reduction, and contrast. There is no `Workflow` class hierarchy and no
+umbrella `TemplateAnalysis` engine.
+
+**X-17.** Every within-collection repetition design states participant scope explicitly. Within-
+participant repetition and cross-participant consistency are different `PairDesign` values; neither
+is the other's default.
 
 ---
 
