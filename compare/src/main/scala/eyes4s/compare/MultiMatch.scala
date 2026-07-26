@@ -114,20 +114,28 @@ object MultiMatch:
             val dy = x.displacement.dy - y.displacement.dy
             math.hypot(dx, dy)
           }
-        yield score(a, sa, sb, path)
+        yield score(a, b, sa, sb, path)
 
       private def score(
-          in: Scanpath[U],
+          left: Scanpath[U],
+          right: Scanpath[U],
           sa: Vector[Event.Saccade[U]],
           sb: Vector[Event.Saccade[U]],
           path: AlignmentPath
       ): MultiMatchScore =
-        val diagonal = in.frame.diagonal
+        val diagonal = left.frame.diagonal
         val pairs    = path.matches
 
+        def median(values: Vector[Double]): Double =
+          val vs = values.sorted
+          if vs.isEmpty then 0.0
+          else if vs.length % 2 == 1 then vs(vs.length / 2)
+          else
+            val upper = vs.length / 2
+            (vs(upper - 1) + vs(upper)) / 2.0
+
         def medianOf(f: (Event.Saccade[U], Event.Saccade[U]) => Double): Double =
-          val vs = pairs.map((i, j) => f(sa(i), sb(j))).sorted
-          if vs.isEmpty then 0.0 else vs(vs.length / 2)
+          median(pairs.map((i, j) => f(sa(i), sb(j))))
 
         val shape = 1.0 - medianOf { (x, y) =>
           math.hypot(
@@ -148,12 +156,16 @@ object MultiMatch:
           x.from.distanceTo(y.from)
         } / diagonal
 
-        val duration = 1.0 - medianOf { (x, y) =>
-          val dx = x.duration.toSeconds
-          val dy = y.duration.toSeconds
-          val mx = math.max(dx, dy)
-          if mx <= 0.0 then 0.0 else math.abs(dx - dy) / mx
-        }
+        val duration = 1.0 - median(
+          pairs.map { (i, j) =>
+            // MultiMatch associates each saccade with the fixation it leaves,
+            // so its duration dimension compares those fixation durations.
+            val dx = left.fixations(i).duration.toSeconds
+            val dy = right.fixations(j).duration.toSeconds
+            val mx = math.max(dx, dy)
+            if mx <= 0.0 then 0.0 else math.abs(dx - dy) / mx
+          }
+        )
 
         MultiMatchScore(
           clamp(shape),
