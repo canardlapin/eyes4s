@@ -104,7 +104,7 @@ final class PointMeasure[U <: Unit2D] private (
           frame,
           positions,
           IArray.tabulate(size)(i => weights(i) / t),
-          provenance.andThen(Provenance.Step("normalise", "measure"))
+          provenance.andThen(Provenance.Step.text("normalise", "of", "measure"))
         )
       )
 
@@ -115,7 +115,7 @@ final class PointMeasure[U <: Unit2D] private (
       frame,
       IArray.from(keep.map(positions.apply)),
       IArray.from(keep.map(weights.apply)),
-      provenance.andThen(Provenance.Step("filter", "predicate"))
+      provenance.andThen(Provenance.Step("filter"))
     )
 
   /** Drop positions falling outside the frame. */

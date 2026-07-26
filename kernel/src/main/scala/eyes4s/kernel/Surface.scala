@@ -227,7 +227,7 @@ extension [U <: Unit2D](i: Intensity[U])
         new Mass(
           i.grid,
           IArray.tabulate(i.size)(k => i.values(k) / t),
-          i.provenance.andThen(Provenance.Step("normalise", "surface"))
+          i.provenance.andThen(Provenance.Step.text("normalise", "of", "surface"))
         )
       )
 
@@ -235,7 +235,7 @@ extension [U <: Unit2D](i: Intensity[U])
     Surface.intensity(
       i.grid,
       IArray.tabulate(i.size)(j => i.values(j) * k),
-      i.provenance.andThen(Provenance.Step("scale", k.toString))
+      i.provenance.andThen(Provenance.Step.num("scale", "by", k))
     )
 
 extension [U <: Unit2D](m: Mass[U])
@@ -250,7 +250,7 @@ extension [U <: Unit2D](m: Mass[U])
           IArray.tabulate(m.size)(i => m.values(i) - that.values(i)),
           Provenance(
             ContentHash.combine(m.provenance.digest, that.provenance.digest),
-            Vector(Provenance.Step("difference", ""))
+            Vector(Provenance.Step("difference"))
           )
         )
       }
@@ -275,7 +275,7 @@ extension [U <: Unit2D](m: Mass[U])
           },
           Provenance(
             ContentHash.combine(m.provenance.digest, that.provenance.digest),
-            Vector(Provenance.Step("logRatio", s"floor=$floor"))
+            Vector(Provenance.Step.num("logRatio", "floor", floor))
           )
         )
       }
@@ -330,7 +330,7 @@ object Mass:
             IArray.unsafeFromArray(acc),
             Provenance(
               ContentHash.combineAll(ms.map(_.provenance.digest)),
-              Vector(Provenance.Step("mean", s"n=${ms.length}"))
+              Vector(Provenance.Step.num("mean", "n", ms.length.toDouble))
             ),
             tolerance = 1e-9
           )
@@ -360,7 +360,7 @@ object Mass:
               IArray.unsafeFromArray(acc),
               Provenance(
                 ContentHash.combineAll(ms.map(_._2.provenance.digest)),
-                Vector(Provenance.Step("weightedMean", s"n=${ms.length}"))
+                Vector(Provenance.Step.num("weightedMean", "n", ms.length.toDouble))
               ),
               tolerance = 1e-9
             )

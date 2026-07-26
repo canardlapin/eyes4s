@@ -51,7 +51,7 @@ extension [U <: Unit2D](g: Grid[U])
         new Signed(g, vs, Provenance(ContentHash.of(vs), Vector(step)))
 
       val zero: Signed[U] =
-        build(IArray.fill(g.size)(0.0), Provenance.Step("zero", g.id.name))
+        build(IArray.fill(g.size)(0.0), Provenance.Step.text("zero", "grid", g.id.name))
 
       def plus(a: Signed[U], b: Signed[U]): Signed[U] =
         new Signed(
@@ -59,7 +59,7 @@ extension [U <: Unit2D](g: Grid[U])
           IArray.tabulate(g.size)(i => a.values(i) + b.values(i)),
           Provenance(
             ContentHash.combine(a.provenance.digest, b.provenance.digest),
-            Vector(Provenance.Step("plus", ""))
+            Vector(Provenance.Step("plus"))
           )
         )
 
@@ -67,12 +67,12 @@ extension [U <: Unit2D](g: Grid[U])
         new Signed(
           g,
           IArray.tabulate(g.size)(i => -a.values(i)),
-          a.provenance.andThen(Provenance.Step("negate", ""))
+          a.provenance.andThen(Provenance.Step("negate"))
         )
 
       def scale(k: Double, v: Signed[U]): Signed[U] =
         new Signed(
           g,
           IArray.tabulate(g.size)(i => v.values(i) * k),
-          v.provenance.andThen(Provenance.Step("scale", k.toString))
+          v.provenance.andThen(Provenance.Step.num("scale", "by", k))
         )

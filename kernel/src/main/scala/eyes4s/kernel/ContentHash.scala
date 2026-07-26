@@ -107,11 +107,17 @@ final case class Provenance(inputs: ContentHash, steps: Vector[Provenance.Step])
 
   def andThen(step: Provenance.Step): Provenance = Provenance(inputs, steps :+ step)
 
-  /** The cache key: inputs and the whole derivation, together. */
+  /** The cache key: inputs and the whole derivation, together.
+    *
+    * Numeric parameters are hashed by their bit pattern, never by their
+    * rendering. `Double.toString` produces "4.0" on the JVM and "4" under
+    * Scala.js, so a digest built from rendered text would differ across
+    * platforms and a cached result would not be portable -- defeating the one
+    * guarantee this type exists to provide (DET-2, APP-12). A test caught this
+    * only because the suite runs on both platforms.
+    */
   def digest: ContentHash =
-    ContentHash.combineAll(
-      inputs +: steps.map(s => ContentHash.ofString(s.operation + "|" + s.detail))
-    )
+    ContentHash.combineAll(inputs +: steps.map(_.digest))
 
   def render: String =
     if steps.isEmpty then s"raw(${inputs.render})"
@@ -119,7 +125,59 @@ final case class Provenance(inputs: ContentHash, steps: Vector[Provenance.Step])
 
 object Provenance:
 
-  final case class Step(operation: String, detail: String):
-    def render: String = if detail.isEmpty then operation else s"$operation($detail)"
+  /** A typed parameter value.
+    *
+    * Typed rather than stringly, because provenance is hashed as well as shown.
+    * This is also the rule PRD APP-4b states for plan nodes: parameters are
+    * domain values, and a `Map[String, String]` is how the drift starts.
+    */
+  enum Param derives CanEqual:
+    case Num(value: Double)
+    case Text(value: String)
+    case Flag(value: Boolean)
+
+    def digest: ContentHash = this match
+      case Num(v)  => ContentHash.of(IArray(v))
+      case Text(v) => ContentHash.ofString("s:" + v)
+      case Flag(v) => ContentHash.ofString(if v then "b:1" else "b:0")
+
+    /** Canonical rendering, identical on every platform. */
+    def render: String = this match
+      case Num(v) =>
+        if v.isNaN then "NaN"
+        else if v.isInfinite then (if v > 0 then "Inf" else "-Inf")
+        else
+          // Fixed six decimals with trailing zeros trimmed: stable across
+          // platforms, unlike Double.toString.
+          val scaled  = math.round(v * 1e6)
+          val whole   = scaled / 1000000L
+          val frac    = math.abs(scaled % 1000000L)
+          val fracStr = f"$frac%06d".reverse.dropWhile(_ == '0').reverse
+          val sign    = if v < 0 && whole == 0L then "-" else ""
+          if fracStr.isEmpty then s"$sign$whole" else s"$sign$whole.$fracStr"
+      case Text(v) => v
+      case Flag(v) => v.toString
+
+  final case class Step(operation: String, params: Vector[(String, Param)]):
+
+    def digest: ContentHash =
+      ContentHash.combineAll(
+        ContentHash.ofString(operation) +:
+          params.flatMap((k, v) => Seq(ContentHash.ofString(k), v.digest))
+      )
+
+    def render: String =
+      if params.isEmpty then operation
+      else s"$operation(${params.map((k, v) => s"$k=${v.render}").mkString(", ")})"
+
+  object Step:
+    /** A step with no parameters. */
+    def apply(operation: String): Step = Step(operation, Vector.empty)
+
+    def num(operation: String, name: String, value: Double): Step =
+      Step(operation, Vector(name -> Param.Num(value)))
+
+    def text(operation: String, name: String, value: String): Step =
+      Step(operation, Vector(name -> Param.Text(value)))
 
   def raw(inputs: ContentHash): Provenance = Provenance(inputs, Vector.empty)

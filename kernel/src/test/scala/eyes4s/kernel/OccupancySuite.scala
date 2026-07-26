@@ -302,17 +302,17 @@ class OccupancySuite extends munit.FunSuite:
 
   test("provenance records the derivation, and the digest covers it") {
     val raw   = Provenance.raw(ContentHash.of(IArray(1.0)))
-    val once  = raw.andThen(Provenance.Step("smooth", "sigma=1"))
-    val twice = once.andThen(Provenance.Step("normalise", "surface"))
+    val once  = raw.andThen(Provenance.Step.num("smooth", "sigma", 1.0))
+    val twice = once.andThen(Provenance.Step.text("normalise", "of", "surface"))
     assertNotEquals(raw.digest, once.digest)
     assertNotEquals(once.digest, twice.digest)
-    assert(clue(twice.render).contains("smooth(sigma=1) -> normalise(surface)"))
+    assert(clue(twice.render).contains("smooth(sigma=1) -> normalise(of=surface)"))
   }
 
   test("same parameters over different inputs give different digests") {
     // The whole reason provenance carries a content hash: a parameter record
     // alone cannot distinguish two datasets analysed identically.
-    val step = Provenance.Step("smooth", "sigma=1")
+    val step = Provenance.Step.num("smooth", "sigma", 1.0)
     val a    = Provenance.raw(ContentHash.of(IArray(1.0, 2.0))).andThen(step)
     val b    = Provenance.raw(ContentHash.of(IArray(3.0, 4.0))).andThen(step)
     assertNotEquals(a.digest, b.digest)
