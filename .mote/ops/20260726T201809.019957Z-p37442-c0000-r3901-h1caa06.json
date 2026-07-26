@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s","entity":"x-trials","kind":"reserve_open","mode":"exclusive","op":"20260726T201809.019957Z-p37442-c0000-r3901-h1caa06","paths":["design/src/main/scala/eyes4s/design/Trials.scala","design/src/test/scala/eyes4s/design/TrialsSuite.scala"],"reservation_id":"rv-01KYG17VZV7RF5T17VVDN5G117","ts":"2026-07-26T20:18:09.019957Z","ttl_s":3600,"v":1}
