@@ -58,6 +58,69 @@ class KernelLawsSuite extends munit.DisciplineSuite:
     MachineLaws.deterministic(Generators.genIntInput, Generators.genIntMachine)
   )
 
+  // Measures. Each is audited under the interface it CLAIMS: a metric gets the
+  // triangle inequality, a semimetric does not, a divergence is not asked for
+  // symmetry, and every SymmetricCompare gets the one law C-9 depends on.
+  import eyes4s.compare.*
+  import eyes4s.kernel.Unit2D.Norm
+
+  private val massGen = Generators.genMass(grid)
+
+  /** Two masses the caller KNOWS are different: disjoint corners of the grid.
+    * The separation law needs a ground truth the generator cannot supply.
+    */
+  private val distinctPair =
+    val spike = (target: Int) =>
+      Surface
+        .intensity(
+          grid,
+          IArray.tabulate(grid.size)(i => if i == target then 1.0 else 0.0),
+          Provenance.raw(ContentHash.empty)
+        )
+        .flatMap(_.normalised)
+        .toOption
+        .get
+    (spike(0), spike(grid.size - 1))
+
+  checkAll(
+    "TotalVariation.metric",
+    MeasureLaws.metric(Distribution.totalVariation[Norm], massGen, distinctPair)
+  )
+  checkAll(
+    "Hellinger.metric",
+    MeasureLaws.metric(Distribution.hellinger[Norm], massGen, distinctPair)
+  )
+  checkAll(
+    "SlicedWasserstein.metric",
+    MeasureLaws.metric(Transport.slicedWasserstein[Norm](8), massGen, distinctPair)
+  )
+  checkAll(
+    "JensenShannon.semimetric",
+    MeasureLaws.semimetric(Distribution.jensenShannon[Norm](), massGen, distinctPair)
+  )
+  checkAll(
+    "KullbackLeibler.divergence",
+    MeasureLaws.divergence(Distribution.kullbackLeibler[Norm](), massGen, distinctPair)
+  )
+  checkAll(
+    "Cosine.symmetry",
+    MeasureLaws.symmetry[Mass[Norm], Similarity](
+      Distribution.cosine[Norm],
+      massGen,
+      (a, b) => math.abs(a.value - b.value) < 1e-9
+    )
+  )
+  checkAll(
+    "Sinkhorn.symmetry",
+    MeasureLaws.symmetry[Mass[Norm], Distance0](
+      Transport.sinkhorn[Norm](epsilon = 0.5, iterations = 20, maxCells = 4096),
+      massGen,
+      (a, b) => math.abs(a.value - b.value) < 1e-7
+    )
+  )
+  checkAll("TotalVariation.info", MeasureLaws.described(Distribution.totalVariation[Norm]))
+  checkAll("Sinkhorn.info", MeasureLaws.described(Transport.sinkhorn[Norm]()))
+
   // Time: the algebraic structure claimed in Span's scaladoc, tested by the
   // standard cats bundles rather than by hand-rolled assertions.
   checkAll("Span.commutativeGroup", CommutativeGroupTests[Span].commutativeGroup)

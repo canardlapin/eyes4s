@@ -285,3 +285,71 @@ class AlignmentSuite extends munit.FunSuite:
   }
 
 end AlignmentSuite
+
+class ScanMatchSuite extends munit.FunSuite:
+
+  private val sm = ScanMatch.similarity[Char](ScanMatch.exactMatch, gap = 1.0)
+
+  test("a sequence is maximally similar to itself") {
+    assertEqualsDouble(
+      sm.compare("ABCD".toVector, "ABCD".toVector).toOption.get.value,
+      1.0,
+      1e-12
+    )
+  }
+
+  test("an extra stop costs one gap, not a cascade of mismatches") {
+    // The reason a gapped alignment is used. ABXCD against ABCD differs by one
+    // insertion; a lattice alignment would have to mismatch everything after it.
+    val s = sm.compare("ABXCD".toVector, "ABCD".toVector).toOption.get.value
+    assert(s > 0.8, clue(s))
+  }
+
+  test("a reordered sequence scores lower than an interrupted one") {
+    val inserted = sm.compare("ABXCD".toVector, "ABCD".toVector).toOption.get.value
+    val shuffled = sm.compare("DCBA".toVector, "ABCD".toVector).toOption.get.value
+    assert(shuffled < inserted, clue((shuffled, inserted)))
+  }
+
+  test("disjoint sequences score low") {
+    val s = sm.compare("AAAA".toVector, "BBBB".toVector).toOption.get.value
+    assert(s < 0.6, clue(s))
+  }
+
+  test("the score is symmetric") {
+    val ab = sm.compare("ABCDE".toVector, "AXCE".toVector).toOption.get.value
+    val ba = sm.compare("AXCE".toVector, "ABCDE".toVector).toOption.get.value
+    assertEqualsDouble(ab, ba, 1e-12)
+  }
+
+  test("normalisation keeps sequences of different lengths comparable") {
+    // Doubling both sequences, preserving the pattern, must not change the
+    // score. Without normalisation the longer pair would always look less alike.
+    val shortPair = sm.compare("ABC".toVector, "ABD".toVector).toOption.get.value
+    val longPair  = sm.compare("ABCABC".toVector, "ABDABD".toVector).toOption.get.value
+    assertEqualsDouble(shortPair, longPair, 1e-9)
+  }
+
+  test("a graded substitution distinguishes a near miss from a far one") {
+    // Looking at the nose instead of the mouth is a smaller error than looking
+    // at the far corner, and only a substitution matrix can say so.
+    val position: Map[Char, Double] = Map('A' -> 0.0, 'B' -> 1.0, 'C' -> 10.0)
+    val graded                      = ScanMatch.similarity[Char](
+      (x, y) => math.abs(position(x) - position(y)) / 10.0,
+      gap = 1.0
+    )
+    val near = graded.compare("AB".toVector, "AA".toVector).toOption.get.value
+    val far  = graded.compare("AC".toVector, "AA".toVector).toOption.get.value
+    assert(near > far, clue((near, far)))
+  }
+
+  test("an empty sequence is refused") {
+    assert(sm.compare(Vector.empty[Char], "AB".toVector).isLeft)
+  }
+
+  test("ScanMatch is symmetric but is not offered as a metric") {
+    val s: SymmetricCompare[Vector[Char], Similarity] = sm
+    assert(s.info.summary.contains("not a metric"))
+  }
+
+end ScanMatchSuite
