@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s","entity":"cmp-crqa","kind":"note","note_kind":"note","op":"20260726T175219.937938Z-p45003-c0000-r3bce-h3fb998","text":"Complete: 12 CRQA tests pass on JVM and Scala.js; ignored-delay mutant is killed; testAll, boundaries, headers, formatting, and workflow checks pass.","ts":"2026-07-26T17:52:19.937938Z","v":1}
