@@ -218,10 +218,26 @@ object Selection:
       seed: Seed,
       sampleId: SampleId
   )(using KeyDigest[KL], KeyDigest[KR]): Vector[KR] =
+    bottomKBy(focal, candidates, identity, cap, seed, sampleId)
+
+  /** Apply the same keyed sampler while retaining a richer candidate value.
+    *
+    * Pair construction needs the complete [[Trial]], but priorities are defined
+    * only by its key. Keeping that projection here prevents a second baseline
+    * sampler from drifting away from [[bottomK]].
+    */
+  private[design] def bottomKBy[KL, C, KR](
+      focal: KL,
+      candidates: Vector[C],
+      keyOf: C => KR,
+      cap: Int,
+      seed: Seed,
+      sampleId: SampleId
+  )(using KeyDigest[KL], KeyDigest[KR]): Vector[C] =
     if cap <= 0 then Vector.empty
     else
       candidates
-        .map(c => (priority(seed, sampleId, focal, c), c))
+        .map(candidate => (priority(seed, sampleId, focal, keyOf(candidate)), candidate))
         .sortBy(_._1)
         .take(cap)
         .map(_._2)
