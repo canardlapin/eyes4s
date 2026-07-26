@@ -24,8 +24,8 @@ class PairDesignSuite extends munit.FunSuite:
 
   given KeyDigest[Key] = KeyDigest.derived[Key]
 
-  val subject = Projection[Key, String]("subject", _.subject)
-  val image   = Projection[Key, String]("image", _.image)
+  val subject = Projection.named[Key, String]("subject")(_.subject)
+  val image   = Projection.named[Key, String]("image")(_.image)
 
   val seed   = Seed(20260725L)
   val sample = SampleId("controls")
@@ -101,6 +101,75 @@ class PairDesignSuite extends munit.FunSuite:
     assert(between.render.startsWith("between-directed"))
     assert(within.render.contains("self=Exclude"))
     assert(undir.render.startsWith("within-undirected"))
+  }
+
+  test("the fluent facade reads as the scientific pair design") {
+    val target =
+      Pairing
+        .between[Key, Key]
+        .sameOn(subject, subject)
+        .sameOn(image, image)
+        .all
+
+    val repeated =
+      PairDesign
+        .within[Key]
+        .sameOn(subject)
+        .sameOn(image)
+        .excludingSelf
+        .canonicalUndirected
+
+    assertEquals(target.relation.render, "(subject == subject and image == image)")
+    assertEquals(repeated.relation.render, "(subject == subject and image == image)")
+    assertEquals(repeated.self, SelfPolicy.Exclude)
+  }
+
+  test("task-named facades compile to the same algebra") {
+    assertEquals(Pairing.matchedOn(image).relation, Relation.sameOn(image))
+    assertEquals(Pairing.mismatchedWithin(subject).relation, Relation.sameOn(subject))
+    assertEquals(Pairing.mismatchedWithin(subject).self, SelfPolicy.Exclude)
+  }
+
+  test("sampled is a thin facade over relation plus validated bottom-k") {
+    val relation =
+      Relation.sameOn(subject).and(Relation.differentOn(image))
+
+    Pairing.sampled(relation, 7, seed, sample) match
+      case Right(PairDesign.BetweenDirected(actual, Selection.BottomK(cap, s, id))) =>
+        assertEquals(actual.render, relation.render)
+        assertEquals(cap.value, 7)
+        assertEquals(s, seed)
+        assertEquals(id, sample)
+      case other => fail(s"unexpected sampled design: $other")
+
+    assertEquals(
+      Pairing.sampled(relation, 0, seed, sample),
+      Left(PairingError.NonPositiveLimit(0))
+    )
+  }
+
+  test("a bottom-k design validates the raw limit at the facade") {
+    val controls =
+      Pairing
+        .between[Key, Key]
+        .sameOn(subject, subject)
+        .differentOn(image, image)
+
+    val valid = controls.bottomK(10, seed, sample)
+    assert(valid.isRight)
+    assertEquals(
+      controls.bottomK(0, seed, sample),
+      Left(PairingError.NonPositiveLimit(0))
+    )
+    assert(clue(controls.bottomK(-5, seed, sample).left.toOption.get.message).contains("-5"))
+  }
+
+  test("the BottomK algebra cannot be constructed with a raw Int") {
+    val errs = typeCheckErrors("""
+      import eyes4s.design.*
+      Selection.BottomK(0, Seed(1L), SampleId("controls"))
+    """)
+    assert(errs.nonEmpty, "BottomK accepted an unvalidated, non-positive cap")
   }
 
   // ---------------------------------------------------------------------------

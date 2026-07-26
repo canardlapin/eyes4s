@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s","entity":"x-pairing","kind":"reserve_open","mode":"exclusive","op":"20260726T202146.717630Z-p40519-c0000-r0c93-h4dcd1c","paths":["design/src/main/scala/eyes4s/design/Relation.scala","design/src/test/scala/eyes4s/design/PairDesignSuite.scala"],"reservation_id":"rv-01KYG1EGJXTC55TJ022EHX92CD","ts":"2026-07-26T20:21:46.717630Z","ttl_s":3600,"v":1}

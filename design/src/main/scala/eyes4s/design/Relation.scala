@@ -24,6 +24,17 @@ package eyes4s.design
 final case class Projection[K, V](name: String, extract: K => V):
   def apply(k: K): V = extract(k)
 
+object Projection:
+
+  /** Name a projection at the point where it is defined.
+    *
+    * The curried shape keeps the readable part first and lets Scala infer both
+    * type parameters from the extractor:
+    * `Projection.named("image")(_.image)`.
+    */
+  def named[K, V](name: String)(extract: K => V): Projection[K, V] =
+    Projection(name, extract)
+
 /** Which pairs of keys are eligible to be compared.
   *
   * ==Structure, not a predicate== (PRD X-2)
@@ -54,7 +65,11 @@ sealed trait Relation[L, R]:
   /** Human-readable structure, for diagnostics and for a plan's display. */
   def render: String
 
-  def and(that: Relation[L, R]): Relation[L, R] = Relation.And(this, that)
+  def and(that: Relation[L, R]): Relation[L, R] =
+    (this, that) match
+      case (Relation.All(), _) => that
+      case (_, Relation.All()) => this
+      case _                   => Relation.And(this, that)
 
   /** Equality projections, which an execution strategy can hash-join on. */
   def joinKeys: Vector[(String, String)] = this match
@@ -114,6 +129,31 @@ enum SelfPolicy derives CanEqual:
   */
 final case class SampleId(value: String) derives CanEqual
 
+/** A positive per-focal pair limit.
+  *
+  * `BottomK(0, ...)` is not a useful design: it selects no pairs and can only
+  * produce an empty analysis. Keeping the positivity in this type means the
+  * [[Selection.BottomK]] case itself cannot represent that state, while the
+  * fluent [[Pairing]] facade still accepts an ordinary `Int` and reports a
+  * construction error.
+  */
+opaque type PairLimit = Int
+
+object PairLimit:
+  def of(value: Int): Either[PairingError, PairLimit] =
+    if value > 0 then Right(value) else Left(PairingError.NonPositiveLimit(value))
+
+  extension (limit: PairLimit) def value: Int = limit
+
+/** Failures constructing a pair design from user-facing values. */
+enum PairingError derives CanEqual:
+  case NonPositiveLimit(value: Int)
+
+  def message: String = this match
+    case NonPositiveLimit(value) =>
+      s"A bottom-k pair design needs a positive limit, got $value. " +
+        "Use Selection.All when every eligible pair should be retained."
+
 /** How many of the eligible candidates to keep. */
 enum Selection derives CanEqual:
 
@@ -139,7 +179,7 @@ enum Selection derives CanEqual:
     * It also implements the whole procedure three times with different
     * semantics.
     */
-  case BottomK(cap: Int, seed: Seed, sampleId: SampleId)
+  case BottomK(cap: PairLimit, seed: Seed, sampleId: SampleId)
 
 object Selection:
 
@@ -171,7 +211,7 @@ object Selection:
     * count is `min(cap, eligible)` and is knowable rather than reported after
     * the fact.
     */
-  def bottomK[KL, KR](
+  private[design] def bottomK[KL, KR](
       focal: KL,
       candidates: Vector[KR],
       cap: Int,
@@ -233,4 +273,135 @@ object PairDesign:
   ) extends PairDesign[K, K]:
     def render: String = s"within-undirected[${relation.render}, self=$self]"
 
+  /** Start a readable between-collection design.
+    *
+    * This delegates to [[Pairing]] so there remains one facade and one algebra.
+    */
+  def between[L, R]: Pairing.Between[L, R] = Pairing.between[L, R]
+
+  /** Start a readable within-collection design. */
+  def within[K]: Pairing.Within[K] = Pairing.within[K]
+
 end PairDesign
+
+/** A fluent, typed facade over [[Relation]] and [[PairDesign]].
+  *
+  * The facade is intentionally thin: every terminal method returns one of the
+  * three legal `PairDesign` inhabitants, and it owns no execution path. The
+  * common call site reads as the scientific design:
+  *
+  * {{{
+  * val target =
+  *   Pairing.between[Key, Key]
+  *     .sameOn(subjectImage, subjectImage)
+  *     .all
+  *
+  * val controls =
+  *   Pairing.between[Key, Key]
+  *     .sameOn(subject, subject)
+  *     .differentOn(image, image)
+  *     .bottomK(50, seed, SampleId("controls"))
+  * }}}
+  *
+  * The final expression is an `Either` only where raw configuration can be
+  * invalid. Relation composition and legal orientation choices remain total.
+  */
+object Pairing:
+
+  final case class Between[L, R] private[design] (relation: Relation[L, R]):
+
+    def sameOn[V](
+        left: Projection[L, V],
+        right: Projection[R, V]
+    ): Between[L, R] =
+      copy(relation = relation.and(Relation.SameOn(left, right)))
+
+    def differentOn[V](
+        left: Projection[L, V],
+        right: Projection[R, V]
+    ): Between[L, R] =
+      copy(relation = relation.and(Relation.DifferentOn(left, right)))
+
+    /** Retain every eligible directed pair. */
+    def all: PairDesign.BetweenDirected[L, R] =
+      PairDesign.BetweenDirected(relation, Selection.All)
+
+    /** Retain a deterministic positive number of candidates per left key. */
+    def bottomK(
+        cap: Int,
+        seed: Seed,
+        sampleId: SampleId
+    ): Either[PairingError, PairDesign.BetweenDirected[L, R]] =
+      PairLimit
+        .of(cap)
+        .map(limit =>
+          PairDesign.BetweenDirected(relation, Selection.BottomK(limit, seed, sampleId))
+        )
+
+  final case class Within[K] private[design] (
+      relation: Relation[K, K],
+      self: SelfPolicy
+  ):
+
+    def sameOn[V](projection: Projection[K, V]): Within[K] =
+      copy(relation = relation.and(Relation.sameOn(projection)))
+
+    def differentOn[V](projection: Projection[K, V]): Within[K] =
+      copy(relation = relation.and(Relation.differentOn(projection)))
+
+    def excludingSelf: Within[K] = copy(self = SelfPolicy.Exclude)
+    def includingSelf: Within[K] = copy(self = SelfPolicy.Include)
+
+    /** Retain orientation and every eligible pair. */
+    def directed: PairDesign.WithinDirected[K] =
+      PairDesign.WithinDirected(relation, self, Selection.All)
+
+    /** Retain orientation and a deterministic positive sample per focal key. */
+    def bottomK(
+        cap: Int,
+        seed: Seed,
+        sampleId: SampleId
+    ): Either[PairingError, PairDesign.WithinDirected[K]] =
+      PairLimit
+        .of(cap)
+        .map(limit =>
+          PairDesign.WithinDirected(relation, self, Selection.BottomK(limit, seed, sampleId))
+        )
+
+    /** Store every unordered edge once. Sampling is absent by construction. */
+    def canonicalUndirected: PairDesign.WithinUndirected[K] =
+      PairDesign.WithinUndirected(relation, self)
+
+  def between[L, R]: Between[L, R] = Between(Relation.all[L, R])
+
+  def within[K]: Within[K] = Within(Relation.all[K, K], SelfPolicy.Exclude)
+
+  /** Match equal keys across two collections. */
+  def matched[K]: PairDesign.BetweenDirected[K, K] =
+    matchedOn(Projection.named[K, K]("key")(identity))
+
+  /** Match equal projected values across two collections. */
+  def matchedOn[K, V](projection: Projection[K, V]): PairDesign.BetweenDirected[K, K] =
+    PairDesign.BetweenDirected(Relation.sameOn(projection), Selection.All)
+
+  /** Directed within-collection controls drawn from the same stratum. */
+  def mismatchedWithin[K, V](
+      stratum: Projection[K, V]
+  ): PairDesign.WithinDirected[K] =
+    PairDesign.WithinDirected(Relation.sameOn(stratum), SelfPolicy.Exclude, Selection.All)
+
+  /** Sample eligible directed pairs from an explicit relation.
+    *
+    * This is the task-named convenience constructor required by PRD X-4. It
+    * delegates to the same validated [[Between.bottomK]] path used by the
+    * fluent facade, so the library still has exactly one baseline sampler.
+    */
+  def sampled[L, R](
+      relation: Relation[L, R],
+      cap: Int,
+      seed: Seed,
+      sampleId: SampleId
+  ): Either[PairingError, PairDesign.BetweenDirected[L, R]] =
+    Between(relation).bottomK(cap, seed, sampleId)
+
+end Pairing
