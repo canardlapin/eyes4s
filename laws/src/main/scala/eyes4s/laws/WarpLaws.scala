@@ -173,3 +173,65 @@ trait WarpLaws extends Laws:
 end WarpLaws
 
 object WarpLaws extends WarpLaws
+
+/** Law suite for [[Machine]] composition.
+  *
+  * ==Observational, and this one could not be otherwise==
+  *
+  * Composition pairs state types, so `id.andThen(f)` has state `(Unit, S)`
+  * where `f` has `S`. Those are isomorphic and never equal, and making them
+  * equal would mean erasing the composition the type records. A suite comparing
+  * machines structurally would therefore fail for a correct implementation, and
+  * the temptation would be to weaken it until it passed.
+  *
+  * So the laws are stated over the output sequences `runAll` produces, which is
+  * both true and the thing a caller actually depends on.
+  */
+trait MachineLaws extends Laws:
+
+  /** @param gen  inputs to drive the machines with
+    * @param mk   machines to compose; supplied by the caller so a downstream
+    *             author can test their own detectors under these laws
+    */
+  def category[A](
+      gen: Gen[List[A]],
+      mk: Gen[Machine[A, A]]
+  ): RuleSet =
+    new SimpleRuleSet(
+      "machine.category",
+      "left identity" -> forAll(gen, mk) { (in, f) =>
+        Prop(Machine.identity[A].andThen(f).runAll(in) == f.runAll(in))
+      },
+      "right identity" -> forAll(gen, mk) { (in, f) =>
+        Prop(f.andThen(Machine.identity[A]).runAll(in) == f.runAll(in))
+      },
+      "associativity" -> forAll(gen, mk, mk, mk) { (in, f, g, h) =>
+        Prop(f.andThen(g).andThen(h).runAll(in) == f.andThen(g.andThen(h)).runAll(in))
+      },
+      "the Category instance agrees with andThen" -> forAll(gen, mk, mk) { (in, f, g) =>
+        val C = summon[cats.arrow.Category[Machine]]
+        Prop(C.compose(g, f).runAll(in) == f.andThen(g).runAll(in))
+      },
+      "a composite is a different value from its parts" -> forAll(mk) { f =>
+        // The reason these laws are observational rather than structural.
+        Prop(!Machine.identity[A].andThen(f).equals(f))
+      }
+    )
+
+  /** Running is deterministic: the same machine over the same input twice. */
+  def deterministic[A, B](gen: Gen[List[A]], mk: Gen[Machine[A, B]]): RuleSet =
+    new SimpleRuleSet(
+      "machine.deterministic",
+      "the same input yields the same output" -> forAll(gen, mk) { (in, f) =>
+        Prop(f.runAll(in) == f.runAll(in))
+      },
+      "a fresh machine is not affected by a previous run" -> forAll(gen, gen, mk) { (a, b, f) =>
+        val first = f.runAll(a)
+        val _     = f.runAll(b)
+        Prop(f.runAll(a) == first)
+      }
+    )
+
+end MachineLaws
+
+object MachineLaws extends MachineLaws

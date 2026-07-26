@@ -201,6 +201,128 @@ class DetectSuite extends munit.FunSuite:
   }
 
   // -------------------------------------------------------------------------
+  // Engbert-Kliegl
+  // -------------------------------------------------------------------------
+
+  /** Deterministic pseudo-noise.
+    *
+    * Not a plain alternation: a two-sample square wave sits exactly in the null
+    * space of the five-point velocity filter -- (a - a + a - a) = 0 -- so it
+    * produces zero velocity at every sample and no threshold at all. That is a
+    * real property of the estimator, and a fixture that ran into it would look
+    * like a detector bug.
+    */
+  private def noise(i: Int): Double =
+    val h = (i * 1103515245 + 12345) & 0x7fffffff
+    ((h % 2000) - 1000) / 1000.0 * 0.03
+
+  test("thresholds are estimated from a whole trial, and say so by being a value") {
+    // Two passes, modelled honestly: you cannot know a median until you have
+    // seen the series, so the threshold cannot be a streaming parameter.
+    // Both axes carry noise. A fixture with a constant y has no vertical
+    // velocity at all, so etaY is zero and no threshold exists -- which
+    // is correct behaviour and a bad fixture.
+    val noisy = (0 until 200).map(i => at(i.toLong, noise(i), noise(i + 7000))).toVector
+    assert(EkThresholds.estimate(noisy, lambda = 6.0).isDefined)
+  }
+
+  test("a square wave has no velocity under the five-point filter, and no threshold") {
+    // Documenting the null space rather than leaving it as a trap.
+    val square =
+      (0 until 200).map(i => at(i.toLong, if i % 2 == 0 then 0.01 else -0.01, 0.0)).toVector
+    assertEquals(EkThresholds.estimate(square, lambda = 6.0), None)
+  }
+
+  test("a perfectly still eye admits no threshold, rather than a zero one") {
+    assertEquals(EkThresholds.estimate(hold(0, 100, 0.0), 6.0), None)
+  }
+
+  test("too few samples yield no threshold") {
+    assertEquals(EkThresholds.estimate(hold(0, 3, 0.0), 6.0), None)
+  }
+
+  test("a microsaccade against a noise floor is detected") {
+    // Noise around zero, then a small fast excursion, then noise again.
+    val before = (0 until 100).map(i => at(i.toLong, noise(i), noise(i + 7000))).toVector
+    val micro  = (0 until 8).map(i => at(100L + i, 0.06 * i, 0.0)).toVector
+    val after  =
+      (0 until 100).map(i => at(108L + i, 0.42 + noise(i + 500), noise(i + 9000))).toVector
+    val trial = before ++ micro ++ after
+
+    val th     = EkThresholds.estimate(trial, lambda = 5.0).get
+    val events = Detectors.engbertKliegl(th, minSamples = 3, clock).runAll(trial)
+    assert(events.nonEmpty, clue(th.render))
+    assert(events.forall(_.isInstanceOf[Event.Saccade[Deg]]))
+  }
+
+  test("a detected microsaccade reports a measured peak velocity") {
+    val before = (0 until 100).map(i => at(i.toLong, noise(i), noise(i + 7000))).toVector
+    val micro  = (0 until 8).map(i => at(100L + i, 0.06 * i, 0.0)).toVector
+    val trial  = before ++ micro
+    val th     = EkThresholds.estimate(trial, lambda = 5.0).get
+    val sacs   = Detectors.engbertKliegl(th, 3, clock).runAll(trial).collect {
+      case s: Event.Saccade[Deg] => s
+    }
+    // Unlike a saccade inferred from a fixation pair, this one measured it.
+    assert(sacs.forall(_.peakVelocity.isDefined), clue(sacs))
+  }
+
+  // -------------------------------------------------------------------------
+  // Merging
+  // -------------------------------------------------------------------------
+
+  private def fixation(fromMs: Long, toMs: Long, x: Double) =
+    Event.Fixation[Deg](
+      Interval.of(clock, Instant.millis(fromMs), Instant.millis(toMs)).toOption.get,
+      Pt[Deg](x, 0.0),
+      dispersion = 0.1,
+      sampleCount = (toMs - fromMs).toInt
+    )
+
+  test("fragments close in time and space are fused") {
+    val merged = Merge
+      .adjacentFixations[Deg](Span.millis(20), Distance.deg(0.5).toOption.get)
+      .runAll(Vector[Event[Deg]](fixation(0, 100, 5.0), fixation(110, 200, 5.2)))
+    assertEquals(merged.length, 1)
+    val f = merged.head.asInstanceOf[Event.Fixation[Deg]]
+    assertEquals(f.span.onset.toMillis, 0.0)
+    assertEquals(f.span.offset.toMillis, 200.0)
+  }
+
+  test("both criteria are required: a long pause in place is two fixations") {
+    val merged = Merge
+      .adjacentFixations[Deg](Span.millis(20), Distance.deg(0.5).toOption.get)
+      .runAll(Vector[Event[Deg]](fixation(0, 100, 5.0), fixation(500, 600, 5.1)))
+    assertEquals(merged.length, 2)
+  }
+
+  test("both criteria are required: a quick move elsewhere is two fixations") {
+    val merged = Merge
+      .adjacentFixations[Deg](Span.millis(20), Distance.deg(0.5).toOption.get)
+      .runAll(Vector[Event[Deg]](fixation(0, 100, 5.0), fixation(105, 200, 25.0)))
+    assertEquals(merged.length, 2)
+  }
+
+  test("the fused centre is duration-weighted, not the midpoint") {
+    // A 10ms fragment should barely move a 200ms fixation.
+    val merged = Merge
+      .adjacentFixations[Deg](Span.millis(20), Distance.deg(1.0).toOption.get)
+      .runAll(Vector[Event[Deg]](fixation(0, 200, 0.0), fixation(205, 215, 1.0)))
+    val f = merged.head.asInstanceOf[Event.Fixation[Deg]]
+    assert(f.centre.x < 0.1, clue(f.centre.x))
+  }
+
+  test("a non-fixation event passes through and closes any pending merge") {
+    val blink = Event.Blink[Deg](
+      Interval.of(clock, Instant.millis(105), Instant.millis(150)).toOption.get
+    )
+    val merged = Merge
+      .adjacentFixations[Deg](Span.millis(20), Distance.deg(0.5).toOption.get)
+      .runAll(Vector[Event[Deg]](fixation(0, 100, 5.0), blink, fixation(160, 200, 5.1)))
+    assertEquals(merged.length, 3)
+  }
+
+  // -------------------------------------------------------------------------
   // Composition
   // -------------------------------------------------------------------------
 

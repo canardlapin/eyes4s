@@ -48,6 +48,16 @@ class KernelLawsSuite extends munit.DisciplineSuite:
   checkAll("Surface.mass", SurfaceLaws.mass(grid))
   checkAll("Measure.integrate", SurfaceLaws.measure(grid))
 
+  // Machine: composition, observationally.
+  checkAll(
+    "Machine.category",
+    MachineLaws.category(Generators.genIntInput, Generators.genIntMachine)
+  )
+  checkAll(
+    "Machine.deterministic",
+    MachineLaws.deterministic(Generators.genIntInput, Generators.genIntMachine)
+  )
+
   // Time: the algebraic structure claimed in Span's scaladoc, tested by the
   // standard cats bundles rather than by hand-rolled assertions.
   checkAll("Span.commutativeGroup", CommutativeGroupTests[Span].commutativeGroup)

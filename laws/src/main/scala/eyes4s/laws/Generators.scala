@@ -300,4 +300,46 @@ object Generators:
       ws <- Gen.listOfN(n, Gen.choose(0.0, 100.0))
     yield PointMeasure.of(frame, IArray.from(ps), IArray.from(ws)).toOption.get
 
+  // -------------------------------------------------------------------------
+  // Machines
+  // -------------------------------------------------------------------------
+
+  /** Small integer machines, including stateful ones, for the category laws.
+    *
+    * A suite driven only by stateless maps would pass for an implementation
+    * that dropped state on composition, which is the failure worth catching.
+    */
+  val genIntMachine: Gen[Machine[Int, Int]] =
+    Gen.oneOf(
+      Gen.const(Machine.identity[Int]),
+      Gen.choose(-5, 5).map(k => Machine.lift[Int, Int](_ + k)),
+      Gen.choose(2, 4).map(k => Machine.filter[Int](_ % k == 0)),
+      Gen.const(runningSum),
+      Gen.const(pairSums)
+    )
+
+  /** Emits a running total: stateful, and every output depends on the history. */
+  private def runningSum: Machine[Int, Int] =
+    Machine(
+      new Detector[Int, Int, Int]:
+        def init: Int                                = 0
+        def step(s: Int, i: Int): (Int, Vector[Int]) = (s + i, Vector(s + i))
+        def flush(s: Int): Vector[Int]               = Vector.empty
+    )
+
+  /** Buffers one input and emits pairwise sums, holding a leftover to flush.
+    * Exercises the flush path, which a stateless machine never does.
+    */
+  private def pairSums: Machine[Int, Int] =
+    Machine(
+      new Detector[Option[Int], Int, Int]:
+        def init: Option[Int]                                        = None
+        def step(s: Option[Int], i: Int): (Option[Int], Vector[Int]) = s match
+          case Some(prev) => (None, Vector(prev + i))
+          case None       => (Some(i), Vector.empty)
+        def flush(s: Option[Int]): Vector[Int] = s.toVector
+    )
+
+  val genIntInput: Gen[List[Int]] = Gen.listOf(Gen.choose(-20, 20))
+
 end Generators

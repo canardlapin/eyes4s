@@ -88,7 +88,13 @@ end Detector
   */
 sealed abstract class Machine[I, O]:
   type S
-  def detector: Detector[S, I, O]
+
+  /** A `val`, not a `def`, so that `m.S` is a stable path a driver can name
+    * without casting. A driver in another module has to hold the state
+    * between chunks, and the only honest way to type that is through this
+    * machine's own type member.
+    */
+  val detector: Detector[S, I, O]
 
   /** Feed one machine's output into another. */
   def andThen[P](that: Machine[O, P]): Machine[I, P] =
@@ -143,7 +149,7 @@ object Machine:
   def apply[St, I, O](d: Detector[St, I, O]): Machine[I, O] =
     new Machine[I, O]:
       type S = St
-      def detector: Detector[St, I, O] = d
+      val detector: Detector[St, I, O] = d
 
   def identity[A]: Machine[A, A]                = Machine(Detector.identity[A])
   def lift[A, B](f: A => B): Machine[A, B]      = Machine(Detector.lift(f))

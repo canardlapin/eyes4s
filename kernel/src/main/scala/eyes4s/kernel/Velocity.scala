@@ -53,3 +53,41 @@ object Velocity:
     cats.kernel.Order.from((a, b) => java.lang.Double.compare(a, b))
 
 end Velocity
+
+/** A non-negative length in frame units.
+  *
+  * Distinct from [[Extent]], which is a width and a height, and from [[Sigma]],
+  * which is a standard deviation. This is a plain separation: a merge radius, a
+  * saccade amplitude, a distance between two positions.
+  *
+  * Carries its unit for the usual reason. "Merge fixations closer than one" is
+  * a different instruction in degrees and in pixels, and the two are not
+  * convertible without the viewing geometry.
+  */
+opaque type Distance[U <: Unit2D] = Double
+
+object Distance:
+
+  def of[U <: Unit2D](v: Double): Either[GeometryError, Distance[U]] =
+    if !v.isFinite then Left(GeometryError.NonFiniteDistance(v))
+    else if v < 0.0 then Left(GeometryError.NegativeDistance(v))
+    else Right(v)
+
+  def deg(v: Double): Either[GeometryError, Distance[Unit2D.Deg]] = of[Unit2D.Deg](v)
+  def px(v: Double): Either[GeometryError, Distance[Unit2D.Px]]   = of[Unit2D.Px](v)
+
+  val zero: Distance[Nothing] = 0.0
+
+  /** The separation between two positions. Always defined and non-negative. */
+  def between[U <: Unit2D](a: Pt[U], b: Pt[U]): Distance[U] = a.distanceTo(b)
+
+  extension [U <: Unit2D](d: Distance[U])
+    def value: Double                         = d
+    def <(that: Distance[U]): Boolean         = d < that
+    def <=(that: Distance[U]): Boolean        = d <= that
+    def render(using u: UnitLabel[U]): String = f"$d%.3g${u.symbol}"
+
+  given [U <: Unit2D]: cats.kernel.Order[Distance[U]] =
+    cats.kernel.Order.from((a, b) => java.lang.Double.compare(a, b))
+
+end Distance

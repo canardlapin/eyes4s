@@ -52,6 +52,8 @@ enum GeometryError derives CanEqual:
   case NonFiniteRegion(shape: String)
   case NonFiniteVelocity(value: Double)
   case NegativeVelocity(value: Double)
+  case NonFiniteDistance(value: Double)
+  case NegativeDistance(value: Double)
 
   def message: String = this match
     case DegenerateBounds(x0, y0, x1, y1) =>
@@ -91,5 +93,9 @@ enum GeometryError derives CanEqual:
     case NegativeVelocity(v) =>
       s"A velocity is a speed and cannot be negative, was $v. " +
         "Direction belongs to the displacement, not to the magnitude."
+    case NonFiniteDistance(v) =>
+      s"A distance must be finite, was $v."
+    case NegativeDistance(v) =>
+      s"A distance cannot be negative, was $v."
 
 end GeometryError
