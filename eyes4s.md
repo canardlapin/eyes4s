@@ -755,7 +755,7 @@ final case class Trial[K, M, A](key: K, meta: M, value: A)
 final case class Trials[K, M, A](rows: Vector[Trial[K, M, A]]):
   def mapV[B](f: A => B): Trials[K, M, B]
   def traverseV[E, B](f: A => Either[E, B])
-      : (Trials[K, M, B], Vector[(K, E)])
+      : (Trials[K, M, B], Vector[TrialTransformFailure[K, M, A, E]])
 
 sealed trait Relation[L, R]
 object Relation:
@@ -773,10 +773,10 @@ object Relation:
 sealed trait PairDesign[L, R]
 object PairDesign:
   final case class BetweenDirected[L, R](
-      relation: Relation[L, R], selection: DirectedSelection
+      relation: Relation[L, R], selection: Selection
   ) extends PairDesign[L, R]
   final case class WithinDirected[K](
-      relation: Relation[K, K], self: SelfPolicy, selection: DirectedSelection
+      relation: Relation[K, K], self: SelfPolicy, selection: Selection
   ) extends PairDesign[K, K]
   final case class WithinUndirected[K](
       relation: Relation[K, K], self: SelfPolicy
@@ -784,33 +784,63 @@ object PairDesign:
 
 /** Convenient constructors compile to Relation + PairDesign values. */
 object Pairing:
-  def matched[K]: PairDesign[K, K]
-  def matchedOn[K, J](proj: Projection[K, J]): PairDesign[K, K]
-  def mismatchedWithin[K, G](stratum: Projection[K, G]): PairDesign[K, K]
+  def matched[K]: PairDesign.BetweenDirected[K, K]
+  def matchedOn[K, J](proj: Projection[K, J]): PairDesign.BetweenDirected[K, K]
+  def mismatchedWithin[K, G](stratum: Projection[K, G]): PairDesign.WithinDirected[K]
+  def sampled[L, R](
+      relation: Relation[L, R], cap: Int, seed: Seed, sampleId: SampleId
+  ): Either[PairingError, PairDesign.BetweenDirected[L, R]]
 
 /** Unmatched and ambiguous keys are DATA, not a warning(). */
-final case class Paired[KL, ML, KR, MR, A, B](
-    pairs:          Vector[(Trial[KL, ML, A], Trial[KR, MR, B])],
-    unmatchedLeft:  Vector[KL],
+sealed trait Paired[KL, ML, KR, MR, A, B]
+final case class DirectedPaired[KL, ML, KR, MR, A, B](
+    pairs: Vector[(Trial[KL, ML, A], Trial[KR, MR, B])],
+    eligiblePairCount: Long,
+    unmatchedLeft: Vector[KL],
     unmatchedRight: Vector[KR],
-    ambiguous:      Vector[PairingAmbiguity[KL, KR]])
+    ambiguous: PairingAmbiguities[KL, ML, KR, MR, A, B],
+    pairSpace: PairSpace.BetweenDirected | PairSpace.WithinDirected)
+    extends Paired[KL, ML, KR, MR, A, B]
+final case class UndirectedPaired[K, M, A](
+    pairs: Vector[(Trial[K, M, A], Trial[K, M, A])],
+    eligiblePairCount: Long,
+    unmatchedLeft: Vector[K],
+    unmatchedRight: Vector[K],
+    ambiguous: PairingAmbiguities[K, M, K, M, A, A],
+    pairSpace: PairSpace.WithinUndirected)
+    extends Paired[K, M, K, M, A, A]
 
 final case class PairScore[KL, KR, E, S](
     left: KL, right: KR, result: Either[E, S])
 
-final case class PairwiseAnalysis[KL, KR, E, S](
+sealed trait PairwiseAnalysis[KL, KR, E, S]
+final case class DirectedPairwiseAnalysis[KL, KR, E, S](
     rows: Vector[PairScore[KL, KR, E, S]],
     diagnostics: PairingReport[KL, KR],
     provenance: Provenance)
+    extends PairwiseAnalysis[KL, KR, E, S]
+final case class UndirectedPairwiseAnalysis[K, E, S](
+    rows: Vector[PairScore[K, K, E, S]],
+    diagnostics: PairingReport[K, K],
+    provenance: Provenance)
+    extends PairwiseAnalysis[K, K, E, S]
 
 final case class Analysis[K, S](
-    rows: Vector[(K, Either[ReductionError, S])],
+    rows: Vector[(K, Either[ReductionError[K], S])],
     diagnostics: ReductionReport[K],
     provenance: Provenance)
 
-def evaluatePairs[KL, ML, KR, MR, A, B, E, S](
-    pairs: Paired[KL, ML, KR, MR, A, B]
-)(f: (A, B) => Either[E, S]): PairwiseAnalysis[KL, KR, E, S]
+def evaluatePairs[KL, ML, KR, MR, A, B, S](
+    pairs: DirectedPaired[KL, ML, KR, MR, A, B],
+    inputs: ContentHash,
+    comparison: Compare[A, B, S]
+): DirectedPairwiseAnalysis[KL, KR, CompareError, S]
+
+def evaluatePairs[K, M, A, S](
+    pairs: UndirectedPaired[K, M, A],
+    inputs: ContentHash,
+    comparison: SymmetricCompare[A, S]
+): UndirectedPairwiseAnalysis[K, CompareError, S]
 
 /** Contrast needs a difference on the score type; for MultiMatchScore it is per-field. */
 trait Contrastable[S]:
@@ -830,21 +860,45 @@ name their side; canonical-undirected reductions choose `meanEdges` or the expli
 `meanByEndpoint`. A reduction also chooses `RequireAll` or `SuccessfulOnly(minSuccessful)` and
 returns eligible, selected, successful, and failed counts.
 
+The directed and undirected subtypes enforce those choices. A plain function cannot evaluate an
+`UndirectedPaired`; the caller supplies `SymmetricEvaluator`, or uses a `SymmetricCompare`. Every
+evaluation also supplies the input `ContentHash`. The resulting provenance records that identity,
+the evaluator and scale, the complete pair policy, seed and sample identifier, and realized counts.
+Generic non-`Compare` evaluators additionally provide `EvaluationInfo`.
+
 The baseline is not a code path. It is the same evaluator applied to a different pair design:
 
 ```scala
+val subjectImage = Projection.named("subject-image")((k: Key) => (k.subject, k.image))
+val subject      = Projection.named("subject")((k: Key) => k.subject)
+val image        = Projection.named("image")((k: Key) => k.image)
+
 val target = PairDesign.between[Key, Key]
-  .sameOn(Projection.named("subject-image")(k => (k.subject, k.image)))
+  .sameOn(subjectImage, subjectImage)
+  .all
 
 val control = PairDesign.between[Key, Key]
-  .sameOn(Projection.named("subject")(_.subject))
-  .differentOn(Projection.named("image")(_.image))
+  .sameOn(subject, subject)
+  .differentOn(image, image)
   .bottomK(50, Seed(1), SampleId("image-control"))
 
-val observed = evaluatePairs(pair(templates, probes, target))(cmp.compare).meanByRight
-val baseline = evaluatePairs(pair(templates, probes, control))(cmp.compare).meanByRight
-val effect   = contrast(observed, baseline)
+val inputDigest = ContentHash.combineAll(
+  templates.rows.map(_.value.provenance.digest) ++
+  probes.rows.map(_.value.provenance.digest))
+
+val reduced = control.map { controlDesign =>
+  val observed =
+    evaluatePairs(pair(templates, probes, target), inputDigest, cmp)
+      .meanByRight(FailurePolicy.RequireAll)
+  val baseline =
+    evaluatePairs(pair(templates, probes, controlDesign), inputDigest, cmp)
+      .meanByRight(FailurePolicy.RequireAll)
+  (observed, baseline)
+}
 ```
+
+`x-contrast` supplies the typed `Contrastable` combination of the two reduced analyses; pair
+evaluation and reduction do not contain a separate baseline branch.
 
 Every eligible directed pair receives a stable priority from `(Seed, SampleId, focal KeyDigest,
 candidate KeyDigest)`. The cap and eligibility relation do not enter the priority, so bottom-60
@@ -860,7 +914,11 @@ val repeated = PairDesign.within[Key]
   .excludingSelf
   .canonicalUndirected
 
-val perViewing = evaluatePairs(pair(viewings, repeated))(cmp.compare).meanByEndpoint
+val viewingInputs =
+  ContentHash.combineAll(viewings.rows.map(_.value.provenance.digest))
+val perViewing =
+  evaluatePairs(pair(viewings, repeated), viewingInputs, cmp)
+    .meanByEndpoint(FailurePolicy.RequireAll)
 ```
 
 There is no participant default. Removing the named subject clause asks the distinct
@@ -1041,16 +1099,31 @@ val (probes,    pErr) = trials.filter(_.key.phase == Phase.Retrieval).traverseV(
 
 val cmp = Compare.fisherZ[Mass[Unit2D.Deg]]
 
+val subjectImage = Projection.named("subject-image")((k: Key) => (k.subject, k.image))
+val subject      = Projection.named("subject")((k: Key) => k.subject)
+val image        = Projection.named("image")((k: Key) => k.image)
+
 val target = PairDesign.between[Key, Key]
-  .sameOn(Projection.named("subject-image")(k => (k.subject, k.image)))
+  .sameOn(subjectImage, subjectImage)
+  .all
 val control = PairDesign.between[Key, Key]
-  .sameOn(Projection.named("subject")(_.subject))
-  .differentOn(Projection.named("image")(_.image))
+  .sameOn(subject, subject)
+  .differentOn(image, image)
   .bottomK(50, Seed(1), SampleId("image-control"))
 
-val observed = evaluatePairs(pair(templates, probes, target))(cmp.compare).meanByRight
-val baseline = evaluatePairs(pair(templates, probes, control))(cmp.compare).meanByRight
-val effect   = contrast(observed, baseline)
+val inputDigest = ContentHash.combineAll(
+  templates.rows.map(_.value.provenance.digest) ++
+  probes.rows.map(_.value.provenance.digest))
+
+val reduced = control.map { controlDesign =>
+  val observed =
+    evaluatePairs(pair(templates, probes, target), inputDigest, cmp)
+      .meanByRight(FailurePolicy.RequireAll)
+  val baseline =
+    evaluatePairs(pair(templates, probes, controlDesign), inputDigest, cmp)
+      .meanByRight(FailurePolicy.RequireAll)
+  (observed, baseline)
+}
 ```
 
 Read what is no longer possible. The target relation names subject and image, while the control

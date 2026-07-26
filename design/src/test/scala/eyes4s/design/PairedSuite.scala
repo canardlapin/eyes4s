@@ -203,7 +203,7 @@ class PairedSuite extends munit.FunSuite:
 
   test("PairwiseAnalysis retains pairing diagnostics and provenance") {
     val diagnostics = PairingReport[Key, Key](
-      PairStorage.BetweenDirected,
+      PairSpace.BetweenDirected("all", Selection.All),
       eligiblePairCount = 1L,
       selectedPairCount = 1,
       unmatchedLeft = Vector.empty,
@@ -211,7 +211,7 @@ class PairedSuite extends munit.FunSuite:
       ambiguous = Vector.empty
     )
     val provenance = Provenance.raw(ContentHash.ofString("paired-suite"))
-    val result     = PairwiseAnalysis[Key, Key, String, Double](
+    val result     = DirectedPairwiseAnalysis[Key, Key, String, Double](
       Vector(PairScore(Key("s1", "a"), Key("s1", "a"), Right(0.5))),
       diagnostics,
       provenance
