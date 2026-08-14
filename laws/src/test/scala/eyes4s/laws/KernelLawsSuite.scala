@@ -112,7 +112,7 @@ class KernelLawsSuite extends munit.DisciplineSuite:
   )
   checkAll(
     "Sinkhorn.symmetry",
-    MeasureLaws.symmetry[Mass[Norm], Distance0](
+    MeasureLaws.symmetry[Mass[Norm], MeasureDistance](
       Transport.sinkhorn[Norm](epsilon = 0.5, iterations = 20, maxCells = 4096),
       massGen,
       (a, b) => math.abs(a.value - b.value) < 1e-7

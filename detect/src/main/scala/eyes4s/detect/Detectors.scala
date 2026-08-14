@@ -82,9 +82,11 @@ object Detectors:
           val held = st.pending :+ s
           if held.length < 3 then (IvtState(held, st.run), Vector.empty)
           else
-            val Vector(a, b, c) = held.takeRight(3): @unchecked
-            val classified      = classify(a, c)
-            val (nextRun, out)  = absorb(st.run, b, classified)
+            val a              = held(held.length - 3)
+            val b              = held(held.length - 2)
+            val c              = held(held.length - 1)
+            val classified     = classify(a, c)
+            val (nextRun, out) = absorb(st.run, b, classified)
             (IvtState(held.takeRight(2), nextRun), out)
 
         def flush(st: IvtState[Deg]): Vector[Event[Deg]] =

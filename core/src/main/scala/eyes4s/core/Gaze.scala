@@ -97,14 +97,14 @@ enum Gaze[U <: Unit2D] derives CanEqual:
     case _                => false
 
   /** Move to another coordinate frame, preserving the classification. */
-  def warp[V <: Unit2D](w: Warp[U, V], frame: Frame[V]): Gaze[V] = this match
+  def warp[V <: Unit2D](w: Warp[U, V]): Gaze[V] = this match
     case Tracked(p, s) =>
       w(p) match
-        case Some(q) => if frame.contains(q) then Gaze.Tracked(q, s) else Gaze.OffScreen(q)
+        case Some(q) => if w.to.contains(q) then Gaze.Tracked(q, s) else Gaze.OffScreen(q)
         case None    => Gaze.Lost()
     case OffScreen(p) =>
       w(p) match
-        case Some(q) => if frame.contains(q) then Gaze.Tracked(q, None) else Gaze.OffScreen(q)
+        case Some(q) => if w.to.contains(q) then Gaze.Tracked(q, None) else Gaze.OffScreen(q)
         case None    => Gaze.Lost()
     case Blink() => Gaze.Blink()
     case Lost()  => Gaze.Lost()

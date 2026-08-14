@@ -56,7 +56,7 @@ import org.typelevel.discipline.Laws
   */
 trait MeasureLaws extends Laws:
 
-  private def value(d: Distance0): Double = d.value
+  private def value(d: MeasureDistance): Double = d.value
 
   /** Identity, symmetry, non-negativity, triangle inequality. */
   def metric[A](
@@ -103,7 +103,7 @@ trait MeasureLaws extends Laws:
     * is on MAGNITUDE, not on distinctness.
     */
   private def separates[A](
-      f: (A, A) => Either[CompareError, Distance0],
+      f: (A, A) => Either[CompareError, MeasureDistance],
       distinct: (A, A),
       minSeparation: Double
   ): Prop =

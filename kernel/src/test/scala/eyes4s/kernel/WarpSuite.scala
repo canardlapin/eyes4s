@@ -61,6 +61,25 @@ class WarpSuite extends munit.FunSuite:
   // Tangent projection
   // -------------------------------------------------------------------------
 
+  test("a tangent warp specifically requires pixels to degrees") {
+    val wrongSource = typeCheckErrors("""
+      import eyes4s.kernel.*
+      val norm = Frame.unitSquare("norm").toOption.get
+      val deg = Frame.angular("deg", 20, 20).toOption.get
+      val p = Perspective.of(Length.mm(600), Length.mm(500), Length.mm(300)).toOption.get
+      Warp.tangent(norm, deg, p)
+    """)
+    val wrongTarget = typeCheckErrors("""
+      import eyes4s.kernel.*
+      val px = Frame.screen("px", 1000, 800).toOption.get
+      val norm = Frame.unitSquare("norm").toOption.get
+      val p = Perspective.of(Length.mm(600), Length.mm(500), Length.mm(300)).toOption.get
+      Warp.tangent(px, norm, p)
+    """)
+    assert(wrongSource.nonEmpty, "a normalised position was treated as a display pixel")
+    assert(wrongTarget.nonEmpty, "a tangent projection produced a non-angular frame")
+  }
+
   test("the screen centre maps to zero eccentricity") {
     val c = toDeg(screen.centre).get
     assert(close(c.x, 0.0, 1e-12), clue(c))

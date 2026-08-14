@@ -63,14 +63,14 @@ object Distribution:
         MeasureScale.Bounded(0.0, 1.0),
         None
       )
-      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Distance0] =
+      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, MeasureDistance] =
         aligned(a, b).map { n =>
           var s = 0.0
           var i = 0
           while i < n do
             s += math.abs(a.at(i) - b.at(i))
             i += 1
-          Distance0(s / 2.0)
+          MeasureDistance(s / 2.0)
         }
 
   /** Hellinger distance: the L2 distance between the square roots, scaled.
@@ -87,7 +87,7 @@ object Distribution:
         MeasureScale.Bounded(0.0, 1.0),
         None
       )
-      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Distance0] =
+      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, MeasureDistance] =
         aligned(a, b).map { n =>
           var s = 0.0
           var i = 0
@@ -95,7 +95,7 @@ object Distribution:
             val d = math.sqrt(a.at(i)) - math.sqrt(b.at(i))
             s += d * d
             i += 1
-          Distance0(math.sqrt(s / 2.0))
+          MeasureDistance(math.sqrt(s / 2.0))
         }
 
   // ---------------------------------------------------------------------------
@@ -116,7 +116,7 @@ object Distribution:
         MeasureScale.Bounded(0.0, 1.0),
         None
       )
-      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Distance0] =
+      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, MeasureDistance] =
         aligned(a, b).map { n =>
           val lb = math.log(base.value)
           var s  = 0.0
@@ -128,7 +128,7 @@ object Distribution:
             if p > 0.0 && m > 0.0 then s += 0.5 * p * math.log(p / m) / lb
             if q > 0.0 && m > 0.0 then s += 0.5 * q * math.log(q / m) / lb
             i += 1
-          Distance0(math.max(s, 0.0))
+          MeasureDistance(math.max(s, 0.0))
         }
 
   // ---------------------------------------------------------------------------
@@ -157,7 +157,7 @@ object Distribution:
         MeasureScale.DistanceLike,
         None
       )
-      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Distance0] =
+      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, MeasureDistance] =
         aligned(a, b).map { n =>
           val lb = math.log(base.value)
           var s  = 0.0
@@ -166,7 +166,7 @@ object Distribution:
             val p = a.at(i)
             if p > 0.0 then s += p * math.log(p / math.max(b.at(i), floor)) / lb
             i += 1
-          Distance0(math.max(s, 0.0))
+          MeasureDistance(math.max(s, 0.0))
         }
 
   // ---------------------------------------------------------------------------
@@ -199,7 +199,7 @@ object Distribution:
             nb += b.at(i) * b.at(i)
             i += 1
           val den = math.sqrt(na) * math.sqrt(nb)
-          if den <= 0.0 then Left(CompareError.Undefined("cosine of a map with no mass"))
+          if den <= 0.0 then Left(CompareError.ZeroNorm("cosine", math.sqrt(na), math.sqrt(nb)))
           else Right(Similarity(dot / den))
         }
 
@@ -244,8 +244,14 @@ object Distribution:
           // therefore never fires, and the correlation returned is the ratio of
           // two quantities made entirely of rounding noise: a number between -1
           // and 1 that means nothing and looks like a result.
-          if isConstant(saa, ma, n) || isConstant(sbb, mb, n) then
-            Left(CompareError.Undefined("correlation with a constant map is undefined"))
+          val leftConstant  = isConstant(saa, ma, n)
+          val rightConstant = isConstant(sbb, mb, n)
+          if leftConstant || rightConstant then
+            val operand =
+              if leftConstant && rightConstant then CompareOperand.Both
+              else if leftConstant then CompareOperand.Left
+              else CompareOperand.Right
+            Left(CompareError.ConstantInput("Pearson correlation", operand))
           else Right(Similarity(sab / (math.sqrt(saa) * math.sqrt(sbb))))
         }
 

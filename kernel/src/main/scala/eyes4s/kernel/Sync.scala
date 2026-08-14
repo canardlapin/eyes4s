@@ -33,7 +33,8 @@ package eyes4s.kernel
   *              offset. A value of 1e-6 means the target clock runs one
   *              microsecond fast per second.
   */
-final case class Sync(from: ClockId, to: ClockId, offset: Span, drift: Double) derives CanEqual:
+final case class Sync private (from: ClockId, to: ClockId, offset: Span, drift: Double)
+    derives CanEqual:
 
   /** Convert an instant. Unchecked: the caller asserts it is on `from`.
     *
@@ -45,8 +46,11 @@ final case class Sync(from: ClockId, to: ClockId, offset: Span, drift: Double) d
 
   /** Convert an interval, checking that it is on the source timeline. */
   def apply(i: Interval): Either[TimeError, Interval] =
-    if i.clock != from then Left(TimeError.WrongSourceClock(from, i.clock))
-    else Interval.of(to, unsafeInstant(i.onset), unsafeInstant(i.offset))
+    Agreement
+      .clocks(from, i.clock)
+      .left
+      .map(_ => TimeError.WrongSourceClock(from, i.clock))
+      .flatMap(_ => Interval.of(to, unsafeInstant(i.onset), unsafeInstant(i.offset)))
 
   /** The inverse map, exact up to rounding at microsecond resolution. */
   def inverse: Sync =
@@ -59,6 +63,19 @@ final case class Sync(from: ClockId, to: ClockId, offset: Span, drift: Double) d
 end Sync
 
 object Sync:
+
+  /** An affine synchronization with a finite, direction-preserving clock
+    * scale.
+    */
+  def affine(
+      from: ClockId,
+      to: ClockId,
+      offset: Span,
+      drift: Double
+  ): Either[TimeError, Sync] =
+    if !drift.isFinite then Left(TimeError.NonFiniteDrift(from, to, drift))
+    else if 1.0 + drift <= 0.0 then Left(TimeError.NonPositiveClockScale(from, to, drift))
+    else Right(Sync(from, to, offset, drift))
 
   /** A pure offset with no rate difference. */
   def offsetOnly(from: ClockId, to: ClockId, offset: Span): Sync =

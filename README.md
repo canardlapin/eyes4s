@@ -10,41 +10,62 @@ duality, and knowing which side is half the design.
 > screen, which origin, which unit, which clock, whether this map is normalised — into types the
 > compiler checks.**
 
-Every library in this space represents a fixation as a row of floats. None carries the screen, the
-viewing distance, the y-axis direction, the clock domain, or the normalisation state in the value.
-The result is a tax paid in silent unit errors, y-flips, and comparisons between incommensurable
-maps.
+Most libraries in this space represent a fixation as a row of floats. The screen, viewing distance,
+y-axis direction, clock domain, and normalisation state remain conventions outside the value. The
+result is a tax paid in silent unit errors, y-flips, and comparisons between incommensurable maps.
 
 ```scala
-val screen = Frame.screen("bench", 1280, 1024)              // Frame[Px], y-down
-val fovea  = Frame.angular("fovea", Extent(34.0, 27.0))     // Frame[Deg]
-val toDeg  = Warp.tangent(screen, fovea, Viewing(mm(600), PhysicalScreen(mm(530), mm(300))))
-
-val pipeline: Machine[Sample[Deg], Event[Deg]] =
-  Filter.deblink[Deg](maxGap = ms(75), pad = ms(20))
-    .andThen(Detector.ivt(threshold = degPerSec(30), minDuration = ms(60)))
-
 for
-  inDeg <- recording.warp(toDeg)          // Recording[Px] => Recording[Deg]
-  events = pipeline.runAll(inDeg.samples)
-  sp    <- Scanpath.fromEvents(fovea, inDeg.clock, events)
-  dwell <- aois.dwell(sp)
-yield dwell
+  display <- Frame.screen("bench", width = 1280, height = 1024)
+  visual  <- Frame.angular("visual-field", width = 47.7, height = 28.0)
+  viewing <- Viewing.of(
+    distance = Length.mm(600),
+    screenWidth = Length.mm(530),
+    screenHeight = Length.mm(300)
+  )
+yield Viewing.angularWarp(viewing, display, visual)
+// Either[GeometryError, Warp[Px, Deg]]
 ```
 
-`pipeline` consumes `Sample[Deg]`, not `Sample[?]`, so the warp is not a stylistic choice — a 30°/s
-threshold cannot reach pixel data, and producing `toDeg` requires stating the viewing geometry.
+That warp can transform `Gaze[Px]` into `Gaze[Deg]`; it cannot be applied backwards or to data from
+another frame. Invalid dimensions are construction errors, not exceptional control flow.
+
+Typed does not have to mean ceremonial. Common scientific designs have a thin vocabulary over the
+same inspectable algebra:
+
+```scala
+final case class TrialKey(subject: String, image: String)
+
+val subject = Projection.named[TrialKey, String]("subject")(_.subject)
+val image   = Projection.named[TrialKey, String]("image")(_.image)
+
+val controls =
+  Pairing
+    .within[TrialKey]
+    .sameOn(subject)
+    .differentOn(image)
+    .excludingSelf
+    .bottomK(50, Seed(2026L), SampleId("controls"))
+// Either[PairingError, PairDesign.WithinDirected[TrialKey]]
+```
+
+The call reads as the design, while the result remains an inspectable `PairDesign` made from named
+relations rather than an opaque predicate. Impossible orientation and sampling combinations are
+absent from the API; invalid raw configuration is reported as data.
 
 ## Status
 
-**Pre-alpha. Nothing is implemented yet.** This repository currently holds the design and the plan.
+**Pre-alpha, under active implementation.** The typed kernel, gaze core, detectors, surfaces,
+comparison measures, relational design algebra, deterministic RNG, and published law suites have
+executable implementations and tests. AOI, analysis-plan, codec, and file-I/O modules remain
+scaffolds; APIs can still change before the first release.
 
 - [`eyes4s.md`](eyes4s.md) — architecture specification: the thesis, the design pillars, the five
   layers, and the traps being designed against.
 - [`PRD.md`](PRD.md) — product requirements: numbered requirements, error model, verification
   requirements, versioned roadmap, and acceptance criteria.
-- `.mote/` — the tracked plan. 99 open work items, 10 resolved decisions with their rationale.
-  Source comments cite decisions as `bead q-<name>`, following house convention.
+- `.mote/` — the tracked plan and decision record. Source comments cite resolved decisions as
+  `bead q-<name>`, following house convention.
 
 ```sh
 mote board     # overview
@@ -89,7 +110,7 @@ Requires JDK 17+ and sbt.
 ```sh
 sbt compileAll
 sbt testAll
-sbt checkModuleBoundaries
+sbt checkBoundaries
 ```
 
 ## Licence

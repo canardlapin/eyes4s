@@ -222,6 +222,24 @@ class ScanpathSuite extends munit.FunSuite:
     assertEqualsDouble(moved.pathLength, path.pathLength / 2.0, 1e-9)
   }
 
+  test("an undefined warp point is an error, never a dropped fixation") {
+    val target = Frame.screen("projected", 1000, 1000).toOption.get
+    // Homogeneous w = x - 100, so the first fixation lies on the line at
+    // infinity while the other two remain mappable.
+    val h = Mat3(1, 0, 0, 0, 1, 0, 1, 0, -100)
+    val r = path.warp(Warp.homography(screen, target, h))
+
+    assertEquals(
+      r,
+      Left(
+        CoreError.OfScanpath(
+          ScanpathError.UnmappableFixation(0, screen.id, target.id, 100.0, 100.0)
+        )
+      )
+    )
+    assert(clue(r.left.toOption.get.message).contains("was not shortened"))
+  }
+
   test("event selection applies the same policy to any event type") {
     val window = Interval.of(clock, Instant.millis(0), Instant.millis(300)).toOption.get
     val events = Vector[Event[Px]](

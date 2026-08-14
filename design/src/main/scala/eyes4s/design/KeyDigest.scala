@@ -18,6 +18,7 @@ package eyes4s.design
 
 import eyes4s.kernel.ContentHash
 
+import scala.annotation.implicitNotFound
 import scala.deriving.Mirror
 
 /** The only route from a key to a sampling identity (PRD X-10).
@@ -43,6 +44,10 @@ import scala.deriving.Mirror
   * `Eq[K].eqv(a, b)` implies `digest(a) == digest(b)`. The converse is not
   * claimed: this is a digest, not an injection.
   */
+@implicitNotFound(
+  "No KeyDigest[${K}] is available. Define one explicitly, or derive it for a case class " +
+    "whose fields all have KeyDigest instances."
+)
 trait KeyDigest[K]:
   def digest(k: K): ContentHash
 
@@ -82,46 +87,40 @@ object KeyDigest:
     * rather than a string built by pasting fields together, which is what
     * `eyesim` requires of its users and what makes its `match_on` join a
     * stringly-typed operation.
+    *
+    * Derivation summons a [[KeyDigest]] for every field at compile time.
+    * Unsupported fields therefore fail where the key type is declared rather
+    * than throwing when an analysis happens to sample its first pair.
     */
-  // Not `inline`: the Mirror is a GUARD that K is a case class, and the digest
-  // itself walks productIterator at runtime. Marking it inline would duplicate
-  // an anonymous class at every use site for no benefit.
-  given derived[K <: Product](using m: Mirror.ProductOf[K]): KeyDigest[K] =
+  given derived[K <: Product](using
+      m: Mirror.ProductOf[K],
+      fields: ProductDigest[m.MirroredElemTypes]
+  ): KeyDigest[K] =
     new KeyDigest[K]:
       def digest(k: K): ContentHash =
-        val fields = k.productIterator.toVector
-        val parts  = fields.zipWithIndex.map { (f, i) =>
-          ContentHash.combine(
-            ContentHash.ofString("f" + i),
-            anyDigest(f)
-          )
-        }
-        tagged("p" + fields.length, ContentHash.combineAll(parts))
+        val tuple: m.MirroredElemTypes = Tuple.fromProductTyped(k)
+        tagged("p" + k.productArity, ContentHash.combineAll(fields.digest(tuple)))
 
-  /** Digest a field whose static type is erased by `productIterator`.
+  /** Compiler-facing support for product derivation.
     *
-    * Restricted to the primitives and identifiers the instances above cover; a
-    * field of any other type is a compile-time-invisible hazard, so it fails
-    * loudly rather than silently digesting a rendering.
+    * Keeping the tuple typed is the important part: each recursive step knows
+    * the field's declared type and must summon its `KeyDigest`. There is no
+    * `Any` match, reflective fallback, or pure-path exception.
     */
-  private def anyDigest(a: Any): ContentHash = a match
-    case v: String  => KeyDigest[String].digest(v)
-    case v: Int     => KeyDigest[Int].digest(v)
-    case v: Long    => KeyDigest[Long].digest(v)
-    case v: Double  => KeyDigest[Double].digest(v)
-    case v: Boolean => KeyDigest[Boolean].digest(v)
-    case v: Product =>
-      // A nested product: recurse, preserving position separators.
-      val parts = v.productIterator.toVector.zipWithIndex.map { (f, i) =>
-        ContentHash.combine(ContentHash.ofString("f" + i), anyDigest(f))
-      }
-      tagged("p" + v.productArity, ContentHash.combineAll(parts))
-    case other =>
-      throw new IllegalArgumentException(
-        s"KeyDigest has no instance for ${other.getClass.getSimpleName}. " +
-          "Keys must be built from strings, integers, longs, doubles, booleans, " +
-          "options and case classes of those. Falling back to hashCode or toString " +
-          "would make sampling depend on the platform and the release."
-      )
+  sealed trait ProductDigest[Values <: Tuple]:
+    def digest(values: Values, position: Int = 0): Vector[ContentHash]
+
+  given productEmpty: ProductDigest[EmptyTuple] with
+    def digest(values: EmptyTuple, position: Int): Vector[ContentHash] = Vector.empty
+
+  given productCons[Head, Tail <: Tuple](using
+      headDigest: KeyDigest[Head],
+      tailDigest: ProductDigest[Tail]
+  ): ProductDigest[Head *: Tail] with
+    def digest(values: Head *: Tail, position: Int): Vector[ContentHash] =
+      ContentHash.combine(
+        ContentHash.ofString("f" + position),
+        headDigest.digest(values.head)
+      ) +: tailDigest.digest(values.tail, position + 1)
 
 end KeyDigest

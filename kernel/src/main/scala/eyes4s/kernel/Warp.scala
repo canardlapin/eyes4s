@@ -226,11 +226,12 @@ object Warp:
     * a threshold in degrees applied to data that never met a viewing geometry
     * is a number with no meaning.
     */
-  def tangent[A <: Unit2D, B <: Unit2D](
-      from: Frame[A],
-      to: Frame[B],
+  def tangent(
+      from: Frame[Unit2D.Px],
+      to: Frame[Unit2D.Deg],
       perspective: Perspective
-  ): Warp[A, B] = Tangent(from, to, perspective, Sense.Forward)
+  ): Warp[Unit2D.Px, Unit2D.Deg] =
+    Tangent(from, to, perspective, Sense.Forward)
 
   /** Map one rectangle onto another, preserving relative position.
     *

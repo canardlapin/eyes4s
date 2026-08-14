@@ -44,6 +44,8 @@ enum TimeError derives CanEqual:
   case WrongSourceClock(expected: ClockId, actual: ClockId)
 
   case NonPositiveRate(value: Double)
+  case NonFiniteDrift(from: ClockId, to: ClockId, drift: Double)
+  case NonPositiveClockScale(from: ClockId, to: ClockId, drift: Double)
 
   def message: String = this match
     case ReversedInterval(c, on, off) =>
@@ -59,5 +61,10 @@ enum TimeError derives CanEqual:
         s"on clock '$act'."
     case NonPositiveRate(v) =>
       s"Sampling rate must be finite and positive, was $v Hz."
+    case NonFiniteDrift(from, to, drift) =>
+      s"Clock drift from '$from' to '$to' must be finite, was $drift."
+    case NonPositiveClockScale(from, to, drift) =>
+      s"Clock drift from '$from' to '$to' implies a non-positive scale " +
+        s"(1 + $drift). A synchronization must preserve the direction of time."
 
 end TimeError

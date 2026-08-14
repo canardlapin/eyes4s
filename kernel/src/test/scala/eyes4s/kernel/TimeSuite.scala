@@ -188,8 +188,29 @@ class TimeSuite extends munit.FunSuite:
     assertEquals(s(i), Left(TimeError.WrongSourceClock(tracker, stimulus)))
   }
 
+  test("an affine sync rejects a non-finite or time-reversing scale") {
+    assert(
+      Sync.affine(tracker, stimulus, Span.zero, Double.NaN).left.exists {
+        case TimeError.NonFiniteDrift(`tracker`, `stimulus`, drift) => drift.isNaN
+        case _                                                      => false
+      }
+    )
+    assertEquals(
+      Sync.affine(tracker, stimulus, Span.zero, -1.0),
+      Left(TimeError.NonPositiveClockScale(tracker, stimulus, -1.0))
+    )
+  }
+
+  test("an unchecked Sync cannot be constructed directly") {
+    val errors = typeCheckErrors("""
+      import eyes4s.kernel.*
+      Sync(ClockId("a"), ClockId("b"), Span.zero, Double.NaN)
+    """)
+    assert(errors.nonEmpty, "the Sync invariant could be bypassed")
+  }
+
   test("sync inverse round-trips within a microsecond") {
-    val s    = Sync(tracker, stimulus, Span.millis(250), drift = 1e-6)
+    val s    = Sync.affine(tracker, stimulus, Span.millis(250), drift = 1e-6).toOption.get
     val i    = Interval.of(tracker, Instant.millis(1000), Instant.millis(61000)).toOption.get
     val back = s(i).flatMap(s.inverse.apply).toOption.get
     assertEquals(back.clock, tracker)
@@ -200,7 +221,7 @@ class TimeSuite extends munit.FunSuite:
   test("drift is not negligible over a session") {
     // One minute at 1e-6 drift is 60us; an hour is 3.6ms. Small, but it
     // accumulates monotonically and is exactly what a pure offset misses.
-    val s    = Sync(tracker, stimulus, Span.zero, drift = 1e-6)
+    val s    = Sync.affine(tracker, stimulus, Span.zero, drift = 1e-6).toOption.get
     val hour = Instant.seconds(3600)
     assertEquals(s.unsafeInstant(hour).toMicros - hour.toMicros, 3600L)
   }

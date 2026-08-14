@@ -16,6 +16,8 @@
 
 package eyes4s.design
 
+import scala.compiletime.testing.typeCheckErrors
+
 class SeedDigestSuite extends munit.FunSuite:
 
   // ---------------------------------------------------------------------------
@@ -75,8 +77,15 @@ class SeedDigestSuite extends munit.FunSuite:
   }
 
   test("bounded integers stay in range") {
+    val g     = Seed(3L).generator
+    val draws = (0 until 1000).map(_ => g.nextInt(10).toOption.get)
+    assert(draws.forall(i => i >= 0 && i < 10))
+  }
+
+  test("an invalid random bound is a named failure, not the sentinel zero") {
     val g = Seed(3L).generator
-    assert((0 until 1000).map(_ => g.nextInt(10)).forall(i => i >= 0 && i < 10))
+    assertEquals(g.nextInt(0), Left(RngError.NonPositiveBound(0)))
+    assert(clue(g.nextInt(-2).left.toOption.get.message).contains("-2"))
   }
 
   test("derivation is by label, so adding a stratum does not reshuffle the others") {
@@ -158,12 +167,17 @@ class SeedDigestSuite extends munit.FunSuite:
     assertNotEquals(KeyDigest[Double].digest(4.0), KeyDigest[Double].digest(4.5))
   }
 
-  test("an unsupported field type fails loudly rather than digesting a rendering") {
-    final case class Bad(x: java.util.Date) extends Product:
-      def canEqual(that: Any) = false
-    intercept[IllegalArgumentException] {
-      KeyDigest.derived[Bad].digest(Bad(new java.util.Date(0L)))
-    }
+  test("an unsupported field type is rejected at compile time") {
+    val errors = typeCheckErrors("""
+      import eyes4s.design.*
+      final case class Bad(x: java.util.Date)
+      KeyDigest.derived[Bad]
+    """)
+    assert(errors.nonEmpty, "unsupported key fields reached the pure digest path")
+    assert(
+      clue(errors.map(_.message).mkString("\n")).contains("KeyDigest[java.util.Date]"),
+      "the compile error should name the missing field instance"
+    )
   }
 
 end SeedDigestSuite

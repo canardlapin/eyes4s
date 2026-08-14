@@ -152,6 +152,11 @@ transcribed link.
   regressions in and out.
 - **Ambient/focal dynamics.** Krejtz et al. for the K coefficient.
 - **AOI-sequence models.** Chuk, Chan & Hsiao for EMHMM.
+- **Visual-world and relational-event paradigms.** Hafri & Trueswell (2025),
+  *Apprehending relational events: The visual world paradigm and the interplay of event perception
+  and language*, Brain Research 150000, DOI 10.1016/j.brainres.2025.150000, for preview-time
+  manipulations, role/filler independence, alternative event construals, and the cascading relation
+  between event apprehension and linguistic encoding.
 - **Standards and formats.** BIDS includes an eye-tracking modality specification with TSV data and
   JSON sidecars. EyeLink `.edf` is a proprietary binary format readable only through SR Research's
   `edfapi`; the `edf2asc` utility produces a text `.asc` that is freely parseable.
@@ -225,6 +230,9 @@ requirement form.
    cause.
 6. Ship as a credible open-source library: semantic versioning, binary-compatibility policy,
    documentation site, reproducible verification, published law modules.
+7. Preserve observed stimulus-side timing and its synchronization evidence so later experiment
+   modules can align gaze to language or other events without treating a planned schedule as an
+   observation.
 
 ## Non-Goals
 
@@ -241,6 +249,8 @@ requirement form.
 6. A tensor library.
 7. A package that encodes grid dimensions at the type level.
 8. A package that claims metric status for measures that do not satisfy the metric axioms.
+9. A forced-alignment, natural-language parsing, or computer-vision role-inference system. Those
+   systems may supply typed annotations; eyes4s does not infer them.
 
 ## Target Users
 
@@ -285,7 +295,8 @@ eyes4s/
   io/            eyes4s-io        JVM+JS   fs2 module
 ```
 
-Deferred beyond v1.0: `eyes4s-gale`, `eyes4s-graph4s`, `eyes4s-viz`, `eyes4s-frame4s`.
+Deferred beyond v1.0: `eyes4s-gale`, `eyes4s-graph4s`, `eyes4s-viz`, `eyes4s-frame4s`,
+`eyes4s-vwp`.
 
 `eyes4s-plan` and `eyes4s-codec` exist because of §Application-Layer Requirements. They are the
 only structural additions the planned application imposes, and both are pure modules subject to
@@ -350,6 +361,25 @@ which assumed both would share a scope and accepted convention in its place. Imp
 **T-7.** `Instant` exposes no overloaded `-`. Subtracting a `Span` yields an `Instant`; the span
 between two instants is `a.until(b)`. Both operands erase to `Long`, so the overloads would collide
 after erasure — and the named form reads better at call sites regardless.
+
+**T-8.** `Timeline[A]` is the first stimulus-side temporal carrier. It is a neutral kernel value,
+not an ocular `Event`: it carries one `ClockId` and an ordered collection of instantaneous
+`Mark[A]` values. Equal timestamps are allowed because distinct marks may be simultaneous; input
+order breaks ties deterministically. `PlannedTimeline[A]` and `ObservedTimeline[A]` are distinct
+types. An analysis that claims realized timing requires the observed form and may not silently use
+the planned form.
+
+**T-9.** Synchronization evidence is data. `SyncEvidence` contains the fitted `Sync`, fit mode,
+number of common-event pairs, residuals, RMS error and maximum absolute error.
+`SyncEvidence.fromCommonEvents` fits either an offset-only or affine relation from trigger pairs,
+centres timestamps before fitting, and returns a sealed `SyncFitError` for insufficient or
+degenerate evidence. Callers do not assemble residual summaries by hand. A one-pair offset fit is
+representable but distinguishable from a fitted multi-trigger relation.
+
+**T-10.** `Span` remains signed because subtraction and relative windows require a group.
+Quantities that cannot be negative use smart-constructed `NonNegativeSpan`; bin widths use
+`PositiveSpan`, and event counts use `NonNegativeLong`. Exposure, dwell, residual magnitudes and
+accounting buckets never expose a signed `Span` or `Long` under a non-negativity convention.
 
 ### Geometry
 
@@ -487,6 +517,55 @@ analyses never read, whereas `contains` is cheap, exact, and is what dwell time 
 
 **O-12.** The module structure on `Signed[U]` is reached through a grid *value*
 (`grid.signedModule`), never summoned as a given, because `zero` depends on the grid.
+
+### AOI assignment and relational attention
+
+**RA-1.** `AoiSet[U, E]` is a greenfield, smart-constructed value carrying a frame and entity-keyed
+regions. Frame checking, duplicate entity keys and spatial-overlap behaviour are part of its public
+contract; no existing temporal `Overlap` value is reused for spatial membership.
+
+**RA-2.** The primitive time-course result is `EntityTrace[E, Q]`. Roles are never the native
+currency of binning. A `Construal[C, E, R]` is a validated relation between entity and role values,
+and role traces are pure projections of an entity trace. Reinterpreting one scene under another
+construal therefore cannot rerun gaze assignment or alter the entity trace.
+
+**RA-3.** A construal may be many-to-many: one entity may fill several roles and one role may have
+several fillers. Projection states an explicit `RoleAttribution` policy (`Replicate`,
+`SplitEqually`, or `RequireFunctional`) and returns mass for visible entities assigned to no role as
+data. A role trace that duplicates mass does not claim partition accounting.
+
+**RA-4.** Trace source determines the result type. Sample-time and clipped fixation-dwell analyses
+return non-negative durations; fixation-onset analyses return non-negative counts. A single
+`Map[E, Span]` result may not represent both. Onset-count results carry coverage diagnostics but do
+not claim that counts sum to temporal exposure.
+
+**RA-5.** Temporal event selection and contribution are separate decisions. Existing `Overlap`
+states whether a fixation is selected. `EventAllocation` states whether its contribution is clipped
+to the bin intersection or assigned whole at onset. Only clipped-intersection dwell participates in
+an exposure identity; whole-at-onset is an event-attribution estimand.
+
+**RA-6.** Spatial membership is an explicit policy with policy-indexed output. Under exclusive or
+priority assignment, entity mass plus background, off-screen, blink, lost and ambiguous mass
+partitions the represented exposure. Under multiple assignment, `sum(byEntity)` is not an
+accounting identity: the result instead carries visible-union mass, pairwise overlap mass and mass
+by overlap multiplicity. Triple and higher-order overlap cannot be inferred from pairwise values
+alone.
+
+**RA-7.** Fixation-dwell coverage distinguishes fixation, saccade, pursuit, blink and unsegmented
+time. It may not imply that fixation dwell alone exhausts a window. Sample-time coverage states its
+sample-support convention, including irregular-rate weighting and any uncovered gaps.
+
+**RA-8.** `EpochPlan` stores a serializable `MarkSelector`, not a captured predicate or a mark
+value. Selection names a typed mark key and an occurrence policy (`RequireUnique`, `First`, `Last`,
+or `Nth`). Missing and multiply matched anchors are values naming the trial, selector and observed
+match count. A `FinalBin` policy states whether a non-divisible window is rejected, includes a
+short final bin, or excludes and returns the tail as data.
+
+**RA-9.** `eyes4s-vwp` is a deferred pure consumer of `Timeline`, `AoiSet`, `Trials` and the plan
+registry. Its first analyses are realized-preview traces, role/filler dissociation, alternative
+construal projection, role-resolution paths and production/onset alignment. It exports descriptive
+estimands with complete support and provenance; it does not implement GAMMs, GLMMs, forced
+alignment or automatic visual-role inference.
 
 ### Comparison
 
@@ -703,7 +782,14 @@ fs2, and does not require the file to fit in memory.
 
 **IO-2.** ASC ingest recovers: samples with timestamps and gaze position, pupil size where present,
 blink and saccade messages where present, recording start/stop, and experimenter messages carrying
-stimulus events.
+stimulus events. Experimenter messages land in an `ObservedTimeline`, preserving their source line
+and clock; they are not folded into ocular `Event` and are not attached to `Recording` as an
+untyped side channel.
+
+**IO-2a.** Presentation logs may provide a `PlannedTimeline`, an `ObservedTimeline`, or both.
+Importers never promote planned timestamps to observed ones. Common triggers fit `SyncEvidence`
+through the shared kernel constructor, and the importer reports when evidence is insufficient for
+the requested fit mode.
 
 **IO-3.** Ingest is total with respect to malformed input: unparseable lines are reported through a
 diagnostics channel with line numbers, never silently dropped and never thrown.
@@ -749,12 +835,15 @@ parameters with their units, and a one-line description.
 between two runs and support undo.
 
 **APP-4a.** The plan vocabulary is a fixed core — detection, estimation, AOI definition, comparison,
-pairing — plus a **typed extension registry**. `NodeDef[P]` carries a `NodeId`, a `Codec[P]` and an
-interpreter `P => Op`. Registration is compile-time typed; only *lookup* is by identifier, and a miss
-returns an explicit error naming the node and its version. *Per decision OD-8 (`bead
+pairing — plus a **typed extension registry**. `NodeDef[P]` carries a `NodeId` and interpreter
+`P => Op`; persistence registration associates the conditional `VersionedCodec[P]` required by
+APP-8a without introducing a plan/codec dependency cycle. Registration is compile-time typed; only
+*lookup* is by identifier, and a miss returns an explicit error naming the node and its version.
+*Per decision OD-8 (`bead
 q-plan-coverage`): covering the whole API means maintaining two parallel libraries by hand, while a
 core-only vocabulary leaves a method developer's new measure invisible to the application until the
-library changes. The registry gets both — but only while its entries stay typed.*
+library changes. The registry gets both — but only while its entries stay typed. OD-13 refines the
+original unqualified `Codec[P]` carrier into a conditional, versioned generic contract.*
 
 **APP-4b.** Plan node parameters are typed domain values. `Map[String, String]` parameter bags are
 prohibited. An operation the plan cannot express is a missing node definition, not grounds for a
@@ -768,7 +857,8 @@ applies the same discipline one level up, to the analysis itself.
 ### Everything round-trips
 
 **APP-5.** Every domain value an application must persist has a codec: `Frame`, `Warp`, `Viewing`,
-`Grid`, `Region`, `AoiSet`, `Sigma`, `Smoother`, all plan types, `Provenance`, and `Analysis`.
+`Grid`, `Region`, `AoiSet`, `Timeline`, `SyncEvidence`, `Sigma`, `Smoother`, all plan types,
+`Provenance`, and `Analysis`.
 
 **APP-6.** Codecs are JSON, in a dedicated module, and are versioned with an explicit schema version
 so that a project file saved by one release opens in the next.
@@ -778,6 +868,18 @@ generators already required by V-5.
 
 **APP-8.** Surfaces and recordings — the large numeric payloads — are excluded from JSON and
 persisted separately, referenced by content hash.
+
+**APP-8a.** Generic domain values use conditional, versioned codecs. A codec for
+`Timeline[A]`, `Trials[K, M, A]`, `Construal[C, E, R]`, or a generic plan parameter exists only when
+the corresponding user types provide `VersionedCodec` instances. Registration of a typed plan
+extension captures those instances; runtime loading reports a missing schema identifier or version
+as a value. The generic mechanism and its module dependency direction are settled before v0.65
+implementation; it is a blocking prerequisite, not an assumption hidden in `NodeDef[P]`.
+
+**APP-8b.** Generic maps encode as arrays of key/value entries rather than JSON object fields, so
+keys do not acquire an accidental string representation. Decoding rejects duplicate keys. Large
+generic payloads are represented by typed artifact references carrying content hashes rather than
+being inlined into project JSON.
 
 ### Execution is observable and interruptible
 
@@ -800,7 +902,8 @@ parameter is tweaked, and is the natural join point with the `repro4s` design.
 **APP-13.** Prerequisites are queryable. Given the current state of a project, an application can ask
 which analyses are available and, for each unavailable one, *what is missing*. Concretely: without a
 `Viewing`, degree-based measures are unavailable; without an `AoiSet`, reading measures are
-unavailable.
+unavailable; and without an observed anchor or adequate `SyncEvidence`, an event-aligned analysis is
+unavailable. Missing and ambiguous mark selections name the trial and selector.
 
 **APP-14.** Errors name the object that failed, not only the reason. Every error carries the trial
 key, and where applicable the source file and line, so an application can navigate to it.
@@ -996,6 +1099,14 @@ directed left/right reduction, self exclusion, uniqueness diagnostics, and parti
 sampling mutant that includes the true match, derives priority from cap, shares a stream across
 focals, or depends on row order must fail.
 
+**V-10. Timeline and relational-attention conformance.** Timeline fits recover synthetic offset and
+drift with reported residuals; shifting both clocks together leaves relative epochs unchanged.
+Exclusive spatial assignment satisfies its partition identity. Multiple assignment satisfies the
+visible-union identity and reports overlap multiplicity. Reprojecting one entity trace through a
+different construal leaves the entity trace bit-identical. Mutation tests kill denominator changes,
+role-first binning, boundary double-counting, blink/loss conflation and silent final-bin truncation.
+These rules publish with the first module that declares the corresponding abstraction.
+
 ---
 
 ## Performance Requirements
@@ -1063,28 +1174,37 @@ OT. CRQA is **not** in v1.0 (OD-6).
 `eyes4s-design`. `Trials[K, M, A]`; sealed `Relation`; legal `PairDesign` inhabitants; `Pairing`
 façades; `Paired`; primary `PairwiseAnalysis`; explicit reductions and contrasts; `KeyDigest`,
 `SampleId`, and the seeded RNG; matched/repetition/temporal conveniences; surface decomposition and
-partial association.
+partial association. The arity and persistence responsibilities of every public generic type are
+finalized here; the conditional `VersionedCodec` mechanism is recorded as a prerequisite for v0.65,
+not retrofitted after plan parameters exist.
 
 *Exit:* relation truth tables and sampling mutation tests are green; cap-monotone bottom-k samples
 and derived-key digests agree on JVM and Scala.js; V-4 parity and repetitive-divergence fixtures run
-in CI; `PARITY.md` names every expected disagreement.
+in CI; `PARITY.md` names every expected disagreement; the generic-codec decision is closed.
 
 ### v0.6 — IO and AOI
 
 `eyes4s-io` with ASC and CSV; `eyes4s-aoi` with regions, dwell, entry, run counts, and transition
-matrices.
+matrices. The neutral kernel timeline, planned/observed distinction and fitted `SyncEvidence` land
+before ASC experimenter-message recovery. `AoiSet` defines spatial membership and overlap outputs
+rather than inheriting an unstated policy.
 
-*Exit:* IO-3 diagnostics on a corrupted fixture; a real `edf2asc` output parsed end to end.
+*Exit:* IO-3 diagnostics on a corrupted fixture; a real `edf2asc` output parsed end to end with
+experimenter messages preserved in an observed timeline; a synthetic multi-trigger fit recovers
+known offset and drift; exclusive and multiple AOI accounting laws are green.
 
 ### v0.65 — Plans and codecs
 
 `eyes4s-plan` and `eyes4s-codec`. Detection and analysis plans as description ADTs with
-interpreters, plus the typed extension registry; JSON codecs with a versioned schema; `MeasureInfo` and detector/smoother metadata;
-prerequisite queries; progress and cancellation on the fs2 execution surface.
+interpreters, plus the typed extension registry; conditional `VersionedCodec` instances for generic
+user types; JSON codecs with a versioned schema; serializable mark selectors and epoch/final-bin
+policies; `MeasureInfo` and detector/smoother metadata; prerequisite queries; progress and
+cancellation on the fs2 execution surface.
 
 *Exit:* APP-7 round-trip law green for every codec; APP-13 prerequisite query returns actionable
-reasons for a project lacking a `Viewing`; a plan constructed programmatically, serialised, reloaded
-and executed produces identical output.
+reasons for a project lacking a `Viewing`, observed anchor, or adequate synchronization evidence; a
+plan containing user-typed keys and markers is constructed programmatically, serialised, reloaded
+and produces output identical to the unserialised run.
 
 ### v0.7 — Documentation and hardening
 
@@ -1105,14 +1225,17 @@ Maven Central for JVM and Scala.js.
 Reading measures; the saliency metric family; BIDS eye-tracking ingest, Tobii TSV, SMI;
 `Detector.nystromHolmqvist` and `Detector.i2mc`; `Smoother.foveal`; **CRQA implemented properly**
 (recurrence matrix, embedding, delay, radius selection, RR/DET/LAM/ENTR/TT/L_max — per OD-6), which
-also unlocks dual eye tracking and joint-attention work. **This is the release that delivers the
-second clause of the product thesis** and is committed, not aspirational.
+also unlocks dual eye tracking and joint-attention work. The first `eyes4s-vwp` release consumes the
+v1.0 timeline/AOI/plan foundations to provide entity-primary exposure and onset traces, pure
+construal projection, realized-preview analyses and export-ready support diagnostics. **This is the
+release that delivers the second clause of the product thesis** and is committed, not aspirational.
 
 ### v1.2 and beyond
 
 Statistical mapping with cluster-based permutation inference; `eyes4s-gale` adapters (PCA, CORAL,
 CCA); `eyes4s-viz`; `eyes4s-graph4s`; `eyes4s-frame4s`; pupillometry with `fmrihrf` bases; Scala
-Native axis; exact network-simplex EMD; RSA for gaze; HMM scanpath models; JMH benchmarks.
+Native axis; exact network-simplex EMD; RSA for gaze; HMM scanpath models; dynamic visual-world
+entity geometry and richer production annotations; JMH benchmarks.
 
 ---
 
@@ -1155,15 +1278,21 @@ v1.0 ships when all of the following hold.
     degree-based measures are reported unavailable with the missing prerequisite named.
 21. **A-21.** Every measure, detector and smoother carries complete `MeasureInfo`-equivalent
     metadata including citation (APP-15, APP-16).
+22. **A-22.** ASC experimenter messages are preserved in an `ObservedTimeline`; planned timestamps
+    cannot satisfy an observed-timing prerequisite.
+23. **A-23.** Conditional codecs round-trip a representative `Trials[K, M, A]` and timeline with
+    user-supplied key, metadata and marker types; duplicate generic keys and missing schema versions
+    are rejected explicitly.
 
 ---
 
 ## Resolved Decisions
 
-All ten open decisions were resolved on 2026-07-24. Each is recorded as a closed bead in the `mote`
-store at `.mote/`, carrying a `decision`-kind note with its full rationale, so source comments can
-cite `bead q-<name>` in the house style. Three of the ten were resolved to an option **not offered in
-the original framing**, which is noted below.
+The original ten open decisions were resolved on 2026-07-24. Three further decisions governing
+stimulus timelines and relational attention were resolved on 2026-07-25. Each is recorded as a
+closed bead in the `mote` store at `.mote/`, carrying a `decision`-kind note with its full rationale.
+Three of the original ten were resolved to an option **not offered in the original framing**, which
+is noted below.
 
 | # | Bead | Resolution |
 |---|---|---|
@@ -1174,12 +1303,15 @@ the original framing**, which is noted below.
 | OD-5 | `q-region-exact` | **Exact ADT**; `contains` exact and resolution-independent, `area(g: Grid[U])` computed by rasterisation at a stated resolution. Exact area over arbitrary Boolean combinations of polygons needs polygon clipping — real, delicate work for a value most analyses never read. Laws tested observationally via `contains`. |
 | OD-6 | `q-crqa` | **Implement properly, in v1.1.** Not on the thesis path, and larger than it appears. Moved off the v0.4 critical path; v1.0 README states the absence. |
 | OD-7 | `q-laws-publication` | **One `eyes4s-laws` module** for v1.0; revisit post-1.0 only on real demand. If ever split, the seam is `kernel-laws` versus the rest, aligning with the `trace4s` extraction boundary. |
-| OD-8 | `q-plan-coverage` | **Core vocabulary plus a typed extension registry.** `NodeDef[P]` carries a `NodeId`, a `Codec[P]` and an interpreter `P => Op`; registration is compile-time typed and only *lookup* is by identifier. Holds the Product Warning rule: parameters are typed domain values, never `Map[String, String]`. |
+| OD-8 | `q-plan-coverage` | **Core vocabulary plus a typed extension registry.** `NodeDef[P]` carries a `NodeId` and typed interpreter; registration is compile-time typed and only *lookup* is by identifier. Holds the Product Warning rule: parameters are typed domain values, never `Map[String, String]`. The original unqualified codec carrier is refined by OD-13. |
 | OD-9 | `q-provenance-cache` | **`Provenance` carries a `ContentHash` of its inputs.** Settled by inspection: parameters alone cannot distinguish two datasets analysed identically, so provenance was never a valid cache key. Fast non-cryptographic digest, computed once at ingest, identical on JVM and JS. The join point with `repro4s`. |
 | OD-10 | `q-app-target` | **Local JVM process serving a browser UI** — the RStudio Server / Jupyter pattern. Decided by data governance more than technology: gaze files are large and are human-subjects data, so a hosted app means uploading participant data off-site. **Consequence: Scala Native remains unnecessary post-1.0, and the Scala.js investment is confirmed load-bearing.** |
+| OD-11 | `bd-01KYDZ53W05NZRFXH38VMMP44B` | **Neutral planned/observed timelines with fitted synchronization evidence.** `Timeline[A]` belongs in the kernel; planned and observed forms are distinct; stimulus messages never become ocular events. `SyncEvidence.fromCommonEvents` owns fitting and its residual diagnostics. |
+| OD-12 | `bd-01KYDZ5F929YKS1TMPCK2NVYYV` | **Entity-primary, estimand-indexed relational-attention traces.** Roles are pure construal projections. Duration and onset-count results are distinct. Temporal selection, event contribution and spatial membership are separately named, with accounting laws specific to each policy. |
+| OD-13 | `bd-01KYDZ5VDVS0E6SSKQJ8QH5EWJ` | **Conditional versioned codecs for generic domain values.** User-supplied type parameters require registered schemas; generic keys are encoded as entries rather than JSON field names; duplicate keys and missing schema versions are explicit failures. The acyclic plan/codec seam is a blocking v0.5 design task. |
 
-Requirements affected by these resolutions have been updated in place. Three new beads were created:
-`c-binocular`, `k-contenthash`, `pl-registry`.
+Requirements affected by these resolutions have been updated in place. Their implementation is
+dependency-ordered under the v0.6/v0.65 milestones and the deferred visual-world epic.
 
 ---
 

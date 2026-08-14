@@ -127,17 +127,37 @@ final class Scanpath[U <: Unit2D] private (
     for
       _     <- CoreError.widenGeometry(Agreement.frames(frame, w.from))
       moved <- CoreError.widenScanpath(
+        fixations.indices.foldLeft[
+          Either[ScanpathError, Vector[Event.Fixation[V]]]
+        ](Right(Vector.empty)) { (acc, index) =>
+          val fixation = fixations(index)
+          for
+            built  <- acc
+            centre <- w(fixation.centre).toRight(
+              ScanpathError.UnmappableFixation(
+                index,
+                w.from.id,
+                w.to.id,
+                fixation.centre.x,
+                fixation.centre.y
+              )
+            )
+          yield built :+ Event.Fixation(
+            fixation.span,
+            centre,
+            fixation.dispersion,
+            fixation.sampleCount
+          )
+        }
+      )
+      result <- CoreError.widenScanpath(
         Scanpath.of(
           w.to,
           clock,
-          IArray.from(
-            fixations.toVector.flatMap { f =>
-              w(f.centre).map(c => Event.Fixation(f.span, c, f.dispersion, f.sampleCount))
-            }
-          )
+          IArray.from(moved)
         )
       )
-    yield moved
+    yield result
 
   /** The measure this path induces, forgetting the order.
     *
@@ -211,6 +231,13 @@ enum ScanpathError derives CanEqual:
   case NoFixations
   case OutOfOrder(index: Int, previous: String, current: String)
   case WrongClock(index: Int, expected: String, actual: String)
+  case UnmappableFixation(
+      index: Int,
+      from: FrameId,
+      to: FrameId,
+      x: Double,
+      y: Double
+  )
 
   def message: String = this match
     case NoFixations =>
@@ -221,3 +248,7 @@ enum ScanpathError derives CanEqual:
         "duration and make window selection depend on iteration order."
     case WrongClock(i, exp, act) =>
       s"Fixation $i is on clock '$act' but the scanpath is on '$exp'."
+    case UnmappableFixation(i, from, to, x, y) =>
+      s"Fixation $i at ($x, $y) in frame '$from' has no finite image in frame '$to'. " +
+        "The scanpath was not shortened; choose a warp defined over every fixation " +
+        "or handle this failure explicitly."

@@ -116,7 +116,7 @@ object Saliency:
       val info = MeasureInfo(
         "NSS",
         "mean z-scored map value at the observed positions; 0 is chance, unbounded above",
-        MeasureScale.FisherZ,
+        MeasureScale.UnboundedSimilarity,
         Some("Peters et al. (2005)")
       )
 
@@ -139,9 +139,9 @@ object Saliency:
               i += 1
             val sd = math.sqrt(ss / n)
             if sd <= 1e-12 * math.max(math.abs(mean), java.lang.Double.MIN_NORMAL) then
-              Left(CompareError.Undefined("NSS against a constant map is undefined"))
+              Left(CompareError.ConstantInput("NSS", CompareOperand.Model))
             else if observed.total <= 0.0 then
-              Left(CompareError.Undefined("no observed positions to score"))
+              Left(CompareError.EmptyInput("NSS", CompareOperand.Observed, observed.total))
             else
               // The integral: the z-scored map, sampled at each observed
               // position and weighted by its mass.

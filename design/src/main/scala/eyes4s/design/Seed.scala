@@ -96,7 +96,16 @@ final class Rng private[design] (private var state: Long):
   def nextDouble(): Double =
     (nextLong() >>> 11).toDouble * (1.0 / (1L << 53).toDouble)
 
-  def nextInt(bound: Int): Int =
-    if bound <= 0 then 0 else ((nextLong() >>> 1) % bound).toInt
+  def nextInt(bound: Int): Either[RngError, Int] =
+    if bound <= 0 then Left(RngError.NonPositiveBound(bound))
+    else Right(((nextLong() >>> 1) % bound).toInt)
 
 end Rng
+
+/** Failures requesting a bounded random value. */
+enum RngError derives CanEqual:
+  case NonPositiveBound(value: Int)
+
+  def message: String = this match
+    case NonPositiveBound(value) =>
+      s"A bounded random draw needs a positive exclusive upper bound, got $value."

@@ -97,7 +97,10 @@ class TransportLiftSuite extends munit.FunSuite:
   }
 
   test("zero directions is refused") {
-    assert(Transport.slicedWasserstein[Px](0).compare(near, far).isLeft)
+    assertEquals(
+      Transport.slicedWasserstein[Px](0).compare(near, far),
+      Left(CompareError.NonPositiveDirections("sliced Wasserstein-1", 0))
+    )
   }
 
   // -------------------------------------------------------------------------
@@ -157,6 +160,21 @@ class TransportLiftSuite extends munit.FunSuite:
     )
   }
 
+  test("Sinkhorn configuration failures retain their parameter values") {
+    assertEquals(
+      Transport.sinkhorn[Px](epsilon = 0.0).compare(near, far),
+      Left(CompareError.NonPositiveRegularisation("Sinkhorn", 0.0))
+    )
+    assertEquals(
+      Transport.sinkhorn[Px](iterations = 0).compare(near, far),
+      Left(CompareError.NonPositiveIterations("Sinkhorn", 0))
+    )
+    assertEquals(
+      Transport.sinkhorn[Px](maxCells = 0).compare(near, far),
+      Left(CompareError.NonPositiveCellLimit("Sinkhorn", 0))
+    )
+  }
+
   test("Sinkhorn is not offered as a metric") {
     val errs = scala.compiletime.testing.typeCheckErrors("""
       import eyes4s.compare.*
@@ -176,7 +194,7 @@ class TransportLiftSuite extends munit.FunSuite:
       .get
     val r = Transport.sinkhorn[Px]().compare(flat, flat)
     assert(r.isLeft)
-    r.left.foreach(e => assert(clue(e.message).contains("slicedWasserstein")))
+    r.left.foreach(e => assert(clue(e.message).contains("sliced Wasserstein")))
   }
 
   // -------------------------------------------------------------------------
@@ -208,7 +226,7 @@ class TransportLiftSuite extends munit.FunSuite:
   }
 
   test("the lift preserves symmetry, so the result is still valid for an unordered pair") {
-    val lifted: SymmetricCompare[Scanpath[Px], Distance0] =
+    val lifted: SymmetricCompare[Scanpath[Px], MeasureDistance] =
       Lift.viaSmoothingSymmetric(Distribution.totalVariation[Px], smoother, grid)
     assertEqualsDouble(
       lifted.compare(left, right).toOption.get.value,
@@ -266,6 +284,7 @@ class TransportLiftSuite extends munit.FunSuite:
     val miss = Saliency.nss[Px].compare(model, elsewhere).toOption.get.value
     assert(hit > 0.0, clue(hit))
     assert(miss < hit, clue((hit, miss)))
+    assertEquals(Saliency.nss[Px].scale, MeasureScale.UnboundedSimilarity)
   }
 
   test("NSS against a constant map is undefined, not zero") {
@@ -274,11 +293,17 @@ class TransportLiftSuite extends munit.FunSuite:
       .flatMap(_.normalised)
       .toOption
       .get
-    assert(Saliency.nss[Px].compare(flat, observedAt((50.0, 50.0))).isLeft)
+    assertEquals(
+      Saliency.nss[Px].compare(flat, observedAt((50.0, 50.0))),
+      Left(CompareError.ConstantInput("NSS", CompareOperand.Model))
+    )
   }
 
   test("NSS with no observed positions is undefined") {
-    assert(Saliency.nss[Px].compare(near, PointMeasure.empty(screen)).isLeft)
+    assertEquals(
+      Saliency.nss[Px].compare(near, PointMeasure.empty(screen)),
+      Left(CompareError.EmptyInput("NSS", CompareOperand.Observed, 0.0))
+    )
   }
 
   test("the map and the points must share a frame") {

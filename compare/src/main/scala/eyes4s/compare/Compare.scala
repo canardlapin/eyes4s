@@ -34,6 +34,13 @@ enum MeasureScale derives CanEqual:
   /** Unbounded; the transform that makes correlations averageable. */
   case FisherZ
 
+  /** Unbounded similarity where larger values mean greater agreement.
+    *
+    * Distinct from [[FisherZ]]: an NSS score is unbounded and similarity-shaped
+    * but is not a transformed correlation.
+    */
+  case UnboundedSimilarity
+
   /** `[0, 1]`. */
   case Probability
 
@@ -43,11 +50,12 @@ enum MeasureScale derives CanEqual:
   case DistanceLike
 
   def render: String = this match
-    case Correlation   => "correlation [-1, 1]"
-    case FisherZ       => "Fisher z (unbounded)"
-    case Probability   => "probability [0, 1]"
-    case Bounded(l, h) => f"bounded [$l%.3g, $h%.3g]"
-    case DistanceLike  => "distance [0, inf), lower is closer"
+    case Correlation         => "correlation [-1, 1]"
+    case FisherZ             => "Fisher z (unbounded)"
+    case UnboundedSimilarity => "unbounded similarity, higher is closer"
+    case Probability         => "probability [0, 1]"
+    case Bounded(l, h)       => f"bounded [$l%.3g, $h%.3g]"
+    case DistanceLike        => "distance [0, inf), lower is closer"
 
 /** Everything an application needs to present a measure without hardcoding a
   * table (PRD APP-15).
@@ -60,19 +68,57 @@ final case class MeasureInfo(
 ):
   def render: String = s"$name -- ${scale.render}"
 
+/** Which input of a comparison caused a structured failure. */
+enum CompareOperand derives CanEqual:
+  case Left
+  case Right
+  case Both
+  case Model
+  case Observed
+
+  def render: String = this match
+    case Left     => "left input"
+    case Right    => "right input"
+    case Both     => "both inputs"
+    case Model    => "model"
+    case Observed => "observed data"
+
 /** Failures comparing two things. */
 enum CompareError derives CanEqual:
   case Grids(underlying: SurfaceError)
   case Frames(underlying: GeometryError)
   case Estimation(underlying: EstimateError)
-  case Undefined(reason: String)
+  case ConstantInput(measure: String, operand: CompareOperand)
+  case EmptyInput(measure: String, operand: CompareOperand, total: Double)
+  case ZeroNorm(measure: String, leftNorm: Double, rightNorm: Double)
+  case NonPositiveDirections(measure: String, directions: Int)
+  case CostMatrixLimitExceeded(measure: String, cells: Int, limit: Int)
+  case NonPositiveRegularisation(measure: String, value: Double)
+  case NonPositiveIterations(measure: String, iterations: Int)
+  case NonPositiveCellLimit(measure: String, limit: Int)
   case TooShort(what: String, got: Int, needed: Int)
 
   def message: String = this match
-    case Grids(e)          => e.message
-    case Frames(e)         => e.message
-    case Estimation(e)     => e.message
-    case Undefined(r)      => r
+    case Grids(e)                        => e.message
+    case Frames(e)                       => e.message
+    case Estimation(e)                   => e.message
+    case ConstantInput(measure, operand) =>
+      s"$measure is undefined because the ${operand.render} is constant."
+    case EmptyInput(measure, operand, total) =>
+      s"$measure needs positive mass in the ${operand.render}, got total=$total."
+    case ZeroNorm(measure, left, right) =>
+      s"$measure needs non-zero input norms, got left=$left and right=$right."
+    case NonPositiveDirections(measure, directions) =>
+      s"$measure needs at least one direction, got $directions."
+    case CostMatrixLimitExceeded(measure, cells, limit) =>
+      s"$measure would form a ${cells}x$cells cost matrix, above the " +
+        s"$limit-cell limit. Use sliced Wasserstein, which is linear in the grid."
+    case NonPositiveRegularisation(measure, value) =>
+      s"$measure needs positive regularisation, got $value."
+    case NonPositiveIterations(measure, iterations) =>
+      s"$measure needs at least one iteration, got $iterations."
+    case NonPositiveCellLimit(measure, limit) =>
+      s"$measure needs a positive cell limit, got $limit."
     case TooShort(w, g, n) =>
       s"Comparing $w needs at least $n elements, got $g."
 
@@ -122,14 +168,14 @@ trait SymmetricCompare[A, +S] extends Compare[A, A, S]
   *
   * Shipping under this interface is a claim, and `eyes4s-laws` checks it.
   */
-trait Metric[A] extends SymmetricCompare[A, Distance0]:
-  def distance(a: A, b: A): Either[CompareError, Distance0] = compare(a, b)
+trait Metric[A] extends SymmetricCompare[A, MeasureDistance]:
+  def distance(a: A, b: A): Either[CompareError, MeasureDistance] = compare(a, b)
 
 /** Symmetric, zero on identical inputs, but with no triangle inequality.
   *
   * Where most "distances" in this field actually live.
   */
-trait Semimetric[A] extends SymmetricCompare[A, Distance0]
+trait Semimetric[A] extends SymmetricCompare[A, MeasureDistance]
 
 /** Zero on identical inputs and non-negative, but not symmetric.
   *
@@ -137,23 +183,25 @@ trait Semimetric[A] extends SymmetricCompare[A, Distance0]
   * comparison, and the absence of [[SymmetricCompare]] in its ancestry is what
   * prevents it.
   */
-trait Divergence[A] extends Compare[A, A, Distance0]
+trait Divergence[A] extends Compare[A, A, MeasureDistance]
 
 /** Symmetric and positive semi-definite: an inner-product-like similarity. */
 trait Kernel[A] extends SymmetricCompare[A, Similarity]
 
-/** A non-negative separation. Named with a trailing zero to stay clear of the
-  * kernel's spatial `Distance[U]`, which is a length in frame units; this one
-  * is a separation in whatever space the measure works in.
+/** A non-negative separation produced by a comparison measure.
+  *
+  * The explicit name keeps it distinct from the kernel's spatial
+  * `Distance[U]`, which is a length in frame units, without leaking an
+  * implementation-oriented suffix into user code.
   */
-opaque type Distance0 = Double
+opaque type MeasureDistance = Double
 
-object Distance0:
-  def apply(v: Double): Distance0 = v
-  extension (d: Distance0)
+object MeasureDistance:
+  def apply(v: Double): MeasureDistance = v
+  extension (d: MeasureDistance)
     def value: Double  = d
     def render: String = f"$d%.6g"
-  given cats.kernel.Order[Distance0] =
+  given cats.kernel.Order[MeasureDistance] =
     cats.kernel.Order.from((a, b) => java.lang.Double.compare(a, b))
 
 /** A similarity: higher means more alike. */

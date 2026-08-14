@@ -47,11 +47,12 @@ object Viewing:
     Perspective.of(distance, screenWidth, screenHeight).map(Viewing.apply)
 
   /** The projection from a display frame to an angular one. */
-  def angularWarp[A <: Unit2D, B <: Unit2D](
+  def angularWarp(
       v: Viewing,
-      display: Frame[A],
-      angular: Frame[B]
-  ): Warp[A, B] = Warp.tangent(display, angular, v.perspective)
+      display: Frame[Unit2D.Px],
+      angular: Frame[Unit2D.Deg]
+  ): Warp[Unit2D.Px, Unit2D.Deg] =
+    Warp.tangent(display, angular, v.perspective)
 
 /** How often samples arrive. */
 enum Rate derives CanEqual:
@@ -151,7 +152,7 @@ final class Recording[U <: Unit2D] private (
           rate,
           eye,
           pupilUnit,
-          samples.map(s => Sample(s.t, s.gaze.warp(w, w.to)))
+          samples.map(s => Sample(s.t, s.gaze.warp(w)))
         )
       )
     yield r

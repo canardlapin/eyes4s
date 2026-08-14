@@ -63,9 +63,9 @@ object Transport:
         Some("Rabin et al. (2011)")
       )
 
-      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Distance0] =
+      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, MeasureDistance] =
         if directions < 1 then
-          Left(CompareError.Undefined("sliced Wasserstein needs at least one direction"))
+          Left(CompareError.NonPositiveDirections("sliced Wasserstein-1", directions))
         else
           Agreement.grids(a.grid, b.grid).left.map(CompareError.Grids.apply).map { g =>
             val centres = g.centres
@@ -77,7 +77,7 @@ object Transport:
               val cy    = math.sin(theta)
               total += sliceDistance(centres, a, b, cx, cy)
               k += 1
-            Distance0(total / directions)
+            MeasureDistance(total / directions)
           }
 
       /** Exact one-dimensional Wasserstein-1 along one projection.
@@ -148,8 +148,8 @@ object Transport:
       epsilon: Double = 1.0,
       iterations: Int = 100,
       maxCells: Int = 4096
-  ): SymmetricCompare[Mass[U], Distance0] =
-    new SymmetricCompare[Mass[U], Distance0]:
+  ): SymmetricCompare[Mass[U], MeasureDistance] =
+    new SymmetricCompare[Mass[U], MeasureDistance]:
       val info = MeasureInfo(
         "Sinkhorn (entropic OT)",
         "regularised transport cost; symmetric but NOT a metric -- d(x, x) > 0",
@@ -157,25 +157,32 @@ object Transport:
         Some("Cuturi (2013)")
       )
 
-      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Distance0] =
+      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, MeasureDistance] =
         for
           g <- Agreement.grids(a.grid, b.grid).left.map(CompareError.Grids.apply)
           _ <- Either.cond(
+            maxCells > 0,
+            (),
+            CompareError.NonPositiveCellLimit("Sinkhorn", maxCells)
+          )
+          _ <- Either.cond(
             g.size <= maxCells,
             (),
-            CompareError.Undefined(
-              s"Sinkhorn forms a ${g.size}x${g.size} cost matrix, above the " +
-                s"$maxCells-cell limit. Use slicedWasserstein, which is linear in the grid."
-            )
+            CompareError.CostMatrixLimitExceeded("Sinkhorn", g.size, maxCells)
           )
           _ <- Either.cond(
             epsilon > 0.0,
             (),
-            CompareError.Undefined("the regularisation must be positive")
+            CompareError.NonPositiveRegularisation("Sinkhorn", epsilon)
+          )
+          _ <- Either.cond(
+            iterations > 0,
+            (),
+            CompareError.NonPositiveIterations("Sinkhorn", iterations)
           )
         yield run(g, a, b)
 
-      private def run(g: Grid[U], a: Mass[U], b: Mass[U]): Distance0 =
+      private def run(g: Grid[U], a: Mass[U], b: Mass[U]): MeasureDistance =
         val n       = g.size
         val centres = g.centres
         val cost    = Array.ofDim[Double](n, n)
@@ -223,6 +230,6 @@ object Transport:
             total += u(i) * kern(i)(j) * v(j) * cost(i)(j)
             j += 1
           i += 1
-        Distance0(total)
+        MeasureDistance(total)
 
 end Transport

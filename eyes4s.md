@@ -185,6 +185,10 @@ object Span:
   given CommutativeGroup[Span]
   extension (s: Span) def toSeconds: Double
 
+opaque type NonNegativeSpan = Span
+opaque type PositiveSpan    = Span
+opaque type NonNegativeLong = Long
+
 final case class ClockId(name: String)
 
 /** ABSOLUTE: a half-open interval [onset, offset) on a named timeline.
@@ -197,13 +201,17 @@ final case class Interval(clock: ClockId, onset: Instant, offset: Instant):
 /** RELATIVE: an analysis window, two Spans from a named anchor. Carries no clock,
   * because it has none. `Window(ms(0), ms(3000))` was never an Interval. */
 final case class Window(from: Span, until: Span)
-enum Anchor: case TrialOnset, FirstFixation, StimulusEvent(name: String)
 
 /** How a window selects events that straddle its edges. */
 enum Overlap:
   case OnsetInside      // eyesim's implicit rule, now named
   case FullyContained
   case AnyIntersection
+
+final case class Mark[A](at: Instant, value: A)
+final class Timeline[A] private (clock: ClockId, marks: Vector[Mark[A]])
+final class PlannedTimeline[A] private (value: Timeline[A])
+final class ObservedTimeline[A] private (value: Timeline[A])
 ```
 
 `Micros` is exact and totally ordered; a `Span` is a `CommutativeGroup`. `eyesim` has no `offset`
@@ -217,7 +225,37 @@ eye-tracker clock, a stimulus-presentation clock, and a system clock, and they d
 final case class Sync(from: ClockId, to: ClockId, offsetMicros: Long, drift: Double):
   def apply(t: Instant): Instant
   def inverse: Sync
+
+enum SyncFitMode:
+  case OffsetOnly, Affine
+
+final case class SyncFit(
+    observations: Int,
+    rmsError: NonNegativeSpan,
+    maxError: NonNegativeSpan,
+    mode: SyncFitMode)
+
+final case class SyncEvidence(sync: Sync, fit: SyncFit, residuals: Vector[Span])
+
+object SyncEvidence:
+  def fromCommonEvents(
+      pairs: NonEmptyVector[(Instant, Instant)],
+      mode: SyncFitMode
+  ): Either[SyncFitError, SyncEvidence]
 ```
+
+`Timeline[A]` is the neutral stimulus-side temporal carrier. It belongs in the kernel because a
+clock-carrying ordered sequence of marks is not ocular vocabulary; ASC messages, audio word onsets,
+scanner triggers and behavioural responses are interpretations supplied at higher layers. Equal
+timestamps are legal for simultaneous marks and retain input order. `PlannedTimeline` and
+`ObservedTimeline` are distinct because a scheduled 300-ms preview is not evidence that 300 ms was
+delivered. Analyses that claim realized timing require the observed form.
+
+`Sync` remains the affine transformation used in inner loops. `SyncEvidence` is how one is obtained
+for analysis: `fromCommonEvents` fits offset-only or affine clock alignment from trigger pairs and
+computes the residual count, RMS and maximum error itself. A single common event can support a
+visibly weak offset-only fit; drift needs multiple non-degenerate observations. Callers never
+manufacture fit-quality summaries independently of the transformation they qualify.
 
 There is no static tag on `Instant` because, unlike space, time has one unit. The distinction that
 needs enforcing is *which timeline*, and that is a value — carried by `Recording`, `Scanpath`, and
@@ -638,15 +676,101 @@ object Region:
 AOI statistics are then a thin, total layer:
 
 ```scala
-final case class AoiSet[U <: Unit2D, K](frame: Frame[U], regions: ListMap[K, Region[U]])
+final class AoiSet[U <: Unit2D, E] private (
+    frame: Frame[U],
+    regions: ListMap[E, Region[U]])
 
-extension [U <: Unit2D, K](s: AoiSet[U, K])
-  def dwell(sp: Scanpath[U]): Map[K, Span]
-  def firstEntry(sp: Scanpath[U]): Map[K, Option[Instant]]
-  def runCount(sp: Scanpath[U]): Map[K, Int]
-  def sequence(sp: Scanpath[U]): Vector[Option[K]]     // the ScanMatch string
-  def transitions(sp: Scanpath[U]): Digraph[K]         // -> graph4s
+extension [U <: Unit2D, E](s: AoiSet[U, E])
+  def dwell(sp: Scanpath[U]): Map[E, NonNegativeSpan]
+  def firstEntry(sp: Scanpath[U]): Map[E, Option[Instant]]
+  def runCount(sp: Scanpath[U]): Map[E, Int]
+  def sequence(sp: Scanpath[U]): Vector[Option[E]]     // the ScanMatch string
+  def transitions(sp: Scanpath[U]): Digraph[E]         // -> graph4s
 ```
+
+`AoiSet` is still greenfield: no spatial-overlap policy exists in the implementation. Its smart
+constructor establishes frame identity and unique entity keys, while a trace plan states how
+overlapping membership is interpreted. Temporal `Overlap` remains what its name says — a policy for
+events straddling a time window — and is not reused for spatial AOIs.
+
+Relational-event analysis keeps visible entities primary and makes roles a projection:
+
+```scala
+final class Construal[C, E, R] private (
+    id: C,
+    relation: Set[(E, R)])
+
+sealed trait TraceSource:
+  type Quantity
+  type Result[E]
+
+object TraceSource:
+  case object SampleTime extends TraceSource:
+    type Quantity = NonNegativeSpan
+    type Result[E] = ExposureTrace[E]
+
+  final case class FixationDwell(
+      selection: Overlap,
+      allocation: EventAllocation
+  ) extends TraceSource:
+    type Quantity = NonNegativeSpan
+    type Result[E] = EventDwellTrace[E]
+
+  final case class FixationOnsets(selection: Overlap) extends TraceSource:
+    type Quantity = NonNegativeLong
+    type Result[E] = OnsetCountTrace[E]
+
+final case class EntityTrace[E, Q](bins: Vector[EntityBin[E, Q]], provenance: Provenance)
+
+def projectRoles[C, E, R, Q](
+    trace: EntityTrace[E, Q],
+    construal: Construal[C, E, R],
+    attribution: RoleAttribution
+): RoleTrace[C, E, R, Q]
+```
+
+The trace cannot be role-primary: the same entity geometry supports `chase` and `flee`, and
+reinterpreting it must not rerun gaze assignment. `Construal` is a relation rather than a function,
+so one role may have several fillers and one entity may fill several roles. Projection therefore
+states whether shared mass is replicated, split, or rejected unless the relation is functional, and
+returns visible entities with no assigned role separately from true background.
+
+Duration and count estimands do not share a false `Map[E, Span]` carrier. Sample-time and clipped
+fixation-dwell traces carry non-negative durations; fixation-onset traces carry non-negative counts
+and coverage diagnostics but make no exposure-sum claim. For fixation dwell, temporal `Overlap`
+selects an event while `EventAllocation` separately says whether contribution is the clipped
+intersection or the whole event assigned at onset. Only the clipped form supports an exposure
+identity.
+
+Spatial assignment is also reflected in the output type. An exclusive/priority bin partitions
+represented exposure into entity, background, off-screen, blink, lost and ambiguous components. A
+multiple-membership bin instead carries each entity's mass, the visible union, pairwise overlap and
+mass by overlap multiplicity; `sum(byEntity)` is deliberately not presented as an accounting
+identity. Fixation-dwell coverage additionally names saccade, pursuit and unsegmented time.
+
+Event-aligned analyses use serializable selectors and bin policies:
+
+```scala
+final case class MarkSelector[K](kind: K, occurrence: Occurrence)
+enum Occurrence:
+  case RequireUnique, First, Last
+  case Nth(index: NonNegativeInt)
+
+final case class EpochPlan[K](
+    anchor: MarkSelector[K],
+    window: Window,
+    binWidth: PositiveSpan,
+    finalBin: FinalBin)
+
+enum FinalBin:
+  case RequireExactDivision
+  case IncludeShortFinal
+  case ExcludeAndReport
+```
+
+There is no closure-valued predicate to serialize. Missing and ambiguous anchors name the trial,
+selector and observed match count. A non-divisible final bin is rejected, included explicitly, or
+returned as an excluded tail — never silently discarded.
 
 Scalar summaries split along the duality, and the split is worth making explicit rather than filing
 everything under "occupancy". **Order-free**, i.e. functionals of a `PointMeasure`: nearest-neighbour
@@ -1046,6 +1170,7 @@ pure module can transitively acquire `cats-effect` or `fs2`.
 | `eyes4s-io` | fs2 module, circe | JVM/JS | EyeLink ASC, Tobii TSV, SMI, BIDS eye-tracking, CSV in/out, `Mirror`-derived metadata decoders |
 | `eyes4s-viz` | core, surface, intaglio | JVM/JS | plot specifications: scanpath, heat map, AOI overlay, pyramid, difference map with a zero-anchored diverging scale |
 | `eyes4s-frame4s` | frame4s-core | JVM/JS | optional projection of `Analysis` into a typed `Frame` |
+| `eyes4s-vwp` | core, aoi, design, plan | JVM/JS | deferred relational-attention consumer: entity traces, construal projection, preview and production alignment |
 
 Two boundaries are enforced mechanically, by a `checkModuleBoundaries` task that inspects the
 resolved dependency graph rather than by documentation:
@@ -1223,6 +1348,12 @@ Each of these is a thin module over primitives the core already has.
 
 ### Larger expansions the design invites
 
+- **Visual-world and relational-event experiments.** The v1.0 foundations are observed stimulus
+  timelines with fitted synchronization evidence, explicit AOI membership, typed trials and
+  serializable plans. A deferred `eyes4s-vwp` module bins gaze over entities, projects the same
+  entity trace through alternative role construals, aligns to typed linguistic marks, and exports
+  realized-preview, role/filler, role-resolution and production-onset estimands with their complete
+  denominators. It does not infer roles, force-align speech or fit mixed models.
 - **Pupillometry.** `Gaze.Tracked` already carries pupil. Baseline correction, luminance regression,
   and deconvolution against a pupil response function — which is an HRF-shaped convolution problem.
   `fmrihrf` supplies the basis machinery and `linop4s` the regularised least squares. This synergy
@@ -1340,10 +1471,12 @@ Nothing is built. The proposed order, each milestone with an acceptance criterio
 | 3 | **Detect**: I-VT, I-DT, Engbert–Kliegl, filters, `Machine` composition | Category laws for `Machine` stated as observational equality on output sequences; `runAll` and `toPipe` produce identical output on the same **finite** input (property test); agreement with published reference implementations on a shared fixture set |
 | 4 | **Surface + compare**: smoothers, bandwidth, pyramids; metric hierarchy, alignment kernel, MultiMatch, distribution measures | Metric axioms law-tested per instance; MultiMatch matches the `multimatch-gaze` Python reference on the `eyesim` parity fixtures at `grouping = FALSE`; `monotoneLattice` DP reproduces the Dijkstra path exactly |
 | 5 | **Design**: trials, relations, pair designs, edge results, reductions, decomposition | Relation truth tables and sampling mutants are green; cap-monotone keyed samples and `KeyDigest` golden vectors agree on JVM/JS; parity fixtures cover matched similarity and the deliberate repetitive-similarity divergence |
-| 6 | **IO**: EyeLink ASC, BIDS eye-tracking, CSV | Round-trip a real EDF-derived ASC; parse a BIDS eye-tracking dataset end to end |
-| 7 | **AOI + reading measures** | first-fixation duration, gaze duration, go-past time, regression-path duration and regression counts reproduced against a published reading corpus |
-| 8 | **Saliency metrics, viz, frame4s interop** | MIT/Tübingen benchmark metric values reproduced on a published fixture |
-| 9 | **Statistical mapping** | pixel-wise contrast with cluster-based permutation inference; false-positive rate at the nominal level on null data |
+| 6 | **Timeline + IO + AOI**: planned/observed marks, fitted sync evidence, ASC/CSV, spatial assignment | a real EDF-derived ASC preserves experimenter messages in an observed timeline; synthetic triggers recover known drift; exclusive and multiple AOI accounting laws are green |
+| 7 | **Plans + codecs** | user-typed trial and marker values round-trip through conditional versioned codecs; missing anchors and schema versions are explicit prerequisite errors |
+| 8 | **AOI + reading measures** | first-fixation duration, gaze duration, go-past time, regression-path duration and regression counts reproduced against a published reading corpus |
+| 9 | **Visual-world foundations** | one entity trace projects through two construals without re-binning; duration and onset estimands have distinct result types; denominator and boundary mutants fail |
+| 10 | **Saliency metrics, viz, frame4s interop** | MIT/Tübingen benchmark metric values reproduced on a published fixture |
+| 11 | **Statistical mapping** | pixel-wise contrast with cluster-based permutation inference; false-positive rate at the nominal level on null data |
 
 Milestones 1–2 are the ones worth getting right; everything after is comparatively mechanical.
 Milestones 7–9 are the first ones that go *beyond* what `eyesim` can express, and are the point of
@@ -1426,13 +1559,25 @@ is in [`PRD.md`](PRD.md) §Resolved Decisions; the outcomes that changed the des
   parameter record alone cannot distinguish two datasets analysed identically, so provenance was
   never a valid cache key without it.
 - **Plans (`q-plan-coverage`).** A fixed core vocabulary plus a typed extension registry —
-  `NodeDef[P]` with a codec and an interpreter — where only lookup is by identifier.
+  `NodeDef[P]` with a typed interpreter and conditionally registered versioned codec — where only
+  lookup is by identifier. The generic codec carrier is refined by
+  `bd-01KYDZ5VDVS0E6SSKQJ8QH5EWJ`.
 - **CRQA (`q-crqa`).** Implemented properly, in v1.1, not v1.0.
 - **Laws packaging (`q-laws-publication`).** One `eyes4s-laws` module; revisit post-1.0 on real
   demand only.
 - **Application target (`q-app-target`).** A local JVM process serving a browser UI, decided by data
   governance rather than technology: gaze files are large and are human-subjects data. **Consequence:
   Scala Native remains unnecessary post-1.0, and the Scala.js target is confirmed load-bearing.**
+- **Stimulus timing (`bd-01KYDZ53W05NZRFXH38VMMP44B`).** Neutral kernel timelines distinguish
+  planned from observed marks; `SyncEvidence.fromCommonEvents` owns affine/offset fitting and its
+  residual evidence. ASC messages land in the observed timeline, never ocular `Event`.
+- **Relational attention (`bd-01KYDZ5F929YKS1TMPCK2NVYYV`).** Entity traces are primitive and roles
+  are pure many-to-many construal projections. Trace source determines duration versus count result
+  types; temporal selection, event allocation and spatial membership have separate policies and
+  policy-specific accounting laws.
+- **Generic persistence (`bd-01KYDZ5VDVS0E6SSKQJ8QH5EWJ`).** Generic domain and plan values require
+  conditional versioned codecs for their user types. Keys encode as entries rather than JSON object
+  field names, and duplicate keys or missing schema versions fail explicitly.
 
 Two build questions remain genuinely open and are tracked in the PRD rather than here: whether
 `eyes4s-frame4s` carries a per-project `scalaVersion := 3.7.4` override for named tuples (proposal:

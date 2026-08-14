@@ -116,14 +116,14 @@ class DistributionSuite extends munit.FunSuite:
       import eyes4s.compare.*
       import eyes4s.kernel.*
       import eyes4s.kernel.Unit2D.Px
-      def unordered(c: SymmetricCompare[Mass[Px], Distance0]): Int = 0
+      def unordered(c: SymmetricCompare[Mass[Px], MeasureDistance]): Int = 0
       unordered(Distribution.kullbackLeibler[Px]())
     """)
     assert(errs.nonEmpty, "an asymmetric divergence was accepted for an unordered comparison")
   }
 
   test("a metric IS accepted where symmetry is required") {
-    def unordered(c: SymmetricCompare[Mass[Px], Distance0]): Boolean = true
+    def unordered(c: SymmetricCompare[Mass[Px], MeasureDistance]): Boolean = true
     assert(unordered(Distribution.totalVariation[Px]))
     assert(unordered(Distribution.hellinger[Px]))
   }
@@ -174,11 +174,16 @@ class DistributionSuite extends munit.FunSuite:
     // positive. An absolute `variance <= 0` test never fires and the ratio of
     // two noise terms comes back as a plausible-looking correlation.
     val r = Distribution.pearson[Px].compare(uniform, uniform)
-    assert(r.isLeft, clue(r))
-    r.left.foreach(e => assert(clue(e.message).contains("undefined")))
+    assertEquals(
+      r,
+      Left(CompareError.ConstantInput("Pearson correlation", CompareOperand.Both))
+    )
 
     // And it holds when only ONE side is constant.
-    assert(Distribution.pearson[Px].compare(uniform, ramp).isLeft)
+    assertEquals(
+      Distribution.pearson[Px].compare(uniform, ramp),
+      Left(CompareError.ConstantInput("Pearson correlation", CompareOperand.Left))
+    )
   }
 
   test("a genuinely varying pair still correlates") {

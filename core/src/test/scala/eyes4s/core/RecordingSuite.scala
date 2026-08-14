@@ -171,6 +171,18 @@ class RecordingSuite extends munit.FunSuite:
   // Warping to degrees
   // -------------------------------------------------------------------------
 
+  test("the eye-tracking facade also requires a pixel display and angular target") {
+    val errors = typeCheckErrors("""
+      import eyes4s.core.*
+      import eyes4s.kernel.*
+      val v = Viewing.of(Length.mm(600), Length.mm(500), Length.mm(300)).toOption.get
+      val norm = Frame.unitSquare("norm").toOption.get
+      val deg = Frame.angular("deg", 20, 20).toOption.get
+      Viewing.angularWarp(v, norm, deg)
+    """)
+    assert(errors.nonEmpty, "Viewing.angularWarp accepted a non-pixel source frame")
+  }
+
   test("a recording warps to angular coordinates as a whole") {
     val toDeg = Viewing.angularWarp(viewing, screen, angular)
     val inDeg = simple.warp(toDeg).toOption.get
