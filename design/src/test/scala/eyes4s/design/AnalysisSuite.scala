@@ -295,19 +295,21 @@ class AnalysisSuite extends munit.FunSuite:
   test("ScoreMean instances preserve score types and MultiMatch fields") {
     assertEquals(
       ScoreMean[MeasureDistance]
-        .mean(Vector(MeasureDistance(2.0), MeasureDistance(4.0)))
+        .mean(
+          Vector(MeasureDistance.of(2.0).toOption.get, MeasureDistance.of(4.0).toOption.get)
+        )
         .map(_.value),
       Right(3.0)
     )
     assertEquals(
       ScoreMean[Similarity]
-        .mean(Vector(Similarity(0.2), Similarity(0.6)))
+        .mean(Vector(Similarity.of(0.2).toOption.get, Similarity.of(0.6).toOption.get))
         .map(_.value),
       Right(0.4)
     )
 
-    val first     = MultiMatchScore(0.1, 0.2, 0.3, 0.4, 0.5)
-    val second    = MultiMatchScore(0.3, 0.4, 0.5, 0.6, 0.7)
+    val first     = MultiMatchScore.of(0.1, 0.2, 0.3, 0.4, 0.5).toOption.get
+    val second    = MultiMatchScore.of(0.3, 0.4, 0.5, 0.6, 0.7).toOption.get
     val averaged  = ScoreMean[MultiMatchScore].mean(Vector(first, second)).toOption.get
     val tolerance = 1e-12
     assertEqualsDouble(averaged.shape, 0.2, tolerance)
@@ -348,7 +350,7 @@ class AnalysisSuite extends munit.FunSuite:
       )
 
       def compare(left: Double, right: Double): Either[CompareError, Similarity] =
-        Right(Similarity(1.0 - math.abs(left - right)))
+        Right(Similarity.of(1.0 - math.abs(left - right)).toOption.get)
 
     val trials = Trials(Vector(trial("a", 0.2), trial("b", 0.6)))
     val paired =

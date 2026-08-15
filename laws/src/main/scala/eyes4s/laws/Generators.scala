@@ -184,7 +184,7 @@ object Generators:
       d <- Gen.choose(300.0, 1200.0)
       w <- Gen.choose(200.0, 700.0)
       h <- Gen.choose(150.0, 500.0)
-    yield Perspective.of(Length.mm(d), Length.mm(w), Length.mm(h)).toOption.get
+    yield Perspective.millimetres(d, w, h).toOption.get
 
   /** A linear frame, an angular frame, and the projection between them. */
   final case class TangentSetup(

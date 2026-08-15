@@ -27,6 +27,20 @@ class TransportLiftSuite extends munit.FunSuite:
   val grid   = Grid.square(screen, 20).toOption.get
   val clock  = ClockId("tracker")
 
+  private def directions(value: Int): ProjectionDirections =
+    ProjectionDirections.of(value).toOption.get
+
+  private def sinkhornConfig(
+      regularisation: Double,
+      iterations: Int,
+      cellLimit: Int = 4096
+  ): SinkhornConfig =
+    SinkhornConfig(
+      SinkhornRegularisation.of(regularisation).toOption.get,
+      SinkhornIterations.of(iterations).toOption.get,
+      SinkhornCellLimit.of(cellLimit).toOption.get
+    )
+
   private def spikeAt(x: Double, y: Double): Mass[Px] =
     val target = grid.indexOf(Pt[Px](x, y)).get
     Surface
@@ -65,7 +79,7 @@ class TransportLiftSuite extends munit.FunSuite:
     assertEqualsDouble(a, 1.0, 1e-12)
   }
 
-  test("sliced Wasserstein satisfies the metric axioms") {
+  test("sliced Wasserstein satisfies its semimetric laws on these examples") {
     val w                           = Transport.slicedWasserstein[Px]()
     def d(x: Mass[Px], y: Mass[Px]) = w.compare(x, y).toOption.get.value
 
@@ -78,7 +92,7 @@ class TransportLiftSuite extends munit.FunSuite:
   }
 
   test("distance grows with displacement, roughly in proportion") {
-    val w  = Transport.slicedWasserstein[Px](directions = 32)
+    val w  = Transport.slicedWasserstein[Px](directions(32))
     val d1 = w.compare(spikeAt(50, 50), spikeAt(60, 50)).toOption.get.value
     val d2 = w.compare(spikeAt(50, 50), spikeAt(70, 50)).toOption.get.value
     assert(d2 > d1, clue((d1, d2)))
@@ -86,20 +100,26 @@ class TransportLiftSuite extends munit.FunSuite:
   }
 
   test("more directions do not change the answer much") {
-    val a = Transport.slicedWasserstein[Px](8).compare(near, far).toOption.get.value
-    val b = Transport.slicedWasserstein[Px](64).compare(near, far).toOption.get.value
+    val a = Transport.slicedWasserstein[Px](directions(8)).compare(near, far).toOption.get.value
+    val b =
+      Transport.slicedWasserstein[Px](directions(64)).compare(near, far).toOption.get.value
     assert(math.abs(a - b) / b < 0.1, clue((a, b)))
   }
 
   test("the result does not depend on a seed, because there is none") {
-    val w = Transport.slicedWasserstein[Px](16)
+    val w = Transport.slicedWasserstein[Px](directions(16))
     assertEquals(w.compare(near, far), w.compare(near, far))
   }
 
-  test("zero directions is refused") {
+  test("zero directions is refused at construction") {
     assertEquals(
-      Transport.slicedWasserstein[Px](0).compare(near, far),
-      Left(CompareError.NonPositiveDirections("sliced Wasserstein-1", 0))
+      ProjectionDirections.of(0),
+      Left(
+        ComparisonConfigurationError.InvalidProjectionDirections(
+          "sliced Wasserstein-1",
+          0
+        )
+      )
     )
   }
 
@@ -119,7 +139,7 @@ class TransportLiftSuite extends munit.FunSuite:
     // spread-out plan and the bias survives on identical inputs. A caller
     // treating a similarity matrix's diagonal as a reference point would be
     // systematically wrong in a way that looks reasonable.
-    val s    = Transport.sinkhorn[Px](epsilon = 50.0, iterations = 50)
+    val s    = Transport.sinkhorn[Px](sinkhornConfig(regularisation = 50.0, iterations = 50))
     val self = s.compare(blob, blob).toOption.get.value
     assert(self > 0.0, clue(self))
   }
@@ -129,14 +149,14 @@ class TransportLiftSuite extends munit.FunSuite:
     // so entropy has no freedom to act and the self-distance really is zero.
     // Worth pinning: the bias is a property of having somewhere to spread TO,
     // not an unconditional property of the method.
-    val s = Transport.sinkhorn[Px](epsilon = 50.0, iterations = 50)
+    val s = Transport.sinkhorn[Px](sinkhornConfig(regularisation = 50.0, iterations = 50))
     assertEqualsDouble(s.compare(near, near).toOption.get.value, 0.0, 1e-12)
   }
 
   test("a larger regularisation biases the self-distance further from zero") {
     def self(eps: Double) =
       Transport
-        .sinkhorn[Px](epsilon = eps, iterations = 50)
+        .sinkhorn[Px](sinkhornConfig(regularisation = eps, iterations = 50))
         .compare(blob, blob)
         .toOption
         .get
@@ -145,33 +165,66 @@ class TransportLiftSuite extends munit.FunSuite:
   }
 
   test("Sinkhorn still orders displacements correctly") {
-    val s = Transport.sinkhorn[Px](epsilon = 50.0, iterations = 50)
+    val s = Transport.sinkhorn[Px](sinkhornConfig(regularisation = 50.0, iterations = 50))
     val a = s.compare(near, mid).toOption.get.value
     val b = s.compare(near, far).toOption.get.value
     assert(b > a, clue((a, b)))
   }
 
-  test("Sinkhorn is symmetric") {
-    val s = Transport.sinkhorn[Px](epsilon = 50.0, iterations = 30)
-    assertEqualsDouble(
-      s.compare(near, far).toOption.get.value,
-      s.compare(far, near).toOption.get.value,
-      1e-9
+  test("finite Sinkhorn iterations retain their orientation and cannot claim symmetry") {
+    val counterexampleFrame = Frame.screen("sinkhorn-orientation", 3, 1).toOption.get
+    val counterexampleGrid  = Grid.over(counterexampleFrame, 3, 1).toOption.get
+    def distribution(values: Double*): Mass[Px] =
+      Surface
+        .intensity(
+          counterexampleGrid,
+          IArray.from(values),
+          Provenance.raw(ContentHash.empty)
+        )
+        .flatMap(_.normalised)
+        .toOption
+        .get
+
+    val a             = distribution(0.9, 0.05, 0.05)
+    val b             = distribution(0.05, 0.1, 0.85)
+    val approximation = Transport.sinkhorn[Px](
+      sinkhornConfig(regularisation = 0.5, iterations = 1)
     )
+    val forward = approximation.compare(a, b).toOption.get.value
+    val reverse = approximation.compare(b, a).toOption.get.value
+
+    assertEqualsDouble(forward, 0.18398923412103138, 1e-15)
+    assertEqualsDouble(reverse, 0.22051037680323535, 1e-15)
+    assert(math.abs(forward - reverse) > 0.03, clue((forward, reverse)))
+
+    val errors = scala.compiletime.testing.typeCheckErrors("""
+      import eyes4s.compare.*
+      import eyes4s.kernel.*
+      import eyes4s.kernel.Unit2D.Px
+      val symmetric: SymmetricCompare[Mass[Px], MeasureDistance] =
+        Transport.sinkhorn[Px](
+          SinkhornConfig(
+            SinkhornRegularisation.of(0.5).toOption.get,
+            SinkhornIterations.of(1).toOption.get,
+            SinkhornCellLimit.of(3).toOption.get
+          )
+        )
+    """)
+    assert(errors.nonEmpty, "a finite orientation-sensitive solver was accepted as symmetric")
   }
 
-  test("Sinkhorn configuration failures retain their parameter values") {
+  test("Sinkhorn configuration failures retain their parameter values at construction") {
     assertEquals(
-      Transport.sinkhorn[Px](epsilon = 0.0).compare(near, far),
-      Left(CompareError.NonPositiveRegularisation("Sinkhorn", 0.0))
+      SinkhornRegularisation.of(0.0),
+      Left(ComparisonConfigurationError.InvalidRegularisation("Sinkhorn", 0.0))
     )
     assertEquals(
-      Transport.sinkhorn[Px](iterations = 0).compare(near, far),
-      Left(CompareError.NonPositiveIterations("Sinkhorn", 0))
+      SinkhornIterations.of(0),
+      Left(ComparisonConfigurationError.InvalidIterationCount("Sinkhorn", 0))
     )
     assertEquals(
-      Transport.sinkhorn[Px](maxCells = 0).compare(near, far),
-      Left(CompareError.NonPositiveCellLimit("Sinkhorn", 0))
+      SinkhornCellLimit.of(0),
+      Left(ComparisonConfigurationError.InvalidCellLimit("Sinkhorn", 0))
     )
   }
 
@@ -202,12 +255,16 @@ class TransportLiftSuite extends munit.FunSuite:
   // -------------------------------------------------------------------------
 
   private def fix(fromMs: Long, toMs: Long, x: Double, y: Double) =
-    Event.Fixation[Px](
-      Interval.of(clock, Instant.millis(fromMs), Instant.millis(toMs)).toOption.get,
-      Pt[Px](x, y),
-      1.0,
-      10
-    )
+    Event.Fixation
+      .of(
+        Interval.of(clock, Instant.millis(fromMs), Instant.millis(toMs)).toOption.get,
+        Pt[Px](x, y),
+        1.0,
+        DispersionMethod.RmsRadius,
+        10
+      )
+      .toOption
+      .get
 
   private def path(pts: (Long, Long, Double, Double)*) =
     Scanpath.of(screen, clock, IArray.from(pts.map(fix))).toOption.get

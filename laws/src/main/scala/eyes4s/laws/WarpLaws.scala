@@ -103,10 +103,12 @@ trait WarpLaws extends Laws:
           val w2 = Warp.rescale(h, f).toOption.get
           val r  = w1.andThen(w2)
           // Composable exactly when w1's target frame is w2's source frame.
-          if g.id == h.id then Prop(r.isRight) :| s"refused a valid composition: ${g.id}"
-          else
-            Prop(r == Left(GeometryError.FrameMismatch(g.id, h.id))) :|
-              s"accepted ${g.id} -> ${h.id}"
+          Agreement.frames(g, h) match
+            case Right(_) =>
+              Prop(r.isRight) :| s"refused a valid composition: ${g.id}"
+            case Left(expected) =>
+              Prop(r == Left(expected)) :|
+                s"accepted incompatible frames ${g.id} -> ${h.id}: ${expected.message}"
       }
     )
 

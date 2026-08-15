@@ -45,7 +45,10 @@ class MultiMatchConformanceSuite extends munit.FunSuite:
         .toOption
         .get
       onsetMicros += durationMicros + 10000L
-      Event.Fixation[Px](span, Pt[Px](fixation.x, fixation.y), 1.0, 1)
+      Event.Fixation
+        .of(span, Pt[Px](fixation.x, fixation.y), 1.0, DispersionMethod.RmsRadius, 1)
+        .toOption
+        .get
     }
     Scanpath.of(frame, clock, IArray.from(events)).toOption.get
 

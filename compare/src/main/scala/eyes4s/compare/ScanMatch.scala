@@ -52,13 +52,37 @@ object ScanMatch:
     */
   def similarity[A](
       substitution: (A, A) => Double,
-      gap: Double
+      gap: ScanMatchGap
+  ): Compare[Vector[A], Vector[A], Similarity] =
+    comparison(substitution, gap)
+
+  /** ScanMatch with the built-in exact-match cost.
+    *
+    * Unlike [[similarity]], this returns [[SymmetricCompare]] because the
+    * library owns and can establish symmetry of the substitution cost. An
+    * arbitrary caller-supplied function receives the weaker [[Compare]]
+    * contract: its type alone cannot prove that `cost(a, b) == cost(b, a)`.
+    */
+  def exactSimilarity[A](
+      gap: ScanMatchGap = ScanMatchGap.unit
   ): SymmetricCompare[Vector[A], Similarity] =
+    val delegate = comparison(exactMatch[A], gap)
     new SymmetricCompare[Vector[A], Similarity]:
+      val info                                                                  = delegate.info
+      def compare(a: Vector[A], b: Vector[A]): Either[CompareError, Similarity] =
+        delegate.compare(a, b)
+
+  private def comparison[A](
+      substitution: (A, A) => Double,
+      gap: ScanMatchGap
+  ): Compare[Vector[A], Vector[A], Similarity] =
+    new Compare[Vector[A], Vector[A], Similarity]:
+
+      private val gapCost = gap.value
 
       val info = MeasureInfo(
         "ScanMatch",
-        "gapped global alignment of label sequences; symmetric, and not a metric",
+        "gapped global alignment of label sequences; symmetry depends on the substitution cost",
         MeasureScale.Bounded(0.0, 1.0),
         Some("Cristino, Mathot, Theeuwes & Gilchrist (2010)")
       )
@@ -67,11 +91,32 @@ object ScanMatch:
         if a.isEmpty then Left(CompareError.TooShort("a label sequence", 0, 1))
         else if b.isEmpty then Left(CompareError.TooShort("a label sequence", 0, 1))
         else
-          Alignment.needlemanWunsch(gap).align(a, b)(substitution).map { path =>
-            val worst = gap * (a.length + b.length)
-            if worst <= 0.0 then Similarity(if path.cost <= 0.0 then 1.0 else 0.0)
-            else Similarity(math.max(0.0, math.min(1.0, 1.0 - path.cost / worst)))
+          validateCosts(a, b, substitution).flatMap { _ =>
+            Alignment.needlemanWunsch(gapCost).align(a, b)(substitution).flatMap { path =>
+              val worst = gapCost * (a.length + b.length)
+              Similarity.computed(
+                "ScanMatch",
+                math.max(0.0, math.min(1.0, 1.0 - path.cost / worst))
+              )
+            }
           }
+
+      private def validateCosts(
+          a: Vector[A],
+          b: Vector[A],
+          substitution: (A, A) => Double
+      ): Either[CompareError, Unit] =
+        var i                             = 0
+        var failure: Option[CompareError] = None
+        while i < a.length && failure.isEmpty do
+          var j = 0
+          while j < b.length && failure.isEmpty do
+            val cost = substitution(a(i), b(j))
+            if !cost.isFinite || cost < 0.0 then
+              failure = Some(CompareError.InvalidSubstitutionCost("ScanMatch", i, j, cost))
+            j += 1
+          i += 1
+        failure.toLeft(())
 
   /** The simplest substitution: identical labels cost nothing, different ones
     * cost one. Reduces the measure to a normalised edit distance.

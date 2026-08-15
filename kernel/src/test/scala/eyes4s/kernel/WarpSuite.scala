@@ -32,7 +32,7 @@ class WarpSuite extends munit.FunSuite:
     )
     .toOption
     .get
-  val persp = Perspective.of(Length.mm(600), Length.mm(530), Length.mm(300)).toOption.get
+  val persp = Perspective.millimetres(600, 530, 300).toOption.get
   val unit  = Frame.unitSquare("norm").toOption.get
 
   val toDeg = Warp.tangent(screen, angular, persp)
@@ -45,9 +45,9 @@ class WarpSuite extends munit.FunSuite:
   // -------------------------------------------------------------------------
 
   test("perspective rejects non-positive and non-finite geometry") {
-    assert(Perspective.of(Length.mm(0), Length.mm(530), Length.mm(300)).isLeft)
-    assert(Perspective.of(Length.mm(600), Length.mm(-1), Length.mm(300)).isLeft)
-    assert(Perspective.of(Length.mm(Double.NaN), Length.mm(530), Length.mm(300)).isLeft)
+    assert(Perspective.millimetres(0, 530, 300).isLeft)
+    assert(Perspective.millimetres(600, -1, 300).isLeft)
+    assert(Perspective.millimetres(Double.NaN, 530, 300).isLeft)
   }
 
   test("perspective reports the angle the surface subtends") {
@@ -66,14 +66,14 @@ class WarpSuite extends munit.FunSuite:
       import eyes4s.kernel.*
       val norm = Frame.unitSquare("norm").toOption.get
       val deg = Frame.angular("deg", 20, 20).toOption.get
-      val p = Perspective.of(Length.mm(600), Length.mm(500), Length.mm(300)).toOption.get
+      val p = Perspective.millimetres(600, 500, 300).toOption.get
       Warp.tangent(norm, deg, p)
     """)
     val wrongTarget = typeCheckErrors("""
       import eyes4s.kernel.*
       val px = Frame.screen("px", 1000, 800).toOption.get
       val norm = Frame.unitSquare("norm").toOption.get
-      val p = Perspective.of(Length.mm(600), Length.mm(500), Length.mm(300)).toOption.get
+      val p = Perspective.millimetres(600, 500, 300).toOption.get
       Warp.tangent(px, norm, p)
     """)
     assert(wrongSource.nonEmpty, "a normalised position was treated as a display pixel")

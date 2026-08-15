@@ -148,7 +148,7 @@ object Saliency:
               val acc = observed.integrate { p =>
                 model.sampleAt(p).map(v => (v - mean) / sd).getOrElse(0.0)
               }
-              Right(Similarity(acc / observed.total))
+              Similarity.computed("NSS", acc / observed.total)
           }
 
 end Saliency

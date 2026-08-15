@@ -60,6 +60,7 @@ enum ScoreMeanError derives CanEqual:
   case EmptyValues(operand: String)
   case NonFiniteValue(component: String, index: Int, value: Double)
   case NonFiniteMean(component: String, value: Double)
+  case InvalidComparisonValue(component: String, underlying: ComparisonValueError)
 
   def message: String = this match
     case EmptyValues(operand) =>
@@ -68,6 +69,8 @@ enum ScoreMeanError derives CanEqual:
       s"Score component $component at index $index is non-finite: $value."
     case NonFiniteMean(component, value) =>
       s"Score component $component produced a non-finite mean: $value."
+    case InvalidComparisonValue(component, underlying) =>
+      s"Score component $component produced an invalid comparison value: ${underlying.message}"
 
 /** A score type whose non-empty arithmetic mean remains the same score type. */
 trait ScoreMean[S]:
@@ -82,11 +85,21 @@ object ScoreMean:
 
   given ScoreMean[MeasureDistance] with
     def mean(values: Vector[MeasureDistance]): Either[ScoreMeanError, MeasureDistance] =
-      finiteMean(values.map(_.value), "distance").map(MeasureDistance.apply)
+      finiteMean(values.map(_.value), "distance").flatMap { value =>
+        MeasureDistance
+          .of(value)
+          .left
+          .map(ScoreMeanError.InvalidComparisonValue("distance", _))
+      }
 
   given ScoreMean[Similarity] with
     def mean(values: Vector[Similarity]): Either[ScoreMeanError, Similarity] =
-      finiteMean(values.map(_.value), "similarity").map(Similarity.apply)
+      finiteMean(values.map(_.value), "similarity").flatMap { value =>
+        Similarity
+          .of(value)
+          .left
+          .map(ScoreMeanError.InvalidComparisonValue("similarity", _))
+      }
 
   given ScoreMean[MultiMatchScore] with
     def mean(values: Vector[MultiMatchScore]): Either[ScoreMeanError, MultiMatchScore] =
@@ -96,7 +109,11 @@ object ScoreMean:
         length    <- finiteMean(values.map(_.length), "length")
         position  <- finiteMean(values.map(_.position), "position")
         duration  <- finiteMean(values.map(_.duration), "duration")
-      yield MultiMatchScore(shape, direction, length, position, duration)
+        score     <- MultiMatchScore
+          .of(shape, direction, length, position, duration)
+          .left
+          .map(ScoreMeanError.InvalidComparisonValue("MultiMatch", _))
+      yield score
 
   /** A compensated mean of scaled terms.
     *

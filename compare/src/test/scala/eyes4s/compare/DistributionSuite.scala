@@ -122,6 +122,56 @@ class DistributionSuite extends munit.FunSuite:
     assert(errs.nonEmpty, "an asymmetric divergence was accepted for an unordered comparison")
   }
 
+  test("exact KL names incompatible support instead of inventing a finite value") {
+    val left  = mass(i => if i == 0 then 1.0 else 0.0)
+    val right = mass(i => if i == 1 then 1.0 else 0.0)
+
+    assert(
+      Distribution.kullbackLeibler[Px]().compare(left, right) match
+        case Left(CompareError.RelativeEntropySupport("Kullback-Leibler", 0, p, q)) =>
+          p == 1.0 && q == 0.0
+        case _ => false
+    )
+  }
+
+  test("a probability floor remains available without a divergence separation claim") {
+    val counterexampleFrame = Frame.screen("floored-kl-separation", 2, 1).toOption.get
+    val counterexampleGrid  = Grid.over(counterexampleFrame, 2, 1).toOption.get
+    def distribution(values: Double*): Mass[Px] =
+      Surface
+        .intensity(
+          counterexampleGrid,
+          IArray.from(values),
+          Provenance.raw(ContentHash.empty)
+        )
+        .flatMap(_.normalised)
+        .toOption
+        .get
+
+    val a             = distribution(0.9, 0.1)
+    val b             = distribution(0.1, 0.9)
+    val floor         = ProbabilityFloor.of(1.0).toOption.get
+    val approximation = Distribution.flooredKullbackLeibler[Px](floor)
+
+    assertEqualsDouble(approximation.compare(a, a).toOption.get.value, 0.0, 0.0)
+    assertEqualsDouble(approximation.compare(a, b).toOption.get.value, 0.0, 0.0)
+    assertEqualsDouble(approximation.compare(b, a).toOption.get.value, 0.0, 0.0)
+
+    val errors = typeCheckErrors("""
+      import eyes4s.compare.*
+      import eyes4s.kernel.*
+      import eyes4s.kernel.Unit2D.Px
+      val claimed: Divergence[Mass[Px]] =
+        Distribution.flooredKullbackLeibler[Px](
+          ProbabilityFloor.of(1.0).toOption.get
+        )
+    """)
+    assert(
+      errors.nonEmpty,
+      "a floor that can collapse distinct inputs was accepted as a divergence"
+    )
+  }
+
   test("a metric IS accepted where symmetry is required") {
     def unordered(c: SymmetricCompare[Mass[Px], MeasureDistance]): Boolean = true
     assert(unordered(Distribution.totalVariation[Px]))
@@ -223,6 +273,7 @@ class DistributionSuite extends munit.FunSuite:
       Distribution.hellinger[Px],
       Distribution.jensenShannon[Px](),
       Distribution.kullbackLeibler[Px](),
+      Distribution.flooredKullbackLeibler[Px](ProbabilityFloor.default),
       Distribution.cosine[Px],
       Distribution.pearson[Px],
       Distribution.fisherZ[Px]

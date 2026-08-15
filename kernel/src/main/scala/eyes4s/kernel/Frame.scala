@@ -79,7 +79,9 @@ final case class Bounds[U <: Unit2D] private (
     p.x >= xMin && p.x < xMax && p.y >= yMin && p.y < yMax
 
   def clamp(p: Pt[U]): Pt[U] =
-    Pt(math.min(math.max(p.x, xMin), xMax), math.min(math.max(p.y, yMin), yMax))
+    val xUpper = java.lang.Math.nextDown(xMax)
+    val yUpper = java.lang.Math.nextDown(yMax)
+    Pt(math.min(math.max(p.x, xMin), xUpper), math.min(math.max(p.y, yMin), yUpper))
 
   def render(using u: UnitLabel[U]): String =
     f"[$xMin%.1f, $xMax%.1f) x [$yMin%.1f, $yMax%.1f)${u.symbol}"
@@ -136,6 +138,31 @@ enum YAxis derives CanEqual:
 final case class FrameId(name: String) derives CanEqual:
   override def toString: String = name
 
+/** Structural coordinate metadata carried under a nominal [[FrameId]].
+  *
+  * It is obtained from a validated [[Frame]], not constructed independently.
+  * This keeps identity nominal while allowing [[Agreement]] to detect the
+  * corrupt-metadata case in which one identity names two geometries.
+  */
+final case class FrameSpec private (
+    xMin: Double,
+    yMin: Double,
+    xMax: Double,
+    yMax: Double,
+    yAxis: YAxis
+) derives CanEqual:
+  def render: String = s"[$xMin, $xMax) x [$yMin, $yMax), y-$yAxis"
+
+object FrameSpec:
+  private[kernel] def from[U <: Unit2D](frame: Frame[U]): FrameSpec =
+    FrameSpec(
+      frame.bounds.xMin,
+      frame.bounds.yMin,
+      frame.bounds.xMax,
+      frame.bounds.yMax,
+      frame.yAxis
+    )
+
 /** A planar coordinate frame: an identity, an extent, and an axis direction.
   *
   * A `Frame` is carried by whole collections -- a recording, a scanpath, a grid
@@ -148,6 +175,8 @@ final case class Frame[U <: Unit2D] private (
     bounds: Bounds[U],
     yAxis: YAxis
 ) derives CanEqual:
+
+  def spec: FrameSpec = FrameSpec.from(this)
 
   def contains(p: Pt[U]): Boolean = bounds.contains(p)
   def centre: Pt[U]               = bounds.centre

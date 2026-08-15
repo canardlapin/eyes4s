@@ -171,7 +171,7 @@ class MovingSuite extends munit.FunSuite:
   test("Lerp falls back to holding when a transform exposes no matrix") {
     // A tangent projection has no matrix to blend elementwise. Rather than
     // failing, the lookup holds -- documented behaviour, not silent breakage.
-    val persp = Perspective.of(Length.mm(600), Length.mm(500), Length.mm(500)).toOption.get
+    val persp = Perspective.millimetres(600, 500, 500).toOption.get
     val ang   = Frame.angular("ang", 45.0, 45.0).toOption.get
     val tSeg  = (a: Long, b: Long) =>
       Moving.Segment(

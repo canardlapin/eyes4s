@@ -31,13 +31,19 @@ import eyes4s.kernel.*
   *
   * Every dimension is in `[0, 1]` with higher meaning more similar.
   */
-final case class MultiMatchScore(
-    shape: Double,
-    direction: Double,
-    length: Double,
-    position: Double,
-    duration: Double
+final class MultiMatchScore private (
+    shapeScore: Similarity01,
+    directionScore: Similarity01,
+    lengthScore: Similarity01,
+    positionScore: Similarity01,
+    durationScore: Similarity01
 ) derives CanEqual:
+
+  def shape: Double     = shapeScore.value
+  def direction: Double = directionScore.value
+  def length: Double    = lengthScore.value
+  def position: Double  = positionScore.value
+  def duration: Double  = durationScore.value
 
   /** The unweighted mean of the five, for callers who want one number.
     *
@@ -50,6 +56,39 @@ final case class MultiMatchScore(
   def render: String =
     f"multimatch(shape=$shape%.3f dir=$direction%.3f len=$length%.3f " +
       f"pos=$position%.3f dur=$duration%.3f)"
+
+  override def equals(other: Any): Boolean = other match
+    case that: MultiMatchScore =>
+      shape == that.shape && direction == that.direction && length == that.length &&
+      position == that.position && duration == that.duration
+    case _ => false
+
+  override def hashCode: Int =
+    Seq(shape, direction, length, position, duration).hashCode
+
+  override def toString: String = render
+
+object MultiMatchScore:
+  def of(
+      shape: Double,
+      direction: Double,
+      length: Double,
+      position: Double,
+      duration: Double
+  ): Either[ComparisonValueError, MultiMatchScore] =
+    for
+      shapeScore     <- Similarity01.of("shape", shape)
+      directionScore <- Similarity01.of("direction", direction)
+      lengthScore    <- Similarity01.of("length", length)
+      positionScore  <- Similarity01.of("position", position)
+      durationScore  <- Similarity01.of("duration", duration)
+    yield new MultiMatchScore(
+      shapeScore,
+      directionScore,
+      lengthScore,
+      positionScore,
+      durationScore
+    )
 
 /** MultiMatch scanpath comparison (Jarodzka et al. 2010; Dewhurst et al. 2012).
   *
@@ -102,8 +141,8 @@ object MultiMatch:
       ): Either[CompareError, MultiMatchScore] =
         for
           _ <- Agreement.frames(a.frame, b.frame).left.map(CompareError.Frames.apply)
-          sa = a.saccades
-          sb = b.saccades
+          sa = a.transitions
+          sb = b.transitions
           _    <- Either.cond(sa.nonEmpty, (), CompareError.TooShort("a scanpath", a.n, 2))
           _    <- Either.cond(sb.nonEmpty, (), CompareError.TooShort("a scanpath", b.n, 2))
           path <- Alignment.monotoneLattice.align(sa, sb) { (x, y) =>
@@ -114,15 +153,16 @@ object MultiMatch:
             val dy = x.displacement.dy - y.displacement.dy
             math.hypot(dx, dy)
           }
-        yield score(a, b, sa, sb, path)
+          result <- score(a, b, sa, sb, path)
+        yield result
 
       private def score(
           left: Scanpath[U],
           right: Scanpath[U],
-          sa: Vector[Event.Saccade[U]],
-          sb: Vector[Event.Saccade[U]],
+          sa: Vector[ScanpathTransition[U]],
+          sb: Vector[ScanpathTransition[U]],
           path: AlignmentPath
-      ): MultiMatchScore =
+      ): Either[CompareError, MultiMatchScore] =
         val diagonal = left.frame.diagonal
         val pairs    = path.matches
 
@@ -134,7 +174,7 @@ object MultiMatch:
             val upper = vs.length / 2
             (vs(upper - 1) + vs(upper)) / 2.0
 
-        def medianOf(f: (Event.Saccade[U], Event.Saccade[U]) => Double): Double =
+        def medianOf(f: (ScanpathTransition[U], ScanpathTransition[U]) => Double): Double =
           median(pairs.map((i, j) => f(sa(i), sb(j))))
 
         val shape = 1.0 - medianOf { (x, y) =>
@@ -167,13 +207,16 @@ object MultiMatch:
           }
         )
 
-        MultiMatchScore(
-          clamp(shape),
-          clamp(direction),
-          clamp(length),
-          clamp(position),
-          clamp(duration)
-        )
+        MultiMatchScore
+          .of(
+            clamp(shape),
+            clamp(direction),
+            clamp(length),
+            clamp(position),
+            clamp(duration)
+          )
+          .left
+          .map(CompareError.InvalidScore("MultiMatch", _))
 
       private def clamp(v: Double): Double = math.max(0.0, math.min(1.0, v))
 

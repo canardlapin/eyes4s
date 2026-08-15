@@ -91,11 +91,20 @@ enum CompareError derives CanEqual:
   case ConstantInput(measure: String, operand: CompareOperand)
   case EmptyInput(measure: String, operand: CompareOperand, total: Double)
   case ZeroNorm(measure: String, leftNorm: Double, rightNorm: Double)
-  case NonPositiveDirections(measure: String, directions: Int)
+  case RelativeEntropySupport(
+      measure: String,
+      cellIndex: Int,
+      leftMass: Double,
+      rightMass: Double
+  )
   case CostMatrixLimitExceeded(measure: String, cells: Int, limit: Int)
-  case NonPositiveRegularisation(measure: String, value: Double)
-  case NonPositiveIterations(measure: String, iterations: Int)
-  case NonPositiveCellLimit(measure: String, limit: Int)
+  case InvalidSubstitutionCost(
+      measure: String,
+      leftIndex: Int,
+      rightIndex: Int,
+      value: Double
+  )
+  case InvalidScore(measure: String, underlying: ComparisonValueError)
   case TooShort(what: String, got: Int, needed: Int)
 
   def message: String = this match
@@ -108,17 +117,17 @@ enum CompareError derives CanEqual:
       s"$measure needs positive mass in the ${operand.render}, got total=$total."
     case ZeroNorm(measure, left, right) =>
       s"$measure needs non-zero input norms, got left=$left and right=$right."
-    case NonPositiveDirections(measure, directions) =>
-      s"$measure needs at least one direction, got $directions."
+    case RelativeEntropySupport(measure, cellIndex, leftMass, rightMass) =>
+      s"$measure is undefined at cell[$cellIndex]: the left input has mass=$leftMass " +
+        s"while the right input has mass=$rightMass."
     case CostMatrixLimitExceeded(measure, cells, limit) =>
       s"$measure would form a ${cells}x$cells cost matrix, above the " +
         s"$limit-cell limit. Use sliced Wasserstein, which is linear in the grid."
-    case NonPositiveRegularisation(measure, value) =>
-      s"$measure needs positive regularisation, got $value."
-    case NonPositiveIterations(measure, iterations) =>
-      s"$measure needs at least one iteration, got $iterations."
-    case NonPositiveCellLimit(measure, limit) =>
-      s"$measure needs a positive cell limit, got $limit."
+    case InvalidSubstitutionCost(measure, leftIndex, rightIndex, value) =>
+      s"$measure needs finite non-negative substitution costs; " +
+        s"left[$leftIndex] versus right[$rightIndex] produced $value."
+    case InvalidScore(measure, underlying) =>
+      s"$measure produced an invalid score: ${underlying.message}"
     case TooShort(w, g, n) =>
       s"Comparing $w needs at least $n elements, got $g."
 
@@ -171,9 +180,11 @@ trait SymmetricCompare[A, +S] extends Compare[A, A, S]
 trait Metric[A] extends SymmetricCompare[A, MeasureDistance]:
   def distance(a: A, b: A): Either[CompareError, MeasureDistance] = compare(a, b)
 
-/** Symmetric, zero on identical inputs, but with no triangle inequality.
+/** Symmetric, non-negative, and zero on identical inputs.
   *
-  * Where most "distances" in this field actually live.
+  * This interface does not promise the triangle inequality or that distinct
+  * inputs have positive separation. Where most distance-shaped comparisons in
+  * this field actually live.
   */
 trait Semimetric[A] extends SymmetricCompare[A, MeasureDistance]
 
@@ -197,7 +208,19 @@ trait Kernel[A] extends SymmetricCompare[A, Similarity]
 opaque type MeasureDistance = Double
 
 object MeasureDistance:
-  def apply(v: Double): MeasureDistance = v
+  def of(v: Double): Either[ComparisonValueError, MeasureDistance] =
+    if !v.isFinite then Left(ComparisonValueError.NonFiniteMeasureDistance(v))
+    else if v < 0.0 then Left(ComparisonValueError.NegativeMeasureDistance(v))
+    else Right(v)
+
+  val zero: MeasureDistance = 0.0
+
+  private[compare] def computed(
+      measure: String,
+      value: Double
+  ): Either[CompareError, MeasureDistance] =
+    of(value).left.map(CompareError.InvalidScore(measure, _))
+
   extension (d: MeasureDistance)
     def value: Double  = d
     def render: String = f"$d%.6g"
@@ -208,9 +231,50 @@ object MeasureDistance:
 opaque type Similarity = Double
 
 object Similarity:
-  def apply(v: Double): Similarity = v
+  def of(v: Double): Either[ComparisonValueError, Similarity] =
+    if v.isFinite then Right(v)
+    else Left(ComparisonValueError.NonFiniteSimilarity(v))
+
+  val zero: Similarity = 0.0
+
+  private[compare] def computed(
+      measure: String,
+      value: Double
+  ): Either[CompareError, Similarity] =
+    of(value).left.map(CompareError.InvalidScore(measure, _))
+
   extension (s: Similarity)
     def value: Double  = s
     def render: String = f"$s%.6g"
   given cats.kernel.Order[Similarity] =
     cats.kernel.Order.from((a, b) => java.lang.Double.compare(a, b))
+
+/** A comparison scalar failed its context-independent invariant. */
+enum ComparisonValueError derives CanEqual:
+  case NonFiniteMeasureDistance(value: Double)
+  case NegativeMeasureDistance(value: Double)
+  case NonFiniteSimilarity(value: Double)
+  case InvalidUnitSimilarity(component: String, value: Double)
+
+  def message: String = this match
+    case NonFiniteMeasureDistance(value) =>
+      s"MeasureDistance must be finite, got value=$value."
+    case NegativeMeasureDistance(value) =>
+      s"MeasureDistance must be non-negative, got value=$value."
+    case NonFiniteSimilarity(value) =>
+      s"Similarity must be finite, got value=$value."
+    case InvalidUnitSimilarity(component, value) =>
+      s"MultiMatch component '$component' must be finite and in [0, 1], got value=$value."
+
+/** A finite similarity constrained to the closed unit interval. */
+opaque type Similarity01 = Double
+
+object Similarity01:
+  def of(
+      component: String,
+      value: Double
+  ): Either[ComparisonValueError, Similarity01] =
+    if value.isFinite && value >= 0.0 && value <= 1.0 then Right(value)
+    else Left(ComparisonValueError.InvalidUnitSimilarity(component, value))
+
+  extension (similarity: Similarity01) def value: Double = similarity

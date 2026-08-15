@@ -194,12 +194,16 @@ class AlignmentSuite extends munit.FunSuite:
   val clock  = ClockId("tracker")
 
   private def fix(fromMs: Long, toMs: Long, x: Double, y: Double) =
-    Event.Fixation[Px](
-      Interval.of(clock, Instant.millis(fromMs), Instant.millis(toMs)).toOption.get,
-      Pt[Px](x, y),
-      1.0,
-      10
-    )
+    Event.Fixation
+      .of(
+        Interval.of(clock, Instant.millis(fromMs), Instant.millis(toMs)).toOption.get,
+        Pt[Px](x, y),
+        1.0,
+        DispersionMethod.RmsRadius,
+        10
+      )
+      .toOption
+      .get
 
   private def path(pts: (Long, Long, Double, Double)*) =
     Scanpath.of(screen, clock, IArray.from(pts.map(fix))).toOption.get
@@ -288,7 +292,8 @@ end AlignmentSuite
 
 class ScanMatchSuite extends munit.FunSuite:
 
-  private val sm = ScanMatch.similarity[Char](ScanMatch.exactMatch, gap = 1.0)
+  private val unitGap = ScanMatchGap.unit
+  private val sm      = ScanMatch.exactSimilarity[Char](unitGap)
 
   test("a sequence is maximally similar to itself") {
     assertEqualsDouble(
@@ -336,7 +341,7 @@ class ScanMatchSuite extends munit.FunSuite:
     val position: Map[Char, Double] = Map('A' -> 0.0, 'B' -> 1.0, 'C' -> 10.0)
     val graded                      = ScanMatch.similarity[Char](
       (x, y) => math.abs(position(x) - position(y)) / 10.0,
-      gap = 1.0
+      unitGap
     )
     val near = graded.compare("AB".toVector, "AA".toVector).toOption.get.value
     val far  = graded.compare("AC".toVector, "AA".toVector).toOption.get.value
@@ -347,9 +352,29 @@ class ScanMatchSuite extends munit.FunSuite:
     assert(sm.compare(Vector.empty[Char], "AB".toVector).isLeft)
   }
 
-  test("ScanMatch is symmetric but is not offered as a metric") {
+  test("the library-owned exact cost is symmetric but is not offered as a metric") {
     val s: SymmetricCompare[Vector[Char], Similarity] = sm
-    assert(s.info.summary.contains("not a metric"))
+    assert(s.info.summary.contains("symmetry depends"))
+  }
+
+  test("a caller-supplied substitution cost is not certified as symmetric") {
+    val errors = scala.compiletime.testing.typeCheckErrors("""
+      import eyes4s.compare.*
+      val gap = ScanMatchGap.of(1.0).toOption.get
+      val claimed: SymmetricCompare[Vector[Char], Similarity] =
+        ScanMatch.similarity[Char]((left, right) => if left < right then 0.0 else 1.0, gap)
+    """)
+    assert(errors.nonEmpty, "an arbitrary substitution function was certified as symmetric")
+  }
+
+  test("a caller-supplied substitution cost is validated on the named operands") {
+    val invalid = ScanMatch.similarity[Char]((_, _) => Double.NaN, unitGap)
+    assert(
+      invalid.compare(Vector('A'), Vector('B')) match
+        case Left(CompareError.InvalidSubstitutionCost("ScanMatch", 0, 0, value)) =>
+          value.isNaN
+        case _ => false
+    )
   }
 
 end ScanMatchSuite

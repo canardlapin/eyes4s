@@ -150,8 +150,21 @@ class GeometrySuite extends munit.FunSuite:
   }
 
   test("clamp brings a stray position back inside") {
-    val b = Bounds.sized[Px](100.0, 100.0).toOption.get
-    assertEquals(b.clamp(Pt(-10.0, 150.0)), Pt[Px](0.0, 100.0))
+    val b       = Bounds.sized[Px](100.0, 100.0).toOption.get
+    val clamped = b.clamp(Pt(-10.0, 150.0))
+    assertEquals(clamped, Pt[Px](0.0, java.lang.Math.nextDown(100.0)))
+    assert(b.contains(clamped))
+  }
+
+  test("clamp is closed over half-open bounds for every finite side case") {
+    val b           = Bounds.sized[Px](100.0, 100.0).toOption.get
+    val coordinates = Vector(-Double.MaxValue, -1.0, 0.0, 50.0, 100.0, Double.MaxValue)
+
+    coordinates.foreach { x =>
+      coordinates.foreach { y =>
+        assert(b.contains(b.clamp(Pt[Px](x, y))), clue((x, y)))
+      }
+    }
   }
 
   // -------------------------------------------------------------------------

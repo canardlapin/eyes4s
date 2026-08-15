@@ -56,7 +56,7 @@ object Instant:
     /** The span from `t` forward to `u`. Negative when `u` precedes `t`. */
     def until(u: Instant): Span = Span.micros(u.toMicros - t.toMicros)
 
-    def render: String = s"${t.toMillis}ms"
+    def render: String = Span.renderMilliseconds(t.toMicros)
 
   given Order[Instant] = Order.from((a, b) => java.lang.Long.compare(a, b))
 

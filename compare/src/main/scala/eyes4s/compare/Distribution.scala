@@ -64,13 +64,13 @@ object Distribution:
         None
       )
       def compare(a: Mass[U], b: Mass[U]): Either[CompareError, MeasureDistance] =
-        aligned(a, b).map { n =>
+        aligned(a, b).flatMap { n =>
           var s = 0.0
           var i = 0
           while i < n do
             s += math.abs(a.at(i) - b.at(i))
             i += 1
-          MeasureDistance(s / 2.0)
+          MeasureDistance.computed("total variation", s / 2.0)
         }
 
   /** Hellinger distance: the L2 distance between the square roots, scaled.
@@ -88,14 +88,14 @@ object Distribution:
         None
       )
       def compare(a: Mass[U], b: Mass[U]): Either[CompareError, MeasureDistance] =
-        aligned(a, b).map { n =>
+        aligned(a, b).flatMap { n =>
           var s = 0.0
           var i = 0
           while i < n do
             val d = math.sqrt(a.at(i)) - math.sqrt(b.at(i))
             s += d * d
             i += 1
-          MeasureDistance(math.sqrt(s / 2.0))
+          MeasureDistance.computed("Hellinger", math.sqrt(s / 2.0))
         }
 
   // ---------------------------------------------------------------------------
@@ -117,7 +117,7 @@ object Distribution:
         None
       )
       def compare(a: Mass[U], b: Mass[U]): Either[CompareError, MeasureDistance] =
-        aligned(a, b).map { n =>
+        aligned(a, b).flatMap { n =>
           val lb = math.log(base.value)
           var s  = 0.0
           var i  = 0
@@ -128,18 +128,19 @@ object Distribution:
             if p > 0.0 && m > 0.0 then s += 0.5 * p * math.log(p / m) / lb
             if q > 0.0 && m > 0.0 then s += 0.5 * q * math.log(q / m) / lb
             i += 1
-          MeasureDistance(math.max(s, 0.0))
+          MeasureDistance.computed("Jensen-Shannon", math.max(s, 0.0))
         }
 
   // ---------------------------------------------------------------------------
   // Divergence -- asymmetric, and structurally barred from unordered use
   // ---------------------------------------------------------------------------
 
-  /** Kullback-Leibler divergence from `b` to `a`, in the given base.
+  /** Exact Kullback-Leibler divergence from the right input to the left.
     *
     * Asymmetric, unbounded, and undefined where `b` has no mass but `a` does.
-    * The floor keeps it finite; the choice of floor changes the number, so it
-    * is a parameter rather than a hidden constant.
+    * That undefined case is a named [[CompareError.RelativeEntropySupport]];
+    * returning a finite sentinel or silently flooring the reference mass would
+    * change the algorithm and can destroy separation of distinct inputs.
     *
     * Note what the type prevents: this does not extend [[SymmetricCompare]], so
     * it cannot be handed to an unordered pair evaluation. In `eyesim` every
@@ -147,26 +148,63 @@ object Distribution:
     * this case.
     */
   def kullbackLeibler[U <: Unit2D](
-      base: LogBase = LogBase.Two,
-      floor: Double = 1e-12
+      base: LogBase = LogBase.Two
   ): Divergence[Mass[U]] =
     new Divergence[Mass[U]]:
       val info = MeasureInfo(
         "Kullback-Leibler",
-        "relative entropy; ASYMMETRIC, so not valid for an unordered pair",
+        "exact relative entropy; ASYMMETRIC and undefined on incompatible support",
         MeasureScale.DistanceLike,
         None
       )
       def compare(a: Mass[U], b: Mass[U]): Either[CompareError, MeasureDistance] =
-        aligned(a, b).map { n =>
+        aligned(a, b).flatMap { n =>
+          (0 until n).find(i => a.at(i) > 0.0 && b.at(i) <= 0.0) match
+            case Some(i) =>
+              Left(CompareError.RelativeEntropySupport("Kullback-Leibler", i, a.at(i), b.at(i)))
+            case None =>
+              val lb = math.log(base.value)
+              var s  = 0.0
+              var i  = 0
+              while i < n do
+                val p = a.at(i)
+                if p > 0.0 then s += p * math.log(p / b.at(i)) / lb
+                i += 1
+              MeasureDistance.computed("Kullback-Leibler", math.max(s, 0.0))
+        }
+
+  /** Finite floor approximation to Kullback-Leibler divergence.
+    *
+    * The floor is an explicit scientific policy. It can make two distinct
+    * distributions compare as zero and therefore does not satisfy the
+    * separation law promised by [[Divergence]]. Its generic [[Compare]] return
+    * type preserves the useful approximation without promoting it into a false
+    * law-bearing value.
+    */
+  def flooredKullbackLeibler[U <: Unit2D](
+      floor: ProbabilityFloor,
+      base: LogBase = LogBase.Two
+  ): Compare[Mass[U], Mass[U], MeasureDistance] =
+    new Compare[Mass[U], Mass[U], MeasureDistance]:
+      private val probabilityFloor = floor.value
+
+      val info = MeasureInfo(
+        "Floored Kullback-Leibler",
+        "finite floor approximation; ASYMMETRIC and not guaranteed to separate inputs",
+        MeasureScale.DistanceLike,
+        None
+      )
+
+      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, MeasureDistance] =
+        aligned(a, b).flatMap { n =>
           val lb = math.log(base.value)
           var s  = 0.0
           var i  = 0
           while i < n do
             val p = a.at(i)
-            if p > 0.0 then s += p * math.log(p / math.max(b.at(i), floor)) / lb
+            if p > 0.0 then s += p * math.log(p / math.max(b.at(i), probabilityFloor)) / lb
             i += 1
-          MeasureDistance(math.max(s, 0.0))
+          MeasureDistance.computed("Floored Kullback-Leibler", math.max(s, 0.0))
         }
 
   // ---------------------------------------------------------------------------
@@ -200,7 +238,7 @@ object Distribution:
             i += 1
           val den = math.sqrt(na) * math.sqrt(nb)
           if den <= 0.0 then Left(CompareError.ZeroNorm("cosine", math.sqrt(na), math.sqrt(nb)))
-          else Right(Similarity(dot / den))
+          else Similarity.computed("cosine", dot / den)
         }
 
   /** Pearson correlation over the cells.
@@ -252,7 +290,8 @@ object Distribution:
               else if leftConstant then CompareOperand.Left
               else CompareOperand.Right
             Left(CompareError.ConstantInput("Pearson correlation", operand))
-          else Right(Similarity(sab / (math.sqrt(saa) * math.sqrt(sbb))))
+          else
+            Similarity.computed("Pearson correlation", sab / (math.sqrt(saa) * math.sqrt(sbb)))
         }
 
   /** True when a map's variation is below a relative tolerance of its own
@@ -279,9 +318,9 @@ object Distribution:
         None
       )
       def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Similarity] =
-        r.compare(a, b).map { s =>
+        r.compare(a, b).flatMap { s =>
           val clamped = math.max(-0.999999999999, math.min(0.999999999999, s.value))
-          Similarity(0.5 * math.log((1 + clamped) / (1 - clamped)))
+          Similarity.computed("Fisher z", 0.5 * math.log((1 + clamped) / (1 - clamped)))
         }
 
 end Distribution

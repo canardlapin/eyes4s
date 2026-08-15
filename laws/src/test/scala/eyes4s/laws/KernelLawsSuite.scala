@@ -82,6 +82,20 @@ class KernelLawsSuite extends munit.DisciplineSuite:
         .get
     (spike(0), spike(grid.size - 1))
 
+  /** Distinct masses inside exact KL's domain: both have full support. */
+  private val klDistinctPair =
+    val dense = (target: Int) =>
+      Surface
+        .intensity(
+          grid,
+          IArray.tabulate(grid.size)(i => if i == target then 2.0 else 1.0),
+          Provenance.raw(ContentHash.empty)
+        )
+        .flatMap(_.normalised)
+        .toOption
+        .get
+    (dense(0), dense(grid.size - 1))
+
   checkAll(
     "TotalVariation.metric",
     MeasureLaws.metric(Distribution.totalVariation[Norm], massGen, distinctPair)
@@ -90,17 +104,23 @@ class KernelLawsSuite extends munit.DisciplineSuite:
     "Hellinger.metric",
     MeasureLaws.metric(Distribution.hellinger[Norm], massGen, distinctPair)
   )
-  checkAll(
-    "SlicedWasserstein.metric",
-    MeasureLaws.metric(Transport.slicedWasserstein[Norm](8), massGen, distinctPair)
-  )
+  List(1, 2, 8, 16).foreach { count =>
+    val directions = ProjectionDirections.of(count).toOption.get
+    checkAll(
+      s"SlicedWasserstein.$count-directions.semimetric",
+      MeasureLaws.semimetric(
+        Transport.slicedWasserstein[Norm](directions),
+        massGen
+      )
+    )
+  }
   checkAll(
     "JensenShannon.semimetric",
-    MeasureLaws.semimetric(Distribution.jensenShannon[Norm](), massGen, distinctPair)
+    MeasureLaws.semimetric(Distribution.jensenShannon[Norm](), massGen)
   )
   checkAll(
     "KullbackLeibler.divergence",
-    MeasureLaws.divergence(Distribution.kullbackLeibler[Norm](), massGen, distinctPair)
+    MeasureLaws.divergence(Distribution.kullbackLeibler[Norm](), massGen, klDistinctPair)
   )
   checkAll(
     "Cosine.symmetry",
@@ -108,14 +128,6 @@ class KernelLawsSuite extends munit.DisciplineSuite:
       Distribution.cosine[Norm],
       massGen,
       (a, b) => math.abs(a.value - b.value) < 1e-9
-    )
-  )
-  checkAll(
-    "Sinkhorn.symmetry",
-    MeasureLaws.symmetry[Mass[Norm], MeasureDistance](
-      Transport.sinkhorn[Norm](epsilon = 0.5, iterations = 20, maxCells = 4096),
-      massGen,
-      (a, b) => math.abs(a.value - b.value) < 1e-7
     )
   )
   checkAll("TotalVariation.info", MeasureLaws.described(Distribution.totalVariation[Norm]))

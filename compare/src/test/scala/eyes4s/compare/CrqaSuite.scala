@@ -27,19 +27,23 @@ class CrqaSuite extends munit.FunSuite:
 
   private def path(points: (Double, Double)*): Scanpath[Px] =
     val fixations = points.zipWithIndex.map { case ((x, y), index) =>
-      Event.Fixation[Px](
-        Interval
-          .of(
-            clock,
-            Instant.millis(index.toLong * 20L),
-            Instant.millis(index.toLong * 20L + 10L)
-          )
-          .toOption
-          .get,
-        Pt[Px](x, y),
-        0.0,
-        1
-      )
+      Event.Fixation
+        .of(
+          Interval
+            .of(
+              clock,
+              Instant.millis(index.toLong * 20L),
+              Instant.millis(index.toLong * 20L + 10L)
+            )
+            .toOption
+            .get,
+          Pt[Px](x, y),
+          0.0,
+          DispersionMethod.RmsRadius,
+          1
+        )
+        .toOption
+        .get
     }
     Scanpath.of(frame, clock, IArray.from(fixations)).toOption.get
 
@@ -250,12 +254,16 @@ class CrqaSuite extends munit.FunSuite:
 
   test("different frames are rejected through Agreement") {
     val otherFrame = Frame.screen("other-crqa", 100, 100).toOption.get
-    val fixation   = Event.Fixation[Px](
-      Interval.of(clock, Instant.millis(0), Instant.millis(10)).toOption.get,
-      Pt[Px](0, 0),
-      0.0,
-      1
-    )
+    val fixation   = Event.Fixation
+      .of(
+        Interval.of(clock, Instant.millis(0), Instant.millis(10)).toOption.get,
+        Pt[Px](0, 0),
+        0.0,
+        DispersionMethod.RmsRadius,
+        1
+      )
+      .toOption
+      .get
     val other  = Scanpath.of(otherFrame, clock, IArray(fixation)).toOption.get
     val result = Crqa.analyse(path((0, 0)), other, fixed(1.0))
 

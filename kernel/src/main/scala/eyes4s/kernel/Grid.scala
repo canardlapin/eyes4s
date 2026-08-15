@@ -70,6 +70,23 @@ end Sigma
 final case class GridId(name: String) derives CanEqual:
   override def toString: String = name
 
+/** Structural discretisation metadata carried under a nominal [[GridId]].
+  *
+  * Cell centres and half-open boundary membership are fixed conventions of
+  * [[Grid]], so the varying specification is its frame and dimensions.
+  */
+final case class GridSpec private (
+    frameId: FrameId,
+    frame: FrameSpec,
+    nx: Int,
+    ny: Int
+) derives CanEqual:
+  def render: String = s"${nx}x$ny over $frameId (${frame.render})"
+
+object GridSpec:
+  private[kernel] def from[U <: Unit2D](grid: Grid[U]): GridSpec =
+    GridSpec(grid.frame.id, grid.frame.spec, grid.nx, grid.ny)
+
 /** A regular rectangular discretisation of a frame.
   *
   * ==Index order is stated, once==
@@ -93,6 +110,8 @@ final case class Grid[U <: Unit2D] private (
     nx: Int,
     ny: Int
 ) derives CanEqual:
+
+  def spec: GridSpec = GridSpec.from(this)
 
   def size: Int = nx * ny
 

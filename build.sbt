@@ -1,4 +1,7 @@
 import org.typelevel.sbt.gha.JavaSpec
+import org.typelevel.sbt.gha.{GenerativePlugin, PermissionValue, Permissions}
+
+import scala.io.Source
 
 // ---------------------------------------------------------------------------
 // Versions
@@ -46,9 +49,188 @@ ThisBuild / githubWorkflowJavaVersions := Seq(
   JavaSpec.temurin("21")
 )
 
+// Code health, security submission, and publication have different trigger and
+// permission boundaries. Generate them as separate files from the same
+// sbt-github-actions model so a missing credential cannot turn a green code
+// check red, and a branch push can never enter the release path.
+ThisBuild / githubWorkflowPublishTargetBranches := Seq.empty
+ThisBuild / githubWorkflowTargetTags            := Seq.empty
+ThisBuild / githubWorkflowAddedJobs             := Seq.empty
+ThisBuild / githubWorkflowPermissions           := Some(
+  Permissions.Specify.defaultRestrictive.withPackages(PermissionValue.None)
+)
+
+lazy val trustWorkflowContents =
+  taskKey[Map[String, String]]("Render every generated eyes4s workflow.")
+
+def bundledCleanWorkflow: String = {
+  val stream = Option(GenerativePlugin.getClass.getResourceAsStream("/clean.yml"))
+    .getOrElse(sys.error("sbt-github-actions clean.yml resource is unavailable"))
+  val source = Source.fromInputStream(stream, "UTF-8")
+  try source.mkString
+  finally source.close()
+}
+
+trustWorkflowContents := {
+  val sbtCommand      = githubWorkflowSbtCommand.value
+  val basePermissions =
+    Permissions.Specify.defaultRestrictive.withPackages(PermissionValue.None)
+
+  val checks = GenerativePlugin.compileWorkflow(
+    "Checks",
+    githubWorkflowTargetBranches.value.toList,
+    Nil,
+    githubWorkflowTargetPaths.value,
+    githubWorkflowPREventTypes.value.toList,
+    Some(basePermissions),
+    githubWorkflowEnv.value,
+    githubWorkflowConcurrency.value,
+    githubWorkflowGeneratedCI.value.toList,
+    sbtCommand
+  )
+
+  val dependencySubmission = WorkflowJob(
+    "dependency-submission",
+    "Submit Dependencies",
+    githubWorkflowJobSetup.value.toList ::: List(
+      WorkflowStep.DependencySubmission(
+        workingDirectory = None,
+        modulesIgnore = Some(List("rootjs_3", "rootjvm_3", "rootnative_3")),
+        configsIgnore = Some(List("test", "scala-tool", "scala-doc-tool", "test-internal")),
+        token = None
+      )
+    ),
+    sbtStepPreamble = Nil,
+    cond = Some("github.event_name == 'push' && github.ref == 'refs/heads/main'"),
+    permissions = Some(basePermissions.withContents(PermissionValue.Write)),
+    oses = githubWorkflowOSes.value.toList.take(1),
+    scalas = Nil,
+    javas = githubWorkflowJavaVersions.value.toList.take(1)
+  )
+
+  val security = GenerativePlugin.compileWorkflow(
+    "Security",
+    List("main"),
+    Nil,
+    Paths.None,
+    githubWorkflowPREventTypes.value.toList,
+    Some(basePermissions),
+    githubWorkflowEnv.value,
+    githubWorkflowConcurrency.value,
+    List(dependencySubmission),
+    sbtCommand
+  )
+
+  val releaseJob = WorkflowJob(
+    "release",
+    "Publish Version Tag",
+    githubWorkflowJobSetup.value.toList :::
+      githubWorkflowPublishPreamble.value.toList :::
+      githubWorkflowPublish.value.toList :::
+      githubWorkflowPublishPostamble.value.toList,
+    sbtStepPreamble = Nil,
+    cond = Some("github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')"),
+    permissions = Some(basePermissions),
+    oses = githubWorkflowOSes.value.toList.take(1),
+    scalas = Nil,
+    javas = githubWorkflowJavaVersions.value.toList.take(1),
+    timeoutMinutes = githubWorkflowPublishTimeoutMinutes.value
+  )
+
+  val release = GenerativePlugin.compileWorkflow(
+    "Release",
+    List("release-workflow-disabled"),
+    List("v*"),
+    Paths.None,
+    githubWorkflowPREventTypes.value.toList,
+    Some(basePermissions),
+    githubWorkflowEnv.value,
+    githubWorkflowConcurrency.value,
+    List(releaseJob),
+    sbtCommand
+  )
+
+  Map(
+    "checks.yml"   -> checks,
+    "security.yml" -> security,
+    "release.yml"  -> release,
+    "clean.yml"    -> bundledCleanWorkflow
+  )
+}
+
+githubWorkflowGenerate := {
+  val outputDirectory = baseDirectory.value / ".github" / "workflows"
+  val rendered        = trustWorkflowContents.value
+  IO.createDirectory(outputDirectory)
+  rendered.foreach { case (name, contents) => IO.write(outputDirectory / name, contents) }
+
+  // ci.yml was the old mixed-permission workflow. Removal is part of the
+  // generated migration, not a hand edit to generated YAML.
+  IO.delete(outputDirectory / "ci.yml")
+}
+
+githubWorkflowCheck := {
+  val outputDirectory = baseDirectory.value / ".github" / "workflows"
+  val rendered        = trustWorkflowContents.value
+  rendered.foreach { case (name, expected) =>
+    val file = outputDirectory / name
+    if (!file.exists()) sys.error(s"$name is missing; run githubWorkflowGenerate")
+    val actual = IO.read(file)
+    if (actual != expected)
+      sys.error(s"$name is stale; run githubWorkflowGenerate")
+  }
+  val obsolete = outputDirectory / "ci.yml"
+  if (obsolete.exists())
+    sys.error("ci.yml still mixes code, security, and release jobs; run githubWorkflowGenerate")
+
+  def requireText(workflow: String, required: String): Unit = {
+    if (!rendered(workflow).contains(required))
+      sys.error(s"$workflow is missing required generated content: $required")
+  }
+
+  def forbidText(workflow: String, forbidden: String): Unit = {
+    if (rendered(workflow).contains(forbidden))
+      sys.error(s"$workflow contains forbidden generated content: $forbidden")
+  }
+
+  List(
+    "project: [rootJS, rootJVM]",
+    "name: Compile all modules",
+    "name: Test",
+    "name: Run published law suites",
+    "name: Check headers and formatting",
+    "name: Check binary compatibility",
+    "name: Generate API documentation",
+    "name: Check module and kernel boundaries"
+  ).foreach(requireText("checks.yml", _))
+  forbidText("checks.yml", "tlCiRelease")
+  forbidText("checks.yml", "sbt-dependency-submission")
+
+  requireText("security.yml", "contents: write")
+  requireText("security.yml", "scalacenter/sbt-dependency-submission@v2")
+  forbidText("security.yml", "tlCiRelease")
+
+  requireText("release.yml", "tags: [v*]")
+  requireText("release.yml", "startsWith(github.ref, 'refs/tags/v')")
+  requireText("release.yml", "sbt tlCiRelease")
+  forbidText("release.yml", "sbt-dependency-submission")
+}
+
 // Both boundary invariants run in CI, not just on a developer's machine.
 // A rule that is only checked locally is a rule that is checked when it is
 // convenient. See bead fnd-boundaries, PRD B-9.
+ThisBuild / githubWorkflowBuild += WorkflowStep.Sbt(
+  List("compile"),
+  name = Some("Compile all modules")
+)
+
+ThisBuild / githubWorkflowBuild += WorkflowStep.Sbt(
+  List("lawsJVM/test", "lawsJS/test"),
+  name = Some("Run published law suites"),
+  cond = Some("matrix.project == 'rootJVM' && matrix.java == 'temurin@17'"),
+  preamble = false
+)
+
 ThisBuild / githubWorkflowBuild += WorkflowStep.Sbt(
   List("checkBoundaries"),
   name = Some("Check module and kernel boundaries")

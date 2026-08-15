@@ -16,13 +16,41 @@
 
 package eyes4s.kernel
 
-/** A physical length, stored in millimetres. */
+/** Unit named by a raw physical-length operand. */
+enum LengthUnit derives CanEqual:
+  case Millimetres
+  case Centimetres
+  case Metres
+
+  private[kernel] def millimetresPerUnit: Double = this match
+    case Millimetres => 1.0
+    case Centimetres => 10.0
+    case Metres      => 1000.0
+
+  def symbol: String = this match
+    case Millimetres => "mm"
+    case Centimetres => "cm"
+    case Metres      => "m"
+
+/** A finite, non-negative physical length, stored in millimetres.
+  *
+  * Zero is a coherent length. Structures that require positive physical
+  * extent, such as [[Perspective]], enforce that stronger contextual rule.
+  */
 opaque type Length = Double
 
 object Length:
-  def mm(v: Double): Length = v
-  def cm(v: Double): Length = v * 10.0
-  def m(v: Double): Length  = v * 1000.0
+  def mm(v: Double): Either[GeometryError, Length] = of(v, LengthUnit.Millimetres)
+  def cm(v: Double): Either[GeometryError, Length] = of(v, LengthUnit.Centimetres)
+  def m(v: Double): Either[GeometryError, Length]  = of(v, LengthUnit.Metres)
+
+  val zero: Length = 0.0
+
+  private def of(v: Double, unit: LengthUnit): Either[GeometryError, Length] =
+    val millimetres = v * unit.millimetresPerUnit
+    if !v.isFinite || !millimetres.isFinite then Left(GeometryError.NonFiniteLength(v, unit))
+    else if v < 0.0 then Left(GeometryError.NegativeLength(v, unit))
+    else Right(millimetres)
 
   extension (l: Length)
     def toMm: Double   = l
@@ -82,11 +110,7 @@ object Perspective:
       surfaceHeight: Length
   ): Either[GeometryError, Perspective] =
     val ds = List(distance.toMm, surfaceWidth.toMm, surfaceHeight.toMm)
-    if !ds.forall(_.isFinite) then
-      Left(
-        GeometryError.NonFinitePerspective(distance.toMm, surfaceWidth.toMm, surfaceHeight.toMm)
-      )
-    else if ds.exists(_ <= 0.0) then
+    if ds.exists(_ <= 0.0) then
       Left(
         GeometryError.NonPositivePerspective(
           distance.toMm,
@@ -95,5 +119,18 @@ object Perspective:
         )
       )
     else Right(Perspective(distance, surfaceWidth, surfaceHeight))
+
+  /** Construct a perspective from raw millimetre operands. */
+  def millimetres(
+      distance: Double,
+      surfaceWidth: Double,
+      surfaceHeight: Double
+  ): Either[GeometryError, Perspective] =
+    for
+      d           <- Length.mm(distance)
+      w           <- Length.mm(surfaceWidth)
+      h           <- Length.mm(surfaceHeight)
+      perspective <- of(d, w, h)
+    yield perspective
 
 end Perspective

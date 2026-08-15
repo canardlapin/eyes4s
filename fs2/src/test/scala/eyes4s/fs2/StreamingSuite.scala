@@ -37,16 +37,23 @@ class StreamingSuite extends munit.FunSuite:
     (0 until n).map(i => at(from + i, x0 + (x1 - x0) * i / n)).toVector
 
   /** A realistic pipeline: clean the signal, then detect. */
-  private val pipeline: Machine[Sample[Deg], Event[Deg]] =
+  private val pipeline: Machine[Sample[Deg], DetectionEmission[Deg]] =
+    val width     = WindowHalfWidth.of(2).toOption.get
+    val frame     = Frame.angular("stream-filter", 100.0, 100.0).toOption.get
+    val threshold = IvtThreshold.of(Velocity.degPerSecond(30.0).toOption.get).toOption.get
+    val minimum   = MinimumEventDuration.of(Span.millis(20)).toOption.get
     Filter
-      .median[Deg](2)
-      .andThen(Detectors.ivt(Velocity.degPerSecond(30.0).toOption.get, Span.millis(20), clock))
+      .median(frame, width, WindowObservationPolicy.RequireTracked)
+      .andThen(Detectors.ivt(threshold, minimum, clock).machine)
 
   private val input =
     hold(0, 60, 0.0) ++ sweep(60, 30, 0.0, 30.0) ++ hold(90, 60, 30.0) ++
       sweep(150, 20, 30.0, 5.0) ++ hold(170, 80, 5.0)
 
-  private def streamed(xs: Vector[Sample[Deg]], chunkSize: Int): Vector[Event[Deg]] =
+  private def streamed(
+      xs: Vector[Sample[Deg]],
+      chunkSize: Int
+  ): Vector[DetectionEmission[Deg]] =
     Stream
       .emits(xs)
       .chunkLimit(chunkSize)
@@ -65,7 +72,7 @@ class StreamingSuite extends munit.FunSuite:
   test("the agreement holds for the identical machine value, not a copy") {
     // Constructed once, driven twice. If the two runtimes needed different
     // definitions the claim would be about a specification, not about code.
-    val m: Machine[Sample[Deg], Event[Deg]] = pipeline
+    val m: Machine[Sample[Deg], DetectionEmission[Deg]] = pipeline
     assertEquals(
       Stream.emits(input).through(m.toPipe[Pure]).toVector,
       m.runAll(input)
@@ -82,8 +89,8 @@ class StreamingSuite extends munit.FunSuite:
   }
 
   test("an empty stream still flushes, and yields nothing") {
-    assertEquals(streamed(Vector.empty, 8), Vector.empty[Event[Deg]])
-    assertEquals(pipeline.runAll(Vector.empty), Vector.empty[Event[Deg]])
+    assertEquals(streamed(Vector.empty, 8), Vector.empty[DetectionEmission[Deg]])
+    assertEquals(pipeline.runAll(Vector.empty), Vector.empty[DetectionEmission[Deg]])
   }
 
   // -------------------------------------------------------------------------
@@ -111,7 +118,7 @@ class StreamingSuite extends munit.FunSuite:
     // before the trial is over.
     val prefix = Stream.emits(input).through(pipeline.toPipe[Pure]).take(1).toVector
     assertEquals(prefix.length, 1)
-    assert(prefix.head.isInstanceOf[Event.Fixation[Deg]])
+    assert(prefix.head.exists(_.isInstanceOf[Event.Fixation[Deg]]), clue(prefix.head))
   }
 
 end StreamingSuite

@@ -111,7 +111,69 @@ enum Gaze[U <: Unit2D] derives CanEqual:
 
 end Gaze
 
+/** One inspectable step in the derivation of a sample value. */
+enum SampleOrigin derives CanEqual:
+  case Measured
+  case Interpolated
+  case Smoothed
+  case Projected
+
+/** Non-empty, ordered derivation history for one sample value.
+  *
+  * Interpolation creates a value whose basis is `Interpolated`. Smoothing and
+  * projection append steps, so an interpolated sample that is later smoothed
+  * and projected remains distinguishable from a measured projected sample.
+  */
+final class SampleLineage private (private val steps: Vector[SampleOrigin]) derives CanEqual:
+  def latest: SampleOrigin                     = steps.last
+  def contains(step: SampleOrigin): Boolean    = steps.contains(step)
+  def toVector: Vector[SampleOrigin]           = steps
+  def render: String                           = steps.mkString(">")
+  private[eyes4s] def smoothed: SampleLineage  = append(SampleOrigin.Smoothed)
+  private[eyes4s] def projected: SampleLineage = append(SampleOrigin.Projected)
+
+  private def append(step: SampleOrigin): SampleLineage =
+    new SampleLineage(steps :+ step)
+
+  override def equals(other: Any): Boolean = other match
+    case that: SampleLineage => steps == that.steps
+    case _                   => false
+
+  override def hashCode: Int = steps.hashCode
+
+object SampleLineage:
+  val measured: SampleLineage     = new SampleLineage(Vector(SampleOrigin.Measured))
+  val interpolated: SampleLineage = new SampleLineage(Vector(SampleOrigin.Interpolated))
+
+  /** Compatibility constructor for callers that previously supplied only the
+    * latest origin. Derived measured values receive their implied measured
+    * basis; interpolation remains a distinct basis.
+    */
+  def fromLatest(origin: SampleOrigin): SampleLineage = origin match
+    case SampleOrigin.Measured     => measured
+    case SampleOrigin.Interpolated => interpolated
+    case SampleOrigin.Smoothed     => measured.smoothed
+    case SampleOrigin.Projected    => measured.projected
+
 /** One instant of a recording. */
-final case class Sample[U <: Unit2D](t: Instant, gaze: Gaze[U]) derives CanEqual:
+final case class Sample[U <: Unit2D](
+    t: Instant,
+    gaze: Gaze[U],
+    lineage: SampleLineage = SampleLineage.measured
+) derives CanEqual:
   def position: Option[Pt[U]] = gaze.position
   def isUsable: Boolean       = gaze.isUsable
+  def origin: SampleOrigin    = lineage.latest
+
+  private[eyes4s] def withSmoothedGaze(value: Gaze[U]): Sample[U] =
+    copy(gaze = value, lineage = lineage.smoothed)
+
+  private[eyes4s] def withProjectedGaze[V <: Unit2D](value: Gaze[V]): Sample[V] =
+    val projected =
+      if gaze.position.isDefined && value.position.isDefined then lineage.projected
+      else lineage
+    Sample(t, value, projected)
+
+object Sample:
+  def apply[U <: Unit2D](t: Instant, gaze: Gaze[U], origin: SampleOrigin): Sample[U] =
+    new Sample(t, gaze, SampleLineage.fromLatest(origin))

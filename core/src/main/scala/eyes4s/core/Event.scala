@@ -44,15 +44,224 @@ sealed trait Event[U <: Unit2D] derives CanEqual:
     case f: Event.Fixation[U] => Some(f.centre)
     case _                    => None
 
+/** The statistic represented by a fixation's spatial spread. */
+enum DispersionMethod derives CanEqual:
+  case RmsRadius
+  case BoundingBoxWidth
+  case BoundingBoxDiagonal
+  case MedianAbsoluteDeviation
+
+/** A finite, non-negative spatial spread with an explicit statistic. */
+final class Dispersion[U <: Unit2D] private (
+    val radius: Distance[U],
+    val method: DispersionMethod
+) derives CanEqual:
+  def value: Double = radius.value
+
+  override def equals(other: Any): Boolean = other match
+    case that: Dispersion[?] => radius.value == that.radius.value && method == that.method
+    case _                   => false
+
+  override def hashCode: Int = 31 * radius.value.hashCode + method.hashCode
+
+  override def toString: String = s"Dispersion(${radius.value},$method)"
+
+object Dispersion:
+  def of[U <: Unit2D](
+      value: Double,
+      method: DispersionMethod
+  ): Either[EventError, Dispersion[U]] =
+    Distance
+      .of[U](value)
+      .left
+      .map(_ => EventError.InvalidDispersion(value, method))
+      .map(new Dispersion(_, method))
+
+/** Structural evidence for the exact spatial transform used to rebuild an
+  * event summary. This mirrors the closed [[Warp]] algebra rather than using a
+  * rendered string as scientific identity.
+  */
+enum SpatialTransform derives CanEqual:
+  case Identity
+  case Affine(matrix: Mat3)
+  case Homography(matrix: Mat3)
+  case Tangent(perspective: Perspective, sense: Warp.Sense)
+  case Then(first: SpatialTransform, second: SpatialTransform)
+
+object SpatialTransform:
+  def of[U <: Unit2D, V <: Unit2D](warp: Warp[U, V]): SpatialTransform = warp match
+    case _: Warp.Id[?]                     => SpatialTransform.Identity
+    case affine: Warp.Affine[?, ?]         => SpatialTransform.Affine(affine.m)
+    case projective: Warp.Homography[?, ?] =>
+      SpatialTransform.Homography(projective.h)
+    case tangent: Warp.Tangent[?, ?] =>
+      SpatialTransform.Tangent(tangent.perspective, tangent.sense)
+    case composed: Warp.Then[?, ?, ?] =>
+      SpatialTransform.Then(
+        SpatialTransform.of(composed.f),
+        SpatialTransform.of(composed.g)
+      )
+
+/** Why a reported fixation spread is scientifically available. */
+enum SummaryEvidence derives CanEqual:
+  case Declared
+  case SourceSupported(source: RecordingRef, support: SampleRange)
+  case Recomputed(
+      source: RecordingRef,
+      support: SampleRange,
+      from: FrameId,
+      to: FrameId,
+      transform: SpatialTransform
+  )
+
+/** Why a fixation has no spatial spread after an otherwise valid operation. */
+enum DispersionUnavailable derives CanEqual:
+  case NotReported
+  case SourceSupportUnavailable(from: FrameId, to: FrameId)
+
+/** Availability and evidence for a fixation's derived spatial spread. */
+enum DispersionStatus[U <: Unit2D] derives CanEqual:
+  case Available(value: Dispersion[U], evidence: SummaryEvidence)
+  case Unavailable(reason: DispersionUnavailable)
+
+/** Why a saccade has no peak velocity estimate. */
+enum PeakVelocityUnavailable derives CanEqual:
+  case NotMeasured
+  case RequiresReestimation(
+      source: RecordingRef,
+      support: SampleRange,
+      from: FrameId,
+      to: FrameId
+  )
+
+/** Availability of the detector-specific peak velocity summary. */
+enum PeakVelocityStatus[U <: Unit2D] derives CanEqual:
+  case Available(value: Velocity[U])
+  case Unavailable(reason: PeakVelocityUnavailable)
+
+/** Positive measured or derived sample support for an event summary. */
+opaque type EventSampleCount = Int
+
+object EventSampleCount:
+  def of(sampleCount: Int): Either[EventError, EventSampleCount] =
+    if sampleCount > 0 then Right(sampleCount)
+    else Left(EventError.NonPositiveSampleCount(sampleCount))
+
+  extension (sampleCount: EventSampleCount) def value: Int = sampleCount
+
+/** A public event constructor rejected an incoherent summary. */
+enum EventError derives CanEqual:
+  case EmptySpan(eventType: String, span: Interval)
+  case NonFinitePoint(eventType: String, role: String, span: Interval, x: Double, y: Double)
+  case InvalidDispersion(value: Double, method: DispersionMethod)
+  case NonPositiveSampleCount(sampleCount: Int)
+  case EmptyPursuit(span: Interval)
+  case NonFinitePursuitPoint(span: Interval, index: Int, x: Double, y: Double)
+
+  def message: String = this match
+    case EmptySpan(eventType, span) =>
+      s"A $eventType event needs positive temporal extent, got span=${span.render}."
+    case NonFinitePoint(eventType, role, span, x, y) =>
+      s"A $eventType event needs a finite $role, got ($x, $y) for span=${span.render}."
+    case InvalidDispersion(value, method) =>
+      s"Fixation dispersion must be finite and non-negative, got value=$value for method=$method."
+    case NonPositiveSampleCount(sampleCount) =>
+      s"Fixation support must contain at least one sample, got sampleCount=$sampleCount."
+    case EmptyPursuit(span) =>
+      s"A pursuit event needs at least one path position, got an empty path for span=${span.render}."
+    case NonFinitePursuitPoint(span, index, x, y) =>
+      s"A pursuit event needs finite path positions, got path[$index]=($x, $y) for span=${span.render}."
+
+end EventError
+
 object Event:
 
   /** The eye held still. */
-  final case class Fixation[U <: Unit2D](
+  sealed abstract case class Fixation[U <: Unit2D] private (
       span: Interval,
       centre: Pt[U],
-      dispersion: Double,
-      sampleCount: Int
-  ) extends Event[U]
+      dispersionStatus: DispersionStatus[U],
+      support: EventSampleCount
+  ) extends Event[U]:
+    def sampleCount: Int = support.value
+
+    def dispersion: Option[Dispersion[U]] = dispersionStatus match
+      case DispersionStatus.Available(value, _) => Some(value)
+      case DispersionStatus.Unavailable(_)      => None
+
+  object Fixation:
+    def of[U <: Unit2D](
+        span: Interval,
+        centre: Pt[U],
+        dispersion: Double,
+        method: DispersionMethod,
+        sampleCount: Int
+    ): Either[CoreError, Fixation[U]] =
+      for
+        _       <- validateSpan("fixation", span)
+        _       <- validatePoint("fixation", "centre", span, centre)
+        spread  <- Dispersion.of[U](dispersion, method).left.map(CoreError.OfEvent.apply)
+        support <- EventSampleCount.of(sampleCount).left.map(CoreError.OfEvent.apply)
+      yield new Fixation(
+        span,
+        centre,
+        DispersionStatus.Available(spread, SummaryEvidence.Declared),
+        support
+      ) {}
+
+    /** Build a coherent fixation when spatial spread was not measured or is
+      * invalidated by a transformation.
+      */
+    def withoutDispersion[U <: Unit2D](
+        span: Interval,
+        centre: Pt[U],
+        sampleCount: Int
+    ): Either[CoreError, Fixation[U]] =
+      for
+        _       <- validateSpan("fixation", span)
+        _       <- validatePoint("fixation", "centre", span, centre)
+        support <- EventSampleCount.of(sampleCount).left.map(CoreError.OfEvent.apply)
+      yield new Fixation(
+        span,
+        centre,
+        DispersionStatus.Unavailable(DispersionUnavailable.NotReported),
+        support
+      ) {}
+
+    private[core] def withSourceSupport[U <: Unit2D](
+        fixation: Fixation[U],
+        source: RecordingRef,
+        range: SampleRange
+    ): Fixation[U] =
+      val status = fixation.dispersionStatus match
+        case DispersionStatus.Available(value, SummaryEvidence.Declared) =>
+          DispersionStatus.Available(value, SummaryEvidence.SourceSupported(source, range))
+        case other => other
+      new Fixation(fixation.span, fixation.centre, status, fixation.support) {}
+
+    private[core] def withRecomputedDispersion[U <: Unit2D](
+        fixation: Fixation[U],
+        spread: Dispersion[U],
+        evidence: SummaryEvidence.Recomputed
+    ): Fixation[U] =
+      new Fixation(
+        fixation.span,
+        fixation.centre,
+        DispersionStatus.Available(spread, evidence),
+        fixation.support
+      ) {}
+
+    private[core] def transformed[U <: Unit2D, V <: Unit2D](
+        source: Fixation[U],
+        centre: Pt[V],
+        from: FrameId,
+        to: FrameId
+    ): Fixation[V] =
+      val status: DispersionStatus[V] = source.dispersionStatus match
+        case DispersionStatus.Available(_, _) =>
+          DispersionStatus.Unavailable(DispersionUnavailable.SourceSupportUnavailable(from, to))
+        case DispersionStatus.Unavailable(reason) => DispersionStatus.Unavailable(reason)
+      new Fixation(source.span, centre, status, source.support) {}
 
   /** The eye moved from one place to another.
     *
@@ -63,18 +272,100 @@ object Event:
     * velocity that was never measured is exactly the sort of invented number
     * this library exists to prevent.
     */
-  final case class Saccade[U <: Unit2D](
+  sealed abstract case class Saccade[U <: Unit2D] private (
       span: Interval,
       from: Pt[U],
       to: Pt[U],
-      peakVelocity: Option[Velocity[U]]
-  ) extends Event[U]
+      peakVelocityStatus: PeakVelocityStatus[U]
+  ) extends Event[U]:
+    def peakVelocity: Option[Velocity[U]] = peakVelocityStatus match
+      case PeakVelocityStatus.Available(value) => Some(value)
+      case PeakVelocityStatus.Unavailable(_)   => None
+
+  object Saccade:
+    def of[U <: Unit2D](
+        span: Interval,
+        from: Pt[U],
+        to: Pt[U],
+        peakVelocity: Option[Velocity[U]]
+    ): Either[CoreError, Saccade[U]] =
+      val status: PeakVelocityStatus[U] = peakVelocity match
+        case Some(value) => PeakVelocityStatus.Available(value)
+        case None        => PeakVelocityStatus.Unavailable(PeakVelocityUnavailable.NotMeasured)
+      for
+        _ <- validateSpan("saccade", span)
+        _ <- validatePoint("saccade", "origin", span, from)
+        _ <- validatePoint("saccade", "destination", span, to)
+      yield new Saccade(span, from, to, status) {}
+
+    private[core] def transformed[U <: Unit2D, V <: Unit2D](
+        saccade: Saccade[U],
+        from: Pt[V],
+        to: Pt[V],
+        source: RecordingRef,
+        support: SampleRange,
+        fromFrame: FrameId,
+        toFrame: FrameId
+    ): Saccade[V] =
+      val status: PeakVelocityStatus[V] = saccade.peakVelocityStatus match
+        case PeakVelocityStatus.Available(_) =>
+          PeakVelocityStatus.Unavailable(
+            PeakVelocityUnavailable.RequiresReestimation(
+              source,
+              support,
+              fromFrame,
+              toFrame
+            )
+          )
+        case PeakVelocityStatus.Unavailable(reason) => PeakVelocityStatus.Unavailable(reason)
+      new Saccade(saccade.span, from, to, status) {}
 
   /** The eye was closed. */
-  final case class Blink[U <: Unit2D](span: Interval) extends Event[U]
+  sealed abstract case class Blink[U <: Unit2D] private (span: Interval) extends Event[U]
+
+  object Blink:
+    def of[U <: Unit2D](span: Interval): Either[CoreError, Blink[U]] =
+      validateSpan("blink", span).map(_ => new Blink[U](span) {})
 
   /** The eye tracked a moving target. */
-  final case class Pursuit[U <: Unit2D](span: Interval, path: IArray[Pt[U]]) extends Event[U]
+  sealed abstract case class Pursuit[U <: Unit2D] private (
+      span: Interval,
+      path: IArray[Pt[U]]
+  ) extends Event[U]
+
+  object Pursuit:
+    def of[U <: Unit2D](
+        span: Interval,
+        path: IArray[Pt[U]]
+    ): Either[CoreError, Pursuit[U]] =
+      for
+        _ <- validateSpan("pursuit", span)
+        _ <- Either.cond(path.nonEmpty, (), CoreError.OfEvent(EventError.EmptyPursuit(span)))
+        _ <- path.indices
+          .find(i => !finite(path(i)))
+          .fold[Either[CoreError, Unit]](Right(())) { i =>
+            val point = path(i)
+            Left(CoreError.OfEvent(EventError.NonFinitePursuitPoint(span, i, point.x, point.y)))
+          }
+      yield new Pursuit(span, path) {}
+
+  private def finite[U <: Unit2D](point: Pt[U]): Boolean =
+    point.x.isFinite && point.y.isFinite
+
+  private def validateSpan(eventType: String, span: Interval): Either[CoreError, Unit] =
+    Either.cond(!span.isEmpty, (), CoreError.OfEvent(EventError.EmptySpan(eventType, span)))
+
+  private def validatePoint[U <: Unit2D](
+      eventType: String,
+      role: String,
+      span: Interval,
+      point: Pt[U]
+  ): Either[CoreError, Unit] =
+    Either.cond(
+      finite(point),
+      (),
+      CoreError.OfEvent(EventError.NonFinitePoint(eventType, role, span, point.x, point.y))
+    )
 
   extension [U <: Unit2D](s: Event.Saccade[U])
 

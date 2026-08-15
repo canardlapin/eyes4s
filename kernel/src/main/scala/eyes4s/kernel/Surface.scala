@@ -24,6 +24,7 @@ enum SurfaceError derives CanEqual:
   case NonFiniteValue(index: Int, value: Double)
   case DegenerateTotal(total: Double)
   case GridMismatch(left: GridId, right: GridId)
+  case GridIdentityConflict(id: GridId, left: GridSpec, right: GridSpec)
   case EmptyCollection(operation: String)
 
   def message: String = this match
@@ -42,6 +43,10 @@ enum SurfaceError derives CanEqual:
     case GridMismatch(l, r) =>
       s"Cannot combine surfaces on different grids: '$l' and '$r'. " +
         "Resample one onto the other's grid first."
+    case GridIdentityConflict(id, left, right) =>
+      s"Grid identity '$id' has conflicting specifications: " +
+        s"left=${left.render}; right=${right.render}. " +
+        "This is corrupt discretisation metadata, not an ordinary grid mismatch."
     case EmptyCollection(op) =>
       s"$op needs at least one surface."
 

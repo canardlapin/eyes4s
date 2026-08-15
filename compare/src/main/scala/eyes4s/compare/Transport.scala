@@ -41,12 +41,14 @@ object Transport:
     * the cumulative distributions -- and average over directions. Each slice is
     * exact; the approximation is only in using finitely many directions.
     *
-    * ==A genuine metric==
+    * ==A finite-projection semimetric==
     *
-    * Unlike the entropic approximation below, this satisfies the metric axioms:
-    * it is symmetric, zero exactly on identical inputs, and obeys the triangle
-    * inequality, because it is an average of one-dimensional Wasserstein
-    * distances which are themselves metrics.
+    * Every projection is a one-dimensional Wasserstein metric, so their average
+    * is symmetric, non-negative, and zero on identical inputs. A finite set of
+    * projections need not separate distinct two-dimensional distributions:
+    * with one horizontal direction, distributions that differ only vertically
+    * have distance zero. The public interface therefore makes no identity-of-
+    * indiscernibles claim.
     *
     * ==Directions are evenly spaced, not random==
     *
@@ -54,31 +56,32 @@ object Transport:
     * runs on the same data disagree. Evenly spaced directions over a half-turn
     * cover the same ground deterministically, which is what DET-1 requires.
     */
-  def slicedWasserstein[U <: Unit2D](directions: Int = 16): Metric[Mass[U]] =
-    new Metric[Mass[U]]:
+  def slicedWasserstein[U <: Unit2D](
+      directions: ProjectionDirections = ProjectionDirections.default
+  ): Semimetric[Mass[U]] =
+    new Semimetric[Mass[U]]:
+      private val directionCount = directions.value
+
       val info = MeasureInfo(
         "sliced Wasserstein-1",
-        "average of exact 1-D transport distances over evenly spaced directions; a metric",
+        "finite average of exact 1-D transport distances; a semimetric that may not separate distinct 2-D inputs",
         MeasureScale.DistanceLike,
         Some("Rabin et al. (2011)")
       )
 
       def compare(a: Mass[U], b: Mass[U]): Either[CompareError, MeasureDistance] =
-        if directions < 1 then
-          Left(CompareError.NonPositiveDirections("sliced Wasserstein-1", directions))
-        else
-          Agreement.grids(a.grid, b.grid).left.map(CompareError.Grids.apply).map { g =>
-            val centres = g.centres
-            var total   = 0.0
-            var k       = 0
-            while k < directions do
-              val theta = math.Pi * k / directions
-              val cx    = math.cos(theta)
-              val cy    = math.sin(theta)
-              total += sliceDistance(centres, a, b, cx, cy)
-              k += 1
-            MeasureDistance(total / directions)
-          }
+        Agreement.grids(a.grid, b.grid).left.map(CompareError.Grids.apply).flatMap { g =>
+          val centres = g.centres
+          var total   = 0.0
+          var k       = 0
+          while k < directionCount do
+            val theta = math.Pi * k / directionCount
+            val cx    = math.cos(theta)
+            val cy    = math.sin(theta)
+            total += sliceDistance(centres, a, b, cx, cy)
+            k += 1
+          MeasureDistance.computed("sliced Wasserstein-1", total / directionCount)
+        }
 
       /** Exact one-dimensional Wasserstein-1 along one projection.
         *
@@ -143,16 +146,27 @@ object Transport:
     * silently: a 128x128 grid is 268 million entries, and a library that tries
     * is a library that hangs. [[slicedWasserstein]] scales linearly and is the
     * right tool at that size.
+    *
+    * ==Finite iteration is orientation-sensitive==
+    *
+    * The exact entropic optimum is symmetric for this symmetric ground cost,
+    * but alternating row and column updates stopped after a fixed iteration
+    * count need not be. Therefore this finite solver ships as a generic
+    * [[Compare]], not [[SymmetricCompare]]. Callers may increase the iteration
+    * budget to reduce numerical asymmetry, but no admitted finite budget is
+    * promoted into a proof of convergence.
     */
   def sinkhorn[U <: Unit2D](
-      epsilon: Double = 1.0,
-      iterations: Int = 100,
-      maxCells: Int = 4096
-  ): SymmetricCompare[Mass[U], MeasureDistance] =
-    new SymmetricCompare[Mass[U], MeasureDistance]:
+      config: SinkhornConfig = SinkhornConfig.default
+  ): Compare[Mass[U], Mass[U], MeasureDistance] =
+    new Compare[Mass[U], Mass[U], MeasureDistance]:
+      private val epsilon    = config.regularisation.value
+      private val iterations = config.iterations.value
+      private val maxCells   = config.cellLimit.value
+
       val info = MeasureInfo(
         "Sinkhorn (entropic OT)",
-        "regularised transport cost; symmetric but NOT a metric -- d(x, x) > 0",
+        "finite-iteration regularised transport cost; orientation-sensitive and NOT a metric",
         MeasureScale.DistanceLike,
         Some("Cuturi (2013)")
       )
@@ -161,28 +175,18 @@ object Transport:
         for
           g <- Agreement.grids(a.grid, b.grid).left.map(CompareError.Grids.apply)
           _ <- Either.cond(
-            maxCells > 0,
-            (),
-            CompareError.NonPositiveCellLimit("Sinkhorn", maxCells)
-          )
-          _ <- Either.cond(
             g.size <= maxCells,
             (),
             CompareError.CostMatrixLimitExceeded("Sinkhorn", g.size, maxCells)
           )
-          _ <- Either.cond(
-            epsilon > 0.0,
-            (),
-            CompareError.NonPositiveRegularisation("Sinkhorn", epsilon)
-          )
-          _ <- Either.cond(
-            iterations > 0,
-            (),
-            CompareError.NonPositiveIterations("Sinkhorn", iterations)
-          )
-        yield run(g, a, b)
+          result <- run(g, a, b)
+        yield result
 
-      private def run(g: Grid[U], a: Mass[U], b: Mass[U]): MeasureDistance =
+      private def run(
+          g: Grid[U],
+          a: Mass[U],
+          b: Mass[U]
+      ): Either[CompareError, MeasureDistance] =
         val n       = g.size
         val centres = g.centres
         val cost    = Array.ofDim[Double](n, n)
@@ -230,6 +234,6 @@ object Transport:
             total += u(i) * kern(i)(j) * v(j) * cost(i)(j)
             j += 1
           i += 1
-        MeasureDistance(total)
+        MeasureDistance.computed("Sinkhorn", total)
 
 end Transport

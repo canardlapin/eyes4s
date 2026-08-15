@@ -114,17 +114,15 @@ trait MeasureLaws extends Laws:
           "the measure may have stopped measuring"
       case Left(e) => Prop(false) :| e.message
 
-  /** A semimetric drops only the triangle inequality.
+  /** A semimetric promises self-zero, non-negativity, and symmetry.
     *
-    * Stated as its own rule set rather than as "metric minus one property", so
-    * that a measure declaring itself a semimetric is still audited for the
-    * three properties it does claim.
+    * It does not promise the triangle inequality or positive separation of
+    * distinct inputs. Stated as its own rule set so that adding either stronger
+    * law here cannot silently promote every semimetric in the ecosystem.
     */
   def semimetric[A](
       m: Semimetric[A],
       gen: Gen[A],
-      distinct: (A, A),
-      minSeparation: Double = 1e-6,
       tol: Tolerance = Tolerance.roundTrip
   ): RuleSet =
     new SimpleRuleSet(
@@ -142,9 +140,7 @@ trait MeasureLaws extends Laws:
           case (Right(x), Right(y)) => Prop(tol.approxEquals(value(x), value(y)))
           case (Left(_), Left(_))   => Prop(true)
           case _                    => Prop(false)
-      },
-      "separates inputs the caller knows to be different" ->
-        separates(m.compare, distinct, minSeparation)
+      }
     )
 
   /** The one law a [[SymmetricCompare]] promises, for any score type.

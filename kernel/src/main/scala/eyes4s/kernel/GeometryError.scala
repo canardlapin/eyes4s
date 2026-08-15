@@ -37,7 +37,12 @@ enum GeometryError derives CanEqual:
     */
   case FrameMismatch(left: FrameId, right: FrameId)
 
-  case NonFinitePerspective(distanceMm: Double, widthMm: Double, heightMm: Double)
+  /** One nominal identity was attached to incompatible coordinate metadata. */
+  case FrameIdentityConflict(id: FrameId, left: FrameSpec, right: FrameSpec)
+
+  case NonFiniteLength(value: Double, unit: LengthUnit)
+
+  case NegativeLength(value: Double, unit: LengthUnit)
 
   case NonPositivePerspective(distanceMm: Double, widthMm: Double, heightMm: Double)
 
@@ -66,8 +71,14 @@ enum GeometryError derives CanEqual:
       s"Cannot combine values from different frames: '$l' and '$r'. " +
         "Both are in the same unit, but not in the same coordinate system; " +
         "convert one with a Warp before combining them."
-    case NonFinitePerspective(d, w, h) =>
-      s"Perspective must be finite, got distance=${d}mm, surface=${w}x${h}mm."
+    case FrameIdentityConflict(id, left, right) =>
+      s"Frame identity '$id' has conflicting specifications: " +
+        s"left=${left.render}; right=${right.render}. " +
+        "This is corrupt coordinate metadata, not an ordinary frame mismatch."
+    case NonFiniteLength(value, unit) =>
+      s"A physical length must be finite, got value=$value ${unit.symbol}."
+    case NegativeLength(value, unit) =>
+      s"A physical length cannot be negative, got value=$value ${unit.symbol}."
     case NonPositivePerspective(d, w, h) =>
       s"Perspective needs a positive distance and surface size, got " +
         s"distance=${d}mm, surface=${w}x${h}mm."

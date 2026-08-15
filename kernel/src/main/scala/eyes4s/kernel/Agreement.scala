@@ -48,12 +48,15 @@ object Agreement:
 
   /** Require two frames to be the same, yielding it on success.
     *
-    * Compares identity, not geometry. Two frames with identical bounds are
-    * different frames when they describe different things.
+    * Identity is nominal: distinct identities remain different even when their
+    * geometry matches. Once identities match, their specifications must also
+    * match; otherwise the identity itself is corrupt metadata.
     */
   def frames[U <: Unit2D](left: Frame[U], right: Frame[U]): Either[GeometryError, Frame[U]] =
-    if left.id == right.id then Right(left)
-    else Left(GeometryError.FrameMismatch(left.id, right.id))
+    if left.id != right.id then Left(GeometryError.FrameMismatch(left.id, right.id))
+    else if left.spec != right.spec then
+      Left(GeometryError.FrameIdentityConflict(left.id, left.spec, right.spec))
+    else Right(left)
 
   /** Require a whole collection to share one frame.
     *
@@ -69,15 +72,17 @@ object Agreement:
       case None       => Right(None)
       case Some(head) =>
         frames.tail
-          .find(_.id != head.id)
-          .fold(Right(Some(head))) { bad =>
-            Left(GeometryError.FrameMismatch(head.id, bad.id))
+          .foldLeft[Either[GeometryError, Frame[U]]](Right(head)) { (agreement, candidate) =>
+            agreement.flatMap(_ => Agreement.frames(head, candidate))
           }
+          .map(Some(_))
 
   /** Require two grids to be the same, yielding it on success. */
   def grids[U <: Unit2D](left: Grid[U], right: Grid[U]): Either[SurfaceError, Grid[U]] =
-    if left.id == right.id then Right(left)
-    else Left(SurfaceError.GridMismatch(left.id, right.id))
+    if left.id != right.id then Left(SurfaceError.GridMismatch(left.id, right.id))
+    else if left.spec != right.spec then
+      Left(SurfaceError.GridIdentityConflict(left.id, left.spec, right.spec))
+    else Right(left)
 
   /** Require a whole collection to share one grid. */
   def allGrids[U <: Unit2D](gs: Seq[Grid[U]]): Either[SurfaceError, Option[Grid[U]]] =
@@ -85,8 +90,10 @@ object Agreement:
       case None       => Right(None)
       case Some(head) =>
         gs.tail
-          .find(_.id != head.id)
-          .fold(Right(Some(head)))(bad => Left(SurfaceError.GridMismatch(head.id, bad.id)))
+          .foldLeft[Either[SurfaceError, Grid[U]]](Right(head)) { (agreement, candidate) =>
+            agreement.flatMap(_ => Agreement.grids(head, candidate))
+          }
+          .map(Some(_))
 
   /** Require a whole collection to share one timeline. */
   def allClocks(clocks: Seq[ClockId]): Either[TimeError, Option[ClockId]] =

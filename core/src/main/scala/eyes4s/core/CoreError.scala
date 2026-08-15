@@ -39,13 +39,17 @@ enum CoreError derives CanEqual:
   case OfSurface(underlying: SurfaceError)
   case OfRecording(underlying: RecordingError)
   case OfScanpath(underlying: ScanpathError)
+  case OfEvent(underlying: EventError)
+  case OfDetectionSupport(underlying: DetectionSupportError)
 
   def message: String = this match
-    case OfTime(e)      => e.message
-    case OfGeometry(e)  => e.message
-    case OfSurface(e)   => e.message
-    case OfRecording(e) => e.message
-    case OfScanpath(e)  => e.message
+    case OfTime(e)             => e.message
+    case OfGeometry(e)         => e.message
+    case OfSurface(e)          => e.message
+    case OfRecording(e)        => e.message
+    case OfScanpath(e)         => e.message
+    case OfEvent(e)            => e.message
+    case OfDetectionSupport(e) => e.message
 
 object CoreError:
   extension [A](e: Either[TimeError, A])
@@ -62,3 +66,10 @@ object CoreError:
 
   extension [A](e: Either[ScanpathError, A])
     def widenScanpath: Either[CoreError, A] = e.left.map(CoreError.OfScanpath.apply)
+
+  extension [A](e: Either[EventError, A])
+    def widenEvent: Either[CoreError, A] = e.left.map(CoreError.OfEvent.apply)
+
+  extension [A](e: Either[DetectionSupportError, A])
+    def widenDetectionSupport: Either[CoreError, A] =
+      e.left.map(CoreError.OfDetectionSupport.apply)

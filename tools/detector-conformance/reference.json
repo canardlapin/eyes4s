@@ -1,0 +1,74 @@
+{
+  "$schema": "eyes4s.detector-conformance.v1",
+  "fixtures": [
+    {
+      "algorithm": "ivt",
+      "expected_eyes4s_fixations": [
+        {"centre": [0.0, 0.0], "name": "fixation", "offset_millis_exclusive": 3, "onset_millis": 0},
+        {"centre": [10.0, 0.0], "name": "fixation", "offset_millis_exclusive": 10, "onset_millis": 6}
+      ],
+      "expected_eyes4s_saccades": [
+        {"end": [10.0, 0.0], "offset_millis_exclusive": 6, "onset_millis": 3, "start": [0.0, 0.0]}
+      ],
+      "id": "ivt-symmetric-central-boundaries",
+      "oracle_events": [
+        {"duration_millis": 2, "name": "fixation", "offset_millis_inclusive": 2, "onset_millis": 0},
+        {"duration_millis": 3, "name": "fixation", "offset_millis_inclusive": 9, "onset_millis": 6}
+      ],
+      "oracle_velocities_deg_per_second": [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [2500.0, 0.0], [5000.0, 0.0], [2500.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0]],
+      "parameters": {"minimum_duration_millis": 2, "velocity_threshold_deg_per_second": 2000.0},
+      "period_millis": 1,
+      "positions_deg": [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [5.0, 0.0], [10.0, 0.0], [10.0, 0.0], [10.0, 0.0], [10.0, 0.0], [10.0, 0.0]]
+    },
+    {
+      "algorithm": "idt",
+      "expected_eyes4s_fixations": [
+        {"centre": [1.04, 0.0], "name": "fixation", "offset_millis_exclusive": 6, "onset_millis": 1}
+      ],
+      "id": "idt-advances-to-stable-window",
+      "oracle_events": [
+        {"duration_millis": 4, "name": "fixation", "offset_millis_inclusive": 5, "onset_millis": 1}
+      ],
+      "parameters": {"dispersion_threshold": 0.5, "minimum_duration_millis": 2},
+      "period_millis": 1,
+      "positions_deg": [[9.0, 0.0], [1.0, 0.0], [1.1, 0.0], [1.0, 0.0], [1.1, 0.0], [1.0, 0.0]]
+    },
+    {
+      "algorithm": "idt",
+      "documented_deviation": "eyes4s excludes the first threshold-violating sample from the completed fixation and starts the next candidate at that sample; pymovements 0.26.2 includes it in the completed fixation",
+      "expected_error_report_against_oracle": {
+        "centre_euclidean_error_deg": [1.79, 0.0],
+        "duration_absolute_error_millis": [1.0, 0.0],
+        "event_count_error": 0,
+        "offset_absolute_error_millis": [1.0, 0.0],
+        "onset_absolute_error_millis": [0.0, 0.0]
+      },
+      "expected_eyes4s_fixations": [
+        {"centre": [0.05, 0.0], "name": "fixation", "offset_millis_exclusive": 4, "onset_millis": 0},
+        {"centre": [1.04, 0.0], "name": "fixation", "offset_millis_exclusive": 10, "onset_millis": 5}
+      ],
+      "id": "idt-violating-sample-policy",
+      "oracle_events": [
+        {"duration_millis": 4, "name": "fixation", "offset_millis_inclusive": 4, "onset_millis": 0},
+        {"duration_millis": 4, "name": "fixation", "offset_millis_inclusive": 9, "onset_millis": 5}
+      ],
+      "oracle_events_half_open_with_centres": [
+        {"centre": [1.8399999999999999, 0.0], "name": "fixation", "offset_millis_exclusive": 5, "onset_millis": 0},
+        {"centre": [1.04, 0.0], "name": "fixation", "offset_millis_exclusive": 10, "onset_millis": 5}
+      ],
+      "parameters": {"dispersion_threshold": 0.5, "minimum_duration_millis": 2},
+      "period_millis": 1,
+      "positions_deg": [[0.0, 0.0], [0.1, 0.0], [0.0, 0.0], [0.1, 0.0], [9.0, 0.0], [1.0, 0.0], [1.1, 0.0], [1.0, 0.0], [1.1, 0.0], [1.0, 0.0]]
+    }
+  ],
+  "oracle": {
+    "event_interval_convention": "offset is the timestamp of the last classified sample; duration is offset minus onset",
+    "license": "MIT",
+    "numpy_version": "1.26.4",
+    "package_version": "0.26.2",
+    "project": "pymovements",
+    "repository": "https://github.com/aeye-lab/pymovements",
+    "revision": "6753fdf8b81da40b890576dd6b369edb81243b06",
+    "source_paths": {"idt": "src/pymovements/events/detection/idt.py", "ivt": "src/pymovements/events/detection/ivt.py"}
+  }
+}

@@ -62,7 +62,30 @@ object Span:
     def isNegative: Boolean = a < 0L
     def isZero: Boolean     = a == 0L
 
-    def render: String = s"${a.toMillis}ms"
+    def render: String = renderMilliseconds(a)
+
+  /** Render exact microseconds as milliseconds without platform-dependent
+    * `Double.toString` behavior. Scala.js omits the trailing `.0` that the JVM
+    * retains for integral doubles, which must not change persistent reports.
+    */
+  private[kernel] def renderMilliseconds(micros: Long): String =
+    val whole     = micros / 1000L
+    val remainder = micros % 1000L
+    if remainder == 0L then s"$whole.0ms"
+    else
+      val sign           = if micros < 0L then "-" else ""
+      val magnitudeWhole =
+        if whole < 0L then -whole
+        else whole
+      val magnitudeRemainder =
+        if remainder < 0L then -remainder
+        else remainder
+      val padded =
+        if magnitudeRemainder < 10L then s"00$magnitudeRemainder"
+        else if magnitudeRemainder < 100L then s"0$magnitudeRemainder"
+        else magnitudeRemainder.toString
+      val fraction = padded.reverse.dropWhile(_ == '0').reverse
+      s"$sign$magnitudeWhole.$fraction" + "ms"
 
   given Order[Span] = Order.from((a, b) => java.lang.Long.compare(a, b))
 
