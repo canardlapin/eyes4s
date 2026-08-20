@@ -20,6 +20,26 @@ import scala.compiletime.testing.typeCheckErrors
 
 class SyncEvidenceSuite extends munit.FunSuite:
 
+  test("fromCommonEvents exposes the retained observation count") {
+    val source = ClockId("event-source")
+    val target = ClockId("event-target")
+    val marks  = Vector(
+      SyncMark
+        .of("one", Instant.millis(0), Instant.millis(10))
+        .fold(error => fail(error.message), identity),
+      SyncMark
+        .of("two", Instant.millis(100), Instant.millis(110))
+        .fold(error => fail(error.message), identity)
+    )
+    val evidence = SyncEvidence
+      .fromCommonEvents(source, target, SyncFitMode.OffsetOnly, marks)
+      .fold(error => fail(error.message), identity)
+
+    assertEquals(evidence.observations, 2)
+    assertEquals(evidence.usedMarks, marks)
+    assertEquals(evidence.offset, Span.millis(10))
+  }
+
   test("exact time rendering is deterministic down to microseconds") {
     assertEquals(Span.micros(34000L).render, "34.0ms")
     assertEquals(Span.micros(120L).render, "0.12ms")

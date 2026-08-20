@@ -1,0 +1,39 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eyes4s.io
+
+import java.nio.charset.StandardCharsets
+
+class EyeLinkConformanceArtifactJvmSuite extends munit.FunSuite:
+  private val Resource = "/META-INF/eyes4s/eyelink/portable-conformance.tsv"
+
+  private def resourceBytes: Array[Byte] =
+    val stream = Option(getClass.getResourceAsStream(Resource)).getOrElse(
+      fail(s"missing packaged EyeLink conformance resource=$Resource")
+    )
+    try stream.readAllBytes()
+    finally stream.close()
+
+  test("packaged portable conformance artifact is exact and explicitly uncertified for EDF") {
+    val text = new String(resourceBytes, StandardCharsets.UTF_8)
+    assertEquals(text, EyeLinkPortableConformanceExpected.renderTsv)
+    assertEquals(text.linesIterator.drop(1).length, 6)
+    assertEquals(text.linesIterator.count(_.contains("\tmissing-external\t")), 6)
+    assert(!text.contains("\tcompared-pass\t\tcompared-pass\t"))
+  }
+
+end EyeLinkConformanceArtifactJvmSuite

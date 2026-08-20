@@ -1,0 +1,3 @@
+# EyeLink oracle manifests have a strict nine-column TSV schema. Value rows
+# intentionally retain an empty final detail field, represented by a terminal tab.
+io/src/test/resources/eyes4s/io/eyelink/oracles/*.tsv whitespace=-blank-at-eol

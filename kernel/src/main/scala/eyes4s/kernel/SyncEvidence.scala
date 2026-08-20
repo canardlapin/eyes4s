@@ -123,10 +123,11 @@ final class SyncEvidence private (
     val maximumAbsoluteResidual: SyncErrorMagnitude,
     val uncertainty: SyncErrorMagnitude
 ):
-  def source: ClockId = sync.from
-  def target: ClockId = sync.to
-  def scale: Double   = 1.0 + sync.drift
-  def offset: Span    = sync.offset
+  def source: ClockId   = sync.from
+  def target: ClockId   = sync.to
+  def observations: Int = usedMarks.length
+  def scale: Double     = 1.0 + sync.drift
+  def offset: Span      = sync.offset
 
   /** Convert a source-clock instant after this evidence has established its identity. */
   def apply(time: Instant): Instant = sync.unsafeInstant(time)
@@ -147,6 +148,19 @@ final class SyncEvidence private (
       s"max=${maximumAbsoluteResidual.render}"
 
 object SyncEvidence:
+
+  /** Domain-named alias for fitting from occurrences common to two observed
+    * timelines. The marks remain explicit evidence; this method does not infer
+    * correspondence from payload equality.
+    */
+  def fromCommonEvents(
+      source: ClockId,
+      target: ClockId,
+      mode: SyncFitMode,
+      events: Vector[SyncMark],
+      residualLimit: Option[SyncResidualLimit] = None
+  ): Either[SyncEvidenceError, SyncEvidence] =
+    fromCommonMarks(source, target, mode, events, residualLimit)
 
   /** Fit from ordered common marks, optionally excluding a first-pass residual
     * outlier set and refitting the retained marks once.
@@ -265,42 +279,54 @@ object SyncEvidence:
       target: ClockId,
       mode: SyncFitMode,
       marks: Vector[SyncMark]
-  ): Either[SyncEvidenceError, Sync] = mode match
-    case SyncFitMode.OffsetOnly =>
-      val meanOffset = marks.iterator
-        .map(mark => mark.onSource.until(mark.onTarget).toMicros.toDouble)
-        .sum / marks.length
-      Sync
-        .affine(source, target, Span.micros(math.round(meanOffset)), 0.0)
-        .left
-        .map(SyncEvidenceError.InvalidFittedSync(source, target, _))
-    case SyncFitMode.Affine =>
-      val sourceOrigin = marks.head.onSource.toMicros
-      val targetOrigin = marks.head.onTarget.toMicros
-      val xs           = marks.map(mark => (mark.onSource.toMicros - sourceOrigin).toDouble)
-      val ys           = marks.map(mark => (mark.onTarget.toMicros - targetOrigin).toDouble)
-      val meanX        = xs.sum / xs.length
-      val meanY        = ys.sum / ys.length
-      val variance     = xs.map(value => square(value - meanX)).sum
-      if !variance.isFinite || variance <= 0.0 then
-        Left(SyncEvidenceError.DegenerateSourceVariance(source, target, variance))
-      else
-        val covariance = xs
-          .zip(ys)
-          .map { case (x, y) =>
-            (x - meanX) * (y - meanY)
-          }
-          .sum
-        val scale  = covariance / variance
-        val offset =
-          targetOrigin.toDouble + meanY - scale * (sourceOrigin.toDouble + meanX)
-        if !scale.isFinite || !offset.isFinite then
-          Left(SyncEvidenceError.NonFiniteFit(source, target, scale, offset))
-        else
-          Sync
-            .affine(source, target, Span.micros(math.round(offset)), scale - 1.0)
-            .left
-            .map(SyncEvidenceError.InvalidFittedSync(source, target, _))
+  ): Either[SyncEvidenceError, Sync] =
+    marks.headOption match
+      case None =>
+        Left(
+          SyncEvidenceError.TooFewCommonMarks(
+            source,
+            target,
+            0,
+            requiredMarks(mode)
+          )
+        )
+      case Some(first) =>
+        mode match
+          case SyncFitMode.OffsetOnly =>
+            val meanOffset = marks.iterator
+              .map(mark => mark.onSource.until(mark.onTarget).toMicros.toDouble)
+              .sum / marks.length
+            Sync
+              .affine(source, target, Span.micros(math.round(meanOffset)), 0.0)
+              .left
+              .map(SyncEvidenceError.InvalidFittedSync(source, target, _))
+          case SyncFitMode.Affine =>
+            val sourceOrigin = first.onSource.toMicros
+            val targetOrigin = first.onTarget.toMicros
+            val xs       = marks.map(mark => (mark.onSource.toMicros - sourceOrigin).toDouble)
+            val ys       = marks.map(mark => (mark.onTarget.toMicros - targetOrigin).toDouble)
+            val meanX    = xs.sum / xs.length
+            val meanY    = ys.sum / ys.length
+            val variance = xs.map(value => square(value - meanX)).sum
+            if !variance.isFinite || variance <= 0.0 then
+              Left(SyncEvidenceError.DegenerateSourceVariance(source, target, variance))
+            else
+              val covariance = xs
+                .zip(ys)
+                .map { case (x, y) =>
+                  (x - meanX) * (y - meanY)
+                }
+                .sum
+              val scale  = covariance / variance
+              val offset =
+                targetOrigin.toDouble + meanY - scale * (sourceOrigin.toDouble + meanX)
+              if !scale.isFinite || !offset.isFinite then
+                Left(SyncEvidenceError.NonFiniteFit(source, target, scale, offset))
+              else
+                Sync
+                  .affine(source, target, Span.micros(math.round(offset)), scale - 1.0)
+                  .left
+                  .map(SyncEvidenceError.InvalidFittedSync(source, target, _))
 
   private def residualsFor(sync: Sync, marks: Vector[SyncMark]): Vector[SyncResidual] =
     marks.map { mark =>

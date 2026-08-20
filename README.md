@@ -57,8 +57,10 @@ absent from the API; invalid raw configuration is reported as data.
 
 **Pre-alpha, under active implementation.** The typed kernel, gaze core, detectors, surfaces,
 comparison measures, relational design algebra, deterministic RNG, and published law suites have
-executable implementations and tests. AOI, analysis-plan, codec, and file-I/O modules remain
-scaffolds; APIs can still change before the first release.
+executable implementations and tests. AOI, analysis-plan, codec, delimited I/O, and the portable
+EyeLink ASC path also have working implementations, but APIs can still change before the first
+release. EyeLink ASC parser evidence is not yet vendor or real-device certification; see the
+[support and import guide](docs/formats/eyelink-asc.md).
 
 - [`eyes4s.md`](eyes4s.md) — architecture specification: the thesis, the design pillars, the five
   layers, and the traps being designed against.

@@ -65,6 +65,33 @@ object Sha256:
 
   def ofUtf8(value: String): Sha256 = ofBytes(utf8(value))
 
+  /** Parse a canonical lower- or upper-case hexadecimal SHA-256 digest.
+    *
+    * The operand is carried into every failure so an application can identify
+    * which source, converter, or artifact digest was malformed.
+    */
+  def fromHex(operand: String, value: String): Either[Sha256Error, Sha256] =
+    if value.length != 64 then Left(Sha256Error.WrongLength(operand, value.length))
+    else
+      val output                     = Array.ofDim[Byte](32)
+      var index                      = 0
+      var error: Option[Sha256Error] = None
+      while index < output.length && error.isEmpty do
+        val highIndex = index * 2
+        val lowIndex  = highIndex + 1
+        (hexDigit(value.charAt(highIndex)), hexDigit(value.charAt(lowIndex))) match
+          case (Some(high), Some(low)) => output(index) = ((high << 4) | low).toByte
+          case (None, _)               =>
+            error = Some(
+              Sha256Error.InvalidCharacter(operand, highIndex, value.charAt(highIndex))
+            )
+          case (_, None) =>
+            error = Some(
+              Sha256Error.InvalidCharacter(operand, lowIndex, value.charAt(lowIndex))
+            )
+        index += 1
+      error.toLeft(new Sha256(IArray.from(output)))
+
   def ofBytes(input: IArray[Byte]): Sha256 =
     val bitLength   = input.length.toLong * 8L
     val paddedBytes = ((input.length + 9 + 63) / 64) * 64
@@ -183,4 +210,22 @@ object Sha256:
       bytes += (0x80 | ((codePoint >>> 6) & 0x3f)).toByte
       bytes += (0x80 | (codePoint & 0x3f)).toByte
 
+  private def hexDigit(value: Char): Option[Int] =
+    if value >= '0' && value <= '9' then Some(value - '0')
+    else if value >= 'a' && value <= 'f' then Some(value - 'a' + 10)
+    else if value >= 'A' && value <= 'F' then Some(value - 'A' + 10)
+    else None
+
 end Sha256
+
+enum Sha256Error derives CanEqual:
+  case WrongLength(operand: String, actual: Int)
+  case InvalidCharacter(operand: String, index: Int, value: Char)
+
+  def message: String = this match
+    case WrongLength(operand, actual) =>
+      s"SHA-256 operand='$operand' has hexadecimal length=$actual; expected=64."
+    case InvalidCharacter(operand, index, value) =>
+      s"SHA-256 operand='$operand' has non-hexadecimal character='$value' at index=$index."
+
+end Sha256Error

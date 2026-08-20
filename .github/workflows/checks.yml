@@ -115,3 +115,7 @@ jobs:
 
       - name: Check module and kernel boundaries
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' checkBoundaries
+
+      - name: Run EyeLink performance smoke court
+        if: matrix.project == 'rootJVM' && matrix.java == 'temurin@17'
+        run: sbt 'ioJVM/Test/runMain eyes4s.io.EyeLinkAscPerformanceMain --profile smoke --hardware github-actions-ubuntu-22.04-x64'
