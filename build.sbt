@@ -541,7 +541,7 @@ lazy val design = crossProject(JVMPlatform, JSPlatform)
 lazy val plan = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("plan"))
-  .dependsOn(design)
+  .dependsOn(design, detect)
   .settings(commonSettings, pureModuleSettings)
   .settings(name := "eyes4s-plan")
 
@@ -553,6 +553,9 @@ lazy val codec = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings, pureModuleSettings)
   .settings(
     name := "eyes4s-codec",
+    Test / unmanagedSources += file(
+      "laws/src/test/scala/eyes4s/examples/MatchedControlFixtures.scala"
+    ).getAbsoluteFile,
     libraryDependencies ++= Seq(
       "io.circe" %%% "circe-core"   % circeV,
       "io.circe" %%% "circe-parser" % circeV
@@ -568,7 +571,7 @@ lazy val codec = crossProject(JVMPlatform, JSPlatform)
 lazy val laws = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("laws"))
-  .dependsOn(kernel, core, detect, surface, aoi, compare, design)
+  .dependsOn(kernel, core, detect, surface, aoi, compare, design, codec)
   .settings(pureModuleSettings)
   .settings(
     name := "eyes4s-laws",
@@ -602,10 +605,17 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
   .dependsOn(fs2Module, codec)
   .settings(commonSettings)
   .settings(
-    name                             := "eyes4s-io",
+    name := "eyes4s-io",
+    Test / unmanagedSources ++= Seq(
+      file("laws/src/test/scala/eyes4s/examples/MatchedControlFixtures.scala").getAbsoluteFile,
+      file("docs/examples/StudyGuide.scala").getAbsoluteFile,
+      file("docs/examples/TemporalStudyGuide.scala").getAbsoluteFile,
+      file("codec/src/test/scala/eyes4s/codec/TemporalFixtures.scala").getAbsoluteFile
+    ),
     libraryDependencies += "co.fs2" %%% "fs2-io" % fs2V
   )
   .jvmSettings(
+    Test / unmanagedSourceDirectories += file("tools/study-cli").getAbsoluteFile,
     Test / parallelExecution := false,
     Test / run / fork        := true,
     Test / run / javaOptions ++= Seq("-Xms64m", "-Xmx256m")

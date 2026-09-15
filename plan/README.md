@@ -1,9 +1,12 @@
 # eyes4s-plan
 
-Analyses as descriptions: plan ADTs, their interpreters, and the typed
-extension registry.
+Typed, inspectable descriptions of matched/control fixation studies. `StudyPlan` records input
+artifact identity, geometry, phases, weighting, estimation scales, failure policy and a typed
+comparison definition. Its interpreter reuses occupancy, pairing, reduction and contrast operations.
 
-A plan is a value that can be shown, edited, diffed, serialised and re-run --
-the five verbs an application needs and a Scala expression cannot provide.
+Plans support structural equality, field-level diffs, prerequisite checks and independent results
+for each scale. Custom comparison definitions retain typed parameters, scores and differences.
+This module has no JSON, filesystem or streaming dependency.
 
-No code yet. See `../PRD.md` for this module's requirements and `../.mote/` for its work items.
+Start with [saved studies](../docs/SAVED_STUDIES.md). General detection, AOI and temporal plan
+vocabularies remain future work; this module currently implements the concrete fixation-study path.

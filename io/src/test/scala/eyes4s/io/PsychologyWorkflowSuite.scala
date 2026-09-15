@@ -16,6 +16,13 @@
 
 package eyes4s.io
 
+import eyes4s.codec.*
+import eyes4s.core.*
+import eyes4s.kernel.*
+import eyes4s.kernel.Unit2D.Px
+import eyes4s.plan.*
+import io.circe.Json
+
 class PsychologyWorkflowSuite extends munit.FunSuite:
 
   /** Exact 90-row excerpt from AdSERP's public Zenodo record 15236546,
@@ -272,4 +279,96 @@ class PsychologyWorkflowSuite extends munit.FunSuite:
         .left
         .exists(_.isInstanceOf[PsychologyWorkflowError.ImportFailed])
     )
+  }
+
+  private def checked[E, A](value: Either[E, A]): A =
+    value.fold(error => fail(s"$error"), identity)
+  private def definition(name: String): DefinitionId = checked(DefinitionId.of(name, 1))
+  private val persistence                            = RecordingCodecs.ivt(
+    definition("eyes4s.recording-plan"),
+    definition("eyes4s.recording.ivt"),
+    definition("eyes4s.ivt-parameters")
+  )
+
+  test("the real recording saves and reloads all scientific choices through the pure plan") {
+    val prepared = checked(PsychologyWorkflow.prepare(plan, publicTrial))
+    val direct   = checked(PsychologyWorkflow.run(plan, publicTrial))
+    val json     = checked(persistence.codec.encode(prepared.analysis))
+    val restored = checked(persistence.codec.parse(json.noSpaces))
+    assertEquals(restored.diff(prepared.analysis), Vector.empty)
+    val rerun =
+      checked(PsychologyWorkflow.runAnalysis(prepared.study, prepared.imported, restored))
+    assertEquals(rerun.report, direct.report)
+    assertEquals(rerun.csv, direct.csv)
+    assertEquals(rerun.preparedRecording.contentHash, direct.preparedRecording.contentHash)
+    assertEquals(rerun.detection.eventSeries.events, direct.detection.eventSeries.events)
+    assertEquals(rerun.detection.eventSeries.support, direct.detection.eventSeries.support)
+    assertEquals(rerun.imported.raw.rows, direct.imported.raw.rows)
+    assertEquals(rerun.imported.diagnostics, direct.imported.diagnostics)
+  }
+
+  test("recording prerequisites retain missing geometry and synchronization before execution") {
+    val prepared = checked(PsychologyWorkflow.prepare(plan, publicTrial))
+    val json     = checked(persistence.codec.encode(prepared.analysis))
+    val changed  = json.mapObject(
+      _.add(
+        "value",
+        checked(json.hcursor.get[Json]("value"))
+          .mapObject(_.add("viewing", Json.Null).add("marks", Json.arr()))
+      )
+    )
+    val missing = checked(persistence.codec.decode(changed))
+    val errors  = missing.prerequisites(None)
+    assertEquals(errors.size, 3)
+    assert(errors.exists { case RecordingPlanError.MissingViewing(_) => true; case _ => false })
+    assert(errors.exists {
+      case RecordingPlanError.MissingSynchronization(_, _) => true; case _ => false
+    })
+    assert(missing.run(prepared.imported.recording.getOrElse(fail("recording"))).isLeft)
+    assert(missing.diff(prepared.analysis).exists(_.field == "viewing"))
+  }
+
+  test(
+    "recording registry rejects unavailable methods, incompatible schemas and invalid parameters"
+  ) {
+    val prepared = checked(PsychologyWorkflow.prepare(plan, publicTrial))
+    val json     = checked(persistence.codec.encode(prepared.analysis))
+    val registry = checked(RecordingRegistry.empty.register(persistence.registration))
+    val loaded   = checked(registry.decode(json))
+    assertEquals(checked(loaded.encode), json)
+    assert(loaded.plan.run(prepared.imported.recording.getOrElse(fail("recording"))).isRight)
+    assertEquals(
+      RecordingRegistry.empty.decode(json).left.toOption,
+      Some(CodecError.MissingMethod(persistence.method.id))
+    )
+    assert(registry.register(persistence.registration).isLeft)
+    val newer = json.mapObject(
+      _.add(
+        "schema",
+        Json.obj(
+          "name"    -> Json.fromString("eyes4s.recording-plan"),
+          "version" -> Json.fromInt(2)
+        )
+      )
+    )
+    assert(persistence.codec.decode(newer).isLeft)
+    val params  = checked(persistence.parameters.encode(prepared.analysis.parameters))
+    val invalid = params.mapObject(
+      _.add(
+        "value",
+        Json.obj("threshold" -> Json.fromInt(-1), "minimumMicros" -> Json.fromString("20000"))
+      )
+    )
+    assert(persistence.parameters.decode(invalid).isLeft)
+    val wrong = checked(
+      Recording.of(
+        prepared.analysis.display,
+        prepared.analysis.trackerClock,
+        Rate.Irregular,
+        Eye.Left,
+        None,
+        IArray(Sample(Instant.micros(0), Gaze.Tracked(Pt[Px](1, 1), None)))
+      )
+    )
+    assert(prepared.analysis.run(wrong).isLeft)
   }

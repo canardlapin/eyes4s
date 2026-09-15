@@ -17,7 +17,9 @@
 package eyes4s.io
 
 import eyes4s.aoi.*
+import cats.syntax.all.*
 import eyes4s.core.*
+import eyes4s.plan.*
 import eyes4s.detect.*
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.{Deg, Px}
@@ -288,6 +290,13 @@ object AdserpWorkflowPlan:
       }
       .toLeft(())
 
+/** Admitted source and pure description, ready for persistence or direct execution. */
+final case class PreparedRecordingStudy[P](
+    study: StudyTrial,
+    imported: DelimitedImport[Px],
+    analysis: RecordingPlan[P]
+)
+
 /** Application summary of every stage in one completed workflow. */
 final case class PsychologyWorkflowReport(
     source: String,
@@ -345,108 +354,115 @@ final class PsychologyWorkflowResult private[io] (
 /** The narrow, reproducible path from an AdSERP-style source file to tidy AOI results. */
 object PsychologyWorkflow:
 
+  /** Admit the native source and expose its reusable pure analysis description. */
+  def prepare(
+      plan: AdserpWorkflowPlan,
+      contents: String
+  ): Either[PsychologyWorkflowError, PreparedRecordingStudy[IvtParameters]] = for
+    schema <- schemaFor(plan.sourceName)
+    raw      = Delimited.parse(plan.sourceName, contents, schema, plan.sourceMetadata)
+    imported = raw.validate(plan.displayFrame, plan.trackerClock, Rate.Irregular, Eye.Left)
+    native <- imported.recording.toRight(
+      PsychologyWorkflowError.ImportFailed(plan.sourceName, imported.diagnostics.map(_.message))
+    )
+    areas <- plan.areas.traverse { a =>
+      for
+        bounds <- Bounds
+          .of[Px](a.xMin, a.yMin, a.xMax, a.yMax)
+          .left
+          .map(PsychologyWorkflowError.AreaRegionFailed(plan.sourceName, a.id, _))
+        area <- RecordingArea
+          .of(a.id, a.label, bounds)
+          .left
+          .map(PsychologyWorkflowError.AnalysisFailed(plan.sourceName, _))
+      yield area
+    }
+    id <- DefinitionId
+      .of("eyes4s.recording.ivt", 1)
+      .left
+      .map(e =>
+        PsychologyWorkflowError.AnalysisFailed(plan.sourceName, RecordingPlanError.Input(e))
+      )
+    analysis <- RecordingPlan
+      .of(
+        ArtifactRef.of[Recording[Px]](native.contentHash),
+        RecordingRef(s"${plan.study.participant}/${plan.study.trial}"),
+        plan.displayFrame,
+        plan.trackerClock,
+        plan.analysisClock,
+        FrameId(plan.sourceName + ":visual-angle"),
+        Some(plan.viewing),
+        plan.synchronizationModel.kernel,
+        plan.synchronizationMarks.map(_.mark),
+        plan.residualLimit,
+        plan.interpolationGap,
+        areas,
+        RecordingMethod.ivt(id),
+        IvtParameters(plan.velocityThreshold, plan.minimumEventDuration)
+      )
+      .left
+      .map(PsychologyWorkflowError.AnalysisFailed(plan.sourceName, _))
+  yield PreparedRecordingStudy(plan.study, imported, analysis)
+
   def run(
       plan: AdserpWorkflowPlan,
       contents: String
   ): Either[PsychologyWorkflowError, PsychologyWorkflowResult] =
-    for
-      schema <- schemaFor(plan.sourceName)
-      raw = Delimited.parse(
-        plan.sourceName,
-        contents,
-        schema,
-        plan.sourceMetadata
+    prepare(plan, contents).flatMap(p => runAnalysis(p.study, p.imported, p.analysis))
+
+  /** Execute a direct or decoded plan against admitted data, retaining its import diagnostics. */
+  def runAnalysis[P](
+      study: StudyTrial,
+      imported: DelimitedImport[Px],
+      plan: RecordingPlan[P]
+  ): Either[PsychologyWorkflowError, PsychologyWorkflowResult] = for
+    native <- imported.recording.toRight(
+      PsychologyWorkflowError.ImportFailed(
+        imported.raw.source,
+        imported.diagnostics.map(_.message)
       )
-      imported = raw.validate(
-        plan.displayFrame,
-        plan.trackerClock,
-        Rate.Irregular,
-        Eye.Left
-      )
-      native <- imported.recording.toRight(
-        PsychologyWorkflowError.ImportFailed(
-          plan.sourceName,
-          imported.diagnostics.map(_.message)
-        )
-      )
-      synchronization <- SyncEvidence
-        .fromCommonMarks(
-          plan.trackerClock,
-          plan.analysisClock,
-          plan.synchronizationModel.kernel,
-          plan.synchronizationMarks.map(_.mark),
-          plan.residualLimit
-        )
-        .left
-        .map(PsychologyWorkflowError.InvalidSynchronization(plan.sourceName, _))
-      synchronized <- synchronize(plan.sourceName, native, synchronization)
-      angularFrame <- Frame
-        .angular(
-          plan.sourceName + ":visual-angle",
-          plan.viewing.horizontalExtent.toDegrees,
-          plan.viewing.verticalExtent.toDegrees
-        )
-        .left
-        .map(PsychologyWorkflowError.AngularFrameFailed(plan.sourceName, _))
-      warp = Viewing.angularWarp(plan.viewing, plan.displayFrame, angularFrame)
-      angular <- synchronized
-        .warp(warp)
-        .left
-        .map(PsychologyWorkflowError.WarpFailed(plan.sourceName, _))
-      prepared <- preprocess(plan.sourceName, angular, plan.interpolationGap)
-      detector = Detectors.ivt(
-        plan.velocityThreshold,
-        plan.minimumEventDuration,
-        plan.analysisClock
-      )
-      temporalSupport = prepared.representedSupport.policy
-      detection <- Detection
-        .run(
-          RecordingRef(s"${plan.study.participant}/${plan.study.trial}"),
-          prepared,
-          detector,
-          GapPolicy.Break,
-          temporalSupport
-        )
-        .left
-        .map(PsychologyWorkflowError.DetectionFailed(plan.sourceName, _))
-      aoiSet     <- buildAreas(plan.sourceName, angularFrame, warp, plan.areas)
-      assignment <- aoiSet
-        .assign(prepared, MembershipPolicy.ExclusiveByPriority, temporalSupport)
-        .left
-        .map(PsychologyWorkflowError.AssignmentFailed(plan.sourceName, _))
-      operations = upstreamOperations(plan, imported, synchronization, angularFrame)
-      tidy <- TidyAoiResult
-        .from(
-          plan.study,
-          imported,
-          detection,
-          assignment,
-          Some(synchronization),
-          operations
-        )
-        .left
-        .map(PsychologyWorkflowError.TidyResultFailed(plan.sourceName, _))
-      csv = TidyCsv.encode(tidy)
-      decoded <- TidyCsv
-        .decode(csv)
-        .left
-        .map(PsychologyWorkflowError.ExportFailed(plan.sourceName, _))
-      _ <- Either.cond(
-        decoded.encode == csv,
-        (),
-        PsychologyWorkflowError.ExportRoundTripMismatch(plan.sourceName)
-      )
-    yield new PsychologyWorkflowResult(
-      imported,
-      synchronization,
-      angular,
-      prepared,
-      detection,
-      assignment,
-      tidy,
-      csv
     )
+    result <- plan
+      .run(native)
+      .left
+      .map(PsychologyWorkflowError.AnalysisFailed(imported.raw.source, _))
+    operations = upstreamOperations(
+      plan,
+      imported,
+      result.synchronization,
+      result.angular.frame
+    )
+    tidy <- TidyAoiResult
+      .from(
+        study,
+        imported,
+        result.detection,
+        result.assignment,
+        Some(result.synchronization),
+        operations
+      )
+      .left
+      .map(PsychologyWorkflowError.TidyResultFailed(imported.raw.source, _))
+    csv = TidyCsv.encode(tidy)
+    decoded <- TidyCsv
+      .decode(csv)
+      .left
+      .map(PsychologyWorkflowError.ExportFailed(imported.raw.source, _))
+    _ <- Either.cond(
+      decoded.encode == csv,
+      (),
+      PsychologyWorkflowError.ExportRoundTripMismatch(imported.raw.source)
+    )
+  yield new PsychologyWorkflowResult(
+    imported,
+    result.synchronization,
+    result.angular,
+    result.prepared,
+    result.detection,
+    result.assignment,
+    tidy,
+    csv
+  )
 
   private def schemaFor(
       source: String
@@ -470,94 +486,8 @@ object PsychologyWorkflow:
         .map(PsychologyWorkflowError.SchemaFailed(source, _))
     yield schema
 
-  private def synchronize(
-      source: String,
-      recording: Recording[Px],
-      synchronization: SyncEvidence
-  ): Either[PsychologyWorkflowError, Recording[Px]] =
-    Recording
-      .of(
-        recording.frame,
-        synchronization.target,
-        recording.rate,
-        recording.eye,
-        recording.pupilUnit,
-        recording.samples.map(sample => sample.copy(t = synchronization(sample.t)))
-      )
-      .left
-      .map(PsychologyWorkflowError.SynchronizedRecordingFailed(source, _))
-
-  private def preprocess(
-      source: String,
-      recording: Recording[Deg],
-      gap: InterpolationGap
-  ): Either[PsychologyWorkflowError, Recording[Deg]] =
-    val samples = Filter.interpolateGaps[Deg](gap).runAll(recording.samples)
-    if samples.length != recording.size then
-      Left(
-        PsychologyWorkflowError.PreprocessingCardinality(source, recording.size, samples.length)
-      )
-    else
-      Recording
-        .of(
-          recording.frame,
-          recording.clock,
-          recording.rate,
-          recording.eye,
-          recording.pupilUnit,
-          IArray.from(samples)
-        )
-        .left
-        .map(PsychologyWorkflowError.PreprocessedRecordingFailed(source, _))
-
-  private def buildAreas(
-      source: String,
-      angularFrame: Frame[Deg],
-      warp: Warp[Px, Deg],
-      specifications: Vector[WorkflowAoi]
-  ): Either[PsychologyWorkflowError, AoiSet[Deg]] =
-    specifications
-      .foldLeft[Either[PsychologyWorkflowError, Vector[Aoi[Deg]]]](Right(Vector.empty)) {
-        (acc, specification) =>
-          for
-            built <- acc
-            first <- warp(Pt[Px](specification.xMin, specification.yMin)).toRight(
-              PsychologyWorkflowError.AreaWarpUndefined(source, specification.id, "minimum")
-            )
-            second <- warp(Pt[Px](specification.xMax, specification.yMax)).toRight(
-              PsychologyWorkflowError.AreaWarpUndefined(source, specification.id, "maximum")
-            )
-            lower = Pt[Deg](math.min(first.x, second.x), math.min(first.y, second.y))
-            upper = Pt[Deg](math.max(first.x, second.x), math.max(first.y, second.y))
-            region <- Region
-              .rect(lower, upper)
-              .left
-              .map(PsychologyWorkflowError.AreaRegionFailed(source, specification.id, _))
-            area <- Aoi
-              .of(
-                specification.id,
-                specification.label,
-                angularFrame,
-                region,
-                Map(
-                  "nativeFrame"        -> warp.from.id.name,
-                  "nativeBoundsPixels" ->
-                    s"${specification.xMin},${specification.yMin},${specification.xMax},${specification.yMax}"
-                )
-              )
-              .left
-              .map(PsychologyWorkflowError.AreaConstructionFailed(source, _))
-          yield built :+ area
-      }
-      .flatMap(
-        AoiSet
-          .of(_)
-          .left
-          .map(PsychologyWorkflowError.AreaConstructionFailed(source, _))
-      )
-
   private def upstreamOperations(
-      plan: AdserpWorkflowPlan,
+      plan: RecordingPlan[?],
       imported: DelimitedImport[Px],
       synchronization: SyncEvidence,
       angularFrame: Frame[Deg]
@@ -566,11 +496,13 @@ object PsychologyWorkflow:
       Provenance.Step(
         "import-delimited",
         Vector(
-          "source"       -> Provenance.Param.Text(plan.sourceName),
+          "source"       -> Provenance.Param.Text(imported.raw.source),
           "sha256"       -> Provenance.Param.Text(imported.sourceDigest.hex),
           "acceptedRows" -> Provenance.Param.Num(imported.acceptedCount.toDouble),
           "rejectedRows" -> Provenance.Param.Num(imported.rejectedCount.toDouble)
-        ) ++ plan.sourceMetadata.map((key, value) => key -> Provenance.Param.Text(value))
+        ) ++ imported.raw.nativeMetadata.map((key, value) =>
+          key -> Provenance.Param.Text(value)
+        )
       ),
       Provenance.Step(
         "synchronize",
@@ -585,10 +517,9 @@ object PsychologyWorkflow:
       Provenance.Step(
         "warp-visual-angle",
         Vector(
-          "sourceFrame" -> Provenance.Param.Text(plan.displayFrame.id.name),
-          "targetFrame" -> Provenance.Param.Text(angularFrame.id.name),
-          "viewing"     -> Provenance.Param.Text(plan.viewing.render)
-        )
+          "sourceFrame" -> Provenance.Param.Text(plan.display.id.name),
+          "targetFrame" -> Provenance.Param.Text(angularFrame.id.name)
+        ) ++ plan.viewing.toVector.map(v => "viewing" -> Provenance.Param.Text(v.render))
       ),
       Provenance.Step(
         "interpolate-gaps",
@@ -602,6 +533,7 @@ object PsychologyWorkflow:
 
 /** A workflow stage failed without discarding its operand identities. */
 enum PsychologyWorkflowError derives CanEqual:
+  case AnalysisFailed(source: String, underlying: RecordingPlanError)
   case BlankSourceName(value: String)
   case InvalidStudy(underlying: TidyResultError)
   case MillisecondsOutsideRange(operand: String, value: Long)
@@ -657,6 +589,8 @@ enum PsychologyWorkflowError derives CanEqual:
   case ExportRoundTripMismatch(source: String)
 
   def message: String = this match
+    case AnalysisFailed(source, underlying) =>
+      s"Source '$source' analysis failed: ${underlying.message}"
     case BlankSourceName(value) =>
       s"Psychology workflow requires a source name, got value='$value'."
     case InvalidStudy(underlying) =>

@@ -33,11 +33,25 @@ enum EvaluationScale derives CanEqual:
     case Unitless       => "unitless"
 
 /** Typed metadata that makes a generic evaluator auditable. */
-final case class EvaluationInfo(name: String, scale: EvaluationScale) derives CanEqual
+final case class EvaluationInfo(
+    name: String,
+    scale: EvaluationScale,
+    specification: Option[EvaluationSpec] = None
+) derives CanEqual
 
 object EvaluationInfo:
   def comparison[A, B, S](comparison: Compare[A, B, S]): EvaluationInfo =
     EvaluationInfo(comparison.info.name, EvaluationScale.Measure(comparison.scale))
+
+  def comparison[A, B, S](
+      comparison: Compare[A, B, S],
+      specification: EvaluationSpec
+  ): EvaluationInfo =
+    EvaluationInfo(
+      comparison.info.name,
+      EvaluationScale.Measure(comparison.scale),
+      Some(specification)
+    )
 
 /** Explicit evidence that a generic evaluator is symmetric.
   *
@@ -231,11 +245,25 @@ final case class ReductionReport[K] private[design] (
 ) derives CanEqual
 
 /** A reduced, derived view of a primary [[PairwiseAnalysis]]. */
-final case class Analysis[K, S] private[design] (
-    rows: Vector[(K, Either[ReductionError[K], S])],
-    diagnostics: ReductionReport[K],
-    provenance: Provenance
-) derives CanEqual
+final class Analysis[K, S] private[design] (
+    val entries: Vector[ReductionRow[K, S]],
+    val diagnostics: ReductionReport[K],
+    val provenance: Provenance,
+    val source: PairwiseAnalysis[?, ?, ?, S]
+) derives CanEqual:
+  def rows: Vector[(K, Either[ReductionError[K], S])] =
+    entries.map(row => row.key -> row.result)
+  def evaluation: EvaluationInfo = source.evaluation
+
+/** Selected contributions and effective denominator for one focal key. */
+final case class ReductionRow[K, S] private[design] (
+    key: K,
+    result: Either[ReductionError[K], S],
+    successful: Int,
+    failed: Int,
+    contributing: Int
+) derives CanEqual:
+  def selected: Int = successful + failed
 
 /** Evaluate every selected directed pair with the same total evaluator. */
 def evaluatePairs[KL, ML, KR, MR, A, B, E, S](
@@ -251,7 +279,8 @@ def evaluatePairs[KL, ML, KR, MR, A, B, E, S](
   DirectedPairwiseAnalysis(
     rows,
     paired.diagnostics,
-    EvaluationProvenance(inputs, info, paired.diagnostics, rows)
+    EvaluationProvenance(inputs, info, paired.diagnostics, rows),
+    info
   )
 
 /** Evaluate canonical-undirected pairs only with explicit symmetry evidence. */
@@ -268,7 +297,8 @@ def evaluatePairs[K, M, A, E, S](
   UndirectedPairwiseAnalysis(
     rows,
     paired.diagnostics,
-    EvaluationProvenance(inputs, info, paired.diagnostics, rows)
+    EvaluationProvenance(inputs, info, paired.diagnostics, rows),
+    info
   )
 
 /** Evaluate directed pairs through a comparison instance. */
@@ -337,7 +367,7 @@ private object EvaluationProvenance:
             "failed"     -> Provenance.Param.Num(failed.toDouble)
           )
         )
-      )
+      ) ++ info.specification.toVector.flatMap(_.steps)
     )
 
   private def pairingParams[KL, KR](
@@ -496,7 +526,18 @@ private object Reduction:
       )
     )
 
-    Analysis(rows, report, provenance)
+    val entries = rows.map { case (key, result) =>
+      val scores     = contributions.collect { case (`key`, score) => score }
+      val successful = scores.count(_.isRight)
+      ReductionRow(
+        key,
+        result,
+        successful,
+        scores.size - successful,
+        if result.isRight then successful else 0
+      )
+    }
+    new Analysis(entries, report, provenance, analysis)
 
   private def reduceOne[K, E, S](
       key: K,

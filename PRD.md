@@ -2,28 +2,25 @@
 
 ## Status
 
-Draft product requirements for `eyes4s`, a Scala 3 library for eye-movement analysis, event
-detection, attention mapping, and gaze-contingent tracking.
-
-`eyes4s` is not a port of `eyesim`, not a Scala binding to a Python eye-tracking stack, and not a
-statistics package. It is a standalone typed core for gaze data, informed by a full read of `eyesim`
-and by the design decisions recorded in [`eyes4s.md`](eyes4s.md), which is the architecture
-specification this document turns into a release contract.
-
-Four scope decisions are settled and govern everything below:
+Product requirements for `eyes4s`, a Scala 3 foundation for eye-movement analysis. The
+[vision and mission](docs/VISION.md) state the owner-directed goals as of 2026-09-08;
+[the development plan](docs/DEVELOPMENT_PLAN.md) governs the active construction order.
+This document retains the numbered scientific, architectural, and release requirements.
+Requirements describe acceptance obligations, not current implementation status.
 
 | Decision | Value |
 |---|---|
-| v1.0 feature boundary | **Thesis core**: `kernel`, `core`, `detect`, `surface`, `compare`, `design`, `laws`, `fs2`, `io` (ASC/CSV). Raw samples through to a contrast. |
-| Parity with `eyesim` | **Advisory fixtures**, reported in CI, documented in `PARITY.md`. Never a release gate. |
-| Platforms for v1.0 | **JVM + Scala.js.** Scala Native deferred to post-1.0, with dependencies kept Native-eligible throughout. |
-| Primary audience | **Published open-source library** for the eye-tracking research community. |
+| Core release boundary | `kernel`, `core`, `detect`, `surface`, `aoi`, `compare`, `design`, `plan`, `codec`, `laws`, `fs2`, and `io`; complete baseline workflows, usable APIs, persistence, and extension proof. |
+| Relationship to eyesim | Subsumes the [basic scientific capabilities](docs/EYESIM_CAPABILITIES.md), with verified equivalence where conventions match and independently justified divergence where they should differ. |
+| Platforms | JVM + Scala.js. Scala Native remains deferred. |
+| Audience | Researchers using the direct Scala API or consuming exported results; method developers and application developers building on the same core. |
+| Application | A separate future eye-movement analysis UI. Its contracts inform the library; its implementation is outside this repository and is not a release prerequisite. |
 
-The audience decision and the feature boundary pull in different directions and the resolution is
-deliberate: the audience governs *how* v1.0 ships — documentation site, binary-compatibility policy,
-Maven Central publication, contribution process, reproducible verification — while the feature
-boundary stays the thesis core. BIDS ingest and additional vendor formats are therefore a **firm
-v1.1 commitment** (§Release Roadmap), not an open-ended aspiration.
+The foundation is the near-term priority. Specialized methods and additional vendor formats follow
+as modules under the development plan. Licensed EDF verification remains a separate programme;
+it does not gate pure analysis descriptions or codecs. Existing real ASC support obligations and
+scientific safety requirements remain in force. Basic template-model workflows must have a working
+route through shared data contracts and an optional solver or external analysis integration.
 
 ---
 
@@ -163,28 +160,18 @@ transcribed link.
 
 ---
 
-## Product Thesis
+## Product mission
 
-A gaze record is a timed trajectory through a known geometry, and it has a shadow: the measure that
-trajectory induces on the stimulus. Eye-movement statistics live on one side or the other of that
-duality, and knowing which side is half the design.
+Build a coherent scientific core that subsumes eyesim's basic workflows, is pleasant to use
+directly, and supports future eye-movement methods and applications through modular contracts.
+The full [vision and mission](docs/VISION.md) is authoritative for product direction.
 
-`eyes4s` exists because every library in this space represents a fixation as a row of floats. None
-carries the screen, the viewing distance, the y-axis direction, the clock domain, or the
-normalization state in the value. The result is a literature-wide tax paid in silent unit errors,
-y-flips, and comparisons between incommensurable maps — a tax this document's Evidence Base
-quantifies in one well-written package.
-
-The product claim is therefore narrow and checkable:
-
-> **`eyes4s` makes the conventions that eye-movement analysis leaves in the analyst's head into
-> types the compiler checks, and in doing so makes several subfields reachable that a
-> fixation-table library cannot express at all.**
-
-The second clause is the commercial argument. Starting at raw samples rather than fixations, and
-making comparison heterogeneous rather than same-type, is what puts microsaccades, data quality,
-pupillometry, reading measures, saliency benchmarking, and statistical mapping inside the same
-library instead of five different ones.
+A gaze record has both ordered trajectory information and an induced spatial measure. eyes4s
+keeps them distinct, carries geometry and time with the data, and represents scientific design
+choices explicitly. Those foundations must support complete analyses rather than leave users to
+assemble every routine operation from primitives. A method's numerical evidence, a user's ability
+to complete a task, and an extension author's ability to reuse contracts are separate acceptance
+obligations.
 
 ---
 
@@ -226,13 +213,16 @@ requirement form.
    satisfies, with law suites as published library code.
 4. Provide a design layer in which matched and permuted analyses are the same function applied to
    different pairings, with unmatched and ambiguous keys returned as data.
-5. Reproduce `eyesim`'s analyses where `eyesim` is correct, and document every divergence with its
-   cause.
+5. Complete the required eyesim capability baseline through public workflows; verify shared
+   estimands and conventions, and independently justify intentional differences.
 6. Ship as a credible open-source library: semantic versioning, binary-compatibility policy,
    documentation site, reproducible verification, published law modules.
 7. Preserve observed stimulus-side timing and its synchronization evidence so later experiment
    modules can align gaze to language or other events without treating a planned schedule as an
    observation.
+8. Provide task-oriented APIs and executable guides without weakening typed scientific contracts.
+9. Prove versioned persistence and modular extension through an isolated downstream consumer;
+   supply the contracts needed by a separate analysis UI without implementing the UI here.
 
 ## Non-Goals
 
@@ -254,26 +244,25 @@ requirement form.
 
 ## Target Users
 
-**Primary — eye-tracking researchers publishing methods and analyses.** They need correct units,
-reproducible verification, documented divergence from familiar tools, and formats they already
-have. This is the audience the release process is built for.
+**Researchers** need complete analyses, explicit conventions, inspectable results, and clear
+migration from familiar workflows. Scala users are direct users of the library. Researchers using
+R or Python initially consume exports; native bindings are separate work. API usability and
+compiled task-oriented documentation are release requirements.
 
-**Secondary — method developers.** They need `Compare`, `Pairing`, `Detector` and `Smoother` to be
-open for extension with law suites they can run against their own instances. `eyes4s-laws` is
-published as main-scope library code precisely for them.
+**Method developers** need small public interfaces for comparisons, detectors, smoothers, and
+analysis descriptions, with published laws and versioned extension contracts. They must be able to
+implement and persist a new method without modifying core interpreters.
 
-**Tertiary — experiment builders.** They need detection in the browser and gaze-contingent
-primitives. The Scala.js target exists for them, and is why Native is deferred rather than JS.
+**Application developers** need inspection, prerequisite queries, validated configuration,
+structural diffing, persistence, usable result descriptions, and effectful progress/cancellation.
+The planned analysis UI lives in another repository; its absence does not block the library.
+The application-layer requirements below remain binding on the core release.
 
-**Quaternary, and strategically decisive — a planned desktop/web application.** A separate product,
-not part of this repository, for which `eyes4s` is the analysis engine and whose users are
-psychologists rather than Scala programmers. It is not built in v1.0 and its absence gates nothing,
-but several architectural decisions are cheap now and expensive to retrofit. Those are specified in
-§Application-Layer Requirements and are binding on v1.0.
+**Experiment builders** use the Scala.js target and streaming execution for browser and online
+workflows. They share the same scientific implementations rather than a separate browser engine.
 
-**Explicitly not targeted in v1.0** — users needing a turnkey GUI *today*, users needing
-vendor-native binary ingest, and users wanting a drop-in `eyesim` replacement with bit-identical
-output.
+A turnkey GUI, vendor-native binary acquisition, and R signature/bug compatibility are outside the
+core release boundary.
 
 ---
 
@@ -642,8 +631,10 @@ counts.
 
 **X-8.** Matched and control analyses evaluate different `PairDesign` values through the same
 function. There is exactly one baseline sampler and one reduction implementation. `contrast`
-combines compatible reduced analyses and requires `Contrastable[S]`, because typed scores do not all
-form a group.
+combines compatible reduced analyses and requires `Contrastable[S, D]`, because typed scores do not
+all form a group and subtraction may produce a different, signed result type. It retains both
+operands, their per-key denominators, and the union of focal keys; compatibility includes the
+explicit method specification, scale, reduction policy, geometry, and temporal convention.
 
 **X-9.** `Selection.BottomK(cap, seed, sampleId)` assigns each eligible directed candidate a stable
 priority derived from `(seed, sampleId, focalKeyDigest, candidateKeyDigest)`. Eligibility and
@@ -803,7 +794,8 @@ bespoke bridge.
 **IO-6.** Binary `.edf` is out of scope for v1.0 and the limitation is stated in the README, with
 `edf2asc` named as the required preprocessing step.
 
-**IO-7.** *v1.1 commitment.* BIDS eye-tracking ingest (TSV plus JSON sidecar), Tobii TSV, and SMI.
+**IO-7.** *Subsequent module work.* BIDS eye-tracking ingest (TSV plus JSON sidecar), Tobii TSV,
+and SMI follow the foundation milestone; implementation order follows a concrete consumer need.
 This is a commitment, not an aspiration, and is scheduled in the roadmap.
 
 ---
@@ -855,6 +847,11 @@ operator composition an inspectable expression tree rather than opaque closure c
 applies the same discipline one level up, to the analysis itself.
 
 ### Everything round-trips
+
+The first concrete delivery is `StudyPlan`/`StudyCodec` for matched/control fixation studies,
+including multiple estimation scales and downstream typed comparison registration. See
+[the saved-study contract](docs/SAVED_STUDIES.md) for its exact scope. This delivery does not
+establish coverage of every node or persistent domain value required below.
 
 **APP-5.** Every domain value an application must persist has a codec: `Frame`, `Warp`, `Viewing`,
 `Grid`, `Region`, `AoiSet`, `Timeline`, `SyncEvidence`, `Sigma`, `Smoother`, all plan types,
@@ -979,8 +976,11 @@ global draw.
 and candidate key. Priorities are independent of row order, eligibility relation, and cap; increasing
 the cap preserves the smaller sample as a subset.
 
-**DET-5.** Reductions over floating-point values sum in a defined key order so that results are
-bit-reproducible across platforms, following `gale`'s precedent.
+**DET-5.** Reductions use a defined key order. Each numerical operation declares and tests its
+cross-platform comparison contract: exact equality or a named `Tolerance`. RNG streams, canonical
+identity encodings, and the designated V-7/A-9 golden pipeline retain exact checks. An export digest
+certifies its encoded bytes, not every intermediate floating-point value. Content-hash verification
+is always exact; numerical tolerances cannot weaken artifact identity.
 
 **DET-6.** Parallelism, where introduced, does not alter results. v1.0 ships no implicit parallelism;
 any parallel execution is an explicit caller choice.
@@ -1070,16 +1070,14 @@ is a test:
 - `monotoneLattice` against a brute-force shortest path on small lattices;
 - detection against published fixtures where available.
 
-**V-4. R-parity, advisory.** A fixture harness modelled on `fmrihrf`'s `tools/r-parity/` generates
-inputs and `eyesim` outputs from R, and CI reports per-measure agreement on `wynn_study` /
-`wynn_test`. **Parity failures do not block release.** Each divergence is recorded in `PARITY.md`
-with its cause and a statement of which implementation is correct. The known divergences to expect,
-from the Evidence Base, are: kernel bandwidth (`ks` versus `MASS` semantics), join behaviour
-(first-match versus keyed), `Ops` semantics (`+` as mean, `/` as log-ratio), permutation baseline
-construction, the treatment of signed maps as probability masses, and repetitive similarity. The
-repetitive fixture is a **divergence fixture**: it proves that the eyesim vignette places the intended
-same-participant, same-image, different-phase pair in `othersim`, and that eyes4s selects it only
-under the explicit target relation.
+**V-4. Baseline reference conformance.** A reproducible fixture harness pins the eyesim source,
+relevant dependencies, inputs, estimands, and conventions from the capability map. Scala tests
+consume generated fixtures offline on JVM and Scala.js. Every case is classified as verified
+agreement, independently justified intentional divergence, or an unresolved gap. Confirmed
+reference defects are not compatibility requirements. Agreement tests for a claimed equivalent
+case are binding; unexplained mismatches cannot be waved through as advisory. Baseline coverage,
+rather than a single aggregate parity percentage, gates the foundation milestone. `PARITY.md`
+records measured results and the migration guide explains the corresponding user workflows.
 
 **V-5. Property tests.** ScalaCheck generators for `Frame`, `Warp`, `Scanpath`, `PointMeasure`,
 `Grid`, `Region` and `Mass` are published in `eyes4s-laws` for downstream use.
@@ -1137,105 +1135,37 @@ second evaluator call.
 
 ## Release Roadmap
 
-### v0.1 — Kernel geometry
+[The development plan](docs/DEVELOPMENT_PLAN.md) owns the detailed construction order and tracker
+mapping. Historical v0.x task names remain useful identifiers but no longer dictate dependencies
+between unrelated modules.
 
-`eyes4s-kernel` geometry and time. `Unit2D`, `Frame`, `Warp`, `Moving`, `Instant`, `Span`,
-`Interval` (absolute, clock-carrying), `Window` (relative), `Overlap`, `ClockId`, `Sync`. `eyes4s-laws` with warp category and round-trip suites.
-Build, CI, boundary enforcement, scalafmt, `AGENTS.md`.
+| Milestone | Required outcome |
+|---|---|
+| M1 — Baseline contract | Finite eyesim capability inventory, pinned scientific fixtures, and named gaps. |
+| M2 — Scientific workflows | Complete fixation, raw-recording, and temporal/multiscale journeys, including contrasts and a basic template-model route. |
+| M3 — Direct usability | Public APIs, useful diagnostics, compiled task guides, and migration examples. Advances alongside M2. |
+| M4 — Persistent analyses | Typed plans, interpreters, versioned codecs, prerequisites, structural diffs, and verified artifact references. Starts with one concrete workflow. |
+| M5 — Modular platform | An isolated downstream method project and headless analysis consumer prove extension and application contracts. |
+| M6 — Foundation acceptance | Scientific, usability, persistence, extension, performance-sanity, and build evidence for a release candidate. |
 
-*Exit:* V-1 warp suites green on JVM and JS; `checkModuleBoundaries` green; `eyes4s-kernel` compiles
-with `eyes4s-core` absent from the classpath.
+### v1.0 — Stability and release
 
-### v0.2 — Occupancy
+The foundation milestone and all acceptance criteria below must be satisfied before release.
+Publish compatibility and schema-evolution policies, run the supported CI matrix, and verify the
+actual release artifacts. A UI application and licensed EDF certification are separate deliverables.
 
-`PointMeasure`, `Grid`, `Surface` (`Mass` / `Intensity` / `Signed`), `Field`, `Region`, `Provenance`,
-`ContentHash`, the module structure. Law suites for regions, surfaces, and `integrate`.
+### Subsequent domain modules
 
-*Exit:* V-1 occupancy suites green; TY-6 negative test for `entropy` on `Signed`.
+Reading measures, additional saliency metrics, adaptive/noise-robust detection, BIDS and other
+vendor ingest, pupillometry, visual-world analyses, and advanced replay/transport models develop
+against the established extension contracts. Heavy solvers, rendering, and frame4s/graph4s
+integrations remain optional. Some methods, including CRQA, already have implementations; their
+presence is not evidence that all future-module acceptance work is complete.
 
-### v0.3 — Trajectory and detection
-
-`eyes4s-core` and `eyes4s-detect`. `Gaze`, `Sample`, `Recording`, `BinocularRecording`, `Event`, `Scanpath`, `Viewing`;
-`Detector`, `Machine`, and the D-6 detector set. `eyes4s-fs2` with `toPipe`.
-
-*Exit:* D-5 equivalence property test green; V-3 detection conformance; TY-6 negative test for a
-`Deg` detector against `Px` samples.
-
-### v0.4 — Surface estimation and comparison
-
-`eyes4s-surface` and `eyes4s-compare`. Smoothers, bandwidth selection, `Pyramid`; the `Compare`
-hierarchy, `Alignment`, MultiMatch, ScanMatch, the distribution-measure family, Sinkhorn and sliced
-OT. CRQA is **not** in v1.0 (OD-6).
-
-*Exit:* V-1 metric-axiom suites green per instance; V-3 MultiMatch agreement with `multimatch_gaze`.
-
-### v0.5 — Design and inference
-
-`eyes4s-design`. `Trials[K, M, A]`; sealed `Relation`; legal `PairDesign` inhabitants; `Pairing`
-façades; `Paired`; primary `PairwiseAnalysis`; explicit reductions and contrasts; `KeyDigest`,
-`SampleId`, and the seeded RNG; matched/repetition/temporal conveniences; surface decomposition and
-partial association. The arity and persistence responsibilities of every public generic type are
-finalized here; the conditional `VersionedCodec` mechanism is recorded as a prerequisite for v0.65,
-not retrofitted after plan parameters exist.
-
-*Exit:* relation truth tables and sampling mutation tests are green; cap-monotone bottom-k samples
-and derived-key digests agree on JVM and Scala.js; V-4 parity and repetitive-divergence fixtures run
-in CI; `PARITY.md` names every expected disagreement; the generic-codec decision is closed.
-
-### v0.6 — IO and AOI
-
-`eyes4s-io` with ASC and CSV; `eyes4s-aoi` with regions, dwell, entry, run counts, and transition
-matrices. The neutral kernel timeline, planned/observed distinction and fitted `SyncEvidence` land
-before ASC experimenter-message recovery. `AoiSet` defines spatial membership and overlap outputs
-rather than inheriting an unstated policy.
-
-*Exit:* IO-3 diagnostics on a corrupted fixture; a real `edf2asc` output parsed end to end with
-experimenter messages preserved in an observed timeline; a synthetic multi-trigger fit recovers
-known offset and drift; exclusive and multiple AOI accounting laws are green.
-
-### v0.65 — Plans and codecs
-
-`eyes4s-plan` and `eyes4s-codec`. Detection and analysis plans as description ADTs with
-interpreters, plus the typed extension registry; conditional `VersionedCodec` instances for generic
-user types; JSON codecs with a versioned schema; serializable mark selectors and epoch/final-bin
-policies; `MeasureInfo` and detector/smoother metadata; prerequisite queries; progress and
-cancellation on the fs2 execution surface.
-
-*Exit:* APP-7 round-trip law green for every codec; APP-13 prerequisite query returns actionable
-reasons for a project lacking a `Viewing`, observed anchor, or adequate synchronization evidence; a
-plan containing user-typed keys and markers is constructed programmatically, serialised, reloaded
-and produces output identical to the unserialised run.
-
-### v0.7 — Documentation and hardening
-
-mdoc site, migration guide, `PARITY.md` completed, Scaladoc coverage, `CONTRIBUTING.md`, negative
-tests, cross-platform equivalence test.
-
-*Exit:* every documented example compiles and runs in CI.
-
-### v1.0 — Stability
-
-No new features. Binary-compatibility policy published; MiMa configured; artifacts published to
-Maven Central for JVM and Scala.js.
-
-*Exit:* Acceptance Criteria below, in full.
-
-### v1.1 — The first expansion beyond `eyesim`
-
-Reading measures; the saliency metric family; BIDS eye-tracking ingest, Tobii TSV, SMI;
-`Detector.nystromHolmqvist` and `Detector.i2mc`; `Smoother.foveal`; **CRQA implemented properly**
-(recurrence matrix, embedding, delay, radius selection, RR/DET/LAM/ENTR/TT/L_max — per OD-6), which
-also unlocks dual eye tracking and joint-attention work. The first `eyes4s-vwp` release consumes the
-v1.0 timeline/AOI/plan foundations to provide entity-primary exposure and onset traces, pure
-construal projection, realized-preview analyses and export-ready support diagnostics. **This is the
-release that delivers the second clause of the product thesis** and is committed, not aspirational.
-
-### v1.2 and beyond
-
-Statistical mapping with cluster-based permutation inference; `eyes4s-gale` adapters (PCA, CORAL,
-CCA); `eyes4s-viz`; `eyes4s-graph4s`; `eyes4s-frame4s`; pupillometry with `fmrihrf` bases; Scala
-Native axis; exact network-simplex EMD; RSA for gaze; HMM scanpath models; dynamic visual-world
-entity geometry and richer production annotations; JMH benchmarks.
+Select additions by a concrete scientific workflow and independent validation plan. New modules
+may reveal missing shared concepts, but specialized algorithms should not spread through kernel,
+core, and every interpreter. General statistical modeling, acquisition, and UI rendering remain
+outside the core.
 
 ---
 
@@ -1256,9 +1186,9 @@ v1.0 ships when all of the following hold.
 7. **A-7.** `runAll` and `toPipe` produce identical output on finite input, as a property test.
 8. **A-8.** The RNG produces identical streams on JVM and Scala.js, as a test.
 9. **A-9.** A representative end-to-end pipeline produces bit-identical output on JVM and Scala.js.
-10. **A-10.** The R-parity harness runs in CI and `PARITY.md` documents every divergence with its
-    cause and a statement of which implementation is correct. *No parity threshold gates the
-    release.*
+10. **A-10.** Offline reference fixtures run in CI and `PARITY.md` reports measured agreement and
+    independently justified divergence. Every claimed equivalent case passes its stated comparison
+    contract; unresolved required baseline gaps block release.
 11. **A-11.** A real `edf2asc` output is ingested end to end and produces a `Scanpath`.
 12. **A-12.** Every documented example compiles and executes in CI via mdoc.
 13. **A-13.** Every public type documents its invariants; every measure documents its scale, its
@@ -1283,6 +1213,17 @@ v1.0 ships when all of the following hold.
 23. **A-23.** Conditional codecs round-trip a representative `Trials[K, M, A]` and timeline with
     user-supplied key, metadata and marker types; duplicate generic keys and missing schema versions
     are rejected explicitly.
+24. **A-24.** Every required row in the eyesim capability map has a runnable public workflow and
+    independent evidence, including a basic template-model analysis route. No required gaps remain.
+25. **A-25.** The three development-plan journeys run from an isolated consumer using public APIs,
+    without private helpers, unsafe extraction, undocumented setup, or fabricated raw samples.
+    Convenience and explicit composition agree, and result keys/diagnostics remain accessible.
+26. **A-26.** A downstream project implements a comparison and a detector or smoother, runs
+    published conformance suites, and saves/runs a registered extension without core edits. A
+    headless consumer verifies inspection, prerequisites, diffing, progress, and cancellation.
+27. **A-27.** Persistence tests cover shared identities, invalid/unknown schemas and nodes, exact
+    artifact verification, a previous-version fixture, and a documented migration or incompatibility
+    result. Raw numerical outputs and exports are checked under their declared contracts.
 
 ---
 

@@ -77,6 +77,18 @@ class GridRegionSuite extends munit.FunSuite:
     }
   }
 
+  test("grid cardinality cannot overflow its index representation") {
+    assertEquals(
+      Grid.over(screen, 65536, 65536),
+      Left(GeometryError.GridCellCountOverflow(65536, 65536, 4294967296L))
+    )
+    assertEquals(
+      Grid.over(screen, Int.MaxValue, 2),
+      Left(GeometryError.GridCellCountOverflow(Int.MaxValue, 2, 4294967294L))
+    )
+    assertEquals(Grid.over(screen, Int.MaxValue, 1).map(_.size), Right(Int.MaxValue))
+  }
+
   test("a position round-trips to the cell containing it") {
     (0 until grid.size).foreach { i =>
       assertEquals(grid.indexOf(grid.cellCentre(i)), Some(i), clue(i))

@@ -2,46 +2,33 @@
 
 *A typed, lawful core for eye-movement analysis in Scala 3.*
 
-## Vision
+## Vision and mission
 
-`eyesim` asks one question well: **are two fixation patterns similar?** `eyes4s` should answer that
-question *and be the substrate underneath it* — a core for eye-movement analysis, event detection,
-attention mapping, AOI analysis, scanpath comparison, and gaze-contingent tracking, general enough
-to serve cognitive psychology rather than one paradigm.
+The product direction is defined in [Vision and mission](docs/VISION.md): eyes4s is a foundation
+for many forms of eye-movement analysis, with a complete eyesim baseline, a considerate direct API,
+and contracts for independent method modules and a separate analysis application.
+[The development plan](docs/DEVELOPMENT_PLAN.md) is the active construction order.
 
-The thesis is small enough to state in one sentence:
+This document explains the architecture and design rationale. Its central distinction remains:
+a gaze record is an ordered trajectory through a known geometry, and induces an order-free spatial
+measure. The conversion is explicit and lossy. Sequence methods operate on the trajectory; density,
+entropy, and distribution comparisons operate on spatial measures. Geometry, clocks, and
+normalization remain part of the values, and methods declare their actual mathematical guarantees.
 
-> **A gaze record is a timed trajectory through a known geometry, and it has a shadow: the measure
-> that trajectory induces on the stimulus. Eye-movement statistics live on one side or the other of
-> that duality, and knowing which side is half the design.**
+### Implemented study boundary
 
-The forgetful map is explicit and lossy:
+The concrete fixation-study path is documented in [saved studies](docs/SAVED_STUDIES.md).
+`plan` owns typed methods, study descriptions, input references and pure interpretation; `codec`
+owns versioned JSON and typed registration closures. `io` admits fixation tables and exports typed
+contrasts. The [external consumer](tools/study-consumer) exercises the published API and laws.
+This is the first demonstrated persistence vocabulary; the general application requirements below
+remain the target for subsequent workflows.
 
-```scala
-def occupancy[U <: Unit2D](sp: Scanpath[U], w: Weight): PointMeasure[U]   // discards order
-```
+### Historical design evidence
 
-**On the occupancy side**, where order has been forgotten, one operation generates the literature.
-Dwell time is the measure of a region. A heat map is the measure convolved with a kernel. Entropy is
-a functional of it. NSS and AUC are integrals of a saliency map against it. Earth-mover's distance is
-a Wasserstein metric between two of them. These stop being a dozen unrelated functions and become one
-`integrate` plus a library of integrands.
-
-**On the trajectory side**, order is the content, and no integral will recover it: MultiMatch,
-ScanMatch, DTW, CRQA, scanpath length, transition matrices, run counts, first-entry times, the
-ambient/focal K coefficient. These are alignment and sequence problems, and they get their own
-factored kernel (Layer 4) rather than being forced through a measure they would destroy.
-
-The design's job is to make the two sides distinct types, make the map between them explicit, and
-refuse to let a statistic be computed on the side that cannot support it.
-
-The one-sentence pitch, in the house idiom:
-
-> **What Cats did for effect composition, eyes4s does for gaze: it turns the conventions that
-> eye-movement analysis leaves in the analyst's head — which screen, which origin, which unit,
-> which clock, whether this map is normalised — into types the compiler checks.**
-
-### The evidence that this is worth doing
+The following July 2026 observations explain earlier design choices. They are not an audit of
+the current eyesim revision; baseline reference cases must be rechecked as described in
+[the capability map](docs/EYESIM_CAPABILITIES.md).
 
 `eyesim` is a good package written by a careful person. That is precisely why its failure modes are
 worth cataloguing: they are not sloppiness, they are the *predictable* consequence of representing a
@@ -941,18 +928,24 @@ sealed trait PairwiseAnalysis[KL, KR, E, S]
 final case class DirectedPairwiseAnalysis[KL, KR, E, S](
     rows: Vector[PairScore[KL, KR, E, S]],
     diagnostics: PairingReport[KL, KR],
-    provenance: Provenance)
+    provenance: Provenance,
+    evaluation: EvaluationInfo)
     extends PairwiseAnalysis[KL, KR, E, S]
 final case class UndirectedPairwiseAnalysis[K, E, S](
     rows: Vector[PairScore[K, K, E, S]],
     diagnostics: PairingReport[K, K],
-    provenance: Provenance)
+    provenance: Provenance,
+    evaluation: EvaluationInfo)
     extends PairwiseAnalysis[K, K, E, S]
 
-final case class Analysis[K, S](
-    rows: Vector[(K, Either[ReductionError[K], S])],
-    diagnostics: ReductionReport[K],
-    provenance: Provenance)
+final class Analysis[K, S] private[design] (
+    val entries: Vector[ReductionRow[K, S]],
+    val diagnostics: ReductionReport[K],
+    val provenance: Provenance,
+    val source: PairwiseAnalysis[?, ?, ?, S]):
+  def rows: Vector[(K, Either[ReductionError[K], S])] =
+    entries.map(row => row.key -> row.result)
+  def evaluation: EvaluationInfo = source.evaluation
 
 def evaluatePairs[KL, ML, KR, MR, A, B, S](
     pairs: DirectedPaired[KL, ML, KR, MR, A, B],
@@ -966,10 +959,13 @@ def evaluatePairs[K, M, A, S](
     comparison: SymmetricCompare[A, S]
 ): UndirectedPairwiseAnalysis[K, CompareError, S]
 
-/** Contrast needs a difference on the score type; for MultiMatchScore it is per-field. */
-trait Contrastable[S]:
-  def diff(observed: S, baseline: S): S
-def contrast[K, S: Contrastable](a: Analysis[K, S], b: Analysis[K, S]): Analysis[K, S]
+/** A bounded score can produce a different, signed output type. */
+trait Contrastable[S, D]:
+  def components: Vector[String]
+  def subtract(matched: S, control: S): Either[DifferenceError, D]
+def contrast[K, S, D](matched: Analysis[K, S], control: Analysis[K, S])(
+    using Contrastable[S, D], Ordering[K]
+): Either[ContrastError[K], Contrast[K, S, D]]
 ```
 
 `Relation` is structural, not a predicate hidden behind `accepts`. `SameOn` can therefore execute as
@@ -1021,8 +1017,12 @@ val reduced = control.map { controlDesign =>
 }
 ```
 
-`x-contrast` supplies the typed `Contrastable` combination of the two reduced analyses; pair
-evaluation and reduction do not contain a separate baseline branch.
+`contrast` combines reductions that carry compatible `EvaluationSpec` declarations, retaining
+the union of focal keys and both source analyses. The comparison-only overload above remains
+useful for pair scores and reductions; a contrast evaluator must also declare its method revision,
+parameters, components, geometry, and temporal convention. See the executable
+[matched/control contract](docs/CONTRAST_CONTRACT.md) for that complete composition. Pair evaluation
+and reduction do not contain a separate baseline branch.
 
 Every eligible directed pair receives a stable priority from `(Seed, SampleId, focal KeyDigest,
 candidate KeyDigest)`. The cap and eligibility relation do not enter the priority, so bottom-60
@@ -1461,26 +1461,12 @@ deliberately.
 
 ## Implementation status and roadmap
 
-Nothing is built. The proposed order, each milestone with an acceptance criterion.
-
-| # | Milestone | Acceptance criterion |
-|---|---|---|
-| 0 | Repo skeleton: build, scalafmt, `AGENTS.md`, CI, module boundaries | both boundary rules enforced (`checkModuleBoundaries` passes, and `eyes4s-kernel` provably does not depend on `eyes4s-core`); `testAll` green on JVM/JS/Native |
-| 1 | **Kernel geometry + core events**: units, frames, warps, clocks, intervals; then samples, events, scanpaths | `eyes4s-laws` proves warp composition associative and identity-respecting on the matching-frame subcategory; round-trip `px -> deg -> px` within stated tolerance; `Scanpath` smart constructor rejects non-monotone onsets; kernel compiles with `eyes4s-core` absent from the classpath |
-| 2 | **Occupancy** (kernel): point measures, grids, surfaces, regions | Region Boolean-algebra laws (Discipline); `Signed` module laws per grid; `Mass` constructor proves non-negativity and unit sum; `integrate` against an indicator equals `massIn` |
-| 3 | **Detect**: I-VT, I-DT, Engbert–Kliegl, filters, `Machine` composition | Category laws for `Machine` stated as observational equality on output sequences; `runAll` and `toPipe` produce identical output on the same **finite** input (property test); agreement with published reference implementations on a shared fixture set |
-| 4 | **Surface + compare**: smoothers, bandwidth, pyramids; metric hierarchy, alignment kernel, MultiMatch, distribution measures | Metric axioms law-tested per instance; MultiMatch matches the `multimatch-gaze` Python reference on the `eyesim` parity fixtures at `grouping = FALSE`; `monotoneLattice` DP reproduces the Dijkstra path exactly |
-| 5 | **Design**: trials, relations, pair designs, edge results, reductions, decomposition | Relation truth tables and sampling mutants are green; cap-monotone keyed samples and `KeyDigest` golden vectors agree on JVM/JS; parity fixtures cover matched similarity and the deliberate repetitive-similarity divergence |
-| 6 | **Timeline + IO + AOI**: planned/observed marks, fitted sync evidence, ASC/CSV, spatial assignment | a real EDF-derived ASC preserves experimenter messages in an observed timeline; synthetic triggers recover known drift; exclusive and multiple AOI accounting laws are green |
-| 7 | **Plans + codecs** | user-typed trial and marker values round-trip through conditional versioned codecs; missing anchors and schema versions are explicit prerequisite errors |
-| 8 | **AOI + reading measures** | first-fixation duration, gaze duration, go-past time, regression-path duration and regression counts reproduced against a published reading corpus |
-| 9 | **Visual-world foundations** | one entity trace projects through two construals without re-binning; duration and onset estimands have distinct result types; denominator and boundary mutants fail |
-| 10 | **Saliency metrics, viz, frame4s interop** | MIT/Tübingen benchmark metric values reproduced on a published fixture |
-| 11 | **Statistical mapping** | pixel-wise contrast with cluster-based permutation inference; false-positive rate at the nominal level on null data |
-
-Milestones 1–2 are the ones worth getting right; everything after is comparatively mechanical.
-Milestones 7–9 are the first ones that go *beyond* what `eyesim` can express, and are the point of
-the whole exercise — see "What this opens up".
+The active milestone sequence and acceptance criteria now live in
+[the development plan](docs/DEVELOPMENT_PLAN.md). Geometry, trajectories, detection, surfaces,
+comparisons, AOI operations, and much of the design layer already have implementations. Remaining
+core work joins baseline scientific workflows, API usability, plans/codecs, and downstream
+extension proof. Mote tracks outstanding acceptance work; old milestone names do not imply that
+an implementation is absent or complete.
 
 ---
 
@@ -1582,4 +1568,5 @@ is in [`PRD.md`](PRD.md) §Resolved Decisions; the outcomes that changed the des
 Two build questions remain genuinely open and are tracked in the PRD rather than here: whether
 `eyes4s-frame4s` carries a per-project `scalaVersion := 3.7.4` override for named tuples (proposal:
 yes, as the sole non-uniform module), and whether an R-parity harness is worth its maintenance cost
-(resolved as advisory, never a gate — see `PARITY.md` when it exists).
+(the original advisory policy is superseded by PRD V-4: verified shared conventions require
+agreement, intentional divergences need independent evidence, and baseline gaps remain visible).

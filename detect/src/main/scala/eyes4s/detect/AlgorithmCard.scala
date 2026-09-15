@@ -248,6 +248,28 @@ final class EventDetector[U <: Unit2D] private[detect] (
   def runAll(input: Iterable[Sample[U]]): Vector[DetectionEmission[U]] =
     machine.runAll(input)
 
+/** Public construction for independently implemented, documented event machines. */
+object EventDetector:
+  def of[U <: Unit2D](
+      card: AlgorithmCard,
+      machine: Machine[Sample[U], DetectionEmission[U]],
+      configuration: Vector[(String, Provenance.Param)]
+  ): Either[DetectorDefinitionError, EventDetector[U]] =
+    val names = configuration.map(_._1)
+    if names.exists(_.trim.isEmpty) || names.distinct.size != names.size || configuration
+        .exists {
+          case (_, Provenance.Param.Num(value)) => !value.isFinite
+          case _                                => false
+        }
+    then Left(DetectorDefinitionError.Configuration(card.id, configuration))
+    else Right(new EventDetector(card, machine, configuration))
+
+enum DetectorDefinitionError derives CanEqual:
+  case Configuration(id: AlgorithmId, parameters: Vector[(String, Provenance.Param)])
+  def message: String = this match
+    case Configuration(id, parameters) =>
+      s"Detector $id needs unique parameter names and finite numeric values, got $parameters."
+
 /** Canonical cards for the detector implementations shipped by eyes4s. */
 object AlgorithmCards:
   private val pymovementsRepository = "https://github.com/aeye-lab/pymovements"

@@ -53,10 +53,19 @@ object Agreement:
     * match; otherwise the identity itself is corrupt metadata.
     */
   def frames[U <: Unit2D](left: Frame[U], right: Frame[U]): Either[GeometryError, Frame[U]] =
-    if left.id != right.id then Left(GeometryError.FrameMismatch(left.id, right.id))
-    else if left.spec != right.spec then
-      Left(GeometryError.FrameIdentityConflict(left.id, left.spec, right.spec))
-    else Right(left)
+    frames(left.id, left.spec, right.id, right.spec).map(_ => left)
+
+  /** Check retained frame metadata without erasing or casting spatial units. */
+  def frames(
+      left: FrameId,
+      leftSpec: FrameSpec,
+      right: FrameId,
+      rightSpec: FrameSpec
+  ): Either[GeometryError, Unit] =
+    if left != right then Left(GeometryError.FrameMismatch(left, right))
+    else if leftSpec != rightSpec then
+      Left(GeometryError.FrameIdentityConflict(left, leftSpec, rightSpec))
+    else Right(())
 
   /** Require a whole collection to share one frame.
     *
@@ -79,10 +88,19 @@ object Agreement:
 
   /** Require two grids to be the same, yielding it on success. */
   def grids[U <: Unit2D](left: Grid[U], right: Grid[U]): Either[SurfaceError, Grid[U]] =
-    if left.id != right.id then Left(SurfaceError.GridMismatch(left.id, right.id))
-    else if left.spec != right.spec then
-      Left(SurfaceError.GridIdentityConflict(left.id, left.spec, right.spec))
-    else Right(left)
+    grids(left.id, left.spec, right.id, right.spec).map(_ => left)
+
+  /** Check retained discretisation metadata through the same identity seam. */
+  def grids(
+      left: GridId,
+      leftSpec: GridSpec,
+      right: GridId,
+      rightSpec: GridSpec
+  ): Either[SurfaceError, Unit] =
+    if left != right then Left(SurfaceError.GridMismatch(left, right))
+    else if leftSpec != rightSpec then
+      Left(SurfaceError.GridIdentityConflict(left, leftSpec, rightSpec))
+    else Right(())
 
   /** Require a whole collection to share one grid. */
   def allGrids[U <: Unit2D](gs: Seq[Grid[U]]): Either[SurfaceError, Option[Grid[U]]] =

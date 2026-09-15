@@ -1,0 +1,191 @@
+{
+  "correct": {
+    "rows": [
+      {
+        "id": "s1/a/recall",
+        "eye_sim": 1,
+        "perm_sim": 0.72,
+        "eye_sim_diff": 0.28,
+        "n_perm": 2
+      },
+      {
+        "id": "s1/b/recall",
+        "eye_sim": 0.8,
+        "perm_sim": 0.9,
+        "eye_sim_diff": -0.1,
+        "n_perm": 2
+      },
+      {
+        "id": "s1/c/recall",
+        "eye_sim": 0.8,
+        "perm_sim": 0.82,
+        "eye_sim_diff": -0.02,
+        "n_perm": 2
+      },
+      {
+        "id": "s2/a/recall",
+        "eye_sim": 0.84,
+        "perm_sim": 0.82,
+        "eye_sim_diff": 0.02,
+        "n_perm": 2
+      },
+      {
+        "id": "s2/b/recall",
+        "eye_sim": 1,
+        "perm_sim": 0.68,
+        "eye_sim_diff": 0.32,
+        "n_perm": 2
+      },
+      {
+        "id": "s2/c/recall",
+        "eye_sim": 0.84,
+        "perm_sim": 0.86,
+        "eye_sim_diff": -0.02,
+        "n_perm": 2
+      }
+    ],
+    "warnings": []
+  },
+  "image_only": {
+    "rows": [
+      {
+        "id": "s1/a/recall",
+        "eye_sim": 1,
+        "perm_sim": 0.72,
+        "eye_sim_diff": 0.28,
+        "n_perm": 2
+      },
+      {
+        "id": "s1/b/recall",
+        "eye_sim": 0.8,
+        "perm_sim": 0.9,
+        "eye_sim_diff": -0.1,
+        "n_perm": 2
+      },
+      {
+        "id": "s1/c/recall",
+        "eye_sim": 0.8,
+        "perm_sim": 0.82,
+        "eye_sim_diff": -0.02,
+        "n_perm": 2
+      },
+      {
+        "id": "s2/a/recall",
+        "eye_sim": 0.72,
+        "perm_sim": 0.84,
+        "eye_sim_diff": -0.12,
+        "n_perm": 2
+      },
+      {
+        "id": "s2/b/recall",
+        "eye_sim": 0.72,
+        "perm_sim": 0.9,
+        "eye_sim_diff": -0.18,
+        "n_perm": 2
+      },
+      {
+        "id": "s2/c/recall",
+        "eye_sim": 0.64,
+        "perm_sim": 0.8,
+        "eye_sim_diff": -0.16,
+        "n_perm": 2
+      }
+    ],
+    "warnings": []
+  },
+  "missing_source": {
+    "rows": [
+      {
+        "id": "s1/a/recall",
+        "eye_sim": 1,
+        "perm_sim": 0.72,
+        "eye_sim_diff": 0.28,
+        "n_perm": 2
+      },
+      {
+        "id": "s1/b/recall",
+        "eye_sim": 0.8,
+        "perm_sim": 0.9,
+        "eye_sim_diff": -0.1,
+        "n_perm": 2
+      },
+      {
+        "id": "s1/c/recall",
+        "eye_sim": 0.8,
+        "perm_sim": 0.82,
+        "eye_sim_diff": -0.02,
+        "n_perm": 2
+      },
+      {
+        "id": "s2/a/recall",
+        "eye_sim": 0.84,
+        "perm_sim": 0.82,
+        "eye_sim_diff": 0.02,
+        "n_perm": 2
+      },
+      {
+        "id": "s2/b/recall",
+        "eye_sim": 1,
+        "perm_sim": 0.68,
+        "eye_sim_diff": 0.32,
+        "n_perm": 2
+      },
+      {
+        "id": "s2/c/recall",
+        "eye_sim": 0.84,
+        "perm_sim": 0.86,
+        "eye_sim_diff": -0.02,
+        "n_perm": 2
+      }
+    ],
+    "warnings": "did not find matching template map for all source maps. Removing non-matching elements."
+  },
+  "duplicate_reference": {
+    "rows": [
+      {
+        "id": "s1/a/recall",
+        "eye_sim": 1,
+        "perm_sim": 0.72,
+        "eye_sim_diff": 0.28,
+        "n_perm": 2
+      },
+      {
+        "id": "s1/b/recall",
+        "eye_sim": 0.8,
+        "perm_sim": 0.9,
+        "eye_sim_diff": -0.1,
+        "n_perm": 2
+      },
+      {
+        "id": "s1/c/recall",
+        "eye_sim": 0.8,
+        "perm_sim": 0.82,
+        "eye_sim_diff": -0.02,
+        "n_perm": 2
+      },
+      {
+        "id": "s2/a/recall",
+        "eye_sim": 0.84,
+        "perm_sim": 0.82,
+        "eye_sim_diff": 0.02,
+        "n_perm": 2
+      },
+      {
+        "id": "s2/b/recall",
+        "eye_sim": 1,
+        "perm_sim": 0.68,
+        "eye_sim_diff": 0.32,
+        "n_perm": 2
+      },
+      {
+        "id": "s2/c/recall",
+        "eye_sim": 0.84,
+        "perm_sim": 0.86,
+        "eye_sim_diff": -0.02,
+        "n_perm": 2
+      }
+    ],
+    "warnings": []
+  },
+  "constant_pearson": 1
+}

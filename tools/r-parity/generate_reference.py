@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""Regenerate a pinned eyesim reference and an independent rational oracle.
+
+No network access or writes to the source checkout are needed. Scala tests use
+only generated data; R is used solely to regenerate/check the reference.
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+from fractions import Fraction
+import hashlib
+import io
+import json
+from pathlib import Path
+import subprocess
+import tarfile
+import tempfile
+import os
+
+ROOT = Path(__file__).resolve().parents[2]
+HERE = Path(__file__).resolve().parent
+REVISION = "ecb9c496257bce51acd5330af6a5e7a8d5b84e05"
+INPUT = HERE / "fixtures/matched-control.csv"
+SCALA = ROOT / "laws/src/test/scala/eyes4s/examples/MatchedControlFixtures.scala"
+TOLERANCE = 1e-12  # Four-term Double dot products and two-term means, bounded by one.
+
+
+def checked(*args, **kwargs):
+    return subprocess.run(args, check=True, text=True, **kwargs)
+
+
+def oracle():
+    rows = list(csv.DictReader(io.StringIO(INPUT.read_text())))
+    assert len(rows) == 48
+    trials = {}
+    for row in rows:
+        key = (row["participant"], row["image"], row["phase"])
+        trials.setdefault(key, []).append(row)
+    weights = {}
+    for key, fixes in trials.items():
+        assert len(fixes) == 4
+        cells = {}
+        for fix in fixes:
+            assert int(fix["duration_us"]) > 0 and int(fix["duration_us"]) % 100000 == 0
+            cell = int(float(fix["x_px"])) + 2 * int(float(fix["y_px"]))
+            assert cell not in cells
+            cells[cell] = int(fix["duration_us"]) // 100000
+        assert set(cells) == set(range(4))
+        vector = tuple(cells[i] for i in range(4))
+        assert sum(vector) == 9 and sum(v*v for v in vector) == 25
+        weights[key] = vector
+    expected, pairs = [], []
+    for source in [k for k in weights if k[2] == "recall"]:
+        # Enumerate the Cartesian product explicitly; no R matching or Scala sampler.
+        matched, controls = [], []
+        for target in [k for k in weights if k[2] == "encode"]:
+            if source[0] != target[0]:
+                continue
+            kind = "matched" if source[1] == target[1] else "control"
+            value = Fraction(sum(a*b for a,b in zip(weights[source], weights[target])), 25)
+            (matched if kind == "matched" else controls).append(value)
+            pairs.append(dict(source="/".join(source), reference="/".join(target), kind=kind, score=str(value)))
+        assert len(matched) == 1 and len(controls) == 2
+        control = sum(controls) / len(controls)
+        expected.append(dict(id="/".join(source), matched=str(matched[0]), control=str(control),
+                             difference=str(matched[0]-control), matched_count=1, control_count=2))
+    names = ["shape", "direction", "length", "position", "duration"]
+    target = list(map(Fraction, ["0.9", "0.8", "0.7", "0.6", "0.5"]))
+    controls = [list(map(Fraction, row)) for row in
+                [["0.2", "0.4", "0.6", "0.8", "1.0"], ["0.4", "0.6", "0.8", "1.0", "0.8"]]]
+    mean = [sum(column)/2 for column in zip(*controls)]
+    named = lambda row: dict(zip(names, map(str, row)))
+    structured = dict(matched=named(target), controls=list(map(named, controls)),
+                      control_mean=named(mean), difference=named([a-b for a,b in zip(target,mean)]))
+    return rows, weights, dict(pairs=pairs, reductions=expected, structured_score_contract=structured)
+
+
+def verify_reference(reference, weights, exact):
+    actual = reference["correct"]["rows"]
+    assert [x["id"] for x in actual] == [x["id"] for x in exact["reductions"]]
+    for got, expected in zip(actual, exact["reductions"]):
+        for field, key in [("eye_sim","matched"),("perm_sim","control"),("eye_sim_diff","difference")]:
+            assert abs(got[field] - float(Fraction(expected[key]))) <= TOLERANCE, (got, expected)
+        assert got["n_perm"] == expected["control_count"]
+    assert len(reference["missing_source"]["rows"]) == 6
+    assert reference["missing_source"]["warnings"]
+    assert reference["duplicate_reference"]["rows"] == actual
+    assert reference["constant_pearson"] == 1
+    # Independently identify exactly which reference the image-only query selects.
+    refs = [k for k in weights if k[2] == "encode"]
+    for got in reference["image_only"]["rows"]:
+        source = tuple(got["id"].split("/"))
+        first = next(k for k in refs if k[1] == source[1])
+        expected = Fraction(sum(a*b for a,b in zip(weights[source],weights[first])),25)
+        assert abs(got["eye_sim"]-float(expected)) <= TOLERANCE
+    assert any(abs(a["eye_sim"]-b["eye_sim"]) > 0.1
+               for a,b in zip(actual,reference["image_only"]["rows"]))
+
+
+def scala(rows, exact, reference):
+    header = (ROOT / "design/src/test/scala/eyes4s/design/AnalysisSuite.scala").read_text().split("package ")[0]
+    lines = [header.rstrip(), "", "package eyes4s.examples", "", "// Generated by tools/r-parity/generate_reference.py. Do not hand-edit.",
+             "// format: off", "object MatchedControlFixtures:",
+             f'  val inputSha256 = "{hashlib.sha256(INPUT.read_bytes()).hexdigest()}"',
+             "  final case class FixationRow(participant: String, image: String, phase: String, ordinal: Int, x: Double, y: Double, onsetMicros: Long, durationMicros: Long, sampleCount: Int)",
+             "  final case class ExpectedPair(source: String, reference: String, kind: String, score: Double)",
+             "  final case class ExpectedReduction(id: String, matched: Double, control: Double, difference: Double)",
+             "  val fixations = Vector("]
+    for x in rows:
+        lines.append(f'    FixationRow("{x["participant"]}", "{x["image"]}", "{x["phase"]}", {x["fixation"]}, {x["x_px"]}, {x["y_px"]}, {x["onset_us"]}L, {x["duration_us"]}L, {x["sample_count"]}),')
+    lines += ["  )", "  val pairs = Vector("]
+    for x in exact["pairs"]:
+        f=Fraction(x["score"])
+        lines.append(f'    ExpectedPair("{x["source"]}", "{x["reference"]}", "{x["kind"]}", {f.numerator}.0 / {f.denominator}.0),')
+    lines += ["  )", "  val reductions = Vector("]
+    for x in reference["correct"]["rows"]:
+        lines.append(f'    ExpectedReduction("{x["id"]}", {float(x["eye_sim"])!r}, {float(x["perm_sim"])!r}, {float(x["eye_sim_diff"])!r}),')
+    lines += ["  )", "  final case class Components(shape: Double, direction: Double, length: Double, position: Double, duration: Double)"]
+    structured = exact["structured_score_contract"]
+    def components(row):
+        return "Components(" + ", ".join(f"{Fraction(v).numerator}.0 / {Fraction(v).denominator}.0" for v in row.values()) + ")"
+    lines.append("  val structuredMatched = " + components(structured["matched"]))
+    lines.append("  val structuredControls = Vector(" + ", ".join(map(components,structured["controls"])) + ")")
+    lines.append("  val structuredControlMean = " + components(structured["control_mean"]))
+    lines.append("  val structuredDifference = " + components(structured["difference"]))
+    lines += ["// format: on", ""]
+    return "\n".join(lines)
+
+
+def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--eyesim", type=Path, required=True, help="Local Git checkout containing the pinned revision")
+    parser.add_argument("--check", action="store_true")
+    args=parser.parse_args()
+    rows,weights,exact=oracle()
+    env=os.environ | {"LC_ALL":"C", "LANG":"C", "RGL_USE_NULL":"TRUE"}
+    with tempfile.TemporaryDirectory(prefix="eyes4s-r-reference-") as tmp:
+        tmp=Path(tmp);src=tmp/"source";lib=tmp/"library";src.mkdir();lib.mkdir()
+        archive=tmp/"source.tar"
+        checked("git","-C",str(args.eyesim),"archive","--format=tar","--output",str(archive),REVISION)
+        with tarfile.open(archive) as tar: tar.extractall(src,filter="data")
+        # Install the exact archived source, never an arbitrary installed eyesim package.
+        with (tmp/"install.log").open("w") as log:
+            result=subprocess.run(["R","CMD","INSTALL",f"--library={lib}",str(src)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        if result.returncode:
+            raise RuntimeError((tmp/"install.log").read_text())
+        output=tmp/"reference.json"
+        checked("Rscript","--vanilla",str(HERE/"reference.R"),str(lib),str(INPUT),str(output),env=env)
+        reference=json.loads(output.read_text())
+    verify_reference(reference,weights,exact)
+    metadata=dict(eyesim_revision=REVISION, input_sha256=hashlib.sha256(INPUT.read_bytes()).hexdigest(),
+                  input_license="Apache-2.0; synthetic data authored for eyes4s", grid="2x2 pixels; 2x2 cells; x varies fastest",
+                  weighting="fixation duration; normalized cell mass; no smoothing", selection="exhaustive within participant; same image target, different image controls",
+                  numerical_tolerance=dict(absolute=TOLERANCE,relative=0), runtime=reference.pop("runtime"))
+    files={HERE/"fixtures/exact.json":json.dumps(exact,indent=2)+"\n",
+           HERE/"fixtures/eyesim.json":json.dumps(reference,indent=2)+"\n",
+           HERE/"fixtures/reference-lock.json":json.dumps(metadata,indent=2)+"\n",
+           SCALA:scala(rows,exact,reference)}
+    for path,content in files.items():
+        if args.check:
+            if not path.exists() or path.read_text()!=content: raise RuntimeError(f"Reference drift: {path.relative_to(ROOT)}")
+        else:
+            path.parent.mkdir(parents=True,exist_ok=True);path.write_text(content)
+    print(f'{"Checked" if args.check else "Generated"} {len(files)} artifacts: 48 fixations, 18 pairs, 6 focal contrasts; rational oracle agrees with eyesim.')
+
+
+if __name__ == "__main__":
+    main()

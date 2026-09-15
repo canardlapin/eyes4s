@@ -158,6 +158,8 @@ object Grid:
       ny: Int
   ): Either[GeometryError, Grid[U]] =
     if nx <= 0 || ny <= 0 then Left(GeometryError.DegenerateGrid(nx, ny))
+    else if nx.toLong * ny.toLong > Int.MaxValue then
+      Left(GeometryError.GridCellCountOverflow(nx, ny, nx.toLong * ny.toLong))
     else Right(Grid(id, frame, nx, ny))
 
   /** A grid named after its frame and resolution.

@@ -52,6 +52,7 @@ enum GeometryError derives CanEqual:
   case NonFiniteSigma(value: Double)
   case NonPositiveSigma(value: Double)
   case DegenerateGrid(nx: Int, ny: Int)
+  case GridCellCountOverflow(nx: Int, ny: Int, cells: Long)
   case DegenerateEllipse(rx: Double, ry: Double)
   case DegeneratePolygon(vertices: Int)
   case NonFiniteRegion(shape: String)
@@ -93,6 +94,8 @@ enum GeometryError derives CanEqual:
         "that backend's boundary rather than passing its convention here."
     case DegenerateGrid(nx, ny) =>
       s"A grid needs at least one cell in each axis, got ${nx}x$ny."
+    case GridCellCountOverflow(nx, ny, cells) =>
+      s"Grid ${nx}x$ny has $cells cells, exceeding the indexed cell limit ${Int.MaxValue}."
     case DegenerateEllipse(rx, ry) =>
       s"An ellipse needs positive radii, got rx=$rx, ry=$ry."
     case DegeneratePolygon(n) =>

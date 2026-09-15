@@ -1,0 +1,201 @@
+{
+  "pairs": [
+    {
+      "source": "s1/a/recall",
+      "reference": "s1/a/encode",
+      "kind": "matched",
+      "score": "1"
+    },
+    {
+      "source": "s1/a/recall",
+      "reference": "s1/b/encode",
+      "kind": "control",
+      "score": "16/25"
+    },
+    {
+      "source": "s1/a/recall",
+      "reference": "s1/c/encode",
+      "kind": "control",
+      "score": "4/5"
+    },
+    {
+      "source": "s1/b/recall",
+      "reference": "s1/a/encode",
+      "kind": "control",
+      "score": "4/5"
+    },
+    {
+      "source": "s1/b/recall",
+      "reference": "s1/b/encode",
+      "kind": "matched",
+      "score": "4/5"
+    },
+    {
+      "source": "s1/b/recall",
+      "reference": "s1/c/encode",
+      "kind": "control",
+      "score": "1"
+    },
+    {
+      "source": "s1/c/recall",
+      "reference": "s1/a/encode",
+      "kind": "control",
+      "score": "16/25"
+    },
+    {
+      "source": "s1/c/recall",
+      "reference": "s1/b/encode",
+      "kind": "control",
+      "score": "1"
+    },
+    {
+      "source": "s1/c/recall",
+      "reference": "s1/c/encode",
+      "kind": "matched",
+      "score": "4/5"
+    },
+    {
+      "source": "s2/a/recall",
+      "reference": "s2/a/encode",
+      "kind": "matched",
+      "score": "21/25"
+    },
+    {
+      "source": "s2/a/recall",
+      "reference": "s2/b/encode",
+      "kind": "control",
+      "score": "16/25"
+    },
+    {
+      "source": "s2/a/recall",
+      "reference": "s2/c/encode",
+      "kind": "control",
+      "score": "1"
+    },
+    {
+      "source": "s2/b/recall",
+      "reference": "s2/a/encode",
+      "kind": "control",
+      "score": "18/25"
+    },
+    {
+      "source": "s2/b/recall",
+      "reference": "s2/b/encode",
+      "kind": "matched",
+      "score": "1"
+    },
+    {
+      "source": "s2/b/recall",
+      "reference": "s2/c/encode",
+      "kind": "control",
+      "score": "16/25"
+    },
+    {
+      "source": "s2/c/recall",
+      "reference": "s2/a/encode",
+      "kind": "control",
+      "score": "1"
+    },
+    {
+      "source": "s2/c/recall",
+      "reference": "s2/b/encode",
+      "kind": "control",
+      "score": "18/25"
+    },
+    {
+      "source": "s2/c/recall",
+      "reference": "s2/c/encode",
+      "kind": "matched",
+      "score": "21/25"
+    }
+  ],
+  "reductions": [
+    {
+      "id": "s1/a/recall",
+      "matched": "1",
+      "control": "18/25",
+      "difference": "7/25",
+      "matched_count": 1,
+      "control_count": 2
+    },
+    {
+      "id": "s1/b/recall",
+      "matched": "4/5",
+      "control": "9/10",
+      "difference": "-1/10",
+      "matched_count": 1,
+      "control_count": 2
+    },
+    {
+      "id": "s1/c/recall",
+      "matched": "4/5",
+      "control": "41/50",
+      "difference": "-1/50",
+      "matched_count": 1,
+      "control_count": 2
+    },
+    {
+      "id": "s2/a/recall",
+      "matched": "21/25",
+      "control": "41/50",
+      "difference": "1/50",
+      "matched_count": 1,
+      "control_count": 2
+    },
+    {
+      "id": "s2/b/recall",
+      "matched": "1",
+      "control": "17/25",
+      "difference": "8/25",
+      "matched_count": 1,
+      "control_count": 2
+    },
+    {
+      "id": "s2/c/recall",
+      "matched": "21/25",
+      "control": "43/50",
+      "difference": "-1/50",
+      "matched_count": 1,
+      "control_count": 2
+    }
+  ],
+  "structured_score_contract": {
+    "matched": {
+      "shape": "9/10",
+      "direction": "4/5",
+      "length": "7/10",
+      "position": "3/5",
+      "duration": "1/2"
+    },
+    "controls": [
+      {
+        "shape": "1/5",
+        "direction": "2/5",
+        "length": "3/5",
+        "position": "4/5",
+        "duration": "1"
+      },
+      {
+        "shape": "2/5",
+        "direction": "3/5",
+        "length": "4/5",
+        "position": "1",
+        "duration": "4/5"
+      }
+    ],
+    "control_mean": {
+      "shape": "3/10",
+      "direction": "1/2",
+      "length": "7/10",
+      "position": "9/10",
+      "duration": "9/10"
+    },
+    "difference": {
+      "shape": "3/5",
+      "direction": "3/10",
+      "length": "0",
+      "position": "-3/10",
+      "duration": "-2/5"
+    }
+  }
+}

@@ -1,0 +1,308 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eyes4s.design
+
+import cats.data.NonEmptyVector
+import eyes4s.compare.*
+import eyes4s.kernel.*
+import scala.annotation.implicitNotFound
+
+/** Failures name the component and both operands, including arithmetic overflow. */
+enum DifferenceError derives CanEqual:
+  case NonFiniteOperands(component: String, matched: Double, control: Double)
+  case NonFiniteDifference(component: String, matched: Double, control: Double)
+
+  def message: String = this match
+    case NonFiniteOperands(component, matched, control) =>
+      s"$component needs finite operands: matched=$matched, control=$control."
+    case NonFiniteDifference(component, matched, control) =>
+      s"$component subtraction overflowed: matched=$matched, control=$control."
+
+/** A finite signed difference, distinct from bounded similarities and distances. */
+opaque type SignedDifference = Double
+
+object SignedDifference:
+  def between(
+      matched: Double,
+      control: Double,
+      component: String = "value"
+  ): Either[DifferenceError, SignedDifference] =
+    if !matched.isFinite || !control.isFinite then
+      Left(DifferenceError.NonFiniteOperands(component, matched, control))
+    else
+      val difference = matched - control
+      if difference.isFinite then Right(difference)
+      else Left(DifferenceError.NonFiniteDifference(component, matched, control))
+
+  extension (difference: SignedDifference) def value: Double = difference
+
+/** Five signed components; no implicit scalar aggregation or bounded-score conversion. */
+final class MultiMatchDifference private[design] (
+    val shape: SignedDifference,
+    val direction: SignedDifference,
+    val length: SignedDifference,
+    val position: SignedDifference,
+    val duration: SignedDifference
+) derives CanEqual
+
+/** Subtraction need not be closed over the input score type.
+  * Published ContrastLaws checks component-wise signed subtraction.
+  */
+@implicitNotFound(
+  "No signed contrast is defined from ${S} to ${D}. Supply a Contrastable instance with a separate signed output type."
+)
+trait Contrastable[S, D]:
+  def components: Vector[String]
+  def subtract(matched: S, control: S): Either[DifferenceError, D]
+
+object Contrastable:
+  def apply[S, D](using instance: Contrastable[S, D]): Contrastable[S, D] = instance
+
+  given Contrastable[Double, SignedDifference] with
+    val components = Vector("value")
+    def subtract(matched: Double, control: Double): Either[DifferenceError, SignedDifference] =
+      SignedDifference.between(matched, control)
+
+  given Contrastable[Similarity, SignedDifference] with
+    val components = Vector("value")
+    def subtract(
+        matched: Similarity,
+        control: Similarity
+    ): Either[DifferenceError, SignedDifference] =
+      SignedDifference.between(matched.value, control.value)
+
+  given Contrastable[MeasureDistance, SignedDifference] with
+    val components = Vector("value")
+    def subtract(
+        matched: MeasureDistance,
+        control: MeasureDistance
+    ): Either[DifferenceError, SignedDifference] =
+      SignedDifference.between(matched.value, control.value)
+
+  given Contrastable[MultiMatchScore, MultiMatchDifference] with
+    val components = Vector("shape", "direction", "length", "position", "duration")
+    def subtract(
+        matched: MultiMatchScore,
+        control: MultiMatchScore
+    ): Either[DifferenceError, MultiMatchDifference] =
+      for
+        shape     <- SignedDifference.between(matched.shape, control.shape, "shape")
+        direction <- SignedDifference.between(matched.direction, control.direction, "direction")
+        length    <- SignedDifference.between(matched.length, control.length, "length")
+        position  <- SignedDifference.between(matched.position, control.position, "position")
+        duration  <- SignedDifference.between(matched.duration, control.duration, "duration")
+      yield new MultiMatchDifference(shape, direction, length, position, duration)
+
+enum ContrastOperand derives CanEqual:
+  case Matched, Control
+
+/** Compatibility is checked from typed values before any row is subtracted. */
+enum ContrastCompatibilityError derives CanEqual:
+  case Orientation(matched: ReductionOrientation, control: ReductionOrientation)
+  case Policy(matched: FailurePolicy, control: FailurePolicy)
+  case Scale(matched: EvaluationScale, control: EvaluationScale)
+  case MissingSpecification(operand: ContrastOperand, evaluation: EvaluationInfo)
+  case Method(matched: EvaluationSpec, control: EvaluationSpec)
+  case Components(operand: ContrastOperand, declared: Vector[String], required: Vector[String])
+  case SpatialConvention(matched: EvaluationGeometry, control: EvaluationGeometry)
+  case Frames(underlying: GeometryError)
+  case Grids(underlying: SurfaceError)
+  case Time(matched: EvaluationTime, control: EvaluationTime)
+  case Clocks(underlying: TimeError)
+
+  def message: String = this match
+    case Orientation(m, c) => s"Contrast orientations differ: matched=$m, control=$c."
+    case Policy(m, c)      =>
+      s"Contrast failure policies differ: matched=${m.render}, control=${c.render}."
+    case Scale(m, c) => s"Contrast scales differ: matched=${m.render}, control=${c.render}."
+    case MissingSpecification(operand, info) =>
+      s"$operand evaluator '${info.name}' has no contrast specification."
+    case Method(m, c) =>
+      s"Contrast methods differ: matched=${m.method}@${m.revision} ${m.parameters}, control=${c.method}@${c.revision} ${c.parameters}."
+    case Components(operand, declared, required) =>
+      s"$operand components $declared differ from contrast components $required."
+    case SpatialConvention(m, c) =>
+      s"Contrast spatial conventions differ: matched=${m.unit}/${m.frame}/${m.grid}, control=${c.unit}/${c.frame}/${c.grid}."
+    case Frames(error) => error.message
+    case Grids(error)  => error.message
+    case Time(m, c)    => s"Contrast temporal conventions differ: matched=$m, control=$c."
+    case Clocks(error) => error.message
+
+enum ContrastError[K] derives CanEqual:
+  case Incompatible(issues: NonEmptyVector[ContrastCompatibilityError])
+  case EmptyDomain(matchedKeys: Int, controlKeys: Int)
+  case IndistinguishableOrdering(first: K, second: K)
+
+  def message: String = this match
+    case Incompatible(issues) => issues.toVector.map(_.message).mkString(" ")
+    case EmptyDomain(m, c)    => s"Contrast has no focal keys: matched=$m, control=$c."
+    case IndistinguishableOrdering(a, b) =>
+      s"Contrast key ordering equates distinct keys $a and $b."
+
+enum ContrastRowError[K] derives CanEqual:
+  case MissingOperands(key: K, missing: Vector[ContrastOperand])
+  case ReductionFailures(
+      key: K,
+      matched: Option[ReductionError[K]],
+      control: Option[ReductionError[K]]
+  )
+  case Arithmetic(key: K, underlying: DifferenceError)
+
+  def message: String = this match
+    case MissingOperands(key, missing) => s"Contrast key $key is missing $missing."
+    case ReductionFailures(key, m, c)  =>
+      s"Contrast key $key failed: matched=${m.map(_.message)}, control=${c.map(_.message)}."
+    case Arithmetic(key, error) => s"Contrast key $key: ${error.message}"
+
+/** Both operands survive even when subtraction cannot produce a result. */
+final class ContrastRow[K, S, D] private[design] (
+    val key: K,
+    val matched: Option[ReductionRow[K, S]],
+    val control: Option[ReductionRow[K, S]],
+    val difference: Either[ContrastRowError[K], D]
+) derives CanEqual
+
+/** A keyed contrast with both complete source analyses and their provenance. */
+final class Contrast[K, S, D] private[design] (
+    val matched: Analysis[K, S],
+    val control: Analysis[K, S],
+    val rows: Vector[ContrastRow[K, S, D]]
+) derives CanEqual
+
+/** Matched minus control, over the union of focal keys in the caller's explicit
+  * key ordering. A lawful Ordering consistent with key equality is required;
+  * observed ties between distinct keys are rejected. No key rendering or digest
+  * collision can silently determine row alignment.
+  */
+def contrast[K, S, D](matched: Analysis[K, S], control: Analysis[K, S])(using
+    algebra: Contrastable[S, D],
+    ordering: Ordering[K]
+): Either[ContrastError[K], Contrast[K, S, D]] =
+  val issues = ContrastCompatibility.check(matched, control, algebra.components)
+  NonEmptyVector.fromVector(issues) match
+    case Some(errors) => Left(ContrastError.Incompatible(errors))
+    case None         =>
+      val keys      = (matched.entries.map(_.key) ++ control.entries.map(_.key)).distinct.sorted
+      val collision = keys.zip(keys.drop(1)).find { case (a, b) => ordering.compare(a, b) == 0 }
+      if keys.isEmpty then
+        Left(ContrastError.EmptyDomain(matched.entries.size, control.entries.size))
+      else
+        collision match
+          case Some((a, b)) => Left(ContrastError.IndistinguishableOrdering(a, b))
+          case None         =>
+            val rows = keys.map { key =>
+              val m      = matched.entries.find(_.key == key)
+              val c      = control.entries.find(_.key == key)
+              val result = (m, c) match
+                case (Some(left), Some(right)) =>
+                  (left.result, right.result) match
+                    case (Right(a), Right(b)) =>
+                      algebra.subtract(a, b).left.map(ContrastRowError.Arithmetic(key, _))
+                    case _ =>
+                      Left(
+                        ContrastRowError.ReductionFailures(
+                          key,
+                          left.result.left.toOption,
+                          right.result.left.toOption
+                        )
+                      )
+                case _ =>
+                  Left(
+                    ContrastRowError.MissingOperands(
+                      key,
+                      Option.when(m.isEmpty)(ContrastOperand.Matched).toVector ++
+                        Option.when(c.isEmpty)(ContrastOperand.Control).toVector
+                    )
+                  )
+              new ContrastRow(key, m, c, result)
+            }
+            Right(new Contrast(matched, control, rows))
+
+private object ContrastCompatibility:
+  def check[K, S](
+      matched: Analysis[K, S],
+      control: Analysis[K, S],
+      components: Vector[String]
+  ): Vector[ContrastCompatibilityError] =
+    import ContrastCompatibilityError.*
+    val m     = matched.evaluation
+    val c     = control.evaluation
+    val basic =
+      Option
+        .when(matched.diagnostics.orientation != control.diagnostics.orientation)(
+          Orientation(matched.diagnostics.orientation, control.diagnostics.orientation)
+        )
+        .toVector ++
+        Option
+          .when(matched.diagnostics.policy != control.diagnostics.policy)(
+            Policy(matched.diagnostics.policy, control.diagnostics.policy)
+          )
+          .toVector ++
+        Option.when(m.scale != c.scale)(Scale(m.scale, c.scale)).toVector
+    val missing = Vector(ContrastOperand.Matched -> m, ContrastOperand.Control -> c).flatMap {
+      case (operand, info) =>
+        Option.when(info.specification.isEmpty)(MissingSpecification(operand, info))
+    }
+    val declared = Vector(ContrastOperand.Matched -> m, ContrastOperand.Control -> c).flatMap {
+      case (operand, info) =>
+        info.specification.toVector.flatMap { spec =>
+          Option.when(spec.components != components)(
+            Components(operand, spec.components, components)
+          )
+        }
+    }
+    val method = (m.specification, c.specification) match
+      case (Some(a), Some(b)) =>
+        Option
+          .when(
+            a.method != b.method || a.revision != b.revision || a.parameters != b.parameters
+          )(Method(a, b))
+          .toVector ++
+          spatial(a.geometry, b.geometry) ++ temporal(a.time, b.time)
+      case _ => Vector.empty
+    basic ++ missing ++ declared ++ method
+
+  private def spatial(
+      a: EvaluationGeometry,
+      b: EvaluationGeometry
+  ): Vector[ContrastCompatibilityError] =
+    import ContrastCompatibilityError.*
+    val frames = (a.frame, b.frame) match
+      case (Some((ai, as)), Some((bi, bs))) =>
+        Agreement.frames(ai, as, bi, bs).left.toOption.map(Frames.apply).toVector
+      case (None, None) => Vector.empty
+      case _            => Vector(SpatialConvention(a, b))
+    val grids = (a.grid, b.grid) match
+      case (Some((ai, as)), Some((bi, bs))) =>
+        Agreement.grids(ai, as, bi, bs).left.toOption.map(Grids.apply).toVector
+      case (None, None) => Vector.empty
+      case _            => Vector(SpatialConvention(a, b))
+    Option.when(a.unit != b.unit)(SpatialConvention(a, b)).toVector ++ frames ++ grids
+
+  private def temporal(
+      a: EvaluationTime,
+      b: EvaluationTime
+  ): Vector[ContrastCompatibilityError] =
+    (a, b) match
+      case (EvaluationTime.SharedClock(left), EvaluationTime.SharedClock(right)) =>
+        Agreement
+          .clocks(left, right)
+          .left
+          .toOption
+          .map(ContrastCompatibilityError.Clocks.apply)
+          .toVector
+      case _ => Option.when(a != b)(ContrastCompatibilityError.Time(a, b)).toVector

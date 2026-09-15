@@ -1,0 +1,134 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eyes4s.codec
+
+import cats.syntax.all.*
+import eyes4s.plan.*
+import io.circe.{Json, Decoder}
+
+/** Decoding never loads artifacts or resolves behavior implicitly. */
+enum CodecError derives CanEqual:
+  case InvalidJson(input: String, reason: String)
+  case Field(path: String, input: Json, reason: String)
+  case Schema(expected: DefinitionId, found: DefinitionId)
+  case Definition(underlying: PlanError)
+  case DuplicateKeys(schema: DefinitionId, indices: Vector[Int])
+  case MissingMethod(method: DefinitionId)
+  case DuplicateMethod(method: DefinitionId)
+
+  def message: String = this match
+    case InvalidJson(_, reason)     => s"Invalid project JSON: $reason"
+    case Field(path, input, reason) => s"Cannot decode $path from ${input.noSpaces}: $reason"
+    case Schema(expected, found)    =>
+      s"Expected schema ${expected.name}@${expected.version}, found ${found.name}@${found.version}."
+    case Definition(e)             => e.message
+    case DuplicateKeys(s, indices) =>
+      s"Schema ${s.name}@${s.version} has duplicate keys at entries $indices."
+    case MissingMethod(id)   => s"No registered method ${id.name}@${id.version}."
+    case DuplicateMethod(id) => s"Method ${id.name}@${id.version} is already registered."
+
+/** A typed, explicitly versioned codec. Unsupported old versions fail precisely.
+  * The wire envelope separates schema identity from any method identity in its payload.
+  */
+final class VersionedCodec[A] private (
+    val schema: DefinitionId,
+    write: A => Either[CodecError, Json],
+    read: Json => Either[CodecError, A]
+):
+  def encode(value: A): Either[CodecError, Json] =
+    write(value).map(payload => Json.obj("schema" -> Wire.id(schema), "value" -> payload))
+  def decode(json: Json): Either[CodecError, A] = for
+    found   <- Wire.definition(json, "schema")
+    _       <- Either.cond(found == schema, (), CodecError.Schema(schema, found))
+    payload <- Wire.field[Json](json, "value")
+    result  <- read(payload)
+  yield result
+  def parse(input: String): Either[CodecError, A] =
+    io.circe.parser
+      .parse(input)
+      .left
+      .map(e => CodecError.InvalidJson(input, e.message))
+      .flatMap(decode)
+
+object VersionedCodec:
+  def of[A](schema: DefinitionId)(write: A => Json)(
+      read: Json => Either[CodecError, A]
+  ): VersionedCodec[A] =
+    new VersionedCodec(schema, value => Right(write(value)), read)
+
+  def string(schema: DefinitionId): VersionedCodec[String] = of(schema)(Json.fromString)(json =>
+    json.asString.toRight(CodecError.Field("string", json, "expected a string"))
+  )
+
+  def unit(schema: DefinitionId): VersionedCodec[Unit] =
+    of[Unit](schema)(_ => Json.obj())(json =>
+      Either.cond(
+        json.asObject.exists(_.isEmpty),
+        (),
+        CodecError.Field("unit", json, "expected an empty object")
+      )
+    )
+
+  def checked[A](schema: DefinitionId)(write: A => Either[CodecError, Json])(
+      read: Json => Either[CodecError, A]
+  ): VersionedCodec[A] =
+    new VersionedCodec(schema, write, read)
+
+  /** Entry-array encoding preserves arbitrary typed keys and rejects duplicates. */
+  def entries[K: Ordering, V](
+      schema: DefinitionId,
+      key: VersionedCodec[K],
+      value: VersionedCodec[V]
+  ): VersionedCodec[Map[K, V]] =
+    checked(schema)((entries: Map[K, V]) =>
+      entries.toVector
+        .sortBy(_._1)
+        .traverse { case (k, v) =>
+          for
+            encodedKey   <- key.encode(k)
+            encodedValue <- value.encode(v)
+          yield Json.obj("key" -> encodedKey, "value" -> encodedValue)
+        }
+        .map(rows => Json.arr(rows*))
+    ) { json =>
+      for
+        rows   <- json.asArray.toRight(CodecError.Field("entries", json, "expected an array"))
+        result <- rows.toVector.traverse { row =>
+          for
+            k <- Wire.field[Json](row, "key").flatMap(key.decode)
+            v <- Wire.field[Json](row, "value").flatMap(value.decode)
+          yield k -> v
+        }
+        duplicates = result.zipWithIndex.collect {
+          case ((k, _), i) if result.count(_._1 == k) > 1 => i
+        }
+        _ <- Either.cond(duplicates.isEmpty, (), CodecError.DuplicateKeys(schema, duplicates))
+      yield result.toMap
+    }
+
+/** Small decoding primitives; errors retain the path and offending JSON value. */
+private[codec] object Wire:
+  def field[A: Decoder](json: Json, name: String): Either[CodecError, A] =
+    json.hcursor.get[A](name).left.map(e => CodecError.Field(name, json, e.message))
+  def id(value: DefinitionId): Json =
+    Json.obj("name" -> Json.fromString(value.name), "version" -> Json.fromInt(value.version))
+  def definition(json: Json, name: String): Either[CodecError, DefinitionId] = for
+    value   <- field[Json](json, name)
+    id      <- field[String](value, "name")
+    version <- field[Int](value, "version")
+    result  <- DefinitionId.of(id, version).left.map(CodecError.Definition.apply)
+  yield result

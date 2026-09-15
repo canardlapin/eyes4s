@@ -164,17 +164,20 @@ sealed trait PairwiseAnalysis[KL, KR, E, S] derives CanEqual:
   def rows: Vector[PairScore[KL, KR, E, S]]
   def diagnostics: PairingReport[KL, KR]
   def provenance: Provenance
+  def evaluation: EvaluationInfo
 
 final case class DirectedPairwiseAnalysis[KL, KR, E, S] private[design] (
     rows: Vector[PairScore[KL, KR, E, S]],
     diagnostics: PairingReport[KL, KR],
-    provenance: Provenance
+    provenance: Provenance,
+    evaluation: EvaluationInfo
 ) extends PairwiseAnalysis[KL, KR, E, S] derives CanEqual
 
 final case class UndirectedPairwiseAnalysis[K, E, S] private[design] (
     rows: Vector[PairScore[K, K, E, S]],
     diagnostics: PairingReport[K, K],
-    provenance: Provenance
+    provenance: Provenance,
+    evaluation: EvaluationInfo
 ) extends PairwiseAnalysis[K, K, E, S] derives CanEqual
 
 /** Pair two distinct trial collections under a directed design. */

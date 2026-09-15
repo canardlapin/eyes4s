@@ -1,6 +1,11 @@
 # eyes4s
 
-*A typed, lawful core for eye-movement analysis in Scala 3.*
+*A composable scientific foundation for eye-movement analysis in Scala 3.*
+
+The aim is to subsume eyesim’s basic analysis workflows through a clear direct API, then support
+new methods and a separate analysis application through stable, typed contracts. Read the
+[vision and mission](docs/VISION.md), [development plan](docs/DEVELOPMENT_PLAN.md), and
+[eyesim capability baseline](docs/EYESIM_CAPABILITIES.md).
 
 A gaze record is a timed trajectory through a known geometry, and it has a shadow: the measure that
 trajectory induces on the stimulus. Eye-movement statistics live on one side or the other of that
@@ -57,9 +62,12 @@ absent from the API; invalid raw configuration is reported as data.
 
 **Pre-alpha, under active implementation.** The typed kernel, gaze core, detectors, surfaces,
 comparison measures, relational design algebra, deterministic RNG, and published law suites have
-executable implementations and tests. AOI, analysis-plan, codec, delimited I/O, and the portable
-EyeLink ASC path also have working implementations, but APIs can still change before the first
-release. EyeLink ASC parser evidence is not yet vendor or real-device certification; see the
+executable implementations and tests. AOI, delimited I/O, and the portable EyeLink ASC path
+also have implementations. Matched/control contrasts now retain signed results, compatibility
+checks, and per-key evidence. The fixation-study path has CSV admission, typed saved plans,
+versioned codecs, multiscale execution, and tidy exports. General detection/AOI/temporal plans and
+complete baseline coverage remain in progress. APIs can change before the
+first release. EyeLink ASC parser evidence is not yet vendor or real-device certification; see the
 [support and import guide](docs/formats/eyelink-asc.md).
 
 - [`eyes4s.md`](eyes4s.md) — architecture specification: the thesis, the design pillars, the five
@@ -75,14 +83,24 @@ mote ready     # what is actionable now
 mote show k-warp
 ```
 
+## Analyze an existing fixation table
+
+Start with the [fixation study guide](docs/FIXATION_STUDIES.md) and its
+[compiled Scala example](docs/examples/StudyGuide.scala). It takes a CSV table through explicit
+geometry and timing, matched/control comparison, a saved/reloaded plan, and an R-readable result.
+Then see [saved studies](docs/SAVED_STUDIES.md) for inspection and versioning, or
+[extending studies](docs/EXTENDING_STUDIES.md) to add a method in an independent consumer.
+
 ## Scope
 
-**v1.0** is the thesis core: raw samples → event detection → scanpaths → occupancy measures →
-lawful comparison → contrast. Modules `kernel`, `core`, `detect`, `surface`, `aoi`, `compare`,
+**v1.0** completes the baseline from raw samples or existing fixations through scanpaths,
+occupancy measures, comparison, and contrasts, with usable APIs, saved plans, and extension proof. Modules `kernel`, `core`, `detect`, `surface`, `aoi`, `compare`,
 `design`, `plan`, `codec`, `laws`, `fs2`, `io`.
 
-**v1.1** is the first expansion beyond what `eyesim` can express: reading measures, the saliency
-metric family, BIDS eye-tracking ingest, and CRQA.
+**Subsequent modules** extend the foundation with reading measures, additional saliency metrics,
+adaptive detection, vendor formats, pupillometry, and advanced modeling. Some additional methods,
+including CRQA, already have code; implementation presence does not establish release readiness.
+The separate analysis UI is outside this repository.
 
 Deliberately **not** in scope: a statistics package (no mixed models — results are exported), a
 plotting library (specifications only), vendor SDK bindings, and saliency-model training.
@@ -93,17 +111,18 @@ plotting library (specifications only), vendor SDK bindings, and saliency-model 
   `edf2asc` first and ingest the `.asc`.
 - **Platforms are JVM and Scala.js.** Scala Native is deferred post-1.0; dependencies are kept
   Native-eligible so adding the axis stays a build change.
-- **Parity with `eyesim` is advisory, not guaranteed.** Several `eyesim` behaviours are defects, and
-  gating on agreement would encode them as requirements. Divergences are documented in `PARITY.md`
-  with their cause and a statement of which implementation is correct.
+- **eyesim baseline coverage is a goal, not a completed claim.** The
+  [capability map](docs/EYESIM_CAPABILITIES.md) distinguishes existing primitives from complete
+  workflows. Verified shared conventions require agreement; confirmed defects require explicit
+  divergence tests. The [parity report](PARITY.md) records the bounded evidence; broader migration coverage remains open.
 
 ## Relationship to eyesim
 
-[`eyesim`](https://github.com/bbuchsbaum/eyesim) is the R package this work grew out of, and a full
-read of it is the primary evidence base for the requirements. `eyes4s` is not a port: it starts at
-raw samples rather than fixations, carries geometry in types, and makes comparison heterogeneous —
-three changes that put microsaccades, data quality, pupillometry, reading measures, saliency
-benchmarking, and statistical mapping inside one library instead of five.
+[`eyesim`](https://github.com/bbuchsbaum/eyesim) supplies the basic capability baseline: fixation
+representation, density and entropy, similarity, template and repetition designs, and multiscale
+and temporal analysis. eyes4s aims to make these workflows more coherent while adding raw-sample
+analysis and contracts for future modules. It preserves scientific capabilities, with verified
+conventions and documented differences, rather than reproducing R function signatures.
 
 ## Building
 

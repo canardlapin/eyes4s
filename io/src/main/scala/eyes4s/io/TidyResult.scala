@@ -1481,7 +1481,7 @@ object TidyCsv:
   private def pack(values: Vector[String]): String =
     values.map(value => s"${value.length}:$value").mkString
 
-private object Rfc4180:
+private[io] object Rfc4180:
   def encode(rows: Vector[Vector[String]]): String =
     rows.map(_.map(quote).mkString(",")).mkString("\r\n") + "\r\n"
 

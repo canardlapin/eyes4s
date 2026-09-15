@@ -1,0 +1,1909 @@
+{
+  "input_sha256": "9ab2b0301c2313c170a330b1735b856d7337544983991a8cb7b120a7705d9e3f",
+  "windows": [
+    [
+      "early",
+      0,
+      300000
+    ],
+    [
+      "middle",
+      300000,
+      600000
+    ],
+    [
+      "late",
+      600000,
+      950000
+    ],
+    [
+      "outside",
+      950000,
+      1100000
+    ]
+  ],
+  "repetitions": [
+    [
+      "recall-encode",
+      "recall",
+      "encode"
+    ],
+    [
+      "retest-recall",
+      "retest",
+      "recall"
+    ]
+  ],
+  "coverage": {
+    "s1/a/encode": [
+      [
+        0,
+        930000
+      ]
+    ],
+    "s1/b/encode": [
+      [
+        0,
+        930000
+      ]
+    ],
+    "s1/c/encode": [
+      [
+        0,
+        930000
+      ]
+    ],
+    "s2/a/encode": [
+      [
+        0,
+        930000
+      ]
+    ],
+    "s2/b/encode": [
+      [
+        0,
+        930000
+      ]
+    ],
+    "s2/c/encode": [
+      [
+        0,
+        930000
+      ]
+    ],
+    "s1/a/recall": [
+      [
+        0,
+        930000
+      ]
+    ],
+    "s1/b/recall": [
+      [
+        0,
+        930000
+      ]
+    ],
+    "s1/c/recall": [
+      [
+        0,
+        930000
+      ]
+    ],
+    "s2/a/recall": [
+      [
+        0,
+        930000
+      ]
+    ],
+    "s2/b/recall": [
+      [
+        0,
+        930000
+      ]
+    ],
+    "s2/c/recall": [
+      [
+        0,
+        930000
+      ]
+    ],
+    "s1/a/retest": [
+      [
+        0,
+        930000
+      ]
+    ],
+    "s1/b/retest": [
+      [
+        0,
+        930000
+      ]
+    ],
+    "s1/c/retest": [
+      [
+        0,
+        930000
+      ]
+    ],
+    "s2/a/retest": [
+      [
+        0,
+        930000
+      ]
+    ],
+    "s2/b/retest": [
+      [
+        0,
+        350000
+      ],
+      [
+        500000,
+        930000
+      ]
+    ],
+    "s2/c/retest": [
+      [
+        0,
+        930000
+      ]
+    ]
+  },
+  "ledgers": [
+    {
+      "key": "s1/a/encode",
+      "window": "early",
+      "retained": [
+        100000,
+        190000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/b/encode",
+      "window": "early",
+      "retained": [
+        300000,
+        0,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/c/encode",
+      "window": "early",
+      "retained": [
+        200000,
+        90000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s2/a/encode",
+      "window": "early",
+      "retained": [
+        200000,
+        90000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s2/b/encode",
+      "window": "early",
+      "retained": [
+        100000,
+        190000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s2/c/encode",
+      "window": "early",
+      "retained": [
+        300000,
+        0,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/a/recall",
+      "window": "early",
+      "retained": [
+        100000,
+        190000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/b/recall",
+      "window": "early",
+      "retained": [
+        200000,
+        90000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/c/recall",
+      "window": "early",
+      "retained": [
+        300000,
+        0,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s2/a/recall",
+      "window": "early",
+      "retained": [
+        300000,
+        0,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s2/b/recall",
+      "window": "early",
+      "retained": [
+        100000,
+        190000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s2/c/recall",
+      "window": "early",
+      "retained": [
+        200000,
+        90000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/a/retest",
+      "window": "early",
+      "retained": [
+        100000,
+        190000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/b/retest",
+      "window": "early",
+      "retained": [
+        200000,
+        90000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/c/retest",
+      "window": "early",
+      "retained": [
+        300000,
+        0,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s2/a/retest",
+      "window": "early",
+      "retained": [
+        300000,
+        0,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s2/b/retest",
+      "window": "early",
+      "retained": [
+        100000,
+        190000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s2/c/retest",
+      "window": "early",
+      "retained": [
+        200000,
+        90000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/a/encode",
+      "window": "middle",
+      "retained": [
+        0,
+        10000,
+        200000,
+        70000
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/b/encode",
+      "window": "middle",
+      "retained": [
+        100000,
+        190000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/c/encode",
+      "window": "middle",
+      "retained": [
+        0,
+        300000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s2/a/encode",
+      "window": "middle",
+      "retained": [
+        0,
+        10000,
+        280000,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s2/b/encode",
+      "window": "middle",
+      "retained": [
+        0,
+        210000,
+        80000,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s2/c/encode",
+      "window": "middle",
+      "retained": [
+        100000,
+        100000,
+        80000,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/a/recall",
+      "window": "middle",
+      "retained": [
+        0,
+        10000,
+        200000,
+        70000
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/b/recall",
+      "window": "middle",
+      "retained": [
+        0,
+        300000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/c/recall",
+      "window": "middle",
+      "retained": [
+        100000,
+        190000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s2/a/recall",
+      "window": "middle",
+      "retained": [
+        100000,
+        100000,
+        80000,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s2/b/recall",
+      "window": "middle",
+      "retained": [
+        0,
+        210000,
+        80000,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s2/c/recall",
+      "window": "middle",
+      "retained": [
+        0,
+        10000,
+        280000,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/a/retest",
+      "window": "middle",
+      "retained": [
+        0,
+        10000,
+        200000,
+        70000
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/b/retest",
+      "window": "middle",
+      "retained": [
+        0,
+        300000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/c/retest",
+      "window": "middle",
+      "retained": [
+        100000,
+        190000,
+        0,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s2/a/retest",
+      "window": "middle",
+      "retained": [
+        100000,
+        100000,
+        80000,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s2/b/retest",
+      "window": "middle",
+      "retained": [
+        0,
+        60000,
+        80000,
+        0
+      ],
+      "observed": 150000,
+      "missing": 150000
+    },
+    {
+      "key": "s2/c/retest",
+      "window": "middle",
+      "retained": [
+        0,
+        10000,
+        280000,
+        0
+      ],
+      "observed": 300000,
+      "missing": 0
+    },
+    {
+      "key": "s1/a/encode",
+      "window": "late",
+      "retained": [
+        0,
+        0,
+        0,
+        330000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s1/b/encode",
+      "window": "late",
+      "retained": [
+        0,
+        10000,
+        200000,
+        100000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s1/c/encode",
+      "window": "late",
+      "retained": [
+        0,
+        10000,
+        100000,
+        200000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s2/a/encode",
+      "window": "late",
+      "retained": [
+        0,
+        0,
+        120000,
+        200000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s2/b/encode",
+      "window": "late",
+      "retained": [
+        0,
+        0,
+        120000,
+        200000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s2/c/encode",
+      "window": "late",
+      "retained": [
+        0,
+        0,
+        120000,
+        200000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s1/a/recall",
+      "window": "late",
+      "retained": [
+        0,
+        0,
+        0,
+        330000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s1/b/recall",
+      "window": "late",
+      "retained": [
+        0,
+        10000,
+        100000,
+        200000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s1/c/recall",
+      "window": "late",
+      "retained": [
+        0,
+        10000,
+        200000,
+        100000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s2/a/recall",
+      "window": "late",
+      "retained": [
+        0,
+        0,
+        120000,
+        200000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s2/b/recall",
+      "window": "late",
+      "retained": [
+        0,
+        0,
+        120000,
+        200000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s2/c/recall",
+      "window": "late",
+      "retained": [
+        0,
+        0,
+        120000,
+        200000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s1/a/retest",
+      "window": "late",
+      "retained": [
+        0,
+        0,
+        0,
+        330000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s1/b/retest",
+      "window": "late",
+      "retained": [
+        0,
+        10000,
+        100000,
+        200000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s1/c/retest",
+      "window": "late",
+      "retained": [
+        0,
+        10000,
+        200000,
+        100000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s2/a/retest",
+      "window": "late",
+      "retained": [
+        0,
+        0,
+        120000,
+        200000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s2/b/retest",
+      "window": "late",
+      "retained": [
+        0,
+        0,
+        120000,
+        200000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s2/c/retest",
+      "window": "late",
+      "retained": [
+        0,
+        0,
+        120000,
+        200000
+      ],
+      "observed": 330000,
+      "missing": 20000
+    },
+    {
+      "key": "s1/a/encode",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    },
+    {
+      "key": "s1/b/encode",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    },
+    {
+      "key": "s1/c/encode",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    },
+    {
+      "key": "s2/a/encode",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    },
+    {
+      "key": "s2/b/encode",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    },
+    {
+      "key": "s2/c/encode",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    },
+    {
+      "key": "s1/a/recall",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    },
+    {
+      "key": "s1/b/recall",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    },
+    {
+      "key": "s1/c/recall",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    },
+    {
+      "key": "s2/a/recall",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    },
+    {
+      "key": "s2/b/recall",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    },
+    {
+      "key": "s2/c/recall",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    },
+    {
+      "key": "s1/a/retest",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    },
+    {
+      "key": "s1/b/retest",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    },
+    {
+      "key": "s1/c/retest",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    },
+    {
+      "key": "s2/a/retest",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    },
+    {
+      "key": "s2/b/retest",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    },
+    {
+      "key": "s2/c/retest",
+      "window": "outside",
+      "retained": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "observed": 0,
+      "missing": 150000
+    }
+  ],
+  "pairs": [
+    {
+      "repetition": "recall-encode",
+      "left": "s1/a/recall",
+      "right": "s1/a/encode",
+      "kind": "matched"
+    },
+    {
+      "repetition": "recall-encode",
+      "left": "s1/a/recall",
+      "right": "s1/b/encode",
+      "kind": "control"
+    },
+    {
+      "repetition": "recall-encode",
+      "left": "s1/a/recall",
+      "right": "s1/c/encode",
+      "kind": "control"
+    },
+    {
+      "repetition": "recall-encode",
+      "left": "s1/b/recall",
+      "right": "s1/a/encode",
+      "kind": "control"
+    },
+    {
+      "repetition": "recall-encode",
+      "left": "s1/b/recall",
+      "right": "s1/b/encode",
+      "kind": "matched"
+    },
+    {
+      "repetition": "recall-encode",
+      "left": "s1/b/recall",
+      "right": "s1/c/encode",
+      "kind": "control"
+    },
+    {
+      "repetition": "recall-encode",
+      "left": "s1/c/recall",
+      "right": "s1/a/encode",
+      "kind": "control"
+    },
+    {
+      "repetition": "recall-encode",
+      "left": "s1/c/recall",
+      "right": "s1/b/encode",
+      "kind": "control"
+    },
+    {
+      "repetition": "recall-encode",
+      "left": "s1/c/recall",
+      "right": "s1/c/encode",
+      "kind": "matched"
+    },
+    {
+      "repetition": "recall-encode",
+      "left": "s2/a/recall",
+      "right": "s2/a/encode",
+      "kind": "matched"
+    },
+    {
+      "repetition": "recall-encode",
+      "left": "s2/a/recall",
+      "right": "s2/b/encode",
+      "kind": "control"
+    },
+    {
+      "repetition": "recall-encode",
+      "left": "s2/a/recall",
+      "right": "s2/c/encode",
+      "kind": "control"
+    },
+    {
+      "repetition": "recall-encode",
+      "left": "s2/b/recall",
+      "right": "s2/a/encode",
+      "kind": "control"
+    },
+    {
+      "repetition": "recall-encode",
+      "left": "s2/b/recall",
+      "right": "s2/b/encode",
+      "kind": "matched"
+    },
+    {
+      "repetition": "recall-encode",
+      "left": "s2/b/recall",
+      "right": "s2/c/encode",
+      "kind": "control"
+    },
+    {
+      "repetition": "recall-encode",
+      "left": "s2/c/recall",
+      "right": "s2/a/encode",
+      "kind": "control"
+    },
+    {
+      "repetition": "recall-encode",
+      "left": "s2/c/recall",
+      "right": "s2/b/encode",
+      "kind": "control"
+    },
+    {
+      "repetition": "recall-encode",
+      "left": "s2/c/recall",
+      "right": "s2/c/encode",
+      "kind": "matched"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s1/a/retest",
+      "right": "s1/a/recall",
+      "kind": "matched"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s1/a/retest",
+      "right": "s1/b/recall",
+      "kind": "control"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s1/a/retest",
+      "right": "s1/c/recall",
+      "kind": "control"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s1/b/retest",
+      "right": "s1/a/recall",
+      "kind": "control"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s1/b/retest",
+      "right": "s1/b/recall",
+      "kind": "matched"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s1/b/retest",
+      "right": "s1/c/recall",
+      "kind": "control"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s1/c/retest",
+      "right": "s1/a/recall",
+      "kind": "control"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s1/c/retest",
+      "right": "s1/b/recall",
+      "kind": "control"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s1/c/retest",
+      "right": "s1/c/recall",
+      "kind": "matched"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s2/a/retest",
+      "right": "s2/a/recall",
+      "kind": "matched"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s2/a/retest",
+      "right": "s2/b/recall",
+      "kind": "control"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s2/a/retest",
+      "right": "s2/c/recall",
+      "kind": "control"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s2/b/retest",
+      "right": "s2/a/recall",
+      "kind": "control"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s2/b/retest",
+      "right": "s2/b/recall",
+      "kind": "matched"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s2/b/retest",
+      "right": "s2/c/recall",
+      "kind": "control"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s2/c/retest",
+      "right": "s2/a/recall",
+      "kind": "control"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s2/c/retest",
+      "right": "s2/b/recall",
+      "kind": "control"
+    },
+    {
+      "repetition": "retest-recall",
+      "left": "s2/c/retest",
+      "right": "s2/c/recall",
+      "kind": "matched"
+    }
+  ],
+  "targets": [
+    {
+      "repetition": "recall-encode",
+      "key": "s1/a/recall",
+      "window": "early",
+      "sigma": null,
+      "difference": "0.37319509915928027730821716940546312903678321444543904773368"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/b/recall",
+      "window": "early",
+      "sigma": null,
+      "difference": "0.017989820750697827770344365578904148797455279196238416788418"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/c/recall",
+      "window": "early",
+      "sigma": null,
+      "difference": "0.179048288758795240934801843005566352395003116808639524274218"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/a/recall",
+      "window": "early",
+      "sigma": null,
+      "difference": "0.179048288758795240934801843005566352395003116808639524274218"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/b/recall",
+      "window": "early",
+      "sigma": null,
+      "difference": "0.37319509915928027730821716940546312903678321444543904773368"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/c/recall",
+      "window": "early",
+      "sigma": null,
+      "difference": "0.017989820750697827770344365578904148797455279196238416788418"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/a/retest",
+      "window": "early",
+      "sigma": null,
+      "difference": "0.316584563109794648436027941192533664646975916017572089682234"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/b/retest",
+      "window": "early",
+      "sigma": null,
+      "difference": "-0.029267604435354231951077896733878674953394931444646780577000"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/c/retest",
+      "window": "early",
+      "sigma": null,
+      "difference": "-0.64764144985539013308311360241711926336489895847048872804100"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/a/retest",
+      "window": "early",
+      "sigma": null,
+      "difference": "-0.64764144985539013308311360241711926336489895847048872804100"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/b/retest",
+      "window": "early",
+      "sigma": null,
+      "difference": "0.316584563109794648436027941192533664646975916017572089682234"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/c/retest",
+      "window": "early",
+      "sigma": null,
+      "difference": "-0.029267604435354231951077896733878674953394931444646780577000"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/a/recall",
+      "window": "early",
+      "sigma": 1.0,
+      "difference": "0.031846421951358213186546532988741351483505294711036663037205"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/b/recall",
+      "window": "early",
+      "sigma": 1.0,
+      "difference": "-0.003785595050772113657746885954861159087572256376720670116993"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/c/recall",
+      "window": "early",
+      "sigma": 1.0,
+      "difference": "0.013898649569610220128444435097194703415870074916200734060812"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/a/recall",
+      "window": "early",
+      "sigma": 1.0,
+      "difference": "0.013898649569610220128444435097194703415870074916200734060812"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/b/recall",
+      "window": "early",
+      "sigma": 1.0,
+      "difference": "0.031846421951358213186546532988741351483505294711036663037205"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/c/recall",
+      "window": "early",
+      "sigma": 1.0,
+      "difference": "-0.003785595050772113657746885954861159087572256376720670116993"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/a/retest",
+      "window": "early",
+      "sigma": 1.0,
+      "difference": "0.067062838256434667966845131040691309985500386909937132292038"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/b/retest",
+      "window": "early",
+      "sigma": 1.0,
+      "difference": "0.008357618161506655770707883060089000922549987441919523109724"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/c/retest",
+      "window": "early",
+      "sigma": 1.0,
+      "difference": "-0.079007038888452945381893525545222278105344769066415272159577"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/a/retest",
+      "window": "early",
+      "sigma": 1.0,
+      "difference": "-0.079007038888452945381893525545222278105344769066415272159577"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/b/retest",
+      "window": "early",
+      "sigma": 1.0,
+      "difference": "0.067062838256434667966845131040691309985500386909937132292038"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/c/retest",
+      "window": "early",
+      "sigma": 1.0,
+      "difference": "0.008357618161506655770707883060089000922549987441919523109724"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/a/recall",
+      "window": "middle",
+      "sigma": null,
+      "difference": "0.955572051432386915102238696766094759123503109505940416871361"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/b/recall",
+      "window": "middle",
+      "sigma": null,
+      "difference": "0.361347996342430803955223358948800233351943136500487903863377"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/c/recall",
+      "window": "middle",
+      "sigma": null,
+      "difference": "0.364060499853920887350851679855218261761101975185659923173957"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/a/recall",
+      "window": "middle",
+      "sigma": null,
+      "difference": "-0.361189839181170488721961315344996138286322725053842649130355"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/b/recall",
+      "window": "middle",
+      "sigma": null,
+      "difference": "0.43023038509358087664373853903407297473238276636974797372023"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/c/recall",
+      "window": "middle",
+      "sigma": null,
+      "difference": "-0.180542028496163779340632262939674994158558847771244217021535"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/a/retest",
+      "window": "middle",
+      "sigma": null,
+      "difference": "0.107111692687071921918598338627260285259624288725153172887426"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/b/retest",
+      "window": "middle",
+      "sigma": null,
+      "difference": "-0.164991582276861089026863684491131442499795052127310608537279"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/c/retest",
+      "window": "middle",
+      "sigma": null,
+      "difference": "0.022292482611272095149277579496954348730436082633709729991420"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/a/retest",
+      "window": "middle",
+      "sigma": null,
+      "difference": "0.383266151067148443731778232146208709930709444174219719839823"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/b/retest",
+      "window": "middle",
+      "sigma": null,
+      "difference": "-0.246182981958665465468481320250486071166794063234100388716714"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/c/retest",
+      "window": "middle",
+      "sigma": null,
+      "difference": "-0.307532659427504016540840819605503899562356821608382740209194"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/a/recall",
+      "window": "middle",
+      "sigma": 1.0,
+      "difference": "0.13913384640473046210994385383034588378445321584059051987899"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/b/recall",
+      "window": "middle",
+      "sigma": 1.0,
+      "difference": "0.065564325567943720679831921877590014974907686828791134641607"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/c/recall",
+      "window": "middle",
+      "sigma": 1.0,
+      "difference": "0.046626811806519269867778096228274658675320538764891155700682"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/a/recall",
+      "window": "middle",
+      "sigma": 1.0,
+      "difference": "-0.055617257187204125441415759539156676683836523323260167597404"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/b/recall",
+      "window": "middle",
+      "sigma": 1.0,
+      "difference": "0.061484986609490194315966334902814235992794799921189163782355"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/c/recall",
+      "window": "middle",
+      "sigma": 1.0,
+      "difference": "-0.010837374998909216757340737013176290582302424210496757855404"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/a/retest",
+      "window": "middle",
+      "sigma": 1.0,
+      "difference": "0.023256354796077157769441862717692262177842799013213583796610"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/b/retest",
+      "window": "middle",
+      "sigma": 1.0,
+      "difference": "-0.020887920722197924523802426126141531998387110425491280614070"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/c/retest",
+      "window": "middle",
+      "sigma": 1.0,
+      "difference": "-0.002892405640878818313390697937096956742748937898528296670647"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/a/retest",
+      "window": "middle",
+      "sigma": 1.0,
+      "difference": "0.033596342570684011509968415186671814208132297096157904161486"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/b/retest",
+      "window": "middle",
+      "sigma": 1.0,
+      "difference": "0.010937948619584553563482319126582191374389523665486563675990"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/c/retest",
+      "window": "middle",
+      "sigma": 1.0,
+      "difference": "-0.056955973349092096564802040496039578446684065928385222955573"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/a/recall",
+      "window": "late",
+      "sigma": null,
+      "difference": "0.32984942258684457002876119231845336075908693275101989134564"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/b/recall",
+      "window": "late",
+      "sigma": null,
+      "difference": "-0.146367850011963899421943636258755643725478970980357996587937"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/c/recall",
+      "window": "late",
+      "sigma": null,
+      "difference": "0.077015675792421243901802632968426569354825384769302039630183"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/a/recall",
+      "window": "late",
+      "sigma": null,
+      "difference": "0"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/b/recall",
+      "window": "late",
+      "sigma": null,
+      "difference": "0"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/c/recall",
+      "window": "late",
+      "sigma": null,
+      "difference": "0"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/a/retest",
+      "window": "late",
+      "sigma": null,
+      "difference": "-0.67015057741315542997123880768154663924091306724898010865436"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/b/retest",
+      "window": "late",
+      "sigma": null,
+      "difference": "0.007601767180040527583793037747940461326700103347189685000942"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/c/retest",
+      "window": "late",
+      "sigma": null,
+      "difference": "0.277062845024351904829302019783868605039274953646590882605733"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/a/retest",
+      "window": "late",
+      "sigma": null,
+      "difference": "0E-60"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/b/retest",
+      "window": "late",
+      "sigma": null,
+      "difference": "0E-60"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/c/retest",
+      "window": "late",
+      "sigma": null,
+      "difference": "0E-60"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/a/recall",
+      "window": "late",
+      "sigma": 1.0,
+      "difference": "0.030227159355526082147983978703904570024434505401968458006385"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/b/recall",
+      "window": "late",
+      "sigma": 1.0,
+      "difference": "-0.006511489532411665207916805966094385192004696264385647319246"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/c/recall",
+      "window": "late",
+      "sigma": 1.0,
+      "difference": "0.011753014038117880528638080787888927615517469439877651612114"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/a/recall",
+      "window": "late",
+      "sigma": 1.0,
+      "difference": "0"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/b/recall",
+      "window": "late",
+      "sigma": 1.0,
+      "difference": "0"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/c/recall",
+      "window": "late",
+      "sigma": 1.0,
+      "difference": "0"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/a/retest",
+      "window": "late",
+      "sigma": 1.0,
+      "difference": "-0.079640041195669556976311682606251324371718412163267946363375"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/b/retest",
+      "window": "late",
+      "sigma": 1.0,
+      "difference": "0.011817318524794128704223933728584021490306451366980599600632"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/c/retest",
+      "window": "late",
+      "sigma": 1.0,
+      "difference": "0.064141201949665318521257431849324032359479124742262406165597"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/a/retest",
+      "window": "late",
+      "sigma": 1.0,
+      "difference": "2E-60"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/b/retest",
+      "window": "late",
+      "sigma": 1.0,
+      "difference": "2E-60"
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/c/retest",
+      "window": "late",
+      "sigma": 1.0,
+      "difference": "2E-60"
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/a/recall",
+      "window": "outside",
+      "sigma": null,
+      "difference": null
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/b/recall",
+      "window": "outside",
+      "sigma": null,
+      "difference": null
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/c/recall",
+      "window": "outside",
+      "sigma": null,
+      "difference": null
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/a/recall",
+      "window": "outside",
+      "sigma": null,
+      "difference": null
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/b/recall",
+      "window": "outside",
+      "sigma": null,
+      "difference": null
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/c/recall",
+      "window": "outside",
+      "sigma": null,
+      "difference": null
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/a/retest",
+      "window": "outside",
+      "sigma": null,
+      "difference": null
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/b/retest",
+      "window": "outside",
+      "sigma": null,
+      "difference": null
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/c/retest",
+      "window": "outside",
+      "sigma": null,
+      "difference": null
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/a/retest",
+      "window": "outside",
+      "sigma": null,
+      "difference": null
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/b/retest",
+      "window": "outside",
+      "sigma": null,
+      "difference": null
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/c/retest",
+      "window": "outside",
+      "sigma": null,
+      "difference": null
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/a/recall",
+      "window": "outside",
+      "sigma": 1.0,
+      "difference": null
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/b/recall",
+      "window": "outside",
+      "sigma": 1.0,
+      "difference": null
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s1/c/recall",
+      "window": "outside",
+      "sigma": 1.0,
+      "difference": null
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/a/recall",
+      "window": "outside",
+      "sigma": 1.0,
+      "difference": null
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/b/recall",
+      "window": "outside",
+      "sigma": 1.0,
+      "difference": null
+    },
+    {
+      "repetition": "recall-encode",
+      "key": "s2/c/recall",
+      "window": "outside",
+      "sigma": 1.0,
+      "difference": null
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/a/retest",
+      "window": "outside",
+      "sigma": 1.0,
+      "difference": null
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/b/retest",
+      "window": "outside",
+      "sigma": 1.0,
+      "difference": null
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s1/c/retest",
+      "window": "outside",
+      "sigma": 1.0,
+      "difference": null
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/a/retest",
+      "window": "outside",
+      "sigma": 1.0,
+      "difference": null
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/b/retest",
+      "window": "outside",
+      "sigma": 1.0,
+      "difference": null
+    },
+    {
+      "repetition": "retest-recall",
+      "key": "s2/c/retest",
+      "window": "outside",
+      "sigma": 1.0,
+      "difference": null
+    }
+  ]
+}

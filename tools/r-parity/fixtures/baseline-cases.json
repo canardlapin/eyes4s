@@ -1,0 +1,101 @@
+{
+  "schema": 1,
+  "license": "Apache-2.0; synthetic data authored for eyes4s",
+  "purpose": "Small inputs selected before implementation so every eyesim baseline gap has a stable falsification case.",
+  "admission": {
+    "clip_bounds": [0, 100, 0, 50],
+    "relative_coords": true,
+    "rows": [
+      {"id": "valid-a", "participant": "p1", "trial": "a", "x": 10, "y": 20, "onset": 0, "duration": 100},
+      {"id": "outside-left", "participant": "p1", "trial": "a", "x": -1, "y": 20, "onset": 100, "duration": 100},
+      {"id": "zero-duration", "participant": "p1", "trial": "a", "x": 30, "y": 20, "onset": 200, "duration": 0},
+      {"id": "valid-b", "participant": "p1", "trial": "b", "x": 90, "y": 40, "onset": 0, "duration": 125}
+    ]
+  },
+  "transforms": {
+    "bounds": [0, 100, 0, 50],
+    "origin": [50, 25],
+    "points": [[0, 0], [20, 10], [80, 40]],
+    "rescale": [2, 3],
+    "affine_homogeneous": [[2, 0.5, 10], [-0.25, 3, -4], [0, 0, 1]],
+    "fit_pairs": [
+      {"source": [0, 0], "target": [10, -4]},
+      {"source": [20, 0], "target": [50, -9]},
+      {"source": [0, 10], "target": [15, 26]}
+    ],
+    "held_out": {"source": [70, 30], "target": [165, 68.5]}
+  },
+  "scanpaths": {
+    "screen": [100, 50],
+    "left": [
+      {"x": 10, "y": 10, "onset": 0, "duration": 80},
+      {"x": 40, "y": 20, "onset": 100, "duration": 120},
+      {"x": 80, "y": 40, "onset": 250, "duration": 100}
+    ],
+    "right": [
+      {"x": 12, "y": 9, "onset": 0, "duration": 100},
+      {"x": 38, "y": 24, "onset": 120, "duration": 80},
+      {"x": 75, "y": 42, "onset": 260, "duration": 140}
+    ],
+    "overlap": {"distance_threshold": 10, "metric": "euclidean", "time_step": 20}
+  },
+  "density": {
+    "bounds": [0, 100, 0, 50],
+    "outdim": [5, 3],
+    "points": [[10, 10], [30, 20], [80, 40]],
+    "duration_weights": [1, 2, 4],
+    "explicit_weights": [4, 2, 1],
+    "sigmas": [5, 10],
+    "queries": [[10, 10], [50, 25], [-1, 25], [101, 25]]
+  },
+  "sampling": {
+    "weights": [1, 2, 1],
+    "requested_counts": [0, 1, 7],
+    "with_replacement": [false, true],
+    "resolution": 100,
+    "seed": 12345
+  },
+  "entropy_and_arithmetic": {
+    "mass_p": [0.5, 0.25, 0.25, 0],
+    "mass_q": [0.25, 0.25, 0.25, 0.25],
+    "signed": [0.5, -0.25, 0.75, 0],
+    "log_bases": [2, 2.718281828459045],
+    "scale_weights": [1, 3]
+  },
+  "comparisons": {
+    "x": [0.1, 0.2, 0.3, 0.4],
+    "y": [0.4, 0.1, 0.2, 0.3],
+    "constant": [0.25, 0.25, 0.25, 0.25],
+    "zero": [0, 0, 0, 0],
+    "methods": ["pearson", "spearman", "fisherz", "cosine", "l1", "jaccard", "dcov", "emd"]
+  },
+  "repetition": {
+    "input_fixture": "matched-control.csv",
+    "condition": "phase",
+    "stratum": "participant",
+    "identity": "image",
+    "directed_pairs": true,
+    "pairwise_modes": [false, true]
+  },
+  "temporal_point_sampling": {
+    "template": {"x": [0, 1], "y": [0, 1], "z": [[0.1, 0.3], [0.2, 0.4]]},
+    "fixations": [
+      {"x": 0, "y": 0, "onset": 0, "duration": 100},
+      {"x": 1, "y": 1, "onset": 100, "duration": 100}
+    ],
+    "query_times": [0, 50, 100, 150, 200],
+    "time_bins": [0, 100, 200],
+    "normalizations": ["none", "max", "sum", "zscore"]
+  },
+  "template_model": {
+    "training": [
+      {"fold": "train-a", "trial": "a", "features": [1, 0], "response": 1},
+      {"fold": "train-a", "trial": "b", "features": [0, 1], "response": 2},
+      {"fold": "train-b", "trial": "c", "features": [1, 1], "response": 3},
+      {"fold": "train-b", "trial": "d", "features": [2, 1], "response": 4}
+    ],
+    "held_out": {"fold": "test", "trial": "e", "features": [3, 2], "response": 7},
+    "basic_fit": {"method": "lm", "intercept": false, "expected_coefficients": [1, 2]},
+    "leakage_mutant": "replace the held-out response with 700; fitted coefficients must remain unchanged"
+  }
+}

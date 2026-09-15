@@ -214,7 +214,8 @@ class PairedSuite extends munit.FunSuite:
     val result     = DirectedPairwiseAnalysis[Key, Key, String, Double](
       Vector(PairScore(Key("s1", "a"), Key("s1", "a"), Right(0.5))),
       diagnostics,
-      provenance
+      provenance,
+      EvaluationInfo("fixture", EvaluationScale.Unitless)
     )
 
     assertEquals(result.rows.head.left, Key("s1", "a"))
