@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s-workflows","entity":"bd-01M21FHASFK4F6ESB09DN3A4AP","kind":"reserve_open","mode":"exclusive","op":"20260908T215040.768071Z-p44072-c0000-r1136-hccfaf6","paths":["tools/study-cli","tools/r-parity/check_study_export.R"],"reservation_id":"rv-01M21G0XM03144F0E416VMZ5HY","ts":"2026-09-08T21:50:40.768071Z","ttl_s":3600,"v":2}
