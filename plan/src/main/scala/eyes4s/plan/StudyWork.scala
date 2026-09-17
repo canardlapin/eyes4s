@@ -49,6 +49,11 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
   val methodId: DefinitionId                        = plan.method.id
   val estimates: Vector[StudyEstimate[U]]           = plan.estimates
 
+  /** The plan grid every mass shares; its cell count is the declared work of
+    * one bounded comparison, so a driver can bound a comparison stage.
+    */
+  val grid: Grid[U] = plan.grid
+
   /** Inspect the exact schedules and reduction choices without numerical work. */
   def preview: Either[PlanError, StudyPreview[K, U]] =
     checkUnchanged.map { _ =>
