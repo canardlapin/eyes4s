@@ -25,7 +25,13 @@ import eyes4s.surface.EdgePolicy
 
 import scala.compiletime.testing.typeCheckErrors
 
-/** Resumable study execution against the pure runner. */
+/** Resumable study execution against the pure runner.
+  *
+  * `work.run` is itself `StudyWork.complete(cursor)`, so the equalities here
+  * prove that cutting the work at any quantum changes nothing, not that the
+  * cursor agrees with the pre-X3 runner; that equivalence rests on the pinned
+  * oracle suites (`StudyGuideOracleSuite`, `StudyWorkSuite`).
+  */
 class StudyCursorSuite extends munit.FunSuite:
   private def get[E, A](e: Either[E, A]): A = e.fold(e => fail(s"$e"), identity)
 
@@ -324,15 +330,21 @@ class StudyCursorSuite extends munit.FunSuite:
   }
 
   test("a comparison budget below the grid is refused with its operands before estimation") {
-    var estimated = 0
-    val work      = get(plan().prepare(input))
+    var estimated                                   = 0
+    val work                                        = get(plan().prepare(input))
+    def counting(key: StudyKey, path: Scanpath[Px]) =
+      estimated += 1
+      path.occupancy(Weight.Duration).left.map(StudyFailure.Occupancy(key, _))
+    def cursor(cells: Long) = work.work(get(ComparisonBudget.of(cells)), counting, Vector.empty)
     assertEquals(
-      work.work(get(ComparisonBudget.of(3))).left.toOption,
+      cursor(3).left.toOption,
       Some(PlanError.ComparisonWork(ComparisonWorkError.WorkBudget("cosine", 4, 3)))
     )
-    assert(work.work(get(ComparisonBudget.of(4))).isRight)
+    assert(cursor(4).isRight)
+    // Both the refusal and the accepted start precede any estimation.
     assertEquals(estimated, 0)
-    val (_, resumed) = drive(get(work.work(get(ComparisonBudget.of(4)))), quanta.head)
+    val (_, resumed) = drive(get(cursor(4)), quanta.head)
+    assertEquals(estimated, input.trials.rows.size)
     assertSameResult(resumed, get(work.run), "budget of exactly the grid")
   }
 
@@ -343,7 +355,7 @@ class StudyCursorSuite extends munit.FunSuite:
         import eyes4s.plan.*
         import eyes4s.kernel.Unit2D.Px
         MethodExecution.Bounded[Unit, Px, MeasureDistance](_ => Distribution.totalVariation[Px])
-      """).nonEmpty,
+      """).exists(_.message.contains("BoundedCompare")),
       "a whole synchronous metric was accepted as bounded execution"
     )
     assert(
@@ -352,7 +364,7 @@ class StudyCursorSuite extends munit.FunSuite:
         import eyes4s.plan.*
         import eyes4s.kernel.Unit2D.Px
         MethodExecution.Bounded[Unit, Px, MeasureDistance](_ => Distribution.cosine[Px])
-      """).nonEmpty,
+      """).exists(_.message.contains("MeasureDistance")),
       "a Similarity method was accepted with a MeasureDistance score type"
     )
     assert(
@@ -362,7 +374,7 @@ class StudyCursorSuite extends munit.FunSuite:
         import eyes4s.kernel.Unit2D.Px
         val execution: MethodExecution[Double, Px, Similarity] =
           MethodExecution.Bounded((p: Unit) => Distribution.cosine[Px])
-      """).nonEmpty,
+      """).exists(_.message.contains("Double")),
       "a Unit-parameter method was accepted for Double parameters"
     )
     assert(
@@ -378,7 +390,7 @@ class StudyCursorSuite extends munit.FunSuite:
           MethodExecution.Bounded(_ => Distribution.cosine[Px]),
           None
         )
-      """).nonEmpty,
+      """).exists(_.message.contains("MeasureDistance")),
       "a StudyMethod accepted execution evidence of the wrong score type"
     )
   }

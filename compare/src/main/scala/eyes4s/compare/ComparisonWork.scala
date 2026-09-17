@@ -74,6 +74,10 @@ enum ComparisonStep[+S]:
   *     between steps;
   *   - re-advancing the same cursor is deterministic, and the final result
   *     does not depend on where the steps were cut.
+  *
+  * A cursor whose outcome is already decided ([[ComparisonCursor.decided]],
+  * for example incompatible grids) has `remaining = 0` and completes with
+  * `Done(0, result)`; a zero-unit step is a decided outcome, not a stall.
   */
 trait ComparisonCursor[+S]:
   def remaining: Long

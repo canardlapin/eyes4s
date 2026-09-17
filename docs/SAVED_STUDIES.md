@@ -62,17 +62,25 @@ captured plan description invalidates prepared execution.
 
 ## Run a study in bounded steps
 
-`work.work(budget)` returns a `StudyCursor`; `work.run` drives the same cursor to
-completion, so pure and resumable execution are one scientific path. Each
-`cursor.advance(quanta)` performs one bounded step and returns `StudyStep.More`
-with the stage it worked on (`Estimating(scale, trial)`, `Comparing`,
-`Reducing(scale, design)` or `Contrasting(scale)`), the units it visited and the
-next immutable cursor, or `StudyStep.Done` with the complete `StudyResult`.
-`WorkQuanta(pairs, comparison)` bounds one step: `PairQuantum` limits schedule
-visits and reduction/contrast keys, `ComparisonQuantum` limits cells inside one
-comparison. Cursors are immutable, so re-advancing one is deterministic, and
-the result does not depend on where steps were cut: pair outcomes accumulate in
-schedule order and keys reduce in order of first appearance.
+`work.work(budget)` returns `Either[PlanError, StudyCursor]`; `work.run` drives
+the same cursor to completion, so pure and resumable execution are one
+scientific path. Each `cursor.advance(quanta)` performs one bounded step and
+returns `StudyStep.More` with the stage it worked on (`Estimating(scale, trial)`,
+`Comparing(scale, design)`, `Reducing(scale, design)` or `Contrasting(scale)`),
+the units it visited and the next immutable cursor, or `StudyStep.Done` with the
+complete `StudyResult`. `WorkQuanta(pairs, comparison)` bounds one step:
+`PairQuantum` limits schedule visits and reduction/contrast keys,
+`ComparisonQuantum` limits cells inside one comparison. Cursors are immutable,
+so re-advancing one is deterministic, and the result does not depend on where
+steps were cut: pair outcomes accumulate in schedule order and keys reduce in
+order of first appearance. Grouping by key relies on `hashCode` being consistent
+with `equals`, as the contrast's key domain already does.
+
+Units are a step's own count, not a promise that `workUnits <= quantum`: a
+reduction step charges `max(1, scores.size)` for the key it reduces, so its
+units can exceed the pair quantum, and a pair whose comparison is already
+decided (for example incompatible grids) records its outcome as a zero-unit
+`More`. A driver must treat both as progress rather than a stall.
 
 What is bounded is declared, not assumed. `Distribution.cosine` is a
 `BoundedCompare`: its dot product and norms accumulate one cell per unit through

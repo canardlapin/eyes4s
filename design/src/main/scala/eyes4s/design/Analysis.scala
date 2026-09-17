@@ -331,6 +331,11 @@ enum EvaluationPage[KL, KR, E, S]:
 
 /** An immutable position inside scheduled evaluation. Scores accumulate in
   * schedule order, so the completed analysis does not depend on the quanta.
+  *
+  * Beginning a bounded pair whose comparison is already decided (for example
+  * incompatible grids) costs one unit, and the next step records its outcome
+  * as a zero-unit `More`. Drivers must treat a zero-unit step as progress, not
+  * a stall, and must not assume `workUnits <= quanta.comparison`.
   */
 final class EvaluationCursor[KL, KR, E, S] private[design] (
     private val evaluation: PairEvaluation[KL, KR, E, S],
@@ -591,6 +596,11 @@ enum ReductionPage[K, S]:
   * step, charging that key's contribution count. Keys are reduced in order of
   * first appearance, and each key's scores keep schedule order, so the result
   * does not depend on the quanta.
+  *
+  * A key step charges `max(1, scores.size)` units, so one step's `workUnits`
+  * may exceed the quantum: the quantum bounds the keys and visits a step
+  * starts, never the size of one key's group. Grouping keys by `K` relies on
+  * `hashCode` being consistent with `equals`, as `contrast` already does.
   */
 final class ReductionCursor[K, S] private[design] (
     private val source: PairwiseAnalysis[?, ?, ?, S],
