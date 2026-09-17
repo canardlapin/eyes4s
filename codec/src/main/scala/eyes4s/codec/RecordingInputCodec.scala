@@ -35,8 +35,8 @@ import io.circe.Json
   * the same artifact reference as the original.
   *
   * Payloads are in-memory JSON. Encoding and decoding refuse more than
-  * [[RecordingInputCodecs.maximumSamples]] samples per recording with a named
-  * `CodecError.Unsupported`; larger recordings must be split per block or
+  * [[RecordingInputCodecs.maximumSamples]] samples per recording with a typed
+  * `CodecError.SampleBound`; larger recordings must be split per block or
   * carried as separately referenced typed payloads.
   */
 object RecordingInputCodecs:
@@ -150,7 +150,6 @@ object RecordingInputCodecs:
       )
       syncJson <- Wire.field[Option[Json]](json, "synchronization")
       sync     <- syncJson.traverse(readSynchronization(_, table))
-      fitted   <- syncJson.traverse(Wire.field[Json](_, "fitted"))
       value    <- RecordingInput
         .of(RecordingRef(source), channels, viewing, sync.map(_._1))
         .left
@@ -164,11 +163,12 @@ object RecordingInputCodecs:
             Either.cond(
               evidence.offset.toMicros == offset && evidence.sync.drift == drift,
               (),
-              CodecError.Field(
+              CodecError.SynchronizationFit(
                 "synchronization.fitted",
-                fitted.getOrElse(Json.Null),
-                s"declared offsetMicros=$offset drift=$drift but the observed marks refit to " +
-                  s"offsetMicros=${evidence.offset.toMicros} drift=${evidence.sync.drift}"
+                offset,
+                drift,
+                evidence.offset.toMicros,
+                evidence.sync.drift
               )
             )
           )
@@ -239,38 +239,51 @@ object RecordingInputCodecs:
   * Frames and clocks are referenced by nominal ID against a document table.
   */
 private[codec] object RecordingInputWire:
-  private val eyes: Vector[(Eye, String)] =
-    Vector(Eye.Left -> "left", Eye.Right -> "right", Eye.Cyclopean -> "cyclopean")
+  /** Explicit wire names as exhaustive matches: a new enum case fails to
+    * compile here rather than throwing during encoding, and an enum rename
+    * cannot change the format.
+    */
+  private def eyeName(eye: Eye): String = eye match
+    case Eye.Left      => "left"
+    case Eye.Right     => "right"
+    case Eye.Cyclopean => "cyclopean"
 
-  private val pupilUnits: Vector[(PupilUnit, String)] = Vector(
-    PupilUnit.Area      -> "area",
-    PupilUnit.Diameter  -> "diameter",
-    PupilUnit.Arbitrary -> "arbitrary"
-  )
+  private def readEye(json: Json): Either[CodecError, Eye] =
+    Wire.field[String](json, "eye").flatMap {
+      case "left"      => Right(Eye.Left)
+      case "right"     => Right(Eye.Right)
+      case "cyclopean" => Right(Eye.Cyclopean)
+      case other       => Left(CodecError.Field("eye", json, s"unknown eye '$other'"))
+    }
 
-  private val origins: Vector[(SampleOrigin, String)] = Vector(
-    SampleOrigin.Measured     -> "measured",
-    SampleOrigin.Interpolated -> "interpolated",
-    SampleOrigin.Smoothed     -> "smoothed",
-    SampleOrigin.Projected    -> "projected"
-  )
+  private def pupilUnitName(unit: PupilUnit): String = unit match
+    case PupilUnit.Area      => "area"
+    case PupilUnit.Diameter  => "diameter"
+    case PupilUnit.Arbitrary => "arbitrary"
 
-  private def name[A](table: Vector[(A, String)], value: A): Json =
-    Json.fromString(table.collectFirst { case (v, n) if v == value => n }.get)
+  private def readPupilUnit(json: Json): Either[CodecError, Option[PupilUnit]] =
+    Wire.field[Option[String]](json, "pupilUnit").flatMap {
+      case None              => Right(None)
+      case Some("area")      => Right(Some(PupilUnit.Area))
+      case Some("diameter")  => Right(Some(PupilUnit.Diameter))
+      case Some("arbitrary") => Right(Some(PupilUnit.Arbitrary))
+      case Some(other)       =>
+        Left(CodecError.Field("pupilUnit", json, s"unknown pupil unit '$other'"))
+    }
 
-  private def lookup[A](
-      table: Vector[(A, String)],
-      json: Json,
-      field: String,
-      kind: String
-  ): Either[CodecError, A] =
-    Wire
-      .field[String](json, field)
-      .flatMap(text =>
-        table
-          .collectFirst { case (v, n) if n == text => v }
-          .toRight(CodecError.Field(field, json, s"unknown $kind '$text'"))
-      )
+  private def originName(origin: SampleOrigin): String = origin match
+    case SampleOrigin.Measured     => "measured"
+    case SampleOrigin.Interpolated => "interpolated"
+    case SampleOrigin.Smoothed     => "smoothed"
+    case SampleOrigin.Projected    => "projected"
+
+  private def readOrigin(step: String, json: Json): Either[CodecError, SampleOrigin] =
+    step match
+      case "measured"     => Right(SampleOrigin.Measured)
+      case "interpolated" => Right(SampleOrigin.Interpolated)
+      case "smoothed"     => Right(SampleOrigin.Smoothed)
+      case "projected"    => Right(SampleOrigin.Projected)
+      case other => Left(CodecError.Field("lineage", json, s"unknown derivation step '$other'"))
 
   private def rate(value: Rate): Json = value match
     case Rate.Fixed(hz) =>
@@ -307,12 +320,7 @@ private[codec] object RecordingInputWire:
   private def checkLength(json: Json, length: Int): Either[CodecError, Unit] =
     if length < 1 then Left(CodecError.Field("samples.length", json, "expected at least one"))
     else if length > RecordingInputCodecs.maximumSamples then
-      Left(
-        CodecError.Unsupported(
-          "samples",
-          s"$length samples exceed the inline payload bound ${RecordingInputCodecs.maximumSamples}"
-        )
-      )
+      Left(CodecError.SampleBound("samples", length, RecordingInputCodecs.maximumSamples))
     else Right(())
 
   private def column(
@@ -412,20 +420,13 @@ private[codec] object RecordingInputWire:
       case _ => Left(CodecError.Field("state", state, "unknown sample support category"))
 
   private def lineage(value: SampleLineage): Json =
-    Json.fromString(value.toVector.map(step => name(origins, step).asString.get).mkString(">"))
+    Json.fromString(value.toVector.map(originName).mkString(">"))
 
   private def readLineage(json: Json): Either[CodecError, SampleLineage] =
     json.asString
       .toRight(CodecError.Field("lineage", json, "expected a lineage string"))
       .flatMap { text =>
-        val steps = text
-          .split(">", -1)
-          .toVector
-          .traverse(step =>
-            origins
-              .collectFirst { case (o, n) if n == step => o }
-              .toRight(CodecError.Field("lineage", json, s"unknown derivation step '$step'"))
-          )
+        val steps = text.split(">", -1).toVector.traverse(readOrigin(_, json))
         steps.flatMap { parsed =>
           val basis = parsed.headOption match
             case Some(SampleOrigin.Measured)     => Right(SampleLineage.measured)
@@ -448,7 +449,7 @@ private[codec] object RecordingInputWire:
                     CodecError.Field(
                       "lineage",
                       json,
-                      s"derivation step '${name(origins, other).asString.get}' cannot follow a basis"
+                      s"derivation step '${originName(other)}' cannot follow a basis"
                     )
                   )
             )
@@ -460,11 +461,11 @@ private[codec] object RecordingInputWire:
     checkLength(Json.Null, value.size).map { _ =>
       val n = value.size
       Json.obj(
-        "frame"                   -> Json.fromString(value.frame.id.name),
-        "clock"                   -> Json.fromString(value.clock.name),
-        "eye"                     -> name(eyes, value.eye),
-        "pupilUnit"               -> value.pupilUnit.fold(Json.Null)(name(pupilUnits, _)),
-        "rate"                    -> rate(value.rate),
+        "frame"     -> Json.fromString(value.frame.id.name),
+        "clock"     -> Json.fromString(value.clock.name),
+        "eye"       -> Json.fromString(eyeName(value.eye)),
+        "pupilUnit" -> value.pupilUnit.fold(Json.Null)(u => Json.fromString(pupilUnitName(u))),
+        "rate"      -> rate(value.rate),
         "samplingToleranceMicros" -> DomainWire.time(value.samplingTolerance.toSpan.toMicros),
         "recording"               -> Json.fromString(value.contentHash.render),
         "samples"                 -> Json.fromFields(
@@ -488,9 +489,8 @@ private[codec] object RecordingInputWire:
       frame     <- table.frame[U](FrameId(frameName))
       clockName <- Wire.field[String](json, "clock")
       clock     <- table.clock(ClockId(clockName))
-      eye       <- lookup(eyes, json, "eye", "eye")
-      pupilJson <- Wire.field[Option[Json]](json, "pupilUnit")
-      pupilUnit <- pupilJson.traverse(_ => lookup(pupilUnits, json, "pupilUnit", "pupil unit"))
+      eye       <- readEye(json)
+      pupilUnit <- readPupilUnit(json)
       rate      <- readRate(json)
       tolerance <- readTolerance(json)
       declared  <- Wire.field[String](json, "recording")
@@ -530,10 +530,10 @@ private[codec] object RecordingInputWire:
     checkLength(Json.Null, value.size).map { _ =>
       val n = value.size
       Json.obj(
-        "frame"                   -> Json.fromString(value.frame.id.name),
-        "clock"                   -> Json.fromString(value.clock.name),
-        "pupilUnit"               -> value.pupilUnit.fold(Json.Null)(name(pupilUnits, _)),
-        "rate"                    -> rate(value.rate),
+        "frame"     -> Json.fromString(value.frame.id.name),
+        "clock"     -> Json.fromString(value.clock.name),
+        "pupilUnit" -> value.pupilUnit.fold(Json.Null)(u => Json.fromString(pupilUnitName(u))),
+        "rate"      -> rate(value.rate),
         "samplingToleranceMicros" -> DomainWire.time(value.samplingTolerance.toSpan.toMicros),
         "recording"               -> Json.fromString(value.contentHash.render),
         "samples"                 -> Json.obj(
@@ -556,8 +556,7 @@ private[codec] object RecordingInputWire:
       frame     <- table.frame[U](FrameId(frameName))
       clockName <- Wire.field[String](json, "clock")
       clock     <- table.clock(ClockId(clockName))
-      pupilJson <- Wire.field[Option[Json]](json, "pupilUnit")
-      pupilUnit <- pupilJson.traverse(_ => lookup(pupilUnits, json, "pupilUnit", "pupil unit"))
+      pupilUnit <- readPupilUnit(json)
       rate      <- readRate(json)
       tolerance <- readTolerance(json)
       declared  <- Wire.field[String](json, "recording")

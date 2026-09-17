@@ -29,9 +29,17 @@ import org.scalacheck.{Gen, Test}
   * inputs and timelines, with deliberate mutants that the laws must kill.
   */
 class RecordingInputCodecLawSuite extends munit.DisciplineSuite:
-  private def get[E, A](value: Either[E, A]): A       = value.fold(e => fail(s"$e"), identity)
-  private def lift[E, A](value: Either[E, A]): Gen[A] =
-    value.fold(_ => Gen.fail, Gen.const)
+  private def get[E, A](value: Either[E, A]): A = value.fold(e => fail(s"$e"), identity)
+
+  /** Generated operands satisfy every constructor invariant by construction,
+    * so a `Left` here is a generator bug and surfaces as a failure rather
+    * than as a discarded case; the generators therefore cannot exhaust.
+    */
+  private def sure[E, A](value: Either[E, A]): A =
+    value.fold(
+      e => throw new IllegalStateException(s"generator invariant violated: $e"),
+      identity
+    )
 
   private val display = get(Frame.screen("display", 1000, 1000))
   private val tracker = ClockId("tracker")
@@ -91,7 +99,7 @@ class RecordingInputCodecLawSuite extends munit.DisciplineSuite:
     eye   <- Gen.oneOf(Eye.Left, Eye.Right, Eye.Cyclopean)
     unit  <- Gen.option(Gen.oneOf(PupilUnit.Area, PupilUnit.Diameter, PupilUnit.Arbitrary))
     rows  <- samples(n, fixed, unit.isDefined)
-    value <- lift(
+    value = sure(
       Recording.of(
         display,
         tracker,
@@ -111,7 +119,7 @@ class RecordingInputCodecLawSuite extends munit.DisciplineSuite:
     times <- timestamps(n, fixed)
     left  <- Gen.listOfN(n, gaze(unit.isDefined))
     right <- Gen.listOfN(n, gaze(unit.isDefined))
-    value <- lift(
+    value = sure(
       BinocularRecording.of(
         display,
         tracker,
@@ -130,7 +138,7 @@ class RecordingInputCodecLawSuite extends munit.DisciplineSuite:
       d <- Gen.choose(300.0, 1000.0)
       w <- Gen.choose(200.0, 800.0)
       h <- Gen.choose(200.0, 600.0)
-      v <- lift(Viewing.millimetres(d, w, h))
+      v = sure(Viewing.millimetres(d, w, h))
     yield v
   )
 
@@ -139,7 +147,7 @@ class RecordingInputCodecLawSuite extends munit.DisciplineSuite:
     mode   <- Gen.oneOf(SyncFitMode.OffsetOnly, SyncFitMode.Affine)
     offset <- Gen.choose(-5000000L, 5000000L)
     noise  <- Gen.listOfN(n, Gen.choose(0L, 40L))
-    marks  <- lift(
+    marks = sure(
       (0 until n).toVector.traverseEither(i =>
         SyncMark.of(
           s"m$i",
@@ -148,7 +156,7 @@ class RecordingInputCodecLawSuite extends munit.DisciplineSuite:
         )
       )
     )
-    limit <- Gen.option(lift(SyncResidualLimit.of(Span.micros(1000))))
+    limit <- Gen.option(Gen.const(sure(SyncResidualLimit.of(Span.micros(1000)))))
   yield ObservedSynchronization(ClockId("display"), mode, marks, limit)
 
   private def inputs(sync: Gen[Option[ObservedSynchronization]]): Gen[RecordingInput[Px]] =
@@ -159,7 +167,7 @@ class RecordingInputCodecLawSuite extends munit.DisciplineSuite:
       )
       viewing <- viewings
       marks   <- sync
-      value   <- lift(RecordingInput.of(RecordingRef("generated"), channels, viewing, marks))
+      value = sure(RecordingInput.of(RecordingRef("generated"), channels, viewing, marks))
     yield value
 
   private val sameRecording: (Recording[Px], Recording[Px]) => Boolean = (a, b) =>
@@ -210,8 +218,10 @@ class RecordingInputCodecLawSuite extends munit.DisciplineSuite:
     })
   )
 
-  private val temporals: Gen[TemporalStudyInput[StudyKey, Px]] = for
-    chosen <- Gen.someOf(keys)
+  private def temporalsOver(
+      subset: Gen[collection.Seq[StudyKey]]
+  ): Gen[TemporalStudyInput[StudyKey, Px]] = for
+    chosen <- subset
     epochs <- Gen.sequence[Vector[(StudyKey, TrialEpoch)], (StudyKey, TrialEpoch)](
       chosen.toVector.map { k =>
         for
@@ -227,12 +237,14 @@ class RecordingInputCodecLawSuite extends munit.DisciplineSuite:
             .map { case (a, b) =>
               get(Interval.of(clock(k), Instant.micros(a), Instant.micros(b)))
             }
-          coverage <- lift(ObservedCoverage.of(clock(k), intervals.toVector))
+          coverage = sure(ObservedCoverage.of(clock(k), intervals.toVector))
         yield k -> TrialEpoch(Instant.micros(anchor), coverage)
       }
     )
-    value <- lift(TemporalStudyInput.of(study, epochs))
+    value = sure(TemporalStudyInput.of(study, epochs))
   yield value
+
+  private val temporals: Gen[TemporalStudyInput[StudyKey, Px]] = temporalsOver(Gen.someOf(keys))
 
   private val sameTemporal
       : (TemporalStudyInput[StudyKey, Px], TemporalStudyInput[StudyKey, Px]) => Boolean =
@@ -253,7 +265,7 @@ class RecordingInputCodecLawSuite extends munit.DisciplineSuite:
         value <- Gen.oneOf("", "start", "\"quoted\"", "line\nbreak", "tab\there")
       yield Mark(Instant.micros(at), value)
     )
-    line <- lift(Timeline.of(ClockId("display"), marks.toVector))
+    line = sure(Timeline.of(ClockId("display"), marks.toVector))
   yield line
 
   checkAll(
@@ -289,9 +301,14 @@ class RecordingInputCodecLawSuite extends munit.DisciplineSuite:
         .flatMap(change)
     )
 
+  /** A mutant is killed only by a genuine counterexample: an exhausted
+    * generator or an exception inside a property is not a kill.
+    */
   private def killed[A](codec: VersionedCodec[A], gen: Gen[A], eq: (A, A) => Boolean): Boolean =
     CodecLaws.roundTrip(codec, gen, eq).all.properties.exists { case (_, prop) =>
-      !Test.check(Test.Parameters.default.withMinSuccessfulTests(40), prop).passed
+      Test.check(Test.Parameters.default.withMinSuccessfulTests(40), prop).status match
+        case Test.Failed(_, _) => true
+        case _                 => false
     }
 
   test("published laws kill a dropped sample, a swapped clock and a dropped sync mark") {
@@ -344,7 +361,7 @@ class RecordingInputCodecLawSuite extends munit.DisciplineSuite:
         .left
         .map(CodecError.Temporal.apply)
     }
-    assert(killed(movedAnchor, temporals.suchThat(_.epochs.nonEmpty), sameTemporal))
+    assert(killed(movedAnchor, temporalsOver(Gen.atLeastOne(keys)), sameTemporal))
   }
 
   extension [E, A](values: Vector[A])

@@ -235,13 +235,15 @@ its hash omits because irregular sampling never applies it. Mis-shaped columns, 
 without a position, an unknown category, or a lineage that does not begin with a basis are located
 errors such as `CodecError.Entry("channels.recording.samples[3]", ...)`. Payloads are in-memory
 JSON; a recording with more than `RecordingInputCodecs.maximumSamples` (2^22, about seventy minutes
-at 1 kHz) is refused with `CodecError.Unsupported` on both sides, and must be split or carried as a
-separately referenced typed payload.
+at 1 kHz) is refused with `CodecError.SampleBound` on both sides, naming the count and the bound, and
+must be split or carried as a separately referenced typed payload.
 
 The synchronization entry is input evidence: the target clock, the fit mode, the observed common
 marks and the optional residual limit, from which `RecordingInput.synchronize` refits `SyncEvidence`
-deterministically. The `fitted` offset and drift are written alongside and cross-checked on decode;
-the fitted diagnostics themselves belong to the completed-result archive. `RecordingInput.of` refuses
+deterministically. The `fitted` offset and drift are written alongside and cross-checked on decode
+(`CodecError.SynchronizationFit` names the declared and refit coefficients); the fitted diagnostics
+themselves belong to the completed-result archive. Only offset-only synchronization is fixture-pinned;
+affine fits with non-zero drift are covered by the generated laws on both the JVM and Scala.js. `RecordingInput.of` refuses
 an empty source, a synchronization whose target is the recording's own clock, or marks that do not
 fit. Viewing geometry and every mark enter the input digest. A recording plan still runs on the bare
 `Recording[Px]` with its own declared provenance; `RecordingInput.disagreements(input, plan)` names
@@ -255,9 +257,10 @@ its fixations. Decoding rebuilds it through `EventSeries.of` and `Scanpath.fromE
 and sample counts are re-derived from the samples and must equal the declared summaries; a detached
 summary, an overlapping or truncated range, or a support category flipped inside the source
 recording is refused. Its fixations declare a dispersion `method` only: the value is re-derived from
-the samples rather than compared, because the spread statistics use `hypot` and `pow`, whose
-rounding differs between the JVM and JavaScript engines, so a value written on one platform is not
-promised bit-identical on the other. The source name, the source recording's digest and every sample
+the samples rather than compared. This is a design assumption rather than a measured difference:
+the spread statistics use `hypot` and `pow`, which neither platform promises to round identically,
+so a value written on one platform is not promised bit-identical on the other and the wire does not
+depend on it. The source name, the source recording's digest and every sample
 range enter the study digest of a source-supported trial, so a different source recording or
 segmentation with the same summaries is a different input; detached trials keep their S2 digests.
 Dispersion recomputed under a warp (`SummaryEvidence.Recomputed`) is a transformation result, not an

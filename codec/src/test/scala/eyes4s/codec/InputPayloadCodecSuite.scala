@@ -566,6 +566,23 @@ class InputPayloadCodecSuite extends munit.FunSuite:
       case Left(CodecError.Entry("epochs[0]", CodecError.MissingIdentity("clock", "other"))) =>
         ()
       case other => fail(s"unexpected $other")
+    val shiftedCoverage = edit(json, "value", "epochs")(
+      setAt(
+        0,
+        edit(epochs.head, "coverage", "intervals")(intervals =>
+          setAt(
+            0,
+            edit(intervals.asArray.get.head, "offsetMicros")(offset =>
+              Json.fromString((offset.asString.get.toLong + 1).toString)
+            )
+          )(intervals)
+        )
+      )
+    )
+    temporals.input.decode(shiftedCoverage) match
+      case Left(CodecError.InputIdentity(declared, _)) =>
+        assertEquals(declared, temporal.reference.digest)
+      case other => fail(s"unexpected $other")
     val moved = edit(json, "value", "epochs")(
       setAt(0, edit(epochs.head, "anchorMicros")(_ => Json.fromString("1")))
     )
@@ -635,8 +652,14 @@ class InputPayloadCodecSuite extends munit.FunSuite:
     channel(json, "samples", "length")(_ =>
       Json.fromInt(RecordingInputCodecs.maximumSamples + 1)
     ).pipe(inputs.decode) match
-      case Left(CodecError.Entry("channels.recording", CodecError.Unsupported("samples", _))) =>
-        ()
+      case Left(
+            CodecError.Entry(
+              "channels.recording",
+              CodecError.SampleBound("samples", declared, maximum)
+            )
+          ) =>
+        assertEquals(declared, RecordingInputCodecs.maximumSamples + 1)
+        assertEquals(maximum, RecordingInputCodecs.maximumSamples)
       case other => fail(s"unexpected $other")
     channel(json, "pupilUnit")(_ => Json.Null).pipe(inputs.decode) match
       case Left(
@@ -704,14 +727,31 @@ class InputPayloadCodecSuite extends munit.FunSuite:
     edit(json, "value", "synchronization", "fitted", "offsetMicros")(_ =>
       Json.fromString("1000001")
     ).pipe(inputs.decode) match
-      case Left(CodecError.Field("synchronization.fitted", _, _)) => ()
-      case other                                                  => fail(s"unexpected $other")
+      case Left(
+            CodecError.SynchronizationFit(
+              "synchronization.fitted",
+              1000001L,
+              0.0,
+              1000010L,
+              0.0
+            )
+          ) =>
+        ()
+      case other => fail(s"unexpected $other")
     edit(json, "value", "synchronization", "fitted", "drift")(_ =>
       Json.fromDoubleOrNull(1.0e-6)
     )
       .pipe(inputs.decode) match
-      case Left(CodecError.Field("synchronization.fitted", offending, _)) =>
-        assertEquals(offending.hcursor.get[String]("offsetMicros"), Right("1000010"))
+      case Left(
+            CodecError.SynchronizationFit(
+              "synchronization.fitted",
+              1000010L,
+              1.0e-6,
+              1000010L,
+              0.0
+            )
+          ) =>
+        ()
       case other => fail(s"unexpected $other")
     val pairedJson = get(inputs.encode(binocularInput))
     edit(pairedJson, "value", "channels", "recording", "samples", "left", "x")(dropAt(1))

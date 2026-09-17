@@ -46,6 +46,14 @@ enum CodecError derives CanEqual:
   case Synchronization(path: String, underlying: SyncEvidenceError)
   case Input(underlying: RecordingInputError)
   case Temporal(underlying: TemporalStudyError)
+  case SampleBound(path: String, samples: Int, maximum: Int)
+  case SynchronizationFit(
+      path: String,
+      declaredOffsetMicros: Long,
+      declaredDrift: Double,
+      refitOffsetMicros: Long,
+      refitDrift: Double
+  )
 
   def message: String = this match
     case InvalidJson(_, reason)     => s"Invalid project JSON: $reason"
@@ -69,11 +77,16 @@ enum CodecError derives CanEqual:
       s"Payload declares input $declared but its trials reconstruct $reconstructed."
     case Admission(e) => e.message
     // UI-S3
-    case Recording(path, e)       => s"Cannot decode $path: ${e.message}"
-    case Support(path, e)         => s"Cannot decode $path: ${e.message}"
-    case Synchronization(path, e) => s"Cannot decode $path: ${e.message}"
-    case Input(e)                 => e.message
-    case Temporal(e)              => e.message
+    case Recording(path, e)                  => s"Cannot decode $path: ${e.message}"
+    case Support(path, e)                    => s"Cannot decode $path: ${e.message}"
+    case Synchronization(path, e)            => s"Cannot decode $path: ${e.message}"
+    case Input(e)                            => e.message
+    case Temporal(e)                         => e.message
+    case SampleBound(path, samples, maximum) =>
+      s"Cannot carry $path inline: $samples samples exceed the payload bound of $maximum."
+    case SynchronizationFit(path, declaredOffset, declaredDrift, refitOffset, refitDrift) =>
+      s"$path declares offsetMicros=$declaredOffset drift=$declaredDrift but the observed marks " +
+        s"refit to offsetMicros=$refitOffset drift=$refitDrift."
 
 /** A typed, explicitly versioned codec. Unsupported old versions fail precisely.
   * The wire envelope separates schema identity from any method identity in its payload.
