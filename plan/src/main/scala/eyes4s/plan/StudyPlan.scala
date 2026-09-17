@@ -203,6 +203,18 @@ final case class PlanChange(
     before: Vector[Provenance.Param],
     after: Vector[Provenance.Param]
 ) derives CanEqual
+object PlanChange:
+  /** Field-level differences between two plan descriptions, in field order. */
+  def between(
+      before: Vector[(String, Vector[Provenance.Param])],
+      after: Vector[(String, Vector[Provenance.Param])]
+  ): Vector[PlanChange] =
+    val left  = before.toMap
+    val right = after.toMap
+    (left.keySet ++ right.keySet).toVector.sorted.collect {
+      case key if left.get(key) != right.get(key) =>
+        PlanChange(key, left.getOrElse(key, Vector.empty), right.getOrElse(key, Vector.empty))
+    }
 
 /** One scale retains estimation failures, excluded phase keys, and the full contrast. */
 final class StudyScaleResult[K, U <: Unit2D, S, D] private[plan] (
@@ -273,12 +285,7 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
   override def hashCode: Int = description.hashCode
 
   def diff(that: StudyPlan[K, U, P, S, D]): Vector[PlanChange] =
-    val left  = description.toMap
-    val right = that.description.toMap
-    (left.keySet ++ right.keySet).toVector.sorted.collect {
-      case key if left.get(key) != right.get(key) =>
-        PlanChange(key, left.getOrElse(key, Vector.empty), right.getOrElse(key, Vector.empty))
-    }
+    PlanChange.between(description, that.description)
 
   def prerequisites(available: Option[StudyInput[K, U]]): Vector[PlanError] = available match
     case None => Vector(PlanError.MissingArtifact(input.digest))

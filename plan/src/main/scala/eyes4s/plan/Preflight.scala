@@ -27,9 +27,11 @@ import scala.annotation.tailrec
 enum RecipeFamily derives CanEqual:
   case FixationStudy, EventRecording, TemporalStudy
 
-/** A blocker means the recipe will be refused as a whole; a warning means it
-  * will execute but the named object has a deterministic failure or a reduced
-  * explanation. Neither certifies numerical success.
+/** A blocker means the plan's own constructors or prerequisites refuse the
+  * recipe as a whole, so `prepare`/`run` cannot proceed. A warning means
+  * execution proceeds, but the named trial has a deterministic failure or the
+  * method's explanation is missing or inconsistent. Neither certifies
+  * numerical success.
   */
 enum Severity derives CanEqual:
   case Blocker, Warning
@@ -63,6 +65,24 @@ enum PairingSide derives CanEqual:
 enum AreaCorner derives CanEqual:
   case Minimum, Maximum
 
+/** The two ways a study exceeds its declared pair budget. `plan` is the exact
+  * `PlanError` that `StudyPlan.prepare` or schedule paging returns for it.
+  */
+enum BudgetError derives CanEqual:
+  case CandidateVisits(
+      focalTrials: Int,
+      referenceTrials: Int,
+      scales: Int,
+      maximumCandidateVisits: Long
+  )
+  case Schedule(underlying: PairScheduleError)
+
+  def plan: PlanError = this match
+    case CandidateVisits(f, r, s, m) => PlanError.StudyWorkBudget(f, r, s, m)
+    case Schedule(e)                 => PlanError.Schedule(e)
+
+  def message: String = plan.message
+
 sealed trait PreflightFinding:
   def severity: Severity
   def category: FindingClass
@@ -71,6 +91,8 @@ sealed trait PreflightFinding:
 
 /** Findings for the within-participant matched/control fixation study. Trial
   * keys stay typed; duplicate positions index the focal or reference operand.
+  * `Refused` carries any other constructor refusal so a new prerequisite in
+  * `StudyPlan` surfaces as a blocker rather than being dropped.
   */
 enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
   case UndescribedMethod(method: DefinitionId)
@@ -80,27 +102,34 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
       expected: ArtifactRef[StudyInput[K, U]],
       actual: ArtifactRef[StudyInput[K, U]]
   )
-  case OverBudget(underlying: PlanError)
+  case OverBudget(underlying: BudgetError)
+  case Refused(underlying: PlanError)
   case FrameMismatch(key: K, underlying: GeometryError)
   case DuplicateTrial(key: K, side: PairingSide, positions: Vector[Int])
   case UnmatchedFocal(key: K)
   case UncontrolledFocal(key: K)
 
   def keys: Vector[K] = this match
-    case FrameMismatch(k, _)     => Vector(k)
-    case DuplicateTrial(k, _, _) => Vector(k)
-    case UnmatchedFocal(k)       => Vector(k)
-    case UncontrolledFocal(k)    => Vector(k)
-    case _                       => Vector.empty
+    case FrameMismatch(k, _)          => Vector(k)
+    case DuplicateTrial(k, _, _)      => Vector(k)
+    case UnmatchedFocal(k)            => Vector(k)
+    case UncontrolledFocal(k)         => Vector(k)
+    case UndescribedMethod(_)         => Vector.empty
+    case InconsistentDescriptor(_, _) => Vector.empty
+    case MissingArtifact(_)           => Vector.empty
+    case ArtifactMismatch(_, _)       => Vector.empty
+    case OverBudget(_)                => Vector.empty
+    case Refused(_)                   => Vector.empty
 
   def severity: Severity = this match
-    case InconsistentDescriptor(_, _) | MissingArtifact(_) | ArtifactMismatch(_, _) |
-        OverBudget(_) =>
+    case MissingArtifact(_) | ArtifactMismatch(_, _) | OverBudget(_) | Refused(_) =>
       Severity.Blocker
-    case _ => Severity.Warning
+    case UndescribedMethod(_) | InconsistentDescriptor(_, _) | FrameMismatch(_, _) |
+        DuplicateTrial(_, _, _) | UnmatchedFocal(_) | UncontrolledFocal(_) =>
+      Severity.Warning
 
   def category: FindingClass = this match
-    case UndescribedMethod(_) | InconsistentDescriptor(_, _) | OverBudget(_) =>
+    case UndescribedMethod(_) | InconsistentDescriptor(_, _) | OverBudget(_) | Refused(_) =>
       FindingClass.InvalidSetting
     case MissingArtifact(_) | ArtifactMismatch(_, _) => FindingClass.UnavailableInput
     case FrameMismatch(_, _)                         => FindingClass.IncompatibleInput
@@ -113,6 +142,7 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
     case MissingArtifact(_)           => Remedy.SupplyReferencedArtifact
     case ArtifactMismatch(_, _)       => Remedy.RetargetPlanToAvailableInput
     case OverBudget(_)                => Remedy.RaiseBudgetOrReduceStudy
+    case Refused(e)                   => Preflight.remedyFor(e)
     case FrameMismatch(_, _)          => Remedy.AlignFrame
     case DuplicateTrial(_, _, _)      => Remedy.ResolveDuplicateTrials
     case UnmatchedFocal(_)            => Remedy.SupplyMatchedReference
@@ -122,10 +152,11 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
     case UndescribedMethod(m) =>
       s"Method ${m.name}@${m.version} has no descriptor; it can run but its parameters cannot be explained."
     case InconsistentDescriptor(m, e) =>
-      s"Method ${m.name}@${m.version} disagrees with its descriptor: ${e.message}"
+      s"Method ${m.name}@${m.version} runs but disagrees with its descriptor: ${e.message}"
     case MissingArtifact(e)     => s"Study requires fixation artifact ${e.digest}."
     case ArtifactMismatch(e, a) => s"Study requires artifact ${e.digest}, supplied ${a.digest}."
     case OverBudget(e)          => e.message
+    case Refused(e)             => e.message
     case FrameMismatch(k, e)    => s"Trial $k will fail at every scale: ${e.message}"
     case DuplicateTrial(k, side, positions) =>
       s"Trial key $k occurs at $side positions $positions and is excluded from pairing."
@@ -147,21 +178,27 @@ enum RecordingFinding extends PreflightFinding derives CanEqual:
   case ClockMismatch(source: RecordingRef, underlying: TimeError)
   case MissingViewing(source: RecordingRef)
   case MissingSynchronization(source: ClockId, target: ClockId)
+  case Refused(underlying: RecordingPlanError)
   case Synchronization(underlying: SyncEvidenceError)
   case AngularFrame(frame: FrameId, underlying: GeometryError)
   case AreaWarp(area: String, corner: AreaCorner)
   case DetectorDefinition(method: DefinitionId, underlying: DetectorDefinitionError)
 
   def severity: Severity = this match
-    case UndescribedMethod(_) => Severity.Warning
-    case _                    => Severity.Blocker
+    case UndescribedMethod(_) | InconsistentDescriptor(_, _) => Severity.Warning
+    case MissingArtifact(_) | ArtifactMismatch(_, _) | FrameMismatch(_, _) |
+        ClockMismatch(_, _) | MissingViewing(_) | MissingSynchronization(_, _) | Refused(_) |
+        Synchronization(_) | AngularFrame(_, _) | AreaWarp(_, _) | DetectorDefinition(_, _) =>
+      Severity.Blocker
 
   def category: FindingClass = this match
     case MissingArtifact(_) | ArtifactMismatch(_, _) | MissingViewing(_) |
         MissingSynchronization(_, _) =>
       FindingClass.UnavailableInput
     case FrameMismatch(_, _) | ClockMismatch(_, _) => FindingClass.IncompatibleInput
-    case _                                         => FindingClass.InvalidSetting
+    case UndescribedMethod(_) | InconsistentDescriptor(_, _) | Refused(_) | Synchronization(_) |
+        AngularFrame(_, _) | AreaWarp(_, _) | DetectorDefinition(_, _) =>
+      FindingClass.InvalidSetting
 
   def remedy: Remedy = this match
     case UndescribedMethod(_)         => Remedy.RegisterMethodDescriptor
@@ -172,6 +209,7 @@ enum RecordingFinding extends PreflightFinding derives CanEqual:
     case ClockMismatch(_, _)          => Remedy.AlignClock
     case MissingViewing(_)            => Remedy.SupplyViewingGeometry
     case MissingSynchronization(_, _) => Remedy.SupplyCommonMarks
+    case Refused(_)                   => Remedy.ReviseDetectorParameters
     case Synchronization(_)           => Remedy.ReviseSynchronizationMarks
     case AngularFrame(_, _)           => Remedy.ReviseViewingOrArea
     case AreaWarp(_, _)               => Remedy.ReviseViewingOrArea
@@ -181,7 +219,7 @@ enum RecordingFinding extends PreflightFinding derives CanEqual:
     case UndescribedMethod(m) =>
       s"Detector ${m.name}@${m.version} has no descriptor; it can run but its parameters cannot be explained."
     case InconsistentDescriptor(m, e) =>
-      s"Detector ${m.name}@${m.version} disagrees with its descriptor: ${e.message}"
+      s"Detector ${m.name}@${m.version} runs but disagrees with its descriptor: ${e.message}"
     case MissingArtifact(e)     => s"Recording plan requires artifact ${e.digest}."
     case ArtifactMismatch(e, a) =>
       s"Recording plan requires artifact ${e.digest}, supplied ${a.digest}."
@@ -190,6 +228,7 @@ enum RecordingFinding extends PreflightFinding derives CanEqual:
     case MissingViewing(s)            => s"Recording $s requires viewing geometry."
     case MissingSynchronization(s, t) =>
       s"Recording synchronization from $s to $t requires observed common marks."
+    case Refused(e)         => e.message
     case Synchronization(e) => e.message
     case AngularFrame(f, e) => s"Angular frame ${f.name}: ${e.message}"
     case AreaWarp(id, c)    => s"Area '$id' has an undefined $c corner under viewing geometry."
@@ -205,6 +244,7 @@ enum TemporalFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
       expected: ArtifactRef[TemporalStudyInput[K, U]],
       actual: ArtifactRef[TemporalStudyInput[K, U]]
   )
+  case Refused(underlying: TemporalStudyError)
   case Study(underlying: StudyFinding[K, U])
   case RepetitionPlan(repetition: String, underlying: PlanError)
   case Repetition(repetition: String, underlying: StudyFinding[K, U])
@@ -222,30 +262,35 @@ enum TemporalFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
     case NoObservedCoverage(k, _)  => Vector(k)
     case MissingArtifact(_)        => Vector.empty
     case ArtifactMismatch(_, _)    => Vector.empty
+    case Refused(_)                => Vector.empty
     case RepetitionPlan(_, _)      => Vector.empty
 
   def severity: Severity = this match
-    case MissingArtifact(_) | ArtifactMismatch(_, _) | RepetitionPlan(_, _) => Severity.Blocker
-    case Study(f)                                                           => f.severity
-    case Repetition(_, f)                                                   => f.severity
-    case _                                                                  => Severity.Warning
+    case MissingArtifact(_) | ArtifactMismatch(_, _) | Refused(_) | RepetitionPlan(_, _) =>
+      Severity.Blocker
+    case Study(f)         => f.severity
+    case Repetition(_, f) => f.severity
+    case MissingEpoch(_) | CoverageClock(_, _) | WindowResolution(_, _, _) |
+        NoObservedCoverage(_, _) =>
+      Severity.Warning
 
   def category: FindingClass = this match
     case MissingArtifact(_) | ArtifactMismatch(_, _) | MissingEpoch(_) =>
       FindingClass.UnavailableInput
-    case Study(f)                  => f.category
-    case Repetition(_, f)          => f.category
-    case RepetitionPlan(_, _)      => FindingClass.InvalidSetting
-    case CoverageClock(_, _)       => FindingClass.IncompatibleInput
-    case WindowResolution(_, _, _) => FindingClass.InvalidSetting
-    case NoObservedCoverage(_, _)  => FindingClass.DataDependent
+    case Study(f)                          => f.category
+    case Repetition(_, f)                  => f.category
+    case Refused(_) | RepetitionPlan(_, _) => FindingClass.InvalidSetting
+    case CoverageClock(_, _)               => FindingClass.IncompatibleInput
+    case WindowResolution(_, _, _)         => FindingClass.InvalidSetting
+    case NoObservedCoverage(_, _)          => FindingClass.DataDependent
 
   def remedy: Remedy = this match
     case MissingArtifact(_)        => Remedy.SupplyReferencedArtifact
     case ArtifactMismatch(_, _)    => Remedy.RetargetPlanToAvailableInput
+    case Refused(e)                => Preflight.remedyFor(e)
     case Study(f)                  => f.remedy
+    case RepetitionPlan(_, e)      => Preflight.remedyFor(e)
     case Repetition(_, f)          => f.remedy
-    case RepetitionPlan(_, _)      => Remedy.ReviseWindow
     case MissingEpoch(_)           => Remedy.SupplyEpoch
     case CoverageClock(_, _)       => Remedy.AlignClock
     case WindowResolution(_, _, _) => Remedy.ReviseWindow
@@ -255,6 +300,7 @@ enum TemporalFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
     case MissingArtifact(e)     => s"Temporal study requires artifact ${e.digest}."
     case ArtifactMismatch(e, a) =>
       s"Temporal study requires artifact ${e.digest}, supplied ${a.digest}."
+    case Refused(e)                => e.message
     case Study(f)                  => f.message
     case RepetitionPlan(r, e)      => s"Repetition '$r': ${e.message}"
     case Repetition(r, f)          => s"Repetition '$r': ${f.message}"
@@ -377,9 +423,11 @@ final class TemporalReport[K, U <: Unit2D] private[plan] (
 
 /** Pure, bounded availability checks for the shipped recipes.
   *
-  * Preflight reuses the plan constructors, `Agreement`, the synchronization
-  * evidence constructor, the detector factory and the prepared pair schedule.
-  * It never estimates densities, compares maps, warps samples or detects events.
+  * Artifact, frame, clock, viewing and mark findings are derived from each
+  * plan's own `prerequisites`, so preflight and execution refuse on one rule.
+  * Preflight additionally reuses `inspect`, the synchronization evidence
+  * constructor, the detector factory and the prepared pair schedule. It never
+  * estimates densities, compares maps, warps samples or detects events.
   * Schedule traversal is bounded by the supplied `PairScheduleBudget`; recording
   * identity is O(samples) exactly as `RecordingPlan.prerequisites` is.
   */
@@ -406,52 +454,34 @@ object Preflight:
       budget: PairScheduleBudget = PairScheduleBudget.default
   ): StudyReport[K, U] =
     given Ordering[K] = plan.layout.ordering
-    val findings      = describe(plan) ++ studyArtifact(plan, available).fold(
-      identity,
-      input =>
-        prepared(plan, input, budget).fold(
-          e => Vector(e),
-          work => frames(work) ++ schedule(work).fold(e => Vector(e), identity)
-        )
-    )
+    val prerequisites = plan.prerequisites(available).map(studyRefusal(plan, available))
+    val rest          =
+      if prerequisites.nonEmpty then prerequisites
+      else
+        available.toVector.flatMap { input =>
+          prepared(plan, input, budget).fold(
+            e => Vector(e),
+            work => frames(work) ++ schedule(work).fold(e => Vector(e), identity)
+          )
+        }
     new StudyReport(
       plan.description,
       plan.input,
       available.map(_.reference),
-      findings,
+      describe(plan) ++ rest,
       studyUnchecked
     )
 
   def recording[P](plan: RecordingPlan[P], available: Option[Recording[Px]]): RecordingReport =
+    val actual    = available.map(r => ArtifactRef.of[Recording[Px]](r.contentHash))
     val described = plan.inspect match
       case Right(_)                                => Vector.empty
       case Left(DescriptorError.MissingMethod(id)) =>
         Vector(RecordingFinding.UndescribedMethod(id))
       case Left(e) => Vector(RecordingFinding.InconsistentDescriptor(plan.method.id, e))
-    val artifact = available match
-      case None    => Vector(RecordingFinding.MissingArtifact(plan.input))
-      case Some(r) =>
-        val ref = ArtifactRef.of[Recording[Px]](r.contentHash)
-        if ref != plan.input then Vector(RecordingFinding.ArtifactMismatch(plan.input, ref))
-        else
-          Agreement
-            .frames(plan.display, r.frame)
-            .left
-            .toOption
-            .map(RecordingFinding.FrameMismatch(plan.source, _))
-            .toVector ++
-            Agreement
-              .clocks(plan.trackerClock, r.clock)
-              .left
-              .toOption
-              .map(RecordingFinding.ClockMismatch(plan.source, _))
-              .toVector
-    val viewing =
-      if plan.viewing.isEmpty then Vector(RecordingFinding.MissingViewing(plan.source))
-      else Vector.empty
+    val prerequisites   = plan.prerequisites(available).map(recordingRefusal(plan, actual))
     val synchronization =
-      if plan.marks.isEmpty then
-        Vector(RecordingFinding.MissingSynchronization(plan.trackerClock, plan.analysisClock))
+      if plan.marks.isEmpty then Vector.empty
       else
         SyncEvidence
           .fromCommonMarks(
@@ -492,8 +522,8 @@ object Preflight:
     new RecordingReport(
       plan.description,
       plan.input,
-      available.map(r => ArtifactRef.of[Recording[Px]](r.contentHash)),
-      described ++ artifact ++ viewing ++ synchronization ++ geometry ++ detector,
+      actual,
+      described ++ prerequisites ++ synchronization ++ geometry ++ detector,
       recordingUnchecked
     )
 
@@ -504,53 +534,47 @@ object Preflight:
   ): TemporalReport[K, U] =
     given Ordering[K] = plan.base.layout.ordering
     val described     = describe(plan.base).map(TemporalFinding.Study(_))
-    val artifact: Either[Vector[TemporalFinding[K, U]], TemporalStudyInput[K, U]] =
-      available match
-        case None => Left(Vector(TemporalFinding.MissingArtifact(plan.input)))
-        case Some(a) if a.reference != plan.input =>
-          Left(Vector(TemporalFinding.ArtifactMismatch(plan.input, a.reference)))
-        case Some(a) => Right(a)
-    val rest: Vector[TemporalFinding[K, U]] = artifact.fold(
-      identity,
-      a =>
-        studyArtifact(plan.base, Some(a.study)) match
-          case Left(fs)     => fs.map(TemporalFinding.Study(_))
-          case Right(input) =>
-            val repetitions = plan.repetitions.map { r =>
-              r.name -> StudyPlan
-                .of(
-                  plan.base.input,
-                  plan.base.layout,
-                  plan.base.grid,
-                  r.focalPhase,
-                  r.referencePhase,
-                  plan.base.weight,
-                  plan.base.estimates,
-                  plan.base.policy,
-                  plan.base.method,
-                  plan.base.parameters
-                )
-                .left
-                .map(TemporalFinding.RepetitionPlan(r.name, _))
-                .flatMap(p =>
-                  prepared(p, input, budget).left.map(TemporalFinding.Repetition(r.name, _))
-                )
+    val prerequisites = plan.prerequisites(available).map(temporalRefusal(plan, available))
+    val rest: Vector[TemporalFinding[K, U]] =
+      if prerequisites.nonEmpty then prerequisites
+      else
+        available.toVector.flatMap { a =>
+          val input       = a.study
+          val repetitions = plan.repetitions.map { r =>
+            r.name -> StudyPlan
+              .of(
+                plan.base.input,
+                plan.base.layout,
+                plan.base.grid,
+                r.focalPhase,
+                r.referencePhase,
+                plan.base.weight,
+                plan.base.estimates,
+                plan.base.policy,
+                plan.base.method,
+                plan.base.parameters
+              )
+              .left
+              .map(TemporalFinding.RepetitionPlan(r.name, _))
+              .flatMap(p =>
+                prepared(p, input, budget).left.map(TemporalFinding.Repetition(r.name, _))
+              )
+          }
+          val frameFindings = repetitions
+            .collectFirst { case (_, Right(work)) =>
+              frames(work).map(TemporalFinding.Study(_))
             }
-            val frameFindings = repetitions
-              .collectFirst { case (_, Right(work)) =>
-                frames(work).map(TemporalFinding.Study(_))
-              }
-              .getOrElse(Vector.empty)
-            val scheduleFindings = repetitions.flatMap {
-              case (_, Left(e))        => Vector(e)
-              case (name, Right(work)) =>
-                schedule(work).fold(
-                  e => Vector(TemporalFinding.Repetition(name, e)),
-                  _.map(TemporalFinding.Repetition(name, _))
-                )
-            }
-            frameFindings ++ scheduleFindings ++ epochs(plan, a)
-    )
+            .getOrElse(Vector.empty)
+          val scheduleFindings = repetitions.flatMap {
+            case (_, Left(e))        => Vector(e)
+            case (name, Right(work)) =>
+              schedule(work).fold(
+                e => Vector(TemporalFinding.Repetition(name, e)),
+                _.map(TemporalFinding.Repetition(name, _))
+              )
+          }
+          frameFindings ++ scheduleFindings ++ epochs(plan, a)
+        }
     new TemporalReport(
       plan.description,
       plan.input,
@@ -558,6 +582,32 @@ object Preflight:
       described ++ rest,
       temporalUnchecked
     )
+
+  /** The remedy for a plan-level refusal that is not one of the named findings. */
+  private[plan] def remedyFor(error: PlanError): Remedy = error match
+    case PlanError.MissingArtifact(_)     => Remedy.SupplyReferencedArtifact
+    case PlanError.ArtifactMismatch(_, _) => Remedy.RetargetPlanToAvailableInput
+    case PlanError.Schedule(_) | PlanError.StudyWorkBudget(_, _, _, _) =>
+      Remedy.RaiseBudgetOrReduceStudy
+    case PlanError.InvalidDefinition(_, _) | PlanError.InvalidArtifact(_) |
+        PlanError.InvalidPhases(_, _) | PlanError.EmptyScales(_) |
+        PlanError.DuplicateScales(_) | PlanError.Specification(_) |
+        PlanError.ChangedPreparedPlan(_, _) =>
+      Remedy.ReconcileMethodDescriptor
+
+  private[plan] def remedyFor(error: TemporalStudyError): Remedy = error match
+    case TemporalStudyError.Input(e)     => remedyFor(e)
+    case TemporalStudyError.Time(_)      => Remedy.AlignClock
+    case TemporalStudyError.Occupancy(_) => Remedy.AlignClock
+    case TemporalStudyError.InvalidWindow(_, _, _) |
+        TemporalStudyError.AnchorOverflow(_, _, _, _) | TemporalStudyError.WindowNames(_) =>
+      Remedy.ReviseWindow
+    case TemporalStudyError.InvalidRepetition(_, _, _) | TemporalStudyError.RepetitionNames(_) |
+        TemporalStudyError.Weighting(_) =>
+      Remedy.ReconcileMethodDescriptor
+    case TemporalStudyError.DuplicateEpochs(_) | TemporalStudyError.DuplicateTrials(_) |
+        TemporalStudyError.UnknownEpochs(_) | TemporalStudyError.MissingEpoch(_) =>
+      Remedy.SupplyEpoch
 
   private def describe[K, U <: Unit2D, P, S, D](
       plan: StudyPlan[K, U, P, S, D]
@@ -567,22 +617,62 @@ object Preflight:
       case Left(DescriptorError.MissingMethod(id)) => Vector(StudyFinding.UndescribedMethod(id))
       case Left(e) => Vector(StudyFinding.InconsistentDescriptor(plan.method.id, e))
 
-  private def studyArtifact[K, U <: Unit2D, P, S, D](
+  /** Map a `StudyPlan` refusal to its finding; total over `PlanError`. */
+  private def studyRefusal[K, U <: Unit2D, P, S, D](
       plan: StudyPlan[K, U, P, S, D],
       available: Option[StudyInput[K, U]]
-  ): Either[Vector[StudyFinding[K, U]], StudyInput[K, U]] =
-    available match
-      case None => Left(Vector(StudyFinding.MissingArtifact(plan.input)))
-      case Some(input) if input.reference != plan.input =>
-        Left(Vector(StudyFinding.ArtifactMismatch(plan.input, input.reference)))
-      case Some(input) => Right(input)
+  )(error: PlanError): StudyFinding[K, U] =
+    (error, available) match
+      case (PlanError.MissingArtifact(_), _) => StudyFinding.MissingArtifact(plan.input)
+      case (PlanError.ArtifactMismatch(_, _), Some(input)) =>
+        StudyFinding.ArtifactMismatch(plan.input, input.reference)
+      case (PlanError.StudyWorkBudget(f, r, s, m), _) =>
+        StudyFinding.OverBudget(BudgetError.CandidateVisits(f, r, s, m))
+      case (PlanError.Schedule(e), _) => StudyFinding.OverBudget(BudgetError.Schedule(e))
+      case (other, _)                 => StudyFinding.Refused(other)
+
+  /** Map a `RecordingPlan` prerequisite refusal to its finding; total. */
+  private def recordingRefusal[P](
+      plan: RecordingPlan[P],
+      actual: Option[ArtifactRef[Recording[Px]]]
+  )(error: RecordingPlanError): RecordingFinding =
+    (error, actual) match
+      case (RecordingPlanError.Input(PlanError.MissingArtifact(_)), _) =>
+        RecordingFinding.MissingArtifact(plan.input)
+      case (RecordingPlanError.Input(PlanError.ArtifactMismatch(_, _)), Some(ref)) =>
+        RecordingFinding.ArtifactMismatch(plan.input, ref)
+      case (RecordingPlanError.Geometry(e), _) => RecordingFinding.FrameMismatch(plan.source, e)
+      case (RecordingPlanError.Time(e), _)     => RecordingFinding.ClockMismatch(plan.source, e)
+      case (RecordingPlanError.MissingViewing(s), _) => RecordingFinding.MissingViewing(s)
+      case (RecordingPlanError.MissingSynchronization(s, t), _) =>
+        RecordingFinding.MissingSynchronization(s, t)
+      case (other, _) => RecordingFinding.Refused(other)
+
+  /** Map a `TemporalStudyPlan` prerequisite refusal to its finding; total. The
+    * temporal and base study artifacts are both reported as `Input`, so the
+    * expected digest decides which one a refusal names.
+    */
+  private def temporalRefusal[K, U <: Unit2D, P, S, D](
+      plan: TemporalStudyPlan[K, U, P, S, D],
+      available: Option[TemporalStudyInput[K, U]]
+  )(error: TemporalStudyError): TemporalFinding[K, U] =
+    (error, available) match
+      case (TemporalStudyError.Input(PlanError.MissingArtifact(d)), _)
+          if d == plan.input.digest =>
+        TemporalFinding.MissingArtifact(plan.input)
+      case (TemporalStudyError.Input(PlanError.ArtifactMismatch(d, _)), Some(a))
+          if d == plan.input.digest =>
+        TemporalFinding.ArtifactMismatch(plan.input, a.reference)
+      case (TemporalStudyError.Input(e), _) =>
+        TemporalFinding.Study(studyRefusal(plan.base, available.map(_.study))(e))
+      case (other, _) => TemporalFinding.Refused(other)
 
   private def prepared[K, U <: Unit2D, P, S, D](
       plan: StudyPlan[K, U, P, S, D],
       input: StudyInput[K, U],
       budget: PairScheduleBudget
   ): Either[StudyFinding[K, U], PreparedStudy[K, U, P, S, D]] =
-    plan.prepare(input, budget).left.map(StudyFinding.OverBudget(_))
+    plan.prepare(input, budget).left.map(studyRefusal(plan, Some(input)))
 
   private def frames[K, U <: Unit2D, P, S, D](
       work: PreparedStudy[K, U, P, S, D]
@@ -596,10 +686,10 @@ object Preflight:
   ): Either[StudyFinding[K, U], Vector[StudyFinding[K, U]]] =
     for
       matched <- complete(work.matched).left.map(e =>
-        StudyFinding.OverBudget(PlanError.Schedule(e))
+        StudyFinding.OverBudget(BudgetError.Schedule(e))
       )
       controls <- complete(work.controls).left.map(e =>
-        StudyFinding.OverBudget(PlanError.Schedule(e))
+        StudyFinding.OverBudget(BudgetError.Schedule(e))
       )
     yield work.matched.ambiguities.map {
       case PairingAmbiguity.DuplicateLeft(key, positions) =>
@@ -645,17 +735,6 @@ object Preflight:
               }
     }
 
-  private[plan] def changes(
-      before: Vector[(String, Vector[Provenance.Param])],
-      after: Vector[(String, Vector[Provenance.Param])]
-  ): Vector[PlanChange] =
-    val left  = before.toMap
-    val right = after.toMap
-    (left.keySet ++ right.keySet).toVector.sorted.collect {
-      case key if left.get(key) != right.get(key) =>
-        PlanChange(key, left.getOrElse(key, Vector.empty), right.getOrElse(key, Vector.empty))
-    }
-
   private[plan] def confirm(
       family: RecipeFamily,
       reported: Vector[(String, Vector[Provenance.Param])],
@@ -664,7 +743,7 @@ object Preflight:
       actual: ArtifactRef[?],
       blockers: Vector[PreflightFinding]
   ): Either[PreflightError, Unit] =
-    val changed = changes(reported, current)
+    val changed = PlanChange.between(reported, current)
     if changed.nonEmpty then Left(PreflightError.ChangedPlan(family, changed))
     else
       available match

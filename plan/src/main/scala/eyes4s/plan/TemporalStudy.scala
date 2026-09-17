@@ -168,12 +168,7 @@ final class TemporalStudyPlan[K, U <: Unit2D, P, S, D] private (
         s"repetition.$i" -> Vector(Text(r.name), Text(r.focalPhase), Text(r.referencePhase))
       }
   def diff(other: TemporalStudyPlan[K, U, P, S, D]): Vector[PlanChange] =
-    val left  = description.toMap
-    val right = other.description.toMap
-    (left.keySet ++ right.keySet).toVector.sorted.collect {
-      case key if left.get(key) != right.get(key) =>
-        PlanChange(key, left.getOrElse(key, Vector.empty), right.getOrElse(key, Vector.empty))
-    }
+    PlanChange.between(description, other.description)
   def prerequisites(available: Option[TemporalStudyInput[K, U]]): Vector[TemporalStudyError] =
     available match
       case None => Vector(TemporalStudyError.Input(PlanError.MissingArtifact(input.digest)))

@@ -210,6 +210,14 @@ class PreflightSuite extends munit.FunSuite:
     )
   private val undescribedDetector: RecordingMethod[IvtParameters] =
     new RecordingMethod[IvtParameters](ivtId, ivt.parameters, ivt.detector)
+  private val ivtV2 = get(DefinitionId.of("eyes4s.ivt", 2))
+  private val misversionedDetector: RecordingMethod[IvtParameters] =
+    new RecordingMethod[IvtParameters](
+      ivtV2,
+      ivt.parameters,
+      ivt.detector,
+      Some(RecordingMethodDescriptor.ivt(ivtId))
+    )
 
   // ---------------------------------------------------------------- temporal fixtures
 
@@ -305,7 +313,7 @@ class PreflightSuite extends munit.FunSuite:
         plan(),
         Some(input),
         budget,
-        Vector(StudyFinding.OverBudget(PlanError.StudyWorkBudget(2, 2, 1, 7L)))
+        Vector(StudyFinding.OverBudget(BudgetError.CandidateVisits(2, 2, 1, 7L)))
       ),
       (
         "unknown method",
@@ -367,7 +375,7 @@ class PreflightSuite extends munit.FunSuite:
         Remedy.AlignFrame
       ),
       (
-        StudyFinding.OverBudget(PlanError.StudyWorkBudget(2, 2, 1, 7L)),
+        StudyFinding.OverBudget(BudgetError.CandidateVisits(2, 2, 1, 7L)),
         Severity.Blocker,
         FindingClass.InvalidSetting,
         Remedy.RaiseBudgetOrReduceStudy
@@ -383,7 +391,7 @@ class PreflightSuite extends munit.FunSuite:
           cosineV2,
           DescriptorError.MethodIdentity(cosineV2, DefinitionId.cosine)
         ),
-        Severity.Blocker,
+        Severity.Warning,
         FindingClass.InvalidSetting,
         Remedy.ReconcileMethodDescriptor
       ),
@@ -413,7 +421,7 @@ class PreflightSuite extends munit.FunSuite:
     assertEquals(plan(misframed).preflight(Some(misframed)).availability, Availability.Ready)
     assertEquals(plan(misframed).preflight(Some(misframed)).affectedTrials, Vector(a))
     assertEquals(plan(method = undescribed).preflight(Some(input)).ready, true)
-    assertEquals(plan(method = misversion).preflight(Some(input)).ready, false)
+    assertEquals(plan(method = misversion).preflight(Some(input)).ready, true)
     assertEquals(plan(duplicated).preflight(Some(duplicated)).affectedTrials, Vector(a, lone))
   }
 
@@ -548,6 +556,18 @@ class PreflightSuite extends munit.FunSuite:
           recordingPlan(method = undescribedDetector),
           Some(recording),
           Vector(RecordingFinding.UndescribedMethod(ivtId)),
+          None
+        ),
+        (
+          "unknown method version",
+          recordingPlan(method = misversionedDetector),
+          Some(recording),
+          Vector(
+            RecordingFinding.InconsistentDescriptor(
+              ivtV2,
+              DescriptorError.MethodIdentity(ivtV2, ivtId)
+            )
+          ),
           None
         )
       )
@@ -988,4 +1008,112 @@ class PreflightSuite extends munit.FunSuite:
     assert(report.notChecked.contains(UncheckedAspect.OccupancyEstimation))
     val scale = get(p.run(outside)).scales.head
     assertEquals(scale.estimation.collect { case (k, Left(_)) => k }, Vector(a))
+  }
+
+  test("inconsistent descriptors warn while execution proceeds") {
+    val sp      = plan(method = misversion)
+    val sreport = sp.preflight(Some(input))
+    assertEquals(
+      sreport.findings,
+      Vector(
+        StudyFinding.InconsistentDescriptor(
+          cosineV2,
+          DescriptorError.MethodIdentity(cosineV2, DefinitionId.cosine)
+        )
+      )
+    )
+    assertEquals(sreport.blockers, Vector.empty)
+    assertEquals(sreport.availability, Availability.Ready)
+    assert(sp.inspect.isLeft)
+    assert(sp.run(input).isRight)
+    assert(get(sreport.prepare(sp, input)).run.isRight)
+
+    val rp      = recordingPlan(method = misversionedDetector)
+    val rreport = rp.preflight(Some(recording))
+    assertEquals(
+      rreport.findings,
+      Vector(
+        RecordingFinding.InconsistentDescriptor(
+          ivtV2,
+          DescriptorError.MethodIdentity(ivtV2, ivtId)
+        )
+      )
+    )
+    assertEquals(rreport.blockers, Vector.empty)
+    assert(rp.inspect.isLeft)
+    assert(rp.run(recording).isRight)
+    assertEquals(rreport.confirm(rp, recording), Right(()))
+  }
+
+  test("plan prerequisites and preflight blockers agree on the shared cases") {
+    val reversed = StudyInput(Trials(input.trials.rows.reverse))
+    val sp       = plan()
+    Vector(None, Some(reversed), Some(input)).foreach { available =>
+      val report        = sp.preflight(available)
+      val prerequisites = sp.prerequisites(available)
+      assertEquals(report.blockers.size, prerequisites.size, s"study $available")
+      assertEquals(report.blockers.nonEmpty, prerequisites.nonEmpty, s"study $available")
+    }
+
+    val wrong = recordingAt(400.0)
+    val plans = Vector(
+      "default"  -> recordingPlan(),
+      "frame"    -> recordingPlan(frame = get(Frame.screen("other-display", 1000, 1000))),
+      "clock"    -> recordingPlan(tracker = ClockId("other-tracker")),
+      "viewing"  -> recordingPlan(viewing = None),
+      "no marks" -> recordingPlan(syncMarks = Vector.empty)
+    )
+    for
+      (name, rp) <- plans
+      available  <- Vector(None, Some(wrong), Some(recording))
+    do
+      val report        = rp.preflight(available)
+      val prerequisites = rp.prerequisites(available)
+      assertEquals(report.blockers.size, prerequisites.size, s"recording $name $available")
+      assertEquals(
+        report.blockers.nonEmpty,
+        prerequisites.nonEmpty,
+        s"recording $name $available"
+      )
+      available.foreach(r => assertEquals(rp.run(r).isLeft, report.blockers.nonEmpty, name))
+
+    val tp      = temporalPlan()
+    val shifted = get(
+      TemporalStudyInput.of(
+        study,
+        epochs.map { case (k, e) => k -> TrialEpoch(Instant.micros(1), e.coverage) }
+      )
+    )
+    Vector(None, Some(shifted), Some(temporalInput)).foreach { available =>
+      val report        = tp.preflight(available)
+      val prerequisites = tp.prerequisites(available)
+      assertEquals(report.blockers.size, prerequisites.size, s"temporal $available")
+      assertEquals(report.blockers.nonEmpty, prerequisites.nonEmpty, s"temporal $available")
+    }
+  }
+
+  test("a selected-pair budget exhausted while paging is reported as an over-budget blocker") {
+    val budget = get(PairScheduleBudget.of(100, 1000L, 1))
+    val p      = plan()
+    val work   = get(p.prepare(input, budget))
+    val paged  = work.matched.start.advance(PairQuantum.default).left.toOption
+    val error  =
+      paged.getOrElse(fail("expected the matched schedule to exceed one selected pair"))
+    assertEquals(
+      error,
+      PairScheduleError.SelectedBudget(work.matched.pairSpace.relation, 2L, 1)
+    )
+    val report = p.preflight(Some(input), budget)
+    assertEquals(report.findings, Vector(StudyFinding.OverBudget(BudgetError.Schedule(error))))
+    assertEquals(report.blockers.map(_.remedy), Vector(Remedy.RaiseBudgetOrReduceStudy))
+    assertEquals(report.blockers.map(_.category), Vector(FindingClass.InvalidSetting))
+    assertEquals(
+      report.blockers.collect { case StudyFinding.OverBudget(e) => e.plan },
+      Vector(PlanError.Schedule(error))
+    )
+    assertEquals(work.run.left.toOption, Some(PlanError.Schedule(error)))
+    assertEquals(
+      report.prepare(p, input, budget).left.toOption,
+      Some(PreflightError.NotReady(RecipeFamily.FixationStudy, report.blockers))
+    )
   }

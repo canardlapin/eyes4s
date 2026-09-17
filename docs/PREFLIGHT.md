@@ -25,16 +25,18 @@ or detection succeeds on the data.
 A finding is a typed ADT value, never a string. Each names its object and
 carries three classifications:
 
-- `severity`: `Blocker` (the recipe is refused as a whole) or `Warning` (it runs,
-  but the named trial or method has a deterministic failure or a reduced
-  explanation).
+- `severity`: `Blocker` (the plan's constructors or prerequisites refuse the
+  recipe as a whole, so `prepare`/`run` cannot proceed) or `Warning` (it runs,
+  but the named trial has a deterministic failure, or the method's descriptor is
+  missing or disagrees with the method; execution never consults descriptors).
 - `category`: `UnavailableInput`, `IncompatibleInput`, `InvalidSetting` or
   `DataDependent`.
 - `remedy`: a scientific next step such as `SupplyReferencedArtifact`,
   `AlignFrame`, `SupplyCommonMarks`, `SupplyEpoch` or `ResolveDuplicateTrials`.
 
 `StudyFinding` names the missing or mismatched artifact, an undescribed or
-inconsistent method descriptor, an exceeded budget with its operands, a trial
+inconsistent method descriptor, an exceeded budget (`BudgetError`: candidate
+visits at preparation, or the selected-pair budget while paging), a trial
 whose frame disagrees with the plan's nominal frame, a duplicated key with its
 operand positions, and focal trials without a matched or control reference.
 `RecordingFinding` names the artifact, the display frame and tracker clock, the
@@ -51,7 +53,10 @@ same input yields the same report on JVM and Scala.js.
 
 ## What preflight reuses and never does
 
-Preflight reuses the plan constructors, `Agreement` frame and clock checks, the
+Artifact, frame, clock, viewing and common-mark findings are derived from each
+plan's own `prerequisites`, so preflight and execution refuse on one rule; any
+other constructor refusal surfaces as a `Refused` blocker carrying the plan
+error rather than being dropped. Preflight also reuses `inspect`, the
 synchronization-evidence constructor, the detector factory, and the prepared
 pair schedule from `plan.prepare`. It never estimates a density, compares two
 maps, warps samples or feeds a detector. Its cost is bounded by the supplied
