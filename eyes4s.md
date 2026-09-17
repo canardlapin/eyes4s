@@ -2,6 +2,10 @@
 
 *A typed, lawful core for eye-movement analysis in Scala 3.*
 
+Sync record: synchronised with code at 7403401 on 2026-09-17. Where a section below describes a
+type or entry point under a name or shape the code does not use, the code's spelling is given in
+place; where it describes something not yet implemented, a dated status line names the tracker item.
+
 ## Vision and mission
 
 The product direction is defined in [Vision and mission](docs/VISION.md): eyes4s is a foundation
@@ -23,6 +27,15 @@ owns versioned JSON and typed registration closures. `io` admits fixation tables
 contrasts. The [external consumer](tools/study-consumer) exercises the published API and laws.
 This is the first demonstrated persistence vocabulary; the general application requirements below
 remain the target for subsequent workflows.
+
+As of 2026-09-17 the executable plan vocabulary is three concrete plan families rather than one
+plan ADT: `StudyPlan` (fixation-study contrasts), `RecordingPlan` (raw recording to I-VT events
+and AOI measures) and `TemporalStudyPlan` (windowed repetition contrasts), all in `eyes4s-plan`.
+`StudyPlan.prepare` yields a `PreparedStudy` whose matched and control `DirectedPairSchedule`s
+page through pairs under a `PairScheduleBudget`; `MethodDescriptor` and `RecipeDescriptors`
+describe those plans for inspection; `DomainCodecs` supplies the versioned codecs for frames,
+grids, clocks, times, perspectives and synchronization that the plan codecs are built from. See
+"Plans, descriptors and codecs" after Layer 5.
 
 ### Historical design evidence
 
@@ -209,26 +222,31 @@ Clocks are nominal-runtime values, exactly like frames, and for the same reason 
 eye-tracker clock, a stimulus-presentation clock, and a system clock, and they drift:
 
 ```scala
-final case class Sync(from: ClockId, to: ClockId, offsetMicros: Long, drift: Double):
-  def apply(t: Instant): Instant
+final case class Sync private (from: ClockId, to: ClockId, offset: Span, drift: Double):
+  def unsafeInstant(t: Instant): Instant          // inner-loop form, no clock check
+  def apply(i: Interval): Either[TimeError, Interval]
   def inverse: Sync
+object Sync:
+  def affine(from: ClockId, to: ClockId, offset: Span, drift: Double): Either[TimeError, Sync]
+  def offsetOnly(from: ClockId, to: ClockId, offset: Span): Sync
+  def identity(clock: ClockId): Sync
 
 enum SyncFitMode:
   case OffsetOnly, Affine
 
-final case class SyncFit(
-    observations: Int,
-    rmsError: NonNegativeSpan,
-    maxError: NonNegativeSpan,
-    mode: SyncFitMode)
-
-final case class SyncEvidence(sync: Sync, fit: SyncFit, residuals: Vector[Span])
+/** The fit summary is not a separate `SyncFit` record: `SyncEvidence` carries the fitted
+  * `Sync`, the marks used, `SyncResidual`s, `RejectedSyncMark`s and the limit they were
+  * judged against. `observations`, `scale`, `offset` and `uncertaintyAt` are derived. */
+final class SyncEvidence private (...):
+  def observations: Int
+  def uncertaintyAt(t: Instant): SyncErrorMagnitude
 
 object SyncEvidence:
   def fromCommonEvents(
-      pairs: NonEmptyVector[(Instant, Instant)],
-      mode: SyncFitMode
-  ): Either[SyncFitError, SyncEvidence]
+      source: ClockId, target: ClockId, mode: SyncFitMode,
+      events: Vector[SyncMark], residualLimit: Option[SyncResidualLimit] = None
+  ): Either[SyncEvidenceError, SyncEvidence]
+  def fromCommonMarks(...): Either[SyncEvidenceError, SyncEvidence]   // same shape; refits once
 ```
 
 `Timeline[A]` is the neutral stimulus-side temporal carrier. It belongs in the kernel because a
@@ -270,30 +288,30 @@ object Unit2D:
   sealed trait Norm extends Unit2D    // normalised stimulus coordinates in [0,1]²
   sealed trait Mm   extends Unit2D    // physical
 
-final case class Pt(x: Double, y: Double)     // bare pair; frames live on collections
-final case class Extent(w: Double, h: Double)
+final case class Pt[U <: Unit2D](x: Double, y: Double)   // unit-tagged pair; frames live on collections
+final case class Extent[U <: Unit2D] private (width: Double, height: Double)
+final case class Bounds[U <: Unit2D] private (xMin, yMin, xMax, yMax)   // half-open box
 enum YAxis:  case Down, Up                    // device convention vs mathematical
 
 final case class FrameId(name: String)
 
-/** A planar coordinate frame: identity, extent, and axis orientation, in a static unit. */
-final class Frame[U <: Unit2D] private (
-    val id: FrameId,
-    val extent: Extent,
-    val yAxis:  YAxis
-):
-  def contains(p: Pt): Boolean
+/** A planar coordinate frame: identity, bounds, and axis orientation, in a static unit. */
+final case class Frame[U <: Unit2D] private (id: FrameId, bounds: Bounds[U], yAxis: YAxis):
+  def contains(p: Pt[U]): Boolean
   def diagonal: Double                        // computed ONCE, not five times as in multimatch.R
-  def centre: Pt
+  def centre: Pt[U]
 
 object Frame:
-  def screen(name: String, w: Int, h: Int, yAxis: YAxis = YAxis.Down): Frame[Unit2D.Px]
-  def unitSquare(name: String): Frame[Unit2D.Norm]
-  def angular(name: String, extent: Extent): Frame[Unit2D.Deg]
+  def of[U <: Unit2D](id: FrameId, bounds: Bounds[U], yAxis: YAxis): Frame[U]
+  def screen(name: String, width: Int, height: Int): Either[GeometryError, Frame[Unit2D.Px]]
+  def unitSquare(name: String): Either[GeometryError, Frame[Unit2D.Norm]]
+  def angular(name: String, width: Double, height: Double): Either[GeometryError, Frame[Unit2D.Deg]]
 ```
 
 Frames put on collections, never on points: a whole trial shares a frame, exactly as a `NeuroVol`
-shares a `NeuroSpace`. Per-point frames would be both slower and a lie about the data.
+shares a `NeuroSpace`. Per-point frames would be both slower and a lie about the data. The unit
+does sit on the point type, because `Pt[Px]` and `Pt[Deg]` must not meet in one arithmetic
+expression; frame *identity* is what stays on the collection.
 
 Conversions retain structure, as `linop4s`'s `LinearMap` does — they are an inspectable ADT, not an
 opaque closure:
@@ -302,42 +320,51 @@ opaque closure:
 sealed trait Warp[A <: Unit2D, B <: Unit2D]:
   def from: Frame[A]
   def to:   Frame[B]
-  def apply(p: Pt): Pt
+  def apply(p: Pt[A]): Option[Pt[B]]    // None where the map is undefined (behind the eye)
   def inverse: Option[Warp[B, A]]
   def render: String                    // "screen[px] --tangent(600mm)--> fovea[deg]"
+  def andThen[C <: Unit2D](that: Warp[B, C]): Either[GeometryError, Warp[A, C]]
 
 object Warp:
-  final case class Id[A <: Unit2D](frame: Frame[A]) extends Warp[A, A]:
-    def from = frame; def to = frame
-  final case class Affine[A <: Unit2D, B <: Unit2D] private[eyes4s] (
+  final case class Id[A <: Unit2D] private[kernel] (frame: Frame[A]) extends Warp[A, A]
+  final case class Affine[A <: Unit2D, B <: Unit2D] private[kernel] (
       from: Frame[A], to: Frame[B], m: Mat3)                            extends Warp[A, B]
   /** px <-> deg. NONLINEAR (tangent / arctangent). `sense` selects the direction, so the
     * pairing is genuinely invertible rather than a one-way door. */
-  final case class Tangent[A <: Unit2D, B <: Unit2D] private[eyes4s] (
-      from: Frame[A], to: Frame[B], viewing: Viewing, sense: Sense)     extends Warp[A, B]
+  final case class Tangent[A <: Unit2D, B <: Unit2D] private[kernel] (
+      from: Frame[A], to: Frame[B], perspective: Perspective, sense: Sense) extends Warp[A, B]
   /** Planar surface mapping for head-worn cameras / marker-tracked stimuli. */
-  final case class Homography[A <: Unit2D, B <: Unit2D] private[eyes4s] (
+  final case class Homography[A <: Unit2D, B <: Unit2D] private[kernel] (
       from: Frame[A], to: Frame[B], h: Mat3)                            extends Warp[A, B]
-  final case class Then[A <: Unit2D, B <: Unit2D, C <: Unit2D] private[eyes4s] (
+  final case class Then[A <: Unit2D, B <: Unit2D, C <: Unit2D] private[kernel] (
       f: Warp[A, B], g: Warp[B, C])                                     extends Warp[A, C]
 
   enum Sense: case Forward, Inverse
 
   // Smart constructors are the ONLY public way in; `Then` cannot be built unchecked.
-  def tangent(screen: Frame[Unit2D.Px], fovea: Frame[Unit2D.Deg], v: Viewing)
+  def id[A <: Unit2D](frame: Frame[A]): Warp[A, A]
+  def tangent(from: Frame[Unit2D.Px], to: Frame[Unit2D.Deg], perspective: Perspective)
       : Warp[Unit2D.Px, Unit2D.Deg]
   def affine[A <: Unit2D, B <: Unit2D](from: Frame[A], to: Frame[B], m: Mat3)
-      : Either[SingularWarp, Warp[A, B]]
+      : Either[GeometryError, Warp[A, B]]
+  def homography[A <: Unit2D, B <: Unit2D](from: Frame[A], to: Frame[B], h: Mat3): Warp[A, B]
+  def rescale[A <: Unit2D, B <: Unit2D](from: Frame[A], to: Frame[B])
+      : Either[GeometryError, Warp[A, B]]
 
-  extension [A <: Unit2D, B <: Unit2D](f: Warp[A, B])
-    def andThen[C <: Unit2D](g: Warp[B, C]): Either[FrameMismatch, Warp[A, C]]
-
-final case class Viewing(distance: Length, screen: PhysicalScreen)
+/** The physical bench. `Perspective` (kernel) is distance plus surface width and height as
+  * `Length`s; `Viewing` (core) wraps it and is what a `Recording` carries. */
+final case class Perspective private (distance: Length, surfaceWidth: Length, surfaceHeight: Length)
+final case class Viewing(perspective: Perspective)
+object Viewing:
+  def of(distance: Length, screenWidth: Length, screenHeight: Length): Either[GeometryError, Viewing]
+  def millimetres(distance: Double, screenWidth: Double, screenHeight: Double): Either[GeometryError, Viewing]
 ```
 
 Every case has a private constructor; `Then` is reachable only through `andThen`, which checks that
 `f.to.id == g.from.id`. A public `Then` would let a caller assemble an unchecked composition and
-defeat the discipline the type exists to enforce.
+defeat the discipline the type exists to enforce. The error channel is one kernel `GeometryError`
+ADT rather than the per-failure `SingularWarp` / `FrameMismatch` types sketched earlier; the
+distinction survives as cases of that ADT.
 
 **Frame identity is checked wherever two frame-carrying values meet.** The unit parameter `U` proves
 only that both sides are in degrees — not that they are in the *same* degrees. So every binary
@@ -357,6 +384,12 @@ capability value would be forgeable, since one obtained for frame A can be appli
 frame B; a container's contents were validated on entry. `Session` is also the project object the
 application layer needs.
 
+Status (2026-09-17): `Session` is not implemented; tracked by `x-session`. The only `Session`
+types in the tree are the EyeLink ASC session materialisers in `eyes4s-io`, which are unrelated.
+Frame, grid and clock agreement between two carrying values is checked today by
+`kernel.Agreement`, which `PreparedStudy`, `RecordingPlan`, `contrast` and `DocumentIdentities`
+all call.
+
 Composition is a **partial category**: associativity and identity hold on the subcategory where
 frame identities agree, and `andThen` returns `Either[FrameMismatch, _]` off it. The law suite
 checks the laws on that subcategory and checks that `andThen` refuses everywhere else. This is
@@ -367,11 +400,15 @@ that `screen_A --> stimulus_B` composes with `stimulus_C --> deg`.
 mobile eye tracking:
 
 ```scala
-final case class Moving[A <: Unit2D, B <: Unit2D](
-    segments: Vector[(Interval, Warp[A, B])],
-    interp:   Interp                        // Constant | Linear
+final case class Moving[A <: Unit2D, B <: Unit2D] private (
+    segments: Vector[Moving.Segment[A, B]],   // Segment(interval: Interval, warp: Warp[A, B])
+    interp:   Interp                          // Hold | Lerp
 ):
   def at(t: Instant): Option[Warp[A, B]]
+  def apply(t: Instant, p: Pt[A]): Option[Pt[B]]
+object Moving:
+  def of[A <: Unit2D, B <: Unit2D](segments: Vector[Segment[A, B]], interp: Interp)
+      : Either[MovingError, Moving[A, B]]     // rejects empty and overlapping segments
 ```
 
 A dynamic AOI is then just a `Region` in a moving frame. No special case, no new machinery.
@@ -382,13 +419,14 @@ No `NA`. Missing data is an ADT:
 
 ```scala
 enum Gaze[U <: Unit2D]:
-  case Tracked  (p: Pt, pupil: Option[Double]) extends Gaze[U]
-  case Blink    ()                             extends Gaze[U]
-  case Lost     ()                             extends Gaze[U]
-  case OffScreen(p: Pt)                        extends Gaze[U]
+  case Tracked  (at: Pt[U], pupilSize: Option[Double]) extends Gaze[U]
+  case Blink    ()                                     extends Gaze[U]
+  case Lost     ()                                     extends Gaze[U]
+  case OffScreen(at: Pt[U])                            extends Gaze[U]
 
-/** Unit-parameterised, so a sample in pixels is a different type from a sample in degrees. */
-final case class Sample[U <: Unit2D](t: Instant, gaze: Gaze[U])
+/** Unit-parameterised, so a sample in pixels is a different type from a sample in degrees.
+  * `lineage` records whether the sample was measured, padded or interpolated. */
+final case class Sample[U <: Unit2D](t: Instant, gaze: Gaze[U], lineage: SampleLineage = measured)
 enum Eye: case Left, Right, Cyclopean
 enum Rate:
   case Fixed(hz: Hz)
@@ -399,13 +437,18 @@ final class Recording[U <: Unit2D] private (
     val clock:   ClockId,
     val rate:    Rate,
     val eye:     Eye,
+    val pupilUnit: Option[PupilUnit],
+    val samplingTolerance: SamplingTolerance,
+    val samplingEvidence:  SamplingEvidence,   // what the timestamps actually showed
     val samples: IArray[Sample[U]]
 ):
-  def warp[V <: Unit2D](f: Warp[U, V]): Either[FrameMismatch, Recording[V]]
+  def warp[V <: Unit2D](f: Warp[U, V]): Either[CoreError, Recording[V]]
 
 object Recording:
   def of[U <: Unit2D](frame: Frame[U], clock: ClockId, rate: Rate, eye: Eye,
-                      samples: IArray[Sample[U]]): Either[RecordingError, Recording[U]]
+                      pupilUnit: Option[PupilUnit], samples: IArray[Sample[U]],
+                      samplingTolerance: SamplingTolerance = TimestampQuantisation)
+      : Either[RecordingError, Recording[U]]
 
 /** Binocular data is a SEPARATE type, so the monocular path carries no tax and
   * disparity stays recoverable. Filtering two recordings independently destroys
@@ -413,12 +456,12 @@ object Recording:
 final class BinocularRecording[U <: Unit2D] private (...):
   def left: Recording[U]
   def right: Recording[U]
-  def cyclopean(f: Fusion): Recording[U]
-  def vergence: Vector[(Instant, Angle)]
+  def cyclopean(f: Fusion): Recording[U]     // Fusion.Mean | Fusion.BestTracked
+  def disparity: Vector[(Instant, Vec2[U])]  // the vergence signal, as a frame-unit vector
 ```
 
 The unit parameter on `Sample` is what makes the detector claim true. Without it,
-`Detector.ivt(degPerSec(30))` would happily consume a stream of pixel samples and the only thing
+`Detectors.ivt(degPerSec(30))` would happily consume a stream of pixel samples and the only thing
 "typed" would be the literal. See Layer 2's detector section.
 
 Events carry a real interval and the frame's unit, so neither the n-vs-(n−1) confusion nor a
@@ -426,28 +469,36 @@ unit mix-up can arise:
 
 ```scala
 sealed trait Event[U <: Unit2D]:  def span: Interval
-final case class Fixation[U <: Unit2D](span: Interval, centre: Pt, dispersion: Double, nSamples: Int)
-    extends Event[U]
-final case class Saccade[U <: Unit2D](span: Interval, from: Pt, to: Pt, peakVelocity: Velocity[U])
-    extends Event[U]
-final case class Blink[U <: Unit2D](span: Interval)                extends Event[U]
-final case class Pursuit[U <: Unit2D](span: Interval, path: IArray[Pt]) extends Event[U]
+object Event:   // every case has a private constructor and an Either-returning `of`
+  Fixation[U](span: Interval, centre: Pt[U], dispersionStatus: DispersionStatus[U],
+              support: EventSampleCount)
+  Saccade [U](span: Interval, from: Pt[U], to: Pt[U], peakVelocityStatus: PeakVelocityStatus[U])
+  Blink   [U](span: Interval)
+  Pursuit [U](span: Interval, path: IArray[Pt[U]])
 
 final class Scanpath[U <: Unit2D] private (
-    val frame:     Frame[U],
-    val clock:     ClockId,
-    val fixations: NonEmptyVector[Fixation[U]]
+    val frame:       Frame[U],
+    val clock:       ClockId,
+    val fixations:   IArray[Event.Fixation[U]],          // non-empty by construction
+    val transitions: Vector[ScanpathTransition[U]]        // exactly n - 1; no padded zero row
 ):
   def n: Int
-  /** Exactly n - 1 saccades. No padded zero row. */
-  def saccades: Vector[Saccade[U]]
-  def window(w: Interval, policy: Overlap): Option[Scanpath[U]]
-  def warp[V <: Unit2D](f: Warp[U, V]): Either[FrameMismatch, Scanpath[V]]
+  def within(w: Window, anchor: Instant, policy: Overlap): Either[CoreError, Scanpath[U]]
+  def warp[V <: Unit2D](f: Warp[U, V]): Either[CoreError, Scanpath[V]]
+  def occupancy(weight: Weight = Weight.Duration): Either[SurfaceError, PointMeasure[U]]
 
 object Scanpath:
-  def fromEvents[U <: Unit2D](frame: Frame[U], clock: ClockId, es: Vector[Event[U]])
+  def of[U <: Unit2D](frame: Frame[U], clock: ClockId, fixations: IArray[Event.Fixation[U]])
       : Either[ScanpathError, Scanpath[U]]
+  def fromEvents[U <: Unit2D](frame: Frame[U], clock: ClockId, events: Vector[Event[U]])
+      : Either[ScanpathError, Scanpath[U]]
+  def fromEvents[U <: Unit2D](series: EventSeries[U]): Either[CoreError, Scanpath[U]]
 ```
+
+A `ScanpathTransition` is deliberately not a `Saccade`: abutting fixations have a transition with no
+measured duration, which cannot honestly inhabit a positive-duration saccade event. Dispersion and
+peak velocity are carried as *status* values (`Available` / an unavailability reason), because an
+imported fixation table often has neither, and the absence must be data rather than `NaN`.
 
 `eyesim`'s `scanpath` class appends `lenx, leny, rho, theta` to the fixation table and pads the last
 row with zeros, which every consumer must then remember to drop (`multi_match` does
@@ -459,19 +510,23 @@ case rather than a separate library:
 ```scala
 trait Detector[S, -I, +O]:
   def init: S
-  def step(s: S, i: I): (S, Chunk[O])
-  def flush(s: S): Chunk[O]
+  def step(s: S, i: I): (S, Vector[O])
+  def flush(s: S): Vector[O]
 
-/** Existential wrapper hiding the state type, so composition has a well-kinded Category. */
-sealed trait Machine[-I, +O]:
+/** Existential wrapper hiding the state type, so composition has a well-kinded Category.
+  * Variance lives on Detector[-I, +O]; it is deliberately dropped on Machine[I, O] because the
+  * existential state member and the Category instance need invariant positions (commit 57fadc5). */
+sealed abstract class Machine[I, O]:
   type S
   val detector: Detector[S, I, O]
+  def runAll(in: Iterable[I]): Vector[O]              // kernel, pure; step* then flush
+  def andThen[P](n: Machine[O, P]): Machine[I, P]
 
 object Machine:
   def apply[St, I, O](d: Detector[St, I, O]): Machine[I, O]
-  extension [I, O](m: Machine[I, O])
-    def runAll(in: Iterable[I]): Vector[O]              // core, pure; step* then flush
-    def andThen[P](n: Machine[O, P]): Machine[I, P]
+  def identity[A]: Machine[A, A]
+  def lift[A, B](f: A => B): Machine[A, B]
+  def filter[A](p: A => Boolean): Machine[A, A]
   given Category[Machine] = ...
 ```
 
@@ -490,23 +545,34 @@ holds for finite streams only.
 Shipped detectors and filters, each with the parameters that define it *in its own units*:
 
 ```scala
-Detector.ivt(threshold: Velocity[Unit2D.Deg], minDuration: Span)
-    : Machine[Sample[Unit2D.Deg], Event[Unit2D.Deg]]
-Detector.idt(extent: Extent, minDuration: Span)                 // a bounding box, NOT a Sigma
-Detector.engbertKliegl(lambda: Double, minDuration: Span)       // microsaccades
-Detector.nystromHolmqvist(...)                                  // adaptive threshold
-Detector.i2mc(...)
-Filter.savitzkyGolay[U <: Unit2D](window: Int, order: Int): Machine[Sample[U], Sample[U]]
-Filter.median[U <: Unit2D](window: Int)
-Filter.deblink[U <: Unit2D](maxGap: Span, pad: Span)
-Merge.adjacentFixations[U <: Unit2D](maxGap: Span, maxAngle: Angle)
+// eyes4s-detect. Every parameter is a checked opaque type from detect.Configuration, and every
+// detector is an EventDetector: an AlgorithmCard (citation, version, deviations) plus the Machine.
+Detectors.ivt(threshold: IvtThreshold, minDuration: MinimumEventDuration, clock: ClockId)
+    : EventDetector[Unit2D.Deg]                                 // IvtThreshold wraps Velocity[Deg]
+Detectors.idt[U](extent: Extent[U], minDuration: MinimumEventDuration, clock: ClockId)
+    : EventDetector[U]                                          // a bounding box, NOT a Sigma
+Detectors.engbertKliegl(thresholds: EkThresholds, minSamples: EkMinimumSamples, clock: ClockId)
+    : EventDetector[Unit2D.Deg]                                 // microsaccades
+Filter.savitzkyGolay[U](frame, halfWidth: WindowHalfWidth, policy: WindowObservationPolicy,
+                        sampling: RegularSampling): Machine[Sample[U], Sample[U]]
+Filter.median[U](frame, halfWidth: WindowHalfWidth, policy: WindowObservationPolicy)
+Filter.padMissing[U](pad: MissingPadding)                      // the two halves of "deblink"
+Filter.interpolateGaps[U](maxGap: InterpolationGap)
+Merge.adjacentFixations[U](series: EventSeries[U], maxGap: MaximumMergeGap, maxSeparation: Distance[U])
+    : Either[MergeError, MergeResult[U]]
 ```
 
-`Detector.ivt` consumes `Sample[Deg]`, not `Sample[?]`. An I-VT threshold of 30°/s is meaningless in
+Status (2026-09-17): Nyström–Holmqvist and I2MC are not implemented. I2MC (with REMoDNaV) is
+tracked by `bd-01M02N4D5QRV2GPMXHXCJ5S5DP`; there is no tracker item for Nyström–Holmqvist.
+
+`Detectors.ivt` consumes `Sample[Deg]`, not `Sample[?]`. An I-VT threshold of 30°/s is meaningless in
 pixels, and because the *input* is unit-parameterised — not merely the threshold literal — you must
 warp the recording to `Deg` first, which means you must have produced a `Viewing`. Note also that
 I-DT's dispersion is a bounding-box extent, not a standard deviation, so it takes an `Extent` rather
-than punning on `Sigma`.
+than punning on `Sigma`. An `EventDetector` emits `DetectionEmission[U] = Either[DetectionFailure,
+Event[U]]`, so a detector that cannot classify a stretch says so in-band rather than dropping it;
+`EventSeries` then binds those events to their sample support for downstream merging and scanpath
+construction.
 
 ### Layer 3 — occupancy: measures, grids, surfaces, regions
 
@@ -515,20 +581,33 @@ This is the layer that unifies everything `eyesim` does piecewise.
 ```scala
 /** A finite discrete measure on the plane: weighted points in a frame. */
 final class PointMeasure[U <: Unit2D] private (
-    val frame:  Frame[U],
-    val points: IArray[Pt],
-    val mass:   IArray[Double]
+    val frame:     Frame[U],
+    val positions: IArray[Pt[U]],
+    val weights:   IArray[Double]
 ):
   def total: Double
-  def normalised: PointMeasure[U]
-  def integrate(f: Pt => Double): Double
+  def normalised: Either[SurfaceError, PointMeasure[U]]
+  def integrate(f: Pt[U] => Double): Double
   def massIn(r: Region[U]): Double
+  def binned(g: Grid[U]): Either[GeometryError, IArray[Double]]
 
 object PointMeasure:
-  enum Weight: case Uniform, Duration, Custom(f: Fixation => Double)
-  def fromScanpath[U <: Unit2D](sp: Scanpath[U], w: Weight): PointMeasure[U]
-  def fromSamples [U <: Unit2D](r: Recording[U]): PointMeasure[U]     // each sample carries 1/rate
+  def of[U <: Unit2D](frame: Frame[U], positions: IArray[Pt[U]], weights: IArray[Double])
+      : Either[SurfaceError, PointMeasure[U]]
+  def uniform[U <: Unit2D](frame: Frame[U], positions: IArray[Pt[U]]): PointMeasure[U]
+  def empty[U <: Unit2D](frame: Frame[U]): PointMeasure[U]
+
+// The scanpath-to-measure conversion lives on the trajectory side, in eyes4s-core:
+enum Weight: case Uniform, Duration                    // core.Weight; no Custom(f) case: a closure-valued
+                                                       // weight cannot be persisted (generic persistence
+                                                       // decision, bd-01KYDZ5VDVS0E6SSKQJ8QH5EWJ); Weight is
+                                                       // encoded through RecipeParameters.weight
+Scanpath#occupancy(weight: Weight = Weight.Duration): Either[SurfaceError, PointMeasure[U]]
 ```
+
+Status (2026-09-17): a `fromSamples` measure over raw `Recording` samples is not implemented as a
+`PointMeasure` constructor; sample-time occupancy is reached through `AoiSet.assign` and
+`WindowOccupancy` in core instead.
 
 `integrate` generates this layer — the *occupancy* half of the duality, where order has been
 forgotten. Dwell time is `massIn`. NSS is `integrate` against a z-scored surface. Template sampling
@@ -540,12 +619,14 @@ Grids have **nominal identity**, following `linop4s`'s `SpaceId`:
 
 ```scala
 final case class GridId(name: String)
-final class Grid[U <: Unit2D] private (
-    val id: GridId, val frame: Frame[U], val nx: Int, val ny: Int
-):
+final case class Grid[U <: Unit2D] private (id: GridId, frame: Frame[U], nx: Int, ny: Int):
   def cellArea: Double
-  def centres: IArray[Pt]
-  def index(p: Pt): Option[Int]
+  def centres: IArray[Pt[U]]
+  def indexOf(p: Pt[U]): Option[Int]
+  def cellCentre(index: Int): Option[Pt[U]]
+object Grid:
+  def of[U <: Unit2D](id: GridId, frame: Frame[U], nx: Int, ny: Int): Either[GeometryError, Grid[U]]
+  def over[U <: Unit2D](frame: Frame[U], nx: Int, ny: Int): Either[GeometryError, Grid[U]]
 ```
 
 Two grids of the same dimensions over different frames are **not** interchangeable. `eyesim` checks
@@ -568,25 +649,36 @@ final class Signed   [U <: Unit2D] private (...) extends Surface[U]  // any real
 
 /** A typed grid of non-Double values; `Region.rasterise` produces Field[U, Boolean]. */
 final class Field[U <: Unit2D, A] private (val grid: Grid[U], val values: IArray[A])
+// Status (2026-09-17): Field[U, A] not implemented; no tracker item. Region.rasterise(g) returns
+// a plain IArray[Boolean].
 
+object Surface:   // the three checked constructors; every one takes the Provenance it will carry
+  def intensity[U <: Unit2D](g: Grid[U], values: IArray[Double], provenance: Provenance)
+      : Either[SurfaceError, Intensity[U]]
+  def signed   [U <: Unit2D](g: Grid[U], values: IArray[Double], provenance: Provenance)
+      : Either[SurfaceError, Signed[U]]
+  def mass     [U <: Unit2D](g: Grid[U], values: IArray[Double], provenance: Provenance,
+                             tolerance: Double = 1e-9): Either[SurfaceError, Mass[U]]
 object Mass:
-  def of[U <: Unit2D](g: Grid[U], vs: IArray[Double]): Either[NotAMass, Mass[U]]
-  def mean[U <: Unit2D](ms: NonEmptyVector[Mass[U]]): Either[GridMismatch, Mass[U]]
-  def weightedMean[U <: Unit2D](ms: NonEmptyVector[(Double, Mass[U])]): Either[GridMismatch, Mass[U]]
+  def mean[U <: Unit2D](ms: Seq[Mass[U]]): Either[SurfaceError, Mass[U]]
+  def weightedMean[U <: Unit2D](ms: Seq[(Double, Mass[U])]): Either[SurfaceError, Mass[U]]
 
 extension [U <: Unit2D](i: Intensity[U])
   /** The ONLY route from an unnormalised estimate to a probability mass. */
-  def normalised: Either[DegenerateSurface, Mass[U]]
+  def normalised: Either[SurfaceError, Mass[U]]
+  def scaled(k: Double): Either[SurfaceError, Intensity[U]]
 
 extension [U <: Unit2D](m: Mass[U])
-  def difference(that: Mass[U]): Either[GridMismatch, Signed[U]]
-  def logRatio  (that: Mass[U]): Either[GridMismatch, Signed[U]]
+  def difference(that: Mass[U]): Either[SurfaceError, Signed[U]]
+  def logRatio  (that: Mass[U], floor: Double = 1e-12): Either[SurfaceError, Signed[U]]
   def entropy(base: LogBase = LogBase.E): Entropy          // defined on Mass ONLY
+  def relativeEntropy(base: LogBase = LogBase.E): Double   // entropy / log(cells)
 
 // Core defines its own module structure; `algebra` has no VectorSpace and Spire is rejected.
 trait Module[V, K]:
   def zero: V
   def plus(a: V, b: V): V
+  def negate(a: V): V
   def scale(k: K, v: V): V
 
 extension [U <: Unit2D](g: Grid[U])
@@ -613,18 +705,27 @@ Smoothing states its bandwidth convention in the type:
 opaque type Sigma[U <: Unit2D] = Double     // ALWAYS a standard deviation, in frame units
 
 trait Smoother[U <: Unit2D]:
+  def card: SmootherCard                     // identity, citation and parameter units
   def bandwidth: Sigma[U]
-  def smooth(m: PointMeasure[U], g: Grid[U]): Either[EstimateError, Intensity[U]]
+  def edges: EdgePolicy                      // Renormalise | Truncate; never a silent default
+  def smooth (m: PointMeasure[U], g: Grid[U]): Either[EstimateError, Intensity[U]]
+  def density(m: PointMeasure[U], g: Grid[U]): Either[EstimateError, Mass[U]]   // smooth then normalise
 
 object Smoother:
-  def gaussian   [U <: Unit2D](s: Sigma[U]): Smoother[U]
-  def anisotropic[U <: Unit2D](h: Mat2):     Smoother[U]
-  def foveal     [U <: Unit2D](centre: Pt, s0: Sigma[U], slope: Double): Smoother[U]
+  def gaussian[U <: Unit2D](sigma: Sigma[U], edgePolicy: EdgePolicy): Smoother[U]
 
 object Bandwidth:
-  def silverman2D[U <: Unit2D](m: PointMeasure[U]): Sigma[U]
-  def scott      [U <: Unit2D](m: PointMeasure[U]): Sigma[U]
+  def silverman[U <: Unit2D](m: PointMeasure[U]): Either[GeometryError, Sigma[U]]
+  def scott    [U <: Unit2D](m: PointMeasure[U]): Either[GeometryError, Sigma[U]]
+  def foveal: Either[GeometryError, Sigma[Unit2D.Deg]]                 // the documented 1° default
 ```
+
+Status (2026-09-17): only the separable Gaussian smoother exists. PRD S-2 promised
+`Smoother.gaussian` and `Smoother.anisotropic` for v1.0 and deferred `Smoother.foveal` to v1.1;
+the closed ticket `s-smoother` claims both v1.0 smoothers but the code has no anisotropic smoother,
+so that ticket over-claimed; the gap is now tracked by `bd-01M2R16EQ2EF6573DJKD0Y0Q05`.
+`Bandwidth.foveal` is a default sigma, not a smoother. Baseline KDE conformance is tracked by
+`eyesim-kde`.
 
 `Sigma[Deg]` is the psychologically meaningful choice — a 1° kernel is a statement about the fovea,
 a 30 px kernel is a statement about nothing. Getting that for free is the clearest payoff of the
@@ -633,7 +734,11 @@ unit types.
 Multi-scale is a real type that carries its scales, not a bare list with an attribute:
 
 ```scala
-final class Pyramid[U <: Unit2D] private (val scales: NonEmptyVector[(Sigma[U], Mass[U])])
+final class Pyramid[U <: Unit2D] private (levels: Vector[(Sigma[U], Mass[U])]):   // non-empty
+  def scales: Vector[Sigma[U]];  def at(s: Sigma[U]): Option[Mass[U]];  def finest: Mass[U]
+object Pyramid:
+  def of[U <: Unit2D](m: PointMeasure[U], g: Grid[U], sigmas: Vector[Sigma[U]], edges: EdgePolicy)
+      : Either[EstimateError, Pyramid[U]]
 ```
 
 `eyesim`'s latent transforms silently take `obj[[1]]` from a multiscale object, discarding every
@@ -643,24 +748,28 @@ Regions form a **Boolean algebra**, which is law-testable:
 
 ```scala
 sealed trait Region[U <: Unit2D]:
-  def contains(p: Pt): Boolean
+  def contains(p: Pt[U]): Boolean
   def area(g: Grid[U]): Double        // by rasterisation, at a STATED resolution
-  def rasterise(g: Grid[U]): Field[U, Boolean]
+  def rasterise(g: Grid[U]): IArray[Boolean]
 
 object Region:
-  def rect[U <: Unit2D](lo: Pt, hi: Pt): Region[U]
-  def ellipse[U <: Unit2D](centre: Pt, rx: Double, ry: Double): Region[U]
-  def polygon[U <: Unit2D](vs: NonEmptyVector[Pt]): Either[DegenerateRegion, Region[U]]
+  def rect[U <: Unit2D](lo: Pt[U], hi: Pt[U]): Either[GeometryError, Region[U]]
+  def fromBounds[U <: Unit2D](b: Bounds[U]): Region[U]
+  def ellipse[U <: Unit2D](centre: Pt[U], rx: Double, ry: Double): Either[GeometryError, Region[U]]
+  def circle[U <: Unit2D](centre: Pt[U], r: Double): Either[GeometryError, Region[U]]
+  def polygon[U <: Unit2D](vertices: Vector[Pt[U]]): Either[GeometryError, Region[U]]
   def everything[U <: Unit2D]: Region[U]
   def empty[U <: Unit2D]: Region[U]
   extension [U <: Unit2D](a: Region[U])
     def ||(b: Region[U]): Region[U]
     def &&(b: Region[U]): Region[U]
     def unary_! : Region[U]
-    def \(b: Region[U]): Region[U]
+    // set difference is derived, not a primitive: a \ b is written `a && !b`
 ```
 
-AOI statistics are then a thin, total layer:
+AOI statistics are then a thin, total layer. The design target (PRD RA-1) is an entity-keyed set,
+because the v1.1 relational-attention layer below projects roles over entity keys and must not
+re-run gaze assignment to do so:
 
 ```scala
 final class AoiSet[U <: Unit2D, E] private (
@@ -675,10 +784,43 @@ extension [U <: Unit2D, E](s: AoiSet[U, E])
   def transitions(sp: Scanpath[U]): Digraph[E]         // -> graph4s
 ```
 
-`AoiSet` is still greenfield: no spatial-overlap policy exists in the implementation. Its smart
-constructor establishes frame identity and unique entity keys, while a trace plan states how
-overlapping membership is interpreted. Temporal `Overlap` remains what its name says — a policy for
-events straddling a time window — and is not reused for spatial AOIs.
+The current implementation in `eyes4s-aoi` (commits 894fe38 and 8b4db05) differs in shape: the set
+is keyed by a nominal `AoiId`, the analysis runs over sample-level `Recording`s rather than
+scanpaths, and membership is decided by an explicit policy that produces one accounting-checked
+assignment from which the summary measures are read. The shipped `AoiSet` (module `aoi`) accounts
+sample time under an explicit `MembershipPolicy` rather than fixations directly, and its dwell,
+first-entry, run-count and overlap behaviour is stated as laws in `eyes4s-laws`
+(`AoiLaws.accounting`: exclusive dwell partition, multiple dwell sum, first-entry-iff-dwell, maximal
+abutting blocks, reject-overlap, translation invariance), each guarded by mutation receipts in
+`AoiLawsSuite`:
+
+```scala
+final class Aoi[U <: Unit2D] private (id: AoiId, label: String, frame: Frame[U], region: Region[U],
+                                       attributes: Map[String, String])   // priority is list order
+final class AoiSet[U <: Unit2D] private (areas: Vector[Aoi[U]]):
+  def assign(recording: Recording[U], policy: MembershipPolicy): Either[AoiError, AoiAssignment[U]]
+object AoiSet:
+  def of[U <: Unit2D](areas: Vector[Aoi[U]]): Either[AoiError, AoiSet[U]]   // frame identity, unique ids
+
+enum MembershipPolicy:
+  case Multiple, ExclusiveByPriority, SmallestContaining(resolution: AoiResolution), RejectOverlap
+
+final class AoiAssignment[U <: Unit2D]:          // per-sample SampleMembership plus the ledger
+  def report: AoiAssignmentReport                // union, background, excluded, censored time
+  def accountingHolds: Boolean                   // accounted time == represented support
+  def measure: AoiMeasurements                   // AoiMetric(dwell, dwellProportion,
+                                                 //   firstEntryLatency, runCount) and AoiTransitions
+```
+
+Decision open (2026-09-17): entity keys vs `AoiId`; tracked by `bd-01M2R16EWFP1AF92ZXS80JQ7SM`,
+since the Construal section below still presupposes entity keys. Decision open (2026-09-17): run
+count is sample-level, so a saccade between two contained fixations splits a visit; tracked by
+`bd-01M2R18YTC8BF4T1890QX991RW`. The spatial-overlap policy that RA-1 asked for exists as
+`MembershipPolicy`; the remaining laws-module receipts are tracked by `aoi-set`. The scanpath-level `sequence` is not exposed on `AoiSet`;
+`ScanMatch.similarity` takes `Vector[A]` and callers build the sequence. Transition counts exist
+(`aoi-seq`, closed) as the k×k table `AoiMeasurements.transitions`; the `Digraph[E]` projection
+belongs to the unbuilt `eyes4s-graph4s` module (no tracker item). Temporal `Overlap` remains what
+its name says — a policy for events straddling a time window — and is not reused for spatial AOIs.
 
 Relational-event analysis keeps visible entities primary and makes roles a projection:
 
@@ -715,6 +857,10 @@ def projectRoles[C, E, R, Q](
     attribution: RoleAttribution
 ): RoleTrace[C, E, R, Q]
 ```
+
+Status (2026-09-17): `Construal`, `TraceSource`, `EntityTrace` and `projectRoles` are not
+implemented; entity traces are tracked by `bd-01KYDZ933FHNT7GC7AJYRPVQDN` and construal projection
+by `bd-01KYDZ9BYPQNY5W4YTJSH9JSPN`, both under the v1.1 epic `bd-01KYDZ8V30PVKAQ78PY2J9SNB2`.
 
 The trace cannot be role-primary: the same entity geometry supports `chase` and `flee`, and
 reinterpreting it must not rerun gaze assignment. `Construal` is a relation rather than a function,
@@ -759,6 +905,12 @@ There is no closure-valued predicate to serialize. Missing and ambiguous anchors
 selector and observed match count. A non-divisible final bin is rejected, included explicitly, or
 returned as an excluded tail — never silently discarded.
 
+Status (2026-09-17): `MarkSelector`, `Occurrence`, `EpochPlan` and `FinalBin` are not implemented;
+tracked by `bd-01KYDZ80ANFH3HW11946E4QTR8`. What exists today is the un-binned form in
+`eyes4s-plan`: `TrialEpoch(anchor: Instant, coverage: ObservedCoverage)` and `StudyWindow`, which
+resolves a named relative `Window` against an epoch into an absolute `Interval` or a
+`TemporalStudyError`, used by `TemporalStudyPlan`.
+
 Scalar summaries split along the duality, and the split is worth making explicit rather than filing
 everything under "occupancy". **Order-free**, i.e. functionals of a `PointMeasure`: nearest-neighbour
 index, BCEA, convex-hull area, stationary AOI entropy. **Order-dependent**, i.e. functions of a
@@ -774,25 +926,32 @@ set — so the type has two sides:
 
 ```scala
 trait Compare[-A, -B, +S]:
-  def name: MeasureName
-  def scale: MeasureScale
+  def info: MeasureInfo                 // name, scale, citation
   def compare(a: A, b: B): Either[CompareError, S]
+  final def scale: MeasureScale = info.scale
 
 enum MeasureScale:                    // "a note on units" becomes a type
   case Correlation                    // [-1, 1]
   case FisherZ                        // unbounded
+  case UnboundedSimilarity            // higher is closer, no bound
   case Probability                    // [0, 1]
   case Bounded(lo: Double, hi: Double)
   case DistanceLike                   // [0, inf), lower is closer
 ```
 
-The lawful refinements, each with a Discipline rule set in `eyes4s-laws`:
+The lawful refinements, each with a Discipline rule set in `eyes4s-laws`. Symmetry has its own
+interface because canonical-undirected pair evaluation in Layer 5 needs exactly that and no more:
 
 ```scala
-trait Metric    [A] extends Compare[A, A, Distance]      // identity, symmetry, triangle
-trait Semimetric[A] extends Compare[A, A, Distance]      // identity, symmetry
-trait Divergence[A] extends Compare[A, A, Divergence.V]  // D(x,x) = 0, D >= 0, asymmetric OK
-trait Kernel    [A] extends Compare[A, A, Similarity]    // symmetric, PSD Gram matrix
+trait SymmetricCompare[A, +S] extends Compare[A, A, S]                // symmetry law only
+trait Metric    [A] extends SymmetricCompare[A, MeasureDistance]      // identity, symmetry, triangle
+trait Semimetric[A] extends SymmetricCompare[A, MeasureDistance]      // identity, symmetry
+trait Divergence[A] extends Compare[A, A, MeasureDistance]            // D(x,x) = 0, D >= 0, asymmetric OK
+trait Kernel    [A] extends SymmetricCompare[A, Similarity]           // symmetric, PSD Gram matrix
+
+opaque type MeasureDistance = Double   // >= 0
+opaque type Similarity      = Double   // finite
+opaque type Similarity01    = Double   // [0, 1]; MultiMatch components
 ```
 
 This is where the library gets to be honest in a way `eyesim` is not: cosine similarity is not a
@@ -805,26 +964,36 @@ Results are typed, which deletes `eyesim`'s 95-line `flatten_similarity_output` 
 `expand_vector_output <- identical(method, "multimatch")` string test:
 
 ```scala
-final case class MultiMatchScore(
-    shape: Score, direction: Score, length: Score, position: Score, duration: Score)
-
-final case class ScaleProfile[U <: Unit2D](byScale: NonEmptyMap[Sigma[U], Score]):
-  def aggregate(a: Aggregation): Score
+final class MultiMatchScore private (   // five Similarity01 components; `mean` is explicit, not implied
+    shapeScore: Similarity01, directionScore: Similarity01, lengthScore: Similarity01,
+    positionScore: Similarity01, durationScore: Similarity01):
+  def shape: Double; def direction: Double; def length: Double; def position: Double; def duration: Double
+object MultiMatch:
+  def apply[U <: Unit2D]: SymmetricCompare[Scanpath[U], MultiMatchScore]
 ```
+
+Status (2026-09-17): `ScaleProfile` is not implemented as a type. Per-scale results are carried by
+`StudyPlan` as one `StudyScaleResult` per declared `StudyEstimate`, never aggregated across scales.
+`Crqa.analyse(left, right, config: CrqaConfig[U]): Either[CrqaError, CrqaResult[U]]` is implemented
+(the `q-crqa` decision), with `RecurrenceMatrix` and `CrqaMetrics` as its typed result.
 
 **Alignment is factored out.** MultiMatch, ScanMatch, DTW, Levenshtein and Fréchet are all "align
 two sequences under a cost model, then summarise":
 
 ```scala
 trait Alignment:
-  def align[A, B](xs: IndexedSeq[A], ys: IndexedSeq[B])(cost: (A, B) => Double): AlignmentPath
+  def name: String
+  def align[A, B](xs: IndexedSeq[A], ys: IndexedSeq[B])(cost: (A, B) => Double)
+      : Either[CompareError, AlignmentPath]
 
-final case class AlignmentPath(pairs: Vector[(Int, Int)], cost: Double)
+enum AlignmentStep: case Match(left: Int, right: Int), SkipLeft(left: Int), SkipRight(right: Int)
+final case class AlignmentPath(steps: Vector[AlignmentStep], cost: Double):
+  def matches: Vector[(Int, Int)]
 
 object Alignment:
   val monotoneLattice: Alignment                   // MultiMatch's graph, as an O(nm) DP
-  def needlemanWunsch(gap: Double, sub: SubstitutionMatrix): Alignment   // ScanMatch
-  def dtw(band: Option[Int]): Alignment
+  def needlemanWunsch(gap: Double): Alignment      // ScanMatch; substitution is the `cost` argument
+  val dtw: Alignment                               // unbanded; banded variants: bd-01M02N4E54KR43Q5JSSMCV4G2E
   val frechet: Alignment
 ```
 
@@ -836,8 +1005,11 @@ far faster, with no graph dependency.
 and becomes a combinator:
 
 ```scala
-extension [U <: Unit2D](c: Compare[Mass[U], Mass[U], Score])
-  def viaSmoothing(s: Smoother[U], g: Grid[U]): Compare[Scanpath[U], Scanpath[U], Score]
+object Lift:
+  def viaSmoothing[U <: Unit2D, S](inner: Compare[Mass[U], Mass[U], S], smoother: Smoother[U],
+                                   grid: Grid[U], weight: Weight = Weight.Duration)
+      : Compare[Scanpath[U], Scanpath[U], S]
+  def viaSmoothingSymmetric[U <: Unit2D, S](...): SymmetricCompare[Scanpath[U], S]   // keeps the symmetry proof
 ```
 
 And the slot `eyesim` lacks entirely — map against point set — is now expressible, which brings the
@@ -845,16 +1017,24 @@ whole saliency-benchmark literature into scope:
 
 ```scala
 object Saliency:
-  def nss         [U <: Unit2D]: Compare[Mass[U], PointMeasure[U], Score]
+  def nss         [U <: Unit2D]: Compare[Mass[U], PointMeasure[U], Similarity]
   def aucJudd     [U <: Unit2D]: Compare[Mass[U], PointMeasure[U], Score]
   def aucBorji    [U <: Unit2D](rng: Seed, nSplits: Int): Compare[Mass[U], PointMeasure[U], Score]
   def shuffledAuc [U <: Unit2D](others: Vector[PointMeasure[U]]): Compare[Mass[U], PointMeasure[U], Score]
   def infoGain    [U <: Unit2D](baseline: Mass[U]): Compare[Mass[U], PointMeasure[U], Score]
 ```
 
-Distribution measures ship as `Compare[Mass[U], Mass[U], _]`: Pearson, Spearman, Fisher-z, cosine,
-Tanimoto, total variation, KL, Jensen–Shannon, χ², Hellinger, exact W₁ and Sinkhorn-regularised OT
-with λ exposed and its consequences documented.
+Status (2026-09-17): only `Saliency.nss` is implemented. The AUC family and information gain are
+not implemented and have no tracker item.
+
+Distribution measures ship as `Compare[Mass[U], Mass[U], _]` in `Distribution` and `Transport`.
+Implemented: `pearson`, `fisherZ`, `cosine` (all `SymmetricCompare[Mass[U], Similarity]`),
+`totalVariation` and `hellinger` (`Metric`), `jensenShannon` (`Semimetric`), `kullbackLeibler`
+and `flooredKullbackLeibler` (`Divergence`), `Transport.slicedWasserstein` and `Transport.sinkhorn`
+with `SinkhornConfig` (λ, iterations, cell limit) exposed.
+Status (2026-09-17): Spearman, Tanimoto, χ² and exact W₁ are not implemented; the baseline
+comparison matrix is tracked by `eyesim-compare`. `ScanMatch.similarity(substitution, gap)` is
+`Compare[Vector[A], Vector[A], Similarity]` over any AOI-label sequence.
 
 ### Layer 5 — design: trials, relations, pairings, reductions
 
@@ -877,9 +1057,7 @@ object Relation:
   final case class DifferentOn[L, R, J](
       left: Projection[L, J], right: Projection[R, J]
   ) extends Relation[L, R]
-  final case class And[L, R](
-      left: Relation[L, R], right: Relation[L, R]
-  ) extends Relation[L, R]
+  final case class And[L, R](a: Relation[L, R], b: Relation[L, R]) extends Relation[L, R]
 
 sealed trait PairDesign[L, R]
 object PairDesign:
@@ -1050,6 +1228,36 @@ cross-participant-consistency question. This is the seam `eyesim` lacks: its rep
 vignette claims same-image, cross-phase scores while the implementation groups only on phase, mixes
 participants and images, and places the intended reinstatement pair in its `othersim` baseline.
 
+**Pair schedules** are the resumable form of the same enumeration. Between-collection pairing under
+`Selection.All` is driven through a `DirectedPairSchedule[KL, KR]`, so duplicate exclusion, unmatched
+accounting and eligible counting live in one place for the pure `pair` API, for previews and for
+bounded execution alike:
+
+```scala
+object DirectedPairSchedule:
+  def exhaustive[KL, KR](left: Vector[KL], right: Vector[KR], relation: Relation[KL, KR],
+                         budget: PairScheduleBudget = PairScheduleBudget.default)
+      : Either[PairScheduleError, DirectedPairSchedule[KL, KR]]
+
+final class DirectedPairSchedule[KL, KR]:   def start: PairCursor[KL, KR]
+final class PairCursor[KL, KR]:             def advance(quantum: PairQuantum): Either[PairScheduleError, PairPage[KL, KR]]
+enum PairPage[KL, KR]:
+  case More(pairs: Vector[ScheduledPair[KL, KR]], workUnits: Int, next: PairCursor[KL, KR])
+  case Done(pairs: Vector[ScheduledPair[KL, KR]], workUnits: Int, report: PairingReport[KL, KR])
+
+def evaluateScheduled[KL, KR, E, S](schedule: DirectedPairSchedule[KL, KR], inputs: ContentHash,
+                                    info: EvaluationInfo, quantum: PairQuantum = PairQuantum.default)
+                                   (evaluator: ScheduledPair[KL, KR] => Either[E, S])
+    : Either[PairScheduleError, DirectedPairwiseAnalysis[KL, KR, E, S]]
+```
+
+Cursors are immutable, pages never imply completion until `Done` carries the full pairing report,
+and `PairScheduleBudget.of(sourceRows, candidatePairs, selectedPairs)` refuses oversized operands
+by name instead of truncating. Bottom-k sampling is per focal key and keeps its own loop with the
+same diagnostics; within-collection pairing still enumerates on its own (folding it into the
+schedule is tracked by `bd-01M2QN4YZZY9Q18VGGT2P1MW4F`). The detail is in
+[saved studies](docs/SAVED_STUDIES.md) under "Prepare a study and inspect its pair schedule".
+
 Domain adaptation (`eyesim`'s latent transforms) gets a real fit/apply split, with the change of
 representation in the type — which makes "EMD after PCA" *unrepresentable* rather than a runtime
 `match.arg` failure:
@@ -1073,6 +1281,11 @@ object Adapter:
 Strata are keyed by a real type, not by the sentinel string `"__all__"` that `eyesim` then renames
 to `"all"` — a collision waiting for the first study with a condition called `all`.
 
+Status (2026-09-17): `Adapter` and the latent (PCA / CORAL / CCA) and map-space (`contract`,
+`affine`) adapters are not implemented, and neither is the `eyes4s-gale` module that would host
+them. The eyesim fitted density-space transforms they correspond to are tracked by
+`eyesim-transform` (p3), which records them as an implementation gap in the baseline.
+
 Surface decomposition reuses alignment and pair evaluation without pretending to be a `Compare`.
 OLS returns a `Signed` fit, intercept-free NNLS an `Intensity`, and simplex-constrained fitting a
 `Mass`; every residual is `Signed`. Only the simplex-constrained coefficients are mixture weights.
@@ -1080,9 +1293,115 @@ Diagnostics are descriptive — rank, conditioning, convergence, residual norms,
 cell-wise standard errors would falsely treat spatially autocorrelated cells as independent.
 Partial association is a different result type, not a coefficient.
 
+Status (2026-09-17): surface decomposition and partial association are not implemented; tracked by
+`bd-01KYD6SYK02ZRV99MG7FX939ZS`.
+
 The convenient surface keeps distinct scientific verbs: matched similarity, repetition similarity,
 surface decomposition, and temporal reinstatement. They are thin functions over the algebra above,
 not a `Workflow` hierarchy or a single `TemplateAnalysis` engine.
+
+Status (2026-09-17): of those verbs, matched similarity is public as `StudyPlan` and temporal
+reinstatement as `TemporalStudyPlan`; repetition similarity as a public workflow is tracked by
+`eyesim-repetition`.
+
+### Plans, descriptors and codecs
+
+Plans are values; running one is an interpretation. There is no single analysis-plan ADT. As of
+2026-09-17 the executable vocabulary in `eyes4s-plan` is three concrete plan families sharing one
+shape — `description`, `diff`, `prerequisites`, `preflight`, `inspect`, `run` — with a shared plan
+interface and the remaining journey nodes tracked by `pl-analysis`:
+
+```scala
+// eyes4s-plan
+final class StudyPlan[K, U <: Unit2D, P, S, D] private (...):        // fixation-study contrast
+  def description: Vector[(String, Vector[Provenance.Param])]
+  def diff(that: StudyPlan[K, U, P, S, D]): Vector[PlanChange]
+  def prerequisites(available: Option[StudyInput[K, U]]): Vector[PlanError]
+  def preflight(available: Option[StudyInput[K, U]], budget: PairScheduleBudget = default)
+      : StudyReport[K, U]                        // availability and prerequisites, never Either
+  def inspect: Either[DescriptorError, RecipeInspection]
+  def prepare(available: StudyInput[K, U], budget: PairScheduleBudget = default)
+      : Either[PlanError, PreparedStudy[K, U, P, S, D]]
+  def run(available: StudyInput[K, U]): Either[PlanError, StudyResult[K, U, S, D]]   // via prepare
+object StudyPlan:
+  def of[K, U, P, S, D](input: ArtifactRef[StudyInput[K, U]], layout: StudyLayout[K], grid: Grid[U],
+                        focalPhase: String, referencePhase: String, weight: Weight,
+                        estimates: Vector[StudyEstimate[U]], policy: FailurePolicy,
+                        method: StudyMethod[P, U, S, D], parameters: P)
+                       (using UnitLabel[U]): Either[PlanError, StudyPlan[...]]
+  def cosine[U <: Unit2D](...): Either[PlanError, StudyPlan[StudyKey, U, ...]]   // the shipped method
+
+final class PreparedStudy[K, U <: Unit2D, P, S, D]:   // bound to one input; no maps or scores yet
+  val input: StudyInput[K, U];  val description;  val frameChecks: Vector[Either[StudyFailure[K], Unit]]
+  val matched:  DirectedPairSchedule[K, K]
+  val controls: DirectedPairSchedule[K, K]
+  val budget: PairScheduleBudget
+  def run: Either[PlanError, StudyResult[K, U, S, D]]   // refuses if the plan description changed
+
+final class RecordingPlan[P] private (...):            // raw Recording[Px] -> I-VT events -> AOI measures
+  def run(recording: Recording[Px]): Either[RecordingPlanError, RecordingAnalysis[P]]
+object RecordingMethod:  def ivt(id: DefinitionId): RecordingMethod[IvtParameters]
+
+final class TemporalStudyPlan[K, U <: Unit2D, P, S, D] private (...):   // windowed repetition contrasts
+  def run(...): Either[TemporalStudyError, TemporalStudyResult[K, U, P, S, D]]
+```
+
+`StudyMethod[P, U, S, D]` is the extension point: a stable `DefinitionId`, typed parameters `P`, a
+comparison built from them, `ScoreMean[S]` and `Contrastable[S, D]`. A `StudyLayout[K]` names the
+participant, stimulus and phase projections with a `KeyDigest[K]` and key ordering.
+`StudyInput[K, U]` is `Trials[K, M, Scanpath[U]]` behind a `ContentHash`, referenced from a plan
+only as `ArtifactRef` — loading JSON never reads files. `preflight` (UI-M3) answers the
+application's prerequisite query without running anything: each family returns a typed report
+of what is available and what is missing, on the same budget as `prepare`; `RecordingPlan.preflight`
+takes only the optional recording. See [preflight](docs/PREFLIGHT.md). Status (2026-09-17): I-DT
+and microsaccade `RecordingMethod` values are tracked by `pl-detect`. See
+[saved studies](docs/SAVED_STUDIES.md) and [extending studies](docs/EXTENDING_STUDIES.md).
+
+**Descriptors** make a plan inspectable without executing it and without a parameter bag:
+
+```scala
+final class MethodDescriptor[P, S, D] private (...)           // ParameterSet[P] + ScoreComponent[S, D]s
+final class ParameterDescriptor[R, A, E](...):                 // raw -> checked value, keeping the domain error
+  def parse(input: R): Either[ParameterFailure[R, E], A]
+final class RecordingMethodDescriptor[P](...)                 // carries the detector's AlgorithmCard
+object RecipeParameters:   // typed constructors: sigma[U], bounds[U], grid[U], frame[U], gaussian[U],
+                           // ivtThreshold, minimumDuration, interpolationGap, relativeWindow, studyWindow,
+                           // repetition, failurePolicy, weight, edges, syncMark, residualLimit, ...
+object RecipeDescriptors:  def study(plan), recording(plan), temporal(plan): Either[DescriptorError, RecipeInspection]
+```
+
+Every canonical description field has a stable id, version, meaning, units and constructor
+contract; inspection checks the descriptor against the executable method's declared parameters and
+score components and fails on a missing, extra or misencoded field. All shipped recipes report
+`ExecutionCapability.SynchronousWholeOperation`; bounded execution is the UI-X2 to UI-X6 series. See
+[method descriptors](docs/METHOD_DESCRIPTORS.md).
+
+**Codecs** live in `eyes4s-codec` (the only pure module with a circe dependency):
+
+```scala
+final class VersionedCodec[A] private (schema: DefinitionId, ...):
+  def encode(value: A): Either[CodecError, Json];  def decode(json: Json): Either[CodecError, A]
+object VersionedCodec:
+  def entries[K: Ordering, V](...)      // generic maps as arrays of typed entries; duplicate keys fail
+
+object DomainCodecs:                     // conditional codecs for the scientific vocabulary
+  def frame[U: UnitLabel](schema), grid[U: UnitLabel](schema), unit[U](...), clock(schema),
+      instant(schema), span(schema), interval(schema), window(schema), coverage(schema),
+      perspective(schema), syncMark(schema), synchronization(schema), identities(schema)
+final class DocumentIdentities:          // frames, grids and clocks a document declares once
+  def addFrame / addGrid / addClock;  def frame[U](id): Either[CodecError, Frame[U]]; ...
+
+final class StudyCodec[K, U, P, S, D](...)        // pairs a StudyMethod with key and parameter codecs
+final class StudyRegistry[K, U]                   // lookup by DefinitionId to a typed closure; no casts
+final class RecordingPlanCodec[P](...);  final class TemporalStudyCodec[K, U, P, S, D](...)
+```
+
+`Instant` and `Span` are decimal strings of signed 64-bit microseconds on the wire, so Scala.js
+cannot lose precision; geometry is finite JSON numbers. Schema id, method id, `ContentHash` and a
+future byte checksum are four distinct identities and none is a substitute for another. See
+[domain codecs](docs/DOMAIN_CODECS.md). Status (2026-09-17): serialising study inputs, normalised
+recordings, completed results and typed manifests is the UI-S2 to UI-S6 series
+(`bd-01M2N2QDV9JB6T6AYZG3D0TT3X` onward).
 
 ---
 
@@ -1154,23 +1473,33 @@ Following the `linop4s` / `graph4s` lineage: own repo, own `build.sbt`, top-leve
 directories, `tlCrossRootProject`, and the `checkModuleBoundaries` task copied verbatim so that no
 pure module can transitively acquire `cats-effect` or `fs2`.
 
-| Module | Depends on | Platforms | Contents |
+The table is the design; the **Status** column is the build at 7403401 (2026-09-17). Every built
+module cross-compiles for JVM and Scala.js; there is no Native axis in the build.
+
+| Module | Depends on | Status | Contents |
 |---|---|---|---|
-| `eyes4s-kernel` | cats-core | JVM/JS/Native | **no ocular vocabulary**: units, frames, warps, clocks, intervals, trajectories, point measures, grids, surfaces, regions, `Machine`, and the library's own `Module` |
-| `eyes4s-core` | kernel | JVM/JS/Native | the eye-specific layer: `Gaze`, `Sample`, `Recording`, `Eye`, `Fixation`, `Saccade`, `Blink`, `Pursuit`, `Scanpath`, `Viewing` |
-| `eyes4s-detect` | core | JVM/JS/Native | `Detector` instances, filters, I-VT / I-DT / Engbert–Kliegl / NH / I2MC |
-| `eyes4s-surface` | core | JVM/JS/Native | smoothers, bandwidth selection, pyramids, entropy |
-| `eyes4s-aoi` | core | JVM/JS/Native | AOI sets, dwell/entry/run statistics, transition matrices |
-| `eyes4s-compare` | core, surface, aoi | JVM/JS/Native | `Compare` hierarchy, alignment kernel, MultiMatch, ScanMatch, CRQA, distribution measures, Sinkhorn/sliced OT, saliency metrics |
-| `eyes4s-design` | core, compare | JVM/JS/Native | trials, pairings, baselines, contrasts, deterministic RNG |
-| `eyes4s-laws` | all pure modules + munit, scalacheck, discipline-munit (**main** deps) | JVM/JS/Native | rule sets: warp category, region Boolean algebra, surface module, metric axioms, kernel PSD, machine composition |
-| `eyes4s-gale` | core, design, gale-core | JVM/JS | SVD-backed adapters (PCA, CORAL, CCA); exact EMD later |
-| `eyes4s-graph4s` | aoi, graph4s-core | JVM/JS/Native | transition matrices as `Digraph[K]`, for graph algorithms |
-| `eyes4s-fs2` | core, detect, fs2, cats-effect | JVM/JS | `Machine.toPipe`, streaming windows, online detection |
-| `eyes4s-io` | fs2 module, circe | JVM/JS | EyeLink ASC, Tobii TSV, SMI, BIDS eye-tracking, CSV in/out, `Mirror`-derived metadata decoders |
-| `eyes4s-viz` | core, surface, intaglio | JVM/JS | plot specifications: scanpath, heat map, AOI overlay, pyramid, difference map with a zero-anchored diverging scale |
-| `eyes4s-frame4s` | frame4s-core | JVM/JS | optional projection of `Analysis` into a typed `Frame` |
-| `eyes4s-vwp` | core, aoi, design, plan | JVM/JS | deferred relational-attention consumer: entity traces, construal projection, preview and production alignment |
+| `eyes4s-kernel` | cats-core | built | **no ocular vocabulary**: units, frames, warps, clocks, intervals, timelines, sync evidence, point measures, grids, surfaces, regions, `Agreement`, `Machine`, and the library's own `Module` |
+| `eyes4s-core` | kernel | built | the eye-specific layer: `Gaze`, `Sample`, `Recording`, `BinocularRecording`, `Eye`, `Event`, `EventSeries`, `Scanpath`, `Viewing`, `TemporalSupport`, `WindowOccupancy` |
+| `eyes4s-detect` | core | built | `EventDetector`s with `AlgorithmCard`s and checked `Configuration`: I-VT / I-DT / Engbert–Kliegl; filters; `Merge`. NH and I2MC not implemented |
+| `eyes4s-surface` | core | built | Gaussian smoother with `SmootherCard`, bandwidth selection, pyramids |
+| `eyes4s-aoi` | core | built | `AoiSet` with `MembershipPolicy`, accounting-checked `AoiAssignment`, dwell/entry/run metrics, transition counts |
+| `eyes4s-compare` | core, surface, aoi | built | `Compare` hierarchy, alignment kernel, MultiMatch, ScanMatch, CRQA, distribution measures, Sinkhorn/sliced OT, `Saliency.nss` |
+| `eyes4s-design` | core, compare | built | trials, relations, pair designs, pair schedules, evaluation, reductions, contrasts, `KeyDigest`, deterministic RNG |
+| `eyes4s-plan` | design, detect | built | `StudyPlan`, `PreparedStudy`, `RecordingPlan`, `TemporalStudyPlan`, `MethodDescriptor`, `RecipeDescriptors` |
+| `eyes4s-codec` | plan, circe | built | `VersionedCodec`, `DomainCodecs`, `DocumentIdentities`, study / recording / temporal plan codecs and registries |
+| `eyes4s-laws` | kernel … codec + munit, scalacheck, discipline-munit (**main** deps) | built | rule sets: warp category, region Boolean algebra, surface module, metric axioms, machine composition, detector metamorphic laws, codec laws, contrast laws |
+| `eyes4s-fs2` | core, detect, plan, fs2, cats-effect | built | `Machine.toPipe` |
+| `eyes4s-io` | fs2 module, codec, fs2-io | built | EyeLink ASC (streaming, native records, sessions, conformance, edf2asc provenance), delimited fixation tables, tidy AOI results, contrast CSV, psychology workflow |
+| `eyes4s-gale` | core, design, gale-core | not built | SVD-backed adapters (PCA, CORAL, CCA); exact EMD later. No tracker item; see `eyesim-transform` |
+| `eyes4s-graph4s` | aoi, graph4s-core | not built | transition matrices as `Digraph[K]`, for graph algorithms. No tracker item |
+| `eyes4s-viz` | core, surface, intaglio | not built | plot specifications: scanpath, heat map, AOI overlay, pyramid, difference map with a zero-anchored diverging scale. Owned by the separate application (`docs/UI_APP_VISION.md`) |
+| `eyes4s-frame4s` | frame4s-core | not built | optional projection of `Analysis` into a typed `Frame`. No tracker item |
+| `eyes4s-vwp` | core, aoi, design, plan | not built | deferred relational-attention consumer: entity traces, construal projection, preview and production alignment. Tracked by `bd-01KYDZ8V30PVKAQ78PY2J9SNB2` |
+
+Two departures from the sketch are worth naming. Tobii, SMI and BIDS readers are not in `io`
+(BIDS 1.11 ingest is `bd-01M004XM43TEWJENBNBX29GWK1`; the `Mirror`-derived key reader is
+`io-csv`). And `plan` depends on `detect` as well as `design`, because `RecordingPlan` interprets
+typed I-VT parameters into a detector.
 
 Two boundaries are enforced mechanically, by a `checkModuleBoundaries` task that inspects the
 resolved dependency graph rather than by documentation:
@@ -1187,8 +1516,10 @@ effects, and no eyes.
 Build settings: Scala 3.3.8 LTS pinned as `val Scala3`, sbt 1.11.7, sbt-typelevel 0.8.7,
 `tlBaseVersion := "0.1"`, `tlJdkRelease := Some(11)`, Apache-2.0, org `io.github.canardlapin`,
 `.scalafmt.conf` copied from `linop4s` (scalafmt 3.11.4, `maxColumn = 96`, no optional-brace
-rewrite). `eyes4s-frame4s` carries a per-project `scalaVersion := 3.7.4` override for named tuples
-and is excluded from the Native axis; nothing else in the build is affected.
+rewrite). The kernel boundary is enforced by a second task, `checkKernelPurity`, which scans the
+kernel sources for a named ocular vocabulary in addition to the dependency-graph check.
+`eyes4s-frame4s` would carry a per-project `scalaVersion := 3.7.4` override for named tuples;
+since it is not built, nothing in the build is currently affected.
 
 ---
 
@@ -1198,6 +1529,17 @@ Examples elide constructors that the sections above name but do not spell out (`
 `Sigma.deg`, `Compare.fisherZ`, `Prior.centreBias`) and the unit literals `mm` / `ms` / `deg` /
 `degPerSec`. They do not elide error handling: where a signature returns `Either`, the example
 handles it.
+
+Status (2026-09-17): the examples are kept in the design's shorthand. Against the code, read
+`Frame.screen` / `Frame.angular` / `Grid.of` as `Either`-returning; `Warp.tangent(screen, fovea,
+perspective)` with a `Perspective` in place of `Viewing(mm(600), PhysicalScreen(...))`;
+`PointMeasure.fromScanpath(sp, w)` as `sp.occupancy(w)`; `Compare.fisherZ` as
+`Distribution.fisherZ`; `Detector.ivt` / `Filter.deblink` / `Merge.adjacentFixations` as the
+`Detectors.ivt`, `Filter.padMissing` + `interpolateGaps` and `Merge.adjacentFixations` signatures
+in Layer 2; and `AoiSet(fovea, ListMap(...))` as `AoiSet.of(Vector[Aoi[U]])` with an `AoiId` per
+area. `Saliency.shuffledAuc`, `Saliency.infoGain`, `Prior.centreBias` and `Warp.pipe` in examples 3
+and 4 are not implemented. The runnable form of example 1 is
+[docs/examples/StudyGuide.scala](docs/examples/StudyGuide.scala).
 
 ### 1. The `eyesim` flagship pipeline, correct by construction
 
@@ -1533,10 +1875,11 @@ is in [`PRD.md`](PRD.md) §Resolved Decisions; the outcomes that changed the des
 - **Frame checking (`q-scope`).** No `Scope` capability. Kernel binary operations stay `Either`-only;
   ergonomics come from `Session`, a checked container that validates frame membership on insertion
   and is therefore total on the way out. A capability value is forgeable; a container's contents were
-  validated on entry.
+  validated on entry. Status (2026-09-17): `Session` not implemented; tracked by `x-session`.
 - **Binocular (`q-binocular`).** `Recording` stays monocular; `BinocularRecording[U]` is a separate
   type with `left` / `right` / `cyclopean` projections and a vergence signal, landing at v0.3 so that
-  ASC ingest cannot silently drop an eye.
+  ASC ingest cannot silently drop an eye. Implemented (`c-binocular`); the vergence signal is
+  `disparity: Vector[(Instant, Vec2[U])]`, and the EyeLink ASC session materialiser builds it.
 - **Regions (`q-region-exact`).** Exact ADT; `contains` exact and resolution-independent, `area`
   parameterised by a `Grid`.
 - **Bandwidth (`q-sigma-units`).** `Sigma[U]` stays in frame units, with `Sigma.deg` the documented
@@ -1547,8 +1890,13 @@ is in [`PRD.md`](PRD.md) §Resolved Decisions; the outcomes that changed the des
 - **Plans (`q-plan-coverage`).** A fixed core vocabulary plus a typed extension registry —
   `NodeDef[P]` with a typed interpreter and conditionally registered versioned codec — where only
   lookup is by identifier. The generic codec carrier is refined by
-  `bd-01KYDZ5VDVS0E6SSKQJ8QH5EWJ`.
-- **CRQA (`q-crqa`).** Implemented properly, in v1.1, not v1.0.
+  `bd-01KYDZ5VDVS0E6SSKQJ8QH5EWJ`. Status (2026-09-17): there is no `NodeDef[P]` and no single
+  plan ADT. The decision is honoured per concrete family instead: `StudyMethod[P, U, S, D]` /
+  `RecordingMethod[P]` are the typed extension points, `StudyRegistry` / `RecordingRegistry` do
+  lookup-by-`DefinitionId` into typed closures, and `VersionedCodec` is the conditional codec. The
+  shared plan interface over the three families is tracked by `pl-analysis`.
+- **CRQA (`q-crqa`).** Implemented properly, in v1.1, not v1.0. Implemented ahead of that in
+  `compare.Crqa` (`cmp-crqa`).
 - **Laws packaging (`q-laws-publication`).** One `eyes4s-laws` module; revisit post-1.0 on real
   demand only.
 - **Application target (`q-app-target`).** A local JVM process serving a browser UI, decided by data
@@ -1563,7 +1911,9 @@ is in [`PRD.md`](PRD.md) §Resolved Decisions; the outcomes that changed the des
   policy-specific accounting laws.
 - **Generic persistence (`bd-01KYDZ5VDVS0E6SSKQJ8QH5EWJ`).** Generic domain and plan values require
   conditional versioned codecs for their user types. Keys encode as entries rather than JSON object
-  field names, and duplicate keys or missing schema versions fail explicitly.
+  field names, and duplicate keys or missing schema versions fail explicitly. Implemented as
+  `VersionedCodec.entries` and `DomainCodecs` in `eyes4s-codec`; see
+  [domain codecs](docs/DOMAIN_CODECS.md).
 
 Two build questions remain genuinely open and are tracked in the PRD rather than here: whether
 `eyes4s-frame4s` carries a per-project `scalaVersion := 3.7.4` override for named tuples (proposal:
