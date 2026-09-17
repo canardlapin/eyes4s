@@ -16,7 +16,7 @@
 
 package eyes4s.kernel
 
-import eyes4s.kernel.Unit2D.{Deg, Norm, Px}
+import eyes4s.kernel.Unit2D.Px
 
 import scala.compiletime.testing.typeCheckErrors
 

@@ -1418,9 +1418,10 @@ recordings, completed results and typed manifests is the UI-S2 to UI-S6 series
 | results with appended columns | tibble | `PairwiseAnalysis`, reduced `Analysis`, plus an export at the edge |
 | study metadata (subject, block, accuracy, RT) | tibble | **genuinely tabular** — schema unknown at library-compile time |
 
-Modelling the first three as a dataframe is what produces `x[, 1:2]` silently meaning
-`(index, x)`, nine parameter names for "the list-column", and `match_on` as a `character`. For the
-library's own representations the dataframe is the disease, not the cure.
+The first three have domain-specific representations so geometry, identity, pairing and failure
+contracts do not depend on callers remembering column positions or names. This does not rule out
+a typed dataframe for genuinely tabular work; no additional dataframe functionality is currently
+required by the shipped workflows.
 
 The fourth is real, and the Scala answer is not a dataframe but the user's own product type carried
 as a parameter:
@@ -1434,10 +1435,11 @@ val trials: Trials[Key, Meta, Scanpath[Unit2D.Deg]] = ...
 trials.filter(_.key.phase == Phase.Encoding)       // pairing dimensions live in the key
 ```
 
-eyes4s never inspects `Meta`; it carries it. Reading it from a study CSV is a `Mirror`-derived
-decoder in `eyes4s-io` (no dependency). Getting results back out — to R, in practice — is a CSV or
-Arrow writer, not a query engine. `frame4s` therefore becomes an optional *export adapter*, which
-also dissolves the LTS-vs-3.7.4 tension: core never needs named tuples.
+eyes4s never inspects `Meta`; it carries it. Current admission and result export use the typed
+CSV APIs; a general `Mirror`-derived metadata decoder and Arrow output remain separate work.
+`frame4s` is available for future tabular needs, but there is no present requirement for a
+dependency or adapter. The library uniformly uses Scala 3.7.4 by owner decision, independently
+of frame4s. An integration should follow a concrete workflow need, not the compiler choice.
 
 ### What actually needs an external library
 
@@ -1493,7 +1495,6 @@ module cross-compiles for JVM and Scala.js; there is no Native axis in the build
 | `eyes4s-gale` | core, design, gale-core | not built | SVD-backed adapters (PCA, CORAL, CCA); exact EMD later. No tracker item; see `eyesim-transform` |
 | `eyes4s-graph4s` | aoi, graph4s-core | not built | transition matrices as `Digraph[K]`, for graph algorithms. No tracker item |
 | `eyes4s-viz` | core, surface, intaglio | not built | plot specifications: scanpath, heat map, AOI overlay, pyramid, difference map with a zero-anchored diverging scale. Owned by the separate application (`docs/UI_APP_VISION.md`) |
-| `eyes4s-frame4s` | frame4s-core | not built | optional projection of `Analysis` into a typed `Frame`. No tracker item |
 | `eyes4s-vwp` | core, aoi, design, plan | not built | deferred relational-attention consumer: entity traces, construal projection, preview and production alignment. Tracked by `bd-01KYDZ8V30PVKAQ78PY2J9SNB2` |
 
 Two departures from the sketch are worth naming. Tobii, SMI and BIDS readers are not in `io`
@@ -1513,13 +1514,13 @@ Note what is *not* in the kernel: no `algebra` (the vector-space layer is define
 does, because per-grid `zero` is not a global constant), no `gale`, no `graph4s`, no `frame4s`, no
 effects, and no eyes.
 
-Build settings: Scala 3.3.8 LTS pinned as `val Scala3`, sbt 1.11.7, sbt-typelevel 0.8.7,
+Build settings: Scala 3.7.4 pinned as `val Scala3`, sbt 1.11.7, sbt-typelevel 0.8.7,
 `tlBaseVersion := "0.1"`, `tlJdkRelease := Some(11)`, Apache-2.0, org `io.github.canardlapin`,
 `.scalafmt.conf` copied from `linop4s` (scalafmt 3.11.4, `maxColumn = 96`, no optional-brace
 rewrite). The kernel boundary is enforced by a second task, `checkKernelPurity`, which scans the
 kernel sources for a named ocular vocabulary in addition to the dependency-graph check.
-`eyes4s-frame4s` would carry a per-project `scalaVersion := 3.7.4` override for named tuples;
-since it is not built, nothing in the build is currently affected.
+The packaged-artifact consumer uses the same Scala baseline. There is no module-specific
+compiler override and no frame4s adapter in the current scope.
 
 ---
 
@@ -1824,9 +1825,9 @@ an implementation is absent or complete.
 - **`graph4s`** — AOI transition digraphs, scanpath networks, connected components on thresholded
   maps. *Optional*: a transition matrix is a k×k array and `eyes4s-aoi` computes it unaided; the
   `Digraph[K]` projection lives in `eyes4s-graph4s` for users who want graph algorithms on it.
-- **`frame4s`** — typed local dataframe. *Optional export adapter only.* Study metadata is the user's
-  own product type carried as a parameter, so core needs no dataframe, no named tuples, and no
-  departure from the LTS or the Native axis. See "There is no dataframe in this design".
+- **`frame4s`** — typed local dataframe. Available if a concrete tabular workflow needs it;
+  no dependency or adapter is currently required. Study metadata remains the user's own product
+  type carried as a parameter. Both repositories use Scala 3.7.4, without implying an integration.
 - **`fmrihrf`** — HRF bases and convolution. The pupil response function is the same object under a
   different name; pupillometric deconvolution should borrow its basis machinery rather than
   re-derive it.
@@ -1915,8 +1916,7 @@ is in [`PRD.md`](PRD.md) §Resolved Decisions; the outcomes that changed the des
   `VersionedCodec.entries` and `DomainCodecs` in `eyes4s-codec`; see
   [domain codecs](docs/DOMAIN_CODECS.md).
 
-Two build questions remain genuinely open and are tracked in the PRD rather than here: whether
-`eyes4s-frame4s` carries a per-project `scalaVersion := 3.7.4` override for named tuples (proposal:
-yes, as the sole non-uniform module), and whether an R-parity harness is worth its maintenance cost
-(the original advisory policy is superseded by PRD V-4: verified shared conventions require
-agreement, intentional divergences need independent evidence, and baseline gaps remain visible).
+The compiler question is settled by the owner's 2026-09-17 decision: use Scala 3.7.4 uniformly,
+with no frame4s adapter needed at present (bead `bd-01M2R7AH4XBQVR0C9F1AGSZ74X`). The R-parity
+harness is also established: PRD V-4 requires agreement for verified shared conventions,
+independent evidence for intentional divergences, and visible baseline gaps.

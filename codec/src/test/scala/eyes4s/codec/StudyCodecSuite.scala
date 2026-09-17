@@ -16,7 +16,6 @@
 
 package eyes4s.codec
 
-import cats.syntax.all.*
 import eyes4s.compare.*
 import eyes4s.core.*
 import eyes4s.design.*

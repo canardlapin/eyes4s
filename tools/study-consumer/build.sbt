@@ -1,7 +1,10 @@
 import sbtcrossproject.CrossPlugin.autoImport._
 import scalajscrossproject.ScalaJSCrossPlugin.autoImport._
 
-ThisBuild / scalaVersion := "3.3.8"
+ThisBuild / scalaVersion := "3.7.4"
+// Match the JVM stdlib used by Scala.js macro dependencies to the compiler.
+ThisBuild / dependencyOverrides += "org.scala-lang" % "scala3-library_3" % scalaVersion.value
+
 ThisBuild / organization := "example"
 ThisBuild / version      := "0.1.0"
 

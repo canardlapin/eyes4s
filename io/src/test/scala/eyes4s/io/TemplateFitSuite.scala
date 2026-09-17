@@ -16,7 +16,6 @@
 
 package eyes4s.io
 
-import eyes4s.design.*
 import eyes4s.examples.TemplateFitGuide
 import io.circe.Json
 import munit.FunSuite

@@ -81,7 +81,8 @@ class DistributionSuite extends munit.FunSuite:
     // change: the divergence fails the triangle inequality, its square root
     // does not, and shipping it as a Metric would be false.
     val js: Semimetric[Mass[Px]] = Distribution.jensenShannon[Px]()
-    val errs                     = typeCheckErrors("""
+    assertEqualsDouble(js.compare(ramp, ramp).toOption.get.value, 0.0, 1e-12)
+    val errs = typeCheckErrors("""
       import eyes4s.compare.*
       import eyes4s.kernel.*
       import eyes4s.kernel.Unit2D.Px

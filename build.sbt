@@ -7,9 +7,9 @@ import scala.io.Source
 // Versions
 // ---------------------------------------------------------------------------
 
-// Scala 3 LTS. A library published from the LTS line is consumable from every
-// later 3.x; the reverse is not true. See bead fnd-build, PRD B-1.
-val Scala3 = "3.3.8"
+// Uniform compiler baseline, including downstream specimens. PRD B-1;
+// owner decision bead bd-01M2R7AH4XBQVR0C9F1AGSZ74X. No frame4s integration implied.
+val Scala3 = "3.7.4"
 
 // eyes4s-kernel's ONLY external dependency is cats-core. There is deliberately
 // no `algebra` and no Spire: `algebra` has no vector-space abstraction to
@@ -42,7 +42,11 @@ ThisBuild / developers       := List(
 
 ThisBuild / scalaVersion       := Scala3
 ThisBuild / crossScalaVersions := Seq(Scala3)
-ThisBuild / tlJdkRelease       := Some(11)
+// Scala.js macro dependencies can otherwise retain an older JVM stdlib alongside
+// the JS stdlib, colliding at scala.caps. Keep both on the compiler baseline.
+// https://github.com/scala/scala3/issues/22890
+ThisBuild / dependencyOverrides += "org.scala-lang" % "scala3-library_3" % Scala3
+ThisBuild / tlJdkRelease                           := Some(11)
 
 ThisBuild / githubWorkflowJavaVersions := Seq(
   JavaSpec.temurin("17"),

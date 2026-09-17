@@ -31,6 +31,10 @@ verified directly in this repository or in `~/code/eyesim`.
 
 ### Scala platform
 
+The observations below describe the original July baseline. The owner's 2026-09-17 decision
+supersedes the compiler choice: eyes4s now targets Scala 3.7.4 uniformly (B-1), independently
+of any future frame4s integration. No frame4s adapter is currently required or scheduled.
+
 - Scala publishes two lines: an LTS line at 3.3.8 and a Scala Next line, with LTS recommended for
   published libraries.
 - The sibling `4s` libraries (`linop4s`, `graph4s`) pin `val Scala3 = "3.3.8"`, sbt 1.11.7,
@@ -284,7 +288,7 @@ eyes4s/
   io/            eyes4s-io        JVM+JS   fs2 module
 ```
 
-Deferred beyond v1.0: `eyes4s-gale`, `eyes4s-graph4s`, `eyes4s-viz`, `eyes4s-frame4s`,
+Deferred beyond v1.0: `eyes4s-gale`, `eyes4s-graph4s`, `eyes4s-viz`,
 `eyes4s-vwp`.
 
 `eyes4s-plan` and `eyes4s-codec` exist because of §Application-Layer Requirements. They are the
@@ -989,8 +993,10 @@ any parallel execution is an explicit caller choice.
 
 ## Cross-Platform Build Requirements
 
-**B-1.** Scala 3.3.8 LTS, pinned as `val Scala3` at the top of `build.sbt`. `crossScalaVersions :=
-Seq(Scala3)`.
+**B-1.** Scala 3.7.4, pinned as `val Scala3` at the top of `build.sbt`. `crossScalaVersions :=
+Seq(Scala3)`. The isolated packaged-artifact consumer uses the same compiler baseline. New
+artifacts do not promise compatibility with Scala 3.3 consumers. This is a uniform compiler
+choice, not a requirement to introduce named tuples, frame4s, or a dataframe adapter.
 
 **B-2.** sbt 1.11.7, sbt-typelevel 0.8.7, `tlCrossRootProject`, `tlBaseVersion := "0.1"`,
 `tlJdkRelease := Some(11)`.

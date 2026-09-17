@@ -16,7 +16,7 @@
 
 package eyes4s.kernel
 
-import eyes4s.kernel.Unit2D.{Deg, Norm, Px}
+import eyes4s.kernel.Unit2D.{Norm, Px}
 
 import scala.compiletime.testing.typeCheckErrors
 
@@ -37,7 +37,7 @@ class WarpSuite extends munit.FunSuite:
 
   val toDeg = Warp.tangent(screen, angular, persp)
 
-  private def close(a: Double, b: Double, eps: Double = 1e-9): Boolean =
+  private def close(a: Double, b: Double, eps: Double): Boolean =
     math.abs(a - b) <= eps
 
   // -------------------------------------------------------------------------

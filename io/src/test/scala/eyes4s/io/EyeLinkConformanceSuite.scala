@@ -101,7 +101,7 @@ class EyeLinkConformanceSuite extends munit.FunSuite:
       .create(fixture, artifact, digest)
       .fold(error => fail(error.message), identity)
     EyeLinkConformanceManifest
-      .create(operand, values.toVector.map((fact _).tupled))
+      .create(operand, values.toVector.map(fact.tupled))
       .fold(errors => fail(errors.toVector.map(_.message).mkString("\n")), identity)
 
   private def semantic(
