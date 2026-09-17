@@ -1146,8 +1146,10 @@ def contrast[K, S, D](matched: Analysis[K, S], control: Analysis[K, S])(
 ): Either[ContrastError[K], Contrast[K, S, D]]
 ```
 
-`Relation` is structural, not a predicate hidden behind `accepts`. `SameOn` can therefore execute as
-a hash join, a plan can persist its named projections, and diagnostics can name the clause that
+`Relation` is structural, not a predicate hidden behind `accepts`. `SameOn` executes with a typed
+hash index on the first equality conjunct, restricting candidates before the full relation is
+tested. This strategy is shared by exhaustive, sampled and within-collection pairing and preserves
+right-source order. A plan can persist its named projections, and diagnostics can name the clause that
 excluded an edge. Pair-design inhabitants encode the semantic dependencies: self policy exists only
 within one collection, per-focal selection exists only for directed pairs, and canonical-undirected
 evaluation requires `SymmetricCompare`.
@@ -1254,8 +1256,12 @@ def evaluateScheduled[KL, KR, E, S](schedule: DirectedPairSchedule[KL, KR], inpu
 Cursors are immutable, pages never imply completion until `Done` carries the full pairing report,
 and `PairScheduleBudget.of(sourceRows, candidatePairs, selectedPairs)` refuses oversized operands
 by name instead of truncating. Bottom-k sampling is per focal key and keeps its own loop with the
-same diagnostics; within-collection pairing still enumerates on its own (folding it into the
-schedule is tracked by `bd-01M2QN4YZZY9Q18VGGT2P1MW4F`). The detail is in
+same diagnostics. `WithinPairSchedule.directed` and `.canonicalUndirected` now use the same
+exhaustive engine as between-collection scheduling and pure `pair` calls. The former retains
+separate incoming/outgoing diagnostics; the latter stores edges in original source-position order
+and reports keys with no incident edge. Both retain explicit self policy and duplicate quarantine.
+This closes the traversal residual `bd-01M2QN4YZZY9Q18VGGT2P1MW4F`; it does not add within designs
+to the saved `StudyPlan` vocabulary or promise resumable bottom-k selection. The detail is in
 [saved studies](docs/SAVED_STUDIES.md) under "Prepare a study and inspect its pair schedule".
 
 Domain adaptation (`eyesim`'s latent transforms) gets a real fit/apply split, with the change of

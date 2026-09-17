@@ -21,7 +21,7 @@ import org.scalacheck.Gen
 import org.scalacheck.Prop
 import org.scalacheck.Prop.forAll
 
-/** Laws for the single between-collection pairing path.
+/** Laws for the shared exhaustive pairing path.
   *
   * The oracle here is a deliberately naive brute force over keys: it shares no
   * code with [[PairConstruction]] or [[DirectedPairSchedule]]. Generated
@@ -175,5 +175,80 @@ class PairConstructionLawSuite extends ScalaCheckSuite:
           selectedByLeft.getOrElse(l, 0) == math.min(cap, n)
         }) :|
           "counts"
+    }
+  }
+
+  private val genWithinRelation: Gen[Relation[Key, Key]] = Gen.oneOf(
+    matched.relation,
+    controls.relation,
+    Relation.all[Key, Key],
+    Relation.SameOn(
+      Projection.named[Key, Int]("occurrence")(_.occurrence),
+      Projection.named[Key, Int]("nextOccurrence")(_.occurrence + 1)
+    )
+  )
+
+  property("within schedules and pure pairing match an independent source-position oracle") {
+    forAll(
+      genTrials,
+      genWithinRelation,
+      Gen.oneOf(SelfPolicy.values.toSeq),
+      Gen.oneOf(true, false),
+      Gen.oneOf(1, 2, 3, 7, 1024)
+    ) { (trials, relation, self, undirected, quantum) =>
+      // No production grouping, eligibility enumeration or diagnostic helpers.
+      val rows     = trials.rows
+      val usable   = rows.indices.filter(i => rows.count(_.key == rows(i).key) == 1).toVector
+      val expected = for
+        l <- usable
+        r <- usable
+        if (if undirected then l < r || (self == SelfPolicy.Include && l == r)
+            else self == SelfPolicy.Include || l != r)
+        if relation.accepts(rows(l).key, rows(r).key)
+      yield l -> r
+      val unmatchedLeft = usable
+        .filterNot(i => expected.exists { case (l, r) => l == i || (undirected && r == i) })
+        .map(rows(_).key)
+      val unmatchedRight = usable
+        .filterNot(i => expected.exists { case (l, r) => r == i || (undirected && l == i) })
+        .map(rows(_).key)
+      val duplicated = rows.map(_.key).distinct.flatMap { key =>
+        val indices = rows.indices.filter(i => rows(i).key == key).toVector
+        Option.when(indices.size > 1)(key -> indices)
+      }
+      val ambiguities = duplicated.map { case (key, indices) =>
+        PairingAmbiguity.DuplicateLeft[Key, Key](key, indices)
+      } ++ duplicated.map { case (key, indices) =>
+        PairingAmbiguity.DuplicateRight[Key, Key](key, indices)
+      }
+      val paired = if undirected then pair(trials, PairDesign.WithinUndirected(relation, self))
+      else pair(trials, PairDesign.WithinDirected(relation, self, Selection.All))
+      val schedule = get(if undirected then
+        WithinPairSchedule.canonicalUndirected(rows.map(_.key), relation, self)
+      else WithinPairSchedule.directed(rows.map(_.key), relation, self))
+      val pages = Vector.newBuilder[ScheduledPair[Key, Key]]
+      val q     = get(PairQuantum.of(quantum))
+      @annotation.tailrec
+      def drain(cursor: PairCursor[Key, Key]): PairingReport[Key, Key] =
+        get(cursor.advance(q)) match
+          case PairPage.More(pairs, work, next) =>
+            assert(work > 0 && work <= quantum)
+            pages ++= pairs
+            drain(next)
+          case PairPage.Done(pairs, work, report) =>
+            assert(work >= 0 && work <= quantum)
+            pages ++= pairs
+            report
+      val report = drain(schedule.start)
+      Prop(pages.result().map(p => p.leftIndex -> p.rightIndex) == expected) :| "positions" &&
+      Prop(paired.pairs == expected.map { case (l, r) =>
+        rows(l) -> rows(r)
+      }) :| "pure pairs" &&
+      Prop(report == paired.diagnostics) :| "same report" &&
+      Prop(report.unmatchedLeft == unmatchedLeft) :| "unmatched left" &&
+      Prop(report.unmatchedRight == unmatchedRight) :| "unmatched right" &&
+      Prop(report.ambiguous == ambiguities) :| "all duplicate occurrences" &&
+      Prop(report.eligiblePairCount == expected.size.toLong) :| "eligible count" &&
+      Prop(report.selectedPairCount == expected.size) :| "selected count"
     }
   }

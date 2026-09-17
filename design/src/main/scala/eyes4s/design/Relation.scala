@@ -79,6 +79,25 @@ sealed trait Relation[L, R]:
 
 object Relation:
 
+  /** Restrict enumeration using the first equality conjunct, preserving right
+    * source order. The complete relation remains the residual filter: this is
+    * an execution strategy, not a second definition of eligibility. Capturing
+    * each SameOn's V inside its typed map avoids erased composite join keys.
+    * No equality conjunct means the original exhaustive candidate space.
+    */
+  private[design] def candidates[L, R, A](
+      relation: Relation[L, R],
+      right: Vector[A],
+      key: A => R
+  ): L => Vector[A] =
+    def indexed(node: Relation[L, R]): Option[L => Vector[A]] = node match
+      case SameOn(leftProjection, rightProjection) =>
+        val groups = right.groupBy(value => rightProjection(key(value)))
+        Some(left => groups.getOrElse(leftProjection(left), Vector.empty))
+      case And(a, b) => indexed(a).orElse(indexed(b))
+      case _         => None
+    indexed(relation).getOrElse(_ => right)
+
   /** Every pair is eligible. */
   final case class All[L, R]() extends Relation[L, R]:
     def accepts(l: L, r: R): Boolean = true
