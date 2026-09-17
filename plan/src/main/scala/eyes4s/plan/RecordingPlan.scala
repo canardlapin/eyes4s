@@ -87,6 +87,10 @@ final class RecordingPlan[P] private (
 ):
   def inspect: Either[DescriptorError, RecipeInspection] = RecipeDescriptors.recording(this)
 
+  /** Typed availability report; see [[Preflight.recording]]. */
+  def preflight(available: Option[Recording[Px]]): RecordingReport =
+    Preflight.recording(this, available)
+
   def description: Vector[(String, Vector[Provenance.Param])] =
     import Provenance.Param.*
     Vector(
@@ -135,11 +139,7 @@ final class RecordingPlan[P] private (
         )
       }
   def diff(other: RecordingPlan[P]): Vector[PlanChange] =
-    val left = description.toMap; val right = other.description.toMap
-    (left.keySet ++ right.keySet).toVector.sorted.collect {
-      case k if left.get(k) != right.get(k) =>
-        PlanChange(k, left.getOrElse(k, Vector.empty), right.getOrElse(k, Vector.empty))
-    }
+    PlanChange.between(description, other.description)
   def prerequisites(available: Option[Recording[Px]]): Vector[RecordingPlanError] =
     val artifact = available match
       case None => Vector(RecordingPlanError.Input(PlanError.MissingArtifact(input.digest)))
