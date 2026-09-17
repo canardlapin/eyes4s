@@ -6,14 +6,14 @@ revision is `ecb9c496257bce51acd5330af6a5e7a8d5b84e05`.
 input digest, and conventions. [Regeneration instructions](tools/r-parity/README.md) reproduce the
 public R calls from an isolated installation of that revision.
 
-The executable [capability inventory](tools/r-parity/baseline.json) currently classifies 21 cases
+The executable [capability inventory](tools/r-parity/baseline.json) currently classifies 24 cases
 across all 13 required rows:
 
 | Status | Cases | Meaning |
 |---|---:|---|
-| Verified equivalent | 2 | Exhaustive matched/control cosine on the pinned fixed-grid study; supplied coordinate transforms (center, rescale, normalize) with an exact affine oracle. |
-| Verified intentional divergence | 3 | Matched/control failure semantics, windowed duration-mass analysis, and typed current result exports. |
-| Implementation gap | 16 | Each case names a live task and selected falsification input; no parity is claimed. |
+| Verified equivalent | 4 | Exhaustive matched/control cosine on the pinned fixed-grid study; supplied coordinate transforms (center, rescale, normalize) with an exact affine oracle; entropy of supplied positive maps; the two-map mean and difference. |
+| Verified intentional divergence | 5 | Matched/control failure semantics, windowed duration-mass analysis, typed current result exports, the log ratio at zero cells and the absent product, and signed maps treated as mass. |
+| Implementation gap | 15 | Each case names a live task and selected falsification input; no parity is claimed. |
 
 ## Verified R reference and analytic results
 
@@ -53,6 +53,31 @@ no-translation mutants are oracle values only: eyesim has no coordinate affine e
 resample densities; the fixture records their response to coordinate tables, and eyes4s does not
 implement them (gap `eyesim-transform`).
 
+### Entropy and map arithmetic
+
+[entropy.json](tools/r-parity/fixtures/entropy.json) pins the public `fixation_entropy`
+(`entropy_from_mass` through both the `eye_density` and `density` methods) and `Ops.eye_density`
+on hand-built `eye_density` objects over the two-by-two lattice in
+[baseline-cases.json](tools/r-parity/fixtures/baseline-cases.json): `mass_p` `[1/2, 1/4, 1/4, 0]`
+with a zero cell, the uniform `mass_q`, the all-positive `mass_r`, the count map `[2, 1, 1, 0]`
+and the signed vector `[0.5, -0.25, 0.75, 0]`.
+`kernel/src/test/scala/eyes4s/kernel/EntropyConformanceSuite.scala` consumes the generated
+`EntropyFixtures` on JVM and Scala.js.
+
+| Case at the pinned revision | Observed eyesim behavior | eyes4s contract and evidence |
+|---|---|---|
+| Entropy of a positive map, both bases, `normalize` true and false | `mass_p` gives 1.5 bits (0.75 relative), `mass_q` 2 bits, `mass_r` 1.84644 bits; the count map gives `mass_p`'s values; the `density` class gives the same numbers. | `Mass.entropy` and `relativeEntropy` agree with eyesim and with a 60-digit decimal oracle to `1e-12` ("entropy and relative entropy on positive maps equal eyesim and the oracle in both bases", "an unnormalised count map normalises to the entropy eyesim computes from the counts"). **Verified equivalent.** |
+| `+` and `-` on `mass_p`, `mass_q` | `+` is the two-map mean `[0.375, 0.25, 0.25, 0.125]` classed `eye_density_add`; `-` is `[0.25, 0, 0, -0.25]` classed `eye_density_delta`; neither carries a `sigma`. | `Mass.mean` and `Mass.difference` coincide cell by cell and with the exact rationals; the difference is typed `Signed` ("eyesim + is the two-map mean ...", "eyesim - is the cell-wise difference ..."). **Verified equivalent.** |
+| `/` on `mass_r`, `mass_q` and on `mass_p`, `mass_q` | `log(e1/e2)` with no floor: `r / q` is finite everywhere; at `mass_p`'s zero cell `p / q` is `-Inf`, `q / p` is `Inf`, `p / p` is `NaN`. | `Mass.logRatio` agrees to `1e-12` wherever eyesim is finite; at the zero cell it floors both cells at `1e-12` (`log(1e-12 / 0.25) = -26.2447`), and `floor = 0.0` is refused as `NonFiniteValue` ("at a zero cell eyesim / is -Inf, Inf or NaN; eyes4s floors both cells at 1e-12 and stays finite"). **Verified intentional divergence.** |
+| `*` and a shifted lattice | `*` stops with `undefined operation`; a map whose `x` differs stops in `stopifnot` with `all(e1$x == e2$x) is not TRUE`. | No product typechecks; a second grid returns `GridMismatch` ("eyesim * stops ...", "a shifted lattice ..."). **Verified intentional divergence.** |
+| `fixation_entropy` on `mass_p - mass_q` | `NA`: the total is exactly zero, within `.Machine$double.eps`. | `difference(...).entropy()` does not typecheck; `Surface.mass` and `Surface.intensity` return `NegativeValue(3, -0.25)` ("an exact difference map: ..."). **Verified intentional divergence.** |
+| `fixation_entropy` on the signed vector | 0.5623 nats, 0.8113 bits, 0.4056 relative: the positive cells `0.5` and `0.75` over the signed total `1.0`, so the "probabilities" sum to 1.25. The fixture's labelled reading of the formula reproduces the number. | `Surface.mass` and `Surface.intensity` return `NegativeValue(1, -0.25)`; `Signed` has no entropy ("a signed map with positive total: ..."). **Verified intentional divergence.** |
+| `fixation_entropy` on `p / q` and `p / p` | `p / q` gives exactly 0 in every base: the `-Inf` cell is dropped and the single positive finite cell holds all the mass. `p / p` gives `NA`: its finite cells sum to zero. | The log ratio is `Signed` and has no entropy ("the log-ratio map: ..."). **Verified intentional divergence.** |
+
+The eyesim `fixation_entropy.fixation_group` (density and grid methods) and
+`fixation_entropy.eye_density_multiscale` entry points are not pinned here; the density method
+depends on the KDE row, and both remain gap `eyesim-entropy`.
+
 ## Cases that must remain distinguishable
 
 | Case at the pinned revision | Observed eyesim behavior | eyes4s contract and evidence |
@@ -78,14 +103,16 @@ the owning task is in the last column.
 | Case | eyesim at the pinned revision (source reading) | eyes4s contract and evidence | Status |
 |---|---|---|---|
 | Kernel bandwidth and lattice | `eye_density.fixation_group` passes `sigma` as `H = diag(sigma^2)` to `ks::kde` when `kde_pkg = "ks"`, so `sigma` is a standard deviation there. The `MASS::kde2d` and `kde2d_weighted` fallbacks receive the same `sigma` as `h`, and both divide `h` by four before use, so the effective standard deviation is `sigma/4`; `MASS::kde2d` also ignores weights. Both engines evaluate the continuous kernel on an inclusive-endpoint lattice of `outdim` points (bounds 0 to 100 with `outdim` 5 evaluate at 0, 25, 50, 75, 100), then sum-normalise and `zapsmall`. Off-grid mass is simply never evaluated; there is no edge option. `suggest_sigma` is the root mean square of the two `IQR/1.349` spreads times `n^(-1/6)`, clamped to 1% to 15% of the mean display extent, and `NA` below two points. | `Smoother.gaussian` takes `Sigma` as a standard deviation in frame units, with one meaning everywhere (SmootherCardSuite "the Gaussian card states its bandwidth convention and every edge policy"). Fixations are binned to cell centres, then convolved with a separable discrete kernel truncated at `ceil(3 sigma)` cells and normalised per axis. `EdgePolicy` is a required argument, and `Truncate` and `Renormalise` are pinned to disagree at the edge (SmootherSuite "at the edge the two policies genuinely disagree, which is why it is required"). A `sigma` below a fifth of the cell size is refused as `DegenerateBandwidth` (SmootherSuite "a kernel narrower than the grid can express is refused, with a reason"). `Bandwidth.silverman` and `Bandwidth.scott` take the narrower axis of `min(sd, IQR/1.349)` times `n^(-1/6)` (factor 1.0 or 1.06), drop a zero-spread axis and never clamp (SmootherSuite "a cloud degenerate in one axis still yields a bandwidth", "Scott's rule is wider than Silverman's on the same data"). | **Implementation gap: `eyesim-kde`.** Divergent by construction, unverified: the two eyesim engines disagree with each other by a factor of four on the same `sigma`, both use a point lattice where eyes4s uses cell centres and a truncated discrete kernel, and the two rules both called Silverman compute different numbers. The two-by-two multiscale fixture cannot detect any of this. Settling fixture: the 5-by-3 density case in [baseline-cases.json](tools/r-parity/fixtures/baseline-cases.json) run under both `kde_pkg` values with the locked `ks` and `MASS` versions, plus pinned `suggest_sigma` output. |
-| Map arithmetic (`Ops.eye_density`) | `Ops.eye_density` requires identical lattices and defines `-` as the cell-wise difference `e1$z - e2$z`, `+` as the two-map mean `(e1$z + e2$z)/2`, and `/` as the natural-log ratio `log(e1$z/e2$z)` with no floor, so a zero cell yields `-Inf`, `Inf` or `NaN`; `*` stops with "undefined operation". Every result is classed `eye_density` (with a `delta`, `add` or `div` subclass), carries no `sigma`, and is not renormalised. | `Mass.mean` is k-way and returns a `Mass` checked to unit total; `Mass.difference` and `Mass.logRatio(floor = 1e-12)` return `Signed`; signed surfaces add, negate and scale through `Grid.signedModule`. There are no operator spellings and no product. Evidence: OccupancySuite "difference of two masses is signed, sums to zero, and is typed Signed", "log ratio is named for what it is, and is zero for identical masses", "the mean of masses is a mass"; the OccupancyLaws `surface.mass` and `surface.module` rule sets. | **Implementation gap: `eyesim-entropy`.** By formula the two-map mean and the difference coincide, and the log ratio coincides only where both cells exceed `1e-12`; eyesim's non-finite cells against eyes4s's floored finite values is an intended divergence, but no pinned R operator output exists, so nothing here is verified. Settling fixture: R `+`, `-` and `/` output on `mass_p` and `mass_q` from `baseline-cases.json` (`mass_p` has a zero cell) beside the typed eyes4s results. |
-| Signed maps treated as mass | Any `eye_density`-classed object, including `-` and `/` results, is accepted by `similarity.density` and `fixation_entropy.eye_density` without a sign check. `entropy_from_mass` divides by the signed total, keeps only the positive cells, and normalises by the log of the count of all finite cells. It returns `NA` only when the total is within machine epsilon of zero, which an exact difference of two normalised maps is; a signed map with positive total, such as the pinned `signed` vector `[0.5, -0.25, 0.75, 0]`, returns a finite entropy computed from its positive cells alone. | `Surface.mass` and `Surface.intensity` reject negative values with `SurfaceError.NegativeValue`; `Signed` is a distinct type with no `entropy`, no `normalised` and no comparator, since every `Distribution`, `Transport` and `Lift` comparison takes `Mass`. Evidence: OccupancySuite "entropy on a signed surface does not compile", "a negative value cannot become an Intensity", "signed surfaces form a module over the grid"; OccupancyLaws "every mass is non-negative". | **Implementation gap: `eyesim-entropy`.** The type-level refusal is intentional and pinned on the eyes4s side; the eyesim side is a source reading with no pinned output. Settling fixture: R `fixation_entropy` and `similarity` output on the pinned `signed` vector and on `mass_p - mass_q`, recorded as reference behaviour that eyes4s refuses by type. |
+| Signed maps in `similarity.density` | Any `eye_density`-classed object, including `-` and `/` results, is accepted by `similarity.density` without a sign check, so a difference or log-ratio map can be correlated, cosined or transported as if it were mass. | Every `Distribution`, `Transport` and `Lift` comparison takes `Mass`; `Signed` has no comparator (OccupancySuite "entropy on a signed surface does not compile"; the compare suites take `Mass` only). | **Implementation gap: `eyesim-compare`.** The entropy fixture pins `fixation_entropy` on signed maps but does not call `similarity`. Settling fixture: R `similarity` output on `mass_p - mass_q` and on the pinned `signed` vector for every method, recorded as reference behaviour that eyes4s refuses by type. |
 | Permutation baseline construction | `run_similarity_analysis` and its fast cosine path take as candidates the matched reference indices of the source rows in the `permute_on` stratum (all source rows without `permute_on`), so a reference matched by several source rows is counted several times. When `permutations` is below the candidate count, `sample(candidates, permutations)` runs before the true match is removed, so the realised `n_perm` is `permutations` or `permutations - 1`, and a cap of one can leave no control (`perm_sim = NA`, `n_perm = 0`). The baseline is the arithmetic mean of the remaining similarities with `na.rm = TRUE`, and `eye_sim_diff = eye_sim - perm_sim`. The general path draws under `furrr_options(seed = TRUE)`, which derives streams from the session RNG rather than a fixed seed; the fast cosine path calls `sample` directly. | Controls are an explicit `Relation`, so the match is never a candidate. `Selection.All` enumerates every eligible pair; `Selection.BottomK(cap, seed, sampleId)` ranks eligible candidates by a keyed hash of seed, sample id, focal key and candidate key and takes the lowest `cap`, so the realised count is `min(cap, eligible)`, independent of row order, and a larger cap is a superset. Seed and sample id are written into provenance. The reduction is `ScoreMean` under an explicit `FailurePolicy`; an empty selection is `NoSelectedScores`. `PairScheduleBudget.default` is unbounded. Evidence: MatchedControlSuite "selected pairs and reductions agree with rational enumeration and pinned eyesim"; PairDesignSuite "raising the cap yields a SUPERSET, never a different sample", "the realised count is min(cap, eligible), and knowable in advance", "a distinct seed gives an independent field too". | **Verified equivalent for the exhaustive baseline only:** `permutations = 100` over two eligible controls reproduces `n_perm = 2` and every `perm_sim` in the table above. **Implementation gap: `eyesim-sampling`** for any finite cap. eyesim caps before excluding the match and eyes4s excludes before capping, the priorities are unrelated, and no cross-language RNG identity is claimed. Settling fixture: the cap-of-one case in `baseline.json` run in R under a recorded `set.seed`, pinning the realised `n_perm` (0 or 1) against the eyes4s constant 1. |
 
-The eyesim readings come from `R/similarity.R`, `R/density.R` and `R/entropy.R` at the pinned
-revision and from the `MASS` version in the environment lock. The eyes4s readings come from
-`surface/Smoother.scala`, `kernel/Surface.scala`, `kernel/Module.scala`, `design/Relation.scala`
-and `design/Analysis.scala` at the current revision.
+The eyesim readings come from `R/similarity.R` and `R/density.R` at the pinned revision and from
+the `MASS` version in the environment lock. The eyes4s readings come from `surface/Smoother.scala`,
+`design/Relation.scala`, `design/Analysis.scala` and the compare suites at the current revision.
+Map arithmetic and signed maps in `fixation_entropy` left this table on 2026-09-17 when
+[entropy.json](tools/r-parity/fixtures/entropy.json) pinned them; see
+[Entropy and map arithmetic](#entropy-and-map-arithmetic). The `similarity` half of the signed-map
+reading stays above as its own row.
 
 ## Scope of Scala conformance
 
@@ -99,9 +126,9 @@ The production `contrast` operation reproduces all six stored scalar differences
 signed components of the analytic score fixture. The five-component fixture checks component-wise
 means and subtraction; it is not a new MultiMatch algorithm conformance claim. See [the contrast contract](docs/CONTRAST_CONTRACT.md).
 
-General KDE bandwidth/edge equivalence, map arithmetic, signed-map handling, finite control
-sampling (the residual table above), eyesim temporal template-density sampling, template-model
-fitting, real study-data coverage, and the remaining
+General KDE bandwidth/edge equivalence, finite control sampling (the residual table above),
+fixation-group and multiscale entropy inputs, eyesim temporal template-density sampling,
+template-model fitting, real study-data coverage, and the remaining
 [capability baseline](docs/EYESIM_CAPABILITIES.md) still require their own reference fixtures.
 Historical eyesim bug descriptions outside this report have not been revalidated by this slice.
 Earlier Python MultiMatch fixtures remain a separate conformance programme.
@@ -228,5 +255,14 @@ Java 17/21 matrix was not run. Local artifact publication is not a remote releas
   with every public `center`, `rescale` and `normalize` output.
 - `check_baseline.py --eyesim ... --mote` validated all 13 rows and 21 classified cases (two
   verified equivalent, three intentional divergences, sixteen gaps).
+- After the entropy and map-arithmetic fixture: `generate_entropy.py --eyesim ... --check`
+  reinstalled the pinned eyesim archive and reproduced `fixtures/entropy.json` and
+  `EntropyFixtures.scala` byte for byte, with the rational and decimal oracle agreeing with every
+  finite eyesim value; `generate_transforms.py --check` reproduced the regenerated transform
+  artifacts for the new `baseline-cases.json` digest. `EntropyConformanceSuite` (15 tests) passed on
+  `kernelJVM` and `kernelJS`; the root `clean test` matrix passed **2,414 test executions** across
+  24 module runs; `scalafmtCheckAll`, `headerCheckAll` and `checkBoundaries` passed;
+  `check_baseline.py --eyesim ... --mote` validated 13 rows and 24 classified cases (four verified
+  equivalent, five intentional divergences, fifteen gaps).
 
 These are local results. Hosted Java 17/21 CI and remote publication were not run.

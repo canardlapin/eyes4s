@@ -11,8 +11,8 @@ python3 tools/r-parity/check_baseline.py \
   --mote
 ```
 
-The contract currently contains 13 required rows and 21 classified cases: two verified equivalent,
-three verified intentional divergences and sixteen implementation gaps. This is a finite work list,
+The contract currently contains 13 required rows and 24 classified cases: four verified equivalent,
+five verified intentional divergences and fifteen implementation gaps. This is a finite work list,
 not a parity percentage. A row remains open while any required case is a gap.
 
 ## Reference and classification
@@ -65,7 +65,7 @@ export/reimport boundary.
 | Describe and compare scanpaths (`scanpath-multimatch`, `fixation-overlap-and-transport`) | `scanpath`, `scanpath_similarity`, `multi_match`, `fixation_similarity`, `fixation_overlap`; MultiMatch vector/direction/length/position/duration plus eyesim's position EMD, and overlap/Sinkhorn with explicit thresholds, time step and metric. | `Scanpath`, `Alignment`, `MultiMatch`, `Transport`, `Lift`; existing Python MultiMatch conformance is kept separate from eyesim evidence. | **Gaps — `eyesim-scanpath`.** The pinned R MultiMatch, overlap and transport cases remain unmeasured. |
 | Estimate and sample density (`kde-estimation-and-bandwidth`, `density-point-evaluation`) | `eye_density`, `density_by`, `get_density`, `gen_density`, `suggest_sigma`, `sample_density`; weighted KDE or normalized mass on an explicit grid, then deterministic point evaluation. Pin `ks` versus `MASS`, sigma, bounds, outdim, window, minimum fixations, edges, interpolation and none/max/sum/zscore normalization. | `PointMeasure`, Gaussian `Smoother`, `Bandwidth`, `Grid`, `Mass`, `Intensity`, `Surface.sampleAt`; a 5-by-3 adversarial input is selected. | **Gaps — `eyesim-kde`**; public surface totality (`Surface.at`, `Grid.indexAt`/`cellCentre` returning `Option`) is delivered. |
 | Sample fixation patterns and distributions (`fixation-and-density-random-sampling`) | `sample_fixations`, `rep_fixations` and density draws; a requested temporal resolution or draw count from explicit weights. Pin replacement, endpoints, seed, RNG and realized cardinality. | Design RNG and explicit selection primitives exist, but there is no complete public distribution-sampling route or R fixture. | **Gap — `eyesim-sampling`**; relation sampler mutation coverage remains `bd-01KYD6T48ZREC657WRGSAHM1R3`. |
-| Compute entropy and combine maps (`fixation-entropy`, `density-map-arithmetic`) | `fixation_entropy` for density/grid/fixation/multiscale inputs and `Ops.eye_density`; Shannon entropy or an explicitly named compatible-grid operation. Pin base, normalization, duration weights, scale reduction and `+ - * /` meanings. | `Mass.entropy`, `relativeEntropy`, `mean`, `difference`, `logRatio`, `Signed`; the selected mass has exact entropy 1.5 bits and a signed counterexample. | **Gaps — `eyesim-entropy`.** Current laws do not measure the pinned R methods or operators. |
+| Compute entropy and combine maps (`fixation-entropy`, `fixation-entropy-derived-inputs`, `density-map-mean-and-difference`, `density-map-log-ratio`, `signed-maps-as-mass`) | `fixation_entropy` for density/grid/fixation/multiscale inputs and `Ops.eye_density`; Shannon entropy or an explicitly named compatible-grid operation. Pin base, normalization, duration weights, scale reduction and `+ - * /` meanings. | `Mass.entropy` and `relativeEntropy` reproduce the pinned `fixation_entropy` output on supplied positive maps in both bases; `Mass.mean` and `Mass.difference` coincide with eyesim `+` and `-` cell by cell and with an exact rational oracle; `Mass.logRatio` coincides with `/` away from zero cells. At a zero cell eyesim gives `-Inf`, `Inf` or `NaN` and eyes4s floors at `1e-12`. On signed maps eyesim returns `NA` (exact difference) or a finite positive-cell number (signed vector), and eyes4s refuses by type or with `NegativeValue`; the eyesim values are pinned. | **Equivalent** for entropy on supplied maps and for `+`/`-` ([entropy.json](../tools/r-parity/fixtures/entropy.json), `kernel/.../EntropyConformanceSuite.scala`); **intentional divergence** for `/` at zero cells, the absent product and signed maps treated as mass; **gap — `eyesim-entropy`** for fixation-group density/grid and multiscale entropy inputs. |
 | Compare maps and fixation patterns (`distribution-method-matrix`) | `similarity` for default, density, multiscale and fixation groups; Pearson, Spearman, Fisher z, cosine, L1, Jaccard, distance covariance, EMD, Sinkhorn and overlap. Each result's scale/direction, geometry support and constant/empty behavior are part of the estimand. | `Distribution`, `Lift`, `Similarity`, `MeasureDistance`, `Transport`; current unit tests establish internal contracts only. | **Gap — `eyesim-compare`**, with scalable advanced implementations tracked separately by `bd-01M02N4E54KR43Q5JSSMCV4G2E`. |
 | Analyze matched templates and controls (`matched-control-exhaustive-cosine`, `matched-control-failure-semantics`, `matched-control-finite-sampling`) | `template_similarity`, `fixation_similarity`, `template_sample`; matched-minus-mean-control under explicit identity/strata, then finite control or template point sampling. | Public `StudyPlan`, relations, pair design, cosine mass, reductions, signed contrasts, saved execution and tidy CSV reproduce all exhaustive targets. Unmatched, ambiguous and failed comparisons remain values. | **Equivalent** for exhaustive cosine; **intentional divergence** for first-duplicate, dropped-unmatched and constant-Pearson behavior; **gap — `eyesim-sampling`** for finite sampling. |
 | Analyze repetition and reinstatement (`repetition-and-reinstatement`) | `repetitive_similarity`; same- versus different-condition comparisons with pairwise/reduced modes and multiscale mean/none. Participant strata, direction, self edges and realized denominators must be explicit. | Relations and temporal pair execution exist, including exhaustive independent pair lists, but no complete pinned eyesim convenience-workflow case exists. | **Gap — `eyesim-repetition`**, with relation mutations tracked by `bd-01KYD6T48ZREC657WRGSAHM1R3`. |
@@ -86,14 +86,17 @@ Implemented evidence is reproducible with:
 
 ```sh
 python3 tools/r-parity/generate_reference.py --eyesim /path/to/eyesim --check
+python3 tools/r-parity/generate_transforms.py --eyesim /path/to/eyesim --check
+python3 tools/r-parity/generate_entropy.py --eyesim /path/to/eyesim --check
 python3 tools/r-parity/generate_multiscale.py --check
 python3 tools/r-parity/generate_temporal.py --check
 ```
 
-The first command archives the pinned Git object, installs that source into a temporary R library,
-and invokes exported eyesim functions. Its lock records the observed R and package versions. The
-other commands are independent rational, integer-overlap or high-precision decimal oracles and do
-not call eyesim. Use `check_baseline.py --run-regeneration --eyesim /path/to/eyesim` to run all three.
+The first three commands archive the pinned Git object, install that source into a temporary R
+library, and invoke exported eyesim functions; each records the observed R and package versions.
+The other commands are independent rational, integer-overlap or high-precision decimal oracles and
+do not call eyesim. Use `check_baseline.py --run-regeneration --eyesim /path/to/eyesim` to run all
+five.
 Portable JVM and Scala.js tests consume generated values without starting R or reading runtime
 fixtures.
 
