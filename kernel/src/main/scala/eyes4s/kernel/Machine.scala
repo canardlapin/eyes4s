@@ -175,3 +175,62 @@ object Machine:
       g.andThen(f)
 
 end Machine
+
+/** One bounded step of a [[MachineCursor]]. `units` is the number of inputs
+  * the step fed; the `Done` step also flushed and carries every output.
+  */
+enum MachinePage[I, O]:
+  case More(units: Int, next: MachineCursor[I, O])
+  case Done(units: Int, output: Vector[O])
+
+/** A machine part-way through a finite input: the state after `consumed`
+  * inputs and everything emitted so far. This is the pure chunked driver,
+  * the third runtime beside `runAll` and the streaming pipe: it steps the
+  * identical detector value, so the output of driving a cursor to completion
+  * is `runAll`'s output for any cut of the input, and an event that spans a
+  * cut is emitted exactly where `runAll` emits it. Cursors are immutable, so
+  * re-advancing one is deterministic.
+  *
+  * `flush` runs once, inside the step that feeds the last input; a cursor
+  * abandoned before that step has flushed nothing and manufactured no event.
+  */
+final class MachineCursor[I, O] private (
+    val machine: Machine[I, O],
+    private val input: IArray[I]
+)(
+    private val state: machine.S,
+    val consumed: Int,
+    val emitted: Vector[O]
+):
+  def total: Int     = input.length
+  def remaining: Int = total - consumed
+
+  /** Feed at most `maximum` further inputs. A non-positive `maximum` feeds one,
+    * so every step makes progress.
+    */
+  def advance(maximum: Int): MachinePage[I, O] =
+    val count = math.min(math.max(maximum, 1), remaining)
+    var s     = state
+    val out   = Vector.newBuilder[O]
+    var index = consumed
+    val until = consumed + count
+    while index < until do
+      val (next, produced) = machine.detector.step(s, input(index))
+      s = next
+      out ++= produced
+      index += 1
+    val produced = emitted ++ out.result()
+    if until >= total then MachinePage.Done(count, produced ++ machine.detector.flush(s))
+    else MachinePage.More(count, new MachineCursor(machine, input)(s, until, produced))
+
+object MachineCursor:
+  def of[I, O](machine: Machine[I, O], input: IArray[I]): MachineCursor[I, O] =
+    new MachineCursor(machine, input)(machine.detector.init, 0, Vector.empty)
+
+  /** Drive a cursor to completion in chunks of `maximum` inputs. */
+  def complete[I, O](cursor: MachineCursor[I, O], maximum: Int): Vector[O] =
+    @annotation.tailrec
+    def loop(cursor: MachineCursor[I, O]): Vector[O] = cursor.advance(maximum) match
+      case MachinePage.More(_, next)   => loop(next)
+      case MachinePage.Done(_, output) => output
+    loop(cursor)

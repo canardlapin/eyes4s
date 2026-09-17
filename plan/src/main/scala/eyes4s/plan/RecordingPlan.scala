@@ -16,7 +16,6 @@
 
 package eyes4s.plan
 
-import cats.syntax.all.*
 import eyes4s.aoi.*
 import eyes4s.core.*
 import eyes4s.detect.*
@@ -168,110 +167,16 @@ final class RecordingPlan[P] private (
          Vector(RecordingPlanError.MissingSynchronization(trackerClock, analysisClock))
        else Vector.empty)
 
+  /** Execute this plan on the supplied recording; the bounded cursor driven to completion. */
   def run(recording: Recording[Px]): Either[RecordingPlanError, RecordingAnalysis[P]] =
-    prerequisites(Some(recording)).headOption match
-      case Some(error) => Left(error)
-      case None        =>
-        for
-          geometry        <- viewing.toRight(RecordingPlanError.MissingViewing(source))
-          synchronization <- SyncEvidence
-            .fromCommonMarks(
-              trackerClock,
-              analysisClock,
-              synchronizationModel,
-              marks,
-              residualLimit
-            )
-            .left
-            .map(RecordingPlanError.Synchronization.apply)
-          synchronized <- Recording
-            .of(
-              recording.frame,
-              analysisClock,
-              recording.rate,
-              recording.eye,
-              recording.pupilUnit,
-              recording.samples.map(sample => sample.copy(t = synchronization(sample.t)))
-            )
-            .left
-            .map(RecordingPlanError.Recording("synchronize", _))
-          angularFrame <- Frame
-            .angular(
-              angularFrameId.name,
-              geometry.horizontalExtent.toDegrees,
-              geometry.verticalExtent.toDegrees
-            )
-            .left
-            .map(RecordingPlanError.Geometry.apply)
-          warp = Viewing.angularWarp(geometry, display, angularFrame)
-          angular <- synchronized.warp(warp).left.map(RecordingPlanError.Core("warp", _))
-          samples = Filter.interpolateGaps[Deg](interpolationGap).runAll(angular.samples)
-          _ <- Either.cond(
-            samples.length == angular.size,
-            (),
-            RecordingPlanError.Cardinality(source, angular.size, samples.length)
-          )
-          prepared <- Recording
-            .of(
-              angular.frame,
-              angular.clock,
-              angular.rate,
-              angular.eye,
-              angular.pupilUnit,
-              IArray.from(samples)
-            )
-            .left
-            .map(RecordingPlanError.Recording("preprocess", _))
-          detector <- method
-            .detector(parameters, analysisClock)
-            .left
-            .map(RecordingPlanError.DetectorDefinition.apply)
-          support = prepared.representedSupport.policy
-          detection <- Detection
-            .run(source, prepared, detector, GapPolicy.Break, support)
-            .left
-            .map(RecordingPlanError.Detection.apply)
-          built <- areas.traverse { area =>
-            for
-              a <- warp(Pt[Px](area.bounds.xMin, area.bounds.yMin))
-                .toRight(RecordingPlanError.AreaWarp(area.id, "minimum"))
-              b <- warp(Pt[Px](area.bounds.xMax, area.bounds.yMax))
-                .toRight(RecordingPlanError.AreaWarp(area.id, "maximum"))
-              region <- Region
-                .rect(
-                  Pt[Deg](math.min(a.x, b.x), math.min(a.y, b.y)),
-                  Pt[Deg](math.max(a.x, b.x), math.max(a.y, b.y))
-                )
-                .left
-                .map(RecordingPlanError.Geometry.apply)
-              result <- Aoi
-                .of(
-                  area.id,
-                  area.label,
-                  angularFrame,
-                  region,
-                  Map(
-                    "nativeFrame" -> display.id.name,
-                    "nativeBoundsPixels" -> s"${area.bounds.xMin},${area.bounds.yMin},${area.bounds.xMax},${area.bounds.yMax}"
-                  )
-                )
-                .left
-                .map(RecordingPlanError.Areas.apply)
-            yield result
-          }
-          aoiSet     <- AoiSet.of(built).left.map(RecordingPlanError.Areas.apply)
-          assignment <- aoiSet
-            .assign(prepared, MembershipPolicy.ExclusiveByPriority, support)
-            .left
-            .map(RecordingPlanError.Areas.apply)
-        yield new RecordingAnalysis(
-          description,
-          synchronization,
-          angular,
-          prepared,
-          detection,
-          assignment
-        )
+    work(recording).flatMap(RecordingWork.complete(_))
+
+  /** Resumable execution: preprocessing and detection step their machines in
+    * chunks of `quanta.samples`; see [[RecordingCursor]]. Prerequisites are
+    * checked here, before any step.
+    */
+  def work(recording: Recording[Px]): Either[RecordingPlanError, RecordingCursor[P]] =
+    RecordingWork.begin(this, recording)
 
 object RecordingPlan:
   def of[P](

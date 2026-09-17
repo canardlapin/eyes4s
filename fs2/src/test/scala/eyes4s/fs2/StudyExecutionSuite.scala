@@ -536,7 +536,7 @@ class StudyExecutionSuite extends munit.CatsEffectSuite:
   test("interrupting the pull stream ends it between steps without a terminal event") {
     runner.events(work, quanta = finest).take(3).compile.toVector.map { events =>
       assertEquals(
-        events.map(_.isInstanceOf[StudyEvent.Advanced[?, ?, ?, ?]]),
+        events.map(_.isInstanceOf[RunEvent.Advanced[?, ?, ?, ?, ?]]),
         Vector.fill(3)(true)
       )
       assertEquals(progressOf(events).map(_.step), Vector(1L, 2L, 3L))
