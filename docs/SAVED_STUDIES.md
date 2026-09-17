@@ -143,10 +143,15 @@ same event sequence), the step number, the cursor's `StudyStage` and its own
 units, the `StudySegment` the step counts toward (trials of one scale share one
 `Estimating(scale)` segment), the segment's cumulative units and typed
 `SegmentTotal`, and the run's cumulative units. Totals are what preparation can
-state: `Exact(trials)` for estimation, `AtMost(candidates * (2 + cells))` for a
-bounded comparison segment (`AtMost(2 * candidates)` for a synchronous method),
-`AtMost(focal keys)` for a contrast, and `Unknown` for a reduction, whose units
-depend on the realized scores.
+state: `Exact(trials)` for estimation;
+`AtMost(candidates * (2 + cells) + focal + reference)` for a bounded comparison
+segment and `AtMost(2 * candidates + focal + reference)` for a synchronous
+method, where the schedule's paging visits every candidate pair and then every
+reference key (or every focal key when there are no reference trials) and each
+selected pair costs one unit to begin plus its cells; `AtMost(focal keys)` for
+a contrast; and `Unknown` for a reduction, whose units depend on the realized
+scores. The comparison budget is not part of the id: a refusal is a `Failed`
+outcome, not a different run.
 
 The outcome is one value, `StudyOutcome.Completed(run, last, result)`,
 `Cancelled(run, last)` or `Failed(run, error, last)`, and a `StudyResult` exists
@@ -157,8 +162,9 @@ single point, inside the deciding step; `cancel` or releasing the resource
 before that commit settles `Cancelled` with the last completed step, and the
 first commit wins. `run.progress` is telemetry with one coalescing slot: it
 never slows the run, an observer that keeps up sees every step, a slow or late
-observer sees the latest step, and every observer ends once the run settles
-(without a terminal step when the run was cancelled). `run.outcome` is the
+observer sees the latest step, and every observer ends once the run settles,
+having received the last completed step; a cancelled run's observers see no
+step for the work that was cut off, since none completed. `run.outcome` is the
 authority. `events` has no commit point: interrupting it ends the stream
 between steps with no terminal element.
 

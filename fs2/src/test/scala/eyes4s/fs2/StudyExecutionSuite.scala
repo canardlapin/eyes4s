@@ -107,6 +107,9 @@ class StudyExecutionSuite extends munit.CatsEffectSuite:
 
   private val runner = StudyExecution[IO]
 
+  /** A defect, distinct from every typed failure. */
+  private final class Broken extends RuntimeException("broken comparison")
+
   // -------------------------------------------------------------------------
   // Pure oracle
   // -------------------------------------------------------------------------
@@ -319,9 +322,11 @@ class StudyExecutionSuite extends munit.CatsEffectSuite:
           StudyDesign.Control -> two.controls.candidatePairCount
         ).foreach { case (design, candidates) =>
           val comparing = StudySegment.Comparing(scale, design)
-          assertEquals(totals(comparing), SegmentTotal.AtMost(candidates * (2 + cells)))
+          val bound     =
+            candidates * (2 + cells) + two.focalIndices.size + two.referenceIndices.size
+          assertEquals(totals(comparing), SegmentTotal.AtMost(bound))
           val units = bySegment(comparing).segmentUnits
-          assert(units >= 1 && units <= candidates * (2 + cells), clue((comparing, units)))
+          assert(units >= 1 && units <= bound, clue((comparing, units)))
           assertEquals(totals(StudySegment.Reducing(scale, design)), SegmentTotal.Unknown)
         }
         val focal = two.focalIndices.size.toLong
@@ -345,9 +350,60 @@ class StudyExecutionSuite extends munit.CatsEffectSuite:
       val totals = progressOf(events).map(p => p.segment -> p.segmentTotal).toMap
       assertEquals(
         totals(StudySegment.Comparing(0, StudyDesign.Matched)),
-        SegmentTotal.AtMost(2 * whole.matched.candidatePairCount)
+        SegmentTotal.AtMost(
+          2 * whole.matched.candidatePairCount + whole.focalIndices.size + whole.referenceIndices.size
+        )
       )
       assertSameResult(completed(finished(events))._2, get(whole.run), "synchronous")
+    }
+  }
+
+  test("a fully matched schedule and one without reference trials stay within their bounds") {
+    // One focal, one reference on the same stimulus: every candidate is selected,
+    // so the paging visit, the begin unit and the cells saturate
+    // candidates * (2 + cells) and the unmatched-reference report pass exceeds it.
+    val full =
+      StudyInput(Trials(Vector(trial(a, (0.5, 0.5), (1.5, 0.5)), trial(ar, (0.5, 0.5)))))
+    val fullWork = get(plan(full).prepare(full))
+    // One focal and no reference: the schedule charges one unit per focal key.
+    val alone     = StudyInput(Trials(Vector(trial(a, (0.5, 0.5)))))
+    val aloneWork = get(plan(alone).prepare(alone))
+    val cells     = grid.size
+    Vector(fullWork -> "fully matched", aloneWork -> "no reference").traverse_ {
+      case (prepared, where) =>
+        runner.events(prepared, quanta = finest).compile.toVector.map { events =>
+          val progress = progressOf(events)
+          assertSameResult(completed(finished(events))._2, get(prepared.run), where)
+          Vector(
+            StudyDesign.Matched -> prepared.matched.candidatePairCount,
+            StudyDesign.Control -> prepared.controls.candidatePairCount
+          ).foreach { case (design, candidates) =>
+            val segment  = StudySegment.Comparing(0, design)
+            val realized = progress.filter(_.segment == segment).map(_.segmentUnits).max
+            val bound    =
+              candidates * (2 + cells) + prepared.focalIndices.size + prepared.referenceIndices.size
+            assertEquals(
+              progress.find(_.segment == segment).map(_.segmentTotal),
+              Some(SegmentTotal.AtMost(bound)),
+              (where, design)
+            )
+            assert(realized <= bound, clue((where, design, realized, bound)))
+          }
+        }
+    } >> runner.events(fullWork, quanta = finest).compile.toVector.map { events =>
+      // The matched design of the fully matched fixture: 1 visit + 1 report + 1 begin + 4 cells.
+      val matched =
+        progressOf(events).filter(_.segment == StudySegment.Comparing(0, StudyDesign.Matched))
+      assertEquals(matched.map(_.segmentUnits).max, 7L)
+      assert(
+        7L > fullWork.matched.candidatePairCount * (2 + cells),
+        "the pair-only bound is too small"
+      )
+    } >> runner.events(aloneWork, quanta = finest).compile.toVector.map { events =>
+      val matched =
+        progressOf(events).filter(_.segment == StudySegment.Comparing(0, StudyDesign.Matched))
+      assertEquals(aloneWork.matched.candidatePairCount, 0L)
+      assertEquals(matched.map(_.segmentUnits).max, 1L)
     }
   }
 
@@ -488,8 +544,44 @@ class StudyExecutionSuite extends munit.CatsEffectSuite:
   }
 
   // -------------------------------------------------------------------------
-  // Failure is a typed outcome
+  // Failure is a typed outcome; a defect is raised
   // -------------------------------------------------------------------------
+
+  test(
+    "a defect thrown inside a step is raised from the outcome, not hidden as a hang or a cancel"
+  ) {
+    val throwing = new StudyMethod[Unit, Px, Similarity, SignedDifference](
+      DefinitionId.cosine,
+      "throwing cosine",
+      _ => Vector.empty,
+      _ =>
+        val inner = Distribution.cosine[Px]
+        new Compare[Mass[Px], Mass[Px], Similarity]:
+          def info: MeasureInfo                                                   = inner.info
+          def compare(x: Mass[Px], y: Mass[Px]): Either[CompareError, Similarity] =
+            throw new Broken
+      ,
+      Some(MethodDescriptor.cosine[Px](DefinitionId.cosine))
+    )
+    val broken = get(plan(method = throwing).prepare(input))
+    for
+      pulled <- runner.events(broken, quanta = finest).compile.toVector.attempt
+      handle <- TestControl.executeEmbed {
+        runner.start(broken, quanta = finest).use { run =>
+          run.outcome.attempt.product(run.progress.compile.toVector)
+        }
+      }
+    yield
+      assert(pulled.left.exists(_.isInstanceOf[Broken]), clue(pulled))
+      val (outcome, observed) = handle
+      assert(outcome.left.exists(_.isInstanceOf[Broken]), clue(outcome))
+      // Every trial was estimated and the first schedule page was visited before
+      // the first whole comparison threw; observers end on that committed step.
+      assertEquals(
+        observed.lastOption.map(p => (p.step, p.stage)),
+        Some((input.trials.rows.size + 1L, StudyStage.Comparing(0, StudyDesign.Matched)))
+      )
+  }
 
   test("a refused comparison budget settles Failed with the PlanError and no progress") {
     val budget = get(ComparisonBudget.of(3))

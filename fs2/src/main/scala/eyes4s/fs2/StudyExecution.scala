@@ -32,6 +32,10 @@ import _root_.fs2.concurrent.SignallingRef
   * two submissions of the same prepared study at the same quanta share an id
   * and their event sequences are identical. An id names the work; a consumer
   * that schedules the same work twice attaches its own job identity.
+  *
+  * The `ComparisonBudget` is deliberately not part of the id: it changes no
+  * produced value, only whether the run begins, and a refusal is already
+  * visible as `StudyOutcome.Failed` carrying the budget error.
   */
 final case class StudyRunId(
     input: String,
@@ -162,12 +166,12 @@ object StudyExecution:
       val interpreter = new Interpreter[K, U, S, D](work, quanta)
       def go(state: interpreter.State): Pull[F, StudyEvent[K, U, S, D], Unit] =
         Pull
-          .eval(F.cede >> F.uncancelable(_ => F.unit.map(_ => interpreter.step(state))))
+          .eval(F.cede >> F.uncancelable(_ => F.catchNonFatal(interpreter.step(state))))
           .flatMap { case (events, next) =>
             Pull.output(Chunk.from(events)) >> next.fold(Pull.done)(go)
           }
       Pull
-        .eval(F.unit.map(_ => interpreter.begin(budget)))
+        .eval(F.catchNonFatal(interpreter.begin(budget)))
         .flatMap {
           case Left(failed) => Pull.output1(StudyEvent.Finished(failed))
           case Right(state) => go(state)
@@ -220,7 +224,7 @@ object StudyExecution:
           def loop(state: interpreter.State): F[Unit] =
             between >> F
               .uncancelable(_ =>
-                F.unit.map(_ => interpreter.step(state)).flatMap { case (events, next) =>
+                F.catchNonFatal(interpreter.step(state)).flatMap { case (events, next) =>
                   events.traverse_(publish).as(next)
                 }
               )
@@ -236,7 +240,7 @@ object StudyExecution:
             ) >> signal.update(_.settle)
 
           val body: F[Unit] =
-            F.uncancelable(_ => F.unit.map(_ => interpreter.begin(budget)))
+            F.uncancelable(_ => F.catchNonFatal(interpreter.begin(budget)))
               .flatMap {
                 case Left(failed) => publish(StudyEvent.Finished(failed))
                 case Right(state) => loop(state)
@@ -338,11 +342,13 @@ object StudyExecution:
       )
 
     /** Totals the prepared study can state before the segment runs. Estimation
-      * is one unit per trial. A comparison segment visits each candidate pair
-      * once while paging, charges one unit to begin or wholly evaluate each
-      * selected pair, and for a bounded method at most one unit per grid cell
-      * inside it. Reduction charges per realized score, which preparation does
-      * not enumerate. A contrast visits at most every focal key.
+      * is one unit per trial. A comparison segment pages the schedule, which
+      * visits each candidate pair once and then charges one unit per reference
+      * key for the unmatched-reference report (or one per focal key when there
+      * are no reference trials), charges one unit to begin or wholly evaluate
+      * each selected pair, and for a bounded method at most one unit per grid
+      * cell inside it. Reduction charges per realized score, which preparation
+      * does not enumerate. A contrast visits at most every focal key.
       */
     private def total(segment: StudySegment): SegmentTotal = segment match
       case StudySegment.Estimating(_) => SegmentTotal.Exact(work.input.trials.rows.size.toLong)
@@ -353,7 +359,8 @@ object StudyExecution:
         val perPair = work.capability match
           case ExecutionCapability.BoundedComparison         => BigInt(2) + work.grid.size
           case ExecutionCapability.SynchronousWholeOperation => BigInt(2)
-        val bound = candidates * perPair
+        val bound =
+          candidates * perPair + work.focalIndices.size + work.referenceIndices.size
         if bound.isValidLong then SegmentTotal.AtMost(bound.toLong) else SegmentTotal.Unknown
       case StudySegment.Reducing(_, _) => SegmentTotal.Unknown
       case StudySegment.Contrasting(_) => SegmentTotal.AtMost(work.focalIndices.size.toLong)
