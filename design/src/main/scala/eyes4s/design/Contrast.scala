@@ -176,12 +176,82 @@ final class ContrastRow[K, S, D] private[design] (
     val difference: Either[ContrastRowError[K], D]
 ) derives CanEqual
 
+object ContrastRow:
+  /** Checked reconstruction: the stored difference must have the shape the two
+    * operands determine. Missing operands, reduction failures and arithmetic
+    * outcomes each name the operands that produced them, and those must agree
+    * with the rows this contrast row refers to.
+    */
+  def reconstruct[K, S, D](
+      key: K,
+      matched: Option[ReductionRow[K, S]],
+      control: Option[ReductionRow[K, S]],
+      difference: Either[ContrastRowError[K], D]
+  ): Either[ReconstructionError[K], ContrastRow[K, S, D]] =
+    val expectedMissing =
+      Option.when(matched.isEmpty)(ContrastOperand.Matched).toVector ++
+        Option.when(control.isEmpty)(ContrastOperand.Control).toVector
+    val consistent = (matched, control, difference) match
+      case (Some(m), Some(c), Right(_)) =>
+        m.key == key && c.key == key && m.result.isRight && c.result.isRight
+      case (Some(m), Some(c), Left(ContrastRowError.Arithmetic(k, _))) =>
+        k == key && m.key == key && c.key == key && m.result.isRight && c.result.isRight
+      case (Some(m), Some(c), Left(ContrastRowError.ReductionFailures(k, mf, cf))) =>
+        k == key && m.key == key && c.key == key &&
+        (m.result.isLeft || c.result.isLeft) &&
+        m.result.left.toOption == mf && c.result.left.toOption == cf
+      case (_, _, Left(ContrastRowError.MissingOperands(k, missing))) =>
+        k == key && expectedMissing.nonEmpty && missing == expectedMissing &&
+        matched.forall(_.key == key) && control.forall(_.key == key)
+      case _ => false
+    Either.cond(
+      consistent,
+      new ContrastRow(key, matched, control, difference),
+      ReconstructionError.ContrastRowShape(
+        key,
+        matched.map(_.result.map(_ => ())),
+        control.map(_.result.map(_ => ())),
+        difference.map(_ => ())
+      )
+    )
+
 /** A keyed contrast with both complete source analyses and their provenance. */
 final class Contrast[K, S, D] private[design] (
     val matched: Analysis[K, S],
     val control: Analysis[K, S],
     val rows: Vector[ContrastRow[K, S, D]]
 ) derives CanEqual
+
+object Contrast:
+  /** Checked reconstruction: the two analyses must be contrast-compatible for
+    * the declared components, the rows must cover exactly the sorted key union
+    * in the caller's ordering, and each row's operands must be the analyses'
+    * own rows for that key.
+    */
+  def reconstruct[K, S, D](
+      matched: Analysis[K, S],
+      control: Analysis[K, S],
+      rows: Vector[ContrastRow[K, S, D]],
+      components: Vector[String]
+  )(using ordering: Ordering[K]): Either[ReconstructionError[K], Contrast[K, S, D]] =
+    val issues = ContrastCompatibility.check(matched, control, components)
+    NonEmptyVector.fromVector(issues) match
+      case Some(errors) => Left(ReconstructionError.Incompatible(errors))
+      case None         =>
+        val keys = (matched.entries.map(_.key) ++ control.entries.map(_.key)).distinct.sorted
+        val matchedRows = matched.entries.map(row => row.key -> row).toMap
+        val controlRows = control.entries.map(row => row.key -> row).toMap
+        if rows.map(_.key) != keys then
+          Left(ReconstructionError.ContrastDomain(keys, rows.map(_.key)))
+        else
+          rows
+            .collectFirst {
+              case row if row.matched != matchedRows.get(row.key) =>
+                ReconstructionError.ContrastOperand(row.key, ContrastOperand.Matched)
+              case row if row.control != controlRows.get(row.key) =>
+                ReconstructionError.ContrastOperand(row.key, ContrastOperand.Control)
+            }
+            .toLeft(new Contrast(matched, control, rows))
 
 /** Matched minus control, over the union of focal keys in the caller's explicit
   * key ordering. A lawful Ordering consistent with key equality is required;

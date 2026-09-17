@@ -231,6 +231,58 @@ class ConsumerSuite extends munit.DisciplineSuite:
     })
   }
 
+  test("a completed result with the custom score archives through the registered score codec") {
+    val scores  = CustomMethod.scoreCodec(id("my.lab.scaled-score"))
+    val archive = persistence.results(scores, StudyResultCodecs.signedDifference())
+    val result  = get(plan(2.0).run(input))
+    val json    = get(archive.codec.encode(result))
+    val decoded = get(archive.codec.decode(json))
+    val same    = (a: ScaledScore, b: ScaledScore) => a.value == b.value
+    val sameD   = (a: SignedDifference, b: SignedDifference) => a.value == b.value
+    assert(StudyResultEquivalence.same(result, decoded)(same, sameD))
+    assertEquals(get(archive.codec.encode(decoded)), json)
+    assertEquals(decoded.scales.size, 3)
+    assertEquals(
+      get(decoded.scales.head.contrast).rows.map(r => r.control.map(_.contributing)),
+      Vector.fill(6)(Some(2))
+    )
+    val registry = get(StudyResultRegistry.empty[TrialKey, Px].register(archive.registration))
+    val loaded   = get(registry.decode(json))
+    assertEquals(get(loaded.encode), json)
+    assertEquals(
+      StudyResultRegistry.empty[TrialKey, Px].decode(json).left.toOption,
+      Some(CodecError.MissingResultCodec(method.id))
+    )
+    assertEquals(
+      registry.register(archive.registration).left.toOption,
+      Some(CodecError.DuplicateResultCodec(method.id))
+    )
+    // Re-executing the reloaded plan reproduces the archived contrasts bit for bit.
+    val reloaded = get(persistence.codec.decode(get(persistence.codec.encode(plan(2.0)))))
+    assertEquals(get(archive.codec.encode(get(reloaded.run(input)))), json)
+  }
+
+  checkAll(
+    "custom result codec",
+    CodecLaws.roundTrip(
+      persistence
+        .results(
+          CustomMethod.scoreCodec(id("my.lab.scaled-score")),
+          StudyResultCodecs.signedDifference()
+        )
+        .codec,
+      Gen.choose(0.1, 5.0).map(m => get(plan(m).run(input))),
+      (
+          a: StudyResult[TrialKey, Px, ScaledScore, SignedDifference],
+          b: StudyResult[TrialKey, Px, ScaledScore, SignedDifference]
+      ) =>
+        StudyResultEquivalence.same(a, b)(
+          (x, y) => x.value == y.value,
+          (x, y) => x.value == y.value
+        )
+    )
+  )
+
   test("invalid parameters, missing schema versions and incompatible static types reject") {
     val json = get(parameters.encode(get(Multiplier.of(2.0))))
     assert(

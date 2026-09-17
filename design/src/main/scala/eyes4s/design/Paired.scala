@@ -430,3 +430,44 @@ private[design] object PairConstruction:
     duplicates.iterator.flatMap(_.occurrences.iterator.map(_.index)).toSet
 
 end PairConstruction
+
+object PairingReport:
+  /** Checked reconstruction: counts are non-negative and selection never exceeds eligibility. */
+  def reconstruct[KL, KR](
+      pairSpace: PairSpace,
+      eligiblePairCount: Long,
+      selectedPairCount: Int,
+      unmatchedLeft: Vector[KL],
+      unmatchedRight: Vector[KR],
+      ambiguous: Vector[PairingAmbiguity[KL, KR]]
+  ): Either[ReconstructionError[KL], PairingReport[KL, KR]] =
+    Either.cond(
+      eligiblePairCount >= 0L && selectedPairCount >= 0 &&
+        selectedPairCount.toLong <= eligiblePairCount,
+      PairingReport(
+        pairSpace,
+        eligiblePairCount,
+        selectedPairCount,
+        unmatchedLeft,
+        unmatchedRight,
+        ambiguous
+      ),
+      ReconstructionError.PairCounts(eligiblePairCount, selectedPairCount)
+    )
+
+object DirectedPairwiseAnalysis:
+  /** Checked reconstruction: one row per selected pair, and the stored
+    * provenance must be exactly what evaluating those rows records.
+    */
+  def reconstruct[KL, KR, E, S](
+      rows: Vector[PairScore[KL, KR, E, S]],
+      diagnostics: PairingReport[KL, KR],
+      provenance: Provenance,
+      evaluation: EvaluationInfo
+  ): Either[ReconstructionError[KL], DirectedPairwiseAnalysis[KL, KR, E, S]] =
+    val derived = EvaluationProvenance(provenance.inputs, evaluation, diagnostics, rows)
+    if rows.size != diagnostics.selectedPairCount then
+      Left(ReconstructionError.RowCount(diagnostics.selectedPairCount, rows.size))
+    else if derived != provenance then
+      Left(ReconstructionError.ProvenanceConflict("evaluatePairs", provenance, derived))
+    else Right(DirectedPairwiseAnalysis(rows, diagnostics, provenance, evaluation))

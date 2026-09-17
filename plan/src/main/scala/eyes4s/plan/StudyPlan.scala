@@ -26,15 +26,20 @@ import eyes4s.surface.*
 /** Stable identity of a registered behavior, separate from its parameter schema. */
 final case class DefinitionId private (name: String, version: Int) derives CanEqual
 object DefinitionId:
-  val cosine: DefinitionId          = new DefinitionId("eyes4s.cosine", 1)
-  val study: DefinitionId           = new DefinitionId("eyes4s.study", 1)
-  val studyKey: DefinitionId        = new DefinitionId("eyes4s.study-key", 1)
-  val studyLayout: DefinitionId     = new DefinitionId("eyes4s.participant-stimulus-phase", 1)
-  val unit: DefinitionId            = new DefinitionId("eyes4s.unit", 1)
-  val studyInput: DefinitionId      = new DefinitionId("eyes4s.study-input", 1)
-  val trials: DefinitionId          = new DefinitionId("eyes4s.trials", 1)
-  val scanpath: DefinitionId        = new DefinitionId("eyes4s.scanpath", 1)
-  val admissionLedger: DefinitionId = new DefinitionId("eyes4s.admission-ledger", 1)
+  val cosine: DefinitionId           = new DefinitionId("eyes4s.cosine", 1)
+  val study: DefinitionId            = new DefinitionId("eyes4s.study", 1)
+  val studyKey: DefinitionId         = new DefinitionId("eyes4s.study-key", 1)
+  val studyLayout: DefinitionId      = new DefinitionId("eyes4s.participant-stimulus-phase", 1)
+  val unit: DefinitionId             = new DefinitionId("eyes4s.unit", 1)
+  val studyInput: DefinitionId       = new DefinitionId("eyes4s.study-input", 1)
+  val trials: DefinitionId           = new DefinitionId("eyes4s.trials", 1)
+  val scanpath: DefinitionId         = new DefinitionId("eyes4s.scanpath", 1)
+  val admissionLedger: DefinitionId  = new DefinitionId("eyes4s.admission-ledger", 1)
+  val studyResult: DefinitionId      = new DefinitionId("eyes4s.study-result", 1)
+  val similarity: DefinitionId       = new DefinitionId("eyes4s.similarity", 1)
+  val measureDistance: DefinitionId  = new DefinitionId("eyes4s.measure-distance", 1)
+  val scalar: DefinitionId           = new DefinitionId("eyes4s.scalar", 1)
+  val signedDifference: DefinitionId = new DefinitionId("eyes4s.signed-difference", 1)
   def of(name: String, version: Int): Either[PlanError, DefinitionId] =
     if name.trim.isEmpty || version < 1 then Left(PlanError.InvalidDefinition(name, version))
     else Right(new DefinitionId(name, version))
@@ -182,6 +187,15 @@ enum StudyFailure[K] derives CanEqual:
     case Estimation(k, e)    => s"Trial $k: ${e.message}"
     case Comparison(l, r, e) => s"Trials $l and $r: ${e.message}"
 
+object StudyFailure:
+  /** The trial keys a failure names, in operand order. */
+  def keys[K](failure: StudyFailure[K]): Vector[K] = failure match
+    case StudyFailure.Frame(k, _)         => Vector(k)
+    case StudyFailure.Temporal(k, _)      => Vector(k)
+    case StudyFailure.Occupancy(k, _)     => Vector(k)
+    case StudyFailure.Estimation(k, _)    => Vector(k)
+    case StudyFailure.Comparison(l, r, _) => Vector(l, r)
+
 /** Typed evidence of how a method's comparison executes. A synchronous closure
   * runs whole per pair; only a [[BoundedCompare]] can be declared bounded, so
   * the reported capability is never inferred from a name or a flag.
@@ -265,6 +279,154 @@ final class StudyResult[K, U <: Unit2D, S, D] private[plan] (
     val description: Vector[(String, Vector[Provenance.Param])],
     val scales: Vector[StudyScaleResult[K, U, S, D]]
 )
+
+/** Refusals while rebuilding a completed result from stored parts. A scale's
+  * own refusal is wrapped in [[Scale]] with the scale index; every other case
+  * names the trial keys, pair keys or declared values that disagree.
+  */
+enum StudyResultError[K] derives CanEqual:
+  case InputMismatch(reference: String, described: Vector[Provenance.Param])
+  case ScaleCount(declared: Int, found: Int)
+  case ScaleEstimate(
+      index: Int,
+      declared: Vector[Provenance.Param],
+      found: Vector[Provenance.Param]
+  )
+  case MassGrid(key: K, declared: Vector[Provenance.Param], found: Vector[Provenance.Param])
+  case FailureKey(key: K, failure: StudyFailure[K])
+  case PairFailure(left: K, right: K, failure: StudyFailure[K])
+  case OrphanKey(key: K)
+  case OrphanPair(left: K, right: K)
+  case Reconstruction(underlying: ReconstructionError[K])
+  case Scale(index: Int, underlying: StudyResultError[K])
+
+  def message: String = this match
+    case InputMismatch(reference, described) =>
+      s"Result refers to input $reference but its description declares $described."
+    case ScaleCount(declared, found) =>
+      s"Description declares $declared estimation scales; the result stores $found. " +
+        "A completed result stores every declared scale; partial work is not a result."
+    case ScaleEstimate(index, declared, found) =>
+      s"Scale $index is declared as $declared but stores estimate $found."
+    case MassGrid(key, declared, found) =>
+      s"Trial $key has a density on grid $found; the plan grid is $declared."
+    case FailureKey(key, failure) =>
+      s"Trial $key stores a failure naming another trial: ${failure.message}"
+    case PairFailure(left, right, failure) =>
+      s"Pair ($left, $right) stores a failure naming other trials: ${failure.message}"
+    case OrphanKey(key)          => s"Key $key is referenced but no trial was estimated for it."
+    case OrphanPair(left, right) =>
+      s"Pair ($left, $right) refers to a trial that was not estimated."
+    case Reconstruction(underlying) => underlying.message
+    case Scale(index, underlying)   => s"Scale $index: ${underlying.message}"
+
+object StudyScaleResult:
+  /** Checked reconstruction of one scale: every stored failure names the row it
+    * sits in, and every key the contrast refers to was estimated at this scale.
+    */
+  def reconstruct[K, U <: Unit2D, S, D](
+      estimate: StudyEstimate[U],
+      estimation: Vector[(K, Either[StudyFailure[K], Mass[U]])],
+      excludedPhases: Vector[K],
+      contrast: Either[ContrastError[K], Contrast[K, S, D]]
+  ): Either[StudyResultError[K], StudyScaleResult[K, U, S, D]] =
+    val estimated              = estimation.map(_._1).toSet
+    def known(key: K): Boolean = estimated.contains(key)
+    val rowFailure             = estimation.collectFirst {
+      case (key, Left(failure)) if StudyFailure.keys(failure) != Vector(key) =>
+        StudyResultError.FailureKey(key, failure)
+    }
+    val references: Vector[StudyResultError[K]] = contrast match
+      case Left(_)  => Vector.empty
+      case Right(c) =>
+        Vector(c.matched, c.control).flatMap { analysis =>
+          val pairs = analysis.source.rows.collect {
+            case PairScore(left: K @unchecked, right: K @unchecked, result) =>
+              (left, right, result)
+          }
+          pairs.flatMap { case (left, right, result) =>
+            if !known(left) || !known(right) then Some(StudyResultError.OrphanPair(left, right))
+            else
+              result match
+                case Left(failure: StudyFailure[K] @unchecked)
+                    if !StudyFailure.keys(failure).forall(k => k == left || k == right) =>
+                  Some(StudyResultError.PairFailure(left, right, failure))
+                case _ => None
+          } ++
+            analysis.entries.collect {
+              case row if !known(row.key) =>
+                StudyResultError.OrphanKey(row.key)
+            } ++
+            analysis.diagnostics.failedKeys.collect {
+              case key if !known(key) =>
+                StudyResultError.OrphanKey(key)
+            }
+        } ++ c.rows.collect {
+          case row if !known(row.key) => StudyResultError.OrphanKey(row.key)
+        }
+    rowFailure
+      .orElse(excludedPhases.collectFirst {
+        case key if !known(key) => StudyResultError.OrphanKey(key)
+      })
+      .orElse(references.headOption)
+      .toLeft(new StudyScaleResult(estimate, estimation, excludedPhases, contrast))
+
+object StudyResult:
+  /** Checked reconstruction of a completed result from its identity and scales.
+    * The description must declare exactly the stored scales, with the same
+    * estimator parameters in the same order; every density must lie on the
+    * declared plan grid; the input reference must be the described one.
+    */
+  def reconstruct[K, U <: Unit2D, S, D](
+      input: ArtifactRef[StudyInput[K, U]],
+      description: Vector[(String, Vector[Provenance.Param])],
+      scales: Vector[StudyScaleResult[K, U, S, D]]
+  ): Either[StudyResultError[K], StudyResult[K, U, S, D]] =
+    val fields    = description.toMap
+    val described = fields.getOrElse("input", Vector.empty)
+    val declared  = description.collect {
+      case (field, params) if field.startsWith("estimate.") =>
+        field.drop("estimate.".length).toIntOption -> params
+    }
+    val grid = fields.getOrElse("grid", Vector.empty)
+    if described != Vector(Provenance.Param.Text(input.digest)) then
+      Left(StudyResultError.InputMismatch(input.digest, described))
+    else if declared.size != scales.size || declared.map(_._1) != scales.indices.map(Some(_))
+    then Left(StudyResultError.ScaleCount(declared.size, scales.size))
+    else
+      scales.zipWithIndex
+        .collectFirst {
+          case (scale, index) if declared(index)._2 != scale.estimate.parameters.flatMap {
+                case (k, v) => Vector(Provenance.Param.Text(k), v)
+              } =>
+            StudyResultError.ScaleEstimate(
+              index,
+              declared(index)._2,
+              scale.estimate.parameters.flatMap { case (k, v) =>
+                Vector(Provenance.Param.Text(k), v)
+              }
+            )
+          case (scale, index) if scale.estimation.exists {
+                case (_, Right(mass)) => StudyResult.gridParams(mass.grid) != grid
+                case _                => false
+              } =>
+            val (key, mass) = scale.estimation.collectFirst {
+              case (key, Right(mass)) if StudyResult.gridParams(mass.grid) != grid =>
+                key -> mass
+            }.get
+            StudyResultError.Scale(
+              index,
+              StudyResultError.MassGrid(key, grid, StudyResult.gridParams(mass.grid))
+            )
+        }
+        .toLeft(new StudyResult(input, description, scales))
+
+  private def gridParams[U <: Unit2D](grid: Grid[U]): Vector[Provenance.Param] =
+    Vector(
+      Provenance.Param.Text(grid.id.name),
+      Provenance.Param.Num(grid.nx.toDouble),
+      Provenance.Param.Num(grid.ny.toDouble)
+    )
 
 /** A saved study describes exhaustive matched and different-stimulus controls
   * within each participant. Scale results remain separate; no implicit pooling.

@@ -98,23 +98,9 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
     "focalPhase"     -> Json.fromString(plan.focalPhase),
     "referencePhase" -> Json.fromString(plan.referencePhase),
     "weight"         -> Json.fromString(plan.weight.toString),
-    "policy"         -> (plan.policy match
-      case FailurePolicy.RequireAll => Json.obj("kind" -> Json.fromString("requireAll"))
-      case FailurePolicy.SuccessfulOnly(minimum) =>
-        Json.obj(
-          "kind"    -> Json.fromString("successfulOnly"),
-          "minimum" -> Json.fromInt(minimum.value)
-        )),
-    "estimates" -> Json.arr(plan.estimates.map {
-      case StudyEstimate.Binned()               => Json.obj("kind" -> Json.fromString("binned"))
-      case StudyEstimate.Gaussian(sigma, edges) =>
-        Json.obj(
-          "kind"  -> Json.fromString("gaussian"),
-          "sigma" -> Json.fromDoubleOrNull(sigma.value),
-          "edges" -> Json.fromString(edges.toString)
-        )
-    }*),
-    "parameters" -> encodedParameters
+    "policy"         -> StudyWire.policy(plan.policy),
+    "estimates"      -> Json.arr(plan.estimates.map(StudyWire.estimate[U])*),
+    "parameters"     -> encodedParameters
   )
 
   private def requireId(
@@ -147,22 +133,9 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
     weight     <- Weight.values
       .find(_.toString == weightName)
       .toRight(CodecError.Field("weight", json, s"unknown weight $weightName"))
-    policyJson <- Wire.field[Json](json, "policy")
-    kind       <- Wire.field[String](policyJson, "kind")
-    policy     <- kind match
-      case "requireAll"     => Right(FailurePolicy.RequireAll)
-      case "successfulOnly" =>
-        Wire
-          .field[Int](policyJson, "minimum")
-          .flatMap(n =>
-            FailurePolicy
-              .successfulOnly(n)
-              .left
-              .map(e => CodecError.Field("minimum", policyJson, e.message))
-          )
-      case other => Left(CodecError.Field("policy", policyJson, s"unknown policy $other"))
+    policy        <- Wire.field[Json](json, "policy").flatMap(StudyWire.readPolicy)
     estimateJson  <- Wire.field[Vector[Json]](json, "estimates")
-    estimates     <- estimateJson.traverse(readEstimate)
+    estimates     <- estimateJson.traverse(StudyWire.readEstimate[U])
     parameterJson <- Wire.field[Json](json, "parameters")
     params        <- parameters.decode(parameterJson)
     plan          <- StudyPlan
@@ -171,20 +144,12 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
       .map(CodecError.Definition.apply)
   yield plan
 
-  private def readEstimate(json: Json): Either[CodecError, StudyEstimate[U]] =
-    Wire.field[String](json, "kind").flatMap {
-      case "binned"   => Right(StudyEstimate.Binned())
-      case "gaussian" =>
-        for
-          value <- Wire.field[Double](json, "sigma")
-          sigma <- Sigma.of[U](value).left.map(e => CodecError.Field("sigma", json, e.message))
-          edgesName <- Wire.field[String](json, "edges")
-          edges     <- EdgePolicy.values
-            .find(_.toString == edgesName)
-            .toRight(CodecError.Field("edges", json, s"unknown edge policy $edgesName"))
-        yield StudyEstimate.Gaussian(sigma, edges)
-      case other => Left(CodecError.Field("estimate", json, s"unknown estimator $other"))
-    }
+  /** The result archive for this plan family, with explicit score and difference codecs. */
+  def results(
+      scores: VersionedCodec[S],
+      differences: VersionedCodec[D]
+  ): StudyResultCodec[K, U, P, S, D] =
+    new StudyResultCodec(DefinitionId.studyResult, layout, keys, method, scores, differences)
 
   def registration: StudyRegistration[K, U] =
     new StudyRegistration[K, U]:
@@ -227,3 +192,52 @@ final class StudyRegistry[K, U <: Unit2D] private (
   yield result
 object StudyRegistry:
   def empty[K, U <: Unit2D]: StudyRegistry[K, U] = new StudyRegistry(Vector.empty)
+
+/** Wire forms shared by plan and result payloads. */
+private[codec] object StudyWire:
+  def policy(value: FailurePolicy): Json = value match
+    case FailurePolicy.RequireAll => Json.obj("kind" -> Json.fromString("requireAll"))
+    case FailurePolicy.SuccessfulOnly(minimum) =>
+      Json.obj(
+        "kind"    -> Json.fromString("successfulOnly"),
+        "minimum" -> Json.fromInt(minimum.value)
+      )
+
+  def readPolicy(json: Json): Either[CodecError, FailurePolicy] =
+    Wire.field[String](json, "kind").flatMap {
+      case "requireAll"     => Right(FailurePolicy.RequireAll)
+      case "successfulOnly" =>
+        Wire
+          .field[Int](json, "minimum")
+          .flatMap(n =>
+            FailurePolicy
+              .successfulOnly(n)
+              .left
+              .map(e => CodecError.Field("minimum", json, e.message))
+          )
+      case other => Left(CodecError.Field("policy", json, s"unknown policy $other"))
+    }
+
+  def estimate[U <: Unit2D](value: StudyEstimate[U]): Json = value match
+    case StudyEstimate.Binned()               => Json.obj("kind" -> Json.fromString("binned"))
+    case StudyEstimate.Gaussian(sigma, edges) =>
+      Json.obj(
+        "kind"  -> Json.fromString("gaussian"),
+        "sigma" -> Json.fromDoubleOrNull(sigma.value),
+        "edges" -> Json.fromString(edges.toString)
+      )
+
+  def readEstimate[U <: Unit2D](json: Json): Either[CodecError, StudyEstimate[U]] =
+    Wire.field[String](json, "kind").flatMap {
+      case "binned"   => Right(StudyEstimate.Binned())
+      case "gaussian" =>
+        for
+          value <- Wire.field[Double](json, "sigma")
+          sigma <- Sigma.of[U](value).left.map(e => CodecError.Field("sigma", json, e.message))
+          edgesName <- Wire.field[String](json, "edges")
+          edges     <- EdgePolicy.values
+            .find(_.toString == edgesName)
+            .toRight(CodecError.Field("edges", json, s"unknown edge policy $edgesName"))
+        yield StudyEstimate.Gaussian(sigma, edges)
+      case other => Left(CodecError.Field("estimate", json, s"unknown estimator $other"))
+    }

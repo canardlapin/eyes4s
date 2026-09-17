@@ -208,6 +208,65 @@ checked for decoded meaning and JSON value identity on JVM and Scala.js; the JVM
 checks byte-identical re-encoding of the pretty-printed files, which Scala.js does not promise because
 it renders integral doubles without a fraction.
 
+## Completed results
+
+`StudyResultCodecs.cosine[U]` supplies the versioned codec for a completed `StudyResult` of the
+ordinary cosine route (`eyes4s.study-result@1`); `persistence.results(scoreCodec, differenceCodec)`
+builds one from any `StudyCodec`, so an extension method archives its own score and difference
+types through the codecs it registers, never through `Any`, an unnamed numeric vector or a rendered
+string. Only a `StudyResult` can be encoded, and a `StudyResult` exists only for completed execution:
+a cancelled or failed run has no value to archive.
+
+The archive keeps the result's identity and every piece of evidence the run produced:
+
+- the layout, key, method, score and difference schema identities, the spatial unit, the input
+  reference digest and the complete plan description with its typed parameters;
+- per scale, the estimator, every trial's estimation outcome (a density as its cell values on the
+  plan grid with its provenance, or a typed `StudyFailure` naming the trial), and the keys excluded
+  by phase selection;
+- both directed pair analyses: every pair row with both source keys and its score or typed failure
+  (`StudyFailure.Comparison` names both trials; an estimation failure names the trial that failed),
+  the pairing report (pair space, eligible and selected counts, unmatched keys, duplicate-key
+  ambiguities with their operand indices), the evaluation metadata (name, scale and the full
+  `EvaluationSpec`) and the evaluation provenance;
+- both by-focal reductions: every `ReductionRow` with its typed `ReductionError` or score and its
+  `successful`/`failed`/`contributing` denominators, the `ReductionReport` and the reduction provenance;
+- the contrast rows in the layout's key order, each with its operands and its difference or typed
+  `ContrastRowError`, or the typed `ContrastError` when no contrast could be formed.
+
+Provenance is written as its input digest and every step's parameters in order; 64-bit values are
+decimal strings. Densities are cell values on a grid declared once in the document identity table.
+Decoding rebuilds the result through checked reconstruction: `DirectedPairwiseAnalysis.reconstruct`,
+`Analysis.reconstruct`, `ReductionRow.reconstruct`, `ReductionReport.reconstruct`,
+`ContrastRow.reconstruct`, `Contrast.reconstruct` (design) and `StudyScaleResult.reconstruct`,
+`StudyResult.reconstruct` (plan). Each recomputes what it can from the stored parts and refuses
+disagreement with the operands that disagree: a pair analysis whose row count differs from its
+selected count, a stored provenance that differs from the derivation of the same rows
+(`ReconstructionError.ProvenanceConflict`), a row whose `contributing` does not follow from its
+outcome (`ReconstructionError.Denominator`), a report whose counts do not follow from its rows, a
+contrast whose rows do not cover the sorted key union or whose operands are not the analyses' own
+rows, a scale count that differs from the described estimators (`StudyResultError.ScaleCount`, which
+is how a partial accumulator tagged as complete is refused), a pair or key that no estimated trial
+carries (`StudyResultError.OrphanPair`, `OrphanKey`), a failure naming another trial than its row, a
+density on a grid other than the plan grid, and archived score components that differ from the
+method's (`CodecError.ScoreComponents`). Errors inside a stage are located, for example
+`CodecError.Entry("scales[0].contrast.matched.source.rows[1]", ...)`.
+
+`StudyResultRegistry` registers result codecs by method identity and refuses unknown
+(`CodecError.MissingResultCodec`) or duplicate (`CodecError.DuplicateResultCodec`) registrations; a
+payload declaring another score or difference schema than the registered codec's is refused before
+any row is read. Temporal failures (`StudyFailure.Temporal`) are refused with
+`CodecError.Unsupported`: they name windows and epochs of the temporal route and belong to the
+temporal result archive that follows the recording and temporal input payloads.
+
+The pinned [study-result-v1.json](../codec/src/test/resources/eyes4s/study-result-v1.json) is the
+pinned study-v1 plan run on the pinned study-input-v1 input. The portable suite checks its decoded
+meaning and JSON value identity on JVM and Scala.js, and that re-executing the pinned plan on the
+pinned input reproduces the archive bit for bit; the JVM suite additionally checks byte-identical
+re-encoding of the pretty-printed file. `eyes4s.laws.StudyResultEquivalence` is the published
+structural identity of two results, for round-trip laws over extension score types that keep
+reference equality.
+
 ## Versions and extensions
 
 The JSON envelope has a schema identifier and version. Its payload separately records the method
