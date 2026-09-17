@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s","entity":"bd-01KYD6CFWNAN0Y3TR59FJV8VMG","kind":"note","note_kind":"progress","op":"20260917T180612.409163Z-p63815-c0003-r2807-heb7708","text":"Implement actual keyed candidate enumeration for SameOn/conjunctions; preserve source ordering, duplicate exclusions, sampling priorities and schedule budgets.","ts":"2026-09-17T18:06:12.409163Z","v":1}
