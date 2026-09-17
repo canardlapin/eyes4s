@@ -195,8 +195,10 @@ private[codec] object ResultWire:
     "yAxis" -> Json.fromString(spec.yAxis.toString)
   )
 
-  /** A frame specification is unit-free structural metadata; any unit rebuilds it. */
-  def readFrameSpec(json: Json): Either[CodecError, (FrameId, FrameSpec)] = for
+  /** A frame specification is unit-free structural metadata; the pixel frame
+    * that rebuilds it is returned so callers take its identity and spec.
+    */
+  def readFrameSpec(json: Json): Either[CodecError, Frame[Unit2D.Px]] = for
     id       <- Wire.field[String](json, "id")
     a        <- DomainWire.finite(json, "xMin")
     b        <- DomainWire.finite(json, "yMin")
@@ -210,7 +212,7 @@ private[codec] object ResultWire:
       .of[Unit2D.Px](a, b, c, d)
       .left
       .map(e => CodecError.Field("bounds", json, e.message))
-  yield FrameId(id) -> Frame.of(FrameId(id), bounds, axis).spec
+  yield Frame.of(FrameId(id), bounds, axis)
 
   def gridSpec(id: GridId, spec: GridSpec): Json = Json.obj(
     "id"    -> gridId(id),
@@ -224,19 +226,11 @@ private[codec] object ResultWire:
     frame <- Wire.field[Json](json, "frame").flatMap(readFrameSpec)
     nx    <- Wire.field[Int](json, "nx")
     ny    <- Wire.field[Int](json, "ny")
-    (frameId, fs) = frame
-    grid <- Grid
-      .of(GridId(id), frameFromSpec(frameId, fs), nx, ny)
+    grid  <- Grid
+      .of(GridId(id), frame, nx, ny)
       .left
       .map(e => CodecError.Field("grid", json, e.message))
   yield GridId(id) -> grid.spec
-
-  private def frameFromSpec(id: FrameId, spec: FrameSpec): Frame[Unit2D.Px] =
-    Frame.of(
-      id,
-      Bounds.of[Unit2D.Px](spec.xMin, spec.yMin, spec.xMax, spec.yMax).toOption.get,
-      spec.yAxis
-    )
 
   def lengthUnit(unit: LengthUnit): Json = Json.fromString(unit.symbol)
 
@@ -337,7 +331,7 @@ private[codec] object ResultWire:
           id <- readFrameId(json, "id")
           l  <- Wire.field[Json](json, "left").flatMap(readFrameSpec)
           r  <- Wire.field[Json](json, "right").flatMap(readFrameSpec)
-        yield FrameIdentityConflict(id, l._2, r._2)
+        yield FrameIdentityConflict(id, l.spec, r.spec)
       case "nonFiniteLength"        => length(NonFiniteLength.apply)
       case "negativeLength"         => length(NegativeLength.apply)
       case "nonPositivePerspective" =>
@@ -988,12 +982,12 @@ private[codec] object ResultWire:
         (),
         CodecError.Field("unit", json, s"expected ${unit.symbol}, got $symbol")
       )
-      spec   <- Wire.field[Json](json, "frame").flatMap(readFrameSpec)
+      pixel  <- Wire.field[Json](json, "frame").flatMap(readFrameSpec)
       bounds <- Bounds
-        .of[U](spec._2.xMin, spec._2.yMin, spec._2.xMax, spec._2.yMax)
+        .of[U](pixel.spec.xMin, pixel.spec.yMin, pixel.spec.xMax, pixel.spec.yMax)
         .left
         .map(e => CodecError.Field("frame", json, e.message))
-    yield Frame.of(spec._1, bounds, spec._2.yAxis)
+    yield Frame.of(pixel.id, bounds, pixel.yAxis)
     kind(json).flatMap {
       case "independent" => Right(EvaluationGeometry.Independent)
       case "frame"       => frame.map(f => EvaluationGeometry.inFrame(f))

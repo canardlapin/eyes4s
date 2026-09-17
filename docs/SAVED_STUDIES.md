@@ -236,21 +236,58 @@ The archive keeps the result's identity and every piece of evidence the run prod
 
 Provenance is written as its input digest and every step's parameters in order; 64-bit values are
 decimal strings. Densities are cell values on a grid declared once in the document identity table.
+Each scale carries `analyses`, a `StudyAnalyses` with both typed directed pair analyses
+(`DirectedPairwiseAnalysis[K, K, StudyFailure[K], S]`) and their reductions, and the `contrast` is
+over those same reductions; the archive stores the analyses once and the contrast rows beside them.
+
 Decoding rebuilds the result through checked reconstruction: `DirectedPairwiseAnalysis.reconstruct`,
-`Analysis.reconstruct`, `ReductionRow.reconstruct`, `ReductionReport.reconstruct`,
-`ContrastRow.reconstruct`, `Contrast.reconstruct` (design) and `StudyScaleResult.reconstruct`,
-`StudyResult.reconstruct` (plan). Each recomputes what it can from the stored parts and refuses
-disagreement with the operands that disagree: a pair analysis whose row count differs from its
-selected count, a stored provenance that differs from the derivation of the same rows
-(`ReconstructionError.ProvenanceConflict`), a row whose `contributing` does not follow from its
-outcome (`ReconstructionError.Denominator`), a report whose counts do not follow from its rows, a
-contrast whose rows do not cover the sorted key union or whose operands are not the analyses' own
-rows, a scale count that differs from the described estimators (`StudyResultError.ScaleCount`, which
-is how a partial accumulator tagged as complete is refused), a pair or key that no estimated trial
-carries (`StudyResultError.OrphanPair`, `OrphanKey`), a failure naming another trial than its row, a
-density on a grid other than the plan grid, and archived score components that differ from the
-method's (`CodecError.ScoreComponents`). Errors inside a stage are located, for example
-`CodecError.Entry("scales[0].contrast.matched.source.rows[1]", ...)`.
+`Analysis.reconstructByLeft` (and `reconstructByRight`, `reconstructEdges`, `reconstructByEndpoint`
+for the other orientations), `ReductionRow.reconstruct`, `ReductionReport.reconstruct`,
+`ContrastRow.reconstruct`, `Contrast.reconstruct` (design) and `StudyAnalyses.of`,
+`StudyScaleResult.reconstruct`, `StudyResult.reconstruct` (plan). What is re-derived and checked:
+
+- `DirectedPairwiseAnalysis.reconstruct` requires one row per selected pair and re-derives the
+  evaluation provenance from the rows, the pairing report and the evaluation metadata; the stored
+  provenance must equal it (`ReconstructionError.RowCount`, `ProvenanceConflict`).
+- `Analysis.reconstructByLeft` regroups the pair rows by focal key exactly as the reduction cursor
+  does (contributions, then unmatched keys, then ambiguities, in order of first appearance) and
+  requires the stored rows to cover those keys in that order (`KeyDomain`), each row's
+  `successful`/`failed` to be the group's (`KeyDenominator`), each row's outcome to be the one the
+  group and the policy force, an ambiguity, no scores, a rejected failure count, or otherwise a score
+  or a mean failure (`OutcomeShape`; the mean itself is the one thing not recomputed), every report
+  count to follow from the rows and the source, including `contributionCount == rows.size`
+  (`ReportCount`, `FailedKeys`), and the reduction provenance to equal the derivation
+  (`ProvenanceConflict`). `ReductionRow.reconstruct` additionally requires `contributing` to follow
+  from the outcome (`Denominator`) and a failed outcome's own counts to agree with the row's.
+- `Contrast.reconstruct` re-runs the contrast compatibility check, requires the rows to cover the
+  sorted key union in the layout's ordering (`ContrastDomain`) and each row's operands to be the
+  reductions' own rows (`ContrastOperand`); `ContrastRow.reconstruct` requires the difference's shape
+  to follow from its operands (`ContrastRowShape`).
+- `StudyAnalyses.of` requires each reduction to have been reduced from the very pair analysis
+  supplied beside it (`StudyResultError.SourceIdentity`), which is how a reduction over an
+  undirected or foreign source is refused, and `StudyScaleResult.reconstruct` requires the contrast
+  to be over the scale's own reductions (`ContrastAnalyses`).
+- `StudyScaleResult.reconstruct` requires every density's provenance steps to be the ones the scale's
+  estimator derives, `StudyEstimate.provenanceSteps`, so the smoothing bandwidth and edge policy on
+  record are the declared ones (`MassProvenance`); every stored failure to name the row it sits in
+  (`FailureKey`, `PairFailure`); and every pair, unmatched, reduced, contrasted or excluded key to
+  be an estimated trial (`OrphanPair`, `OrphanKey`).
+- `StudyResult.reconstruct` takes the layout and requires the description to name it
+  (`LayoutMismatch`), the input reference (`InputMismatch`) and exactly the stored scales with the
+  same estimator parameters (`ScaleCount`, which is how a partial accumulator tagged as complete is
+  refused, and `ScaleEstimate`); every density to lie on the described grid (`MassGrid`); and, for
+  both pair analyses of every scale: the evaluation provenance's inputs digest to be the study input
+  (`ProvenanceInputs`), the evaluation specification to name the described method and version
+  (`MissingSpecification`, `SpecificationMethod`) with parameters equal to the described weight,
+  estimator and `method.*` parameters (`SpecificationParameters`), the reduction to use the
+  described failure policy (`Policy`), and every pair to join a focal-phase trial to a
+  reference-phase trial under the layout, with excluded keys outside both phases (`Phase`).
+- The codec itself requires the archived score components to be the method's
+  (`CodecError.ScoreComponents`).
+
+Not re-derived: the reduced means and contrast differences (arithmetic), and the digest inside each
+density's provenance, which is the digest of the trial's occupancy and needs the input. Errors inside
+a stage are located, for example `CodecError.Entry("scales[0].analyses.matched.source.rows[1]", ...)`.
 
 `StudyResultRegistry` registers result codecs by method identity and refuses unknown
 (`CodecError.MissingResultCodec`) or duplicate (`CodecError.DuplicateResultCodec`) registrations; a

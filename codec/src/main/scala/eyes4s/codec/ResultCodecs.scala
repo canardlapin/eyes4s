@@ -110,11 +110,13 @@ object StudyResultCodecs:
   * layout and method identities, the score and difference schemas), every
   * scale's estimation outcomes as densities on the plan grid or typed
   * failures, both directed pair analyses with every pair row, pairing
-  * diagnostics and provenance, the by-focal reductions with their per-key
-  * denominators and reports, and the keyed contrast rows. Decoding rebuilds
-  * the result through the checked reconstruction APIs, so an archive whose
-  * counts, keys, denominators or provenance disagree is refused with the
-  * operands that disagree. Only a completed result can be encoded: cancelled
+  * diagnostics, evaluation specification and provenance, the by-focal
+  * reductions with their per-key denominators and reports, and the keyed
+  * contrast rows. Decoding rebuilds the result through the checked
+  * reconstruction APIs, which regroup the reductions from the pair rows,
+  * re-derive every provenance from the rows and the plan description, and
+  * refuse an archive whose counts, keys, denominators, specification or
+  * provenance disagree, naming the operands that disagree. Only a completed result can be encoded: cancelled
   * or failed execution never produces a `StudyResult`.
   */
 final class StudyResultCodec[K, U <: Unit2D, P, S, D](
@@ -217,7 +219,7 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
       readScale(table, entry).left.map(Wire.at(s"scales[$index]"))
     }
     result <- StudyResult
-      .reconstruct(input, description, scales)
+      .reconstruct(input, layout, description, scales)
       .left
       .map(e => CodecError.Result(e))
   yield result
@@ -243,6 +245,10 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
       yield Json.obj("key" -> k, "outcome" -> o)).left.map(Wire.at(s"estimation[$index]"))
     }
     excluded <- scale.excludedPhases.traverse(keys.encode).left.map(Wire.at("excludedPhases"))
+    matched  <- writeAnalysis(scale.analyses.matchedSource, scale.analyses.matched).left
+      .map(Wire.at("analyses.matched"))
+    control <- writeAnalysis(scale.analyses.controlSource, scale.analyses.control).left
+      .map(Wire.at("analyses.control"))
     contrast <- (scale.contrast match
       case Right(value) => writeContrast(value)
       case Left(error)  =>
@@ -254,6 +260,7 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
     "estimate"       -> StudyWire.estimate(scale.estimate),
     "estimation"     -> Json.arr(estimation*),
     "excludedPhases" -> Json.arr(excluded*),
+    "analyses"       -> Json.obj("matched" -> matched, "control" -> control),
     "contrast"       -> contrast
   )
 
@@ -266,14 +273,29 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
     estimation <- rows.zipWithIndex.traverse { case (row, index) =>
       readEstimate(table, row).left.map(Wire.at(s"estimation[$index]"))
     }
-    excluded <- ResultWire.keyVector(keys, json, "excludedPhases")
+    excluded  <- ResultWire.keyVector(keys, json, "excludedPhases")
+    analysesJ <- Wire.field[Json](json, "analyses")
+    matched   <- Wire
+      .field[Json](analysesJ, "matched")
+      .flatMap(readAnalysis)
+      .left
+      .map(Wire.at("analyses.matched"))
+    control <- Wire
+      .field[Json](analysesJ, "control")
+      .flatMap(readAnalysis)
+      .left
+      .map(Wire.at("analyses.control"))
+    analyses <- StudyAnalyses
+      .of(matched._1, matched._2, control._1, control._2)
+      .left
+      .map(e => CodecError.Result(e))
     contrast <- Wire
       .field[Json](json, "contrast")
-      .flatMap(readContrast)
+      .flatMap(readContrast(analyses, _))
       .left
       .map(Wire.at("contrast"))
     scale <- StudyScaleResult
-      .reconstruct(estimate, estimation, excluded, contrast)
+      .reconstruct(estimate, estimation, excluded, analyses, contrast)
       .left
       .map(e => CodecError.Result(e))
   yield scale
@@ -313,36 +335,31 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
         case other => Left(ResultWire.unknown(outcome, "estimation outcome", other))
     yield key -> value
 
-  private def writeContrast(contrast: Contrast[K, S, D]): Either[CodecError, Json] = for
-    matched <- writeAnalysis(contrast.matched).left.map(Wire.at("matched"))
-    control <- writeAnalysis(contrast.control).left.map(Wire.at("control"))
-    rows    <- contrast.rows.zipWithIndex.traverse { case (row, index) =>
-      (for
-        key        <- keys.encode(row.key)
-        difference <- row.difference match
-          case Right(value) =>
-            ResultWire
-              .payload(differences, value)
-              .map(d => ResultWire.tagged("value", "value" -> d))
-          case Left(error) =>
-            ResultWire
-              .contrastRowError(keys)(error)
-              .map(e => ResultWire.tagged("error", "error" -> e))
-      yield Json.obj(
-        "key"        -> key,
-        "matched"    -> Json.fromBoolean(row.matched.isDefined),
-        "control"    -> Json.fromBoolean(row.control.isDefined),
-        "difference" -> difference
-      )).left.map(Wire.at(s"rows[$index]"))
-    }
-  yield ResultWire.tagged(
-    "contrast",
-    "matched" -> matched,
-    "control" -> control,
-    "rows"    -> Json.arr(rows*)
-  )
+  private def writeContrast(contrast: Contrast[K, S, D]): Either[CodecError, Json] =
+    contrast.rows.zipWithIndex
+      .traverse { case (row, index) =>
+        (for
+          key        <- keys.encode(row.key)
+          difference <- row.difference match
+            case Right(value) =>
+              ResultWire
+                .payload(differences, value)
+                .map(d => ResultWire.tagged("value", "value" -> d))
+            case Left(error) =>
+              ResultWire
+                .contrastRowError(keys)(error)
+                .map(e => ResultWire.tagged("error", "error" -> e))
+        yield Json.obj(
+          "key"        -> key,
+          "matched"    -> Json.fromBoolean(row.matched.isDefined),
+          "control"    -> Json.fromBoolean(row.control.isDefined),
+          "difference" -> difference
+        )).left.map(Wire.at(s"rows[$index]"))
+      }
+      .map(rows => ResultWire.tagged("contrast", "rows" -> Json.arr(rows*)))
 
   private def readContrast(
+      analyses: StudyAnalyses[K, S],
       json: Json
   ): Either[CodecError, Either[ContrastError[K], Contrast[K, S, D]]] =
     ResultWire.kind(json).flatMap {
@@ -352,25 +369,15 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
           .flatMap(ResultWire.readContrastError[K, U](keys))
           .map(Left(_))
       case "contrast" =>
+        val matchedRows = analyses.matched.entries.map(row => row.key -> row).toMap
+        val controlRows = analyses.control.entries.map(row => row.key -> row).toMap
         for
-          matched <- Wire
-            .field[Json](json, "matched")
-            .flatMap(readAnalysis)
-            .left
-            .map(Wire.at("matched"))
-          control <- Wire
-            .field[Json](json, "control")
-            .flatMap(readAnalysis)
-            .left
-            .map(Wire.at("control"))
-          matchedRows = matched.entries.map(row => row.key -> row).toMap
-          controlRows = control.entries.map(row => row.key -> row).toMap
           entries <- Wire.field[Vector[Json]](json, "rows")
           rows    <- entries.zipWithIndex.traverse { case (entry, index) =>
             readContrastRow(entry, matchedRows, controlRows).left.map(Wire.at(s"rows[$index]"))
           }
           contrast <- Contrast
-            .reconstruct(matched, control, rows, method.difference.components)
+            .reconstruct(analyses.matched, analyses.control, rows, method.difference.components)
             .left
             .map(e => CodecError.Reconstruction(e))
         yield Right(contrast)
@@ -391,8 +398,9 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
         matchedRows
           .get(key)
           .toRight(
-            CodecError
-              .Reconstruction(ReconstructionError.ContrastOperand(key, ContrastOperand.Matched))
+            CodecError.Reconstruction(
+              ReconstructionError.ContrastOperand(key, ContrastOperand.Matched)
+            )
           )
           .map(Some(_))
     control <-
@@ -401,8 +409,9 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
         controlRows
           .get(key)
           .toRight(
-            CodecError
-              .Reconstruction(ReconstructionError.ContrastOperand(key, ContrastOperand.Control))
+            CodecError.Reconstruction(
+              ReconstructionError.ContrastOperand(key, ContrastOperand.Control)
+            )
           )
           .map(Some(_))
     outcome    <- Wire.field[Json](json, "difference")
@@ -425,18 +434,11 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
       .map(e => CodecError.Reconstruction(e))
   yield row
 
-  private def writeAnalysis(analysis: Analysis[K, S]): Either[CodecError, Json] = for
-    source <- (analysis.source match
-      case directed: DirectedPairwiseAnalysis[?, ?, ?, S] @unchecked =>
-        writeSource(directed.asInstanceOf[Source])
-      case _ =>
-        Left(
-          CodecError.Unsupported(
-            "source",
-            "a fixation study reduces directed pair analyses; undirected sources are not a study result"
-          )
-        )
-    ).left.map(Wire.at("source"))
+  private def writeAnalysis(
+      source: Source,
+      analysis: Analysis[K, S]
+  ): Either[CodecError, Json] = for
+    written <- writeSource(source).left.map(Wire.at("source"))
     entries <- analysis.entries.zipWithIndex.traverse { case (row, index) =>
       (for
         key    <- keys.encode(row.key)
@@ -460,13 +462,13 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
       .left
       .map(Wire.at("diagnostics"))
   yield Json.obj(
-    "source"      -> source,
+    "source"      -> written,
     "entries"     -> Json.arr(entries*),
     "diagnostics" -> diagnostics,
     "provenance"  -> ResultWire.provenance(analysis.provenance)
   )
 
-  private def readAnalysis(json: Json): Either[CodecError, Analysis[K, S]] = for
+  private def readAnalysis(json: Json): Either[CodecError, (Source, Analysis[K, S])] = for
     source  <- Wire.field[Json](json, "source").flatMap(readSource).left.map(Wire.at("source"))
     entries <- Wire.field[Vector[Json]](json, "entries")
     rows    <- entries.zipWithIndex.traverse { case (entry, index) =>
@@ -502,10 +504,10 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
       .map(Wire.at("diagnostics"))
     provenance <- Wire.field[Json](json, "provenance").flatMap(ResultWire.readProvenance)
     analysis   <- Analysis
-      .reconstruct(rows, diagnostics, provenance, source)
+      .reconstructByLeft(rows, diagnostics, provenance, source)
       .left
       .map(e => CodecError.Reconstruction(e))
-  yield analysis
+  yield (source, analysis)
 
   private def writeSource(source: Source): Either[CodecError, Json] = for
     rows <- source.rows.zipWithIndex.traverse { case (row, index) =>

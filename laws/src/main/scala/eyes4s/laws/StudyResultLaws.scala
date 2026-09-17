@@ -25,10 +25,11 @@ import eyes4s.plan.*
   * Result classes keep reference equality and surfaces compare by provenance,
   * so a law needs an explicit notion of "the same result": the same identity,
   * every estimation outcome (density cells and provenance, or the typed
-  * failure), every pair row, pairing report and provenance, every reduced row
-  * with its denominators, every report and every contrast row. Scores and
-  * differences are compared by the supplied predicates, so extension types
-  * without structural equality can still be checked exactly.
+  * failure), both typed pair analyses with every pair row, pairing report,
+  * evaluation metadata and provenance, every reduced row with its
+  * denominators, every report and every contrast row. Scores and differences
+  * are compared by the supplied predicates, so extension types without
+  * structural equality can still be checked exactly.
   */
 object StudyResultEquivalence:
   def same[K, U <: Unit2D, S, D](a: StudyResult[K, U, S, D], b: StudyResult[K, U, S, D])(
@@ -51,10 +52,33 @@ object StudyResultEquivalence:
         case ((k, Left(x)), (l, Left(y))) => k == l && x == y
         case _                            => false
       } &&
+      sameAnalyses(a.analyses, b.analyses)(scores) &&
       ((a.contrast, b.contrast) match
         case (Right(x), Right(y)) => sameContrast(x, y)(scores, differences)
         case (Left(x), Left(y))   => x == y
         case _                    => false)
+
+  def sameAnalyses[K, S](a: StudyAnalyses[K, S], b: StudyAnalyses[K, S])(
+      scores: (S, S) => Boolean
+  ): Boolean =
+    StudyDesign.values.forall { design =>
+      sameSource(a.source(design), b.source(design))(scores) &&
+      sameAnalysis(a.reduced(design), b.reduced(design))(scores)
+    }
+
+  def sameSource[K, E, S](
+      a: DirectedPairwiseAnalysis[K, K, E, S],
+      b: DirectedPairwiseAnalysis[K, K, E, S]
+  )(scores: (S, S) => Boolean): Boolean =
+    a.diagnostics == b.diagnostics && a.provenance == b.provenance &&
+      a.evaluation == b.evaluation && a.rows.size == b.rows.size &&
+      a.rows.zip(b.rows).forall { case (x, y) =>
+        x.left == y.left && x.right == y.right &&
+        ((x.result, y.result) match
+          case (Right(p), Right(q)) => scores(p, q)
+          case (Left(p), Left(q))   => p == q
+          case _                    => false)
+      }
 
   def sameContrast[K, S, D](a: Contrast[K, S, D], b: Contrast[K, S, D])(
       scores: (S, S) => Boolean,
@@ -77,15 +101,7 @@ object StudyResultEquivalence:
     a.entries.size == b.entries.size &&
       a.entries.zip(b.entries).forall { case (x, y) => sameRow(x, y)(scores) } &&
       a.diagnostics == b.diagnostics && a.provenance == b.provenance &&
-      a.evaluation == b.evaluation && a.source.diagnostics == b.source.diagnostics &&
-      a.source.provenance == b.source.provenance && a.source.rows.size == b.source.rows.size &&
-      a.source.rows.zip(b.source.rows).forall { case (x, y) =>
-        x.left == y.left && x.right == y.right &&
-        ((x.result, y.result) match
-          case (Right(p), Right(q)) => scores(p, q)
-          case (Left(p), Left(q))   => p == q
-          case _                    => false)
-      }
+      a.evaluation == b.evaluation
 
   private def sameOption[K, S](a: Option[ReductionRow[K, S]], b: Option[ReductionRow[K, S]])(
       scores: (S, S) => Boolean

@@ -44,10 +44,28 @@ object ResultEquivalence:
         case ((k, Left(x)), (l, Left(y))) => k == l && x == y
         case _                            => false
       } &&
+      StudyDesign.values.forall { design =>
+        sameSource(a.analyses.source(design), b.analyses.source(design))(scores) &&
+        sameAnalysis(a.analyses.reduced(design), b.analyses.reduced(design))(scores)
+      } &&
       ((a.contrast, b.contrast) match
         case (Right(x), Right(y)) => sameContrast(x, y)(scores, differences)
         case (Left(x), Left(y))   => x == y
         case _                    => false)
+
+  def sameSource[K, E, S](
+      a: DirectedPairwiseAnalysis[K, K, E, S],
+      b: DirectedPairwiseAnalysis[K, K, E, S]
+  )(scores: (S, S) => Boolean): Boolean =
+    a.diagnostics == b.diagnostics && a.provenance == b.provenance &&
+      a.evaluation == b.evaluation && a.rows.size == b.rows.size &&
+      a.rows.zip(b.rows).forall { case (x, y) =>
+        x.left == y.left && x.right == y.right &&
+        ((x.result, y.result) match
+          case (Right(p), Right(q)) => scores(p, q)
+          case (Left(p), Left(q))   => p == q
+          case _                    => false)
+      }
 
   def sameContrast[K, S, D](a: Contrast[K, S, D], b: Contrast[K, S, D])(
       scores: (S, S) => Boolean,
@@ -70,15 +88,7 @@ object ResultEquivalence:
     a.entries.size == b.entries.size &&
       a.entries.zip(b.entries).forall { case (x, y) => sameRow(x, y)(scores) } &&
       a.diagnostics == b.diagnostics && a.provenance == b.provenance &&
-      a.evaluation == b.evaluation && a.source.diagnostics == b.source.diagnostics &&
-      a.source.provenance == b.source.provenance && a.source.rows.size == b.source.rows.size &&
-      a.source.rows.zip(b.source.rows).forall { case (x, y) =>
-        x.left == y.left && x.right == y.right &&
-        ((x.result, y.result) match
-          case (Right(p), Right(q)) => scores(p, q)
-          case (Left(p), Left(q))   => p == q
-          case _                    => false)
-      }
+      a.evaluation == b.evaluation
 
   private def sameOption[K, S](a: Option[ReductionRow[K, S]], b: Option[ReductionRow[K, S]])(
       scores: (S, S) => Boolean

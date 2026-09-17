@@ -42,7 +42,8 @@ class StudyResultCodecLawSuite extends munit.DisciplineSuite:
   private val sim        = (a: Similarity, b: Similarity) => a.value == b.value
   private val diff       = (a: SignedDifference, b: SignedDifference) => a.value == b.value
   private type Result = StudyResult[StudyKey, Px, Similarity, SignedDifference]
-  private type Scale  = StudyScaleResult[StudyKey, Px, Similarity, SignedDifference]
+  private type Source =
+    DirectedPairwiseAnalysis[StudyKey, StudyKey, StudyFailure[StudyKey], Similarity]
   private val same = (a: Result, b: Result) => StudyResultEquivalence.same(a, b)(sim, diff)
 
   private def trial(key: StudyKey, in: Frame[Px], points: Vector[(Double, Double)]) =
@@ -79,6 +80,23 @@ class StudyResultCodecLawSuite extends munit.DisciplineSuite:
       .flatMap(n => Gen.listOfN(n, trials))
       .map(rows => StudyInput(Trials(rows.toVector)))
 
+  /** A focal trial in a foreign frame with its matched reference (a failed
+    * pair) and a clean matched pair (a successful pair and a reduced key), on
+    * top of the random trials; every mutant below has something to alter.
+    */
+  private val guaranteed: Gen[StudyInput[StudyKey, Px]] = inputs.map(random =>
+    StudyInput(
+      Trials(
+        Vector(
+          trial(StudyKey("p1", "z", "recall"), otherFrame, Vector((0.5, 0.5))),
+          trial(StudyKey("p1", "z", "encode"), frame, Vector((0.5, 0.5))),
+          trial(StudyKey("p1", "y", "recall"), frame, Vector((0.5, 0.5), (1.5, 1.5))),
+          trial(StudyKey("p1", "y", "encode"), frame, Vector((1.5, 1.5)))
+        ) ++ random.trials.rows
+      )
+    )
+  )
+
   private val policies: Gen[FailurePolicy] = Gen.oneOf(
     Gen.const(FailurePolicy.RequireAll),
     Gen.choose(1, 2).map(n => checked(FailurePolicy.successfulOnly(n)))
@@ -91,18 +109,37 @@ class StudyResultCodecLawSuite extends munit.DisciplineSuite:
   )
   private val estimates: Gen[Vector[StudyEstimate[Px]]] =
     Gen
-      .someOf(candidates.indices)
-      .suchThat(_.nonEmpty)
-      .map(chosen => chosen.toVector.sorted.map(candidates))
+      .choose(1, 7)
+      .map(mask =>
+        candidates.indices.filter(i => (mask & (1 << i)) != 0).map(candidates).toVector
+      )
+
+  private def run(
+      input: StudyInput[StudyKey, Px],
+      policy: FailurePolicy,
+      scales: Vector[StudyEstimate[Px]]
+  ): Result =
+    checked(
+      StudyPlan
+        .cosine[Px](input.reference, grid, "recall", "encode", Weight.Duration, scales, policy)
+        .flatMap(_.run(input))
+    )
 
   private val results: Gen[Result] = for
     input  <- inputs
     policy <- policies
     scales <- estimates
-  yield checked(
-    StudyPlan
-      .cosine[Px](input.reference, grid, "recall", "encode", Weight.Duration, scales, policy)
-      .flatMap(_.run(input))
+  yield run(input, policy, scales)
+
+  /** Binned first, so the first scale has a density, a failed pair and a reduced key. */
+  private val mutable: Gen[Result] = for
+    input  <- guaranteed
+    policy <- policies
+    scales <- estimates
+  yield run(
+    input,
+    policy,
+    StudyEstimate.Binned() +: scales.filterNot(_ == StudyEstimate.Binned())
   )
 
   checkAll("cosine study result", CodecLaws.roundTrip(codec.codec, results, same))
@@ -131,176 +168,167 @@ class StudyResultCodecLawSuite extends munit.DisciplineSuite:
         .flatMap(change)
     )
 
+  /** A mutant is killed only by a falsified property, never by exhaustion. */
   private def killed[A](codec: VersionedCodec[A], gen: Gen[A], eq: (A, A) => Boolean): Boolean =
     CodecLaws.roundTrip(codec, gen, eq).all.properties.exists { case (_, prop) =>
-      !Test.check(Test.Parameters.default.withMinSuccessfulTests(40), prop).passed
+      Test.check(Test.Parameters.default.withMinSuccessfulTests(40), prop).status match
+        case Test.Failed(_, _) | Test.PropException(_, _, _) => true
+        case _                                               => false
     }
 
-  private def matchedOf(scale: Scale): Option[Analysis[StudyKey, Similarity]] =
-    scale.contrast.toOption.map(_.matched)
+  private def reconstruction[A](
+      e: Either[ReconstructionError[StudyKey], A]
+  ): Either[CodecError, A] =
+    e.left.map(x => CodecError.Reconstruction(x))
+  private def result[A](e: Either[StudyResultError[StudyKey], A]): Either[CodecError, A] =
+    e.left.map(x => CodecError.Result(x))
 
-  /** Rebuild a result with its first scale replaced through the checked constructors. */
-  private def withScale(result: Result)(
-      change: Scale => Either[CodecError, Scale]
-  ): Either[CodecError, Result] =
-    change(result.scales.head).flatMap(scale =>
-      StudyResult
-        .reconstruct(result.input, result.description, scale +: result.scales.tail)
-        .left
-        .map(e => CodecError.Result(e))
-    )
-
-  private def withMatched(scale: Scale)(
-      change: Analysis[StudyKey, Similarity] => Either[
+  /** Rebuild a result with its first scale's matched analysis replaced through
+    * the checked constructors; the contrast rows are kept as stored.
+    */
+  private def withMatched(r: Result)(
+      change: (Source, Analysis[StudyKey, Similarity]) => Either[
         CodecError,
-        Analysis[StudyKey, Similarity]
+        (Source, Analysis[StudyKey, Similarity])
       ]
-  ): Either[CodecError, Scale] =
-    val contrast = scale.contrast.toOption.get
-    change(contrast.matched).flatMap(matched =>
-      Contrast
-        .reconstruct(matched, contrast.control, contrast.rows, Vector("value"))
-        .left
-        .map(e => CodecError.Reconstruction(e))
-        .flatMap(c =>
-          StudyScaleResult
-            .reconstruct(scale.estimate, scale.estimation, scale.excludedPhases, Right(c))
-            .left
-            .map(e => CodecError.Result(e))
+  ): Either[CodecError, Result] =
+    val scale = r.scales.head
+    for
+      changed  <- change(scale.analyses.matchedSource, scale.analyses.matched)
+      analyses <- result(
+        StudyAnalyses.of(
+          changed._1,
+          changed._2,
+          scale.analyses.controlSource,
+          scale.analyses.control
         )
-    )
-
-  private def source(analysis: Analysis[StudyKey, Similarity]) =
-    analysis.source.asInstanceOf[DirectedPairwiseAnalysis[StudyKey, StudyKey, StudyFailure[
-      StudyKey
-    ], Similarity]]
+      )
+      contrast <- scale.contrast match
+        case Left(error) => Right(Left(error))
+        case Right(c)    =>
+          reconstruction(
+            Contrast.reconstruct(analyses.matched, analyses.control, c.rows, Vector("value"))
+          ).map(Right(_))
+      rebuilt <- result(
+        StudyScaleResult
+          .reconstruct(
+            scale.estimate,
+            scale.estimation,
+            scale.excludedPhases,
+            analyses,
+            contrast
+          )
+      )
+      whole <- result(
+        StudyResult.reconstruct(
+          r.input,
+          StudyKey.layout(DefinitionId.studyLayout),
+          r.description,
+          rebuilt +: r.scales.tail
+        )
+      )
+    yield whole
 
   test(
     "published laws kill a dropped failure row, reordered or dropped provenance and an altered denominator"
   ) {
-    val withFailedPair = results.suchThat(r =>
-      matchedOf(r.scales.head).exists(_.source.rows.exists(_.result.isLeft))
-    )
     val droppedFailure = mutant(codec.codec)(r =>
-      withScale(r)(withMatched(_)(m =>
-        val s = source(m)
-        DirectedPairwiseAnalysis
-          .reconstruct(
-            s.rows.filterNot(_.result.isLeft),
-            s.diagnostics,
-            s.provenance,
-            s.evaluation
-          )
-          .left
-          .map(e => CodecError.Reconstruction(e))
-          .flatMap(rebuilt =>
-            Analysis
-              .reconstruct(m.entries, m.diagnostics, m.provenance, rebuilt)
-              .left
-              .map(e => CodecError.Reconstruction(e))
-          )
-      ))
+      withMatched(r) { (s, m) =>
+        reconstruction(
+          DirectedPairwiseAnalysis
+            .reconstruct(
+              s.rows.filterNot(_.result.isLeft),
+              s.diagnostics,
+              s.provenance,
+              s.evaluation
+            )
+        ).flatMap(rebuilt =>
+          reconstruction(
+            Analysis.reconstructByLeft(m.entries, m.diagnostics, m.provenance, rebuilt)
+          ).map(rebuilt -> _)
+        )
+      }
     )
-    assert(killed(droppedFailure, withFailedPair, same))
+    assert(killed(droppedFailure, mutable, same))
 
-    val withContrast        = results.suchThat(r => matchedOf(r.scales.head).isDefined)
     val reorderedProvenance = mutant(codec.codec)(r =>
-      withScale(r)(withMatched(_)(m =>
-        val s        = source(m)
+      withMatched(r) { (s, m) =>
         val reversed = Provenance(
           s.provenance.inputs,
           s.provenance.steps.map(step => Provenance.Step(step.operation, step.params.reverse))
         )
-        DirectedPairwiseAnalysis
-          .reconstruct(s.rows, s.diagnostics, reversed, s.evaluation)
-          .left
-          .map(e => CodecError.Reconstruction(e))
-          .flatMap(rebuilt =>
-            Analysis
-              .reconstruct(m.entries, m.diagnostics, m.provenance, rebuilt)
-              .left
-              .map(e => CodecError.Reconstruction(e))
-          )
-      ))
-    )
-    assert(killed(reorderedProvenance, withContrast, same))
-
-    val withMass        = results.suchThat(_.scales.head.estimation.exists(_._2.isRight))
-    val droppedMassStep = mutant(codec.codec)(r =>
-      withScale(r) { scale =>
-        val estimation = scale.estimation.map {
-          case (k, Right(mass)) if mass.provenance.steps.nonEmpty =>
-            k -> Surface
-              .mass(
-                mass.grid,
-                mass.values,
-                Provenance(mass.provenance.inputs, mass.provenance.steps.dropRight(1))
-              )
-              .toOption
-              .toRight(StudyFailure.Occupancy(k, SurfaceError.EmptyCollection("mutant")))
-          case other => other
-        }
-        StudyScaleResult
-          .reconstruct(scale.estimate, estimation, scale.excludedPhases, scale.contrast)
-          .left
-          .map(e => CodecError.Result(e))
+        reconstruction(
+          DirectedPairwiseAnalysis.reconstruct(s.rows, s.diagnostics, reversed, s.evaluation)
+        ).flatMap(rebuilt =>
+          reconstruction(
+            Analysis.reconstructByLeft(m.entries, m.diagnostics, m.provenance, rebuilt)
+          ).map(rebuilt -> _)
+        )
       }
     )
-    assert(killed(droppedMassStep, withMass, same))
+    assert(killed(reorderedProvenance, mutable, same))
 
-    val withReduced =
-      results.suchThat(r => matchedOf(r.scales.head).exists(_.entries.exists(_.result.isRight)))
-    val alteredDenominator = mutant(codec.codec)(r =>
-      withScale(r)(withMatched(_)(m =>
-        val index = m.entries.indexWhere(_.result.isRight)
-        val row   = m.entries(index)
-        ReductionRow
-          .reconstruct(row.key, row.result, row.successful, row.failed, row.contributing + 1)
-          .left
-          .map(e => CodecError.Reconstruction(e))
-          .flatMap(changed =>
-            Analysis
-              .reconstruct(
-                m.entries.updated(index, changed),
-                m.diagnostics,
-                m.provenance,
-                m.source
-              )
-              .left
-              .map(e => CodecError.Reconstruction(e))
+    val droppedMassStep = mutant(codec.codec)(r =>
+      val scale      = r.scales.head
+      val estimation = scale.estimation.map {
+        case (k, Right(mass)) if mass.provenance.steps.nonEmpty =>
+          k -> Surface
+            .mass(
+              mass.grid,
+              mass.values,
+              Provenance(mass.provenance.inputs, mass.provenance.steps.dropRight(1))
+            )
+            .toOption
+            .toRight(StudyFailure.Occupancy(k, SurfaceError.EmptyCollection("mutant")))
+        case other => other
+      }
+      result(
+        StudyScaleResult.reconstruct(
+          scale.estimate,
+          estimation,
+          scale.excludedPhases,
+          scale.analyses,
+          scale.contrast
+        )
+      ).flatMap(rebuilt =>
+        result(
+          StudyResult.reconstruct(
+            r.input,
+            StudyKey.layout(DefinitionId.studyLayout),
+            r.description,
+            rebuilt +: r.scales.tail
           )
-      ))
+        )
+      )
     )
-    assert(killed(alteredDenominator, withReduced, same))
+    assert(killed(droppedMassStep, mutable, same))
 
-    // A consistent-looking alteration of successful and contributing counts is still refused,
-    // because the report's contribution count no longer follows from the rows.
-    val inflatedDenominator = mutant(codec.codec)(r =>
-      withScale(r)(withMatched(_)(m =>
+    def bumped(by: Int): VersionedCodec[Result] = mutant(codec.codec)(r =>
+      withMatched(r) { (s, m) =>
         val index = m.entries.indexWhere(_.result.isRight)
         val row   = m.entries(index)
-        ReductionRow
-          .reconstruct(
+        reconstruction(
+          ReductionRow.reconstruct(
             row.key,
             row.result,
-            row.successful + 1,
+            row.successful + by,
             row.failed,
             row.contributing + 1
           )
-          .left
-          .map(e => CodecError.Reconstruction(e))
-          .flatMap(changed =>
-            Analysis
-              .reconstruct(
-                m.entries.updated(index, changed),
-                m.diagnostics,
-                m.provenance,
-                m.source
-              )
-              .left
-              .map(e => CodecError.Reconstruction(e))
-          )
-      ))
+        ).flatMap(changed =>
+          reconstruction(
+            Analysis.reconstructByLeft(
+              m.entries.updated(index, changed),
+              m.diagnostics,
+              m.provenance,
+              s
+            )
+          ).map(s -> _)
+        )
+      }
     )
-    assert(killed(inflatedDenominator, withReduced, same))
+    assert(killed(bumped(0), mutable, same))
+    // Bumping successful and contributing together is consistent with the row alone,
+    // but not with the source pairs the reduction regroups.
+    assert(killed(bumped(1), mutable, same))
   }

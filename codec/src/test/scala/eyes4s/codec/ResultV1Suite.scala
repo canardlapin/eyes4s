@@ -33,10 +33,6 @@ class ResultV1Suite extends munit.FunSuite:
   private def sameSimilarity(a: Similarity, b: Similarity): Boolean = a.value == b.value
   private def sameDifference(a: SignedDifference, b: SignedDifference): Boolean =
     a.value == b.value
-  private def source(analysis: Analysis[StudyKey, Similarity]) =
-    analysis.source.asInstanceOf[DirectedPairwiseAnalysis[StudyKey, StudyKey, StudyFailure[
-      StudyKey
-    ], Similarity]]
 
   test(
     "frozen study-result v1 fixes the identity, densities, pair rows, denominators, provenance and contrast"
@@ -65,25 +61,28 @@ class ResultV1Suite extends munit.FunSuite:
     assertEquals(first.provenance.inputs.render, "5dd8999b58bda362")
 
     val contrast = get(scale.contrast)
-    assertEquals(source(contrast.matched).rows.size, 6)
-    assertEquals(source(contrast.control).rows.size, 12)
-    assert(source(contrast.matched).rows.forall(_.result.isRight))
-    assert(source(contrast.control).rows.forall(_.result.isRight))
-    assertEquals(get(source(contrast.matched).rows.head.result.left.map(_.message)).value, 1.0)
+    assertEquals(scale.analyses.matchedSource.rows.size, 6)
+    assertEquals(scale.analyses.controlSource.rows.size, 12)
+    assert(scale.analyses.matchedSource.rows.forall(_.result.isRight))
+    assert(scale.analyses.controlSource.rows.forall(_.result.isRight))
     assertEquals(
-      source(contrast.matched).rows.head.left -> source(contrast.matched).rows.head.right,
-      StudyKey("s1", "a", "recall")           -> StudyKey("s1", "a", "encode")
+      get(scale.analyses.matchedSource.rows.head.result.left.map(_.message)).value,
+      1.0
     )
-    assertEquals(source(contrast.matched).diagnostics.eligiblePairCount, 6L)
-    assertEquals(source(contrast.matched).diagnostics.selectedPairCount, 6)
     assertEquals(
-      source(contrast.matched).diagnostics.pairSpace,
+      scale.analyses.matchedSource.rows.head.left -> scale.analyses.matchedSource.rows.head.right,
+      StudyKey("s1", "a", "recall") -> StudyKey("s1", "a", "encode")
+    )
+    assertEquals(scale.analyses.matchedSource.diagnostics.eligiblePairCount, 6L)
+    assertEquals(scale.analyses.matchedSource.diagnostics.selectedPairCount, 6)
+    assertEquals(
+      scale.analyses.matchedSource.diagnostics.pairSpace,
       PairSpace.BetweenDirected(
         "(participant == participant and stimulus == stimulus)",
         Selection.All
       )
     )
-    assertEquals(source(contrast.control).diagnostics.eligiblePairCount, 12L)
+    assertEquals(scale.analyses.controlSource.diagnostics.eligiblePairCount, 12L)
     assertEquals(contrast.matched.entries.map(_.contributing), Vector.fill(6)(1))
     assertEquals(contrast.control.entries.map(_.contributing), Vector.fill(6)(2))
     assertEquals(contrast.matched.diagnostics.contributionCount, 6)
@@ -106,9 +105,11 @@ class ResultV1Suite extends munit.FunSuite:
     )
     assertEquals(contrast.matched.provenance.inputs.render, "cebe7474ab5c2aec")
     assertEquals(
-      contrast.matched.source.provenance,
+      scale.analyses.matchedSource.provenance,
       contrast.matched.provenance.copy(steps = contrast.matched.provenance.steps.dropRight(1))
     )
+    assert(contrast.matched eq scale.analyses.matched)
+    assert(contrast.control eq scale.analyses.control)
     assertEquals(contrast.matched.evaluation.name, "cosine")
     assertEquals(
       contrast.matched.evaluation.scale,
