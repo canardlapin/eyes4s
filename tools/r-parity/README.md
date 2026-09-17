@@ -35,6 +35,7 @@ the reference; the generator does not modify the global R library.
 python3 tools/r-parity/generate_reference.py --eyesim /path/to/eyesim
 python3 tools/r-parity/generate_reference.py --eyesim /path/to/eyesim --check
 python3 tools/r-parity/generate_transforms.py --eyesim /path/to/eyesim --check
+python3 tools/r-parity/generate_entropy.py --eyesim /path/to/eyesim --check
 python3 tools/r-parity/generate_multiscale.py --check
 python3 tools/r-parity/generate_temporal.py --check
 ```
@@ -50,6 +51,13 @@ rational oracle, and records how `affine_transform` and `contract_transform` (fi
 maps, not coordinate maps) respond to coordinate tables. The homogeneous affine, its training-only
 solve from three pairs and the held-out target are oracle values only: eyesim has no coordinate
 affine entry point.
+
+The entropy generator installs the same pinned archive, builds `eye_density` objects over the
+two-by-two lattice in `baseline-cases.json`, and calls the public `fixation_entropy` methods and
+`Ops.eye_density` on them. Entropy on positive maps, the two-map mean, the difference and the log
+ratio away from zero cells are compared with an exact rational or 60-digit decimal oracle. Every
+`NA`, `Inf`, `-Inf`, `NaN` cell and every error is pinned as a literal, and the reading of eyesim's
+positive-cell formula on signed maps is labelled as a reading, not an estimand.
 
 The independent multiscale and temporal generators do not call eyesim. They establish eyes4s
 scientific cases while the corresponding eyesim KDE and temporal point-sampling cases remain open.
@@ -75,22 +83,29 @@ python3 tools/r-parity/check_baseline.py \
 - `fixtures/transforms.json`: pinned public eyesim center/rescale/normalize output, observed fitted
   transform behaviour on coordinate tables, R environment, and the exact affine oracle with a
   training-only solve, held-out target and falsification mutants.
+- `fixtures/entropy.json`: pinned public eyesim `fixation_entropy` and `Ops.eye_density` output on
+  the entropy lattice, including non-finite cells, `NA` entropies and errors, R environment, and
+  the exact and decimal oracle.
 - `fixtures/multiscale.json`: 60-digit closed-form eyes4s Gaussian oracle at three scales.
 - `fixtures/temporal-study.csv` and `fixtures/temporal.json`: 18-trial temporal input plus exact
   interval ledgers, pair lists and 96 contrast targets.
 - `laws/src/test/scala/eyes4s/examples/MatchedControlFixtures.scala`,
   `core/src/test/scala/eyes4s/core/TransformFixtures.scala`,
+  `kernel/src/test/scala/eyes4s/kernel/EntropyFixtures.scala`,
   `codec/src/test/scala/eyes4s/codec/MultiscaleFixtures.scala`, and
   `codec/src/test/scala/eyes4s/codec/TemporalFixtures.scala`: generated values used by JVM and
   Scala.js tests without starting R or reading runtime fixtures.
 
-Run the matched/control conformance example and the coordinate-transform conformance suite with:
+Run the matched/control conformance example, the coordinate-transform conformance suite and the
+entropy and map-arithmetic conformance suite with:
 
 ```sh
 sbt 'lawsJVM/testOnly eyes4s.examples.MatchedControlSuite' \
     'lawsJS/testOnly eyes4s.examples.MatchedControlSuite' \
     'coreJVM/testOnly eyes4s.core.TransformConformanceSuite' \
-    'coreJS/testOnly eyes4s.core.TransformConformanceSuite'
+    'coreJS/testOnly eyes4s.core.TransformConformanceSuite' \
+    'kernelJVM/testOnly eyes4s.kernel.EntropyConformanceSuite' \
+    'kernelJS/testOnly eyes4s.kernel.EntropyConformanceSuite'
 ```
 
 See [the capability baseline](../../docs/EYESIM_CAPABILITIES.md),

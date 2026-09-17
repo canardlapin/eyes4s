@@ -73,9 +73,16 @@ final case class Entropy(value: Double, base: LogBase) derives CanEqual:
   *
   * `eyesim` has one. Its `Ops.eye_density` defines `+` as a mean and `/` as a
   * log-ratio, returns all three results tagged as densities, and drops the
-  * bandwidth on every operation. A signed difference map is therefore accepted
-  * by `fixation_entropy` as if it were a probability mass, and silently returns
-  * a number that means nothing.
+  * bandwidth on every operation. A signed map is therefore accepted by
+  * `fixation_entropy` as if it were a probability mass, and what comes back
+  * depends on its total. At the pinned revision (fixture
+  * `tools/r-parity/fixtures/entropy.json`, checked by
+  * `EntropyConformanceSuite`) an exact difference of two masses sums to zero
+  * and returns `NA`; a signed map with positive total, such as
+  * `[0.5, -0.25, 0.75, 0]`, returns a finite number computed from its positive
+  * cells alone (0.5623 nats), which is not the entropy of anything; and the
+  * log-ratio map `p / q` with a zero cell returns exactly 0, because its `-Inf`
+  * cell is dropped before the sum.
   *
   * Splitting the type makes that a compile error rather than a wrong answer:
   *
@@ -276,10 +283,14 @@ extension [U <: Unit2D](m: Mass[U])
 
   /** Cell-wise log ratio, named for what it is.
     *
-    * `eyesim` spells this `/`, which reads as division and is not. Cells where
-    * either map has no mass are `None`-free here only because they are mapped
-    * to zero explicitly; a log-ratio at a cell with no data is not defined and
-    * pretending otherwise produces the infinities its `zapsmall` then hides.
+    * `eyesim` spells this `/`, which reads as division and is not. A log-ratio
+    * at a cell with no mass is not defined; here both cells are floored at
+    * `floor` before the ratio, so the result is finite and the floor is on
+    * record in the provenance. eyesim takes the raw ratio, and at the pinned
+    * revision a zero cell yields `-Inf`, `Inf` or `NaN` (`EntropyConformanceSuite`
+    * "at a zero cell eyesim / is -Inf, Inf or NaN; eyes4s floors both cells at
+    * 1e-12 and stays finite"). Pass `floor = 0.0` to get the same
+    * non-finite cell, which is then refused as `NonFiniteValue`.
     */
   def logRatio(that: Mass[U], floor: Double = 1e-12): Either[SurfaceError, Signed[U]] =
     Agreement

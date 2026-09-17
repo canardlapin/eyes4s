@@ -44,7 +44,7 @@
   "fixtures": {
     "baseline-small": {
       "path": "tools/r-parity/fixtures/baseline-cases.json",
-      "sha256": "ce6618fd0a7e2bccb2f1b90b88486b7fbb81a8fee89594bd5e0d0193c20af2aa",
+      "sha256": "0b2e5036ee1c8aee63e27b3a99d08f8e4bffa3402e9ff67e4cba5bd68aef0300",
       "license": "Apache-2.0; synthetic data authored for eyes4s",
       "role": "Selected adversarial and analytic inputs for every unresolved baseline row"
     },
@@ -92,9 +92,15 @@
     },
     "transforms-reference": {
       "path": "tools/r-parity/fixtures/transforms.json",
-      "sha256": "89d04fa3ef04d2320a6b0a24315b5e6f4af6982243093fc491b39fd07acc570a",
+      "sha256": "81be57c8f54aa304e9785a716bc2c0b31f4640be108a436ba77294f9c00d7fd9",
       "license": "Apache-2.0",
       "role": "Pinned public eyesim center/rescale/normalize output, observed fitted-transform behaviour on coordinate tables, R environment, and the exact affine oracle with a training-only solve, held-out target and mutants"
+    },
+    "entropy-reference": {
+      "path": "tools/r-parity/fixtures/entropy.json",
+      "sha256": "e5e497e7663b678f71a72a35a133bf6e673b60ee0860edef4fb55ed79ad7117b",
+      "license": "Apache-2.0",
+      "role": "Pinned public eyesim fixation_entropy and Ops.eye_density output on the two-by-two entropy lattice, including NA/Inf/NaN cells and errors, R environment, and the exact rational and 60-digit decimal oracle with a labelled reading of eyesim's positive-cell formula"
     }
   },
   "regeneration": {
@@ -117,6 +123,11 @@
       "command": "python3 tools/r-parity/generate_transforms.py --eyesim {eyesim} --check",
       "requires_eyesim": true,
       "outputs": ["transforms-reference"]
+    },
+    "entropy-reference": {
+      "command": "python3 tools/r-parity/generate_entropy.py --eyesim {eyesim} --check",
+      "requires_eyesim": true,
+      "outputs": ["entropy-reference"]
     }
   },
   "cases": [
@@ -253,34 +264,85 @@
     {
       "id": "fixation-entropy",
       "row": "entropy-map-arithmetic",
-      "eyesim_entry_points": ["fixation_entropy.fixation_group", "fixation_entropy.density", "fixation_entropy.eye_density", "fixation_entropy.eye_density_multiscale"],
-      "methods": ["density", "grid", "multiscale mean", "multiscale none"],
-      "estimand": "Shannon entropy of normalized spatial mass, optionally divided by log of the supported cell count.",
-      "conventions": ["log base explicit", "normalize default true", "duration weighting explicit", "multiscale reduction and weights explicit", "zero mass and empty support are failures"],
-      "backend_dependencies": ["base R", "ks", "MASS"],
-      "eyes4s_public_api": ["Mass.entropy", "Mass.relativeEntropy", "Pyramid"],
-      "fixture_inputs": ["baseline-small"],
-      "independent_case": "Mass [1/2,1/4,1/4,0] has entropy 1.5 bits and detects zero-cell handling and base conversion.",
-      "status": "implementation-gap",
-      "evidence": ["laws/src/main/scala/eyes4s/laws/OccupancyLaws.scala"],
-      "gap_issue": "eyesim-entropy",
-      "planned_evidence": "Pinned density and grid outputs plus exact finite-grid calculations."
+      "eyesim_entry_points": ["fixation_entropy.eye_density", "fixation_entropy.density"],
+      "methods": ["entropy_from_mass", "normalize true", "normalize false", "base 2", "base e"],
+      "estimand": "Shannon entropy of a supplied non-negative map after sum-normalisation, optionally divided by the log of the cell count.",
+      "conventions": ["log base explicit", "normalize default true divides by the log of the count of finite cells, which is the cell count on a positive map", "zero cells contribute nothing", "an unnormalised count map is sum-normalised first", "the eye_density and density methods are the same routine", "absolute tolerance 1e-12"],
+      "backend_dependencies": ["base R"],
+      "eyes4s_public_api": ["Mass.entropy", "Mass.relativeEntropy", "Intensity.normalised", "LogBase"],
+      "fixture_inputs": ["baseline-small", "entropy-reference"],
+      "independent_case": "A 60-digit decimal oracle of the Shannon entropy of mass_p (exactly 1.5 bits), the uniform mass_q (maximal) and the all-positive mass_r in both bases, raw and relative, computed without either implementation; the count map [2, 1, 1, 0] must give mass_p's entropy.",
+      "status": "verified-equivalent",
+      "evidence": ["tools/r-parity/fixtures/entropy.json", "kernel/src/test/scala/eyes4s/kernel/EntropyFixtures.scala", "kernel/src/test/scala/eyes4s/kernel/EntropyConformanceSuite.scala", "docs/EYESIM_CAPABILITIES.md"],
+      "gap_issue": null,
+      "regeneration_ids": ["entropy-reference"]
     },
     {
-      "id": "density-map-arithmetic",
+      "id": "fixation-entropy-derived-inputs",
+      "row": "entropy-map-arithmetic",
+      "eyesim_entry_points": ["fixation_entropy.fixation_group", "fixation_entropy.eye_density_multiscale"],
+      "methods": ["density", "grid", "multiscale mean", "multiscale none"],
+      "estimand": "Entropy of a map derived from a fixation group by KDE or by occupancy-grid counts, and the mean or per-scale vector over a multiscale object.",
+      "conventions": ["duration weighting explicit", "suggest_sigma default bandwidth when sigma is NULL", "padded observed bounds when none are supplied", "grid counts use findInterval with the rightmost cell closed", "multiscale mean drops NA scales", "scale weights explicit"],
+      "backend_dependencies": ["base R", "ks", "MASS"],
+      "eyes4s_public_api": ["Mass.entropy", "Pyramid", "Smoother.gaussian"],
+      "fixture_inputs": ["baseline-small"],
+      "independent_case": "The density method depends on the unresolved KDE row; the grid method and the multiscale mean/none reductions can be pinned on the entropy lattice with the explicit scale weights [1, 3].",
+      "status": "implementation-gap",
+      "evidence": ["tools/r-parity/fixtures/entropy.json", "docs/EYESIM_CAPABILITIES.md"],
+      "gap_issue": "eyesim-entropy",
+      "related_issues": ["eyesim-kde"],
+      "planned_evidence": "Pinned fixation_group grid-method and multiscale mean/none output with explicit weights, and density-method output once the KDE row is settled."
+    },
+    {
+      "id": "density-map-mean-and-difference",
       "row": "entropy-map-arithmetic",
       "eyesim_entry_points": ["Ops.eye_density"],
-      "methods": ["+", "-", "*", "/"],
-      "estimand": "An explicitly named elementwise, aggregate, difference or log-ratio operation on compatible grids.",
-      "conventions": ["common geometry required", "signed outputs cannot masquerade as mass", "addition weights explicit", "division meaning explicit"],
+      "methods": ["+", "-"],
+      "estimand": "The cell-wise two-map mean and the cell-wise difference of two maps on one lattice.",
+      "conventions": ["identical lattices required; a shifted lattice is an error in both", "+ is the two-map mean (e1 + e2) / 2, not a sum", "- is a signed map: eyesim classes it eye_density_delta, eyes4s types it Signed", "no result carries a sigma", "absolute tolerance 1e-12"],
       "backend_dependencies": ["base R"],
-      "eyes4s_public_api": ["Mass.mean", "Mass.difference", "Mass.logRatio", "Signed"],
-      "fixture_inputs": ["baseline-small"],
-      "independent_case": "Positive masses p and q plus an explicitly signed vector distinguish mean, sum, difference and log-ratio semantics.",
-      "status": "implementation-gap",
-      "evidence": ["laws/src/main/scala/eyes4s/laws/OccupancyLaws.scala"],
-      "gap_issue": "eyesim-entropy",
-      "planned_evidence": "Pinned R operator outputs and typed eyes4s arithmetic tests."
+      "eyes4s_public_api": ["Mass.mean", "Mass.difference", "Signed", "SurfaceError.GridMismatch"],
+      "fixture_inputs": ["baseline-small", "entropy-reference"],
+      "independent_case": "Exact rational mean and difference of mass_p and mass_q; the difference sums to zero and goes negative at mass_p's zero cell, so a sum masquerading as a mean or a dropped sign is visible.",
+      "status": "verified-equivalent",
+      "evidence": ["tools/r-parity/fixtures/entropy.json", "kernel/src/test/scala/eyes4s/kernel/EntropyFixtures.scala", "kernel/src/test/scala/eyes4s/kernel/EntropyConformanceSuite.scala", "docs/EYESIM_CAPABILITIES.md"],
+      "gap_issue": null,
+      "regeneration_ids": ["entropy-reference"]
+    },
+    {
+      "id": "density-map-log-ratio",
+      "row": "entropy-map-arithmetic",
+      "eyesim_entry_points": ["Ops.eye_density"],
+      "methods": ["/", "*"],
+      "estimand": "The natural-log ratio of two maps cell by cell; neither implementation has a product.",
+      "conventions": ["/ is log(e1 / e2), not division", "eyesim applies no floor: a zero numerator gives -Inf, a zero denominator Inf, both zero NaN", "eyes4s floors both cells at 1e-12 by default and refuses a non-finite Signed map when floor = 0", "* stops with undefined operation in eyesim and does not typecheck in eyes4s", "absolute tolerance 1e-12 away from zero cells"],
+      "backend_dependencies": ["base R"],
+      "eyes4s_public_api": ["Mass.logRatio", "Signed", "SurfaceError.NonFiniteValue"],
+      "fixture_inputs": ["baseline-small", "entropy-reference"],
+      "independent_case": "60-digit decimal log ratios of mass_r over mass_q (no zero cell) and of mass_p over mass_q away from the zero cell; the floored eyes4s value at the zero cell, log(1e-12 / 0.25), is computed from the same rationals.",
+      "status": "verified-intentional-divergence",
+      "divergence": "At a zero cell eyesim returns -Inf, Inf or NaN and keeps the result classed as a density; eyes4s floors both cells at 1e-12 so the Signed map stays finite, records the floor in provenance, and refuses the unfloored infinity as NonFiniteValue. Away from zero cells the two agree to 1e-12. Neither has a product.",
+      "evidence": ["tools/r-parity/fixtures/entropy.json", "kernel/src/test/scala/eyes4s/kernel/EntropyFixtures.scala", "kernel/src/test/scala/eyes4s/kernel/EntropyConformanceSuite.scala", "docs/EYESIM_CAPABILITIES.md"],
+      "gap_issue": null,
+      "regeneration_ids": ["entropy-reference"]
+    },
+    {
+      "id": "signed-maps-as-mass",
+      "row": "entropy-map-arithmetic",
+      "eyesim_entry_points": ["fixation_entropy.eye_density", "Ops.eye_density"],
+      "methods": ["entropy of an exact difference map", "entropy of a signed map with positive total", "entropy of a log-ratio map"],
+      "estimand": "What each implementation answers when a signed map is offered where a probability mass is expected.",
+      "conventions": ["eyesim keeps operator results classed eye_density, so fixation_entropy accepts them", "entropy_from_mass drops non-finite cells, divides by the signed total, sums positive cells only, and returns NA when the total is within .Machine$double.eps of zero", "eyes4s Mass and Intensity reject a negative cell with NegativeValue; Signed has no entropy"],
+      "backend_dependencies": ["base R"],
+      "eyes4s_public_api": ["Signed", "Surface.mass", "Surface.intensity", "SurfaceError.NegativeValue"],
+      "fixture_inputs": ["baseline-small", "entropy-reference"],
+      "independent_case": "The exact difference mass_p - mass_q has total zero; the signed vector [0.5, -0.25, 0.75, 0] has total one and positive cells summing to 1.25; the log-ratio map has one -Inf cell. A labelled reading of eyesim's formula reproduces its pinned finite value -(0.5 ln 0.5 + 0.75 ln 0.75).",
+      "status": "verified-intentional-divergence",
+      "divergence": "eyesim returns NA for the exact difference map, a finite 0.5623 nats for the signed vector (its positive cells over the signed total, not the entropy of anything), exactly 0 for the log-ratio map after dropping its -Inf cell, and NA for the NaN-bearing p / p map. eyes4s refuses at the type (entropy is defined on Mass only; the suite uses typeCheckErrors) and at construction (NegativeValue names the offending cell). The eyesim values are pinned so the refusal is evidenced, not asserted.",
+      "evidence": ["tools/r-parity/fixtures/entropy.json", "kernel/src/test/scala/eyes4s/kernel/EntropyFixtures.scala", "kernel/src/test/scala/eyes4s/kernel/EntropyConformanceSuite.scala", "docs/EYESIM_CAPABILITIES.md"],
+      "gap_issue": null,
+      "regeneration_ids": ["entropy-reference"]
     },
     {
       "id": "distribution-method-matrix",

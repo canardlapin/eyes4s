@@ -1,6 +1,6 @@
 {
   "eyesim_revision": "ecb9c496257bce51acd5330af6a5e7a8d5b84e05",
-  "input_sha256": "ce6618fd0a7e2bccb2f1b90b88486b7fbb81a8fee89594bd5e0d0193c20af2aa",
+  "input_sha256": "0b2e5036ee1c8aee63e27b3a99d08f8e4bffa3402e9ff67e4cba5bd68aef0300",
   "input_license": "Apache-2.0; synthetic data authored for eyes4s",
   "oracle": "Exact rational arithmetic for every supplied map, a training-only solve of the affine from the three fitting pairs, the held-out target, and axis-swap and no-translation mutants. center, rescale and normalize are compared with public eyesim fixation_group output; the affine has no eyesim coordinate entry point.",
   "fitted_transforms": "eyesim affine_transform and contract_transform fit density-space maps from matched density objects and resample densities; they are not coordinate transforms. Their response to coordinate tables is recorded below and eyes4s does not implement them.",

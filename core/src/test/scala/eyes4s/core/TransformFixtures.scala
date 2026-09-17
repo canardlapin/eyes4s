@@ -20,7 +20,7 @@ package eyes4s.core
 // format: off
 object TransformFixtures:
   val eyesimRevision = "ecb9c496257bce51acd5330af6a5e7a8d5b84e05"
-  val inputSha256 = "ce6618fd0a7e2bccb2f1b90b88486b7fbb81a8fee89594bd5e0d0193c20af2aa"
+  val inputSha256 = "0b2e5036ee1c8aee63e27b3a99d08f8e4bffa3402e9ff67e4cba5bd68aef0300"
   val tolerance = 1e-12
   final case class P(x: Double, y: Double)
   final case class Affine(a: Double, b: Double, tx: Double, c: Double, d: Double, ty: Double)

@@ -56,8 +56,17 @@
     "seed": 12345
   },
   "entropy_and_arithmetic": {
+    "lattice": {
+      "frame": [100, 50],
+      "x": [25, 75],
+      "y": [12.5, 37.5],
+      "order": "z is the nx-by-ny matrix z[ix, iy]; as.numeric(z) is column-major, so cell k = iy * nx + ix, the eyes4s Grid index"
+    },
+    "shifted_lattice": {"x": [0, 50], "y": [12.5, 37.5]},
     "mass_p": [0.5, 0.25, 0.25, 0],
     "mass_q": [0.25, 0.25, 0.25, 0.25],
+    "mass_r": [0.4, 0.3, 0.2, 0.1],
+    "counts": [2, 1, 1, 0],
     "signed": [0.5, -0.25, 0.75, 0],
     "log_bases": [2, 2.718281828459045],
     "scale_weights": [1, 3]

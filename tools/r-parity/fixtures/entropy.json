@@ -1,0 +1,638 @@
+{
+  "eyesim_revision": "ecb9c496257bce51acd5330af6a5e7a8d5b84e05",
+  "input_sha256": "0b2e5036ee1c8aee63e27b3a99d08f8e4bffa3402e9ff67e4cba5bd68aef0300",
+  "input_license": "Apache-2.0; synthetic data authored for eyes4s",
+  "oracle": "Exact rational arithmetic for the two-map mean and the difference; 60-digit decimal logarithms for the Shannon entropy of each normalised vector and for the log ratio away from zero cells. eyesim's fixation_entropy.eye_density (entropy_from_mass) and Ops.eye_density are called on hand-built eye_density objects over the pinned lattice. Non-finite cells, NA entropies and errors are pinned as eyesim literals. The eyesim_formula block is a reading of entropy_from_mass on signed maps: it records what eyesim computes there, not an estimand eyes4s implements.",
+  "lattice_order": "z is the nx-by-ny matrix z[ix, iy]; as.numeric(z) is column-major, so cell k = iy * nx + ix, the eyes4s Grid index",
+  "numerical_tolerance": {
+    "absolute": 1e-12,
+    "relative": 0
+  },
+  "eyes4s_log_ratio_floor": "1E-12",
+  "exact": {
+    "lattice": {
+      "frame": [
+        "100",
+        "50"
+      ],
+      "x": [
+        "25",
+        "75"
+      ],
+      "y": [
+        "25/2",
+        "75/2"
+      ],
+      "nx": 2,
+      "ny": 2
+    },
+    "mass_p": [
+      "1/2",
+      "1/4",
+      "1/4",
+      "0"
+    ],
+    "mass_q": [
+      "1/4",
+      "1/4",
+      "1/4",
+      "1/4"
+    ],
+    "mass_r": [
+      "2/5",
+      "3/10",
+      "1/5",
+      "1/10"
+    ],
+    "counts": [
+      "2",
+      "1",
+      "1",
+      "0"
+    ],
+    "signed": [
+      "1/2",
+      "-1/4",
+      "3/4",
+      "0"
+    ],
+    "entropy": {
+      "mass_p": {
+        "2": {
+          "raw": "1.5",
+          "normalized": "0.75"
+        },
+        "e": {
+          "raw": "1.03972077083991796412584818232215539958174283400160954982279",
+          "normalized": "0.75"
+        }
+      },
+      "mass_q": {
+        "2": {
+          "raw": "2",
+          "normalized": "1"
+        },
+        "e": {
+          "raw": "1.38629436111989061883446424309620719944232377866881273309706",
+          "normalized": "1"
+        }
+      },
+      "mass_r": {
+        "2": {
+          "raw": "1.84643934467101549343419774630504522323688707071683629391803",
+          "normalized": "0.923219672335507746717098873152522611618443535358418146959016"
+        },
+        "e": {
+          "raw": "1.27985422583366746718218576231547473751137954973483964167806",
+          "normalized": "0.923219672335507746717098873152522611618443535358418146959016"
+        }
+      },
+      "counts": {
+        "2": {
+          "raw": "1.5",
+          "normalized": "0.75"
+        },
+        "e": {
+          "raw": "1.03972077083991796412584818232215539958174283400160954982279",
+          "normalized": "0.75"
+        }
+      }
+    },
+    "mean_p_q": [
+      "3/8",
+      "1/4",
+      "1/4",
+      "1/8"
+    ],
+    "difference_p_q": [
+      "1/4",
+      "0",
+      "0",
+      "-1/4"
+    ],
+    "log_ratio_r_q": [
+      "0.470003629245735553650937031148342064700899048812248040449392",
+      "0.182321556793954626211718025154514633197389337914486983942726",
+      "-0.223143551314209755766295090309834503374601085548007213671288",
+      "-0.916290731874155065183527211768011071450101219908262467791968"
+    ],
+    "log_ratio_p_q": [
+      "0.693147180559945309417232121458176568075500134360255254120680",
+      "0",
+      "0",
+      "-Inf"
+    ],
+    "log_ratio_q_p": [
+      "-0.693147180559945309417232121458176568075500134360255254120680",
+      "0",
+      "0",
+      "Inf"
+    ],
+    "log_ratio_p_p": [
+      "0",
+      "0",
+      "0",
+      "NaN"
+    ],
+    "floored_log_ratio_p_q": [
+      "0.693147180559945309417232121458176568075500134360255254120680",
+      "0",
+      "0",
+      "-26.2447267548086575893814332132960173550622175948247652041586"
+    ],
+    "floored_log_ratio_q_p": [
+      "-0.693147180559945309417232121458176568075500134360255254120680",
+      "0",
+      "0",
+      "26.2447267548086575893814332132960173550622175948247652041586"
+    ],
+    "floored_log_ratio_p_p": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "eyesim_formula": {
+      "signed": {
+        "2": {
+          "raw": "0.811278124459132863909695792039137618430139194230639204658187",
+          "normalized": "0.405639062229566431954847896019568809215069597115319602329093"
+        },
+        "e": {
+          "raw": "0.562335144618808350288030315297414691237051907249795927792834",
+          "normalized": "0.405639062229566431954847896019568809215069597115319602329093"
+        }
+      },
+      "minus_p_q": {
+        "2": {
+          "raw": "NA",
+          "normalized": "NA"
+        },
+        "e": {
+          "raw": "NA",
+          "normalized": "NA"
+        }
+      },
+      "div_p_q": {
+        "2": {
+          "raw": "0E+60",
+          "normalized": "0E+59"
+        },
+        "e": {
+          "raw": "0E+60",
+          "normalized": "0E+59"
+        }
+      },
+      "div_p_p": {
+        "2": {
+          "raw": "NA",
+          "normalized": "NA"
+        },
+        "e": {
+          "raw": "NA",
+          "normalized": "NA"
+        }
+      }
+    }
+  },
+  "eyesim": {
+    "machine_eps": 2.220446049250313e-16,
+    "entropy": {
+      "mass_p": {
+        "2": {
+          "raw": {
+            "kind": "finite",
+            "value": 1.5
+          },
+          "normalized": {
+            "kind": "finite",
+            "value": 0.75
+          }
+        },
+        "e": {
+          "raw": {
+            "kind": "finite",
+            "value": 1.0397207708399179
+          },
+          "normalized": {
+            "kind": "finite",
+            "value": 0.75
+          }
+        }
+      },
+      "mass_q": {
+        "2": {
+          "raw": {
+            "kind": "finite",
+            "value": 2
+          },
+          "normalized": {
+            "kind": "finite",
+            "value": 1
+          }
+        },
+        "e": {
+          "raw": {
+            "kind": "finite",
+            "value": 1.3862943611198906
+          },
+          "normalized": {
+            "kind": "finite",
+            "value": 1
+          }
+        }
+      },
+      "mass_r": {
+        "2": {
+          "raw": {
+            "kind": "finite",
+            "value": 1.8464393446710157
+          },
+          "normalized": {
+            "kind": "finite",
+            "value": 0.9232196723355078
+          }
+        },
+        "e": {
+          "raw": {
+            "kind": "finite",
+            "value": 1.2798542258336676
+          },
+          "normalized": {
+            "kind": "finite",
+            "value": 0.9232196723355078
+          }
+        }
+      },
+      "counts": {
+        "2": {
+          "raw": {
+            "kind": "finite",
+            "value": 1.5
+          },
+          "normalized": {
+            "kind": "finite",
+            "value": 0.75
+          }
+        },
+        "e": {
+          "raw": {
+            "kind": "finite",
+            "value": 1.0397207708399179
+          },
+          "normalized": {
+            "kind": "finite",
+            "value": 0.75
+          }
+        }
+      },
+      "signed": {
+        "2": {
+          "raw": {
+            "kind": "finite",
+            "value": 0.8112781244591328
+          },
+          "normalized": {
+            "kind": "finite",
+            "value": 0.4056390622295664
+          }
+        },
+        "e": {
+          "raw": {
+            "kind": "finite",
+            "value": 0.5623351446188083
+          },
+          "normalized": {
+            "kind": "finite",
+            "value": 0.4056390622295664
+          }
+        }
+      },
+      "mass_p_density_class": {
+        "2": {
+          "raw": {
+            "kind": "finite",
+            "value": 1.5
+          },
+          "normalized": {
+            "kind": "finite",
+            "value": 0.75
+          }
+        },
+        "e": {
+          "raw": {
+            "kind": "finite",
+            "value": 1.0397207708399179
+          },
+          "normalized": {
+            "kind": "finite",
+            "value": 0.75
+          }
+        }
+      },
+      "minus_p_q": {
+        "2": {
+          "raw": {
+            "kind": "NA"
+          },
+          "normalized": {
+            "kind": "NA"
+          }
+        },
+        "e": {
+          "raw": {
+            "kind": "NA"
+          },
+          "normalized": {
+            "kind": "NA"
+          }
+        }
+      },
+      "div_p_q": {
+        "2": {
+          "raw": {
+            "kind": "finite",
+            "value": 0
+          },
+          "normalized": {
+            "kind": "finite",
+            "value": 0
+          }
+        },
+        "e": {
+          "raw": {
+            "kind": "finite",
+            "value": 0
+          },
+          "normalized": {
+            "kind": "finite",
+            "value": 0
+          }
+        }
+      },
+      "div_p_p": {
+        "2": {
+          "raw": {
+            "kind": "NA"
+          },
+          "normalized": {
+            "kind": "NA"
+          }
+        },
+        "e": {
+          "raw": {
+            "kind": "NA"
+          },
+          "normalized": {
+            "kind": "NA"
+          }
+        }
+      }
+    },
+    "ops": {
+      "plus_p_q": {
+        "cells": [
+          {
+            "kind": "finite",
+            "value": 0.375
+          },
+          {
+            "kind": "finite",
+            "value": 0.25
+          },
+          {
+            "kind": "finite",
+            "value": 0.25
+          },
+          {
+            "kind": "finite",
+            "value": 0.125
+          }
+        ],
+        "class": [
+          "eye_density_add",
+          "eye_density",
+          "density",
+          "list"
+        ],
+        "has_sigma": false,
+        "total": {
+          "kind": "finite",
+          "value": 1
+        }
+      },
+      "minus_p_q": {
+        "cells": [
+          {
+            "kind": "finite",
+            "value": 0.25
+          },
+          {
+            "kind": "finite",
+            "value": 0
+          },
+          {
+            "kind": "finite",
+            "value": 0
+          },
+          {
+            "kind": "finite",
+            "value": -0.25
+          }
+        ],
+        "class": [
+          "eye_density_delta",
+          "eye_density",
+          "density",
+          "list"
+        ],
+        "has_sigma": false,
+        "total": {
+          "kind": "finite",
+          "value": 0
+        }
+      },
+      "div_p_q": {
+        "cells": [
+          {
+            "kind": "finite",
+            "value": 0.6931471805599453
+          },
+          {
+            "kind": "finite",
+            "value": 0
+          },
+          {
+            "kind": "finite",
+            "value": 0
+          },
+          {
+            "kind": "-Inf"
+          }
+        ],
+        "class": [
+          "eye_density_div",
+          "eye_density",
+          "density",
+          "list"
+        ],
+        "has_sigma": false,
+        "total": {
+          "kind": "-Inf"
+        }
+      },
+      "div_q_p": {
+        "cells": [
+          {
+            "kind": "finite",
+            "value": -0.6931471805599453
+          },
+          {
+            "kind": "finite",
+            "value": 0
+          },
+          {
+            "kind": "finite",
+            "value": 0
+          },
+          {
+            "kind": "Inf"
+          }
+        ],
+        "class": [
+          "eye_density_div",
+          "eye_density",
+          "density",
+          "list"
+        ],
+        "has_sigma": false,
+        "total": {
+          "kind": "Inf"
+        }
+      },
+      "div_r_q": {
+        "cells": [
+          {
+            "kind": "finite",
+            "value": 0.47000362924573563
+          },
+          {
+            "kind": "finite",
+            "value": 0.1823215567939546
+          },
+          {
+            "kind": "finite",
+            "value": -0.2231435513142097
+          },
+          {
+            "kind": "finite",
+            "value": -0.916290731874155
+          }
+        ],
+        "class": [
+          "eye_density_div",
+          "eye_density",
+          "density",
+          "list"
+        ],
+        "has_sigma": false,
+        "total": {
+          "kind": "finite",
+          "value": -0.48710909714867445
+        }
+      },
+      "div_p_p": {
+        "cells": [
+          {
+            "kind": "finite",
+            "value": 0
+          },
+          {
+            "kind": "finite",
+            "value": 0
+          },
+          {
+            "kind": "finite",
+            "value": 0
+          },
+          {
+            "kind": "NaN"
+          }
+        ],
+        "class": [
+          "eye_density_div",
+          "eye_density",
+          "density",
+          "list"
+        ],
+        "has_sigma": false,
+        "total": {
+          "kind": "NaN"
+        }
+      }
+    },
+    "outcomes": {
+      "product_p_q": {
+        "outcome": "error",
+        "detail": "undefined operation"
+      },
+      "shifted_lattice_minus": {
+        "outcome": "error",
+        "detail": "all(e1$x == e2$x) is not TRUE"
+      }
+    }
+  },
+  "runtime": {
+    "R": "4.5.1",
+    "packages": {
+      "KernSmooth": "2.23.26",
+      "MASS": "7.3.65",
+      "Matrix": "1.7.3",
+      "R6": "2.6.1",
+      "RColorBrewer": "1.1.3",
+      "Rcpp": "1.1.2",
+      "RcppArmadillo": "15.4.2.1",
+      "S7": "0.2.2",
+      "assertthat": "0.2.1",
+      "backports": "1.5.1",
+      "base": "4.5.1",
+      "broom": "1.0.13",
+      "cli": "3.6.6",
+      "compiler": "4.5.1",
+      "datasets": "4.5.1",
+      "dplyr": "1.2.1",
+      "eyesim": "0.1.0.9000",
+      "farver": "2.1.2",
+      "furrr": "0.4.0",
+      "generics": "0.1.4",
+      "ggplot2": "4.0.3",
+      "glue": "1.8.1",
+      "grDevices": "4.5.1",
+      "graphics": "4.5.1",
+      "grid": "4.5.1",
+      "gtable": "0.3.6",
+      "jsonlite": "2.0.0",
+      "ks": "1.15.1",
+      "lattice": "0.22.7",
+      "lifecycle": "1.0.5",
+      "magrittr": "2.0.5",
+      "mclust": "6.1.2",
+      "methods": "4.5.1",
+      "mvtnorm": "1.3.6",
+      "pillar": "1.11.1",
+      "pkgconfig": "2.0.3",
+      "pracma": "2.4.6",
+      "proxy": "0.4.29",
+      "purrr": "1.2.2",
+      "rlang": "1.3.0",
+      "scales": "1.4.0",
+      "stats": "4.5.1",
+      "tibble": "3.3.1",
+      "tidyr": "1.3.2",
+      "tidyselect": "1.2.1",
+      "tools": "4.5.1",
+      "utils": "4.5.1",
+      "vctrs": "0.7.3"
+    }
+  }
+}
