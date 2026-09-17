@@ -96,6 +96,24 @@
       "license": "Apache-2.0",
       "role": "Pinned public eyesim center/rescale/normalize output, observed fitted-transform behaviour on coordinate tables, R environment, and the exact affine oracle with a training-only solve, held-out target and mutants"
     },
+    "template-training": {
+      "path": "tools/r-parity/fixtures/template-training.csv",
+      "sha256": "b399b51816ea67a67629b96ef66b9a4444c20024a5ed25be406f1e9043f76baf",
+      "license": "Apache-2.0; synthetic data authored for eyes4s",
+      "role": "Actual JVM training-only CSV export of the frozen four-row fixed-feature linear case"
+    },
+    "template-reference": {
+      "path": "tools/r-parity/fixtures/template.json",
+      "sha256": "9c4c8bafd307aecb30e4b731b03ea5b97f578f399200bad2c718a756611ff6d5",
+      "license": "Apache-2.0",
+      "role": "Actual R QR coefficient receipt, exact rational held-out oracle, contaminated-fit mutant and pinned eyesim normalized-map regression"
+    },
+    "repetition-reference": {
+      "path": "tools/r-parity/fixtures/repetition.json",
+      "sha256": "05296e9d8d0f6208e331fab88a922f5d56aaab7aad5c497ecb4082385235c53d",
+      "license": "Apache-2.0",
+      "role": "Pinned public phase-only cosine repetition outputs, duplicate/singleton/empty cases, R environment and exact rational within-participant reinstatement oracle"
+    },
     "entropy-reference": {
       "path": "tools/r-parity/fixtures/entropy.json",
       "sha256": "e5e497e7663b678f71a72a35a133bf6e673b60ee0860edef4fb55ed79ad7117b",
@@ -123,6 +141,16 @@
       "command": "python3 tools/r-parity/generate_transforms.py --eyesim {eyesim} --check",
       "requires_eyesim": true,
       "outputs": ["transforms-reference"]
+    },
+    "template-reference": {
+      "command": "python3 tools/r-parity/generate_template.py --eyesim {eyesim} --check",
+      "requires_eyesim": true,
+      "outputs": ["template-training", "template-reference"]
+    },
+    "repetition-reference": {
+      "command": "python3 tools/r-parity/generate_repetition.py --eyesim {eyesim} --check",
+      "requires_eyesim": true,
+      "outputs": ["repetition-reference"]
     },
     "entropy-reference": {
       "command": "python3 tools/r-parity/generate_entropy.py --eyesim {eyesim} --check",
@@ -412,6 +440,23 @@
       "planned_evidence": "Pinned finite-cap selection results without asserting cross-language PRNG identity unless the algorithm is shared."
     },
     {
+      "id": "repetition-phase-cosine",
+      "row": "repetition",
+      "eyesim_entry_points": ["repetitive_similarity"],
+      "methods": ["cosine", "pairwise true", "pairwise false"],
+      "estimand": "Explicit within-participant, across-occasion same-stimulus mean minus different-stimulus control mean; contrasted with the reference phase-only grouping across all participants and stimuli.",
+      "conventions": ["supplied normalized duration maps on a two-by-two grid, not KDE", "directed full-key self exclusion", "reference denominators five/six; reinstatement denominators one/two", "absolute tolerance 1e-12", "duplicate, singleton and empty reference output retained"],
+      "backend_dependencies": ["dplyr", "purrr", "furrr", "future", "proxy"],
+      "eyes4s_public_api": ["RepetitionDesign.withinParticipant", "RepetitionResult.contrast", "StudyPlan.cosine", "StudyCodecs.cosine", "ContrastCsv.document"],
+      "fixture_inputs": ["matched-control", "repetition-reference"],
+      "independent_case": "Rational dot products and exhaustive participant/stimulus/occasion predicates determine both reference and reinstatement pairs and means independently. Finite-cap controls retain eligibility and nesting; the saved exhaustive two-phase route agrees per focal key.",
+      "status": "verified-intentional-divergence",
+      "divergence": "The reference phase-only condition groups across participants and stimuli, retaining duplicated rows; the reinstatement facade requires same participant, different occasion and explicit stimulus match/control roles, and excludes ambiguous full keys. These are documented different estimands, not a claim that every phase-only use is erroneous.",
+      "evidence": ["tools/r-parity/fixtures/repetition.json", "design/src/test/scala/eyes4s/design/RepetitionSuite.scala", "io/src/test/scala/eyes4s/io/RepetitionGuideSuite.scala", "docs/REPETITION_STUDIES.md"],
+      "gap_issue": null,
+      "regeneration_ids": ["repetition-reference"]
+    },
+    {
       "id": "repetition-and-reinstatement",
       "row": "repetition",
       "eyesim_entry_points": ["repetitive_similarity"],
@@ -419,14 +464,14 @@
       "estimand": "For each focal trial, comparisons to same-condition and different-condition trials under an explicit participant and identity relation.",
       "conventions": ["directed focal/reference roles", "self-edge policy explicit", "same and different denominators retained", "scale aggregation mean or none"],
       "backend_dependencies": ["dplyr", "purrr", "comparison-specific optional backends"],
-      "eyes4s_public_api": ["Relation", "PairDesign", "EndpointReduction", "TemporalStudy"],
+      "eyes4s_public_api": ["RepetitionDesign", "Relation", "PairDesign", "EndpointReduction", "TemporalStudy"],
       "fixture_inputs": ["baseline-small", "matched-control", "temporal-input"],
       "independent_case": "Exhaustive Cartesian pair enumeration detects reference join, self-edge and denominator defects.",
       "status": "implementation-gap",
       "evidence": ["codec/src/test/scala/eyes4s/codec/TemporalStudySuite.scala"],
       "gap_issue": "eyesim-repetition",
       "related_issues": ["bd-01KYD6T48ZREC657WRGSAHM1R3"],
-      "planned_evidence": "Pinned repetitive_similarity rows plus a public saved and exported convenience workflow."
+      "planned_evidence": "Extend the verified supplied-map cosine case to the remaining methods and multiscale mean/none behavior; persist arbitrary all-occasion projections and finite-cap controls without changing their estimand."
     },
     {
       "id": "multiscale-density-and-comparison",
@@ -481,6 +526,23 @@
       "planned_evidence": "Pinned sample_density_time output and a separate eyes4s point-sampling plan."
     },
     {
+      "id": "training-only-fixed-feature-lm",
+      "row": "template-models",
+      "eyesim_entry_points": ["template_multireg"],
+      "methods": ["lm", "intercept false", "fixed-feature held-out prediction"],
+      "estimand": "Held-out trial predictions from intercept-free OLS on predeclared fixed features, fitted from training rows only; distinct from eyesim's separate per-source normalized-map cell regression.",
+      "conventions": ["typed unique trial keys and explicit disjoint fold partitions", "training-only CSV is distinct from the saved full recipe", "QR rank tolerance 1e-7; singular/underdetermined designs refused", "no learned feature construction or normalization", "absolute numerical tolerance 1e-12", "no coefficient standard errors or p-values"],
+      "backend_dependencies": ["stats::lm.fit", "stats::lm", "broom", "tibble"],
+      "eyes4s_public_api": ["TemplateBasis", "TemplateObservation", "TemplateSplit", "TemplateFitCsv.training", "TemplateFitCsv.importFit", "TemplateRecipeCodec", "FittedTemplate.evaluate"],
+      "fixture_inputs": ["baseline-small", "template-training", "template-reference"],
+      "independent_case": "Exact rational normal equations give coefficients 1 and 2 and held-out prediction 7. Replacing only the held-out response by 700 leaves the exported training request and prediction unchanged. Deliberately including that row in fitting instead gives 701/8 and 709/8. The public eyesim normalized-map call returns 0.4 and 0.6 on the corresponding vectors.",
+      "status": "verified-intentional-divergence",
+      "divergence": "eyesim template_multireg normalizes each response/predictor map and fits over cells separately per source row. The new explicit recipe fits raw fixed features across training trials and evaluates held-out trials. The resulting coefficient bases and statistical units differ; neither this route nor the map reference establishes template_similarity_cv learned-transform parity.",
+      "evidence": ["tools/r-parity/fixtures/template.json", "tools/template-fit/fit.R", "design/src/test/scala/eyes4s/design/TemplateFitSuite.scala", "io/src/test/scala/eyes4s/io/TemplateFitSuite.scala", "docs/TEMPLATE_FITTING.md"],
+      "gap_issue": null,
+      "regeneration_ids": ["template-reference"]
+    },
+    {
       "id": "leakage-free-basic-template-model",
       "row": "template-models",
       "eyesim_entry_points": ["template_similarity_cv", "template_regression", "template_multireg"],
@@ -488,14 +550,14 @@
       "estimand": "Held-out trial predictions from a model whose features, responses and fitted parameters are constructed from training folds only.",
       "conventions": ["fold identity retained", "intercept policy explicit", "shared feature construction", "basic baseline fit is intercept-free lm", "rlm, nnls and logistic may be deferred with explicit status"],
       "backend_dependencies": ["stats::lm", "stats::glm", "MASS::rlm", "nnls suggested"],
-      "eyes4s_public_api": ["PredictorSet planned", "saved plan or executable export/reimport adapter"],
+      "eyes4s_public_api": ["TemplateSplit and fixed-feature export/reimport delivered", "PredictorSet and learned training-only feature construction planned"],
       "fixture_inputs": ["baseline-small"],
       "independent_case": "The exact y=x1+2*x2 fit and a held-out response changed from 7 to 700 detect training/test leakage.",
       "status": "implementation-gap",
-      "evidence": [],
+      "evidence": ["docs/TEMPLATE_FITTING.md"],
       "gap_issue": "eyesim-template",
       "related_issues": ["bd-01KYD6SYK02ZRV99MG7FX939ZS"],
-      "planned_evidence": "One executable training-only basic fit, saved recipe, predictions and leakage mutant; advanced methods named as deferred or separately verified."
+      "planned_evidence": "Extend the delivered fixed-feature no-intercept route to actual training-only learned feature/template construction and pinned template_similarity_cv/template_regression workflows. Surface decomposition must preserve Signed/Intensity/Mass types; robust and NNLS variants remain deferred, and binomial regression on continuous mass is excluded."
     },
     {
       "id": "typed-current-result-exports",

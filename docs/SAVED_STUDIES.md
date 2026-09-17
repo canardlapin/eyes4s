@@ -46,6 +46,27 @@ excluded phases, and failure-policy denominators keep their existing semantics.
 Traversal is focal-major/reference-minor in input order; the final contrast still
 uses the layout's canonical key ordering.
 
+`work.preview` returns `Either[PlanError, StudyPreview[K, U]]`: a thin inspection
+facade over those same schedules. It exposes `focalKeys`, `referenceKeys`,
+`excludedPhases`, `failurePolicy`, and `reductionOrientation` (`ByLeft`, meaning
+the focal trial). Repeated stimulus occurrences with distinct full keys remain
+separate trials. Schedule indices and duplicate indices address the two key
+vectors. No maps or scores are computed by preview creation or paging.
+
+The preview carries `inputReference`, `layoutId`, `methodId`, and the full
+`description`. `preview.checkCurrent(plan, input)` rejects changed input or
+declared choices; obtaining a fresh preview also rejects a prepared plan whose
+declared method parameters have changed. These are scientific identities, not
+cryptographic verification of registered code. Registered behavior and key
+projections must remain pure and stable for their declared identities.
+
+Before paging, `candidatePairCount` is only the size of the usable Cartesian
+candidate space, before relation filtering. The exact `eligiblePairCount`,
+selected count, unmatched keys, and ambiguities are in the completed
+`PairPage.Done` report. These design counts do not predict numerical success or
+the number of scores contributing to a reduction; those remain execution results.
+Consumers may discard each inspected page instead of retaining the entire table.
+
 `PairScheduleBudget.of(sourceRows, candidatePairs, selectedPairs)` and
 `PairQuantum.of(visits)` are checked constructors. The study candidate budget
 conservatively counts both designs at every scale before duplicate exclusion.

@@ -6,13 +6,13 @@ revision is `ecb9c496257bce51acd5330af6a5e7a8d5b84e05`.
 input digest, and conventions. [Regeneration instructions](tools/r-parity/README.md) reproduce the
 public R calls from an isolated installation of that revision.
 
-The executable [capability inventory](tools/r-parity/baseline.json) currently classifies 24 cases
+The executable [capability inventory](tools/r-parity/baseline.json) currently classifies 26 cases
 across all 13 required rows:
 
 | Status | Cases | Meaning |
 |---|---:|---|
 | Verified equivalent | 4 | Exhaustive matched/control cosine on the pinned fixed-grid study; supplied coordinate transforms (center, rescale, normalize) with an exact affine oracle; entropy of supplied positive maps; the two-map mean and difference. |
-| Verified intentional divergence | 5 | Matched/control failure semantics, windowed duration-mass analysis, typed current result exports, the log ratio at zero cells and the absent product, and signed maps treated as mass. |
+| Verified intentional divergence | 7 | Matched/control failure semantics, windowed duration-mass analysis, typed current result exports, the log ratio at zero cells and the absent product, signed maps treated as mass, phase-only versus within-participant repetition cosine, and fixed-feature trial fitting versus normalized-map regression. |
 | Implementation gap | 15 | Each case names a live task and selected falsification input; no parity is claimed. |
 
 ## Verified R reference and analytic results
@@ -37,6 +37,66 @@ The R call uses `match_on = "key"`, where `key` combines participant and image,
 `permute_on = "participant"`, `method = "cosine"`, and `permutations = 100`. There are three
 encoding candidates per stratum, so this takes all candidates and excludes the match. It makes
 no claim about R versus Scala finite-cap sampling or RNG equivalence.
+
+### Repetition cosine: phase grouping is not participant-scoped reinstatement
+
+[repetition.json](tools/r-parity/fixtures/repetition.json) records public
+`repetitive_similarity(condition_var = "phase", method = "cosine")` pairwise and reduced
+outputs at the pinned revision. On the same twelve-trial input, R groups across participants
+and stimuli: five other same-phase rows and six different-phase rows per focal trial. The
+explicit `RepetitionDesign.withinParticipant` estimand instead compares across occasions within
+participant, with one same-stimulus target and two different-stimulus controls. Neither grouping
+can substitute for the other without changing the scientific question.
+
+An independent rational dot-product oracle verifies both sets of means and enumerates the
+reinstatement edges. Duplicated rows remain independent observations in R; ambiguous full keys
+are excluded with diagnostics in eyes4s. Singleton and empty R results are retained, not removed
+from the fixture. Portable conformance tests retain failures, unmatched keys and denominators,
+exercise keyed finite-cap controls, and compare the saved exhaustive phase route with the direct
+all-occasion facade at the same focal keys. The [compiled guide](docs/REPETITION_STUDIES.md)
+connects admission, persistence, execution and CSV export. Named absolute cosine tolerance is
+`1e-12`; identities and counts are exact.
+
+Local verification on 2026-09-17: the full CI-style command with `sbt -J-Xmx4g` passed 2,492
+tests across JVM and Scala.js, headers, formatting, workflow-generation and boundaries on
+Homebrew Java 25.0.1. Pinned repetition regeneration and the baseline/Mote checker also passed.
+A deliberate `sameOn(participant)` to `differentOn(participant)` source mutant caused four
+of six repetition tests to fail; the production source was restored byte-for-byte.
+These are local checks, not the supported-JDK hosted release matrix. Other repetition methods,
+multiscale aggregation and arbitrary sampled-design persistence remain explicit gaps.
+
+### Training-only fixed-feature fitting
+
+The [template fitting workflow](docs/TEMPLATE_FITTING.md) now executes the fixed four-row
+training case through actual Scala CSV export, R `stats::lm.fit` with no intercept, coefficient
+reimport against the saved recipe and held-out evaluation. Exact rational normal equations give
+coefficients `(1,2)` and prediction `7`. The observed prediction is `7.000000000000002`, with
+MSE `3.1554436208840472e-30`. This is numerical agreement within `1e-12`, not exact floating-point
+identity. Both portable runtimes consume the R receipt; numeric CSV spelling can differ while
+the parsed values and metadata agree.
+
+Changing only the held-out response from 7 to 700 does not change the training identity, export,
+coefficients or prediction; the residual becomes 693. Deliberately contaminating fitting with
+that row produces coefficients `(701/8,709/8)`, so the analytic target detects leakage. The R
+adapter rejects rank deficiency, underdetermination and non-finite data. A shifted-response case
+distinguishes no-intercept fitting from an accidental intercept.
+
+[template.json](tools/r-parity/fixtures/template.json) also pins public eyesim
+`template_multireg(method="lm", intercept=FALSE)` on the same vectors as normalized maps.
+It returns `(0.4,0.6)`: each predictor and response is separately normalized before regression.
+That is a per-source fit over cells, not a held-out trial predictor. The fixture preserves this
+different basis and statistical unit rather than claiming universal template-model parity.
+Learned feature construction, cross-fitted transform workflows, `template_regression`, robust
+fits, NNLS and typed surface decomposition remain separate gaps. No coefficient standard errors,
+p-values or binomial-on-mass analysis is exposed by the new route.
+
+Local acceptance on 2026-09-17: actual JVM export → R 4.5.1 fit → saved-recipe reimport ran
+successfully. The full `sbt -J-Xmx4g headerCheckAll scalafmtCheckAll scalafmtSbtCheck
+githubWorkflowCheck testAll checkBoundaries` command passed 2,516 tests across JVM and Scala.js
+on Homebrew Java 25.0.1. Pinned template regeneration and the baseline/Mote checker pass.
+A production split mutant that included held-out rows in training failed four of six domain
+tests; source was restored before the full gate. These are local checks, not hosted supported-JDK
+or release evidence.
 
 ### Supplied coordinate transforms
 

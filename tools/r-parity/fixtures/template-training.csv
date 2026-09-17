@@ -1,0 +1,5 @@
+method,training_hash,basis,response_unit,row,fold,response,feature:template-a,feature:template-b
+eyes4s.no-intercept-r-lm-qr/1,8a3a3b110b6bcfac,fixed-template-features/1,score,0,train-a,1.0,1.0,0.0
+eyes4s.no-intercept-r-lm-qr/1,8a3a3b110b6bcfac,fixed-template-features/1,score,1,train-a,2.0,0.0,1.0
+eyes4s.no-intercept-r-lm-qr/1,8a3a3b110b6bcfac,fixed-template-features/1,score,2,train-b,3.0,1.0,1.0
+eyes4s.no-intercept-r-lm-qr/1,8a3a3b110b6bcfac,fixed-template-features/1,score,3,train-b,4.0,2.0,1.0

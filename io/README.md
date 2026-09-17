@@ -1,7 +1,8 @@
 # eyes4s-io
 
-Ingest and export: EyeLink ASC, CSV, Mirror-derived metadata decoders, and
-result export to CSV and Arrow.
+Ingest and export: portable EyeLink ASC, sample/fixation CSV admission and typed
+AOI, contrast and temporal CSV exports. Arrow and general Mirror-derived metadata
+decoders are requirements, not delivered features.
 
 Binary .edf is out of scope -- it requires SR Research's proprietary edfapi.
 Run edf2asc first.
@@ -16,3 +17,8 @@ EDF2ASC, and real-device validation remain external release gates.
 Start with the [EyeLink import guide](../docs/formats/eyelink-asc.md). The corpus
 and independent-oracle policies are documented beside it. See `../PRD.md` for
 the module requirements and `../.mote/` for the live work items.
+
+For existing fixation summaries, use [fixation studies](../docs/FIXATION_STUDIES.md)
+or the compiled [repetition guide](../docs/REPETITION_STUDIES.md). Both preserve
+admission diagnostics rather than silently dropping invalid trials. The
+[task index](../docs/START_HERE.md) connects the other public workflows.

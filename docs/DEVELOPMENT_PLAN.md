@@ -28,28 +28,34 @@ The first two journeys must also run as saved plans; the third must be expressib
 same plan vocabulary or a demonstrated registered extension. Existing fixations and raw samples
 are equally legitimate starting points.
 
-## Current starting point
+## Current position — 2026-09-17
 
-Source and tracker review on 2026-09-08 found:
+The four active epics describe overlapping acceptance gates, not four independent frameworks.
+The [task index](START_HERE.md) is the public entry point; the baseline manifest remains the
+scientific inventory. Current source and tracker reconciliation distinguishes:
 
-- Geometry, time, trajectories, occupancy, detection, comparisons, AOI operations, pairing,
-  explicit score reductions, and published laws have implementations. Presence is not a claim
-  that all PRD cases or eyesim semantics are covered.
-- `PsychologyWorkflow` already provides a validated `AdserpWorkflowPlan` and a real-data AOI
-  journey. Generalize useful parts instead of adding a competing workflow framework.
-- `x-contrast` is now implemented against the pinned scalar and structured fixtures, with
-  compatibility checks and per-key evidence. Surface totality, broader temporal conveniences,
-  template workflows, and `Session` still have open work or require coverage reconciliation.
-- `plan` and `codec` now implement the concrete fixation-study path: typed descriptions,
-  artifact references, structural diffs, versioned persistence, and typed comparison registration.
-  General detection/AOI/temporal plans and generic domain/result archives remain open.
-- Several module READMEs and milestone statuses lag implemented code. Reconcile each against
-  acceptance evidence; do not close tasks from symbol presence alone.
-- Licensed EyeLink verification currently has unavailable external inputs. It is a separate
-  programme, not a prerequisite for work on descriptions, codecs, or direct analysis usability.
+| Epic | Delivered foundation | Remaining acceptance |
+|---|---|---|
+| Relational analysis (`bd-01KYD6CFWNAN0Y3TR59FJV8VMG`) | Typed relations/designs, keyed sampling, edge analyses, explicit reductions/contrasts, truth-table/mutation coverage and a direct repetition facade | Surface decomposition, partial association, broad parity, executable keyed joins and remaining shared within-pair scheduling |
+| Coherent roadmap (`bd-01M02N4AVNKKTEV3SA5PR0H4S8`) | Fixation, recording and temporal plan/codec routes; typed method descriptors, preflight and bounded study preview | Complete baseline, second extension-family and packaged application-consumer proof, operational and release gates |
+| Psychology-facing API/docs (`bd-01M02N4EKAEA6EBB3TE0G4TYMP`) | Real AdSERP workflow, fixation/temporal guides, compiled repetition admission/save/run/export example and corrected module entry points | Complete five-minute reader journey, migration coverage, detector/API cards and mdoc/Scaladoc CI site |
+| Complete baseline (`bd-01M214CX2CTADNR6Q9D032Y1FB`) | Pinned measured cases, exhaustive matched/control route, bounded temporal/scale examples, repetition-cosine divergence and a saved training-only fixed-feature R fit | Fifteen classified gap cases, including other comparison methods, KDE/sampling, learned template construction and surface decomposition |
 
-This planning pass does not rerun the numerical suites or inherit a previous build's test count.
-Each implementation slice must establish its own current evidence.
+`PsychologyWorkflow` and `RecordingPlan` already retain synchronization, angle conversion,
+preprocessing, detection and AOI operations; recording persistence is not future work wholesale.
+`TemporalStudyPlan` and its codec retain explicit windows and clipped duration support. Their
+bounded operation sets are not generic archives or proof that every method is serializable.
+Surface totality and scalar/structured contrast contracts are implemented. General template
+workflows and complete `Session` integration remain open.
+
+`RepetitionDesign` is a thin constructor over the existing pair/evaluate/reduce machinery.
+Its explicit within-participant estimand differs from eyesim's measured phase-only grouping.
+The saved guide uses the existing exhaustive two-phase `StudyPlan`; arbitrary all-occasion
+projections and finite-cap repetition persistence remain gaps. Do not conflate these routes.
+
+Licensed EyeLink verification remains a separate programme with external inputs, not a prerequisite
+for pure core work. Each implementation slice must establish current test evidence; this roadmap
+does not turn historical test counts or symbol presence into release acceptance.
 
 ## Milestones and acceptance
 
@@ -157,8 +163,9 @@ The [UI-consumer infrastructure plan](UI_FOUNDATION_PLAN.md), lodged on 2026-09-
 and revised on 2026-09-17, breaks the execution, scientific serialization, and
 method/preflight boundary into 18 scoped implementation tickets under the existing
 Mote owners. X1's shared work/pair schedule, S1's domain codecs and M1's typed
-descriptors closed on 2026-09-16 (commit `34f234c`); X3, S2, M3 and the rescoped
-M2 are ready next. A fixation-only gate (G0) proves the first app journey before
+descriptors closed on 2026-09-16 (commit `34f234c`); preflight and bounded preview
+are now implemented too. Follow the live tracker for X3, S2 and the remaining consumer work.
+A fixation-only gate (G0) proves the first app journey before
 the external-consumer gate (G1) covers the bounded shipped study, recording, and
 temporal routes; neither closes the broader baseline, Session, or all-method
 coverage requirements in this development plan.
@@ -209,39 +216,30 @@ M1 starts first. M2 and M3 advance together; M4 begins with its seam design duri
 follows concrete workflow contracts. M5 consumes the completed persistence boundary. M6 requires
 all preceding acceptance evidence. Documentation and error quality are part of each slice.
 
-The initial three bounded implementation slices are:
+The initial contrast, fixation-table, saved-study and multiscale-extension slices are delivered
+within the boundaries recorded in [saved studies](SAVED_STUDIES.md),
+[fixation studies](FIXATION_STUDIES.md), [extending studies](EXTENDING_STUDIES.md) and
+[PARITY.md](../PARITY.md). The [repetition slice](REPETITION_STUDIES.md) now connects direct
+relations, bounded controls, pinned reference semantics and saved/exported phase contrasts.
 
-1. **Baseline fixture and contrast contract:** pin one matched/control fixation study with an
-   independently enumerable pair set; specify scalar and structured-score contrast outputs,
-   mismatch failures, and expected denominators. Start the R reference harness and record actual
-   differences. Deliver a public-API acceptance example alongside the fixtures.
-2. **Complete that workflow:** implement `x-contrast` and the minimum admission, configuration,
-   and export conveniences needed for the study. Test explicit versus convenient composition and
-   retain unsuccessful rows. Close only the corresponding verified baseline cases.
-3. **Save that workflow:** implement the smallest typed plan/registry/codec slice that can describe,
-   inspect, persist, and rerun the same study, including its typed keys and scientific parameters.
-   Test a user-defined parameter/result and schema mismatch early. Expand from this demonstrated
-   seam to the remaining workflows rather than designing the entire framework in advance.
+The next coherent slices are:
 
-Progress on 2026-09-08: the baseline fixture and production contrast contract are implemented.
-The next three delivery slices build on them:
+1. **Learned template and surface-model bridge:** the basic fixed-feature training-only
+   export/R-QR/import route is now [executable](TEMPLATE_FITTING.md), with a versioned recipe,
+   independent rational targets and held-out leakage controls. Continue `eyesim-template` and
+   surface decomposition with training-only learned feature construction, actual cross-fitted
+   similarity and representation-correct map fits. Do not treat fixed features as proof of
+   learned-template leakage safety or coefficient normalization as a mixture model.
+2. **Repetition and comparison breadth:** extend `eyesim-repetition` and `eyesim-compare` with
+   pinned remaining-method and multiscale mean/none cases. Persist arbitrary all-occasion and
+   finite-cap designs only with named projections and direct-versus-restored pair identity proof.
+3. **Consumer and docs proof:** finish the existing bounded UI-foundation consumer gates and
+   second extension family. Build the task-first documentation in CI and expand the migration
+   guide incrementally, marking unsupported methods explicitly rather than waiting to write
+   any guidance until the full baseline is done.
 
-1. **Saved study:** typed plans and versioned JSON for the matched/control path, input prerequisites,
-   structural diffs, and portable direct-versus-restored execution.
-2. **Fixation-table workflow:** explicit CSV admission and whole-trial rejection accounting,
-   scalar/structured contrast export, a compiled public guide, and actual R readback.
-3. **Multiscale extension:** independent Gaussian targets and an isolated packaged-artifact consumer
-   with custom typed keys, parameters and scores, registration, persistence and published laws.
-
-Their implementation and acceptance commands are linked from [saved studies](SAVED_STUDIES.md),
-[fixation studies](FIXATION_STUDIES.md), and [extending studies](EXTENDING_STUDIES.md).
-[PARITY.md](../PARITY.md) records completed validation. These bounded deliveries do not close
-M2–M5 as a whole: raw-recording persistence, temporal/repetition convenience workflows, a basic
-held-out template fit, a second extension family, and application progress/cancellation remain.
-
-These slices make immediate user-visible progress while exposing the hard extension and
-persistence questions early. M1 may identify additional method work; attach it to the baseline
-integration gate instead of creating a competing roadmap.
+These slices advance M2–M5 without closing them wholesale. Reuse live task ownership and attach
+any genuinely new gap to the existing baseline/consumer gates rather than creating another roadmap.
 
 ## Scope discipline
 

@@ -7,6 +7,12 @@ munit, scalacheck and discipline are MAIN-scope dependencies of this module,
 not Test: these suites are library code that downstream authors run against
 their own instances.
 
+`AoiLaws.accounting(assignments, tolerance)` checks sample-time membership against
+source geometry, exact support conservation, visible union and duplicated mass,
+per-area dwell, and its analysable-time denominator. See
+[AOI accounting laws and mutation evidence](../docs/AOI_LAWS.md) for generator
+requirements and the boundary of the claim.
+
 Generate a typed report and canonical machine-readable document without parsing
 test output:
 

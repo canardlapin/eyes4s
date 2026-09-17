@@ -48,6 +48,30 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
   val methodId: DefinitionId                        = plan.method.id
   val estimates: Vector[StudyEstimate[U]]           = plan.estimates
 
+  /** Inspect the exact schedules and reduction choices without numerical work. */
+  def preview: Either[PlanError, StudyPreview[K, U]] =
+    checkUnchanged.map { _ =>
+      new StudyPreview(
+        inputReference,
+        layoutId,
+        methodId,
+        description,
+        focalIndices.map(i => input.trials.rows(i).key),
+        referenceIndices.map(i => input.trials.rows(i).key),
+        excludedPhases,
+        matched,
+        controls,
+        plan.policy
+      )
+    }
+
+  private def checkUnchanged: Either[PlanError, Unit] =
+    Either.cond(
+      plan.description == description,
+      (),
+      PlanError.ChangedPreparedPlan(methodId, layoutId)
+    )
+
   /** Execute this exact prepared plan, retaining its source order and evidence. */
   def run: Either[PlanError, StudyResult[K, U, S, D]] =
     execute(
@@ -59,9 +83,7 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
       occupancy: (K, Scanpath[U]) => Either[StudyFailure[K], PointMeasure[U]],
       context: Vector[(String, Provenance.Param)]
   ): Either[PlanError, StudyResult[K, U, S, D]] =
-    if plan.description != description then
-      Left(PlanError.ChangedPreparedPlan(methodId, layoutId))
-    else plan.executeWork(this, occupancy, context)
+    checkUnchanged.flatMap(_ => plan.executeWork(this, occupancy, context))
 
 object PreparedStudy:
   private[plan] def build[K, U <: Unit2D, P, S, D](

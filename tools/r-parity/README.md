@@ -36,6 +36,8 @@ python3 tools/r-parity/generate_reference.py --eyesim /path/to/eyesim
 python3 tools/r-parity/generate_reference.py --eyesim /path/to/eyesim --check
 python3 tools/r-parity/generate_transforms.py --eyesim /path/to/eyesim --check
 python3 tools/r-parity/generate_entropy.py --eyesim /path/to/eyesim --check
+python3 tools/r-parity/generate_repetition.py --eyesim /path/to/eyesim --check
+python3 tools/r-parity/generate_template.py --eyesim /path/to/eyesim --check
 python3 tools/r-parity/generate_multiscale.py --check
 python3 tools/r-parity/generate_temporal.py --check
 ```
@@ -59,8 +61,20 @@ ratio away from zero cells are compared with an exact rational or 60-digit decim
 `NA`, `Inf`, `-Inf`, `NaN` cell and every error is pinned as a literal, and the reading of eyesim's
 positive-cell formula on signed maps is labelled as a reading, not an estimand.
 
+The repetition generator measures public `repetitive_similarity` cosine pairwise/reduced calls
+on the supplied duration maps, including duplicated rows, singleton and empty input. Exact
+rational dot products check its phase-only grouping and the different within-participant
+reinstatement estimand. See [repetition studies](../../docs/REPETITION_STUDIES.md) for the compiled
+direct and saved-plan workflows; other methods and multiscale reductions remain gaps.
+
 The independent multiscale and temporal generators do not call eyesim. They establish eyes4s
 scientific cases while the corresponding eyesim KDE and temporal point-sampling cases remain open.
+The template generator consumes the committed actual Scala training export, executes the optional
+R QR adapter and checks exact rational coefficients/predictions, a held-out contamination mutant,
+an offset-response intercept control and rejected invalid designs. It also installs the pinned
+eyesim archive to measure `template_multireg` on normalized maps, a different statistical unit
+and coefficient basis. The [template guide](../../docs/TEMPLATE_FITTING.md) reproduces the full
+export, saved recipe, external fit and reimport path; no R process runs in ordinary Scala tests.
 Run all implemented checks through the manifest with:
 
 ```sh
@@ -87,6 +101,12 @@ python3 tools/r-parity/check_baseline.py \
   the entropy lattice, including non-finite cells, `NA` entropies and errors, R environment, and
   the exact and decimal oracle.
 - `fixtures/multiscale.json`: 60-digit closed-form eyes4s Gaussian oracle at three scales.
+- `fixtures/repetition.json`: phase-only cosine R output, runtime versions and independent
+  within-participant pair/mean expectations, consumed by `design/.../RepetitionReference.scala`.
+- `fixtures/template-training.csv`: actual JVM export of the baseline's four training rows.
+- `fixtures/template.json`: R coefficient receipt, exact held-out oracle, contaminated-fit mutant
+  and pinned eyesim normalized-map fit. `io/.../TemplateFitReference.scala` carries the transport
+  strings for portable tests. The recipe is deliberately not the training request.
 - `fixtures/temporal-study.csv` and `fixtures/temporal.json`: 18-trial temporal input plus exact
   interval ledgers, pair lists and 96 contrast targets.
 - `laws/src/test/scala/eyes4s/examples/MatchedControlFixtures.scala`,
