@@ -283,6 +283,90 @@ checked for decoded meaning and JSON value identity on JVM and Scala.js; the JVM
 checks byte-identical re-encoding of the pretty-printed files, which Scala.js does not promise because
 it renders integral doubles without a fraction.
 
+## Recording and temporal input payloads
+
+`RecordingInputCodecs.input[U]` encodes a `RecordingInput[U]` (`eyes4s.recording-input@1`): the
+nominal source name, the declared input digest, a document identity table of the frame and clocks, the
+gaze channels, the optional viewing geometry in millimetres, and the optional observed synchronization.
+Channels are either a monocular `Recording[U]` or a paired `BinocularRecording[U]`; the standalone
+`recording[U]` (`eyes4s.recording@1`) and `binocular[U]` (`eyes4s.binocular-recording@1`) codecs carry
+the same inner shape with their own identity table. A recording is its frame and clock by nominal ID,
+the eye, the declared pupil unit, the sampling rate (`fixed` with a finite `hz`, or `irregular`), the
+fixed-rate tolerance in microseconds, its `Recording.contentHash`, and its samples as parallel columns
+of one declared `length`: `tMicros` as decimal strings, `state` as one of `tracked`, `blink`, `lost`
+and `offScreen`, `x`/`y` and `pupil` as finite numbers where the category has them and `null` where it
+does not, and `lineage` as the ordered derivation of each sample (`measured` or `interpolated`,
+followed by `smoothed` and `projected` steps). A binocular recording carries `left` and `right`
+column groups over one `tMicros` column. Decoding rebuilds the value through `Recording.of` or
+`BinocularRecording.of`, so monotonic time, in-frame positions, declared pupil units and the
+fixed-rate tolerance are re-proven and reported as `CodecError.Recording`, and then compares the
+declared digest with `Recording.contentHash` (for a paired recording, `BinocularRecording.contentHash`,
+the ordered combination of its two eye projections); a dropped or altered sample, a changed support
+category or lineage, or a swapped clock fails with `CodecError.InputIdentity`, so
+`RecordingPlan.prerequisites` accepts the decoded recording by the same `ArtifactRef`. Two operands
+are carried and re-proven but not identity-bearing: the spatial unit, which the payload's `unit` field
+and the typed frame lookup guard instead, and the sampling tolerance of an irregular recording, which
+its hash omits because irregular sampling never applies it. Mis-shaped columns, a `tracked` sample
+without a position, an unknown category, or a lineage that does not begin with a basis are located
+errors such as `CodecError.Entry("channels.recording.samples[3]", ...)`. Payloads are in-memory
+JSON; a recording with more than `RecordingInputCodecs.maximumSamples` (2^22, about seventy minutes
+at 1 kHz) is refused with `CodecError.SampleBound` on both sides, naming the count and the bound, and
+must be split or carried as a separately referenced typed payload.
+
+The synchronization entry is input evidence: the target clock, the fit mode, the observed common
+marks and the optional residual limit, from which `RecordingInput.synchronize` refits `SyncEvidence`
+deterministically. The `fitted` offset and drift are written alongside and cross-checked on decode
+(`CodecError.SynchronizationFit` names the declared and refit coefficients); the fitted diagnostics
+themselves belong to the completed-result archive. Only offset-only synchronization is fixture-pinned;
+affine fits with non-zero drift are covered by the generated laws on both the JVM and Scala.js. `RecordingInput.of` refuses
+an empty source, a synchronization whose target is the recording's own clock, or marks that do not
+fit. Viewing geometry and every mark enter the input digest. A recording plan still runs on the bare
+`Recording[Px]` with its own declared provenance; `RecordingInput.disagreements(input, plan)` names
+every field where that provenance departs from the input's evidence (source, clocks, viewing, fit
+mode, marks, residual limit), followed by the plan's own prerequisites, so a plan whose marks differ
+from the observed ones is refused before it records the wrong provenance.
+
+A source-supported scanpath inside a study input (`eyes4s.scanpath@1`) now carries a `source` entry:
+the `RecordingRef`, the exact recording in the inner shape above, and the half-open sample ranges of
+its fixations. Decoding rebuilds it through `EventSeries.of` and `Scanpath.fromEvents`, so centres
+and sample counts are re-derived from the samples and must equal the declared summaries; a detached
+summary, an overlapping or truncated range, or a support category flipped inside the source
+recording is refused. Its fixations declare a dispersion `method` only: the value is re-derived from
+the samples rather than compared. This is a design assumption rather than a measured difference:
+the spread statistics use `hypot` and `pow`, which neither platform promises to round identically,
+so a value written on one platform is not promised bit-identical on the other and the wire does not
+depend on it. The source name, the source recording's digest and every sample
+range enter the study digest of a source-supported trial, so a different source recording or
+segmentation with the same summaries is a different input; detached trials keep their S2 digests.
+Dispersion recomputed under a warp (`SummaryEvidence.Recomputed`) is a transformation result, not an
+input, and stays `CodecError.Unsupported`.
+
+`TemporalInputCodecs.study[U](embedding, resolve)` encodes a `TemporalStudyInput[K, U]`
+(`eyes4s.temporal-study-input@1`): the layout and key schema identities, the spatial unit, the
+declared temporal digest, the base study either inline (`StudyEmbedding.Inline`, the complete
+study-input payload) or by reference (`StudyEmbedding.ByReference`, the study digest resolved through
+a caller-supplied lookup that never loads files and fails with `PlanError.MissingArtifact`), a clock
+identity table, and one epoch per trial that has one, in key order: the typed key, the measured
+`anchorMicros` as a decimal string, and the observed coverage as a clock and its intervals. Trials
+without an epoch stay absent, so a decoded input reports the same `MissingEpoch` at run time.
+Decoding rebuilds the value through `TemporalStudyInput.of`, so duplicate or foreign epochs are the
+constructor's `CodecError.Temporal` refusals; a coverage interval on another clock, a coverage clock
+that is not the trial scanpath's clock, or an unknown clock is located at its epoch, and a moved
+anchor or changed coverage fails with `CodecError.InputIdentity`. `TimelineCodecs.timeline(schema, values)` is the conditional codec for
+`Timeline[A]` (`planned` and `observed` wrap the two timing kinds with a `timing` field, and the
+neutral codec refuses a payload that carries one): a clock and ordered marks with exact microsecond
+instants, where equal instants keep input order.
+
+The pinned [recording-input-v1.json](../codec/src/test/resources/eyes4s/recording-input-v1.json),
+[binocular-recording-input-v1.json](../codec/src/test/resources/eyes4s/binocular-recording-input-v1.json),
+[study-input-source-supported-v1.json](../codec/src/test/resources/eyes4s/study-input-source-supported-v1.json)
+and [temporal-study-input-v1.json](../codec/src/test/resources/eyes4s/temporal-study-input-v1.json)
+fixtures are seeded from the core recording constructions, the synthetic EyeLink binocular corpus
+file and the temporal contrast fixtures (with one trial anchored beyond JavaScript's exact integer
+range and one trial left without an epoch). They are checked for decoded meaning and JSON value
+identity on JVM and Scala.js; the JVM suite additionally checks byte-identical re-encoding of the
+pretty-printed files.
+
 ## Versions and extensions
 
 The JSON envelope has a schema identifier and version. Its payload separately records the method

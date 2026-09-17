@@ -1,0 +1,195 @@
+{
+  "schema" : {
+    "name" : "eyes4s.study-input",
+    "version" : 1
+  },
+  "value" : {
+    "layout" : {
+      "name" : "eyes4s.participant-stimulus-phase",
+      "version" : 1
+    },
+    "keySchema" : {
+      "name" : "eyes4s.study-key",
+      "version" : 1
+    },
+    "unit" : "px",
+    "input" : "9ac7e83e4874dec7",
+    "identities" : {
+      "frames" : [
+        {
+          "id" : "display",
+          "unit" : "px",
+          "xMin" : 0.0,
+          "yMin" : 0.0,
+          "xMax" : 1000.0,
+          "yMax" : 1000.0,
+          "yAxis" : "Down"
+        }
+      ],
+      "grids" : [
+      ],
+      "clocks" : [
+        "trial"
+      ]
+    },
+    "trials" : {
+      "schema" : {
+        "name" : "eyes4s.trials",
+        "version" : 1
+      },
+      "value" : [
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s1",
+              "stimulus" : "a",
+              "phase" : "encode"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "display",
+              "clock" : "trial",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "5000",
+                  "x" : 103.0,
+                  "y" : 101.39999999999999,
+                  "sampleCount" : 4,
+                  "dispersion" : {
+                    "method" : "rmsRadius"
+                  }
+                },
+                {
+                  "onsetMicros" : "5000",
+                  "offsetMicros" : "10000",
+                  "x" : 300.0,
+                  "y" : 102.0,
+                  "sampleCount" : 5
+                }
+              ],
+              "source" : {
+                "ref" : "synthetic-right-headfixed-1000",
+                "recording" : {
+                  "frame" : "display",
+                  "clock" : "trial",
+                  "eye" : "right",
+                  "pupilUnit" : null,
+                  "rate" : {
+                    "kind" : "fixed",
+                    "hz" : 1000.0
+                  },
+                  "samplingToleranceMicros" : "1",
+                  "recording" : "58960f21c98f4dbc",
+                  "samples" : {
+                    "length" : 10,
+                    "tMicros" : [
+                      "0",
+                      "1000",
+                      "2000",
+                      "3000",
+                      "4000",
+                      "5000",
+                      "6000",
+                      "7000",
+                      "8000",
+                      "9000"
+                    ],
+                    "state" : [
+                      "tracked",
+                      "tracked",
+                      "blink",
+                      "tracked",
+                      "tracked",
+                      "tracked",
+                      "tracked",
+                      "tracked",
+                      "tracked",
+                      "tracked"
+                    ],
+                    "x" : [
+                      100.0,
+                      101.5,
+                      null,
+                      104.5,
+                      106.0,
+                      300.0,
+                      300.0,
+                      300.0,
+                      300.0,
+                      300.0
+                    ],
+                    "y" : [
+                      100.0,
+                      100.7,
+                      null,
+                      102.1,
+                      102.8,
+                      100.0,
+                      101.0,
+                      102.0,
+                      103.0,
+                      104.0
+                    ],
+                    "pupil" : [
+                      null,
+                      null,
+                      null,
+                      null,
+                      null,
+                      null,
+                      null,
+                      null,
+                      null,
+                      null
+                    ],
+                    "lineage" : [
+                      "measured",
+                      "measured",
+                      "measured",
+                      "measured",
+                      "measured",
+                      "measured",
+                      "measured",
+                      "measured",
+                      "measured",
+                      "measured"
+                    ]
+                  }
+                },
+                "support" : [
+                  {
+                    "from" : 0,
+                    "until" : 5
+                  },
+                  {
+                    "from" : 5,
+                    "until" : 10
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

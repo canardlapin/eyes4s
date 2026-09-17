@@ -17,7 +17,9 @@
 package eyes4s.codec
 
 import cats.syntax.all.*
+import eyes4s.core.{DetectionSupportError, RecordingError}
 import eyes4s.design.{Trial, Trials}
+import eyes4s.kernel.SyncEvidenceError
 import eyes4s.plan.*
 import io.circe.{Json, Decoder}
 
@@ -38,6 +40,20 @@ enum CodecError derives CanEqual:
   case Unsupported(path: String, reason: String)
   case InputIdentity(declared: String, reconstructed: String)
   case Admission(underlying: AdmissionError)
+  // UI-S3: recording and temporal input payloads.
+  case Recording(path: String, underlying: RecordingError)
+  case Support(path: String, underlying: DetectionSupportError)
+  case Synchronization(path: String, underlying: SyncEvidenceError)
+  case Input(underlying: RecordingInputError)
+  case Temporal(underlying: TemporalStudyError)
+  case SampleBound(path: String, samples: Int, maximum: Int)
+  case SynchronizationFit(
+      path: String,
+      declaredOffsetMicros: Long,
+      declaredDrift: Double,
+      refitOffsetMicros: Long,
+      refitDrift: Double
+  )
 
   def message: String = this match
     case InvalidJson(_, reason)     => s"Invalid project JSON: $reason"
@@ -60,6 +76,17 @@ enum CodecError derives CanEqual:
     case InputIdentity(declared, reconstructed) =>
       s"Payload declares input $declared but its trials reconstruct $reconstructed."
     case Admission(e) => e.message
+    // UI-S3
+    case Recording(path, e)                  => s"Cannot decode $path: ${e.message}"
+    case Support(path, e)                    => s"Cannot decode $path: ${e.message}"
+    case Synchronization(path, e)            => s"Cannot decode $path: ${e.message}"
+    case Input(e)                            => e.message
+    case Temporal(e)                         => e.message
+    case SampleBound(path, samples, maximum) =>
+      s"Cannot carry $path inline: $samples samples exceed the payload bound of $maximum."
+    case SynchronizationFit(path, declaredOffset, declaredDrift, refitOffset, refitDrift) =>
+      s"$path declares offsetMicros=$declaredOffset drift=$declaredDrift but the observed marks " +
+        s"refit to offsetMicros=$refitOffset drift=$refitDrift."
 
 /** A typed, explicitly versioned codec. Unsupported old versions fail precisely.
   * The wire envelope separates schema identity from any method identity in its payload.

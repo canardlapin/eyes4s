@@ -44,9 +44,10 @@ object StudyInputCodecs:
   * registered key codec; frames and clocks are declared once in a document
   * identity table and referenced by nominal ID. Decoding rebuilds the input
   * through `StudyInput` and refuses a payload whose declared digest differs
-  * from the reconstructed one. Fixation summaries that carry source-sample
-  * support are refused rather than silently detached; they belong to the
-  * recording payload.
+  * from the reconstructed one. A source-supported scanpath embeds its exact
+  * recording and half-open sample ranges and is rebuilt through
+  * `EventSeries.of`, so its summaries are re-derived from the samples rather
+  * than trusted; a summary recomputed under a warp remains refused.
   */
 final class StudyInputCodec[K, U <: Unit2D](
     val schema: DefinitionId,
@@ -118,41 +119,146 @@ final class StudyInputCodec[K, U <: Unit2D](
 
   private def scanpaths(table: DocumentIdentities): VersionedCodec[Scanpath[U]] =
     VersionedCodec.checked[Scanpath[U]](StudyInputCodecs.scanpath)(path =>
-      if path.source.isDefined then
-        Left(
-          CodecError.Unsupported(
-            "scanpath",
-            "source-supported scanpaths carry sample ranges that belong to the recording payload"
-          )
-        )
-      else
-        path.fixations.toVector.zipWithIndex
-          .traverse { case (f, index) => fixation(f).left.map(Wire.at(s"fixations[$index]")) }
-          .map(fixations =>
-            Json.obj(
-              "frame"     -> Json.fromString(path.frame.id.name),
-              "clock"     -> Json.fromString(path.clock.name),
-              "fixations" -> Json.arr(fixations*)
-            )
-          )
+      for
+        fixations <- path.fixations.toVector.zipWithIndex
+          .traverse { case (f, index) =>
+            fixation(f, path.source.isDefined).left.map(Wire.at(s"fixations[$index]"))
+          }
+        source <- (path.source, path.sourceRecording, path.sampleSupport) match
+          case (Some(ref), Some(recording), Some(support)) =>
+            RecordingInputWire
+              .writeRecording(recording)
+              .map(body =>
+                Json.obj(
+                  "ref"       -> Json.fromString(ref.value),
+                  "recording" -> body,
+                  "support"   -> Json.arr(
+                    support.map(range =>
+                      Json.obj(
+                        "from"  -> Json.fromInt(range.from),
+                        "until" -> Json.fromInt(range.until)
+                      )
+                    )*
+                  )
+                )
+              )
+              .map(Some(_))
+              .left
+              .map(Wire.at("source"))
+          case _ => Right(None)
+      yield Json.fromFields(
+        Vector(
+          "frame"     -> Json.fromString(path.frame.id.name),
+          "clock"     -> Json.fromString(path.clock.name),
+          "fixations" -> Json.arr(fixations*)
+        ) ++ source.map("source" -> _)
+      )
     ) { json =>
       for
-        frameName <- Wire.field[String](json, "frame")
-        frame     <- table.frame[U](FrameId(frameName))
-        clockName <- Wire.field[String](json, "clock")
-        clock     <- table.clock(ClockId(clockName))
-        entries   <- Wire.field[Vector[Json]](json, "fixations")
-        fixations <- entries.zipWithIndex.traverse { case (entry, index) =>
-          readFixation(entry, clock).left.map(Wire.at(s"fixations[$index]"))
+        frameName  <- Wire.field[String](json, "frame")
+        frame      <- table.frame[U](FrameId(frameName))
+        clockName  <- Wire.field[String](json, "clock")
+        clock      <- table.clock(ClockId(clockName))
+        entries    <- Wire.field[Vector[Json]](json, "fixations")
+        sourceJson <- Wire.field[Option[Json]](json, "source")
+        fixations  <- entries.zipWithIndex.traverse { case (entry, index) =>
+          readFixation(entry, clock, sourceJson.isDefined).left
+            .map(Wire.at(s"fixations[$index]"))
         }
-        path <- Scanpath
-          .of(frame, clock, IArray.from(fixations))
-          .left
-          .map(e => CodecError.Field("fixations", json, e.message))
+        path <- sourceJson match
+          case None =>
+            Scanpath
+              .of(frame, clock, IArray.from(fixations))
+              .left
+              .map(e => CodecError.Field("fixations", json, e.message))
+          case Some(source) =>
+            readSourceSupported(source, table, frame, clock, fixations).left.map(
+              Wire.at("source")
+            )
       yield path
     }
 
-  private def fixation(f: Event.Fixation[U]): Either[CodecError, Json] =
+  /** Rebuild a source-supported scanpath from its recording and sample
+    * ranges. The declared spans, centres and sample counts must equal the
+    * ones the source samples derive, so a payload cannot detach a summary
+    * from its evidence. Dispersion is carried by method only: its value is
+    * re-derived from the samples, because the spread statistics use `hypot`
+    * and `pow`, whose rounding is not identical across platforms.
+    */
+  private def readSourceSupported(
+      json: Json,
+      table: DocumentIdentities,
+      frame: Frame[U],
+      clock: ClockId,
+      declared: Vector[Event.Fixation[U]]
+  ): Either[CodecError, Scanpath[U]] =
+    for
+      ref <- Wire.field[String](json, "ref")
+      _   <- Either.cond(
+        ref.trim.nonEmpty,
+        (),
+        CodecError.Field("ref", json, "a source recording needs a non-empty nominal name")
+      )
+      recording <- Wire
+        .field[Json](json, "recording")
+        .flatMap(RecordingInputWire.readRecording[U](_, table))
+        .left
+        .map(Wire.at("recording"))
+      _ <- Either.cond(
+        recording.frame.id == frame.id && recording.clock == clock,
+        (),
+        CodecError.Field(
+          "recording",
+          json,
+          s"source recording is in frame ${recording.frame.id.name} on clock ${recording.clock.name}, " +
+            s"but the scanpath is in frame ${frame.id.name} on clock ${clock.name}"
+        )
+      )
+      raw     <- Wire.field[Vector[Json]](json, "support")
+      support <- raw.zipWithIndex.traverse { case (range, index) =>
+        (for
+          from  <- Wire.field[Int](range, "from")
+          until <- Wire.field[Int](range, "until")
+          value <- SampleRange.of(from, until).left.map(CodecError.Support("support", _))
+        yield value).left.map(Wire.at(s"support[$index]"))
+      }
+      series <- EventSeries
+        .of(recording, RecordingRef(ref), declared.map(f => f: Event[U]), support)
+        .left
+        .map(CodecError.Support("support", _))
+      path <- Scanpath
+        .fromEvents(series)
+        .left
+        .map(e => CodecError.Field("fixations", json, e.message))
+      _ <- path.fixations.toVector.zip(declared).zipWithIndex.traverse {
+        case ((derived, expected), index) =>
+          Either.cond(
+            derived.span == expected.span && derived.centre == expected.centre &&
+              derived.sampleCount == expected.sampleCount &&
+              derived.dispersion.map(_.method) == expected.dispersion.map(_.method),
+            (),
+            CodecError.Field(
+              s"fixations[$index]",
+              Json.obj(
+                "onsetMicros"  -> DomainWire.time(expected.span.onset.toMicros),
+                "offsetMicros" -> DomainWire.time(expected.span.offset.toMicros),
+                "x"            -> Json.fromDoubleOrNull(expected.centre.x),
+                "y"            -> Json.fromDoubleOrNull(expected.centre.y),
+                "sampleCount"  -> Json.fromInt(expected.sampleCount)
+              ),
+              s"source samples derive centre=(${derived.centre.x}, ${derived.centre.y}) " +
+                s"sampleCount=${derived.sampleCount}, but the payload declares " +
+                s"centre=(${expected.centre.x}, ${expected.centre.y}) " +
+                s"sampleCount=${expected.sampleCount}"
+            )
+          )
+      }
+    yield path
+
+  private def fixation(
+      f: Event.Fixation[U],
+      sourceSupported: Boolean
+  ): Either[CodecError, Json] =
     val base = Json.obj(
       "onsetMicros"  -> DomainWire.time(f.span.onset.toMicros),
       "offsetMicros" -> DomainWire.time(f.span.offset.toMicros),
@@ -174,11 +280,31 @@ final class StudyInputCodec[K, U <: Unit2D](
             )
           )
         )
-      case DispersionStatus.Available(_, evidence) =>
+      case DispersionStatus.Available(value, SummaryEvidence.SourceSupported(_, _))
+          if sourceSupported =>
+        Right(
+          base.mapObject(
+            _.add(
+              "dispersion",
+              Json.obj(
+                "method" -> Json.fromString(StudyInputCodec.dispersionMethods(value.method))
+              )
+            )
+          )
+        )
+      case DispersionStatus.Available(_, evidence: SummaryEvidence.SourceSupported) =>
         Left(
           CodecError.Unsupported(
             "dispersion",
-            s"evidence $evidence refers to source samples that belong to the recording payload"
+            s"evidence $evidence refers to source samples this scanpath does not carry"
+          )
+        )
+      case DispersionStatus.Available(_, evidence: SummaryEvidence.Recomputed) =>
+        Left(
+          CodecError.Unsupported(
+            "dispersion",
+            s"evidence $evidence records a warp of source samples; a recomputed summary is a " +
+              "result of transformation and is not an input payload"
           )
         )
       case DispersionStatus.Unavailable(reason) =>
@@ -189,7 +315,15 @@ final class StudyInputCodec[K, U <: Unit2D](
           )
         )
 
-  private def readFixation(json: Json, clock: ClockId): Either[CodecError, Event.Fixation[U]] =
+  /** A source-supported entry declares its dispersion method only; the
+    * value is re-derived from the samples, so a placeholder of zero stands
+    * in until `EventSeries.of` rebuilds the summary.
+    */
+  private def readFixation(
+      json: Json,
+      clock: ClockId,
+      sourceSupported: Boolean
+  ): Either[CodecError, Event.Fixation[U]] =
     for
       onset  <- DomainWire.micros(json, "onsetMicros")
       offset <- DomainWire.micros(json, "offsetMicros")
@@ -208,7 +342,18 @@ final class StudyInputCodec[K, U <: Unit2D](
             .map(e => CodecError.Field("fixation", json, e.message))
         case Some(spread) =>
           for
-            value  <- DomainWire.finite(spread, "value")
+            value <-
+              if sourceSupported then
+                Either.cond(
+                  spread.asObject.exists(!_.contains("value")),
+                  0.0,
+                  CodecError.Field(
+                    "value",
+                    spread,
+                    "a source-supported dispersion carries its method only; its value is derived"
+                  )
+                )
+              else DomainWire.finite(spread, "value")
             name   <- Wire.field[String](spread, "method")
             method <- StudyInputCodec.dispersionMethods
               .collectFirst { case (m, n) if n == name => m }

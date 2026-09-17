@@ -10,8 +10,11 @@ constructors and returns `CodecError` with the offending field and operands.
 Existing study, recording and temporal plan schemas keep their version-one wire
 meanings. Their frame, time, perspective and mark helpers now use this foundation.
 These codecs describe scientific values; they do not load files or implement an
-application project format. Fitted synchronization evidence belongs to the
-completed-result archive work in S4.
+application project format. Observed synchronization marks travel with the
+recording input payload (see [saved studies](SAVED_STUDIES.md)); fitted
+synchronization diagnostics belong to the completed-result archive work in S4.
+`TimelineCodecs` supplies the conditional `Timeline[A]`, `PlannedTimeline[A]`
+and `ObservedTimeline[A]` codecs given a codec for the mark values.
 
 ## Numeric policy
 
@@ -70,4 +73,9 @@ Scala.js. Negative tests cover invalid geometry, time, coverage, conflicting IDs
 and unresolved references. Frame-ID, y-axis and microsecond-unit mutants must
 fail the roundtrip laws. The frozen study-v1 and recording-v1 fixtures separately
 pin decoded scientific meaning, preventing a mutually wrong encoder/decoder
-from passing solely by agreeing with each other.
+from passing solely by agreeing with each other. The recording, binocular,
+source-supported study and temporal input fixtures do the same for the input
+payloads. Their published laws are shown to discriminate dropped-sample,
+swapped-clock, dropped-mark and moved-anchor mutants of the decoded value, and
+the payload-editing suites show that the decoders themselves refuse the same
+changes through the declared digests.

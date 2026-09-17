@@ -1,0 +1,88 @@
+{
+  "schema" : {
+    "name" : "eyes4s.recording-input",
+    "version" : 1
+  },
+  "value" : {
+    "unit" : "px",
+    "source" : "synthetic-binocular-remote-2000",
+    "input" : "c5e4009b9cb153b0",
+    "identities" : {
+      "frames" : [
+        {
+          "id" : "display",
+          "unit" : "px",
+          "xMin" : 0.0,
+          "yMin" : 0.0,
+          "xMax" : 1000.0,
+          "yMax" : 1000.0,
+          "yAxis" : "Down"
+        }
+      ],
+      "grids" : [
+      ],
+      "clocks" : [
+        "tracker"
+      ]
+    },
+    "channels" : {
+      "kind" : "binocular",
+      "recording" : {
+        "frame" : "display",
+        "clock" : "tracker",
+        "pupilUnit" : "arbitrary",
+        "rate" : {
+          "kind" : "fixed",
+          "hz" : 2000.0
+        },
+        "samplingToleranceMicros" : "1",
+        "recording" : "39e3dafb2de70ca2",
+        "samples" : {
+          "length" : 2,
+          "tMicros" : [
+            "300000",
+            "300500"
+          ],
+          "left" : {
+            "state" : [
+              "tracked",
+              "tracked"
+            ],
+            "x" : [
+              1.0,
+              4.5
+            ],
+            "y" : [
+              2.0,
+              5.5
+            ],
+            "pupil" : [
+              3.0,
+              6.5
+            ]
+          },
+          "right" : {
+            "state" : [
+              "tracked",
+              "lost"
+            ],
+            "x" : [
+              4.0,
+              null
+            ],
+            "y" : [
+              5.0,
+              null
+            ],
+            "pupil" : [
+              6.0,
+              null
+            ]
+          }
+        }
+      }
+    },
+    "viewing" : null,
+    "synchronization" : null
+  }
+}

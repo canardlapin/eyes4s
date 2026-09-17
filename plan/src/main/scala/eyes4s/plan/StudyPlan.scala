@@ -35,6 +35,12 @@ object DefinitionId:
   val trials: DefinitionId          = new DefinitionId("eyes4s.trials", 1)
   val scanpath: DefinitionId        = new DefinitionId("eyes4s.scanpath", 1)
   val admissionLedger: DefinitionId = new DefinitionId("eyes4s.admission-ledger", 1)
+  // UI-S3: recording and temporal input payload schemas.
+  val recording: DefinitionId          = new DefinitionId("eyes4s.recording", 1)
+  val binocularRecording: DefinitionId = new DefinitionId("eyes4s.binocular-recording", 1)
+  val recordingInput: DefinitionId     = new DefinitionId("eyes4s.recording-input", 1)
+  val temporalStudyInput: DefinitionId = new DefinitionId("eyes4s.temporal-study-input", 1)
+  val timeline: DefinitionId           = new DefinitionId("eyes4s.timeline", 1)
   def of(name: String, version: Int): Either[PlanError, DefinitionId] =
     if name.trim.isEmpty || version < 1 then Left(PlanError.InvalidDefinition(name, version))
     else Right(new DefinitionId(name, version))
@@ -134,6 +140,16 @@ object StudyInput:
           )
         )
       }
+      // UI-S3: a source-supported scanpath is also identified by its
+      // evidence, so a different source recording or segmentation is a
+      // different input even when the summaries agree.
+      val source = (path.source, path.sourceRecording, path.sampleSupport) match
+        case (Some(ref), Some(recording), Some(support)) =>
+          Vector(
+            ContentHash.ofString("source:" + ref.value),
+            recording.contentHash
+          ) ++ support.map(range => ContentHash.ofString(s"${range.from},${range.until}"))
+        case _ => Vector.empty
       ContentHash.combineAll(
         Vector(
           keys.digest(trial.key),
@@ -144,7 +160,7 @@ object StudyInput:
           ContentHash.of(
             IArray(frame.spec.xMin, frame.spec.yMin, frame.spec.xMax, frame.spec.yMax)
           )
-        ) ++ fixes
+        ) ++ fixes ++ source
       )
     }
     new StudyInput(trials, ContentHash.combineAll(hashes))
