@@ -192,6 +192,16 @@ def contrast[K, S, D](matched: Analysis[K, S], control: Analysis[K, S])(using
     algebra: Contrastable[S, D],
     ordering: Ordering[K]
 ): Either[ContrastError[K], Contrast[K, S, D]] =
+  contrastWork(matched, control).map(ContrastWork.complete)
+
+/** The same contrast as [[contrast]], in resumable steps. Compatibility, the
+  * sorted key domain and the ordering check are decided here before any row
+  * is subtracted; each step then subtracts at most `quantum` keys.
+  */
+def contrastWork[K, S, D](matched: Analysis[K, S], control: Analysis[K, S])(using
+    algebra: Contrastable[S, D],
+    ordering: Ordering[K]
+): Either[ContrastError[K], ContrastCursor[K, S, D]] =
   val issues = ContrastCompatibility.check(matched, control, algebra.components)
   NonEmptyVector.fromVector(issues) match
     case Some(errors) => Left(ContrastError.Incompatible(errors))
@@ -204,33 +214,82 @@ def contrast[K, S, D](matched: Analysis[K, S], control: Analysis[K, S])(using
         collision match
           case Some((a, b)) => Left(ContrastError.IndistinguishableOrdering(a, b))
           case None         =>
-            val rows = keys.map { key =>
-              val m      = matched.entries.find(_.key == key)
-              val c      = control.entries.find(_.key == key)
-              val result = (m, c) match
-                case (Some(left), Some(right)) =>
-                  (left.result, right.result) match
-                    case (Right(a), Right(b)) =>
-                      algebra.subtract(a, b).left.map(ContrastRowError.Arithmetic(key, _))
-                    case _ =>
-                      Left(
-                        ContrastRowError.ReductionFailures(
-                          key,
-                          left.result.left.toOption,
-                          right.result.left.toOption
-                        )
-                      )
-                case _ =>
-                  Left(
-                    ContrastRowError.MissingOperands(
-                      key,
-                      Option.when(m.isEmpty)(ContrastOperand.Matched).toVector ++
-                        Option.when(c.isEmpty)(ContrastOperand.Control).toVector
-                    )
-                  )
-              new ContrastRow(key, m, c, result)
-            }
-            Right(new Contrast(matched, control, rows))
+            Right(
+              new ContrastCursor(
+                matched,
+                control,
+                keys,
+                matched.entries.map(row => row.key -> row).toMap,
+                control.entries.map(row => row.key -> row).toMap,
+                0,
+                Vector.empty
+              )
+            )
+
+/** One step of a keyed contrast. */
+enum ContrastPage[K, S, D]:
+  case More(workUnits: Int, next: ContrastCursor[K, S, D])
+  case Done(workUnits: Int, contrast: Contrast[K, S, D])
+
+/** An immutable position inside a keyed contrast, one unit per key. */
+final class ContrastCursor[K, S, D] private[design] (
+    private val matched: Analysis[K, S],
+    private val control: Analysis[K, S],
+    private val keys: Vector[K],
+    private val matchedRows: Map[K, ReductionRow[K, S]],
+    private val controlRows: Map[K, ReductionRow[K, S]],
+    private val position: Int,
+    private val rows: Vector[ContrastRow[K, S, D]]
+)(using algebra: Contrastable[S, D]):
+  /** Keys whose row is already recorded. */
+  def contrastedKeys: Int = position
+
+  def advance(quantum: PairQuantum): ContrastPage[K, S, D] =
+    val end  = math.min(keys.size, position + quantum.value)
+    val next = rows ++ (position until end).map { index =>
+      val key    = keys(index)
+      val m      = matchedRows.get(key)
+      val c      = controlRows.get(key)
+      val result = (m, c) match
+        case (Some(left), Some(right)) =>
+          (left.result, right.result) match
+            case (Right(a), Right(b)) =>
+              algebra.subtract(a, b).left.map(ContrastRowError.Arithmetic(key, _))
+            case _ =>
+              Left(
+                ContrastRowError.ReductionFailures(
+                  key,
+                  left.result.left.toOption,
+                  right.result.left.toOption
+                )
+              )
+        case _ =>
+          Left(
+            ContrastRowError.MissingOperands(
+              key,
+              Option.when(m.isEmpty)(ContrastOperand.Matched).toVector ++
+                Option.when(c.isEmpty)(ContrastOperand.Control).toVector
+            )
+          )
+      new ContrastRow(key, m, c, result)
+    }
+    if end == keys.size then
+      ContrastPage.Done(end - position, new Contrast(matched, control, next))
+    else
+      ContrastPage.More(
+        end - position,
+        new ContrastCursor(matched, control, keys, matchedRows, controlRows, end, next)
+      )
+
+object ContrastWork:
+  /** Drive a contrast to completion with the default quantum. */
+  def complete[K, S, D](cursor: ContrastCursor[K, S, D]): Contrast[K, S, D] =
+    @annotation.tailrec
+    def loop(cursor: ContrastCursor[K, S, D]): Contrast[K, S, D] =
+      cursor.advance(PairQuantum.default) match
+        case ContrastPage.More(_, next)     => loop(next)
+        case ContrastPage.Done(_, contrast) => contrast
+    loop(cursor)
 
 private object ContrastCompatibility:
   def check[K, S](

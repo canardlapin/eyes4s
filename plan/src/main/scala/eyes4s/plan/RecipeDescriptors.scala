@@ -286,7 +286,8 @@ object RecipeDescriptors:
       description: Vector[(String, Vector[Provenance.Param])],
       metadata: Vector[ParameterInfo],
       conventions: Vector[String],
-      children: Map[String, Vector[InspectedParameter]] = Map.empty
+      children: Map[String, Vector[InspectedParameter]] = Map.empty,
+      execution: ExecutionCapability = ExecutionCapability.SynchronousWholeOperation
   ): Either[DescriptorError, RecipeInspection] =
     val byId    = metadata.map(m => m.id -> m).toMap
     val missing = description.map(_._1).filterNot(byId.contains)
@@ -301,9 +302,7 @@ object RecipeDescriptors:
             .toRight(DescriptorError.UnexplainedFields(Vector(id)))
             .map(new InspectedParameter(_, values, children.getOrElse(id, Vector.empty)))
         }
-        .map(
-          new RecipeInspection(_, conventions, ExecutionCapability.SynchronousWholeOperation)
-        )
+        .map(new RecipeInspection(_, conventions, execution))
 
   private def prefixed(prefix: String, p: ParameterInfo): ParameterInfo =
     p.prefixed(prefix)
@@ -317,6 +316,11 @@ object RecipeDescriptors:
         method.id == plan.method.id,
         (),
         DescriptorError.MethodIdentity(plan.method.id, method.id)
+      )
+      _ <- Either.cond(
+        method.execution == plan.method.capability,
+        (),
+        DescriptorError.ExecutionMismatch(method.execution, plan.method.capability)
       )
       _ <- method.verify(
         plan.parameters,
@@ -359,7 +363,8 @@ object RecipeDescriptors:
                 )
               )
           s"estimate.$i" -> fields
-        }.toMap
+        }.toMap,
+        plan.method.capability
       )
     yield result
 

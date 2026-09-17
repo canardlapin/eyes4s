@@ -587,12 +587,13 @@ object Preflight:
   private[plan] def remedyFor(error: PlanError): Remedy = error match
     case PlanError.MissingArtifact(_)     => Remedy.SupplyReferencedArtifact
     case PlanError.ArtifactMismatch(_, _) => Remedy.RetargetPlanToAvailableInput
-    case PlanError.Schedule(_) | PlanError.StudyWorkBudget(_, _, _, _) =>
+    case PlanError.Schedule(_) | PlanError.StudyWorkBudget(_, _, _, _) |
+        PlanError.ComparisonWork(_) =>
       Remedy.RaiseBudgetOrReduceStudy
     case PlanError.InvalidDefinition(_, _) | PlanError.InvalidArtifact(_) |
         PlanError.InvalidPhases(_, _) | PlanError.EmptyScales(_) |
         PlanError.DuplicateScales(_) | PlanError.Specification(_) |
-        PlanError.ChangedPreparedPlan(_, _) =>
+        PlanError.ChangedPreparedPlan(_, _) | PlanError.UnsupportedExecution(_, _) =>
       Remedy.ReconcileMethodDescriptor
 
   private[plan] def remedyFor(error: TemporalStudyError): Remedy = error match

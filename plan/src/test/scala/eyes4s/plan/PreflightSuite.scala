@@ -75,7 +75,10 @@ class PreflightSuite extends munit.FunSuite:
       )
     )
 
-  /** A method whose factory and comparison both count their invocations. */
+  /** A method whose factory and comparison both count their invocations. It
+    * stays a bounded comparison, so the cosine descriptor's execution claim
+    * remains true of it.
+    */
   private final class Sentinel:
     var factory                                                     = 0
     var comparisons                                                 = 0
@@ -84,15 +87,15 @@ class PreflightSuite extends munit.FunSuite:
         DefinitionId.cosine,
         "sentinel",
         _ => Vector.empty,
-        _ =>
+        MethodExecution.Bounded { _ =>
           factory += 1
           val inner = Distribution.cosine[Px]
-          new Compare[Mass[Px], Mass[Px], Similarity]:
-            def info: MeasureInfo                                                   = inner.info
-            def compare(x: Mass[Px], y: Mass[Px]): Either[CompareError, Similarity] =
+          new BoundedCompare[Mass[Px], Mass[Px], Similarity]:
+            def info: MeasureInfo                                             = inner.info
+            def start(x: Mass[Px], y: Mass[Px]): ComparisonCursor[Similarity] =
               comparisons += 1
-              inner.compare(x, y)
-        ,
+              inner.start(x, y)
+        },
         Some(MethodDescriptor.cosine[Px](DefinitionId.cosine))
       )
 

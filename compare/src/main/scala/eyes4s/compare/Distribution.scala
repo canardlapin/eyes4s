@@ -224,30 +224,56 @@ object Distribution:
     * Symmetric and bounded, and **not** a metric: `1 - cos` fails the triangle
     * inequality. The angular distance derived from it is a metric; cosine
     * itself is not, and shipping it as one would be a false claim.
+    *
+    * The dot product and both squared norms accumulate one cell per work unit
+    * through a [[ComparisonCursor]], so the comparison can pause inside a large
+    * grid. Whole and incremental evaluation share this one accumulation.
     */
-  def cosine[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
-    new SymmetricCompare[Mass[U], Similarity]:
+  def cosine[U <: Unit2D]
+      : SymmetricCompare[Mass[U], Similarity] & BoundedCompare[Mass[U], Mass[U], Similarity] =
+    new SymmetricCompare[Mass[U], Similarity] with BoundedCompare[Mass[U], Mass[U], Similarity]:
       val info = MeasureInfo(
         "cosine",
         "inner product over norms; symmetric, bounded, NOT a metric",
         MeasureScale.Bounded(0.0, 1.0),
         None
       )
-      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Similarity] =
-        aligned(a, b).flatMap { n =>
-          var dot = 0.0
-          var na  = 0.0
-          var nb  = 0.0
-          var i   = 0
-          while i < n do
-            dot += a.unsafeAt(i) * b.unsafeAt(i)
-            na += a.unsafeAt(i) * a.unsafeAt(i)
-            nb += b.unsafeAt(i) * b.unsafeAt(i)
-            i += 1
-          val den = math.sqrt(na) * math.sqrt(nb)
+      def start(a: Mass[U], b: Mass[U]): ComparisonCursor[Similarity] =
+        Agreement.grids(a.grid, b.grid) match
+          case Left(error) => ComparisonCursor.decided(Left(CompareError.Grids(error)))
+          case Right(_)    => new CosineCursor(a, b, 0, 0.0, 0.0, 0.0)
+
+  /** Sequential accumulation from `index`; a cut between steps changes no operation. */
+  private final class CosineCursor[U <: Unit2D](
+      a: Mass[U],
+      b: Mass[U],
+      index: Int,
+      dot: Double,
+      leftNorm: Double,
+      rightNorm: Double
+  ) extends ComparisonCursor[Similarity]:
+    def remaining: Long = (a.size - index).toLong
+
+    def advance(quantum: ComparisonQuantum): ComparisonStep[Similarity] =
+      val n   = a.size
+      val end = if quantum.value >= n - index then n else index + quantum.value
+      var i   = index
+      var d   = dot
+      var na  = leftNorm
+      var nb  = rightNorm
+      while i < end do
+        d += a.unsafeAt(i) * b.unsafeAt(i)
+        na += a.unsafeAt(i) * a.unsafeAt(i)
+        nb += b.unsafeAt(i) * b.unsafeAt(i)
+        i += 1
+      if end < n then ComparisonStep.More(end - index, new CosineCursor(a, b, end, d, na, nb))
+      else
+        val den = math.sqrt(na) * math.sqrt(nb)
+        ComparisonStep.Done(
+          end - index,
           if den <= 0.0 then Left(CompareError.ZeroNorm("cosine", math.sqrt(na), math.sqrt(nb)))
-          else Similarity.computed("cosine", dot / den)
-        }
+          else Similarity.computed("cosine", d / den)
+        )
 
   /** Pearson correlation over the cells.
     *
