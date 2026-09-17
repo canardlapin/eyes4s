@@ -63,8 +63,8 @@ class SmootherSuite extends munit.FunSuite:
 
   test("the estimate is centred where the mass is") {
     val m    = Smoother.gaussian(sigma, EdgePolicy.Truncate).smooth(centre, grid).toOption.get
-    val peak = (0 until grid.size).maxBy(m.at)
-    val p    = grid.cellCentre(peak)
+    val peak = (0 until grid.size).maxBy(m.unsafeAt)
+    val p    = grid.cellCentre(peak).get
     assertEqualsDouble(p.x, 50.0, grid.cellWidth)
     assertEqualsDouble(p.y, 50.0, grid.cellHeight)
   }
@@ -94,7 +94,7 @@ class SmootherSuite extends munit.FunSuite:
     val sb    = s.smooth(b, grid).toOption.get
     val sboth = s.smooth(both, grid).toOption.get
     (0 until grid.size).foreach { i =>
-      assertEqualsDouble(sboth.at(i), sa.at(i) + sb.at(i), 1e-9, clue(i))
+      assertEqualsDouble(sboth.unsafeAt(i), sa.unsafeAt(i) + sb.unsafeAt(i), 1e-9, clue(i))
     }
   }
 
@@ -102,7 +102,9 @@ class SmootherSuite extends munit.FunSuite:
     val s   = Smoother.gaussian(sigma, EdgePolicy.Truncate)
     val one = s.smooth(measureAt((50.0, 50.0, 1.0)), grid).toOption.get
     val ten = s.smooth(measureAt((50.0, 50.0, 10.0)), grid).toOption.get
-    (0 until grid.size).foreach(i => assertEqualsDouble(ten.at(i), one.at(i) * 10.0, 1e-9))
+    (0 until grid.size).foreach(i =>
+      assertEqualsDouble(ten.unsafeAt(i), one.unsafeAt(i) * 10.0, 1e-9)
+    )
   }
 
   // -------------------------------------------------------------------------

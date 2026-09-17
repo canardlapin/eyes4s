@@ -381,7 +381,7 @@ class TransportLiftSuite extends munit.FunSuite:
 
     val n      = model.size
     val mean   = model.sum / n
-    val sd     = math.sqrt((0 until n).map(i => math.pow(model.at(i) - mean, 2)).sum / n)
+    val sd     = math.sqrt((0 until n).map(i => math.pow(model.unsafeAt(i) - mean, 2)).sum / n)
     val byHand =
       obs.integrate(p => model.sampleAt(p).map(v => (v - mean) / sd).getOrElse(0.0)) / obs.total
 

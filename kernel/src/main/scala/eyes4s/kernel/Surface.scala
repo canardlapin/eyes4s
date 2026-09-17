@@ -102,8 +102,22 @@ sealed trait Surface[U <: Unit2D]:
   def values: IArray[Double]
   def provenance: Provenance
 
-  final def size: Int          = values.length
-  final def at(i: Int): Double = values(i)
+  final def size: Int = values.length
+
+  /** Value at cell `i`, or `None` when `i` is not a cell of this surface.
+    *
+    * Total, like [[sampleAt]]: an index off the grid is a question with no
+    * answer, not an exception. Loops that already range over `0 until size`
+    * use [[unsafeAt]], which is named for what it skips.
+    */
+  final def at(i: Int): Option[Double] =
+    if i >= 0 && i < values.length then Some(values(i)) else None
+
+  /** Unchecked cell read for inner loops whose index provably lies in
+    * `[0, size)`. Restricted to this library so that the only public entry
+    * point is the total [[at]].
+    */
+  private[eyes4s] final def unsafeAt(i: Int): Double = values(i)
 
   final def sum: Double =
     var s = 0.0

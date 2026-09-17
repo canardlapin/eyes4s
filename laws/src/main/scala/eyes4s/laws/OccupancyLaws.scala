@@ -45,7 +45,7 @@ trait RegionLaws extends Laws:
       b: Region[U]
   ): Prop =
     Prop.all((0 until g.size).map { i =>
-      val p = g.cellCentre(i)
+      val p = g.unsafeCellCentre(i)
       Prop(a.contains(p) == b.contains(p)) :| s"differ at cell $i"
     }*)
 
@@ -96,7 +96,7 @@ trait RegionLaws extends Laws:
       "rasterise agrees with contains" -> forAll(gen) { a =>
         val bits = a.rasterise(g)
         Prop.all((0 until g.size).map { i =>
-          Prop(bits(i) == a.contains(g.cellCentre(i)))
+          Prop(bits(i) == a.contains(g.unsafeCellCentre(i)))
         }*)
       }
     )
@@ -122,7 +122,9 @@ trait SurfaceLaws extends Laws:
       tol: Tolerance
   ): Prop =
     Prop(a.size == b.size) :| "sizes differ" && Prop.all(
-      (0 until a.size).map(i => Prop(close(a.at(i), b.at(i), tol)) :| s"differ at $i")*
+      (0 until a.size).map(i =>
+        Prop(close(a.unsafeAt(i), b.unsafeAt(i), tol)) :| s"differ at $i"
+      )*
     )
 
   /** The module laws, on a fixed grid.
@@ -187,7 +189,7 @@ trait SurfaceLaws extends Laws:
       "normalising preserves relative magnitudes" -> forAll(gi) { i =>
         val m = i.normalised.toOption.get
         val t = i.sum
-        Prop.all((0 until g.size).map(k => Prop(close(m.at(k), i.at(k) / t, tol)))*)
+        Prop.all((0 until g.size).map(k => Prop(close(m.unsafeAt(k), i.unsafeAt(k) / t, tol)))*)
       },
       "normalising is idempotent in effect" -> forAll(gi) { i =>
         val m = i.normalised.toOption.get
@@ -201,7 +203,7 @@ trait SurfaceLaws extends Laws:
         sameValues(again, m, tol)
       },
       "every mass is non-negative" -> forAll(gm) { m =>
-        Prop.all((0 until g.size).map(k => Prop(m.at(k) >= 0.0))*)
+        Prop.all((0 until g.size).map(k => Prop(m.unsafeAt(k) >= 0.0))*)
       },
       "the difference of two masses sums to zero" -> forAll(gm, gm) { (a, b) =>
         a.difference(b) match
@@ -210,11 +212,11 @@ trait SurfaceLaws extends Laws:
       },
       "a mass differs from itself by nothing" -> forAll(gm) { m =>
         val d = m.difference(m).toOption.get
-        Prop.all((0 until g.size).map(k => Prop(close(d.at(k), 0.0, tol)))*)
+        Prop.all((0 until g.size).map(k => Prop(close(d.unsafeAt(k), 0.0, tol)))*)
       },
       "log ratio against itself is zero" -> forAll(gm) { m =>
         val r = m.logRatio(m).toOption.get
-        Prop.all((0 until g.size).map(k => Prop(close(r.at(k), 0.0, tol)))*)
+        Prop.all((0 until g.size).map(k => Prop(close(r.unsafeAt(k), 0.0, tol)))*)
       },
       "the mean of masses is a mass" -> forAll(gm, gm) { (a, b) =>
         Mass.mean(Seq(a, b)) match

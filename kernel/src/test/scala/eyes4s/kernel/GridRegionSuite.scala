@@ -69,12 +69,46 @@ class GridRegionSuite extends munit.FunSuite:
   }
 
   test("index order is x-fastest, and the accessors are mutually consistent") {
-    assertEquals(grid.indexAt(3, 7), 73)
-    assertEquals(grid.columnOf(73), 3)
-    assertEquals(grid.rowOf(73), 7)
+    assertEquals(grid.indexAt(3, 7), Some(73))
+    assertEquals(grid.columnOf(73), Some(3))
+    assertEquals(grid.rowOf(73), Some(7))
     (0 until grid.size).foreach { i =>
-      assertEquals(grid.indexAt(grid.columnOf(i), grid.rowOf(i)), i, clue(i))
+      val roundTrip =
+        for
+          ix <- grid.columnOf(i)
+          iy <- grid.rowOf(i)
+          k  <- grid.indexAt(ix, iy)
+        yield k
+      assertEquals(roundTrip, Some(i), clue(i))
+      assertEquals(grid.unsafeIndexAt(grid.unsafeColumnOf(i), grid.unsafeRowOf(i)), i, clue(i))
     }
+  }
+
+  test("checked accessors answer None off the grid instead of wrapping") {
+    // Under unchecked arithmetic a column overrun of one becomes the first
+    // cell of the next row: an answer, not an error. The checked accessors
+    // refuse it, and refuse every other way of naming a cell that is not there.
+    assertEquals(grid.indexAt(grid.nx, 0), None)
+    assertEquals(grid.indexAt(-1, 0), None)
+    assertEquals(grid.indexAt(0, grid.ny), None)
+    assertEquals(grid.indexAt(0, -1), None)
+    assertEquals(grid.indexAt(Int.MaxValue, Int.MaxValue), None)
+    assertEquals(grid.indexAt(0, 0), Some(0))
+    assertEquals(grid.indexAt(grid.nx - 1, grid.ny - 1), Some(grid.size - 1))
+
+    assertEquals(grid.columnOf(-1), None)
+    assertEquals(grid.columnOf(grid.size), None)
+    assertEquals(grid.rowOf(-1), None)
+    assertEquals(grid.rowOf(grid.size), None)
+    assertEquals(grid.columnOf(grid.size - 1), Some(grid.nx - 1))
+    assertEquals(grid.rowOf(grid.size - 1), Some(grid.ny - 1))
+
+    assertEquals(grid.cellCentre(-1), None)
+    assertEquals(grid.cellCentre(grid.size), None)
+    assertEquals(grid.cellCentre(Int.MinValue), None)
+    assertEquals(grid.cellCentre(Int.MaxValue), None)
+    assertEquals(grid.cellCentre(0), Some(Pt[Px](5.0, 5.0)))
+    assertEquals(grid.centres.length, grid.size)
   }
 
   test("grid cardinality cannot overflow its index representation") {
@@ -91,7 +125,7 @@ class GridRegionSuite extends munit.FunSuite:
 
   test("a position round-trips to the cell containing it") {
     (0 until grid.size).foreach { i =>
-      assertEquals(grid.indexOf(grid.cellCentre(i)), Some(i), clue(i))
+      assertEquals(grid.cellCentre(i).flatMap(grid.indexOf), Some(i), clue(i))
     }
   }
 
@@ -187,14 +221,14 @@ class GridRegionSuite extends munit.FunSuite:
   }
 
   test("complement of everything is empty, observationally") {
-    val pts = (0 until grid.size).map(grid.cellCentre)
+    val pts = grid.centres
     assert(pts.forall(p => !(!Region.everything[Px]).contains(p)))
     assert(pts.forall(p => Region.everything[Px].contains(p)))
     assert(pts.forall(p => !Region.empty[Px].contains(p)))
   }
 
   test("de Morgan holds observationally over the grid") {
-    val pts = (0 until grid.size).map(grid.cellCentre)
+    val pts = grid.centres
     pts.foreach { p =>
       assertEquals((!(left || right)).contains(p), ((!left) && (!right)).contains(p), clue(p))
       assertEquals((!(left && right)).contains(p), ((!left) || (!right)).contains(p), clue(p))
@@ -237,7 +271,7 @@ class GridRegionSuite extends munit.FunSuite:
     val bits = r.rasterise(grid)
     assertEquals(bits.length, grid.size)
     (0 until grid.size).foreach { i =>
-      assertEquals(bits(i), r.contains(grid.cellCentre(i)), clue(i))
+      assertEquals(bits(i), r.contains(grid.unsafeCellCentre(i)), clue(i))
     }
   }
 

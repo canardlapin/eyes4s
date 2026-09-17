@@ -16,10 +16,11 @@
 
 package eyes4s.laws
 
+import eyes4s.core.{DispersionMethod, Event, Scanpath}
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.{Deg, Norm, Px}
 
-import org.scalacheck.{Arbitrary, Cogen, Gen}
+import org.scalacheck.{Arbitrary, Cogen, Gen, Shrink}
 
 /** ScalaCheck generators for the kernel types.
   *
@@ -299,6 +300,81 @@ object Generators:
       ps <- Gen.listOfN(n, genPtIn(frame))
       ws <- Gen.listOfN(n, Gen.choose(0.0, 100.0))
     yield PointMeasure.of(frame, IArray.from(ps), IArray.from(ws)).toOption.get
+
+  // -------------------------------------------------------------------------
+  // Scanpaths
+  // -------------------------------------------------------------------------
+
+  /** Positive-duration fixations laid end to end on one clock, each separated
+    * from the last by a non-negative gap, so that the sequence is ordered and
+    * non-overlapping by construction -- exactly what [[Scanpath.of]] demands.
+    *
+    * A zero gap is generated deliberately: abutting fixations are the case the
+    * type exists to handle honestly (a transition with no measured extent),
+    * and a generator that never produced one would never test it. Dispersion
+    * is sometimes reported and sometimes not, for the same reason.
+    */
+  def genFixationsIn[U <: Unit2D](
+      frame: Frame[U],
+      clock: ClockId
+  ): Gen[IArray[Event.Fixation[U]]] =
+    for
+      n      <- Gen.choose(1, 12)
+      start  <- Gen.choose(0L, 1000000000L)
+      gaps   <- Gen.listOfN(n, Gen.frequency(1 -> Gen.const(0L), 4 -> Gen.choose(1L, 500000L)))
+      durs   <- Gen.listOfN(n, Gen.choose(1L, 1000000L))
+      pts    <- Gen.listOfN(n, genPtIn(frame))
+      spread <- Gen.listOfN(n, Gen.option(Gen.choose(0.0, 10.0)))
+      counts <- Gen.listOfN(n, Gen.choose(1, 500))
+    yield
+      var t         = start
+      val fixations = (0 until n).map { i =>
+        val onset  = t + gaps(i)
+        val offset = onset + durs(i)
+        t = offset
+        val span =
+          Interval.of(clock, Instant.micros(onset), Instant.micros(offset)).toOption.get
+        spread(i) match
+          case Some(d) =>
+            Event.Fixation
+              .of(span, pts(i), d, DispersionMethod.RmsRadius, counts(i))
+              .toOption
+              .get
+          case None =>
+            Event.Fixation.withoutDispersion(span, pts(i), counts(i)).toOption.get
+      }
+      IArray.from(fixations)
+
+  def genScanpathIn[U <: Unit2D](frame: Frame[U]): Gen[Scanpath[U]] =
+    for
+      clock <- genClockId
+      fx    <- genFixationsIn(frame, clock)
+    yield Scanpath.of(frame, clock, fx).toOption.get
+
+  def genScanpath[U <: Unit2D]: Gen[Scanpath[U]] =
+    genFrame[U].flatMap(genScanpathIn)
+
+  /** Shrinks by dropping fixations, never by editing them.
+    *
+    * Every non-empty subsequence of an ordered, non-overlapping sequence is
+    * itself ordered and non-overlapping on the same frame and clock, so every
+    * candidate is a valid scanpath. A shrink that could produce an invalid
+    * value would report, as a minimal counterexample, a failure the law under
+    * test never made.
+    */
+  def shrinkScanpath[U <: Unit2D](sp: Scanpath[U]): LazyList[Scanpath[U]] =
+    if sp.n <= 1 then LazyList.empty
+    else
+      val fx      = sp.fixations.toVector
+      val halves  = LazyList(fx.take(sp.n / 2), fx.drop(sp.n / 2))
+      val dropOne = LazyList.from(0 until sp.n).map(i => fx.patch(i, Nil, 1))
+      (halves #::: dropOne)
+        .filter(_.nonEmpty)
+        .flatMap(f => Scanpath.of(sp.frame, sp.clock, IArray.from(f)).toOption)
+
+  given [U <: Unit2D]: Shrink[Scanpath[U]] = Shrink.withLazyList(shrinkScanpath)
+
+  given Arbitrary[Scanpath[Norm]] = Arbitrary(genScanpath[Norm])
 
   // -------------------------------------------------------------------------
   // Machines

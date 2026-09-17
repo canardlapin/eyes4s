@@ -134,7 +134,7 @@ object Saliency:
             var ss   = 0.0
             var i    = 0
             while i < n do
-              val d = model.at(i) - mean
+              val d = model.unsafeAt(i) - mean
               ss += d * d
               i += 1
             val sd = math.sqrt(ss / n)

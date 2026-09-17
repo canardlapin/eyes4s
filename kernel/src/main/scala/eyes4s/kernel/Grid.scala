@@ -119,17 +119,36 @@ final case class Grid[U <: Unit2D] private (
   def cellHeight: Double = frame.bounds.height / ny
   def cellArea: Double   = cellWidth * cellHeight
 
-  def indexAt(ix: Int, iy: Int): Int = iy * nx + ix
+  private def hasCell(index: Int): Boolean = index >= 0 && index < size
 
-  def columnOf(index: Int): Int = index % nx
-  def rowOf(index: Int): Int    = index / nx
+  private def hasCell(ix: Int, iy: Int): Boolean =
+    ix >= 0 && ix < nx && iy >= 0 && iy < ny
 
-  /** The centre of cell `index`. */
-  def cellCentre(index: Int): Pt[U] =
-    Pt(
-      frame.bounds.xMin + (columnOf(index) + 0.5) * cellWidth,
-      frame.bounds.yMin + (rowOf(index) + 0.5) * cellHeight
-    )
+  /** The flat index of column `ix`, row `iy`, or `None` when either is off
+    * the grid.
+    *
+    * ==Total, like [[indexOf]]==
+    *
+    * An unchecked `iy * nx + ix` silently maps `(nx, 0)` onto `(0, 1)`: a
+    * column overrun becomes the first cell of the next row, which is an
+    * answer rather than an error and is therefore never noticed. The
+    * unchecked form survives as [[unsafeIndexAt]] for the loops that already
+    * range over the grid.
+    */
+  def indexAt(ix: Int, iy: Int): Option[Int] =
+    if hasCell(ix, iy) then Some(unsafeIndexAt(ix, iy)) else None
+
+  /** The column of cell `index`, or `None` when `index` is not a cell. */
+  def columnOf(index: Int): Option[Int] =
+    if hasCell(index) then Some(unsafeColumnOf(index)) else None
+
+  /** The row of cell `index`, or `None` when `index` is not a cell. */
+  def rowOf(index: Int): Option[Int] =
+    if hasCell(index) then Some(unsafeRowOf(index)) else None
+
+  /** The centre of cell `index`, or `None` when `index` is not a cell. */
+  def cellCentre(index: Int): Option[Pt[U]] =
+    if hasCell(index) then Some(unsafeCellCentre(index)) else None
 
   /** The cell containing `p`, or `None` when it falls outside the frame. */
   def indexOf(p: Pt[U]): Option[Int] =
@@ -138,11 +157,30 @@ final case class Grid[U <: Unit2D] private (
       val ix = ((p.x - frame.bounds.xMin) / cellWidth).toInt
       val iy = ((p.y - frame.bounds.yMin) / cellHeight).toInt
       // Guard the top edge against floating-point landing exactly on nx/ny.
-      Some(indexAt(math.min(ix, nx - 1), math.min(iy, ny - 1)))
+      Some(unsafeIndexAt(math.min(ix, nx - 1), math.min(iy, ny - 1)))
 
   /** Every cell centre, in index order. */
   def centres: IArray[Pt[U]] =
-    IArray.tabulate(size)(cellCentre)
+    IArray.tabulate(size)(unsafeCellCentre)
+
+  // -------------------------------------------------------------------------
+  // Unchecked indexing. Named for what it skips and restricted to this
+  // library: these exist so that the convolution and integration loops, which
+  // range over `0 until size` by construction, pay no Option per cell. The
+  // public entry points above are total.
+  // -------------------------------------------------------------------------
+
+  private[eyes4s] def unsafeIndexAt(ix: Int, iy: Int): Int = iy * nx + ix
+
+  private[eyes4s] def unsafeColumnOf(index: Int): Int = index % nx
+
+  private[eyes4s] def unsafeRowOf(index: Int): Int = index / nx
+
+  private[eyes4s] def unsafeCellCentre(index: Int): Pt[U] =
+    Pt(
+      frame.bounds.xMin + (unsafeColumnOf(index) + 0.5) * cellWidth,
+      frame.bounds.yMin + (unsafeRowOf(index) + 0.5) * cellHeight
+    )
 
   def render(using u: UnitLabel[U]): String =
     s"$id ${nx}x$ny over ${frame.id}${u.symbol}"

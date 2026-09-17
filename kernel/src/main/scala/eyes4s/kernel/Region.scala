@@ -55,13 +55,13 @@ sealed trait Region[U <: Unit2D]:
     var n = 0
     var i = 0
     while i < g.size do
-      if contains(g.cellCentre(i)) then n += 1
+      if contains(g.unsafeCellCentre(i)) then n += 1
       i += 1
     n * g.cellArea
 
   /** Membership evaluated at every cell centre. */
   def rasterise(g: Grid[U]): IArray[Boolean] =
-    IArray.tabulate(g.size)(i => contains(g.cellCentre(i)))
+    IArray.tabulate(g.size)(i => contains(g.unsafeCellCentre(i)))
 
   def render: String
 
