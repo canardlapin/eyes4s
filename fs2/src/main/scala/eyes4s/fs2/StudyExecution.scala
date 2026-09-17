@@ -75,7 +75,10 @@ object StudySegment:
     case StudyStage.Contrasting(scale)       => Contrasting(scale)
 
 /** The study family's instances of the shared runner vocabulary; see
-  * [[RunProgress]], [[RunOutcome]], [[RunEvent]] and [[Run]].
+  * [[RunProgress]], [[RunOutcome]], [[RunEvent]] and [[Run]]. `StudyProgress`
+  * is an alias: its companion offers `apply` for construction only, with no
+  * `unapply`, so match on `RunProgress(...)` or read its fields. The outcome
+  * and event companions forward the shared cases, which construct and match.
   */
 type StudyProgress = RunProgress[StudyRunId, StudyStage, StudySegment]
 object StudyProgress:

@@ -307,6 +307,57 @@ class DetectionResultSuite extends munit.FunSuite:
     assertEquals(result.report.bridgedGaps, Vector.empty)
   }
 
+  test("a stepped cursor ends at the chunk that observes a failed emission, with run's error") {
+    val input      = recording((0 until 20).map(tracked(_)).toVector)
+    val eventError = DetectionFailure.EventSummary(
+      CoreError.OfEvent(EventError.NonPositiveSampleCount(0))
+    )
+    // One emission per sample: Right for the first `k` samples, Left at
+    // sample `k` (emission index `k`), nothing after.
+    val k                                                     = 6
+    val failing: Machine[Sample[Deg], DetectionEmission[Deg]] = Machine(
+      new Detector[Int, Sample[Deg], DetectionEmission[Deg]]:
+        def init: Int                                                                   = 0
+        def step(seen: Int, sample: Sample[Deg]): (Int, Vector[DetectionEmission[Deg]]) =
+          val emission =
+            if seen < k then Vector(Right(fixation(seen, seen + 1)))
+            else if seen == k then Vector(Left(eventError))
+            else Vector.empty
+          (seen + 1, emission)
+        def flush(seen: Int): Vector[DetectionEmission[Deg]] = Vector.empty
+    )
+    val expected =
+      Left(DetectionResultError.DetectorEmissionFailed(source, detector, k, eventError))
+    assertEquals(
+      Detection.runCustom(source, input, detector, GapPolicy.Break, failing),
+      expected
+    )
+    val quantum = 4
+    assert(quantum < k)
+    var cursor = Detection.steppedCustom(source, input, detector, GapPolicy.Break, failing)
+    var pages  = Vector.empty[Int]
+    var ended  = Option.empty[Either[DetectionResultError, DetectionResult[Deg]]]
+    while ended.isEmpty do
+      cursor.advance(quantum) match
+        case DetectionPage.More(units, next) =>
+          pages :+= units
+          cursor = next
+        case DetectionPage.Done(units, result) =>
+          pages :+= units
+          ended = Some(result)
+    // Sample 6 lies in the second chunk (samples 4-7): the cursor ends there,
+    // having fed 8 of 20 samples, with exactly run's error.
+    assertEquals(pages, Vector(4, 4))
+    assertEquals(ended, Some(expected))
+    assertEquals(
+      DetectionCursor.complete(
+        Detection.steppedCustom(source, input, detector, GapPolicy.Break, failing),
+        quantum
+      ),
+      expected
+    )
+  }
+
   test("emission, outside-support, and overlap failures name source and detector") {
     val input      = recording((0 until 10).map(tracked(_)).toVector)
     val eventError = DetectionFailure.EventSummary(

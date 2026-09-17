@@ -183,8 +183,10 @@ each segment, plus the `Stepwise` evidence) into `RunEvent`, `RunOutcome`,
 `TemporalExecution` are thin wrappers that build the submission; the study
 names (`StudyProgress`, `StudyOutcome`, `StudyEvent`, `StudyRun`) are aliases of
 the shared types, so `StudyOutcome.Completed(_, last, result)` and
-`StudyEvent.Advanced(progress)` construct and match as before. The one change a
-consumer can notice: a wildcard type test must name the shared case,
+`StudyEvent.Advanced(progress)` construct and match as before. Two things a
+consumer can notice: `StudyProgress(...)` still constructs, but the alias has no
+`unapply`, so a progress value is matched as `RunProgress(...)` or read by
+field; and a wildcard type test must name the shared case,
 `RunEvent.Advanced[?, ?, ?, ?, ?]`, because an alias with four parameters cannot
 be applied to wildcards. The commit, cancellation, observer and defect contracts
 of the previous section hold unchanged for every family.
@@ -236,8 +238,10 @@ between study steps and between cells; no partial cell is returned as a result.
 and coverage ledger), the base layout and method identities, the full plan
 description and the pair and comparison quanta. One ordering note: because
 preparation now precedes execution for every repetition, a preparation failure
-of a later repetition is reported before an execution failure of an earlier one;
-with default budgets neither occurs.
+of a later repetition is reported before an execution failure of an earlier one.
+Execution failures can occur under default budgets; what cannot is a later
+repetition failing preparation after an earlier one succeeded, since every
+repetition is prepared against the same input and budget before any cell runs.
 
 ## Input payloads and admission ledgers
 
