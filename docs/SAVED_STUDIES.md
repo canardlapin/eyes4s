@@ -125,6 +125,49 @@ bounded method every comparison is checked against it when a scale begins,
 before any trial is estimated, and a refusal names the measure, its cells and
 the limit. `ComparisonBudget.default` is effectively unbounded.
 
+## Run a study under Cats Effect
+
+`eyes4s-fs2` interprets the same cursor with cooperative yields. Fix the effect
+type once, `StudyExecution[IO]`, then either pull the deterministic sequence or
+start a run handle:
+
+```scala
+val runner = StudyExecution[IO]
+runner.events(work, budget, quanta)   // Stream[IO, StudyEvent]: Advanced(progress)* then Finished(outcome)
+runner.start(work, budget, quanta)    // Resource[IO, StudyRun]: id, progress, outcome, cancel
+```
+
+Every `StudyProgress` carries the `StudyRunId` (input digest, layout, method,
+description and both quanta, so the same submission yields the same id and the
+same event sequence), the step number, the cursor's `StudyStage` and its own
+units, the `StudySegment` the step counts toward (trials of one scale share one
+`Estimating(scale)` segment), the segment's cumulative units and typed
+`SegmentTotal`, and the run's cumulative units. Totals are what preparation can
+state: `Exact(trials)` for estimation;
+`AtMost(candidates * (2 + cells) + focal + reference)` for a bounded comparison
+segment and `AtMost(2 * candidates + focal + reference)` for a synchronous
+method, where the schedule's paging visits every candidate pair and then every
+reference key (or every focal key when there are no reference trials) and each
+selected pair costs one unit to begin plus its cells; `AtMost(focal keys)` for
+a contrast; and `Unknown` for a reduction, whose units depend on the realized
+scores. The comparison budget is not part of the id: a refusal is a `Failed`
+outcome, not a different run.
+
+The outcome is one value, `StudyOutcome.Completed(run, last, result)`,
+`Cancelled(run, last)` or `Failed(run, error, last)`, and a `StudyResult` exists
+only inside `Completed`. Each step (one `advance` plus its bookkeeping) is an
+uncancelable region and the fiber cedes before every step, so cancellation lands
+between steps; one trial's estimation is a whole step. `start` commits at a
+single point, inside the deciding step; `cancel` or releasing the resource
+before that commit settles `Cancelled` with the last completed step, and the
+first commit wins. `run.progress` is telemetry with one coalescing slot: it
+never slows the run, an observer that keeps up sees every step, a slow or late
+observer sees the latest step, and every observer ends once the run settles,
+having received the last completed step; a cancelled run's observers see no
+step for the work that was cut off, since none completed. `run.outcome` is the
+authority. `events` has no commit point: interrupting it ends the stream
+between steps with no terminal element.
+
 ## Versions and extensions
 
 The JSON envelope has a schema identifier and version. Its payload separately records the method

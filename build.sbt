@@ -26,6 +26,7 @@ val scalacheckV      = "1.19.0"
 val catsLawsV        = "2.13.0"
 val catsEffectV      = "3.7.0"   // eyes4s-fs2 / eyes4s-io only
 val fs2V             = "3.13.0"  // eyes4s-fs2 / eyes4s-io only
+val munitCatsEffectV = "2.1.0"   // eyes4s-fs2 tests only
 
 // ---------------------------------------------------------------------------
 // Build-wide settings
@@ -611,8 +612,10 @@ lazy val fs2Module = crossProject(JVMPlatform, JSPlatform)
   .settings(
     name := "eyes4s-fs2",
     libraryDependencies ++= Seq(
-      "org.typelevel" %%% "cats-effect" % catsEffectV,
-      "co.fs2"        %%% "fs2-core"    % fs2V
+      "org.typelevel" %%% "cats-effect"         % catsEffectV,
+      "co.fs2"        %%% "fs2-core"            % fs2V,
+      "org.typelevel" %%% "cats-effect-testkit" % catsEffectV      % Test,
+      "org.typelevel" %%% "munit-cats-effect"   % munitCatsEffectV % Test
     )
   )
 
