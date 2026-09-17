@@ -506,9 +506,12 @@ trait AoiLaws extends Laws:
         },
       "the accounting is invariant under a translation of scanpath and areas" ->
         forAll(gen) { scene =>
+          // Whole-number offsets: exactly representable, so the translation
+          // adds the same rounded quantity to a point and to the edge it sits
+          // on rather than an offset with its own rounding.
           val b       = scene.frame.bounds
-          val dx      = b.width
-          val dy      = -b.height
+          val dx      = math.ceil(b.width)
+          val dy      = -math.ceil(b.height)
           val shifted = Frame.of(
             FrameId(scene.frame.id.name + "-shifted"),
             Bounds.of[U](b.xMin + dx, b.yMin + dy, b.xMax + dx, b.yMax + dy).toOption.get,

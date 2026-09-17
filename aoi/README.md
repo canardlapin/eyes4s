@@ -5,7 +5,11 @@ Areas of interest: `AoiSet`, membership policies (`Multiple`, `ExclusiveByPriori
 counts, and an exact time ledger (`AoiAssignmentReport`, `accountingHolds`).
 
 The accounting is stated as laws in `eyes4s-laws` (`AoiLaws.accounting`, checked by
-`AoiLawsSuite` with mutation receipts): dwell partitions the fixation time with the background
+`AoiLawsSuite` with mutation receipts). The laws are exact for a scanpath sampled once per
+fixation (the `AoiScene` bridge: a `Tracked` sample at each onset, a `Lost` sample for each
+saccade); on a real-rate `Recording` in-fixation samples sit at their own positions, saccade
+samples are `Tracked`, and blinks split runs, so dwell, first entry and run count differ from the
+fixation-level statement. Under that bridge: dwell partitions the fixation time with the background
 under a single-membership policy and sums to union plus duplicated time under `Multiple`; first
 entry is defined exactly when dwell is positive and is the onset of the first contained fixation;
 run count is the number of maximal abutting blocks of contained fixations; `RejectOverlap` refuses

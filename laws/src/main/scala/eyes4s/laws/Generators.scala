@@ -381,13 +381,14 @@ object Generators:
   // Areas of interest
   // -------------------------------------------------------------------------
 
-  /** A box of non-degenerate extent, drawn from either two random corners or
-    * an anchor point taken as the closed lower corner.
+  /** A box of non-degenerate extent, drawn from a random corner or from an
+    * anchor point taken as either its closed lower corner or its open upper
+    * corner.
     *
     * Anchoring at fixation centres is deliberate. A rectangle is half-open, so
     * a point exactly on its lower edges is inside and one on its upper edges is
     * outside; without anchored boxes no generated fixation would ever sit on an
-    * edge and the boundary convention would go untested.
+    * edge and neither half of the boundary convention would be tested.
     */
   private def genBoxIn[U <: Unit2D](
       frame: Frame[U],
@@ -405,11 +406,19 @@ object Generators:
     else
       Gen.frequency(
         2 -> free,
+        // Anchor as the closed lower corner: the fixation is inside.
         1 -> (for
           a  <- Gen.oneOf(anchors)
           dx <- Gen.choose(0.05, 0.6).map(_ * w)
           dy <- Gen.choose(0.05, 0.6).map(_ * h)
-        yield AoiShape.Box(a, Pt(a.x + dx, a.y + dy)))
+        yield AoiShape.Box(a, Pt(a.x + dx, a.y + dy))),
+        // Anchor as the open upper corner: the fixation is outside, and an
+        // implementation that closed the upper edge would count it.
+        1 -> (for
+          a  <- Gen.oneOf(anchors)
+          dx <- Gen.choose(0.05, 0.6).map(_ * w)
+          dy <- Gen.choose(0.05, 0.6).map(_ * h)
+        yield AoiShape.Box(Pt(a.x - dx, a.y - dy), a))
       )
 
   private def genOvalIn[U <: Unit2D](frame: Frame[U]): Gen[AoiShape[U]] =
@@ -443,10 +452,12 @@ object Generators:
   /** One to five areas over a frame, with overlap and nesting drawn often
     * enough to exercise every membership policy.
     *
-    * Areas are unions and intersections of boxes and ovals, never empty or
-    * everything: an area that could contain nothing, or everything, would make
-    * the overlap laws vacuous for that sample. Overlap between areas is not
-    * prevented; it is what the policies are for.
+    * Areas are boxes and ovals and unions and intersections of them, never
+    * `Region.everything`: an area containing everything would make the overlap
+    * laws vacuous for that sample. An intersection of disjoint leaves is empty,
+    * and is kept, because an area no fixation enters is a case the metrics must
+    * account for. Overlap between areas is not prevented; it is what the
+    * policies are for.
     */
   def genAoiSpecsIn[U <: Unit2D](
       frame: Frame[U],

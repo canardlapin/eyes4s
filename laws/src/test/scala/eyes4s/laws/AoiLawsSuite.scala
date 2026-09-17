@@ -50,6 +50,10 @@ import scala.annotation.unused
   * |                     |                                                        | bounded, blocks                             |
   * | exclusive-last      | ExclusiveByPriority assigns the last containing area   | first, dwell, entry, bounded, blocks        |
   * | smallest-largest    | SmallestContaining picks the largest area              | least, dwell, entry, bounded, blocks        |
+  * | lower-edge-open     | a box excludes points on its lower (closed) edges      | order, first, least, reject, dwell, entry,  |
+  * |                     |                                                        | bounded, blocks                             |
+  * | upper-edge-closed   | a box includes points on its upper (open) edges        | order, first, least, reject, dwell, entry,  |
+  * |                     |                                                        | bounded, blocks                             |
   * | reject-lower-edge   | RejectOverlap ignores a box the point touches on a     | reject                                      |
   * |                     | closed (lower) edge                                    |                                             |
   * | reject-first-only   | the overlap error names only the first containing area | reject                                      |
@@ -68,6 +72,15 @@ import scala.annotation.unused
   * of `AoiLaws.accounting`; the receipt test asserts that the observed set of
   * failing laws is exactly the set listed, so the table cannot drift from the
   * run.
+  *
+  * Two laws compare the implementation with itself: "union and background
+  * time do not depend on the policy" runs the same implementation under
+  * three policies, and "first entry is defined exactly when dwell is
+  * positive" relates two fields of one metric. Each is anchored by the
+  * independent laws beside it -- the dwell, partition and multiple-sum laws
+  * fix what union, background and dwell must be, and the first-entry law
+  * fixes the latency itself -- so a mutant cannot satisfy them by being
+  * consistently wrong.
   *
   * The translation law is metamorphic and is the one law no mutant here
   * fails: every mutant is coordinate-free, so it is as invariant under a
@@ -124,6 +137,15 @@ class AoiLawsSuite extends munit.DisciplineSuite:
             case Region.Rect(lo, _) => lo.x == c.x || lo.y == c.y
             case _                  => false)
       }
+    def onUpperEdge(scene: AoiScene[Px]) =
+      (0 until scene.n).exists { i =>
+        val c = scene.scanpath.fixations(i).centre
+        scene.specs.exists(_.shape match
+          case AoiShape.Box(lo, hi) =>
+            (hi.x == c.x || hi.y == c.y) && lo.x <= c.x && lo.y <= c.y &&
+            c.x <= hi.x && c.y <= hi.y
+          case _ => false)
+      }
     def abutting(scene: AoiScene[Px]) =
       scene.areas.areas.exists { a =>
         val p = scene.contained(a)
@@ -136,9 +158,32 @@ class AoiLawsSuite extends munit.DisciplineSuite:
     assert(scenes.exists(overlapAt), "no observed overlap")
     assert(scenes.exists(nested), "no nested area")
     assert(scenes.exists(onEdge), "no fixation on a closed edge inside two areas")
+    assert(scenes.exists(onUpperEdge), "no fixation on an open upper edge")
     assert(scenes.exists(abutting), "no abutting contained fixations")
     assert(scenes.exists(everywhere), "no area containing every fixation")
     assert(scenes.exists(nowhere), "no area containing no fixation")
+  }
+
+  test("the published AOI-set generator binds non-degenerate, overlapping sets to the frame") {
+    val sets = LazyList
+      .continually(Generators.genAoiSetIn(screen).sample)
+      .flatten
+      .take(200)
+      .toVector
+    val grid    = Grid.over(screen, 32, 32).toOption.get
+    val centres = (0 until grid.size).map(grid.unsafeCellCentre)
+    assert(sets.forall(s => s.frame == screen && s.size >= 1 && s.ids.distinct == s.ids))
+    // An intersection of two disjoint leaves is empty by construction, and a
+    // one-area set may consist of exactly that, so the claim is a proportion.
+    val populated = sets.count(_.areas.exists(a => centres.exists(a.region.contains)))
+    assert(
+      populated * 10 >= sets.length * 9,
+      s"only $populated of ${sets.length} sets have an area containing a raster cell centre"
+    )
+    assert(
+      sets.exists(s => centres.exists(c => s.areas.count(_.region.contains(c)) >= 2)),
+      "no set with overlapping areas"
+    )
   }
 
   // ---------------------------------------------------------------------------
@@ -150,6 +195,10 @@ class AoiLawsSuite extends munit.DisciplineSuite:
     * a method, so that the changed expression is the whole of the mutant.
     */
   class Reference(val name: String) extends AoiAccounting:
+
+    /** Point membership, the one place the edge convention enters. */
+    protected def contains[U <: Unit2D](area: Aoi[U], p: Pt[U]): Boolean =
+      area.region.contains(p)
 
     protected def multiple[U <: Unit2D](containing: Vector[Aoi[U]]): Vector[AoiId] =
       containing.map(_.id)
@@ -229,7 +278,7 @@ class AoiLawsSuite extends munit.DisciplineSuite:
           case Gaze.Tracked(p, _) if !areas.frame.contains(p) =>
             out += AoiMembership.Excluded(ExclusionReason.OffSurface)
           case Gaze.Tracked(p, _) =>
-            val containing = areas.areas.filter(_.region.contains(p))
+            val containing = areas.areas.filter(contains(_, p))
             if containing.isEmpty then out += AoiMembership.Background
             else if containing.length == 1 then
               out += AoiMembership.Areas(Vector(containing.head.id))
@@ -362,6 +411,18 @@ class AoiLawsSuite extends munit.DisciplineSuite:
         }
         .id
 
+  object LowerEdgeOpen extends Reference("lower-edge-open"):
+    override protected def contains[U <: Unit2D](area: Aoi[U], p: Pt[U]): Boolean =
+      area.region match
+        case Region.Rect(lo, hi) => p.x > lo.x && p.x < hi.x && p.y > lo.y && p.y < hi.y
+        case other               => other.contains(p)
+
+  object UpperEdgeClosed extends Reference("upper-edge-closed"):
+    override protected def contains[U <: Unit2D](area: Aoi[U], p: Pt[U]): Boolean =
+      area.region match
+        case Region.Rect(lo, hi) => p.x >= lo.x && p.x <= hi.x && p.y >= lo.y && p.y <= hi.y
+        case other               => other.contains(p)
+
   object RejectLowerEdge extends Reference("reject-lower-edge"):
     override protected def overlapIgnored[U <: Unit2D](area: Aoi[U], p: Pt[U]): Boolean =
       area.region match
@@ -427,6 +488,8 @@ class AoiLawsSuite extends munit.DisciplineSuite:
     ExclusiveMulti    -> Set(single, first, partition, dwell, entry, bounded, blocks),
     ExclusiveLast     -> Set(first, dwell, entry, bounded, blocks),
     SmallestLargest   -> Set(least, dwell, entry, bounded, blocks),
+    LowerEdgeOpen     -> Set(order, first, least, reject, dwell, entry, bounded, blocks),
+    UpperEdgeClosed   -> Set(order, first, least, reject, dwell, entry, bounded, blocks),
     RejectLowerEdge   -> Set(reject),
     RejectFirstOnly   -> Set(reject),
     LostAsBackground  -> Set(analysable, excluded, partition, multiple, dwell),
