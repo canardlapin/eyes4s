@@ -318,3 +318,200 @@ class FixationStudySuite extends munit.FunSuite:
       )
     }
   }
+
+  private val inputCodec = StudyInputCodecs.study[Px]
+
+  test(
+    "complete import yields a complete ledger and reconstructs the study without the importer"
+  ) {
+    val imported = read()
+    val input    = get(imported.requireComplete)
+    val ledger   = get(
+      FixationEvidence.ledger(
+        "matched-control.csv",
+        imported,
+        AdmissionDecision.RequireComplete
+      )
+    )
+    assertEquals(ledger.outcome, AdmissionOutcome.Complete)
+    assertEquals(ledger.records.size, imported.sourceRows.size)
+    assertEquals(ledger.records.map(_.record), (2 to 49).toVector)
+    assertEquals(ledger.admitted.size, 48)
+    assertEquals(ledger.rejected, Vector.empty)
+    assertEquals(ledger.source, FixationEvidence.source("matched-control.csv", imported))
+    assertEquals(ledger.checkAgainst(input), Right(()))
+    assertEquals(
+      imported.admitted.map(r => (r.rowNumber, r.key, r.ordinal)),
+      records.zipWithIndex.map { case (r, i) =>
+        (i + 2, StudyKey(r(0), r(1), r(2)), r(3).toInt)
+      }
+    )
+    val inputJson  = get(inputCodec.input.encode(input)).noSpaces
+    val ledgerJson = get(inputCodec.ledger.encode(ledger)).noSpaces
+    val restored   = get(inputCodec.input.parse(inputJson))
+    val decisions  = get(inputCodec.ledger.parse(ledgerJson))
+    assertEquals(restored.reference, input.reference)
+    assertEquals(restored.trials.rows.map(_.key), input.trials.rows.map(_.key))
+    assertEquals(decisions, ledger)
+    assertEquals(decisions.checkAgainst(restored), Right(()))
+    val plan = get(
+      StudyPlan.cosine(
+        restored.reference,
+        grid,
+        "recall",
+        "encode",
+        Weight.Duration,
+        Vector(StudyEstimate.Binned()),
+        FailurePolicy.RequireAll
+      )
+    )
+    val direct         = get(plan.run(input)).scales.head
+    val restoredResult = get(plan.run(restored)).scales.head
+    val rows           = get(restoredResult.contrast).rows
+    assertEquals(rows.size, 6)
+    rows.zip(get(direct.contrast).rows).foreach { case (a, b) =>
+      assertEquals(a.key, b.key)
+      assertEquals(get(a.difference).value, get(b.difference).value)
+    }
+    rows.zip(MatchedControlFixtures.reductions).foreach { case (row, expected) =>
+      assertEquals(s"${row.key.participant}/${row.key.stimulus}/${row.key.phase}", expected.id)
+      assertEqualsDouble(get(row.difference).value, expected.difference, OracleTolerance)
+    }
+    assertEquals(
+      get(plan.prepare(restored)).inputReference,
+      get(plan.prepare(input)).inputReference
+    )
+  }
+
+  test("quarantined trials keep typed reasons, total accounting and the pinned v1 ledger") {
+    val altered  = records.updated(0, records.head.updated(7, "-1"))
+    val imported = read(altered)
+    val refused  = get(
+      FixationEvidence.ledger(
+        "matched-control.csv",
+        imported,
+        AdmissionDecision.RequireComplete
+      )
+    )
+    assertEquals(refused.outcome, AdmissionOutcome.Refused)
+    assertEquals(refused.records.size, 48)
+    assertEquals(refused.admitted.size + refused.rejected.size, imported.sourceRows.size)
+    assertEquals(refused.rejected.map(_.record), Vector(2, 3, 4, 5))
+    val key = StudyKey("s1", "a", "encode")
+    assertEquals(refused.quarantined, Vector(key))
+    assertEquals(
+      refused.records.head.disposition,
+      Disposition.Rejected(
+        altered.head,
+        Some(key),
+        AdmissionReason.Time(
+          "0",
+          "-1",
+          "microseconds",
+          "duration must be positive and the interval must fit signed microseconds"
+        )
+      )
+    )
+    assertEquals(
+      refused.records(1).disposition,
+      Disposition.Rejected(
+        altered(1),
+        Some(key),
+        AdmissionReason.Quarantined(Vector(2, 3, 4, 5), QuarantineCause.RejectedRecords)
+      )
+    )
+    assertEquals(
+      get(inputCodec.ledger.encode(refused)),
+      get(io.circe.parser.parse(StudyInputFixtures.ledgerVersionOne))
+    )
+    assertEquals(get(inputCodec.ledger.parse(StudyInputFixtures.ledgerVersionOne)), refused)
+    val reviewed = get(
+      FixationEvidence.ledger(
+        "matched-control.csv",
+        imported,
+        AdmissionDecision.ReviewExclusions
+      )
+    )
+    assertEquals(reviewed.outcome, AdmissionOutcome.ReviewedExclusions)
+    assertEquals(reviewed.records, refused.records)
+    val accepted = StudyInput(imported.accepted)
+    assertEquals(accepted.trials.size, 11)
+    assertEquals(reviewed.checkAgainst(accepted), Right(()))
+    assertEquals(
+      reviewed.checkAgainst(get(read().requireComplete)),
+      Left(AdmissionError.UnadmittedTrial(0))
+    )
+    val restored = get(inputCodec.input.decode(get(inputCodec.input.encode(accepted))))
+    assertEquals(restored.reference, accepted.reference)
+    assertEquals(
+      get(inputCodec.ledger.decode(get(inputCodec.ledger.encode(reviewed)))),
+      reviewed
+    )
+  }
+
+  test("duplicate ordinals, overlaps and unreadable keys are typed ledger reasons") {
+    val duplicate = read(records.updated(1, records(1).updated(3, records.head(3))))
+    val dupLedger = get(
+      FixationEvidence.ledger("dup.csv", duplicate, AdmissionDecision.RequireComplete)
+    )
+    assertEquals(
+      dupLedger.rejected.map(_.disposition).collect {
+        case Disposition.Rejected(_, _, AdmissionReason.Quarantined(rows, cause)) =>
+          rows -> cause
+      },
+      Vector.fill(4)(Vector(2, 3, 4, 5) -> QuarantineCause.DuplicateOrdinals)
+    )
+    val overlap       = read(records.updated(1, records(1).updated(6, records.head(6))))
+    val overlapLedger = get(
+      FixationEvidence.ledger("overlap.csv", overlap, AdmissionDecision.RequireComplete)
+    )
+    overlapLedger.rejected.map(_.disposition).foreach {
+      case Disposition.Rejected(_, Some(k), AdmissionReason.Quarantined(rows, cause)) =>
+        assertEquals(k, StudyKey("s1", "a", "encode"))
+        assertEquals(rows, Vector(2, 3, 4, 5))
+        cause match
+          case QuarantineCause.Overlap(index, _, _) => assertEquals(index, 1)
+          case other                                => fail(s"unexpected $other")
+      case other => fail(s"unexpected $other")
+    }
+    val blank       = read(records.updated(0, records.head.updated(0, "")))
+    val blankLedger = get(
+      FixationEvidence.ledger("blank.csv", blank, AdmissionDecision.RequireComplete)
+    )
+    blankLedger.records.head.disposition match
+      case Disposition.Rejected(raw, None, AdmissionReason.Key(_)) =>
+        assertEquals(raw, records.head.updated(0, ""))
+      case other => fail(s"unexpected $other")
+    assertEquals(blankLedger.records.size, 48)
+    val short       = read(records.updated(0, records.head.dropRight(1)))
+    val shortLedger = get(
+      FixationEvidence.ledger("short.csv", short, AdmissionDecision.RequireComplete)
+    )
+    assertEquals(
+      shortLedger.records.head.disposition,
+      Disposition.Rejected(
+        records.head.dropRight(1),
+        Some(StudyKey("s1", "a", "encode")),
+        AdmissionReason.Width(9, 8)
+      )
+    )
+    Vector(dupLedger, overlapLedger, blankLedger, shortLedger).foreach { ledger =>
+      assertEquals(get(inputCodec.ledger.decode(get(inputCodec.ledger.encode(ledger)))), ledger)
+    }
+  }
+
+  test("quoted and newline identifiers survive the input and ledger payloads") {
+    val quoted   = records.map(r => r.updated(0, r(0) + ", \"lab\"\nA"))
+    val imported = read(quoted)
+    val input    = get(imported.requireComplete)
+    val ledger   = get(
+      FixationEvidence.ledger("quoted.csv", imported, AdmissionDecision.RequireComplete)
+    )
+    val restored  = get(inputCodec.input.parse(get(inputCodec.input.encode(input)).noSpaces))
+    val decisions = get(inputCodec.ledger.parse(get(inputCodec.ledger.encode(ledger)).noSpaces))
+    assertEquals(restored.reference, input.reference)
+    assert(restored.trials.rows.forall(_.key.participant.contains(", \"lab\"\nA")))
+    assertEquals(decisions, ledger)
+    assertEquals(decisions.checkAgainst(restored), Right(()))
+    assertNotEquals(ledger.source, FixationEvidence.source("quoted.csv", read()))
+  }

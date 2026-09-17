@@ -1,0 +1,881 @@
+{
+  "schema" : {
+    "name" : "eyes4s.admission-ledger",
+    "version" : 1
+  },
+  "value" : {
+    "keySchema" : {
+      "name" : "eyes4s.study-key",
+      "version" : 1
+    },
+    "source" : {
+      "label" : "matched-control.csv",
+      "records" : "75c2ca1c758598b5"
+    },
+    "header" : [
+      "participant",
+      "image",
+      "phase",
+      "fixation",
+      "x_px",
+      "y_px",
+      "onset_us",
+      "duration_us",
+      "sample_count"
+    ],
+    "outcome" : "refused",
+    "records" : [
+      {
+        "record" : 2,
+        "kind" : "rejected",
+        "raw" : [
+          "s1",
+          "a",
+          "encode",
+          "0",
+          "0.5",
+          "0.5",
+          "0",
+          "-1",
+          "100"
+        ],
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "a",
+            "phase" : "encode"
+          }
+        },
+        "reason" : {
+          "kind" : "time",
+          "onset" : "0",
+          "duration" : "-1",
+          "unit" : "microseconds",
+          "reason" : "duration must be positive and the interval must fit signed microseconds"
+        }
+      },
+      {
+        "record" : 3,
+        "kind" : "rejected",
+        "raw" : [
+          "s1",
+          "a",
+          "encode",
+          "1",
+          "1.5",
+          "0.5",
+          "110000",
+          "200000",
+          "200"
+        ],
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "a",
+            "phase" : "encode"
+          }
+        },
+        "reason" : {
+          "kind" : "quarantined",
+          "records" : [
+            2,
+            3,
+            4,
+            5
+          ],
+          "cause" : {
+            "kind" : "rejectedRecords"
+          }
+        }
+      },
+      {
+        "record" : 4,
+        "kind" : "rejected",
+        "raw" : [
+          "s1",
+          "a",
+          "encode",
+          "2",
+          "0.5",
+          "1.5",
+          "320000",
+          "200000",
+          "200"
+        ],
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "a",
+            "phase" : "encode"
+          }
+        },
+        "reason" : {
+          "kind" : "quarantined",
+          "records" : [
+            2,
+            3,
+            4,
+            5
+          ],
+          "cause" : {
+            "kind" : "rejectedRecords"
+          }
+        }
+      },
+      {
+        "record" : 5,
+        "kind" : "rejected",
+        "raw" : [
+          "s1",
+          "a",
+          "encode",
+          "3",
+          "1.5",
+          "1.5",
+          "530000",
+          "400000",
+          "400"
+        ],
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "a",
+            "phase" : "encode"
+          }
+        },
+        "reason" : {
+          "kind" : "quarantined",
+          "records" : [
+            2,
+            3,
+            4,
+            5
+          ],
+          "cause" : {
+            "kind" : "rejectedRecords"
+          }
+        }
+      },
+      {
+        "record" : 6,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "b",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 0
+      },
+      {
+        "record" : 7,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "b",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 1
+      },
+      {
+        "record" : 8,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "b",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 2
+      },
+      {
+        "record" : 9,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "b",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 3
+      },
+      {
+        "record" : 10,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "c",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 0
+      },
+      {
+        "record" : 11,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "c",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 1
+      },
+      {
+        "record" : 12,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "c",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 2
+      },
+      {
+        "record" : 13,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "c",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 3
+      },
+      {
+        "record" : 14,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "a",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 0
+      },
+      {
+        "record" : 15,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "a",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 1
+      },
+      {
+        "record" : 16,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "a",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 2
+      },
+      {
+        "record" : 17,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "a",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 3
+      },
+      {
+        "record" : 18,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "b",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 0
+      },
+      {
+        "record" : 19,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "b",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 1
+      },
+      {
+        "record" : 20,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "b",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 2
+      },
+      {
+        "record" : 21,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "b",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 3
+      },
+      {
+        "record" : 22,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "c",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 0
+      },
+      {
+        "record" : 23,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "c",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 1
+      },
+      {
+        "record" : 24,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "c",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 2
+      },
+      {
+        "record" : 25,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "c",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 3
+      },
+      {
+        "record" : 26,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "a",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 0
+      },
+      {
+        "record" : 27,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "a",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 1
+      },
+      {
+        "record" : 28,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "a",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 2
+      },
+      {
+        "record" : 29,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "a",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 3
+      },
+      {
+        "record" : 30,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "b",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 0
+      },
+      {
+        "record" : 31,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "b",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 1
+      },
+      {
+        "record" : 32,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "b",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 2
+      },
+      {
+        "record" : 33,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "b",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 3
+      },
+      {
+        "record" : 34,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "c",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 0
+      },
+      {
+        "record" : 35,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "c",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 1
+      },
+      {
+        "record" : 36,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "c",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 2
+      },
+      {
+        "record" : 37,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "c",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 3
+      },
+      {
+        "record" : 38,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "a",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 0
+      },
+      {
+        "record" : 39,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "a",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 1
+      },
+      {
+        "record" : 40,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "a",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 2
+      },
+      {
+        "record" : 41,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "a",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 3
+      },
+      {
+        "record" : 42,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "b",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 0
+      },
+      {
+        "record" : 43,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "b",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 1
+      },
+      {
+        "record" : 44,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "b",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 2
+      },
+      {
+        "record" : 45,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "b",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 3
+      },
+      {
+        "record" : 46,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "c",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 0
+      },
+      {
+        "record" : 47,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "c",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 1
+      },
+      {
+        "record" : 48,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "c",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 2
+      },
+      {
+        "record" : 49,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "c",
+            "phase" : "recall"
+          }
+        },
+        "ordinal" : 3
+      }
+    ]
+  }
+}
