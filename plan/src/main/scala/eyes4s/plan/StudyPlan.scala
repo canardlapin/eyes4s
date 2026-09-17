@@ -26,11 +26,15 @@ import eyes4s.surface.*
 /** Stable identity of a registered behavior, separate from its parameter schema. */
 final case class DefinitionId private (name: String, version: Int) derives CanEqual
 object DefinitionId:
-  val cosine: DefinitionId      = new DefinitionId("eyes4s.cosine", 1)
-  val study: DefinitionId       = new DefinitionId("eyes4s.study", 1)
-  val studyKey: DefinitionId    = new DefinitionId("eyes4s.study-key", 1)
-  val studyLayout: DefinitionId = new DefinitionId("eyes4s.participant-stimulus-phase", 1)
-  val unit: DefinitionId        = new DefinitionId("eyes4s.unit", 1)
+  val cosine: DefinitionId          = new DefinitionId("eyes4s.cosine", 1)
+  val study: DefinitionId           = new DefinitionId("eyes4s.study", 1)
+  val studyKey: DefinitionId        = new DefinitionId("eyes4s.study-key", 1)
+  val studyLayout: DefinitionId     = new DefinitionId("eyes4s.participant-stimulus-phase", 1)
+  val unit: DefinitionId            = new DefinitionId("eyes4s.unit", 1)
+  val studyInput: DefinitionId      = new DefinitionId("eyes4s.study-input", 1)
+  val trials: DefinitionId          = new DefinitionId("eyes4s.trials", 1)
+  val scanpath: DefinitionId        = new DefinitionId("eyes4s.scanpath", 1)
+  val admissionLedger: DefinitionId = new DefinitionId("eyes4s.admission-ledger", 1)
   def of(name: String, version: Int): Either[PlanError, DefinitionId] =
     if name.trim.isEmpty || version < 1 then Left(PlanError.InvalidDefinition(name, version))
     else Right(new DefinitionId(name, version))

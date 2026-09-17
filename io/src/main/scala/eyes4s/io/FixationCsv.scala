@@ -107,15 +107,15 @@ enum FixationRowError derives CanEqual:
   case Time(onset: String, duration: String, unit: TimestampUnit, reason: String)
   case Position(x: Double, y: Double, frame: FrameId)
   case Event(reason: String)
-  case Trial(rows: Vector[Int], reason: String)
+  case Trial(rows: Vector[Int], cause: QuarantineCause)
   def message: String = this match
-    case Width(e, a)         => s"Expected $e fields, got $a."
-    case Key(reason)         => s"Trial key: $reason"
-    case Number(c, v, r)     => s"Column '$c' has '$v'; expected $r."
-    case Time(o, d, u, r)    => s"Onset '$o', duration '$d' in $u: $r"
-    case Position(x, y, f)   => s"Position ($x,$y) is outside frame $f."
-    case Event(reason)       => s"Fixation: $reason"
-    case Trial(rows, reason) => s"Trial from rows $rows: $reason"
+    case Width(e, a)        => s"Expected $e fields, got $a."
+    case Key(reason)        => s"Trial key: $reason"
+    case Number(c, v, r)    => s"Column '$c' has '$v'; expected $r."
+    case Time(o, d, u, r)   => s"Onset '$o', duration '$d' in $u: $r"
+    case Position(x, y, f)  => s"Position ($x,$y) is outside frame $f."
+    case Event(reason)      => s"Fixation: $reason"
+    case Trial(rows, cause) => s"Trial from rows $rows: ${cause.message}"
 
 final case class RejectedFixationRow[K] private[io] (
     rowNumber: Int,
@@ -123,6 +123,10 @@ final case class RejectedFixationRow[K] private[io] (
     key: Option[K],
     error: FixationRowError
 ) derives CanEqual
+
+/** The record/ordinal link of one admitted source row to its typed trial key. */
+final case class AdmittedFixationRow[K] private[io] (rowNumber: Int, key: K, ordinal: Int)
+    derives CanEqual
 
 /** The default admission refuses incomplete studies. Accepted trial groups are
   * separately available for an analyst who explicitly reviews the exclusions.
@@ -132,6 +136,7 @@ final class FixationImport[K, U <: Unit2D] private[io] (
     val header: Vector[String],
     val sourceRows: Vector[Vector[String]],
     val accepted: Trials[K, Unit, Scanpath[U]],
+    val admitted: Vector[AdmittedFixationRow[K]],
     val rejected: Vector[RejectedFixationRow[K]]
 )(using KeyDigest[K], UnitLabel[U]):
   def requireComplete: Either[FixationImportError, StudyInput[K, U]] =
@@ -221,17 +226,23 @@ object FixationCsv:
             val allRows  = (ordered.map(_.row) ++ affected).sorted
             val path     =
               if affected.nonEmpty then
-                Left(FixationRowError.Trial(allRows, "one or more source rows were rejected"))
+                Left(FixationRowError.Trial(allRows, QuarantineCause.RejectedRecords))
               else if ordered.map(_.ordinal).distinct.size != ordered.size then
-                Left(FixationRowError.Trial(allRows, "duplicate fixation ordinals"))
+                Left(FixationRowError.Trial(allRows, QuarantineCause.DuplicateOrdinals))
               else
                 Scanpath
                   .of(frame, keys.clock(key), IArray.from(ordered.map(_.fixation)))
                   .left
-                  .map(e => FixationRowError.Trial(allRows, e.message))
-            path.map(value => Trial(key, (), value)).left.map { error =>
-              ordered.map(row => RejectedFixationRow(row.row, row.raw, Some(key), error))
-            }
+                  .map(e => FixationRowError.Trial(allRows, QuarantineCause.of(e)))
+            path
+              .map(value =>
+                Trial(key, (), value) ->
+                  ordered.map(row => AdmittedFixationRow(row.row, key, row.ordinal))
+              )
+              .left
+              .map { error =>
+                ordered.map(row => RejectedFixationRow(row.row, row.raw, Some(key), error))
+              }
           }
         val rejected = (invalid ++ groups.collect { case Left(errors) => errors }.flatten)
           .sortBy(_.rowNumber)
@@ -239,7 +250,8 @@ object FixationCsv:
           new FixationImport(
             header,
             rows.drop(1),
-            Trials(groups.collect { case Right(trial) => trial }),
+            Trials(groups.collect { case Right((trial, _)) => trial }),
+            groups.collect { case Right((_, links)) => links }.flatten.sortBy(_.rowNumber),
             rejected
           )
         )

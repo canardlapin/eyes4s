@@ -631,7 +631,8 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
       file("laws/src/test/scala/eyes4s/examples/MatchedControlFixtures.scala").getAbsoluteFile,
       file("docs/examples/StudyGuide.scala").getAbsoluteFile,
       file("docs/examples/TemporalStudyGuide.scala").getAbsoluteFile,
-      file("codec/src/test/scala/eyes4s/codec/TemporalFixtures.scala").getAbsoluteFile
+      file("codec/src/test/scala/eyes4s/codec/TemporalFixtures.scala").getAbsoluteFile,
+      file("codec/src/test/scala/eyes4s/codec/StudyInputFixtures.scala").getAbsoluteFile
     ),
     libraryDependencies += "co.fs2" %%% "fs2-io" % fs2V
   )

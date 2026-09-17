@@ -17,6 +17,7 @@
 package eyes4s.codec
 
 import cats.syntax.all.*
+import eyes4s.design.{Trial, Trials}
 import eyes4s.plan.*
 import io.circe.{Json, Decoder}
 
@@ -31,6 +32,12 @@ enum CodecError derives CanEqual:
   case IdentityConflict(kind: String, id: String, existing: Json, incoming: Json)
   case MissingMethod(method: DefinitionId)
   case DuplicateMethod(method: DefinitionId)
+  case MissingKeySchema(schema: DefinitionId)
+  case DuplicateKeySchema(schema: DefinitionId)
+  case Entry(path: String, underlying: CodecError)
+  case Unsupported(path: String, reason: String)
+  case InputIdentity(declared: String, reconstructed: String)
+  case Admission(underlying: AdmissionError)
 
   def message: String = this match
     case InvalidJson(_, reason)     => s"Invalid project JSON: $reason"
@@ -43,8 +50,16 @@ enum CodecError derives CanEqual:
     case MissingIdentity(kind, id) => s"No $kind with nominal ID '$id' in this document."
     case IdentityConflict(kind, id, old, incoming) =>
       s"Conflicting $kind ID '$id': ${old.noSpaces} versus ${incoming.noSpaces}."
-    case MissingMethod(id)   => s"No registered method ${id.name}@${id.version}."
-    case DuplicateMethod(id) => s"Method ${id.name}@${id.version} is already registered."
+    case MissingMethod(id)      => s"No registered method ${id.name}@${id.version}."
+    case DuplicateMethod(id)    => s"Method ${id.name}@${id.version} is already registered."
+    case MissingKeySchema(id)   => s"No registered key schema ${id.name}@${id.version}."
+    case DuplicateKeySchema(id) =>
+      s"Key schema ${id.name}@${id.version} is already registered."
+    case Entry(path, underlying)                => s"At $path: ${underlying.message}"
+    case Unsupported(path, reason)              => s"Cannot encode $path: $reason"
+    case InputIdentity(declared, reconstructed) =>
+      s"Payload declares input $declared but its trials reconstruct $reconstructed."
+    case Admission(e) => e.message
 
 /** A typed, explicitly versioned codec. Unsupported old versions fail precisely.
   * The wire envelope separates schema identity from any method identity in its payload.
@@ -125,10 +140,52 @@ object VersionedCodec:
       yield result.toMap
     }
 
+  /** Row-array encoding of typed trials: input order and repeated keys are
+    * preserved, so identity stays in `K` and never in a JSON field name.
+    */
+  def trials[K, M, A](
+      schema: DefinitionId,
+      key: VersionedCodec[K],
+      meta: VersionedCodec[M],
+      value: VersionedCodec[A]
+  ): VersionedCodec[Trials[K, M, A]] =
+    checked(schema)((trials: Trials[K, M, A]) =>
+      trials.rows.zipWithIndex
+        .traverse { case (row, index) =>
+          (for
+            k <- key.encode(row.key)
+            m <- meta.encode(row.meta)
+            v <- value.encode(row.value)
+          yield Json.obj("key" -> k, "meta" -> m, "value" -> v)).left
+            .map(Wire.at(s"rows[$index]"))
+        }
+        .map(rows => Json.arr(rows*))
+    ) { json =>
+      for
+        rows   <- json.asArray.toRight(CodecError.Field("rows", json, "expected an array"))
+        result <- rows.toVector.zipWithIndex.traverse { case (row, index) =>
+          (for
+            k <- Wire.field[Json](row, "key").flatMap(key.decode)
+            m <- Wire.field[Json](row, "meta").flatMap(meta.decode)
+            v <- Wire.field[Json](row, "value").flatMap(value.decode)
+          yield Trial(k, m, v)).left.map(Wire.at(s"rows[$index]"))
+        }
+      yield Trials(result)
+    }
+
 /** Small decoding primitives; errors retain the path and offending JSON value. */
 private[codec] object Wire:
   def field[A: Decoder](json: Json, name: String): Either[CodecError, A] =
     json.hcursor.get[A](name).left.map(e => CodecError.Field(name, json, e.message))
+
+  /** Locate an error at a containing entry; nested locations join into one path. */
+  def at(path: String)(error: CodecError): CodecError = error match
+    case CodecError.Entry(inner, underlying) => CodecError.Entry(s"$path.$inner", underlying)
+    case other                               => CodecError.Entry(path, other)
+  def requireId(json: Json, name: String, expected: DefinitionId): Either[CodecError, Unit] =
+    definition(json, name).flatMap(found =>
+      Either.cond(found == expected, (), CodecError.Schema(expected, found))
+    )
   def id(value: DefinitionId): Json =
     Json.obj("name" -> Json.fromString(value.name), "version" -> Json.fromInt(value.version))
   def definition(json: Json, name: String): Either[CodecError, DefinitionId] = for

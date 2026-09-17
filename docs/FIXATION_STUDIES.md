@@ -43,6 +43,15 @@ trial is quarantined. A row whose key cannot be decoded remains an explicit reje
 `requireComplete` refuses to produce a study input while any rejected rows remain. The `accepted`
 collection is separately available if an analyst deliberately reviews and handles the exclusions.
 
+`FixationEvidence.ledger(label, imported, decision)` turns the import report into a pure
+`AdmissionLedger` with exactly one typed disposition per source record. `imported.admitted` links
+each accepted row to its typed key and ordinal; row errors become typed `AdmissionReason` values, and
+a quarantined trial names its records and a `QuarantineCause`. `AdmissionDecision.RequireComplete`
+records the outcome `Refused` when any record was rejected; `ReviewExclusions` records
+`ReviewedExclusions`, the explicit decision to proceed with `imported.accepted`. See
+[saved studies](SAVED_STUDIES.md) for the input and ledger payloads that reconstruct the study,
+with the same input digest and results, without the importer.
+
 ## Interpret and export
 
 The guide constructs duration-weighted occupancy on the declared grid, normalizes it to mass,

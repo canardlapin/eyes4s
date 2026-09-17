@@ -168,6 +168,46 @@ step for the work that was cut off, since none completed. `run.outcome` is the
 authority. `events` has no commit point: interrupting it ends the stream
 between steps with no terminal element.
 
+## Input payloads and admission ledgers
+
+`StudyInputCodecs.study[U]` supplies two versioned codecs for the ordinary participant/stimulus/phase
+route; `new StudyInputCodec(schema, ledgerSchema, layout, keyCodec)` builds them for a custom key
+layout, so repeated presentations are kept apart by an explicit occurrence or session field in `K`
+rather than by a label or digest. `input` encodes a `StudyInput[K, U]` (`eyes4s.study-input@1`):
+the layout and key schema identities, the spatial unit, the declared input digest, a document
+identity table of frames and trial clocks, and the trials as a row array (`eyes4s.trials@1`) whose
+rows carry the typed key, the unit metadata and a scanpath (`eyes4s.scanpath@1`) that references its
+frame and clock by nominal ID. Fixations are half-open microsecond intervals as decimal strings,
+finite centre coordinates, the sample count and, when declared, the dispersion value and method.
+Decoding rebuilds the input through `StudyInput` and compares the reconstructed digest with the
+declared one. That digest covers what the study computes on: the typed keys, trial order, each
+trial's spatial unit, frame identity/geometry/axis and clock, and every fixation's interval, centre
+and sample count. Reordering, dropping or altering any of those fails with
+`CodecError.InputIdentity`. Declared dispersion is carried through the payload but is not
+identity-bearing: it does not enter the digest, so a changed dispersion decodes as a different
+value with the same input reference. Errors inside a trial are located, for example
+`CodecError.Entry("trials.rows[2].fixations[1]", ...)`.
+Scanpaths and fixation summaries backed by source samples are refused with `CodecError.Unsupported`
+rather than silently detached; their support belongs to the recording payload.
+
+`ledger` encodes an `AdmissionLedger[K]` (`eyes4s.admission-ledger@1`): the source reference (a label
+and the portable digest of the decoded header and records), the header, the recorded outcome and one
+entry per source record in record order. An admitted record links its logical record number to the
+typed trial key and the ordinal it supplied; a rejected record keeps its raw fields, its key when one
+could be read, and a typed `AdmissionReason`. A quarantined trial names the affected records and a
+`QuarantineCause`. `AdmissionLedger.of` refuses unordered records, duplicate ordinals within a trial,
+quarantine scopes that omit their own record, and an outcome inconsistent with the rejected count;
+`ledger.checkAgainst(input)` verifies that admitted records address every input trial exactly once
+per fixation. `StudyInputRegistry` registers codecs by key schema and refuses missing or duplicate
+registrations. `VersionedCodec.trials` is the generic row-array codec these payloads use.
+
+Both payloads are artifacts of their own; plan JSON references the input by digest only. The pinned
+[study-input-v1.json](../codec/src/test/resources/eyes4s/study-input-v1.json) and
+[admission-ledger-v1.json](../codec/src/test/resources/eyes4s/admission-ledger-v1.json) fixtures are
+checked for decoded meaning and JSON value identity on JVM and Scala.js; the JVM suite additionally
+checks byte-identical re-encoding of the pretty-printed files, which Scala.js does not promise because
+it renders integral doubles without a fraction.
+
 ## Versions and extensions
 
 The JSON envelope has a schema identifier and version. Its payload separately records the method

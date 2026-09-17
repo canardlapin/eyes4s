@@ -20,5 +20,7 @@ the module requirements and `../.mote/` for the live work items.
 
 For existing fixation summaries, use [fixation studies](../docs/FIXATION_STUDIES.md)
 or the compiled [repetition guide](../docs/REPETITION_STUDIES.md). Both preserve
-admission diagnostics rather than silently dropping invalid trials. The
-[task index](../docs/START_HERE.md) connects the other public workflows.
+admission diagnostics rather than silently dropping invalid trials; `FixationEvidence`
+turns a fixation import into the pure admission ledger that `eyes4s-codec` serializes
+beside the study input. The [task index](../docs/START_HERE.md) connects the other
+public workflows.
