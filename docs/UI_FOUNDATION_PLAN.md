@@ -1,15 +1,24 @@
 # eyes4s infrastructure for an external UI consumer
 
-Implementation plan lodged in Mote on 2026-09-16. This is an authorized plan,
-not implementation or passing-test evidence. The UI will live in another
-repository; [the app vision](UI_APP_VISION.md) supplies the intended consumer.
+Implementation plan lodged in Mote on 2026-09-16 by the
+`codex-eyes4s-ui-foundation-plan` actor and reviewed on 2026-09-17 at the owner's request
+([tracker triage](TRACKER_TRIAGE_2026-09-17.md), Tier 1). Except where a ticket
+is marked closed, this document is a plan, not implementation or passing-test
+evidence. The UI will live in another repository; [the app vision](UI_APP_VISION.md)
+supplies the intended consumer.
 
 The existing application-boundary owner is
-`bd-01M02N4GM03BF98C3PSJS6D4WA`. This plan creates **17 implementation tickets**:
-six execution, six serialization, four inspection/preflight, and one final
-consumer proof. Each ticket is open and unassigned until someone starts it.
-Planning and registration are tracked separately by
-`bd-01M2N2EHPN8XGSRHCMXF65NHAQ`.
+`bd-01M02N4GM03BF98C3PSJS6D4WA`. This plan carries **18 implementation tickets**:
+six execution, six serialization, four inspection/preflight, and two consumer
+proofs. Planning and registration were tracked by
+`bd-01M2N2EHPN8XGSRHCMXF65NHAQ` (closed).
+
+**State on 2026-09-17.** X1, S1 and M1 closed on 2026-09-16; their code landed
+in commit `34f234c`. Ready now: X3, S2, M3 and the rescoped M2. X2 is unblocked
+but deferred until X6 measures whether it is needed. Everything else is blocked
+on those tickets. This revision, made on 2026-09-17, adds the fixation-only gate
+G0, drops the S3 edges from S4 and S5, drops the X2 edge from X4, and rescopes
+M2 to its residual. The remaining tickets are open and unassigned.
 
 ## Outcome and ownership
 
@@ -27,7 +36,9 @@ save/reconstruct/rerun it through packaged eyes4s APIs.
 No JavaFX or Intaglio dependency enters eyes4s. Effects stay in `io`/`fs2`;
 `plan` and `codec` stay acyclic and pure. Kernel vocabulary remains neutral.
 Generic renderer/input-adapter work belongs in Intaglio, and app-specific
-graphics belong in the consuming repository.
+graphics belong in the consuming repository. The JavaFX/Intaglio host named in
+[the app vision](UI_APP_VISION.md) is an owner decision still open as of
+2026-09-17; nothing in this plan depends on it.
 
 ## Scope and current foundation
 
@@ -45,6 +56,12 @@ Source review at `6218627` establishes a concrete foundation:
   registrations and JVM/JS evidence. Extend that tool rather than start an
   unrelated proof harness.
 
+Commit `34f234c` added, on top of that review: `PreparedStudy` and
+`DirectedPairSchedule` with paged cursors, explicit budgets and identity stamps
+(X1); `DomainCodecs` with a document-scoped identity table (S1); and typed
+`MethodDescriptor`/recipe descriptors (M1). Numerical execution is still one
+whole operation per study; X3 and X4 make it bounded and cancellable.
+
 The primary vertical slice is the existing fixation-study route: binned and
 Gaussian duration/uniform-weighted maps, exhaustive within-participant
 matched/control cosine comparisons, typed custom extension evidence and full
@@ -60,14 +77,21 @@ not establish raw observation coverage.
 
 ## Construction order
 
-Start **X1** first. **S1** and **M1** are independently ready foundations.
-X1 supplies both the work schedule and pairing preview; the numerical runner and
-preflight must not maintain separate pairing rules.
+**X1**, **S1** and **M1** are closed. **X3**, **S2** and **M3** are ready now;
+the rescoped **M2** can run whenever a consumer needs the preview facade. **X2**
+is unblocked but deferred until X6's measurement shows it is needed. X1 supplies
+both the work schedule and pairing preview; the numerical runner and preflight
+must not maintain separate pairing rules. The fixation-only gate **G0** is the
+first end-to-end target: it needs X4, S2, S4, S5 and M4 and none of the
+recording or temporal work.
 
-- Execution: X1 -> X2 and X3 -> X4 -> X5 -> X6.
-- Serialization: S1 -> S2 -> S3 -> S4 -> S5 -> S6.
-- Inspection: M1 plus X1 -> M2 -> M3; M3 plus S2/S4 -> M4.
-- Final consumer: X6 plus S6 plus M4 -> G1.
+- Execution: X1 -> X3 -> X4 -> X5 -> X6; X2 joins after X6 only if the measured
+  pair-level quanta miss the 100 ms budget.
+- Serialization: S1 -> S2 -> S4 -> S5 -> S6 for the fixation route; S2 -> S3 -> S6
+  adds recording and temporal payloads.
+- Inspection: X1 -> M2; M1 plus X1 -> M3; M3 plus S2/S4 -> M4.
+- Fixation-only gate: X4 plus S2/S4/S5 plus M4 -> G0.
+- Final consumer: X6 plus S6 plus M4 plus G0 -> G1.
 
 The sequence above is a readable overview; each ticket lists all concrete direct
 dependencies. Parent/child ownership uses non-blocking Mote relationships.
@@ -77,26 +101,33 @@ their previous acceptance requirements; this plan does not declare them complete
 
 ```mermaid
 flowchart LR
-  X1["X1 Shared work and pair schedule"] --> X2["X2 Incremental estimation"]
-  X1 --> X3["X3 Incremental comparison"]
-  X2 --> X4["X4 FS2 runner"]
+  X1["X1 Shared work and pair schedule (closed)"] --> X3["X3 Incremental comparison"]
+  X1 --> X4["X4 FS2 runner"]
   X3 --> X4
   X4 --> X5["X5 Recording and temporal execution"]
   X5 --> X6["X6 Laws and response budgets"]
-  S1["S1 Domain codecs"] --> S2["S2 Fixation inputs and source ledger"]
+  X6 -. "only if pair-level quanta miss 100 ms" .-> X2["X2 Incremental estimation (deferred)"]
+  S1["S1 Domain codecs (closed)"] --> S2["S2 Fixation inputs and source ledger"]
   S2 --> S3["S3 Recording and temporal inputs"]
-  S3 --> S4["S4 Completed results"]
+  S2 --> S4["S4 Completed results"]
   S4 --> S5["S5 Manifest and verifying resolver"]
-  S5 --> S6["S6 Fresh-process proof"]
-  X1 --> M2["M2 Pairing preview"]
-  M1["M1 Typed descriptors"] --> M3["M3 Preflight"]
-  M2 --> M3
+  S3 --> S6["S6 Fresh-process proof"]
+  S5 --> S6
+  X1 --> M2["M2 Pairing preview facade"]
+  M1["M1 Typed descriptors (closed)"] --> M3["M3 Preflight"]
+  X1 --> M3
   M3 --> M4["M4 Source-linked result inspection"]
   S2 --> M4
   S4 --> M4
+  X4 --> G0["G0 Fixation-only consumer gate"]
+  S2 --> G0
+  S4 --> G0
+  S5 --> G0
+  M4 --> G0
   X6 --> G1["G1 External headless consumer"]
   S6 --> G1
   M4 --> G1
+  G0 --> G1
 ```
 
 ## Shared acceptance rules
@@ -132,7 +163,9 @@ flowchart LR
    counters rather than wall-clock sleeps. A separate pinned-runtime benchmark
    measures response/cancellation and memory on declared workloads. The proposed
    100 ms JVM cancellation target is a target to freeze and test, not a current
-   measurement or a portable hard real-time guarantee.
+   measurement or a portable hard real-time guarantee. Bounded pair enumeration
+   is only as bounded as the budget supplied: `PairScheduleBudget.default` is
+   effectively unbounded, so consumers must pass explicit budgets.
 
 Implementation slices run their affected JVM/JS suites. The final integration runs:
 
@@ -149,25 +182,28 @@ No implementation suite was run merely to register this plan.
 
 ## Ticket index
 
-| Key | Mote ticket | Deliverable | Direct prerequisites |
-|---|---|---|---|
-| [X1](#x1) | `bd-01M2N2QA11Y97G7R2PR5630ZAQ` | Extract shared deterministic study preparation and pair scheduling | Ready |
-| [X2](#x2) | `bd-01M2N2QAK3PH8QGFAZ1YFR15W0` | Make occupancy and Gaussian estimation resumable within a trial | X1 |
-| [X3](#x3) | `bd-01M2N2QB107Y48TXK39XK8NWBX` | Make cosine comparison and study reduction bounded and deterministic | X1 |
-| [X4](#x4) | `bd-01M2N2QBJ638R8GZAT5P2EWM33` | Add the FS2 study runner with progress, cancellation and terminal outcomes | X2, X3 |
-| [X5](#x5) | `bd-01M2N2QC7RA8RZHW7EH2F2R9GA` | Compose recording and temporal plans through the bounded runner | X4 |
-| [X6](#x6) | `bd-01M2N2QCWATK57DT0TEWTRJTCP` | Publish execution conformance laws and qualify responsiveness budgets | X5 |
-| [S1](#s1) | `bd-01M2N2QDDGDDPC7Q2TRV08D03F` | Define reusable geometry, time and identity codecs for scientific payloads | Ready |
-| [S2](#s2) | `bd-01M2N2QDV9JB6T6AYZG3D0TT3X` | Serialize fixation-study inputs and explicit admission/source ledgers | S1 |
-| [S3](#s3) | `bd-01M2N2QEDSTM8XK40WW2SG3E8R` | Serialize normalized recordings and temporal study input payloads | S1, S2 |
-| [S4](#s4) | `bd-01M2N2QEWQMWBSNRC30RQ5CCPP` | Encode completed scientific results, typed failures and provenance | S1, S2, S3 |
-| [S5](#s5) | `bd-01M2N2QFF4NCTFZFDF87ZH3ERF` | Add typed artifact manifests and an injected verifying resolver | S2, S3, S4 |
-| [S6](#s6) | `bd-01M2N2QFZSGT9TG6ZEK5THE1CR` | Prove fresh-process reconstruction, schema compatibility and codec laws | S5 |
-| [M1](#m1) | `bd-01M2N2QGJ7MECZAHWC01ER9CMT` | Expose typed parameter and method descriptors for the shipped recipes | Ready |
-| [M2](#m2) | `bd-01M2N2QH044FSDXJTERDZ5EZRS` | Expose bounded pairing previews from the executable study schedule | X1 |
-| [M3](#m3) | `bd-01M2N2QHGNAN5V3R34NP2B9Q7E` | Add typed recipe availability and scientific prerequisite reports | M1, M2 |
-| [M4](#m4) | `bd-01M2N2QJ1H158B984E0Z7YBTGK` | Expose stable source-linked diagnostics and inspectable result projections | M3, S2, S4 |
-| [G1](#g1) | `bd-01M2N2QJKD231A7MJ3NFF2H6Q6` | Qualify the three infrastructure APIs in an isolated headless app consumer | X6, S6, M4 |
+Status is as of 2026-09-17.
+
+| Key | Mote ticket | Deliverable | Direct prerequisites | Status |
+|---|---|---|---|---|
+| [X1](#x1) | `bd-01M2N2QA11Y97G7R2PR5630ZAQ` | Extract shared deterministic study preparation and pair scheduling | none | Closed 2026-09-16 |
+| [X2](#x2) | `bd-01M2N2QAK3PH8QGFAZ1YFR15W0` | Make occupancy and Gaussian estimation resumable within a trial | X1 | Deferred pending X6 measurement |
+| [X3](#x3) | `bd-01M2N2QB107Y48TXK39XK8NWBX` | Make cosine comparison and study reduction bounded and deterministic | X1 | Ready |
+| [X4](#x4) | `bd-01M2N2QBJ638R8GZAT5P2EWM33` | Add the FS2 study runner with progress, cancellation and terminal outcomes | X1, X3 | Blocked |
+| [X5](#x5) | `bd-01M2N2QC7RA8RZHW7EH2F2R9GA` | Compose recording and temporal plans through the bounded runner | X4 | Blocked |
+| [X6](#x6) | `bd-01M2N2QCWATK57DT0TEWTRJTCP` | Publish execution conformance laws and qualify responsiveness budgets | X5 | Blocked |
+| [S1](#s1) | `bd-01M2N2QDDGDDPC7Q2TRV08D03F` | Define reusable geometry, time and identity codecs for scientific payloads | none | Closed 2026-09-16 |
+| [S2](#s2) | `bd-01M2N2QDV9JB6T6AYZG3D0TT3X` | Serialize fixation-study inputs and explicit admission/source ledgers | S1 | Ready |
+| [S3](#s3) | `bd-01M2N2QEDSTM8XK40WW2SG3E8R` | Serialize normalized recordings and temporal study input payloads | S1, S2 | Blocked |
+| [S4](#s4) | `bd-01M2N2QEWQMWBSNRC30RQ5CCPP` | Encode completed scientific results, typed failures and provenance | S1, S2 | Blocked |
+| [S5](#s5) | `bd-01M2N2QFF4NCTFZFDF87ZH3ERF` | Add typed artifact manifests and an injected verifying resolver | S2, S4 | Blocked |
+| [S6](#s6) | `bd-01M2N2QFZSGT9TG6ZEK5THE1CR` | Prove fresh-process reconstruction, schema compatibility and codec laws | S3, S5 | Blocked |
+| [M1](#m1) | `bd-01M2N2QGJ7MECZAHWC01ER9CMT` | Expose typed parameter and method descriptors for the shipped recipes | none | Closed 2026-09-16 |
+| [M2](#m2) | `bd-01M2N2QH044FSDXJTERDZ5EZRS` | Thin pairing-preview facade over the PreparedStudy schedule | X1 | Ready (priority 2) |
+| [M3](#m3) | `bd-01M2N2QHGNAN5V3R34NP2B9Q7E` | Add typed recipe availability and scientific prerequisite reports | M1, X1 | Ready |
+| [M4](#m4) | `bd-01M2N2QJ1H158B984E0Z7YBTGK` | Expose stable source-linked diagnostics and inspectable result projections | M3, S2, S4 | Blocked |
+| [G0](#g0) | `bd-01M2QMC663VXY7YR6GVMDXP54Y` | Qualify the fixation-only route in the isolated headless consumer | X4, S2, S4, S5, M4 | Blocked |
+| [G1](#g1) | `bd-01M2N2QJKD231A7MJ3NFF2H6Q6` | Qualify the three infrastructure APIs in an isolated headless app consumer | X6, S6, M4, G0 | Blocked |
 
 ## Detailed tickets
 
@@ -176,7 +212,15 @@ No implementation suite was run merely to register this plan.
 ### X1 — Extract shared deterministic study preparation and pair scheduling
 
 Mote: `bd-01M2N2QA11Y97G7R2PR5630ZAQ`. Existing owner: `app-progress`.
-Priority: 0. Direct prerequisites: none; ready.
+Priority: 0. Direct prerequisites: none. **Closed 2026-09-16**; code in commit
+`34f234c`. Delivered `PreparedStudy` and `DirectedPairSchedule` with immutable
+paged candidate/diagnostic cursors, explicit source/candidate/selected budgets,
+and input/layout/plan identity stamps; `StudyPlan.run` and the temporal runner
+consume the same schedules. `PairScheduleBudget.default` is effectively
+unbounded, so a consumer that wants bounded enumeration must supply its own
+budget. Residuals recorded at triage: `PairConstruction.between` still has its
+own pairing path alongside `DirectedPairSchedule`, and the StudyGuide
+before/after parity test proposed below was not added.
 
 **Scope and proposed paths**
 
@@ -207,7 +251,12 @@ ownership and reserve only the exact files needed when starting the ticket.
 ### X2 — Make occupancy and Gaussian estimation resumable within a trial
 
 Mote: `bd-01M2N2QAK3PH8QGFAZ1YFR15W0`. Existing owner: `app-progress`.
-Priority: 1. Direct prerequisites: X1 (`bd-01M2N2QA11Y97G7R2PR5630ZAQ`).
+Priority: 1. Direct prerequisites: X1 (`bd-01M2N2QA11Y97G7R2PR5630ZAQ`, closed).
+**Deferred on 2026-09-17.** X2 is scheduled only if X4's measured responsiveness
+on pair-level quanta misses the 100 ms cancellation budget stated in the shared
+acceptance rules; X6 is where that measurement lands. Until then X4 treats one
+trial's estimation as a single quantum and X4 no longer blocks on this ticket.
+The content below is unchanged and applies if the measurement calls for it.
 
 **Scope and proposed paths**
 
@@ -270,7 +319,10 @@ ownership and reserve only the exact files needed when starting the ticket.
 ### X4 — Add the FS2 study runner with progress, cancellation and terminal outcomes
 
 Mote: `bd-01M2N2QBJ638R8GZAT5P2EWM33`. Existing owner: `app-progress`.
-Priority: 1. Direct prerequisites: X2 (`bd-01M2N2QAK3PH8QGFAZ1YFR15W0`), X3 (`bd-01M2N2QB107Y48TXK39XK8NWBX`).
+Priority: 1. Direct prerequisites: X1 (`bd-01M2N2QA11Y97G7R2PR5630ZAQ`, closed), X3 (`bd-01M2N2QB107Y48TXK39XK8NWBX`).
+The X2 edge was dropped on 2026-09-17: the runner interprets X1's pair schedule
+and X3's comparison work, with one trial's estimation as a single quantum, and
+X6 measures whether that granularity meets the budget.
 
 **Scope and proposed paths**
 
@@ -366,7 +418,10 @@ ownership and reserve only the exact files needed when starting the ticket.
 ### S1 — Define reusable geometry, time and identity codecs for scientific payloads
 
 Mote: `bd-01M2N2QDDGDDPC7Q2TRV08D03F`. Existing owner: `cd-codecs`.
-Priority: 1. Direct prerequisites: none; ready.
+Priority: 1. Direct prerequisites: none. **Closed 2026-09-16**; code in commit
+`34f234c`. Delivered `DomainCodecs`, an immutable document-scoped identity table
+and exact 64-bit microsecond strings, with v1 plan wire formats unchanged and
+published domain codec laws with killed mutants on JVM and JS.
 
 **Scope and proposed paths**
 
@@ -464,7 +519,11 @@ ownership and reserve only the exact files needed when starting the ticket.
 ### S4 — Encode completed scientific results, typed failures and provenance
 
 Mote: `bd-01M2N2QEWQMWBSNRC30RQ5CCPP`. Existing owner: `cd-codecs`.
-Priority: 1. Direct prerequisites: S1 (`bd-01M2N2QDDGDDPC7Q2TRV08D03F`), S2 (`bd-01M2N2QDV9JB6T6AYZG3D0TT3X`), S3 (`bd-01M2N2QEDSTM8XK40WW2SG3E8R`).
+Priority: 1. Direct prerequisites: S1 (`bd-01M2N2QDDGDDPC7Q2TRV08D03F`, closed), S2 (`bd-01M2N2QDV9JB6T6AYZG3D0TT3X`).
+S3 was removed as a prerequisite on 2026-09-17 so the fixation-only gate G0 does
+not wait on recording and temporal payloads; the recording and temporal result
+archives, which reference S3 input identities, land once S3 is available and
+before S6.
 
 **Scope and proposed paths**
 
@@ -499,7 +558,10 @@ ownership and reserve only the exact files needed when starting the ticket.
 ### S5 — Add typed artifact manifests and an injected verifying resolver
 
 Mote: `bd-01M2N2QFF4NCTFZFDF87ZH3ERF`. Existing owner: `cd-blobs`.
-Priority: 1. Direct prerequisites: S2 (`bd-01M2N2QDV9JB6T6AYZG3D0TT3X`), S3 (`bd-01M2N2QEDSTM8XK40WW2SG3E8R`), S4 (`bd-01M2N2QEWQMWBSNRC30RQ5CCPP`).
+Priority: 1. Direct prerequisites: S2 (`bd-01M2N2QDV9JB6T6AYZG3D0TT3X`), S4 (`bd-01M2N2QEWQMWBSNRC30RQ5CCPP`).
+S3 was removed as a prerequisite on 2026-09-17 because the manifest and verifying
+resolver serve the fixation-only gate G0 first; S3 payload references join the
+manifest before S6.
 
 **Scope and proposed paths**
 
@@ -532,7 +594,9 @@ ownership and reserve only the exact files needed when starting the ticket.
 ### S6 — Prove fresh-process reconstruction, schema compatibility and codec laws
 
 Mote: `bd-01M2N2QFZSGT9TG6ZEK5THE1CR`. Existing owner: `cd-roundtrip`.
-Priority: 1. Direct prerequisites: S5 (`bd-01M2N2QFF4NCTFZFDF87ZH3ERF`).
+Priority: 1. Direct prerequisites: S5 (`bd-01M2N2QFF4NCTFZFDF87ZH3ERF`), S3 (`bd-01M2N2QEDSTM8XK40WW2SG3E8R`).
+The S3 edge was made explicit on 2026-09-17: it no longer reaches S6 through S4
+and S5, and the recording and temporal examples below need it.
 
 **Scope and proposed paths**
 
@@ -565,7 +629,12 @@ ownership and reserve only the exact files needed when starting the ticket.
 ### M1 — Expose typed parameter and method descriptors for the shipped recipes
 
 Mote: `bd-01M2N2QGJ7MECZAHWC01ER9CMT`. Existing owner: `app-measureinfo`.
-Priority: 1. Direct prerequisites: none; ready.
+Priority: 1. Direct prerequisites: none. **Closed 2026-09-16**; code in commit
+`34f234c`. Delivered typed `ParameterDescriptor` values, versioned field
+metadata, checked parameter sets and typed score/difference components for the
+shipped cosine and I-VT methods across all three plan families, documented in
+[METHOD_DESCRIPTORS.md](METHOD_DESCRIPTORS.md); arbitrary closures keep the
+synchronous whole-operation capability.
 
 **Scope and proposed paths**
 
@@ -596,16 +665,21 @@ ownership and reserve only the exact files needed when starting the ticket.
 
 <a id="m2"></a>
 
-### M2 — Expose bounded pairing previews from the executable study schedule
+### M2 — Thin pairing-preview facade over the PreparedStudy schedule
 
 Mote: `bd-01M2N2QH044FSDXJTERDZ5EZRS`. Existing owner: `app-prereq`.
-Priority: 1. Direct prerequisites: X1 (`bd-01M2N2QA11Y97G7R2PR5630ZAQ`).
+Priority: 2. Direct prerequisites: X1 (`bd-01M2N2QA11Y97G7R2PR5630ZAQ`, closed).
+**Rescoped on 2026-09-17.** The schedule, paged `PairCursor`, budgets,
+`PairingReport` and identity stamps shipped in X1; `PreparedStudy` already
+exposes excluded phases, matched/control edges, ambiguities and candidate
+counts without density evaluation. What remains is the residual recorded on the
+Mote ticket: a thin preview facade, the reduction-policy field, and
+page-versus-exhaustive truth-table tests.
 
 **Scope and proposed paths**
 
 - `plan/src/main/scala/eyes4s/plan/StudyPreview.scala (new)`
-- `plan/src/main/scala/eyes4s/plan/StudyWork.scala (new)`
-- `design/src/main/scala/eyes4s/design/Paired.scala`
+- `plan/src/main/scala/eyes4s/plan/StudyWork.scala`
 - `plan/src/test/scala/eyes4s/plan/StudyPreviewSuite.scala (new)`
 
 These are implementation boundaries, not active reservations. Inspect current
@@ -613,24 +687,26 @@ ownership and reserve only the exact files needed when starting the ticket.
 
 **Implementation**
 
-- Provide typed preview access to matched/control keys, eligible pair counts, unmatched/ambiguous groups, excluded phases and the declared reduction policy from X1's exact prepared schedule.
-- Expose bounded/pageable inspection so a preview does not allocate every pair or compute maps merely to list candidates. Stamp the preview with input/layout/plan identity.
-- Specify deterministic ordering and distinction between design-known counts and runtime successful/contributing counts. Previewing eligibility cannot certify future numerical success.
+- Add a thin facade over `PreparedStudy` that presents matched/control keys, eligible pair counts, unmatched/ambiguous groups and excluded phases through the existing paged cursor; do not add a second pairing path or recompute the schedule.
+- Add the declared reduction policy to the preview so a consumer sees what execution will reduce before it runs.
+- Keep the X1 identity stamps and deterministic ordering; distinguish design-known counts from runtime successful/contributing counts. Previewing eligibility cannot certify future numerical success.
 
 **Proposed tests**
 
 - Independent manual pair truth tables with duplicates, no controls, empty phases, participant strata and repeated-stimulus occurrence keys.
-- For completed runs, preview eligible edges/counts agree with actual scheduled edges, while injected numerical failures change success counts only.
-- Concatenate bounded pages and compare to independent exhaustive enumeration for small studies; verify no density/comparison calls occur and changed plan/input invalidates the old preview.
+- Concatenate bounded pages and compare to independent exhaustive enumeration for small studies; verify no density/comparison calls occur and a changed plan/input invalidates the old preview.
+- The reduction-policy field agrees with the plan description and the saved encoding.
 
-**Completion criterion:** Consumers can show actual matching/control choices before computation using the same design that execution will consume.
+**Completion criterion:** Consumers can show actual matching/control choices and the reduction policy before computation, through the same prepared schedule that execution consumes.
 
 <a id="m3"></a>
 
 ### M3 — Add typed recipe availability and scientific prerequisite reports
 
 Mote: `bd-01M2N2QHGNAN5V3R34NP2B9Q7E`. Existing owner: `app-prereq`.
-Priority: 1. Direct prerequisites: M1 (`bd-01M2N2QGJ7MECZAHWC01ER9CMT`), M2 (`bd-01M2N2QH044FSDXJTERDZ5EZRS`).
+Priority: 1. Direct prerequisites: M1 (`bd-01M2N2QGJ7MECZAHWC01ER9CMT`, closed), X1 (`bd-01M2N2QA11Y97G7R2PR5630ZAQ`, closed); ready.
+The M2 edge was dropped at triage on 2026-09-17: preflight needs M1's descriptors
+and X1's prepared schedule, not the preview facade.
 
 **Scope and proposed paths**
 
@@ -691,12 +767,48 @@ ownership and reserve only the exact files needed when starting the ticket.
 
 **Completion criterion:** An external UI can navigate results and errors back to scientific observations without deriving identity or scientific meaning from presentation text.
 
+<a id="g0"></a>
+
+### G0 — Qualify the fixation-only route in the isolated consumer
+
+Mote: `bd-01M2QMC663VXY7YR6GVMDXP54Y`. Existing owner: `bd-01M02N4GM03BF98C3PSJS6D4WA`.
+Priority: 1. Direct prerequisites: X4 (`bd-01M2N2QBJ638R8GZAT5P2EWM33`), S2 (`bd-01M2N2QDV9JB6T6AYZG3D0TT3X`), S4 (`bd-01M2N2QEWQMWBSNRC30RQ5CCPP`), S5 (`bd-01M2N2QFF4NCTFZFDF87ZH3ERF`), M4 (`bd-01M2N2QJ1H158B984E0Z7YBTGK`).
+Added on 2026-09-17 as an intermediate gate. It proves the app vision's first
+journey, fixation table in and cosine study out with save/reload/rerun,
+progress and cancellation, before any recording or temporal payload exists.
+
+**Scope and proposed paths**
+
+- `tools/study-consumer/verify.py`
+- `tools/study-consumer/build.sbt`
+- `tools/study-consumer/src/ (bounded fixation-route consumer example)`
+- `docs/UI_FOUNDATION_PLAN.md`
+- `docs/SAVED_STUDIES.md`
+
+These are implementation boundaries, not active reservations. Inspect current
+ownership and reserve only the exact files needed when starting the ticket.
+
+**Implementation**
+
+- Extend the isolated packaged-artifact consumer with one scripted fixation journey: import a fixation CSV through S2's input codec and source ledger, discover the cosine recipe through M1 descriptors, preflight it through M3, inspect the X1 pair schedule, run it through the X4 FS2 runner with progress and cancellation, and inspect source-linked results through M4.
+- Archive the run through S4's result codecs and S5's manifest and verifying resolver; reload and rerun in a fresh process and compare complete values, keys, failures and denominators with the pure runner.
+- Fixation inputs only: no RecordingPlan, TemporalStudyPlan, S3 payloads, X5 execution or X6 laws and budget measurement. The consumer supplies explicit `PairScheduleBudget` values; the default is effectively unbounded.
+- Pin candidate/package versions and emit a receipt. No source-tree project dependency, package-private helpers or GUI runtime.
+
+**Proposed tests**
+
+- Scripted happy path plus cancelled run, stale revision, failed-pair, missing/changed artifact and over-budget schedule paths; assert exact terminal outcomes and retained evidence.
+- Pinned rational cosine and decimal Gaussian fixtures as numerical oracles; fresh-process identity reconstruction with exact keys, 64-bit times and semantic digests, and a named Tolerance for Gaussian values.
+- Run compileAll, testAll and checkBoundaries plus the consumer verify script on JVM, and on JS where the payloads are portable.
+
+**Completion criterion:** A separate process can take a fixation table to a saved, reloaded and rerun cosine study through published eyes4s APIs, with observable progress and cancellation, without recording or temporal support. Closing G0 does not close G1, X5, X6, S3 or S6.
+
 <a id="g1"></a>
 
 ### G1 — Qualify the three infrastructure APIs in an isolated headless app consumer
 
 Mote: `bd-01M2N2QJKD231A7MJ3NFF2H6Q6`. Existing owner: `bd-01M214CXBZN8R7R4P0M5ACY25H`.
-Priority: 1. Direct prerequisites: X6 (`bd-01M2N2QCWATK57DT0TEWTRJTCP`), S6 (`bd-01M2N2QFZSGT9TG6ZEK5THE1CR`), M4 (`bd-01M2N2QJ1H158B984E0Z7YBTGK`).
+Priority: 1. Direct prerequisites: X6 (`bd-01M2N2QCWATK57DT0TEWTRJTCP`), S6 (`bd-01M2N2QFZSGT9TG6ZEK5THE1CR`), M4 (`bd-01M2N2QJ1H158B984E0Z7YBTGK`), G0 (`bd-01M2QMC663VXY7YR6GVMDXP54Y`).
 
 **Scope and proposed paths**
 
@@ -741,7 +853,7 @@ for the scoped work are:
 | `pl-display` | M1 — `bd-01M2N2QGJ7MECZAHWC01ER9CMT` |
 | `app-prereq` | M3 — `bd-01M2N2QHGNAN5V3R34NP2B9Q7E` |
 | `app-errors` | M4 — `bd-01M2N2QJ1H158B984E0Z7YBTGK` |
-| `bd-01M02N4GM03BF98C3PSJS6D4WA` | G1 — `bd-01M2N2QJKD231A7MJ3NFF2H6Q6` |
+| `bd-01M02N4GM03BF98C3PSJS6D4WA` | G0 — `bd-01M2QMC663VXY7YR6GVMDXP54Y` (intermediate), then G1 — `bd-01M2N2QJKD231A7MJ3NFF2H6Q6` |
 
 These gates do not replace old requirements or auto-close any parent. In particular,
 the broader `app-prereq` Session/AOI/anchored-timeline scope, all-method metadata
@@ -750,7 +862,23 @@ against the already implemented APIs without inheriting unrelated milestone bloc
 G1 also belongs to the existing M5 external-consumer issue
 `bd-01M214CXBZN8R7R4P0M5ACY25H`.
 
+**Tracker changes on 2026-09-17**, recorded against
+[the triage](TRACKER_TRIAGE_2026-09-17.md) by the `claude-eyes4s-backlog` actor:
+
+- X1, S1 and M1 were closed on 2026-09-16 by the implementing actor; the
+  planning ticket `bd-01M2N2EHPN8XGSRHCMXF65NHAQ` is closed.
+- M3 no longer blocks on M2 (dropped at triage). M2 was retitled and rescoped to
+  its residual at priority 2.
+- S4 and S5 no longer block on S3; each carries a note citing the triage. S6
+  now blocks on S3 explicitly, since the edge no longer reaches it transitively.
+- X4 no longer blocks on X2; X2 carries a decision note that it is scheduled only
+  if X6's measurement shows pair-level quanta miss the 100 ms budget.
+- G0 was registered as `bd-01M2QMC663VXY7YR6GVMDXP54Y` under
+  `bd-01M02N4GM03BF98C3PSJS6D4WA`, blocked by X4, S2, S4, S5 and M4; G1 is now
+  also blocked by G0.
+- Closed prerequisites (X1, S1, M1) are not re-added as tracker edges; the
+  tables above list them for readability only.
+
 Use `mote ls --tag ui-foundation` to list this work, and `mote show <id>`
-to read a ticket's independent scope, tests and acceptance criterion. New tickets
-remain open/unassigned after planning. Only the planning/registration ticket is
-closed when the document and dependency graph have been verified.
+to read a ticket's independent scope, tests and acceptance criterion. Open
+tickets remain unassigned until someone starts them.
