@@ -42,6 +42,12 @@
     {"id": "reuse-export", "label": "Reuse, inspect, and export results", "required_entry_points": ["template_similarity", "repetitive_similarity", "sample_density_time"]}
   ],
   "fixtures": {
+    "admission-reference": {
+      "path": "tools/r-parity/fixtures/admission.json",
+      "sha256": "23a3f8b8e90e113ea037020696a63c93d246882ab1b60e150c1bb61824651acf",
+      "license": "Apache-2.0",
+      "role": "Pinned public admission behavior, R environment and independently checked row/coordinate/time accounting"
+    },
     "baseline-small": {
       "path": "tools/r-parity/fixtures/baseline-cases.json",
       "sha256": "0b2e5036ee1c8aee63e27b3a99d08f8e4bffa3402e9ff67e4cba5bd68aef0300",
@@ -122,6 +128,11 @@
     }
   },
   "regeneration": {
+    "admission-reference": {
+      "command": "python3 tools/r-parity/generate_admission.py --eyesim {eyesim} --check",
+      "requires_eyesim": true,
+      "outputs": ["admission-reference"]
+    },
     "matched-reference": {
       "command": "python3 tools/r-parity/generate_reference.py --eyesim {eyesim} --check",
       "requires_eyesim": true,
@@ -167,13 +178,14 @@
       "estimand": "One ordered fixation-summary group per declared trial key.",
       "conventions": ["x/y are spatial coordinates", "onset and duration use caller-supplied units", "eye_table clips to bounds before grouping", "eyes4s must account for every accepted or rejected input row"],
       "backend_dependencies": ["base R", "dplyr", "tibble", "assertthat"],
-      "eyes4s_public_api": ["FixationCsv.read", "Event.Fixation", "Scanpath.fromFixations", "Trials.from"],
-      "fixture_inputs": ["baseline-small", "matched-control"],
+      "eyes4s_public_api": ["FixationCsv.read", "Event.Fixation", "Scanpath.of", "Trials.apply"],
+      "fixture_inputs": ["baseline-small", "matched-control", "admission-reference"],
       "independent_case": "Row ids valid-a, outside-left and zero-duration distinguish clipping from explicit row/trial rejection.",
-      "status": "implementation-gap",
-      "evidence": ["docs/FIXATION_STUDIES.md", "io/src/test/scala/eyes4s/io/FixationStudySuite.scala"],
-      "gap_issue": "eyesim-admission",
-      "planned_evidence": "Pinned R output for clipping, grouping, ordering and invalid values plus portable accounting assertions."
+      "status": "verified-intentional-divergence",
+      "evidence": ["docs/FIXATION_STUDIES.md", "tools/r-parity/fixtures/admission.json", "io/src/test/scala/eyes4s/io/AdmissionConformanceSuite.scala", "io/src/test/scala/eyes4s/io/AdmissionReference.scala"],
+      "gap_issue": null,
+      "regeneration_ids": ["admission-reference"],
+      "divergence": "Valid coordinates and explicit times agree. eyesim clips outside and NA positions, accepts zero durations, duplicate/unsorted fixations and closed upper bounds, errors on empty groups, and reclassifies arbitrary tables. eyes4s uses half-open geometry and positive intervals, explicit ordinal order and whole-trial quarantine with every rejected source row retained. Coordinate conversion is an explicit Warp, not an import default."
     },
     {
       "id": "basic-coordinate-transforms",

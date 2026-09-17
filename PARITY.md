@@ -12,8 +12,26 @@ across all 13 required rows:
 | Status | Cases | Meaning |
 |---|---:|---|
 | Verified equivalent | 4 | Exhaustive matched/control cosine on the pinned fixed-grid study; supplied coordinate transforms (center, rescale, normalize) with an exact affine oracle; entropy of supplied positive maps; the two-map mean and difference. |
-| Verified intentional divergence | 7 | Matched/control failure semantics, windowed duration-mass analysis, typed current result exports, the log ratio at zero cells and the absent product, signed maps treated as mass, phase-only versus within-participant repetition cosine, and fixed-feature trial fitting versus normalized-map regression. |
-| Implementation gap | 15 | Each case names a live task and selected falsification input; no parity is claimed. |
+| Verified intentional divergence | 8 | Explicit fixation admission; matched/control failure semantics; windowed duration-mass analysis; typed current result exports; log ratio at zero cells and the absent product; signed maps treated as mass; phase-only versus within-participant repetition cosine; fixed-feature trial fitting versus normalized-map regression. |
+| Implementation gap | 14 | Each case names a live task and selected falsification input; no parity is claimed. |
+
+## Fixation admission: measured differences
+
+The [pinned admission fixture](tools/r-parity/fixtures/admission.json) calls `eye_table`,
+`fixation_group`, `coords` and `as_eye_table`. Valid coordinates and explicitly declared
+millisecond times agree exactly. On the four selected rows, eyesim clips `outside-left`, retains
+`zero-duration`, and returns the remaining three fixations. eyes4s rejects both defects and
+quarantines the other row in their trial: `valid-b` is accepted and all three trial-a source rows
+remain in the rejection ledger. No partial trial is analyzed by default.
+
+Reference probes also retain unsorted/duplicate fixations and closed upper boundaries; missing
+coordinates disappear. `eye_table` rejects negative duration but `fixation_group` accepts it.
+Both empty constructors error, and `as_eye_table` reclasses an unrelated table without validation.
+eyes4s instead enforces positive intervals, half-open frames and explicit ordinal ordering, accepts
+an empty import as empty data, and rejects malformed headers. Shifted/reversed reference bounds
+are measured separately; eyes4s requires an explicit coordinate warp rather than an import default.
+The independent oracle checks retained groups, coordinates and times; portable
+`AdmissionConformanceSuite` checks source identity, exact row accounting and these rejection rules.
 
 ## Verified R reference and analytic results
 

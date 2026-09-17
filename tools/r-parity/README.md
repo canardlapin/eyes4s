@@ -38,6 +38,7 @@ python3 tools/r-parity/generate_transforms.py --eyesim /path/to/eyesim --check
 python3 tools/r-parity/generate_entropy.py --eyesim /path/to/eyesim --check
 python3 tools/r-parity/generate_repetition.py --eyesim /path/to/eyesim --check
 python3 tools/r-parity/generate_template.py --eyesim /path/to/eyesim --check
+python3 tools/r-parity/generate_admission.py --eyesim /path/to/eyesim --check
 python3 tools/r-parity/generate_multiscale.py --check
 python3 tools/r-parity/generate_temporal.py --check
 ```
@@ -66,6 +67,13 @@ on the supplied duration maps, including duplicated rows, singleton and empty in
 rational dot products check its phase-only grouping and the different within-participant
 reinstatement estimand. See [repetition studies](../../docs/REPETITION_STUDIES.md) for the compiled
 direct and saved-plan workflows; other methods and multiscale reductions remain gaps.
+
+The admission generator measures public `eye_table`, `fixation_group`, `coords` and
+`as_eye_table` calls at the same pinned revision. It records clipping, row ordering, duplicate
+onsets, zero/negative durations, missing coordinates, upper-bound closure, shifted/flipped
+bounds and empty inputs. An independent clipping oracle checks the retained reference rows;
+portable tests check eyes4s' explicit whole-trial rejection ledger and half-open bounds.
+Valid coordinate and timing values agree, but admission policies intentionally differ.
 
 The independent multiscale and temporal generators do not call eyesim. They establish eyes4s
 scientific cases while the corresponding eyesim KDE and temporal point-sampling cases remain open.
@@ -100,6 +108,9 @@ python3 tools/r-parity/check_baseline.py \
 - `fixtures/entropy.json`: pinned public eyesim `fixation_entropy` and `Ops.eye_density` output on
   the entropy lattice, including non-finite cells, `NA` entropies and errors, R environment, and
   the exact and decimal oracle.
+- `fixtures/admission.json`: public constructor/accessor results and errors, independent row
+  retention and coordinate checks, source identity and runtime versions. Generated
+  `io/.../AdmissionReference.scala` is consumed by the portable admission conformance suite.
 - `fixtures/multiscale.json`: 60-digit closed-form eyes4s Gaussian oracle at three scales.
 - `fixtures/repetition.json`: phase-only cosine R output, runtime versions and independent
   within-participant pair/mean expectations, consumed by `design/.../RepetitionReference.scala`.

@@ -12,7 +12,7 @@ python3 tools/r-parity/check_baseline.py \
 ```
 
 The contract currently contains 13 required rows and 26 classified cases: four verified equivalent,
-seven verified intentional divergences and fifteen implementation gaps. This is a finite work list,
+eight verified intentional divergences and fourteen implementation gaps. This is a finite work list,
 not a parity percentage. A row remains open while any required case is a gap.
 
 ## Reference and classification
@@ -60,7 +60,7 @@ export/reimport boundary.
 
 | Scientific task and case ids | eyesim entry points, methods and estimand | eyes4s contract and current evidence | Status and owner |
 |---|---|---|---|
-| Construct and group fixation data (`fixation-table-admission`) | `fixation_group`, `eye_table`, `as_eye_table`, `coords`; one ordered fixation-summary group per trial. Measure bounds clipping, relative coordinates, grouping, onset/duration units and invalid rows. | `FixationCsv`, `Event.Fixation`, `Scanpath`, `Trials`; the guide already proves typed keys and accepted/rejected row accounting without fabricating raw samples. | **Gap — `eyesim-admission`.** Pinned R clipping, ordering and invalid-value output is missing. |
+| Construct and group fixation data (`fixation-table-admission`) | `fixation_group`, `eye_table`, `as_eye_table`, `coords`; one ordered fixation-summary group per trial. Bounds clipping, relative coordinates, grouping, onset/duration units and invalid rows are pinned. | `FixationCsv`, `Event.Fixation`, `Scanpath`, `Trials`; valid coordinates/times agree. Rejected rows and whole-trial quarantine remain explicit rather than clipping or accepting invalid intervals. Shifted/flipped reference bounds and empty/duplicate/negative/nonfinite cases are measured. | **Intentional divergence** ([admission.json](../tools/r-parity/fixtures/admission.json), `io/.../AdmissionConformanceSuite.scala`). |
 | Transform spatial coordinates (`basic-coordinate-transforms`, `fitted-density-transforms`) | `center`, `rescale`, `normalize`; supplied coordinate maps on a fixation group. `affine_transform`, `contract_transform`; density-space maps fitted from matched density moments and applied by bilinear resampling, not coordinate maps. Coordinate normalization must remain distinct from mass normalization. | `Frame`, `Warp`, `Perspective`, `Scanpath.warp` reproduce the pinned center, mean-center, rescale and normalize outputs on the non-square 100-by-50 bounds with explicit frames and y-axes. The homogeneous affine, a training-only three-pair solve and the excluded held-out point are exact-oracle targets with axis-swap and no-translation mutants; eyesim has no coordinate affine entry point. No fitting backend exists in pure modules. | **Equivalent** for the supplied maps ([transforms.json](../tools/r-parity/fixtures/transforms.json), `core/.../TransformConformanceSuite.scala`); **gap — `eyesim-transform`** for the fitted density-moment `affine_transform`/`contract_transform`, whose response to coordinate tables is pinned and which eyes4s does not implement. |
 | Describe and compare scanpaths (`scanpath-multimatch`, `fixation-overlap-and-transport`) | `scanpath`, `scanpath_similarity`, `multi_match`, `fixation_similarity`, `fixation_overlap`; MultiMatch vector/direction/length/position/duration plus eyesim's position EMD, and overlap/Sinkhorn with explicit thresholds, time step and metric. | `Scanpath`, `Alignment`, `MultiMatch`, `Transport`, `Lift`; existing Python MultiMatch conformance is kept separate from eyesim evidence. | **Gaps — `eyesim-scanpath`.** The pinned R MultiMatch, overlap and transport cases remain unmeasured. |
 | Estimate and sample density (`kde-estimation-and-bandwidth`, `density-point-evaluation`) | `eye_density`, `density_by`, `get_density`, `gen_density`, `suggest_sigma`, `sample_density`; weighted KDE or normalized mass on an explicit grid, then deterministic point evaluation. Pin `ks` versus `MASS`, sigma, bounds, outdim, window, minimum fixations, edges, interpolation and none/max/sum/zscore normalization. | `PointMeasure`, Gaussian `Smoother`, `Bandwidth`, `Grid`, `Mass`, `Intensity`, `Surface.sampleAt`; a 5-by-3 adversarial input is selected. | **Gaps — `eyesim-kde`**; public surface totality (`Surface.at`, `Grid.indexAt`/`cellCentre` returning `Option`) is delivered. |
@@ -86,6 +86,7 @@ Implemented evidence is reproducible with:
 
 ```sh
 python3 tools/r-parity/generate_reference.py --eyesim /path/to/eyesim --check
+python3 tools/r-parity/generate_admission.py --eyesim /path/to/eyesim --check
 python3 tools/r-parity/generate_transforms.py --eyesim /path/to/eyesim --check
 python3 tools/r-parity/generate_entropy.py --eyesim /path/to/eyesim --check
 python3 tools/r-parity/generate_repetition.py --eyesim /path/to/eyesim --check
@@ -94,11 +95,11 @@ python3 tools/r-parity/generate_multiscale.py --check
 python3 tools/r-parity/generate_temporal.py --check
 ```
 
-The first five commands archive the pinned Git object, install that source into a temporary R
+The first six commands archive the pinned Git object, install that source into a temporary R
 library, and invoke exported eyesim functions; each records the observed R and package versions.
 The other commands are independent rational, integer-overlap or high-precision decimal oracles and
 do not call eyesim. Use `check_baseline.py --run-regeneration --eyesim /path/to/eyesim` to run all
-seven.
+eight.
 Portable JVM and Scala.js tests consume generated values without starting R or reading runtime
 fixtures.
 
