@@ -283,8 +283,209 @@ def evaluatePairs[KL, ML, KR, MR, A, B, E, S](
     info
   )
 
+/** Page and comparison quanta for one resumable step. `pairs` also bounds the
+  * contributions or keys visited by one reduction or contrast step.
+  */
+final case class WorkQuanta(pairs: PairQuantum, comparison: ComparisonQuantum)
+object WorkQuanta:
+  val default: WorkQuanta = WorkQuanta(PairQuantum.default, ComparisonQuantum.default)
+
+/** Typed evidence of how one scheduled pair is evaluated.
+  *
+  * A [[PairEvaluation.Whole]] closure runs as one indivisible operation per
+  * pair; the schedule is still paged, so cancellation is bounded at pair
+  * granularity only. [[PairEvaluation.Bounded]] needs a [[BoundedCompare]],
+  * whose cursor yields inside each pair; an arbitrary closure cannot be lifted
+  * into it.
+  */
+sealed trait PairEvaluation[KL, KR, E, S]
+
+object PairEvaluation:
+  final class Whole[KL, KR, E, S](
+      val evaluate: ScheduledPair[KL, KR] => Either[E, S]
+  ) extends PairEvaluation[KL, KR, E, S]
+
+  final class Bounded[KL, KR, A, B, E, S](
+      val comparison: BoundedCompare[A, B, S],
+      val budget: ComparisonBudget,
+      val operands: ScheduledPair[KL, KR] => Either[E, (A, B)],
+      val failure: (ScheduledPair[KL, KR], CompareError) => E
+  ) extends PairEvaluation[KL, KR, E, S]
+
+/** Refusals while advancing scheduled evaluation; every case names its operands. */
+enum EvaluationWorkError derives CanEqual:
+  case Schedule(underlying: PairScheduleError)
+  case Comparison(underlying: ComparisonWorkError)
+
+  def message: String = this match
+    case Schedule(e)   => e.message
+    case Comparison(e) => e.message
+
+/** One step of scheduled evaluation. `workUnits` counts candidate visits for a
+  * schedule page, one unit for beginning or wholly evaluating a pair, and
+  * comparison units inside a bounded pair.
+  */
+enum EvaluationPage[KL, KR, E, S]:
+  case More(workUnits: Int, next: EvaluationCursor[KL, KR, E, S])
+  case Done(workUnits: Int, analysis: DirectedPairwiseAnalysis[KL, KR, E, S])
+
+/** An immutable position inside scheduled evaluation. Scores accumulate in
+  * schedule order, so the completed analysis does not depend on the quanta.
+  *
+  * Beginning a bounded pair whose comparison is already decided (for example
+  * incompatible grids) costs one unit, and the next step records its outcome
+  * as a zero-unit `More`. Drivers must treat a zero-unit step as progress, not
+  * a stall, and must not assume `workUnits <= quanta.comparison`.
+  */
+final class EvaluationCursor[KL, KR, E, S] private[design] (
+    private val evaluation: PairEvaluation[KL, KR, E, S],
+    private val inputs: ContentHash,
+    private val info: EvaluationInfo,
+    private val schedule: Either[PairingReport[KL, KR], PairCursor[KL, KR]],
+    private val pending: Vector[ScheduledPair[KL, KR]],
+    private val offset: Int,
+    private val current: Option[Comparing[KL, KR, E, S]],
+    private val rows: Vector[PairScore[KL, KR, E, S]]
+):
+  /** Pairs whose outcome is already recorded. */
+  def completedPairs: Int = rows.size
+
+  def advance(
+      quanta: WorkQuanta
+  ): Either[EvaluationWorkError, EvaluationPage[KL, KR, E, S]] =
+    current match
+      case Some(comparing) =>
+        Right(comparing.cursor.advance(quanta.comparison) match
+          case ComparisonStep.More(units, next) =>
+            EvaluationPage.More(units, copy(current = Some(comparing.continue(next))))
+          case ComparisonStep.Done(units, result) =>
+            EvaluationPage.More(
+              units,
+              copy(current = None, rows = rows :+ comparing.score(result))
+            ))
+      case None if offset < pending.size =>
+        val pair = pending(offset)
+        evaluation match
+          case whole: PairEvaluation.Whole[KL, KR, E, S] =>
+            Right(
+              EvaluationPage.More(
+                1,
+                copy(
+                  offset = offset + 1,
+                  rows = rows :+ PairScore(pair.left, pair.right, whole.evaluate(pair))
+                )
+              )
+            )
+          case bounded: PairEvaluation.Bounded[KL, KR, ?, ?, E, S] =>
+            begin(bounded, pair).map { started =>
+              EvaluationPage.More(
+                1,
+                started match
+                  case Left(error) =>
+                    copy(
+                      offset = offset + 1,
+                      rows = rows :+ PairScore(pair.left, pair.right, Left(error))
+                    )
+                  case Right(comparing) => copy(offset = offset + 1, current = Some(comparing))
+              )
+            }
+      case None =>
+        schedule match
+          case Right(cursor) =>
+            cursor.advance(quanta.pairs) match
+              case Left(error) => Left(EvaluationWorkError.Schedule(error))
+              case Right(PairPage.More(pairs, units, next)) =>
+                Right(
+                  EvaluationPage
+                    .More(units, copy(schedule = Right(next), pending = pairs, offset = 0))
+                )
+              case Right(PairPage.Done(pairs, units, report)) =>
+                Right(
+                  EvaluationPage
+                    .More(units, copy(schedule = Left(report), pending = pairs, offset = 0))
+                )
+          case Left(report) =>
+            Right(
+              EvaluationPage.Done(
+                0,
+                DirectedPairwiseAnalysis(
+                  rows,
+                  report,
+                  EvaluationProvenance(inputs, info, report, rows),
+                  info
+                )
+              )
+            )
+
+  private def begin[A, B](
+      bounded: PairEvaluation.Bounded[KL, KR, A, B, E, S],
+      pair: ScheduledPair[KL, KR]
+  ): Either[EvaluationWorkError, Either[E, Comparing[KL, KR, E, S]]] =
+    bounded.operands(pair) match
+      case Left(error)   => Right(Left(error))
+      case Right((a, b)) =>
+        ComparisonWork
+          .start(bounded.comparison, a, b, bounded.budget)
+          .left
+          .map(EvaluationWorkError.Comparison.apply)
+          .map(cursor => Right(Comparing(pair, cursor, bounded.failure)))
+
+  private def copy(
+      schedule: Either[PairingReport[KL, KR], PairCursor[KL, KR]] = schedule,
+      pending: Vector[ScheduledPair[KL, KR]] = pending,
+      offset: Int = offset,
+      current: Option[Comparing[KL, KR, E, S]] = current,
+      rows: Vector[PairScore[KL, KR, E, S]] = rows
+  ): EvaluationCursor[KL, KR, E, S] =
+    new EvaluationCursor(evaluation, inputs, info, schedule, pending, offset, current, rows)
+
+/** A bounded comparison in progress for one scheduled pair. */
+private final case class Comparing[KL, KR, E, S](
+    pair: ScheduledPair[KL, KR],
+    cursor: ComparisonCursor[S],
+    failure: (ScheduledPair[KL, KR], CompareError) => E
+):
+  def continue(next: ComparisonCursor[S]): Comparing[KL, KR, E, S]    = copy(cursor = next)
+  def score(result: Either[CompareError, S]): PairScore[KL, KR, E, S] =
+    PairScore(pair.left, pair.right, result.left.map(failure(pair, _)))
+
+object EvaluationWork:
+  /** Begin resumable evaluation of every scheduled pair. No pair is visited here. */
+  def start[KL, KR, E, S](
+      schedule: DirectedPairSchedule[KL, KR],
+      inputs: ContentHash,
+      info: EvaluationInfo,
+      evaluation: PairEvaluation[KL, KR, E, S]
+  ): EvaluationCursor[KL, KR, E, S] =
+    new EvaluationCursor(
+      evaluation,
+      inputs,
+      info,
+      Right(schedule.start),
+      Vector.empty,
+      0,
+      None,
+      Vector.empty
+    )
+
+  /** Drive a cursor to completion with fixed quanta. */
+  def complete[KL, KR, E, S](
+      cursor: EvaluationCursor[KL, KR, E, S],
+      quanta: WorkQuanta
+  ): Either[EvaluationWorkError, DirectedPairwiseAnalysis[KL, KR, E, S]] =
+    @annotation.tailrec
+    def loop(
+        cursor: EvaluationCursor[KL, KR, E, S]
+    ): Either[EvaluationWorkError, DirectedPairwiseAnalysis[KL, KR, E, S]] =
+      cursor.advance(quanta) match
+        case Left(error)                             => Left(error)
+        case Right(EvaluationPage.More(_, next))     => loop(next)
+        case Right(EvaluationPage.Done(_, analysis)) => Right(analysis)
+    loop(cursor)
+
 /** Evaluate bounded pair pages without retaining a second table of source pairs.
-  * Completed scores remain fully materialized for the existing reduction API.
+  * The evaluator runs whole per pair; completed scores remain fully
+  * materialized for the existing reduction API.
   */
 def evaluateScheduled[KL, KR, E, S](
     schedule: DirectedPairSchedule[KL, KR],
@@ -293,33 +494,11 @@ def evaluateScheduled[KL, KR, E, S](
     quantum: PairQuantum = PairQuantum.default
 )(
     evaluator: ScheduledPair[KL, KR] => Either[E, S]
-): Either[PairScheduleError, DirectedPairwiseAnalysis[KL, KR, E, S]] =
-  val rows = Vector.newBuilder[PairScore[KL, KR, E, S]]
-  def append(pairs: Vector[ScheduledPair[KL, KR]]): Unit =
-    pairs.foreach(p => rows += PairScore(p.left, p.right, evaluator(p)))
-
-  @annotation.tailrec
-  def loop(
-      cursor: PairCursor[KL, KR]
-  ): Either[PairScheduleError, DirectedPairwiseAnalysis[KL, KR, E, S]] =
-    cursor.advance(quantum) match
-      case Left(error)                          => Left(error)
-      case Right(PairPage.More(pairs, _, next)) =>
-        append(pairs)
-        loop(next)
-      case Right(PairPage.Done(pairs, _, report)) =>
-        append(pairs)
-        val scores = rows.result()
-        Right(
-          DirectedPairwiseAnalysis(
-            scores,
-            report,
-            EvaluationProvenance(inputs, info, report, scores),
-            info
-          )
-        )
-
-  loop(schedule.start)
+): Either[EvaluationWorkError, DirectedPairwiseAnalysis[KL, KR, E, S]] =
+  EvaluationWork.complete(
+    EvaluationWork.start(schedule, inputs, info, PairEvaluation.Whole(evaluator)),
+    WorkQuanta(quantum, ComparisonQuantum.default)
+  )
 
 /** Evaluate canonical-undirected pairs only with explicit symmetry evidence. */
 def evaluatePairs[K, M, A, E, S](
@@ -362,11 +541,23 @@ extension [KL, KR, E, S](analysis: DirectedPairwiseAnalysis[KL, KR, E, S])
   def meanByLeft(
       policy: FailurePolicy
   )(using ScoreMean[S]): Analysis[KL, S] =
-    Reduction.byLeft(analysis, policy)
+    ReductionWork.complete(meanByLeftWork(policy))
 
   def meanByRight(
       policy: FailurePolicy
   )(using ScoreMean[S]): Analysis[KR, S] =
+    ReductionWork.complete(meanByRightWork(policy))
+
+  /** The same reduction as [[meanByLeft]], in resumable steps. */
+  def meanByLeftWork(
+      policy: FailurePolicy
+  )(using ScoreMean[S]): ReductionCursor[KL, S] =
+    Reduction.byLeft(analysis, policy)
+
+  /** The same reduction as [[meanByRight]], in resumable steps. */
+  def meanByRightWork(
+      policy: FailurePolicy
+  )(using ScoreMean[S]): ReductionCursor[KR, S] =
     Reduction.byRight(analysis, policy)
 
 extension [K, E, S](analysis: UndirectedPairwiseAnalysis[K, E, S])
@@ -374,12 +565,138 @@ extension [K, E, S](analysis: UndirectedPairwiseAnalysis[K, E, S])
   def meanEdges(
       policy: FailurePolicy
   )(using ScoreMean[S]): Analysis[Unit, S] =
-    Reduction.edges(analysis, policy)
+    ReductionWork.complete(meanEdgesWork(policy))
 
   def meanByEndpoint(
       policy: FailurePolicy
   )(using ScoreMean[S]): Analysis[K, S] =
+    ReductionWork.complete(meanByEndpointWork(policy))
+
+  /** The same reduction as [[meanEdges]], in resumable steps. */
+  def meanEdgesWork(
+      policy: FailurePolicy
+  )(using ScoreMean[S]): ReductionCursor[Unit, S] =
+    Reduction.edges(analysis, policy)
+
+  /** The same reduction as [[meanByEndpoint]], in resumable steps. */
+  def meanByEndpointWork(
+      policy: FailurePolicy
+  )(using ScoreMean[S]): ReductionCursor[K, S] =
     Reduction.byEndpoint(analysis, policy)
+
+/** One step of a keyed reduction. */
+enum ReductionPage[K, S]:
+  case More(workUnits: Int, next: ReductionCursor[K, S])
+  case Done(workUnits: Int, analysis: Analysis[K, S])
+
+/** An immutable position inside a keyed mean reduction.
+  *
+  * The first pass groups contributions, unmatched keys and ambiguities in
+  * their original order, one unit per visit; the second reduces one key per
+  * step, charging that key's contribution count. Keys are reduced in order of
+  * first appearance, and each key's scores keep schedule order, so the result
+  * does not depend on the quanta.
+  *
+  * A key step charges `max(1, scores.size)` units, so one step's `workUnits`
+  * may exceed the quantum: the quantum bounds the keys and visits a step
+  * starts, never the size of one key's group. Grouping keys by `K` relies on
+  * `hashCode` being consistent with `equals`, as `contrast` already does.
+  */
+final class ReductionCursor[K, S] private[design] (
+    private val source: PairwiseAnalysis[?, ?, ?, S],
+    private val contributions: Vector[(K, Either[?, S])],
+    private val unmatched: Vector[K],
+    private val ambiguous: Vector[(K, Vector[Int])],
+    private val orientation: ReductionOrientation,
+    private val policy: FailurePolicy,
+    private val position: Int,
+    private val order: Vector[K],
+    private val groups: Map[K, Vector[Either[?, S]]],
+    private val ambiguities: Map[K, Vector[Int]],
+    private val reduced: Int,
+    private val entries: Vector[ReductionRow[K, S]]
+)(using ScoreMean[S]):
+  private def total: Int = contributions.size + unmatched.size + ambiguous.size
+
+  /** Keys whose reduced row is already recorded. */
+  def reducedKeys: Int = reduced
+
+  def advance(quantum: PairQuantum): ReductionPage[K, S] =
+    var work    = 0
+    var pos     = position
+    var keys    = order
+    var grouped = groups
+    var firsts  = ambiguities
+    var done    = reduced
+    var rows    = entries
+
+    while work < quantum.value && pos < total do
+      if pos < contributions.size then
+        val (key, result) = contributions(pos)
+        if !grouped.contains(key) then keys :+= key
+        grouped = grouped.updated(key, grouped.getOrElse(key, Vector.empty) :+ result)
+      else if pos < contributions.size + unmatched.size then
+        val key = unmatched(pos - contributions.size)
+        if !grouped.contains(key) then
+          keys :+= key
+          grouped = grouped.updated(key, Vector.empty)
+      else
+        val (key, indices) = ambiguous(pos - contributions.size - unmatched.size)
+        if !grouped.contains(key) then
+          keys :+= key
+          grouped = grouped.updated(key, Vector.empty)
+        if !firsts.contains(key) then firsts = firsts.updated(key, indices)
+      pos += 1
+      work += 1
+
+    while work < quantum.value && pos == total && done < keys.size do
+      val key        = keys(done)
+      val scores     = grouped.getOrElse(key, Vector.empty)
+      val result     = Reduction.reduceOne(key, scores, firsts.get(key), policy)
+      val successful = scores.count(_.isRight)
+      rows :+= ReductionRow(
+        key,
+        result,
+        successful,
+        scores.size - successful,
+        if result.isRight then successful else 0
+      )
+      done += 1
+      work += math.max(1, scores.size)
+
+    if pos == total && done == keys.size then
+      ReductionPage.Done(
+        work,
+        Reduction.finish(source, contributions.size, orientation, policy, rows)
+      )
+    else
+      ReductionPage.More(
+        work,
+        new ReductionCursor(
+          source,
+          contributions,
+          unmatched,
+          ambiguous,
+          orientation,
+          policy,
+          pos,
+          keys,
+          grouped,
+          firsts,
+          done,
+          rows
+        )
+      )
+
+object ReductionWork:
+  /** Drive a reduction to completion with the default quantum. */
+  def complete[K, S](cursor: ReductionCursor[K, S]): Analysis[K, S] =
+    @annotation.tailrec
+    def loop(cursor: ReductionCursor[K, S]): Analysis[K, S] =
+      cursor.advance(PairQuantum.default) match
+        case ReductionPage.More(_, next)     => loop(next)
+        case ReductionPage.Done(_, analysis) => analysis
+    loop(cursor)
 
 private object EvaluationProvenance:
 
@@ -451,12 +768,12 @@ private object Reduction:
   def byLeft[KL, KR, E, S](
       analysis: DirectedPairwiseAnalysis[KL, KR, E, S],
       policy: FailurePolicy
-  )(using ScoreMean[S]): Analysis[KL, S] =
+  )(using ScoreMean[S]): ReductionCursor[KL, S] =
     val contributions = analysis.rows.map(row => row.left -> row.result)
     val ambiguous     = analysis.diagnostics.ambiguous.collect {
       case PairingAmbiguity.DuplicateLeft(key, indices) => key -> indices
     }
-    reduce(
+    start(
       analysis,
       contributions,
       analysis.diagnostics.unmatchedLeft,
@@ -468,12 +785,12 @@ private object Reduction:
   def byRight[KL, KR, E, S](
       analysis: DirectedPairwiseAnalysis[KL, KR, E, S],
       policy: FailurePolicy
-  )(using ScoreMean[S]): Analysis[KR, S] =
+  )(using ScoreMean[S]): ReductionCursor[KR, S] =
     val contributions = analysis.rows.map(row => row.right -> row.result)
     val ambiguous     = analysis.diagnostics.ambiguous.collect {
       case PairingAmbiguity.DuplicateRight(key, indices) => key -> indices
     }
-    reduce(
+    start(
       analysis,
       contributions,
       analysis.diagnostics.unmatchedRight,
@@ -485,8 +802,8 @@ private object Reduction:
   def edges[K, E, S](
       analysis: UndirectedPairwiseAnalysis[K, E, S],
       policy: FailurePolicy
-  )(using ScoreMean[S]): Analysis[Unit, S] =
-    reduce(
+  )(using ScoreMean[S]): ReductionCursor[Unit, S] =
+    start(
       analysis,
       analysis.rows.map(row => () -> row.result),
       Vector(()),
@@ -498,7 +815,7 @@ private object Reduction:
   def byEndpoint[K, E, S](
       analysis: UndirectedPairwiseAnalysis[K, E, S],
       policy: FailurePolicy
-  )(using ScoreMean[S]): Analysis[K, S] =
+  )(using ScoreMean[S]): ReductionCursor[K, S] =
     val contributions =
       analysis.rows.flatMap(row => Vector(row.left -> row.result, row.right -> row.result))
     val ambiguous = analysis.diagnostics.ambiguous.flatMap {
@@ -508,7 +825,7 @@ private object Reduction:
     val unmatched =
       distinct(analysis.diagnostics.unmatchedLeft ++ analysis.diagnostics.unmatchedRight)
 
-    reduce(
+    start(
       analysis,
       contributions,
       unmatched,
@@ -517,29 +834,39 @@ private object Reduction:
       policy
     )
 
-  private def reduce[K, KL, KR, E, S](
+  private def start[K, KL, KR, E, S](
       analysis: PairwiseAnalysis[KL, KR, E, S],
       contributions: Vector[(K, Either[E, S])],
       unmatched: Vector[K],
       ambiguous: Vector[(K, Vector[Int])],
       orientation: ReductionOrientation,
       policy: FailurePolicy
-  )(using mean: ScoreMean[S]): Analysis[K, S] =
-    val keys = distinct(
-      contributions.map(_._1) ++ unmatched ++ ambiguous.map(_._1)
+  )(using ScoreMean[S]): ReductionCursor[K, S] =
+    new ReductionCursor(
+      analysis,
+      contributions,
+      unmatched,
+      ambiguous,
+      orientation,
+      policy,
+      0,
+      Vector.empty,
+      Map.empty,
+      Map.empty,
+      0,
+      Vector.empty
     )
 
-    val rows = keys.map { key =>
-      val ambiguity = ambiguous.find(_._1 == key).map(_._2)
-      val scores    = contributions.collect { case (`key`, result) =>
-        result
-      }
-      key -> reduceOne(key, scores, ambiguity, policy)
-    }
-
+  def finish[K, S](
+      analysis: PairwiseAnalysis[?, ?, ?, S],
+      contributions: Int,
+      orientation: ReductionOrientation,
+      policy: FailurePolicy,
+      entries: Vector[ReductionRow[K, S]]
+  ): Analysis[K, S] =
     val successfulPairs = analysis.rows.count(_.result.isRight)
     val failedPairs     = analysis.rows.size - successfulPairs
-    val failedKeys      = rows.collect { case (key, Left(_)) => key }
+    val failedKeys      = entries.collect { case row if row.result.isLeft => row.key }
     val report          = ReductionReport(
       orientation,
       policy,
@@ -547,8 +874,8 @@ private object Reduction:
       analysis.diagnostics.selectedPairCount,
       successfulPairs,
       failedPairs,
-      contributions.size,
-      rows.size - failedKeys.size,
+      contributions,
+      entries.size - failedKeys.size,
       failedKeys
     )
     val provenance = analysis.provenance.andThen(
@@ -557,29 +884,17 @@ private object Reduction:
         Vector(
           "orientation"   -> Provenance.Param.Text(orientation.toString),
           "failurePolicy" -> Provenance.Param.Text(policy.render),
-          "contributions" -> Provenance.Param.Num(contributions.size.toDouble),
+          "contributions" -> Provenance.Param.Num(contributions.toDouble),
           "reducedKeys"   -> Provenance.Param.Num(report.reducedKeyCount.toDouble),
           "failedKeys"    -> Provenance.Param.Num(report.failedKeys.size.toDouble)
         )
       )
     )
-
-    val entries = rows.map { case (key, result) =>
-      val scores     = contributions.collect { case (`key`, score) => score }
-      val successful = scores.count(_.isRight)
-      ReductionRow(
-        key,
-        result,
-        successful,
-        scores.size - successful,
-        if result.isRight then successful else 0
-      )
-    }
     new Analysis(entries, report, provenance, analysis)
 
-  private def reduceOne[K, E, S](
+  def reduceOne[K, S](
       key: K,
-      scores: Vector[Either[E, S]],
+      scores: Vector[Either[?, S]],
       ambiguity: Option[Vector[Int]],
       policy: FailurePolicy
   )(using mean: ScoreMean[S]): Either[ReductionError[K], S] =

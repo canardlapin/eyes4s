@@ -77,11 +77,53 @@ name operand sizes and limits instead of returning a truncated result.
 Preparation stores source metadata rather than a Cartesian table of source pairs.
 Duplicate grouping and frame checks are bounded by the source-row budget; pages
 bound candidate visits and final diagnostic visits. This is not a wall-clock bound
-for arbitrary custom key/projection functions. The current runner still computes
-whole numerical operations and retains completed scores for reductions; a full
-cancellable numerical interpreter is separate work. Custom projections, parameters,
+for arbitrary custom key/projection functions. Custom projections, parameters,
 and registered behavior must remain pure and stable; an observed change in the
 captured plan description invalidates prepared execution.
+
+## Run a study in bounded steps
+
+`work.work(budget)` returns `Either[PlanError, StudyCursor]`; `work.run` drives
+the same cursor to completion, so pure and resumable execution are one
+scientific path. Each `cursor.advance(quanta)` performs one bounded step and
+returns `StudyStep.More` with the stage it worked on (`Estimating(scale, trial)`,
+`Comparing(scale, design)`, `Reducing(scale, design)` or `Contrasting(scale)`),
+the units it visited and the next immutable cursor, or `StudyStep.Done` with the
+complete `StudyResult`. `WorkQuanta(pairs, comparison)` bounds one step:
+`PairQuantum` limits schedule visits and reduction/contrast keys,
+`ComparisonQuantum` limits cells inside one comparison. Cursors are immutable,
+so re-advancing one is deterministic, and the result does not depend on where
+steps were cut: pair outcomes accumulate in schedule order and keys reduce in
+order of first appearance. Grouping by key relies on `hashCode` being consistent
+with `equals`, as the contrast's key domain already does.
+
+Units are a step's own count, not a promise that `workUnits <= quantum`: a
+reduction step charges `max(1, scores.size)` for the key it reduces, so its
+units can exceed the pair quantum, and a pair whose comparison is already
+decided (for example incompatible grids) records its outcome as a zero-unit
+`More`. A driver must treat both as progress rather than a stall.
+
+What is bounded is declared, not assumed. `Distribution.cosine` is a
+`BoundedCompare`: its dot product and norms accumulate one cell per unit through
+a `ComparisonCursor`, and `compare` is the same cursor run to completion.
+`StudyMethod.cosine` therefore carries `MethodExecution.Bounded`, and
+`work.capability`, `plan.inspect.execution` and the method descriptor all report
+`ExecutionCapability.BoundedComparison`. A method built from an ordinary
+`Compare` closure carries `MethodExecution.Synchronous`: its pairs still run one
+per step, but each comparison is a whole operation, and `work.boundedWork`
+refuses it with `PlanError.UnsupportedExecution` before any work. A descriptor
+whose execution claim disagrees with the method's typed evidence fails
+inspection with `DescriptorError.ExecutionMismatch`. One trial's estimation is
+always a whole step.
+
+Extensions declare bounded work by implementing `BoundedCompare`, or by deriving
+one from a supported instance with `mapScore`, which applies a constant-time
+transformation of the finished score and performs exactly the source's work; a
+scaled cosine is the intended example. There is no lifting from a closure.
+`ComparisonBudget.of(maxWorkUnits)` bounds one comparison's declared work; for a
+bounded method every comparison is checked against it when a scale begins,
+before any trial is estimated, and a refusal names the measure, its cells and
+the limit. `ComparisonBudget.default` is effectively unbounded.
 
 ## Versions and extensions
 

@@ -172,7 +172,7 @@ class MethodDescriptorSuite extends munit.FunSuite:
         ComparisonProperty.Bounded
       )
     )
-    assertEquals(descriptor.execution, ExecutionCapability.SynchronousWholeOperation)
+    assertEquals(descriptor.execution, ExecutionCapability.BoundedComparison)
     val recording = RecordingMethod.ivt(get(DefinitionId.of("ivt", 1))).descriptor.get
     assertEquals(recording.card, AlgorithmCards.ivt)
     assert(recording.card.citations.nonEmpty)

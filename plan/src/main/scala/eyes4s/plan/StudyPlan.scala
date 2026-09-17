@@ -61,6 +61,8 @@ enum PlanError derives CanEqual:
       maximumCandidateVisits: Long
   )
   case ChangedPreparedPlan(method: DefinitionId, layout: DefinitionId)
+  case ComparisonWork(underlying: ComparisonWorkError)
+  case UnsupportedExecution(method: DefinitionId, capability: ExecutionCapability)
 
   def message: String = this match
     case InvalidDefinition(n, v) =>
@@ -79,6 +81,9 @@ enum PlanError derives CanEqual:
       s"Study with focal=$focal, reference=$reference and scales=$scales exceeds matched/control candidate-visit budget $maximum."
     case ChangedPreparedPlan(method, layout) =>
       s"Prepared study parameters changed for method $method and layout $layout; prepare the revised plan again."
+    case ComparisonWork(e)                        => e.message
+    case UnsupportedExecution(method, capability) =>
+      s"Method ${method.name}@${method.version} executes as $capability and cannot promise bounded comparison work."
 
 /** A registered interpretation of user keys. Identity and matching stay in K. */
 final class StudyLayout[K](
@@ -173,6 +178,22 @@ enum StudyFailure[K] derives CanEqual:
     case Estimation(k, e)    => s"Trial $k: ${e.message}"
     case Comparison(l, r, e) => s"Trials $l and $r: ${e.message}"
 
+/** Typed evidence of how a method's comparison executes. A synchronous closure
+  * runs whole per pair; only a [[BoundedCompare]] can be declared bounded, so
+  * the reported capability is never inferred from a name or a flag.
+  */
+enum MethodExecution[-P, U <: Unit2D, +S]:
+  case Synchronous(comparison: P => Compare[Mass[U], Mass[U], S])
+  case Bounded(comparison: P => BoundedCompare[Mass[U], Mass[U], S])
+
+  def compare: P => Compare[Mass[U], Mass[U], S] = this match
+    case Synchronous(comparison) => comparison
+    case Bounded(comparison)     => comparison
+
+  def capability: ExecutionCapability = this match
+    case Synchronous(_) => ExecutionCapability.SynchronousWholeOperation
+    case Bounded(_)     => ExecutionCapability.BoundedComparison
+
 /** A method definition accepts typed P, S and D; registration never erases them to Any.
   * A method author supplies the existing ScoreMean and Contrastable capabilities.
   */
@@ -180,20 +201,32 @@ final class StudyMethod[P, U <: Unit2D, S, D](
     val id: DefinitionId,
     val name: String,
     val parameters: P => Vector[(String, Provenance.Param)],
-    val comparison: P => Compare[Mass[U], Mass[U], S],
-    val descriptor: Option[MethodDescriptor[P, S, D]] = None
-)(using val mean: ScoreMean[S], val difference: Contrastable[S, D])
+    val execution: MethodExecution[P, U, S],
+    val descriptor: Option[MethodDescriptor[P, S, D]]
+)(using val mean: ScoreMean[S], val difference: Contrastable[S, D]):
+  /** The ordinary extension route: a whole synchronous comparison per pair. */
+  def this(
+      id: DefinitionId,
+      name: String,
+      parameters: P => Vector[(String, Provenance.Param)],
+      comparison: P => Compare[Mass[U], Mass[U], S],
+      descriptor: Option[MethodDescriptor[P, S, D]] = None
+  )(using ScoreMean[S], Contrastable[S, D]) =
+    this(id, name, parameters, MethodExecution.Synchronous(comparison), descriptor)
+
+  val comparison: P => Compare[Mass[U], Mass[U], S] = execution.compare
+  def capability: ExecutionCapability               = execution.capability
 
 object StudyMethod:
   /** No hidden parameters; geometry, weighting and estimation live in StudyPlan. */
   def cosine[U <: Unit2D](
       id: DefinitionId
   ): StudyMethod[Unit, U, Similarity, SignedDifference] =
-    new StudyMethod(
+    new StudyMethod[Unit, U, Similarity, SignedDifference](
       id,
       "Cosine similarity",
       _ => Vector.empty,
-      _ => Distribution.cosine[U],
+      MethodExecution.Bounded(_ => Distribution.cosine[U]),
       Some(MethodDescriptor.cosine[U](id))
     )
 
@@ -311,26 +344,12 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
   ): Either[PlanError, StudyResult[K, U, S, D]] =
     this.prepare(available).flatMap(_.execute(prepare, context))
 
-  private[plan] def executeWork(
-      work: PreparedStudy[K, U, P, S, D],
-      prepare: (K, Scanpath[U]) => Either[StudyFailure[K], PointMeasure[U]],
-      context: Vector[(String, Provenance.Param)]
-  ): Either[PlanError, StudyResult[K, U, S, D]] =
-    estimates
-      .traverse(runScale(work, _, prepare, context))
-      .map(new StudyResult(input, description, _))
-
-  private def runScale(
-      work: PreparedStudy[K, U, P, S, D],
+  /** One scale's method specification; identical for pure and resumable execution. */
+  private[plan] def specification(
       estimate: StudyEstimate[U],
-      prepare: (K, Scanpath[U]) => Either[StudyFailure[K], PointMeasure[U]],
       context: Vector[(String, Provenance.Param)]
-  ): Either[PlanError, StudyScaleResult[K, U, S, D]] =
-    given Ordering[K]        = layout.ordering
-    given ScoreMean[S]       = method.mean
-    given Contrastable[S, D] = method.difference
-    val cmp                  = method.comparison(parameters)
-    val params               = Vector("weight" -> Provenance.Param.Text(weight.toString)) ++
+  ): Either[PlanError, EvaluationSpec] =
+    val params = Vector("weight" -> Provenance.Param.Text(weight.toString)) ++
       estimate.parameters.map { case (k, v) => s"estimate.$k" -> v } ++
       method.parameters(parameters).map { case (k, v) => s"method.$k" -> v } ++ context
     EvaluationSpec
@@ -345,57 +364,36 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
       )
       .left
       .map(PlanError.Specification.apply)
-      .flatMap { specification =>
-        val prepared = work.input.trials.rows.zipWithIndex.map { case (trial, index) =>
-          val mass = for
-            _         <- work.frameChecks(index)
-            occupancy <- prepare(trial.key, trial.value)
-            mass      <- estimate match
-              case StudyEstimate.Binned() =>
-                for
-                  cells     <- occupancy.binned(grid).left.map(StudyFailure.Frame(trial.key, _))
-                  intensity <- Surface
-                    .intensity(grid, cells, occupancy.provenance)
-                    .left
-                    .map(StudyFailure.Occupancy(trial.key, _))
-                  result <- intensity.normalised.left.map(StudyFailure.Occupancy(trial.key, _))
-                yield result
-              case StudyEstimate.Gaussian(sigma, edges) =>
-                Smoother
-                  .gaussian(sigma, edges)
-                  .density(occupancy, grid)
-                  .left
-                  .map(StudyFailure.Estimation(trial.key, _))
-          yield mass
-          Trial(trial.key, (), mass)
-        }
-        def evaluate(schedule: DirectedPairSchedule[K, K]): Either[PlanError, Analysis[K, S]] =
-          evaluateScheduled(
-            schedule,
-            work.input.hash,
-            EvaluationInfo.comparison(cmp, specification)
-          ) { pair =>
-            val a = prepared(work.focalIndices(pair.leftIndex)).value
-            val b = prepared(work.referenceIndices(pair.rightIndex)).value
-            a.flatMap(left =>
-              b.flatMap(right =>
-                cmp
-                  .compare(left, right)
-                  .left
-                  .map(e => StudyFailure.Comparison(pair.left, pair.right, e))
-              )
-            )
-          }.left.map(PlanError.Schedule.apply).map(_.meanByLeft(policy))
-        for
-          matched  <- evaluate(work.matched)
-          controls <- evaluate(work.controls)
-        yield new StudyScaleResult(
-          estimate,
-          prepared.map(t => t.key -> t.value),
-          work.excludedPhases,
-          contrast(matched, controls)
-        )
-      }
+
+  /** One trial's density at one scale; a whole operation per trial. */
+  private[plan] def estimateTrial(
+      work: PreparedStudy[K, U, P, S, D],
+      estimate: StudyEstimate[U],
+      prepare: (K, Scanpath[U]) => Either[StudyFailure[K], PointMeasure[U]],
+      index: Int
+  ): (K, Either[StudyFailure[K], Mass[U]]) =
+    val trial = work.input.trials.rows(index)
+    val mass  = for
+      _         <- work.frameChecks(index)
+      occupancy <- prepare(trial.key, trial.value)
+      mass      <- estimate match
+        case StudyEstimate.Binned() =>
+          for
+            cells     <- occupancy.binned(grid).left.map(StudyFailure.Frame(trial.key, _))
+            intensity <- Surface
+              .intensity(grid, cells, occupancy.provenance)
+              .left
+              .map(StudyFailure.Occupancy(trial.key, _))
+            result <- intensity.normalised.left.map(StudyFailure.Occupancy(trial.key, _))
+          yield result
+        case StudyEstimate.Gaussian(sigma, edges) =>
+          Smoother
+            .gaussian(sigma, edges)
+            .density(occupancy, grid)
+            .left
+            .map(StudyFailure.Estimation(trial.key, _))
+    yield mass
+    trial.key -> mass
 
 object StudyPlan:
   /** Ordinary within-participant matched/control cosine study, using the same interpreter. */

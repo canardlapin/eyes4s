@@ -111,7 +111,23 @@ class ConsumerSuite extends munit.DisciplineSuite:
       get(descriptor.components(value)).map(_.range),
       Vector(eyes4s.compare.MeasureScale.Bounded(0, 2))
     )
-    assertEquals(descriptor.execution, ExecutionCapability.SynchronousWholeOperation)
+    assertEquals(descriptor.execution, ExecutionCapability.BoundedComparison)
+    assertEquals(inspection.execution, ExecutionCapability.BoundedComparison)
+    val prepared = get(original.prepare(input))
+    assertEquals(prepared.capability, ExecutionCapability.BoundedComparison)
+    val bounded = get(prepared.boundedWork())
+    assertEquals(bounded.capability, ExecutionCapability.BoundedComparison)
+    assertEquals(bounded.stage, StudyStage.Estimating(0, 0))
+    val cells   = get(eyes4s.compare.ComparisonQuantum.of(1))
+    val finest  = WorkQuanta(get(PairQuantum.of(1)), cells)
+    val stepped = get(StudyWork.complete(bounded, finest))
+    val whole   = get(prepared.run)
+    assertEquals(
+      stepped.scales.map(s =>
+        get(s.contrast).rows.map(r => r.key -> r.difference.map(_.value))
+      ),
+      whole.scales.map(s => get(s.contrast).rows.map(r => r.key -> r.difference.map(_.value)))
+    )
     assert(descriptor.verify(value, Vector.empty, Vector("value")).isLeft)
     assert(typeCheckErrors("""
       import example.*

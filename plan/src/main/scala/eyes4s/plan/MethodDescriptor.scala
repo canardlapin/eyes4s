@@ -156,6 +156,11 @@ enum ExecutionCapability derives CanEqual:
   /** Whole synchronous operations; no intra-operation cancellation guarantee. */
   case SynchronousWholeOperation
 
+  /** Comparisons resume in declared quanta through a `BoundedCompare` cursor.
+    * Estimation stays a whole operation per trial; pairing is paged.
+    */
+  case BoundedComparison
+
 final class ScoreComponent[S, D] private (
     val id: String,
     val meaning: String,
@@ -220,21 +225,18 @@ final class MethodDescriptor[P, S, D] private (
     yield ()
 
 object MethodDescriptor:
+  /** `execution` is a claim about the method; `StudyPlan.inspect` rejects a
+    * descriptor whose claim disagrees with the method's typed evidence.
+    */
   def of[P, S, D](
       id: DefinitionId,
       parameters: ParameterSet[P],
       info: P => MeasureInfo,
       components: P => Either[DescriptorError, Vector[ScoreComponent[S, D]]],
-      properties: Set[ComparisonProperty] = Set.empty
+      properties: Set[ComparisonProperty] = Set.empty,
+      execution: ExecutionCapability = ExecutionCapability.SynchronousWholeOperation
   ): MethodDescriptor[P, S, D] =
-    new MethodDescriptor(
-      id,
-      parameters,
-      info,
-      components,
-      properties,
-      ExecutionCapability.SynchronousWholeOperation
-    )
+    new MethodDescriptor(id, parameters, info, components, properties, execution)
 
   def cosine[U <: Unit2D](
       id: DefinitionId
@@ -248,7 +250,8 @@ object MethodDescriptor:
         ComparisonProperty.Symmetric,
         ComparisonProperty.NonNegative,
         ComparisonProperty.Bounded
-      )
+      ),
+      ExecutionCapability.BoundedComparison
     )
 
 final class RecordingMethodDescriptor[P](
@@ -288,6 +291,7 @@ enum DescriptorError derives CanEqual:
   case ComponentMismatch(described: Vector[String], declared: Vector[String])
   case MissingMethod(id: DefinitionId)
   case MethodIdentity(expected: DefinitionId, found: DefinitionId)
+  case ExecutionMismatch(declared: ExecutionCapability, actual: ExecutionCapability)
   case UnexplainedFields(fields: Vector[String])
   def message: String = this match
     case InvalidField(id, v, meaning) =>
@@ -303,6 +307,8 @@ enum DescriptorError derives CanEqual:
     case ComponentMismatch(a, b) =>
       s"Described score components $a disagree with contrast components $b."
     case MissingMethod(id) => s"Method ${id.name}@${id.version} has no registered descriptor."
-    case MethodIdentity(a, b)  => s"Descriptor identity $b disagrees with method $a."
+    case MethodIdentity(a, b) => s"Descriptor identity $b disagrees with method $a."
+    case ExecutionMismatch(declared, actual) =>
+      s"Descriptor declares execution $declared but the method executes as $actual."
     case UnexplainedFields(xs) =>
       s"Scientific description contains fields without metadata: $xs."

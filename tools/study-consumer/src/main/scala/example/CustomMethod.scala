@@ -103,39 +103,43 @@ object CustomMethod:
           ComparisonProperty.Symmetric,
           ComparisonProperty.NonNegative,
           ComparisonProperty.Bounded
-        )
+        ),
+        executable.capability
       )
       new StudyMethod(
         id,
         executable.name,
         executable.parameters,
-        executable.comparison,
+        executable.execution,
         Some(metadata)
       )
 
+  /** A bounded instance: the cosine cursor's work with a constant-time scaling
+    * of its finished score, so the study runner can pause inside each pair.
+    */
   def method(id: DefinitionId): StudyMethod[Multiplier, Px, ScaledScore, SignedDifference] =
     new StudyMethod(
       id,
       "Scaled cosine",
       p => Vector("multiplier" -> Provenance.Param.Num(p.value)),
-      p =>
-        new Compare[Mass[Px], Mass[Px], ScaledScore]:
-          val info = MeasureInfo(
-            "Scaled cosine",
-            "Cosine multiplied by an explicit positive factor",
-            MeasureScale.Bounded(0, p.value),
-            None
+      MethodExecution.Bounded((p: Multiplier) =>
+        Distribution
+          .cosine[Px]
+          .mapScore(
+            MeasureInfo(
+              "Scaled cosine",
+              "Cosine multiplied by an explicit positive factor",
+              MeasureScale.Bounded(0, p.value),
+              None
+            )
+          )(s =>
+            ScaledScore
+              .of(s.value * p.value)
+              .left
+              .map(CompareError.InvalidScore("scaled cosine", _))
           )
-          def compare(left: Mass[Px], right: Mass[Px]): Either[CompareError, ScaledScore] =
-            Distribution
-              .cosine[Px]
-              .compare(left, right)
-              .flatMap(s =>
-                ScaledScore
-                  .of(s.value * p.value)
-                  .left
-                  .map(CompareError.InvalidScore("scaled cosine", _))
-              )
+      ),
+      None
     )
 
   def parameterCodec(schema: DefinitionId): VersionedCodec[Multiplier] =
