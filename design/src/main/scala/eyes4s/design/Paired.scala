@@ -204,6 +204,16 @@ def pair[K, M, A](
 
 private[design] object PairConstruction:
 
+  /** Between-collection pairing has one enumeration: [[DirectedPairSchedule]].
+    *
+    * Under [[Selection.All]] the schedule is driven to completion, so duplicate
+    * exclusion, unmatched accounting and eligible counting live in one place
+    * for the pure API, resumable execution and previews alike. Bottom-k
+    * sampling is per focal key and is not expressible as a paged schedule, so
+    * it keeps a separate loop that reports the same diagnostics. Within-collection
+    * pairing ([[withinDirected]], [[withinUndirected]]) still enumerates on its
+    * own; folding it into the schedule is a recorded residual.
+    */
   def between[KL, ML, KR, MR, A, B](
       left: Trials[KL, ML, A],
       right: Trials[KR, MR, B],
@@ -211,10 +221,42 @@ private[design] object PairConstruction:
   )(using KeyDigest[KL], KeyDigest[KR]): DirectedPaired[KL, ML, KR, MR, A, B] =
     val leftDuplicates  = duplicates(left.rows)
     val rightDuplicates = duplicates(right.rows)
-    val excludedLeft    = duplicateIndices(leftDuplicates)
-    val excludedRight   = duplicateIndices(rightDuplicates)
-    val usableLeft      = indexed(left.rows).filterNot(row => excludedLeft.contains(row.index))
-    val usableRight = indexed(right.rows).filterNot(row => excludedRight.contains(row.index))
+    val ambiguities     = PairingAmbiguities(leftDuplicates, rightDuplicates)
+    design.selection match
+      case Selection.All =>
+        val schedule = DirectedPairSchedule.prepared(
+          left.rows.map(_.key),
+          right.rows.map(_.key),
+          design.relation,
+          leftDuplicates,
+          rightDuplicates,
+          PairScheduleBudget.default
+        )
+        val (scheduled, report) = schedule.complete
+        DirectedPaired(
+          scheduled.map(p => left.rows(p.leftIndex) -> right.rows(p.rightIndex)),
+          report.eligiblePairCount,
+          report.unmatchedLeft,
+          report.unmatchedRight,
+          ambiguities,
+          schedule.pairSpace
+        )
+      case Selection.BottomK(cap, seed, sampleId) =>
+        betweenBottomK(left, right, design, ambiguities, cap.value, seed, sampleId)
+
+  private def betweenBottomK[KL, ML, KR, MR, A, B](
+      left: Trials[KL, ML, A],
+      right: Trials[KR, MR, B],
+      design: PairDesign.BetweenDirected[KL, KR],
+      ambiguities: PairingAmbiguities[KL, ML, KR, MR, A, B],
+      cap: Int,
+      seed: Seed,
+      sampleId: SampleId
+  )(using KeyDigest[KL], KeyDigest[KR]): DirectedPaired[KL, ML, KR, MR, A, B] =
+    val excludedLeft  = duplicateIndices(ambiguities.left)
+    val excludedRight = duplicateIndices(ambiguities.right)
+    val usableLeft    = indexed(left.rows).filterNot(row => excludedLeft.contains(row.index))
+    val usableRight   = indexed(right.rows).filterNot(row => excludedRight.contains(row.index))
 
     val selected          = Vector.newBuilder[(Trial[KL, ML, A], Trial[KR, MR, B])]
     val unmatchedLeft     = Vector.newBuilder[KL]
@@ -231,9 +273,9 @@ private[design] object PairConstruction:
       else
         eligiblePairCount += eligible.size.toLong
         eligible.foreach(row => eligibleRight += row.index)
-        select(leftRow.trial.key, eligible, design.selection).foreach(rightRow =>
-          selected += leftRow.trial -> rightRow.trial
-        )
+        Selection
+          .bottomKBy(leftRow.trial.key, eligible, _.trial.key, cap, seed, sampleId)
+          .foreach(rightRow => selected += leftRow.trial -> rightRow.trial)
     }
 
     val unmatchedRight =
@@ -246,7 +288,7 @@ private[design] object PairConstruction:
       eligiblePairCount,
       unmatchedLeft.result(),
       unmatchedRight,
-      PairingAmbiguities(leftDuplicates, rightDuplicates),
+      ambiguities,
       PairSpace.BetweenDirected(design.relation.render, design.selection)
     )
 

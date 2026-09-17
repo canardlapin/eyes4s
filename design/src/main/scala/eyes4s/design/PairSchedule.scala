@@ -132,19 +132,66 @@ final class DirectedPairSchedule[KL, KR] private[design] (
       cursor: PairCursor[KL, KR],
       quantum: PairQuantum
   ): Either[PairScheduleError, PairPage[KL, KR]] =
-    var l                                  = cursor.leftPosition
-    var r                                  = cursor.rightPosition
-    var reportPosition                     = cursor.rightReportPosition
-    var found                              = cursor.foundLeft
-    var matchedRight                       = cursor.matchedRight
-    var unmatchedLeft                      = cursor.unmatchedLeft
-    var unmatchedRight                     = cursor.unmatchedRight
-    var selected                           = cursor.selected
-    var work                               = 0
-    var failure: Option[PairScheduleError] = None
-    val pairs                              = Vector.newBuilder[ScheduledPair[KL, KR]]
+    val page = enumerate(cursor, quantum.value, Some(budget.maxSelectedPairs))
+    page.overflow match
+      case Some(attempted) =>
+        Left(
+          PairScheduleError.SelectedBudget(relation.render, attempted, budget.maxSelectedPairs)
+        )
+      case None =>
+        Right(page.next match
+          case Left(report)  => PairPage.Done(page.pairs, page.workUnits, report)
+          case Right(cursor) => PairPage.More(page.pairs, page.workUnits, cursor))
 
-    while work < quantum.value && l < left.size && failure.isEmpty do
+  /** Every scheduled pair and the complete report, in one traversal.
+    *
+    * No selected-pair cap applies: the realised vector is the only bound, which
+    * is exactly the legacy `pair` contract. With `cap = None`, [[enumerate]]
+    * never records an overflow, so this is total.
+    */
+  private[design] def complete: (Vector[ScheduledPair[KL, KR]], PairingReport[KL, KR]) =
+    val pairs = Vector.newBuilder[ScheduledPair[KL, KR]]
+    @annotation.tailrec
+    def loop(cursor: PairCursor[KL, KR]): PairingReport[KL, KR] =
+      val page = enumerate(cursor, Int.MaxValue, None)
+      pairs ++= page.pairs
+      page.next match
+        case Left(report) => report
+        case Right(next)  => loop(next)
+    val report = loop(start)
+    pairs.result() -> report
+
+  /** One page of the exhaustive enumeration, shared by paged and complete traversal.
+    *
+    * `cap` is the selected-pair budget; `overflow` carries the attempted count
+    * when the next accepted pair would exceed it, and is `None` whenever `cap`
+    * is `None`.
+    */
+  private final case class Enumeration(
+      pairs: Vector[ScheduledPair[KL, KR]],
+      workUnits: Int,
+      overflow: Option[Long],
+      next: Either[PairingReport[KL, KR], PairCursor[KL, KR]]
+  )
+
+  private def enumerate(
+      cursor: PairCursor[KL, KR],
+      quantum: Int,
+      cap: Option[Int]
+  ): Enumeration =
+    var l                      = cursor.leftPosition
+    var r                      = cursor.rightPosition
+    var reportPosition         = cursor.rightReportPosition
+    var found                  = cursor.foundLeft
+    var matchedRight           = cursor.matchedRight
+    var unmatchedLeft          = cursor.unmatchedLeft
+    var unmatchedRight         = cursor.unmatchedRight
+    var selected               = cursor.selected
+    var work                   = 0
+    var overflow: Option[Long] = None
+    val pairs                  = Vector.newBuilder[ScheduledPair[KL, KR]]
+
+    while work < quantum && l < left.size && overflow.isEmpty do
       if right.isEmpty then
         unmatchedLeft :+= left(l)._2
         l += 1
@@ -152,11 +199,7 @@ final class DirectedPairSchedule[KL, KR] private[design] (
         val (li, lk) = left(l)
         val (ri, rk) = right(r)
         if relation.accepts(lk, rk) then
-          if selected == budget.maxSelectedPairs then
-            failure = Some(
-              PairScheduleError
-                .SelectedBudget(relation.render, selected.toLong + 1L, budget.maxSelectedPairs)
-            )
+          if cap.contains(selected) then overflow = Some(selected.toLong + 1L)
           else
             pairs += ScheduledPair(li, ri, lk, rk)
             selected += 1
@@ -170,48 +213,40 @@ final class DirectedPairSchedule[KL, KR] private[design] (
           l += 1
       work += 1
 
-    while work < quantum.value && l == left.size && reportPosition < right.size && failure.isEmpty
+    while work < quantum && l == left.size && reportPosition < right.size && overflow.isEmpty
     do
       val (index, key) = right(reportPosition)
       if !matchedRight.contains(index) then unmatchedRight :+= key
       reportPosition += 1
       work += 1
 
-    failure match
-      case Some(error)                                            => Left(error)
-      case None if l == left.size && reportPosition == right.size =>
-        Right(
-          PairPage.Done(
-            pairs.result(),
-            work,
-            PairingReport(
-              pairSpace,
-              selected.toLong,
-              selected,
-              unmatchedLeft,
-              unmatchedRight,
-              ambiguities
-            )
+    val next =
+      if l == left.size && reportPosition == right.size then
+        Left(
+          PairingReport(
+            pairSpace,
+            selected.toLong,
+            selected,
+            unmatchedLeft,
+            unmatchedRight,
+            ambiguities
           )
         )
-      case None =>
+      else
         Right(
-          PairPage.More(
-            pairs.result(),
-            work,
-            new PairCursor(
-              this,
-              l,
-              r,
-              reportPosition,
-              found,
-              matchedRight,
-              unmatchedLeft,
-              unmatchedRight,
-              selected
-            )
+          new PairCursor(
+            this,
+            l,
+            r,
+            reportPosition,
+            found,
+            matchedRight,
+            unmatchedLeft,
+            unmatchedRight,
+            selected
           )
         )
+    Enumeration(pairs.result(), work, overflow, next)
 
 object DirectedPairSchedule:
   def exhaustive[KL, KR](
@@ -221,27 +256,46 @@ object DirectedPairSchedule:
       budget: PairScheduleBudget = PairScheduleBudget.default
   ): Either[PairScheduleError, DirectedPairSchedule[KL, KR]] =
     budget.checkCounts(left.size.toLong, right.size.toLong).map { _ =>
-      val leftRows   = left.map(key => Trial(key, (), ()))
-      val rightRows  = right.map(key => Trial(key, (), ()))
-      val ld         = PairConstruction.duplicates(leftRows)
-      val rd         = PairConstruction.duplicates(rightRows)
-      val le         = PairConstruction.duplicateIndices(ld)
-      val re         = PairConstruction.duplicateIndices(rd)
-      val usableLeft = left.zipWithIndex.collect {
-        case (key, index) if !le.contains(index) => index -> key
-      }
-      val usableRight = right.zipWithIndex.collect {
-        case (key, index) if !re.contains(index) => index -> key
-      }
-      val ambiguities = ld
-        .map(d => PairingAmbiguity.DuplicateLeft[KL, KR](d.key, d.occurrences.map(_.index))) ++
-        rd.map(d => PairingAmbiguity.DuplicateRight[KL, KR](d.key, d.occurrences.map(_.index)))
-      new DirectedPairSchedule(
-        usableLeft,
-        usableRight,
+      prepared(
+        left,
+        right,
         relation,
-        ambiguities,
-        usableLeft.size.toLong * usableRight.size.toLong,
+        PairConstruction.duplicates(left.map(key => Trial(key, (), ()))),
+        PairConstruction.duplicates(right.map(key => Trial(key, (), ()))),
         budget
       )
     }
+
+  /** Build from operands whose duplicate groups are already known, so pair
+    * construction and paged scheduling share one exclusion rule and one
+    * diagnostic source. Counts are not re-checked against the budget here.
+    */
+  private[design] def prepared[KL, ML, KR, MR, A, B](
+      left: Vector[KL],
+      right: Vector[KR],
+      relation: Relation[KL, KR],
+      leftDuplicates: Vector[DuplicateTrials[KL, ML, A]],
+      rightDuplicates: Vector[DuplicateTrials[KR, MR, B]],
+      budget: PairScheduleBudget
+  ): DirectedPairSchedule[KL, KR] =
+    val le         = PairConstruction.duplicateIndices(leftDuplicates)
+    val re         = PairConstruction.duplicateIndices(rightDuplicates)
+    val usableLeft = left.zipWithIndex.collect {
+      case (key, index) if !le.contains(index) => index -> key
+    }
+    val usableRight = right.zipWithIndex.collect {
+      case (key, index) if !re.contains(index) => index -> key
+    }
+    val ambiguities = leftDuplicates
+      .map(d => PairingAmbiguity.DuplicateLeft[KL, KR](d.key, d.occurrences.map(_.index))) ++
+      rightDuplicates.map(d =>
+        PairingAmbiguity.DuplicateRight[KL, KR](d.key, d.occurrences.map(_.index))
+      )
+    new DirectedPairSchedule(
+      usableLeft,
+      usableRight,
+      relation,
+      ambiguities,
+      usableLeft.size.toLong * usableRight.size.toLong,
+      budget
+    )
