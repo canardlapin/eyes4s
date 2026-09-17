@@ -34,6 +34,7 @@ the reference; the generator does not modify the global R library.
 ```sh
 python3 tools/r-parity/generate_reference.py --eyesim /path/to/eyesim
 python3 tools/r-parity/generate_reference.py --eyesim /path/to/eyesim --check
+python3 tools/r-parity/generate_transforms.py --eyesim /path/to/eyesim --check
 python3 tools/r-parity/generate_multiscale.py --check
 python3 tools/r-parity/generate_temporal.py --check
 ```
@@ -42,6 +43,13 @@ python3 tools/r-parity/generate_temporal.py --check
 and generated Scala bytes without overwriting artifacts. Regeneration without `--check`
 deliberately updates those artifacts. Review changes to the environment lock as well as numerical
 output. The lock records consumed evidence; it is not a dependency installer.
+
+The transform generator installs the same pinned archive, calls the public `center`, `rescale` and
+`normalize` fixation-group methods on the non-square transform case, compares them with an exact
+rational oracle, and records how `affine_transform` and `contract_transform` (fitted density-space
+maps, not coordinate maps) respond to coordinate tables. The homogeneous affine, its training-only
+solve from three pairs and the held-out target are oracle values only: eyesim has no coordinate
+affine entry point.
 
 The independent multiscale and temporal generators do not call eyesim. They establish eyes4s
 scientific cases while the corresponding eyesim KDE and temporal point-sampling cases remain open.
@@ -64,19 +72,25 @@ python3 tools/r-parity/check_baseline.py \
 - `fixtures/eyesim.json`: public R output for the correct workflow, image-only matching, missing
   source matches, duplicate references and constant Pearson correlation.
 - `fixtures/reference-lock.json`: input identity, conventions, source revision and R environment.
+- `fixtures/transforms.json`: pinned public eyesim center/rescale/normalize output, observed fitted
+  transform behaviour on coordinate tables, R environment, and the exact affine oracle with a
+  training-only solve, held-out target and falsification mutants.
 - `fixtures/multiscale.json`: 60-digit closed-form eyes4s Gaussian oracle at three scales.
 - `fixtures/temporal-study.csv` and `fixtures/temporal.json`: 18-trial temporal input plus exact
   interval ledgers, pair lists and 96 contrast targets.
 - `laws/src/test/scala/eyes4s/examples/MatchedControlFixtures.scala`,
+  `core/src/test/scala/eyes4s/core/TransformFixtures.scala`,
   `codec/src/test/scala/eyes4s/codec/MultiscaleFixtures.scala`, and
   `codec/src/test/scala/eyes4s/codec/TemporalFixtures.scala`: generated values used by JVM and
   Scala.js tests without starting R or reading runtime fixtures.
 
-Run the matched/control conformance example with:
+Run the matched/control conformance example and the coordinate-transform conformance suite with:
 
 ```sh
 sbt 'lawsJVM/testOnly eyes4s.examples.MatchedControlSuite' \
-    'lawsJS/testOnly eyes4s.examples.MatchedControlSuite'
+    'lawsJS/testOnly eyes4s.examples.MatchedControlSuite' \
+    'coreJVM/testOnly eyes4s.core.TransformConformanceSuite' \
+    'coreJS/testOnly eyes4s.core.TransformConformanceSuite'
 ```
 
 See [the capability baseline](../../docs/EYESIM_CAPABILITIES.md),

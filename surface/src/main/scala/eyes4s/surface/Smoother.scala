@@ -74,6 +74,17 @@ enum EstimateError derives CanEqual:
   */
 trait Smoother[U <: Unit2D]:
 
+  /** The scientific identity of this smoother: what a method-selection UI
+    * shows and a methods section cites. See [[SmootherCard]].
+    */
+  def card: SmootherCard
+
+  /** The parameter values this instance runs with, keyed exactly as [[card]]
+    * names them and recorded verbatim in the provenance of every estimate, so
+    * a reader can match the description to the number.
+    */
+  def configuration: Vector[(String, Provenance.Param)]
+
   def bandwidth: Sigma[U]
   def edges: EdgePolicy
 
@@ -95,8 +106,14 @@ object Smoother:
       edgePolicy: EdgePolicy
   ): Smoother[U] =
     new Smoother[U]:
+      val card: SmootherCard  = SmootherCards.gaussian
       val bandwidth: Sigma[U] = sigma
       val edges: EdgePolicy   = edgePolicy
+
+      val configuration: Vector[(String, Provenance.Param)] = Vector(
+        "sigma" -> Provenance.Param.Num(sigma.value),
+        "edges" -> Provenance.Param.Text(edgePolicy.toString)
+      )
 
       def smooth(m: PointMeasure[U], g: Grid[U]): Either[EstimateError, Intensity[U]] =
         for
@@ -118,11 +135,7 @@ object Smoother:
               m.provenance.andThen(
                 Provenance.Step(
                   "smooth",
-                  Vector(
-                    "kernel" -> Provenance.Param.Text("gaussian"),
-                    "sigma"  -> Provenance.Param.Num(sigma.value),
-                    "edges"  -> Provenance.Param.Text(edgePolicy.toString)
-                  )
+                  ("kernel" -> Provenance.Param.Text("gaussian")) +: configuration
                 )
               )
             )
@@ -189,7 +202,7 @@ object Smoother:
           edgePolicy match
             case EdgePolicy.Truncate    => binned(i)
             case EdgePolicy.Renormalise =>
-              val f = onGridX(g.columnOf(i)) * onGridY(g.rowOf(i))
+              val f = onGridX(g.unsafeColumnOf(i)) * onGridY(g.unsafeRowOf(i))
               if f > 0.0 then binned(i) / f else binned(i)
         }
 
@@ -202,9 +215,9 @@ object Smoother:
             var t   = -rx
             while t <= rx do
               val sx = ix + t
-              if sx >= 0 && sx < g.nx then acc += source(g.indexAt(sx, iy)) * kx(t + rx)
+              if sx >= 0 && sx < g.nx then acc += source(g.unsafeIndexAt(sx, iy)) * kx(t + rx)
               t += 1
-            rowPass(g.indexAt(ix, iy)) = acc
+            rowPass(g.unsafeIndexAt(ix, iy)) = acc
             ix += 1
           iy += 1
 
@@ -217,9 +230,9 @@ object Smoother:
             var t   = -ry
             while t <= ry do
               val sy = jy + t
-              if sy >= 0 && sy < g.ny then acc += rowPass(g.indexAt(jx, sy)) * ky(t + ry)
+              if sy >= 0 && sy < g.ny then acc += rowPass(g.unsafeIndexAt(jx, sy)) * ky(t + ry)
               t += 1
-            out(g.indexAt(jx, jy)) = acc
+            out(g.unsafeIndexAt(jx, jy)) = acc
             jy += 1
           jx += 1
 

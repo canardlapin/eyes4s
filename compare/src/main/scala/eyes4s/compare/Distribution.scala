@@ -68,7 +68,7 @@ object Distribution:
           var s = 0.0
           var i = 0
           while i < n do
-            s += math.abs(a.at(i) - b.at(i))
+            s += math.abs(a.unsafeAt(i) - b.unsafeAt(i))
             i += 1
           MeasureDistance.computed("total variation", s / 2.0)
         }
@@ -92,7 +92,7 @@ object Distribution:
           var s = 0.0
           var i = 0
           while i < n do
-            val d = math.sqrt(a.at(i)) - math.sqrt(b.at(i))
+            val d = math.sqrt(a.unsafeAt(i)) - math.sqrt(b.unsafeAt(i))
             s += d * d
             i += 1
           MeasureDistance.computed("Hellinger", math.sqrt(s / 2.0))
@@ -122,8 +122,8 @@ object Distribution:
           var s  = 0.0
           var i  = 0
           while i < n do
-            val p = a.at(i)
-            val q = b.at(i)
+            val p = a.unsafeAt(i)
+            val q = b.unsafeAt(i)
             val m = (p + q) / 2.0
             if p > 0.0 && m > 0.0 then s += 0.5 * p * math.log(p / m) / lb
             if q > 0.0 && m > 0.0 then s += 0.5 * q * math.log(q / m) / lb
@@ -159,16 +159,23 @@ object Distribution:
       )
       def compare(a: Mass[U], b: Mass[U]): Either[CompareError, MeasureDistance] =
         aligned(a, b).flatMap { n =>
-          (0 until n).find(i => a.at(i) > 0.0 && b.at(i) <= 0.0) match
+          (0 until n).find(i => a.unsafeAt(i) > 0.0 && b.unsafeAt(i) <= 0.0) match
             case Some(i) =>
-              Left(CompareError.RelativeEntropySupport("Kullback-Leibler", i, a.at(i), b.at(i)))
+              Left(
+                CompareError.RelativeEntropySupport(
+                  "Kullback-Leibler",
+                  i,
+                  a.unsafeAt(i),
+                  b.unsafeAt(i)
+                )
+              )
             case None =>
               val lb = math.log(base.value)
               var s  = 0.0
               var i  = 0
               while i < n do
-                val p = a.at(i)
-                if p > 0.0 then s += p * math.log(p / b.at(i)) / lb
+                val p = a.unsafeAt(i)
+                if p > 0.0 then s += p * math.log(p / b.unsafeAt(i)) / lb
                 i += 1
               MeasureDistance.computed("Kullback-Leibler", math.max(s, 0.0))
         }
@@ -201,8 +208,9 @@ object Distribution:
           var s  = 0.0
           var i  = 0
           while i < n do
-            val p = a.at(i)
-            if p > 0.0 then s += p * math.log(p / math.max(b.at(i), probabilityFloor)) / lb
+            val p = a.unsafeAt(i)
+            if p > 0.0 then
+              s += p * math.log(p / math.max(b.unsafeAt(i), probabilityFloor)) / lb
             i += 1
           MeasureDistance.computed("Floored Kullback-Leibler", math.max(s, 0.0))
         }
@@ -232,9 +240,9 @@ object Distribution:
           var nb  = 0.0
           var i   = 0
           while i < n do
-            dot += a.at(i) * b.at(i)
-            na += a.at(i) * a.at(i)
-            nb += b.at(i) * b.at(i)
+            dot += a.unsafeAt(i) * b.unsafeAt(i)
+            na += a.unsafeAt(i) * a.unsafeAt(i)
+            nb += b.unsafeAt(i) * b.unsafeAt(i)
             i += 1
           val den = math.sqrt(na) * math.sqrt(nb)
           if den <= 0.0 then Left(CompareError.ZeroNorm("cosine", math.sqrt(na), math.sqrt(nb)))
@@ -268,8 +276,8 @@ object Distribution:
           var sbb = 0.0
           var i   = 0
           while i < n do
-            val da = a.at(i) - ma
-            val db = b.at(i) - mb
+            val da = a.unsafeAt(i) - ma
+            val db = b.unsafeAt(i) - mb
             sab += da * db
             saa += da * da
             sbb += db * db

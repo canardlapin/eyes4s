@@ -108,8 +108,8 @@ object Transport:
         var i   = 0
         while i < n - 1 do
           val idx = sorted(i)
-          fa += a.at(idx)
-          fb += b.at(idx)
+          fa += a.unsafeAt(idx)
+          fb += b.unsafeAt(idx)
           val width = proj(sorted(i + 1)) - proj(idx)
           acc += math.abs(fa - fb) * width
           i += 1
@@ -212,7 +212,7 @@ object Transport:
             while j < n do
               s += kern(i)(j) * v(j)
               j += 1
-            u(i) = if s > 0.0 then a.at(i) / s else 0.0
+            u(i) = if s > 0.0 then a.unsafeAt(i) / s else 0.0
             i += 1
           var j = 0
           while j < n do
@@ -221,7 +221,7 @@ object Transport:
             while i < n do
               s += kern(i)(j) * u(i)
               i += 1
-            v(j) = if s > 0.0 then b.at(j) / s else 0.0
+            v(j) = if s > 0.0 then b.unsafeAt(j) / s else 0.0
             j += 1
           t += 1
 

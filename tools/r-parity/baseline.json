@@ -44,7 +44,7 @@
   "fixtures": {
     "baseline-small": {
       "path": "tools/r-parity/fixtures/baseline-cases.json",
-      "sha256": "30c86e4b5eb1fda661fc9c24da82190e164da4d27fddf05fc6efe2a4b38eaf01",
+      "sha256": "ce6618fd0a7e2bccb2f1b90b88486b7fbb81a8fee89594bd5e0d0193c20af2aa",
       "license": "Apache-2.0; synthetic data authored for eyes4s",
       "role": "Selected adversarial and analytic inputs for every unresolved baseline row"
     },
@@ -89,6 +89,12 @@
       "sha256": "fb322844da4e0d70105438c5eff28b66e2bb55b4da8db253be899b046ec12f42",
       "license": "Apache-2.0",
       "role": "Independent clipped-duration ledgers, pair lists and temporal contrasts"
+    },
+    "transforms-reference": {
+      "path": "tools/r-parity/fixtures/transforms.json",
+      "sha256": "89d04fa3ef04d2320a6b0a24315b5e6f4af6982243093fc491b39fd07acc570a",
+      "license": "Apache-2.0",
+      "role": "Pinned public eyesim center/rescale/normalize output, observed fitted-transform behaviour on coordinate tables, R environment, and the exact affine oracle with a training-only solve, held-out target and mutants"
     }
   },
   "regeneration": {
@@ -106,6 +112,11 @@
       "command": "python3 tools/r-parity/generate_temporal.py --check",
       "requires_eyesim": false,
       "outputs": ["temporal-input", "temporal-exact"]
+    },
+    "transforms-reference": {
+      "command": "python3 tools/r-parity/generate_transforms.py --eyesim {eyesim} --check",
+      "requires_eyesim": true,
+      "outputs": ["transforms-reference"]
     }
   },
   "cases": [
@@ -128,18 +139,34 @@
     {
       "id": "basic-coordinate-transforms",
       "row": "spatial-transforms",
-      "eyesim_entry_points": ["center", "rescale", "normalize", "affine_transform", "contract_transform"],
-      "methods": ["supplied center", "axis-specific scale", "bounds normalization", "fitted affine", "fitted contraction"],
-      "estimand": "A declared map from one spatial coordinate system to another, with fitted maps estimated from reference/source pairs only.",
-      "conventions": ["non-square bounds", "homogeneous affine matrix", "coordinate normalization is distinct from mass normalization", "held-out point is excluded from fitting"],
+      "eyesim_entry_points": ["center", "rescale", "normalize"],
+      "methods": ["supplied center", "mean center", "axis-specific scale", "bounds normalization", "supplied homogeneous affine", "training-only three-pair affine solve"],
+      "estimand": "A declared map from one spatial coordinate system to another, applied to fixation coordinates; the affine is determined by the three fitting pairs alone and checked on the excluded held-out point.",
+      "conventions": ["non-square 100 by 50 bounds", "homogeneous affine matrix", "no axis flip: every eyes4s target frame declares the source y-axis", "coordinate normalization is distinct from mass normalization", "held-out point is excluded from fitting", "absolute tolerance 1e-12; 1e-9 for the floating-point solve"],
+      "backend_dependencies": ["base R", "dplyr", "tibble"],
+      "eyes4s_public_api": ["Frame", "Warp.affine", "Warp.rescale", "Warp.tangent", "Perspective", "Mat3", "Scanpath.warp"],
+      "fixture_inputs": ["baseline-small", "transforms-reference"],
+      "independent_case": "An exact rational oracle applies every supplied map, solves the affine from the three training pairs without the held-out point, and records axis-swap and no-translation mutants that miss the held-out target; eyesim has no coordinate affine entry point, so the affine targets are oracle-only.",
+      "status": "verified-equivalent",
+      "evidence": ["tools/r-parity/fixtures/transforms.json", "core/src/test/scala/eyes4s/core/TransformFixtures.scala", "core/src/test/scala/eyes4s/core/TransformConformanceSuite.scala", "docs/EYESIM_CAPABILITIES.md"],
+      "gap_issue": null,
+      "regeneration_ids": ["transforms-reference"]
+    },
+    {
+      "id": "fitted-density-transforms",
+      "row": "spatial-transforms",
+      "eyesim_entry_points": ["affine_transform", "contract_transform"],
+      "methods": ["moment-matched affine: sqrt(reference covariance) times inverse sqrt(source covariance)", "isotropic contraction from the covariance trace ratio", "bilinear density resampling under the fitted map"],
+      "estimand": "A density-space map fitted from matched reference/source density moments within fit_by strata and applied to source density objects by resampling; not a coordinate transform.",
+      "conventions": ["fitted on eye_density or density objects, never on coordinates", "ridge shrink 1e-6 on both covariances", "training-only fitting per stratum with optional unique matching", "coordinate tables are rejected, as the pinned fixture records"],
       "backend_dependencies": ["base R", "stats"],
-      "eyes4s_public_api": ["Frame", "Warp", "Perspective", "Scanpath.warp"],
-      "fixture_inputs": ["baseline-small"],
-      "independent_case": "The explicit affine matrix and held-out target detect axis swaps, translation loss and fit/apply leakage.",
+      "eyes4s_public_api": ["none: pure modules carry no fitting backend"],
+      "fixture_inputs": ["baseline-small", "transforms-reference"],
+      "independent_case": "The pinned fixture records eyesim's response to coordinate tables; a future density-object case needs matched density moments computed independently of both implementations.",
       "status": "implementation-gap",
-      "evidence": ["kernel/src/test/scala/eyes4s/kernel/WarpSuite.scala"],
+      "evidence": ["tools/r-parity/fixtures/transforms.json", "docs/EYESIM_CAPABILITIES.md"],
       "gap_issue": "eyesim-transform",
-      "planned_evidence": "Public eyesim outputs and independent matrix calculations for every basic transform."
+      "planned_evidence": "Pinned R output for affine_transform and contract_transform on density objects with independently computed moment-matched maps, delivered through a typed optional adapter or an export/reimport recipe."
     },
     {
       "id": "scanpath-multimatch",

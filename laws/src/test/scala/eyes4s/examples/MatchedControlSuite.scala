@@ -56,7 +56,7 @@ class MatchedControlSuite extends munit.FunSuite:
         .sortBy(_.ordinal)
       assertEquals(raw.size, 4)
       raw.zipWithIndex.foreach { case (row, cell) =>
-        close(trial.value.at(cell), row.durationMicros.toDouble / 900000.0)
+        close(trial.value.unsafeAt(cell), row.durationMicros.toDouble / 900000.0)
       }
     }
   }

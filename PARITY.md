@@ -6,12 +6,12 @@ revision is `ecb9c496257bce51acd5330af6a5e7a8d5b84e05`.
 input digest, and conventions. [Regeneration instructions](tools/r-parity/README.md) reproduce the
 public R calls from an isolated installation of that revision.
 
-The executable [capability inventory](tools/r-parity/baseline.json) currently classifies 20 cases
+The executable [capability inventory](tools/r-parity/baseline.json) currently classifies 21 cases
 across all 13 required rows:
 
 | Status | Cases | Meaning |
 |---|---:|---|
-| Verified equivalent | 1 | Exhaustive matched/control cosine on the pinned fixed-grid study. |
+| Verified equivalent | 2 | Exhaustive matched/control cosine on the pinned fixed-grid study; supplied coordinate transforms (center, rescale, normalize) with an exact affine oracle. |
 | Verified intentional divergence | 3 | Matched/control failure semantics, windowed duration-mass analysis, and typed current result exports. |
 | Implementation gap | 16 | Each case names a live task and selected falsification input; no parity is claimed. |
 
@@ -37,6 +37,21 @@ The R call uses `match_on = "key"`, where `key` combines participant and image,
 `permute_on = "participant"`, `method = "cosine"`, and `permutations = 100`. There are three
 encoding candidates per stratum, so this takes all candidates and excludes the match. It makes
 no claim about R versus Scala finite-cap sampling or RNG equivalence.
+
+### Supplied coordinate transforms
+
+[transforms.json](tools/r-parity/fixtures/transforms.json) pins the public `center`, `rescale` and
+`normalize` fixation-group methods on the non-square 100-by-50 transform case from
+[baseline-cases.json](tools/r-parity/fixtures/baseline-cases.json): three points, a supplied origin,
+eyesim's default mean origin, per-axis factors 2 and 3, and the bounds themselves. An exact rational
+oracle computed without either implementation agrees with every eyesim output to `1e-12`, and
+`Warp.affine`, `Warp.rescale` and `Scanpath.warp` reproduce them with explicitly declared frames and
+y-axes in `core/src/test/scala/eyes4s/core/TransformConformanceSuite.scala`. The homogeneous affine,
+its solve from the three fitting pairs alone, the excluded held-out target and the axis-swap and
+no-translation mutants are oracle values only: eyesim has no coordinate affine entry point. Its
+`affine_transform` and `contract_transform` fit density-space maps from matched density moments and
+resample densities; the fixture records their response to coordinate tables, and eyes4s does not
+implement them (gap `eyesim-transform`).
 
 ## Cases that must remain distinguishable
 
@@ -182,5 +197,16 @@ Java 17/21 matrix was not run. Local artifact publication is not a remote releas
   including the custom detector run.
 - `check_baseline.py --eyesim ... --mote` validated all 13 rows, 20 classified cases, fixture
   digests, the exact eyesim Git object, live gap tasks and their downstream blocking edges.
+
+### Local acceptance addendum, 2026-09-17
+
+- The root `test` matrix passed **2,276 test executions** across 24 JVM and Scala.js module runs
+  after the surface-totality, smoother-card, scanpath-generator and coordinate-transform changes.
+  `scalafmtCheckAll`, `headerCheckAll` and `checkBoundaries` also passed.
+- `generate_transforms.py --eyesim ... --check` reinstalled the pinned eyesim archive and reproduced
+  `fixtures/transforms.json` and `TransformFixtures.scala` byte for byte; the exact oracle agreed
+  with every public `center`, `rescale` and `normalize` output.
+- `check_baseline.py --eyesim ... --mote` validated all 13 rows and 21 classified cases (two
+  verified equivalent, three intentional divergences, sixteen gaps).
 
 These are local results. Hosted Java 17/21 CI and remote publication were not run.

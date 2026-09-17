@@ -242,7 +242,7 @@ class StudyCodecSuite extends munit.FunSuite:
           val target = expected.masses.toMap.apply(label)
           val mass   = get(value)
           target.zipWithIndex.foreach { case (cell, index) =>
-            assertEqualsDouble(mass.at(index), cell, OracleTolerance)
+            assertEqualsDouble(mass.unsafeAt(index), cell, OracleTolerance)
           }
         }
         get(scale.contrast).rows.foreach { row =>

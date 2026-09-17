@@ -235,7 +235,7 @@ class OccupancySuite extends munit.FunSuite:
     val m = Mass.mean(Seq(a, b)).toOption.get
     assertEqualsDouble(m.sum, 1.0, 1e-9)
     (0 until grid.size).foreach { i =>
-      assertEqualsDouble(m.at(i), (a.at(i) + b.at(i)) / 2.0, 1e-12, clue(i))
+      assertEqualsDouble(m.unsafeAt(i), (a.unsafeAt(i) + b.unsafeAt(i)) / 2.0, 1e-12, clue(i))
     }
   }
 
@@ -249,7 +249,18 @@ class OccupancySuite extends munit.FunSuite:
     val b  = uniformMass(Grid.square(screen, 10).toOption.get)
     val m1 = Mass.mean(Seq(a, b)).toOption.get
     val m2 = Mass.weightedMean(Seq((3.0, a), (3.0, b))).toOption.get
-    (0 until grid.size).foreach(i => assertEqualsDouble(m2.at(i), m1.at(i), 1e-12))
+    (0 until grid.size).foreach(i => assertEqualsDouble(m2.unsafeAt(i), m1.unsafeAt(i), 1e-12))
+  }
+
+  test("at is total: an index off the surface is None, not an exception") {
+    val a = uniformMass(grid)
+    assertEquals(a.at(-1), None)
+    assertEquals(a.at(grid.size), None)
+    assertEquals(a.at(Int.MinValue), None)
+    assertEquals(a.at(Int.MaxValue), None)
+    assertEquals(a.at(0), Some(1.0 / grid.size))
+    assertEquals(a.at(grid.size - 1), Some(a.values(grid.size - 1)))
+    (0 until grid.size).foreach(i => assertEquals(a.at(i), Some(a.unsafeAt(i)), clue(i)))
   }
 
   // -------------------------------------------------------------------------
@@ -267,10 +278,14 @@ class OccupancySuite extends munit.FunSuite:
       .toOption
       .get
 
-    assert((0 until grid.size).forall(i => M.plus(a, M.zero).at(i) == a.at(i)))
-    assert((0 until grid.size).forall(i => math.abs(M.plus(a, M.negate(a)).at(i)) < 1e-12))
+    assert((0 until grid.size).forall(i => M.plus(a, M.zero).unsafeAt(i) == a.unsafeAt(i)))
     assert(
-      (0 until grid.size).forall(i => math.abs(M.scale(2.0, a).at(i) - 2.0 * a.at(i)) < 1e-12)
+      (0 until grid.size).forall(i => math.abs(M.plus(a, M.negate(a)).unsafeAt(i)) < 1e-12)
+    )
+    assert(
+      (0 until grid.size).forall(i =>
+        math.abs(M.scale(2.0, a).unsafeAt(i) - 2.0 * a.unsafeAt(i)) < 1e-12
+      )
     )
     assertEquals(M.zero.size, grid.size)
   }
