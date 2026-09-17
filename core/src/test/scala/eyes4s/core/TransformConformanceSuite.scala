@@ -107,6 +107,9 @@ class TransformConformanceSuite extends munit.FunSuite:
   ) {
     assertEquals(eyesimRevision, "ecb9c496257bce51acd5330af6a5e7a8d5b84e05")
     assertNotEquals(xMax - xMin, yMax - yMin)
+    // On the bounds diagonal every normalised point has x == y and an x/y swap
+    // would pass unseen; the fixture must carry at least one point off it.
+    assert(eyesimNormalize.exists(p => p.x != p.y), clue(eyesimNormalize))
     Vector(
       "center"        -> (eyesimCenterSupplied, exactCenterSupplied),
       "center (mean)" -> (eyesimCenterDefault, exactCenterDefault),

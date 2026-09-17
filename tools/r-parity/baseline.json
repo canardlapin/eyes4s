@@ -44,7 +44,7 @@
   "fixtures": {
     "baseline-small": {
       "path": "tools/r-parity/fixtures/baseline-cases.json",
-      "sha256": "30c86e4b5eb1fda661fc9c24da82190e164da4d27fddf05fc6efe2a4b38eaf01",
+      "sha256": "ce6618fd0a7e2bccb2f1b90b88486b7fbb81a8fee89594bd5e0d0193c20af2aa",
       "license": "Apache-2.0; synthetic data authored for eyes4s",
       "role": "Selected adversarial and analytic inputs for every unresolved baseline row"
     },
@@ -92,7 +92,7 @@
     },
     "transforms-reference": {
       "path": "tools/r-parity/fixtures/transforms.json",
-      "sha256": "013757397e235cb20c30642b39e2ac5ec8bf92fd58af48e32a77c6ce7226c316",
+      "sha256": "89d04fa3ef04d2320a6b0a24315b5e6f4af6982243093fc491b39fd07acc570a",
       "license": "Apache-2.0",
       "role": "Pinned public eyesim center/rescale/normalize output, observed fitted-transform behaviour on coordinate tables, R environment, and the exact affine oracle with a training-only solve, held-out target and mutants"
     }

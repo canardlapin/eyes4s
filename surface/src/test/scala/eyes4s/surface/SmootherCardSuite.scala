@@ -102,6 +102,42 @@ class SmootherCardSuite extends munit.FunSuite:
     }
   }
 
+  test(
+    "the Gaussian provenance step digest is pinned, so a reordered configuration fails loudly"
+  ) {
+    // Literals computed once from the step as shipped at cb203e8: the same
+    // Vector, written out below, so the pin is the old construction, not a
+    // reading of the new one. Identical on JVM and Scala.js by DET-2.
+    val pinned = Map(
+      EdgePolicy.Truncate    -> "b2cd40693f4dcfeb",
+      EdgePolicy.Renormalise -> "9ce79506f26d0fcb"
+    )
+    EdgePolicy.values.foreach { policy =>
+      val out  = Smoother.gaussian(sigma, policy).smooth(measure, grid).toOption.get
+      val step = out.provenance.steps.last
+      assertEquals(step.digest.render, pinned(policy), clue(policy))
+      val original = Provenance.Step(
+        "smooth",
+        Vector(
+          "kernel" -> Provenance.Param.Text("gaussian"),
+          "sigma"  -> Provenance.Param.Num(4.0),
+          "edges"  -> Provenance.Param.Text(policy.toString)
+        )
+      )
+      assertEquals(original.digest.render, pinned(policy), clue(policy))
+    }
+    val reordered = Provenance.Step(
+      "smooth",
+      Vector(
+        "sigma"  -> Provenance.Param.Num(4.0),
+        "kernel" -> Provenance.Param.Text("gaussian"),
+        "edges"  -> Provenance.Param.Text("Truncate")
+      )
+    )
+    assertEquals(reordered.digest.render, "668b07a67a1e4433")
+    assertNotEquals(reordered.digest.render, pinned(EdgePolicy.Truncate))
+  }
+
   test("a card cannot be declared with empty text or clashing parameter names") {
     val p = SmootherParameter("sigma", "spread", SmootherParameterUnits.FrameUnits)
     assert(SmootherCard.of("", "n", "s", Vector(p), "rule", Vector.empty, None).isLeft)

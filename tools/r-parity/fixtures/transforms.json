@@ -1,6 +1,6 @@
 {
   "eyesim_revision": "ecb9c496257bce51acd5330af6a5e7a8d5b84e05",
-  "input_sha256": "30c86e4b5eb1fda661fc9c24da82190e164da4d27fddf05fc6efe2a4b38eaf01",
+  "input_sha256": "ce6618fd0a7e2bccb2f1b90b88486b7fbb81a8fee89594bd5e0d0193c20af2aa",
   "input_license": "Apache-2.0; synthetic data authored for eyes4s",
   "oracle": "Exact rational arithmetic for every supplied map, a training-only solve of the affine from the three fitting pairs, the held-out target, and axis-swap and no-translation mutants. center, rescale and normalize are compared with public eyesim fixation_group output; the affine has no eyesim coordinate entry point.",
   "fitted_transforms": "eyesim affine_transform and contract_transform fit density-space maps from matched density objects and resample densities; they are not coordinate transforms. Their response to coordinate tables is recorded below and eyes4s does not implement them.",
@@ -21,6 +21,10 @@
       [
         "80",
         "40"
+      ],
+      [
+        "20",
+        "40"
       ]
     ],
     "origin": [
@@ -28,8 +32,8 @@
       "25"
     ],
     "mean_origin": [
-      "100/3",
-      "50/3"
+      "30",
+      "45/2"
     ],
     "scale": [
       "2",
@@ -53,20 +57,28 @@
       [
         "30",
         "15"
+      ],
+      [
+        "-30",
+        "15"
       ]
     ],
     "center_default": [
       [
-        "-100/3",
-        "-50/3"
+        "-30",
+        "-45/2"
       ],
       [
-        "-40/3",
-        "-20/3"
+        "-10",
+        "-25/2"
       ],
       [
-        "140/3",
-        "70/3"
+        "50",
+        "35/2"
+      ],
+      [
+        "-10",
+        "35/2"
       ]
     ],
     "rescale": [
@@ -81,6 +93,10 @@
       [
         "160",
         "120"
+      ],
+      [
+        "40",
+        "120"
       ]
     ],
     "normalize": [
@@ -94,6 +110,10 @@
       ],
       [
         "4/5",
+        "4/5"
+      ],
+      [
+        "1/5",
         "4/5"
       ]
     ],
@@ -126,6 +146,10 @@
       [
         "190",
         "96"
+      ],
+      [
+        "70",
+        "111"
       ]
     ],
     "fit_pairs": [
@@ -212,20 +236,28 @@
         [
           30,
           15
+        ],
+        [
+          -30,
+          15
         ]
       ],
       "center_default": [
         [
-          -33.3333333333333,
-          -16.6666666666667
+          -30,
+          -22.5
         ],
         [
-          -13.3333333333333,
-          -6.66666666666667
+          -10,
+          -12.5
         ],
         [
-          46.6666666666667,
-          23.3333333333333
+          50,
+          17.5
+        ],
+        [
+          -10,
+          17.5
         ]
       ],
       "rescale": [
@@ -240,6 +272,10 @@
         [
           160,
           120
+        ],
+        [
+          40,
+          120
         ]
       ],
       "normalize": [
@@ -253,6 +289,10 @@
         ],
         [
           0.8,
+          0.8
+        ],
+        [
+          0.2,
           0.8
         ]
       ]

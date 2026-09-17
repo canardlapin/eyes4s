@@ -81,10 +81,33 @@ trait ScanpathLaws extends Laws:
         Prop(sp.dwellTotal.toMicros <= sp.extent.duration.toMicros) :|
           s"dwell ${sp.dwellTotal.toMicros} > extent ${sp.extent.duration.toMicros}"
       },
-      "path length is the sum of transition amplitudes" -> forAll(gen) { sp =>
-        val summed = sp.transitions.map(_.amplitude).sum
-        Prop(tol.approxEquals(sp.pathLength, summed)) :| s"${sp.pathLength} vs $summed"
-      },
+      "path length is invariant under translation and scales under a uniform rescale" ->
+        forAll(gen) { sp =>
+          val b       = sp.frame.bounds
+          val shifted = Frame.of(
+            FrameId(sp.frame.id.name + "-shifted"),
+            Bounds
+              .of[U](b.xMin + b.width, b.yMin - b.height, b.xMax + b.width, b.yMax - b.height)
+              .toOption
+              .get,
+            sp.frame.yAxis
+          )
+          val doubled = Frame.of(
+            FrameId(sp.frame.id.name + "-doubled"),
+            Bounds.of[U](2 * b.xMin, 2 * b.yMin, 2 * b.xMax, 2 * b.yMax).toOption.get,
+            sp.frame.yAxis
+          )
+          val moved  = sp.warp(Warp.rescale(sp.frame, shifted).toOption.get)
+          val scaled = sp.warp(Warp.rescale(sp.frame, doubled).toOption.get)
+          (moved, scaled) match
+            case (Right(m), Right(s)) =>
+              Prop(tol.approxEquals(m.pathLength, sp.pathLength)) :|
+                s"translated ${m.pathLength} vs ${sp.pathLength}" &&
+                Prop(tol.approxEquals(s.pathLength, 2 * sp.pathLength)) :|
+                s"doubled ${s.pathLength} vs ${2 * sp.pathLength}"
+            case (Left(e), _) => Prop(false) :| e.message
+            case (_, Left(e)) => Prop(false) :| e.message
+        },
       "re-admitting the fixations reproduces the scanpath" -> forAll(gen) { sp =>
         Scanpath.of(sp.frame, sp.clock, sp.fixations) match
           case Left(e)      => Prop(false) :| e.message

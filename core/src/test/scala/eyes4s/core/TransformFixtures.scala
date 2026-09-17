@@ -20,7 +20,7 @@ package eyes4s.core
 // format: off
 object TransformFixtures:
   val eyesimRevision = "ecb9c496257bce51acd5330af6a5e7a8d5b84e05"
-  val inputSha256 = "30c86e4b5eb1fda661fc9c24da82190e164da4d27fddf05fc6efe2a4b38eaf01"
+  val inputSha256 = "ce6618fd0a7e2bccb2f1b90b88486b7fbb81a8fee89594bd5e0d0193c20af2aa"
   val tolerance = 1e-12
   final case class P(x: Double, y: Double)
   final case class Affine(a: Double, b: Double, tx: Double, c: Double, d: Double, ty: Double)
@@ -28,24 +28,24 @@ object TransformFixtures:
   final case class Outcome(entryPoint: String, outcome: String, detail: String)
   /** xMin, xMax, yMin, yMax: the eyesim bounds convention. */
   val bounds = (0.0 / 1.0, 100.0 / 1.0, 0.0 / 1.0, 50.0 / 1.0)
-  val points = Vector(P(0.0 / 1.0, 0.0 / 1.0), P(20.0 / 1.0, 10.0 / 1.0), P(80.0 / 1.0, 40.0 / 1.0))
+  val points = Vector(P(0.0 / 1.0, 0.0 / 1.0), P(20.0 / 1.0, 10.0 / 1.0), P(80.0 / 1.0, 40.0 / 1.0), P(20.0 / 1.0, 40.0 / 1.0))
   val origin = P(50.0 / 1.0, 25.0 / 1.0)
-  val meanOrigin = P(100.0 / 3.0, 50.0 / 3.0)
+  val meanOrigin = P(30.0 / 1.0, 45.0 / 2.0)
   val scale = (2.0 / 1.0, 3.0 / 1.0)
   val affine = Affine(2.0 / 1.0, 1.0 / 2.0, 10.0 / 1.0, -1.0 / 4.0, 3.0 / 1.0, -4.0 / 1.0)
   val fitPairs = Vector(Pair(P(0.0 / 1.0, 0.0 / 1.0), P(10.0 / 1.0, -4.0 / 1.0)), Pair(P(20.0 / 1.0, 0.0 / 1.0), P(50.0 / 1.0, -9.0 / 1.0)), Pair(P(0.0 / 1.0, 10.0 / 1.0), P(15.0 / 1.0, 26.0 / 1.0)))
   val heldOut = Pair(P(70.0 / 1.0, 30.0 / 1.0), P(165.0 / 1.0, 137.0 / 2.0))
   // Public eyesim fixation_group outputs at the pinned revision.
-  val eyesimCenterSupplied = Vector(P(-50.0, -25.0), P(-30.0, -15.0), P(30.0, 15.0))
-  val eyesimCenterDefault = Vector(P(-33.3333333333333, -16.6666666666667), P(-13.3333333333333, -6.66666666666667), P(46.6666666666667, 23.3333333333333))
-  val eyesimRescale = Vector(P(0.0, 0.0), P(40.0, 30.0), P(160.0, 120.0))
-  val eyesimNormalize = Vector(P(0.0, 0.0), P(0.2, 0.2), P(0.8, 0.8))
+  val eyesimCenterSupplied = Vector(P(-50.0, -25.0), P(-30.0, -15.0), P(30.0, 15.0), P(-30.0, 15.0))
+  val eyesimCenterDefault = Vector(P(-30.0, -22.5), P(-10.0, -12.5), P(50.0, 17.5), P(-10.0, 17.5))
+  val eyesimRescale = Vector(P(0.0, 0.0), P(40.0, 30.0), P(160.0, 120.0), P(40.0, 120.0))
+  val eyesimNormalize = Vector(P(0.0, 0.0), P(0.2, 0.2), P(0.8, 0.8), P(0.2, 0.8))
   // Exact rational oracle; eyesim has no coordinate affine entry point.
-  val exactCenterSupplied = Vector(P(-50.0 / 1.0, -25.0 / 1.0), P(-30.0 / 1.0, -15.0 / 1.0), P(30.0 / 1.0, 15.0 / 1.0))
-  val exactCenterDefault = Vector(P(-100.0 / 3.0, -50.0 / 3.0), P(-40.0 / 3.0, -20.0 / 3.0), P(140.0 / 3.0, 70.0 / 3.0))
-  val exactRescale = Vector(P(0.0 / 1.0, 0.0 / 1.0), P(40.0 / 1.0, 30.0 / 1.0), P(160.0 / 1.0, 120.0 / 1.0))
-  val exactNormalize = Vector(P(0.0 / 1.0, 0.0 / 1.0), P(1.0 / 5.0, 1.0 / 5.0), P(4.0 / 5.0, 4.0 / 5.0))
-  val exactAffinePoints = Vector(P(10.0 / 1.0, -4.0 / 1.0), P(55.0 / 1.0, 21.0 / 1.0), P(190.0 / 1.0, 96.0 / 1.0))
+  val exactCenterSupplied = Vector(P(-50.0 / 1.0, -25.0 / 1.0), P(-30.0 / 1.0, -15.0 / 1.0), P(30.0 / 1.0, 15.0 / 1.0), P(-30.0 / 1.0, 15.0 / 1.0))
+  val exactCenterDefault = Vector(P(-30.0 / 1.0, -45.0 / 2.0), P(-10.0 / 1.0, -25.0 / 2.0), P(50.0 / 1.0, 35.0 / 2.0), P(-10.0 / 1.0, 35.0 / 2.0))
+  val exactRescale = Vector(P(0.0 / 1.0, 0.0 / 1.0), P(40.0 / 1.0, 30.0 / 1.0), P(160.0 / 1.0, 120.0 / 1.0), P(40.0 / 1.0, 120.0 / 1.0))
+  val exactNormalize = Vector(P(0.0 / 1.0, 0.0 / 1.0), P(1.0 / 5.0, 1.0 / 5.0), P(4.0 / 5.0, 4.0 / 5.0), P(1.0 / 5.0, 4.0 / 5.0))
+  val exactAffinePoints = Vector(P(10.0 / 1.0, -4.0 / 1.0), P(55.0 / 1.0, 21.0 / 1.0), P(190.0 / 1.0, 96.0 / 1.0), P(70.0 / 1.0, 111.0 / 1.0))
   val exactFittedAffine = Affine(2.0 / 1.0, 1.0 / 2.0, 10.0 / 1.0, -1.0 / 4.0, 3.0 / 1.0, -4.0 / 1.0)
   val mutantAxisSwapHeldOut = P(105.0 / 1.0, 397.0 / 2.0)
   val mutantNoTranslationHeldOut = P(155.0 / 1.0, 145.0 / 2.0)

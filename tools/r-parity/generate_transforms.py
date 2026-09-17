@@ -68,6 +68,11 @@ def oracle(spec):
     sx, sy = (frac(v) for v in spec["rescale"])
     xmin, xmax, ymin, ymax = (frac(v) for v in spec["bounds"])
     assert xmax - xmin != ymax - ymin, "the case must use non-square bounds"
+    # On the bounds diagonal every normalised point has x == y, so an x/y swap
+    # would be invisible; at least one point must leave it.
+    assert any(
+        (p[0] - xmin) / (xmax - xmin) != (p[1] - ymin) / (ymax - ymin) for p in points
+    ), "at least one point must lie off the bounds diagonal"
     matrix = [[frac(v) for v in row] for row in spec["affine_homogeneous"]]
     pairs = [
         ([frac(v) for v in pr["source"]], [frac(v) for v in pr["target"]])

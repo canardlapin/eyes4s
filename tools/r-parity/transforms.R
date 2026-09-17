@@ -11,7 +11,7 @@ as_rows <- function(value) {
   matrix(as.numeric(value), ncol = 2L)
 }
 points <- as_rows(spec$points)
-stopifnot(identical(points[1L, ], c(0, 0)), nrow(points) == 3L)
+stopifnot(identical(points[1L, ], c(0, 0)), nrow(points) >= 4L)
 n <- nrow(points)
 fg <- eyesim::fixation_group(
   x = points[, 1L], y = points[, 2L],
