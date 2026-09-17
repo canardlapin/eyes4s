@@ -168,6 +168,81 @@ step for the work that was cut off, since none completed. `run.outcome` is the
 authority. `events` has no commit point: interrupting it ends the stream
 between steps with no terminal element.
 
+## Run recording and temporal plans through the same runner
+
+The three shipped plan families share one execution contract. In `eyes4s-plan`,
+`Stepwise[C, Stage, E, R]` is the step shape a runner interprets: a pure,
+immutable cursor that names the stage its next `advance(quanta)` works on and
+returns `WorkStep.More(stage, units, next)`, `WorkStep.Done(units, result)` or a
+typed error. `StudyCursor` satisfies it as it is; `RecordingCursor` and
+`TemporalCursor` are written to it, and `Stepwise.complete` drives any of them.
+In `eyes4s-fs2`, `Execution[F]` is the one runner: it interprets a `Submission`
+(id, quanta, how to begin the cursor, the segment of each stage and the total of
+each segment, plus the `Stepwise` evidence) into `RunEvent`, `RunOutcome`,
+`RunProgress` and `Run`. `StudyExecution`, `RecordingExecution` and
+`TemporalExecution` are thin wrappers that build the submission; the study
+names (`StudyProgress`, `StudyOutcome`, `StudyEvent`, `StudyRun`) are aliases of
+the shared types, so `StudyOutcome.Completed(_, last, result)` and
+`StudyEvent.Advanced(progress)` construct and match as before. Two things a
+consumer can notice: `StudyProgress(...)` still constructs, but the alias has no
+`unapply`, so a progress value is matched as `RunProgress(...)` or read by
+field; and a wildcard type test must name the shared case,
+`RunEvent.Advanced[?, ?, ?, ?, ?]`, because an alias with four parameters cannot
+be applied to wildcards. The commit, cancellation, observer and defect contracts
+of the previous section hold unchanged for every family.
+
+**Recording plans.** `plan.work(recording)` checks the prerequisites and returns
+a `RecordingCursor`; `plan.run(recording)` drives it to completion, so the
+streamed analysis is the pure one bit for bit, chunk cuts included. Its stages
+are `Synchronizing` (one whole step), `Warping` (one whole step),
+`Interpolating(sample)` and `Detecting(sample)` in chunks of
+`WorkQuanta.samples` (a `SampleQuantum`, default 4096; the new third field of
+`WorkQuanta`, which no study step reads), and `Assigning` (one whole step). The
+chunked stages step the interpolation and detection machines through the
+kernel's `MachineCursor`, the pure chunked driver beside `runAll` and the
+streaming pipe: an event that spans a cut is emitted where the machine emits
+it, and `flush` runs exactly once, inside the step that feeds the last sample.
+A run cancelled earlier has flushed nothing and manufactured no event; a
+cancelled or failed outcome never carries a `RecordingAnalysis`. In
+`eyes4s-detect`, `Detection.stepped` returns the `DetectionCursor` behind this,
+and `Detection.run` is that cursor driven to completion, so identity, gap
+policy, support ledgers and provenance are assembled by the same code either
+way. The bounded-step requirement for an independently implemented detector is
+therefore stated, not assumed: its machine's per-sample `step` and its `flush`
+are the units the cursor cuts between, and a `step` that does unbounded work on
+one sample is not made interruptible by chunking. Detectors register once,
+through `EventDetector.of`; there is no second bounded registration.
+`RecordingRunId` is the plan's input digest, detector identity, description and
+sample quantum. Segment totals are all `Exact`: one unit for each whole step
+and the recording's sample count for each chunked machine.
+
+**Temporal plans.** `plan.prepare(available, budget)` checks the prerequisites
+and prepares every repetition's `StudyPlan` and `PreparedStudy` once, in plan
+order, without estimating anything; `PreparedTemporalStudy.work(budget)` returns
+a `TemporalCursor` and `plan.run(available)` is `prepare` then completion. Cells
+run in plan order, repetitions outer and windows inner. Per cell, one
+`Preparing(repetition, window, trial)` step resolves one trial's measured
+anchor, window and observed occupancy, exactly as before (explicit anchors and
+coverage, clipped straddlers, missing epochs and 64-bit anchor overflow stay
+per-trial typed data inside the result); then the cell's `StudyCursor`, created
+from the repetition's prepared study with that occupancy and the window's
+provenance context, advances step for step as `Studying(repetition, window,
+stage)`. The inner cursor's `Done` is the temporal cursor's `More` into the next
+cell, so a temporal run's step sequence is its cells' study sequences
+concatenated, each stamped with its cell, and its segments are
+`TemporalSegment.Preparing(repetition, window)` with total `Exact(trials)` and
+`TemporalSegment.Studying(repetition, window, studySegment)` with the
+repetition's study totals. Cancellation lands between trials of a preparation,
+between study steps and between cells; no partial cell is returned as a result.
+`TemporalRunId` is the temporal input digest (fixation input plus every anchor
+and coverage ledger), the base layout and method identities, the full plan
+description and the pair and comparison quanta. One ordering note: because
+preparation now precedes execution for every repetition, a preparation failure
+of a later repetition is reported before an execution failure of an earlier one.
+Execution failures can occur under default budgets; what cannot is a later
+repetition failing preparation after an earlier one succeeded, since every
+repetition is prepared against the same input and budget before any cell runs.
+
 ## Input payloads and admission ledgers
 
 `StudyInputCodecs.study[U]` supplies two versioned codecs for the ordinary participant/stimulus/phase

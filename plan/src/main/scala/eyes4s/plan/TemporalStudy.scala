@@ -16,7 +16,6 @@
 
 package eyes4s.plan
 
-import cats.syntax.all.*
 import eyes4s.core.*
 import eyes4s.design.*
 import eyes4s.kernel.*
@@ -178,86 +177,20 @@ final class TemporalStudyPlan[K, U <: Unit2D, P, S, D] private (
         )
       case Some(a) => base.prerequisites(Some(a.study)).map(TemporalStudyError.Input.apply)
 
+  /** Execute every repetition and window: the prepared study driven to completion. */
   def run(
       available: TemporalStudyInput[K, U]
   ): Either[TemporalStudyError, TemporalStudyResult[K, U, P, S, D]] =
-    prerequisites(Some(available)).headOption match
-      case Some(error) => Left(error)
-      case None        =>
-        repetitions
-          .traverse { repetition =>
-            StudyPlan
-              .of(
-                base.input,
-                base.layout,
-                base.grid,
-                repetition.focalPhase,
-                repetition.referencePhase,
-                Weight.Duration,
-                base.estimates,
-                base.policy,
-                base.method,
-                base.parameters
-              )
-              .left
-              .map(TemporalStudyError.Input.apply)
-              .flatMap { study =>
-                windows.traverse { window =>
-                  val occupancy = available.study.trials.rows.map { trial =>
-                    val prepared = for
-                      epoch <- available.epochs
-                        .get(trial.key)
-                        .toRight(
-                          TemporalStudyError
-                            .MissingEpoch(base.layout.digest.digest(trial.key).render)
-                        )
-                      interval <- window.resolve(epoch)
-                      value    <- WindowOccupancy(
-                        trial.value,
-                        interval,
-                        epoch.coverage,
-                        boundary
-                      ).left.map(TemporalStudyError.Occupancy.apply)
-                    yield value
-                    trial.key -> prepared
-                  }
-                  val byKey   = occupancy.toMap
-                  val context = Vector(
-                    "temporal.input"      -> Provenance.Param.Text(input.digest),
-                    "temporal.window"     -> Provenance.Param.Text(window.name),
-                    "temporal.fromMicros" -> Provenance.Param
-                      .Text(window.window.from.toMicros.toString),
-                    "temporal.untilMicros" -> Provenance.Param
-                      .Text(window.window.until.toMicros.toString),
-                    "temporal.boundary"   -> Provenance.Param.Text(boundary.toString),
-                    "temporal.repetition" -> Provenance.Param.Text(repetition.name)
-                  )
-                  study
-                    .runPrepared(
-                      available.study,
-                      (key, _) =>
-                        byKey
-                          .get(key)
-                          .toRight(
-                            TemporalStudyError.MissingEpoch(
-                              base.layout.digest.digest(key).render
-                            )
-                          )
-                          .flatten
-                          .left
-                          .map(StudyFailure.Temporal(key, _))
-                          .map(_.measure),
-                      context
-                    )
-                    .left
-                    .map(TemporalStudyError.Input.apply)
-                    .map(result =>
-                      new TemporalCell(repetition, window, study, occupancy, result)
-                    )
-                }
-              }
-          }
-          .map(rows => new TemporalStudyResult(description, rows.flatten))
+    prepare(available).flatMap(_.run)
+
+  /** Bind the input and prepare every repetition's study once, in plan order,
+    * without estimating anything; see [[PreparedTemporalStudy]].
+    */
+  def prepare(
+      available: TemporalStudyInput[K, U],
+      budget: PairScheduleBudget = PairScheduleBudget.default
+  ): Either[TemporalStudyError, PreparedTemporalStudy[K, U, P, S, D]] =
+    TemporalWork.prepare(this, available, budget)
 
 object TemporalStudyPlan:
   def of[K, U <: Unit2D: UnitLabel, P, S, D](

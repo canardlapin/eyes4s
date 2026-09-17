@@ -258,6 +258,49 @@ object Detection:
       parameters
     )
 
+  /** Bounded execution of a shipped or independently documented detector: the
+    * same machine that `run` drives, stepped over sample chunks. Driving the
+    * cursor to completion is `run`; see [[DetectionCursor]].
+    */
+  def stepped[U <: Unit2D](
+      source: RecordingRef,
+      recording: Recording[U],
+      detector: EventDetector[U],
+      gapPolicy: GapPolicy,
+      temporalSupport: TemporalSupport,
+      parameters: Vector[(String, Provenance.Param)] = Vector.empty
+  ): DetectionCursor[U] =
+    DetectionCursor.begin(
+      source,
+      recording,
+      DetectorIdentity.Algorithm(detector.card),
+      gapPolicy,
+      recording.representedSupport(temporalSupport),
+      detector.machine,
+      detector.configuration ++ parameters
+    )
+
+  /** Bounded execution of an explicitly custom machine, the stepped form of
+    * [[runCustom]] with the same weaker identity.
+    */
+  def steppedCustom[U <: Unit2D](
+      source: RecordingRef,
+      recording: Recording[U],
+      detector: DetectorRef,
+      gapPolicy: GapPolicy,
+      machine: Machine[Sample[U], DetectionEmission[U]],
+      parameters: Vector[(String, Provenance.Param)] = Vector.empty
+  ): DetectionCursor[U] =
+    DetectionCursor.begin(
+      source,
+      recording,
+      DetectorIdentity.Custom(detector),
+      gapPolicy,
+      recording.representedSupport,
+      machine,
+      parameters
+    )
+
   private def execute[U <: Unit2D](
       source: RecordingRef,
       recording: Recording[U],
@@ -267,38 +310,66 @@ object Detection:
       machine: Machine[Sample[U], DetectionEmission[U]],
       parameters: Vector[(String, Provenance.Param)]
   ): Either[DetectionResultError, DetectionResult[U]] =
-    val detector  = identity.detectorRef
-    val emissions = machine.runAll(recording.samples)
-    emissions.zipWithIndex.collectFirst { case (Left(error), index) => (error, index) } match
-      case Some((error, index)) =>
-        Left(DetectionResultError.DetectorEmissionFailed(source, detector, index, error))
-      case None =>
-        val events = emissions.collect { case Right(event) => event }
-        for
-          support <- supportFor(source, recording, detector, events)
-          series  <- EventSeries
-            .of(recording, source, events, support)
-            .left
-            .map(DetectionResultError.SourceSupport(source, detector, _))
-          bridged <- validateGaps(
-            source,
-            recording,
-            detector,
-            gapPolicy,
-            temporalSupport,
-            support
-          )
-          result <- assemble(
-            source,
-            recording,
-            identity,
-            gapPolicy,
-            temporalSupport,
-            series,
-            bridged,
-            parameters
-          )
-        yield result
+    DetectionCursor.complete(
+      DetectionCursor
+        .begin(source, recording, identity, gapPolicy, temporalSupport, machine, parameters),
+      Int.MaxValue
+    )
+
+  /** The first failed emission at or after `from`, by its global index. */
+  private[detect] def firstFailure[U <: Unit2D](
+      source: RecordingRef,
+      detector: DetectorRef,
+      emissions: Vector[DetectionEmission[U]],
+      from: Int
+  ): Either[DetectionResultError, Unit] =
+    val failed = emissions.indexWhere(_.isLeft, from)
+    if failed < 0 then Right(())
+    else
+      emissions(failed) match
+        case Left(error) =>
+          Left(DetectionResultError.DetectorEmissionFailed(source, detector, failed, error))
+        case Right(_) => Right(())
+
+  /** Assemble a result from emissions already checked to be all `Right`. */
+  private[detect] def assembleEmissions[U <: Unit2D](
+      source: RecordingRef,
+      recording: Recording[U],
+      identity: DetectorIdentity,
+      gapPolicy: GapPolicy,
+      temporalSupport: SampleSupportLedger,
+      emissions: Vector[DetectionEmission[U]],
+      parameters: Vector[(String, Provenance.Param)]
+  ): Either[DetectionResultError, DetectionResult[U]] =
+    val detector = identity.detectorRef
+    locally {
+      val events = emissions.collect { case Right(event) => event }
+      for
+        support <- supportFor(source, recording, detector, events)
+        series  <- EventSeries
+          .of(recording, source, events, support)
+          .left
+          .map(DetectionResultError.SourceSupport(source, detector, _))
+        bridged <- validateGaps(
+          source,
+          recording,
+          detector,
+          gapPolicy,
+          temporalSupport,
+          support
+        )
+        result <- assemble(
+          source,
+          recording,
+          identity,
+          gapPolicy,
+          temporalSupport,
+          series,
+          bridged,
+          parameters
+        )
+      yield result
+    }
 
   private def supportFor[U <: Unit2D](
       source: RecordingRef,
@@ -527,3 +598,115 @@ object Detection:
     )
 
 end Detection
+
+/** One bounded step of detection. `samples` is the number the step fed. */
+enum DetectionPage[U <: Unit2D]:
+  case More(samples: Int, next: DetectionCursor[U])
+  case Done(samples: Int, result: Either[DetectionResultError, DetectionResult[U]])
+
+/** Detection part-way through a recording, see [[Detection.stepped]].
+  *
+  * Each `advance` feeds at most `maximum` samples to the detector's machine
+  * through a [[MachineCursor]]; the step that feeds the last sample also
+  * flushes the machine once and assembles the result exactly as `Detection.run`
+  * does, so a completed cursor is bit-for-bit `run`'s result whatever the
+  * chunking, and an event that spans a chunk boundary is emitted where the
+  * machine emits it. A cursor abandoned before its last step has flushed
+  * nothing: no event, and no result, is manufactured for a cancelled run.
+  *
+  * A step's units are its samples; the flush and assembly are charged to the
+  * last step. An emission failure ends the cursor at the step that observes
+  * it, with the same error `run` reports.
+  *
+  * Bounded-step requirement for independently implemented detectors: the
+  * machine's per-sample `step` and its `flush` are the units of work this
+  * cursor can cut between; a `step` that does unbounded work on one sample is
+  * not made interruptible by chunking. Detectors register once, through
+  * `EventDetector.of`; there is no separate bounded registration.
+  */
+final class DetectionCursor[U <: Unit2D] private (
+    source: RecordingRef,
+    recording: Recording[U],
+    identity: DetectorIdentity,
+    gapPolicy: GapPolicy,
+    temporalSupport: SampleSupportLedger,
+    parameters: Vector[(String, Provenance.Param)],
+    machine: MachineCursor[Sample[U], DetectionEmission[U]],
+    checked: Int
+):
+  /** Samples fed so far and the recording's sample count. */
+  def consumed: Int = machine.consumed
+  def total: Int    = machine.total
+
+  /** Each page checks only the emissions it added: `checked` counts those
+    * already known to be `Right`, so a run scans every emission once.
+    */
+  def advance(maximum: Int): DetectionPage[U] =
+    machine.advance(maximum) match
+      case MachinePage.More(units, next) =>
+        Detection.firstFailure(source, identity.detectorRef, next.emitted, checked) match
+          case Left(error) => DetectionPage.Done(units, Left(error))
+          case Right(())   =>
+            DetectionPage.More(
+              units,
+              new DetectionCursor(
+                source,
+                recording,
+                identity,
+                gapPolicy,
+                temporalSupport,
+                parameters,
+                next,
+                next.emitted.size
+              )
+            )
+      case MachinePage.Done(units, emissions) =>
+        DetectionPage.Done(
+          units,
+          Detection
+            .firstFailure(source, identity.detectorRef, emissions, checked)
+            .flatMap(_ =>
+              Detection.assembleEmissions(
+                source,
+                recording,
+                identity,
+                gapPolicy,
+                temporalSupport,
+                emissions,
+                parameters
+              )
+            )
+        )
+
+object DetectionCursor:
+  private[detect] def begin[U <: Unit2D](
+      source: RecordingRef,
+      recording: Recording[U],
+      identity: DetectorIdentity,
+      gapPolicy: GapPolicy,
+      temporalSupport: SampleSupportLedger,
+      machine: Machine[Sample[U], DetectionEmission[U]],
+      parameters: Vector[(String, Provenance.Param)]
+  ): DetectionCursor[U] =
+    new DetectionCursor(
+      source,
+      recording,
+      identity,
+      gapPolicy,
+      temporalSupport,
+      parameters,
+      MachineCursor.of(machine, recording.samples),
+      0
+    )
+
+  /** Drive a cursor to completion in chunks of `maximum` samples. */
+  def complete[U <: Unit2D](
+      cursor: DetectionCursor[U],
+      maximum: Int
+  ): Either[DetectionResultError, DetectionResult[U]] =
+    @annotation.tailrec
+    def loop(cursor: DetectionCursor[U]): Either[DetectionResultError, DetectionResult[U]] =
+      cursor.advance(maximum) match
+        case DetectionPage.More(_, next)   => loop(next)
+        case DetectionPage.Done(_, result) => result
+    loop(cursor)

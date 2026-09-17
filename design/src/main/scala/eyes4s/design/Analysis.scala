@@ -283,10 +283,32 @@ def evaluatePairs[KL, ML, KR, MR, A, B, E, S](
     info
   )
 
-/** Page and comparison quanta for one resumable step. `pairs` also bounds the
-  * contributions or keys visited by one reduction or contrast step.
+/** Maximum recording samples one bounded preprocessing or detection step may
+  * feed to its machine. One sample is one unit; a machine whose per-sample
+  * `step` is itself unbounded is not made bounded by this quantum.
   */
-final case class WorkQuanta(pairs: PairQuantum, comparison: ComparisonQuantum)
+final class SampleQuantum private (val value: Int)
+object SampleQuantum:
+  val default: SampleQuantum                                 = new SampleQuantum(1 << 12)
+  def of(value: Int): Either[WorkQuantaError, SampleQuantum] =
+    if value <= 0 then Left(WorkQuantaError.InvalidSampleQuantum(value))
+    else Right(new SampleQuantum(value))
+
+enum WorkQuantaError derives CanEqual:
+  case InvalidSampleQuantum(value: Int)
+  def message: String = this match
+    case InvalidSampleQuantum(value) => s"Sample quantum must be positive, got $value."
+
+/** Page, comparison and sample quanta for one resumable step. `pairs` also
+  * bounds the contributions or keys visited by one reduction or contrast step;
+  * `samples` bounds one recording preprocessing or detection step and plays
+  * no part in a study step.
+  */
+final case class WorkQuanta(
+    pairs: PairQuantum,
+    comparison: ComparisonQuantum,
+    samples: SampleQuantum = SampleQuantum.default
+)
 object WorkQuanta:
   val default: WorkQuanta = WorkQuanta(PairQuantum.default, ComparisonQuantum.default)
 
