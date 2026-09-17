@@ -27,6 +27,8 @@ enum CodecError derives CanEqual:
   case Schema(expected: DefinitionId, found: DefinitionId)
   case Definition(underlying: PlanError)
   case DuplicateKeys(schema: DefinitionId, indices: Vector[Int])
+  case MissingIdentity(kind: String, id: String)
+  case IdentityConflict(kind: String, id: String, existing: Json, incoming: Json)
   case MissingMethod(method: DefinitionId)
   case DuplicateMethod(method: DefinitionId)
 
@@ -38,6 +40,9 @@ enum CodecError derives CanEqual:
     case Definition(e)             => e.message
     case DuplicateKeys(s, indices) =>
       s"Schema ${s.name}@${s.version} has duplicate keys at entries $indices."
+    case MissingIdentity(kind, id) => s"No $kind with nominal ID '$id' in this document."
+    case IdentityConflict(kind, id, old, incoming) =>
+      s"Conflicting $kind ID '$id': ${old.noSpaces} versus ${incoming.noSpaces}."
     case MissingMethod(id)   => s"No registered method ${id.name}@${id.version}."
     case DuplicateMethod(id) => s"Method ${id.name}@${id.version} is already registered."
 

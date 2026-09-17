@@ -283,6 +283,44 @@ def evaluatePairs[KL, ML, KR, MR, A, B, E, S](
     info
   )
 
+/** Evaluate bounded pair pages without retaining a second table of source pairs.
+  * Completed scores remain fully materialized for the existing reduction API.
+  */
+def evaluateScheduled[KL, KR, E, S](
+    schedule: DirectedPairSchedule[KL, KR],
+    inputs: ContentHash,
+    info: EvaluationInfo,
+    quantum: PairQuantum = PairQuantum.default
+)(
+    evaluator: ScheduledPair[KL, KR] => Either[E, S]
+): Either[PairScheduleError, DirectedPairwiseAnalysis[KL, KR, E, S]] =
+  val rows = Vector.newBuilder[PairScore[KL, KR, E, S]]
+  def append(pairs: Vector[ScheduledPair[KL, KR]]): Unit =
+    pairs.foreach(p => rows += PairScore(p.left, p.right, evaluator(p)))
+
+  @annotation.tailrec
+  def loop(
+      cursor: PairCursor[KL, KR]
+  ): Either[PairScheduleError, DirectedPairwiseAnalysis[KL, KR, E, S]] =
+    cursor.advance(quantum) match
+      case Left(error)                          => Left(error)
+      case Right(PairPage.More(pairs, _, next)) =>
+        append(pairs)
+        loop(next)
+      case Right(PairPage.Done(pairs, _, report)) =>
+        append(pairs)
+        val scores = rows.result()
+        Right(
+          DirectedPairwiseAnalysis(
+            scores,
+            report,
+            EvaluationProvenance(inputs, info, report, scores),
+            info
+          )
+        )
+
+  loop(schedule.start)
+
 /** Evaluate canonical-undirected pairs only with explicit symmetry evidence. */
 def evaluatePairs[K, M, A, E, S](
     paired: UndirectedPaired[K, M, A],

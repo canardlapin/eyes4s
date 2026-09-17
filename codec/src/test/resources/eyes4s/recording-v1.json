@@ -1,0 +1,61 @@
+{
+  "schema": {
+    "name": "eyes4s.recording-plan",
+    "version": 1
+  },
+  "value": {
+    "method": {
+      "name": "eyes4s.recording.ivt",
+      "version": 1
+    },
+    "parameters": {
+      "schema": {
+        "name": "eyes4s.ivt-parameters",
+        "version": 1
+      },
+      "value": {
+        "threshold": 30,
+        "minimumMicros": "60000"
+      }
+    },
+    "input": "0123456789abcdef",
+    "source": "recording-v1-oracle",
+    "display": {
+      "id": "screen-v1",
+      "unit": "px",
+      "xMin": 0,
+      "yMin": 0,
+      "xMax": 800,
+      "yMax": 600,
+      "yAxis": "Down"
+    },
+    "trackerClock": "tracker-v1",
+    "analysisClock": "analysis-v1",
+    "angularFrame": "angular-v1",
+    "viewing": {
+      "distanceMm": 600,
+      "widthMm": 400,
+      "heightMm": 300
+    },
+    "syncModel": "OffsetOnly",
+    "marks": [
+      {
+        "id": "trigger-v1",
+        "sourceMicros": "9007199254740993",
+        "targetMicros": "9007199254741003"
+      }
+    ],
+    "residualLimitMicros": "500",
+    "interpolationGapMicros": "75000",
+    "areas": [
+      {
+        "id": "image",
+        "label": "Image",
+        "xMin": 100,
+        "yMin": 100,
+        "xMax": 700,
+        "yMax": 500
+      }
+    ]
+  }
+}

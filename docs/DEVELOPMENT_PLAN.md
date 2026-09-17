@@ -153,6 +153,14 @@ produce actionable typed failures. A changed plan produces a meaningful structur
 
 ### M5 — Prove modular development and application consumption
 
+The [UI-consumer infrastructure plan](UI_FOUNDATION_PLAN.md), lodged on 2026-09-16,
+breaks the execution, scientific serialization, and method/preflight boundary into
+17 scoped implementation tickets under the existing Mote owners. Start with X1's
+shared work/pair schedule; S1's domain codecs and M1's typed descriptors are
+independently ready. Its external-consumer gate proves the bounded shipped study,
+recording, and temporal routes; it does not close the broader baseline, Session,
+or all-method coverage requirements in this development plan.
+
 Use `bd-01M214CXBZN8R7R4P0M5ACY25H`, the application-boundary integration work
 `bd-01M02N4GM03BF98C3PSJS6D4WA`, and `app-progress`/`app-measureinfo`/`app-errors`.
 

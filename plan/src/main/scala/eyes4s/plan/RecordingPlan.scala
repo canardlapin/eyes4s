@@ -29,7 +29,8 @@ final case class IvtParameters(threshold: IvtThreshold, minimumDuration: Minimum
 final class RecordingMethod[P](
     val id: DefinitionId,
     val parameters: P => Vector[(String, Provenance.Param)],
-    val detector: (P, ClockId) => Either[DetectorDefinitionError, EventDetector[Deg]]
+    val detector: (P, ClockId) => Either[DetectorDefinitionError, EventDetector[Deg]],
+    val descriptor: Option[RecordingMethodDescriptor[P]] = None
 )
 object RecordingMethod:
   def ivt(id: DefinitionId): RecordingMethod[IvtParameters] = new RecordingMethod(
@@ -41,7 +42,8 @@ object RecordingMethod:
           p.minimumDuration.span.toMicros.toString
         )
       ),
-    (p, c) => Right(Detectors.ivt(p.threshold, p.minimumDuration, c))
+    (p, c) => Right(Detectors.ivt(p.threshold, p.minimumDuration, c)),
+    Some(RecordingMethodDescriptor.ivt(id))
   )
 
 final class RecordingArea private (val id: String, val label: String, val bounds: Bounds[Px])
@@ -83,6 +85,8 @@ final class RecordingPlan[P] private (
     val method: RecordingMethod[P],
     val parameters: P
 ):
+  def inspect: Either[DescriptorError, RecipeInspection] = RecipeDescriptors.recording(this)
+
   def description: Vector[(String, Vector[Provenance.Param])] =
     import Provenance.Param.*
     Vector(

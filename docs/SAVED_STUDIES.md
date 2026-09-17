@@ -29,6 +29,39 @@ contains only the content digest. The importer or application resolves the artif
 codec modules never load files or access a network. The first workflow supports existing fixation
 summaries. Detection plans and a general artifact storage service remain separate work.
 
+## Prepare a study and inspect its pair schedule
+
+`plan.prepare(input, budget)` returns a `PreparedStudy` bound to the input,
+layout/method identities, and full plan description. It checks the input artifact
+and records each trial's frame compatibility through `Agreement`. It does not
+compute density maps or comparison scores. `work.run` executes that same prepared
+work; `plan.run(input)` now uses this route internally.
+
+The `matched` and `controls` schedules retain typed keys and positions in the
+focal/reference operands. Start with `schedule.start`, then call
+`cursor.advance(quantum)`. `PairPage.More` returns a bounded vector and the next
+immutable cursor; `PairPage.Done` also returns the complete pairing diagnostics.
+Duplicate keys are excluded in full and retained as ambiguities. Missing matches,
+excluded phases, and failure-policy denominators keep their existing semantics.
+Traversal is focal-major/reference-minor in input order; the final contrast still
+uses the layout's canonical key ordering.
+
+`PairScheduleBudget.of(sourceRows, candidatePairs, selectedPairs)` and
+`PairQuantum.of(visits)` are checked constructors. The study candidate budget
+conservatively counts both designs at every scale before duplicate exclusion.
+The default retains the count limits representable by the existing result API;
+applications should supply smaller budgets suited to their workload. Refusals
+name operand sizes and limits instead of returning a truncated result.
+
+Preparation stores source metadata rather than a Cartesian table of source pairs.
+Duplicate grouping and frame checks are bounded by the source-row budget; pages
+bound candidate visits and final diagnostic visits. This is not a wall-clock bound
+for arbitrary custom key/projection functions. The current runner still computes
+whole numerical operations and retains completed scores for reductions; a full
+cancellable numerical interpreter is separate work. Custom projections, parameters,
+and registered behavior must remain pure and stable; an observed change in the
+captured plan description invalidates prepared execution.
+
 ## Versions and extensions
 
 The JSON envelope has a schema identifier and version. Its payload separately records the method

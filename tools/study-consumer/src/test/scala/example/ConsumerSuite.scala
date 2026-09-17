@@ -35,7 +35,7 @@ class ConsumerSuite extends munit.DisciplineSuite:
   private def get[E, A](e: Either[E, A]): A  = e.fold(error => fail(s"$error"), identity)
   private def id(name: String): DefinitionId = get(DefinitionId.of(name, 1))
   private val layout                         = CustomMethod.layout(id("my.lab.trial-layout"))
-  private val method                         = CustomMethod.method(id("my.lab.scaled-cosine"))
+  private val method      = get(CustomMethod.describedMethod(id("my.lab.scaled-cosine")))
   private val parameters  = CustomMethod.parameterCodec(id("my.lab.multiplier"))
   private val keys        = CustomMethod.keyCodec(id("my.lab.trial-key"))
   private val persistence = new StudyCodec(id("my.lab.study"), layout, keys, method, parameters)
@@ -89,6 +89,35 @@ class ConsumerSuite extends munit.DisciplineSuite:
       d => Vector(d.value)
     )
   )
+
+  test(
+    "packaged typed descriptors construct and inspect an extension without an application parameter table"
+  ) {
+    val parameter = get(CustomMethod.parameterDescriptor)
+    assert(parameter.parse(0).isLeft)
+    val value = get(parameter.parse(2.0))
+    assertEquals(value.value, 2.0)
+    val original   = plan(value.value)
+    val inspection = get(original.inspect)
+    assertEquals(inspection.description, original.description)
+    assertEquals(
+      inspection.fields.find(_.info.id == "method.multiplier").map(_.info.version),
+      Some(2)
+    )
+    val restored = get(persistence.codec.decode(get(persistence.codec.encode(original))))
+    assertEquals(get(restored.inspect).description, inspection.description)
+    val descriptor = method.descriptor.get
+    assertEquals(
+      get(descriptor.components(value)).map(_.range),
+      Vector(eyes4s.compare.MeasureScale.Bounded(0, 2))
+    )
+    assertEquals(descriptor.execution, ExecutionCapability.SynchronousWholeOperation)
+    assert(descriptor.verify(value, Vector.empty, Vector("value")).isLeft)
+    assert(typeCheckErrors("""
+      import example.*
+      CustomMethod.parameterDescriptor.toOption.get.construct("two")
+    """).nonEmpty)
+  }
 
   checkAll(
     "parameter codec",

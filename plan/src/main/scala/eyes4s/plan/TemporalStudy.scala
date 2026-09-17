@@ -142,6 +142,8 @@ final class TemporalStudyPlan[K, U <: Unit2D, P, S, D] private (
     val repetitions: Vector[RepetitionContrast],
     val boundary: FixationBoundary
 )(using UnitLabel[U]):
+  def inspect: Either[DescriptorError, RecipeInspection] = RecipeDescriptors.temporal(this)
+
   def description: Vector[(String, Vector[Provenance.Param])] =
     import Provenance.Param.*
     base.description ++ Vector(

@@ -59,12 +59,8 @@ object RecordingCodecs:
     )
 
 private[codec] object RecordingWire:
-  def micros(json: Json, field: String): Either[CodecError, Long] = Wire
-    .field[String](json, field)
-    .flatMap(text =>
-      text.toLongOption
-        .toRight(CodecError.Field(field, json, s"invalid integer microseconds '$text'"))
-    )
+  def micros(json: Json, field: String): Either[CodecError, Long] =
+    DomainWire.micros(json, field)
 
 final class RecordingPlanCodec[P](
     val schema: DefinitionId,
@@ -87,23 +83,9 @@ final class RecordingPlanCodec[P](
       "trackerClock"  -> Json.fromString(plan.trackerClock.name),
       "analysisClock" -> Json.fromString(plan.analysisClock.name),
       "angularFrame"  -> Json.fromString(plan.angularFrameId.name),
-      "viewing"       -> plan.viewing.fold(Json.Null)(v =>
-        Json.obj(
-          "distanceMm" -> Json.fromDoubleOrNull(v.perspective.distance.toMm),
-          "widthMm"    -> Json.fromDoubleOrNull(v.perspective.surfaceWidth.toMm),
-          "heightMm"   -> Json.fromDoubleOrNull(v.perspective.surfaceHeight.toMm)
-        )
-      ),
+      "viewing"   -> plan.viewing.fold(Json.Null)(v => DomainWire.perspective(v.perspective)),
       "syncModel" -> Json.fromString(plan.synchronizationModel.toString),
-      "marks"     -> Json.arr(
-        plan.marks.map(m =>
-          Json.obj(
-            "id"           -> Json.fromString(m.id),
-            "sourceMicros" -> Json.fromString(m.onSource.toMicros.toString),
-            "targetMicros" -> Json.fromString(m.onTarget.toMicros.toString)
-          )
-        )*
-      ),
+      "marks"     -> Json.arr(plan.marks.map(DomainWire.mark)*),
       "residualLimitMicros" -> plan.residualLimit.fold(Json.Null)(l =>
         Json.fromString(l.span.toMicros.toString)
       ),
@@ -136,33 +118,15 @@ final class RecordingPlanCodec[P](
       analysis    <- Wire.field[String](json, "analysisClock")
       angular     <- Wire.field[String](json, "angularFrame")
       viewingJson <- Wire.field[Option[Json]](json, "viewing")
-      viewing     <- viewingJson.traverse { value =>
-        for
-          d           <- Wire.field[Double](value, "distanceMm")
-          w           <- Wire.field[Double](value, "widthMm")
-          h           <- Wire.field[Double](value, "heightMm")
-          perspective <- Perspective
-            .millimetres(d, w, h)
-            .left
-            .map(e => CodecError.Field("viewing", value, e.message))
-        yield Viewing(perspective)
-      }
+      viewing     <- viewingJson.traverse(value =>
+        DomainWire.readPerspective(value).map(Viewing.apply)
+      )
       modelName <- Wire.field[String](json, "syncModel")
       model     <- SyncFitMode.values
         .find(_.toString == modelName)
         .toRight(CodecError.Field("syncModel", json, s"unknown model '$modelName'"))
       rawMarks <- Wire.field[Vector[Json]](json, "marks")
-      marks    <- rawMarks.traverse { value =>
-        for
-          id   <- Wire.field[String](value, "id")
-          a    <- RecordingWire.micros(value, "sourceMicros")
-          b    <- RecordingWire.micros(value, "targetMicros")
-          mark <- SyncMark
-            .of(id, Instant.micros(a), Instant.micros(b))
-            .left
-            .map(e => CodecError.Field("mark", value, e.message))
-        yield mark
-      }
+      marks    <- rawMarks.traverse(DomainWire.readMark)
       rawLimit <- Wire.field[Option[String]](json, "residualLimitMicros")
       limit    <- rawLimit.traverse(text =>
         for

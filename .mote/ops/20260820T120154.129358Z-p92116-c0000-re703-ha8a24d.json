@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s","entity":"ms-v06","kind":"note","note_kind":"decision","op":"20260820T120154.129358Z-p92116-c0000-re703-ha8a24d","text":"Priority normalized to P1 because v0.5 relational analysis is the current P0 gate. v0.6 remains valid and includes x-session after removal of the prior milestone dependency cycle.","ts":"2026-08-20T12:01:54.129358Z","v":1}

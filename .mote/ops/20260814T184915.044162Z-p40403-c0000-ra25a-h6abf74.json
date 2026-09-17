@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s","entity":"trust-detector-cards","kind":"note","note_kind":"note","op":"20260814T184915.044162Z-p40403-c0000-ra25a-h6abf74","text":"Corrected publication-only reference omission. AlgorithmCardSuite passes 5/5 on JVM and Scala.js with exact repository, revision, source paths, and license assertions.","ts":"2026-08-14T18:49:15.044162Z","v":1}

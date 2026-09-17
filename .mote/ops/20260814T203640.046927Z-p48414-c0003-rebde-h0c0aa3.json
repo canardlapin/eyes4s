@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s","entity":"trust-csv-golden","kind":"note","note_kind":"progress","op":"20260814T203640.046927Z-p48414-c0003-rebde-h0c0aa3","text":"Implementing the declarative CSV/TSV boundary, source digest, accumulated row diagnostics, and lossless validation report.","ts":"2026-08-14T20:36:40.046927Z","v":1}

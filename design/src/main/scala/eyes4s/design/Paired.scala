@@ -202,7 +202,7 @@ def pair[K, M, A](
 ): UndirectedPaired[K, M, A] =
   PairConstruction.withinUndirected(trials, design)
 
-private object PairConstruction:
+private[design] object PairConstruction:
 
   def between[KL, ML, KR, MR, A, B](
       left: Trials[KL, ML, A],
@@ -361,27 +361,21 @@ private object PairConstruction:
   ): Vector[IndexedTrial[K, M, A]] =
     rows.zipWithIndex.map { case (trial, index) => IndexedTrial(index, trial) }
 
-  private def duplicates[K, M, A](
+  private[design] def duplicates[K, M, A](
       rows: Vector[Trial[K, M, A]]
   ): Vector[DuplicateTrials[K, M, A]] =
-    val seen       = scala.collection.mutable.Set.empty[Int]
-    val duplicates = Vector.newBuilder[DuplicateTrials[K, M, A]]
-
-    rows.indices.foreach { index =>
-      if !seen.contains(index) then
-        val matching =
-          rows.indices.filter(other => rows(other).key == rows(index).key).toVector
-        matching.foreach(seen += _)
-        if matching.size > 1 then
-          duplicates += DuplicateTrials(
-            rows(index).key,
-            matching.map(other => IndexedTrial(other, rows(other)))
-          )
+    val groups = scala.collection.mutable.LinkedHashMap.empty[K, Vector[IndexedTrial[K, M, A]]]
+    rows.zipWithIndex.foreach { case (trial, index) =>
+      groups.update(
+        trial.key,
+        groups.getOrElse(trial.key, Vector.empty) :+ IndexedTrial(index, trial)
+      )
     }
+    groups.iterator.collect {
+      case (key, occurrences) if occurrences.size > 1 => DuplicateTrials(key, occurrences)
+    }.toVector
 
-    duplicates.result()
-
-  private def duplicateIndices[K, M, A](
+  private[design] def duplicateIndices[K, M, A](
       duplicates: Vector[DuplicateTrials[K, M, A]]
   ): Set[Int] =
     duplicates.iterator.flatMap(_.occurrences.iterator.map(_.index)).toSet

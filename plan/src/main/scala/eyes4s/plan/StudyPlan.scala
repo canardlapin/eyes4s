@@ -53,6 +53,14 @@ enum PlanError derives CanEqual:
   case EmptyScales(count: Int)
   case DuplicateScales(names: Vector[String])
   case Specification(underlying: EvaluationSpecError)
+  case Schedule(underlying: PairScheduleError)
+  case StudyWorkBudget(
+      focalTrials: Int,
+      referenceTrials: Int,
+      scales: Int,
+      maximumCandidateVisits: Long
+  )
+  case ChangedPreparedPlan(method: DefinitionId, layout: DefinitionId)
 
   def message: String = this match
     case InvalidDefinition(n, v) =>
@@ -66,6 +74,11 @@ enum PlanError derives CanEqual:
     case EmptyScales(n)         => s"Study requires at least one estimation scale, got $n."
     case DuplicateScales(names) => s"Study estimation scales must be distinct: $names."
     case Specification(e)       => e.message
+    case Schedule(e)            => e.message
+    case StudyWorkBudget(focal, reference, scales, maximum) =>
+      s"Study with focal=$focal, reference=$reference and scales=$scales exceeds matched/control candidate-visit budget $maximum."
+    case ChangedPreparedPlan(method, layout) =>
+      s"Prepared study parameters changed for method $method and layout $layout; prepare the revised plan again."
 
 /** A registered interpretation of user keys. Identity and matching stay in K. */
 final class StudyLayout[K](
@@ -167,7 +180,8 @@ final class StudyMethod[P, U <: Unit2D, S, D](
     val id: DefinitionId,
     val name: String,
     val parameters: P => Vector[(String, Provenance.Param)],
-    val comparison: P => Compare[Mass[U], Mass[U], S]
+    val comparison: P => Compare[Mass[U], Mass[U], S],
+    val descriptor: Option[MethodDescriptor[P, S, D]] = None
 )(using val mean: ScoreMean[S], val difference: Contrastable[S, D])
 
 object StudyMethod:
@@ -175,7 +189,13 @@ object StudyMethod:
   def cosine[U <: Unit2D](
       id: DefinitionId
   ): StudyMethod[Unit, U, Similarity, SignedDifference] =
-    new StudyMethod(id, "Cosine similarity", _ => Vector.empty, _ => Distribution.cosine[U])
+    new StudyMethod(
+      id,
+      "Cosine similarity",
+      _ => Vector.empty,
+      _ => Distribution.cosine[U],
+      Some(MethodDescriptor.cosine[U](id))
+    )
 
 /** A field-level structural difference suitable for a review panel. */
 final case class PlanChange(
@@ -212,6 +232,8 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
     val method: StudyMethod[P, U, S, D],
     val parameters: P
 )(using unit: UnitLabel[U]):
+  def inspect: Either[DescriptorError, RecipeInspection] = RecipeDescriptors.study(this)
+
   def description: Vector[(String, Vector[Provenance.Param])] =
     import Provenance.Param.*
     Vector(
@@ -259,31 +281,38 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
     case _ => Vector.empty
 
   def run(available: StudyInput[K, U]): Either[PlanError, StudyResult[K, U, S, D]] =
-    runPrepared(
-      available,
-      (key, path) => path.occupancy(weight).left.map(StudyFailure.Occupancy(key, _)),
-      Vector.empty
-    )
+    prepare(available).flatMap(_.run)
+
+  def prepare(
+      available: StudyInput[K, U],
+      budget: PairScheduleBudget = PairScheduleBudget.default
+  ): Either[PlanError, PreparedStudy[K, U, P, S, D]] =
+    prerequisites(Some(available)).headOption match
+      case Some(error) => Left(error)
+      case None        => PreparedStudy.build(this, available, budget)
 
   private[plan] def runPrepared(
       available: StudyInput[K, U],
       prepare: (K, Scanpath[U]) => Either[StudyFailure[K], PointMeasure[U]],
       context: Vector[(String, Provenance.Param)]
   ): Either[PlanError, StudyResult[K, U, S, D]] =
-    prerequisites(Some(available)).headOption match
-      case Some(error) => Left(error)
-      case None        =>
-        estimates
-          .traverse(runScale(available, _, prepare, context))
-          .map(new StudyResult(input, description, _))
+    this.prepare(available).flatMap(_.execute(prepare, context))
+
+  private[plan] def executeWork(
+      work: PreparedStudy[K, U, P, S, D],
+      prepare: (K, Scanpath[U]) => Either[StudyFailure[K], PointMeasure[U]],
+      context: Vector[(String, Provenance.Param)]
+  ): Either[PlanError, StudyResult[K, U, S, D]] =
+    estimates
+      .traverse(runScale(work, _, prepare, context))
+      .map(new StudyResult(input, description, _))
 
   private def runScale(
-      available: StudyInput[K, U],
+      work: PreparedStudy[K, U, P, S, D],
       estimate: StudyEstimate[U],
       prepare: (K, Scanpath[U]) => Either[StudyFailure[K], PointMeasure[U]],
       context: Vector[(String, Provenance.Param)]
   ): Either[PlanError, StudyScaleResult[K, U, S, D]] =
-    given KeyDigest[K]       = layout.digest
     given Ordering[K]        = layout.ordering
     given ScoreMean[S]       = method.mean
     given Contrastable[S, D] = method.difference
@@ -303,13 +332,10 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
       )
       .left
       .map(PlanError.Specification.apply)
-      .map { specification =>
-        val prepared = available.trials.rows.map { trial =>
+      .flatMap { specification =>
+        val prepared = work.input.trials.rows.zipWithIndex.map { case (trial, index) =>
           val mass = for
-            _ <- Agreement
-              .frames(grid.frame, trial.value.frame)
-              .left
-              .map(StudyFailure.Frame(trial.key, _))
+            _         <- work.frameChecks(index)
             occupancy <- prepare(trial.key, trial.value)
             mass      <- estimate match
               case StudyEstimate.Binned() =>
@@ -330,43 +356,31 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
           yield mass
           Trial(trial.key, (), mass)
         }
-        val trials    = Trials(prepared.map(t => Trial(t.key, (), t.key -> t.value)))
-        val focal     = trials.filterKey(k => layout.phase(k) == focalPhase)
-        val reference = trials.filterKey(k => layout.phase(k) == referencePhase)
-        val matched   = Pairing
-          .between[K, K]
-          .sameOn(layout.participant, layout.participant)
-          .sameOn(layout.stimulus, layout.stimulus)
-          .all
-        val controls = Pairing
-          .between[K, K]
-          .sameOn(layout.participant, layout.participant)
-          .differentOn(layout.stimulus, layout.stimulus)
-          .all
-        def evaluate(design: PairDesign.BetweenDirected[K, K]): Analysis[K, S] =
-          evaluatePairs(
-            pair(focal, reference, design),
-            available.hash,
+        def evaluate(schedule: DirectedPairSchedule[K, K]): Either[PlanError, Analysis[K, S]] =
+          evaluateScheduled(
+            schedule,
+            work.input.hash,
             EvaluationInfo.comparison(cmp, specification)
-          ) { case ((leftKey, a), (rightKey, b)) =>
+          ) { pair =>
+            val a = prepared(work.focalIndices(pair.leftIndex)).value
+            val b = prepared(work.referenceIndices(pair.rightIndex)).value
             a.flatMap(left =>
               b.flatMap(right =>
                 cmp
                   .compare(left, right)
                   .left
-                  .map(e => StudyFailure.Comparison(leftKey, rightKey, e))
+                  .map(e => StudyFailure.Comparison(pair.left, pair.right, e))
               )
             )
-          }.meanByLeft(policy)
-        new StudyScaleResult(
+          }.left.map(PlanError.Schedule.apply).map(_.meanByLeft(policy))
+        for
+          matched  <- evaluate(work.matched)
+          controls <- evaluate(work.controls)
+        yield new StudyScaleResult(
           estimate,
           prepared.map(t => t.key -> t.value),
-          available.trials.rows
-            .filter(t =>
-              layout.phase(t.key) != focalPhase && layout.phase(t.key) != referencePhase
-            )
-            .map(_.key),
-          contrast(evaluate(matched), evaluate(controls))
+          work.excludedPhases,
+          contrast(matched, controls)
         )
       }
 

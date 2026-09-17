@@ -61,12 +61,7 @@ final class TemporalStudyCodec[K, U <: Unit2D: UnitLabel, P, S, D](
       def invalid(path: String, e: TemporalStudyError): CodecError =
         CodecError.Field(path, json, e.message)
       def micros(value: Json, field: String): Either[CodecError, Long] =
-        Wire
-          .field[String](value, field)
-          .flatMap(raw =>
-            raw.toLongOption
-              .toRight(CodecError.Field(field, value, s"invalid integer microseconds '$raw'"))
-          )
+        DomainWire.micros(value, field)
       for
         baseJson <- Wire.field[Json](json, "study")
         base     <- study.codec.decode(baseJson)

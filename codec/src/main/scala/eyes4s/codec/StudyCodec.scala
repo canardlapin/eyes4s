@@ -53,39 +53,12 @@ object StudyCodecs:
       yield StudyKey(participant, stimulus, phase)
     }
 
-  private[codec] def frame[U <: Unit2D](f: Frame[U])(using u: UnitLabel[U]): Json = Json.obj(
-    "id"    -> Json.fromString(f.id.name),
-    "unit"  -> Json.fromString(u.symbol),
-    "xMin"  -> Json.fromDoubleOrNull(f.spec.xMin),
-    "yMin"  -> Json.fromDoubleOrNull(f.spec.yMin),
-    "xMax"  -> Json.fromDoubleOrNull(f.spec.xMax),
-    "yMax"  -> Json.fromDoubleOrNull(f.spec.yMax),
-    "yAxis" -> Json.fromString(f.yAxis.toString)
-  )
+  private[codec] def frame[U <: Unit2D: UnitLabel](f: Frame[U]): Json = DomainWire.frame(f)
 
-  private[codec] def readFrame[U <: Unit2D](
+  private[codec] def readFrame[U <: Unit2D: UnitLabel](
       json: Json
-  )(using u: UnitLabel[U]): Either[CodecError, Frame[U]] = for
-    name <- Wire.field[String](json, "id")
-    unit <- Wire.field[String](json, "unit")
-    _    <- Either.cond(
-      unit == u.symbol,
-      (),
-      CodecError.Field("unit", json, s"expected ${u.symbol}, got $unit")
-    )
-    xmin     <- Wire.field[Double](json, "xMin")
-    ymin     <- Wire.field[Double](json, "yMin")
-    xmax     <- Wire.field[Double](json, "xMax")
-    ymax     <- Wire.field[Double](json, "yMax")
-    axisName <- Wire.field[String](json, "yAxis")
-    axis     <- YAxis.values
-      .find(_.toString == axisName)
-      .toRight(CodecError.Field("yAxis", json, s"unknown axis $axisName"))
-    bounds <- Bounds
-      .of[U](xmin, ymin, xmax, ymax)
-      .left
-      .map(e => CodecError.Field("bounds", json, e.message))
-  yield Frame.of(FrameId(name), bounds, axis)
+  ): Either[CodecError, Frame[U]] =
+    DomainWire.readFrame[U](json)
 
 /** Persistence registration captures the typed key and parameter codecs with one method.
   * Plan has no circe dependency. Runtime lookup selects this already typed closure;

@@ -63,6 +63,56 @@ object TrialKey:
   given Ordering[TrialKey]  = Ordering.by(key => (key.subject, key.item, key.phase))
 
 object CustomMethod:
+  def parameterDescriptor
+      : Either[DescriptorError, ParameterDescriptor[Double, Multiplier, String]] =
+    ParameterInfo
+      .of(
+        "multiplier",
+        2,
+        "Positive dimensionless factor applied to cosine similarity",
+        ParameterUnits.Dimensionless,
+        ParameterDomain.PositiveFinite
+      )
+      .map(info => new ParameterDescriptor(info, Multiplier.of, identity))
+
+  def describedMethod(
+      id: DefinitionId
+  ): Either[DescriptorError, StudyMethod[Multiplier, Px, ScaledScore, SignedDifference]] =
+    for
+      parameter <- parameterDescriptor
+      fields    <- ParameterSet.of(
+        Vector(parameter.bind[Multiplier](identity)(p => Provenance.Param.Num(p.value)))
+      )
+    yield
+      val executable = method(id)
+      val metadata   = MethodDescriptor.of[Multiplier, ScaledScore, SignedDifference](
+        id,
+        fields,
+        p => executable.comparison(p).info,
+        p =>
+          ScoreComponent
+            .of[ScaledScore, SignedDifference](
+              "value",
+              "Scaled cosine; matched minus control difference",
+              ParameterUnits.Dimensionless,
+              MeasureScale.Bounded(0, p.value),
+              ScoreDirection.HigherIsCloser
+            )(_.value, _.value)
+            .map(Vector(_)),
+        Set(
+          ComparisonProperty.Symmetric,
+          ComparisonProperty.NonNegative,
+          ComparisonProperty.Bounded
+        )
+      )
+      new StudyMethod(
+        id,
+        executable.name,
+        executable.parameters,
+        executable.comparison,
+        Some(metadata)
+      )
+
   def method(id: DefinitionId): StudyMethod[Multiplier, Px, ScaledScore, SignedDifference] =
     new StudyMethod(
       id,

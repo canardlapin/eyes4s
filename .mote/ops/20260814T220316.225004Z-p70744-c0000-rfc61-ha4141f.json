@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s","entity":"trust-tidy-golden","kind":"reserve_open","mode":"exclusive","op":"20260814T220316.225004Z-p70744-c0000-rfc61-ha4141f","paths":["io/src/main/scala/eyes4s/io/TidyResult.scala","io/src/test/scala/eyes4s/io/TidyResultSuite.scala"],"reservation_id":"rv-01M014T0C0KS6CYNBS87MY5Q29","ts":"2026-08-14T22:03:16.225004Z","ttl_s":3600,"v":1}
