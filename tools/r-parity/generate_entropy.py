@@ -94,7 +94,11 @@ def log_ratio(a: list[Fraction], b: list[Fraction]) -> list[Decimal | str]:
 
 
 def floored_log_ratio(a: list[Fraction], b: list[Fraction]) -> list[Decimal]:
-    """eyes4s Mass.logRatio: both cells floored at 1e-12 before the ratio."""
+    """A restatement of the eyes4s Mass.logRatio floor rule, the counterpart of
+    eyesim_formula for the eyes4s side: both cells are floored at 1e-12 before
+    the ratio. It records what eyes4s computes at a zero cell so the divergence
+    from eyesim's unfloored -Inf/Inf/NaN is a pinned number, not an estimand.
+    """
     return [(max(dec(x), FLOOR) / max(dec(y), FLOOR)).ln() for x, y in zip(a, b)]
 
 

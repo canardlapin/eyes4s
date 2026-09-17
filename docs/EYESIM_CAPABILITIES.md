@@ -11,8 +11,8 @@ python3 tools/r-parity/check_baseline.py \
   --mote
 ```
 
-The contract currently contains 13 required rows and 21 classified cases: two verified equivalent,
-three verified intentional divergences and sixteen implementation gaps. This is a finite work list,
+The contract currently contains 13 required rows and 24 classified cases: four verified equivalent,
+five verified intentional divergences and fifteen implementation gaps. This is a finite work list,
 not a parity percentage. A row remains open while any required case is a gap.
 
 ## Reference and classification

@@ -210,7 +210,7 @@ class EntropyConformanceSuite extends munit.FunSuite:
     // The floor is a named argument, so a caller who wants eyesim's behaviour
     // at zero cells can ask for it and get the infinity explicitly.
     val raw = p.logRatio(q, floor = 0.0)
-    assert(raw.isLeft, "an unfloored log ratio at a zero cell is not a finite Signed map")
+    assertEquals(raw, Left(SurfaceError.NonFiniteValue(zero, Double.NegativeInfinity)))
   }
 
   test("eyesim * stops with 'undefined operation'; eyes4s has no product spelling at all") {
@@ -235,7 +235,7 @@ class EntropyConformanceSuite extends munit.FunSuite:
     val q2    = Surface.mass(other, IArray.from(massQ), origin).toOption.get
     assertEquals(p.difference(q2), Left(SurfaceError.GridMismatch(grid.id, other.id)))
     assertEquals(p.logRatio(q2), Left(SurfaceError.GridMismatch(grid.id, other.id)))
-    assert(Mass.mean(Seq(p, q2)).isLeft)
+    assertEquals(Mass.mean(Seq(p, q2)), Left(SurfaceError.GridMismatch(grid.id, other.id)))
   }
 
   test("every eyesim operator result is still classed eye_density and carries no sigma") {
