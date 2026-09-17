@@ -23,7 +23,13 @@ final class EvaluationGeometry private (
     val unit: Option[(String, String)],
     val frame: Option[(FrameId, FrameSpec)],
     val grid: Option[(GridId, GridSpec)]
-) derives CanEqual
+) derives CanEqual:
+  /** Structural: a reconstructed geometry equals the one it was written from. */
+  override def equals(other: Any): Boolean = other match
+    case that: EvaluationGeometry =>
+      unit == that.unit && frame == that.frame && grid == that.grid
+    case _ => false
+  override def hashCode: Int = (unit, frame, grid).hashCode
 
 object EvaluationGeometry:
   val Independent: EvaluationGeometry = new EvaluationGeometry(None, None, None)
@@ -68,6 +74,15 @@ final class EvaluationSpec private (
     val geometry: EvaluationGeometry,
     val time: EvaluationTime
 ) derives CanEqual:
+  /** Structural: a reconstructed specification equals the one it was written from. */
+  override def equals(other: Any): Boolean = other match
+    case that: EvaluationSpec =>
+      method == that.method && revision == that.revision && parameters == that.parameters &&
+      components == that.components && geometry == that.geometry && time == that.time
+    case _ => false
+  override def hashCode: Int =
+    (method, revision, parameters, components, geometry, time).hashCode
+
   private[design] def steps: Vector[Provenance.Step] =
     import Provenance.Param.*
     val frame = geometry.frame.toVector.flatMap { case (id, spec) =>

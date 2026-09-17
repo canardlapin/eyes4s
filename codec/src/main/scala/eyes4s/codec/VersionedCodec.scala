@@ -18,7 +18,7 @@ package eyes4s.codec
 
 import cats.syntax.all.*
 import eyes4s.core.{DetectionSupportError, RecordingError}
-import eyes4s.design.{Trial, Trials}
+import eyes4s.design.{ReconstructionError, Trial, Trials}
 import eyes4s.kernel.SyncEvidenceError
 import eyes4s.plan.*
 import io.circe.{Json, Decoder}
@@ -54,6 +54,12 @@ enum CodecError derives CanEqual:
       refitOffsetMicros: Long,
       refitDrift: Double
   )
+  // UI-S4: result archives.
+  case Reconstruction(underlying: ReconstructionError[?])
+  case Result(underlying: StudyResultError[?])
+  case ScoreComponents(expected: Vector[String], found: Vector[String])
+  case MissingResultCodec(method: DefinitionId)
+  case DuplicateResultCodec(method: DefinitionId)
 
   def message: String = this match
     case InvalidJson(_, reason)     => s"Invalid project JSON: $reason"
@@ -87,6 +93,15 @@ enum CodecError derives CanEqual:
     case SynchronizationFit(path, declaredOffset, declaredDrift, refitOffset, refitDrift) =>
       s"$path declares offsetMicros=$declaredOffset drift=$declaredDrift but the observed marks " +
         s"refit to offsetMicros=$refitOffset drift=$refitDrift."
+    // UI-S4
+    case Reconstruction(e)                => e.message
+    case Result(e)                        => e.message
+    case ScoreComponents(expected, found) =>
+      s"Archived score components $found differ from the method's components $expected."
+    case MissingResultCodec(id) =>
+      s"No registered result codec for method ${id.name}@${id.version}."
+    case DuplicateResultCodec(id) =>
+      s"Result codec for method ${id.name}@${id.version} is already registered."
 
 /** A typed, explicitly versioned codec. Unsupported old versions fail precisely.
   * The wire envelope separates schema identity from any method identity in its payload.

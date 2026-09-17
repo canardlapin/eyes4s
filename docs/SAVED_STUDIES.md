@@ -367,6 +367,102 @@ range and one trial left without an epoch). They are checked for decoded meaning
 identity on JVM and Scala.js; the JVM suite additionally checks byte-identical re-encoding of the
 pretty-printed files.
 
+## Completed results
+
+`StudyResultCodecs.cosine[U]` supplies the versioned codec for a completed `StudyResult` of the
+ordinary cosine route (`eyes4s.study-result@1`); `persistence.results(scoreCodec, differenceCodec)`
+builds one from any `StudyCodec`, so an extension method archives its own score and difference
+types through the codecs it registers, never through `Any`, an unnamed numeric vector or a rendered
+string. Only a `StudyResult` can be encoded, and a `StudyResult` exists only for completed execution:
+a cancelled or failed run has no value to archive.
+
+The archive keeps the result's identity and every piece of evidence the run produced:
+
+- the layout, key, method, score and difference schema identities, the spatial unit, the input
+  reference digest and the complete plan description with its typed parameters;
+- per scale, the estimator, every trial's estimation outcome (a density as its cell values on the
+  plan grid with its provenance, or a typed `StudyFailure` naming the trial), and the keys excluded
+  by phase selection;
+- both directed pair analyses: every pair row with both source keys and its score or typed failure
+  (`StudyFailure.Comparison` names both trials; an estimation failure names the trial that failed),
+  the pairing report (pair space, eligible and selected counts, unmatched keys, duplicate-key
+  ambiguities with their operand indices), the evaluation metadata (name, scale and the full
+  `EvaluationSpec`) and the evaluation provenance;
+- both by-focal reductions: every `ReductionRow` with its typed `ReductionError` or score and its
+  `successful`/`failed`/`contributing` denominators, the `ReductionReport` and the reduction provenance;
+- the contrast rows in the layout's key order, each with its operands and its difference or typed
+  `ContrastRowError`, or the typed `ContrastError` when no contrast could be formed.
+
+Provenance is written as its input digest and every step's parameters in order; 64-bit values are
+decimal strings. Densities are cell values on a grid declared once in the document identity table.
+Each scale carries `analyses`, a `StudyAnalyses` with both typed directed pair analyses
+(`DirectedPairwiseAnalysis[K, K, StudyFailure[K], S]`) and their reductions, and the `contrast` is
+over those same reductions; the archive stores the analyses once and the contrast rows beside them.
+
+Decoding rebuilds the result through checked reconstruction: `DirectedPairwiseAnalysis.reconstruct`,
+`Analysis.reconstructByLeft` (and `reconstructByRight`, `reconstructEdges`, `reconstructByEndpoint`
+for the other orientations), `ReductionRow.reconstruct`, `ReductionReport.reconstruct`,
+`ContrastRow.reconstruct`, `Contrast.reconstruct` (design) and `StudyAnalyses.of`,
+`StudyScaleResult.reconstruct`, `StudyResult.reconstruct` (plan). What is re-derived and checked:
+
+- `DirectedPairwiseAnalysis.reconstruct` requires one row per selected pair and re-derives the
+  evaluation provenance from the rows, the pairing report and the evaluation metadata; the stored
+  provenance must equal it (`ReconstructionError.RowCount`, `ProvenanceConflict`).
+- `Analysis.reconstructByLeft` regroups the pair rows by focal key exactly as the reduction cursor
+  does (contributions, then unmatched keys, then ambiguities, in order of first appearance) and
+  requires the stored rows to cover those keys in that order (`KeyDomain`), each row's
+  `successful`/`failed` to be the group's (`KeyDenominator`), each row's outcome to be the one the
+  group and the policy force, an ambiguity, no scores, a rejected failure count, or otherwise a score
+  or a mean failure (`OutcomeShape`; the mean itself is the one thing not recomputed), every report
+  count to follow from the rows and the source, including `contributionCount == rows.size`
+  (`ReportCount`, `FailedKeys`), and the reduction provenance to equal the derivation
+  (`ProvenanceConflict`). `ReductionRow.reconstruct` additionally requires `contributing` to follow
+  from the outcome (`Denominator`) and a failed outcome's own counts to agree with the row's.
+- `Contrast.reconstruct` re-runs the contrast compatibility check, requires the rows to cover the
+  sorted key union in the layout's ordering (`ContrastDomain`) and each row's operands to be the
+  reductions' own rows (`ContrastOperand`); `ContrastRow.reconstruct` requires the difference's shape
+  to follow from its operands (`ContrastRowShape`).
+- `StudyAnalyses.of` requires each reduction to have been reduced from the very pair analysis
+  supplied beside it (`StudyResultError.SourceIdentity`), which is how a reduction over an
+  undirected or foreign source is refused, and `StudyScaleResult.reconstruct` requires the contrast
+  to be over the scale's own reductions (`ContrastAnalyses`).
+- `StudyScaleResult.reconstruct` requires every density's provenance steps to be the ones the scale's
+  estimator derives, `StudyEstimate.provenanceSteps`, so the smoothing bandwidth and edge policy on
+  record are the declared ones (`MassProvenance`); every stored failure to name the row it sits in
+  (`FailureKey`, `PairFailure`); and every pair, unmatched, reduced, contrasted or excluded key to
+  be an estimated trial (`OrphanPair`, `OrphanKey`).
+- `StudyResult.reconstruct` takes the layout and requires the description to name it
+  (`LayoutMismatch`), the input reference (`InputMismatch`) and exactly the stored scales with the
+  same estimator parameters (`ScaleCount`, which is how a partial accumulator tagged as complete is
+  refused, and `ScaleEstimate`); every density to lie on the described grid (`MassGrid`); and, for
+  both pair analyses of every scale: the evaluation provenance's inputs digest to be the study input
+  (`ProvenanceInputs`), the evaluation specification to name the described method and version
+  (`MissingSpecification`, `SpecificationMethod`) with parameters equal to the described weight,
+  estimator and `method.*` parameters (`SpecificationParameters`), the reduction to use the
+  described failure policy (`Policy`), and every pair to join a focal-phase trial to a
+  reference-phase trial under the layout, with excluded keys outside both phases (`Phase`).
+- The codec itself requires the archived score components to be the method's
+  (`CodecError.ScoreComponents`).
+
+Not re-derived: the reduced means and contrast differences (arithmetic), and the digest inside each
+density's provenance, which is the digest of the trial's occupancy and needs the input. Errors inside
+a stage are located, for example `CodecError.Entry("scales[0].analyses.matched.source.rows[1]", ...)`.
+
+`StudyResultRegistry` registers result codecs by method identity and refuses unknown
+(`CodecError.MissingResultCodec`) or duplicate (`CodecError.DuplicateResultCodec`) registrations; a
+payload declaring another score or difference schema than the registered codec's is refused before
+any row is read. Temporal failures (`StudyFailure.Temporal`) are refused with
+`CodecError.Unsupported`: they name windows and epochs of the temporal route and belong to the
+temporal result archive that follows the recording and temporal input payloads.
+
+The pinned [study-result-v1.json](../codec/src/test/resources/eyes4s/study-result-v1.json) is the
+pinned study-v1 plan run on the pinned study-input-v1 input. The portable suite checks its decoded
+meaning and JSON value identity on JVM and Scala.js, and that re-executing the pinned plan on the
+pinned input reproduces the archive bit for bit; the JVM suite additionally checks byte-identical
+re-encoding of the pretty-printed file. `eyes4s.laws.StudyResultEquivalence` is the published
+structural identity of two results, for round-trip laws over extension score types that keep
+reference equality.
+
 ## Versions and extensions
 
 The JSON envelope has a schema identifier and version. Its payload separately records the method

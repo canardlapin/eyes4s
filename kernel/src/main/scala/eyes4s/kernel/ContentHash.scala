@@ -87,6 +87,14 @@ object ContentHash:
   def combineAll(hs: Seq[ContentHash]): ContentHash =
     hs.foldLeft(empty)(combine)
 
+  /** The digest a [[render]] produced; anything but 16 lowercase hex digits is `None`. */
+  def parse(rendered: String): Option[ContentHash] =
+    if rendered.length == 16 && rendered.forall(c =>
+        (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')
+      )
+    then Some(java.lang.Long.parseUnsignedLong(rendered, 16))
+    else None
+
   extension (h: ContentHash)
     def value: Long    = h
     def render: String = f"${h}%016x"

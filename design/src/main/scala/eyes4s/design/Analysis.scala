@@ -16,6 +16,7 @@
 
 package eyes4s.design
 
+import cats.data.NonEmptyVector
 import eyes4s.compare.*
 import eyes4s.kernel.*
 
@@ -900,19 +901,25 @@ private object Reduction:
       entries.size - failedKeys.size,
       failedKeys
     )
-    val provenance = analysis.provenance.andThen(
+    new Analysis(entries, report, provenance(analysis, report), analysis)
+
+  /** The reduction step appended to the source provenance; shared with reconstruction. */
+  def provenance[K, S](
+      analysis: PairwiseAnalysis[?, ?, ?, S],
+      report: ReductionReport[K]
+  ): Provenance =
+    analysis.provenance.andThen(
       Provenance.Step(
         "reducePairs",
         Vector(
-          "orientation"   -> Provenance.Param.Text(orientation.toString),
-          "failurePolicy" -> Provenance.Param.Text(policy.render),
-          "contributions" -> Provenance.Param.Num(contributions.toDouble),
+          "orientation"   -> Provenance.Param.Text(report.orientation.toString),
+          "failurePolicy" -> Provenance.Param.Text(report.policy.render),
+          "contributions" -> Provenance.Param.Num(report.contributionCount.toDouble),
           "reducedKeys"   -> Provenance.Param.Num(report.reducedKeyCount.toDouble),
           "failedKeys"    -> Provenance.Param.Num(report.failedKeys.size.toDouble)
         )
       )
     )
-    new Analysis(entries, report, provenance, analysis)
 
   def reduceOne[K, S](
       key: K,
@@ -942,9 +949,378 @@ private object Reduction:
           case _ =>
             mean.mean(successful).left.map(ReductionError.MeanFailure(key, _))
 
-  private def distinct[K](values: Vector[K]): Vector[K] =
+  def distinct[K](values: Vector[K]): Vector[K] =
     values.foldLeft(Vector.empty[K]) { (found, value) =>
       if found.contains(value) then found else found :+ value
     }
 
 end Reduction
+
+/** Refusals while rebuilding stored analyses; every case names its operands.
+  *
+  * Result constructors stay restricted. An archive supplies the parts it kept,
+  * and these checks decide whether they describe one consistent computation:
+  * counts agree, keys refer to rows that exist, denominators follow from the
+  * outcomes, and the provenance is what the same derivation would produce.
+  */
+enum ReconstructionError[K] derives CanEqual:
+  case PairCounts(eligible: Long, selected: Int)
+  case RowCount(expected: Int, actual: Int)
+  case Denominator(key: K, successful: Int, failed: Int, contributing: Int)
+  case ResultKey(expected: K, found: K)
+  case ResultCounts(key: K, result: ReductionError[K], successful: Int, failed: Int)
+  case DuplicateEntry(key: K, indices: Vector[Int])
+  case ReportCount(field: String, expected: Long, found: Long)
+  case FailedKeys(expected: Vector[K], found: Vector[K])
+  case ProvenanceConflict(stage: String, declared: Provenance, derived: Provenance)
+  case ContrastDomain(expected: Vector[K], found: Vector[K])
+  case ContrastRowShape(
+      key: K,
+      matched: Option[Either[ReductionError[K], Unit]],
+      control: Option[Either[ReductionError[K], Unit]],
+      difference: Either[ContrastRowError[K], Unit]
+  )
+  case ContrastOperand(key: K, operand: eyes4s.design.ContrastOperand)
+  case Incompatible(issues: NonEmptyVector[ContrastCompatibilityError])
+  case Orientation(expected: ReductionOrientation, found: ReductionOrientation)
+  case KeyDomain(expected: Vector[K], found: Vector[K])
+  case KeyDenominator(
+      key: K,
+      expectedSuccessful: Int,
+      expectedFailed: Int,
+      successful: Int,
+      failed: Int
+  )
+  case OutcomeShape(
+      key: K,
+      expected: Option[ReductionError[K]],
+      found: Option[ReductionError[K]]
+  )
+
+  def message: String = this match
+    case PairCounts(eligible, selected) =>
+      s"A pairing report cannot select $selected pairs out of $eligible eligible pairs."
+    case RowCount(expected, actual) =>
+      s"A pair analysis declares $expected selected pairs but stores $actual rows."
+    case Denominator(key, successful, failed, contributing) =>
+      s"Key $key has successful=$successful, failed=$failed and contributing=$contributing; " +
+        "a reduced key contributes every successful score and a failed key none."
+    case ResultKey(expected, found) =>
+      s"Row $expected carries an outcome for key $found."
+    case ResultCounts(key, result, successful, failed) =>
+      s"Key $key stores successful=$successful and failed=$failed but its outcome says ${result.message}"
+    case DuplicateEntry(key, indices) =>
+      s"Key $key is reduced more than once, at entries $indices."
+    case ReportCount(field, expected, found) =>
+      s"Reduction report field $field is $found; the stored rows give $expected."
+    case FailedKeys(expected, found) =>
+      s"Reduction report names failed keys $found; the stored rows fail $expected."
+    case ProvenanceConflict(stage, declared, derived) =>
+      s"Stored $stage provenance ${declared.render} differs from the derived ${derived.render}."
+    case ContrastDomain(expected, found) =>
+      s"Contrast rows cover keys $found; the two analyses give $expected."
+    case ContrastRowShape(key, matched, control, difference) =>
+      s"Contrast key $key has matched=$matched, control=$control but stores difference $difference."
+    case ContrastOperand(key, operand) =>
+      s"Contrast key $key refers to a $operand row that the analysis does not contain."
+    case Incompatible(issues)         => issues.toVector.map(_.message).mkString(" ")
+    case Orientation(expected, found) =>
+      s"A $expected reduction is stored with orientation $found."
+    case KeyDomain(expected, found) =>
+      s"Reduced keys $found differ from the keys the source pairs, unmatched keys and ambiguities give: $expected."
+    case KeyDenominator(key, expectedSuccessful, expectedFailed, successful, failed) =>
+      s"Key $key stores successful=$successful and failed=$failed; its source pairs give successful=$expectedSuccessful and failed=$expectedFailed."
+    case OutcomeShape(key, expected, found) =>
+      s"Key $key stores outcome ${found.map(_.message).getOrElse("a score")}; its source pairs and policy give ${expected.map(_.message).getOrElse("a score or a mean failure")}."
+
+object ReductionRow:
+  /** Checked reconstruction: the denominator follows from the outcome, and a
+    * failed outcome's own counts agree with the row's.
+    */
+  def reconstruct[K, S](
+      key: K,
+      result: Either[ReductionError[K], S],
+      successful: Int,
+      failed: Int,
+      contributing: Int
+  ): Either[ReconstructionError[K], ReductionRow[K, S]] =
+    val expected = if result.isRight then successful else 0
+    if successful < 0 || failed < 0 || contributing != expected then
+      Left(ReconstructionError.Denominator(key, successful, failed, contributing))
+    else
+      result match
+        case Left(error) if errorKey(error) != key =>
+          Left(ReconstructionError.ResultKey(key, errorKey(error)))
+        case Left(error) if !consistent(error, successful, failed) =>
+          Left(ReconstructionError.ResultCounts(key, error, successful, failed))
+        case _ => Right(ReductionRow(key, result, successful, failed, contributing))
+
+  private def errorKey[K](error: ReductionError[K]): K = error match
+    case ReductionError.NoSelectedScores(k)                => k
+    case ReductionError.AmbiguousKey(k, _)                 => k
+    case ReductionError.FailedScores(k, _, _)              => k
+    case ReductionError.InsufficientSuccessful(k, _, _, _) => k
+    case ReductionError.MeanFailure(k, _)                  => k
+
+  private def consistent[K](error: ReductionError[K], successful: Int, failed: Int): Boolean =
+    error match
+      case ReductionError.NoSelectedScores(_)                => successful == 0 && failed == 0
+      case ReductionError.AmbiguousKey(_, _)                 => successful == 0 && failed == 0
+      case ReductionError.FailedScores(_, s, f)              => s == successful && f == failed
+      case ReductionError.InsufficientSuccessful(_, _, s, f) => s == successful && f == failed
+      case ReductionError.MeanFailure(_, _)                  => true
+
+object ReductionReport:
+  /** Checked reconstruction of the realized counts alone; [[Analysis.reconstruct]]
+    * cross-checks them against the stored rows.
+    */
+  def reconstruct[K](
+      orientation: ReductionOrientation,
+      policy: FailurePolicy,
+      eligiblePairCount: Long,
+      selectedPairCount: Int,
+      successfulPairCount: Int,
+      failedPairCount: Int,
+      contributionCount: Int,
+      reducedKeyCount: Int,
+      failedKeys: Vector[K]
+  ): Either[ReconstructionError[K], ReductionReport[K]] =
+    if eligiblePairCount < 0L || selectedPairCount < 0 ||
+      selectedPairCount.toLong > eligiblePairCount
+    then Left(ReconstructionError.PairCounts(eligiblePairCount, selectedPairCount))
+    else if successfulPairCount < 0 || failedPairCount < 0 ||
+      successfulPairCount + failedPairCount != selectedPairCount
+    then
+      Left(
+        ReconstructionError.ReportCount(
+          "successfulPairCount + failedPairCount",
+          selectedPairCount.toLong,
+          successfulPairCount.toLong + failedPairCount.toLong
+        )
+      )
+    else if contributionCount < 0 then
+      Left(ReconstructionError.ReportCount("contributionCount", 0L, contributionCount.toLong))
+    else if reducedKeyCount < 0 then
+      Left(ReconstructionError.ReportCount("reducedKeyCount", 0L, reducedKeyCount.toLong))
+    else
+      Right(
+        ReductionReport(
+          orientation,
+          policy,
+          eligiblePairCount,
+          selectedPairCount,
+          successfulPairCount,
+          failedPairCount,
+          contributionCount,
+          reducedKeyCount,
+          failedKeys
+        )
+      )
+
+object Analysis:
+  /** Checked reconstruction of a by-left (by-focal) reduction from its stored
+    * rows, report, provenance and typed directed source; see [[check]].
+    */
+  def reconstructByLeft[KL, KR, E, S](
+      entries: Vector[ReductionRow[KL, S]],
+      diagnostics: ReductionReport[KL],
+      provenance: Provenance,
+      source: DirectedPairwiseAnalysis[KL, KR, E, S]
+  ): Either[ReconstructionError[KL], Analysis[KL, S]] =
+    check(
+      entries,
+      diagnostics,
+      provenance,
+      source,
+      ReductionOrientation.ByLeft,
+      source.rows.map(row => row.left -> row.result),
+      source.diagnostics.unmatchedLeft,
+      source.diagnostics.ambiguous.collect {
+        case PairingAmbiguity.DuplicateLeft(key, indices) =>
+          key -> indices
+      }
+    )
+
+  /** Checked reconstruction of a by-right reduction. */
+  def reconstructByRight[KL, KR, E, S](
+      entries: Vector[ReductionRow[KR, S]],
+      diagnostics: ReductionReport[KR],
+      provenance: Provenance,
+      source: DirectedPairwiseAnalysis[KL, KR, E, S]
+  ): Either[ReconstructionError[KR], Analysis[KR, S]] =
+    check(
+      entries,
+      diagnostics,
+      provenance,
+      source,
+      ReductionOrientation.ByRight,
+      source.rows.map(row => row.right -> row.result),
+      source.diagnostics.unmatchedRight,
+      source.diagnostics.ambiguous.collect {
+        case PairingAmbiguity.DuplicateRight(key, indices) =>
+          key -> indices
+      }
+    )
+
+  /** Checked reconstruction of an edges-once reduction of an undirected analysis. */
+  def reconstructEdges[K, E, S](
+      entries: Vector[ReductionRow[Unit, S]],
+      diagnostics: ReductionReport[Unit],
+      provenance: Provenance,
+      source: UndirectedPairwiseAnalysis[K, E, S]
+  ): Either[ReconstructionError[Unit], Analysis[Unit, S]] =
+    check(
+      entries,
+      diagnostics,
+      provenance,
+      source,
+      ReductionOrientation.EdgesOnce,
+      source.rows.map(row => () -> row.result),
+      Vector(()),
+      Vector.empty
+    )
+
+  /** Checked reconstruction of a mirrored-endpoint reduction of an undirected analysis. */
+  def reconstructByEndpoint[K, E, S](
+      entries: Vector[ReductionRow[K, S]],
+      diagnostics: ReductionReport[K],
+      provenance: Provenance,
+      source: UndirectedPairwiseAnalysis[K, E, S]
+  ): Either[ReconstructionError[K], Analysis[K, S]] =
+    check(
+      entries,
+      diagnostics,
+      provenance,
+      source,
+      ReductionOrientation.MirroredEndpoints,
+      source.rows.flatMap(row => Vector(row.left -> row.result, row.right -> row.result)),
+      Reduction.distinct(source.diagnostics.unmatchedLeft ++ source.diagnostics.unmatchedRight),
+      source.diagnostics.ambiguous.flatMap {
+        case PairingAmbiguity.DuplicateLeft(key, indices)  => Vector(key -> indices)
+        case PairingAmbiguity.DuplicateRight(key, indices) => Vector(key -> indices)
+      }
+    )
+
+  /** The reduction is regrouped from the source exactly as the reduction
+    * cursor groups it: keys in order of first appearance over contributions,
+    * unmatched keys and ambiguities. The stored rows must cover exactly those
+    * keys in that order; each row's successful and failed counts must be the
+    * group's; each row's outcome must be the one the group and policy force
+    * (ambiguity, no scores, a rejected failure count) or otherwise a score or
+    * a mean failure, which alone needs arithmetic and is not recomputed. Every
+    * report count is recomputed from the rows and the source, and the stored
+    * provenance must equal the derivation.
+    */
+  private def check[K, S](
+      entries: Vector[ReductionRow[K, S]],
+      diagnostics: ReductionReport[K],
+      provenance: Provenance,
+      source: PairwiseAnalysis[?, ?, ?, S],
+      orientation: ReductionOrientation,
+      contributions: Vector[(K, Either[?, S])],
+      unmatched: Vector[K],
+      ambiguous: Vector[(K, Vector[Int])]
+  ): Either[ReconstructionError[K], Analysis[K, S]] =
+    var keys    = Vector.empty[K]
+    var grouped = Map.empty[K, Vector[Either[?, S]]]
+    var firsts  = Map.empty[K, Vector[Int]]
+    contributions.foreach { case (key, result) =>
+      if !grouped.contains(key) then keys :+= key
+      grouped = grouped.updated(key, grouped.getOrElse(key, Vector.empty) :+ result)
+    }
+    unmatched.foreach { key =>
+      if !grouped.contains(key) then
+        keys :+= key
+        grouped = grouped.updated(key, Vector.empty)
+    }
+    ambiguous.foreach { case (key, indices) =>
+      if !grouped.contains(key) then
+        keys :+= key
+        grouped = grouped.updated(key, Vector.empty)
+      if !firsts.contains(key) then firsts = firsts.updated(key, indices)
+    }
+    val successfulPairs = source.rows.count(_.result.isRight)
+    val failedPairs     = source.rows.size - successfulPairs
+    val failedKeys      = entries.collect { case row if row.result.isLeft => row.key }
+    val counts          = Vector(
+      (
+        "eligiblePairCount",
+        source.diagnostics.eligiblePairCount,
+        diagnostics.eligiblePairCount
+      ),
+      (
+        "selectedPairCount",
+        source.diagnostics.selectedPairCount.toLong,
+        diagnostics.selectedPairCount.toLong
+      ),
+      ("successfulPairCount", successfulPairs.toLong, diagnostics.successfulPairCount.toLong),
+      ("failedPairCount", failedPairs.toLong, diagnostics.failedPairCount.toLong),
+      ("contributionCount", contributions.size.toLong, diagnostics.contributionCount.toLong),
+      (
+        "reducedKeyCount",
+        (entries.size - failedKeys.size).toLong,
+        diagnostics.reducedKeyCount.toLong
+      )
+    )
+    def forced(key: K, successful: Int, failed: Int): Option[ReductionError[K]] =
+      firsts.get(key) match
+        case Some(indices)                    => Some(ReductionError.AmbiguousKey(key, indices))
+        case None if successful + failed == 0 => Some(ReductionError.NoSelectedScores(key))
+        case None                             =>
+          diagnostics.policy match
+            case FailurePolicy.RequireAll if failed > 0 =>
+              Some(ReductionError.FailedScores(key, successful, failed))
+            case FailurePolicy.SuccessfulOnly(minimum) if successful < minimum.value =>
+              Some(
+                ReductionError.InsufficientSuccessful(key, minimum.value, successful, failed)
+              )
+            case _ => None
+    def shape(found: Either[ReductionError[K], S]): Option[ReductionError[K]] = found match
+      case Left(ReductionError.MeanFailure(_, _)) => None
+      case Left(error)                            => Some(error)
+      case Right(_)                               => None
+    val rows = entries.collectFirst {
+      case row
+          if grouped
+            .get(row.key)
+            .exists(scores =>
+              scores.count(_.isRight) != row.successful ||
+                scores.size - scores.count(_.isRight) != row.failed
+            ) =>
+        val scores     = grouped(row.key)
+        val successful = scores.count(_.isRight)
+        ReconstructionError.KeyDenominator(
+          row.key,
+          successful,
+          scores.size - successful,
+          row.successful,
+          row.failed
+        )
+      case row
+          if grouped.contains(row.key) &&
+            forced(row.key, row.successful, row.failed) != shape(row.result) =>
+        ReconstructionError.OutcomeShape(
+          row.key,
+          forced(row.key, row.successful, row.failed),
+          row.result.left.toOption
+        )
+    }
+    if diagnostics.orientation != orientation then
+      Left(ReconstructionError.Orientation(orientation, diagnostics.orientation))
+    else if entries.map(_.key) != keys then
+      Left(ReconstructionError.KeyDomain(keys, entries.map(_.key)))
+    else
+      rows.toLeft(()).flatMap { _ =>
+        counts.collectFirst {
+          case (field, expected, found) if expected != found =>
+            ReconstructionError.ReportCount[K](field, expected, found)
+        } match
+          case Some(error) => Left(error)
+          case None        =>
+            val derived = Reduction.provenance(source, diagnostics)
+            if diagnostics.failedKeys != failedKeys then
+              Left(ReconstructionError.FailedKeys(failedKeys, diagnostics.failedKeys))
+            else if derived != provenance then
+              Left(ReconstructionError.ProvenanceConflict("reducePairs", provenance, derived))
+            else Right(new Analysis(entries, diagnostics, provenance, source))
+      }
