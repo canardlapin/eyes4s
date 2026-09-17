@@ -225,9 +225,13 @@ followed by `smoothed` and `projected` steps). A binocular recording carries `le
 column groups over one `tMicros` column. Decoding rebuilds the value through `Recording.of` or
 `BinocularRecording.of`, so monotonic time, in-frame positions, declared pupil units and the
 fixed-rate tolerance are re-proven and reported as `CodecError.Recording`, and then compares the
-declared digest with `Recording.contentHash`; a dropped or altered sample, a changed support category
-or lineage, or a swapped clock fails with `CodecError.InputIdentity`, so `RecordingPlan.prerequisites`
-accepts the decoded recording by the same `ArtifactRef`. Mis-shaped columns, a `tracked` sample
+declared digest with `Recording.contentHash` (for a paired recording, `BinocularRecording.contentHash`,
+the ordered combination of its two eye projections); a dropped or altered sample, a changed support
+category or lineage, or a swapped clock fails with `CodecError.InputIdentity`, so
+`RecordingPlan.prerequisites` accepts the decoded recording by the same `ArtifactRef`. Two operands
+are carried and re-proven but not identity-bearing: the spatial unit, which the payload's `unit` field
+and the typed frame lookup guard instead, and the sampling tolerance of an irregular recording, which
+its hash omits because irregular sampling never applies it. Mis-shaped columns, a `tracked` sample
 without a position, an unknown category, or a lineage that does not begin with a basis are located
 errors such as `CodecError.Entry("channels.recording.samples[3]", ...)`. Payloads are in-memory
 JSON; a recording with more than `RecordingInputCodecs.maximumSamples` (2^22, about seventy minutes
@@ -239,15 +243,25 @@ marks and the optional residual limit, from which `RecordingInput.synchronize` r
 deterministically. The `fitted` offset and drift are written alongside and cross-checked on decode;
 the fitted diagnostics themselves belong to the completed-result archive. `RecordingInput.of` refuses
 an empty source, a synchronization whose target is the recording's own clock, or marks that do not
-fit. Viewing geometry and every mark enter the input digest.
+fit. Viewing geometry and every mark enter the input digest. A recording plan still runs on the bare
+`Recording[Px]` with its own declared provenance; `RecordingInput.disagreements(input, plan)` names
+every field where that provenance departs from the input's evidence (source, clocks, viewing, fit
+mode, marks, residual limit), followed by the plan's own prerequisites, so a plan whose marks differ
+from the observed ones is refused before it records the wrong provenance.
 
 A source-supported scanpath inside a study input (`eyes4s.scanpath@1`) now carries a `source` entry:
 the `RecordingRef`, the exact recording in the inner shape above, and the half-open sample ranges of
-its fixations. Decoding rebuilds it through `EventSeries.of` and `Scanpath.fromEvents`, so centres,
-sample counts and dispersion are re-derived from the samples and must equal the declared summaries;
-a detached summary, an overlapping or truncated range, or a support category flipped inside the
-source recording is refused. Dispersion recomputed under a warp (`SummaryEvidence.Recomputed`) is a
-transformation result, not an input, and stays `CodecError.Unsupported`.
+its fixations. Decoding rebuilds it through `EventSeries.of` and `Scanpath.fromEvents`, so centres
+and sample counts are re-derived from the samples and must equal the declared summaries; a detached
+summary, an overlapping or truncated range, or a support category flipped inside the source
+recording is refused. Its fixations declare a dispersion `method` only: the value is re-derived from
+the samples rather than compared, because the spread statistics use `hypot` and `pow`, whose
+rounding differs between the JVM and JavaScript engines, so a value written on one platform is not
+promised bit-identical on the other. The source name, the source recording's digest and every sample
+range enter the study digest of a source-supported trial, so a different source recording or
+segmentation with the same summaries is a different input; detached trials keep their S2 digests.
+Dispersion recomputed under a warp (`SummaryEvidence.Recomputed`) is a transformation result, not an
+input, and stays `CodecError.Unsupported`.
 
 `TemporalInputCodecs.study[U](embedding, resolve)` encodes a `TemporalStudyInput[K, U]`
 (`eyes4s.temporal-study-input@1`): the layout and key schema identities, the spatial unit, the
@@ -258,11 +272,12 @@ identity table, and one epoch per trial that has one, in key order: the typed ke
 `anchorMicros` as a decimal string, and the observed coverage as a clock and its intervals. Trials
 without an epoch stay absent, so a decoded input reports the same `MissingEpoch` at run time.
 Decoding rebuilds the value through `TemporalStudyInput.of`, so duplicate or foreign epochs are the
-constructor's `CodecError.Temporal` refusals; a coverage interval on another clock or an unknown
-clock is located at its epoch, and a moved anchor or changed coverage fails with
-`CodecError.InputIdentity`. `TimelineCodecs.timeline(schema, values)` is the conditional codec for
-`Timeline[A]` (`planned` and `observed` wrap the two timing kinds): a clock and ordered marks with
-exact microsecond instants, where equal instants keep input order.
+constructor's `CodecError.Temporal` refusals; a coverage interval on another clock, a coverage clock
+that is not the trial scanpath's clock, or an unknown clock is located at its epoch, and a moved
+anchor or changed coverage fails with `CodecError.InputIdentity`. `TimelineCodecs.timeline(schema, values)` is the conditional codec for
+`Timeline[A]` (`planned` and `observed` wrap the two timing kinds with a `timing` field, and the
+neutral codec refuses a payload that carries one): a clock and ordered marks with exact microsecond
+instants, where equal instants keep input order.
 
 The pinned [recording-input-v1.json](../codec/src/test/resources/eyes4s/recording-input-v1.json),
 [binocular-recording-input-v1.json](../codec/src/test/resources/eyes4s/binocular-recording-input-v1.json),

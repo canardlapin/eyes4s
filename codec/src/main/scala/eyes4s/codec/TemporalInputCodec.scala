@@ -136,7 +136,7 @@ final class TemporalInputCodec[K, U <: Unit2D](
     table  <- Wire.field[Json](json, "identities").flatMap(DocumentIdentities.read)
     rows   <- Wire.field[Vector[Json]](json, "epochs")
     epochs <- rows.zipWithIndex.traverse { case (row, index) =>
-      readEpoch(row, table).left.map(Wire.at(s"epochs[$index]"))
+      readEpoch(row, table, base).left.map(Wire.at(s"epochs[$index]"))
     }
     value <- TemporalStudyInput.of(base, epochs).left.map(CodecError.Temporal.apply)
     _     <- Either.cond(
@@ -168,15 +168,31 @@ final class TemporalInputCodec[K, U <: Unit2D](
       case other => Left(CodecError.Field("kind", json, s"unknown study embedding $other"))
     }
 
+  /** An epoch's coverage must be observed on its trial's own clock; the
+    * temporal plan would otherwise refuse the window at run time, so the
+    * codec names the disagreement before execution.
+    */
   private def readEpoch(
       json: Json,
-      table: DocumentIdentities
+      table: DocumentIdentities,
+      base: StudyInput[K, U]
   ): Either[CodecError, (K, TrialEpoch)] = for
     key       <- Wire.field[Json](json, "key").flatMap(study.keys.decode)
     anchor    <- DomainWire.micros(json, "anchorMicros")
     coverage  <- Wire.field[Json](json, "coverage")
     clockName <- Wire.field[String](coverage, "clock")
     clock     <- table.clock(ClockId(clockName))
+    _         <- base.trials.rows.find(_.key == key).map(_.value.clock) match
+      case Some(trialClock) if trialClock != clock =>
+        Left(
+          CodecError.Field(
+            "coverage",
+            coverage,
+            s"coverage is observed on clock '${clock.name}' but the trial scanpath is on " +
+              s"clock '${trialClock.name}'"
+          )
+        )
+      case _ => Right(())
     raw       <- Wire.field[Vector[Json]](coverage, "intervals")
     intervals <- raw.zipWithIndex.traverse { case (interval, index) =>
       DomainWire.readInterval(interval).left.map(Wire.at(s"coverage.intervals[$index]"))
@@ -207,6 +223,16 @@ object TimelineCodecs:
         )
     ) { json =>
       for
+        timing <- Wire.field[Option[String]](json, "timing")
+        _      <- Either.cond(
+          timing.isEmpty,
+          (),
+          CodecError.Field(
+            "timing",
+            json,
+            s"a ${timing.getOrElse("")} timeline cannot be read as a neutral timeline; use the matching codec"
+          )
+        )
         clock <- Wire.field[String](json, "clock")
         raw   <- Wire.field[Vector[Json]](json, "marks")
         marks <- raw.zipWithIndex.traverse { case (mark, index) =>
@@ -243,7 +269,9 @@ object TimelineCodecs:
           (),
           CodecError.Field("timing", json, s"expected planned timing, got $timing")
         )
-        line <- inner.decode(Json.obj("schema" -> Wire.id(schema), "value" -> json))
+        line <- inner.decode(
+          Json.obj("schema" -> Wire.id(schema), "value" -> json.mapObject(_.remove("timing")))
+        )
       yield PlannedTimeline.from(line)
     }
 
@@ -268,6 +296,8 @@ object TimelineCodecs:
           (),
           CodecError.Field("timing", json, s"expected observed timing, got $timing")
         )
-        line <- inner.decode(Json.obj("schema" -> Wire.id(schema), "value" -> json))
+        line <- inner.decode(
+          Json.obj("schema" -> Wire.id(schema), "value" -> json.mapObject(_.remove("timing")))
+        )
       yield ObservedTimeline.from(line)
     }

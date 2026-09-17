@@ -40,9 +40,9 @@ import io.circe.Json
   * carried as separately referenced typed payloads.
   */
 object RecordingInputCodecs:
-  val recording: DefinitionId = DefinitionId.recording
-  val binocular: DefinitionId = DefinitionId.binocularRecording
-  val input: DefinitionId     = DefinitionId.recordingInput
+  val recordingSchema: DefinitionId = DefinitionId.recording
+  val binocularSchema: DefinitionId = DefinitionId.binocularRecording
+  val inputSchema: DefinitionId     = DefinitionId.recordingInput
 
   /** Inline sample bound per recording: 2^22 samples, roughly seventy minutes
     * at 1 kHz, and about 300 MB of pretty-printed JSON at the upper end.
@@ -51,7 +51,7 @@ object RecordingInputCodecs:
 
   /** A standalone monocular recording with its own identity table. */
   def recording[U <: Unit2D: UnitLabel]: VersionedCodec[Recording[U]] =
-    VersionedCodec.checked[Recording[U]](recording)(value =>
+    VersionedCodec.checked[Recording[U]](recordingSchema)(value =>
       for
         table <- DocumentIdentities.empty.addFrame(value.frame).map(_.addClock(value.clock))
         body  <- RecordingInputWire.writeRecording(value)
@@ -66,7 +66,7 @@ object RecordingInputCodecs:
 
   /** A standalone paired recording with its own identity table. */
   def binocular[U <: Unit2D: UnitLabel]: VersionedCodec[BinocularRecording[U]] =
-    VersionedCodec.checked[BinocularRecording[U]](binocular)(value =>
+    VersionedCodec.checked[BinocularRecording[U]](binocularSchema)(value =>
       for
         table <- DocumentIdentities.empty.addFrame(value.frame).map(_.addClock(value.clock))
         body  <- RecordingInputWire.writeBinocular(value)
@@ -83,7 +83,7 @@ object RecordingInputCodecs:
     * synchronization marks, with the input digest checked on decode.
     */
   def input[U <: Unit2D](using unit: UnitLabel[U]): VersionedCodec[RecordingInput[U]] =
-    VersionedCodec.checked[RecordingInput[U]](input)(writeInput[U])(readInput[U])
+    VersionedCodec.checked[RecordingInput[U]](inputSchema)(writeInput[U])(readInput[U])
 
   private def writeInput[U <: Unit2D: UnitLabel](
       value: RecordingInput[U]
@@ -150,6 +150,7 @@ object RecordingInputCodecs:
       )
       syncJson <- Wire.field[Option[Json]](json, "synchronization")
       sync     <- syncJson.traverse(readSynchronization(_, table))
+      fitted   <- syncJson.traverse(Wire.field[Json](_, "fitted"))
       value    <- RecordingInput
         .of(RecordingRef(source), channels, viewing, sync.map(_._1))
         .left
@@ -165,7 +166,7 @@ object RecordingInputCodecs:
               (),
               CodecError.Field(
                 "synchronization.fitted",
-                json,
+                fitted.getOrElse(Json.Null),
                 s"declared offsetMicros=$offset drift=$drift but the observed marks refit to " +
                   s"offsetMicros=${evidence.offset.toMicros} drift=${evidence.sync.drift}"
               )
@@ -238,13 +239,6 @@ object RecordingInputCodecs:
   * Frames and clocks are referenced by nominal ID against a document table.
   */
 private[codec] object RecordingInputWire:
-  val states: Vector[(String, String)] = Vector(
-    "tracked"   -> "tracked and inside the frame",
-    "blink"     -> "eye closed",
-    "lost"      -> "no signal",
-    "offScreen" -> "tracked outside the frame"
-  )
-
   private val eyes: Vector[(Eye, String)] =
     Vector(Eye.Left -> "left", Eye.Right -> "right", Eye.Cyclopean -> "cyclopean")
 
@@ -541,8 +535,8 @@ private[codec] object RecordingInputWire:
         "pupilUnit"               -> value.pupilUnit.fold(Json.Null)(name(pupilUnits, _)),
         "rate"                    -> rate(value.rate),
         "samplingToleranceMicros" -> DomainWire.time(value.samplingTolerance.toSpan.toMicros),
-        "recording" -> Json.fromString(RecordingChannels.binocularHash(value).render),
-        "samples"   -> Json.obj(
+        "recording"               -> Json.fromString(value.contentHash.render),
+        "samples"                 -> Json.obj(
           "length"  -> Json.fromInt(n),
           "tMicros" -> Json.arr(
             Vector.tabulate(n)(i => DomainWire.time(value.timestamps(i).toMicros))*
@@ -582,8 +576,8 @@ private[codec] object RecordingInputWire:
         .left
         .map(CodecError.Recording("samples", _))
       _ <- Either.cond(
-        RecordingChannels.binocularHash(value).render == declared,
+        value.contentHash.render == declared,
         (),
-        CodecError.InputIdentity(declared, RecordingChannels.binocularHash(value).render)
+        CodecError.InputIdentity(declared, value.contentHash.render)
       )
     yield value

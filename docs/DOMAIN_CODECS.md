@@ -75,5 +75,7 @@ fail the roundtrip laws. The frozen study-v1 and recording-v1 fixtures separatel
 pin decoded scientific meaning, preventing a mutually wrong encoder/decoder
 from passing solely by agreeing with each other. The recording, binocular,
 source-supported study and temporal input fixtures do the same for the input
-payloads, and their laws kill dropped-sample, swapped-clock, dropped-mark and
-moved-anchor mutants.
+payloads. Their published laws are shown to discriminate dropped-sample,
+swapped-clock, dropped-mark and moved-anchor mutants of the decoded value, and
+the payload-editing suites show that the decoders themselves refuse the same
+changes through the declared digests.

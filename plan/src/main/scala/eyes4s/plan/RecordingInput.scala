@@ -45,20 +45,7 @@ enum RecordingChannels[U <: Unit2D]:
     */
   def contentHash: ContentHash = this match
     case Monocular(r) => r.contentHash
-    case Binocular(b) => RecordingChannels.binocularHash(b)
-
-object RecordingChannels:
-  /** A paired recording has no core identity of its own; it is the ordered
-    * combination of its two eye projections.
-    */
-  def binocularHash[U <: Unit2D](b: BinocularRecording[U]): ContentHash =
-    ContentHash.combineAll(
-      Seq(
-        ContentHash.ofString("binocular:v1"),
-        b.left.contentHash,
-        b.right.contentHash
-      )
-    )
+    case Binocular(b) => b.contentHash
 
 /** The observed common marks from which a synchronization is fitted. This is
   * input evidence: the fit itself is deterministic from these operands, so a
@@ -76,7 +63,9 @@ final case class ObservedSynchronization(
 
 /** A normalized recording input: the channels, the bench geometry when it
   * was recorded, and the synchronization marks observed against another
-  * clock. Identity covers every operand a recording plan computes on.
+  * clock. Identity covers the source name, the channels, the viewing
+  * geometry and every observed mark; `RecordingInput.disagreements` names
+  * where a plan's declared provenance departs from this evidence.
   */
 final class RecordingInput[U <: Unit2D] private (
     val source: RecordingRef,
@@ -98,6 +87,63 @@ final class RecordingInput[U <: Unit2D] private (
     synchronization.map(_.fit(clock))
 
 object RecordingInput:
+  /** Where a recording plan's declared provenance departs from the input's
+    * evidence: the source name, clocks, viewing geometry, fit mode, observed
+    * marks and residual limit, followed by the plan's own prerequisites over
+    * the monocular recording. Empty means the plan may run on this input
+    * without changing any provenance it will record.
+    */
+  def disagreements[P](
+      input: RecordingInput[Unit2D.Px],
+      plan: RecordingPlan[P]
+  ): Vector[RecordingInputError] =
+    def differs(
+        field: String,
+        declared: String,
+        evidence: String
+    ): Option[RecordingInputError] =
+      Option.when(declared != evidence)(
+        RecordingInputError.PlanDisagreement(field, declared, evidence)
+      )
+    val marks = input.synchronization.fold(Vector.empty[SyncMark])(_.marks)
+    val named = Vector(
+      differs("source", plan.source.value, input.source.value),
+      differs("trackerClock", plan.trackerClock.name, input.clock.name),
+      differs(
+        "analysisClock",
+        plan.analysisClock.name,
+        input.synchronization.fold("none")(_.target.name)
+      ),
+      differs(
+        "viewing",
+        plan.viewing.fold("none")(_.render),
+        input.viewing.fold("none")(_.render)
+      ),
+      differs(
+        "synchronizationModel",
+        plan.synchronizationModel.render,
+        input.synchronization.fold("none")(_.mode.render)
+      ),
+      differs(
+        "marks",
+        plan.marks.map(RecordingInput.renderMark).mkString(","),
+        marks.map(RecordingInput.renderMark).mkString(",")
+      ),
+      differs(
+        "residualLimit",
+        plan.residualLimit.fold("none")(_.span.toMicros.toString),
+        input.synchronization.flatMap(_.residualLimit).fold("none")(_.span.toMicros.toString)
+      )
+    ).flatten
+    val channels = input.monocular match
+      case Some(recording) =>
+        plan.prerequisites(Some(recording)).map(RecordingInputError.Plan.apply)
+      case None => Vector(RecordingInputError.BinocularChannels(input.source))
+    named ++ channels
+
+  private def renderMark(mark: SyncMark): String =
+    s"${mark.id}@${mark.onSource.toMicros}->${mark.onTarget.toMicros}"
+
   def of[U <: Unit2D](
       source: RecordingRef,
       channels: RecordingChannels[U],
@@ -179,6 +225,9 @@ enum RecordingInputError derives CanEqual:
   case SynchronizationTargetIsSource(clock: ClockId)
   case NoSynchronizationMarks(source: ClockId, target: ClockId)
   case Synchronization(underlying: SyncEvidenceError)
+  case PlanDisagreement(field: String, plan: String, evidence: String)
+  case BinocularChannels(source: RecordingRef)
+  case Plan(underlying: RecordingPlanError)
 
   def message: String = this match
     case EmptySource(source) => s"Recording input source must be named, got '$source'."
@@ -186,4 +235,9 @@ enum RecordingInputError derives CanEqual:
       s"Recording input synchronization must map clock '$clock' to a different clock."
     case NoSynchronizationMarks(source, target) =>
       s"Recording input synchronization from '$source' to '$target' declares no observed marks."
-    case Synchronization(e) => e.message
+    case Synchronization(e)                      => e.message
+    case PlanDisagreement(field, plan, evidence) =>
+      s"Recording plan declares $field=$plan but the recording input evidences $field=$evidence."
+    case BinocularChannels(source) =>
+      s"Recording input '$source' is binocular; project one eye explicitly before running a recording plan."
+    case Plan(e) => e.message

@@ -166,7 +166,7 @@ class RecordingInputCodecLawSuite extends munit.DisciplineSuite:
     a.contentHash == b.contentHash && a.samples.toVector == b.samples.toVector &&
       a.samplingEvidence == b.samplingEvidence
   private val sameBinocular: (BinocularRecording[Px], BinocularRecording[Px]) => Boolean =
-    (a, b) => RecordingChannels.binocularHash(a) == RecordingChannels.binocularHash(b)
+    (a, b) => a.contentHash == b.contentHash
   private val sameInput: (RecordingInput[Px], RecordingInput[Px]) => Boolean = (a, b) =>
     a.reference == b.reference && a.synchronization == b.synchronization
 

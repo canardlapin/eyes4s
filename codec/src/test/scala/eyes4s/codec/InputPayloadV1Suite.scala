@@ -95,7 +95,7 @@ class InputPayloadV1Suite extends munit.FunSuite:
     val paired = value.channels match
       case RecordingChannels.Binocular(b) => b
       case other                          => fail(s"unexpected $other")
-    assertEquals(RecordingChannels.binocularHash(paired).render, "39e3dafb2de70ca2")
+    assertEquals(paired.contentHash.render, "39e3dafb2de70ca2")
     assertEquals(paired.timestamps.toVector.map(_.toMicros), Vector(300000L, 300500L))
     assertEquals(
       paired.leftGaze.toVector,
@@ -118,18 +118,22 @@ class InputPayloadV1Suite extends munit.FunSuite:
 
   test("frozen source-supported study-input v1 rebuilds summaries from its samples") {
     val value = get(studies.input.parse(sourceSupportedVersionOne))
-    assertEquals(value.reference.digest, "f4f250e30583ceaa")
+    assertEquals(value.reference.digest, "9ac7e83e4874dec7")
     val path = value.trials.rows.head.value
     assertEquals(path.source, Some(RecordingRef("synthetic-right-headfixed-1000")))
     assertEquals(
       path.sampleSupport,
       Some(Vector(get(SampleRange.of(0, 5)), get(SampleRange.of(5, 10))))
     )
-    assertEquals(path.sourceRecording.map(_.contentHash.render), Some("e466fbcfe9b3547a"))
+    assertEquals(path.sourceRecording.map(_.contentHash.render), Some("58960f21c98f4dbc"))
     assertEquals(path.sourceRecording.map(_.samples(2).gaze), Some(Gaze.Blink[Px]()))
-    assertEquals(path.first.centre, Pt[Px](102.0, 100.0))
+    assertEquals(path.first.centre, sourceSupportedScanpath.first.centre)
     assertEquals(path.first.sampleCount, 4)
-    assertEquals(path.first.dispersion.map(_.value), Some(1.5811388300841898))
+    assertEquals(path.first.dispersion.map(_.method), Some(DispersionMethod.RmsRadius))
+    assertEquals(
+      path.first.dispersion.map(_.value),
+      sourceSupportedScanpath.first.dispersion.map(_.value)
+    )
     assertEquals(path.last.centre, Pt[Px](300.0, 102.0))
     assertEquals(path.last.sampleCount, 5)
     assertEquals(path.last.dispersion, None)

@@ -140,6 +140,16 @@ object StudyInput:
           )
         )
       }
+      // UI-S3: a source-supported scanpath is also identified by its
+      // evidence, so a different source recording or segmentation is a
+      // different input even when the summaries agree.
+      val source = (path.source, path.sourceRecording, path.sampleSupport) match
+        case (Some(ref), Some(recording), Some(support)) =>
+          Vector(
+            ContentHash.ofString("source:" + ref.value),
+            recording.contentHash
+          ) ++ support.map(range => ContentHash.ofString(s"${range.from},${range.until}"))
+        case _ => Vector.empty
       ContentHash.combineAll(
         Vector(
           keys.digest(trial.key),
@@ -150,7 +160,7 @@ object StudyInput:
           ContentHash.of(
             IArray(frame.spec.xMin, frame.spec.yMin, frame.spec.xMax, frame.spec.yMax)
           )
-        ) ++ fixes
+        ) ++ fixes ++ source
       )
     }
     new StudyInput(trials, ContentHash.combineAll(hashes))

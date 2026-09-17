@@ -141,6 +141,56 @@ class InputPayloadCodecSuite extends munit.FunSuite:
     assertEquals(paired.reference, binocularInput.reference)
     assertEquals(paired.monocular, None)
     assertEquals(paired.channels.contentHash, binocularInput.channels.contentHash)
+
+    assertEquals(RecordingInput.disagreements(decoded, plan), Vector.empty)
+    val extraMark = get(
+      RecordingInput.of(
+        input.source,
+        input.channels,
+        input.viewing,
+        Some(
+          synchronization.copy(marks =
+            synchronization.marks :+ get(
+              SyncMark.of("t5", Instant.micros(40000000), Instant.micros(41000010))
+            )
+          )
+        )
+      )
+    )
+    val withExtra = get(inputs.decode(get(inputs.encode(extraMark))))
+    assertNotEquals(withExtra.reference, input.reference)
+    RecordingInput.disagreements(withExtra, plan) match
+      case Vector(RecordingInputError.PlanDisagreement("marks", declared, evidence)) =>
+        assert(evidence.endsWith("t5@40000000->41000010"))
+        assert(!declared.contains("t5"))
+      case other => fail(s"unexpected $other")
+    val otherViewing = get(
+      RecordingInput.of(
+        input.source,
+        input.channels,
+        Some(get(Viewing.millimetres(650, 500, 500))),
+        input.synchronization
+      )
+    )
+    assertEquals(
+      RecordingInput.disagreements(otherViewing, plan).map {
+        case RecordingInputError.PlanDisagreement(field, _, _) => field
+        case other                                             => other.toString
+      },
+      Vector("viewing")
+    )
+    RecordingInput.disagreements(paired, plan) match
+      case Vector(
+            RecordingInputError.PlanDisagreement("source", _, _),
+            RecordingInputError.PlanDisagreement("analysisClock", _, "none"),
+            RecordingInputError.PlanDisagreement("viewing", _, "none"),
+            RecordingInputError.PlanDisagreement("synchronizationModel", _, "none"),
+            RecordingInputError.PlanDisagreement("marks", _, ""),
+            RecordingInputError.PlanDisagreement("residualLimit", _, "none"),
+            RecordingInputError.BinocularChannels(_)
+          ) =>
+        ()
+      case other => fail(s"unexpected $other")
   }
 
   test("source-supported scanpaths carry their recording and sample ranges") {
@@ -154,8 +204,43 @@ class InputPayloadCodecSuite extends munit.FunSuite:
     assertEquals(path.first.sampleCount, 4)
     assertEquals(path.last.sampleCount, 5)
     path.first.dispersionStatus match
-      case DispersionStatus.Available(_, SummaryEvidence.SourceSupported(_, range)) =>
+      case DispersionStatus.Available(spread, SummaryEvidence.SourceSupported(_, range)) =>
         assertEquals(range, get(SampleRange.of(0, 5)))
+        assertEquals(spread.method, DispersionMethod.RmsRadius)
+        assert(spread.value > 0.0)
+      case other => fail(s"unexpected $other")
+    val json   = get(studies.input.encode(sourceSupportedStudy))
+    val spread = json.hcursor
+      .downField("value")
+      .downField("trials")
+      .downField("value")
+      .downArray
+      .downField("value")
+      .downField("value")
+      .downField("fixations")
+      .downArray
+      .get[Json]("dispersion")
+    assertEquals(get(spread), Json.obj("method" -> Json.fromString("rmsRadius")))
+    val detachedStudy = StudyInput(
+      Trials(
+        Vector(
+          Trial(
+            StudyKey("s1", "a", "encode"),
+            (),
+            get(Scanpath.of(display, trialClock, sourceSupportedScanpath.fixations))
+          )
+        )
+      )
+    )
+    assertNotEquals(detachedStudy.reference, sourceSupportedStudy.reference)
+    studies.input.encode(detachedStudy) match
+      case Left(
+            CodecError.Entry(
+              "trials.rows[0].fixations[0]",
+              CodecError.Unsupported("dispersion", _)
+            )
+          ) =>
+        ()
       case other => fail(s"unexpected $other")
     val moved = get(
       sourceSupportedScanpath.warp(
@@ -195,6 +280,26 @@ class InputPayloadCodecSuite extends munit.FunSuite:
             CodecError.Entry("trials.rows[0].source", CodecError.Field("fixations[0]", _, _))
           ) =>
         ()
+      case other => fail(s"unexpected $other")
+    val valued = row(scan =>
+      edit(scan, "fixations")(fixes =>
+        setAt(
+          0,
+          edit(fixes.asArray.get.head, "dispersion")(
+            _.mapObject(_.add("value", Json.fromDoubleOrNull(1.0)))
+          )
+        )(fixes)
+      )
+    )
+    studies.input.decode(valued) match
+      case Left(
+            CodecError.Entry("trials.rows[0].fixations[0]", CodecError.Field("value", _, _))
+          ) =>
+        ()
+      case other => fail(s"unexpected $other")
+    val unnamed = row(scan => edit(scan, "source", "ref")(_ => Json.fromString(" ")))
+    studies.input.decode(unnamed) match
+      case Left(CodecError.Entry("trials.rows[0].source", CodecError.Field("ref", _, _))) => ()
       case other => fail(s"unexpected $other")
     val overlapping = row(scan =>
       edit(scan, "source", "support")(
@@ -353,7 +458,21 @@ class InputPayloadCodecSuite extends munit.FunSuite:
     val rebuilt = cells(decoded)
     assertEquals(direct.size, 8)
     assertEquals(rebuilt, direct)
-    assert(direct.exists(_._2 == "outside"))
+    val outside = direct.filter(_._2 == "outside")
+    assert(outside.nonEmpty)
+    outside.foreach { case (_, _, occupancy, _) =>
+      occupancy.foreach { case (_, value) => assertEquals(value.map(_._1), Some(0L)) }
+    }
+    // The gapped s2/b/retest coverage straddles fixations: clipped duration
+    // retains only the covered part and reports the gap as missing.
+    val gapped = direct.collect { case (_, "middle", occupancy, _) =>
+      occupancy.collectFirst { case (StudyKey("s2", "b", "retest"), Some(value)) => value }
+    }.flatten
+    assert(gapped.nonEmpty)
+    gapped.foreach { case (observed, missing, _) =>
+      assert(observed > 0L)
+      assert(missing > 0L)
+    }
   }
 
   test("by-reference temporal payloads resolve the base study or name the missing artifact") {
@@ -382,7 +501,9 @@ class InputPayloadCodecSuite extends munit.FunSuite:
       case other => fail(s"unexpected $other")
   }
 
-  test("duplicate, foreign and clock-inconsistent epochs are refused before execution") {
+  test(
+    "duplicate, foreign and clock-inconsistent epochs are refused before decoding completes"
+  ) {
     val json       = get(temporals.input.encode(temporal))
     val epochs     = json.hcursor.downField("value").get[Vector[Json]]("epochs").toOption.get
     val duplicated = edit(json, "value", "epochs")(_ => Json.arr((epochs :+ epochs.head)*))
@@ -409,6 +530,34 @@ class InputPayloadCodecSuite extends munit.FunSuite:
     )
     temporals.input.decode(otherClock) match
       case Left(CodecError.Entry("epochs[0]", CodecError.Field("coverage", _, _))) => ()
+      case other => fail(s"unexpected $other")
+    val trialClocks = json.hcursor
+      .downField("value")
+      .downField("identities")
+      .get[Vector[String]]("clocks")
+      .toOption
+      .get
+    val swappedClock = edit(json, "value", "epochs")(
+      setAt(
+        0,
+        edit(epochs.head, "coverage")(coverage =>
+          coverage.mapObject(fields =>
+            fields
+              .add("clock", Json.fromString(trialClocks(1)))
+              .add(
+                "intervals",
+                Json.arr(
+                  fields("intervals").get.asArray.get
+                    .map(i => edit(i, "clock")(_ => Json.fromString(trialClocks(1))))*
+                )
+              )
+          )
+        )
+      )
+    )
+    temporals.input.decode(swappedClock) match
+      case Left(CodecError.Entry("epochs[0]", CodecError.Field("coverage", _, reason))) =>
+        assert(reason.contains("trial scanpath is on clock"))
       case other => fail(s"unexpected $other")
     val unknownClock = edit(json, "value", "epochs")(
       setAt(0, edit(epochs.head, "coverage", "clock")(_ => Json.fromString("other")))
@@ -557,6 +706,40 @@ class InputPayloadCodecSuite extends munit.FunSuite:
     ).pipe(inputs.decode) match
       case Left(CodecError.Field("synchronization.fitted", _, _)) => ()
       case other                                                  => fail(s"unexpected $other")
+    edit(json, "value", "synchronization", "fitted", "drift")(_ =>
+      Json.fromDoubleOrNull(1.0e-6)
+    )
+      .pipe(inputs.decode) match
+      case Left(CodecError.Field("synchronization.fitted", offending, _)) =>
+        assertEquals(offending.hcursor.get[String]("offsetMicros"), Right("1000010"))
+      case other => fail(s"unexpected $other")
+    val pairedJson = get(inputs.encode(binocularInput))
+    edit(pairedJson, "value", "channels", "recording", "samples", "left", "x")(dropAt(1))
+      .pipe(inputs.decode) match
+      case Left(
+            CodecError.Entry("channels.recording", CodecError.Field("samples.x", _, reason))
+          ) =>
+        assert(reason.contains("1 entries, expected length 2"))
+      case other => fail(s"unexpected $other")
+    edit(pairedJson, "value", "channels", "recording", "samples", "tMicros")(
+      setAt(1, Json.fromString("300000"))
+    ).pipe(inputs.decode) match
+      case Left(
+            CodecError.Entry(
+              "channels.recording",
+              CodecError.Recording("samples", RecordingError.NonMonotonic(1, _, _))
+            )
+          ) =>
+        ()
+      case other => fail(s"unexpected $other")
+    edit(pairedJson, "value", "channels", "recording", "samples", "right", "state")(
+      setAt(1, Json.fromString("blink"))
+    ).pipe(inputs.decode) match
+      case Left(
+            CodecError.Entry("channels.recording", CodecError.InputIdentity(declared, _))
+          ) =>
+        assertEquals(declared, binocular.contentHash.render)
+      case other => fail(s"unexpected $other")
     edit(json, "value", "synchronization", "target")(_ => Json.fromString("tracker"))
       .pipe(inputs.decode) match
       case Left(
@@ -607,6 +790,9 @@ class InputPayloadCodecSuite extends munit.FunSuite:
     observed.decode(get(planned.encode(PlannedTimeline.from(line)))) match
       case Left(CodecError.Field("timing", _, _)) => ()
       case other                                  => fail(s"unexpected $other")
+    codec.decode(get(planned.encode(PlannedTimeline.from(line)))) match
+      case Left(CodecError.Field("timing", _, reason)) => assert(reason.contains("planned"))
+      case other                                       => fail(s"unexpected $other")
     val json = get(codec.encode(line))
     edit(json, "value", "marks")(
       setAt(1, Json.obj("atMicros" -> Json.fromString("x"), "value" -> Json.Null))

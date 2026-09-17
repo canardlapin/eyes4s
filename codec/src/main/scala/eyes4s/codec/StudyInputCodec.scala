@@ -121,7 +121,9 @@ final class StudyInputCodec[K, U <: Unit2D](
     VersionedCodec.checked[Scanpath[U]](StudyInputCodecs.scanpath)(path =>
       for
         fixations <- path.fixations.toVector.zipWithIndex
-          .traverse { case (f, index) => fixation(f).left.map(Wire.at(s"fixations[$index]")) }
+          .traverse { case (f, index) =>
+            fixation(f, path.source.isDefined).left.map(Wire.at(s"fixations[$index]"))
+          }
         source <- (path.source, path.sourceRecording, path.sampleSupport) match
           case (Some(ref), Some(recording), Some(support)) =>
             RecordingInputWire
@@ -153,16 +155,17 @@ final class StudyInputCodec[K, U <: Unit2D](
       )
     ) { json =>
       for
-        frameName <- Wire.field[String](json, "frame")
-        frame     <- table.frame[U](FrameId(frameName))
-        clockName <- Wire.field[String](json, "clock")
-        clock     <- table.clock(ClockId(clockName))
-        entries   <- Wire.field[Vector[Json]](json, "fixations")
-        fixations <- entries.zipWithIndex.traverse { case (entry, index) =>
-          readFixation(entry, clock).left.map(Wire.at(s"fixations[$index]"))
-        }
+        frameName  <- Wire.field[String](json, "frame")
+        frame      <- table.frame[U](FrameId(frameName))
+        clockName  <- Wire.field[String](json, "clock")
+        clock      <- table.clock(ClockId(clockName))
+        entries    <- Wire.field[Vector[Json]](json, "fixations")
         sourceJson <- Wire.field[Option[Json]](json, "source")
-        path       <- sourceJson match
+        fixations  <- entries.zipWithIndex.traverse { case (entry, index) =>
+          readFixation(entry, clock, sourceJson.isDefined).left
+            .map(Wire.at(s"fixations[$index]"))
+        }
+        path <- sourceJson match
           case None =>
             Scanpath
               .of(frame, clock, IArray.from(fixations))
@@ -176,8 +179,11 @@ final class StudyInputCodec[K, U <: Unit2D](
     }
 
   /** Rebuild a source-supported scanpath from its recording and sample
-    * ranges; the declared fixation summaries must equal the ones the source
-    * samples derive, so a payload cannot detach a summary from its evidence.
+    * ranges. The declared spans, centres and sample counts must equal the
+    * ones the source samples derive, so a payload cannot detach a summary
+    * from its evidence. Dispersion is carried by method only: its value is
+    * re-derived from the samples, because the spread statistics use `hypot`
+    * and `pow`, whose rounding is not identical across platforms.
     */
   private def readSourceSupported(
       json: Json,
@@ -187,7 +193,12 @@ final class StudyInputCodec[K, U <: Unit2D](
       declared: Vector[Event.Fixation[U]]
   ): Either[CodecError, Scanpath[U]] =
     for
-      ref       <- Wire.field[String](json, "ref")
+      ref <- Wire.field[String](json, "ref")
+      _   <- Either.cond(
+        ref.trim.nonEmpty,
+        (),
+        CodecError.Field("ref", json, "a source recording needs a non-empty nominal name")
+      )
       recording <- Wire
         .field[Json](json, "recording")
         .flatMap(RecordingInputWire.readRecording[U](_, table))
@@ -224,21 +235,30 @@ final class StudyInputCodec[K, U <: Unit2D](
           Either.cond(
             derived.span == expected.span && derived.centre == expected.centre &&
               derived.sampleCount == expected.sampleCount &&
-              derived.dispersion == expected.dispersion,
+              derived.dispersion.map(_.method) == expected.dispersion.map(_.method),
             (),
             CodecError.Field(
               s"fixations[$index]",
-              json,
+              Json.obj(
+                "onsetMicros"  -> DomainWire.time(expected.span.onset.toMicros),
+                "offsetMicros" -> DomainWire.time(expected.span.offset.toMicros),
+                "x"            -> Json.fromDoubleOrNull(expected.centre.x),
+                "y"            -> Json.fromDoubleOrNull(expected.centre.y),
+                "sampleCount"  -> Json.fromInt(expected.sampleCount)
+              ),
               s"source samples derive centre=(${derived.centre.x}, ${derived.centre.y}) " +
-                s"sampleCount=${derived.sampleCount} dispersion=${derived.dispersion}, " +
-                s"but the payload declares centre=(${expected.centre.x}, ${expected.centre.y}) " +
-                s"sampleCount=${expected.sampleCount} dispersion=${expected.dispersion}"
+                s"sampleCount=${derived.sampleCount}, but the payload declares " +
+                s"centre=(${expected.centre.x}, ${expected.centre.y}) " +
+                s"sampleCount=${expected.sampleCount}"
             )
           )
       }
     yield path
 
-  private def fixation(f: Event.Fixation[U]): Either[CodecError, Json] =
+  private def fixation(
+      f: Event.Fixation[U],
+      sourceSupported: Boolean
+  ): Either[CodecError, Json] =
     val base = Json.obj(
       "onsetMicros"  -> DomainWire.time(f.span.onset.toMicros),
       "offsetMicros" -> DomainWire.time(f.span.offset.toMicros),
@@ -260,16 +280,23 @@ final class StudyInputCodec[K, U <: Unit2D](
             )
           )
         )
-      case DispersionStatus.Available(value, SummaryEvidence.SourceSupported(_, _)) =>
+      case DispersionStatus.Available(value, SummaryEvidence.SourceSupported(_, _))
+          if sourceSupported =>
         Right(
           base.mapObject(
             _.add(
               "dispersion",
               Json.obj(
-                "value"  -> Json.fromDoubleOrNull(value.value),
                 "method" -> Json.fromString(StudyInputCodec.dispersionMethods(value.method))
               )
             )
+          )
+        )
+      case DispersionStatus.Available(_, evidence: SummaryEvidence.SourceSupported) =>
+        Left(
+          CodecError.Unsupported(
+            "dispersion",
+            s"evidence $evidence refers to source samples this scanpath does not carry"
           )
         )
       case DispersionStatus.Available(_, evidence: SummaryEvidence.Recomputed) =>
@@ -288,7 +315,15 @@ final class StudyInputCodec[K, U <: Unit2D](
           )
         )
 
-  private def readFixation(json: Json, clock: ClockId): Either[CodecError, Event.Fixation[U]] =
+  /** A source-supported entry declares its dispersion method only; the
+    * value is re-derived from the samples, so a placeholder of zero stands
+    * in until `EventSeries.of` rebuilds the summary.
+    */
+  private def readFixation(
+      json: Json,
+      clock: ClockId,
+      sourceSupported: Boolean
+  ): Either[CodecError, Event.Fixation[U]] =
     for
       onset  <- DomainWire.micros(json, "onsetMicros")
       offset <- DomainWire.micros(json, "offsetMicros")
@@ -307,7 +342,18 @@ final class StudyInputCodec[K, U <: Unit2D](
             .map(e => CodecError.Field("fixation", json, e.message))
         case Some(spread) =>
           for
-            value  <- DomainWire.finite(spread, "value")
+            value <-
+              if sourceSupported then
+                Either.cond(
+                  spread.asObject.exists(!_.contains("value")),
+                  0.0,
+                  CodecError.Field(
+                    "value",
+                    spread,
+                    "a source-supported dispersion carries its method only; its value is derived"
+                  )
+                )
+              else DomainWire.finite(spread, "value")
             name   <- Wire.field[String](spread, "method")
             method <- StudyInputCodec.dispersionMethods
               .collectFirst { case (m, n) if n == name => m }
