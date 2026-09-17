@@ -35,6 +35,12 @@ object DefinitionId:
   val trials: DefinitionId          = new DefinitionId("eyes4s.trials", 1)
   val scanpath: DefinitionId        = new DefinitionId("eyes4s.scanpath", 1)
   val admissionLedger: DefinitionId = new DefinitionId("eyes4s.admission-ledger", 1)
+  // UI-S3: recording and temporal input payload schemas.
+  val recording: DefinitionId          = new DefinitionId("eyes4s.recording", 1)
+  val binocularRecording: DefinitionId = new DefinitionId("eyes4s.binocular-recording", 1)
+  val recordingInput: DefinitionId     = new DefinitionId("eyes4s.recording-input", 1)
+  val temporalStudyInput: DefinitionId = new DefinitionId("eyes4s.temporal-study-input", 1)
+  val timeline: DefinitionId           = new DefinitionId("eyes4s.timeline", 1)
   def of(name: String, version: Int): Either[PlanError, DefinitionId] =
     if name.trim.isEmpty || version < 1 then Left(PlanError.InvalidDefinition(name, version))
     else Right(new DefinitionId(name, version))
