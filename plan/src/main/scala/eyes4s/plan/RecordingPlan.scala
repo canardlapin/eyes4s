@@ -25,6 +25,15 @@ import eyes4s.kernel.Unit2D.{Px, Deg}
 
 final case class IvtParameters(threshold: IvtThreshold, minimumDuration: MinimumEventDuration)
 
+/** Per-axis angular extent, not a radial dispersion threshold. */
+final case class IdtParameters(extent: Extent[Deg], minimumDuration: MinimumEventDuration)
+
+/** Supplied or previously estimated thresholds. Estimation remains a separate
+  * whole-trial/calibration operation via EkThresholds.estimate, never a hidden
+  * change of parameters when replaying a recording plan.
+  */
+final case class EkParameters(thresholds: EkThresholds, minimumSamples: EkMinimumSamples)
+
 /** Typed detector factory, reusable by shipped and downstream implementations. */
 final class RecordingMethod[P](
     val id: DefinitionId,
@@ -33,6 +42,27 @@ final class RecordingMethod[P](
     val descriptor: Option[RecordingMethodDescriptor[P]] = None
 )
 object RecordingMethod:
+  def idt(id: DefinitionId): RecordingMethod[IdtParameters] =
+    val descriptor = RecordingMethodDescriptor.idt(id)
+    new RecordingMethod(
+      id,
+      descriptor.parameters.values,
+      (p, c) => Right(Detectors.idt(p.extent, p.minimumDuration, c)),
+      Some(descriptor)
+    )
+
+  /** Canonical five-point Engbert-Kliegl detection with fixed per-axis thresholds.
+    * Irregular sampling remains a typed detection failure; no resampling occurs.
+    */
+  def engbertKliegl(id: DefinitionId): RecordingMethod[EkParameters] =
+    val descriptor = RecordingMethodDescriptor.engbertKliegl(id)
+    new RecordingMethod(
+      id,
+      descriptor.parameters.values,
+      (p, c) => Right(Detectors.engbertKliegl(p.thresholds, p.minimumSamples, c)),
+      Some(descriptor)
+    )
+
   def ivt(id: DefinitionId): RecordingMethod[IvtParameters] = new RecordingMethod(
     id,
     p =>

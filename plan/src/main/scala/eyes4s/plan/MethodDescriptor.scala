@@ -262,6 +262,40 @@ final class RecordingMethodDescriptor[P](
   val execution: ExecutionCapability = ExecutionCapability.SynchronousWholeOperation
 
 object RecordingMethodDescriptor:
+  def idt(id: DefinitionId): RecordingMethodDescriptor[IdtParameters] =
+    new RecordingMethodDescriptor(
+      id,
+      ParameterSet.literal(
+        Vector(
+          RecipeParameters.idtWidth
+            .bind[IdtParameters](_.extent.width)(Provenance.Param.Num.apply),
+          RecipeParameters.idtHeight
+            .bind[IdtParameters](_.extent.height)(Provenance.Param.Num.apply),
+          RecipeParameters.minimumDuration.bind[IdtParameters](_.minimumDuration)(p =>
+            Provenance.Param.Text(p.span.toMicros.toString)
+          )
+        )
+      ),
+      AlgorithmCards.idt
+    )
+
+  def engbertKliegl(id: DefinitionId): RecordingMethodDescriptor[EkParameters] =
+    new RecordingMethodDescriptor(
+      id,
+      ParameterSet.literal(
+        Vector(
+          RecipeParameters.ekEtaX
+            .bind[EkParameters](_.thresholds.etaX)(Provenance.Param.Num.apply),
+          RecipeParameters.ekEtaY
+            .bind[EkParameters](_.thresholds.etaY)(Provenance.Param.Num.apply),
+          RecipeParameters.ekMinimumSamples.bind[EkParameters](_.minimumSamples)(p =>
+            Provenance.Param.Num(p.value.toDouble)
+          )
+        )
+      ),
+      AlgorithmCards.engbertKliegl
+    )
+
   def ivt(id: DefinitionId): RecordingMethodDescriptor[IvtParameters] =
     new RecordingMethodDescriptor(
       id,

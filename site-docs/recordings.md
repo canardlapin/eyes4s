@@ -93,6 +93,51 @@ yield output.csv
 assert(restoredResult.isRight && restoredResult == result.map(_.csv))
 ```
 
+## Choose a different detector
+
+`RecordingPlan.of` also accepts `RecordingMethod.idt` with `IdtParameters`, or
+`RecordingMethod.engbertKliegl` with `EkParameters`. These use the same synchronization,
+angular conversion, preprocessing and AOI stages; the AdSERP convenience facade above still
+selects I-VT. Each method has a descriptor for inspection and a matching persistence codec.
+
+```scala mdoc:silent
+import eyes4s.plan.*
+import eyes4s.detect.*
+import eyes4s.kernel.*
+import eyes4s.kernel.Unit2D.Deg
+
+val detectorChoices = for
+  schema <- DefinitionId.of("guide.recording", 1)
+  idtId <- DefinitionId.of("guide.recording.idt", 1)
+  idtSchema <- DefinitionId.of("guide.idt-parameters", 1)
+  ekId <- DefinitionId.of("guide.recording.engbert-kliegl", 1)
+  ekSchema <- DefinitionId.of("guide.ek-parameters", 1)
+  extent <- Extent.of[Deg](0.5, 0.8)
+  minimum <- MinimumEventDuration.of(Span.micros(60000))
+  thresholds <- EkThresholds.of(6.0, 8.0)
+  count <- EkMinimumSamples.of(3)
+yield (
+  RecordingCodecs.idt(schema, idtId, idtSchema), IdtParameters(extent, minimum),
+  RecordingCodecs.engbertKliegl(schema, ekId, ekSchema), EkParameters(thresholds, count))
+
+assert(detectorChoices.exists { case (idt, ip, ek, ep) =>
+  idt.parameters.encode(ip).flatMap(idt.parameters.decode) == Right(ip) &&
+  ek.parameters.encode(ep).flatMap(ek.parameters.decode) == Right(ep)
+})
+```
+
+Pass the chosen codec's `method` and matching parameters to `RecordingPlan.of`, then save and
+restore with its `codec`. I-DT uses **per-axis angular ranges**, not a radial threshold.
+The EK numbers above are illustrative fixed thresholds in degrees/second, not a multiplier.
+For data-derived thresholds, run `EkThresholds.estimate` explicitly on the intended angular
+trial or calibration samples and store that result in `EkParameters`; replay does not refit it.
+Retain the calibration input and estimation settings separately if needed for provenance.
+
+EK requires regular timestamps for its five-point velocity calculation. Irregular windows
+produce typed detection failures; interpolated observations do not become measured velocities.
+Both methods retain the existing synchronous whole-operation execution contract. Saving a
+method does not make it resumable, and preflight does not certify sample-level EK suitability.
+
 For other delimited layouts use `DelimitedSchema`. For EyeLink use the repository's
 [ASC format guide](https://github.com/canardlapin/eyes4s/blob/main/docs/formats/eyelink-asc.md).
 EDF requires `edf2asc`; this acquired CSV example is not licensed EDF-converter certification.

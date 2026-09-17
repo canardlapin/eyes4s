@@ -154,6 +154,43 @@ object RecipeParameters:
       ParameterUnits.Microseconds,
       ParameterDomain.PositiveMicroseconds
     )(x => MinimumEventDuration.of(x).left.map(RecipeParameterError.Configuration.apply))
+
+  private def extentAxis(id: String, meaning: String) =
+    descriptor[Double, Double](
+      id,
+      meaning,
+      ParameterUnits.Spatial("deg"),
+      ParameterDomain.PositiveFinite
+    )(x => Extent.square[Deg](x).map(_.width).left.map(RecipeParameterError.Geometry.apply))
+  val idtWidth: ParameterDescriptor[Double, Double, RecipeParameterError] =
+    extentAxis("extentWidthDeg", "Maximum horizontal range of an I-DT candidate")
+  val idtHeight: ParameterDescriptor[Double, Double, RecipeParameterError] =
+    extentAxis("extentHeightDeg", "Maximum vertical range of an I-DT candidate")
+
+  private def ekAxis(id: String, meaning: String) =
+    descriptor[Double, Double](
+      id,
+      meaning,
+      ParameterUnits.PerSecond("deg"),
+      ParameterDomain.PositiveFinite
+    )(x => EkThresholds.of(x, x).map(_.etaX).left.map(RecipeParameterError.Configuration.apply))
+  val ekEtaX: ParameterDescriptor[Double, Double, RecipeParameterError] =
+    ekAxis(
+      "etaXDegPerSecond",
+      "Supplied horizontal Engbert-Kliegl ellipse threshold; not estimated during replay"
+    )
+  val ekEtaY: ParameterDescriptor[Double, Double, RecipeParameterError] =
+    ekAxis(
+      "etaYDegPerSecond",
+      "Supplied vertical Engbert-Kliegl ellipse threshold; not estimated during replay"
+    )
+  val ekMinimumSamples: ParameterDescriptor[Int, EkMinimumSamples, RecipeParameterError] =
+    descriptor(
+      "minimumSamples",
+      "Minimum consecutive above-ellipse samples",
+      ParameterUnits.Dimensionless,
+      ParameterDomain.DomainValue("EkMinimumSamples.of")
+    )(x => EkMinimumSamples.of(x).left.map(RecipeParameterError.Configuration.apply))
   val interpolationGap: ParameterDescriptor[Span, InterpolationGap, RecipeParameterError] =
     descriptor(
       "interpolationGapMicros",

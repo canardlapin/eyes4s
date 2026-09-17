@@ -25,6 +25,70 @@ import eyes4s.plan.*
 import io.circe.Json
 
 object RecordingCodecs:
+  /** I-DT parameters are angular per-axis extents and exact microsecond duration. */
+  def idt(
+      schema: DefinitionId,
+      methodId: DefinitionId,
+      parameterSchema: DefinitionId
+  ): RecordingPlanCodec[IdtParameters] =
+    new RecordingPlanCodec(
+      schema,
+      RecordingMethod.idt(methodId),
+      VersionedCodec.of[IdtParameters](parameterSchema)(p =>
+        Json.obj(
+          "extentWidthDeg"  -> Json.fromDoubleOrNull(p.extent.width),
+          "extentHeightDeg" -> Json.fromDoubleOrNull(p.extent.height),
+          "minimumMicros"   -> Json.fromString(p.minimumDuration.span.toMicros.toString)
+        )
+      ) { json =>
+        for
+          width  <- Wire.field[Double](json, "extentWidthDeg")
+          height <- Wire.field[Double](json, "extentHeightDeg")
+          extent <- Extent
+            .of[Deg](width, height)
+            .left
+            .map(e => CodecError.Field("extent", json, e.message))
+          duration <- RecordingWire.micros(json, "minimumMicros")
+          minimum  <- MinimumEventDuration
+            .of(Span.micros(duration))
+            .left
+            .map(e => CodecError.Field("minimumMicros", json, e.message))
+        yield IdtParameters(extent, minimum)
+      }
+    )
+
+  /** Fixed thresholds, not a lambda or an instruction to estimate from input. */
+  def engbertKliegl(
+      schema: DefinitionId,
+      methodId: DefinitionId,
+      parameterSchema: DefinitionId
+  ): RecordingPlanCodec[EkParameters] =
+    new RecordingPlanCodec(
+      schema,
+      RecordingMethod.engbertKliegl(methodId),
+      VersionedCodec.of[EkParameters](parameterSchema)(p =>
+        Json.obj(
+          "etaXDegPerSecond" -> Json.fromDoubleOrNull(p.thresholds.etaX),
+          "etaYDegPerSecond" -> Json.fromDoubleOrNull(p.thresholds.etaY),
+          "minimumSamples"   -> Json.fromInt(p.minimumSamples.value)
+        )
+      ) { json =>
+        for
+          x          <- Wire.field[Double](json, "etaXDegPerSecond")
+          y          <- Wire.field[Double](json, "etaYDegPerSecond")
+          thresholds <- EkThresholds
+            .of(x, y)
+            .left
+            .map(e => CodecError.Field("thresholds", json, e.message))
+          n       <- Wire.field[Int](json, "minimumSamples")
+          minimum <- EkMinimumSamples
+            .of(n)
+            .left
+            .map(e => CodecError.Field("minimumSamples", json, e.message))
+        yield EkParameters(thresholds, minimum)
+      }
+    )
+
   def ivt(
       schema: DefinitionId,
       methodId: DefinitionId,
