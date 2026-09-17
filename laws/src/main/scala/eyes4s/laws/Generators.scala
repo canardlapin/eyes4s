@@ -16,6 +16,7 @@
 
 package eyes4s.laws
 
+import eyes4s.aoi.{Aoi, AoiSet}
 import eyes4s.core.{DispersionMethod, Event, Scanpath}
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.{Deg, Norm, Px}
@@ -375,6 +376,122 @@ object Generators:
   given [U <: Unit2D]: Shrink[Scanpath[U]] = Shrink.withLazyList(shrinkScanpath)
 
   given Arbitrary[Scanpath[Norm]] = Arbitrary(genScanpath[Norm])
+
+  // -------------------------------------------------------------------------
+  // Areas of interest
+  // -------------------------------------------------------------------------
+
+  /** A box of non-degenerate extent, drawn from either two random corners or
+    * an anchor point taken as the closed lower corner.
+    *
+    * Anchoring at fixation centres is deliberate. A rectangle is half-open, so
+    * a point exactly on its lower edges is inside and one on its upper edges is
+    * outside; without anchored boxes no generated fixation would ever sit on an
+    * edge and the boundary convention would go untested.
+    */
+  private def genBoxIn[U <: Unit2D](
+      frame: Frame[U],
+      anchors: Vector[Pt[U]]
+  ): Gen[AoiShape[U]] =
+    val w                      = frame.bounds.width
+    val h                      = frame.bounds.height
+    val free: Gen[AoiShape[U]] =
+      for
+        p  <- genPtIn(frame)
+        dx <- Gen.choose(0.05, 0.6).map(_ * w)
+        dy <- Gen.choose(0.05, 0.6).map(_ * h)
+      yield AoiShape.Box(p, Pt(p.x + dx, p.y + dy))
+    if anchors.isEmpty then free
+    else
+      Gen.frequency(
+        2 -> free,
+        1 -> (for
+          a  <- Gen.oneOf(anchors)
+          dx <- Gen.choose(0.05, 0.6).map(_ * w)
+          dy <- Gen.choose(0.05, 0.6).map(_ * h)
+        yield AoiShape.Box(a, Pt(a.x + dx, a.y + dy)))
+      )
+
+  private def genOvalIn[U <: Unit2D](frame: Frame[U]): Gen[AoiShape[U]] =
+    for
+      c  <- genPtIn(frame)
+      rx <- Gen.choose(0.05, 0.5).map(_ * frame.bounds.width)
+      ry <- Gen.choose(0.05, 0.5).map(_ * frame.bounds.height)
+    yield AoiShape.Oval(c, rx, ry)
+
+  /** A box strictly inside another, so that nesting is generated on purpose
+    * rather than left to chance.
+    */
+  private def nestedIn[U <: Unit2D](outer: AoiShape[U]): Gen[Option[AoiShape[U]]] =
+    outer match
+      case AoiShape.Box(lo, hi) =>
+        for
+          a <- Gen.choose(0.05, 0.4)
+          b <- Gen.choose(0.6, 0.95)
+          c <- Gen.choose(0.05, 0.4)
+          d <- Gen.choose(0.6, 0.95)
+        yield Some(
+          AoiShape.Box(
+            Pt(lo.x + a * (hi.x - lo.x), lo.y + c * (hi.y - lo.y)),
+            Pt(lo.x + b * (hi.x - lo.x), lo.y + d * (hi.y - lo.y))
+          )
+        )
+      case AoiShape.Oval(centre, rx, ry) =>
+        Gen.choose(0.2, 0.8).map(k => Some(AoiShape.Oval(centre, k * rx, k * ry)))
+      case _ => Gen.const(None)
+
+  /** One to five areas over a frame, with overlap and nesting drawn often
+    * enough to exercise every membership policy.
+    *
+    * Areas are unions and intersections of boxes and ovals, never empty or
+    * everything: an area that could contain nothing, or everything, would make
+    * the overlap laws vacuous for that sample. Overlap between areas is not
+    * prevented; it is what the policies are for.
+    */
+  def genAoiSpecsIn[U <: Unit2D](
+      frame: Frame[U],
+      anchors: Vector[Pt[U]]
+  ): Gen[Vector[AoiSpec[U]]] =
+    val leaf: Gen[AoiShape[U]]     = Gen.oneOf(genBoxIn(frame, anchors), genOvalIn(frame))
+    val compound: Gen[AoiShape[U]] = Gen.frequency(
+      4 -> leaf,
+      1 -> (for a <- leaf; b <- leaf yield AoiShape.Union(a, b)),
+      1 -> (for a <- leaf; b <- leaf yield AoiShape.Intersection(a, b))
+    )
+    for
+      n      <- Gen.choose(1, 5)
+      shapes <- Gen.listOfN(n, compound)
+      nested <- Gen.sequence[Vector[Option[AoiShape[U]]], Option[AoiShape[U]]](
+        shapes.toVector.map(s => Gen.frequency(2 -> Gen.const(None), 1 -> Gen.lzy(nestedIn(s))))
+      )
+    yield (shapes.toVector ++ nested.flatten).zipWithIndex.map { (shape, i) =>
+      AoiSpec(s"aoi-$i", s"Area $i", shape)
+    }
+
+  def genAoiSetIn[U <: Unit2D](frame: Frame[U]): Gen[AoiSet[U]] =
+    genAoiSpecsIn(frame, Vector.empty).flatMap { specs =>
+      val bound = specs.foldLeft[Either[String, Vector[Aoi[U]]]](Right(Vector.empty)) {
+        (acc, spec) => for v <- acc; a <- spec.bind(frame) yield v :+ a
+      }
+      bound.flatMap(as => AoiSet.of(as).left.map(_.message)) match
+        case Right(set) => Gen.const(set)
+        case Left(_)    => Gen.fail
+    }
+
+  /** A scanpath and areas over the same frame, with some areas anchored at
+    * fixation centres, sampled as [[AoiScene]] describes.
+    */
+  def genAoiSceneIn[U <: Unit2D](frame: Frame[U]): Gen[AoiScene[U]] =
+    for
+      sp    <- genScanpathIn(frame)
+      specs <- genAoiSpecsIn(frame, sp.fixations.toVector.map(_.centre))
+      scene <- AoiScene.of(sp, specs) match
+        case Right(scene) => Gen.const(scene)
+        case Left(_)      => Gen.fail
+    yield scene
+
+  def genAoiScene[U <: Unit2D]: Gen[AoiScene[U]] =
+    genFrame[U].flatMap(genAoiSceneIn)
 
   // -------------------------------------------------------------------------
   // Machines

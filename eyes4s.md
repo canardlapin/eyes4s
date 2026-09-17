@@ -675,9 +675,13 @@ extension [U <: Unit2D, E](s: AoiSet[U, E])
   def transitions(sp: Scanpath[U]): Digraph[E]         // -> graph4s
 ```
 
-`AoiSet` is still greenfield: no spatial-overlap policy exists in the implementation. Its smart
-constructor establishes frame identity and unique entity keys, while a trace plan states how
-overlapping membership is interpreted. Temporal `Overlap` remains what its name says — a policy for
+The shipped `AoiSet` (module `aoi`) accounts sample time under an explicit `MembershipPolicy`
+rather than fixations directly, and its dwell, first-entry, run-count and overlap behaviour is
+stated as laws in `eyes4s-laws` (`AoiLaws.accounting`: exclusive dwell partition, multiple dwell
+sum, first-entry-iff-dwell, maximal abutting blocks, reject-overlap, translation invariance),
+each guarded by mutation receipts in `AoiLawsSuite`. Its smart constructor establishes frame
+identity and unique entity keys, while a trace plan states how overlapping membership is
+interpreted. Temporal `Overlap` remains what its name says — a policy for
 events straddling a time window — and is not reused for spatial AOIs.
 
 Relational-event analysis keeps visible entities primary and makes roles a projection:
