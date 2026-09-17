@@ -366,6 +366,105 @@ class StudyInputCodecSuite extends munit.FunSuite:
     assertEquals(decoded.trials.rows.head.value.first.dispersion.map(_.value), Some(100.0))
   }
 
+  test("dispersion methods use explicit wire names and every method round-trips") {
+    val key   = StudyKey("s1", "a", "recall")
+    val clock = ClockId("declared")
+    val wire  = Map(
+      DispersionMethod.RmsRadius               -> "rmsRadius",
+      DispersionMethod.BoundingBoxWidth        -> "boundingBoxWidth",
+      DispersionMethod.BoundingBoxDiagonal     -> "boundingBoxDiagonal",
+      DispersionMethod.MedianAbsoluteDeviation -> "medianAbsoluteDeviation"
+    )
+    assertEquals(wire.keySet, DispersionMethod.values.toSet)
+    wire.foreach { case (method, name) =>
+      val fixation = get(
+        Event.Fixation.of(
+          get(Interval.of(clock, Instant.micros(0), Instant.micros(1000))),
+          Pt[Px](0.5, 0.5),
+          0.25,
+          method,
+          3
+        )
+      )
+      val value = StudyInput(
+        Trials(Vector(Trial(key, (), get(Scanpath.of(frame, clock, IArray(fixation))))))
+      )
+      val json   = get(codec.input.encode(value))
+      val spread = get(
+        rows(json).head.hcursor
+          .downField("value")
+          .downField("value")
+          .downField("fixations")
+          .downArray
+          .get[Json]("dispersion")
+      )
+      assertEquals(get(spread.hcursor.get[String]("method")), name)
+      val decoded = get(codec.input.decode(json))
+      assertEquals(decoded.trials.rows.head.value.first.dispersion.map(_.method), Some(method))
+      assertEquals(decoded.trials.rows.head.value.fixations.toVector, Vector(fixation))
+      assert(
+        codec.input
+          .decode(
+            withRows(
+              json,
+              Vector(
+                mutateRow(
+                  rows(json).head,
+                  inner =>
+                    val fixes = get(inner.hcursor.get[Vector[Json]]("fixations"))
+                    inner.mapObject(
+                      _.add(
+                        "fixations",
+                        Json.arr(
+                          fixes.head.mapObject(
+                            _.add(
+                              "dispersion",
+                              spread.mapObject(
+                                _.add("method", Json.fromString(method.toString))
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                )
+              )
+            )
+          )
+          .isLeft
+      )
+    }
+  }
+
+  test("dispersion invalidated by a transform is refused, not encoded as unreported") {
+    val key      = StudyKey("s1", "a", "recall")
+    val clock    = ClockId("warped")
+    val screen   = get(Frame.screen("source", 800, 600))
+    val half     = get(Frame.screen("half", 400, 300))
+    val declared = get(
+      Event.Fixation.of(
+        get(Interval.of(clock, Instant.micros(0), Instant.micros(1000))),
+        Pt[Px](200.0, 100.0),
+        4.0,
+        DispersionMethod.RmsRadius,
+        3
+      )
+    )
+    val warped = get(
+      get(Scanpath.of(screen, clock, IArray(declared))).warp(get(Warp.rescale(screen, half)))
+    )
+    assertEquals(
+      warped.first.dispersionStatus,
+      DispersionStatus.Unavailable(
+        DispersionUnavailable.SourceSupportUnavailable(screen.id, half.id)
+      )
+    )
+    codec.input.encode(StudyInput(Trials(Vector(Trial(key, (), warped))))) match
+      case Left(CodecError.Entry(path, CodecError.Unsupported("dispersion", _))) =>
+        assertEquals(path, "trials.rows[0].fixations[0]")
+      case other => fail(s"unexpected $other")
+  }
+
   private def completeLedger: AdmissionLedger[StudyKey] =
     get(
       AdmissionLedger.decide(
@@ -485,7 +584,14 @@ class StudyInputCodecSuite extends munit.FunSuite:
       AdmissionReason.Quarantined(Vector(2, 3), QuarantineCause.RejectedRecords),
       AdmissionReason.Quarantined(Vector(2, 3), QuarantineCause.DuplicateOrdinals),
       AdmissionReason.Quarantined(Vector(2, 3), QuarantineCause.Overlap(1, "[0, 1)", "[0, 2)")),
-      AdmissionReason.Quarantined(Vector(2, 3), QuarantineCause.Scanpath("extent"))
+      AdmissionReason.Quarantined(Vector(2, 3), QuarantineCause.NoFixations),
+      AdmissionReason.Quarantined(Vector(2, 3), QuarantineCause.WrongClock(0, "c", "d")),
+      AdmissionReason.Quarantined(Vector(2, 3), QuarantineCause.InvalidTransition(1, "gap")),
+      AdmissionReason.Quarantined(Vector(2, 3), QuarantineCause.InvalidExtent("extent")),
+      AdmissionReason.Quarantined(
+        Vector(2, 3),
+        QuarantineCause.UnmappableFixation(0, frame.id, FrameId("other"), 0.5, 1.5)
+      )
     )
     val records = reasons.zipWithIndex.map { case (reason, index) =>
       SourceRecord(
@@ -495,11 +601,14 @@ class StudyInputCodecSuite extends munit.FunSuite:
           if index % 2 == 0 then Some(key) else None,
           reason match
             case AdmissionReason.Quarantined(_, cause) =>
-              AdmissionReason.Quarantined(Vector(index + 2, index + 3), cause)
+              AdmissionReason.Quarantined(
+                Vector(index + 2, index + 3).filter(_ <= reasons.size + 1),
+                cause
+              )
             case other => other
         )
       )
-    } :+ SourceRecord(reasons.size + 2, Disposition.Admitted(key, 0))
+    } :+ SourceRecord(reasons.size + 2, Disposition.Admitted(StudyKey("s2", "a", "encode"), 0))
     val ledger = get(
       AdmissionLedger.decide(
         SourceRef.of("bad.csv", Vector("participant", "image"), Vector.empty),

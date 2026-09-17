@@ -137,8 +137,13 @@ rows carry the typed key, the unit metadata and a scanpath (`eyes4s.scanpath@1`)
 frame and clock by nominal ID. Fixations are half-open microsecond intervals as decimal strings,
 finite centre coordinates, the sample count and, when declared, the dispersion value and method.
 Decoding rebuilds the input through `StudyInput` and compares the reconstructed digest with the
-declared one; a reordered, dropped or altered trial fails with `CodecError.InputIdentity`. Errors
-inside a trial are located, for example `CodecError.Entry("trials.rows[2].fixations[1]", ...)`.
+declared one. That digest covers what the study computes on: the typed keys, trial order, each
+trial's spatial unit, frame identity/geometry/axis and clock, and every fixation's interval, centre
+and sample count. Reordering, dropping or altering any of those fails with
+`CodecError.InputIdentity`. Declared dispersion is carried through the payload but is not
+identity-bearing: it does not enter the digest, so a changed dispersion decodes as a different
+value with the same input reference. Errors inside a trial are located, for example
+`CodecError.Entry("trials.rows[2].fixations[1]", ...)`.
 Scanpaths and fixation summaries backed by source samples are refused with `CodecError.Unsupported`
 rather than silently detached; their support belongs to the recording payload.
 

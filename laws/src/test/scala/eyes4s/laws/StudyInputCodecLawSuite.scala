@@ -166,42 +166,88 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
   private val causes: Gen[QuarantineCause] = Gen.oneOf(
     Gen.const(QuarantineCause.RejectedRecords),
     Gen.const(QuarantineCause.DuplicateOrdinals),
+    Gen.const(QuarantineCause.NoFixations),
     Gen.zip(Gen.choose(0, 5), text, text).map(QuarantineCause.Overlap.apply),
-    text.map(QuarantineCause.Scanpath.apply)
+    Gen.zip(Gen.choose(0, 5), text, text).map(QuarantineCause.WrongClock.apply),
+    Gen.zip(Gen.choose(0, 5), text).map(QuarantineCause.InvalidTransition.apply),
+    text.map(QuarantineCause.InvalidExtent.apply),
+    Gen
+      .zip(
+        Gen.choose(0, 5),
+        text.map(FrameId.apply),
+        text.map(FrameId.apply),
+        Gen.choose(-5.0, 5.0),
+        Gen.choose(-5.0, 5.0)
+      )
+      .map(QuarantineCause.UnmappableFixation.apply)
   )
 
-  private def ledgers[K](keys: Gen[K]): Gen[AdmissionLedger[K]] = for
+  /** One admitted record, one rejected record, or a quarantined trial of one
+    * to three consecutive records sharing a scope, the way the importer emits it.
+    */
+  private enum Block[K]:
+    case Admitted(key: K, raw: Vector[String])
+    case Rejected(key: Option[K], raw: Vector[String], reason: AdmissionReason)
+    case Quarantined(
+        key: K,
+        raws: Vector[Vector[String]],
+        reason: AdmissionReason,
+        cause: QuarantineCause
+    )
+
+  private def blocks[K](keys: Gen[K], quarantine: K => K): Gen[Block[K]] =
+    val raw = Gen.listOfN(3, text).map(_.toVector)
+    Gen.frequency(
+      3 -> Gen.zip(keys, raw).map(Block.Admitted.apply),
+      2 -> Gen.zip(Gen.option(keys), raw, reasons).map(Block.Rejected.apply),
+      2 -> Gen
+        .zip(
+          keys.map(quarantine),
+          Gen.choose(1, 3).flatMap(Gen.listOfN(_, raw)),
+          reasons,
+          causes
+        )
+        .map { case (k, raws, reason, cause) =>
+          Block.Quarantined(k, raws.toVector, reason, cause)
+        }
+    )
+
+  private def ledgers[K](keys: Gen[K], quarantine: K => K): Gen[AdmissionLedger[K]] = for
     label    <- text
     header   <- Gen.listOfN(3, text).map(_.toVector)
-    n        <- Gen.choose(1, 8)
-    ks       <- Gen.listOfN(n, keys)
-    kinds    <- Gen.listOfN(n, Gen.choose(0, 2))
-    raws     <- Gen.listOfN(n, Gen.listOfN(3, text).map(_.toVector))
-    rs       <- Gen.listOfN(n, reasons)
-    cs       <- Gen.listOfN(n, causes)
+    n        <- Gen.choose(1, 6)
+    bs       <- Gen.listOfN(n, blocks(keys, quarantine))
     decision <- Gen.oneOf(AdmissionDecision.RequireComplete, AdmissionDecision.ReviewExclusions)
   yield
-    val records = (0 until n).toVector.map { i =>
-      val record                      = i + 2
-      val disposition: Disposition[K] = kinds(i) match
-        case 0 => Disposition.Admitted(ks(i), i)
-        case 1 => Disposition.Rejected(raws(i), Some(ks(i)), rs(i))
-        case _ =>
-          Disposition.Rejected(
-            raws(i),
-            Some(ks(i)),
-            AdmissionReason.Quarantined(Vector(record), cs(i))
-          )
-      SourceRecord(record, disposition)
+    val (records, raws) = bs.zipWithIndex.foldLeft(
+      (Vector.empty[SourceRecord[K]], Vector.empty[Vector[String]])
+    ) { case ((acc, rows), (block, ordinal)) =>
+      val first = acc.size + 2
+      block match
+        case Block.Admitted(k, raw) =>
+          (acc :+ SourceRecord(first, Disposition.Admitted(k, ordinal)), rows :+ raw)
+        case Block.Rejected(k, raw, reason) =>
+          (acc :+ SourceRecord(first, Disposition.Rejected(raw, k, reason)), rows :+ raw)
+        case Block.Quarantined(k, blockRaws, reason, cause) =>
+          val scope   = blockRaws.indices.map(_ + first).toVector
+          val entries = blockRaws.zipWithIndex.map { case (raw, i) =>
+            val disposition =
+              if i == 0 && cause == QuarantineCause.RejectedRecords then
+                Disposition.Rejected(raw, Some(k), reason)
+              else Disposition.Rejected(raw, Some(k), AdmissionReason.Quarantined(scope, cause))
+            SourceRecord(first + i, disposition)
+          }
+          (acc ++ entries, rows ++ blockRaws)
     }
     checked(
-      AdmissionLedger.decide(
-        SourceRef.of(label, header, raws.toVector),
-        header,
-        records,
-        decision
-      )
+      AdmissionLedger.decide(SourceRef.of(label, header, raws), header, records, decision)
     )
+
+  // Quarantined keys are kept disjoint from admitted keys, as the importer guarantees.
+  private def quarantineStudyKey(k: StudyKey): StudyKey =
+    k.copy(participant = "quarantined-" + k.participant)
+  private def quarantineOccurrenceKey(k: OccurrenceKey): OccurrenceKey =
+    k.copy(participant = "quarantined-" + k.participant)
 
   private val standard = StudyInputCodecs.study[Px]
   private val custom   = new StudyInputCodec[OccurrenceKey, Px](
@@ -223,7 +269,7 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
     "admission ledger",
     CodecLaws.roundTrip(
       standard.ledger,
-      ledgers(studyKeys),
+      ledgers(studyKeys, quarantineStudyKey),
       (a: AdmissionLedger[StudyKey], b: AdmissionLedger[StudyKey]) => a == b
     )
   )
@@ -231,7 +277,7 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
     "occurrence ledger",
     CodecLaws.roundTrip(
       custom.ledger,
-      ledgers(occurrenceKeys),
+      ledgers(occurrenceKeys, quarantineOccurrenceKey),
       (a: AdmissionLedger[OccurrenceKey], b: AdmissionLedger[OccurrenceKey]) => a == b
     )
   )
@@ -281,7 +327,7 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
     }
 
   test("published laws kill dropped ledger rows, reordered trials and collapsed occurrences") {
-    val withAdmitted = ledgers(studyKeys).suchThat(_.admitted.nonEmpty)
+    val withAdmitted = ledgers(studyKeys, quarantineStudyKey).suchThat(_.admitted.nonEmpty)
     val droppedRow   = mutant(standard.ledger)(l =>
       AdmissionLedger
         .of(l.source, l.header, l.records.filterNot(_ == l.admitted.head), l.outcome)
@@ -296,7 +342,7 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
       )
     )
 
-    val withExclusions    = ledgers(studyKeys).suchThat(_.rejected.nonEmpty)
+    val withExclusions    = ledgers(studyKeys, quarantineStudyKey).suchThat(_.rejected.nonEmpty)
     val droppedExclusions = mutant(standard.ledger)(l =>
       AdmissionLedger
         .of(l.source, l.header, l.admitted, l.outcome)
@@ -331,7 +377,7 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
     val repeated = inputs(occurrenceKeys).suchThat(_.trials.rows.exists(_.key.occurrence != 1))
     // The forgetful key codec contradicts the declared digest, so decoding fails.
     assert(killed(forgetful.input, repeated, sameInput[OccurrenceKey]))
-    val repeatedLedgers = ledgers(occurrenceKeys).suchThat(
+    val repeatedLedgers = ledgers(occurrenceKeys, quarantineOccurrenceKey).suchThat(
       _.records.exists {
         case SourceRecord(_, Disposition.Admitted(k, _))    => k.occurrence != 1
         case SourceRecord(_, Disposition.Rejected(_, k, _)) => k.exists(_.occurrence != 1)

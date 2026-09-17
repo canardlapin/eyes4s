@@ -47,19 +47,34 @@ object SourceRef:
 enum QuarantineCause derives CanEqual:
   case RejectedRecords
   case DuplicateOrdinals
+  case NoFixations
   case Overlap(index: Int, previous: String, current: String)
-  case Scanpath(reason: String)
+  case WrongClock(index: Int, expected: String, actual: String)
+  case InvalidTransition(index: Int, reason: String)
+  case InvalidExtent(reason: String)
+  case UnmappableFixation(index: Int, from: FrameId, to: FrameId, x: Double, y: Double)
 
   def message: String = this match
-    case RejectedRecords   => "one or more source rows were rejected"
-    case DuplicateOrdinals => "duplicate fixation ordinals"
-    case Overlap(i, p, c)  => s"fixation $i at $c begins before the previous fixation $p ends"
-    case Scanpath(reason)  => reason
+    case RejectedRecords     => "one or more source rows were rejected"
+    case DuplicateOrdinals   => "duplicate fixation ordinals"
+    case NoFixations         => "a scanpath needs at least one fixation"
+    case Overlap(i, p, c)    => s"fixation $i at $c begins before the previous fixation $p ends"
+    case WrongClock(i, e, a) => s"fixation $i is on clock $a, expected $e"
+    case InvalidTransition(i, r)               => s"transition into fixation $i: $r"
+    case InvalidExtent(r)                      => s"scanpath extent: $r"
+    case UnmappableFixation(i, from, to, x, y) =>
+      s"fixation $i at ($x, $y) cannot be mapped from ${from.name} to ${to.name}"
 
 object QuarantineCause:
+  /** Total over the scanpath constructor's errors; each case keeps its operands. */
   def of(error: ScanpathError): QuarantineCause = error match
-    case ScanpathError.OutOfOrder(index, previous, current) => Overlap(index, previous, current)
-    case other                                              => Scanpath(other.message)
+    case ScanpathError.NoFixations                           => NoFixations
+    case ScanpathError.OutOfOrder(i, p, c)                   => Overlap(i, p, c)
+    case ScanpathError.WrongClock(i, e, a)                   => WrongClock(i, e, a)
+    case ScanpathError.InvalidTransitionSpan(i, e)           => InvalidTransition(i, e.message)
+    case ScanpathError.InvalidExtent(e)                      => InvalidExtent(e.message)
+    case ScanpathError.UnmappableFixation(i, from, to, x, y) =>
+      UnmappableFixation(i, from, to, x, y)
 
 /** Why one source record was not admitted. Every case names its operands. */
 enum AdmissionReason derives CanEqual:
@@ -111,8 +126,11 @@ enum AdmissionOutcome derives CanEqual:
 enum AdmissionError derives CanEqual:
   case NonPositiveRecord(record: Int)
   case RecordOrder(index: Int, previous: Int, record: Int)
+  case NegativeOrdinal(record: Int, value: Int)
   case DuplicateOrdinal(records: Vector[Int], value: Int)
   case QuarantineScope(record: Int, records: Vector[Int])
+  case QuarantineAdmitted(record: Int, admitted: Int)
+  case QuarantinedKeyAdmitted(quarantined: Int, admitted: Int)
   case OutcomeMismatch(outcome: AdmissionOutcome, rejected: Int)
   case AmbiguousTrial(indices: Vector[Int])
   case UnknownTrial(records: Vector[Int])
@@ -123,9 +141,14 @@ enum AdmissionError derives CanEqual:
     case NonPositiveRecord(r) => s"Source record numbers are positive, got $r."
     case RecordOrder(i, p, r) =>
       s"Source records must be strictly increasing; entry $i has record $r after $p."
+    case NegativeOrdinal(r, o)   => s"Record $r admits a negative ordinal $o."
     case DuplicateOrdinal(rs, o) => s"Records $rs admit the same ordinal $o for one trial."
     case QuarantineScope(r, rs)  =>
       s"Record $r is quarantined with records $rs, which must include it and exist in the ledger."
+    case QuarantineAdmitted(r, a) =>
+      s"Record $r is quarantined with record $a, but record $a is admitted."
+    case QuarantinedKeyAdmitted(q, a) =>
+      s"Record $q quarantines a trial key that record $a admits."
     case OutcomeMismatch(o, n) => s"Outcome $o is inconsistent with $n rejected records."
     case AmbiguousTrial(is)    =>
       s"Input trials $is repeat one key; the ledger cannot address them."
@@ -157,18 +180,25 @@ final case class AdmissionLedger[K] private (
         key
     }.distinct
 
-  /** Admitted records must address every input trial exactly once per fixation. */
+  /** Admitted records must address every input trial exactly once per fixation.
+    * Ordinals are the source's own values: distinct within a trial and as many
+    * as the trial has fixations; their rank order is the fixation order.
+    * Errors name the first offender in input or record order.
+    */
   def checkAgainst[U <: Unit2D](input: StudyInput[K, U]): Either[AdmissionError, Unit] =
     val byKey = records
       .collect { case SourceRecord(r, Disposition.Admitted(k, _)) => k -> r }
       .groupMap(_._1)(_._2)
-    val trials  = input.trials.rows.zipWithIndex
-    val known   = trials.map(_._1.key).toSet
-    val orphans =
-      byKey.collect { case (k, rs) if !known.contains(k) => rs }.flatten.toVector.sorted
-    trials.groupBy(_._1.key).collectFirst {
-      case (_, rows) if rows.size > 1 => AdmissionError.AmbiguousTrial(rows.map(_._2))
-    } match
+    val trials    = input.trials.rows.zipWithIndex
+    val known     = trials.map(_._1.key).toSet
+    val ambiguous = trials.collectFirst {
+      case (trial, i) if trials.count(_._1.key == trial.key) > 1 =>
+        AdmissionError.AmbiguousTrial(trials.collect { case (t, j) if t.key == trial.key => j })
+    }
+    val orphans = records.collect {
+      case SourceRecord(r, Disposition.Admitted(k, _)) if !known.contains(k) => r
+    }
+    ambiguous match
       case Some(error)              => Left(error)
       case None if orphans.nonEmpty => Left(AdmissionError.UnknownTrial(orphans))
       case None                     =>
@@ -181,30 +211,56 @@ final case class AdmissionLedger[K] private (
           .toLeft(())
 
 object AdmissionLedger:
+  /** Every invariant reports the first offending record in record order. */
   def of[K](
       source: SourceRef,
       header: Vector[String],
       records: Vector[SourceRecord[K]],
       outcome: AdmissionOutcome
   ): Either[AdmissionError, AdmissionLedger[K]] =
-    val rejected = records.count(!_.isAdmitted)
-    val numbers  = records.map(_.record).toSet
-    def ordered  = records.zipWithIndex.collectFirst {
+    val rejected      = records.count(!_.isAdmitted)
+    val numbers       = records.map(_.record).toSet
+    val admittedByKey = records
+      .collect { case SourceRecord(r, Disposition.Admitted(k, _)) => k -> r }
+      .groupMap(_._1)(_._2)
+    val admittedNumbers = records.collect { case SourceRecord(r, Disposition.Admitted(_, _)) =>
+      r
+    }.toSet
+    def ordered = records.zipWithIndex.collectFirst {
       case (r, _) if r.record < 1 => AdmissionError.NonPositiveRecord(r.record)
       case (r, i) if i > 0 && r.record <= records(i - 1).record =>
         AdmissionError.RecordOrder(i, records(i - 1).record, r.record)
     }
-    def ordinals = records
-      .collect { case SourceRecord(r, Disposition.Admitted(k, o)) => (k, o) -> r }
-      .groupMap(_._1)(_._2)
-      .collectFirst {
-        case ((_, o), rs) if rs.size > 1 => AdmissionError.DuplicateOrdinal(rs, o)
-      }
-    def scopes = records.collectFirst {
-      case SourceRecord(r, Disposition.Rejected(_, _, AdmissionReason.Quarantined(rs, _)))
-          if !rs.contains(r) || !rs.forall(numbers.contains) =>
-        AdmissionError.QuarantineScope(r, rs)
+    def ordinals = records.collectFirst {
+      case SourceRecord(r, Disposition.Admitted(_, o)) if o < 0 =>
+        AdmissionError.NegativeOrdinal(r, o)
+      case SourceRecord(r, Disposition.Admitted(k, o)) if records.exists {
+            case SourceRecord(other, Disposition.Admitted(k2, o2)) =>
+              other != r && k2 == k && o2 == o
+            case _ => false
+          } =>
+        AdmissionError.DuplicateOrdinal(
+          records.collect {
+            case SourceRecord(other, Disposition.Admitted(k2, o2)) if k2 == k && o2 == o =>
+              other
+          },
+          o
+        )
     }
+    def scope(entry: SourceRecord[K]): Option[AdmissionError] = entry match
+      case SourceRecord(r, Disposition.Rejected(_, key, AdmissionReason.Quarantined(rs, _))) =>
+        if !rs.contains(r) || !rs.forall(numbers.contains) then
+          Some(AdmissionError.QuarantineScope(r, rs))
+        else
+          rs.find(admittedNumbers.contains)
+            .map(AdmissionError.QuarantineAdmitted(r, _))
+            .orElse(
+              key
+                .flatMap(admittedByKey.get)
+                .map(admitted => AdmissionError.QuarantinedKeyAdmitted(r, admitted.min))
+            )
+      case _ => None
+    def scopes     = records.iterator.map(scope).collectFirst { case Some(error) => error }
     def consistent = outcome match
       case AdmissionOutcome.Complete if rejected > 0 =>
         Some(AdmissionError.OutcomeMismatch(outcome, rejected))

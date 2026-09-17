@@ -515,3 +515,23 @@ class FixationStudySuite extends munit.FunSuite:
     assertEquals(decisions.checkAgainst(restored), Right(()))
     assertNotEquals(ledger.source, FixationEvidence.source("quoted.csv", read()))
   }
+
+  test("the ledger keeps the source's own ordinal values, which need not be contiguous") {
+    val sparse   = records.map(r => r.updated(3, (r(3).toInt * 10 + 1).toString))
+    val imported = read(sparse)
+    val input    = get(imported.requireComplete)
+    assertEquals(input.reference, get(read().requireComplete).reference)
+    val ledger = get(
+      FixationEvidence.ledger("sparse.csv", imported, AdmissionDecision.RequireComplete)
+    )
+    assertEquals(ledger.checkAgainst(input), Right(()))
+    assertEquals(
+      ledger.admitted.take(4).map(_.disposition).collect {
+        case Disposition.Admitted(_, ordinal) => ordinal
+      },
+      Vector(1, 11, 21, 31)
+    )
+    val restored = get(inputCodec.ledger.decode(get(inputCodec.ledger.encode(ledger))))
+    assertEquals(restored, ledger)
+    assertEquals(restored.checkAgainst(input), Right(()))
+  }

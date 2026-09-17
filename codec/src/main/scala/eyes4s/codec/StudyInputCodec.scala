@@ -25,11 +25,10 @@ import io.circe.Json
 
 /** Built-in schemas for the fixation-study input route. */
 object StudyInputCodecs:
-  // DefinitionId.of is total for a non-empty literal name and version 1.
-  val input: DefinitionId    = DefinitionId.of("eyes4s.study-input", 1).toOption.get
-  val trials: DefinitionId   = DefinitionId.of("eyes4s.trials", 1).toOption.get
-  val scanpath: DefinitionId = DefinitionId.of("eyes4s.scanpath", 1).toOption.get
-  val ledger: DefinitionId   = DefinitionId.of("eyes4s.admission-ledger", 1).toOption.get
+  val input: DefinitionId    = DefinitionId.studyInput
+  val trials: DefinitionId   = DefinitionId.trials
+  val scanpath: DefinitionId = DefinitionId.scanpath
+  val ledger: DefinitionId   = DefinitionId.admissionLedger
 
   /** The ordinary participant/stimulus/phase route, matching `StudyCodecs.cosine`. */
   def study[U <: Unit2D: UnitLabel]: StudyInputCodec[StudyKey, U] =
@@ -170,7 +169,7 @@ final class StudyInputCodec[K, U <: Unit2D](
               "dispersion",
               Json.obj(
                 "value"  -> Json.fromDoubleOrNull(value.value),
-                "method" -> Json.fromString(value.method.toString)
+                "method" -> Json.fromString(StudyInputCodec.dispersionMethods(value.method))
               )
             )
           )
@@ -211,8 +210,8 @@ final class StudyInputCodec[K, U <: Unit2D](
           for
             value  <- DomainWire.finite(spread, "value")
             name   <- Wire.field[String](spread, "method")
-            method <- DispersionMethod.values
-              .find(_.toString == name)
+            method <- StudyInputCodec.dispersionMethods
+              .collectFirst { case (m, n) if n == name => m }
               .toRight(CodecError.Field("method", spread, s"unknown dispersion method $name"))
             result <- Event.Fixation
               .of(span, Pt[U](x, y), value, method, count)
@@ -362,9 +361,44 @@ private[codec] object StudyInputCodec:
               "previous" -> Json.fromString(previous),
               "current"  -> Json.fromString(current)
             )
-          case QuarantineCause.Scanpath(reason) =>
-            Json.obj("kind" -> Json.fromString("scanpath"), "reason" -> Json.fromString(reason)))
+          case QuarantineCause.NoFixations =>
+            Json.obj("kind" -> Json.fromString("noFixations"))
+          case QuarantineCause.WrongClock(index, expected, actual) =>
+            Json.obj(
+              "kind"     -> Json.fromString("wrongClock"),
+              "index"    -> Json.fromInt(index),
+              "expected" -> Json.fromString(expected),
+              "actual"   -> Json.fromString(actual)
+            )
+          case QuarantineCause.InvalidTransition(index, reason) =>
+            Json.obj(
+              "kind"   -> Json.fromString("invalidTransition"),
+              "index"  -> Json.fromInt(index),
+              "reason" -> Json.fromString(reason)
+            )
+          case QuarantineCause.InvalidExtent(reason) =>
+            Json.obj(
+              "kind"   -> Json.fromString("invalidExtent"),
+              "reason" -> Json.fromString(reason)
+            )
+          case QuarantineCause.UnmappableFixation(index, from, to, x, y) =>
+            Json.obj(
+              "kind"  -> Json.fromString("unmappableFixation"),
+              "index" -> Json.fromInt(index),
+              "from"  -> Json.fromString(from.name),
+              "to"    -> Json.fromString(to.name),
+              "x"     -> Json.fromDoubleOrNull(x),
+              "y"     -> Json.fromDoubleOrNull(y)
+            ))
       )
+
+  /** Explicit wire names: an enum rename cannot change the format. */
+  val dispersionMethods: Map[DispersionMethod, String] = Map(
+    DispersionMethod.RmsRadius               -> "rmsRadius",
+    DispersionMethod.BoundingBoxWidth        -> "boundingBoxWidth",
+    DispersionMethod.BoundingBoxDiagonal     -> "boundingBoxDiagonal",
+    DispersionMethod.MedianAbsoluteDeviation -> "medianAbsoluteDeviation"
+  )
 
   def readReason(json: Json): Either[CodecError, AdmissionReason] =
     Wire.field[String](json, "kind").flatMap {
@@ -408,8 +442,28 @@ private[codec] object StudyInputCodec:
                 previous <- Wire.field[String](cause, "previous")
                 current  <- Wire.field[String](cause, "current")
               yield QuarantineCause.Overlap(index, previous, current)
-            case "scanpath" =>
-              Wire.field[String](cause, "reason").map(QuarantineCause.Scanpath.apply)
+            case "noFixations" => Right(QuarantineCause.NoFixations)
+            case "wrongClock"  =>
+              for
+                index    <- Wire.field[Int](cause, "index")
+                expected <- Wire.field[String](cause, "expected")
+                actual   <- Wire.field[String](cause, "actual")
+              yield QuarantineCause.WrongClock(index, expected, actual)
+            case "invalidTransition" =>
+              for
+                index  <- Wire.field[Int](cause, "index")
+                reason <- Wire.field[String](cause, "reason")
+              yield QuarantineCause.InvalidTransition(index, reason)
+            case "invalidExtent" =>
+              Wire.field[String](cause, "reason").map(QuarantineCause.InvalidExtent.apply)
+            case "unmappableFixation" =>
+              for
+                index <- Wire.field[Int](cause, "index")
+                from  <- Wire.field[String](cause, "from")
+                to    <- Wire.field[String](cause, "to")
+                x     <- DomainWire.finite(cause, "x")
+                y     <- DomainWire.finite(cause, "y")
+              yield QuarantineCause.UnmappableFixation(index, FrameId(from), FrameId(to), x, y)
             case other =>
               Left(CodecError.Field("kind", cause, s"unknown quarantine cause $other"))
         yield AdmissionReason.Quarantined(records, value)
