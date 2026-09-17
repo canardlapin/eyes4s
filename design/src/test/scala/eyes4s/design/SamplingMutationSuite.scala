@@ -265,17 +265,26 @@ class SamplingMutationSuite extends ScalaCheckSuite:
     assertEquals(shipped(focal, pool, 25, seed, sample).map(_.item).take(10), pinned)
   }
 
+  /** GOLDEN VECTORS for the digest path itself: the focal key's KeyDigest and
+    * its priority against the first pool candidate. A change in KeyDigest or
+    * in the priority mix is caught here directly, before it reaches a sample.
+    */
+  val pinnedFocalDigest: Long   = -452002883083538310L
+  val pinnedFirstPriority: Long = 3119845174082442710L
+
   test("shipped: P-drift, the digest is of bits and not of a rendering") {
     // The fixture contains whole-valued weights (0.0, 1.0, 2.0, ...) whose
-    // toString differs between platforms; the shipped digest ignores that.
+    // toString differs between platforms.
     assert(!pool.contains(focal))
     assert(jvmStyle(focal.weight) != jsStyle(focal.weight))
     assertEquals(pool.count(k => jvmStyle(k.weight) != jsStyle(k.weight)), 15)
-    assertEquals(
-      shipped(focal, pool, 10, seed, sample),
-      shipped(focal, pool.map(k => k.copy(weight = k.weight + 0.0)), 10, seed, sample)
-    )
-    assert(pDrift(shipped, shipped))
+    // The shipped selection is neither platform's rendering-derived one.
+    val selected = shipped(focal, pool, 10, seed, sample)
+    assertNotEquals(selected, renderDigestJvm(focal, pool, 10, seed, sample))
+    assertNotEquals(selected, renderDigestJs(focal, pool, 10, seed, sample))
+    // And the digest the selection is built from is pinned bit-for-bit.
+    assertEquals(digest(focal).value, pinnedFocalDigest)
+    assertEquals(Selection.priority(seed, sample, focal, pool.head), pinnedFirstPriority)
   }
 
   // ---------------------------------------------------------------------------
@@ -353,6 +362,9 @@ class SamplingMutationSuite extends ScalaCheckSuite:
   test("mutant match-after-sample: killed by P-count") {
     assert(killed(pCount(matchAfterSample)))
     // eyesim's n-or-(n-1): the count is never MORE than the cap, only short.
+    // Under the fixed seed the focal ranks within the first 60 of the 61-key
+    // pool it was prepended to, so some cap in 1..60 is short by one and the
+    // `exists` below is deterministic rather than probabilistic.
     val counts = (1 to 60).map(cap => matchAfterSample(focal, pool, cap, seed, sample).size)
     assert(counts.zipWithIndex.forall { case (n, i) => n == i + 1 || n == i })
     assert(counts.zipWithIndex.exists { case (n, i) => n == i })

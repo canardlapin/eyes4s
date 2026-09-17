@@ -44,7 +44,13 @@ import org.scalacheck.Prop.forAll
   * structurally, because `render` and `joinKeys` are order-preserving by
   * design, and that is also pinned.
   *
-  * ==Relation and design mutants killed by the tables==
+  * ==Table sensitivity: alternative relation and design values==
+  *
+  * These "mutants" are alternative `Relation` and `PairDesign` VALUES, not
+  * alternative interpreter implementations: each is a plausible mis-stated
+  * design, and the row records the table cell that tells it apart from the
+  * intended one. (The sampling suite's mutants, by contrast, are alternative
+  * sampler implementations.)
   *
   * {{{
   * | mutant                         | changed expression                          | killed by                    |
@@ -606,7 +612,12 @@ class RelationTruthTableSuite extends ScalaCheckSuite:
     }
   }
 
-  property("every within-collection relation is symmetric, which canonical storage relies on") {
+  // Symmetry is a property of the generated grammar (sameOn/differentOn with
+  // the SAME projection on both sides), not of Relation[K, K] in general:
+  // SameOn(participant, image) is constructible for a WithinUndirected design
+  // and is asymmetric. Canonical storage relies on the caller supplying a
+  // symmetric relation; nothing in the type enforces it.
+  property("within-collection relations with identical projections are symmetric") {
     forAll(genRel, genWideKey, genWideKey) { (a, l, r) =>
       Prop(a.accepts(l, r) == a.accepts(r, l)) :| s"${a.render} at ($l, $r)"
     }
