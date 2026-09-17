@@ -26,6 +26,9 @@ implementation version, assumptions, deviations and source references remain the
 authority for the detector. The detector's streaming capability does not imply
 that an entire recording recipe supports bounded cancellation.
 
+[PREFLIGHT.md](PREFLIGHT.md) describes the typed availability reports that
+consult these descriptors before a recipe runs.
+
 All current recipe descriptors report `SynchronousWholeOperation`. Bounded
 execution is subsequent X2–X6 work; attaching metadata to an arbitrary custom
 closure cannot confer cancellation guarantees.

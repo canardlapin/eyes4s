@@ -144,6 +144,12 @@ final class TemporalStudyPlan[K, U <: Unit2D, P, S, D] private (
 )(using UnitLabel[U]):
   def inspect: Either[DescriptorError, RecipeInspection] = RecipeDescriptors.temporal(this)
 
+  /** Typed availability report; see [[Preflight.temporal]]. */
+  def preflight(
+      available: Option[TemporalStudyInput[K, U]],
+      budget: PairScheduleBudget = PairScheduleBudget.default
+  ): TemporalReport[K, U] = Preflight.temporal(this, available, budget)
+
   def description: Vector[(String, Vector[Provenance.Param])] =
     import Provenance.Param.*
     base.description ++ Vector(

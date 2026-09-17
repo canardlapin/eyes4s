@@ -234,6 +234,12 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
 )(using unit: UnitLabel[U]):
   def inspect: Either[DescriptorError, RecipeInspection] = RecipeDescriptors.study(this)
 
+  /** Typed availability report; see [[Preflight.study]]. */
+  def preflight(
+      available: Option[StudyInput[K, U]],
+      budget: PairScheduleBudget = PairScheduleBudget.default
+  ): StudyReport[K, U] = Preflight.study(this, available, budget)
+
   def description: Vector[(String, Vector[Provenance.Param])] =
     import Provenance.Param.*
     Vector(

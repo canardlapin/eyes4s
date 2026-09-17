@@ -87,6 +87,10 @@ final class RecordingPlan[P] private (
 ):
   def inspect: Either[DescriptorError, RecipeInspection] = RecipeDescriptors.recording(this)
 
+  /** Typed availability report; see [[Preflight.recording]]. */
+  def preflight(available: Option[Recording[Px]]): RecordingReport =
+    Preflight.recording(this, available)
+
   def description: Vector[(String, Vector[Provenance.Param])] =
     import Provenance.Param.*
     Vector(
