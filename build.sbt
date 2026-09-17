@@ -310,6 +310,19 @@ ThisBuild / githubWorkflowBuild += WorkflowStep.Sbt(
 )
 
 ThisBuild / githubWorkflowBuild += WorkflowStep.Sbt(
+  List("docs/tlSite"),
+  name = Some("Compile examples and build the public guide"),
+  cond = Some("matrix.project == 'rootJVM' && matrix.java == 'temurin@17'"),
+  preamble = false
+)
+
+ThisBuild / githubWorkflowBuild += WorkflowStep.Run(
+  List("python3 tools/check-docs.py"),
+  name = Some("Check public documentation coverage"),
+  cond = Some("matrix.project == 'rootJVM' && matrix.java == 'temurin@17'")
+)
+
+ThisBuild / githubWorkflowBuild += WorkflowStep.Sbt(
   List(
     "ioJVM/Test/runMain eyes4s.io.EyeLinkAscPerformanceMain --profile smoke --hardware github-actions-ubuntu-22.04-x64"
   ),
@@ -378,6 +391,7 @@ def forbiddenInPureModules(org: String, name: String): Boolean =
 
 lazy val pureModuleSettings = Seq(
   checkModuleBoundaries := {
+    val log        = streams.value.log
     val moduleName = name.value
     val offenders  = update.value.allModules
       .filter(m => forbiddenInPureModules(m.organization, m.name))
@@ -395,7 +409,7 @@ lazy val pureModuleSettings = Seq(
             |Move the offending code to eyes4s-fs2 or eyes4s-io.""".stripMargin
       )
     else
-      streams.value.log.info(s"$moduleName: module boundaries OK (no effect deps)")
+      log.info(s"$moduleName: module boundaries OK (no effect deps)")
   }
 )
 
@@ -628,6 +642,20 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
 // ---------------------------------------------------------------------------
 // Aliases
 // ---------------------------------------------------------------------------
+
+// Public reader documentation only; docs/ also contains internal plans and audits.
+// Local/CI generation does not enable site deployment.
+lazy val docs = project
+  .in(file("site"))
+  .enablePlugins(TypelevelSitePlugin)
+  .dependsOn(io.jvm)
+  .settings(
+    name           := "eyes4s-guide",
+    publish / skip := true,
+    mdocIn         := file("site-docs"),
+    Compile / unmanagedResourceDirectories += file("site-docs/data").getAbsoluteFile,
+    tlSitePublishBranch := None
+  )
 
 lazy val allModules = Seq(
   "kernel",

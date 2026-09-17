@@ -31,15 +31,15 @@ are equally legitimate starting points.
 ## Current position — 2026-09-17
 
 The four active epics describe overlapping acceptance gates, not four independent frameworks.
-The [task index](START_HERE.md) is the public entry point; the baseline manifest remains the
+The [public guide](../site-docs/index.md) is the reader entry point; the baseline manifest remains the
 scientific inventory. Current source and tracker reconciliation distinguishes:
 
 | Epic | Delivered foundation | Remaining acceptance |
 |---|---|---|
-| Relational analysis (`bd-01KYD6CFWNAN0Y3TR59FJV8VMG`) | Typed relations/designs, keyed sampling, edge analyses, explicit reductions/contrasts, truth-table/mutation coverage and a direct repetition facade | Surface decomposition, partial association, broad parity, executable keyed joins and remaining shared within-pair scheduling |
-| Coherent roadmap (`bd-01M02N4AVNKKTEV3SA5PR0H4S8`) | Fixation, recording and temporal plan/codec routes; typed method descriptors, preflight and bounded study preview | Complete baseline, second extension-family and packaged application-consumer proof, operational and release gates |
-| Psychology-facing API/docs (`bd-01M02N4EKAEA6EBB3TE0G4TYMP`) | Real AdSERP workflow, fixation/temporal guides, compiled repetition admission/save/run/export example and corrected module entry points | Complete five-minute reader journey, migration coverage, detector/API cards and mdoc/Scaladoc CI site |
-| Complete baseline (`bd-01M214CX2CTADNR6Q9D032Y1FB`) | Pinned measured cases, exhaustive matched/control route, bounded temporal/scale examples, repetition-cosine divergence and a saved training-only fixed-feature R fit | Fifteen classified gap cases, including other comparison methods, KDE/sampling, learned template construction and surface decomposition |
+| Relational analysis (`bd-01KYD6CFWNAN0Y3TR59FJV8VMG`) | Typed relations/designs, indexed equality joins, shared exhaustive between/within scheduling, keyed sampling, edge analyses, explicit reductions/contrasts, mutation coverage and a direct repetition facade | Surface decomposition, partial association, broad parity and saved arbitrary within-design persistence |
+| Coherent roadmap (`bd-01M02N4AVNKKTEV3SA5PR0H4S8`) | Fixation, recording and temporal plan/codec routes; typed method descriptors, preflight, bounded study preview and two extension families | Complete baseline and packaged application-consumer proof, operational and release gates |
+| Psychology-facing API/docs (`bd-01M02N4EKAEA6EBB3TE0G4TYMP`) | Nine-page public guide, executed first study and acquired-recording save/restore examples, migration coverage of all 36 required entry points, local mdoc/Laika build and generated CI checks | Full fresh-consumer journey coverage, remaining example migration, public API Scaladoc, rendered browser review and hosted CI evidence |
+| Complete baseline (`bd-01M214CX2CTADNR6Q9D032Y1FB`) | Pinned admission divergences, exhaustive matched/control route, bounded temporal/scale examples, repetition-cosine divergence and a saved training-only fixed-feature R fit | Fourteen classified gap cases, including other comparison methods, KDE/sampling, learned template construction and surface decomposition |
 
 `PsychologyWorkflow` and `RecordingPlan` already retain synchronization, angle conversion,
 preprocessing, detection and AOI operations; recording persistence is not future work wholesale.
@@ -233,10 +233,11 @@ The next coherent slices are:
 2. **Repetition and comparison breadth:** extend `eyesim-repetition` and `eyesim-compare` with
    pinned remaining-method and multiscale mean/none cases. Persist arbitrary all-occasion and
    finite-cap designs only with named projections and direct-versus-restored pair identity proof.
-3. **Consumer and docs proof:** finish the existing bounded UI-foundation consumer gates and
-   second extension family. Build the task-first documentation in CI and expand the migration
-   guide incrementally, marking unsupported methods explicitly rather than waiting to write
-   any guidance until the full baseline is done.
+3. **Consumer and docs proof:** finish the existing bounded UI-foundation consumer gates;
+   the second extension family already has bounded evidence. The task-first site now builds
+   locally and has generated CI checks; its migration table names every required entry point,
+   including unsupported methods. Complete public-example migration and API Scaladoc, obtain
+   rendered browser review, and distinguish configured CI from a passing hosted run.
 
 These slices advance M2–M5 without closing them wholesale. Reuse live task ownership and attach
 any genuinely new gap to the existing baseline/consumer gates rather than creating another roadmap.

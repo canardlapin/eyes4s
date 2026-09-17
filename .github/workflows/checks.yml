@@ -116,6 +116,59 @@ jobs:
       - name: Check module and kernel boundaries
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' checkBoundaries
 
+      - name: Compile examples and build the public guide
+        if: matrix.project == 'rootJVM' && matrix.java == 'temurin@17'
+        run: sbt docs/tlSite
+
+      - name: Check public documentation coverage
+        if: matrix.project == 'rootJVM' && matrix.java == 'temurin@17'
+        run: python3 tools/check-docs.py
+
       - name: Run EyeLink performance smoke court
         if: matrix.project == 'rootJVM' && matrix.java == 'temurin@17'
         run: sbt 'ioJVM/Test/runMain eyes4s.io.EyeLinkAscPerformanceMain --profile smoke --hardware github-actions-ubuntu-22.04-x64'
+
+  site:
+    name: Generate Site
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+        java: [temurin@17]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout current branch (full)
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: Setup Java (temurin@17)
+        id: setup-java-temurin-17
+        if: matrix.java == 'temurin@17'
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: sbt
+
+      - name: sbt update
+        if: matrix.java == 'temurin@17' && steps.setup-java-temurin-17.outputs.cache-hit == 'false'
+        run: sbt +update
+
+      - name: Setup Java (temurin@21)
+        id: setup-java-temurin-21
+        if: matrix.java == 'temurin@21'
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: sbt
+
+      - name: sbt update
+        if: matrix.java == 'temurin@21' && steps.setup-java-temurin-21.outputs.cache-hit == 'false'
+        run: sbt +update
+
+      - name: Generate site
+        run: sbt docs/tlSite
