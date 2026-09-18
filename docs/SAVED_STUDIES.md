@@ -142,16 +142,21 @@ description and both quanta, so the same submission yields the same id and the
 same event sequence), the step number, the cursor's `StudyStage` and its own
 units, the `StudySegment` the step counts toward (trials of one scale share one
 `Estimating(scale)` segment), the segment's cumulative units and typed
-`SegmentTotal`, and the run's cumulative units. Totals are what preparation can
-state: `Exact(trials)` for estimation;
+`SegmentTotal`, and the run's cumulative units. A segment's total is stated once,
+as the segment begins, and every step of the segment reports that same total.
+Preparation can state `Exact(trials)` for estimation;
 `AtMost(candidates * (2 + cells) + focal + reference)` for a bounded comparison
 segment and `AtMost(2 * candidates + focal + reference)` for a synchronous
 method, where the schedule's paging visits every candidate pair and then every
 reference key (or every focal key when there are no reference trials) and each
-selected pair costs one unit to begin plus its cells; `AtMost(focal keys)` for
-a contrast; and `Unknown` for a reduction, whose units depend on the realized
-scores. The comparison budget is not part of the id: a refusal is a `Failed`
-outcome, not a different run.
+selected pair costs one unit to begin plus its cells; and `AtMost(focal keys)`
+for a contrast. A reduction's units depend on the realized scores, so
+`StudyExecution.total(work, segment)` answers `Unknown` before the run, and the
+runner reports `Exact(units)` from the reduction's first step:
+`StudyCursor.reductionUnits` counts one unit per contribution, unmatched key and
+ambiguity visited plus `max(1, scores)` per distinct key, a function of the
+realized scores alone and therefore the same at any quanta. The comparison budget
+is not part of the id: a refusal is a `Failed` outcome, not a different run.
 
 The outcome is one value, `StudyOutcome.Completed(run, last, result)`,
 `Cancelled(run, last)` or `Failed(run, error, last)`, and a `StudyResult` exists
@@ -176,10 +181,17 @@ immutable cursor that names the stage its next `advance(quanta)` works on and
 returns `WorkStep.More(stage, units, next)`, `WorkStep.Done(units, result)` or a
 typed error. `StudyCursor` satisfies it as it is; `RecordingCursor` and
 `TemporalCursor` are written to it, and `Stepwise.complete` drives any of them.
+The counted vocabulary is also pure: `SegmentTotal`, `StudySegment`,
+`RecordingSegment` and `TemporalSegment` live in `eyes4s-plan` with the totals
+each family states (`StudySegment.total` and so on), and `eyes4s-fs2` keeps the
+same names as aliases, so existing imports compile and importing both packages
+is not ambiguous.
 In `eyes4s-fs2`, `Execution[F]` is the one runner: it interprets a `Submission`
-(id, quanta, how to begin the cursor, the segment of each stage and the total of
-each segment, plus the `Stepwise` evidence) into `RunEvent`, `RunOutcome`,
-`RunProgress` and `Run`. `StudyExecution`, `RecordingExecution` and
+(id, quanta, how to begin the cursor, the segment of each stage, and the total of
+each segment given the cursor about to start it, plus the `Stepwise` evidence)
+into `RunEvent`, `RunOutcome`, `RunProgress` and `Run`. A hand-built
+`Submission` passes `total` as `(segment, cursor) => SegmentTotal`; a total
+that needs no cursor ignores it. `StudyExecution`, `RecordingExecution` and
 `TemporalExecution` are thin wrappers that build the submission; the study
 names (`StudyProgress`, `StudyOutcome`, `StudyEvent`, `StudyRun`) are aliases of
 the shared types, so `StudyOutcome.Completed(_, last, result)` and
@@ -242,6 +254,70 @@ of a later repetition is reported before an execution failure of an earlier one.
 Execution failures can occur under default budgets; what cannot is a later
 repetition failing preparation after an earlier one succeeded, since every
 repetition is prepared against the same input and budget before any cell runs.
+
+## Test the execution contract and its response envelope
+
+The contract above is published, so a downstream family is tested the same way
+as the shipped ones. `eyes4s-laws` provides `ExecutionLaws`, pure laws over
+`Stepwise` alone. A family supplies an `ExecutionLaws.Family`: its stage-to-segment
+map, its totals, the reference run of the plan a cursor came from, result and error
+equality, and a step budget. Pass it to `ExecutionLaws.conformance(family, cursors,
+quanta)` with a cursor generator and `ExecutionLaws.quanta(...)`, which always
+includes `WorkQuanta.default` and `ExecutionLaws.finest` (every quantum at 1). The
+rule set checks eight laws:
+
+- the same cursor at the same quanta yields the same steps and the same end;
+- a run ends in exactly one terminal step within the budget, a result or a typed
+  failure (a run whose first advance fails ends with no step, lawfully);
+- completion at any quanta, and at the finest cut, is the reference run;
+- every sequence of quanta, changing from step to step, yields the reference run;
+- units are non-negative and each segment is visited in one contiguous block;
+- a segment's total is position-independent: every step of it states the same one;
+- an `Exact` total is met and an `AtMost` total is never exceeded (a block a
+  failure cut short is held to the bound only);
+- the work each completed segment charges does not depend on how the steps were
+  cut, the finest cut always included.
+
+For the shipped families the reference run is the plan's own `run`, which drives
+the same cursor at the default quanta, so these laws establish cut invariance, not
+scientific correctness. A ninth law adds that when the family passes an
+independent oracle, an expectation computed without the cursor:
+`conformance(family, cursors, quanta, Some(expect))` requires every run's end,
+under any sequence of quanta, to satisfy it.
+
+`ExecutionLawsSuite` runs them over the study, recording and temporal fixtures on
+the JVM and Scala.js. It also runs two temporal fixtures that fail lawfully (a
+refused comparison budget, once after four preparation steps and once on the first
+advance) and checks the R-pinned matched/control fixture against its pinned
+matched means, control means and differences as the independent oracle. Twelve
+deliberate mutants are each falsified by exactly the laws their receipts name:
+dropped units, a skipped trial, drifting units, premature completion, a
+quanta-dependent result, a run that never ends, a cut that charges extra work, a
+revisited segment, an overstated `Exact`, an understated `AtMost`, a wavering
+total, and a self-vouching instance whose reference run is itself, which only the
+independent oracle catches. The effectful half lives in `eyes4s-fs2`'s
+`ExecutionConformanceSuite`. It states five laws as functions of a runner, over a
+synthetic cursor under `TestControl`: `events` ends in exactly one terminal event,
+`Cancelled` never carries a result, cancellation is observed only between steps,
+the first commit wins, and a defect surfaces from both entry points. The shipped
+`Execution` and a fault-free re-implementation satisfy all five, and each of five
+mutant runners fails the laws its receipt names.
+
+How long a step can hold the runner is measured, not assumed.
+`fs2ModuleJVM/Test/runMain eyes4s.fs2.ExecutionResponsivenessMain` reports the
+longest step, the longest runner gap and the cancellation latency for each route,
+on a pinned JVM. It never fails on timing. [Execution responsiveness](EXECUTION_RESPONSIVENESS.md)
+records the evidence. Against the proposed 100 ms target, on the measured runtime
+(an Apple M3 Max, JDK 25, four visible processors, a 2 GiB heap), every fixture
+meets it at default and smallest quanta. A 100-trial 256×256 study meets it with
+Gaussian bandwidths up to 32 cells: one trial's estimation takes at most 19.6 ms,
+and cancellation settles within 17.2 ms. More trials lengthen the run, not its
+steps, and cost 512 KiB of retained heap per trial per scale at that grid. A
+1024×1024 grid misses it at 647 ms per
+trial, so intra-trial estimation (UI-X2) stays deferred until a consumer needs
+grids that large. Recordings of 60,000 samples or more also miss it, because
+detection assembly scans every sample once per event. That defect is outside
+estimation.
 
 ## Input payloads and admission ledgers
 
