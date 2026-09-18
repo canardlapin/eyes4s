@@ -25,17 +25,27 @@ import org.scalacheck.Gen
 import org.scalacheck.Prop.{forAll, forAllNoShrink}
 import org.typelevel.discipline.Laws
 
-/** What a manifest writer stores: the manifest and every entry's bytes by
-  * name. The manifest's own bytes and address are its canonical encoding.
+/** What a manifest writer stores: the manifest, the exact bytes it stored the
+  * manifest as, and every entry's bytes by name. The address is the SHA-256
+  * of the stored manifest bytes.
   */
 final case class StoredGraph(
     manifest: ScientificManifest,
+    manifestBytes: IArray[Byte],
     entries: Map[ArtifactName, IArray[Byte]]
-)
+):
+  def address: ByteDigest = ByteDigest.sha256(manifestBytes)
 
 object StoredGraph:
   def of(saved: SavedManifest): StoredGraph =
-    StoredGraph(saved.manifest, saved.artifacts.map(a => a.name -> a.bytes).toMap)
+    StoredGraph(saved.manifest, saved.bytes, saved.artifacts.map(a => a.name -> a.bytes).toMap)
+
+  /** A manifest stored in its canonical form beside these entries. */
+  def canonical(
+      manifest: ScientificManifest,
+      entries: Map[ArtifactName, IArray[Byte]]
+  ): Either[CodecError, StoredGraph] =
+    ScientificManifest.bytes(manifest).map(StoredGraph(manifest, _, entries))
 
 /** Published conformance of manifest writing and verified resolution, for
   * any scientific graph an application saves through its registered codecs.
@@ -52,14 +62,12 @@ trait ManifestLaws extends Laws:
       decoders: ArtifactDecoders[K, U],
       reproduces: (G, ResolvedManifest[K, U]) => Boolean
   ): RuleSet =
-    val stored: Gen[Either[CodecError, (StoredGraph, IArray[Byte])]] =
-      graphs.map(g => write(g).flatMap(s => ScientificManifest.bytes(s.manifest).map(s -> _)))
     val corruptions = graphs.flatMap { g =>
-      write(g).flatMap(s => ScientificManifest.bytes(s.manifest).map(s -> _)) match
-        case Left(error)           => Gen.const(Left(error))
-        case Right((graph, bytes)) =>
-          // Index 0 is the manifest itself; entry i is at index i + 1.
-          val blobs = (bytes +: graph.manifest.entries.map(e =>
+      write(g) match
+        case Left(error)  => Gen.const(Left(error))
+        case Right(graph) =>
+          // Index 0 is the stored manifest itself; entry i is at index i + 1.
+          val blobs = (graph.manifestBytes +: graph.manifest.entries.map(e =>
             graph.entries.getOrElse(e.name, IArray.empty[Byte])
           )).zipWithIndex
             .filter(_._1.nonEmpty)
@@ -67,43 +75,46 @@ trait ManifestLaws extends Laws:
             chosen <- Gen.oneOf(blobs)
             at     <- Gen.choose(0, chosen._1.length - 1)
             delta  <- Gen.choose(1, 255)
-          yield Right((graph, bytes, chosen._2, at, delta))
+          yield Right((graph, chosen._2, at, delta))
     }
     new SimpleRuleSet(
       "verifiedManifest",
-      "the manifest round-trips to its canonical bytes" -> forAll(stored) {
-        case Right((graph, bytes)) =>
-          ScientificManifest.codec
-            .encode(graph.manifest)
-            .flatMap(ScientificManifest.codec.decode) ==
-            Right(graph.manifest) &&
-            ScientificManifest.bytes(graph.manifest).map(_.toVector) == Right(bytes.toVector)
-        case Left(_) => false
-      },
+      "the stored manifest bytes decode to the manifest and are its canonical form" ->
+        forAll(graphs) { g =>
+          write(g) match
+            case Right(graph) =>
+              ArtifactResolver
+                .manifest(graph.address, ByteSource(_ => Right(graph.manifestBytes)))
+                .contains(graph.manifest) &&
+              ScientificManifest.bytes(graph.manifest).map(_.toVector) ==
+                Right(graph.manifestBytes.toVector)
+            case Left(_) => false
+        },
       "a written graph resolves by address, reading each artifact once" -> forAll(graphs) { g =>
-        write(g).flatMap(s => ScientificManifest.bytes(s.manifest).map(s -> _)) match
-          case Right((graph, bytes)) =>
-            val address = ByteDigest.sha256(bytes)
-            var reads   = 0
-            val source  = ByteSource { request =>
+        write(g) match
+          case Right(graph) =>
+            var reads  = 0
+            val source = ByteSource { request =>
               reads += 1
-              ManifestLaws.serve(graph, address, bytes)(request)
+              ManifestLaws.serve(graph)(request)
             }
-            ArtifactResolver.resolve(address, source, decoders).exists(r => reproduces(g, r)) &&
+            ArtifactResolver
+              .resolve(graph.address, source, decoders)
+              .exists(r => reproduces(g, r)) &&
             reads == graph.manifest.entries.size + 1
           case Left(_) => false
       },
       "any single corrupted byte is refused by its digest before anything is decoded" ->
         forAllNoShrink(corruptions) {
-          case Right((graph, bytes, which, at, delta)) =>
-            val address                                   = ByteDigest.sha256(bytes)
+          case Right((graph, which, at, delta)) =>
+            val address                                   = graph.address
             def corrupt(blob: IArray[Byte]): IArray[Byte] =
               IArray.tabulate(blob.length)(i =>
                 if i == at then (blob(i) ^ delta).toByte else blob(i)
               )
             val (manifestBytes, entries, expected) =
               if which == 0 then
-                val changed = corrupt(bytes)
+                val changed = corrupt(graph.manifestBytes)
                 (
                   changed,
                   graph.entries,
@@ -113,7 +124,7 @@ trait ManifestLaws extends Laws:
                 val entry   = graph.manifest.entries(which - 1)
                 val changed = corrupt(graph.entries.getOrElse(entry.name, IArray.empty[Byte]))
                 (
-                  bytes,
+                  graph.manifestBytes,
                   graph.entries.updated(entry.name, changed),
                   ResolveError.Digest(entry.name, entry.sha256, ByteDigest.sha256(changed))
                 )
@@ -129,14 +140,14 @@ trait ManifestLaws extends Laws:
     )
 
 object ManifestLaws extends ManifestLaws:
-  /** Serve a stored graph by manifest address and entry name. */
-  def serve(graph: StoredGraph, address: ByteDigest, bytes: IArray[Byte])(
-      request: ByteRequest
-  ): Either[SourceFailure, IArray[Byte]] = request match
-    case ByteRequest.Manifest(`address`) => Right(bytes)
-    case ByteRequest.Manifest(_)         => Left(SourceFailure.Missing)
-    case ByteRequest.Entry(entry)        =>
-      graph.entries.get(entry.name).toRight(SourceFailure.Missing)
+  /** Serve a stored graph: the manifest under its address, entries by name. */
+  def serve(graph: StoredGraph)(request: ByteRequest): Either[SourceFailure, IArray[Byte]] =
+    request match
+      case ByteRequest.Manifest(address) if address == graph.address =>
+        Right(graph.manifestBytes)
+      case ByteRequest.Manifest(_)  => Left(SourceFailure.Missing)
+      case ByteRequest.Entry(entry) =>
+        graph.entries.get(entry.name).toRight(SourceFailure.Missing)
 
   /** Decoders that count their invocations and otherwise delegate. */
   final class Counting[K, U <: Unit2D](underlying: ArtifactDecoders[K, U])

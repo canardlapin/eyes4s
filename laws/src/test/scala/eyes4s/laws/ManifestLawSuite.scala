@@ -273,7 +273,10 @@ class ManifestLawSuite extends munit.DisciplineSuite:
     */
   private def killed(mutant: Graph => Either[CodecError, StoredGraph]): Boolean =
     val ruleSet    = ManifestLaws.verifiedResolution(graphs, mutant, decoders, reproduces)
-    val wellFormed = outcome(ruleSet, "the manifest round-trips to its canonical bytes") match
+    val wellFormed = outcome(
+      ruleSet,
+      "the stored manifest bytes decode to the manifest and are its canonical form"
+    ) match
       case Test.Passed | Test.Proved(_) => true
       case _                            => false
     val falsified =
@@ -282,33 +285,44 @@ class ManifestLawSuite extends munit.DisciplineSuite:
         case _                                               => false
     wellFormed && falsified
 
-  private def mutant(change: StoredGraph => Either[ManifestError, StoredGraph]) =
-    (g: Graph) => write(g).flatMap(s => change(s).left.map(CodecError.Manifest.apply))
+  /** A writer that stores a changed manifest, canonically encoded, beside the
+    * kept entries.
+    */
+  private def mutant(
+      change: StoredGraph => Either[ManifestError, ScientificManifest],
+      keep: StoredGraph => Map[ArtifactName, IArray[Byte]] = _.entries
+  ) =
+    (g: Graph) =>
+      write(g).flatMap(s =>
+        change(s).left
+          .map(CodecError.Manifest.apply)
+          .flatMap(m => StoredGraph.canonical(m, keep(s)))
+      )
 
   private def entry(graph: StoredGraph, value: String): ManifestEntry =
     get(graph.manifest.entry(name(value)).toRight(value))
 
   private def withEntry(graph: StoredGraph, value: String)(
       change: ManifestEntry => Either[ManifestError, ManifestEntry]
-  ): Either[ManifestError, StoredGraph] = for
+  ): Either[ManifestError, ScientificManifest] = for
     changed  <- change(entry(graph, value))
     manifest <- ScientificManifest.of(
       graph.manifest.entries.map(e => if e.name == changed.name then changed else e),
       graph.manifest.relations
     )
-  yield graph.copy(manifest = manifest)
+  yield manifest
 
   test(
     "the published laws kill a dropped entry, an altered digest and a relation to the wrong artifact"
   ) {
     // The ledger and its relation vanish: the manifest stays well formed but no longer describes the graph.
-    val droppedEntry = mutant(graph =>
-      ScientificManifest
-        .of(
+    val droppedEntry = mutant(
+      graph =>
+        ScientificManifest.of(
           graph.manifest.entries.filterNot(_.name == name("ledger")),
           graph.manifest.relations.filterNot(_.endpoints.exists(_._2 == name("ledger")))
-        )
-        .map(m => StoredGraph(m, graph.entries - name("ledger")))
+        ),
+      _.entries - name("ledger")
     )
     assert(killed(droppedEntry))
 
@@ -331,16 +345,14 @@ class ManifestLawSuite extends munit.DisciplineSuite:
 
     // The result claims to be computed on the temporal base study.
     val wrongRelation = mutant(graph =>
-      ScientificManifest
-        .of(
-          graph.manifest.entries,
-          graph.manifest.relations.map {
-            case ManifestRelation.ResultOf(result, plan, _) =>
-              ManifestRelation.ResultOf(result, plan, name("base"))
-            case other => other
-          }
-        )
-        .map(m => graph.copy(manifest = m))
+      ScientificManifest.of(
+        graph.manifest.entries,
+        graph.manifest.relations.map {
+          case ManifestRelation.ResultOf(result, plan, _) =>
+            ManifestRelation.ResultOf(result, plan, name("base"))
+          case other => other
+        }
+      )
     )
     assert(killed(wrongRelation))
 

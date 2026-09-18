@@ -392,6 +392,21 @@ class ManifestSuite extends munit.FunSuite:
     )
   }
 
+  test("a payload related to a packed recording that does not reference it is refused") {
+    val extra = get(
+      PackedArrays.pack(get(PayloadLayout.column(ElementKind.Int64, 2)), IArray(1L, 2L))
+    )
+    val stored    = get(StoredArtifact.payload("extra", extra))
+    val relation  = ManifestRelation.PayloadOf(name("recording"), name("extra"))
+    val withExtra = get(SavedManifest.of(artifacts :+ stored, relations :+ relation))
+    assertEquals(
+      resolveWith(withExtra.source, withExtra.manifest),
+      Left(
+        Vector(ResolveError.Relation(relation, RelationMismatch.UnreferencedPayload(extra.ref)))
+      )
+    )
+  }
+
   test("caller mutation cannot change bytes that were verified or values that were admitted") {
     val arrays = blobs.map((n, bytes) => n -> bytes.toVector.toArray)
     val source =

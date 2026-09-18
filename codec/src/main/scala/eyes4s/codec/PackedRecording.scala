@@ -105,21 +105,30 @@ final class PackedRecordingCodec[U <: Unit2D] private[codec] (val schema: Defini
           s"${lineages.size} distinct lineages exceed the $maximumLineages a uint8 index addresses"
         )
       )
-      index = lineages.zipWithIndex.toMap
-      times <- pack(
-        PayloadLayout.column(ElementKind.Int64, n),
-        IArray.tabulate(n)(i => value.samples(i).t.toMicros)
-      )
+      // Every layout is validated against the payload bound before any
+      // column is allocated.
+      layouts <- (for
+        timeLayout  <- PayloadLayout.column(ElementKind.Int64, n)
+        codeLayout  <- PayloadLayout.column(ElementKind.UInt8, n)
+        valueLayout <- PayloadLayout.of(
+          ElementKind.Float64,
+          Vector(n, 3),
+          ArrayOrder.ColumnMajor
+        )
+      yield (timeLayout, codeLayout, valueLayout)).left.map(CodecError.Payload("samples", _))
+      (timeLayout, codeLayout, valueLayout) = layouts
+      index                                 = lineages.zipWithIndex.toMap
+      times   <- pack(timeLayout, IArray.tabulate(n)(i => value.samples(i).t.toMicros))
       support <- pack(
-        PayloadLayout.column(ElementKind.UInt8, n),
+        codeLayout,
         IArray.tabulate(n)(i => code(value.samples(i).gaze).toByte)
       )
       lineage <- pack(
-        PayloadLayout.column(ElementKind.UInt8, n),
+        codeLayout,
         IArray.tabulate(n)(i => index(value.samples(i).lineage).toByte)
       )
       values <- pack(
-        PayloadLayout.of(ElementKind.Float64, Vector(n, 3), ArrayOrder.ColumnMajor),
+        valueLayout,
         IArray.tabulate(3 * n) { k =>
           val gaze = value.samples(k % n).gaze
           (k / n) match
@@ -172,13 +181,10 @@ final class PackedRecordingCodec[U <: Unit2D] private[codec] (val schema: Defini
   yield rec
 
   private def pack[A: PackedElement](
-      layout: Either[PayloadError, PayloadLayout],
+      layout: PayloadLayout,
       values: IArray[A]
   ): Either[CodecError, VerifiedPayload] =
-    layout
-      .flatMap(PackedArrays.pack(_, values))
-      .left
-      .map(CodecError.Payload("samples", _))
+    PackedArrays.pack(layout, values).left.map(CodecError.Payload("samples", _))
 
   private def code(gaze: Gaze[U]): Int = gaze match
     case Gaze.Tracked(_, pupil) => Tracked | pupil.fold(0)(_ => PupilBit)

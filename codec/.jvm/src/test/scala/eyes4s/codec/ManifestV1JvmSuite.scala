@@ -19,9 +19,9 @@ package eyes4s.codec
 import eyes4s.kernel.Unit2D.Px
 import eyes4s.plan.*
 
-/** The frozen manifest-v1 over the pinned resource files: byte-identical
-  * re-encoding, independently known file digests, and end-to-end resolution
-  * of the four pinned artifacts from an in-memory source.
+/** The frozen manifest-v1 and complete-ledger fixtures over the pinned
+  * resource files: byte-identical re-encoding, independently known file
+  * digests, and end-to-end resolution of all five artifacts from memory.
   */
 class ManifestV1JvmSuite extends munit.FunSuite:
   private def get[E, A](e: Either[E, A]): A        = e.fold(error => fail(s"$error"), identity)
@@ -35,6 +35,7 @@ class ManifestV1JvmSuite extends munit.FunSuite:
   private val shasum = Map(
     "study-v1.json"       -> "f5f5a02f327b79250387365542540297bdc18cffe379648828d77cda3e668f71",
     "study-input-v1.json" -> "dd9922646e8ced281d3ed8f63fb38f36774c775ef836d95a76b66ebc664c3b52",
+    "admission-ledger-complete-v1.json" -> ManifestV1Fixtures.completeLedgerSha256,
     "admission-ledger-v1.json" -> "114585a745fa08bbb6acbbdb58590e6e29f16fd8e53aa2da7d5f77bccd7c5447",
     "study-result-v1.json" -> "d8429e2f980919fde450192e0485cfbcfc7920923fb45ef4863ea7923869d9f0",
     "manifest-v1.json" -> ManifestV1Fixtures.address
@@ -47,15 +48,19 @@ class ManifestV1JvmSuite extends munit.FunSuite:
   )
   private lazy val decoders = get(ArtifactDecoders.study[Px])
 
-  test("manifest-v1.json is what the writer produces and re-encodes byte-identically") {
+  test("manifest-v1.json and the complete ledger are what the writer produces, byte for byte") {
     val bytes    = resource("manifest-v1.json")
     val manifest = get(ScientificManifest.codec.parse(text("manifest-v1.json")))
-    val written  = get(GenerateManifestV1.written)
+    val written  = get(GenerateManifestV1.written(GenerateManifestV1.resource))
     assertEquals(get(ScientificManifest.bytes(manifest)).toVector, bytes.toVector)
     assertEquals(written.manifest, manifest)
     assertEquals(written.bytes.toVector, bytes.toVector)
     assertEquals(written.address.hex, ManifestV1Fixtures.address)
     assertEquals(text("manifest-v1.json"), ManifestV1Fixtures.manifestVersionOne)
+    assertEquals(
+      get(GenerateManifestV1.completeLedger).toVector,
+      resource(GenerateManifestV1.completeLedgerFile).toVector
+    )
   }
 
   test("every file has its independently known SHA-256, and every entry its file's length") {
@@ -70,7 +75,19 @@ class ManifestV1JvmSuite extends munit.FunSuite:
     }
   }
 
-  test("the pinned plan, input, ledger and result resolve end to end from memory") {
+  test("the complete ledger admits exactly the trials and fixations of the pinned input") {
+    val input  = get(StudyInputCodecs.study[Px].input.parse(text("study-input-v1.json")))
+    val ledger =
+      get(StudyInputCodecs.study[Px].ledger.parse(text(GenerateManifestV1.completeLedgerFile)))
+    assertEquals(input.reference.digest, "cebe7474ab5c2aec")
+    assertEquals(ledger, ManifestFixtures.ledger)
+    assertEquals(ledger.outcome, AdmissionOutcome.Complete)
+    assertEquals(ledger.rejected, Vector.empty)
+    assertEquals(ledger.admitted.size, input.trials.rows.map(_.value.n).sum)
+    assertEquals(ledger.checkAgainst(input), Right(()))
+  }
+
+  test("the pinned plan, input, ledgers and result resolve end to end from memory") {
     val address  = get(ByteDigest.parse(ManifestV1Fixtures.address))
     val resolved = get(ArtifactResolver.resolve(address, source, decoders).left.map(_.toVector))
     val input    = get(resolved.input(name("input")).toRight("input"))
@@ -83,30 +100,20 @@ class ManifestV1JvmSuite extends munit.FunSuite:
       get(resolved.result(name("result")).toRight("result")).encode.map(_.spaces2),
       Right(text("study-result-v1.json"))
     )
+    assertEquals(resolved.ledger(name("ledger")), Some(ManifestFixtures.ledger))
     assertEquals(
-      get(resolved.ledger(name("ledger")).toRight("ledger")).outcome,
+      get(resolved.ledger(name("refused-ledger")).toRight("refused-ledger")).outcome,
       AdmissionOutcome.Refused
     )
   }
 
-  test("the pinned ledger records a refused import and cannot be related to the pinned input") {
-    val manifest = get(ScientificManifest.codec.parse(text("manifest-v1.json")))
-    val claimed  = get(
-      ScientificManifest.of(
-        manifest.entries,
-        manifest.relations :+ ManifestRelation.LedgerOf(name("ledger"), name("input"))
-      )
-    )
+  test("the refused ledger is evidence only: relating it to the pinned input is refused") {
+    val manifest  = get(ScientificManifest.codec.parse(text("manifest-v1.json")))
+    val claimed   = ManifestRelation.LedgerOf(name("refused-ledger"), name("input"))
+    val withClaim = get(ScientificManifest.of(manifest.entries, manifest.relations :+ claimed))
     assertEquals(
-      ArtifactResolver.resolveManifest(claimed, source, decoders).left.map(_.toVector),
-      Left(
-        Vector(
-          ResolveError.Relation(
-            ManifestRelation.LedgerOf(name("ledger"), name("input")),
-            RelationMismatch.RefusedAdmission
-          )
-        )
-      )
+      ArtifactResolver.resolveManifest(withClaim, source, decoders).left.map(_.toVector),
+      Left(Vector(ResolveError.Relation(claimed, RelationMismatch.RefusedAdmission)))
     )
     // Independently of its outcome, its admitted records do not cover the pinned input.
     val input  = get(StudyInputCodecs.study[Px].input.parse(text("study-input-v1.json")))

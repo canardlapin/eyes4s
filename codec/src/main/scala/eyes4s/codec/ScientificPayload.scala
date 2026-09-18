@@ -147,9 +147,9 @@ final class VerifiedPayload private (val ref: PayloadRef, private val data: IArr
 object VerifiedPayload:
   /** Copy the bytes, then check their length and digest against `ref`. */
   def verify(ref: PayloadRef, bytes: IArray[Byte]): Either[PayloadError, VerifiedPayload] =
-    val copy = Bytes.copy(bytes)
-    if copy.length != ref.length then Left(PayloadError.Length(ref.length, copy.length))
+    if bytes.length != ref.length then Left(PayloadError.Length(ref.length, bytes.length))
     else
+      val copy   = Bytes.copy(bytes)
       val actual = ByteDigest.sha256(copy)
       Either.cond(
         actual == ref.sha256,

@@ -130,7 +130,12 @@ enum ManifestRelation derives CanEqual:
   /** The result was produced by the plan on the input. Exactly one per result. */
   case ResultOf(result: ArtifactName, plan: ArtifactName, input: ArtifactName)
 
-  /** The ledger admitted exactly this input. At most one per ledger. */
+  /** The ledger is consistent with this input: its admitted records address
+    * every input trial once per fixation, and it is not a refused import. A
+    * ledger carries its source's digest, not the input's, so this is a check
+    * of keys and fixation counts rather than of identity. At most one per
+    * ledger.
+    */
   case LedgerOf(ledger: ArtifactName, input: ArtifactName)
 
   /** The temporal input's base study is the input entry. At most one per
@@ -187,7 +192,13 @@ enum ManifestRelation derives CanEqual:
         ("payload", payload, ArtifactRole.Payload)
       )
 
-  def source: ArtifactName = endpoints.head._2
+  def source: ArtifactName = this match
+    case PlanInput(plan, _)        => plan
+    case ResultOf(result, _, _)    => result
+    case LedgerOf(ledger, _)       => ledger
+    case TemporalBase(temporal, _) => temporal
+    case RecordingOf(input, _)     => input
+    case PayloadOf(owner, _)       => owner
 
   def render: String =
     endpoints
@@ -282,20 +293,21 @@ object ScientificManifest:
       relations: Vector[ManifestRelation]
   ): Either[ManifestError, ScientificManifest] =
     val byName = entries.map(e => e.name -> e).toMap
-    def count(name: ArtifactName, kind: String, sourceOnly: Boolean): Int =
-      relations.count(r =>
-        r.kind == kind && (if sourceOnly then r.source == name else r.endpoints(1)._2 == name)
-      )
+
+    /** Relations of `kind` whose source is `name`, or whose payload is `name`. */
+    def count(name: ArtifactName, kind: String): Int =
+      relations.count {
+        case ManifestRelation.PayloadOf(_, payload) => kind == "payload-of" && payload == name
+        case r                                      => r.kind == kind && r.source == name
+      }
     def multiplicity(
         role: ArtifactRole,
         kind: String,
-        sourceOnly: Boolean,
         valid: Int => Boolean,
         expected: String
     ): Option[ManifestError] =
-      entries.filter(_.role == role).collectFirst {
-        case e if !valid(count(e.name, kind, sourceOnly)) =>
-          ManifestError.RelationCount(e.name, kind, count(e.name, kind, sourceOnly), expected)
+      entries.filter(_.role == role).map(e => e.name -> count(e.name, kind)).collectFirst {
+        case (name, n) if !valid(n) => ManifestError.RelationCount(name, kind, n, expected)
       }
     val duplicateName = entries
       .groupBy(_.name)
@@ -306,34 +318,30 @@ object ScientificManifest:
       .map(ManifestError.DuplicateName.apply)
     val endpointErrors = relations.view.flatMap { relation =>
       relation.endpoints
+        .map((_, name, role) => (name, role, byName.get(name)))
         .collectFirst {
-          case (_, name, _) if !byName.contains(name) =>
-            ManifestError.UnknownEntry(relation, name)
-          case (_, name, role) if byName(name).role != role =>
-            ManifestError.RoleMismatch(relation, name, role, byName(name).role)
+          case (name, _, None) => ManifestError.UnknownEntry(relation, name)
+          case (name, role, Some(e)) if e.role != role =>
+            ManifestError.RoleMismatch(relation, name, role, e.role)
         }
         .orElse(relation match
-          case ManifestRelation.PayloadOf(owner, _)
-              if byName(owner).schema != DefinitionId.packedRecording =>
-            Some(ManifestError.PayloadOwner(relation, byName(owner).schema))
+          case ManifestRelation.PayloadOf(owner, _) =>
+            byName
+              .get(owner)
+              .filter(_.schema != DefinitionId.packedRecording)
+              .map(e => ManifestError.PayloadOwner(relation, e.schema))
           case _ => None)
     }.headOption
     val duplicateRelation = relations.zipWithIndex.collectFirst {
       case (relation, index) if relations.indexOf(relation) != index =>
         ManifestError.DuplicateRelation(relation)
     }
-    val counts = multiplicity(ArtifactRole.StudyPlan, "plan-input", true, _ == 1, "exactly one")
-      .orElse(multiplicity(ArtifactRole.StudyResult, "result-of", true, _ == 1, "exactly one"))
-      .orElse(
-        multiplicity(ArtifactRole.AdmissionLedger, "ledger-of", true, _ <= 1, "at most one")
-      )
-      .orElse(
-        multiplicity(ArtifactRole.TemporalInput, "temporal-base", true, _ <= 1, "at most one")
-      )
-      .orElse(
-        multiplicity(ArtifactRole.RecordingInput, "recording-of", true, _ <= 1, "at most one")
-      )
-      .orElse(multiplicity(ArtifactRole.Payload, "payload-of", false, _ >= 1, "at least one"))
+    val counts = multiplicity(ArtifactRole.StudyPlan, "plan-input", _ == 1, "exactly one")
+      .orElse(multiplicity(ArtifactRole.StudyResult, "result-of", _ == 1, "exactly one"))
+      .orElse(multiplicity(ArtifactRole.AdmissionLedger, "ledger-of", _ <= 1, "at most one"))
+      .orElse(multiplicity(ArtifactRole.TemporalInput, "temporal-base", _ <= 1, "at most one"))
+      .orElse(multiplicity(ArtifactRole.RecordingInput, "recording-of", _ <= 1, "at most one"))
+      .orElse(multiplicity(ArtifactRole.Payload, "payload-of", _ >= 1, "at least one"))
     duplicateName
       .orElse(endpointErrors)
       .orElse(duplicateRelation)

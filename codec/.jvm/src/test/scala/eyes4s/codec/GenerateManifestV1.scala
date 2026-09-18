@@ -20,22 +20,25 @@ import eyes4s.kernel.Unit2D.Px
 
 import java.nio.file.{Files, Paths}
 
-/** Repository-only writer of `manifest-v1.json`, kept in the JVM test source
-  * set rather than published. `ManifestV1JvmSuite` checks that [[written]]
-  * reproduces the frozen resource byte for byte, so the fixture cannot drift
-  * from what the writer produces.
+/** Repository-only writer of `admission-ledger-complete-v1.json` and
+  * `manifest-v1.json`, kept in the JVM test source set rather than published.
+  * `ManifestV1JvmSuite` checks that both resources are exactly what this
+  * writer produces, so the fixtures cannot drift from it.
   *
   * {{{
-  * sbt "codecJVM/Test/runMain eyes4s.codec.GenerateManifestV1 <output path>"
+  * sbt "codecJVM/Test/runMain eyes4s.codec.GenerateManifestV1 <output directory>"
   * }}}
   */
 private[codec] object GenerateManifestV1:
+  val completeLedgerFile = "admission-ledger-complete-v1.json"
+
   /** Entry name to pinned resource file; the layout is this fixture's choice. */
   val files: Vector[(String, String)] = Vector(
-    "plan"   -> "study-v1.json",
-    "input"  -> "study-input-v1.json",
-    "ledger" -> "admission-ledger-v1.json",
-    "result" -> "study-result-v1.json"
+    "plan"           -> "study-v1.json",
+    "input"          -> "study-input-v1.json",
+    "ledger"         -> completeLedgerFile,
+    "refused-ledger" -> "admission-ledger-v1.json",
+    "result"         -> "study-result-v1.json"
   )
 
   def resource(name: String): Either[String, IArray[Byte]] =
@@ -46,45 +49,74 @@ private[codec] object GenerateManifestV1:
         finally stream.close()
       }
 
-  /** The manifest over the four pinned files, with the plan-input and
-    * result-of relations. The pinned ledger records a refused import and is
-    * carried without a ledger-of relation.
-    */
-  def written: Either[String, SavedManifest] = for
-    plan   <- resource("study-v1.json")
-    input  <- resource("study-input-v1.json")
-    ledger <- resource("admission-ledger-v1.json")
-    result <- resource("study-result-v1.json")
-    value  <- StudyInputCodecs
-      .study[Px]
-      .input
-      .parse(new String(Array.tabulate(input.length)(input(_)), "UTF-8"))
+  /** The complete admission ledger of study-input-v1, as the writer stores it. */
+  def completeLedger: Either[String, IArray[Byte]] =
+    StoredArtifact
+      .ledger("ledger", StudyInputCodecs.study[Px], ManifestFixtures.ledger)
+      .map(_.bytes)
       .left
       .map(_.message)
-    saved <- (for
-      p <- StoredArtifact.bytes("plan", ArtifactRole.StudyPlan, plan, None)
-      i <- StoredArtifact.bytes("input", ArtifactRole.StudyInput, input, Some(value.hash))
-      l <- StoredArtifact.bytes("ledger", ArtifactRole.AdmissionLedger, ledger, None)
-      r <- StoredArtifact.bytes("result", ArtifactRole.StudyResult, result, None)
-      s <- SavedManifest.of(
-        Vector(p, i, l, r),
-        Vector(
-          ManifestRelation.PlanInput(p.name, i.name),
-          ManifestRelation.ResultOf(r.name, p.name, i.name)
+
+  /** The manifest over the pinned files as `read` supplies them: plan-input,
+    * ledger-of for the complete ledger and result-of. The refused ledger is
+    * carried as evidence without a relation.
+    */
+  def written(read: String => Either[String, IArray[Byte]]): Either[String, SavedManifest] =
+    for
+      bytes <- files.traverseEither((entry, file) => read(file).map(entry -> _))
+      table = bytes.toMap
+      input <- StudyInputCodecs
+        .study[Px]
+        .input
+        .parse(new String(Array.tabulate(table("input").length)(table("input")(_)), "UTF-8"))
+        .left
+        .map(_.message)
+      saved <- (for
+        p <- StoredArtifact.bytes("plan", ArtifactRole.StudyPlan, table("plan"), None)
+        i <- StoredArtifact.bytes(
+          "input",
+          ArtifactRole.StudyInput,
+          table("input"),
+          Some(input.hash)
         )
+        l <- StoredArtifact.bytes("ledger", ArtifactRole.AdmissionLedger, table("ledger"), None)
+        f <- StoredArtifact
+          .bytes("refused-ledger", ArtifactRole.AdmissionLedger, table("refused-ledger"), None)
+        r <- StoredArtifact.bytes("result", ArtifactRole.StudyResult, table("result"), None)
+        s <- SavedManifest.of(
+          Vector(p, i, l, f, r),
+          Vector(
+            ManifestRelation.PlanInput(p.name, i.name),
+            ManifestRelation.LedgerOf(l.name, i.name),
+            ManifestRelation.ResultOf(r.name, p.name, i.name)
+          )
+        )
+      yield s).left.map(_.message)
+    yield saved
+
+  extension [A](values: Vector[A])
+    private def traverseEither[B](f: A => Either[String, B]): Either[String, Vector[B]] =
+      values.foldLeft[Either[String, Vector[B]]](Right(Vector.empty))((acc, a) =>
+        acc.flatMap(bs => f(a).map(bs :+ _))
       )
-    yield s).left.map(_.message)
-  yield saved
 
   def main(arguments: Array[String]): Unit =
     (for
-      path  <- arguments.headOption.toRight("usage: GenerateManifestV1 <output path>")
-      saved <- written
-    yield Files.write(
-      Paths.get(path),
-      Array.tabulate(saved.bytes.length)(saved.bytes(_))
-    )) match
+      directory <- arguments.headOption.toRight("usage: GenerateManifestV1 <output directory>")
+      ledger    <- completeLedger
+      saved     <- written(file =>
+        if file == completeLedgerFile then Right(ledger) else resource(file)
+      )
+    yield
+      val out = Paths.get(directory)
+      Files.write(out.resolve(completeLedgerFile), Array.tabulate(ledger.length)(ledger(_)))
+      Files.write(
+        out.resolve("manifest-v1.json"),
+        Array.tabulate(saved.bytes.length)(saved.bytes(_))
+      )
+      saved.address.hex
+    ) match
       case Left(message) =>
         Console.err.println(s"manifest-v1 not written: $message")
         System.exit(2)
-      case Right(path) => println(s"wrote $path")
+      case Right(address) => println(s"wrote manifest-v1 with address $address")

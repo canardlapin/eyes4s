@@ -17,13 +17,17 @@
 package eyes4s.codec
 
 /** Pinned first manifest schema; matches src/test/resources/eyes4s/manifest-v1.json
-  * byte for byte. It lists the pinned study-v1 plan, study-input-v1 input,
-  * admission-ledger-v1 ledger and study-result-v1 archive by the SHA-256 of
-  * their resource files.
+  * byte for byte. It lists the pinned study-v1 plan, study-input-v1 input, its
+  * complete admission ledger, the refused admission-ledger-v1 import (evidence
+  * only) and the study-result-v1 archive by the SHA-256 of their resource files.
   */
 object ManifestV1Fixtures:
   /** The SHA-256 of [[manifestVersionOne]], computed with `shasum -a 256`. */
-  val address: String = "43d35a94e26a84c548c32ac2029e846a4abd639ec2c61074274018786987f736"
+  val address: String = "e0695ccdc41bbc174e7c14f806ff6e855358af810675aa464bc88506546235fe"
+
+  /** The SHA-256 of admission-ledger-complete-v1.json, computed with `shasum -a 256`. */
+  val completeLedgerSha256: String =
+    "0efe86cc9a1f297b1001925a05db9025845a7e8d9be05862744fc2fea8c9e0e7"
 
   val manifestVersionOne: String = """{
   "schema" : {
@@ -66,6 +70,19 @@ object ManifestV1Fixtures:
           "version" : 1
         },
         "media" : "application/json",
+        "length" : "17401",
+        "sha256" : "0efe86cc9a1f297b1001925a05db9025845a7e8d9be05862744fc2fea8c9e0e7",
+        "identity" : null,
+        "layout" : null
+      },
+      {
+        "name" : "refused-ledger",
+        "role" : "admission-ledger",
+        "schema" : {
+          "name" : "eyes4s.admission-ledger",
+          "version" : 1
+        },
+        "media" : "application/json",
         "length" : "18987",
         "sha256" : "114585a745fa08bbb6acbbdb58590e6e29f16fd8e53aa2da7d5f77bccd7c5447",
         "identity" : null,
@@ -89,6 +106,11 @@ object ManifestV1Fixtures:
       {
         "kind" : "plan-input",
         "plan" : "plan",
+        "input" : "input"
+      },
+      {
+        "kind" : "ledger-of",
+        "ledger" : "ledger",
         "input" : "input"
       },
       {

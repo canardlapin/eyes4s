@@ -37,6 +37,25 @@ enum SourceFailure derives CanEqual:
   case Missing
   case Unreadable(reason: String)
 
+  /** Storage refused to read a location that lies outside its root, for
+    * example through `..`, an absolute name or a symbolic link.
+    */
+  case OutsideRoot(location: String, root: String)
+
+  /** Storage refused to read something other than a regular file. */
+  case NotRegularFile(location: String)
+
+  /** Storage refused to read more bytes than the request can use. */
+  case Oversize(location: String, size: Long, limit: Long)
+
+  def message: String = this match
+    case Missing                         => "missing"
+    case Unreadable(reason)              => reason
+    case OutsideRoot(location, root)     => s"'$location' lies outside $root"
+    case NotRegularFile(location)        => s"'$location' is not a regular file"
+    case Oversize(location, size, limit) =>
+      s"'$location' has at least $size bytes; at most $limit can be used"
+
 /** The application's storage, injected: a total function from a request to
   * bytes. eyes4s never opens a file or a network connection to resolve a
   * manifest; where each entry lives (a project directory, a database, an
@@ -95,6 +114,11 @@ enum RelationMismatch derives CanEqual:
   /** The owner does not reference the related payload. */
   case UnreferencedPayload(reference: PayloadRef)
 
+  /** The relation's endpoints have no decoded values of their roles; the
+    * relation is refused rather than skipped.
+    */
+  case Unavailable(endpoints: Vector[ArtifactName])
+
   def message: String = this match
     case Prerequisites(errors)        => errors.map(_.message).mkString(" ")
     case ResultInput(expected, found) =>
@@ -109,6 +133,8 @@ enum RelationMismatch derives CanEqual:
       s"The recording input's channels are recording $found, not $expected."
     case UnreferencedPayload(ref) =>
       s"The owner does not reference payload ${ref.sha256.hex}."
+    case Unavailable(endpoints) =>
+      s"No decoded value of the required role for ${endpoints.map(_.value).mkString(", ")}."
 
 /** Why a manifest or one of its artifacts was refused. Every case names the
   * manifest address, the entry or the relation at fault; integrity cases are
@@ -119,8 +145,18 @@ enum ResolveError derives CanEqual:
   case UnreadableManifest(address: ByteDigest, reason: String)
   case ManifestDigest(address: ByteDigest, actual: ByteDigest)
   case ManifestDecode(address: ByteDigest, underlying: CodecError)
+
+  /** Storage refused to read the manifest (outside its root, not a regular
+    * file, or larger than its bound); nothing was read.
+    */
+  case RefusedManifest(address: ByteDigest, failure: SourceFailure)
   case Missing(entry: ArtifactName)
   case Unreadable(entry: ArtifactName, reason: String)
+
+  /** Storage refused to read the entry (outside its root, not a regular file,
+    * or larger than its declared length); nothing was read.
+    */
+  case Refused(entry: ArtifactName, failure: SourceFailure)
   case Length(entry: ArtifactName, declared: Long, actual: Int)
   case Digest(entry: ArtifactName, declared: ByteDigest, actual: ByteDigest)
   case Text(entry: ArtifactName, offset: Int)
@@ -134,6 +170,7 @@ enum ResolveError derives CanEqual:
   def entryName: Option[ArtifactName] = this match
     case Missing(e)        => Some(e)
     case Unreadable(e, _)  => Some(e)
+    case Refused(e, _)     => Some(e)
     case Length(e, _, _)   => Some(e)
     case Digest(e, _, _)   => Some(e)
     case Text(e, _)        => Some(e)
@@ -143,7 +180,7 @@ enum ResolveError derives CanEqual:
     case Identity(e, _, _) => Some(e)
     case Relation(r, _)    => Some(r.source)
     case MissingManifest(_) | UnreadableManifest(_, _) | ManifestDigest(_, _) |
-        ManifestDecode(_, _) =>
+        ManifestDecode(_, _) | RefusedManifest(_, _) =>
       None
 
   def message: String = this match
@@ -153,8 +190,12 @@ enum ResolveError derives CanEqual:
     case ManifestDigest(address, actual) =>
       s"The manifest stored under ${address.hex} has bytes digesting to ${actual.hex}."
     case ManifestDecode(address, e) => s"The manifest stored under ${address.hex}: ${e.message}"
-    case Missing(e)                 => s"Artifact '${e.value}' is missing."
-    case Unreadable(e, reason)      => s"Artifact '${e.value}' could not be read: $reason"
+    case RefusedManifest(address, failure) =>
+      s"Storage refused to read the manifest under ${address.hex}: ${failure.message}."
+    case Missing(e)            => s"Artifact '${e.value}' is missing."
+    case Unreadable(e, reason) => s"Artifact '${e.value}' could not be read: $reason"
+    case Refused(e, failure)   =>
+      s"Storage refused to read artifact '${e.value}': ${failure.message}."
     case Length(e, declared, actual) =>
       s"Artifact '${e.value}' declares $declared bytes but has $actual."
     case Digest(e, declared, actual) =>
@@ -324,6 +365,7 @@ object ArtifactResolver:
         case SourceFailure.Missing            => ResolveError.MissingManifest(address)
         case SourceFailure.Unreadable(reason) =>
           ResolveError.UnreadableManifest(address, reason)
+        case refusal => ResolveError.RefusedManifest(address, refusal)
       }
       bytes  = Bytes.copy(raw)
       actual = ByteDigest.sha256(bytes)
@@ -376,11 +418,12 @@ object ArtifactResolver:
       case Left(SourceFailure.Missing)            => Left(ResolveError.Missing(entry.name))
       case Left(SourceFailure.Unreadable(reason)) =>
         Left(ResolveError.Unreadable(entry.name, reason))
-      case Right(raw) =>
-        val bytes = Bytes.copy(raw)
-        if bytes.length.toLong != entry.length then
-          Left(ResolveError.Length(entry.name, entry.length, bytes.length))
+      case Left(refusal) => Left(ResolveError.Refused(entry.name, refusal))
+      case Right(raw)    =>
+        if raw.length.toLong != entry.length then
+          Left(ResolveError.Length(entry.name, entry.length, raw.length))
         else
+          val bytes  = Bytes.copy(raw)
           val actual = ByteDigest.sha256(bytes)
           Either.cond(
             actual == entry.sha256,
@@ -602,7 +645,10 @@ object ArtifactResolver:
             ) =>
           if references.contains(payload.ref) then None
           else fail(RelationMismatch.UnreferencedPayload(payload.ref))
-        case _ => None
+        case _ =>
+          // Unreachable after a successful decoding phase over a well-formed
+          // manifest; refused rather than skipped should it ever be reached.
+          fail(RelationMismatch.Unavailable(relation.endpoints.map(_._2)))
     }
     NonEmptyVector.fromVector(errors).toLeft(())
 
