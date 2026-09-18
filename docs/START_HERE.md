@@ -17,6 +17,7 @@ the generated checks workflow runs the same task. The site is not deployed.
 | Analyze an imported recording through detection and AOIs | [Real-data recording guide](../site-docs/recordings.md) | Synchronization, preprocessing, detection and AOI descriptions and diagnostics |
 | Measure changes in duration-weighted maps over time | [Temporal study source](examples/TemporalStudyGuide.scala) | Window identity, clipped durations, missing support and empty results |
 | Save, inspect and rerun a fixation study | [Saved studies](SAVED_STUDIES.md) | Artifact identity, versioned parameters, structural differences and prerequisite failures |
+| Explain a failure or trace a result to its source records | [Diagnostics](DIAGNOSTICS.md) | Stable codes with typed operands, trial keys, ledger records and pageable result views |
 | Add a custom typed comparison | [Extending studies](EXTENDING_STUDIES.md) | Typed parameters/results, registration, codecs and published conformance tests |
 | Check what transfers from eyesim | [Baseline capabilities](EYESIM_CAPABILITIES.md) | Measured equivalences, deliberate differences and unresolved cases |
 

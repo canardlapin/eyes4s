@@ -828,6 +828,21 @@ pinned bytes on Scala.js, but their re-executed results are not compared with an
 there. A realistic-size input for throughput is not archived: no permitted realistic-size dataset
 is in the repository, and choosing one is left to G1.
 
+## Inspect results and explain failures
+
+`ResultInspection.study(plan, result, input, ledger)` opens a completed or decoded result for
+navigation. Every estimation, pair row, reduction and contrast row has a typed `ResultRef` built
+from the scale index, design and trial keys, never a row position; listings page from a reference.
+A contrast row refers to its two reductions, a reduction lists its member pairs as contributing,
+failed or withheld, and `StudySources` maps each trial and fixation back to the admission-ledger
+record and CSV record number that supplied it, or names why it cannot. The plan, run, preflight,
+admission, result-reconstruction, inspection and artifact-resolution errors, and every lower-level
+error they wrap, project to a `Diagnostic` with a stable code, the failing object and every
+operand, so an application localises and navigates without parsing messages; the errors that are
+not cataloged are listed in [diagnostics](DIAGNOSTICS.md). An inspection of a decoded archive
+equals the inspection of the result it was written from. See [diagnostics](DIAGNOSTICS.md) for the
+model, the source-link rules and the generated code table.
+
 ## Versions and extensions
 
 The JSON envelope has a schema identifier and version. Its payload separately records the method
