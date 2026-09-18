@@ -73,10 +73,11 @@ injects; decoding never reads. See
 Every stored document is an envelope, `{"schema": {"name", "version"}, "value"}`. The version is
 one positive integer; there are no minor versions. The rules below are enforced on the JVM and
 Scala.js by `SchemaCompatibilitySuite` over a pinned v1 document of every shipped document schema:
-the sixteen JSON codecs (study plan, study input, admission ledger, study result, recording,
+the eighteen JSON codecs (study plan, study input, admission ledger, study result, recording,
 binocular recording, recording input, temporal input, timeline, manifest, the four score and
-difference schemas, and the conventional `eyes4s.recording-plan@1` and `eyes4s.temporal-study@1`
-plan schemas), with a test that fails if a pinned schema is missing, and the packed recording,
+difference schemas, the recording and temporal result archives, and the conventional
+`eyes4s.recording-plan@1` and `eyes4s.temporal-study@1` plan schemas), with a test that fails if a
+pinned schema is missing, and the packed recording,
 whose decoder also takes its payloads. The schema registry described under
 [Evidence](#evidence) checks the same fixtures on the JVM.
 
@@ -111,11 +112,13 @@ incompatibility.
 | A document's envelope | `CodecError.Schema(expected, found)` |
 | Version 0, a negative or a non-integer version | `CodecError.Definition(PlanError.InvalidDefinition(name, version))`, or `CodecError.Field("version", …)` |
 | A nested identity a codec requires: layout, key, parameter, score or difference schema | `CodecError.Schema(expected, found)` |
-| An identity a registry selects on: a plan's method, an input's key schema, a result's method | `CodecError.MissingMethod`, `MissingKeySchema` or `MissingResultCodec` |
+| An identity a registry selects on: a plan's method (a temporal plan's base method), an input's key schema, a result's method (a recording or temporal result's too) | `CodecError.MissingMethod`, `MissingKeySchema` or `MissingResultCodec` |
+| The plan embedded in a recording or temporal result archive | `CodecError.Entry("plan", CodecError.Schema(expected, found))` |
 | A standalone recording's envelope | `CodecError.UnsupportedSchema("recording", found, supported)` |
 | A manifest | `ResolveError.ManifestDecode(address, CodecError.Schema(…))` |
 | An artifact its manifest declares at that version | `ResolveError.Decode(entry, CodecError.Schema(…))` |
 | An artifact whose bytes hold another schema than declared | `ResolveError.Schema(entry, declared, found)`, before its decoder runs |
+| A recording or temporal plan or result no registration was added for | `ResolveError.Decode(entry, CodecError.UnsupportedSchema(role, found, Vector()))` |
 
 **Unknown members** of an object are ignored at every level and are not preserved: re-encoding
 writes the version's own members only. The first rule makes this safe. A member that carries
@@ -130,7 +133,11 @@ with an added member has another address. Three members are refused where they w
 because they have a version-1 meaning elsewhere: any member of an `eyes4s.unit@1` payload, which
 is exactly `{}` whether it is a parameterless method's parameters or a trial's metadata; a `timing`
 member on a neutral `eyes4s.timeline@1`; and a declared dispersion value on a source-supported
-fixation, whose value is derived from its samples.
+fixation, whose value is derived from its samples, in a study input's scanpath and in a recording
+result's detected events alike. The members a recording result archive re-derives
+(its synchronization, detection and assignment) are compared with the derivation member by member
+over the members version 1 writes, so an unknown member among them is ignored like any other and a
+known one that differs is refused with `CodecError.Derived(path, declared, derived)`.
 
 ## Evidence
 
@@ -173,7 +180,22 @@ reset failure policy, a dropped window, mark or sample, a moved threshold, a los
 single-precision rounding, a payload filled in from elsewhere) by a falsified property from a fixed
 seed, and requires every property of the shipped codec to pass outright rather than merely not
 fail. No generator in these suites or in `PayloadLaws` discards a value, so no property can pass
-by exhaustion. It also pinned the built-in schemas no fixture had carried: `timeline-v1.json` (a timeline
+by exhaustion. The recording and temporal result archives (`eyes4s.recording-result@1`,
+`eyes4s.temporal-result@1`) have `RecordingResultCodecLawSuite` (I-VT and I-DT analyses over
+generated recordings with fixations, saccades, blinks, signal loss and off-screen samples,
+synchronized by generated marks with rejected outliers, optionally interpolated and assigned to
+generated areas) and `TemporalResultCodecLawSuite` (generated temporal studies with clipped and
+fully contained fixations, coverage gaps, anchors at zero, beyond 2^53 and near the Long maximum,
+where a late window overflows, missing epochs, one or two repetitions and binned and Gaussian
+scales), compared by the published `RecordingResultEquivalence` and `TemporalResultEquivalence`.
+Each kills its mutants by a falsified property only (`Test.Failed`, never an exception or
+exhaustion): a dropped event, a moved angular sample, an emptied area and an encoder that declares
+a fixation's derived dispersion value; reordered cells, a forged
+missing-epoch digest, a ledger re-anchored by a microsecond and a changed contrast difference. The
+pinned recording-result-v1 and temporal-result-v1 fixtures are described under
+[result archives](SAVED_STUDIES.md#recording-and-temporal-result-archives).
+
+UI-S6 also pinned the built-in schemas no fixture had carried: `timeline-v1.json` (a timeline
 of study keys, with equal instants beyond 2^53 kept in order), `score-codecs-v1.json` (one
 envelope of each score and difference schema, the only fixture of `measure-distance@1` and
 `scalar@1`), and the standalone, binocular and packed recordings with their payloads listed under

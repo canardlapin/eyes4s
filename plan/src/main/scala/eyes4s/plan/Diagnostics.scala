@@ -216,6 +216,12 @@ object Diagnostics:
           int(index),
           cause(inner)
         )
+      case SpecificationTime(value, expected, found) =>
+        diagnostic(C.studyResult, e, e.message, at(Locus.Design(value)))(
+          design(value),
+          evaluationTime(expected),
+          evaluationTime(found)
+        )
 
   def temporal(e: TemporalStudyError): Diagnostic[Nothing] =
     import TemporalStudyError.*
@@ -331,6 +337,104 @@ object Diagnostics:
       case Plan(underlying) =>
         val inner = recordingPlan(underlying)
         diagnostic(C.recordingInput, e, e.message, inner.subject)(cause(inner))
+
+  def recordingResult(e: RecordingResultError): Diagnostic[Nothing] =
+    import RecordingResultError.*
+    e match
+      case Plan(underlying) =>
+        val inner = recordingPlan(underlying)
+        diagnostic(C.recordingResult, e, e.message, inner.subject)(cause(inner))
+      case Stage(stage, field, expected, found) =>
+        diagnostic(C.recordingResult, e, e.message, Vector(Locus.Field(s"$stage.$field")))(
+          name(stage),
+          name(field),
+          text(expected),
+          text(found)
+        )
+
+  def temporalResult[K](e: TemporalResultError[K]): Diagnostic[K] =
+    import TemporalResultError.*
+    def trial(key: K) = Vector(Locus.Trial(key))
+    e match
+      case CellCount(expected, found) =>
+        diagnostic[K](C.temporalResult, e, e.message)(int(expected), int(found))
+      case CellLayout(index, repetition, window, foundRepetition, foundWindow) =>
+        diagnostic(
+          C.temporalResult,
+          e,
+          e.message,
+          Vector(Locus.Repetition(repetition), Locus.Window(window))
+        )(int(index), name(repetition), name(window), name(foundRepetition), name(foundWindow))
+      case Repetition(repetition, underlying) =>
+        val inner = temporal(underlying)
+        diagnostic(
+          C.temporalResult,
+          e,
+          e.message,
+          inherit(Vector(Locus.Repetition(repetition)), inner)
+        )(name(repetition), cause(inner))
+      case Plan(changes) =>
+        diagnostic[K](C.temporalResult, e, e.message)(
+          Operand.Items(
+            changes.map(change =>
+              fields(
+                "field"  -> name(change.field),
+                "before" -> params(change.before),
+                "after"  -> params(change.after)
+              )
+            )
+          )
+        )
+      case Result(underlying) =>
+        val inner = result(underlying)
+        diagnostic(C.temporalResult, e, e.message, inner.subject)(cause(inner))
+      case OccupancyKeys(expected, found) =>
+        diagnostic[K](C.temporalResult, e, e.message)(keys(expected), keys(found))
+      case Boundary(key, expected, found) =>
+        diagnostic(C.temporalResult, e, e.message, trial(key))(
+          Operand.Key(key),
+          token(expected.toString),
+          token(found.toString)
+        )
+      case Width(key, expected, found) =>
+        diagnostic(C.temporalResult, e, e.message, trial(key))(
+          Operand.Key(key),
+          Operand.Integer(expected),
+          Operand.Integer(found)
+        )
+      case Epoch(key, expected, found) =>
+        diagnostic(C.temporalResult, e, e.message, trial(key))(
+          Operand.Key(key),
+          optional(expected.map(name)),
+          optional(found.map(name))
+        )
+      case Anchor(key, expectedClock, expectedMicros, foundClock, foundMicros) =>
+        diagnostic(C.temporalResult, e, e.message, trial(key))(
+          Operand.Key(key),
+          clock(expectedClock),
+          Operand.Integer(expectedMicros),
+          clock(foundClock),
+          Operand.Integer(foundMicros)
+        )
+      case Density(key, expected, found) =>
+        diagnostic(C.temporalResult, e, e.message, trial(key))(
+          Operand.Key(key),
+          optional(expected.map(artifact)),
+          artifact(found)
+        )
+      case Failure(key, stored) =>
+        diagnostic(C.temporalResult, e, e.message, trial(key))(
+          Operand.Key(key),
+          cause(failure(stored))
+        )
+      case Cell(repetition, window, underlying) =>
+        val inner = temporalResult(underlying)
+        diagnostic(
+          C.temporalResult,
+          e,
+          e.message,
+          inherit(Vector(Locus.Repetition(repetition), Locus.Window(window)), inner)
+        )(name(repetition), name(window), cause(inner))
 
   // ---------------------------------------------------------------- reduction and contrast
 
@@ -997,6 +1101,10 @@ object Diagnose:
     instance(C.recordingPlan)(Diagnostics.recordingPlan)
   given recordingInput: Diagnose[RecordingInputError, Nothing] =
     instance(C.recordingInput)(Diagnostics.recordingInput)
+  given recordingResult: Diagnose[RecordingResultError, Nothing] =
+    instance(C.recordingResult)(Diagnostics.recordingResult)
+  given temporalResult[K]: Diagnose[TemporalResultError[K], K] =
+    instance(C.temporalResult)(Diagnostics.temporalResult[K])
   given reduction[K]: Diagnose[ReductionError[K], K] =
     instance(C.reduction)(Diagnostics.reduction[K])
   given reconstruction[K]: Diagnose[ReconstructionError[K], K] =

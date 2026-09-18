@@ -58,7 +58,10 @@ object CodecDiagnosticCatalog:
     "MissingPayload",
     "Manifest",
     "Text",
-    "UnsupportedSchema"
+    "UnsupportedSchema",
+    "Derived",
+    "RecordingResult",
+    "TemporalResult"
   )
   val resolve: DiagnosticFamily = error("resolve")(
     "MissingManifest",
@@ -94,7 +97,9 @@ object CodecDiagnosticCatalog:
     "BaseStudy",
     "RecordingIdentity",
     "UnreferencedPayload",
-    "Unavailable"
+    "Unavailable",
+    "RecordingPrerequisites",
+    "TemporalPrerequisites"
   )
   val manifest: DiagnosticFamily = error("manifest")(
     "InvalidName",
@@ -264,6 +269,14 @@ object CodecDiagnostics:
           definition(found),
           Operand.Items(supported.map(definition))
         )
+      case Derived(where, declared, derived) =>
+        diagnostic(C.codec, e, e.message, path(where))(
+          name(where),
+          json(declared),
+          json(derived)
+        )
+      case RecordingResult(underlying) => wrap(Diagnostics.recordingResult(underlying))
+      case TemporalResult(underlying)  => wrap(Diagnostics.temporalResult(underlying))
 
   def resolve(e: ResolveError): Diagnostic[Any] =
     import ResolveError.*
@@ -371,6 +384,16 @@ object CodecDiagnostics:
         diagnostic[Any](C.relation, e, e.message)(payloadRef(reference))
       case Unavailable(endpoints) =>
         diagnostic(C.relation, e, e.message, endpoints.map(at))(names(endpoints.map(_.value)))
+      case RecordingPrerequisites(errors) =>
+        val inner = errors.map(Diagnostics.recordingInput)
+        diagnostic(C.relation, e, e.message, inner.flatMap(_.subject).distinct)(
+          Operand.Causes(inner)
+        )
+      case TemporalPrerequisites(errors) =>
+        val inner = errors.map(Diagnostics.temporal)
+        diagnostic(C.relation, e, e.message, inner.flatMap(_.subject).distinct)(
+          Operand.Causes(inner)
+        )
 
   def manifest(e: ManifestError): Diagnostic[Nothing] =
     import ManifestError.*

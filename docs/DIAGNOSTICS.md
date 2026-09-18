@@ -109,6 +109,14 @@ A test checks that none of them is in a catalog.
 `TemporalStudyError` identifies trials by key digest, so its subject is a
 `TrialDigest`; inside a temporal result the inspection adds the typed key.
 
+Reconstructing a recording or temporal result archive refuses with
+`RecordingResultError` and `TemporalResultError` (plan table), which the codec
+carries as `codec.recording-result` and `codec.temporal-result`, and with
+`codec.derived` when an archived member differs from the one the archive's own
+evidence derives; the member's path is its `Path` locus. A refused temporal
+cell has the subject `Repetition` and `Window`, then the trial it concerns; a
+refused recording stage has a `Field` locus naming the stage and field.
+
 Preflight: `Diagnostics.studyFinding` and `Diagnostics.temporalFinding`
 project a report's `findings` to `Diagnostic[K]`, keys typed. `PreflightError`
 carries its blockers without their key type, so `PreflightError.NotReady` and
@@ -333,6 +341,7 @@ fails after rewriting, so review the change and run it again.
 | `study-result.phase` | `Phase` | `key`, `expected`, `found` |
 | `study-result.reconstruction` | `Reconstruction` | `underlying` |
 | `study-result.scale` | `Scale` | `index`, `underlying` |
+| `study-result.specification-time` | `SpecificationTime` | `design`, `expected`, `found` |
 
 ### `temporal` — `TemporalStudyError`
 
@@ -385,6 +394,31 @@ fails after rewriting, so review the change and run it again.
 | `recording-input.plan-disagreement` | `PlanDisagreement` | `field`, `plan`, `evidence` |
 | `recording-input.binocular-channels` | `BinocularChannels` | `source` |
 | `recording-input.plan` | `Plan` | `underlying` |
+
+### `recording-result` — `RecordingResultError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `recording-result.plan` | `Plan` | `underlying` |
+| `recording-result.stage` | `Stage` | `stage`, `field`, `expected`, `found` |
+
+### `temporal-result` — `TemporalResultError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `temporal-result.cell-count` | `CellCount` | `expected`, `found` |
+| `temporal-result.cell-layout` | `CellLayout` | `index`, `repetition`, `window`, `foundRepetition`, `foundWindow` |
+| `temporal-result.repetition` | `Repetition` | `repetition`, `underlying` |
+| `temporal-result.plan` | `Plan` | `changes` |
+| `temporal-result.result` | `Result` | `underlying` |
+| `temporal-result.occupancy-keys` | `OccupancyKeys` | `expected`, `found` |
+| `temporal-result.boundary` | `Boundary` | `key`, `expected`, `found` |
+| `temporal-result.width` | `Width` | `key`, `expectedMicros`, `foundMicros` |
+| `temporal-result.epoch` | `Epoch` | `key`, `expected`, `found` |
+| `temporal-result.anchor` | `Anchor` | `key`, `expectedClock`, `expectedMicros`, `foundClock`, `foundMicros` |
+| `temporal-result.density` | `Density` | `key`, `expected`, `found` |
+| `temporal-result.failure` | `Failure` | `key`, `failure` |
+| `temporal-result.cell` | `Cell` | `repetition`, `window`, `underlying` |
 
 ### `reduction` — `ReductionError`
 
@@ -585,6 +619,9 @@ fails after rewriting, so review the change and run it again.
 | `window-occupancy.invalid-width` | `InvalidWidth` | `interval`, `micros` |
 | `window-occupancy.empty-coverage-interval` | `EmptyCoverageInterval` | `clock`, `intervals` |
 | `window-occupancy.overlapping-coverage` | `OverlappingCoverage` | `clock`, `intervals` |
+| `window-occupancy.observed-time` | `ObservedTime` | `interval`, `observedMicros`, `missingMicros` |
+| `window-occupancy.ledger` | `Ledger` | `position`, `index`, `originalMicros`, `retainedMicros`, `boundary` |
+| `window-occupancy.measure-support` | `MeasureSupport` | `retained`, `positions` |
 
 ### `sync-evidence` — `SyncEvidenceError`
 
@@ -904,6 +941,9 @@ fails after rewriting, so review the change and run it again.
 | `codec.manifest` | `Manifest` | `underlying` |
 | `codec.text` | `Text` | `offset`, `reason` |
 | `codec.unsupported-schema` | `UnsupportedSchema` | `role`, `found`, `supported` |
+| `codec.derived` | `Derived` | `path`, `declared`, `derived` |
+| `codec.recording-result` | `RecordingResult` | `underlying` |
+| `codec.temporal-result` | `TemporalResult` | `underlying` |
 
 ### `resolve` — `ResolveError`
 
@@ -949,6 +989,8 @@ fails after rewriting, so review the change and run it again.
 | `relation.recording-identity` | `RecordingIdentity` | `expected`, `found` |
 | `relation.unreferenced-payload` | `UnreferencedPayload` | `reference` |
 | `relation.unavailable` | `Unavailable` | `endpoints` |
+| `relation.recording-prerequisites` | `RecordingPrerequisites` | `errors` |
+| `relation.temporal-prerequisites` | `TemporalPrerequisites` | `errors` |
 
 ### `manifest` — `ManifestError`
 

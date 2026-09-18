@@ -547,9 +547,10 @@ a stage are located, for example `CodecError.Entry("scales[0].analyses.matched.s
 `StudyResultRegistry` registers result codecs by method identity and refuses unknown
 (`CodecError.MissingResultCodec`) or duplicate (`CodecError.DuplicateResultCodec`) registrations; a
 payload declaring another score or difference schema than the registered codec's is refused before
-any row is read. Temporal failures (`StudyFailure.Temporal`) are refused with
-`CodecError.Unsupported`: they name windows and epochs of the temporal route and belong to the
-temporal result archive that follows the recording and temporal input payloads.
+any row is read. A temporal failure (`StudyFailure.Temporal`) is written as its trial and the typed
+`TemporalStudyError` its occupancy produced, with every case of that family and of the plan, window
+occupancy, evaluation-specification, pair-schedule and comparison-work errors it wraps as a `kind`
+tag and its operands; it arises only in the cells of a temporal result, below.
 
 The pinned [study-result-v1.json](../codec/src/test/resources/eyes4s/study-result-v1.json) is the
 pinned study-v1 plan run on the pinned study-input-v1 input. The portable suite checks its decoded
@@ -558,6 +559,114 @@ pinned input reproduces the archive bit for bit; the JVM suite additionally chec
 re-encoding of the pretty-printed file. `eyes4s.laws.StudyResultEquivalence` is the published
 structural identity of two results, for round-trip laws over extension score types that keep
 reference equality.
+
+## Recording and temporal result archives
+
+A recording analysis and a temporal study have archives of their own, built from their plan
+family's codec: `RecordingPlanCodec.results` (`eyes4s.recording-result@1`, a `RecordingResultCodec[P]`)
+and `TemporalStudyCodec.results(scoreCodec, differenceCodec)` (`eyes4s.temporal-result@1`, a
+`TemporalResultCodec[K, U, P, S, D]`; `TemporalResultCodecs.cosine[U](planSchema)` for the ordinary
+route). Unlike a study result, both embed the plan document they ran, through the plan family's
+versioned codec: a recording analysis's detector identity and a temporal cell's study plan are
+typed values only the typed plan can rebuild, so the plan is the evidence the rest is checked
+against. A result's description and input reference are its plan's.
+
+**`eyes4s.recording-result@1`** carries the plan, a document identity table (the angular frame and
+the analysis clock), the synchronization evidence (source and target clocks, fit mode, offset and
+drift, the marks used, every residual, every rejected mark with its residual and limit, and the
+root-mean-square, maximum and uncertainty magnitudes), the angular and the prepared recordings in
+the inline recording shape, the detection (the detector's name and version, the gap policy and
+temporal support, every event with its half-open sample support, the label of every sample, the
+report with its class durations, unclassified ranges, bridged gaps and warnings, and the
+provenance) and the assignment (every area with its region and attributes, the membership policy
+and temporal support, every sample's membership and the time ledger). Events are written by kind:
+a fixation's span, centre, sample count and dispersion method (its value is re-derived from the
+supporting samples, as a source-supported scanpath's is, and a declared value is refused where it
+would be ignored: `CodecError.Field("value", …)` located at the event), a saccade's endpoints and
+peak velocity
+(or `null` where it was not measured), a pursuit's path, a blink's span. Decoding rebuilds the
+analysis through `RecordingAnalysis.reconstruct(plan, angular, prepared, events, support, areas)`,
+which re-derives the synchronization evidence by refitting the plan's marks exactly as the run
+fits them, the detector's identity and configuration from the plan's method and parameters, the gap
+policy and the temporal support; requires the angular recording to be on the plan's angular frame
+and analysis clock; re-derives the prepared recording by re-running the plan's gap interpolation
+over the angular samples (a linear fill in basic IEEE arithmetic, exact and identical on every
+platform) and requires the archived one to equal it sample for sample, refusing otherwise with
+`RecordingResultError.Stage(stage, field, expected, found)`; rebuilds the detection through
+`Detection.reconstruct`, the assembly a detector's emissions go through, so every event must lie in
+the recording, every declared support range must be the range its span covers, invalid samples
+inside an event must be allowed by the gap policy, and the labels, report and provenance are
+re-derived (the dispersion uses `hypot` and `pow`, which neither platform promises to round
+identically, so a fixation's re-derived dispersion may differ in its last bit between the JVM and
+Scala.js; decoding cannot fail because of it, since the archive carries no dispersion value to
+compare); requires the areas to be the plan's `(id, label)` pairs, in order and trimmed as an
+AOI trims them, with the attributes the run records (`RecordingArea.attributes`: the native frame
+and the pixel bounds rendered canonically, so the same area archives to the same bytes on the JVM
+and Scala.js); and re-derives the assignment by assigning the prepared recording to them under exclusive
+priority, an exact point-in-region test. Every archived member the reconstruction derives
+(synchronization, detection, assignment) must then equal it, member by member, or decoding fails
+with `CodecError.Derived(path, declared, derived)` at the first difference, for example
+`detection.labels[5]`; numbers compare as the doubles they denote, never through a decimal
+rendering. Not re-derived: the angular samples and frame (a trigonometric warp of the input) and
+each area's warped region.
+
+**`eyes4s.temporal-result@1`** carries the plan, the score and difference schemas, a document
+identity table of the occupancy measures' frames, and one cell per repetition and window in plan
+order (repetitions outer, windows inner): the names of its repetition and window, every trial's
+occupancy in input order, and the cell's completed study result in the `study-result@1` wire,
+envelope included. An occupancy is its resolved window interval, boundary, observed and missing
+microseconds, the complete ledger of every fixation's original and retained microseconds and the
+positions of the retained fixations; or the typed `TemporalStudyError` it failed with (a missing
+epoch, a window that cannot be anchored without overflow). Decoding rebuilds each occupancy through
+`WindowOccupancy.reconstruct`, which requires the observed and missing time to partition the window
+(`WindowOccupancyError.ObservedTime`), every ledger row to sit at its own fixation with
+`0 <= retained <= original`, no more retained than the window observed and, under
+`FullyContained`, retained all or nothing (`Ledger`), and
+one position per retained fixation (`MeasureSupport`), and re-derives the measure's weights and
+its digest from the ledger; each cell's study result through the checked study reconstruction in
+the cell's provenance context (`TemporalStudyPlan.provenanceContext`), so every evaluation
+specification must carry the cell's temporal input, window, bounds, boundary and repetition and the
+time order that context implies (`StudyResultError.SpecificationTime`); and the whole through
+`TemporalStudyResult.reconstruct(plan, cells)`, which re-derives the cell layout, each
+repetition's study plan (`TemporalStudyPlan.repetitionPlan`) and each cell's context from the plan
+and refuses, as a `TemporalResultError` wrapped in `Cell(repetition, window, …)` where it concerns
+one cell: a missing or extra cell (`CellCount`), a cell out of place (`CellLayout`), a result
+describing another plan than its repetition's (`Plan`) or failing its context (`Result`), a cell
+whose ledger lists other trials than the first cell's, or a scale estimating other trials than its
+cell's ledger lists (`OccupancyKeys`), an occupancy under another boundary (`Boundary`) or over
+another width (`Width`), a missing epoch naming another trial's digest or where another cell has
+the trial's epoch (`Epoch`), an occupancy anchored at another instant or clock than the same trial
+in another cell (`Anchor`; each cell's outcome is compared as a typed anchor, missing epoch or
+failure, never by a rendered name, so any clock name is safe), a density not estimated
+from its trial's occupancy measure, which ties every density to the archived ledger
+(`Density`), and a temporal failure the occupancy does not produce (`Failure`). Not re-derived:
+densities, scores, means and differences, and the retained fixations' positions, which only the
+input can confirm.
+
+`RecordingResultRegistry` and `TemporalResultRegistry` register result codecs by method (the
+recording method, the base study's method) and refuse missing or duplicate registrations with
+`CodecError.MissingResultCodec` and `DuplicateResultCodec`; `TemporalRegistry` does the same for
+temporal plans by their base study's method (`MissingMethod`, `DuplicateMethod`), beside the
+existing `RecordingRegistry` for recording plans.
+
+The pinned [recording-result-v1.json](../codec/src/test/resources/eyes4s/recording-result-v1.json)
+is an I-DT plan (one degree square, 2 ms minimum, a 6 ms interpolation gap) whose provenance is
+exactly the pinned recording-input-v1's evidence, run on its monocular channels: the fourth mark
+is rejected by the residual limit, the gap interpolation fills the blink and the signal loss so the
+prepared recording differs from the angular one, and two source-supported fixations (the first
+over interpolated samples) leave one off-screen sample excluded from the one area. The pinned
+[temporal-result-v1.json](../codec/src/test/resources/eyes4s/temporal-result-v1.json) is the pinned
+temporal-study-v1 plan run on the pinned temporal-study-input-v1: eight cells, each with the trial
+without an epoch as a typed `MissingEpoch` in its ledger and a `StudyFailure.Temporal` at every
+scale, the anchor beyond 2^53 intact in every window and the coverage gap visible as missing time.
+`GenerateResultArchivesV1` writes both, and their compact portable mirrors; the portable
+`ResultArchivesV1Suite` checks their decoded meaning and JSON value identity on the JVM and
+Scala.js, and `ResultArchivesV1JvmSuite` that the files are the writer's output with independently
+computed `shasum -a 256` digests, re-encode byte for byte, and are reproduced byte for byte by
+re-executing the pinned plans on the pinned inputs. The temporal archive is large (2.3 MB
+pretty-printed): its sixteen scale results each carry the complete `study-result@1` evidence.
+`eyes4s.laws.RecordingResultEquivalence` and `TemporalResultEquivalence` are the published
+structural identities of two results.
 
 ## Artifact manifests and verified resolution
 
@@ -569,7 +678,8 @@ repair.
 
 Each `ManifestEntry` records a manifest-local `ArtifactName`, an `ArtifactRole` (`study-plan`,
 `study-input`, `admission-ledger`, `study-result`, `recording`, `recording-input`,
-`temporal-study-input` or `payload`), the schema identity of the artifact's envelope, its media kind
+`temporal-study-input`, `payload`, `recording-plan`, `recording-result`, `temporal-plan` or
+`temporal-result`), the schema identity of the artifact's envelope, its media kind
 (`application/json` or `application/octet-stream`), its exact byte length as a decimal string and
 the SHA-256 of its exact bytes (`ByteDigest`, 64 lowercase hexadecimal digits). The identity-bearing
 roles (study input, recording, recording input, temporal input) also declare the semantic identity
@@ -589,6 +699,10 @@ Relations are typed edges, checked against decoded values rather than names:
 | `TemporalBase` | temporal input, input | at most one per temporal input; required for a base embedded by reference | the temporal input's base study is the input |
 | `RecordingOf` | recording input, recording | at most one per recording input | the recording input's channels are the recording (`contentHash`) |
 | `PayloadOf` | packed recording, payload | at least one per payload | the owner references the payload's digest and layout |
+| `RecordingPlanInput` | recording plan, recording input | exactly one per recording plan | `RecordingInput.disagreements(input, plan)` is empty: the plan's declared provenance is the input's evidence and its prerequisites hold on the input's channels |
+| `RecordingResultOf` | recording result, recording plan, recording input | exactly one per recording result | the result's input reference is the input's channels (`contentHash`), its description is the plan's, and the plan agrees with this input's evidence (`RecordingInput.disagreements`), since the channels do not cover the source, viewing geometry or marks |
+| `TemporalPlanInput` | temporal plan, temporal input | exactly one per temporal plan | `plan.prerequisites(input)` is empty |
+| `TemporalResultOf` | temporal result, temporal plan, temporal input | exactly one per temporal result | the result's input reference is the temporal input's, and its description is the plan's |
 
 `ScientificManifest.of` checks structure only: unique names, relations naming existing entries of
 the required roles, a packed-recording owner for every `PayloadOf`, no repeated relation and the
@@ -598,8 +712,8 @@ a payload without its schema or with a layout of another length. A graph's own c
 only by resolution.
 
 **Writing.** `StoredArtifact.plan`, `input`, `ledger`, `result`, `recording`, `binocular`,
-`recordingInput`, `temporalInput` and `packedRecording` encode a typed value through its registered
-codec and store the UTF-8 of the pretty-printed document; `StoredArtifact.bytes` stores existing
+`recordingInput`, `temporalInput`, `recordingPlan`, `recordingResult`, `temporalPlan`,
+`temporalResult` and `packedRecording` encode a typed value through its registered codec and store the UTF-8 of the pretty-printed document; `StoredArtifact.bytes` stores existing
 JSON bytes verbatim (strict UTF-8 with a schema envelope, as the pinned fixture below does), and
 `StoredArtifact.payload` stores a verified payload. Every artifact holds a private copy of its bytes.
 `SavedManifest.of(artifacts, relations)` builds the manifest, its canonical bytes
@@ -615,6 +729,21 @@ with a reason). `ByteSource.inMemory` serves manifests by address and entries by
 registries the values are decoded through: `ArtifactDecoders.of(studyRegistry, inputRegistry,
 resultRegistry)` for any key layout, or `ArtifactDecoders.study[U]` for the ordinary cosine route;
 recordings use the built-in `recording@1`, `binocular-recording@1` and `packed-recording@1` codecs.
+Recording and temporal plans and results decode only through registries added explicitly:
+`decoders.withRecordings(recordingPlans, recordingResults)` (a `RecordingRegistry` and a
+`RecordingResultRegistry`) and `decoders.withTemporal(temporalPlans, temporalResults)` (a
+`TemporalRegistry` and a `TemporalResultRegistry`); without them such an entry is refused as
+`CodecError.UnsupportedSchema(role, schema, Vector())`, and with them an entry of a schema no
+registration declares is refused as `UnsupportedSchema(role, schema, registered)`, naming the
+registered schemas. A decorator (counting calls, logging) extends `ArtifactDecoders.Delegating`,
+which forwards every decoder, so wrapping registered decoders never turns one into a refusal.
+A recording plan runs on display pixels
+while the resolver is generic in the unit `U`, so `withRecordings` takes a `PixelUnit[U]`: a sealed
+witness whose one instance is for `Px`, where its conversion is the identity. A manifest in any
+other unit cannot register recording plans (a type error, not a cast), and a decoded
+`LoadedRecordingPlan[U]` checks and runs against a recording input of the manifest's own unit
+through it (`disagreements(input)`, `run(input)`). A `LoadedTemporal[K, U]` keeps its parameter,
+score and difference types abstract, as `LoadedStudy` does.
 `ArtifactResolver.resolve(address, source, decoders)` reads the manifest, checks its digest against
 the address and decodes it, then resolves the graph in three phases, reporting every error of a
 phase as `NonEmptyVector[ResolveError]`:
@@ -633,7 +762,8 @@ phase as `NonEmptyVector[ResolveError]`:
    `RelationMismatch`).
 
 A successful resolution is a `ResolvedManifest`: plans, inputs, ledgers, results, recordings,
-recording inputs, temporal inputs and verified payloads, each by name in manifest order. Failure
+recording inputs, temporal inputs, verified payloads, recording plans and results and temporal
+plans and results, each by name in manifest order. Failure
 produces no values, so an unverified input can never reach a runner. Ownership: the resolver copies
 every buffer a source returns before verifying it and decodes only the copy, so a caller that
 mutates its array afterwards, or even during resolution, cannot change what was verified or admitted.
@@ -722,14 +852,6 @@ address on the JVM and Scala.js, that both platforms pack the pinned recording t
 digests (exact IEEE bits, no platform number formatting), the typed meaning of every new fixture,
 and that the same graph over the portable fixture strings resolves on both platforms.
 
-Recording and temporal plans have no manifest role yet. The resolver is polymorphic in the spatial
-unit while `RecordingPlan` is fixed to `Recording[Px]`, so a relation checking a recording plan's
-prerequisites needs a unit witness in `ArtifactDecoders`; the temporal plan needs a registry
-analogous to `StudyRegistry`. Both extend `ArtifactDecoders`, a published extension point, and are
-left to G1, together with their result archives. Until then an application stores such a plan
-beside the manifest and checks it against the verified input with the plan's own
-`prerequisites`, as the fresh-process harness below does.
-
 `eyes4s.laws.ManifestLaws.verifiedResolution(graphs, write, decoders, reproduces)` is the published
 conformance for an application's own graphs and registrations, over a writer producing a
 `StoredGraph` (the manifest, the exact bytes the writer stored it as, and every entry's bytes): the
@@ -752,41 +874,44 @@ harness) and the pinned fixtures. The reader shares no memory, registry or cache
 and it reads the saved studies only from their files and reads none of the pinned fixtures; it is
 not isolated from the repository's classes. The isolated consumer runs the fixation journey from
 published artifacts instead (see [below](#the-fixation-journey-from-published-artifacts)); its
-recording and temporal routes are left to G1.
+recording and temporal routes, which now have the archives and manifest roles above, are G1's.
 
 1. A **writer** process (`FreshProcessHarness write <root>`) decodes the pinned v1 fixtures, runs
    each plan, and saves three studies under `root`, each a directory holding the manifest
    (`manifest.json`), every entry under its manifest name, the application's pointer to the
-   manifest (`manifest.sha256`) and the writer's exact fingerprint of the result it computed:
+   manifest (`manifest.sha256`) and the writer's exact fingerprint of the result it computed.
+   Every study is its plan, its input and its result archive under one manifest:
    - `fixation`: the study-v1 plan, the study-input-v1 input, its complete and its refused
-     admission ledgers and the result of running the plan, with `PlanInput`, `LedgerOf` and
-     `ResultOf` relations;
+     admission ledgers and the result of running the plan (`study-result@1`), with `PlanInput`,
+     `LedgerOf` and `ResultOf` relations;
    - `recording`: the recording-input-v1 input and its monocular channels as a packed recording
-     with four payloads (`RecordingOf`, `PayloadOf`), and an I-VT plan
-     (`eyes4s.recording-plan@1`) whose declared provenance is exactly the input's evidence;
+     with four payloads (`RecordingOf`, `PayloadOf`), the pinned recording-result-v1 I-DT plan
+     (`eyes4s.recording-plan@1`), whose declared provenance is exactly the input's evidence, and
+     its analysis (`recording-result@1`), with `RecordingPlanInput` and `RecordingResultOf`
+     relations;
    - `temporal`: the pinned temporal input, with its missing epoch and its anchor beyond 2^53,
-     stored with its base study by reference (`TemporalBase`), and the pinned
+     stored with its base study by reference (`TemporalBase`), the pinned
      [temporal-study-v1.json](../codec/src/test/resources/eyes4s/temporal-study-v1.json) plan
      (`eyes4s.temporal-study@1`) over both repetitions, all four windows and the binned and
-     Gaussian scales.
-2. A **reader** process (`FreshProcessHarness read <root>`) registers the cosine plan, input and
-   result codecs explicitly, resolves each manifest through the shipped `ArtifactFiles` directory
+     Gaussian scales, and its result (`temporal-result@1`), with `TemporalPlanInput` and
+     `TemporalResultOf` relations.
+2. A **reader** process (`FreshProcessHarness read <root>`) registers explicitly the cosine study
+   plan, input and result codecs, the I-DT recording plan and result codecs (through
+   `withRecordings`, with the pixel unit witness) and the cosine temporal plan and result codecs
+   (through `withTemporal`), resolves each manifest through the shipped `ArtifactFiles` directory
    source (which verifies every length, SHA-256, schema, semantic identity and relation before
-   admitting anything), re-executes each plan on its verified input and compares:
-   - for the fixation study, the re-executed result encoded under the canonical contract (the
-     UTF-8 of the pretty-printed `study-result@1` document) must have the archived entry's exact
-     length and SHA-256, and the result of the plan as registered (`LoadedStudy.run`), the result of
-     the typed plan and the decoded archive must all equal the writer's fingerprint;
-   - for the recording and temporal studies, whose results have no archive codec yet, the
-     re-executed result must equal the writer's fingerprint. Their plans travel in `plan.json`
-     beside the manifest (see above) and are checked against the verified inputs by
-     `RecordingInput.disagreements`, `RecordingPlan.prerequisites` and
-     `TemporalStudyPlan.prerequisites` before they run.
+   admitting anything), re-executes each plan on its verified input and compares, for every
+   study: the re-executed result encoded under the canonical contract (the UTF-8 of the
+   pretty-printed archive document) must have the archived entry's exact length and SHA-256, and
+   the result of the typed plan, the result of the plan as registered (`LoadedStudy.run`,
+   `LoadedRecordingPlan.run`, `LoadedTemporal.run`) and the decoded archive must all equal the
+   writer's fingerprint. The comparison with the archive needs nothing outside the saved files;
+   the writer's fingerprint is a second, independent record.
 
 A fingerprint (`ScientificFingerprint`, test code) renders a result field by field without any
 codec: every double as the sixteen hexadecimal digits of its raw IEEE 754 bits, every 64-bit value
 as a decimal string. Equal fingerprints therefore mean every field is equal and every double has
-the same bits (the three fingerprints carry 308, 116 and 6,178 doubles, and the suite asserts those
+the same bits (the three fingerprints carry 308, 136 and 6,178 doubles, and the suite asserts those
 counts); `-0.0` and `+0.0` differ and nothing is rounded or compared with a tolerance. Result
 classes without structural equality are rendered from an explicit list of their fields; a value of
 any other class that is not a case class, an enum case or a collection is refused rather than
@@ -795,46 +920,56 @@ computed fingerprints agreeing, and changing one bit of one double in the writer
 caught.
 
 The suite requires the writer to reproduce the pinned `study-input-v1`, both ledgers,
-`study-result-v1` and `temporal-study-v1` byte for byte (the plan differs from the pinned
-`study-v1.json` in whitespace only and is compared as a JSON value), the reader to report every
-study reconstructed with the writer's fingerprint, and three distinct processes.
+`study-result-v1`, `recording-result-v1`, `temporal-study-v1` and `temporal-result-v1` byte for
+byte (the plan differs from the pinned `study-v1.json` in whitespace only and is compared as a JSON
+value), the reader to report every study reconstructed, its rerun encoding to the archived bytes
+and its fingerprint the writer's, and three distinct processes.
 
 **What verification establishes.** A manifest's byte digests protect against corruption. They do
 not protect against a forger who edits an artifact and re-declares its digests, and the documents
 that reference it, consistently. Such a forgery is refused only where the forged content
-contradicts something the reader re-derives: a semantic identity, a relation, a ledger invariant or
-a plan's recorded input. The suite perturbs private copies of the saved studies, each read by a
-fresh reader, and pins the typed outcome of exactly the perturbed study while the other two still
-reconstruct. The reader reports each refusal with its entry, its case, its located path and its
-innermost cause as the typed value:
+contradicts something the reader re-derives: a semantic identity, a relation, a ledger invariant, a
+plan's recorded input, a result's own evidence or the rerun of its plan. The suite perturbs private
+copies of the saved studies, each read by a fresh reader, and pins the typed outcome of exactly the
+perturbed study while the other two still reconstruct. The reader reports each refusal with its
+entry, its case, its located path and its innermost cause as the typed value:
 
 | Perturbation | What the reader reports |
 |---|---|
 | One byte of the archived result flipped | `ResolveError.Digest(result, declared, actual)`, before anything is decoded |
-| The result codec left unregistered | `ResolveError.Decode(result, CodecError.MissingResultCodec(eyes4s.cosine@1))` |
+| The result codecs left unregistered | `ResolveError.Decode` of each archive by its method: `MissingResultCodec(eyes4s.cosine@1)` for the study and temporal results, `MissingResultCodec(eyes4s.recording.idt@1)` for the recording result |
 | One packed double moved by one unit in the last place, with the payload digest in the packed document and the manifest re-declared | `ResolveError.Decode` at `recording`: `CodecError.InputIdentity(2c826dc41ae25e67, …)`, the rebuilt recording's `contentHash` |
 | The same recording re-packed with its new `contentHash` declared, and the manifest's identity re-declared | `ResolveError.Relation` on `recording-of`: `RelationMismatch.RecordingIdentity`, since the recording input's channels are still the original recording |
-| The recording input forged over the same channels as well, with its identity re-declared | resolves; the plan, unchanged in `plan.json`, refuses it: `RecordingInputError.Plan(RecordingPlanError.Input(PlanError.ArtifactMismatch(2c826dc41ae25e67, …)))` |
-| All of the above and the plan's input digest rewritten | **passes every check** and re-executes; only the writer's fingerprint, kept outside the saved files, differs (pinned) |
+| The recording input forged over the same channels as well, with its identity re-declared | `ResolveError.Relation` on `recording-plan-input`: `RecordingPrerequisites(Plan(Input(ArtifactMismatch(2c826dc41ae25e67, …))))`, and on `recording-result-of`: `ResultInput(…, 2c826dc41ae25e67)`: the saved plan and archive still record the original recording |
+| All of the above and the plan's input digest rewritten | `ResolveError.Relation` on `recording-result-of`: `ResultInput`, since the archive records the plan it ran |
+| All of the above and the archive's embedded plan rewritten the same way | resolves, but the plan re-executed on the verified input does not encode to the archived bytes ("the re-executed result encodes to …, not the archived …") |
+| All of the above and the archive replaced by the forged study's own result | **passes every check** and re-executes to the archive; only the writer's fingerprint, kept outside the saved files, differs (pinned) |
+| One retained time in a temporal occupancy ledger changed (190 ms to 180 ms), manifest re-declared | `ResolveError.Decode` at `temporal-result`: `CodecError.TemporalResult(Cell(recall-encode, early, Density(s1/a/encode, …)))`: the ledger no longer weights the measure its densities were estimated from |
+| One archived pair score in a temporal cell changed, manifest re-declared | resolves, but the re-executed temporal study does not encode to the archived bytes |
 | Record 2 dropped from the refused ledger, manifest re-declared | `ResolveError.Decode` at `refused-ledger`: `CodecError.Admission(AdmissionError.QuarantineScope(3, Vector(2, 3, 4, 5)))`, because records 3 to 5 are quarantined with record 2 |
 | Record 2 dropped and the quarantine scope rewritten to records 3 to 5, manifest re-declared | **resolves and reconstructs** (pinned): nothing binds a ledger's rejected rows |
-| One bit of one double in the writer's temporal fingerprint flipped | the temporal study fails its comparison ("fingerprints differ from the writer's for rerun") |
+| One bit of one double in the writer's temporal fingerprint flipped | the temporal study fails its comparison ("fingerprints differ from the writer's for rerun, loaded-rerun, archive") |
 
-So a consistent forger can replace a whole study with a different, self-consistent one, and can
-drop exclusions from a ledger wherever the drop keeps its invariants. `LedgerForgerySuite`
-additionally pins that dropping a standalone rejection from a reviewed ledger related to its input
-resolves. Establishing authenticity (who wrote the study) needs a signature over the manifest
-address, which is the application's concern. Establishing that a ledger's exclusions are the
-source's needs a re-import of the source file, the G1 deferral described under
+So a consistent forger can replace a whole study with a different, self-consistent one, results
+included, and can drop exclusions from a ledger wherever the drop keeps its invariants; a forger
+who changes an archived number that the archive does not re-derive (a score, a density, a mean) is
+caught only by re-executing the plan, which the reader does. `LedgerForgerySuite` additionally pins
+that dropping a standalone rejection from a reviewed ledger related to its input resolves.
+Establishing authenticity (who wrote the study) needs a signature over the manifest address, which
+is the application's concern. Establishing that a ledger's exclusions are the source's needs a
+re-import of the source file, the G1 deferral described under
 [input payloads](#input-payloads-and-admission-ledgers).
 
-The harness runs on the JVM, where the application process lives. On Scala.js only the fixation
-route is compared with pinned bytes: `ResultV1Suite` re-executes the pinned plan on the pinned input
-and matches study-result-v1, and `InputsManifestV1Suite` reproduces the pinned manifests and packed
-payload digests. The recording and temporal inputs and the temporal plan are decoded from their
-pinned bytes on Scala.js, but their re-executed results are not compared with any pinned record
-there. A realistic-size input for throughput is not archived: no permitted realistic-size dataset
-is in the repository, and choosing one is left to G1.
+The harness runs on the JVM, where the application process lives. On Scala.js, the pinned
+archives are compared with pinned bytes by decoding and re-encoding them to the same JSON values:
+`ResultV1Suite` also re-executes the pinned study plan on the pinned input and matches
+study-result-v1, `ResultArchivesV1Suite` decodes recording-result-v1 and temporal-result-v1
+(re-deriving every member it re-derives on the JVM), and `InputsManifestV1Suite` reproduces the
+pinned manifests and packed payload digests. The recording and temporal re-executions are compared
+with their archives bit for bit on the JVM only: the angular warp and Gaussian smoothing use
+transcendental functions neither platform promises to round identically. A realistic-size input
+for throughput is not archived: no permitted realistic-size dataset is in the repository, and
+choosing one is left to G1.
 
 ## The fixation journey from published artifacts
 

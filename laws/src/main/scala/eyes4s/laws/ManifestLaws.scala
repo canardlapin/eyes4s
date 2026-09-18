@@ -151,23 +151,27 @@ object ManifestLaws extends ManifestLaws:
 
   /** Decoders that count their invocations and otherwise delegate. */
   final class Counting[K, U <: Unit2D](underlying: ArtifactDecoders[K, U])
-      extends ArtifactDecoders[K, U]:
+      extends ArtifactDecoders.Delegating[K, U](underlying):
     private var count               = 0
     def calls: Int                  = count
     private def tick[A](a: => A): A =
       count += 1
       a
-    def plan(document: Json)   = tick(underlying.plan(document))
-    def input(document: Json)  = tick(underlying.input(document))
-    def ledger(document: Json) = tick(underlying.ledger(document))
-    def result(document: Json) = tick(underlying.result(document))
-    def recording(document: Json, payloads: PayloadRef => Option[VerifiedPayload]) =
-      tick(underlying.recording(document, payloads))
-    def recordingInput(document: Json) = tick(underlying.recordingInput(document))
-    def temporalInput(
+    override def plan(document: Json)   = tick(super.plan(document))
+    override def input(document: Json)  = tick(super.input(document))
+    override def ledger(document: Json) = tick(super.ledger(document))
+    override def result(document: Json) = tick(super.result(document))
+    override def recording(document: Json, payloads: PayloadRef => Option[VerifiedPayload]) =
+      tick(super.recording(document, payloads))
+    override def recordingInput(document: Json) = tick(super.recordingInput(document))
+    override def temporalInput(
         document: Json,
         base: ArtifactRef[StudyInput[K, U]] => Option[StudyInput[K, U]]
-    ) = tick(underlying.temporalInput(document, base))
+    )                                            = tick(super.temporalInput(document, base))
+    override def recordingPlan(document: Json)   = tick(super.recordingPlan(document))
+    override def recordingResult(document: Json) = tick(super.recordingResult(document))
+    override def temporalPlan(document: Json)    = tick(super.temporalPlan(document))
+    override def temporalResult(document: Json)  = tick(super.temporalResult(document))
 
   def counting[K, U <: Unit2D](decoders: ArtifactDecoders[K, U]): Counting[K, U] =
     new Counting(decoders)

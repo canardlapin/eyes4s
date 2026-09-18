@@ -68,6 +68,8 @@ object SchemaRegistry:
   private val artifacts  = () => new ArtifactCodecLawSuite
   private val codecs     = () => new CodecLawsSuite
   private val graphs     = () => new ManifestLawSuite
+  private val recorded   = () => new RecordingResultCodecLawSuite
+  private val temporal   = () => new TemporalResultCodecLawSuite
 
   /** One identity: its kind, its pinned fixtures and its laws. A document's
     * first fixture carries it as its envelope schema.
@@ -243,6 +245,18 @@ object SchemaRegistry:
           "packedArray.unpacking a packed array returns every element exactly"
         )
       )
+    ),
+    Entry(
+      DefinitionId.recordingResult,
+      Kind.Document,
+      Vector("recording-result-v1.json"),
+      codecLaw(recorded, "I-VT recording result") ++ codecLaw(recorded, "I-DT recording result")
+    ),
+    Entry(
+      DefinitionId.temporalResult,
+      Kind.Document,
+      Vector("temporal-result-v1.json"),
+      codecLaw(temporal, "temporal study result")
     )
   )
 
@@ -532,6 +546,20 @@ private object Decoders:
           value   <- codec.decode(document, ref => payloads.find(_.ref == ref))
           encoded <- codec.encode(value)
         yield encoded.document
+      case DefinitionId.recordingResult =>
+        val idt = RecordingCodecs.idt(
+          get(DefinitionId.of("eyes4s.recording-plan", 1)),
+          get(DefinitionId.of("eyes4s.recording.idt", 1)),
+          get(DefinitionId.of("eyes4s.idt-parameters", 1))
+        )
+        through(idt.results.codec, document)
+      case DefinitionId.temporalResult =>
+        through(
+          TemporalResultCodecs
+            .cosine[Px](get(DefinitionId.of("eyes4s.temporal-study", 1)))
+            .codec,
+          document
+        )
       case other if other.name == "eyes4s.recording-plan" =>
         through(recordingPlan.codec, document)
       case other if other.name == "eyes4s.temporal-study" =>

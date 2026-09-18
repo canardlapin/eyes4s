@@ -109,3 +109,79 @@ class WindowOccupancySuite extends munit.FunSuite:
       ).isLeft
     )
   }
+
+  test("reconstruction from the ledger and retained positions rebuilds the same occupancy") {
+    val result =
+      get(WindowOccupancy(path, interval(5, 45), coverage, FixationBoundary.ClipDuration))
+    val rebuilt = get(
+      WindowOccupancy.reconstruct(
+        result.interval,
+        result.boundary,
+        result.measure.frame,
+        result.measure.positions,
+        result.observedMicros,
+        result.missingMicros,
+        result.fixationTimes
+      )
+    )
+    assertEquals(rebuilt.fixationTimes, result.fixationTimes)
+    assertEquals(rebuilt.measure.weights.toVector, result.measure.weights.toVector)
+    // The measure's identity is re-derived from the ledger's retained times.
+    assertEquals(rebuilt.measure.provenance, result.measure.provenance)
+  }
+
+  test("reconstruction refuses a ledger its window, boundary or measure contradicts") {
+    val result =
+      get(WindowOccupancy(path, interval(5, 45), coverage, FixationBoundary.ClipDuration))
+    def rebuild(
+        boundary: FixationBoundary = result.boundary,
+        positions: IArray[Pt[Px]] = result.measure.positions,
+        observed: Long = result.observedMicros,
+        missing: Long = result.missingMicros,
+        ledger: Vector[FixationWindowTime] = result.fixationTimes
+    ) = WindowOccupancy.reconstruct(
+      result.interval,
+      boundary,
+      frame,
+      positions,
+      observed,
+      missing,
+      ledger
+    )
+    assertEquals(
+      rebuild(observed = 36L).left.toOption,
+      Some(WindowOccupancyError.ObservedTime(interval(5, 45), 36L, 5L))
+    )
+    assertEquals(
+      rebuild(ledger = result.fixationTimes.reverse).left.toOption,
+      Some(
+        WindowOccupancyError.Ledger(0, 2, BigInt(20), 5L, FixationBoundary.ClipDuration)
+      )
+    )
+    assertEquals(
+      rebuild(ledger =
+        result.fixationTimes.updated(1, FixationWindowTime(1, BigInt(20), 21L))
+      ).left.toOption,
+      Some(
+        WindowOccupancyError.Ledger(1, 1, BigInt(20), 21L, FixationBoundary.ClipDuration)
+      )
+    )
+    // A partly retained fixation is not a whole-fixation ledger.
+    assertEquals(
+      rebuild(boundary = FixationBoundary.FullyContained).left.toOption,
+      Some(
+        WindowOccupancyError.Ledger(0, 0, BigInt(10), 5L, FixationBoundary.FullyContained)
+      )
+    )
+    assertEquals(
+      rebuild(positions = result.measure.positions.take(2)).left.toOption,
+      Some(WindowOccupancyError.MeasureSupport(3, 2))
+    )
+    // No fixation retains more time than the window observed.
+    assertEquals(
+      rebuild(observed = 10L, missing = 30L).left.toOption,
+      Some(
+        WindowOccupancyError.Ledger(1, 1, BigInt(20), 15L, FixationBoundary.ClipDuration)
+      )
+    )
+  }

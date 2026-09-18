@@ -109,6 +109,21 @@ object CodecDiagnosticSamples:
         "plan",
         DefinitionId.studyInput,
         Vector(DefinitionId.study, DefinitionId.cosine)
+      ),
+      CodecError.Derived(
+        "detection.labels[3]",
+        Json.fromString("fixation"),
+        Json.fromString("missing")
+      ),
+      CodecError.RecordingResult(
+        RecordingResultError.Stage("angular", "clock", "display", "tracker")
+      ),
+      CodecError.TemporalResult(
+        TemporalResultError.Cell(
+          "recall-encode",
+          "early",
+          TemporalResultError.Density(k1, Some(digest), digest2)
+        )
       )
     ),
     family[ResolveError]("ResolveError")(
@@ -150,7 +165,13 @@ object CodecDiagnosticSamples:
       RelationMismatch.BaseStudy(digest, digest2),
       RelationMismatch.RecordingIdentity(digest, digest2),
       RelationMismatch.UnreferencedPayload(ref),
-      RelationMismatch.Unavailable(Vector(plan, input))
+      RelationMismatch.Unavailable(Vector(plan, input)),
+      RelationMismatch.RecordingPrerequisites(
+        Vector(RecordingInputError.PlanDisagreement("source", "a", "b"))
+      ),
+      RelationMismatch.TemporalPrerequisites(
+        Vector(TemporalStudyError.Input(PlanError.ArtifactMismatch(digest, digest2)))
+      )
     ),
     family[ManifestError]("ManifestError")(
       ManifestError.InvalidName(" padded"),

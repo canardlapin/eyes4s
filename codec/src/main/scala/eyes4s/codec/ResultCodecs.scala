@@ -190,7 +190,26 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
     "scales"     -> Json.arr(scales*)
   )
 
-  private def read(json: Json): Either[CodecError, StudyResult[K, U, S, D]] = for
+  private def read(json: Json): Either[CodecError, StudyResult[K, U, S, D]] =
+    readIn(json, Vector.empty)
+
+  /** Decode a result executed under a provenance context, as every temporal
+    * cell is; see `StudyResult.reconstruct`.
+    */
+  private[codec] def decodeIn(
+      document: Json,
+      context: Vector[(String, Provenance.Param)]
+  ): Either[CodecError, StudyResult[K, U, S, D]] = for
+    found   <- Wire.definition(document, "schema")
+    _       <- Either.cond(found == schema, (), CodecError.Schema(schema, found))
+    payload <- Wire.field[Json](document, "value")
+    result  <- readIn(payload, context)
+  yield result
+
+  private def readIn(
+      json: Json,
+      context: Vector[(String, Provenance.Param)]
+  ): Either[CodecError, StudyResult[K, U, S, D]] = for
     _      <- Wire.requireId(json, "layout", layout.id)
     _      <- Wire.requireId(json, "keySchema", keys.schema)
     _      <- Wire.requireId(json, "method", method.id)
@@ -219,7 +238,7 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
       readScale(table, entry).left.map(Wire.at(s"scales[$index]"))
     }
     result <- StudyResult
-      .reconstruct(input, layout, description, scales)
+      .reconstruct(input, layout, description, scales, context)
       .left
       .map(e => CodecError.Result(e))
   yield result

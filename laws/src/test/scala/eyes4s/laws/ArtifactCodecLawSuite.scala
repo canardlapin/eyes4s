@@ -535,18 +535,24 @@ object ArtifactCodecLawSuite:
     * and relations in generated order: one to three inputs; plans with their
     * input; results of a plan on an input; ledgers, temporal inputs and
     * recording inputs with or without their optional relation; standalone
-    * and packed recordings; payloads owned by one or more packed recordings.
+    * and packed recordings; payloads owned by one or more packed recordings;
+    * recording and temporal plans with their input, and their results of a
+    * plan on an input.
     */
   val manifests: Gen[ScientificManifest] = for
-    inputs     <- Gen.choose(1, 3)
-    plans      <- Gen.choose(0, 2)
-    results    <- if plans == 0 then Gen.const(0) else Gen.choose(0, 2)
-    ledgers    <- Gen.choose(0, 2)
-    temporals  <- Gen.choose(0, 2)
-    standalone <- Gen.choose(0, 2)
-    packed     <- Gen.choose(0, 2)
-    recorded   <- Gen.choose(0, 2)
-    payloads   <- if packed == 0 then Gen.const(0) else Gen.choose(1, 4)
+    inputs           <- Gen.choose(1, 3)
+    plans            <- Gen.choose(0, 2)
+    results          <- if plans == 0 then Gen.const(0) else Gen.choose(0, 2)
+    ledgers          <- Gen.choose(0, 2)
+    temporals        <- Gen.choose(0, 2)
+    standalone       <- Gen.choose(0, 2)
+    packed           <- Gen.choose(0, 2)
+    recorded         <- Gen.choose(0, 2)
+    payloads         <- if packed == 0 then Gen.const(0) else Gen.choose(1, 4)
+    recordingPlans   <- if recorded == 0 then Gen.const(0) else Gen.choose(0, 2)
+    recordingResults <- if recordingPlans == 0 then Gen.const(0) else Gen.choose(0, 2)
+    temporalPlans    <- if temporals == 0 then Gen.const(0) else Gen.choose(0, 2)
+    temporalResults  <- if temporalPlans == 0 then Gen.const(0) else Gen.choose(0, 2)
     roles = Vector.fill(inputs)(ArtifactRole.StudyInput) ++
       Vector.fill(plans)(ArtifactRole.StudyPlan) ++
       Vector.fill(results)(ArtifactRole.StudyResult) ++
@@ -554,7 +560,11 @@ object ArtifactCodecLawSuite:
       Vector.fill(temporals)(ArtifactRole.TemporalInput) ++
       Vector.fill(standalone + packed)(ArtifactRole.Recording) ++
       Vector.fill(recorded)(ArtifactRole.RecordingInput) ++
-      Vector.fill(payloads)(ArtifactRole.Payload)
+      Vector.fill(payloads)(ArtifactRole.Payload) ++
+      Vector.fill(recordingPlans)(ArtifactRole.RecordingPlan) ++
+      Vector.fill(recordingResults)(ArtifactRole.RecordingResult) ++
+      Vector.fill(temporalPlans)(ArtifactRole.TemporalPlan) ++
+      Vector.fill(temporalResults)(ArtifactRole.TemporalResult)
     named   <- names(roles.size)
     entries <- Gen.sequence[Vector[ManifestEntry], ManifestEntry](
       roles.zip(named).zipWithIndex.map { case ((role, name), index) =>
@@ -607,7 +617,28 @@ object ArtifactCodecLawSuite:
           .map(_.toVector.map(ManifestRelation.PayloadOf(_, p)))
       )
     )
-    relations = planInputs ++ resultOf ++ optional.flatten ++ owned.flatten
+    archives <- Gen.sequence[Vector[ManifestRelation], ManifestRelation](
+      byRole(ArtifactRole.RecordingPlan).map(p =>
+        Gen
+          .oneOf(byRole(ArtifactRole.RecordingInput))
+          .map(ManifestRelation.RecordingPlanInput(p, _))
+      ) ++ byRole(ArtifactRole.RecordingResult).map(r =>
+        for
+          p <- Gen.oneOf(byRole(ArtifactRole.RecordingPlan))
+          i <- Gen.oneOf(byRole(ArtifactRole.RecordingInput))
+        yield ManifestRelation.RecordingResultOf(r, p, i)
+      ) ++ byRole(ArtifactRole.TemporalPlan).map(p =>
+        Gen
+          .oneOf(byRole(ArtifactRole.TemporalInput))
+          .map(ManifestRelation.TemporalPlanInput(p, _))
+      ) ++ byRole(ArtifactRole.TemporalResult).map(r =>
+        for
+          p <- Gen.oneOf(byRole(ArtifactRole.TemporalPlan))
+          i <- Gen.oneOf(byRole(ArtifactRole.TemporalInput))
+        yield ManifestRelation.TemporalResultOf(r, p, i)
+      )
+    )
+    relations = planInputs ++ resultOf ++ optional.flatten ++ owned.flatten ++ archives
     entryOrder    <- Gen.listOfN(entries.size, Gen.long)
     relationOrder <- Gen.listOfN(relations.size, Gen.long)
   yield sure(

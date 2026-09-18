@@ -190,7 +190,12 @@ object DiagnosticSamples:
       StudyResultError.Policy(StudyDesign.Matched, "require-all", successful),
       StudyResultError.Phase(k1, "recall", "encode"),
       StudyResultError.Reconstruction(ReconstructionError.RowCount(2, 3)),
-      StudyResultError.Scale(0, StudyResultError.OrphanKey(k1))
+      StudyResultError.Scale(0, StudyResultError.OrphanKey(k1)),
+      StudyResultError.SpecificationTime(
+        StudyDesign.Control,
+        EvaluationTime.RelativeMicroseconds,
+        EvaluationTime.OrderFree
+      )
     ),
     family[TemporalStudyError]("TemporalStudyError")(
       TemporalStudyError.Input(PlanError.MissingArtifact(digest)),
@@ -234,6 +239,31 @@ object DiagnosticSamples:
       RecordingInputError.PlanDisagreement("source", "a", "b"),
       RecordingInputError.BinocularChannels(rec),
       RecordingInputError.Plan(RecordingPlanError.MissingViewing(rec))
+    ),
+    family[RecordingResultError]("RecordingResultError")(
+      RecordingResultError.Plan(RecordingPlanError.MissingViewing(rec)),
+      RecordingResultError.Stage("prepared", "samples[2].tMicros", "4000", "4001")
+    ),
+    family[TemporalResultError[StudyKey]]("TemporalResultError")(
+      TemporalResultError.CellCount(8, 7),
+      TemporalResultError.CellLayout(3, "recall-encode", "late", "retest-recall", "early"),
+      TemporalResultError.Repetition("recall-encode", TemporalStudyError.MissingEpoch(digest)),
+      TemporalResultError.Plan(
+        Vector(PlanChange("phases", Vector.empty, Vector(Provenance.Param.Text("recall"))))
+      ),
+      TemporalResultError.Result(StudyResultError.OrphanKey(k1)),
+      TemporalResultError.OccupancyKeys(Vector(k1, k2), Vector(k2)),
+      TemporalResultError.Boundary(
+        k1,
+        FixationBoundary.ClipDuration,
+        FixationBoundary.FullyContained
+      ),
+      TemporalResultError.Width(k1, BigInt(300000), BigInt(350000)),
+      TemporalResultError.Epoch(k1, Some(digest), None),
+      TemporalResultError.Anchor(k1, clk, BigInt(0), clk2, BigInt(10)),
+      TemporalResultError.Density(k1, Some(digest), digest2),
+      TemporalResultError.Failure(k1, StudyFailure.Estimation(k1, EstimateError.NoMass)),
+      TemporalResultError.Cell("recall-encode", "early", TemporalResultError.CellCount(2, 1))
     ),
     family[ReductionError[StudyKey]]("ReductionError")(
       ReductionError.NoSelectedScores(k1),
@@ -396,7 +426,10 @@ object DiagnosticSamples:
       WindowOccupancyError.Measure(surfaceError),
       WindowOccupancyError.InvalidWidth(span, BigInt(Long.MaxValue) * 2),
       WindowOccupancyError.EmptyCoverageInterval(clk, Vector(span)),
-      WindowOccupancyError.OverlappingCoverage(clk, Vector(span, span2))
+      WindowOccupancyError.OverlappingCoverage(clk, Vector(span, span2)),
+      WindowOccupancyError.ObservedTime(span, 7L, 4L),
+      WindowOccupancyError.Ledger(1, 2, BigInt(500), 700L, FixationBoundary.FullyContained),
+      WindowOccupancyError.MeasureSupport(3, 2)
     ),
     family[SyncEvidenceError]("SyncEvidenceError")(
       SyncEvidenceError.EmptyMarkId(" "),

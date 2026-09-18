@@ -19,6 +19,7 @@ package eyes4s.codec
 import cats.data.NonEmptyVector
 import cats.syntax.all.*
 import eyes4s.kernel.*
+import eyes4s.kernel.Unit2D.Px
 import eyes4s.plan.*
 import io.circe.Json
 
@@ -119,6 +120,12 @@ enum RelationMismatch derives CanEqual:
     */
   case Unavailable(endpoints: Vector[ArtifactName])
 
+  /** `RecordingInput.disagreements(input, plan)` refused the recording input. */
+  case RecordingPrerequisites(errors: Vector[RecordingInputError])
+
+  /** `plan.prerequisites(input)` refused the temporal input. */
+  case TemporalPrerequisites(errors: Vector[TemporalStudyError])
+
   def message: String = this match
     case Prerequisites(errors)        => errors.map(_.message).mkString(" ")
     case ResultInput(expected, found) =>
@@ -135,6 +142,8 @@ enum RelationMismatch derives CanEqual:
       s"The owner does not reference payload ${ref.sha256.hex}."
     case Unavailable(endpoints) =>
       s"No decoded value of the required role for ${endpoints.map(_.value).mkString(", ")}."
+    case RecordingPrerequisites(errors) => errors.map(_.message).mkString(" ")
+    case TemporalPrerequisites(errors)  => errors.map(_.message).mkString(" ")
 
 /** Why a manifest or one of its artifacts was refused. Every case names the
   * manifest address, the entry or the relation at fault; integrity cases are
@@ -210,9 +219,68 @@ enum ResolveError derives CanEqual:
       s"Artifact '${e.value}' declares identity $declared but reconstructs $reconstructed."
     case Relation(relation, mismatch) => s"Relation ${relation.render}: ${mismatch.message}"
 
+/** Evidence that the spatial unit `U` is display pixels, the only unit a
+  * [[RecordingPlan]] runs in. The trait is sealed and its one instance is for
+  * `Unit2D.Px`, where the conversion is the identity, so decoders that are
+  * generic in `U` check a recording plan against a recording input of their
+  * own unit without a cast. A manifest in any other unit cannot register
+  * recording plans.
+  */
+sealed trait PixelUnit[U <: Unit2D]:
+  def input(value: RecordingInput[U]): RecordingInput[Px]
+
+object PixelUnit:
+  given pixels: PixelUnit[Px] = new PixelUnit[Px]:
+    def input(value: RecordingInput[Px]): RecordingInput[Px] = value
+
+/** A decoded recording plan in a manifest of unit `U`: its detector
+  * parameters stay abstract, and its checks against a recording input go
+  * through the unit witness of its registration.
+  */
+trait LoadedRecordingPlan[U <: Unit2D] extends LoadedRecording:
+  def description: Vector[(String, Vector[Provenance.Param])] = plan.description
+
+  /** `RecordingInput.disagreements` of the plan on this input: empty when the
+    * plan may run on it without changing any provenance it records.
+    */
+  def disagreements(input: RecordingInput[U]): Vector[RecordingInputError]
+
+  /** Run the plan on the input's monocular channels once every disagreement
+    * is ruled out.
+    */
+  def run(input: RecordingInput[U]): Either[RecordingInputError, RecordingAnalysis[Parameters]]
+
+object LoadedRecordingPlan:
+  /** A decoded plan whose input checks go through the witness that `U` is
+    * display pixels.
+    */
+  def of[U <: Unit2D](
+      loaded: LoadedRecording
+  )(using pixels: PixelUnit[U]): LoadedRecordingPlan[U] =
+    new LoadedRecordingPlan[U]:
+      type Parameters = loaded.Parameters
+      val plan: RecordingPlan[loaded.Parameters]                               = loaded.plan
+      def encode: Either[CodecError, Json]                                     = loaded.encode
+      def disagreements(input: RecordingInput[U]): Vector[RecordingInputError] =
+        RecordingInput.disagreements(pixels.input(input), plan)
+      def run(
+          input: RecordingInput[U]
+      ): Either[RecordingInputError, RecordingAnalysis[loaded.Parameters]] =
+        val pixelInput = pixels.input(input)
+        for
+          _         <- RecordingInput.disagreements(pixelInput, plan).headOption.toLeft(())
+          recording <- pixelInput.monocular.toRight(
+            RecordingInputError.BinocularChannels(pixelInput.source)
+          )
+          analysis <- plan.run(recording).left.map(RecordingInputError.Plan.apply)
+        yield analysis
+
 /** The registered decoders a manifest is resolved through. Each receives a
   * parsed JSON document whose bytes, length and schema envelope were already
-  * verified; none of them reads storage.
+  * verified; none of them reads storage. Recording and temporal plans and
+  * results decode only through the registries added with [[withRecordings]]
+  * and [[withTemporal]]; without them such an entry is refused as an
+  * unsupported schema.
   */
 trait ArtifactDecoders[K, U <: Unit2D]:
   def plan(document: Json): Either[CodecError, LoadedStudy[K, U]]
@@ -235,7 +303,108 @@ trait ArtifactDecoders[K, U <: Unit2D]:
       base: ArtifactRef[StudyInput[K, U]] => Option[StudyInput[K, U]]
   ): Either[CodecError, TemporalStudyInput[K, U]]
 
+  /** A recording plan; refused, with no supported schema, unless registered
+    * through [[withRecordings]]. A decorator that wraps other decoders
+    * extends [[ArtifactDecoders.Delegating]], which forwards this and every
+    * other decoder, so wrapping never drops a registration.
+    */
+  def recordingPlan(document: Json): Either[CodecError, LoadedRecordingPlan[U]] =
+    ArtifactDecoders.unregistered("recording-plan", document)
+
+  /** A recording analysis; refused unless registered through [[withRecordings]]. */
+  def recordingResult(document: Json): Either[CodecError, LoadedRecordingResult] =
+    ArtifactDecoders.unregistered("recording-result", document)
+
+  /** A temporal study plan; refused unless registered through [[withTemporal]]. */
+  def temporalPlan(document: Json): Either[CodecError, LoadedTemporal[K, U]] =
+    ArtifactDecoders.unregistered("temporal-plan", document)
+
+  /** A temporal study result; refused unless registered through [[withTemporal]]. */
+  def temporalResult(document: Json): Either[CodecError, LoadedTemporalResult[K, U]] =
+    ArtifactDecoders.unregistered("temporal-result", document)
+
+  /** These decoders, with recording plans and results decoded through the
+    * given registries. `pixels` witnesses that this manifest's unit is the
+    * display pixels a recording plan runs in; the plans' checks against
+    * recording inputs go through it.
+    */
+  final def withRecordings(
+      plans: RecordingRegistry,
+      results: RecordingResultRegistry
+  )(using pixels: PixelUnit[U]): ArtifactDecoders[K, U] =
+    new ArtifactDecoders.Delegating[K, U](this):
+      override def recordingPlan(document: Json) =
+        ArtifactDecoders.admitted("recording-plan", document, plans.schemas)(
+          plans.decode(document).map(LoadedRecordingPlan.of[U](_))
+        )
+      override def recordingResult(document: Json) =
+        ArtifactDecoders.admitted("recording-result", document, results.schemas)(
+          results.decode(document)
+        )
+
+  /** These decoders, with temporal plans and results decoded through the
+    * given registries.
+    */
+  final def withTemporal(
+      plans: TemporalRegistry[K, U],
+      results: TemporalResultRegistry[K, U]
+  ): ArtifactDecoders[K, U] =
+    new ArtifactDecoders.Delegating[K, U](this):
+      override def temporalPlan(document: Json) =
+        ArtifactDecoders.admitted("temporal-plan", document, plans.schemas)(
+          plans.decode(document)
+        )
+      override def temporalResult(document: Json) =
+        ArtifactDecoders.admitted("temporal-result", document, results.schemas)(
+          results.decode(document)
+        )
+
 object ArtifactDecoders:
+  /** Every decoder of `base`, forwarded. Extend this to decorate decoders
+    * (count calls, add a registration, log): a subclass overrides the
+    * decoders it changes and forwards the rest, including those a later
+    * release adds, so a decorator never silently turns a registered decoder
+    * into a refusal.
+    */
+  open class Delegating[K, U <: Unit2D](base: ArtifactDecoders[K, U])
+      extends ArtifactDecoders[K, U]:
+    def plan(document: Json)   = base.plan(document)
+    def input(document: Json)  = base.input(document)
+    def ledger(document: Json) = base.ledger(document)
+    def result(document: Json) = base.result(document)
+    def recording(document: Json, payloads: PayloadRef => Option[VerifiedPayload]) =
+      base.recording(document, payloads)
+    def recordingInput(document: Json) = base.recordingInput(document)
+    def temporalInput(
+        document: Json,
+        study: ArtifactRef[StudyInput[K, U]] => Option[StudyInput[K, U]]
+    )                                            = base.temporalInput(document, study)
+    override def recordingPlan(document: Json)   = base.recordingPlan(document)
+    override def recordingResult(document: Json) = base.recordingResult(document)
+    override def temporalPlan(document: Json)    = base.temporalPlan(document)
+    override def temporalResult(document: Json)  = base.temporalResult(document)
+
+  /** Nothing is registered for the role: refuse the document's schema. */
+  private def unregistered[A](role: String, document: Json): Either[CodecError, A] =
+    Wire
+      .definition(document, "schema")
+      .flatMap(found => Left(CodecError.UnsupportedSchema(role, found, Vector.empty)))
+
+  /** Decode a document of a schema some registration declares; refuse
+    * another schema naming the registered ones. An empty registry decodes,
+    * so its refusal names the missing method (`MissingMethod`,
+    * `MissingResultCodec`).
+    */
+  private def admitted[A](role: String, document: Json, supported: Vector[DefinitionId])(
+      decode: => Either[CodecError, A]
+  ): Either[CodecError, A] =
+    Wire
+      .definition(document, "schema")
+      .flatMap(found =>
+        if supported.isEmpty || supported.contains(found) then decode
+        else Left(CodecError.UnsupportedSchema(role, found, supported))
+      )
+
   /** Decoders over explicit registries; recordings use the built-in
     * `recording@1`, `binocular-recording@1` and `packed-recording@1` codecs.
     */
@@ -317,7 +486,11 @@ final class ResolvedManifest[K, U <: Unit2D] private[codec] (
     val recordings: Vector[(ArtifactName, RecordingChannels[U])],
     val recordingInputs: Vector[(ArtifactName, RecordingInput[U])],
     val temporalInputs: Vector[(ArtifactName, TemporalStudyInput[K, U])],
-    val payloads: Vector[(ArtifactName, VerifiedPayload)]
+    val payloads: Vector[(ArtifactName, VerifiedPayload)],
+    val recordingPlans: Vector[(ArtifactName, LoadedRecordingPlan[U])],
+    val recordingResults: Vector[(ArtifactName, LoadedRecordingResult)],
+    val temporalPlans: Vector[(ArtifactName, LoadedTemporal[K, U])],
+    val temporalResults: Vector[(ArtifactName, LoadedTemporalResult[K, U])]
 ):
   def plan(name: ArtifactName): Option[LoadedStudy[K, U]]    = plans.collectFirst(at(name))
   def input(name: ArtifactName): Option[StudyInput[K, U]]    = inputs.collectFirst(at(name))
@@ -329,6 +502,14 @@ final class ResolvedManifest[K, U <: Unit2D] private[codec] (
     recordingInputs.collectFirst(at(name))
   def temporalInput(name: ArtifactName): Option[TemporalStudyInput[K, U]] =
     temporalInputs.collectFirst(at(name))
+  def recordingPlan(name: ArtifactName): Option[LoadedRecordingPlan[U]] =
+    recordingPlans.collectFirst(at(name))
+  def recordingResult(name: ArtifactName): Option[LoadedRecordingResult] =
+    recordingResults.collectFirst(at(name))
+  def temporalPlan(name: ArtifactName): Option[LoadedTemporal[K, U]] =
+    temporalPlans.collectFirst(at(name))
+  def temporalResult(name: ArtifactName): Option[LoadedTemporalResult[K, U]] =
+    temporalResults.collectFirst(at(name))
 
   private def at[A](name: ArtifactName): PartialFunction[(ArtifactName, A), A] = {
     case (n, value) if n == name => value
@@ -446,6 +627,10 @@ object ArtifactResolver:
     case Recorded(value: RecordingInput[U])
     case Temporal(value: TemporalStudyInput[K, U])
     case Payload(value: VerifiedPayload)
+    case RecordingPlan(value: LoadedRecordingPlan[U])
+    case RecordingResult(value: LoadedRecordingResult)
+    case TemporalPlan(value: LoadedTemporal[K, U])
+    case TemporalResult(value: LoadedTemporalResult[K, U])
 
   private def decode[K, U <: Unit2D](
       manifest: ScientificManifest,
@@ -573,6 +758,14 @@ object ArtifactResolver:
         )
       case ArtifactRole.Payload =>
         Left(ResolveError.Schema(entry.name, entry.schema, DefinitionId.packedArray))
+      case ArtifactRole.RecordingPlan =>
+        attempt(entry, decoders.recordingPlan(json)).map(Decoded.RecordingPlan(_))
+      case ArtifactRole.RecordingResult =>
+        attempt(entry, decoders.recordingResult(json)).map(Decoded.RecordingResult(_))
+      case ArtifactRole.TemporalPlan =>
+        attempt(entry, decoders.temporalPlan(json)).map(Decoded.TemporalPlan(_))
+      case ArtifactRole.TemporalResult =>
+        attempt(entry, decoders.temporalResult(json)).map(Decoded.TemporalResult(_))
 
   private def relations[K, U <: Unit2D](
       manifest: ScientificManifest,
@@ -645,6 +838,62 @@ object ArtifactResolver:
             ) =>
           if references.contains(payload.ref) then None
           else fail(RelationMismatch.UnreferencedPayload(payload.ref))
+        case (
+              ManifestRelation.RecordingPlanInput(_, _),
+              Vector(Some(Decoded.RecordingPlan(plan)), Some(Decoded.Recorded(input)))
+            ) =>
+          val refused = plan.disagreements(input)
+          if refused.isEmpty then None
+          else fail(RelationMismatch.RecordingPrerequisites(refused))
+        case (
+              ManifestRelation.RecordingResultOf(_, _, _),
+              Vector(
+                Some(Decoded.RecordingResult(result)),
+                Some(Decoded.RecordingPlan(plan)),
+                Some(Decoded.Recorded(input))
+              )
+            ) =>
+          // The result references the input's channels only, which do not
+          // cover its source, viewing geometry or marks: the plan it ran must
+          // also agree with this input's evidence.
+          val channels     = input.channels.contentHash.render
+          lazy val refused = plan.disagreements(input)
+          if result.analysis.input.digest != channels then
+            fail(RelationMismatch.ResultInput(channels, result.analysis.input.digest))
+          else if result.analysis.description != plan.plan.description then
+            fail(
+              RelationMismatch.Description(
+                PlanChange.between(plan.plan.description, result.analysis.description)
+              )
+            )
+          else if refused.nonEmpty then fail(RelationMismatch.RecordingPrerequisites(refused))
+          else None
+        case (
+              ManifestRelation.TemporalPlanInput(_, _),
+              Vector(Some(Decoded.TemporalPlan(plan)), Some(Decoded.Temporal(input)))
+            ) =>
+          val refused = plan.prerequisites(Some(input))
+          if refused.isEmpty then None
+          else fail(RelationMismatch.TemporalPrerequisites(refused))
+        case (
+              ManifestRelation.TemporalResultOf(_, _, _),
+              Vector(
+                Some(Decoded.TemporalResult(result)),
+                Some(Decoded.TemporalPlan(plan)),
+                Some(Decoded.Temporal(input))
+              )
+            ) =>
+          if result.result.input != input.reference then
+            fail(
+              RelationMismatch.ResultInput(input.reference.digest, result.result.input.digest)
+            )
+          else if result.result.description != plan.description then
+            fail(
+              RelationMismatch.Description(
+                PlanChange.between(plan.description, result.result.description)
+              )
+            )
+          else None
         case _ =>
           // Unreachable after a successful decoding phase over a well-formed
           // manifest; refused rather than skipped should it ever be reached.
@@ -666,5 +915,9 @@ object ArtifactResolver:
       ordered.collect { case (n, Decoded.Channels(v, _)) => n -> v },
       ordered.collect { case (n, Decoded.Recorded(v)) => n -> v },
       ordered.collect { case (n, Decoded.Temporal(v)) => n -> v },
-      ordered.collect { case (n, Decoded.Payload(v)) => n -> v }
+      ordered.collect { case (n, Decoded.Payload(v)) => n -> v },
+      ordered.collect { case (n, Decoded.RecordingPlan(v)) => n -> v },
+      ordered.collect { case (n, Decoded.RecordingResult(v)) => n -> v },
+      ordered.collect { case (n, Decoded.TemporalPlan(v)) => n -> v },
+      ordered.collect { case (n, Decoded.TemporalResult(v)) => n -> v }
     )

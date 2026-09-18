@@ -248,10 +248,16 @@ final class RecordingPlanCodec[P](
         .map(e => CodecError.Field("recordingPlan", json, e.message))
     yield plan
   }
+
+  /** The result archive for this recording plan family. */
+  def results: RecordingResultCodec[P] =
+    new RecordingResultCodec(DefinitionId.recordingResult, this)
+
   def registration: RecordingRegistration =
     val registered = this
     new RecordingRegistration:
       val methodId: DefinitionId                                  = registered.method.id
+      override def schema: Option[DefinitionId]                   = Some(registered.schema)
       def decode(json: Json): Either[CodecError, LoadedRecording] =
         registered.codec.decode(json).map { value =>
           new LoadedRecording:
@@ -267,11 +273,18 @@ trait LoadedRecording:
 trait RecordingRegistration:
   val methodId: DefinitionId
   def decode(json: Json): Either[CodecError, LoadedRecording]
+
+  /** The envelope schema this registration decodes, when it declares one. */
+  def schema: Option[DefinitionId] = None
 final class RecordingRegistry private (definitions: Vector[RecordingRegistration]):
   def register(definition: RecordingRegistration): Either[CodecError, RecordingRegistry] =
     if definitions.exists(_.methodId == definition.methodId) then
       Left(CodecError.DuplicateMethod(definition.methodId))
     else Right(new RecordingRegistry(definitions :+ definition))
+
+  /** The envelope schemas the registrations declare. */
+  def schemas: Vector[DefinitionId] = definitions.flatMap(_.schema).distinct
+
   def decode(json: Json): Either[CodecError, LoadedRecording] = for
     value      <- Wire.field[Json](json, "value")
     id         <- Wire.definition(value, "method")

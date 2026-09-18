@@ -154,7 +154,13 @@ final class TemporalCursor[K, U <: Unit2D, P, S, D] private[plan] (
               TemporalWork
                 .enter(work, budget, repetition + 1, 0, cells)
                 .map(next => WorkStep.More(finished, units, next))
-            else Right(WorkStep.Done(units, new TemporalStudyResult(work.description, cells)))
+            else
+              Right(
+                WorkStep.Done(
+                  units,
+                  new TemporalStudyResult(work.plan, cells)
+                )
+              )
         }
 
   private def current: PreparedRepetition[K, U, P, S, D] = work.repetitions(repetition)
@@ -171,7 +177,7 @@ object TemporalWork:
   ): Either[TemporalStudyError, TemporalStudyResult[K, U, P, S, D]] =
     Stepwise.complete(cursor, quanta)
 
-  private[plan] def prepare[K, U <: Unit2D: UnitLabel, P, S, D](
+  private[plan] def prepare[K, U <: Unit2D, P, S, D](
       plan: TemporalStudyPlan[K, U, P, S, D],
       available: TemporalStudyInput[K, U],
       budget: PairScheduleBudget
@@ -182,21 +188,7 @@ object TemporalWork:
         plan.repetitions
           .traverse { repetition =>
             for
-              study <- StudyPlan
-                .of(
-                  plan.base.input,
-                  plan.base.layout,
-                  plan.base.grid,
-                  repetition.focalPhase,
-                  repetition.referencePhase,
-                  Weight.Duration,
-                  plan.base.estimates,
-                  plan.base.policy,
-                  plan.base.method,
-                  plan.base.parameters
-                )
-                .left
-                .map(TemporalStudyError.Input.apply)
+              study    <- plan.repetitionPlan(repetition)
               prepared <- study
                 .prepare(available.study, budget)
                 .left
@@ -272,15 +264,7 @@ object TemporalWork:
       occupancy: Vector[(K, Either[TemporalStudyError, WindowOccupancy[U]])]
   ): Either[TemporalStudyError, StudyCursor[K, U, S, D]] =
     val byKey   = occupancy.toMap
-    val studied = work.windows(window)
-    val context = Vector(
-      "temporal.input"       -> Provenance.Param.Text(work.inputReference.digest),
-      "temporal.window"      -> Provenance.Param.Text(studied.name),
-      "temporal.fromMicros"  -> Provenance.Param.Text(studied.window.from.toMicros.toString),
-      "temporal.untilMicros" -> Provenance.Param.Text(studied.window.until.toMicros.toString),
-      "temporal.boundary"    -> Provenance.Param.Text(work.boundary.toString),
-      "temporal.repetition"  -> Provenance.Param.Text(repetition.contrast.name)
-    )
+    val context = work.plan.provenanceContext(repetition.contrast, work.windows(window))
     repetition.prepared
       .work(
         budget,

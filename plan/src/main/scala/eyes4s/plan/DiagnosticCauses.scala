@@ -321,11 +321,22 @@ private[plan] object CauseDiagnostics:
     import WindowOccupancyError.*
     val d = diagnostic[Nothing](C.windowOccupancy, e, e.message)
     e match
-      case Time(underlying)                  => d(cause(time(underlying)))
-      case Measure(underlying)               => d(cause(surface(underlying)))
-      case InvalidWidth(value, micros)       => d(interval(value), Operand.Integer(micros))
-      case EmptyCoverageInterval(id, values) => d(clock(id), intervals(values))
-      case OverlappingCoverage(id, values)   => d(clock(id), intervals(values))
+      case Time(underlying)                       => d(cause(time(underlying)))
+      case Measure(underlying)                    => d(cause(surface(underlying)))
+      case InvalidWidth(value, micros)            => d(interval(value), Operand.Integer(micros))
+      case EmptyCoverageInterval(id, values)      => d(clock(id), intervals(values))
+      case OverlappingCoverage(id, values)        => d(clock(id), intervals(values))
+      case ObservedTime(value, observed, missing) =>
+        d(interval(value), Operand.Micros(observed), Operand.Micros(missing))
+      case Ledger(position, index, original, retained, boundary) =>
+        d(
+          int(position),
+          int(index),
+          Operand.Integer(original),
+          Operand.Micros(retained),
+          token(boundary.toString)
+        )
+      case MeasureSupport(retained, positions) => d(int(retained), int(positions))
 
   def syncEvidence(e: SyncEvidenceError): Diagnostic[Nothing] =
     import SyncEvidenceError.*

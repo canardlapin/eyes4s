@@ -66,6 +66,11 @@ enum CodecError derives CanEqual:
   case Manifest(underlying: ManifestError)
   case Text(offset: Int, reason: String)
   case UnsupportedSchema(role: String, found: DefinitionId, supported: Vector[DefinitionId])
+  // Recording and temporal result archives.
+  /** An archived member the archive's own evidence re-derives differs. */
+  case Derived(path: String, declared: Json, derived: Json)
+  case RecordingResult(underlying: RecordingResultError)
+  case TemporalResult(underlying: TemporalResultError[?])
 
   def message: String = this match
     case InvalidJson(_, reason)     => s"Invalid project JSON: $reason"
@@ -116,8 +121,16 @@ enum CodecError derives CanEqual:
     case Manifest(e)          => e.message
     case Text(offset, reason) => s"Artifact text is not strict UTF-8 at offset $offset: $reason"
     case UnsupportedSchema(role, found, supported) =>
-      s"No $role decoder for schema ${found.name}@${found.version}; supported: " +
-        supported.map(id => s"${id.name}@${id.version}").mkString(", ") + "."
+      if supported.isEmpty then
+        s"No $role decoder is registered, so schema ${found.name}@${found.version} is refused."
+      else
+        s"No $role decoder for schema ${found.name}@${found.version}; supported: " +
+          supported.map(id => s"${id.name}@${id.version}").mkString(", ") + "."
+    case Derived(path, declared, derived) =>
+      s"Archived $path is ${declared.noSpaces}, but the archive's own evidence derives " +
+        s"${derived.noSpaces}."
+    case RecordingResult(e) => e.message
+    case TemporalResult(e)  => e.message
 
 /** A typed, explicitly versioned codec. Unsupported old versions fail precisely.
   * The wire envelope separates schema identity from any method identity in its payload.

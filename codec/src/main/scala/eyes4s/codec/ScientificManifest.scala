@@ -63,6 +63,15 @@ enum ArtifactRole(val wire: String, val media: MediaKind, val identityBearing: B
   case TemporalInput  extends ArtifactRole("temporal-study-input", MediaKind.JsonText, true)
   case Payload        extends ArtifactRole("payload", MediaKind.Binary, false)
 
+  /** A recording plan, a completed recording analysis, a temporal study plan
+    * and a completed temporal study; none carries a semantic identity of its
+    * own, since plans and results reference their inputs.
+    */
+  case RecordingPlan   extends ArtifactRole("recording-plan", MediaKind.JsonText, false)
+  case RecordingResult extends ArtifactRole("recording-result", MediaKind.JsonText, false)
+  case TemporalPlan    extends ArtifactRole("temporal-plan", MediaKind.JsonText, false)
+  case TemporalResult  extends ArtifactRole("temporal-result", MediaKind.JsonText, false)
+
 /** One stored artifact: its role, the schema of its content, its media kind,
   * the exact byte length and SHA-256 of its bytes, the semantic identity for
   * identity-bearing roles and the layout of a payload.
@@ -151,13 +160,38 @@ enum ManifestRelation derives CanEqual:
   /** A packed recording references the payload. At least one per payload. */
   case PayloadOf(owner: ArtifactName, payload: ArtifactName)
 
+  /** The recording plan runs on the recording input: its declared
+    * provenance is the input's evidence and its prerequisites hold on the
+    * input's channels. Exactly one per recording plan.
+    */
+  case RecordingPlanInput(plan: ArtifactName, input: ArtifactName)
+
+  /** The recording analysis was produced by the plan on the input's
+    * channels. Exactly one per recording result.
+    */
+  case RecordingResultOf(result: ArtifactName, plan: ArtifactName, input: ArtifactName)
+
+  /** The temporal plan's prerequisites hold on the temporal input. Exactly
+    * one per temporal plan.
+    */
+  case TemporalPlanInput(plan: ArtifactName, input: ArtifactName)
+
+  /** The temporal result was produced by the plan on the temporal input.
+    * Exactly one per temporal result.
+    */
+  case TemporalResultOf(result: ArtifactName, plan: ArtifactName, input: ArtifactName)
+
   def kind: String = this match
-    case PlanInput(_, _)    => "plan-input"
-    case ResultOf(_, _, _)  => "result-of"
-    case LedgerOf(_, _)     => "ledger-of"
-    case TemporalBase(_, _) => "temporal-base"
-    case RecordingOf(_, _)  => "recording-of"
-    case PayloadOf(_, _)    => "payload-of"
+    case PlanInput(_, _)            => "plan-input"
+    case ResultOf(_, _, _)          => "result-of"
+    case LedgerOf(_, _)             => "ledger-of"
+    case TemporalBase(_, _)         => "temporal-base"
+    case RecordingOf(_, _)          => "recording-of"
+    case PayloadOf(_, _)            => "payload-of"
+    case RecordingPlanInput(_, _)   => "recording-plan-input"
+    case RecordingResultOf(_, _, _) => "recording-result-of"
+    case TemporalPlanInput(_, _)    => "temporal-plan-input"
+    case TemporalResultOf(_, _, _)  => "temporal-result-of"
 
   /** Every endpoint as its wire field, entry name and required role; the
     * relation's source entry first.
@@ -191,14 +225,40 @@ enum ManifestRelation derives CanEqual:
         ("owner", owner, ArtifactRole.Recording),
         ("payload", payload, ArtifactRole.Payload)
       )
+    case RecordingPlanInput(plan, input) =>
+      Vector(
+        ("plan", plan, ArtifactRole.RecordingPlan),
+        ("input", input, ArtifactRole.RecordingInput)
+      )
+    case RecordingResultOf(result, plan, input) =>
+      Vector(
+        ("result", result, ArtifactRole.RecordingResult),
+        ("plan", plan, ArtifactRole.RecordingPlan),
+        ("input", input, ArtifactRole.RecordingInput)
+      )
+    case TemporalPlanInput(plan, input) =>
+      Vector(
+        ("plan", plan, ArtifactRole.TemporalPlan),
+        ("input", input, ArtifactRole.TemporalInput)
+      )
+    case TemporalResultOf(result, plan, input) =>
+      Vector(
+        ("result", result, ArtifactRole.TemporalResult),
+        ("plan", plan, ArtifactRole.TemporalPlan),
+        ("input", input, ArtifactRole.TemporalInput)
+      )
 
   def source: ArtifactName = this match
-    case PlanInput(plan, _)        => plan
-    case ResultOf(result, _, _)    => result
-    case LedgerOf(ledger, _)       => ledger
-    case TemporalBase(temporal, _) => temporal
-    case RecordingOf(input, _)     => input
-    case PayloadOf(owner, _)       => owner
+    case PlanInput(plan, _)              => plan
+    case ResultOf(result, _, _)          => result
+    case LedgerOf(ledger, _)             => ledger
+    case TemporalBase(temporal, _)       => temporal
+    case RecordingOf(input, _)           => input
+    case PayloadOf(owner, _)             => owner
+    case RecordingPlanInput(plan, _)     => plan
+    case RecordingResultOf(result, _, _) => result
+    case TemporalPlanInput(plan, _)      => plan
+    case TemporalResultOf(result, _, _)  => result
 
   def render: String =
     endpoints
@@ -284,9 +344,9 @@ object ScientificManifest:
   /** Structural checks only; semantic relations are checked on resolution.
     * Names are unique; relations name existing entries of the required roles;
     * a payload owner is a packed recording; no relation repeats; every plan
-    * and result has exactly one relation of its kind, every ledger, temporal
-    * input and recording input at most one, and every payload at least one
-    * owner.
+    * and result (study, recording or temporal) has exactly one relation of
+    * its kind, every ledger, temporal input and recording input at most one,
+    * and every payload at least one owner.
     */
   def of(
       entries: Vector[ManifestEntry],
@@ -342,6 +402,18 @@ object ScientificManifest:
       .orElse(multiplicity(ArtifactRole.TemporalInput, "temporal-base", _ <= 1, "at most one"))
       .orElse(multiplicity(ArtifactRole.RecordingInput, "recording-of", _ <= 1, "at most one"))
       .orElse(multiplicity(ArtifactRole.Payload, "payload-of", _ >= 1, "at least one"))
+      .orElse(
+        multiplicity(ArtifactRole.RecordingPlan, "recording-plan-input", _ == 1, "exactly one")
+      )
+      .orElse(
+        multiplicity(ArtifactRole.RecordingResult, "recording-result-of", _ == 1, "exactly one")
+      )
+      .orElse(
+        multiplicity(ArtifactRole.TemporalPlan, "temporal-plan-input", _ == 1, "exactly one")
+      )
+      .orElse(
+        multiplicity(ArtifactRole.TemporalResult, "temporal-result-of", _ == 1, "exactly one")
+      )
     duplicateName
       .orElse(endpointErrors)
       .orElse(duplicateRelation)
@@ -437,6 +509,18 @@ object ScientificManifest:
         (name(json, "input"), name(json, "recording")).mapN(ManifestRelation.RecordingOf.apply)
       case "payload-of" =>
         (name(json, "owner"), name(json, "payload")).mapN(ManifestRelation.PayloadOf.apply)
+      case "recording-plan-input" =>
+        (name(json, "plan"), name(json, "input")).mapN(
+          ManifestRelation.RecordingPlanInput.apply
+        )
+      case "recording-result-of" =>
+        (name(json, "result"), name(json, "plan"), name(json, "input"))
+          .mapN(ManifestRelation.RecordingResultOf.apply)
+      case "temporal-plan-input" =>
+        (name(json, "plan"), name(json, "input")).mapN(ManifestRelation.TemporalPlanInput.apply)
+      case "temporal-result-of" =>
+        (name(json, "result"), name(json, "plan"), name(json, "input"))
+          .mapN(ManifestRelation.TemporalResultOf.apply)
       case other => Left(CodecError.Field("kind", json, s"unknown relation kind '$other'"))
     }
 
@@ -601,6 +685,42 @@ object StoredArtifact:
     persistence.input
       .encode(value)
       .flatMap(document(name, ArtifactRole.TemporalInput, _, Some(value.hash)))
+
+  def recordingPlan[P](
+      name: String,
+      persistence: RecordingPlanCodec[P],
+      value: eyes4s.plan.RecordingPlan[P]
+  ): Either[CodecError, StoredArtifact] =
+    persistence.codec
+      .encode(value)
+      .flatMap(document(name, ArtifactRole.RecordingPlan, _, None))
+
+  def recordingResult[P](
+      name: String,
+      persistence: RecordingResultCodec[P],
+      value: RecordingAnalysis[P]
+  ): Either[CodecError, StoredArtifact] =
+    persistence.codec
+      .encode(value)
+      .flatMap(document(name, ArtifactRole.RecordingResult, _, None))
+
+  def temporalPlan[K, U <: Unit2D, P, S, D](
+      name: String,
+      persistence: TemporalStudyCodec[K, U, P, S, D],
+      value: TemporalStudyPlan[K, U, P, S, D]
+  ): Either[CodecError, StoredArtifact] =
+    persistence.codec
+      .encode(value)
+      .flatMap(document(name, ArtifactRole.TemporalPlan, _, None))
+
+  def temporalResult[K, U <: Unit2D, P, S, D](
+      name: String,
+      persistence: TemporalResultCodec[K, U, P, S, D],
+      value: TemporalStudyResult[K, U, P, S, D]
+  ): Either[CodecError, StoredArtifact] =
+    persistence.codec
+      .encode(value)
+      .flatMap(document(name, ArtifactRole.TemporalResult, _, None))
 
   /** A packed recording and its four payloads, named `name.tMicros`,
     * `name.support`, `name.lineage` and `name.values`.

@@ -46,19 +46,17 @@ import java.nio.file.{Files, Path, Paths}
   *     verified input, and compares the result with the archive: the
   *     re-encoded result must have the archived entry's exact SHA-256, and
   *     the fingerprints (every double's raw bits) of the re-executed result,
-  *     the decoded archive and the writer's in-memory result must agree.
+  *     the result of the plan as registered, the decoded archive and the
+  *     writer's in-memory result must agree.
   *
-  * Both run from the build's class directories: the library, this test code
-  * and the pinned fixtures are on their classpath. The reader shares no
-  * memory, registry or cache with the writer and reads none of the pinned
-  * fixtures, only the saved files; running from published artifacts is the
-  * isolated consumer's job (G0/G1).
-  *
-  * Recording and temporal plans have no manifest role yet, so their plans
-  * travel beside the manifest in `plan.json` and are checked against the
-  * verified inputs by the plans' own prerequisites; their results have no
-  * archive codec, so the writer's fingerprint is the archive they are
-  * compared with.
+  * Every study is a manifest of its plan, its input and its result archive:
+  * the fixation study's `study-result@1`, the recording study's
+  * `recording-result@1` and the temporal study's `temporal-result@1`, each
+  * related to its plan and input. Both run from the build's class
+  * directories: the library, this test code and the pinned fixtures are on
+  * their classpath. The reader shares no memory, registry or cache with the
+  * writer and reads none of the pinned fixtures, only the saved files;
+  * running from published artifacts is the isolated consumer's job (G0/G1).
   *
   * Each run prints one line, `EYES4S_FRESH_PROCESS=<receipt>`, and exits 0
   * only if every study was written, or reconstructed and matched.
@@ -67,7 +65,6 @@ object FreshProcessHarness:
   val marker        = "EYES4S_FRESH_PROCESS="
   val manifestFile  = "manifest.json"
   val addressFile   = "manifest.sha256"
-  val planFile      = "plan.json"
   val expectedFile  = "expected-fingerprint.json"
   val studies       = Vector("fixation", "recording", "temporal")
   val refusalStatus = 3
@@ -76,16 +73,21 @@ object FreshProcessHarness:
     DefinitionId.of(name, 1).left.map(_.message)
 
   /** The conventional schemas of the two plan families without a built-in identity. */
-  private def recordingCodec: Either[String, RecordingPlanCodec[IvtParameters]] =
+  private def recordingCodec: Either[String, RecordingPlanCodec[IdtParameters]] =
     (
       definition("eyes4s.recording-plan"),
-      definition("eyes4s.recording.ivt"),
-      definition("eyes4s.ivt-parameters")
-    ).mapN(RecordingCodecs.ivt)
+      definition("eyes4s.recording.idt"),
+      definition("eyes4s.idt-parameters")
+    ).mapN(RecordingCodecs.idt)
 
   private def temporalCodec
       : Either[String, TemporalStudyCodec[StudyKey, Px, Unit, Similarity, SignedDifference]] =
     definition("eyes4s.temporal-study").map(new TemporalStudyCodec(_, StudyCodecs.cosine[Px]))
+
+  private def temporalResults(
+      codec: TemporalStudyCodec[StudyKey, Px, Unit, Similarity, SignedDifference]
+  ): TemporalResultCodec[StudyKey, Px, Unit, Similarity, SignedDifference] =
+    codec.results(StudyResultCodecs.similarity(), StudyResultCodecs.signedDifference())
 
   private def message[E](e: E): String = e match
     case c: CodecError => c.message
@@ -112,11 +114,7 @@ object FreshProcessHarness:
   // Writing
   // ---------------------------------------------------------------------------
 
-  private final case class Saved(
-      saved: SavedManifest,
-      expected: ScientificFingerprint.Rendered,
-      plan: Option[Json]
-  )
+  private final case class Saved(saved: SavedManifest, expected: ScientificFingerprint.Rendered)
 
   private def fixation: Either[String, Saved] =
     val studies = StudyCodecs.cosine[Px]
@@ -147,13 +145,16 @@ object FreshProcessHarness:
           )
         )
       yield s).left.map(message)
-    yield Saved(saved, ScientificFingerprint.of(result), None)
+    yield Saved(saved, ScientificFingerprint.of(result))
 
-  /** An I-VT plan whose declared provenance is exactly the input's evidence. */
+  /** The pinned recording-result-v1 plan: I-DT over one degree square, two
+    * milliseconds minimum and a 6 ms interpolation gap, whose declared
+    * provenance is exactly the input's evidence.
+    */
   private def recordingPlan(
       input: RecordingInput[Px],
-      codec: RecordingPlanCodec[IvtParameters]
-  ): Either[String, (Recording[Px], RecordingPlan[IvtParameters])] =
+      codec: RecordingPlanCodec[IdtParameters]
+  ): Either[String, (Recording[Px], RecordingPlan[IdtParameters])] =
     for
       recording <- input.monocular.toRight("the pinned recording input is not monocular")
       sync      <- input.synchronization.toRight("the pinned recording input has no marks")
@@ -162,12 +163,9 @@ object FreshProcessHarness:
         .left
         .map(_.message)
         .flatMap(b => RecordingArea.of("image", "Image", b).left.map(_.message))
-      threshold <- Velocity
-        .perSecond[Deg](30)
-        .left
-        .map(_.message)
-        .flatMap(v => IvtThreshold.of(v).left.map(_.message))
+      extent  <- Extent.of[Deg](1, 1).left.map(_.message)
       minimum <- MinimumEventDuration.of(Span.micros(2000)).left.map(_.message)
+      gap     <- InterpolationGap.of(Span.micros(6000)).left.map(_.message)
       plan    <- RecordingPlan
         .of(
           ArtifactRef.of[Recording[Px]](recording.contentHash),
@@ -180,10 +178,10 @@ object FreshProcessHarness:
           sync.mode,
           sync.marks,
           sync.residualLimit,
-          InterpolationGap.none,
+          gap,
           Vector(area),
           codec.method,
-          IvtParameters(threshold, minimum)
+          IdtParameters(extent, minimum)
         )
         .left
         .map(_.message)
@@ -202,16 +200,20 @@ object FreshProcessHarness:
       )
       built    <- recordingPlan(input, codec)
       analysis <- built._2.run(built._1).left.map(_.message)
-      document <- codec.codec.encode(built._2).left.map(message)
       saved    <- (for
         i <- StoredArtifact.recordingInput("recording-input", input)
         r <- StoredArtifact.packedRecording("recording", built._1)
+        p <- StoredArtifact.recordingPlan("recording-plan", codec, built._2)
+        a <- StoredArtifact.recordingResult("recording-result", codec.results, analysis)
         s <- SavedManifest.of(
-          Vector(i, r.recording) ++ r.payloads,
-          ManifestRelation.RecordingOf(i.name, r.recording.name) +: r.relations
+          Vector(i, r.recording) ++ r.payloads ++ Vector(p, a),
+          (ManifestRelation.RecordingOf(i.name, r.recording.name) +: r.relations) ++ Vector(
+            ManifestRelation.RecordingPlanInput(p.name, i.name),
+            ManifestRelation.RecordingResultOf(a.name, p.name, i.name)
+          )
         )
       yield s).left.map(message)
-    yield Saved(saved, ScientificFingerprint.of(analysis), Some(document))
+    yield Saved(saved, ScientificFingerprint.of(analysis))
 
   private def temporal: Either[String, Saved] =
     val inputs = StudyInputCodecs.study[Px]
@@ -220,22 +222,27 @@ object FreshProcessHarness:
       input <- text("temporal-study-input-v1.json").flatMap(
         TemporalInputCodecs.study[Px]().input.parse(_).left.map(message)
       )
-      plan     <- text("temporal-study-v1.json").flatMap(codec.codec.parse(_).left.map(message))
-      result   <- plan.run(input).left.map(_.message)
-      document <- codec.codec.encode(plan).left.map(message)
-      saved    <- (for
+      plan   <- text("temporal-study-v1.json").flatMap(codec.codec.parse(_).left.map(message))
+      result <- plan.run(input).left.map(_.message)
+      saved  <- (for
         b <- StoredArtifact.input("base", inputs, input.study)
         t <- StoredArtifact.temporalInput(
           "temporal",
           TemporalInputCodecs.study[Px](StudyEmbedding.ByReference),
           input
         )
+        p <- StoredArtifact.temporalPlan("temporal-plan", codec, plan)
+        a <- StoredArtifact.temporalResult("temporal-result", temporalResults(codec), result)
         s <- SavedManifest.of(
-          Vector(b, t),
-          Vector(ManifestRelation.TemporalBase(t.name, b.name))
+          Vector(b, t, p, a),
+          Vector(
+            ManifestRelation.TemporalBase(t.name, b.name),
+            ManifestRelation.TemporalPlanInput(p.name, t.name),
+            ManifestRelation.TemporalResultOf(a.name, p.name, t.name)
+          )
         )
       yield s).left.map(message)
-    yield Saved(saved, ScientificFingerprint.of(result), Some(document))
+    yield Saved(saved, ScientificFingerprint.of(result))
 
   private def store(directory: Path, study: Saved): Json =
     Files.createDirectories(directory)
@@ -246,7 +253,6 @@ object FreshProcessHarness:
     study.saved.artifacts.foreach(a =>
       put(a.name.value, Array.tabulate(a.bytes.length)(a.bytes(_)))
     )
-    study.plan.foreach(plan => put(planFile, plan.spaces2.getBytes("UTF-8")))
     val expected = Json.obj(
       "doubles"     -> Json.fromInt(study.expected.doubles),
       "fingerprint" -> study.expected.json
@@ -286,22 +292,42 @@ object FreshProcessHarness:
   // Reading in a fresh process
   // ---------------------------------------------------------------------------
 
-  /** Registrations made explicitly on load; `withoutResultCodec` leaves the
-    * cosine result codec unregistered, as a reader that forgot it would.
+  /** Registrations made explicitly on load: the cosine study, the I-DT
+    * recording and the cosine temporal plan families, with their result
+    * codecs unless `withoutResultCodec`, as a reader that forgot them would.
+    * Recording plans register through the pixel unit witness.
     */
   private def decoders(
       withoutResultCodec: Boolean
   ): Either[String, ArtifactDecoders[StudyKey, Px]] =
+    def registered[R](empty: R)(register: => Either[CodecError, R]): Either[CodecError, R] =
+      if withoutResultCodec then Right(empty) else register
     (for
+      recordings <- recordingCodec.left.map(reason =>
+        CodecError.Unsupported("recording", reason)
+      )
+      temporals <- temporalCodec.left.map(reason => CodecError.Unsupported("temporal", reason))
       plans   <- StudyRegistry.empty[StudyKey, Px].register(StudyCodecs.cosine[Px].registration)
       inputs  <- StudyInputRegistry.empty[StudyKey, Px].register(StudyInputCodecs.study[Px])
-      results <-
-        if withoutResultCodec then Right(StudyResultRegistry.empty[StudyKey, Px])
-        else
-          StudyResultRegistry
-            .empty[StudyKey, Px]
-            .register(StudyResultCodecs.cosine[Px].registration)
-    yield ArtifactDecoders.of(plans, inputs, results)).left.map(message)
+      results <- registered(StudyResultRegistry.empty[StudyKey, Px])(
+        StudyResultRegistry
+          .empty[StudyKey, Px]
+          .register(StudyResultCodecs.cosine[Px].registration)
+      )
+      recordingPlans   <- RecordingRegistry.empty.register(recordings.registration)
+      recordingResults <- registered(RecordingResultRegistry.empty)(
+        RecordingResultRegistry.empty.register(recordings.results.registration)
+      )
+      temporalPlans   <- TemporalRegistry.empty[StudyKey, Px].register(temporals.registration)
+      temporalArchive <- registered(TemporalResultRegistry.empty[StudyKey, Px])(
+        TemporalResultRegistry
+          .empty[StudyKey, Px]
+          .register(temporalResults(temporals).registration)
+      )
+    yield ArtifactDecoders
+      .of(plans, inputs, results)
+      .withRecordings(recordingPlans, recordingResults)
+      .withTemporal(temporalPlans, temporalArchive)).left.map(message)
 
   /** A codec error's innermost cause and the entry path that locates it. */
   private def leaf(
@@ -463,46 +489,103 @@ object FreshProcessHarness:
       )
     )
 
+  /** The re-executed result against the archived entry: its canonical
+    * encoding (the UTF-8 of the pretty-printed document) must have the
+    * archived entry's exact length and SHA-256.
+    */
+  private def matchesArchive(
+      entry: ManifestEntry,
+      encoded: Either[CodecError, Json]
+  ): Either[Failure, ByteDigest] =
+    encoded.left.map(message).failing.flatMap { json =>
+      val bytes  = json.spaces2.getBytes("UTF-8")
+      val digest = ByteDigest.sha256(IArray.unsafeFromArray(bytes))
+      Either.cond(
+        digest == entry.sha256 && bytes.length.toLong == entry.length,
+        digest,
+        Failure(
+          s"the re-executed result encodes to ${digest.hex} (${bytes.length} bytes), " +
+            s"not the archived ${entry.sha256.hex} (${entry.length} bytes)"
+        )
+      )
+    }
+
+  private def archived(entry: ManifestEntry, digest: ByteDigest): Json = Json.obj(
+    "archiveSha256" -> Json.fromString(entry.sha256.hex),
+    "rerunSha256"   -> Json.fromString(digest.hex)
+  )
+
   private def rerunRecording(
       directory: Path,
       resolved: ResolvedManifest[StudyKey, Px]
   ): Either[Failure, Json] =
     for
-      codec    <- recordingCodec.failing
-      registry <- RecordingRegistry.empty.register(codec.registration).left.map(message).failing
-      inputName <- name("recording-input").failing
-      recName   <- name("recording").failing
-      input     <- resolved.recordingInput(inputName).toRight(Failure("no recording input"))
-      recording <- resolved.recording(recName).toRight(Failure("no recording")).flatMap {
-        case RecordingChannels.Monocular(r) => Right(r)
-        case RecordingChannels.Binocular(_) => Left(Failure("the recording is binocular"))
-      }
-      raw    <- readText(directory.resolve(planFile)).failing
-      json   <- io.circe.parser.parse(raw).left.map(_.message).failing
-      loaded <- registry.decode(json).left.map(message).failing
-      _      <- check(
-        RecordingInput.disagreements(input, loaded.plan),
+      codec      <- recordingCodec.failing
+      inputName  <- name("recording-input").failing
+      planName   <- name("recording-plan").failing
+      resultName <- name("recording-result").failing
+      input      <- resolved.recordingInput(inputName).toRight(Failure("no recording input"))
+      loaded     <- resolved.recordingPlan(planName).toRight(Failure("no recording plan"))
+      archive    <- resolved.recordingResult(resultName).toRight(Failure("no recording result"))
+      entry      <- resolved.manifest.entry(resultName).toRight(Failure("no result entry"))
+      recording  <- input.monocular.toRight(Failure("the recording input is binocular"))
+      // The typed plan the application's registration stands for: the verified
+      // plan re-encoded and read through the typed codec, with the same description.
+      json  <- loaded.encode.left.map(message).failing
+      typed <- codec.codec.decode(json).left.map(message).failing
+      _     <- check(
+        PlanChange.between(loaded.description, typed.description),
+        "typed plan differs"
+      )
+      _ <- check(
+        RecordingInput.disagreements(input, typed),
         "the plan disagrees with its input"
       )
-      _        <- check(loaded.plan.prerequisites(Some(recording)), "prerequisites refused")
-      analysis <- loaded.plan.run(recording).left.map(_.message).failing
-      receipt  <- compared(directory, Vector("rerun" -> ScientificFingerprint.of(analysis)))
-    yield receipt
+      rerun     <- typed.run(recording).left.map(_.message).failing
+      loadedRun <- loaded.run(input).left.map(_.message).failing
+      digest    <- matchesArchive(entry, codec.results.codec.encode(rerun))
+      receipt   <- compared(
+        directory,
+        Vector(
+          "rerun"        -> ScientificFingerprint.of(rerun),
+          "loaded-rerun" -> ScientificFingerprint.of(loadedRun),
+          "archive"      -> ScientificFingerprint.of(archive.analysis)
+        )
+      )
+    yield receipt.deepMerge(archived(entry, digest))
 
   private def rerunTemporal(
       directory: Path,
       resolved: ResolvedManifest[StudyKey, Px]
   ): Either[Failure, Json] =
     for
-      codec   <- temporalCodec.failing
-      named   <- name("temporal").failing
-      input   <- resolved.temporalInput(named).toRight(Failure("no temporal input"))
-      raw     <- readText(directory.resolve(planFile)).failing
-      plan    <- codec.codec.parse(raw).left.map(message).failing
-      _       <- check(plan.prerequisites(Some(input)), "prerequisites refused")
-      result  <- plan.run(input).left.map(_.message).failing
-      receipt <- compared(directory, Vector("rerun" -> ScientificFingerprint.of(result)))
-    yield receipt
+      codec      <- temporalCodec.failing
+      inputName  <- name("temporal").failing
+      planName   <- name("temporal-plan").failing
+      resultName <- name("temporal-result").failing
+      input      <- resolved.temporalInput(inputName).toRight(Failure("no temporal input"))
+      loaded     <- resolved.temporalPlan(planName).toRight(Failure("no temporal plan"))
+      archive    <- resolved.temporalResult(resultName).toRight(Failure("no temporal result"))
+      entry      <- resolved.manifest.entry(resultName).toRight(Failure("no result entry"))
+      json       <- loaded.encode.left.map(message).failing
+      typed      <- codec.codec.decode(json).left.map(message).failing
+      _          <- check(
+        PlanChange.between(loaded.description, typed.description),
+        "typed plan differs"
+      )
+      _         <- check(typed.prerequisites(Some(input)), "prerequisites refused")
+      rerun     <- typed.run(input).left.map(_.message).failing
+      loadedRun <- loaded.run(input).left.map(_.message).failing
+      digest    <- matchesArchive(entry, temporalResults(codec).codec.encode(rerun))
+      receipt   <- compared(
+        directory,
+        Vector(
+          "rerun"        -> ScientificFingerprint.of(rerun),
+          "loaded-rerun" -> ScientificFingerprint.of(loadedRun),
+          "archive"      -> ScientificFingerprint.of(archive.result)
+        )
+      )
+    yield receipt.deepMerge(archived(entry, digest))
 
   def read(root: Path, withoutResultCodec: Boolean): Either[String, Json] =
     decoders(withoutResultCodec).map { registered =>
