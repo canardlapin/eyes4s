@@ -182,28 +182,28 @@ No implementation suite was run merely to register this plan.
 
 ## Ticket index
 
-Status is as of 2026-09-17.
+Status is as of 2026-09-18. Merge commits refer to main; each ticket in Mote carries its delivery evidence.
 
 | Key | Mote ticket | Deliverable | Direct prerequisites | Status |
 |---|---|---|---|---|
 | [X1](#x1) | `bd-01M2N2QA11Y97G7R2PR5630ZAQ` | Extract shared deterministic study preparation and pair scheduling | none | Closed 2026-09-16 |
-| [X2](#x2) | `bd-01M2N2QAK3PH8QGFAZ1YFR15W0` | Make occupancy and Gaussian estimation resumable within a trial | X1 | Deferred pending X6 measurement |
-| [X3](#x3) | `bd-01M2N2QB107Y48TXK39XK8NWBX` | Make cosine comparison and study reduction bounded and deterministic | X1 | Ready |
-| [X4](#x4) | `bd-01M2N2QBJ638R8GZAT5P2EWM33` | Add the FS2 study runner with progress, cancellation and terminal outcomes | X1, X3 | Blocked |
-| [X5](#x5) | `bd-01M2N2QC7RA8RZHW7EH2F2R9GA` | Compose recording and temporal plans through the bounded runner | X4 | Blocked |
-| [X6](#x6) | `bd-01M2N2QCWATK57DT0TEWTRJTCP` | Publish execution conformance laws and qualify responsiveness budgets | X5 | Blocked |
+| [X2](#x2) | `bd-01M2N2QAK3PH8QGFAZ1YFR15W0` | Make occupancy and Gaussian estimation resumable within a trial | X1 | Deferred: X6 measured every estimation step under 100 ms up to 256x256 grids with sigma 32 (decision on the ticket) |
+| [X3](#x3) | `bd-01M2N2QB107Y48TXK39XK8NWBX` | Make cosine comparison and study reduction bounded and deterministic | X1 | Closed 2026-09-17 (merge f0950d8) |
+| [X4](#x4) | `bd-01M2N2QBJ638R8GZAT5P2EWM33` | Add the FS2 study runner with progress, cancellation and terminal outcomes | X1, X3 | Closed 2026-09-17 (merge 527a1dd) |
+| [X5](#x5) | `bd-01M2N2QC7RA8RZHW7EH2F2R9GA` | Compose recording and temporal plans through the bounded runner | X4 | Closed 2026-09-17 (merge 623d5ba) |
+| [X6](#x6) | `bd-01M2N2QCWATK57DT0TEWTRJTCP` | Publish execution conformance laws and qualify responsiveness budgets | X5 | Closed 2026-09-18 (merge 58ba216) |
 | [S1](#s1) | `bd-01M2N2QDDGDDPC7Q2TRV08D03F` | Define reusable geometry, time and identity codecs for scientific payloads | none | Closed 2026-09-16 |
-| [S2](#s2) | `bd-01M2N2QDV9JB6T6AYZG3D0TT3X` | Serialize fixation-study inputs and explicit admission/source ledgers | S1 | Ready |
-| [S3](#s3) | `bd-01M2N2QEDSTM8XK40WW2SG3E8R` | Serialize normalized recordings and temporal study input payloads | S1, S2 | Blocked |
-| [S4](#s4) | `bd-01M2N2QEWQMWBSNRC30RQ5CCPP` | Encode completed scientific results, typed failures and provenance | S1, S2 | Blocked |
-| [S5](#s5) | `bd-01M2N2QFF4NCTFZFDF87ZH3ERF` | Add typed artifact manifests and an injected verifying resolver | S2, S4 | Blocked |
-| [S6](#s6) | `bd-01M2N2QFZSGT9TG6ZEK5THE1CR` | Prove fresh-process reconstruction, schema compatibility and codec laws | S3, S5 | Blocked |
+| [S2](#s2) | `bd-01M2N2QDV9JB6T6AYZG3D0TT3X` | Serialize fixation-study inputs and explicit admission/source ledgers | S1 | Closed 2026-09-17 (merge 8e66e82) |
+| [S3](#s3) | `bd-01M2N2QEDSTM8XK40WW2SG3E8R` | Serialize normalized recordings and temporal study input payloads | S1, S2 | Closed 2026-09-17 (merge f0e1c70) |
+| [S4](#s4) | `bd-01M2N2QEWQMWBSNRC30RQ5CCPP` | Encode completed scientific results, typed failures and provenance | S1, S2 | Closed 2026-09-17 (merge 40537b1) |
+| [S5](#s5) | `bd-01M2N2QFF4NCTFZFDF87ZH3ERF` | Add typed artifact manifests and an injected verifying resolver | S2, S4 | Closed 2026-09-18 (merge c57c4e9) |
+| [S6](#s6) | `bd-01M2N2QFZSGT9TG6ZEK5THE1CR` | Prove fresh-process reconstruction, schema compatibility and codec laws | S3, S5 | Closed 2026-09-18 (merge db0c12a) |
 | [M1](#m1) | `bd-01M2N2QGJ7MECZAHWC01ER9CMT` | Expose typed parameter and method descriptors for the shipped recipes | none | Closed 2026-09-16 |
-| [M2](#m2) | `bd-01M2N2QH044FSDXJTERDZ5EZRS` | Thin pairing-preview facade over the PreparedStudy schedule | X1 | Ready (priority 2) |
-| [M3](#m3) | `bd-01M2N2QHGNAN5V3R34NP2B9Q7E` | Add typed recipe availability and scientific prerequisite reports | M1, X1 | Ready |
-| [M4](#m4) | `bd-01M2N2QJ1H158B984E0Z7YBTGK` | Expose stable source-linked diagnostics and inspectable result projections | M3, S2, S4 | Blocked |
-| [G0](#g0) | `bd-01M2QMC663VXY7YR6GVMDXP54Y` | Qualify the fixation-only route in the isolated headless consumer | X4, S2, S4, S5, M4 | Blocked |
-| [G1](#g1) | `bd-01M2N2QJKD231A7MJ3NFF2H6Q6` | Qualify the three infrastructure APIs in an isolated headless app consumer | X6, S6, M4, G0 | Blocked |
+| [M2](#m2) | `bd-01M2N2QH044FSDXJTERDZ5EZRS` | Thin pairing-preview facade over the PreparedStudy schedule | X1 | Closed 2026-09-17 (commit 44e3296) |
+| [M3](#m3) | `bd-01M2N2QHGNAN5V3R34NP2B9Q7E` | Add typed recipe availability and scientific prerequisite reports | M1, X1 | Closed 2026-09-17 (merge 0b3ccf7) |
+| [M4](#m4) | `bd-01M2N2QJ1H158B984E0Z7YBTGK` | Expose stable source-linked diagnostics and inspectable result projections | M3, S2, S4 | Closed 2026-09-18 (merge 089a6a2) |
+| [G0](#g0) | `bd-01M2QMC663VXY7YR6GVMDXP54Y` | Qualify the fixation-only route in the isolated headless consumer | X4, S2, S4, S5, M4 | Closed 2026-09-18 (merge 24b2c65) |
+| [G1](#g1) | `bd-01M2N2QJKD231A7MJ3NFF2H6Q6` | Qualify the three infrastructure APIs in an isolated headless app consumer | X6, S6, M4, G0 | Ready |
 
 ## Detailed tickets
 
