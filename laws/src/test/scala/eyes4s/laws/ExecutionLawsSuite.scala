@@ -25,7 +25,10 @@ import eyes4s.kernel.Unit2D.{Deg, Px}
 import eyes4s.plan.*
 import eyes4s.surface.EdgePolicy
 
-import org.scalacheck.{Gen, Test}
+import eyes4s.examples.MatchedControlFixtures
+
+import org.scalacheck.{Gen, Prop, Test}
+import org.scalacheck.Prop.propBoolean
 
 /** The published execution laws over the three shipped families, and the
   * mutants that show each law is load-bearing.
@@ -34,17 +37,28 @@ import org.scalacheck.{Gen, Test}
   * the study cursor with a single injected fault, written in this file. The
   * shipped instance must pass every law; each mutant must be observed to fail
   * the law that names it. The suite checks the receipts below mechanically:
-  * for each mutant it runs every law alone and asserts the named laws fail.
+  * for each mutant it runs every law alone and asserts that exactly the
+  * named laws are falsified (`Test.Failed`; an exception or an exhausted
+  * generator does not count as a kill).
+  *
+  * Fixtures: five study, two recording and two temporal families that
+  * complete; two temporal families that fail lawfully (a comparison budget
+  * refused after four preparation steps, and on the very first advance),
+  * whose reference is the literal expected error; and the R-pinned
+  * matched/control fixture checked against an independent oracle.
   *
   * ==Mutation execution receipts==
   *
   * Observed on both JVM and Scala.js (`lawsJVM/test`, `lawsJS/test`). Law
   * names are abbreviated: determinism (same cursor, same quanta, same steps
   * and end), terminal (one terminal step within budget), completion (any
-  * quanta is the pure run), cut-invariance (any sequence of quanta is the
-  * pure run), contiguity (units non-negative, one block per segment), stated-
-  * once (one total per segment block), totals (Exact met, AtMost never
-  * exceeded), accounting (per-segment work independent of the cuts).
+  * quanta, and the finest cut, reach the reference run), cut-invariance (any
+  * sequence of quanta reaches the reference run), contiguity (units
+  * non-negative, one block per segment), position-independent (every step of
+  * a segment states the same total), totals (Exact met, AtMost never
+  * exceeded), accounting (per-segment work independent of the cuts, the
+  * finest cut always included), independent (every run's end satisfies an
+  * oracle computed without the cursor).
   *
   * {{{
   * | mutant             | injected fault                                           | killed by                                    |
@@ -59,7 +73,9 @@ import org.scalacheck.{Gen, Test}
   * | segment-revisited  | odd trials' estimation counts toward the contrast        | contiguity, totals                           |
   * | exact-overclaimed  | estimation claims Exact(trials + 1)                      | totals                                       |
   * | atmost-understated | comparison claims AtMost(0)                              | totals                                       |
-  * | wavering-total     | estimation states Unknown, then Exact, inside one block  | stated-once                                  |
+  * | wavering-total     | estimation states Unknown, then Exact, inside one block  | position-independent                         |
+  * | self-vouching      | every Done carries a decoy result, and the reference run | independent                                  |
+  * |                    | is this same instance (on the R-pinned fixture)          |                                              |
   * }}}
   *
   * Laws a mutant also happens to fail are listed after the one it targets;
@@ -94,6 +110,23 @@ class ExecutionLawsSuite extends munit.DisciplineSuite:
       (m.source.diagnostics: Any) == (n.source.diagnostics: Any) &&
       m.source.provenance == n.source.provenance
 
+  private def sameEvaluation(m: EvaluationInfo, n: EvaluationInfo): Boolean =
+    m.name == n.name && m.scale == n.scale &&
+      m.specification.map(s => (s.method, s.revision, s.parameters, s.components)) ==
+      n.specification.map(s => (s.method, s.revision, s.parameters, s.components))
+
+  /** A typed pairwise source, as S4's `StudyScaleResult.analyses` carries it. */
+  private def sameSource[K, E, S](
+      m: DirectedPairwiseAnalysis[K, K, E, S],
+      n: DirectedPairwiseAnalysis[K, K, E, S]
+  ): Boolean =
+    m.rows == n.rows && m.diagnostics == n.diagnostics && m.provenance == n.provenance &&
+      sameEvaluation(m.evaluation, n.evaluation)
+
+  private def sameAnalyses[K, S](m: StudyAnalyses[K, S], n: StudyAnalyses[K, S]): Boolean =
+    sameSource(m.matchedSource, n.matchedSource) && sameAnalysis(m.matched, n.matched) &&
+      sameSource(m.controlSource, n.controlSource) && sameAnalysis(m.control, n.control)
+
   private def sameStudy[K, U <: Unit2D, S, D](
       o: StudyResult[K, U, S, D],
       e: StudyResult[K, U, S, D]
@@ -101,6 +134,7 @@ class ExecutionLawsSuite extends munit.DisciplineSuite:
     o.input == e.input && o.description == e.description && o.scales.size == e.scales.size &&
       o.scales.zip(e.scales).forall { (a, b) =>
         a.estimate == b.estimate && a.excludedPhases == b.excludedPhases &&
+        sameAnalyses(a.analyses, b.analyses) &&
         a.estimation.size == b.estimation.size &&
         a.estimation.zip(b.estimation).forall {
           case ((k, Right(x)), (l, Right(y))) =>
@@ -440,6 +474,198 @@ class ExecutionLawsSuite extends munit.DisciplineSuite:
     )
   }
 
+  // -------------------------------------------------------------------------
+  // Runs that fail lawfully: a comparison budget below the grid's four cells
+  // is refused when a cell's study cursor begins, after that cell's trials are
+  // prepared. With five trials the failure cuts the Preparing block short
+  // after four steps; with one trial the very first advance fails. The
+  // reference is the literal expected error, not a run of the cursor.
+  // -------------------------------------------------------------------------
+
+  private val refusal = TemporalStudyError.Input(
+    PlanError.ComparisonWork(ComparisonWorkError.WorkBudget("cosine", 4, 3))
+  )
+  private val single = get(TemporalStudyInput.of(alone, Vector(epoch(a))))
+
+  private val failingTemporal: Vector[(String, PreparedTemporal)] = Vector(
+    "budget-after-preparation" -> get(temporalPlan(clean).prepare(clean)),
+    "budget-on-first-advance"  -> get(temporalPlan(single).prepare(single))
+  )
+
+  private def refusedFamily(work: PreparedTemporal) = new ExecutionLaws.Family[
+    TemporalC,
+    TemporalStage,
+    TemporalSegment,
+    TemporalStudyError,
+    TemporalR
+  ](
+    TemporalSegment.of,
+    TemporalSegment.total(work, _, _),
+    _ => Left(refusal),
+    sameTemporal,
+    _ == _,
+    20_000
+  )
+
+  failingTemporal.foreach { (name, work) =>
+    checkAll(
+      s"temporal.$name",
+      ExecutionLaws.conformance(
+        refusedFamily(work),
+        Gen.const(get(work.work(get(ComparisonBudget.of(3))))),
+        quanta
+      )
+    )
+  }
+
+  test("segment totals are total: a segment outside the work claims nothing") {
+    val (_, work) = temporalPrepared.head
+    assertEquals(StudySegment.total(binned, StudySegment.Estimating(7)), SegmentTotal.Unknown)
+    assertEquals(
+      StudySegment
+        .total(binned, StudySegment.Reducing(7, StudyDesign.Matched), get(binned.work())),
+      SegmentTotal.Unknown
+    )
+    assertEquals(
+      TemporalSegment.total(work, TemporalSegment.Preparing(9, 0)),
+      SegmentTotal.Unknown
+    )
+    assertEquals(
+      TemporalSegment.total(work, TemporalSegment.Preparing(0, 9)),
+      SegmentTotal.Unknown
+    )
+    assertEquals(
+      TemporalSegment.total(work, TemporalSegment.Studying(-1, 0, StudySegment.Estimating(0))),
+      SegmentTotal.Unknown
+    )
+    assertEquals(
+      TemporalSegment.total(work, TemporalSegment.Preparing(1, 1)),
+      SegmentTotal.Exact(rows.size.toLong)
+    )
+  }
+
+  test("the failing fixtures fail where the laws must tolerate it") {
+    val (_, after) = failingTemporal(0)
+    val cut        = ExecutionLaws.trace(
+      refusedFamily(after),
+      get(after.work(get(ComparisonBudget.of(3)))),
+      _ => ExecutionLaws.finest
+    )
+    assertEquals(cut.end, Some(Left(refusal)))
+    assertEquals(
+      cut.blocks.map((segment, units, totals) => (segment, units, totals.distinct)),
+      Vector(
+        (TemporalSegment.Preparing(0, 0), rows.size - 1L, Vector(SegmentTotal.Exact(rows.size)))
+      )
+    )
+    val (_, first) = failingTemporal(1)
+    val none       = ExecutionLaws.trace(
+      refusedFamily(first),
+      get(first.work(get(ComparisonBudget.of(3)))),
+      _ => ExecutionLaws.finest
+    )
+    assertEquals((none.steps, none.end), (Vector.empty, Some(Left(refusal))))
+  }
+
+  // -------------------------------------------------------------------------
+  // An independent oracle: the R-pinned matched/control fixture (rational
+  // cosine scores, generated by tools/r-parity) states every recall key's
+  // matched mean, control mean and difference without running a cursor.
+  // -------------------------------------------------------------------------
+
+  /** Four-cell dot products and two-value means need only rounding allowance. */
+  private val ReferenceTolerance = Tolerance(absolute = 1e-12, relative = 0.0)
+
+  private val pinnedFrame = get(Frame.screen("execution-laws-pinned", 2, 2))
+  private val pinnedInput = StudyInput(
+    Trials(
+      MatchedControlFixtures.fixations
+        .groupBy(row => StudyKey(row.participant, row.image, row.phase))
+        .toVector
+        .sortBy((key, _) => (key.participant, key.stimulus, key.phase))
+        .map { (key, fixations) =>
+          val trialClock = clock(key)
+          Trial(
+            key,
+            (),
+            get(
+              Scanpath.of(
+                pinnedFrame,
+                trialClock,
+                IArray.from(fixations.sortBy(_.ordinal).map { row =>
+                  get(
+                    Event.Fixation.withoutDispersion(
+                      get(
+                        Interval.of(
+                          trialClock,
+                          Instant.micros(row.onsetMicros),
+                          Instant.micros(row.onsetMicros + row.durationMicros)
+                        )
+                      ),
+                      Pt[Px](row.x, row.y),
+                      row.sampleCount
+                    )
+                  )
+                })
+              )
+            )
+          )
+        }
+    )
+  )
+  private val pinned: Prepared = get(
+    StudyPlan
+      .of(
+        pinnedInput.reference,
+        StudyKey.layout(DefinitionId.studyLayout),
+        get(Grid.over(pinnedFrame, 2, 2)),
+        "recall",
+        "encode",
+        Weight.Duration,
+        Vector(StudyEstimate.Binned()),
+        FailurePolicy.RequireAll,
+        cosine,
+        ()
+      )
+      .flatMap(_.prepare(pinnedInput))
+  )
+
+  private def label(key: StudyKey): String = s"${key.participant}/${key.stimulus}/${key.phase}"
+
+  /** The pinned reductions, checked against a run's end without consulting any cursor. */
+  private def pinnedReductions(end: Either[PlanError, Result]): Prop = end match
+    case Left(error)   => Prop.falsified :| s"the pinned study failed: $error"
+    case Right(result) =>
+      result.scales.map(_.contrast) match
+        case Vector(Right(contrast)) =>
+          val byKey = contrast.rows.map(row => label(row.key) -> row).toMap
+          (byKey.size == MatchedControlFixtures.reductions.size) :| s"${byKey.size} rows" &&
+          Prop.all(MatchedControlFixtures.reductions.map { expected =>
+            val row      = byKey.get(expected.id)
+            val observed = Vector(
+              row.flatMap(_.matched).flatMap(_.result.toOption).map(_.value),
+              row.flatMap(_.control).flatMap(_.result.toOption).map(_.value),
+              row.flatMap(_.difference.toOption).map(_.value)
+            )
+            observed
+              .zip(Vector(expected.matched, expected.control, expected.difference))
+              .forall((value, want) =>
+                value.exists(ReferenceTolerance.approxEquals(_, want))
+              ) :|
+              s"${expected.id}: $observed, pinned ${expected.matched}, ${expected.control}, ${expected.difference}"
+          }*)
+        case other => Prop.falsified :| s"expected one binned contrast, got $other"
+
+  checkAll(
+    "study.pinned",
+    ExecutionLaws.conformance(
+      studyFamily(pinned),
+      Gen.const(get(pinned.work())),
+      quanta,
+      Some(pinnedReductions)
+    )
+  )
+
   test("the plans' own runs are the shipped instances driven at the default quanta") {
     prepared.foreach { (name, work) =>
       assert(
@@ -575,23 +801,32 @@ class ExecutionLawsSuite extends munit.DisciplineSuite:
     "the same cursor at the same quanta yields the same steps and the same end"
   private val terminal =
     "a run ends in exactly one terminal step within the family's step budget"
-  private val completion    = "completion at any quanta is the pure run"
-  private val cutInvariance = "every sequence of quanta yields the pure run"
+  private val completion    = "completion at any quanta is the reference run"
+  private val cutInvariance = "every sequence of quanta yields the reference run"
   private val contiguity    =
     "units are non-negative and each segment is visited in one contiguous block"
-  private val statedOnce = "a segment's total is stated once, from its first step to its last"
+  private val statedOnce =
+    "a segment's total is position-independent: every step of the segment states the same one"
   private val totals     = "an Exact total is met and an AtMost total is never exceeded"
   private val accounting =
     "the work each segment charges is a property of the cursor, not of its cuts"
+  private val independentLaw =
+    "completion at any sequence of quanta satisfies the independent oracle"
 
   private type StudyFamily =
     ExecutionLaws.Family[Cursor, StudyStage, StudySegment, PlanError, Result]
+
+  /** Killed means falsified: a law that throws or gives up has not caught the mutant. */
+  private def falsified(prop: Prop): Boolean =
+    Test.check(killParameters, prop).status match
+      case _: Test.Failed => true
+      case _              => false
 
   /** The laws a family fails over the binned cursor, each run alone under the kill parameters. */
   private def failing(family: StudyFamily): Set[String] =
     ExecutionLaws
       .laws(family, Gen.const(get(binned.work())), quanta)
-      .collect { case (name, prop) if !Test.check(killParameters, prop).passed => name }
+      .collect { case (name, prop) if falsified(prop) => name }
       .toSet
 
   private val mutants: Vector[(String, StudyFamily, Set[String])] =
@@ -641,4 +876,34 @@ class ExecutionLawsSuite extends munit.DisciplineSuite:
       )
       assertEquals(observed, killers, s"$name fails laws the receipts do not list")
     }
+  }
+
+  test(
+    "a self-vouching instance passes every cut law and only the independent oracle kills it"
+  ) {
+    // Every Done carries the small binned fixture's result, and the family's
+    // reference is this same instance at the default quanta: the cut laws are
+    // satisfied by construction, which is why an independent oracle is needed.
+    val selfVouching = mutant((c, q) =>
+      shipped.advance(c, q).map {
+        case WorkStep.Done(units, _) => WorkStep.Done(units, decoyResult)
+        case step                    => step
+      }
+    )
+    val family =
+      new ExecutionLaws.Family[Cursor, StudyStage, StudySegment, PlanError, Result](
+        StudySegment.of,
+        StudySegment.total(pinned, _, _),
+        cursor => Stepwise.complete(cursor, WorkQuanta.default)(using selfVouching),
+        sameStudy,
+        _ == _,
+        stepBudget = 20_000
+      )(using selfVouching)
+    def killedBy(family: StudyFamily): Set[String] =
+      ExecutionLaws
+        .laws(family, Gen.const(get(pinned.work())), quanta, Some(pinnedReductions))
+        .collect { case (name, prop) if falsified(prop) => name }
+        .toSet
+    assertEquals(killedBy(studyFamily(pinned)), Set.empty[String])
+    assertEquals(killedBy(family), Set(independentLaw))
   }

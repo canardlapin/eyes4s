@@ -27,32 +27,40 @@ import org.typelevel.discipline.Laws
 /** The execution contract every bounded plan family satisfies, stated over
   * [[eyes4s.plan.Stepwise]] alone so it needs no effect system: a family is
   * conformant when driving its cursor step by step, at any quanta and any
-  * sequence of quanta, is deterministic, ends in exactly one terminal step,
-  * agrees with the pure run, visits its counted segments contiguously, and
-  * states each segment's total once and truthfully. The runner-side half of
-  * the contract (one terminal event, cancellation between steps, first commit
-  * wins, defects surface) is effectful and lives in the `eyes4s-fs2` tests.
+  * sequence of quanta, is deterministic, ends in exactly one terminal step
+  * (a result or a typed failure), agrees with the family's reference run,
+  * visits its counted segments contiguously, and states each segment's
+  * total once and truthfully. The runner-side half of the contract (one
+  * terminal event, cancellation between steps, first commit wins, defects
+  * surface) is effectful and lives in the `eyes4s-fs2` tests.
   *
   * A family supplies its [[Family]] evidence and a generator of cursors; the
   * shipped study, recording and temporal families are checked in the module's
   * own suite, which also shows each law killing a deliberate mutant. A
   * downstream family that implements `Stepwise` runs the same rule set.
   *
-  * The pure oracle is the family's own run of the plan that produced the
-  * cursor (`PreparedStudy.run`, `RecordingPlan.run`,
-  * `PreparedTemporalStudy.run` for the shipped families), supplied
-  * separately from the `Stepwise` instance under test so that an instance
-  * which completes early or differently cannot vouch for itself.
+  * What the reference run proves depends on where it comes from. For the
+  * shipped families it is the plan's own `run` (`PreparedStudy.run`,
+  * `RecordingPlan.run`, `PreparedTemporalStudy.run`), and that `run` drives
+  * the same cursor at [[WorkQuanta.default]]. The completion laws then say
+  * that every cut, and every sequence of cuts, reaches the default-quanta
+  * result: cut invariance, not scientific correctness. They are kept
+  * separate from the `Stepwise` instance under test, so an instance that
+  * completes early or differently cannot vouch for itself, but they share
+  * its science. Scientific correctness needs an independent oracle, an
+  * expectation computed without the cursor (a pinned reference fixture, for
+  * example); pass it as `independent` and the rule set also requires every
+  * cut to satisfy it.
   */
 object ExecutionLaws extends Laws:
 
   /** One family's evidence for the laws: how a stage is counted, what a
     * segment's total is as its first step begins (given the cursor about to
-    * take it), the pure run of the plan a generated cursor came from, when
-    * two results or two errors are the same, and a step budget within which
-    * every generated cursor must end. Results are compared with `sameResult`
-    * because scientific results carry provenance and arrays that have no
-    * useful universal equality.
+    * take it), the reference run of the plan a generated cursor came from,
+    * when two results or two errors are the same, and a step budget within
+    * which every generated cursor must end. Results are compared with
+    * `sameResult` because scientific results carry provenance and arrays that
+    * have no useful universal equality.
     */
   final class Family[C, Stage, Segment, E, R](
       val segment: Stage => Segment,
@@ -74,8 +82,10 @@ object ExecutionLaws extends Laws:
       total: SegmentTotal
   )
 
-  /** A run's trace: every step, the `Done` step included, and its end. `end`
-    * is `None` only when the step budget was exhausted before a terminal step.
+  /** A run's trace: every step that completed, the `Done` step included,
+    * and its end. A failing advance records no step: its work was not
+    * committed. `end` is `None` only when the step budget was exhausted
+    * before a terminal step.
     */
   final case class Trace[Stage, Segment, E, R](
       steps: Vector[Step[Stage, Segment]],
@@ -91,9 +101,19 @@ object ExecutionLaws extends Laws:
             case _ => acc :+ (step.segment, step.units.toLong, Vector(step.total))
         }
 
-    /** The work each segment block charged, which the laws require to be cut-invariant. */
+    /** Whether the run ended in a typed failure. */
+    def failed: Boolean = end.exists(_.isLeft)
+
+    /** The blocks that ran to their end. A failed run's last block is cut
+      * short by the failure, and how much of it completed depends on the
+      * cuts, so it is not one of them.
+      */
+    def completedBlocks: Vector[(Segment, Long, Vector[SegmentTotal])] =
+      if failed then blocks.dropRight(1) else blocks
+
+    /** The work each completed segment block charged, which the laws require to be cut-invariant. */
     def accounting: Vector[(Segment, Long)] =
-      blocks.map((segment, units, _) => (segment, units))
+      completedBlocks.map((segment, units, _) => (segment, units))
 
   /** Drive a cursor to its end, cutting step `i` with `quanta(i)`, recording
     * exactly what the runner reports: a `More` step's own stage, a `Done`
@@ -124,18 +144,31 @@ object ExecutionLaws extends Laws:
     val end = loop(cursor, 0)
     Trace(steps.result(), end)
 
-  /** The pure oracle: the family's own run of the plan the cursor came from. */
+  /** The reference run: the family's own run of the plan the cursor came from. */
   def oracle[C, Stage, Segment, E, R](
       family: Family[C, Stage, Segment, E, R],
       cursor: C
   ): Either[E, R] = family.pure(cursor)
 
-  /** Quanta drawn from the given positive values, `WorkQuanta.default` included. */
+  /** Every quantum at its smallest value: the most finely cut run any
+    * family admits. The cut laws always compare against it, so a fault that
+    * appears only at the finest cut is found on every generated case.
+    */
+  val finest: WorkQuanta =
+    (PairQuantum.of(1), ComparisonQuantum.of(1), SampleQuantum.of(1)) match
+      case (Right(pairs), Right(comparison), Right(samples)) =>
+        WorkQuanta(pairs, comparison, samples)
+      case _ => WorkQuanta.default // unreachable: 1 is a valid value of every quantum
+
+  /** Quanta drawn from the given positive values, with [[finest]] and
+    * `WorkQuanta.default` included explicitly.
+    */
   def quanta(pairs: Seq[Int], comparison: Seq[Int], samples: Seq[Int]): Gen[WorkQuanta] =
     def pick[A](values: Seq[Int], of: Int => Either[?, A], default: A): Gen[A] =
       Gen.oneOf(values.flatMap(v => of(v).toOption) :+ default)
     Gen.oneOf(
       Gen.const(WorkQuanta.default),
+      Gen.const(finest),
       for
         p <- pick(pairs, PairQuantum.of, PairQuantum.default)
         c <- pick(comparison, ComparisonQuantum.of, ComparisonQuantum.default)
@@ -145,15 +178,17 @@ object ExecutionLaws extends Laws:
 
   /** The rule set. `cursors` should cover the family's designated fixtures:
     * fully matched and unmatched schedules, several scales, chunk-spanning
-    * events, and whatever else changes the step sequence. `quanta` should
-    * include the finest cut of every quantum and the default.
+    * events, a run that fails, and whatever else changes the step sequence.
+    * `independent`, when given, is an oracle computed without the cursor
+    * that every run's end must satisfy.
     */
   def conformance[C, Stage, Segment, E, R](
       family: Family[C, Stage, Segment, E, R],
       cursors: Gen[C],
-      quanta: Gen[WorkQuanta]
+      quanta: Gen[WorkQuanta],
+      independent: Option[Either[E, R] => Prop] = None
   ): RuleSet =
-    new SimpleRuleSet("execution", laws(family, cursors, quanta)*)
+    new SimpleRuleSet("execution", laws(family, cursors, quanta, independent)*)
 
   /** The laws as named properties, so a suite can also run each one alone
     * against a mutant and record which laws kill it.
@@ -161,7 +196,8 @@ object ExecutionLaws extends Laws:
   def laws[C, Stage, Segment, E, R](
       family: Family[C, Stage, Segment, E, R],
       cursors: Gen[C],
-      quanta: Gen[WorkQuanta]
+      quanta: Gen[WorkQuanta],
+      independent: Option[Either[E, R] => Prop] = None
   ): Vector[(String, Prop)] =
     val sequences: Gen[Vector[WorkQuanta]] =
       Gen.choose(1, 4).flatMap(n => Gen.listOfN(n, quanta).map(_.toVector))
@@ -177,7 +213,9 @@ object ExecutionLaws extends Laws:
     def cycled(sequence: Vector[WorkQuanta]): Int => WorkQuanta =
       index => sequence(index % sequence.size)
 
-    Vector(
+    def reference(cursor: C): Option[Either[E, R]] = Some(oracle(family, cursor))
+
+    val core = Vector(
       "the same cursor at the same quanta yields the same steps and the same end" ->
         forAll(cursors, quanta) { (cursor, q) =>
           val first  = trace(family, cursor, _ => q)
@@ -188,19 +226,24 @@ object ExecutionLaws extends Laws:
       "a run ends in exactly one terminal step within the family's step budget" ->
         forAll(cursors, quanta) { (cursor, q) =>
           val run = trace(family, cursor, _ => q)
+          // A completed run records its Done step; a run whose first advance
+          // fails ends lawfully with no step at all.
           run.end.isDefined :| s"no terminal step within ${family.stepBudget} steps" &&
-          run.steps.nonEmpty :| "a run has at least its terminal step"
+          (run.failed || run.steps.nonEmpty) :| "a completed run recorded no terminal step"
         },
-      "completion at any quanta is the pure run" ->
+      "completion at any quanta is the reference run" ->
         forAll(cursors, quanta) { (cursor, q) =>
-          val run = trace(family, cursor, _ => q)
-          same(run.end, Some(oracle(family, cursor))) :| s"end differs from the pure run at $q"
+          val expected = reference(cursor)
+          same(trace(family, cursor, _ => q).end, expected) :|
+            s"end differs from the reference run at $q" &&
+            same(trace(family, cursor, _ => finest).end, expected) :|
+            "end differs from the reference run at the finest cut"
         },
-      "every sequence of quanta yields the pure run" ->
+      "every sequence of quanta yields the reference run" ->
         forAll(cursors, sequences) { (cursor, sequence) =>
           val run = trace(family, cursor, cycled(sequence))
-          same(run.end, Some(oracle(family, cursor))) :|
-            s"end differs from the pure run under $sequence"
+          same(run.end, reference(cursor)) :|
+            s"end differs from the reference run under $sequence"
         },
       "units are non-negative and each segment is visited in one contiguous block" ->
         forAll(cursors, quanta) { (cursor, q) =>
@@ -209,7 +252,7 @@ object ExecutionLaws extends Laws:
           run.steps.forall(_.units >= 0) :| "a step charged negative units" &&
           (segments == segments.distinct) :| s"a segment was revisited: $segments"
         },
-      "a segment's total is stated once, from its first step to its last" ->
+      "a segment's total is position-independent: every step of the segment states the same one" ->
         forAll(cursors, quanta) { (cursor, q) =>
           val run = trace(family, cursor, _ => q)
           Prop.all(run.blocks.map { (segment, _, totals) =>
@@ -218,9 +261,14 @@ object ExecutionLaws extends Laws:
         },
       "an Exact total is met and an AtMost total is never exceeded" ->
         forAll(cursors, quanta) { (cursor, q) =>
-          val run = trace(family, cursor, _ => q)
-          Prop.all(run.blocks.map { (segment, units, totals) =>
+          val run  = trace(family, cursor, _ => q)
+          val last = run.blocks.size - 1
+          Prop.all(run.blocks.zipWithIndex.map { case ((segment, units, totals), index) =>
+            // The block a failure cut short is held to its bound, not its total.
+            val cutShort = run.failed && index == last
             totals.head match
+              case SegmentTotal.Exact(n) if cutShort =>
+                (units <= n) :| s"$segment, cut short by a failure, charged $units over Exact($n)"
               case SegmentTotal.Exact(n) =>
                 (units == n) :| s"$segment charged $units of Exact($n)"
               case SegmentTotal.AtMost(n) =>
@@ -230,8 +278,28 @@ object ExecutionLaws extends Laws:
         },
       "the work each segment charges is a property of the cursor, not of its cuts" ->
         forAll(cursors, quanta, sequences) { (cursor, q, sequence) =>
-          val fixed = trace(family, cursor, _ => q).accounting
-          val cut   = trace(family, cursor, cycled(sequence)).accounting
-          (fixed == cut) :| s"accounting at $q: $fixed; under $sequence: $cut"
+          val runs = Vector(
+            s"$q"        -> trace(family, cursor, _ => q),
+            "finest"     -> trace(family, cursor, _ => finest),
+            s"$sequence" -> trace(family, cursor, cycled(sequence))
+          )
+          val (_, first) = runs.head
+          Prop.all(runs.tail.map { (label, run) =>
+            // A failure may land a block earlier or later depending on the
+            // cuts; the blocks both runs completed must agree.
+            val agreed =
+              if first.failed || run.failed then
+                first.accounting.zip(run.accounting).forall(_ == _)
+              else first.accounting == run.accounting
+            agreed :| s"accounting at $q: ${first.accounting}; at $label: ${run.accounting}"
+          }*)
+        }
+    )
+    core ++ independent.toVector.map(expect =>
+      "completion at any sequence of quanta satisfies the independent oracle" ->
+        forAll(cursors, sequences) { (cursor, sequence) =>
+          trace(family, cursor, cycled(sequence)).end match
+            case Some(end) => expect(end) :| s"under $sequence"
+            case None      => Prop.falsified :| "no terminal step"
         }
     )

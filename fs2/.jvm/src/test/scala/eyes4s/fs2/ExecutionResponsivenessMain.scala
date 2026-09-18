@@ -527,12 +527,12 @@ private[fs2] object ExecutionResponsivenessHarness:
       ) ++
       Vector(
         synthetic("study-100x256-binned", 5, 10, 256, None, "default"),
-        synthetic("study-100x256-sigma8", 5, 10, 256, Some(8.0), "default")
+        synthetic("study-100x256-sigma8", 5, 10, 256, Some(8.0), "default"),
+        synthetic("study-100x256-sigma32", 5, 10, 256, Some(32.0), "default")
       )
 
   val fullWorkloads: Vector[ResponsivenessWorkload] =
     smokeWorkloads ++ Vector(
-      synthetic("study-100x256-sigma32", 5, 10, 256, Some(32.0), "default"),
       synthetic("study-100x256-binned", 5, 10, 256, None, "smallest"),
       synthetic("study-100x256-sigma8", 5, 10, 256, Some(8.0), "smallest"),
       synthetic("study-100x256-sigma32", 5, 10, 256, Some(32.0), "smallest"),

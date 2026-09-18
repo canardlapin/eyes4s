@@ -260,26 +260,42 @@ repetition is prepared against the same input and budget before any cell runs.
 The contract above is published, so a downstream family is tested the same way
 as the shipped ones. `eyes4s-laws` provides `ExecutionLaws`, pure laws over
 `Stepwise` alone. A family supplies an `ExecutionLaws.Family`: its stage-to-segment
-map, its totals, the pure run of the plan a cursor came from (so an instance
-cannot vouch for itself), result and error equality, and a step budget. Pass it to
-`ExecutionLaws.conformance(family, cursors, quanta)` with a cursor generator and
-`ExecutionLaws.quanta(...)`. The rule set checks eight laws:
+map, its totals, the reference run of the plan a cursor came from, result and error
+equality, and a step budget. Pass it to `ExecutionLaws.conformance(family, cursors,
+quanta)` with a cursor generator and `ExecutionLaws.quanta(...)`, which always
+includes `WorkQuanta.default` and `ExecutionLaws.finest` (every quantum at 1). The
+rule set checks eight laws:
 
 - the same cursor at the same quanta yields the same steps and the same end;
-- a run ends in exactly one terminal step within the budget;
-- completion at any quanta is the pure run;
-- every sequence of quanta, changing from step to step, yields the pure run;
+- a run ends in exactly one terminal step within the budget, a result or a typed
+  failure (a run whose first advance fails ends with no step, lawfully);
+- completion at any quanta, and at the finest cut, is the reference run;
+- every sequence of quanta, changing from step to step, yields the reference run;
 - units are non-negative and each segment is visited in one contiguous block;
-- a segment's total is the same from its first step to its last;
-- an `Exact` total is met and an `AtMost` total is never exceeded;
-- the work each segment charges does not depend on how the steps were cut.
+- a segment's total is position-independent: every step of it states the same one;
+- an `Exact` total is met and an `AtMost` total is never exceeded (a block a
+  failure cut short is held to the bound only);
+- the work each completed segment charges does not depend on how the steps were
+  cut, the finest cut always included.
+
+For the shipped families the reference run is the plan's own `run`, which drives
+the same cursor at the default quanta, so these laws establish cut invariance, not
+scientific correctness. A ninth law adds that when the family passes an
+independent oracle, an expectation computed without the cursor:
+`conformance(family, cursors, quanta, Some(expect))` requires every run's end,
+under any sequence of quanta, to satisfy it.
 
 `ExecutionLawsSuite` runs them over the study, recording and temporal fixtures on
-the JVM and Scala.js. It also shows that eleven deliberate mutants are each killed
-by the laws its receipt names: dropped units, a skipped trial, drifting units,
-premature completion, a quanta-dependent result, a run that never ends, a cut that
-charges extra work, a revisited segment, an overstated `Exact`, an understated
-`AtMost` and a wavering total. The effectful half lives in `eyes4s-fs2`'s
+the JVM and Scala.js. It also runs two temporal fixtures that fail lawfully (a
+refused comparison budget, once after four preparation steps and once on the first
+advance) and checks the R-pinned matched/control fixture against its pinned
+matched means, control means and differences as the independent oracle. Twelve
+deliberate mutants are each falsified by exactly the laws their receipts name:
+dropped units, a skipped trial, drifting units, premature completion, a
+quanta-dependent result, a run that never ends, a cut that charges extra work, a
+revisited segment, an overstated `Exact`, an understated `AtMost`, a wavering
+total, and a self-vouching instance whose reference run is itself, which only the
+independent oracle catches. The effectful half lives in `eyes4s-fs2`'s
 `ExecutionConformanceSuite`. It states five laws as functions of a runner, over a
 synthetic cursor under `TestControl`: `events` ends in exactly one terminal event,
 `Cancelled` never carries a result, cancellation is observed only between steps,
@@ -291,10 +307,13 @@ How long a step can hold the runner is measured, not assumed.
 `fs2ModuleJVM/Test/runMain eyes4s.fs2.ExecutionResponsivenessMain` reports the
 longest step, the longest runner gap and the cancellation latency for each route,
 on a pinned JVM. It never fails on timing. [Execution responsiveness](EXECUTION_RESPONSIVENESS.md)
-records the evidence. Against the proposed 100 ms target, every fixture meets it
-at default and smallest quanta. A 100-trial 256×256 study meets it with Gaussian
-bandwidths up to 32 cells: one trial's estimation takes at most 19.6 ms, and
-cancellation settles within 17.2 ms. A 1024×1024 grid misses it at 647 ms per
+records the evidence. Against the proposed 100 ms target, on the measured runtime
+(an Apple M3 Max, JDK 25, four visible processors, a 2 GiB heap), every fixture
+meets it at default and smallest quanta. A 100-trial 256×256 study meets it with
+Gaussian bandwidths up to 32 cells: one trial's estimation takes at most 19.6 ms,
+and cancellation settles within 17.2 ms. More trials lengthen the run, not its
+steps, and cost 512 KiB of retained heap per trial per scale at that grid. A
+1024×1024 grid misses it at 647 ms per
 trial, so intra-trial estimation (UI-X2) stays deferred until a consumer needs
 grids that large. Recordings of 60,000 samples or more also miss it, because
 detection assembly scans every sample once per event. That defect is outside

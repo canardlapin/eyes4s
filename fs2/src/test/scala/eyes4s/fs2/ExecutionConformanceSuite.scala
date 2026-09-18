@@ -39,7 +39,8 @@ import _root_.fs2.concurrent.SignallingRef
   * Each law is a function of a runner. The shipped [[Execution]] must satisfy
   * every law; so must a control re-implementation with no fault; and each
   * mutant runner, the control with one injected fault, must be observed to
-  * fail the law that names it.
+  * fail the law that names it with a munit assertion failure; an exception
+  * of any other kind is not a kill.
   *
   * ==Mutation execution receipts==
   *
@@ -435,11 +436,19 @@ class ExecutionConformanceSuite extends munit.CatsEffectSuite:
     assertEquals(fromFs2, eyes4s.fs2.StudySegment.Reducing(0, eyes4s.plan.StudyDesign.Matched))
   }
 
+  /** A kill is an assertion the law makes failing, not any error: a law that
+    * crashes, times out under `TestControl` or hits an unrelated exception has
+    * not caught the mutant.
+    */
+  private def assertionFailed(result: Either[Throwable, Unit]): Boolean = result match
+    case Left(_: munit.FailExceptionLike[?]) => true
+    case _                                   => false
+
   test("every runner mutant fails exactly the laws the receipts name") {
     kills.traverse_ { (fault, killers) =>
       laws
         .traverse { (name, law) =>
-          law(new Mutant(fault)).attempt.map(result => name -> result.isLeft)
+          law(new Mutant(fault)).attempt.map(result => name -> assertionFailed(result))
         }
         .map { observed =>
           val failed = observed.collect { case (name, true) => name }.toSet

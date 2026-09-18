@@ -34,6 +34,8 @@ enum StudySegment derives CanEqual:
   case Reducing(scale: Int, design: StudyDesign)
   case Contrasting(scale: Int)
 
+  def scale: Int
+
 object StudySegment:
   def of(stage: StudyStage): StudySegment = stage match
     case StudyStage.Estimating(scale, _)     => Estimating(scale)
@@ -50,7 +52,7 @@ object StudySegment:
       segment: StudySegment,
       cursor: StudyCursor[K, U, S, D]
   ): SegmentTotal = segment match
-    case Reducing(_, _) =>
+    case Reducing(scale, _) if work.estimates.isDefinedAt(scale) =>
       cursor.reductionUnits.fold(SegmentTotal.Unknown)(SegmentTotal.Exact.apply)
     case other => total(work, other)
 
@@ -63,11 +65,16 @@ object StudySegment:
     * cell inside it. Reduction charges per realized score, which preparation
     * does not enumerate, so it is `Unknown` here and exact once the segment
     * begins. A contrast visits at most every focal key.
+    *
+    * A segment whose scale is not one of the plan's estimates names no work
+    * of this study, so its total is `Unknown`; `work`'s own cursor never
+    * reports one.
     */
   def total[K, U <: Unit2D, S, D](
       work: PreparedStudy[K, U, ?, S, D],
       segment: StudySegment
   ): SegmentTotal = segment match
+    case other if !work.estimates.isDefinedAt(other.scale) => SegmentTotal.Unknown
     case Estimating(_)        => SegmentTotal.Exact(work.input.trials.rows.size.toLong)
     case Comparing(_, design) =>
       val candidates = BigInt(design match
@@ -136,11 +143,24 @@ object TemporalSegment:
   /** Totals the prepared temporal study can state before a segment runs: a
     * cell's preparation is exactly one unit per trial, and its study segments
     * are the repetition's prepared study's totals, see [[StudySegment.total]].
+    *
+    * Total over every segment value: a segment whose repetition or window is
+    * not a cell of `work` names no work of this study, so nothing is claimed
+    * for it and its total is `Unknown`. Every segment `work`'s own cursor
+    * reports is a cell of `work`, so this case never arises from a run.
     */
   def total[K, U <: Unit2D, P, S, D](
       work: PreparedTemporalStudy[K, U, P, S, D],
       segment: TemporalSegment
-  ): SegmentTotal = segment match
-    case Preparing(_, _)                => SegmentTotal.Exact(work.trials.toLong)
-    case Studying(repetition, _, inner) =>
-      StudySegment.total(work.repetitions(repetition).prepared, inner)
+  ): SegmentTotal =
+    def cell(repetition: Int, window: Int): Option[PreparedRepetition[K, U, P, S, D]] =
+      work.repetitions.lift(repetition).filter(_ => work.windows.isDefinedAt(window))
+    segment match
+      case Preparing(repetition, window) =>
+        cell(repetition, window).fold(SegmentTotal.Unknown)(_ =>
+          SegmentTotal.Exact(work.trials.toLong)
+        )
+      case Studying(repetition, window, inner) =>
+        cell(repetition, window).fold(SegmentTotal.Unknown)(r =>
+          StudySegment.total(r.prepared, inner)
+        )

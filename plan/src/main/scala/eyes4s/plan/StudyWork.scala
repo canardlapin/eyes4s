@@ -307,9 +307,9 @@ final class StudyCursor[K, U <: Unit2D, S, D] private[plan] (
     * once its scores are realised; `None` outside a reducing stage.
     */
   def reductionUnits: Option[Long] = phase match
-    case ReduceMatched(cursor)    => Some(cursor.declaredUnits)
-    case ReduceControl(_, cursor) => Some(cursor.declaredUnits)
-    case _                        => None
+    case ReduceMatched(_, cursor)       => Some(cursor.declaredUnits)
+    case ReduceControl(_, _, _, cursor) => Some(cursor.declaredUnits)
+    case _                              => None
 
   def advance(quanta: WorkQuanta): Either[PlanError, StudyStep[K, U, S, D]] =
     phase match

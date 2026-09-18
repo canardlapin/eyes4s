@@ -6,9 +6,12 @@ foundation plan: does the shipped runner, which estimates one trial per step
 (X2 deferred), meet the proposed 100 ms JVM cancellation target? The answer
 decides whether X2 is scheduled.
 
-**Decision.** Keep X2 deferred. On every designated fixture, and on a 100-trial
-256×256 study with Gaussian bandwidths up to 32 cells, no step exceeds 20 ms and no
-cancellation takes longer than 18 ms. Estimation reaches the budget only at
+**Decision.** Keep X2 deferred. On the measured runtime (below: an Apple M3 Max,
+JDK 25.0.1, four visible processors, a 2 GiB heap), on every designated fixture and
+on a 100-trial 256×256 study with Gaussian bandwidths up to 32 cells, the longest
+step in the recorded full run was 19.6 ms and the slowest cancellation 17.2 ms (a
+later smoke run of the σ = 32 workload measured 20.0 ms and 15.9 ms), five times
+inside the budget. Estimation reaches the budget only at
 512×512 with σ = 32 cells (98.6 ms) and misses it at 1024×1024 (647 ms per step,
 955 ms to cancel). Schedule X2 when a consumer needs grids larger than 256×256 with
 wide kernels. The recording route misses the target for an unrelated reason:
@@ -137,8 +140,13 @@ quanta. No step exceeds 0.9 ms and no cancellation exceeds 0.8 ms.
 scaled study workload that uses a Gaussian. On the 100-trial 256×256 study it
 costs at most 3.8 ms binned, 5.9 ms at σ = 8 and 19.6 ms at σ = 32, and cancellation
 settles within 17.2 ms. That leaves at least five times headroom. The step cost is
-per trial and independent of the number of trials, so the result holds for any
-trial count on that grid. Cost grows with cells × kernel taps (193 taps at
+per trial, so more trials make a run longer, not its steps; what more trials cost
+is heap. Each estimated trial retains one mass per scale, 65,536 cells × 8 bytes
+= 512 KiB at 256×256, and a Gaussian step allocates a few more such arrays
+transiently. Against the pinned 2 GiB heap that is room for roughly 3,000
+retained trial-scales with headroom for the rest of the run; the measurement
+retained 100. Beyond that the collector, not the step, sets the pause, and this
+measurement says nothing about it. Cost grows with cells × kernel taps (193 taps at
 σ = 32) and faster than linearly once the grid leaves cache: about 0.7 ns per
 multiply-add at 256×256, about 0.95 ns at 512×512 and about 1.5 ns at 1024×1024.
 At 512×512 with σ = 32 a step takes 98.6 ms, and at 1024×1024 it takes 647 ms, with
@@ -153,9 +161,13 @@ every Gaussian workload is still an estimation step of the same length.
 ## X2 recommendation
 
 X2 (resumable estimation within a trial) is **not needed** for the declared
-envelope and should stay deferred. The supported envelope for the 100 ms target on
-this runtime is grids of at most 65,536 cells (256×256) with Gaussian bandwidths up
-to 32 cells, for any number of trials. The 512×512 σ = 32 case meets the target
+envelope and should stay deferred. The envelope supported by this evidence, for the
+100 ms target on the measured runtime only, is grids of at most 65,536 cells
+(256×256) with Gaussian bandwidths up to 32 cells, and as many trial-scales as the
+heap retains at 512 KiB each (about 3,000 under the pinned 2 GiB; 100 measured).
+It is not a claim for other hardware or JVMs: CI's smoke profile now reports the
+σ = 32 workload on GitHub's four-vCPU runner with JDK 17, and that output is what
+extends or narrows the envelope there. The 512×512 σ = 32 case meets the target
 with no headroom on this hardware, so a portable claim should not include it.
 
 Schedule X2 when a consumer needs grids beyond 256×256 with wide kernels. Its
@@ -201,10 +213,10 @@ sbt "fs2ModuleJVM/Test/runMain eyes4s.fs2.ExecutionResponsivenessMain --profile 
 ```
 
 The smoke profile covers the fixtures at both quanta, the 60 s recording and the
-100-trial 256×256 study binned and at σ = 8. It takes about ten seconds, and CI runs
-it on `rootJVM` with Java 17. The full profile adds σ = 32, the smallest-quanta
-synthetic runs, the large grids and the 600 s recording, and takes about 11
-minutes. The harness is `fs2/.jvm/src/test/scala/eyes4s/fs2/ExecutionResponsivenessMain.scala`.
+100-trial 256×256 study binned, at σ = 8 and at σ = 32, the widest bandwidth the
+envelope claims. It takes about ten seconds, and CI runs it on `rootJVM` with Java
+17. The full profile adds the smallest-quanta synthetic runs, the large grids and
+the 600 s recording, and takes about 11 minutes. The harness is `fs2/.jvm/src/test/scala/eyes4s/fs2/ExecutionResponsivenessMain.scala`.
 
 ## Appendix: per-stage step durations
 
