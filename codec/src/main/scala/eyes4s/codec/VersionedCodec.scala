@@ -60,6 +60,12 @@ enum CodecError derives CanEqual:
   case ScoreComponents(expected: Vector[String], found: Vector[String])
   case MissingResultCodec(method: DefinitionId)
   case DuplicateResultCodec(method: DefinitionId)
+  // UI-S5: artifact manifests and typed payload references.
+  case Payload(path: String, underlying: PayloadError)
+  case MissingPayload(path: String, reference: PayloadRef)
+  case Manifest(underlying: ManifestError)
+  case Text(offset: Int, reason: String)
+  case UnsupportedSchema(role: String, found: DefinitionId, supported: Vector[DefinitionId])
 
   def message: String = this match
     case InvalidJson(_, reason)     => s"Invalid project JSON: $reason"
@@ -102,6 +108,16 @@ enum CodecError derives CanEqual:
       s"No registered result codec for method ${id.name}@${id.version}."
     case DuplicateResultCodec(id) =>
       s"Result codec for method ${id.name}@${id.version} is already registered."
+    // UI-S5
+    case Payload(path, e)          => s"At $path: ${e.message}"
+    case MissingPayload(path, ref) =>
+      s"$path references payload ${ref.sha256.hex} (${ref.layout.element.wire}" +
+        s"${ref.layout.shape.mkString("[", ",", "]")}), which is not available."
+    case Manifest(e)          => e.message
+    case Text(offset, reason) => s"Artifact text is not strict UTF-8 at offset $offset: $reason"
+    case UnsupportedSchema(role, found, supported) =>
+      s"No $role decoder for schema ${found.name}@${found.version}; supported: " +
+        supported.map(id => s"${id.name}@${id.version}").mkString(", ") + "."
 
 /** A typed, explicitly versioned codec. Unsupported old versions fail precisely.
   * The wire envelope separates schema identity from any method identity in its payload.

@@ -60,11 +60,13 @@ There is no global interning, mutable registry or cross-document identity state.
 | Schema `DefinitionId` | The versioned wire shape and interpretation |
 | Method `DefinitionId` | The scientific implementation and parameter meaning |
 | `ContentHash` / `ArtifactRef` | Existing semantic input identity; 16-hex representation remains unchanged |
-| Optional byte checksum | Integrity of specified bytes, to be carried by S5's manifest |
+| Byte digest (`ByteDigest`) | SHA-256 of an artifact's exact bytes, carried with its length by each `eyes4s.manifest@1` entry |
 
 Schema or method IDs are not content hashes. `ContentHash` is not a cryptographic
-checksum, and JSON formatting changes do not redefine it. Byte verification is
-a separate effectful resolver concern, not an effect hidden inside decoding.
+checksum, and JSON formatting changes do not redefine it. Byte verification
+belongs to the manifest resolver, which reads through a source the application
+injects; decoding never reads. See
+[artifact manifests](SAVED_STUDIES.md#artifact-manifests-and-verified-resolution).
 
 ## Evidence
 

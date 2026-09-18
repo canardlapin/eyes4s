@@ -283,6 +283,111 @@ class ConsumerSuite extends munit.DisciplineSuite:
     )
   )
 
+  // UI-S5: the saved custom study as a manifest, resolved from the application's own storage.
+  private val archive =
+    persistence.results(
+      CustomMethod.scoreCodec(id("my.lab.scaled-score")),
+      StudyResultCodecs.signedDifference()
+    )
+  private val inputPersistence =
+    new StudyInputCodec[TrialKey, Px](
+      id("my.lab.study-input"),
+      id("my.lab.admission-ledger"),
+      layout,
+      keys
+    )
+  private val customDecoders = ArtifactDecoders.of(
+    get(StudyRegistry.empty[TrialKey, Px].register(persistence.registration)),
+    get(StudyInputRegistry.empty[TrialKey, Px].register(inputPersistence)),
+    get(StudyResultRegistry.empty[TrialKey, Px].register(archive.registration))
+  )
+  private def savedStudy(multiplier: Double): Either[CodecError, SavedManifest] = for
+    p <- StoredArtifact.plan("plan", persistence, plan(multiplier))
+    i <- StoredArtifact.input("input", inputPersistence, input)
+    r <- StoredArtifact.result("result", archive, get(plan(multiplier).run(input)))
+    s <- SavedManifest.of(
+      Vector(p, i, r),
+      Vector(
+        ManifestRelation.PlanInput(p.name, i.name),
+        ManifestRelation.ResultOf(r.name, p.name, i.name)
+      )
+    )
+  yield s
+
+  test("a saved custom study resolves from an in-memory source through registered decoders") {
+    val saved = get(savedStudy(2.0))
+    // The application's storage: here a map, keyed by its own names.
+    val store  = saved.artifacts.map(a => a.name.value -> a.bytes).toMap
+    val source = ByteSource {
+      case ByteRequest.Manifest(address) =>
+        Either.cond(address == saved.address, saved.bytes, SourceFailure.Missing)
+      case ByteRequest.Entry(entry) =>
+        store.get(entry.name.value).toRight(SourceFailure.Missing)
+    }
+    val resolved =
+      get(ArtifactResolver.resolve(saved.address, source, customDecoders).left.map(_.toVector))
+    val result = get(plan(2.0).run(input))
+    assertEquals(resolved.results.map(_._2.encode), Vector(archive.codec.encode(result)))
+    val admitted = resolved.inputs.map(_._2)
+    assertEquals(admitted.map(_.reference), Vector(input.reference))
+    // The admitted input reruns the reloaded plan to the archived result.
+    assertEquals(
+      archive.codec.encode(get(plan(2.0).run(admitted.head))),
+      archive.codec.encode(result)
+    )
+    // A changed byte is refused before anything is decoded, naming the entry.
+    val changed = store.updated(
+      "result",
+      IArray.tabulate(store("result").length)(i =>
+        if i == 40 then (store("result")(i) ^ 1).toByte else store("result")(i)
+      )
+    )
+    val tampered = ByteSource {
+      case ByteRequest.Manifest(_)  => Right(saved.bytes)
+      case ByteRequest.Entry(entry) =>
+        changed.get(entry.name.value).toRight(SourceFailure.Missing)
+    }
+    assert(
+      ArtifactResolver
+        .resolve(saved.address, tampered, customDecoders)
+        .left
+        .exists(errors =>
+          errors.length == 1 && (errors.head match
+            case ResolveError.Digest(name, _, _) => name.value == "result"
+            case _                               => false)
+        )
+    )
+    // Without the custom result registration the archive is refused by name.
+    val unregistered = ArtifactDecoders.of(
+      get(StudyRegistry.empty[TrialKey, Px].register(persistence.registration)),
+      get(StudyInputRegistry.empty[TrialKey, Px].register(inputPersistence)),
+      StudyResultRegistry.empty[TrialKey, Px]
+    )
+    assertEquals(
+      ArtifactResolver.resolve(saved.address, source, unregistered).left.map(_.toVector),
+      Left(
+        Vector(
+          ResolveError.Decode(
+            get(ArtifactName.of("result")),
+            CodecError.MissingResultCodec(method.id)
+          )
+        )
+      )
+    )
+  }
+
+  checkAll(
+    "custom saved study manifest",
+    ManifestLaws.verifiedResolution(
+      Gen.choose(0.1, 5.0),
+      (m: Double) => savedStudy(m).map(StoredGraph.of),
+      customDecoders,
+      (m: Double, resolved: ResolvedManifest[TrialKey, Px]) =>
+        resolved.results.map(_._2.encode) ==
+          Vector(archive.codec.encode(get(plan(m).run(input))))
+    )
+  )
+
   test("invalid parameters, missing schema versions and incompatible static types reject") {
     val json = get(parameters.encode(get(Multiplier.of(2.0))))
     assert(
