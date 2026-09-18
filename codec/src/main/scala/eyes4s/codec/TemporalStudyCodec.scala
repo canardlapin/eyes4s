@@ -111,3 +111,71 @@ final class TemporalStudyCodec[K, U <: Unit2D: UnitLabel, P, S, D](
           .map(invalid("temporalStudy", _))
       yield plan
     }
+
+  /** Registration of this temporal plan family, keyed by its base method. */
+  def registration: TemporalRegistration[K, U] =
+    val registered = this
+    new TemporalRegistration[K, U]:
+      val id: DefinitionId = registered.study.method.id
+      def decode(json: Json): Either[CodecError, LoadedTemporal[K, U]] =
+        registered.codec.decode(json).map { value =>
+          new LoadedTemporal[K, U]:
+            type Parameters = P
+            type Score      = S
+            type Difference = D
+            val plan: TemporalStudyPlan[K, U, P, S, D] = value
+            def encode: Either[CodecError, Json]       = registered.codec.encode(value)
+        }
+
+  /** The result archive for this temporal plan family, with explicit score
+    * and difference codecs.
+    */
+  def results(
+      scores: VersionedCodec[S],
+      differences: VersionedCodec[D]
+  ): TemporalResultCodec[K, U, P, S, D] =
+    new TemporalResultCodec(DefinitionId.temporalResult, this, scores, differences)
+
+/** A decoded temporal plan whose parameter, score and difference types stay
+  * abstract but typed.
+  */
+trait LoadedTemporal[K, U <: Unit2D]:
+  type Parameters
+  type Score
+  type Difference
+  def plan: TemporalStudyPlan[K, U, Parameters, Score, Difference]
+  def encode: Either[CodecError, Json]
+  def description: Vector[(String, Vector[Provenance.Param])] = plan.description
+  def prerequisites(input: Option[TemporalStudyInput[K, U]]): Vector[TemporalStudyError] =
+    plan.prerequisites(input)
+  def run(
+      input: TemporalStudyInput[K, U]
+  ): Either[TemporalStudyError, TemporalStudyResult[K, U, Parameters, Score, Difference]] =
+    plan.run(input)
+
+sealed trait TemporalRegistration[K, U <: Unit2D]:
+  def id: DefinitionId
+  def decode(json: Json): Either[CodecError, LoadedTemporal[K, U]]
+
+/** Temporal plan codecs by the method of their base study; lookup reads the
+  * payload's `study.value.method` and refuses missing or duplicate
+  * registrations.
+  */
+final class TemporalRegistry[K, U <: Unit2D] private (
+    val entries: Vector[TemporalRegistration[K, U]]
+):
+  def register(entry: TemporalRegistration[K, U]): Either[CodecError, TemporalRegistry[K, U]] =
+    if entries.exists(_.id == entry.id) then Left(CodecError.DuplicateMethod(entry.id))
+    else Right(new TemporalRegistry(entries :+ entry))
+
+  def decode(json: Json): Either[CodecError, LoadedTemporal[K, U]] = for
+    payload    <- Wire.field[Json](json, "value")
+    study      <- Wire.field[Json](payload, "study")
+    base       <- Wire.field[Json](study, "value")
+    method     <- Wire.definition(base, "method")
+    registered <- entries.find(_.id == method).toRight(CodecError.MissingMethod(method))
+    result     <- registered.decode(json)
+  yield result
+
+object TemporalRegistry:
+  def empty[K, U <: Unit2D]: TemporalRegistry[K, U] = new TemporalRegistry(Vector.empty)

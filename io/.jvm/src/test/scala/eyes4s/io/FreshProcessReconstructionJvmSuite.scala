@@ -21,7 +21,7 @@ import eyes4s.core.*
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.Px
 import eyes4s.plan.*
-import io.circe.Json
+import io.circe.{ACursor, Json}
 
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 import java.util.concurrent.TimeUnit
@@ -36,10 +36,11 @@ import scala.util.Using
   * the pinned fixtures); neither is this JVM, and the reader shares no
   * memory, registry or cache with the writer and reads only the saved files.
   *
+  * Every study is saved as a manifest of its plan, input and result archive.
   * The writer must reproduce the pinned v1 archives byte for byte, and the
-  * reader must find, for the fixation study, a re-executed result whose
-  * canonical encoding has the archived entry's exact SHA-256 and, for every
-  * study, a result whose every double has the bits the writer computed.
+  * reader must find, for every study, a re-executed result whose canonical
+  * encoding has the archived entry's exact SHA-256, and whose every double
+  * has the bits of the decoded archive and of the writer's result.
   *
   * Perturbations of private copies pin what verification establishes. Byte
   * corruption and a missing registration are refused by name. A forger who
@@ -68,8 +69,14 @@ class FreshProcessReconstructionJvmSuite extends munit.FunSuite:
     "result"         -> "d8429e2f980919fde450192e0485cfbcfc7920923fb45ef4863ea7923869d9f0"
   )
 
+  /** The pinned recording-result-v1 and temporal-result-v1 archives, by `shasum -a 256`. */
+  private val archives = Map(
+    "recording" -> "2727f9d196460ef1dd6f4a6753b85d093273f1d4baff5a4707959c89551ba585",
+    "temporal"  -> "742c22bc8081921d711534a8234209d814e1df8a2e2c0637d8e41270255a11ca"
+  )
+
   /** The doubles each result's fingerprint carries, as SAVED_STUDIES.md states. */
-  private val doubles = Map("fixation" -> 308, "recording" -> 116, "temporal" -> 6178)
+  private val doubles = Map("fixation" -> 308, "recording" -> 136, "temporal" -> 6178)
 
   /** The pinned monocular recording's identity: recording-input-v1's channels. */
   private val recordingHash = "2c826dc41ae25e67"
@@ -200,22 +207,50 @@ class FreshProcessReconstructionJvmSuite extends munit.FunSuite:
   test("a writer JVM saves three studies and reproduces the pinned v1 archives byte for byte") {
     assertEquals(written.status, 0, written.output)
     assertNotEquals(written.pid, ProcessHandle.current.pid)
-    val entries = get(written.study("fixation").hcursor.get[Vector[Json]]("entries")).map(e =>
-      get(e.hcursor.get[String]("name")) -> get(e.hcursor.get[String]("sha256"))
-    )
+    def entries(study: String): Vector[(String, String)] =
+      get(written.study(study).hcursor.get[Vector[Json]]("entries")).map(e =>
+        get(e.hcursor.get[String]("name")) -> get(e.hcursor.get[String]("sha256"))
+      )
+    val fixation = entries("fixation")
     assertEquals(
-      entries.map(_._1),
+      fixation.map(_._1),
       Vector("plan", "input", "ledger", "refused-ledger", "result")
     )
-    assertEquals(entries.toMap - "plan", pinned)
+    assertEquals(fixation.toMap - "plan", pinned)
     val study =
       Option(getClass.getResource("/eyes4s/study-v1.json")).getOrElse(fail("study-v1"))
     assertEquals(json(saved.resolve("fixation").resolve("plan")), json(Paths.get(study.toURI)))
+    // The recording and temporal archives are the pinned v1 archives, byte for byte.
+    assertEquals(
+      entries("recording").map(_._1),
+      Vector(
+        "recording-input",
+        "recording",
+        "recording.tMicros",
+        "recording.support",
+        "recording.lineage",
+        "recording.values",
+        "recording-plan",
+        "recording-result"
+      )
+    )
+    assertEquals(entries("recording").toMap.apply("recording-result"), archives("recording"))
+    assertEquals(
+      Files.readAllBytes(saved.resolve("recording").resolve("recording-result")).toVector,
+      resourceBytes("recording-result-v1.json").toVector
+    )
+    assertEquals(
+      entries("temporal").map(_._1),
+      Vector("base", "temporal", "temporal-plan", "temporal-result")
+    )
+    assertEquals(entries("temporal").toMap.apply("temporal-result"), archives("temporal"))
+    assertEquals(
+      Files.readAllBytes(saved.resolve("temporal").resolve("temporal-result")).toVector,
+      resourceBytes("temporal-result-v1.json").toVector
+    )
     // The temporal plan the writer saved is the pinned temporal-study-v1 fixture, byte for byte.
     assertEquals(
-      Files
-        .readAllBytes(saved.resolve("temporal").resolve(FreshProcessHarness.planFile))
-        .toVector,
+      Files.readAllBytes(saved.resolve("temporal").resolve("temporal-plan")).toVector,
       resourceBytes("temporal-study-v1.json").toVector
     )
     FreshProcessHarness.studies.foreach { study =>
@@ -230,6 +265,7 @@ class FreshProcessReconstructionJvmSuite extends munit.FunSuite:
       Set(ProcessHandle.current.pid, written.pid, reader.pid).size == 3,
       "writer, reader and test ran in three processes"
     )
+    val archived = Map("fixation" -> pinned("result")) ++ archives
     FreshProcessHarness.studies.foreach { study =>
       assertEquals(reader.outcome(study), "reconstructed", s"$study: ${reader.study(study)}")
       // The reader's own fingerprint digest and double count equal the writer's:
@@ -240,14 +276,16 @@ class FreshProcessReconstructionJvmSuite extends munit.FunSuite:
         study
       )
       assertEquals(reader.count(study), doubles(study), study)
+      // The re-executed result encodes to the archived bytes exactly, and the
+      // decoded archive has the same bits as the rerun.
+      assertEquals(reader.field(study, "rerunSha256"), archived(study), study)
+      assertEquals(reader.field(study, "archiveSha256"), archived(study), study)
+      assertEquals(
+        get(reader.study(study).hcursor.get[Vector[String]]("compared")),
+        Vector("rerun", "loaded-rerun", "archive"),
+        study
+      )
     }
-    // The re-executed fixation result encodes to the archived bytes exactly.
-    assertEquals(reader.field("fixation", "rerunSha256"), pinned("result"))
-    assertEquals(reader.field("fixation", "archiveSha256"), pinned("result"))
-    assertEquals(
-      get(reader.study("fixation").hcursor.get[Vector[String]]("compared")),
-      Vector("rerun", "loaded-rerun", "archive")
-    )
     assertEquals(
       get(reader.study("recording").hcursor.get[Vector[String]]("resolved")),
       Vector(
@@ -256,12 +294,14 @@ class FreshProcessReconstructionJvmSuite extends munit.FunSuite:
         "recording.tMicros",
         "recording.support",
         "recording.lineage",
-        "recording.values"
+        "recording.values",
+        "recording-plan",
+        "recording-result"
       )
     )
     assertEquals(
       get(reader.study("temporal").hcursor.get[Vector[String]]("resolved")),
-      Vector("base", "temporal")
+      Vector("base", "temporal", "temporal-plan", "temporal-result")
     )
   }
 
@@ -280,7 +320,7 @@ class FreshProcessReconstructionJvmSuite extends munit.FunSuite:
     assertEquals(run.outcome("temporal"), "failed")
     assertEquals(
       run.field("temporal", "reason"),
-      "fingerprints differ from the writer's for rerun"
+      "fingerprints differ from the writer's for rerun, loaded-rerun, archive"
     )
     assertEquals(run.outcome("fixation"), "reconstructed")
     assertEquals(run.outcome("recording"), "reconstructed")
@@ -308,7 +348,7 @@ class FreshProcessReconstructionJvmSuite extends munit.FunSuite:
     assertEquals(run.outcome("temporal"), "reconstructed")
   }
 
-  test("a fresh JVM without the result registration refuses the archive by name") {
+  test("a fresh JVM without the result registrations refuses every archive by its method") {
     val run = launch("read", saved.toString, "--without-result-codec")
     assertEquals(run.status, refusalStatus, run.output)
     assertEquals(
@@ -317,8 +357,111 @@ class FreshProcessReconstructionJvmSuite extends munit.FunSuite:
         Refusal("result", "Decode", "", "MissingResultCodec(DefinitionId(eyes4s.cosine,1))")
       )
     )
+    assertEquals(
+      refusals(run, "recording"),
+      Vector(
+        Refusal(
+          "recording-result",
+          "Decode",
+          "",
+          "MissingResultCodec(DefinitionId(eyes4s.recording.idt,1))"
+        )
+      )
+    )
+    assertEquals(
+      refusals(run, "temporal"),
+      Vector(
+        Refusal(
+          "temporal-result",
+          "Decode",
+          "",
+          "MissingResultCodec(DefinitionId(eyes4s.cosine,1))"
+        )
+      )
+    )
+  }
+
+  // ---------------------------------------------------------------------------
+  // Forgeries of the temporal archive
+  // ---------------------------------------------------------------------------
+
+  /** The temporal archive with `change` applied to its JSON document. */
+  private def temporalArchive(directory: Path)(change: ACursor => ACursor): Array[Byte] =
+    change(json(directory.resolve("temporal-result")).hcursor).top
+      .getOrElse(fail("no such member"))
+      .spaces2
+      .getBytes("UTF-8")
+
+  private def firstCell(cursor: ACursor): ACursor =
+    cursor.downField("value").downField("cells").downArray
+
+  test(
+    "a forged occupancy ledger, re-declared, is refused because a density no longer follows"
+  ) {
+    val copied    = copy("temporal-ledger")
+    val directory = copied.resolve("temporal")
+    // The early window of s1/a/encode retains 190 ms of its second fixation;
+    // claim 180 ms. The ledger stays self-consistent, but the measure it
+    // weights is no longer the one the trial's densities were estimated from.
+    val forged = temporalArchive(directory)(cell =>
+      firstCell(cell)
+        .downField("occupancy")
+        .downArray
+        .downField("outcome")
+        .downField("fixations")
+        .downN(1)
+        .downField("retainedMicros")
+        .withFocus(_ => Json.fromString("180000"))
+    )
+    redeclare(directory, Map("temporal-result" -> forged))
+    val run = launch("read", copied.toString)
+    assertEquals(run.status, refusalStatus, run.output)
+    val refused = refusals(run, "temporal")
+    assertEquals(
+      refused.map(r => (r.entry, r.error, r.path)),
+      Vector(("temporal-result", "Decode", ""))
+    )
+    assert(
+      refused.head.cause.startsWith(
+        "TemporalResult(Cell(recall-encode,early,Density(StudyKey(s1,a,encode),Some("
+      ),
+      refused.head.cause
+    )
+    assertEquals(run.outcome("fixation"), "reconstructed")
     assertEquals(run.outcome("recording"), "reconstructed")
-    assertEquals(run.outcome("temporal"), "reconstructed")
+  }
+
+  test("a forged pair score, re-declared, resolves but is refused by the re-executed archive") {
+    val copied    = copy("temporal-score")
+    val directory = copied.resolve("temporal")
+    val forged    = temporalArchive(directory)(cell =>
+      firstCell(cell)
+        .downField("result")
+        .downField("value")
+        .downField("scales")
+        .downArray
+        .downField("analyses")
+        .downField("matched")
+        .downField("source")
+        .downField("rows")
+        .downArray
+        .downField("result")
+        .downField("score")
+        .withFocus(_ => Json.fromDoubleOrNull(0.5))
+    )
+    redeclare(directory, Map("temporal-result" -> forged))
+    val run = launch("read", copied.toString)
+    assertEquals(run.status, refusalStatus, run.output)
+    // Scores are archived, not re-derived: the archive decodes and every
+    // relation holds, but the study re-executed on its verified input does not
+    // encode to the archived bytes.
+    assertEquals(run.outcome("temporal"), "failed")
+    assert(
+      run.field("temporal", "reason").startsWith("the re-executed result encodes to "),
+      run.field("temporal", "reason")
+    )
+    assertEquals(run.outcome("fixation"), "reconstructed")
+    assertEquals(run.outcome("recording"), "reconstructed")
   }
 
   // ---------------------------------------------------------------------------
@@ -423,7 +566,7 @@ class FreshProcessReconstructionJvmSuite extends munit.FunSuite:
   }
 
   test(
-    "the recording input forged as well resolves, and the plan's recorded input refuses it"
+    "the recording input forged as well is refused by the plan's and the archive's relations"
   ) {
     val copied    = copy("forged-input")
     val directory = copied.resolve("recording")
@@ -436,45 +579,119 @@ class FreshProcessReconstructionJvmSuite extends munit.FunSuite:
     )
     val run = launch("read", copied.toString)
     assertEquals(run.status, refusalStatus, run.output)
-    // Every artifact verified; plan.json still records the original recording.
-    assertEquals(run.outcome("recording"), "failed")
-    assertEquals(run.field("recording", "reason"), "the plan disagrees with its input")
+    // Every artifact verified; the saved plan and archive still record the original recording.
+    val moved = forged._1.contentHash.render
     assertEquals(
-      run.field("recording", "cause"),
-      s"Vector(Plan(Input(ArtifactMismatch($recordingHash,${forged._1.contentHash.render}))))"
+      refusals(run, "recording"),
+      Vector(
+        Refusal(
+          "recording-plan",
+          "Relation",
+          "recording-plan-input(plan=recording-plan, input=recording-input)",
+          s"RecordingPrerequisites(Vector(Plan(Input(ArtifactMismatch($recordingHash,$moved)))))"
+        ),
+        Refusal(
+          "recording-result",
+          "Relation",
+          "recording-result-of(result=recording-result, plan=recording-plan, input=recording-input)",
+          s"ResultInput($moved,$recordingHash)"
+        )
+      )
     )
     assertEquals(run.outcome("fixation"), "reconstructed")
     assertEquals(run.outcome("temporal"), "reconstructed")
   }
 
-  test(
-    "pinned: a forgery that also rewrites the plan passes every check but the writer's record"
-  ) {
-    val copied    = copy("forged-plan")
+  private lazy val idt = RecordingCodecs.idt(
+    get(DefinitionId.of("eyes4s.recording-plan", 1)),
+    get(DefinitionId.of("eyes4s.recording.idt", 1)),
+    get(DefinitionId.of("eyes4s.idt-parameters", 1))
+  )
+
+  /** The saved recording archive with `cursor`'s change applied. */
+  private def archiveWith(directory: Path, cursor: ACursor => ACursor): Json =
+    cursor(json(directory.resolve("recording-result")).hcursor).top.getOrElse(fail("cursor"))
+
+  /** Forge the input, its recording and the saved plan's input digest consistently. */
+  private def forgedStudy(label: String): Path =
+    val copied    = copy(label)
     val directory = copied.resolve("recording")
     val input     = get(StoredArtifact.recordingInput("recording-input", forged._2))
-    redeclare(
-      directory,
-      packedFiles(forged._1) +
-        ("recording-input" -> Array.tabulate(input.bytes.length)(input.bytes(_))),
-      Map("recording" -> forged._1.contentHash, "recording-input" -> forged._2.hash)
-    )
-    val plan = json(directory.resolve(FreshProcessHarness.planFile)).hcursor
+    val plan      = json(directory.resolve("recording-plan")).hcursor
       .downField("value")
       .downField("input")
       .withFocus(_ => Json.fromString(forged._1.contentHash.render))
       .top
       .get
-    write(directory.resolve(FreshProcessHarness.planFile), plan.spaces2.getBytes("UTF-8"))
-    val run = launch("read", copied.toString)
+    redeclare(
+      directory,
+      packedFiles(forged._1) ++ Map(
+        "recording-input" -> Array.tabulate(input.bytes.length)(input.bytes(_)),
+        "recording-plan"  -> plan.spaces2.getBytes("UTF-8")
+      ),
+      Map("recording" -> forged._1.contentHash, "recording-input" -> forged._2.hash)
+    )
+    directory
+
+  test("the plan's input digest rewritten as well is refused by the archive's relation") {
+    val directory = forgedStudy("forged-plan")
+    val run       = launch("read", directory.getParent.toString)
     assertEquals(run.status, refusalStatus, run.output)
-    // A self-consistent different study: resolution, relations and the plan's
-    // checks all pass, and it re-executes. Only the writer's fingerprint of the
-    // original result, held outside the saved files, differs.
+    // The archive still records the plan it ran, on the original recording.
+    assertEquals(
+      refusals(run, "recording"),
+      Vector(
+        Refusal(
+          "recording-result",
+          "Relation",
+          "recording-result-of(result=recording-result, plan=recording-plan, input=recording-input)",
+          s"ResultInput(${forged._1.contentHash.render},$recordingHash)"
+        )
+      )
+    )
+  }
+
+  test(
+    "the archive's embedded plan rewritten too resolves, and its rerun refuses the archive"
+  ) {
+    val directory = forgedStudy("forged-archive-plan")
+    val archive   = archiveWith(
+      directory,
+      _.downField("value")
+        .downField("plan")
+        .downField("value")
+        .downField("input")
+        .withFocus(_ => Json.fromString(forged._1.contentHash.render))
+    )
+    redeclare(directory, Map("recording-result" -> archive.spaces2.getBytes("UTF-8")))
+    val run = launch("read", directory.getParent.toString)
+    assertEquals(run.status, refusalStatus, run.output)
+    // Every check of the saved files passes; the analysis the archive records
+    // is not the one its plan computes on the verified input.
+    assertEquals(run.outcome("recording"), "failed")
+    assert(
+      run.field("recording", "reason").startsWith("the re-executed result encodes to "),
+      run.field("recording", "reason")
+    )
+  }
+
+  test(
+    "pinned: a forgery that also replaces the archive with its own rerun passes every check but the writer's record"
+  ) {
+    val directory = forgedStudy("forged-study")
+    val plan      = get(idt.codec.parse(Files.readString(directory.resolve("recording-plan"))))
+    val analysis  = get(plan.run(forged._1).left.map(_.message))
+    val archive   = get(idt.results.codec.encode(analysis))
+    redeclare(directory, Map("recording-result" -> archive.spaces2.getBytes("UTF-8")))
+    val run = launch("read", directory.getParent.toString)
+    assertEquals(run.status, refusalStatus, run.output)
+    // A self-consistent different study: resolution, relations, the plan's
+    // checks and the archive comparison all pass. Only the writer's
+    // fingerprint of the original result, held outside the saved files, differs.
     assertEquals(run.outcome("recording"), "failed")
     assertEquals(
       run.field("recording", "reason"),
-      "fingerprints differ from the writer's for rerun"
+      "fingerprints differ from the writer's for rerun, loaded-rerun, archive"
     )
   }
 

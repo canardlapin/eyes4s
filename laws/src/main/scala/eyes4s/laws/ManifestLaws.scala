@@ -167,7 +167,11 @@ object ManifestLaws extends ManifestLaws:
     def temporalInput(
         document: Json,
         base: ArtifactRef[StudyInput[K, U]] => Option[StudyInput[K, U]]
-    ) = tick(underlying.temporalInput(document, base))
+    )                                          = tick(underlying.temporalInput(document, base))
+    override def recordingPlan(document: Json) = tick(underlying.recordingPlan(document))
+    override def recordingResult(document: Json) = tick(underlying.recordingResult(document))
+    override def temporalPlan(document: Json)    = tick(underlying.temporalPlan(document))
+    override def temporalResult(document: Json)  = tick(underlying.temporalResult(document))
 
   def counting[K, U <: Unit2D](decoders: ArtifactDecoders[K, U]): Counting[K, U] =
     new Counting(decoders)

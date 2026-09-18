@@ -441,10 +441,26 @@ class ResultCodecSuite extends munit.FunSuite:
       )
     )
 
-    val temporal = edit(json)(scale0("estimation", "0", "outcome")*)(_ =>
+    // A temporal failure carries its typed error; an unknown error kind is
+    // refused at the estimation it sits in.
+    val estimated = get(
+      json.hcursor
+        .downField("value")
+        .downField("scales")
+        .downN(0)
+        .downField("estimation")
+        .downN(0)
+        .get[Json]("key")
+    )
+    val epochless = Json.obj("kind" -> Json.fromString("epochless"))
+    val temporal  = edit(json)(scale0("estimation", "0", "outcome")*)(_ =>
       Json.obj(
         "kind"    -> Json.fromString("failure"),
-        "failure" -> Json.obj("kind" -> Json.fromString("temporal"))
+        "failure" -> Json.obj(
+          "kind"  -> Json.fromString("temporal"),
+          "key"   -> estimated,
+          "error" -> epochless
+        )
       )
     )
     assertEquals(
@@ -452,10 +468,7 @@ class ResultCodecSuite extends munit.FunSuite:
       Some(
         CodecError.Entry(
           "scales[0].estimation[0]",
-          CodecError.Unsupported(
-            "failure",
-            "temporal failures belong to the temporal result archive"
-          )
+          CodecError.Field("kind", epochless, "unknown temporal study error epochless")
         )
       )
     )
@@ -648,11 +661,28 @@ class ResultCodecSuite extends munit.FunSuite:
     )
     val rebuilt =
       get(StudyResult.reconstruct(result.input, layout, result.description, Vector(temporal)))
+    // A temporal failure has a wire form: it round-trips with its trial and typed error.
+    val encoded = get(cosine.codec.encode(rebuilt))
     assertEquals(
-      cosine.codec.encode(rebuilt).left.toOption.map(_.message),
-      Some(
-        "At scales[0].estimation[0]: Cannot encode failure: temporal failures name windows and epochs that belong to the temporal result archive"
+      encoded.hcursor
+        .downField("value")
+        .downField("scales")
+        .downN(0)
+        .downField("estimation")
+        .downN(0)
+        .downField("outcome")
+        .downField("failure")
+        .get[Json]("error"),
+      Right(
+        Json.obj(
+          "kind"   -> Json.fromString("weighting"),
+          "weight" -> Json.fromString("Duration")
+        )
       )
+    )
+    assertEquals(
+      get(cosine.codec.decode(encoded)).scales.head.estimation.head,
+      k -> Left(StudyFailure.Temporal(k, TemporalStudyError.Weighting(Weight.Duration)))
     )
     assertEquals(
       StudyResult

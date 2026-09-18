@@ -821,8 +821,9 @@ private[codec] object ResultWire:
       case other => Left(unknown(json, "reduction error", other))
     }
 
-  /** Temporal failures name windows and epochs of the temporal route; they
-    * belong to the temporal result archive and are refused here.
+  /** Every failure family, the temporal one included: a temporal failure
+    * carries its trial and the typed `TemporalStudyError` its occupancy
+    * produced, which names the window and epoch it concerns.
     */
   def studyFailure[K](keys: VersionedCodec[K])(
       failure: StudyFailure[K]
@@ -838,13 +839,12 @@ private[codec] object ResultWire:
         left  <- keys.encode(l)
         right <- keys.encode(r)
       yield tagged("comparison", "left" -> left, "right" -> right, "error" -> compareError(e))
-    case StudyFailure.Temporal(_, _) =>
-      Left(
-        CodecError.Unsupported(
-          "failure",
-          "temporal failures name windows and epochs that belong to the temporal result archive"
+    case StudyFailure.Temporal(k, e) =>
+      keys
+        .encode(k)
+        .map(key =>
+          tagged("temporal", "key" -> key, "error" -> TemporalWire.temporalStudyError(e))
         )
-      )
 
   def readStudyFailure[K](keys: VersionedCodec[K])(
       json: Json
@@ -874,12 +874,10 @@ private[codec] object ResultWire:
           e <- error.flatMap(readCompareError)
         yield StudyFailure.Comparison(l, r, e)
       case "temporal" =>
-        Left(
-          CodecError.Unsupported(
-            "failure",
-            "temporal failures belong to the temporal result archive"
-          )
-        )
+        for
+          k <- key
+          e <- error.flatMap(TemporalWire.readTemporalStudyError)
+        yield StudyFailure.Temporal(k, e)
       case other => Left(unknown(json, "study failure", other))
     }
 

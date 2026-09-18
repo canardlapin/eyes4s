@@ -115,6 +115,16 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
       "temporal-study-v1",
       ConventionalPlanFixtures.temporalStudyVersionOne,
       ConventionalPlanFixtures.temporalCodec.codec
+    ),
+    Pinned(
+      "recording-result-v1",
+      ResultArchiveMirrors.recordingResultVersionOne,
+      ArchiveFixtures.recordingResults.codec
+    ),
+    Pinned(
+      "temporal-result-v1",
+      ResultArchiveMirrors.temporalResultVersionOne,
+      ArchiveFixtures.temporalResults.codec
     )
   ) ++ scoreEnvelopes
 
@@ -145,6 +155,7 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
         "eyes4s.measure-distance@1",
         "eyes4s.recording-input@1",
         "eyes4s.recording-plan@1",
+        "eyes4s.recording-result@1",
         "eyes4s.recording@1",
         "eyes4s.scalar@1",
         "eyes4s.signed-difference@1",
@@ -152,6 +163,7 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
         "eyes4s.study-input@1",
         "eyes4s.study-result@1",
         "eyes4s.study@1",
+        "eyes4s.temporal-result@1",
         "eyes4s.temporal-study-input@1",
         "eyes4s.temporal-study@1",
         "eyes4s.timeline@1"
@@ -295,6 +307,67 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
     assertEquals(
       archived.decode(nested(StudyResultFixtures.resultVersionOne, "method", 2)).left.toOption,
       Some(CodecError.MissingResultCodec(cosine2))
+    )
+    // The recording and temporal archives dispatch on their method, and read
+    // their embedded plan through its own versioned codec.
+    val recordingArchives = get(
+      RecordingResultRegistry.empty.register(ArchiveFixtures.recordingResults.registration)
+    )
+    val idt2 = id(ArchiveFixtures.recordingCodec.method.id.name, 2)
+    assertEquals(
+      recordingArchives
+        .decode(nested(ResultArchiveMirrors.recordingResultVersionOne, "method", 2))
+        .left
+        .toOption,
+      Some(CodecError.MissingResultCodec(idt2))
+    )
+    val temporalArchives = get(
+      TemporalResultRegistry
+        .empty[StudyKey, Px]
+        .register(ArchiveFixtures.temporalResults.registration)
+    )
+    assertEquals(
+      temporalArchives
+        .decode(nested(ResultArchiveMirrors.temporalResultVersionOne, "method", 2))
+        .left
+        .toOption,
+      Some(CodecError.MissingResultCodec(cosine2))
+    )
+    val temporalPlans = get(
+      TemporalRegistry.empty[StudyKey, Px].register(ArchiveFixtures.temporalCodec.registration)
+    )
+    val nestedMethod = parse(ConventionalPlanFixtures.temporalStudyVersionOne).hcursor
+      .downField("value")
+      .downField("study")
+      .downField("value")
+      .downField("method")
+      .downField("version")
+      .withFocus(_ => Json.fromInt(2))
+      .top
+      .get
+    assertEquals(
+      temporalPlans.decode(nestedMethod).left.toOption,
+      Some(CodecError.MissingMethod(cosine2))
+    )
+    val embeddedPlan = parse(ResultArchiveMirrors.recordingResultVersionOne).hcursor
+      .downField("value")
+      .downField("plan")
+      .downField("schema")
+      .downField("version")
+      .withFocus(_ => Json.fromInt(2))
+      .top
+      .get
+    assertEquals(
+      ArchiveFixtures.recordingResults.codec.decode(embeddedPlan).left.toOption,
+      Some(
+        CodecError.Entry(
+          "plan",
+          CodecError.Schema(
+            ArchiveFixtures.recordingCodec.schema,
+            id(ArchiveFixtures.recordingCodec.schema.name, 2)
+          )
+        )
+      )
     )
     assertEquals(
       results.codec

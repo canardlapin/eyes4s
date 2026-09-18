@@ -126,12 +126,98 @@ object WindowOccupancy:
       ledger
     )
 
+  /** Checked reconstruction of an archived occupancy from its ledger and the
+    * positions of its retained fixations, without the scanpath or coverage it
+    * was computed from. What follows from the ledger alone is re-derived and
+    * checked: the window has a positive representable width, the observed and
+    * missing time partition it, every ledger row sits at its own fixation
+    * index with `0 <= retained <= original` and no more retained than the
+    * window observed (and, under `FullyContained`, `retained` either zero or
+    * the whole fixation), one position is supplied
+    * per retained fixation, in ledger order, and each retained fixation's
+    * weight is its retained time in seconds, exactly as `apply` weights it.
+    * The positions themselves are the scanpath's fixation centres, which only
+    * the input can confirm.
+    */
+  def reconstruct[U <: Unit2D](
+      interval: Interval,
+      boundary: FixationBoundary,
+      frame: Frame[U],
+      positions: IArray[Pt[U]],
+      observedMicros: Long,
+      missingMicros: Long,
+      fixationTimes: Vector[FixationWindowTime]
+  ): Either[WindowOccupancyError, WindowOccupancy[U]] =
+    val width    = BigInt(interval.offset.toMicros) - interval.onset.toMicros
+    val selected = fixationTimes.filter(_.retainedMicros > 0)
+    for
+      _ <- Either.cond(
+        width > 0 && width.isValidLong,
+        (),
+        WindowOccupancyError.InvalidWidth(interval, width)
+      )
+      _ <- Either.cond(
+        observedMicros >= 0 && missingMicros >= 0 &&
+          BigInt(observedMicros) + missingMicros == width,
+        (),
+        WindowOccupancyError.ObservedTime(interval, observedMicros, missingMicros)
+      )
+      _ <- fixationTimes.zipWithIndex
+        .collectFirst {
+          case (row, position)
+              if row.index != position || row.retainedMicros < 0 ||
+                BigInt(row.retainedMicros) > row.originalMicros ||
+                row.retainedMicros > observedMicros ||
+                (boundary == FixationBoundary.FullyContained && row.retainedMicros != 0 &&
+                  BigInt(row.retainedMicros) != row.originalMicros) =>
+            WindowOccupancyError.Ledger(
+              position,
+              row.index,
+              row.originalMicros,
+              row.retainedMicros,
+              boundary
+            )
+        }
+        .toLeft(())
+      _ <- Either.cond(
+        positions.length == selected.size,
+        (),
+        WindowOccupancyError.MeasureSupport(selected.size, positions.length)
+      )
+      measure <- PointMeasure
+        .of(frame, positions, IArray.from(selected.map(_.retainedMicros.toDouble / 1000000.0)))
+        .left
+        .map(WindowOccupancyError.Measure.apply)
+    yield new WindowOccupancy(
+      interval,
+      boundary,
+      measure,
+      observedMicros,
+      missingMicros,
+      fixationTimes
+    )
+
 enum WindowOccupancyError derives CanEqual:
   case Time(underlying: TimeError)
   case Measure(underlying: SurfaceError)
   case InvalidWidth(interval: Interval, micros: BigInt)
   case EmptyCoverageInterval(clock: ClockId, intervals: Vector[Interval])
   case OverlappingCoverage(clock: ClockId, intervals: Vector[Interval])
+
+  /** An archived occupancy's observed and missing time do not partition its window. */
+  case ObservedTime(interval: Interval, observedMicros: Long, missingMicros: Long)
+
+  /** An archived ledger row is out of place or retains time its fixation cannot. */
+  case Ledger(
+      position: Int,
+      index: Int,
+      originalMicros: BigInt,
+      retainedMicros: Long,
+      boundary: FixationBoundary
+  )
+
+  /** An archived measure does not hold one position per retained fixation. */
+  case MeasureSupport(retained: Int, positions: Int)
   def message: String = this match
     case Time(e)            => e.message
     case Measure(e)         => e.message
@@ -141,3 +227,11 @@ enum WindowOccupancyError derives CanEqual:
       s"Observed coverage on $c contains an empty interval: $xs."
     case OverlappingCoverage(c, xs) =>
       s"Observed coverage on $c contains overlapping intervals: $xs."
+    case ObservedTime(i, observed, missing) =>
+      s"Window ${i.render} records observed=$observed and missing=$missing microseconds, " +
+        "which do not partition its width."
+    case Ledger(position, index, original, retained, b) =>
+      s"Ledger row $position names fixation $index with original=$original and " +
+        s"retained=$retained microseconds, which $b cannot retain."
+    case MeasureSupport(retained, positions) =>
+      s"The ledger retains $retained fixations but the measure holds $positions positions."

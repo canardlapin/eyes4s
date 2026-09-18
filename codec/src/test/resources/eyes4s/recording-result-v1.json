@@ -1,0 +1,536 @@
+{
+  "schema" : {
+    "name" : "eyes4s.recording-result",
+    "version" : 1
+  },
+  "value" : {
+    "method" : {
+      "name" : "eyes4s.recording.idt",
+      "version" : 1
+    },
+    "plan" : {
+      "schema" : {
+        "name" : "eyes4s.recording-plan",
+        "version" : 1
+      },
+      "value" : {
+        "method" : {
+          "name" : "eyes4s.recording.idt",
+          "version" : 1
+        },
+        "parameters" : {
+          "schema" : {
+            "name" : "eyes4s.idt-parameters",
+            "version" : 1
+          },
+          "value" : {
+            "extentWidthDeg" : 1.0,
+            "extentHeightDeg" : 1.0,
+            "minimumMicros" : "2000"
+          }
+        },
+        "input" : "2c826dc41ae25e67",
+        "source" : "synthetic-left-headfixed-500",
+        "display" : {
+          "id" : "display",
+          "unit" : "px",
+          "xMin" : 0.0,
+          "yMin" : 0.0,
+          "xMax" : 1000.0,
+          "yMax" : 1000.0,
+          "yAxis" : "Down"
+        },
+        "trackerClock" : "tracker",
+        "analysisClock" : "display",
+        "angularFrame" : "angular",
+        "viewing" : {
+          "distanceMm" : 600.0,
+          "widthMm" : 500.0,
+          "heightMm" : 500.0
+        },
+        "syncModel" : "OffsetOnly",
+        "marks" : [
+          {
+            "id" : "t1",
+            "sourceMicros" : "0",
+            "targetMicros" : "1000000"
+          },
+          {
+            "id" : "t2",
+            "sourceMicros" : "10000000",
+            "targetMicros" : "11000010"
+          },
+          {
+            "id" : "t3",
+            "sourceMicros" : "20000000",
+            "targetMicros" : "21000020"
+          },
+          {
+            "id" : "t4",
+            "sourceMicros" : "30000000",
+            "targetMicros" : "31005000"
+          }
+        ],
+        "residualLimitMicros" : "2000",
+        "interpolationGapMicros" : "6000",
+        "areas" : [
+          {
+            "id" : "image",
+            "label" : "Image",
+            "xMin" : 0.0,
+            "yMin" : 0.0,
+            "xMax" : 800.0,
+            "yMax" : 600.0
+          }
+        ]
+      }
+    },
+    "identities" : {
+      "frames" : [
+        {
+          "id" : "angular",
+          "unit" : "deg",
+          "xMin" : -22.619864948040426,
+          "yMin" : -22.619864948040426,
+          "xMax" : 22.619864948040426,
+          "yMax" : 22.619864948040426,
+          "yAxis" : "Up"
+        }
+      ],
+      "grids" : [
+      ],
+      "clocks" : [
+        "display"
+      ]
+    },
+    "synchronization" : {
+      "source" : "tracker",
+      "target" : "display",
+      "mode" : "offset-only",
+      "offsetMicros" : "1000010",
+      "drift" : 0.0,
+      "used" : [
+        "t1",
+        "t2",
+        "t3"
+      ],
+      "residuals" : [
+        {
+          "mark" : "t1",
+          "predictedMicros" : "1000010",
+          "errorMicros" : "-10"
+        },
+        {
+          "mark" : "t2",
+          "predictedMicros" : "11000010",
+          "errorMicros" : "0"
+        },
+        {
+          "mark" : "t3",
+          "predictedMicros" : "21000010",
+          "errorMicros" : "10"
+        }
+      ],
+      "rejected" : [
+        {
+          "mark" : "t4",
+          "residualMicros" : "3742",
+          "limitMicros" : "2000"
+        }
+      ],
+      "rmsMicros" : "8",
+      "maximumMicros" : "10",
+      "uncertaintyMicros" : "10"
+    },
+    "angular" : {
+      "frame" : "angular",
+      "clock" : "display",
+      "eye" : "left",
+      "pupilUnit" : "arbitrary",
+      "rate" : {
+        "kind" : "fixed",
+        "hz" : 500.0
+      },
+      "samplingToleranceMicros" : "1",
+      "recording" : "92fa5356a94b1aca",
+      "samples" : {
+        "length" : 8,
+        "tMicros" : [
+          "1000010",
+          "1002010",
+          "1004011",
+          "1006010",
+          "1008010",
+          "1010010",
+          "1012010",
+          "1014010"
+        ],
+        "state" : [
+          "tracked",
+          "tracked",
+          "blink",
+          "lost",
+          "tracked",
+          "offScreen",
+          "tracked",
+          "tracked"
+        ],
+        "x" : [
+          0.0,
+          0.48938954827399167,
+          null,
+          null,
+          0.7161599454704085,
+          30.256437163529274,
+          0.9548412538721887,
+          1.193489423982035
+        ],
+        "y" : [
+          0.0,
+          0.0,
+          null,
+          null,
+          -0.09549287743587173,
+          22.822980597654823,
+          0.0,
+          -0.23873103309890856
+        ],
+        "pupil" : [
+          900.0,
+          901.0,
+          null,
+          null,
+          null,
+          null,
+          903.0,
+          905.0
+        ],
+        "lineage" : [
+          "measured>projected",
+          "measured>smoothed>projected",
+          "measured",
+          "measured",
+          "interpolated>projected",
+          "measured>projected",
+          "interpolated>smoothed>projected",
+          "measured>projected"
+        ]
+      }
+    },
+    "prepared" : {
+      "frame" : "angular",
+      "clock" : "display",
+      "eye" : "left",
+      "pupilUnit" : "arbitrary",
+      "rate" : {
+        "kind" : "fixed",
+        "hz" : 500.0
+      },
+      "samplingToleranceMicros" : "1",
+      "recording" : "0bf2979c94591243",
+      "samples" : {
+        "length" : 8,
+        "tMicros" : [
+          "1000010",
+          "1002010",
+          "1004011",
+          "1006010",
+          "1008010",
+          "1010010",
+          "1012010",
+          "1014010"
+        ],
+        "state" : [
+          "tracked",
+          "tracked",
+          "tracked",
+          "tracked",
+          "tracked",
+          "offScreen",
+          "tracked",
+          "tracked"
+        ],
+        "x" : [
+          0.0,
+          0.48938954827399167,
+          0.5650174757389967,
+          0.6405698130716029,
+          0.7161599454704085,
+          30.256437163529274,
+          0.9548412538721887,
+          1.193489423982035
+        ],
+        "y" : [
+          0.0,
+          0.0,
+          -0.03184687462486322,
+          -0.06366191829058115,
+          -0.09549287743587173,
+          22.822980597654823,
+          0.0,
+          -0.23873103309890856
+        ],
+        "pupil" : [
+          900.0,
+          901.0,
+          null,
+          null,
+          null,
+          null,
+          903.0,
+          905.0
+        ],
+        "lineage" : [
+          "measured>projected",
+          "measured>smoothed>projected",
+          "interpolated",
+          "interpolated",
+          "interpolated>projected",
+          "measured>projected",
+          "interpolated>smoothed>projected",
+          "measured>projected"
+        ]
+      }
+    },
+    "detection" : {
+      "detector" : {
+        "name" : "eyes4s.detect.idt",
+        "version" : "1.0.0"
+      },
+      "gapPolicy" : {
+        "kind" : "break"
+      },
+      "temporalSupport" : {
+        "kind" : "fixed",
+        "periodMicros" : "2000"
+      },
+      "events" : [
+        {
+          "kind" : "fixation",
+          "onsetMicros" : "1000010",
+          "offsetMicros" : "1010010",
+          "support" : {
+            "from" : 0,
+            "until" : 5
+          },
+          "x" : 0.48222735651099996,
+          "y" : -0.03820033407026322,
+          "sampleCount" : 5,
+          "dispersion" : {
+            "method" : "boundingBoxDiagonal"
+          }
+        },
+        {
+          "kind" : "fixation",
+          "onsetMicros" : "1012010",
+          "offsetMicros" : "1016010",
+          "support" : {
+            "from" : 6,
+            "until" : 8
+          },
+          "x" : 1.074165338927112,
+          "y" : -0.11936551654945428,
+          "sampleCount" : 2,
+          "dispersion" : {
+            "method" : "boundingBoxDiagonal"
+          }
+        }
+      ],
+      "labels" : [
+        "fixation",
+        "fixation",
+        "fixation",
+        "fixation",
+        "fixation",
+        "offSurface",
+        "fixation",
+        "fixation"
+      ],
+      "report" : {
+        "recording" : "synthetic-left-headfixed-500",
+        "detector" : {
+          "name" : "eyes4s.detect.idt",
+          "version" : "1.0.0"
+        },
+        "gapPolicy" : {
+          "kind" : "break"
+        },
+        "temporalSupport" : {
+          "kind" : "fixed",
+          "periodMicros" : "2000"
+        },
+        "policyCensoredMicros" : "0",
+        "totalSamples" : 8,
+        "classDurations" : [
+          {
+            "class" : "fixation",
+            "micros" : "14000"
+          },
+          {
+            "class" : "saccade",
+            "micros" : "0"
+          },
+          {
+            "class" : "pursuit",
+            "micros" : "0"
+          },
+          {
+            "class" : "blink",
+            "micros" : "0"
+          },
+          {
+            "class" : "missing",
+            "micros" : "0"
+          },
+          {
+            "class" : "offSurface",
+            "micros" : "2000"
+          },
+          {
+            "class" : "unclassified",
+            "micros" : "0"
+          }
+        ],
+        "unclassifiedRanges" : [
+        ],
+        "bridgedGaps" : [
+        ],
+        "warnings" : [
+        ]
+      },
+      "provenance" : {
+        "inputs" : "0bf2979c94591243",
+        "steps" : [
+          {
+            "operation" : "detect",
+            "params" : [
+              {
+                "name" : "detector",
+                "kind" : "text",
+                "value" : "eyes4s.detect.idt"
+              },
+              {
+                "name" : "version",
+                "kind" : "text",
+                "value" : "1.0.0"
+              },
+              {
+                "name" : "source",
+                "kind" : "text",
+                "value" : "synthetic-left-headfixed-500"
+              },
+              {
+                "name" : "gapPolicy",
+                "kind" : "text",
+                "value" : "break"
+              },
+              {
+                "name" : "extentWidth",
+                "kind" : "num",
+                "value" : 1.0
+              },
+              {
+                "name" : "extentHeight",
+                "kind" : "num",
+                "value" : 1.0
+              },
+              {
+                "name" : "minimumEventDurationMicros",
+                "kind" : "num",
+                "value" : 2000.0
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "assignment" : {
+      "areas" : [
+        {
+          "id" : "image",
+          "label" : "Image",
+          "frame" : "angular",
+          "region" : {
+            "kind" : "rect",
+            "xMin" : -22.619864948040426,
+            "yMin" : -4.763641690726177,
+            "xMax" : 14.036243467926477,
+            "yMax" : 22.619864948040426
+          },
+          "attributes" : [
+            {
+              "key" : "nativeBoundsPixels",
+              "value" : "0,0,800,600"
+            },
+            {
+              "key" : "nativeFrame",
+              "value" : "display"
+            }
+          ]
+        }
+      ],
+      "policy" : {
+        "kind" : "exclusiveByPriority"
+      },
+      "temporalSupport" : {
+        "kind" : "fixed",
+        "periodMicros" : "2000"
+      },
+      "memberships" : [
+        {
+          "kind" : "areas",
+          "ids" : [
+            "image"
+          ]
+        },
+        {
+          "kind" : "areas",
+          "ids" : [
+            "image"
+          ]
+        },
+        {
+          "kind" : "areas",
+          "ids" : [
+            "image"
+          ]
+        },
+        {
+          "kind" : "areas",
+          "ids" : [
+            "image"
+          ]
+        },
+        {
+          "kind" : "areas",
+          "ids" : [
+            "image"
+          ]
+        },
+        {
+          "kind" : "excluded",
+          "reason" : "offSurface"
+        },
+        {
+          "kind" : "areas",
+          "ids" : [
+            "image"
+          ]
+        },
+        {
+          "kind" : "areas",
+          "ids" : [
+            "image"
+          ]
+        }
+      ],
+      "report" : {
+        "aoiUnionMicros" : "14000",
+        "backgroundMicros" : "0",
+        "excludedMicros" : "2000",
+        "policyCensoredMicros" : "0",
+        "duplicatedAoiMicros" : "0"
+      }
+    }
+  }
+}

@@ -248,6 +248,11 @@ final class RecordingPlanCodec[P](
         .map(e => CodecError.Field("recordingPlan", json, e.message))
     yield plan
   }
+
+  /** The result archive for this recording plan family. */
+  def results: RecordingResultCodec[P] =
+    new RecordingResultCodec(DefinitionId.recordingResult, this)
+
   def registration: RecordingRegistration =
     val registered = this
     new RecordingRegistration:

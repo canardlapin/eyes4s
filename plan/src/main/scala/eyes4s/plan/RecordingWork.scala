@@ -237,10 +237,7 @@ final class RecordingCursor[P] private[plan] (
                   area.label,
                   angularFrame,
                   region,
-                  Map(
-                    "nativeFrame" -> plan.display.id.name,
-                    "nativeBoundsPixels" -> s"${area.bounds.xMin},${area.bounds.yMin},${area.bounds.xMax},${area.bounds.yMax}"
-                  )
+                  RecordingArea.attributes(plan.display, area)
                 )
                 .left
                 .map(RecordingPlanError.Areas.apply)
@@ -258,7 +255,7 @@ final class RecordingCursor[P] private[plan] (
         yield WorkStep.Done(
           1,
           new RecordingAnalysis(
-            plan.description,
+            plan,
             synchronization,
             angular,
             prepared,

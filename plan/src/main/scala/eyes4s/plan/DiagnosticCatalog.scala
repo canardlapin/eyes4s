@@ -68,7 +68,8 @@ object DiagnosticCatalog:
     "Policy",
     "Phase",
     "Reconstruction",
-    "Scale"
+    "Scale",
+    "SpecificationTime"
   )
   val temporal: DiagnosticFamily = error("temporal")(
     "Input",
@@ -112,6 +113,19 @@ object DiagnosticCatalog:
     "PlanDisagreement",
     "BinocularChannels",
     "Plan"
+  )
+  val recordingResult: DiagnosticFamily = error("recording-result")("Plan", "Stage")
+  val temporalResult: DiagnosticFamily  = error("temporal-result")(
+    "CellCount",
+    "CellLayout",
+    "Repetition",
+    "Plan",
+    "Result",
+    "OccupancyKeys",
+    "Occupancy",
+    "Density",
+    "Failure",
+    "Cell"
   )
 
   // ---------------------------------------------------------------- reduction and contrast
@@ -246,7 +260,10 @@ object DiagnosticCatalog:
     "Measure",
     "InvalidWidth",
     "EmptyCoverageInterval",
-    "OverlappingCoverage"
+    "OverlappingCoverage",
+    "ObservedTime",
+    "Ledger",
+    "MeasureSupport"
   )
 
   // ---------------------------------------------------------------- recordings and detection
@@ -468,6 +485,8 @@ object DiagnosticCatalog:
     temporal,
     recordingPlan,
     recordingInput,
+    recordingResult,
+    temporalResult,
     reduction,
     reconstruction,
     contrast,

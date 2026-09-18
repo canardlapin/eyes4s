@@ -54,6 +54,9 @@ object DefinitionId:
   val manifest: DefinitionId        = new DefinitionId("eyes4s.manifest", 1)
   val packedRecording: DefinitionId = new DefinitionId("eyes4s.packed-recording", 1)
   val packedArray: DefinitionId     = new DefinitionId("eyes4s.packed-array", 1)
+  // recording and temporal archives
+  val recordingResult: DefinitionId = new DefinitionId("eyes4s.recording-result", 1)
+  val temporalResult: DefinitionId  = new DefinitionId("eyes4s.temporal-result", 1)
 
 /** A typed reference to separately stored input; no file access occurs in plan. */
 final case class ArtifactRef[A] private (digest: String) derives CanEqual
@@ -394,6 +397,7 @@ enum StudyResultError[K] derives CanEqual:
   case Phase(key: K, expected: String, found: String)
   case Reconstruction(underlying: ReconstructionError[K])
   case Scale(index: Int, underlying: StudyResultError[K])
+  case SpecificationTime(design: StudyDesign, expected: EvaluationTime, found: EvaluationTime)
 
   def message: String = this match
     case Description(field, found) =>
@@ -434,8 +438,10 @@ enum StudyResultError[K] derives CanEqual:
       s"The $design reduction used ${found.render}; the plan declares $declared."
     case Phase(key, expected, found) =>
       s"Trial $key is in phase '$found' where the plan places phase '$expected'."
-    case Reconstruction(underlying) => underlying.message
-    case Scale(index, underlying)   => s"Scale $index: ${underlying.message}"
+    case Reconstruction(underlying)                 => underlying.message
+    case Scale(index, underlying)                   => s"Scale $index: ${underlying.message}"
+    case SpecificationTime(design, expected, found) =>
+      s"The $design specification orders time as $found; the plan's execution context gives $expected."
 
 object StudyScaleResult:
   /** Checked reconstruction of one scale: every density carries the provenance
@@ -510,6 +516,23 @@ object StudyResult:
       description: Vector[(String, Vector[Provenance.Param])],
       scales: Vector[StudyScaleResult[K, U, S, D]]
   ): Either[StudyResultError[K], StudyResult[K, U, S, D]] =
+    reconstruct(input, layout, description, scales, Vector.empty)
+
+  /** Checked reconstruction of a result executed under a provenance
+    * `context`, as every cell of a temporal study is (see
+    * `TemporalStudyPlan.provenanceContext`): the checks above, with the
+    * context's parameters expected in every evaluation specification beside
+    * the described ones, and the specification's time order the one the
+    * context implies (`OrderFree` without a context, `RelativeMicroseconds`
+    * with one).
+    */
+  def reconstruct[K, U <: Unit2D, S, D](
+      input: ArtifactRef[StudyInput[K, U]],
+      layout: StudyLayout[K],
+      description: Vector[(String, Vector[Provenance.Param])],
+      scales: Vector[StudyScaleResult[K, U, S, D]],
+      context: Vector[(String, Provenance.Param)]
+  ): Either[StudyResultError[K], StudyResult[K, U, S, D]] =
     import Provenance.Param.*
     val fields = description.toMap
     def field(name: String): Either[StudyResultError[K], Vector[Provenance.Param]] =
@@ -572,7 +595,8 @@ object StudyResult:
           methodParameters,
           method,
           policy,
-          phases
+          phases,
+          context
         ).left
           .map(StudyResultError.Scale(index, _))
       }
@@ -588,14 +612,17 @@ object StudyResult:
       methodParameters: Vector[(String, Provenance.Param)],
       method: DefinitionId,
       policy: String,
-      phases: (String, String)
+      phases: (String, String),
+      context: Vector[(String, Provenance.Param)]
   ): Either[StudyResultError[K], Unit] =
     import Provenance.Param.*
     val estimate = scale.estimate.parameters.flatMap { case (k, v) => Vector(Text(k), v) }
     val expectedParameters =
       (Vector("weight" -> Text(weight)) ++
         scale.estimate.parameters.map { case (k, v) => s"estimate.$k" -> v } ++
-        methodParameters).sortBy(_._1)
+        methodParameters ++ context).sortBy(_._1)
+    val expectedTime =
+      if context.isEmpty then EvaluationTime.OrderFree else EvaluationTime.RelativeMicroseconds
     val (focal, reference)                                               = phases
     def analysis(design: StudyDesign): Either[StudyResultError[K], Unit] =
       val source  = scale.analyses.source(design)
@@ -622,6 +649,11 @@ object StudyResult:
           spec.parameters == expectedParameters,
           (),
           StudyResultError.SpecificationParameters(design, expectedParameters, spec.parameters)
+        )
+        _ <- Either.cond(
+          spec.time == expectedTime,
+          (),
+          StudyResultError.SpecificationTime(design, expectedTime, spec.time)
         )
         _ <- Either.cond(
           reduced.diagnostics.policy.render == policy,

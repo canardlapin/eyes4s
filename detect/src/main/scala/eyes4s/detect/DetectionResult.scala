@@ -301,6 +301,54 @@ object Detection:
       parameters
     )
 
+  /** Checked reconstruction of an archived detection from its events and
+    * their declared sample support, without re-running any detector.
+    *
+    * The assembly `run` applies to a detector's emissions is applied to the
+    * archived events: each event must lie inside the recording, its declared
+    * support must be the sample range its span covers
+    * (`EventSeries.of`, which also re-derives fixation centres, sample counts
+    * and dispersions from the samples), every invalid observation inside an
+    * event must be permitted by the gap policy, and the exhaustive labels,
+    * the report with its class durations, unclassified ranges, bridged gaps
+    * and warnings, and the provenance are derived exactly as `run` derives
+    * them. `parameters` are the detection's parameters after the four the
+    * provenance step always records (`detector`, `version`, `source`,
+    * `gapPolicy`): for a shipped detector, its configuration.
+    */
+  def reconstruct[U <: Unit2D](
+      source: RecordingRef,
+      recording: Recording[U],
+      identity: DetectorIdentity,
+      gapPolicy: GapPolicy,
+      temporalSupport: TemporalSupport,
+      events: Vector[Event[U]],
+      support: Vector[SampleRange],
+      parameters: Vector[(String, Provenance.Param)]
+  ): Either[DetectionResultError, DetectionResult[U]] =
+    val detector = identity.detectorRef
+    val ledger   = recording.representedSupport(temporalSupport)
+    for
+      // Every event inside the recording, as `run` requires, before the
+      // declared ranges are compared with the ranges their spans cover.
+      _      <- supportFor(source, recording, detector, events)
+      series <- EventSeries
+        .of(recording, source, events, support)
+        .left
+        .map(DetectionResultError.SourceSupport(source, detector, _))
+      bridged <- validateGaps(source, recording, detector, gapPolicy, ledger, support)
+      result  <- assemble(
+        source,
+        recording,
+        identity,
+        gapPolicy,
+        ledger,
+        series,
+        bridged,
+        parameters
+      )
+    yield result
+
   private def execute[U <: Unit2D](
       source: RecordingRef,
       recording: Recording[U],
