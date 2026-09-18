@@ -105,8 +105,59 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
       "manifest-inputs-v1",
       InputsManifestV1Fixtures.manifestInputsVersionOne,
       ScientificManifest.codec
+    ),
+    Pinned(
+      "recording-v1",
+      ConventionalPlanFixtures.recordingPlanVersionOne,
+      ConventionalPlanFixtures.recordingCodec.codec
+    ),
+    Pinned(
+      "temporal-study-v1",
+      ConventionalPlanFixtures.temporalStudyVersionOne,
+      ConventionalPlanFixtures.temporalCodec.codec
     )
-  )
+  ) ++ scoreEnvelopes
+
+  /** The four score and difference envelopes of score-codecs-v1, each a
+    * document of its own schema.
+    */
+  private def scoreEnvelopes: Vector[Pinned[?]] =
+    val envelopes = get(
+      parse(InputsManifestV1Fixtures.scoreCodecsVersionOne).asArray.toRight("array")
+    )
+    val codecs = StudyResultCodecs
+    Vector[(String, VersionedCodec[?])](
+      "similarity"        -> codecs.similarity(),
+      "measure-distance"  -> codecs.measureDistance(),
+      "scalar"            -> codecs.scalar(),
+      "signed-difference" -> codecs.signedDifference()
+    ).zip(envelopes).map { case ((label, codec), envelope) =>
+      Pinned(s"score-codecs-v1 $label", envelope.noSpaces, codec)
+    }
+
+  test("the pinned documents cover every shipped document schema") {
+    assertEquals(
+      pinned.map(_.codec.schema).distinct.map(id => s"${id.name}@${id.version}").sorted,
+      Vector(
+        "eyes4s.admission-ledger@1",
+        "eyes4s.binocular-recording@1",
+        "eyes4s.manifest@1",
+        "eyes4s.measure-distance@1",
+        "eyes4s.recording-input@1",
+        "eyes4s.recording-plan@1",
+        "eyes4s.recording@1",
+        "eyes4s.scalar@1",
+        "eyes4s.signed-difference@1",
+        "eyes4s.similarity@1",
+        "eyes4s.study-input@1",
+        "eyes4s.study-result@1",
+        "eyes4s.study@1",
+        "eyes4s.temporal-study-input@1",
+        "eyes4s.temporal-study@1",
+        "eyes4s.timeline@1"
+      )
+    )
+  }
 
   private def withSchema(document: Json, name: String, version: Json): Json =
     document.mapObject(
@@ -300,6 +351,54 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
     )
   }
 
+  test("packed-recording@1 follows the policy: versions refused, members ignored and dropped") {
+    val codec    = PackedRecordingCodecs.recording[Px]
+    val payloads = get(codec.encode(InputPayloadFixtures.monocular)).payloads
+    def lookup(ref: PayloadRef): Option[VerifiedPayload] = payloads.find(_.ref == ref)
+    val document              = parse(InputsManifestV1Fixtures.packedRecordingVersionOne)
+    def reencoded(json: Json) = codec.decode(json, lookup).flatMap(codec.encode).map(_.document)
+    assertEquals(reencoded(document), Right(document))
+    val packed2 = id(DefinitionId.packedRecording.name, 2)
+    val bumped  = withSchema(document, DefinitionId.packedRecording.name, Json.fromInt(2))
+    assertEquals(
+      codec.decode(bumped, lookup).left.toOption,
+      Some(CodecError.Schema(DefinitionId.packedRecording, packed2))
+    )
+    assertEquals(
+      PackedRecordingCodecs.references(bumped).left.toOption,
+      Some(CodecError.Schema(DefinitionId.packedRecording, packed2))
+    )
+    assertEquals(
+      codec
+        .decode(
+          withSchema(document, DefinitionId.packedRecording.name, Json.fromInt(0)),
+          lookup
+        )
+        .left
+        .toOption,
+      Some(
+        CodecError.Definition(PlanError.InvalidDefinition(DefinitionId.packedRecording.name, 0))
+      )
+    )
+    assertEquals(
+      get(ArtifactDecoders.study[Px]).recording(bumped, lookup).left.toOption,
+      Some(
+        CodecError.UnsupportedSchema(
+          "recording",
+          packed2,
+          Vector(
+            DefinitionId.recording,
+            DefinitionId.binocularRecording,
+            DefinitionId.packedRecording
+          )
+        )
+      )
+    )
+    val extended = annotated(document, unknown)
+    assert(members(extended).count(_ == unknown._1) > 1)
+    assertEquals(reencoded(extended), Right(document))
+  }
+
   test("the resolver refuses an unknown manifest version and an unknown artifact version") {
     val decoders = get(ArtifactDecoders.study[Px])
     // A manifest@2 document stored under its own address.
@@ -444,6 +543,38 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
         .map(_.toVector),
       Left(Vector(ResolveError.Length(name("input"), original.entry.length, extended.length)))
     )
+    // Padded to the original length, the extended bytes pass the length check
+    // and are refused by their SHA-256.
+    val pretty = utf8(parse(StudyInputFixtures.inputVersionOne).spaces2)
+    val stored = get(
+      StoredArtifact.bytes(
+        "input",
+        ArtifactRole.StudyInput,
+        pretty,
+        Some(ManifestFixtures.input.hash)
+      )
+    )
+    val listed = get(SavedManifest.of(Vector(stored), Vector.empty))
+    val noted  =
+      parse(StudyInputFixtures.inputVersionOne).mapObject(_.add(unknown._1, unknown._2))
+    val padded = utf8(noted.noSpaces.padTo(pretty.length, ' '))
+    assertEquals(padded.length, pretty.length)
+    assertEquals(
+      ArtifactResolver
+        .resolve(
+          listed.address,
+          ByteSource
+            .inMemory(Map(listed.address -> listed.bytes), Map(name("input") -> padded)),
+          decoders
+        )
+        .left
+        .map(_.toVector),
+      Left(
+        Vector(
+          ResolveError.Digest(name("input"), stored.entry.sha256, ByteDigest.sha256(padded))
+        )
+      )
+    )
     // A manifest written over the extended bytes admits them: the member carries no
     // v1 meaning, and the input's semantic identity is the one re-derived from its values.
     val rewritten = get(
@@ -462,19 +593,20 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
     assertEquals(resolved.input(name("input")).map(_.hash), Some(ManifestFixtures.input.hash))
     // The manifest itself: a stored manifest with an extra member has another address; under
     // its own address it decodes to the same manifest, whose canonical bytes omit the member.
-    val frozen  = get(ScientificManifest.codec.parse(ManifestV1Fixtures.manifestVersionOne))
-    val noted   = utf8(annotated(parse(ManifestV1Fixtures.manifestVersionOne), unknown).spaces2)
-    val notedAt = ByteDigest.sha256(noted)
+    val frozen = get(ScientificManifest.codec.parse(ManifestV1Fixtures.manifestVersionOne))
+    val annotatedManifest =
+      utf8(annotated(parse(ManifestV1Fixtures.manifestVersionOne), unknown).spaces2)
+    val notedAt  = ByteDigest.sha256(annotatedManifest)
     val frozenAt = get(ByteDigest.parse(ManifestV1Fixtures.address))
     assertEquals(
-      ArtifactResolver.manifest(frozenAt, ByteSource(_ => Right(noted))),
+      ArtifactResolver.manifest(frozenAt, ByteSource(_ => Right(annotatedManifest))),
       Left(ResolveError.ManifestDigest(frozenAt, notedAt))
     )
     assertEquals(
-      ArtifactResolver.manifest(notedAt, ByteSource(_ => Right(noted))),
+      ArtifactResolver.manifest(notedAt, ByteSource(_ => Right(annotatedManifest))),
       Right(frozen)
     )
-    assertNotEquals(get(ScientificManifest.bytes(frozen)).toVector, noted.toVector)
+    assertNotEquals(get(ScientificManifest.bytes(frozen)).toVector, annotatedManifest.toVector)
   }
 
   test("unknown enumerated values are refused with a located error") {
@@ -528,10 +660,16 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
       .withFocus(_ => Json.fromString("kde"))
       .top
       .get
-    studies.codec.decode(estimator) match
-      case Left(CodecError.Field("estimate", _, reason)) =>
-        assert(reason.contains("kde"), reason)
-      case other => fail(s"unexpected $other")
+    assertEquals(
+      studies.codec.decode(estimator).left.toOption,
+      Some(
+        CodecError.Field(
+          "estimate",
+          Json.obj("kind" -> Json.fromString("kde")),
+          "unknown estimator kde"
+        )
+      )
+    )
     val state = parse(InputsManifestV1Fixtures.standaloneRecordingVersionOne).hcursor
       .downField("value")
       .downField("recording")
@@ -541,7 +679,19 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
       .withFocus(_ => Json.fromString("saccade"))
       .top
       .get
-    assert(RecordingInputCodecs.recording[Px].decode(state).isLeft)
+    assertEquals(
+      RecordingInputCodecs.recording[Px].decode(state).left.toOption,
+      Some(
+        CodecError.Entry(
+          "recording.samples[0]",
+          CodecError.Field(
+            "state",
+            Json.fromString("saccade"),
+            "unknown sample support category"
+          )
+        )
+      )
+    )
     val embedding = parse(InputPayloadFixtures.temporalInputVersionOne).hcursor
       .downField("value")
       .downField("study")
@@ -551,7 +701,7 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
       .get
     temporals.input.decode(embedding) match
       case Left(CodecError.Entry("study", CodecError.Field("kind", _, reason))) =>
-        assert(reason.contains("external"), reason)
+        assertEquals(reason, "unknown study embedding external")
       case other => fail(s"unexpected $other")
   }
 
@@ -564,9 +714,40 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
       .withFocus(_ => Json.obj("sigma" -> Json.fromInt(2)))
       .top
       .get
-    studies.codec.decode(parameters) match
-      case Left(CodecError.Field("unit", _, _)) => ()
-      case other                                => fail(s"unexpected $other")
+    assertEquals(
+      studies.codec.decode(parameters).left.toOption,
+      Some(
+        CodecError.Field(
+          "unit",
+          Json.obj("sigma" -> Json.fromInt(2)),
+          "expected an empty object"
+        )
+      )
+    )
+    // So is a trial's unit@1 metadata payload.
+    val metadata = parse(StudyInputFixtures.inputVersionOne).hcursor
+      .downField("value")
+      .downField("trials")
+      .downField("value")
+      .downArray
+      .downField("meta")
+      .downField("value")
+      .withFocus(_ => Json.obj("session" -> Json.fromInt(2)))
+      .top
+      .get
+    assertEquals(
+      inputs.input.decode(metadata).left.toOption,
+      Some(
+        CodecError.Entry(
+          "trials.rows[0]",
+          CodecError.Field(
+            "unit",
+            Json.obj("session" -> Json.fromInt(2)),
+            "expected an empty object"
+          )
+        )
+      )
+    )
     // A planned or observed timeline is not a neutral timeline.
     val planned = parse(InputsManifestV1Fixtures.timelineVersionOne).hcursor
       .downField("value")
@@ -590,7 +771,14 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
       .withFocus(_.mapObject(_.add("value", Json.fromDoubleOrNull(1.0))))
       .top
     assert(declared.isDefined, "the pinned source-supported fixation declares a dispersion")
-    assert(inputs.input.decode(declared.get).isLeft)
+    inputs.input.decode(declared.get).left.toOption match
+      case Some(CodecError.Entry(path, CodecError.Field("value", _, reason))) =>
+        assertEquals(path, "trials.rows[0].fixations[0]")
+        assertEquals(
+          reason,
+          "a source-supported dispersion carries its method only; its value is derived"
+        )
+      case other => fail(s"unexpected $other")
   }
 
   test("a refusal is a value: resolution reports every refused entry of a phase") {

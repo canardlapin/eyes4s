@@ -95,7 +95,7 @@ class ArtifactCodecLawSuite extends munit.DisciplineSuite:
     "similarity",
     CodecLaws.roundTrip(
       codecs.similarity(),
-      doubles.suchThat(_.isFinite).map(v => sure(Similarity.of(v))),
+      finiteDoubles.map(v => sure(Similarity.of(v))),
       (a: Similarity, b: Similarity) => PayloadLaws.sameBits(a.value, b.value)
     )
   )
@@ -103,19 +103,19 @@ class ArtifactCodecLawSuite extends munit.DisciplineSuite:
     "measure distance",
     CodecLaws.roundTrip(
       codecs.measureDistance(),
-      doubles.suchThat(v => v.isFinite && v >= 0.0).map(v => sure(MeasureDistance.of(v))),
+      finiteDoubles.map(v => sure(MeasureDistance.of(math.abs(v)))),
       (a: MeasureDistance, b: MeasureDistance) => PayloadLaws.sameBits(a.value, b.value)
     )
   )
   checkAll(
     "scalar",
-    CodecLaws.roundTrip(codecs.scalar(), doubles.suchThat(_.isFinite), PayloadLaws.sameBits)
+    CodecLaws.roundTrip(codecs.scalar(), finiteDoubles, PayloadLaws.sameBits)
   )
   checkAll(
     "signed difference",
     CodecLaws.roundTrip(
       codecs.signedDifference(),
-      doubles.suchThat(_.isFinite).map(v => sure(SignedDifference.between(v, 0.0))),
+      finiteDoubles.map(v => sure(SignedDifference.between(v, 0.0))),
       (a: SignedDifference, b: SignedDifference) => PayloadLaws.sameBits(a.value, b.value)
     )
   )
@@ -136,6 +136,12 @@ class ArtifactCodecLawSuite extends munit.DisciplineSuite:
 
   private def killed(rules: org.typelevel.discipline.Laws#RuleSet): Boolean =
     rules.all.properties.exists((_, prop) => falsified(prop))
+
+  /** The shipped implementation survives: every property passes outright,
+    * rather than merely not failing.
+    */
+  private def survives(rules: org.typelevel.discipline.Laws#RuleSet): Boolean =
+    rules.all.properties.forall((_, prop) => Test.check(killParameters, prop).passed)
 
   /** Wrap a codec so that decoding applies a deliberate change to the value. */
   private def mutant[A](codec: VersionedCodec[A])(
@@ -206,7 +212,7 @@ class ArtifactCodecLawSuite extends munit.DisciplineSuite:
     )
     assert(killed(CodecLaws.roundTrip(swapped, manifests, (a, b) => a == b)))
     // The criterion does not fire spuriously: the shipped codec survives.
-    assert(!killed(CodecLaws.roundTrip(ScientificManifest.codec, manifests, (a, b) => a == b)))
+    assert(survives(CodecLaws.roundTrip(ScientificManifest.codec, manifests, (a, b) => a == b)))
   }
 
   test(
@@ -248,7 +254,7 @@ class ArtifactCodecLawSuite extends munit.DisciplineSuite:
         packedCodec.decode(document, ref => payloads(ref).orElse(remembered.get(ref)))
     )
     assert(killed(filledIn))
-    assert(!killed(PayloadLaws.shippedRecording(packedCodec, recordings, sameRecording)))
+    assert(survives(PayloadLaws.shippedRecording(packedCodec, recordings, sameRecording)))
   }
 
   test("columns with identical bytes and layout are one content-addressed payload") {
@@ -313,13 +319,13 @@ class ArtifactCodecLawSuite extends munit.DisciplineSuite:
         )
       )
     )
-    assert(!killed(PayloadLaws.shippedArrays(zeros, PayloadLaws.sameBits)))
+    assert(survives(PayloadLaws.shippedArrays(zeros, PayloadLaws.sameBits)))
   }
 
   test("the score round-trip law kills a codec that rounds through single precision") {
     val rounded = mutant(codecs.scalar())(v => Right(v.toFloat.toDouble))
     assert(
-      killed(CodecLaws.roundTrip(rounded, doubles.suchThat(_.isFinite), PayloadLaws.sameBits))
+      killed(CodecLaws.roundTrip(rounded, finiteDoubles, PayloadLaws.sameBits))
     )
     val lostZero = mutant(codecs.signedDifference())(d =>
       SignedDifference
@@ -348,12 +354,21 @@ object ArtifactCodecLawSuite:
       identity
     )
 
-  /** Finite and non-finite doubles with their awkward bit patterns: both
-    * zeros, the smallest subnormal, the largest finite value, infinities and
-    * decimal fractions without an exact binary form. NaN is excluded: its bit
-    * pattern is not portable and every payload refuses it.
+  /** Every finite double, built from its bits: any sign, a biased exponent
+    * below the all-ones pattern (so neither an infinity nor a NaN) and any
+    * mantissa, subnormals included. Nothing is generated only to be discarded.
     */
-  val doubles: Gen[Double] = Gen.frequency(
+  val finiteBits: Gen[Double] = for
+    sign     <- Gen.oneOf(0L, 1L)
+    exponent <- Gen.choose(0L, 0x7feL)
+    mantissa <- Gen.choose(0L, 0xfffffffffffffL)
+  yield java.lang.Double.longBitsToDouble((sign << 63) | (exponent << 52) | mantissa)
+
+  /** Finite doubles with their awkward bit patterns: both zeros, the smallest
+    * subnormal, the largest finite value and decimal fractions without an
+    * exact binary form, besides arbitrary bit patterns.
+    */
+  val finiteDoubles: Gen[Double] = Gen.frequency(
     6 -> Gen.choose(-1e6, 1e6),
     2 -> Gen.oneOf(0.1, -0.3, 1.0 / 3.0, 2.5e-7, 123456.789),
     2 -> Gen.oneOf(
@@ -362,11 +377,18 @@ object ArtifactCodecLawSuite:
       java.lang.Double.MIN_VALUE,
       -java.lang.Double.MIN_VALUE,
       java.lang.Double.MAX_VALUE,
-      -java.lang.Double.MAX_VALUE,
-      Double.PositiveInfinity,
-      Double.NegativeInfinity
+      -java.lang.Double.MAX_VALUE
     ),
-    1 -> Gen.long.map(java.lang.Double.longBitsToDouble).suchThat(!_.isNaN)
+    1 -> finiteBits
+  )
+
+  /** Finite doubles and both infinities, which a payload carries exactly.
+    * NaN is excluded: its bit pattern is not portable and every payload
+    * refuses it.
+    */
+  val doubles: Gen[Double] = Gen.frequency(
+    10 -> finiteDoubles,
+    1  -> Gen.oneOf(Double.PositiveInfinity, Double.NegativeInfinity)
   )
 
   /** A layout of one to three axes (with empty extents) and its values. */

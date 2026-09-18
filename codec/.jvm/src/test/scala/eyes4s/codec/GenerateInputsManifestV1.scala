@@ -24,7 +24,8 @@ import java.nio.file.{Files, Paths}
 /** Repository-only writer of the UI-S6 pinned fixtures, kept in the JVM test
   * source set rather than published: the standalone, binocular and packed
   * recordings with the packed recording's four payloads, the temporal
-  * fixture's base study, a timeline, the four score schemas and
+  * fixture's base study, a timeline, the four score schemas, the temporal
+  * fixture's plan under the conventional `eyes4s.temporal-study@1` schema and
   * `manifest-inputs-v1.json`, the manifest over them and the pinned S3 input
   * payloads. `InputsManifestV1JvmSuite` checks that every resource is
   * exactly what this writer produces, so the fixtures cannot drift from it.
@@ -73,13 +74,17 @@ private[codec] object GenerateInputsManifestV1:
         scores <- InputsManifestV1Fixtures.scoreDocument.flatMap(json =>
           Documents.utf8(json.spaces2)
         )
+        temporalPlan <- ConventionalPlanFixtures.temporalCodec.codec
+          .encode(ConventionalPlanFixtures.temporalPlan)
+          .flatMap(json => Documents.utf8(json.spaces2))
       yield Vector(
         files.standalone   -> standalone.bytes,
         files.binocular    -> binocular.bytes,
         files.packed       -> document.bytes,
         files.temporalBase -> base.bytes,
         files.timeline     -> timeline,
-        files.scores       -> scores
+        files.scores       -> scores,
+        files.temporalPlan -> temporalPlan
       ) ++ payloads.map(p => p.name.value -> p.bytes)
     )
 

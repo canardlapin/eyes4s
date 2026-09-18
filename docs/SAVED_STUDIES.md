@@ -347,10 +347,23 @@ entry per source record in record order. An admitted record links its logical re
 typed trial key and the ordinal it supplied; a rejected record keeps its raw fields, its key when one
 could be read, and a typed `AdmissionReason`. A quarantined trial names the affected records and a
 `QuarantineCause`. `AdmissionLedger.of` refuses unordered records, duplicate ordinals within a trial,
-quarantine scopes that omit their own record, and an outcome inconsistent with the rejected count;
-`ledger.checkAgainst(input)` verifies that admitted records address every input trial exactly once
-per fixation. `StudyInputRegistry` registers codecs by key schema and refuses missing or duplicate
-registrations. `VersionedCodec.trials` is the generic row-array codec these payloads use.
+quarantine scopes that omit their own record or name a record the ledger lacks, and an outcome
+inconsistent with the rejected count; `ledger.checkAgainst(input)` verifies that admitted records
+address every input trial exactly once per fixation. `StudyInputRegistry` registers codecs by key
+schema and refuses missing or duplicate registrations. `VersionedCodec.trials` is the generic
+row-array codec these payloads use.
+
+What a decoded ledger does **not** prove is that its exclusions are the source's. The source digest
+is carried, not recomputed: admitted records keep no raw fields, so the ledger alone cannot
+reproduce the digest of the header and records it names. Nothing binds a rejected row to the
+source, so a ledger whose rejected rows were edited is refused only where the edit breaks one of
+the invariants above. `LedgerForgerySuite` pins this. Dropping the time rejection that a quarantine
+scope names is refused (`AdmissionError.QuarantineScope(3, Vector(2, 3, 4, 5))`), but dropping it
+and rewriting the scope decodes cleanly, and so does dropping one of two standalone rejections from
+a reviewed ledger that has a `LedgerOf` relation to its input. Exclusions can be verified only by
+re-importing the source file and comparing the ledger the importer produces. That is an io-level
+check that the pure resolver cannot perform, so it is deferred to G1 as a ledger-to-source relation
+checked by re-running the importer.
 
 Both payloads are artifacts of their own; plan JSON references the input by digest only. The pinned
 [study-input-v1.json](../codec/src/test/resources/eyes4s/study-input-v1.json) and
@@ -690,7 +703,9 @@ each with a `RecordingOf` relation to the recording its channels are
 `packed-recording-v1.{tMicros,support,lineage,values}.bin` and their `PayloadOf` relations; the
 source-supported study input; and the pinned temporal input with a `TemporalBase` relation to its
 base study, [temporal-base-v1.json](../codec/src/test/resources/eyes4s/temporal-base-v1.json).
-`GenerateInputsManifestV1` writes all of them from the typed fixture sources, and
+`GenerateInputsManifestV1` writes all of them from the typed fixture sources, together with
+[temporal-study-v1.json](../codec/src/test/resources/eyes4s/temporal-study-v1.json), the temporal
+fixture's plan under the conventional `eyes4s.temporal-study@1` schema, and
 `InputsManifestV1JvmSuite` checks that the resource files are exactly its output, that every file
 has its independently computed `shasum -a 256` digest, that every new JSON fixture re-encodes byte
 for byte, that the packed recording decodes from its four payload files to the pinned recording
@@ -723,8 +738,13 @@ and `eyes4s.laws.PayloadLaws` gives the packed recording and packed arrays their
 ## Fresh-process reconstruction
 
 A saved study is only as good as a reader that starts from nothing but its files. The JVM suite
-`FreshProcessReconstructionJvmSuite` (in `eyes4s-io`) proves this with two processes it launches
-from its own test classpath, neither of which is the test's JVM:
+`FreshProcessReconstructionJvmSuite` (in `eyes4s-io`) proves this with two processes it launches,
+neither of which is the test's JVM. Both run from the build's class directories: the test
+classpath, which the build writes to a resource, holds the library, the test code (including the
+harness) and the pinned fixtures. The reader shares no memory, registry or cache with the writer,
+and it reads the saved studies only from their files and reads none of the pinned fixtures; it is
+not isolated from the repository's classes. Running the same journey from published artifacts, in
+the isolated consumer under `tools/study-consumer`, is left to G0 and G1.
 
 1. A **writer** process (`FreshProcessHarness write <root>`) decodes the pinned v1 fixtures, runs
    each plan, and saves three studies under `root`, each a directory holding the manifest
@@ -737,14 +757,14 @@ from its own test classpath, neither of which is the test's JVM:
      with four payloads (`RecordingOf`, `PayloadOf`), and an I-VT plan
      (`eyes4s.recording-plan@1`) whose declared provenance is exactly the input's evidence;
    - `temporal`: the pinned temporal input, with its missing epoch and its anchor beyond 2^53,
-     stored with its base study by reference (`TemporalBase`), and a plan
+     stored with its base study by reference (`TemporalBase`), and the pinned
+     [temporal-study-v1.json](../codec/src/test/resources/eyes4s/temporal-study-v1.json) plan
      (`eyes4s.temporal-study@1`) over both repetitions, all four windows and the binned and
      Gaussian scales.
-2. A **reader** process (`FreshProcessHarness read <root>`) shares nothing with the writer but
-   those files and the published code. It registers the cosine plan, input and result codecs
-   explicitly, resolves each manifest through the shipped `ArtifactFiles` directory source (which
-   verifies every length, SHA-256, schema, semantic identity and relation before admitting
-   anything), re-executes each plan on its verified input and compares:
+2. A **reader** process (`FreshProcessHarness read <root>`) registers the cosine plan, input and
+   result codecs explicitly, resolves each manifest through the shipped `ArtifactFiles` directory
+   source (which verifies every length, SHA-256, schema, semantic identity and relation before
+   admitting anything), re-executes each plan on its verified input and compares:
    - for the fixation study, the re-executed result encoded under the canonical contract (the
      UTF-8 of the pretty-printed `study-result@1` document) must have the archived entry's exact
      length and SHA-256, and the result of the plan as registered (`LoadedStudy.run`), the result of
@@ -758,29 +778,55 @@ from its own test classpath, neither of which is the test's JVM:
 A fingerprint (`ScientificFingerprint`, test code) renders a result field by field without any
 codec: every double as the sixteen hexadecimal digits of its raw IEEE 754 bits, every 64-bit value
 as a decimal string. Equal fingerprints therefore mean every field is equal and every double has
-the same bits (the three fingerprints carry 308, 116 and 6,178 doubles); `-0.0` and `+0.0` differ
-and nothing is rounded or compared with a tolerance. Result classes without structural equality
-are rendered from an explicit list of their fields; a value of any other class that is not a case
-class, an enum case or a collection is refused rather than skipped.
+the same bits (the three fingerprints carry 308, 116 and 6,178 doubles, and the suite asserts those
+counts); `-0.0` and `+0.0` differ and nothing is rounded or compared with a tolerance. Result
+classes without structural equality are rendered from an explicit list of their fields; a value of
+any other class that is not a case class, an enum case or a collection is refused rather than
+skipped. The reader reports the digest of its own rendering, so a match is two independently
+computed fingerprints agreeing, and changing one bit of one double in the writer's record is
+caught.
 
-The suite requires the writer to reproduce the pinned `study-input-v1`, both ledgers and
-`study-result-v1` byte for byte (the plan differs from the pinned `study-v1.json` in whitespace only
-and is compared as a JSON value), the reader to report every study reconstructed with the writer's
-fingerprint, and three distinct processes. It then perturbs private copies of the saved studies,
-each time in a fresh reader, and requires a typed refusal of exactly the perturbed study while the
-other two still reconstruct:
+The suite requires the writer to reproduce the pinned `study-input-v1`, both ledgers,
+`study-result-v1` and `temporal-study-v1` byte for byte (the plan differs from the pinned
+`study-v1.json` in whitespace only and is compared as a JSON value), the reader to report every
+study reconstructed with the writer's fingerprint, and three distinct processes.
 
-| Perturbation | Refusal the reader reports |
+**What verification establishes.** A manifest's byte digests protect against corruption. They do
+not protect against a forger who edits an artifact and re-declares its digests, and the documents
+that reference it, consistently. Such a forgery is refused only where the forged content
+contradicts something the reader re-derives: a semantic identity, a relation, a ledger invariant or
+a plan's recorded input. The suite perturbs private copies of the saved studies, each read by a
+fresh reader, and pins the typed outcome of exactly the perturbed study while the other two still
+reconstruct. The reader reports each refusal with its entry, its case, its located path and its
+innermost cause as the typed value:
+
+| Perturbation | What the reader reports |
 |---|---|
-| One byte of the archived result flipped | `ResolveError.Digest` naming `result`, before anything is decoded |
+| One byte of the archived result flipped | `ResolveError.Digest(result, declared, actual)`, before anything is decoded |
 | The result codec left unregistered | `ResolveError.Decode(result, CodecError.MissingResultCodec(eyes4s.cosine@1))` |
-| One packed double changed, and the payload digest, the packed document and the manifest all re-declared consistently | `ResolveError.Decode` naming `recording`: the rebuilt recording's `contentHash` is not the declared `2c826dc41ae25e67` |
-| The refused ledger's first rejected record dropped, and the manifest re-declared consistently | `ResolveError.Decode` naming `refused-ledger` |
-| One double in the writer's temporal fingerprint changed in its last bit | the temporal study fails its comparison ("fingerprints differ") |
+| One packed double moved by one unit in the last place, with the payload digest in the packed document and the manifest re-declared | `ResolveError.Decode` at `recording`: `CodecError.InputIdentity(2c826dc41ae25e67, …)`, the rebuilt recording's `contentHash` |
+| The same recording re-packed with its new `contentHash` declared, and the manifest's identity re-declared | `ResolveError.Relation` on `recording-of`: `RelationMismatch.RecordingIdentity`, since the recording input's channels are still the original recording |
+| The recording input forged over the same channels as well, with its identity re-declared | resolves; the plan, unchanged in `plan.json`, refuses it: `RecordingInputError.Plan(RecordingPlanError.Input(PlanError.ArtifactMismatch(2c826dc41ae25e67, …)))` |
+| All of the above and the plan's input digest rewritten | **passes every check** and re-executes; only the writer's fingerprint, kept outside the saved files, differs (pinned) |
+| Record 2 dropped from the refused ledger, manifest re-declared | `ResolveError.Decode` at `refused-ledger`: `CodecError.Admission(AdmissionError.QuarantineScope(3, Vector(2, 3, 4, 5)))`, because records 3 to 5 are quarantined with record 2 |
+| Record 2 dropped and the quarantine scope rewritten to records 3 to 5, manifest re-declared | **resolves and reconstructs** (pinned): nothing binds a ledger's rejected rows |
+| One bit of one double in the writer's temporal fingerprint flipped | the temporal study fails its comparison ("fingerprints differ from the writer's for rerun") |
 
-The harness runs on the JVM, where the application process lives; the portable suites decode the
-same pinned bytes on Scala.js. A realistic-size input for throughput is not archived: no permitted
-realistic-size dataset is in the repository, and choosing one is left to G1.
+So a consistent forger can replace a whole study with a different, self-consistent one, and can
+drop exclusions from a ledger wherever the drop keeps its invariants. `LedgerForgerySuite`
+additionally pins that dropping a standalone rejection from a reviewed ledger related to its input
+resolves. Establishing authenticity (who wrote the study) needs a signature over the manifest
+address, which is the application's concern. Establishing that a ledger's exclusions are the
+source's needs a re-import of the source file, the G1 deferral described under
+[input payloads](#input-payloads-and-admission-ledgers).
+
+The harness runs on the JVM, where the application process lives. On Scala.js only the fixation
+route is compared with pinned bytes: `ResultV1Suite` re-executes the pinned plan on the pinned input
+and matches study-result-v1, and `InputsManifestV1Suite` reproduces the pinned manifests and packed
+payload digests. The recording and temporal inputs and the temporal plan are decoded from their
+pinned bytes on Scala.js, but their re-executed results are not compared with any pinned record
+there. A realistic-size input for throughput is not archived: no permitted realistic-size dataset
+is in the repository, and choosing one is left to G1.
 
 ## Versions and extensions
 

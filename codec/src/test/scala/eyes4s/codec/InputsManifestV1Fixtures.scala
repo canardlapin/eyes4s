@@ -51,6 +51,7 @@ object InputsManifestV1Fixtures:
     val temporal        = "temporal-study-input-v1.json"
     val timeline        = "timeline-v1.json"
     val scores          = "score-codecs-v1.json"
+    val temporalPlan    = "temporal-study-v1.json"
 
   /** The packed recording's payload files in its declared column order. */
   val payloadFiles: Vector[String] =

@@ -204,6 +204,29 @@ class InputsManifestV1Suite extends munit.FunSuite:
     assertEquals(get(scoreDocument), parse(scoreCodecsVersionOne))
   }
 
+  test("the temporal-study v1 plan fixes its input, windows, repetitions and scales") {
+    val codec = ConventionalPlanFixtures.temporalCodec.codec
+    val plan  = get(codec.parse(ConventionalPlanFixtures.temporalStudyVersionOne))
+    assertEquals(plan.input, InputPayloadFixtures.temporal.reference)
+    assertEquals(plan.base.input, InputPayloadFixtures.temporal.study.reference)
+    assertEquals(
+      plan.windows.map(w => (w.name, w.window.from.toMicros, w.window.until.toMicros)),
+      TemporalFixtures.windows
+    )
+    assertEquals(
+      plan.repetitions.map(r => (r.name, r.focalPhase, r.referencePhase)),
+      TemporalFixtures.repetitions
+    )
+    assertEquals(plan.base.estimates.map(_.name), Vector("binned", "gaussian:1:Truncate"))
+    assertEquals(plan.boundary, eyes4s.core.FixationBoundary.ClipDuration)
+    assertEquals(plan.prerequisites(Some(InputPayloadFixtures.temporal)), Vector.empty)
+    assertEquals(plan.diff(ConventionalPlanFixtures.temporalPlan), Vector.empty)
+    assertEquals(
+      get(codec.encode(plan)),
+      parse(ConventionalPlanFixtures.temporalStudyVersionOne)
+    )
+  }
+
   test("temporal-base v1 is the temporal fixture's inline base study") {
     val inline = parse(InputPayloadFixtures.temporalInputVersionOne).hcursor
       .downField("value")

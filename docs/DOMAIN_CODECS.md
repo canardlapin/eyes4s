@@ -72,8 +72,13 @@ injects; decoding never reads. See
 
 Every stored document is an envelope, `{"schema": {"name", "version"}, "value"}`. The version is
 one positive integer; there are no minor versions. The rules below are enforced on the JVM and
-Scala.js by `SchemaCompatibilitySuite` over every pinned v1 document, and by the schema registry
-described under [Evidence](#evidence).
+Scala.js by `SchemaCompatibilitySuite` over a pinned v1 document of every shipped document schema:
+the sixteen JSON codecs (study plan, study input, admission ledger, study result, recording,
+binocular recording, recording input, temporal input, timeline, manifest, the four score and
+difference schemas, and the conventional `eyes4s.recording-plan@1` and `eyes4s.temporal-study@1`
+plan schemas), with a test that fails if a pinned schema is missing, and the packed recording,
+whose decoder also takes its payloads. The schema registry described under
+[Evidence](#evidence) checks the same fixtures on the JVM.
 
 **What a new version means.** A schema's version fixes the meaning of every document it admits,
 so a change that could make an existing reader decode a document to a meaning its writer did not
@@ -82,7 +87,9 @@ member is interpreted, its unit, or its numeric or time encoding; changing how a
 (`ContentHash`) is derived. A new version is a new `DefinitionId` with its own decoder beside the
 old one. Two kinds of addition extend a version instead, because no existing reader can misread
 them: a new value of an enumerated field (an artifact role, a relation kind, an estimator, a sample
-state), which an older reader refuses with a located `CodecError.Field`; and a new registration (a
+state), which an older reader refuses with a `CodecError.Field` naming the member and carrying the
+value it does not know (inside a `CodecError.Entry` giving its path wherever the codec locates
+entries, as the manifest and sample columns do); and a new registration (a
 method, a key layout, a score or difference schema), which is its own identity with its own
 version and never changes the schema that carries it. A pinned fixture must decode on the current
 code and re-encode to the same JSON value on both platforms (and the same bytes on the JVM), so a
@@ -116,12 +123,14 @@ meaning cannot be added without a new version, so an unknown member in a v1 docu
 another tool's annotation, which eyes4s neither interprets nor round-trips (an application keeps
 its own metadata in its own files), or the output of a writer that broke the rule. It cannot pass
 verification unnoticed: an artifact with an added member is other bytes, which the manifest that
-listed the original refuses by length and SHA-256; a manifest written over the extended bytes
+listed the original refuses by its length or, when the length happens to match, by its SHA-256
+(both cases are tested); a manifest written over the extended bytes
 admits it with the semantic identity re-derived from its version-1 values, and a manifest document
 with an added member has another address. Three members are refused where they would be misread,
-because they have a version-1 meaning elsewhere: any member of the parameterless `eyes4s.unit@1`
-payload, which is exactly `{}`; a `timing` member on a neutral `eyes4s.timeline@1`; and a declared
-dispersion value on a source-supported fixation, whose value is derived from its samples.
+because they have a version-1 meaning elsewhere: any member of an `eyes4s.unit@1` payload, which
+is exactly `{}` whether it is a parameterless method's parameters or a trial's metadata; a `timing`
+member on a neutral `eyes4s.timeline@1`; and a declared dispersion value on a source-supported
+fixation, whose value is derived from its samples.
 
 ## Evidence
 
@@ -145,8 +154,14 @@ companion requires exactly one entry per built-in identity; instantiating each n
 requires the named round-trip law to be registered there; and every fixture must exist, carry the
 identity and, for a document, decode and re-encode to itself through the shipped codec. Every file
 under `codec/src/test/resources/eyes4s` must be claimed by an entry, so an unclaimed or undecodable
-fixture fails as well. A test shows each check failing when an entry, a law or a fixture is
-removed. A new built-in schema without a law and a fixture therefore fails `lawsJVM/test`.
+fixture fails as well. The shipped codecs whose schema the caller supplies are registered too,
+under the conventional identities their pinned fixtures use: `eyes4s.recording-plan@1`
+(recording-v1.json) and `eyes4s.temporal-study@1` (temporal-study-v1.json, the temporal fixture's
+plan). A test shows each check failing: a missing or duplicated entry, a missing or misnamed law, a
+missing fixture, a fixture that does not carry its identity, a fixture of another schema, a
+fixture that decodes but does not round-trip, an unclaimed resource file and a registered fixture
+that does not exist. A new built-in schema without a law and a fixture therefore fails
+`lawsJVM/test`.
 
 UI-S6 added the laws the registry found missing: `PlanCodecLawSuite` for the study plan
 (`eyes4s.study@1`, with the `cosine@1`, layout and `unit@1` identities inside it) and for the
@@ -156,7 +171,9 @@ manifest codec, the packed recording and packed arrays through the published
 Each suite kills deliberate mutants (a dropped scale or relation, swapped phases or identities, a
 reset failure policy, a dropped window, mark or sample, a moved threshold, a lost signed zero,
 single-precision rounding, a payload filled in from elsewhere) by a falsified property from a fixed
-seed. It also pinned the built-in schemas no fixture had carried: `timeline-v1.json` (a timeline
+seed, and requires every property of the shipped codec to pass outright rather than merely not
+fail. No generator in these suites or in `PayloadLaws` discards a value, so no property can pass
+by exhaustion. It also pinned the built-in schemas no fixture had carried: `timeline-v1.json` (a timeline
 of study keys, with equal instants beyond 2^53 kept in order), `score-codecs-v1.json` (one
 envelope of each score and difference schema, the only fixture of `measure-distance@1` and
 `scalar@1`), and the standalone, binocular and packed recordings with their payloads listed under

@@ -103,6 +103,18 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
   private val killParameters =
     Test.Parameters.default.withMinSuccessfulTests(60).withInitialSeed(0x53364b494c4cL)
 
+  /** The shipped codec survives: every property passes outright. */
+  private def survives[A](
+      codec: VersionedCodec[A],
+      gen: Gen[A],
+      eq: (A, A) => Boolean
+  ): Boolean =
+    CodecLaws
+      .roundTrip(codec, gen, eq)
+      .all
+      .properties
+      .forall((_, prop) => Test.check(killParameters, prop).passed)
+
   private def killed[A](codec: VersionedCodec[A], gen: Gen[A], eq: (A, A) => Boolean): Boolean =
     CodecLaws.roundTrip(codec, gen, eq).all.properties.exists { (_, prop) =>
       Test.check(killParameters, prop).status match
@@ -156,7 +168,7 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
       cosine(p, p.focalPhase, p.referencePhase, p.estimates, FailurePolicy.RequireAll)
     )
     assert(killed(reset, cosinePlans, sameStudy))
-    assert(!killed(studies.codec, cosinePlans, sameStudy))
+    assert(survives(studies.codec, cosinePlans, sameStudy))
   }
 
   test("the temporal-plan law kills a dropped window and a flipped boundary") {
@@ -175,7 +187,7 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
       )
     )
     assert(killed(flipped, temporalPlans, sameTemporal))
-    assert(!killed(temporals.codec, temporalPlans, sameTemporal))
+    assert(survives(temporals.codec, temporalPlans, sameTemporal))
   }
 
   test("the recording-plan law kills a dropped synchronization mark and a moved threshold") {
@@ -215,7 +227,7 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
         .flatMap(t => rebuilt(p, p.marks, p.parameters.copy(threshold = t)))
     )
     assert(killed(moved, plans, sameRecording))
-    assert(!killed(ivt.codec, plans, sameRecording))
+    assert(survives(ivt.codec, plans, sameRecording))
   }
 
 object PlanCodecLawSuite:
@@ -233,8 +245,15 @@ object PlanCodecLawSuite:
   )
 
   /** Names that JSON must carry exactly: quotes, separators, non-ASCII text. */
-  private val labels: Gen[String] =
-    Gen.oneOf("recall", "encode", "retest", "phase \"two\"", "fase-é", "阶段", "a/b\\c")
+  private val labelValues: Vector[String] =
+    Vector("recall", "encode", "retest", "phase \"two\"", "fase-é", "阶段", "a/b\\c")
+  private val labels: Gen[String] = Gen.oneOf(labelValues)
+
+  /** Two distinct labels, chosen without discarding anything. */
+  private val distinctLabels: Gen[(String, String)] = for
+    first  <- labels
+    second <- Gen.oneOf(labelValues.filterNot(_ == first))
+  yield (first, second)
 
   private val references: Gen[String] = Gen.long.map(l => f"$l%016x")
 
@@ -268,15 +287,15 @@ object PlanCodecLawSuite:
     )
 
   private def cosine(weights: Gen[Weight]) = for
-    input     <- references.map(r => sure(ArtifactRef.parse[StudyInput[StudyKey, Px]](r)))
-    frame     <- frames
-    nx        <- Gen.choose(1, 64)
-    ny        <- Gen.choose(1, 64)
-    focal     <- labels
-    reference <- labels.suchThat(_ != focal)
-    weight    <- weights
-    scales    <- estimates
-    policy    <- policies
+    input  <- references.map(r => sure(ArtifactRef.parse[StudyInput[StudyKey, Px]](r)))
+    frame  <- frames
+    nx     <- Gen.choose(1, 64)
+    ny     <- Gen.choose(1, 64)
+    phases <- distinctLabels
+    (focal, reference) = phases
+    weight <- weights
+    scales <- estimates
+    policy <- policies
   yield sure(
     StudyPlan.cosine(
       input,
@@ -314,7 +333,7 @@ object PlanCodecLawSuite:
         )
       }
       repeats <- Gen.choose(1, 3)
-      phases  <- Gen.listOfN(repeats, Gen.zip(labels, labels).suchThat((f, r) => f != r))
+      phases  <- Gen.listOfN(repeats, distinctLabels)
       contrasts = phases.zipWithIndex.map { case ((f, r), i) =>
         sure(RepetitionContrast.withinParticipant(s"repetition-$i", f, r))
       }

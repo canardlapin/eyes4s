@@ -41,9 +41,11 @@ trait PayloadLaws extends Laws:
       pack: (PayloadLayout, IArray[A]) => Either[PayloadError, VerifiedPayload],
       unpack: VerifiedPayload => Either[PayloadError, IArray[A]]
   ): RuleSet =
+    // Every generated layout is used, empty ones included: nothing is
+    // discarded, so a property can fail but never pass by exhaustion.
     val corruptions = for
-      (layout, xs) <- values.suchThat((layout, _) => layout.byteLength > 0)
-      at           <- Gen.choose(0, layout.byteLength - 1)
+      (layout, xs) <- values
+      at           <- Gen.choose(0, Int.MaxValue)
       delta        <- Gen.choose(1, 255)
     yield (layout, xs, at, delta)
     new SimpleRuleSet(
@@ -66,13 +68,22 @@ trait PayloadLaws extends Laws:
       "a changed byte or a changed length is refused by the reference" ->
         forAll(corruptions) { (layout, xs, at, delta) =>
           pack(layout, xs).exists { payload =>
-            val changed = IArray.tabulate(payload.bytes.length)(i =>
-              if i == at then (payload.bytes(i) ^ delta).toByte else payload.bytes(i)
-            )
-            VerifiedPayload.verify(payload.ref, changed) ==
-              Left(PayloadError.Digest(payload.ref.sha256, ByteDigest.sha256(changed))) &&
-              VerifiedPayload.verify(payload.ref, payload.bytes.drop(1)) ==
-              Left(PayloadError.Length(layout.byteLength, layout.byteLength - 1))
+            val bytes  = payload.bytes
+            val longer = IArray.from(bytes.toVector :+ delta.toByte)
+            val grown  = VerifiedPayload.verify(payload.ref, longer) ==
+              Left(PayloadError.Length(layout.byteLength, layout.byteLength + 1))
+            // An empty payload has no byte to change or drop.
+            val changed = bytes.isEmpty || {
+              val i       = at % bytes.length
+              val flipped = IArray.tabulate(bytes.length)(j =>
+                if j == i then (bytes(j) ^ delta).toByte else bytes(j)
+              )
+              VerifiedPayload.verify(payload.ref, flipped) ==
+                Left(PayloadError.Digest(payload.ref.sha256, ByteDigest.sha256(flipped))) &&
+                VerifiedPayload.verify(payload.ref, bytes.drop(1)) ==
+                Left(PayloadError.Length(layout.byteLength, layout.byteLength - 1))
+            }
+            grown && changed
           }
         }
     )

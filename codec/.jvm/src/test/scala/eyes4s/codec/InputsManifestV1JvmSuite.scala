@@ -54,7 +54,8 @@ class InputsManifestV1JvmSuite extends munit.FunSuite:
     files.temporalBase    -> "e52de1c8b3d0d94817e0e6511a3bf2551abf17056a0877f58702e529daeba7e8",
     files.temporal        -> "bb149a480ba54c9320d767d32e4cce79e4461baa8df018b407f99b7d74676840",
     files.timeline        -> "506012173a961f8f6e8c6de1c8cae8aabb2d3fd4b28039bf36b6dd056a1a72ea",
-    files.scores          -> "c2a7235b6d4c08897d1873a498b666a9c0affd07999f55fe0d22e9917a712a0f"
+    files.scores          -> "c2a7235b6d4c08897d1873a498b666a9c0affd07999f55fe0d22e9917a712a0f",
+    files.temporalPlan    -> "861697d2f1ba961962b3ef211b0ce08d74597acc92b349f16692fd84f8b10913"
   )
 
   private lazy val manifest =
@@ -68,7 +69,7 @@ class InputsManifestV1JvmSuite extends munit.FunSuite:
 
   test("every UI-S6 fixture and manifest-inputs-v1.json are what the writer produces") {
     val generated = get(GenerateInputsManifestV1.generated)
-    assertEquals(generated.size, 10)
+    assertEquals(generated.size, 11)
     generated.foreach((file, bytes) =>
       assertEquals(bytes.toVector, resource(file).toVector, file)
     )
@@ -112,6 +113,12 @@ class InputsManifestV1JvmSuite extends munit.FunSuite:
       InputsManifestV1Fixtures.timelineVersionOne,
       InputsManifestV1Fixtures.timelineCodec
     )
+    val plan = check(
+      files.temporalPlan,
+      ConventionalPlanFixtures.temporalStudyVersionOne,
+      ConventionalPlanFixtures.temporalCodec.codec
+    )
+    assertEquals(plan.diff(ConventionalPlanFixtures.temporalPlan), Vector.empty)
     val base = get(StudyInputCodecs.study[Px].input.parse(text(files.temporalBase)))
     assertEquals(
       get(StudyInputCodecs.study[Px].input.encode(base)).spaces2,

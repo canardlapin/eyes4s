@@ -23,6 +23,7 @@ import io.circe.Json
 
 import java.nio.file.{Files, Path, Paths}
 import scala.jdk.CollectionConverters.*
+import scala.util.Using
 
 /** Every schema and definition identity eyes4s ships, with the published
   * round-trip law and the pinned v1 fixture that stand behind it.
@@ -255,6 +256,12 @@ object SchemaRegistry:
       Vector("recording-v1.json"),
       codecLaw(plans, "I-VT recording plan") ++ codecLaw(plans, "I-DT recording plan") ++
         codecLaw(plans, "Engbert-Kliegl recording plan")
+    ),
+    Entry(
+      get(DefinitionId.of("eyes4s.temporal-study", 1)),
+      Kind.Document,
+      Vector("temporal-study-v1.json"),
+      codecLaw(plans, "temporal study plan")
     )
   )
 
@@ -328,7 +335,12 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
     * identity, and document fixtures that do not decode and re-encode to
     * themselves through the identity's shipped codec.
     */
-  private def fixtureProblems(entries: Vector[Entry]): Vector[String] =
+  private def fixtureProblems(
+      entries: Vector[Entry],
+      read: String => Option[Array[Byte]] = resource
+  ): Vector[String] =
+    def parsed(file: String): Option[Json] =
+      read(file).flatMap(bytes => io.circe.parser.parse(new String(bytes, "UTF-8")).toOption)
     entries.flatMap { entry =>
       def document(file: String, json: Json): Option[String] =
         if entry.kind != Kind.Document then None
@@ -339,20 +351,41 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
             .contains(Set(entry.id))
         then Some(s"$file is not a ${entry.id} document")
         else
-          Decoders.reencode(entry.id, json, resource) match
+          Decoders.reencode(entry.id, json, read) match
             case Right(same) if same == json => None
             case other                       => Some(s"$file does not round-trip: $other")
       def carried(file: String): Vector[String] =
-        if resource(file).isEmpty then Vector(s"missing pinned fixture $file")
+        if read(file).isEmpty then Vector(s"missing pinned fixture $file")
         else if !file.endsWith(".json") then Vector.empty
         else
-          val parsed = json(file)
-          Option
-            .when(!identities(parsed).contains(entry.id))(s"$file does not carry ${entry.id}")
-            .toVector ++ document(file, parsed).toVector
+          parsed(file) match
+            case None       => Vector(s"$file is not JSON")
+            case Some(json) =>
+              Option
+                .when(!identities(json).contains(entry.id))(s"$file does not carry ${entry.id}")
+                .toVector ++ document(file, json).toVector
       val none = Option.when(entry.fixtures.isEmpty)(s"${entry.id} has no pinned fixture")
       none.toVector ++ entry.fixtures.flatMap(carried)
     }
+
+  /** Resource files no entry claims, and claimed fixtures that do not exist. */
+  private def unclaimed(files: Set[String], entries: Vector[Entry]): Vector[String] =
+    val claimed = entries.flatMap(_.fixtures).toSet
+    (files -- claimed).toVector.sorted.map(f => s"$f is not claimed by any entry") ++
+      (claimed -- files).toVector.sorted.map(f => s"$f is registered but does not exist")
+
+  /** The regular files of the pinned fixture directory. */
+  private def fixtureFiles: Set[String] =
+    val anchor = getClass.getResource("/eyes4s/manifest-v1.json")
+    assert(
+      anchor != null && anchor.getProtocol == "file",
+      s"resources are not a directory: $anchor"
+    )
+    val directory: Path = Paths.get(anchor.toURI).getParent
+    // Compiled test classes share the directory; the fixtures are its regular files.
+    Using.resource(Files.list(directory))(
+      _.iterator.asScala.filter(Files.isRegularFile(_)).map(_.getFileName.toString).toSet
+    )
 
   test("every built-in DefinitionId has exactly one registry entry, and nothing else does") {
     assert(declared.size >= 22, s"reflection found only ${declared.keys}")
@@ -393,6 +426,28 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
       fixtureProblems(Vector(plan.copy(fixtures = Vector("study-input-v1.json"))))
         .exists(_.contains("is not a"))
     )
+    // A study-v1 that decodes but would be written differently: an extra member.
+    val annotated = json("study-v1.json")
+      .mapObject(_.add("x-note", Json.fromString("not a v1 member")))
+      .noSpaces
+      .getBytes("UTF-8")
+    val read =
+      (file: String) => if file == "study-v1.json" then Some(annotated) else resource(file)
+    assertEquals(
+      fixtureProblems(Vector(plan), read).map(_.takeWhile(_ != ':')),
+      Vector("study-v1.json does not round-trip")
+    )
+    // An unclaimed resource file, and a registered fixture that does not exist.
+    val entries = builtIns ++ conventional
+    assertEquals(unclaimed(fixtureFiles, entries), Vector.empty)
+    assertEquals(
+      unclaimed(fixtureFiles + "orphan-v1.json", entries),
+      Vector("orphan-v1.json is not claimed by any entry")
+    )
+    assertEquals(
+      unclaimed(fixtureFiles - "timeline-v1.json", entries),
+      Vector("timeline-v1.json is registered but does not exist")
+    )
   }
 
   test("the score fixture decodes every envelope through its registered schema") {
@@ -422,23 +477,7 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
   }
 
   test("every pinned fixture under codec/src/test/resources/eyes4s is claimed by an entry") {
-    val anchor = getClass.getResource("/eyes4s/manifest-v1.json")
-    assert(
-      anchor != null && anchor.getProtocol == "file",
-      s"resources are not a directory: $anchor"
-    )
-    val directory: Path = Paths.get(anchor.toURI).getParent
-    // Compiled test classes share the directory; the fixtures are its regular files.
-    val files = Files
-      .list(directory)
-      .iterator
-      .asScala
-      .filter(Files.isRegularFile(_))
-      .map(_.getFileName.toString)
-      .toSet
-    val claimed = (builtIns ++ conventional).flatMap(_.fixtures).toSet
-    assertEquals(files -- claimed, Set.empty[String], "unclaimed pinned fixtures")
-    assertEquals(claimed -- files, Set.empty[String], "registered fixtures that do not exist")
+    assertEquals(unclaimed(fixtureFiles, builtIns ++ conventional), Vector.empty)
   }
 
 /** The shipped decoder of every registered document schema: decode, then
@@ -495,6 +534,8 @@ private object Decoders:
         yield encoded.document
       case other if other.name == "eyes4s.recording-plan" =>
         through(recordingPlan.codec, document)
+      case other if other.name == "eyes4s.temporal-study" =>
+        through(new TemporalStudyCodec(other, StudyCodecs.cosine[Px]).codec, document)
       case other => Left(CodecError.Unsupported(other.name, "no registered decoder"))
 
 private object Envelopes:

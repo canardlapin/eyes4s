@@ -27,7 +27,6 @@ import eyes4s.detect.*
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.{Deg, Px}
 import eyes4s.plan.*
-import eyes4s.surface.EdgePolicy
 import io.circe.Json
 
 import java.nio.file.{Files, Path, Paths}
@@ -40,14 +39,20 @@ import java.nio.file.{Files, Path, Paths}
   *     `recording`, `temporal`): a manifest, its entries under their manifest
   *     names, the application's pointer to the manifest (`manifest.sha256`)
   *     and the writer's exact fingerprint of the result it computed;
-  *   - `read <root>` starts from nothing but those files and explicit
-  *     registrations: it resolves each manifest through the shipped
+  *   - `read <root>` reads nothing but those files, with registrations made
+  *     explicitly on load: it resolves each manifest through the shipped
   *     `ArtifactFiles` directory source, which verifies every length, digest,
   *     schema, semantic identity and relation, re-executes the plan on the
   *     verified input, and compares the result with the archive: the
   *     re-encoded result must have the archived entry's exact SHA-256, and
   *     the fingerprints (every double's raw bits) of the re-executed result,
   *     the decoded archive and the writer's in-memory result must agree.
+  *
+  * Both run from the build's class directories: the library, this test code
+  * and the pinned fixtures are on their classpath. The reader shares no
+  * memory, registry or cache with the writer and reads none of the pinned
+  * fixtures, only the saved files; running from published artifacts is the
+  * isolated consumer's job (G0/G1).
   *
   * Recording and temporal plans have no manifest role yet, so their plans
   * travel beside the manifest in `plan.json` and are checked against the
@@ -208,45 +213,6 @@ object FreshProcessHarness:
       yield s).left.map(message)
     yield Saved(saved, ScientificFingerprint.of(analysis), Some(document))
 
-  /** The temporal fixture's plan: both repetitions, every window, the binned
-    * and Gaussian scales, over the pinned input with its missing epoch and
-    * its anchor beyond JavaScript's exact integer range.
-    */
-  private def temporalPlan(
-      input: TemporalStudyInput[StudyKey, Px]
-  ): Either[String, TemporalStudyPlan[StudyKey, Px, Unit, Similarity, SignedDifference]] =
-    for
-      frame <- input.study.trials.rows.headOption.map(_.value.frame).toRight("no trials")
-      grid  <- Grid.over(frame, 2, 2).left.map(_.message)
-      sigma <- Sigma.px(1).left.map(_.message)
-      base  <- StudyPlan
-        .cosine(
-          input.study.reference,
-          grid,
-          "recall",
-          "encode",
-          Weight.Duration,
-          Vector(StudyEstimate.Binned(), StudyEstimate.Gaussian(sigma, EdgePolicy.Truncate)),
-          FailurePolicy.RequireAll
-        )
-        .left
-        .map(message)
-      windows <- TemporalFixtures.windows.traverse { (name, from, until) =>
-        Window
-          .of(Span.micros(from), Span.micros(until))
-          .left
-          .map(_.message)
-          .flatMap(w => StudyWindow.of(name, w).left.map(_.message))
-      }
-      repeats <- TemporalFixtures.repetitions.traverse { (name, focal, reference) =>
-        RepetitionContrast.withinParticipant(name, focal, reference).left.map(_.message)
-      }
-      plan <- TemporalStudyPlan
-        .of(base, input.reference, windows, repeats, FixationBoundary.ClipDuration)
-        .left
-        .map(_.message)
-    yield plan
-
   private def temporal: Either[String, Saved] =
     val inputs = StudyInputCodecs.study[Px]
     for
@@ -254,7 +220,7 @@ object FreshProcessHarness:
       input <- text("temporal-study-input-v1.json").flatMap(
         TemporalInputCodecs.study[Px]().input.parse(_).left.map(message)
       )
-      plan     <- temporalPlan(input)
+      plan     <- text("temporal-study-v1.json").flatMap(codec.codec.parse(_).left.map(message))
       result   <- plan.run(input).left.map(_.message)
       document <- codec.codec.encode(plan).left.map(message)
       saved    <- (for
@@ -337,24 +303,54 @@ object FreshProcessHarness:
             .register(StudyResultCodecs.cosine[Px].registration)
     yield ArtifactDecoders.of(plans, inputs, results)).left.map(message)
 
-  /** A refusal as data: every resolve error with its entry and its case names. */
+  /** A codec error's innermost cause and the entry path that locates it. */
+  private def leaf(
+      error: CodecError,
+      path: Vector[String] = Vector.empty
+  ): (String, CodecError) =
+    error match
+      case CodecError.Entry(at, inner) => leaf(inner, path :+ at)
+      case other                       => (path.mkString("."), other)
+
+  /** A refusal as data: every resolve error with its entry, its case, the
+    * located leaf cause as its typed value, and its message.
+    */
   private def refused(errors: Vector[ResolveError]): Json = Json.obj(
     "outcome" -> Json.fromString("refused"),
     "errors"  -> Json.arr(errors.map { e =>
-      val underlying = e match
-        case ResolveError.Decode(_, codec) => Some(codec.productPrefix)
-        case _                             => None
+      val (path, cause) = e match
+        case ResolveError.Decode(_, codec) =>
+          val (at, inner) = leaf(codec)
+          (at, inner.toString)
+        case ResolveError.Relation(relation, mismatch) => (relation.render, mismatch.toString)
+        case other                                     => ("", other.toString)
       Json.obj(
-        "entry"      -> e.entryName.fold(Json.Null)(n => Json.fromString(n.value)),
-        "error"      -> Json.fromString(e.productPrefix),
-        "underlying" -> underlying.fold(Json.Null)(Json.fromString),
-        "message"    -> Json.fromString(e.message)
+        "entry"   -> e.entryName.fold(Json.Null)(n => Json.fromString(n.value)),
+        "error"   -> Json.fromString(e.productPrefix),
+        "path"    -> Json.fromString(path),
+        "cause"   -> Json.fromString(cause),
+        "message" -> Json.fromString(e.message)
       )
     }*)
   )
 
-  private def failed(reason: String): Json =
-    Json.obj("outcome" -> Json.fromString("failed"), "reason" -> Json.fromString(reason))
+  /** Why a verified study could not be rerun or matched; `cause` is the typed
+    * value the check refused with, when there is one.
+    */
+  private final case class Failure(reason: String, cause: Option[String] = None)
+
+  private def failed(failure: Failure): Json = Json.obj(
+    "outcome" -> Json.fromString("failed"),
+    "reason"  -> Json.fromString(failure.reason),
+    "cause"   -> failure.cause.fold(Json.Null)(Json.fromString)
+  )
+
+  private def check[E](refusals: Vector[E], reason: String): Either[Failure, Unit] =
+    Either.cond(refusals.isEmpty, (), Failure(reason, Some(refusals.toString)))
+
+  extension [A](value: Either[String, A])
+    private def failing: Either[Failure, A] =
+      value.left.map(Failure(_))
 
   private def readText(path: Path): Either[String, String] =
     Either
@@ -370,7 +366,7 @@ object FreshProcessHarness:
       hex     <- readText(directory.resolve(addressFile)).map(_.trim)
       address <- ByteDigest.parse(hex).left.map(_.message)
     yield address) match
-      case Left(reason)   => Left(failed(reason))
+      case Left(reason)   => Left(failed(Failure(reason)))
       case Right(address) =>
         ArtifactFiles
           .resolve[IO, StudyKey, Px](address, directory, manifestFile, decoders)
@@ -386,24 +382,30 @@ object FreshProcessHarness:
       doubles <- json.hcursor.get[Int]("doubles").left.map(_.message)
     yield (print, doubles)
 
-  /** The rerun's fingerprints against the writer's, as the receipt reports them. */
+  /** The rerun's fingerprints against the writer's. The receipt reports the
+    * digest and double count of the reader's own first rendering, so a match
+    * is two independently computed values agreeing.
+    */
   private def compared(
       directory: Path,
       named: Vector[(String, ScientificFingerprint.Rendered)]
-  ): Either[String, Json] =
-    expected(directory).flatMap { (print, doubles) =>
-      val mismatched = named.collect { case (name, r) if r.json != print => name }
+  ): Either[Failure, Json] =
+    expected(directory).failing.flatMap { (print, doubles) =>
+      val mismatched = named.collect {
+        case (name, r) if r.json != print || r.doubles != doubles => name
+      }
+      val own = named.head._2
       Either.cond(
-        mismatched.isEmpty && named.forall(_._2.doubles == doubles),
+        mismatched.isEmpty,
         Json.obj(
           "outcome"     -> Json.fromString("reconstructed"),
-          "doubles"     -> Json.fromInt(doubles),
+          "doubles"     -> Json.fromInt(own.doubles),
           "compared"    -> Json.arr(named.map((n, _) => Json.fromString(n))*),
           "fingerprint" -> Json.fromString(
-            ByteDigest.sha256(IArray.unsafeFromArray(print.noSpaces.getBytes("UTF-8"))).hex
+            ByteDigest.sha256(IArray.unsafeFromArray(own.bytes)).hex
           )
         ),
-        s"fingerprints differ from the writer's for ${mismatched.mkString(", ")}"
+        Failure(s"fingerprints differ from the writer's for ${mismatched.mkString(", ")}")
       )
     }
 
@@ -413,33 +415,38 @@ object FreshProcessHarness:
   private def rerunFixation(
       directory: Path,
       resolved: ResolvedManifest[StudyKey, Px]
-  ): Either[String, Json] =
+  ): Either[Failure, Json] =
     val studies = StudyCodecs.cosine[Px]
     val results = StudyResultCodecs.cosine[Px]
     for
-      planName   <- name("plan")
-      inputName  <- name("input")
-      resultName <- name("result")
-      loaded     <- resolved.plan(planName).toRight("no plan")
-      input      <- resolved.input(inputName).toRight("no input")
-      archive    <- resolved.result(resultName).toRight("no result")
-      entry      <- resolved.manifest.entry(resultName).toRight("no result entry")
+      planName   <- name("plan").failing
+      inputName  <- name("input").failing
+      resultName <- name("result").failing
+      loaded     <- resolved.plan(planName).toRight(Failure("no plan"))
+      input      <- resolved.input(inputName).toRight(Failure("no input"))
+      archive    <- resolved.result(resultName).toRight(Failure("no result"))
+      entry      <- resolved.manifest.entry(resultName).toRight(Failure("no result entry"))
       // The typed plan the application's registration stands for: the verified
       // plan re-encoded and read through the typed codec, with the same description.
-      json  <- loaded.encode.left.map(message)
-      typed <- studies.codec.decode(json).left.map(message)
-      _     <- Either.cond(typed.description == loaded.description, (), "typed plan differs")
-      _ <- Either.cond(typed.prerequisites(Some(input)).isEmpty, (), "prerequisites refused")
-      rerun     <- typed.run(input).left.map(message)
-      loadedRun <- loaded.run(input).left.map(message)
-      encoded   <- results.codec.encode(rerun).left.map(message)
+      json  <- loaded.encode.left.map(message).failing
+      typed <- studies.codec.decode(json).left.map(message).failing
+      _     <- check(
+        PlanChange.between(loaded.description, typed.description),
+        "typed plan differs"
+      )
+      _         <- check(typed.prerequisites(Some(input)), "prerequisites refused")
+      rerun     <- typed.run(input).left.map(message).failing
+      loadedRun <- loaded.run(input).left.map(message).failing
+      encoded   <- results.codec.encode(rerun).left.map(message).failing
       bytes  = encoded.spaces2.getBytes("UTF-8")
       digest = ByteDigest.sha256(IArray.unsafeFromArray(bytes))
       _ <- Either.cond(
         digest == entry.sha256 && bytes.length.toLong == entry.length,
         (),
-        s"the re-executed result encodes to ${digest.hex} (${bytes.length} bytes), " +
-          s"not the archived ${entry.sha256.hex} (${entry.length} bytes)"
+        Failure(
+          s"the re-executed result encodes to ${digest.hex} (${bytes.length} bytes), " +
+            s"not the archived ${entry.sha256.hex} (${entry.length} bytes)"
+        )
       )
       receipt <- compared(
         directory,
@@ -459,46 +466,41 @@ object FreshProcessHarness:
   private def rerunRecording(
       directory: Path,
       resolved: ResolvedManifest[StudyKey, Px]
-  ): Either[String, Json] =
+  ): Either[Failure, Json] =
     for
-      codec     <- recordingCodec
-      registry  <- RecordingRegistry.empty.register(codec.registration).left.map(message)
-      inputName <- name("recording-input")
-      recName   <- name("recording")
-      input     <- resolved.recordingInput(inputName).toRight("no recording input")
-      recording <- resolved.recording(recName).toRight("no recording").flatMap {
+      codec    <- recordingCodec.failing
+      registry <- RecordingRegistry.empty.register(codec.registration).left.map(message).failing
+      inputName <- name("recording-input").failing
+      recName   <- name("recording").failing
+      input     <- resolved.recordingInput(inputName).toRight(Failure("no recording input"))
+      recording <- resolved.recording(recName).toRight(Failure("no recording")).flatMap {
         case RecordingChannels.Monocular(r) => Right(r)
-        case RecordingChannels.Binocular(_) => Left("the recording is binocular")
+        case RecordingChannels.Binocular(_) => Left(Failure("the recording is binocular"))
       }
-      raw    <- readText(directory.resolve(planFile))
-      json   <- io.circe.parser.parse(raw).left.map(_.message)
-      loaded <- registry.decode(json).left.map(message)
-      _      <- Either.cond(
-        RecordingInput.disagreements(input, loaded.plan).isEmpty,
-        (),
-        s"the plan disagrees with its input: ${RecordingInput.disagreements(input, loaded.plan)}"
+      raw    <- readText(directory.resolve(planFile)).failing
+      json   <- io.circe.parser.parse(raw).left.map(_.message).failing
+      loaded <- registry.decode(json).left.map(message).failing
+      _      <- check(
+        RecordingInput.disagreements(input, loaded.plan),
+        "the plan disagrees with its input"
       )
-      _ <- Either.cond(
-        loaded.plan.prerequisites(Some(recording)).isEmpty,
-        (),
-        s"prerequisites refused: ${loaded.plan.prerequisites(Some(recording))}"
-      )
-      analysis <- loaded.plan.run(recording).left.map(_.message)
+      _        <- check(loaded.plan.prerequisites(Some(recording)), "prerequisites refused")
+      analysis <- loaded.plan.run(recording).left.map(_.message).failing
       receipt  <- compared(directory, Vector("rerun" -> ScientificFingerprint.of(analysis)))
     yield receipt
 
   private def rerunTemporal(
       directory: Path,
       resolved: ResolvedManifest[StudyKey, Px]
-  ): Either[String, Json] =
+  ): Either[Failure, Json] =
     for
-      codec <- temporalCodec
-      named <- name("temporal")
-      input <- resolved.temporalInput(named).toRight("no temporal input")
-      raw   <- readText(directory.resolve(planFile))
-      plan  <- codec.codec.parse(raw).left.map(message)
-      _     <- Either.cond(plan.prerequisites(Some(input)).isEmpty, (), "prerequisites refused")
-      result  <- plan.run(input).left.map(_.message)
+      codec   <- temporalCodec.failing
+      named   <- name("temporal").failing
+      input   <- resolved.temporalInput(named).toRight(Failure("no temporal input"))
+      raw     <- readText(directory.resolve(planFile)).failing
+      plan    <- codec.codec.parse(raw).left.map(message).failing
+      _       <- check(plan.prerequisites(Some(input)), "prerequisites refused")
+      result  <- plan.run(input).left.map(_.message).failing
       receipt <- compared(directory, Vector("rerun" -> ScientificFingerprint.of(result)))
     yield receipt
 
@@ -506,7 +508,7 @@ object FreshProcessHarness:
     decoders(withoutResultCodec).map { registered =>
       def study(
           label: String,
-          rerun: (Path, ResolvedManifest[StudyKey, Px]) => Either[String, Json]
+          rerun: (Path, ResolvedManifest[StudyKey, Px]) => Either[Failure, Json]
       ): Json =
         val directory = root.resolve(label)
         val started   = System.nanoTime
