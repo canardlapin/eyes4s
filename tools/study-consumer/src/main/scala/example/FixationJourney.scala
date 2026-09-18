@@ -16,7 +16,6 @@
 
 package example
 
-import cats.data.NonEmptyVector
 import cats.effect.IO
 import eyes4s.codec.*
 import eyes4s.compare.ComparisonBudget
@@ -25,8 +24,6 @@ import eyes4s.fs2.*
 import eyes4s.io.ArtifactLoading
 import eyes4s.kernel.Unit2D.Px
 import eyes4s.plan.*
-
-import java.nio.charset.StandardCharsets
 
 /** The steps of the fixation-only journey that an application repeats after
   * the analysis has run once: save a run, reload it from bytes alone, rerun it
@@ -43,11 +40,9 @@ object FixationJourney:
   val ledgerEntry = "ledger.json"
   val resultEntry = "result.json"
 
-  /** The application's file layout: the manifest in `manifest.json`, every
-    * entry under its manifest name, and the address in `manifest.sha256`.
-    */
-  val manifestFile = "manifest.json"
-  val addressFile  = "manifest.sha256"
+  /** The application's file layout, shared by every route; see [[SavedRun]]. */
+  val manifestFile = SavedRun.manifestFile
+  val addressFile  = SavedRun.addressFile
 
   /** A saved run, typed again through the route's own codecs. */
   final case class Reloaded[K, P, S, D](
@@ -56,15 +51,6 @@ object FixationJourney:
       ledger: AdmissionLedger[K],
       result: StudyResult[K, Px, S, D]
   )
-
-  enum JourneyError derives CanEqual:
-    case Codec(error: CodecError)
-    case Resolve(errors: NonEmptyVector[ResolveError])
-
-    /** The resolved manifest did not hold exactly one artifact of `role`. */
-    case Entries(role: ArtifactRole, count: Int)
-    case Preflight(error: PreflightError)
-    case Descriptor(error: DescriptorError)
 
   /** Save the plan, its admitted input, the admission ledger and a completed
     * result under one manifest with typed relations between them.
@@ -93,16 +79,10 @@ object FixationJourney:
   /** Every file of a saved run under the application's layout. Entry names
     * must differ from the two layout files; `save` uses the names above.
     */
-  def files(saved: SavedManifest): Vector[(String, IArray[Byte])] =
-    (manifestFile  -> saved.bytes) +:
-      (addressFile -> IArray.from(saved.address.hex.getBytes(StandardCharsets.UTF_8))) +:
-      saved.artifacts.map(a => a.name.value -> a.bytes)
+  def files(saved: SavedManifest): Vector[(String, IArray[Byte])] = SavedRun.files(saved)
 
   /** Serve a stored run from whatever holds its files, by the layout above. */
-  def source(files: String => Option[IArray[Byte]]): ByteSource = ByteSource {
-    case ByteRequest.Manifest(_)  => files(manifestFile).toRight(SourceFailure.Missing)
-    case ByteRequest.Entry(entry) => files(entry.name.value).toRight(SourceFailure.Missing)
-  }
+  def source(files: String => Option[IArray[Byte]]): ByteSource = SavedRun.source(files)
 
   /** Resolve and verify a stored run from bytes, then type it again. */
   def resolve[K, P, S, D](
@@ -140,10 +120,7 @@ object FixationJourney:
       route: AnalysisRoute[K, P, S, D],
       resolved: ResolvedManifest[K, Px]
   ): Either[JourneyError, Reloaded[K, P, S, D]] =
-    def single[A](role: ArtifactRole, values: Vector[(ArtifactName, A)]) =
-      values match
-        case Vector((_, value)) => Right(value)
-        case other              => Left(JourneyError.Entries(role, other.size))
+    import SavedRun.single
     for
       loaded   <- single(ArtifactRole.StudyPlan, resolved.plans)
       input    <- single(ArtifactRole.StudyInput, resolved.inputs)

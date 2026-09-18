@@ -369,8 +369,9 @@ scope names is refused (`AdmissionError.QuarantineScope(3, Vector(2, 3, 4, 5))`)
 and rewriting the scope decodes cleanly, and so does dropping one of two standalone rejections from
 a reviewed ledger that has a `LedgerOf` relation to its input. Exclusions can be verified only by
 re-importing the source file and comparing the ledger the importer produces. That is an io-level
-check that the pure resolver cannot perform, so it is deferred to G1 as a ledger-to-source relation
-checked by re-running the importer.
+check that the pure resolver cannot perform, so it is deferred as a ledger-to-source relation
+checked by re-running the importer (`bd-01M2SC6N15J2N7PHD4DXBE43VD`); the G1 consumer records it
+as a limit.
 
 Both payloads are artifacts of their own; plan JSON references the input by digest only. The pinned
 [study-input-v1.json](../codec/src/test/resources/eyes4s/study-input-v1.json) and
@@ -872,9 +873,9 @@ neither of which is the test's JVM. Both run from the build's class directories:
 classpath, which the build writes to a resource, holds the library, the test code (including the
 harness) and the pinned fixtures. The reader shares no memory, registry or cache with the writer,
 and it reads the saved studies only from their files and reads none of the pinned fixtures; it is
-not isolated from the repository's classes. The isolated consumer runs the fixation journey from
-published artifacts instead (see [below](#the-fixation-journey-from-published-artifacts)); its
-recording and temporal routes, which now have the archives and manifest roles above, are G1's.
+not isolated from the repository's classes. The isolated consumer runs the fixation, recording and
+temporal journeys from published artifacts instead (see
+[below](#the-consumer-journeys-from-published-artifacts)).
 
 1. A **writer** process (`FreshProcessHarness write <root>`) decodes the pinned v1 fixtures, runs
    each plan, and saves three studies under `root`, each a directory holding the manifest
@@ -957,7 +958,7 @@ caught only by re-executing the plan, which the reader does. `LedgerForgerySuite
 that dropping a standalone rejection from a reviewed ledger related to its input resolves.
 Establishing authenticity (who wrote the study) needs a signature over the manifest address, which
 is the application's concern. Establishing that a ledger's exclusions are the source's needs a
-re-import of the source file, the G1 deferral described under
+re-import of the source file, the deferral described under
 [input payloads](#input-payloads-and-admission-ledgers).
 
 The harness runs on the JVM, where the application process lives. On Scala.js, the pinned
@@ -968,10 +969,10 @@ study-result-v1, `ResultArchivesV1Suite` decodes recording-result-v1 and tempora
 pinned manifests and packed payload digests. The recording and temporal re-executions are compared
 with their archives bit for bit on the JVM only: the angular warp and Gaussian smoothing use
 transcendental functions neither platform promises to round identically. A realistic-size input
-for throughput is not archived: no permitted realistic-size dataset is in the repository, and
-choosing one is left to G1.
+for throughput is not archived: no permitted realistic-size dataset is in the repository, and G1
+records this as a limit rather than inventing one.
 
-## The fixation journey from published artifacts
+## The consumer journeys from published artifacts
 
 The isolated consumer under [`tools/study-consumer`](../tools/study-consumer/README.md) runs the
 fixation-only route an application needs, through packaged artifacts alone, on the JVM and
@@ -987,6 +988,22 @@ which `verify.py` checks holds only the consumer's own `example` classes, the pa
 (each compared by SHA-256 with the locally published artifact) and third-party jars. A reader reruns a resolved study by re-reading the plan and result through the
 typed codecs it registered, because `LoadedStudy` and `LoadedResult` keep their parameter and score
 types abstract.
+
+UI-G1 extends the consumer to the recording and temporal routes, each for a shipped method (I-VT,
+cosine) and for one of the consumer's own (a laboratory detector with its own typed parameter
+descriptors; the scaled cosine over its own key and score types). A recording run is saved as its
+recording input, its channels packed with four payloads, its plan and its `recording-result@1`
+archive, with `RecordingOf`, `PayloadOf`, `RecordingPlanInput` and `RecordingResultOf` relations; a
+temporal run as its base input, admission ledger, temporal input (base by reference), plan and
+`temporal-result@1` archive, with `LedgerOf`, `TemporalBase`, `TemporalPlanInput` and
+`TemporalResultOf`. Each resolves through a fresh resolver with only the route's own registrations
+(`withRecordings` with the pixel witness, `withTemporal`), is re-typed through the route's codecs and
+reruns through `RecordingExecution` or `TemporalExecution` to the same fingerprint and the archived
+entry's SHA-256; on the JVM a separate reader process does the same from a directory. The detected
+events match the pinned pymovements I-VT fixture, and every temporal ledger and contrast matches the
+independent `temporal.json` oracle. The failure paths the consumer pins for all three routes, the
+published laws it runs over its own types, its response-envelope smoke run and its limits are in
+[its README](../tools/study-consumer/README.md#the-recording-and-temporal-journeys-ui-g1).
 
 ## Inspect results and explain failures
 
@@ -1037,7 +1054,10 @@ numeric spelling (`1.0` versus `1`); byte-identical JSON serialization is not th
 Within either runtime, saving/reloading the same plan preserves its numerical results exactly.
 On the JVM the fresh-process harness shows the stronger statement across processes: a study saved
 by one JVM and re-executed by another reproduces every double bit for bit, and the fixation
-result re-encodes to the archived bytes exactly. The consumer's fixation journey shows the same
-from packaged artifacts, and its JVM and Scala.js runs must also agree exactly on the input digest,
-the 64-bit onsets, the binned contrast bits, every progress segment with its stated total and
-units, and the step at which a cancelled run stopped.
+result re-encodes to the archived bytes exactly. The consumer's journeys show the same from
+packaged artifacts for all three routes, and their JVM and Scala.js runs must also agree exactly on
+the input digests, the 64-bit onsets, the binned contrast bits, every progress segment with its
+stated total and units, and the step at which a cancelled run stopped; for recordings, on the
+event kinds, microsecond spans, sample support, labels and area memberships (event places within
+`1e-9` degrees); for temporal studies, on every occupancy ledger and the binned bits (Gaussian
+values within `1e-12`).

@@ -29,7 +29,7 @@ import eyes4s.kernel.Unit2D.Px
 import eyes4s.laws.StudyResultEquivalence
 import eyes4s.plan.*
 import eyes4s.surface.EdgePolicy
-import example.FixationJourney.{JourneyError, Reloaded}
+import example.FixationJourney.Reloaded
 
 import java.nio.charset.StandardCharsets
 

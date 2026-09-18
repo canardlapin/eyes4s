@@ -1378,8 +1378,9 @@ object RecipeDescriptors:  def study(plan), recording(plan), temporal(plan): Eit
 
 Every canonical description field has a stable id, version, meaning, units and constructor
 contract; inspection checks the descriptor against the executable method's declared parameters and
-score components and fails on a missing, extra or misencoded field. All shipped recipes report
-`ExecutionCapability.SynchronousWholeOperation`; bounded execution is the UI-X2 to UI-X6 series. See
+score components and fails on a missing, extra or misencoded field. A study plan reports its
+method's `ExecutionCapability` (`BoundedComparison` for cosine), a temporal plan its base study's,
+and a recording plan `SynchronousWholeOperation`. See
 [method descriptors](docs/METHOD_DESCRIPTORS.md).
 
 **Codecs** live in `eyes4s-codec` (the only pure module with a circe dependency):

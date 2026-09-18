@@ -8,6 +8,9 @@ tests save/reload both study and recording plans, compare independently generate
 targets, export results, and exercise missing/duplicate registration and malformed schemas.
 They also save the custom plan, input and result archive under a manifest and resolve it from an
 in-memory source through the consumer's own registrations, under the published `ManifestLaws`.
+Beyond that, it is the headless reference application of the UI foundation plan: three journeys
+(fixation, recording and temporal) run from import to a saved, reloaded and rerun result through
+published eyes4s APIs only, each for a shipped method and for one of the consumer's own.
 
 From the eyes4s repository root:
 
@@ -92,5 +95,139 @@ resolve, reload, rerun, fingerprint); `Journey` in the test sources holds the re
 The application owns everything else: file locations, autosave, scheduling and wording. A resolved
 plan and result keep their parameter and score types abstract (`LoadedStudy`, `LoadedResult`), so
 the application re-reads them through the typed codecs it registered before preparing, running or
-inspecting them. The journey covers fixation inputs only: recording and temporal routes, the
-execution laws and the response budget belong to G1.
+inspecting them. `SavedRun` holds the file layout and `JourneyError` the typed refusals that every
+route shares.
+
+## The recording and temporal journeys (UI-G1)
+
+`RecordingJourneySuite` and `TemporalJourneySuite` run the same journey for the other two shipped
+plan families, on the JVM and Scala.js, each once for a shipped method and once for one of this
+consumer's own:
+
+| Route | Shipped | The consumer's own |
+|---|---|---|
+| Recording (`RecordingRoute`, `RecordingJourney`) | I-VT through `RecordingCodecs.ivt` | `CustomDetector`: a laboratory I-VT with its own parameter type, typed field descriptors (its own error type), `RecordingMethodDescriptor`, codec and schemas |
+| Temporal (`TemporalRoute`, `TemporalJourney`) | cosine over `StudyKey` | the scaled cosine over `TrialKey` with `Multiplier` and `ScaledScore` |
+
+The recording journey starts from a normalized `RecordingInput` (channels, viewing geometry and
+observed synchronization marks): the pinned I-VT conformance fixture
+`ivt-symmetric-central-boundaries` of [`tools/detector-conformance/reference.json`](../detector-conformance/reference.json)
+(its fixations are the pymovements 0.26.2 oracle's, mapped to half-open support, and verify.py
+checks that mapping; the saccade between them is the fixture's stated eyes4s expectation),
+written as display pixels (`x = 500 + 600 tan(theta)` on a 1000 x 1000 mm display at 600 mm, as decimal
+literals so the recording's digest is the same on both runtimes). Its steps:
+
+1. **Discover.** `Preflight.families`, the detector's `RecordingMethodDescriptor` (typed fields,
+   algorithm card, execution capability) and `plan.inspect` for every field of the plan.
+2. **Preflight.** `plan.preflight(Some(recording))` names a missing recording, a missing viewing
+   geometry, a display that disagrees with the plan and marks the residual limit rejects;
+   `report.confirm` refuses a plan or a recording changed since the report.
+3. **Run.** `RecordingExecution[IO]` with two samples per step: one exact total per segment
+   (synchronizing 1, warping 1, interpolating 10, detecting 10, assigning 1), a cancellation
+   parked between two detection chunks settles `Cancelled` with the last committed step and no
+   analysis, and a completed run is the pure `plan.run`, bit for bit.
+4. **Inspect.** `ResultInspection.recording` lists every event by its sample range, linked to the
+   samples of the input recording; the events match the oracle's kinds and microsecond spans
+   exactly and its places within 1e-9 degrees.
+5. **Save and reload.** `RecordingJourney.save`: the recording input, its channels as a packed
+   recording with four `packed-array@1` payloads, the plan (`recording-plan`) and the analysis
+   (`recording-result@1`), with `RecordingOf`, `PayloadOf`, `RecordingPlanInput` and
+   `RecordingResultOf` relations. A fresh resolver over a private copy of the bytes, with fresh
+   registrations (`route.decoders`: `withRecordings` and the pixel witness), reloads it;
+   `RecordingJourney.rerun` checks `RecordingInput.disagreements`, preflights and reruns it. The
+   rerun's fingerprint (every sample and event double as raw IEEE bits) and canonical archive
+   SHA-256 equal the original's.
+
+The temporal journey imports the pinned temporal table (`TemporalConsumerFixtures`, which
+`generate_temporal.py` writes together with `tools/r-parity/fixtures/temporal-study.csv` and
+`temporal.json`; verify.py checks the table against that file and runs the generator's `--check`) through the fixation
+route's reader and ledger, gives every trial a measured epoch (anchor 0 and the fixture's observed
+coverage on the trial's own clock), and runs four windows by two repetitions at the binned and
+sigma 1 scales. Each repetition's prepared pair design, paged without scoring, is exactly the oracle's
+pair table (36 pairs, the third phase's trials named as excluded). Preflight warns (and only warns)
+that no trial is observed in the `outside` window;
+the run's cells follow one another with exact preparation totals; every occupancy ledger equals the
+independent integer-overlap ledger and all 96 contrasts the 60-digit targets of
+[`temporal.json`](../r-parity/fixtures/temporal.json) within 1e-12 (twice the target for the
+scaled cosine, bit for bit in the binned scale). `ResultInspection.temporal` locates every failure of
+the unobserved window by repetition, window, scale and trial, linked to its CSV records.
+`TemporalJourney.save` stores the base input, its ledger, the temporal input (base by reference),
+the plan and the result with `LedgerOf`, `TemporalBase`, `TemporalPlanInput` and
+`TemporalResultOf`; a fresh resolver reloads it and `TemporalJourney.rerun` reproduces it bit for bit.
+
+On the JVM, `FreshProcessRoutesJvmSuite` stores each of the four runs in a directory, resolves it
+through `ArtifactFiles`, and launches `RouteReader` in a separate JVM over this consumer's classpath.
+The reader makes its registrations from nothing, knows only a route name and a directory, and
+reports the archived and rerun fingerprints and the rerun's canonical archive digest, which must
+equal the writer's. On Scala.js the same journeys run in one process: every reload, value identity
+and rerun is checked there, and verify.py compares the two runtimes' portable evidence.
+
+### Failure paths
+
+Every path asserts the exact typed outcome it names and what it retains. Recording has no pairs,
+so its failed-pair row is the analogous failed stage:
+
+| Path | Fixation (G0) | Recording | Temporal |
+|---|---|---|---|
+| Missing or changed artifact | `resolve.digest`, `resolve.missing`, `resolve.identity` naming the entry | a flipped archive byte (`Digest`), a missing payload file (`Missing(recording.values)`), another session's input re-declared consistently (`Identity`); also in a separate JVM | a flipped archive byte, a missing ledger, a temporal input without one epoch re-declared consistently (`Identity`) |
+| Unknown extension | an archive of the scaled cosine without its result codec (`MissingResultCodec`, `ConsumerSuite`) | no recording registrations: `UnsupportedSchema(recording-plan, schema, [])`; the other detector's registrations: `UnsupportedSchema(…, [registered])` and `MissingResultCodec(method)`; the same refusal from a separate JVM | fixation registrations only: `UnsupportedSchema` for plan and result; empty temporal registries: `MissingMethod` and `MissingResultCodec` by the base method |
+| Invalid geometry | a degenerate display is `geometry.degenerate-bounds`; the table read on a display named like the plan's with other bounds is a `FrameMismatch` warning per trial (`AlignFrame`), and every estimation fails as `study-failure.frame`, 48 located failures | a zero viewing distance is refused by the typed descriptor (`NonPositivePerspective`) and, edited into a saved plan, by decoding (`Decode(recording-plan.json, Field(perspective))`); a recording naming the plan's display with other bounds is a `FrameMismatch` blocker, `NotReady`, and `Failed(Geometry(FrameIdentityConflict), None)` before any step | the same table on the other display: a `FrameMismatch` finding per trial, and every trial's estimation `study-failure.frame` in all eight cells |
+| Cancelled run | inside a scale's matched comparison, and before step 1 | between two detection chunks, and before step 1 | inside the second cell's matched comparison, and before step 1 |
+| Stale revision | `ChangedPlan`, `ChangedInput`, a stale preview | `ChangedPlan(EventRecording, [interpolationGapMicros])`, `ChangedInput` | `ChangedPlan(TemporalStudy, [temporal.boundary])`, `ChangedInput` |
+| Failed pair | a bandwidth finer than the grid fails every pair of its scale | no pairs; the analogue is marks the plan's residual limit rejects: a `Synchronization` blocker and `Failed(Synchronization(…), None)` | the unobserved window fails every pair of both scales (108 located failures per cell: occupancy `surface.degenerate-total` binned, `estimate.no-mass` Gaussian); a trial without an epoch is `temporal.missing-epoch` in every cell |
+
+### The published laws over the consumer's routes
+
+`ConsumerLawsSuite` runs `ExecutionLaws.conformance` over the cursor of every route (the fixation
+journey at the binned and sigma 1 scales, both recording routes, and both temporal routes over one
+repetition of an observed and an unobserved window), each with an independent oracle: the rational
+and decimal cosine targets, the I-VT conformance events, and the integer-overlap ledgers with the
+decimal temporal targets. It runs `ManifestLaws.verifiedResolution` over the consumer's own writers
+and registrations for all six routes. One deliberate mutant per law set shows the laws have teeth
+here: a detection total overclaimed by one sample, and a writer that drops a packed payload.
+
+### The JVM response envelope
+
+`ResponseEnvelopeJvmSuite` times every step of each route's cursor and the latency from `cancel` to a
+settled outcome while a step is in flight (at the slowest step and three spread steps), and adds the
+widest study [the declared envelope](../../docs/EXECUTION_RESPONSIVENESS.md) supports (256 x 256
+cells, Gaussian sigma 32) and a 10 s recording at 1 kHz. It asserts no time, only the runner's outcome
+contract; verify.py copies every workload and the JVM into its receipt. Test suites run one at a time
+on the JVM so that nothing competes with the measurement. The run for UI-G1 (Apple M3 Max, JDK 25.0.1,
+six visible processors, 3 GiB heap) is recorded in
+[the plan's G1 outcome](../../docs/UI_FOUNDATION_PLAN.md#g1-outcome).
+
+### The receipt
+
+verify.py's `receipt.json` names the artifacts (version, each jar's SHA-256, the library revision
+they were published from), the fixtures (SHA-256 of every pinned oracle input), the runtime (Python,
+platform, sbt, Scala and the measuring JVM), the gates (the commands, both runtimes' test totals and
+every check it made), the runtime evidence of every journey, the fresh-process receipts, the response
+envelope and the SHA-256 of every tested source file.
+
+### Limits
+
+What the consumer proves stops here; each limit is an open follow-up or a stated boundary:
+
+- io import errors (`FixationImportError`, EyeLink) have no stable diagnostic codes yet
+  (`bd-01M2SG4718MMQ8SDDMC0K13T33`); codec refusals of a constructor's value (a zero viewing
+  distance) carry the constructor's message as the reason of `codec.field`, not its typed error.
+- A resolved plan or result keeps its parameter and score types abstract (`LoadedStudy`,
+  `LoadedRecordingPlan`, `LoadedTemporal`); the application re-reads it through its typed codec
+  (`bd-01M2SG47CCG30E22SY3M4WA7DR`).
+- No fixture has a scale where some pairs fail and others succeed (`bd-01M2SG47P8BZYP9BG35QWYNKHY`).
+- `PreflightError` has no key type, so its findings project to `Diagnostic[Any]`
+  (`bd-01M2SBT6HYM8WT3VHND10TSRGF`).
+- Detection support assembly is quadratic in events x samples, which the 10 s recording shows as its
+  slowest step (`bd-01M2S5AX3E1E3PRGS3CR322HAX`); a recording descriptor always states
+  `SynchronousWholeOperation`, although the runner feeds its machine in sample chunks.
+- An admission ledger's exclusions are not verified against the source by re-running the importer
+  (`bd-01M2SC6N15J2N7PHD4DXBE43VD`).
+- Binocular recordings and recording inputs with channels by reference are not packed
+  (`bd-01M2SC6NKVX2E7DN8PD4Q990ND`).
+- No realistic-size input is archived: the fixtures are small by design, and no permitted
+  realistic-size dataset is in the repository.
+- Recording and Gaussian results are rerun bit for bit within a runtime and across JVM processes, not
+  from a JVM archive on Scala.js: the angular warp and Gaussian smoothing use transcendental functions
+  that neither platform promises to round identically. Across runtimes, verify.py compares them
+  within the named tolerances.
