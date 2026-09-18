@@ -58,11 +58,14 @@ object StudySegment:
 
   /** Totals the prepared study can state before the segment runs. Estimation
     * is one unit per trial. A comparison segment pages the schedule, which
-    * visits each candidate pair once and then charges one unit per reference
-    * key for the unmatched-reference report (or one per focal key when there
-    * are no reference trials), charges one unit to begin or wholly evaluate
-    * each selected pair, and for a bounded method at most one unit per grid
-    * cell inside it. Reduction charges per realized score, which preparation
+    * visits each candidate pair at most once: for each focal key, only the
+    * reference keys in its block of the design's first declared equality, or
+    * one unit when that block is empty (so one per focal key when there are
+    * no reference trials). It then charges one unit per reference key for the
+    * unmatched-reference report, one unit to begin or wholly evaluate each
+    * selected pair, and for a bounded method at most one unit per grid cell
+    * inside it; the bound counts every candidate pair and every focal and
+    * reference key. Reduction charges per realized score, which preparation
     * does not enumerate, so it is `Unknown` here and exact once the segment
     * begins. A contrast visits at most every focal key.
     *

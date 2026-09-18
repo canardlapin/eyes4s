@@ -147,10 +147,17 @@ as the segment begins, and every step of the segment reports that same total.
 Preparation can state `Exact(trials)` for estimation;
 `AtMost(candidates * (2 + cells) + focal + reference)` for a bounded comparison
 segment and `AtMost(2 * candidates + focal + reference)` for a synchronous
-method, where the schedule's paging visits every candidate pair and then every
-reference key (or every focal key when there are no reference trials) and each
-selected pair costs one unit to begin plus its cells; and `AtMost(focal keys)`
-for a contrast. A reduction's units depend on the realized scores, so
+method, where `candidates` is the schedule's `candidatePairCount`, the whole
+focal-by-reference space. Paging visits at most that space: for each focal key
+it visits the reference keys in its block of the design's first declared
+equality (the participant, for both shipped designs; every reference key when a
+design declares none), or charges one unit when that block is empty, so one per
+focal key when there are no reference trials. It then visits every reference
+key once for the unmatched report, and each selected pair costs one unit to
+begin plus its cells. The isolated consumer's journey pins
+this: 36 candidates, 18 visits, 6 reference keys and 6 matched pairs of 1 + 4
+units make 54 of an `AtMost(228)`. A contrast states `AtMost(focal keys)`. A
+reduction's units depend on the realized scores, so
 `StudyExecution.total(work, segment)` answers `Unknown` before the run, and the
 runner reports `Exact(units)` from the reduction's first step:
 `StudyCursor.reductionUnits` counts one unit per contribution, unmatched key and
@@ -743,8 +750,9 @@ neither of which is the test's JVM. Both run from the build's class directories:
 classpath, which the build writes to a resource, holds the library, the test code (including the
 harness) and the pinned fixtures. The reader shares no memory, registry or cache with the writer,
 and it reads the saved studies only from their files and reads none of the pinned fixtures; it is
-not isolated from the repository's classes. Running the same journey from published artifacts, in
-the isolated consumer under `tools/study-consumer`, is left to G0 and G1.
+not isolated from the repository's classes. The isolated consumer runs the fixation journey from
+published artifacts instead (see [below](#the-fixation-journey-from-published-artifacts)); its
+recording and temporal routes are left to G1.
 
 1. A **writer** process (`FreshProcessHarness write <root>`) decodes the pinned v1 fixtures, runs
    each plan, and saves three studies under `root`, each a directory holding the manifest
@@ -828,6 +836,23 @@ pinned bytes on Scala.js, but their re-executed results are not compared with an
 there. A realistic-size input for throughput is not archived: no permitted realistic-size dataset
 is in the repository, and choosing one is left to G1.
 
+## The fixation journey from published artifacts
+
+The isolated consumer under [`tools/study-consumer`](../tools/study-consumer/README.md) runs the
+fixation-only route an application needs, through packaged artifacts alone, on the JVM and
+Scala.js (UI-G0): a fixation table imported with its admission ledger, recipe discovery through
+typed descriptors, preflight with explicit budgets, the pair-schedule preview, a run through
+`StudyExecution` with progress, a cancellation that settles `Cancelled` with no result and a
+completed run, a save under one manifest, a reload through a fresh resolver, a rerun compared bit
+for bit, and inspection down to CSV record numbers, with a bad table and a corrupted archive turned
+into coded diagnostics. It runs once for the shipped cosine and once for the consumer's own method,
+key and score types. On the JVM the run is also stored in a directory, resolved through
+`ArtifactFiles`, and reloaded and rerun by a separate JVM launched over the consumer's own classpath,
+which `verify.py` checks holds only the consumer's own `example` classes, the packaged eyes4s jars
+(each compared by SHA-256 with the locally published artifact) and third-party jars. A reader reruns a resolved study by re-reading the plan and result through the
+typed codecs it registered, because `LoadedStudy` and `LoadedResult` keep their parameter and score
+types abstract.
+
 ## Inspect results and explain failures
 
 `ResultInspection.study(plan, result, input, ledger)` opens a completed or decoded result for
@@ -877,4 +902,7 @@ numeric spelling (`1.0` versus `1`); byte-identical JSON serialization is not th
 Within either runtime, saving/reloading the same plan preserves its numerical results exactly.
 On the JVM the fresh-process harness shows the stronger statement across processes: a study saved
 by one JVM and re-executed by another reproduces every double bit for bit, and the fixation
-result re-encodes to the archived bytes exactly.
+result re-encodes to the archived bytes exactly. The consumer's fixation journey shows the same
+from packaged artifacts, and its JVM and Scala.js runs must also agree exactly on the input digest,
+the 64-bit onsets, the binned contrast bits, every progress segment with its stated total and
+units, and the step at which a cancelled run stopped.
