@@ -38,11 +38,15 @@ import io.circe.Json
   * Decoding rebuilds the analysis through `RecordingAnalysis.reconstruct`
   * from the plan, the two recordings, the events with their support and the
   * areas, which re-derives the synchronization from the plan's marks, the
-  * detection's labels, report and provenance from the events and samples, and
-  * the memberships from the areas; every archived member the reconstruction
-  * derives must then equal the derived value (`CodecError.Derived`). Nothing
-  * numerical is re-run but the refit of the marks, the fixation summaries
-  * `EventSeries.of` re-derives and the exact point-in-region assignment.
+  * prepared recording by re-running the plan's gap interpolation over the
+  * angular samples, the detection's labels, report and provenance from the
+  * events and samples, and the memberships from the areas; every archived
+  * member the reconstruction derives must then equal the derived value
+  * (`CodecError.Derived`). Nothing numerical is re-run but the refit of the
+  * marks, the linear gap interpolation, the fixation summaries
+  * `EventSeries.of` re-derives (a fixation's dispersion travels as its method
+  * only, and a declared value is refused) and the exact point-in-region
+  * assignment.
   */
 final class RecordingResultCodec[P](
     val schema: DefinitionId,
@@ -129,6 +133,7 @@ final class RecordingResultCodec[P](
     val registered = this
     new RecordingResultRegistration:
       val methodId: DefinitionId = registered.plans.method.id
+      val schema: DefinitionId   = registered.schema
       def decode(json: Json): Either[CodecError, LoadedRecordingResult] =
         registered.codec.decode(json).map { value =>
           new LoadedRecordingResult:
@@ -145,6 +150,7 @@ trait LoadedRecordingResult:
 
 sealed trait RecordingResultRegistration:
   val methodId: DefinitionId
+  val schema: DefinitionId
   def decode(json: Json): Either[CodecError, LoadedRecordingResult]
 
 /** Recording result codecs by recording method; lookup reads the archive's
@@ -159,6 +165,9 @@ final class RecordingResultRegistry private (
     if entries.exists(_.methodId == entry.methodId) then
       Left(CodecError.DuplicateResultCodec(entry.methodId))
     else Right(new RecordingResultRegistry(entries :+ entry))
+
+  /** The envelope schemas of the registered codecs. */
+  def schemas: Vector[DefinitionId] = entries.map(_.schema).distinct
 
   def decode(json: Json): Either[CodecError, LoadedRecordingResult] = for
     payload    <- Wire.field[Json](json, "value")
@@ -318,7 +327,8 @@ final class TemporalResultCodec[K, U <: Unit2D, P, S, D](
   def registration: TemporalResultRegistration[K, U] =
     val registered = this
     new TemporalResultRegistration[K, U]:
-      val id: DefinitionId = registered.plans.study.method.id
+      val id: DefinitionId     = registered.plans.study.method.id
+      val schema: DefinitionId = registered.schema
       def decode(json: Json): Either[CodecError, LoadedTemporalResult[K, U]] =
         registered.codec.decode(json).map { value =>
           new LoadedTemporalResult[K, U]:
@@ -339,6 +349,7 @@ trait LoadedTemporalResult[K, U <: Unit2D]:
 
 sealed trait TemporalResultRegistration[K, U <: Unit2D]:
   def id: DefinitionId
+  def schema: DefinitionId
   def decode(json: Json): Either[CodecError, LoadedTemporalResult[K, U]]
 
 /** Temporal result codecs by the method of their base study; lookup reads the
@@ -352,6 +363,9 @@ final class TemporalResultRegistry[K, U <: Unit2D] private (
   ): Either[CodecError, TemporalResultRegistry[K, U]] =
     if entries.exists(_.id == entry.id) then Left(CodecError.DuplicateResultCodec(entry.id))
     else Right(new TemporalResultRegistry(entries :+ entry))
+
+  /** The envelope schemas of the registered codecs. */
+  def schemas: Vector[DefinitionId] = entries.map(_.schema).distinct
 
   def decode(json: Json): Either[CodecError, LoadedTemporalResult[K, U]] = for
     payload    <- Wire.field[Json](json, "value")

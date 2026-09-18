@@ -133,7 +133,8 @@ with an added member has another address. Three members are refused where they w
 because they have a version-1 meaning elsewhere: any member of an `eyes4s.unit@1` payload, which
 is exactly `{}` whether it is a parameterless method's parameters or a trial's metadata; a `timing`
 member on a neutral `eyes4s.timeline@1`; and a declared dispersion value on a source-supported
-fixation, whose value is derived from its samples. The members a recording result archive re-derives
+fixation, whose value is derived from its samples, in a study input's scanpath and in a recording
+result's detected events alike. The members a recording result archive re-derives
 (its synchronization, detection and assignment) are compared with the derivation member by member
 over the members version 1 writes, so an unknown member among them is ignored like any other and a
 known one that differs is refused with `CodecError.Derived(path, declared, derived)`.
@@ -188,7 +189,8 @@ fully contained fixations, coverage gaps, anchors at zero, beyond 2^53 and near 
 where a late window overflows, missing epochs, one or two repetitions and binned and Gaussian
 scales), compared by the published `RecordingResultEquivalence` and `TemporalResultEquivalence`.
 Each kills its mutants by a falsified property only (`Test.Failed`, never an exception or
-exhaustion): a dropped event, a moved angular sample and an emptied area; reordered cells, a forged
+exhaustion): a dropped event, a moved angular sample, an emptied area and an encoder that declares
+a fixation's derived dispersion value; reordered cells, a forged
 missing-epoch digest, a ledger re-anchored by a microsecond and a changed contrast difference. The
 pinned recording-result-v1 and temporal-result-v1 fixtures are described under
 [result archives](SAVED_STUDIES.md#recording-and-temporal-result-archives).

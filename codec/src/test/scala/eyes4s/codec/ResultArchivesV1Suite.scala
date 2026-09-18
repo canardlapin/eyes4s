@@ -230,3 +230,24 @@ class ResultArchivesV1Suite extends munit.FunSuite:
       )
     )
   }
+
+  test("a declared fixation dispersion value is refused where it would be ignored") {
+    val json   = parse(ResultArchiveMirrors.recordingResultVersionOne)
+    val valued = json.hcursor
+      .downField("value")
+      .downField("detection")
+      .downField("events")
+      .downArray
+      .downField("dispersion")
+      .withFocus(_.mapObject(_.add("value", Json.fromDoubleOrNull(0.5))))
+      .top
+      .get
+    ArchiveFixtures.recordingResults.codec.decode(valued).left.toOption match
+      case Some(CodecError.Entry(path, CodecError.Field("value", _, reason))) =>
+        assertEquals(path, "detection.events[0]")
+        assertEquals(
+          reason,
+          "a source-supported dispersion carries its method only; its value is derived"
+        )
+      case other => fail(s"unexpected $other")
+  }

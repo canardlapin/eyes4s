@@ -303,7 +303,11 @@ trait ArtifactDecoders[K, U <: Unit2D]:
       base: ArtifactRef[StudyInput[K, U]] => Option[StudyInput[K, U]]
   ): Either[CodecError, TemporalStudyInput[K, U]]
 
-  /** A recording plan; refused unless registered through [[withRecordings]]. */
+  /** A recording plan; refused, with no supported schema, unless registered
+    * through [[withRecordings]]. A decorator that wraps other decoders
+    * extends [[ArtifactDecoders.Delegating]], which forwards this and every
+    * other decoder, so wrapping never drops a registration.
+    */
   def recordingPlan(document: Json): Either[CodecError, LoadedRecordingPlan[U]] =
     ArtifactDecoders.unregistered("recording-plan", document)
 
@@ -330,8 +334,13 @@ trait ArtifactDecoders[K, U <: Unit2D]:
   )(using pixels: PixelUnit[U]): ArtifactDecoders[K, U] =
     new ArtifactDecoders.Delegating[K, U](this):
       override def recordingPlan(document: Json) =
-        plans.decode(document).map(LoadedRecordingPlan.of[U](_))
-      override def recordingResult(document: Json) = results.decode(document)
+        ArtifactDecoders.admitted("recording-plan", document, plans.schemas)(
+          plans.decode(document).map(LoadedRecordingPlan.of[U](_))
+        )
+      override def recordingResult(document: Json) =
+        ArtifactDecoders.admitted("recording-result", document, results.schemas)(
+          results.decode(document)
+        )
 
   /** These decoders, with temporal plans and results decoded through the
     * given registries.
@@ -341,12 +350,23 @@ trait ArtifactDecoders[K, U <: Unit2D]:
       results: TemporalResultRegistry[K, U]
   ): ArtifactDecoders[K, U] =
     new ArtifactDecoders.Delegating[K, U](this):
-      override def temporalPlan(document: Json)   = plans.decode(document)
-      override def temporalResult(document: Json) = results.decode(document)
+      override def temporalPlan(document: Json) =
+        ArtifactDecoders.admitted("temporal-plan", document, plans.schemas)(
+          plans.decode(document)
+        )
+      override def temporalResult(document: Json) =
+        ArtifactDecoders.admitted("temporal-result", document, results.schemas)(
+          results.decode(document)
+        )
 
 object ArtifactDecoders:
-  /** Every decoder of `base`; a subclass overrides the ones it adds. */
-  private class Delegating[K, U <: Unit2D](base: ArtifactDecoders[K, U])
+  /** Every decoder of `base`, forwarded. Extend this to decorate decoders
+    * (count calls, add a registration, log): a subclass overrides the
+    * decoders it changes and forwards the rest, including those a later
+    * release adds, so a decorator never silently turns a registered decoder
+    * into a refusal.
+    */
+  open class Delegating[K, U <: Unit2D](base: ArtifactDecoders[K, U])
       extends ArtifactDecoders[K, U]:
     def plan(document: Json)   = base.plan(document)
     def input(document: Json)  = base.input(document)
@@ -364,10 +384,26 @@ object ArtifactDecoders:
     override def temporalPlan(document: Json)    = base.temporalPlan(document)
     override def temporalResult(document: Json)  = base.temporalResult(document)
 
+  /** Nothing is registered for the role: refuse the document's schema. */
   private def unregistered[A](role: String, document: Json): Either[CodecError, A] =
     Wire
       .definition(document, "schema")
       .flatMap(found => Left(CodecError.UnsupportedSchema(role, found, Vector.empty)))
+
+  /** Decode a document of a schema some registration declares; refuse
+    * another schema naming the registered ones. An empty registry decodes,
+    * so its refusal names the missing method (`MissingMethod`,
+    * `MissingResultCodec`).
+    */
+  private def admitted[A](role: String, document: Json, supported: Vector[DefinitionId])(
+      decode: => Either[CodecError, A]
+  ): Either[CodecError, A] =
+    Wire
+      .definition(document, "schema")
+      .flatMap(found =>
+        if supported.isEmpty || supported.contains(found) then decode
+        else Left(CodecError.UnsupportedSchema(role, found, supported))
+      )
 
   /** Decoders over explicit registries; recordings use the built-in
     * `recording@1`, `binocular-recording@1` and `packed-recording@1` codecs.

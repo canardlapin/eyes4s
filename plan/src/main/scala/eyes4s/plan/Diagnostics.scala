@@ -390,12 +390,31 @@ object Diagnostics:
         diagnostic(C.temporalResult, e, e.message, inner.subject)(cause(inner))
       case OccupancyKeys(expected, found) =>
         diagnostic[K](C.temporalResult, e, e.message)(keys(expected), keys(found))
-      case Occupancy(key, field, expected, found) =>
+      case Boundary(key, expected, found) =>
         diagnostic(C.temporalResult, e, e.message, trial(key))(
           Operand.Key(key),
-          name(field),
-          text(expected),
-          text(found)
+          token(expected.toString),
+          token(found.toString)
+        )
+      case Width(key, expected, found) =>
+        diagnostic(C.temporalResult, e, e.message, trial(key))(
+          Operand.Key(key),
+          Operand.Integer(expected),
+          Operand.Integer(found)
+        )
+      case Epoch(key, expected, found) =>
+        diagnostic(C.temporalResult, e, e.message, trial(key))(
+          Operand.Key(key),
+          optional(expected.map(name)),
+          optional(found.map(name))
+        )
+      case Anchor(key, expectedClock, expectedMicros, foundClock, foundMicros) =>
+        diagnostic(C.temporalResult, e, e.message, trial(key))(
+          Operand.Key(key),
+          clock(expectedClock),
+          Operand.Integer(expectedMicros),
+          clock(foundClock),
+          Operand.Integer(foundMicros)
         )
       case Density(key, expected, found) =>
         diagnostic(C.temporalResult, e, e.message, trial(key))(

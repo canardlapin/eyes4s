@@ -251,6 +251,7 @@ class RecordingResultCodecLawSuite extends munit.DisciplineSuite:
     (1 to 25).foreach { _ =>
       val analysis = get(mutable.sample.toRight("no sample"))
       assert(analysis.detection.eventSeries.events.nonEmpty)
+      assert(analysis.detection.eventSeries.events.exists(_.isInstanceOf[Event.Fixation[?]]))
       assert(analysis.angular.samples(0).gaze.isInstanceOf[Gaze.Tracked[?]])
       assert(analysis.assignment.toVector.exists {
         case SampleMembership.Areas(ids) => ids.contains(analysis.assignment.aoiSet.ids.head)
@@ -344,4 +345,42 @@ class RecordingResultCodecLawSuite extends munit.DisciplineSuite:
         .flatMap(empty => rebuilt(a)(areas = empty +: a.assignment.aoiSet.areas.tail))
     }
     assert(killed(emptiedArea, mutable, RecordingResultEquivalence.same))
+  }
+
+  test("published laws kill an encoder that declares a derived fixation dispersion value") {
+    // Writes every detected fixation's dispersion value beside its method:
+    // the decoder refuses the member, so the round trip is falsified.
+    def declared(event: Json): Json =
+      if !event.hcursor.get[String]("kind").contains("fixation") then event
+      else
+        event.hcursor
+          .downField("dispersion")
+          .withFocus(_.mapObject(_.add("value", Json.fromDoubleOrNull(0.25))))
+          .top
+          .getOrElse(event)
+    val writesValue = VersionedCodec.checked[Analysis](ivtResults.codec.schema)(a =>
+      ivtResults.codec
+        .encode(a)
+        .flatMap(j =>
+          j.hcursor
+            .downField("value")
+            .downField("detection")
+            .downField("events")
+            .withFocus(_.mapArray(_.map(declared)))
+            .top
+            .flatMap(_.hcursor.get[Json]("value").toOption)
+            .toRight(CodecError.Field("value", j, "no events"))
+        )
+    )(raw =>
+      ivtResults.codec.decode(
+        Json.obj(
+          "schema" -> Json.obj(
+            "name"    -> Json.fromString(ivtResults.codec.schema.name),
+            "version" -> Json.fromInt(ivtResults.codec.schema.version)
+          ),
+          "value" -> raw
+        )
+      )
+    )
+    assert(killed(writesValue, mutable, RecordingResultEquivalence.same))
   }

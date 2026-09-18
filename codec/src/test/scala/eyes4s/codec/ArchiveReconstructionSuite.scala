@@ -18,6 +18,7 @@ package eyes4s.codec
 
 import eyes4s.aoi.*
 import eyes4s.core.*
+import eyes4s.design.{Trial, Trials}
 import eyes4s.detect.*
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.Deg
@@ -328,10 +329,10 @@ class ArchiveReconstructionSuite extends munit.FunSuite:
             TemporalResultError.Cell(
               "recall-encode",
               "early",
-              TemporalResultError.Occupancy(_, "widthMicros", "300000", "350000")
+              TemporalResultError.Width(_, expected, found)
             )
           ) =>
-        ()
+        assertEquals((expected, found), (BigInt(300000), BigInt(350000)))
       case other => fail(s"unexpected $other")
     // The middle window's ledgers span 300 ms as well, but the densities were not estimated from them.
     val middle = all(1)
@@ -393,9 +394,94 @@ class ArchiveReconstructionSuite extends munit.FunSuite:
             TemporalResultError.Cell(
               _,
               _,
-              TemporalResultError.Occupancy(`key`, "anchor", expected, found)
+              TemporalResultError.Anchor(`key`, expectedClock, expected, foundClock, found)
             )
           ) =>
-        assertNotEquals(expected, found)
+        assertEquals(foundClock, expectedClock)
+        // The first cell carries the shifted ledger, so the next cell disagrees with it.
+        assertEquals(expected - found, BigInt(1))
       case other => fail(s"unexpected $other")
+  }
+
+  test("anchors are compared as resolutions, whatever a clock is called") {
+    // Clock names that contain the words and separators of a rendered
+    // resolution: one trial anchored so close to the Long maximum that its
+    // late window overflows, so its cells mix an anchor and a failure.
+    val frame = get(Frame.screen("clocks", 2, 2))
+    val keys  = for
+      s  <- Vector("a", "b")
+      ph <- Vector("encode", "recall")
+    yield StudyKey("p1", s, ph)
+    def clockOf(key: StudyKey)  = ClockId(s"missing:eeg@${key.stimulus}/${key.phase}")
+    def anchorOf(key: StudyKey) =
+      if key == keys.head then Long.MaxValue - 1050000L else 0L
+    val trials = keys.map { key =>
+      val c        = clockOf(key)
+      val t        = anchorOf(key)
+      val fixation = get(
+        Event.Fixation.withoutDispersion(
+          get(Interval.of(c, Instant.micros(t + 10000L), Instant.micros(t + 200000L))),
+          Pt[Unit2D.Px](0.5, 0.5),
+          1
+        )
+      )
+      Trial(key, (), get(Scanpath.of(frame, c, IArray(fixation))))
+    }
+    val input = get(
+      TemporalStudyInput.of(
+        StudyInput(Trials(trials)),
+        keys.map { key =>
+          val c = clockOf(key)
+          val t = anchorOf(key)
+          key -> TrialEpoch(
+            Instant.micros(t),
+            get(
+              ObservedCoverage.of(
+                c,
+                Vector(get(Interval.of(c, Instant.micros(t), Instant.micros(t + 1000000L))))
+              )
+            )
+          )
+        }
+      )
+    )
+    val base = get(
+      StudyPlan.cosine[Unit2D.Px](
+        input.study.reference,
+        get(Grid.over(frame, 2, 2)),
+        "recall",
+        "encode",
+        Weight.Duration,
+        Vector(StudyEstimate.Binned()),
+        eyes4s.design.FailurePolicy.RequireAll
+      )
+    )
+    val windows = Vector(("early", 0L, 300000L), ("outside", 950000L, 1100000L)).map {
+      (name, from, until) =>
+        get(StudyWindow.of(name, get(Window.of(Span.micros(from), Span.micros(until)))))
+    }
+    val plan = get(
+      TemporalStudyPlan.of(
+        base,
+        input.reference,
+        windows,
+        Vector(get(RepetitionContrast.withinParticipant("recall-encode", "recall", "encode"))),
+        FixationBoundary.ClipDuration
+      )
+    )
+    val run        = get(plan.run(input))
+    val overflowed = run.cells.flatMap(_.occupancy).collect {
+      case (key, Left(TemporalStudyError.AnchorOverflow(_, _, _, _))) => key
+    }
+    assertEquals(overflowed, Vector(keys.head))
+    val cells = run.cells.map(c =>
+      TemporalCellRecord(c.repetition.name, c.window.name, c.occupancy, c.result)
+    )
+    assert(TemporalStudyResult.reconstruct(plan, cells).isRight)
+    val codec = ConventionalPlanFixtures.temporalCodec.results(
+      StudyResultCodecs.similarity(),
+      StudyResultCodecs.signedDifference()
+    )
+    val encoded = get(codec.codec.encode(run))
+    assertEquals(codec.codec.decode(encoded).flatMap(codec.codec.encode), Right(encoded))
   }

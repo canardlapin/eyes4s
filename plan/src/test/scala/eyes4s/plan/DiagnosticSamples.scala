@@ -253,7 +253,14 @@ object DiagnosticSamples:
       ),
       TemporalResultError.Result(StudyResultError.OrphanKey(k1)),
       TemporalResultError.OccupancyKeys(Vector(k1, k2), Vector(k2)),
-      TemporalResultError.Occupancy(k1, "anchor", "clock@0", "clock@10"),
+      TemporalResultError.Boundary(
+        k1,
+        FixationBoundary.ClipDuration,
+        FixationBoundary.FullyContained
+      ),
+      TemporalResultError.Width(k1, BigInt(300000), BigInt(350000)),
+      TemporalResultError.Epoch(k1, Some(digest), None),
+      TemporalResultError.Anchor(k1, clk, BigInt(0), clk2, BigInt(10)),
       TemporalResultError.Density(k1, Some(digest), digest2),
       TemporalResultError.Failure(k1, StudyFailure.Estimation(k1, EstimateError.NoMass)),
       TemporalResultError.Cell("recall-encode", "early", TemporalResultError.CellCount(2, 1))

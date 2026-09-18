@@ -581,7 +581,9 @@ report with its class durations, unclassified ranges, bridged gaps and warnings,
 provenance) and the assignment (every area with its region and attributes, the membership policy
 and temporal support, every sample's membership and the time ledger). Events are written by kind:
 a fixation's span, centre, sample count and dispersion method (its value is re-derived from the
-supporting samples, as a source-supported scanpath's is), a saccade's endpoints and peak velocity
+supporting samples, as a source-supported scanpath's is, and a declared value is refused where it
+would be ignored: `CodecError.Field("value", …)` located at the event), a saccade's endpoints and
+peak velocity
 (or `null` where it was not measured), a pursuit's path, a blink's span. Decoding rebuilds the
 analysis through `RecordingAnalysis.reconstruct(plan, angular, prepared, events, support, areas)`,
 which re-derives the synchronization evidence by refitting the plan's marks exactly as the run
@@ -594,7 +596,10 @@ platform) and requires the archived one to equal it sample for sample, refusing 
 `Detection.reconstruct`, the assembly a detector's emissions go through, so every event must lie in
 the recording, every declared support range must be the range its span covers, invalid samples
 inside an event must be allowed by the gap policy, and the labels, report and provenance are
-re-derived; requires the areas to be the plan's `(id, label)` pairs, in order and trimmed as an
+re-derived (the dispersion uses `hypot` and `pow`, which neither platform promises to round
+identically, so a fixation's re-derived dispersion may differ in its last bit between the JVM and
+Scala.js; decoding cannot fail because of it, since the archive carries no dispersion value to
+compare); requires the areas to be the plan's `(id, label)` pairs, in order and trimmed as an
 AOI trims them, with the attributes the run records (`RecordingArea.attributes`: the native frame
 and the pixel bounds rendered canonically, so the same area archives to the same bytes on the JVM
 and Scala.js); and re-derives the assignment by assigning the prepared recording to them under exclusive
@@ -628,10 +633,11 @@ and refuses, as a `TemporalResultError` wrapped in `Cell(repetition, window, …
 one cell: a missing or extra cell (`CellCount`), a cell out of place (`CellLayout`), a result
 describing another plan than its repetition's (`Plan`) or failing its context (`Result`), a cell
 whose ledger lists other trials than the first cell's, or a scale estimating other trials than its
-cell's ledger lists (`OccupancyKeys`), an occupancy under another
-boundary, over another width, with a missing epoch naming another trial's digest, or anchored at
-another instant or clock than the same trial in another cell, or a missing epoch where another
-cell has the trial's epoch (`Occupancy`), a density not estimated
+cell's ledger lists (`OccupancyKeys`), an occupancy under another boundary (`Boundary`) or over
+another width (`Width`), a missing epoch naming another trial's digest or where another cell has
+the trial's epoch (`Epoch`), an occupancy anchored at another instant or clock than the same trial
+in another cell (`Anchor`; each cell's outcome is compared as a typed anchor, missing epoch or
+failure, never by a rendered name, so any clock name is safe), a density not estimated
 from its trial's occupancy measure, which ties every density to the archived ledger
 (`Density`), and a temporal failure the occupancy does not produce (`Failure`). Not re-derived:
 densities, scores, means and differences, and the retained fixations' positions, which only the
@@ -727,7 +733,11 @@ Recording and temporal plans and results decode only through registries added ex
 `decoders.withRecordings(recordingPlans, recordingResults)` (a `RecordingRegistry` and a
 `RecordingResultRegistry`) and `decoders.withTemporal(temporalPlans, temporalResults)` (a
 `TemporalRegistry` and a `TemporalResultRegistry`); without them such an entry is refused as
-`CodecError.UnsupportedSchema(role, schema, Vector())`. A recording plan runs on display pixels
+`CodecError.UnsupportedSchema(role, schema, Vector())`, and with them an entry of a schema no
+registration declares is refused as `UnsupportedSchema(role, schema, registered)`, naming the
+registered schemas. A decorator (counting calls, logging) extends `ArtifactDecoders.Delegating`,
+which forwards every decoder, so wrapping registered decoders never turns one into a refusal.
+A recording plan runs on display pixels
 while the resolver is generic in the unit `U`, so `withRecordings` takes a `PixelUnit[U]`: a sealed
 witness whose one instance is for `Px`, where its conversion is the identity. A manifest in any
 other unit cannot register recording plans (a type error, not a cast), and a decoded

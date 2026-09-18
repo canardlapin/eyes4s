@@ -412,7 +412,10 @@ fails after rewriting, so review the change and run it again.
 | `temporal-result.plan` | `Plan` | `changes` |
 | `temporal-result.result` | `Result` | `underlying` |
 | `temporal-result.occupancy-keys` | `OccupancyKeys` | `expected`, `found` |
-| `temporal-result.occupancy` | `Occupancy` | `key`, `field`, `expected`, `found` |
+| `temporal-result.boundary` | `Boundary` | `key`, `expected`, `found` |
+| `temporal-result.width` | `Width` | `key`, `expectedMicros`, `foundMicros` |
+| `temporal-result.epoch` | `Epoch` | `key`, `expected`, `found` |
+| `temporal-result.anchor` | `Anchor` | `key`, `expectedClock`, `expectedMicros`, `foundClock`, `foundMicros` |
 | `temporal-result.density` | `Density` | `key`, `expected`, `found` |
 | `temporal-result.failure` | `Failure` | `key`, `failure` |
 | `temporal-result.cell` | `Cell` | `repetition`, `window`, `underlying` |

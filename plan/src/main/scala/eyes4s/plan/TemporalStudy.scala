@@ -240,13 +240,10 @@ object TemporalStudyResult:
     val outcomes = cell.occupancy.toMap
     val width    = BigInt(window.window.until.toMicros) - window.window.from.toMicros
     def occupancy(key: K, value: WindowOccupancy[U]): Option[TemporalResultError[K]] =
-      if value.boundary != plan.boundary then
-        Some(Occupancy(key, "boundary", plan.boundary.toString, value.boundary.toString))
+      if value.boundary != plan.boundary then Some(Boundary(key, plan.boundary, value.boundary))
       else
         val span = BigInt(value.interval.offset.toMicros) - value.interval.onset.toMicros
-        Option.when(span != width)(
-          Occupancy(key, "widthMicros", width.toString, span.toString)
-        )
+        Option.when(span != width)(Width(key, width, span))
     def outcome(
         key: K,
         estimated: Either[StudyFailure[K], Mass[U]]
@@ -265,7 +262,7 @@ object TemporalStudyResult:
         case (_, Left(_))                                     => None
     def epoch(key: K, digest: String): Option[TemporalResultError[K]] =
       val expected = plan.base.layout.digest.digest(key).render
-      Option.when(digest != expected)(Occupancy(key, "epoch", expected, digest))
+      Option.when(digest != expected)(Epoch(key, Some(expected), Some(digest)))
     for
       _ <- Either.cond(
         stored.description == study.description,
@@ -301,37 +298,55 @@ object TemporalStudyResult:
         .toLeft(())
     yield new TemporalCell(repetition, window, study, cell.occupancy, result)
 
+  /** How one cell resolved a trial's epoch, as the anchor check compares it. */
+  private enum Resolution derives CanEqual:
+    case Anchored(clock: ClockId, anchorMicros: BigInt)
+    case Missing(keyDigest: String)
+
+    /** The occupancy failed after its epoch was found (an anchor overflow). */
+    case Present
+
   /** Every trial is anchored at one instant on one clock in every cell where
     * its occupancy resolved, and a trial whose epoch is missing in one cell
-    * is missing, with the same digest, in every cell: any other outcome
-    * (an occupancy, or a failure such as an anchor overflow) implies an epoch.
+    * is missing in every cell: any other outcome (an occupancy, or a failure
+    * such as an anchor overflow) implies an epoch. Each cell's missing epoch
+    * already names the trial's own digest (`checkCell`).
     */
   private def anchors[K, U <: Unit2D, S, D](
       cells: Vector[((RepetitionContrast, StudyWindow), TemporalCellRecord[K, U, S, D])]
   ): Either[TemporalResultError[K], Unit] =
     import TemporalResultError.*
-    def render(
+    def resolve(
         window: StudyWindow,
         value: Either[TemporalStudyError, WindowOccupancy[U]]
-    ): String = value match
+    ): Resolution = value match
       case Right(occupancy) =>
-        val micros = BigInt(occupancy.interval.onset.toMicros) - window.window.from.toMicros
-        s"${occupancy.interval.clock.name}@$micros"
-      case Left(TemporalStudyError.MissingEpoch(digest)) => s"missing:$digest"
-      case Left(error)                                   => s"epoch:${error.productPrefix}"
+        Resolution.Anchored(
+          occupancy.interval.clock,
+          BigInt(occupancy.interval.onset.toMicros) - window.window.from.toMicros
+        )
+      case Left(TemporalStudyError.MissingEpoch(digest)) => Resolution.Missing(digest)
+      case Left(_)                                       => Resolution.Present
     val observed = cells.flatMap { case ((repetition, window), cell) =>
-      cell.occupancy.map((key, value) => (repetition, window, key, render(window, value)))
+      cell.occupancy.map((key, value) => (repetition, window, key, resolve(window, value)))
     }
-    val byKey    = observed.groupBy(_._3)
-    val missing  = byKey.view.mapValues(_.map(_._4).find(_.startsWith("missing:"))).toMap
-    val anchored = byKey.view.mapValues(_.map(_._4).find(_.contains("@"))).toMap
+    val byKey = observed.groupBy(_._3).view.mapValues(_.map(_._4)).toMap
+    def refusal(key: K, found: Resolution): Option[TemporalResultError[K]] =
+      val all      = byKey(key)
+      val missing  = all.collectFirst { case Resolution.Missing(digest) => digest }
+      val anchored = all.collectFirst { case a: Resolution.Anchored => a }
+      (missing, found, anchored) match
+        case (Some(_), Resolution.Missing(_), _)   => None
+        case (Some(digest), Resolution.Present, _) => Some(Epoch(key, Some(digest), None))
+        case (Some(digest), Resolution.Anchored(_, _), _) =>
+          Some(Epoch(key, Some(digest), None))
+        case (None, Resolution.Anchored(clock, micros), Some(first))
+            if first.clock != clock || first.anchorMicros != micros =>
+          Some(Anchor(key, first.clock, first.anchorMicros, clock, micros))
+        case _ => None
     observed
       .collectFirst(Function.unlift { (repetition, window, key, found) =>
-        val expected =
-          missing(key).orElse(Option.when(found.contains("@"))(anchored(key)).flatten)
-        expected
-          .filter(_ != found)
-          .map(e => Cell(repetition.name, window.name, Occupancy(key, "anchor", e, found)))
+        refusal(key, found).map(Cell(repetition.name, window.name, _))
       })
       .toLeft(())
 
@@ -352,7 +367,21 @@ enum TemporalResultError[K] derives CanEqual:
   case Plan(changes: Vector[PlanChange])
   case Result(underlying: StudyResultError[K])
   case OccupancyKeys(expected: Vector[K], found: Vector[K])
-  case Occupancy(key: K, field: String, expected: String, found: String)
+  case Boundary(key: K, expected: FixationBoundary, found: FixationBoundary)
+  case Width(key: K, expectedMicros: BigInt, foundMicros: BigInt)
+
+  /** A missing epoch that names another trial's digest (`expected` is the
+    * trial's own), or a trial missing its epoch in one cell (`expected`) but
+    * not in this one (`found` absent).
+    */
+  case Epoch(key: K, expected: Option[String], found: Option[String])
+  case Anchor(
+      key: K,
+      expectedClock: ClockId,
+      expectedMicros: BigInt,
+      foundClock: ClockId,
+      foundMicros: BigInt
+  )
   case Density(key: K, expected: Option[String], found: String)
   case Failure(key: K, failure: StudyFailure[K])
   case Cell(repetition: String, window: String, underlying: TemporalResultError[K])
@@ -372,8 +401,20 @@ enum TemporalResultError[K] derives CanEqual:
     case Result(underlying)             => underlying.message
     case OccupancyKeys(expected, found) =>
       s"The cell estimated trials $expected but its occupancy ledger lists $found."
-    case Occupancy(key, field, expected, found) =>
-      s"Trial $key has occupancy $field $found where the plan and the other cells give $expected."
+    case Boundary(key, expected, found) =>
+      s"Trial $key has an occupancy under boundary $found; the plan's boundary is $expected."
+    case Width(key, expected, found) =>
+      s"Trial $key has an occupancy spanning $found microseconds; its window spans $expected."
+    case Epoch(key, expected, found) =>
+      (expected, found) match
+        case (Some(own), Some(other)) =>
+          s"Trial $key records a missing epoch under digest $other; the trial's digest is $own."
+        case _ =>
+          s"Trial $key has no epoch in another cell (digest ${expected.getOrElse("")}), " +
+            "but its epoch resolved here."
+    case Anchor(key, expectedClock, expectedMicros, foundClock, foundMicros) =>
+      s"Trial $key is anchored at $foundMicros on $foundClock here and at $expectedMicros on " +
+        s"$expectedClock in another cell."
     case Density(key, expected, found) =>
       expected match
         case Some(digest) =>

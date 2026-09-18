@@ -595,6 +595,18 @@ private[codec] object RecordingResultWire:
               case None => built(Event.Fixation.withoutDispersion(interval, centre, count))
               case Some(spread) =>
                 for
+                  // A detected spread is re-derived from its supporting
+                  // samples; a declared value would be ignored, so it is
+                  // refused, as a source-supported scanpath refuses it.
+                  _ <- Either.cond(
+                    spread.asObject.exists(!_.contains("value")),
+                    (),
+                    CodecError.Field(
+                      "value",
+                      spread,
+                      "a source-supported dispersion carries its method only; its value is derived"
+                    )
+                  )
                   method <- Wire.field[String](spread, "method")
                   parsed <- StudyInputCodec.dispersionMethods
                     .collectFirst { case (m, n) if n == method => m }
@@ -780,15 +792,15 @@ private[codec] object RecordingResultWire:
     case TemporalSupport.ForwardHold(g, e) =>
       tagged("forwardHold", "maxGap" -> maxGap(g), "edge" -> edge(e))
 
-  private val sampleClasses: Map[SampleClass, String] = Map(
-    SampleClass.Fixation     -> "fixation",
-    SampleClass.Saccade      -> "saccade",
-    SampleClass.Pursuit      -> "pursuit",
-    SampleClass.Blink        -> "blink",
-    SampleClass.Missing      -> "missing",
-    SampleClass.OffSurface   -> "offSurface",
-    SampleClass.Unclassified -> "unclassified"
-  )
+  /** Wire names as an exhaustive match: a new class fails to compile here. */
+  private def sampleClass(value: SampleClass): String = value match
+    case SampleClass.Fixation     => "fixation"
+    case SampleClass.Saccade      => "saccade"
+    case SampleClass.Pursuit      => "pursuit"
+    case SampleClass.Blink        => "blink"
+    case SampleClass.Missing      => "missing"
+    case SampleClass.OffSurface   => "offSurface"
+    case SampleClass.Unclassified => "unclassified"
 
   private def report(value: DetectionReport): Json = Json.obj(
     "recording"            -> Json.fromString(value.recording.value),
@@ -798,7 +810,7 @@ private[codec] object RecordingResultWire:
     "policyCensoredMicros" -> long(value.policyCensoredTime.toMicros),
     "totalSamples"         -> Json.fromInt(value.totalSamples),
     "classDurations"       -> Json.arr(value.classDurations.map { (c, d) =>
-      Json.obj("class" -> Json.fromString(sampleClasses(c)), "micros" -> long(d.toMicros))
+      Json.obj("class" -> Json.fromString(sampleClass(c)), "micros" -> long(d.toMicros))
     }*),
     "unclassifiedRanges" -> Json.arr(value.unclassifiedRanges.map(range)*),
     "bridgedGaps"        -> Json.arr(value.bridgedGaps.map(range)*),
@@ -829,7 +841,7 @@ private[codec] object RecordingResultWire:
           "temporalSupport" -> temporalSupport(value.report.temporalSupport),
           "events"          -> Json.arr(events*),
           "labels"          -> Json.arr(
-            value.labels.toVector.map(c => Json.fromString(sampleClasses(c)))*
+            value.labels.toVector.map(c => Json.fromString(sampleClass(c)))*
           ),
           "report"     -> report(value.report),
           "provenance" -> ResultWire.provenance(value.provenance)

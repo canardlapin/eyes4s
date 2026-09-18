@@ -122,7 +122,10 @@ object DiagnosticCatalog:
     "Plan",
     "Result",
     "OccupancyKeys",
-    "Occupancy",
+    "Boundary",
+    "Width",
+    "Epoch",
+    "Anchor",
     "Density",
     "Failure",
     "Cell"

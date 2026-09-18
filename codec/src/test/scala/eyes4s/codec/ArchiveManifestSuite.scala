@@ -411,14 +411,76 @@ class ArchiveManifestSuite extends munit.FunSuite:
     )
   }
 
+  test("a delegating decorator keeps every registration it does not override") {
+    final class Counted extends ArtifactDecoders.Delegating[StudyKey, Px](decoders):
+      private var count                          = 0
+      def plans: Int                             = count
+      override def plan(document: io.circe.Json) =
+        count += 1
+        super.plan(document)
+    val counted  = new Counted
+    val resolved = get(resolve(saved, counted))
+    assertEquals(resolved.recordingResults.size, 1)
+    assertEquals(resolved.temporalResults.size, 1)
+    assertEquals(resolved.recordingPlans.size + resolved.temporalPlans.size, 2)
+    // No study plan in this graph: the overridden decoder was never needed.
+    assertEquals(counted.plans, 0)
+  }
+
+  test("a registered role refuses another schema, naming the registered ones") {
+    val foreign = get(
+      StoredArtifact.bytes(
+        "recording-result",
+        ArtifactRole.RecordingResult,
+        get(
+          Utf8
+            .encode(
+              get(recordingResult.codec.encode(ArchiveFixtures.recordingAnalysis))
+                .mapObject(
+                  _.add(
+                    "schema",
+                    io.circe.Json.obj(
+                      "name"    -> io.circe.Json.fromString("eyes4s.recording-result"),
+                      "version" -> io.circe.Json.fromInt(2)
+                    )
+                  )
+                )
+                .noSpaces
+            )
+            .left
+            .map(i => s"at $i")
+        ),
+        None
+      )
+    )
+    val manifest = get(
+      SavedManifest.of(Vector(recordingInput, recordingPlan, foreign), relations.take(2))
+    )
+    assertEquals(
+      resolve(manifest).left.toOption,
+      Some(
+        Vector(
+          ResolveError.Decode(
+            foreign.name,
+            CodecError.UnsupportedSchema(
+              "recording-result",
+              get(DefinitionId.of("eyes4s.recording-result", 2)),
+              Vector(DefinitionId.recordingResult)
+            )
+          )
+        )
+      )
+    )
+  }
+
   test("recording plans register only where the manifest unit is display pixels") {
     val degrees: ArtifactDecoders[StudyKey, Deg] = get(ArtifactDecoders.study[Deg])
     assert(degrees.recordingPlan(io.circe.Json.obj()).isLeft)
-    assert(
+    val refused =
       typeCheckErrors(
         "degrees.withRecordings(RecordingRegistry.empty, RecordingResultRegistry.empty)"
-      ).nonEmpty
-    )
+      )
+    assert(refused.exists(_.message.contains("PixelUnit")), refused.map(_.message))
     assert(
       typeCheckErrors(
         "decoders.withRecordings(RecordingRegistry.empty, RecordingResultRegistry.empty)"

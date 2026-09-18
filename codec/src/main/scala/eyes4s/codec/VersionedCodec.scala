@@ -121,8 +121,11 @@ enum CodecError derives CanEqual:
     case Manifest(e)          => e.message
     case Text(offset, reason) => s"Artifact text is not strict UTF-8 at offset $offset: $reason"
     case UnsupportedSchema(role, found, supported) =>
-      s"No $role decoder for schema ${found.name}@${found.version}; supported: " +
-        supported.map(id => s"${id.name}@${id.version}").mkString(", ") + "."
+      if supported.isEmpty then
+        s"No $role decoder is registered, so schema ${found.name}@${found.version} is refused."
+      else
+        s"No $role decoder for schema ${found.name}@${found.version}; supported: " +
+          supported.map(id => s"${id.name}@${id.version}").mkString(", ") + "."
     case Derived(path, declared, derived) =>
       s"Archived $path is ${declared.noSpaces}, but the archive's own evidence derives " +
         s"${derived.noSpaces}."

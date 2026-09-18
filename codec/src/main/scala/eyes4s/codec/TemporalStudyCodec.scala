@@ -116,7 +116,8 @@ final class TemporalStudyCodec[K, U <: Unit2D: UnitLabel, P, S, D](
   def registration: TemporalRegistration[K, U] =
     val registered = this
     new TemporalRegistration[K, U]:
-      val id: DefinitionId = registered.study.method.id
+      val id: DefinitionId     = registered.study.method.id
+      val schema: DefinitionId = registered.schema
       def decode(json: Json): Either[CodecError, LoadedTemporal[K, U]] =
         registered.codec.decode(json).map { value =>
           new LoadedTemporal[K, U]:
@@ -155,6 +156,7 @@ trait LoadedTemporal[K, U <: Unit2D]:
 
 sealed trait TemporalRegistration[K, U <: Unit2D]:
   def id: DefinitionId
+  def schema: DefinitionId
   def decode(json: Json): Either[CodecError, LoadedTemporal[K, U]]
 
 /** Temporal plan codecs by the method of their base study; lookup reads the
@@ -167,6 +169,9 @@ final class TemporalRegistry[K, U <: Unit2D] private (
   def register(entry: TemporalRegistration[K, U]): Either[CodecError, TemporalRegistry[K, U]] =
     if entries.exists(_.id == entry.id) then Left(CodecError.DuplicateMethod(entry.id))
     else Right(new TemporalRegistry(entries :+ entry))
+
+  /** The envelope schemas of the registered codecs. */
+  def schemas: Vector[DefinitionId] = entries.map(_.schema).distinct
 
   def decode(json: Json): Either[CodecError, LoadedTemporal[K, U]] = for
     payload    <- Wire.field[Json](json, "value")
