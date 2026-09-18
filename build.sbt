@@ -332,6 +332,18 @@ ThisBuild / githubWorkflowBuild += WorkflowStep.Sbt(
   preamble = false
 )
 
+// Execution responsiveness (UI-X6, docs/EXECUTION_RESPONSIVENESS.md): the smoke
+// profile reports step and cancellation times without asserting them, and fails
+// only if a run breaks its outcome contract.
+ThisBuild / githubWorkflowBuild += WorkflowStep.Sbt(
+  List(
+    "fs2ModuleJVM/Test/runMain eyes4s.fs2.ExecutionResponsivenessMain --profile smoke --hardware github-actions-ubuntu-22.04-x64"
+  ),
+  name = Some("Run execution responsiveness smoke profile"),
+  cond = Some("matrix.project == 'rootJVM' && matrix.java == 'temurin@17'"),
+  preamble = false
+)
+
 // Scala Native is deferred post-1.0 (bead q-app-target: the application target
 // is a local JVM process serving a browser UI, so Native buys nothing). Every
 // dependency is nonetheless kept Native-eligible so that adding the axis later
@@ -590,7 +602,7 @@ lazy val codec = crossProject(JVMPlatform, JSPlatform)
 lazy val laws = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("laws"))
-  .dependsOn(kernel, core, detect, surface, aoi, compare, design, codec)
+  .dependsOn(kernel, core, detect, surface, aoi, compare, design, plan, codec)
   .settings(pureModuleSettings)
   .settings(
     name := "eyes4s-laws",
@@ -616,6 +628,18 @@ lazy val fs2Module = crossProject(JVMPlatform, JSPlatform)
       "co.fs2"        %%% "fs2-core"            % fs2V,
       "org.typelevel" %%% "cats-effect-testkit" % catsEffectV      % Test,
       "org.typelevel" %%% "munit-cats-effect"   % munitCatsEffectV % Test
+    )
+  )
+  .jvmSettings(
+    // The pinned runtime of ExecutionResponsivenessMain (docs/EXECUTION_RESPONSIVENESS.md):
+    // a fixed heap, the default collector named explicitly, and four processors so the
+    // global IORuntime has the compute pool of a four-vCPU CI runner on any host.
+    Test / run / fork := true,
+    Test / run / javaOptions ++= Seq(
+      "-Xms2g",
+      "-Xmx2g",
+      "-XX:+UseG1GC",
+      "-XX:ActiveProcessorCount=4"
     )
   )
 

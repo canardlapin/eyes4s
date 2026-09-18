@@ -108,6 +108,11 @@ final class TemporalCursor[K, U <: Unit2D, P, S, D] private[plan] (
     case Preparing(trial, _) => TemporalStage.Preparing(repetition, window, trial)
     case Studying(_, cursor) => TemporalStage.Studying(repetition, window, cursor.stage)
 
+  /** The cell's study cursor's [[StudyCursor.reductionUnits]]; `None` while preparing. */
+  def reductionUnits: Option[Long] = phase match
+    case Studying(_, cursor) => cursor.reductionUnits
+    case _                   => None
+
   def advance(quanta: WorkQuanta): Either[
     TemporalStudyError,
     WorkStep[TemporalStage, TemporalCursor[K, U, P, S, D], TemporalStudyResult[K, U, P, S, D]]

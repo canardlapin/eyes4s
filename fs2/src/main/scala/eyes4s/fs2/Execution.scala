@@ -25,14 +25,12 @@ import eyes4s.plan.{Stepwise, WorkStep}
 import _root_.fs2.{Chunk, Pull, Stream}
 import _root_.fs2.concurrent.SignallingRef
 
-/** What is known about a segment's total units before it runs. `Exact` is
-  * the count the segment finishes at; `AtMost` is a bound the segment cannot
-  * exceed but may finish under; `Unknown` is stated rather than estimated.
+/** The segment-total vocabulary is [[eyes4s.plan.SegmentTotal]], stated in
+  * the pure plan module so the published execution laws can check it; these
+  * aliases keep `SegmentTotal.Exact`, `AtMost` and `Unknown` available here.
   */
-enum SegmentTotal derives CanEqual:
-  case Exact(units: Long)
-  case AtMost(units: Long)
-  case Unknown
+type SegmentTotal = eyes4s.plan.SegmentTotal
+val SegmentTotal: eyes4s.plan.SegmentTotal.type = eyes4s.plan.SegmentTotal
 
 /** Telemetry for one completed step. `stepUnits` is the step's own count as
   * the cursor reported it; `segmentUnits` accumulates over the current
@@ -86,13 +84,18 @@ final class Run[F[_], Id, Stage, Segment, E, R] private[fs2] (
   * which counted segment each stage belongs to and what each segment's total
   * is, plus the [[Stepwise]] evidence that the cursor is step-shaped. The
   * family objects build these; see `StudyExecution.submission`.
+  *
+  * `total` is asked once per segment, as the segment begins, with the cursor
+  * about to take its first step, so a family can state a total only that
+  * cursor knows (a reduction's, once its scores are realised) and the runner
+  * reports one total for the whole segment.
   */
 final class Submission[Id, C, Stage, Segment, E, R](
     val id: Id,
     val quanta: WorkQuanta,
     val begin: () => Either[E, C],
     val segment: Stage => Segment,
-    val total: Segment => SegmentTotal
+    val total: (Segment, C) => SegmentTotal
 )(using val stepwise: Stepwise[C, Stage, E, R])
 
 /** Interpret any stepwise cursor under Cats Effect: the one runner every plan
@@ -250,6 +253,7 @@ object Execution:
         step: Long,
         segment: Option[Segment],
         segmentUnits: Long,
+        segmentTotal: SegmentTotal,
         totalUnits: Long,
         last: Option[Progress]
     )
@@ -257,7 +261,8 @@ object Execution:
     def begin: Either[Outcome, State] =
       work.begin() match
         case Left(error)   => Left(RunOutcome.Failed(work.id, error, None))
-        case Right(cursor) => Right(State(cursor, 0L, None, 0L, 0L, None))
+        case Right(cursor) =>
+          Right(State(cursor, 0L, None, 0L, SegmentTotal.Unknown, 0L, None))
 
     def step(state: State): (Vector[Event], Option[State]) =
       work.stepwise.advance(state.cursor, work.quanta) match
@@ -277,9 +282,10 @@ object Execution:
           )
 
     private def record(state: State, stage: Stage, units: Int): (Progress, State) =
-      val segment      = work.segment(stage)
-      val segmentUnits =
-        if state.segment.contains(segment) then state.segmentUnits + units else units.toLong
+      val segment                      = work.segment(stage)
+      val (segmentUnits, segmentTotal) =
+        if state.segment.contains(segment) then (state.segmentUnits + units, state.segmentTotal)
+        else (units.toLong, work.total(segment, state.cursor))
       val progress = RunProgress(
         work.id,
         state.step + 1,
@@ -287,7 +293,7 @@ object Execution:
         units,
         segment,
         segmentUnits,
-        work.total(segment),
+        segmentTotal,
         state.totalUnits + units
       )
       (
@@ -296,6 +302,7 @@ object Execution:
           step = progress.step,
           segment = Some(segment),
           segmentUnits = segmentUnits,
+          segmentTotal = segmentTotal,
           totalUnits = progress.totalUnits,
           last = Some(progress)
         )

@@ -380,11 +380,17 @@ class TemporalExecutionSuite extends munit.CatsEffectSuite:
           StudySegment.Contrasting(0)
         ).foreach { inner =>
           val segment = TemporalSegment.Studying(r, w, inner)
-          assertEquals(totals(segment), StudyExecution.total(prepared, inner), segment)
+          // The pre-run total, except that a reduction is exact once it begins.
+          inner match
+            case StudySegment.Reducing(_, _) =>
+              assertEquals(StudyExecution.total(prepared, inner), SegmentTotal.Unknown)
+              assertEquals(totals(segment), SegmentTotal.Exact(last(segment)), segment)
+            case _ =>
+              assertEquals(totals(segment), StudyExecution.total(prepared, inner), segment)
           totals(segment) match
             case SegmentTotal.Exact(units)  => assertEquals(last(segment), units, segment)
             case SegmentTotal.AtMost(units) => assert(last(segment) <= units, clue(segment))
-            case SegmentTotal.Unknown       => ()
+            case SegmentTotal.Unknown       => fail(s"$segment stated no total")
         }
       }
       // The reversed repetition has a different focal set, hence its own totals.
