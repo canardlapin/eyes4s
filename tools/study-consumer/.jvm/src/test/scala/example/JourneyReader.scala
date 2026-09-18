@@ -25,7 +25,7 @@ import eyes4s.fs2.*
 import eyes4s.io.ArtifactFiles
 import eyes4s.kernel.*
 import eyes4s.plan.*
-import example.FixationJourney.{JourneyError, Reloaded}
+import example.FixationJourney.Reloaded
 import io.circe.Json
 
 import java.nio.file.{Files, Path, Paths}

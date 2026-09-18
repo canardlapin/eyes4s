@@ -266,3 +266,58 @@ class MethodDescriptorSuite extends munit.FunSuite:
       RecipeParameters.grid[Deg].construct((GridId("g"), frame, 2, 2))
     """).nonEmpty)
   }
+
+  test("a temporal plan states the execution capability of its base study's method") {
+    val frame = get(Frame.screen("temporal-capability", 2, 2))
+    val grid  = get(Grid.over(frame, 2, 2))
+    val input = ArtifactRef.of[StudyInput[StudyKey, Px]](ContentHash.empty)
+    // A synchronous closure whose descriptor states its capability truthfully.
+    val synchronous = new StudyMethod[Unit, Px, Similarity, SignedDifference](
+      DefinitionId.cosine,
+      "synchronous cosine",
+      _ => Vector.empty,
+      (_: Unit) => (Distribution.cosine[Px]: Compare[Mass[Px], Mass[Px], Similarity]),
+      Some(
+        MethodDescriptor.of[Unit, Similarity, SignedDifference](
+          DefinitionId.cosine,
+          ParameterSet.empty,
+          _ => Distribution.cosine[Px].info,
+          _ => Right(Vector(ScoreComponent.cosine)),
+          Set(ComparisonProperty.Symmetric),
+          ExecutionCapability.SynchronousWholeOperation
+        )
+      )
+    )
+    def study(method: StudyMethod[Unit, Px, Similarity, SignedDifference]) = get(
+      StudyPlan.of(
+        input,
+        StudyKey.layout(DefinitionId.studyLayout),
+        grid,
+        "recall",
+        "encode",
+        eyes4s.core.Weight.Duration,
+        Vector(StudyEstimate.Binned()),
+        FailurePolicy.RequireAll,
+        method,
+        ()
+      )
+    )
+    def temporal(base: StudyPlan[StudyKey, Px, Unit, Similarity, SignedDifference]) = get(
+      TemporalStudyPlan.of(
+        base,
+        ArtifactRef.of[TemporalStudyInput[StudyKey, Px]](ContentHash.empty),
+        Vector(get(StudyWindow.of("early", get(Window.of(Span.zero, Span.micros(1000)))))),
+        Vector(get(RepetitionContrast.withinParticipant("recall", "recall", "encode"))),
+        eyes4s.core.FixationBoundary.ClipDuration
+      )
+    )
+    // Both directions: a bounded base and a synchronous one.
+    Vector(
+      StudyMethod.cosine[Px](DefinitionId.cosine) -> ExecutionCapability.BoundedComparison,
+      synchronous -> ExecutionCapability.SynchronousWholeOperation
+    ).foreach { (method, capability) =>
+      val base = study(method)
+      assertEquals(get(base.inspect).execution, capability)
+      assertEquals(get(temporal(base).inspect).execution, capability)
+    }
+  }

@@ -21,7 +21,11 @@ lazy val consumer = crossProject(JVMPlatform, JSPlatform)
     )
   )
   .jvmSettings(
-    // The fixation journey's fresh reader is a separate JVM launched over this
+    // The response-envelope smoke run times steps and cancellations; suites run
+    // one at a time so that no other suite competes with it for processors.
+    Test / parallelExecution := false,
+    // The fresh readers (JourneyReader for the fixation routes, RouteReader for
+    // the recording and temporal routes) are separate JVMs launched over this
     // test classpath: the consumer's own classes and the packaged artifacts.
     // An unforked test cannot read it from java.class.path, so the build
     // writes it as a test resource; verify.py checks every entry.

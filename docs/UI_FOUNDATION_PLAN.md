@@ -203,7 +203,7 @@ Status is as of 2026-09-18. Merge commits refer to main; each ticket in Mote car
 | [M3](#m3) | `bd-01M2N2QHGNAN5V3R34NP2B9Q7E` | Add typed recipe availability and scientific prerequisite reports | M1, X1 | Closed 2026-09-17 (merge 0b3ccf7) |
 | [M4](#m4) | `bd-01M2N2QJ1H158B984E0Z7YBTGK` | Expose stable source-linked diagnostics and inspectable result projections | M3, S2, S4 | Closed 2026-09-18 (merge 089a6a2) |
 | [G0](#g0) | `bd-01M2QMC663VXY7YR6GVMDXP54Y` | Qualify the fixation-only route in the isolated headless consumer | X4, S2, S4, S5, M4 | Closed 2026-09-18 (merge 24b2c65) |
-| [G1](#g1) | `bd-01M2N2QJKD231A7MJ3NFF2H6Q6` | Qualify the three infrastructure APIs in an isolated headless app consumer | X6, S6, M4, G0 | Ready |
+| [G1](#g1) | `bd-01M2N2QJKD231A7MJ3NFF2H6Q6` | Qualify the three infrastructure APIs in an isolated headless app consumer | X6, S6, M4, G0, archives | Delivered 2026-09-18 on its branch, pending review and merge ([outcome](#g1-outcome)) |
 
 ## Detailed tickets
 
@@ -808,7 +808,7 @@ ownership and reserve only the exact files needed when starting the ticket.
 ### G1 — Qualify the three infrastructure APIs in an isolated headless app consumer
 
 Mote: `bd-01M2N2QJKD231A7MJ3NFF2H6Q6`. Existing owner: `bd-01M214CXBZN8R7R4P0M5ACY25H`.
-Priority: 1. Direct prerequisites: X6 (`bd-01M2N2QCWATK57DT0TEWTRJTCP`), S6 (`bd-01M2N2QFZSGT9TG6ZEK5THE1CR`), M4 (`bd-01M2N2QJ1H158B984E0Z7YBTGK`), G0 (`bd-01M2QMC663VXY7YR6GVMDXP54Y`).
+Priority: 1. Direct prerequisites: X6 (`bd-01M2N2QCWATK57DT0TEWTRJTCP`), S6 (`bd-01M2N2QFZSGT9TG6ZEK5THE1CR`), M4 (`bd-01M2N2QJ1H158B984E0Z7YBTGK`), G0 (`bd-01M2QMC663VXY7YR6GVMDXP54Y`), and since 2026-09-18 the recording and temporal result archives (`bd-01M2SC6NA7A9V0TWZXVMHA65BM`, closed).
 
 **Scope and proposed paths**
 
@@ -837,6 +837,52 @@ ownership and reserve only the exact files needed when starting the ticket.
 - Run compileAll/testAll/checkBoundaries and headerCheckAll/scalafmtCheckAll/scalafmtSbtCheck/githubWorkflowCheck; measure the declared JVM response envelope and portable JVM/JS semantics. Browser/native UI checks belong to the consumer app.
 
 **Completion criterion:** A separate repository can build the planned UI using only published eyes4s APIs; all three contracts have executable, reproducible consumer evidence and documented limits.
+
+<a id="g1-outcome"></a>
+
+**Outcome (2026-09-18).** The isolated consumer (`tools/study-consumer`, published artifacts only;
+`verify.py` checks every classpath entry) now runs all three shipped plan families end to end, each
+for a shipped method and for one of its own: fixation (cosine; scaled cosine over its own key and
+score), recording (I-VT; a laboratory detector with its own typed field descriptors and
+`RecordingMethodDescriptor`) and temporal (both fixation routes over windows and repetitions).
+**Execution:** every route runs through `StudyExecution`, `RecordingExecution` or
+`TemporalExecution` with stated segment totals, cancellation parked between steps settling
+`Cancelled` with the last committed step and no result, and completion equal to the pure run; the
+published `ExecutionLaws` hold over all six routes' cursors with independent oracles (rational and
+decimal cosine, the pymovements I-VT events, the integer-overlap temporal ledgers and 60-digit
+temporal targets), and a deliberate mutant is killed. **Serialization:** each route saves under one
+manifest with its roles and relations, resolves through a fresh resolver with only its own
+registrations, reruns to the same raw-bit fingerprint and archived SHA-256, and does so in a separate
+JVM from a directory; `ManifestLaws` hold over the consumer's own writers; missing, changed and
+replaced artifacts and unregistered methods or detectors are refused by name and code.
+**Inspection:** descriptors, preflight (blockers, warnings, stale-report refusals) and
+`ResultInspection` for all three families, with failures located and linked to CSV records or
+input samples; the six failure paths are pinned for every route in
+[the consumer README](../tools/study-consumer/README.md#failure-paths) (recording has no pairs, so
+its failed-pair path is a failed synchronization stage). On Scala.js the same journeys
+reload, check value identity and rerun in one process; verify.py compares the runtimes' portable
+evidence exactly (binned bits, digests, 64-bit times, event spans, ledgers, segments) and the rest
+within named tolerances. **Envelope** (consumer smoke run, report only; Apple M3 Max, JDK 25.0.1, six
+visible processors, 3 GiB heap; slowest step / slowest cancellation in ms, both routes of a
+family, from the final verify run): fixation journey 0.02 / 0.41, recording fixture 0.14 / 0.15,
+temporal fixture 0.04 / 0.05, the widest study the envelope supports (256 x 256, sigma 32, 12
+trials) 19.1 / 17.0, a 10 s recording 10.0 / 9.4. In the last two the cancellation aimed at the
+slowest step stopped at that step, so it landed while the step ran; on the fixtures, whose steps
+take microseconds, the asynchronously woken canceller can land up to tens of steps later, and the
+receipt records where every trial stopped. These workloads are within the 100 ms target on this
+machine; the recording route still misses it on realistic lengths, as X6 measured (60 s at 1 kHz:
+a 502 ms step), because detection support assembly is quadratic (`bd-01M2S5AX3E1E3PRGS3CR322HAX`). **Library change:** one gap the consumer exposed,
+`RecipeDescriptors.temporal` reporting `SynchronousWholeOperation` for a temporal plan whose cells
+run a bounded study cursor; it now reports the base study's capability. **Limits:** io import-error
+diagnostics (`bd-01M2SG4718MMQ8SDDMC0K13T33`), typed access to a resolved `LoadedStudy`
+(`bd-01M2SG47CCG30E22SY3M4WA7DR`), a partial-failure fixture (`bd-01M2SG47P8BZYP9BG35QWYNKHY`),
+`PreflightError`'s key type (`bd-01M2SBT6HYM8WT3VHND10TSRGF`), quadratic detection support
+(`bd-01M2S5AX3E1E3PRGS3CR322HAX`), ledger re-import (`bd-01M2SC6N15J2N7PHD4DXBE43VD`), binocular
+packing (`bd-01M2SC6NKVX2E7DN8PD4Q990ND`), no realistic-size input, and no bit-for-bit
+re-execution of a JVM archive's transcendental results on Scala.js. Codec refusals of a
+constructor's value carry its message rather than its typed error, and a recording descriptor always
+states `SynchronousWholeOperation`. The broader app, codec and Session milestones and eyesim parity
+remain open.
 
 ## Tracker reconciliation
 

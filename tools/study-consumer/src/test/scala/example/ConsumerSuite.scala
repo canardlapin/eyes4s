@@ -39,10 +39,12 @@ class ConsumerSuite extends munit.DisciplineSuite:
   private val parameters  = CustomMethod.parameterCodec(id("my.lab.multiplier"))
   private val keys        = CustomMethod.keyCodec(id("my.lab.trial-key"))
   private val persistence = new StudyCodec(id("my.lab.study"), layout, keys, method, parameters)
-  private val detectorPersistence = CustomDetector.persistence(
-    id("my.lab.recording-plan"),
-    id("my.lab.conservative-ivt"),
-    id("my.lab.conservative-ivt-parameters")
+  private val detectorPersistence = get(
+    CustomDetector.persistence(
+      id("my.lab.recording-plan"),
+      id("my.lab.conservative-ivt"),
+      id("my.lab.conservative-ivt-parameters")
+    )
   )
   private val frame  = get(Frame.screen("display", 2, 2))
   private val grid   = get(Grid.over(frame, 2, 2))

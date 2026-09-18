@@ -80,7 +80,9 @@ def generate():
     for t in ledgers:
         scala+=f'    ({json.dumps(t["key"])},{json.dumps(t["window"])},Vector('+','.join(str(x)+'L' for x in t['retained'])+f'),{t["observed"]}L,{t["missing"]}L),\n'
     scala+='  )\n  val pairs = Vector('+','.join('('+','.join(json.dumps(p[x]) for x in ['repetition','left','right','kind'])+')' for p in pairs)+')\n// format: on\n'
-    return {HERE/'fixtures/temporal-study.csv':csv_text,HERE/'fixtures/temporal.json':json.dumps(data,indent=2)+'\n',ROOT/'codec/src/test/scala/eyes4s/codec/TemporalFixtures.scala':scala}
+    # The isolated consumer (tools/study-consumer) carries the same data in its own package.
+    consumer=scala.replace('package eyes4s.codec\n','package example\n',1).replace('object TemporalFixtures:','object TemporalConsumerFixtures:',1)
+    return {HERE/'fixtures/temporal-study.csv':csv_text,HERE/'fixtures/temporal.json':json.dumps(data,indent=2)+'\n',ROOT/'codec/src/test/scala/eyes4s/codec/TemporalFixtures.scala':scala,ROOT/'tools/study-consumer/src/test/scala/example/TemporalConsumerFixtures.scala':consumer}
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('--check',action='store_true');args=parser.parse_args()

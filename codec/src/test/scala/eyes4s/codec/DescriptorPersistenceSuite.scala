@@ -257,4 +257,8 @@ class DescriptorPersistenceSuite extends munit.FunSuite:
       )
     )
     assert(get(temporal.inspect).conventions.exists(_.contains("observed coverage")))
+    // Each cell runs the base study's cursor: the temporal plan states the
+    // base method's execution capability, not the whole-operation default.
+    assertEquals(get(study.inspect).execution, ExecutionCapability.BoundedComparison)
+    assertEquals(get(temporal.inspect).execution, get(study.inspect).execution)
   }

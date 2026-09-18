@@ -31,7 +31,6 @@ import eyes4s.kernel.Unit2D.Px
 import eyes4s.laws.{StudyResultEquivalence, Tolerance}
 import eyes4s.plan.*
 import eyes4s.surface.EstimateError
-import example.FixationJourney.JourneyError
 import io.circe.Json
 
 import java.nio.charset.StandardCharsets
@@ -106,14 +105,9 @@ class FixationJourneySuite extends munit.CatsEffectSuite:
         Vector("value" -> MeasureScale.Bounded(0, c.multiplier))
       )
       // Checked constructors refuse by the domain's own typed error.
-      assert(
-        RecipeParameters
-          .sigma[Px]
-          .parse(-1.0)
-          .left
-          .exists(_.underlying match
-            case RecipeParameterError.Geometry(_) => true
-            case _                                => false)
+      assertEquals(
+        RecipeParameters.sigma[Px].parse(-1.0).left.map(_.underlying),
+        Left(RecipeParameterError.Geometry(GeometryError.NonPositiveSigma(-1.0)))
       )
       val inspection = get(j.study.inspect)
       assertEquals(inspection.description, j.study.description)
@@ -610,6 +604,66 @@ class FixationJourneySuite extends munit.CatsEffectSuite:
           assert(j.same(j.completed(get(rerun)), result), "the rerun reproduces the failures")
         }
       }
+    }
+
+    test(s"$name: a table on another display fails every trial by its frame, as evidence") {
+      // UI-G1 invalid geometry: a degenerate display is refused by its constructor.
+      assertEquals(
+        Frame.screen("display", 0, 2).left.map(e => Diagnostics.geometry(e).code.render),
+        Left("geometry.degenerate-bounds")
+      )
+      // The journey's table read on a display named like the plan's, with other bounds.
+      val wide  = get(Frame.screen("display", 4, 4))
+      val input = get(
+        get(
+          FixationCsv.read(
+            JourneyFixtures.table,
+            JourneySetup.columns,
+            route.reader,
+            wide,
+            TimestampUnit.Microseconds
+          )
+        ).requireComplete
+      )
+      val study  = j.plan(input, Vector(StudyEstimate.Binned()))
+      val report = study.preflight(Some(input), pairs)
+      val keys   = input.trials.rows.map(_.key)
+      // Every trial will fail at every scale: a warning per trial, not a blocker.
+      assertEquals(report.findings.map(_.keys), keys.map(Vector(_)))
+      assertEquals(
+        report.findings.map(f => (f.severity, f.category, f.remedy)).distinct,
+        Vector((Severity.Warning, FindingClass.IncompatibleInput, Remedy.AlignFrame))
+      )
+      assertEquals(
+        report.findings
+          .map(f => Diagnostics.studyFinding(f))
+          .map(d => d.code.render -> d.causes.map(_.code.render))
+          .distinct,
+        Vector("study-finding.frame-mismatch" -> Vector("geometry.frame-identity-conflict"))
+      )
+      assertEquals(report.availability, Availability.Ready)
+      j.runner
+        .start(get(report.prepare(study, input, pairs)), comparison, quanta)
+        .use(_.outcome)
+        .map { outcome =>
+          val result = j.completed(outcome)
+          val scale  = result.scales.head
+          assertEquals(
+            scale.estimation.map((k, e) => k -> e.left.map(Diagnostics.failure(_).code.render)),
+            keys.map(k => k -> Left("study-failure.frame"))
+          )
+          assertEquals(
+            get(scale.contrast).rows
+              .map(_.difference.left.map(Diagnostics.contrastRow(_).code.render)),
+            Vector.fill(6)(Left("contrast-row.reduction-failures"))
+          )
+          // Each failure is located at its scale and trial.
+          val view  = get(ResultInspection.study(study, result, input, None))
+          val first = get(view.failures.headOption.toRight("no failure"))
+          assertEquals(first.code.render, "study-failure.frame")
+          assertEquals(first.subject, Vector(Locus.Scale(0), Locus.Trial(keys.head)))
+          assertEquals(view.failures.size, 12 + 6 + 6 + 12 + 6 + 6)
+        }
     }
 
     test(s"$name: a bad table row becomes coded, record-linked diagnostics") {

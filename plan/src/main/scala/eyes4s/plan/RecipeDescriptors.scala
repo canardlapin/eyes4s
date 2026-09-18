@@ -490,6 +490,9 @@ object RecipeDescriptors:
           "Duration weighting uses observed coverage; gaps are missing time, not zero gaze",
           "Each repetition supplies its focal/reference phases; base phases do not select temporal cells"
         ),
-        base.fields.map(f => f.info.id -> f.children).toMap
+        base.fields.map(f => f.info.id -> f.children).toMap,
+        // Every cell runs the base study's cursor, so the temporal plan executes
+        // exactly as its base method does.
+        base.execution
       )
     }

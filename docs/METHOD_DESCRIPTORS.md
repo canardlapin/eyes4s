@@ -29,9 +29,15 @@ that an entire recording recipe supports bounded cancellation.
 [PREFLIGHT.md](PREFLIGHT.md) describes the typed availability reports that
 consult these descriptors before a recipe runs.
 
-All current recipe descriptors report `SynchronousWholeOperation`. Bounded
-execution is subsequent X2–X6 work; attaching metadata to an arbitrary custom
-closure cannot confer cancellation guarantees.
+A study plan's inspection reports its method's execution capability:
+`BoundedComparison` for cosine and for an extension built on a bounded
+comparison cursor, `SynchronousWholeOperation` for an arbitrary closure. A
+temporal plan reports its base study's capability, since every cell runs the
+base study's cursor (UI-G1 found it reporting the whole-operation default).
+Recording recipes report `SynchronousWholeOperation`: the runner feeds the
+detector's machine in sample chunks, but the flush and support assembly remain
+one step. Attaching metadata to an arbitrary custom closure cannot confer
+cancellation guarantees.
 
 ## Construct typed parameters
 

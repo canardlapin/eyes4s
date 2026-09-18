@@ -9,6 +9,8 @@ import json
 import math
 import os
 from pathlib import Path
+import platform
+import re
 import shutil
 import subprocess
 import tempfile
@@ -18,6 +20,50 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 VERSION = "0.0.0-workflow-slices"
 SBT = ["sbt", "-J-Xmx3g", "-J-XX:ActiveProcessorCount=6"]
+# Independent oracles and pinned inputs the consumer's evidence is checked against.
+FIXTURES = (
+    "tools/r-parity/fixtures/exact.json",
+    "tools/r-parity/fixtures/multiscale.json",
+    "tools/r-parity/fixtures/matched-control.csv",
+    "tools/r-parity/fixtures/temporal.json",
+    "tools/r-parity/fixtures/temporal-study.csv",
+    "tools/detector-conformance/reference.json",
+)
+# Degrees: the recording route's angular warp is trigonometric.
+ANGULAR_TOLERANCE = 1e-9
+# The named tolerance of the Gaussian and temporal cosine oracles.
+ORACLE_TOLERANCE = 1e-12
+RECORDING_EXACT = [
+    "input",
+    "recording",
+    "plan",
+    "support",
+    "labels",
+    "areas",
+    "segments",
+    "cancelled",
+    "fingerprint_size",
+]
+TEMPORAL_EXACT = [
+    "base",
+    "input",
+    "plan",
+    "ledgers",
+    "segments",
+    "cancelled",
+    "fingerprint_size",
+]
+FRESH_ROUTES = ["recording-ivt", "recording-lab", "temporal-cosine", "temporal-scaled"]
+ENVELOPE_WORKLOADS = {
+    "study-journey-cosine",
+    "study-journey-scaled",
+    "recording-fixture-ivt",
+    "recording-fixture-lab",
+    "temporal-fixture-cosine",
+    "temporal-fixture-scaled",
+    "study-256x256-sigma32",
+    "recording-10s",
+}
 
 
 def run(cwd, log, *commands):
@@ -142,9 +188,58 @@ def main():
     journey = check_journey(log)
     fresh = check_fresh_process(log)
     reader_classpath = check_reader_classpath(candidate, artifacts)
+    check_consumer_fixtures()
+    recording = check_recording_journey(log)
+    temporal = check_temporal_journey(log)
+    fresh_routes = check_fresh_routes(log)
+    envelope = check_envelope(log)
     receipt = {
         "artifact_version": VERSION,
+        "source_revision": source_revision(),
         "artifacts_sha256": artifacts,
+        "fixtures_sha256": {
+            name: hashlib.sha256((REPO / name).read_bytes()).hexdigest()
+            for name in FIXTURES
+        },
+        "runtime": {
+            "python": platform.python_version(),
+            "platform": platform.platform(),
+            "sbt": (HERE / "project/build.properties").read_text().strip(),
+            "scala": re.search(
+                r'scalaVersion := "([^"]+)"', (HERE / "build.sbt").read_text()
+            ).group(1),
+            "jvm": envelope["runtime"],
+        },
+        "gates": {
+            "commands": [
+                "publishLocal" if not args.skip_publish else "publishLocal (skipped)",
+                "scalafmtCheckAll",
+                "scalafmtSbtCheck",
+                "consumerJVM/test",
+                "consumerJS/test",
+            ],
+            "test_totals": test_totals(log),
+            # The library's own gates (compileAll, testAll, checkBoundaries,
+            # headerCheckAll, scalafmtCheckAll, scalafmtSbtCheck,
+            # githubWorkflowCheck) run in the library build, not here.
+            "not_run_here": [
+                "library compileAll/testAll/checkBoundaries",
+                "library headerCheckAll/scalafmtCheckAll/scalafmtSbtCheck/githubWorkflowCheck",
+            ],
+            "checks": [
+                "consumer classpaths use only the packaged artifacts",
+                "packaged sources equal the checkout",
+                "fresh reader classpath: own classes, published jars, third-party jars",
+                "transcribed tables equal the pinned fixture files",
+                "fixation journey against exact.json and multiscale.json",
+                "generate_multiscale.py --check and generate_temporal.py --check",
+                "recording journey against the I-VT conformance fixture",
+                "the fixture's fixations against the pymovements oracle events",
+                "temporal journey against temporal.json targets and ledgers",
+                "fresh-process reload and bit-for-bit rerun of every route",
+                "JVM and Scala.js agree exactly on portable evidence",
+            ],
+        },
         "cross_runtime": {
             "exact": ["plan", "input", "binned_bits"],
             "gaussian_absolute_tolerance": 1e-12,
@@ -169,6 +264,23 @@ def main():
             "runtime_evidence": journey,
         },
         "fresh_process_reader": {"receipts": fresh, "classpath": reader_classpath},
+        "recording_journey": {
+            "exact_across_runtimes": RECORDING_EXACT + ["event kinds and microseconds"],
+            "angular_absolute_tolerance": ANGULAR_TOLERANCE,
+            "oracle": "tools/detector-conformance/reference.json#ivt-symmetric-central-boundaries",
+            "runtime_evidence": recording,
+        },
+        "temporal_journey": {
+            "exact_across_runtimes": TEMPORAL_EXACT + ["binned bits"],
+            "gaussian_absolute_tolerance": ORACLE_TOLERANCE,
+            "oracles": [
+                "tools/r-parity/fixtures/temporal.json (targets)",
+                "tools/r-parity/fixtures/temporal.json (ledgers)",
+            ],
+            "runtime_evidence": temporal,
+        },
+        "fresh_process_routes": fresh_routes,
+        "response_envelope": envelope,
         "consumer_directory": str(candidate),
         "tests": ["consumerJVM/test", "consumerJS/test"],
         "sources_sha256": {
@@ -186,6 +298,249 @@ def main():
         "Both artifact-consumer suites passed; receipt.json records the tested sources.",
         flush=True,
     )
+
+
+def source_revision():
+    """The library checkout the artifacts were published from."""
+    head = subprocess.run(
+        ["git", "-C", str(REPO), "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    modified = subprocess.run(
+        ["git", "-C", str(REPO), "status", "--porcelain", "--untracked-files=no"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    return {"head": head, "modified_tracked_files": bool(modified)}
+
+
+def test_totals(log):
+    """The consumer's test totals, JVM first, as sbt reports them."""
+    totals = [
+        dict(zip(("total", "failed", "errors", "passed"), map(int, m.groups())))
+        for m in re.finditer(
+            r"Passed: Total (\d+), Failed (\d+), Errors (\d+), Passed (\d+)", log
+        )
+    ]
+    if len(totals) != 2 or any(t["failed"] or t["errors"] for t in totals):
+        raise RuntimeError(f"Expected two passing consumer test runs, found {totals}")
+    return {"jvm": totals[0], "js": totals[1]}
+
+
+def check_consumer_fixtures():
+    """The consumer's transcribed tables are the pinned oracle inputs, verbatim."""
+    for scala, source in (
+        (
+            "src/test/scala/example/ConsumerFixtures.scala",
+            "tools/r-parity/fixtures/matched-control.csv",
+        ),
+        (
+            "src/test/scala/example/TemporalConsumerFixtures.scala",
+            "tools/r-parity/fixtures/temporal-study.csv",
+        ),
+    ):
+        text = (HERE / scala).read_text()
+        table = text.split('val csv = """', 1)[1].split('"""', 1)[0]
+        if table != (REPO / source).read_text():
+            raise RuntimeError(f"{scala} does not carry {source} verbatim")
+    temporal = json.loads((REPO / "tools/r-parity/fixtures/temporal.json").read_text())
+    table = (REPO / "tools/r-parity/fixtures/temporal-study.csv").read_bytes()
+    if hashlib.sha256(table).hexdigest() != temporal["input_sha256"]:
+        raise RuntimeError("temporal.json was not generated from temporal-study.csv")
+    # The generators pin every embedded window, coverage, target and ledger too.
+    for generator in ("generate_multiscale.py", "generate_temporal.py"):
+        subprocess.run(
+            ["python3", str(REPO / "tools/r-parity" / generator), "--check"],
+            check=True,
+            capture_output=True,
+        )
+
+
+def by_route_and_runtime(runs, routes, label):
+    found = sorted((run["route"], run["runtime"]) for run in runs)
+    expected = sorted((route, runtime) for route in routes for runtime in ("js", "jvm"))
+    if found != expected:
+        raise RuntimeError(f"Expected {label} evidence for {expected}, found {found}")
+    return {
+        route: {run["runtime"]: run for run in runs if run["route"] == route}
+        for route in routes
+    }
+
+
+def check_recording_journey(log):
+    """Both recording routes on both runtimes: exact agreement, and the
+    pymovements I-VT oracle for every event's kind, span and places."""
+    runs = evidence(log, "EYES4S_RECORDING_JOURNEY=")
+    routes = by_route_and_runtime(runs, ("ivt", "lab"), "recording journey")
+    reference = json.loads((REPO / "tools/detector-conformance/reference.json").read_text())
+    fixture = next(
+        f for f in reference["fixtures"] if f["id"] == "ivt-symmetric-central-boundaries"
+    )
+    expected = sorted(
+        [
+            (
+                "fixation",
+                f["onset_millis"] * 1000,
+                f["offset_millis_exclusive"] * 1000,
+                f["centre"],
+            )
+            for f in fixture["expected_eyes4s_fixations"]
+        ]
+        + [
+            (
+                "saccade",
+                s["onset_millis"] * 1000,
+                s["offset_millis_exclusive"] * 1000,
+                [s["start"][0], s["end"][0]],
+            )
+            for s in fixture["expected_eyes4s_saccades"]
+        ],
+        key=lambda e: e[1],
+    )
+    period = fixture["period_millis"]
+    support = [[e[1] // (1000 * period), e[2] // (1000 * period)] for e in expected]
+    # The fixture's fixations are the pymovements oracle's, whose offsets are the
+    # last classified sample: half-open support ends one period later.
+    oracle = [
+        (e["onset_millis"], e["offset_millis_inclusive"] + period)
+        for e in fixture["oracle_events"]
+        if e["name"] == "fixation"
+    ]
+    if oracle != [(e[1] // 1000, e[2] // 1000) for e in expected if e[0] == "fixation"]:
+        raise RuntimeError("The fixture's fixations are not the pymovements oracle's")
+    for route, by_runtime in routes.items():
+        left, right = by_runtime["jvm"], by_runtime["js"]
+        for field in RECORDING_EXACT:
+            if left[field] != right[field]:
+                raise RuntimeError(
+                    f"JVM/Scala.js recording disagreement for {route} in {field}"
+                )
+        for run in (left, right):
+            events = [
+                (e["kind"], e["onsetMicros"], e["offsetMicros"], e["degrees"])
+                for e in run["events"]
+            ]
+            if [e[:3] for e in events] != [e[:3] for e in expected]:
+                raise RuntimeError(
+                    f"The {route} events on {run['runtime']} differ from the pymovements oracle"
+                )
+            for found, target in zip(events, expected):
+                if not all(
+                    math.isclose(a, b, abs_tol=ANGULAR_TOLERANCE, rel_tol=0)
+                    for a, b in zip(found[3], target[3])
+                ):
+                    raise RuntimeError(
+                        f"The {route} event places on {run['runtime']} miss the oracle"
+                    )
+            if run["support"] != support:
+                raise RuntimeError(f"The {route} event support differs from the oracle's samples")
+    if routes["ivt"]["jvm"]["labels"] != routes["lab"]["jvm"]["labels"]:
+        raise RuntimeError("The laboratory detector labelled samples unlike the shipped I-VT")
+    return runs
+
+
+def check_temporal_journey(log):
+    """Both temporal routes on both runtimes: exact agreement, and the
+    independent integer-overlap ledgers and 60-digit cosine targets."""
+    runs = evidence(log, "EYES4S_TEMPORAL_JOURNEY=")
+    routes = by_route_and_runtime(runs, ("cosine", "scaled"), "temporal journey")
+    oracle = json.loads((REPO / "tools/r-parity/fixtures/temporal.json").read_text())
+    targets = {
+        (t["repetition"], t["key"], t["window"], t["sigma"]): t["difference"]
+        for t in oracle["targets"]
+    }
+    ledgers = {
+        (l["key"], l["window"]): [l["retained"], l["observed"], l["missing"]]
+        for l in oracle["ledgers"]
+    }
+    for route, by_runtime in routes.items():
+        left, right = by_runtime["jvm"], by_runtime["js"]
+        for field in TEMPORAL_EXACT:
+            if left[field] != right[field]:
+                raise RuntimeError(f"JVM/Scala.js temporal disagreement for {route} in {field}")
+        if len(left["contrasts"]) != len(right["contrasts"]):
+            raise RuntimeError(f"JVM/Scala.js temporal contrasts differ in number for {route}")
+        for a, b in zip(left["contrasts"], right["contrasts"]):
+            place = ("repetition", "key", "window", "sigma")
+            if [a[k] for k in place] != [b[k] for k in place] or (a["value"] is None) != (
+                b["value"] is None
+            ):
+                raise RuntimeError(f"JVM/Scala.js temporal contrasts disagree for {route}")
+            if a["sigma"] is None and a["bits"] != b["bits"]:
+                raise RuntimeError(f"JVM/Scala.js binned temporal bits disagree for {route}")
+            if a["value"] is not None and not math.isclose(
+                a["value"], b["value"], abs_tol=ORACLE_TOLERANCE, rel_tol=0
+            ):
+                raise RuntimeError(f"JVM/Scala.js Gaussian temporal contrasts disagree for {route}")
+        multiplier = Decimal(str(left["multiplier"]))
+        for run in (left, right):
+            found = {
+                (c["repetition"], c["key"], c["window"], c["sigma"]): c["value"]
+                for c in run["contrasts"]
+            }
+            if set(found) != set(targets) or len(run["contrasts"]) != len(targets):
+                raise RuntimeError(f"The {route} temporal contrasts differ in keys from temporal.json")
+            for at, target in targets.items():
+                value = found[at]
+                if target is None or value is None:
+                    if (target is None) != (value is None):
+                        raise RuntimeError(
+                            f"Temporal {route} contrast {at} fails where the oracle does not"
+                        )
+                elif not math.isclose(
+                    value,
+                    float(Decimal(target) * multiplier),
+                    abs_tol=ORACLE_TOLERANCE,
+                    rel_tol=0,
+                ):
+                    raise RuntimeError(f"Temporal {route} contrast {at} misses the decimal oracle")
+            printed = {
+                (l["key"], l["window"]): [l["retained"], l["observed"], l["missing"]]
+                for l in run["ledgers"]
+            }
+            if printed != ledgers:
+                raise RuntimeError(f"Temporal {route} occupancy ledgers differ from temporal.json")
+    return runs
+
+
+def check_fresh_routes(log):
+    """A separate JVM reloaded and reran every recording and temporal route bit for bit."""
+    receipts = evidence(log, "EYES4S_FRESH_ROUTE=")
+    if sorted(r["route"] for r in receipts) != FRESH_ROUTES:
+        raise RuntimeError(
+            f"Expected fresh-process receipts for {FRESH_ROUTES}, found {len(receipts)}"
+        )
+    for receipt in receipts:
+        if (
+            receipt["outcome"] != "completed"
+            or receipt["process"] != receipt["launched"]
+            or receipt["process"] == receipt["writer"]
+        ):
+            raise RuntimeError(
+                f"The fresh reader did not reconstruct {receipt['route']} in its own process"
+            )
+        if receipt["archived_bits"] != receipt["rerun_bits"] or not receipt["rerun_bits"]:
+            raise RuntimeError(f"The fresh reader's rerun of {receipt['route']} is not bit for bit")
+    keys = ("route", "writer", "process", "address", "run", "input", "rerun_sha256")
+    return [
+        {**{key: r[key] for key in keys}, "steps": r["steps"], "total_units": r["total_units"]}
+        for r in receipts
+    ]
+
+
+def check_envelope(log):
+    """The consumer's JVM response-envelope smoke run: reported, never asserted."""
+    runtime = evidence(log, "EYES4S_ENVELOPE_RUNTIME=")
+    workloads = evidence(log, "EYES4S_ENVELOPE=")
+    found = sorted(w["workload"] for w in workloads)
+    if len(runtime) != 1 or found != sorted(ENVELOPE_WORKLOADS):
+        raise RuntimeError(
+            f"Expected one runtime and the workloads {sorted(ENVELOPE_WORKLOADS)}, found {found}"
+        )
+    return {"runtime": runtime[0], "workloads": workloads}
 
 
 def evidence(log, marker):
