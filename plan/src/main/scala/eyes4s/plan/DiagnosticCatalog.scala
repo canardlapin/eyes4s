@@ -217,7 +217,14 @@ object DiagnosticCatalog:
     "InvalidUnitSimilarity"
   )
   val estimate: DiagnosticFamily =
-    error("estimate")("FrameMismatch", "NoMass", "DegenerateBandwidth", "Surface")
+    error("estimate")(
+      "FrameMismatch",
+      "NoMass",
+      "DegenerateBandwidth",
+      "Surface",
+      "DegenerateAxisBandwidth",
+      "KernelSupportOverflow"
+    )
   val surface: DiagnosticFamily = error("surface")(
     "LengthMismatch",
     "NegativeWeight",

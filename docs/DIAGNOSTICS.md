@@ -560,6 +560,8 @@ fails after rewriting, so review the change and run it again.
 | `estimate.no-mass` | `NoMass` |  |
 | `estimate.degenerate-bandwidth` | `DegenerateBandwidth` | `sigma`, `cellSize` |
 | `estimate.surface` | `Surface` | `underlying` |
+| `estimate.degenerate-axis-bandwidth` | `DegenerateAxisBandwidth` | `axis`, `sigma`, `cellSize` |
+| `estimate.kernel-support-overflow` | `KernelSupportOverflow` | `axis`, `sigma`, `cellSize` |
 
 ### `surface` — `SurfaceError`
 

@@ -48,6 +48,8 @@ enum EstimateError derives CanEqual:
   case NoMass
   case DegenerateBandwidth(sigma: Double, cellSize: Double)
   case Surface(underlying: SurfaceError)
+  case DegenerateAxisBandwidth(axis: SmoothingAxis, sigma: Double, cellSize: Double)
+  case KernelSupportOverflow(axis: SmoothingAxis, sigma: Double, cellSize: Double)
 
   def message: String = this match
     case FrameMismatch(m, g) =>
@@ -60,7 +62,24 @@ enum EstimateError derives CanEqual:
         "so the kernel would fall inside a single cell and the estimate would " +
         "be a histogram wearing a smoother's name. Use a coarser grid or a " +
         "wider bandwidth."
-    case Surface(e) => e.message
+    case Surface(e)                                 => e.message
+    case DegenerateAxisBandwidth(axis, sigma, cell) =>
+      s"The $axis bandwidth sigma=$sigma is smaller than one fifth of its cell size=$cell."
+    case KernelSupportOverflow(axis, sigma, cell) =>
+      s"The $axis bandwidth sigma=$sigma on cell size=$cell requires a kernel longer than an Int-indexed array can hold."
+
+enum SmoothingAxis derives CanEqual:
+  case X, Y
+
+/** Standard deviations in frame units, never a scalar proxy for an ellipse. */
+enum KernelBandwidth[U <: Unit2D] derives CanEqual:
+  case Isotropic(sigma: Sigma[U])
+  case AxisAligned(sigmaX: Sigma[U], sigmaY: Sigma[U])
+
+  def render: String = this match
+    case Isotropic(s)      => s"sigma=${Provenance.Param.Num(s.value).render}"
+    case AxisAligned(x, y) =>
+      s"sigmaX=${Provenance.Param.Num(x.value).render}, sigmaY=${Provenance.Param.Num(y.value).render}"
 
 /** Turns a discrete measure into a continuous-looking one.
   *
@@ -85,7 +104,7 @@ trait Smoother[U <: Unit2D]:
     */
   def configuration: Vector[(String, Provenance.Param)]
 
-  def bandwidth: Sigma[U]
+  def bandwidth: KernelBandwidth[U]
   def edges: EdgePolicy
 
   def smooth(m: PointMeasure[U], g: Grid[U]): Either[EstimateError, Intensity[U]]
@@ -105,25 +124,53 @@ object Smoother:
       sigma: Sigma[U],
       edgePolicy: EdgePolicy
   ): Smoother[U] =
-    new Smoother[U]:
-      val card: SmootherCard  = SmootherCards.gaussian
-      val bandwidth: Sigma[U] = sigma
-      val edges: EdgePolicy   = edgePolicy
+    separable(sigma, sigma, edgePolicy, KernelBandwidth.Isotropic(sigma))
 
-      val configuration: Vector[(String, Provenance.Param)] = Vector(
-        "sigma" -> Provenance.Param.Num(sigma.value),
-        "edges" -> Provenance.Param.Text(edgePolicy.toString)
-      )
+  /** Axis-aligned Gaussian with independent x/y standard deviations in frame units.
+    * No rotation, covariance fitting or implicit bandwidth selection is performed.
+    * Each sigma must resolve its own grid axis (at least one fifth of that cell side).
+    */
+  def anisotropic[U <: Unit2D](
+      sigmaX: Sigma[U],
+      sigmaY: Sigma[U],
+      edgePolicy: EdgePolicy
+  ): Smoother[U] =
+    separable(sigmaX, sigmaY, edgePolicy, KernelBandwidth.AxisAligned(sigmaX, sigmaY))
+
+  private def separable[U <: Unit2D](
+      sigmaX: Sigma[U],
+      sigmaY: Sigma[U],
+      edgePolicy: EdgePolicy,
+      shape: KernelBandwidth[U]
+  ): Smoother[U] =
+    new Smoother[U]:
+      val card: SmootherCard = shape match
+        case KernelBandwidth.Isotropic(_)      => SmootherCards.gaussian
+        case KernelBandwidth.AxisAligned(_, _) => SmootherCards.anisotropic
+      val bandwidth: KernelBandwidth[U] = shape
+      val edges: EdgePolicy             = edgePolicy
+
+      val configuration: Vector[(String, Provenance.Param)] =
+        (shape match
+          case KernelBandwidth.Isotropic(sigma) =>
+            Vector("sigma" -> Provenance.Param.Num(sigma.value))
+          case KernelBandwidth.AxisAligned(x, y) =>
+            Vector(
+              "sigmaX" -> Provenance.Param.Num(x.value),
+              "sigmaY" -> Provenance.Param.Num(y.value)
+            )
+        ) :+ ("edges" -> Provenance.Param.Text(edgePolicy.toString))
 
       def smooth(m: PointMeasure[U], g: Grid[U]): Either[EstimateError, Intensity[U]] =
         for
-          _ <- Either.cond(
-            m.frame.id == g.frame.id,
-            (),
-            EstimateError.FrameMismatch(m.frame.id, g.frame.id)
-          )
+          _ <- Agreement
+            .frames(m.frame, g.frame)
+            .left
+            .map(_ => EstimateError.FrameMismatch(m.frame.id, g.frame.id))
           _      <- Either.cond(m.total > 0.0, (), EstimateError.NoMass)
           _      <- checkResolution(g)
+          _      <- checkSupport(sigmaX, g.cellWidth, SmoothingAxis.X)
+          _      <- checkSupport(sigmaY, g.cellHeight, SmoothingAxis.Y)
           binned <- m
             .binned(g)
             .left
@@ -135,7 +182,9 @@ object Smoother:
               m.provenance.andThen(
                 Provenance.Step(
                   "smooth",
-                  ("kernel" -> Provenance.Param.Text("gaussian")) +: configuration
+                  ("kernel" -> Provenance.Param.Text(shape match
+                    case KernelBandwidth.Isotropic(_)      => "gaussian"
+                    case KernelBandwidth.AxisAligned(_, _) => "anisotropic")) +: configuration
                 )
               )
             )
@@ -148,9 +197,31 @@ object Smoother:
         * with visible cell edges nobody can account for.
         */
       private def checkResolution(g: Grid[U]): Either[EstimateError, Unit] =
-        val cell = math.min(g.cellWidth, g.cellHeight)
-        if sigma.value >= cell / 5.0 then Right(())
-        else Left(EstimateError.DegenerateBandwidth(sigma.value, cell))
+        shape match
+          case KernelBandwidth.Isotropic(sigma) =>
+            val cell = math.min(g.cellWidth, g.cellHeight)
+            if sigma.value >= cell / 5.0 then Right(())
+            else Left(EstimateError.DegenerateBandwidth(sigma.value, cell))
+          case KernelBandwidth.AxisAligned(x, y) =>
+            if x.value < g.cellWidth / 5.0 then
+              Left(EstimateError.DegenerateAxisBandwidth(SmoothingAxis.X, x.value, g.cellWidth))
+            else if y.value < g.cellHeight / 5.0 then
+              Left(
+                EstimateError.DegenerateAxisBandwidth(SmoothingAxis.Y, y.value, g.cellHeight)
+              )
+            else Right(())
+
+      private def checkSupport(
+          sigma: Sigma[U],
+          cell: Double,
+          axis: SmoothingAxis
+      ): Either[EstimateError, Unit] =
+        val radius = math.ceil(3.0 * (sigma.value / cell))
+        Either.cond(
+          radius.isFinite && radius <= (Int.MaxValue - 1) / 2,
+          (),
+          EstimateError.KernelSupportOverflow(axis, sigma.value, cell)
+        )
 
       private def kernel(sigmaCells: Double): Array[Double] =
         val radius = math.max(1, math.ceil(3.0 * sigmaCells).toInt)
@@ -166,8 +237,8 @@ object Smoother:
         k
 
       private def convolve(binned: IArray[Double], g: Grid[U]): IArray[Double] =
-        val kx = kernel(sigma.value / g.cellWidth)
-        val ky = kernel(sigma.value / g.cellHeight)
+        val kx = kernel(sigmaX.value / g.cellWidth)
+        val ky = kernel(sigmaY.value / g.cellHeight)
         val rx = kx.length / 2
         val ry = ky.length / 2
 

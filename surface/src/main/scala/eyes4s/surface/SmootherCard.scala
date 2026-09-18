@@ -163,5 +163,27 @@ object SmootherCards:
     None
   )
 
+  val anisotropic: SmootherCard = SmootherCard.literal(
+    "eyes4s.surface.anisotropic",
+    "Axis-aligned anisotropic Gaussian kernel density estimate",
+    "Bins a weighted measure then smooths with independent x and y Gaussian widths; no rotation or adaptive fitting.",
+    Vector(
+      SmootherParameter(
+        "sigmaX",
+        "Standard deviation along the frame x axis.",
+        SmootherParameterUnits.FrameUnits
+      ),
+      SmootherParameter(
+        "sigmaY",
+        "Standard deviation along the frame y axis.",
+        SmootherParameterUnits.FrameUnits
+      ),
+      gaussian.parameters(1)
+    ),
+    "Both standard deviations are supplied explicitly in frame units. Each must be at least one fifth of its own grid cell side. No bandwidth is fitted implicitly.",
+    gaussian.conventions :+ "axis-aligned diagonal covariance; no rotation",
+    None
+  )
+
   /** Every shipped smoother, so a test can insist that none lacks a card. */
-  val all: Vector[SmootherCard] = Vector(gaussian)
+  val all: Vector[SmootherCard] = Vector(gaussian, anisotropic)

@@ -219,6 +219,13 @@ private[codec] object StudyWire:
     }
 
   def estimate[U <: Unit2D](value: StudyEstimate[U]): Json = value match
+    case StudyEstimate.Anisotropic(x, y, edges) =>
+      Json.obj(
+        "kind"   -> Json.fromString("anisotropic"),
+        "sigmaX" -> Json.fromDoubleOrNull(x.value),
+        "sigmaY" -> Json.fromDoubleOrNull(y.value),
+        "edges"  -> Json.fromString(edges.toString)
+      )
     case StudyEstimate.Binned()               => Json.obj("kind" -> Json.fromString("binned"))
     case StudyEstimate.Gaussian(sigma, edges) =>
       Json.obj(
@@ -229,6 +236,17 @@ private[codec] object StudyWire:
 
   def readEstimate[U <: Unit2D](json: Json): Either[CodecError, StudyEstimate[U]] =
     Wire.field[String](json, "kind").flatMap {
+      case "anisotropic" =>
+        for
+          rawX  <- Wire.field[Double](json, "sigmaX")
+          x     <- Sigma.of[U](rawX).left.map(e => CodecError.Field("sigmaX", json, e.message))
+          rawY  <- Wire.field[Double](json, "sigmaY")
+          y     <- Sigma.of[U](rawY).left.map(e => CodecError.Field("sigmaY", json, e.message))
+          name  <- Wire.field[String](json, "edges")
+          edges <- EdgePolicy.values
+            .find(_.toString == name)
+            .toRight(CodecError.Field("edges", json, s"unknown edge policy $name"))
+        yield StudyEstimate.Anisotropic(x, y, edges)
       case "binned"   => Right(StudyEstimate.Binned())
       case "gaussian" =>
         for

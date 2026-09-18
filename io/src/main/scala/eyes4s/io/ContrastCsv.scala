@@ -97,9 +97,13 @@ object ScoreColumns:
 /** Long-form CSV: one row per focal key, scale and component, including failures.
   * Scale-level errors and excluded phase keys have explicit scope/status fields.
   * Empty numeric fields mean missing, with status and reason carried alongside.
+  * Decimal cells use the same lossless rounded round-trip spelling on JVM and Scala.js;
+  * identical output requires identical input values, not merely numerically close results.
+  * Trailing decimal zeros are omitted (1.0 becomes "1"); exponents use uppercase E
+  * with an explicit positive sign (1000.0 becomes "1E+3"). Signed zero is preserved.
   */
 object ContrastCsv:
-  val schemaVersion          = "eyes4s-study-contrast/1"
+  val schemaVersion          = "eyes4s-study-contrast/2"
   val header: Vector[String] = Vector(
     "schema_version",
     "scope",
@@ -133,7 +137,9 @@ object ContrastCsv:
     "matched_provenance",
     "control_provenance",
     "estimation_failures",
-    "plan_json"
+    "plan_json",
+    "sigma_x",
+    "sigma_y"
   )
 
   def document[K, U <: Unit2D, P, S, D](
@@ -155,9 +161,10 @@ object ContrastCsv:
     saved <- persistence.codec.encode(plan).left.map(ContrastExportError.Codec.apply)
     rows  <- result.scales.traverse { scale =>
       val estimate = scale.estimate match
-        case StudyEstimate.Binned()               => Vector("binned", "", "")
-        case StudyEstimate.Gaussian(sigma, edges) =>
-          Vector("gaussian", sigma.value.toString, edges.toString)
+        case StudyEstimate.Anisotropic(_, _, edges) => Vector("anisotropic", "", edges.toString)
+        case StudyEstimate.Binned()                 => Vector("binned", "", "")
+        case StudyEstimate.Gaussian(sigma, edges)   =>
+          Vector("gaussian", CsvNumber.render(sigma.value), edges.toString)
       val failures =
         scale.estimation.collect { case (_, Left(error)) => error.message }.mkString(" | ")
       def keyFields(key: K): Either[ContrastExportError, Vector[String]] =
@@ -184,7 +191,12 @@ object ContrastCsv:
         control,
         failures,
         saved.noSpaces
-      )
+      ) ++ (scale.estimate match
+        case StudyEstimate.Anisotropic(x, y, _) =>
+          Vector(CsvNumber.render(x.value), CsvNumber.render(y.value))
+        case StudyEstimate.Gaussian(sigma, _) =>
+          Vector(CsvNumber.render(sigma.value), CsvNumber.render(sigma.value))
+        case StudyEstimate.Binned() => Vector("", ""))
       val contrastRows = scale.contrast match
         case Left(error) =>
           Right(
@@ -215,9 +227,9 @@ object ContrastCsv:
                   )
                 Vector(schemaVersion, "contrast") ++ key ++ estimate ++ Vector(
                   name,
-                  matched.map(_(index).toString).getOrElse(""),
-                  control.map(_(index).toString).getOrElse(""),
-                  difference.map(_(index).toString).getOrElse(""),
+                  matched.map(values => CsvNumber.render(values(index))).getOrElse(""),
+                  control.map(values => CsvNumber.render(values(index))).getOrElse(""),
+                  difference.map(values => CsvNumber.render(values(index))).getOrElse(""),
                   if row.difference.isRight then "ok" else "failed",
                   row.difference.left.toOption.map(_.message).getOrElse("")
                 ) ++ counts(row.matched) ++ counts(row.control) ++

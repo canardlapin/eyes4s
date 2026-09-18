@@ -182,13 +182,23 @@ object StudyInput:
 enum StudyEstimate[U <: Unit2D] derives CanEqual:
   case Binned()
   case Gaussian(sigma: Sigma[U], edges: EdgePolicy)
+  case Anisotropic(sigmaX: Sigma[U], sigmaY: Sigma[U], edges: EdgePolicy)
 
   def name: String = this match
     case Binned()               => "binned"
     case Gaussian(sigma, edges) =>
       s"gaussian:${Provenance.Param.Num(sigma.value).render}:$edges"
+    case Anisotropic(x, y, edges) =>
+      s"anisotropic:${Provenance.Param.Num(x.value).render}:${Provenance.Param.Num(y.value).render}:$edges"
 
   def parameters: Vector[(String, Provenance.Param)] = this match
+    case Anisotropic(x, y, edges) =>
+      Vector(
+        "estimator" -> Provenance.Param.Text("anisotropic"),
+        "sigmaX"    -> Provenance.Param.Num(x.value),
+        "sigmaY"    -> Provenance.Param.Num(y.value),
+        "edges"     -> Provenance.Param.Text(edges.toString)
+      )
     case Binned()               => Vector("estimator" -> Provenance.Param.Text("binned"))
     case Gaussian(sigma, edges) =>
       Vector(
@@ -203,6 +213,19 @@ enum StudyEstimate[U <: Unit2D] derives CanEqual:
   def provenanceSteps: Vector[Provenance.Step] =
     val normalise = Provenance.Step.text("normalise", "of", "surface")
     this match
+      case Anisotropic(x, y, edges) =>
+        Vector(
+          Provenance.Step(
+            "smooth",
+            Vector(
+              "kernel" -> Provenance.Param.Text("anisotropic"),
+              "sigmaX" -> Provenance.Param.Num(x.value),
+              "sigmaY" -> Provenance.Param.Num(y.value),
+              "edges"  -> Provenance.Param.Text(edges.toString)
+            )
+          ),
+          normalise
+        )
       case Binned()               => Vector(normalise)
       case Gaussian(sigma, edges) =>
         Vector(
@@ -812,6 +835,12 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
       _         <- work.frameChecks(index)
       occupancy <- prepare(trial.key, trial.value)
       mass      <- estimate match
+        case StudyEstimate.Anisotropic(x, y, edges) =>
+          Smoother
+            .anisotropic(x, y, edges)
+            .density(occupancy, grid)
+            .left
+            .map(StudyFailure.Estimation(trial.key, _))
         case StudyEstimate.Binned() =>
           for
             cells     <- occupancy.binned(grid).left.map(StudyFailure.Frame(trial.key, _))

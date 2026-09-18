@@ -63,6 +63,45 @@ class FixationStudySuite extends munit.FunSuite:
   private def read(rows: Vector[Vector[String]] = records) =
     get(FixationCsv.read(csv(rows), columns, keys, frame, TimestampUnit.Microseconds))
 
+  test("anisotropic public guide saves, restores, executes and exports both bandwidths") {
+    val choice = get(
+      RecipeParameters
+        .anisotropic[Px]
+        .construct((0.5, 1.0, eyes4s.surface.EdgePolicy.Renormalise))
+    )
+    val output = get(StudyGuide.run(csv(), Vector(choice)))
+    val table  = output.contrasts
+    assertEquals(table.header.takeRight(2), Vector("sigma_x", "sigma_y"))
+    assertEquals(table.rows.size, 6)
+    table.rows.foreach { cells =>
+      assertEquals(cells.size, table.header.size)
+      val row = table.header.zip(cells).toMap
+      assertEquals(row("schema_version"), "eyes4s-study-contrast/2")
+      assertEquals(row("estimator"), "anisotropic")
+      assertEquals(row("sigma"), "")
+      assertEquals(row("sigma_x"), "0.5")
+      assertEquals(row("sigma_y"), "1")
+      assertEquals(row("status"), "ok")
+    }
+    val failed = get(
+      StudyGuide.run(
+        csv(),
+        Vector(
+          StudyEstimate.Anisotropic(
+            get(Sigma.px(0.5)),
+            get(Sigma.px(0.01)),
+            eyes4s.surface.EdgePolicy.Truncate
+          )
+        )
+      )
+    )
+    assert(failed.contrasts.rows.forall { cells =>
+      val row = failed.contrasts.header.zip(cells).toMap
+      row("status") == "failed" && row("sigma_y") == "0.01" && row("estimation_failures")
+        .contains("Y bandwidth")
+    })
+  }
+
   test("exact compiled guide imports, saves, reloads and exports the pinned study") {
     val imported = read()
     assertEquals(imported.sourceRows.size, 48)

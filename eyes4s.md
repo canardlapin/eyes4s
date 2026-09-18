@@ -706,13 +706,14 @@ opaque type Sigma[U <: Unit2D] = Double     // ALWAYS a standard deviation, in f
 
 trait Smoother[U <: Unit2D]:
   def card: SmootherCard                     // identity, citation and parameter units
-  def bandwidth: Sigma[U]
+  def bandwidth: KernelBandwidth[U]         // Isotropic(sigma) | AxisAligned(sigmaX, sigmaY)
   def edges: EdgePolicy                      // Renormalise | Truncate; never a silent default
   def smooth (m: PointMeasure[U], g: Grid[U]): Either[EstimateError, Intensity[U]]
   def density(m: PointMeasure[U], g: Grid[U]): Either[EstimateError, Mass[U]]   // smooth then normalise
 
 object Smoother:
   def gaussian[U <: Unit2D](sigma: Sigma[U], edgePolicy: EdgePolicy): Smoother[U]
+  def anisotropic[U <: Unit2D](sigmaX: Sigma[U], sigmaY: Sigma[U], edgePolicy: EdgePolicy): Smoother[U]
 
 object Bandwidth:
   def silverman[U <: Unit2D](m: PointMeasure[U]): Either[GeometryError, Sigma[U]]
@@ -720,12 +721,14 @@ object Bandwidth:
   def foveal: Either[GeometryError, Sigma[Unit2D.Deg]]                 // the documented 1° default
 ```
 
-Status (2026-09-17): only the separable Gaussian smoother exists. PRD S-2 promised
-`Smoother.gaussian` and `Smoother.anisotropic` for v1.0 and deferred `Smoother.foveal` to v1.1;
-the closed ticket `s-smoother` claims both v1.0 smoothers but the code has no anisotropic smoother,
-so that ticket over-claimed; the gap is now tracked by `bd-01M2R16EQ2EF6573DJKD0Y0Q05`.
-`Bandwidth.foveal` is a default sigma, not a smoother. Baseline KDE conformance is tracked by
-`eyesim-kde`.
+Status (2026-09-18): isotropic and axis-aligned anisotropic Gaussian smoothers are implemented
+as separable x/y passes. `StudyEstimate.Anisotropic` carries both widths through execution,
+inspection, saved plans/results and contrast CSV schema 2 (`sigma_x`, `sigma_y`). Each anisotropic
+width must be at least one fifth of its own cell dimension; isotropic resolution behavior is
+unchanged. Equal supported widths reproduce isotropic numerical output, but retain the explicitly
+chosen method identity. No width is fitted implicitly, and no rotation or adaptive covariance is
+claimed. This closes `bd-01M2R16EQ2EF6573DJKD0Y0Q05`. `Bandwidth.foveal` remains a default sigma,
+not a smoother; the foveal smoother is deferred. Baseline KDE conformance remains `eyesim-kde`.
 
 `Sigma[Deg]` is the psychologically meaningful choice — a 1° kernel is a statement about the fovea,
 a 30 px kernel is a statement about nothing. Getting that for free is the clearest payoff of the
@@ -1490,7 +1493,7 @@ module cross-compiles for JVM and Scala.js; there is no Native axis in the build
 | `eyes4s-kernel` | cats-core | built | **no ocular vocabulary**: units, frames, warps, clocks, intervals, timelines, sync evidence, point measures, grids, surfaces, regions, `Agreement`, `Machine`, and the library's own `Module` |
 | `eyes4s-core` | kernel | built | the eye-specific layer: `Gaze`, `Sample`, `Recording`, `BinocularRecording`, `Eye`, `Event`, `EventSeries`, `Scanpath`, `Viewing`, `TemporalSupport`, `WindowOccupancy` |
 | `eyes4s-detect` | core | built | `EventDetector`s with `AlgorithmCard`s and checked `Configuration`: I-VT / I-DT / Engbert–Kliegl; filters; `Merge`. NH and I2MC not implemented |
-| `eyes4s-surface` | core | built | Gaussian smoother with `SmootherCard`, bandwidth selection, pyramids |
+| `eyes4s-surface` | core | built | Isotropic and axis-aligned anisotropic Gaussian smoothers with `SmootherCard`, bandwidth selection, pyramids |
 | `eyes4s-aoi` | core | built | `AoiSet` with `MembershipPolicy`, accounting-checked `AoiAssignment`, dwell/entry/run metrics, transition counts |
 | `eyes4s-compare` | core, surface, aoi | built | `Compare` hierarchy, alignment kernel, MultiMatch, ScanMatch, CRQA, distribution measures, Sinkhorn/sliced OT, `Saliency.nss` |
 | `eyes4s-design` | core, compare | built | trials, relations, pair designs, pair schedules, evaluation, reductions, contrasts, `KeyDigest`, deterministic RNG |

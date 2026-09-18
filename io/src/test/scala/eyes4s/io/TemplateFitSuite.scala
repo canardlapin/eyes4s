@@ -27,6 +27,16 @@ class TemplateFitSuite extends FunSuite:
   private def split(y: Double = 7.0)        = get(TemplateFitGuide.input(y))
   private def prepared(y: Double = 7.0)     = get(TemplateFitGuide.prepare(split(y)))
 
+  test("training CSV bytes have the same pinned decimal spelling on JVM and Scala.js") {
+    // The independent R input fixture predates the canonical renderer; only its numeric
+    // cells change spelling. Keep that historical fixture and its provenance intact.
+    val rows     = get(Rfc4180.decode(TemplateFitReference.trainingCsv))
+    val expected = Rfc4180.encode(
+      rows.head +: rows.tail.map(row => row.take(6) ++ row.drop(6).map(_.stripSuffix(".0")))
+    )
+    assertEquals(prepared().trainingCsv, expected)
+  }
+
   test("Scala training export matches R input metadata exactly and numeric fields as Doubles") {
     val expected = get(Rfc4180.decode(TemplateFitReference.trainingCsv))
     val actual   = get(Rfc4180.decode(prepared().trainingCsv))

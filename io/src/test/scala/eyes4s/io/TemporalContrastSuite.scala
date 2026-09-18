@@ -44,6 +44,60 @@ class TemporalContrastSuite extends munit.FunSuite:
     }
     k -> TrialEpoch(Instant.micros(0), get(ObservedCoverage.of(trial.value.clock, spans)))
   }
+
+  test("anisotropic temporal plans round-trip and export named widths in every window") {
+    val choice = StudyEstimate.Anisotropic(
+      get(Sigma.px(0.5)),
+      get(Sigma.px(1)),
+      eyes4s.surface.EdgePolicy.Renormalise
+    )
+    val temporal = get(TemporalStudyInput.of(input, epochs))
+    val base     = get(
+      StudyPlan.cosine(
+        input.reference,
+        grid,
+        "recall",
+        "encode",
+        Weight.Duration,
+        Vector(choice),
+        eyes4s.design.FailurePolicy.RequireAll
+      )
+    )
+    val windows = Vector(
+      get(StudyWindow.of("whole", get(Window.of(Span.micros(0), Span.micros(950000))))),
+      get(StudyWindow.of("outside", get(Window.of(Span.micros(950000), Span.micros(1100000)))))
+    )
+    val repetition =
+      get(RepetitionContrast.withinParticipant("recall-encode", "recall", "encode"))
+    val plan = get(
+      TemporalStudyPlan.of(
+        base,
+        temporal.reference,
+        windows,
+        Vector(repetition),
+        FixationBoundary.ClipDuration
+      )
+    )
+    val codec = new TemporalStudyCodec(
+      get(DefinitionId.of("anisotropic-temporal", 1)),
+      StudyCodecs.cosine[Unit2D.Px]
+    )
+    val restored = get(codec.codec.decode(get(codec.codec.encode(plan))))
+    assertEquals(plan.diff(restored), Vector.empty)
+    assertEquals(get(codec.codec.encode(restored)), get(codec.codec.encode(plan)))
+    val result = get(restored.run(temporal))
+    val table  = get(
+      TemporalContrastCsv.document(restored, result, codec, ScoreColumns.similarity)
+    ).contrasts
+    val rows =
+      table.rows.map(row => table.header.zip(row).toMap).filter(_("scope") == "contrast")
+    assertEquals(rows.size, 12)
+    assert(
+      rows.forall(row => row("sigma_x") == "0.5" && row("sigma_y") == "1" && row("sigma") == "")
+    )
+    assert(rows.filter(_("window") == "whole").forall(_("status") == "ok"))
+    assert(rows.filter(_("window") == "outside").forall(_("status") == "failed"))
+  }
   test(
     "compiled guide admits the actual CSV and exports every window/scale contrast and trial ledger"
   ) {

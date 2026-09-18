@@ -22,7 +22,7 @@ import eyes4s.compare.*
 import eyes4s.design.*
 import eyes4s.kernel.*
 import eyes4s.plan.*
-import eyes4s.surface.EstimateError
+import eyes4s.surface.{EstimateError, SmoothingAxis}
 import io.circe.Json
 
 /** Wire forms for the typed parts of a completed result: provenance, every
@@ -424,6 +424,20 @@ private[codec] object ResultWire:
     }
 
   def estimateError(error: EstimateError): Json = error match
+    case EstimateError.DegenerateAxisBandwidth(axis, s, c) =>
+      tagged(
+        "degenerateAxisBandwidth",
+        "axis"     -> Json.fromString(axis.toString),
+        "sigma"    -> double(s),
+        "cellSize" -> double(c)
+      )
+    case EstimateError.KernelSupportOverflow(axis, s, c) =>
+      tagged(
+        "kernelSupportOverflow",
+        "axis"     -> Json.fromString(axis.toString),
+        "sigma"    -> double(s),
+        "cellSize" -> double(c)
+      )
     case EstimateError.FrameMismatch(m, g) =>
       tagged("frameMismatch", "measure" -> frameId(m), "grid" -> frameId(g))
     case EstimateError.NoMass                    => tagged("noMass")
@@ -432,6 +446,18 @@ private[codec] object ResultWire:
     case EstimateError.Surface(e) => tagged("surface", "error" -> surfaceError(e))
 
   def readEstimateError(json: Json): Either[CodecError, EstimateError] = kind(json).flatMap {
+    case tag @ ("degenerateAxisBandwidth" | "kernelSupportOverflow") =>
+      for
+        name <- Wire.field[String](json, "axis")
+        axis <- SmoothingAxis.values
+          .find(_.toString == name)
+          .toRight(CodecError.Field("axis", json, s"unknown smoothing axis $name"))
+        s <- readDouble(json, "sigma")
+        c <- readDouble(json, "cellSize")
+      yield
+        if tag == "degenerateAxisBandwidth" then
+          EstimateError.DegenerateAxisBandwidth(axis, s, c)
+        else EstimateError.KernelSupportOverflow(axis, s, c)
     case "frameMismatch" =>
       for
         m <- readFrameId(json, "measure")

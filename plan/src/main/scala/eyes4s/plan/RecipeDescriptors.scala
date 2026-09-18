@@ -105,6 +105,42 @@ object RecipeParameters:
       ParameterDomain.DomainValue("Sigma.of and StudyEstimate.Gaussian")
     )(x => sigma[U].construct(x._1).map(s => StudyEstimate.Gaussian(s, x._2)))
 
+  def sigmaX[U <: Unit2D](using
+      u: UnitLabel[U]
+  ): ParameterDescriptor[Double, Sigma[U], RecipeParameterError] =
+    descriptor(
+      "sigmaX",
+      "Gaussian standard deviation along the frame x axis",
+      ParameterUnits.Spatial(u.symbol),
+      ParameterDomain.PositiveFinite
+    )(v => Sigma.of[U](v).left.map(RecipeParameterError.Geometry.apply))
+
+  def sigmaY[U <: Unit2D](using
+      u: UnitLabel[U]
+  ): ParameterDescriptor[Double, Sigma[U], RecipeParameterError] =
+    descriptor(
+      "sigmaY",
+      "Gaussian standard deviation along the frame y axis",
+      ParameterUnits.Spatial(u.symbol),
+      ParameterDomain.PositiveFinite
+    )(v => Sigma.of[U](v).left.map(RecipeParameterError.Geometry.apply))
+
+  def anisotropic[U <: Unit2D: UnitLabel]
+      : ParameterDescriptor[(Double, Double, EdgePolicy), StudyEstimate[
+        U
+      ], RecipeParameterError] =
+    descriptor(
+      "anisotropic",
+      "Axis-aligned Gaussian x/y standard deviations and explicit edge policy",
+      ParameterUnits.Mixed,
+      ParameterDomain.DomainValue("Sigma.of and StudyEstimate.Anisotropic")
+    )(v =>
+      for
+        x <- sigmaX[U].construct(v._1)
+        y <- sigmaY[U].construct(v._2)
+      yield StudyEstimate.Anisotropic(x, y, v._3)
+    )
+
   val syncMark
       : ParameterDescriptor[(String, Instant, Instant), SyncMark, RecipeParameterError] =
     descriptor(
@@ -374,6 +410,8 @@ object RecipeDescriptors:
                 "Binned occupancy normalized to unit mass; no smoothing"
               case StudyEstimate.Gaussian(_, _) =>
                 "Gaussian standard deviation and edge policy; normalized to unit mass"
+              case StudyEstimate.Anisotropic(_, _, _) =>
+                "Axis-aligned Gaussian x/y standard deviations and edge policy; normalized to unit mass"
             info(
               s"estimate.$i",
               meaning,
@@ -387,6 +425,21 @@ object RecipeDescriptors:
         ),
         plan.estimates.zipWithIndex.map { case (estimate, i) =>
           val fields = estimate match
+            case StudyEstimate.Anisotropic(x, y, edges) =>
+              Vector(
+                new InspectedParameter(
+                  RecipeParameters.sigmaX[U].info,
+                  Vector(Provenance.Param.Num(x.value))
+                ),
+                new InspectedParameter(
+                  RecipeParameters.sigmaY[U].info,
+                  Vector(Provenance.Param.Num(y.value))
+                ),
+                new InspectedParameter(
+                  RecipeParameters.edges.info,
+                  Vector(Provenance.Param.Text(edges.toString))
+                )
+              )
             case StudyEstimate.Binned()               => Vector.empty
             case StudyEstimate.Gaussian(sigma, edges) =>
               Vector(

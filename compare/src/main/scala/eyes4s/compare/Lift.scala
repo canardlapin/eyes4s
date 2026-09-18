@@ -50,7 +50,7 @@ object Lift:
     new Compare[Scanpath[U], Scanpath[U], S]:
       val info = inner.info.copy(
         name = s"${inner.info.name} (smoothed)",
-        summary = s"${inner.info.summary}; paths smoothed at sigma=${smoother.bandwidth.value}"
+        summary = s"${inner.info.summary}; paths smoothed at ${smoother.bandwidth.render}"
       )
 
       def compare(a: Scanpath[U], b: Scanpath[U]): Either[CompareError, S] =

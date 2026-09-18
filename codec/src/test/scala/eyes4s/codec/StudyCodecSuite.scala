@@ -94,6 +94,78 @@ class StudyCodecSuite extends munit.FunSuite:
       get(scale.contrast).rows.map(row => row.key -> get(row.difference).value)
     )
 
+  test("anisotropic study persists both axes and reruns with the declared provenance") {
+    val estimate =
+      StudyEstimate.Anisotropic(get(Sigma.px(0.5)), get(Sigma.px(1)), EdgePolicy.Renormalise)
+    val original = plan(Vector(estimate))
+    val json     = get(persistence.codec.encode(original))
+    val restored = get(persistence.codec.parse(json.noSpaces))
+    assertEquals(restored, original)
+    assertEquals(results(restored), results(original))
+    val fields = get(restored.inspect).fields.find(_.info.id == "estimate.0").get.children
+    assertEquals(fields.map(_.info.id), Vector("sigmaX", "sigmaY", "edges"))
+    assertEquals(
+      fields.take(2).map(_.values),
+      Vector(Vector(Provenance.Param.Num(0.5)), Vector(Provenance.Param.Num(1)))
+    )
+    val scale = get(restored.run(input)).scales.head
+    scale.estimation.foreach { (_, result) =>
+      assertEquals(get(result).provenance.steps.takeRight(2), estimate.provenanceSteps)
+    }
+    val changed = plan(
+      Vector(
+        StudyEstimate.Anisotropic(get(Sigma.px(1)), get(Sigma.px(0.5)), EdgePolicy.Renormalise)
+      )
+    )
+    assert(original.diff(changed).nonEmpty)
+    assertNotEquals(original.description, changed.description)
+  }
+
+  test("anisotropic wire refuses a missing or invalid axis rather than defaulting it") {
+    val value = StudyWire.estimate(
+      StudyEstimate.Anisotropic(get(Sigma.px(0.5)), get(Sigma.px(1)), EdgePolicy.Truncate)
+    )
+    assertEquals(
+      get(StudyWire.readEstimate[Px](value)),
+      StudyEstimate.Anisotropic(get(Sigma.px(0.5)), get(Sigma.px(1)), EdgePolicy.Truncate)
+    )
+    Vector("sigmaX", "sigmaY").foreach { field =>
+      assert(StudyWire.readEstimate[Px](value.mapObject(_.remove(field))).isLeft)
+      Vector(0.0, -1.0).foreach { bad =>
+        assert(
+          StudyWire
+            .readEstimate[Px](value.mapObject(_.add(field, Json.fromDoubleOrNull(bad))))
+            .isLeft
+        )
+      }
+    }
+  }
+
+  test("completed anisotropic results preserve successful maps and axis-specific failures") {
+    val p = plan(
+      Vector(
+        StudyEstimate.Anisotropic(get(Sigma.px(0.5)), get(Sigma.px(1)), EdgePolicy.Renormalise),
+        StudyEstimate.Anisotropic(get(Sigma.px(0.01)), get(Sigma.px(1)), EdgePolicy.Truncate),
+        StudyEstimate.Anisotropic(get(Sigma.px(0.5)), get(Sigma.px(0.01)), EdgePolicy.Truncate),
+        StudyEstimate.Anisotropic(
+          get(Sigma.px(0.5)),
+          get(Sigma.px(Double.MaxValue)),
+          EdgePolicy.Truncate
+        )
+      )
+    )
+    val result = get(p.run(input))
+    val codec  = persistence
+      .results(StudyResultCodecs.similarity(), StudyResultCodecs.signedDifference())
+      .codec
+    val encoded  = get(codec.encode(result))
+    val restored = get(codec.parse(encoded.noSpaces))
+    assertEquals(get(codec.encode(restored)), encoded)
+    assertEquals(restored.scales.map(_.estimate), p.estimates)
+    assert(restored.scales.head.estimation.forall(_._2.isRight))
+    assert(restored.scales.tail.forall(_.estimation.forall(_._2.isLeft)))
+  }
+
   test(
     "saved study round-trips structurally and reproduces every independent contrast target"
   ) {

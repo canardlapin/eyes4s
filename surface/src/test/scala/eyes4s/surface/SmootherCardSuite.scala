@@ -34,13 +34,16 @@ class SmootherCardSuite extends munit.FunSuite:
     * without a card fails here rather than in a methods section.
     */
   private val shipped: Vector[(String, Smoother[Px])] =
-    EdgePolicy.values.toVector.map(policy =>
-      s"gaussian/$policy" -> Smoother.gaussian(sigma, policy)
+    EdgePolicy.values.toVector.flatMap(policy =>
+      Vector(
+        s"gaussian/$policy"    -> Smoother.gaussian(sigma, policy),
+        s"anisotropic/$policy" -> Smoother.anisotropic(sigma, Sigma.px(8).toOption.get, policy)
+      )
     )
 
   test("every shipped smoother has a unique, complete card") {
     val cards = SmootherCards.all
-    assertEquals(cards.length, 1)
+    assertEquals(cards.length, 2)
     assertEquals(cards.map(_.id).distinct.length, cards.length)
     cards.foreach { card =>
       assert(card.id.nonEmpty)
@@ -96,7 +99,11 @@ class SmootherCardSuite extends munit.FunSuite:
       val out  = s.smooth(measure, grid).toOption.get
       val step = out.provenance.steps.last
       assertEquals(step.operation, "smooth", clue(label))
-      assertEquals(step.params.head, "kernel" -> Provenance.Param.Text("gaussian"), clue(label))
+      assertEquals(
+        step.params.head,
+        "kernel" -> Provenance.Param.Text(label.takeWhile(_ != '/')),
+        clue(label)
+      )
       assertEquals(step.params.tail, s.configuration, clue(label))
       assertEquals(step.params.tail.map(_._1), s.card.parameterNames, clue(label))
     }

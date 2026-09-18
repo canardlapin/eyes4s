@@ -379,6 +379,8 @@ object DiagnosticSamples:
       EstimateError.FrameMismatch(fid, deg),
       EstimateError.NoMass,
       EstimateError.DegenerateBandwidth(0.1, 1.0),
+      EstimateError.DegenerateAxisBandwidth(eyes4s.surface.SmoothingAxis.X, 0.1, 1.0),
+      EstimateError.KernelSupportOverflow(eyes4s.surface.SmoothingAxis.Y, Double.MaxValue, 1.0),
       EstimateError.Surface(surfaceError)
     ),
     family[SurfaceError]("SurfaceError")(

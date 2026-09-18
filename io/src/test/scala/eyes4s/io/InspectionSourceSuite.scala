@@ -112,6 +112,15 @@ object OverlapSpreadScore:
   * result semantics as the projection.
   */
 class InspectionSourceSuite extends munit.FunSuite:
+  private def assertNumberCell(actual: String, expected: Option[Double]): Unit =
+    expected match
+      case None        => assertEquals(actual, "")
+      case Some(value) =>
+        assertEquals(
+          actual.toDoubleOption.map(java.lang.Double.doubleToLongBits),
+          Some(java.lang.Double.doubleToLongBits(value))
+        )
+
   private def get[E, A](e: Either[E, A]): A = e.fold(error => fail(s"$error"), identity)
   private val frame                         = get(Frame.screen("matched-control-display", 2, 2))
   private val columns                       = get(
@@ -310,16 +319,16 @@ class InspectionSourceSuite extends munit.FunSuite:
                   .map(_.toString)
               )
               // Missing is an empty field; a zero count is "0".
-              assertEquals(
+              assertNumberCell(
                 exported(prefix),
-                reduction.outcome.fold(_ => "", _.components.head.value.toString)
+                reduction.outcome.toOption.map(_.components.head.value)
               )
         operand(entry.matched, "matched")
         operand(entry.control, "control")
         assertEquals(exported("component"), "value")
-        assertEquals(
+        assertNumberCell(
           exported("difference"),
-          entry.outcome.fold(_ => "", _.components.head.value.toString)
+          entry.outcome.toOption.map(_.components.head.value)
         )
         assertEquals(exported("status"), if entry.outcome.isRight then "ok" else "failed")
         assertEquals(exported("reason"), entry.outcome.fold(_.message, _ => ""))
@@ -428,9 +437,9 @@ class InspectionSourceSuite extends munit.FunSuite:
           ResultRef.InCell(row("repetition"), row("window"), ResultRef.ContrastRow(0, focal))
         )
       )
-      assertEquals(
+      assertNumberCell(
         row("difference"),
-        entry.outcome.fold(_ => "", _.components.head.value.toString)
+        entry.outcome.toOption.map(_.components.head.value)
       )
       assertEquals(row("status"), if entry.outcome.isRight then "ok" else "failed")
       assertEquals(row("reason"), entry.outcome.fold(_.message, _ => ""))
@@ -492,12 +501,12 @@ class InspectionSourceSuite extends munit.FunSuite:
         exported.filter(r => StudyKey(r("participant"), r("stimulus"), r("phase")) == entry.key)
       assertEquals(lines.map(_("component")), view.components.map(_.id))
       lines.zip(view.components).foreach { (line, component) =>
-        assertEquals(line("difference"), component.value.toString)
+        assertNumberCell(line("difference"), Some(component.value))
       }
       val matched = get(inspection.reduction(get(entry.matched.toRight("matched"))))
       val score   = get(matched.outcome.left.map(_.message))
       lines.zip(score.components).foreach { (line, component) =>
-        assertEquals(line("matched"), component.value.toString)
+        assertNumberCell(line("matched"), Some(component.value))
       }
       assertEquals(
         view.components.map(_.direction),

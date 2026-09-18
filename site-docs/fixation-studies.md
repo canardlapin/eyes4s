@@ -14,6 +14,31 @@ Gaussian estimates remain separate labelled results. It does not pool bandwidths
 fixations equally. A Gaussian bandwidth is a standard deviation in the frame's units. Edge
 truncation and source-wise edge renormalization are different estimators: choose explicitly.
 
+### Smooth differently along x and y
+
+For a row-structured display, you may want a wider horizontal kernel without merging adjacent
+rows. Supply both standard deviations explicitly; this does not estimate measurement uncertainty
+or choose bandwidths from the observed result.
+
+```scala mdoc
+import eyes4s.kernel.Sigma
+import eyes4s.plan.StudyEstimate
+import eyes4s.surface.EdgePolicy
+
+val directionalEstimates = for {
+  horizontal <- Sigma.deg(2.0)
+  vertical <- Sigma.deg(1.0)
+} yield Vector(StudyEstimate.Anisotropic(horizontal, vertical, EdgePolicy.Renormalise))
+```
+
+Pass these estimates to `StudyPlan.cosine` with a grid and input in degrees. For direct surface
+estimation, use `Smoother.anisotropic(sigmaX, sigmaY, edges).density(measure, grid)`.
+The axes follow the frame, not the scanpath direction: this is an axis-aligned Gaussian, not a
+rotated, adaptive or foveal kernel. Each width must be at least one fifth of its own grid cell
+dimension; failures identify the axis. Both edge policies and duration/uniform weighting remain
+available. Equal supported widths give the same numerical surface as `Smoother.gaussian`, while
+provenance retains the selected method and both widths.
+
 ## Inspect before accepting
 
 `FixationCsv.read` returns accepted trials, every rejected row and original fields. The default
@@ -33,7 +58,13 @@ use keyed candidate lookup; additional clauses still decide eligibility.
 `StudyCodecs.cosine` encodes versioned parameters, geometry and input identity. `plan.diff` reports
 changed choices. `plan.preflight` reports missing or incompatible inputs without estimation.
 `ContrastCsv.document` exports keys, scale, method, counts, failures and the saved plan with scores.
-Floating-point text spelling can differ between JVM and JS; compare the declared numerical values,
-not an assumed byte-identical CSV.
+Contrast CSV schema 2 adds `sigma_x` and `sigma_y`. Isotropic rows retain `sigma` and repeat that
+width in both axis columns; anisotropic rows leave `sigma` empty and supply both axis widths.
+Binned rows leave all three empty. Decimal cells with identical input bits have identical spelling
+on JVM and JS; numerically close results are not necessarily byte-identical exports.
+
+For smoother implementors, `Smoother.bandwidth` now returns `KernelBandwidth[U]` rather than
+`Sigma[U]`: declare `Isotropic(sigma)` or `AxisAligned(sigmaX, sigmaY)`. Existing Gaussian call
+sites and saved Gaussian plans remain valid. Scalar `Pyramid` scales remain isotropic.
 
 Next: [repetition designs](repetition.md) or [migration differences](migration.md).

@@ -752,10 +752,14 @@ from it.
 
 ## Surface and Estimation Requirements
 
-**S-1.** `Smoother[U]` declares `bandwidth: Sigma[U]` and returns `Either[EstimateError, Intensity[U]]`.
+**S-1.** `Smoother[U]` declares `bandwidth: KernelBandwidth[U]`, distinguishing an
+`Isotropic(sigma)` from an `AxisAligned(sigmaX, sigmaY)` bandwidth. Every width is a
+`Sigma[U]` standard deviation in frame units. Estimation returns `Either[EstimateError, Intensity[U]]`.
 
-**S-2.** v1.0 ships `Smoother.gaussian` and `Smoother.anisotropic`. `Smoother.foveal` is deferred to
-v1.1.
+**S-2.** v1.0 ships `Smoother.gaussian` and `Smoother.anisotropic`. The latter is an
+axis-aligned Gaussian with explicitly supplied x/y standard deviations, source-side edge policy,
+and per-axis resolution checks. It is available through study execution, persistence and export.
+Rotated/full-covariance and adaptive kernels are not included. `Smoother.foveal` is deferred to v1.1.
 
 **S-3.** The Gaussian smoother is implemented as a separable convolution — two one-dimensional
 passes — and requires no linear-algebra dependency.

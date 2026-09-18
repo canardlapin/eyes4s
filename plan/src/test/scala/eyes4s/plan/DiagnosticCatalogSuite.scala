@@ -28,8 +28,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Rendered codes, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 382
-  private val PinnedDigest = "c440a2e562a2990f"
+  private val PinnedCount  = 384
+  private val PinnedDigest = "f9e28145b6766641"
 
   test(
     "every cataloged family is sampled, in catalog order, through its own Diagnose instance"
@@ -98,6 +98,17 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   }
 
   test("the rendered code table is pinned and so identical on the JVM and Scala.js") {
+    assertEquals(
+      DiagnosticCatalog.estimate.codes.map(_.render),
+      Vector(
+        "estimate.frame-mismatch",
+        "estimate.no-mass",
+        "estimate.degenerate-bandwidth",
+        "estimate.surface",
+        "estimate.degenerate-axis-bandwidth",
+        "estimate.kernel-support-overflow"
+      )
+    )
     val rendered = DiagnosticCatalog.codes.map(_.render)
     assertEquals(rendered.size, PinnedCount)
     assertEquals(ContentHash.ofString(rendered.mkString("\n")).render, PinnedDigest)

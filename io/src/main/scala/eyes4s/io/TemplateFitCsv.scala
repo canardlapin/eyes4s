@@ -45,6 +45,9 @@ object TemplateFitCsv:
 
   /** Accepts only the training capability, never the whole split or held-out responses.
     * Transport row indices preserve order; original typed keys remain in the saved recipe.
+    * Decimal cells use lossless rounded round-trip spelling, identical on JVM and Scala.js.
+    * Trailing decimal zeros are omitted (1.0 becomes "1"); exponents use uppercase E
+    * with an explicit positive sign (1000.0 becomes "1E+3"). Signed zero is preserved.
     */
   def training[K](input: TemplateTraining[K]): String =
     val header =
@@ -58,8 +61,8 @@ object TemplateFitCsv:
         input.basis.responseUnit,
         index.toString,
         row.fold,
-        row.response.toString
-      ) ++ row.features.map(_.toString)
+        CsvNumber.render(row.response)
+      ) ++ row.features.map(CsvNumber.render)
     })
 
   def importFit[K](

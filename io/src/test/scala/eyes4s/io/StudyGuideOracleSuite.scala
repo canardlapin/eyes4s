@@ -26,8 +26,9 @@ import eyes4s.surface.EdgePolicy
   *
   * Every literal below was printed by running this exact guide, fixture and
   * estimate list at commit 6218627 (the last commit before StudyPlan delegated
-  * pairing to DirectedPairSchedule), then copied verbatim. Numeric columns use
-  * the suite-wide 1e-12 oracle tolerance; every other column, including every
+  * pairing to DirectedPairSchedule), then copied verbatim. Computed score columns use
+  * the suite-wide 1e-12 oracle tolerance. Sigma uses exact canonical decimal spelling
+  * (the historical integral .0 suffix is removed); every other column, including every
   * failure row, reason and selected/successful/failed/contributing denominator,
   * must match exactly.
   */
@@ -83,8 +84,7 @@ class StudyGuideOracleSuite extends munit.FunSuite:
     "control_failed",
     "control_contributing"
   )
-  // Sigma is a rendered Double: Scala.js prints 1.0 as "1", so it is compared numerically.
-  private val numericColumns = Set("sigma", "matched", "control", "difference")
+  private val numericColumns = Set("matched", "control", "difference")
 
   private def check(
       rows: Vector[Vector[String]],
@@ -103,6 +103,8 @@ class StudyGuideOracleSuite extends munit.FunSuite:
           val clue = s"row $index column $column"
           if numericColumns.contains(column) && value.nonEmpty then
             assertEqualsDouble(row(column).toDouble, value.toDouble, OracleTolerance, clue)
+          else if column == "sigma" then
+            assertEquals(row(column), value.stripSuffix(".0"), clue)
           else assertEquals(row(column), value, clue)
         }
         assertEquals(row("estimation_failures"), failures, s"row $index estimation_failures")
@@ -142,6 +144,15 @@ class StudyGuideOracleSuite extends munit.FunSuite:
 
   test("scalar binned StudyGuide output matches the pre-extraction pinned rows") {
     check(records, Vector(StudyEstimate.Binned()), pinnedScalar, Vector.fill(6)(""))
+  }
+
+  test("matched, control and difference cells use pinned cross-runtime decimal bytes") {
+    val output = get(StudyGuide.run(csv(records), Vector(StudyEstimate.Binned())))
+    val row    = ContrastCsv.header.zip(output.contrasts.rows.head).toMap
+    assertEquals(
+      Vector("matched", "control", "difference").map(row),
+      Vector("1", "0.72", "0.28")
+    )
   }
 
   test("multiscale StudyGuide output matches the pre-extraction pinned rows") {

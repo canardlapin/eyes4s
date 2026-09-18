@@ -219,10 +219,14 @@ private[plan] object CauseDiagnostics:
     import EstimateError.*
     val d = diagnostic[Nothing](C.estimate, e, e.message)
     e match
-      case FrameMismatch(measure, target)   => d(frame(measure), frame(target))
-      case NoMass                           => d()
-      case DegenerateBandwidth(sigma, cell) => d(real(sigma), real(cell))
-      case Surface(underlying)              => d(cause(surface(underlying)))
+      case FrameMismatch(measure, target)             => d(frame(measure), frame(target))
+      case NoMass                                     => d()
+      case DegenerateBandwidth(sigma, cell)           => d(real(sigma), real(cell))
+      case DegenerateAxisBandwidth(axis, sigma, cell) =>
+        d(token(axis.toString), real(sigma), real(cell))
+      case KernelSupportOverflow(axis, sigma, cell) =>
+        d(token(axis.toString), real(sigma), real(cell))
+      case Surface(underlying) => d(cause(surface(underlying)))
 
   def comparisonValue(e: ComparisonValueError): Diagnostic[Nothing] =
     import ComparisonValueError.*

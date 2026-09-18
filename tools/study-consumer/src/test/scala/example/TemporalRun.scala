@@ -166,8 +166,12 @@ final class TemporalCase[K, P, S, D](val c: JourneyCase[K, P, S, D], schemaName:
     result.cells.flatMap { cell =>
       cell.result.scales.flatMap { scale =>
         val sigma = scale.estimate match
-          case StudyEstimate.Gaussian(s, _) => Some(s.value)
-          case StudyEstimate.Binned()       => None
+          case StudyEstimate.Gaussian(s, _)       => Some(s.value)
+          case StudyEstimate.Binned()             => None
+          case StudyEstimate.Anisotropic(_, _, _) =>
+            throw new AssertionError(
+              "This pinned scalar-bandwidth oracle fixture has no anisotropic scale"
+            )
         scale.contrast.toOption.toVector.flatMap(_.rows).map { row =>
           (cell.repetition.name, c.label(row.key), cell.window.name, sigma) ->
             row.difference.toOption.map(d => schema.difference(d).components.head.value)
