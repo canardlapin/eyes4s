@@ -263,7 +263,13 @@ sample count and order preprocessing keeps.
   `TemporalContrastCsv` carry the projection's values, denominators, statuses
   and reasons.
 - `tools/study-consumer`: a packaged consumer drills down from a result row to
-  a CSV record number on the JVM and Scala.js.
+  a CSV record number on the JVM and Scala.js. Its fixation journey
+  (`FixationJourneySuite`) also projects a failed run's `PlanError`, preflight
+  findings, a bad table row's admission reasons and ledger refusal, the
+  failures of a scale whose bandwidth the grid cannot express, and a flipped,
+  missing or replaced archive entry's `ResolveError` to coded diagnostics; it
+  asserts the subjects and record links of the admission reasons, the ledger
+  refusal, the scale failures and the refused entries.
 
 ## Code table
 
