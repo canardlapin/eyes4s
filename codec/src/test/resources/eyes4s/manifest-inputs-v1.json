@@ -1,0 +1,232 @@
+{
+  "schema" : {
+    "name" : "eyes4s.manifest",
+    "version" : 1
+  },
+  "value" : {
+    "entries" : [
+      {
+        "name" : "recording-input-v1.json",
+        "role" : "recording-input",
+        "schema" : {
+          "name" : "eyes4s.recording-input",
+          "version" : 1
+        },
+        "media" : "application/json",
+        "length" : "2993",
+        "sha256" : "9c20cc18ca05ca56da8e8c7e401e9c5f74e773920c3c4e7005dab25bfb1c4c6a",
+        "identity" : "d4c0d76ef6fd5169",
+        "layout" : null
+      },
+      {
+        "name" : "recording-standalone-v1.json",
+        "role" : "recording",
+        "schema" : {
+          "name" : "eyes4s.recording",
+          "version" : 1
+        },
+        "media" : "application/json",
+        "length" : "1846",
+        "sha256" : "7cef935f22ce42f450a14793e93ba0165d848b1d451a3aba6b2947cec38f01bb",
+        "identity" : "2c826dc41ae25e67",
+        "layout" : null
+      },
+      {
+        "name" : "binocular-recording-input-v1.json",
+        "role" : "recording-input",
+        "schema" : {
+          "name" : "eyes4s.recording-input",
+          "version" : 1
+        },
+        "media" : "application/json",
+        "length" : "1742",
+        "sha256" : "e1694accd76a1ce44d65eb299cfa618b11374b009a6f853e1710bff3f3aaac78",
+        "identity" : "c5e4009b9cb153b0",
+        "layout" : null
+      },
+      {
+        "name" : "binocular-recording-v1.json",
+        "role" : "recording",
+        "schema" : {
+          "name" : "eyes4s.binocular-recording",
+          "version" : 1
+        },
+        "media" : "application/json",
+        "length" : "1430",
+        "sha256" : "fbd71faa7b90ed3fc82b85cf65561917d3b8d11e11a2915931e00c5f783a7b6b",
+        "identity" : "39e3dafb2de70ca2",
+        "layout" : null
+      },
+      {
+        "name" : "packed-recording-v1.json",
+        "role" : "recording",
+        "schema" : {
+          "name" : "eyes4s.packed-recording",
+          "version" : 1
+        },
+        "media" : "application/json",
+        "length" : "2221",
+        "sha256" : "92f805142ead0c4c61b6315d97922e41ab315afcb299cba4c0d07f9a82a5b187",
+        "identity" : "2c826dc41ae25e67",
+        "layout" : null
+      },
+      {
+        "name" : "packed-recording-v1.tMicros.bin",
+        "role" : "payload",
+        "schema" : {
+          "name" : "eyes4s.packed-array",
+          "version" : 1
+        },
+        "media" : "application/octet-stream",
+        "length" : "64",
+        "sha256" : "b0eb08db23502a251b675c9f0683108455c0f38c549a2c12ec249f7daf21d7b5",
+        "identity" : null,
+        "layout" : {
+          "element" : "int64",
+          "shape" : [
+            8
+          ],
+          "order" : "row-major",
+          "byteOrder" : "little-endian"
+        }
+      },
+      {
+        "name" : "packed-recording-v1.support.bin",
+        "role" : "payload",
+        "schema" : {
+          "name" : "eyes4s.packed-array",
+          "version" : 1
+        },
+        "media" : "application/octet-stream",
+        "length" : "8",
+        "sha256" : "9d92b6855fd8a4ccfd53bf41a75cb97381a420422c00ce381eb309304a533001",
+        "identity" : null,
+        "layout" : {
+          "element" : "uint8",
+          "shape" : [
+            8
+          ],
+          "order" : "row-major",
+          "byteOrder" : "little-endian"
+        }
+      },
+      {
+        "name" : "packed-recording-v1.lineage.bin",
+        "role" : "payload",
+        "schema" : {
+          "name" : "eyes4s.packed-array",
+          "version" : 1
+        },
+        "media" : "application/octet-stream",
+        "length" : "8",
+        "sha256" : "b376730a4db09f72de102f105a7db3904683a5e3f384d047c0b3855a91d9f145",
+        "identity" : null,
+        "layout" : {
+          "element" : "uint8",
+          "shape" : [
+            8
+          ],
+          "order" : "row-major",
+          "byteOrder" : "little-endian"
+        }
+      },
+      {
+        "name" : "packed-recording-v1.values.bin",
+        "role" : "payload",
+        "schema" : {
+          "name" : "eyes4s.packed-array",
+          "version" : 1
+        },
+        "media" : "application/octet-stream",
+        "length" : "192",
+        "sha256" : "4ead6bd01976f4f532fac378ff25513d11cb2258a3c2ef475086f9df5e03a795",
+        "identity" : null,
+        "layout" : {
+          "element" : "float64",
+          "shape" : [
+            8,
+            3
+          ],
+          "order" : "column-major",
+          "byteOrder" : "little-endian"
+        }
+      },
+      {
+        "name" : "study-input-source-supported-v1.json",
+        "role" : "study-input",
+        "schema" : {
+          "name" : "eyes4s.study-input",
+          "version" : 1
+        },
+        "media" : "application/json",
+        "length" : "5141",
+        "sha256" : "a4b17ec5c97a04eb4b3d1f47401b2c70cd6a32737325e474708137c4e9cea1e4",
+        "identity" : "9ac7e83e4874dec7",
+        "layout" : null
+      },
+      {
+        "name" : "temporal-base-v1.json",
+        "role" : "study-input",
+        "schema" : {
+          "name" : "eyes4s.study-input",
+          "version" : 1
+        },
+        "media" : "application/json",
+        "length" : "32258",
+        "sha256" : "e52de1c8b3d0d94817e0e6511a3bf2551abf17056a0877f58702e529daeba7e8",
+        "identity" : "4fd98f50693c79ad",
+        "layout" : null
+      },
+      {
+        "name" : "temporal-study-input-v1.json",
+        "role" : "temporal-study-input",
+        "schema" : {
+          "name" : "eyes4s.temporal-study-input",
+          "version" : 1
+        },
+        "media" : "application/json",
+        "length" : "50917",
+        "sha256" : "bb149a480ba54c9320d767d32e4cce79e4461baa8df018b407f99b7d74676840",
+        "identity" : "def40de68e529acf",
+        "layout" : null
+      }
+    ],
+    "relations" : [
+      {
+        "kind" : "recording-of",
+        "input" : "recording-input-v1.json",
+        "recording" : "recording-standalone-v1.json"
+      },
+      {
+        "kind" : "recording-of",
+        "input" : "binocular-recording-input-v1.json",
+        "recording" : "binocular-recording-v1.json"
+      },
+      {
+        "kind" : "payload-of",
+        "owner" : "packed-recording-v1.json",
+        "payload" : "packed-recording-v1.tMicros.bin"
+      },
+      {
+        "kind" : "payload-of",
+        "owner" : "packed-recording-v1.json",
+        "payload" : "packed-recording-v1.support.bin"
+      },
+      {
+        "kind" : "payload-of",
+        "owner" : "packed-recording-v1.json",
+        "payload" : "packed-recording-v1.lineage.bin"
+      },
+      {
+        "kind" : "payload-of",
+        "owner" : "packed-recording-v1.json",
+        "payload" : "packed-recording-v1.values.bin"
+      },
+      {
+        "kind" : "temporal-base",
+        "temporal" : "temporal-study-input-v1.json",
+        "base" : "temporal-base-v1.json"
+      }
+    ]
+  }
+}

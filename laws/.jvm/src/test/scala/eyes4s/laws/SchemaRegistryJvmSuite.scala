@@ -1,0 +1,506 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eyes4s.laws
+
+import eyes4s.codec.*
+import eyes4s.kernel.Unit2D.Px
+import eyes4s.plan.*
+import io.circe.Json
+
+import java.nio.file.{Files, Path, Paths}
+import scala.jdk.CollectionConverters.*
+
+/** Every schema and definition identity eyes4s ships, with the published
+  * round-trip law and the pinned v1 fixture that stand behind it.
+  *
+  * The registry is checked against the `DefinitionId` companion by
+  * reflection, so adding a built-in identity without an entry here, or an
+  * entry without a law suite that actually registers the named law or a
+  * resource that actually carries the identity, fails the build. Conversely
+  * every pinned fixture under `codec/src/test/resources/eyes4s` must be
+  * claimed by an entry and decode on the current code.
+  */
+object SchemaRegistry:
+  /** What an identity names on the wire. */
+  enum Kind derives CanEqual:
+    /** The envelope schema of a stored document; its fixtures decode through it. */
+    case Document
+
+    /** A schema nested inside documents (keys, trials, scanpaths, scores). */
+    case Nested
+
+    /** A method or layout identity carried inside a plan or result. */
+    case Definition
+
+    /** The schema of a binary payload declared by a manifest entry. */
+    case Payload
+
+  /** A published law registered by `suite` under `checkAll(name, ...)`,
+    * identified by one of its property names.
+    */
+  final case class Law(suite: () => munit.Suite, name: String, property: String):
+    def test: String = s"$name: $property"
+
+  private val roundTrip = "versionedCodec.round trip preserves the value"
+  private val canonical = "versionedCodec.reencoding is canonical"
+  private def codecLaw(suite: () => munit.Suite, name: String): Vector[Law] =
+    Vector(Law(suite, name, roundTrip), Law(suite, name, canonical))
+
+  private val plans      = () => new PlanCodecLawSuite
+  private val inputs     = () => new StudyInputCodecLawSuite
+  private val results    = () => new StudyResultCodecLawSuite
+  private val recordings = () => new RecordingInputCodecLawSuite
+  private val artifacts  = () => new ArtifactCodecLawSuite
+  private val codecs     = () => new CodecLawsSuite
+  private val graphs     = () => new ManifestLawSuite
+
+  /** One identity: its kind, its pinned fixtures and its laws. A document's
+    * first fixture carries it as its envelope schema.
+    */
+  final case class Entry(
+      id: DefinitionId,
+      kind: Kind,
+      fixtures: Vector[String],
+      laws: Vector[Law]
+  )
+
+  val builtIns: Vector[Entry] = Vector(
+    Entry(
+      DefinitionId.cosine,
+      Kind.Definition,
+      Vector("study-v1.json", "study-result-v1.json"),
+      codecLaw(plans, "study plan") ++ codecLaw(results, "cosine study result")
+    ),
+    Entry(
+      DefinitionId.study,
+      Kind.Document,
+      Vector("study-v1.json"),
+      codecLaw(plans, "study plan")
+    ),
+    Entry(
+      DefinitionId.studyKey,
+      Kind.Nested,
+      Vector("study-v1.json", "study-input-v1.json", "timeline-v1.json"),
+      codecLaw(codecs, "key") ++ codecLaw(inputs, "study input")
+    ),
+    Entry(
+      DefinitionId.studyLayout,
+      Kind.Definition,
+      Vector("study-v1.json", "study-input-v1.json", "study-result-v1.json"),
+      codecLaw(plans, "study plan") ++ codecLaw(inputs, "study input")
+    ),
+    Entry(
+      DefinitionId.unit,
+      Kind.Nested,
+      Vector("study-v1.json", "study-input-v1.json"),
+      codecLaw(plans, "study plan") ++ codecLaw(inputs, "study input")
+    ),
+    Entry(
+      DefinitionId.studyInput,
+      Kind.Document,
+      Vector(
+        "study-input-v1.json",
+        "study-input-source-supported-v1.json",
+        "temporal-base-v1.json"
+      ),
+      codecLaw(inputs, "study input")
+    ),
+    Entry(
+      DefinitionId.trials,
+      Kind.Nested,
+      Vector("study-input-v1.json"),
+      codecLaw(inputs, "study input") ++ codecLaw(inputs, "generic trials")
+    ),
+    Entry(
+      DefinitionId.scanpath,
+      Kind.Nested,
+      Vector("study-input-v1.json", "study-input-source-supported-v1.json"),
+      codecLaw(inputs, "study input")
+    ),
+    Entry(
+      DefinitionId.admissionLedger,
+      Kind.Document,
+      Vector("admission-ledger-v1.json", "admission-ledger-complete-v1.json"),
+      codecLaw(inputs, "admission ledger")
+    ),
+    Entry(
+      DefinitionId.recording,
+      Kind.Document,
+      Vector("recording-standalone-v1.json"),
+      codecLaw(recordings, "recording")
+    ),
+    Entry(
+      DefinitionId.binocularRecording,
+      Kind.Document,
+      Vector("binocular-recording-v1.json"),
+      codecLaw(recordings, "binocular recording")
+    ),
+    Entry(
+      DefinitionId.recordingInput,
+      Kind.Document,
+      Vector("recording-input-v1.json", "binocular-recording-input-v1.json"),
+      codecLaw(recordings, "recording input")
+    ),
+    Entry(
+      DefinitionId.temporalStudyInput,
+      Kind.Document,
+      Vector("temporal-study-input-v1.json"),
+      codecLaw(recordings, "temporal input")
+    ),
+    Entry(
+      DefinitionId.timeline,
+      Kind.Document,
+      Vector("timeline-v1.json"),
+      codecLaw(recordings, "timeline")
+    ),
+    Entry(
+      DefinitionId.studyResult,
+      Kind.Document,
+      Vector("study-result-v1.json"),
+      codecLaw(results, "cosine study result")
+    ),
+    Entry(
+      DefinitionId.similarity,
+      Kind.Nested,
+      Vector("score-codecs-v1.json", "study-result-v1.json"),
+      codecLaw(artifacts, "similarity") ++ codecLaw(results, "cosine study result")
+    ),
+    Entry(
+      DefinitionId.measureDistance,
+      Kind.Nested,
+      Vector("score-codecs-v1.json"),
+      codecLaw(artifacts, "measure distance")
+    ),
+    Entry(
+      DefinitionId.scalar,
+      Kind.Nested,
+      Vector("score-codecs-v1.json"),
+      codecLaw(artifacts, "scalar")
+    ),
+    Entry(
+      DefinitionId.signedDifference,
+      Kind.Nested,
+      Vector("score-codecs-v1.json", "study-result-v1.json"),
+      codecLaw(artifacts, "signed difference") ++ codecLaw(results, "cosine study result")
+    ),
+    Entry(
+      DefinitionId.manifest,
+      Kind.Document,
+      Vector("manifest-v1.json", "manifest-inputs-v1.json"),
+      codecLaw(artifacts, "manifest") :+
+        Law(
+          graphs,
+          "saved study graph",
+          "verifiedManifest.a written graph resolves by address, reading each artifact once"
+        )
+    ),
+    Entry(
+      DefinitionId.packedRecording,
+      Kind.Document,
+      Vector("packed-recording-v1.json"),
+      Vector(
+        Law(
+          artifacts,
+          "packed recording",
+          "packedRecording.decoding from its own payloads reproduces the recording"
+        ),
+        Law(
+          artifacts,
+          "packed recording",
+          "packedRecording.re-packing the decoded recording is canonical"
+        )
+      )
+    ),
+    Entry(
+      DefinitionId.packedArray,
+      Kind.Payload,
+      Vector(
+        "manifest-inputs-v1.json",
+        "packed-recording-v1.tMicros.bin",
+        "packed-recording-v1.support.bin",
+        "packed-recording-v1.lineage.bin",
+        "packed-recording-v1.values.bin"
+      ),
+      Vector("packed float64", "packed int64", "packed int32", "packed uint8").map(name =>
+        Law(
+          artifacts,
+          name,
+          "packedArray.unpacking a packed array returns every element exactly"
+        )
+      )
+    )
+  )
+
+  /** Shipped codecs whose schema identity the caller supplies, pinned under
+    * the conventional identity their fixture uses.
+    */
+  val conventional: Vector[Entry] = Vector(
+    Entry(
+      get(DefinitionId.of("eyes4s.recording-plan", 1)),
+      Kind.Document,
+      Vector("recording-v1.json"),
+      codecLaw(plans, "I-VT recording plan") ++ codecLaw(plans, "I-DT recording plan") ++
+        codecLaw(plans, "Engbert-Kliegl recording plan")
+    )
+  )
+
+  def get[E, A](value: Either[E, A]): A =
+    value.fold(e => throw new IllegalStateException(s"$e"), identity)
+
+class SchemaRegistryJvmSuite extends munit.FunSuite:
+  import SchemaRegistry.*
+
+  private def resource(name: String): Option[Array[Byte]] =
+    Option(getClass.getResourceAsStream(s"/eyes4s/$name")).map { stream =>
+      try stream.readAllBytes()
+      finally stream.close()
+    }
+  private def json(name: String): Json =
+    val bytes = resource(name).getOrElse(fail(s"missing pinned fixture $name"))
+    io.circe.parser
+      .parse(new String(bytes, "UTF-8"))
+      .fold(e => fail(s"$name: ${e.message}"), identity)
+
+  /** Every `{"name": ..., "version": ...}` identity carried anywhere in a document. */
+  private def identities(document: Json): Set[DefinitionId] =
+    val here = for
+      name    <- document.hcursor.get[String]("name").toOption
+      version <- document.hcursor.get[Int]("version").toOption
+      id      <- DefinitionId.of(name, version).toOption
+      if document.asObject.exists(_.size == 2)
+    yield id
+    here.toSet ++ document.asArray.toVector.flatten.flatMap(identities) ++
+      document.asObject.toVector.flatMap(_.values).flatMap(identities)
+
+  /** The identities the `DefinitionId` companion declares, by reflection. */
+  private lazy val declared: Map[String, DefinitionId] =
+    DefinitionId.getClass.getDeclaredMethods.toVector
+      .filter(m =>
+        m.getParameterCount == 0 && m.getReturnType == classOf[DefinitionId] &&
+          java.lang.reflect.Modifier.isPublic(m.getModifiers)
+      )
+      .flatMap(m =>
+        m.invoke(DefinitionId) match
+          case id: DefinitionId => Vector(m.getName -> id)
+          case _                => Vector.empty
+      )
+      .toMap
+
+  /** Declared identities without an entry, entries twice, and entries that are not built in. */
+  private def coverage(entries: Vector[Entry]): Vector[String] =
+    val registered = entries.map(_.id)
+    registered.diff(registered.distinct).map(id => s"$id is registered twice") ++
+      declared.toVector.sortBy(_._1).collect {
+        case (field, id) if !registered.contains(id) =>
+          s"DefinitionId.$field ($id) has no registry entry: add a published round-trip law " +
+            "in eyes4s-laws and a pinned v1 fixture, then register both here"
+      } ++
+      registered
+        .filterNot(declared.values.toSet.contains)
+        .map(id => s"$id is not a built-in identity")
+
+  /** Entries without a law, and laws their suite does not register. */
+  private def lawProblems(entries: Vector[Entry]): Vector[String] =
+    entries.filter(_.laws.isEmpty).map(e => s"${e.id} has no law") ++
+      entries.flatMap(_.laws).groupBy(_.suite).toVector.flatMap { (factory, laws) =>
+        val suite = factory()
+        val names = suite.munitTests().map(_.name).toSet
+        laws.distinct
+          .filterNot(law => names.contains(law.test))
+          .map(law => s"${suite.getClass.getSimpleName} registers no test '${law.test}'")
+      }
+
+  /** Entries without a fixture, fixtures that are missing or do not carry the
+    * identity, and document fixtures that do not decode and re-encode to
+    * themselves through the identity's shipped codec.
+    */
+  private def fixtureProblems(entries: Vector[Entry]): Vector[String] =
+    entries.flatMap { entry =>
+      def document(file: String, json: Json): Option[String] =
+        if entry.kind != Kind.Document then None
+        else if !json.hcursor
+            .get[Json]("schema")
+            .toOption
+            .map(identities)
+            .contains(Set(entry.id))
+        then Some(s"$file is not a ${entry.id} document")
+        else
+          Decoders.reencode(entry.id, json, resource) match
+            case Right(same) if same == json => None
+            case other                       => Some(s"$file does not round-trip: $other")
+      def carried(file: String): Vector[String] =
+        if resource(file).isEmpty then Vector(s"missing pinned fixture $file")
+        else if !file.endsWith(".json") then Vector.empty
+        else
+          val parsed = json(file)
+          Option
+            .when(!identities(parsed).contains(entry.id))(s"$file does not carry ${entry.id}")
+            .toVector ++ document(file, parsed).toVector
+      val none = Option.when(entry.fixtures.isEmpty)(s"${entry.id} has no pinned fixture")
+      none.toVector ++ entry.fixtures.flatMap(carried)
+    }
+
+  test("every built-in DefinitionId has exactly one registry entry, and nothing else does") {
+    assert(declared.size >= 22, s"reflection found only ${declared.keys}")
+    assertEquals(coverage(builtIns), Vector.empty)
+  }
+
+  test("every registered law is registered by its published law suite") {
+    assertEquals(lawProblems(builtIns ++ conventional), Vector.empty)
+  }
+
+  test(
+    "every registered fixture exists and carries its identity; documents decode through it"
+  ) {
+    assertEquals(fixtureProblems(builtIns ++ conventional), Vector.empty)
+  }
+
+  test("the registry checks fail for an identity without an entry, a law or a fixture") {
+    val distance = builtIns.find(_.id == DefinitionId.measureDistance).get
+    assert(coverage(builtIns.filterNot(_ == distance)).exists(_.contains("measureDistance")))
+    assert(coverage(builtIns :+ distance).exists(_.contains("registered twice")))
+    assert(lawProblems(Vector(distance.copy(laws = Vector.empty))).nonEmpty)
+    val renamed = distance.laws.head.copy(name = "distance")
+    assert(
+      lawProblems(Vector(distance.copy(laws = Vector(renamed))))
+        .exists(_.contains("registers no test"))
+    )
+    assert(fixtureProblems(Vector(distance.copy(fixtures = Vector.empty))).nonEmpty)
+    assert(
+      fixtureProblems(Vector(distance.copy(fixtures = Vector("study-v1.json"))))
+        .exists(_.contains("does not carry"))
+    )
+    assert(
+      fixtureProblems(Vector(distance.copy(fixtures = Vector("no-such-fixture-v1.json"))))
+        .exists(_.contains("missing"))
+    )
+    val plan = builtIns.find(_.id == DefinitionId.study).get
+    assert(
+      fixtureProblems(Vector(plan.copy(fixtures = Vector("study-input-v1.json"))))
+        .exists(_.contains("is not a"))
+    )
+  }
+
+  test("the score fixture decodes every envelope through its registered schema") {
+    val envelopes = json("score-codecs-v1.json").asArray.getOrElse(fail("expected an array"))
+    assertEquals(
+      envelopes.map(e => Decoders.reencode(get(Envelopes.schemaOf(e)), e, resource)),
+      envelopes.map(Right(_))
+    )
+  }
+
+  test("every packed-array payload verifies against its manifest declaration and unpacks") {
+    val manifest = get(ScientificManifest.codec.decode(json("manifest-inputs-v1.json")))
+    val payloads = manifest.entries.filter(_.schema == DefinitionId.packedArray)
+    assertEquals(payloads.size, 4)
+    payloads.foreach { entry =>
+      val layout   = entry.layout.getOrElse(fail(s"${entry.name} has no layout"))
+      val bytes    = resource(entry.name.value).getOrElse(fail(s"missing ${entry.name}"))
+      val verified =
+        get(VerifiedPayload.verify(PayloadRef(entry.sha256, layout), IArray.from(bytes)))
+      val count = layout.element match
+        case ElementKind.UInt8   => PackedArrays.unpack[Byte](verified).map(_.length)
+        case ElementKind.Int32   => PackedArrays.unpack[Int](verified).map(_.length)
+        case ElementKind.Int64   => PackedArrays.unpack[Long](verified).map(_.length)
+        case ElementKind.Float64 => PackedArrays.unpack[Double](verified).map(_.length)
+      assertEquals(count, Right(layout.count), entry.name.value)
+    }
+  }
+
+  test("every pinned fixture under codec/src/test/resources/eyes4s is claimed by an entry") {
+    val anchor = getClass.getResource("/eyes4s/manifest-v1.json")
+    assert(
+      anchor != null && anchor.getProtocol == "file",
+      s"resources are not a directory: $anchor"
+    )
+    val directory: Path = Paths.get(anchor.toURI).getParent
+    // Compiled test classes share the directory; the fixtures are its regular files.
+    val files = Files
+      .list(directory)
+      .iterator
+      .asScala
+      .filter(Files.isRegularFile(_))
+      .map(_.getFileName.toString)
+      .toSet
+    val claimed = (builtIns ++ conventional).flatMap(_.fixtures).toSet
+    assertEquals(files -- claimed, Set.empty[String], "unclaimed pinned fixtures")
+    assertEquals(claimed -- files, Set.empty[String], "registered fixtures that do not exist")
+  }
+
+/** The shipped decoder of every registered document schema: decode, then
+  * re-encode, so a fixture that decodes but would be written differently is
+  * caught as well.
+  */
+private object Decoders:
+  import SchemaRegistry.get
+
+  private def through[A](codec: VersionedCodec[A], document: Json): Either[CodecError, Json] =
+    codec.decode(document).flatMap(codec.encode)
+
+  def reencode(
+      id: DefinitionId,
+      document: Json,
+      resource: String => Option[Array[Byte]]
+  ): Either[CodecError, Json] =
+    val recordingPlan = RecordingCodecs.ivt(
+      id,
+      get(DefinitionId.of("eyes4s.recording.ivt", 1)),
+      get(DefinitionId.of("eyes4s.ivt-parameters", 1))
+    )
+    id match
+      case DefinitionId.study           => through(StudyCodecs.cosine[Px].codec, document)
+      case DefinitionId.studyInput      => through(StudyInputCodecs.study[Px].input, document)
+      case DefinitionId.admissionLedger => through(StudyInputCodecs.study[Px].ledger, document)
+      case DefinitionId.recording       => through(RecordingInputCodecs.recording[Px], document)
+      case DefinitionId.binocularRecording =>
+        through(RecordingInputCodecs.binocular[Px], document)
+      case DefinitionId.recordingInput     => through(RecordingInputCodecs.input[Px], document)
+      case DefinitionId.temporalStudyInput =>
+        through(TemporalInputCodecs.study[Px]().input, document)
+      case DefinitionId.timeline =>
+        through(TimelineCodecs.timeline(id, StudyCodecs.key(DefinitionId.studyKey)), document)
+      case DefinitionId.studyResult     => through(StudyResultCodecs.cosine[Px].codec, document)
+      case DefinitionId.manifest        => through(ScientificManifest.codec, document)
+      case DefinitionId.similarity      => through(StudyResultCodecs.similarity(), document)
+      case DefinitionId.measureDistance =>
+        through(StudyResultCodecs.measureDistance(), document)
+      case DefinitionId.scalar           => through(StudyResultCodecs.scalar(), document)
+      case DefinitionId.signedDifference =>
+        through(StudyResultCodecs.signedDifference(), document)
+      case DefinitionId.packedRecording =>
+        val codec = PackedRecordingCodecs.recording[Px]
+        for
+          refs     <- PackedRecordingCodecs.references(document)
+          payloads <- Right(refs.flatMap { ref =>
+            Vector("tMicros", "support", "lineage", "values")
+              .flatMap(c => resource(s"packed-recording-v1.$c.bin"))
+              .flatMap(bytes => VerifiedPayload.verify(ref, IArray.from(bytes)).toOption)
+          })
+          value   <- codec.decode(document, ref => payloads.find(_.ref == ref))
+          encoded <- codec.encode(value)
+        yield encoded.document
+      case other if other.name == "eyes4s.recording-plan" =>
+        through(recordingPlan.codec, document)
+      case other => Left(CodecError.Unsupported(other.name, "no registered decoder"))
+
+private object Envelopes:
+  def schemaOf(envelope: Json): Either[String, DefinitionId] = for
+    schema  <- envelope.hcursor.get[Json]("schema").left.map(_.message)
+    name    <- schema.hcursor.get[String]("name").left.map(_.message)
+    version <- schema.hcursor.get[Int]("version").left.map(_.message)
+    id      <- DefinitionId.of(name, version).left.map(_.message)
+  yield id

@@ -1,0 +1,30 @@
+[
+  {
+    "schema" : {
+      "name" : "eyes4s.similarity",
+      "version" : 1
+    },
+    "value" : 0.1
+  },
+  {
+    "schema" : {
+      "name" : "eyes4s.measure-distance",
+      "version" : 1
+    },
+    "value" : 2.5
+  },
+  {
+    "schema" : {
+      "name" : "eyes4s.scalar",
+      "version" : 1
+    },
+    "value" : -0.3
+  },
+  {
+    "schema" : {
+      "name" : "eyes4s.signed-difference",
+      "version" : 1
+    },
+    "value" : -0.24999999999999997
+  }
+]

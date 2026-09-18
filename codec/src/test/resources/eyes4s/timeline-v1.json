@@ -1,0 +1,67 @@
+{
+  "schema" : {
+    "name" : "eyes4s.timeline",
+    "version" : 1
+  },
+  "value" : {
+    "clock" : "presentation-display",
+    "marks" : [
+      {
+        "atMicros" : "-1500000",
+        "value" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s2",
+            "stimulus" : "c",
+            "phase" : "retest"
+          }
+        }
+      },
+      {
+        "atMicros" : "0",
+        "value" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "a",
+            "phase" : "encode"
+          }
+        }
+      },
+      {
+        "atMicros" : "9007199254740993",
+        "value" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "b",
+            "phase" : "encode"
+          }
+        }
+      },
+      {
+        "atMicros" : "9007199254740993",
+        "value" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "s1",
+            "stimulus" : "a",
+            "phase" : "recall"
+          }
+        }
+      }
+    ]
+  }
+}
