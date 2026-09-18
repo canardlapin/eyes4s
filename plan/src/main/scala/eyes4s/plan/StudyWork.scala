@@ -234,7 +234,8 @@ private[plan] final class StudyEngine[K, U <: Unit2D, S, D](
         Analysis[K, S]
     ) => Either[ContrastError[K], ContrastCursor[K, S, D]],
     val finish: Vector[StudyScaleResult[K, U, S, D]] => StudyResult[K, U, S, D]
-)
+):
+  type Source = DirectedPairwiseAnalysis[K, K, StudyFailure[K], S]
 
 /** One scale's comparison instance and specification, created once per scale. */
 private[plan] final class StudyScale[K, U <: Unit2D, S, D](
@@ -245,24 +246,33 @@ private[plan] final class StudyScale[K, U <: Unit2D, S, D](
     ) => EvaluationCursor[K, K, StudyFailure[K], S]
 )
 
+/** Phases carry the typed pair analyses forward, so the completed scale keeps
+  * its sources with their key and failure types intact.
+  */
 private[plan] sealed trait StudyPhase[K, S, D]
 private[plan] object StudyPhase:
+  type Source[K, S] = DirectedPairwiseAnalysis[K, K, StudyFailure[K], S]
   final case class Estimate[K, S, D](trial: Int) extends StudyPhase[K, S, D]
   final case class CompareMatched[K, S, D](
       cursor: EvaluationCursor[K, K, StudyFailure[K], S]
   ) extends StudyPhase[K, S, D]
-  final case class ReduceMatched[K, S, D](cursor: ReductionCursor[K, S])
+  final case class ReduceMatched[K, S, D](source: Source[K, S], cursor: ReductionCursor[K, S])
       extends StudyPhase[K, S, D]
   final case class CompareControl[K, S, D](
+      matchedSource: Source[K, S],
       matched: Analysis[K, S],
       cursor: EvaluationCursor[K, K, StudyFailure[K], S]
   ) extends StudyPhase[K, S, D]
   final case class ReduceControl[K, S, D](
+      matchedSource: Source[K, S],
       matched: Analysis[K, S],
+      controlSource: Source[K, S],
       cursor: ReductionCursor[K, S]
   ) extends StudyPhase[K, S, D]
-  final case class Contrasting[K, S, D](cursor: ContrastCursor[K, S, D])
-      extends StudyPhase[K, S, D]
+  final case class Contrasting[K, S, D](
+      analyses: StudyAnalyses[K, S],
+      cursor: ContrastCursor[K, S, D]
+  ) extends StudyPhase[K, S, D]
 
 /** An immutable position inside study execution.
   *
@@ -284,12 +294,12 @@ final class StudyCursor[K, U <: Unit2D, S, D] private[plan] (
 
   /** The stage the next `advance` will work on. */
   def stage: StudyStage = phase match
-    case Estimate(trial)      => StudyStage.Estimating(scale, trial)
-    case CompareMatched(_)    => StudyStage.Comparing(scale, StudyDesign.Matched)
-    case ReduceMatched(_)     => StudyStage.Reducing(scale, StudyDesign.Matched)
-    case CompareControl(_, _) => StudyStage.Comparing(scale, StudyDesign.Control)
-    case ReduceControl(_, _)  => StudyStage.Reducing(scale, StudyDesign.Control)
-    case Contrasting(_)       => StudyStage.Contrasting(scale)
+    case Estimate(trial)           => StudyStage.Estimating(scale, trial)
+    case CompareMatched(_)         => StudyStage.Comparing(scale, StudyDesign.Matched)
+    case ReduceMatched(_, _)       => StudyStage.Reducing(scale, StudyDesign.Matched)
+    case CompareControl(_, _, _)   => StudyStage.Comparing(scale, StudyDesign.Control)
+    case ReduceControl(_, _, _, _) => StudyStage.Reducing(scale, StudyDesign.Control)
+    case Contrasting(_, _)         => StudyStage.Contrasting(scale)
 
   def capability: ExecutionCapability = engine.capability
 
@@ -312,34 +322,44 @@ final class StudyCursor[K, U <: Unit2D, S, D] private[plan] (
 
       case CompareMatched(cursor) =>
         compare(quanta, cursor)(CompareMatched(_))(analysis =>
-          Right(ReduceMatched(engine.reduce(analysis)))
+          Right(ReduceMatched(analysis, engine.reduce(analysis)))
         )
 
-      case ReduceMatched(cursor) =>
-        reduce(quanta, cursor)(ReduceMatched(_))(matched =>
-          Right(CompareControl(matched, current.evaluate(engine.controls, masses)))
+      case ReduceMatched(source, cursor) =>
+        reduce(quanta, cursor)(ReduceMatched(source, _))(matched =>
+          Right(CompareControl(source, matched, current.evaluate(engine.controls, masses)))
         )
 
-      case CompareControl(matched, cursor) =>
-        compare(quanta, cursor)(CompareControl(matched, _))(analysis =>
-          Right(ReduceControl(matched, engine.reduce(analysis)))
+      case CompareControl(matchedSource, matched, cursor) =>
+        compare(quanta, cursor)(CompareControl(matchedSource, matched, _))(analysis =>
+          Right(ReduceControl(matchedSource, matched, analysis, engine.reduce(analysis)))
         )
 
-      case ReduceControl(matched, cursor) =>
+      case ReduceControl(matchedSource, matched, controlSource, cursor) =>
         cursor.advance(quanta.pairs) match
           case ReductionPage.More(units, next) =>
-            Right(StudyStep.More(stage, units, copy(phase = ReduceControl(matched, next))))
+            Right(
+              StudyStep.More(
+                stage,
+                units,
+                copy(phase = ReduceControl(matchedSource, matched, controlSource, next))
+              )
+            )
           case ReductionPage.Done(units, control) =>
+            val analyses = new StudyAnalyses(matchedSource, matched, controlSource, control)
             engine.contrast(matched, control) match
-              case Left(error)     => finishScale(units, Left(error))
+              case Left(error)     => finishScale(units, analyses, Left(error))
               case Right(contrast) =>
-                Right(StudyStep.More(stage, units, copy(phase = Contrasting(contrast))))
+                Right(
+                  StudyStep.More(stage, units, copy(phase = Contrasting(analyses, contrast)))
+                )
 
-      case Contrasting(cursor) =>
+      case Contrasting(analyses, cursor) =>
         cursor.advance(quanta.pairs) match
           case ContrastPage.More(units, next) =>
-            Right(StudyStep.More(stage, units, copy(phase = Contrasting(next))))
-          case ContrastPage.Done(units, contrast) => finishScale(units, Right(contrast))
+            Right(StudyStep.More(stage, units, copy(phase = Contrasting(analyses, next))))
+          case ContrastPage.Done(units, contrast) =>
+            finishScale(units, analyses, Right(contrast))
 
   private def compare(
       quanta: WorkQuanta,
@@ -376,12 +396,14 @@ final class StudyCursor[K, U <: Unit2D, S, D] private[plan] (
 
   private def finishScale(
       units: Int,
+      analyses: StudyAnalyses[K, S],
       result: Either[ContrastError[K], Contrast[K, S, D]]
   ): Either[PlanError, StudyStep[K, U, S, D]] =
     val results = completed :+ new StudyScaleResult(
       engine.estimates(scale),
       masses,
       engine.excludedPhases,
+      analyses,
       result
     )
     if scale + 1 < engine.estimates.size then

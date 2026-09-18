@@ -155,6 +155,24 @@ object CustomMethod:
         )
     }
 
+  /** The extension's own score codec; a result archive registers it explicitly. */
+  def scoreCodec(schema: DefinitionId): VersionedCodec[ScaledScore] =
+    VersionedCodec.checked[ScaledScore](schema)(score =>
+      Either.cond(
+        score.value.isFinite,
+        Json.obj("scaled" -> Json.fromDoubleOrNull(score.value)),
+        CodecError.Field("scaled", Json.Null, "scaled cosine must be finite")
+      )
+    ) { json =>
+      json.hcursor
+        .get[Double]("scaled")
+        .left
+        .map(e => CodecError.Field("scaled", json, e.message))
+        .flatMap(value =>
+          ScaledScore.of(value).left.map(e => CodecError.Field("scaled", json, e.message))
+        )
+    }
+
   def keyCodec(schema: DefinitionId): VersionedCodec[TrialKey] =
     VersionedCodec.of[TrialKey](schema)(key =>
       Json.obj(

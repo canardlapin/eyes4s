@@ -340,6 +340,186 @@ checked for decoded meaning and JSON value identity on JVM and Scala.js; the JVM
 checks byte-identical re-encoding of the pretty-printed files, which Scala.js does not promise because
 it renders integral doubles without a fraction.
 
+## Recording and temporal input payloads
+
+`RecordingInputCodecs.input[U]` encodes a `RecordingInput[U]` (`eyes4s.recording-input@1`): the
+nominal source name, the declared input digest, a document identity table of the frame and clocks, the
+gaze channels, the optional viewing geometry in millimetres, and the optional observed synchronization.
+Channels are either a monocular `Recording[U]` or a paired `BinocularRecording[U]`; the standalone
+`recording[U]` (`eyes4s.recording@1`) and `binocular[U]` (`eyes4s.binocular-recording@1`) codecs carry
+the same inner shape with their own identity table. A recording is its frame and clock by nominal ID,
+the eye, the declared pupil unit, the sampling rate (`fixed` with a finite `hz`, or `irregular`), the
+fixed-rate tolerance in microseconds, its `Recording.contentHash`, and its samples as parallel columns
+of one declared `length`: `tMicros` as decimal strings, `state` as one of `tracked`, `blink`, `lost`
+and `offScreen`, `x`/`y` and `pupil` as finite numbers where the category has them and `null` where it
+does not, and `lineage` as the ordered derivation of each sample (`measured` or `interpolated`,
+followed by `smoothed` and `projected` steps). A binocular recording carries `left` and `right`
+column groups over one `tMicros` column. Decoding rebuilds the value through `Recording.of` or
+`BinocularRecording.of`, so monotonic time, in-frame positions, declared pupil units and the
+fixed-rate tolerance are re-proven and reported as `CodecError.Recording`, and then compares the
+declared digest with `Recording.contentHash` (for a paired recording, `BinocularRecording.contentHash`,
+the ordered combination of its two eye projections); a dropped or altered sample, a changed support
+category or lineage, or a swapped clock fails with `CodecError.InputIdentity`, so
+`RecordingPlan.prerequisites` accepts the decoded recording by the same `ArtifactRef`. Two operands
+are carried and re-proven but not identity-bearing: the spatial unit, which the payload's `unit` field
+and the typed frame lookup guard instead, and the sampling tolerance of an irregular recording, which
+its hash omits because irregular sampling never applies it. Mis-shaped columns, a `tracked` sample
+without a position, an unknown category, or a lineage that does not begin with a basis are located
+errors such as `CodecError.Entry("channels.recording.samples[3]", ...)`. Payloads are in-memory
+JSON; a recording with more than `RecordingInputCodecs.maximumSamples` (2^22, about seventy minutes
+at 1 kHz) is refused with `CodecError.SampleBound` on both sides, naming the count and the bound, and
+must be split or carried as a separately referenced typed payload.
+
+The synchronization entry is input evidence: the target clock, the fit mode, the observed common
+marks and the optional residual limit, from which `RecordingInput.synchronize` refits `SyncEvidence`
+deterministically. The `fitted` offset and drift are written alongside and cross-checked on decode
+(`CodecError.SynchronizationFit` names the declared and refit coefficients); the fitted diagnostics
+themselves belong to the completed-result archive. Only offset-only synchronization is fixture-pinned;
+affine fits with non-zero drift are covered by the generated laws on both the JVM and Scala.js. `RecordingInput.of` refuses
+an empty source, a synchronization whose target is the recording's own clock, or marks that do not
+fit. Viewing geometry and every mark enter the input digest. A recording plan still runs on the bare
+`Recording[Px]` with its own declared provenance; `RecordingInput.disagreements(input, plan)` names
+every field where that provenance departs from the input's evidence (source, clocks, viewing, fit
+mode, marks, residual limit), followed by the plan's own prerequisites, so a plan whose marks differ
+from the observed ones is refused before it records the wrong provenance.
+
+A source-supported scanpath inside a study input (`eyes4s.scanpath@1`) now carries a `source` entry:
+the `RecordingRef`, the exact recording in the inner shape above, and the half-open sample ranges of
+its fixations. Decoding rebuilds it through `EventSeries.of` and `Scanpath.fromEvents`, so centres
+and sample counts are re-derived from the samples and must equal the declared summaries; a detached
+summary, an overlapping or truncated range, or a support category flipped inside the source
+recording is refused. Its fixations declare a dispersion `method` only: the value is re-derived from
+the samples rather than compared. This is a design assumption rather than a measured difference:
+the spread statistics use `hypot` and `pow`, which neither platform promises to round identically,
+so a value written on one platform is not promised bit-identical on the other and the wire does not
+depend on it. The source name, the source recording's digest and every sample
+range enter the study digest of a source-supported trial, so a different source recording or
+segmentation with the same summaries is a different input; detached trials keep their S2 digests.
+Dispersion recomputed under a warp (`SummaryEvidence.Recomputed`) is a transformation result, not an
+input, and stays `CodecError.Unsupported`.
+
+`TemporalInputCodecs.study[U](embedding, resolve)` encodes a `TemporalStudyInput[K, U]`
+(`eyes4s.temporal-study-input@1`): the layout and key schema identities, the spatial unit, the
+declared temporal digest, the base study either inline (`StudyEmbedding.Inline`, the complete
+study-input payload) or by reference (`StudyEmbedding.ByReference`, the study digest resolved through
+a caller-supplied lookup that never loads files and fails with `PlanError.MissingArtifact`), a clock
+identity table, and one epoch per trial that has one, in key order: the typed key, the measured
+`anchorMicros` as a decimal string, and the observed coverage as a clock and its intervals. Trials
+without an epoch stay absent, so a decoded input reports the same `MissingEpoch` at run time.
+Decoding rebuilds the value through `TemporalStudyInput.of`, so duplicate or foreign epochs are the
+constructor's `CodecError.Temporal` refusals; a coverage interval on another clock, a coverage clock
+that is not the trial scanpath's clock, or an unknown clock is located at its epoch, and a moved
+anchor or changed coverage fails with `CodecError.InputIdentity`. `TimelineCodecs.timeline(schema, values)` is the conditional codec for
+`Timeline[A]` (`planned` and `observed` wrap the two timing kinds with a `timing` field, and the
+neutral codec refuses a payload that carries one): a clock and ordered marks with exact microsecond
+instants, where equal instants keep input order.
+
+The pinned [recording-input-v1.json](../codec/src/test/resources/eyes4s/recording-input-v1.json),
+[binocular-recording-input-v1.json](../codec/src/test/resources/eyes4s/binocular-recording-input-v1.json),
+[study-input-source-supported-v1.json](../codec/src/test/resources/eyes4s/study-input-source-supported-v1.json)
+and [temporal-study-input-v1.json](../codec/src/test/resources/eyes4s/temporal-study-input-v1.json)
+fixtures are seeded from the core recording constructions, the synthetic EyeLink binocular corpus
+file and the temporal contrast fixtures (with one trial anchored beyond JavaScript's exact integer
+range and one trial left without an epoch). They are checked for decoded meaning and JSON value
+identity on JVM and Scala.js; the JVM suite additionally checks byte-identical re-encoding of the
+pretty-printed files.
+
+## Completed results
+
+`StudyResultCodecs.cosine[U]` supplies the versioned codec for a completed `StudyResult` of the
+ordinary cosine route (`eyes4s.study-result@1`); `persistence.results(scoreCodec, differenceCodec)`
+builds one from any `StudyCodec`, so an extension method archives its own score and difference
+types through the codecs it registers, never through `Any`, an unnamed numeric vector or a rendered
+string. Only a `StudyResult` can be encoded, and a `StudyResult` exists only for completed execution:
+a cancelled or failed run has no value to archive.
+
+The archive keeps the result's identity and every piece of evidence the run produced:
+
+- the layout, key, method, score and difference schema identities, the spatial unit, the input
+  reference digest and the complete plan description with its typed parameters;
+- per scale, the estimator, every trial's estimation outcome (a density as its cell values on the
+  plan grid with its provenance, or a typed `StudyFailure` naming the trial), and the keys excluded
+  by phase selection;
+- both directed pair analyses: every pair row with both source keys and its score or typed failure
+  (`StudyFailure.Comparison` names both trials; an estimation failure names the trial that failed),
+  the pairing report (pair space, eligible and selected counts, unmatched keys, duplicate-key
+  ambiguities with their operand indices), the evaluation metadata (name, scale and the full
+  `EvaluationSpec`) and the evaluation provenance;
+- both by-focal reductions: every `ReductionRow` with its typed `ReductionError` or score and its
+  `successful`/`failed`/`contributing` denominators, the `ReductionReport` and the reduction provenance;
+- the contrast rows in the layout's key order, each with its operands and its difference or typed
+  `ContrastRowError`, or the typed `ContrastError` when no contrast could be formed.
+
+Provenance is written as its input digest and every step's parameters in order; 64-bit values are
+decimal strings. Densities are cell values on a grid declared once in the document identity table.
+Each scale carries `analyses`, a `StudyAnalyses` with both typed directed pair analyses
+(`DirectedPairwiseAnalysis[K, K, StudyFailure[K], S]`) and their reductions, and the `contrast` is
+over those same reductions; the archive stores the analyses once and the contrast rows beside them.
+
+Decoding rebuilds the result through checked reconstruction: `DirectedPairwiseAnalysis.reconstruct`,
+`Analysis.reconstructByLeft` (and `reconstructByRight`, `reconstructEdges`, `reconstructByEndpoint`
+for the other orientations), `ReductionRow.reconstruct`, `ReductionReport.reconstruct`,
+`ContrastRow.reconstruct`, `Contrast.reconstruct` (design) and `StudyAnalyses.of`,
+`StudyScaleResult.reconstruct`, `StudyResult.reconstruct` (plan). What is re-derived and checked:
+
+- `DirectedPairwiseAnalysis.reconstruct` requires one row per selected pair and re-derives the
+  evaluation provenance from the rows, the pairing report and the evaluation metadata; the stored
+  provenance must equal it (`ReconstructionError.RowCount`, `ProvenanceConflict`).
+- `Analysis.reconstructByLeft` regroups the pair rows by focal key exactly as the reduction cursor
+  does (contributions, then unmatched keys, then ambiguities, in order of first appearance) and
+  requires the stored rows to cover those keys in that order (`KeyDomain`), each row's
+  `successful`/`failed` to be the group's (`KeyDenominator`), each row's outcome to be the one the
+  group and the policy force, an ambiguity, no scores, a rejected failure count, or otherwise a score
+  or a mean failure (`OutcomeShape`; the mean itself is the one thing not recomputed), every report
+  count to follow from the rows and the source, including `contributionCount == rows.size`
+  (`ReportCount`, `FailedKeys`), and the reduction provenance to equal the derivation
+  (`ProvenanceConflict`). `ReductionRow.reconstruct` additionally requires `contributing` to follow
+  from the outcome (`Denominator`) and a failed outcome's own counts to agree with the row's.
+- `Contrast.reconstruct` re-runs the contrast compatibility check, requires the rows to cover the
+  sorted key union in the layout's ordering (`ContrastDomain`) and each row's operands to be the
+  reductions' own rows (`ContrastOperand`); `ContrastRow.reconstruct` requires the difference's shape
+  to follow from its operands (`ContrastRowShape`).
+- `StudyAnalyses.of` requires each reduction to have been reduced from the very pair analysis
+  supplied beside it (`StudyResultError.SourceIdentity`), which is how a reduction over an
+  undirected or foreign source is refused, and `StudyScaleResult.reconstruct` requires the contrast
+  to be over the scale's own reductions (`ContrastAnalyses`).
+- `StudyScaleResult.reconstruct` requires every density's provenance steps to be the ones the scale's
+  estimator derives, `StudyEstimate.provenanceSteps`, so the smoothing bandwidth and edge policy on
+  record are the declared ones (`MassProvenance`); every stored failure to name the row it sits in
+  (`FailureKey`, `PairFailure`); and every pair, unmatched, reduced, contrasted or excluded key to
+  be an estimated trial (`OrphanPair`, `OrphanKey`).
+- `StudyResult.reconstruct` takes the layout and requires the description to name it
+  (`LayoutMismatch`), the input reference (`InputMismatch`) and exactly the stored scales with the
+  same estimator parameters (`ScaleCount`, which is how a partial accumulator tagged as complete is
+  refused, and `ScaleEstimate`); every density to lie on the described grid (`MassGrid`); and, for
+  both pair analyses of every scale: the evaluation provenance's inputs digest to be the study input
+  (`ProvenanceInputs`), the evaluation specification to name the described method and version
+  (`MissingSpecification`, `SpecificationMethod`) with parameters equal to the described weight,
+  estimator and `method.*` parameters (`SpecificationParameters`), the reduction to use the
+  described failure policy (`Policy`), and every pair to join a focal-phase trial to a
+  reference-phase trial under the layout, with excluded keys outside both phases (`Phase`).
+- The codec itself requires the archived score components to be the method's
+  (`CodecError.ScoreComponents`).
+
+Not re-derived: the reduced means and contrast differences (arithmetic), and the digest inside each
+density's provenance, which is the digest of the trial's occupancy and needs the input. Errors inside
+a stage are located, for example `CodecError.Entry("scales[0].analyses.matched.source.rows[1]", ...)`.
+
+`StudyResultRegistry` registers result codecs by method identity and refuses unknown
+(`CodecError.MissingResultCodec`) or duplicate (`CodecError.DuplicateResultCodec`) registrations; a
+payload declaring another score or difference schema than the registered codec's is refused before
+any row is read. Temporal failures (`StudyFailure.Temporal`) are refused with
+`CodecError.Unsupported`: they name windows and epochs of the temporal route and belong to the
+temporal result archive that follows the recording and temporal input payloads.
+
+The pinned [study-result-v1.json](../codec/src/test/resources/eyes4s/study-result-v1.json) is the
+pinned study-v1 plan run on the pinned study-input-v1 input. The portable suite checks its decoded
+meaning and JSON value identity on JVM and Scala.js, and that re-executing the pinned plan on the
+pinned input reproduces the archive bit for bit; the JVM suite additionally checks byte-identical
+re-encoding of the pretty-printed file. `eyes4s.laws.StudyResultEquivalence` is the published
+structural identity of two results, for round-trip laws over extension score types that keep
+reference equality.
+
 ## Versions and extensions
 
 The JSON envelope has a schema identifier and version. Its payload separately records the method

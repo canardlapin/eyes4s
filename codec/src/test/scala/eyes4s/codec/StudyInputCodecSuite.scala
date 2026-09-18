@@ -298,7 +298,7 @@ class StudyInputCodecSuite extends munit.FunSuite:
     assert(codec.input.decode(withValue(json, "input", Json.fromString("xyz"))).isLeft)
   }
 
-  test("encoding refuses conflicting frame identities and source-supported summaries") {
+  test("encoding refuses conflicting frame identities and carries source-supported summaries") {
     val key   = StudyKey("s1", "a", "recall")
     val other = StudyKey("s1", "b", "recall")
     val clash = Frame.of(FrameId(frame.id.name), get(Bounds.of[Px](0, 0, 4, 4)), YAxis.Down)
@@ -350,13 +350,17 @@ class StudyInputCodecSuite extends munit.FunSuite:
         Vector(get(SampleRange.of(0, 2)))
       )
     )
-    val backed = StudyInput(Trials(Vector(Trial(key, (), get(Scanpath.fromEvents(series))))))
+    val backed  = StudyInput(Trials(Vector(Trial(key, (), get(Scanpath.fromEvents(series))))))
+    val rebuilt = get(codec.input.decode(get(codec.input.encode(backed))))
+    assertEquals(rebuilt.reference, backed.reference)
+    assertEquals(rebuilt.trials.rows.head.value.source, Some(source))
     assertEquals(
-      codec.input.encode(backed).left.toOption.map {
-        case CodecError.Entry(path, CodecError.Unsupported(field, _)) => path           -> field
-        case other                                                    => other.toString -> ""
-      },
-      Some("trials.rows[0]" -> "scanpath")
+      rebuilt.trials.rows.head.value.sampleSupport,
+      Some(Vector(get(SampleRange.of(0, 2))))
+    )
+    assertEquals(
+      rebuilt.trials.rows.head.value.fixations.toVector,
+      backed.trials.rows.head.value.fixations.toVector
     )
     val declared = StudyInput(
       Trials(Vector(Trial(key, (), get(Scanpath.of(screen, clock, IArray(backedFixation))))))

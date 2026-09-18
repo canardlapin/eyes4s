@@ -35,6 +35,18 @@ object DefinitionId:
   val trials: DefinitionId          = new DefinitionId("eyes4s.trials", 1)
   val scanpath: DefinitionId        = new DefinitionId("eyes4s.scanpath", 1)
   val admissionLedger: DefinitionId = new DefinitionId("eyes4s.admission-ledger", 1)
+  // UI-S3: recording and temporal input payload schemas.
+  val recording: DefinitionId          = new DefinitionId("eyes4s.recording", 1)
+  val binocularRecording: DefinitionId = new DefinitionId("eyes4s.binocular-recording", 1)
+  val recordingInput: DefinitionId     = new DefinitionId("eyes4s.recording-input", 1)
+  val temporalStudyInput: DefinitionId = new DefinitionId("eyes4s.temporal-study-input", 1)
+  val timeline: DefinitionId           = new DefinitionId("eyes4s.timeline", 1)
+  // UI-S4: result archive and score schemas.
+  val studyResult: DefinitionId      = new DefinitionId("eyes4s.study-result", 1)
+  val similarity: DefinitionId       = new DefinitionId("eyes4s.similarity", 1)
+  val measureDistance: DefinitionId  = new DefinitionId("eyes4s.measure-distance", 1)
+  val scalar: DefinitionId           = new DefinitionId("eyes4s.scalar", 1)
+  val signedDifference: DefinitionId = new DefinitionId("eyes4s.signed-difference", 1)
   def of(name: String, version: Int): Either[PlanError, DefinitionId] =
     if name.trim.isEmpty || version < 1 then Left(PlanError.InvalidDefinition(name, version))
     else Right(new DefinitionId(name, version))
@@ -134,6 +146,16 @@ object StudyInput:
           )
         )
       }
+      // UI-S3: a source-supported scanpath is also identified by its
+      // evidence, so a different source recording or segmentation is a
+      // different input even when the summaries agree.
+      val source = (path.source, path.sourceRecording, path.sampleSupport) match
+        case (Some(ref), Some(recording), Some(support)) =>
+          Vector(
+            ContentHash.ofString("source:" + ref.value),
+            recording.contentHash
+          ) ++ support.map(range => ContentHash.ofString(s"${range.from},${range.until}"))
+        case _ => Vector.empty
       ContentHash.combineAll(
         Vector(
           keys.digest(trial.key),
@@ -144,7 +166,7 @@ object StudyInput:
           ContentHash.of(
             IArray(frame.spec.xMin, frame.spec.yMin, frame.spec.xMax, frame.spec.yMax)
           )
-        ) ++ fixes
+        ) ++ fixes ++ source
       )
     }
     new StudyInput(trials, ContentHash.combineAll(hashes))
@@ -168,6 +190,26 @@ enum StudyEstimate[U <: Unit2D] derives CanEqual:
         "edges"     -> Provenance.Param.Text(edges.toString)
       )
 
+  /** The provenance steps a density estimated at this scale carries after its
+    * trial's occupancy: the Gaussian smoothing step and the normalisation gate.
+    */
+  def provenanceSteps: Vector[Provenance.Step] =
+    val normalise = Provenance.Step.text("normalise", "of", "surface")
+    this match
+      case Binned()               => Vector(normalise)
+      case Gaussian(sigma, edges) =>
+        Vector(
+          Provenance.Step(
+            "smooth",
+            Vector(
+              "kernel" -> Provenance.Param.Text("gaussian"),
+              "sigma"  -> Provenance.Param.Num(sigma.value),
+              "edges"  -> Provenance.Param.Text(edges.toString)
+            )
+          ),
+          normalise
+        )
+
 enum StudyFailure[K] derives CanEqual:
   case Frame(key: K, underlying: GeometryError)
   case Occupancy(key: K, underlying: SurfaceError)
@@ -181,6 +223,15 @@ enum StudyFailure[K] derives CanEqual:
     case Occupancy(k, e)     => s"Trial $k: ${e.message}"
     case Estimation(k, e)    => s"Trial $k: ${e.message}"
     case Comparison(l, r, e) => s"Trials $l and $r: ${e.message}"
+
+object StudyFailure:
+  /** The trial keys a failure names, in operand order. */
+  def keys[K](failure: StudyFailure[K]): Vector[K] = failure match
+    case StudyFailure.Frame(k, _)         => Vector(k)
+    case StudyFailure.Temporal(k, _)      => Vector(k)
+    case StudyFailure.Occupancy(k, _)     => Vector(k)
+    case StudyFailure.Estimation(k, _)    => Vector(k)
+    case StudyFailure.Comparison(l, r, _) => Vector(l, r)
 
 /** Typed evidence of how a method's comparison executes. A synchronous closure
   * runs whole per pair; only a [[BoundedCompare]] can be declared bounded, so
@@ -253,11 +304,49 @@ object PlanChange:
         PlanChange(key, left.getOrElse(key, Vector.empty), right.getOrElse(key, Vector.empty))
     }
 
-/** One scale retains estimation failures, excluded phase keys, and the full contrast. */
+/** Both directed pair analyses of one scale and their by-focal reductions,
+  * with key and failure types intact. Each reduction was derived from the
+  * source beside it; [[StudyAnalyses.of]] checks that identity.
+  */
+final class StudyAnalyses[K, S] private[plan] (
+    val matchedSource: DirectedPairwiseAnalysis[K, K, StudyFailure[K], S],
+    val matched: Analysis[K, S],
+    val controlSource: DirectedPairwiseAnalysis[K, K, StudyFailure[K], S],
+    val control: Analysis[K, S]
+):
+  def source(design: StudyDesign): DirectedPairwiseAnalysis[K, K, StudyFailure[K], S] =
+    design match
+      case StudyDesign.Matched => matchedSource
+      case StudyDesign.Control => controlSource
+  def reduced(design: StudyDesign): Analysis[K, S] = design match
+    case StudyDesign.Matched => matched
+    case StudyDesign.Control => control
+
+object StudyAnalyses:
+  /** Checked: each reduced analysis must have been reduced from the typed
+    * source supplied beside it (the very same value), so an analysis over an
+    * undirected or foreign source is refused by design.
+    */
+  def of[K, S](
+      matchedSource: DirectedPairwiseAnalysis[K, K, StudyFailure[K], S],
+      matched: Analysis[K, S],
+      controlSource: DirectedPairwiseAnalysis[K, K, StudyFailure[K], S],
+      control: Analysis[K, S]
+  ): Either[StudyResultError[K], StudyAnalyses[K, S]] =
+    if !(matched.source eq matchedSource) then
+      Left(StudyResultError.SourceIdentity(StudyDesign.Matched))
+    else if !(control.source eq controlSource) then
+      Left(StudyResultError.SourceIdentity(StudyDesign.Control))
+    else Right(new StudyAnalyses(matchedSource, matched, controlSource, control))
+
+/** One scale retains estimation failures, excluded phase keys, both typed
+  * pair analyses with their reductions, and the full contrast.
+  */
 final class StudyScaleResult[K, U <: Unit2D, S, D] private[plan] (
     val estimate: StudyEstimate[U],
     val estimation: Vector[(K, Either[StudyFailure[K], Mass[U]])],
     val excludedPhases: Vector[K],
+    val analyses: StudyAnalyses[K, S],
     val contrast: Either[ContrastError[K], Contrast[K, S, D]]
 )
 final class StudyResult[K, U <: Unit2D, S, D] private[plan] (
@@ -265,6 +354,312 @@ final class StudyResult[K, U <: Unit2D, S, D] private[plan] (
     val description: Vector[(String, Vector[Provenance.Param])],
     val scales: Vector[StudyScaleResult[K, U, S, D]]
 )
+
+/** Refusals while rebuilding a completed result from stored parts. A scale's
+  * own refusal is wrapped in [[Scale]] with the scale index; every other case
+  * names the trial keys, pair keys, design or declared values that disagree.
+  */
+enum StudyResultError[K] derives CanEqual:
+  case Description(field: String, found: Vector[Provenance.Param])
+  case InputMismatch(reference: String, described: Vector[Provenance.Param])
+  case LayoutMismatch(expected: DefinitionId, described: DefinitionId)
+  case ScaleCount(declared: Int, found: Int)
+  case ScaleEstimate(declared: Vector[Provenance.Param], found: Vector[Provenance.Param])
+  case MassGrid(key: K, declared: Vector[Provenance.Param], found: Vector[Provenance.Param])
+  case MassProvenance(key: K, expected: Vector[Provenance.Step], found: Vector[Provenance.Step])
+  case FailureKey(key: K, failure: StudyFailure[K])
+  case PairFailure(left: K, right: K, failure: StudyFailure[K])
+  case OrphanKey(key: K)
+  case OrphanPair(left: K, right: K)
+  case SourceIdentity(design: StudyDesign)
+  case ContrastAnalyses(design: StudyDesign)
+  case ProvenanceInputs(design: StudyDesign, declared: String, expected: String)
+  case MissingSpecification(design: StudyDesign, evaluation: EvaluationInfo)
+  case SpecificationMethod(
+      design: StudyDesign,
+      expected: DefinitionId,
+      method: String,
+      revision: String
+  )
+  case SpecificationParameters(
+      design: StudyDesign,
+      expected: Vector[(String, Provenance.Param)],
+      found: Vector[(String, Provenance.Param)]
+  )
+  case Policy(design: StudyDesign, declared: String, found: FailurePolicy)
+  case Phase(key: K, expected: String, found: String)
+  case Reconstruction(underlying: ReconstructionError[K])
+  case Scale(index: Int, underlying: StudyResultError[K])
+
+  def message: String = this match
+    case Description(field, found) =>
+      s"Description field $field is missing or malformed: $found."
+    case InputMismatch(reference, described) =>
+      s"Result refers to input $reference but its description declares $described."
+    case LayoutMismatch(expected, described) =>
+      s"Result is reconstructed for layout ${expected.name}@${expected.version} but describes ${described.name}@${described.version}."
+    case ScaleCount(declared, found) =>
+      s"Description declares $declared estimation scales; the result stores $found. " +
+        "A completed result stores every declared scale; partial work is not a result."
+    case ScaleEstimate(declared, found) =>
+      s"Scale is declared as $declared but stores estimate $found."
+    case MassGrid(key, declared, found) =>
+      s"Trial $key has a density on grid $found; the plan grid is $declared."
+    case MassProvenance(key, expected, found) =>
+      s"Trial $key has density provenance ${found.map(_.render)}; the scale's estimator derives ${expected.map(_.render)}."
+    case FailureKey(key, failure) =>
+      s"Trial $key stores a failure naming another trial: ${failure.message}"
+    case PairFailure(left, right, failure) =>
+      s"Pair ($left, $right) stores a failure naming other trials: ${failure.message}"
+    case OrphanKey(key)          => s"Key $key is referenced but no trial was estimated for it."
+    case OrphanPair(left, right) =>
+      s"Pair ($left, $right) refers to a trial that was not estimated."
+    case SourceIdentity(design) =>
+      s"The $design reduction was not reduced from the $design pair analysis supplied with it."
+    case ContrastAnalyses(design) =>
+      s"The contrast's $design analysis is not the scale's $design reduction."
+    case ProvenanceInputs(design, declared, expected) =>
+      s"The $design evaluation provenance names inputs $declared; the study input is $expected."
+    case MissingSpecification(design, evaluation) =>
+      s"The $design evaluator '${evaluation.name}' carries no method specification."
+    case SpecificationMethod(design, expected, method, revision) =>
+      s"The $design specification names $method@$revision; the plan method is ${expected.name}@${expected.version}."
+    case SpecificationParameters(design, expected, found) =>
+      s"The $design specification declares parameters $found; the plan description gives $expected."
+    case Policy(design, declared, found) =>
+      s"The $design reduction used ${found.render}; the plan declares $declared."
+    case Phase(key, expected, found) =>
+      s"Trial $key is in phase '$found' where the plan places phase '$expected'."
+    case Reconstruction(underlying) => underlying.message
+    case Scale(index, underlying)   => s"Scale $index: ${underlying.message}"
+
+object StudyScaleResult:
+  /** Checked reconstruction of one scale: every density carries the provenance
+    * the scale's estimator derives, every stored failure names the row it sits
+    * in, the contrast (when present) is over the scale's own reductions, and
+    * every key the analyses refer to was estimated at this scale.
+    */
+  def reconstruct[K, U <: Unit2D, S, D](
+      estimate: StudyEstimate[U],
+      estimation: Vector[(K, Either[StudyFailure[K], Mass[U]])],
+      excludedPhases: Vector[K],
+      analyses: StudyAnalyses[K, S],
+      contrast: Either[ContrastError[K], Contrast[K, S, D]]
+  ): Either[StudyResultError[K], StudyScaleResult[K, U, S, D]] =
+    val estimated                         = estimation.map(_._1).toSet
+    def known(key: K): Boolean            = estimated.contains(key)
+    val expectedSteps                     = estimate.provenanceSteps
+    val rows: Option[StudyResultError[K]] = estimation.collectFirst {
+      case (key, Left(failure)) if StudyFailure.keys(failure) != Vector(key) =>
+        StudyResultError.FailureKey(key, failure)
+      case (key, Right(mass)) if mass.provenance.steps != expectedSteps =>
+        StudyResultError.MassProvenance(key, expectedSteps, mass.provenance.steps)
+    }
+    val contrastIdentity: Option[StudyResultError[K]] = contrast match
+      case Right(c) if !(c.matched eq analyses.matched) =>
+        Some(StudyResultError.ContrastAnalyses(StudyDesign.Matched))
+      case Right(c) if !(c.control eq analyses.control) =>
+        Some(StudyResultError.ContrastAnalyses(StudyDesign.Control))
+      case _ => None
+    val references: Vector[StudyResultError[K]] = StudyDesign.values.toVector.flatMap {
+      design =>
+        val source = analyses.source(design)
+        source.rows.flatMap { row =>
+          if !known(row.left) || !known(row.right) then
+            Some(StudyResultError.OrphanPair(row.left, row.right))
+          else
+            row.result match
+              case Left(failure)
+                  if !StudyFailure.keys(failure).forall(k => k == row.left || k == row.right) =>
+                Some(StudyResultError.PairFailure(row.left, row.right, failure))
+              case _ => None
+        } ++
+          (source.diagnostics.unmatchedLeft ++ source.diagnostics.unmatchedRight ++
+            analyses.reduced(design).entries.map(_.key)).collect {
+            case key if !known(key) => StudyResultError.OrphanKey(key)
+          }
+    } ++ contrast.toOption.toVector.flatMap(_.rows.collect {
+      case row if !known(row.key) => StudyResultError.OrphanKey(row.key)
+    })
+    rows
+      .orElse(contrastIdentity)
+      .orElse(excludedPhases.collectFirst {
+        case key if !known(key) => StudyResultError.OrphanKey(key)
+      })
+      .orElse(references.headOption)
+      .toLeft(new StudyScaleResult(estimate, estimation, excludedPhases, analyses, contrast))
+
+object StudyResult:
+  /** Checked reconstruction of a completed result from its identity and scales.
+    * The description must declare this layout and exactly the stored scales,
+    * with the same estimator parameters in the same order; every density must
+    * lie on the declared plan grid; both pair analyses of every scale must
+    * name the study input as their provenance inputs, carry the plan method's
+    * specification with the described weight, estimator and method parameters,
+    * reduce under the described failure policy, and pair a focal-phase trial
+    * with a reference-phase trial under the supplied layout; every excluded
+    * key must lie outside both phases.
+    */
+  def reconstruct[K, U <: Unit2D, S, D](
+      input: ArtifactRef[StudyInput[K, U]],
+      layout: StudyLayout[K],
+      description: Vector[(String, Vector[Provenance.Param])],
+      scales: Vector[StudyScaleResult[K, U, S, D]]
+  ): Either[StudyResultError[K], StudyResult[K, U, S, D]] =
+    import Provenance.Param.*
+    val fields = description.toMap
+    def field(name: String): Either[StudyResultError[K], Vector[Provenance.Param]] =
+      fields.get(name).toRight(StudyResultError.Description(name, Vector.empty))
+    def text(name: String): Either[StudyResultError[K], String] = field(name).flatMap {
+      case Vector(Text(value)) => Right(value)
+      case other               => Left(StudyResultError.Description(name, other))
+    }
+    def definition(name: String): Either[StudyResultError[K], DefinitionId] =
+      field(name).flatMap {
+        case found @ Vector(Text(id), Num(version)) if version.isWhole =>
+          DefinitionId
+            .of(id, version.toInt)
+            .left
+            .map(_ => StudyResultError.Description(name, found))
+        case other => Left(StudyResultError.Description(name, other))
+      }
+    val declared = description.collect {
+      case (name, params) if name.startsWith("estimate.") =>
+        name.drop("estimate.".length).toIntOption -> params
+    }
+    val methodParameters = description.collect {
+      case (name, Vector(value)) if name.startsWith("method.") =>
+        name -> value
+    }
+    for
+      described <- field("input")
+      _         <- Either.cond(
+        described == Vector(Text(input.digest)),
+        (),
+        StudyResultError.InputMismatch(input.digest, described)
+      )
+      describedLayout <- definition("layout")
+      _               <- Either.cond(
+        describedLayout == layout.id,
+        (),
+        StudyResultError.LayoutMismatch(layout.id, describedLayout)
+      )
+      method <- definition("method")
+      grid   <- field("grid")
+      weight <- text("weight")
+      policy <- text("failurePolicy")
+      phases <- field("phases").flatMap {
+        case Vector(Text(focal), Text(reference)) => Right(focal -> reference)
+        case other => Left(StudyResultError.Description("phases", other))
+      }
+      _ <- Either.cond(
+        declared.size == scales.size && declared.map(_._1) == scales.indices.map(Some(_)),
+        (),
+        StudyResultError.ScaleCount(declared.size, scales.size)
+      )
+      _ <- scales.zipWithIndex.traverse { case (scale, index) =>
+        checkScale(
+          scale,
+          input.digest,
+          layout,
+          declared(index)._2,
+          grid,
+          weight,
+          methodParameters,
+          method,
+          policy,
+          phases
+        ).left
+          .map(StudyResultError.Scale(index, _))
+      }
+    yield new StudyResult(input, description, scales)
+
+  private def checkScale[K, U <: Unit2D, S, D](
+      scale: StudyScaleResult[K, U, S, D],
+      inputDigest: String,
+      layout: StudyLayout[K],
+      declaredEstimate: Vector[Provenance.Param],
+      grid: Vector[Provenance.Param],
+      weight: String,
+      methodParameters: Vector[(String, Provenance.Param)],
+      method: DefinitionId,
+      policy: String,
+      phases: (String, String)
+  ): Either[StudyResultError[K], Unit] =
+    import Provenance.Param.*
+    val estimate = scale.estimate.parameters.flatMap { case (k, v) => Vector(Text(k), v) }
+    val expectedParameters =
+      (Vector("weight" -> Text(weight)) ++
+        scale.estimate.parameters.map { case (k, v) => s"estimate.$k" -> v } ++
+        methodParameters).sortBy(_._1)
+    val (focal, reference)                                               = phases
+    def analysis(design: StudyDesign): Either[StudyResultError[K], Unit] =
+      val source  = scale.analyses.source(design)
+      val reduced = scale.analyses.reduced(design)
+      for
+        _ <- Either.cond(
+          source.provenance.inputs.render == inputDigest,
+          (),
+          StudyResultError.ProvenanceInputs(
+            design,
+            source.provenance.inputs.render,
+            inputDigest
+          )
+        )
+        spec <- source.evaluation.specification.toRight(
+          StudyResultError.MissingSpecification(design, source.evaluation)
+        )
+        _ <- Either.cond(
+          spec.method == method.name && spec.revision == method.version.toString,
+          (),
+          StudyResultError.SpecificationMethod(design, method, spec.method, spec.revision)
+        )
+        _ <- Either.cond(
+          spec.parameters == expectedParameters,
+          (),
+          StudyResultError.SpecificationParameters(design, expectedParameters, spec.parameters)
+        )
+        _ <- Either.cond(
+          reduced.diagnostics.policy.render == policy,
+          (),
+          StudyResultError.Policy(design, policy, reduced.diagnostics.policy)
+        )
+        _ <- source.rows
+          .collectFirst {
+            case row if layout.phase(row.left) != focal =>
+              StudyResultError.Phase(row.left, focal, layout.phase(row.left))
+            case row if layout.phase(row.right) != reference =>
+              StudyResultError.Phase(row.right, reference, layout.phase(row.right))
+          }
+          .toLeft(())
+      yield ()
+    if declaredEstimate != estimate then
+      Left(StudyResultError.ScaleEstimate(declaredEstimate, estimate))
+    else
+      scale.estimation
+        .collectFirst {
+          case (key, Right(mass)) if gridParams(mass.grid) != grid =>
+            StudyResultError.MassGrid(key, grid, gridParams(mass.grid))
+        }
+        .toLeft(())
+        .flatMap(_ => analysis(StudyDesign.Matched))
+        .flatMap(_ => analysis(StudyDesign.Control))
+        .flatMap(_ =>
+          scale.excludedPhases
+            .collectFirst {
+              case key if layout.phase(key) == focal || layout.phase(key) == reference =>
+                StudyResultError
+                  .Phase(key, "neither " + focal + " nor " + reference, layout.phase(key))
+            }
+            .toLeft(())
+        )
+
+  private def gridParams[U <: Unit2D](grid: Grid[U]): Vector[Provenance.Param] =
+    Vector(
+      Provenance.Param.Text(grid.id.name),
+      Provenance.Param.Num(grid.nx.toDouble),
+      Provenance.Param.Num(grid.ny.toDouble)
+    )
 
 /** A saved study describes exhaustive matched and different-stimulus controls
   * within each participant. Scale results remain separate; no implicit pooling.

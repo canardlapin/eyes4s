@@ -84,6 +84,9 @@ final class Scanpath[U <: Unit2D] private (
   def source: Option[RecordingRef]               = sourceSeries.map(_.source)
   def sampleSupport: Option[Vector[SampleRange]] = sourceSeries.map(_.support)
 
+  /** The exact source recording, when this scanpath is source-supported. */
+  def sourceRecording: Option[Recording[U]] = sourceSeries.map(_.recording)
+
   /** Total distance travelled, in frame units.
     *
     * Order-dependent, and therefore unavailable from [[occupancy]] -- the

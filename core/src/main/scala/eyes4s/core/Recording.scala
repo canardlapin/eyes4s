@@ -656,6 +656,14 @@ final class BinocularRecording[U <: Unit2D] private (
   def left: Recording[U]  = project(leftGaze, Eye.Left)
   def right: Recording[U] = project(rightGaze, Eye.Right)
 
+  /** Deterministic content identity: the ordered combination of the two eye
+    * projections, which already cover the shared timing, frame and sampling.
+    */
+  def contentHash: ContentHash =
+    ContentHash.combineAll(
+      Seq(ContentHash.ofString("binocular:v1"), left.contentHash, right.contentHash)
+    )
+
   /** One signal from two, by an explicit rule. */
   def cyclopean(f: Fusion): Recording[U] =
     val fused = IArray.tabulate(size) { i =>

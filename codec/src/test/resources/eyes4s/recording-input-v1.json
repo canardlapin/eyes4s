@@ -1,0 +1,144 @@
+{
+  "schema" : {
+    "name" : "eyes4s.recording-input",
+    "version" : 1
+  },
+  "value" : {
+    "unit" : "px",
+    "source" : "synthetic-left-headfixed-500",
+    "input" : "d4c0d76ef6fd5169",
+    "identities" : {
+      "frames" : [
+        {
+          "id" : "display",
+          "unit" : "px",
+          "xMin" : 0.0,
+          "yMin" : 0.0,
+          "xMax" : 1000.0,
+          "yMax" : 1000.0,
+          "yAxis" : "Down"
+        }
+      ],
+      "grids" : [
+      ],
+      "clocks" : [
+        "tracker",
+        "display"
+      ]
+    },
+    "channels" : {
+      "kind" : "monocular",
+      "recording" : {
+        "frame" : "display",
+        "clock" : "tracker",
+        "eye" : "left",
+        "pupilUnit" : "arbitrary",
+        "rate" : {
+          "kind" : "fixed",
+          "hz" : 500.0
+        },
+        "samplingToleranceMicros" : "2",
+        "recording" : "2c826dc41ae25e67",
+        "samples" : {
+          "length" : 8,
+          "tMicros" : [
+            "0",
+            "2000",
+            "4001",
+            "6000",
+            "8000",
+            "10000",
+            "12000",
+            "14000"
+          ],
+          "state" : [
+            "tracked",
+            "tracked",
+            "blink",
+            "lost",
+            "tracked",
+            "offScreen",
+            "tracked",
+            "tracked"
+          ],
+          "x" : [
+            500.0,
+            510.25,
+            null,
+            null,
+            515.0,
+            1200.0,
+            520.0,
+            525.0
+          ],
+          "y" : [
+            500.0,
+            500.0,
+            null,
+            null,
+            502.0,
+            -5.0,
+            500.0,
+            505.0
+          ],
+          "pupil" : [
+            900.0,
+            901.0,
+            null,
+            null,
+            null,
+            null,
+            903.0,
+            905.0
+          ],
+          "lineage" : [
+            "measured",
+            "measured>smoothed",
+            "measured",
+            "measured",
+            "interpolated",
+            "measured",
+            "interpolated>smoothed",
+            "measured"
+          ]
+        }
+      }
+    },
+    "viewing" : {
+      "distanceMm" : 600.0,
+      "widthMm" : 500.0,
+      "heightMm" : 500.0
+    },
+    "synchronization" : {
+      "target" : "display",
+      "mode" : "offset-only",
+      "marks" : [
+        {
+          "id" : "t1",
+          "sourceMicros" : "0",
+          "targetMicros" : "1000000"
+        },
+        {
+          "id" : "t2",
+          "sourceMicros" : "10000000",
+          "targetMicros" : "11000010"
+        },
+        {
+          "id" : "t3",
+          "sourceMicros" : "20000000",
+          "targetMicros" : "21000020"
+        },
+        {
+          "id" : "t4",
+          "sourceMicros" : "30000000",
+          "targetMicros" : "31005000"
+        }
+      ],
+      "residualLimitMicros" : "2000",
+      "fitted" : {
+        "offsetMicros" : "1000010",
+        "drift" : 0.0
+      }
+    }
+  }
+}
