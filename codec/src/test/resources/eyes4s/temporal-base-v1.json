@@ -1,0 +1,1177 @@
+{
+  "schema" : {
+    "name" : "eyes4s.study-input",
+    "version" : 1
+  },
+  "value" : {
+    "layout" : {
+      "name" : "eyes4s.participant-stimulus-phase",
+      "version" : 1
+    },
+    "keySchema" : {
+      "name" : "eyes4s.study-key",
+      "version" : 1
+    },
+    "unit" : "px",
+    "input" : "4fd98f50693c79ad",
+    "identities" : {
+      "frames" : [
+        {
+          "id" : "temporal",
+          "unit" : "px",
+          "xMin" : 0.0,
+          "yMin" : 0.0,
+          "xMax" : 2.0,
+          "yMax" : 2.0,
+          "yAxis" : "Down"
+        }
+      ],
+      "grids" : [
+      ],
+      "clocks" : [
+        "fixation-trial:e5ee90ac5de274ac",
+        "fixation-trial:1966b114a051e430",
+        "fixation-trial:92f11d0c26531591",
+        "fixation-trial:71cf0b836f87958f",
+        "fixation-trial:511af6d534d2d177",
+        "fixation-trial:42861ebde1bc774f",
+        "fixation-trial:e2db26ec48c12617",
+        "fixation-trial:1d19da57590cdd9b",
+        "fixation-trial:d9df8e0cff0e467f",
+        "fixation-trial:b2efc1a803f87179",
+        "fixation-trial:fc8771ee29333db9",
+        "fixation-trial:fe37c91e9c531fa6",
+        "fixation-trial:728faa6c51a28c62",
+        "fixation-trial:0871979179efa5a0",
+        "fixation-trial:264e5a9fc941f997",
+        "fixation-trial:2e1a9a5dfe8d8931",
+        "fixation-trial:14a0d777804fe58f",
+        "fixation-trial:f0ba02fb12e9cebd"
+      ]
+    },
+    "trials" : {
+      "schema" : {
+        "name" : "eyes4s.trials",
+        "version" : 1
+      },
+      "value" : [
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s1",
+              "stimulus" : "a",
+              "phase" : "encode"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:e5ee90ac5de274ac",
+              "fixations" : [
+                {
+                  "onsetMicros" : "9007199254740993",
+                  "offsetMicros" : "9007199254840993",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 100
+                },
+                {
+                  "onsetMicros" : "9007199254850993",
+                  "offsetMicros" : "9007199255050993",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "9007199255060993",
+                  "offsetMicros" : "9007199255260993",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "9007199255270993",
+                  "offsetMicros" : "9007199255670993",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 400
+                }
+              ]
+            }
+          }
+        },
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s1",
+              "stimulus" : "a",
+              "phase" : "recall"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:1966b114a051e430",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "100000",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 100
+                },
+                {
+                  "onsetMicros" : "110000",
+                  "offsetMicros" : "310000",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "320000",
+                  "offsetMicros" : "520000",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "530000",
+                  "offsetMicros" : "930000",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 400
+                }
+              ]
+            }
+          }
+        },
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s1",
+              "stimulus" : "a",
+              "phase" : "retest"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:92f11d0c26531591",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "100000",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 100
+                },
+                {
+                  "onsetMicros" : "110000",
+                  "offsetMicros" : "310000",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "320000",
+                  "offsetMicros" : "520000",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "530000",
+                  "offsetMicros" : "930000",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 400
+                }
+              ]
+            }
+          }
+        },
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s1",
+              "stimulus" : "b",
+              "phase" : "encode"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:71cf0b836f87958f",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "400000",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 400
+                },
+                {
+                  "onsetMicros" : "410000",
+                  "offsetMicros" : "610000",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "620000",
+                  "offsetMicros" : "820000",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "830000",
+                  "offsetMicros" : "930000",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s1",
+              "stimulus" : "b",
+              "phase" : "recall"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:511af6d534d2d177",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "200000",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "210000",
+                  "offsetMicros" : "610000",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 400
+                },
+                {
+                  "onsetMicros" : "620000",
+                  "offsetMicros" : "720000",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 100
+                },
+                {
+                  "onsetMicros" : "730000",
+                  "offsetMicros" : "930000",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                }
+              ]
+            }
+          }
+        },
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s1",
+              "stimulus" : "b",
+              "phase" : "retest"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:42861ebde1bc774f",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "200000",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "210000",
+                  "offsetMicros" : "610000",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 400
+                },
+                {
+                  "onsetMicros" : "620000",
+                  "offsetMicros" : "720000",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 100
+                },
+                {
+                  "onsetMicros" : "730000",
+                  "offsetMicros" : "930000",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                }
+              ]
+            }
+          }
+        },
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s1",
+              "stimulus" : "c",
+              "phase" : "encode"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:e2db26ec48c12617",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "200000",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "210000",
+                  "offsetMicros" : "610000",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 400
+                },
+                {
+                  "onsetMicros" : "620000",
+                  "offsetMicros" : "720000",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 100
+                },
+                {
+                  "onsetMicros" : "730000",
+                  "offsetMicros" : "930000",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                }
+              ]
+            }
+          }
+        },
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s1",
+              "stimulus" : "c",
+              "phase" : "recall"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:1d19da57590cdd9b",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "400000",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 400
+                },
+                {
+                  "onsetMicros" : "410000",
+                  "offsetMicros" : "610000",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "620000",
+                  "offsetMicros" : "820000",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "830000",
+                  "offsetMicros" : "930000",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s1",
+              "stimulus" : "c",
+              "phase" : "retest"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:d9df8e0cff0e467f",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "400000",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 400
+                },
+                {
+                  "onsetMicros" : "410000",
+                  "offsetMicros" : "610000",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "620000",
+                  "offsetMicros" : "820000",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "830000",
+                  "offsetMicros" : "930000",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s2",
+              "stimulus" : "a",
+              "phase" : "encode"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:b2efc1a803f87179",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "200000",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "210000",
+                  "offsetMicros" : "310000",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 100
+                },
+                {
+                  "onsetMicros" : "320000",
+                  "offsetMicros" : "720000",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 400
+                },
+                {
+                  "onsetMicros" : "730000",
+                  "offsetMicros" : "930000",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                }
+              ]
+            }
+          }
+        },
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s2",
+              "stimulus" : "a",
+              "phase" : "recall"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:fc8771ee29333db9",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "400000",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 400
+                },
+                {
+                  "onsetMicros" : "410000",
+                  "offsetMicros" : "510000",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 100
+                },
+                {
+                  "onsetMicros" : "520000",
+                  "offsetMicros" : "720000",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "730000",
+                  "offsetMicros" : "930000",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                }
+              ]
+            }
+          }
+        },
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s2",
+              "stimulus" : "a",
+              "phase" : "retest"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:fe37c91e9c531fa6",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "400000",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 400
+                },
+                {
+                  "onsetMicros" : "410000",
+                  "offsetMicros" : "510000",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 100
+                },
+                {
+                  "onsetMicros" : "520000",
+                  "offsetMicros" : "720000",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "730000",
+                  "offsetMicros" : "930000",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                }
+              ]
+            }
+          }
+        },
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s2",
+              "stimulus" : "b",
+              "phase" : "encode"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:728faa6c51a28c62",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "100000",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 100
+                },
+                {
+                  "onsetMicros" : "110000",
+                  "offsetMicros" : "510000",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 400
+                },
+                {
+                  "onsetMicros" : "520000",
+                  "offsetMicros" : "720000",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "730000",
+                  "offsetMicros" : "930000",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                }
+              ]
+            }
+          }
+        },
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s2",
+              "stimulus" : "b",
+              "phase" : "recall"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:0871979179efa5a0",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "100000",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 100
+                },
+                {
+                  "onsetMicros" : "110000",
+                  "offsetMicros" : "510000",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 400
+                },
+                {
+                  "onsetMicros" : "520000",
+                  "offsetMicros" : "720000",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "730000",
+                  "offsetMicros" : "930000",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                }
+              ]
+            }
+          }
+        },
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s2",
+              "stimulus" : "b",
+              "phase" : "retest"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:264e5a9fc941f997",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "100000",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 100
+                },
+                {
+                  "onsetMicros" : "110000",
+                  "offsetMicros" : "510000",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 400
+                },
+                {
+                  "onsetMicros" : "520000",
+                  "offsetMicros" : "720000",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "730000",
+                  "offsetMicros" : "930000",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                }
+              ]
+            }
+          }
+        },
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s2",
+              "stimulus" : "c",
+              "phase" : "encode"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:2e1a9a5dfe8d8931",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "400000",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 400
+                },
+                {
+                  "onsetMicros" : "410000",
+                  "offsetMicros" : "510000",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 100
+                },
+                {
+                  "onsetMicros" : "520000",
+                  "offsetMicros" : "720000",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "730000",
+                  "offsetMicros" : "930000",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                }
+              ]
+            }
+          }
+        },
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s2",
+              "stimulus" : "c",
+              "phase" : "recall"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:14a0d777804fe58f",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "200000",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "210000",
+                  "offsetMicros" : "310000",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 100
+                },
+                {
+                  "onsetMicros" : "320000",
+                  "offsetMicros" : "720000",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 400
+                },
+                {
+                  "onsetMicros" : "730000",
+                  "offsetMicros" : "930000",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                }
+              ]
+            }
+          }
+        },
+        {
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "s2",
+              "stimulus" : "c",
+              "phase" : "retest"
+            }
+          },
+          "meta" : {
+            "schema" : {
+              "name" : "eyes4s.unit",
+              "version" : 1
+            },
+            "value" : {
+              
+            }
+          },
+          "value" : {
+            "schema" : {
+              "name" : "eyes4s.scanpath",
+              "version" : 1
+            },
+            "value" : {
+              "frame" : "temporal",
+              "clock" : "fixation-trial:f0ba02fb12e9cebd",
+              "fixations" : [
+                {
+                  "onsetMicros" : "0",
+                  "offsetMicros" : "200000",
+                  "x" : 1.5,
+                  "y" : 0.5,
+                  "sampleCount" : 200
+                },
+                {
+                  "onsetMicros" : "210000",
+                  "offsetMicros" : "310000",
+                  "x" : 1.5,
+                  "y" : 1.5,
+                  "sampleCount" : 100
+                },
+                {
+                  "onsetMicros" : "320000",
+                  "offsetMicros" : "720000",
+                  "x" : 0.5,
+                  "y" : 0.5,
+                  "sampleCount" : 400
+                },
+                {
+                  "onsetMicros" : "730000",
+                  "offsetMicros" : "930000",
+                  "x" : 0.5,
+                  "y" : 1.5,
+                  "sampleCount" : 200
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

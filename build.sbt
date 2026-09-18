@@ -618,6 +618,10 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
       "org.scalacheck" %%% "scalacheck"       % scalacheckV
     )
   )
+  .jvmSettings(
+    // UI-S6: the schema registry suite checks every pinned v1 codec fixture.
+    Test / unmanagedResourceDirectories += file("codec/src/test/resources").getAbsoluteFile
+  )
 
 /** Streaming execution: Machine.toPipe, progress events, cancellation. */
 lazy val fs2Module = crossProject(JVMPlatform, JSPlatform)
@@ -668,7 +672,18 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
     Test / unmanagedSourceDirectories += file("tools/study-cli").getAbsoluteFile,
     Test / parallelExecution := false,
     Test / run / fork        := true,
-    Test / run / javaOptions ++= Seq("-Xms64m", "-Xmx256m")
+    Test / run / javaOptions ++= Seq("-Xms64m", "-Xmx256m"),
+    // UI-S6: FreshProcessReconstructionJvmSuite writes and reads saved studies in
+    // separate, freshly started JVMs over this test classpath, from the pinned
+    // v1 codec fixtures. The classpath is written as a test resource because an
+    // unforked test cannot read it from java.class.path.
+    Test / unmanagedResourceDirectories += file("codec/src/test/resources").getAbsoluteFile,
+    Test / resourceGenerators += Def.task {
+      val out = (Test / resourceManaged).value / "eyes4s" / "fresh-process" / "classpath.txt"
+      val entries = (Test / classDirectory).value +: (Test / dependencyClasspath).value.files
+      IO.write(out, entries.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator))
+      Seq(out)
+    }.taskValue
   )
 
 // ---------------------------------------------------------------------------

@@ -1,0 +1,103 @@
+{
+  "schema" : {
+    "name" : "eyes4s.temporal-study",
+    "version" : 1
+  },
+  "value" : {
+    "study" : {
+      "schema" : {
+        "name" : "eyes4s.study",
+        "version" : 1
+      },
+      "value" : {
+        "layout" : {
+          "name" : "eyes4s.participant-stimulus-phase",
+          "version" : 1
+        },
+        "keySchema" : {
+          "name" : "eyes4s.study-key",
+          "version" : 1
+        },
+        "method" : {
+          "name" : "eyes4s.cosine",
+          "version" : 1
+        },
+        "input" : "4fd98f50693c79ad",
+        "frame" : {
+          "id" : "temporal",
+          "unit" : "px",
+          "xMin" : 0.0,
+          "yMin" : 0.0,
+          "xMax" : 2.0,
+          "yMax" : 2.0,
+          "yAxis" : "Down"
+        },
+        "gridId" : "temporal@2x2",
+        "nx" : 2,
+        "ny" : 2,
+        "focalPhase" : "recall",
+        "referencePhase" : "encode",
+        "weight" : "Duration",
+        "policy" : {
+          "kind" : "requireAll"
+        },
+        "estimates" : [
+          {
+            "kind" : "binned"
+          },
+          {
+            "kind" : "gaussian",
+            "sigma" : 1.0,
+            "edges" : "Truncate"
+          }
+        ],
+        "parameters" : {
+          "schema" : {
+            "name" : "eyes4s.unit",
+            "version" : 1
+          },
+          "value" : {
+            
+          }
+        }
+      }
+    },
+    "input" : "def40de68e529acf",
+    "scope" : "withinParticipant",
+    "boundary" : "ClipDuration",
+    "windows" : [
+      {
+        "name" : "early",
+        "fromMicros" : "0",
+        "untilMicros" : "300000"
+      },
+      {
+        "name" : "middle",
+        "fromMicros" : "300000",
+        "untilMicros" : "600000"
+      },
+      {
+        "name" : "late",
+        "fromMicros" : "600000",
+        "untilMicros" : "950000"
+      },
+      {
+        "name" : "outside",
+        "fromMicros" : "950000",
+        "untilMicros" : "1100000"
+      }
+    ],
+    "repetitions" : [
+      {
+        "name" : "recall-encode",
+        "focal" : "recall",
+        "reference" : "encode"
+      },
+      {
+        "name" : "retest-recall",
+        "focal" : "retest",
+        "reference" : "recall"
+      }
+    ]
+  }
+}
