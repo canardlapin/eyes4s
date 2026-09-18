@@ -6,19 +6,19 @@ from fractions import Fraction
 import hashlib
 import io
 import json
-import os
 from pathlib import Path
-import subprocess
-import tarfile
-import tempfile
+import sys
 
-ROOT = Path(__file__).resolve().parents[2]
-HERE = Path(__file__).resolve().parent
+sys.dont_write_bytecode = True
+import parity  # noqa: E402
+
+ROOT = parity.ROOT
+HERE = parity.HERE
 INPUT = HERE / "fixtures/baseline-cases.json"
 REQUEST = HERE / "fixtures/template-training.csv"
 OUTPUT = HERE / "fixtures/template.json"
 SCALA = ROOT / "io/src/test/scala/eyes4s/io/TemplateFitReference.scala"
-REVISION = "ecb9c496257bce51acd5330af6a5e7a8d5b84e05"
+REVISION = parity.pinned_revision()
 ABSOLUTE_TOLERANCE = 1e-12
 
 
@@ -64,14 +64,13 @@ def main():
     prediction = sum(a*Fraction(b) for a,b in zip(exact, held["features"]))
     contaminated_rows = case["training"] + [dict(held, response=700)]
     contaminated_exact = rational_fit(contaminated_rows)
-    env = os.environ | {"LC_ALL": "C", "LANG": "C", "RGL_USE_NULL": "TRUE"}
-    with tempfile.TemporaryDirectory(prefix="eyes4s-template-reference-") as tmp:
-        tmp = Path(tmp)
+    # One locked R session runs the adapter and, after installing the pinned archive, eyesim.
+    with parity.r_session("eyes4s-template-reference-") as session:
+        tmp = session.tmp
         def fit(name, contents, success=True):
             input_path, output_path = tmp / (name + ".csv"), tmp / (name + "-fit.csv")
             input_path.write_bytes(contents)
-            run = subprocess.run(["Rscript", "--vanilla", str(ROOT / "tools/template-fit/fit.R"),
-                                  str(input_path), str(output_path)], env=env, capture_output=True, text=True)
+            run = session.rscript(ROOT / "tools/template-fit/fit.R", input_path, output_path, check=False, capture=True)
             if not success:
                 assert run.returncode != 0 and not output_path.exists(), (name, run.stdout, run.stderr)
                 return
@@ -104,15 +103,9 @@ def main():
         nonfinite = [list(row) for row in body]
         nonfinite[0][6] = "NaN"
         fit("nonfinite", csv_text(header, nonfinite).encode(), success=False)
-        archive, src, lib = tmp/"source.tar", tmp/"source", tmp/"library"
-        src.mkdir(); lib.mkdir()
-        subprocess.run(["git", "-C", str(args.eyesim), "archive", "--format=tar", "--output", str(archive), REVISION], check=True)
-        with tarfile.open(archive) as tar:
-            tar.extractall(src, filter="data")
-        install = subprocess.run(["R", "CMD", "INSTALL", f"--library={lib}", str(src)], env=env, capture_output=True, text=True)
-        assert install.returncode == 0, install.stdout + install.stderr
+        lib = session.install_eyesim(args.eyesim)
         ref = tmp/"eyesim.json"
-        subprocess.run(["Rscript", "--vanilla", str(HERE/"template.R"), str(lib), str(INPUT), str(ref)], env=env, check=True)
+        session.rscript(HERE/"template.R", lib, INPUT, ref)
         reference = json.loads(ref.read_text())
         assert reference["terms"] == ["template_a", "template_b"]
         # eyesim fits independently normalized maps: x columns sum to 4/3, y to 10.

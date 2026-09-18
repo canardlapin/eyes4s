@@ -52,7 +52,7 @@
       "path": "tools/r-parity/fixtures/baseline-cases.json",
       "sha256": "0b2e5036ee1c8aee63e27b3a99d08f8e4bffa3402e9ff67e4cba5bd68aef0300",
       "license": "Apache-2.0; synthetic data authored for eyes4s",
-      "role": "Selected adversarial and analytic inputs for every unresolved baseline row"
+      "role": "Frozen shared adversarial and analytic inputs selected before implementation; later inputs go in tools/r-parity/fixtures/cases/<ticket>.json"
     },
     "matched-control": {
       "path": "tools/r-parity/fixtures/matched-control.csv",
@@ -204,22 +204,6 @@
       "regeneration_ids": ["transforms-reference"]
     },
     {
-      "id": "fitted-density-transforms",
-      "row": "spatial-transforms",
-      "eyesim_entry_points": ["affine_transform", "contract_transform"],
-      "methods": ["moment-matched affine: sqrt(reference covariance) times inverse sqrt(source covariance)", "isotropic contraction from the covariance trace ratio", "bilinear density resampling under the fitted map"],
-      "estimand": "A density-space map fitted from matched reference/source density moments within fit_by strata and applied to source density objects by resampling; not a coordinate transform.",
-      "conventions": ["fitted on eye_density or density objects, never on coordinates", "ridge shrink 1e-6 on both covariances", "training-only fitting per stratum with optional unique matching", "coordinate tables are rejected, as the pinned fixture records"],
-      "backend_dependencies": ["base R", "stats"],
-      "eyes4s_public_api": ["none: pure modules carry no fitting backend"],
-      "fixture_inputs": ["baseline-small", "transforms-reference"],
-      "independent_case": "The pinned fixture records eyesim's response to coordinate tables; a future density-object case needs matched density moments computed independently of both implementations.",
-      "status": "implementation-gap",
-      "evidence": ["tools/r-parity/fixtures/transforms.json", "docs/EYESIM_CAPABILITIES.md"],
-      "gap_issue": "eyesim-transform",
-      "planned_evidence": "Pinned R output for affine_transform and contract_transform on density objects with independently computed moment-matched maps, delivered through a typed optional adapter or an export/reimport recipe."
-    },
-    {
       "id": "scanpath-multimatch",
       "row": "scanpaths",
       "eyesim_entry_points": ["scanpath", "scanpath_similarity", "multi_match"],
@@ -285,21 +269,20 @@
       "planned_evidence": "Pinned point values and explicit outside-domain results for every normalization."
     },
     {
-      "id": "fixation-and-density-random-sampling",
+      "id": "fixation-trajectory-evaluation",
       "row": "fixation-sampling",
       "eyesim_entry_points": ["sample_fixations", "rep_fixations", "sample_density"],
-      "methods": ["fast fixation interpolation", "fixed temporal resolution", "weighted random draw with and without replacement"],
-      "estimand": "A requested number or temporal resolution of draws from a declared fixation or spatial distribution.",
-      "conventions": ["seed and RNG identity explicit", "replacement explicit", "count versus duration weights explicit", "requested and realized cardinality both retained"],
-      "backend_dependencies": ["base R", "stats"],
-      "eyes4s_public_api": ["Rng", "Selection.BottomK", "PointMeasure"],
+      "methods": ["fast step lookup (stats::approx, constant, f = 0)", "slow last-onset lookup (fast = FALSE)", "duration-proportional row replication at a temporal resolution", "density lookup along the sampled trajectory (sample_density with times)"],
+      "estimand": "The fixation position in force at each requested time, the rows implied by each fixation's duration at a stated temporal resolution, and the template-density value at the sampled positions. Every output is a deterministic function of its inputs; eyesim draws nothing at random here.",
+      "conventions": ["a time before the first onset is NA on both paths", "after the last onset the fast path returns NA while the slow path holds the last fixation", "neither path consults duration, so a gap between fixations keeps the preceding position", "equal onsets are averaged by the fast path and resolved to the later row by the slow path", "rep_fixations repeats each row as.integer(duration / (1 / resolution)) times, truncating and never fewer than once", "sample_density returns NA wherever the sampled trajectory is NA", "requested and realized cardinality both retained"],
+      "backend_dependencies": ["stats::approx", "purrr", "dplyr"],
+      "eyes4s_public_api": ["Scanpath", "Scanpath.within", "Surface.sampleAt", "a time-indexed Scanpath lookup is planned"],
       "fixture_inputs": ["baseline-small"],
-      "independent_case": "Weights 1:2:1, count seven and both replacement policies expose impossible or duplicated draws.",
+      "independent_case": "A two-fixation path queried before its first onset, at and between onsets, after the last onset and after the last fixation ends separates the fast and slow endpoint policies from a duration-aware lookup; a duration of 0.29 at resolution 100, 29 steps in exact arithmetic, exposes the floating-point truncation to 28 rows; a duplicated onset exposes the averaging.",
       "status": "implementation-gap",
-      "evidence": ["design/src/test/scala/eyes4s/design/PairDesignSuite.scala"],
+      "evidence": ["core/src/test/scala/eyes4s/core/ScanpathSuite.scala"],
       "gap_issue": "eyesim-sampling",
-      "related_issues": ["bd-01KYD6T48ZREC657WRGSAHM1R3"],
-      "planned_evidence": "Seeded R fixtures and an eyes4s public sampling API with cardinality accounting."
+      "planned_evidence": "Pinned fast and slow sample_fixations, rep_fixations and sample_density-with-times output on a declared path, an independent step-function oracle, and an eyes4s public route that evaluates a scanpath at requested times with explicit out-of-support results."
     },
     {
       "id": "fixation-entropy",
@@ -604,6 +587,25 @@
       "gap_issue": "eyesim-export",
       "related_issues": ["io-export"],
       "planned_evidence": "Base-R consumption checks for each completed baseline workflow and JVM-only Arrow evidence under io-export."
+    }
+  ],
+  "out_of_baseline": [
+    {
+      "id": "fitted-density-transforms",
+      "row": "spatial-transforms",
+      "eyesim_entry_points": ["affine_transform", "contract_transform"],
+      "methods": ["moment-matched affine: sqrt(reference covariance) times inverse sqrt(source covariance)", "isotropic contraction from the covariance trace ratio", "bilinear density resampling under the fitted map"],
+      "estimand": "A density-space map fitted from matched reference/source density moments within fit_by strata and applied to source density objects by resampling; not a coordinate transform.",
+      "conventions": ["fitted on eye_density or density objects, never on coordinates", "ridge shrink 1e-6 on both covariances", "training-only fitting per stratum with optional unique matching", "coordinate tables are rejected, as the pinned fixture records"],
+      "backend_dependencies": ["base R", "stats"],
+      "eyes4s_public_api": ["none: pure modules carry no fitting backend"],
+      "fixture_inputs": ["baseline-small", "transforms-reference"],
+      "independent_case": "The pinned fixture records eyesim's response to coordinate tables; a future density-object case needs matched density moments computed independently of both implementations.",
+      "evidence": ["tools/r-parity/fixtures/transforms.json", "docs/EYESIM_CAPABILITIES.md"],
+      "planned_evidence": "Pinned R output for affine_transform and contract_transform on density objects with independently computed moment-matched maps, delivered through a typed optional adapter or an export/reimport recipe.",
+      "reason": "fitted density-space maps belong with PCA, CORAL and CCA in a later adapter module; owner decision 2026-09-18",
+      "owner_decision": "2026-09-18",
+      "related_issues": ["eyesim-transform"]
     }
   ]
 }

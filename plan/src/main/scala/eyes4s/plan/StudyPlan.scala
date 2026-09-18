@@ -50,6 +50,20 @@ object DefinitionId:
   def of(name: String, version: Int): Either[PlanError, DefinitionId] =
     if name.trim.isEmpty || version < 1 then Left(PlanError.InvalidDefinition(name, version))
     else Right(new DefinitionId(name, version))
+
+  /** A built-in identity declared outside this companion.
+    *
+    * New built-in identities are not appended here. Each is declared in the
+    * file that introduces it, as a `val` of an object whose name ends in
+    * `Definitions` (for example `object KdeDefinitions` beside the KDE
+    * method), so parallel changes never edit this companion. The schema
+    * registry in `eyes4s-laws` finds every such object on the classpath and
+    * requires each identity to be valid under [[of]] and to have exactly one
+    * registry entry, with its law and pinned fixture. The identities above
+    * stay where they are.
+    */
+  private[eyes4s] def builtIn(name: String, version: Int): DefinitionId =
+    new DefinitionId(name, version)
   // UI-S5: artifact manifests and typed payload references.
   val manifest: DefinitionId        = new DefinitionId("eyes4s.manifest", 1)
   val packedRecording: DefinitionId = new DefinitionId("eyes4s.packed-recording", 1)

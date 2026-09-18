@@ -281,9 +281,10 @@ HEAD was `5b217a6`. Source inspection is not a native UI or release qualificatio
   already establish a separate app consuming typed, inspectable scientific plans.
 - [The fixation study guide](FIXATION_STUDIES.md), [saved studies](SAVED_STUDIES.md),
   and [extensions](EXTENDING_STUDIES.md) supply a concrete first consumer route.
-- [The eyesim capability baseline](EYESIM_CAPABILITIES.md) records 20 cases: one
-  verified equivalent, three intentional divergences, and sixteen gaps. Some gaps
-  concern external-reference evidence; others concern missing workflows. Neither
+- [The eyesim capability baseline](EYESIM_CAPABILITIES.md) classifies every case as
+  verified equivalent, intentional divergence or gap; `tools/r-parity/check_baseline.py`
+  prints the current counts. Some gaps concern external-reference evidence; others
+  concern missing workflows. Neither
   symbol presence nor completion of the baseline inventory establishes full parity.
 - Intaglio's [JavaFX backend](../../intaglio/modules/javafx/README.md) already compiles
   scenes to Canvas commands, with pure compilation and FX-thread drawing. Its headless

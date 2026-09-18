@@ -1289,8 +1289,10 @@ to `"all"` — a collision waiting for the first study with a condition called `
 
 Status (2026-09-17): `Adapter` and the latent (PCA / CORAL / CCA) and map-space (`contract`,
 `affine`) adapters are not implemented, and neither is the `eyes4s-gale` module that would host
-them. The eyesim fitted density-space transforms they correspond to are tracked by
-`eyesim-transform` (p3), which records them as an implementation gap in the baseline.
+them. The eyesim fitted density-space transforms they correspond to left the baseline by owner
+decision on 2026-09-18 and belong in that later adapter module with PCA, CORAL and CCA; the
+baseline manifest keeps their record, fixture and evidence under `out_of_baseline`
+(`eyesim-transform` holds the tracker history).
 
 Surface decomposition reuses alignment and pair evaluation without pretending to be a `Compare`.
 OLS returns a `Signed` fit, intercept-free NNLS an `Intensity`, and simplex-constrained fitting a

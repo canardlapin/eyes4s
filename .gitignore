@@ -14,3 +14,7 @@ project/project/
 # mote op-log is intentionally committed: it is the project's decision record.
 .mote/tmp/
 .mote/local/
+
+# Project-local R library of the parity generators; tools/r-parity/r-lock.json records it.
+tools/r-parity/library/
+__pycache__/

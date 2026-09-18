@@ -28,8 +28,10 @@ import scala.util.Using
 /** Every schema and definition identity eyes4s ships, with the published
   * round-trip law and the pinned v1 fixture that stand behind it.
   *
-  * The registry is checked against the `DefinitionId` companion by
-  * reflection, so adding a built-in identity without an entry here, or an
+  * The registry is checked by reflection against the `DefinitionId`
+  * companion and every `*Definitions` object in the `eyes4s` packages, where
+  * new built-in identities are declared file by file (see
+  * `DefinitionId.builtIn`), so adding a built-in identity without an entry here, or an
   * entry without a law suite that actually registers the named law or a
   * resource that actually carries the identity, fails the build. Conversely
   * every pinned fixture under `codec/src/test/resources/eyes4s` must be
@@ -307,31 +309,84 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
     here.toSet ++ document.asArray.toVector.flatten.flatMap(identities) ++
       document.asObject.toVector.flatMap(_.values).flatMap(identities)
 
-  /** The identities the `DefinitionId` companion declares, by reflection. */
-  private lazy val declared: Map[String, DefinitionId] =
-    DefinitionId.getClass.getDeclaredMethods.toVector
-      .filter(m =>
-        m.getParameterCount == 0 && m.getReturnType == classOf[DefinitionId] &&
-          java.lang.reflect.Modifier.isPublic(m.getModifiers)
-      )
-      .flatMap(m =>
-        m.invoke(DefinitionId) match
-          case id: DefinitionId => Vector(m.getName -> id)
-          case _                => Vector.empty
-      )
-      .toMap
+  /** Binary names of the classes under the `eyes4s` packages on the test
+    * classpath whose names end in `suffix`, from class directories and jars.
+    */
+  private def classesEndingWith(suffix: String): Vector[String] =
+    val loader = getClass.getClassLoader
+    val files  = loader.getResources("eyes4s/").asScala.toVector.flatMap { url =>
+      url.getProtocol match
+        case "file" =>
+          val root = Paths.get(url.toURI).getParent
+          Using.resource(Files.walk(root.resolve("eyes4s")))(
+            _.iterator.asScala.map(p => root.relativize(p).toString).toVector
+          )
+        case "jar" =>
+          val jar = url.openConnection().asInstanceOf[java.net.JarURLConnection].getJarFile
+          jar.entries.asScala.map(_.getName).toVector
+        case other => fail(s"cannot list classes under $url ($other)")
+    }
+    files
+      .map(_.replace(java.io.File.separatorChar, '/'))
+      .filter(name => name.startsWith("eyes4s/") && name.endsWith(s"$suffix.class"))
+      .map(_.stripSuffix(".class").replace('/', '.'))
+      .distinct
+      .sorted
 
-  /** Declared identities without an entry, entries twice, and entries that are not built in. */
-  private def coverage(entries: Vector[Entry]): Vector[String] =
+  /** The `DefinitionId` companion and every `*Definitions` object: per-file
+    * holders of built-in identities (see `DefinitionId.builtIn`), found on the
+    * classpath so that a new holder needs no edit here.
+    */
+  private lazy val holders: Vector[(String, AnyRef)] =
+    ("DefinitionId" -> (DefinitionId: AnyRef)) +: classesEndingWith("Definitions$").map {
+      name =>
+        val holder =
+          Class.forName(name, true, getClass.getClassLoader).getField("MODULE$").get(null)
+        name.stripPrefix("eyes4s.").stripSuffix("$") -> holder
+    }
+
+  /** Every identity a holder declares, by reflection, keyed by `Holder.field`. */
+  private lazy val declarations: Vector[(String, DefinitionId)] =
+    holders.flatMap { (label, holder) =>
+      holder.getClass.getDeclaredMethods.toVector
+        .filter(m =>
+          m.getParameterCount == 0 && m.getReturnType == classOf[DefinitionId] &&
+            java.lang.reflect.Modifier.isPublic(m.getModifiers)
+        )
+        .flatMap(m =>
+          m.invoke(holder) match
+            case id: DefinitionId => Vector(s"$label.${m.getName}" -> id)
+            case _                => Vector.empty
+        )
+    }
+
+  private lazy val declared: Map[String, DefinitionId] = declarations.toMap
+
+  /** Identities declared twice or invalid, declared identities without an
+    * entry, entries twice, and entries that are not built in.
+    */
+  private def coverage(
+      entries: Vector[Entry],
+      declarations: Vector[(String, DefinitionId)] = declarations
+  ): Vector[String] =
     val registered = entries.map(_.id)
+    val builtIn    = declarations.map(_._2).toSet
     registered.diff(registered.distinct).map(id => s"$id is registered twice") ++
-      declared.toVector.sortBy(_._1).collect {
+      declarations.groupBy(_._2).toVector.sortBy(_._1.toString).collect {
+        case (id, fields) if fields.size > 1 =>
+          s"$id is declared twice: ${fields.map(_._1).sorted.mkString(", ")}"
+      } ++
+      declarations.sortBy(_._1).collect {
+        case (field, id) if DefinitionId.of(id.name, id.version).isLeft =>
+          s"$field ($id) is not a valid identity"
+      } ++
+      declarations.sortBy(_._1).collect {
         case (field, id) if !registered.contains(id) =>
-          s"DefinitionId.$field ($id) has no registry entry: add a published round-trip law " +
+          s"$field ($id) has no registry entry: add a published round-trip law " +
             "in eyes4s-laws and a pinned v1 fixture, then register both here"
       } ++
       registered
-        .filterNot(declared.values.toSet.contains)
+        .filterNot(builtIn.contains)
         .map(id => s"$id is not a built-in identity")
 
   /** Entries without a law, and laws their suite does not register. */
@@ -404,6 +459,31 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
   test("every built-in DefinitionId has exactly one registry entry, and nothing else does") {
     assert(declared.size >= 22, s"reflection found only ${declared.keys}")
     assertEquals(coverage(builtIns), Vector.empty)
+  }
+
+  test("the scan for per-file Definitions holders reads main and test classes") {
+    // The scan that finds `*Definitions` objects, shown on two known objects:
+    // one in a dependency's main classes, one in this module's test classes.
+    assert(classesEndingWith("DefinitionId$").contains("eyes4s.plan.DefinitionId$"))
+    assert(classesEndingWith("SchemaRegistry$").contains("eyes4s.laws.SchemaRegistry$"))
+    assertEquals(holders.map(_._1).take(1), Vector("DefinitionId"))
+    val duplicate = "KdeDefinitions.cosine" -> DefinitionId.cosine
+    assert(
+      coverage(builtIns, declarations :+ duplicate).exists(
+        _.startsWith(
+          s"${DefinitionId.cosine} is declared twice"
+        )
+      )
+    )
+    val blank = "KdeDefinitions.blank" -> DefinitionId.builtIn(" ", 1)
+    assert(
+      coverage(builtIns, declarations :+ blank).exists(_.contains("is not a valid identity"))
+    )
+    val unregistered = "KdeDefinitions.kde" -> DefinitionId.builtIn("eyes4s.kde", 1)
+    assert(
+      coverage(builtIns, declarations :+ unregistered)
+        .exists(_.startsWith("KdeDefinitions.kde (DefinitionId(eyes4s.kde,1)) has no registry"))
+    )
   }
 
   test("every registered law is registered by its published law suite") {

@@ -4,7 +4,6 @@ stopifnot(length(args) == 3L)
 .libPaths(c(args[[1L]], .libPaths()))
 library(eyesim)
 future::plan(future::sequential)
-options(digits = 17)
 x <- read.csv(args[[2L]], stringsAsFactors = FALSE)
 trial_id <- paste(x$participant, x$image, x$phase, sep = "/")
 rows <- lapply(unique(trial_id), function(id) {

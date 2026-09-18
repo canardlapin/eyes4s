@@ -22,15 +22,15 @@ from decimal import Decimal, getcontext
 from fractions import Fraction
 import hashlib
 import json
-import os
 from pathlib import Path
-import subprocess
-import tarfile
-import tempfile
+import sys
 
-ROOT = Path(__file__).resolve().parents[2]
-HERE = Path(__file__).resolve().parent
-REVISION = "ecb9c496257bce51acd5330af6a5e7a8d5b84e05"
+sys.dont_write_bytecode = True
+import parity  # noqa: E402
+
+ROOT = parity.ROOT
+HERE = parity.HERE
+REVISION = parity.pinned_revision()
 INPUT = HERE / "fixtures/baseline-cases.json"
 JSON_OUT = HERE / "fixtures/entropy.json"
 SCALA = ROOT / "kernel/src/test/scala/eyes4s/kernel/EntropyFixtures.scala"
@@ -41,10 +41,6 @@ BASES = {"2": Decimal(2), "e": Decimal(1).exp()}
 NA = "NA"
 
 getcontext().prec = 60
-
-
-def checked(*args, **kwargs):
-    return subprocess.run(args, check=True, text=True, **kwargs)
 
 
 def frac(value) -> Fraction:
@@ -203,45 +199,10 @@ def oracle(spec: dict) -> dict:
 
 
 def run_r(eyesim: Path) -> dict:
-    env = os.environ | {"LC_ALL": "C", "LANG": "C", "RGL_USE_NULL": "TRUE"}
-    with tempfile.TemporaryDirectory(prefix="eyes4s-r-entropy-") as tmp:
-        tmp = Path(tmp)
-        src, lib = tmp / "source", tmp / "library"
-        src.mkdir()
-        lib.mkdir()
-        archive = tmp / "source.tar"
-        checked(
-            "git",
-            "-C",
-            str(eyesim),
-            "archive",
-            "--format=tar",
-            "--output",
-            str(archive),
-            REVISION,
-        )
-        with tarfile.open(archive) as tar:
-            tar.extractall(src, filter="data")
-        # Install the exact archived source, never an arbitrary installed eyesim package.
-        with (tmp / "install.log").open("w") as log:
-            result = subprocess.run(
-                ["R", "CMD", "INSTALL", f"--library={lib}", str(src)],
-                env=env,
-                stdout=log,
-                stderr=subprocess.STDOUT,
-            )
-        if result.returncode:
-            raise RuntimeError((tmp / "install.log").read_text())
-        output = tmp / "entropy.json"
-        checked(
-            "Rscript",
-            "--vanilla",
-            str(HERE / "entropy.R"),
-            str(lib),
-            str(INPUT),
-            str(output),
-            env=env,
-        )
+    # The pinned archive in the locked R session; never an arbitrary installed eyesim package.
+    with parity.r_session("eyes4s-r-entropy-", eyesim) as r:
+        output = r.tmp / "entropy.json"
+        r.rscript(HERE / "entropy.R", r.eyesim_library, INPUT, output)
         return json.loads(output.read_text())
 
 
