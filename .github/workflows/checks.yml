@@ -128,6 +128,10 @@ jobs:
         if: matrix.project == 'rootJVM' && matrix.java == 'temurin@17'
         run: sbt 'ioJVM/Test/runMain eyes4s.io.EyeLinkAscPerformanceMain --profile smoke --hardware github-actions-ubuntu-22.04-x64'
 
+      - name: Run execution responsiveness smoke profile
+        if: matrix.project == 'rootJVM' && matrix.java == 'temurin@17'
+        run: sbt 'fs2ModuleJVM/Test/runMain eyes4s.fs2.ExecutionResponsivenessMain --profile smoke --hardware github-actions-ubuntu-22.04-x64'
+
   site:
     name: Generate Site
     strategy:

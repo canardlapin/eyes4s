@@ -327,7 +327,14 @@ class StudyExecutionSuite extends munit.CatsEffectSuite:
           assertEquals(totals(comparing), SegmentTotal.AtMost(bound))
           val units = bySegment(comparing).segmentUnits
           assert(units >= 1 && units <= bound, clue((comparing, units)))
-          assertEquals(totals(StudySegment.Reducing(scale, design)), SegmentTotal.Unknown)
+          // Unknown before the run, exact once the reduction's scores are realised.
+          val reducing = StudySegment.Reducing(scale, design)
+          assertEquals(StudyExecution.total(two, reducing), SegmentTotal.Unknown)
+          assertEquals(
+            totals(reducing),
+            SegmentTotal.Exact(bySegment(reducing).segmentUnits),
+            reducing
+          )
         }
         val focal = two.focalIndices.size.toLong
         assertEquals(totals(StudySegment.Contrasting(scale)), SegmentTotal.AtMost(focal))

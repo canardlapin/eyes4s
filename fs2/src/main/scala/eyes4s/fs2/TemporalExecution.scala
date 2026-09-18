@@ -53,18 +53,12 @@ object TemporalRunId:
       quanta.comparison.value
     )
 
-/** The counted span of a temporal run: one `Preparing` segment per cell, and
-  * the cell's study segments stamped with the cell.
+/** The counted span of a temporal run is [[eyes4s.plan.TemporalSegment]],
+  * stated in the pure plan module with its totals; these aliases keep the
+  * name and its cases here.
   */
-enum TemporalSegment derives CanEqual:
-  case Preparing(repetition: Int, window: Int)
-  case Studying(repetition: Int, window: Int, segment: StudySegment)
-
-object TemporalSegment:
-  def of(stage: TemporalStage): TemporalSegment = stage match
-    case TemporalStage.Preparing(repetition, window, _)    => Preparing(repetition, window)
-    case TemporalStage.Studying(repetition, window, stage) =>
-      Studying(repetition, window, StudySegment.of(stage))
+type TemporalSegment = eyes4s.plan.TemporalSegment
+val TemporalSegment: eyes4s.plan.TemporalSegment.type = eyes4s.plan.TemporalSegment
 
 type TemporalProgress = RunProgress[TemporalRunId, TemporalStage, TemporalSegment]
 type TemporalOutcome[K, U <: Unit2D, P, S, D] = RunOutcome[
@@ -141,17 +135,20 @@ object TemporalExecution:
       quanta,
       () => work.work(budget),
       TemporalSegment.of,
-      total(work, _)
+      total(work, _, _)
     )
 
-  /** Totals the prepared temporal study can state before a segment runs: a
-    * cell's preparation is exactly one unit per trial, and its study segments
-    * are the repetition's prepared study's totals, see [[StudyExecution.total]].
+  /** The total stated as a segment begins; see [[eyes4s.plan.TemporalSegment.total]]. */
+  def total[K, U <: Unit2D, P, S, D](
+      work: PreparedTemporalStudy[K, U, P, S, D],
+      segment: TemporalSegment,
+      cursor: TemporalCursor[K, U, P, S, D]
+  ): SegmentTotal = TemporalSegment.total(work, segment, cursor)
+
+  /** Totals the prepared temporal study can state before a segment runs; see
+    * [[eyes4s.plan.TemporalSegment.total]].
     */
   def total[K, U <: Unit2D, P, S, D](
       work: PreparedTemporalStudy[K, U, P, S, D],
       segment: TemporalSegment
-  ): SegmentTotal = segment match
-    case TemporalSegment.Preparing(_, _) => SegmentTotal.Exact(work.trials.toLong)
-    case TemporalSegment.Studying(repetition, _, inner) =>
-      StudyExecution.total(work.repetitions(repetition).prepared, inner)
+  ): SegmentTotal = TemporalSegment.total(work, segment)

@@ -644,6 +644,17 @@ final class ReductionCursor[K, S] private[design] (
   /** Keys whose reduced row is already recorded. */
   def reducedKeys: Int = reduced
 
+  /** The units this reduction charges from its first step to `Done`: one per
+    * contribution, unmatched key and ambiguity visited, then `max(1, scores)`
+    * per distinct key. A function of the realised scores alone, so it is the
+    * same from every position and a driver can state an exact total when the
+    * reduction begins.
+    */
+  def declaredUnits: Long =
+    val scores = contributions.groupMapReduce(_._1)(_ => 1L)(_ + _)
+    val keys   = (contributions.map(_._1) ++ unmatched ++ ambiguous.map(_._1)).distinct
+    total.toLong + keys.iterator.map(key => math.max(1L, scores.getOrElse(key, 0L))).sum
+
   def advance(quantum: PairQuantum): ReductionPage[K, S] =
     var work    = 0
     var pos     = position

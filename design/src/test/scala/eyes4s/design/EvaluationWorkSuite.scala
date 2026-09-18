@@ -322,3 +322,62 @@ class EvaluationWorkSuite extends munit.FunSuite:
       "a closure was accepted as bounded pair evaluation"
     )
   }
+
+  test("a reduction's declared units are what it charges, at every quantum and position") {
+    val spec = get(
+      EvaluationSpec.of(
+        "doubles",
+        "1",
+        Vector.empty,
+        Vector("value"),
+        EvaluationGeometry.Independent,
+        EvaluationTime.OrderFree
+      )
+    )
+    val scored = EvaluationInfo("doubles", EvaluationScale.Unitless, Some(spec))
+    // p/a is a duplicated focal key and p/b a duplicated reference key, so both
+    // orientations see an ambiguity; q/a has no reference in its subject, so it
+    // is unmatched; every pair with p/c on the left fails its score.
+    val focal =
+      Vector(Key("p", "a"), Key("p", "b"), Key("p", "c"), Key("q", "a"), Key("p", "a"))
+    val refs = Vector(Key("p", "a"), Key("p", "b"), Key("p", "c"), Key("p", "b"), Key("p", "d"))
+    val source = get(
+      evaluateScheduled(
+        get(DirectedPairSchedule.exhaustive(focal, refs, controls.relation)),
+        ContentHash.empty,
+        scored
+      )(pair =>
+        if pair.left.item == "c" then Left("failed")
+        else Right(pair.leftIndex.toDouble + 0.5 * pair.rightIndex.toDouble)
+      )
+    )
+    assert(source.diagnostics.ambiguous.nonEmpty, "the fixture must carry an ambiguous key")
+    assert(source.diagnostics.unmatchedLeft.nonEmpty, "the fixture must carry an unmatched key")
+    assert(source.rows.exists(_.result.isLeft), "the fixture must carry a failed score")
+    val starts = Vector(
+      "by left"  -> ((p: FailurePolicy) => source.meanByLeftWork(p)),
+      "by right" -> ((p: FailurePolicy) => source.meanByRightWork(p))
+    )
+    for
+      (orientation, start) <- starts
+      policy  <- Vector(FailurePolicy.RequireAll, get(FailurePolicy.successfulOnly(1)))
+      quantum <- (1 to 24).toVector :+ 1024
+    do
+      val first    = start(policy)
+      val declared = first.declaredUnits
+      val clue     = s"$orientation, $policy, quantum $quantum"
+      // Drive to Done, recording the units charged and what every position declares.
+      @annotation.tailrec
+      def drive(
+          cursor: ReductionCursor[Key, Double],
+          charged: Long,
+          seen: Vector[Long]
+      ): (Long, Vector[Long]) =
+        cursor.advance(get(PairQuantum.of(quantum))) match
+          case ReductionPage.More(units, next) =>
+            drive(next, charged + units, seen :+ next.declaredUnits)
+          case ReductionPage.Done(units, _) => (charged + units, seen)
+      val (charged, seen) = drive(first, 0L, Vector(declared))
+      assertEquals(charged, declared, clue)
+      assertEquals(seen.distinct, Vector(declared), clue)
+  }

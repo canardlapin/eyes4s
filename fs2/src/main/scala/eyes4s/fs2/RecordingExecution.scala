@@ -41,19 +41,12 @@ object RecordingRunId:
   def of(plan: RecordingPlan[?], quanta: WorkQuanta): RecordingRunId =
     RecordingRunId(plan.input.digest, plan.method.id, plan.description, quanta.samples.value)
 
-/** The counted span of a recording run: a [[RecordingStage]] with the chunk
-  * offset erased, so every chunk of one machine counts toward one total.
+/** The counted span of a recording run is [[eyes4s.plan.RecordingSegment]],
+  * stated in the pure plan module with its totals; these aliases keep the
+  * name and its cases here.
   */
-enum RecordingSegment derives CanEqual:
-  case Synchronizing, Warping, Interpolating, Detecting, Assigning
-
-object RecordingSegment:
-  def of(stage: RecordingStage): RecordingSegment = stage match
-    case RecordingStage.Synchronizing    => Synchronizing
-    case RecordingStage.Warping          => Warping
-    case RecordingStage.Interpolating(_) => Interpolating
-    case RecordingStage.Detecting(_)     => Detecting
-    case RecordingStage.Assigning        => Assigning
+type RecordingSegment = eyes4s.plan.RecordingSegment
+val RecordingSegment: eyes4s.plan.RecordingSegment.type = eyes4s.plan.RecordingSegment
 
 type RecordingProgress   = RunProgress[RecordingRunId, RecordingStage, RecordingSegment]
 type RecordingOutcome[P] = RunOutcome[
@@ -129,16 +122,11 @@ object RecordingExecution:
       quanta,
       () => plan.work(recording),
       RecordingSegment.of,
-      total(recording.size, _)
+      (segment, _) => total(recording.size, segment)
     )
 
-  /** Totals a recording plan can state before a segment runs: the whole
-    * steps are one unit each, and each chunked machine feeds exactly every
-    * sample, its flush and assembly charged to the last chunk.
+  /** Totals a recording plan can state before a segment runs; see
+    * [[eyes4s.plan.RecordingSegment.total]]. All are exact.
     */
-  def total(samples: Int, segment: RecordingSegment): SegmentTotal = segment match
-    case RecordingSegment.Synchronizing => SegmentTotal.Exact(1L)
-    case RecordingSegment.Warping       => SegmentTotal.Exact(1L)
-    case RecordingSegment.Interpolating => SegmentTotal.Exact(samples.toLong)
-    case RecordingSegment.Detecting     => SegmentTotal.Exact(samples.toLong)
-    case RecordingSegment.Assigning     => SegmentTotal.Exact(1L)
+  def total(samples: Int, segment: RecordingSegment): SegmentTotal =
+    RecordingSegment.total(samples, segment)

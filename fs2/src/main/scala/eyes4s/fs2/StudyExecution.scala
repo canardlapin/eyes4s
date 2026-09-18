@@ -58,21 +58,12 @@ object StudyRunId:
       quanta.comparison.value
     )
 
-/** The counted span of a run: a [[StudyStage]] with the trial index erased,
-  * so every trial's estimation counts toward one `Estimating(scale)` total.
+/** The counted span of a run is [[eyes4s.plan.StudySegment]], stated in the
+  * pure plan module with its totals so the published execution laws check
+  * the shipped claims; these aliases keep the name and its cases here.
   */
-enum StudySegment derives CanEqual:
-  case Estimating(scale: Int)
-  case Comparing(scale: Int, design: StudyDesign)
-  case Reducing(scale: Int, design: StudyDesign)
-  case Contrasting(scale: Int)
-
-object StudySegment:
-  def of(stage: StudyStage): StudySegment = stage match
-    case StudyStage.Estimating(scale, _)     => Estimating(scale)
-    case StudyStage.Comparing(scale, design) => Comparing(scale, design)
-    case StudyStage.Reducing(scale, design)  => Reducing(scale, design)
-    case StudyStage.Contrasting(scale)       => Contrasting(scale)
+type StudySegment = eyes4s.plan.StudySegment
+val StudySegment: eyes4s.plan.StudySegment.type = eyes4s.plan.StudySegment
 
 /** The study family's instances of the shared runner vocabulary; see
   * [[RunProgress]], [[RunOutcome]], [[RunEvent]] and [[Run]]. `StudyProgress`
@@ -185,32 +176,21 @@ object StudyExecution:
       quanta,
       () => work.work(budget),
       StudySegment.of,
-      total(work, _)
+      total(work, _, _)
     )
 
-  /** Totals the prepared study can state before the segment runs. Estimation
-    * is one unit per trial. A comparison segment pages the schedule, which
-    * visits each candidate pair once and then charges one unit per reference
-    * key for the unmatched-reference report (or one per focal key when there
-    * are no reference trials), charges one unit to begin or wholly evaluate
-    * each selected pair, and for a bounded method at most one unit per grid
-    * cell inside it. Reduction charges per realized score, which preparation
-    * does not enumerate. A contrast visits at most every focal key.
+  /** The total stated as a segment begins; see [[eyes4s.plan.StudySegment.total]]. */
+  def total[K, U <: Unit2D, S, D](
+      work: PreparedStudy[K, U, ?, S, D],
+      segment: StudySegment,
+      cursor: StudyCursor[K, U, S, D]
+  ): SegmentTotal = StudySegment.total(work, segment, cursor)
+
+  /** Totals the prepared study can state before the segment runs; see
+    * [[eyes4s.plan.StudySegment.total]]. A reduction is `Unknown` here and
+    * exact once its segment begins.
     */
   def total[K, U <: Unit2D, S, D](
       work: PreparedStudy[K, U, ?, S, D],
       segment: StudySegment
-  ): SegmentTotal = segment match
-    case StudySegment.Estimating(_) => SegmentTotal.Exact(work.input.trials.rows.size.toLong)
-    case StudySegment.Comparing(_, design) =>
-      val candidates = BigInt(design match
-        case StudyDesign.Matched => work.matched.candidatePairCount
-        case StudyDesign.Control => work.controls.candidatePairCount)
-      val perPair = work.capability match
-        case ExecutionCapability.BoundedComparison         => BigInt(2) + work.grid.size
-        case ExecutionCapability.SynchronousWholeOperation => BigInt(2)
-      val bound =
-        candidates * perPair + work.focalIndices.size + work.referenceIndices.size
-      if bound.isValidLong then SegmentTotal.AtMost(bound.toLong) else SegmentTotal.Unknown
-    case StudySegment.Reducing(_, _) => SegmentTotal.Unknown
-    case StudySegment.Contrasting(_) => SegmentTotal.AtMost(work.focalIndices.size.toLong)
+  ): SegmentTotal = StudySegment.total(work, segment)
