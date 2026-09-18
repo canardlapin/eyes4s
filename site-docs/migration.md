@@ -1,7 +1,8 @@
 # Migrating from eyesim
 
-Migrate the scientific question, not the R calling convention. The reference revision is
-`ecb9c496257bce51acd5330af6a5e7a8d5b84e05`; agreement claims below refer only to the pinned cases.
+Migrate the scientific question, not the R calling convention. The reference is the eyesim
+revision pinned in the project's parity manifest, `tools/r-parity/baseline.json`; agreement claims
+below refer only to the pinned cases.
 
 | eyesim task | eyes4s route | Important difference or limit |
 |---|---|---|
@@ -18,7 +19,7 @@ Migrate the scientific question, not the R calling convention. The reference rev
 | `repetitive_similarity` | `RepetitionDesign`, explicit pair/reduce operations | Within-participant reinstatement deliberately differs from eyesim phase-only grouping. |
 | `sample_density_time` | `TemporalStudyPlan` for windowed duration maps | A different estimand; static-template trajectory sampling remains a gap. |
 | `template_regression`, `template_multireg`, `template_similarity_cv` | Training-only fixed-feature export/fit/import | Trial-level QR route works; learned features/CV and normalized-map regression bridge remain gaps. |
-| `affine_transform`, `contract_transform` | No fitted density-space adapter yet | Supplied coordinate `Warp`s are not substitutes for learned density transforms. |
+| `affine_transform`, `contract_transform` | No fitted density-space adapter; outside the baseline, planned for a later adapter module with PCA, CORAL and CCA | Supplied coordinate `Warp`s are not substitutes for learned density transforms. |
 | Result tables | `ContrastCsv`, temporal CSV, typed results and versioned codecs | Keep keys, method identity, failures, exclusions and denominators. Not every baseline result family is implemented. |
 
 ## Differences to review in a migrated analysis

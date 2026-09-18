@@ -83,6 +83,24 @@ recorded in `PRD.md`'s Evidence Base.
 10. **Every declared abstraction has an instance and a law suite or conformance
     test.** A trait with no inhabitant does not ship.
 
+## Shared registries
+
+Parallel changes append their own files instead of editing shared lists:
+
+- **Declare a new built-in `DefinitionId` in the file that introduces it**, as a
+  `val` of an object whose name ends in `Definitions`, built with
+  `DefinitionId.builtIn`. Do not append to the `DefinitionId` companion in
+  `plan/StudyPlan.scala`; its existing identities stay where they are.
+  `SchemaRegistryJvmSuite` finds every `*Definitions` object and still requires a
+  registry entry, law and pinned fixture for each identity
+  (`docs/DOMAIN_CODECS.md`).
+- **eyesim parity evidence is per ticket.** Inputs go in
+  `tools/r-parity/fixtures/cases/<ticket>.json`, fixtures and generators are
+  registered in `tools/r-parity/manifest.d/<ticket>.json`, and
+  `fixtures/baseline-cases.json` is frozen (`tools/r-parity/README.md`).
+- **Do not write baseline case counts into prose.**
+  `tools/r-parity/check_baseline.py` prints them.
+
 ## Tests
 
 - munit `FunSuite`; law suites via `munit.DisciplineSuite` and `checkAll`.

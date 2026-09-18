@@ -1,19 +1,24 @@
 # Reference agreement and intentional differences
 
-This is a bounded evidence report, not a declaration of complete eyesim coverage. The source
-revision is `ecb9c496257bce51acd5330af6a5e7a8d5b84e05`.
-[The environment lock](tools/r-parity/fixtures/reference-lock.json) records R/package versions,
-input digest, and conventions. [Regeneration instructions](tools/r-parity/README.md) reproduce the
-public R calls from an isolated installation of that revision.
+This is a bounded evidence report, not a declaration of complete eyesim coverage. The source is
+the eyesim revision pinned in [baseline.json](tools/r-parity/baseline.json) (`eyesim.revision`),
+the only place the pin is written. [r-lock.json](tools/r-parity/r-lock.json) fixes the R version
+and every package a generator may load, and each reference fixture records the runtime it
+consumed; [the matched/control lock](tools/r-parity/fixtures/reference-lock.json) also records the
+input digest and conventions. [Regeneration instructions](tools/r-parity/README.md) reproduce the
+public R calls from an isolated installation of the pinned revision.
 
-The executable [capability inventory](tools/r-parity/baseline.json) currently classifies 26 cases
-across all 13 required rows:
+The executable [capability inventory](tools/r-parity/baseline.json) classifies every case of the
+13 required rows under one of the statuses below. `python3 tools/r-parity/check_baseline.py` prints
+the current number of cases in each status, and `--list-cases` names them; this report does not
+repeat those counts. The sections below give the measured findings case by case.
 
-| Status | Cases | Meaning |
-|---|---:|---|
-| Verified equivalent | 4 | Exhaustive matched/control cosine on the pinned fixed-grid study; supplied coordinate transforms (center, rescale, normalize) with an exact affine oracle; entropy of supplied positive maps; the two-map mean and difference. |
-| Verified intentional divergence | 8 | Explicit fixation admission; matched/control failure semantics; windowed duration-mass analysis; typed current result exports; log ratio at zero cells and the absent product; signed maps treated as mass; phase-only versus within-participant repetition cosine; fixed-feature trial fitting versus normalized-map regression. |
-| Implementation gap | 14 | Each case names a live task and selected falsification input; no parity is claimed. |
+| Status | Meaning |
+|---|---|
+| Verified equivalent | A public eyesim call and a public eyes4s route agree on a pinned input within an explicit tolerance, and an independent oracle could detect a mistake they share. |
+| Verified intentional divergence | The behaviors differ, the eyes4s behavior is independently justified, and portable tests retain the difference. |
+| Implementation gap | The case names a live task and a selected falsification input; no parity is claimed. |
+| Out of baseline | Removed from the baseline by an owner decision recorded with its reason and date. The record and its evidence are kept and validated, but reported separately: it is neither a gap nor progress towards closing the baseline. |
 
 ## Fixation admission: measured differences
 
@@ -129,7 +134,9 @@ its solve from the three fitting pairs alone, the excluded held-out target and t
 no-translation mutants are oracle values only: eyesim has no coordinate affine entry point. Its
 `affine_transform` and `contract_transform` fit density-space maps from matched density moments and
 resample densities; the fixture records their response to coordinate tables, and eyes4s does not
-implement them (gap `eyesim-transform`).
+implement them. They are out of the baseline by owner decision on 2026-09-18: fitted density-space
+maps belong with PCA, CORAL and CCA in a later adapter module. `baseline.json` keeps the
+`fitted-density-transforms` record, this fixture and its eyesim evidence under `out_of_baseline`.
 
 ### Entropy and map arithmetic
 
@@ -185,7 +192,7 @@ the owning task is in the last column.
 | Permutation baseline construction | `run_similarity_analysis` and its fast cosine path take as candidates the matched reference indices of the source rows in the `permute_on` stratum (all source rows without `permute_on`), so a reference matched by several source rows is counted several times. When `permutations` is below the candidate count, `sample(candidates, permutations)` runs before the true match is removed, so the realised `n_perm` is `permutations` or `permutations - 1`, and a cap of one can leave no control (`perm_sim = NA`, `n_perm = 0`). The baseline is the arithmetic mean of the remaining similarities with `na.rm = TRUE`, and `eye_sim_diff = eye_sim - perm_sim`. The general path draws under `furrr_options(seed = TRUE)`, which derives streams from the session RNG rather than a fixed seed; the fast cosine path calls `sample` directly. | Controls are an explicit `Relation`, so the match is never a candidate. `Selection.All` enumerates every eligible pair; `Selection.BottomK(cap, seed, sampleId)` ranks eligible candidates by a keyed hash of seed, sample id, focal key and candidate key and takes the lowest `cap`, so the realised count is `min(cap, eligible)`, independent of row order, and a larger cap is a superset. Seed and sample id are written into provenance. The reduction is `ScoreMean` under an explicit `FailurePolicy`; an empty selection is `NoSelectedScores`. `PairScheduleBudget.default` is unbounded. Evidence: MatchedControlSuite "selected pairs and reductions agree with rational enumeration and pinned eyesim"; PairDesignSuite "raising the cap yields a SUPERSET, never a different sample", "the realised count is min(cap, eligible), and knowable in advance", "a distinct seed gives an independent field too". | **Verified equivalent for the exhaustive baseline only:** `permutations = 100` over two eligible controls reproduces `n_perm = 2` and every `perm_sim` in the table above. **Implementation gap: `eyesim-sampling`** for any finite cap. eyesim caps before excluding the match and eyes4s excludes before capping, the priorities are unrelated, and no cross-language RNG identity is claimed. Settling fixture: the cap-of-one case in `baseline.json` run in R under a recorded `set.seed`, pinning the realised `n_perm` (0 or 1) against the eyes4s constant 1. |
 
 The eyesim readings come from `R/similarity.R` and `R/density.R` at the pinned revision and from
-the `MASS` version in the environment lock. The eyes4s readings come from `surface/Smoother.scala`,
+the `MASS` version in [r-lock.json](tools/r-parity/r-lock.json). The eyes4s readings come from `surface/Smoother.scala`,
 `design/Relation.scala`, `design/Analysis.scala` and the compare suites at the current revision.
 Map arithmetic and signed maps in `fixation_entropy` left this table on 2026-09-17 when
 [entropy.json](tools/r-parity/fixtures/entropy.json) pinned them; see

@@ -105,7 +105,9 @@ class TransformConformanceSuite extends munit.FunSuite:
   test(
     "the fixture is the pinned revision on non-square bounds, and the oracle agrees with eyesim"
   ) {
-    assertEquals(eyesimRevision, "ecb9c496257bce51acd5330af6a5e7a8d5b84e05")
+    // A full Git revision; tools/r-parity/check_baseline.py checks it is the one pinned in
+    // baseline.json, which is the only place the pin is written.
+    assert(eyesimRevision.matches("[0-9a-f]{40}"), clue(eyesimRevision))
     assertNotEquals(xMax - xMin, yMax - yMin)
     // On the bounds diagonal every normalised point has x == y and an x/y swap
     // would pass unseen; the fixture must carry at least one point off it.

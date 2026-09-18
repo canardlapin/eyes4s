@@ -157,7 +157,8 @@ Every built-in identity has a round-trip law and a pinned fixture, and the build
 `SchemaRegistryJvmSuite` (in `eyes4s-laws`, JVM) lists each `DefinitionId` the library ships, what
 it names (a document envelope, a nested schema, a method or layout, or a payload), the pinned v1
 fixtures that carry it and the published laws that exercise it. Reflection over the `DefinitionId`
-companion requires exactly one entry per built-in identity; instantiating each named law suite
+companion and every `*Definitions` object on the classpath requires exactly one valid, singly
+declared entry per built-in identity; instantiating each named law suite
 requires the named round-trip law to be registered there; and every fixture must exist, carry the
 identity and, for a document, decode and re-encode to itself through the shipped codec. Every file
 under `codec/src/test/resources/eyes4s` must be claimed by an entry, so an unclaimed or undecodable
@@ -169,6 +170,20 @@ missing fixture, a fixture that does not carry its identity, a fixture of anothe
 fixture that decodes but does not round-trip, an unclaimed resource file and a registered fixture
 that does not exist. A new built-in schema without a law and a fixture therefore fails
 `lawsJVM/test`.
+
+**Where a new identity is declared.** The identities in the `DefinitionId` companion
+(`plan/StudyPlan.scala`) stay where they are, but new ones are not appended there. Declare each in
+the file that introduces it, as a `val` of an object whose name ends in `Definitions`, built with
+the package-private `DefinitionId.builtIn`:
+
+```scala
+// Illustration: declared in the file that introduces the KDE method.
+object KdeDefinitions:
+  val gaussianKde: DefinitionId = DefinitionId.builtIn("eyes4s.gaussian-kde", 1)
+```
+
+The registry finds every such object on the classpath, so parallel changes never edit one shared
+list of identities. Each identity still needs its registry entry, law and pinned fixture.
 
 UI-S6 added the laws the registry found missing: `PlanCodecLawSuite` for the study plan
 (`eyes4s.study@1`, with the `cosine@1`, layout and `unit@1` identities inside it) and for the

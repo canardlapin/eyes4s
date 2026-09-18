@@ -69,7 +69,7 @@ does not yet persist arbitrary all-occasion projections or finite-cap repetition
 
 ## What the reference actually measures
 
-At pinned eyesim revision `ecb9c496257bce51acd5330af6a5e7a8d5b84e05`,
+At the eyesim revision pinned in [baseline.json](../tools/r-parity/baseline.json),
 `repetitive_similarity(condition_var = "phase", method = "cosine")` compares each row to all
 other rows in the same phase and to all rows in other phases. On this input its denominators
 are five and six, across participants and stimuli. The explicit reinstatement design above

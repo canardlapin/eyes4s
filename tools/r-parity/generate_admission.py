@@ -3,34 +3,21 @@
 import argparse
 import hashlib
 import json
-import os
 from pathlib import Path
-import subprocess
 import sys
-import tarfile
-import tempfile
 
 sys.dont_write_bytecode = True
-from generate_reference import ROOT, HERE, REVISION
+import parity  # noqa: E402
+from generate_reference import ROOT, HERE, REVISION  # noqa: E402
 
 INPUT = HERE / "fixtures/baseline-cases.json"
 
 
 def reference(checkout):
-    env = os.environ | {"LC_ALL": "C", "LANG": "C", "RGL_USE_NULL": "TRUE"}
-    with tempfile.TemporaryDirectory(prefix="eyes4s-admission-") as name:
-        tmp = Path(name)
-        src, lib = tmp / "source", tmp / "library"
-        src.mkdir(); lib.mkdir()
-        archive = tmp / "source.tar"
-        subprocess.run(["git", "-C", str(checkout), "archive", "--format=tar", "--output", str(archive), REVISION], check=True)
-        with tarfile.open(archive) as tar:
-            tar.extractall(src, filter="data")
-        install = subprocess.run(["R", "CMD", "INSTALL", f"--library={lib}", str(src)], env=env, capture_output=True, text=True)
-        if install.returncode:
-            raise RuntimeError(install.stdout + install.stderr)
-        output = tmp / "admission.json"
-        subprocess.run(["Rscript", "--vanilla", str(HERE / "admission.R"), str(lib), str(INPUT), str(output)], env=env, check=True)
+    # The pinned archive in the locked R session; never an arbitrary installed eyesim package.
+    with parity.r_session("eyes4s-admission-", checkout) as r:
+        output = r.tmp / "admission.json"
+        r.rscript(HERE / "admission.R", r.eyesim_library, INPUT, output)
         return json.loads(output.read_text())
 
 

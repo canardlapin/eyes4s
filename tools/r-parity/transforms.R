@@ -3,7 +3,6 @@ args <- commandArgs(trailingOnly = TRUE)
 stopifnot(length(args) == 3L)
 .libPaths(c(args[[1L]], .libPaths()))
 library(eyesim)
-options(digits = 17)
 spec <- jsonlite::fromJSON(args[[2L]], simplifyVector = TRUE)$transforms
 as_rows <- function(value) {
   # jsonlite returns a numeric matrix for a rectangular array and a list otherwise.

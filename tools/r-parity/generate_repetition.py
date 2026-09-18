@@ -4,15 +4,12 @@ import argparse
 from fractions import Fraction
 import hashlib
 import json
-import os
 from pathlib import Path
-import subprocess
 import sys
-import tarfile
-import tempfile
 
 sys.dont_write_bytecode = True
-from generate_reference import ROOT, HERE, INPUT, REVISION, oracle, TOLERANCE
+import parity  # noqa: E402
+from generate_reference import ROOT, HERE, INPUT, REVISION, oracle, TOLERANCE  # noqa: E402
 
 
 def expected(weights):
@@ -82,19 +79,10 @@ def main():
     args = parser.parse_args()
     _, weights, _ = oracle()
     rows = expected(weights)
-    env = os.environ | {"LC_ALL": "C", "LANG": "C", "RGL_USE_NULL": "TRUE"}
-    with tempfile.TemporaryDirectory(prefix="eyes4s-repetition-") as tmp:
-        tmp = Path(tmp); src = tmp / "source"; lib = tmp / "library"
-        src.mkdir(); lib.mkdir()
-        archive = tmp / "source.tar"
-        subprocess.run(["git", "-C", str(args.eyesim), "archive", "--format=tar", "--output", str(archive), REVISION], check=True)
-        with tarfile.open(archive) as tar:
-            tar.extractall(src, filter="data")
-        install = subprocess.run(["R", "CMD", "INSTALL", f"--library={lib}", str(src)], env=env, capture_output=True, text=True)
-        if install.returncode:
-            raise RuntimeError(install.stdout + install.stderr)
-        output = tmp / "repetition.json"
-        subprocess.run(["Rscript", "--vanilla", str(HERE / "repetition.R"), str(lib), str(INPUT), str(output)], env=env, check=True)
+    # The pinned archive in the locked R session; never an arbitrary installed eyesim package.
+    with parity.r_session("eyes4s-repetition-", args.eyesim) as r:
+        output = r.tmp / "repetition.json"
+        r.rscript(HERE / "repetition.R", r.eyesim_library, INPUT, output)
         reference = json.loads(output.read_text())
     verify(reference, rows, weights)
     document = dict(eyesim_revision=REVISION, input_sha256=hashlib.sha256(INPUT.read_bytes()).hexdigest(),

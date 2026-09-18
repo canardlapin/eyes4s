@@ -13,21 +13,17 @@ import hashlib
 import io
 import json
 from pathlib import Path
-import subprocess
-import tarfile
-import tempfile
-import os
+import sys
 
-ROOT = Path(__file__).resolve().parents[2]
-HERE = Path(__file__).resolve().parent
-REVISION = "ecb9c496257bce51acd5330af6a5e7a8d5b84e05"
+sys.dont_write_bytecode = True
+import parity  # noqa: E402
+
+ROOT = parity.ROOT
+HERE = parity.HERE
+REVISION = parity.pinned_revision()
 INPUT = HERE / "fixtures/matched-control.csv"
 SCALA = ROOT / "laws/src/test/scala/eyes4s/examples/MatchedControlFixtures.scala"
 TOLERANCE = 1e-12  # Four-term Double dot products and two-term means, bounded by one.
-
-
-def checked(*args, **kwargs):
-    return subprocess.run(args, check=True, text=True, **kwargs)
 
 
 def oracle():
@@ -134,19 +130,10 @@ def main():
     parser.add_argument("--check", action="store_true")
     args=parser.parse_args()
     rows,weights,exact=oracle()
-    env=os.environ | {"LC_ALL":"C", "LANG":"C", "RGL_USE_NULL":"TRUE"}
-    with tempfile.TemporaryDirectory(prefix="eyes4s-r-reference-") as tmp:
-        tmp=Path(tmp);src=tmp/"source";lib=tmp/"library";src.mkdir();lib.mkdir()
-        archive=tmp/"source.tar"
-        checked("git","-C",str(args.eyesim),"archive","--format=tar","--output",str(archive),REVISION)
-        with tarfile.open(archive) as tar: tar.extractall(src,filter="data")
-        # Install the exact archived source, never an arbitrary installed eyesim package.
-        with (tmp/"install.log").open("w") as log:
-            result=subprocess.run(["R","CMD","INSTALL",f"--library={lib}",str(src)],env=env,stdout=log,stderr=subprocess.STDOUT)
-        if result.returncode:
-            raise RuntimeError((tmp/"install.log").read_text())
-        output=tmp/"reference.json"
-        checked("Rscript","--vanilla",str(HERE/"reference.R"),str(lib),str(INPUT),str(output),env=env)
+    # The pinned archive in the locked R session; never an arbitrary installed eyesim package.
+    with parity.r_session("eyes4s-r-reference-", args.eyesim) as r:
+        output=r.tmp/"reference.json"
+        r.rscript(HERE/"reference.R",r.eyesim_library,INPUT,output)
         reference=json.loads(output.read_text())
     verify_reference(reference,weights,exact)
     metadata=dict(eyesim_revision=REVISION, input_sha256=hashlib.sha256(INPUT.read_bytes()).hexdigest(),
