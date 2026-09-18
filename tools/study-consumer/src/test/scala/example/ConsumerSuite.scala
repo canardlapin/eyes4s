@@ -383,6 +383,35 @@ class ConsumerSuite extends munit.DisciplineSuite:
     )
   }
 
+  test("a packaged result row drills down to the CSV record that supplied it") {
+    val imported = get(
+      FixationCsv.read(ConsumerFixtures.csv, columns, reader, frame, TimestampUnit.Microseconds)
+    )
+    val ledger = get(
+      FixationEvidence.ledger("consumer.csv", imported, AdmissionDecision.RequireComplete)
+    )
+    val study      = plan(2.0)
+    val result     = get(study.run(input))
+    val inspection = get(ResultInspection.study(study, result, input, Some(ledger)))
+    val focal      = TrialKey("s1", 1, "recall")
+    val row        = get(inspection.contrastRow(ResultRef.ContrastRow(0, focal)))
+    val difference = get(row.outcome.left.map(_.message))
+    assertEquals(difference.components.map(_.id), Vector("value"))
+    assertEquals(difference.components.map(_.value), Vector(difference.value.value))
+    val matched = get(inspection.reduction(get(row.matched.toRight("no matched reduction"))))
+    assertEquals(matched.contributors, Vector(TrialKey("s1", 1, "encode")))
+    val pair    = get(inspection.pair(matched.members.head.pair))
+    val located = get(inspection.sources.fixation(pair.reference, 0))
+    assertEquals((located.record, located.ordinal), (2, 0))
+    val line = ConsumerFixtures.csv.linesIterator.toVector(located.record - 1)
+    assertEquals(line.split(',').take(4).toVector, Vector("s1", "a", "encode", "0"))
+    assertEquals(get(inspection.trial(focal)).records, Vector(26, 27, 28, 29))
+    val refusal = Diagnostic.of(PlanError.ArtifactMismatch(input.reference.digest, "0" * 16))
+    assertEquals(refusal.code.render, "plan.artifact-mismatch")
+    assertEquals(refusal.subject, Vector(Locus.Artifact(input.reference.digest)))
+    assert(DiagnosticCatalog.codes.map(_.render).contains("study-failure.comparison"))
+  }
+
   test("emit raw portable evidence for the isolated JVM and Scala.js comparison") {
     val original = plan(2.0)
     val result   = get(original.run(input))

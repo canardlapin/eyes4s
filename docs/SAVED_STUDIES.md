@@ -539,6 +539,19 @@ re-encoding of the pretty-printed file. `eyes4s.laws.StudyResultEquivalence` is 
 structural identity of two results, for round-trip laws over extension score types that keep
 reference equality.
 
+## Inspect results and explain failures
+
+`ResultInspection.study(plan, result, input, ledger)` opens a completed or decoded result for
+navigation. Every estimation, pair row, reduction and contrast row has a typed `ResultRef` built
+from the scale index, design and trial keys, never a row position; listings page from a reference.
+A contrast row refers to its two reductions, a reduction lists its member pairs as contributing,
+failed or withheld, and `StudySources` maps each trial and fixation back to the admission-ledger
+record and CSV record number that supplied it, or names why it cannot. Every typed error, preflight
+finding and admission reason projects to a `Diagnostic` with a stable code, the failing object and
+every operand, so an application localises and navigates without parsing messages. An inspection of
+a decoded archive equals the inspection of the result it was written from. See
+[diagnostics](DIAGNOSTICS.md) for the model, the source-link rules and the generated code table.
+
 ## Versions and extensions
 
 The JSON envelope has a schema identifier and version. Its payload separately records the method
