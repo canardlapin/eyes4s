@@ -243,12 +243,12 @@ private[codec] object RecordingInputWire:
     * compile here rather than throwing during encoding, and an enum rename
     * cannot change the format.
     */
-  private def eyeName(eye: Eye): String = eye match
+  private[codec] def eyeName(eye: Eye): String = eye match
     case Eye.Left      => "left"
     case Eye.Right     => "right"
     case Eye.Cyclopean => "cyclopean"
 
-  private def readEye(json: Json): Either[CodecError, Eye] =
+  private[codec] def readEye(json: Json): Either[CodecError, Eye] =
     Wire.field[String](json, "eye").flatMap {
       case "left"      => Right(Eye.Left)
       case "right"     => Right(Eye.Right)
@@ -256,12 +256,12 @@ private[codec] object RecordingInputWire:
       case other       => Left(CodecError.Field("eye", json, s"unknown eye '$other'"))
     }
 
-  private def pupilUnitName(unit: PupilUnit): String = unit match
+  private[codec] def pupilUnitName(unit: PupilUnit): String = unit match
     case PupilUnit.Area      => "area"
     case PupilUnit.Diameter  => "diameter"
     case PupilUnit.Arbitrary => "arbitrary"
 
-  private def readPupilUnit(json: Json): Either[CodecError, Option[PupilUnit]] =
+  private[codec] def readPupilUnit(json: Json): Either[CodecError, Option[PupilUnit]] =
     Wire.field[Option[String]](json, "pupilUnit").flatMap {
       case None              => Right(None)
       case Some("area")      => Right(Some(PupilUnit.Area))
@@ -285,12 +285,12 @@ private[codec] object RecordingInputWire:
       case "projected"    => Right(SampleOrigin.Projected)
       case other => Left(CodecError.Field("lineage", json, s"unknown derivation step '$other'"))
 
-  private def rate(value: Rate): Json = value match
+  private[codec] def rate(value: Rate): Json = value match
     case Rate.Fixed(hz) =>
       Json.obj("kind" -> Json.fromString("fixed"), "hz" -> Json.fromDoubleOrNull(hz.value))
     case Rate.Irregular => Json.obj("kind" -> Json.fromString("irregular"))
 
-  private def readRate(json: Json): Either[CodecError, Rate] =
+  private[codec] def readRate(json: Json): Either[CodecError, Rate] =
     for
       raw  <- Wire.field[Json](json, "rate")
       kind <- Wire.field[String](raw, "kind")
@@ -307,7 +307,7 @@ private[codec] object RecordingInputWire:
         case other => Left(CodecError.Field("rate.kind", raw, s"unknown sampling rate $other"))
     yield rate
 
-  private def readTolerance(json: Json): Either[CodecError, SamplingTolerance] =
+  private[codec] def readTolerance(json: Json): Either[CodecError, SamplingTolerance] =
     DomainWire
       .micros(json, "samplingToleranceMicros")
       .flatMap(micros =>
@@ -419,10 +419,10 @@ private[codec] object RecordingInputWire:
         yield Gaze.Lost[U]()
       case _ => Left(CodecError.Field("state", state, "unknown sample support category"))
 
-  private def lineage(value: SampleLineage): Json =
+  private[codec] def lineage(value: SampleLineage): Json =
     Json.fromString(value.toVector.map(originName).mkString(">"))
 
-  private def readLineage(json: Json): Either[CodecError, SampleLineage] =
+  private[codec] def readLineage(json: Json): Either[CodecError, SampleLineage] =
     json.asString
       .toRight(CodecError.Field("lineage", json, "expected a lineage string"))
       .flatMap { text =>

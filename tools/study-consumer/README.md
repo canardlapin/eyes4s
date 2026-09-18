@@ -6,6 +6,8 @@ registers an extension-owned detector parameter type and codec around the canoni
 implementation, preserving the algorithm card carried by the resulting detection artifact. Its
 tests save/reload both study and recording plans, compare independently generated numerical
 targets, export results, and exercise missing/duplicate registration and malformed schemas.
+They also save the custom plan, input and result archive under a manifest and resolve it from an
+in-memory source through the consumer's own registrations, under the published `ManifestLaws`.
 
 From the eyes4s repository root:
 

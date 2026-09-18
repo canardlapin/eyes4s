@@ -50,6 +50,10 @@ object DefinitionId:
   def of(name: String, version: Int): Either[PlanError, DefinitionId] =
     if name.trim.isEmpty || version < 1 then Left(PlanError.InvalidDefinition(name, version))
     else Right(new DefinitionId(name, version))
+  // UI-S5: artifact manifests and typed payload references.
+  val manifest: DefinitionId        = new DefinitionId("eyes4s.manifest", 1)
+  val packedRecording: DefinitionId = new DefinitionId("eyes4s.packed-recording", 1)
+  val packedArray: DefinitionId     = new DefinitionId("eyes4s.packed-array", 1)
 
 /** A typed reference to separately stored input; no file access occurs in plan. */
 final case class ArtifactRef[A] private (digest: String) derives CanEqual

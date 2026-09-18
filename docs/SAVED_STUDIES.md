@@ -463,6 +463,135 @@ re-encoding of the pretty-printed file. `eyes4s.laws.StudyResultEquivalence` is 
 structural identity of two results, for round-trip laws over extension score types that keep
 reference equality.
 
+## Artifact manifests and verified resolution
+
+A saved study is several artifacts. `ScientificManifest` (`eyes4s.manifest@1`) lists them and the
+typed relations between them, and `ArtifactResolver` rebuilds the scientific values from bytes the
+application supplies, admitting nothing it has not verified. eyes4s owns the manifest and the
+verification; the application owns where the bytes live, autosave, crash recovery and missing-file
+repair.
+
+Each `ManifestEntry` records a manifest-local `ArtifactName`, an `ArtifactRole` (`study-plan`,
+`study-input`, `admission-ledger`, `study-result`, `recording`, `recording-input`,
+`temporal-study-input` or `payload`), the schema identity of the artifact's envelope, its media kind
+(`application/json` or `application/octet-stream`), its exact byte length as a decimal string and
+the SHA-256 of its exact bytes (`ByteDigest`, 64 lowercase hexadecimal digits). The identity-bearing
+roles (study input, recording, recording input, temporal input) also declare the semantic identity
+that plans and results reference: the 16-hex `ContentHash` of an `ArtifactRef`, whose meaning is
+unchanged. The two are separate on purpose. Re-serializing a JSON artifact (compact instead of
+pretty-printed, say) gives new bytes and therefore a new length and digest, but the same identity;
+the byte digest never stands in for the semantic one. A `payload` entry carries the
+`eyes4s.packed-array@1` schema and its `PayloadLayout`, whose byte length must equal the entry's.
+
+Relations are typed edges, checked against decoded values rather than names:
+
+| Relation | Endpoints | Multiplicity | Resolution checks |
+|---|---|---|---|
+| `PlanInput` | plan, input | exactly one per plan | `plan.prerequisites(input)` is empty |
+| `ResultOf` | result, plan, input | exactly one per result | the result's input reference is the input's, and its plan description is the plan's (`PlanChange` names differing fields) |
+| `LedgerOf` | ledger, input | at most one per ledger | the ledger is not a refused import and `ledger.checkAgainst(input)` holds |
+| `TemporalBase` | temporal input, input | at most one per temporal input; required for a base embedded by reference | the temporal input's base study is the input |
+| `RecordingOf` | recording input, recording | at most one per recording input | the recording input's channels are the recording (`contentHash`) |
+| `PayloadOf` | packed recording, payload | at least one per payload | the owner references the payload's digest and layout |
+
+`ScientificManifest.of` checks structure only: unique names, relations naming existing entries of
+the required roles, a packed-recording owner for every `PayloadOf`, no repeated relation and the
+multiplicities above, each refusal a `ManifestError` naming the entry or relation.
+`ManifestEntry.of` refuses a media kind other than the role's, a missing or superfluous identity and
+a payload without its schema or with a layout of another length. A graph's own consistency is proven
+only by resolution.
+
+**Writing.** `StoredArtifact.plan`, `input`, `ledger`, `result`, `recording`, `binocular`,
+`recordingInput`, `temporalInput` and `packedRecording` encode a typed value through its registered
+codec and store the UTF-8 of the pretty-printed document; `StoredArtifact.bytes` stores existing
+JSON bytes verbatim (strict UTF-8 with a schema envelope, as the pinned fixture below does), and
+`StoredArtifact.payload` stores a verified payload. Every artifact holds a private copy of its bytes.
+`SavedManifest.of(artifacts, relations)` builds the manifest, its canonical bytes
+(`ScientificManifest.bytes`, the UTF-8 of the pretty-printed envelope) and its `address`, the SHA-256
+of those bytes: the manifest is itself digest-addressed. It contains no floating-point number, so
+its canonical bytes and address are the same on the JVM and Scala.js. A store may keep the manifest
+in another byte form; its address is always the digest of the bytes stored.
+
+**Resolving.** Storage is injected as a `ByteSource`, a total function from a `ByteRequest` (the
+manifest under an address, or one entry) to bytes or a `SourceFailure` (`Missing`, or `Unreadable`
+with a reason). `ByteSource.inMemory` serves manifests by address and entries by name;
+`ByteSource.contentAddressed` serves every blob by its digest. `ArtifactDecoders` bundles the
+registries the values are decoded through: `ArtifactDecoders.of(studyRegistry, inputRegistry,
+resultRegistry)` for any key layout, or `ArtifactDecoders.study[U]` for the ordinary cosine route;
+recordings use the built-in `recording@1`, `binocular-recording@1` and `packed-recording@1` codecs.
+`ArtifactResolver.resolve(address, source, decoders)` reads the manifest, checks its digest against
+the address and decodes it, then resolves the graph in three phases, reporting every error of a
+phase as `NonEmptyVector[ResolveError]`:
+
+1. integrity: every entry is read once, copied, and checked for its declared length
+   (`ResolveError.Length`) and SHA-256 (`ResolveError.Digest`); missing and unreadable entries are
+   `Missing` and `Unreadable`, and a source that throws is reported as `Unreadable` rather than
+   propagated. Any failure stops resolution here, so a changed artifact is never parsed or decoded;
+2. decoding: strict UTF-8 (`Text`), JSON (`Syntax`), the envelope's schema against the declared one
+   (`Schema`), the registered decoder (`Decode`, carrying the located `CodecError`, for example an
+   unsupported schema version or a missing result registration), and the reconstructed semantic
+   identity against the declared one (`Identity`);
+3. relations: every relation against the decoded values (`Relation` with a typed
+   `RelationMismatch`).
+
+A successful resolution is a `ResolvedManifest`: plans, inputs, ledgers, results, recordings,
+recording inputs, temporal inputs and verified payloads, each by name in manifest order. Failure
+produces no values, so an unverified input can never reach a runner. Ownership: the resolver copies
+every buffer a source returns before verifying it and decodes only the copy, so a caller that
+mutates its array afterwards, or even during resolution, cannot change what was verified or admitted.
+Decoding a manifest document performs no reads, the resolver reads each entry exactly once and
+caches nothing, and `ArtifactResolver.manifest` and `resolveManifest` expose the two halves.
+
+On the JVM, `eyes4s.io.ArtifactFiles.resolve[F](address, locate, decoders)` reads each file with
+`Sync.interruptible`, so resolution can be cancelled between and during reads, and hands the bytes to
+the pure resolver; `ArtifactFiles.inDirectory(root, manifestFile)` is one possible layout, which
+refuses entry names that would leave the directory.
+
+**Typed payloads.** Large numeric blobs are stored as packed payloads rather than JSON. A
+`PayloadLayout` declares the element kind (`uint8`, `int32`, `int64` or `float64`), the shape, the
+storage order (`row-major` or `column-major`) and the byte order, which is pinned to
+`little-endian`; any other declaration is refused. A layout's size is bounded only by
+`PayloadLayout.maximumBytes`, the largest array a JVM allocates. A `PayloadRef` is the SHA-256 of the
+payload's bytes plus its layout, so a payload is content-addressed. `VerifiedPayload.verify` copies
+bytes and checks their length and digest; `PackedArrays.pack` and `unpack` convert typed values.
+Every value is assembled from its bytes with integer shifts, so 64-bit integers keep all 64 bits and
+doubles come from their exact IEEE bits on both platforms, including signed zeros, subnormals and
+infinities, with no platform number formatting. NaN is refused on both sides
+(`PayloadError.NotANumber`): its bit pattern is not portable.
+
+`PackedRecordingCodecs.recording[U]` (`eyes4s.packed-recording@1`) is the escape hatch for
+recordings above the inline bound `RecordingInputCodecs.maximumSamples`. Its document carries the
+inline recording's metadata (frame, clock, eye, pupil unit, rate, sampling tolerance and declared
+`contentHash`) and four payload references: `tMicros` (`int64[n]`), `support` (`uint8[n]`: the
+category in bits 0-1, `tracked`, `blink`, `lost`, `offScreen`, and a measured pupil in bit 2),
+`lineage` (`uint8[n]` indices into a `lineages` dictionary listed in order of first appearance) and
+`values` (`float64[n, 3]` column-major: the `x`, `y` and `pupil` columns, with `+0.0` exactly where a
+value is absent). Decoding reads payloads only through a lookup of verified payloads, requires the
+declared layouts, refuses unknown support codes, non-canonical fillers and out-of-order lineage
+indices at the sample they occur, rebuilds the value through `Recording.of` and compares its
+`contentHash`, so a packed recording has exactly one encoding. `StoredArtifact.packedRecording`
+stores it with its payloads and `PayloadOf` relations. Binocular recordings and recording inputs
+whose channels are carried by reference are not yet packed.
+
+The pinned [manifest-v1.json](../codec/src/test/resources/eyes4s/manifest-v1.json) lists the pinned
+study-v1 plan, study-input-v1 input, admission-ledger-v1 ledger and study-result-v1 archive by the
+SHA-256 of their resource files, with `PlanInput` and `ResultOf` relations. Its entry digests equal
+independently computed `shasum -a 256` values. The JVM suite checks that the writer reproduces it
+byte for byte and resolves all four artifacts end to end from memory; the portable suite checks its
+decoded meaning and its byte-identical re-encoding and address on JVM and Scala.js. The ledger is
+carried as evidence without a `LedgerOf` relation: it records the refused import of a variant of
+the source whose first record has a negative duration, so its admitted records do not cover the
+pinned input (`AdmissionError.UnadmittedTrial(0)`), and declaring the relation is refused with
+`RelationMismatch.RefusedAdmission`.
+
+`eyes4s.laws.ManifestLaws.verifiedResolution(graphs, write, decoders, reproduces)` is the published
+conformance for an application's own graphs and registrations, over a writer producing a
+`StoredGraph`: the manifest round-trips to its canonical bytes; a written graph resolves by address,
+reading each artifact once, and reproduces the values written; and corrupting any single byte of the
+manifest or of any artifact is refused by exactly that digest, with the laws' instrumented decoders
+never called. Writer mutants that drop an entry, alter a digest, point a relation at the wrong
+artifact or swap a declared identity are each killed by a falsified property.
+
 ## Versions and extensions
 
 The JSON envelope has a schema identifier and version. Its payload separately records the method
