@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 
-package eyes4s.plan
+package eyes4s.codec
 
+import eyes4s.plan.*
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
-/** docs/DIAGNOSTICS.md carries the code table generated from the catalog and
-  * the per-case samples, so the published table cannot drift. Set
-  * EYES4S_WRITE_DIAGNOSTICS_DOC=1 to rewrite the generated section.
+/** docs/DIAGNOSTICS.md carries the code table generated from both catalogs
+  * and their per-case samples, so the published table, which is also the list
+  * of covered families, cannot drift. Set EYES4S_WRITE_DIAGNOSTICS_DOC=1 to
+  * rewrite the generated section; the run then fails so the change is reviewed.
   */
 class DiagnosticsDocJvmSuite extends munit.FunSuite:
   private val Begin    = "<!-- BEGIN GENERATED DIAGNOSTIC CODES -->"
   private val End      = "<!-- END GENERATED DIAGNOSTIC CODES -->"
   private val relative = Paths.get("docs/DIAGNOSTICS.md")
+  private val all      = DiagnosticSamples.all ++ CodecDiagnosticSamples.all
 
   private val path: Path =
     Iterator
@@ -38,7 +41,7 @@ class DiagnosticsDocJvmSuite extends munit.FunSuite:
 
   /** The generated section: one table per family, in catalog order. */
   private def generated: String =
-    val families = DiagnosticSamples.all.map { family =>
+    val families = all.map { family =>
       val rows = family.labels.indices.map { ordinal =>
         val sample   = family.samples.find(_._1.ordinal == ordinal).map(_._1)
         val operands = sample.toVector
@@ -73,12 +76,24 @@ class DiagnosticsDocJvmSuite extends munit.FunSuite:
     else assertEquals(current, expected)
   }
 
-  test("the generated section documents every catalog code exactly once") {
+  test("the generated section documents every code of both catalogs exactly once") {
     val text    = Files.readString(path, StandardCharsets.UTF_8)
     val section = text.substring(text.indexOf(Begin), text.indexOf(End))
     val codes   = section.linesIterator
       .filter(_.startsWith("| `"))
       .map(_.split('`')(1))
       .toVector
-    assertEquals(codes, DiagnosticCatalog.codes.map(_.render))
+    assertEquals(codes, CodecDiagnosticCatalog.all.flatMap(_.codes).map(_.render))
+  }
+
+  test("every error enum the document says is not cataloged is absent from the catalogs") {
+    val text  = Files.readString(path, StandardCharsets.UTF_8)
+    val start = text.indexOf("<!-- BEGIN NOT CATALOGED -->")
+    val stop  = text.indexOf("<!-- END NOT CATALOGED -->")
+    assert(start >= 0 && stop > start, "not-cataloged markers are missing")
+    val excluded =
+      "`([A-Za-z]+)`".r.findAllMatchIn(text.substring(start, stop)).map(_.group(1)).toSet
+    val cataloged = all.map(_.enumName).toSet
+    assert(excluded.nonEmpty)
+    assertEquals(excluded.intersect(cataloged), Set.empty[String])
   }

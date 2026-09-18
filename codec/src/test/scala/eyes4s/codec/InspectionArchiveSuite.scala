@@ -19,7 +19,6 @@ package eyes4s.codec
 import eyes4s.compare.Similarity
 import eyes4s.core.{Recording, RecordingRef}
 import eyes4s.design.*
-import eyes4s.examples.MatchedControlFixtures
 import eyes4s.kernel.Unit2D.Px
 import eyes4s.plan.*
 import io.circe.{ACursor, Json}
@@ -43,36 +42,20 @@ class InspectionArchiveSuite extends munit.FunSuite:
 
   private def key(p: String, s: String, phase: String) = StudyKey(p, s, phase)
 
-  /** The complete ledger of the pinned matched-control records: the header
-    * is record 1 and fixture row r is record r + 2, reconstructed from its
-    * own encoding.
+  /** The pinned admission-ledger-complete-v1: every matched-control record
+    * admitted, the header being record 1 and fixture row r record r + 2.
     */
-  private val source = SourceRef.of(
-    "matched-control.csv",
-    StudyInputFixtures.header,
-    StudyInputFixtures.records
-  )
-  private val complete =
-    val built = get(
-      AdmissionLedger.decide(
-        source,
-        StudyInputFixtures.header,
-        MatchedControlFixtures.fixations.zipWithIndex.map { case (row, i) =>
-          SourceRecord(
-            i + 2,
-            Disposition.Admitted(key(row.participant, row.image, row.phase), row.ordinal)
-          )
-        },
-        AdmissionDecision.RequireComplete
-      )
-    )
-    get(inputs.ledger.decode(get(inputs.ledger.encode(built))))
+  private val complete = ManifestFixtures.ledger
 
   /** The CSV fields of one logical record (the header is record 1). */
   private def fields(record: Int): Vector[String] = StudyInputFixtures.records(record - 2)
 
   test("the pinned study-result-v1 drills down to specific CSV record numbers") {
     assertEquals(complete.outcome, AdmissionOutcome.Complete)
+    assertEquals(
+      get(StoredArtifact.ledger("ledger", inputs, complete)).entry.sha256.hex,
+      ManifestV1Fixtures.completeLedgerSha256
+    )
     val inspection =
       get(ResultInspection.study(pinnedPlan, pinnedResult, pinnedInput, Some(complete)))
     val focal = key("s1", "a", "recall")
@@ -175,6 +158,28 @@ class InspectionArchiveSuite extends munit.FunSuite:
       Vector(26, 27, 28, 29).map(SourceLink.Record(ledger.source, _))
     )
     assert(inspection.failures.contains(failure))
+  }
+
+  test("the refused ledger, checked against the full input, names the trial it did not admit") {
+    val refused = get(inputs.ledger.parse(StudyInputFixtures.ledgerVersionOne))
+    val dropped = key("s1", "a", "encode")
+    val refusal =
+      get(StudySources.of(pinnedInput, refused).swap.left.map(_ => "expected a refusal"))
+    assertEquals(refusal.error, AdmissionError.UnadmittedTrial(0))
+    val diagnostic = Diagnostics.ledgerRefusal(refusal)
+    assertEquals(diagnostic.code.render, "admission.unadmitted-trial")
+    assertEquals(diagnostic.subject, Vector(Locus.Trial(dropped)))
+    assertEquals(diagnostic.keys, Vector(dropped))
+    assertEquals(
+      diagnostic.sources,
+      Vector(2, 3, 4, 5).map(SourceLink.Record(refused.source, _))
+    )
+    val inspection =
+      ResultInspection.study(pinnedPlan, pinnedResult, pinnedInput, Some(refused))
+    assertEquals(
+      inspection.left.map(e => Diagnostic.of(e).subject),
+      Left(Vector(Locus.Trial(dropped)))
+    )
   }
 
   test("an inspection of a decoded archive equals the inspection of the original result") {

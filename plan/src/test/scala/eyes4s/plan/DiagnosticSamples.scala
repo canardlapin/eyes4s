@@ -662,7 +662,13 @@ object DiagnosticSamples:
       InspectionError.UnknownReference(ResultRef.Estimation(0, k1)),
       InspectionError.DuplicateReference(ResultRef.PairRow(0, StudyDesign.Matched, k1, k2)),
       InspectionError.InvalidPageSize(0, PageSize.maximum),
-      InspectionError.Sources(AdmissionError.UnadmittedTrial(0)),
+      InspectionError.Sources(
+        LedgerRefusal(
+          AdmissionError.UnadmittedTrial(0),
+          Vector(k1),
+          Vector(SourceLink.Missing(MissingSource.UnknownTrial(k1)))
+        )
+      ),
       InspectionError.InputMismatch(studyRef, studyRef2),
       InspectionError.Components(DescriptorError.MissingMethod(DefinitionId.cosine)),
       InspectionError.PlanMismatch(

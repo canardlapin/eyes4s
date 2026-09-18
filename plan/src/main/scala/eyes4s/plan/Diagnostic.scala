@@ -24,7 +24,7 @@ import eyes4s.kernel.Provenance
   * on every platform and run, and never derived from message text. A consumer
   * localises from the code and the named operands.
   */
-final case class DiagnosticCode private[plan] (family: String, name: String) derives CanEqual:
+final case class DiagnosticCode private[eyes4s] (family: String, name: String) derives CanEqual:
   def render: String            = s"$family.$name"
   override def toString: String = render
 
@@ -63,6 +63,15 @@ enum Locus[+K] derives CanEqual:
   case Event(index: Int)
   case Sample(index: Int)
   case Samples(from: Int, until: Int)
+
+  /** An entry of a saved-study manifest, by its artifact name. */
+  case Entry(name: String)
+
+  /** A location inside a decoded document, as the codec reports it. */
+  case Path(path: String)
+
+  /** A typed manifest relation, by its kind and its source entry. */
+  case Relation(kind: String, source: String)
 
 /** A double compared by its bit pattern: NaN equals NaN and `-0.0` differs
   * from `0.0`, so a projection of a non-finite failure equals itself and exact
@@ -140,8 +149,11 @@ enum MissingSource[+K] derives CanEqual:
   /** The input repeats this full key, so no single trial can be addressed. */
   case AmbiguousTrial(key: K, occurrences: Int)
 
-  /** The error kept only a key digest, and no single input trial has it. */
-  case UnresolvedDigest(digest: String)
+  /** The error kept only a key digest, and no input trial has it. */
+  case UnknownDigest(digest: String)
+
+  /** The error kept only a key digest, and several input trials have it. */
+  case CollidingDigest(digest: String, keys: Vector[K])
 
   /** The error named an input position this input does not have. */
   case UnknownInputTrial(index: Int, trials: Int)
@@ -242,11 +254,11 @@ final class DiagnosticFamily private (
   override def toString: String = s"DiagnosticFamily($name)"
 
 object DiagnosticFamily:
-  private[plan] def of(name: String, severity: DiagnosticSeverity)(
+  private[eyes4s] def of(name: String, severity: DiagnosticSeverity)(
       labels: String*
   ): DiagnosticFamily = new DiagnosticFamily(name, labels.toVector, severity)
 
-  private[plan] def error(name: String)(labels: String*): DiagnosticFamily =
+  private[eyes4s] def error(name: String)(labels: String*): DiagnosticFamily =
     of(name, DiagnosticSeverity.Error)(labels*)
 
   /** `InvalidDefinition` becomes `invalid-definition`. */

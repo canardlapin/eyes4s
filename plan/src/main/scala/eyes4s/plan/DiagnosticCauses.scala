@@ -28,7 +28,7 @@ import eyes4s.surface.EstimateError
   * from the error case's own field names, so a projection supplies values in
   * declaration order and cannot rename a field.
   */
-private[plan] object DiagnosticSupport:
+private[eyes4s] object DiagnosticSupport:
   /** A diagnostic awaiting its operand values, in the case's field order. */
   final class Pending[K](
       family: DiagnosticFamily,
@@ -36,12 +36,22 @@ private[plan] object DiagnosticSupport:
       message: String,
       subject: Vector[Locus[K]]
   ):
+    /** Fails on a projection defect: every field needs exactly one value.
+      * DiagnosticCatalogSuite projects a sample of every case, so a defect
+      * cannot reach a release.
+      */
     def apply(values: Operand[K]*): Diagnostic[K] =
+      val names = error.productElementNames.toVector
+      require(
+        names.size == values.size,
+        s"${family.name} projection of ${error.productPrefix} gives ${values.size} values " +
+          s"for fields $names"
+      )
       Diagnostic(
         family.code(error.ordinal),
         family.severity,
         subject,
-        error.productElementNames.toVector.zip(values),
+        names.zip(values),
         Vector.empty,
         message
       )

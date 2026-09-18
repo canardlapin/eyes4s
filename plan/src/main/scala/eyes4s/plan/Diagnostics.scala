@@ -663,12 +663,13 @@ object Diagnostics:
           cause(CauseDiagnostics.time(underlying))
         )
       case WindowResolution(key, window, underlying) =>
+        val inner = temporal(underlying)
         diagnostic(
           C.temporalFinding,
           f,
           f.message,
-          Vector(Locus.Window(window), Locus.Trial(key))
-        )(Operand.Key(key), name(window), cause(temporal(underlying)))
+          merge(Vector(Locus.Window(window), Locus.Trial(key)), inner)
+        )(Operand.Key(key), name(window), cause(inner))
       case NoObservedCoverage(key, window) =>
         diagnostic(
           C.temporalFinding,
@@ -799,7 +800,7 @@ object Diagnostics:
       case OutcomeMismatch(outcome, rejected) =>
         diagnostic[Nothing](C.admission, e, e.message)(token(outcome.toString), int(rejected))
       case AmbiguousTrial(indices) =>
-        diagnostic[Nothing](C.admission, e, e.message)(ints(indices))
+        diagnostic(C.admission, e, e.message, indices.map(Locus.InputTrial(_)))(ints(indices))
       case UnknownTrial(numbers) =>
         diagnostic(C.admission, e, e.message, Vector(Locus.Records(numbers)))(ints(numbers))
       case UnadmittedTrial(index) =>
@@ -810,6 +811,22 @@ object Diagnostics:
           int(fixations),
           int(records)
         )
+
+  /** A ledger refusal resolved against its input: the admission error's
+    * code and operands, with the trials it concerns named by key and linked
+    * to their records. An input position stays in the subject only where the
+    * key cannot tell occurrences apart (a repeated key).
+    */
+  def ledgerRefusal[K](refusal: LedgerRefusal[K]): Diagnostic[K] =
+    val inner  = admission(refusal.error)
+    val trials = refusal.trials match
+      case Vector()    => Vector.empty
+      case Vector(key) => Vector(Locus.Trial(key))
+      case keys        => Vector(Locus.Trials(keys))
+    val located = refusal.error match
+      case AdmissionError.AmbiguousTrial(_) => inner.subject
+      case _ => inner.subject.filterNot { case Locus.InputTrial(_) => true; case _ => false }
+    inner.copy(subject = trials ++ located, sources = refusal.links)
 
   // ---------------------------------------------------------------- inspection
 
@@ -872,9 +889,10 @@ object Diagnostics:
         diagnostic(C.inspection, e, e.message, ref.loci)(reference(ref))
       case InvalidPageSize(requested, maximum) =>
         diagnostic[K](C.inspection, e, e.message)(int(requested), int(maximum))
-      case Sources(underlying) =>
-        val inner = admission(underlying)
+      case Sources(refusal) =>
+        val inner = ledgerRefusal(refusal)
         diagnostic(C.inspection, e, e.message, inner.subject)(cause(inner))
+          .linked(inner.sources)
       case InputMismatch(result, sources) =>
         diagnostic(C.inspection, e, e.message, Vector(Locus.Artifact(result.digest)))(
           artifact(result.digest),

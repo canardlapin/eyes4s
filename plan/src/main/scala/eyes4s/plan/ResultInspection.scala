@@ -58,7 +58,7 @@ enum InspectionError[+K] derives CanEqual:
   case UnknownReference(reference: ResultRef[K])
   case DuplicateReference(reference: ResultRef[K])
   case InvalidPageSize(requested: Int, maximum: Int)
-  case Sources(underlying: AdmissionError)
+  case Sources(refusal: LedgerRefusal[K])
   case InputMismatch(result: ArtifactRef[?], sources: ArtifactRef[?])
   case Components(underlying: DescriptorError)
   case PlanMismatch(changes: Vector[PlanChange])
@@ -81,7 +81,7 @@ enum InspectionError[+K] derives CanEqual:
       s"Reference $reference addresses more than one result item; it cannot identify one."
     case InvalidPageSize(requested, maximum) =>
       s"Page size must be between 1 and $maximum, got $requested."
-    case Sources(e)                     => e.message
+    case Sources(refusal)               => refusal.error.message
     case InputMismatch(result, sources) =>
       s"Result was computed on input ${result.digest}; the source index describes input ${sources.digest}."
     case Components(e)         => e.message
@@ -397,7 +397,7 @@ final class StudyInspection[K, U <: Unit2D, S, D] private[plan] (
     * for the matched and then the control design its pair failures followed
     * by its reduction failures, then the contrast's. Each is located and linked.
     */
-  def failures: Vector[Diagnostic[K]] = scales.flatMap { scale =>
+  lazy val failures: Vector[Diagnostic[K]] = scales.flatMap { scale =>
     val estimation = scale.estimation.inOrder.flatMap(_.outcomes.collect {
       case EstimationOutcome.Failed(d) => d
     })

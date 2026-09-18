@@ -584,9 +584,13 @@ lazy val codec = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings, pureModuleSettings)
   .settings(
     name := "eyes4s-codec",
-    Test / unmanagedSources += file(
-      "laws/src/test/scala/eyes4s/examples/MatchedControlFixtures.scala"
-    ).getAbsoluteFile,
+    Test / unmanagedSources ++= Seq(
+      file("laws/src/test/scala/eyes4s/examples/MatchedControlFixtures.scala").getAbsoluteFile,
+      // The plan catalog's samples and alignment check, so the codec suites
+      // check both code tables together.
+      file("plan/src/test/scala/eyes4s/plan/DiagnosticSamples.scala").getAbsoluteFile,
+      file("plan/src/test/scala/eyes4s/plan/DiagnosticAlignment.scala").getAbsoluteFile
+    ),
     libraryDependencies ++= Seq(
       "io.circe" %%% "circe-core"   % circeV,
       "io.circe" %%% "circe-parser" % circeV

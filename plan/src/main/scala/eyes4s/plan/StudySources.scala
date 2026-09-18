@@ -169,15 +169,16 @@ final class StudySources[K] private (
     case None          => Vector(SourceLink.Missing(MissingSource.NoLedger))
     case Some(entries) => Vector(SourceLink.Record(entries.source, number))
 
-  /** The trial an input position or retained key digest names, if exactly one. */
-  private def resolved(locus: Locus[K]): Either[MissingSource[K], K] = locus match
-    case Locus.InputTrial(index) =>
-      inputKeys.lift(index).toRight(MissingSource.UnknownInputTrial(index, inputKeys.size))
-    case Locus.TrialDigest(digest) =>
-      digests.get(digest) match
-        case Some(Vector(key)) => Right(key)
-        case _                 => Left(MissingSource.UnresolvedDigest(digest))
-    case _ => Left(MissingSource.NoLedger)
+  /** The trial at an input position. */
+  private def atPosition(index: Int): Either[MissingSource[K], K] =
+    inputKeys.lift(index).toRight(MissingSource.UnknownInputTrial(index, inputKeys.size))
+
+  /** The trial a retained key digest names, when exactly one input trial has it. */
+  private def withDigest(digest: String): Either[MissingSource[K], K] =
+    digests.get(digest) match
+      case Some(Vector(key))   => Right(key)
+      case Some(keys @ _ +: _) => Left(MissingSource.CollidingDigest(digest, keys))
+      case _                   => Left(MissingSource.UnknownDigest(digest))
 
   /** Source links for the innermost object a subject names: a trial followed
     * by a fixation resolves to that fixation; a trial, pair or trial set to
@@ -206,8 +207,17 @@ final class StudySources[K] private (
         case (Locus.Trials(keys), _)           => keys.flatMap(links)
         case (Locus.Record(number), _)         => recordLink(number)
         case (Locus.Records(numbers), _)       => numbers.flatMap(recordLink)
-        case (other, i)                        =>
-          resolved(other).fold(missing => Vector(SourceLink.Missing(missing)), trialLinks(_, i))
+        case (Locus.InputTrial(index), i)      =>
+          atPosition(index).fold(
+            missing => Vector(SourceLink.Missing(missing)),
+            trialLinks(_, i)
+          )
+        case (Locus.TrialDigest(digest), i) =>
+          withDigest(digest).fold(
+            missing => Vector(SourceLink.Missing(missing)),
+            trialLinks(_, i)
+          )
+        case _ => Vector.empty
       }
       .distinct
 
@@ -231,13 +241,19 @@ final class StudySources[K] private (
 
 object StudySources:
   /** Sources of a ledgered import; the ledger must describe exactly this input.
-    * The key digest resolves errors that retained only a digest.
+    * A refusal is resolved against the input and the ledger, so it names the
+    * trials and the records at fault. The key digest resolves errors that
+    * retained only a digest.
     */
   def of[K: KeyDigest, U <: Unit2D](
       input: StudyInput[K, U],
       ledger: AdmissionLedger[K]
-  ): Either[AdmissionError, StudySources[K]] =
-    ledger.checkAgainst(input).map(_ => build(input, Some(ledger)))
+  ): Either[LedgerRefusal[K], StudySources[K]] =
+    ledger
+      .checkAgainst(input)
+      .left
+      .map(LedgerRefusal.of(input, ledger, _))
+      .map(_ => build(input, Some(ledger)))
 
   /** Sources of an input with no ledger: every record lookup is explicitly
     * missing; recording sample support is still available when present.

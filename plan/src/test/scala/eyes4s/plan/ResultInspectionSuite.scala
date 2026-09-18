@@ -363,12 +363,24 @@ class ResultInspectionSuite extends munit.FunSuite:
     assertEquals(reduced.outcome.left.map(_.code.render), Left("reduction.ambiguous-key"))
     assertEquals(reduced.members, Vector.empty)
     assertEquals(unledgered.sources.samples(a, 0), Left(MissingSource.AmbiguousTrial(a, 2)))
+    val ambiguous = ResultInspection
+      .study(repeatedPlan, repeatedRun, repeated, Some(ledger))
+      .left
+      .map(e => Diagnostic.of(e))
+    assertEquals(ambiguous.left.map(_.code.render), Left("inspection.sources"))
     assertEquals(
-      ResultInspection
-        .study(repeatedPlan, repeatedRun, repeated, Some(ledger))
-        .left
-        .map(e => Diagnostic.of(e).code.render),
-      Left("inspection.sources")
+      ambiguous.left.map(_.causes.map(_.code.render)),
+      Left(Vector("admission.ambiguous-trial"))
+    )
+    // The repeated key, and one input position per occurrence, since the key
+    // cannot tell the occurrences apart; linked to the key's own records.
+    assertEquals(
+      ambiguous.left.map(_.subject),
+      Left(Vector(Locus.Trial(a), Locus.InputTrial(0), Locus.InputTrial(7)))
+    )
+    assertEquals(
+      ambiguous.left.map(_.sources),
+      Left(Vector(3, 6).map(SourceLink.Record(source, _)))
     )
   }
 
@@ -646,7 +658,7 @@ class ResultInspectionSuite extends munit.FunSuite:
     )
     assertEquals(
       ledgered.sources.locate(Vector(Locus.TrialDigest("0000000000000000"))),
-      Vector(SourceLink.Missing(MissingSource.UnresolvedDigest("0000000000000000")))
+      Vector(SourceLink.Missing(MissingSource.UnknownDigest("0000000000000000")))
     )
     assertEquals(
       ledgered.sources.locate(Vector(Locus.InputTrial(0))),
@@ -858,10 +870,25 @@ class ResultInspectionSuite extends munit.FunSuite:
     )
     val refused = ResultInspection.study(p, result, input, Some(otherLedger))
     assertEquals(refused.left.map(Diagnostic.of(_).code.render), Left("inspection.sources"))
+    // The ledger of another CSV has no records for one input trial: the
+    // refusal names that trial by key and says no record supplied it.
+    assertEquals(refused.left.map(Diagnostic.of(_).subject), Left(Vector(Locus.Trial(other))))
+    assertEquals(refused.left.map(Diagnostic.of(_).keys), Left(Vector(other)))
     assertEquals(
-      refused.left.map(Diagnostic.of(_).subject),
-      Left(Vector(Locus.InputTrial(6)))
+      refused.left.map(Diagnostic.of(_).sources),
+      Left(Vector(SourceLink.Missing(MissingSource.UnknownTrial(other))))
     )
+    assertEquals(
+      StudySources.of(input, otherLedger).left.map(_.error),
+      Left(AdmissionError.UnadmittedTrial(6))
+    )
+    // An input one trial short of the ledger: the orphan records name their trial.
+    val short    = StudyInput(Trials(rows(failing = false).filterNot(_.key == lone)))
+    val orphaned = get(StudySources.of(short, ledger).swap.left.map(_ => "expected a refusal"))
+    val orphan   = Diagnostics.ledgerRefusal(orphaned)
+    assertEquals(orphan.code.render, "admission.unknown-trial")
+    assertEquals(orphan.subject, Vector(Locus.Trial(lone), Locus.Records(Vector(14))))
+    assertEquals(orphan.sources, Vector(SourceLink.Record(source, 14)))
     val stale = ResultInspection.study(plan(input, successfulOnly), result, input, Some(ledger))
     assertEquals(stale.left.map(Diagnostic.of(_).code.render), Left("inspection.plan-mismatch"))
     assertEquals(

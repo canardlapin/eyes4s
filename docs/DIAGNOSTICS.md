@@ -17,8 +17,11 @@ the stored pair rows and is checked against the stored denominators.
 `Diagnostic.of(error)` projects any cataloged error through its `Diagnose`
 instance; `Diagnostics.plan`, `Diagnostics.failure`, `Diagnostics.reduction`
 and the other `Diagnostics` methods do the same by name, and also accept
-errors whose key type is a wildcard, such as the `ReconstructionError[?]`
-inside `CodecError.Reconstruction`. A diagnostic carries:
+errors whose key type is a wildcard. The codec's families (`CodecError`,
+`ResolveError`, `SourceFailure`, `RelationMismatch`, `ManifestError`,
+`PayloadError`, `ByteDigestError`) project through `CodecDiagnostics`; import
+`eyes4s.codec.CodecDiagnostics.given` to use `Diagnostic.of` on them. A
+diagnostic carries:
 
 - `code`: the stable identity, rendered `family.case`, for example
   `reduction.failed-scores`. A consumer localises from the code and the
@@ -27,8 +30,10 @@ inside `CodecError.Reconstruction`. A diagnostic carries:
   `Warning` for preflight warnings only.
 - `subject`: the failing object as a path of `Locus` values from the coarsest to
   the finest: `Repetition` and `Window` for a temporal cell, `Scale`, `Design`,
-  then `Trial`, `Pair`, `Trials`, `Record`, `Records` or `Fixation`, and for
-  recordings `Recording`, `Event`, `Sample`, `Samples` or `Area`. A wrapper (a
+  then `Trial`, `Pair`, `Trials`, `Record`, `Records` or `Fixation`; for
+  recordings `Recording`, `Event`, `Sample`, `Samples` or `Area`; and for saved
+  studies `Entry` (a manifest entry), `Relation` and `Path` (a location in a
+  decoded document). A wrapper (a
   scale around a reconstruction error, a repetition around a finding, a refusal
   around a plan error, a core error around a recording error) keeps every locus
   of the error it wraps, so the innermost failing object is named. The two
@@ -56,41 +61,73 @@ code is `geometry.frame-mismatch` and whose operands are the two frame names.
 
 ### Stability
 
-`DiagnosticCatalog` is the code table: each family lists its enum's cases in
-declaration order, and a case's code is the family name and its kebab-case
-label. `DiagnosticCatalogSuite` compares every list with the compiler's own
-case list and samples every case of every family through its public
-`Diagnose` instance. For each sample it checks that the operands are the
+`DiagnosticCatalog` (plan) and `CodecDiagnosticCatalog` (codec) are the code
+tables: each family lists its enum's cases in declaration order, and a case's
+code is the family name and its kebab-case label. `DiagnosticCatalogSuite`
+and `CodecDiagnosticCatalogSuite` compare every list with the compiler's own
+case list and sample every case of every family through its public
+`Diagnose` instance. For each sample they check that the operands are the
 case's fields in order, that each operand carries its field's value (a
 structured field must have its structured projection, and a nested error must
 carry the code of the family that owns its case), that a wrapper keeps the
 wrapped subject, and that same-typed fields of a sample differ, so a swapped
-operand is detected. It pins the rendered code list by count and portable
-digest on both platforms. A new, removed, renamed or reordered case therefore
-fails the tests until the catalog, the pinned digest and this document are
-updated. Renaming a case changes its code; treat that as a breaking change.
+operand is detected. Walking every sample's fields, they also fail when an
+error, failure, mismatch, cause, reason or finding reachable from any
+cataloged error (`CodecError` and `ResolveError` included) belongs to a family
+that is not cataloged, or is carried as a token instead of a cause. They pin
+each table's rendered codes by count and portable digest on both platforms. A
+new, removed, renamed or reordered case therefore fails the tests until the
+catalog, the pinned digest and this document are updated. Renaming a case
+changes its code; treat that as a breaking change.
 
-The catalog covers the plan, study-failure, study-result, temporal,
-recording-plan and recording-input errors; reduction, reconstruction, contrast
-and contrast-row errors; every preflight finding family, `BudgetError` and
-`PreflightError`; admission reasons, quarantine causes and ledger refusals;
-inspection refusals; and every lower-level error those wrap, from geometry,
-time and surface errors to detection support and AOI errors.
+The families covered are exactly those listed in the code table below, which
+a test generates from both catalogs.
 
-Not cataloged: `CodecError` and the io import errors (`FixationImportError`,
-`TidyCsvError` and the EyeLink errors). They remain typed values, and the
-`CodecError` cases that wrap a cataloged error (`Definition`, `Admission`,
-`Recording`, `Support`, `Synchronization`, `Input`, `Temporal`,
-`Reconstruction`, `Result`) project that error directly. `PreflightError` and
-`preflightFinding` project to `Diagnostic[Any]` because `PreflightError`
-carries its blockers without their key type.
+Not cataloged, and so without codes: the errors that no cataloged error wraps.
+A test checks that none of them is in a catalog.
+
+<!-- BEGIN NOT CATALOGED -->
+- io import, export and EyeLink errors: `FixationImportError`,
+  `FixationRowError` (the importer turns it into a cataloged admission
+  reason), `TidyCsvError`, `TidyResultError`, `ContrastExportError`,
+  `TemplateCsvError`, `DelimitedSchemaError`, `PsychologyWorkflowError`,
+  `Sha256Error`, `Edf2AscProvenanceError`, `AscSampleMaterializationError`,
+  `AscSourceLineError`, `AscStreamConfigurationError`,
+  `AscNativeTimelineError`, `AscPerformanceValidationError`,
+  `EyeLinkAscSessionConfigError`, `EyeLinkOracleError`,
+  `EyeLinkConformanceError` and `EyeLinkCorpusError`.
+- lower-level errors outside the study, recording and saved-study routes:
+  `TimelineError`, `TimeQuantityError`, `MovingError`, `OccupancyError`,
+  `TemporalSupportError`, `AlgorithmMetadataError`, `EkEstimationError`,
+  `MergeError`, `SmootherCardError`, `CrqaError`, `CrqaParameterError`,
+  `ComparisonConfigurationError`, `PairingError`, `TemplateFitError`,
+  `ReductionPolicyError`, `WorkQuantaError`, `EvaluationWorkError` (its two
+  cases wrap the cataloged pair-schedule and comparison-work errors),
+  `RngError` and `RecipeParameterError`.
+<!-- END NOT CATALOGED -->
+
+`TemporalStudyError` identifies trials by key digest, so its subject is a
+`TrialDigest`; inside a temporal result the inspection adds the typed key.
+
+Preflight: `Diagnostics.studyFinding` and `Diagnostics.temporalFinding`
+project a report's `findings` to `Diagnostic[K]`, keys typed. `PreflightError`
+carries its blockers without their key type, so `PreflightError.NotReady` and
+`Diagnostics.preflightFinding` project to `Diagnostic[Any]`; project a
+report's own findings when the keys matter.
 
 ## Source links
 
 `StudySources.of(input, ledger)` indexes the admission ledger of a ledgered
 import after `AdmissionLedger.checkAgainst` confirms that it describes exactly
 this input; `StudySources.unledgered(input)` indexes an input without one.
-Both take the key type's `KeyDigest`.
+Both take the key type's `KeyDigest`. A refusal is a `LedgerRefusal`: the
+`AdmissionError`, which names input positions and record numbers, resolved
+against the input and the ledger to the trials it concerns, by key, and links
+to their records. `Diagnostics.ledgerRefusal` projects it with the admission
+code, the trials first in its subject and those links as its sources; an input
+position stays in the subject only for a repeated key, one per occurrence.
+An input trial the ledger never mentions links to an explicit
+`UnknownTrial`.
 
 | Question | Call | Answer |
 |---|---|---|
@@ -114,7 +151,8 @@ link names the recording plan's input artifact.
 Where evidence is absent, the answer is an explicit `MissingSource`, never a
 guessed link: `NoLedger`, `UnknownTrial`, `NotAdmitted` (a quarantined trial,
 with its rejected records), `FixationOutOfRange`, `NotSourceSupported`,
-`AmbiguousTrial` (the input repeats the full key), `UnresolvedDigest` and
+`AmbiguousTrial` (the input repeats the full key), `UnknownDigest` (no input
+trial has the digest), `CollidingDigest` (several do, all named) and
 `UnknownInputTrial`. An error that kept only an input position
 (`admission.unadmitted-trial`) or a key digest (`temporal.missing-epoch`)
 resolves to its trial when exactly one input trial has it.
@@ -168,16 +206,22 @@ from the typed value by the descriptor. An undescribed method has no
 components: missing, not zero.
 
 `failures` lists every failure the result records, located under its scale and
-design and linked to its sources. A drill-down from a contrast row to CSV
-records reads:
+design and linked to its sources; it is computed once, on first use.
+
+Opening an inspection builds every listing, its diagnostics and their source
+links at once, so its cost is proportional to the size of the result and its
+input. Paging then only slices the built listings.
+
+A drill-down from a contrast row to CSV records reads:
 
 ```scala
-val inspection = ResultInspection.study(plan, result, input, Some(ledger))
 for
-  view      <- inspection
+  view      <- ResultInspection.study(plan, result, input, Some(ledger))
   row       <- view.contrastRow(ResultRef.ContrastRow(0, focal))
-  reduction <- view.reduction(row.matched.get)
-  pair      <- view.pair(reduction.members.head.pair)
+  matched   <- row.matched.toRight(InspectionError.UnknownReference(row.ref))
+  reduction <- view.reduction(matched)
+  member    <- reduction.members.headOption.toRight(InspectionError.UnknownReference(matched))
+  pair      <- view.pair(member.pair)
 yield view.sources.fixation(pair.reference, 0).map(_.record)
 ```
 
@@ -191,20 +235,25 @@ sample count and order preprocessing keeps.
 
 ## Evidence
 
-- `plan/src/test/scala/eyes4s/plan/DiagnosticCatalogSuite.scala`: catalog
-  totality against the compiler's case lists, per-case samples, field
-  alignment with mutant checks, preserved nested subjects, exact non-finite
-  operands, unique and pinned codes on both platforms.
+- `plan/src/test/scala/eyes4s/plan/DiagnosticCatalogSuite.scala` and
+  `codec/src/test/scala/eyes4s/codec/CodecDiagnosticCatalogSuite.scala`:
+  catalog totality against the compiler's case lists, per-case samples, field
+  alignment with mutant checks, reachable error types, preserved nested
+  subjects, exact non-finite operands, unique and pinned codes on both
+  platforms.
 - `plan/src/test/scala/eyes4s/plan/ResultInspectionSuite.scala`: drill-down,
   membership under both failure policies, colliding display text and repeated
   keys, reordered input, a two-component custom score and a mislabelled
   schema, scale, trial and window failures, cell-scoped references, missing
   locators, digest and position resolution, rejected records, buffer copies,
-  paging at several sizes, agreement with the typed result, and recording
-  events linked to the plan's input.
-- `codec/src/test/scala/eyes4s/codec/InspectionArchiveSuite.scala`: the pinned
-  study-result-v1 and study-input-v1 drill down to CSV record numbers; the
-  pinned admission ledger names its rejected records; a decoded archive
+  paging at several sizes, agreement with the typed result, recording events
+  linked to the plan's input, and ledger refusals named by trial key.
+- `codec/src/test/scala/eyes4s/codec/InspectionArchiveSuite.scala` and
+  `codec/.jvm/src/test/scala/eyes4s/codec/InspectionManifestJvmSuite.scala`:
+  the pinned study-result-v1, study-input-v1 and admission-ledger-complete-v1,
+  and the same artifacts resolved from manifest-v1, drill down to CSV record
+  numbers; the pinned refused admission ledger names its rejected records and,
+  against the full input, the trial it did not admit; a decoded archive
   inspects exactly as its original, reports included; source-supported
   fixations link to their samples; a tampered archive is refused with a coded
   diagnostic.
@@ -218,8 +267,8 @@ sample count and order preprocessing keeps.
 
 ## Code table
 
-Generated from `DiagnosticCatalog` and checked by
-`plan/.jvm/src/test/scala/eyes4s/plan/DiagnosticsDocJvmSuite.scala`. Set
+Generated from `DiagnosticCatalog` and `CodecDiagnosticCatalog` and checked
+by `codec/.jvm/src/test/scala/eyes4s/codec/DiagnosticsDocJvmSuite.scala`. Set
 `EYES4S_WRITE_DIAGNOSTICS_DOC=1` and run that suite to regenerate it; the run
 fails after rewriting, so review the change and run it again.
 
@@ -805,12 +854,131 @@ fails after rewriting, so review the change and run it again.
 | `inspection.unknown-reference` | `UnknownReference` | `reference` |
 | `inspection.duplicate-reference` | `DuplicateReference` | `reference` |
 | `inspection.invalid-page-size` | `InvalidPageSize` | `requested`, `maximum` |
-| `inspection.sources` | `Sources` | `underlying` |
+| `inspection.sources` | `Sources` | `refusal` |
 | `inspection.input-mismatch` | `InputMismatch` | `result`, `sources` |
 | `inspection.components` | `Components` | `underlying` |
 | `inspection.plan-mismatch` | `PlanMismatch` | `changes` |
 | `inspection.reduction-membership` | `ReductionMembership` | `reference`, `selected`, `members`, `contributing`, `contributors` |
 | `inspection.orientation` | `Orientation` | `scale`, `design`, `found` |
 | `inspection.no-contrast` | `NoContrast` | `scale` |
+
+### `codec` — `CodecError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `codec.invalid-json` | `InvalidJson` | `input`, `reason` |
+| `codec.field` | `Field` | `path`, `input`, `reason` |
+| `codec.schema` | `Schema` | `expected`, `found` |
+| `codec.definition` | `Definition` | `underlying` |
+| `codec.duplicate-keys` | `DuplicateKeys` | `schema`, `indices` |
+| `codec.missing-identity` | `MissingIdentity` | `kind`, `id` |
+| `codec.identity-conflict` | `IdentityConflict` | `kind`, `id`, `existing`, `incoming` |
+| `codec.missing-method` | `MissingMethod` | `method` |
+| `codec.duplicate-method` | `DuplicateMethod` | `method` |
+| `codec.missing-key-schema` | `MissingKeySchema` | `schema` |
+| `codec.duplicate-key-schema` | `DuplicateKeySchema` | `schema` |
+| `codec.entry` | `Entry` | `path`, `underlying` |
+| `codec.unsupported` | `Unsupported` | `path`, `reason` |
+| `codec.input-identity` | `InputIdentity` | `declared`, `reconstructed` |
+| `codec.admission` | `Admission` | `underlying` |
+| `codec.recording` | `Recording` | `path`, `underlying` |
+| `codec.support` | `Support` | `path`, `underlying` |
+| `codec.synchronization` | `Synchronization` | `path`, `underlying` |
+| `codec.input` | `Input` | `underlying` |
+| `codec.temporal` | `Temporal` | `underlying` |
+| `codec.sample-bound` | `SampleBound` | `path`, `samples`, `maximum` |
+| `codec.synchronization-fit` | `SynchronizationFit` | `path`, `declaredOffsetMicros`, `declaredDrift`, `refitOffsetMicros`, `refitDrift` |
+| `codec.reconstruction` | `Reconstruction` | `underlying` |
+| `codec.result` | `Result` | `underlying` |
+| `codec.score-components` | `ScoreComponents` | `expected`, `found` |
+| `codec.missing-result-codec` | `MissingResultCodec` | `method` |
+| `codec.duplicate-result-codec` | `DuplicateResultCodec` | `method` |
+| `codec.payload` | `Payload` | `path`, `underlying` |
+| `codec.missing-payload` | `MissingPayload` | `path`, `reference` |
+| `codec.manifest` | `Manifest` | `underlying` |
+| `codec.text` | `Text` | `offset`, `reason` |
+| `codec.unsupported-schema` | `UnsupportedSchema` | `role`, `found`, `supported` |
+
+### `resolve` — `ResolveError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `resolve.missing-manifest` | `MissingManifest` | `address` |
+| `resolve.unreadable-manifest` | `UnreadableManifest` | `address`, `reason` |
+| `resolve.manifest-digest` | `ManifestDigest` | `address`, `actual` |
+| `resolve.manifest-decode` | `ManifestDecode` | `address`, `underlying` |
+| `resolve.refused-manifest` | `RefusedManifest` | `address`, `failure` |
+| `resolve.missing` | `Missing` | `entry` |
+| `resolve.unreadable` | `Unreadable` | `entry`, `reason` |
+| `resolve.refused` | `Refused` | `entry`, `failure` |
+| `resolve.length` | `Length` | `entry`, `declared`, `actual` |
+| `resolve.digest` | `Digest` | `entry`, `declared`, `actual` |
+| `resolve.text` | `Text` | `entry`, `offset` |
+| `resolve.syntax` | `Syntax` | `entry`, `reason` |
+| `resolve.schema` | `Schema` | `entry`, `declared`, `found` |
+| `resolve.decode` | `Decode` | `entry`, `underlying` |
+| `resolve.identity` | `Identity` | `entry`, `declared`, `reconstructed` |
+| `resolve.relation` | `Relation` | `relation`, `mismatch` |
+
+### `source-failure` — `SourceFailure`
+
+| Code | Case | Operands |
+|---|---|---|
+| `source-failure.missing` | `Missing` |  |
+| `source-failure.unreadable` | `Unreadable` | `reason` |
+| `source-failure.outside-root` | `OutsideRoot` | `location`, `root` |
+| `source-failure.not-regular-file` | `NotRegularFile` | `location` |
+| `source-failure.oversize` | `Oversize` | `location`, `size`, `limit` |
+
+### `relation` — `RelationMismatch`
+
+| Code | Case | Operands |
+|---|---|---|
+| `relation.prerequisites` | `Prerequisites` | `errors` |
+| `relation.result-input` | `ResultInput` | `expected`, `found` |
+| `relation.description` | `Description` | `changes` |
+| `relation.admission` | `Admission` | `error` |
+| `relation.refused-admission` | `RefusedAdmission` |  |
+| `relation.base-study` | `BaseStudy` | `expected`, `found` |
+| `relation.recording-identity` | `RecordingIdentity` | `expected`, `found` |
+| `relation.unreferenced-payload` | `UnreferencedPayload` | `reference` |
+| `relation.unavailable` | `Unavailable` | `endpoints` |
+
+### `manifest` — `ManifestError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `manifest.invalid-name` | `InvalidName` | `value` |
+| `manifest.duplicate-name` | `DuplicateName` | `name` |
+| `manifest.media-mismatch` | `MediaMismatch` | `name`, `role`, `media` |
+| `manifest.negative-length` | `NegativeLength` | `name`, `length` |
+| `manifest.identity-presence` | `IdentityPresence` | `name`, `role`, `identity` |
+| `manifest.payload-declaration` | `PayloadDeclaration` | `name`, `role`, `schema`, `layout` |
+| `manifest.layout-length` | `LayoutLength` | `name`, `declared`, `layout` |
+| `manifest.unknown-entry` | `UnknownEntry` | `relation`, `name` |
+| `manifest.role-mismatch` | `RoleMismatch` | `relation`, `name`, `expected`, `found` |
+| `manifest.payload-owner` | `PayloadOwner` | `relation`, `schema` |
+| `manifest.duplicate-relation` | `DuplicateRelation` | `relation` |
+| `manifest.relation-count` | `RelationCount` | `name`, `kind`, `count`, `expected` |
+
+### `payload` — `PayloadError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `payload.empty-shape` | `EmptyShape` |  |
+| `payload.negative-extent` | `NegativeExtent` | `axis`, `extent` |
+| `payload.too-large` | `TooLarge` | `element`, `shape`, `maximumBytes` |
+| `payload.count` | `Count` | `layout`, `values` |
+| `payload.element` | `Element` | `declared`, `requested` |
+| `payload.length` | `Length` | `declared`, `actual` |
+| `payload.digest` | `Digest` | `declared`, `actual` |
+| `payload.not-a-number` | `NotANumber` | `index` |
+
+### `byte-digest` — `ByteDigestError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `byte-digest.wrong-length` | `WrongLength` | `value`, `length` |
+| `byte-digest.invalid-character` | `InvalidCharacter` | `value`, `index`, `character` |
 
 <!-- END GENERATED DIAGNOSTIC CODES -->
