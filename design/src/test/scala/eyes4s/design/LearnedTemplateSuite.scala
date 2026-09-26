@@ -47,6 +47,40 @@ class LearnedTemplateSuite extends munit.FunSuite:
   private def near(actual: Double, expected: Double): Unit =
     assertEqualsDouble(actual, expected, LearnedTolerance)
 
+  test("the training identity names the spatial unit, not only the numbers") {
+    // Identical ids, bounds, axis and values in pixels and in degrees are different inputs.
+    val degrees =
+      Frame.of[Unit2D.Deg](frame.id, get(Bounds.of[Unit2D.Deg](0, 0, 2, 1)), frame.yAxis)
+    val angularGrid = get(Grid.over(degrees, 2, 1))
+    def angular(key: String, group: String, matched: String, x: Double, y: Double) =
+      val values = IArray(x, 1.0 - x)
+      get(
+        MapTemplateObservation.of(
+          key,
+          group,
+          matched,
+          get(Surface.mass(angularGrid, values, Provenance.raw(ContentHash.of(values)))),
+          y
+        )
+      )
+    val inDegrees = get(
+      MapTemplateSplit.of(
+        Vector(
+          angular("a", "p1", "a", 1, 2),
+          angular("b", "p2", "b", 1, 2),
+          angular("c", "p3", "c", 0, 1),
+          angular("duplicate-match", "p1", "held", 0, 900),
+          angular("held", "p4", "held", 0.5, 7.0)
+        ),
+        Set("p4"),
+        "participant",
+        "score"
+      )
+    )
+    assertNotEquals(inDegrees.training.hash, split().training.hash)
+    assertNotEquals(inDegrees.heldOut.hash, split().heldOut.hash)
+  }
+
   test("equal-trial learned mean and slope agree with independent analytic expectations") {
     val s = split(); val model = get(LearnedTemplate.fit(s.training))
     near(model.mean.values(0), 2.0 / 3); near(model.mean.values(1), 1.0 / 3)

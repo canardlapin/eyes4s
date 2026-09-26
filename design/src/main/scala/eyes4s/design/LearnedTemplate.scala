@@ -100,7 +100,7 @@ final class MapTemplateSplit[K, U <: Unit2D] private (
     val excluded: Vector[TemplateExcludedRow[K, U]]
 )
 object MapTemplateSplit:
-  def of[K: KeyDigest, U <: Unit2D](
+  def of[K: KeyDigest, U <: Unit2D: UnitLabel](
       rows: Vector[MapTemplateObservation[K, U]],
       heldOutGroups: Set[String],
       splitUnit: String,
@@ -139,6 +139,7 @@ object MapTemplateSplit:
                     ContentHash.ofString(LearnedTemplate.method),
                     ContentHash.ofString(splitUnit),
                     ContentHash.ofString(responseUnit),
+                    ContentHash.ofString(summon[UnitLabel[U]].symbol),
                     ContentHash.ofString(grid.id.name),
                     ContentHash.ofString(grid.frame.id.name),
                     ContentHash.ofString(grid.frame.spec.yAxis.toString),

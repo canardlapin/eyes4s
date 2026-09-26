@@ -100,3 +100,33 @@ class LearnedTemplateRecipeSuite extends munit.FunSuite:
     )
     assert(angularCodec.decode(encoded).isLeft)
   }
+
+  test("held-out groups have one canonical wire order; unsorted input is refused") {
+    val twoHeld = get(
+      MapTemplateSplit.of(
+        Vector(
+          row("a", "p1", "a", Vector(1, 0), 2),
+          row("b", "p2", "b", Vector(1, 0), 2),
+          row("c", "p3", "c", Vector(0, 1), 1),
+          row("held", "p4", "held", Vector(0.5, 0.5), 7)
+        ),
+        Set("p4", "p3"),
+        "participant",
+        "score"
+      )
+    )
+    val encoded = get(codec.encode(twoHeld))
+    val value   = encoded.hcursor.downField("value").focus.get
+    assertEquals(
+      value.hcursor.get[Vector[String]]("heldOutGroups"),
+      Right(Vector("p3", "p4"))
+    )
+    val reversed = value.mapObject(
+      _.add("heldOutGroups", Json.arr(Json.fromString("p4"), Json.fromString("p3")))
+    )
+    assert(
+      codec.decode(encoded.mapObject(_.add("value", reversed))) match
+        case Left(CodecError.Field("heldOutGroups", _, reason)) => reason.contains("ascending")
+        case _                                                  => false
+    )
+  }

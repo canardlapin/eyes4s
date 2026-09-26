@@ -23,12 +23,15 @@ scientifically.
 
 `LearnedTemplate.fit(split.training)` can receive only training maps and responses.
 It returns the mean map, ordered training features, slope and full training receipt.
-The digest includes recipe identity, units, grid/frame specification, ordered keys,
-groups, map values and responses. `evaluate(split.heldOut)` checks training identity
+The digest includes recipe identity, split and response units, the spatial unit
+symbol (`UnitLabel[U]`, so identical numbers in pixels and in degrees differ),
+grid/frame specification, ordered keys, groups, map values and responses. `evaluate(split.heldOut)` checks training identity
 and retains every held-out key, group, response and prediction/residual or error.
 
 `LearnedTemplateRecipeCodec.of(schema, keyCodec)` saves the complete input recipe,
-including excluded rows and both partitions. Reopening reruns admission and
+including excluded rows and both partitions. `heldOutGroups` has one canonical wire
+form, ascending order without duplicates; any other order is a typed `CodecError`
+rather than a second spelling of the same recipe. Reopening reruns admission and
 exclusion rules and checks the training digest. Refit reconstructs the learned mean,
 features and slope; saved coefficients are not accepted as proof of native fitting.
 The compiled `LearnedTemplateRecipeSuite` exercises save/reopen/refit/evaluate on
