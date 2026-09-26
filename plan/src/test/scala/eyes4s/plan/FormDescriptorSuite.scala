@@ -16,6 +16,8 @@
 
 package eyes4s.plan
 
+import eyes4s.core.Weight
+import eyes4s.design.FailurePolicy
 import eyes4s.detect.IvtThreshold
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.{Deg, Px}
@@ -547,6 +549,43 @@ class FormDescriptorSuite extends munit.FunSuite:
     assertEquals(real.read("1e-400"), None)
     assertEquals(real.read("0e-400"), Some(0.0))
     assertEquals(real.read("0.000"), Some(0.0))
+  }
+
+  test("host accessors: views by id, value equality, inspection and detector forms") {
+    assert(Endpoint.Closed(0).admits(0, Side.Lower) && !Endpoint.Open(0).admits(0, Side.Lower))
+    assert(
+      Endpoint.Open(1).admits(0.5, Side.Upper) && !Endpoint.Closed(1).admits(1.5, Side.Upper)
+    )
+    val v    = F.sigma[Px].view
+    val same = get(FieldView.of(v.id, v.version, v.meaning, v.kind))
+    assertEquals(same.hashCode, v.hashCode)
+    assert(v.toString.contains("sigma"))
+    val defaulted =
+      get(v.withDefault(get(DefaultValue.of(RawValue.Number("1"), "a test default"))))
+    assertEquals(defaulted.default.map(_.raw), Some(RawValue.Number("1")))
+    assert(v.withDefault(get(DefaultValue.of(RawValue.Number("-1"), "out of bounds"))).isLeft)
+    val info = ParameterInfo.of(v)
+    assertEquals(info, RecipeParameters.sigma[Px].info)
+    assertEquals(info.hashCode, RecipeParameters.sigma[Px].info.hashCode)
+    assertEquals(info.version, 1)
+    assert(info.toString.contains("sigma"))
+    val ivt = RecordingMethodDescriptor.ivt(DefinitionId.builtIn("test.ivt", 1)).formView
+    assertEquals(ivt.field(id("minimumDurationMicros")), Some(F.minimumDuration.view))
+    assertEquals(ivt.field(id("absent")), None)
+    val frame = get(Frame.screen("display", 800, 600))
+    val plan  = get(
+      StudyPlan.cosine(
+        ArtifactRef.of[StudyInput[StudyKey, Px]](ContentHash.empty),
+        get(Grid.of(GridId("g"), frame, 10, 8)),
+        "recall",
+        "encode",
+        Weight.Duration,
+        Vector(StudyEstimate.Binned()),
+        FailurePolicy.RequireAll
+      )
+    )
+    val inspection = get(plan.inspect)
+    assertEquals(inspection.views.map(_.id.value), inspection.description.map(_._1))
   }
 
 /** The parts of a view, for the tests. */
