@@ -866,6 +866,52 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
 val javaFxV           = "24.0.1"
 val studioDesktopJdkV = 22
 
+// Source pins (S0.3). scaladock and Intaglio are source-only pre-release. Each
+// is pinned by a full Git SHA in studio/pins.properties and resolved as
+// 0.0.0-<sha>, which studio/publish-pins.sh builds from exactly that commit and
+// publishes locally. No external build is loaded by default, so the library
+// build never clones anything. `-Dstudio.<name>.local=<checkout>` substitutes
+// a local checkout as a source dependency; there is no implicit sibling.
+// studio/README.md documents both paths.
+lazy val studioPins: java.util.Properties = {
+  val props = new java.util.Properties
+  IO.load(props, file("studio/pins.properties").getAbsoluteFile)
+  props
+}
+
+def studioPinVersion(name: String): String = {
+  val revision = Option(studioPins.getProperty(s"$name.revision")).getOrElse("")
+  if (!revision.matches("[0-9a-f]{40}"))
+    sys.error(s"studio/pins.properties: $name.revision is not a full Git SHA: '$revision'")
+  s"0.0.0-$revision"
+}
+
+def studioPinOrganization(name: String): String =
+  Option(studioPins.getProperty(s"$name.organization"))
+    .getOrElse(sys.error(s"studio/pins.properties has no $name.organization"))
+
+def studioLocalCheckout(name: String): Option[URI] =
+  sys.props.get(s"studio.$name.local").map { path =>
+    val dir = file(path).getAbsoluteFile.getCanonicalFile
+    if (!(dir / "build.sbt").isFile)
+      sys.error(s"-Dstudio.$name.local=$path: $dir is not an sbt build (no build.sbt)")
+    dir.toURI
+  }
+
+lazy val intaglioLocal  = studioLocalCheckout("intaglio")
+lazy val scaladockLocal = studioLocalCheckout("scaladock")
+
+// JVM-only pinned artifacts, and the local projects that replace pins.
+def intaglioPinned(module: String) =
+  studioPinOrganization("intaglio") %% s"intaglio-$module" % studioPinVersion("intaglio")
+def scaladockPinned(module: String) =
+  studioPinOrganization("scaladock") %% s"scaladock-$module" % studioPinVersion("scaladock")
+def studioLocalRefs(
+    local: Option[URI],
+    projects: String*
+): Seq[ClasspathDep[ProjectReference]] =
+  local.toSeq.flatMap(uri => projects.map(p => ClasspathDependency(ProjectRef(uri, p), None)))
+
 lazy val checkStudioBoundaries =
   taskKey[Unit]("Fail if a library module depends on studio, or portable studio names JavaFX.")
 
@@ -961,7 +1007,25 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
   .enablePlugins(NoPublishPlugin)
   .dependsOn(plan, codec, fs2Module)
   .settings(commonSettings, portableStudioSettings)
-  .settings(name := "eyes4s-studio-core")
+  .settings(
+    name := "eyes4s-studio-core",
+    // S3.0: the backend protocol's codecs (circe, pinned with eyes4s-codec) and
+    // its effect tests.
+    libraryDependencies ++= Seq(
+      "io.circe"      %%% "circe-core"        % circeV,
+      "io.circe"      %%% "circe-parser"      % circeV,
+      "org.typelevel" %%% "munit-cats-effect" % munitCatsEffectV % Test
+    ),
+    // S3.0: studio-core may not read files (it links for Scala.js), so the mock
+    // study and the acceptance fixture's inventory are generated sources.
+    Compile / sourceGenerators += Def.task {
+      StudioFixture.generate(
+        (ThisBuild / baseDirectory).value,
+        (Compile / sourceManaged).value / "eyes4s" / "studio",
+        streams.value.cacheDirectory / "studio-fixture"
+      )
+    }.taskValue
+  )
 
 /** UI-neutral presentation: app model, intents, pure update, view-models. */
 lazy val studioApp = crossProject(JVMPlatform, JSPlatform)
@@ -972,14 +1036,29 @@ lazy val studioApp = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings, portableStudioSettings)
   .settings(name := "eyes4s-studio-app")
 
-/** Intaglio scene builders over view-models. Intaglio is pinned in S0.3. */
+/** Intaglio scene builders over view-models, on Intaglio core, interaction and svg. */
 lazy val studioViz = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("studio/viz"))
   .enablePlugins(NoPublishPlugin)
   .dependsOn(studioApp)
+  .jvmConfigure(
+    _.dependsOn(studioLocalRefs(intaglioLocal, "coreJVM", "interactionJVM", "svgJVM"): _*)
+  )
+  .jsConfigure(
+    _.dependsOn(studioLocalRefs(intaglioLocal, "coreJS", "interactionJS", "svgJS"): _*)
+  )
   .settings(commonSettings, portableStudioSettings)
-  .settings(name := "eyes4s-studio-viz")
+  .settings(
+    name := "eyes4s-studio-viz",
+    libraryDependencies ++= {
+      if (intaglioLocal.isDefined) Nil
+      else
+        Seq("core", "interaction", "svg").map { m =>
+          studioPinOrganization("intaglio") %%% s"intaglio-$m" % studioPinVersion("intaglio")
+        }
+    }
+  )
 
 // OpenJFX publishes one native jar per platform, selected by classifier. The
 // host is detected; `-Djavafx.platform=<classifier>` overrides it. Packaging
@@ -1001,6 +1080,8 @@ lazy val studioDesktop = project
   .in(file("studio/desktop"))
   .enablePlugins(NoPublishPlugin)
   .dependsOn(studioViz.jvm)
+  .dependsOn(studioLocalRefs(intaglioLocal, "javafxJVM"): _*)
+  .dependsOn(studioLocalRefs(scaladockLocal, "core", "fx"): _*)
   .settings(commonSettings)
   .settings(
     name         := "eyes4s-studio-desktop",
@@ -1008,6 +1089,33 @@ lazy val studioDesktop = project
     libraryDependencies ++= Seq("javafx-base", "javafx-graphics", "javafx-controls").map(
       "org.openjfx" % _ % javaFxV classifier javaFxClassifier
     ),
+    libraryDependencies ++=
+      (if (intaglioLocal.isDefined) Nil else Seq(intaglioPinned("javafx"))) ++
+        (if (scaladockLocal.isDefined) Nil
+         else Seq(scaladockPinned("core"), scaladockPinned("fx"))),
+    // One JavaFX for the shell and both providers. Intaglio and scaladock
+    // declare it `Provided` (21.0.5 and 24.0.1), which does not reach us; since
+    // scaladock 3ed443e ScalaFX is demo-only. No override: a clash must reach the
+    // guard below, which requires exactly base, graphics and controls at javaFxV.
+    checkModuleBoundaries := {
+      val log       = streams.value.log
+      val allowed   = Set("javafx-base", "javafx-graphics", "javafx-controls")
+      val openjfx   = update.value.allModules.filter(_.organization == "org.openjfx")
+      val offenders = openjfx
+        .filter(m => m.revision != javaFxV || !allowed(m.name))
+        .map(m => s"${m.organization}:${m.name}:${m.revision}")
+        .distinct
+        .sorted
+      val missing = allowed -- openjfx.map(_.name)
+      if (offenders.nonEmpty || missing.nonEmpty)
+        sys.error(
+          s"""|studio-desktop must resolve exactly ${allowed.toSeq.sorted
+               .mkString(", ")} at OpenJFX $javaFxV.
+              |Unexpected: ${offenders.mkString(", ")}
+              |Missing: ${missing.toSeq.sorted.mkString(", ")}""".stripMargin
+        )
+      else log.info(s"eyes4s-studio-desktop: OpenJFX $javaFxV base/graphics/controls only")
+    },
     // FX tests (StudioFxSuite, S0.4) start the toolkit once per forked JVM.
     Test / fork := true,
     Test / javaOptions ++= studioFxTestOptions((ThisBuild / baseDirectory).value)
@@ -1032,7 +1140,8 @@ lazy val studioProjects     =
 // resolved-graph rule on each portable studio project.
 lazy val studioBoundaryChecks =
   "checkStudioBoundaries" +: "checkStudioColours" +:
-    studioCrossModules.flatMap(m => allPlatforms.map(p => s"$m$p/checkModuleBoundaries"))
+    studioCrossModules.flatMap(m => allPlatforms.map(p => s"$m$p/checkModuleBoundaries")) :+
+    "studioDesktop/checkModuleBoundaries"
 
 addCommandAlias(
   "studioAll",
@@ -1040,10 +1149,11 @@ addCommandAlias(
 )
 
 // The root headerCheckAll and scalafmtCheckAll cover the aggregate only.
+// checkStudioTypeScale (S1.2) is defined with the token settings below.
 addCommandAlias(
   "studioStyleCheck",
-  studioProjects
-    .flatMap(p => Seq(s"$p/headerCheckAll", s"$p/scalafmtCheckAll"))
+  ("checkStudioTypeScale" +: studioProjects
+    .flatMap(p => Seq(s"$p/headerCheckAll", s"$p/scalafmtCheckAll")))
     .mkString(";", ";", "")
 )
 
@@ -1053,10 +1163,45 @@ addCommandAlias(
 // OpenJFX natives are named per runner with -Djavafx.platform.
 lazy val studioJdk = JavaSpec.temurin("25")
 
+// Every studio job resolves scaladock and Intaglio as pinned artifacts (S0.3),
+// so each one publishes the pins from their remotes before sbt runs.
 def studioJobSetup: List[WorkflowStep] =
   List(WorkflowStep.CheckoutFull, WorkflowStep.SetupSbt) ::: WorkflowStep.SetupJava(
     List(studioJdk)
+  ) ::: List(
+    WorkflowStep.Run(
+      List("bash studio/publish-pins.sh"),
+      name = Some("Publish the scaladock and Intaglio pins")
+    )
   )
+
+// studio-clean-clone (S0.3): the pins resolve on a fresh runner, and the
+// explicit local-checkout override builds against the same pinned commits.
+lazy val studioCleanCloneJob = {
+  def checkout(name: String) =
+    s"target/studio-pins/$name-${studioPinVersion(name).stripPrefix("0.0.0-")}"
+  WorkflowJob(
+    "studio-clean-clone",
+    "Studio pins from a clean clone",
+    studioJobSetup ::: List(
+      WorkflowStep.Run(
+        List(
+          "sbt -J-Xmx6g -Djavafx.platform=linux" +
+            s" -Dstudio.intaglio.local=${checkout("intaglio")}" +
+            s" -Dstudio.scaladock.local=${checkout("scaladock")}" +
+            " studioVizJVM/test studioVizJS/test studioDesktop/Test/compile" +
+            " studioDesktop/checkModuleBoundaries"
+        ),
+        name = Some("Build studio through the local-checkout override")
+      )
+    ),
+    sbtStepPreamble = Nil,
+    oses = List("ubuntu-22.04"),
+    scalas = Nil,
+    javas = List(studioJdk),
+    timeoutMinutes = Some(60)
+  )
+}
 
 lazy val studioLinuxJob = WorkflowJob(
   "studio-linux",
@@ -1169,7 +1314,7 @@ studioWorkflowContents := GenerativePlugin.compileWorkflow(
   Some(Permissions.Specify.defaultRestrictive.withPackages(PermissionValue.None)),
   githubWorkflowEnv.value,
   githubWorkflowConcurrency.value,
-  List(studioLinuxJob, studioMacosJob),
+  List(studioLinuxJob, studioMacosJob, studioCleanCloneJob),
   githubWorkflowSbtCommand.value
 )
 
@@ -1204,6 +1349,35 @@ ThisBuild / checkStudioColours := {
     )
   log.info(
     "studio colours OK (lint self-test passed; no literal colour outside the token source)"
+  )
+}
+
+// Type scale (S1.2): only the five sizes of eyes4s.studio.app.tokens.TypeSize
+// in studio CSS, FXML and inline styles. Runs in studioStyleCheck.
+lazy val checkStudioTypeScale =
+  taskKey[Unit]("Fail on a font size in studio sources outside the five-size type scale.")
+
+ThisBuild / checkStudioTypeScale := {
+  val log      = streams.value.log
+  val selfTest = TypeScaleLint.selfTest
+  if (selfTest.nonEmpty)
+    sys.error(
+      s"""|TypeScaleLint self-test failed: a rule no longer detects a planted
+          |font size, or flags a clean input.
+          |${selfTest.map("  - " + _).mkString("\n")}""".stripMargin
+    )
+  val found = TypeScaleLint.scanTree((ThisBuild / baseDirectory).value)
+  if (found.nonEmpty)
+    sys.error(
+      s"""|Font size outside the type scale, or a font weight.
+          |
+          |${found.map("  - " + _.render).mkString("\n")}
+          |
+          |Use a type class (t11, t12, t13, t16, t28 in studio-type.css) or
+          |eyes4s.studio.app.tokens.TypeSize (DESIGN_SPEC section 7).""".stripMargin
+    )
+  log.info(
+    "studio type scale OK (lint self-test passed; only the five sizes in studio sources)"
   )
 }
 

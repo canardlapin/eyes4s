@@ -1,0 +1,35 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* Studio icons (ticket S1.3; eyes4s.studio.desktop.icons.StudioIcons).
+ *
+ * -es-current is the studio's currentColor. A control recolours its icon by
+ * redefining it, e.g. `.primary { -es-current: -es-on-accent; }`. Stroke width,
+ * caps and joins are set in code; only colour comes from here. */
+
+.root {
+  -es-current: -es-ink;
+}
+
+.icon-stroke {
+  -fx-fill: transparent;
+  -fx-stroke: -es-current;
+}
+
+.icon-fill {
+  -fx-fill: -es-current;
+  -fx-stroke: transparent;
+}
