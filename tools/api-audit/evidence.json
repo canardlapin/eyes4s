@@ -13966,12 +13966,15 @@
     "codecJS/eyes4s.codec.ReportManifestSuite": [
       "a report bound to another result, input, plan or ledger is refused, naming the field",
       "a report bound to the stored plan, input, result and ledger resolves",
+      "a report cannot cite another scale's or role's rows, and its members drill down",
       "a report is refused without a report decoder, and needs exactly one report-of",
       "a report naming another input than its result's is refused",
       "a report of another specification than the stored one is refused",
       "a report of other trials, bound to this study's documents, is refused naming them",
       "a report that reads covariates needs a bound ledger that carries a trials table",
       "a report without covariates writes its absent ledger as null, and reads it back",
+      "a stored report whose values the shipped reduction does not give is refused",
+      "a stored report with other accounting than the reduction's is refused naming the part",
       "the public source binds exactly the plan, input, result and ledger it reads"
     ],
     "codecJS/eyes4s.codec.ResultArchivesV1Suite": [
@@ -16828,12 +16831,15 @@
     "codecJVM/eyes4s.codec.ReportManifestSuite": [
       "a report bound to another result, input, plan or ledger is refused, naming the field",
       "a report bound to the stored plan, input, result and ledger resolves",
+      "a report cannot cite another scale's or role's rows, and its members drill down",
       "a report is refused without a report decoder, and needs exactly one report-of",
       "a report naming another input than its result's is refused",
       "a report of another specification than the stored one is refused",
       "a report of other trials, bound to this study's documents, is refused naming them",
       "a report that reads covariates needs a bound ledger that carries a trials table",
       "a report without covariates writes its absent ledger as null, and reads it back",
+      "a stored report whose values the shipped reduction does not give is refused",
+      "a stored report with other accounting than the reduction's is refused naming the part",
       "the public source binds exactly the plan, input, result and ledger it reads"
     ],
     "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite": [
