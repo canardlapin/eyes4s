@@ -348,8 +348,9 @@ value with the same input reference. Errors inside a trial are located, for exam
 Scanpaths and fixation summaries backed by source samples are refused with `CodecError.Unsupported`
 rather than silently detached; their support belongs to the recording payload.
 
-`ledger` encodes an `AdmissionLedger[K]` (`eyes4s.admission-ledger@1`, or `@2` when it records an
-admission policy other than the version-1 one): the source reference (a label
+`ledger` encodes an `AdmissionLedger[K]` (`eyes4s.admission-ledger@1`, `@2` when it records an
+admission policy other than the version-1 one, or `@3` when it records a trial inventory; each
+ledger is written under the earliest version that expresses it): the source reference (a label
 and the portable digest of the decoded header and records), the header, the recorded outcome and one
 entry per source record in record order. An admitted record links its logical record number to the
 typed trial key and the ordinal it supplied; a rejected record keeps its raw fields, its key when one
@@ -362,7 +363,17 @@ off-screen policy and the correction rules, each with its scope) and the admitte
 the frame; `AdmissionLedger.of` refuses such a record unless it is admitted, listed once in record
 order and admitted under `ExcludeRecord`, and decoding refuses a ledger in which two rules cover an
 admitted record's trial (`AdmissionError.CorrectionConflict`). A version-1 ledger decodes with the
-version-1 policy. `StudyInputRegistry` registers codecs by key
+version-1 policy. Version 3 adds the `InventoryLedger` of an inventory admission
+([fixation studies](FIXATION_STUDIES.md#join-a-trial-inventory)): the inventory's own source
+reference and header, every inventory trial (identity, inventory records, declared item, typed
+attributes, the items its records named, its fixation records and its `TrialDisposition`), the
+trials only the fixation table names, and the typed attributes of admitted records. Integer
+attributes are decimal strings, so 64-bit values survive Scala.js. Decoding rebuilds the inventory
+through `InventoryLedger.of` and joins it with `ledger.withInventory`, so a saved inventory is
+refused (`AdmissionError.Inventory(InventoryError…)`) unless every keyed record is listed under its
+own trial and every disposition agrees with its records; a key layout without a trial label
+cannot carry one (`InventoryError.NoTrialProjection`). A version-3 ledger is pinned by
+[admission-ledger-v3.json](../codec/src/test/resources/eyes4s/admission-ledger-v3.json). `StudyInputRegistry` registers codecs by key
 schema and refuses missing or duplicate registrations. `VersionedCodec.trials` is the generic
 row-array codec these payloads use.
 

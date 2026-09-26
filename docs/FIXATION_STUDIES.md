@@ -75,6 +75,69 @@ records the outcome `Refused` when any record was rejected; `ReviewExclusions` r
 [saved studies](SAVED_STUDIES.md) for the input and ledger payloads that reconstruct the study,
 with the same input digest and results, without the importer.
 
+## Join a trial inventory
+
+A trials table (the inventory) lists every trial the design presented, including trials that
+produced no fixation records. `FixationCsv.admitInventory(fixations, table, inventory, frame,
+policy)` admits the fixation table against it; `StudioAcceptance` runs it end to end on the
+Studio fixture. Both tables are read under declared columns only: a column no declaration names is
+never read, and no role is inferred.
+
+- `TrialColumns.of(participant, phase, trial, occurrence)` names the trial identity both tables
+  share (occurrence 1 when no column is named). Records join inventory trials on the whole
+  identity, `TrialIdentity`; the item is not part of it.
+- `TrialInventory.read(contents, TrialInventoryColumns.of(trial, item, attributes))` reads the
+  inventory. It is a declaration, so any defective record refuses it with a
+  `FixationImportError.Inventory(InventoryError…)` naming the record: a wrong width, a blank
+  identity field or item, an occurrence that is not a positive integer, an attribute not of its
+  declared kind, or two records that declare one participant, phase and trial label with different
+  values (`Conflict`, naming the records and the differing columns). Identical repeated records
+  collapse into one trial and never multiply its fixations.
+- `FixationTable.of(trial, ordinal, x, y, TimeColumns(onset, duration, unit), samples, item,
+  attributes)` declares the fixation table. The `TimestampUnit` is a required part of
+  `TimeColumns`; there is no default and no inference. `SampleCountRule` states the support rule:
+  `PositiveColumn(name)` reads counts from a column and rejects a record whose count is not a
+  positive integer, 0 included; `FromDuration(rate)` is for tables without a count column and
+  gives each record its duration times the declared rate, rounded up.
+- Attributes are `AttributeColumn(name, kind)` with kind `Text`, `Integer` or `Number`; an empty
+  cell is `AttributeValue.Blank`. Inventory attributes belong to the trial
+  (`ledger.inventory.attributes(key)`, `imported.attributes(key)`); fixation-table attributes
+  belong to each admitted record (`imported.recordAttributes`). A fixation attribute of the wrong
+  kind rejects its record.
+
+The trial's item is the inventory's when the inventory declares an item column, otherwise the one
+item its records name; at least one table must declare one (`FixationImportError.NoItemColumn`).
+Records that name several items quarantine the trial with `QuarantineCause.ItemConflict(items)`;
+records that name another item than the inventory's quarantine it with
+`InventoryItemConflict(inventory, records)`. Either way the trial's records are reported under the
+inventory's item.
+
+Every inventory trial gets exactly one `TrialDisposition`:
+
+| Disposition | When |
+|---|---|
+| `Absent` | no record names the trial |
+| `NoFixations` | it has records and every one was rejected on its own, e.g. all with sample count 0; this takes precedence over `Quarantined(RejectedRecords)` |
+| `Quarantined(cause)` | it has an admissible record, but an item conflict or the importer's usual grounds (a rejected record, duplicate ordinals, overlap, a correction conflict) quarantine it |
+| `Admitted` | its records build its scanpath |
+
+Records of a trial the inventory does not declare are not dropped: each admissible one is
+quarantined with `QuarantineCause.NotInInventory(participant, phase, trial, occurrence)` and the
+trial is listed in `imported.unlisted`. A record whose identity cannot be read is a row-level
+`Key` rejection, as before.
+
+`FixationEvidence.ledger(label, inventoryLabel, imported, decision)` records all of it: the
+fixation ledger joined to an `InventoryLedger` (written as `eyes4s.admission-ledger@3`, see
+[saved studies](SAVED_STUDIES.md#input-payloads-and-admission-ledgers)). The join is checked:
+`ledger.withInventory` refuses, with `AdmissionError.Inventory(InventoryError…)`, an inventory in
+which a keyed record is not listed under its own trial, a trial's disposition contradicts its
+records (for example `Quarantined(RejectedRecords)` for a trial whose records were all rejected on
+their own), or an admitted record carries another item than its trial's. On the Studio fixture
+the ledger reads 960 inventory trials: 937 admitted, 17 quarantined (duplicate ordinals 4, no
+fixations 5, overlap 6, rejected records 2) and 6 absent, with 11,311 admitted and 209 rejected
+records. The published `InventoryLaws` in `eyes4s-laws` state the partition, precedence and
+absence rules over generated studies, for any importer.
+
 ## Analysis window and degrees
 
 A study maps the whole admission frame by default (`StudyGeometry.WholeFrame(grid)`, what
