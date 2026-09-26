@@ -8,9 +8,10 @@ can use these contracts without introducing JavaFX or Intaglio into eyes4s.
 
 `StudyPlan.inspect`, `RecordingPlan.inspect` and `TemporalStudyPlan.inspect`
 return `Either[DescriptorError, RecipeInspection]`. Every canonical description
-field has a stable ID, descriptor version, scientific meaning, units, allowed
-values or constructor contract, and the current value. Gaussian estimates also
-expose named sigma and edge-policy children with their own units and constraints.
+field has a stable ID, descriptor version, scientific meaning, a `FieldView`
+(quantity, bounds, allowed values, parts and rules; see
+[form-grade fields](#form-grade-fields)), and the current value. Gaussian
+estimates also expose named sigma and edge-policy children with their own views.
 `inspection.description` reproduces the plan description used for structural
 diffs. The values are display projections of typed domain values, not a parameter
 bag accepted by execution.
@@ -67,18 +68,67 @@ preserves integer time and delegates to `MinimumEventDuration.of`.
 
 `ParameterDescriptor[Raw, Value, Error]` retains all three types. `construct`
 returns the domain error; `parse` wraps that error with the field identity and
-original input. Range/choice metadata explains the smart constructor's contract;
-it does not implement another validator. Invalid scientific values fail through
-the same domain constructors used by ordinary library callers.
+original input. Invalid scientific values fail through the same domain
+constructors used by ordinary library callers.
 
 No universal sigma or detection-threshold default is scientifically justified,
-so shipped descriptors supply none. A caller can provide a checked
-`NamedParameterDefault` with an explicit name and reason. Interactive draft
-state, field layouts, localization and widgets belong in the application.
+so shipped numeric descriptors supply none. A caller can provide a checked
+`NamedParameterDefault` with an explicit name and reason. A recipe field carries
+a `DefaultValue` only where the library itself has one (`StudyPairing.default`,
+keeping every fixation). Interactive draft state, field layouts, localization
+and widgets belong in the application.
+
+## Form-grade fields
+
+Every described field has a `FieldView`: plain data with no type members or
+functions, which a host renders a control from and a codec can store.
+
+- `FieldView.kind` is a `FieldKind`: `Numeric(quantity, shape, bounds)`,
+  `Choice`, `Toggle`, `Text`, `Reference` (an identity bound elsewhere),
+  `Group(parts, rule)`, `Optional`, `Repeated` or `Variant(cases)`. A group's
+  `GroupRule` states what holds across its parts: `Ordered` pairs such as
+  `xMin < xMax`, or `Distinct` parts such as the focal and reference phases.
+- A `Quantity` names what a number measures in a kernel unit: `Planar(PlanarUnit)`,
+  `Rate`, `UnitsPerDegree`, `Length(LengthUnit)`, `Duration` (integer
+  microseconds), `Count(Counted)`, `Dimensionless`. `PlanarUnit` is the runtime
+  value of a `Unit2D`, and every `UnitLabel` carries its own, so
+  `RecipeParameters.sigma[Deg]` is `Planar(Deg)` by construction.
+- `NumericBounds` has an optional lower and upper `Endpoint`, each `Open` or
+  `Closed`, in the field's own quantity. Integral shapes (`Int32`, `Int64`)
+  take integral endpoints only.
+- A form value is a `RawValue`. A number is the text the user typed, so an empty
+  or malformed entry is representable; `Numeral.write` gives the canonical text,
+  identical on the JVM and Scala.js, and reading it back gives the same number.
+
+A `NumericField[E, N, A]` parses a raw value on its own, without a whole
+recipe, in three stages: the shape (text to a number of shape `N`), the declared
+bounds, then the domain constructor, which stays the authority. A refusal is a
+`FieldError` naming the field and the value; `OutOfBounds` also names the side,
+the violated endpoint and the quantity ("sigma: 0 deg is out of bounds; it must
+be greater than 0 deg."). `RecipeParameters.forms` holds the typed fields of
+every one-number parameter, and each such `ParameterDescriptor` carries its
+field as `form`. `ParameterSet.validate(id, raw)` checks one method parameter,
+and `MethodDescriptor.formView` and `RecipeInspection.views` give the host its
+views. Recipe-level views (frames, windows, pairing, initial fixations,
+estimates) are data in this release; parsing them and the whole-recipe checks
+keyed by `StudyField` follow in CR6b.
+
+The bounds restate the constructor, so `eyes4s.laws.FormLaws.numeric` holds them
+to it: at each endpoint, one representable step inside and one outside, the
+bounds admit a number exactly when the constructor accepts it, and a side with no
+endpoint must accept the shape's extreme number. `FormLaws.inspection` checks
+that every inspected field has a well-formed view. `FieldError` projects to the
+`form-field` diagnostic family.
+
+`ParameterUnits` and `ParameterDomain` are deprecated. `ParameterInfo.units` and
+`allowed` remain as projections of `quantity` and `kind`, and the deprecated
+`ParameterInfo.of(id, version, meaning, units, allowed)` translates what it can
+and refuses the rest with `DescriptorError.UntranslatableLegacy`.
 
 ## Describe an extension
 
-Build `ParameterInfo.of(...)`, a typed `ParameterDescriptor`, and bind its typed
+Build a `NumericField.of(...)` (or a `FieldView`) and `ParameterInfo.of(view)`,
+a typed `ParameterDescriptor` carrying the field as `form`, and bind its typed
 getter/encoding into `ParameterSet.of(...)`. Attach that set and typed score
 components to `MethodDescriptor.of(...)`, then supply it to the optional
 `StudyMethod` descriptor argument. Recording extensions use

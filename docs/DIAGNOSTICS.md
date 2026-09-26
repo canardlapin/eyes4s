@@ -847,6 +847,13 @@ fails after rewriting, so review the change and run it again.
 | `descriptor.method-identity` | `MethodIdentity` | `expected`, `found` |
 | `descriptor.execution-mismatch` | `ExecutionMismatch` | `declared`, `actual` |
 | `descriptor.unexplained-fields` | `UnexplainedFields` | `fields` |
+| `descriptor.invalid-field-id` | `InvalidFieldId` | `value` |
+| `descriptor.invalid-bounds` | `InvalidBounds` | `lower`, `upper` |
+| `descriptor.bounds-for-shape` | `BoundsForShape` | `field`, `shape`, `bounds` |
+| `descriptor.unknown-rule-part` | `UnknownRulePart` | `field`, `part` |
+| `descriptor.invalid-repetition` | `InvalidRepetition` | `field`, `minimum`, `maximum` |
+| `descriptor.default-refused` | `DefaultRefused` | `field`, `error` |
+| `descriptor.untranslatable-legacy` | `UntranslatableLegacy` | `field`, `units`, `domain` |
 
 ### `study-finding` — `StudyFinding`
 
@@ -1367,6 +1374,20 @@ fails after rewriting, so review the change and run it again.
 | `analysis-finding.artifact-mismatch` | `ArtifactMismatch` | `expected`, `actual` |
 | `analysis-finding.refused` | `Refused` | `underlying`, `suggested` |
 | `analysis-finding.data-dependent` | `DataDependent` | `underlying`, `trials` |
+
+### `form-field` — `FieldError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `form-field.missing` | `Missing` | `field` |
+| `form-field.malformed` | `Malformed` | `field`, `raw`, `expected` |
+| `form-field.out-of-bounds` | `OutOfBounds` | `field`, `text`, `value`, `side`, `bound`, `quantity` |
+| `form-field.not-a-choice` | `NotAChoice` | `field`, `token`, `options` |
+| `form-field.unknown-part` | `UnknownPart` | `field`, `part` |
+| `form-field.unordered` | `Unordered` | `field`, `lower`, `upper`, `lowerValue`, `upperValue` |
+| `form-field.duplicate` | `Duplicate` | `field`, `part`, `token` |
+| `form-field.item-count` | `ItemCount` | `field`, `count`, `minimum`, `maximum` |
+| `form-field.refused` | `Refused` | `field`, `raw`, `underlying`, `reason` |
 
 ### `codec` — `CodecError`
 

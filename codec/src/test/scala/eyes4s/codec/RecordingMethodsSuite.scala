@@ -275,19 +275,19 @@ class RecordingMethodsSuite extends munit.FunSuite:
     assertEquals(d.execution, ExecutionCapability.SynchronousWholeOperation)
     assertEquals(e.execution, ExecutionCapability.SynchronousWholeOperation)
     assertEquals(
-      d.parameters.fields.map(_.descriptor.info.units),
+      d.parameters.fields.map(_.descriptor.info.quantity),
       Vector(
-        ParameterUnits.Spatial("deg"),
-        ParameterUnits.Spatial("deg"),
-        ParameterUnits.Microseconds
+        Quantity.Planar(PlanarUnit.Deg),
+        Quantity.Planar(PlanarUnit.Deg),
+        Quantity.Duration
       )
     )
     assertEquals(
-      e.parameters.fields.map(_.descriptor.info.units),
+      e.parameters.fields.map(_.descriptor.info.quantity),
       Vector(
-        ParameterUnits.PerSecond("deg"),
-        ParameterUnits.PerSecond("deg"),
-        ParameterUnits.Dimensionless
+        Quantity.Rate(PlanarUnit.Deg),
+        Quantity.Rate(PlanarUnit.Deg),
+        Quantity.Count(Counted.Samples)
       )
     )
     for bad <- Vector(0.0, -1.0, Double.NaN, Double.PositiveInfinity) do

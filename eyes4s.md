@@ -1379,6 +1379,9 @@ and microsaccade `RecordingMethod` values are tracked by `pl-detect`. See
 final class MethodDescriptor[P, S, D] private (...)           // ParameterSet[P] + ScoreComponent[S, D]s
 final class ParameterDescriptor[R, A, E](...):                 // raw -> checked value, keeping the domain error
   def parse(input: R): Either[ParameterFailure[R, E], A]
+  val form: Option[FormField[E, A]]                            // a raw form value, parsed on its own
+final class FieldView(...)                                     // host view: id, meaning, FieldKind, default; plain data
+final class NumericField[E, N, A](...)                        // shape -> declared bounds -> domain constructor
 final class RecordingMethodDescriptor[P](...)                 // carries the detector's AlgorithmCard
 object RecipeParameters:   // typed constructors: sigma[U], bounds[U], grid[U], frame[U], gaussian[U],
                            // ivtThreshold, minimumDuration, interpolationGap, relativeWindow, studyWindow,
@@ -1386,8 +1389,8 @@ object RecipeParameters:   // typed constructors: sigma[U], bounds[U], grid[U], 
 object RecipeDescriptors:  def study(plan), recording(plan), temporal(plan): Either[DescriptorError, RecipeInspection]
 ```
 
-Every canonical description field has a stable id, version, meaning, units and constructor
-contract; inspection checks the descriptor against the executable method's declared parameters and
+Every canonical description field has a stable id, version, meaning and a `FieldView` (quantity in a
+kernel unit, typed bounds, allowed values, parts and rules); inspection checks the descriptor against the executable method's declared parameters and
 score components and fails on a missing, extra or misencoded field. A study plan reports its
 method's `ExecutionCapability` (`BoundedComparison` for cosine), a temporal plan its base study's,
 and a recording plan `SynchronousWholeOperation`. See

@@ -170,7 +170,7 @@ class ComparisonRegistryLawSuite extends munit.DisciplineSuite:
             .of[Similarity, SignedDifference](
               "value",
               "mutant",
-              ParameterUnits.Dimensionless,
+              Quantity.Dimensionless,
               range,
               ScoreDirection.HigherIsCloser
             )(_.value, _.value)

@@ -58,28 +58,42 @@ object CustomDetector:
     */
   def thresholdField
       : Either[DescriptorError, ParameterDescriptor[Double, IvtThreshold, String]] =
-    ParameterInfo
-      .of(
-        "thresholdDegPerSecond",
+    for
+      id    <- FieldId.of("thresholdDegPerSecond")
+      field <- NumericField.of[String, Double, IvtThreshold](
+        id,
         1,
         "Conservative I-VT velocity threshold on the angular samples",
-        ParameterUnits.PerSecond("deg"),
-        ParameterDomain.PositiveFinite
-      )
-      .map(info => new ParameterDescriptor(info, LabIvtParameters.threshold, identity))
+        Quantity.Rate(PlanarUnit.Deg),
+        NumericBounds.positive
+      )(LabIvtParameters.threshold, _.velocity.value, identity)
+    yield new ParameterDescriptor(
+      ParameterInfo.of(field.view),
+      LabIvtParameters.threshold,
+      identity,
+      None,
+      Some(field)
+    )
 
   /** The extension's own typed field for its minimum duration in microseconds. */
   def minimumField
       : Either[DescriptorError, ParameterDescriptor[Long, MinimumEventDuration, String]] =
-    ParameterInfo
-      .of(
-        "minimumDurationMicros",
+    for
+      id    <- FieldId.of("minimumDurationMicros")
+      field <- NumericField.of[String, Long, MinimumEventDuration](
+        id,
         1,
         "Minimum event duration; shorter candidates stay unclassified",
-        ParameterUnits.Microseconds,
-        ParameterDomain.PositiveMicroseconds
-      )
-      .map(info => new ParameterDescriptor(info, LabIvtParameters.minimum, identity))
+        Quantity.Duration,
+        NumericBounds.positive
+      )(LabIvtParameters.minimum, _.span.toMicros, identity)
+    yield new ParameterDescriptor(
+      ParameterInfo.of(field.view),
+      LabIvtParameters.minimum,
+      identity,
+      None,
+      Some(field)
+    )
 
   /** The detector's descriptor: its typed fields and the algorithm card of
     * the canonical I-VT machine it wraps, which is the card its detections

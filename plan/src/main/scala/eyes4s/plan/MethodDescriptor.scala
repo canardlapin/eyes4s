@@ -20,13 +20,23 @@ import eyes4s.compare.*
 import eyes4s.detect.*
 import eyes4s.design.SignedDifference
 import eyes4s.kernel.*
+import scala.annotation.nowarn
 
+// The two enums below are deprecated. A Scala 3 enum's own cases extend their
+// deprecated parent, so without @nowarn each enum definition warns against
+// itself; these two annotations are the only ones CR6 adds.
+
+/** Informational units, superseded by [[Quantity]]. */
+@deprecated("Use Quantity (ParameterInfo.quantity / FieldView.quantity)", "0.1.0")
+@nowarn("cat=deprecation")
 enum ParameterUnits derives CanEqual:
   case Dimensionless, Microseconds, Millimetres, Cells, NominalIdentity, Mixed
   case Spatial(symbol: String)
   case PerSecond(symbol: String)
 
-/** Informational constructor contracts, never a second validation implementation. */
+/** Informational constructor contracts, superseded by [[FieldKind]]. */
+@deprecated("Use FieldKind (ParameterInfo.kind / FieldView.kind)", "0.1.0")
+@nowarn("cat=deprecation")
 enum ParameterDomain derives CanEqual:
   case PositiveFinite, NonNegativeFinite, PositiveMicroseconds, NonNegativeMicroseconds
   case SignedMicroseconds, PositiveGridDimensions, OrderedFiniteBounds,
@@ -35,16 +45,48 @@ enum ParameterDomain derives CanEqual:
   case Alternatives(values: Vector[String])
   case DomainValue(constructor: String)
 
-final class ParameterInfo private (
-    val id: String,
-    val version: Int,
-    val meaning: String,
-    val units: ParameterUnits,
-    val allowed: ParameterDomain
-):
+/** A described field: its stable identity, version, scientific meaning and
+  * the [[FieldView]] a host builds a control from.
+  */
+final class ParameterInfo private (val view: FieldView):
+  def id: String         = view.id.value
+  def version: Int       = view.version
+  def meaning: String    = view.meaning
+  def kind: FieldKind    = view.kind
+  def quantity: Quantity = view.quantity
+
+  /** The legacy projection of [[quantity]]. */
+  @deprecated("Use quantity", "0.1.0")
+  def units: ParameterUnits = LegacyDescriptors.units(view.quantity)
+
+  /** The legacy projection of [[kind]]. */
+  @deprecated("Use kind", "0.1.0")
+  def allowed: ParameterDomain = LegacyDescriptors.domain(view.kind)
+
   private[plan] def prefixed(prefix: String): ParameterInfo =
-    new ParameterInfo(prefix + id, version, meaning, units, allowed)
+    new ParameterInfo(view.prefixed(prefix))
+
+  override def equals(that: Any): Boolean = that match
+    case p: ParameterInfo => view == p.view
+    case _                => false
+  override def hashCode: Int    = view.hashCode
+  override def toString: String = s"ParameterInfo($view)"
+
 object ParameterInfo:
+  def of(view: FieldView): ParameterInfo = new ParameterInfo(view)
+
+  def of(
+      id: String,
+      version: Int,
+      meaning: String,
+      kind: FieldKind
+  ): Either[DescriptorError, ParameterInfo] =
+    FieldId.of(id).flatMap(FieldView.of(_, version, meaning, kind)).map(new ParameterInfo(_))
+
+  /** The legacy constructor: the units and domain are translated into a
+    * [[FieldKind]]; a domain with no translation is refused.
+    */
+  @deprecated("Use ParameterInfo.of(id, version, meaning, kind)", "0.1.0")
   def of(
       id: String,
       version: Int,
@@ -59,13 +101,13 @@ object ParameterInfo:
         case ParameterDomain.Alternatives(xs)
             if xs.isEmpty || xs.exists(_.trim.isEmpty) || xs.distinct.size != xs.size =>
           Left(DescriptorError.InvalidAlternatives(id, xs))
-        case _ => Right(new ParameterInfo(id, version, meaning, units, allowed))
-  private[plan] def literal(
-      id: String,
-      meaning: String,
-      units: ParameterUnits,
-      allowed: ParameterDomain
-  ): ParameterInfo = new ParameterInfo(id, 1, meaning, units, allowed)
+        case _ =>
+          LegacyDescriptors.kind(id, units, allowed).flatMap(of(id, version, meaning, _))
+
+  private[plan] def literal(id: String, meaning: String, kind: FieldKind): ParameterInfo =
+    new ParameterInfo(FieldView.literal(id, meaning, kind))
+
+  private[plan] def literal(view: FieldView): ParameterInfo = new ParameterInfo(view)
 
 final class NamedParameterDefault[A] private (
     val name: String,
@@ -96,8 +138,15 @@ final class ParameterDescriptor[R, A, E](
     val info: ParameterInfo,
     val construct: R => Either[E, A],
     val errorMessage: E => String,
-    val default: Option[NamedParameterDefault[A]] = None
+    val default: Option[NamedParameterDefault[A]] = None,
+    val form: Option[FormField[E, A]] = None
 ):
+  /** A raw form value parsed on its own: through [[form]] when the field has
+    * one, else through the shape and bounds stages of its view.
+    */
+  def validate(raw: RawValue): Either[FieldError[E], Unit] =
+    form.fold(info.view.check(raw))(_.parse(raw).map(_ => ()))
+
   def parse(input: R): Either[ParameterFailure[R, E], A] =
     construct(input).left.map(e =>
       new ParameterFailure(info, input, e, s"${info.id}: ${errorMessage(e)}")
@@ -121,7 +170,23 @@ trait ParameterField[P]:
   def value(parameters: P): Value
   def encoded(parameters: P): Provenance.Param
 
+  /** The host view of this field: plain data, no type members. */
+  final def view: FieldView = descriptor.info.view
+
+  /** A raw form value checked on its own; see [[ParameterDescriptor.validate]]. */
+  final def validate(raw: RawValue): Either[FieldError[Any], Unit] = descriptor.validate(raw)
+
 final class ParameterSet[P] private (val fields: Vector[ParameterField[P]]):
+  /** The host views of the fields, in order. */
+  def views: Vector[FieldView] = fields.map(_.view)
+
+  /** One raw value checked by the field it names, without the other fields. */
+  def validate(id: FieldId, raw: RawValue): Either[FieldError[Any], Unit] =
+    fields
+      .find(_.view.id == id)
+      .toRight(FieldError.UnknownPart(id, id))
+      .flatMap(_.validate(raw))
+
   def values(parameters: P): Vector[(String, Provenance.Param)] =
     fields.map(f => f.descriptor.info.id -> f.encoded(parameters))
   def verify(
@@ -164,17 +229,21 @@ enum ExecutionCapability derives CanEqual:
 final class ScoreComponent[S, D] private (
     val id: String,
     val meaning: String,
-    val units: ParameterUnits,
+    val quantity: Quantity,
     val range: MeasureScale,
     val direction: ScoreDirection,
     val score: S => Double,
     val difference: D => Double
-)
+):
+  /** The legacy projection of [[quantity]]. */
+  @deprecated("Use quantity", "0.1.0")
+  def units: ParameterUnits = LegacyDescriptors.units(quantity)
+
 object ScoreComponent:
   def of[S, D](
       id: String,
       meaning: String,
-      units: ParameterUnits,
+      quantity: Quantity,
       range: MeasureScale,
       direction: ScoreDirection
   )(
@@ -185,10 +254,25 @@ object ScoreComponent:
       case MeasureScale.Bounded(lo, hi) => lo.isFinite && hi.isFinite && lo <= hi
       case _                            => true
     Either.cond(
-      id.trim.nonEmpty && meaning.trim.nonEmpty && validRange,
-      new ScoreComponent(id, meaning, units, range, direction, score, difference),
+      id.trim.nonEmpty && meaning.trim.nonEmpty && validRange && quantity.isNumeric,
+      new ScoreComponent(id, meaning, quantity, range, direction, score, difference),
       DescriptorError.InvalidComponent(id, meaning, range)
     )
+
+  @deprecated("Use ScoreComponent.of with a Quantity", "0.1.0")
+  def of[S, D](
+      id: String,
+      meaning: String,
+      units: ParameterUnits,
+      range: MeasureScale,
+      direction: ScoreDirection
+  )(
+      score: S => Double,
+      difference: D => Double
+  ): Either[DescriptorError, ScoreComponent[S, D]] =
+    LegacyDescriptors
+      .quantity(units)
+      .flatMap(of(id, meaning, _, range, direction)(score, difference))
 
   /** A similarity component whose difference is a signed difference, for a
     * registered method whose range comes from its measure's declared scale.
@@ -196,11 +280,11 @@ object ScoreComponent:
   private[plan] def literal(
       id: String,
       meaning: String,
-      units: ParameterUnits,
+      quantity: Quantity,
       range: MeasureScale,
       direction: ScoreDirection
   ): ScoreComponent[Similarity, SignedDifference] =
-    new ScoreComponent(id, meaning, units, range, direction, _.value, _.value)
+    new ScoreComponent(id, meaning, quantity, range, direction, _.value, _.value)
 
 final class MethodDescriptor[P, S, D] private (
     val id: DefinitionId,
@@ -210,6 +294,9 @@ final class MethodDescriptor[P, S, D] private (
     val properties: Set[ComparisonProperty],
     val execution: ExecutionCapability
 ):
+  /** The method's parameters as a host sees them. */
+  def formView: FormView = FormView(id, parameters.views)
+
   def verify(
       p: P,
       declared: Vector[(String, Provenance.Param)],
@@ -245,6 +332,9 @@ final class RecordingMethodDescriptor[P](
     val parameters: ParameterSet[P],
     val card: AlgorithmCard
 ):
+  /** The detector's parameters as a host sees them. */
+  def formView: FormView = FormView(id, parameters.views)
+
   val execution: ExecutionCapability = ExecutionCapability.SynchronousWholeOperation
 
 object RecordingMethodDescriptor:
@@ -313,6 +403,13 @@ enum DescriptorError derives CanEqual:
   case MethodIdentity(expected: DefinitionId, found: DefinitionId)
   case ExecutionMismatch(declared: ExecutionCapability, actual: ExecutionCapability)
   case UnexplainedFields(fields: Vector[String])
+  case InvalidFieldId(value: String)
+  case InvalidBounds(lower: Option[Endpoint], upper: Option[Endpoint])
+  case BoundsForShape(field: FieldId, shape: NumberShape, bounds: NumericBounds)
+  case UnknownRulePart(field: FieldId, part: FieldId)
+  case InvalidRepetition(field: FieldId, minimum: Int, maximum: Option[Int])
+  case DefaultRefused(field: FieldId, error: FieldError[Nothing])
+  case UntranslatableLegacy(field: String, units: String, domain: String)
   def message: String = this match
     case InvalidField(id, v, meaning) =>
       s"Invalid descriptor '$id' version $v with meaning '$meaning'."
@@ -332,3 +429,16 @@ enum DescriptorError derives CanEqual:
       s"Descriptor declares execution $declared but the method executes as $actual."
     case UnexplainedFields(xs) =>
       s"Scientific description contains fields without metadata: $xs."
+    case InvalidFieldId(v)     => s"Field id '$v' must be non-empty and contain no whitespace."
+    case InvalidBounds(lo, hi) =>
+      s"Bounds need finite endpoints with the lower below the upper, got $lo and $hi."
+    case BoundsForShape(f, shape, bounds) =>
+      s"Field '$f' has bounds ${bounds.render} that a $shape number cannot represent exactly."
+    case UnknownRulePart(f, part) =>
+      s"Field '$f' has a rule naming '$part', which is not one of its parts."
+    case InvalidRepetition(f, min, max) =>
+      s"Field '$f' repeats between $min and $max items; the minimum must be non-negative and not above the maximum."
+    case DefaultRefused(f, e) =>
+      s"The default of field '$f' does not pass its own checks: ${e.message}"
+    case UntranslatableLegacy(f, units, domain) =>
+      s"Field '$f' uses legacy units $units and domain $domain, which have no FieldKind translation."

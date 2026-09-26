@@ -1,0 +1,186 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eyes4s.laws
+
+import eyes4s.codec.*
+import eyes4s.kernel.*
+import eyes4s.kernel.Unit2D.{Deg, Norm, Px}
+import eyes4s.plan.*
+import org.scalacheck.{Gen, Test}
+
+/** Runs the published form laws against every shipped one-number parameter
+  * and every shipped recipe inspection, and shows by mutation that the laws
+  * discriminate.
+  *
+  * {{{
+  * | mutant (built through the public API)                  | falsified law                            |
+  * |--------------------------------------------------------|------------------------------------------|
+  * | sigma's lower bound closed at 0 instead of open        | bounds and constructor agree at the edges |
+  * | the interpolation gap's lower bound open at 0          | bounds and constructor agree at the edges, |
+  * |                                                        | raw form parses back                      |
+  * | sigma with no lower bound                              | bounds and constructor agree at the edges |
+  * | an I-VT threshold bounded below at 1, not 0            | bounds and constructor agree at the edges, |
+  * |                                                        | raw form parses back                      |
+  * | a field that reads its value back doubled              | raw form parses back                      |
+  * }}}
+  *
+  * Mutants of the library source, each applied, run against this suite,
+  * `LegacyDescriptorSuite`, `FormDescriptorSuite`, `MethodDescriptorSuite`
+  * and `PlanarUnitSuite` on the JVM, and reverted; every one was killed:
+  *
+  * {{{
+  * | source mutant                                          | killed by (among others)                     |
+  * |--------------------------------------------------------|----------------------------------------------|
+  * | Endpoint.admits swaps closed and open                  | every field: bounds and constructor agree    |
+  * | parse skips the declared-bounds stage                  | every field: outside the bounds is refused   |
+  * | OutOfBounds names the other side                       | every field: outside the bounds is refused   |
+  * | shipped interpolation gap bound Closed(0) -> Open(0)   | interpolationGap: agree at the edges         |
+  * | shipped minimum duration bound Open(0) -> Closed(0)    | minimumDuration: agree at the edges          |
+  * | shipped sigma loses its lower bound                    | sigma*: agree at the edges (shape extreme)   |
+  * | canonical number text drops the sign                   | every field: raw form parses back            |
+  * | a group's Ordered rule admits equal parts              | FormDescriptorSuite group checks             |
+  * | legacy projection reads Closed(0) duration as positive | LegacyDescriptorSuite pins                   |
+  * | UnitLabel[Deg] reports Px                              | PlanarUnitSuite, MethodDescriptorSuite       |
+  * }}}
+  */
+class FormLawSuite extends munit.DisciplineSuite:
+  import PlanCodecLawSuite.*
+
+  private val F = RecipeParameters.forms
+
+  private def numeric[E, N, A](name: String, field: NumericField[E, N, A]): Unit =
+    checkAll(name, FormLaws.numeric(field, FormLaws.numbers(field)))
+
+  numeric("sigma[Px]", F.sigma[Px])
+  numeric("sigma[Deg]", F.sigma[Deg])
+  numeric("sigma[Norm]", F.sigma[Norm])
+  numeric("sigmaX[Px]", F.sigmaX[Px])
+  numeric("sigmaY[Deg]", F.sigmaY[Deg])
+  numeric("residualLimit", F.residualLimit)
+  numeric("ivtThreshold", F.ivtThreshold)
+  numeric("minimumDuration", F.minimumDuration)
+  numeric("idtWidth", F.idtWidth)
+  numeric("idtHeight", F.idtHeight)
+  numeric("ekEtaX", F.ekEtaX)
+  numeric("ekEtaY", F.ekEtaY)
+  numeric("ekMinimumSamples", F.ekMinimumSamples)
+  numeric("interpolationGap", F.interpolationGap)
+
+  private val recordingSchema = definition("eyes4s.recording-plan", 1)
+  private val ivt             = RecordingCodecs.ivt(
+    recordingSchema,
+    definition("eyes4s.recording.ivt", 1),
+    definition("eyes4s.ivt-parameters", 1)
+  )
+  private val idt = RecordingCodecs.idt(
+    recordingSchema,
+    definition("eyes4s.recording.idt", 1),
+    definition("eyes4s.idt-parameters", 1)
+  )
+  private val ek = RecordingCodecs.engbertKliegl(
+    recordingSchema,
+    definition("eyes4s.recording.engbert-kliegl", 1),
+    definition("eyes4s.engbert-kliegl-parameters", 1)
+  )
+
+  checkAll(
+    "study inspection",
+    FormLaws.inspection(
+      Gen.oneOf(cosinePlans, configuredPlans, initialFixationPlans).map(_.inspect)
+    )
+  )
+  checkAll("trial-keyed study inspection", FormLaws.inspection(trialPlans.map(_.inspect)))
+  checkAll("temporal inspection", FormLaws.inspection(temporalPlans.map(_.inspect)))
+  checkAll(
+    "recording inspection",
+    FormLaws.inspection(
+      Gen.oneOf(
+        recordingPlans(ivt.method, ivtParameters).map(_.inspect),
+        recordingPlans(idt.method, idtParameters).map(_.inspect),
+        recordingPlans(ek.method, ekParameters).map(_.inspect)
+      )
+    )
+  )
+
+  /** Mutant checks run from a fixed seed, so every kill is reproducible. */
+  private val parameters =
+    Test.Parameters.default.withMinSuccessfulTests(100).withInitialSeed(0x464f524dL)
+
+  private def falsified[E, N, A](field: NumericField[E, N, A]): Vector[String] =
+    FormLaws
+      .numeric(field, FormLaws.numbers(field))
+      .all
+      .properties
+      .toVector
+      .collect {
+        case (name, prop) if !Test.check(parameters, prop).passed =>
+          name.drop(name.indexOf('.') + 1)
+      }
+      .sorted
+
+  private def get[A](e: Either[DescriptorError, A]): A = e.fold(x => fail(x.message), identity)
+  private val agree = "the declared bounds and the domain constructor agree at the edges"
+  private val back  = "a typed value's raw form parses back to it"
+
+  private def mutant[E, N: Numeral, A](
+      original: NumericField[E, N, A],
+      bounds: NumericBounds,
+      number: A => N = null
+  )(message: E => String): NumericField[E, N, A] =
+    get(
+      NumericField.of[E, N, A](
+        original.view.id,
+        original.view.version,
+        original.view.meaning,
+        original.quantity,
+        bounds
+      )(original.domain, Option(number).getOrElse(original.number), message)
+    )
+
+  test("every shipped field passes, so each mutant below differs by one change") {
+    assertEquals(falsified(F.sigma[Px]), Vector.empty)
+    assertEquals(falsified(F.interpolationGap), Vector.empty)
+    assertEquals(falsified(F.ivtThreshold), Vector.empty)
+  }
+
+  test("closing sigma's open lower bound is caught at the edge") {
+    val closed = mutant(F.sigma[Px], NumericBounds.nonNegative)(_.message)
+    assertEquals(falsified(closed), Vector(agree))
+  }
+
+  test("opening the interpolation gap's closed lower bound is caught at the edge") {
+    val open = mutant(F.interpolationGap, NumericBounds.positive)(_.message)
+    // The constructor still builds a zero gap, whose raw form the bounds refuse.
+    assertEquals(falsified(open), Vector(back, agree))
+  }
+
+  test("dropping sigma's lower bound is caught at the shape's extreme") {
+    val unbounded = mutant(F.sigma[Px], NumericBounds.unbounded)(_.message)
+    assertEquals(falsified(unbounded), Vector(agree))
+  }
+
+  test("a lower bound stricter than the constructor is caught at the edge") {
+    val strict = mutant(F.ivtThreshold, get(NumericBounds.atLeast(1)))(_.message)
+    assertEquals(falsified(strict), Vector(back, agree))
+  }
+
+  test("a field that reads its value back wrongly fails the raw round trip") {
+    val doubled = mutant(F.sigma[Px], NumericBounds.positive, (s: Sigma[Px]) => s.value * 2)(
+      _.message
+    )
+    assertEquals(falsified(doubled), Vector(back))
+  }

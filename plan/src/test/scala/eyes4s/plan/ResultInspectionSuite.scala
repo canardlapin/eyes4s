@@ -220,7 +220,7 @@ class ResultInspectionSuite extends munit.FunSuite:
       Vector(
         ComponentValue(
           "value",
-          ParameterUnits.Dimensionless,
+          Quantity.Dimensionless,
           MeasureScale.Bounded(0, 1),
           ScoreDirection.HigherIsCloser,
           score.value
@@ -444,7 +444,7 @@ class ResultInspectionSuite extends munit.FunSuite:
         ScoreComponent.of[OverlapSpread, OverlapSpreadDifference](
           "overlap",
           "Cosine overlap of the two maps",
-          ParameterUnits.Dimensionless,
+          Quantity.Dimensionless,
           MeasureScale.Bounded(0, 1),
           ScoreDirection.HigherIsCloser
         )(_.overlap, _.overlap)
@@ -452,7 +452,7 @@ class ResultInspectionSuite extends munit.FunSuite:
         ScoreComponent.of[OverlapSpread, OverlapSpreadDifference](
           "spread",
           "Summed absolute difference of cell masses",
-          ParameterUnits.Cells,
+          Quantity.Count(Counted.Cells),
           MeasureScale.DistanceLike,
           ScoreDirection.LowerIsCloser
         )(_.spread, _.spread)
@@ -479,8 +479,8 @@ class ResultInspectionSuite extends munit.FunSuite:
     assertEquals(Right(view.value), stored.difference.left.map(_.message))
     assertEquals(view.components.map(_.id), Vector("overlap", "spread"))
     assertEquals(
-      view.components.map(_.units),
-      Vector(ParameterUnits.Dimensionless, ParameterUnits.Cells)
+      view.components.map(_.quantity),
+      Vector(Quantity.Dimensionless, Quantity.Count(Counted.Cells))
     )
     assertEquals(
       view.components.map(_.direction),
@@ -915,7 +915,7 @@ class ResultInspectionSuite extends munit.FunSuite:
       ScoreComponent.of[Similarity, SignedDifference](
         "overlap",
         "A component the method does not have",
-        ParameterUnits.Dimensionless,
+        Quantity.Dimensionless,
         MeasureScale.Bounded(0, 1),
         ScoreDirection.HigherIsCloser
       )(_.value, _.value)

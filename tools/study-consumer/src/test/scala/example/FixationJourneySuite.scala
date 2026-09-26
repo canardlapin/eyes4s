@@ -134,8 +134,8 @@ class FixationJourneySuite extends munit.CatsEffectSuite:
         inspection.fields
           .find(_.info.id == "estimate.1")
           .flatMap(_.children.headOption)
-          .map(ch => ch.info.units -> ch.values),
-        Some(ParameterUnits.Spatial("px") -> Vector(Provenance.Param.Num(0.5)))
+          .map(ch => ch.info.quantity -> ch.values),
+        Some(Quantity.Planar(PlanarUnit.Px) -> Vector(Provenance.Param.Num(0.5)))
       )
       c.methodFields.foreach { field =>
         assertEquals(

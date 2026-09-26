@@ -429,7 +429,15 @@ object DiagnosticCatalog:
     "MissingMethod",
     "MethodIdentity",
     "ExecutionMismatch",
-    "UnexplainedFields"
+    "UnexplainedFields",
+    // appended by CR6a
+    "InvalidFieldId",
+    "InvalidBounds",
+    "BoundsForShape",
+    "UnknownRulePart",
+    "InvalidRepetition",
+    "DefaultRefused",
+    "UntranslatableLegacy"
   )
 
   /** Finding severity is the finding's own blocker/warning classification. */
@@ -852,6 +860,22 @@ object DiagnosticCatalog:
     "DataDependent"
   )
 
+  // ---------------------------------------------------------------- appended by CR6a
+  /** A raw form value refused by its field: shape, declared bounds, a rule
+    * across the field's parts, or the domain constructor.
+    */
+  val formField: DiagnosticFamily = error("form-field")(
+    "Missing",
+    "Malformed",
+    "OutOfBounds",
+    "NotAChoice",
+    "UnknownPart",
+    "Unordered",
+    "Duplicate",
+    "ItemCount",
+    "Refused"
+  )
+
   /** Families whose error type no longer exists. Their codes stay issued, in
     * their original place in [[issuedFamilies]], so a retired code is never
     * reused with another meaning; no live error projects to one.
@@ -952,7 +976,8 @@ object DiagnosticCatalog:
     diagnosticCode,
     fixationEntropy,
     template,
-    analysisFinding
+    analysisFinding,
+    formField
   )
 
   /** Every live family, grouped as documented. */

@@ -101,11 +101,15 @@ class RecordingJourneySuite extends munit.CatsEffectSuite:
       assertEquals(
         inspection.fields
           .find(_.info.id == "detector.thresholdDegPerSecond")
-          .map(f => (f.info.units, f.info.allowed, f.values)),
+          .map(f => (f.info.quantity, f.info.kind, f.values)),
         Some(
           (
-            ParameterUnits.PerSecond("deg"),
-            ParameterDomain.PositiveFinite,
+            Quantity.Rate(PlanarUnit.Deg),
+            FieldKind.Numeric(
+              Quantity.Rate(PlanarUnit.Deg),
+              NumberShape.Real,
+              NumericBounds.positive
+            ),
             Vector(Provenance.Param.Num(thresholdDegPerSecond))
           )
         )
