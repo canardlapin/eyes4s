@@ -31,14 +31,10 @@ def main():
         actual = json.loads(out.read_text())
     # floor(duration * resolution) with a floating-point tolerance: 0.29 s at 100 Hz is 29 copies.
     assert sequence(actual["replication"]["counts"]) == [29, 1, 1, 1, 3]
-    # The fast and slow paths sample the same positions at the pin: both hold the last fixation
-    # and take the last tied onset. Only their returned duration columns differ.
+    # The fast and slow paths return the same object at the pin, durations and warnings
+    # included: both hold the last fixation and take the last tied onset.
     for t in actual["trajectories"]:
-        fast, slow = t["fast"]["result"], t["slow"]["result"]
-        if "error" in fast or "error" in slow:
-            assert fast == slow, t["name"]
-        else:
-            assert (fast["x"], fast["y"]) == (slow["x"], slow["y"]), t["name"]
+        assert t["fast"] == t["slow"], t["name"]
     refs = {r["match"]: r["values"] for r in inputs["controls"]}
     refvalues = list(refs.values())
     for case in actual["controls"]:
