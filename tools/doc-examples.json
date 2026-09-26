@@ -312,8 +312,8 @@
       "suite": "eyes4s.pointconsumer.PointSamplingSuite",
       "tests": [
         "public static workflow agrees with independently checked R values for every normalization and exhaustive/disabled controls",
-        "control population preserves source occurrences, excludes all true copies and uses the focal path",
-        "finite keyed controls are deterministic and order invariant with exact occurrence identities",
+        "control population counts each distinct template once, excludes all true copies and uses the focal path",
+        "finite keyed controls are deterministic and order invariant with exact template identities",
         "final endpoint is explicit; empty and all-missing bins keep their counts",
         "matching failures and duplicate source keys retain every row and query",
         "clock and frame disagreements are operand-bearing failures, including no containing cell",
