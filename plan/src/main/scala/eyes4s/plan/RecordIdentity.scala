@@ -64,6 +64,18 @@ enum RecordIdentityError derives CanEqual:
       s"Data record ${record.value} is beyond the layout's $records data records."
     case LineBeyond(line, lines) => s"Line ${line.value} is beyond the layout's $lines lines."
 
+object RecordIdentityError:
+  given diagnose: Diagnose[RecordIdentityError, Nothing] =
+    Diagnose.derived[RecordIdentityError, Nothing](
+      DiagnosticCatalog.recordIdentity,
+      (e: RecordIdentityError) =>
+        e match
+          case HeaderRecord(record)    => Vector(Locus.Record(record.value))
+          case RecordLineCount(r, _)   => Vector(Locus.Record(r.value))
+          case RecordBeyond(record, _) => Vector(Locus.Record(record.csv.value))
+          case _                       => Vector.empty
+    )(_.message)
+
 /** A data record of a delimited source: the n-th record after the header,
   * counted from 1. "fixations.csv record 7,214" is `DataRecord` 7,214. The
   * header is never a data record; it is [[CsvRecord.header]].
@@ -87,6 +99,11 @@ object DataRecord:
 
   given Ordering[DataRecord] = Ordering.by(_.value)
 
+  private[eyes4s] given DiagnosticOperand[DataRecord, Nothing] =
+    DiagnosticOperand.of(r =>
+      Operand.Fields(Vector("value" -> Operand.Integer(BigInt(r.value))))
+    )
+
 /** A record of a delimited source in the RFC 4180 sense, counted from 1 with
   * the header as record 1. Admission ledgers, diagnostic loci and source
   * links store record numbers in this convention; [[role]] converts one to a
@@ -105,6 +122,11 @@ final case class CsvRecord private[plan] (value: Int) derives CanEqual:
 object CsvRecord:
   /** The header record. */
   val header: CsvRecord = new CsvRecord(1)
+
+  private[eyes4s] given DiagnosticOperand[CsvRecord, Nothing] =
+    DiagnosticOperand.of(r =>
+      Operand.Fields(Vector("value" -> Operand.Integer(BigInt(r.value))))
+    )
 
   def of(value: Int): Either[RecordIdentityError, CsvRecord] =
     Either.cond(
@@ -128,6 +150,11 @@ enum RecordRole derives CanEqual:
 final case class SourceLine private[plan] (value: Long) derives CanEqual
 
 object SourceLine:
+  private[eyes4s] given DiagnosticOperand[SourceLine, Nothing] =
+    DiagnosticOperand.of(l =>
+      Operand.Fields(Vector("value" -> Operand.Integer(BigInt(l.value))))
+    )
+
   def of(value: Long): Either[RecordIdentityError, SourceLine] =
     Either.cond(
       value >= 1,

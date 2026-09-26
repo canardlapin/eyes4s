@@ -28,12 +28,12 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Every issued code, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 639
-  private val PinnedDigest = "6a3a13f40fcdda23"
+  private val PinnedCount  = 651
+  private val PinnedDigest = "089ca13005ce0e62"
 
   /** The issued table before CR5: codes are only ever issued, never changed
     * or reused, and a retired code keeps its place, so taking away the codes
-    * CR5, CR2 and CR4 added leaves exactly this table.
+    * CR5, CR2, CR4 and UI-G added leaves exactly this table.
     */
   private val StableCount  = 445
   private val StableDigest = "fb7ffbd3d3db7f63"
@@ -57,6 +57,10 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   /** The codes CR4 added: the generic analysis finding. */
   private val Cr4Codes: Set[String] =
     DiagnosticCatalog.analysisFinding.codes.map(_.render).toSet
+
+  /** The codes UI-G added: record, line and fixation identities. */
+  private val UiGCodes: Set[String] =
+    DiagnosticCatalog.recordIdentity.codes.map(_.render).toSet
 
   test(
     "every cataloged family is sampled, in catalog order, through its own Diagnose instance"
@@ -155,7 +159,9 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
       )
     )
     val rendered = DiagnosticCatalog.issued.map(_.render)
-    val stable = rendered.filterNot(code => Cr5Codes(code) || Cr2Codes(code) || Cr4Codes(code))
+    val stable   = rendered.filterNot(code =>
+      Cr5Codes(code) || Cr2Codes(code) || Cr4Codes(code) || UiGCodes(code)
+    )
     assertEquals(stable.size, StableCount)
     assertEquals(ContentHash.ofString(stable.mkString("\n")).render, StableDigest)
     assertEquals(rendered.size, PinnedCount)

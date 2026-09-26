@@ -78,12 +78,17 @@ object DiagnosticExample extends DiagnosticExampleStructures:
   given DiagnosticExample[Provenance] =
     of(seed => Provenance(ContentHash.ofString(s"inputs-$seed"), Vector.empty))
   given DiagnosticExample[Provenance.Param] = of(seed => Provenance.Param.Text(s"param-$seed"))
+  given DiagnosticExample[DataRecord]       = of(seed => get(DataRecord.of(seed + 101)))
+  given DiagnosticExample[CsvRecord]        = of(seed => get(CsvRecord.of(seed + 202)))
+  given DiagnosticExample[SourceLine]       = of(seed => get(SourceLine.of(seed + 303L)))
 
   // Nested errors are given one explicit case each, so a generated family
   // never derives a chain of wrapped errors (which the compiler would refuse
   // as a diverging implicit search).
   given DiagnosticExample[GeometryError] = of(seed => GeometryError.NonFiniteSigma(seed + 0.5))
-  given DiagnosticExample[SurfaceError]  =
+  given DiagnosticExample[RecordIdentityError] =
+    of(seed => RecordIdentityError.CsvRecordNotPositive(-seed))
+  given DiagnosticExample[SurfaceError] =
     of(seed => SurfaceError.LengthMismatch(seed, seed + 1))
   given DiagnosticExample[TimeError] =
     of(seed => TimeError.ReversedWindow(9000L + seed, 8000L + seed))

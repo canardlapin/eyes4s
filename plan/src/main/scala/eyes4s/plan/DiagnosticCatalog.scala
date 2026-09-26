@@ -852,6 +852,23 @@ object DiagnosticCatalog:
     "DataDependent"
   )
 
+  // ---------------------------------------------------------------- appended by UI-G
+  /** Record, line and fixation identities, and record layouts. */
+  val recordIdentity: DiagnosticFamily = error("record-identity")(
+    "DataRecordOutOfRange",
+    "CsvRecordNotPositive",
+    "HeaderRecord",
+    "SourceLineNotPositive",
+    "LineSpanOrder",
+    "ScanpathPositionOutOfRange",
+    "FixationNumberNotPositive",
+    "RecordCountOutOfRange",
+    "NoHeaderRecord",
+    "RecordLineCount",
+    "RecordBeyond",
+    "LineBeyond"
+  )
+
   /** Families whose error type no longer exists. Their codes stay issued, in
     * their original place in [[issuedFamilies]], so a retired code is never
     * reused with another meaning; no live error projects to one.
@@ -952,7 +969,8 @@ object DiagnosticCatalog:
     diagnosticCode,
     fixationEntropy,
     template,
-    analysisFinding
+    analysisFinding,
+    recordIdentity
   )
 
   /** Every live family, grouped as documented. */

@@ -857,5 +857,6 @@ object DiagnosticSamples:
         Diagnostic.of(StudyFinding.UnmatchedFocal[StudyKey, Px](k2)),
         NonEmptyVector.one(k1)
       )
-    )
+    ),
+    generated[RecordIdentityError]("RecordIdentityError")
   )
