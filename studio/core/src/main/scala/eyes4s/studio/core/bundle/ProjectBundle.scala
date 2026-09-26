@@ -377,8 +377,20 @@ object ProjectBundle:
     * lists; `cache/` and unlisted files are never read.
     */
   def open[F[_]: Monad](store: ProjectStore[F]): F[Either[BundleError, OpenedProject]] =
+    EitherT(store.readManifest)
+      .leftMap(BundleError.Store(_))
+      .flatMapF(openFrom(store, _))
+      .value
+
+  /** Open the document that the manifest `bytes` describe, reading its parts
+    * from `store`: [[open]] for a manifest held elsewhere, such as the
+    * retained previous one ([[Sidecar.PreviousManifest]]).
+    */
+  def openFrom[F[_]: Monad](
+      store: ProjectStore[F],
+      bytes: IArray[Byte]
+  ): F[Either[BundleError, OpenedProject]] =
     (for
-      bytes    <- EitherT(store.readManifest).leftMap(BundleError.Store(_))
       manifest <- EitherT.fromEither[F](readManifest(bytes))
       read     <- manifest.parts.all.traverse(entry =>
         EitherT(store.read(entry.path)).leftMap(BundleError.Store(_)).map(entry.path -> _)
@@ -508,7 +520,10 @@ object ProjectBundle:
   // Helpers
   // -------------------------------------------------------------------------
 
-  private def writeImmutable[F[_]: Monad](
+  /** Write an immutable entry: nothing if it already holds these bytes, a
+    * [[BundleError.Collision]] if it holds others.
+    */
+  private[core] def writeImmutable[F[_]: Monad](
       store: ProjectStore[F],
       lock: WriterLock,
       path: BundlePath,
