@@ -34,18 +34,16 @@ import eyes4s.surface.EdgePolicy
   * prepared study and the result, so the suite can read the canonical
   * `fixtures/studio-golden` tables unchanged by replacing `source`.
   */
-class StudioAcceptanceSuite extends munit.FunSuite:
+abstract class StudioAcceptance(source: => StudioFixture.Source) extends munit.FunSuite:
   override val munitTimeout                 = scala.concurrent.duration.Duration(10, "min")
   private def get[E, A](e: Either[E, A]): A = e.fold(error => fail(s"$error"), identity)
-
-  private val source = StudioFixture.source
 
   private val screen = get(Frame.screen("studio-screen", 1920, 1080))
   private val image  =
     get(Subframe.centred(screen, FrameId("studio-image"), get(Extent.of[Px](1024, 768))))
   private val grid    = get(Grid.over(image.frame, 64, 48))
   private val columns = get(
-    FixationColumns.of("fixation", "x_px", "y_px", "onset_ms", "duration_ms", "samples")
+    FixationColumns.of("ordinal", "x", "y", "onset_ms", "duration_ms", "sample_count")
   )
   private val keys = get(
     FixationKeyReader.trial("participant", "phase", "trial", "item", Some("occurrence"))
@@ -64,8 +62,8 @@ class StudioAcceptanceSuite extends munit.FunSuite:
       input.reference,
       TrialKey.layout(TrialKeyDefinitions.trialLayout),
       get(StudyGeometry.windowed(image, grid, OffWindowPolicy.Exclude)),
-      "retrieval",
-      "encoding",
+      "Retrieval",
+      "Encoding",
       Weight.Duration,
       Vector(
         StudyScale.Angular(
@@ -103,18 +101,19 @@ class StudioAcceptanceSuite extends munit.FunSuite:
   test("inventory: 960 trials = 937 admitted + 17 quarantined + 6 absent; 11,520 records") {
     assertEquals(source.inventory.size, 960)
     assertEquals(imported.sourceRows.size, 11520)
-    val admitted    = trialIds(input.trials.rows.map(_.key))
-    val quarantined = trialIds(ledger.quarantined)
+    val admitted = trialIds(input.trials.rows.map(_.key))
+    // Trials with records but none admitted: quarantined, or every record rejected.
+    val quarantined = trialIds(imported.rejected.flatMap(_.key)) -- admitted
     assertEquals(admitted.size, 937)
     assertEquals(quarantined.size, 17)
     val seen   = trialIds(imported.admitted.map(_.key) ++ imported.rejected.flatMap(_.key))
     val absent = source.inventory.toSet -- seen
     assertEquals(absent.size, 6)
     assertEquals(admitted.size + quarantined.size + absent.size, source.inventory.size)
-    // The importer's own causes. A trial whose records are all non-fixation
-    // events ("no fixations" in the Studio inventory) needs the trial
-    // inventory (UI-H), so those five are rejected records here.
-    val causes = ledger.records
+    // The importer's own causes. A trial every record of which is rejected
+    // ("no fixations" in the Studio inventory) has no trial-level cause until
+    // the trial inventory (UI-H); its records are row-level rejections.
+    val quarantineCauses = ledger.records
       .collect {
         case SourceRecord(
               _,
@@ -126,9 +125,10 @@ class StudioAcceptanceSuite extends munit.FunSuite:
       .values
       .groupMapReduce(identity)(_ => 1)(_ + _)
     assertEquals(
-      causes,
-      Map("RejectedRecords" -> 7, "Overlap" -> 6, "DuplicateOrdinals" -> 4)
+      quarantineCauses,
+      Map("RejectedRecords" -> 2, "Overlap" -> 6, "DuplicateOrdinals" -> 4)
     )
+    assertEquals((quarantined -- trialIds(ledger.quarantined)).size, 5)
   }
 
   test("window: 543 records fall outside the image, in 409 trials, none off the screen") {
@@ -190,3 +190,6 @@ class StudioAcceptanceSuite extends munit.FunSuite:
     )
     assertEquals(perQuery(query), 19)
   }
+
+/** The acceptance tests over the small deterministic stand-in, on both platforms. */
+class StudioAcceptanceSuite extends StudioAcceptance(StudioFixture.source)

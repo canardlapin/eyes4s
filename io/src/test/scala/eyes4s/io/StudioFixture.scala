@@ -147,8 +147,8 @@ object StudioFixture:
     val p = participants(pi)
     items(pi).zipWithIndex.flatMap { (item, k) =>
       Vector(
-        Trial(p, "encoding", encodingTrial(k), item),
-        Trial(p, "retrieval", retrievalTrial(k), item)
+        Trial(p, "Encoding", encodingTrial(k), item),
+        Trial(p, "Retrieval", retrievalTrial(k), item)
       )
     }
   }
@@ -195,13 +195,13 @@ object StudioFixture:
       "phase",
       "trial",
       "occurrence",
-      "item",
-      "fixation",
-      "x_px",
-      "y_px",
+      "ordinal",
+      "x",
+      "y",
       "onset_ms",
       "duration_ms",
-      "samples"
+      "sample_count",
+      "item"
     )
     val rows = recorded.flatMap { t =>
       val n         = counts(t.id)
@@ -221,23 +221,25 @@ object StudioFixture:
           case Some(Cause.Overlap) if i == 1 => onset - durations(0) + 10
           case _                             => onset
         onset = start + durations(i) + 50
-        val ordinal  = if cause.contains(Cause.DuplicateOrdinals) && i == 1 then 0 else i
-        val duration =
-          cause match
-            case Some(Cause.RejectedRecords | Cause.NoFixations) if i == 0 => "-5"
-            case _ => durations(i).toString
+        // As in the canonical fixture: ordinals from 1, a repeated ordinal,
+        // one record with no samples, or no record with any.
+        val ordinal = if cause.contains(Cause.DuplicateOrdinals) && i == 1 then 1 else i + 1
+        val samples = cause match
+          case Some(Cause.NoFixations)               => 0
+          case Some(Cause.RejectedRecords) if i == 0 => 0
+          case _                                     => durations(i) / 2
         Vector(
           t.participant,
           t.phase,
           t.trial,
           "1",
-          t.item,
           ordinal.toString,
           x.toString,
           y.toString,
           start.toString,
-          duration,
-          "10"
+          durations(i).toString,
+          samples.toString,
+          t.item
         )
       }
     }
