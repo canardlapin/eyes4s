@@ -17,6 +17,7 @@
 package eyes4s.codec
 
 import cats.syntax.all.*
+import eyes4s.kernel.Hz
 import eyes4s.plan.*
 import io.circe.Json
 
@@ -39,8 +40,9 @@ private[codec] object InventoryWire:
           "label"   -> Json.fromString(value.source.label),
           "records" -> Json.fromString(value.source.records.digest)
         ),
-        "header" -> Json.arr(value.header.map(Json.fromString)*),
-        "trials" -> Json.arr(value.trials.map { t =>
+        "header"           -> Json.arr(value.header.map(Json.fromString)*),
+        "attributeColumns" -> columns(value.attributeColumns),
+        "trials"           -> Json.arr(value.trials.map { t =>
           Json.fromFields(
             identity(t.identity) ++ Vector(
               "rows"          -> ints(t.rows),
@@ -60,15 +62,33 @@ private[codec] object InventoryWire:
             )
           )
         }*),
-        "recordAttributes" -> Json.arr(value.recordAttributes.map { entry =>
+        "recordAttributeColumns" -> columns(value.recordAttributeColumns),
+        "recordAttributes"       -> Json.arr(value.recordAttributes.map { entry =>
           Json.obj(
             "record"     -> Json.fromInt(entry.record),
             "attributes" -> attributes(entry.attributes)
           )
-        }*)
+        }*),
+        "sampleCounts" -> (value.sampleCounts match
+          case SampleCountRule.PositiveColumn(column) =>
+            Json.obj(
+              "kind"   -> Json.fromString("positiveColumn"),
+              "column" -> Json.fromString(column)
+            )
+          case SampleCountRule.DerivedFromDuration(rate) =>
+            Json.obj(
+              "kind"   -> Json.fromString("derivedFromDuration"),
+              "rateHz" -> Json.fromDoubleOrNull(rate.value)
+            ))
       )
     )
 
+  private def refused(e: InventoryError): CodecError =
+    CodecError.Admission(AdmissionError.Inventory(e))
+
+  /** Every part is rebuilt through its smart constructor, so a saved
+    * inventory meets the same invariants as the importer's.
+    */
   def read(json: Json): Either[CodecError, InventoryLedger] =
     for
       source <- Wire.field[Json](json, "source")
@@ -78,9 +98,10 @@ private[codec] object InventoryWire:
         .parse[Vector[Vector[String]]](digest)
         .left
         .map(CodecError.Definition.apply)
-      header  <- Wire.field[Vector[String]](json, "header")
-      entries <- Wire.field[Vector[Json]](json, "trials")
-      trials  <- entries.zipWithIndex.traverse { (entry, index) =>
+      header   <- Wire.field[Vector[String]](json, "header")
+      declared <- Wire.field[Json](json, "attributeColumns").flatMap(readColumns)
+      entries  <- Wire.field[Vector[Json]](json, "trials")
+      trials   <- entries.zipWithIndex.traverse { (entry, index) =>
         (for
           id            <- readIdentity(entry)
           rows          <- Wire.field[Vector[Int]](entry, "rows")
@@ -89,16 +110,11 @@ private[codec] object InventoryWire:
           recordItems   <- Wire.field[Vector[String]](entry, "recordItems")
           records       <- Wire.field[Vector[Int]](entry, "records")
           outcome       <- Wire.field[Json](entry, "disposition").flatMap(readDisposition)
-        yield InventoryTrial(
-          id,
-          rows,
-          inventoryItem,
-          values,
-          recordItems,
-          records,
-          outcome
-        )).left
-          .map(Wire.at(s"trials[$index]"))
+          trial         <- InventoryTrial
+            .of(id, rows, inventoryItem, values, recordItems, records, outcome)
+            .left
+            .map(refused)
+        yield trial).left.map(Wire.at(s"trials[$index]"))
       }
       others   <- Wire.field[Vector[Json]](json, "unlisted")
       unlisted <- others.zipWithIndex.traverse { (entry, index) =>
@@ -106,20 +122,77 @@ private[codec] object InventoryWire:
           id          <- readIdentity(entry)
           recordItems <- Wire.field[Vector[String]](entry, "recordItems")
           records     <- Wire.field[Vector[Int]](entry, "records")
-        yield UnlistedTrial(id, recordItems, records)).left.map(Wire.at(s"unlisted[$index]"))
+          trial       <- UnlistedTrial.of(id, recordItems, records).left.map(refused)
+        yield trial).left.map(Wire.at(s"unlisted[$index]"))
       }
+      recordDeclared   <- Wire.field[Json](json, "recordAttributeColumns").flatMap(readColumns)
       listed           <- Wire.field[Vector[Json]](json, "recordAttributes")
       recordAttributes <- listed.zipWithIndex.traverse { (entry, index) =>
         (for
           record <- Wire.field[Int](entry, "record")
           values <- Wire.field[Json](entry, "attributes").flatMap(readAttributes)
-        yield RecordAttributes(record, values)).left.map(Wire.at(s"recordAttributes[$index]"))
+          value  <- RecordAttributes.of(record, values).left.map(refused)
+        yield value).left.map(Wire.at(s"recordAttributes[$index]"))
       }
+      counts <- Wire.field[Json](json, "sampleCounts").flatMap(readSampleCounts)
       ledger <- InventoryLedger
-        .of(SourceRef(label, ref), header, trials, unlisted, recordAttributes)
+        .of(
+          SourceRef(label, ref),
+          header,
+          declared,
+          trials,
+          unlisted,
+          recordDeclared,
+          recordAttributes,
+          counts
+        )
         .left
-        .map(e => CodecError.Admission(AdmissionError.Inventory(e)))
+        .map(refused)
     yield ledger
+
+  private val kinds: Vector[(AttributeKind, String)] = Vector(
+    AttributeKind.Text    -> "text",
+    AttributeKind.Integer -> "integer",
+    AttributeKind.Number  -> "number"
+  )
+
+  private def columns(values: Vector[AttributeColumn]): Json =
+    Json.arr(values.map { column =>
+      Json.obj(
+        "name" -> Json.fromString(column.name),
+        "kind" -> Json.fromString(
+          kinds.collectFirst { case (column.kind, n) => n }.getOrElse("")
+        )
+      )
+    }*)
+
+  private def readColumns(json: Json): Either[CodecError, Vector[AttributeColumn]] =
+    for
+      entries <- json.asArray
+        .map(_.toVector)
+        .toRight(CodecError.Field("attributeColumns", json, "expected an array"))
+      values <- entries.zipWithIndex.traverse { (entry, index) =>
+        (for
+          name <- Wire.field[String](entry, "name")
+          kind <- Wire.field[String](entry, "kind")
+          k    <- kinds
+            .collectFirst { case (k, `kind`) => k }
+            .toRight(CodecError.Field("kind", entry, s"unknown attribute kind $kind"))
+        yield AttributeColumn(name, k)).left.map(Wire.at(s"columns[$index]"))
+      }
+    yield values
+
+  private def readSampleCounts(json: Json): Either[CodecError, SampleCountRule] =
+    Wire.field[String](json, "kind").flatMap {
+      case "positiveColumn" =>
+        Wire.field[String](json, "column").map(SampleCountRule.PositiveColumn.apply)
+      case "derivedFromDuration" =>
+        DomainWire
+          .finite(json, "rateHz")
+          .flatMap(rate => Hz(rate).left.map(e => CodecError.Field("rateHz", json, e.toString)))
+          .map(SampleCountRule.DerivedFromDuration.apply)
+      case other => Left(CodecError.Field("kind", json, s"unknown sample-count rule $other"))
+    }
 
   private def ints(values: Vector[Int]): Json = Json.arr(values.map(Json.fromInt)*)
 

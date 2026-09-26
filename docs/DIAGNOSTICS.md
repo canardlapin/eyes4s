@@ -911,6 +911,9 @@ fails after rewriting, so review the change and run it again.
 | `inventory.disposition-mismatch` | `DispositionMismatch` | `trial`, `disposition`, `record`, `found` |
 | `inventory.item-mismatch` | `ItemMismatch` | `trial`, `record`, `expected`, `actual` |
 | `inventory.no-trial-projection` | `NoTrialProjection` | `layout` |
+| `inventory.record-items` | `RecordItems` | `trial`, `disposition`, `items` |
+| `inventory.attribute-names` | `AttributeNames` | `owner`, `declared`, `found` |
+| `inventory.attribute-kind-mismatch` | `AttributeKindMismatch` | `owner`, `name`, `declared`, `found` |
 
 ### `admission` — `AdmissionError`
 
@@ -931,6 +934,7 @@ fails after rewriting, so review the change and run it again.
 | `admission.outside-frame-record` | `OutsideFrameRecord` | `record`, `policy` |
 | `admission.correction-conflict` | `CorrectionConflict` | `record`, `first`, `second` |
 | `admission.inventory` | `Inventory` | `underlying` |
+| `admission.uninventoried-cause` | `UninventoriedCause` | `record`, `cause` |
 
 ### `inspection` — `InspectionError`
 

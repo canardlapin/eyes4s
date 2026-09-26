@@ -102,14 +102,20 @@ final class StudyInputCodec[K, U <: Unit2D](
               case _ =>
                 for
                   policy    <- writePolicy(value)
-                  inventory <- value.inventory.fold[Either[CodecError, Json]](Right(Json.Null))(
-                    inventory =>
+                  inventory <- value.inventory
+                    .toRight(
+                      CodecError.Unsupported(
+                        "inventory",
+                        "only a ledger with a trial inventory is written as version 3"
+                      )
+                    )
+                    .flatMap(inventory =>
                       trialIdentity
                         .toRight(noTrialProjection)
                         .flatMap(_ => InventoryWire.write(inventory))
                         .left
                         .map(Wire.at("inventory"))
-                  )
+                    )
                 yield ledgerSchemaV3 -> Wire.append(
                   Wire.append(json, policy),
                   Json.obj("inventory" -> inventory)
@@ -570,26 +576,40 @@ final class StudyInputCodec[K, U <: Unit2D](
     admission <-
       if version >= 2 then readPolicy(json)
       else Right(AdmissionPolicy.version1[K] -> Vector.empty[OutsideFrame])
-    base <- AdmissionLedger
-      .of(SourceRef(label, ref), header, records, outcome, admission._1, admission._2)
-      .left
-      .map(CodecError.Admission.apply)
-    _      <- base.checkCorrections(layout.participant(_)).left.map(CodecError.Admission.apply)
     ledger <-
-      if version < 3 then Right(base)
+      if version < 3 then
+        AdmissionLedger
+          .of(SourceRef(label, ref), header, records, outcome, admission._1, admission._2)
+          .left
+          .map(CodecError.Admission.apply)
       else
-        Wire.field[Json](json, "inventory").flatMap { body =>
-          if body.isNull then Right(base)
-          else
-            for
-              project   <- trialIdentity.toRight(noTrialProjection)
-              inventory <- InventoryWire.read(body).left.map(Wire.at("inventory"))
-              joined    <- base
-                .withInventory(inventory, project, layout.stimulus(_))
-                .left
-                .map(CodecError.Admission.apply)
-            yield joined
-        }
+        // A version-3 ledger is exactly one with an inventory.
+        for
+          body <- Wire.field[Json](json, "inventory")
+          _    <- Either.cond(
+            !body.isNull,
+            (),
+            CodecError
+              .Field("inventory", json, "a version-3 ledger carries its trial inventory")
+          )
+          project   <- trialIdentity.toRight(noTrialProjection)
+          inventory <- InventoryWire.read(body).left.map(Wire.at("inventory"))
+          joined    <- AdmissionLedger
+            .inventoried(
+              SourceRef(label, ref),
+              header,
+              records,
+              outcome,
+              admission._1,
+              admission._2,
+              inventory,
+              project,
+              layout.stimulus(_)
+            )
+            .left
+            .map(CodecError.Admission.apply)
+        yield joined
+    _ <- ledger.checkCorrections(layout.participant(_)).left.map(CodecError.Admission.apply)
   yield ledger
 
   private def readRecord(

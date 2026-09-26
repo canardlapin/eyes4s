@@ -180,6 +180,9 @@ enum AdmissionError derives CanEqual:
   /** The ledger's trial inventory was refused. */
   case Inventory(underlying: InventoryError)
 
+  /** A record names a cause only a ledger with a trial inventory can name. */
+  case UninventoriedCause(record: Int, cause: QuarantineCause)
+
   def message: String = this match
     case NonPositiveRecord(r) => s"Source record numbers are positive, got $r."
     case RecordOrder(i, p, r) =>
@@ -204,7 +207,10 @@ enum AdmissionError derives CanEqual:
         "admitted record listed once, in record order, and ExcludeRecord must be the policy."
     case CorrectionConflict(r, first, second) =>
       s"Admitted record $r belongs to a trial that correction rules $first and $second both cover."
-    case Inventory(underlying) => s"Trial inventory: ${underlying.message}"
+    case Inventory(underlying)        => s"Trial inventory: ${underlying.message}"
+    case UninventoriedCause(r, cause) =>
+      s"Record $r is quarantined with ${cause.productPrefix}, which only a ledger with a " +
+        "trial inventory can record."
 
 /** What admission does with a record whose coordinates are finite but lie
   * outside the admission frame (off the screen). Unparseable or non-finite
@@ -303,8 +309,9 @@ final case class AdmissionLedger[K] private (
     val base = if policy.isVersion1 && outsideFrame.isEmpty then 1 else 2
     math.max(if inventory.isDefined then 3 else base, causes)
 
-  /** Join a trial inventory to this ledger. `identity` and `item` project a
-    * key's trial identity and match item. Every keyed record must be listed
+  /** Join a trial inventory to this ledger (see [[AdmissionLedger.inventoried]]
+    * for a ledger whose records name the inventory's own causes). `identity`
+    * and `item` project a key's trial identity and match item. Every keyed record must be listed
     * under its own trial, and every trial's disposition must agree with its
     * records: an admitted trial's records are all admitted with its resolved
     * item; a trial with no fixations has only records rejected on their own;
@@ -370,22 +377,13 @@ final case class AdmissionLedger[K] private (
             check(d => admitted(d) || quarantinedAs(d).isDefined)(t.records)
           case TrialDisposition.Admitted =>
             check(d => !admitted(d))(t.records).orElse(
-              t.item.fold(
-                t.records.headOption.map(r =>
+              Option
+                .when(t.item.isEmpty)(t.records.headOption)
+                .flatten
+                .map(r =>
                   InventoryError
                     .DispositionMismatch(t.identity.render, label, r, "unresolved item")
                 )
-              )(expected =>
-                t.records.collectFirst {
-                  case r if keyOf(byRecord(r)).exists(k => item(k) != expected) =>
-                    InventoryError.ItemMismatch(
-                      t.identity.render,
-                      r,
-                      expected,
-                      item(keyOf(byRecord(r)).get)
-                    )
-                }
-              )
             )
           case TrialDisposition.Quarantined(cause) =>
             val conflict = t.itemConflict
@@ -416,6 +414,20 @@ final case class AdmissionLedger[K] private (
             check(admitted)(t.records).orElse(conflict).orElse(carries)
       }
       .collectFirst { case Some(e) => e }
+    // Every keyed record of a trial carries the item the trial's records are
+    // keyed under: its resolved item, or under a conflict the inventory's.
+    def items = value.trials.iterator
+      .flatMap(t =>
+        t.records.iterator.flatMap(r =>
+          keyOf(byRecord(r))
+            .map(item)
+            .filterNot(t.keyItem.contains)
+            .map(actual =>
+              InventoryError.ItemMismatch(t.identity.render, r, t.keyItem.getOrElse(""), actual)
+            )
+        )
+      )
+      .nextOption()
     def unlisted = value.unlisted.iterator
       .map { u =>
         val label = "not in the inventory"
@@ -440,6 +452,7 @@ final case class AdmissionLedger[K] private (
     listed
       .orElse(claimed)
       .orElse(dispositions)
+      .orElse(items)
       .orElse(unlisted)
       .orElse(attributes)
       .map(AdmissionError.Inventory.apply)
@@ -517,6 +530,76 @@ object AdmissionLedger:
     * increasing and only present under [[OffScreenPolicy.ExcludeRecord]].
     */
   def of[K](
+      source: SourceRef,
+      header: Vector[String],
+      records: Vector[SourceRecord[K]],
+      outcome: AdmissionOutcome,
+      policy: AdmissionPolicy[K],
+      outsideFrame: Vector[OutsideFrame]
+  ): Either[AdmissionError, AdmissionLedger[K]] =
+    // The inventory's causes need the inventory that explains them.
+    records
+      .collectFirst {
+        case SourceRecord(r, Disposition.Rejected(_, _, AdmissionReason.Quarantined(_, cause)))
+            if QuarantineCause.version(cause) >= 3 =>
+          AdmissionError.UninventoriedCause(r, cause)
+      }
+      .toLeft(())
+      .flatMap(_ => build(source, header, records, outcome, policy, outsideFrame))
+
+  /** A ledger joined to its trial inventory: the invariants of [[of]], then
+    * those of `withInventory`. Only such a ledger may quarantine a record as
+    * not in the inventory or in conflict with the inventory's item.
+    */
+  def inventoried[K](
+      source: SourceRef,
+      header: Vector[String],
+      records: Vector[SourceRecord[K]],
+      outcome: AdmissionOutcome,
+      policy: AdmissionPolicy[K],
+      outsideFrame: Vector[OutsideFrame],
+      inventory: InventoryLedger,
+      identity: K => TrialIdentity,
+      item: K => String
+  ): Either[AdmissionError, AdmissionLedger[K]] =
+    build(source, header, records, outcome, policy, outsideFrame)
+      .flatMap(_.withInventory(inventory, identity, item))
+
+  /** As [[decide]], joined to a trial inventory (see [[inventoried]]). */
+  def decide[K](
+      source: SourceRef,
+      header: Vector[String],
+      records: Vector[SourceRecord[K]],
+      decision: AdmissionDecision,
+      policy: AdmissionPolicy[K],
+      outsideFrame: Vector[OutsideFrame],
+      inventory: InventoryLedger,
+      identity: K => TrialIdentity,
+      item: K => String
+  ): Either[AdmissionError, AdmissionLedger[K]] =
+    inventoried(
+      source,
+      header,
+      records,
+      outcome(records, decision),
+      policy,
+      outsideFrame,
+      inventory,
+      identity,
+      item
+    )
+
+  private def outcome[K](
+      records: Vector[SourceRecord[K]],
+      decision: AdmissionDecision
+  ): AdmissionOutcome =
+    if records.forall(_.isAdmitted) then AdmissionOutcome.Complete
+    else
+      decision match
+        case AdmissionDecision.RequireComplete  => AdmissionOutcome.Refused
+        case AdmissionDecision.ReviewExclusions => AdmissionOutcome.ReviewedExclusions
+
+  private def build[K](
       source: SourceRef,
       header: Vector[String],
       records: Vector[SourceRecord[K]],
@@ -607,10 +690,4 @@ object AdmissionLedger:
       policy: AdmissionPolicy[K],
       outsideFrame: Vector[OutsideFrame]
   ): Either[AdmissionError, AdmissionLedger[K]] =
-    val outcome =
-      if records.forall(_.isAdmitted) then AdmissionOutcome.Complete
-      else
-        decision match
-          case AdmissionDecision.RequireComplete  => AdmissionOutcome.Refused
-          case AdmissionDecision.ReviewExclusions => AdmissionOutcome.ReviewedExclusions
-    of(source, header, records, outcome, policy, outsideFrame)
+    of(source, header, records, outcome(records, decision), policy, outsideFrame)

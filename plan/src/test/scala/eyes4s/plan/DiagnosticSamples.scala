@@ -733,7 +733,10 @@ object DiagnosticSamples:
         "rejected (Number)"
       ),
       InventoryError.ItemMismatch("P01/Encoding/enc_01#1", 4, "beach-042", "dog-077"),
-      InventoryError.NoTrialProjection(DefinitionId.studyLayout)
+      InventoryError.NoTrialProjection(DefinitionId.studyLayout),
+      InventoryError.RecordItems("P01/Encoding/enc_01#1", "absent", Vector("beach-042")),
+      InventoryError.AttributeNames("record 4", Vector("rt"), Vector("pupil")),
+      InventoryError.AttributeKindMismatch("P01/Encoding/enc_01#1", "rt", "Integer", "Text")
     ),
     family[AdmissionError]("AdmissionError")(
       AdmissionError.NonPositiveRecord(0),
@@ -750,7 +753,8 @@ object DiagnosticSamples:
       AdmissionError.FixationCount(1, 4, 3),
       AdmissionError.OutsideFrameRecord(4, OffScreenPolicy.QuarantineTrial),
       AdmissionError.CorrectionConflict(4, 0, 1),
-      AdmissionError.Inventory(InventoryError.UnclaimedRecord(4, "P01/Encoding/enc_02#1"))
+      AdmissionError.Inventory(InventoryError.UnclaimedRecord(4, "P01/Encoding/enc_02#1")),
+      AdmissionError.UninventoriedCause(4, QuarantineCause.NotInInventory("P01", "E", "x", 1))
     ),
     family[InspectionError[StudyKey]]("InspectionError")(
       InspectionError.UnknownScale(3, 1),

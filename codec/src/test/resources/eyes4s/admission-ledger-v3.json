@@ -276,6 +276,24 @@
         "weight",
         "kind"
       ],
+      "attributeColumns" : [
+        {
+          "name" : "response",
+          "kind" : "text"
+        },
+        {
+          "name" : "count",
+          "kind" : "integer"
+        },
+        {
+          "name" : "weight",
+          "kind" : "number"
+        },
+        {
+          "name" : "kind",
+          "kind" : "text"
+        }
+      ],
       "trials" : [
         {
           "participant" : "P1",
@@ -499,6 +517,12 @@
           ]
         }
       ],
+      "recordAttributeColumns" : [
+        {
+          "name" : "pupil",
+          "kind" : "number"
+        }
+      ],
       "recordAttributes" : [
         {
           "record" : 2,
@@ -519,7 +543,11 @@
             }
           ]
         }
-      ]
+      ],
+      "sampleCounts" : {
+        "kind" : "derivedFromDuration",
+        "rateHz" : 500.0
+      }
     }
   }
 }

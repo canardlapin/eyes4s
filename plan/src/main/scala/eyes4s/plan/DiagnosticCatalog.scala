@@ -506,7 +506,10 @@ object DiagnosticCatalog:
     "UnclaimedRecord",
     "DispositionMismatch",
     "ItemMismatch",
-    "NoTrialProjection"
+    "NoTrialProjection",
+    "RecordItems",
+    "AttributeNames",
+    "AttributeKindMismatch"
   )
   val admission: DiagnosticFamily = error("admission")(
     "NonPositiveRecord",
@@ -523,7 +526,8 @@ object DiagnosticCatalog:
     "FixationCount",
     "OutsideFrameRecord",
     "CorrectionConflict",
-    "Inventory"
+    "Inventory",
+    "UninventoriedCause"
   )
   val inspection: DiagnosticFamily = error("inspection")(
     "UnknownScale",

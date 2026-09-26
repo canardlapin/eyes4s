@@ -365,13 +365,20 @@ order and admitted under `ExcludeRecord`, and decoding refuses a ledger in which
 admitted record's trial (`AdmissionError.CorrectionConflict`). A version-1 ledger decodes with the
 version-1 policy. Version 3 adds the `InventoryLedger` of an inventory admission
 ([fixation studies](FIXATION_STUDIES.md#join-a-trial-inventory)): the inventory's own source
-reference and header, every inventory trial (identity, inventory records, declared item, typed
-attributes, the items its records named, its fixation records and its `TrialDisposition`), the
-trials only the fixation table names, and the typed attributes of admitted records. Integer
+reference and header, the declared attribute columns, every inventory trial (identity, inventory
+records, declared item, typed attributes, the items its records named, its fixation records and
+its `TrialDisposition`), the trials only the fixation table names, the declared record attribute
+columns with the typed attributes of admitted records, and the `SampleCountRule` the records were
+admitted under (a count column, or counts derived from duration at a recorded rate). Integer
 attributes are decimal strings, so 64-bit values survive Scala.js. Decoding rebuilds the inventory
-through `InventoryLedger.of` and joins it with `ledger.withInventory`, so a saved inventory is
-refused (`AdmissionError.Inventory(InventoryError…)`) unless every keyed record is listed under its
-own trial and every disposition agrees with its records; a key layout without a trial label
+through the smart constructors of every part (`InventoryTrial.of`, `UnlistedTrial.of`,
+`RecordAttributes.of`, `InventoryLedger.of`) and joins it with `AdmissionLedger.inventoried`, so a
+saved inventory is refused (`AdmissionError.Inventory(InventoryError…)`) unless every attribute
+is of its declared column's kind, every trial's record items agree with its records and
+disposition, every keyed record is listed under its own trial and carries its trial's item, and
+every disposition agrees with its records. A version-3 document must carry its inventory, and
+only a ledger with an inventory may name `NotInInventory` or `InventoryItemConflict`
+(`AdmissionError.UninventoriedCause`); a key layout without a trial label
 cannot carry one (`InventoryError.NoTrialProjection`). A version-3 ledger is pinned by
 [admission-ledger-v3.json](../codec/src/test/resources/eyes4s/admission-ledger-v3.json). `StudyInputRegistry` registers codecs by key
 schema and refuses missing or duplicate registrations. `VersionedCodec.trials` is the generic

@@ -16,6 +16,7 @@
 
 package eyes4s.codec
 
+import eyes4s.kernel.Hz
 import eyes4s.plan.*
 
 /** The pinned version-3 admission ledger: a trial-keyed admission joined to
@@ -94,119 +95,141 @@ object LedgerV3Fixtures:
   private val zeroSamples = AdmissionReason.Number("n", "0", "a positive integer")
 
   def ledger: AdmissionLedger[TrialKey] =
-    val base = get(
-      AdmissionLedger.decide(
-        SourceRef.of("fixations.csv", header, rows),
-        header,
-        Vector(
-          SourceRecord(2, Disposition.Admitted(key(e1, "beach"), 1)),
-          SourceRecord(3, Disposition.Admitted(key(e1, "beach"), 2)),
-          SourceRecord(4, Disposition.Rejected(rows(2), Some(key(e2, "dog")), zeroSamples)),
-          SourceRecord(5, Disposition.Rejected(rows(3), Some(key(r3, "beach")), zeroSamples)),
-          SourceRecord(
-            6,
-            Disposition.Rejected(
-              rows(4),
-              Some(key(r3, "beach")),
-              AdmissionReason.Quarantined(Vector(5, 6), QuarantineCause.RejectedRecords)
-            )
-          ),
-          SourceRecord(
-            7,
-            Disposition.Rejected(
-              rows(5),
-              Some(key(x9, "tower")),
-              AdmissionReason.Quarantined(
-                Vector(7),
-                QuarantineCause.NotInInventory("P2", "Encoding", "x9", 1)
-              )
-            )
-          ),
-          SourceRecord(
-            8,
-            Disposition.Rejected(
-              rows(6),
-              Some(key(r4, "bridge")),
-              AdmissionReason.Quarantined(
-                Vector(8),
-                QuarantineCause.InventoryItemConflict("bridge", Vector("lake"))
-              )
+    val records =
+      Vector(
+        SourceRecord(2, Disposition.Admitted(key(e1, "beach"), 1)),
+        SourceRecord(3, Disposition.Admitted(key(e1, "beach"), 2)),
+        SourceRecord(4, Disposition.Rejected(rows(2), Some(key(e2, "dog")), zeroSamples)),
+        SourceRecord(5, Disposition.Rejected(rows(3), Some(key(r3, "beach")), zeroSamples)),
+        SourceRecord(
+          6,
+          Disposition.Rejected(
+            rows(4),
+            Some(key(r3, "beach")),
+            AdmissionReason.Quarantined(Vector(5, 6), QuarantineCause.RejectedRecords)
+          )
+        ),
+        SourceRecord(
+          7,
+          Disposition.Rejected(
+            rows(5),
+            Some(key(x9, "tower")),
+            AdmissionReason.Quarantined(
+              Vector(7),
+              QuarantineCause.NotInInventory("P2", "Encoding", "x9", 1)
             )
           )
         ),
-        AdmissionDecision.ReviewExclusions,
-        AdmissionPolicy.default[TrialKey],
-        Vector.empty
+        SourceRecord(
+          8,
+          Disposition.Rejected(
+            rows(6),
+            Some(key(r4, "bridge")),
+            AdmissionReason.Quarantined(
+              Vector(8),
+              QuarantineCause.InventoryItemConflict("bridge", Vector("lake"))
+            )
+          )
+        )
       )
-    )
     val inventory = get(
       InventoryLedger.of(
         SourceRef.of("trials.csv", inventoryHeader, inventoryRows),
         inventoryHeader,
         Vector(
-          InventoryTrial(
-            e1,
-            Vector(2),
-            Some("beach"),
-            row(
-              missing,
-              AttributeValue.Integer(9007199254740993L),
-              AttributeValue.Number(0.5),
-              "image"
-            ),
-            Vector("beach"),
-            Vector(2, 3),
-            TrialDisposition.Admitted
-          ),
-          InventoryTrial(
-            e2,
-            Vector(3),
-            Some("dog"),
-            row(missing, AttributeValue.Integer(-3L), missing, "image"),
-            Vector("dog"),
-            Vector(4),
-            TrialDisposition.NoFixations
-          ),
-          InventoryTrial(
-            r3,
-            Vector(4),
-            Some("beach"),
-            row(
-              AttributeValue.Text("Remembered"),
-              missing,
-              AttributeValue.Number(1.25),
-              "cross"
-            ),
-            Vector("beach"),
-            Vector(5, 6),
-            TrialDisposition.Quarantined(QuarantineCause.RejectedRecords)
-          ),
-          InventoryTrial(
-            r4,
-            Vector(5),
-            Some("bridge"),
-            row(AttributeValue.Text("Forgotten"), missing, missing, "cross"),
-            Vector("lake"),
-            Vector(8),
-            TrialDisposition.Quarantined(
-              QuarantineCause.InventoryItemConflict("bridge", Vector("lake"))
+          AttributeColumn("response", AttributeKind.Text),
+          AttributeColumn("count", AttributeKind.Integer),
+          AttributeColumn("weight", AttributeKind.Number),
+          AttributeColumn("kind", AttributeKind.Text)
+        ),
+        Vector(
+          get(
+            InventoryTrial.of(
+              e1,
+              Vector(2),
+              Some("beach"),
+              row(
+                missing,
+                AttributeValue.Integer(9007199254740993L),
+                AttributeValue.Number(0.5),
+                "image"
+              ),
+              Vector("beach"),
+              Vector(2, 3),
+              TrialDisposition.Admitted
             )
           ),
-          InventoryTrial(
-            r5,
-            Vector(6),
-            Some("desert"),
-            row(AttributeValue.Text("Forgotten"), missing, missing, "cross"),
-            Vector.empty,
-            Vector.empty,
-            TrialDisposition.Absent
+          get(
+            InventoryTrial.of(
+              e2,
+              Vector(3),
+              Some("dog"),
+              row(missing, AttributeValue.Integer(-3L), missing, "image"),
+              Vector("dog"),
+              Vector(4),
+              TrialDisposition.NoFixations
+            )
+          ),
+          get(
+            InventoryTrial.of(
+              r3,
+              Vector(4),
+              Some("beach"),
+              row(
+                AttributeValue.Text("Remembered"),
+                missing,
+                AttributeValue.Number(1.25),
+                "cross"
+              ),
+              Vector("beach"),
+              Vector(5, 6),
+              TrialDisposition.Quarantined(QuarantineCause.RejectedRecords)
+            )
+          ),
+          get(
+            InventoryTrial.of(
+              r4,
+              Vector(5),
+              Some("bridge"),
+              row(AttributeValue.Text("Forgotten"), missing, missing, "cross"),
+              Vector("lake"),
+              Vector(8),
+              TrialDisposition.Quarantined(
+                QuarantineCause.InventoryItemConflict("bridge", Vector("lake"))
+              )
+            )
+          ),
+          get(
+            InventoryTrial.of(
+              r5,
+              Vector(6),
+              Some("desert"),
+              row(AttributeValue.Text("Forgotten"), missing, missing, "cross"),
+              Vector.empty,
+              Vector.empty,
+              TrialDisposition.Absent
+            )
           )
         ),
-        Vector(UnlistedTrial(x9, Vector("tower"), Vector(7))),
+        Vector(get(UnlistedTrial.of(x9, Vector("tower"), Vector(7)))),
+        Vector(AttributeColumn("pupil", AttributeKind.Number)),
         Vector(
-          RecordAttributes(2, attributes("pupil" -> AttributeValue.Number(3.25))),
-          RecordAttributes(3, attributes("pupil" -> AttributeValue.Blank))
-        )
+          get(RecordAttributes.of(2, attributes("pupil" -> AttributeValue.Number(3.25)))),
+          get(RecordAttributes.of(3, attributes("pupil" -> AttributeValue.Blank)))
+        ),
+        SampleCountRule.DerivedFromDuration(get(Hz(500)))
       )
     )
-    get(base.withInventory(inventory, TrialIdentity.of, _.item))
+    get(
+      AdmissionLedger.inventoried(
+        SourceRef.of("fixations.csv", header, rows),
+        header,
+        records,
+        AdmissionOutcome.ReviewedExclusions,
+        AdmissionPolicy.default[TrialKey],
+        Vector.empty,
+        inventory,
+        TrialIdentity.of,
+        _.item
+      )
+    )

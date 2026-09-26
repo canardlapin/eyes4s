@@ -1036,6 +1036,25 @@ object Diagnostics:
         diagnostic(C.inventory, e, e.message, Vector(Locus.Definition(layout)))(
           definition(layout)
         )
+      case RecordItems(trial, disposition, items) =>
+        diagnostic[Nothing](C.inventory, e, e.message)(
+          name(trial),
+          token(disposition),
+          names(items)
+        )
+      case AttributeNames(owner, declared, found) =>
+        diagnostic[Nothing](C.inventory, e, e.message)(
+          name(owner),
+          names(declared),
+          names(found)
+        )
+      case AttributeKindMismatch(owner, attribute, declared, found) =>
+        diagnostic[Nothing](C.inventory, e, e.message)(
+          name(owner),
+          name(attribute),
+          token(declared),
+          token(found)
+        )
 
   def admission(e: AdmissionError): Diagnostic[Nothing] =
     import AdmissionError.*
@@ -1093,6 +1112,9 @@ object Diagnostics:
       case Inventory(underlying) =>
         val inner = inventory(underlying)
         diagnostic(C.admission, e, e.message, inner.subject)(cause(inner))
+      case UninventoriedCause(number, value) =>
+        val inner = quarantine(value)
+        diagnostic(C.admission, e, e.message, record(number))(int(number), cause(inner))
 
   /** A ledger refusal resolved against its input: the admission error's
     * code and operands, with the trials it concerns named by key and linked

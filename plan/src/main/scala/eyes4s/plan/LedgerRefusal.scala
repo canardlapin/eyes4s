@@ -70,6 +70,7 @@ object LedgerRefusal:
       case FixationCount(index, _, _)       => (Vector.empty, atPosition(index))
       case OutsideFrameRecord(record, _)    => (Vector(record), named(record))
       case CorrectionConflict(record, _, _) => (Vector(record), named(record))
+      case UninventoriedCause(record, _)    => (Vector(record), named(record))
       case Inventory(underlying)            =>
         // The ledger's own records the inventory error names; inventory
         // records and records the ledger lacks are not ledger sources.

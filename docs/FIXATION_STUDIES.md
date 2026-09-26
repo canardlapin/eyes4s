@@ -84,29 +84,39 @@ Studio fixture. Both tables are read under declared columns only: a column no de
 never read, and no role is inferred.
 
 - `TrialColumns.of(participant, phase, trial, occurrence)` names the trial identity both tables
-  share (occurrence 1 when no column is named). Records join inventory trials on the whole
-  identity, `TrialIdentity`; the item is not part of it.
+  share (occurrence 1 when no column is named). As on the key route, the label (participant,
+  phase and trial) identifies a trial and the occurrence is checked against it, not joined on:
+  two inventory records of one label with different occurrences are a `Conflict`, and records of
+  an inventory label that name another occurrence quarantine the trial with
+  `QuarantineCause.OccurrenceConflict(occurrences)`, naming the inventory's and the records'.
 - `TrialInventory.read(contents, TrialInventoryColumns.of(trial, item, attributes))` reads the
   inventory. It is a declaration, so any defective record refuses it with a
-  `FixationImportError.Inventory(InventoryError…)` naming the record: a wrong width, a blank
+  `FixationImportError.Inventory(errors)` listing every defect, each an `InventoryError` naming
+  its record and column: a wrong width, a blank
   identity field or item, an occurrence that is not a positive integer, an attribute not of its
   declared kind, or two records that declare one participant, phase and trial label with different
-  values (`Conflict`, naming the records and the differing columns). Identical repeated records
-  collapse into one trial and never multiply its fixations.
+  values (`Conflict`, naming the records and the differing columns). Repeated records whose
+  parsed values are equal (`1` and `1.0`, occurrence `1` and `01`) collapse into one trial and
+  never multiply its fixations.
 - `FixationTable.of(trial, ordinal, x, y, TimeColumns(onset, duration, unit), samples, item,
   attributes)` declares the fixation table. The `TimestampUnit` is a required part of
   `TimeColumns`; there is no default and no inference. `SampleCountRule` states the support rule:
   `PositiveColumn(name)` reads counts from a column and rejects a record whose count is not a
-  positive integer, 0 included; `FromDuration(rate)` is for tables without a count column and
-  gives each record its duration times the declared rate, rounded up.
+  positive integer, 0 included; `DerivedFromDuration(rate)` is for tables without a count
+  column and gives each record its duration times the declared rate, rounded up. The rule is
+  recorded in the ledger, because the counts are part of the study input's identity.
 - Attributes are `AttributeColumn(name, kind)` with kind `Text`, `Integer` or `Number`; an empty
-  cell is `AttributeValue.Blank`. Inventory attributes belong to the trial
+  cell is `AttributeValue.Blank`. Integers and numbers follow a strict decimal grammar (an
+  optional sign, digits, and for numbers a fraction and exponent); whitespace, type suffixes,
+  hexadecimal and non-finite spellings are refused. Inventory attributes belong to the trial
   (`ledger.inventory.attributes(key)`, `imported.attributes(key)`); fixation-table attributes
   belong to each admitted record (`imported.recordAttributes`). A fixation attribute of the wrong
   kind rejects its record.
 
 The trial's item is the inventory's when the inventory declares an item column, otherwise the one
 item its records name; at least one table must declare one (`FixationImportError.NoItemColumn`).
+A blank record item cell never detaches its record from its trial: with an inventory item it
+takes that item, and without one it rejects the record, which keeps its key and its trial.
 Records that name several items quarantine the trial with `QuarantineCause.ItemConflict(items)`;
 records that name another item than the inventory's quarantine it with
 `InventoryItemConflict(inventory, records)`. Either way the trial's records are reported under the
