@@ -277,8 +277,9 @@ final case class TrialInputState private (
 
   /** The feedback rings to draw, in order: the selection, the hover ring,
     * then the focus ring last, and only while the view has keyboard focus. A
-    * ring's radius is where its innermost band starts; a focus ring on a
-    * selected mark starts outside the selection ring, so both stay visible.
+    * ring's radius is where its innermost band starts; a hover or focus ring
+    * on a selected mark starts outside the selection ring, so both stay
+    * visible.
     */
   def overlay(targets: TrialTargets): Vector[OverlayRing] =
     selectionRings(targets) ++ pointerRings(targets)
@@ -304,7 +305,8 @@ final case class TrialInputState private (
       ref: StudioRef.Fixation
   ): Option[OverlayRing] =
     val outside =
-      if kind == RingKind.Focus && selected.contains(ref) then 2.0 * OverlayRings.SelectedBandPx
+      if kind != RingKind.Selected && selected.contains(ref) then
+        2.0 * OverlayRings.SelectedBandPx
       else 0.0
     targets
       .target(ref)

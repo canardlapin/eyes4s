@@ -166,6 +166,29 @@ class RovingCursorSuite extends ScalaCheckSuite:
       }
   }
 
+  test("inside two overlapping hollow rings, the later-drawn mark wins the centre fallback") {
+    // Two 900 ms control rings (radius 12 px) 5 px apart: the earlier ring's
+    // centre is inside both rings and on neither outline.
+    val fs = Vector((900.0, 500.0), (905.0, 500.0)).zipWithIndex.map { case ((x, y), i) =>
+      right(
+        TrialFixation.of(ret07, right(FixationIndex.of(i + 1)), x, y, 900, WindowSide.Inside)
+      )
+    }
+    for scale <- List(1.0, 2.0) do
+      val t                      = targets(fs, MarkStyle.Role(TrialRole.Control), scale)
+      val Vector(earlier, later) = t.targets: @unchecked
+      assert(
+        math.hypot(later.anchor.x - earlier.anchor.x, later.anchor.y - earlier.anchor.y) <
+          later.radiusDevicePx - 2.0 * scale
+      )
+      assertEquals(right(t.pick(earlier.anchor, 0.5 * scale)).map(_.ref), Some(later.ref))
+      assertEquals(right(t.pick(later.anchor, 0.5 * scale)).map(_.ref), Some(later.ref))
+      // On the earlier ring's own outline, away from the later ring, the
+      // painted hit still wins.
+      val onEarlier = DevicePoint(earlier.anchor.x - earlier.radiusDevicePx, earlier.anchor.y)
+      assertEquals(right(t.pick(onEarlier, 0.5 * scale)).map(_.ref), Some(earlier.ref))
+  }
+
   test("a hit on a control mark's casing resolves to that mark, not to a casing target") {
     for scale <- List(1.0, 2.0) do
       val t = targets(marks = MarkStyle.Role(TrialRole.Control), scale = scale)

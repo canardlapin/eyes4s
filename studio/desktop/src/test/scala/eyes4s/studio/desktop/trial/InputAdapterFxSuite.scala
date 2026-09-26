@@ -362,6 +362,48 @@ class InputAdapterFxSuite extends StudioFxSuite:
 
   // --- Projection -----------------------------------------------------------------
 
+  fxStage.test("hover on a selected mark rings outside the selection, in both themes") { fx =>
+    Theme.values.foreach { theme =>
+      val w      = Wired(viewIn(fx))
+      val (f, t) = showAndDraw(w, input(ret07, ret07Fix, theme = theme), 2.0)
+      val target = t.targets(4)
+      selectByOther(w, target.ref, 0L)
+      runOnFx(mouse(w, MouseEvent.MOUSE_MOVED, local(f, target.anchor)))
+      val rings = runOnFx(w.adapter.state.overlay(t))
+      assertEquals(rings.map(_.kind), Vector(RingKind.Selected, RingKind.Hover))
+      val Vector(selected, hover) = rings: @unchecked
+      val k                       = 2.0
+      // The hover ring starts outside both selection bands.
+      assertEqualsDouble(
+        hover.radius - selected.radius,
+        2.0 * OverlayRings.SelectedBandPx * k,
+        1e-9
+      )
+      val image = snapshotHost(w, 2)
+      val inner = Tokens.themed(theme, ThemedToken.SelRingInner)
+      val outer = Tokens.themed(theme, ThemedToken.Ink)
+      val onHov = Tokens.staged(StageVariant.Dark, StageToken.OnStage)
+      val band  = OverlayRings.SelectedBandPx * k
+      // Both selection bands keep their colours under the hover ring ...
+      assert(
+        onCircle(image, selected.centre, selected.radius + band / 2.0, inner) >= 16,
+        s"$theme: the selection's inner band is painted over"
+      )
+      assert(
+        onCircle(image, selected.centre, selected.radius + 1.5 * band, outer) >= 16,
+        s"$theme: the selection's outer band is painted over"
+      )
+      // ... and the hover ring shows outside them.
+      assert(
+        onCircle(image, hover.centre, hover.radius + OverlayRings.HoverPx / 2.0 * k, onHov) >=
+          16,
+        s"$theme: no hover ring"
+      )
+      runOnFx(w.adapter.dispose())
+      runOnFx(w.view.dispose())
+    }
+  }
+
   fxStage.test("a selection projected from the bus draws the ring without emitting") { fx =>
     val w      = Wired(viewIn(fx))
     val (_, t) = showAndDraw(w, input(ret07, ret07Fix), 2.0)
