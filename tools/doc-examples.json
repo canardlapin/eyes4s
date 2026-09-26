@@ -39,6 +39,7 @@
     "docs/formats/eyelink-asc.md": "public guide",
     "docs/formats/eyelink-corpus.md": "public guide",
     "docs/formats/eyelink-oracles.md": "public guide",
+    "docs/plans/CORE_READINESS_PLAN.md": "internal decision or historical evidence",
     "docs/plans/EYESIM_BASELINE_PLAN.md": "internal decision or historical evidence",
     "README.md": "public overview",
     "site-docs/concepts.md": "executed mdoc site",
