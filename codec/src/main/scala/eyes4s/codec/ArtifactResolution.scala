@@ -164,6 +164,11 @@ enum RelationMismatch derives CanEqual:
     */
   case ReportRecomputed(part: String, stored: String, recomputed: String)
 
+  /** The plan's method names score components `planned`, the result's method
+    * `result`: the result was not scored by the plan's method.
+    */
+  case ReportComponents(planned: Vector[String], result: Vector[String])
+
   def message: String = this match
     case Prerequisites(errors)        => errors.map(_.message).mkString(" ")
     case ResultInput(expected, found) =>
@@ -197,6 +202,8 @@ enum RelationMismatch derives CanEqual:
         s"stored $stored, recomputed $recomputed."
     case ReportRecomputed(part, stored, recomputed) =>
       s"Re-evaluating the report gives other $part: stored $stored, recomputed $recomputed."
+    case ReportComponents(planned, result) =>
+      s"The plan's method scores components $planned, but the result's method scores $result."
 
 /** Why a manifest or one of its artifacts was refused. Every case names the
   * manifest address, the entry or the relation at fault; integrity cases are

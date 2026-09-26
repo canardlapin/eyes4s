@@ -110,7 +110,8 @@ object CodecDiagnosticCatalog:
     "ReportLedger",
     "ReportMembers",
     "ReportCell",
-    "ReportRecomputed"
+    "ReportRecomputed",
+    "ReportComponents"
   )
   val manifest: DiagnosticFamily = error("manifest")(
     "InvalidName",
@@ -446,6 +447,8 @@ private[codec] object CodecProjections:
         )
       case ReportRecomputed(part, stored, recomputed) =>
         diagnostic[Any](C.relation, e, e.message)(token(part), text(stored), text(recomputed))
+      case ReportComponents(planned, result) =>
+        diagnostic[Any](C.relation, e, e.message)(names(planned), names(result))
 
   def manifest(e: ManifestError): Diagnostic[Nothing] =
     import ManifestError.*

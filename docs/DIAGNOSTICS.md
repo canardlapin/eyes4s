@@ -1456,6 +1456,7 @@ fails after rewriting, so review the change and run it again.
 | `relation.report-members` | `ReportMembers` | `scale`, `unknown` |
 | `relation.report-cell` | `ReportCell` | `group`, `role`, `component`, `stored`, `recomputed` |
 | `relation.report-recomputed` | `ReportRecomputed` | `part`, `stored`, `recomputed` |
+| `relation.report-components` | `ReportComponents` | `planned`, `result` |
 
 ### `manifest` — `ManifestError`
 

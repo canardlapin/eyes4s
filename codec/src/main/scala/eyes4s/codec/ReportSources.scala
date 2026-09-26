@@ -101,9 +101,9 @@ object ReportSources:
     * differing part. Only window tallies and a linear reduction are
     * recomputed; no pair is scored.
     *
-    * The resolver calls this only when `result` carries `plan`'s description,
-    * which names the plan's method and parameters; the result's score and
-    * difference types are then the plan's.
+    * No type is assumed shared between the plan and the result: the plan
+    * supplies the layout, window tallies and covariates, and the result is
+    * reduced through its own method's score schema.
     */
   private[codec] def reevaluate[K, U <: Unit2D](
       plan: LoadedStudy[K, U],
@@ -112,27 +112,40 @@ object ReportSources:
       ledger: Option[AdmissionLedger[K]],
       stored: Report[K]
   ): Option[RelationMismatch] =
-    val computed =
-      result.result.asInstanceOf[StudyResult[K, U, plan.Score, plan.Difference]]
-    val recomputed = for
+    // The result is read with its own method's components: the plan's
+    // parameters, re-read by the result codec's parameter codec, give the
+    // result method's score schema, typed by the result's scores. The plan's
+    // and the result's methods must name the same components.
+    val planComponents = ScoreSchema.study(plan.plan).map(_.ids)
+    val resultSchema   = plan.parametersDocument.flatMap(result.scoreSchema)
+    val components     = (planComponents, resultSchema) match
+      case (Right(planned), Right(schema)) if planned != schema.ids =>
+        Some(RelationMismatch.ReportComponents(planned, schema.ids))
+      case _ => None
+    lazy val recomputed = for
+      schema     <- resultSchema
       covariates <- CovariateSchema
         .of(stored.spec.covariates)
         .left
         .map(e => CodecError.Covariates(e))
-      table  <- covariateTable(plan.plan, input, ledger, covariates)
-      source <- ReportSource
-        .study(plan.plan, input, computed, table, stored.binding)
-        .left
-        .map(CodecError.Report.apply)
+      table <- covariateTable(plan.plan, input, ledger, covariates)
+      source = ReportSource.of(
+        result.result,
+        plan.plan.layout,
+        plan.plan.windowTallies(input),
+        table,
+        schema,
+        stored.binding
+      )
       report <- Report.evaluate(stored.spec, source).left.map(CodecError.Report.apply)
     yield report
-    recomputed match
+    components.orElse(recomputed match
       case Left(error) =>
         Some(
           RelationMismatch.ReportRecomputed("evaluation", "the stored report", error.message)
         )
       case Right(fresh) if fresh == stored => None
-      case Right(fresh)                    => Some(difference(stored, fresh))
+      case Right(fresh)                    => Some(difference(stored, fresh)))
 
   /** The first cell (by position) that differs, else the first other part. */
   private def difference[K](stored: Report[K], fresh: Report[K]): RelationMismatch =

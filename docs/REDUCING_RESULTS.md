@@ -151,7 +151,11 @@ ledger (`ReportBinding(field, bound, stored)`). It then re-evaluates the specifi
 decoded documents (window tallies and a linear reduction; no pair is scored) and requires the
 stored report to be exactly the result, refusing the first differing cell as
 `ReportCell(group, role, component, stored, recomputed)`, or else the first differing part (groups,
-contrasts, accounting or findings) as `ReportRecomputed(part, stored, recomputed)`. A hand-edited
+contrasts, accounting or findings) as `ReportRecomputed(part, stored, recomputed)`. The result is
+read through its own method's score schema (the plan's parameters re-read by the result codec, so
+no type is assumed shared between the plan and result registries); when the plan's method and the
+result's method name different score components, the report is refused as
+`ReportComponents(planned, result)`. A hand-edited
 estimate, or a report written by another reduction, does not resolve.
 
 A cell's members are always the cell role's rows at the report's scale: `Report.reconstruct`,
