@@ -78,9 +78,20 @@ import scala.deriving.Mirror
   * | temporal inspect metadata loses the boundary field      | TemporalStudy inspect               |
   * | TemporalStudyCodec reads back only the first window     | TemporalStudy archive               |
   * | BaselineExports tables lose every row                   | FixationStudy, TemporalStudy table  |
+  * | ContrastCsv drops the last contrast row of each scale    | FixationStudy, TemporalStudy table  |
+  * | ContrastCsv writes negated differences                  | FixationStudy, TemporalStudy table  |
+  * | TemporalContrastCsv drops a trial's coverage row        | TemporalStudy table                 |
   * | the runner numbers the first step 2                     | every family's execution checks     |
   * | the runner's between-step hook is uncancelable          | every family's cancellation check   |
   * }}}
+  *
+  * The table obligation compares each table with what the result implies: the
+  * contrast table's row count (one row per failed scale, else one per contrast
+  * row) and its `difference` column in row order, and the coverage table's
+  * row count (one per trial and cell). `BaselineExports.contrasts` is not a
+  * projection of any family's result (it takes `CompareError` sources, a study
+  * result retains `StudyFailure` ones), so a mutant there is
+  * `BaselineExportsSuite`'s to kill, not this suite's.
   */
 class FamilyConformanceSuite extends munit.FunSuite:
   import FamilyWitness.*
@@ -172,8 +183,22 @@ class FamilyConformanceSuite extends munit.FunSuite:
 
     test(s"$name: the result projects to a table, or the gap is named") {
       w.table() match
-        case Right(tables) => assert(tables.nonEmpty && tables.forall(_.rows.nonEmpty), tables)
-        case Left(gap)     => assertEquals(gap.obligation, Obligation.Table)
+        case Right(tables) =>
+          assert(tables.nonEmpty)
+          tables.foreach { t =>
+            val clue = t.table.family
+            assertEquals(t.table.rows.size, t.rows, clue)
+            t.differences.foreach { expected =>
+              val column = t.table.columns.indexWhere(_.name == "difference")
+              assert(column >= 0, clue)
+              val written = t.table.rows.collect(_(column) match
+                case ResultCell.Number(v) => v)
+              assertEquals(written, expected, clue)
+              // Not vacuous: the fixture has differences a sign flip would change.
+              assert(expected.exists(_ != 0.0), s"$clue differences $expected")
+            }
+          }
+        case Left(gap) => assertEquals(gap.obligation, Obligation.Table)
     }
   }
 
@@ -212,7 +237,8 @@ abstract class FamilyWitness[F](val family: F & RecipeFamily):
       document: Json
   ): Either[CodecError, (Vector[(String, Vector[Provenance.Param])], Json)]
 
-  def tables(result: Result): Either[Gap, Either[ResultExportError, Vector[ResultTable]]]
+  /** The result's tables, each with the row count and differences the result implies. */
+  def tables(result: Result): Either[Gap, Either[ResultExportError, Vector[Tabulated]]]
 
   final def gaps: Vector[Gap] =
     run.toOption.toVector.flatMap(r => tables(r).left.toOption)
@@ -314,13 +340,35 @@ abstract class FamilyWitness[F](val family: F & RecipeFamily):
     val document = get(archived(get(run)))
     check(get(rearchived(document)) == document, "the result re-encodes differently")
 
-  final def table(): Either[Gap, Vector[ResultTable]] =
+  final def table(): Either[Gap, Vector[Tabulated]] =
     tables(get(run)).map(get)
 
 object FamilyWitness:
   /** An obligation of the definition of done. */
   enum Obligation derives CanEqual:
     case Inspect, Preflight, Stepwise, Execution, Archive, Table
+
+  /** A projected table with what the result says it must hold: its row
+    * count and, for a contrast table, the finite differences of the
+    * `difference` column in row order.
+    */
+  final case class Tabulated(table: ResultTable, rows: Int, differences: Option[Vector[Double]])
+
+  /** A study result's contrast rows: one per scale that failed, else one per
+    * contrast row (similarity has one component), and its finite differences.
+    */
+  def contrastRows[K, U <: Unit2D](
+      result: StudyResult[K, U, Similarity, SignedDifference]
+  ): (Int, Vector[Double]) =
+    result.scales.foldLeft((0, Vector.empty[Double])) { case ((rows, differences), scale) =>
+      scale.contrast match
+        case Left(_)         => (rows + 1, differences)
+        case Right(contrast) =>
+          (
+            rows + contrast.rows.size,
+            differences ++ contrast.rows.flatMap(_.difference.toOption.map(_.value))
+          )
+    }
 
   /** An obligation the family does not meet yet, and why. */
   final case class Gap(obligation: Obligation, reason: String)
@@ -534,7 +582,10 @@ object FamilyWitnesses:
         Right(
           BaselineExports
             .study(studyPlan, result, plans, ScoreColumns.similarity)
-            .map(Vector(_))
+            .map { table =>
+              val (rows, differences) = contrastRows(result)
+              Vector(Tabulated(table, rows, Some(differences)))
+            }
         )
 
   given recording: FamilyWitness[RecipeFamily.EventRecording.type] =
@@ -611,4 +662,15 @@ object FamilyWitnesses:
       def reloadedPlan(document: Json) =
         plans.codec.decode(document).flatMap(p => plans.codec.encode(p).map(p.description -> _))
       def tables(result: Result) =
-        Right(BaselineExports.temporal(temporalPlan, result, plans, ScoreColumns.similarity))
+        Right(
+          BaselineExports.temporal(temporalPlan, result, plans, ScoreColumns.similarity).map {
+            tables =>
+              val contrasts = result.cells.map(cell => contrastRows(cell.result))
+              val coverage  = result.cells.map(_.occupancy.size).sum
+              tables.map {
+                case t if t.family == ResultFamily.TemporalContrasts =>
+                  Tabulated(t, contrasts.map(_._1).sum, Some(contrasts.flatMap(_._2)))
+                case t => Tabulated(t, coverage, None)
+              }
+          }
+        )
