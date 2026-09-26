@@ -800,6 +800,25 @@ object DiagnosticCatalog:
     "InvalidCoverage",
     "InsufficientTotal"
   )
+  val fixationEntropy: DiagnosticFamily = error("fixation-entropy")(
+    "FrameMismatch",
+    "DegenerateLattice",
+    "InvalidPadding",
+    "LatticeBounds",
+    "FixationOutsideLattice",
+    "NoOccupancy",
+    "Occupancy",
+    "Bandwidth",
+    "Estimate",
+    "NoScales",
+    "DuplicateScale",
+    "ScaleGrid",
+    "MissingScaleWeight",
+    "UnknownScaleWeight",
+    "InvalidScaleWeight",
+    "DegenerateScaleWeights",
+    "NonFinitePosition"
+  )
 
   /** Every family, grouped as documented. */
   val families: Vector[DiagnosticFamily] = Vector(
@@ -890,7 +909,8 @@ object DiagnosticCatalog:
     recipeParameter,
     repetitionPlan,
     diagnosticCode,
-    massLevel
+    massLevel,
+    fixationEntropy
   )
 
   /** Every stable code, in catalog order. */

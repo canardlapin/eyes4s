@@ -223,6 +223,9 @@ object Diagnose:
     derived(C.diagnosticCode)(_.message)
   given massLevel: Diagnose[MassLevelError, Nothing] = derived(C.massLevel)(_.message)
 
+  given fixationEntropy: Diagnose[FixationEntropyError, Nothing] =
+    derived(C.fixationEntropy)(_.message)
+
   /** An epoch error names its trial by key; the mark kind of its selector is
     * the application's own value and is carried as text.
     */

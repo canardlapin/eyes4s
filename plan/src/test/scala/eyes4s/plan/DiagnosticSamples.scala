@@ -859,5 +859,6 @@ object DiagnosticSamples:
     generated[RecipeParameterError]("RecipeParameterError"),
     generated[RepetitionPlanError]("RepetitionPlanError"),
     generated[DiagnosticCodeError]("DiagnosticCodeError"),
-    generated[MassLevelError]("MassLevelError")
+    generated[MassLevelError]("MassLevelError"),
+    generated[FixationEntropyError]("FixationEntropyError")
   )

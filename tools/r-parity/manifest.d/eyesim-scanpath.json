@@ -10,7 +10,7 @@
     },
     "scanpath-reference": {
       "path": "tools/r-parity/fixtures/scanpath.json",
-      "sha256": "1e33db8aa1ed30247b9b17e5c4f9602eec0fdd283473a66346df518683141fa7",
+      "sha256": "ad13583eea633f212afa4140469e5089703e3aa232f7c51697b04578558ee871",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Exported R route, analytic oracles, solver plans and retained failure evidence"
     },
