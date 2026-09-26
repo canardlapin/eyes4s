@@ -10,7 +10,7 @@
     },
     "export-receipt": {
       "path": "tools/result-export/receipt-v1.json",
-      "sha256": "4926beab5445c7a71bad2ea3cca3886f47ff095d92c9f44ba9ac9e7991a2b6a6",
+      "sha256": "bd4b4a08a2cc63a43eb1fefe2b317c9297dc27873c1b28b91f70c2fd3e958779",
       "license": "Apache-2.0; synthetic public export examples authored for eyes4s",
       "role": "Frozen canonical export schemas, emitted artifact receipt or independent reader"
     },
