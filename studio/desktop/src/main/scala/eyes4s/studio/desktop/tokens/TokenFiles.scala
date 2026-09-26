@@ -1,0 +1,110 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eyes4s.studio.desktop.tokens
+
+import eyes4s.studio.app.tokens.{Theme, TokenCss}
+
+import java.nio.charset.StandardCharsets.UTF_8
+import java.nio.file.{Files, Path, Paths}
+
+/** One generated file: where it lives, relative to the build root, and what it
+  * must contain.
+  */
+final case class GeneratedFile(relativePath: String, content: String)
+
+/** Why a generated file does not match the token source. */
+enum TokenFileProblem:
+  case Missing(file: String)
+  case Stale(file: String)
+
+  def message: String = this match
+    case Missing(f) => s"$f is missing; run `sbt studioTokens`"
+    case Stale(f)   => s"$f differs from the token source; run `sbt studioTokens`"
+
+/** The checked-in files generated from `eyes4s.studio.app.tokens.Tokens`
+  * (ticket S1.1): the JavaFX stylesheet of each theme, shipped as resources of
+  * this project, and the web custom properties under `docs/studio/tokens/`,
+  * checked in CI and not shipped.
+  *
+  * `sbt studioTokens` rewrites them; `sbt studioTokensCheck` and
+  * `TokenFilesSuite` fail when one is stale.
+  */
+object TokenFiles:
+
+  /** Where JavaFX loads the stylesheets from, on the classpath. */
+  val resourceDirectory: String = "eyes4s/studio/desktop"
+
+  /** The classpath resource of a theme's stylesheet. */
+  def stylesheetResource(theme: Theme): String =
+    s"$resourceDirectory/${TokenCss.javaFxFileName(theme)}"
+
+  /** Every generated file. */
+  val files: List[GeneratedFile] =
+    Theme.values.toList.map { theme =>
+      GeneratedFile(
+        s"studio/desktop/src/main/resources/${stylesheetResource(theme)}",
+        TokenCss.javaFx(theme)
+      )
+    } :+ GeneratedFile("docs/studio/tokens/studio-tokens.css", TokenCss.web)
+
+  /** The files under `root` that do not match the token source. */
+  def check(root: Path): List[TokenFileProblem] =
+    files.flatMap { f =>
+      val path = root.resolve(f.relativePath)
+      if !Files.isRegularFile(path) then List(TokenFileProblem.Missing(f.relativePath))
+      else if String(Files.readAllBytes(path), UTF_8) != f.content then
+        List(TokenFileProblem.Stale(f.relativePath))
+      else Nil
+    }
+
+  /** Rewrite every generated file under `root`; returns those that changed. */
+  def write(root: Path): List[String] =
+    files.flatMap { f =>
+      val path    = root.resolve(f.relativePath)
+      val current =
+        if Files.isRegularFile(path) then Some(String(Files.readAllBytes(path), UTF_8))
+        else None
+      if current.contains(f.content) then Nil
+      else
+        Files.createDirectories(path.getParent)
+        Files.write(path, f.content.getBytes(UTF_8))
+        List(f.relativePath)
+    }
+
+  /** `--check` (the default) or `--write`, optionally followed by the build
+    * root (default: the working directory).
+    */
+  def main(args: Array[String]): Unit =
+    val (mode, rest) = args.toList match
+      case "--write" :: tail => ("write", tail)
+      case "--check" :: tail => ("check", tail)
+      case other             => ("check", other)
+    val root = Paths.get(rest.headOption.getOrElse(".")).toAbsolutePath.normalize
+    mode match
+      case "write" =>
+        val changed = write(root)
+        println(
+          if changed.isEmpty then "token files are current"
+          else changed.mkString("rewrote:\n  ", "\n  ", "")
+        )
+      case _ =>
+        val problems = check(root)
+        if problems.isEmpty then println(s"${files.size} token files are current")
+        else
+          // The entry point's failure, not a library path: `runMain` reports it
+          // and fails, without ending an unforked sbt the way `sys.exit` would.
+          throw IllegalStateException(problems.map(_.message).mkString("\n"))

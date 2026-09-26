@@ -1012,6 +1012,7 @@ lazy val studioDesktop = project
     Test / fork := true,
     Test / javaOptions ++= studioFxTestOptions((ThisBuild / baseDirectory).value)
   )
+  .settings(studioTokenSettings)
 
 // Snapshots go to <build>/target/studio-snapshots/<suite>/<test>/<theme>-<scale>x.png.
 // java.awt.headless keeps AWT (used only for PNG encoding) off the display. On CI,
@@ -1030,7 +1031,7 @@ lazy val studioProjects     =
 // Everything checkBoundaries runs for studio: the build-level rules, then the
 // resolved-graph rule on each portable studio project.
 lazy val studioBoundaryChecks =
-  "checkStudioBoundaries" +:
+  "checkStudioBoundaries" +: "checkStudioColours" +:
     studioCrossModules.flatMap(m => allPlatforms.map(p => s"$m$p/checkModuleBoundaries"))
 
 addCommandAlias(
@@ -1170,6 +1171,59 @@ studioWorkflowContents := GenerativePlugin.compileWorkflow(
   githubWorkflowConcurrency.value,
   List(studioLinuxJob, studioMacosJob),
   githubWorkflowSbtCommand.value
+)
+
+// Design tokens (S1.1). eyes4s.studio.app.tokens.Tokens is the one colour
+// source; TokenFiles generates the checked-in JavaFX stylesheets and the web
+// custom properties (docs/studio/tokens/) from it. TokenFilesSuite (studioAll)
+// fails when one is stale; `studioTokens` rewrites them. checkStudioColours
+// (checkBoundaries) rejects a literal colour anywhere else in studio sources.
+lazy val checkStudioColours =
+  taskKey[Unit]("Fail on a literal colour in studio sources outside the token source.")
+
+ThisBuild / checkStudioColours := {
+  val log       = streams.value.log
+  val buildRoot = (ThisBuild / baseDirectory).value
+  val selfTest  = NoLiteralColourLint.selfTest
+  if (selfTest.nonEmpty)
+    sys.error(
+      s"""|NoLiteralColourLint self-test failed: a rule no longer detects a planted
+          |literal colour, or flags a clean input.
+          |${selfTest.map("  - " + _).mkString("\n")}""".stripMargin
+    )
+  val found = NoLiteralColourLint.scanTree(buildRoot)
+  if (found.nonEmpty)
+    sys.error(
+      s"""|Literal colour outside the token source.
+          |
+          |${found.map("  - " + _.render).mkString("\n")}
+          |
+          |Use a token: a JavaFX looked-up colour (-es-ink) in CSS, or
+          |eyes4s.studio.app.tokens.Tokens in Scala. Add a new colour to Tokens.scala
+          |and run `sbt studioTokens` (DESIGN_SPEC section 4).""".stripMargin
+    )
+  log.info(
+    "studio colours OK (lint self-test passed; no literal colour outside the token source)"
+  )
+}
+
+lazy val studioTokenSettings = Seq(
+  // TokenFilesSuite compares the checked-in files under the build root.
+  Test / resourceGenerators += Def.task {
+    val out =
+      (Test / resourceManaged).value / "eyes4s" / "studio" / "desktop" / "build-root.txt"
+    IO.write(out, (ThisBuild / baseDirectory).value.getAbsolutePath)
+    Seq(out)
+  }.taskValue
+)
+
+addCommandAlias(
+  "studioTokens",
+  "studioDesktop/runMain eyes4s.studio.desktop.tokens.TokenFiles --write"
+)
+addCommandAlias(
+  "studioTokensCheck",
+  "studioDesktop/runMain eyes4s.studio.desktop.tokens.TokenFiles --check"
 )
 
 // ---------------------------------------------------------------------------
