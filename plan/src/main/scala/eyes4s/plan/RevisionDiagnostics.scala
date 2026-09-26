@@ -57,11 +57,11 @@ object RevisionDiagnostics:
     e match
       case DuplicateField(field) =>
         diagnostic(C.studyRevision, e, e.message, at(field))(token(field.toString))
-      case Stale(field, expected, found) =>
+      case Stale(field, stated, current) =>
         diagnostic(C.studyRevision, e, e.message, at(field))(
           token(field.toString),
-          text(expected),
-          text(found)
+          text(stated),
+          text(current)
         )
       case IncompleteWindow(window, offWindow) =>
         diagnostic(C.studyRevision, e, e.message, at(StudyField.Window))(

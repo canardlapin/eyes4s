@@ -51,7 +51,7 @@ enum Remedy derives CanEqual:
     SupplyViewingGeometry, SupplyCommonMarks, ReviseSynchronizationMarks, ReviseViewingOrArea,
     ReviseDetectorParameters, SupplyEpoch, ReviseWindow, AcceptMissingObservation,
     ReviewAnalysisWindow, ReviseScaleDeclaration, ChooseMatchedReference,
-    ResolveMatchItemConflict
+    ResolveMatchItemConflict, ReviseInitialFixationPolicy
 
 /** Outcomes that only execution decides. Preflight lists them instead of guessing. */
 enum UncheckedAspect derives CanEqual:
@@ -666,7 +666,7 @@ object Preflight:
     case PlanError.UnmatchedFocalRefused(_) => Remedy.SupplyMatchedReference
     case PlanError.InitialFixations(InitialFixationError.MissingAngularScale(_)) =>
       Remedy.ReviseScaleDeclaration
-    case PlanError.InitialFixations(_) => Remedy.ReviewAnalysisWindow
+    case PlanError.InitialFixations(_) => Remedy.ReviseInitialFixationPolicy
 
   private[plan] def remedyFor(error: TemporalStudyError): Remedy = error match
     case TemporalStudyError.Input(e)     => remedyFor(e)
@@ -754,7 +754,10 @@ object Preflight:
       StudyFinding.FrameMismatch(key, e)
     }
 
-  /** Trials with fixations outside the window or the screen, in input order. */
+  /** Trials with fixations outside the window or the screen, in input order.
+    * A trial the initial-fixation policy leaves without fixations has an
+    * empty tally and fails for that reason, not the window's.
+    */
   private def windows[K, U <: Unit2D, P, S, D](
       work: PreparedStudy[K, U, P, S, D]
   ): Vector[StudyFinding[K, U]] =
@@ -762,7 +765,7 @@ object Preflight:
       case StudyGeometry.Windowed(_, _, p) => p
       case StudyGeometry.WholeFrame(_)     => OffWindowPolicy.Exclude
     work.windowTallies.collect {
-      case (key, Right(tally)) if tally.allOutside =>
+      case (key, Right(tally)) if tally.total > 0 && tally.allOutside =>
         StudyFinding.NoFixationInWindow(key, tally)
       case (key, Right(tally)) if tally.anyOutside =>
         StudyFinding.OffWindowFixations(key, tally, policy)

@@ -193,7 +193,9 @@ The cross is a position in admission-frame units and must lie on the admission f
 (`InitialFixationError.CrossOffFrame`). The distance is `centre.distanceTo(cross) /
 unitsPerDegree` through the plan's one `LinearAngularScale`, so this policy needs one
 (`InitialFixationError.MissingAngularScale`), and a centre exactly at the radius is within it.
-Refusals arrive as `PlanError.InitialFixations`, with the `initial-fixation.*` diagnostic codes.
+Refusals arrive as `PlanError.InitialFixations`, with the `initial-fixation.*` diagnostic codes and the
+remedy `ReviseInitialFixationPolicy` (`ReviseScaleDeclaration` for a missing scale). Preflight does
+not report a trial the policy empties as having no fixation in the window.
 
 Dropped fixations are removed before the analysis window and the screen are considered, so every
 fixation is exactly one of: dropped, outside the screen, outside the window, or in the map.
@@ -206,7 +208,7 @@ kept fixations. A trial whose fixations are all dropped fails at every scale wit
 temporal study, every cell applies the base plan's policy before its window.
 
 The policy is a recorded plan field: the description gains
-`initialFixations -> [dropFirst]` or `[dropLeadingNearCross, x, y, radius]` when anything is
+`initialFixations -> [dropFirst]` or `[dropLeadingInClosedDisc, x, y, radius]` when anything is
 dropped, `RecipeInspection` explains it, and `policy.methods` gives one sentence a methods section
 can cite. The plan codec writes it as `eyes4s.study@3` (see [saved studies](SAVED_STUDIES.md)).
 

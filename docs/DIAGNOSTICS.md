@@ -336,7 +336,7 @@ fails after rewriting, so review the change and run it again.
 | Code | Case | Operands |
 |---|---|---|
 | `study-revision.duplicate-field` | `DuplicateField` | `field` |
-| `study-revision.stale` | `Stale` | `field`, `expected`, `found` |
+| `study-revision.stale` | `Stale` | `field`, `stated`, `current` |
 | `study-revision.incomplete-window` | `IncompleteWindow` | `window`, `offWindow` |
 | `study-revision.plan` | `Plan` | `underlying` |
 

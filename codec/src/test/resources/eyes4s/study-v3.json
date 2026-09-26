@@ -92,7 +92,7 @@
       "unitsPerDegree" : 2.0
     },
     "initialFixations" : {
-      "kind" : "dropLeadingNearCross",
+      "kind" : "dropLeadingInClosedDisc",
       "cross" : {
         "x" : 8.0,
         "y" : 6.0

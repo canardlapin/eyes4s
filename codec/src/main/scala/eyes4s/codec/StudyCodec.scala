@@ -535,9 +535,9 @@ private[codec] object StudyWire:
   def initialFixations[U <: Unit2D](policy: InitialFixationPolicy[U]): Json = policy match
     case InitialFixationPolicy.KeepAll()   => Json.obj("kind" -> Json.fromString("keepAll"))
     case InitialFixationPolicy.DropFirst() => Json.obj("kind" -> Json.fromString("dropFirst"))
-    case InitialFixationPolicy.DropLeadingNearCross(cross, radius) =>
+    case InitialFixationPolicy.DropLeadingInClosedDisc(cross, radius) =>
       Json.obj(
-        "kind"  -> Json.fromString("dropLeadingNearCross"),
+        "kind"  -> Json.fromString("dropLeadingInClosedDisc"),
         "cross" -> Json.obj(
           "x" -> Json.fromDoubleOrNull(cross.x),
           "y" -> Json.fromDoubleOrNull(cross.y)
@@ -549,9 +549,9 @@ private[codec] object StudyWire:
       json: Json
   ): Either[CodecError, InitialFixationPolicy[U]] =
     Wire.field[String](json, "kind").flatMap {
-      case "keepAll"              => Right(InitialFixationPolicy.keepAll[U])
-      case "dropFirst"            => Right(InitialFixationPolicy.dropFirst[U])
-      case "dropLeadingNearCross" =>
+      case "keepAll"                 => Right(InitialFixationPolicy.keepAll[U])
+      case "dropFirst"               => Right(InitialFixationPolicy.dropFirst[U])
+      case "dropLeadingInClosedDisc" =>
         for
           cross  <- Wire.field[Json](json, "cross")
           x      <- DomainWire.finite(cross, "x")
@@ -560,7 +560,11 @@ private[codec] object StudyWire:
           policy <- InitialFixationPolicy
             .dropLeadingInClosedDisc(Pt[U](x, y), radius)
             .left
-            .map(e => CodecError.Field("radiusDegrees", json, e.message))
+            .map {
+              case e @ InitialFixationError.NonPositiveRadius(_) =>
+                CodecError.Field("radiusDegrees", json, e.message)
+              case e => CodecError.Field("cross", json, e.message)
+            }
         yield policy
       case other =>
         Left(

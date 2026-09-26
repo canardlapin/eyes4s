@@ -59,6 +59,9 @@ sealed trait StudyChange[K, U <: Unit2D, P, S, D]:
   def inverse: StudyChange[K, U, P, S, D]
   def render(using UnitLabel[U]): String
 
+  /** The default rendering of the value the change starts from. */
+  def stated(using UnitLabel[U]): String
+
 object StudyChange:
   import StudyRender.*
 
@@ -75,6 +78,7 @@ object StudyChange:
       after: ArtifactRef[StudyInput[K, U]]
   ) extends StudyChange[K, U, P, S, D]:
     def field: StudyField                  = StudyField.Input
+    def stated(using UnitLabel[U]): String = before.digest
     def inverse: Input[K, U, P, S, D]      = Input(after, before)
     def render(using UnitLabel[U]): String = s"input ${before.digest} → ${after.digest}"
 
@@ -84,6 +88,7 @@ object StudyChange:
       after: StudyLayout[K]
   ) extends StudyChange[K, U, P, S, D]:
     def field: StudyField                  = StudyField.Layout
+    def stated(using UnitLabel[U]): String = definition(before.id)
     def inverse: Layout[K, U, P, S, D]     = Layout(after, before)
     def render(using UnitLabel[U]): String =
       s"layout ${definition(before.id)} → ${definition(after.id)}"
@@ -97,7 +102,9 @@ object StudyChange:
       after: StudyMethod[P, U, S, D],
       afterParameters: P
   ) extends StudyChange[K, U, P, S, D]:
-    def field: StudyField              = StudyField.Method
+    def field: StudyField                  = StudyField.Method
+    def stated(using UnitLabel[U]): String =
+      s"${definition(before.id)} ${parameters(before.parameters(beforeParameters))}"
     def inverse: Method[K, U, P, S, D] =
       Method(after, afterParameters, before, beforeParameters)
     def render(using UnitLabel[U]): String =
@@ -112,8 +119,9 @@ object StudyChange:
       afterFocal: String,
       afterReference: String
   ) extends StudyChange[K, U, P, S, D]:
-    def field: StudyField              = StudyField.Phases
-    def inverse: Phases[K, U, P, S, D] =
+    def field: StudyField                  = StudyField.Phases
+    def stated(using UnitLabel[U]): String = s"$beforeFocal vs $beforeReference"
+    def inverse: Phases[K, U, P, S, D]     =
       Phases(afterFocal, afterReference, beforeFocal, beforeReference)
     def render(using UnitLabel[U]): String =
       s"phases $beforeFocal vs $beforeReference → $afterFocal vs $afterReference"
@@ -121,6 +129,7 @@ object StudyChange:
   final case class Weighting[K, U <: Unit2D, P, S, D](before: Weight, after: Weight)
       extends StudyChange[K, U, P, S, D]:
     def field: StudyField                  = StudyField.Weighting
+    def stated(using UnitLabel[U]): String = before.toString
     def inverse: Weighting[K, U, P, S, D]  = Weighting(after, before)
     def render(using UnitLabel[U]): String = s"weight $before → $after"
 
@@ -129,6 +138,7 @@ object StudyChange:
       after: FailurePolicy
   ) extends StudyChange[K, U, P, S, D]:
     def field: StudyField                  = StudyField.FailurePolicy
+    def stated(using UnitLabel[U]): String = before.render
     def inverse: Failures[K, U, P, S, D]   = Failures(after, before)
     def render(using UnitLabel[U]): String =
       s"failure policy ${before.render} → ${after.render}"
@@ -139,6 +149,7 @@ object StudyChange:
       after: eyes4s.kernel.Grid[U]
   ) extends StudyChange[K, U, P, S, D]:
     def field: StudyField                  = StudyField.Grid
+    def stated(using UnitLabel[U]): String = grid(before)
     def inverse: Grid[K, U, P, S, D]       = Grid(after, before)
     def render(using UnitLabel[U]): String = s"grid ${grid(before)} → ${grid(after)}"
 
@@ -148,6 +159,7 @@ object StudyChange:
       after: Option[Subframe[U]]
   ) extends StudyChange[K, U, P, S, D]:
     def field: StudyField                  = StudyField.Window
+    def stated(using UnitLabel[U]): String = before.fold("the whole frame")(window(_))
     def inverse: Window[K, U, P, S, D]     = Window(after, before)
     def render(using UnitLabel[U]): String = (before, after) match
       case (None, Some(w))    => s"window added: ${window(w)}"
@@ -161,6 +173,7 @@ object StudyChange:
       after: Option[OffWindowPolicy]
   ) extends StudyChange[K, U, P, S, D]:
     def field: StudyField                  = StudyField.OffWindow
+    def stated(using UnitLabel[U]): String = before.fold("none")(_.toString)
     def inverse: OffWindow[K, U, P, S, D]  = OffWindow(after, before)
     def render(using UnitLabel[U]): String =
       s"off-window policy ${before.fold("none")(_.toString)} → ${after.fold("none")(_.toString)}"
@@ -173,6 +186,7 @@ object StudyChange:
       after: Vector[StudyScale[U]]
   ) extends StudyChange[K, U, P, S, D]:
     def field: StudyField                  = StudyField.Scales
+    def stated(using UnitLabel[U]): String = before.map(scale(_)).mkString(", ")
     def inverse: Scales[K, U, P, S, D]     = Scales(after, before)
     def added: Vector[StudyScale[U]]       = after.filterNot(before.contains)
     def removed: Vector[StudyScale[U]]     = before.filterNot(after.contains)
@@ -188,6 +202,8 @@ object StudyChange:
       after: Option[LinearAngularScale[U]]
   ) extends StudyChange[K, U, P, S, D]:
     def field: StudyField                     = StudyField.AngularScale
+    def stated(using u: UnitLabel[U]): String =
+      before.fold("none")(v => s"${num(v.unitsPerDegree)} ${u.symbol}/°")
     def inverse: AngularScale[K, U, P, S, D]  = AngularScale(after, before)
     def render(using u: UnitLabel[U]): String =
       def show(s: Option[LinearAngularScale[U]]) =
@@ -199,6 +215,7 @@ object StudyChange:
       after: MatchedReferences
   ) extends StudyChange[K, U, P, S, D]:
     def field: StudyField                  = StudyField.MatchedReferences
+    def stated(using UnitLabel[U]): String = matched(before)
     def inverse: Matched[K, U, P, S, D]    = Matched(after, before)
     def render(using UnitLabel[U]): String =
       s"matched references policy ${matched(before)} → ${matched(after)}"
@@ -208,6 +225,7 @@ object StudyChange:
       after: ControlReferences
   ) extends StudyChange[K, U, P, S, D]:
     def field: StudyField                  = StudyField.ControlReferences
+    def stated(using UnitLabel[U]): String = before.toString
     def inverse: Controls[K, U, P, S, D]   = Controls(after, before)
     def render(using UnitLabel[U]): String = s"control references $before → $after"
 
@@ -216,6 +234,7 @@ object StudyChange:
       after: UnmatchedFocalPolicy
   ) extends StudyChange[K, U, P, S, D]:
     def field: StudyField                  = StudyField.UnmatchedFocal
+    def stated(using UnitLabel[U]): String = before.toString
     def inverse: Unmatched[K, U, P, S, D]  = Unmatched(after, before)
     def render(using UnitLabel[U]): String =
       s"queries without a matched reference $before → $after"
@@ -225,6 +244,7 @@ object StudyChange:
       after: InitialFixationPolicy[U]
   ) extends StudyChange[K, U, P, S, D]:
     def field: StudyField                        = StudyField.InitialFixations
+    def stated(using UnitLabel[U]): String       = before.render
     def inverse: InitialFixations[K, U, P, S, D] = InitialFixations(after, before)
     def render(using UnitLabel[U]): String       =
       s"initial fixations ${before.render} → ${after.render}"
@@ -272,8 +292,10 @@ enum StudyRevisionError derives CanEqual:
   /** Two changes name the same field. */
   case DuplicateField(field: StudyField)
 
-  /** A change's `before` is not the plan's current value of the field. */
-  case Stale(field: StudyField, expected: String, found: String)
+  /** A change starts from `stated`, but the plan's value of the field is
+    * `current` (both in their default rendering).
+    */
+  case Stale(field: StudyField, stated: String, current: String)
 
   /** A window without an off-window policy, or a policy without a window. */
   case IncompleteWindow(window: Option[String], offWindow: Option[OffWindowPolicy])
@@ -284,8 +306,8 @@ enum StudyRevisionError derives CanEqual:
   def message: String = this match
     case DuplicateField(field) =>
       s"Two changes name the ${field.label}; a revision changes each field once."
-    case Stale(field, expected, found) =>
-      s"The change of ${field.label} starts from $expected, but the plan has $found."
+    case Stale(field, stated, current) =>
+      s"The change of ${field.label} starts from $stated, but the plan has $current."
     case IncompleteWindow(window, offWindow) =>
       s"A windowed plan needs both a window and an off-window policy; the revision gives " +
         s"window ${window.getOrElse("none")} and off-window policy ${offWindow.fold("none")(_.toString)}."
@@ -422,7 +444,7 @@ object StudyDiff:
       plan.initialFixations
     )
     def stale(change: StudyChange[K, U, P, S, D], current: StudyChange[K, U, P, S, D]) =
-      Left(Stale(change.field, change.render, current.render))
+      Left(Stale(change.field, change.stated, current.stated))
     // Each check compares the change's `before` with the plan's value, shown
     // through a change from the plan's value to the change's `after`.
     def step(

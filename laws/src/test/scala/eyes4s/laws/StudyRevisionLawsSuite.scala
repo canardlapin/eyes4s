@@ -52,6 +52,7 @@ class StudyRevisionLawsSuite extends munit.DisciplineSuite:
     "StudyPlan initial fixations",
     InitialFixationLaws.roles[StudyKey, Px, Unit, Similarity, SignedDifference](
       (plan, input) => plan.initialFixationTallies(input),
+      InitialFixationLaws.estimated,
       InitialFixationLaws.planCases
     )
   )
@@ -101,7 +102,7 @@ class StudyRevisionLawsSuite extends munit.DisciplineSuite:
 
   private def inDisc(rule: InitialFixationRule[Px], f: Event.Fixation[Px], open: Boolean) =
     rule.policy match
-      case InitialFixationPolicy.DropLeadingNearCross(cross, radius) =>
+      case InitialFixationPolicy.DropLeadingInClosedDisc(cross, radius) =>
         val d = f.centre.distanceTo(cross) / rule.unitsPerDegree.get
         if open then d < radius else d <= radius
       case _ => false
@@ -121,7 +122,7 @@ class StudyRevisionLawsSuite extends munit.DisciplineSuite:
     )
     val open = dropping((rule, path) =>
       rule.policy match
-        case InitialFixationPolicy.DropLeadingNearCross(_, _) =>
+        case InitialFixationPolicy.DropLeadingInClosedDisc(_, _) =>
           path.fixations.toVector.takeWhile(inDisc(rule, _, open = true)).size
         case _ => rule.dropCount(path)
     )
@@ -131,7 +132,7 @@ class StudyRevisionLawsSuite extends munit.DisciplineSuite:
     )
     val everyInside = dropping((rule, path) =>
       rule.policy match
-        case InitialFixationPolicy.DropLeadingNearCross(_, _) =>
+        case InitialFixationPolicy.DropLeadingInClosedDisc(_, _) =>
           path.fixations.toVector.count(inDisc(rule, _, open = false))
         case _ => rule.dropCount(path)
     )
@@ -148,7 +149,7 @@ class StudyRevisionLawsSuite extends munit.DisciplineSuite:
     )
   }
 
-  test("the roles law kills a policy applied to focal trials only") {
+  test("the roles law kills a policy applied to focal trials only, in tallies or maps") {
     val cases = InitialFixationLaws.planCases
     val focalOnly
         : InitialFixationLaws.Tallies[StudyKey, Px, Unit, Similarity, SignedDifference] =
@@ -160,15 +161,39 @@ class StudyRevisionLawsSuite extends munit.DisciplineSuite:
             else 0
           t.key -> Right(tally(t.value, dropped, t.value.n))
         }
-    assert(
-      passes(InitialFixationLaws.roles(shippedTallies, cases))
-    )
+    // Maps of focal trials under the policy, and of reference trials as if
+    // every fixation were kept.
+    val focalMaps
+        : InitialFixationLaws.Estimated[StudyKey, Px, Unit, Similarity, SignedDifference] =
+      (plan, input) =>
+        val shipped =
+          InitialFixationLaws.estimated[StudyKey, Px, Unit, Similarity, SignedDifference]
+        val keep = sure(
+          plan.revise(
+            Vector(
+              StudyChange.InitialFixations(plan.initialFixations, InitialFixationPolicy.keepAll)
+            )
+          )
+        )
+        for
+          under <- shipped(plan, input)
+          all   <- shipped(keep, input)
+        yield under.zip(all).map { case ((key, mapped), (_, whole)) =>
+          key -> (if plan.layout.phase(key) == plan.focalPhase then mapped else whole)
+        }
+    val estimated =
+      InitialFixationLaws.estimated[StudyKey, Px, Unit, Similarity, SignedDifference]
+    assert(passes(InitialFixationLaws.roles(shippedTallies, estimated, cases)))
     assertEquals(
-      falsified(InitialFixationLaws.roles(focalOnly, cases)),
+      falsified(InitialFixationLaws.roles(focalOnly, estimated, cases)),
       Vector(
         "each trial's tally is its own selection, whatever its phase",
         "exchanging the focal and reference phases leaves every tally unchanged"
       )
+    )
+    assertEquals(
+      falsified(InitialFixationLaws.roles(shippedTallies, focalMaps, cases)),
+      Vector("each trial is mapped from the fixations it keeps, whatever its phase")
     )
   }
 
@@ -210,6 +235,16 @@ class StudyRevisionLawsSuite extends munit.DisciplineSuite:
       falsified(StudyDiffLaws.diff(between, unchecked, pairs)),
       Vector("a change that does not start from the plan's value is refused")
     )
+    // Diffs that never report a change of layout, or of method.
+    Vector(StudyField.Layout, StudyField.Method).foreach { dropped =>
+      val blind: StudyDiffLaws.Between[StudyKey, Px, Unit, Similarity, SignedDifference] =
+        (a, b) => between(a, b).filterNot(_.field == dropped)
+      assert(
+        falsified(StudyDiffLaws.diff(blind, revise, pairs))
+          .contains("applying the diff of a to b to a gives b"),
+        dropped
+      )
+    }
     // A revision that leaves the weighting as it was.
     val forgetful: StudyDiffLaws.Revise[StudyKey, Px, Unit, Similarity, SignedDifference] =
       (plan, changes) => plan.revise(changes.filterNot(_.field == StudyField.Weighting))
@@ -280,8 +315,7 @@ class StudyRevisionLawsSuite extends munit.DisciplineSuite:
     )
     assertEquals(
       StudyDiff.render(base.structuralDiff(dropped)),
-      "initial fixations keep all → drop fixations within 1.5° of the cross before the " +
-        "first saccade away"
+      "initial fixations keep all → drop leading fixations within 1.5° of the cross"
     )
     assertEquals(StudyDiff.render(base.structuralDiff(base)), "no changes")
     // A change that does not start from the plan's value names both values.
@@ -294,8 +328,8 @@ class StudyRevisionLawsSuite extends munit.DisciplineSuite:
       Left(
         StudyRevisionError.Stale(
           StudyField.MatchedReferences,
-          "matched references policy RequireOne → SameOccurrence",
-          "matched references policy MeanOfAll → SameOccurrence"
+          "RequireOne",
+          "MeanOfAll"
         )
       )
     )
@@ -365,6 +399,11 @@ object StudyRevisionLawsSuite:
       case StudyChange.InitialFixations(_, a) =>
         StudyChange.InitialFixations(self.initialFixations, a)
 
+  private val otherLayout =
+    StudyKey.layout(PlanCodecLawSuite.definition("eyes4s.revised-layout", 1))
+  private val otherMethod =
+    StudyMethod.cosine[Px](PlanCodecLawSuite.definition("eyes4s.cosine-variant", 2))
+
   /** A plan and a variant that changes a few of its fields, each chosen
     * independently; the variant keeps the plan whenever a combination is not
     * a valid plan, so nothing is discarded.
@@ -378,6 +417,10 @@ object StudyRevisionLawsSuite:
       )
     val options: Vector[Gen[Option[Change]]] =
       Vector(
+        Gen.const(Some(C.Layout(a.layout, otherLayout))),
+        Gen
+          .oneOf(otherMethod, a.method)
+          .map(m => Option.when(m.id != a.method.id)(C.Method(a.method, (), m, ()))),
         Gen.const(Some(C.Weighting(a.weight, otherWeight))),
         Gen.const(
           Some(C.Phases(a.focalPhase, a.referencePhase, a.referencePhase, a.focalPhase))

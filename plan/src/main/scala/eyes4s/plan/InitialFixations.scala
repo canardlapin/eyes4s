@@ -70,7 +70,7 @@ object InitialFixationError:
   *  - `KeepAll`: none; the default, and what every version-1 and version-2
   *    plan means.
   *  - `DropFirst`: the first fixation of the trial, whatever its position.
-  *  - `DropLeadingNearCross`: the leading run of fixations whose centres lie
+  *  - `DropLeadingInClosedDisc`: the leading run of fixations whose centres lie
   *    in the closed disc of `radiusDegrees` around `cross` (admission-frame
   *    units), measured through the plan's one [[LinearAngularScale]]: the
   *    fixations before the first one whose centre lies farther than the
@@ -84,17 +84,17 @@ sealed trait InitialFixationPolicy[U <: Unit2D] derives CanEqual:
 
   /** The short label a review panel shows. */
   def render: String = this match
-    case KeepAll()                  => "keep all"
-    case DropFirst()                => "drop first fixation"
-    case DropLeadingNearCross(_, r) =>
-      s"drop fixations within ${Provenance.Param.Num(r).render}° of the cross before the first saccade away"
+    case KeepAll()                     => "keep all"
+    case DropFirst()                   => "drop first fixation"
+    case DropLeadingInClosedDisc(_, r) =>
+      s"drop leading fixations within ${Provenance.Param.Num(r).render}° of the cross"
 
   /** One sentence a methods section can cite. */
   def methods: String = this match
     case KeepAll()   => "All fixations of every trial were retained."
     case DropFirst() =>
       "The first fixation of every trial, query and reference alike, was excluded."
-    case DropLeadingNearCross(cross, r) =>
+    case DropLeadingInClosedDisc(cross, r) =>
       s"Fixations at the start of every trial, query and reference alike, whose centres lay " +
         s"within ${Provenance.Param.Num(r).render}° of the fixation cross at " +
         s"(${Provenance.Param.Num(cross.x).render}, ${Provenance.Param.Num(cross.y).render}) " +
@@ -104,10 +104,10 @@ sealed trait InitialFixationPolicy[U <: Unit2D] derives CanEqual:
   def parameters: Vector[Provenance.Param] =
     import Provenance.Param.*
     this match
-      case KeepAll()                      => Vector.empty
-      case DropFirst()                    => Vector(Text("dropFirst"))
-      case DropLeadingNearCross(cross, r) =>
-        Vector(Text("dropLeadingNearCross"), Num(cross.x), Num(cross.y), Num(r))
+      case KeepAll()                         => Vector.empty
+      case DropFirst()                       => Vector(Text("dropFirst"))
+      case DropLeadingInClosedDisc(cross, r) =>
+        Vector(Text("dropLeadingInClosedDisc"), Num(cross.x), Num(cross.y), Num(r))
 
   def isKeepAll: Boolean = this match
     case KeepAll() => true
@@ -116,7 +116,7 @@ sealed trait InitialFixationPolicy[U <: Unit2D] derives CanEqual:
 object InitialFixationPolicy:
   final case class KeepAll[U <: Unit2D]()   extends InitialFixationPolicy[U]
   final case class DropFirst[U <: Unit2D]() extends InitialFixationPolicy[U]
-  final case class DropLeadingNearCross[U <: Unit2D] private[plan] (
+  final case class DropLeadingInClosedDisc[U <: Unit2D] private[plan] (
       cross: Pt[U],
       radiusDegrees: Double
   ) extends InitialFixationPolicy[U]
@@ -137,7 +137,7 @@ object InitialFixationPolicy:
       Left(InitialFixationError.NonPositiveRadius(radiusDegrees))
     else if !cross.x.isFinite || !cross.y.isFinite then
       Left(InitialFixationError.NonFiniteCross(cross.x, cross.y))
-    else Right(DropLeadingNearCross(cross, radiusDegrees))
+    else Right(DropLeadingInClosedDisc(cross, radiusDegrees))
 
 /** How the policy fell on one trial, by count and by duration: the leading
   * `dropped` of its `total` fixations were left out and the rest kept.
@@ -156,7 +156,10 @@ final case class InitialFixationTally private (
       s"${totalDuration.render})"
 
 object InitialFixationTally:
-  /** Rebuild a stored tally; the dropped part must lie within the trial. */
+  /** Rebuild a stored tally. It must partition its trial: the dropped
+    * fixations lie within it, none dropped means no dropped duration, and
+    * all dropped means all of the duration.
+    */
   def of(
       dropped: Int,
       total: Int,
@@ -165,7 +168,9 @@ object InitialFixationTally:
   ): Either[InitialFixationError, InitialFixationTally] =
     val counts    = dropped >= 0 && dropped <= total
     val durations = !droppedDuration.isNegative &&
-      droppedDuration.toMicros <= totalDuration.toMicros
+      droppedDuration.toMicros <= totalDuration.toMicros &&
+      (dropped != 0 || droppedDuration.toMicros == 0L) &&
+      (dropped != total || droppedDuration.toMicros == totalDuration.toMicros)
     if counts && durations then
       Right(new InitialFixationTally(dropped, total, droppedDuration, totalDuration))
     else
@@ -245,7 +250,7 @@ object InitialFixationRule:
     case InitialFixationPolicy.KeepAll() => Right(new InitialFixationRule(policy, None, _ => 0))
     case InitialFixationPolicy.DropFirst() =>
       Right(new InitialFixationRule(policy, None, path => math.min(1, path.n)))
-    case InitialFixationPolicy.DropLeadingNearCross(cross, radius) =>
+    case InitialFixationPolicy.DropLeadingInClosedDisc(cross, radius) =>
       if !admission.contains(cross) then
         Left(InitialFixationError.CrossOffFrame(cross.x, cross.y, admission.id))
       else
@@ -270,7 +275,7 @@ final case class InitialFixationSummary(
     dropped: Int,
     total: Int,
     trialsWithDrops: Int,
-    trialsWithoutFixations: Int,
+    trialsEmptied: Int,
     trials: Int,
     untallied: Int
 ) derives CanEqual

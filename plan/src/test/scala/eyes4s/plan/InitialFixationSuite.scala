@@ -118,7 +118,7 @@ class InitialFixationSuite extends munit.FunSuite:
     assertEquals(
       p.description.last,
       "initialFixations" -> Vector(
-        Provenance.Param.Text("dropLeadingNearCross"),
+        Provenance.Param.Text("dropLeadingInClosedDisc"),
         Provenance.Param.Num(10),
         Provenance.Param.Num(5),
         Provenance.Param.Num(1.5)
@@ -201,6 +201,64 @@ class InitialFixationSuite extends munit.FunSuite:
     assertEquals(ours, kept)
   }
 
+  test("prepared work, preflight and inspection report the policy's tallies") {
+    val p    = get(plan(nearCross))
+    val work = get(p.prepare(input))
+    assertEquals(work.initialFixations, nearCross)
+    assertEquals(work.initialFixationSummary, InitialFixationSummary(4, 11, 2, 1, 4, 0))
+    // encodeB is emptied by the policy, not by the window: preflight does not
+    // blame the window for it.
+    assert(
+      !p.preflight(Some(input)).findings.exists {
+        case StudyFinding.NoFixationInWindow(key, _) => key == encodeB
+        case _                                       => false
+      }
+    )
+    val result     = get(p.run(input))
+    val inspection =
+      ResultInspection.study(p, result, input, None).fold(e => fail(s"$e"), identity)
+    assertEquals(inspection.initialFixationTally(recallA).map(_.dropped), Some(2))
+    assertEquals(inspection.initialFixationTally(StudyKey("p9", "z", "recall")), None)
+  }
+
+  test("a change of layout or method is typed, inverted and rendered by identity") {
+    val base         = get(plan(InitialFixationPolicy.keepAll))
+    val otherLayout  = StudyKey.layout(get(DefinitionId.of("eyes4s.other-layout", 1)))
+    val otherCosine  = StudyMethod.cosine[Px](get(DefinitionId.of("eyes4s.cosine-variant", 2)))
+    val relaid       = get(base.revise(Vector(StudyChange.Layout(base.layout, otherLayout))))
+    val remethodised = get(
+      base.revise(Vector(StudyChange.Method(base.method, (), otherCosine, ())))
+    )
+    val layout = base.structuralDiff(relaid)
+    assertEquals(layout.map(_.field), Vector(StudyField.Layout))
+    assertEquals(
+      layout.head.render,
+      "layout eyes4s.participant-stimulus-phase@1 → eyes4s.other-layout@1"
+    )
+    assertEquals(relaid.structuralDiff(base), layout.map(_.inverse))
+    val method = base.structuralDiff(remethodised)
+    assertEquals(method.map(_.field), Vector(StudyField.Method))
+    assertEquals(method.head.render, "method eyes4s.cosine@1 → eyes4s.cosine-variant@2")
+    assertEquals(remethodised.structuralDiff(base), method.map(_.inverse))
+    assertEquals(
+      relaid.revise(layout),
+      Left(
+        StudyRevisionError.Stale(
+          StudyField.Layout,
+          "eyes4s.participant-stimulus-phase@1",
+          "eyes4s.other-layout@1"
+        )
+      )
+    )
+    assertEquals(
+      remethodised.revise(method).left.map(_.message),
+      Left(
+        "The change of method starts from eyes4s.cosine@1 none, but the plan has " +
+          "eyes4s.cosine-variant@2 none."
+      )
+    )
+  }
+
   test("the plan refuses a cross off the frame, a non-positive radius and a missing scale") {
     assertEquals(
       InitialFixationPolicy.dropLeadingInClosedDisc(cross, 0.0),
@@ -229,4 +287,15 @@ class InitialFixationSuite extends munit.FunSuite:
       InitialFixationTally.of(3, 2, Span.micros(10), Span.micros(20)),
       Left(InitialFixationError.InvalidTally(3, 2, 10L, 20L))
     )
+    // A tally partitions its trial: none dropped is no dropped time, all
+    // dropped is all of it.
+    assertEquals(
+      InitialFixationTally.of(0, 2, Span.micros(5), Span.micros(20)),
+      Left(InitialFixationError.InvalidTally(0, 2, 5L, 20L))
+    )
+    assertEquals(
+      InitialFixationTally.of(2, 2, Span.micros(5), Span.micros(20)),
+      Left(InitialFixationError.InvalidTally(2, 2, 5L, 20L))
+    )
+    assert(InitialFixationTally.of(1, 2, Span.micros(5), Span.micros(20)).isRight)
   }

@@ -267,7 +267,7 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
     assert(killed(reset, initialFixationPlans, sameStudy))
     val moved = mutant(studies.codec)(p =>
       p.initialFixations match
-        case InitialFixationPolicy.DropLeadingNearCross(cross, radius) =>
+        case InitialFixationPolicy.DropLeadingInClosedDisc(cross, radius) =>
           InitialFixationPolicy
             .dropLeadingInClosedDisc(cross, radius * 2)
             .toOption

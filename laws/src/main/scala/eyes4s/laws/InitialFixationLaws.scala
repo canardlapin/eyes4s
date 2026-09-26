@@ -103,7 +103,7 @@ object InitialFixationLaws extends Laws:
             case InitialFixationPolicy.KeepAll()   => Prop(tally.dropped == 0)
             case InitialFixationPolicy.DropFirst() =>
               Prop(tally.dropped == math.min(1, path.n)) :| tally.render
-            case InitialFixationPolicy.DropLeadingNearCross(cross, radius) =>
+            case InitialFixationPolicy.DropLeadingInClosedDisc(cross, radius) =>
               rule.unitsPerDegree match
                 case None => Prop(false) :| "a near-cross rule without units per degree"
                 case Some(perDegree) =>
@@ -121,12 +121,75 @@ object InitialFixationLaws extends Laws:
       (K, Either[GeometryError, InitialFixationTally])
     ]
 
+  /** Each trial's estimated map at the plan's first scale, as its values'
+    * IEEE bits, or the trial's failure.
+    */
+  type Estimated[K, U <: Unit2D, P, S, D] =
+    (StudyPlan[K, U, P, S, D], StudyInput[K, U]) => Either[
+      PlanError,
+      Vector[(K, Either[StudyFailure[K], Vector[Long]])]
+    ]
+
+  /** The shipped estimation: the plan run to completion. */
+  def estimated[K, U <: Unit2D, P, S, D]: Estimated[K, U, P, S, D] = (plan, input) =>
+    plan
+      .run(input)
+      .map(
+        _.scales.head.estimation
+          .map((k, m) => k -> m.map(_.values.toVector.map(java.lang.Double.doubleToLongBits)))
+      )
+
   def roles[K, U <: Unit2D, P, S, D](
       tallies: Tallies[K, U, P, S, D],
+      estimate: Estimated[K, U, P, S, D],
       cases: Gen[(StudyPlan[K, U, P, S, D], StudyInput[K, U])]
-  ): RuleSet =
+  )(using unit: UnitLabel[U]): RuleSet =
     new SimpleRuleSet(
       "initialFixationRoles",
+      "each trial is mapped from the fixations it keeps, whatever its phase" -> forAll(cases) {
+        case (plan, input) =>
+          val outcomes = input.trials.rows.map(t => plan.initialFixationRule.select(t.value))
+          // The same study keeping every fixation, over the kept fixations:
+          // the maps every trial must have, whatever its phase.
+          val trimmed = StudyInput(
+            Trials(
+              input.trials.rows
+                .zip(outcomes)
+                .map((t, o) => t.copy(value = o.kept.getOrElse(t.value)))
+            )
+          )(using plan.layout.digest, unit)
+          val expected = plan
+            .revise(
+              Vector(
+                StudyChange.Input(plan.input, trimmed.reference),
+                StudyChange
+                  .InitialFixations(plan.initialFixations, InitialFixationPolicy.keepAll[U])
+              )
+            )
+            .left
+            .map(_.message)
+            .flatMap(keep => estimated(keep, trimmed).left.map(_.message))
+          (estimate(plan, input).left.map(_.message), expected) match
+            case (Right(found), Right(reference)) =>
+              val byKey = reference.toMap
+              Prop.all(found.zip(outcomes).map { case ((key, value), outcome) =>
+                outcome.kept match
+                  case None =>
+                    Prop(
+                      value == Left(
+                        StudyFailure.InitialFixations(
+                          key,
+                          InitialFixationError.NoFixationKept(
+                            outcome.tally.dropped,
+                            outcome.tally.droppedDuration.toMicros
+                          )
+                        )
+                      )
+                    ) :| s"trial $key keeps no fixation: $value"
+                  case Some(_) => Prop(byKey.get(key).contains(value)) :| s"trial $key"
+              }*)
+            case (found, reference) => Prop(false) :| s"$found / $reference"
+      },
       "each trial's tally is its own selection, whatever its phase" -> forAll(cases) {
         case (plan, input) =>
           val expected = input.trials.rows.map { t =>
@@ -250,7 +313,7 @@ object InitialFixationLaws extends Laws:
     for
       (rule, _) <- crossCases
       (cross, radius, perDegree) = rule.policy match
-        case InitialFixationPolicy.DropLeadingNearCross(c, r) =>
+        case InitialFixationPolicy.DropLeadingInClosedDisc(c, r) =>
           (c, r, rule.unitsPerDegree.getOrElse(35.0))
         case _ => (Pt[Px](960, 540), 1.5, 35.0)
       keys =
