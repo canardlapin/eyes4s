@@ -150,7 +150,15 @@ enum RelationMismatch derives CanEqual:
   /** A source relation disagrees with its ledger or import description. */
   case SourceBinding(field: String, expected: String, found: String)
 
+  /** Full canonical plan identity, independent of the human-readable diff. */
+  case RunPlan(reported: ByteDigest, current: ByteDigest, changes: Vector[PlanChange])
+  case RunInput(reported: ByteDigest, current: ByteDigest)
+
   def message: String = this match
+    case RunPlan(reported, current, changes) =>
+      s"Run plan ${reported.hex} differs from current ${current.hex}; changes ${changes.map(_.field).mkString(", ")}."
+    case RunInput(reported, current) =>
+      s"Run input ${reported.hex} differs from current ${current.hex}."
     case SourceBinding(field, expected, found) =>
       s"Source binding $field declares $found; expected $expected."
     case Prerequisites(errors)        => errors.map(_.message).mkString(" ")
@@ -321,6 +329,20 @@ object LoadedRecordingPlan:
 trait ArtifactDecoders[K, U <: Unit2D]:
   def plan(document: Json): Either[CodecError, LoadedStudy[K, U]]
   def input(document: Json): Either[CodecError, StudyInput[K, U]]
+
+  /** Re-encode the decoded input through its registered full canonical codec.
+    * A custom decoder must provide this evidence before verifying saved run stamps.
+    */
+  def inputDigest(
+      @annotation.unused document: Json,
+      input: StudyInput[K, U]
+  ): Either[CodecError, CanonicalDigest[StudyInput[K, U]]] =
+    Left(
+      CodecError.Unsupported(
+        "runStamp.input",
+        s"no canonical input encoder for ${input.reference.digest}"
+      )
+    )
   def ledger(document: Json): Either[CodecError, AdmissionLedger[K]]
   def result(document: Json): Either[CodecError, LoadedResult[K, U]]
 
@@ -442,8 +464,10 @@ object ArtifactDecoders:
     */
   open class Delegating[K, U <: Unit2D](base: ArtifactDecoders[K, U])
       extends ArtifactDecoders[K, U]:
-    def plan(document: Json)   = base.plan(document)
-    def input(document: Json)  = base.input(document)
+    def plan(document: Json)                                          = base.plan(document)
+    def input(document: Json)                                         = base.input(document)
+    override def inputDigest(document: Json, input: StudyInput[K, U]) =
+      base.inputDigest(document, input)
     def ledger(document: Json) = base.ledger(document)
     def result(document: Json) = base.result(document)
     override def resultWithPayloads(
@@ -495,8 +519,17 @@ object ArtifactDecoders:
       results: StudyResultRegistry[K, U]
   )(using unit: UnitLabel[U]): ArtifactDecoders[K, U] =
     new ArtifactDecoders[K, U]:
-      def plan(document: Json)   = plans.decode(document)
-      def input(document: Json)  = inputs.decodeInput(document)
+      def plan(document: Json)  = plans.decode(document)
+      def input(document: Json) = inputs.decodeInput(document)
+      override def inputDigest(document: Json, input: StudyInput[K, U]) =
+        for
+          payload <- Wire.field[Json](document, "value")
+          schema  <- Wire.definition(payload, "keySchema")
+          codec   <- inputs.entries
+            .find(_.keys.schema == schema)
+            .toRight(CodecError.MissingKeySchema(schema))
+          digest <- codec.input.digest(input)
+        yield digest
       def ledger(document: Json) = inputs.decodeLedger(document)
       def result(document: Json) = results.decode(document)
       override def resultWithPayloads(
@@ -713,7 +746,7 @@ object ArtifactResolver:
         manifest.entries.map(entry => verify(entry, source).map(entry -> _))
       )
       decoded <- decode(manifest, verified, decoders)
-      _       <- relations(manifest, decoded, verified)
+      _       <- relations(manifest, decoded, verified, decoders)
     yield assemble(manifest, decoded)
 
   private def read(
@@ -939,7 +972,8 @@ object ArtifactResolver:
   private def relations[K, U <: Unit2D](
       manifest: ScientificManifest,
       decoded: Map[ArtifactName, Decoded[K, U]],
-      verified: Vector[(ManifestEntry, IArray[Byte])]
+      verified: Vector[(ManifestEntry, IArray[Byte])],
+      decoders: ArtifactDecoders[K, U]
   ): Resolution[Unit] =
     // The canonical digest of a stored document, as a report's binding cites it.
     def digestOf(name: ArtifactName): Option[String] =
@@ -948,6 +982,75 @@ object ArtifactResolver:
         .flatMap(_.toOption)
         .flatMap(json => CanonicalDigest.document[Json](json).toOption)
         .map(_.sha256.hex)
+    def stored(name: ArtifactName): Either[ResolveError, Json] =
+      verified
+        .find(_._1.name == name)
+        .toRight(ResolveError.Missing(name))
+        .flatMap((entry, bytes) => document(entry, bytes))
+
+    def stampMismatch(
+        resultName: ArtifactName,
+        planName: ArtifactName,
+        inputName: ArtifactName,
+        plan: LoadedStudy[K, U],
+        input: StudyInput[K, U],
+        description: Vector[(String, Vector[Provenance.Param])],
+        relation: ManifestRelation
+    ): Option[ResolveError] =
+      val checked = for
+        document <- stored(resultName)
+        mismatch <- document.hcursor.downField("value").downField("runStamp").focus match
+          case None        => Right(None)
+          case Some(claim) =>
+            for
+              schema <- Wire
+                .definition(document, "schema")
+                .left
+                .map(ResolveError.Decode(resultName, _))
+              _ <- Either.cond(
+                schema == DensityArchiveDefinitions.studyResultV2,
+                (),
+                ResolveError.Decode(
+                  resultName,
+                  CodecError.Schema(DensityArchiveDefinitions.studyResultV2, schema)
+                )
+              )
+              saved <- RunStampWire
+                .read[LoadedStudy[K, U], StudyInput[K, U]](claim)
+                .left
+                .map(ResolveError.Decode(resultName, _))
+              planDocument <- plan.encode.left.map(ResolveError.Decode(planName, _))
+              currentPlan  <- CanonicalDigest
+                .document[LoadedStudy[K, U]](planDocument)
+                .left
+                .map(ResolveError.Decode(planName, _))
+              inputDocument <- stored(inputName)
+              currentInput  <- decoders
+                .inputDigest(inputDocument, input)
+                .left
+                .map(ResolveError.Decode(inputName, _))
+            yield saved
+              .check(
+                new RunStamp(currentPlan, currentInput),
+                PlanChange.between(description, plan.description)
+              )
+              .left
+              .toOption
+              .map {
+                case RunStampError.ChangedPlan(reported, current, changes) =>
+                  ResolveError.Relation(
+                    relation,
+                    RelationMismatch.RunPlan(reported.sha256, current.sha256, changes)
+                  )
+                case RunStampError.ChangedInput(reported, current) =>
+                  ResolveError.Relation(
+                    relation,
+                    RelationMismatch.RunInput(reported.sha256, current.sha256)
+                  )
+              }
+      yield mismatch
+      checked.fold(Some(_), identity)
+
     val errors = manifest.relations.flatMap { relation =>
       def fail(mismatch: RelationMismatch) = Some(ResolveError.Relation(relation, mismatch))
       (relation, relation.endpoints.map(e => decoded.get(e._2))) match
@@ -958,24 +1061,34 @@ object ArtifactResolver:
           val refused = plan.prerequisites(Some(input))
           if refused.isEmpty then None else fail(RelationMismatch.Prerequisites(refused))
         case (
-              ManifestRelation.ResultOf(_, _, _),
+              relation @ ManifestRelation.ResultOf(resultName, planName, inputName),
               Vector(
                 Some(Decoded.Result(result)),
                 Some(Decoded.Plan(plan)),
                 Some(Decoded.Input(input))
               )
             ) =>
-          if result.result.input != input.reference then
-            fail(
-              RelationMismatch.ResultInput(input.reference.digest, result.result.input.digest)
-            )
-          else if result.result.description != plan.description then
-            fail(
-              RelationMismatch.Description(
-                PlanChange.between(plan.description, result.result.description)
+          stampMismatch(
+            resultName,
+            planName,
+            inputName,
+            plan,
+            input,
+            result.result.description,
+            relation
+          ).orElse {
+            if result.result.input != input.reference then
+              fail(
+                RelationMismatch.ResultInput(input.reference.digest, result.result.input.digest)
               )
-            )
-          else None
+            else if result.result.description != plan.description then
+              fail(
+                RelationMismatch.Description(
+                  PlanChange.between(plan.description, result.result.description)
+                )
+              )
+            else None
+          }
         case (
               ManifestRelation.LedgerOf(_, _),
               Vector(Some(Decoded.Ledger(ledger)), Some(Decoded.Input(input)))

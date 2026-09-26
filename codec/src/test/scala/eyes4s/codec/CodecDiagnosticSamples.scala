@@ -186,7 +186,13 @@ object CodecDiagnosticSamples:
       RelationMismatch.ReportInput("input", "base"),
       RelationMismatch.ReportLedger("ledger", "input"),
       RelationMismatch.ReportMembers(2, Vector("p9/a")),
-      RelationMismatch.SourceBinding("parser", "fixation-parser@1", "inventory-parser@1")
+      RelationMismatch.SourceBinding("parser", "fixation-parser@1", "inventory-parser@1"),
+      RelationMismatch.RunPlan(
+        a,
+        b,
+        Vector(PlanChange("choice", Vector.empty, Vector(Provenance.Param.Text("changed"))))
+      ),
+      RelationMismatch.RunInput(a, b)
     ),
     family[ManifestError]("ManifestError")(
       ManifestError.InvalidName(" padded"),
@@ -242,5 +248,22 @@ object CodecDiagnosticSamples:
       DensityError.Materialize(CodecError.Field("archive", Json.Null, "invalid")),
       DensityError.UnknownRow(12, 7, 4),
       DensityError.RowKeyMismatch(13, 6, k1, k2)
+    ),
+    family[RunStampError[String, Int]]("RunStampError")(
+      RunStampError.ChangedPlan(
+        get(CanonicalDigest.parse[String](a.hex)),
+        get(CanonicalDigest.parse[String](b.hex)),
+        Vector(
+          PlanChange(
+            "method",
+            Vector(Provenance.Param.Text("before")),
+            Vector(Provenance.Param.Text("after"))
+          )
+        )
+      ),
+      RunStampError.ChangedInput(
+        get(CanonicalDigest.parse[Int](a.hex)),
+        get(CanonicalDigest.parse[Int](b.hex))
+      )
     )
   )

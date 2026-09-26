@@ -32,21 +32,22 @@ class CodecDiagnosticCatalogSuite extends munit.FunSuite:
   private val all   =
     DiagnosticSamples.all ++ codec ++ eyes4s.results.ResultsDiagnosticSamples.all
 
-  private val PinnedCount  = 114
-  private val PinnedDigest = "e7fc60dbb6c55e63"
+  private val PinnedCount  = 118
+  private val PinnedDigest = "6841dba38b874da3"
 
   private val alignment = DiagnosticAlignment(
     all,
     eyes4s.results.ResultsDiagnosticSamples.structured.orElse {
-      case v: ByteDigest       => CodecDiagnosticSupport.digest(v)
-      case v: ArtifactName     => CodecDiagnosticSupport.entry(v)
-      case v: ArtifactRole     => CodecDiagnosticSupport.role(v)
-      case v: MediaKind        => CodecDiagnosticSupport.media(v)
-      case v: ElementKind      => CodecDiagnosticSupport.element(v)
-      case v: PayloadLayout    => CodecDiagnosticSupport.layout(v)
-      case v: PayloadRef       => CodecDiagnosticSupport.payloadRef(v)
-      case v: ManifestRelation => CodecDiagnosticSupport.relation(v)
-      case v: Json             => CodecDiagnosticSupport.json(v)
+      case v: ByteDigest         => CodecDiagnosticSupport.digest(v)
+      case v: CanonicalDigest[?] => CodecDiagnosticSupport.digest(v.sha256)
+      case v: ArtifactName       => CodecDiagnosticSupport.entry(v)
+      case v: ArtifactRole       => CodecDiagnosticSupport.role(v)
+      case v: MediaKind          => CodecDiagnosticSupport.media(v)
+      case v: ElementKind        => CodecDiagnosticSupport.element(v)
+      case v: PayloadLayout      => CodecDiagnosticSupport.layout(v)
+      case v: PayloadRef         => CodecDiagnosticSupport.payloadRef(v)
+      case v: ManifestRelation   => CodecDiagnosticSupport.relation(v)
+      case v: Json               => CodecDiagnosticSupport.json(v)
     },
     {
       case (v: Char, Operand.Text(x)) => x == v.toString

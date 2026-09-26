@@ -623,13 +623,22 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
           payloads: PayloadRef => Option[VerifiedPayload]
       ): Either[CodecError, LoadedResult[K, U]] =
         val archives = new DensityArchiveCodec(StudyResultCodec.this)
-        archives.codec
-          .decode(json)
-          .flatMap(
-            _.materialize(payloads).left
-              .map(error => CodecError.Field("density", json, error.message))
-          )
-          .map(loaded)
+        archives.codec.decode(json).flatMap { archive =>
+          archive
+            .materialize(payloads)
+            .left
+            .map(error => CodecError.Field("density", json, error.message))
+            .map { value =>
+              new LoadedResult[K, U]:
+                type Score      = S
+                type Difference = D
+                def result              = value
+                override def stampClaim = archive.stampClaim
+                def encode              =
+                  if archive.stampClaim.isEmpty then codec.encode(value)
+                  else archives.codec.encode(archive)
+            }
+        }
       private def loaded(value: StudyResult[K, U, S, D]): LoadedResult[K, U] =
         new LoadedResult[K, U]:
           type Score      = S
@@ -643,6 +652,9 @@ trait LoadedResult[K, U <: Unit2D]:
   type Difference
   def result: StudyResult[K, U, Score, Difference]
   def encode: Either[CodecError, Json]
+
+  /** None is a legacy result; a saved claim still requires actual plan/input verification. */
+  def stampClaim: Option[RunStamp[?, StudyInput[K, U]]] = None
 
 sealed trait StudyResultRegistration[K, U <: Unit2D]:
   def id: DefinitionId

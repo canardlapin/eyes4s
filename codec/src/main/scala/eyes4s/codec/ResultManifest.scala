@@ -52,6 +52,27 @@ object ResultManifest:
       payloads.map(p => ManifestRelation.ResultPayloadOf(result.name, p.name))
     )
 
+  /** Persist a completion-bound result and its canonical run claim. */
+  def stamped[K, U <: Unit2D: UnitLabel, P, S, D](
+      name: String,
+      persistence: StudyResultCodec[K, U, P, S, D],
+      value: StampedStudyResult[K, U, P, S, D],
+      storage: DensityStorage = DensityStorage.Packed
+  ): Either[CodecError, ResultArtifacts] =
+    val codec = new DensityArchiveCodec(persistence)
+    for
+      bundle   <- codec.encodeStamped(value, storage)
+      json     <- codec.codec.encode(bundle.archive)
+      result   <- StoredArtifact.document(name, ArtifactRole.StudyResult, json, None)
+      payloads <- bundle.chunks.zipWithIndex.traverse { case ((_, chunk), index) =>
+        StoredArtifact.resultPayload(s"$name.payload.$index", chunk)
+      }
+    yield ResultArtifacts(
+      result,
+      payloads,
+      payloads.map(p => ManifestRelation.ResultPayloadOf(result.name, p.name))
+    )
+
   /** References used by the archive, not merely edges asserted by a caller.
     * Full geometry and completed-result validation still belongs to its codec.
     */

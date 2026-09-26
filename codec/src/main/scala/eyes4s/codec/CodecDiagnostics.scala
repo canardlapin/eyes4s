@@ -109,7 +109,9 @@ object CodecDiagnosticCatalog:
     "ReportInput",
     "ReportLedger",
     "ReportMembers",
-    "SourceBinding"
+    "SourceBinding",
+    "RunPlan",
+    "RunInput"
   )
   val manifest: DiagnosticFamily = error("manifest")(
     "InvalidName",
@@ -155,8 +157,20 @@ object CodecDiagnosticCatalog:
     "RowKeyMismatch"
   )
 
+  val runStamp: DiagnosticFamily = error("run-stamp")("ChangedPlan", "ChangedInput")
+
   val families: Vector[DiagnosticFamily] =
-    Vector(codec, resolve, sourceFailure, relation, manifest, payload, byteDigest, density)
+    Vector(
+      codec,
+      resolve,
+      sourceFailure,
+      relation,
+      manifest,
+      payload,
+      byteDigest,
+      density,
+      runStamp
+    )
 
   val codes: Vector[DiagnosticCode] = families.flatMap(_.codes)
 
@@ -405,7 +419,15 @@ private[codec] object CodecProjections:
           artifact(found)
         )
       case Description(values) => diagnostic[Any](C.relation, e, e.message)(changes(values))
-      case Admission(error)    =>
+      case RunPlan(reported, current, values) =>
+        diagnostic[Any](C.relation, e, e.message)(
+          digest(reported),
+          digest(current),
+          changes(values)
+        )
+      case RunInput(reported, current) =>
+        diagnostic[Any](C.relation, e, e.message)(digest(reported), digest(current))
+      case Admission(error) =>
         val inner = Projections.admission(error)
         diagnostic(C.relation, e, e.message, inner.subject)(cause(inner))
       case RefusedAdmission           => diagnostic[Any](C.relation, e, e.message)()
@@ -641,3 +663,21 @@ object CodecDiagnostics:
     Diagnose.instance(C.byteDigest)(byteDigest)
   given densityError[K]: Diagnose[DensityError[K], ErasedKey] =
     erased(C.density)(density[K])
+
+  given runStampError[P, I]: Diagnose[RunStampError[P, I], Nothing] =
+    Diagnose.instance(C.runStamp) { error =>
+      import DiagnosticSupport.diagnostic
+      import CodecDiagnosticSupport.{digest, changes}
+      error match
+        case RunStampError.ChangedPlan(reported, current, values) =>
+          diagnostic[Nothing](C.runStamp, error, error.message)(
+            digest(reported.sha256),
+            digest(current.sha256),
+            changes(values)
+          )
+        case RunStampError.ChangedInput(reported, current) =>
+          diagnostic[Nothing](C.runStamp, error, error.message)(
+            digest(reported.sha256),
+            digest(current.sha256)
+          )
+    }
