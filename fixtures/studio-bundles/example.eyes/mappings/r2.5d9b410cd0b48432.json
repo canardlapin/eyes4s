@@ -1,0 +1,1 @@
+[{"column":"participant","role":{"Participant":{}}},{"column":"phase","role":{"Phase":{}}},{"column":"trial","role":{"Trial":{}}},{"column":"ordinal","role":{"Ordinal":{}}},{"column":"sample_count","role":{"SampleCount":{}}},{"column":"x","role":{"X":{}}},{"column":"y","role":{"Y":{}}},{"column":"onset_ms","role":{"Onset":{}}},{"column":"duration_ms","role":{"Duration":{}}}]

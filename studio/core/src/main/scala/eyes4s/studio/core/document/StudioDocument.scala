@@ -34,15 +34,18 @@ object StudioSchemaIds:
   val JournalName: String  = "studio.journal"
   val DatasetName: String  = "studio.dataset-content"
   val ProjectName: String  = "studio.project"
+  val AssetsName: String   = "studio.asset-registry"
 
   final case class Ids(
       document: DefinitionId,
       science: DefinitionId,
       journal: DefinitionId,
       datasetContent: DefinitionId,
-      project: DefinitionId
+      project: DefinitionId,
+      assets: DefinitionId
   ) derives CanEqual:
-    def all: Vector[DefinitionId] = Vector(document, science, journal, datasetContent, project)
+    def all: Vector[DefinitionId] =
+      Vector(document, science, journal, datasetContent, project, assets)
 
   private def id(name: String, version: Int): Either[DocumentError, DefinitionId] =
     DefinitionId.of(name, version).left.map(_ => DocumentError.BadSchemaId(name, version))
@@ -50,7 +53,8 @@ object StudioSchemaIds:
   /** The whole document, presentation included; its science, whose digest is
     * the document's scientific identity; a line of the command journal
     * (S2.2); and the first version of the `.eyes` bundle manifest
-    * `project.json` (S2.3), whose later versions its `SchemaLadder` adds.
+    * `project.json` (S2.3), whose later versions its `SchemaLadder` adds;
+    * and a dataset revision's asset registry (S2.10).
     */
   val ids: Either[DocumentError, Ids] =
     for
@@ -59,7 +63,8 @@ object StudioSchemaIds:
       journal  <- id(JournalName, 1)
       dataset  <- id(DatasetName, 1)
       project  <- id(ProjectName, 1)
-    yield Ids(document, science, journal, dataset, project)
+      assets   <- id(AssetsName, 1)
+    yield Ids(document, science, journal, dataset, project, assets)
 
   /** The ids as a codec failure, for building codecs. */
   private[studio] def forCodec: Either[CodecError, Ids] =
