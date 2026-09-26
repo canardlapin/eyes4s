@@ -47,7 +47,10 @@ object StudioFixture {
     val listing = cache / "stimuli.txt"
     val names   = stimuli.map(_.getName).sorted.mkString("\n")
     if (!listing.exists || IO.read(listing) != names) IO.write(listing, names)
-    cached(inputs + listing).toSeq.sortBy(_.getName)
+    // The generator's own source is an input too: changing what it emits must
+    // regenerate even when the fixture files are unchanged (found at merge of S2.1).
+    val generator = root / "project" / "StudioFixture.scala"
+    cached(inputs + listing + generator).toSeq.sortBy(_.getName)
   }
 
   /** JVM class files cap one string constant at 65,535 modified-UTF-8 bytes;
