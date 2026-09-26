@@ -121,6 +121,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
     assertEquals(ProgressTotal.of(SegmentTotal.Exact(3L)), ProgressTotal.Exact(3L))
     assertEquals(ProgressTotal.of(SegmentTotal.AtMost(4L)), ProgressTotal.AtMost(4L))
     assertEquals(ProgressTotal.of(SegmentTotal.Unknown), ProgressTotal.Unknown)
+    assertEquals(ProgressTotal.of(SegmentTotal.Counting), ProgressTotal.Counting)
     assertEquals(Segment.of(StudySegment.Estimating(0)), Segment.Estimating(0))
     assertEquals(
       Segment.of(StudySegment.Comparing(1, StudyDesign.Control)),
@@ -163,4 +164,30 @@ class ProtocolCodecSuite extends munit.FunSuite:
       TrialDisposition.of(eyes4s.plan.TrialDisposition.NoFixations),
       TrialDisposition.NoFixations
     )
+  }
+
+  test(
+    "Counting is unbounded but still refuses negative progress and remains distinct from Unknown"
+  ) {
+    assertEquals(ProgressTotal.Counting.bound, None)
+    val meter = StageMeter
+      .of(StageKind.Comparing, CountUnit.Pairs, 1000000L, ProgressTotal.Counting)
+      .fold(e => fail(e.message), identity)
+    assertEquals(meter.asJson.as[StageMeter], Right(meter))
+    assertEquals(
+      StageMeter.of(StageKind.Comparing, CountUnit.Pairs, -1L, ProgressTotal.Counting),
+      Left(ProgressError.Negative("meter", -1L))
+    )
+    assert(RunTotals.of(1L, ProgressTotal.Counting, 2L, ProgressTotal.Counting).isRight)
+    assertNotEquals(
+      (ProgressTotal.Counting: ProgressTotal).asJson,
+      (ProgressTotal.Unknown: ProgressTotal).asJson
+    )
+    val invalid = progress.meter.asJson.deepMerge(
+      Json.obj(
+        "done"  -> Json.fromLong(-1L),
+        "total" -> (ProgressTotal.Counting: ProgressTotal).asJson
+      )
+    )
+    assert(invalid.as[StageMeter].isLeft)
   }

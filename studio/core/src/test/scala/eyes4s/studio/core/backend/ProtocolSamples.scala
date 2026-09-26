@@ -365,7 +365,8 @@ object ProtocolSamples:
         Sample("state.Finished", JobState.Finished(outcomes(0)): JobState),
         Sample("total.Exact", ProgressTotal.Exact(1L): ProgressTotal),
         Sample("total.AtMost", ProgressTotal.AtMost(2L): ProgressTotal),
-        Sample("total.Unknown", ProgressTotal.Unknown: ProgressTotal)
+        Sample("total.Unknown", ProgressTotal.Unknown: ProgressTotal),
+        Sample("total.Counting", ProgressTotal.Counting: ProgressTotal)
       ) ++
       named("cause", causes)(prefix) ++
       named("disposition", dispositions.take(3))(prefix) ++

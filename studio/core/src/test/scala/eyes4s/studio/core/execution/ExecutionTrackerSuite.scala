@@ -203,6 +203,13 @@ class ExecutionTrackerSuite extends munit.ScalaCheckSuite:
     assertEquals(p.stageMeter.total, MeterTotal.Counting)
   }
 
+  test("an explicit Counting total retains stage and run-wide counting meters") {
+    assertEquals(MeterTotal.of(ProgressTotal.Counting), MeterTotal.Counting)
+    val p = ExecutionProgress(report(JobId(1), RunId(8), 3L, 21400L, ProgressTotal.Counting))
+    assertEquals(p.pairs, Meter(CountUnit.Pairs, 21400L, MeterTotal.Counting))
+    assertEquals(p.stageMeter.total, MeterTotal.Counting)
+  }
+
   test("tracking the same job twice is refused, naming it") {
     val status = JobStatus(JobId(1), RunId(8), rev5, r3, JobState.Queued)
     val (t, g) = ExecutionTracker.empty.intend(stamps(1))

@@ -249,6 +249,8 @@ object ProtocolPins:
       """{"Running":{"progress":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}""",
     "total.AtMost" ->
       """{"AtMost":{"units":2}}""",
+    "total.Counting" ->
+      """{"Counting":{}}""",
     "total.Exact" ->
       """{"Exact":{"units":1}}""",
     "total.Unknown" ->

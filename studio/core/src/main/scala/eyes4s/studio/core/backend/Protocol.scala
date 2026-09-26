@@ -157,18 +157,20 @@ enum ProgressTotal derives CanEqual, Codec.AsObject:
   case Exact(units: Long)
   case AtMost(units: Long)
   case Unknown
+  case Counting
 
   /** The largest count that can be reached, when one is stated. */
   def bound: Option[Long] = this match
-    case Exact(units)  => Some(units)
-    case AtMost(units) => Some(units)
-    case Unknown       => None
+    case Exact(units)       => Some(units)
+    case AtMost(units)      => Some(units)
+    case Unknown | Counting => None
 
 object ProgressTotal:
   def of(total: SegmentTotal): ProgressTotal = total match
     case SegmentTotal.Exact(units)  => Exact(units)
     case SegmentTotal.AtMost(units) => AtMost(units)
     case SegmentTotal.Unknown       => Unknown
+    case SegmentTotal.Counting      => Counting
 
 /** Why a progress report was refused. */
 enum ProgressError derives CanEqual:
