@@ -18,7 +18,14 @@ package eyes4s.studio.desktop.platform
 
 import cats.effect.Sync
 import eyes4s.codec.ByteDigest
-import eyes4s.studio.core.bundle.{BundlePath, LockOwner, ProjectStore, StoreError, WriterLock}
+import eyes4s.studio.core.bundle.{
+  BundlePath,
+  LockOwner,
+  ProjectStore,
+  Sidecar,
+  StoreError,
+  WriterLock
+}
 
 import java.nio.ByteBuffer
 import java.nio.channels.{FileChannel, FileLock, OverlappingFileLockException}
@@ -49,6 +56,12 @@ import scala.util.control.NonFatal
   * entry or manifest. On macOS `force` is `fsync`, which does not flush the
   * drive's own cache (`F_FULLFSYNC`); that power-loss window is the
   * platform's.
+  *
+  * '''Sidecars''' (S2.4a/b) are files at the bundle root beside
+  * `project.json`. Replacing one is staged and moved like the manifest.
+  * Appending writes in place and flushes before returning, so a crash can
+  * leave only a torn tail of the last append, which the journal's reader
+  * tolerates.
   *
   * '''The writer lock''' is an OS file lock on `.lock`. POSIX drops a
   * process's locks on a file when any descriptor on it closes, so each JVM
@@ -234,6 +247,73 @@ final class FileProjectStore[F[_]: Sync] private (root: Path) extends ProjectSto
         found = current.map(ByteDigest.sha256)
         _ <- Either.cond(found == expected, (), StoreError.ManifestMoved(expected, found))
       yield stage(r, file, next)
+    }
+
+  /** The sidecar's file at the bundle root, refused if it is a link. */
+  private def sidecarFile(r: Path, file: Sidecar, reading: Boolean): Either[StoreError, Path] =
+    contained(r, file.fileName, Vector(file.fileName), reading)
+
+  def readSidecar(file: Sidecar): F[Either[StoreError, IArray[Byte]]] =
+    blocking(file.fileName, reading = true) {
+      realRoot match
+        case None    => Left(StoreError.NoSidecar(file))
+        case Some(r) =>
+          sidecarFile(r, file, reading = true)
+            .flatMap(readFile(_, file.fileName))
+            .flatMap(_.toRight(StoreError.NoSidecar(file)))
+    }
+
+  /** Appended in place and flushed; a new file's directory is flushed too.
+    * A crash mid-append can leave a prefix of `bytes` at the end.
+    */
+  def appendSidecar(
+      lock: WriterLock,
+      file: Sidecar,
+      bytes: IArray[Byte]
+  ): F[Either[StoreError, Unit]] =
+    holding(lock, file.fileName) { r =>
+      sidecarFile(r, file, reading = false).flatMap { f =>
+        if Files.exists(f, LinkOption.NOFOLLOW_LINKS) &&
+          !Files.isRegularFile(f, LinkOption.NOFOLLOW_LINKS)
+        then Left(StoreError.Unwritable(file.fileName, "it is not a regular file"))
+        else
+          val created = !Files.exists(f, LinkOption.NOFOLLOW_LINKS)
+          val channel = FileChannel.open(
+            f,
+            StandardOpenOption.CREATE,
+            StandardOpenOption.WRITE,
+            StandardOpenOption.APPEND,
+            LinkOption.NOFOLLOW_LINKS
+          )
+          try
+            val buffer = ByteBuffer.wrap(Array.from(bytes))
+            while buffer.hasRemaining do channel.write(buffer): Unit
+            channel.force(true)
+          finally channel.close()
+          if created then syncDirectory(r)
+          Right(())
+      }
+    }
+
+  /** Staged, flushed and moved into place, like the manifest. */
+  def replaceSidecar(
+      lock: WriterLock,
+      file: Sidecar,
+      bytes: IArray[Byte]
+  ): F[Either[StoreError, Unit]] =
+    holding(lock, file.fileName)(r =>
+      sidecarFile(r, file, reading = false).map(stage(r, _, bytes))
+    )
+
+  def removeSidecar(lock: WriterLock, file: Sidecar): F[Either[StoreError, Unit]] =
+    holding(lock, file.fileName) { r =>
+      sidecarFile(r, file, reading = false).flatMap { f =>
+        if !Files.exists(f, LinkOption.NOFOLLOW_LINKS) then Left(StoreError.NoSidecar(file))
+        else
+          Files.delete(f)
+          syncDirectory(r)
+          Right(())
+      }
     }
 
   def acquire(owner: LockOwner): F[Either[StoreError, WriterLock]] =

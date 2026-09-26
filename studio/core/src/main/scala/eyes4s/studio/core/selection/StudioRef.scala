@@ -218,6 +218,20 @@ object StudioRef:
             case _ => None
         case _ => None
 
+  /** eyes4s `ResultRef.Estimation` of one run: one trial's map at one scale
+    * (S3.4's map step).
+    */
+  object TrialMap:
+    def apply(run: RunId, scale: ScaleIndex, key: TrialKey): StudioRef =
+      Result(run, CheckedAddress.trusted(ResultAddress.Estimation(scale.value, key)))
+
+    def unapply(ref: StudioRef): Option[(RunId, ScaleIndex, TrialKey)] = ref match
+      case Result(run, a) =>
+        a.value match
+          case ResultAddress.Estimation(_, key) => Some((run, a.scale, key))
+          case _                                => None
+      case _ => None
+
   /** eyes4s `ResultRef.ContrastRow` of one run: a query's M, B and D. */
   object QueryContrast:
     def apply(run: RunId, scale: ScaleIndex, query: TrialKey): StudioRef =

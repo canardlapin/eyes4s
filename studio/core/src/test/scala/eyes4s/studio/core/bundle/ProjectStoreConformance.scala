@@ -177,6 +177,58 @@ abstract class ProjectStoreConformance extends CatsEffectSuite:
     }
   }
 
+  test(
+    "sidecars: append adds at the end, replace swaps whole, remove deletes; none is an entry"
+  ) {
+    views.use { (store, other) =>
+      val journal = Sidecar.Journal
+      for
+        absent   <- other.readSidecar(journal)
+        lock     <- ok(store.acquire(owner(alice)))
+        _        <- ok(store.appendSidecar(lock, journal, bytes("one\n")))
+        _        <- ok(store.appendSidecar(lock, journal, bytes("two\n")))
+        _        <- ok(store.appendSidecar(lock, journal, IArray.empty[Byte]))
+        both     <- ok(other.readSidecar(journal))
+        _        <- ok(store.replaceSidecar(lock, journal, bytes("three\n")))
+        _        <- ok(store.replaceSidecar(lock, Sidecar.PreviousManifest, bytes("{}")))
+        three    <- ok(other.readSidecar(journal))
+        prev     <- ok(other.readSidecar(Sidecar.PreviousManifest))
+        listed   <- ok(other.list)
+        _        <- ok(store.removeSidecar(lock, journal))
+        again    <- store.removeSidecar(lock, journal)
+        removed  <- other.readSidecar(journal)
+        kept     <- ok(other.readSidecar(Sidecar.PreviousManifest))
+        manifest <- other.readManifest
+      yield
+        assertEquals(absent, Left(StoreError.NoSidecar(journal)))
+        assert(same(both, bytes("one\ntwo\n")))
+        assert(same(three, bytes("three\n")))
+        assert(same(prev, bytes("{}")))
+        assertEquals(listed, Vector.empty)
+        assertEquals(again, Left(StoreError.NoSidecar(journal)))
+        assertEquals(removed, Left(StoreError.NoSidecar(journal)))
+        assert(same(kept, bytes("{}")))
+        assertEquals(manifest, Left(StoreError.NoManifest))
+    }
+  }
+
+  test("every sidecar write needs the current lock") {
+    views.use { (store, other) =>
+      for
+        lock     <- ok(store.acquire(owner(alice)))
+        _        <- ok(store.release(lock))
+        appended <- store.appendSidecar(lock, Sidecar.Journal, bytes("x"))
+        replaced <- store.replaceSidecar(lock, Sidecar.Journal, bytes("x"))
+        removed  <- store.removeSidecar(lock, Sidecar.Journal)
+        read     <- other.readSidecar(Sidecar.Journal)
+      yield
+        assertEquals(appended, Left(StoreError.NotHolder(owner(alice), None)))
+        assertEquals(replaced, Left(StoreError.NotHolder(owner(alice), None)))
+        assertEquals(removed, Left(StoreError.NotHolder(owner(alice), None)))
+        assertEquals(read, Left(StoreError.NoSidecar(Sidecar.Journal)))
+    }
+  }
+
 /** The in-memory store passes the conformance suite. */
 class InMemoryProjectStoreSuite extends ProjectStoreConformance:
   def views: Resource[IO, (ProjectStore[IO], ProjectStore[IO])] =

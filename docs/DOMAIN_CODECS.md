@@ -116,6 +116,17 @@ parsing. Invalid counters, mismatched units, missing running meters and inconsis
 work totals are refused. The codec owns the DTO; the io module maps fs2 progress to
 it through `StampedStudyExecution.snapshot`.
 
+### Record and fixation identities in application documents
+
+`RecordIdentityCodecs` (circe `Codec` givens) write a `DataRecord`, `FixationNumber` or
+`ScanpathPosition` as an object with one member named for its counting convention:
+`{"data-record":7214}`, `{"fixation-number":6}`, `{"scanpath-position":5}`. A stored number
+therefore can't be read in another convention. Decoding refuses any other member, an extra member,
+a value that is not a JSON integer, and a number outside the type's range. These forms have no
+schema identity of their own: the application document that holds them is versioned. The pinned
+document `codec/src/test/resources/values/record-identity-v1.json` is checked byte for byte on
+the JVM and through a portable mirror on Scala.js.
+
 ## Schema compatibility
 
 Every stored document is an envelope, `{"schema": {"name", "version"}, "value"}`. The version is
