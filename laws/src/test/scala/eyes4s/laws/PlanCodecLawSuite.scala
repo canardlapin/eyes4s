@@ -25,6 +25,7 @@ import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.{Deg, Px}
 import eyes4s.plan.*
 import eyes4s.surface.EdgePolicy
+import io.circe.Json
 import org.scalacheck.{Gen, Test}
 
 /** Round-trip laws for the saved plan codecs: the built-in study plan
@@ -88,6 +89,22 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
     "trial study plan",
     CodecLaws.roundTrip(
       StudyCodecs.trialCosine[Px].codec,
+      trialPlans,
+      (a: TrialPlan, b: TrialPlan) => a.description == b.description && a.input == b.input
+    )
+  )
+  checkAll(
+    "study plan versions",
+    SchemaLadderLaws.ladder(
+      studies.ladder,
+      Gen.oneOf(cosinePlans, configuredPlans),
+      sameStudy
+    )
+  )
+  checkAll(
+    "trial study plan versions",
+    SchemaLadderLaws.ladder(
+      StudyCodecs.trialCosine[Px].ladder,
       trialPlans,
       (a: TrialPlan, b: TrialPlan) => a.description == b.description && a.input == b.input
     )
@@ -325,6 +342,62 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
     )
     assert(killed(moved, plans, sameRecording))
     assert(survives(ivt.codec, plans, sameRecording))
+  }
+
+  test("the study-plan ladder laws kill a dropped upcast and writing the latest version") {
+    val ladder = studies.ladder
+    val plans  = Gen.oneOf(cosinePlans, configuredPlans)
+    assert(LadderMutants.passes(ladder, plans, sameStudy))
+    val v1 = ladder.versions.head
+    // The v1 -> v2 upcast dropped: a v1 payload is carried into v2 unchanged.
+    assertEquals(
+      LadderMutants.falsified(
+        LadderMutants.rebuilt(ladder)(upcast = { case _ => identity }),
+        plans,
+        sameStudy
+      ),
+      Vector(
+        "a lifted document decodes to the value and re-encodes to the earliest document",
+        "upcasting a vN payload writes exactly what each later version writes"
+      )
+    )
+    // Every plan written as the latest version instead of the earliest.
+    assertEquals(
+      LadderMutants.falsified(
+        LadderMutants.rebuilt(ladder)(expresses = { case `v1` => _ => false }),
+        plans,
+        sameStudy
+      ),
+      Vector(
+        "a value is written under the earliest version that expresses it"
+      )
+    )
+    // An upcast that states another pairing than the one version 1 meant.
+    val otherPairing: Json => Json = json =>
+      ladder
+        .upcast(v1, json)
+        .fold(
+          _ => json,
+          (_, lifted) =>
+            lifted.hcursor
+              .downField("pairing")
+              .downField("unmatched")
+              .withFocus(u =>
+                Json.fromString(if u.asString.contains("refuse") then "reportNoMatch"
+                else "refuse")
+              )
+              .top
+              .getOrElse(lifted)
+        )
+    assert(
+      LadderMutants
+        .falsified(
+          LadderMutants.rebuilt(ladder)(upcast = { case _ => otherPairing }),
+          plans,
+          sameStudy
+        )
+        .contains("upcasting a vN payload writes exactly what each later version writes")
+    )
   }
 
 object PlanCodecLawSuite:

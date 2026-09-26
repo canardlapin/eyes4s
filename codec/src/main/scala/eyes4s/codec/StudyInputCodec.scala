@@ -76,52 +76,40 @@ final class StudyInputCodec[K, U <: Unit2D](
   val input: VersionedCodec[StudyInput[K, U]] =
     VersionedCodec.checked(schema)(writeInput)(readInput)
 
-  /** The ledger schema that also records the admission policy. */
-  val ledgerSchemaV2: DefinitionId =
-    DefinitionId.builtIn(ledgerSchema.name, ledgerSchema.version + 1)
-
-  /** The ledger schema that also records a trial inventory. */
-  val ledgerSchemaV3: DefinitionId =
-    DefinitionId.builtIn(ledgerSchema.name, ledgerSchema.version + 2)
-
-  /** Reads all three ledger versions; a version-1 ledger is an admission
-    * under `AdmissionPolicy.version1`, and only a version-3 ledger carries a
-    * trial inventory. A ledger is written under the earliest version that
-    * expresses it (`AdmissionLedger.version`), so a version-1 or version-2
-    * ledger re-encodes to its own bytes.
+  /** All three ledger versions. A version-1 ledger is an admission under
+    * `AdmissionPolicy.version1`; a version-2 ledger adds the admission policy
+    * and the admitted records outside the frame; a version-3 ledger adds the
+    * trial inventory, which is `null` for a lifted ledger without one. A ledger
+    * is written under the earliest version that expresses it
+    * (`AdmissionLedger.version`), so a version-1 or version-2 ledger
+    * re-encodes to its own bytes. The upcasts state what an earlier version
+    * left implicit (`StudyInputCodec.upcastV1` and `upcastV2`).
     */
-  val ledger: VersionedCodec[AdmissionLedger[K]] =
-    VersionedCodec
-      .versions[AdmissionLedger[K]]("admission ledger", ledgerSchema, ledgerSchema.version + 2)(
-        value =>
-          writeLedger(value).flatMap(json =>
-            value.version match
-              case 1 => Right(ledgerSchema -> json)
-              case 2 =>
-                writePolicy(value).map(policy => ledgerSchemaV2 -> Wire.append(json, policy))
-              case _ =>
-                for
-                  policy    <- writePolicy(value)
-                  inventory <- value.inventory
-                    .toRight(
-                      CodecError.Unsupported(
-                        "inventory",
-                        "only a ledger with a trial inventory is written as version 3"
-                      )
-                    )
-                    .flatMap(inventory =>
-                      trialIdentity
-                        .toRight(noTrialProjection)
-                        .flatMap(_ => InventoryWire.write(inventory))
-                        .left
-                        .map(Wire.at("inventory"))
-                    )
-                yield ledgerSchemaV3 -> Wire.append(
-                  Wire.append(json, policy),
-                  Json.obj("inventory" -> inventory)
-                )
+  val ledgerLadder: SchemaLadder[AdmissionLedger[K]] =
+    SchemaLadder
+      .of[AdmissionLedger[K]]("admission ledger", ledgerSchema)(writeLedger)(readLedger(_, 1))
+      .next(_.version == 1, StudyInputCodec.upcastV1)(value =>
+        for
+          json   <- writeLedger(value)
+          policy <- writePolicy(value)
+        yield Wire.append(json, policy)
+      )(readLedger(_, 2))
+      .next(_.version <= 2, StudyInputCodec.upcastV2)(value =>
+        for
+          json      <- writeLedger(value)
+          policy    <- writePolicy(value)
+          inventory <- value.inventory.fold[Either[CodecError, Json]](Right(Json.Null))(
+            inventory =>
+              trialIdentity
+                .toRight(noTrialProjection)
+                .flatMap(_ => InventoryWire.write(inventory))
+                .left
+                .map(Wire.at("inventory"))
           )
-      )((version, json) => readLedger(json, version.version - ledgerSchema.version + 1))
+        yield Wire.append(Wire.append(json, policy), Json.obj("inventory" -> inventory))
+      )(readLedger(_, 3))
+
+  val ledger: VersionedCodec[AdmissionLedger[K]] = ledgerLadder.codec
 
   /** A trial's identity under this layout, when the layout names a trial. */
   private val trialIdentity: Option[K => TrialIdentity] = TrialIdentity.projection(layout)
@@ -226,7 +214,7 @@ final class StudyInputCodec[K, U <: Unit2D](
         clockName  <- Wire.field[String](json, "clock")
         clock      <- table.clock(ClockId(clockName))
         entries    <- Wire.field[Vector[Json]](json, "fixations")
-        sourceJson <- Wire.field[Option[Json]](json, "source")
+        sourceJson <- Wire.omittable[Json](json, "source")
         fixations  <- entries.zipWithIndex.traverse { case (entry, index) =>
           readFixation(entry, clock, sourceJson.isDefined).left
             .map(Wire.at(s"fixations[$index]"))
@@ -569,9 +557,13 @@ final class StudyInputCodec[K, U <: Unit2D](
     outcome <- StudyInputCodec.outcomes
       .collectFirst { case (o, n) if n == name => o }
       .toRight(CodecError.Field("outcome", json, s"unknown admission outcome $name"))
+    // A version-3 ledger lifted without an inventory speaks version 2's vocabulary.
+    inventoryJson <-
+      if version >= 3 then Wire.field[Json](json, "inventory").map(Some(_)) else Right(None)
+    vocabulary = if inventoryJson.exists(_.isNull) then 2 else version
     entries <- Wire.field[Vector[Json]](json, "records")
     records <- entries.zipWithIndex.traverse { case (entry, index) =>
-      readRecord(entry, version).left.map(Wire.at(s"records[$index]"))
+      readRecord(entry, vocabulary).left.map(Wire.at(s"records[$index]"))
     }
     admission <-
       if version >= 2 then readPolicy(json)
@@ -583,32 +575,33 @@ final class StudyInputCodec[K, U <: Unit2D](
           .left
           .map(CodecError.Admission.apply)
       else
-        // A version-3 ledger is exactly one with an inventory.
-        for
-          body <- Wire.field[Json](json, "inventory")
-          _    <- Either.cond(
-            !body.isNull,
-            (),
-            CodecError
-              .Field("inventory", json, "a version-3 ledger carries its trial inventory")
-          )
-          project   <- trialIdentity.toRight(noTrialProjection)
-          inventory <- InventoryWire.read(body).left.map(Wire.at("inventory"))
-          joined    <- AdmissionLedger
-            .inventoried(
-              SourceRef(label, ref),
-              header,
-              records,
-              outcome,
-              admission._1,
-              admission._2,
-              inventory,
-              project,
-              layout.stimulus(_)
-            )
-            .left
-            .map(CodecError.Admission.apply)
-        yield joined
+        // A version-3 ledger states its inventory; `null` is a lifted ledger without one.
+        Wire.field[Json](json, "inventory").flatMap { body =>
+          if body.isNull then
+            AdmissionLedger
+              .of(SourceRef(label, ref), header, records, outcome, admission._1, admission._2)
+              .left
+              .map(CodecError.Admission.apply)
+          else
+            for
+              project   <- trialIdentity.toRight(noTrialProjection)
+              inventory <- InventoryWire.read(body).left.map(Wire.at("inventory"))
+              joined    <- AdmissionLedger
+                .inventoried(
+                  SourceRef(label, ref),
+                  header,
+                  records,
+                  outcome,
+                  admission._1,
+                  admission._2,
+                  inventory,
+                  project,
+                  layout.stimulus(_)
+                )
+                .left
+                .map(CodecError.Admission.apply)
+            yield joined
+        }
     _ <- ledger.checkCorrections(layout.participant(_)).left.map(CodecError.Admission.apply)
   yield ledger
 
@@ -759,6 +752,26 @@ private[codec] object StudyInputCodec:
     OffScreenPolicy.ExcludeRecord   -> "excludeRecord",
     OffScreenPolicy.QuarantineTrial -> "quarantineTrial"
   )
+
+  /** Lift a version-1 ledger payload to version 2: the admission policy it
+    * left implicit (`AdmissionPolicy.version1`: off-screen records quarantine
+    * their trial, no corrections) and no admitted records outside the frame.
+    */
+  def upcastV1(payload: Json): Json =
+    Wire.append(
+      payload,
+      Json.obj(
+        "offScreen" -> Json.fromString(
+          offScreenPolicies.toMap.apply(OffScreenPolicy.QuarantineTrial)
+        ),
+        "corrections"  -> Json.arr(),
+        "outsideFrame" -> Json.arr()
+      )
+    )
+
+  /** Lift a version-2 ledger payload to version 3: it has no trial inventory. */
+  def upcastV2(payload: Json): Json =
+    Wire.append(payload, Json.obj("inventory" -> Json.Null))
 
   def correction(value: Correction): Json = value match
     case Correction.FlipX             => Json.obj("kind" -> Json.fromString("flipX"))

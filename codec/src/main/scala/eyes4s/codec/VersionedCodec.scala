@@ -72,6 +72,11 @@ enum CodecError derives CanEqual:
   case RecordingResult(underlying: RecordingResultError)
   case TemporalResult(underlying: TemporalResultError[?])
 
+  /** A second spelling of a value the writer spells one way: `found` at
+    * `path` decodes, but the writer writes `canonical`, as `rule` says.
+    */
+  case NonCanonical(path: String, found: Json, canonical: Json, rule: String)
+
   def message: String = this match
     case InvalidJson(_, reason)     => s"Invalid project JSON: $reason"
     case Field(path, input, reason) => s"Cannot decode $path from ${input.noSpaces}: $reason"
@@ -129,23 +134,27 @@ enum CodecError derives CanEqual:
     case Derived(path, declared, derived) =>
       s"Archived $path is ${declared.noSpaces}, but the archive's own evidence derives " +
         s"${derived.noSpaces}."
-    case RecordingResult(e) => e.message
-    case TemporalResult(e)  => e.message
+    case RecordingResult(e)                         => e.message
+    case TemporalResult(e)                          => e.message
+    case NonCanonical(path, found, canonical, rule) =>
+      s"$path is not in canonical form ($rule): found ${found.noSpaces}, " +
+        s"written as ${canonical.noSpaces}."
 
 /** A typed, explicitly versioned codec. Unsupported old versions fail precisely.
   * The wire envelope separates schema identity from any method identity in its payload.
   *
-  * `schema` is the latest version the codec writes. A codec built with
-  * [[VersionedCodec.versions]] also reads its earlier versions, each with its
-  * own original meaning, and writes each value under the earliest version
-  * that expresses it; `schemas` lists every version it reads.
+  * `schema` is the latest version the codec writes. A codec built from a
+  * [[SchemaLadder]] (its `ladder`) also reads the ladder's earlier versions,
+  * each with its own original meaning, and writes each value under the
+  * earliest version that expresses it; `schemas` lists every version it reads.
   */
 final class VersionedCodec[A] private (
     val schema: DefinitionId,
     val schemas: Vector[DefinitionId],
     write: A => Either[CodecError, (DefinitionId, Json)],
     read: (DefinitionId, Json) => Either[CodecError, A],
-    role: Option[String]
+    role: Option[String],
+    val ladder: Option[SchemaLadder[A]]
 ):
   def encode(value: A): Either[CodecError, Json] =
     write(value).map { case (id, payload) =>
@@ -163,6 +172,12 @@ final class VersionedCodec[A] private (
     payload <- Wire.field[Json](json, "value")
     result  <- read(found, payload)
   yield result
+
+  /** The collision-resistant identity of `value`: the SHA-256 of its
+    * canonical document (see [[CanonicalDigest]]).
+    */
+  def digest(value: A): Either[CodecError, CanonicalDigest[A]] =
+    encode(value).flatMap(CanonicalDigest.document)
   def parse(input: String): Either[CodecError, A] =
     io.circe.parser
       .parse(input)
@@ -179,6 +194,7 @@ object VersionedCodec:
       Vector(schema),
       value => Right(schema -> write(value)),
       (_, json) => read(json),
+      None,
       None
     )
 
@@ -203,42 +219,30 @@ object VersionedCodec:
       Vector(schema),
       value => write(value).map(schema -> _),
       (_, json) => read(json),
+      None,
       None
     )
 
-  /** A codec over several versions of one schema. `write` chooses, for each
-    * value, the version it is written under (the earliest that expresses it)
-    * and its payload; `read` decodes a payload of any listed version with that
-    * version's meaning. The versions are `first` through version `latest` of
-    * `first`'s name; the last is the codec's `schema`. A document of any
-    * other version is refused as `CodecError.UnsupportedSchema(role, found,
-    * schemas)`.
+  /** The codec of a [[SchemaLadder]]: `write` chooses each value's version
+    * and payload, `read` decodes a payload of any of the ladder's versions.
     */
-  private[codec] def versions[A](role: String, first: DefinitionId, latest: Int)(
+  private[codec] def laddered[A](ladder: SchemaLadder[A])(
       write: A => Either[CodecError, (DefinitionId, Json)]
   )(
       read: (DefinitionId, Json) => Either[CodecError, A]
   ): VersionedCodec[A] =
-    // Built here from one name and a version range, so the versions share a
-    // name and increase by construction.
-    val all = (first.version to math.max(first.version, latest)).toVector
-      .map(DefinitionId.builtIn(first.name, _))
     new VersionedCodec(
-      all.last,
-      all,
-      value =>
-        write(value).flatMap { case (id, json) =>
-          Either.cond(
-            all.contains(id),
-            id -> json,
-            CodecError.UnsupportedSchema(role, id, all)
-          )
-        },
+      ladder.latest,
+      ladder.versions,
+      write,
       read,
-      Some(role)
+      Some(ladder.role),
+      Some(ladder)
     )
 
-  /** Entry-array encoding preserves arbitrary typed keys and rejects duplicates. */
+  /** Entry-array encoding preserves arbitrary typed keys; it is written in
+    * ascending key order and refuses duplicates and any other order.
+    */
   def entries[K: Ordering, V](
       schema: DefinitionId,
       key: VersionedCodec[K],
@@ -267,6 +271,7 @@ object VersionedCodec:
           case ((k, _), i) if result.count(_._1 == k) > 1 => i
         }
         _ <- Either.cond(duplicates.isEmpty, (), CodecError.DuplicateKeys(schema, duplicates))
+        _ <- Wire.ascending("entries", result.map(_._1).zip(rows.toVector))
       yield result.toMap
     }
 
@@ -305,8 +310,100 @@ object VersionedCodec:
 
 /** Small decoding primitives; errors retain the path and offending JSON value. */
 private[codec] object Wire:
-  def field[A: Decoder](json: Json, name: String): Either[CodecError, A] =
-    json.hcursor.get[A](name).left.map(e => CodecError.Field(name, json, e.message))
+  /** Read member `name` in its one canonical spelling (see [[Member]]). */
+  def field[A](json: Json, name: String)(using member: Member[A]): Either[CodecError, A] =
+    json.hcursor
+      .downField(name)
+      .focus
+      .toRight("missing member")
+      .flatMap(member.read)
+      .left
+      .map(reason => CodecError.Field(name, json, reason))
+
+  /** Read a member its writer omits when there is no value: absence is
+    * `None`, and a `null` is refused as a second spelling of absence.
+    */
+  def omittable[A](json: Json, name: String)(using
+      member: Member[A]
+  ): Either[CodecError, Option[A]] =
+    json.hcursor.downField(name).focus match
+      case None                => Right(None)
+      case Some(v) if v.isNull =>
+        Left(
+          CodecError.NonCanonical(
+            name,
+            json,
+            json.mapObject(_.remove(name)),
+            "an absent value is omitted, not null"
+          )
+        )
+      case Some(v) => member.read(v).map(Some(_)).left.map(r => CodecError.Field(name, json, r))
+
+  /** Refuse `entries` unless their keys are in the writer's (ascending)
+    * order; the canonical spelling carries the same members sorted.
+    */
+  def ascending[A](path: String, entries: Vector[(A, Json)])(using
+      order: Ordering[A]
+  ): Either[CodecError, Unit] =
+    val ordered = entries.zip(entries.drop(1)).forall((a, b) => order.lteq(a._1, b._1))
+    Either.cond(
+      ordered,
+      (),
+      CodecError.NonCanonical(
+        path,
+        Json.arr(entries.map(_._2)*),
+        Json.arr(entries.sortBy(_._1).map(_._2)*),
+        "members are written in ascending order"
+      )
+    )
+
+  /** How a member value is read. Members have one spelling each: a number
+    * is a JSON number, never a numeric string or `null`, and an integer is
+    * spelled as an integer (`1`, not `1.0` or `1e0`); an `Option` member is
+    * present, with `null` meaning no value. Other types read through circe.
+    */
+  trait Member[A]:
+    def read(value: Json): Either[String, A]
+
+  object Member extends LowPriorityMember:
+    private def number(value: Json): Either[String, io.circe.JsonNumber] =
+      value.asNumber.toRight(s"expected a JSON number, got ${value.noSpaces}")
+
+    given Member[Double] = value => number(value).map(_.toDouble)
+
+    given Member[Int] = value =>
+      number(value).flatMap(n =>
+        n.toInt
+          .filter(_.toString == n.toString)
+          .toRight(s"expected an integer spelled as one, got ${value.noSpaces}")
+      )
+
+    /** Beyond 2^53 a JSON number is refused on every platform: Scala.js
+      * parses numbers into doubles, so it cannot tell such an integer from
+      * its neighbours. Integers that large are written as decimal strings.
+      */
+    given Member[Long] = value =>
+      number(value).flatMap(n =>
+        n.toLong
+          .filter(_.toString == n.toString)
+          .toRight(s"expected an integer spelled as one, got ${value.noSpaces}")
+          .filterOrElse(
+            l => l <= (1L << 53) && l >= -(1L << 53),
+            s"an integer beyond 2^53 is written as a decimal string, got ${value.noSpaces}"
+          )
+      )
+
+    given [A](using inner: Member[A]): Member[Vector[A]] = value =>
+      value.asArray
+        .toRight(s"expected an array, got ${value.noSpaces}")
+        .flatMap(_.zipWithIndex.traverse((v, i) => inner.read(v).left.map(r => s"[$i]: $r")))
+
+    given [A](using inner: Member[A]): Member[Option[A]] = value =>
+      if value.isNull then Right(None) else inner.read(value).map(Some(_))
+
+  trait LowPriorityMember:
+    given [A](using decoder: Decoder[A]): Member[A] = value =>
+      decoder.decodeJson(value).left.map(_.message)
 
   /** The members of `base` followed by those of `later`, in that order. */
   def append(base: Json, later: Json): Json =

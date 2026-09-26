@@ -120,21 +120,23 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
   /** The plan schema that records geometry, declared scales and pairing. */
   val schemaV2: DefinitionId = DefinitionId.builtIn(schema.name, schema.version + 1)
 
-  /** Reads both plan versions; a version-1 plan maps the whole frame with
-    * scales in frame units. A plan is written as version 1 whenever it means
-    * exactly that, so a version-1 plan re-encodes to its own bytes.
+  /** Both plan versions. A version-1 plan maps the whole frame with scales
+    * in frame units and averages every matched reference; a plan is written
+    * as version 1 whenever it means exactly that, so a version-1 plan
+    * re-encodes to its own bytes. The upcast states that meaning in
+    * version-2 members (`StudyCodec.upcastV1`).
     */
-  val codec: VersionedCodec[StudyPlan[K, U, P, S, D]] =
-    VersionedCodec.versions[StudyPlan[K, U, P, S, D]]("study plan", schema, schema.version + 1)(
-      plan =>
-        write(plan).flatMap(base =>
-          if plan.isVersion1 then Right(schema -> base)
-          else
-            writeV2(plan).map(extra =>
-              schemaV2 -> Wire.append(base.mapObject(_.remove("estimates")), extra)
-            )
-        )
-    )((version, json) => read(json, version == schemaV2))
+  val ladder: SchemaLadder[StudyPlan[K, U, P, S, D]] =
+    SchemaLadder
+      .of[StudyPlan[K, U, P, S, D]]("study plan", schema)(write)(read(_, v2 = false))
+      .next(_.isVersion1, StudyCodec.upcastV1)(plan =>
+        for
+          base  <- write(plan)
+          extra <- writeV2(plan)
+        yield Wire.append(base.mapObject(_.remove("estimates")), extra)
+      )(read(_, v2 = true))
+
+  val codec: VersionedCodec[StudyPlan[K, U, P, S, D]] = ladder.codec
 
   /** The version-2 members; `estimates` is replaced by the declared `scales`. */
   private def writeV2(plan: StudyPlan[K, U, P, S, D]): Either[CodecError, Json] =
@@ -356,6 +358,30 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
             def prerequisites(input: Option[StudyInput[K, U]]) = value.prerequisites(input)
             def run(input: StudyInput[K, U])                   = value.run(input)
         }
+
+private[codec] object StudyCodec:
+  /** Lift a version-1 plan payload to version 2: its `estimates` become
+    * native `scales`, and the geometry, pairing and angular scale it left
+    * implicit are stated (the whole frame, `StudyPairing.version1`, none).
+    */
+  def upcastV1(payload: Json): Json =
+    val estimates = payload.hcursor.downField("estimates").focus
+    val scales    = estimates
+      .flatMap(_.asArray)
+      .fold(estimates.getOrElse(Json.Null))(entries =>
+        Json.arr(
+          entries.map(e => Json.obj("kind" -> Json.fromString("native"), "estimate" -> e))*
+        )
+      )
+    Wire.append(
+      payload.mapObject(_.remove("estimates")),
+      Json.obj(
+        "pairing"      -> StudyWire.pairing(StudyPairing.version1),
+        "geometry"     -> Json.obj("kind" -> Json.fromString("wholeFrame")),
+        "scales"       -> scales,
+        "angularScale" -> Json.Null
+      )
+    )
 
 /** Existential method output remains typed inside this value after runtime lookup. */
 trait LoadedStudy[K, U <: Unit2D]:

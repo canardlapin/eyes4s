@@ -1147,6 +1147,8 @@ private[codec] object ResultWire:
       method     <- Wire.field[String](json, "method")
       revision   <- Wire.field[String](json, "revision")
       parameters <- readParams(json, "parameters")
+      rawParams  <- Wire.field[Vector[Json]](json, "parameters")
+      _          <- Wire.ascending("parameters", parameters.map(_._1).zip(rawParams))
       components <- Wire.field[Vector[String]](json, "components")
       geometry   <- Wire.field[Json](json, "geometry").flatMap(readEvaluationGeometry[U])
       time       <- Wire.field[Json](json, "time").flatMap(readEvaluationTime)

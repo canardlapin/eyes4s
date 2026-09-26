@@ -534,6 +534,88 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
       (a: AdmissionLedger[TrialKey], b: AdmissionLedger[TrialKey]) => a == b
     )
   )
+
+  /** Replace every quarantine cause in a written ledger with `cause`. */
+  private def causeEdit(cause: Json): Json => Json = document =>
+    document.hcursor
+      .downField("value")
+      .downField("records")
+      .withFocus(_.mapArray(_.map { record =>
+        record.hcursor
+          .downField("reason")
+          .downField("cause")
+          .set(cause)
+          .top
+          .getOrElse(record)
+      }))
+      .top
+      .getOrElse(document)
+
+  /** Generic payload damage, and quarantine causes from each later version's
+    * vocabulary written into a ledger of any version.
+    */
+  private val ledgerEdits: Gen[Json => Json] = Gen.oneOf(
+    SchemaLadderLaws.payloadEdits,
+    Gen.const(
+      causeEdit(
+        Json.obj(
+          "kind"        -> Json.fromString("occurrenceConflict"),
+          "occurrences" -> Json.arr(Json.fromInt(1), Json.fromInt(2))
+        )
+      )
+    ),
+    Gen.const(
+      causeEdit(
+        Json.obj(
+          "kind"        -> Json.fromString("notInInventory"),
+          "participant" -> Json.fromString("p"),
+          "phase"       -> Json.fromString("f"),
+          "trial"       -> Json.fromString("t"),
+          "occurrence"  -> Json.fromInt(1)
+        )
+      )
+    )
+  )
+
+  private val trialKeys: Gen[TrialKey] = for
+    participant <- Gen.oneOf("p1", "p2")
+    phase       <- Gen.oneOf("encode", "recall")
+    trial       <- Gen.oneOf("t1", "t2", "t3")
+    occurrence  <- Gen.choose(1, 2)
+    item        <- Gen.oneOf("a", "b")
+  yield TrialKey
+    .of(participant, phase, trial, checked(TrialOccurrence.of(occurrence)), item)
+    .fold(e => throw new IllegalStateException(s"$e"), identity)
+  private def quarantineTrialKey(k: TrialKey): TrialKey =
+    TrialKey
+      .of("quarantined-" + k.participant, k.phase, k.trial, k.occurrence, k.item)
+      .fold(e => throw new IllegalStateException(s"$e"), identity)
+
+  checkAll(
+    "admission ledger versions",
+    SchemaLadderLaws.ladder(
+      standard.ledgerLadder,
+      Gen.oneOf(
+        ledgers(studyKeys, quarantineStudyKey),
+        policyLedgers(studyKeys, quarantineStudyKey)
+      ),
+      (a: AdmissionLedger[StudyKey], b: AdmissionLedger[StudyKey]) => a == b,
+      ledgerEdits
+    )
+  )
+  checkAll(
+    "inventory ledger versions",
+    SchemaLadderLaws.ladder(
+      StudyInputCodecs.trial[Px].ledgerLadder,
+      Gen.oneOf(
+        inventoryLedgers,
+        ledgers(trialKeys, quarantineTrialKey),
+        policyLedgers(trialKeys, quarantineTrialKey)
+      ),
+      (a: AdmissionLedger[TrialKey], b: AdmissionLedger[TrialKey]) => a == b,
+      ledgerEdits
+    )
+  )
   checkAll(
     "occurrence ledger",
     CodecLaws.roundTrip(
@@ -604,6 +686,80 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
     assert(killed(flipped, gen, eq))
     val lost = mutant(standard.ledger)(l => rebuilt(l, l.policy, l.outsideFrame.drop(1)))
     assert(killed(lost, gen, eq))
+  }
+
+  test("the ledger ladder laws kill dropped or wrong upcasts and writing the latest version") {
+    val ladder = standard.ledgerLadder
+    val values = Gen.oneOf(
+      ledgers(studyKeys, quarantineStudyKey),
+      policyLedgers(studyKeys, quarantineStudyKey)
+    )
+    val same = (a: AdmissionLedger[StudyKey], b: AdmissionLedger[StudyKey]) => a == b
+    val v1 +: v2 +: v3 +: _ = ladder.versions: @unchecked
+    assert(LadderMutants.passes(ladder, values, same))
+    val lifting = Vector(
+      "a lifted document decodes to the value and re-encodes to the earliest document",
+      "upcasting a vN payload writes exactly what each later version writes"
+    )
+    // Each upcast step dropped in turn.
+    assertEquals(
+      LadderMutants.falsified(
+        LadderMutants.rebuilt(ladder)(upcast = { case `v2` => identity }),
+        values,
+        same
+      ),
+      lifting
+    )
+    assertEquals(
+      LadderMutants.falsified(
+        LadderMutants.rebuilt(ladder)(upcast = { case `v3` => identity }),
+        values,
+        same
+      ),
+      lifting
+    )
+    // The v1 -> v2 upcast states today's default policy, not version 1's.
+    val defaultPolicy: Json => Json = json =>
+      ladder
+        .upcast(v1, json)
+        .fold(
+          _ => json,
+          (_, lifted) =>
+            lifted.hcursor
+              .downField("offScreen")
+              .set(Json.fromString("excludeRecord"))
+              .top
+              .getOrElse(lifted)
+        )
+    assertEquals(
+      LadderMutants.falsified(
+        LadderMutants.rebuilt(ladder)(upcast = { case `v2` => defaultPolicy }),
+        values,
+        same
+      ),
+      lifting
+    )
+    // Every ledger written as the latest version, and a version-2 vocabulary
+    // that claims a policy ledger is a version-1 ledger.
+    assertEquals(
+      LadderMutants.falsified(
+        LadderMutants.rebuilt(ladder)(expresses = { case `v1` | `v2` => _ => false }),
+        values,
+        same
+      ),
+      Vector(
+        "a value is written under the earliest version that expresses it"
+      )
+    )
+    assert(
+      LadderMutants
+        .falsified(
+          LadderMutants.rebuilt(ladder)(expresses = { case `v1` => _ => true }),
+          values,
+          same
+        )
+        .contains("a value is written under the earliest version that expresses it")
+    )
   }
 
   test("published laws kill dropped ledger rows, reordered trials and collapsed occurrences") {
@@ -796,14 +952,28 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
                 .downField("recordItems")
                 .withFocus(_ => Json.arr(Json.fromString("aaa"), Json.fromString("zzz")))
             )
-        ,
-        // A null inventory under version 3.
-        json.hcursor.downField("value").downField("inventory").set(Json.Null).top
       ).flatten
+      // A null inventory under version 3 is the lift of a ledger without one:
+      // refused when a record names an inventory cause, and otherwise read as
+      // that ledger, which is written under an earlier version.
+      val inventoryCause = ledger.records.exists {
+        case SourceRecord(_, Disposition.Rejected(_, _, AdmissionReason.Quarantined(_, c))) =>
+          QuarantineCause.version(c) == 3
+        case _ => false
+      }
+      val nullified =
+        json.hcursor.downField("value").downField("inventory").set(Json.Null).top.get
+      val withoutInventory = codec.decode(nullified) match
+        case Left(_)        => inventoryCause
+        case Right(decoded) =>
+          !inventoryCause && decoded.inventory.isEmpty && decoded.version <= 2 &&
+          decoded.records == ledger.records
       org.scalacheck.Prop.all(
-        forgeries.map(f =>
-          org.scalacheck.Prop(codec.decode(f).isLeft) :| s"accepted ${f.noSpaces.take(200)}"
-        )*
+        ((org.scalacheck
+          .Prop(withoutInventory) :| s"null inventory read as ${codec.decode(nullified)}") +:
+          forgeries.map(f =>
+            org.scalacheck.Prop(codec.decode(f).isLeft) :| s"accepted ${f.noSpaces.take(200)}"
+          ))*
       )
     }
     assert(Test.check(Test.Parameters.default.withMinSuccessfulTests(100), prop).passed)

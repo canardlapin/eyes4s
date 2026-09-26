@@ -191,12 +191,10 @@ final class RecordingPlanCodec[P](
         .toRight(CodecError.Field("syncModel", json, s"unknown model '$modelName'"))
       rawMarks <- Wire.field[Vector[Json]](json, "marks")
       marks    <- rawMarks.traverse(DomainWire.readMark)
-      rawLimit <- Wire.field[Option[String]](json, "residualLimitMicros")
+      rawLimit <- Wire.field[Option[Json]](json, "residualLimitMicros")
       limit    <- rawLimit.traverse(text =>
         for
-          value <- text.toLongOption.toRight(
-            CodecError.Field("residualLimitMicros", json, s"invalid microseconds '$text'")
-          )
+          value <- DomainWire.readTime(text, "residualLimitMicros")
           limit <- SyncResidualLimit
             .of(Span.micros(value))
             .left

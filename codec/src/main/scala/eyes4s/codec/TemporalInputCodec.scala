@@ -139,6 +139,7 @@ final class TemporalInputCodec[K, U <: Unit2D](
       readEpoch(row, table, base).left.map(Wire.at(s"epochs[$index]"))
     }
     value <- TemporalStudyInput.of(base, epochs).left.map(CodecError.Temporal.apply)
+    _     <- Wire.ascending("epochs", epochs.map(_._1).zip(rows))
     _     <- Either.cond(
       value.reference.digest == declared,
       (),
@@ -197,6 +198,7 @@ final class TemporalInputCodec[K, U <: Unit2D](
     intervals <- raw.zipWithIndex.traverse { case (interval, index) =>
       DomainWire.readInterval(interval).left.map(Wire.at(s"coverage.intervals[$index]"))
     }
+    _        <- Wire.ascending("coverage.intervals", intervals.map(_.onset.toMicros).zip(raw))
     observed <- ObservedCoverage
       .of(clock, intervals)
       .left
@@ -223,7 +225,7 @@ object TimelineCodecs:
         )
     ) { json =>
       for
-        timing <- Wire.field[Option[String]](json, "timing")
+        timing <- Wire.omittable[String](json, "timing")
         _      <- Either.cond(
           timing.isEmpty,
           (),
