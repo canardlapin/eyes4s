@@ -59,7 +59,7 @@ by CR2; the trial-keyed route remains cosine only.
   - Each family gets its own file in plan (`RepetitionFamily.scala`, `PointSamplingFamily.scala`,
     `TemplateFamily.scala`, `ScanpathStudy.scala`) holding `description`, `diff`, `inspect`,
     `preflight`, the cursor and the stage enum.
-  - The `RecipeDescriptors` helpers become `private[plan]`.
+  - The `RecipeDescriptors` helpers stay public (narrowing them would be a MiMa break with no benefit); family files call them directly.
 - **Conformance.** `FamilyConformanceSuite` in `io` tests (`io` sees plan, codec, fs2, results and
   laws).
   - An exhaustive match over `RecipeFamily.values` into a witness means a new family fails
