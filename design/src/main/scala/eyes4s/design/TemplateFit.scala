@@ -220,8 +220,11 @@ final class FittedTemplate[K] private (
       )
 
 object FittedTemplate:
-  /** Full-rank scaled Householder QR, with no implicit intercept or preprocessing. */
-  val nativeMethod: String        = "eyes4s.no-intercept-scaled-householder-qr/1"
+  /** Full-rank scaled Householder QR, with no implicit intercept or preprocessing.
+    * Revision 2 moved the relative rank tolerance from 1e-12 to 1e-7 (the `lm`
+    * convention); revision-1 recipes are refused rather than refitted silently.
+    */
+  val nativeMethod: String        = "eyes4s.no-intercept-scaled-householder-qr/2"
   val nativeRankTolerance: Double = RelativeRankTolerance.default.value
 
   def fitNoIntercept[K](

@@ -120,11 +120,45 @@ class SurfaceDecompositionSuite extends munit.FunSuite:
     val rows = Vector(0.0, 1.0, 2.0, 3.0, 4.0, 5.0).zipWithIndex.map { case (x, i) =>
       Vector(1.0 + x, 1.0 + x + (if i % 2 == 0 then 1e-8 else -1e-8))
     }
-    val y   = rows.map(r => 2.0 * r(0) - r(1))
-    val fit = get(LeastSquares.fit(rows, y))
+    val y = rows.map(r => 2.0 * r(0) - r(1))
+    // The default (1e-7, as lm) refuses a 1e-8 perturbation; a caller who
+    // explicitly accepts a looser policy still recovers the exact coefficients.
+    assert(LeastSquares.fit(rows, y).isLeft)
+    val fit = get(LeastSquares.fit(rows, y, get(RelativeRankTolerance.of(1e-12))))
     near(fit.coefficients(0), 2.0, illConditionedTolerance)
     near(fit.coefficients(1), -1.0, illConditionedTolerance)
     assert(LeastSquares.fit(rows, y, get(RelativeRankTolerance.of(1e-6))).isLeft)
+  }
+
+  test("a near-collinear design with a nonzero residual is rank deficient by default") {
+    // x2 = x1 +/- 1e-10: the response is not in the span of either column alone,
+    // so a 1e-12 threshold admits coefficients near +/-3e9 made of rounding noise.
+    val rows = Vector(1.0, 2.0, 3.0, 4.0, 5.0, 6.0).zipWithIndex.map { case (x, i) =>
+      Vector(x, x + (if i % 2 == 0 then 1e-10 else -1e-10))
+    }
+    val y = Vector(1.0, 0.0, 2.0, 1.0, 3.0, 5.0)
+    assert(
+      LeastSquares.fit(rows, y) match
+        case Left(LeastSquaresError.RankDeficient(1, pivot, threshold)) =>
+          pivot <= threshold && threshold == RelativeRankTolerance.default.value
+        case other => fail(s"expected a rank refusal, found $other")
+    )
+  }
+
+  test("arithmetic failures name only the operands that exist") {
+    val overflow = LeastSquares.fit(
+      Vector(Vector(Double.MaxValue), Vector(Double.MaxValue)),
+      Vector(1.0, 1.0)
+    )
+    assertEquals(
+      overflow.left.map(_.message),
+      Left("Least squares column norm is nonfinite at column=0.")
+    )
+    assertEquals(overflow, Left(LeastSquaresError.ColumnArithmetic("column norm", 0)))
+    assertEquals(
+      LeastSquaresError.RowArithmetic("prediction/residual", 3).message,
+      "Least squares prediction/residual is nonfinite at row=3."
+    )
   }
 
   test("OLS fitted maps and residuals cannot be used as masses") {
