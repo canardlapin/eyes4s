@@ -112,7 +112,7 @@ the eighteen JSON codecs (study plan, study input, admission ledger, study resul
 binocular recording, recording input, temporal input, timeline, manifest, the four score and
 difference schemas, the recording and temporal result archives, and the conventional
 `eyes4s.recording-plan@1` and `eyes4s.temporal-study@1` plan schemas), plus a pinned v2 document
-of the study plan and admission ledger and a pinned v3 document of the admission ledger, with a test that fails if a pinned schema version is
+of the study plan and admission ledger and a pinned v3 document of each, with a test that fails if a pinned schema version is
 missing, and the packed recording,
 whose decoder also takes its payloads. The schema registry described under
 [Evidence](#evidence) checks the same fixtures on the JVM.
@@ -135,12 +135,13 @@ change to a pinned v1 writer's output fails the build rather than silently becom
 **Which decoders stay readable.** Every released version stays decodable, with its original
 meaning, in every later release. The study plan and the admission ledger have a version 2
 (`eyes4s.study@2`, `eyes4s.admission-ledger@2`, pinned by `study-v2.json` and
-`admission-ledger-v2.json`), and the admission ledger a version 3 (`eyes4s.admission-ledger@3`,
-declared in `InventoryDefinitions` and pinned by `admission-ledger-v3.json`), which adds the trial
-inventory. A version-1 document decodes with its version-1 meaning (the whole frame, scales in
-frame units, every matched reference averaged, and the admission policy that quarantines
-off-screen records), and a document older than the version that introduced a cause may not name
-it. For every other schema, version 1 is the first version, so every current decoder reads exactly
+`admission-ledger-v2.json`), and both a version 3: `eyes4s.admission-ledger@3` (declared in
+`InventoryDefinitions` and pinned by `admission-ledger-v3.json`) adds the trial inventory, and
+`eyes4s.study@3` (declared in `StudyCodecDefinitions` and pinned by `study-v3.json`) adds the
+initial-fixation policy. A version-1 document decodes with its version-1 meaning (the whole frame,
+scales in frame units, every matched reference averaged, every fixation kept, and the admission
+policy that quarantines off-screen records), a version-2 plan keeps every fixation, and a document
+older than the version that introduced a cause may not name it. For every other schema, version 1 is the first version, so every current decoder reads exactly
 version 1; there is no version 0 or earlier variant to keep or migrate from, and `DefinitionId`
 refuses a version below 1.
 
@@ -154,8 +155,9 @@ from a payload of the previous version to a payload of the new version with the 
 version cannot exist without its upcast, and `ladder.codec` is the `VersionedCodec` the schema
 ships. The upcasts state what an earlier version left implicit: the study plan's v1 to v2 upcast
 turns `estimates` into native `scales` and writes the whole-frame geometry, the version-1 pairing
-and no angular scale; the ledger's v1 to v2 upcast writes the version-1 admission policy and no
-records outside the frame, and its v2 to v3 upcast writes `"inventory": null`.
+and no angular scale, and its v2 to v3 upcast writes `"initialFixations": {"kind": "keepAll"}`;
+the ledger's v1 to v2 upcast writes the version-1 admission policy and no records outside the
+frame, and its v2 to v3 upcast writes `"inventory": null`.
 
 The versions' vocabularies are nested: every value a version expresses is expressed by each later
 version. Writing is **earliest-version**: a value is written under the lowest version that
@@ -184,12 +186,14 @@ the codec writes a value `x` under:
 | Refusal | a document the codec refuses is still refused after `lift`; the invalid documents come from edits of written ones (generic payload damage by default, plus edits that reach a later version's vocabulary) |
 
 `PlanCodecLawSuite` and `StudyInputCodecLawSuite` apply them to the study-plan ladders (both key
-layouts) and the admission-ledger ladders (the study key layout for versions 1 and 2, the trial
+layouts, with plans under every initial-fixation policy) and the admission-ledger ladders (the study key layout for versions 1 and 2, the trial
 layout at all three versions), with ledger edits that write a version-2 or version-3 quarantine
 cause into a ledger of any version, and kill, by a falsified property from a fixed seed, a
 dropped upcast step (each step of the ledger in turn), an upcast that states another pairing or
-today's default admission policy instead of version 1's, a codec that writes the latest version
-instead of the earliest, and a vocabulary that claims a policy ledger is a version-1 ledger.
+today's default admission policy instead of version 1's, a v2 to v3 plan upcast that states
+dropping the first fixation, a codec that writes the latest version instead of the earliest, and
+vocabularies that claim a policy ledger is a version-1 ledger or an initial-fixation plan a
+version-2 plan.
 `SchemaRegistryJvmSuite` finds the ladders from the shipped codecs that expose one (through the
 decoder of every registered document fixture), not from a list, and requires every schema name
 registered at more than one version to have one, each ladder's versions to be exactly the
