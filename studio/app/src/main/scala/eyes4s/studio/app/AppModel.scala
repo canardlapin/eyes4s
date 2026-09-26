@@ -20,7 +20,7 @@ import eyes4s.codec.CanonicalDigest
 import eyes4s.studio.app.jobs.JobBoard
 import eyes4s.studio.app.keys.{CommandId, CommandRegistry, KeyChord}
 import eyes4s.studio.app.layout.{LayoutId, PaneId, PerspectiveLayout, StudioLayouts}
-import eyes4s.studio.app.nav.{Location, Navigation, Place}
+import eyes4s.studio.app.nav.{Location, Navigation, Place, Provenance}
 import eyes4s.studio.app.text.{Format, MessageId, Messages}
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId, TrialKey}
 import eyes4s.studio.core.execution.{
@@ -28,6 +28,7 @@ import eyes4s.studio.core.execution.{
   ExecutionError,
   ExecutionEvent,
   ExecutionJob,
+  JobPhase,
   RunStamp
 }
 import eyes4s.studio.core.command.{
@@ -46,6 +47,7 @@ import eyes4s.studio.core.document.{
   LayoutBlob,
   Perspective,
   PresentationState,
+  RunLifecycle,
   StudioDocument
 }
 import eyes4s.studio.core.freshness.{Freshness, SessionFacts}
@@ -251,6 +253,12 @@ enum Intent derives CanEqual:
   case OpenCrumb(index: Int)
   case Back
   case Forward
+
+  /** Explain a number: land on `target` with the provenance trail that leads
+    * to it, keeping the part of the current trail it descends from (S3.4).
+    * The perspective follows the target (Place.home).
+    */
+  case Explain(target: Place)
 
   // --- Selection and hover (S3.3) ------------------------------------------------
   case Select(input: SelectionInput)
@@ -489,6 +497,9 @@ object AppModel:
       m.navigation
         .goForward(m.location)
         .fold((m, none))((to, nav) => arrive(m, m.copy(navigation = nav), to))
+    case Intent.Explain(target) =>
+      val trail = Provenance.explain(m.location.trail, target)
+      navigate(m, Location(Place.home(trail).getOrElse(m.perspective), trail))
 
     case Intent.Select(input) =>
       m.selection
@@ -589,7 +600,11 @@ object AppModel:
           none
         )
 
-    case Intent.Execution(event)   => (m.copy(jobs = m.jobs.receive(event)), none)
+    case Intent.Execution(event) =>
+      val received = m.copy(jobs = m.jobs.receive(event))
+      outcomeOf(received.document, event).fold((received, none)) { command =>
+        applyHistory(received, JournalEntry.Apply(command), received.history.apply(command))
+      }
     case Intent.JobsChanged(jobs)  => (m.copy(jobs = m.jobs.withJobs(jobs)), none)
     case Intent.SessionChanged(f)  => (m.copy(session = f), none)
     case Intent.ItemsLoaded(items) => (m.copy(items = items), none)
@@ -719,6 +734,26 @@ object AppModel:
         selection = after.selection.rebase(keep),
         hover = after.hover.filter(h => keep(h.target))
       )
+
+  /** The document command that records a settled job's run, while the
+    * document still has that run running: a job's end is a backend fact the
+    * document keeps (S3.1). A superseded job that had reported progress
+    * completed on the backend; one with none never ran.
+    */
+  def outcomeOf(document: StudioDocument, event: ExecutionEvent): Option[Command] =
+    event match
+      case ExecutionEvent.Changed(job)
+          if document.run(job.run).exists(_.state == RunLifecycle.Running) =>
+        val lifecycle = job.phase match
+          case JobPhase.Succeeded(_)    => Some(RunLifecycle.Completed)
+          case JobPhase.Failed(_, _)    => Some(RunLifecycle.Failed)
+          case JobPhase.Cancelled(last) => Some(RunLifecycle.Cancelled(last.map(_.stage)))
+          case JobPhase.Superseded(_, Some(_)) => Some(RunLifecycle.Completed)
+          case JobPhase.Superseded(_, None)    => Some(RunLifecycle.Cancelled(None))
+          case JobPhase.Queued | JobPhase.Running(_) | JobPhase.Cancelling(_) => None
+        // The result archive binds when the real backend reports it (S3.7).
+        lifecycle.map(Command.RecordRunOutcome(job.run, _, CoreBinding.unbound))
+      case _ => None
 
   /** The run a ref belongs to, if it is a run result. */
   def runOf(ref: StudioRef): Option[RunId] = ref match

@@ -871,6 +871,7 @@ object DiagnosticSamples:
         NonEmptyVector.one(k1)
       )
     ),
+    generated[RecordIdentityError]("RecordIdentityError"),
     generated[SourceIdentityError]("SourceIdentityError"),
     generated[ImportSpecError]("ImportSpecError"),
     generated[MassLevelError]("MassLevelError"),

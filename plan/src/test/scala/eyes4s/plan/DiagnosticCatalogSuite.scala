@@ -28,12 +28,12 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Every issued code, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 654
-  private val PinnedDigest = "c24110550ea2fe45"
+  private val PinnedCount  = 666
+  private val PinnedDigest = "6b224d49a712c484"
 
   /** The issued table before CR5: codes are only ever issued, never changed
     * or reused, and a retired code keeps its place, so taking away the codes
-    * CR5, CR2, CR4, SourceRef, UI-E and UI-D added leaves exactly this table.
+    * CR5, CR2, CR4, SourceRef, UI-E, G1 and UI-D added leaves exactly this table.
     */
   private val StableCount  = 445
   private val StableDigest = "fb7ffbd3d3db7f63"
@@ -70,6 +70,10 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
       Set("inspection.geometry", "inspection.geometry-description")
 
   private val UiDCodes: Set[String] = DiagnosticCatalog.stageMeter.codes.map(_.render).toSet
+
+  /** G1 adds record identity diagnostics before SourceRef and UI-E land. */
+  private val G1Codes: Set[String] =
+    DiagnosticCatalog.recordIdentity.codes.map(_.render).toSet
 
   test(
     "every cataloged family is sampled, in catalog order, through its own Diagnose instance"
@@ -172,7 +176,7 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
       rendered.filterNot(code =>
         Cr5Codes(code) || Cr2Codes(code) || Cr4Codes(code) || SourceCodes(code) || UiECodes(
           code
-        ) || UiDCodes(code)
+        ) || G1Codes(code) || UiDCodes(code)
       )
     assertEquals(stable.size, StableCount)
     assertEquals(ContentHash.ofString(stable.mkString("\n")).render, StableDigest)
@@ -243,6 +247,33 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
     assertEquals(
       incompatible.causes.map(_.code.render),
       Vector("contrast-compatibility.orientation", "contrast-compatibility.policy")
+    )
+  }
+
+  test("record identity diagnostics keep CSV ordinals distinct from physical lines") {
+    val record = DataRecord.of(7).toOption.get
+    val beyond = Diagnostic.of(RecordIdentityError.RecordBeyond(record, 3))
+    assertEquals(beyond.subject, Vector(Locus.Record(8)))
+    assertEquals(
+      beyond.operands,
+      Vector(
+        "record"  -> Operand.Fields(Vector("value" -> Operand.Integer(BigInt(7)))),
+        "records" -> Operand.Integer(BigInt(3))
+      )
+    )
+    assertEquals(
+      Diagnostic.of(RecordIdentityError.HeaderRecord(CsvRecord.header)).subject,
+      Vector(Locus.Record(1))
+    )
+    val line     = SourceLine.of(9).toOption.get
+    val physical = Diagnostic.of(RecordIdentityError.LineBeyond(line, 4))
+    assertEquals(physical.subject, Vector.empty)
+    assertEquals(
+      physical.operands,
+      Vector(
+        "line"  -> Operand.Fields(Vector("value" -> Operand.Integer(BigInt(9)))),
+        "lines" -> Operand.Integer(BigInt(4))
+      )
     )
   }
 

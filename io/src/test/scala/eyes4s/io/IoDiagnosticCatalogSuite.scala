@@ -32,8 +32,8 @@ class IoDiagnosticCatalogSuite extends munit.FunSuite:
 
   private val all = IoDiagnosticSamples.all
 
-  private val IoCount    = 183
-  private val IoDigest   = "1cadee57d23ba6be"
+  private val IoCount    = 185
+  private val IoDigest   = "3fe35b37de91fc62"
   private val LawsCount  = 21
   private val LawsDigest = "cec5dc887ffa1c46"
 
@@ -155,6 +155,19 @@ class IoDiagnosticCatalogSuite extends munit.FunSuite:
     )
     val corpus = Diagnostic.of(EyeLinkCorpusError.WrongFieldCount("corpus.tsv", 3, 5, 4))
     assertEquals(corpus.subject, Vector(Locus.Line("corpus.tsv", 3L)))
+  }
+
+  test("CSV layout diagnostics retain their typed cause and its record subject") {
+    val csv       = TidyCsvError.WrongColumnCount(7, 9, 8)
+    val malformed = Diagnostic.of(CsvLayoutError.Csv(csv))
+    assertEquals(malformed.code.render, "csv-layout.csv")
+    assertEquals(malformed.causes, Vector(Diagnostic.of(csv)))
+    assertEquals(malformed.subject, Vector(Locus.Record(7)))
+    val identity = RecordIdentityError.HeaderRecord(CsvRecord.header)
+    val layout   = Diagnostic.of(CsvLayoutError.Layout(identity))
+    assertEquals(layout.code.render, "csv-layout.layout")
+    assertEquals(layout.causes, Vector(Diagnostic.of(identity)))
+    assertEquals(layout.subject, Vector(Locus.Record(1)))
   }
 
   test("every sampled case that names a source and a line has that line as its subject") {

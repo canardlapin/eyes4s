@@ -49,10 +49,25 @@ object WriterLock:
   /** A lock with this owner and token; for [[ProjectStore]] implementations. */
   def issue(owner: LockOwner, token: String): WriterLock = new WriterLock(owner, token)
 
+/** A store-kept file beside the manifest (tickets S2.4a and S2.4b).
+  * Sidecars are not bundle entries: no [[BundlePath]] names them, `list`
+  * never returns them and the manifest never lists them. They hold what a
+  * writing session keeps for recovery, not the document.
+  *
+  *  - `Journal`, `project.journal`: the autosave command journal of the
+  *    session writing the bundle, appended to as the user works (S2.4b);
+  *  - `PreviousManifest`, `project.previous.json`: the last manifest that
+  *    opened valid before the current one was swapped in (S2.4a).
+  */
+enum Sidecar(val fileName: String) derives CanEqual:
+  case Journal          extends Sidecar("project.journal")
+  case PreviousManifest extends Sidecar("project.previous.json")
+
 /** Why a store operation failed. Each case names what it was applied to. */
 enum StoreError derives CanEqual:
   case Missing(path: BundlePath)
   case NoManifest
+  case NoSidecar(file: Sidecar)
   case Unreadable(target: String, reason: String)
   case Unwritable(target: String, reason: String)
 
@@ -70,6 +85,7 @@ enum StoreError derives CanEqual:
   def message: String = this match
     case Missing(path)              => s"The bundle has no entry $path."
     case NoManifest                 => s"The bundle has no ${ProjectStore.ManifestName}."
+    case NoSidecar(file)            => s"The bundle has no ${file.fileName}."
     case Unreadable(target, reason) => s"Cannot read $target: $reason."
     case Unwritable(target, reason) => s"Cannot write $target: $reason."
     case Locked(requester, holder)  =>
@@ -104,9 +120,16 @@ enum StoreError derives CanEqual:
   *    refused with [[StoreError.Locked]] naming the holder. Every mutation
   *    takes the current lock and is refused with [[StoreError.NotHolder]]
   *    otherwise. Reads need no lock.
+  *  - '''Sidecars''' ([[Sidecar]]) are the store's files beside the
+  *    manifest. `replaceSidecar` is atomic like the manifest swap: a reader
+  *    sees the old bytes or the new, whole. `appendSidecar` adds bytes at the
+  *    end and is durable when it returns; a crash during it may leave a
+  *    prefix of the appended bytes (a torn tail) but never changes the bytes
+  *    before them. Both need the current lock, as does `removeSidecar`.
   *
-  * Atomic save (write every new immutable entry, then swap the manifest, and
-  * keep the last valid manifest) is built on this contract in S2.4a.
+  * Atomic save (write every new immutable entry, keep the last valid
+  * manifest, then swap the manifest) is built on this contract by
+  * `eyes4s.studio.core.session.ProjectSession` (S2.4a).
   */
 trait ProjectStore[F[_]]:
   def read(path: BundlePath): F[Either[StoreError, IArray[Byte]]]
@@ -125,6 +148,18 @@ trait ProjectStore[F[_]]:
   ): F[Either[StoreError, Unit]]
   def acquire(owner: LockOwner): F[Either[StoreError, WriterLock]]
   def release(lock: WriterLock): F[Either[StoreError, Unit]]
+  def readSidecar(file: Sidecar): F[Either[StoreError, IArray[Byte]]]
+  def appendSidecar(
+      lock: WriterLock,
+      file: Sidecar,
+      bytes: IArray[Byte]
+  ): F[Either[StoreError, Unit]]
+  def replaceSidecar(
+      lock: WriterLock,
+      file: Sidecar,
+      bytes: IArray[Byte]
+  ): F[Either[StoreError, Unit]]
+  def removeSidecar(lock: WriterLock, file: Sidecar): F[Either[StoreError, Unit]]
 
 object ProjectStore:
   /** The manifest's name at the bundle root. */
@@ -137,12 +172,13 @@ object InMemoryProjectStore:
   private final case class State(
       entries: Map[BundlePath, IArray[Byte]],
       manifest: Option[IArray[Byte]],
+      sidecars: Map[Sidecar, IArray[Byte]],
       lock: Option[WriterLock],
       issued: Long
   )
 
   def create[F[_]: Sync]: F[ProjectStore[F]] =
-    Ref.of[F, State](State(Map.empty, None, None, 0L)).map(new Store(_))
+    Ref.of[F, State](State(Map.empty, None, Map.empty, None, 0L)).map(new Store(_))
 
   private final class Store[F[_]: Sync](state: Ref[F, State]) extends ProjectStore[F]:
     private def held(s: State, lock: WriterLock): Either[StoreError, Unit] =
@@ -209,3 +245,35 @@ object InMemoryProjectStore:
 
     def release(lock: WriterLock): F[Either[StoreError, Unit]] =
       mutate(lock)(s => Right(s.copy(lock = None)))
+
+    def readSidecar(file: Sidecar): F[Either[StoreError, IArray[Byte]]] =
+      state.get.map(_.sidecars.get(file).toRight(StoreError.NoSidecar(file)))
+
+    def appendSidecar(
+        lock: WriterLock,
+        file: Sidecar,
+        bytes: IArray[Byte]
+    ): F[Either[StoreError, Unit]] =
+      mutate(lock)(s =>
+        Right(
+          s.copy(sidecars =
+            s.sidecars.updated(file, s.sidecars.getOrElse(file, IArray.empty[Byte]) ++ bytes)
+          )
+        )
+      )
+
+    def replaceSidecar(
+        lock: WriterLock,
+        file: Sidecar,
+        bytes: IArray[Byte]
+    ): F[Either[StoreError, Unit]] =
+      mutate(lock)(s => Right(s.copy(sidecars = s.sidecars.updated(file, bytes))))
+
+    def removeSidecar(lock: WriterLock, file: Sidecar): F[Either[StoreError, Unit]] =
+      mutate(lock)(s =>
+        Either.cond(
+          s.sidecars.contains(file),
+          s.copy(sidecars = s.sidecars - file),
+          StoreError.NoSidecar(file)
+        )
+      )

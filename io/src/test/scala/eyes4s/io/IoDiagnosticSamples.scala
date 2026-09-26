@@ -49,6 +49,8 @@ object IoDiagnosticSamples:
   )
 
   // Nested errors, one explicit case each (see DiagnosticExample).
+  given DiagnosticExample[CsvLayoutError] =
+    DiagnosticExample.of(seed => CsvLayoutError.Csv(TidyCsvError.MalformedCsv(seed, 'q')))
   given DiagnosticExample[SourceAdmissionError] =
     DiagnosticExample.of(seed => SourceAdmissionError.MissingItem(s"source-$seed"))
   given DiagnosticExample[IdentityChanges] =
@@ -98,6 +100,7 @@ object IoDiagnosticSamples:
     generated[EyeLinkOracleError]("EyeLinkOracleError"),
     generated[EyeLinkConformanceError]("EyeLinkConformanceError"),
     generated[EyeLinkCorpusError]("EyeLinkCorpusError"),
+    generated[CsvLayoutError]("CsvLayoutError"),
     generated[SourceAdmissionError]("SourceAdmissionError"),
     generated[LedgerVerificationError]("LedgerVerificationError")
   )

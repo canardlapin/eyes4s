@@ -258,6 +258,9 @@ object IoDiagnosticCatalog:
   )
 
   /** Every family, in the order documented. */
+  // ---------------------------------------------------------------- appended by UI-G
+  val csvLayout: DiagnosticFamily = error("csv-layout")("Csv", "Layout")
+
   val families: Vector[DiagnosticFamily] = Vector(
     fixationImport,
     fixationRow,
@@ -279,6 +282,7 @@ object IoDiagnosticCatalog:
     eyeLinkOracle,
     eyeLinkConformance,
     eyeLinkCorpus,
+    csvLayout,
     sourceAdmission,
     ledgerVerification
   )

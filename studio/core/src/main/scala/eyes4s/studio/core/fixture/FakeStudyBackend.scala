@@ -20,6 +20,7 @@ import cats.Eq
 import cats.effect.Concurrent
 import cats.syntax.all.*
 import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.navigation.StudyNavigator
 import fs2.Stream
 import fs2.concurrent.SignallingRef
 
@@ -61,6 +62,13 @@ enum FakeControlError derives CanEqual:
   case PairsOutOfRange(job: JobId, pairs: Long, total: ProgressTotal)
   case Progress(underlying: ProgressError)
 
+  /** `revision` is already declared on `declared`, not `requested`. */
+  case RevisionConflict(
+      revision: AnalysisRevision,
+      declared: DatasetRevision,
+      requested: DatasetRevision
+  )
+
   def message: String = this match
     case UnknownJob(job, known) =>
       s"No job ${job.number}; the fake has ${known.map(_.number).mkString(", ")}."
@@ -71,7 +79,9 @@ enum FakeControlError derives CanEqual:
       s"Job ${job.number} cannot move back from $fromDone of $from to $toDone of $to."
     case PairsOutOfRange(job, pairs, total) =>
       s"Job ${job.number} cannot hold at $pairs pairs of $total."
-    case Progress(underlying) => underlying.message
+    case Progress(underlying)                            => underlying.message
+    case RevisionConflict(revision, declared, requested) =>
+      s"${revision.label} stands on data ${declared.label}, not ${requested.label}."
 
 /** One segment of a fake job's script with its stated total. */
 final case class ScriptedSegment(segment: Segment, total: ProgressTotal) derives CanEqual
@@ -91,8 +101,8 @@ final case class ScriptedSegment(segment: Segment, total: ProgressTotal) derives
   * segments by scale, then stage, as eyes4s runs them.
   *
   * The fake computes no science: every score it serves is a value of the
-  * fixture. Only run 7 (rev 4, data r3) has scores; the fixture has no numbers
-  * for data r2 or for a completed rev 5.
+  * fixture. Only a completed run of rev 4 on data r3 (run 7 in the story) has
+  * scores; the fixture has no numbers for data r2 or for a completed rev 5.
   */
 final class FakeStudyBackend[F[_]] private (
     val study: MockStudy,
@@ -106,8 +116,11 @@ final class FakeStudyBackend[F[_]] private (
   /** The dataset every fixture number describes. */
   private val servedDataset = DatasetRevision(3)
 
-  /** The run whose scores fixture.json holds. */
-  private val scoredRun = RunId(7)
+  /** The analysis whose scores fixture.json holds: rev 4 on data r3. Every
+    * completed run of it serves them (run 7 in the story; a headless journey
+    * that saves rev 4 itself gets its own run number, S3.6).
+    */
+  private val scoredRevision = AnalysisRevision(4)
 
   private val byKey: Map[TrialKey, MockQuery]      = study.queries.map(q => q.key -> q).toMap
   private val ledgerOf: Map[TrialKey, LedgerEntry] =
@@ -461,6 +474,22 @@ final class FakeStudyBackend[F[_]] private (
         case Right((j, outcome)) => (s.finish(j, outcome, RunState.Completed), Right(outcome))
     }
 
+  /** Declare that `revision` stands on `dataset`, as a saved analysis the
+    * document now holds (Save & run in a headless journey, S3.6). The real
+    * backend learns a revision from its bound plan (S3.7). Declaring a known
+    * revision again on another dataset is refused.
+    */
+  def declare(
+      revision: AnalysisRevision,
+      dataset: DatasetRevision
+  ): F[Either[FakeControlError, Unit]] =
+    state.modify { s =>
+      s.revisions.get(revision) match
+        case Some(d) if d != dataset =>
+          (s, Left(FakeControlError.RevisionConflict(revision, d, dataset)))
+        case _ => (s.copy(revisions = s.revisions.updated(revision, dataset)), Right(()))
+    }
+
   /** Finish a job with diagnostics; its run becomes `Failed`. */
   def fail(
       id: JobId,
@@ -487,10 +516,19 @@ final class FakeStudyBackend[F[_]] private (
   private def scored(run: RunId): F[Either[BackendError, RunSummary]] =
     state.get.map { s =>
       s.runs.find(_.run == run) match
-        case None => Left(BackendError.UnknownRun(run, s.runs.map(_.run)))
-        case Some(r) if r.run != scoredRun => Left(BackendError.NoResult(run, r.state))
-        case Some(r)                       => Right(r)
+        case None                     => Left(BackendError.UnknownRun(run, s.runs.map(_.run)))
+        case Some(r) if !hasScores(r) => Left(BackendError.NoResult(run, r.state))
+        case Some(r)                  => Right(r)
     }
+
+  private def hasScores(r: RunSummary): Boolean =
+    r.revision == scoredRevision && r.dataset == servedDataset && (r.state match
+      case RunState.Current | RunState.Completed => true
+      case _                                     => false)
+
+  /** The provenance chain's down functions over this backend's runs (S3.4). */
+  lazy val navigator: StudyNavigator[F] =
+    FakeNavigator[F](study, run => scored(run).map(_.void), status)
 
   def result(run: RunId): F[Either[BackendError, ResultSummary]] =
     scored(run).map(_.map { r =>
