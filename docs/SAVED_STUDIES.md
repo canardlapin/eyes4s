@@ -427,10 +427,22 @@ the invariants above. `LedgerForgerySuite` pins this. Dropping the time rejectio
 scope names is refused (`AdmissionError.QuarantineScope(3, Vector(2, 3, 4, 5))`), but dropping it
 and rewriting the scope decodes cleanly, and so does dropping one of two standalone rejections from
 a reviewed ledger that has a `LedgerOf` relation to its input. Exclusions can be verified only by
-re-importing the source file and comparing the ledger the importer produces. That is an io-level
-check that the pure resolver cannot perform, so it is deferred as a ledger-to-source relation
-checked by re-running the importer (`bd-01M2SC6N15J2N7PHD4DXBE43VD`); the G1 consumer records it
-as a limit.
+re-importing the source file and comparing the ledger the importer produces.
+
+`LedgerReverification.verify(label, contents, spec, ledger, input, inventory)` performs that
+check in `io`. It compares fresh admission with the saved source interpretation, header, every
+record disposition, policy, outcome, outside-frame evidence, complete inventory evidence and
+input digest. It returns privately constructed `VerifiedAdmission` only after all comparisons
+pass. Its `admitted` input is absent for a refused admission. `LedgerVerificationError` names
+the source and differing component or input identities, and `IoDiagnostics.given` projects every
+case through `Diagnose`.
+
+This entry point is synchronous; it does not promise cooperative cancellation. Legacy sources
+with unspecified interpretation remain unverified, and custom readers without a supported
+interpreter are refused. The pure resolver retains its structural guarantee and existing forgery
+fixtures; it cannot perform this source check. Manifest-to-source wiring remains tracked under
+`bd-01M2SC6N15J2N7PHD4DXBE43VD`. Replay proves consistency of the supplied archive, not who
+created it: replacing the source, options, ledger and input together is not an authenticity check.
 
 Both payloads are artifacts of their own; plan JSON references the input by digest only. The pinned
 [study-input-v1.json](../codec/src/test/resources/eyes4s/study-input-v1.json) and

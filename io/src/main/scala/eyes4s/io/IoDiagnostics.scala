@@ -36,6 +36,14 @@ object IoDiagnosticCatalog:
     "MissingItem"
   )
 
+  val ledgerVerification: DiagnosticFamily = error("ledger-verification")(
+    "LegacyUnverified",
+    "Import",
+    "SourceChanged",
+    "LedgerMismatch",
+    "InputMismatch"
+  )
+
   val fixationImport: DiagnosticFamily = error("fixation-import")(
     "Csv",
     "Columns",
@@ -269,7 +277,8 @@ object IoDiagnosticCatalog:
     eyeLinkOracle,
     eyeLinkConformance,
     eyeLinkCorpus,
-    sourceAdmission
+    sourceAdmission,
+    ledgerVerification
   )
 
   /** Every stable code, in catalog order. */
@@ -297,6 +306,16 @@ object IoDiagnostics:
 
   given sourceAdmission: Diagnose[SourceAdmissionError, Nothing] =
     Diagnose.derived[SourceAdmissionError, Nothing](C.sourceAdmission)(_.message)
+
+  private given identityChanges: DiagnosticOperand[IdentityChanges, Nothing] =
+    DiagnosticOperand.of(changes =>
+      Operand.Items(
+        changes.values.toVector.sortBy(_.ordinal).map(value => Operand.Token(value.toString))
+      )
+    )
+
+  given ledgerVerification: Diagnose[LedgerVerificationError, Nothing] =
+    Diagnose.derived[LedgerVerificationError, Nothing](C.ledgerVerification)(_.message)
 
   given fixationImport: Diagnose[FixationImportError, Nothing] =
     Diagnose.derived[FixationImportError, Nothing](C.fixationImport, rejectedRecords)(_.message)
