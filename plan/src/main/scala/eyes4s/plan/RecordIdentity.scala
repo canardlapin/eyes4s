@@ -64,6 +64,18 @@ enum RecordIdentityError derives CanEqual:
       s"Data record ${record.value} is beyond the layout's $records data records."
     case LineBeyond(line, lines) => s"Line ${line.value} is beyond the layout's $lines lines."
 
+object RecordIdentityError:
+  given diagnose: Diagnose[RecordIdentityError, Nothing] =
+    Diagnose.derived[RecordIdentityError, Nothing](
+      DiagnosticCatalog.recordIdentity,
+      (e: RecordIdentityError) =>
+        e match
+          case HeaderRecord(record)    => Vector(Locus.Record(record.value))
+          case RecordLineCount(r, _)   => Vector(Locus.Record(r.value))
+          case RecordBeyond(record, _) => Vector(Locus.Record(record.csv.value))
+          case _                       => Vector.empty
+    )(_.message)
+
 /** A data record of a delimited source: the n-th record after the header,
   * counted from 1. "fixations.csv record 7,214" is `DataRecord` 7,214. The
   * header is never a data record; it is [[CsvRecord.header]].
@@ -75,6 +87,11 @@ final case class DataRecord private[plan] (value: Int) derives CanEqual:
   def csv: CsvRecord = new CsvRecord(value + 1)
 
 object DataRecord:
+  private[eyes4s] given DiagnosticOperand[DataRecord, Nothing] =
+    DiagnosticOperand.of(r =>
+      Operand.Fields(Vector("value" -> Operand.Integer(BigInt(r.value))))
+    )
+
   /** The largest data record, so that its CSV record ordinal is an `Int`. */
   val maximum: Int = Int.MaxValue - 1
 
@@ -103,6 +120,11 @@ final case class CsvRecord private[plan] (value: Int) derives CanEqual:
     case RecordRole.Data(record) => Right(record)
 
 object CsvRecord:
+  private[eyes4s] given DiagnosticOperand[CsvRecord, Nothing] =
+    DiagnosticOperand.of(r =>
+      Operand.Fields(Vector("value" -> Operand.Integer(BigInt(r.value))))
+    )
+
   /** The header record. */
   val header: CsvRecord = new CsvRecord(1)
 
@@ -128,6 +150,11 @@ enum RecordRole derives CanEqual:
 final case class SourceLine private[plan] (value: Long) derives CanEqual
 
 object SourceLine:
+  private[eyes4s] given DiagnosticOperand[SourceLine, Nothing] =
+    DiagnosticOperand.of(l =>
+      Operand.Fields(Vector("value" -> Operand.Integer(BigInt(l.value))))
+    )
+
   def of(value: Long): Either[RecordIdentityError, SourceLine] =
     Either.cond(
       value >= 1,

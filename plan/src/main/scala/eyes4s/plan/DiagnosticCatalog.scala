@@ -865,6 +865,22 @@ object DiagnosticCatalog:
   val retired: Vector[DiagnosticFamily] =
     Vector(scanpathComponent, learnedTemplate, templateFit)
 
+  /** Record, physical-line and fixation identity refusals. */
+  val recordIdentity: DiagnosticFamily = DiagnosticFamily.error("record-identity")(
+    "DataRecordOutOfRange",
+    "CsvRecordNotPositive",
+    "HeaderRecord",
+    "SourceLineNotPositive",
+    "LineSpanOrder",
+    "ScanpathPositionOutOfRange",
+    "FixationNumberNotPositive",
+    "RecordCountOutOfRange",
+    "NoHeaderRecord",
+    "RecordLineCount",
+    "RecordBeyond",
+    "LineBeyond"
+  )
+
   /** Every family ever issued, in issue order: families are only appended,
     * and a retired family keeps its place.
     */
@@ -961,7 +977,8 @@ object DiagnosticCatalog:
     analysisFinding,
     SourceDiagnostics.identity,
     SourceDiagnostics.importDescription,
-    massLevel
+    massLevel,
+    recordIdentity
   )
 
   /** Every live family, grouped as documented. */

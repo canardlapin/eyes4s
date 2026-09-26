@@ -32,6 +32,11 @@ enum CsvLayoutError derives CanEqual:
     case Csv(error)    => error.message
     case Layout(error) => error.message
 
+object CsvLayoutError:
+  given diagnose: Diagnose[CsvLayoutError, Nothing] =
+    import IoDiagnostics.given
+    Diagnose.derived[CsvLayoutError, Nothing](IoDiagnosticCatalog.csvLayout)(_.message)
+
 /** The records of a CSV text, with where each one lies in the text and among
   * its physical lines.
   *

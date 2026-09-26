@@ -99,7 +99,8 @@ object IoDiagnosticSamples:
     generated[EyeLinkConformanceError]("EyeLinkConformanceError"),
     generated[EyeLinkCorpusError]("EyeLinkCorpusError"),
     generated[SourceAdmissionError]("SourceAdmissionError"),
-    generated[LedgerVerificationError]("LedgerVerificationError")
+    generated[LedgerVerificationError]("LedgerVerificationError"),
+    generated[CsvLayoutError]("CsvLayoutError")
   )
 
   val laws: Vector[FamilySamples] = Vector(

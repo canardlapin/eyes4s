@@ -46,6 +46,8 @@ object IoDiagnosticCatalog:
     "ManifestBinding"
   )
 
+  val csvLayout: DiagnosticFamily = error("csv-layout")("Csv", "Layout")
+
   val fixationImport: DiagnosticFamily = error("fixation-import")(
     "Csv",
     "Columns",
@@ -280,7 +282,8 @@ object IoDiagnosticCatalog:
     eyeLinkConformance,
     eyeLinkCorpus,
     sourceAdmission,
-    ledgerVerification
+    ledgerVerification,
+    csvLayout
   )
 
   /** Every stable code, in catalog order. */

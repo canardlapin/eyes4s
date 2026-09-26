@@ -873,5 +873,6 @@ object DiagnosticSamples:
     ),
     generated[SourceIdentityError]("SourceIdentityError"),
     generated[ImportSpecError]("ImportSpecError"),
-    generated[MassLevelError]("MassLevelError")
+    generated[MassLevelError]("MassLevelError"),
+    generated[RecordIdentityError]("RecordIdentityError")
   )
