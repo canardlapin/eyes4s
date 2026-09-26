@@ -118,3 +118,28 @@ class CombinedSourceResultManifestSuite extends munit.FunSuite:
       case _                                                         => false
     })
   }
+
+  test("valid packed result edges do not mask two primary sources for one ledger") {
+    val second = get(
+      StoredArtifact.sourceFile(
+        "second-source.csv",
+        SourceFormat.FixationCsv,
+        get(Utf8.encode("x\n"))
+      )
+    )
+    val duplicate = sourceRelation.copy(sourceFile = second.name)
+    assertEquals(
+      ScientificManifest
+        .of((artifacts :+ second).map(_.entry), relations :+ duplicate)
+        .left
+        .toOption,
+      Some(
+        ManifestError.RelationCount(
+          storedLedger.name,
+          "ledger-source:primary",
+          2,
+          "exactly one"
+        )
+      )
+    )
+  }

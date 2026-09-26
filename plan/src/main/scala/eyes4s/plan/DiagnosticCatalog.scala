@@ -958,9 +958,9 @@ object DiagnosticCatalog:
     diagnosticCode,
     fixationEntropy,
     template,
+    analysisFinding,
     SourceDiagnostics.identity,
     SourceDiagnostics.importDescription,
-    analysisFinding,
     massLevel
   )
 

@@ -1361,6 +1361,15 @@ fails after rewriting, so review the change and run it again.
 | `template.evaluation` | `Evaluation` | `failed`, `total` |
 | `template.aggregate` | `Aggregate` | `operation`, `value` |
 
+### `analysis-finding` — `AnalysisFinding`
+
+| Code | Case | Operands |
+|---|---|---|
+| `analysis-finding.missing-artifact` | `MissingArtifact` | `expected` |
+| `analysis-finding.artifact-mismatch` | `ArtifactMismatch` | `expected`, `actual` |
+| `analysis-finding.refused` | `Refused` | `underlying`, `suggested` |
+| `analysis-finding.data-dependent` | `DataDependent` | `underlying`, `trials` |
+
 ### `source-identity` — `SourceIdentityError`
 
 | Code | Case | Operands |
@@ -1377,15 +1386,6 @@ fails after rewriting, so review the change and run it again.
 | `import-spec.blank-frame` | `BlankFrame` | `frame` |
 | `import-spec.inventory-keys` | `InventoryKeys` | `keys` |
 | `import-spec.missing-item` | `MissingItem` | `keys` |
-
-### `analysis-finding` — `AnalysisFinding`
-
-| Code | Case | Operands |
-|---|---|---|
-| `analysis-finding.missing-artifact` | `MissingArtifact` | `expected` |
-| `analysis-finding.artifact-mismatch` | `ArtifactMismatch` | `expected`, `actual` |
-| `analysis-finding.refused` | `Refused` | `underlying`, `suggested` |
-| `analysis-finding.data-dependent` | `DataDependent` | `underlying`, `trials` |
 
 ### `mass-level` — `MassLevelError`
 

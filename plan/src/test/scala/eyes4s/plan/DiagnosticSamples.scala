@@ -862,8 +862,6 @@ object DiagnosticSamples:
     generated[DiagnosticCodeError]("DiagnosticCodeError"),
     generated[FixationEntropyError]("FixationEntropyError"),
     generated[TemplateError]("TemplateError"),
-    generated[SourceIdentityError]("SourceIdentityError"),
-    generated[ImportSpecError]("ImportSpecError"),
     family[AnalysisFinding[StudyKey]]("AnalysisFinding")(
       AnalysisFinding.MissingArtifact(studyRef),
       AnalysisFinding.ArtifactMismatch(studyRef, studyRef2),
@@ -873,5 +871,7 @@ object DiagnosticSamples:
         NonEmptyVector.one(k1)
       )
     ),
+    generated[SourceIdentityError]("SourceIdentityError"),
+    generated[ImportSpecError]("ImportSpecError"),
     generated[MassLevelError]("MassLevelError")
   )
