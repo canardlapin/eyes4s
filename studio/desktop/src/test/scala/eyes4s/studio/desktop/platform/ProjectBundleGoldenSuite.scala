@@ -101,9 +101,10 @@ class ProjectBundleGoldenSuite extends CatsEffectSuite:
       status <- ProjectBundle.checkInputs(store, opened.manifest)
     yield
       assertEquals(opened.document, t2)
+      assert(opened.science.verified)
       assertEquals(status, opened.manifest.inputs.map(InputStatus.Missing(_)))
       val onDisk = opened.manifest.inputs.map { e =>
-        val file = sources.resolve(e.name)
+        val file = sources.resolve(e.name.get)
         (e.name, Files.size(file), ByteDigest.sha256(bytes(file)))
       }
       assertEquals(onDisk, opened.manifest.inputs.map(e => (e.name, e.length, e.sha256)))
@@ -140,7 +141,7 @@ class ProjectBundleGoldenSuite extends CatsEffectSuite:
         status    <- ProjectBundle.checkInputs(store, reopened.manifest)
         _         <- ok(store.release(lock))
       yield
-        assertEquals(entries.sortBy(_.path), opened.manifest.inputs)
+        assertEquals(entries.sortBy(_.path.map(_.value)), opened.manifest.inputs)
         assertEquals(reopened, opened)
         assertEquals(withCache, opened)
         assertEquals(

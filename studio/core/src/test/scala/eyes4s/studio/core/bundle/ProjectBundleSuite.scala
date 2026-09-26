@@ -84,15 +84,20 @@ class ProjectBundleSuite extends CatsEffectSuite:
     assertEquals(encoded.parts.map(_._1.value), BundlePins.t2Parts)
     assertEquals(hex(encoded.manifestBytes), BundlePins.t2ManifestSha256)
     assertEquals(
-      encoded.manifest.inputs.map(_.path.value),
+      encoded.manifest.inputs.flatMap(_.path).map(_.value),
       Vector(
         "inputs/0668bccf6c672b706c0a138268f632fb5a768170578a01c58ee752176f0f8b99/trials.csv",
         "inputs/19342ecedb6e089a190b4784a248907b27fedbef03ca3e6d4bc251702fbbc2f2/fixations.csv"
       )
     )
     assertEquals(
-      encoded.manifest.science.map(_.display),
-      StudioDocument.scienceDigest(t2).toOption.map(_.display)
+      Right(encoded.manifest.science),
+      StudioDocument.scienceDigest(t2).map(ScienceRecord.Verified(_))
+    )
+    // Source.path is the import name; inputPath is its one stored path.
+    assertEquals(
+      t2.datasets.head.sources.entries.map(s => ProjectBundle.inputPath(s).map(_.value)),
+      encoded.manifest.inputs.reverse.flatMap(_.path).map(p => Right(p.value))
     )
   }
 
@@ -113,7 +118,7 @@ class ProjectBundleSuite extends CatsEffectSuite:
       Double.MaxValue -> "1.7976931348623157e+308"
     )
     cases.foreach { (d, text) =>
-      val printed = PortableJson.print(Json.fromDoubleOrNull(d))
+      val printed = right(PortableJson.print("n", Json.fromDoubleOrNull(d)))
       assertEquals(printed, text, d)
       val back = parse(printed).toOption.flatMap(_.asNumber).map(_.toDouble)
       assertEquals(
@@ -122,7 +127,45 @@ class ProjectBundleSuite extends CatsEffectSuite:
         text
       )
     }
-    assertEquals(PortableJson.print(Json.fromLong(Long.MinValue)), Long.MinValue.toString)
+    assertEquals(
+      PortableJson.print("n", Json.fromLong(-(1L << 53))),
+      Right("-9007199254740992")
+    )
+  }
+
+  test("a non-finite or inexact number is refused, never rounded, when written and when read") {
+    def number(text: String) =
+      Json.fromJsonNumber(io.circe.JsonNumber.fromDecimalStringUnsafe(text))
+    val refusedOnWrite = Vector(
+      "1e400"                  -> BundleError.NonFiniteNumber("w", "1e400"),
+      "-1e400"                 -> BundleError.NonFiniteNumber("w", "-1e400"),
+      "0.10000000000000000001" -> BundleError.InexactNumber("w", "0.10000000000000000001"),
+      "9007199254740993"       -> BundleError.InexactNumber("w", "9007199254740993")
+    )
+    refusedOnWrite.foreach { (text, error) =>
+      assertEquals(PortableJson.print("w", Json.arr(number(text))), Left(error), text)
+    }
+    assertEquals(PortableJson.print("w", number("0.1")), Right("0.1"))
+    // Reading scans the literals of the text itself, so both platforms agree.
+    val refusedOnRead = Vector(
+      "[1e400]"                  -> BundleError.NonFiniteNumber("r", "1e400"),
+      "{\"a\":-1E999}"           -> BundleError.NonFiniteNumber("r", "-1E999"),
+      "[0.10000000000000000001]" -> BundleError.InexactNumber("r", "0.10000000000000000001"),
+      "[9007199254740993]"       -> BundleError.InexactNumber("r", "9007199254740993")
+    )
+    refusedOnRead.foreach { (text, error) =>
+      assertEquals(PortableJson.checkText("r", text), Left(error), text)
+    }
+    assertEquals(
+      PortableJson.checkText("r", "{\"s\":\"1e400 \\\" 2\",\"n\":[0.6,-0.0,5e-324]}"),
+      Right(())
+    )
+    assertEquals(
+      ProjectBundle.readManifest(
+        utf8("{\"schema\":{\"name\":\"studio.project\",\"version\":1e999}}")
+      ),
+      Left(BundleError.NonFiniteNumber("project.json", "1e999"))
+    )
   }
 
   test("every path the manifest names is relative and inside a scientific area") {
@@ -178,7 +221,7 @@ class ProjectBundleSuite extends CatsEffectSuite:
   // --- Upcasting ------------------------------------------------------------
 
   test(
-    "a hand-written version 1 manifest upcasts: sharing is complete, no science was recorded"
+    "a hand-written version 1 manifest upcasts: sharing is complete; it opens unverified"
   ) {
     for
       (store, lock, encoded) <- saved(t2)
@@ -191,7 +234,12 @@ class ProjectBundleSuite extends CatsEffectSuite:
     yield
       assertEquals(opened.document, t2)
       assertEquals(opened.manifest.sharing, SharingOptions.complete)
-      assertEquals(opened.manifest.science, None)
+      assertEquals(opened.manifest.science, ScienceRecord.Unrecorded)
+      assert(!opened.science.verified)
+      assertEquals(
+        Right(opened.science),
+        StudioDocument.scienceDigest(t2).map(ScienceCheck.Unverified(_))
+      )
       assertEquals(opened.manifest.parts, encoded.manifest.parts)
       assertEquals(opened.manifest.inputs, encoded.manifest.inputs)
       assertEquals(resaved.manifest, encoded.manifest)
@@ -224,6 +272,30 @@ class ProjectBundleSuite extends CatsEffectSuite:
     val current =
       right(ProjectBundle.encode(t2, SharingOptions.complete, inputsFor(t2))).manifest
     assertEquals(ladder.earliest(current), latest)
+    assertEquals(
+      ladder.lift(v1).map(_.hcursor.downField("value").downField("science").focus),
+      Right(Some(Json.obj("Unrecorded" -> Json.obj())))
+    )
+  }
+
+  test("version 2 requires the science record: missing or null is refused") {
+    val encoded = right(ProjectBundle.encode(t2, SharingOptions.complete, inputsFor(t2)))
+    val json    = parse(String(Array.from(encoded.manifestBytes), "UTF-8")).toOption.get
+    def without(science: Option[Json]) =
+      val value = json.hcursor
+        .downField("value")
+        .withFocus(v =>
+          v.mapObject(o => science.fold(o.remove("science"))(s => o.add("science", s)))
+        )
+      utf8(value.top.get.noSpaces)
+    val missing = ProjectBundle.readManifest(without(None))
+    val nulled  = ProjectBundle.readManifest(without(Some(Json.Null)))
+    assert(missing.left.exists(_.message.contains("science")), missing)
+    assert(nulled.left.exists(_.message.contains("science is required")), nulled)
+    assertEquals(
+      ProjectBundle.readManifest(encoded.manifestBytes).map(_.science),
+      Right(encoded.manifest.science)
+    )
   }
 
   // --- Paths ----------------------------------------------------------------
@@ -299,12 +371,24 @@ class ProjectBundleSuite extends CatsEffectSuite:
 
   // --- Refusals -------------------------------------------------------------
 
-  test("a document source missing from the inputs is refused by dataset, role and digest") {
+  test(
+    "a document source not stored at its mapped input path is refused by dataset, role and path"
+  ) {
     val inputs = inputsFor(t2).filterNot(_.kind == InputKind.Source(SourceRole.Trials))
     val trials = t2.datasets.head.sources.trials.get
+    val path   = right(ProjectBundle.inputPath(trials))
+    assertEquals(path.value, s"inputs/${trials.bytes.hex}/trials.csv")
     assertEquals(
       ProjectBundle.encode(t2, SharingOptions.complete, inputs).map(_ => ()),
-      Left(BundleError.UnlistedSource(t2.datasets.head.id, SourceRole.Trials, trials.bytes))
+      Left(BundleError.UnlistedSource(t2.datasets.head.id, SourceRole.Trials, path))
+    )
+    // The same bytes under another name are not the mapped path.
+    val renamed = inputs :+ right(
+      InputEntry.of(InputKind.Source(SourceRole.Trials), "t.csv", trials.bytes, 1)
+    )
+    assertEquals(
+      ProjectBundle.encode(t2, SharingOptions.complete, renamed).map(_ => ()),
+      Left(BundleError.UnlistedSource(t2.datasets.head.id, SourceRole.Trials, path))
     )
   }
 
@@ -341,7 +425,7 @@ class ProjectBundleSuite extends CatsEffectSuite:
       forged = right(
         ProjectManifest.of(
           m.document,
-          Some(other),
+          ScienceRecord.Verified(other),
           m.sharing,
           m.inputs,
           m.parts,
@@ -420,13 +504,13 @@ class ProjectBundleSuite extends CatsEffectSuite:
       again                  <- ok(
         ProjectBundle.importInput(store, lock, entries(2).kind, "scene_01.png", image)
       )
-      _     <- ok(store.write(lock, entries(2).path, utf8("other")))
-      _     <- ok(store.delete(lock, entries(3).path))
+      _     <- ok(store.write(lock, entries(2).path.get, utf8("other")))
+      _     <- ok(store.delete(lock, entries(3).path.get))
       after <- ProjectBundle.checkInputs(store, opened.manifest)
-      byPath = entries.sortBy(_.path)
+      byPath = entries.sortBy(_.path.map(_.value))
     yield
       assertEquals(
-        entries.map(_.path.value.split('/').dropRight(1).mkString("/")),
+        entries.map(_.path.get.value.split('/').dropRight(1).mkString("/")),
         Vector(fixations, trials, image, people).map(b => s"inputs/${hex(b)}")
       )
       assertEquals(present, byPath.map(InputStatus.Present(_)))
@@ -439,7 +523,7 @@ class ProjectBundleSuite extends CatsEffectSuite:
   }
 
   test(
-    "sharing withholds stimulus images explicitly: same science, image listed as withheld, not copied"
+    "sharing withholds stimulus images explicitly: same science, image listed unnamed, not copied"
   ) {
     val noImages = SharingOptions(Inclusion.Included, Inclusion.Withheld)
     for
@@ -447,6 +531,7 @@ class ProjectBundleSuite extends CatsEffectSuite:
       target               <- InMemoryProjectStore.create[IO]
       lock                 <- ok(target.acquire(me))
       _                    <- ok(ProjectBundle.share(source, target, lock, noImages))
+      again                <- ProjectBundle.share(source, target, lock, noImages)
       opened               <- ok(ProjectBundle.open(target))
       status               <- ProjectBundle.checkInputs(target, opened.manifest)
       listed               <- ok(target.list)
@@ -463,22 +548,59 @@ class ProjectBundleSuite extends CatsEffectSuite:
           SharingOptions(Inclusion.Withheld, Inclusion.Withheld)
         )
       )
-      stripped <- ok(ProjectBundle.open(metadataOnly))
+      stripped      <- ok(ProjectBundle.open(metadataOnly))
+      strippedFiles <- ok(metadataOnly.list)
+      strippedText  <- ok(metadataOnly.readManifest).map(b => String(Array.from(b), "UTF-8"))
     yield
-      val image = entries(2)
+      val (image, people) = (entries(2).withheld, entries(3).withheld)
       assertEquals(opened.document, shared)
+      assert(opened.science.verified)
       assertEquals(opened.manifest.sharing, noImages)
       assertEquals(
-        opened.manifest.science.map(_.display),
-        StudioDocument.scienceDigest(shared).toOption.map(_.display)
+        Right(opened.manifest.science),
+        StudioDocument.scienceDigest(shared).map(ScienceRecord.Verified(_))
       )
       assert(status.contains(InputStatus.Withheld(image)), status)
+      assertEquals(
+        (image.name, image.path, image.sha256, image.kind),
+        (None, None, entries(2).sha256, entries(2).kind)
+      )
       assertEquals(status.count(_.isInstanceOf[InputStatus.Present]), 3)
-      assert(!listed.contains(image.path), listed)
+      assert(!listed.contains(entries(2).path.get), listed)
+      assertEquals(again.map(_ => ()), Left(BundleError.TargetNotEmpty(true, listed)))
       assertEquals(refused, Left(BundleError.WithheldInSource(image)))
+      // Participant metadata withheld: participants.csv is neither stored nor named.
       assertEquals(stripped.document, shared)
-      assertEquals(stripped.manifest.inputs, opened.manifest.inputs)
+      assert(stripped.manifest.inputs.contains(people), stripped.manifest.inputs)
+      assert(!strippedFiles.contains(entries(3).path.get), strippedFiles)
+      assert(!strippedFiles.exists(_.value.contains("participants")), strippedFiles)
+      assert(
+        !strippedText.contains("participants.csv") && !strippedText.contains("scene_01"),
+        strippedText
+      )
+      assertEquals(strippedFiles.count(_.area == BundleArea.Inputs), 2)
   }
+
+  test("a manifest must name exactly the inputs its sharing includes") {
+    val m     = right(ProjectBundle.encode(t2, SharingOptions.complete, inputsFor(t2))).manifest
+    val image =
+      right(InputEntry.withheld(InputKind.StimulusImage, ByteDigest.sha256(image0), 3))
+    assertEquals(
+      ProjectManifest
+        .of(
+          m.document,
+          m.science,
+          SharingOptions.complete,
+          m.inputs :+ image,
+          m.parts,
+          m.presentation
+        )
+        .map(_ => ()),
+      Left(BundleError.InputNaming(image, SharingOptions.complete))
+    )
+  }
+
+  private val image0 = utf8("img")
 
 /** Every generated document survives the bundle, through the pure encoder
   * and assembler.
@@ -499,7 +621,8 @@ class ProjectBundlePropertySuite extends munit.ScalaCheckSuite:
           ProjectBundle
             .assemble(m, p => files.get(p).toRight(BundleError.Store(StoreError.Missing(p))))
         )
-      assertEquals(back, Right(d.withJobs(Vector.empty).toOption.get))
+      assertEquals(back.map(_.document), Right(d.withJobs(Vector.empty).toOption.get))
+      assert(back.exists(_.science.verified))
       assertEquals(encoded.sessionOnly, d.jobs)
     }
   }

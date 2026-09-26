@@ -16,6 +16,7 @@
 
 package eyes4s.studio.core.bundle
 
+import cats.syntax.all.*
 import eyes4s.studio.core.document.CanonicalJson
 import io.circe.{Json, JsonNumber}
 
@@ -28,19 +29,83 @@ import io.circe.{Json, JsonNumber}
   * integer is therefore written as that integer, `-0.0` as itself, and any
   * other as the ECMAScript `Number.prototype.toString` form of its shortest
   * round-trip digits. Reading gives the same values back, bit for bit.
+  *
+  * Every number in a bundle is exactly a finite double, the value the
+  * document model holds. Writing refuses a non-finite number
+  * ([[BundleError.NonFiniteNumber]]) and a decimal or integer that no double
+  * equals ([[BundleError.InexactNumber]]) rather than rounding it. Reading
+  * applies the same rule to the number literals of the text before any JSON
+  * parser sees them, so `1e400` or `0.10000000000000000001` are refused alike
+  * on the JVM and Scala.js (whose parser would otherwise turn them into
+  * `Infinity` or `0.1`).
   */
 object PortableJson:
-  def print(json: Json): String = numbers(CanonicalJson(json)).noSpaces
+  def print(target: String, json: Json): Either[BundleError, String] =
+    numbers(target, CanonicalJson(json)).map(_.noSpaces)
 
-  private def numbers(json: Json): Json =
+  /** Refuse the text if any number literal in it is not exactly a finite
+    * double.
+    */
+  def checkText(target: String, text: String): Either[BundleError, Unit] =
+    var i                                 = 0
+    var inText                            = false
+    var escaped                           = false
+    var result: Either[BundleError, Unit] = Right(())
+    while i < text.length && result.isRight do
+      val c = text.charAt(i)
+      if inText then
+        if escaped then escaped = false
+        else if c == '\\' then escaped = true
+        else if c == '"' then inText = false
+        i += 1
+      else if c == '"' then
+        inText = true
+        i += 1
+      else if c == '-' || (c >= '0' && c <= '9') then
+        val start = i
+        while i < text.length && "+-.eE0123456789".indexOf(text.charAt(i).toInt) >= 0 do i += 1
+        result = literal(target, text.substring(start, i))
+      else i += 1
+    result
+
+  private def numbers(target: String, json: Json): Either[BundleError, Json] =
     json.fold(
-      json,
-      _ => json,
-      n => Json.fromJsonNumber(JsonNumber.fromDecimalStringUnsafe(render(n))),
-      _ => json,
-      items => Json.fromValues(items.map(numbers)),
-      members => Json.fromJsonObject(members.mapValues(numbers))
+      Right(json),
+      _ => Right(json),
+      n =>
+        literal(target, n.toString).map(_ =>
+          Json.fromJsonNumber(JsonNumber.fromDecimalStringUnsafe(render(n)))
+        ),
+      _ => Right(json),
+      items => items.traverse(numbers(target, _)).map(Json.fromValues),
+      members =>
+        members.toVector
+          .traverse((k, v) => numbers(target, v).map(k -> _))
+          .map(Json.fromFields)
     )
+
+  /** A number literal must denote exactly a finite double: its decimal value
+    * is that double's exact binary value or one of its round-trip renderings.
+    */
+  private def literal(target: String, text: String): Either[BundleError, Unit] =
+    val d =
+      try java.lang.Double.parseDouble(text)
+      catch case _: NumberFormatException => Double.NaN
+    if d.isNaN || d.isInfinite then Left(BundleError.NonFiniteNumber(target, text))
+    else
+      val value =
+        try Some(new java.math.BigDecimal(text))
+        catch case _: NumberFormatException => None
+      val forms = Vector(
+        new java.math.BigDecimal(d),
+        new java.math.BigDecimal(java.lang.Double.toString(d)),
+        new java.math.BigDecimal(ecmascript(d))
+      )
+      Either.cond(
+        value.exists(v => forms.exists(_.compareTo(v) == 0)),
+        (),
+        BundleError.InexactNumber(target, text)
+      )
 
   private[bundle] def render(n: JsonNumber): String =
     val d = n.toDouble

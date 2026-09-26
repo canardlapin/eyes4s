@@ -22,7 +22,13 @@ import cats.syntax.all.*
 import eyes4s.codec.{ByteDigest, CanonicalDigest, CodecError}
 import eyes4s.plan.DefinitionId
 import eyes4s.studio.core.backend.DatasetRevision
-import eyes4s.studio.core.document.{JobHandle, ScienceContent, SourceRole, StudioDocument}
+import eyes4s.studio.core.document.{
+  JobHandle,
+  ScienceContent,
+  Source,
+  SourceRole,
+  StudioDocument
+}
 import io.circe.{Json, JsonObject}
 
 import java.nio.charset.StandardCharsets.UTF_8
@@ -37,8 +43,21 @@ enum BundleError derives CanEqual:
   case PartOutsideArea(part: String, path: BundlePath, expected: BundleArea)
   case DuplicatePath(path: BundlePath)
 
-  /** A document source whose bytes the bundle does not list as an input. */
-  case UnlistedSource(dataset: DatasetRevision, role: SourceRole, sha256: ByteDigest)
+  /** A document source the bundle does not list as a stored input at its
+    * mapped path ([[ProjectBundle.inputPath]]).
+    */
+  case UnlistedSource(dataset: DatasetRevision, role: SourceRole, path: BundlePath)
+
+  /** An input is named although `sharing` withholds its kind, or unnamed
+    * although `sharing` includes it.
+    */
+  case InputNaming(entry: InputEntry, sharing: SharingOptions)
+  case DuplicateInput(entry: InputEntry)
+  case NonFiniteNumber(target: String, text: String)
+  case InexactNumber(target: String, text: String)
+
+  /** `share` writes only into an empty bundle. */
+  case TargetNotEmpty(manifest: Boolean, entries: Vector[BundlePath])
   case Store(error: StoreError)
   case Codec(target: String, error: CodecError)
   case NotUtf8(target: String)
@@ -66,9 +85,22 @@ enum BundleError derives CanEqual:
     case NegativeLength(path, length) => s"$path declares a negative length, $length."
     case PartOutsideArea(part, path, a) =>
       s"The $part part $path lies outside the ${a.directory}/ area."
-    case DuplicatePath(path)         => s"The manifest lists $path more than once."
-    case UnlistedSource(ds, role, d) =>
-      s"Dataset ${ds.label}'s ${role.label} source (${d.hex}) is not among the bundle's inputs."
+    case DuplicatePath(path)            => s"The manifest lists $path more than once."
+    case UnlistedSource(ds, role, path) =>
+      s"Dataset ${ds.label}'s ${role.label} source is not stored at $path among the inputs."
+    case InputNaming(entry, sharing) =>
+      val state = if sharing.includes(entry.kind) then "included" else "withheld"
+      s"Input ${entry.sha256.hex} is $state by the sharing options, so it must " +
+        (if sharing.includes(entry.kind) then "have a file name." else "have no file name.")
+    case DuplicateInput(entry)         => s"Input ${entry.sha256.hex} is listed more than once."
+    case NonFiniteNumber(target, text) =>
+      s"$target holds the number $text, which is not finite."
+    case InexactNumber(target, text) =>
+      s"$target holds the number $text, which no double equals; it is not rounded."
+    case TargetNotEmpty(manifest, entries) =>
+      s"The target bundle is not empty (" +
+        (if manifest then "it has a manifest" else "it has no manifest") +
+        s", ${entries.size} entries${entries.headOption.fold("")(p => s", first $p")})."
     case Store(error)                => error.message
     case Codec(target, error)        => s"$target: ${error.message}"
     case NotUtf8(target)             => s"$target is not strict UTF-8."
@@ -81,10 +113,10 @@ enum BundleError derives CanEqual:
     case ScienceMismatch(recorded, found) =>
       s"The parts' science is ${found.display}; the manifest recorded ${recorded.display}."
     case WithheldInSource(entry) =>
-      s"Input ${entry.path} was withheld from the source bundle, so it cannot be included."
-    case InputUnavailable(entry, error) => s"Input ${entry.path}: ${error.message}"
+      s"Input ${entry.sha256.hex} was withheld from the source bundle, so it cannot be included."
+    case InputUnavailable(entry, error) => s"Input ${entry.sha256.hex}: ${error.message}"
     case InputChanged(entry, found)     =>
-      s"Input ${entry.path} has SHA-256 ${found.hex}; the manifest lists ${entry.sha256.hex}."
+      s"Input ${entry.sha256.hex} now has SHA-256 ${found.hex}."
 
 /** A document written as bundle files: the manifest, its exact bytes and
   * every part's bytes. `sessionOnly` returns, as data, the job handles that
@@ -97,11 +129,29 @@ final case class EncodedBundle(
     sessionOnly: Vector[JobHandle]
 )
 
-/** An opened bundle: its document (with no job handles), its manifest and
-  * the digest of the manifest's bytes, which the next save swaps against.
+/** Whether an opened bundle's science was checked against a recorded digest.
+  * Only `Verified` means it was; a manifest that recorded none (version 1)
+  * opens as `Unverified`, with the digest of what its parts hold, until it is
+  * saved again.
+  */
+enum ScienceCheck derives CanEqual:
+  case Verified(digest: CanonicalDigest[ScienceContent])
+  case Unverified(computed: CanonicalDigest[ScienceContent])
+
+  def verified: Boolean = this match
+    case Verified(_)   => true
+    case Unverified(_) => false
+
+/** A document rebuilt from a manifest and its parts. */
+final case class Assembled(document: StudioDocument, science: ScienceCheck) derives CanEqual
+
+/** An opened bundle: its document (with no job handles), whether its science
+  * was verified, its manifest and the digest of the manifest's bytes, which
+  * the next save swaps against.
   */
 final case class OpenedProject(
     document: StudioDocument,
+    science: ScienceCheck,
     manifest: ProjectManifest,
     manifestDigest: ByteDigest
 ) derives CanEqual
@@ -142,8 +192,20 @@ object ProjectBundle:
   // Pure encoding and decoding
   // -------------------------------------------------------------------------
 
+  /** Where the bundle stores a document source's bytes: the explicit mapping
+    * from a `Source` (its role, the name it was imported under and its byte
+    * digest) to `inputs/<sha256>/<file name of Source.path>`. `Source.path`
+    * is the import name, not a stored path; this is its only mapping.
+    */
+  def inputPath(source: Source): Either[BundleError, BundlePath] =
+    BundlePath.in(
+      BundleArea.Inputs,
+      s"${source.bytes.hex}/${source.path.value.split('/').last}"
+    )
+
   /** Write `document` as bundle files. Every source of every dataset
-    * revision must be among `inputs`; its bytes need not be in the store yet.
+    * revision must be a stored input at its [[inputPath]]; its bytes need not
+    * be in the store yet.
     */
   def encode(
       document: StudioDocument,
@@ -203,7 +265,7 @@ object ProjectBundle:
         .map(BundleError.Codec("science", _))
       manifest <- ProjectManifest.of(
         schema,
-        Some(science),
+        ScienceRecord.Verified(science),
         sharing,
         inputs,
         DocumentParts(
@@ -229,7 +291,8 @@ object ProjectBundle:
       .flatMap(_.encode(manifest))
       .left
       .map(BundleError.Codec(ProjectStore.ManifestName, _))
-      .flatMap(json => utf8(ProjectStore.ManifestName, PortableJson.print(json) + "\n"))
+      .flatMap(json => PortableJson.print(ProjectStore.ManifestName, json))
+      .flatMap(text => utf8(ProjectStore.ManifestName, text + "\n"))
 
   /** Read `project.json` bytes of any listed manifest version. */
   def readManifest(bytes: IArray[Byte]): Either[BundleError, ProjectManifest] =
@@ -242,12 +305,13 @@ object ProjectBundle:
   /** Rebuild the document from its manifest and its parts' bytes: each part's
     * length and digest are checked, the document is read with the reader of
     * the version its manifest names, and its science must be the recorded
-    * science. The document has no job handles.
+    * science; a manifest that recorded none gives `Unverified`. The document
+    * has no job handles.
     */
   def assemble(
       manifest: ProjectManifest,
       part: BundlePath => Either[BundleError, IArray[Byte]]
-  ): Either[BundleError, StudioDocument] =
+  ): Either[BundleError, Assembled] =
     def load(entry: PartEntry): Either[BundleError, Json] =
       for
         bytes <- part(entry.path)
@@ -294,16 +358,16 @@ object ProjectBundle:
         .flatMap(_.readAt(manifest.document, value))
         .left
         .map(BundleError.Codec("the document", _))
-      _ <- manifest.science.traverse_ { recorded =>
-        StudioDocument
-          .scienceDigest(document)
-          .left
-          .map(BundleError.Codec("science", _))
-          .flatMap(found =>
-            Either.cond(found == recorded, (), BundleError.ScienceMismatch(recorded, found))
+      found <- StudioDocument.scienceDigest(document).left.map(BundleError.Codec("science", _))
+      check <- manifest.science match
+        case ScienceRecord.Verified(recorded) =>
+          Either.cond(
+            found == recorded,
+            ScienceCheck.Verified(found),
+            BundleError.ScienceMismatch(recorded, found)
           )
-      }
-    yield document
+        case ScienceRecord.Unrecorded => Right(ScienceCheck.Unverified(found))
+    yield Assembled(document, check)
 
   // -------------------------------------------------------------------------
   // Through a store
@@ -319,7 +383,7 @@ object ProjectBundle:
       read     <- manifest.parts.all.traverse(entry =>
         EitherT(store.read(entry.path)).leftMap(BundleError.Store(_)).map(entry.path -> _)
       )
-      document <- EitherT.fromEither[F](
+      assembled <- EitherT.fromEither[F](
         assemble(
           manifest,
           path =>
@@ -329,7 +393,12 @@ object ProjectBundle:
               .toRight(BundleError.Store(StoreError.Missing(path)))
         )
       )
-    yield OpenedProject(document, manifest, ByteDigest.sha256(bytes))).value
+    yield OpenedProject(
+      assembled.document,
+      assembled.science,
+      manifest,
+      ByteDigest.sha256(bytes)
+    )).value
 
   /** Write `encoded` to `store`: every part not already there, then the
     * manifest by compare-and-swap against `previous` (the digest of the
@@ -365,7 +434,7 @@ object ProjectBundle:
       entry <- EitherT.fromEither[F](
         InputEntry.of(kind, name, ByteDigest.sha256(bytes), bytes.length.toLong)
       )
-      _ <- EitherT(writeImmutable(store, lock, entry.path, bytes))
+      _ <- entry.path.traverse_(p => EitherT(writeImmutable(store, lock, p, bytes)))
     yield entry).value
 
   /** The state of every input the manifest lists. */
@@ -374,21 +443,23 @@ object ProjectBundle:
       manifest: ProjectManifest
   ): F[Vector[InputStatus]] =
     manifest.inputs.traverse { entry =>
-      if !manifest.sharing.includes(entry.kind) then Monad[F].pure(InputStatus.Withheld(entry))
-      else
-        store.read(entry.path).map {
-          case Left(StoreError.Missing(_)) => InputStatus.Missing(entry)
-          case Left(error)                 => InputStatus.Unreadable(entry, error)
-          case Right(bytes)                =>
-            val found = ByteDigest.sha256(bytes)
-            if found == entry.sha256 then InputStatus.Present(entry)
-            else InputStatus.Changed(entry, found)
-        }
+      entry.path match
+        case None       => Monad[F].pure(InputStatus.Withheld(entry))
+        case Some(path) =>
+          store.read(path).map {
+            case Left(StoreError.Missing(_)) => InputStatus.Missing(entry)
+            case Left(error)                 => InputStatus.Unreadable(entry, error)
+            case Right(bytes)                =>
+              val found = ByteDigest.sha256(bytes)
+              if found == entry.sha256 then InputStatus.Present(entry)
+              else InputStatus.Changed(entry, found)
+          }
     }
 
-  /** Write the bundle in `from` as a new bundle in `to` with `sharing`: the
-    * same science, the inputs `sharing` includes, and the others listed as
-    * withheld. An input cannot be included if `from` withheld it.
+  /** Write the bundle in `from` as a new bundle in `to`, which must be empty
+    * (no manifest, no entries), with `sharing`: the same science, the inputs
+    * `sharing` includes, and the others listed as withheld, with their file
+    * names omitted. An input cannot be included if `from` withheld it.
     */
   def share[F[_]: Monad](
       from: ProjectStore[F],
@@ -397,27 +468,37 @@ object ProjectBundle:
       sharing: SharingOptions
   ): F[Either[BundleError, ByteDigest]] =
     (for
+      manifest <- EitherT(to.readManifest.map {
+        case Left(StoreError.NoManifest) => Right(false)
+        case Left(error)                 => Left(BundleError.Store(error))
+        case Right(_)                    => Right(true)
+      })
+      entries <- EitherT(to.list).leftMap(BundleError.Store(_))
+      _       <- EitherT.cond[F](
+        !manifest && entries.isEmpty,
+        (),
+        BundleError.TargetNotEmpty(manifest, entries)
+      )
       opened <- EitherT(open(from))
       inputs = opened.manifest.inputs
       _ <- EitherT.fromEither[F](
         inputs
-          .find(e => sharing.includes(e.kind) && !opened.manifest.sharing.includes(e.kind))
+          .find(e => sharing.includes(e.kind) && !e.stored)
           .map(BundleError.WithheldInSource(_))
           .toLeft(())
       )
-      encoded <- EitherT.fromEither[F](encode(opened.document, sharing, inputs))
-      _       <- inputs.filter(e => sharing.includes(e.kind)).traverse_ { entry =>
+      shared = inputs.map(e => if sharing.includes(e.kind) then e else e.withheld)
+      encoded <- EitherT.fromEither[F](encode(opened.document, sharing, shared))
+      _       <- shared.flatMap(e => e.path.map(e -> _)).traverse_ { (entry, path) =>
         for
-          bytes <- EitherT(from.read(entry.path)).leftMap(
-            BundleError.InputUnavailable(entry, _)
-          )
+          bytes <- EitherT(from.read(path)).leftMap(BundleError.InputUnavailable(entry, _))
           found = ByteDigest.sha256(bytes)
           _ <- EitherT.cond[F](
             found == entry.sha256,
             (),
             BundleError.InputChanged(entry, found)
           )
-          _ <- EitherT(writeImmutable(to, lock, entry.path, bytes))
+          _ <- EitherT(writeImmutable(to, lock, path, bytes))
         yield ()
       }
       digest <- EitherT(save(to, lock, None, encoded))
@@ -448,10 +529,14 @@ object ProjectBundle:
   ): Either[BundleError, Unit] =
     document.datasets.traverse_ { d =>
       d.sources.entries.traverse_ { s =>
-        Either.cond(
-          inputs.exists(i => i.kind == InputKind.Source(s.role) && i.sha256 == s.bytes),
-          (),
-          BundleError.UnlistedSource(d.id, s.role, s.bytes)
+        inputPath(s).flatMap(path =>
+          Either.cond(
+            inputs.exists(i =>
+              i.kind == InputKind.Source(s.role) && i.sha256 == s.bytes && i.path.contains(path)
+            ),
+            (),
+            BundleError.UnlistedSource(d.id, s.role, path)
+          )
         )
       }
     }
@@ -463,7 +548,8 @@ object ProjectBundle:
       json: Json
   ): Either[BundleError, (PartEntry, IArray[Byte])] =
     for
-      bytes <- utf8(s"${area.directory}/$stem", PortableJson.print(json))
+      text  <- PortableJson.print(s"${area.directory}/$stem", json)
+      bytes <- utf8(s"${area.directory}/$stem", text)
       path  <- BundlePath.in(area, s"$stem.${ByteDigest.sha256(bytes).hex.take(16)}.json")
     yield (PartEntry.of(path, bytes), bytes)
 
@@ -507,6 +593,7 @@ object ProjectBundle:
         (),
         BundleError.NotUtf8(target)
       )
+      _    <- PortableJson.checkText(target, text)
       json <- io.circe.parser
         .parse(text)
         .left

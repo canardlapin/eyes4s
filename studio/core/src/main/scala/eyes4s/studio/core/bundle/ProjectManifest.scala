@@ -59,19 +59,34 @@ enum InputKind derives CanEqual, Codec.AsObject:
   case ParticipantMetadata
   case StimulusImage
 
-/** One copied input: its kind, file name, the SHA-256 and length of its exact
-  * bytes. It is stored at `inputs/<sha256>/<name>`, so its address is its
+/** One input the project lists: its kind, the SHA-256 and length of its
+  * exact bytes and, while its bytes travel with the bundle, its file name.
+  * A stored input lies at `inputs/<sha256>/<name>`, so its address is its
   * digest and a copy is never rewritten.
+  *
+  * A withheld input (see [[SharingOptions]]) keeps its kind, digest and
+  * length but has no name and no path: its original file name, which may
+  * identify a participant, is omitted rather than hashed, because a hash of
+  * a guessable name can be reversed by trying the guesses.
   */
 final case class InputEntry private (
     kind: InputKind,
-    name: String,
+    name: Option[String],
     sha256: ByteDigest,
     length: Long,
-    path: BundlePath
-) derives CanEqual
+    path: Option[BundlePath]
+) derives CanEqual:
+  def stored: Boolean = path.isDefined
+
+  /** The same input, withheld: its name and path omitted. */
+  def withheld: InputEntry = new InputEntry(kind, None, sha256, length, None)
+
+  /** Its order in a manifest: stored inputs by path, then withheld ones. */
+  private[bundle] def sortKey: (Int, String, String) =
+    (if stored then 0 else 1, path.fold("")(_.value), sha256.hex)
 
 object InputEntry:
+  /** A stored input at `inputs/<sha256>/<name>`; `name` is one path segment. */
   def of(
       kind: InputKind,
       name: String,
@@ -84,25 +99,43 @@ object InputEntry:
           Left(BundleError.BadPath(name, PathProblem.Reserved('/', name.indexOf('/'))))
         else BundlePath.in(BundleArea.Inputs, s"${sha256.hex}/$name")
       _ <- Either.cond(length >= 0, (), BundleError.NegativeLength(path.value, length))
-    yield new InputEntry(kind, name, sha256, length, path)
+    yield new InputEntry(kind, Some(name), sha256, length, Some(path))
+
+  /** A withheld input: listed by kind, digest and length only. */
+  def withheld(
+      kind: InputKind,
+      sha256: ByteDigest,
+      length: Long
+  ): Either[BundleError, InputEntry] =
+    Either.cond(
+      length >= 0,
+      new InputEntry(kind, None, sha256, length, None),
+      BundleError.NegativeLength(s"withheld input ${sha256.hex}", length)
+    )
 
   given Encoder.AsObject[InputEntry] =
     Encoder.forProduct4("kind", "name", "sha256", "length")(e =>
       (e.kind, e.name, e.sha256.hex, e.length)
     )
   given Decoder[InputEntry] = Decoder
-    .forProduct4[(InputKind, String, String, Long), InputKind, String, String, Long](
-      "kind",
-      "name",
-      "sha256",
-      "length"
-    )((_, _, _, _))
+    .forProduct4[
+      (InputKind, Option[String], String, Long),
+      InputKind,
+      Option[String],
+      String,
+      Long
+    ]("kind", "name", "sha256", "length")((_, _, _, _))
     .emap((kind, name, hex, length) =>
       ByteDigest
         .parse(hex)
         .left
         .map(_.message)
-        .flatMap(d => of(kind, name, d, length).left.map(_.message))
+        .flatMap(d =>
+          name
+            .fold(withheld(kind, d, length))(n => of(kind, n, d, length))
+            .left
+            .map(_.message)
+        )
     )
 
 /** One stored part of the document: its path and the length and SHA-256 of
@@ -162,12 +195,47 @@ final case class DocumentParts(
 // The manifest
 // ---------------------------------------------------------------------------
 
+/** The science a manifest records. Every manifest this release writes is
+  * `Verified`: it carries the CR3 digest of the document's science, and
+  * opening checks the parts against it. `Unrecorded` is what a version 1
+  * manifest lifts to, since version 1 recorded no digest; opening such a
+  * bundle never reports it as verified.
+  */
+enum ScienceRecord derives CanEqual:
+  case Verified(digest: CanonicalDigest[ScienceContent])
+  case Unrecorded
+
+object ScienceRecord:
+  given Encoder[ScienceRecord] = Encoder.instance {
+    case Verified(d) => Json.obj("Verified" -> Json.obj("sha256" -> d.sha256.hex.asJson))
+    case Unrecorded  => Json.obj("Unrecorded" -> Json.obj())
+  }
+  given Decoder[ScienceRecord] = Decoder.instance { c =>
+    c.keys.map(_.toVector) match
+      case Some(Vector("Verified")) =>
+        c.downField("Verified")
+          .get[String]("sha256")
+          .flatMap(h =>
+            CanonicalDigest
+              .parse[ScienceContent](h)
+              .bimap(e => DecodingFailure(e.message, c.history), Verified(_))
+          )
+      case Some(Vector("Unrecorded")) => Right(Unrecorded)
+      case _                          =>
+        Left(
+          DecodingFailure(
+            "science is required: {\"Verified\": {\"sha256\": …}} or {\"Unrecorded\": {}}",
+            c.history
+          )
+        )
+  }
+
 /** `project.json`: what a bundle holds (ticket S2.3).
   *
   *  - `document`: the schema version of the document the parts are fragments
   *    of (`studio.document@n`); they are read with that version's reader.
-  *  - `science`: the CR3 digest of the document's science, checked on every
-  *    open. `None` only in a manifest written before it was recorded.
+  *  - `science`: the required [[ScienceRecord]]: the CR3 digest of the
+  *    document's science, checked on every open.
   *  - `sharing`, `inputs`: see [[SharingOptions]] and [[InputEntry]].
   *  - `parts`: every part, by path, length and SHA-256.
   *  - `presentation`: the document's presentation state, in the same
@@ -175,31 +243,32 @@ final case class DocumentParts(
   *    immutable part.
   *
   * Built only through [[ProjectManifest.of]]: every part lies in its own area,
-  * no path is listed twice, and inputs are kept in path order.
+  * no path or input is listed twice, an input is named exactly when
+  * `sharing` includes its kind, and inputs are kept in path order.
   */
 final case class ProjectManifest private (
     document: DefinitionId,
-    science: Option[CanonicalDigest[ScienceContent]],
+    science: ScienceRecord,
     sharing: SharingOptions,
     inputs: Vector[InputEntry],
     parts: DocumentParts,
     presentation: Json
 ) derives CanEqual:
-  /** Every path the manifest names: its parts, then its inputs. */
-  def paths: Vector[BundlePath] = parts.all.map(_.path) ++ inputs.map(_.path)
+  /** Every path the manifest names: its parts, then its stored inputs. */
+  def paths: Vector[BundlePath] = parts.all.map(_.path) ++ inputs.flatMap(_.path)
 
 object ProjectManifest:
   given CanEqual[Json, Json] = CanEqual.derived
 
   def of(
       document: DefinitionId,
-      science: Option[CanonicalDigest[ScienceContent]],
+      science: ScienceRecord,
       sharing: SharingOptions,
       inputs: Vector[InputEntry],
       parts: DocumentParts,
       presentation: Json
   ): Either[BundleError, ProjectManifest] =
-    val listed = parts.all.map(_.path) ++ inputs.map(_.path)
+    val listed = parts.all.map(_.path) ++ inputs.flatMap(_.path)
     for
       _ <- parts.located.traverse_ { (part, area, entry) =>
         entry.path.area match
@@ -207,11 +276,16 @@ object ProjectManifest:
           case _      => Left(BundleError.PartOutsideArea(part, entry.path, area))
       }
       _ <- listed.diff(listed.distinct).headOption.map(BundleError.DuplicatePath(_)).toLeft(())
+      _ <- inputs
+        .find(e => e.stored != sharing.includes(e.kind))
+        .map(BundleError.InputNaming(_, sharing))
+        .toLeft(())
+      _ <- inputs.diff(inputs.distinct).headOption.map(BundleError.DuplicateInput(_)).toLeft(())
     yield new ProjectManifest(
       document,
       science,
       sharing,
-      inputs.sortBy(_.path),
+      inputs.sortBy(_.sortKey),
       parts,
       CanonicalJson(presentation)
     )
@@ -228,10 +302,6 @@ object ProjectManifest:
         .map(e => DecodingFailure(s"invalid definition $name@$version: $e", c.history))
     yield id
   }
-  private given Encoder[CanonicalDigest[ScienceContent]] =
-    Encoder[String].contramap(_.sha256.hex)
-  private given Decoder[CanonicalDigest[ScienceContent]] =
-    Decoder[String].emap(h => CanonicalDigest.parse[ScienceContent](h).left.map(_.message))
 
   /** Version 1, the pre-release layout: no sharing options and no recorded
     * science digest. It expresses exactly the manifests that carry
@@ -251,7 +321,7 @@ object ProjectManifest:
   private def read(
       json: Json,
       sharing: HCursor => Decoder.Result[SharingOptions],
-      science: HCursor => Decoder.Result[Option[CanonicalDigest[ScienceContent]]]
+      science: HCursor => Decoder.Result[ScienceRecord]
   ): Either[CodecError, ProjectManifest] =
     val c = json.hcursor
     (for
@@ -268,28 +338,34 @@ object ProjectManifest:
       )
 
   private def expressedByV1(m: ProjectManifest): Boolean =
-    m.sharing == SharingOptions.complete && m.science.isEmpty
+    m.sharing == SharingOptions.complete && m.science == ScienceRecord.Unrecorded
 
   /** Every version of the manifest schema (CR3). Version 1 lifts to version
     * 2 by stating what it always meant: everything travels, and no science
-    * digest was recorded.
+    * digest was recorded (`Unrecorded`, never `Verified`). Version 2 requires
+    * `science`: a missing or null record is refused.
     */
   val ladder: Either[CodecError, SchemaLadder[ProjectManifest]] =
     StudioSchemaIds.forCodec.map { ids =>
       SchemaLadder
         .of[ProjectManifest]("studio project manifest", ids.project)(m =>
           Right(CanonicalJson(writeV1(m)))
-        )(json => read(json, _ => Right(SharingOptions.complete), _ => Right(None)))
+        )(json =>
+          read(json, _ => Right(SharingOptions.complete), _ => Right(ScienceRecord.Unrecorded))
+        )
         .next(
           expressedByV1,
           _.deepMerge(
-            Json.obj("sharing" -> SharingOptions.complete.asJson, "science" -> Json.Null)
+            Json.obj(
+              "sharing" -> SharingOptions.complete.asJson,
+              "science" -> (ScienceRecord.Unrecorded: ScienceRecord).asJson
+            )
           )
         )(m => Right(CanonicalJson(writeV2(m))))(json =>
           read(
             json,
             _.get[SharingOptions]("sharing"),
-            _.get[Option[CanonicalDigest[ScienceContent]]]("science")
+            _.get[ScienceRecord]("science")
           )
         )
     }
