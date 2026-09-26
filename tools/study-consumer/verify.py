@@ -160,7 +160,9 @@ def main():
         "show consumerJS/Compile/fullClasspath",
     )
     log = (candidate / "consumer.log").read_text()
-    if str(REPO) in log:
+    # The consumer lives under REPO/target, so its own paths are removed first; any
+    # remaining checkout path (library classes or sources) breaks isolation.
+    if str(REPO) in log.replace(str(candidate), "<consumer>"):
         raise RuntimeError(
             "Consumer output unexpectedly refers to the library source checkout"
         )
@@ -724,7 +726,10 @@ def check_reader_classpath(candidate, artifacts):
     own, packaged, external = [], [], []
     for entry in found[0].read_text().split(os.pathsep):
         path = Path(entry).resolve()
-        if path.is_relative_to(REPO.resolve()):
+        # The consumer is built under REPO/target: its own output is checked first.
+        if path.is_relative_to(REPO.resolve()) and not path.is_relative_to(
+            candidate.resolve()
+        ):
             raise RuntimeError(
                 f"Reader classpath refers to the library checkout: {entry}"
             )
