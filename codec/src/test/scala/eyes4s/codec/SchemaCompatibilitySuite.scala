@@ -61,6 +61,19 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
       codec.decode(document).flatMap(codec.encode)
 
   private val pinned: Vector[Pinned[?]] = Vector(
+    Pinned("source-ref-v1", SourceIdentityMirrors.sourceRef, SourceIdentityCodec.source),
+    Pinned(
+      "inventory-source-ref-v1",
+      SourceIdentityMirrors.inventoryRef,
+      SourceIdentityCodec.source
+    ),
+    Pinned("import-spec-v1", SourceIdentityMirrors.importSpec, ImportSpecCodec.study[Px]),
+    Pinned(
+      "inventory-import-spec-v1",
+      SourceIdentityMirrors.inventorySpec,
+      ImportSpecCodec.inventory
+    ),
+    Pinned("admission-ledger-v4", SourceIdentityMirrors.ledgerV4, inputs.ledger),
     Pinned("study-v1", SavedStudyFixtures.versionOne, studies.codec),
     Pinned("study-v2", StudyV2Mirrors.studyVersionTwo, studies.codec),
     Pinned("study-v3", StudyV3Mirrors.studyVersionThree, studies.codec),
@@ -177,7 +190,10 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
         "eyes4s.admission-ledger@1",
         "eyes4s.admission-ledger@2",
         "eyes4s.admission-ledger@3",
+        "eyes4s.admission-ledger@4",
         "eyes4s.binocular-recording@1",
+        "eyes4s.import-spec@1",
+        "eyes4s.inventory-import-spec@1",
         "eyes4s.manifest@1",
         "eyes4s.measure-distance@1",
         "eyes4s.recording-input@1",
@@ -187,6 +203,7 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
         "eyes4s.scalar@1",
         "eyes4s.signed-difference@1",
         "eyes4s.similarity@1",
+        "eyes4s.source-ref@1",
         "eyes4s.study-input@1",
         "eyes4s.study-result@1",
         "eyes4s.study@1",

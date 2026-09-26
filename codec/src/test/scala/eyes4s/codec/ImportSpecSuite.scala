@@ -95,13 +95,13 @@ class ImportSpecSuite extends munit.FunSuite:
   test("pinned version one descriptions and version four ledger remain readable") {
     val json0 = get(
       io.circe.parser.parse(
-        """{"schema":{"name":"eyes4s.import-spec","version":1},"value":{"keySchema":{"name":"eyes4s.study-key","version":1},"keys":{"kind":"study","participant":"participant","stimulus":"item","phase":"phase"},"columns":{"ordinal":"n","x":"x","y":"y","onset":"onset","duration":"duration","samples":{"kind":"positiveColumn","column":"samples"},"attributes":[]},"frame":{"id":"source-frame","unit":"px","xMin":0.0,"yMin":0.0,"xMax":100.0,"yMax":100.0,"yAxis":"Down"},"timeUnit":"Milliseconds","rounding":"NearestMicrosecond","policy":{"offScreen":"ExcludeRecord","corrections":[]},"decision":"ReviewExclusions","inventory":null,"digest":"36995201760330b5"}}"""
+        SourceIdentityMirrors.importSpec
       )
     )
     assertEquals(get(codec.encode(get(codec.decode(json0)))), json0)
     val json1 = get(
       io.circe.parser.parse(
-        """{"schema":{"name":"eyes4s.inventory-import-spec","version":1},"value":{"participant":"participant","phase":"phase","trial":"trial","occurrence":null,"item":"item","attributes":[]}}"""
+        SourceIdentityMirrors.inventorySpec
       )
     )
     assertEquals(
@@ -110,7 +110,7 @@ class ImportSpecSuite extends munit.FunSuite:
     )
     val json2 = get(
       io.circe.parser.parse(
-        """{"schema":{"name":"eyes4s.source-ref","version":1},"value":{"label":"fixations.csv","records":"e5740769eab149c6","interpretation":{"kind":"declared","format":"FixationCsv","parser":{"name":"eyes4s.fixation-csv-parser","version":1},"options":"36995201760330b5","identityVersion":"eyes4s.source-identity/1","identity":"068718ec24fd232f"}}}"""
+        SourceIdentityMirrors.sourceRef
       )
     )
     assertEquals(
@@ -119,7 +119,7 @@ class ImportSpecSuite extends munit.FunSuite:
     )
     val json3 = get(
       io.circe.parser.parse(
-        """{"schema":{"name":"eyes4s.source-ref","version":1},"value":{"label":"trials.csv","records":"e1f5405aea80983e","interpretation":{"kind":"declared","format":"TrialInventoryCsv","parser":{"name":"eyes4s.trial-inventory-csv-parser","version":1},"options":"3a6a492490fede29","identityVersion":"eyes4s.source-identity/1","identity":"e14cf26d5ad7c128"}}}"""
+        SourceIdentityMirrors.inventoryRef
       )
     )
     assertEquals(
@@ -128,7 +128,7 @@ class ImportSpecSuite extends munit.FunSuite:
     )
     val json4 = get(
       io.circe.parser.parse(
-        """{"schema":{"name":"eyes4s.admission-ledger","version":4},"value":{"keySchema":{"name":"eyes4s.study-key","version":1},"source":{"label":"empty.csv","records":"df0f52b97b77fd3b","interpretation":{"kind":"declared","format":"FixationCsv","parser":{"name":"eyes4s.fixation-csv-parser","version":1},"options":"36995201760330b5","identityVersion":"eyes4s.source-identity/1","identity":"8f6e78db3722138f"}},"header":["x"],"outcome":"complete","records":[],"offScreen":"excludeRecord","corrections":[],"outsideFrame":[],"inventory":null}}"""
+        SourceIdentityMirrors.ledgerV4
       )
     )
     assertEquals(
