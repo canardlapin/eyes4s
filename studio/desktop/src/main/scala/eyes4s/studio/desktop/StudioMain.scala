@@ -30,6 +30,13 @@ import javafx.stage.Stage
   */
 final class StudioApplication extends Application:
 
+  // S1.2: register the bundled faces before the first scene reads its CSS. A
+  // face that fails to load falls back to the platform font; say which.
+  override def init(): Unit =
+    eyes4s.studio.desktop.typography.StudioFonts
+      .loadAll()
+      .foreach(p => System.err.println(p.message))
+
   override def start(stage: Stage): Unit =
     stage.setTitle(StudioMain.title)
     stage.setScene(Scene(Label(StudioViz.caption(AppModel.initial)), 480, 240))

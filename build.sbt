@@ -1058,10 +1058,11 @@ addCommandAlias(
 )
 
 // The root headerCheckAll and scalafmtCheckAll cover the aggregate only.
+// checkStudioTypeScale (S1.2) is defined with the token settings below.
 addCommandAlias(
   "studioStyleCheck",
-  studioProjects
-    .flatMap(p => Seq(s"$p/headerCheckAll", s"$p/scalafmtCheckAll"))
+  ("checkStudioTypeScale" +: studioProjects
+    .flatMap(p => Seq(s"$p/headerCheckAll", s"$p/scalafmtCheckAll")))
     .mkString(";", ";", "")
 )
 
@@ -1222,6 +1223,35 @@ ThisBuild / checkStudioColours := {
     )
   log.info(
     "studio colours OK (lint self-test passed; no literal colour outside the token source)"
+  )
+}
+
+// Type scale (S1.2): only the five sizes of eyes4s.studio.app.tokens.TypeSize
+// in studio CSS, FXML and inline styles. Runs in studioStyleCheck.
+lazy val checkStudioTypeScale =
+  taskKey[Unit]("Fail on a font size in studio sources outside the five-size type scale.")
+
+ThisBuild / checkStudioTypeScale := {
+  val log      = streams.value.log
+  val selfTest = TypeScaleLint.selfTest
+  if (selfTest.nonEmpty)
+    sys.error(
+      s"""|TypeScaleLint self-test failed: a rule no longer detects a planted
+          |font size, or flags a clean input.
+          |${selfTest.map("  - " + _).mkString("\n")}""".stripMargin
+    )
+  val found = TypeScaleLint.scanTree((ThisBuild / baseDirectory).value)
+  if (found.nonEmpty)
+    sys.error(
+      s"""|Font size outside the type scale.
+          |
+          |${found.map("  - " + _.render).mkString("\n")}
+          |
+          |Use a type class (t11, t12, t13, t16, t28 in studio-type.css) or
+          |eyes4s.studio.app.tokens.TypeSize (DESIGN_SPEC section 7).""".stripMargin
+    )
+  log.info(
+    "studio type scale OK (lint self-test passed; only the five sizes in studio sources)"
   )
 }
 
