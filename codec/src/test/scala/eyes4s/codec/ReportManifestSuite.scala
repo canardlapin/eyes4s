@@ -42,22 +42,32 @@ class ReportManifestSuite extends munit.FunSuite:
     )
   )
 
-  private val binding = get(
-    ReportCodecs.binding(
-      (studies.codec, plan),
-      (inputs.input, input),
-      (results.codec, result),
-      Some((inputs.ledger, ledger))
+  /** The bound source: its binding computed from the values it reads. */
+  private def source(
+      withLedger: Boolean = true,
+      covariates: CovariateSchema = CovariateSchema.empty
+  ) =
+    ReportSources.study(studies, inputs, results)(
+      plan,
+      input,
+      result,
+      Option.when(withLedger)(ledger),
+      covariates
     )
-  )
 
+  private val binding = get(source()).binding
+
+  /** A report evaluated under a binding taken on trust: how a report stored
+    * against since-changed documents looks.
+    */
   private def evaluated(b: ReportBinding, s: ReportSpec = spec): Report[StudyKey] =
     get(Report.evaluate(s, get(ReportSource.study(plan, input, result, None, b))))
 
   private def graph(
       report: Report[StudyKey],
       stored: ReportSpec = spec,
-      covariates: Option[String] = Some("ledger")
+      covariates: Option[String] = Some("ledger"),
+      reportInput: String = "input"
   ): SavedManifest =
     get(
       SavedManifest.of(
@@ -66,6 +76,7 @@ class ReportManifestSuite extends munit.FunSuite:
           inputArtifact,
           ledgerArtifact,
           resultArtifact,
+          baseArtifact,
           get(StoredArtifact.reportSpec("spec", stored)),
           get(StoredArtifact.report("report", reports, report))
         ),
@@ -77,7 +88,7 @@ class ReportManifestSuite extends munit.FunSuite:
             name("report"),
             name("spec"),
             name("result"),
-            name("input"),
+            name(reportInput),
             covariates.map(name)
           )
         )
@@ -182,4 +193,68 @@ class ReportManifestSuite extends munit.FunSuite:
     assertEquals(relation.hcursor.downField("covariates").focus, Some(Json.Null))
     assertEquals(get(ScientificManifest.codec.decode(json)), saved.manifest)
     assert(resolve(saved).isRight)
+  }
+
+  test("the public source binds exactly the plan, input, result and ledger it reads") {
+    val digests = (
+      get(ReportCodecs.digest(get(studies.codec.digest(plan)), "plan")),
+      get(ReportCodecs.digest(get(inputs.input.digest(input)), "input")),
+      get(ReportCodecs.digest(get(results.codec.digest(result)), "result")),
+      get(ReportCodecs.digest(get(inputs.ledger.digest(ledger)), "covariates"))
+    )
+    assertEquals(binding, ReportBinding(digests._1, digests._2, digests._3, Some(digests._4)))
+    assertEquals(get(source(withLedger = false)).binding.covariates, None)
+    val report = get(Report.evaluate(spec, get(source())))
+    assertEquals(report.binding, binding)
+  }
+
+  test("a report that reads covariates needs a bound ledger that carries a trials table") {
+    val memory = get(CovariateName.of("memory"))
+    val levels = get(Levels.of(Vector("Remembered", "Forgotten")))
+    val schema =
+      get(CovariateSchema.of(Vector(Covariate(memory, CovariateType.Categorical(levels)))))
+    val reading = get(
+      ReportSpec.of(
+        get(ReportId.of("memory")),
+        0,
+        spec.selection,
+        groupBy = Vector(Grouping.ByLevel(LevelTerm.Categorical(memory, levels)))
+      )
+    )
+    // No ledger: the source cannot bind covariates, and a report reading them is refused.
+    assertEquals(
+      source(withLedger = false, covariates = schema).left.map(_.message),
+      Left(CodecError.Report(ReportError.UnboundCovariates(Vector("memory"))).message)
+    )
+    assertEquals(
+      Report.evaluate(reading, get(source(withLedger = false))).left.map(_.message),
+      Left(ReportError.UnboundCovariates(Vector("memory")).message)
+    )
+    // This ledger has no trials table, so it cannot be a covariate source either.
+    assertEquals(
+      source(covariates = schema).left.map(_.message),
+      Left(CodecError.Report(ReportError.UnboundCovariates(Vector("memory"))).message)
+    )
+  }
+
+  test("a report of other trials, bound to this study's documents, is refused naming them") {
+    // The review's reproducer: a genuine binding over an unrelated query table.
+    val forged  = get(Report.reduce(ReportFixtures.spec, ReportFixtures.table, binding))
+    val refused = resolve(graph(forged, stored = ReportFixtures.spec))
+    val named   = refused.left.toOption.toVector.flatten.collect {
+      case ResolveError.Relation(_, RelationMismatch.ReportMembers(0, unknown)) => unknown
+    }
+    assertEquals(named.size, 1, refused)
+    assert(named.head.contains(StudyKey("p1", "a", "recall").toString), named)
+  }
+
+  test("a report naming another input than its result's is refused") {
+    val refused = resolve(graph(evaluated(binding), reportInput = "base"))
+    assert(
+      refused.left.exists(_.exists {
+        case ResolveError.Relation(_, RelationMismatch.ReportInput("base", "input")) => true
+        case _                                                                       => false
+      }),
+      refused
+    )
   }

@@ -218,6 +218,12 @@ class ReportSuite extends munit.FunSuite:
     assertEquals((books.eligible, books.kept, books.filteredOut, books.failed), (6, 3, 2, 1))
     val forgotten = GroupKey(Vector("covariate:memory" -> "Forgotten"))
     assertEquals(estimate(r, forgotten), Value.Missing(Absence.EmptyGroup))
+    // The failed query is attributed to its group, not only to the role's books.
+    val rememberedG = GroupKey(Vector("covariate:memory" -> "Remembered"))
+    assertEquals(
+      r.cell(rememberedG, Role.Difference, "value").map(c => (c.queries, c.failed)),
+      Some((3, 1))
+    )
     assert(r.findings.contains(ReportFinding.EmptyGroup(forgotten, Role.Difference)))
     val cells = get(ReportTables.cells(r))
     val row   = cells.rows(
@@ -565,4 +571,17 @@ class ReportSuite extends munit.FunSuite:
       Report.evaluate(spec(), source, binding.copy(covariates = None)).left.map(_.message),
       Left(ReportError.StaleBinding("covariates", "none", s"sha256:${hex('d')}").message)
     )
+  }
+
+  test("a contrast of a level no query shows is reported missing, never dropped") {
+    val item = LevelTerm.Layout(LayoutField.Item)
+    val r    = report(
+      spec(Vector(Grouping.ByLevel(item)), contrast = Some(LevelContrast(item, "a", "zz")))
+    )
+    assertEquals(r.contrasts.size, 1)
+    val stat = r.contrasts.head
+    assertEquals((stat.minuend, stat.subtrahend), ("a", "zz"))
+    assertEquals(stat.estimate, Value.Missing(Absence.EmptyGroup))
+    assertEquals(stat.dispersion.n, 0)
+    assert(stat.paired.isEmpty && stat.unpaired.isEmpty)
   }

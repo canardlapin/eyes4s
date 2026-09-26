@@ -53,7 +53,8 @@ object ResultsDiagnosticCatalog:
     "InvalidQuery",
     "InconsistentAccounting",
     "InconsistentCell",
-    "Components"
+    "Components",
+    "UnboundCovariates"
   )
   val reportSpec: DiagnosticFamily = error("report-spec")(
     "BlankId",
@@ -77,7 +78,8 @@ object ResultsDiagnosticCatalog:
     "DuplicateCovariate",
     "DuplicateKey",
     "UnknownAttribute",
-    "IncompatibleKind"
+    "IncompatibleKind",
+    "NoTrialProjection"
   )
   val resultTable: DiagnosticFamily = error("result-table")(
     "Schema",

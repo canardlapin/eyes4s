@@ -75,10 +75,12 @@ final case class ParticipantValue(participant: String, queries: Int, value: Valu
   * that stand behind it and the stored rows it was read from (`members`,
   * resolvable through `ResultInspection`).
   *
-  * `queries` counts every query assigned to the group; `participants`
+  * `queries` counts the queries assigned to the group that have a stored
+  * value for the role, and `failed` those assigned to it that passed the
+  * filter but have none (a stored failure or no stored row); `participants`
   * counts those whose value contributes (under participant means, those
-  * meeting the minimum). A cell with no query has the absence `EmptyGroup`,
-  * never an estimate of zero.
+  * meeting the minimum). A cell with no valued query has the absence
+  * `EmptyGroup`, never an estimate of zero.
   */
 final case class Cell[+K](
     group: GroupKey,
@@ -88,6 +90,7 @@ final case class Cell[+K](
     dispersion: CellSpread,
     participants: Int,
     queries: Int,
+    failed: Int,
     perParticipant: Vector[ParticipantValue],
     members: Vector[ResultRef[K]]
 ) derives CanEqual
@@ -263,6 +266,11 @@ enum ReportError[+K] derives CanEqual:
   /** The plan's described score components do not name its method's contrast components. */
   case Components(underlying: eyes4s.plan.DescriptorError)
 
+  /** The report reads `covariates`, but its source is bound to no covariate
+    * source (no admission ledger with a trials table).
+    */
+  case UnboundCovariates(covariates: Vector[String])
+
   def message: String = this match
     case UnknownScale(scale, scales) =>
       s"The report reads scale $scale, but the result has $scales scales."
@@ -296,7 +304,10 @@ enum ReportError[+K] derives CanEqual:
         s"missingGroupAttribute=$missing."
     case InconsistentCell(group, role, component, reason) =>
       s"The $role cell of $component in $group is inconsistent: $reason."
-    case Components(underlying) => underlying.message
+    case Components(underlying)        => underlying.message
+    case UnboundCovariates(covariates) =>
+      s"The report reads covariates $covariates, but its source is bound to no covariate " +
+        "source; evaluate it over the admission ledger that carries the trials table."
 
 /** A report: the cells, level contrasts and accounting a [[ReportSpec]]
   * reduces a scale's stored rows to, with its findings and the binding of
@@ -332,15 +343,24 @@ final class Report[K] private (
 object Report:
   /** Evaluate `spec` over the stored rows of `source`. Pair scores are never
     * rerun: each query's values are read from the stored reductions and
-    * contrast rows.
+    * contrast rows. A report that reads covariates needs a source bound to
+    * its covariate source. The report carries the source's binding, which
+    * the source computed from the very values it reads (see
+    * `eyes4s.codec.ReportSources.study`).
     */
   def evaluate[K](
       spec: ReportSpec,
       source: ReportSource[K]
   ): Either[ReportError[K], Report[K]] =
-    source
-      .queries(spec.scale)
-      .flatMap(table => reduce(spec, table, source.binding)(using source.ordering))
+    for
+      _ <- Either.cond(
+        spec.covariates.isEmpty || source.binding.covariates.isDefined,
+        (),
+        ReportError.UnboundCovariates(spec.covariates.map(_.name.value))
+      )
+      table  <- source.queries(spec.scale)
+      report <- reduce(spec, table, source.binding)(using source.ordering)
+    yield report
 
   /** As [[evaluate]], refusing a source whose binding is not `expected`. */
   def evaluate[K](
@@ -350,9 +370,12 @@ object Report:
   ): Either[ReportError[K], Report[K]] =
     expected.check(source.binding).flatMap(_ => evaluate(spec, source))
 
-  /** Reduce a query table under `spec`: the pure core of [[evaluate]]. */
-  def reduce[K](spec: ReportSpec, table: QueryTable[K], binding: ReportBinding)(using
-      ordering: Ordering[K]
+  /** Reduce a query table under `spec`: the pure core of [[evaluate]]. The
+    * binding is taken on trust, so this is not a public way to make a bound
+    * report; law suites and the codec use it.
+    */
+  private[eyes4s] def reduce[K](spec: ReportSpec, table: QueryTable[K], binding: ReportBinding)(
+      using ordering: Ordering[K]
   ): Either[ReportError[K], Report[K]] =
     for
       _ <- Either.cond(
@@ -393,7 +416,7 @@ object Report:
     * role and component in order; consistent counts; and accounting whose
     * identities hold and whose kept queries the cells hold.
     */
-  def reconstruct[K](
+  private[eyes4s] def reconstruct[K](
       spec: ReportSpec,
       binding: ReportBinding,
       groups: Vector[GroupKey],
@@ -424,6 +447,7 @@ object Report:
       val present = c.perParticipant.count(_.value.isPresent)
       val listed  = c.perParticipant.map(_.queries).sum
       if c.members.size != c.queries then Some(cellError(c, "members differ from queries"))
+      else if c.failed < 0 then Some(cellError(c, "a negative failure count"))
       else if listed != c.queries then Some(cellError(c, "participant queries differ"))
       else if spec.reduce != ReducePolicy.PooledQueries && present != c.participants then
         Some(cellError(c, "contributing participants differ"))
@@ -625,12 +649,21 @@ object Report:
         )
         val byGroup: Map[GroupKey, Vector[Query[K]]] =
           kept.flatMap(i => assigned(i).map(_ -> queries(i))).toVector.groupMap(_._1)(_._2)
+        val failedByGroup: Map[GroupKey, Int] =
+          queries.indices
+            .filter(i =>
+              truths(i) == Truth.True && !queries(i)
+                .outcome(role)
+                .isInstanceOf[RoleOutcome.Scored]
+            )
+            .flatMap(assigned(_))
+            .groupMapReduce(identity)(_ => 1)(_ + _)
         val cells = groups.map { g =>
           val members = byGroup.getOrElse(g, Vector.empty)
           val people  = members.groupBy(_.participant).toVector.sortBy(_._1)
-          g -> people
+          (g, people, failedByGroup.getOrElse(g, 0))
         }
-        val below = cells.flatMap { case (g, people) =>
+        val below = cells.flatMap { case (g, people, _) =>
           minimum.toVector.flatMap(m =>
             people.collect {
               case (p, qs) if qs.size < m => ReportFinding.BelowMinimum(p, g, role, qs.size, m)
@@ -638,7 +671,7 @@ object Report:
           )
         }
         val empties = cells.collect {
-          case (g, people) if people.isEmpty => ReportFinding.EmptyGroup(g, role)
+          case (g, people, _) if people.isEmpty => ReportFinding.EmptyGroup(g, role)
         }
         val accounting = Accounting.of(
           role,
@@ -655,7 +688,7 @@ object Report:
 
       val built = for
         (role, grouped, _, _) <- perRole
-        (g, people)           <- grouped
+        (g, people, failures) <- grouped
         (component, index)    <- components.zip(indices)
       yield
         val values: Vector[ParticipantValue] = people.map { (p, qs) =>
@@ -688,6 +721,7 @@ object Report:
           dispersion(averaged, estimate),
           minimum.fold(people.size)(_ => values.count(_.value.isPresent)),
           queryN,
+          failures,
           values,
           members.map(_.ref(role, table.scale))
         )
@@ -699,7 +733,7 @@ object Report:
         cell <- built.find(x => x.group == g && x.role == r && x.component == c)
       yield cell
 
-      val contrasts = spec.contrast.toVector.flatMap(c => levelContrast(c, cells))
+      val contrasts = spec.contrast.toVector.flatMap(c => levelContrast(c, cells, dims))
 
       val contrastFindings = contrasts
         .distinctBy(s => (s.stratum, s.role))
@@ -726,34 +760,64 @@ object Report:
           )
         }
 
+    /** One statistic per stratum (a level of each other grouping), role and
+      * component. The strata come from the specification's levels, so a
+      * contrast whose level no query shows is reported as missing
+      * (`EmptyGroup`), never dropped.
+      */
     private def levelContrast(
         c: LevelContrast,
-        cells: Vector[Cell[K]]
+        cells: Vector[Cell[K]],
+        dims: Vector[(Grouping, Vector[String])]
     ): Vector[LevelContrastStat] =
       val term   = c.term.render
       val index  = spec.groupBy.indexWhere(_.on == c.term)
-      val strata = cells
-        .map(_.group)
-        .distinct
-        .map(g => GroupKey(g.levels.patch(index, Nil, 1)))
-        .distinct
+      val strata =
+        dims.patch(index, Nil, 1).foldLeft(Vector(GroupKey.all)) { case (acc, (g, levels)) =>
+          for
+            key   <- acc
+            level <- levels
+          yield GroupKey(key.levels :+ (g.on.render -> level))
+        }
       def at(stratum: GroupKey, level: String) =
         GroupKey(stratum.levels.patch(index, Vector(term -> level), 0))
+      val empty = CellSpread(0, Value.Missing(Absence.EmptyGroup), None)
       for
         stratum   <- strata
         role      <- roles
         component <- components
-        a         <- cells
-          .find(x =>
-            x.group == at(stratum, c.minuend) && x.role == role && x.component == component
-          )
-          .toVector
-        b <- cells
-          .find(x =>
-            x.group == at(stratum, c.subtrahend) && x.role == role && x.component == component
-          )
-          .toVector
       yield
+        def find(level: String) = cells.find(x =>
+          x.group == at(stratum, level) && x.role == role && x.component == component
+        )
+        (find(c.minuend), find(c.subtrahend)) match
+          case (Some(a), Some(b)) => contrast(c, stratum, role, component, a, b)
+          case _                  =>
+            LevelContrastStat(
+              stratum,
+              term,
+              c.minuend,
+              c.subtrahend,
+              role,
+              component,
+              Value.Missing(Absence.EmptyGroup),
+              if spec.spread == Spread.StandardDeviationAndError then
+                empty.copy(sem = Some(Value.Missing(Absence.EmptyGroup)))
+              else empty,
+              Vector.empty,
+              Vector.empty
+            )
+
+    private def contrast(
+        c: LevelContrast,
+        stratum: GroupKey,
+        role: Role,
+        component: String,
+        a: Cell[K],
+        b: Cell[K]
+    ): LevelContrastStat =
+      val term = c.term.render
+      locally {
         def present(cell: Cell[K]) =
           cell.perParticipant.collect { case ParticipantValue(p, n, Value.Present(v)) =>
             p -> (n, v)
@@ -792,3 +856,4 @@ object Report:
           diffs,
           unpaired
         )
+      }

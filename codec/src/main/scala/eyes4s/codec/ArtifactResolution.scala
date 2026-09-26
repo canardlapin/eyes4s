@@ -134,6 +134,19 @@ enum RelationMismatch derives CanEqual:
     */
   case ReportBinding(field: String, bound: String, stored: String)
 
+  /** The report names `input`, but its result was computed on `computed`. */
+  case ReportInput(input: String, computed: String)
+
+  /** The report's covariate ledger is not a ledger of its input (no
+    * `ledger-of` relation joins them).
+    */
+  case ReportLedger(ledger: String, input: String)
+
+  /** The report's cells cite trials the bound result did not estimate at
+    * `scale`.
+    */
+  case ReportMembers(scale: Int, unknown: Vector[String])
+
   def message: String = this match
     case Prerequisites(errors)        => errors.map(_.message).mkString(" ")
     case ResultInput(expected, found) =>
@@ -156,6 +169,12 @@ enum RelationMismatch derives CanEqual:
       s"The report was evaluated under specification '$report', not the stored '$stored'."
     case ReportBinding(field, bound, stored) =>
       s"The report is bound to $field $bound, but the stored $field is $stored."
+    case ReportInput(input, computed) =>
+      s"The report names input '$input', but its result was computed on '$computed'."
+    case ReportLedger(ledger, input) =>
+      s"The report reads covariates from '$ledger', which no ledger-of relation joins to '$input'."
+    case ReportMembers(scale, unknown) =>
+      s"The report's cells cite trials $unknown that the result did not estimate at scale $scale."
 
 /** Why a manifest or one of its artifacts was refused. Every case names the
   * manifest address, the entry or the relation at fault; integrity cases are
@@ -955,16 +974,45 @@ object ArtifactResolver:
             case (
                   Some(Decoded.Reported(value)),
                   Some(Decoded.Spec(stored)),
-                  Some(Decoded.Result(_)),
+                  Some(Decoded.Result(loaded)),
                   Some(Decoded.Input(_)),
                   covariates
                 ) if covariates.forall(_.exists(_.isInstanceOf[Decoded.Ledger[?, ?]])) =>
-              val plan = manifest.relations.collectFirst {
-                case ManifestRelation.ResultOf(`result`, plan, _) => plan
+              val computed = manifest.relations.collectFirst {
+                case ManifestRelation.ResultOf(`result`, plan, on) => (plan, on)
               }
+              val plan  = computed.map(_._1)
               val bound = value.binding
+              // Every cell member must be a trial the bound result estimated at
+              // the report's scale: a report of other trials cites nothing here.
+              val estimated = loaded.result.scales
+                .lift(value.spec.scale)
+                .fold(Set.empty[Any])(_.estimation.map(_._1).toSet)
+              val strangers = value.cells
+                .flatMap(_.members)
+                .flatMap(_.loci.flatMap(_.trialKeys))
+                .distinct
+                .filterNot(estimated.contains)
               if value.spec != stored then
                 fail(RelationMismatch.ReportSpec(value.spec.id.value, stored.id.value))
+              else if computed.exists(_._2 != input) then
+                fail(
+                  RelationMismatch.ReportInput(
+                    input.value,
+                    computed.fold("")(_._2.value)
+                  )
+                )
+              else if ledger.exists(l =>
+                  !manifest.relations.contains(ManifestRelation.LedgerOf(l, input))
+                )
+              then
+                fail(
+                  RelationMismatch.ReportLedger(ledger.fold("")(_.value), input.value)
+                )
+              else if strangers.nonEmpty then
+                fail(
+                  RelationMismatch.ReportMembers(value.spec.scale, strangers.map(_.toString))
+                )
               else
                 Vector(
                   ("plan", Some(bound.plan.hex), plan.flatMap(digestOf)),

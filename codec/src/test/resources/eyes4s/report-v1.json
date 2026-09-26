@@ -181,6 +181,7 @@
         },
         "participants" : 0,
         "queries" : 0,
+        "failed" : 0,
         "perParticipant" : [
         ],
         "members" : [
@@ -219,6 +220,7 @@
         },
         "participants" : 0,
         "queries" : 0,
+        "failed" : 0,
         "perParticipant" : [
         ],
         "members" : [
@@ -257,6 +259,7 @@
         },
         "participants" : 0,
         "queries" : 0,
+        "failed" : 0,
         "perParticipant" : [
         ],
         "members" : [
@@ -295,6 +298,7 @@
         },
         "participants" : 0,
         "queries" : 0,
+        "failed" : 0,
         "perParticipant" : [
         ],
         "members" : [
@@ -327,6 +331,7 @@
         },
         "participants" : 2,
         "queries" : 5,
+        "failed" : 1,
         "perParticipant" : [
           {
             "participant" : "p1",
@@ -439,6 +444,7 @@
         },
         "participants" : 2,
         "queries" : 5,
+        "failed" : 1,
         "perParticipant" : [
           {
             "participant" : "p1",
@@ -563,6 +569,7 @@
         },
         "participants" : 1,
         "queries" : 2,
+        "failed" : 0,
         "perParticipant" : [
           {
             "participant" : "p1",
@@ -636,6 +643,7 @@
         },
         "participants" : 1,
         "queries" : 2,
+        "failed" : 0,
         "perParticipant" : [
           {
             "participant" : "p1",

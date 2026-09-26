@@ -39,7 +39,7 @@ class ReportFixturesJvmSuite extends munit.FunSuite:
   private val shasum = Map(
     covariateSchemaFile -> "d84665c51968550f2378374b68c0c95d72faac2560345ef54d3e0587017e124d",
     reportSpecFile      -> "257d54952779b37e701a0ad6d59392893c0787315d6620b371ad8d41982c5220",
-    reportFile          -> "e42425e054fe825c22c21d975b4f9baa7e56e67b4d5d0787a88f8bf0b0f61e07"
+    reportFile          -> "63c56be257ab023d0e20126833b6b4f24fca6ce168fe836834c39c140e5be10b"
   )
 
   private val directory: Path =

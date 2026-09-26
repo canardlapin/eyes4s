@@ -509,12 +509,15 @@ def forbiddenInPureModules(org: String, name: String): Boolean =
   (org == "org.typelevel" && name.startsWith("cats-effect")) ||
     org == "co.fs2"
 
-lazy val pureModuleSettings = Seq(
+lazy val pureModuleSettings = pureModuleSettingsForbidding((_, _) => false)
+
+/** The pure-module boundary with `also` forbidden besides the effect systems. */
+def pureModuleSettingsForbidding(also: (String, String) => Boolean) = Seq(
   checkModuleBoundaries := {
     val log        = streams.value.log
     val moduleName = name.value
     val offenders  = update.value.allModules
-      .filter(m => forbiddenInPureModules(m.organization, m.name))
+      .filter(m => forbiddenInPureModules(m.organization, m.name) || also(m.organization, m.name))
       .map(m => s"${m.organization}:${m.name}:${m.revision}")
       .distinct
       .sorted
@@ -522,7 +525,8 @@ lazy val pureModuleSettings = Seq(
       sys.error(
         s"""|Module boundary violation in $moduleName.
             |
-            |Pure modules must not depend on an effect system, but the resolved
+            |Pure modules must not depend on an effect system (and eyes4s-results on no
+            |JSON library), but the resolved
             |dependency graph contains:
             |${offenders.map("  - " + _).mkString("\n")}
             |
@@ -701,7 +705,8 @@ lazy val results = crossProject(JVMPlatform, JSPlatform)
   .jvmSettings(ApiAudit.settings)
   .in(file("results"))
   .dependsOn(plan)
-  .settings(commonSettings, pureModuleSettings)
+  // No JSON library either, so a Scala.js client reads tables without one.
+  .settings(commonSettings, pureModuleSettingsForbidding((org, _) => org == "io.circe"))
   .settings(
     name := "eyes4s-results",
     // The plan catalog's samples and alignment check, so the results suites

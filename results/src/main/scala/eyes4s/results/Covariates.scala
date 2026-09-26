@@ -201,6 +201,39 @@ object CovariateTable:
       schema: CovariateSchema,
       ledger: InventoryLedger
   ): Either[CovariateError[TrialKey], CovariateTable[TrialKey]] =
+    declared(schema, ledger).flatMap { _ =>
+      val entries = ledger.trials.flatMap(t =>
+        t.item.flatMap(item => t.identity.withItem(item).toOption).map(_ -> t.attributes)
+      )
+      of(schema, entries)
+    }
+
+  /** The covariates of `keys`, each joined to the inventory trial of the
+    * identity the study layout projects from it (participant, phase, trial
+    * label and occurrence); a key whose trial the inventory does not declare
+    * has no row. The layout must project a trial label.
+    */
+  def forKeys[K](
+      schema: CovariateSchema,
+      ledger: InventoryLedger,
+      layout: StudyLayout[K],
+      keys: Vector[K]
+  ): Either[CovariateError[K], CovariateTable[K]] =
+    TrialIdentity.projection(layout) match
+      case None           => Left(CovariateError.NoTrialProjection(layout.id))
+      case Some(identity) =>
+        declared(schema, ledger).flatMap { _ =>
+          of(
+            schema,
+            keys.distinct.flatMap(k => ledger.trial(identity(k)).map(t => k -> t.attributes))
+          )
+        }
+
+  /** Every declared covariate is an attribute column of a kind that can hold it. */
+  private def declared(
+      schema: CovariateSchema,
+      ledger: InventoryLedger
+  ): Either[CovariateError[Nothing], Unit] =
     val columns = ledger.attributeColumns
     schema.covariates.iterator
       .map { c =>
@@ -215,12 +248,6 @@ object CovariateTable:
       }
       .collectFirst { case Some(e) => e }
       .toLeft(())
-      .flatMap { _ =>
-        val entries = ledger.trials.flatMap(t =>
-          t.item.flatMap(item => t.identity.withItem(item).toOption).map(_ -> t.attributes)
-        )
-        of(schema, entries)
-      }
 
   private def read[K](
       schema: CovariateSchema,
@@ -250,6 +277,7 @@ enum CovariateError[+K] derives CanEqual:
   case DuplicateKey(key: K)
   case UnknownAttribute(covariate: String, declared: Vector[String])
   case IncompatibleKind(covariate: String, declared: String, attribute: String)
+  case NoTrialProjection(layout: DefinitionId)
 
   def message: String = this match
     case BlankName(value)  => s"A covariate name must not be blank, got '$value'."
@@ -263,3 +291,6 @@ enum CovariateError[+K] derives CanEqual:
       s"Covariate '$covariate' is not an attribute column of the trials table; declared: $declared."
     case IncompatibleKind(covariate, declared, attribute) =>
       s"Covariate '$covariate' is declared $declared, but its trials-table column holds $attribute."
+    case NoTrialProjection(layout) =>
+      s"Layout ${layout.name}@${layout.version} names no trial label, so covariates cannot be " +
+        "joined to its keys."

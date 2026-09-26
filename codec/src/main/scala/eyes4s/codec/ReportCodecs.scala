@@ -52,11 +52,11 @@ object ReportCodecs:
   def digest[A](value: CanonicalDigest[A], field: String): Either[CodecError, BindingDigest] =
     BindingDigest.parse(field, value.sha256.hex).left.map(CodecError.Report.apply)
 
-  /** A report's binding: the canonical digests of the plan, input and
+  /** The binding of the given documents: the canonical digests of the plan, input and
     * result documents, and of the covariate source (the admission ledger
     * that carries the trials table) when the report reads covariates.
     */
-  def binding[P, I, R, C](
+  private[eyes4s] def binding[P, I, R, C](
       plan: (VersionedCodec[P], P),
       input: (VersionedCodec[I], I),
       result: (VersionedCodec[R], R),
@@ -579,6 +579,7 @@ object ReportCodecs:
           "spread"         -> spreadJson(c.dispersion),
           "participants"   -> Json.fromInt(c.participants),
           "queries"        -> Json.fromInt(c.queries),
+          "failed"         -> Json.fromInt(c.failed),
           "perParticipant" -> Json.arr(c.perParticipant.map(participant)*),
           "members"        -> Json.arr(members*)
         )
@@ -592,6 +593,7 @@ object ReportCodecs:
         spread    <- Wire.field[Json](json, "spread").flatMap(readSpread)
         people    <- Wire.field[Int](json, "participants")
         queries   <- Wire.field[Int](json, "queries")
+        failed    <- Wire.field[Int](json, "failed")
         per       <- list(json, "perParticipant")(readParticipant)
         members   <- list(json, "members")(keys.decode)
       yield Cell(
@@ -602,6 +604,7 @@ object ReportCodecs:
         spread,
         people,
         queries,
+        failed,
         per,
         members.map(ref(r, scale, _))
       )

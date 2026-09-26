@@ -371,7 +371,114 @@ object ReportLaws extends ReportLaws:
           spreadNear(s.dispersion.sd, sd(differences.flatten))
         case _ => false
     }
-    participantValues.forall(_._3) && contrastsOk
+    participantValues.forall(_._3) && contrastsOk && membership(c, r)
+
+  // ------------------------------------------------------------------ independent membership
+  //
+  // The oracle decides which queries each cell holds on its own: its own
+  // three-valued filter, its own comparisons, and its own group assignment
+  // with its own bin edges. None of the reduction's term, predicate, bin or
+  // comparison code is used, so a cell holding the wrong queries fails here.
+
+  private def numeric(q: Query[StudyKey], t: NumericTerm): Option[Double] = t match
+    case NumericTerm.Occurrence         => Some(q.occurrence.toDouble)
+    case NumericTerm.Covariate(name, _) =>
+      q.covariate(name) match
+        case Value.Present(CovariateValue.Number(d)) => Some(d)
+        case _                                       => None
+    case NumericTerm.Window(m) => q.measure(m).toOption
+
+  private def level(q: Query[StudyKey], t: LevelTerm): Option[String] = t match
+    case LevelTerm.Layout(LayoutField.Participant) => Some(q.participant)
+    case LevelTerm.Layout(LayoutField.Item)        => Some(q.item)
+    case LevelTerm.Layout(LayoutField.Phase)       => Some(q.phase)
+    case LevelTerm.Categorical(name, _)            => covariateLevel(q, name)
+    case LevelTerm.Ordinal(name, _)                => covariateLevel(q, name)
+
+  private def covariateLevel(q: Query[StudyKey], name: CovariateName): Option[String] =
+    q.covariate(name) match
+      case Value.Present(CovariateValue.Level(s)) => Some(s)
+      case _                                      => None
+
+  private def flag(q: Query[StudyKey], t: FlagTerm): Option[Boolean] = t match
+    case FlagTerm.Binary(name) =>
+      q.covariate(name) match
+        case Value.Present(CovariateValue.Flag(b)) => Some(b)
+        case _                                     => None
+
+  private def present(q: Query[StudyKey], t: Term): Boolean = t match
+    case n: NumericTerm => numeric(q, n).isDefined
+    case l: LevelTerm   => level(q, l).isDefined
+    case f: FlagTerm    => flag(q, f).isDefined
+
+  /** Kleene logic: `None` is unknown. */
+  private def decide(q: Query[StudyKey], p: Predicate): Option[Boolean] = p match
+    case Predicate.Cmp(t, comparison, threshold) =>
+      numeric(q, t).map(x =>
+        comparison match
+          case Comparison.Less           => x < threshold
+          case Comparison.LessOrEqual    => !(x > threshold)
+          case Comparison.Greater        => threshold < x
+          case Comparison.GreaterOrEqual => !(x < threshold)
+      )
+    case Predicate.In(t, levels)     => level(q, t).map(levels.contains)
+    case Predicate.AtLeast(t, least) =>
+      level(q, t).map(s => t.levels.values.indexOf(s) >= t.levels.values.indexOf(least))
+    case Predicate.Is(t, value) => flag(q, t).map(_ == value)
+    case Predicate.IsMissing(t) => Some(!present(q, t))
+    case Predicate.And(l, r)    =>
+      (decide(q, l), decide(q, r)) match
+        case (Some(false), _) | (_, Some(false)) => Some(false)
+        case (Some(true), Some(true))            => Some(true)
+        case _                                   => None
+    case Predicate.Or(l, r) =>
+      (decide(q, l), decide(q, r)) match
+        case (Some(true), _) | (_, Some(true)) => Some(true)
+        case (Some(false), Some(false))        => Some(false)
+        case _                                 => None
+    case Predicate.Not(inner) => decide(q, inner).map(!_)
+
+  private def levelOf(q: Query[StudyKey], g: Grouping): Option[String] = g match
+    case Grouping.ByLevel(t)      => level(q, t)
+    case Grouping.ByFlag(t)       => flag(q, t).map(_.toString)
+    case Grouping.ByBins(t, bins) =>
+      numeric(q, t).flatMap(x =>
+        bins.bins
+          .find(b =>
+            b.from <= x && (x < b.until || (b.upper == UpperEdge.Included && x == b.until))
+          )
+          .map(_.label)
+      )
+
+  /** Each cell holds exactly the queries that pass the filter, have a value
+    * for its role and belong to its group; each role's filter counts agree.
+    */
+  def membership(c: ReportCase, r: Report[StudyKey]): Boolean =
+    val decided = c.table.queries.map(q => q -> c.spec.filter.fold(Option(true))(decide(q, _)))
+    def groupOf(q: Query[StudyKey]): Option[GroupKey] =
+      val levels = c.spec.groupBy.map(g => levelOf(q, g).map(g.on.render -> _))
+      Option.when(levels.forall(_.isDefined))(GroupKey(levels.flatten))
+    def key(ref: ResultRef[StudyKey]): Option[StudyKey] = ref match
+      case ResultRef.Reduction(_, _, k) => Some(k)
+      case ResultRef.ContrastRow(_, k)  => Some(k)
+      case _                            => None
+    val cellsOk = r.cells.forall { cell =>
+      val passing = decided.collect {
+        case (q, Some(true)) if groupOf(q).contains(cell.group) => q
+      }
+      val (valued, unvalued) = passing.partition(q =>
+        q.outcome(cell.role) match
+          case RoleOutcome.Scored(_) => true
+          case _                     => false
+      )
+      cell.members.flatMap(key).sortBy(_.toString) == valued.map(_.key).sortBy(_.toString) &&
+      cell.queries == valued.size && cell.failed == unvalued.size
+    }
+    val booksOk = r.accounting.forall { a =>
+      a.filteredOut == decided.count(_._2.contains(false)) &&
+      a.unknownPredicate == decided.count(_._2.isEmpty)
+    }
+    cellsOk && booksOk
 
 /** Generators of report cases: participants with differing numbers of
   * queries, dyadic and decimal scores, covariates that are sometimes missing or unparsed, undefined window
@@ -423,7 +530,8 @@ object ReportGenerators:
       1 -> Gen.const(Value.Missing(Absence.NotRecorded))
     )
     rated <- Gen.frequency(
-      8 -> Gen.choose(1, 4).map(r => Value.Present(CovariateValue.Number(r.toDouble))),
+      // Ratings sit on every threshold and bin edge the specifications use.
+      8 -> Gen.oneOf(1.0, 2.0, 2.5, 3.0, 4.0).map(r => Value.Present(CovariateValue.Number(r))),
       1 -> Gen.const(Value.Missing(Absence.NotRecorded)),
       1 -> Gen.const(Value.Missing(Absence.Unparsed))
     )
@@ -470,6 +578,9 @@ object ReportGenerators:
   val genFilter: Gen[Option[Predicate]] = Gen.oneOf(
     Gen.const(None),
     Gen.const(Some(Predicate.Cmp(confidenceTerm, Comparison.GreaterOrEqual, 2.0))),
+    Gen.const(Some(Predicate.Cmp(confidenceTerm, Comparison.Less, 2.5))),
+    Gen.const(Some(Predicate.Cmp(confidenceTerm, Comparison.LessOrEqual, 2.0))),
+    Gen.const(Some(Predicate.Cmp(confidenceTerm, Comparison.Greater, 2.5))),
     Gen.const(Some(Predicate.In(memoryTerm, Vector("Remembered")))),
     Gen.const(Some(Predicate.Cmp(share, Comparison.LessOrEqual, 0.25))),
     Gen.const(Some(Predicate.IsMissing(confidenceTerm))),
@@ -500,7 +611,18 @@ object ReportGenerators:
     )
   )
 
+  /** Bins open at the top: a rating of 4 lies in none of them. */
+  private val openBins: Bins = sure(
+    Bins.of(
+      Vector(
+        sure(Bin.of("low", 1, 2.5, UpperEdge.Excluded)),
+        sure(Bin.of("high", 2.5, 4, UpperEdge.Excluded))
+      )
+    )
+  )
+
   val genGrouping: Gen[Vector[Grouping]] = Gen.oneOf(
+    Vector(Grouping.ByBins(confidenceTerm, openBins)),
     Vector.empty,
     Vector(Grouping.ByLevel(memoryTerm)),
     Vector(Grouping.ByLevel(item)),

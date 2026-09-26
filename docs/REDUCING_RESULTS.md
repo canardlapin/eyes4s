@@ -10,9 +10,16 @@ The executed [report page](../site-docs/summaries.md) shows the API; this page s
 
 ## What a report reads
 
-`ReportSource.study(plan, input, result, covariates, binding)` checks that `result` carries the
-plan's description and refers to `input`, takes the plan's described score components, and
-computes the plan's window tallies over `input`. For a scale it builds a `QueryTable`: one
+`eyes4s.codec.ReportSources.study(plans, inputs, results)(plan, input, result, ledger,
+covariates)` is the public way to obtain a source. It computes the source's binding from the very
+values it reads (see [binding](#binding-persistence-and-staleness)), checks that `result` carries
+the plan's description and refers to `input` and that the ledger is consistent with `input`,
+reads the declared covariates from the ledger's trials table, takes the plan's described score
+components, and computes the plan's window tallies over `input`. The constructors in
+`eyes4s-results` that take a binding on trust (`ReportSource.study`, `fromQueries`,
+`Report.reduce`) are package-private: they exist for the codec and the published law suites, so
+a report cannot be bound to documents it did not read. The report types themselves, and the
+binding they carry, are all in `eyes4s-results`. For a scale it builds a `QueryTable`: one
 `Query` per focal trial (every key of the scale's matched and control reductions and its
 contrast, and every focal trial the matched pairing left unmatched), with
 
@@ -24,8 +31,8 @@ contrast, and every focal trial the matched pairing left unmatched), with
   contrast row, as the score components the method describes, a stored failure (its diagnostic
   code), or no stored row.
 
-`Report.reduce(spec, table, binding)` is the pure core; `Report.evaluate(spec, source)` composes
-the two. `ReportSource.fromQueries` serves query tables a host has already read.
+`Report.evaluate(spec, source)` reduces the scale's query table; it refuses a specification
+that reads covariates over a source bound to no covariate source (`UnboundCovariates`).
 
 ## Covariates
 
@@ -34,7 +41,9 @@ A `CovariateSchema` declares each covariate's `CovariateType`: `Numeric(unit)`, 
 reads the trial inventory an admission ledger carries (the trials table of the trials importer):
 every declared covariate must be an attribute column of a kind that can hold it, each trial with
 a resolved item is keyed by its `TrialKey`, a blank cell is not recorded and a value outside the
-declared type is unparsed. `CovariateTable.of` does the same for keyed attributes of any key
+declared type is unparsed. `CovariateTable.forKeys` joins the same table to any study keys
+through the layout's trial identity (participant, phase, trial label, occurrence); it is what
+`ReportSources.study` uses. `CovariateTable.of` does the same for keyed attributes of any key
 type. A report reads a covariate only as its table declares it; a disagreement is refused.
 
 ## Values and absences
@@ -82,14 +91,18 @@ For each role, group and component:
 
 Group levels are the declared ones (a covariate's levels, `false`/`true`, a grouping's bins), or,
 for a layout field, the levels observed among the eligible queries; groups are their product in
-grouping order. A group with no query has the absence `EmptyGroup`.
+grouping order. A group with no valued query has the absence `EmptyGroup`. A cell's `queries`
+counts its queries with a stored value for the role, and `failed` those assigned to it that
+passed the filter but have none.
 
 A `LevelContrast` is taken in each combination of the other groupings' levels (a stratum). Each
 participant present at both levels contributes its difference of participant values; the
 estimate is their mean and its n the number of paired participants, `|Pa ∩ Pb|`. A participant
-present at one level only is unpaired and reported (`UnpairedParticipant`). Under
-`PooledQueries` the contrast still uses each participant's own mean, since it is within
-participant.
+present at one level only is unpaired and reported (`UnpairedParticipant`). The strata come from
+the specification's levels, so a contrast whose level no query shows is reported as a statistic
+missing with `EmptyGroup`, never dropped. Under `PooledQueries`, level contrasts still use
+per-participant means: each participant's own mean at each level, since the contrast is within
+participant; only the cells pool queries.
 
 ## Accounting
 
@@ -120,8 +133,9 @@ cells carry `ResultRef`s (`Reduction` or `ContrastRow` at the report's scale) th
 A `ReportBinding` names the canonical digests (`CanonicalDigest`, see
 [domain codecs](DOMAIN_CODECS.md#separate-identities)) of the plan, the input, the stored result
 and, when the report reads covariates, the covariate source (the admission ledger carrying the
-trials table). The binding types are pure (`eyes4s-results`); `ReportCodecs.binding` in
-`eyes4s-codec` computes one from the values and their codecs. `Report.checkCurrent(binding)` and
+trials table). The binding types are pure (`eyes4s-results`); the digests are computed in
+`eyes4s-codec`, which holds the JSON codecs, by `ReportSources.study` from the values the source
+reads. `Report.checkCurrent(binding)` and
 `Report.evaluate(spec, source, expected)` refuse a stale binding, naming the field that changed.
 
 The codecs are `eyes4s.covariate-schema@1`, `eyes4s.report-spec@1` and `eyes4s.report@1`
@@ -129,9 +143,11 @@ The codecs are `eyes4s.covariate-schema@1`, `eyes4s.report-spec@1` and `eyes4s.r
 `covariate-schema-v1.json`, `report-spec-v1.json` and `report-v1.json`. In a saved study the roles
 `report-spec` and `report` and the relation `report-of(report, spec, result, input, covariates)`
 join a report to what it was evaluated over: the resolver (with `ArtifactDecoders.withReports`)
-checks that the report's specification is the stored one and that its binding names the stored
-result, input, the result's plan and the ledger, and refuses a mismatch as
-`RelationMismatch.ReportBinding(field, bound, stored)`.
+checks that the report's specification is the stored one (`ReportSpec`), that its input is the
+one its result was computed on (`ReportInput`), that its ledger is a ledger of that input
+(`ReportLedger`), that every cell member is a trial the result estimated at the report's scale
+(`ReportMembers`), and that its binding names the stored result, input, the result's plan and the
+ledger (`ReportBinding(field, bound, stored)`).
 
 ## Diagnostics
 
@@ -149,7 +165,10 @@ unparsed covariates, undefined shares, failed and unstored rows and every specif
 equal weight under within-participant duplication (with a pooled witness showing the law
 discriminates), order and participant-relabel invariance, filter/group commutation, the
 accounting identities, paired n, that a missing value is never a zero (in cells and tables), and
-agreement with an exact rational oracle, within the named tolerance `ReportLaws.arithmetic`.
+agreement with an exact rational oracle, within the named tolerance `ReportLaws.arithmetic`. The
+oracle decides each cell's membership on its own (its own three-valued filter, comparisons and
+bin edges) and checks it against the cell's members, queries and failures; the generators put
+ratings on every threshold and bin edge.
 `ReportLawSuite` also runs the three codec round trips and kills reduction mutants from a fixed
 seed. The report suite of `eyes4s-results` covers hand-computed estimates, a stored study read by
 key with its members resolved through `ResultInspection`, and the compile-time refusals.

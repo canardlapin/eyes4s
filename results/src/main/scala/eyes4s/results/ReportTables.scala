@@ -166,11 +166,13 @@ object ReportTables:
         text("component", "score component")
       ) ++ valued("estimate", "the group estimate") ++ Vector(
         count("participants", "participants whose value contributes"),
-        count("queries", "queries assigned to the group")
+        count("queries", "queries of the group with a stored value"),
+        count("failed", "queries of the group that passed the filter with no stored value")
       ) ++ spreadColumns(r.spec),
       r.cells.map(c =>
         head(r) ++ Vector(T(groupJson(c.group)), T(role(c.role)), T(c.component)) ++
-          value(c.estimate) ++ Vector(I(c.participants.toLong), I(c.queries.toLong)) ++
+          value(c.estimate) ++
+          Vector(I(c.participants.toLong), I(c.queries.toLong), I(c.failed.toLong)) ++
           spreadCells(r.spec, c.dispersion)
       ),
       context(r)

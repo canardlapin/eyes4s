@@ -8,71 +8,76 @@ value says why; a missing mean is never a zero. The
 [contract](https://github.com/canardlapin/eyes4s/blob/main/docs/REDUCING_RESULTS.md) states the
 rules and the evidence.
 
-For a stored study, `ReportSource.study(plan, input, result, covariates, binding)` reads each
-focal trial's matched, control and difference values by key. Here the same query table is written
-out by hand: three participants, a memory covariate, and one trial whose window share is
-undefined.
+A small study first: two participants recall items `a` and `b` they encoded earlier.
 
 ```scala mdoc:silent
-import eyes4s.plan.StudyKey
+import eyes4s.codec.*
+import eyes4s.core.*
+import eyes4s.design.*
+import eyes4s.kernel.*
+import eyes4s.kernel.Unit2D.Px
+import eyes4s.plan.*
 import eyes4s.results.*
 
 def get[E, A](e: Either[E, A]): A = e.fold(x => sys.error(x.toString), identity)
 
-val memory = get(CovariateName.of("memory"))
-val levels = get(Levels.of(Vector("Remembered", "Forgotten")))
-val schema = get(CovariateSchema.of(Vector(Covariate(memory, CovariateType.Categorical(levels)))))
-val share  = NumericTerm.Window(WindowMeasure.OutsideWindowShare)
+val frame = get(Frame.screen("screen", 2, 2))
+def trial(p: String, item: String, phase: String, xs: Vector[(Double, Double)]) =
+  val key   = StudyKey(p, item, phase)
+  val clock = ClockId(s"$p/$item/$phase")
+  val fixes = xs.zipWithIndex.map { case ((x, y), i) =>
+    get(Event.Fixation.withoutDispersion(
+      get(Interval.of(clock, Instant.micros(i * 1000L), Instant.micros(i * 1000L + 1000L))),
+      Pt[Px](x, y), 1))
+  }
+  Trial(key, (), get(Scanpath.of(frame, clock, IArray.from(fixes))))
 
-def trial(p: String, item: String, remembered: Boolean, outside: Option[Double], d: Double) =
-  get(Query.of(
-    StudyKey(p, item, "recall"), p, item, "recall", 1,
-    Vector(memory -> Value.Present(
-      CovariateValue.Level(if remembered then "Remembered" else "Forgotten"))),
-    Vector.empty,
-    Vector(WindowMeasure.OutsideWindowShare -> outside.fold(
-      Value.Missing(Absence.Undefined(UndefinedReason.ZeroDuration)))(Value.Present(_))),
-    RoleOutcome.NotStored, RoleOutcome.NotStored, RoleOutcome.Scored(Vector(d))))
-
-val table = get(QueryTable.of(0, Vector("value"), schema, Vector(
-  trial("p1", "a", true, Some(0.0), 0.30), trial("p1", "b", true, Some(0.1), 0.10),
-  trial("p1", "c", false, Some(0.0), -0.10),
-  trial("p2", "a", true, Some(0.0), 0.50), trial("p2", "b", false, None, 0.20),
-  trial("p3", "a", false, Some(0.5), 0.00))))
-
-val memoryTerm = LevelTerm.Categorical(memory, levels)
-val spec = get(ReportSpec.of(
-  get(ReportId.of("memory")), 0,
-  get(ReportSelection.of(Vector(Role.Difference), Vector("value"))),
-  filter   = Some(Predicate.Cmp(share, Comparison.LessOrEqual, 0.25)),
-  groupBy  = Vector(Grouping.ByLevel(memoryTerm)),
-  contrast = Some(LevelContrast(memoryTerm, "Remembered", "Forgotten"))))
-
-val binding = ReportBinding(
-  get(BindingDigest.parse("plan", "1" * 64)), get(BindingDigest.parse("input", "2" * 64)),
-  get(BindingDigest.parse("result", "3" * 64)), None)
-val report = get(Report.reduce(spec, table, binding))
+val input = StudyInput(Trials(Vector(
+  trial("p1", "a", "recall", Vector(0.5 -> 0.5, 1.5 -> 0.5)),
+  trial("p1", "a", "encode", Vector(0.5 -> 0.5, 0.5 -> 1.5)),
+  trial("p1", "b", "recall", Vector(1.5 -> 1.5, 1.5 -> 0.5)),
+  trial("p1", "b", "encode", Vector(1.5 -> 1.5, 0.5 -> 0.5)),
+  trial("p2", "a", "recall", Vector(0.5 -> 0.5, 0.5 -> 0.5)),
+  trial("p2", "a", "encode", Vector(0.5 -> 0.5, 1.5 -> 0.5)),
+  trial("p2", "b", "recall", Vector(1.5 -> 0.5, 1.5 -> 1.5)),
+  trial("p2", "b", "encode", Vector(1.5 -> 0.5, 0.5 -> 1.5)))))
+val plan = get(StudyPlan.cosine(input.reference, get(Grid.over(frame, 2, 2)), "recall",
+  "encode", Weight.Duration, Vector(StudyEstimate.Binned()), FailurePolicy.RequireAll))
+val result = get(plan.run(input))
 ```
 
-Participant p1 averages its two remembered trials (0.2); p2 has one (0.5); the remembered
-estimate weighs both participants equally. p2's forgotten trial has no defined window share, so
-the filter is unknown for it: it is excluded and reported, not counted as filtered out. p3's
-trial lies outside the window and is filtered out.
+`ReportSources.study` reads the stored result through the plan's layout and binds the source to
+the canonical digests of the very plan, input and result it reads (and of the admission ledger,
+when the report reads covariates from its trials table). The report groups trials by item and
+contrasts item `a` with item `b` within each participant.
+
+```scala mdoc:silent
+val source = get(ReportSources.study(StudyCodecs.cosine[Px], StudyInputCodecs.study[Px],
+  StudyResultCodecs.cosine[Px])(plan, input, result, None, CovariateSchema.empty))
+
+val item = LevelTerm.Layout(LayoutField.Item)
+val spec = get(ReportSpec.of(
+  get(ReportId.of("by item")), 0,
+  get(ReportSelection.of(Vector(Role.Difference), Vector("value"))),
+  groupBy  = Vector(Grouping.ByLevel(item)),
+  contrast = Some(LevelContrast(item, "a", "b"))))
+
+val report = get(Report.evaluate(spec, source))
+```
+
+Each cell averages each participant's trials first; the contrast pairs the participants who have
+both items; the accounting says where every eligible trial went.
 
 ```scala mdoc
-val remembered = report.cell(GroupKey(Vector("covariate:memory" -> "Remembered")),
-  Role.Difference, "value").get
-remembered.estimate
-remembered.perParticipant
-report.accountingOf(Role.Difference)
+report.cells.map(c => (c.group.render, c.estimate, c.participants, c.queries))
 report.contrasts.map(c => (c.estimate, c.paired.map(_.participant), c.unpaired))
-report.findings.collect { case f @ ReportFinding.UnknownPredicate(_, _) => f }
+report.accountingOf(Role.Difference)
 ```
 
 ```scala mdoc:silent
-assert(remembered.estimate.toOption.exists(v => math.abs(v - (0.2 + 0.5) / 2) < 1e-12))
-assert(report.accountingOf(Role.Difference).exists(a =>
-  a.eligible == 6 && a.kept == 4 && a.filteredOut == 1 && a.unknownPredicate == 1))
+assert(report.accountingOf(Role.Difference).exists(a => a.eligible == 4 && a.kept == 4))
+assert(report.contrasts.head.paired.map(_.participant) == Vector("p1", "p2"))
+assert(report.binding == source.binding)
 ```
 
 The report is one set of result tables, which the CSV and Arrow writers of `eyes4s-io` render

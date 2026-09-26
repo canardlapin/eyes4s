@@ -21,8 +21,12 @@ import eyes4s.kernel.*
 import eyes4s.plan.*
 
 /** What a report is evaluated over: a completed study result read through
-  * its layout, the plan's per-trial window tallies, the trial covariates,
-  * the method's score components, and the binding of all of them.
+  * its layout, bound to the plan, input, result and covariate source it
+  * reads. The public way to obtain one is `eyes4s.codec.ReportSources.study`,
+  * which computes the binding from those same values; the constructors
+  * here take a binding on trust and are for the codec and law suites.
+  * A source also carries the plan's per-trial window tallies, the trial
+  * covariates and the method's score components.
   *
   * A source reads the stored rows of a result; it never reruns a pair score.
   * The eligible queries of a scale are its focal trials: every key of its
@@ -45,7 +49,7 @@ object ReportSource:
     * window tallies over the result's input (`StudyPlan.windowTallies`); a
     * trial without one has no window values. `covariates` joins by key.
     */
-  def of[K, U <: Unit2D, S, D](
+  private[eyes4s] def of[K, U <: Unit2D, S, D](
       result: StudyResult[K, U, S, D],
       layout: StudyLayout[K],
       tallies: Vector[(K, Either[GeometryError, WindowTally])],
@@ -66,8 +70,8 @@ object ReportSource:
   /** A source over query tables already read, one per scale in order: for a
     * host that caches them, and for law suites.
     */
-  def fromQueries[K](tables: Vector[QueryTable[K]], binding: ReportBinding)(using
-      Ordering[K]
+  private[eyes4s] def fromQueries[K](tables: Vector[QueryTable[K]], binding: ReportBinding)(
+      using Ordering[K]
   ): ReportSource[K] =
     val schema = tables.headOption.fold(CovariateSchema.empty)(_.covariates)
     new ReportSource[K](binding, schema, tables.size, index => Right(tables(index)))
@@ -76,7 +80,7 @@ object ReportSource:
     * carry the plan's description and refer to the input, and the plan's
     * described score components name the method's contrast components.
     */
-  def study[K, U <: Unit2D, P, S, D](
+  private[eyes4s] def study[K, U <: Unit2D, P, S, D](
       plan: StudyPlan[K, U, P, S, D],
       input: StudyInput[K, U],
       result: StudyResult[K, U, S, D],

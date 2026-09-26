@@ -1436,6 +1436,9 @@ fails after rewriting, so review the change and run it again.
 | `relation.temporal-prerequisites` | `TemporalPrerequisites` | `errors` |
 | `relation.report-spec` | `ReportSpec` | `report`, `stored` |
 | `relation.report-binding` | `ReportBinding` | `field`, `bound`, `stored` |
+| `relation.report-input` | `ReportInput` | `input`, `computed` |
+| `relation.report-ledger` | `ReportLedger` | `ledger`, `input` |
+| `relation.report-members` | `ReportMembers` | `scale`, `unknown` |
 
 ### `manifest` — `ManifestError`
 
@@ -1507,6 +1510,7 @@ fails after rewriting, so review the change and run it again.
 | `report-error.inconsistent-accounting` | `InconsistentAccounting` | `role`, `eligible`, `kept`, `filteredOut`, `unknownPredicate`, `failed`, `missingGroupAttribute` |
 | `report-error.inconsistent-cell` | `InconsistentCell` | `group`, `role`, `component`, `reason` |
 | `report-error.components` | `Components` | `underlying` |
+| `report-error.unbound-covariates` | `UnboundCovariates` | `covariates` |
 
 ### `report-spec` — `SpecError`
 
@@ -1537,6 +1541,7 @@ fails after rewriting, so review the change and run it again.
 | `covariate.duplicate-key` | `DuplicateKey` | `key` |
 | `covariate.unknown-attribute` | `UnknownAttribute` | `covariate`, `declared` |
 | `covariate.incompatible-kind` | `IncompatibleKind` | `covariate`, `declared`, `attribute` |
+| `covariate.no-trial-projection` | `NoTrialProjection` | `layout` |
 
 ### `result-table` — `ResultTableError`
 
