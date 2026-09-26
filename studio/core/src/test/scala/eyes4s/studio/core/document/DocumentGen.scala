@@ -130,6 +130,7 @@ object DocumentGen:
     yield AdmissionChoice(o, cs.toVector.map(CorrectionRule.apply))
   val decision: Gen[AdmissionDecision] = Gen.oneOf(
     Gen.const(AdmissionDecision.Pending),
+    canonical[DatasetRevisionSpec].map(AdmissionDecision.Verifying(_)),
     Gen
       .zip(binding[AdmissionLedgerArtifact], binding[TrialInventoryArtifact])
       .map(AdmissionDecision.Admitted.apply)

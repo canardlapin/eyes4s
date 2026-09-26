@@ -67,6 +67,8 @@ object DocumentPins:
       """{"id":3,"parent":2,"sources":[{"role":{"Fixations":{}},"path":"inputs/fixations.csv","bytes":"19342ecedb6e089a190b4784a248907b27fedbef03ca3e6d4bc251702fbbc2f2","semantic":null},{"role":{"Trials":{}},"path":"inputs/trials.csv","bytes":"0668bccf6c672b706c0a138268f632fb5a768170578a01c58ee752176f0f8b99","semantic":null}],"mapping":[{"role":{"Participant":{}},"column":"participant"},{"role":{"Phase":{}},"column":"phase"},{"role":{"Trial":{}},"column":"trial"},{"role":{"Occurrence":{}},"column":"occurrence"},{"role":{"Ordinal":{}},"column":"ordinal"},{"role":{"SampleCount":{}},"column":"sample_count"},{"role":{"X":{}},"column":"x"},{"role":{"Y":{}},"column":"y"},{"role":{"Onset":{}},"column":"onset_ms"},{"role":{"Duration":{}},"column":"duration_ms"}],"units":{"time":{"Milliseconds":{}}},"geometry":{"screen":{"width":1920,"height":1080},"image":{"left":448,"top":156,"width":1024,"height":768},"pixelsPerDegree":35.0},"admission":{"offScreen":{"ExcludeRecord":{}},"corrections":[]},"decision":{"Admitted":{"ledger":{"Unbound":{}},"inventory":{"Unbound":{}}}}}""",
     "decision.Admitted" ->
       """{"Admitted":{"ledger":{"Unbound":{}},"inventory":{"Unbound":{}}}}""",
+    "decision.Verifying" ->
+      """{"Verifying":{"content":"fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"}}""",
     "decision.Pending" ->
       """{"Pending":{}}""",
     "document.t1" ->

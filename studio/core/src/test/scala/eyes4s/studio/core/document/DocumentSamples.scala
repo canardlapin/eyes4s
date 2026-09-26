@@ -93,6 +93,12 @@ object DocumentSamples:
     Sample("admission.default", AdmissionChoice.default),
     Sample("admission.rules", rules),
     Sample("decision.Pending", AdmissionDecision.Pending),
+    Sample(
+      "decision.Verifying",
+      AdmissionDecision.Verifying(
+        CanonicalDigest.parse[DatasetRevisionSpec]("fedcba9876543210" * 4).toOption.get
+      )
+    ),
     Sample("decision.Admitted", r3.decision),
     Sample("dataset.r3", r3),
     Sample("sigma", s2),
