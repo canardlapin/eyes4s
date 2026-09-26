@@ -27,6 +27,15 @@ final class RunStamp[Plan, Input] private[codec] (
     val plan: CanonicalDigest[Plan],
     val input: CanonicalDigest[Input]
 ):
+  def sameAs(other: RunStamp[Plan, Input]): Boolean =
+    plan.sameAs(other.plan) && input.sameAs(other.input)
+
+  override def equals(other: Any): Boolean = other match
+    case that: RunStamp[?, ?] =>
+      plan.sha256 == that.plan.sha256 && input.sha256 == that.input.sha256
+    case _ => false
+  override def hashCode: Int = (plan, input).hashCode
+
   /** Refuse a changed document even if its human-readable diff is empty.
     * When both changed, report the plan first, then the input after it is resolved.
     */
@@ -41,6 +50,8 @@ final class RunStamp[Plan, Input] private[codec] (
     else Right(())
 
 object RunStamp:
+  given [P, I]: CanEqual[RunStamp[P, I], RunStamp[P, I]] = CanEqual.derived
+
   def of[Plan, Input](
       plan: Plan,
       input: Input,

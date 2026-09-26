@@ -295,3 +295,21 @@ class CountedStudyExecutionSuite extends munit.CatsEffectSuite:
       yield ()
     }
   }
+
+  test("duplicate focal keys and failed maps retain attempted object counts") {
+    val source   = StudyInput(Trials(input.trials.rows :+ trial(a, (3.5, 3.5))))
+    val prepared = get(plan(source).prepare(source))
+    Execution[IO]
+      .events(StudyExecution.submissionWithId("duplicate", prepared, quanta = finest))
+      .compile
+      .toVector
+      .map { events =>
+        val progress = events.collect { case RunEvent.Advanced(p) => p }
+        checkMeters(progress, Vector(6L, 2L, 4L, 2L))
+        events.last match
+          case RunEvent.Finished(RunOutcome.Completed(_, _, result)) =>
+            assert(result.scales.head.estimation.exists(_._2.isLeft))
+            assertEquals(result.scales.head.analyses.matched.entries.size, 2)
+          case other => fail(s"unexpected duplicate-key outcome $other")
+      }
+  }

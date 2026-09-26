@@ -132,6 +132,49 @@ the limit. `ComparisonBudget.default` is effectively unbounded.
 
 ## Run a study under Cats Effect
 
+For canonical plan/input identity and completed-object progress, prepare with
+`StampedStudy.prepare(plan, input, plans, inputs)`, build
+`StampedStudyExecution.submission(study, budget, quanta)` in `eyes4s-io`, and
+pass that submission to `Execution[IO].events` or `Execution[IO].start`.
+[StampedStudyExecutionSuite](../io/src/test/scala/eyes4s/io/StampedStudyExecutionSuite.scala)
+executes this route, including its saved result and progress round trips.
+The identity contains separate typed SHA-256 digests of the complete canonical
+plan and input documents, plus pair and comparison quanta. A changed encoded
+parameter or input evidence fails the stamp check even when the legacy hash or
+human-readable plan description is unchanged.
+
+The submission has one counting prephase followed by the scientific cursor.
+`StudyRunStage.Counting(design, visited)` reports schedule work visited; bounded
+refusal-operand assembly spends work units without increasing that visited count.
+`SegmentTotal.Counting` is distinct from `Unknown`. Counting completion transitions
+to execution in the same run. Its checked startup uses the completed counts from
+that exact preparation, without recounting pairs. Preparation itself includes
+source indexing, sorting and digest rendering and is outside the bounded-step
+contract; custom projection, ordering and digest callbacks must be pure and stable.
+Each counting or diagnostic page is limited by the pair quantum. Cancellation
+between those pages produces no scientific result and starts no estimation.
+
+Every `StudyRunStage.Running` contains a required `StageMeter`: completed maps,
+pair rows, reduced keys or contrast rows, accumulated over scales. Failed attempts
+remain counted in their corresponding objects. Pair-comparison microsteps spend
+work units without claiming another completed pair. The meter describes the
+committed step, including terminal completion; stages with no operations may be
+skipped. Map estimation still takes one whole trial per step.
+`StudyExecution.submissionWithId` exposes the same composite path with a caller's
+typed identity when the codec binding is not needed.
+
+A `StampedStudyResult` is constructed only when its captured cursor completes.
+`checkAgainst` checks it against the current stamped preparation. To persist it,
+use `DensityArchiveCodec.encodeStamped` or `ResultManifest.stamped`; a decoded
+stamp is a claim until checked against the actual canonical plan and input.
+`StampedStudyExecution.snapshot(progress)` produces the codec-owned
+`StudyProgressSnapshot`; `StudyProgressCodec.codec` writes its versioned document
+with exact decimal-string counters on JVM and Scala.js. The explicit io adapter
+keeps codec and fs2 independent.
+
+The original `StudyExecution` entry points below retain their unit-progress and
+legacy in-memory identity contract for existing consumers.
+
 `eyes4s-fs2` interprets the same cursor with cooperative yields. Fix the effect
 type once, `StudyExecution[IO]`, then either pull the deterministic sequence or
 start a run handle:

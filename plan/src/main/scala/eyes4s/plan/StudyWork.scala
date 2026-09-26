@@ -23,8 +23,9 @@ import eyes4s.kernel.*
 
 /** Prepared work binds the exact input, plan description, layout and method
   * identity to two reusable schedules. Preparation does no density estimation
-  * or comparisons. Source indexing/identity checks are O(source rows), bounded
-  * by the supplied budget; arbitrary custom projections must be pure/stable.
+  * or comparisons. Preparation includes source indexing, identity checks, canonical
+  * sorting and digest rendering. It is outside the bounded cursor-step guarantee;
+  * arbitrary custom projections, ordering and digest callbacks must be pure/stable.
   *
   * Pair order follows the original input: focal-major, reference-minor. Keys
   * remain typed values; their display strings and digests never decide equality.

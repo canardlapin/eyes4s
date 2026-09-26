@@ -225,3 +225,48 @@ class CountedStudyCursorSuite extends munit.FunSuite:
       }
     }
   }
+
+  test("composite refusal precedes a control selected-pair budget failure") {
+    def key(phase: String, label: String, item: String) =
+      get(TrialKey.of("p", phase, label, TrialOccurrence.first, item))
+    val focal = key("recall", "q", "a")
+    val keys  = Vector(
+      focal,
+      key("encode", "a1", "a"),
+      key("encode", "a2", "a"),
+      key("encode", "b", "b"),
+      key("encode", "c", "c"),
+      key("encode", "d", "d")
+    )
+    val source     = StudyInput(Trials(keys.map(k => Trial(k, (), path))))
+    val configured = get(
+      StudyPlan.configure(
+        source.reference,
+        TrialKey.layout(TrialKeyDefinitions.trialLayout),
+        StudyGeometry.WholeFrame(grid),
+        "recall",
+        "encode",
+        Weight.Duration,
+        Vector(StudyScale.Native(StudyEstimate.Binned[Px]())),
+        None,
+        FailurePolicy.RequireAll,
+        StudyMethod.cosine[Px](DefinitionId.cosine),
+        (),
+        StudyPairing.default
+      )
+    )
+    val prepared = get(configured.prepare(source, get(PairScheduleBudget.of(6, 100L, 2))))
+    Vector(1, 3, 64).foreach { size =>
+      val quanta   = WorkQuanta(get(PairQuantum.of(size)), ComparisonQuantum.default)
+      val expected = prepared.work().left.toOption.map(StudyRunError.Plan(_))
+      val result   = Stepwise.complete(get(CountedStudyCursor.of(prepared)), quanta)
+      assertEquals(result.left.toOption, expected)
+      assert(expected.exists {
+        case StudyRunError.Plan(
+              PlanError.MatchedCardinality(MatchedReferences.RequireOne, ks, _)
+            ) =>
+          ks == Vector(KeyDigest[TrialKey].digest(focal).render)
+        case _ => false
+      })
+    }
+  }

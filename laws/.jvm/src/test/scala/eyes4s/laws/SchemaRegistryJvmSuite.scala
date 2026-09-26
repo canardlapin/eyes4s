@@ -98,6 +98,12 @@ object SchemaRegistry:
 
   val builtIns: Vector[Entry] = Vector(
     Entry(
+      StudyProgressDefinitions.progress,
+      Kind.Document,
+      Vector("study-progress-v1.json"),
+      codecLaw(() => new StudyProgressCodecLawSuite, "study progress")
+    ),
+    Entry(
       DefinitionId.cosine,
       Kind.Definition,
       Vector("study-v1.json", "study-result-v1.json"),
@@ -1011,9 +1017,10 @@ private object Decoders:
         Some(TimelineCodecs.timeline(id, StudyCodecs.key(DefinitionId.studyKey)))
       case DefinitionId.studyResult | DensityArchiveDefinitions.studyResultV2 =>
         Some(new DensityArchiveCodec(StudyResultCodecs.cosine[Px]).codec)
-      case DefinitionId.manifest        => Some(ScientificManifest.codec)
-      case DefinitionId.similarity      => Some(StudyResultCodecs.similarity())
-      case DefinitionId.measureDistance =>
+      case StudyProgressDefinitions.progress => Some(StudyProgressCodec.codec[String, String])
+      case DefinitionId.manifest             => Some(ScientificManifest.codec)
+      case DefinitionId.similarity           => Some(StudyResultCodecs.similarity())
+      case DefinitionId.measureDistance      =>
         Some(StudyResultCodecs.measureDistance())
       case DefinitionId.scalar           => Some(StudyResultCodecs.scalar())
       case DefinitionId.signedDifference =>

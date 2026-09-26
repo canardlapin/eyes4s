@@ -99,9 +99,22 @@ an input digest (`sameAs`), and it neither converts to nor from a `ContentHash`.
 16-hex `ArtifactRef` that version-1 plan, input, ledger and result documents carry is kept as it is,
 so no pinned wire form changes: it is an in-document cross-check that the decoder re-derives
 (`CodecError.InputIdentity` on a mismatch) and the manifest records beside each entry's SHA-256,
-never the identity a file or a run is cited by. A future schema version that needs a
-collision-resistant link inside a document adds a `CanonicalDigest` member under the version
-policy rather than changing the meaning of the 16-hex one.
+never the identity a file or a run is cited by. Stamped study results use the existing `eyes4s.study-result@2` ladder to add separate
+canonical plan and input digests; pinned unstamped `@1` bytes remain unchanged.
+`DensityArchiveCodec.encodeStamped` accepts only the completion-bound
+`StampedStudyResult`, while decoded `StudyResultArchive.stampClaim` remains an
+unverified claim. Manifest resolution re-encodes the actual decoded plan and input
+and checks their canonical identities before accepting a stamped result; custom
+input decoders without a canonical encoder fail closed. Legacy archives expose
+`None` for the stamp.
+
+`eyes4s.study-progress@1` carries a typed `RunStamp`, execution quanta and a
+committed progress snapshot. Counting and unknown totals are different wire cases;
+running stages require their matching scientific meter. Every 64-bit counter is a
+canonical decimal string, preserving values above 2^53 through JavaScript JSON
+parsing. Invalid counters, mismatched units, missing running meters and inconsistent
+work totals are refused. The codec owns the DTO; the io module maps fs2 progress to
+it through `StampedStudyExecution.snapshot`.
 
 ## Schema compatibility
 

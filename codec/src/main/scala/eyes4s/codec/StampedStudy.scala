@@ -57,6 +57,12 @@ final class StampedStudy[K, U <: Unit2D, P, S, D] private (
   ): Either[PlanError, StampedStudyCursor[K, U, P, S, D]] =
     prepared.work(budget).map(new StampedStudyCursor(_, stamp))
 
+  /** One cursor counts, assembles diagnostics and executes without recounting. */
+  def countedWork(
+      budget: ComparisonBudget = ComparisonBudget.default
+  ): Either[StudyRunError, StampedCountedStudyCursor[K, U, P, S, D]] =
+    CountedStudyCursor.of(prepared, budget).map(new StampedCountedStudyCursor(_, stamp))
+
   def run: Either[PlanError, StampedStudyResult[K, U, P, S, D]] =
     work().flatMap(Stepwise.complete(_, WorkQuanta.default))
 
@@ -103,4 +109,51 @@ object StampedStudyCursor:
     def advance(cursor: StampedStudyCursor[K, U, P, S, D], quanta: WorkQuanta): Either[
       PlanError,
       WorkStep[StudyStage, StampedStudyCursor[K, U, P, S, D], StampedStudyResult[K, U, P, S, D]]
+    ] = cursor.advance(quanta)
+
+/** A composite cursor whose terminal result receives only its captured canonical stamp. */
+final class StampedCountedStudyCursor[K, U <: Unit2D, P, S, D] private[codec] (
+    private val cursor: CountedStudyCursor[K, U, P, S, D],
+    val stamp: RunStamp[StudyPlan[K, U, P, S, D], StudyInput[K, U]]
+):
+  def stage: StudyRunStage                          = cursor.stage
+  def total(segment: StudyRunSegment): SegmentTotal = cursor.total(segment)
+
+  def advance(quanta: WorkQuanta): Either[StudyRunError, WorkStep[
+    StudyRunStage,
+    StampedCountedStudyCursor[K, U, P, S, D],
+    StampedStudyResult[K, U, P, S, D]
+  ]] = cursor.advance(quanta).map {
+    case WorkStep.More(stage, units, next) =>
+      WorkStep.More(stage, units, new StampedCountedStudyCursor(next, stamp))
+    case WorkStep.Done(units, result) =>
+      WorkStep.Done(units, StampedStudyResult.completed(stamp, result))
+  }
+
+  def completedStage(
+      step: WorkStep[
+        StudyRunStage,
+        StampedCountedStudyCursor[K, U, P, S, D],
+        StampedStudyResult[K, U, P, S, D]
+      ]
+  ): Either[StudyRunError, StudyRunStage] = step match
+    case WorkStep.More(stage, _, _)   => Right(stage)
+    case WorkStep.Done(units, result) =>
+      cursor.completedStage(WorkStep.Done(units, result.result))
+
+object StampedCountedStudyCursor:
+  given [K, U <: Unit2D, P, S, D]: Stepwise[
+    StampedCountedStudyCursor[K, U, P, S, D],
+    StudyRunStage,
+    StudyRunError,
+    StampedStudyResult[K, U, P, S, D]
+  ] with
+    def stage(cursor: StampedCountedStudyCursor[K, U, P, S, D]): StudyRunStage = cursor.stage
+    def advance(cursor: StampedCountedStudyCursor[K, U, P, S, D], quanta: WorkQuanta): Either[
+      StudyRunError,
+      WorkStep[
+        StudyRunStage,
+        StampedCountedStudyCursor[K, U, P, S, D],
+        StampedStudyResult[K, U, P, S, D]
+      ]
     ] = cursor.advance(quanta)
