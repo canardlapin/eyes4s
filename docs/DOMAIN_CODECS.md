@@ -103,6 +103,17 @@ never the identity a file or a run is cited by. A future schema version that nee
 collision-resistant link inside a document adds a `CanonicalDigest` member under the version
 policy rather than changing the meaning of the 16-hex one.
 
+### Record and fixation identities in application documents
+
+`RecordIdentityCodecs` (circe `Codec` givens) write a `DataRecord`, `FixationNumber` or
+`ScanpathPosition` as an object with one member named for its counting convention:
+`{"data-record":7214}`, `{"fixation-number":6}`, `{"scanpath-position":5}`. A stored number
+therefore can't be read in another convention. Decoding refuses any other member, an extra member,
+a value that is not a JSON integer, and a number outside the type's range. These forms have no
+schema identity of their own: the application document that holds them is versioned. The pinned
+document `codec/src/test/resources/values/record-identity-v1.json` is checked byte for byte on
+the JVM and through a portable mirror on Scala.js.
+
 ## Schema compatibility
 
 Every stored document is an envelope, `{"schema": {"name", "version"}, "value"}`. The version is

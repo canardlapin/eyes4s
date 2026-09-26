@@ -98,9 +98,16 @@ enum JournalError derives CanEqual:
 /** A final line that did not decode: the write a crash interrupted. */
 final case class TornLine(line: Int, text: String) derives CanEqual
 
-/** A replayed journal: the history it rebuilds and the entries it applied. */
-final case class Replay(history: History, entries: Vector[JournalEntry], torn: Option[TornLine])
-    derives CanEqual
+/** A replayed journal: the history it rebuilds, the entries it applied, the
+  * entry counts at which a checkpoint was checked (in order), and the torn
+  * final line, if any.
+  */
+final case class Replay(
+    history: History,
+    entries: Vector[JournalEntry],
+    checkpoints: Vector[Int],
+    torn: Option[TornLine]
+) derives CanEqual
 
 /** The autosave command journal (ticket S2.2, used by S2.4b): JSON lines,
   * each a CR3 versioned envelope (`studio.journal`) around a [[JournalLine]]
@@ -181,7 +188,7 @@ object CommandJournal:
       own    <- digest(base)
       _      <- Either.cond(from.sameAs(own), (), JournalError.BaseMismatch(from, own))
       replay <- (2 to lines.size).toVector
-        .foldLeftM(Replay(History.start(base), Vector.empty, None)) { (acc, n) =>
+        .foldLeftM(Replay(History.start(base), Vector.empty, Vector.empty, None)) { (acc, n) =>
           read(n) match
             case Left(_) if n == lines.size =>
               Right(acc.copy(torn = Some(TornLine(n, lines(n - 1)))))
@@ -210,7 +217,7 @@ object CommandJournal:
                   (),
                   JournalError.Drift(n, seq, recorded, replayed)
                 )
-              yield acc
+              yield acc.copy(checkpoints = acc.checkpoints :+ seq)
         }
     yield replay
 

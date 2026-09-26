@@ -128,6 +128,7 @@ class CommandJournalSuite extends munit.ScalaCheckSuite:
       cp.hcursor.downField("value").downField("Checkpoint").get[Int]("seq"),
       Right(4)
     )
+    assertEquals(CommandJournal.replay(t2, journal).map(_.checkpoints), Right(Vector(4)))
   }
 
   test("a checkpoint the replay does not reach is a typed drift error") {

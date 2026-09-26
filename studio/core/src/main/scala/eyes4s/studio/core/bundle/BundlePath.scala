@@ -27,6 +27,10 @@ package eyes4s.studio.core.bundle
   *    carries a prefix of its own digest;
   *  - `cache/`: disposable. The manifest never names it, so deleting it loses
   *    nothing scientific.
+  *  - `journals/`: autosave journals set aside (declined or superseded) by
+  *    a writing session (S2.4b), under `journals/archive/`. The manifest
+  *    never names it, but it is not disposable: a declined journal is the
+  *    only copy of the work it holds.
   */
 enum BundleArea(val directory: String, val disposable: Boolean) derives CanEqual:
   case Inputs    extends BundleArea("inputs", false)
@@ -37,6 +41,7 @@ enum BundleArea(val directory: String, val disposable: Boolean) derives CanEqual
   case Reporting extends BundleArea("reporting", false)
   case Figures   extends BundleArea("figures", false)
   case Cache     extends BundleArea("cache", true)
+  case Journals  extends BundleArea("journals", false)
 
 object BundleArea:
   def named(directory: String): Option[BundleArea] = values.find(_.directory == directory)
