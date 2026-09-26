@@ -110,6 +110,7 @@ object DomainCodecs:
         c         <- Wire.field[String](j, "clock")
         xs        <- Wire.field[Vector[Json]](j, "intervals")
         intervals <- xs.traverse(DomainWire.readInterval)
+        _         <- Wire.ascending("intervals", intervals.map(_.onset.toMicros).zip(xs))
         result    <- ObservedCoverage
           .of(ClockId(c), intervals)
           .left
@@ -265,10 +266,34 @@ object DocumentIdentities:
       )
     )
 
+  /** Refuse a wire table that declares one identity twice: the writer
+    * declares each once, so a repetition is a second spelling of the table.
+    */
+  private def once(
+      member: String,
+      table: Json,
+      declared: Vector[Json],
+      id: Json => Option[String]
+  ): Either[CodecError, Unit] =
+    val ids = declared.map(id)
+    Either.cond(
+      ids.distinct.size == ids.size,
+      (),
+      CodecError.NonCanonical(
+        member,
+        Json.arr(declared*),
+        Json.arr(declared.zip(ids).distinctBy(_._2).map(_._1)*),
+        "each identity is declared once"
+      )
+    )
+
   private[codec] def read(j: Json): Either[CodecError, DocumentIdentities] = for
     fs         <- Wire.field[Vector[Json]](j, "frames")
     gs         <- Wire.field[Vector[Json]](j, "grids")
     cs         <- Wire.field[Vector[String]](j, "clocks")
+    _          <- once("frames", j, fs, _.hcursor.get[String]("id").toOption)
+    _          <- once("grids", j, gs, _.hcursor.get[String]("id").toOption)
+    _          <- once("clocks", j, cs.map(Json.fromString), _.asString)
     withFrames <- fs.foldLeft[Either[CodecError, DocumentIdentities]](Right(empty)) {
       (acc, f) =>
         for
@@ -307,10 +332,22 @@ private[codec] object DomainWire:
   def time(micros: Long): Json = Json.fromString(micros.toString)
   def readTime(j: Json, path: String): Either[CodecError, Long] =
     j.asString
-      .flatMap(_.toLongOption)
+      .flatMap(raw => raw.toLongOption.map(raw -> _))
       .toRight(
         CodecError
           .Field(path, j, "expected signed 64-bit integer microseconds as a decimal string")
+      )
+      .flatMap((raw, value) =>
+        Either.cond(
+          raw == value.toString,
+          value,
+          CodecError.NonCanonical(
+            path,
+            j,
+            Json.fromString(value.toString),
+            "microseconds are written without a sign or leading zeros they do not need"
+          )
+        )
       )
   def micros(j: Json, field: String): Either[CodecError, Long] =
     Wire.field[Json](j, field).flatMap(readTime(_, field))

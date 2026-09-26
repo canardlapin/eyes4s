@@ -118,6 +118,12 @@ object CodecDiagnosticSamples:
       CodecError.RecordingResult(
         RecordingResultError.Stage("angular", "clock", "display", "tracker")
       ),
+      CodecError.NonCanonical(
+        "heldOutFolds",
+        Json.arr(Json.fromString("b"), Json.fromString("a")),
+        Json.arr(Json.fromString("a"), Json.fromString("b")),
+        "members are written in ascending order"
+      ),
       CodecError.TemporalResult(
         TemporalResultError.Cell(
           "recall-encode",

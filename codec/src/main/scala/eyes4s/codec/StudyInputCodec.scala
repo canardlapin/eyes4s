@@ -222,7 +222,7 @@ final class StudyInputCodec[K, U <: Unit2D](
         clockName  <- Wire.field[String](json, "clock")
         clock      <- table.clock(ClockId(clockName))
         entries    <- Wire.field[Vector[Json]](json, "fixations")
-        sourceJson <- Wire.field[Option[Json]](json, "source")
+        sourceJson <- Wire.omittable[Json](json, "source")
         fixations  <- entries.zipWithIndex.traverse { case (entry, index) =>
           readFixation(entry, clock, sourceJson.isDefined).left
             .map(Wire.at(s"fixations[$index]"))

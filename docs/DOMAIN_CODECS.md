@@ -196,6 +196,28 @@ result's detected events alike. The members a recording result archive re-derive
 over the members version 1 writes, so an unknown member among them is ignored like any other and a
 known one that differs is refused with `CodecError.Derived(path, declared, derived)`.
 
+### Canonical wire forms
+
+Each value has one written document, and a decoder refuses a second spelling that would decode to
+the same value, so a document's bytes identify its value (apart from the lift of an earlier
+version, under the [version policy](#version-policy), and the unknown members and numeric
+spellings described above). A refusal is `CodecError.NonCanonical(path, found, canonical, rule)`,
+naming the member, what it found, what the writer writes and the rule, or `CodecError.Field` where
+the member has the wrong JSON type:
+
+| Rule | Where |
+|---|---|
+| A set is written in ascending order, once per member | a template recipe's `heldOutFolds`, a learned template recipe's `heldOutGroups`, the entries of `VersionedCodec.entries`, a temporal input's `epochs` (by key), observed coverage `intervals` (by onset, standalone and in an epoch), an evaluation specification's `parameters` (by name) |
+| An identity is declared once | the `frames`, `grids` and `clocks` of a document identity table |
+| Microseconds are a plain decimal string | every `*Micros` member: `"5"`, never `"+5"` or `"05"`, and `"0"`, never `"-0"` |
+| A number is a JSON number | every numeric member: never a numeric string, and never `null` for a number |
+| An integer is spelled as an integer | every integer member: `3`, never `3.0` or `3e0` |
+| An absent value has one spelling | a member written as `null` when absent must be present; a member omitted when absent (a scanpath's `source`, a neutral timeline's `timing`) may not be `null` |
+
+A document identity table's order and its unreferenced entries are not yet checked against the
+table the writer derives from the value; a table that lists the same identities in another order,
+or adds one nothing references, still decodes.
+
 ## Evidence
 
 The generated-value tests apply published `CodecLaws` to these codecs on JVM and

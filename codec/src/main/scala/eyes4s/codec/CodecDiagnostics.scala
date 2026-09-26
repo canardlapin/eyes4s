@@ -61,7 +61,8 @@ object CodecDiagnosticCatalog:
     "UnsupportedSchema",
     "Derived",
     "RecordingResult",
-    "TemporalResult"
+    "TemporalResult",
+    "NonCanonical"
   )
   val resolve: DiagnosticFamily = error("resolve")(
     "MissingManifest",
@@ -277,6 +278,13 @@ object CodecDiagnostics:
         )
       case RecordingResult(underlying) => wrap(Diagnostics.recordingResult(underlying))
       case TemporalResult(underlying)  => wrap(Diagnostics.temporalResult(underlying))
+      case NonCanonical(where, found, canonical, rule) =>
+        diagnostic(C.codec, e, e.message, path(where))(
+          name(where),
+          json(found),
+          json(canonical),
+          text(rule)
+        )
 
   def resolve(e: ResolveError): Diagnostic[Any] =
     import ResolveError.*

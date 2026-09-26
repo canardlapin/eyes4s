@@ -992,6 +992,7 @@ fails after rewriting, so review the change and run it again.
 | `codec.derived` | `Derived` | `path`, `declared`, `derived` |
 | `codec.recording-result` | `RecordingResult` | `underlying` |
 | `codec.temporal-result` | `TemporalResult` | `underlying` |
+| `codec.non-canonical` | `NonCanonical` | `path`, `found`, `canonical`, `rule` |
 
 ### `resolve` — `ResolveError`
 

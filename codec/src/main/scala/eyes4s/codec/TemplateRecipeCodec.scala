@@ -108,6 +108,7 @@ object TemplateRecipeCodec:
           (),
           CodecError.Field("heldOutFolds", json, "duplicate folds")
         )
+        _    <- Wire.ascending("heldOutFolds", folds.map(f => f -> Json.fromString(f)))
         rows <- Wire
           .field[Vector[Json]](json, "rows")
           .flatMap(_.traverse { row =>
