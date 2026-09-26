@@ -221,6 +221,7 @@ object Diagnose:
     derived(C.repetitionPlan)(_.message)
   given diagnosticCode: Diagnose[DiagnosticCodeError, Nothing] =
     derived(C.diagnosticCode)(_.message)
+  given massLevel: Diagnose[MassLevelError, Nothing] = derived(C.massLevel)(_.message)
 
   /** An epoch error names its trial by key; the mark kind of its selector is
     * the application's own value and is carried as text.

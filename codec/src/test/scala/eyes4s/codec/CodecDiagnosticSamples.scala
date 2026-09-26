@@ -213,5 +213,23 @@ object CodecDiagnosticSamples:
     family[ByteDigestError]("ByteDigestError")(
       ByteDigestError.WrongLength("abc", 3),
       ByteDigestError.InvalidCharacter("0g", 1, 'g')
+    ),
+    family[DensityError[StudyKey]]("DensityError")(
+      DensityError.UnknownScale(3, 1),
+      DensityError.UnknownKey(1, k1),
+      DensityError.AmbiguousKey(2, k1, 3),
+      DensityError.Failed(3, k1, StudyFailure.Frame(k1, GeometryError.NonFiniteSigma(1.5))),
+      DensityError.MissingPayload(4, k1, ref),
+      DensityError.Payload(5, k1, PayloadError.NotANumber(6)),
+      DensityError.PayloadReference(6, k1, ref, PayloadRef(b, layout)),
+      DensityError.RecomputeUnavailable(7, k1),
+      DensityError.SourceMismatch(8, k1, digest, digest2),
+      DensityError.DigestMismatch(9, k1, a, b),
+      DensityError.Decode(10, k1, CodecError.Field("density", Json.Null, "invalid")),
+      DensityError.Geometry(
+        InspectionError
+          .Geometry(ResultRef.Estimation(11, k1), GeometryError.NonFiniteSigma(1.5))
+      ),
+      DensityError.Materialize(CodecError.Field("archive", Json.Null, "invalid"))
     )
   )

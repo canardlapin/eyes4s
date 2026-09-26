@@ -1060,33 +1060,11 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
   ): (K, Either[StudyFailure[K], Mass[U]]) =
     val trial = work.input.trials.rows(index)
     val mass  = for
-      _         <- work.frameChecks(index)
-      _         <- work.windowChecks(index)
-      kept      <- work.keptPath(index)
-      whole     <- prepare(trial.key, kept)
-      occupancy <- StudyWindowing.restrict(geometry, trial.key, whole)
-      mass      <- estimate match
-        case StudyEstimate.Anisotropic(x, y, edges) =>
-          Smoother
-            .anisotropic(x, y, edges)
-            .density(occupancy, grid)
-            .left
-            .map(StudyFailure.Estimation(trial.key, _))
-        case StudyEstimate.Binned() =>
-          for
-            cells     <- occupancy.binned(grid).left.map(StudyFailure.Frame(trial.key, _))
-            intensity <- Surface
-              .intensity(grid, cells, occupancy.provenance)
-              .left
-              .map(StudyFailure.Occupancy(trial.key, _))
-            result <- intensity.normalised.left.map(StudyFailure.Occupancy(trial.key, _))
-          yield result
-        case StudyEstimate.Gaussian(sigma, edges) =>
-          Smoother
-            .gaussian(sigma, edges)
-            .density(occupancy, grid)
-            .left
-            .map(StudyFailure.Estimation(trial.key, _))
+      _     <- work.frameChecks(index)
+      _     <- work.windowChecks(index)
+      kept  <- work.keptPath(index)
+      whole <- prepare(trial.key, kept)
+      mass  <- StudyDensity.fromOccupancy(geometry, estimate, trial.key, whole)
     yield mass
     trial.key -> mass
 

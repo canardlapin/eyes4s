@@ -1256,3 +1256,15 @@ private[eyes4s] object Projections:
         )(int(scale), token(design.toString), token(found.toString))
       case NoContrast(scale) =>
         diagnostic(C.inspection, e, e.message, Vector(Locus.Scale(scale)))(int(scale))
+      case Geometry(ref, underlying) =>
+        val inner = CauseDiagnostics.geometry(underlying)
+        diagnostic(C.inspection, e, e.message, ref.loci ++ inner.subject)(
+          reference(ref),
+          cause(inner)
+        )
+      case GeometryDescription(ref, field, found) =>
+        diagnostic(C.inspection, e, e.message, ref.loci :+ Locus.Field(field))(
+          reference(ref),
+          name(field),
+          params(found)
+        )

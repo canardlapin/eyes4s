@@ -1000,6 +1000,8 @@ fails after rewriting, so review the change and run it again.
 | `inspection.reduction-membership` | `ReductionMembership` | `reference`, `selected`, `members`, `contributing`, `contributors` |
 | `inspection.orientation` | `Orientation` | `scale`, `design`, `found` |
 | `inspection.no-contrast` | `NoContrast` | `scale` |
+| `inspection.geometry` | `Geometry` | `reference`, `underlying` |
+| `inspection.geometry-description` | `GeometryDescription` | `reference`, `field`, `found` |
 
 ### `timeline` — `TimelineError`
 
@@ -1342,6 +1344,13 @@ fails after rewriting, so review the change and run it again.
 | `diagnostic-code.invalid-family` | `InvalidFamily` | `family` |
 | `diagnostic-code.invalid-name` | `InvalidName` | `name` |
 
+### `mass-level` — `MassLevelError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `mass-level.invalid-coverage` | `InvalidCoverage` | `index`, `coverage` |
+| `mass-level.insufficient-total` | `InsufficientTotal` | `index`, `coverage`, `total` |
+
 ### `codec` — `CodecError`
 
 | Code | Case | Operands |
@@ -1466,6 +1475,24 @@ fails after rewriting, so review the change and run it again.
 |---|---|---|
 | `byte-digest.wrong-length` | `WrongLength` | `value`, `length` |
 | `byte-digest.invalid-character` | `InvalidCharacter` | `value`, `index`, `character` |
+
+### `density` — `DensityError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `density.unknown-scale` | `UnknownScale` | `scale`, `count` |
+| `density.unknown-key` | `UnknownKey` | `scale`, `key` |
+| `density.ambiguous-key` | `AmbiguousKey` | `scale`, `key`, `count` |
+| `density.failed` | `Failed` | `scale`, `key`, `failure` |
+| `density.missing-payload` | `MissingPayload` | `scale`, `key`, `reference` |
+| `density.payload` | `Payload` | `scale`, `key`, `underlying` |
+| `density.payload-reference` | `PayloadReference` | `scale`, `key`, `expected`, `actual` |
+| `density.recompute-unavailable` | `RecomputeUnavailable` | `scale`, `key` |
+| `density.source-mismatch` | `SourceMismatch` | `scale`, `key`, `expected`, `actual` |
+| `density.digest-mismatch` | `DigestMismatch` | `scale`, `key`, `expected`, `actual` |
+| `density.decode` | `Decode` | `scale`, `key`, `underlying` |
+| `density.geometry` | `Geometry` | `underlying` |
+| `density.materialize` | `Materialize` | `underlying` |
 
 ### `detector-validation` — `DetectorValidationError`
 

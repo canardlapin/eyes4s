@@ -558,7 +558,9 @@ object DiagnosticCatalog:
     "PlanMismatch",
     "ReductionMembership",
     "Orientation",
-    "NoContrast"
+    "NoContrast",
+    "Geometry",
+    "GeometryDescription"
   )
 
   // ---------------------------------------------------------------- appended by CR5
@@ -794,6 +796,10 @@ object DiagnosticCatalog:
     "InvalidFamily",
     "InvalidName"
   )
+  val massLevel: DiagnosticFamily = error("mass-level")(
+    "InvalidCoverage",
+    "InsufficientTotal"
+  )
 
   /** Every family, grouped as documented. */
   val families: Vector[DiagnosticFamily] = Vector(
@@ -883,7 +889,8 @@ object DiagnosticCatalog:
     pointSampling,
     recipeParameter,
     repetitionPlan,
-    diagnosticCode
+    diagnosticCode,
+    massLevel
   )
 
   /** Every stable code, in catalog order. */

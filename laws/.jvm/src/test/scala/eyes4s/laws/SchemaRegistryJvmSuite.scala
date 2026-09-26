@@ -66,6 +66,7 @@ object SchemaRegistry:
   private val plans      = () => new PlanCodecLawSuite
   private val inputs     = () => new StudyInputCodecLawSuite
   private val results    = () => new StudyResultCodecLawSuite
+  private val densities  = () => new DensityArchiveLawSuite
   private val recordings = () => new RecordingInputCodecLawSuite
   private val artifacts  = () => new ArtifactCodecLawSuite
   private val codecs     = () => new CodecLawsSuite
@@ -215,6 +216,12 @@ object SchemaRegistry:
       codecLaw(results, "cosine study result")
     ),
     Entry(
+      DensityArchiveDefinitions.studyResultV2,
+      Kind.Document,
+      Vector("study-result-v2.json"),
+      codecLaw(densities, "density archive document")
+    ),
+    Entry(
       DefinitionId.similarity,
       Kind.Nested,
       Vector("score-codecs-v1.json", "study-result-v1.json"),
@@ -351,7 +358,8 @@ object SchemaRegistry:
 
   /** The published ladder laws of each multi-version schema, by name. */
   val ladderLaws: Map[String, Vector[Law]] = Map(
-    "eyes4s.study" ->
+    "eyes4s.study-result" -> ladderLaw(densities, "density archive versions"),
+    "eyes4s.study"        ->
       (ladderLaw(plans, "study plan versions") ++ ladderLaw(
         plans,
         "trial study plan versions"
@@ -626,7 +634,10 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
 
   test("every multi-version schema has a ladder, a fixture per version and lifts them") {
     val versioned = SchemaRegistry.versioned(builtIns ++ conventional, resource)
-    assertEquals(versioned.map(_.name), Vector("eyes4s.admission-ledger", "eyes4s.study"))
+    assertEquals(
+      versioned.map(_.name),
+      Vector("eyes4s.admission-ledger", "eyes4s.study", "eyes4s.study-result")
+    )
     assertEquals(versionProblems(builtIns ++ conventional, versioned), Vector.empty)
     assertEquals(
       lawProblems(
@@ -870,7 +881,8 @@ private object Decoders:
         Some(TemporalInputCodecs.study[Px]().input)
       case DefinitionId.timeline =>
         Some(TimelineCodecs.timeline(id, StudyCodecs.key(DefinitionId.studyKey)))
-      case DefinitionId.studyResult     => Some(StudyResultCodecs.cosine[Px].codec)
+      case DefinitionId.studyResult | DensityArchiveDefinitions.studyResultV2 =>
+        Some(new DensityArchiveCodec(StudyResultCodecs.cosine[Px]).codec)
       case DefinitionId.manifest        => Some(ScientificManifest.codec)
       case DefinitionId.similarity      => Some(StudyResultCodecs.similarity())
       case DefinitionId.measureDistance =>

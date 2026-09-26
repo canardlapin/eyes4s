@@ -811,7 +811,16 @@ object DiagnosticSamples:
         4
       ),
       InspectionError.Orientation(1, StudyDesign.Matched, ReductionOrientation.EdgesOnce),
-      InspectionError.NoContrast(2)
+      InspectionError.NoContrast(2),
+      InspectionError.Geometry(
+        ResultRef.Estimation(0, k1),
+        GeometryError.FrameMismatch(fid, deg)
+      ),
+      InspectionError.GeometryDescription(
+        ResultRef.Estimation(0, k1),
+        "window",
+        Vector(Provenance.Param.Text("image"))
+      )
     ),
     generated[TimelineError]("TimelineError"),
     generated[MovingError]("MovingError"),
@@ -849,5 +858,6 @@ object DiagnosticSamples:
     generated[PointSamplingError]("PointSamplingError"),
     generated[RecipeParameterError]("RecipeParameterError"),
     generated[RepetitionPlanError]("RepetitionPlanError"),
-    generated[DiagnosticCodeError]("DiagnosticCodeError")
+    generated[DiagnosticCodeError]("DiagnosticCodeError"),
+    generated[MassLevelError]("MassLevelError")
   )
