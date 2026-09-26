@@ -97,7 +97,7 @@ class TemporalExecutionSuite extends munit.CatsEffectSuite:
   private val cosine = StudyMethod.cosine[Px](DefinitionId.cosine)
   private def base(
       input: TemporalStudyInput[StudyKey, Px],
-      method: StudyMethod[Unit, Px, Similarity, SignedDifference] = cosine
+      method: StudyMethod[Unit, Px, Similarity, SignedDifference]
   ) = get(
     StudyPlan.of(
       input.study.reference,

@@ -32,7 +32,6 @@ import scala.compiletime.testing.typeCheckErrors
 class ResultCodecSuite extends munit.FunSuite:
   import StudyResultFixtures.*
 
-  private type Result = StudyResult[StudyKey, Px, Similarity, SignedDifference]
   private def get[E, A](e: Either[E, A]): A = e.fold(error => fail(s"$error"), identity)
   private val cosine                        = StudyResultCodecs.cosine[Px]
   private val layout                        = StudyKey.layout(DefinitionId.studyLayout)
