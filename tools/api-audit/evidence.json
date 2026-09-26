@@ -14334,10 +14334,10 @@
     ],
     "surfaceJS/eyes4s.surface.FixationEntropyConformanceSuite": [
       "a scale with no mass: eyesim gives NA and drops it from the mean; eyes4s cannot hold it",
-      "aggregate = none is unreachable from eyesim's fixation-group route",
       "excluding or refusing the outside fixation are explicit alternatives to eyesim's clamp",
       "explicit scale weights give the weighted oracle, which eyesim cannot express",
       "eyesim's default padded bounds reproduce its grid entropy and counts",
+      "eyesim's fixation-group route returns every scale, and eyes4s agrees by sigma label",
       "grid entropy on explicit bounds equals eyesim and the exact oracle, cell by cell",
       "multiscale none and mean on eyesim's own scale maps equal eyesim, by sigma label",
       "multiscale none and mean on supplied maps equal eyesim and the exact oracle",
@@ -17145,10 +17145,10 @@
     ],
     "surfaceJVM/eyes4s.surface.FixationEntropyConformanceSuite": [
       "a scale with no mass: eyesim gives NA and drops it from the mean; eyes4s cannot hold it",
-      "aggregate = none is unreachable from eyesim's fixation-group route",
       "excluding or refusing the outside fixation are explicit alternatives to eyesim's clamp",
       "explicit scale weights give the weighted oracle, which eyesim cannot express",
       "eyesim's default padded bounds reproduce its grid entropy and counts",
+      "eyesim's fixation-group route returns every scale, and eyes4s agrees by sigma label",
       "grid entropy on explicit bounds equals eyesim and the exact oracle, cell by cell",
       "multiscale none and mean on eyesim's own scale maps equal eyesim, by sigma label",
       "multiscale none and mean on supplied maps equal eyesim and the exact oracle",
