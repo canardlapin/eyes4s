@@ -194,5 +194,5 @@ final class TemporalCase[K, P, S, D](val c: JourneyCase[K, P, S, D], schemaName:
 object TemporalRun:
   val cosine: TemporalCase[StudyKey, Unit, eyes4s.compare.Similarity, SignedDifference] =
     TemporalCase(JourneyCases.cosine, "eyes4s.temporal-study")
-  val scaled: TemporalCase[TrialKey, Multiplier, ScaledScore, SignedDifference] =
+  val scaled: TemporalCase[SubjectItemKey, Multiplier, ScaledScore, SignedDifference] =
     TemporalCase(JourneyCases.scaled, "my.lab.temporal-study")

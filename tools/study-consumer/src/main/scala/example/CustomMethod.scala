@@ -57,10 +57,10 @@ object ScaledScore:
     ): Either[DifferenceError, SignedDifference] =
       SignedDifference.between(matched.value, control.value)
 
-final case class TrialKey(subject: String, item: Int, phase: String) derives CanEqual
-object TrialKey:
-  given KeyDigest[TrialKey] = KeyDigest.derived[TrialKey]
-  given Ordering[TrialKey]  = Ordering.by(key => (key.subject, key.item, key.phase))
+final case class SubjectItemKey(subject: String, item: Int, phase: String) derives CanEqual
+object SubjectItemKey:
+  given KeyDigest[SubjectItemKey] = KeyDigest.derived[SubjectItemKey]
+  given Ordering[SubjectItemKey]  = Ordering.by(key => (key.subject, key.item, key.phase))
 
 object CustomMethod:
   def parameterDescriptor
@@ -173,8 +173,8 @@ object CustomMethod:
         )
     }
 
-  def keyCodec(schema: DefinitionId): VersionedCodec[TrialKey] =
-    VersionedCodec.of[TrialKey](schema)(key =>
+  def keyCodec(schema: DefinitionId): VersionedCodec[SubjectItemKey] =
+    VersionedCodec.of[SubjectItemKey](schema)(key =>
       Json.obj(
         "subject" -> Json.fromString(key.subject),
         "item"    -> Json.fromInt(key.item),
@@ -194,10 +194,10 @@ object CustomMethod:
           .get[String]("phase")
           .left
           .map(e => CodecError.Field("phase", json, e.message))
-      yield TrialKey(subject, item, phase)
+      yield SubjectItemKey(subject, item, phase)
     }
 
-  def layout(id: DefinitionId): StudyLayout[TrialKey] = new StudyLayout(
+  def layout(id: DefinitionId): StudyLayout[SubjectItemKey] = new StudyLayout(
     id,
     Projection.named("subject")(_.subject),
     Projection.named("item")(_.item.toString),

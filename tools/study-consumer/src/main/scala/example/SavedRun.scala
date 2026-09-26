@@ -63,7 +63,7 @@ enum JourneyError derives CanEqual:
 
   /** The resolved manifest did not hold exactly one artifact of `role`. */
   case Entries(role: ArtifactRole, count: Int)
-  case Preflight(error: PreflightError)
+  case Preflight(error: PreflightError[Any])
   case Descriptor(error: DescriptorError)
 
   /** A recording input whose channels a recording plan cannot run on. */

@@ -124,9 +124,15 @@ class LearnedTemplateRecipeSuite extends munit.FunSuite:
     val reversed = value.mapObject(
       _.add("heldOutGroups", Json.arr(Json.fromString("p4"), Json.fromString("p3")))
     )
-    assert(
-      codec.decode(encoded.mapObject(_.add("value", reversed))) match
-        case Left(CodecError.Field("heldOutGroups", _, reason)) => reason.contains("ascending")
-        case _                                                  => false
+    assertEquals(
+      codec.decode(encoded.mapObject(_.add("value", reversed))),
+      Left(
+        CodecError.NonCanonical(
+          "heldOutGroups",
+          Json.arr(Json.fromString("p4"), Json.fromString("p3")),
+          Json.arr(Json.fromString("p3"), Json.fromString("p4")),
+          "members are written in ascending order"
+        )
+      )
     )
   }

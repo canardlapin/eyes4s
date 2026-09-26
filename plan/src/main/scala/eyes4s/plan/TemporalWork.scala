@@ -236,7 +236,9 @@ object TemporalWork:
         )
       )
 
-  /** One trial's measured anchor, resolved window and observed occupancy. */
+  /** One trial's measured anchor, resolved window and observed occupancy,
+    * over the fixations the base plan's initial-fixation policy keeps.
+    */
   private[plan] def occupancy[K, U <: Unit2D, P, S, D](
       work: PreparedTemporalStudy[K, U, P, S, D],
       window: Int,
@@ -250,7 +252,18 @@ object TemporalWork:
           TemporalStudyError.MissingEpoch(work.plan.base.layout.digest.digest(row.key).render)
         )
       interval <- work.windows(window).resolve(epoch)
-      value    <- WindowOccupancy(row.value, interval, epoch.coverage, work.boundary).left
+      outcome = work.plan.base.initialFixationRule.select(row.value)
+      kept <- outcome.kept.toRight(
+        TemporalStudyError.Input(
+          PlanError.InitialFixations(
+            InitialFixationError.NoFixationKept(
+              outcome.tally.dropped,
+              outcome.tally.droppedDuration.toMicros
+            )
+          )
+        )
+      )
+      value <- WindowOccupancy(kept, interval, epoch.coverage, work.boundary).left
         .map(TemporalStudyError.Occupancy.apply)
     yield value
     row.key -> resolved

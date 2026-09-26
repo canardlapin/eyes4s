@@ -40,6 +40,10 @@ import org.scalacheck.{Gen, Test}
   * | codec               | killed mutants                                          |
   * |---------------------|---------------------------------------------------------|
   * | eyes4s.study@1      | dropped scale, swapped phases, failure policy reset      |
+  * | eyes4s.study@2      | window dropped, off-window policy flipped, units per    |
+  * |                     | degree moved, degree scale read as native               |
+  * | eyes4s.study@3      | initial-fixation policy reset, cross radius moved; an   |
+  * |                     | upcast that states dropping the first fixation          |
   * | temporal study plan | dropped window, boundary flipped                        |
   * | recording plan      | dropped synchronization mark, detector threshold moved  |
   * }}}
@@ -47,8 +51,9 @@ import org.scalacheck.{Gen, Test}
 class PlanCodecLawSuite extends munit.DisciplineSuite:
   import PlanCodecLawSuite.*
 
-  private type Cosine   = StudyPlan[StudyKey, Px, Unit, Similarity, SignedDifference]
-  private type Temporal = TemporalStudyPlan[StudyKey, Px, Unit, Similarity, SignedDifference]
+  private type Cosine    = StudyPlan[StudyKey, Px, Unit, Similarity, SignedDifference]
+  private type Temporal  = TemporalStudyPlan[StudyKey, Px, Unit, Similarity, SignedDifference]
+  private type TrialPlan = StudyPlan[TrialKey, Px, Unit, Similarity, SignedDifference]
 
   private val studies   = StudyCodecs.cosine[Px]
   private val temporals =
@@ -78,6 +83,38 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
     a.description == b.description && a.input == b.input && a.parameters == b.parameters
 
   checkAll("study plan", CodecLaws.roundTrip(studies.codec, cosinePlans, sameStudy))
+  checkAll(
+    "configured study plan",
+    CodecLaws.roundTrip(studies.codec, configuredPlans, sameStudy)
+  )
+  checkAll(
+    "initial-fixation study plan",
+    CodecLaws.roundTrip(studies.codec, initialFixationPlans, sameStudy)
+  )
+  checkAll(
+    "trial study plan",
+    CodecLaws.roundTrip(
+      StudyCodecs.trialCosine[Px].codec,
+      trialPlans,
+      (a: TrialPlan, b: TrialPlan) => a.description == b.description && a.input == b.input
+    )
+  )
+  checkAll(
+    "study plan versions",
+    SchemaLadderLaws.ladder(
+      studies.ladder,
+      Gen.oneOf(cosinePlans, configuredPlans, initialFixationPlans),
+      sameStudy
+    )
+  )
+  checkAll(
+    "trial study plan versions",
+    SchemaLadderLaws.ladder(
+      StudyCodecs.trialCosine[Px].ladder,
+      trialPlans,
+      (a: TrialPlan, b: TrialPlan) => a.description == b.description && a.input == b.input
+    )
+  )
   checkAll(
     "temporal study plan",
     CodecLaws.roundTrip(temporals.codec, temporalPlans, sameTemporal)
@@ -122,26 +159,13 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
         case _                                               => false
     }
 
-  /** Wrap a codec so that decoding applies a deliberate change to the value. */
+  /** Wrap a codec so that decoding applies a deliberate change to the value.
+    * The wrapped codec's whole document is the mutant's payload, so a value
+    * keeps the schema version it was written under.
+    */
   private def mutant[A](codec: VersionedCodec[A])(change: A => Option[A]): VersionedCodec[A] =
-    VersionedCodec.checked[A](codec.schema)(a =>
-      codec
-        .encode(a)
-        .flatMap(j =>
-          j.hcursor.get[Json]("value").left.map(e => CodecError.Field("value", j, e.message))
-        )
-    )(raw =>
-      codec
-        .decode(
-          Json.obj(
-            "schema" -> Json.obj(
-              "name"    -> Json.fromString(codec.schema.name),
-              "version" -> Json.fromInt(codec.schema.version)
-            ),
-            "value" -> raw
-          )
-        )
-        .map(a => change(a).getOrElse(a))
+    VersionedCodec.checked[A](codec.schema)(codec.encode)(raw =>
+      codec.decode(raw).map(a => change(a).getOrElse(a))
     )
 
   private def cosine(
@@ -169,6 +193,124 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
     )
     assert(killed(reset, cosinePlans, sameStudy))
     assert(survives(studies.codec, cosinePlans, sameStudy))
+  }
+
+  private def configured(
+      p: Cosine,
+      geometry: StudyGeometry[Px],
+      scales: Vector[StudyScale[Px]],
+      angular: Option[LinearAngularScale[Px]]
+  ): Option[Cosine] =
+    StudyPlan
+      .configure(
+        p.input,
+        p.layout,
+        geometry,
+        p.focalPhase,
+        p.referencePhase,
+        p.weight,
+        scales,
+        angular,
+        p.policy,
+        p.method,
+        p.parameters
+      )
+      .toOption
+
+  test("the configured-plan law kills a dropped window, a flipped policy and a moved scale") {
+    val droppedWindow = mutant(studies.codec)(p =>
+      p.geometry match
+        case StudyGeometry.Windowed(_, grid, _) =>
+          val whole = sure(Grid.of(grid.id, p.geometry.admission, grid.nx, grid.ny))
+          configured(p, StudyGeometry.WholeFrame(whole), p.scales, p.angularScale)
+        case _ => None
+    )
+    assert(killed(droppedWindow, configuredPlans, sameStudy))
+    val flipped = mutant(studies.codec)(p =>
+      p.geometry match
+        case StudyGeometry.Windowed(window, grid, policy) =>
+          val other =
+            if policy == OffWindowPolicy.Exclude then OffWindowPolicy.FailTrial
+            else OffWindowPolicy.Exclude
+          StudyGeometry
+            .windowed(window, grid, other)
+            .toOption
+            .flatMap(g => configured(p, g, p.scales, p.angularScale))
+        case _ => None
+    )
+    assert(killed(flipped, configuredPlans, sameStudy))
+    val moved = mutant(studies.codec)(p =>
+      p.angularScale
+        .flatMap(s => LinearAngularScale.of(s.frame, s.unitsPerDegree * 2).toOption)
+        .flatMap(s => configured(p, p.geometry, p.scales, Some(s)))
+    )
+    assert(killed(moved, configuredPlans, sameStudy))
+    val native = mutant(studies.codec)(p =>
+      Option
+        .when(p.scales.exists(_.isInstanceOf[StudyScale.Angular[?]]))(p)
+        .flatMap(p =>
+          configured(p, p.geometry, p.estimates.map(StudyScale.Native(_)), p.angularScale)
+        )
+    )
+    assert(killed(native, configuredPlans, sameStudy))
+    assert(survives(studies.codec, configuredPlans, sameStudy))
+  }
+
+  test("the initial-fixation law kills a reset policy and a moved radius") {
+    def withPolicy(p: Cosine, policy: InitialFixationPolicy[Px]): Option[Cosine] =
+      p.revise(Vector(StudyChange.InitialFixations(p.initialFixations, policy))).toOption
+    val reset = mutant(studies.codec)(p =>
+      Option
+        .unless(p.keepsAllFixations)(p)
+        .flatMap(withPolicy(_, InitialFixationPolicy.keepAll))
+    )
+    assert(killed(reset, initialFixationPlans, sameStudy))
+    val moved = mutant(studies.codec)(p =>
+      p.initialFixations match
+        case InitialFixationPolicy.DropLeadingInClosedDisc(cross, radius) =>
+          InitialFixationPolicy
+            .dropLeadingInClosedDisc(cross, radius * 2)
+            .toOption
+            .flatMap(withPolicy(p, _))
+        case _ => None
+    )
+    assert(killed(moved, initialFixationPlans, sameStudy))
+    assert(survives(studies.codec, initialFixationPlans, sameStudy))
+  }
+
+  test("the trial-plan law kills a reset pairing and a widened control pool") {
+    val codec = StudyCodecs.trialCosine[Px].codec
+    val same  = (a: TrialPlan, b: TrialPlan) => a.description == b.description
+    def with_(p: TrialPlan, pairing: StudyPairing): Option[TrialPlan] =
+      StudyPlan
+        .configure(
+          p.input,
+          p.layout,
+          p.geometry,
+          p.focalPhase,
+          p.referencePhase,
+          p.weight,
+          p.scales,
+          p.angularScale,
+          p.policy,
+          p.method,
+          p.parameters,
+          pairing
+        )
+        .toOption
+    val reset = mutant(codec)(p =>
+      Option
+        .when(p.pairing != StudyPairing.default)(p)
+        .flatMap(with_(_, StudyPairing.default))
+    )
+    assert(killed(reset, trialPlans, same))
+    val widened = mutant(codec)(p =>
+      Option
+        .when(p.pairing.controls == ControlReferences.SameSelection)(p)
+        .flatMap(p => with_(p, p.pairing.copy(controls = ControlReferences.AllOccurrences)))
+    )
+    assert(killed(widened, trialPlans, same))
+    assert(survives(codec, trialPlans, same))
   }
 
   test("the temporal-plan law kills a dropped window and a flipped boundary") {
@@ -228,6 +370,97 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
     )
     assert(killed(moved, plans, sameRecording))
     assert(survives(ivt.codec, plans, sameRecording))
+  }
+
+  test("the study-plan ladder laws kill a dropped upcast and writing the latest version") {
+    val ladder = studies.ladder
+    val plans  = Gen.oneOf(cosinePlans, configuredPlans, initialFixationPlans)
+    assert(LadderMutants.passes(ladder, plans, sameStudy))
+    val v1 = ladder.versions.head
+    // The v1 -> v2 upcast dropped: a v1 payload is carried into v2 unchanged.
+    assertEquals(
+      LadderMutants.falsified(
+        LadderMutants.rebuilt(ladder)(upcast = { case _ => identity }),
+        plans,
+        sameStudy
+      ),
+      Vector(
+        "a lifted document decodes to the value and re-encodes to the earliest document",
+        "upcasting a vN payload writes exactly what each later version writes"
+      )
+    )
+    // Every plan written as the latest version instead of the earliest.
+    assertEquals(
+      LadderMutants.falsified(
+        LadderMutants.rebuilt(ladder)(expresses = { case `v1` => _ => false }),
+        plans,
+        sameStudy
+      ),
+      Vector(
+        "a value is written under the earliest version that expresses it"
+      )
+    )
+    // An upcast that states another pairing than the one version 1 meant.
+    val otherPairing: Json => Json = json =>
+      ladder
+        .upcast(v1, json)
+        .fold(
+          _ => json,
+          (_, lifted) =>
+            lifted.hcursor
+              .downField("pairing")
+              .downField("unmatched")
+              .withFocus(u =>
+                Json.fromString(if u.asString.contains("refuse") then "reportNoMatch"
+                else "refuse")
+              )
+              .top
+              .getOrElse(lifted)
+        )
+    assert(
+      LadderMutants
+        .falsified(
+          LadderMutants.rebuilt(ladder)(upcast = { case _ => otherPairing }),
+          plans,
+          sameStudy
+        )
+        .contains("upcasting a vN payload writes exactly what each later version writes")
+    )
+    // A v2 -> v3 upcast that states dropping the first fixation instead of
+    // keeping every one, which is what version 2 meant.
+    val v2        = ladder.versions(1)
+    val dropFirst = Json.obj("kind" -> Json.fromString("dropFirst"))
+    val v3        = ladder.versions(2)
+    assertEquals(
+      LadderMutants.falsified(
+        LadderMutants.rebuilt(ladder)(upcast = { case `v3` =>
+          json =>
+            ladder
+              .upcast(v2, json)
+              .fold(
+                _ => json,
+                (_, lifted) => lifted.mapObject(_.add("initialFixations", dropFirst))
+              )
+        }),
+        plans,
+        sameStudy
+      ),
+      Vector(
+        "a lifted document decodes to the value and re-encodes to the earliest document",
+        "upcasting a vN payload writes exactly what each later version writes"
+      )
+    )
+    // Plans with an initial-fixation policy written as version 2, which
+    // cannot express it.
+    assert(
+      LadderMutants
+        .falsified(
+          LadderMutants.rebuilt(ladder)(expresses = { case `v2` => _ => true }),
+          plans,
+          sameStudy
+        )
+        .contains("a value is written under the earliest version that expresses it")
+    )
   }
 
 object PlanCodecLawSuite:
@@ -310,6 +543,165 @@ object PlanCodecLawSuite:
 
   val cosinePlans: Gen[StudyPlan[StudyKey, Px, Unit, Similarity, SignedDifference]] =
     cosine(Gen.oneOf(Weight.values.toIndexedSeq))
+
+  /** A window of a frame: a region inside it, sometimes the whole frame or
+    * touching an edge.
+    */
+  def windows(frame: Frame[Px]): Gen[Subframe[Px]] =
+    val b = frame.bounds
+    for
+      fx0  <- Gen.oneOf(Gen.const(0.0), Gen.choose(0.0, 0.9))
+      fy0  <- Gen.oneOf(Gen.const(0.0), Gen.choose(0.0, 0.9))
+      fx1  <- Gen.oneOf(Gen.const(1.0), Gen.choose(fx0 + 0.05, 1.0))
+      fy1  <- Gen.oneOf(Gen.const(1.0), Gen.choose(fy0 + 0.05, 1.0))
+      name <- labels
+      x0 = b.xMin + fx0 * b.width
+      y0 = b.yMin + fy0 * b.height
+      x1 = if fx1 == 1.0 then b.xMax else b.xMin + fx1 * b.width
+      y1 = if fy1 == 1.0 then b.yMax else b.yMin + fy1 * b.height
+    yield sure(
+      Subframe.of(frame, FrameId(s"window $name"), sure(Bounds.of[Px](x0, y0, x1, y1)))
+    )
+
+  /** Plans with a whole-frame or windowed geometry under either off-window
+    * policy, scales in pixels or degrees, and units per degree when any
+    * scale is angular (and sometimes when none is).
+    */
+  val configuredPlans: Gen[StudyPlan[StudyKey, Px, Unit, Similarity, SignedDifference]] =
+    for
+      input  <- references.map(r => sure(ArtifactRef.parse[StudyInput[StudyKey, Px]](r)))
+      frame  <- frames
+      nx     <- Gen.choose(1, 64)
+      ny     <- Gen.choose(1, 64)
+      phases <- distinctLabels
+      (focal, reference) = phases
+      weight    <- Gen.oneOf(Weight.values.toIndexedSeq)
+      policy    <- policies
+      windowed  <- Gen.option(windows(frame))
+      offWindow <- Gen.oneOf(OffWindowPolicy.values.toIndexedSeq)
+      geometry = windowed.fold(StudyGeometry.WholeFrame(sure(Grid.over(frame, nx, ny)))) { w =>
+        sure(StudyGeometry.windowed(w, sure(Grid.over(w.frame, nx, ny)), offWindow))
+      }
+      native  <- estimates
+      degrees <- Gen
+        .choose(0, 2)
+        .flatMap(n =>
+          Gen.listOfN(
+            n,
+            Gen
+              .choose(0.05, 8.0)
+              .map(d => StudyEstimate.Gaussian[Deg](sure(Sigma.deg(d)), EdgePolicy.Truncate))
+          )
+        )
+      ppd   <- Gen.oneOf(Gen.choose(1.0, 80.0), Gen.const(35.0))
+      extra <- Gen.oneOf(true, false)
+      scales = native.map(StudyScale.Native(_)) ++
+        degrees.distinctBy(_.name).map(StudyScale.Angular[Px](_))
+      angular =
+        Option.when(degrees.nonEmpty || extra)(
+          sure(LinearAngularScale.of(geometry.admission, ppd))
+        )
+      pairing <- pairings(occurrences = false)
+    yield sure(
+      StudyPlan.configure(
+        input,
+        StudyKey.layout(DefinitionId.studyLayout),
+        geometry,
+        focal,
+        reference,
+        weight,
+        scales,
+        angular,
+        policy,
+        StudyMethod.cosine[Px](DefinitionId.cosine),
+        (),
+        pairing
+      )
+    )
+
+  /** Configured plans under every initial-fixation policy: keep all, drop
+    * the first, or drop the leading run near a cross on the admission frame
+    * (only where the plan declares units per degree).
+    */
+  val initialFixationPlans: Gen[StudyPlan[StudyKey, Px, Unit, Similarity, SignedDifference]] =
+    for
+      plan <- configuredPlans
+      b = plan.geometry.admission.bounds
+      fx     <- Gen.oneOf(Gen.const(0.0), Gen.const(0.5), Gen.choose(0.0, 0.999))
+      fy     <- Gen.oneOf(Gen.const(0.0), Gen.const(0.5), Gen.choose(0.0, 0.999))
+      radius <- Gen.oneOf(Gen.choose(0.05, 10.0), Gen.const(1.5))
+      cross = Pt[Px](b.xMin + fx * b.width, b.yMin + fy * b.height)
+      near  = sure(InitialFixationPolicy.dropLeadingInClosedDisc(cross, radius))
+      policy <-
+        if plan.angularScale.isDefined then
+          Gen.oneOf(
+            InitialFixationPolicy.keepAll[Px],
+            InitialFixationPolicy.dropFirst[Px],
+            near
+          )
+        else Gen.oneOf(InitialFixationPolicy.keepAll[Px], InitialFixationPolicy.dropFirst[Px])
+    yield sure(plan.revise(Vector(StudyChange.InitialFixations(plan.initialFixations, policy))))
+
+  /** Every pairing rule; the occurrence rules only where the layout has
+    * occurrences.
+    */
+  def pairings(occurrences: Boolean): Gen[StudyPairing] =
+    val rules = Vector[Gen[MatchedReferences]](
+      Gen.const(MatchedReferences.RequireOne),
+      Gen.const(MatchedReferences.MeanOfAll)
+    ) ++ (if occurrences then
+            Vector[Gen[MatchedReferences]](
+              Gen.const(MatchedReferences.SameOccurrence),
+              Gen
+                .oneOf(
+                  Gen.const(OccurrenceChoice.First),
+                  Gen.const(OccurrenceChoice.Last),
+                  Gen.choose(1, 4).map(n => OccurrenceChoice.At(sure(TrialOccurrence.of(n))))
+                )
+                .map(MatchedReferences.Select(_))
+            )
+          else Vector.empty)
+    for
+      matched   <- Gen.oneOf(rules).flatMap(identity)
+      controls  <- Gen.oneOf(ControlReferences.values.toIndexedSeq)
+      unmatched <- Gen.oneOf(UnmatchedFocalPolicy.values.toIndexedSeq)
+    yield StudyPairing(matched, controls, unmatched)
+
+  val trialKeys: Gen[TrialKey] = for
+    participant <- labels
+    phase       <- labels
+    trial       <- labels
+    occurrence  <- Gen.oneOf(Gen.const(1), Gen.choose(1, 1000), Gen.const(Int.MaxValue))
+    item        <- labels
+  yield sure(TrialKey.of(participant, phase, trial, sure(TrialOccurrence.of(occurrence)), item))
+
+  /** Trial-keyed plans under every pairing rule. */
+  val trialPlans: Gen[StudyPlan[TrialKey, Px, Unit, Similarity, SignedDifference]] =
+    for
+      input  <- references.map(r => sure(ArtifactRef.parse[StudyInput[TrialKey, Px]](r)))
+      frame  <- frames
+      nx     <- Gen.choose(1, 32)
+      ny     <- Gen.choose(1, 32)
+      phases <- distinctLabels
+      (focal, reference) = phases
+      scales  <- estimates
+      pairing <- pairings(occurrences = true)
+    yield sure(
+      StudyPlan.configure(
+        input,
+        TrialKey.layout(TrialKeyDefinitions.trialLayout),
+        StudyGeometry.WholeFrame(sure(Grid.over(frame, nx, ny))),
+        focal,
+        reference,
+        Weight.Duration,
+        scales.map(StudyScale.Native(_)),
+        None,
+        FailurePolicy.RequireAll,
+        StudyMethod.cosine[Px](DefinitionId.cosine),
+        (),
+        pairing
+      )
+    )
 
   /** Temporal plans over duration-weighted bases, with windows beyond
     * JavaScript's exact integer range and every fixation boundary.

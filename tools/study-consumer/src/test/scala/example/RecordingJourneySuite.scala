@@ -134,7 +134,7 @@ class RecordingJourneySuite extends munit.CatsEffectSuite:
         (Severity.Blocker, FindingClass.UnavailableInput, Remedy.SupplyReferencedArtifact)
       )
       assertEquals(
-        Diagnostics.recordingFinding(missing).code.render,
+        Diagnostic.of(missing).code.render,
         "recording-finding.missing-artifact"
       )
       assertEquals(
@@ -180,7 +180,7 @@ class RecordingJourneySuite extends munit.CatsEffectSuite:
         Left(PreflightError.ChangedInput(RecipeFamily.EventRecording, plan.input, laterRef))
       )
       assertEquals(
-        Diagnostics.preflight(get(report.confirm(plan, later).swap)).code.render,
+        Diagnostic.of(get(report.confirm(plan, later).swap)).code.render,
         "preflight.changed-input"
       )
       // A plan without viewing geometry is blocked with the remedy to supply it.
@@ -624,7 +624,7 @@ class RecordingJourneySuite extends munit.CatsEffectSuite:
       // rejects both marks and none of the one an offset needs is retained.
       val cause = SyncEvidenceError.TooFewRetainedMarks(trackerClock, analysisClock, 2, 0, 1)
       assertEquals(
-        Diagnostics.syncEvidence(cause).code.render,
+        Diagnostic.of(cause).code.render,
         "sync-evidence.too-few-retained-marks"
       )
       assertEquals(report.findings, Vector(RecordingFinding.Synchronization(cause)))

@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package eyes4s.codec
+package eyes4s.io
 
-import eyes4s.plan.*
+import eyes4s.codec.CodecDiagnosticCatalog
+import eyes4s.laws.LawsDiagnosticCatalog
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
-/** docs/DIAGNOSTICS.md carries the code table generated from both catalogs
-  * and their per-case samples, so the published table, which is also the list
+/** docs/DIAGNOSTICS.md carries the code table generated from every catalog
+  * (plan, codec, laws, io and the JVM-only Arrow export) and their per-case
+  * samples, so the published table, which is also the list
   * of covered families, cannot drift. Set EYES4S_WRITE_DIAGNOSTICS_DOC=1 to
   * rewrite the generated section; the run then fails so the change is reviewed.
   */
@@ -29,7 +31,7 @@ class DiagnosticsDocJvmSuite extends munit.FunSuite:
   private val Begin    = "<!-- BEGIN GENERATED DIAGNOSTIC CODES -->"
   private val End      = "<!-- END GENERATED DIAGNOSTIC CODES -->"
   private val relative = Paths.get("docs/DIAGNOSTICS.md")
-  private val all      = DiagnosticSamples.all ++ CodecDiagnosticSamples.all
+  private val all      = IoDiagnosticSamples.all ++ ArrowDiagnosticSamples.all
 
   private val path: Path =
     Iterator
@@ -66,7 +68,11 @@ class DiagnosticsDocJvmSuite extends munit.FunSuite:
     assert(start >= 0 && stop > start, "generated-section markers are missing")
     val expected = s"$Begin\n\n$generated\n\n$End"
     val current  = text.substring(start, stop + End.length)
-    if sys.env.get("EYES4S_WRITE_DIAGNOSTICS_DOC").contains("1") && current != expected then
+    if sys.env
+        .get("EYES4S_WRITE_DIAGNOSTICS_DOC")
+        .orElse(sys.props.get("EYES4S_WRITE_DIAGNOSTICS_DOC"))
+        .contains("1") && current != expected
+    then
       Files.writeString(
         path,
         text.substring(0, start) + expected + text.substring(stop + End.length),
@@ -76,14 +82,18 @@ class DiagnosticsDocJvmSuite extends munit.FunSuite:
     else assertEquals(current, expected)
   }
 
-  test("the generated section documents every code of both catalogs exactly once") {
+  test("the generated section documents every code of every catalog exactly once") {
     val text    = Files.readString(path, StandardCharsets.UTF_8)
     val section = text.substring(text.indexOf(Begin), text.indexOf(End))
     val codes   = section.linesIterator
       .filter(_.startsWith("| `"))
       .map(_.split('`')(1))
       .toVector
-    assertEquals(codes, CodecDiagnosticCatalog.all.flatMap(_.codes).map(_.render))
+    assertEquals(
+      codes,
+      (CodecDiagnosticCatalog.all.flatMap(_.codes) ++ LawsDiagnosticCatalog.codes ++
+        IoDiagnosticCatalog.codes ++ ArrowDiagnostics.arrowExport.codes).map(_.render)
+    )
   }
 
   test("every error enum the document says is not cataloged is absent from the catalogs") {

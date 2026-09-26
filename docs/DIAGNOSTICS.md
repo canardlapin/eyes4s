@@ -14,14 +14,31 @@ the stored pair rows and is checked against the stored denominators.
 
 ## Diagnostics
 
-`Diagnostic.of(error)` projects any cataloged error through its `Diagnose`
-instance; `Diagnostics.plan`, `Diagnostics.failure`, `Diagnostics.reduction`
-and the other `Diagnostics` methods do the same by name, and also accept
-errors whose key type is a wildcard. The codec's families (`CodecError`,
-`ResolveError`, `SourceFailure`, `RelationMismatch`, `ManifestError`,
-`PayloadError`, `ByteDigestError`) project through `CodecDiagnostics`; import
-`eyes4s.codec.CodecDiagnostics.given` to use `Diagnostic.of` on them. A
-diagnostic carries:
+`Diagnostic.of(error)` projects any cataloged error through its
+`Diagnose[E, K]` instance, the single projection surface: every public enum of
+the shipped modules whose name ends in `Error` or `Failure` has one. `K` is
+the key type of the trials the diagnostic names: `Nothing` for a family that
+names none, the study key for a keyed family. `Diagnose` is contravariant in
+the error, so a case type such as `CodecError.Entry` projects through its
+enum's instance. The instances of the plan and every pure module below it are
+in `Diagnose`'s companion and need no import. The codec's families
+(`CodecError`, `ResolveError`, `SourceFailure`, `RelationMismatch`,
+`ManifestError`, `PayloadError`, `ByteDigestError`) project through
+`CodecDiagnostics`, io's through `IoDiagnostics`, the laws module's through
+`LawsDiagnostics` and the JVM-only Arrow export through `ArrowDiagnostics`;
+import their `given`s to use `Diagnostic.of` on them.
+
+The codec cannot state the key type of a study it decodes, so trial keys
+inside a codec, resolution or relation error (and an io export error that
+wraps one) are `ErasedKey`s. `diagnostic.narrow[K]` returns the diagnostic
+with typed keys, or `None` when any key, source links included, is not a `K`.
+
+Families whose projection names no custom subject are derived from the enum:
+each field becomes the operand of its type under its own name, and a wrapped
+error keeps its subject. An io case that names a text source and a line has
+the subject `Line(source, line)`; a tidy CSV error names its logical record
+(the header is record 1) as `Record`; a fixation import refused for rejected
+rows names them as `Records`. A diagnostic carries:
 
 - `code`: the stable identity, rendered `family.case`, for example
   `reduction.failed-scores`. A consumer localises from the code and the
@@ -52,6 +69,13 @@ diagnostic carries:
   it verbatim.
 - `sources`: source links, filled in by `StudySources.link` (below).
 - `category` and `remedy`: the preflight classification, for findings only.
+- `source`: who reported it. Every library diagnostic is `EyesCore`; a host
+  application reports its own checks as `Host`, with a code from
+  `DiagnosticCode.host(family, name)`, so the two can be shown as separately
+  labelled sources.
+- `affectedTrials`: every trial key the diagnostic names, typed: its subject,
+  then its operands and nested causes, each key once in first-seen order. An
+  application opens exactly these trials, for example to choose an occurrence.
 - `message`: a default English rendering. It is not an identity, and numbers
   may render differently on Scala.js.
 
@@ -81,29 +105,22 @@ catalog, the pinned digest and this document are updated. Renaming a case
 changes its code; treat that as a breaking change.
 
 The families covered are exactly those listed in the code table below, which
-a test generates from both catalogs.
+a test generates from every catalog.
 
-Not cataloged, and so without codes: the errors that no cataloged error wraps.
+Every public enum of the shipped modules whose name ends in `Error` or
+`Failure` is cataloged; `DiagnosticCoverageJvmSuite` reads the reviewed API
+inventory (`tools/api-audit/inventory.json`) and fails for one without an
+instance. Not cataloged, and so without codes, are the record types that
+report warnings or parse diagnostics as data rather than refuse an operation.
 A test checks that none of them is in a catalog.
 
 <!-- BEGIN NOT CATALOGED -->
-- io import, export and EyeLink errors: `FixationImportError`,
-  `FixationRowError` (the importer turns it into a cataloged admission
-  reason), `TidyCsvError`, `TidyResultError`, `ContrastExportError`,
-  `TemplateCsvError`, `DelimitedSchemaError`, `PsychologyWorkflowError`,
-  `Sha256Error`, `Edf2AscProvenanceError`, `AscSampleMaterializationError`,
-  `AscSourceLineError`, `AscStreamConfigurationError`,
-  `AscNativeTimelineError`, `AscPerformanceValidationError`,
-  `EyeLinkAscSessionConfigError`, `EyeLinkOracleError`,
-  `EyeLinkConformanceError` and `EyeLinkCorpusError`.
-- lower-level errors outside the study, recording and saved-study routes:
-  `TimelineError`, `TimeQuantityError`, `MovingError`, `OccupancyError`,
-  `TemporalSupportError`, `AlgorithmMetadataError`, `EkEstimationError`,
-  `MergeError`, `SmootherCardError`, `CrqaError`, `CrqaParameterError`,
-  `ComparisonConfigurationError`, `PairingError`, `TemplateFitError`,
-  `ReductionPolicyError`, `WorkQuantaError`, `EvaluationWorkError` (its two
-  cases wrap the cataloged pair-schedule and comparison-work errors),
-  `RngError` and `RecipeParameterError`.
+- EyeLink ASC parse and session reports: `EyeLinkAscSessionDiagnostic`,
+  `AscSampleDiagnostic`, `AscNativeDiagnostic`, `AscNativePairingDiagnostic`,
+  `AscFramingDiagnostic`, `AscLexicalDiagnostic` and `DelimitedDiagnostic`,
+  each with its own severity.
+- Warnings carried beside a result: `DetectionWarning`,
+  `ConversionEvidenceWarning` and `ScientificValidationWarning`.
 <!-- END NOT CATALOGED -->
 
 `TemporalStudyError` identifies trials by key digest, so its subject is a
@@ -117,11 +134,11 @@ evidence derives; the member's path is its `Path` locus. A refused temporal
 cell has the subject `Repetition` and `Window`, then the trial it concerns; a
 refused recording stage has a `Field` locus naming the stage and field.
 
-Preflight: `Diagnostics.studyFinding` and `Diagnostics.temporalFinding`
-project a report's `findings` to `Diagnostic[K]`, keys typed. `PreflightError`
-carries its blockers without their key type, so `PreflightError.NotReady` and
-`Diagnostics.preflightFinding` project to `Diagnostic[Any]`; project a
-report's own findings when the keys matter.
+Preflight: a report's `diagnostics` are its findings projected to
+`Diagnostic[K]`, keys typed, and every finding's `affectedTrials` are exactly
+the finding's `keys`. `PreflightError[K]` keeps its blockers' key type, so
+`PreflightError.NotReady` projects to `Diagnostic[K]` too; a recording
+refusal is `PreflightError[Nothing]`.
 
 ## Source links
 
@@ -131,7 +148,7 @@ this input; `StudySources.unledgered(input)` indexes an input without one.
 Both take the key type's `KeyDigest`. A refusal is a `LedgerRefusal`: the
 `AdmissionError`, which names input positions and record numbers, resolved
 against the input and the ledger to the trials it concerns, by key, and links
-to their records. `Diagnostics.ledgerRefusal` projects it with the admission
+to their records. `Diagnostic.of(refusal)` projects it with the admission
 code, the trials first in its subject and those links as its sources; an input
 position stays in the subject only for a repeated key, one per occurrence.
 An input trial the ledger never mentions links to an explicit
@@ -234,12 +251,18 @@ sample count and order preprocessing keeps.
 
 ## Evidence
 
-- `plan/src/test/scala/eyes4s/plan/DiagnosticCatalogSuite.scala` and
-  `codec/src/test/scala/eyes4s/codec/CodecDiagnosticCatalogSuite.scala`:
+- `plan/src/test/scala/eyes4s/plan/DiagnosticCatalogSuite.scala`,
+  `codec/src/test/scala/eyes4s/codec/CodecDiagnosticCatalogSuite.scala` and
+  `io/src/test/scala/eyes4s/io/IoDiagnosticCatalogSuite.scala`:
   catalog totality against the compiler's case lists, per-case samples, field
   alignment with mutant checks, reachable error types, preserved nested
   subjects, exact non-finite operands, unique and pinned codes on both
-  platforms.
+  platforms, typed affected trials of every finding and preflight refusal.
+  A derived family's samples are generated, one per case, from its
+  compiler-supplied case list (`DiagnosticExample`).
+- `io/.jvm/src/test/scala/eyes4s/io/DiagnosticCoverageJvmSuite.scala`: every
+  public `Error` or `Failure` enum of the API inventory has an instance and a
+  sampled family, and no public signature projects to `Diagnostic[Any]`.
 - `plan/src/test/scala/eyes4s/plan/ResultInspectionSuite.scala`: drill-down,
   membership under both failure policies, colliding display text and repeated
   keys, reordered input, a two-component custom score and a mislabelled
@@ -272,8 +295,11 @@ sample count and order preprocessing keeps.
 
 ## Code table
 
-Generated from `DiagnosticCatalog` and `CodecDiagnosticCatalog` and checked
-by `codec/.jvm/src/test/scala/eyes4s/codec/DiagnosticsDocJvmSuite.scala`. Set
+Generated from `DiagnosticCatalog`, `CodecDiagnosticCatalog`,
+`LawsDiagnosticCatalog`, `IoDiagnosticCatalog` and `ArrowDiagnostics` and
+checked by `io/.jvm/src/test/scala/eyes4s/io/DiagnosticsDocJvmSuite.scala`.
+Codes are only ever appended: the plan table's first 433 codes are pinned
+separately and never change. Set
 `EYES4S_WRITE_DIAGNOSTICS_DOC=1` and run that suite to regenerate it; the run
 fails after rewriting, so review the change and run it again.
 
@@ -296,6 +322,16 @@ fails after rewriting, so review the change and run it again.
 | `plan.changed-prepared-plan` | `ChangedPreparedPlan` | `method`, `layout` |
 | `plan.comparison-work` | `ComparisonWork` | `underlying` |
 | `plan.unsupported-execution` | `UnsupportedExecution` | `method`, `capability` |
+| `plan.missing-angular-scale` | `MissingAngularScale` | `scale` |
+| `plan.geometry` | `Geometry` | `underlying` |
+| `plan.invalid-window-tally` | `InvalidWindowTally` | `outsideScreen`, `outsideWindow`, `total`, `outsideScreenMicros`, `outsideWindowMicros`, `totalMicros` |
+| `plan.invalid-occurrence` | `InvalidOccurrence` | `value` |
+| `plan.blank-key-field` | `BlankKeyField` | `field` |
+| `plan.occurrence-unavailable` | `OccurrenceUnavailable` | `layout`, `matched` |
+| `plan.match-item-conflict` | `MatchItemConflict` | `trialDigests` |
+| `plan.matched-cardinality` | `MatchedCardinality` | `matched`, `focalDigests`, `referenceGroups` |
+| `plan.unmatched-focal-refused` | `UnmatchedFocalRefused` | `focalDigests` |
+| `plan.initial-fixations` | `InitialFixations` | `underlying` |
 
 ### `study-failure` — `StudyFailure`
 
@@ -306,6 +342,28 @@ fails after rewriting, so review the change and run it again.
 | `study-failure.temporal` | `Temporal` | `key`, `underlying` |
 | `study-failure.estimation` | `Estimation` | `key`, `underlying` |
 | `study-failure.comparison` | `Comparison` | `left`, `right`, `underlying` |
+| `study-failure.off-window` | `OffWindow` | `key`, `tally` |
+| `study-failure.initial-fixations` | `InitialFixations` | `key`, `underlying` |
+
+### `initial-fixation` — `InitialFixationError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `initial-fixation.non-positive-radius` | `NonPositiveRadius` | `radiusDegrees` |
+| `initial-fixation.non-finite-cross` | `NonFiniteCross` | `x`, `y` |
+| `initial-fixation.cross-off-frame` | `CrossOffFrame` | `x`, `y`, `frame` |
+| `initial-fixation.missing-angular-scale` | `MissingAngularScale` | `radiusDegrees` |
+| `initial-fixation.invalid-tally` | `InvalidTally` | `dropped`, `total`, `droppedMicros`, `totalMicros` |
+| `initial-fixation.no-fixation-kept` | `NoFixationKept` | `dropped`, `droppedMicros` |
+
+### `study-revision` — `StudyRevisionError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `study-revision.duplicate-field` | `DuplicateField` | `field` |
+| `study-revision.stale` | `Stale` | `field`, `stated`, `current` |
+| `study-revision.incomplete-window` | `IncompleteWindow` | `window`, `offWindow` |
+| `study-revision.plan` | `Plan` | `underlying` |
 
 ### `study-result` — `StudyResultError`
 
@@ -530,6 +588,7 @@ fails after rewriting, so review the change and run it again.
 | `compare.zero-norm` | `ZeroNorm` | `measure`, `leftNorm`, `rightNorm` |
 | `compare.relative-entropy-support` | `RelativeEntropySupport` | `measure`, `cellIndex`, `leftMass`, `rightMass` |
 | `compare.cost-matrix-limit-exceeded` | `CostMatrixLimitExceeded` | `measure`, `cells`, `limit` |
+| `compare.work-limit-exceeded` | `WorkLimitExceeded` | `measure`, `cells`, `pairs`, `limit` |
 | `compare.invalid-substitution-cost` | `InvalidSubstitutionCost` | `measure`, `leftIndex`, `rightIndex`, `value` |
 | `compare.invalid-score` | `InvalidScore` | `measure`, `underlying` |
 | `compare.too-short` | `TooShort` | `what`, `got`, `needed` |
@@ -591,6 +650,10 @@ fails after rewriting, so review the change and run it again.
 | `geometry.non-finite-distance` | `NonFiniteDistance` | `value` |
 | `geometry.negative-distance` | `NegativeDistance` | `value` |
 | `geometry.bounds-extent-overflow` | `BoundsExtentOverflow` | `xMin`, `yMin`, `xMax`, `yMax` |
+| `geometry.subframe-outside-parent` | `SubframeOutsideParent` | `window`, `xMin`, `yMin`, `xMax`, `yMax`, `parent`, `parentSpec` |
+| `geometry.subframe-identity` | `SubframeIdentity` | `window` |
+| `geometry.non-positive-angular-scale` | `NonPositiveAngularScale` | `frame`, `unitsPerDegree` |
+| `geometry.non-finite-translation` | `NonFiniteTranslation` | `dx`, `dy` |
 
 ### `time` — `TimeError`
 
@@ -790,6 +853,13 @@ fails after rewriting, so review the change and run it again.
 | `study-finding.duplicate-trial` | `DuplicateTrial` | `key`, `side`, `positions` |
 | `study-finding.unmatched-focal` | `UnmatchedFocal` | `key` |
 | `study-finding.uncontrolled-focal` | `UncontrolledFocal` | `key` |
+| `study-finding.off-window-fixations` | `OffWindowFixations` | `key`, `tally`, `policy` |
+| `study-finding.no-fixation-in-window` | `NoFixationInWindow` | `key`, `tally` |
+| `study-finding.matched-cardinality` | `MatchedCardinality` | `key`, `references`, `matched` |
+| `study-finding.ambiguous-references` | `AmbiguousReferences` | `references`, `matched` |
+| `study-finding.unmatched-focal-refused` | `UnmatchedFocalRefused` | `key` |
+| `study-finding.match-item-conflict` | `MatchItemConflict` | `trials` |
+| `study-finding.no-fixation-kept` | `NoFixationKept` | `key`, `tally` |
 
 ### `recording-finding` — `RecordingFinding`
 
@@ -864,6 +934,34 @@ fails after rewriting, so review the change and run it again.
 | `quarantine.invalid-transition` | `InvalidTransition` | `index`, `reason` |
 | `quarantine.invalid-extent` | `InvalidExtent` | `reason` |
 | `quarantine.unmappable-fixation` | `UnmappableFixation` | `index`, `from`, `to`, `x`, `y` |
+| `quarantine.correction-conflict` | `CorrectionConflict` | `first`, `second` |
+| `quarantine.item-conflict` | `ItemConflict` | `items` |
+| `quarantine.occurrence-conflict` | `OccurrenceConflict` | `occurrences` |
+| `quarantine.not-in-inventory` | `NotInInventory` | `participant`, `phase`, `trial`, `occurrence` |
+| `quarantine.inventory-item-conflict` | `InventoryItemConflict` | `inventory`, `records` |
+
+### `inventory` — `InventoryError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `inventory.width` | `Width` | `record`, `expected`, `actual` |
+| `inventory.field` | `Field` | `record`, `column`, `value`, `requirement` |
+| `inventory.conflict` | `Conflict` | `participant`, `phase`, `trial`, `records`, `columns` |
+| `inventory.duplicate-attribute` | `DuplicateAttribute` | `names` |
+| `inventory.duplicate-trial` | `DuplicateTrial` | `participant`, `phase`, `trial`, `occurrence` |
+| `inventory.record-order` | `RecordOrder` | `trial`, `records` |
+| `inventory.shared-record` | `SharedRecord` | `record`, `trials` |
+| `inventory.absent-mismatch` | `AbsentMismatch` | `trial`, `disposition`, `records` |
+| `inventory.attribute-record` | `AttributeRecord` | `record` |
+| `inventory.unknown-record` | `UnknownRecord` | `trial`, `record` |
+| `inventory.foreign-record` | `ForeignRecord` | `trial`, `record`, `found` |
+| `inventory.unclaimed-record` | `UnclaimedRecord` | `record`, `trial` |
+| `inventory.disposition-mismatch` | `DispositionMismatch` | `trial`, `disposition`, `record`, `found` |
+| `inventory.item-mismatch` | `ItemMismatch` | `trial`, `record`, `expected`, `actual` |
+| `inventory.no-trial-projection` | `NoTrialProjection` | `layout` |
+| `inventory.record-items` | `RecordItems` | `trial`, `disposition`, `items` |
+| `inventory.attribute-names` | `AttributeNames` | `owner`, `declared`, `found` |
+| `inventory.attribute-kind-mismatch` | `AttributeKindMismatch` | `owner`, `name`, `declared`, `found` |
 
 ### `admission` — `AdmissionError`
 
@@ -881,6 +979,10 @@ fails after rewriting, so review the change and run it again.
 | `admission.unknown-trial` | `UnknownTrial` | `records` |
 | `admission.unadmitted-trial` | `UnadmittedTrial` | `index` |
 | `admission.fixation-count` | `FixationCount` | `index`, `fixations`, `records` |
+| `admission.outside-frame-record` | `OutsideFrameRecord` | `record`, `policy` |
+| `admission.correction-conflict` | `CorrectionConflict` | `record`, `first`, `second` |
+| `admission.inventory` | `Inventory` | `underlying` |
+| `admission.uninventoried-cause` | `UninventoriedCause` | `record`, `cause` |
 
 ### `inspection` — `InspectionError`
 
@@ -898,6 +1000,347 @@ fails after rewriting, so review the change and run it again.
 | `inspection.reduction-membership` | `ReductionMembership` | `reference`, `selected`, `members`, `contributing`, `contributors` |
 | `inspection.orientation` | `Orientation` | `scale`, `design`, `found` |
 | `inspection.no-contrast` | `NoContrast` | `scale` |
+
+### `timeline` — `TimelineError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `timeline.blank-clock` | `BlankClock` | `value` |
+
+### `moving` — `MovingError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `moving.no-segments` | `NoSegments` |  |
+| `moving.overlapping-segments` | `OverlappingSegments` | `first`, `second` |
+| `moving.clock` | `Clock` | `underlying` |
+| `moving.frame` | `Frame` | `underlying` |
+
+### `time-quantity` — `TimeQuantityError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `time-quantity.negative-non-negative-span` | `NegativeNonNegativeSpan` | `value` |
+| `time-quantity.non-positive-span` | `NonPositiveSpan` | `value` |
+| `time-quantity.negative-non-negative-long` | `NegativeNonNegativeLong` | `value` |
+| `time-quantity.non-negative-long-overflow` | `NonNegativeLongOverflow` | `left`, `right` |
+
+### `occupancy` — `OccupancyError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `occupancy.measure` | `Measure` | `policy`, `underlying` |
+
+### `replication` — `ReplicationError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `replication.period` | `Period` | `microseconds` |
+| `replication.duration` | `Duration` | `index`, `microseconds` |
+| `replication.maximum-rows` | `MaximumRows` | `value` |
+| `replication.cardinality` | `Cardinality` | `requested`, `maximum` |
+
+### `temporal-support` — `TemporalSupportError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `temporal-support.non-positive-fixed-period` | `NonPositiveFixedPeriod` | `period` |
+| `temporal-support.negative-maximum-gap` | `NegativeMaximumGap` | `maxGap` |
+| `temporal-support.negative-edge-support` | `NegativeEdgeSupport` | `edgeSupport` |
+
+### `algorithm-metadata` — `AlgorithmMetadataError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `algorithm-metadata.empty-algorithm-id` | `EmptyAlgorithmId` | `value` |
+| `algorithm-metadata.invalid-doi` | `InvalidDoi` | `value` |
+| `algorithm-metadata.invalid-version` | `InvalidVersion` | `major`, `minor`, `patch` |
+| `algorithm-metadata.invalid-authors` | `InvalidAuthors` | `authors` |
+| `algorithm-metadata.invalid-year` | `InvalidYear` | `year` |
+| `algorithm-metadata.empty-citation-title` | `EmptyCitationTitle` | `value` |
+| `algorithm-metadata.empty-algorithm-name` | `EmptyAlgorithmName` | `value` |
+| `algorithm-metadata.no-citations` | `NoCitations` | `id` |
+| `algorithm-metadata.no-assumptions` | `NoAssumptions` | `id` |
+| `algorithm-metadata.no-references` | `NoReferences` | `id` |
+
+### `ek-estimation` — `EkEstimationError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `ek-estimation.invalid-sampling` | `InvalidSampling` | `underlying` |
+| `ek-estimation.insufficient-velocities` | `InsufficientVelocities` | `available`, `required` |
+| `ek-estimation.degenerate-velocity-spread` | `DegenerateVelocitySpread` | `etaXDegPerSecond`, `etaYDegPerSecond`, `lambda` |
+
+### `merge` — `MergeError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `merge.interval` | `Interval` | `source`, `leftEventIndex`, `rightEventIndex`, `underlying` |
+| `merge.range` | `Range` | `source`, `leftEventIndex`, `rightEventIndex`, `underlying` |
+| `merge.event` | `Event` | `source`, `leftEventIndex`, `rightEventIndex`, `underlying` |
+| `merge.source-support` | `SourceSupport` | `source`, `underlying` |
+
+### `density-lookup` — `DensityLookupError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `density-lookup.arithmetic` | `Arithmetic` | `normalization`, `operand`, `value` |
+| `density-lookup.surface` | `Surface` | `underlying` |
+
+### `density-point-failure` — `DensityPointFailure`
+
+| Code | Case | Operands |
+|---|---|---|
+| `density-point-failure.non-finite-point` | `NonFinitePoint` | `x`, `y` |
+| `density-point-failure.outside-grid` | `OutsideGrid` | `grid`, `x`, `y` |
+| `density-point-failure.trajectory` | `Trajectory` | `reason` |
+
+### `iqr-bandwidth` — `IqrBandwidthError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `iqr-bandwidth.too-few-points` | `TooFewPoints` | `frame`, `count` |
+| `iqr-bandwidth.sigma` | `Sigma` | `frame`, `underlying` |
+
+### `smoother-card` — `SmootherCardError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `smoother-card.empty-text` | `EmptyText` | `field` |
+| `smoother-card.invalid-parameters` | `InvalidParameters` | `names` |
+
+### `comparison-configuration` — `ComparisonConfigurationError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `comparison-configuration.invalid-projection-directions` | `InvalidProjectionDirections` | `algorithm`, `supplied` |
+| `comparison-configuration.invalid-regularisation` | `InvalidRegularisation` | `algorithm`, `supplied` |
+| `comparison-configuration.invalid-iteration-count` | `InvalidIterationCount` | `algorithm`, `supplied` |
+| `comparison-configuration.invalid-cell-limit` | `InvalidCellLimit` | `algorithm`, `supplied` |
+| `comparison-configuration.invalid-probability-floor` | `InvalidProbabilityFloor` | `algorithm`, `supplied` |
+| `comparison-configuration.invalid-gap-cost` | `InvalidGapCost` | `algorithm`, `supplied` |
+
+### `crqa-parameter` — `CrqaParameterError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `crqa-parameter.non-positive-embedding-dimension` | `NonPositiveEmbeddingDimension` | `value` |
+| `crqa-parameter.non-positive-embedding-delay` | `NonPositiveEmbeddingDelay` | `value` |
+| `crqa-parameter.non-positive-line-minimum` | `NonPositiveLineMinimum` | `value` |
+| `crqa-parameter.invalid-target-recurrence-rate` | `InvalidTargetRecurrenceRate` | `value` |
+
+### `crqa` — `CrqaError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `crqa.geometry` | `Geometry` | `underlying` |
+| `crqa.too-short` | `TooShort` | `operand`, `observedFixations`, `requiredFixations`, `embeddingDimension`, `embeddingDelay` |
+| `crqa.matrix-too-large` | `MatrixTooLarge` | `leftStates`, `rightStates`, `requiredCells`, `maximumCells` |
+| `crqa.non-finite-position` | `NonFinitePosition` | `operand`, `index`, `x`, `y` |
+| `crqa.non-finite-embedded-distance` | `NonFiniteEmbeddedDistance` | `leftState`, `rightState`, `value` |
+| `crqa.selected-radius` | `SelectedRadius` | `underlying` |
+
+### `fixation-comparison` — `FixationComparisonError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `fixation-comparison.parameter` | `Parameter` | `name`, `value` |
+| `fixation-comparison.frames` | `Frames` | `error` |
+| `fixation-comparison.clock` | `Clock` | `error` |
+| `fixation-comparison.empty-queries` | `EmptyQueries` |  |
+| `fixation-comparison.missing-support` | `MissingSupport` | `requested`, `contributing` |
+| `fixation-comparison.matrix-size` | `MatrixSize` | `left`, `right`, `limit` |
+| `fixation-comparison.numerical` | `Numerical` | `left`, `right`, `value` |
+| `fixation-comparison.non-convergence` | `NonConvergence` | `left`, `right`, `iterations`, `residual`, `tolerance` |
+| `fixation-comparison.solver-numerical` | `SolverNumerical` | `left`, `right`, `cost`, `residual` |
+| `fixation-comparison.work-limit` | `WorkLimit` | `left`, `right`, `iterations`, `residual`, `limit` |
+| `fixation-comparison.score` | `Score` | `error` |
+
+### `overlap-failure` — `OverlapFailure`
+
+| Code | Case | Operands |
+|---|---|---|
+| `overlap-failure.missing` | `Missing` | `left`, `right` |
+| `overlap-failure.nonfinite-distance` | `NonfiniteDistance` | `leftX`, `leftY`, `rightX`, `rightY` |
+
+### `map-scale-failure` — `MapScaleFailure`
+
+| Code | Case | Operands |
+|---|---|---|
+| `map-scale-failure.missing-left` | `MissingLeft` |  |
+| `map-scale-failure.missing-right` | `MissingRight` |  |
+| `map-scale-failure.comparison` | `Comparison` | `underlying` |
+
+### `map-comparison` — `MapComparisonError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `map-comparison.unsupported-method` | `UnsupportedMethod` | `value` |
+| `map-comparison.scales` | `Scales` | `values` |
+| `map-comparison.grid` | `Grid` | `scale`, `underlying` |
+| `map-comparison.incomplete` | `Incomplete` | `requested`, `failures` |
+| `map-comparison.score` | `Score` | `underlying` |
+
+### `scanpath-component` — `ScanpathComponentError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `scanpath-component.comparison` | `Comparison` | `error` |
+| `scanpath-component.unavailable` | `Unavailable` | `component`, `reason` |
+
+### `decomposition` — `DecompositionError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `decomposition.predictor-name` | `PredictorName` | `value` |
+| `decomposition.predictor-keys` | `PredictorKeys` | `keys` |
+| `decomposition.geometry` | `Geometry` | `operand`, `underlying` |
+| `decomposition.solve` | `Solve` | `keys`, `intercept`, `underlying` |
+| `decomposition.numerical` | `Numerical` | `operation`, `value` |
+
+### `pairing` — `PairingError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `pairing.non-positive-limit` | `NonPositiveLimit` | `value` |
+
+### `session` — `SessionError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `session.invalid-key` | `InvalidKey` | `value` |
+| `session.duplicate-key` | `DuplicateKey` | `role`, `key` |
+| `session.missing-key` | `MissingKey` | `role`, `key` |
+| `session.frame` | `Frame` | `role`, `key`, `underlying` |
+| `session.grid-identity` | `GridIdentity` | `key`, `existingKey`, `underlying` |
+
+### `reduction-policy` — `ReductionPolicyError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `reduction-policy.non-positive-minimum-successful` | `NonPositiveMinimumSuccessful` | `value` |
+
+### `work-quanta` — `WorkQuantaError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `work-quanta.invalid-sample-quantum` | `InvalidSampleQuantum` | `value` |
+
+### `evaluation-work` — `EvaluationWorkError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `evaluation-work.schedule` | `Schedule` | `underlying` |
+| `evaluation-work.comparison` | `Comparison` | `underlying` |
+
+### `repetition-mean` — `RepetitionMeanError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `repetition-mean.incomplete` | `Incomplete` | `level`, `requested`, `successful`, `required` |
+| `repetition-mean.mean` | `Mean` | `error` |
+
+### `learned-template` — `LearnedTemplateError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `learned-template.observation` | `Observation` | `key`, `splitGroup`, `matchGroup`, `response` |
+| `learned-template.definition` | `Definition` | `splitUnit`, `responseUnit` |
+| `learned-template.duplicate-key` | `DuplicateKey` | `key` |
+| `learned-template.split` | `Split` | `requested`, `available`, `training`, `heldOut`, `excluded` |
+| `learned-template.geometry` | `Geometry` | `key`, `underlying` |
+| `learned-template.feature` | `Feature` | `key`, `underlying` |
+| `learned-template.fit` | `Fit` | `trainingHash`, `underlying` |
+| `learned-template.identity` | `Identity` | `expected`, `actual` |
+| `learned-template.numerical` | `Numerical` | `key`, `prediction`, `response` |
+
+### `least-squares` — `LeastSquaresError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `least-squares.shape` | `Shape` | `rows`, `columns`, `response`, `rowWidths` |
+| `least-squares.non-finite` | `NonFinite` | `row`, `column`, `value` |
+| `least-squares.rank-tolerance` | `RankTolerance` | `value` |
+| `least-squares.rank-deficient` | `RankDeficient` | `column`, `pivot`, `threshold` |
+| `least-squares.column-arithmetic` | `ColumnArithmetic` | `operation`, `column` |
+| `least-squares.row-arithmetic` | `RowArithmetic` | `operation`, `row` |
+
+### `template-fit` — `TemplateFitError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `template-fit.fit` | `Fit` | `trainingHash`, `underlying` |
+| `template-fit.basis` | `Basis` | `id`, `columns`, `responseUnit` |
+| `template-fit.observation` | `Observation` | `key`, `fold`, `features`, `response` |
+| `template-fit.width` | `Width` | `key`, `expected`, `actual` |
+| `template-fit.duplicate-key` | `DuplicateKey` | `key` |
+| `template-fit.split` | `Split` | `requested`, `available`, `training`, `heldOut` |
+| `template-fit.receipt` | `Receipt` | `expected`, `actual`, `reason` |
+| `template-fit.numerical` | `Numerical` | `key`, `operation` |
+| `template-fit.evaluation` | `Evaluation` | `failed`, `total` |
+
+### `rng` — `RngError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `rng.non-positive-bound` | `NonPositiveBound` | `value` |
+
+### `epoch` — `EpochError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `epoch.clock` | `Clock` | `trial`, `selector`, `underlying` |
+| `epoch.anchor-matches` | `AnchorMatches` | `trial`, `selector`, `count` |
+| `epoch.anchor-overflow` | `AnchorOverflow` | `trial`, `selector`, `anchor`, `window` |
+| `epoch.duration-overflow` | `DurationOverflow` | `trial`, `window`, `durationMicros` |
+| `epoch.non-divisible` | `NonDivisible` | `trial`, `window`, `width`, `remainderMicros` |
+| `epoch.bin-limit` | `BinLimit` | `trial`, `window`, `width`, `requested`, `maximum` |
+
+### `point-sampling` — `PointSamplingError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `point-sampling.boundaries` | `Boundaries` | `values` |
+| `point-sampling.clock` | `Clock` | `error` |
+| `point-sampling.frames` | `Frames` | `error` |
+| `point-sampling.missing-template` | `MissingTemplate` | `participant`, `stimulus` |
+| `point-sampling.ambiguous-template` | `AmbiguousTemplate` | `participant`, `stimulus`, `indices` |
+| `point-sampling.duplicate-source` | `DuplicateSource` | `indices` |
+| `point-sampling.density` | `Density` | `templateIndex`, `error` |
+| `point-sampling.point` | `Point` | `error` |
+| `point-sampling.insufficient` | `Insufficient` | `level`, `requested`, `successful`, `minimum` |
+| `point-sampling.non-finite` | `NonFinite` | `level`, `index`, `value` |
+
+### `recipe-parameter` — `RecipeParameterError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `recipe-parameter.geometry` | `Geometry` | `error` |
+| `recipe-parameter.time` | `Time` | `error` |
+| `recipe-parameter.configuration` | `Configuration` | `error` |
+| `recipe-parameter.temporal` | `Temporal` | `error` |
+| `recipe-parameter.reduction` | `Reduction` | `error` |
+| `recipe-parameter.synchronization` | `Synchronization` | `error` |
+| `recipe-parameter.recording` | `Recording` | `error` |
+
+### `repetition-plan` — `RepetitionPlanError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `repetition-plan.projection-ids` | `ProjectionIds` | `values` |
+| `repetition-plan.duplicate-layout` | `DuplicateLayout` | `id` |
+| `repetition-plan.missing-layout` | `MissingLayout` | `id` |
+| `repetition-plan.rules` | `Rules` | `role`, `values` |
+| `repetition-plan.overlapping-relations` | `OverlappingRelations` | `matched`, `controls` |
+| `repetition-plan.grid` | `Grid` | `row`, `underlying` |
+| `repetition-plan.specification` | `Specification` | `underlying` |
+
+### `diagnostic-code` — `DiagnosticCodeError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `diagnostic-code.invalid-family` | `InvalidFamily` | `family` |
+| `diagnostic-code.invalid-name` | `InvalidName` | `name` |
 
 ### `codec` — `CodecError`
 
@@ -938,6 +1381,7 @@ fails after rewriting, so review the change and run it again.
 | `codec.derived` | `Derived` | `path`, `declared`, `derived` |
 | `codec.recording-result` | `RecordingResult` | `underlying` |
 | `codec.temporal-result` | `TemporalResult` | `underlying` |
+| `codec.non-canonical` | `NonCanonical` | `path`, `found`, `canonical`, `rule` |
 
 ### `resolve` — `ResolveError`
 
@@ -1022,5 +1466,318 @@ fails after rewriting, so review the change and run it again.
 |---|---|---|
 | `byte-digest.wrong-length` | `WrongLength` | `value`, `length` |
 | `byte-digest.invalid-character` | `InvalidCharacter` | `value`, `index`, `character` |
+
+### `detector-validation` — `DetectorValidationError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `detector-validation.label-count-mismatch` | `LabelCountMismatch` | `referenceCount`, `predictedCount` |
+| `detector-validation.empty-truth-denominator` | `EmptyTruthDenominator` | `label` |
+| `detector-validation.empty-prediction-denominator` | `EmptyPredictionDenominator` | `label` |
+| `detector-validation.no-matched-events` | `NoMatchedEvents` | `referenceCount`, `predictedCount` |
+| `detector-validation.no-centred-event-pairs` | `NoCentredEventPairs` | `referenceCount`, `predictedCount` |
+| `detector-validation.no-peak-velocity-pairs` | `NoPeakVelocityPairs` | `referenceCount`, `predictedCount` |
+| `detector-validation.event-clock-mismatch` | `EventClockMismatch` | `label`, `reference`, `predicted` |
+| `detector-validation.invalid-numeric-metric` | `InvalidNumericMetric` | `name`, `underlying` |
+
+### `synthetic-generation` — `SyntheticGenerationError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `synthetic-generation.invalid-clock-scale` | `InvalidClockScale` | `scale` |
+| `synthetic-generation.frame` | `Frame` | `underlying` |
+| `synthetic-generation.recording` | `Recording` | `underlying` |
+| `synthetic-generation.geometry` | `Geometry` | `underlying` |
+| `synthetic-generation.support` | `Support` | `underlying` |
+| `synthetic-generation.time` | `Time` | `underlying` |
+
+### `validation-artifact` — `ValidationArtifactError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `validation-artifact.empty-build-field` | `EmptyBuildField` | `name`, `value` |
+| `validation-artifact.invalid-build-field` | `InvalidBuildField` | `name`, `value`, `requirement` |
+| `validation-artifact.invalid-source-revision` | `InvalidSourceRevision` | `name`, `value` |
+| `validation-artifact.empty-oracle-content` | `EmptyOracleContent` | `path`, `contentLength` |
+| `validation-artifact.missing-oracle-schema` | `MissingOracleSchema` | `path`, `expectedSchema` |
+| `validation-artifact.synthetic` | `Synthetic` | `underlying` |
+| `validation-artifact.metrics` | `Metrics` | `underlying` |
+
+### `fixation-import` — `FixationImportError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `fixation-import.csv` | `Csv` | `underlying` |
+| `fixation-import.columns` | `Columns` | `names` |
+| `fixation-import.header` | `Header` | `found`, `required` |
+| `fixation-import.incomplete` | `Incomplete` | `rejectedRows` |
+| `fixation-import.participant-scope` | `ParticipantScope` | `rules` |
+| `fixation-import.inventory` | `Inventory` | `errors` |
+| `fixation-import.no-item-column` | `NoItemColumn` | `inventory`, `fixations` |
+
+### `fixation-row` — `FixationRowError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `fixation-row.width` | `Width` | `expected`, `actual` |
+| `fixation-row.key` | `Key` | `reason` |
+| `fixation-row.number` | `Number` | `column`, `value`, `requirement` |
+| `fixation-row.time` | `Time` | `onset`, `duration`, `unit`, `reason` |
+| `fixation-row.position` | `Position` | `x`, `y`, `frame` |
+| `fixation-row.event` | `Event` | `reason` |
+| `fixation-row.trial` | `Trial` | `rows`, `cause` |
+
+### `tidy-csv` — `TidyCsvError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `tidy-csv.missing-header` | `MissingHeader` |  |
+| `tidy-csv.unexpected-header` | `UnexpectedHeader` | `expected`, `actual` |
+| `tidy-csv.wrong-column-count` | `WrongColumnCount` | `line`, `expected`, `actual` |
+| `tidy-csv.unexpected-schema` | `UnexpectedSchema` | `line`, `expected`, `actual` |
+| `tidy-csv.missing-required-context` | `MissingRequiredContext` | `line`, `column` |
+| `tidy-csv.invalid-value-cells` | `InvalidValueCells` | `line`, `status`, `value`, `missingReason` |
+| `tidy-csv.invalid-scientific-field` | `InvalidScientificField` | `line`, `column`, `value`, `reason` |
+| `tidy-csv.malformed-csv` | `MalformedCsv` | `characterIndex`, `character` |
+| `tidy-csv.unterminated-quoted-field` | `UnterminatedQuotedField` | `characterIndex` |
+
+### `tidy-result` — `TidyResultError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `tidy-result.blank-participant` | `BlankParticipant` | `value` |
+| `tidy-result.blank-trial` | `BlankTrial` | `participant`, `value` |
+| `tidy-result.blank-condition-key` | `BlankConditionKey` | `participant`, `trial`, `index`, `value` |
+| `tidy-result.blank-condition-value` | `BlankConditionValue` | `participant`, `trial`, `index`, `key`, `value` |
+| `tidy-result.duplicate-condition-key` | `DuplicateConditionKey` | `participant`, `trial`, `key`, `firstIndex`, `secondIndex` |
+| `tidy-result.no-validated-recording` | `NoValidatedRecording` | `source` |
+| `tidy-result.frame-conflict` | `FrameConflict` | `source`, `underlying` |
+| `tidy-result.clock-conflict` | `ClockConflict` | `source`, `underlying` |
+| `tidy-result.analysis-recording-mismatch` | `AnalysisRecordingMismatch` | `source`, `assignment`, `detection` |
+| `tidy-result.missing-synchronization` | `MissingSynchronization` | `source`, `nativeClock`, `analysisClock` |
+| `tidy-result.synchronization-mismatch` | `SynchronizationMismatch` | `source`, `nativeClock`, `analysisClock`, `evidenceSource`, `evidenceTarget` |
+| `tidy-result.custom-detector-cannot-produce-scientific-export` | `CustomDetectorCannotProduceScientificExport` | `source`, `detector` |
+| `tidy-result.temporal-support-mismatch` | `TemporalSupportMismatch` | `source`, `detection`, `assignment` |
+| `tidy-result.missing-detector-provenance` | `MissingDetectorProvenance` | `source`, `detector` |
+| `tidy-result.blank-detector-parameter` | `BlankDetectorParameter` | `source`, `index`, `name` |
+| `tidy-result.duplicate-detector-parameter` | `DuplicateDetectorParameter` | `source`, `name`, `firstIndex`, `secondIndex` |
+| `tidy-result.blank-warning` | `BlankWarning` | `source`, `index`, `warning` |
+| `tidy-result.blank-operation` | `BlankOperation` | `source`, `index`, `operation` |
+| `tidy-result.invalid-operation-parameters` | `InvalidOperationParameters` | `source`, `operationIndex`, `operation`, `underlying` |
+
+### `contrast-export` — `ContrastExportError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `contrast-export.codec` | `Codec` | `underlying` |
+| `contrast-export.plan-mismatch` | `PlanMismatch` | `expected`, `actual` |
+| `contrast-export.components` | `Components` | `expected`, `actual` |
+| `contrast-export.values` | `Values` | `operand`, `components`, `values` |
+
+### `result-export` — `ResultExportError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `result-export.schema` | `Schema` | `columns`, `reason` |
+| `result-export.cell` | `Cell` | `row`, `column`, `value`, `reason` |
+| `result-export.width` | `Width` | `row`, `expected`, `actual` |
+| `result-export.codec` | `Codec` | `underlying` |
+| `result-export.score` | `Score` | `underlying` |
+| `result-export.context` | `Context` | `operand`, `reason` |
+
+### `template-csv` — `TemplateCsvError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `template-csv.csv` | `Csv` | `underlying` |
+| `template-csv.header` | `Header` | `expected`, `actual` |
+| `template-csv.row` | `Row` | `index`, `fields`, `reason` |
+| `template-csv.fit` | `Fit` | `underlying` |
+
+### `delimited-schema` — `DelimitedSchemaError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `delimited-schema.no-tracked-validity-token` | `NoTrackedValidityToken` |  |
+| `delimited-schema.blank-validity-token` | `BlankValidityToken` | `meaning` |
+| `delimited-schema.ambiguous-validity-token` | `AmbiguousValidityToken` | `token`, `meanings` |
+| `delimited-schema.blank-column-name` | `BlankColumnName` | `index` |
+| `delimited-schema.duplicate-logical-column` | `DuplicateLogicalColumn` | `name`, `firstIndex`, `secondIndex` |
+| `delimited-schema.empty-supplied-header` | `EmptySuppliedHeader` |  |
+| `delimited-schema.blank-supplied-header` | `BlankSuppliedHeader` | `index` |
+| `delimited-schema.duplicate-supplied-header` | `DuplicateSuppliedHeader` | `name`, `firstIndex`, `secondIndex` |
+| `delimited-schema.unknown-missing-token-column` | `UnknownMissingTokenColumn` | `column` |
+| `delimited-schema.missing-validity-overlap` | `MissingValidityOverlap` | `token` |
+
+### `psychology-workflow` — `PsychologyWorkflowError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `psychology-workflow.analysis-failed` | `AnalysisFailed` | `source`, `underlying` |
+| `psychology-workflow.blank-source-name` | `BlankSourceName` | `value` |
+| `psychology-workflow.invalid-study` | `InvalidStudy` | `underlying` |
+| `psychology-workflow.milliseconds-outside-range` | `MillisecondsOutsideRange` | `operand`, `value` |
+| `psychology-workflow.blank-clock` | `BlankClock` | `source`, `role`, `value` |
+| `psychology-workflow.invalid-display` | `InvalidDisplay` | `source`, `underlying` |
+| `psychology-workflow.invalid-viewing` | `InvalidViewing` | `source`, `underlying` |
+| `psychology-workflow.invalid-interpolation` | `InvalidInterpolation` | `source`, `underlying` |
+| `psychology-workflow.invalid-velocity` | `InvalidVelocity` | `source`, `underlying` |
+| `psychology-workflow.invalid-detector-configuration` | `InvalidDetectorConfiguration` | `source`, `underlying` |
+| `psychology-workflow.invalid-sync-mark` | `InvalidSyncMark` | `underlying` |
+| `psychology-workflow.invalid-synchronization` | `InvalidSynchronization` | `source`, `underlying` |
+| `psychology-workflow.blank-aoi-id` | `BlankAoiId` | `value` |
+| `psychology-workflow.blank-aoi-label` | `BlankAoiLabel` | `id`, `value` |
+| `psychology-workflow.non-finite-aoi-bounds` | `NonFiniteAoiBounds` | `id`, `xMin`, `yMin`, `xMax`, `yMax` |
+| `psychology-workflow.degenerate-aoi-bounds` | `DegenerateAoiBounds` | `id`, `xMin`, `yMin`, `xMax`, `yMax` |
+| `psychology-workflow.no-areas` | `NoAreas` | `source` |
+| `psychology-workflow.duplicate-area` | `DuplicateArea` | `source`, `id`, `firstIndex`, `secondIndex` |
+| `psychology-workflow.area-outside-display` | `AreaOutsideDisplay` | `source`, `id`, `x`, `y`, `frame` |
+| `psychology-workflow.invalid-source-metadata` | `InvalidSourceMetadata` | `source`, `index`, `key`, `value` |
+| `psychology-workflow.reserved-source-metadata` | `ReservedSourceMetadata` | `source`, `index`, `key` |
+| `psychology-workflow.duplicate-source-metadata` | `DuplicateSourceMetadata` | `source`, `key`, `firstIndex`, `secondIndex` |
+| `psychology-workflow.schema-failed` | `SchemaFailed` | `source`, `underlying` |
+| `psychology-workflow.import-failed` | `ImportFailed` | `source`, `diagnostics` |
+| `psychology-workflow.synchronized-recording-failed` | `SynchronizedRecordingFailed` | `source`, `underlying` |
+| `psychology-workflow.angular-frame-failed` | `AngularFrameFailed` | `source`, `underlying` |
+| `psychology-workflow.warp-failed` | `WarpFailed` | `source`, `underlying` |
+| `psychology-workflow.preprocessing-cardinality` | `PreprocessingCardinality` | `source`, `expected`, `actual` |
+| `psychology-workflow.preprocessed-recording-failed` | `PreprocessedRecordingFailed` | `source`, `underlying` |
+| `psychology-workflow.detection-failed` | `DetectionFailed` | `source`, `underlying` |
+| `psychology-workflow.area-warp-undefined` | `AreaWarpUndefined` | `source`, `id`, `corner` |
+| `psychology-workflow.area-region-failed` | `AreaRegionFailed` | `source`, `id`, `underlying` |
+| `psychology-workflow.area-construction-failed` | `AreaConstructionFailed` | `source`, `underlying` |
+| `psychology-workflow.assignment-failed` | `AssignmentFailed` | `source`, `underlying` |
+| `psychology-workflow.tidy-result-failed` | `TidyResultFailed` | `source`, `underlying` |
+| `psychology-workflow.export-failed` | `ExportFailed` | `source`, `underlying` |
+| `psychology-workflow.export-round-trip-mismatch` | `ExportRoundTripMismatch` | `source` |
+
+### `sha256` — `Sha256Error`
+
+| Code | Case | Operands |
+|---|---|---|
+| `sha256.wrong-length` | `WrongLength` | `operand`, `actual` |
+| `sha256.invalid-character` | `InvalidCharacter` | `operand`, `index`, `value` |
+
+### `edf2asc-provenance` — `Edf2AscProvenanceError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `edf2asc-provenance.blank-converter-name` | `BlankConverterName` | `value` |
+| `edf2asc-provenance.blank-converter-version` | `BlankConverterVersion` | `converter` |
+| `edf2asc-provenance.blank-converter-argument` | `BlankConverterArgument` | `index` |
+| `edf2asc-provenance.invalid-converter-argument` | `InvalidConverterArgument` | `index`, `value` |
+| `edf2asc-provenance.blank-platform` | `BlankPlatform` | `value` |
+| `edf2asc-provenance.unsuccessful-conversion` | `UnsuccessfulConversion` | `exitCode`, `ascDigest` |
+| `edf2asc-provenance.missing-edf-digest` | `MissingEdfDigest` | `ascDigest` |
+| `edf2asc-provenance.missing-conversion-receipt` | `MissingConversionReceipt` | `ascDigest` |
+
+### `asc-sample-materialization` — `AscSampleMaterializationError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `asc-sample-materialization.coordinate-mode-is-not-screen-pixels` | `CoordinateModeIsNotScreenPixels` | `eye`, `mode`, `frame` |
+| `asc-sample-materialization.pixel-value-outside-double-range` | `PixelValueOutsideDoubleRange` | `eye`, `x`, `y`, `frame` |
+
+### `asc-source-line` — `AscSourceLineError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `asc-source-line.blank-source` | `BlankSource` | `value` |
+| `asc-source-line.non-positive-line-number` | `NonPositiveLineNumber` | `source`, `number` |
+| `asc-source-line.negative-byte-offset` | `NegativeByteOffset` | `source`, `offset` |
+| `asc-source-line.non-positive-line-limit` | `NonPositiveLineLimit` | `bytes` |
+| `asc-source-line.line-too-long` | `LineTooLong` | `source`, `line`, `limit`, `actual` |
+| `asc-source-line.embedded-line-terminator` | `EmbeddedLineTerminator` | `source`, `line`, `index`, `value` |
+
+### `asc-stream-configuration` — `AscStreamConfigurationError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `asc-stream-configuration.blank-source` | `BlankSource` | `value` |
+| `asc-stream-configuration.invalid-line-limit` | `InvalidLineLimit` | `bytes`, `cause` |
+| `asc-stream-configuration.non-positive-read-chunk` | `NonPositiveReadChunk` | `bytes` |
+
+### `asc-native-timeline` — `AscNativeTimelineError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `asc-native-timeline.fractional-microsecond` | `FractionalMicrosecond` | `source`, `line`, `field`, `milliseconds` |
+| `asc-native-timeline.instant-outside-long-range` | `InstantOutsideLongRange` | `source`, `line`, `field`, `milliseconds` |
+| `asc-native-timeline.invalid-timeline` | `InvalidTimeline` | `clock`, `underlying` |
+
+### `asc-performance-validation` — `AscPerformanceValidationError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `asc-performance-validation.blank` | `Blank` | `operand`, `value` |
+| `asc-performance-validation.non-positive` | `NonPositive` | `operand`, `value` |
+| `asc-performance-validation.negative` | `Negative` | `operand`, `value` |
+| `asc-performance-validation.allocation-measurement-unavailable` | `AllocationMeasurementUnavailable` | `operand`, `reason` |
+
+### `eyelink-session-config` — `EyeLinkAscSessionConfigError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `eyelink-session-config.blank-frame` | `BlankFrame` | `value` |
+| `eyelink-session-config.blank-clock` | `BlankClock` | `value` |
+
+### `eyelink-oracle` — `EyeLinkOracleError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `eyelink-oracle.invalid-preamble` | `InvalidPreamble` | `source`, `actual` |
+| `eyelink-oracle.invalid-header` | `InvalidHeader` | `source`, `line`, `expected`, `actual` |
+| `eyelink-oracle.wrong-field-count` | `WrongFieldCount` | `source`, `line`, `expected`, `actual` |
+| `eyelink-oracle.invalid-escape` | `InvalidEscape` | `source`, `line`, `field`, `index`, `value` |
+| `eyelink-oracle.invalid-value` | `InvalidValue` | `source`, `line`, `field`, `value`, `expected` |
+| `eyelink-oracle.invalid-digest` | `InvalidDigest` | `source`, `line`, `field`, `detail` |
+| `eyelink-oracle.invalid-descriptor` | `InvalidDescriptor` | `oracleId`, `field`, `value`, `expected` |
+| `eyelink-oracle.invalid-fact` | `InvalidFact` | `recordOrdinal`, `fieldOrdinal`, `field`, `value`, `expected` |
+| `eyelink-oracle.empty-manifest` | `EmptyManifest` | `oracleId` |
+| `eyelink-oracle.non-contiguous-records` | `NonContiguousRecords` | `oracleId`, `expected`, `actual` |
+| `eyelink-oracle.non-contiguous-fields` | `NonContiguousFields` | `oracleId`, `recordOrdinal`, `expected`, `actual` |
+| `eyelink-oracle.inconsistent-record-metadata` | `InconsistentRecordMetadata` | `oracleId`, `recordOrdinal`, `field`, `values` |
+| `eyelink-oracle.duplicate-field-path` | `DuplicateFieldPath` | `oracleId`, `recordOrdinal`, `paths` |
+| `eyelink-oracle.ordering-conflict` | `OrderingConflict` | `oracleId`, `expected`, `actual` |
+| `eyelink-oracle.missing-ordering-disclosure` | `MissingOrderingDisclosure` | `oracleId`, `recordOrdinals` |
+
+### `eyelink-conformance` — `EyeLinkConformanceError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `eyelink-conformance.invalid-operand` | `InvalidOperand` | `artifact`, `field`, `actual`, `expected` |
+| `eyelink-conformance.invalid-absent-value` | `InvalidAbsentValue` | `presence`, `actual`, `expected` |
+| `eyelink-conformance.invalid-field-path` | `InvalidFieldPath` | `actual`, `expected` |
+| `eyelink-conformance.duplicate-field` | `DuplicateField` | `operand`, `fieldPath`, `count` |
+| `eyelink-conformance.empty-manifest` | `EmptyManifest` | `operand` |
+| `eyelink-conformance.invalid-tolerance` | `InvalidTolerance` | `tolerance`, `field`, `actual`, `expected` |
+| `eyelink-conformance.invalid-summary-row` | `InvalidSummaryRow` | `fixture`, `field`, `actual`, `expected` |
+| `eyelink-conformance.duplicate-summary-fixture` | `DuplicateSummaryFixture` | `fixture`, `count` |
+| `eyelink-conformance.empty-summary` | `EmptySummary` |  |
+
+### `eyelink-corpus` — `EyeLinkCorpusError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `eyelink-corpus.invalid-preamble` | `InvalidPreamble` | `source`, `actual` |
+| `eyelink-corpus.invalid-header` | `InvalidHeader` | `source`, `line`, `expected`, `actual` |
+| `eyelink-corpus.wrong-field-count` | `WrongFieldCount` | `source`, `line`, `expected`, `actual` |
+| `eyelink-corpus.invalid-escape` | `InvalidEscape` | `source`, `line`, `field`, `index`, `value` |
+| `eyelink-corpus.invalid-value` | `InvalidValue` | `source`, `line`, `field`, `value`, `expected` |
+| `eyelink-corpus.invalid-digest` | `InvalidDigest` | `source`, `line`, `field`, `detail` |
+| `eyelink-corpus.partial-converter-evidence` | `PartialConverterEvidence` | `source`, `line` |
+| `eyelink-corpus.invalid-converter-evidence` | `InvalidConverterEvidence` | `source`, `line`, `detail` |
+| `eyelink-corpus.invalid-fixture` | `InvalidFixture` | `source`, `line`, `fixtureId`, `detail` |
+| `eyelink-corpus.unsafe-local-path` | `UnsafeLocalPath` | `source`, `line`, `fixtureId`, `path` |
+| `eyelink-corpus.duplicate-fixture-id` | `DuplicateFixtureId` | `source`, `fixtureId`, `lines` |
+| `eyelink-corpus.duplicate-local-path` | `DuplicateLocalPath` | `source`, `path`, `fixtureIds` |
+| `eyelink-corpus.empty-manifest` | `EmptyManifest` | `source` |
+
+### `arrow-export` — `ArrowExportError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `arrow-export.limits` | `Limits` | `memoryBytes`, `batchRows` |
+| `arrow-export.write` | `Write` | `path`, `reason` |
 
 <!-- END GENERATED DIAGNOSTIC CODES -->

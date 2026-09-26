@@ -898,7 +898,7 @@ class ResultInspectionSuite extends munit.FunSuite:
     // An input one trial short of the ledger: the orphan records name their trial.
     val short    = StudyInput(Trials(rows(failing = false).filterNot(_.key == lone)))
     val orphaned = get(StudySources.of(short, ledger).swap.left.map(_ => "expected a refusal"))
-    val orphan   = Diagnostics.ledgerRefusal(orphaned)
+    val orphan   = Diagnostic.of(orphaned)
     assertEquals(orphan.code.render, "admission.unknown-trial")
     assertEquals(orphan.subject, Vector(Locus.Trial(lone), Locus.Records(Vector(14))))
     assertEquals(orphan.sources, Vector(SourceLink.Record(source, 14)))

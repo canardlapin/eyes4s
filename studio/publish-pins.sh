@@ -74,7 +74,7 @@ for name in "${names[@]}"; do
   echo "publish-pins: fetching $name $revision from $source"
   git -C "$checkout" init --quiet
   git -C "$checkout" fetch --quiet --depth 1 "$source" "$revision" ||
-    die "cannot fetch $name $revision from $source (for an unpushed repository pass --source $name=<checkout>)"
+    die "cannot fetch $name $revision from $source (or pass --source $name=<checkout>)"
   git -C "$checkout" checkout --quiet --detach FETCH_HEAD
   actual="$(git -C "$checkout" rev-parse HEAD)"
   [[ "$actual" == "$revision" ]] || die "$name checked out $actual, expected $revision"
@@ -87,9 +87,6 @@ for name in "${names[@]}"; do
   done
   for module in "${modules[@]}"; do commands+=("$module/publishLocal"); done
   echo "publish-pins: publishing $organization ${modules[*]} at $version"
-  # CI is unset because a provider may make warnings fatal under it (scaladock
-  # does, and its pinned commit has warnings). The provider's own CI gates its
-  # warnings; this build only consumes the commit.
-  (cd "$checkout" && env -u CI sbt -batch "${commands[@]}")
+  (cd "$checkout" && sbt -batch "${commands[@]}")
   printf '%s\n' "${modules[@]}" >"$marker"
 done

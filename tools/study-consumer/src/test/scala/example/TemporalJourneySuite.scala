@@ -167,7 +167,7 @@ class TemporalJourneySuite extends munit.CatsEffectSuite:
         Vector((Severity.Warning, FindingClass.DataDependent, Remedy.AcceptMissingObservation))
       )
       assertEquals(
-        report.findings.map(Diagnostics.temporalFinding(_).code.render).distinct,
+        report.findings.map(Diagnostic.of(_).code.render).distinct,
         Vector("temporal-finding.no-observed-coverage")
       )
       assertEquals(report.notChecked, Preflight.temporalUnchecked)
@@ -200,7 +200,7 @@ class TemporalJourneySuite extends munit.CatsEffectSuite:
         Vector(TemporalFinding.MissingEpoch(focal))
       )
       assertEquals(
-        Diagnostics.temporalFinding(TemporalFinding.MissingEpoch(focal)).code.render,
+        Diagnostic.of(TemporalFinding.MissingEpoch(focal)).code.render,
         "temporal-finding.missing-epoch"
       )
     }
@@ -369,7 +369,7 @@ class TemporalJourneySuite extends munit.CatsEffectSuite:
       missing.cells.foreach { cell =>
         assertEquals(
           cell.occupancy.collect { case (k, Left(e)) =>
-            k -> Diagnostics.temporal(e).code.render
+            k -> Diagnostic.of(e).code.render
           },
           Vector(focal -> "temporal.missing-epoch")
         )
@@ -398,12 +398,12 @@ class TemporalJourneySuite extends munit.CatsEffectSuite:
       val report = study.preflight(Some(input), pairs)
       val keys   = moved.trials.rows.map(_.key)
       assertEquals(
-        report.findings.map(f => Diagnostics.temporalFinding(f).code.render).distinct,
+        report.findings.map(f => Diagnostic.of(f).code.render).distinct,
         Vector("temporal-finding.study", "temporal-finding.no-observed-coverage")
       )
       assertEquals(
         report.findings.collect { case TemporalFinding.Study(f) =>
-          f.keys -> Diagnostics.studyFinding(f).code.render
+          f.keys -> Diagnostic.of(f).code.render
         },
         keys.map(k => Vector(k) -> "study-finding.frame-mismatch")
       )
@@ -415,7 +415,7 @@ class TemporalJourneySuite extends munit.CatsEffectSuite:
         result.cells.foreach { cell =>
           assertEquals(
             cell.result.scales.head.estimation
-              .map((k, e) => k -> e.left.map(Diagnostics.failure(_).code.render)),
+              .map((k, e) => k -> e.left.map(Diagnostic.of(_).code.render)),
             keys.map(k => k -> Left("study-failure.frame")),
             s"${cell.repetition.name}/${cell.window.name}"
           )

@@ -52,12 +52,16 @@ class ResultCodecSuite extends munit.FunSuite:
 
   private def scale(index: Int)(rest: String*): Seq[String] =
     Seq("value", "scales", index.toString) ++ rest
-  private def scale0(rest: String*): Seq[String]        = scale(0)(rest*)
+  private def scale0(rest: String*): Seq[String] = scale(0)(rest*)
+
+  /** Change a number, keeping an integer spelled as one (the only spelling decoders accept). */
   private def number(f: Double => Double): Json => Json =
     json =>
-      Json.fromDoubleOrNull(
-        f(json.asNumber.map(_.toDouble).getOrElse(fail(s"not a number: $json")))
-      )
+      val n     = json.asNumber.getOrElse(fail(s"not a number: $json"))
+      val value = f(n.toDouble)
+      if n.toLong.exists(_.toString == n.toString) && value.isWhole then
+        Json.fromLong(value.toLong)
+      else Json.fromDoubleOrNull(value)
 
   test(
     "successes mixed with pair and scale failures round-trip with exact counts, keys and failures"

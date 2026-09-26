@@ -32,7 +32,10 @@ package eyes4s.kernel
   * input?". FNV-1a over the raw bit patterns is a few nanoseconds per value and
   * good enough to make a collision an irrelevance in practice. A SHA over a
   * hundred megabytes of samples would be a security-grade answer to a
-  * cache-invalidation question.
+  * cache-invalidation question. For the same reason it is not the identity
+  * a file or a run is cited by: that is `eyes4s.codec.CanonicalDigest`, a
+  * SHA-256 of a value's canonical document, which does not convert to or
+  * from this type.
   *
   * ==Identical on every platform==
   *

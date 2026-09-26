@@ -1,0 +1,71 @@
+{
+  "schema" : {
+    "name" : "eyes4s.study",
+    "version" : 2
+  },
+  "value" : {
+    "layout" : {
+      "name" : "eyes4s.participant-phase-trial-occurrence",
+      "version" : 1
+    },
+    "keySchema" : {
+      "name" : "eyes4s.trial-key",
+      "version" : 1
+    },
+    "method" : {
+      "name" : "eyes4s.cosine",
+      "version" : 1
+    },
+    "input" : "fedcba9876543210",
+    "frame" : {
+      "id" : "v2-screen",
+      "unit" : "px",
+      "xMin" : 0.0,
+      "yMin" : 0.0,
+      "xMax" : 16.0,
+      "yMax" : 12.0,
+      "yAxis" : "Down"
+    },
+    "gridId" : "v2-screen@8x6",
+    "nx" : 8,
+    "ny" : 6,
+    "focalPhase" : "retrieval",
+    "referencePhase" : "encoding",
+    "weight" : "Duration",
+    "policy" : {
+      "kind" : "requireAll"
+    },
+    "parameters" : {
+      "schema" : {
+        "name" : "eyes4s.unit",
+        "version" : 1
+      },
+      "value" : {
+        
+      }
+    },
+    "pairing" : {
+      "matched" : {
+        "kind" : "select",
+        "choice" : {
+          "kind" : "at",
+          "occurrence" : 2
+        }
+      },
+      "controls" : "allOccurrences",
+      "unmatched" : "refuse"
+    },
+    "geometry" : {
+      "kind" : "wholeFrame"
+    },
+    "scales" : [
+      {
+        "kind" : "native",
+        "estimate" : {
+          "kind" : "binned"
+        }
+      }
+    ],
+    "angularScale" : null
+  }
+}

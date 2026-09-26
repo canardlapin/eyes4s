@@ -1,0 +1,95 @@
+{
+  "schema" : {
+    "name" : "eyes4s.study",
+    "version" : 2
+  },
+  "value" : {
+    "layout" : {
+      "name" : "eyes4s.participant-stimulus-phase",
+      "version" : 1
+    },
+    "keySchema" : {
+      "name" : "eyes4s.study-key",
+      "version" : 1
+    },
+    "method" : {
+      "name" : "eyes4s.cosine",
+      "version" : 1
+    },
+    "input" : "0123456789abcdef",
+    "frame" : {
+      "id" : "v2-image",
+      "unit" : "px",
+      "xMin" : 0.0,
+      "yMin" : 0.0,
+      "xMax" : 8.0,
+      "yMax" : 6.0,
+      "yAxis" : "Down"
+    },
+    "gridId" : "v2-image@4x3",
+    "nx" : 4,
+    "ny" : 3,
+    "focalPhase" : "recall",
+    "referencePhase" : "encode",
+    "weight" : "Duration",
+    "policy" : {
+      "kind" : "requireAll"
+    },
+    "parameters" : {
+      "schema" : {
+        "name" : "eyes4s.unit",
+        "version" : 1
+      },
+      "value" : {
+        
+      }
+    },
+    "pairing" : {
+      "matched" : {
+        "kind" : "requireOne"
+      },
+      "controls" : "sameSelection",
+      "unmatched" : "reportNoMatch"
+    },
+    "geometry" : {
+      "kind" : "windowed",
+      "admission" : {
+        "id" : "v2-screen",
+        "unit" : "px",
+        "xMin" : 0.0,
+        "yMin" : 0.0,
+        "xMax" : 16.0,
+        "yMax" : 12.0,
+        "yAxis" : "Down"
+      },
+      "window" : {
+        "id" : "v2-image",
+        "xMin" : 4.0,
+        "yMin" : 3.0,
+        "xMax" : 12.0,
+        "yMax" : 9.0
+      },
+      "offWindow" : "exclude"
+    },
+    "scales" : [
+      {
+        "kind" : "degrees",
+        "estimate" : {
+          "kind" : "gaussian",
+          "sigma" : 0.5,
+          "edges" : "Truncate"
+        }
+      },
+      {
+        "kind" : "native",
+        "estimate" : {
+          "kind" : "binned"
+        }
+      }
+    ],
+    "angularScale" : {
+      "frame" : "v2-screen",
+      "unitsPerDegree" : 2.0
+    }
+  }
+}

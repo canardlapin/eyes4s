@@ -32,7 +32,7 @@ published artifacts. Each is pinned to one full Git SHA in
 | Provider | Revision | Modules used | Coordinates |
 |---|---|---|---|
 | Intaglio | `2fa5c682f4a95b8e73daad78dd9302d7aff46e11` | core, interaction, svg (JVM+JS); javafx (JVM) | `io.github.canardlapin::intaglio-*` |
-| scaladock | `32ac3ca87d3728d88cdd9d694959dd6ff80b9ddb` | core, fx (JVM) | `io.github.bbuchsbaum::scaladock-*` |
+| scaladock | `44c44f794645e93da9a479ef660b4c26a9a1da15` | core, fx (JVM) | `io.github.bbuchsbaum::scaladock-*` |
 
 The build resolves each as the ordinary library version `0.0.0-<full SHA>`.
 [`publish-pins.sh`](publish-pins.sh) produces those artifacts: it fetches the
@@ -51,22 +51,18 @@ To move a pin: edit its revision, run `bash studio/publish-pins.sh`, run the
 gate above, and regenerate the workflows (`sbt githubWorkflowGenerate`), which
 record the pinned checkout paths.
 
-### scaladock has no remote yet
+`--source NAME=<checkout or URL>` fetches the same pinned commit from somewhere
+else, for example an offline mirror; the checked-out SHA is still verified.
 
-The scaladock repository has not been pushed. Its declared home,
-`https://github.com/bbuchsbaum/scaladock`, does not resolve, so the default pin
-step fails for scaladock on a fresh clone and in CI. Until it is pushed, build
-the same committed revision from a local checkout:
+### What the scaladock pin provides
 
-```sh
-bash studio/publish-pins.sh --source scaladock=/path/to/scaladock
-```
-
-The checkout's uncommitted changes are ignored. At the pinned revision
-scaladock has true minimize (`32ac3ca`) but not asynchronous close admission
-(`Dock.requestClose`, `PaneView.prepareClose`, `requestCloseAll`), which exists
-only as uncommitted work. Studio's unsaved-changes close flow needs it, so the
-pin must move once that work is committed.
+At `44c44f7` scaladock has asynchronous close admission (`Dock.requestClose`,
+`PaneView.prepareClose`, `requestCloseAll`) and true minimize. The tab header
+height is `LayoutSettings.headerPx` (default 32), passed to `Dock(...)`. The
+header button glyphs are CSS shapes (`.dock-icon.close`, `.minimize`,
+`.maximize`, `.popout`, `.dock-back`, `.chevron-down`), which a
+`DockTheme.Custom` stylesheet can redefine. scaladock has no host-supplied
+header action, so a "more actions" button needs an upstream hook (UP-scaladock).
 
 ## Local-checkout override
 
@@ -81,8 +77,7 @@ Each property names a directory containing a `build.sbt`. There is no implicit
 sibling lookup: without the property the pin is used, whatever is checked out
 nearby. An override compiles the checkout's working tree, including
 uncommitted changes, so rerun the gate without it before recording evidence.
-scaladock makes warnings fatal when `CI` is set; run an override build with
-`env -u CI` if its tree has warnings.
+scaladock makes warnings fatal when `CI` is set.
 
 ## Versions
 
@@ -97,7 +92,8 @@ scaladock makes warnings fatal when `CI` is set; run an override build with
 
 ## CI
 
-The `studio-clean-clone` job in `.github/workflows/studio.yml` (generated from
-`build.sbt`) publishes the pins on a fresh runner, runs the studio gate, and
-builds once more through the override properties. It runs on demand only
-until scaladock can be fetched from its remote.
+Every job in `.github/workflows/studio.yml` (generated from `build.sbt`)
+publishes the pins from their remotes before sbt runs. The
+`studio-clean-clone` job then builds studio through the override properties,
+pointed at the pinned checkouts, which proves the override on every push and
+pull request that touches studio.

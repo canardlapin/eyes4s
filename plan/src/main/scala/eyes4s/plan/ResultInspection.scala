@@ -359,8 +359,24 @@ final class StudyInspection[K, U <: Unit2D, S, D] private[plan] (
     val description: Vector[(String, Vector[Provenance.Param])],
     val sources: StudySources[K],
     val scales: Vector[ScaleInspection[K, U, S, D]],
-    val cell: Option[(String, String)]
+    val cell: Option[(String, String)],
+    val windowTallies: Vector[(K, Either[GeometryError, WindowTally])] = Vector.empty,
+    val initialFixationTallies: Vector[(K, Either[GeometryError, InitialFixationTally])] =
+      Vector.empty
 ):
+  /** One trial's initial fixations the plan's policy dropped, when the
+    * inspection was opened with its plan and input.
+    */
+  def initialFixationTally(key: K): Option[InitialFixationTally] =
+    initialFixationTallies.collectFirst { case (`key`, Right(tally)) => tally }
+
+  /** One trial's fixations outside the analysis window and the screen, when
+    * the inspection was opened with its plan and input.
+    */
+  def windowTally(key: K): Option[WindowTally] = windowTallies.collectFirst {
+    case (`key`, Right(tally)) => tally
+  }
+
   def scale(index: Int): Either[InspectionError[K], ScaleInspection[K, U, S, D]] =
     scales.lift(index).toRight(InspectionError.UnknownScale(index, scales.size))
 
@@ -528,7 +544,15 @@ object ResultInspection:
       )
       schema <- ScoreSchema.study(plan).left.map(InspectionError.Components.apply)
       found  <- study(result, sources, schema)
-    yield found
+    yield new StudyInspection(
+      found.input,
+      found.description,
+      found.sources,
+      found.scales,
+      found.cell,
+      plan.windowTallies(input),
+      plan.initialFixationTallies(input)
+    )
 
   /** Inspect every cell of a temporal result; cell studies share the base
     * input's sources, and every item and diagnostic is addressed to its cell.
@@ -559,7 +583,7 @@ object ResultInspection:
                   )
                 )
                 .left
-                .map(e => located(ref.loci, Diagnostics.temporal(e), sources))
+                .map(e => located(ref.loci, Projections.temporal(e), sources))
             )
           })(_.ref)
           inspected <- inspectStudy(cell.result, sources, schema, Some(rep -> window))
@@ -646,7 +670,7 @@ object ResultInspection:
         key,
         outcomes(key).map(
           _.fold(
-            f => EstimationOutcome.Failed(place(ref, Diagnostics.failure(f))),
+            f => EstimationOutcome.Failed(place(ref, Projections.failure(f))),
             mass => EstimationOutcome.Estimated(new DensityView(mass))
           )
         )
@@ -669,7 +693,7 @@ object ResultInspection:
           design,
           row.left,
           row.right,
-          row.result.left.map(f => place(ref, Diagnostics.failure(f))).map(schema.score)
+          row.result.left.map(f => place(ref, Projections.failure(f))).map(schema.score)
         )
       }
     def reductions(
@@ -680,7 +704,7 @@ object ResultInspection:
       scale.analyses.reduced(design).entries.traverse { row =>
         val ref     = ResultRef.Reduction(index, design, row.key)
         val outcome =
-          row.result.left.map(e => place(ref, Diagnostics.reduction(e))).map(schema.score)
+          row.result.left.map(e => place(ref, Projections.reduction(e))).map(schema.score)
         val members = byFocal.getOrElse(row.key, Vector.empty).map { pair =>
           val status = (pair.outcome, outcome) match
             case (Left(failure), _)    => Membership.FailedPair(failure)
@@ -718,7 +742,7 @@ object ResultInspection:
             located(
               cell.toVector.flatMap((r, w) => Vector(Locus.Repetition(r), Locus.Window(w))) :+
                 Locus.Scale(index),
-              Diagnostics.contrast(error),
+              Projections.contrast(error),
               sources
             )
           )
@@ -735,7 +759,7 @@ object ResultInspection:
               row.control
                 .map(r => address(ResultRef.Reduction(index, StudyDesign.Control, r.key))),
               row.difference.left
-                .map(e => place(ref, Diagnostics.contrastRow(e)))
+                .map(e => place(ref, Projections.contrastRow(e)))
                 .map(schema.difference)
             )
           })(_.ref)

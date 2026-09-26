@@ -114,6 +114,15 @@ private[eyes4s] object DiagnosticSupport:
     "ny"      -> int(spec.ny)
   )
 
+  def windowTally(value: WindowTally): Operand[Nothing] = fields(
+    "outsideScreen"         -> int(value.outsideScreen),
+    "outsideWindow"         -> int(value.outsideWindow),
+    "total"                 -> int(value.total),
+    "outsideScreenDuration" -> span(value.outsideScreenDuration),
+    "outsideWindowDuration" -> span(value.outsideWindowDuration),
+    "totalDuration"         -> span(value.totalDuration)
+  )
+
   /** A path that keeps an outer context and adds the inner subject's loci. */
   def merge[K](prefix: Vector[Locus[K]], inner: Diagnostic[K]): Vector[Locus[K]] =
     prefix ++ inner.subject.filterNot(prefix.contains)
@@ -189,6 +198,11 @@ private[plan] object CauseDiagnostics:
       case NegativeVelocity(value)              => d(real(value))
       case NonFiniteDistance(value)             => d(real(value))
       case NegativeDistance(value)              => d(real(value))
+      case SubframeOutsideParent(window, a, b, c, x, parent, spec) =>
+        d(frame(window), real(a), real(b), real(c), real(x), frame(parent), frameSpec(spec))
+      case SubframeIdentity(window)           => d(frame(window))
+      case NonPositiveAngularScale(id, value) => d(frame(id), real(value))
+      case NonFiniteTranslation(dx, dy)       => d(real(dx), real(dy))
 
   def surface(e: SurfaceError): Diagnostic[Nothing] =
     import SurfaceError.*
@@ -249,8 +263,10 @@ private[plan] object CauseDiagnostics:
       case EmptyInput(m, o, total)               => d(name(m), token(o.toString), real(total))
       case ZeroNorm(m, l, r)                     => d(name(m), real(l), real(r))
       case RelativeEntropySupport(m, cell, l, r) => d(name(m), int(cell), real(l), real(r))
-      case CostMatrixLimitExceeded(m, cells, limit) => d(name(m), int(cells), int(limit))
-      case InvalidSubstitutionCost(m, l, r, value)  =>
+      case CostMatrixLimitExceeded(m, cells, limit)  => d(name(m), int(cells), int(limit))
+      case WorkLimitExceeded(m, cells, pairs, limit) =>
+        d(name(m), int(cells), long(pairs), long(limit))
+      case InvalidSubstitutionCost(m, l, r, value) =>
         d(name(m), int(l), int(r), real(value))
       case InvalidScore(m, underlying) => d(name(m), cause(comparisonValue(underlying)))
       case TooShort(what, got, needed) => d(name(what), int(got), int(needed))

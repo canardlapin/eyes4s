@@ -231,7 +231,7 @@ final class StudySources[K] private (
   def rejections: Vector[Diagnostic[K]] = ledger.toVector.flatMap { entries =>
     entries.rejected.collect {
       case SourceRecord(number, Disposition.Rejected(_, key, reason)) =>
-        val inner = Diagnostics.admissionReason(reason)
+        val inner = Projections.admissionReason(reason)
         val trial = key.map(k => Locus.Trial(k)).toVector
         inner
           .copy(subject = trial ++ (Locus.Record(number) +: inner.subject))
