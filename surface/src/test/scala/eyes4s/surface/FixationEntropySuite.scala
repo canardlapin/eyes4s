@@ -253,6 +253,47 @@ class FixationEntropySuite extends munit.FunSuite:
     assertEquals(MultiscaleEntropy.ofPyramid(pyramid, LogBase.Two).levels, direct.levels)
   }
 
+  test("results carry the lattice, weights, policies, grid and base that produced them") {
+    val p       = path((5, 5), (25, 15), (45, 3))
+    val closed  = lattice(LatticeUpperEdge.Closed)
+    val counted = get(
+      FixationEntropy.occupancy(p, closed, Weight.Duration, OutsideLattice.Exclude, LogBase.Two)
+    )
+    assert(counted.lattice eq closed)
+    assertEquals(counted.weight, Weight.Duration)
+    assertEquals(counted.outsidePolicy, OutsideLattice.Exclude)
+    assertEquals(counted.outside, Vector(2))
+    assertEquals((closed.frame.id, closed.nx, closed.ny, closed.size), (frame.id, 4, 2, 8))
+    assertEquals(closed.upperEdge, LatticeUpperEdge.Closed)
+    assert(closed.render.contains("4x2") && closed.render.contains("Closed"), closed.render)
+    val scales = get(
+      FixationEntropy.multiscale(
+        p,
+        grid,
+        Vector(sigma),
+        EdgePolicy.Truncate,
+        Weight.Uniform,
+        LogBase.Two
+      )
+    )
+    assertEquals((scales.grid, scales.base), (grid, LogBase.Two))
+    assertEquals(DensityBandwidth.Fixed(sigma).sigma, sigma)
+    assertEquals(
+      DensityBandwidth.IqrSuggested[Px](IqrBandwidthClamp.Unclamped).clamp,
+      IqrBandwidthClamp.Unclamped
+    )
+    assertEquals(
+      ScaleReduction.Weighted(Vector(sigma -> 1.0)).weights.map(_._2),
+      Vector(1.0)
+    )
+    assertEquals(
+      EntropyQuantity.values.toVector,
+      Vector(EntropyQuantity.Raw, EntropyQuantity.Relative)
+    )
+    assertEquals(OutsideLattice.values.length, 3)
+    assertEquals(LatticeUpperEdge.values.length, 2)
+  }
+
   test("every error message names its operands") {
     Vector(
       FixationEntropyError.DegenerateLattice(0, 7)                -> Vector("0", "7"),
