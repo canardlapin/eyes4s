@@ -30,6 +30,9 @@ import scala.concurrent.duration.*
 
 class EyeLinkAscStreamingJvmSuite extends munit.FunSuite:
 
+  // A backstop only: the interleaving assertion, not a deadline, is the evidence.
+  override val munitTimeout: Duration = 2.minutes
+
   private def bytes(value: String): Vector[Byte] =
     value.toVector.map(_.toByte)
 
@@ -92,23 +95,43 @@ class EyeLinkAscStreamingJvmSuite extends munit.FunSuite:
     )
   }
 
-  test("two hundred thousand lines stream without downstream materialization") {
+  test("streamed lines are emitted while the source is still producing") {
+    // The source records the latest chunk it has produced. If the first parsed line
+    // arrives before the last chunk exists, the pipe interleaves with its input rather
+    // than materialising it. Returning a Future puts the run under munitTimeout.
     val linesPerChunk = 1000
-    val chunkCount    = 200
+    val chunkCount    = 20
     val chunk         = Chunk.from(bytes("2 1 2 3\n" * linesPerChunk))
-    val count         = Stream
-      .emits(0 until chunkCount)
-      .flatMap(_ => Stream.chunk(chunk))
-      .through(EyeLinkAscStreaming.pipe[IO](settings))
-      .compile
-      .fold(0L) { (total, emission) =>
-        emission match
-          case AscFramingEmission.Parsed(_)   => total + 1L
-          case AscFramingEmission.Rejected(_) => total
-      }
-      .unsafeRunSync()
+    val run           = for
+      produced <- Ref.of[IO, Int](-1)
+      first    <- Ref.of[IO, Option[Int]](None)
+      count    <- Stream
+        .emits(0 until chunkCount)
+        .covary[IO]
+        .evalTap(produced.set)
+        .flatMap(_ => Stream.chunk(chunk))
+        .through(EyeLinkAscStreaming.pipe[IO](settings))
+        .evalTap {
+          case AscFramingEmission.Parsed(_) =>
+            produced.get.flatMap(index => first.update(_.orElse(Some(index))))
+          case AscFramingEmission.Rejected(_) => IO.unit
+        }
+        .compile
+        .fold(0L) { (total, emission) =>
+          emission match
+            case AscFramingEmission.Parsed(_)   => total + 1L
+            case AscFramingEmission.Rejected(_) => total
+        }
+      firstProduced <- first.get
+    yield (count, firstProduced)
 
-    assertEquals(count, linesPerChunk.toLong * chunkCount.toLong)
+    run.unsafeToFuture().map { (count, firstProduced) =>
+      assertEquals(count, linesPerChunk.toLong * chunkCount.toLong)
+      assert(
+        firstProduced.exists(_ < chunkCount - 1),
+        s"first parsed line arrived after source chunk $firstProduced of ${chunkCount - 1}"
+      )
+    }(using munitExecutionContext)
   }
 
   test("downstream cancellation runs the upstream finalizer") {
