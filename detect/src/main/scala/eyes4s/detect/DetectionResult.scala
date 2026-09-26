@@ -708,7 +708,14 @@ object Detection:
 
 end Detection
 
-/** One bounded step: charged samples while feeding, operations during assembly. */
+/** One bounded step: charged samples while feeding, operations during assembly.
+  *
+  * `workUnits` replaced the former `samples` field because assembly pages charge
+  * operations, not samples. The page that feeds the last sample returns `More` with a
+  * cursor in assembly (`assemblyPhase` is defined), and from then on `consumed` equals
+  * `total`; only an assembly page or a detector failure returns `Done`. Loop until
+  * `Done`: `consumed == total` does not mean the result is ready.
+  */
 enum DetectionPage[U <: Unit2D]:
   case More(workUnits: Int, next: DetectionCursor[U])
   case Done(workUnits: Int, result: Either[DetectionResultError, DetectionResult[U]])

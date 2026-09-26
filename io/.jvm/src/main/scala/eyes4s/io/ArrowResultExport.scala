@@ -39,29 +39,59 @@ enum ArrowExportError derives CanEqual:
 
 /** JVM-only IPC stream writer. This object owns each file, writer, vector and allocator it opens. */
 object ArrowResultExport:
+
+  /** A missing optional Arrow jar or `--add-opens` surfaces as a `LinkageError`
+    * (`NoClassDefFoundError`, `ExceptionInInitializerError`). Cats Effect treats those as
+    * fatal, so they are converted here, where Arrow is first touched, into an ordinary
+    * failure that `write` returns as a typed `Left`.
+    */
+  private final class ArrowUnavailable(cause: LinkageError)
+      extends RuntimeException(cause.toString, cause)
+
+  private def linked[F[_]: Sync, A](thunk: => A): F[A] =
+    Sync[F].blocking {
+      try thunk
+      catch case e: LinkageError => throw new ArrowUnavailable(e)
+    }
+
   def write[F[_]: Sync](
       table: ResultTable,
       path: Path,
       memoryBytes: Long = 64L * 1024 * 1024,
       batchRows: Int = 1024
   ): F[Either[ArrowExportError, Unit]] =
+    writeUsing(table, path, memoryBytes, batchRows)(new RootAllocator(_))
+
+  /** `write` with the allocator construction supplied, so a failed Arrow linkage is testable. */
+  private[io] def writeUsing[F[_]: Sync](
+      table: ResultTable,
+      path: Path,
+      memoryBytes: Long,
+      batchRows: Int
+  )(allocate: Long => BufferAllocator): F[Either[ArrowExportError, Unit]] =
     if memoryBytes <= 0 || batchRows <= 0 then
       Sync[F].pure(Left(ArrowExportError.Limits(memoryBytes, batchRows)))
     else
       val resources = for
-        allocator <- Resource.fromAutoCloseable(
-          Sync[F].blocking(new RootAllocator(memoryBytes))
-        )
-        stream <- Resource.fromAutoCloseable(Sync[F].blocking(Files.newOutputStream(path)))
+        allocator <- Resource.fromAutoCloseable(linked(allocate(memoryBytes)))
+        stream    <- Resource.fromAutoCloseable(Sync[F].blocking(Files.newOutputStream(path)))
       yield (allocator, stream)
       resources
         .use { (allocator, stream) => writeTo(table, stream, allocator, batchRows) }
         .attempt
         .map(
-          _.left.map(e =>
-            ArrowExportError
-              .Write(path.toString, Option(e.getMessage).getOrElse(e.getClass.getName))
-          )
+          _.left.map {
+            case e: ArrowUnavailable =>
+              ArrowExportError.Write(
+                path.toString,
+                s"Arrow runtime unavailable (${e.getMessage}); the JVM Arrow writer needs " +
+                  "arrow-vector, arrow-memory-unsafe and " +
+                  "--add-opens=java.base/java.nio=ALL-UNNAMED"
+              )
+            case e =>
+              ArrowExportError
+                .Write(path.toString, Option(e.getMessage).getOrElse(e.getClass.getName))
+          }
         )
 
   /** Borrow allocator; own the stream through writer.close, also on a failed write. */
@@ -70,7 +100,11 @@ object ArrowResultExport:
       stream: OutputStream,
       allocator: BufferAllocator,
       batchRows: Int
-  ): F[Unit] =
+  ): F[Unit] = linked(schemaOf(table)).flatMap(schema =>
+    writeWith(table, schema, stream, allocator, batchRows)
+  )
+
+  private def schemaOf(table: ResultTable): Schema =
     val columns = ResultColumn(
       "table_sha256",
       ResultColumnType.Utf8,
@@ -96,20 +130,27 @@ object ArrowResultExport:
         java.util.Collections.emptyList[Field]()
       )
     }
-    val schema =
-      new Schema(fields.asJava, Map("eyes4s.result_metadata" -> table.metadata.noSpaces).asJava)
+    new Schema(fields.asJava, Map("eyes4s.result_metadata" -> table.metadata.noSpaces).asJava)
+
+  private def writeWith[F[_]: Sync](
+      table: ResultTable,
+      schema: Schema,
+      stream: OutputStream,
+      allocator: BufferAllocator,
+      batchRows: Int
+  ): F[Unit] =
     val resources = for
-      output <- Resource.make(Sync[F].pure(stream))(s => Sync[F].blocking(s.close()))
+      output <- Resource.make(Sync[F].pure(stream))(s => linked(s.close()))
       root   <- Resource.fromAutoCloseable(
-        Sync[F].blocking(VectorSchemaRoot.create(schema, allocator))
+        linked(VectorSchemaRoot.create(schema, allocator))
       )
-      dictionaries <- Resource.fromAutoCloseable(Sync[F].blocking(new MapDictionaryProvider()))
+      dictionaries <- Resource.fromAutoCloseable(linked(new MapDictionaryProvider()))
       writer       <- Resource.fromAutoCloseable(
-        Sync[F].blocking(new ArrowStreamWriter(root, dictionaries, Channels.newChannel(output)))
+        linked(new ArrowStreamWriter(root, dictionaries, Channels.newChannel(output)))
       )
     yield (root, writer)
     resources.use { (root, writer) =>
-      Sync[F].blocking {
+      linked {
         writer.start()
         table.rows.grouped(batchRows).foreach { batch =>
           root.allocateNew()

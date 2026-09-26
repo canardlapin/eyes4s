@@ -590,6 +590,7 @@ fails after rewriting, so review the change and run it again.
 | `geometry.negative-velocity` | `NegativeVelocity` | `value` |
 | `geometry.non-finite-distance` | `NonFiniteDistance` | `value` |
 | `geometry.negative-distance` | `NegativeDistance` | `value` |
+| `geometry.bounds-extent-overflow` | `BoundsExtentOverflow` | `xMin`, `yMin`, `xMax`, `yMax` |
 
 ### `time` — `TimeError`
 

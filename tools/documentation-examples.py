@@ -15,7 +15,6 @@ code = header + '''package docconsumer
 import eyes4s.kernel.*
 import eyes4s.core.*
 import eyes4s.design.*
-import eyes4s.io.*
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import _root_.fs2.io.file.Files

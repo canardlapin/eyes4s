@@ -90,7 +90,7 @@ final class ResultTable private (
     "schema"           -> Json.fromString(ResultTable.schema),
     "family"           -> Json.fromString(family.toString),
     "table_sha256"     -> Json.fromString(identity.hex),
-    "row_count"        -> Json.fromString(rows.size.toLong.toString),
+    "row_count"        -> Json.fromLong(rows.size.toLong),
     "csv_nulls"        -> Json.fromString("explicit __valid column for each nullable field"),
     "arrow_dictionary" -> Json.fromString("none; finite labels retained as UTF-8"),
     "columns"          -> Json.arr(columns.map(ResultTable.columnJson)*),

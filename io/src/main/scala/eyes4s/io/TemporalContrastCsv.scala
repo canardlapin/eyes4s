@@ -26,13 +26,20 @@ final case class TemporalTables(contrasts: TidyCsvDocument, coverage: TidyCsvDoc
 
 /** Separate long tables for scientific contrasts and every source trial's temporal ledger. */
 object TemporalContrastCsv:
+
+  /** Written in every contrast row and recorded as the source schema of both typed tables. */
+  val schemaVersion = "eyes4s-temporal-contrast/1"
+
   val contextHeader = Vector("repetition", "window", "from_us", "until_us", "fixation_boundary")
   val coverageHeader = contextHeader ++ Vector(
     "key_json",
     "observed_us",
     "missing_us",
     "retained_us",
-    "excluded_fixations",
+    // A count and the fixation indices it counts, as separate columns: the indices are a
+    // JSON array so a single exclusion can never be read back as a count.
+    "excluded_fixation_count",
+    "excluded_fixations_json",
     "fixation_times_json",
     "status",
     "reason",
@@ -65,13 +72,14 @@ object TemporalContrastCsv:
           persistence.study.keys.encode(key).left.map(ContrastExportError.Codec.apply).map {
             keyJson =>
               val fields = outcome match
-                case Left(error)  => Vector("", "", "", "", "", "failed", error.message)
+                case Left(error)  => Vector("", "", "", "", "", "", "failed", error.message)
                 case Right(value) =>
                   Vector(
                     value.observedMicros.toString,
                     value.missingMicros.toString,
                     value.retainedMicros.toString,
-                    value.excludedFixations.mkString(","),
+                    value.excludedFixations.size.toString,
+                    Json.arr(value.excludedFixations.map(Json.fromInt)*).noSpaces,
                     Json
                       .arr(
                         value.fixationTimes.map(t =>
@@ -97,7 +105,7 @@ object TemporalContrastCsv:
           context ++ contrasts.header.zip(row).map {
             case ("plan_json", _)      => saved.noSpaces
             case ("input_digest", _)   => plan.input.digest
-            case ("schema_version", _) => "eyes4s-temporal-contrast/1"
+            case ("schema_version", _) => schemaVersion
             case (_, value)            => value
           }
         ),

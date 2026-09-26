@@ -34,6 +34,11 @@ score unit. MultiMatch components are unitless. The generic table constructor va
 shape and finite values; the adapters establish the association with scientific result types.
 This matrix does not promise an adapter for every future result type.
 
+The `study` and `temporal` sidecars record `source_schema` (`ContrastCsv.schemaVersion` or
+`TemporalContrastCsv.schemaVersion`) and the typed `key_schema`. Temporal coverage reports
+`excluded_fixation_count` (Int64) and, separately, the excluded fixation indices as a JSON array
+in `excluded_fixations_json`. The sidecar's `row_count` is a JSON number.
+
 `reductions` and `contrasts` require their original pair analyses so a typed key codec can retain
 all excluded source keys. A mismatched source is refused. Template adapters execute the existing
 checked split/fit/evaluation workflow. A failed whole-model fit returns an export error; it is not

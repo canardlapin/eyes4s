@@ -136,3 +136,83 @@ class TemporalContrastSuite extends munit.FunSuite:
     assert(outside.forall(_("missing_us") == "150000"))
     assert(outside.forall(_("retained_us") == "0"))
   }
+
+  test(
+    "typed temporal coverage exports exclusion counts and indices for 0, 1 and 2 exclusions"
+  ) {
+    // Onsets per trial are fixed by TemporalFixtures. With a [0, 620 ms) window a
+    // fixation starting at or after 620 ms retains nothing: s1/a/encode excludes
+    // none, s2/a/encode excludes index 3, and s1/b/encode excludes indices 2 and 3.
+    val temporal = get(TemporalStudyInput.of(input, epochs))
+    val base     = get(
+      StudyPlan.cosine(
+        input.reference,
+        grid,
+        "recall",
+        "encode",
+        Weight.Duration,
+        Vector(StudyEstimate.Binned()),
+        eyes4s.design.FailurePolicy.RequireAll
+      )
+    )
+    val window =
+      get(StudyWindow.of("early", get(Window.of(Span.micros(0), Span.micros(620000)))))
+    val plan = get(
+      TemporalStudyPlan.of(
+        base,
+        temporal.reference,
+        Vector(window),
+        Vector(get(RepetitionContrast.withinParticipant("recall-encode", "recall", "encode"))),
+        FixationBoundary.ClipDuration
+      )
+    )
+    val result = get(plan.run(temporal))
+    val codec  = new TemporalStudyCodec(
+      get(DefinitionId.of("exclusion-temporal", 1)),
+      StudyCodecs.cosine[Unit2D.Px]
+    )
+    val tables   = get(BaselineExports.temporal(plan, result, codec, ScoreColumns.similarity))
+    val coverage = tables.find(_.family == ResultFamily.TemporalCoverage).get
+    def column(name: String) = coverage.columns.indexWhere(_.name == name)
+    assertEquals(
+      coverage.columns(column("excluded_fixation_count")).kind,
+      ResultColumnType.Int64
+    )
+    assertEquals(
+      coverage.columns(column("excluded_fixations_json")).kind,
+      ResultColumnType.JsonUtf8
+    )
+    val expected = result.cells.flatMap { cell =>
+      cell.occupancy.collect { case (key, Right(occupancy)) =>
+        s"${key.participant}/${key.stimulus}/${key.phase}" -> occupancy.excludedFixations
+      }
+    }.toMap
+    val observed = coverage.rows.collect {
+      case row if row(column("status")) == ResultCell.Text("ok") =>
+        val key = get(
+          codec.study.keys.decode(get(io.circe.parser.parse(row(column("key_json")).text)))
+        )
+        val label   = s"${key.participant}/${key.stimulus}/${key.phase}"
+        val indices = get(
+          get(io.circe.parser.parse(row(column("excluded_fixations_json")).text))
+            .as[Vector[Int]]
+        )
+        assertEquals(
+          row(column("excluded_fixation_count")),
+          ResultCell.Integer(indices.size.toLong)
+        )
+        label -> indices
+    }.toMap
+    assertEquals(observed, expected)
+    assertEquals(observed("s1/a/encode"), Vector.empty[Int])
+    assertEquals(observed("s2/a/encode"), Vector(3))
+    assertEquals(observed("s1/b/encode"), Vector(2, 3))
+    tables.foreach { table =>
+      val context = table.context.hcursor
+      assertEquals(
+        context.get[String]("source_schema").toOption,
+        Some(TemporalContrastCsv.schemaVersion)
+      )
+      assert(context.downField("key_schema").focus.isDefined, clue = table.family)
+    }
+  }

@@ -134,6 +134,21 @@ class GeometrySuite extends munit.FunSuite:
     assert(Bounds.of[Px](0, 0, Double.PositiveInfinity, 100).isLeft)
   }
 
+  test("finite bounds whose extent overflows are named as overflow, not as non-finite") {
+    val max = Double.MaxValue
+    assertEquals(
+      Bounds.of[Px](-max, 0, max, 1),
+      Left(GeometryError.BoundsExtentOverflow(-max, 0, max, 1))
+    )
+    assertEquals(
+      Bounds.of[Px](0, -max, 1, max),
+      Left(GeometryError.BoundsExtentOverflow(0, -max, 1, max))
+    )
+    assert(Bounds.of[Px](0, 0, Double.NaN, 1) match
+      case Left(GeometryError.NonFiniteBounds(_, _, _, _)) => true
+      case _                                               => false)
+  }
+
   test("bounds are half-open, matching Interval") {
     val b = Bounds.sized[Px](100.0, 100.0).toOption.get
     assert(b.contains(Pt(0.0, 0.0)))

@@ -122,3 +122,26 @@ class ArrowResultExportJvmSuite extends munit.CatsEffectSuite:
         yield ()
       }(p => IO.blocking(Files.deleteIfExists(p)).void)
   }
+  test("a missing Arrow jar or --add-opens is a typed Left, not a fatal runtime error") {
+    // What the JVM raises when arrow-vector is absent, and when Arrow's memory
+    // utilities fail their static initialisation without --add-opens.
+    val failures = Vector[LinkageError](
+      new NoClassDefFoundError("org/apache/arrow/memory/RootAllocator"),
+      new ExceptionInInitializerError("Failed to initialize MemoryUtil")
+    )
+    val path = Files.createTempDirectory("eyes4s-arrow-linkage-").resolve("absent.arrow")
+    failures.traverse_ { failure =>
+      ArrowResultExport
+        .writeUsing[IO](table, path, 1024L, 8)(_ => throw failure)
+        .map { result =>
+          result match
+            case Left(ArrowExportError.Write(p, reason)) =>
+              assertEquals(p, path.toString)
+              assert(reason.contains("Arrow runtime unavailable"), reason)
+              assert(reason.contains(failure.getClass.getName), reason)
+              assert(reason.contains("--add-opens"), reason)
+            case other => fail(s"expected a typed Arrow write failure, got $other")
+          assert(!Files.exists(path))
+        }
+    }
+  }

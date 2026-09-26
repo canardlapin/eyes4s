@@ -101,7 +101,7 @@ object Bounds:
     else if xMax <= xMin || yMax <= yMin then
       Left(GeometryError.DegenerateBounds(xMin, yMin, xMax, yMax))
     else if !((xMax - xMin).isFinite && (yMax - yMin).isFinite) then
-      Left(GeometryError.NonFiniteBounds(xMin, yMin, xMax, yMax))
+      Left(GeometryError.BoundsExtentOverflow(xMin, yMin, xMax, yMax))
     else Right(Bounds(xMin, yMin, xMax, yMax))
 
   /** `[0, w) x [0, h)`, the usual device rectangle. */

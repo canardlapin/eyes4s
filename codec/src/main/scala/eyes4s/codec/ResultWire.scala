@@ -256,6 +256,14 @@ private[codec] object ResultWire:
           "xMax" -> double(x1),
           "yMax" -> double(y1)
         )
+      case BoundsExtentOverflow(x0, y0, x1, y1) =>
+        tagged(
+          "boundsExtentOverflow",
+          "xMin" -> double(x0),
+          "yMin" -> double(y0),
+          "xMax" -> double(x1),
+          "yMax" -> double(y1)
+        )
       case NonFiniteBounds(x0, y0, x1, y1) =>
         tagged(
           "nonFiniteBounds",
@@ -319,9 +327,10 @@ private[codec] object ResultWire:
       u <- readLengthUnit(json, "unit")
     yield build(v, u)
     kind(json).flatMap {
-      case "degenerateBounds" => bounds(DegenerateBounds.apply)
-      case "nonFiniteBounds"  => bounds(NonFiniteBounds.apply)
-      case "frameMismatch"    =>
+      case "degenerateBounds"     => bounds(DegenerateBounds.apply)
+      case "nonFiniteBounds"      => bounds(NonFiniteBounds.apply)
+      case "boundsExtentOverflow" => bounds(BoundsExtentOverflow.apply)
+      case "frameMismatch"        =>
         for
           l <- readFrameId(json, "left")
           r <- readFrameId(json, "right")

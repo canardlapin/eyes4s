@@ -13,7 +13,6 @@ import platform
 import re
 import shutil
 import subprocess
-import tempfile
 import zipfile
 
 HERE = Path(__file__).resolve().parent
@@ -66,6 +65,23 @@ ENVELOPE_WORKLOADS = {
 }
 
 
+# Under the build's target/ so an OS purge of temporary directories cannot delete the
+# consumer and its receipt while check-docs.py still refers to them.
+WORK_DIR = REPO / "target" / "study-consumer"
+MARKER = ".eyes4s-study-consumer"
+
+
+def prepare(candidate):
+    """Replace a previous consumer build; refuse to delete a directory this script did not create."""
+    if candidate.exists():
+        if any(candidate.iterdir()) and not (candidate / MARKER).exists():
+            raise SystemExit(f"Refusing to replace {candidate}: it is not a study-consumer build")
+        shutil.rmtree(candidate)
+    candidate.mkdir(parents=True)
+    (candidate / MARKER).write_text("Created by tools/study-consumer/verify.py\n")
+    return candidate
+
+
 def run(cwd, log, *commands):
     with log.open("w") as out:
         subprocess.run(
@@ -80,8 +96,14 @@ def main():
         action="store_true",
         help="Use artifacts already published by this script",
     )
+    parser.add_argument(
+        "--work-dir",
+        type=Path,
+        default=WORK_DIR,
+        help="Build directory for the isolated consumer (replaced on every run)",
+    )
     args = parser.parse_args()
-    candidate = Path(tempfile.mkdtemp(prefix="eyes4s-study-consumer-"))
+    candidate = prepare(args.work_dir.resolve())
     print(f"Isolated consumer and logs: {candidate}", flush=True)
     shutil.copy2(HERE / "build.sbt", candidate / "build.sbt")
     shutil.copy2(HERE / ".scalafmt.conf", candidate / ".scalafmt.conf")
@@ -138,7 +160,9 @@ def main():
         "show consumerJS/Compile/fullClasspath",
     )
     log = (candidate / "consumer.log").read_text()
-    if str(REPO) in log:
+    # The consumer lives under REPO/target, so its own paths are removed first; any
+    # remaining checkout path (library classes or sources) breaks isolation.
+    if str(REPO) in log.replace(str(candidate), "<consumer>"):
         raise RuntimeError(
             "Consumer output unexpectedly refers to the library source checkout"
         )
@@ -702,7 +726,10 @@ def check_reader_classpath(candidate, artifacts):
     own, packaged, external = [], [], []
     for entry in found[0].read_text().split(os.pathsep):
         path = Path(entry).resolve()
-        if path.is_relative_to(REPO.resolve()):
+        # The consumer is built under REPO/target: its own output is checked first.
+        if path.is_relative_to(REPO.resolve()) and not path.is_relative_to(
+            candidate.resolve()
+        ):
             raise RuntimeError(
                 f"Reader classpath refers to the library checkout: {entry}"
             )

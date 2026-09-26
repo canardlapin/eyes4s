@@ -171,6 +171,7 @@ private[plan] object CauseDiagnostics:
     e match
       case DegenerateBounds(a, b, c, x)         => d(real(a), real(b), real(c), real(x))
       case NonFiniteBounds(a, b, c, x)          => d(real(a), real(b), real(c), real(x))
+      case BoundsExtentOverflow(a, b, c, x)     => d(real(a), real(b), real(c), real(x))
       case FrameMismatch(left, right)           => d(frame(left), frame(right))
       case FrameIdentityConflict(id, l, r)      => d(frame(id), frameSpec(l), frameSpec(r))
       case NonFiniteLength(value, unit)         => d(real(value), token(unit.toString))

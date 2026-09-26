@@ -467,6 +467,24 @@ class RecordingSuite extends munit.FunSuite:
     assertEquals(simple.contentHash.render, "00b93d68abd7b46f")
   }
 
+  test("resumable content hashing reuses a hash computed by either route") {
+    val direct = rec(tracked(0, 500, 500), tracked(1, 501, 500), tracked(2, 502, 500))
+    val hash   = direct.contentHash
+    assertEquals(direct.contentHashWork, AssemblyWork.Done(hash))
+    val resumed = rec(tracked(0, 500, 500), tracked(1, 501, 500), tracked(2, 502, 500))
+    val work    = resumed.contentHashWork
+    assert(work.phase.nonEmpty, "an unhashed recording must do the resumable work")
+    assertEquals(work.complete, hash)
+    assertEquals(resumed.contentHashWork, AssemblyWork.Done(hash))
+    assertEquals(resumed.contentHash, hash)
+  }
+
+  test("binocular eye projections are built once and keep their cached identity") {
+    assert(bino.left eq bino.left)
+    assert(bino.right eq bino.right)
+    assertEquals(bino.contentHash, bino.contentHash)
+  }
+
   test("recording content identity distinguishes absent and present pupil values") {
     def withPupil(value: Option[Double]) = Recording
       .of(

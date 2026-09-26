@@ -61,6 +61,11 @@ enum GeometryError derives CanEqual:
   case NonFiniteDistance(value: Double)
   case NegativeDistance(value: Double)
 
+  /** Finite, ordered bounds whose width or height overflows a Double. Appended last so
+    * every existing diagnostic code keeps its position.
+    */
+  case BoundsExtentOverflow(xMin: Double, yMin: Double, xMax: Double, yMax: Double)
+
   def message: String = this match
     case DegenerateBounds(x0, y0, x1, y1) =>
       s"Bounds must have positive extent in both axes, got " +
@@ -68,6 +73,9 @@ enum GeometryError derives CanEqual:
         "YAxis explicitly rather than encoding the flip in the bounds."
     case NonFiniteBounds(x0, y0, x1, y1) =>
       s"Bounds must be finite, got [$x0, $x1) x [$y0, $y1)."
+    case BoundsExtentOverflow(x0, y0, x1, y1) =>
+      s"Bounds [$x0, $x1) x [$y0, $y1) are finite, but their width or height " +
+        "overflows a Double."
     case FrameMismatch(l, r) =>
       s"Cannot combine values from different frames: '$l' and '$r'. " +
         "Both are in the same unit, but not in the same coordinate system; " +
