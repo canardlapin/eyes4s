@@ -702,7 +702,16 @@ lazy val results = crossProject(JVMPlatform, JSPlatform)
   .in(file("results"))
   .dependsOn(plan)
   .settings(commonSettings, pureModuleSettings)
-  .settings(name := "eyes4s-results")
+  .settings(
+    name := "eyes4s-results",
+    // The plan catalog's samples and alignment check, so the results suites
+    // check both code tables together.
+    Test / unmanagedSources ++= Seq(
+      file("plan/src/test/scala/eyes4s/plan/DiagnosticSamples.scala").getAbsoluteFile,
+      file("plan/src/test/scala/eyes4s/plan/DiagnosticExamples.scala").getAbsoluteFile,
+      file("plan/src/test/scala/eyes4s/plan/DiagnosticAlignment.scala").getAbsoluteFile
+    )
+  )
 
 /** JSON codecs with a versioned schema, so a project file round-trips. */
 lazy val codec = crossProject(JVMPlatform, JSPlatform)
@@ -719,7 +728,10 @@ lazy val codec = crossProject(JVMPlatform, JSPlatform)
       // check both code tables together.
       file("plan/src/test/scala/eyes4s/plan/DiagnosticSamples.scala").getAbsoluteFile,
       file("plan/src/test/scala/eyes4s/plan/DiagnosticExamples.scala").getAbsoluteFile,
-      file("plan/src/test/scala/eyes4s/plan/DiagnosticAlignment.scala").getAbsoluteFile
+      file("plan/src/test/scala/eyes4s/plan/DiagnosticAlignment.scala").getAbsoluteFile,
+      file(
+        "results/src/test/scala/eyes4s/results/ResultsDiagnosticSamples.scala"
+      ).getAbsoluteFile
     ),
     libraryDependencies ++= Seq(
       "io.circe" %%% "circe-core"   % circeV,
@@ -807,7 +819,10 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
       file("plan/src/test/scala/eyes4s/plan/DiagnosticSamples.scala").getAbsoluteFile,
       file("plan/src/test/scala/eyes4s/plan/DiagnosticExamples.scala").getAbsoluteFile,
       file("plan/src/test/scala/eyes4s/plan/DiagnosticAlignment.scala").getAbsoluteFile,
-      file("codec/src/test/scala/eyes4s/codec/CodecDiagnosticSamples.scala").getAbsoluteFile
+      file("codec/src/test/scala/eyes4s/codec/CodecDiagnosticSamples.scala").getAbsoluteFile,
+      file(
+        "results/src/test/scala/eyes4s/results/ResultsDiagnosticSamples.scala"
+      ).getAbsoluteFile
     ),
     libraryDependencies += "co.fs2" %%% "fs2-io" % fs2V
   )
