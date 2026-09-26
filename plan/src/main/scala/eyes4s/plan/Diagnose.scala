@@ -221,6 +221,8 @@ object Diagnose:
     derived(C.repetitionPlan)(_.message)
   given diagnosticCode: Diagnose[DiagnosticCodeError, Nothing] =
     derived(C.diagnosticCode)(_.message)
+  given fixationEntropy: Diagnose[FixationEntropyError, Nothing] =
+    derived(C.fixationEntropy)(_.message)
 
   given sourceIdentity: Diagnose[SourceIdentityError, Nothing] =
     derived(SourceDiagnostics.identity)(_.message)

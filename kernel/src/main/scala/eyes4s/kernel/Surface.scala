@@ -67,22 +67,62 @@ enum LogBase derives CanEqual:
 final case class Entropy(value: Double, base: LogBase) derives CanEqual:
   def render: String = f"$value%.4f ${base.unitName}"
 
+object Entropy:
+
+  /** Shannon entropy of non-negative weights over `weights.length` cells,
+    * after dividing each by their total.
+    *
+    * The same computation as [[Mass.entropy]] for weights that are not yet a
+    * [[Mass]]: counts in the cells of a lattice that is not a [[Grid]], for
+    * instance. A negative or non-finite weight is refused with the index that
+    * carries it, and weights with no mass have no distribution to measure.
+    */
+  def ofWeights(weights: IArray[Double], base: LogBase): Either[SurfaceError, Entropy] =
+    var total = 0.0
+    var i     = 0
+    while i < weights.length do
+      val w = weights(i)
+      if !w.isFinite then return Left(SurfaceError.NonFiniteValue(i, w))
+      if w < 0.0 then return Left(SurfaceError.NegativeValue(i, w))
+      total += w
+      i += 1
+    if !total.isFinite || total <= 0.0 then Left(SurfaceError.DegenerateTotal(total))
+    else Right(shannon(IArray.tabulate(weights.length)(k => weights(k) / total), base))
+
+  /** An entropy as a fraction of the maximum achievable over `cells` cells,
+    * `log(cells)` in the same base. One cell has no uncertainty to lose, so its
+    * relative entropy is zero rather than `0 / 0`.
+    */
+  def relative(entropy: Entropy, cells: Int): Double =
+    val maxH = math.log(cells.toDouble) / math.log(entropy.base.value)
+    if cells <= 1 || maxH <= 0.0 then 0.0 else entropy.value / maxH
+
+  /** The sum over probabilities already known to be a distribution. */
+  private[kernel] def shannon(probabilities: IArray[Double], base: LogBase): Entropy =
+    val lb = math.log(base.value)
+    var h  = 0.0
+    var i  = 0
+    while i < probabilities.length do
+      val p = probabilities(i)
+      if p > 0.0 then h -= p * math.log(p) / lb
+      i += 1
+    Entropy(h, base)
+
+end Entropy
+
 /** Scalar values on a grid.
   *
   * ==Three types, because there are three things==
   *
   * `eyesim` has one. Its `Ops.eye_density` defines `+` as a mean and `/` as a
   * log-ratio, returns all three results tagged as densities, and drops the
-  * bandwidth on every operation. A signed map is therefore accepted by
-  * `fixation_entropy` as if it were a probability mass, and what comes back
-  * depends on its total. At the pinned revision (fixture
-  * `tools/r-parity/fixtures/entropy.json`, checked by
-  * `EntropyConformanceSuite`) an exact difference of two masses sums to zero
-  * and returns `NA`; a signed map with positive total, such as
-  * `[0.5, -0.25, 0.75, 0]`, returns a finite number computed from its positive
-  * cells alone (0.5623 nats), which is not the entropy of anything; and the
-  * log-ratio map `p / q` with a zero cell returns exactly 0, because its `-Inf`
-  * cell is dropped before the sum.
+  * bandwidth on every operation, so an operator result still reaches
+  * `fixation_entropy` as if it were a probability mass. At the pinned revision
+  * (fixture `tools/r-parity/fixtures/entropy.json`, checked by
+  * `EntropyConformanceSuite`) an exact difference of two masses and a signed
+  * map such as `[0.5, -0.25, 0.75, 0]` are refused with a non-negative-mass
+  * error, but the log-ratio map `p / q` with a zero cell returns exactly 0,
+  * because its `-Inf` cell is dropped before the sum, and `p / p` returns `NA`.
   *
   * Splitting the type makes that a compile error rather than a wrong answer:
   *
@@ -315,15 +355,7 @@ extension [U <: Unit2D](m: Mass[U])
     * Cells with no mass contribute nothing, which is the limit of `p log p` as
     * `p` tends to zero, not a special case.
     */
-  def entropy(base: LogBase = LogBase.E): Entropy =
-    val lb = math.log(base.value)
-    var h  = 0.0
-    var i  = 0
-    while i < m.size do
-      val p = m.values(i)
-      if p > 0.0 then h -= p * math.log(p) / lb
-      i += 1
-    Entropy(h, base)
+  def entropy(base: LogBase = LogBase.E): Entropy = Entropy.shannon(m.values, base)
 
   /** Entropy as a fraction of the maximum achievable on this grid.
     *
@@ -331,8 +363,7 @@ extension [U <: Unit2D](m: Mass[U])
     * different resolution -- which raw entropy does not.
     */
   def relativeEntropy(base: LogBase = LogBase.E): Double =
-    val maxH = math.log(m.size.toDouble) / math.log(base.value)
-    if maxH <= 0.0 then 0.0 else entropy(base).value / maxH
+    Entropy.relative(entropy(base), m.size)
 
 object Mass:
 
