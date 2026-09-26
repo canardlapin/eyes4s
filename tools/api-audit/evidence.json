@@ -670,7 +670,9 @@
           "lawsJVM/eyes4s.laws.KernelLawsSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -1052,8 +1054,10 @@
           "lawsJVM/eyes4s.laws.KernelLawsSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
@@ -1224,7 +1228,9 @@
           "lawsJVM/eyes4s.laws.KernelLawsSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -1289,7 +1295,9 @@
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -1435,10 +1443,12 @@
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.TrustRegressionSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.AdmissionLedgerSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.RecordingCursorSuite",
@@ -1601,6 +1611,7 @@
           "codecJVM/eyes4s.codec.StudyInputCodecSuite",
           "codecJVM/eyes4s.codec.StudyInputV1Suite",
           "codecJVM/eyes4s.codec.StudyV2JvmSuite",
+          "codecJVM/eyes4s.codec.StudyV3JvmSuite",
           "codecJVM/eyes4s.codec.TemporalStudySuite",
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
           "designJVM/eyes4s.design.RepetitionSuite",
@@ -1625,8 +1636,10 @@
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
@@ -1705,7 +1718,9 @@
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -1787,9 +1802,11 @@
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.AdmissionLedgerSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -1870,9 +1887,11 @@
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.AdmissionLedgerSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -1955,9 +1974,11 @@
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.AdmissionLedgerSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -2100,9 +2121,11 @@
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.AdmissionLedgerSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -2250,7 +2273,9 @@
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -2347,8 +2372,10 @@
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -2700,7 +2727,9 @@
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -2770,7 +2799,9 @@
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -2835,7 +2866,9 @@
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -2910,7 +2943,9 @@
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -3001,8 +3036,10 @@
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -3062,8 +3099,10 @@
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -3127,8 +3166,10 @@
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -3211,8 +3252,10 @@
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -3272,8 +3315,10 @@
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -3337,8 +3382,10 @@
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -3426,7 +3473,9 @@
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -4384,7 +4433,9 @@
           "lawsJVM/eyes4s.laws.KernelLawsSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -4461,9 +4512,11 @@
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.SurfaceDecompositionSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.TrustRegressionSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -4537,7 +4590,9 @@
           "lawsJVM/eyes4s.laws.KernelLawsSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -4687,7 +4742,9 @@
           "lawsJVM/eyes4s.laws.KernelLawsSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -4763,9 +4820,11 @@
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.SurfaceDecompositionSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.TrustRegressionSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -4828,6 +4887,7 @@
           "codecJVM/eyes4s.codec.StudyInputCodecSuite",
           "codecJVM/eyes4s.codec.StudyInputV1Suite",
           "codecJVM/eyes4s.codec.StudyV2JvmSuite",
+          "codecJVM/eyes4s.codec.StudyV3JvmSuite",
           "codecJVM/eyes4s.codec.TemporalStudySuite",
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
           "designJVM/consumer.PublicDesignSuite",
@@ -4859,9 +4919,11 @@
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
@@ -4913,6 +4975,7 @@
           "codecJVM/eyes4s.codec.StudyInputV1JvmSuite",
           "codecJVM/eyes4s.codec.StudyInputV1Suite",
           "codecJVM/eyes4s.codec.StudyV2JvmSuite",
+          "codecJVM/eyes4s.codec.StudyV3JvmSuite",
           "codecJVM/eyes4s.codec.TemporalStudySuite",
           "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
@@ -4959,10 +5022,12 @@
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.AdmissionLedgerSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
@@ -5283,6 +5348,7 @@
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/consumer.PublicPlanSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
           "planJVM/eyes4s.plan.StudyWindowSuite"
@@ -5382,6 +5448,7 @@
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.PreflightSuite"
         ]
       },
@@ -5412,6 +5479,7 @@
         "owner": "eyes4s/plan/StudyFinding",
         "suites": [
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.PreflightSuite"
         ]
       },
@@ -5448,6 +5516,7 @@
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.StudyWindowSuite"
         ]
@@ -5490,6 +5559,7 @@
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.StudyWindowSuite"
@@ -5536,6 +5606,7 @@
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
@@ -5621,6 +5692,7 @@
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
@@ -5737,6 +5809,449 @@
         ]
       }
     ],
+    "method eyes4s.plan.StudyChange.field():": [
+      {
+        "descriptor": "()Leyes4s/plan/StudyField;",
+        "owner": "eyes4s/plan/StudyChange$AngularScale",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyField;",
+        "owner": "eyes4s/plan/StudyChange$Controls",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyField;",
+        "owner": "eyes4s/plan/StudyChange$Failures",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyField;",
+        "owner": "eyes4s/plan/StudyChange$Grid",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyField;",
+        "owner": "eyes4s/plan/StudyChange$InitialFixations",
+        "suites": [
+          "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+          "planJVM/eyes4s.plan.TemporalCursorSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyField;",
+        "owner": "eyes4s/plan/StudyChange$Input",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyField;",
+        "owner": "eyes4s/plan/StudyChange$Layout",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyField;",
+        "owner": "eyes4s/plan/StudyChange$Matched",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyField;",
+        "owner": "eyes4s/plan/StudyChange$Method",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyField;",
+        "owner": "eyes4s/plan/StudyChange$OffWindow",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyField;",
+        "owner": "eyes4s/plan/StudyChange$Phases",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyField;",
+        "owner": "eyes4s/plan/StudyChange$Scales",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyField;",
+        "owner": "eyes4s/plan/StudyChange$Unmatched",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyField;",
+        "owner": "eyes4s/plan/StudyChange$Weighting",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyField;",
+        "owner": "eyes4s/plan/StudyChange$Window",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite"
+        ]
+      }
+    ],
+    "method eyes4s.plan.StudyChange.inverse():": [
+      {
+        "descriptor": "()Leyes4s/plan/StudyChange;",
+        "owner": "eyes4s/plan/StudyChange$AngularScale",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyChange;",
+        "owner": "eyes4s/plan/StudyChange$Controls",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyChange;",
+        "owner": "eyes4s/plan/StudyChange$Failures",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyChange;",
+        "owner": "eyes4s/plan/StudyChange$Grid",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyChange;",
+        "owner": "eyes4s/plan/StudyChange$InitialFixations",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyChange;",
+        "owner": "eyes4s/plan/StudyChange$Input",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyChange;",
+        "owner": "eyes4s/plan/StudyChange$Layout",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyChange;",
+        "owner": "eyes4s/plan/StudyChange$Matched",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyChange;",
+        "owner": "eyes4s/plan/StudyChange$Method",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyChange;",
+        "owner": "eyes4s/plan/StudyChange$OffWindow",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyChange;",
+        "owner": "eyes4s/plan/StudyChange$Phases",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyChange;",
+        "owner": "eyes4s/plan/StudyChange$Scales",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyChange;",
+        "owner": "eyes4s/plan/StudyChange$Unmatched",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyChange;",
+        "owner": "eyes4s/plan/StudyChange$Weighting",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "()Leyes4s/plan/StudyChange;",
+        "owner": "eyes4s/plan/StudyChange$Window",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      }
+    ],
+    "method eyes4s.plan.StudyChange.render(eyes4s.kernel.UnitLabel):java.lang.String": [
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$AngularScale",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Controls",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Failures",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Grid",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$InitialFixations",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Input",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Layout",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Matched",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Method",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$OffWindow",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Phases",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Scales",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Unmatched",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Weighting",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Window",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      }
+    ],
+    "method eyes4s.plan.StudyChange.stated(eyes4s.kernel.UnitLabel):java.lang.String": [
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$AngularScale",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Controls",
+        "suites": [
+          "planJVM/eyes4s.plan.InitialFixationSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Failures",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Grid",
+        "suites": [
+          "planJVM/eyes4s.plan.InitialFixationSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$InitialFixations",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Input",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Layout",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Matched",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Method",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$OffWindow",
+        "suites": [
+          "planJVM/eyes4s.plan.InitialFixationSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Phases",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Scales",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Unmatched",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Weighting",
+        "suites": [
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite"
+        ]
+      },
+      {
+        "descriptor": "(Leyes4s/kernel/UnitLabel;)Ljava/lang/String;",
+        "owner": "eyes4s/plan/StudyChange$Window",
+        "suites": [
+          "planJVM/eyes4s.plan.InitialFixationSuite"
+        ]
+      }
+    ],
     "method eyes4s.plan.StudyGeometry.admission():": [
       {
         "descriptor": "()Leyes4s/kernel/Frame;",
@@ -5744,17 +6259,27 @@
         "suites": [
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
+          "codecJVM/eyes4s.codec.CanonicalDigestSuite",
+          "codecJVM/eyes4s.codec.DescriptorPersistenceSuite",
           "codecJVM/eyes4s.codec.InputPayloadCodecSuite",
+          "codecJVM/eyes4s.codec.InputsManifestV1JvmSuite",
+          "codecJVM/eyes4s.codec.InputsManifestV1Suite",
           "codecJVM/eyes4s.codec.InspectionArchiveSuite",
+          "codecJVM/eyes4s.codec.InspectionManifestJvmSuite",
           "codecJVM/eyes4s.codec.ManifestSuite",
+          "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
+          "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
           "codecJVM/eyes4s.codec.ResultCodecSuite",
           "codecJVM/eyes4s.codec.ResultV1Suite",
+          "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
           "codecJVM/eyes4s.codec.StudyCodecSuite",
           "codecJVM/eyes4s.codec.StudyInputCodecSuite",
           "codecJVM/eyes4s.codec.StudyInputV1Suite",
+          "codecJVM/eyes4s.codec.StudyV2JvmSuite",
           "codecJVM/eyes4s.codec.TemporalStudySuite",
+          "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
           "fs2ModuleJVM/eyes4s.fs2.StudyExecutionSuite",
           "fs2ModuleJVM/eyes4s.fs2.TemporalExecutionSuite",
           "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -5770,9 +6295,13 @@
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
+          "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
+          "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -5789,10 +6318,13 @@
         "suites": [
           "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
           "codecJVM/eyes4s.codec.StudyV2JvmSuite",
+          "codecJVM/eyes4s.codec.StudyV3JvmSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.StudyWindowSuite"
         ]
       }
@@ -5842,8 +6374,10 @@
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
@@ -5861,10 +6395,13 @@
         "suites": [
           "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
           "codecJVM/eyes4s.codec.StudyV2JvmSuite",
+          "codecJVM/eyes4s.codec.StudyV3JvmSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
+          "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+          "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.StudyWindowSuite"
         ]
       }
@@ -7902,7 +8439,7 @@
     "class eyes4s.plan.Availability": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/Availability$$anon$6",
-      "suite": "planJVM/eyes4s.plan.StudyWindowSuite"
+      "suite": "planJVM/eyes4s.plan.InitialFixationSuite"
     },
     "class eyes4s.plan.BudgetError": {
       "classification": "data-sum",
@@ -7962,11 +8499,11 @@
     "class eyes4s.plan.EstimationOutcome": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/EstimationOutcome$Estimated",
-      "suite": "planJVM/eyes4s.plan.StudyWindowSuite"
+      "suite": "planJVM/eyes4s.plan.InitialFixationSuite"
     },
     "class eyes4s.plan.EventKind": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/EventKind$$anon$5",
+      "instance": "eyes4s/plan/EventKind$$anon$6",
       "suite": "planJVM/eyes4s.plan.ResultInspectionSuite"
     },
     "class eyes4s.plan.ExecutionCapability": {
@@ -7982,7 +8519,17 @@
     "class eyes4s.plan.FindingClass": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/FindingClass$$anon$3",
-      "suite": "planJVM/eyes4s.plan.PreflightSuite"
+      "suite": "planJVM/eyes4s.plan.InitialFixationSuite"
+    },
+    "class eyes4s.plan.InitialFixationError": {
+      "classification": "data-sum",
+      "instance": "eyes4s/plan/InitialFixationError$NoFixationKept",
+      "suite": "planJVM/eyes4s.plan.TemporalCursorSuite"
+    },
+    "class eyes4s.plan.InitialFixationPolicy": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/InitialFixationPolicy$KeepAll",
+      "suite": "ioJVM/docconsumer.DocumentationExamplesSuite"
     },
     "class eyes4s.plan.InspectionError": {
       "classification": "data-sum",
@@ -8007,7 +8554,7 @@
     "class eyes4s.plan.Membership": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/Membership$$anon$1",
-      "suite": "planJVM/eyes4s.plan.StudyWindowSuite"
+      "suite": "planJVM/eyes4s.plan.InitialFixationSuite"
     },
     "class eyes4s.plan.MethodExecution": {
       "classification": "data-sum",
@@ -8017,7 +8564,7 @@
     "class eyes4s.plan.MissingSource": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/MissingSource$$anon$4",
-      "suite": "planJVM/eyes4s.plan.StudyWindowSuite"
+      "suite": "planJVM/eyes4s.plan.InitialFixationSuite"
     },
     "class eyes4s.plan.Occurrence": {
       "classification": "data-sum",
@@ -8157,7 +8704,7 @@
     "class eyes4s.plan.Remedy": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/Remedy$$anon$4",
-      "suite": "planJVM/eyes4s.plan.OccurrencePairingSuite"
+      "suite": "planJVM/eyes4s.plan.InitialFixationSuite"
     },
     "class eyes4s.plan.RepetitionPlanError": {
       "classification": "data-sum",
@@ -8172,7 +8719,7 @@
     "class eyes4s.plan.ResultRef": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/ResultRef$ContrastRow",
-      "suite": "planJVM/eyes4s.plan.StudyWindowSuite"
+      "suite": "planJVM/eyes4s.plan.InitialFixationSuite"
     },
     "class eyes4s.plan.SampleCountRule": {
       "classification": "data-sum",
@@ -8182,7 +8729,7 @@
     "class eyes4s.plan.ScaleContrast": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/ScaleContrast$Rows",
-      "suite": "planJVM/eyes4s.plan.StudyWindowSuite"
+      "suite": "planJVM/eyes4s.plan.InitialFixationSuite"
     },
     "class eyes4s.plan.ScoreDirection": {
       "classification": "data-sum",
@@ -8202,12 +8749,17 @@
     "class eyes4s.plan.SourceLink": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/SourceLink$Missing",
-      "suite": "planJVM/eyes4s.plan.StudyWindowSuite"
+      "suite": "planJVM/eyes4s.plan.InitialFixationSuite"
     },
     "class eyes4s.plan.Stepwise": {
       "classification": "behavior-or-sealed-data",
       "instance": "eyes4s/plan/Stepwise$recording",
       "suite": "lawsJVM/eyes4s.laws.ExecutionLawsSuite"
+    },
+    "class eyes4s.plan.StudyChange": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/StudyChange$InitialFixations",
+      "suite": "planJVM/eyes4s.plan.TemporalCursorSuite"
     },
     "class eyes4s.plan.StudyDesign": {
       "classification": "data-sum",
@@ -8221,7 +8773,12 @@
     },
     "class eyes4s.plan.StudyFailure": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/StudyFailure$Occupancy",
+      "instance": "eyes4s/plan/StudyFailure$InitialFixations",
+      "suite": "planJVM/eyes4s.plan.TemporalCursorSuite"
+    },
+    "class eyes4s.plan.StudyField": {
+      "classification": "data-sum",
+      "instance": "eyes4s/plan/StudyField$$anon$1",
       "suite": "planJVM/eyes4s.plan.TemporalCursorSuite"
     },
     "class eyes4s.plan.StudyFinding": {
@@ -8238,6 +8795,11 @@
       "classification": "data-sum",
       "instance": "eyes4s/plan/StudyResultError$ContrastAnalyses",
       "suite": "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
+    },
+    "class eyes4s.plan.StudyRevisionError": {
+      "classification": "data-sum",
+      "instance": "eyes4s/plan/StudyRevisionError$Stale",
+      "suite": "planJVM/eyes4s.plan.InitialFixationSuite"
     },
     "class eyes4s.plan.StudyScale": {
       "classification": "data-sum",
@@ -8525,13 +9087,13 @@
     "method eyes4s.codec.SavedManifest$.of(scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "codecJVM/eyes4s.codec.LedgerForgerySuite",
     "method eyes4s.codec.SavedManifest.source():": "codecJVM/eyes4s.codec.LedgerForgerySuite",
     "method eyes4s.codec.SchemaLadder$.of(1,java.lang.String,eyes4s.plan.DefinitionId,scala.Function1,scala.Function1):eyes4s.codec.SchemaLadder": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
-    "method eyes4s.codec.SchemaLadder.earliest(java.lang.Object):eyes4s.plan.DefinitionId": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
+    "method eyes4s.codec.SchemaLadder.earliest(java.lang.Object):eyes4s.plan.DefinitionId": "codecJVM/eyes4s.codec.StudyV3JvmSuite",
     "method eyes4s.codec.SchemaLadder.latest():": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.codec.SchemaLadder.lift(io.circe.Json):scala.util.Either": "codecJVM/eyes4s.codec.LadderLiftSuite",
     "method eyes4s.codec.SchemaLadder.next(scala.Function1,scala.Function1,scala.Function1,scala.Function1):eyes4s.codec.SchemaLadder": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.codec.SchemaLadder.readAt(eyes4s.plan.DefinitionId,io.circe.Json):scala.util.Either": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "method eyes4s.codec.SchemaLadder.upTo(eyes4s.plan.DefinitionId):scala.util.Either": "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite",
-    "method eyes4s.codec.SchemaLadder.upcast(eyes4s.plan.DefinitionId,io.circe.Json):scala.util.Either": "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite",
+    "method eyes4s.codec.SchemaLadder.upcast(eyes4s.plan.DefinitionId,io.circe.Json):scala.util.Either": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.codec.SchemaLadder.upcastTo(eyes4s.plan.DefinitionId,eyes4s.plan.DefinitionId,io.circe.Json):scala.util.Either": "codecJVM/eyes4s.codec.LadderLiftSuite",
     "method eyes4s.codec.SchemaLadder.writeAt(eyes4s.plan.DefinitionId,java.lang.Object):scala.util.Either": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.codec.ScientificManifest$.address(eyes4s.codec.ScientificManifest):scala.util.Either": "codecJVM/eyes4s.codec.ManifestV1Suite",
@@ -9559,6 +10121,7 @@
     "method eyes4s.kernel.Intensity.render():": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.Interval$.lasting(eyes4s.kernel.ClockId,scala.Long,scala.Long):scala.util.Either": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.Interval$.of(eyes4s.kernel.ClockId,scala.Long,scala.Long):scala.util.Either": "kernelJVM/consumer.PublicKernelSuite",
+    "method eyes4s.kernel.Interval.clampedFrom(scala.Long):eyes4s.kernel.Interval": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
     "method eyes4s.kernel.Interval.contains(scala.Long):scala.Boolean": "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite",
     "method eyes4s.kernel.Interval.duration():": "coreJVM/consumer.PublicCoreSuite",
     "method eyes4s.kernel.Interval.encloses(eyes4s.kernel.Interval):scala.util.Either": "kernelJVM/eyes4s.kernel.AgreementSuite",
@@ -9570,7 +10133,7 @@
     "method eyes4s.kernel.LinearAngularScale$.of(1,eyes4s.kernel.Frame,scala.Double):scala.util.Either": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.kernel.LinearAngularScale.angular(eyes4s.kernel.FrameId):scala.util.Either": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "method eyes4s.kernel.LinearAngularScale.angularFrame(eyes4s.kernel.FrameId):scala.util.Either": "lawsJVM/eyes4s.laws.WindowLawsSuite",
-    "method eyes4s.kernel.LinearAngularScale.equals(java.lang.Object):scala.Boolean": "ioJVM/eyes4s.io.WindowConstructionSuite",
+    "method eyes4s.kernel.LinearAngularScale.equals(java.lang.Object):scala.Boolean": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
     "method eyes4s.kernel.LinearAngularScale.hashCode():": "ioJVM/eyes4s.io.WindowConstructionSuite",
     "method eyes4s.kernel.LinearAngularScale.on(eyes4s.kernel.Subframe):scala.util.Either": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "method eyes4s.kernel.LinearAngularScale.sigma(scala.Double):scala.util.Either": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -9727,11 +10290,11 @@
     "method eyes4s.kernel.Span$package$.Span$.toMillis(scala.Long):scala.Double": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.Span$package$.Span$.toSeconds(scala.Long):scala.Double": "coreJVM/consumer.PublicCoreSuite",
     "method eyes4s.kernel.Span$package$.Span$.unary_-(scala.Long):scala.Long": "kernelJVM/consumer.PublicKernelSuite",
-    "method eyes4s.kernel.Subframe$.centred(1,eyes4s.kernel.Frame,eyes4s.kernel.FrameId,eyes4s.kernel.Extent):scala.util.Either": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+    "method eyes4s.kernel.Subframe$.centred(1,eyes4s.kernel.Frame,eyes4s.kernel.FrameId,eyes4s.kernel.Extent):scala.util.Either": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
     "method eyes4s.kernel.Subframe$.of(1,eyes4s.kernel.Frame,eyes4s.kernel.FrameId,eyes4s.kernel.Bounds):scala.util.Either": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.kernel.Subframe$.whole(1,eyes4s.kernel.Frame,eyes4s.kernel.FrameId):scala.util.Either": "planJVM/eyes4s.plan.StudyWindowSuite",
     "method eyes4s.kernel.Subframe.enter():": "lawsJVM/eyes4s.laws.WindowLawsSuite",
-    "method eyes4s.kernel.Subframe.equals(java.lang.Object):scala.Boolean": "ioJVM/eyes4s.io.WindowConstructionSuite",
+    "method eyes4s.kernel.Subframe.equals(java.lang.Object):scala.Boolean": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
     "method eyes4s.kernel.Subframe.exit():": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "method eyes4s.kernel.Subframe.hashCode():": "ioJVM/eyes4s.io.WindowConstructionSuite",
     "method eyes4s.kernel.Subframe.locate(eyes4s.kernel.Pt):eyes4s.kernel.HalfOpenPlacement": "lawsJVM/eyes4s.laws.WindowLawsSuite",
@@ -9901,6 +10464,11 @@
     "method eyes4s.laws.Generators$.genSigned(1,eyes4s.kernel.Grid):org.scalacheck.Gen": "lawsJVM/eyes4s.laws.KernelLawsSuite",
     "method eyes4s.laws.Generators$.given_Shrink_Scanpath(1):org.scalacheck.Shrink": "lawsJVM/eyes4s.laws.ScanpathLawsSuite",
     "method eyes4s.laws.Generators$.shrinkScanpath(1,eyes4s.core.Scanpath):scala.collection.immutable.LazyList": "lawsJVM/eyes4s.laws.ScanpathLawsSuite",
+    "method eyes4s.laws.InitialFixationLaws$.estimated(5):scala.Function2": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.laws.InitialFixationLaws$.roles(5,scala.Function2,scala.Function2,org.scalacheck.Gen,eyes4s.kernel.UnitLabel):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.laws.InitialFixationLaws$.selection(1,scala.Function2,org.scalacheck.Gen):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.laws.InitialFixationLaws$.shipped(1):scala.Function2": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.laws.InitialFixationLaws$.trialNear(eyes4s.kernel.Pt,scala.Double,scala.Double):org.scalacheck.Gen": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
     "method eyes4s.laws.InventoryLaws.<init>(scala.Function1):eyes4s.laws.InventoryLaws": "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
     "method eyes4s.laws.InventoryLaws.inventory():": "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
     "method eyes4s.laws.InventoryScenario$.gen():": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -9963,6 +10531,8 @@
     "method eyes4s.laws.StoredGraph$.canonical(eyes4s.codec.ScientificManifest,scala.collection.immutable.Map):scala.util.Either": "lawsJVM/eyes4s.laws.ManifestLawSuite",
     "method eyes4s.laws.StoredGraph$.of(eyes4s.codec.SavedManifest):eyes4s.laws.StoredGraph": "lawsJVM/eyes4s.laws.ManifestLawSuite",
     "method eyes4s.laws.StoredGraph.address():": "lawsJVM/eyes4s.laws.ManifestLawSuite",
+    "method eyes4s.laws.StudyDiffLaws$.diff(5,scala.Function2,scala.Function2,org.scalacheck.Gen,eyes4s.kernel.UnitLabel):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.laws.StudyDiffLaws$.shipped(5):scala.Tuple2": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
     "method eyes4s.laws.StudyResultEquivalence$.same(4,eyes4s.plan.StudyResult,eyes4s.plan.StudyResult,scala.Function2,scala.Function2):scala.Boolean": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
     "method eyes4s.laws.StudyResultEquivalence$.sameAnalyses(2,eyes4s.plan.StudyAnalyses,eyes4s.plan.StudyAnalyses,scala.Function2):scala.Boolean": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
     "method eyes4s.laws.StudyResultEquivalence$.sameAnalysis(2,eyes4s.design.Analysis,eyes4s.design.Analysis,scala.Function2):scala.Boolean": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
@@ -10061,23 +10631,23 @@
     "method eyes4s.plan.Diagnose$.preflight(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.Diagnose$.reconstruction(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.Diagnose$.reduction(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.ResultInspectionSuite",
-    "method eyes4s.plan.Diagnose$.studyFailure(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.StudyWindowSuite",
-    "method eyes4s.plan.Diagnose$.studyFinding(2):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.PreflightSuite",
+    "method eyes4s.plan.Diagnose$.studyFailure(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.Diagnose$.studyFinding(2):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.Diagnose$.studyResult(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.Diagnose$.temporalFinding(2):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.Diagnose$.temporalResult(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.Diagnostic$.host(1,eyes4s.plan.DiagnosticCode,eyes4s.plan.DiagnosticSeverity,scala.collection.immutable.Vector,scala.collection.immutable.Vector,java.lang.String):eyes4s.plan.Diagnostic": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.Diagnostic$.of(2,java.lang.Object,eyes4s.plan.Diagnose):eyes4s.plan.Diagnostic": "planJVM/consumer.PublicPlanSuite",
-    "method eyes4s.plan.Diagnostic.affectedTrials():": "planJVM/eyes4s.plan.PreflightSuite",
-    "method eyes4s.plan.Diagnostic.causes():": "planJVM/eyes4s.plan.ResultInspectionSuite",
-    "method eyes4s.plan.Diagnostic.keys():": "planJVM/eyes4s.plan.PreflightSuite",
+    "method eyes4s.plan.Diagnostic.affectedTrials():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.Diagnostic.causes():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.Diagnostic.keys():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.Diagnostic.linked(1,scala.collection.immutable.Vector):eyes4s.plan.Diagnostic": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.Diagnostic.mapKeys(1,scala.Function1):eyes4s.plan.Diagnostic": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.Diagnostic.operand(java.lang.String):scala.Option": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.Diagnostic.withSeverity(eyes4s.plan.DiagnosticSeverity):eyes4s.plan.Diagnostic": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.Diagnostic.within(1,scala.collection.immutable.Seq):eyes4s.plan.Diagnostic": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.DiagnosticCode$.host(java.lang.String,java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.DiagnosticCode.render():": "planJVM/eyes4s.plan.StudyWindowSuite",
+    "method eyes4s.plan.DiagnosticCode.render():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.DiagnosticCode.toString():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.DiagnosticCodeError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.DiagnosticFamily$.slug(java.lang.String):java.lang.String": "planJVM/consumer.PublicPlanSuite",
@@ -10098,6 +10668,23 @@
     "method eyes4s.plan.ExactDouble.equals(java.lang.Object):scala.Boolean": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ExactDouble.hashCode():": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ExactDouble.toString():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "method eyes4s.plan.InitialFixationError.message():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.InitialFixationPolicy$.dropFirst(1):eyes4s.plan.InitialFixationPolicy": "planJVM/eyes4s.plan.TemporalCursorSuite",
+    "method eyes4s.plan.InitialFixationPolicy$.dropLeadingInClosedDisc(1,eyes4s.kernel.Pt,scala.Double):scala.util.Either": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.InitialFixationPolicy$.keepAll(1):eyes4s.plan.InitialFixationPolicy": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "method eyes4s.plan.InitialFixationPolicy.isKeepAll():": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "method eyes4s.plan.InitialFixationPolicy.methods():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.InitialFixationPolicy.parameters():": "planJVM/eyes4s.plan.TemporalCursorSuite",
+    "method eyes4s.plan.InitialFixationPolicy.render():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.InitialFixationRule$.of(1,eyes4s.plan.InitialFixationPolicy,eyes4s.kernel.Frame,scala.Option):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "method eyes4s.plan.InitialFixationRule.dropCount(eyes4s.core.Scanpath):scala.Int": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "method eyes4s.plan.InitialFixationRule.select(eyes4s.core.Scanpath):eyes4s.plan.InitialFixationOutcome": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "method eyes4s.plan.InitialFixationSummary$.of(1,scala.collection.immutable.Vector):eyes4s.plan.InitialFixationSummary": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.InitialFixationTally$.of(scala.Int,scala.Int,scala.Long,scala.Long):scala.util.Either": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.InitialFixationTally.anyDropped():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.InitialFixationTally.kept():": "planJVM/eyes4s.plan.StudyCursorSuite",
+    "method eyes4s.plan.InitialFixationTally.keptDuration():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.InitialFixationTally.render():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.InspectionError.message():": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.InventoryError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.InventoryLedger$.of(eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.SampleCountRule):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
@@ -10118,11 +10705,11 @@
     "method eyes4s.plan.Listing.page(eyes4s.plan.ResultRef,eyes4s.plan.PageSize):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.Listing.size():": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.Locus.mapKeys(1,scala.Function1):eyes4s.plan.Locus": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.Locus.trialKeys():": "planJVM/eyes4s.plan.PreflightSuite",
+    "method eyes4s.plan.Locus.trialKeys():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.MatchedCardinality.blocking():": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "method eyes4s.plan.MatchedCardinality.blockingReferences():": "planJVM/eyes4s.plan.StudyCursorSuite",
-    "method eyes4s.plan.MatchedCardinality.refusal(eyes4s.plan.StudyLayout):scala.Option": "planJVM/eyes4s.plan.OccurrencePairingSuite",
-    "method eyes4s.plan.MatchedReferences.render():": "planJVM/eyes4s.plan.OccurrencePairingSuite",
+    "method eyes4s.plan.MatchedCardinality.refusal(eyes4s.plan.StudyLayout):scala.Option": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.MatchedReferences.render():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.MethodDescriptor$.cosine(1,eyes4s.plan.DefinitionId):eyes4s.plan.MethodDescriptor": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.plan.MethodDescriptor$.of(3,eyes4s.plan.DefinitionId,eyes4s.plan.ParameterSet,scala.Function1,scala.Function1,scala.collection.immutable.Set,eyes4s.plan.ExecutionCapability):eyes4s.plan.MethodDescriptor": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.plan.MethodDescriptor.verify(java.lang.Object,scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.StudyCursorSuite",
@@ -10134,7 +10721,7 @@
     "method eyes4s.plan.ObservedSynchronization.fit(eyes4s.kernel.ClockId):scala.util.Either": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.plan.OccurrenceChoice.render():": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "method eyes4s.plan.Operand.mapKeys(1,scala.Function1):eyes4s.plan.Operand": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.Operand.trialKeys():": "planJVM/eyes4s.plan.PreflightSuite",
+    "method eyes4s.plan.Operand.trialKeys():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.PageSize$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ParameterDescriptor.<init>(3,eyes4s.plan.ParameterInfo,scala.Function1,scala.Function1,scala.Option):eyes4s.plan.ParameterDescriptor": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.ParameterDescriptor.bind(1,scala.Function1,scala.Function1):eyes4s.plan.ParameterField": "planJVM/consumer.PublicPlanSuite",
@@ -10145,7 +10732,7 @@
     "method eyes4s.plan.ParameterSet.verify(java.lang.Object,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.ParticipantScope.rule():": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "method eyes4s.plan.PlanChange$.between(scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.OccurrencePairingSuite",
-    "method eyes4s.plan.PlanError.message():": "planJVM/eyes4s.plan.OccurrencePairingSuite",
+    "method eyes4s.plan.PlanError.message():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.PointBinResult.difference():": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.plan.PointBins$.of(eyes4s.kernel.ClockId,scala.collection.immutable.Vector,eyes4s.plan.PointBinEndpoint):scala.util.Either": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
     "method eyes4s.plan.PointBins.index(scala.Long):scala.Option": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
@@ -10163,12 +10750,13 @@
     "method eyes4s.plan.Preflight$.temporal(5,eyes4s.plan.TemporalStudyPlan,scala.Option,eyes4s.design.PairScheduleBudget):eyes4s.plan.TemporalReport": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.PreflightError.affectedTrials():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.PreflightError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.PreflightReport.availability():": "planJVM/eyes4s.plan.StudyWindowSuite",
+    "method eyes4s.plan.PreflightReport.availability():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.PreflightReport.blockers():": "planJVM/eyes4s.plan.StudyCursorSuite",
-    "method eyes4s.plan.PreflightReport.ready():": "planJVM/eyes4s.plan.StudyWindowSuite",
+    "method eyes4s.plan.PreflightReport.ready():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.PreflightReport.warnings():": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "method eyes4s.plan.PreparedStudy.boundedWork(eyes4s.compare.ComparisonBudget):scala.util.Either": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.PreparedStudy.capability():": "planJVM/eyes4s.plan.StudyCursorSuite",
+    "method eyes4s.plan.PreparedStudy.initialFixationSummary():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.PreparedStudy.preview():": "planJVM/eyes4s.plan.StudyPreviewSuite",
     "method eyes4s.plan.PreparedStudy.run():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.PreparedStudy.windowSummary():": "planJVM/eyes4s.plan.StudyWindowSuite",
@@ -10244,7 +10832,7 @@
     "method eyes4s.plan.RecordingSegment$.of(eyes4s.plan.RecordingStage):eyes4s.plan.RecordingSegment": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.plan.RecordingSegment$.total(scala.Int,eyes4s.plan.RecordingSegment):eyes4s.plan.SegmentTotal": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.plan.RecordingWork$.complete(1,eyes4s.plan.RecordingCursor,eyes4s.design.WorkQuanta):scala.util.Either": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "method eyes4s.plan.ReductionEntry.contributors():": "planJVM/eyes4s.plan.StudyWindowSuite",
+    "method eyes4s.plan.ReductionEntry.contributors():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.ReductionEntry.exclusions():": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.RepetitionContrast$.withinParticipant(java.lang.String,java.lang.String,java.lang.String):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.RepetitionLayout$.of(4,eyes4s.plan.DefinitionId,eyes4s.plan.DefinitionId,eyes4s.design.Projection,eyes4s.plan.DefinitionId,eyes4s.design.Projection,eyes4s.plan.DefinitionId,eyes4s.design.Projection,eyes4s.design.KeyDigest,scala.math.Ordering):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -10259,22 +10847,22 @@
     "method eyes4s.plan.RepetitionRelations$.of(scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "method eyes4s.plan.RepetitionRelations$.referenceConditionGrouping(eyes4s.plan.ParticipantScope):eyes4s.plan.RepetitionRelations": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "method eyes4s.plan.ResultInspection$.recording(1,eyes4s.plan.RecordingPlan,eyes4s.plan.RecordingAnalysis):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
-    "method eyes4s.plan.ResultInspection$.study(4,eyes4s.plan.StudyResult,eyes4s.plan.StudySources,eyes4s.plan.ScoreSchema):scala.util.Either": "planJVM/eyes4s.plan.StudyWindowSuite",
-    "method eyes4s.plan.ResultInspection$.study(5,eyes4s.plan.StudyPlan,eyes4s.plan.StudyResult,eyes4s.plan.StudyInput,scala.Option):scala.util.Either": "planJVM/eyes4s.plan.StudyWindowSuite",
+    "method eyes4s.plan.ResultInspection$.study(4,eyes4s.plan.StudyResult,eyes4s.plan.StudySources,eyes4s.plan.ScoreSchema):scala.util.Either": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.ResultInspection$.study(5,eyes4s.plan.StudyPlan,eyes4s.plan.StudyResult,eyes4s.plan.StudyInput,scala.Option):scala.util.Either": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.ResultInspection$.temporal(5,eyes4s.plan.TemporalStudyResult,eyes4s.plan.StudySources,eyes4s.plan.ScoreSchema):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
-    "method eyes4s.plan.ResultRef.loci():": "planJVM/eyes4s.plan.StudyWindowSuite",
+    "method eyes4s.plan.ResultRef.loci():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.SampleCountRule.countColumn():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.ScaleInspection.pairing(eyes4s.plan.StudyDesign):eyes4s.design.PairingReport": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ScaleInspection.pairs(eyes4s.plan.StudyDesign):eyes4s.plan.Listing": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ScaleInspection.reductions(eyes4s.plan.StudyDesign):eyes4s.plan.Listing": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ScaleInspection.report(eyes4s.plan.StudyDesign):eyes4s.design.ReductionReport": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ScoreComponent$.of(2,java.lang.String,java.lang.String,eyes4s.plan.ParameterUnits,eyes4s.compare.MeasureScale,eyes4s.plan.ScoreDirection,scala.Function1,scala.Function1):scala.util.Either": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.ScoreSchema$.of(2,scala.collection.immutable.Vector):eyes4s.plan.ScoreSchema": "planJVM/eyes4s.plan.StudyWindowSuite",
-    "method eyes4s.plan.ScoreSchema$.study(5,eyes4s.plan.StudyPlan):scala.util.Either": "planJVM/eyes4s.plan.StudyWindowSuite",
+    "method eyes4s.plan.ScoreSchema$.of(2,scala.collection.immutable.Vector):eyes4s.plan.ScoreSchema": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.ScoreSchema$.study(5,eyes4s.plan.StudyPlan):scala.util.Either": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.ScoreSchema$.undescribed(2):eyes4s.plan.ScoreSchema": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ScoreSchema.difference(java.lang.Object):eyes4s.plan.ScoreView": "planJVM/eyes4s.plan.StudyWindowSuite",
-    "method eyes4s.plan.ScoreSchema.ids():": "planJVM/eyes4s.plan.StudyWindowSuite",
-    "method eyes4s.plan.ScoreSchema.score(java.lang.Object):eyes4s.plan.ScoreView": "planJVM/eyes4s.plan.StudyWindowSuite",
+    "method eyes4s.plan.ScoreSchema.ids():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.ScoreSchema.score(java.lang.Object):eyes4s.plan.ScoreView": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.SourceLink.mapKeys(1,scala.Function1):eyes4s.plan.SourceLink": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.SourceLink.trialKeys():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.SourceRecord.isAdmitted():": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
@@ -10292,29 +10880,97 @@
     "method eyes4s.plan.Stepwise$.temporal.advance(eyes4s.plan.TemporalCursor,eyes4s.design.WorkQuanta):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.Stepwise$.temporal.stage(eyes4s.plan.TemporalCursor):eyes4s.plan.TemporalStage": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.plan.StudyAnalyses$.of(2,eyes4s.design.DirectedPairwiseAnalysis,eyes4s.design.Analysis,eyes4s.design.DirectedPairwiseAnalysis,eyes4s.design.Analysis):scala.util.Either": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
-    "method eyes4s.plan.StudyAnalyses.reduced(eyes4s.plan.StudyDesign):eyes4s.design.Analysis": "planJVM/eyes4s.plan.StudyWindowSuite",
-    "method eyes4s.plan.StudyAnalyses.source(eyes4s.plan.StudyDesign):eyes4s.design.DirectedPairwiseAnalysis": "planJVM/eyes4s.plan.StudyWindowSuite",
+    "method eyes4s.plan.StudyAnalyses.reduced(eyes4s.plan.StudyDesign):eyes4s.design.Analysis": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyAnalyses.source(eyes4s.plan.StudyDesign):eyes4s.design.DirectedPairwiseAnalysis": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.AngularScale.field():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.AngularScale.inverse():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.AngularScale.render(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.AngularScale.stated(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Controls.field():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.Controls.inverse():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Controls.render(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Controls.stated(eyes4s.kernel.UnitLabel):java.lang.String": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.Failures.field():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Failures.inverse():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Failures.render(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Failures.stated(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Grid.field():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.Grid.inverse():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Grid.render(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Grid.stated(eyes4s.kernel.UnitLabel):java.lang.String": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.InitialFixations.field():": "planJVM/eyes4s.plan.TemporalCursorSuite",
+    "method eyes4s.plan.StudyChange$.InitialFixations.inverse():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.InitialFixations.render(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.InitialFixations.stated(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Input.field():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Input.inverse():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Input.render(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Input.stated(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Layout.field():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.Layout.inverse():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.Layout.render(eyes4s.kernel.UnitLabel):java.lang.String": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.Layout.stated(eyes4s.kernel.UnitLabel):java.lang.String": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.Matched.field():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Matched.inverse():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Matched.render(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Matched.stated(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Method.field():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.Method.inverse():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.Method.render(eyes4s.kernel.UnitLabel):java.lang.String": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.Method.stated(eyes4s.kernel.UnitLabel):java.lang.String": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.OffWindow.field():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.OffWindow.inverse():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.OffWindow.render(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.OffWindow.stated(eyes4s.kernel.UnitLabel):java.lang.String": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.Phases.field():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Phases.inverse():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Phases.render(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Phases.stated(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Scales.added():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Scales.field():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Scales.inverse():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Scales.removed():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Scales.render(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Scales.stated(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Unmatched.field():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Unmatched.inverse():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Unmatched.render(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Unmatched.stated(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Weighting.field():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.Weighting.inverse():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Weighting.render(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Weighting.stated(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Window.field():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.Window.inverse():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Window.render(eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyChange$.Window.stated(eyes4s.kernel.UnitLabel):java.lang.String": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyChange$.ordering(5):scala.math.Ordering": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
     "method eyes4s.plan.StudyCursor.advance(eyes4s.design.WorkQuanta):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyCursor.capability():": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.StudyCursor.reductionUnits():": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.plan.StudyCursor.stage():": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.plan.StudyEstimate.name():": "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
+    "method eyes4s.plan.StudyDiff$.between(5,eyes4s.plan.StudyPlan,eyes4s.plan.StudyPlan):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyDiff$.render(5,scala.collection.immutable.Vector,eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "method eyes4s.plan.StudyDiff$.revise(5,eyes4s.plan.StudyPlan,scala.collection.immutable.Vector,eyes4s.kernel.UnitLabel):scala.util.Either": "planJVM/eyes4s.plan.TemporalCursorSuite",
+    "method eyes4s.plan.StudyEstimate.name():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
     "method eyes4s.plan.StudyEstimate.parameters():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyEstimate.provenanceSteps():": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
     "method eyes4s.plan.StudyFailure$.keys(1,eyes4s.plan.StudyFailure):scala.collection.immutable.Vector": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
-    "method eyes4s.plan.StudyFailure.message():": "planJVM/eyes4s.plan.StudyWindowSuite",
-    "method eyes4s.plan.StudyFinding.category():": "planJVM/eyes4s.plan.PreflightSuite",
-    "method eyes4s.plan.StudyFinding.keys():": "planJVM/eyes4s.plan.PreflightSuite",
-    "method eyes4s.plan.StudyFinding.message():": "planJVM/eyes4s.plan.StudyWindowSuite",
-    "method eyes4s.plan.StudyFinding.remedy():": "planJVM/eyes4s.plan.OccurrencePairingSuite",
+    "method eyes4s.plan.StudyFailure.message():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyField.label():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyFinding.category():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyFinding.keys():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyFinding.message():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyFinding.remedy():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.StudyFinding.severity():": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.StudyGeometry$.WholeFrame.admission():": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.plan.StudyGeometry$.Windowed.admission():": "planJVM/eyes4s.plan.StudyWindowSuite",
-    "method eyes4s.plan.StudyGeometry$.windowed(1,eyes4s.kernel.Subframe,eyes4s.kernel.Grid,eyes4s.plan.OffWindowPolicy):scala.util.Either": "planJVM/eyes4s.plan.StudyWindowSuite",
+    "method eyes4s.plan.StudyGeometry$.Windowed.admission():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyGeometry$.windowed(1,eyes4s.kernel.Subframe,eyes4s.kernel.Grid,eyes4s.plan.OffWindowPolicy):scala.util.Either": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.StudyInput$.apply(2,eyes4s.design.Trials,eyes4s.design.KeyDigest,eyes4s.kernel.UnitLabel):eyes4s.plan.StudyInput": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
     "method eyes4s.plan.StudyInput.reference():": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.plan.StudyInspection.contrastRow(eyes4s.plan.ResultRef):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.StudyInspection.estimation(eyes4s.plan.ResultRef):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
+    "method eyes4s.plan.StudyInspection.initialFixationTally(java.lang.Object):scala.Option": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.StudyInspection.pair(eyes4s.plan.ResultRef):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.StudyInspection.reduction(eyes4s.plan.ResultRef):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.StudyInspection.scale(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -10329,9 +10985,9 @@
     "method eyes4s.plan.StudyPairing$package$.TrialOccurrence$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "method eyes4s.plan.StudyPairing$package$.TrialOccurrence$.value(scala.Int):scala.Int": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "method eyes4s.plan.StudyPairing.canRefuse():": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.plan.StudyPairing.description():": "planJVM/eyes4s.plan.OccurrencePairingSuite",
+    "method eyes4s.plan.StudyPairing.description():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.StudyPairing.isVersion1():": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.plan.StudyPlan$.configure(5,eyes4s.plan.ArtifactRef,eyes4s.plan.StudyLayout,eyes4s.plan.StudyGeometry,java.lang.String,java.lang.String,eyes4s.core.Weight,scala.collection.immutable.Vector,scala.Option,eyes4s.design.FailurePolicy,eyes4s.plan.StudyMethod,java.lang.Object,eyes4s.plan.StudyPairing,eyes4s.kernel.UnitLabel):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "method eyes4s.plan.StudyPlan$.configure(5,eyes4s.plan.ArtifactRef,eyes4s.plan.StudyLayout,eyes4s.plan.StudyGeometry,java.lang.String,java.lang.String,eyes4s.core.Weight,scala.collection.immutable.Vector,scala.Option,eyes4s.design.FailurePolicy,eyes4s.plan.StudyMethod,java.lang.Object,eyes4s.plan.StudyPairing,eyes4s.plan.InitialFixationPolicy,eyes4s.kernel.UnitLabel):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyPlan$.cosine(1,eyes4s.plan.ArtifactRef,eyes4s.kernel.Grid,java.lang.String,java.lang.String,eyes4s.core.Weight,scala.collection.immutable.Vector,eyes4s.design.FailurePolicy,eyes4s.kernel.UnitLabel):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyPlan$.of(5,eyes4s.plan.ArtifactRef,eyes4s.plan.StudyLayout,eyes4s.kernel.Grid,java.lang.String,java.lang.String,eyes4s.core.Weight,scala.collection.immutable.Vector,eyes4s.design.FailurePolicy,eyes4s.plan.StudyMethod,java.lang.Object,eyes4s.kernel.UnitLabel):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyPlan.description():": "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -10339,21 +10995,28 @@
     "method eyes4s.plan.StudyPlan.equals(java.lang.Object):scala.Boolean": "codecJVM/eyes4s.codec.StudyCodecSuite",
     "method eyes4s.plan.StudyPlan.grid():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyPlan.hashCode():": "planJVM/eyes4s.plan.ResultInspectionSuite",
+    "method eyes4s.plan.StudyPlan.initialFixationTallies(eyes4s.plan.StudyInput):scala.collection.immutable.Vector": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "method eyes4s.plan.StudyPlan.initialFixations():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyPlan.inspect():": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.StudyPlan.isVersion1():": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "method eyes4s.plan.StudyPlan.keepsAllFixations():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyPlan.preflight(scala.Option,eyes4s.design.PairScheduleBudget):eyes4s.plan.StudyReport": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.StudyPlan.prepare(eyes4s.plan.StudyInput,eyes4s.design.PairScheduleBudget):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyPlan.prerequisites(scala.Option):scala.collection.immutable.Vector": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "method eyes4s.plan.StudyPlan.revise(scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.TemporalCursorSuite",
     "method eyes4s.plan.StudyPlan.run(eyes4s.plan.StudyInput):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "method eyes4s.plan.StudyPlan.structuralDiff(eyes4s.plan.StudyPlan):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.StudyPlan.windowTallies(eyes4s.plan.StudyInput):scala.collection.immutable.Vector": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyPreview.checkCurrent(3,eyes4s.plan.StudyPlan,eyes4s.plan.StudyInput):scala.util.Either": "planJVM/eyes4s.plan.StudyPreviewSuite",
+    "method eyes4s.plan.StudyPreview.initialFixationSummary():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.StudyPreview.windowSummary():": "planJVM/eyes4s.plan.StudyWindowSuite",
-    "method eyes4s.plan.StudyReport.affectedTrials():": "planJVM/eyes4s.plan.PreflightSuite",
-    "method eyes4s.plan.StudyReport.diagnostics():": "planJVM/eyes4s.plan.PreflightSuite",
+    "method eyes4s.plan.StudyReport.affectedTrials():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudyReport.diagnostics():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.StudyReport.prepare(3,eyes4s.plan.StudyPlan,eyes4s.plan.StudyInput,eyes4s.design.PairScheduleBudget):scala.util.Either": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.StudyResult$.reconstruct(4,eyes4s.plan.ArtifactRef,eyes4s.plan.StudyLayout,scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "codecJVM/eyes4s.codec.ResultCodecSuite",
     "method eyes4s.plan.StudyResult$.reconstruct(4,eyes4s.plan.ArtifactRef,eyes4s.plan.StudyLayout,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
     "method eyes4s.plan.StudyResultError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "method eyes4s.plan.StudyRevisionError.message():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.StudyScale.angularParameters():": "planJVM/eyes4s.plan.StudyWindowSuite",
     "method eyes4s.plan.StudyScale.resolve(scala.Option,scala.Int):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyScaleResult$.reconstruct(4,eyes4s.plan.StudyEstimate,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.StudyAnalyses,scala.util.Either):scala.util.Either": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
@@ -10361,12 +11024,12 @@
     "method eyes4s.plan.StudySegment$.total(4,eyes4s.plan.PreparedStudy,eyes4s.plan.StudySegment):eyes4s.plan.SegmentTotal": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.plan.StudySegment$.total(4,eyes4s.plan.PreparedStudy,eyes4s.plan.StudySegment,eyes4s.plan.StudyCursor):eyes4s.plan.SegmentTotal": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.plan.StudySources$.of(2,eyes4s.plan.StudyInput,eyes4s.plan.AdmissionLedger,eyes4s.design.KeyDigest):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
-    "method eyes4s.plan.StudySources$.unledgered(2,eyes4s.plan.StudyInput,eyes4s.design.KeyDigest):eyes4s.plan.StudySources": "planJVM/eyes4s.plan.StudyWindowSuite",
+    "method eyes4s.plan.StudySources$.unledgered(2,eyes4s.plan.StudyInput,eyes4s.design.KeyDigest):eyes4s.plan.StudySources": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.StudySources.fixation(java.lang.Object,scala.Int):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.StudySources.fixationLinks(java.lang.Object,scala.Int):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.ResultInspectionSuite",
-    "method eyes4s.plan.StudySources.link(eyes4s.plan.Diagnostic):eyes4s.plan.Diagnostic": "planJVM/eyes4s.plan.StudyWindowSuite",
-    "method eyes4s.plan.StudySources.links(java.lang.Object):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.StudyWindowSuite",
-    "method eyes4s.plan.StudySources.locate(scala.collection.immutable.Vector):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.StudyWindowSuite",
+    "method eyes4s.plan.StudySources.link(eyes4s.plan.Diagnostic):eyes4s.plan.Diagnostic": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudySources.links(java.lang.Object):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.StudySources.locate(scala.collection.immutable.Vector):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.StudySources.record(scala.Int):scala.Option": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.StudySources.rejections():": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.StudySources.samples(java.lang.Object,scala.Int):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -10512,7 +11175,9 @@
     "value eyes4s.codec.StudyCodec.codec": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "value eyes4s.codec.StudyCodec.ladder": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "value eyes4s.codec.StudyCodec.schemaV2": "codecJVM/eyes4s.codec.StudyCodecSuite",
+    "value eyes4s.codec.StudyCodec.schemaV3": "codecJVM/eyes4s.codec.StudyV3JvmSuite",
     "value eyes4s.codec.StudyCodecDefinitions$.studyV2": "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
+    "value eyes4s.codec.StudyCodecDefinitions$.studyV3": "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
     "value eyes4s.codec.StudyInputCodec.input": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "value eyes4s.codec.StudyInputCodec.ledger": "codecJVM/eyes4s.codec.LadderLiftSuite",
     "value eyes4s.codec.StudyInputCodec.ledgerLadder": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
@@ -10745,6 +11410,9 @@
     "value eyes4s.laws.Generators$.given_Cogen_Angle": "lawsJVM/eyes4s.laws.KernelLawsSuite",
     "value eyes4s.laws.Generators$.given_Cogen_Instant": "lawsJVM/eyes4s.laws.KernelLawsSuite",
     "value eyes4s.laws.Generators$.given_Cogen_Span": "lawsJVM/eyes4s.laws.KernelLawsSuite",
+    "value eyes4s.laws.InitialFixationLaws$.crossCases": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "value eyes4s.laws.InitialFixationLaws$.planCases": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
+    "value eyes4s.laws.InitialFixationLaws$.screen": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
     "value eyes4s.laws.InventoryScenario.records": "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite",
     "value eyes4s.laws.LawsDiagnosticCatalog$.codes": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.laws.LawsDiagnosticCatalog$.detectorValidation": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
@@ -10844,7 +11512,7 @@
     "value eyes4s.plan.Diagnose$.overlapFailure": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.pairSchedule": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.pairing": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.plan": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "value eyes4s.plan.Diagnose$.plan": "planJVM/eyes4s.plan.InitialFixationSuite",
     "value eyes4s.plan.Diagnose$.pointSampling": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.quarantine": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.recipeParameter": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
@@ -10909,6 +11577,7 @@
     "value eyes4s.plan.DiagnosticCatalog$.families": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.fixationComparison": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.geometry": "planJVM/consumer.PublicPlanSuite",
+    "value eyes4s.plan.DiagnosticCatalog$.initialFixation": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.inspection": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.inventory": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.iqrBandwidth": "planJVM/consumer.PublicPlanSuite",
@@ -10948,6 +11617,7 @@
     "value eyes4s.plan.DiagnosticCatalog$.studyFailure": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.studyFinding": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.studyResult": "planJVM/consumer.PublicPlanSuite",
+    "value eyes4s.plan.DiagnosticCatalog$.studyRevision": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.surface": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.syncEvidence": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.templateFit": "planJVM/consumer.PublicPlanSuite",
@@ -10961,6 +11631,7 @@
     "value eyes4s.plan.DiagnosticCatalog$.windowOccupancy": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.workQuanta": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticFamily.codes": "planJVM/consumer.PublicPlanSuite",
+    "value eyes4s.plan.InitialFixationError$.diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.PageSize$.maximum": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "value eyes4s.plan.ParameterSet$.empty": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.plan.PointSamplingSpec$.method": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
@@ -10971,6 +11642,7 @@
     "value eyes4s.plan.PreparedStudy.estimates": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "value eyes4s.plan.PreparedStudy.geometry": "planJVM/eyes4s.plan.StudyCursorSuite",
     "value eyes4s.plan.PreparedStudy.grid": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
+    "value eyes4s.plan.PreparedStudy.initialFixations": "planJVM/eyes4s.plan.InitialFixationSuite",
     "value eyes4s.plan.PreparedStudy.inputReference": "planJVM/eyes4s.plan.StudyWorkSuite",
     "value eyes4s.plan.PreparedStudy.layoutId": "planJVM/eyes4s.plan.StudyWorkSuite",
     "value eyes4s.plan.PreparedStudy.matchedCardinality": "planJVM/eyes4s.plan.StudyCursorSuite",
@@ -11007,12 +11679,13 @@
     "value eyes4s.plan.StudyKey$.given_KeyDigest_StudyKey": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
     "value eyes4s.plan.StudyKey$.given_Ordering_StudyKey": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
     "value eyes4s.plan.StudyMethod.comparison": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "value eyes4s.plan.StudyPairing$.default": "planJVM/eyes4s.plan.OccurrencePairingSuite",
+    "value eyes4s.plan.StudyPairing$.default": "planJVM/eyes4s.plan.InitialFixationSuite",
     "value eyes4s.plan.StudyPairing$.version1": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "value eyes4s.plan.StudyPairing$package$.TrialOccurrence$.first": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "value eyes4s.plan.StudyPairing$package$.TrialOccurrence$.given_KeyDigest_TrialOccurrence": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "value eyes4s.plan.StudyPreview.reductionOrientation": "planJVM/eyes4s.plan.StudyPreviewSuite",
     "value eyes4s.plan.StudyReport.family": "planJVM/eyes4s.plan.PreflightSuite",
+    "value eyes4s.plan.StudyRevisionError$.diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.TemporalReport.family": "planJVM/eyes4s.plan.PreflightSuite",
     "value eyes4s.plan.TrialIdentity$.given_KeyDigest_TrialIdentity": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
     "value eyes4s.plan.TrialIdentity$.given_Ordering_TrialIdentity": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
@@ -13153,6 +13826,8 @@
       "I-VT recording plan: versionedCodec.round trip preserves the value",
       "configured study plan: versionedCodec.reencoding is canonical",
       "configured study plan: versionedCodec.round trip preserves the value",
+      "initial-fixation study plan: versionedCodec.reencoding is canonical",
+      "initial-fixation study plan: versionedCodec.round trip preserves the value",
       "study plan versions: schemaLadder.a document written as vN decodes with a vN-only reader",
       "study plan versions: schemaLadder.a lifted document decodes to the value and re-encodes to the earliest document",
       "study plan versions: schemaLadder.a refused document stays refused after lifting",
@@ -13163,6 +13838,7 @@
       "temporal study plan: versionedCodec.reencoding is canonical",
       "temporal study plan: versionedCodec.round trip preserves the value",
       "the configured-plan law kills a dropped window, a flipped policy and a moved scale",
+      "the initial-fixation law kills a reset policy and a moved radius",
       "the recording-plan law kills a dropped synchronization mark and a moved threshold",
       "the study-plan ladder laws kill a dropped upcast and writing the latest version",
       "the study-plan law kills a dropped scale, swapped phases and a reset failure policy",
@@ -13279,6 +13955,24 @@
       "cosine study result: versionedCodec.round trip preserves the value",
       "published laws kill a dropped failure row, reordered or dropped provenance and an altered denominator"
     ],
+    "lawsJS/eyes4s.laws.StudyRevisionLawsSuite": [
+      "InitialFixationRule: initialFixations.dropped and kept fixations partition the trial, the kept ones its suffix",
+      "InitialFixationRule: initialFixations.keeping every fixation is the identity",
+      "InitialFixationRule: initialFixations.the dropped fixations are exactly those the policy names",
+      "StudyDiff: studyDiff.a change that does not start from the plan's value is refused",
+      "StudyDiff: studyDiff.a diff has one change per field, in field order",
+      "StudyDiff: studyDiff.a diff is empty exactly when the plans describe the same study",
+      "StudyDiff: studyDiff.applying the diff of a to b to a gives b",
+      "StudyDiff: studyDiff.the diff is antisymmetric",
+      "StudyDiff: studyDiff.the diff of a plan with itself is empty",
+      "StudyPlan initial fixations: initialFixationRoles.each trial is mapped from the fixations it keeps, whatever its phase",
+      "StudyPlan initial fixations: initialFixationRoles.each trial's tally is its own selection, whatever its phase",
+      "StudyPlan initial fixations: initialFixationRoles.exchanging the focal and reference phases leaves every tally unchanged",
+      "the default rendering names the field and the typed values",
+      "the diff laws kill a dropped field, a reversed order, a one-sided diff and bad revisions",
+      "the roles law kills a policy applied to focal trials only, in tallies or maps",
+      "the shipped selection passes, and each selection mutant is killed"
+    ],
     "lawsJS/eyes4s.laws.SurfaceDecompositionSuite": [
       "OLS fitted maps and residuals cannot be used as masses",
       "a near-collinear design with a nonzero residual is rank deficient by default",
@@ -13393,6 +14087,16 @@
       "empty and sub-bin windows have explicit coverage",
       "epoch errors support strict equality like every other domain error",
       "stable occurrence selection, zero-based Nth, and named missing/ambiguous errors"
+    ],
+    "planJS/eyes4s.plan.InitialFixationSuite": [
+      "a change of layout or method is typed, inverted and rendered by identity",
+      "a trial left without fixations fails at every scale; the others are mapped",
+      "each trial is mapped from its kept fixations, whether it is focal or reference",
+      "every change states the value it starts from",
+      "keep all drops nothing and describes nothing; drop first drops one per trial",
+      "prepared work, preflight and inspection report the policy's tallies",
+      "the leading run within the closed disc is dropped; a later return is kept",
+      "the plan refuses a cross off the frame, a non-positive radius and a missing scale"
     ],
     "planJS/eyes4s.plan.InventoryLedgerSuite": [
       "a consistent inventory joins and makes the ledger version 3",
@@ -13510,6 +14214,7 @@
       "source permutation changes identity and traversal order without relabelling keys"
     ],
     "planJS/eyes4s.plan.TemporalCursorSuite": [
+      "every cell maps the fixations the base plan's initial-fixation policy keeps",
       "preparation refuses a wrong or missing input before any step; a budget refusal follows the first cell's preparation",
       "the cursor at every quantum is plan.run over straddlers, empty windows, missing epochs and overflow",
       "the step sequence is every cell's preparation then its study cursor's steps, stamped"
@@ -13916,6 +14621,11 @@
       "study-v2.json and admission-ledger-v2.json re-encode byte-identically",
       "the pinned v2 resources are the encodings of the fixture values",
       "the portable mirrors carry the same JSON values"
+    ],
+    "codecJVM/eyes4s.codec.StudyV3JvmSuite": [
+      "study-v3.json re-encodes byte-identically",
+      "the pinned v3 resource is the encoding of the fixture value, under version 3",
+      "the portable mirror carries the same JSON value"
     ],
     "codecJVM/eyes4s.codec.TemporalStudySuite": [
       "coverage and anchors participate in identity and boundary choices produce a meaningful diff",
@@ -15871,6 +16581,8 @@
       "I-VT recording plan: versionedCodec.round trip preserves the value",
       "configured study plan: versionedCodec.reencoding is canonical",
       "configured study plan: versionedCodec.round trip preserves the value",
+      "initial-fixation study plan: versionedCodec.reencoding is canonical",
+      "initial-fixation study plan: versionedCodec.round trip preserves the value",
       "study plan versions: schemaLadder.a document written as vN decodes with a vN-only reader",
       "study plan versions: schemaLadder.a lifted document decodes to the value and re-encodes to the earliest document",
       "study plan versions: schemaLadder.a refused document stays refused after lifting",
@@ -15881,6 +16593,7 @@
       "temporal study plan: versionedCodec.reencoding is canonical",
       "temporal study plan: versionedCodec.round trip preserves the value",
       "the configured-plan law kills a dropped window, a flipped policy and a moved scale",
+      "the initial-fixation law kills a reset policy and a moved radius",
       "the recording-plan law kills a dropped synchronization mark and a moved threshold",
       "the study-plan ladder laws kill a dropped upcast and writing the latest version",
       "the study-plan law kills a dropped scale, swapped phases and a reset failure policy",
@@ -16014,6 +16727,24 @@
       "cosine study result: versionedCodec.round trip preserves the value",
       "published laws kill a dropped failure row, reordered or dropped provenance and an altered denominator"
     ],
+    "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite": [
+      "InitialFixationRule: initialFixations.dropped and kept fixations partition the trial, the kept ones its suffix",
+      "InitialFixationRule: initialFixations.keeping every fixation is the identity",
+      "InitialFixationRule: initialFixations.the dropped fixations are exactly those the policy names",
+      "StudyDiff: studyDiff.a change that does not start from the plan's value is refused",
+      "StudyDiff: studyDiff.a diff has one change per field, in field order",
+      "StudyDiff: studyDiff.a diff is empty exactly when the plans describe the same study",
+      "StudyDiff: studyDiff.applying the diff of a to b to a gives b",
+      "StudyDiff: studyDiff.the diff is antisymmetric",
+      "StudyDiff: studyDiff.the diff of a plan with itself is empty",
+      "StudyPlan initial fixations: initialFixationRoles.each trial is mapped from the fixations it keeps, whatever its phase",
+      "StudyPlan initial fixations: initialFixationRoles.each trial's tally is its own selection, whatever its phase",
+      "StudyPlan initial fixations: initialFixationRoles.exchanging the focal and reference phases leaves every tally unchanged",
+      "the default rendering names the field and the typed values",
+      "the diff laws kill a dropped field, a reversed order, a one-sided diff and bad revisions",
+      "the roles law kills a policy applied to focal trials only, in tallies or maps",
+      "the shipped selection passes, and each selection mutant is killed"
+    ],
     "lawsJVM/eyes4s.laws.SurfaceDecompositionSuite": [
       "OLS fitted maps and residuals cannot be used as masses",
       "a near-collinear design with a nonzero residual is rank deficient by default",
@@ -16128,6 +16859,16 @@
       "empty and sub-bin windows have explicit coverage",
       "epoch errors support strict equality like every other domain error",
       "stable occurrence selection, zero-based Nth, and named missing/ambiguous errors"
+    ],
+    "planJVM/eyes4s.plan.InitialFixationSuite": [
+      "a change of layout or method is typed, inverted and rendered by identity",
+      "a trial left without fixations fails at every scale; the others are mapped",
+      "each trial is mapped from its kept fixations, whether it is focal or reference",
+      "every change states the value it starts from",
+      "keep all drops nothing and describes nothing; drop first drops one per trial",
+      "prepared work, preflight and inspection report the policy's tallies",
+      "the leading run within the closed disc is dropped; a later return is kept",
+      "the plan refuses a cross off the frame, a non-positive radius and a missing scale"
     ],
     "planJVM/eyes4s.plan.InventoryLedgerSuite": [
       "a consistent inventory joins and makes the ledger version 3",
@@ -16245,6 +16986,7 @@
       "source permutation changes identity and traversal order without relabelling keys"
     ],
     "planJVM/eyes4s.plan.TemporalCursorSuite": [
+      "every cell maps the fixations the base plan's initial-fixation policy keeps",
       "preparation refuses a wrong or missing input before any step; a budget refusal follows the first cell's preparation",
       "the cursor at every quantum is plan.run over straddlers, empty windows, missing epochs and overflow",
       "the step sequence is every cell's preparation then its study cursor's steps, stamped"
