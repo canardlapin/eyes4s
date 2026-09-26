@@ -44,6 +44,10 @@ final case class FamilySamples(
   * so a new case appears in `labels` before anyone writes a code for it.
   */
 object DiagnosticSamples:
+  given DiagnosticExample[SourceKeyColumns[?]] = DiagnosticExample.of(seed =>
+    SourceKeyColumns.Study(s"participant-$seed", s"item-$seed", s"phase-$seed")
+  )
+
   inline def labelsOf[E](using m: Mirror.SumOf[E]): Vector[String] =
     constValueTuple[m.MirroredElemLabels].toList.map(_.toString).toVector
 
@@ -849,5 +853,7 @@ object DiagnosticSamples:
     generated[PointSamplingError]("PointSamplingError"),
     generated[RecipeParameterError]("RecipeParameterError"),
     generated[RepetitionPlanError]("RepetitionPlanError"),
-    generated[DiagnosticCodeError]("DiagnosticCodeError")
+    generated[DiagnosticCodeError]("DiagnosticCodeError"),
+    generated[SourceIdentityError]("SourceIdentityError"),
+    generated[ImportSpecError]("ImportSpecError")
   )

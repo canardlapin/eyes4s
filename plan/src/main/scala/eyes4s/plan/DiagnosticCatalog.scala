@@ -883,7 +883,9 @@ object DiagnosticCatalog:
     pointSampling,
     recipeParameter,
     repetitionPlan,
-    diagnosticCode
+    diagnosticCode,
+    SourceDiagnostics.identity,
+    SourceDiagnostics.importDescription
   )
 
   /** Every stable code, in catalog order. */
