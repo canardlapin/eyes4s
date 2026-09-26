@@ -1,14 +1,16 @@
 # Eyes Studio — design and plan
 
 Eyes Studio is the JavaFX desktop workbench built on eyes4s. It lives in the `studio` module family
-(`studio-core`, `studio-viz`, `studio-desktop`). Nothing in eyes4s's pure modules may depend on it.
+(`studio-core`, `studio-app`, `studio-viz` cross-built JVM + Scala.js; `studio-desktop` JavaFX). Nothing in
+eyes4s may depend on it. Architecture: DESIGN_SPEC §13.
 This folder is the reference that the implementation has to reach.
 
 | Path | What it is |
 |---|---|
 | `DESIGN_SPEC.md` | The design contract. §12 lists the round-3 amendments and overrides anything earlier in the file. |
 | `design/*.dc.html` | The approved boards, one file per screen and moment (see below). |
-| `fixture/make_fixture.py`, `fixture/FIXTURE.md` | The deterministic mock study. Every number on the boards comes from it. |
+| `fixture/make_fixture.py`, `fixture/FIXTURE.md`, `fixture/fixture.json` | The deterministic mock study behind every number on the boards. The fake backend serves `fixture.json`. The real CSV acceptance fixture is generated separately, into `fixtures/studio-golden/` (S0.7a). |
+| `PARITY_CHECKLIST.md` | The per-board items a screen must match. The S10.4-* tickets sign it off. |
 | `plan/studio_plan.py` | The single source for `IMPLEMENTATION_PLAN.md` and for the Mote beads tagged `studio`. |
 | `IMPLEMENTATION_PLAN.md` | Generated. Contains the gates G0–G5, the epics S0–S10, and every ticket with its acceptance criteria and tests. |
 
