@@ -26,12 +26,20 @@ import sbt._
   *
   *   - a hex colour (`#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`);
   *   - a CSS colour function (`rgb(`, `rgba(`, `hsl(`, `hsla(`, `hsb(`, `hsba(`);
-  *   - a JavaFX colour factory (`Color.rgb(`, `Color.web(`, `Color.color(`,
-  *     `Color.hsb(`, `Color.gray(`, `Color.grayRgb(`, `Color.valueOf(`).
+  *   - a JavaFX colour factory or constant (`Color.rgb(`, `Color.web(`,
+  *     `Color.color(`, `Color.hsb(`, `Color.gray(`, `Color.grayRgb(`,
+  *     `Color.valueOf(`, `new Color(`, `Color.RED`, `Paint.valueOf(`);
+  *     `Color.TRANSPARENT` is allowed;
+  *   - a token-package constructor (`Colour.srgb(`, `Colour.srgba(`);
+  *   - in Scala, a 24- or 32-bit colour int (`0xRRGGBB`, `0xAARRGGBB`) and a
+  *     named colour in an inline style (`"-fx-fill: white"`);
+  *   - in CSS, a named colour in a declaration value (`transparent` allowed).
   *
   * Comments are ignored. In CSS only declaration blocks are read, so an id
-  * selector such as `#add` is not a colour. The token package itself, the
-  * files generated from it, and the paths in [[whitelist]] are exempt.
+  * selector such as `#add` is not a colour; in Scala a hex-like selector
+  * passed to `lookup`, `lookupAll` or `setId` is not one either. The token
+  * source (`Tokens.scala`, `Colour.scala`), the files generated from it, and
+  * nothing else are exempt ([[whitelist]]).
   *
   * [[selfTest]] plants violations and clean inputs; `checkStudioColours` runs
   * it before the real scan, so a rule that stops detecting fails the build.
@@ -48,14 +56,14 @@ object NoLiteralColourLint {
     * each with its reason.
     */
   val whitelist: Seq[(String, String)] = Seq(
-    "studio/app/src/main/scala/eyes4s/studio/app/tokens/" ->
-      "the token source: every colour and ramp, and the CSS renderers",
+    "studio/app/src/main/scala/eyes4s/studio/app/tokens/Tokens.scala" ->
+      "the token source: every colour and ramp",
+    "studio/app/src/main/scala/eyes4s/studio/app/tokens/Colour.scala" ->
+      "the colour type: its literal range checks and its CSS rendering",
     "studio/desktop/src/main/resources/eyes4s/studio/desktop/studio.css" ->
       "generated from the token source (TokenFiles)",
     "studio/desktop/src/main/resources/eyes4s/studio/desktop/studio-dark.css" ->
-      "generated from the token source (TokenFiles)",
-    "studio/desktop/src/main/resources/eyes4s/studio/desktop/stimulus/" ->
-      "stimulus art: depictions of what a participant saw, not interface colour"
+      "generated from the token source (TokenFiles)"
   )
 
   /** One literal colour, located by file and line. */
@@ -81,7 +89,183 @@ object NoLiteralColourLint {
   private val cssFunction = "(?<![\\w-])(?:rgba?|hsla?|hsba?)\\s*\\(".r
   private val fxFactory   =
     "(?<![\\w$])Color\\s*\\.\\s*(?:rgb|web|color|hsb|gray|grayRgb|valueOf)\\s*\\(".r
-  private val patterns = Seq(hexColour, cssFunction, fxFactory)
+  private val fxNew      = "(?<![\\w$])new\\s+(?:javafx\\.scene\\.paint\\.)?Color\\s*\\(".r
+  private val fxConstant =
+    "(?<![\\w$])Color\\s*\\.\\s*(?!TRANSPARENT(?![\\w$]))[A-Z][A-Z0-9_]+(?![\\w$])".r
+  private val paintValue     = "(?<![\\w$])Paint\\s*\\.\\s*valueOf\\s*\\(".r
+  private val tokenMint      = "(?<![\\w$])Colour\\s*\\.\\s*srgba?\\s*\\(".r
+  private val commonPatterns =
+    Seq(cssFunction, fxFactory, fxNew, fxConstant, paintValue, tokenMint)
+
+  private val colourInt = "(?<![\\w.$])0[xX](?:[0-9A-Fa-f]{8}|[0-9A-Fa-f]{6})(?![\\w$])".r
+
+  /** CSS named colours (CSS Color 4, which JavaFX also reads), except
+    * `transparent`, which is the absence of a colour rather than a choice of one.
+    */
+  val namedColours: Seq[String] = Seq(
+    "aliceblue",
+    "antiquewhite",
+    "aqua",
+    "aquamarine",
+    "azure",
+    "beige",
+    "bisque",
+    "black",
+    "blanchedalmond",
+    "blue",
+    "blueviolet",
+    "brown",
+    "burlywood",
+    "cadetblue",
+    "chartreuse",
+    "chocolate",
+    "coral",
+    "cornflowerblue",
+    "cornsilk",
+    "crimson",
+    "cyan",
+    "darkblue",
+    "darkcyan",
+    "darkgoldenrod",
+    "darkgray",
+    "darkgreen",
+    "darkgrey",
+    "darkkhaki",
+    "darkmagenta",
+    "darkolivegreen",
+    "darkorange",
+    "darkorchid",
+    "darkred",
+    "darksalmon",
+    "darkseagreen",
+    "darkslateblue",
+    "darkslategray",
+    "darkslategrey",
+    "darkturquoise",
+    "darkviolet",
+    "deeppink",
+    "deepskyblue",
+    "dimgray",
+    "dimgrey",
+    "dodgerblue",
+    "firebrick",
+    "floralwhite",
+    "forestgreen",
+    "fuchsia",
+    "gainsboro",
+    "ghostwhite",
+    "gold",
+    "goldenrod",
+    "gray",
+    "green",
+    "greenyellow",
+    "grey",
+    "honeydew",
+    "hotpink",
+    "indianred",
+    "indigo",
+    "ivory",
+    "khaki",
+    "lavender",
+    "lavenderblush",
+    "lawngreen",
+    "lemonchiffon",
+    "lightblue",
+    "lightcoral",
+    "lightcyan",
+    "lightgoldenrodyellow",
+    "lightgray",
+    "lightgreen",
+    "lightgrey",
+    "lightpink",
+    "lightsalmon",
+    "lightseagreen",
+    "lightskyblue",
+    "lightslategray",
+    "lightslategrey",
+    "lightsteelblue",
+    "lightyellow",
+    "lime",
+    "limegreen",
+    "linen",
+    "magenta",
+    "maroon",
+    "mediumaquamarine",
+    "mediumblue",
+    "mediumorchid",
+    "mediumpurple",
+    "mediumseagreen",
+    "mediumslateblue",
+    "mediumspringgreen",
+    "mediumturquoise",
+    "mediumvioletred",
+    "midnightblue",
+    "mintcream",
+    "mistyrose",
+    "moccasin",
+    "navajowhite",
+    "navy",
+    "oldlace",
+    "olive",
+    "olivedrab",
+    "orange",
+    "orangered",
+    "orchid",
+    "palegoldenrod",
+    "palegreen",
+    "paleturquoise",
+    "palevioletred",
+    "papayawhip",
+    "peachpuff",
+    "peru",
+    "pink",
+    "plum",
+    "powderblue",
+    "purple",
+    "rebeccapurple",
+    "red",
+    "rosybrown",
+    "royalblue",
+    "saddlebrown",
+    "salmon",
+    "sandybrown",
+    "seagreen",
+    "seashell",
+    "sienna",
+    "silver",
+    "skyblue",
+    "slateblue",
+    "slategray",
+    "slategrey",
+    "snow",
+    "springgreen",
+    "steelblue",
+    "tan",
+    "teal",
+    "thistle",
+    "tomato",
+    "turquoise",
+    "violet",
+    "wheat",
+    "white",
+    "whitesmoke",
+    "yellow",
+    "yellowgreen"
+  )
+
+  private val namedAlternatives = namedColours.sortBy(-_.length).mkString("|")
+
+  // A named colour as a word inside a CSS value (after the property's colon).
+  private val cssNamed =
+    ("(?i)(?<![\\w#.$-])(?:" + namedAlternatives + ")(?![\\w(-])").r
+
+  // A named colour in an inline JavaFX style string: `-fx-fill: white`.
+  private val inlineNamed =
+    ("(?i)-fx-[\\w-]+\\s*:\\s*[^;\"]*?(?<![\\w#.$-])(?:" + namedAlternatives + ")(?![\\w(-])").r
+
+  // A Scala string passed as a node selector: `lookup("#add")`.
+  private val selectorCall =
+    "(?:lookup|lookupAll|setId|querySelector|querySelectorAll)\\s*\\(\\s*\"[^\"\\n]*$".r
 
   // ---------------------------------------------------------------------------
   // Blanking: keep offsets and newlines, drop what is not colour-bearing
@@ -170,12 +354,37 @@ object NoLiteralColourLint {
       if (fileName.endsWith(".scala")) scalaWithoutComments(source)
       else if (fileName.endsWith(".fxml")) xmlWithoutComments(source)
       else cssDeclarationsOnly(source)
+    val scala               = fileName.endsWith(".scala")
+    val css                 = fileName.endsWith(".css")
     def lineOf(offset: Int) = readable.take(offset).count(_ == '\n') + 1
-    patterns
-      .flatMap(p =>
-        p.findAllMatchIn(readable).map(m => Violation(fileName, lineOf(m.start), m.matched))
-      )
+    def lineBefore(at: Int) = readable.substring(readable.lastIndexOf('\n', at - 1) + 1, at)
+    def selector(at: Int)   = scala && selectorCall.findFirstIn(lineBefore(at)).isDefined
+    val hexes     = hexColour.findAllMatchIn(readable).filterNot(m => selector(m.start)).toList
+    val scalaOnly = if (scala) Seq(colourInt, inlineNamed) else Nil
+    val others    = (commonPatterns ++ scalaOnly).flatMap(_.findAllMatchIn(readable)).toList
+    val named     = if (css) cssNamed.findAllMatchIn(cssValuesOnly(readable)).toList else Nil
+    (hexes ++ others ++ named)
+      .map(m => Violation(fileName, lineOf(m.start), m.matched))
+      .toSeq
       .sortBy(v => (v.line, v.literal))
+  }
+
+  /** CSS declaration text with property names and quoted strings blanked,
+    * leaving only the values after each `:`.
+    */
+  def cssValuesOnly(declarations: String): String = {
+    val out     = new StringBuilder(declarations)
+    var inValue = false
+    var quote   = 0.toChar
+    declarations.indices.foreach { i =>
+      val c = declarations(i)
+      if (quote != 0) { if (c == quote) quote = 0; if (c != '\n') out(i) = ' ' }
+      else if (c == '"' || c == '\'') { quote = c; out(i) = ' ' }
+      else if (c == ':') { inValue = true; out(i) = ' ' }
+      else if (c == ';' || c == '{' || c == '}') { inValue = false; out(i) = ' ' }
+      else if (!inValue && c != '\n') out(i) = ' '
+    }
+    out.toString
   }
 
   /** Every literal colour in the studio sources under `buildRoot`. */
@@ -222,19 +431,30 @@ object NoLiteralColourLint {
     mustFind(
       "Planted.scala",
       Seq(
-        "val c = \"#ECE9E2\""                            -> "#ECE9E2",
-        "val c = \"#fff\""                               -> "#fff",
-        "val c = \"#1C1E2159\""                          -> "#1C1E2159",
-        "node.setStyle(\"-fx-fill: #0E6E68;\")"          -> "#0E6E68",
-        "node.setStyle(s\"-fx-fill: #0e6e68; $x\")"      -> "#0e6e68",
-        "val s = \"-fx-text-fill: rgba(28,30,33,.35)\""  -> "rgba(",
-        "val s = \"-fx-background-color: rgb(1, 2, 3)\"" -> "rgb(",
-        "val s = \"hsl(120, 50%, 50%)\""                 -> "hsl(",
-        "val p = Color.web(\"white\")"                   -> "Color.web(",
-        "val p = Color.rgb(28, 30, 33)"                  -> "Color.rgb(",
-        "val p = Color .color(0.1, 0.2, 0.3)"            -> "Color .color(",
-        "val p = javafx.scene.paint.Color.hsb(1, 1, 1)"  -> "Color.hsb(",
-        "val t = \"\"\"a\n  -fx-fill: #ABCDEF;\"\"\""    -> "#ABCDEF"
+        "val c = \"#ECE9E2\""                              -> "#ECE9E2",
+        "val c = \"#fff\""                                 -> "#fff",
+        "val c = \"#1C1E2159\""                            -> "#1C1E2159",
+        "node.setStyle(\"-fx-fill: #0E6E68;\")"            -> "#0E6E68",
+        "node.setStyle(s\"-fx-fill: #0e6e68; $x\")"        -> "#0e6e68",
+        "val s = \"-fx-text-fill: rgba(28,30,33,.35)\""    -> "rgba(",
+        "val s = \"-fx-background-color: rgb(1, 2, 3)\""   -> "rgb(",
+        "val s = \"hsl(120, 50%, 50%)\""                   -> "hsl(",
+        "val p = Color.web(\"white\")"                     -> "Color.web(",
+        "val p = Color.rgb(28, 30, 33)"                    -> "Color.rgb(",
+        "val p = Color .color(0.1, 0.2, 0.3)"              -> "Color .color(",
+        "val p = javafx.scene.paint.Color.hsb(1, 1, 1)"    -> "Color.hsb(",
+        "val t = \"\"\"a\n  -fx-fill: #ABCDEF;\"\"\""      -> "#ABCDEF",
+        "val c = Colour.srgb(0x1c1e21)"                    -> "Colour.srgb(",
+        "val c = Colour.srgba(0x1c1e21, 35)"               -> "Colour.srgba(",
+        "val argb = 0xFF1C1E21"                            -> "0xFF1C1E21",
+        "val rgb = 0x1c1e21"                               -> "0x1c1e21",
+        "val p = new Color(0.1, 0.2, 0.3, 1.0)"            -> "new Color(",
+        "val p = new javafx.scene.paint.Color(0, 0, 0, 1)" -> "new javafx.scene.paint.Color(",
+        "val p = Color.RED"                                -> "Color.RED",
+        "val p = Color.DARKSLATEGRAY"                      -> "Color.DARKSLATEGRAY",
+        "val p = Paint.valueOf(\"x\")"                     -> "Paint.valueOf(",
+        "node.setStyle(\"-fx-text-fill: white;\")"         -> "-fx-text-fill: white",
+        "node.lookup(\"#add\").setStyle(\"-fx-fill: #ECE9E2\")" -> "#ECE9E2"
       )
     )
     mustFind(
@@ -244,7 +464,10 @@ object NoLiteralColourLint {
         ".chip {\n  -fx-text-fill: #1c1e21;\n}"                              -> "#1c1e21",
         ".x { -fx-fill: rgba(0, 0, 0, 0.5); }"                               -> "rgba(",
         "#id .x { -fx-border-color: #abc #abc; }"                            -> "#abc",
-        ".x { -fx-effect: dropshadow(gaussian, hsb(0,0%,0%), 2, 0, 0, 0); }" -> "hsb("
+        ".x { -fx-effect: dropshadow(gaussian, hsb(0,0%,0%), 2, 0, 0, 0); }" -> "hsb(",
+        ".x { -fx-text-fill: white; }"                                       -> "white",
+        ".x { -fx-border-color: -es-ink DarkSlateGray; }"                    -> "DarkSlateGray",
+        ".x:hover {\n  -fx-background-color: -es-surface, red;\n}"           -> "red"
       )
     )
     mustFind(
@@ -276,7 +499,14 @@ object NoLiteralColourLint {
         "val m = myColor.rgb",
         "val fill = \"-fx-fill: -es-ink;\"",
         "val u = s\"$name#$id\"",
-        "val c = '#'"
+        "val c = '#'",
+        "val n = node.lookup(\"#add\")",
+        "val ns = scene.lookupAll(\"#fade .chip\")",
+        "node.setId(\"#bead\")",
+        "val p = Color.TRANSPARENT",
+        "val mask = 0xff; val big = 0x1234567",
+        "node.setStyle(\"-fx-font-weight: bold; -fx-fill: -es-ink;\")",
+        "val t = Tokens.themed(Theme.Light, ThemedToken.Ink).webCss"
       )
     )
     mustPass(
@@ -285,7 +515,11 @@ object NoLiteralColourLint {
         "#add { -fx-fill: -es-ink; }",
         "#fade, #bead .x { -fx-text-fill: -es-ink-2; }",
         "/* .root { -fx-fill: #ECE9E2; } */ .root { -fx-fill: -es-surface; }",
-        ".x { -fx-background-color: -es-surface, -es-hairline; -fx-effect: none; }"
+        ".x { -fx-background-color: -es-surface, -es-hairline; -fx-effect: none; }",
+        ".x { -fx-background-color: transparent; -fx-border-color: TRANSPARENT; }",
+        ".x { -fx-font-family: \"Tan Serif\"; -fx-alignment: center; }",
+        ".x:hover { -fx-cursor: hand; -fx-fill: -es-tan; }",
+        ".red, .white > .tan { -fx-fill: -es-ink; }"
       )
     )
 
@@ -317,8 +551,16 @@ object NoLiteralColourLint {
       "generated CSS not exempt"
     )
     expect(
-      whitelisted("studio/desktop/src/main/resources/eyes4s/studio/desktop/stimulus/beach.css"),
-      "stimulus art not exempt"
+      whitelisted("studio/app/src/main/scala/eyes4s/studio/app/tokens/Colour.scala"),
+      "colour type not exempt"
+    )
+    expect(
+      !whitelisted("studio/app/src/main/scala/eyes4s/studio/app/tokens/TokenCss.scala"),
+      "the rest of the token package exempt"
+    )
+    expect(
+      !whitelisted("studio/desktop/src/main/resources/eyes4s/studio/desktop/stimulus/a.css"),
+      "an undeclared directory exempt"
     )
     expect(
       !whitelisted("studio/desktop/src/main/resources/eyes4s/studio/desktop/shell.css"),

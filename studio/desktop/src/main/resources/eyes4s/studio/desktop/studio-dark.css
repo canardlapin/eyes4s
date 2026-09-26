@@ -57,6 +57,16 @@
   -es-div-mid: #F3F1EC;
   -es-div-pos: #B4442F;
   -es-screen: #9A9A96;
+  -es-isoline-ink: rgba(28,30,33,0.8);
+  -es-isoline-case: rgba(255,255,255,0.7);
+  -es-paper: #FFFFFF;
+  -es-paper-ink: #1C1E21;
+  -es-paper-ink-2: #464B52;
+  -es-paper-rule: #C9C5BC;
+  -es-fig-query: #3A2E6E;
+  -es-fig-match: #2F6DB5;
+  -es-fig-control: #B86E0E;
+  -es-fig-control-fill: #D98A1C;
 }
 
 /* Stage variants: set one of these style classes on the stage node. */
@@ -67,8 +77,8 @@
 }
 
 .stage-mid {
-  -es-stage: #808080;
-  -es-on-stage: #000000;
+  -es-stage: #767676;
+  -es-on-stage: #FFFFFF;
   -es-halo: #FFFFFF;
 }
 

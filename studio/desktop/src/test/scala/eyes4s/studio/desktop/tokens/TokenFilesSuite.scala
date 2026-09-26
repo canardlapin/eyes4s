@@ -143,21 +143,25 @@ class TokenFilesSuite extends munit.FunSuite:
     Tokens.all.map(ref => ref.cssName -> Tokens.resolve(ref, theme, stage).webCss).toMap +
       ("sel-ring" -> TokenCss.webSelectionRing(theme))
 
-  // Where the token source departs from the boards, and why (see Tokens).
+  // Where the token source departs from the boards, and why (see Tokens). The
+  // light stage's ink halo is not a board deviation: the boards give the halo
+  // once, as a palette colour, and the dark (default) stage keeps it white.
   private val deviations: Map[(String, String), String] = Map(
-    ("mid", "on-stage") -> "white on #808080 is 3.95:1; captions need 4.5:1",
-    ("light", "halo")   -> "a white halo on #F2F2F2 is 1.12:1"
+    ("mid", "stage")           -> "#767676 so white captions reach 4.54:1 (review decision)",
+    ("figures", "fig-control") -> "#D98A1C is 2.76:1 on paper; it is fig-control-fill now"
   )
 
   test("tokens match the boards' token block, except the recorded deviations") {
-    val main   = read("docs/studio/design/Main.dc.html")
-    val system = read("docs/studio/design/System.dc.html")
-    val light  = web(Theme.Light, StageVariant.Dark)
-    val dark   = web(Theme.Dark, StageVariant.Dark)
-    val boards = List(
+    val main    = read("docs/studio/design/Main.dc.html")
+    val system  = read("docs/studio/design/System.dc.html")
+    val figures = read("docs/studio/design/Figures.dc.html")
+    val light   = web(Theme.Light, StageVariant.Dark)
+    val dark    = web(Theme.Dark, StageVariant.Dark)
+    val boards  = List(
       ("light", declarations(main, ".es", "--ground"), light),
       ("dark", declarations(main, ".es.dark", "--ground"), dark),
-      ("palettes", declarations(system, ".es", "--ramp-0"), light)
+      ("palettes", declarations(system, ".es", "--ramp-0"), light),
+      ("figures", declarations(figures, ".es", "--paper"), light)
     ) ++ List(StageVariant.Mid, StageVariant.Light).map { stage =>
       val v = stage.cssName
       (
@@ -176,11 +180,25 @@ class TokenFilesSuite extends munit.FunSuite:
 
     // Every token the boards do not name is a recorded addition.
     val named = boards.flatMap(_._2.keySet).toSet
-    assertEquals(Tokens.all.map(_.cssName).filterNot(named), List("sel-ring-inner"))
-    // The deviations are real: the boards still say otherwise.
     assertEquals(
-      declarations(main, "[data-stage=mid],.es[data-stage=mid]", "--stage")("on-stage"),
-      "#FFFFFF"
+      Tokens.all.map(_.cssName).filterNot(named),
+      List("sel-ring-inner", "isoline-ink", "isoline-case", "fig-control-fill")
     )
-    assertEquals(web(Theme.Light, StageVariant.Mid)("on-stage"), "#000000")
+    // The deviations are real: the boards still say otherwise.
+    deviations.keys.foreach { case (block, name) =>
+      val (_, board, ours) = boards.find(_._1 == block).getOrElse(fail(block))
+      assertNotEquals(board.get(name), ours.get(name), s"$block --$name")
+    }
+    // The board's figure control colour survives as the outlined fill.
+    assertEquals(
+      declarations(figures, ".es", "--paper")("fig-control"),
+      light("fig-control-fill")
+    )
+  }
+
+  test("code outside the token package cannot mint a colour") {
+    import scala.compiletime.testing.typeCheckErrors
+    assert(typeCheckErrors("eyes4s.studio.app.tokens.Colour.srgb(0x1c1e21)").nonEmpty)
+    assert(typeCheckErrors("eyes4s.studio.app.tokens.Colour.srgba(0x1c1e21, 50)").nonEmpty)
+    assertEquals(typeCheckErrors("Tokens.themed(Theme.Light, ThemedToken.Ink)"), Nil)
   }

@@ -24,7 +24,9 @@ import scala.compiletime.error
   *
   * Colours are built only by [[Colour.srgb]] and [[Colour.srgba]], which reject
   * an out-of-range literal at compile time, so every value is a valid colour
-  * and the token source cannot hold a malformed one. Alpha is a whole percent
+  * and the token source cannot hold a malformed one. Both are private to the
+  * token package: code elsewhere reads a colour from [[Tokens]] and cannot
+  * mint one. Alpha is a whole percent
   * rather than a `Double` so that the CSS the token source generates is exact
   * and stable (`.35`, never `0.35000000000000003`).
   */
@@ -59,7 +61,7 @@ object Colour:
     * The argument must be a constant between `0x000000` and `0xFFFFFF`; any
     * other value is a compile error, not a runtime failure.
     */
-  inline def srgb(inline rgb: Int): Colour =
+  private[tokens] inline def srgb(inline rgb: Int): Colour =
     inline if rgb < 0 || rgb > 0xffffff then
       error("Colour.srgb: the literal must lie in 0x000000..0xFFFFFF")
     else fromChecked(rgb, OpaquePercent)
@@ -69,7 +71,7 @@ object Colour:
     * Both arguments must be constants: the colour in `0x000000..0xFFFFFF`, the
     * alpha in `0..100`. Anything else is a compile error.
     */
-  inline def srgba(inline rgb: Int, inline alphaPercent: Int): Colour =
+  private[tokens] inline def srgba(inline rgb: Int, inline alphaPercent: Int): Colour =
     inline if rgb < 0 || rgb > 0xffffff then
       error("Colour.srgba: the literal must lie in 0x000000..0xFFFFFF")
     else inline if alphaPercent < 0 || alphaPercent > 100 then

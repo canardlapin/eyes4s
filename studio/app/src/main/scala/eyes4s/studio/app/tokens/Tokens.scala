@@ -102,6 +102,28 @@ enum PaletteToken(val cssName: String) derives CanEqual:
   /** The grey that depicts a blank experiment screen in display-kind art. */
   case Screen extends PaletteToken("screen")
 
+  /** Cased isolines (DESIGN_SPEC section 12): a translucent ink line inside a
+    * translucent white casing, legible over any map cell and any stage.
+    */
+  case IsolineInk  extends PaletteToken("isoline-ink")
+  case IsolineCase extends PaletteToken("isoline-case")
+
+  /** The journal-figure page (Figures board): white paper whatever the theme. */
+  case Paper     extends PaletteToken("paper")
+  case PaperInk  extends PaletteToken("paper-ink")
+  case PaperInk2 extends PaletteToken("paper-ink-2")
+
+  /** Axis spines, paired-participant lines and the caption rule. */
+  case PaperRule extends PaletteToken("paper-rule")
+
+  /** Role marks on paper. */
+  case FigQuery   extends PaletteToken("fig-query")
+  case FigMatch   extends PaletteToken("fig-match")
+  case FigControl extends PaletteToken("fig-control")
+
+  /** Filled control marks on paper: only inside a [[FigControl]] outline. */
+  case FigControlFill extends PaletteToken("fig-control-fill")
+
 /** Any token, for code that treats the three families alike. */
 enum TokenRef derives CanEqual:
   case Themed(token: ThemedToken)
@@ -125,14 +147,20 @@ final case class DivergingRamp(negative: Colour, zero: Colour, positive: Colour)
   * ticket S1.1).
   *
   * Values are the token block of `docs/studio/design/Main.dc.html` (`.es`,
-  * `.es.dark`, `[data-stage]`) and the data palettes of `System.dc.html`, with
-  * two changes that `TokenContrastSuite` requires and the ticket records:
+  * `.es.dark`, `[data-stage]`), the data palettes of `System.dc.html` and the
+  * paper palette of `Figures.dc.html`, with changes that `TokenContrastSuite`
+  * requires and the ticket records:
   *
-  *   - the mid stage's `on-stage` is black, not white: white on `#808080` is
-  *     3.95:1, below the 4.5:1 its 11px captions need;
+  *   - the mid stage is `#767676`, not `#808080`, so that its white captions
+  *     reach 4.54:1 (3.95:1 on `#808080`); its L* stays near 50 (coordinator
+  *     decision, S1.1 review);
   *   - `halo` is a stage token: white on the dark and mid stages as the boards
   *     draw it, ink on the light stage, where a white halo is 1.12:1 and a
-  *     dark-theme query mark would otherwise vanish (1.35:1).
+  *     dark-theme query mark would otherwise vanish (1.35:1);
+  *   - `fig-control` is the figure-safe `#B86E0E` (3.98:1 on paper); the
+  *     board's `#D98A1C` (2.76:1) becomes `fig-control-fill`, drawn only inside
+  *     a `fig-control` outline;
+  *   - `isoline-ink` and `isoline-case` are new (DESIGN_SPEC section 12).
   *
   * Everything else is generated from here: the JavaFX looked-up colours
   * (`studio.css`, `studio-dark.css`), the web custom properties
@@ -157,8 +185,8 @@ object Tokens:
       case (StageVariant.Dark, StageToken.Stage)    => Colour.srgb(0x1a1a1a)
       case (StageVariant.Dark, StageToken.OnStage)  => Colour.srgb(0xd9d6cf)
       case (StageVariant.Dark, StageToken.Halo)     => Colour.srgb(0xffffff)
-      case (StageVariant.Mid, StageToken.Stage)     => Colour.srgb(0x808080)
-      case (StageVariant.Mid, StageToken.OnStage)   => Colour.srgb(0x000000)
+      case (StageVariant.Mid, StageToken.Stage)     => Colour.srgb(0x767676)
+      case (StageVariant.Mid, StageToken.OnStage)   => Colour.srgb(0xffffff)
       case (StageVariant.Mid, StageToken.Halo)      => Colour.srgb(0xffffff)
       case (StageVariant.Light, StageToken.Stage)   => Colour.srgb(0xf2f2f2)
       case (StageVariant.Light, StageToken.OnStage) => Colour.srgb(0x1c1e21)
@@ -167,14 +195,24 @@ object Tokens:
   /** A data-palette colour. */
   def palette(token: PaletteToken): Colour =
     token match
-      case PaletteToken.Ramp0  => Colour.srgb(0xf9d9ea)
-      case PaletteToken.Ramp1  => Colour.srgb(0xe58fb9)
-      case PaletteToken.Ramp2  => Colour.srgb(0xb83f86)
-      case PaletteToken.Ramp3  => Colour.srgb(0x6b0f4f)
-      case PaletteToken.DivNeg => Colour.srgb(0x2e5a9c)
-      case PaletteToken.DivMid => Colour.srgb(0xf3f1ec)
-      case PaletteToken.DivPos => Colour.srgb(0xb4442f)
-      case PaletteToken.Screen => Colour.srgb(0x9a9a96)
+      case PaletteToken.Ramp0          => Colour.srgb(0xf9d9ea)
+      case PaletteToken.Ramp1          => Colour.srgb(0xe58fb9)
+      case PaletteToken.Ramp2          => Colour.srgb(0xb83f86)
+      case PaletteToken.Ramp3          => Colour.srgb(0x6b0f4f)
+      case PaletteToken.DivNeg         => Colour.srgb(0x2e5a9c)
+      case PaletteToken.DivMid         => Colour.srgb(0xf3f1ec)
+      case PaletteToken.DivPos         => Colour.srgb(0xb4442f)
+      case PaletteToken.Screen         => Colour.srgb(0x9a9a96)
+      case PaletteToken.IsolineInk     => Colour.srgba(0x1c1e21, 80)
+      case PaletteToken.IsolineCase    => Colour.srgba(0xffffff, 70)
+      case PaletteToken.Paper          => Colour.srgb(0xffffff)
+      case PaletteToken.PaperInk       => Colour.srgb(0x1c1e21)
+      case PaletteToken.PaperInk2      => Colour.srgb(0x464b52)
+      case PaletteToken.PaperRule      => Colour.srgb(0xc9c5bc)
+      case PaletteToken.FigQuery       => Colour.srgb(0x3a2e6e)
+      case PaletteToken.FigMatch       => Colour.srgb(0x2f6db5)
+      case PaletteToken.FigControl     => Colour.srgb(0xb86e0e)
+      case PaletteToken.FigControlFill => Colour.srgb(0xd98a1c)
 
   /** Any token's value in a theme, on a stage. */
   def resolve(ref: TokenRef, theme: Theme, stage: StageVariant): Colour =

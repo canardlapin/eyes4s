@@ -140,28 +140,38 @@ class TokenContrastSuite extends munit.FunSuite:
     }
   }
 
-  test("every text, role and state token is checked against a background") {
-    import ThemedToken.*
-    val used        = TokenUsage.text.map(_.text).toSet ++ TokenUsage.marks.map(_.mark).toSet
-    val foregrounds = List(
-      Ink,
-      Ink2,
-      Ink3,
-      Accent,
-      OnAccent,
-      Query,
-      Match,
-      MatchText,
-      Control,
-      ControlFill,
-      ControlText,
-      Fail,
-      WarnText,
-      NeutralMark,
-      SelRingInner,
-      TitleBarText
-    ).map(TokenRef.Themed(_)) :+ TokenRef.Staged(StageToken.OnStage)
-    foregrounds.foreach(f => assert(used.contains(f), s"--${f.cssName} is never checked"))
+  test("every token is measured, or is listed as unmeasured with a reason") {
+    val foregrounds = TokenUsage.text.map(_.text) ++ TokenUsage.marks.map(_.mark) ++
+      TokenUsage.marks.flatMap(_.casing)
+    val measured = (foregrounds ++ TokenUsage.text.map(_.background) ++
+      TokenUsage.marks.map(_.background)).toSet
+    val missing = Tokens.all.filterNot(r => measured(r) || TokenUsage.unmeasured.contains(r))
+    assertEquals(missing.map(_.cssName), Nil)
+    // An unmeasured token is never drawn as a foreground.
+    assertEquals(
+      TokenUsage.unmeasured.keys.toList.filter(foregrounds.toSet).map(_.cssName),
+      Nil
+    )
+  }
+
+  test("every casing rule is applied, needed and sufficient") {
+    TokenUsage.casingRules.foreach { rule =>
+      val uses =
+        TokenUsage.marks.filter(u => u.mark == rule.mark && u.casing.contains(rule.casing))
+      assert(uses.nonEmpty, s"rule for --${rule.mark.cssName} is never applied")
+      assertEquals(markFailures(uses), Nil)
+      assert(
+        markFailures(uses.map(_.copy(casing = None))).nonEmpty,
+        s"--${rule.mark.cssName} passes without its --${rule.casing.cssName} casing: " +
+          "the rule is not needed"
+      )
+    }
+  }
+
+  test("mid stage: white captions reach 4.5:1 and L* stays near 50") {
+    val mid = Tokens.staged(StageVariant.Mid, StageToken.Stage)
+    assert(ratio(Tokens.staged(StageVariant.Mid, StageToken.OnStage), mid) >= Wcag.TextMinimum)
+    assertEqualsDouble(lstar(mid), 50.0, 1.0)
   }
 
   test("the dark theme separates query and matched by at least 20 L*") {

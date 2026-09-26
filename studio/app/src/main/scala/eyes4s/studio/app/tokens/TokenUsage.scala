@@ -33,6 +33,13 @@ final case class MarkUse(
     where: String
 ) derives CanEqual
 
+/** A drawing rule: `mark` is never drawn without `casing` around it.
+  *
+  * Renderers (S1.x shell, S4 scenes) import these rather than restating them;
+  * `TokenContrastSuite` proves each rule is needed and sufficient.
+  */
+final case class CasingRule(mark: TokenRef, casing: TokenRef, reason: String) derives CanEqual
+
 /** The foreground/background pairs the design draws (ticket S1.1).
   *
   * Collected from the boards in `docs/studio/design/` and DESIGN_SPEC sections
@@ -42,15 +49,76 @@ final case class MarkUse(
   */
 object TokenUsage:
 
-  private def t(token: ThemedToken): TokenRef = TokenRef.Themed(token)
-  private def s(token: StageToken): TokenRef  = TokenRef.Staged(token)
+  private def t(token: ThemedToken): TokenRef  = TokenRef.Themed(token)
+  private def s(token: StageToken): TokenRef   = TokenRef.Staged(token)
+  private def p(token: PaletteToken): TokenRef = TokenRef.Palette(token)
 
   import ThemedToken.*
   import StageToken.{Halo, OnStage, Stage}
+  import PaletteToken.*
 
-  private val Body  = 12
-  private val Label = 11
-  private val Hero  = 28
+  // ---------------------------------------------------------------------------
+  // Drawing rules
+  // ---------------------------------------------------------------------------
+
+  /** A filled control mark is drawn inside a `--control` outline: light
+    * `--control-fill` alone is 2.28 to 2.65:1 on the chrome surfaces.
+    */
+  val ControlFillOutline: CasingRule = CasingRule(
+    t(ControlFill),
+    t(Control),
+    "--control-fill alone is below 3:1 on light chrome surfaces"
+  )
+
+  /** A filled control mark on paper is drawn inside a `--fig-control` outline:
+    * `--fig-control-fill` alone is 2.76:1 on white paper.
+    */
+  val FigureControlFillOutline: CasingRule = CasingRule(
+    p(FigControlFill),
+    p(FigControl),
+    "--fig-control-fill alone is 2.76:1 on paper"
+  )
+
+  /** A role mark on the stage is cased in `--halo` (DESIGN_SPEC section 12). */
+  val StageMarkHalo: List[CasingRule] =
+    List(Query, Match, Control, NeutralMark).map { m =>
+      CasingRule(t(m), s(Halo), s"--${m.cssName} alone falls below 3:1 on some stage")
+    }
+
+  /** The keyboard focus ring on the stage is cased in `--halo`: light
+    * `--accent` alone is 2.86:1 on the dark stage.
+    */
+  val StageFocusRingHalo: CasingRule = CasingRule(
+    t(Accent),
+    s(Halo),
+    "--accent alone is below 3:1 on the dark and mid stages"
+  )
+
+  /** An isoline is `--isoline-ink` inside an `--isoline-case` band, so it
+    * reads over light and dark map cells and every stage.
+    */
+  val IsolineCasing: CasingRule = CasingRule(
+    p(IsolineInk),
+    p(IsolineCase),
+    "--isoline-ink alone vanishes over dark map cells and the dark stage"
+  )
+
+  /** Every drawing rule. */
+  val casingRules: List[CasingRule] =
+    List(ControlFillOutline, FigureControlFillOutline, StageFocusRingHalo, IsolineCasing) ++
+      StageMarkHalo
+
+  private def cased(rule: CasingRule, background: TokenRef, where: String): MarkUse =
+    MarkUse(rule.mark, background, Some(rule.casing), where)
+
+  // ---------------------------------------------------------------------------
+  // Pairs
+  // ---------------------------------------------------------------------------
+
+  private val Body   = 12
+  private val Label  = 11
+  private val Hero   = 28
+  private val Figure = 9
 
   private val chromeSurfaces = List(Ground, Surface, Surface2, Surface3)
 
@@ -78,7 +146,9 @@ object TokenUsage:
         TextUse(t(WarnText), t(WarnSoft), Label, "stale chip, pending tag"),
         TextUse(t(WarnText), t(Surface), Label, "stale chip stripes"),
         TextUse(t(TitleBarText), t(TitleBar), Body, "mock title bar"),
-        TextUse(s(OnStage), s(Stage), Label, "stage captions")
+        TextUse(s(OnStage), s(Stage), Label, "stage captions"),
+        TextUse(p(PaperInk), p(Paper), Figure, "figure axes and panel letters"),
+        TextUse(p(PaperInk2), p(Paper), Figure, "figure captions")
       )
 
   /** Every graphical-mark pair. */
@@ -89,7 +159,7 @@ object TokenUsage:
           (Query, None, "query mark (filled circle)"),
           (Match, None, "matched mark (diamond)"),
           (Control, None, "control mark (hollow circle), B tick"),
-          (ControlFill, Some(t(Control)), "filled control mark, cased in control"),
+          (ControlFill, Some(ControlFillOutline.casing), "filled control mark, outlined"),
           (Accent, None, "focus rule, current dot, progress bar"),
           (Ink, None, "D bar, zero rule, axes, selection ring"),
           (Ink3, None, "Forgotten group (dashed), missing-value marker"),
@@ -98,16 +168,40 @@ object TokenUsage:
         )
         surface <- List(Ground, Surface, Surface2)
       yield MarkUse(t(mark), t(surface), casing, s"$where on ${surface.cssName}")
-    val onStage = List(
-      MarkUse(t(Query), s(Stage), Some(s(Halo)), "query mark on the stage"),
-      MarkUse(t(Match), s(Stage), Some(s(Halo)), "matched mark on the stage"),
-      MarkUse(t(Control), s(Stage), Some(s(Halo)), "control mark on the stage"),
-      MarkUse(t(NeutralMark), s(Stage), Some(s(Halo)), "Explore fixation on the stage"),
-      MarkUse(t(Accent), s(Stage), Some(s(Halo)), "focused mark ring on the stage"),
-      MarkUse(t(SelRingInner), s(Stage), Some(t(Ink)), "selection ring on the stage"),
-      MarkUse(s(OnStage), s(Stage), None, "isolines and window outline")
-    )
-    onChrome ++ onStage
+    val onStage =
+      StageMarkHalo.map(r => cased(r, s(Stage), s"--${r.mark.cssName} mark on the stage")) ++
+        List(
+          cased(StageFocusRingHalo, s(Stage), "focused mark ring on the stage"),
+          MarkUse(t(SelRingInner), s(Stage), Some(t(Ink)), "selection ring on the stage"),
+          MarkUse(s(OnStage), s(Stage), None, "analysis-window outline"),
+          cased(IsolineCasing, s(Stage), "isoline on the stage")
+        )
+    val onMaps =
+      List(Ramp0, Ramp1, Ramp2, Ramp3).map { stop =>
+        cased(IsolineCasing, p(stop), s"isoline over a --${stop.cssName} map cell")
+      }
+    val onPaper =
+      List(
+        MarkUse(p(FigQuery), p(Paper), None, "figure query mark"),
+        MarkUse(p(FigMatch), p(Paper), None, "figure matched mark"),
+        MarkUse(p(FigControl), p(Paper), None, "figure control mark (hollow circle)"),
+        cased(FigureControlFillOutline, p(Paper), "figure filled control mark"),
+        MarkUse(p(PaperInk), p(Paper), None, "figure zero rule and D bars")
+      )
+    onChrome ++ onStage ++ onMaps ++ onPaper
+
+  /** Tokens that no check measures, and why: fills behind text, decorative
+    * rules and stimulus depiction. WCAG 1.4.11 exempts rules that carry no
+    * information.
+    */
+  val unmeasured: Map[TokenRef, String] = Map(
+    t(Hairline)  -> "decorative 1px separators and card borders",
+    p(PaperRule) -> "axis spines, paired-participant lines, caption rule: decorative",
+    p(Screen)    -> "stimulus depiction: the blank screen a participant saw",
+    p(DivNeg)    -> "map fill; values are read from the legend and table twin",
+    p(DivMid)    -> "map fill; values are read from the legend and table twin",
+    p(DivPos)    -> "map fill; values are read from the legend and table twin"
+  )
 
   /** True when a pair involves the stage, so it varies with [[StageVariant]]. */
   def onStage(refs: TokenRef*): Boolean = refs.exists {
