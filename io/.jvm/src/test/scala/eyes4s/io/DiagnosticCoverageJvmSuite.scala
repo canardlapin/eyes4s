@@ -47,7 +47,7 @@ class DiagnosticCoverageJvmSuite extends munit.FunSuite:
     .filterNot(f => IoDiagnosticSamples.evidence(f.enumName))
 
   private val inventory: Map[String, Vector[String]] =
-    val relative = Paths.get("tools/api-audit/candidate.py")
+    val relative       = Paths.get("tools/api-audit/candidate.py")
     val selector: Path = Iterator
       .iterate(Paths.get(sys.props("user.dir")).toAbsolutePath.normalize)(_.getParent)
       .takeWhile(_ != null)

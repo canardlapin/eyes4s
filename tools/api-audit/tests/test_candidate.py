@@ -1,5 +1,6 @@
 """Fast protocol tests; real Scala coverage/audit qualification is a separate gate."""
 import json
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -9,6 +10,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import candidate
+import common
 import inventory
 import run
 
@@ -124,6 +126,35 @@ class CandidateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'sources changed'):
             candidate.prepare_inventory('before-edit', self.run_id)
         self.assertFalse(candidate.paths(self.run_id)[0].exists())
+
+    def test_root_sbt_add_change_remove_invalidates_local_and_committed(self):
+        for relative in ('build.sbt', 'project/ApiAudit.scala', 'README.md',
+                         'docs/formats/eyelink-asc.md'):
+            path = self.root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('fixture')
+        extra = self.root / 'zz-local.sbt'
+        with patch.object(common, 'ROOT', self.root), \
+             patch.object(candidate, 'fingerprint', common.fingerprint):
+            for action in ('add', 'change', 'remove'):
+                with self.subTest(action=action):
+                    identity = common.fingerprint()
+                    local = candidate.prepare_inventory(identity)
+                    committed = self.base / 'inventory.json'
+                    committed.write_bytes(local.read_bytes())
+                    candidate.write_provenance(self.base / 'inventory-provenance.json',
+                                               committed, identity, 'committed')
+                    self.assertEqual(candidate.select_inventory({}), local)
+                    if action == 'remove':
+                        extra.unlink()
+                    else:
+                        extra.write_text(action)
+                    self.assertNotEqual(common.fingerprint(), identity)
+                    with self.assertRaisesRegex(ValueError, 'stale'):
+                        candidate.select_inventory({})
+                    shutil.rmtree(local.parent)
+                    with self.assertRaisesRegex(ValueError, 'stale'):
+                        candidate.select_inventory({})
 
     def test_invalid_run_identity_cannot_select_an_arbitrary_path(self):
         for value in ('', '../prepared', '/tmp/inventory', 'x' * 32):
