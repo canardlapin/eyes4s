@@ -20,7 +20,7 @@ import eyes4s.codec.CanonicalDigest
 import eyes4s.studio.app.jobs.JobBoard
 import eyes4s.studio.app.keys.{CommandId, CommandRegistry, KeyChord}
 import eyes4s.studio.app.layout.{LayoutId, PaneId, PerspectiveLayout, StudioLayouts}
-import eyes4s.studio.app.nav.{Location, Navigation, Place}
+import eyes4s.studio.app.nav.{Location, Navigation, Place, Provenance}
 import eyes4s.studio.app.text.{Format, MessageId, Messages}
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId, TrialKey}
 import eyes4s.studio.core.execution.{
@@ -215,6 +215,12 @@ enum Intent derives CanEqual:
   case OpenCrumb(index: Int)
   case Back
   case Forward
+
+  /** Explain a number: land on `target` with the provenance trail that leads
+    * to it, keeping the part of the current trail it descends from (S3.4).
+    * The perspective follows the target (Place.home).
+    */
+  case Explain(target: Place)
 
   // --- Selection and hover (S3.3) ------------------------------------------------
   case Select(input: SelectionInput)
@@ -418,6 +424,9 @@ object AppModel:
       m.navigation
         .goForward(m.location)
         .fold((m, none))((to, nav) => arrive(m, m.copy(navigation = nav), to))
+    case Intent.Explain(target) =>
+      val trail = Provenance.explain(m.location.trail, target)
+      navigate(m, Location(Place.home(trail).getOrElse(m.perspective), trail))
 
     case Intent.Select(input) =>
       m.selection

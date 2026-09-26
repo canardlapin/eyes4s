@@ -465,3 +465,31 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
         Left(BackendError.Unavailable(DiagnosticLocus.Dataset(DatasetRevision(2))))
       )
   }
+
+  test(
+    "a declared rev 4 run on r3 serves the fixture's scores; a conflicting declaration is refused"
+  ) {
+    val rev4 = AnalysisRevision(4)
+    val r2   = DatasetRevision(2)
+    val r3   = DatasetRevision(3)
+    for
+      fake     <- FakeStudyBackend.create[IO](StoryMoment.T1)
+      conflict <- fake.declare(AnalysisRevision(3), r3)
+      _        <- ok(fake.declare(rev4, r3))
+      again    <- fake.declare(rev4, r3)
+      status   <- ok(fake.submit(rev4))
+      before   <- fake.result(status.run)
+      _        <- ok(fake.complete(status.job))
+      after    <- ok(fake.result(status.run))
+    yield
+      assertEquals(
+        conflict,
+        Left(FakeControlError.RevisionConflict(AnalysisRevision(3), r2, r3))
+      )
+      assertEquals(again, Right(()))
+      assertEquals(status.run, RunId(6))
+      assertEquals(before, Left(BackendError.NoResult(RunId(6), RunState.Running(status.job))))
+      assertEquals((after.run, after.revision, after.dataset), (RunId(6), rev4, r3))
+      assertEquals(after.grandD, 0.26)
+      assertEquals(after.pairRows, 35876L)
+  }
