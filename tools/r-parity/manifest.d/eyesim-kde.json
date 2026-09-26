@@ -10,7 +10,7 @@
     },
     "kde-reference": {
       "path": "tools/r-parity/fixtures/kde.json",
-      "sha256": "de2e2ba85868214d5e40711864fa7a3b0247c8a6632d17acb3dd8099b965f6af",
+      "sha256": "957211badd0c97bac3a024e38598d53a511d95da23336600b261c46d52bdabe4",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Locked exported reference calls, failures and analytic comparisons"
     },

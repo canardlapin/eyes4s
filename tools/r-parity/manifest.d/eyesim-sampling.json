@@ -10,7 +10,7 @@
     },
     "sampling-reference": {
       "path": "tools/r-parity/fixtures/sampling.json",
-      "sha256": "7183080abf6750bf2728284867f2857cb61858855a8b0efe88f5a2edd9c216da",
+      "sha256": "92a299d9e2410a229504243d8328f5e050567ca0a230e9f771e3ea7d222c19b4",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Locked exported reference calls, failures and analytic comparisons"
     },

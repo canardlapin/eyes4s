@@ -128,6 +128,15 @@ cells are compared with an exact rational or 60-digit decimal oracle. Every `NA`
 `NaN` cell and every error is pinned as a literal, and the reading of eyesim's positive-cell formula
 on signed maps is labelled as a reading, not an estimand.
 
+The derived-entropy generator calls `fixation_entropy` on a fixation group from
+`fixtures/cases/eyesim-entropy.json` (the `grid` method on explicit and padded bounds, the
+`density` method with explicit and default bandwidths), on the multiscale object `eye_density`
+builds from a sigma vector, and on hand-built multiscale objects over supplied maps. Grid counts
+and entropies are checked against exact rational breakpoints and decimal logarithms; eyesim's
+density entropy against the decimal entropy of its own pinned map, and its map against a
+continuous Gaussian at the rounding tolerance of `zapsmall`. The eyes4s native estimate has its own
+direct two-dimensional kernel oracle, and `NA` values and errors are pinned as literals.
+
 The repetition generator measures public `repetitive_similarity` cosine pairwise/reduced calls
 on the supplied duration maps, including duplicated rows, singleton and empty input. Exact
 rational dot products check its phase-only grouping and the different within-participant
@@ -246,6 +255,10 @@ is neither a gap nor progress towards closing the baseline.
 - `fixtures/entropy.json`: pinned public eyesim `fixation_entropy` and `Ops.eye_density` output on
   the entropy lattice, including non-finite cells, `NA` entropies and errors, R environment, and
   the exact and decimal oracle.
+- `fixtures/derived-entropy.json`: pinned public eyesim `fixation_entropy` on a fixation group and
+  on multiscale objects, eyesim's own density maps, `NA` values and errors, R environment, and the
+  rational, decimal, continuous-Gaussian and discrete-kernel oracles. Generated
+  `surface/.../DerivedEntropyReference.scala` is consumed by `FixationEntropyConformanceSuite`.
 - `fixtures/admission.json`: public constructor/accessor results and errors, independent row
   retention and coordinate checks, source identity and runtime versions. Generated
   `io/.../AdmissionReference.scala` is consumed by the portable admission conformance suite.
@@ -265,8 +278,8 @@ is neither a gap nor progress towards closing the baseline.
   `codec/src/test/scala/eyes4s/codec/TemporalFixtures.scala`: generated values used by JVM and
   Scala.js tests without starting R or reading runtime fixtures.
 
-Run the matched/control conformance example, the coordinate-transform conformance suite and the
-entropy and map-arithmetic conformance suite with:
+Run the matched/control conformance example, the coordinate-transform conformance suite, the
+entropy and map-arithmetic conformance suite and the derived-entropy conformance suite with:
 
 ```sh
 sbt 'lawsJVM/testOnly eyes4s.examples.MatchedControlSuite' \
@@ -274,7 +287,9 @@ sbt 'lawsJVM/testOnly eyes4s.examples.MatchedControlSuite' \
     'coreJVM/testOnly eyes4s.core.TransformConformanceSuite' \
     'coreJS/testOnly eyes4s.core.TransformConformanceSuite' \
     'kernelJVM/testOnly eyes4s.kernel.EntropyConformanceSuite' \
-    'kernelJS/testOnly eyes4s.kernel.EntropyConformanceSuite'
+    'kernelJS/testOnly eyes4s.kernel.EntropyConformanceSuite' \
+    'surfaceJVM/testOnly eyes4s.surface.FixationEntropyConformanceSuite' \
+    'surfaceJS/testOnly eyes4s.surface.FixationEntropyConformanceSuite'
 ```
 
 See [the capability baseline](../../docs/EYESIM_CAPABILITIES.md),
