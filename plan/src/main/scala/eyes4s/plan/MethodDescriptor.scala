@@ -161,6 +161,20 @@ final class ParameterDescriptor[R, A, E](
       def value(parameters: P): A                  = get(parameters)
       def encoded(parameters: P): Provenance.Param = encode(get(parameters))
 
+object ParameterDescriptor:
+  /** A one-number parameter whose raw input is the field's number: its
+    * metadata is the field's view and its constructor the field's domain
+    * constructor, so the two cannot disagree.
+    */
+  def numeric[E, N, A](field: NumericField[E, N, A]): ParameterDescriptor[N, A, E] =
+    new ParameterDescriptor(
+      ParameterInfo.of(field.view),
+      field.domain,
+      field.errorMessage,
+      None,
+      Some(field)
+    )
+
 /** An existential field retains its own types; it is never an Any-valued bag. */
 trait ParameterField[P]:
   type Raw
@@ -184,7 +198,7 @@ final class ParameterSet[P] private (val fields: Vector[ParameterField[P]]):
   def validate(id: FieldId, raw: RawValue): Either[FieldError[Any], Unit] =
     fields
       .find(_.view.id == id)
-      .toRight(FieldError.UnknownPart(id, id))
+      .toRight(FieldError.UnknownField(id))
       .flatMap(_.validate(raw))
 
   def values(parameters: P): Vector[(String, Provenance.Param)] =
@@ -202,13 +216,20 @@ final class ParameterSet[P] private (val fields: Vector[ParameterField[P]]):
     )
 
 object ParameterSet:
+  /** Field ids are unique, and a field's form presents the same view as its
+    * metadata, so validation and inspection describe one field.
+    */
   def of[P](fields: Vector[ParameterField[P]]): Either[DescriptorError, ParameterSet[P]] =
     val ids = fields.map(_.descriptor.info.id)
-    Either.cond(
-      ids.distinct.size == ids.size,
-      new ParameterSet(fields),
-      DescriptorError.DuplicateFields(ids)
-    )
+    for
+      _ <- Either.cond(ids.distinct.size == ids.size, (), DescriptorError.DuplicateFields(ids))
+      _ <- fields
+        .collectFirst {
+          case f if f.descriptor.form.exists(_.view != f.view) =>
+            DescriptorError.FormViewMismatch(f.view.id, f.descriptor.form.get.view.id)
+        }
+        .toLeft(())
+    yield new ParameterSet(fields)
   val empty: ParameterSet[Unit] = new ParameterSet(Vector.empty)
   private[plan] def literal[P](fields: Vector[ParameterField[P]]): ParameterSet[P] =
     new ParameterSet(fields)
@@ -410,6 +431,8 @@ enum DescriptorError derives CanEqual:
   case InvalidRepetition(field: FieldId, minimum: Int, maximum: Option[Int])
   case DefaultRefused(field: FieldId, error: FieldError[Nothing])
   case UntranslatableLegacy(field: String, units: String, domain: String)
+  case FormViewMismatch(field: FieldId, form: FieldId)
+  case RulePartKind(field: FieldId, part: FieldId)
   def message: String = this match
     case InvalidField(id, v, meaning) =>
       s"Invalid descriptor '$id' version $v with meaning '$meaning'."
@@ -440,5 +463,9 @@ enum DescriptorError derives CanEqual:
       s"Field '$f' repeats between $min and $max items; the minimum must be non-negative and not above the maximum."
     case DefaultRefused(f, e) =>
       s"The default of field '$f' does not pass its own checks: ${e.message}"
+    case FormViewMismatch(f, form) =>
+      s"Field '$f' carries a form field '$form' whose view differs from its own."
+    case RulePartKind(f, part) =>
+      s"Field '$f' has a rule over part '$part', which is not of a kind the rule compares."
     case UntranslatableLegacy(f, units, domain) =>
       s"Field '$f' uses legacy units $units and domain $domain, which have no FieldKind translation."

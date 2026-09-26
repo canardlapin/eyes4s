@@ -16,6 +16,7 @@
 
 package eyes4s.plan
 
+import eyes4s.detect.IvtThreshold
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.{Deg, Px}
 import scala.compiletime.testing.typeCheckErrors
@@ -196,7 +197,7 @@ class FormDescriptorSuite extends munit.FunSuite:
     assert(ivt.validate(id("minimumDurationMicros"), RawValue.Number("0")).isLeft)
     assertEquals(
       ivt.validate(id("unknown"), RawValue.Number("1")),
-      Left(FieldError.UnknownPart(id("unknown"), id("unknown")))
+      Left(FieldError.UnknownField(id("unknown")))
     )
     assertEquals(
       ivt.views.map(v => (v.id.value, v.quantity)),
@@ -297,7 +298,7 @@ class FormDescriptorSuite extends munit.FunSuite:
     )
     assertEquals(
       window.check(Group(Vector(id("xMin") -> Number("0")))),
-      Left(FieldError.Missing(id("yMin")))
+      Left(FieldError.Missing(id("window.yMin")))
     )
     assertEquals(
       window.check(Group(Vector(id("zMin") -> Number("0")))),
@@ -335,7 +336,7 @@ class FormDescriptorSuite extends munit.FunSuite:
       ),
       Left(
         FieldError.OutOfBounds(
-          id("radius"),
+          id("initialFixations.radius"),
           "0",
           0,
           Side.Lower,
@@ -389,6 +390,163 @@ class FormDescriptorSuite extends munit.FunSuite:
         "val f: NumericField[RecipeParameterError, Double, Sigma[Unit2D.Px]] = RecipeParameters.forms.sigma[Unit2D.Deg]"
       ).nonEmpty
     )
+  }
+
+  test("a part's error names its path: the group, the case, the option or the item") {
+    import RawValue.*
+    val window = RecipeViews.box("window", "w", PlanarUnit.Px, Vector.empty)
+    assertEquals(
+      window.check(Group(Vector(id("xMin") -> Number("0"), id("xMin") -> Number("1")))),
+      Left(FieldError.RepeatedPart(id("window"), id("xMin")))
+    )
+    assertEquals(
+      RecipeViews.failurePolicy.check(Number("0")).left.map(_.field),
+      Left(id("failurePolicy.minimumSuccessful"))
+    )
+    val list = FieldView.literal("scales", "s", FieldKind.Repeated(cell, 1, None))
+    assertEquals(
+      list.check(Items(Vector(Number("2"), Number("0")))).left.map(_.field),
+      Left(id("scales.1"))
+    )
+  }
+
+  test("64-bit parts compare exactly, in their own type") {
+    import RawValue.*
+    val window = RecipeViews.relativeWindow
+    val big    = 9007199254740992L
+    assertEquals(
+      window.check(
+        Group(
+          Vector(id("start") -> Number(big.toString), id("end") -> Number((big + 1).toString))
+        )
+      ),
+      Right(())
+    )
+    assert(
+      window
+        .check(
+          Group(
+            Vector(id("start") -> Number((big + 1).toString), id("end") -> Number(big.toString))
+          )
+        )
+        .isLeft
+    )
+    val capped = FieldView.literal(
+      "t",
+      "t",
+      FieldKind.Numeric(
+        Quantity.Duration,
+        NumberShape.Int64,
+        get(NumericBounds.of(None, Some(Endpoint.Closed(big.toDouble))))
+      )
+    )
+    assertEquals(capped.check(Number(big.toString)), Right(()))
+    assert(
+      capped.check(Number((big + 1).toString)).isLeft,
+      "a value one past the endpoint was admitted"
+    )
+  }
+
+  test("a rule names parts of the kind it compares") {
+    val name = FieldView.literal("name", "n", FieldKind.Text)
+    val t    = FieldView.literal(
+      "t",
+      "t",
+      FieldKind.Numeric(Quantity.Duration, NumberShape.Int64, NumericBounds.unbounded)
+    )
+    assertEquals(
+      FieldView.of(
+        id("g"),
+        1,
+        "g",
+        FieldKind.Group(Vector(name, t), GroupRule.Ordered(Vector(id("name") -> id("t"))))
+      ),
+      Left(DescriptorError.RulePartKind(id("g"), id("name")))
+    )
+    assertEquals(
+      FieldView.of(
+        id("g"),
+        1,
+        "g",
+        FieldKind.Group(Vector(name, t), GroupRule.Distinct(Vector(id("name"), id("t"))))
+      ),
+      Left(DescriptorError.RulePartKind(id("g"), id("t")))
+    )
+  }
+
+  test("a parameter's form must present the parameter's own view") {
+    val field = RecipeParameters.forms.ivtThreshold
+    val other = new ParameterDescriptor[Double, IvtThreshold, RecipeParameterError](
+      RecipeParameters.minimumDuration.info,
+      field.domain,
+      _.message,
+      None,
+      Some(field)
+    )
+    assertEquals(
+      ParameterSet.of(
+        Vector(other.bind[IvtThreshold](identity)(t => Provenance.Param.Num(t.velocity.value)))
+      ),
+      Left(
+        DescriptorError.FormViewMismatch(
+          id("minimumDurationMicros"),
+          id("thresholdDegPerSecond")
+        )
+      )
+    )
+    val matched = ParameterDescriptor.numeric(field)
+    assert(
+      ParameterSet
+        .of(
+          Vector(
+            matched.bind[IvtThreshold](identity)(t => Provenance.Param.Num(t.velocity.value))
+          )
+        )
+        .isRight
+    )
+  }
+
+  test("every shipped form field's view is well formed") {
+    val views = Vector(
+      F.sigma[Px].view,
+      F.sigmaX[Deg].view,
+      F.sigmaY[Deg].view,
+      F.residualLimit.view,
+      F.ivtThreshold.view,
+      F.minimumDuration.view,
+      F.idtWidth.view,
+      F.idtHeight.view,
+      F.ekEtaX.view,
+      F.ekEtaY.view,
+      F.ekMinimumSamples.view,
+      F.interpolationGap.view
+    )
+    views.foreach(v =>
+      assertEquals(FieldView.of(v.id, v.version, v.meaning, v.kind, v.default), Right(v))
+    )
+  }
+
+  test("hard doubles have pinned canonical text, and underflow is refused like overflow") {
+    val real = summon[Numeral[Double]]
+    assertEquals(
+      Vector(
+        Double.MinPositiveValue,
+        2.2250738585072014e-308,
+        Double.MaxValue,
+        1e23,
+        5e-324 * 3
+      ).map(real.write),
+      Vector(
+        "5E-324",
+        "2.2250738585072014E-308",
+        "1.7976931348623157E+308",
+        "1E+23",
+        "1.5E-323"
+      )
+    )
+    assertEquals(real.read("1e-400"), None)
+    assertEquals(real.read("0e-400"), Some(0.0))
+    assertEquals(real.read("0.000"), Some(0.0))
   }
 
 /** The parts of a view, for the tests. */

@@ -182,7 +182,7 @@ object RecipeParameters:
         "minimumSamples",
         "Minimum consecutive above-ellipse samples",
         Quantity.Count(Counted.Samples),
-        NumericBounds.atLeast(1).fold(e => sys.error(e.message), identity)
+        NumericBounds.atLeastOne
       )(samplesOf, _.value)
 
     val interpolationGap: NumericField[RecipeParameterError, Long, InterpolationGap] =

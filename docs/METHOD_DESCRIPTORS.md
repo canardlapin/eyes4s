@@ -105,7 +105,10 @@ recipe, in three stages: the shape (text to a number of shape `N`), the declared
 bounds, then the domain constructor, which stays the authority. A refusal is a
 `FieldError` naming the field and the value; `OutOfBounds` also names the side,
 the violated endpoint and the quantity ("sigma: 0 deg is out of bounds; it must
-be greater than 0 deg."). `RecipeParameters.forms` holds the typed fields of
+be greater than 0 deg."). A part of a group, case, option or list is named by its
+path (`window.xMin`, `scales.1`), and 64-bit integers are compared exactly.
+`ParameterSet.of` refuses a parameter whose `form` presents a different view
+(`FormViewMismatch`). `RecipeParameters.forms` holds the typed fields of
 every one-number parameter, and each such `ParameterDescriptor` carries its
 field as `form`. `ParameterSet.validate(id, raw)` checks one method parameter,
 and `MethodDescriptor.formView` and `RecipeInspection.views` give the host its
@@ -127,8 +130,9 @@ and refuses the rest with `DescriptorError.UntranslatableLegacy`.
 
 ## Describe an extension
 
-Build a `NumericField.of(...)` (or a `FieldView`) and `ParameterInfo.of(view)`,
-a typed `ParameterDescriptor` carrying the field as `form`, and bind its typed
+Build a `NumericField.of(...)` and `ParameterDescriptor.numeric(field)` (whose
+metadata and constructor are the field's own), or a `FieldView`,
+`ParameterInfo.of(view)` and a typed `ParameterDescriptor`, and bind its typed
 getter/encoding into `ParameterSet.of(...)`. Attach that set and typed score
 components to `MethodDescriptor.of(...)`, then supply it to the optional
 `StudyMethod` descriptor argument. Recording extensions use

@@ -651,7 +651,9 @@ object DiagnosticSamples:
         FieldId.literal("grid"),
         FieldError.Missing(FieldId.literal("nx"))
       ),
-      DescriptorError.UntranslatableLegacy("frame", "Mixed", "DomainValue(Frame.of)")
+      DescriptorError.UntranslatableLegacy("frame", "Mixed", "DomainValue(Frame.of)"),
+      DescriptorError.FormViewMismatch(FieldId.literal("sigma"), FieldId.literal("threshold")),
+      DescriptorError.RulePartKind(FieldId.literal("window"), FieldId.literal("name"))
     ),
     family[StudyFinding[StudyKey, Px]]("StudyFinding")(
       StudyFinding.UndescribedMethod(DefinitionId.cosine),
@@ -904,6 +906,8 @@ object DiagnosticSamples:
         RawValue.Number("0"),
         RecipeParameterError.Configuration(ConfigurationError.NonPositiveIvtThreshold(0.0)),
         "threshold must be positive"
-      )
+      ),
+      FieldError.UnknownField(FieldId.literal("thresholdDegPerSecond")),
+      FieldError.RepeatedPart(FieldId.literal("window"), FieldId.literal("xMin"))
     )
   )

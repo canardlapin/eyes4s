@@ -58,7 +58,7 @@ private[plan] object RecipeViews:
   def atLeastOne(id: String, meaning: String, counted: Counted): FieldView =
     number(id, meaning, Quantity.Count(counted), NumberShape.Int32, one)
 
-  private val one = NumericBounds.atLeast(1).fold(e => sys.error(e.message), identity)
+  private val one = NumericBounds.atLeastOne
 
   def options[A](values: Vector[A], token: A => String): ChoiceSource =
     ChoiceSource.Fixed(values.map(a => ChoiceOption(token(a), token(a))))

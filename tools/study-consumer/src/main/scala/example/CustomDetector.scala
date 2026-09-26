@@ -67,13 +67,7 @@ object CustomDetector:
         Quantity.Rate(PlanarUnit.Deg),
         NumericBounds.positive
       )(LabIvtParameters.threshold, _.velocity.value, identity)
-    yield new ParameterDescriptor(
-      ParameterInfo.of(field.view),
-      LabIvtParameters.threshold,
-      identity,
-      None,
-      Some(field)
-    )
+    yield ParameterDescriptor.numeric(field)
 
   /** The extension's own typed field for its minimum duration in microseconds. */
   def minimumField
@@ -87,13 +81,7 @@ object CustomDetector:
         Quantity.Duration,
         NumericBounds.positive
       )(LabIvtParameters.minimum, _.span.toMicros, identity)
-    yield new ParameterDescriptor(
-      ParameterInfo.of(field.view),
-      LabIvtParameters.minimum,
-      identity,
-      None,
-      Some(field)
-    )
+    yield ParameterDescriptor.numeric(field)
 
   /** The detector's descriptor: its typed fields and the algorithm card of
     * the canonical I-VT machine it wraps, which is the card its detections

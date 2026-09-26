@@ -69,8 +69,9 @@ object FormLaws extends Laws:
 
   /** Numbers inside and around the bounds, with the probes. */
   def numbers[E, N, A](field: NumericField[E, N, A]): Gen[N] =
-    val lo = field.bounds.lower.fold(-1e6)(_.value)
-    val hi = field.bounds.upper.fold(lo.max(0) + 1e6)(_.value)
+    val hi =
+      field.bounds.upper.fold(field.bounds.lower.fold(0.0)(_.value).max(0) + 1e6)(_.value)
+    val lo = field.bounds.lower.fold(hi - 2e6)(_.value)
     Gen.frequency(
       4 -> Gen.choose(lo, hi).map(field.numeral.nearest),
       1 -> Gen.choose(lo - 10, lo + 10).map(field.numeral.nearest),

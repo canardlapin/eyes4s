@@ -74,13 +74,7 @@ object CustomMethod:
         Quantity.Dimensionless,
         NumericBounds.positive
       )(Multiplier.of, _.value, identity)
-    yield new ParameterDescriptor(
-      ParameterInfo.of(field.view),
-      Multiplier.of,
-      identity,
-      None,
-      Some(field)
-    )
+    yield ParameterDescriptor.numeric(field)
 
   def describedMethod(
       id: DefinitionId

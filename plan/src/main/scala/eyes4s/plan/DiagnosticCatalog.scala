@@ -437,7 +437,9 @@ object DiagnosticCatalog:
     "UnknownRulePart",
     "InvalidRepetition",
     "DefaultRefused",
-    "UntranslatableLegacy"
+    "UntranslatableLegacy",
+    "FormViewMismatch",
+    "RulePartKind"
   )
 
   /** Finding severity is the finding's own blocker/warning classification. */
@@ -873,7 +875,9 @@ object DiagnosticCatalog:
     "Unordered",
     "Duplicate",
     "ItemCount",
-    "Refused"
+    "Refused",
+    "UnknownField",
+    "RepeatedPart"
   )
 
   /** Families whose error type no longer exists. Their codes stay issued, in

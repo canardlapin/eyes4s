@@ -854,6 +854,8 @@ fails after rewriting, so review the change and run it again.
 | `descriptor.invalid-repetition` | `InvalidRepetition` | `field`, `minimum`, `maximum` |
 | `descriptor.default-refused` | `DefaultRefused` | `field`, `error` |
 | `descriptor.untranslatable-legacy` | `UntranslatableLegacy` | `field`, `units`, `domain` |
+| `descriptor.form-view-mismatch` | `FormViewMismatch` | `field`, `form` |
+| `descriptor.rule-part-kind` | `RulePartKind` | `field`, `part` |
 
 ### `study-finding` — `StudyFinding`
 
@@ -1388,6 +1390,8 @@ fails after rewriting, so review the change and run it again.
 | `form-field.duplicate` | `Duplicate` | `field`, `part`, `token` |
 | `form-field.item-count` | `ItemCount` | `field`, `count`, `minimum`, `maximum` |
 | `form-field.refused` | `Refused` | `field`, `raw`, `underlying`, `reason` |
+| `form-field.unknown-field` | `UnknownField` | `field` |
+| `form-field.repeated-part` | `RepeatedPart` | `field`, `part` |
 
 ### `codec` — `CodecError`
 

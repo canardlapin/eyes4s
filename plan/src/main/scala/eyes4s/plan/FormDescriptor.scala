@@ -97,8 +97,9 @@ enum NumberShape derives CanEqual:
   * Text is read by one grammar on every platform: an optional sign, digits
   * with an optional fraction, and for reals an optional exponent. Surrounding
   * whitespace is ignored. `NaN`, infinities, hexadecimal and grouping are not
-  * numbers. [[write]] gives the canonical text, the same on the JVM and in
-  * Scala.js, and reading it back gives the same number.
+  * numbers, and a real that overflows to infinity or a non-zero one that
+  * underflows to zero is refused. [[write]] gives the canonical text, the same
+  * on the JVM and in Scala.js, and reading it back gives the same number.
   */
 sealed trait Numeral[N]:
   def shape: NumberShape
@@ -118,6 +119,11 @@ sealed trait Numeral[N]:
   /** The representable number nearest a finite `x`, clamped to the range. */
   def nearest(x: Double): N
 
+  /** The sign of `n - v`, compared exactly in this shape's own type; `v` is a
+    * declared endpoint.
+    */
+  def compare(n: N, v: Double): Int
+
 object Numeral:
   private val integralText = "[+-]?[0-9]+".r
   private val realText     = "[+-]?([0-9]+(\\.[0-9]*)?|\\.[0-9]+)([eE][+-]?[0-9]+)?".r
@@ -126,7 +132,11 @@ object Numeral:
     val shape              = NumberShape.Real
     def read(text: String) =
       val t = text.trim
-      if realText.matches(t) then Some(t.toDouble).filter(_.isFinite) else None
+      // A non-zero mantissa that underflows to zero is refused, as overflow is.
+      val nonZero = t.takeWhile(c => c != 'e' && c != 'E').exists(c => c >= '1' && c <= '9')
+      if realText.matches(t) then
+        Some(t.toDouble).filter(d => d.isFinite && (d != 0.0 || !nonZero))
+      else None
     def write(n: Double)             = NumberText.real(n)
     def toDouble(n: Double)          = n
     def step(n: Double, up: Boolean) =
@@ -135,6 +145,8 @@ object Numeral:
     def exactly(x: Double)   = Option.when(x.isFinite)(x)
     def extreme(up: Boolean) = if up then Double.MaxValue else -Double.MaxValue
     def nearest(x: Double)   = x
+    // `<` and `>` rather than Double.compare, so -0 meets a bound at 0 as 0 does.
+    def compare(n: Double, v: Double) = if n < v then -1 else if n > v then 1 else 0
 
   given int32: Numeral[Int] with
     val shape              = NumberShape.Int32
@@ -151,6 +163,7 @@ object Numeral:
     def extreme(up: Boolean) = if up then Int.MaxValue else Int.MinValue
     def nearest(x: Double)   =
       math.rint(x).max(Int.MinValue.toDouble).min(Int.MaxValue.toDouble).toInt
+    def compare(n: Int, v: Double) = java.lang.Double.compare(n.toDouble, v)
 
   given int64: Numeral[Long] with
     val shape              = NumberShape.Int64
@@ -164,8 +177,11 @@ object Numeral:
       else Option.when(n > Long.MinValue)(n - 1)
     def exactly(x: Double) =
       Option.when(x.isWhole && math.abs(x) <= Numeral.exactIntegers)(x.toLong)
-    def extreme(up: Boolean) = if up then Long.MaxValue else Long.MinValue
-    def nearest(x: Double)   = math.rint(x).toLong
+    def extreme(up: Boolean)        = if up then Long.MaxValue else Long.MinValue
+    def nearest(x: Double)          = math.rint(x).toLong
+    def compare(n: Long, v: Double) = exactly(v) match
+      case Some(e) => java.lang.Long.compare(n, e)
+      case None    => java.lang.Double.compare(n.toDouble, v)
 
   /** Integers up to this magnitude are exact as doubles. */
   val exactIntegers: Double = 9007199254740992.0
@@ -179,9 +195,9 @@ object Numeral:
 private[plan] object NumberText:
   /** The shortest decimal that reads back as `x`: `2`, `0.5`, `1E-7`.
     *
-    * The search starts from the platform's own round-trip text of the
-    * magnitude (Scala.js's `BigDecimal(Double)` is not exact for every
-    * double) and keeps the fewest significant digits that read back as `x`.
+    * The search rounds the double's exact binary value, built from its bits
+    * with integer arithmetic (the same on every platform), to the fewest
+    * significant digits that read back as `x`.
     */
   def real(x: Double): String =
     val sign = if x < 0 || (x == 0.0 && 1.0 / x < 0) then "-" else ""
@@ -190,7 +206,7 @@ private[plan] object NumberText:
       if m == 0.0 then "0"
       else if m.isWhole && m < 1e15 then m.toLong.toString
       else
-        val decimal = new java.math.BigDecimal(java.lang.Double.toString(m))
+        val decimal = exact(m)
         (1 to 17).iterator
           .map(p =>
             decimal
@@ -201,6 +217,20 @@ private[plan] object NumberText:
           .find(_.toDouble == m)
           .getOrElse(decimal.stripTrailingZeros.toString)
     sign + body
+
+  /** The exact value of a finite positive double. */
+  private def exact(m: Double): java.math.BigDecimal =
+    val bits                 = java.lang.Double.doubleToLongBits(m)
+    val biased               = ((bits >>> 52) & 0x7ffL).toInt
+    val fraction             = bits & 0xfffffffffffffL
+    val (mantissa, exponent) =
+      if biased == 0 then (fraction, -1074) else (fraction | (1L << 52), biased - 1075)
+    val digits = java.math.BigInteger.valueOf(mantissa)
+    if exponent >= 0 then new java.math.BigDecimal(digits.shiftLeft(exponent))
+    else
+      // m = mantissa / 2^k = mantissa * 5^k / 10^k
+      new java.math.BigDecimal(digits.multiply(java.math.BigInteger.valueOf(5).pow(-exponent)))
+        .scaleByPowerOfTen(exponent)
 
 /** Which side of a range an endpoint bounds. */
 enum Side derives CanEqual:
@@ -218,11 +248,17 @@ enum Endpoint derives CanEqual:
     case Open(_)   => false
 
   /** `x` satisfies this endpoint on `side`. */
-  def admits(x: Double, side: Side): Boolean = (this, side) match
-    case (Closed(v), Side.Lower) => x >= v
-    case (Open(v), Side.Lower)   => x > v
-    case (Closed(v), Side.Upper) => x <= v
-    case (Open(v), Side.Upper)   => x < v
+  def admits(x: Double, side: Side): Boolean =
+    admitsBy(v => if x < v then -1 else if x > v then 1 else 0, side)
+
+  /** Whether a number satisfies this endpoint on `side`, given the sign of
+    * its difference from an endpoint value.
+    */
+  def admitsBy(compare: Double => Int, side: Side): Boolean = (this, side) match
+    case (Closed(v), Side.Lower) => compare(v) >= 0
+    case (Open(v), Side.Lower)   => compare(v) > 0
+    case (Closed(v), Side.Upper) => compare(v) <= 0
+    case (Open(v), Side.Upper)   => compare(v) < 0
 
   def render(side: Side): String = (this, side) match
     case (Closed(v), Side.Lower) => s"[${NumberText.real(v)}"
@@ -239,10 +275,16 @@ final case class NumericBounds private (lower: Option[Endpoint], upper: Option[E
 
   /** The endpoint `x` violates, if any, lower first. */
   def violation(x: Double): Option[(Side, Endpoint)] =
+    violationBy(v => if x < v then -1 else if x > v then 1 else 0)
+
+  /** The endpoint a number violates, given the sign of its difference from
+    * an endpoint value; lower first.
+    */
+  def violationBy(compare: Double => Int): Option[(Side, Endpoint)] =
     lower
-      .filterNot(_.admits(x, Side.Lower))
+      .filterNot(_.admitsBy(compare, Side.Lower))
       .map(Side.Lower -> _)
-      .orElse(upper.filterNot(_.admits(x, Side.Upper)).map(Side.Upper -> _))
+      .orElse(upper.filterNot(_.admitsBy(compare, Side.Upper)).map(Side.Upper -> _))
 
   def contains(x: Double): Boolean = violation(x).isEmpty
 
@@ -260,6 +302,9 @@ object NumericBounds:
 
   /** Zero or more: `[0, ∞)`. */
   val nonNegative: NumericBounds = new NumericBounds(Some(Endpoint.Closed(0)), None)
+
+  /** One or more: `[1, ∞)`. */
+  val atLeastOne: NumericBounds = new NumericBounds(Some(Endpoint.Closed(1)), None)
 
   /** At least `v`: `[v, ∞)`. */
   def atLeast(v: Double): Either[DescriptorError, NumericBounds] =
@@ -295,7 +340,9 @@ enum RawValue derives CanEqual:
   case Variant(token: String, fields: Vector[(FieldId, RawValue)])
   case Items(values: Vector[RawValue])
 
-/** One alternative of a choice: its stable token and its English label. */
+/** One alternative of a choice: its stable token and a display label. The
+  * shipped labels are the tokens; a host localises by token.
+  */
 final case class ChoiceOption(token: String, label: String) derives CanEqual
 
 /** Values a choice draws from the study input rather than from a fixed list. */
@@ -407,6 +454,9 @@ final class FieldView private (
   def prefixed(prefix: String): FieldView =
     new FieldView(id.prefixed(prefix), version, meaning, kind, default)
 
+  private[plan] def renamed(to: FieldId): FieldView =
+    new FieldView(to, version, meaning, kind, default)
+
   def withDefault(value: DefaultValue): Either[DescriptorError, FieldView] =
     FieldView.of(id, version, meaning, kind, Some(value))
 
@@ -487,6 +537,12 @@ enum FieldError[+E] derives CanEqual:
   case ItemCount(field: FieldId, count: Int, minimum: Int, maximum: Option[Int])
   case Refused(field: FieldId, raw: RawValue, underlying: E, reason: String)
 
+  /** A form names a field its descriptor does not have. */
+  case UnknownField(field: FieldId)
+
+  /** A raw group or case gives the same part twice. */
+  case RepeatedPart(field: FieldId, part: FieldId)
+
   def field: FieldId
 
   def message: String = this match
@@ -510,6 +566,8 @@ enum FieldError[+E] derives CanEqual:
     case ItemCount(f, n, min, max) =>
       s"$f: $n items; at least $min${max.fold("")(m => s" and at most $m")} are needed."
     case Refused(f, raw, _, reason) => s"$f: ${FieldChecks.show(raw)} is refused: $reason"
+    case UnknownField(f)            => s"$f: there is no such field."
+    case RepeatedPart(f, part)      => s"$f: part '$part' is given more than once."
 
 /** A typed field: a raw value parses to `A` on its own, without a whole
   * recipe, in three stages: its shape, its declared bounds, then the domain
@@ -531,7 +589,7 @@ final class NumericField[E, N, A] private (
     val bounds: NumericBounds,
     val domain: N => Either[E, A],
     val number: A => N,
-    errorMessage: E => String
+    val errorMessage: E => String
 ) extends FormField[E, A]:
   def parse(raw: RawValue): Either[FieldError[E], A] =
     for
@@ -613,7 +671,7 @@ private[plan] object FieldChecks:
         .toRight(FieldError.Malformed(id, raw, Expected.Number(numeral.shape)))
         .flatMap { n =>
           val x = numeral.toDouble(n)
-          bounds.violation(x) match
+          bounds.violationBy(numeral.compare(n, _)) match
             case Some((side, bound)) =>
               Left(FieldError.OutOfBounds(id, t.trim, x, side, bound, quantity))
             case None => Right(n)
@@ -640,11 +698,14 @@ private[plan] object FieldChecks:
       case (FieldKind.Toggle, RawValue.Flag(_))                     => Right(())
       case (FieldKind.Text | FieldKind.Reference, RawValue.Text(t)) =>
         Either.cond(t.trim.nonEmpty, (), FieldError.Malformed(id, raw, Expected.Text))
-      case (FieldKind.Optional(of, _), _)                         => check(of, raw)
+      case (FieldKind.Optional(of, _), _)                         => check(within(id, of), raw)
       case (FieldKind.Repeated(of, min, max), RawValue.Items(xs)) =>
         if xs.size < min || max.exists(xs.size > _) then
           Left(FieldError.ItemCount(id, xs.size, min, max))
-        else xs.traverse_(check(of, _))
+        else
+          xs.zipWithIndex.traverse_((x, i) =>
+            check(of.renamed(FieldId.literal(s"${id.value}.$i")), x)
+          )
       case (FieldKind.Group(parts, rule), RawValue.Group(fields)) =>
         checkParts(id, parts, fields, rule)
       case (FieldKind.Variant(cases), RawValue.Variant(token, fields)) =>
@@ -663,6 +724,10 @@ private[plan] object FieldChecks:
     case FieldKind.Repeated(_, _, _)          => Expected.Items
     case FieldKind.Variant(_)                 => Expected.Variant
 
+  /** A part as its containing field reports it: `window.xMin`. */
+  private def within(id: FieldId, part: FieldView): FieldView =
+    part.renamed(FieldId.literal(s"${id.value}.${part.id.value}"))
+
   private def checkParts(
       id: FieldId,
       parts: Vector[FieldView],
@@ -673,21 +738,27 @@ private[plan] object FieldChecks:
     for
       _ <- fields
         .map(_._1)
+        .diff(fields.map(_._1).distinct)
+        .headOption
+        .toLeft(())
+        .left
+        .map(FieldError.RepeatedPart(id, _))
+      _ <- fields
+        .map(_._1)
         .find(p => !parts.exists(_.id == p))
         .toLeft(())
         .left
         .map(
           FieldError.UnknownPart(id, _)
         )
-      _ <- parts.traverse_(p => check(p, given_.getOrElse(p.id, RawValue.Absent)))
+      _ <- parts.traverse_(p => check(within(id, p), given_.getOrElse(p.id, RawValue.Absent)))
       _ <- rule match
         case GroupRule.Independent    => Right(())
         case GroupRule.Ordered(pairs) =>
           pairs.traverse_ { (lo, hi) =>
-            (number(given_.get(lo)), number(given_.get(hi))) match
-              case (Some(l), Some(h)) if !(l < h) =>
-                Left(FieldError.Unordered(id, lo, hi, l, h))
-              case _ => Right(())
+            ordered(parts, given_, lo, hi) match
+              case Some((false, l, h)) => Left(FieldError.Unordered(id, lo, hi, l, h))
+              case _                   => Right(())
           }
         case GroupRule.Distinct(names) =>
           val tokens = names.flatMap(n => given_.get(n).flatMap(token).map(n -> _))
@@ -699,17 +770,46 @@ private[plan] object FieldChecks:
             .toLeft(())
     yield ()
 
-  private def number(raw: Option[RawValue]): Option[Double] = raw.collect {
-    case RawValue.Number(t) => t.trim.toDoubleOption
-  }.flatten
+  /** Whether `lo` lies strictly below `hi`, compared in the parts' own
+    * number shape (exactly, for 64-bit integers), with both as doubles.
+    */
+  private def ordered(
+      parts: Vector[FieldView],
+      given_ : Map[FieldId, RawValue],
+      lo: FieldId,
+      hi: FieldId
+  ): Option[(Boolean, Double, Double)] =
+    def shape(id: FieldId) = parts.find(_.id == id).map(_.kind).collect {
+      case FieldKind.Numeric(_, s, _) => s
+    }
+    def text(id: FieldId) = given_.get(id).collect { case RawValue.Number(t) => t }
+    def compare[N](numeral: Numeral[N]): Option[(Boolean, Double, Double)] =
+      for
+        l <- text(lo).flatMap(numeral.read)
+        h <- text(hi).flatMap(numeral.read)
+      yield
+        val (ld, hd) = (numeral.toDouble(l), numeral.toDouble(h))
+        numeral.shape match
+          case NumberShape.Real  => (ld < hd, ld, hd)
+          case NumberShape.Int32 => (ld < hd, ld, hd)
+          case NumberShape.Int64 =>
+            (
+              java.lang.Long.compare(l.asInstanceOf[Long], h.asInstanceOf[Long]) < 0,
+              ld,
+              hd
+            )
+    (shape(lo), shape(hi)) match
+      case (Some(a), Some(b)) if a == b => compare(Numeral.forShape(a))
+      case _                            => compare(Numeral.real)
 
   private def token(raw: RawValue): Option[String] = raw match
     case RawValue.Choice(t) => Some(t)
     case RawValue.Text(t)   => Some(t)
     case _                  => None
 
-  /** Distinct part ids, rules that name the group's own numeric or choice
-    * parts, and integral bounds that are exact integers.
+  /** Distinct part ids, rules that name the group's own parts (`Ordered`
+    * numeric ones, `Distinct` choice, text or reference ones), and integral
+    * bounds that are exact integers.
     */
   def wellFormed(view: FieldView): Either[DescriptorError, Unit] =
     def parts(ps: Vector[FieldView]): Either[DescriptorError, Unit] =
@@ -743,6 +843,20 @@ private[plan] object FieldChecks:
           case GroupRule.Independent    => Vector.empty
           case GroupRule.Ordered(pairs) => pairs.flatMap((a, b) => Vector(a, b))
           case GroupRule.Distinct(ns)   => ns
+        def kindOf(n: FieldId) = ps.find(_.id == n).map(_.kind)
+        val misfit             = rule match
+          case GroupRule.Independent    => None
+          case GroupRule.Ordered(pairs) =>
+            pairs
+              .flatMap((a, b) => Vector(a, b))
+              .find(n => !kindOf(n).exists(_.isInstanceOf[FieldKind.Numeric]))
+          case GroupRule.Distinct(ns) =>
+            ns.find(n =>
+              !kindOf(n).exists {
+                case FieldKind.Choice(_) | FieldKind.Text | FieldKind.Reference => true
+                case _                                                          => false
+              }
+            )
         parts(ps).flatMap(_ =>
           named
             .find(n => !ps.exists(_.id == n))
@@ -751,6 +865,7 @@ private[plan] object FieldChecks:
             .map(
               DescriptorError.UnknownRulePart(view.id, _)
             )
+            .flatMap(_ => misfit.toLeft(()).left.map(DescriptorError.RulePartKind(view.id, _)))
         )
       case FieldKind.Optional(of, _)        => wellFormed(of)
       case FieldKind.Repeated(of, min, max) =>

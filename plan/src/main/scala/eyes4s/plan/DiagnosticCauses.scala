@@ -767,6 +767,8 @@ private[plan] object CauseDiagnostics:
           cause(inner)
         )
       case UntranslatableLegacy(f, units, domain) => d(name(f), token(units), token(domain))
+      case FormViewMismatch(f, form)              => d(fieldId(f), fieldId(form))
+      case RulePartKind(f, part)                  => d(fieldId(f), fieldId(part))
 
   /** A form field's refusal, located at the field; a domain refusal keeps its
     * own diagnostic as the cause.
@@ -794,6 +796,8 @@ private[plan] object CauseDiagnostics:
         d(fieldId(f), fieldId(lo), fieldId(hi), real(lv), real(hv))
       case Duplicate(f, part, t)      => d(fieldId(f), fieldId(part), token(t))
       case ItemCount(f, n, min, max)  => d(fieldId(f), int(n), int(min), optional(max.map(int)))
+      case UnknownField(f)            => d(fieldId(f))
+      case RepeatedPart(f, part)      => d(fieldId(f), fieldId(part))
       case Refused(f, raw, u, reason) =>
         val inner = underlying(u)
         diagnostic[K](
