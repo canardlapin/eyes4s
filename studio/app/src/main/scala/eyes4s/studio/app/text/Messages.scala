@@ -73,6 +73,8 @@ enum MessageId derives CanEqual:
   case CommandUndo, CommandRedo, CommandUndoView, CommandRedoView, CommandNextPane
   case CommandMaximize, CommandCancelRun, CommandShowRun, CommandReviewDraft
   case CommandDiscardDraft, CommandImport
+  case CommandRenameProject, CommandRevealProject, CommandProjectInfo
+  case CommandResetPerspective, MenuView, WindowEdited
 
   // --- Notices ---------------------------------------------------------------------
   case NoticeUnavailable, NoticeBlocked
@@ -239,6 +241,13 @@ object Catalogue:
       case CommandReviewDraft  => "Review draft in Analysis"
       case CommandDiscardDraft => "Discard draft"
       case CommandImport       => "Import sources…"
+
+      case CommandRenameProject    => "Rename…"
+      case CommandRevealProject    => "Reveal in Finder"
+      case CommandProjectInfo      => "Project info"
+      case CommandResetPerspective => "Reset perspective"
+      case MenuView                => "View"
+      case WindowEdited            => "{0} — Edited"
 
       case NoticeUnavailable => "{0} is not available now."
       case NoticeBlocked     => "{0}: {1}"

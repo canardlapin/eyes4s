@@ -182,6 +182,37 @@ object CommandRegistry:
     always(Intent.RequestImport)
   )
 
+  // --- The project chip's menu (S1.4) and View (S1.5a) -----------------------
+
+  val renameProject: AppCommand = AppCommand(
+    CommandId.declared("project.rename"),
+    MessageId.CommandRenameProject,
+    None,
+    always(Intent.RequestRename)
+  )
+
+  /** Only a saved project has a place to reveal. */
+  val revealProject: AppCommand = AppCommand(
+    CommandId.declared("project.reveal"),
+    MessageId.CommandRevealProject,
+    None,
+    m => m.project.map(_ => Intent.RevealProject)
+  )
+
+  val projectInfo: AppCommand = AppCommand(
+    CommandId.declared("project.info"),
+    MessageId.CommandProjectInfo,
+    None,
+    always(Intent.ShowProjectInfo)
+  )
+
+  val resetPerspective: AppCommand = AppCommand(
+    CommandId.declared("view.reset-perspective"),
+    MessageId.CommandResetPerspective,
+    None,
+    always(Intent.ResetPerspective)
+  )
+
   /** Every command, in menu order. */
   val all: Vector[AppCommand] = Vector(
     data,
@@ -201,7 +232,11 @@ object CommandRegistry:
     showRun,
     reviewDraft,
     discardDraft,
-    importSources
+    importSources,
+    renameProject,
+    revealProject,
+    projectInfo,
+    resetPerspective
   )
 
   def find(id: CommandId): Option[AppCommand] = all.find(_.id == id)

@@ -1,0 +1,350 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* The shell around the dock (tickets S1.4, S1.5a; DESIGN_SPEC section 3,
+ * docs/studio/design/Main.dc.html). Colours are token names only; sizes come
+ * from studio-type.css classes; weights are face families (DESIGN_SPEC 14). */
+
+.studio-shell {
+  -fx-background-color: -es-ground;
+}
+
+/* ---- shared pieces ------------------------------------------------------ */
+
+.chip {
+  -fx-min-height: 24px;
+  -fx-pref-height: 24px;
+  -fx-max-height: 24px;
+  -fx-padding: 0 9 0 9;
+  -fx-graphic-text-gap: 6;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 6, 5;
+  -fx-text-fill: -es-ink-2;
+  -es-current: -es-ink-2;
+}
+
+.sep {
+  -fx-text-fill: -es-ink-3;
+}
+
+.bar-rule {
+  -fx-min-width: 1px;
+  -fx-pref-width: 1px;
+  -fx-max-width: 1px;
+  -fx-min-height: 12px;
+  -fx-pref-height: 12px;
+  -fx-max-height: 12px;
+  -fx-background-color: -es-hairline;
+}
+
+.bar-button {
+  -fx-min-height: 22px;
+  -fx-pref-height: 22px;
+  -fx-max-height: 22px;
+  -fx-padding: 0 10 0 10;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans Medm";
+}
+
+.icon-button {
+  -fx-min-width: 22px;
+  -fx-pref-width: 22px;
+  -fx-max-width: 22px;
+  -fx-min-height: 22px;
+  -fx-pref-height: 22px;
+  -fx-max-height: 22px;
+  -fx-padding: 0;
+  -fx-background-color: transparent;
+  -fx-background-radius: 4;
+  -es-current: -es-ink-3;
+}
+
+.icon-button:hover {
+  -fx-background-color: -es-surface-3;
+}
+
+.dot {
+  -fx-min-width: 7px;
+  -fx-pref-width: 7px;
+  -fx-max-width: 7px;
+  -fx-min-height: 7px;
+  -fx-pref-height: 7px;
+  -fx-max-height: 7px;
+  -fx-background-radius: 4;
+  -fx-background-color: -es-ink-3;
+}
+
+/* ---- 2 · app bar, 44 px ------------------------------------------------- */
+
+.app-bar {
+  -fx-alignment: center-left;
+  -fx-spacing: 10;
+  -fx-padding: 0 12 0 14;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.brand {
+  -fx-alignment: center-left;
+  -fx-spacing: 7;
+  -fx-padding: 0 4 0 0;
+  -es-current: -es-ink;
+}
+
+.wordmark {
+  -fx-text-fill: -es-ink;
+}
+
+.project-chip > .arrow-button > .arrow {
+  -fx-background-color: -es-ink-2;
+}
+
+.perspectives {
+  -fx-spacing: 2;
+  -fx-padding: 2;
+  -fx-background-color: -es-surface-3;
+  -fx-background-radius: 7;
+}
+
+.perspective {
+  -fx-min-height: 28px;
+  -fx-pref-height: 28px;
+  -fx-max-height: 28px;
+  -fx-padding: 0 12 0 12;
+  -fx-graphic-text-gap: 7;
+  -fx-background-color: transparent;
+  -fx-background-radius: 5;
+  -fx-text-fill: -es-ink-2;
+  -fx-font-family: "IBM Plex Sans Medm";
+}
+
+.perspective:selected {
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 5, 4;
+  -fx-text-fill: -es-ink;
+}
+
+.perspective .shortcut {
+  -fx-text-fill: -es-ink-2;
+}
+
+.jobs {
+  -fx-alignment: center-right;
+  -fx-spacing: 6;
+}
+
+.jobs-chip-parts {
+  -fx-alignment: center-left;
+  -fx-spacing: 6;
+}
+
+.jobs-part {
+  -fx-text-fill: -es-ink-2;
+}
+
+.jobs-title {
+  -fx-font-family: "IBM Plex Sans SmBld";
+  -fx-text-fill: -es-ink;
+}
+
+.jobs-count {
+  -fx-font-family: "IBM Plex Mono";
+}
+
+.jobs:failed .jobs-chip {
+  -fx-background-color: -es-fail, -es-fail-soft;
+  -es-current: -es-fail;
+}
+
+.jobs:failed .jobs-part {
+  -fx-text-fill: -es-fail;
+}
+
+.jobs-progress {
+  -fx-pref-width: 64px;
+  -fx-pref-height: 4px;
+  -fx-max-height: 4px;
+}
+
+.jobs-progress > .track {
+  -fx-background-color: -es-surface-3;
+  -fx-background-insets: 0;
+  -fx-background-radius: 2;
+}
+
+.jobs-progress > .bar {
+  -fx-background-color: -es-ink-2;
+  -fx-background-insets: 0;
+  -fx-background-radius: 2;
+  -fx-padding: 2;
+}
+
+/* ---- 3 · context strip, 32 px ------------------------------------------- */
+
+.context-strip {
+  -fx-alignment: center-left;
+  -fx-spacing: 4;
+  -fx-padding: 0 10 0 10;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.trail {
+  -fx-alignment: center-left;
+  -fx-spacing: 2;
+  -fx-padding: 0 0 0 4;
+}
+
+.crumb {
+  -fx-min-height: 22px;
+  -fx-pref-height: 22px;
+  -fx-max-height: 22px;
+  -fx-padding: 0 6 0 6;
+  -fx-background-color: transparent;
+  -fx-background-radius: 4;
+  -fx-text-fill: -es-ink-2;
+}
+
+.crumb:hover {
+  -fx-background-color: -es-surface-3;
+}
+
+.crumb:current {
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.freshness {
+  -fx-min-height: 22px;
+  -fx-pref-height: 22px;
+  -fx-max-height: 22px;
+}
+
+.dot.tone-current {
+  -fx-background-color: -es-accent;
+}
+
+.dot.tone-stale, .dot.tone-pending-data {
+  -fx-background-color: -es-control;
+}
+
+.dot.tone-running {
+  -fx-background-color: -es-ink-2;
+}
+
+.dot.tone-failed {
+  -fx-background-color: -es-fail;
+}
+
+.context-note {
+  -fx-text-fill: -es-ink-3;
+}
+
+.draft-chip {
+  -fx-min-height: 22px;
+  -fx-pref-height: 22px;
+  -fx-max-height: 22px;
+  -fx-background-color: -es-surface;
+  -fx-border-color: -es-ink-2;
+  -fx-border-style: segments(3, 2);
+  -fx-border-radius: 6;
+  -fx-text-fill: -es-ink;
+}
+
+.draft-chip:blocked {
+  -fx-border-color: -es-fail;
+}
+
+/* ---- 4 · draft banner, 30 px -------------------------------------------- */
+
+.draft-banner {
+  -fx-alignment: center-left;
+  -fx-spacing: 10;
+  -fx-padding: 0 12 0 12;
+  -fx-background-color: -es-surface-2;
+  -fx-border-color: transparent transparent -es-ink-2 transparent;
+  -fx-border-style: segments(3, 2);
+  -fx-border-width: 0 0 1 0;
+}
+
+.banner-lead {
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.banner-detail {
+  -fx-text-fill: -es-ink-2;
+}
+
+/* ---- 5 · dock area and placeholder panes -------------------------------- */
+
+.dock-area {
+  -fx-background-color: -es-hairline;
+}
+
+.pane-placeholder {
+  -fx-padding: 12 14 12 14;
+  -fx-background-color: -es-surface;
+}
+
+.pane-placeholder-title {
+  -fx-text-fill: -es-ink-3;
+}
+
+/* ---- 6 · status bar, 24 px ---------------------------------------------- */
+
+.status-bar {
+  -fx-alignment: center-left;
+  -fx-spacing: 12;
+  -fx-padding: 0 12 0 12;
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-background-insets: 0, 1 0 0 0;
+}
+
+.status-bar .label {
+  -fx-text-fill: -es-ink-2;
+}
+
+.status-selected, .status-job {
+  -fx-alignment: center-left;
+  -fx-spacing: 6;
+}
+
+.status-selected .dot {
+  -fx-min-width: 6px;
+  -fx-pref-width: 6px;
+  -fx-max-width: 6px;
+  -fx-min-height: 6px;
+  -fx-pref-height: 6px;
+  -fx-max-height: 6px;
+  -fx-background-color: -es-ink;
+}
+
+.status-bar .status-path {
+  -fx-text-fill: -es-ink;
+}
+
+.status-action {
+  -fx-min-height: 18px;
+  -fx-pref-height: 18px;
+  -fx-max-height: 18px;
+  -fx-padding: 0 6 0 6;
+}

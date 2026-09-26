@@ -1131,6 +1131,8 @@ lazy val studioDesktop = project
   .dependsOn(studioViz.jvm)
   // S2.3: the file-system ProjectStore runs studio-core's conformance suite.
   .dependsOn(studioCore.jvm % "test->test")
+  // S1.4: the shell FX suites boot at the S1.0 story models (StoryModels).
+  .dependsOn(studioApp.jvm % "test->test")
   .dependsOn(studioLocalRefs(intaglioLocal, "javafxJVM"): _*)
   .dependsOn(studioLocalRefs(scaladockLocal, "core", "fx"): _*)
   .settings(commonSettings)
