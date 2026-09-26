@@ -1459,7 +1459,9 @@
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
           "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
-          "surfaceJVM/eyes4s.surface.DensityLookupSuite"
+          "surfaceJVM/eyes4s.surface.DensityLookupSuite",
+          "surfaceJVM/eyes4s.surface.FixationEntropyConformanceSuite",
+          "surfaceJVM/eyes4s.surface.FixationEntropySuite"
         ]
       },
       {
@@ -4446,6 +4448,8 @@
           "planJVM/eyes4s.plan.TemporalCursorSuite",
           "surfaceJVM/consumer.PublicSurfaceSuite",
           "surfaceJVM/eyes4s.surface.AnisotropicSuite",
+          "surfaceJVM/eyes4s.surface.FixationEntropyConformanceSuite",
+          "surfaceJVM/eyes4s.surface.FixationEntropySuite",
           "surfaceJVM/eyes4s.surface.KdeReferenceSuite",
           "surfaceJVM/eyes4s.surface.SmootherSuite"
         ]
@@ -4524,7 +4528,9 @@
           "planJVM/eyes4s.plan.StudyPreviewSuite",
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
-          "planJVM/eyes4s.plan.TemporalCursorSuite"
+          "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "surfaceJVM/eyes4s.surface.FixationEntropyConformanceSuite",
+          "surfaceJVM/eyes4s.surface.FixationEntropySuite"
         ]
       },
       {
@@ -4603,6 +4609,8 @@
           "planJVM/eyes4s.plan.TemporalCursorSuite",
           "surfaceJVM/consumer.PublicSurfaceSuite",
           "surfaceJVM/eyes4s.surface.AnisotropicSuite",
+          "surfaceJVM/eyes4s.surface.FixationEntropyConformanceSuite",
+          "surfaceJVM/eyes4s.surface.FixationEntropySuite",
           "surfaceJVM/eyes4s.surface.KdeReferenceSuite",
           "surfaceJVM/eyes4s.surface.SmootherCardSuite",
           "surfaceJVM/eyes4s.surface.SmootherSuite"
@@ -4755,6 +4763,8 @@
           "planJVM/eyes4s.plan.TemporalCursorSuite",
           "surfaceJVM/consumer.PublicSurfaceSuite",
           "surfaceJVM/eyes4s.surface.AnisotropicSuite",
+          "surfaceJVM/eyes4s.surface.FixationEntropyConformanceSuite",
+          "surfaceJVM/eyes4s.surface.FixationEntropySuite",
           "surfaceJVM/eyes4s.surface.KdeReferenceSuite",
           "surfaceJVM/eyes4s.surface.SmootherSuite"
         ]
@@ -4810,6 +4820,7 @@
           "ioJVM/eyes4s.io.TemporalContrastSuite",
           "kernelJVM/consumer.PublicKernelSuite",
           "kernelJVM/eyes4s.kernel.EntropyConformanceSuite",
+          "kernelJVM/eyes4s.kernel.EntropyWeightsSuite",
           "kernelJVM/eyes4s.kernel.OccupancySuite",
           "lawsJVM/consumer.KernelConformanceSuite",
           "lawsJVM/eyes4s.examples.MatchedControlSuite",
@@ -4834,6 +4845,8 @@
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
           "surfaceJVM/eyes4s.surface.AnisotropicSuite",
+          "surfaceJVM/eyes4s.surface.FixationEntropyConformanceSuite",
+          "surfaceJVM/eyes4s.surface.FixationEntropySuite",
           "surfaceJVM/eyes4s.surface.KdeReferenceSuite",
           "surfaceJVM/eyes4s.surface.SmootherSuite"
         ]
@@ -5037,7 +5050,8 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
-          "planJVM/eyes4s.pointconsumer.PointSamplingSuite"
+          "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
+          "surfaceJVM/eyes4s.surface.FixationEntropySuite"
         ]
       }
     ],
@@ -6543,6 +6557,8 @@
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "surfaceJVM/consumer.PublicSurfaceSuite",
           "surfaceJVM/eyes4s.surface.AnisotropicSuite",
+          "surfaceJVM/eyes4s.surface.FixationEntropyConformanceSuite",
+          "surfaceJVM/eyes4s.surface.FixationEntropySuite",
           "surfaceJVM/eyes4s.surface.KdeReferenceSuite",
           "surfaceJVM/eyes4s.surface.SmootherCardSuite",
           "surfaceJVM/eyes4s.surface.SmootherSuite"
@@ -6589,6 +6605,8 @@
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "surfaceJVM/consumer.PublicSurfaceSuite",
           "surfaceJVM/eyes4s.surface.AnisotropicSuite",
+          "surfaceJVM/eyes4s.surface.FixationEntropyConformanceSuite",
+          "surfaceJVM/eyes4s.surface.FixationEntropySuite",
           "surfaceJVM/eyes4s.surface.KdeReferenceSuite",
           "surfaceJVM/eyes4s.surface.SmootherCardSuite",
           "surfaceJVM/eyes4s.surface.SmootherSuite"
@@ -8866,6 +8884,11 @@
       "instance": "eyes4s/plan/WorkStep$Done",
       "suite": "planJVM/consumer.PublicPlanSuite"
     },
+    "class eyes4s.surface.DensityBandwidth": {
+      "classification": "data-sum",
+      "instance": "eyes4s/surface/DensityBandwidth$Fixed",
+      "suite": "surfaceJVM/eyes4s.surface.FixationEntropySuite"
+    },
     "class eyes4s.surface.DensityLookupError": {
       "classification": "data-sum",
       "instance": "eyes4s/surface/DensityLookupError$Arithmetic",
@@ -8891,10 +8914,20 @@
       "instance": "eyes4s/surface/EdgePolicy$$anon$1",
       "suite": "surfaceJVM/consumer.PublicSurfaceSuite"
     },
+    "class eyes4s.surface.EntropyQuantity": {
+      "classification": "data-sum",
+      "instance": "eyes4s/surface/EntropyQuantity$$anon$4",
+      "suite": "surfaceJVM/eyes4s.surface.FixationEntropySuite"
+    },
     "class eyes4s.surface.EstimateError": {
       "classification": "data-sum",
       "instance": "eyes4s/surface/EstimateError$$anon$2",
       "suite": "surfaceJVM/eyes4s.surface.KdeReferenceSuite"
+    },
+    "class eyes4s.surface.FixationEntropyError": {
+      "classification": "data-sum",
+      "instance": "eyes4s/surface/FixationEntropyError$$anon$1",
+      "suite": "surfaceJVM/eyes4s.surface.FixationEntropySuite"
     },
     "class eyes4s.surface.IqrBandwidthClamp": {
       "classification": "data-sum",
@@ -8910,6 +8943,21 @@
       "classification": "data-sum",
       "instance": "eyes4s/surface/KernelBandwidth$Isotropic",
       "suite": "surfaceJVM/consumer.PublicSurfaceSuite"
+    },
+    "class eyes4s.surface.LatticeUpperEdge": {
+      "classification": "data-sum",
+      "instance": "eyes4s/surface/LatticeUpperEdge$$anon$3",
+      "suite": "surfaceJVM/eyes4s.surface.FixationEntropySuite"
+    },
+    "class eyes4s.surface.OutsideLattice": {
+      "classification": "data-sum",
+      "instance": "eyes4s/surface/OutsideLattice$$anon$2",
+      "suite": "surfaceJVM/eyes4s.surface.FixationEntropySuite"
+    },
+    "class eyes4s.surface.ScaleReduction": {
+      "classification": "data-sum",
+      "instance": "eyes4s/surface/ScaleReduction$Mean",
+      "suite": "surfaceJVM/eyes4s.surface.FixationEntropySuite"
     },
     "class eyes4s.surface.Smoother": {
       "classification": "behavior-or-sealed-data",
@@ -10056,6 +10104,8 @@
     "method eyes4s.kernel.Detector$.filter(1,scala.Function1):eyes4s.kernel.Detector": "kernelJVM/eyes4s.kernel.MachineCursorSuite",
     "method eyes4s.kernel.Detector$.identity(1):eyes4s.kernel.Detector": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.kernel.Detector$.lift(2,scala.Function1):eyes4s.kernel.Detector": "kernelJVM/eyes4s.kernel.MachineCursorSuite",
+    "method eyes4s.kernel.Entropy$.ofWeights(scala.Double[],eyes4s.kernel.LogBase):scala.util.Either": "kernelJVM/eyes4s.kernel.EntropyWeightsSuite",
+    "method eyes4s.kernel.Entropy$.relative(eyes4s.kernel.Entropy,scala.Int):scala.Double": "kernelJVM/eyes4s.kernel.EntropyWeightsSuite",
     "method eyes4s.kernel.Entropy.render():": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.Extent$.of(1,scala.Double,scala.Double):scala.util.Either": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.Extent$.square(1,scala.Double):scala.util.Either": "lawsJVM/eyes4s.laws.DetectorMetamorphicLawsSuite",
@@ -10307,7 +10357,7 @@
     "method eyes4s.kernel.Surface$package$.entropy(1,eyes4s.kernel.Mass,eyes4s.kernel.LogBase):eyes4s.kernel.Entropy": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.Surface$package$.logRatio(1,eyes4s.kernel.Mass,eyes4s.kernel.Mass,scala.Double):scala.util.Either": "kernelJVM/eyes4s.kernel.EntropyConformanceSuite",
     "method eyes4s.kernel.Surface$package$.normalised(1,eyes4s.kernel.Intensity):scala.util.Either": "kernelJVM/consumer.PublicKernelSuite",
-    "method eyes4s.kernel.Surface$package$.relativeEntropy(1,eyes4s.kernel.Mass,eyes4s.kernel.LogBase):scala.Double": "kernelJVM/eyes4s.kernel.EntropyConformanceSuite",
+    "method eyes4s.kernel.Surface$package$.relativeEntropy(1,eyes4s.kernel.Mass,eyes4s.kernel.LogBase):scala.Double": "kernelJVM/eyes4s.kernel.EntropyWeightsSuite",
     "method eyes4s.kernel.Surface$package$.scaled(1,eyes4s.kernel.Intensity,scala.Double):scala.util.Either": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.Surface.at(scala.Int):scala.Option": "kernelJVM/eyes4s.kernel.OccupancySuite",
     "method eyes4s.kernel.Surface.sampleAt(eyes4s.kernel.Pt):scala.Option": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
@@ -11105,10 +11155,26 @@
     "method eyes4s.surface.DensityLookup$.prepare(1,eyes4s.kernel.Surface,eyes4s.surface.DensityNormalization):scala.util.Either": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.surface.DensityLookupError.message():": "surfaceJVM/consumer.PublicSurfaceSuite",
     "method eyes4s.surface.DensityPointFailure.message():": "surfaceJVM/consumer.PublicSurfaceSuite",
-    "method eyes4s.surface.EstimateError.message():": "surfaceJVM/eyes4s.surface.SmootherSuite",
+    "method eyes4s.surface.EstimateError.message():": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
+    "method eyes4s.surface.FixationEntropy$.density(1,eyes4s.core.Scanpath,eyes4s.kernel.Grid,eyes4s.surface.DensityBandwidth,eyes4s.surface.EdgePolicy,eyes4s.core.Weight,eyes4s.kernel.LogBase):scala.util.Either": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
+    "method eyes4s.surface.FixationEntropy$.multiscale(1,eyes4s.core.Scanpath,eyes4s.kernel.Grid,scala.collection.immutable.Vector,eyes4s.surface.EdgePolicy,eyes4s.core.Weight,eyes4s.kernel.LogBase):scala.util.Either": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
+    "method eyes4s.surface.FixationEntropy$.occupancy(1,eyes4s.core.Scanpath,eyes4s.surface.OccupancyLattice,eyes4s.core.Weight,eyes4s.surface.OutsideLattice,eyes4s.kernel.LogBase):scala.util.Either": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
+    "method eyes4s.surface.FixationEntropyError.message():": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
     "method eyes4s.surface.IqrBandwidth$.suggest(1,eyes4s.kernel.PointMeasure,eyes4s.surface.IqrBandwidthClamp):scala.util.Either": "surfaceJVM/eyes4s.surface.KdeReferenceSuite",
     "method eyes4s.surface.IqrBandwidthError.message():": "surfaceJVM/consumer.PublicSurfaceSuite",
     "method eyes4s.surface.KernelBandwidth.render():": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
+    "method eyes4s.surface.MultiscaleEntropy$.of(1,scala.collection.immutable.Vector,eyes4s.kernel.LogBase):scala.util.Either": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
+    "method eyes4s.surface.MultiscaleEntropy$.ofPyramid(1,eyes4s.surface.Pyramid,eyes4s.kernel.LogBase):eyes4s.surface.MultiscaleEntropy": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
+    "method eyes4s.surface.MultiscaleEntropy.reduce(eyes4s.surface.EntropyQuantity,eyes4s.surface.ScaleReduction):scala.util.Either": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
+    "method eyes4s.surface.MultiscaleEntropy.scales():": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
+    "method eyes4s.surface.MultiscaleEntropy.values(eyes4s.surface.EntropyQuantity):scala.collection.immutable.Vector": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
+    "method eyes4s.surface.OccupancyLattice$.of(1,eyes4s.kernel.Frame,eyes4s.kernel.Bounds,scala.Int,scala.Int,eyes4s.surface.LatticeUpperEdge):scala.util.Either": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
+    "method eyes4s.surface.OccupancyLattice$.overFrame(1,eyes4s.kernel.Frame,scala.Int,scala.Int,eyes4s.surface.LatticeUpperEdge):scala.util.Either": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
+    "method eyes4s.surface.OccupancyLattice$.paddedRange(1,eyes4s.core.Scanpath,scala.Int,scala.Int,scala.Double,eyes4s.surface.LatticeUpperEdge):scala.util.Either": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
+    "method eyes4s.surface.OccupancyLattice.cellOf(eyes4s.kernel.Pt):scala.Option": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
+    "method eyes4s.surface.OccupancyLattice.clampedCellOf(eyes4s.kernel.Pt):scala.Int": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
+    "method eyes4s.surface.OccupancyLattice.render(eyes4s.kernel.UnitLabel):java.lang.String": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
+    "method eyes4s.surface.OccupancyLattice.size():": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
     "method eyes4s.surface.PreparedDensityLookup.along(eyes4s.core.TrajectorySamples,eyes4s.surface.DensityLookupPolicy):scala.util.Either": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.surface.PreparedDensityLookup.sample(eyes4s.kernel.Frame,scala.collection.immutable.Vector,eyes4s.surface.DensityLookupPolicy):scala.util.Either": "surfaceJVM/eyes4s.surface.DensityLookupSuite",
     "method eyes4s.surface.Pyramid$.of(1,eyes4s.kernel.PointMeasure,eyes4s.kernel.Grid,scala.collection.immutable.Vector,eyes4s.surface.EdgePolicy):scala.util.Either": "surfaceJVM/consumer.PublicSurfaceSuite",
@@ -11498,6 +11564,7 @@
     "value eyes4s.plan.Diagnose$.evaluationWork": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.event": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.fixationComparison": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "value eyes4s.plan.Diagnose$.fixationEntropy": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.geometry": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.inventory": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.iqrBandwidth": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
@@ -11576,6 +11643,7 @@
     "value eyes4s.plan.DiagnosticCatalog$.event": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.families": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.fixationComparison": "planJVM/consumer.PublicPlanSuite",
+    "value eyes4s.plan.DiagnosticCatalog$.fixationEntropy": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.geometry": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.initialFixation": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.inspection": "planJVM/consumer.PublicPlanSuite",
@@ -13124,6 +13192,11 @@
       "the log-ratio map: eyesim drops the -Inf cell and reports entropy exactly 0; the NaN map is NA",
       "the pinned lattice is the cell-centre lattice of the 2 by 2 grid over 100 by 50"
     ],
+    "kernelJS/eyes4s.kernel.EntropyWeightsSuite": [
+      "negative, non-finite and massless weights are refused with the offending index",
+      "one cell has zero relative entropy, not 0 / 0",
+      "weights give the entropy and relative entropy of their normalised mass"
+    ],
     "kernelJS/eyes4s.kernel.GeometrySuite": [
       "a pixel position is not a degree position",
       "a region-style containment test rejects the wrong unit",
@@ -14254,6 +14327,37 @@
       "containing-cell behavior remains distinct and finite outside values clamp only under the named policy",
       "density-at-time composes the shared fast trajectory and matches both exported reference calls",
       "sample SD, zero variance, zero maximum/sum and singleton policies are explicit"
+    ],
+    "surfaceJS/eyes4s.surface.FixationEntropyConformanceSuite": [
+      "a scale with no mass: eyesim gives NA and drops it from the mean; eyes4s cannot hold it",
+      "aggregate = none is unreachable from eyesim's fixation-group route",
+      "excluding or refusing the outside fixation are explicit alternatives to eyesim's clamp",
+      "explicit scale weights give the weighted oracle, which eyesim cannot express",
+      "eyesim's default padded bounds reproduce its grid entropy and counts",
+      "grid entropy on explicit bounds equals eyesim and the exact oracle, cell by cell",
+      "multiscale none and mean on eyesim's own scale maps equal eyesim, by sigma label",
+      "multiscale none and mean on supplied maps equal eyesim and the exact oracle",
+      "native density entropy equals a direct two-dimensional discrete-kernel oracle",
+      "native multiscale entropy: per scale, mean and weighted mean equal the oracle",
+      "one fixation has zero grid entropy in both implementations",
+      "one fixation: eyesim's density entropy is NA, the native entropy is defined",
+      "the IQR bandwidth matches eyesim's unclamped suggestion; the display clamps differ",
+      "the entropy of eyesim's own density map equals eyesim's density entropy",
+      "the fixture records the pinned inputs",
+      "the grid method ignores duration weighting in eyesim; dwell weights are an eyes4s choice"
+    ],
+    "surfaceJS/eyes4s.surface.FixationEntropySuite": [
+      "a lattice needs cells and a padded range needs a valid padding",
+      "a lattice or grid in another frame is refused with both frame names",
+      "a pyramid's levels give the same entropies as the multiscale route",
+      "a weighted reduction needs one finite non-negative weight per scale, with positive total",
+      "a zero span is widened to one frame unit before padding, as eyesim does",
+      "an estimate failure names its scale",
+      "cells are half-open except a closed upper edge, which is a named choice",
+      "every error message names its operands",
+      "no occupancy left on the lattice or grid names the fixations and how many fell outside",
+      "results carry the lattice, weights, policies, grid and base that produced them",
+      "scales must be present, distinct and on one grid"
     ],
     "surfaceJS/eyes4s.surface.KdeReferenceSuite": [
       "explicit zero mass and incompatible frames remain failures instead of dropped groups",
@@ -15872,6 +15976,11 @@
       "the log-ratio map: eyesim drops the -Inf cell and reports entropy exactly 0; the NaN map is NA",
       "the pinned lattice is the cell-centre lattice of the 2 by 2 grid over 100 by 50"
     ],
+    "kernelJVM/eyes4s.kernel.EntropyWeightsSuite": [
+      "negative, non-finite and massless weights are refused with the offending index",
+      "one cell has zero relative entropy, not 0 / 0",
+      "weights give the entropy and relative entropy of their normalised mass"
+    ],
     "kernelJVM/eyes4s.kernel.GeometrySuite": [
       "a pixel position is not a degree position",
       "a region-style containment test rejects the wrong unit",
@@ -17026,6 +17135,37 @@
       "containing-cell behavior remains distinct and finite outside values clamp only under the named policy",
       "density-at-time composes the shared fast trajectory and matches both exported reference calls",
       "sample SD, zero variance, zero maximum/sum and singleton policies are explicit"
+    ],
+    "surfaceJVM/eyes4s.surface.FixationEntropyConformanceSuite": [
+      "a scale with no mass: eyesim gives NA and drops it from the mean; eyes4s cannot hold it",
+      "aggregate = none is unreachable from eyesim's fixation-group route",
+      "excluding or refusing the outside fixation are explicit alternatives to eyesim's clamp",
+      "explicit scale weights give the weighted oracle, which eyesim cannot express",
+      "eyesim's default padded bounds reproduce its grid entropy and counts",
+      "grid entropy on explicit bounds equals eyesim and the exact oracle, cell by cell",
+      "multiscale none and mean on eyesim's own scale maps equal eyesim, by sigma label",
+      "multiscale none and mean on supplied maps equal eyesim and the exact oracle",
+      "native density entropy equals a direct two-dimensional discrete-kernel oracle",
+      "native multiscale entropy: per scale, mean and weighted mean equal the oracle",
+      "one fixation has zero grid entropy in both implementations",
+      "one fixation: eyesim's density entropy is NA, the native entropy is defined",
+      "the IQR bandwidth matches eyesim's unclamped suggestion; the display clamps differ",
+      "the entropy of eyesim's own density map equals eyesim's density entropy",
+      "the fixture records the pinned inputs",
+      "the grid method ignores duration weighting in eyesim; dwell weights are an eyes4s choice"
+    ],
+    "surfaceJVM/eyes4s.surface.FixationEntropySuite": [
+      "a lattice needs cells and a padded range needs a valid padding",
+      "a lattice or grid in another frame is refused with both frame names",
+      "a pyramid's levels give the same entropies as the multiscale route",
+      "a weighted reduction needs one finite non-negative weight per scale, with positive total",
+      "a zero span is widened to one frame unit before padding, as eyesim does",
+      "an estimate failure names its scale",
+      "cells are half-open except a closed upper edge, which is a named choice",
+      "every error message names its operands",
+      "no occupancy left on the lattice or grid names the fixations and how many fell outside",
+      "results carry the lattice, weights, policies, grid and base that produced them",
+      "scales must be present, distinct and on one grid"
     ],
     "surfaceJVM/eyes4s.surface.KdeReferenceSuite": [
       "explicit zero mass and incompatible frames remain failures instead of dropped groups",
