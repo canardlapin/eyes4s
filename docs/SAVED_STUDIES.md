@@ -351,7 +351,8 @@ Scanpaths and fixation summaries backed by source samples are refused with `Code
 rather than silently detached; their support belongs to the recording payload.
 
 `ledger` encodes an `AdmissionLedger[K]` (`eyes4s.admission-ledger@1`, `@2` when it records an
-admission policy other than the version-1 one, or `@3` when it records a trial inventory; each
+admission policy other than the version-1 one, `@3` when it records a trial inventory, or `@4`
+when it records a declared source interpretation; each
 ledger is written under the earliest version that expresses it): the source reference (a label
 and the portable digest of the decoded header and records), the header, the recorded outcome and one
 entry per source record in record order. An admitted record links its logical record number to the
@@ -387,6 +388,36 @@ cannot carry one (`InventoryError.NoTrialProjection`). A version-3 ledger is pin
 [admission-ledger-v3.json](../codec/src/test/resources/eyes4s/admission-ledger-v3.json). `StudyInputRegistry` registers codecs by key
 schema and refuses missing or duplicate registrations. `VersionedCodec.trials` is the generic
 row-array codec these payloads use.
+
+### Declared source identity
+
+`ImportSpec[K, U]` is the pure, JVM/Scala.js description of fixation admission: typed key
+columns, fixation columns, frame, timestamp units and rounding, sample-count rule, attributes,
+correction policy and admission decision. Build it with `ImportSpec.of` and checked
+`SourceFixationColumns.of`; `SourceKeyColumns.Study` and `.Trial` determine the key type of its
+policy. `InventoryImportSpec.of` describes a separate trials file; `SourceInventory` binds that
+description to the inventory's semantic identity. `ImportSpecCodec.study[U]`, `.trial[U]` and
+`.inventory` persist these descriptions. Custom reader/clock identities can round-trip, but
+the Phase 1 `SourceAdmission.read` interpreter refuses them with `UnsupportedReplay`.
+
+`SourceAdmission.read(label, contents, spec, inventory)` interprets the description in `io`.
+The optional inventory is its display label and text. The result carries a declared ledger and
+all accepted trial groups; `admitted` is absent when the decision refuses the import. Rejected
+records remain in the ledger. `SourceAdmission.source` and `.inventorySource` derive the reference
+from decoded records without admitting trials, for inexpensive asset repair.
+
+`SourceRef.records` remains the digest of the decoded header and every record, including rejected
+records. `SourceRef.identity` is present only for a declared interpretation. The versioned
+`eyes4s.source-identity/1` digest combines format, parser definition/version, decoded records and
+admission options. It excludes display labels, paths and the separate byte SHA-256. Earlier ledgers
+and the original `SourceRef.of` constructor carry `LegacyUnspecified`; loading them does not invent
+parser or option evidence. The v4 ladder preserves v1–v3 meanings and their earliest encoding.
+
+`SourceComparison.of(sameBytes, expectedRef, actualRef)` compares the identity components first.
+`ChangedIdentity` reports a non-empty set of `Format`, `Parser`, `Options`, `Records` or `Undeclared`
+causes, even if the byte checksums match. Only equal declared components produce `SameBytes`
+(equal checksums) or `SameIdentity` (different checksums). A declared source is evidence of an
+interpretation, not proof that its saved ledger has been replay-verified.
 
 What a decoded ledger does **not** prove is that its exclusions are the source's. The source digest
 is carried, not recomputed: admitted records keep no raw fields, so the ledger alone cannot

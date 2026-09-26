@@ -32,8 +32,8 @@ class IoDiagnosticCatalogSuite extends munit.FunSuite:
 
   private val all = IoDiagnosticSamples.all
 
-  private val IoCount    = 170
-  private val IoDigest   = "eaa1ce0a0f01e515"
+  private val IoCount    = 176
+  private val IoDigest   = "81270ba9662b5b30"
   private val LawsCount  = 21
   private val LawsDigest = "cec5dc887ffa1c46"
 
@@ -50,6 +50,7 @@ class IoDiagnosticCatalogSuite extends munit.FunSuite:
       case v: ManifestRelation => CodecDiagnosticSupport.relation(v)
       case v: Json             => CodecDiagnosticSupport.json(v)
       case v: Sha256           => Operand.Artifact(v.hex)
+      case v: SourceIdentity   => Operand.Artifact(v.digest)
     },
     { case (v: StudyKey, Operand.Key(x: ErasedKey)) => x.value == v }
   )

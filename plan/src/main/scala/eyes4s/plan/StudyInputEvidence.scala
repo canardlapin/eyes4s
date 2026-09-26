@@ -24,8 +24,15 @@ import eyes4s.kernel.*
   * `ContentHash` of the decoded header and records, not a byte checksum, and
   * the label is a display name rather than an identity.
   */
-final case class SourceRef(label: String, records: ArtifactRef[Vector[Vector[String]]])
-    derives CanEqual
+final case class SourceRef(
+    label: String,
+    records: ArtifactRef[Vector[Vector[String]]],
+    interpretation: SourceInterpretation = SourceInterpretation.LegacyUnspecified
+) derives CanEqual:
+  def identity: Option[SourceIdentity] = interpretation match
+    case SourceInterpretation.LegacyUnspecified                 => None
+    case SourceInterpretation.Declared(format, parser, options) =>
+      Some(SourceIdentity.of(records, format, parser, options))
 
 object SourceRef:
   def of(label: String, header: Vector[String], rows: Vector[Vector[String]]): SourceRef =
@@ -296,7 +303,8 @@ final case class AdmissionLedger[K] private (
 
   /** The earliest ledger version that expresses this ledger: 1 for the
     * version-1 admission, 2 with an admission policy, admitted records outside
-    * the frame or a policy conflict, 3 with a trial inventory.
+    * the frame or a policy conflict, 3 with a trial inventory, 4 with declared
+    * source interpretation.
     */
   def version: Int =
     val causes = records.iterator
@@ -306,8 +314,10 @@ final case class AdmissionLedger[K] private (
       }
       .maxOption
       .getOrElse(1)
-    val base = if policy.isVersion1 && outsideFrame.isEmpty then 1 else 2
-    math.max(if inventory.isDefined then 3 else base, causes)
+    val base   = if policy.isVersion1 && outsideFrame.isEmpty then 1 else 2
+    val legacy = math.max(if inventory.isDefined then 3 else base, causes)
+    if source.identity.isDefined || inventory.exists(_.source.identity.isDefined) then 4
+    else legacy
 
   /** Join a trial inventory to this ledger (see [[AdmissionLedger.inventoried]]
     * for a ledger whose records name the inventory's own causes). `identity`

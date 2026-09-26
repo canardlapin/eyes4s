@@ -179,6 +179,42 @@ object SchemaRegistry:
       codecLaw(inputs, "admission ledger with inventory")
     ),
     Entry(
+      SourceCodecDefinitions.sourceRef,
+      Kind.Document,
+      Vector("source-ref-v1.json", "source-inventory-ref-v1.json"),
+      codecLaw(() => new SourceIdentityLawsSuite, "source reference")
+    ),
+    Entry(
+      SourceCodecDefinitions.importSpec,
+      Kind.Document,
+      Vector("import-spec-v1.json"),
+      codecLaw(() => new SourceIdentityLawsSuite, "import spec")
+    ),
+    Entry(
+      SourceCodecDefinitions.inventorySpec,
+      Kind.Document,
+      Vector("inventory-import-spec-v1.json"),
+      codecLaw(() => new SourceIdentityLawsSuite, "inventory import spec")
+    ),
+    Entry(
+      SourceCodecDefinitions.admissionLedgerV4,
+      Kind.Document,
+      Vector("ledger-v4.json"),
+      codecLaw(() => new SourceIdentityLawsSuite, "source ledger")
+    ),
+    Entry(
+      SourceImportDefinitions.fixationParser,
+      Kind.Definition,
+      Vector("source-ref-v1.json"),
+      codecLaw(() => new SourceIdentityLawsSuite, "source reference")
+    ),
+    Entry(
+      SourceImportDefinitions.inventoryParser,
+      Kind.Definition,
+      Vector("source-inventory-ref-v1.json"),
+      codecLaw(() => new SourceIdentityLawsSuite, "source reference")
+    ),
+    Entry(
       DefinitionId.recording,
       Kind.Document,
       Vector("recording-standalone-v1.json"),
@@ -862,8 +898,12 @@ private object Decoders:
         Some(StudyInputCodecs.study[Px].ledger)
       case InventoryDefinitions.admissionLedgerV3 =>
         Some(StudyInputCodecs.trial[Px].ledger)
-      case DefinitionId.recording          => Some(RecordingInputCodecs.recording[Px])
-      case DefinitionId.binocularRecording =>
+      case SourceCodecDefinitions.sourceRef         => Some(SourceIdentityCodec.source)
+      case SourceCodecDefinitions.importSpec        => Some(ImportSpecCodec.study[Px])
+      case SourceCodecDefinitions.inventorySpec     => Some(ImportSpecCodec.inventory)
+      case SourceCodecDefinitions.admissionLedgerV4 => Some(StudyInputCodecs.study[Px].ledger)
+      case DefinitionId.recording                   => Some(RecordingInputCodecs.recording[Px])
+      case DefinitionId.binocularRecording          =>
         Some(RecordingInputCodecs.binocular[Px])
       case DefinitionId.recordingInput     => Some(RecordingInputCodecs.input[Px])
       case DefinitionId.temporalStudyInput =>

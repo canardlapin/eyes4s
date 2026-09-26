@@ -1,0 +1,36 @@
+{
+  "schema": {
+    "name": "eyes4s.admission-ledger",
+    "version": 4
+  },
+  "value": {
+    "keySchema": {
+      "name": "eyes4s.study-key",
+      "version": 1
+    },
+    "source": {
+      "label": "empty.csv",
+      "records": "df0f52b97b77fd3b",
+      "interpretation": {
+        "kind": "declared",
+        "format": "FixationCsv",
+        "parser": {
+          "name": "eyes4s.fixation-csv-parser",
+          "version": 1
+        },
+        "options": "36995201760330b5",
+        "identityVersion": "eyes4s.source-identity/1",
+        "identity": "8f6e78db3722138f"
+      }
+    },
+    "header": [
+      "x"
+    ],
+    "outcome": "complete",
+    "records": [],
+    "offScreen": "excludeRecord",
+    "corrections": [],
+    "outsideFrame": [],
+    "inventory": null
+  }
+}
