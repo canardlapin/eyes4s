@@ -16,6 +16,7 @@
 
 package eyes4s.studio.core.command
 
+import eyes4s.codec.CanonicalDigest
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.DocumentGen.right
@@ -36,7 +37,12 @@ object CommandSamples:
   private val spec    = t2.reporting.head
   private val figure1 = t2.figures.head
   private val panelA  = right(PanelLetter.of("A"))
-  private val rule    = CorrectionRule(CorrectionTarget.AllTrials, CoordinateCorrection.FlipY)
+
+  /** r3's content digest in t1, as VerifyDataset records it. */
+  val verified: CanonicalDigest[DatasetRevisionSpec] =
+    DatasetRevisionSpec.contentDigest(pending).toOption.get
+
+  private val rule = CorrectionRule(CorrectionTarget.AllTrials, CoordinateCorrection.FlipY)
 
   val commands: Vector[(String, Command)] = Vector(
     "ImportSources" -> ImportSources(
@@ -46,18 +52,20 @@ object CommandSamples:
       pending.units,
       pending.geometry
     ),
-    "RestoreDataset"     -> RestoreDataset(pending),
-    "DiscardDataset"     -> DiscardDataset(r3),
-    "SetMapping"         -> SetMapping(r3, pending.mapping),
-    "SetUnits"           -> SetUnits(r3, DeclaredUnits(Some(TimeUnit.Seconds))),
-    "SetGeometry"        -> SetGeometry(r3, pending.geometry),
-    "SetOffScreenPolicy" -> SetOffScreenPolicy(r3, OffScreenChoice.QuarantineTrial),
-    "AddCorrection"      -> AddCorrection(r3, 0, rule),
-    "RemoveCorrection"   -> RemoveCorrection(r3, 0),
-    "VerifyDataset"      -> VerifyDataset(r3),
-    "Admit"              -> Admit(r3, CoreBinding.unbound, CoreBinding.unbound),
-    "StartDraft"         -> StartDraft(rev4, None, draft.changes),
-    "RestoreDraft"       -> RestoreDraft(draft),
+    "RestoreDataset"       -> RestoreDataset(pending),
+    "DiscardDataset"       -> DiscardDataset(r3),
+    "SetMapping"           -> SetMapping(r3, pending.mapping),
+    "SetUnits"             -> SetUnits(r3, DeclaredUnits(Some(TimeUnit.Seconds))),
+    "SetGeometry"          -> SetGeometry(r3, pending.geometry),
+    "SetOffScreenPolicy"   -> SetOffScreenPolicy(r3, OffScreenChoice.QuarantineTrial),
+    "AddCorrection"        -> AddCorrection(r3, 0, rule),
+    "RemoveCorrection"     -> RemoveCorrection(r3, 0),
+    "VerifyDataset"        -> VerifyDataset(r3),
+    "WithdrawVerification" -> WithdrawVerification(r3),
+    "ResumeVerification"   -> ResumeVerification(r3, verified),
+    "Admit"                -> Admit(r3, verified, CoreBinding.unbound, CoreBinding.unbound),
+    "StartDraft"           -> StartDraft(rev4, None, draft.changes),
+    "RestoreDraft"         -> RestoreDraft(draft),
     "ChangeRecipe" -> ChangeRecipe(RecipeChange.Grid(rev4Rec.grid, right(GridSize.of(32, 24)))),
     "RebaseDraft"  -> RebaseDraft(r2),
     "DiscardDraft" -> DiscardDraft,
@@ -70,6 +78,12 @@ object CommandSamples:
       RunLifecycle.Cancelled(Some(StageKind.Comparing)),
       CoreBinding.unbound
     ),
+    "CancelRun" -> CancelRun(run8),
+    "BindPlan"  -> BindPlan(
+      rev4,
+      CanonicalDigest.parse[StudyPlanArtifact]("0123456789abcdef" * 4).toOption.get,
+      right(SemanticIdentity.of("00112233445566ff"))
+    ),
     "PutReporting"    -> PutReporting(spec),
     "RemoveReporting" -> RemoveReporting(spec.id),
     "CreateFigure"    -> CreateFigure(run7, spec.id, figure1.panels.take(1)),
@@ -78,13 +92,20 @@ object CommandSamples:
     "BindFigure"      -> BindFigure(figure1.id, run5, spec.id),
     "SetPanelScale"   -> SetPanelScale(figure1.id, panelA, PanelScale.At(right(Sigma.of(2.0)))),
     "SetPanelSelection" -> SetPanelSelection(figure1.id, panelA, PanelSelection.AllQueries),
-    "SetPerspective"    -> SetPerspective(Perspective.Compare),
-    "SetTheme"          -> SetTheme(Theme.Dark),
-    "SetStage"          -> SetStage(StageAppearance.Mid),
-    "SetMapOpacity"     -> SetMapOpacity(right(MapOpacity.of(0.4))),
-    "SetUnderlay"       -> SetUnderlay(true),
-    "ShowRun"           -> ShowRun(Some(run7)),
-    "ShowRun.none"      -> ShowRun(None),
+    "AddPanel"          -> AddPanel(
+      figure1.id,
+      5,
+      figure1.panels(3).copy(letter = right(PanelLetter.of("F")))
+    ),
+    "RemovePanel"    -> RemovePanel(figure1.id, right(PanelLetter.of("E"))),
+    "RetitlePanel"   -> RetitlePanel(figure1.id, panelA, "Encoding gaze · P17"),
+    "SetPerspective" -> SetPerspective(Perspective.Compare),
+    "SetTheme"       -> SetTheme(Theme.Dark),
+    "SetStage"       -> SetStage(StageAppearance.Mid),
+    "SetMapOpacity"  -> SetMapOpacity(right(MapOpacity.of(0.4))),
+    "SetUnderlay"    -> SetUnderlay(true),
+    "ShowRun"        -> ShowRun(Some(run7)),
+    "ShowRun.none"   -> ShowRun(None),
     "SaveLayout" -> SaveLayout(Perspective.Figures, Some(LayoutBlob("""{"root":"figures"}"""))),
     "SaveLayout.clear" -> SaveLayout(Perspective.Data, None)
   )

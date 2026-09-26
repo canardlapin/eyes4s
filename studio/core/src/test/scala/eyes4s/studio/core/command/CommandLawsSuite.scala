@@ -50,12 +50,35 @@ class CommandLawsSuite extends munit.ScalaCheckSuite:
             val which  = History.stackOf(c)
             val undone = s.history.undoOn(which)
             assertEquals(undone.map(_.history.document), Right(t.before.document), c)
-            assertEquals(undone.map(_.effects), Right(Vector(Effect.Persist)), c)
+            assertEquals(undone.map(_.effects.contains(Effect.Persist)), Right(true), c)
             val redone = undone.flatMap(_.history.redoOn(which))
             assertEquals(redone.map(_.history.document), Right(s.history.document), c)
             assertEquals(redone.map(_.history.stack(which)), Right(s.history.stack(which)), c)
           case _ => ()
       }
+    }
+  }
+
+  property("undo still inverts an edit after backend facts and view edits come between") {
+    forAll(interleaving) { (h, c, between) =>
+      Reducer.run(h.document, c).map(_.recording) match
+        case Right(Recording.Reversible(_)) =>
+          val done = h.apply(c).toOption.get.history
+          // Apply each interleaved command on both sides while both accept it.
+          val (after, without) = between.foldLeft((done, h)) { case ((l, r), x) =>
+            (l.apply(x), r.apply(x)) match
+              case (Right(ls), Right(rs)) => (ls.history, rs.history)
+              case _                      => (l, r)
+          }
+          val which  = History.stackOf(c)
+          val undone = after.undoOn(which)
+          assertEquals(undone.map(_.history.document), Right(without.document), (c, between))
+          assertEquals(
+            undone.flatMap(_.history.redoOn(which)).map(_.history.document),
+            without.apply(c).map(_.history.document),
+            (c, between)
+          )
+        case _ => ()
     }
   }
 
@@ -164,8 +187,8 @@ class CommandLawsSuite extends munit.ScalaCheckSuite:
   }
 
   test("every command case applies in some session, and undo covers every reversible one") {
-    val traces = (0L until 400L).flatMap(seed =>
-      session(12).pureApply(Gen.Parameters.default, Seed(seed))._2
+    val traces = (0L until 800L).flatMap(seed =>
+      session(16).pureApply(Gen.Parameters.default, Seed(seed))._2
     )
     val applied = traces.collect { case Trace(_, JournalEntry.Apply(c), Right(_)) =>
       c.name
@@ -175,6 +198,5 @@ class CommandLawsSuite extends munit.ScalaCheckSuite:
       case Trace(h, JournalEntry.UndoView, Right(_)) => h.presentation.done.head.command.name
     }.toSet
     assertEquals(allCommands.filterNot(applied), Vector.empty)
-    val irreversible = Set("VerifyDataset", "Admit", "SaveAndRun", "RecordRunOutcome")
     assertEquals(allCommands.filterNot(irreversible).filterNot(undone), Vector.empty)
   }

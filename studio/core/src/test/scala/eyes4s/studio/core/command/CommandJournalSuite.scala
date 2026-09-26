@@ -16,7 +16,7 @@
 
 package eyes4s.studio.core.command
 
-import eyes4s.studio.core.document.DocumentSamples
+import eyes4s.studio.core.document.{DocumentSamples, StudioDocument}
 import io.circe.syntax.*
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Test
@@ -58,7 +58,7 @@ class CommandJournalSuite extends munit.ScalaCheckSuite:
   }
 
   test("the story session's journal is pinned line by line") {
-    val text  = CommandJournal.write(t2, CommandSamples.session)
+    val text  = CommandJournal.write(t2, CommandSamples.session, checkpointEvery = 4)
     val lines = text.map(_.split("\n").toVector)
     lines.foreach(
       _.foreach(l =>
@@ -74,7 +74,9 @@ class CommandJournalSuite extends munit.ScalaCheckSuite:
 
   test("replaying the story session rebuilds its history: t3's science, view unchanged") {
     val replay =
-      CommandJournal.write(t2, CommandSamples.session).flatMap(CommandJournal.replay(t2, _))
+      CommandJournal
+        .write(t2, CommandSamples.session, checkpointEvery = 4)
+        .flatMap(CommandJournal.replay(t2, _))
     val live = CommandSamples.session.foldLeft(History.start(t2))((h, e) =>
       h.perform(e).toOption.get.history
     )
@@ -92,14 +94,17 @@ class CommandJournalSuite extends munit.ScalaCheckSuite:
         t.result.fold(_ => t.before, _.history)
       )
       val replay =
-        CommandJournal.write(start, performed).flatMap(CommandJournal.replay(start, _))
+        CommandJournal
+          .write(start, performed, checkpointEvery = 3)
+          .flatMap(CommandJournal.replay(start, _))
       assertEquals(replay.map(_.history), Right(end))
       assertEquals(replay.map(_.entries), Right(performed))
     }
   }
 
-  private val journal = CommandJournal.write(t2, CommandSamples.session).toOption.get
-  private val lines   = journal.split("\n").toVector
+  private val journal =
+    CommandJournal.write(t2, CommandSamples.session, checkpointEvery = 4).toOption.get
+  private val lines = journal.split("\n").toVector
 
   test("a torn final line is reported and skipped") {
     val torn   = (lines.init :+ lines.last.take(25)).mkString("\n")
@@ -115,6 +120,38 @@ class CommandJournalSuite extends munit.ScalaCheckSuite:
       Left("Unreadable")
     )
     assert(CommandJournal.replay(t2, broken).left.exists(_.message.contains("line 3")))
+  }
+
+  test("the pinned journal checkpoints the science after entry 4") {
+    val cp = io.circe.parser.parse(lines(5)).toOption.get
+    assertEquals(
+      cp.hcursor.downField("value").downField("Checkpoint").get[Int]("seq"),
+      Right(4)
+    )
+  }
+
+  test("a checkpoint the replay does not reach is a typed drift error") {
+    val wrong = CommandJournal.checkpoint(4, DocumentSamples.t1).toOption.get
+    val live  =
+      CommandSamples.session
+        .take(4)
+        .foldLeft(History.start(t2))((h, e) => h.perform(e).toOption.get.history)
+    assertEquals(
+      CommandJournal.replay(t2, lines.updated(5, wrong).mkString("\n")),
+      Left(
+        JournalError.Drift(
+          6,
+          4,
+          StudioDocument.scienceDigest(DocumentSamples.t1).toOption.get,
+          StudioDocument.scienceDigest(live.document).toOption.get
+        )
+      )
+    )
+    val early = CommandJournal.checkpoint(3, live.document).toOption.get
+    assertEquals(
+      CommandJournal.replay(t2, lines.updated(5, early).mkString("\n")),
+      Left(JournalError.CheckpointOutOfPlace(6, 4, 3))
+    )
   }
 
   test("a journal over another document is refused") {

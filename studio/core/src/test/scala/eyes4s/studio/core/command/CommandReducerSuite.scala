@@ -16,6 +16,7 @@
 
 package eyes4s.studio.core.command
 
+import eyes4s.codec.CanonicalDigest
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.DocumentGen.right
@@ -76,15 +77,178 @@ class CommandReducerSuite extends munit.FunSuite:
     assertEquals(back.document.science, saved.document.science)
   }
 
-  test("admitting t1's pending r3 is a barrier; verifying it only requests admission") {
+  private val verified                                           = CommandSamples.verified
+  private def admitR3As(v: CanonicalDigest[DatasetRevisionSpec]) =
+    Admit(r3, v, CoreBinding.unbound, CoreBinding.unbound)
+  private val admitR3 = admitR3As(verified)
+
+  test("verifying r3 records its content digest and requests admission of exactly that") {
     val verify = ok(History.start(t1).apply(VerifyDataset(r3)))
-    assertEquals(verify.history, History.start(t1))
-    assertEquals(verify.effects, Vector(Effect.RequestAdmission(r3)))
-    val admit = ok(History.start(t1).apply(Admit(r3, CoreBinding.unbound, CoreBinding.unbound)))
+    assertEquals(
+      verify.history.document.dataset(r3).map(_.decision),
+      Some(AdmissionDecision.Verifying(verified))
+    )
+    assertEquals(verify.effects, Vector(Effect.RequestAdmission(r3, verified), Effect.Persist))
+    // Verifying does not change the content it digests.
+    assertEquals(
+      DatasetRevisionSpec.contentDigest(verify.history.document.dataset(r3).get),
+      Right(verified)
+    )
+    assertEquals(ok(verify.history.undo).history.document, t1)
+  }
+
+  test("admitting the verified r3 is a barrier") {
+    val verified = ok(History.start(t1).apply(VerifyDataset(r3))).history
+    val admit    = ok(verified.apply(admitR3))
     assert(admit.history.document.dataset(r3).exists(_.decision.isAdmitted))
     assertEquals(
       admit.history.undo.map(_.history),
       Left(CommandError.UndoBlocked(HistoryBarrier.DatasetAdmitted(r3)))
+    )
+  }
+
+  test("an admission needs a verification, for the digest that was verified") {
+    assertEquals(Reducer.step(t1, admitR3), Left(CommandError.NotVerified(r3)))
+    val verifying = Reducer.step(t1, VerifyDataset(r3)).toOption.get._1
+    val other     = CanonicalDigest.parse[DatasetRevisionSpec]("ab" * 32).toOption.get
+    assertEquals(
+      Reducer.step(verifying, admitR3As(other)),
+      Left(CommandError.VerificationMismatch(r3, verified, other))
+    )
+  }
+
+  test("a revision verifying content it no longer has cannot be admitted") {
+    val other = CanonicalDigest.parse[DatasetRevisionSpec]("ab" * 32).toOption.get
+    val stale = t1.dataset(r3).get.copy(decision = AdmissionDecision.Verifying(other))
+    val doc   = Reducer
+      .step(t1, DiscardDataset(r3))
+      .flatMap((d, _) => Reducer.step(d, RestoreDataset(stale)))
+      .toOption
+      .get
+      ._1
+    assertEquals(
+      Reducer.step(doc, admitR3As(other)),
+      Left(CommandError.ChangedSinceVerification(r3, other, verified))
+    )
+  }
+
+  test("while r3 is verifying its content is not edited; withdrawing makes it editable") {
+    val verifying = ok(History.start(t1).apply(VerifyDataset(r3))).history
+    val edit      = SetOffScreenPolicy(r3, OffScreenChoice.QuarantineTrial)
+    assertEquals(
+      verifying.apply(edit).map(_.history),
+      Left(CommandError.VerificationPending(r3, verified))
+    )
+    assertEquals(
+      verifying.apply(RemoveCorrection(r3, 0)).map(_.history),
+      Left(CommandError.VerificationPending(r3, verified))
+    )
+    val withdrawn = ok(verifying.apply(WithdrawVerification(r3))).history
+    assertEquals(withdrawn.document, t1)
+    val edited = ok(withdrawn.apply(edit)).history
+    // A new verification digests the new content, and the old admission is refused.
+    val again = ok(edited.apply(VerifyDataset(r3)))
+    val now   = DatasetRevisionSpec.contentDigest(edited.document.dataset(r3).get).toOption.get
+    assertNotEquals(now, verified)
+    assertEquals(again.effects.head, Effect.RequestAdmission(r3, now))
+    assertEquals(
+      again.history.apply(admitR3).map(_.history),
+      Left(CommandError.VerificationMismatch(r3, now, verified))
+    )
+  }
+
+  test("cancelling run 8 asks the backend to cancel its job and changes nothing else") {
+    val step = ok(History.start(t3).apply(CancelRun(run8)))
+    assertEquals(step.history, History.start(t3))
+    assertEquals(step.effects, Vector(Effect.CancelJob(run8, StoryMoments.run8Job)))
+    assertEquals(
+      Reducer.step(t3, CancelRun(run7)),
+      Left(CommandError.RunNotRunning(run7, RunLifecycle.Completed))
+    )
+    val lost = t3.withJobs(Vector.empty).toOption.get
+    assertEquals(Reducer.step(lost, CancelRun(run8)), Left(CommandError.NoJobHandle(run8)))
+  }
+
+  test("binding rev 4's plan records the plan and input digests once") {
+    val plan  = CanonicalDigest.parse[StudyPlanArtifact]("0123456789abcdef" * 4).toOption.get
+    val input = right(SemanticIdentity.of("00112233445566ff"))
+    val step  = ok(History.start(t2).apply(BindPlan(rev4, plan, input)))
+    val bound = step.history.document.analysis(rev4).get
+    assertEquals(bound.plan, CoreBinding.Bound(plan))
+    assertEquals(bound.recipe.input, Some(input))
+    assertEquals(step.history.science, History.start(t2).science)
+    assertEquals(
+      Reducer.step(step.history.document, BindPlan(rev4, plan, input)),
+      Left(CommandError.PlanAlreadyBound(rev4, plan))
+    )
+    val other = right(SemanticIdentity.of("ffeeddccbbaa9988"))
+    val t2In  = Reducer.step(t2, BindPlan(AnalysisRevision(3), plan, other)).toOption.get._1
+    assertEquals(t2In.analysis(AnalysisRevision(3)).map(_.recipe.input), Some(Some(other)))
+    // rev 4 already carries the draft, whose recipe has no input change: binding is safe.
+    assertEquals(step.history.document.draft, t2.draft)
+  }
+
+  test("a panel is added, retitled and removed, and each undoes") {
+    val f     = t2.figures.head
+    val panel = f.panels(3).copy(letter = right(PanelLetter.of("F")))
+    val added = ok(History.start(t2).apply(AddPanel(figure1, 1, panel))).history
+    assertEquals(
+      added.document.figures.head.panels.map(_.letter.value),
+      Vector("A", "F", "B", "C", "D", "E")
+    )
+    assertEquals(ok(added.undo).history.document, t2)
+    val retitled =
+      ok(History.start(t2).apply(RetitlePanel(figure1, panelA, "Encoding · P17"))).history
+    assertEquals(retitled.document.figures.head.panels.head.title, "Encoding · P17")
+    assertEquals(ok(retitled.undo).history.document, t2)
+    val removed =
+      ok(History.start(t2).apply(RemovePanel(figure1, right(PanelLetter.of("C"))))).history
+    assertEquals(removed.science.done.head.inverse, AddPanel(figure1, 2, f.panels(2)))
+    assertEquals(ok(removed.undo).history.document, t2)
+    assertEquals(
+      Reducer.step(t2, AddPanel(figure1, 9, panel)),
+      Left(CommandError.PanelIndex(figure1, 9, 5))
+    )
+    assertEquals(
+      Reducer.step(t2, AddPanel(figure1, 0, f.panels(0))),
+      Left(
+        CommandError.Refused(
+          "AddPanel",
+          Target.OnPanel(figure1, panelA),
+          DocumentError.DuplicatePanels(figure1, Vector("A"))
+        )
+      )
+    )
+    assertEquals(
+      Reducer.step(t2, RemovePanel(figure2, panelA)),
+      Left(
+        CommandError.Refused(
+          "RemovePanel",
+          Target.OnPanel(figure2, panelA),
+          DocumentError.NoPanels(figure2)
+        )
+      )
+    )
+  }
+
+  test("refusals name the targeted id") {
+    assertEquals(
+      Reducer.step(t3, DiscardDraft),
+      Left(CommandError.NoDraft("DiscardDraft", Target.OnDraft(Some(AnalysisRevision(6)))))
+    )
+    assertEquals(
+      Reducer.step(t2, SetTheme(t2.presentation.theme)),
+      Left(CommandError.NoChange("SetTheme", Target.OnPresentation))
+    )
+    assertEquals(
+      Reducer.step(t2, RetitlePanel(figure1, panelA, "Encoding gaze")),
+      Left(CommandError.NoChange("RetitlePanel", Target.OnPanel(figure1, panelA)))
+    )
+    assert(
+      CommandError
+        .NoDraft("SaveAndRun", Target.OnDraft(Some(AnalysisRevision(6))))
+        .message
+        .contains("draft rev 6")
     )
   }
 
@@ -156,7 +320,10 @@ class CommandReducerSuite extends munit.FunSuite:
   }
 
   test("rebasing onto the base's own dataset changes nothing; onto pending data is refused") {
-    assertEquals(Reducer.step(t2, RebaseDraft(r3)), Left(CommandError.NoChange("RebaseDraft")))
+    assertEquals(
+      Reducer.step(t2, RebaseDraft(r3)),
+      Left(CommandError.NoChange("RebaseDraft", Target.OnDraft(Some(rev5))))
+    )
     val rebased = ok(History.start(t2).apply(RebaseDraft(r2)))
     assertEquals(rebased.history.document.draft.flatMap(_.dataset), Some(r2))
     assertEquals(ok(rebased.history.undo).history.document, t2)
@@ -165,6 +332,7 @@ class CommandReducerSuite extends munit.FunSuite:
       Left(
         CommandError.Refused(
           "RebaseDraft",
+          Target.OnDraft(Some(AnalysisRevision(4))),
           DocumentError.RebaseNotAdmitted(AnalysisRevision(4), r3)
         )
       )
@@ -231,7 +399,11 @@ class CommandReducerSuite extends munit.FunSuite:
     assertEquals(
       Reducer.step(t2, ShowRun(Some(RunId(42)))),
       Left(
-        CommandError.Refused("ShowRun", DocumentError.UnknownRun("the presentation", RunId(42)))
+        CommandError.Refused(
+          "ShowRun",
+          Target.OnPresentation,
+          DocumentError.UnknownRun("the presentation", RunId(42))
+        )
       )
     )
   }

@@ -24,10 +24,16 @@ object CommandPins:
   val pins: Map[String, String] = Map(
     "AddCorrection" ->
       """{"AddCorrection":{"dataset":3,"index":0,"rule":{"target":{"AllTrials":{}},"correction":{"FlipY":{}}}}}""",
+    "AddPanel" ->
+      """{"AddPanel":{"figure":1,"index":5,"panel":{"letter":"F","title":"Participant D by response","scale":{"At":{"sigma":2.0}},"selection":{"AllQueries":{}}}}}""",
     "Admit" ->
-      """{"Admit":{"dataset":3,"ledger":{"Unbound":{}},"inventory":{"Unbound":{}}}}""",
+      """{"Admit":{"dataset":3,"verified":"369a4968242bce12e3094e5f56dbe06bfd3cd29788938dd2937fb136c18080ba","ledger":{"Unbound":{}},"inventory":{"Unbound":{}}}}""",
     "BindFigure" ->
       """{"BindFigure":{"figure":1,"run":5,"reporting":"by-retrieval-response"}}""",
+    "BindPlan" ->
+      """{"BindPlan":{"revision":4,"plan":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","input":"00112233445566ff"}}""",
+    "CancelRun" ->
+      """{"CancelRun":{"run":8}}""",
     "ChangeRecipe" ->
       """{"ChangeRecipe":{"change":{"Grid":{"before":{"columns":64,"rows":48},"after":{"columns":32,"rows":24}}}}}""",
     "CreateFigure" ->
@@ -48,6 +54,8 @@ object CommandPins:
       """{"RecordRunOutcome":{"run":8,"state":{"Cancelled":{"at":{"Comparing":{}}}},"archive":{"Unbound":{}}}}""",
     "RemoveCorrection" ->
       """{"RemoveCorrection":{"dataset":3,"index":0}}""",
+    "RemovePanel" ->
+      """{"RemovePanel":{"figure":1,"panel":"E"}}""",
     "RemoveReporting" ->
       """{"RemoveReporting":{"reporting":"by-retrieval-response"}}""",
     "RestoreDataset" ->
@@ -56,6 +64,10 @@ object CommandPins:
       """{"RestoreDraft":{"draft":{"id":5,"base":4,"dataset":null,"changes":[{"Scales":{"before":[0.5,1.0,2.0,4.0],"after":[0.5,1.0,2.0,4.0,8.0]}}]}}}""",
     "RestoreFigure" ->
       """{"RestoreFigure":{"figure":{"id":1,"run":7,"reporting":"by-retrieval-response","panels":[{"letter":"A","title":"Encoding gaze","scale":{"Unscaled":{}},"selection":{"Trial":{"key":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}}}},{"letter":"B","title":"Retrieval gaze","scale":{"Unscaled":{}},"selection":{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}},{"letter":"C","title":"Density maps","scale":{"At":{"sigma":2.0}},"selection":{"QueryWithReferences":{"query":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}},{"letter":"D","title":"Participant D by response","scale":{"At":{"sigma":2.0}},"selection":{"AllQueries":{}}},{"letter":"E","title":"Scale profile by response","scale":{"AllScales":{}},"selection":{"AllQueries":{}}}]}}}""",
+    "ResumeVerification" ->
+      """{"ResumeVerification":{"dataset":3,"content":"369a4968242bce12e3094e5f56dbe06bfd3cd29788938dd2937fb136c18080ba"}}""",
+    "RetitlePanel" ->
+      """{"RetitlePanel":{"figure":1,"panel":"A","title":"Encoding gaze · P17"}}""",
     "SaveAndRun" ->
       """{"SaveAndRun":{"studio":null}}""",
     "SaveAndRun.studio" ->
@@ -94,6 +106,8 @@ object CommandPins:
       """{"StartDraft":{"base":4,"dataset":null,"changes":[{"Scales":{"before":[0.5,1.0,2.0,4.0],"after":[0.5,1.0,2.0,4.0,8.0]}}]}}""",
     "VerifyDataset" ->
       """{"VerifyDataset":{"dataset":3}}""",
+    "WithdrawVerification" ->
+      """{"WithdrawVerification":{"dataset":3}}""",
     "entry.Apply" ->
       """{"Apply":{"command":{"SetTheme":{"theme":{"Dark":{}}}}}}""",
     "entry.Redo" ->
@@ -115,8 +129,10 @@ object CommandPins:
     "journal.4" ->
       """{"schema":{"name":"studio.journal","version":1},"value":{"Entry":{"entry":{"Redo":{}},"seq":4}}}""",
     "journal.5" ->
-      """{"schema":{"name":"studio.journal","version":1},"value":{"Entry":{"entry":{"UndoView":{}},"seq":5}}}""",
+      """{"schema":{"name":"studio.journal","version":1},"value":{"Checkpoint":{"science":"4621fe5fa0972d9f8e7d78e7255451c23dbddbd345aba31352ca2d3bdb852953","seq":4}}}""",
     "journal.6" ->
+      """{"schema":{"name":"studio.journal","version":1},"value":{"Entry":{"entry":{"UndoView":{}},"seq":5}}}""",
+    "journal.7" ->
       """{"schema":{"name":"studio.journal","version":1},"value":{"Entry":{"entry":{"Apply":{"command":{"SaveAndRun":{"studio":null}}}},"seq":6}}}"""
   )
 

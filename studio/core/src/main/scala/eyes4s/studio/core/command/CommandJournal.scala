@@ -18,9 +18,15 @@ package eyes4s.studio.core.command
 
 import cats.syntax.all.*
 import eyes4s.codec.{CanonicalDigest, CodecError, VersionedCodec}
-import eyes4s.studio.core.document.{CanonicalJson, StudioDocument, StudioSchemaIds}
+import eyes4s.studio.core.document.DigestJson.given
+import eyes4s.studio.core.document.{
+  CanonicalJson,
+  ScienceContent,
+  StudioDocument,
+  StudioSchemaIds
+}
+import io.circe.Codec
 import io.circe.syntax.*
-import io.circe.{Codec, Decoder, Encoder}
 
 /** One step of an editing session, as the journal records it. */
 enum JournalEntry derives CanEqual, Codec.AsObject:
@@ -29,17 +35,15 @@ enum JournalEntry derives CanEqual, Codec.AsObject:
 
 /** One line of a command journal. The first line names the document the
   * session started from by its CR3 digest; each later line is one entry,
-  * numbered from 1.
+  * numbered from 1, or a checkpoint: the science digest
+  * ([[StudioDocument.scienceDigest]]) after the first `seq` entries.
   */
 enum JournalLine derives CanEqual:
   case Start(base: CanonicalDigest[StudioDocument])
   case Entry(seq: Int, entry: JournalEntry)
+  case Checkpoint(seq: Int, science: CanonicalDigest[ScienceContent])
 
 object JournalLine:
-  private given Codec[CanonicalDigest[StudioDocument]] = Codec.from(
-    Decoder[String].emap(hex => CanonicalDigest.parse[StudioDocument](hex).left.map(_.message)),
-    Encoder[String].contramap(_.sha256.hex)
-  )
   given Codec.AsObject[JournalLine] = Codec.AsObject.derived
 
 /** Why a journal could not be written or replayed. Lines are numbered from
@@ -56,6 +60,21 @@ enum JournalError derives CanEqual:
   )
   case OutOfSequence(line: Int, expected: Int, found: Int)
   case Rejected(line: Int, entry: JournalEntry, error: CommandError)
+
+  /** A checkpoint after `seq` entries on a line where `entries` had been
+    * replayed.
+    */
+  case CheckpointOutOfPlace(line: Int, entries: Int, seq: Int)
+
+  /** Replaying the first `seq` entries gave science `replayed`, but the
+    * session recorded `journal`: the replay has drifted from the session.
+    */
+  case Drift(
+      line: Int,
+      seq: Int,
+      journal: CanonicalDigest[ScienceContent],
+      replayed: CanonicalDigest[ScienceContent]
+  )
   case Unwritable(error: CodecError)
 
   def message: String = this match
@@ -69,6 +88,11 @@ enum JournalError derives CanEqual:
       s"Journal line $line is entry $found; entry $expected was expected."
     case Rejected(line, entry, e) =>
       s"Journal line $line (${entry.productPrefix}) cannot be replayed: ${e.message}"
+    case CheckpointOutOfPlace(line, entries, seq) =>
+      s"Journal line $line is a checkpoint after $seq entries, but $entries were replayed."
+    case Drift(line, seq, journal, replayed) =>
+      s"Journal line $line records science ${journal.display} after $seq entries, but the " +
+        s"replay has ${replayed.display}."
     case Unwritable(e) => s"The journal cannot be written: ${e.message}"
 
 /** A final line that did not decode: the write a crash interrupted. */
@@ -84,8 +108,9 @@ final case class Replay(history: History, entries: Vector[JournalEntry], torn: O
   * store's (S2.4b).
   *
   * Replay is exact: it starts a [[History]] on the base document, checks the
-  * base digest, and performs every entry, undo and redo included. The one
-  * tolerated fault is a final line that does not decode (a torn write),
+  * base digest, performs every entry, undo and redo included, and checks
+  * each checkpoint's science digest (a mismatch is [[JournalError.Drift]]).
+  * The one tolerated fault is a final line that does not decode (a torn write),
   * which is reported and skipped. Effects are not returned: a recovered run
   * request is the recovery screen's decision, not the journal's.
   */
@@ -112,12 +137,34 @@ object CommandJournal:
   def entry(seq: Int, entry: JournalEntry): Either[JournalError, String] =
     encode(JournalLine.Entry(seq, entry))
 
-  /** A whole journal: the start line and each entry, newline-terminated. */
-  def write(base: StudioDocument, entries: Vector[JournalEntry]): Either[JournalError, String] =
+  /** The checkpoint line after `seq` entries, when the session is at `now`. */
+  def checkpoint(seq: Int, now: StudioDocument): Either[JournalError, String] =
+    science(now).flatMap(d => encode(JournalLine.Checkpoint(seq, d)))
+
+  /** A whole journal, newline-terminated: the start line, each entry, and a
+    * checkpoint after every `checkpointEvery` entries. The entries are
+    * performed to compute the checkpoints, so each must apply.
+    */
+  def write(
+      base: StudioDocument,
+      entries: Vector[JournalEntry],
+      checkpointEvery: Int = 16
+  ): Either[JournalError, String] =
     for
       head <- start(base)
-      rest <- entries.zipWithIndex.traverse((e, i) => entry(i + 1, e))
-    yield (head +: rest).map(_ + "\n").mkString
+      rest <- entries.zipWithIndex
+        .foldLeftM((History.start(base), Vector.empty[String])) { case ((h, out), (e, i)) =>
+          val seq = i + 1
+          for
+            line <- entry(seq, e)
+            step <- h.perform(e).left.map(JournalError.Rejected(seq + 1, e, _))
+            mark <-
+              if checkpointEvery > 0 && seq % checkpointEvery == 0 then
+                checkpoint(seq, step.history.document).map(Vector(_))
+              else Right(Vector.empty)
+          yield (step.history, out ++ (line +: mark))
+        }
+    yield (head +: rest._2).map(_ + "\n").mkString
 
   def replay(base: StudioDocument, text: String): Either[JournalError, Replay] =
     val lines = text.split("\n", -1).toVector match
@@ -141,12 +188,34 @@ object CommandJournal:
             case Left(e)                          => Left(e)
             case Right(JournalLine.Start(_))      => Left(JournalError.RepeatedStart(n))
             case Right(JournalLine.Entry(seq, e)) =>
+              val expected = acc.entries.size + 1
               for
-                _    <- Either.cond(seq == n - 1, (), JournalError.OutOfSequence(n, n - 1, seq))
+                _ <- Either.cond(
+                  seq == expected,
+                  (),
+                  JournalError.OutOfSequence(n, expected, seq)
+                )
                 step <- acc.history.perform(e).left.map(JournalError.Rejected(n, e, _))
               yield acc.copy(history = step.history, entries = acc.entries :+ e)
+            case Right(JournalLine.Checkpoint(seq, recorded)) =>
+              for
+                _ <- Either.cond(
+                  seq == acc.entries.size,
+                  (),
+                  JournalError.CheckpointOutOfPlace(n, acc.entries.size, seq)
+                )
+                replayed <- science(acc.history.document)
+                _        <- Either.cond(
+                  recorded.sameAs(replayed),
+                  (),
+                  JournalError.Drift(n, seq, recorded, replayed)
+                )
+              yield acc
         }
     yield replay
 
   private def digest(document: StudioDocument) =
     StudioDocument.codec.flatMap(_.digest(document)).leftMap(JournalError.Unwritable(_))
+
+  private def science(document: StudioDocument) =
+    StudioDocument.scienceDigest(document).leftMap(JournalError.Unwritable(_))

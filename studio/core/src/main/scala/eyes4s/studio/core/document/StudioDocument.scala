@@ -32,10 +32,15 @@ object StudioSchemaIds:
   val DocumentName: String = "studio.document"
   val ScienceName: String  = "studio.science"
   val JournalName: String  = "studio.journal"
+  val DatasetName: String  = "studio.dataset-content"
 
-  final case class Ids(document: DefinitionId, science: DefinitionId, journal: DefinitionId)
-      derives CanEqual:
-    def all: Vector[DefinitionId] = Vector(document, science, journal)
+  final case class Ids(
+      document: DefinitionId,
+      science: DefinitionId,
+      journal: DefinitionId,
+      datasetContent: DefinitionId
+  ) derives CanEqual:
+    def all: Vector[DefinitionId] = Vector(document, science, journal, datasetContent)
 
   private def id(name: String, version: Int): Either[DocumentError, DefinitionId] =
     DefinitionId.of(name, version).left.map(_ => DocumentError.BadSchemaId(name, version))
@@ -49,7 +54,8 @@ object StudioSchemaIds:
       document <- id(DocumentName, 1)
       science  <- id(ScienceName, 1)
       journal  <- id(JournalName, 1)
-    yield Ids(document, science, journal)
+      dataset  <- id(DatasetName, 1)
+    yield Ids(document, science, journal, dataset)
 
   /** The ids as a codec failure, for building codecs. */
   private[document] def forCodec: Either[CodecError, Ids] =

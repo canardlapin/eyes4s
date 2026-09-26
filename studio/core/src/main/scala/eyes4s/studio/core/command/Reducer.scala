@@ -103,7 +103,7 @@ object Reducer:
 
     case AddCorrection(id, index, rule) =>
       for
-        spec <- pending(d, id)
+        spec <- editable(d, id)
         rules = spec.admission.corrections
         _ <- Either.cond(
           index >= 0 && index <= rules.size,
@@ -119,7 +119,7 @@ object Reducer:
 
     case RemoveCorrection(id, index) =>
       for
-        spec <- pending(d, id)
+        spec <- editable(d, id)
         rules = spec.admission.corrections
         rule <- rules.lift(index).toRight(CorrectionIndex(id, index, rules.size))
         next <- replaceDataset(d, c)(
@@ -130,11 +130,44 @@ object Reducer:
       yield reversible(next, AddCorrection(id, index, rule))
 
     case VerifyDataset(id) =>
-      pending(d, id).as(Outcome(d, Vector(Effect.RequestAdmission(id)), Recording.Unrecorded))
-
-    case Admit(id, ledger, inventory) =>
       for
-        spec <- pending(d, id)
+        spec    <- editable(d, id)
+        content <- contentOf(spec)
+        next <- replaceDataset(d, c)(spec.copy(decision = AdmissionDecision.Verifying(content)))
+      yield Outcome(
+        next,
+        Vector(Effect.RequestAdmission(id, content), Effect.Persist),
+        Recording.Reversible(WithdrawVerification(id))
+      )
+
+    case WithdrawVerification(id) =>
+      for
+        spec    <- pending(d, id)
+        content <- spec.decision match
+          case AdmissionDecision.Verifying(content) => Right(content)
+          case _                                    => Left(NotVerified(id))
+        next <- replaceDataset(d, c)(spec.copy(decision = AdmissionDecision.Pending))
+      yield reversible(next, ResumeVerification(id, content))
+
+    case ResumeVerification(id, content) =>
+      for
+        spec <- editable(d, id)
+        next <- replaceDataset(d, c)(spec.copy(decision = AdmissionDecision.Verifying(content)))
+      yield reversible(next, WithdrawVerification(id))
+
+    case Admit(id, verified, ledger, inventory) =>
+      for
+        spec     <- pending(d, id)
+        recorded <- spec.decision match
+          case AdmissionDecision.Verifying(content) => Right(content)
+          case _                                    => Left(NotVerified(id))
+        _ <- Either.cond(verified == recorded, (), VerificationMismatch(id, recorded, verified))
+        current <- contentOf(spec)
+        _       <- Either.cond(
+          current == recorded,
+          (),
+          ChangedSinceVerification(id, recorded, current)
+        )
         next <- replaceDataset(d, c)(
           spec.copy(decision = AdmissionDecision.Admitted(ledger, inventory))
         )
@@ -150,7 +183,7 @@ object Reducer:
         _    <- d.draft.map(existing => DraftExists(existing.id)).toLeft(())
         spec <- d.analysis(base).toRight(UnknownAnalysis(base))
         id = AnalysisRevision(d.latestAnalysis.getOrElse(spec).id.number + 1)
-        draft <- Draft.against(id, spec, dataset, changes).left.map(Refused(c.name, _))
+        draft <- Draft.against(id, spec, dataset, changes).left.map(refused(d, c))
         next  <- rebuild(d, c)(draft = Some(draft))
       yield reversible(next, DiscardDraft)
 
@@ -162,7 +195,7 @@ object Reducer:
 
     case DiscardDraft =>
       for
-        draft <- d.draft.toRight(NoDraft(c.name))
+        draft <- d.draft.toRight(NoDraft(c.name, targetOf(d, c)))
         next  <- rebuild(d, c)(draft = None)
       yield reversible(next, RestoreDraft(draft))
 
@@ -174,8 +207,8 @@ object Reducer:
           .mismatch(current)
           .map(StaleChange(change.field, change.renderedValues._1, _))
           .toLeft(())
-        _     <- Either.cond(!change.isIdentity, (), NoChange(c.name))
-        draft <- redraft(c, id, base, prior.flatMap(_.dataset), change.applyTo(current))
+        _     <- Either.cond(!change.isIdentity, (), NoChange(c.name, targetOf(d, c)))
+        draft <- redraft(d, c, id, base, prior.flatMap(_.dataset), change.applyTo(current))
         next  <- rebuild(d, c)(draft = draft)
       yield reversible(next, draftInverse(prior, draft, ChangeRecipe(change.inverse)))
 
@@ -183,15 +216,15 @@ object Reducer:
       for
         (base, id, prior) <- drafting(d, c)
         current = prior.flatMap(_.dataset).getOrElse(base.dataset)
-        _ <- Either.cond(target != current, (), NoChange(c.name))
+        _ <- Either.cond(target != current, (), NoChange(c.name, targetOf(d, c)))
         recipe = prior.fold(base.recipe)(_.recipe(base.recipe))
-        draft <- redraft(c, id, base, Option.when(target != base.dataset)(target), recipe)
+        draft <- redraft(d, c, id, base, Option.when(target != base.dataset)(target), recipe)
         next  <- rebuild(d, c)(draft = draft)
       yield reversible(next, draftInverse(prior, draft, RebaseDraft(current)))
 
     case SaveAndRun(studio) =>
       for
-        draft <- d.draft.toRight(NoDraft(c.name))
+        draft <- d.draft.toRight(NoDraft(c.name, targetOf(d, c)))
         base  <- d.analysis(draft.base).toRight(UnknownAnalysis(draft.base))
         target = draft.dataset.getOrElse(base.dataset)
         data <- d.dataset(target).toRight(UnknownDataset(target))
@@ -228,10 +261,33 @@ object Reducer:
         )
       yield Outcome(next, Vector(Effect.Persist), Recording.Unrecorded)
 
+    case CancelRun(id) =>
+      for
+        run <- d.run(id).toRight(UnknownRun(id))
+        _   <- Either.cond(run.state == RunLifecycle.Running, (), RunNotRunning(id, run.state))
+        job <- d.job(id).toRight(NoJobHandle(id))
+      yield Outcome(d, Vector(Effect.CancelJob(id, job)), Recording.Unrecorded)
+
+    case BindPlan(id, plan, input) =>
+      for
+        spec <- d.analysis(id).toRight(UnknownAnalysis(id))
+        _    <- spec.plan match
+          case CoreBinding.Bound(bound) => Left(PlanAlreadyBound(id, bound))
+          case CoreBinding.Unbound()    => Right(())
+        _ <- spec.recipe.input match
+          case Some(recorded) if recorded != input => Left(InputMismatch(id, recorded, input))
+          case _                                   => Right(())
+        bound = spec.copy(
+          plan = CoreBinding.Bound(plan),
+          recipe = spec.recipe.copy(input = Some(input))
+        )
+        next <- rebuild(d, c)(analyses = d.analyses.map(a => if a.id == id then bound else a))
+      yield Outcome(next, Vector(Effect.Persist), Recording.Unrecorded)
+
     // --- Reporting · no rerun ------------------------------------------------
     case PutReporting(spec) =>
       d.reporting.find(_.id == spec.id) match
-        case Some(old) if old == spec => Left(NoChange(c.name))
+        case Some(old) if old == spec => Left(NoChange(c.name, targetOf(d, c)))
         case Some(old)                =>
           rebuild(d, c)(reporting = d.reporting.map(r => if r.id == spec.id then spec else r))
             .map(reversible(_, PutReporting(old)))
@@ -252,8 +308,8 @@ object Reducer:
         id <- FigureId
           .of(d.figures.lastOption.fold(1)(_.id.number + 1))
           .left
-          .map(Refused(c.name, _))
-        spec <- FigureSpec.of(id, run, reporting, panels).left.map(Refused(c.name, _))
+          .map(refused(d, c))
+        spec <- FigureSpec.of(id, run, reporting, panels).left.map(refused(d, c))
         next <- rebuild(d, c)(figures = d.figures :+ spec)
       yield reversible(next, DeleteFigure(id))
 
@@ -271,9 +327,13 @@ object Reducer:
 
     case BindFigure(id, run, reporting) =>
       for
-        old  <- figure(d, id)
-        _    <- Either.cond(old.run != run || old.reporting != reporting, (), NoChange(c.name))
-        spec <- FigureSpec.of(id, run, reporting, old.panels).left.map(Refused(c.name, _))
+        old <- figure(d, id)
+        _   <- Either.cond(
+          old.run != run || old.reporting != reporting,
+          (),
+          NoChange(c.name, targetOf(d, c))
+        )
+        spec <- FigureSpec.of(id, run, reporting, old.panels).left.map(refused(d, c))
         next <- replaceFigure(d, c)(spec)
       yield reversible(next, BindFigure(id, old.run, old.reporting))
 
@@ -285,6 +345,34 @@ object Reducer:
     case SetPanelSelection(id, letter, selection) =>
       editPanel(d, c, id, letter)(_.selection, (p, v) => p.copy(selection = v), selection)(
         SetPanelSelection(id, letter, _)
+      )
+
+    case AddPanel(id, index, panel) =>
+      for
+        old <- figure(d, id)
+        _   <- Either.cond(
+          index >= 0 && index <= old.panels.size,
+          (),
+          PanelIndex(id, index, old.panels.size)
+        )
+        panels = old.panels.patch(index, Vector(panel), 0)
+        spec <- FigureSpec.of(id, old.run, old.reporting, panels).left.map(refused(d, c))
+        next <- replaceFigure(d, c)(spec)
+      yield reversible(next, RemovePanel(id, panel.letter))
+
+    case RemovePanel(id, letter) =>
+      for
+        old <- figure(d, id)
+        index = old.panels.indexWhere(_.letter == letter)
+        panel <- old.panels.lift(index).toRight(UnknownPanel(id, letter))
+        panels = old.panels.patch(index, Vector.empty, 1)
+        spec <- FigureSpec.of(id, old.run, old.reporting, panels).left.map(refused(d, c))
+        next <- replaceFigure(d, c)(spec)
+      yield reversible(next, AddPanel(id, index, panel))
+
+    case RetitlePanel(id, letter, title) =>
+      editPanel(d, c, id, letter)(_.title, (p, v) => p.copy(title = v), title)(
+        RetitlePanel(id, letter, _)
       )
 
     // --- View only -----------------------------------------------------------
@@ -329,12 +417,71 @@ object Reducer:
     StudioDocument
       .of(datasets, analyses, draft, runs, reporting, figures, d.presentation, jobs)
       .left
-      .map(Refused(c.name, _))
+      .map(refused(d, c))
+
+  private def refused(d: StudioDocument, c: Command)(error: DocumentError): CommandError =
+    Refused(c.name, targetOf(d, c), error)
+
+  /** The document value `c` acts on in `d`. */
+  def targetOf(d: StudioDocument, c: Command): Target = c match
+    case ImportSources(_, _, _, _, _) =>
+      Target.OnDataset(DatasetRevision(d.datasets.lastOption.fold(1)(_.id.number + 1)))
+    case RestoreDataset(spec)      => Target.OnDataset(spec.id)
+    case DiscardDataset(id)        => Target.OnDataset(id)
+    case SetMapping(id, _)         => Target.OnDataset(id)
+    case SetUnits(id, _)           => Target.OnDataset(id)
+    case SetGeometry(id, _)        => Target.OnDataset(id)
+    case SetOffScreenPolicy(id, _) => Target.OnDataset(id)
+    case AddCorrection(id, _, _)   => Target.OnDataset(id)
+    case RemoveCorrection(id, _)   => Target.OnDataset(id)
+    case VerifyDataset(id)         => Target.OnDataset(id)
+    case WithdrawVerification(id)  => Target.OnDataset(id)
+    case ResumeVerification(id, _) => Target.OnDataset(id)
+    case Admit(id, _, _, _)        => Target.OnDataset(id)
+    case RestoreDraft(draft)       => Target.OnDraft(Some(draft.id))
+    case _: (StartDraft | ChangeRecipe | RebaseDraft | SaveAndRun) | DiscardDraft =>
+      Target.OnDraft(
+        d.draft.map(_.id).orElse(d.latestAnalysis.map(a => AnalysisRevision(a.id.number + 1)))
+      )
+    case RecordRunOutcome(run, _, _) => Target.OnRun(run)
+    case CancelRun(run)              => Target.OnRun(run)
+    case BindPlan(revision, _, _)    => Target.OnAnalysis(revision)
+    case PutReporting(spec)          => Target.OnReporting(spec.id)
+    case RemoveReporting(id)         => Target.OnReporting(id)
+    case CreateFigure(_, _, _)       =>
+      FigureId
+        .of(d.figures.lastOption.fold(1)(_.id.number + 1))
+        .fold(_ => Target.OnPresentation, Target.OnFigure(_))
+    case RestoreFigure(spec)              => Target.OnFigure(spec.id)
+    case DeleteFigure(id)                 => Target.OnFigure(id)
+    case BindFigure(id, _, _)             => Target.OnFigure(id)
+    case SetPanelScale(id, letter, _)     => Target.OnPanel(id, letter)
+    case SetPanelSelection(id, letter, _) => Target.OnPanel(id, letter)
+    case AddPanel(id, _, panel)           => Target.OnPanel(id, panel.letter)
+    case RemovePanel(id, letter)          => Target.OnPanel(id, letter)
+    case RetitlePanel(id, letter, _)      => Target.OnPanel(id, letter)
+    case _: (SetPerspective | SetTheme | SetStage | SetMapOpacity | SetUnderlay | ShowRun |
+          SaveLayout) =>
+      Target.OnPresentation
 
   private def pending(d: StudioDocument, id: DatasetRevision) =
     d.dataset(id)
       .toRight(UnknownDataset(id))
       .flatMap(s => Either.cond(!s.decision.isAdmitted, s, DatasetNotPending(id)))
+
+  /** A pending revision whose content may change: not under verification. */
+  private def editable(d: StudioDocument, id: DatasetRevision) =
+    pending(d, id).flatMap { s =>
+      s.decision match
+        case AdmissionDecision.Verifying(content) => Left(VerificationPending(id, content))
+        case _                                    => Right(s)
+    }
+
+  private def contentOf(spec: DatasetRevisionSpec) =
+    DatasetRevisionSpec
+      .contentDigest(spec)
+      .left
+      .map(Undigestible(Target.OnDataset(spec.id), _))
 
   private def replaceDataset(d: StudioDocument, c: Command)(spec: DatasetRevisionSpec) =
     rebuild(d, c)(datasets = d.datasets.map(s => if s.id == spec.id then spec else s))
@@ -345,9 +492,9 @@ object Reducer:
       value: A
   )(inverse: A => Command)(using CanEqual[A, A]): Either[CommandError, Outcome] =
     for
-      spec <- pending(d, id)
+      spec <- editable(d, id)
       old = get(spec)
-      _    <- Either.cond(old != value, (), NoChange(c.name))
+      _    <- Either.cond(old != value, (), NoChange(c.name, targetOf(d, c)))
       next <- replaceDataset(d, c)(set(spec, value))
     yield reversible(next, inverse(old))
 
@@ -372,6 +519,7 @@ object Reducer:
     * that is exactly the base.
     */
   private def redraft(
+      d: StudioDocument,
       c: Command,
       id: AnalysisRevision,
       base: AnalysisRevisionSpec,
@@ -380,7 +528,7 @@ object Reducer:
   ): Either[CommandError, Option[Draft]] =
     val changes = RecipeChange.between(base.recipe, target)
     if changes.isEmpty && dataset.isEmpty then Right(None)
-    else Draft.against(id, base, dataset, changes).bimap(Refused(c.name, _), Some(_))
+    else Draft.against(id, base, dataset, changes).bimap(refused(d, c), Some(_))
 
   /** A draft edit's inverse: discard a draft it created, restore one it
     * removed, and otherwise the edit in the other direction.
@@ -405,9 +553,9 @@ object Reducer:
     for
       old   <- figure(d, id)
       panel <- old.panels.find(_.letter == letter).toRight(UnknownPanel(id, letter))
-      _     <- Either.cond(get(panel) != value, (), NoChange(c.name))
+      _     <- Either.cond(get(panel) != value, (), NoChange(c.name, targetOf(d, c)))
       panels = old.panels.map(p => if p.letter == letter then set(p, value) else p)
-      spec <- FigureSpec.of(id, old.run, old.reporting, panels).left.map(Refused(c.name, _))
+      spec <- FigureSpec.of(id, old.run, old.reporting, panels).left.map(refused(d, c))
       next <- replaceFigure(d, c)(spec)
     yield reversible(next, inverse(get(panel)))
 
@@ -430,7 +578,7 @@ object Reducer:
   )(inverse: A => Command): Either[CommandError, Outcome] =
     val (old, next) = edit(d.presentation)
     for
-      p   <- next.left.map(Refused(c.name, _))
-      _   <- Either.cond(p != d.presentation, (), NoChange(c.name))
-      doc <- d.withPresentation(p).left.map(Refused(c.name, _))
+      p   <- next.left.map(refused(d, c))
+      _   <- Either.cond(p != d.presentation, (), NoChange(c.name, targetOf(d, c)))
+      doc <- d.withPresentation(p).left.map(refused(d, c))
     yield reversible(doc, inverse(old))

@@ -35,6 +35,10 @@ object CommandGen:
 
   val allCommands: Vector[String] = caseNames[Command]
 
+  /** Commands that never enter an undo stack. */
+  val irreversible: Set[String] =
+    Set("Admit", "SaveAndRun", "RecordRunOutcome", "CancelRun", "BindPlan")
+
   private def pick[A](values: Vector[A]): Option[Gen[A]] =
     Option.when(values.nonEmpty)(Gen.oneOf(values))
 
@@ -43,9 +47,14 @@ object CommandGen:
   private def scalesOf(d: StudioDocument, run: RunId): Option[ScaleSet] =
     d.run(run).flatMap(r => d.analysis(r.analysis)).map(_.recipe.scales)
 
+  private def verifying(spec: DatasetRevisionSpec) = spec.decision match
+    case AdmissionDecision.Verifying(content) => Some(content)
+    case _                                    => None
+
   def dataset(d: StudioDocument): Vector[Gen[Command]] =
     val ids       = d.datasets.map(_.id)
     val pending   = d.datasets.filterNot(_.decision.isAdmitted)
+    val editable  = pending.filter(_.decision == AdmissionDecision.Pending)
     val next      = d.datasets.lastOption.fold(1)(_.id.number + 1)
     val importing = for
       parent <- if ids.isEmpty then Gen.const(None) else Gen.option(Gen.oneOf(ids))
@@ -54,7 +63,7 @@ object CommandGen:
       u      <- units
       g      <- geometry
     yield Command.ImportSources(parent, s, m, u, g)
-    importing +: pick(pending).toVector.flatMap { specs =>
+    val edits = pick(editable).toVector.flatMap { specs =>
       Vector(
         specs.flatMap(s => mapping.map(Command.SetMapping(s.id, _))),
         specs.flatMap(s => units.map(Command.SetUnits(s.id, _))),
@@ -70,17 +79,50 @@ object CommandGen:
         for
           s <- specs
           i <- Gen.choose(-1, s.admission.corrections.size)
-        yield Command.RemoveCorrection(s.id, i),
+        yield Command.RemoveCorrection(s.id, i)
+      )
+    }
+    val lifecycle = pick(pending).toVector.flatMap { specs =>
+      Vector(
         specs.map(s => Command.VerifyDataset(s.id)),
+        specs.map(s => Command.WithdrawVerification(s.id)),
+        specs.flatMap(s =>
+          canonical[DatasetRevisionSpec].map(Command.ResumeVerification(s.id, _))
+        ),
         for
           s <- specs
+          v <- verifying(s).fold(canonical[DatasetRevisionSpec])(c =>
+            Gen.frequency(4 -> Gen.const(c), 1 -> canonical[DatasetRevisionSpec])
+          )
           l <- binding[AdmissionLedgerArtifact]
           t <- binding[TrialInventoryArtifact]
-        yield Command.Admit(s.id, l, t),
+        yield Command.Admit(s.id, v, l, t),
         specs.map(s => Command.DiscardDataset(s.id)),
         specs.map(s => Command.RestoreDataset(s.copy(id = DatasetRevision(next))))
       )
     }
+    importing +: (edits ++ lifecycle)
+
+  /** Backend facts and requests: never in an undo stack. */
+  def backend(d: StudioDocument): Vector[Gen[Command]] =
+    val outcomes = pick(d.running).toVector.flatMap { runs =>
+      Vector(
+        for
+          r <- runs
+          s <- finished
+          a <- binding[ResultArchiveArtifact]
+        yield Command.RecordRunOutcome(r.id, s, a),
+        runs.map(r => Command.CancelRun(r.id))
+      )
+    }
+    val plans = pick(d.analyses).toVector.map { specs =>
+      for
+        a <- specs
+        p <- canonical[StudyPlanArtifact]
+        i <- a.recipe.input.fold(semantic)(i => Gen.frequency(3 -> Gen.const(i), 1 -> semantic))
+      yield Command.BindPlan(a.id, p, i)
+    }
+    outcomes ++ plans
 
   def analysis(d: StudioDocument): Vector[Gen[Command]] =
     val admitted = d.datasets.filter(_.decision.isAdmitted).map(_.id)
@@ -110,15 +152,8 @@ object CommandGen:
           .map(dr => Command.RestoreDraft(dr.get))
       }
     }
-    val rebases  = pick(d.datasets.map(_.id)).toVector.map(_.map(Command.RebaseDraft(_)))
-    val outcomes = pick(d.running).toVector.map { runs =>
-      for
-        r <- runs
-        s <- finished
-        a <- binding[ResultArchiveArtifact]
-      yield Command.RecordRunOutcome(r.id, s, a)
-    }
-    changes ++ reverts ++ starts ++ restores ++ rebases ++ outcomes ++ Vector(
+    val rebases = pick(d.datasets.map(_.id)).toVector.map(_.map(Command.RebaseDraft(_)))
+    changes ++ reverts ++ starts ++ restores ++ rebases ++ Vector(
       Gen.const(Command.DiscardDraft),
       Gen.option(studio).map(Command.SaveAndRun(_))
     )
@@ -161,7 +196,24 @@ object CommandGen:
           f <- figures
           p <- Gen.oneOf(f.panels)
           s <- selection
-        yield Command.SetPanelSelection(f.id, p.letter, s)
+        yield Command.SetPanelSelection(f.id, p.letter, s),
+        for
+          f      <- figures
+          letter <- Gen.oneOf('A' to 'H').map(l => right(PanelLetter.of(l.toString)))
+          i      <- Gen.choose(-1, f.panels.size + 1)
+          t      <- text
+          s      <- panelScale(scalesOf(d, f.run).get)
+          sel    <- selection
+        yield Command.AddPanel(f.id, i, PanelSpec(letter, t, s, sel)),
+        for
+          f <- figures
+          p <- Gen.oneOf(f.panels)
+        yield Command.RemovePanel(f.id, p.letter),
+        for
+          f <- figures
+          p <- Gen.oneOf(f.panels)
+          t <- text
+        yield Command.RetitlePanel(f.id, p.letter, t)
       )
     }
     (put +: remove) ++ binds ++ figureEdits
@@ -180,20 +232,47 @@ object CommandGen:
       yield Command.SaveLayout(p, l)
     )
 
-  /** A command for `d`, from any of the four kinds. */
-  def command(d: StudioDocument): Gen[Command] =
-    Gen
-      .oneOf(dataset(d), analysis(d), reportingAndFigures(d), view(d))
-      .flatMap(gs => Gen.oneOf(gs))
-      .flatMap(identity)
+  private def among(groups: Vector[Gen[Command]]*): Gen[Command] =
+    Gen.oneOf(groups.filter(_.nonEmpty)).flatMap(gs => Gen.oneOf(gs)).flatMap(identity)
 
-  /** A command that is not view-only and not a backend fact. */
+  /** A command for `d`, from any group. */
+  def command(d: StudioDocument): Gen[Command] =
+    among(dataset(d), analysis(d), backend(d), reportingAndFigures(d), view(d))
+
+  /** A science edit: not view-only and not a backend fact. */
   def edit(d: StudioDocument): Gen[Command] =
-    Gen
-      .oneOf(dataset(d), analysis(d), reportingAndFigures(d))
-      .flatMap(gs => Gen.oneOf(gs))
-      .flatMap(identity)
-      .suchThat(!_.isInstanceOf[Command.RecordRunOutcome])
+    among(dataset(d), analysis(d), reportingAndFigures(d))
+
+  /** What may happen between an edit and its undo without undoing it: a
+    * backend fact or request, or (when the edit is science) a view edit.
+    */
+  def interleaved(d: StudioDocument, science: Boolean): Option[Gen[Command]] =
+    val groups = if science then Vector(backend(d), view(d)) else Vector(backend(d))
+    Option.when(groups.exists(_.nonEmpty))(among(groups*))
+
+  /** Up to `n` interleaved commands, each drawn for the document it meets. */
+  def interleave(h: History, n: Int, science: Boolean): Gen[Vector[Command]] =
+    interleaved(h.document, science).filter(_ => n > 0).fold(Gen.const(Vector.empty)) { g =>
+      g.flatMap { c =>
+        interleave(h.apply(c).fold(_ => h, _.history), n - 1, science).map(c +: _)
+      }
+    }
+
+  /** A history reached by a walk, a command for it, and what is interleaved
+    * after the command.
+    */
+  val interleaving: Gen[(History, Command, Vector[Command])] =
+    for
+      (d, traces) <- session(6)
+      h = traces.lastOption.fold(History.start(d))(t => t.result.fold(_ => t.before, _.history))
+      c  <- command(h.document)
+      xs <- h
+        .apply(c)
+        .fold(
+          _ => Gen.const(Vector.empty),
+          s => interleave(s.history, 4, c.kind != ChangeKind.ViewOnly)
+        )
+    yield (h, c, xs)
 
   /** A session entry: mostly commands, sometimes undo or redo. */
   def entry(h: History): Gen[JournalEntry] =

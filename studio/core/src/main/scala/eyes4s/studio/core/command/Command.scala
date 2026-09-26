@@ -16,8 +16,10 @@
 
 package eyes4s.studio.core.command
 
-import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, RunId}
+import eyes4s.codec.CanonicalDigest
+import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId}
 import eyes4s.studio.core.document.*
+import eyes4s.studio.core.document.DigestJson.given
 import io.circe.Codec
 
 /** The four kinds of change (DESIGN_SPEC section 8), tagged the same
@@ -75,17 +77,34 @@ enum Command derives CanEqual, Codec.AsObject:
   case AddCorrection(dataset: DatasetRevision, index: Int, rule: CorrectionRule)
   case RemoveCorrection(dataset: DatasetRevision, index: Int)
 
-  /** Ask the backend to admit a pending revision for verification (story
-    * moment t1); the document is unchanged until [[Admit]].
+  /** Send a pending revision to the backend for verification (story moment
+    * t1): the revision records its content digest as `Verifying`, and the
+    * effect [[Effect.RequestAdmission]] carries the same digest. While it
+    * is verifying, the revision's content cannot be edited; withdraw the
+    * verification first (undo does).
     */
   case VerifyDataset(dataset: DatasetRevision)
 
-  /** Record the admission decision: the pending revision becomes admitted,
-    * bound to the ledger and inventory the backend produced. A history
+  /** Return a verifying revision to `Pending`, so it can be edited again. */
+  case WithdrawVerification(dataset: DatasetRevision)
+
+  /** Put a withdrawn verification of `content` back exactly, without a new
+    * request (the backend was already asked).
+    */
+  case ResumeVerification(
+      dataset: DatasetRevision,
+      content: CanonicalDigest[DatasetRevisionSpec]
+  )
+
+  /** Record the admission decision for the content that was verified: the
+    * verifying revision becomes admitted, bound to the ledger and inventory
+    * the backend produced. `verified` is the digest the backend was sent; it
+    * must be the recorded one and the revision's current content. A history
     * barrier.
     */
   case Admit(
       dataset: DatasetRevision,
+      verified: CanonicalDigest[DatasetRevisionSpec],
       ledger: CoreBinding[AdmissionLedgerArtifact],
       inventory: CoreBinding[TrialInventoryArtifact]
   )
@@ -130,6 +149,22 @@ enum Command derives CanEqual, Codec.AsObject:
       archive: CoreBinding[ResultArchiveArtifact]
   )
 
+  /** Ask the backend to cancel a running run's job (effect
+    * [[Effect.CancelJob]]); the outcome arrives as [[RecordRunOutcome]].
+    */
+  case CancelRun(run: RunId)
+
+  /** A backend fact: preparation bound `revision` to its eyes4s plan, by CR3
+    * digest, and its input, by semantic identity ("input digest · plan
+    * rev N", DESIGN_SPEC section 9). A plan is bound once; an input already
+    * recorded must be the same one. Not part of the undo history.
+    */
+  case BindPlan(
+      revision: AnalysisRevision,
+      plan: CanonicalDigest[StudyPlanArtifact],
+      input: SemanticIdentity
+  )
+
   // --- Reporting · no rerun ------------------------------------------------
 
   /** Create a reporting spec, or replace the one with the same id. */
@@ -155,6 +190,14 @@ enum Command derives CanEqual, Codec.AsObject:
   case SetPanelScale(figure: FigureId, panel: PanelLetter, scale: PanelScale)
   case SetPanelSelection(figure: FigureId, panel: PanelLetter, selection: PanelSelection)
 
+  /** Insert `panel` at `index` (0 to the panel count). */
+  case AddPanel(figure: FigureId, index: Int, panel: PanelSpec)
+
+  /** Remove a panel; a figure keeps at least one. */
+  case RemovePanel(figure: FigureId, panel: PanelLetter)
+
+  case RetitlePanel(figure: FigureId, panel: PanelLetter, title: String)
+
   // --- View only -----------------------------------------------------------
 
   case SetPerspective(perspective: Perspective)
@@ -175,14 +218,15 @@ enum Command derives CanEqual, Codec.AsObject:
   def kind: ChangeKind = this match
     case _: (ImportSources | RestoreDataset | DiscardDataset | SetMapping | SetUnits |
           SetGeometry | SetOffScreenPolicy | AddCorrection | RemoveCorrection | VerifyDataset |
-          Admit) =>
+          WithdrawVerification | ResumeVerification | Admit) =>
       ChangeKind.DatasetReadmit
     case _: (StartDraft | RestoreDraft | ChangeRecipe | RebaseDraft | SaveAndRun |
-          RecordRunOutcome) =>
+          RecordRunOutcome | CancelRun | BindPlan) =>
       ChangeKind.AnalysisRerun
     case DiscardDraft => ChangeKind.AnalysisRerun
     case _: (PutReporting | RemoveReporting | CreateFigure | RestoreFigure | DeleteFigure |
-          BindFigure | SetPanelScale | SetPanelSelection) =>
+          BindFigure | SetPanelScale | SetPanelSelection | AddPanel | RemovePanel |
+          RetitlePanel) =>
       ChangeKind.ReportingNoRerun
     case _: (SetPerspective | SetTheme | SetStage | SetMapOpacity | SetUnderlay | ShowRun |
           SaveLayout) =>
@@ -195,8 +239,13 @@ enum Effect derives CanEqual:
   /** Start `run` of `analysis` on `dataset` (S3.1). */
   case RequestRun(run: RunId, analysis: AnalysisRevision, dataset: DatasetRevision)
 
-  /** Admit a pending dataset revision for verification. */
-  case RequestAdmission(dataset: DatasetRevision)
+  /** Verify `dataset` for admission; `content` is the digest a later
+    * [[Command.Admit]] must carry.
+    */
+  case RequestAdmission(dataset: DatasetRevision, content: CanonicalDigest[DatasetRevisionSpec])
+
+  /** Cancel the backend job running `run`. */
+  case CancelJob(run: RunId, job: JobId)
 
   /** The document changed; schedule a save (S2.4a/b). */
   case Persist
