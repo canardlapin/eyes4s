@@ -33,21 +33,24 @@ object StudioSchemaIds:
   val ScienceName: String  = "studio.science"
   val JournalName: String  = "studio.journal"
   val DatasetName: String  = "studio.dataset-content"
+  val ProjectName: String  = "studio.project"
 
   final case class Ids(
       document: DefinitionId,
       science: DefinitionId,
       journal: DefinitionId,
-      datasetContent: DefinitionId
+      datasetContent: DefinitionId,
+      project: DefinitionId
   ) derives CanEqual:
-    def all: Vector[DefinitionId] = Vector(document, science, journal, datasetContent)
+    def all: Vector[DefinitionId] = Vector(document, science, journal, datasetContent, project)
 
   private def id(name: String, version: Int): Either[DocumentError, DefinitionId] =
     DefinitionId.of(name, version).left.map(_ => DocumentError.BadSchemaId(name, version))
 
-  /** The whole document, presentation included (`project.json` in S2.3), its
-    * science, whose digest is the document's scientific identity, and a line
-    * of the command journal (S2.2).
+  /** The whole document, presentation included; its science, whose digest is
+    * the document's scientific identity; a line of the command journal
+    * (S2.2); and the first version of the `.eyes` bundle manifest
+    * `project.json` (S2.3), whose later versions its `SchemaLadder` adds.
     */
   val ids: Either[DocumentError, Ids] =
     for
@@ -55,10 +58,11 @@ object StudioSchemaIds:
       science  <- id(ScienceName, 1)
       journal  <- id(JournalName, 1)
       dataset  <- id(DatasetName, 1)
-    yield Ids(document, science, journal, dataset)
+      project  <- id(ProjectName, 1)
+    yield Ids(document, science, journal, dataset, project)
 
   /** The ids as a codec failure, for building codecs. */
-  private[document] def forCodec: Either[CodecError, Ids] =
+  private[studio] def forCodec: Either[CodecError, Ids] =
     ids.left.map(e => CodecError.Unsupported("schema", e.message))
 
 /** The canonical JSON the document writer emits: every object's members in

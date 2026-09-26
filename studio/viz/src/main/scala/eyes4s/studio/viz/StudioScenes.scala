@@ -28,13 +28,13 @@ import intaglio.interaction.{KeyCodec, KeySpace, Selection}
   */
 object StudioScenes:
 
-  /** A point at the origin, then one per applied intent, at (count, count).
+  /** A point at the origin, then one per trail crumb, at (count, count).
     *
     * The origin keeps the initial model plottable: Intaglio rejects an empty
     * continuous range.
     */
   def intents(model: AppModel): Either[IntaglioError, Scene] =
-    plot(Vector.range(0L, model.intentsApplied + 1L).map(_.toDouble))
+    plot(Vector.range(0L, model.location.trail.size + 1L).map(_.toDouble))
       .aes(identity, identity)
       .geomPoint()
       .scene

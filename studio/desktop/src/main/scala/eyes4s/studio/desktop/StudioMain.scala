@@ -39,7 +39,8 @@ final class StudioApplication extends Application:
 
   override def start(stage: Stage): Unit =
     stage.setTitle(StudioMain.title)
-    stage.setScene(Scene(Label(StudioViz.caption(AppModel.initial)), 480, 240))
+    val caption = AppModel.newProject.fold(_.message, StudioViz.caption)
+    stage.setScene(Scene(Label(caption), 480, 240))
     stage.show()
 
 /** Entry point for the desktop shell. Tests never launch it. */
