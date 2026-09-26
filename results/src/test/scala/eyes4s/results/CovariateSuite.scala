@@ -207,3 +207,22 @@ class CovariateSuite extends munit.FunSuite:
     assertEquals(a.hashCode, b.hashCode)
     assertEquals(a.cells.map(_.estimate), Vector(Value.Missing(Absence.EmptyGroup)))
   }
+
+  test("forKeys joins study keys to inventory trials through the layout's trial identity") {
+    val layout = TrialKey.layout(TrialKeyDefinitions.trialLayout)
+    val t1     = get(trialIdentity("p1", "t1").withItem("a"))
+    // The key's item is not part of the join: a key naming another item still finds t1.
+    val other  = get(trialIdentity("p1", "t1").withItem("zz"))
+    val absent = get(trialIdentity("p9", "t9").withItem("a"))
+    val table  =
+      get(CovariateTable.forKeys(schema, ledger, layout, Vector(t1, other, absent, t1)))
+    assertEquals(table.rows.map(_.key), Vector(t1, other))
+    assertEquals(table.value(other, memory), Value.Present(CovariateValue.Level("Remembered")))
+    assertEquals(table.value(absent, memory), Value.Missing(Absence.NotRecorded))
+    val studyLayout = StudyKey.layout(DefinitionId.studyLayout)
+    assertEquals(
+      CovariateTable
+        .forKeys(schema, ledger, studyLayout, Vector(StudyKey("p1", "a", "recall"))),
+      Left(CovariateError.NoTrialProjection(DefinitionId.studyLayout))
+    )
+  }
