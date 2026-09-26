@@ -229,8 +229,9 @@ object AppGen:
     1 -> Gen.zip(Gen.oneOf(panes), trail(m)).map(Intent.PaneSubject(_, _)),
     3 -> event(m),
     1 -> Gen
-      .zip(Gen.choose(0, 23), Gen.choose(0, 59))
-      .map((h, mm) => Intent.Saved(ok(ClockTime.of(h, mm))))
+      .zip(Gen.choose(0, 23), Gen.choose(0, 59), Gen.choose(0L, m.save.edits.value))
+      .map((h, mm, e) => Intent.Saved(ok(ClockTime.of(h, mm)), EditMark(e))),
+    1 -> Gen.const(Intent.SaveFailed("disk full"))
   )
 
   /** A step of a walk: the model before and the intent applied to it. */

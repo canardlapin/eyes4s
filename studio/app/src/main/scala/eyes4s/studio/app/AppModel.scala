@@ -91,12 +91,33 @@ object ClockTime:
       AppError.BadClock(hour, minute)
     )
 
-/** The last completed save, and whether the document changed since. */
-final case class SaveState(last: Option[ClockTime], edited: Boolean) derives CanEqual:
-  def edit: SaveState = copy(edited = true)
+/** Which edit a save covers: edits are numbered from 1 in the order the
+  * model makes them, and each `Persist` carries the number of the edit that
+  * asked for it.
+  */
+final case class EditMark(value: Long) derives CanEqual:
+  def next: EditMark = EditMark(value + 1)
+
+object EditMark:
+  val none: EditMark = EditMark(0)
+
+/** The last completed save, the newest edit, and the newest edit a completed
+  * save covers. The project is edited while an edit is newer than every
+  * save: a save that finishes after a later edit leaves it edited.
+  */
+final case class SaveState(last: Option[ClockTime], edits: EditMark, covered: EditMark)
+    derives CanEqual:
+  def edited: Boolean = edits.value > covered.value
+  def edit: SaveState = copy(edits = edits.next)
+
+  /** A save of everything up to `upTo` finished at `at`. A save older than
+    * one already recorded (delivered late) changes nothing.
+    */
+  def saved(at: ClockTime, upTo: EditMark): SaveState =
+    if upTo.value < covered.value then this else copy(last = Some(at), covered = upTo)
 
 object SaveState:
-  val never: SaveState = SaveState(None, edited = false)
+  val never: SaveState = SaveState(None, EditMark.none, EditMark.none)
 
 /** Each trial's match item ("beach-042"), as the backend's ledger reports it.
   * Labels only: a trial with no item is shown by its trial id.
@@ -142,6 +163,9 @@ enum Notice derives CanEqual:
     */
   case LayoutsReset(perspectives: Vector[Perspective], reason: String)
 
+  /** The platform's save of the project failed; the last save stands. */
+  case SaveFailed(reason: String)
+
   def message: String = message(Messages.english)
 
   /** The notice's words; a command is named by its label ("Undo"). */
@@ -159,6 +183,7 @@ enum Notice derives CanEqual:
     case Invalid(e)               => e.message
     case LayoutsReset(ps, reason) =>
       messages(MessageId.NoticeLayoutsReset, ps.map(_.label).mkString(", "), reason)
+    case SaveFailed(reason)                     => messages(MessageId.NoticeSaveFailed, reason)
     case Outdated(Confirmation.DiscardDraft(d)) =>
       s"Draft ${d.label} is no longer the draft; nothing was discarded."
 
@@ -208,8 +233,10 @@ enum AppEffect derives CanEqual:
   /** Verify `dataset`; `content` is the digest a later Admit must carry. */
   case RequestAdmission(dataset: DatasetRevision, content: CanonicalDigest[DatasetRevisionSpec])
 
-  /** The document changed; schedule a save (S2.4a/b). */
-  case Persist
+  /** The document changed with edit `edit`; save it (S2.4a/b). The save's
+    * [[Intent.Saved]] names the same mark.
+    */
+  case Persist(edit: EditMark)
 
   /** Append one entry to the autosave journal (S2.4b). */
   case Journal(entry: JournalEntry)
@@ -232,12 +259,12 @@ object AppEffect:
   /** A command effect of studio-core as an app effect, against the document
     * the command produced.
     */
-  def of(effect: Effect, document: StudioDocument): AppEffect = effect match
+  def of(effect: Effect, document: StudioDocument, edit: EditMark): AppEffect = effect match
     case Effect.RequestRun(_, analysis, dataset) =>
       Execution(ExecutionEffect.Submit(AppModel.stampOf(document, analysis, dataset)))
     case Effect.RequestAdmission(dataset, content) => RequestAdmission(dataset, content)
     case Effect.CancelJob(_, job)                  => Execution(ExecutionEffect.Cancel(job))
-    case Effect.Persist                            => Persist
+    case Effect.Persist                            => Persist(edit)
 
 /** A user action or a service fact the shell dispatches (DESIGN_SPEC
   * section 13). Hover and selection are intents, never document commands.
@@ -327,7 +354,14 @@ enum Intent derives CanEqual:
   /** Progress, outcomes and the latest draft check (freshness inputs). */
   case SessionChanged(facts: SessionFacts)
   case ItemsLoaded(items: TrialItems)
-  case Saved(at: ClockTime)
+
+  /** The project session finished an atomic save at `at` of every edit up
+    * to `upTo` (the mark of the `Persist` it performed, S2.4a).
+    */
+  case Saved(at: ClockTime, upTo: EditMark)
+
+  /** The project session's save failed; `reason` names what failed. */
+  case SaveFailed(reason: String)
 
   // --- Project and layouts (S1.4, S1.5a) -------------------------------------------------------
   /** The project chip's Rename…: the platform asks for the name. */
@@ -608,13 +642,16 @@ object AppModel:
     case Intent.JobsChanged(jobs)  => (m.copy(jobs = m.jobs.withJobs(jobs)), none)
     case Intent.SessionChanged(f)  => (m.copy(session = f), none)
     case Intent.ItemsLoaded(items) => (m.copy(items = items), none)
-    case Intent.Saved(at)          => (m.copy(save = SaveState(Some(at), edited = false)), none)
+    case Intent.Saved(at, upTo)    => (m.copy(save = m.save.saved(at, upTo)), none)
+    case Intent.SaveFailed(reason) => (m.copy(notice = Some(Notice.SaveFailed(reason))), none)
 
     case Intent.RequestRename =>
       (m, Vector(AppEffect.OpenDialog(PlatformDialog.RenameProject)))
     case Intent.RenameProject(name) =>
       if m.project.contains(name) then (m, none)
-      else (m.copy(project = Some(name), save = m.save.edit), Vector(AppEffect.Persist))
+      else
+        val save = m.save.edit
+        (m.copy(project = Some(name), save = save), Vector(AppEffect.Persist(save.edits)))
     case Intent.RenameRefused(e) => (m.copy(notice = Some(Notice.Invalid(e))), none)
     case Intent.LayoutsUnreadable(ps, reason) =>
       (m.copy(notice = Some(Notice.LayoutsReset(ps, reason))), none)
@@ -682,8 +719,9 @@ object AppModel:
     case Left(error) => (m.copy(notice = Some(Notice.Refused(entry, error))), none)
     case Right(step) =>
       val edited  = step.effects.contains(Effect.Persist)
+      val save    = if edited then m.save.edit else m.save
       val doc     = step.history.document
-      val effects = step.effects.map(AppEffect.of(_, doc))
+      val effects = step.effects.map(AppEffect.of(_, doc, save.edits))
       val submits = effects.collect { case AppEffect.Execution(ExecutionEffect.Submit(s)) => s }
       // A requirement that changed without a submission (a plan bound to the
       // running revision) is told to the service as Require.
@@ -696,7 +734,7 @@ object AppModel:
         history = step.history,
         jobs = jobs,
         notice = None,
-        save = if edited then m.save.edit else m.save
+        save = save
       )
       (rebased(m, next), (AppEffect.Journal(entry) +: effects) ++ require)
 

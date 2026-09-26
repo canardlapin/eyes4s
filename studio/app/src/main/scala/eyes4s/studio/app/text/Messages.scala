@@ -79,6 +79,12 @@ enum MessageId derives CanEqual:
   // --- Notices ---------------------------------------------------------------------
   case NoticeUnavailable, NoticeBlocked, NoticeLayoutsReset, Dismiss
   case CommandPreviousPane, CommandNextTab, CommandPreviousTab
+  case NoticeSaveFailed
+
+  // --- Shell chrome (S1.6–S1.11) ------------------------------------------------------
+  case MenuFile, MenuEdit, MenuGo, MenuRun, MenuWindow, CommandBack, CommandForward
+  case PerspectiveAccessible, ProjectAccessible, CrumbCurrentAccessible, CrumbOpensAccessible
+  case DraftChipAccessible, ConfirmDiscardDraft, KeepDraft, TabShowTable, TabShowPlot
 
 /** A message catalogue: one template per id. */
 trait Catalogue:
@@ -258,6 +264,24 @@ object Catalogue:
       case CommandPreviousPane => "Previous pane"
       case CommandNextTab      => "Next tab"
       case CommandPreviousTab  => "Previous tab"
+      case NoticeSaveFailed    => "The project could not be saved: {0}"
+
+      case CommandBack            => "Back"
+      case CommandForward         => "Forward"
+      case MenuFile               => "File"
+      case MenuEdit               => "Edit"
+      case MenuGo                 => "Go"
+      case MenuRun                => "Run"
+      case MenuWindow             => "Window"
+      case PerspectiveAccessible  => "{0} ({1})"
+      case ProjectAccessible      => "Project {0}"
+      case CrumbCurrentAccessible => "{0}, current location"
+      case CrumbOpensAccessible   => "{0}, opens in {1}"
+      case DraftChipAccessible    => "{0}; review in Analysis"
+      case ConfirmDiscardDraft    => "Discard draft {0} and its {1}? Runs are not affected."
+      case KeepDraft              => "Keep draft"
+      case TabShowTable           => "Show table"
+      case TabShowPlot            => "Show plot"
 
 /** Renders catalogue templates. Total: an argument a template does not name
   * is ignored, and a placeholder with no argument is left as written, so a

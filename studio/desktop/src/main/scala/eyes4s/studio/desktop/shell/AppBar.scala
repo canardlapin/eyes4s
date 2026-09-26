@@ -76,6 +76,7 @@ final class AppBar(dispatch: Intent => Unit):
   def render(vm: AppBarVM, projectMenu: Vector[ActionVM]): Unit =
     wordmark.setText(vm.appName)
     project.setText(vm.project)
+    project.setAccessibleText(vm.projectAccessible)
     project.getItems.setAll(projectMenu.map { a =>
       val item = MenuItem(a.label)
       item.setMnemonicParsing(false)
@@ -89,7 +90,7 @@ final class AppBar(dispatch: Intent => Unit):
       t.getGraphic match
         case l: Label => l.setText(b.shortcut)
         case _        => ()
-      t.setAccessibleText(s"${b.label} ${b.shortcut}")
+      t.setAccessibleText(b.accessible)
       t.setSelected(b.selected)
       t.setOnAction(_ => dispatch(b.intent))
     }

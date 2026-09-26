@@ -57,6 +57,7 @@ private[desktop] object Fx:
   def button(action: ActionVM, dispatch: Intent => Unit, classes: String*): Button =
     val b = Button(action.label)
     b.setMnemonicParsing(false)
+    b.setAccessibleText(action.label)
     b.getStyleClass.addAll(classes*)
     b.setDisable(!action.enabled)
     b.setOnAction(_ => dispatch(action.intent))

@@ -20,6 +20,39 @@
 
 .studio-shell {
   -fx-background-color: -es-ground;
+  /* Accent's first job: keyboard focus (DESIGN_SPEC section 4, S1.11). */
+  -fx-focus-color: -es-accent;
+  -fx-faint-focus-color: transparent;
+}
+
+/* ---- keyboard focus: a 2 px accent ring on every control (S1.11) -------- */
+
+.crumb:focused, .icon-button:focused, .bar-button:focused {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+  -fx-background-radius: 4, 3;
+}
+
+.chip:focused {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+  -fx-background-radius: 6, 5;
+}
+
+.perspective:focused {
+  -fx-background-color: -es-accent, -es-surface-3;
+  -fx-background-insets: 0, 2;
+  -fx-background-radius: 5, 4;
+}
+
+.perspective:selected:focused {
+  -fx-background-color: -es-accent, -es-surface;
+}
+
+/* A pane is one focus stop: the ring is drawn inside its edge. */
+.pane-placeholder:focused {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
 }
 
 /* ---- shared pieces ------------------------------------------------------ */
@@ -269,6 +302,13 @@
   -fx-background-color: -es-fail;
 }
 
+/* The two-chip form (Results board, t3): the shown run's dot is hollow. */
+.dot.tone-showing {
+  -fx-background-color: -es-ink-2, -es-surface;
+  -fx-background-insets: 0, 1.5;
+  -fx-background-radius: 4, 3;
+}
+
 .context-note {
   -fx-text-fill: -es-ink-3;
 }
@@ -300,6 +340,24 @@
 
 .notice-text {
   -fx-text-fill: -es-warn-text;
+}
+
+/* Discard draft's question: shown where the banner is, above it. */
+.confirm-bar {
+  -fx-alignment: center-left;
+  -fx-spacing: 10;
+  -fx-padding: 0 12 0 12;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.confirm-text {
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans Medm";
+}
+
+.confirm-action {
+  -fx-text-fill: -es-fail;
 }
 
 /* ---- 4 · draft banner, 30 px -------------------------------------------- */

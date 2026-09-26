@@ -17,11 +17,27 @@
 package eyes4s.studio.app.vm
 
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.app.keys.{AppCommand, CommandRegistry}
+import eyes4s.studio.app.keys.{AppCommand, CommandId, CommandRegistry, KeyChord, MenuSection}
+import eyes4s.studio.app.layout.{PaneId, PaneKind}
 import eyes4s.studio.app.text.{MessageId, Messages}
 
 /** A menu: its title and its items, in order. */
 final case class MenuVM(title: String, items: Vector[ActionVM]) derives CanEqual
+
+/** One item of the system menu bar: a registered command, its shortcut
+  * (the menu shows it as its accelerator), and what it dispatches now.
+  */
+final case class MenuItemVM(
+    command: CommandId,
+    label: String,
+    shortcut: Option[KeyChord],
+    enabled: Boolean,
+    intent: Intent
+) derives CanEqual
+
+/** One menu of the system menu bar. */
+final case class BarMenuVM(section: MenuSection, title: String, items: Vector[MenuItemVM])
+    derives CanEqual
 
 /** The shell's menus and window title (tickets S1.4 and S1.5a): pure
   * projections of the model, like [[Shell]].
@@ -45,6 +61,48 @@ object Menus:
       CommandRegistry.revealProject,
       CommandRegistry.projectInfo
     ).map(item(_, model, messages))
+
+  /** The macOS system menu bar (S1.9): every registered command, in its
+    * menu, generated from the [[CommandRegistry]]. A disabled item carries
+    * its Invoke, which explains itself with a notice.
+    */
+  def bar(model: AppModel, messages: Messages = Messages.english): Vector[BarMenuVM] =
+    CommandRegistry.menus.map { (section, commands) =>
+      BarMenuVM(
+        section,
+        messages(section.title),
+        commands.map { c =>
+          val a = item(c, model, messages)
+          MenuItemVM(c.id, a.label, c.shortcut, a.enabled, a.intent)
+        }
+      )
+    }
+
+  /** The studio's items in a dock tab's context menu (S1.9, through
+    * scaladock's tab-menu hook, after the dock's own items): a plot's
+    * "Show table" (its keyboard twin, DESIGN_SPEC section 3), a table's
+    * "Show plot", and Reset perspective. A pane outside the current layout
+    * gets none.
+    */
+  def tab(
+      model: AppModel,
+      pane: PaneId,
+      messages: Messages = Messages.english
+  ): Vector[ActionVM] =
+    val layout = model.layout
+    layout.pane(pane).toVector.flatMap { decl =>
+      val sibling = decl.kind match
+        case PaneKind.Plot =>
+          layout.panes
+            .find(p => p.kind == PaneKind.Table && p.id.value == s"${pane.value}.table")
+            .map(t => ActionVM(messages(MessageId.TabShowTable), true, Intent.FocusPane(t.id)))
+        case PaneKind.Table =>
+          layout.panes
+            .find(p => p.kind == PaneKind.Plot && s"${p.id.value}.table" == pane.value)
+            .map(p => ActionVM(messages(MessageId.TabShowPlot), true, Intent.FocusPane(p.id)))
+        case _ => None
+      sibling.toVector :+ item(CommandRegistry.resetPerspective, model, messages)
+    }
 
   /** View › Reset perspective. S1.9 adds the rest of the menu bar. */
   def view(model: AppModel, messages: Messages = Messages.english): MenuVM =

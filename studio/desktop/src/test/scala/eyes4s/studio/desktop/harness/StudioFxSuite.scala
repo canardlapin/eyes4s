@@ -75,6 +75,25 @@ abstract class StudioFxSuite extends munit.FunSuite:
   /** Runs `body` on the FX application thread and returns its result. */
   protected def runOnFx[A](body: => A): A = StudioFxSuite.runOnFx(body)
 
+  /** Requires the scene to have its full [[stageSize]].
+    *
+    * A window manager clamps a stage to the display, so on a display smaller than
+    * the stage the scene is smaller than requested. A test whose assertions
+    * depend on the full size (board text, row metrics, device-pixel limits) calls
+    * this first. It fails, unless the environment variable
+    * `EYES4S_STUDIO_SMALL_DISPLAY` is `skip`, when it skips the test instead: the
+    * hosted macOS runner sets that (its display is 1024x768), and the Linux job,
+    * whose virtual display is 1920x1200, runs every such test.
+    */
+  protected def assumeFullStage(fx: FxStage)(using munit.Location): Unit =
+    val (w, h)   = fx.sceneSize
+    val expected = (stageSize.width.toDouble, stageSize.height.toDouble)
+    val message  =
+      s"the display clamped the ${stageSize.width}x${stageSize.height} stage to a ${w}x$h scene"
+    if sys.env.get(StudioFxSuite.SmallDisplayVariable).contains("skip") then
+      assume((w, h) == expected, message)
+    else assertEquals((w, h), expected, message)
+
 /** One shown test stage and the operations a test performs on it. */
 final class FxStage private (
     val stage: Stage,
@@ -161,6 +180,9 @@ object FxStage:
 
 object StudioFxSuite:
   private[harness] val TimeoutSeconds = 30L
+
+  /** Set to `skip` where the display cannot hold a board-size stage. */
+  val SmallDisplayVariable = "EYES4S_STUDIO_SMALL_DISPLAY"
 
   /** Where snapshots are written; the build points it at `target/studio-snapshots`. */
   val snapshotRoot: Path =

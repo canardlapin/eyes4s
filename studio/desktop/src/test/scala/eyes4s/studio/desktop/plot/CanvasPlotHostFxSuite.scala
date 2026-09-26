@@ -400,6 +400,7 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
   }
 
   fxStage.test("a surface too large to draw fails with a typed error, not Waiting") { fx =>
+    assumeFullStage(fx)
     val (host, _) = hostIn(fx)
     runOnFx {
       host.setOutputScaleOverride(Some(6.0)) // 1440 x 6 = 8640 device pixels
