@@ -308,33 +308,50 @@ object Distribution:
             saa += da * da
             sbb += db * db
             i += 1
-          // A RELATIVE constancy test, not `variance <= 0`.
-          //
-          // Summing a hundred copies of 0.01 does not give exactly 1.0, so a
-          // perfectly uniform map has a mean a few ulps off its own cells and a
-          // variance of order 1e-33 -- strictly positive. An absolute guard
-          // therefore never fires, and the correlation returned is the ratio of
-          // two quantities made entirely of rounding noise: a number between -1
-          // and 1 that means nothing and looks like a result.
-          val leftConstant  = isConstant(saa, ma, n)
-          val rightConstant = isConstant(sbb, mb, n)
-          if leftConstant || rightConstant then
-            val operand =
-              if leftConstant && rightConstant then CompareOperand.Both
-              else if leftConstant then CompareOperand.Left
-              else CompareOperand.Right
-            Left(CompareError.ConstantInput("Pearson correlation", operand))
-          else
-            Similarity.computed("Pearson correlation", sab / (math.sqrt(saa) * math.sqrt(sbb)))
+          constantOperands(info.name, a, b, n) match
+            case Some(error) => Left(error)
+            case None        =>
+              Similarity.computed(info.name, sab / (math.sqrt(saa) * math.sqrt(sbb)))
         }
 
-  /** True when a map's variation is below a relative tolerance of its own
-    * scale, and is therefore rounding noise rather than signal.
+  /** The one constancy check shared by every correlation-shaped measure,
+    * applied to the RAW cell values before any rank or distance transform.
+    *
+    * It is RELATIVE, not `variance <= 0`. Summing a hundred copies of 0.01
+    * does not give exactly 1.0, so a perfectly uniform map has a mean a few
+    * ulps off its own cells and a variance of order 1e-33 -- strictly positive.
+    * An absolute guard therefore never fires, and the correlation returned is
+    * the ratio of two quantities made entirely of rounding noise. Ranking or
+    * double-centring does not remove that noise; it rescales it to a unit
+    * spread, which is why the check precedes the transform.
     */
-  private def isConstant(sumSq: Double, mean: Double, n: Int): Boolean =
-    val sd    = math.sqrt(sumSq / n)
-    val scale = math.max(math.abs(mean), java.lang.Double.MIN_NORMAL)
-    sd <= 1e-12 * scale
+  private def constantOperands[U <: Unit2D](
+      measure: String,
+      a: Mass[U],
+      b: Mass[U],
+      n: Int
+  ): Option[CompareError] =
+    def constant(m: Mass[U]): Boolean =
+      val mean  = m.sum / n
+      var sumSq = 0.0
+      var i     = 0
+      while i < n do
+        val d = m.unsafeAt(i) - mean
+        sumSq += d * d
+        i += 1
+      val sd    = math.sqrt(sumSq / n)
+      val scale = math.max(math.abs(mean), java.lang.Double.MIN_NORMAL)
+      sd <= 1e-12 * scale
+    val left  = constant(a)
+    val right = constant(b)
+    Option.when(left || right)(
+      CompareError.ConstantInput(
+        measure,
+        if left && right then CompareOperand.Both
+        else if left then CompareOperand.Left
+        else CompareOperand.Right
+      )
+    )
 
   /** Fisher-z transformed Pearson correlation.
     *
@@ -367,37 +384,29 @@ object Distribution:
         None
       )
       def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Similarity] =
-        aligned(a, b).flatMap { n =>
-          def ranks(m: Mass[U]): Array[Double] =
-            val order  = (0 until n).sortBy(m.values(_))
-            val result = new Array[Double](n)
-            var start  = 0
-            while start < n do
-              var end = start + 1
-              while end < n && m.values(order(end)) == m.values(order(start)) do end += 1
-              val rank = (start.toDouble + end + 1) / 2
-              var j    = start
-              while j < end do
-                result(order(j)) = rank
-                j += 1
-              start = end
-            result
-          val x  = ranks(a); val y = ranks(b); val mean = (n.toDouble + 1) / 2
-          var xx = 0.0; var yy     = 0.0; var xy        = 0.0
-          var i  = 0
-          while i < n do
-            val dx = x(i) - mean; val dy = y(i) - mean
-            xx += dx * dx; yy += dy * dy; xy += dx * dy; i += 1
-          if xx == 0 || yy == 0 then
-            Left(
-              CompareError.ConstantInput(
-                info.name,
-                if xx == 0 && yy == 0 then CompareOperand.Both
-                else if xx == 0 then CompareOperand.Left
-                else CompareOperand.Right
-              )
-            )
-          else
+        aligned(a, b).flatMap(n => constantOperands(info.name, a, b, n).toLeft(n)).flatMap {
+          n =>
+            def ranks(m: Mass[U]): Array[Double] =
+              val order  = (0 until n).sortBy(m.values(_))
+              val result = new Array[Double](n)
+              var start  = 0
+              while start < n do
+                var end = start + 1
+                while end < n && m.values(order(end)) == m.values(order(start)) do end += 1
+                val rank = (start.toDouble + end + 1) / 2
+                var j    = start
+                while j < end do
+                  result(order(j)) = rank
+                  j += 1
+                start = end
+              result
+            val x  = ranks(a); val y = ranks(b); val mean = (n.toDouble + 1) / 2
+            var xx = 0.0; var yy     = 0.0; var xy        = 0.0
+            var i  = 0
+            while i < n do
+              val dx = x(i) - mean; val dy = y(i) - mean
+              xx += dx * dx; yy += dy * dy; xy += dx * dy; i += 1
+            // Raw values that are not constant have at least two distinct ranks.
             Similarity.computed(
               info.name,
               math.max(-1.0, math.min(1.0, xy / math.sqrt(xx) / math.sqrt(yy)))
@@ -437,37 +446,29 @@ object Distribution:
         None
       )
       def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Similarity] =
-        aligned(a, b).flatMap { n =>
-          def means(m: Mass[U]): (Array[Double], Double) =
-            val rows = Array.fill(n)(0.0)
-            var i    = 0
+        aligned(a, b).flatMap(n => constantOperands(info.name, a, b, n).toLeft(n)).flatMap {
+          n =>
+            def means(m: Mass[U]): (Array[Double], Double) =
+              val rows = Array.fill(n)(0.0)
+              var i    = 0
+              while i < n do
+                var j = 0
+                while j < n do
+                  rows(i) += math.abs(m.values(i) - m.values(j)) / n
+                  j += 1
+                i += 1
+              (rows, rows.sum / n)
+            val (ax, grandX) = means(a); val (by, grandY) = means(b)
+            var xx           = 0.0; var yy                = 0.0; var xy = 0.0; var i = 0
             while i < n do
               var j = 0
               while j < n do
-                rows(i) += math.abs(m.values(i) - m.values(j)) / n
+                val x = math.abs(a.values(i) - a.values(j)) - ax(i) - ax(j) + grandX
+                val y = math.abs(b.values(i) - b.values(j)) - by(i) - by(j) + grandY
+                xx += x * x; yy += y * y; xy += x * y
                 j += 1
               i += 1
-            (rows, rows.sum / n)
-          val (ax, grandX) = means(a); val (by, grandY) = means(b)
-          var xx           = 0.0; var yy                = 0.0; var xy = 0.0; var i = 0
-          while i < n do
-            var j = 0
-            while j < n do
-              val x = math.abs(a.values(i) - a.values(j)) - ax(i) - ax(j) + grandX
-              val y = math.abs(b.values(i) - b.values(j)) - by(i) - by(j) + grandY
-              xx += x * x; yy += y * y; xy += x * y
-              j += 1
-            i += 1
-          if xx == 0 || yy == 0 then
-            Left(
-              CompareError.ConstantInput(
-                info.name,
-                if xx == 0 && yy == 0 then CompareOperand.Both
-                else if xx == 0 then CompareOperand.Left
-                else CompareOperand.Right
-              )
-            )
-          else
+            // Non-constant raw values have a nonzero double-centred distance matrix.
             Similarity.computed(
               info.name,
               math.sqrt(math.max(0.0, math.min(1.0, xy / math.sqrt(xx) / math.sqrt(yy))))

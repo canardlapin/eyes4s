@@ -767,6 +767,7 @@
         "owner": "eyes4s/compare/Distribution$$anon$11",
         "suites": [
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
+          "compareJVM/eyes4s.compare.DistributionSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
           "lawsJVM/eyes4s.laws.BaselineMapLawSuite"
@@ -850,6 +851,7 @@
         "owner": "eyes4s/compare/Distribution$$anon$9",
         "suites": [
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
+          "compareJVM/eyes4s.compare.DistributionSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
           "lawsJVM/eyes4s.laws.BaselineMapLawSuite"
@@ -953,6 +955,7 @@
         "owner": "eyes4s/compare/Distribution$$anon$11",
         "suites": [
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
+          "compareJVM/eyes4s.compare.DistributionSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
           "lawsJVM/eyes4s.laws.BaselineMapLawSuite"
@@ -1071,6 +1074,7 @@
           "compareJVM/eyes4s.compare.DistributionSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
+          "lawsJVM/eyes4s.examples.MatchedControlSuite",
           "lawsJVM/eyes4s.laws.BaselineMapLawSuite"
         ]
       },
@@ -1089,6 +1093,7 @@
         "owner": "eyes4s/compare/Distribution$$anon$9",
         "suites": [
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
+          "compareJVM/eyes4s.compare.DistributionSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
           "lawsJVM/eyes4s.laws.BaselineMapLawSuite"
@@ -4737,6 +4742,8 @@
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
           "designJVM/consumer.PublicDesignSuite",
           "designJVM/eyes4s.design.RepetitionSuite",
+          "designJVM/eyes4s.design.TemplateCvSuite",
+          "designJVM/eyes4s.templateconsumer.LearnedTemplateSuite",
           "fs2ModuleJVM/eyes4s.fs2.StudyExecutionSuite",
           "fs2ModuleJVM/eyes4s.fs2.TemporalExecutionSuite",
           "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -6516,7 +6523,7 @@
     },
     "class eyes4s.design.SessionError": {
       "classification": "data-sum",
-      "instance": "eyes4s/design/SessionError$Clock",
+      "instance": "eyes4s/design/SessionError$DuplicateKey",
       "suite": "designJVM/eyes4s.sessionconsumer.SessionSuite"
     },
     "class eyes4s.design.SessionRole": {
@@ -7564,6 +7571,11 @@
       "instance": "eyes4s/plan/ParameterUnits$$anon$1",
       "suite": "planJVM/consumer.PublicPlanSuite"
     },
+    "class eyes4s.plan.ParticipantScope": {
+      "classification": "data-sum",
+      "instance": "eyes4s/plan/ParticipantScope$$anon$2",
+      "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
+    },
     "class eyes4s.plan.PlanError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/PlanError$ArtifactMismatch",
@@ -8140,7 +8152,7 @@
     "method eyes4s.compare.FixationOverlapResult.requested():": "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite",
     "method eyes4s.compare.FixationOverlapResult.similarity():": "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite",
     "method eyes4s.compare.FixationTransport$.compare(1,eyes4s.core.Scanpath,eyes4s.core.Scanpath,eyes4s.compare.FixationTransportConfig):scala.util.Either": "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite",
-    "method eyes4s.compare.FixationTransportConfig$.of(1,scala.Double,scala.Double,scala.Long,scala.Double,scala.Double,scala.Int,scala.Double,scala.Int):scala.util.Either": "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite",
+    "method eyes4s.compare.FixationTransportConfig$.of(1,scala.Double,scala.Double,scala.Long,scala.Double,scala.Double,scala.Int,scala.Double,scala.Int,scala.Long):scala.util.Either": "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite",
     "method eyes4s.compare.FixationTransportResult.rootCost():": "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite",
     "method eyes4s.compare.FixationTransportResult.similarity():": "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite",
     "method eyes4s.compare.Lift$.viaSmoothing(2,eyes4s.compare.Compare,eyes4s.surface.Smoother,eyes4s.kernel.Grid,eyes4s.core.Weight):eyes4s.compare.Compare": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
@@ -8422,7 +8434,7 @@
     "method eyes4s.design.LeastSquares$.fit(scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.design.RelativeRankTolerance):scala.util.Either": "designJVM/eyes4s.templateconsumer.NativeTemplateSuite",
     "method eyes4s.design.LeastSquaresError.message():": "designJVM/eyes4s.templateconsumer.NativeTemplateSuite",
     "method eyes4s.design.MapTemplateObservation$.of(2,java.lang.Object,java.lang.String,java.lang.String,eyes4s.kernel.Mass,scala.Double):scala.util.Either": "designJVM/eyes4s.templateconsumer.LearnedTemplateSuite",
-    "method eyes4s.design.MapTemplateSplit$.of(2,scala.collection.immutable.Vector,scala.collection.immutable.Set,java.lang.String,java.lang.String,eyes4s.design.KeyDigest):scala.util.Either": "designJVM/eyes4s.templateconsumer.LearnedTemplateSuite",
+    "method eyes4s.design.MapTemplateSplit$.of(2,scala.collection.immutable.Vector,scala.collection.immutable.Set,java.lang.String,java.lang.String,eyes4s.design.KeyDigest,eyes4s.kernel.UnitLabel):scala.util.Either": "designJVM/eyes4s.templateconsumer.LearnedTemplateSuite",
     "method eyes4s.design.PairCursor.advance(eyes4s.design.PairQuantum):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.design.PairDesign$.BetweenDirected.render():": "designJVM/eyes4s.design.PairDesignSuite",
     "method eyes4s.design.PairDesign$.WithinDirected.render():": "designJVM/eyes4s.design.PairDesignSuite",
@@ -8526,7 +8538,7 @@
     "method eyes4s.design.Seed$package$.Seed$.generator(scala.Long):eyes4s.design.Rng": "designJVM/eyes4s.design.SamplingMutationSuite",
     "method eyes4s.design.Seed$package$.Seed$.value(scala.Long):scala.Long": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.design.Selection$.priority(2,scala.Long,eyes4s.design.SampleId,java.lang.Object,java.lang.Object,eyes4s.design.KeyDigest,eyes4s.design.KeyDigest):scala.Long": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
-    "method eyes4s.design.Session$.empty(1,eyes4s.kernel.Frame,eyes4s.kernel.ClockId):eyes4s.design.Session": "designJVM/eyes4s.sessionconsumer.SessionSuite",
+    "method eyes4s.design.Session$.empty(1,eyes4s.kernel.Frame):eyes4s.design.Session": "designJVM/eyes4s.sessionconsumer.SessionSuite",
     "method eyes4s.design.Session$package$.SessionKey$.of(java.lang.String):scala.util.Either": "designJVM/eyes4s.sessionconsumer.SessionSuite",
     "method eyes4s.design.Session$package$.SessionKey$.value(java.lang.String):java.lang.String": "designJVM/eyes4s.sessionconsumer.SessionSuite",
     "method eyes4s.design.Session.addAoiSet(java.lang.String,eyes4s.aoi.AoiSet):scala.util.Either": "designJVM/eyes4s.sessionconsumer.SessionSuite",
@@ -9525,6 +9537,7 @@
     "method eyes4s.plan.ParameterSet$.of(1,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.MethodDescriptorSuite",
     "method eyes4s.plan.ParameterSet.values(java.lang.Object):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.ParameterSet.verify(java.lang.Object,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.StudyCursorSuite",
+    "method eyes4s.plan.ParticipantScope.rule():": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "method eyes4s.plan.PlanChange$.between(scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.PlanError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.PointBinResult.difference():": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
@@ -9631,6 +9644,7 @@
     "method eyes4s.plan.RepetitionRegistry.register(eyes4s.plan.RepetitionLayout):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.RepetitionRegistry.resolve(eyes4s.plan.DefinitionId):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.RepetitionRelations$.of(scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
+    "method eyes4s.plan.RepetitionRelations$.referenceConditionGrouping(eyes4s.plan.ParticipantScope):eyes4s.plan.RepetitionRelations": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "method eyes4s.plan.ResultInspection$.recording(1,eyes4s.plan.RecordingPlan,eyes4s.plan.RecordingAnalysis):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ResultInspection$.study(4,eyes4s.plan.StudyResult,eyes4s.plan.StudySources,eyes4s.plan.ScoreSchema):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ResultInspection$.study(5,eyes4s.plan.StudyPlan,eyes4s.plan.StudyResult,eyes4s.plan.StudyInput,scala.Option):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -9865,6 +9879,7 @@
     "value eyes4s.compare.Crqa$package$.EmbeddingDelay$.one": "compareJVM/consumer.PublicCompareSuite",
     "value eyes4s.compare.Crqa$package$.EmbeddingDimension$.one": "compareJVM/consumer.PublicCompareSuite",
     "value eyes4s.compare.Crqa$package$.LineLengthMinimum$.two": "compareJVM/consumer.PublicCompareSuite",
+    "value eyes4s.compare.FixationTransportConfig$.DefaultMaximumWork": "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite",
     "value eyes4s.compare.SinkhornConfig$.default": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
     "value eyes4s.core.Recording$package$.SamplingTolerance$.Exact": "codecJVM/eyes4s.codec.DiagnosticsDocJvmSuite",
     "value eyes4s.core.Recording$package$.SamplingTolerance$.TimestampQuantisation": "coreJVM/consumer.PublicCoreSuite",
@@ -9980,7 +9995,7 @@
     "value eyes4s.kernel.SyncEvidence$package$.SyncErrorMagnitude$.zero": "kernelJVM/eyes4s.kernel.SyncEvidenceSuite",
     "value eyes4s.kernel.TimeQuantity$package$.NonNegativeLong$.zero": "planJVM/eyes4s.plan.EpochPlanSuite",
     "value eyes4s.kernel.TimeQuantity$package$.NonNegativeSpan$.zero": "kernelJVM/consumer.PublicKernelSuite",
-    "value eyes4s.kernel.UnitLabel$.given_UnitLabel_Deg": "kernelJVM/eyes4s.kernel.GeometrySuite",
+    "value eyes4s.kernel.UnitLabel$.given_UnitLabel_Deg": "designJVM/eyes4s.templateconsumer.LearnedTemplateSuite",
     "value eyes4s.kernel.UnitLabel$.given_UnitLabel_Mm": "kernelJVM/consumer.PublicKernelSuite",
     "value eyes4s.kernel.UnitLabel$.given_UnitLabel_Norm": "kernelJVM/consumer.PublicKernelSuite",
     "value eyes4s.kernel.UnitLabel$.given_UnitLabel_Px": "kernelJVM/consumer.PublicKernelSuite",
@@ -10171,7 +10186,6 @@
     "value eyes4s.plan.RecipeParameters$.weight": "planJVM/eyes4s.plan.StudyCursorSuite",
     "value eyes4s.plan.RecordingMethodDescriptor.execution": "codecJVM/eyes4s.codec.RecordingMethodsSuite",
     "value eyes4s.plan.RecordingReport.family": "planJVM/eyes4s.plan.PreflightSuite",
-    "value eyes4s.plan.RepetitionRelations$.conditionGroups": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "value eyes4s.plan.RepetitionRelations$.withinParticipant": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "value eyes4s.plan.StudyInspection.failures": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "value eyes4s.plan.StudyKey$.given_KeyDigest_StudyKey": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
@@ -10303,6 +10317,7 @@
       "the refused ledger, checked against the full input, names the trial it did not admit"
     ],
     "codecJS/eyes4s.codec.LearnedTemplateRecipeSuite": [
+      "held-out groups have one canonical wire order; unsorted input is refused",
       "method, hash, split rules, frame units and invalid numerical payloads cannot be forged",
       "saved learned inputs reopen, reconstruct exclusions and reproduce the complete fit"
     ],
@@ -10448,6 +10463,7 @@
       "unknown methods, stale hashes, changed geometry and unsorted bins cannot decode as valid plans"
     ],
     "codecJS/eyes4s.repetitionconsumer.RepetitionPlanSuite": [
+      "condition grouping names its estimand and requires an explicit participant scope",
       "duplicate and unmatched keys, empty input and constant-method failures survive persistence",
       "every finite map method saves and reruns without new opaque closures",
       "finite controls use the original keyed sampler and survive order changes; higher cap nests",
@@ -10533,6 +10549,7 @@
       "cosine is symmetric and maximal on identical maps",
       "every measure carries enough metadata to present itself",
       "exact KL names incompatible support instead of inventing a finite value",
+      "rank and distance correlation share Pearson's relative constancy check",
       "the scale explains the ordering, which differs between measures",
       "total variation is bounded, and reaches its bound on disjoint maps",
       "total variation satisfies the metric axioms on these maps"
@@ -10606,6 +10623,7 @@
       "ties: every supported method agrees with the independent oracle and pinned vector/density dispatch"
     ],
     "compareJS/eyes4s.scanpathconsumer.ScanpathReferenceSuite": [
+      "a nonfinite cost names the first offending cell",
       "analytic translation, duration, tied alignment and sixth backend value remain separate",
       "base: five portable components match exported R calls; sixth availability is retained",
       "changed: five portable components match exported R calls; sixth availability is retained",
@@ -10620,6 +10638,7 @@
       "translated: five portable components match exported R calls; sixth availability is retained",
       "transport agrees with independent primal oracle and retains failed default-backend conformance",
       "transport retains exact relative microseconds beyond double integer precision and checks identities",
+      "transport work is bounded in total, not only per iteration",
       "two-point analytic entropic bias, duration weighting and convergence refusal"
     ],
     "coreJS/consumer.PublicCoreSuite": [
@@ -10971,7 +10990,7 @@
       "every admission refuses foreign frame identity and conflicting bounds or axes",
       "external consumers cannot forge construction, keys, units or mutable access",
       "grid aliases agree in specification; distinct discretisations remain admissible",
-      "recording clock admission is nominal and errors identify both timelines",
+      "independently acquired recordings keep their own clocks in one shared frame",
       "removal is checked, stable and persistent for every role",
       "replacement preserves order and invalid or absent replacements preserve original state",
       "role-local insertion returns exactly the admitted objects and rejects duplicates",
@@ -10983,7 +11002,8 @@
       "evaluation refuses a different training payload and retains row order",
       "external callers cannot pass held-out maps into learned construction or forge capabilities",
       "invalid split, duplicate identity, metadata and foreign grids are refused",
-      "matching-key exclusions retain full rows and cannot enter training"
+      "matching-key exclusions retain full rows and cannot enter training",
+      "the training identity names the spatial unit, not only the numbers"
     ],
     "designJS/eyes4s.templateconsumer.NativeTemplateSuite": [
       "held-out responses and features cannot change the fit",
@@ -12278,6 +12298,8 @@
     ],
     "lawsJS/eyes4s.laws.SurfaceDecompositionSuite": [
       "OLS fitted maps and residuals cannot be used as masses",
+      "a near-collinear design with a nonzero residual is rank deficient by default",
+      "arithmetic failures name only the operands that exist",
       "column scaling retains coefficients across extreme physical magnitudes",
       "constant-response centered R-squared is explicitly undefined",
       "intercept-exact: native surface OLS agrees with exact rational and pinned public lm",
@@ -12351,6 +12373,7 @@
       "bins and reported tail cover each microsecond exactly once",
       "clock mismatch, anchor overflow and allocation limits are failures",
       "empty and sub-bin windows have explicit coverage",
+      "epoch errors support strict equality like every other domain error",
       "stable occurrence selection, zero-based Nth, and named missing/ambiguous errors"
     ],
     "planJS/eyes4s.plan.MethodDescriptorSuite": [
@@ -12651,6 +12674,7 @@
       "resolved manifest-v1 drills down from a contrast row to its CSV record numbers"
     ],
     "codecJVM/eyes4s.codec.LearnedTemplateRecipeSuite": [
+      "held-out groups have one canonical wire order; unsorted input is refused",
       "method, hash, split rules, frame units and invalid numerical payloads cannot be forged",
       "saved learned inputs reopen, reconstruct exclusions and reproduce the complete fit"
     ],
@@ -12815,6 +12839,7 @@
       "unknown methods, stale hashes, changed geometry and unsorted bins cannot decode as valid plans"
     ],
     "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite": [
+      "condition grouping names its estimand and requires an explicit participant scope",
       "duplicate and unmatched keys, empty input and constant-method failures survive persistence",
       "every finite map method saves and reruns without new opaque closures",
       "finite controls use the original keyed sampler and survive order changes; higher cap nests",
@@ -12900,6 +12925,7 @@
       "cosine is symmetric and maximal on identical maps",
       "every measure carries enough metadata to present itself",
       "exact KL names incompatible support instead of inventing a finite value",
+      "rank and distance correlation share Pearson's relative constancy check",
       "the scale explains the ordering, which differs between measures",
       "total variation is bounded, and reaches its bound on disjoint maps",
       "total variation satisfies the metric axioms on these maps"
@@ -12973,6 +12999,7 @@
       "ties: every supported method agrees with the independent oracle and pinned vector/density dispatch"
     ],
     "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite": [
+      "a nonfinite cost names the first offending cell",
       "analytic translation, duration, tied alignment and sixth backend value remain separate",
       "base: five portable components match exported R calls; sixth availability is retained",
       "changed: five portable components match exported R calls; sixth availability is retained",
@@ -12987,6 +13014,7 @@
       "translated: five portable components match exported R calls; sixth availability is retained",
       "transport agrees with independent primal oracle and retains failed default-backend conformance",
       "transport retains exact relative microseconds beyond double integer precision and checks identities",
+      "transport work is bounded in total, not only per iteration",
       "two-point analytic entropic bias, duration weighting and convergence refusal"
     ],
     "coreJVM/consumer.PublicCoreSuite": [
@@ -13338,7 +13366,7 @@
       "every admission refuses foreign frame identity and conflicting bounds or axes",
       "external consumers cannot forge construction, keys, units or mutable access",
       "grid aliases agree in specification; distinct discretisations remain admissible",
-      "recording clock admission is nominal and errors identify both timelines",
+      "independently acquired recordings keep their own clocks in one shared frame",
       "removal is checked, stable and persistent for every role",
       "replacement preserves order and invalid or absent replacements preserve original state",
       "role-local insertion returns exactly the admitted objects and rejects duplicates",
@@ -13350,7 +13378,8 @@
       "evaluation refuses a different training payload and retains row order",
       "external callers cannot pass held-out maps into learned construction or forge capabilities",
       "invalid split, duplicate identity, metadata and foreign grids are refused",
-      "matching-key exclusions retain full rows and cannot enter training"
+      "matching-key exclusions retain full rows and cannot enter training",
+      "the training identity names the spatial unit, not only the numbers"
     ],
     "designJVM/eyes4s.templateconsumer.NativeTemplateSuite": [
       "held-out responses and features cannot change the fit",
@@ -14740,6 +14769,8 @@
     ],
     "lawsJVM/eyes4s.laws.SurfaceDecompositionSuite": [
       "OLS fitted maps and residuals cannot be used as masses",
+      "a near-collinear design with a nonzero residual is rank deficient by default",
+      "arithmetic failures name only the operands that exist",
       "column scaling retains coefficients across extreme physical magnitudes",
       "constant-response centered R-squared is explicitly undefined",
       "intercept-exact: native surface OLS agrees with exact rational and pinned public lm",
@@ -14813,6 +14844,7 @@
       "bins and reported tail cover each microsecond exactly once",
       "clock mismatch, anchor overflow and allocation limits are failures",
       "empty and sub-bin windows have explicit coverage",
+      "epoch errors support strict equality like every other domain error",
       "stable occurrence selection, zero-based Nth, and named missing/ambiguous errors"
     ],
     "planJVM/eyes4s.plan.MethodDescriptorSuite": [

@@ -155,3 +155,16 @@ class EpochPlanSuite extends munit.ScalaCheckSuite:
       assert(result.bins.forall(_.duration.toMicros <= width))
     }
   }
+
+  test("epoch errors support strict equality like every other domain error") {
+    assertEquals(
+      scala.compiletime.testing
+        .typeCheckErrors("""
+        import scala.language.strictEquality
+        def same(a: eyes4s.plan.EpochError[String, String], b: eyes4s.plan.EpochError[String, String]) =
+          a == b
+      """)
+        .map(_.message),
+      Nil
+    )
+  }

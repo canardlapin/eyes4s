@@ -19,7 +19,7 @@ package eyes4s.design
 /** Relative pivot threshold after every input column has unit Euclidean norm. */
 final class RelativeRankTolerance private (val value: Double)
 object RelativeRankTolerance:
-  val default: RelativeRankTolerance = new RelativeRankTolerance(1e-12)
+  val default: RelativeRankTolerance = new RelativeRankTolerance(1e-7)
   def of(value: Double): Either[LeastSquaresError, RelativeRankTolerance] =
     if value.isFinite && value > 0.0 && value < 1.0 then Right(new RelativeRankTolerance(value))
     else Left(LeastSquaresError.RankTolerance(value))
@@ -29,7 +29,8 @@ enum LeastSquaresError derives CanEqual:
   case NonFinite(row: Int, column: Option[Int], value: Double)
   case RankTolerance(value: Double)
   case RankDeficient(column: Int, pivot: Double, threshold: Double)
-  case Arithmetic(operation: String, row: Int, column: Int)
+  case ColumnArithmetic(operation: String, column: Int)
+  case RowArithmetic(operation: String, row: Int)
   def message: String = this match
     case Shape(n, p, y, widths) =>
       s"Least squares rows=$n columns=$p responseLength=$y rowWidths=$widths require a nonempty rectangular matrix with rows >= columns."
@@ -38,7 +39,8 @@ enum LeastSquaresError derives CanEqual:
       s"Relative QR rank tolerance=$v must be finite and strictly between zero and one."
     case RankDeficient(c, p, t) =>
       s"Scaled QR column=$c has pivot=$p at or below relative threshold=$t."
-    case Arithmetic(op, r, c) => s"Least squares $op is nonfinite at row=$r column=$c."
+    case ColumnArithmetic(op, c) => s"Least squares $op is nonfinite at column=$c."
+    case RowArithmetic(op, r)    => s"Least squares $op is nonfinite at row=$r."
 
 final class LeastSquaresFit private[design] (
     val coefficients: Vector[Double],
@@ -95,7 +97,7 @@ object LeastSquares:
         scales(j) = math.hypot(scales(j), a(i)(j))
         i += 1
       if !scales(j).isFinite then
-        error = Some(LeastSquaresError.Arithmetic("column norm", 0, j))
+        error = Some(LeastSquaresError.ColumnArithmetic("column norm", j))
       else if scales(j) == 0.0 then
         error = Some(LeastSquaresError.RankDeficient(j, 0.0, tolerance.value))
       else
@@ -111,7 +113,8 @@ object LeastSquares:
       while i < n do
         norm = math.hypot(norm, a(i)(k))
         i += 1
-      if !norm.isFinite then error = Some(LeastSquaresError.Arithmetic("reflector norm", k, k))
+      if !norm.isFinite then
+        error = Some(LeastSquaresError.ColumnArithmetic("reflector norm", k))
       else if norm <= tolerance.value then
         error = Some(LeastSquaresError.RankDeficient(k, norm, tolerance.value))
       else
@@ -168,10 +171,10 @@ object LeastSquares:
         val residuals = response.zip(fitted).map(_ - _)
         val bad       = coefficients.indexWhere(v => !v.isFinite)
         val badRow    = fitted.indices.find(i => !fitted(i).isFinite || !residuals(i).isFinite)
-        if bad >= 0 then Left(LeastSquaresError.Arithmetic("coefficient", 0, bad))
+        if bad >= 0 then Left(LeastSquaresError.ColumnArithmetic("coefficient", bad))
         else
           badRow match
-            case Some(i) => Left(LeastSquaresError.Arithmetic("prediction/residual", i, 0))
+            case Some(i) => Left(LeastSquaresError.RowArithmetic("prediction/residual", i))
             case None    =>
               val diagonal = (0 until p).map(j => math.abs(a(j)(j)))
               Right(

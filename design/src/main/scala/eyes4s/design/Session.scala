@@ -35,7 +35,6 @@ enum SessionError derives CanEqual:
   case DuplicateKey(role: SessionRole, key: SessionKey)
   case MissingKey(role: SessionRole, key: SessionKey)
   case Frame(role: SessionRole, key: SessionKey, underlying: GeometryError)
-  case Clock(key: SessionKey, underlying: TimeError)
   case GridIdentity(key: SessionKey, existingKey: SessionKey, underlying: SurfaceError)
 
   def message: String = this match
@@ -43,11 +42,16 @@ enum SessionError derives CanEqual:
     case DuplicateKey(role, key) => s"Session $role key '${key.value}' already exists"
     case MissingKey(role, key)   => s"Session $role key '${key.value}' does not exist"
     case Frame(role, key, error) => s"Session $role '${key.value}': ${error.message}"
-    case Clock(key, error)       => s"Session recording '${key.value}': ${error.message}"
     case GridIdentity(key, existing, error) =>
       s"Session grid '${key.value}' conflicts with '${existing.value}': ${error.message}"
 
-/** Immutable checked membership in one frame and timeline.
+/** Immutable checked membership in one spatial frame.
+  *
+  * Every member shares the frame. Recordings do NOT share a timeline: each
+  * keeps its own `ClockId`, because independently acquired recordings are on
+  * independent clocks, and admission is not a synchronisation claim. An
+  * analysis that needs two recordings on one timeline checks their clocks
+  * through `Agreement.clocks` itself.
   *
   * Keys have separate namespaces for recordings, AOI sets and grids. Insertion
   * appends, replacement retains position, and removal preserves survivor order.
@@ -56,7 +60,6 @@ enum SessionError derives CanEqual:
   */
 final class Session[U <: Unit2D] private (
     val frame: Frame[U],
-    val clock: ClockId,
     val recordings: Vector[(SessionKey, Recording[U])],
     val aoiSets: Vector[(SessionKey, AoiSet[U])],
     val grids: Vector[(SessionKey, Grid[U])]
@@ -69,10 +72,7 @@ final class Session[U <: Unit2D] private (
     Agreement.frames(frame, candidate).left.map(SessionError.Frame(role, key, _)).map(_ => ())
 
   private def checkRecording(key: SessionKey, value: Recording[U]): Either[SessionError, Unit] =
-    for
-      _ <- checkFrame(SessionRole.Recording, key, value.frame)
-      _ <- Agreement.clocks(clock, value.clock).left.map(SessionError.Clock(key, _))
-    yield ()
+    checkFrame(SessionRole.Recording, key, value.frame)
 
   private def checkAoiSet(key: SessionKey, value: AoiSet[U]): Either[SessionError, Unit] =
     checkFrame(SessionRole.AoiSet, key, value.frame)
@@ -121,17 +121,17 @@ final class Session[U <: Unit2D] private (
 
   def addRecording(key: SessionKey, value: Recording[U]): Either[SessionError, Session[U]] =
     put(recordings, SessionRole.Recording, key, value, false, checkRecording).map(entries =>
-      new Session(frame, clock, entries, aoiSets, grids)
+      new Session(frame, entries, aoiSets, grids)
     )
 
   def replaceRecording(key: SessionKey, value: Recording[U]): Either[SessionError, Session[U]] =
     put(recordings, SessionRole.Recording, key, value, true, checkRecording).map(entries =>
-      new Session(frame, clock, entries, aoiSets, grids)
+      new Session(frame, entries, aoiSets, grids)
     )
 
   def removeRecording(key: SessionKey): Either[SessionError, Session[U]] =
     remove(recordings, SessionRole.Recording, key).map(entries =>
-      new Session(frame, clock, entries, aoiSets, grids)
+      new Session(frame, entries, aoiSets, grids)
     )
 
   def aoiSet(key: SessionKey): Option[AoiSet[U]] =
@@ -139,17 +139,17 @@ final class Session[U <: Unit2D] private (
 
   def addAoiSet(key: SessionKey, value: AoiSet[U]): Either[SessionError, Session[U]] =
     put(aoiSets, SessionRole.AoiSet, key, value, false, checkAoiSet).map(entries =>
-      new Session(frame, clock, recordings, entries, grids)
+      new Session(frame, recordings, entries, grids)
     )
 
   def replaceAoiSet(key: SessionKey, value: AoiSet[U]): Either[SessionError, Session[U]] =
     put(aoiSets, SessionRole.AoiSet, key, value, true, checkAoiSet).map(entries =>
-      new Session(frame, clock, recordings, entries, grids)
+      new Session(frame, recordings, entries, grids)
     )
 
   def removeAoiSet(key: SessionKey): Either[SessionError, Session[U]] =
     remove(aoiSets, SessionRole.AoiSet, key).map(entries =>
-      new Session(frame, clock, recordings, entries, grids)
+      new Session(frame, recordings, entries, grids)
     )
 
   def grid(key: SessionKey): Option[Grid[U]] =
@@ -157,20 +157,20 @@ final class Session[U <: Unit2D] private (
 
   def addGrid(key: SessionKey, value: Grid[U]): Either[SessionError, Session[U]] =
     put(grids, SessionRole.Grid, key, value, false, checkGrid).map(entries =>
-      new Session(frame, clock, recordings, aoiSets, entries)
+      new Session(frame, recordings, aoiSets, entries)
     )
 
   def replaceGrid(key: SessionKey, value: Grid[U]): Either[SessionError, Session[U]] =
     put(grids, SessionRole.Grid, key, value, true, checkGrid).map(entries =>
-      new Session(frame, clock, recordings, aoiSets, entries)
+      new Session(frame, recordings, aoiSets, entries)
     )
 
   def removeGrid(key: SessionKey): Either[SessionError, Session[U]] =
     remove(grids, SessionRole.Grid, key).map(entries =>
-      new Session(frame, clock, recordings, aoiSets, entries)
+      new Session(frame, recordings, aoiSets, entries)
     )
 
 object Session:
   /** Empty membership needs no validation beyond the already parsed identities. */
-  def empty[U <: Unit2D](frame: Frame[U], clock: ClockId): Session[U] =
-    new Session(frame, clock, Vector.empty, Vector.empty, Vector.empty)
+  def empty[U <: Unit2D](frame: Frame[U]): Session[U] =
+    new Session(frame, Vector.empty, Vector.empty, Vector.empty)

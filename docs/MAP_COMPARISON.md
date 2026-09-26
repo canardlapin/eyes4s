@@ -37,7 +37,10 @@ agree with an independent rational-arithmetic oracle and the reference at absolu
 near-identical pair whose Pearson r is 1 − 32.4 eps: both implementations snap it to one, so its
 Fisher z equals the identical pair's atanh(1 − 2^-52), about 18.3684.
 
-Native correlation methods reject constant operands, including identical uniform maps; pinned R
+Native correlation methods reject constant operands, including identical uniform maps. Pearson,
+Fisher z, Spearman and distance correlation share one relative check on the raw cell values
+(standard deviation at most `1e-12` times the mean magnitude), applied before ranking or
+double-centring, so cells that differ only by rounding are constant for every method; pinned R
 special-cases identical constants to Pearson one and Fisher z atanh(1 − 2^-52), and scores two
 all-zero vectors the same way. R returns missing for all one-cell
 vector methods; native cosine, Jaccard and L1 similarity are defined there, while correlations

@@ -80,6 +80,12 @@ object LearnedTemplateRecipeCodec:
           (),
           CodecError.Field("heldOutGroups", json, "duplicate groups")
         )
+        // One canonical wire form: encode sorts, so decode refuses any other order.
+        _ <- Either.cond(
+          held == held.sorted,
+          (),
+          CodecError.Field("heldOutGroups", json, "groups must be in ascending order")
+        )
         rows <- Wire
           .field[Vector[Json]](json, "rows")
           .flatMap(_.traverse { row =>

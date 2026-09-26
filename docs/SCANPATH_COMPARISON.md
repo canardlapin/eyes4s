@@ -58,9 +58,14 @@ leaves the query after the last onset unsupported.
 ## Spatiotemporal entropic transport
 
 `FixationTransportConfig.of[U]` checks positive x/y scales in U, positive exact `Span` time scale,
-nonnegative time weight, positive lambda, iteration budget, marginal tolerance and cost-matrix
-limit. `FixationTransport.compare` checks frames and clocks before forming a rectangular cost
-matrix. Duration-derived weights use exact endpoint differences before conversion and scaling.
+nonnegative time weight, positive lambda, iteration budget, marginal tolerance, cost-matrix
+limit and total work limit. The cost-matrix limit bounds one iteration; `maximumWork` bounds
+leftCount × rightCount × iterations for the whole call (default
+`FixationTransportConfig.DefaultMaximumWork` = 5e7, roughly half a second on a laptop JVM), because
+the call is synchronous and cannot be cancelled. Exhausting it before convergence is a
+`WorkLimit` error naming both counts, the completed iterations, the residual and the limit, not
+a `NonConvergence`. `FixationTransport.compare` checks frames and clocks before forming a
+rectangular cost matrix. Duration-derived weights use exact endpoint differences before conversion and scaling.
 Onset differences are subtracted as integers before floating conversion, preserving a one
 microsecond separation even beyond double's exact absolute-integer range.
 
