@@ -35,7 +35,10 @@ vector and density call, warning, error and missing value. Four admitted noncons
 agree with an independent rational-arithmetic oracle and the reference at absolute tolerance
 `MapTolerance = 1e-12`. Cases include exact ties, orthogonal support and identical inputs.
 
-Native correlation methods reject constant operands, including identical uniform maps; pinned R
+Native correlation methods reject constant operands, including identical uniform maps. Pearson,
+Fisher z, Spearman and distance correlation share one relative check on the raw cell values
+(standard deviation at most `1e-12` times the mean magnitude), applied before ranking or
+double-centring, so cells that differ only by rounding are constant for every method; pinned R
 special-cases identical constants to one, even for Fisher z. R returns missing for all one-cell
 vector methods; native cosine, Jaccard and L1 similarity are defined there, while correlations
 remain errors. Zero total mass, empty, signed, nonfinite and wrong-length values cannot construct
