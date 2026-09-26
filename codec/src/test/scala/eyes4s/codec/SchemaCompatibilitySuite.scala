@@ -69,6 +69,11 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
       StudyCodecs.trialCosine[Px].codec
     ),
     Pinned("admission-ledger-v2", StudyV2Mirrors.ledgerVersionTwo, inputs.ledger),
+    Pinned(
+      "admission-ledger-v3",
+      LedgerV3Mirrors.ledgerVersionThree,
+      StudyInputCodecs.trial[Px].ledger
+    ),
     Pinned("study-input-v1", StudyInputFixtures.inputVersionOne, inputs.input),
     Pinned("admission-ledger-v1", StudyInputFixtures.ledgerVersionOne, inputs.ledger),
     Pinned("study-result-v1", StudyResultFixtures.resultVersionOne, results.codec),
@@ -170,6 +175,7 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
       Vector(
         "eyes4s.admission-ledger@1",
         "eyes4s.admission-ledger@2",
+        "eyes4s.admission-ledger@3",
         "eyes4s.binocular-recording@1",
         "eyes4s.manifest@1",
         "eyes4s.measure-distance@1",
