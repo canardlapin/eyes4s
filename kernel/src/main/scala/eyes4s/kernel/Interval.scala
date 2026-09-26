@@ -69,6 +69,16 @@ final case class Interval private (clock: ClockId, onset: Instant, offset: Insta
       that.onset.toMicros >= onset.toMicros && that.offset.toMicros <= offset.toMicros
     }
 
+  /** The part of this interval from `t` on, clamped to the interval: an
+    * instant before the onset keeps the whole interval, and one at or after
+    * the offset leaves the empty interval at the offset. Total, because the
+    * clamped onset never passes the offset.
+    */
+  def clampedFrom(t: Instant): Interval =
+    if t.toMicros <= onset.toMicros then this
+    else if t.toMicros >= offset.toMicros then Interval(clock, offset, offset)
+    else Interval(clock, t, offset)
+
   def render: String = s"[${onset.render}, ${offset.render}) on $clock"
 
 end Interval

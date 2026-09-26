@@ -65,6 +65,14 @@ final class EventSeries[U <: Unit2D] private (
   def clock: ClockId  = recording.clock
   def size: Int       = events.length
 
+  /** The series without its first `count` events and their support. A
+    * suffix of a checked series keeps every invariant the series was checked
+    * for (clocks, ranges inside the recording, non-overlapping order), and
+    * the lineage depends only on the recording.
+    */
+  private[core] def dropLeading(count: Int): EventSeries[U] =
+    new EventSeries(recording, source, events.drop(count), support.drop(count), lineage)
+
   def supported(index: Int): Option[(Event[U], SampleRange)] =
     for
       event <- events.lift(index)

@@ -32,6 +32,9 @@ object StudyCodecDefinitions:
     */
   val studyV2: DefinitionId = DefinitionId.builtIn("eyes4s.study", 2)
 
+  /** A version-2 study plan that also records its initial-fixation policy. */
+  val studyV3: DefinitionId = DefinitionId.builtIn("eyes4s.study", 3)
+
 /** Codecs for the concrete geometry needed by a fixation study. */
 object StudyCodecs:
   def cosine[U <: Unit2D](using
@@ -120,21 +123,35 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
   /** The plan schema that records geometry, declared scales and pairing. */
   val schemaV2: DefinitionId = DefinitionId.builtIn(schema.name, schema.version + 1)
 
-  /** Both plan versions. A version-1 plan maps the whole frame with scales
-    * in frame units and averages every matched reference; a plan is written
-    * as version 1 whenever it means exactly that, so a version-1 plan
-    * re-encodes to its own bytes. The upcast states that meaning in
-    * version-2 members (`StudyCodec.upcastV1`).
+  /** The plan schema that also records the initial-fixation policy. */
+  val schemaV3: DefinitionId = DefinitionId.builtIn(schema.name, schema.version + 2)
+
+  /** The three plan versions. A version-1 plan maps the whole frame with
+    * scales in frame units, averages every matched reference and keeps every
+    * fixation; a version-2 plan keeps every fixation. A plan is written under
+    * the earliest version that expresses it, so version-1 and version-2
+    * plans re-encode to their own bytes. The upcasts state what each earlier
+    * version left implicit (`StudyCodec.upcastV1`, `StudyCodec.upcastV2`).
     */
   val ladder: SchemaLadder[StudyPlan[K, U, P, S, D]] =
     SchemaLadder
-      .of[StudyPlan[K, U, P, S, D]]("study plan", schema)(write)(read(_, v2 = false))
-      .next(_.isVersion1, StudyCodec.upcastV1)(plan =>
-        for
-          base  <- write(plan)
-          extra <- writeV2(plan)
-        yield Wire.append(base.mapObject(_.remove("estimates")), extra)
-      )(read(_, v2 = true))
+      .of[StudyPlan[K, U, P, S, D]]("study plan", schema)(write)(read(_, version = 1))
+      .next(_.isVersion1, StudyCodec.upcastV1)(writeVersion2)(read(_, version = 2))
+      .next(_.keepsAllFixations, StudyCodec.upcastV2)(plan =>
+        writeVersion2(plan).map(
+          Wire.append(
+            _,
+            Json.obj("initialFixations" -> StudyWire.initialFixations(plan.initialFixations))
+          )
+        )
+      )(read(_, version = 3))
+
+  /** The version-2 payload: `estimates` replaced by the declared `scales`. */
+  private def writeVersion2(plan: StudyPlan[K, U, P, S, D]): Either[CodecError, Json] =
+    for
+      base  <- write(plan)
+      extra <- writeV2(plan)
+    yield Wire.append(base.mapObject(_.remove("estimates")), extra)
 
   val codec: VersionedCodec[StudyPlan[K, U, P, S, D]] = ladder.codec
 
@@ -207,7 +224,7 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
       .definition(json, field)
       .flatMap(found => Either.cond(found == expected, (), CodecError.Schema(expected, found)))
 
-  private def read(json: Json, v2: Boolean): Either[CodecError, StudyPlan[K, U, P, S, D]] = for
+  private def read(json: Json, version: Int): Either[CodecError, StudyPlan[K, U, P, S, D]] = for
     _      <- requireId(json, "layout", layout.id)
     _      <- requireId(json, "keySchema", keys.schema)
     _      <- requireId(json, "method", method.id)
@@ -232,7 +249,7 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
     parameterJson <- Wire.field[Json](json, "parameters")
     params        <- parameters.decode(parameterJson)
     plan          <-
-      if !v2 then
+      if version == 1 then
         for
           estimateJson <- Wire.field[Vector[Json]](json, "estimates")
           estimates    <- estimateJson.traverse(StudyWire.readEstimate[U])
@@ -263,7 +280,13 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
           angularJson <- Wire.field[Option[Json]](json, "angularScale")
           angular     <- angularJson.filterNot(_.isNull).traverse(readAngular(_, geometry))
           pairing     <- Wire.field[Json](json, "pairing").flatMap(StudyWire.readPairing)
-          plan        <- StudyPlan
+          initial     <-
+            if version < 3 then Right(InitialFixationPolicy.keepAll[U])
+            else
+              Wire
+                .field[Json](json, "initialFixations")
+                .flatMap(StudyWire.readInitialFixations[U])
+          plan <- StudyPlan
             .configure(
               input,
               layout,
@@ -276,7 +299,8 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
               policy,
               method,
               params,
-              pairing
+              pairing,
+              initial
             )
             .left
             .map(CodecError.Definition.apply)
@@ -380,6 +404,19 @@ private[codec] object StudyCodec:
         "geometry"     -> Json.obj("kind" -> Json.fromString("wholeFrame")),
         "scales"       -> scales,
         "angularScale" -> Json.Null
+      )
+    )
+
+  /** Lift a version-2 plan payload to version 3: the initial-fixation policy
+    * version 2 left implicit is stated, keeping every fixation.
+    */
+  def upcastV2(payload: Json): Json =
+    Wire.append(
+      payload,
+      Json.obj(
+        "initialFixations" -> StudyWire.initialFixations(
+          InitialFixationPolicy.keepAll[Unit2D.Px]
+        )
       )
     )
 
@@ -494,6 +531,46 @@ private[codec] object StudyWire:
       .collectFirst { case (v, `u`) => v }
       .toRight(CodecError.Field("unmatched", json, s"unknown unmatched-focal policy $u"))
   yield StudyPairing(m, controls, unmatched)
+
+  def initialFixations[U <: Unit2D](policy: InitialFixationPolicy[U]): Json = policy match
+    case InitialFixationPolicy.KeepAll()   => Json.obj("kind" -> Json.fromString("keepAll"))
+    case InitialFixationPolicy.DropFirst() => Json.obj("kind" -> Json.fromString("dropFirst"))
+    case InitialFixationPolicy.DropLeadingInClosedDisc(cross, radius) =>
+      Json.obj(
+        "kind"  -> Json.fromString("dropLeadingInClosedDisc"),
+        "cross" -> Json.obj(
+          "x" -> Json.fromDoubleOrNull(cross.x),
+          "y" -> Json.fromDoubleOrNull(cross.y)
+        ),
+        "radiusDegrees" -> Json.fromDoubleOrNull(radius)
+      )
+
+  def readInitialFixations[U <: Unit2D](
+      json: Json
+  ): Either[CodecError, InitialFixationPolicy[U]] =
+    Wire.field[String](json, "kind").flatMap {
+      case "keepAll"                 => Right(InitialFixationPolicy.keepAll[U])
+      case "dropFirst"               => Right(InitialFixationPolicy.dropFirst[U])
+      case "dropLeadingInClosedDisc" =>
+        for
+          cross  <- Wire.field[Json](json, "cross")
+          x      <- DomainWire.finite(cross, "x")
+          y      <- DomainWire.finite(cross, "y")
+          radius <- DomainWire.finite(json, "radiusDegrees")
+          policy <- InitialFixationPolicy
+            .dropLeadingInClosedDisc(Pt[U](x, y), radius)
+            .left
+            .map {
+              case e @ InitialFixationError.NonPositiveRadius(_) =>
+                CodecError.Field("radiusDegrees", json, e.message)
+              case e => CodecError.Field("cross", json, e.message)
+            }
+        yield policy
+      case other =>
+        Left(
+          CodecError.Field("initialFixations", json, s"unknown initial-fixation policy $other")
+        )
+    }
 
   def offWindow(policy: OffWindowPolicy): String = policy match
     case OffWindowPolicy.Exclude   => "exclude"

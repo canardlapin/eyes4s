@@ -14,8 +14,10 @@ and `StudyCodec` machinery available to method authors.
 ## Inspect, compare, execute
 
 `plan.description` exposes named fields with typed parameter values. `plan.diff(other)` reports
-changed fields with their before/after values. Plans have structural equality under those declared
-fields. A change of weighting, bandwidth, phase, failure policy, input digest or registered method
+changed description fields with their before/after values, and `plan.structuralDiff(other)` the
+typed change of each declared field, which `plan.revise(changes)` applies (see
+[comparing plan revisions](FIXATION_STUDIES.md#compare-plan-revisions)). Plans have structural
+equality under those declared fields. A change of weighting, bandwidth, phase, failure policy, input digest or registered method
 version is visible without executing either plan.
 
 `plan.prerequisites(None)` reports the missing input artifact. Supplying the wrong input reports
@@ -1053,7 +1055,10 @@ identifier/version, key schema, key layout, and parameter schema. Missing or uns
 are explicit failures. The pinned [version-one project](../codec/src/test/resources/eyes4s/study-v1.json)
 is exercised by the portable codec suite, so changing defaults cannot silently reinterpret it.
 The study plan and the admission ledger have a second version (`eyes4s.study@2` records the
-geometry, declared scales and units per degree, and the pairing; `eyes4s.admission-ledger@2` the admission policy).
+geometry, declared scales and units per degree, and the pairing; `eyes4s.admission-ledger@2` the
+admission policy) and a third (`eyes4s.study@3` records the
+[initial-fixation policy](FIXATION_STUDIES.md#initial-fixations); `eyes4s.admission-ledger@3` the
+trial inventory).
 Each is a `SchemaLadder`: its codec reads every version with that version's own meaning, writes
 each value under the earliest version that expresses it, so a version-1 document re-encodes to its
 own bytes, and `ladder.lift` rewrites a stored document as the latest version through each

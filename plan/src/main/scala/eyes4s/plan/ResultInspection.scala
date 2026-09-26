@@ -360,8 +360,16 @@ final class StudyInspection[K, U <: Unit2D, S, D] private[plan] (
     val sources: StudySources[K],
     val scales: Vector[ScaleInspection[K, U, S, D]],
     val cell: Option[(String, String)],
-    val windowTallies: Vector[(K, Either[GeometryError, WindowTally])] = Vector.empty
+    val windowTallies: Vector[(K, Either[GeometryError, WindowTally])] = Vector.empty,
+    val initialFixationTallies: Vector[(K, Either[GeometryError, InitialFixationTally])] =
+      Vector.empty
 ):
+  /** One trial's initial fixations the plan's policy dropped, when the
+    * inspection was opened with its plan and input.
+    */
+  def initialFixationTally(key: K): Option[InitialFixationTally] =
+    initialFixationTallies.collectFirst { case (`key`, Right(tally)) => tally }
+
   /** One trial's fixations outside the analysis window and the screen, when
     * the inspection was opened with its plan and input.
     */
@@ -542,7 +550,8 @@ object ResultInspection:
       found.sources,
       found.scales,
       found.cell,
-      plan.windowTallies(input)
+      plan.windowTallies(input),
+      plan.initialFixationTallies(input)
     )
 
   /** Inspect every cell of a temporal result; cell studies share the base

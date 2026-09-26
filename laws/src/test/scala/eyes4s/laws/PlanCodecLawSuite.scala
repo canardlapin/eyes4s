@@ -42,6 +42,8 @@ import org.scalacheck.{Gen, Test}
   * | eyes4s.study@1      | dropped scale, swapped phases, failure policy reset      |
   * | eyes4s.study@2      | window dropped, off-window policy flipped, units per    |
   * |                     | degree moved, degree scale read as native               |
+  * | eyes4s.study@3      | initial-fixation policy reset, cross radius moved; an   |
+  * |                     | upcast that states dropping the first fixation          |
   * | temporal study plan | dropped window, boundary flipped                        |
   * | recording plan      | dropped synchronization mark, detector threshold moved  |
   * }}}
@@ -86,6 +88,10 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
     CodecLaws.roundTrip(studies.codec, configuredPlans, sameStudy)
   )
   checkAll(
+    "initial-fixation study plan",
+    CodecLaws.roundTrip(studies.codec, initialFixationPlans, sameStudy)
+  )
+  checkAll(
     "trial study plan",
     CodecLaws.roundTrip(
       StudyCodecs.trialCosine[Px].codec,
@@ -97,7 +103,7 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
     "study plan versions",
     SchemaLadderLaws.ladder(
       studies.ladder,
-      Gen.oneOf(cosinePlans, configuredPlans),
+      Gen.oneOf(cosinePlans, configuredPlans, initialFixationPlans),
       sameStudy
     )
   )
@@ -250,6 +256,28 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
     assert(survives(studies.codec, configuredPlans, sameStudy))
   }
 
+  test("the initial-fixation law kills a reset policy and a moved radius") {
+    def withPolicy(p: Cosine, policy: InitialFixationPolicy[Px]): Option[Cosine] =
+      p.revise(Vector(StudyChange.InitialFixations(p.initialFixations, policy))).toOption
+    val reset = mutant(studies.codec)(p =>
+      Option
+        .unless(p.keepsAllFixations)(p)
+        .flatMap(withPolicy(_, InitialFixationPolicy.keepAll))
+    )
+    assert(killed(reset, initialFixationPlans, sameStudy))
+    val moved = mutant(studies.codec)(p =>
+      p.initialFixations match
+        case InitialFixationPolicy.DropLeadingInClosedDisc(cross, radius) =>
+          InitialFixationPolicy
+            .dropLeadingInClosedDisc(cross, radius * 2)
+            .toOption
+            .flatMap(withPolicy(p, _))
+        case _ => None
+    )
+    assert(killed(moved, initialFixationPlans, sameStudy))
+    assert(survives(studies.codec, initialFixationPlans, sameStudy))
+  }
+
   test("the trial-plan law kills a reset pairing and a widened control pool") {
     val codec = StudyCodecs.trialCosine[Px].codec
     val same  = (a: TrialPlan, b: TrialPlan) => a.description == b.description
@@ -346,7 +374,7 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
 
   test("the study-plan ladder laws kill a dropped upcast and writing the latest version") {
     val ladder = studies.ladder
-    val plans  = Gen.oneOf(cosinePlans, configuredPlans)
+    val plans  = Gen.oneOf(cosinePlans, configuredPlans, initialFixationPlans)
     assert(LadderMutants.passes(ladder, plans, sameStudy))
     val v1 = ladder.versions.head
     // The v1 -> v2 upcast dropped: a v1 payload is carried into v2 unchanged.
@@ -397,6 +425,41 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
           sameStudy
         )
         .contains("upcasting a vN payload writes exactly what each later version writes")
+    )
+    // A v2 -> v3 upcast that states dropping the first fixation instead of
+    // keeping every one, which is what version 2 meant.
+    val v2        = ladder.versions(1)
+    val dropFirst = Json.obj("kind" -> Json.fromString("dropFirst"))
+    val v3        = ladder.versions(2)
+    assertEquals(
+      LadderMutants.falsified(
+        LadderMutants.rebuilt(ladder)(upcast = { case `v3` =>
+          json =>
+            ladder
+              .upcast(v2, json)
+              .fold(
+                _ => json,
+                (_, lifted) => lifted.mapObject(_.add("initialFixations", dropFirst))
+              )
+        }),
+        plans,
+        sameStudy
+      ),
+      Vector(
+        "a lifted document decodes to the value and re-encodes to the earliest document",
+        "upcasting a vN payload writes exactly what each later version writes"
+      )
+    )
+    // Plans with an initial-fixation policy written as version 2, which
+    // cannot express it.
+    assert(
+      LadderMutants
+        .falsified(
+          LadderMutants.rebuilt(ladder)(expresses = { case `v2` => _ => true }),
+          plans,
+          sameStudy
+        )
+        .contains("a value is written under the earliest version that expresses it")
     )
   }
 
@@ -555,6 +618,29 @@ object PlanCodecLawSuite:
         pairing
       )
     )
+
+  /** Configured plans under every initial-fixation policy: keep all, drop
+    * the first, or drop the leading run near a cross on the admission frame
+    * (only where the plan declares units per degree).
+    */
+  val initialFixationPlans: Gen[StudyPlan[StudyKey, Px, Unit, Similarity, SignedDifference]] =
+    for
+      plan <- configuredPlans
+      b = plan.geometry.admission.bounds
+      fx     <- Gen.oneOf(Gen.const(0.0), Gen.const(0.5), Gen.choose(0.0, 0.999))
+      fy     <- Gen.oneOf(Gen.const(0.0), Gen.const(0.5), Gen.choose(0.0, 0.999))
+      radius <- Gen.oneOf(Gen.choose(0.05, 10.0), Gen.const(1.5))
+      cross = Pt[Px](b.xMin + fx * b.width, b.yMin + fy * b.height)
+      near  = sure(InitialFixationPolicy.dropLeadingInClosedDisc(cross, radius))
+      policy <-
+        if plan.angularScale.isDefined then
+          Gen.oneOf(
+            InitialFixationPolicy.keepAll[Px],
+            InitialFixationPolicy.dropFirst[Px],
+            near
+          )
+        else Gen.oneOf(InitialFixationPolicy.keepAll[Px], InitialFixationPolicy.dropFirst[Px])
+    yield sure(plan.revise(Vector(StudyChange.InitialFixations(plan.initialFixations, policy))))
 
   /** Every pairing rule; the occurrence rules only where the layout has
     * occurrences.

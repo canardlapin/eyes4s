@@ -306,6 +306,7 @@ fails after rewriting, so review the change and run it again.
 | `plan.match-item-conflict` | `MatchItemConflict` | `trialDigests` |
 | `plan.matched-cardinality` | `MatchedCardinality` | `matched`, `focalDigests`, `referenceGroups` |
 | `plan.unmatched-focal-refused` | `UnmatchedFocalRefused` | `focalDigests` |
+| `plan.initial-fixations` | `InitialFixations` | `underlying` |
 
 ### `study-failure` — `StudyFailure`
 
@@ -317,6 +318,27 @@ fails after rewriting, so review the change and run it again.
 | `study-failure.estimation` | `Estimation` | `key`, `underlying` |
 | `study-failure.comparison` | `Comparison` | `left`, `right`, `underlying` |
 | `study-failure.off-window` | `OffWindow` | `key`, `tally` |
+| `study-failure.initial-fixations` | `InitialFixations` | `key`, `underlying` |
+
+### `initial-fixation` — `InitialFixationError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `initial-fixation.non-positive-radius` | `NonPositiveRadius` | `radiusDegrees` |
+| `initial-fixation.non-finite-cross` | `NonFiniteCross` | `x`, `y` |
+| `initial-fixation.cross-off-frame` | `CrossOffFrame` | `x`, `y`, `frame` |
+| `initial-fixation.missing-angular-scale` | `MissingAngularScale` | `radiusDegrees` |
+| `initial-fixation.invalid-tally` | `InvalidTally` | `dropped`, `total`, `droppedMicros`, `totalMicros` |
+| `initial-fixation.no-fixation-kept` | `NoFixationKept` | `dropped`, `droppedMicros` |
+
+### `study-revision` — `StudyRevisionError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `study-revision.duplicate-field` | `DuplicateField` | `field` |
+| `study-revision.stale` | `Stale` | `field`, `stated`, `current` |
+| `study-revision.incomplete-window` | `IncompleteWindow` | `window`, `offWindow` |
+| `study-revision.plan` | `Plan` | `underlying` |
 
 ### `study-result` — `StudyResultError`
 
