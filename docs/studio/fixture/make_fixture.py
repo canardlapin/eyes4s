@@ -351,7 +351,7 @@ with open("FIXTURE.md", "a") as f:
     f.write(f"- Focus query outside window: ret_07 {S['focus_outside']['ret_07']}; enc_03 {S['focus_outside']['enc_03']}. P05's 3 failed queries: 11 of 11 fixations outside.\n")
     ff = S['focus_fixation']
     f.write(f"- Focus fixation: {ff['trial']} fixation {ff['fixation']} = fixations.csv record {ff['record']:,}; image px {ff['image_px']}, screen px {ff['screen_px']}, degrees from image centre (x right, y up) {ff['deg_from_centre_y_up']}; onset {ff['onset_ms']} ms, duration {ff['duration_ms']} ms. Degree convention everywhere: from image centre, x right, y up, declared 35 px/°.\n")
-    f.write(f"- Missing images: " + "; ".join(f"{m}.jpg (encoding trials of {', '.join(v['participants'])}: {v['encoding_trials']})" for m, v in S['missing_images'].items()) + ".\n")
+    f.write(f"- Missing images: " + "; ".join(f"{m}.png (encoding trials of {', '.join(v['participants'])}: {v['encoding_trials']})" for m, v in S['missing_images'].items()) + ".\n")
     f.write(f"- Dataset history: r2 = {S['dataset_history']['r2']}; r3 = {S['dataset_history']['r3']}.\n")
     f.write(f"- Runs: " + "; ".join(f"{k}: {v}" for k, v in S['runs'].items()) + ".\n")
     f.write(f"- Rev 5 (5 scales incl. 8°) pair rows: {S['pair_rows_rev5']:,}. Rev 4: {S['pair_rows_all_scales']:,}.\n")

@@ -50,7 +50,7 @@ Focus query: P17 · ret_07 · beach-042 (Remembered). Matched reference: P17 · 
 - Fixation records outside the image frame (analysis window): 543 of 11,520, in 409 trials. Excluded from maps, reported.
 - Focus query outside window: ret_07 1 of 12 fixations · 4% of duration; enc_03 1 of 13 fixations · 3% of duration. P05's 3 failed queries: 11 of 11 fixations outside.
 - Focus fixation: P17 enc_03 fixation 6 = fixations.csv record 7,214; image px [700, 300], screen px [1148, 456], degrees from image centre (x right, y up) [5.4, 2.4]; onset 2160 ms, duration 412 ms. Degree convention everywhere: from image centre, x right, y up, declared 35 px/°.
-- Missing images: forest-044.jpg (encoding trials of P01, P24: 2); kitchen-081.jpg (encoding trials of P01, P24: 2).
+- Missing images: forest-044.png (encoding trials of P01, P24: 2); kitchen-081.png (encoding trials of P01, P24: 2).
 - Dataset history: r2 = onset units undeclared; Block not mapped to occurrence; r3 = onset declared ms; Block → occurrence; 4 trials change status vs r2 (overlap → admitted 3, admitted → no-fixations 1).
 - Runs: run 5: analysis rev 3 · data r2 · stale; run 6: rev 4 · data r3 · cancelled at Comparing; run 7: rev 4 · data r3 · current; run 8: rev 5 · data r3 · running (moment t3).
 - Rev 5 (5 scales incl. 8°) pair rows: 44,845. Rev 4: 35,876.
