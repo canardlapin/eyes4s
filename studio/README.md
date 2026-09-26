@@ -54,6 +54,12 @@ record the pinned checkout paths.
 `--source NAME=<checkout or URL>` fetches the same pinned commit from somewhere
 else, for example an offline mirror; the checked-out SHA is still verified.
 
+### "not found: …:0.0.0-<sha>"
+
+If sbt cannot resolve `io.github.canardlapin::intaglio-*` or `io.github.bbuchsbaum::scaladock-*`
+at `0.0.0-<sha>`, the pins are not published locally. Run `bash studio/publish-pins.sh`
+once per pin change, then retry.
+
 ### Re-pinning scaladock
 
 Read the "Behaviour changes — check these when updating a pin" section of scaladock's

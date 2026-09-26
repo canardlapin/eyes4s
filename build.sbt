@@ -1094,24 +1094,27 @@ lazy val studioDesktop = project
         (if (scaladockLocal.isDefined) Nil
          else Seq(scaladockPinned("core"), scaladockPinned("fx"))),
     // One JavaFX for the shell and both providers. Intaglio and scaladock
-    // declare it `Provided` (21.0.5 and 24.0.1); since scaladock 3ed443e ScalaFX
-    // is demo-only. Pin the three modules we use and fail on any other version.
-    dependencyOverrides ++= Seq("javafx-base", "javafx-graphics", "javafx-controls").map(
-      "org.openjfx" % _ % javaFxV
-    ),
+    // declare it `Provided` (21.0.5 and 24.0.1), which does not reach us; since
+    // scaladock 3ed443e ScalaFX is demo-only. No override: a clash must reach the
+    // guard below, which requires exactly base, graphics and controls at javaFxV.
     checkModuleBoundaries := {
       val log       = streams.value.log
-      val offenders = update.value.allModules
-        .filter(m => m.organization == "org.openjfx" && m.revision != javaFxV)
+      val allowed   = Set("javafx-base", "javafx-graphics", "javafx-controls")
+      val openjfx   = update.value.allModules.filter(_.organization == "org.openjfx")
+      val offenders = openjfx
+        .filter(m => m.revision != javaFxV || !allowed(m.name))
         .map(m => s"${m.organization}:${m.name}:${m.revision}")
         .distinct
         .sorted
-      if (offenders.nonEmpty)
+      val missing = allowed -- openjfx.map(_.name)
+      if (offenders.nonEmpty || missing.nonEmpty)
         sys.error(
-          s"""|studio-desktop must resolve OpenJFX $javaFxV only, but resolves:
-              |${offenders.map("  - " + _).mkString("\n")}""".stripMargin
+          s"""|studio-desktop must resolve exactly ${allowed.toSeq.sorted
+               .mkString(", ")} at OpenJFX $javaFxV.
+              |Unexpected: ${offenders.mkString(", ")}
+              |Missing: ${missing.toSeq.sorted.mkString(", ")}""".stripMargin
         )
-      else log.info(s"eyes4s-studio-desktop: one OpenJFX version ($javaFxV)")
+      else log.info(s"eyes4s-studio-desktop: OpenJFX $javaFxV base/graphics/controls only")
     },
     // FX tests (StudioFxSuite, S0.4) start the toolkit once per forked JVM.
     Test / fork := true,

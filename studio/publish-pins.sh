@@ -87,6 +87,8 @@ for name in "${names[@]}"; do
   done
   for module in "${modules[@]}"; do commands+=("$module/publishLocal"); done
   echo "publish-pins: publishing $organization ${modules[*]} at $version"
-  (cd "$checkout" && sbt -batch "${commands[@]}")
+  # Providers build under their own defaults: unset CI so a provider's CI-only
+  # -Werror and headless flags cannot fail Studio on warnings its own CI tolerates.
+  (cd "$checkout" && env -u CI -u GITHUB_ACTIONS sbt -batch "${commands[@]}")
   printf '%s\n' "${modules[@]}" >"$marker"
 done
