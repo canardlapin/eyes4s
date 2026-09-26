@@ -46,7 +46,13 @@ object DiagnosticCatalog:
     "UnsupportedExecution",
     "MissingAngularScale",
     "Geometry",
-    "InvalidWindowTally"
+    "InvalidWindowTally",
+    "InvalidOccurrence",
+    "BlankKeyField",
+    "OccurrenceUnavailable",
+    "MatchItemConflict",
+    "MatchedCardinality",
+    "UnmatchedFocalRefused"
   )
   val studyFailure: DiagnosticFamily =
     error("study-failure")(
@@ -422,7 +428,11 @@ object DiagnosticCatalog:
     "UnmatchedFocal",
     "UncontrolledFocal",
     "OffWindowFixations",
-    "NoFixationInWindow"
+    "NoFixationInWindow",
+    "MatchedCardinality",
+    "AmbiguousReferences",
+    "UnmatchedFocalRefused",
+    "MatchItemConflict"
   )
   val recordingFinding: DiagnosticFamily = error("recording-finding")(
     "UndescribedMethod",
@@ -474,7 +484,8 @@ object DiagnosticCatalog:
     "InvalidTransition",
     "InvalidExtent",
     "UnmappableFixation",
-    "CorrectionConflict"
+    "CorrectionConflict",
+    "ItemConflict"
   )
   val admission: DiagnosticFamily = error("admission")(
     "NonPositiveRecord",

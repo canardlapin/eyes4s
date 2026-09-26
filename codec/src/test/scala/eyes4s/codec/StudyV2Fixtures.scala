@@ -62,6 +62,31 @@ object StudyV2Fixtures:
       )
     )
 
+  /** A trial-keyed plan that keeps the second occurrence of each item, uses
+    * every occurrence as a control and refuses focal trials without a match.
+    */
+  def trialPlan: StudyPlan[TrialKey, Px, Unit, Similarity, SignedDifference] =
+    get(
+      StudyPlan.configure(
+        get(ArtifactRef.parse[StudyInput[TrialKey, Px]]("fedcba9876543210")),
+        TrialKey.layout(TrialKeyDefinitions.trialLayout),
+        StudyGeometry.WholeFrame(get(Grid.over(screen, 8, 6))),
+        "retrieval",
+        "encoding",
+        Weight.Duration,
+        Vector(StudyScale.Native(StudyEstimate.Binned())),
+        None,
+        FailurePolicy.RequireAll,
+        StudyMethod.cosine[Px](DefinitionId.cosine),
+        (),
+        StudyPairing(
+          MatchedReferences.Select(OccurrenceChoice.At(get(TrialOccurrence.of(2)))),
+          ControlReferences.AllOccurrences,
+          UnmatchedFocalPolicy.Refuse
+        )
+      )
+    )
+
   private val a1 = StudyKey("p1", "a", "encode")
   private val a2 = StudyKey("p2", "a", "encode")
 

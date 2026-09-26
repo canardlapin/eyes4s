@@ -36,6 +36,14 @@ class CodecLawsSuite extends munit.DisciplineSuite:
   )
   checkAll("key", CodecLaws.roundTrip(key, keys, (a: StudyKey, b: StudyKey) => a == b))
   checkAll(
+    "trial key",
+    CodecLaws.roundTrip(
+      StudyCodecs.trialKey(TrialKeyDefinitions.trialKey),
+      PlanCodecLawSuite.trialKeys,
+      (a: TrialKey, b: TrialKey) => a == b
+    )
+  )
+  checkAll(
     "conditional entries",
     CodecLaws.roundTrip(
       VersionedCodec.entries(id("map"), key, string),

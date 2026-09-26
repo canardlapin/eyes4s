@@ -59,6 +59,9 @@ enum QuarantineCause derives CanEqual:
     */
   case CorrectionConflict(first: Int, second: Int)
 
+  /** Records of one trial identity name different match items. */
+  case ItemConflict(items: Vector[String])
+
   def message: String = this match
     case RejectedRecords     => "one or more source rows were rejected"
     case DuplicateOrdinals   => "duplicate fixation ordinals"
@@ -71,6 +74,7 @@ enum QuarantineCause derives CanEqual:
       s"fixation $i at ($x, $y) cannot be mapped from ${from.name} to ${to.name}"
     case CorrectionConflict(first, second) =>
       s"correction rules $first and $second both apply to the trial"
+    case ItemConflict(items) => s"the trial's records name different match items $items"
 
 object QuarantineCause:
   /** Total over the scanpath constructor's errors; each case keeps its operands. */

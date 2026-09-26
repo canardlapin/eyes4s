@@ -48,6 +48,11 @@ class StudyV2JvmSuite extends munit.FunSuite:
       StudyV2Mirrors.studyVersionTwo
     ),
     (
+      "study-trial-v2.json",
+      get(StudyCodecs.trialCosine[Px].codec.encode(StudyV2Fixtures.trialPlan)),
+      StudyV2Mirrors.trialStudyVersionTwo
+    ),
+    (
       "admission-ledger-v2.json",
       get(ledgers.ledger.encode(StudyV2Fixtures.ledger)),
       StudyV2Mirrors.ledgerVersionTwo
@@ -70,6 +75,9 @@ class StudyV2JvmSuite extends munit.FunSuite:
   test("study-v2.json and admission-ledger-v2.json re-encode byte-identically") {
     val plan = get(plans.codec.parse(resource("study-v2.json")))
     assertEquals(get(plans.codec.encode(plan)).spaces2, resource("study-v2.json"))
+    val trials = StudyCodecs.trialCosine[Px].codec
+    val trial  = get(trials.parse(resource("study-trial-v2.json")))
+    assertEquals(get(trials.encode(trial)).spaces2, resource("study-trial-v2.json"))
     val ledger = get(ledgers.ledger.parse(resource("admission-ledger-v2.json")))
     assertEquals(
       get(ledgers.ledger.encode(ledger)).spaces2,

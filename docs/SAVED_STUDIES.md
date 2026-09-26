@@ -49,8 +49,10 @@ uses the layout's canonical key ordering.
 `work.preview` returns `Either[PlanError, StudyPreview[K, U]]`: a thin inspection
 facade over those same schedules. It exposes `focalKeys`, `referenceKeys`,
 `excludedPhases`, `failurePolicy`, `reductionOrientation` (`ByLeft`, meaning
-the focal trial) and `windowTallies`, each trial's fixations outside the analysis
-window and the screen, with their `windowSummary`. Repeated stimulus occurrences with distinct full keys remain
+the focal trial), `windowTallies`, each trial's fixations outside the analysis
+window and the screen, with their `windowSummary`, the plan's `pairing` and its
+`matchedCardinality`, the same value that refuses execution when a
+one-reference rule meets several matched references. Repeated stimulus occurrences with distinct full keys remain
 separate trials. Schedule indices and duplicate indices address the two key
 vectors. No maps or scores are computed by preview creation or paging.
 
@@ -326,7 +328,8 @@ estimation.
 ## Input payloads and admission ledgers
 
 `StudyInputCodecs.study[U]` supplies two versioned codecs for the ordinary participant/stimulus/phase
-route; `new StudyInputCodec(schema, ledgerSchema, layout, keyCodec)` builds them for a custom key
+route, and `StudyInputCodecs.trial[U]` (with `StudyCodecs.trialCosine`) the trial-keyed route of
+`eyes4s.trial-key@1` keys under the `eyes4s.participant-phase-trial-occurrence@1` layout; `new StudyInputCodec(schema, ledgerSchema, layout, keyCodec)` builds them for a custom key
 layout, so repeated presentations are kept apart by an explicit occurrence or session field in `K`
 rather than by a label or digest. `input` encodes a `StudyInput[K, U]` (`eyes4s.study-input@1`):
 the layout and key schema identities, the spatial unit, the declared input digest, a document
@@ -1030,7 +1033,7 @@ identifier/version, key schema, key layout, and parameter schema. Missing or uns
 are explicit failures. The pinned [version-one project](../codec/src/test/resources/eyes4s/study-v1.json)
 is exercised by the portable codec suite, so changing defaults cannot silently reinterpret it.
 The study plan and the admission ledger have a second version (`eyes4s.study@2` records the
-geometry, declared scales and units per degree; `eyes4s.admission-ledger@2` the admission policy).
+geometry, declared scales and units per degree, and the pairing; `eyes4s.admission-ledger@2` the admission policy).
 Their codecs read both versions, each with its own meaning, and write each value under the earliest
 version that expresses it, so a version-1 document re-encodes to its own bytes. The other schemas
 have one version and no historical migration;

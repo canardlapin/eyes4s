@@ -63,6 +63,11 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
   private val pinned: Vector[Pinned[?]] = Vector(
     Pinned("study-v1", SavedStudyFixtures.versionOne, studies.codec),
     Pinned("study-v2", StudyV2Mirrors.studyVersionTwo, studies.codec),
+    Pinned(
+      "study-trial-v2",
+      StudyV2Mirrors.trialStudyVersionTwo,
+      StudyCodecs.trialCosine[Px].codec
+    ),
     Pinned("admission-ledger-v2", StudyV2Mirrors.ledgerVersionTwo, inputs.ledger),
     Pinned("study-input-v1", StudyInputFixtures.inputVersionOne, inputs.input),
     Pinned("admission-ledger-v1", StudyInputFixtures.ledgerVersionOne, inputs.ledger),

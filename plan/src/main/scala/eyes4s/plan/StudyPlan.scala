@@ -110,6 +110,16 @@ enum PlanError derives CanEqual:
       outsideWindowMicros: Long,
       totalMicros: Long
   )
+  case InvalidOccurrence(value: Int)
+  case BlankKeyField(field: String)
+  case OccurrenceUnavailable(layout: DefinitionId, matched: MatchedReferences)
+  case MatchItemConflict(keyDigests: Vector[String])
+  case MatchedCardinality(
+      matched: MatchedReferences,
+      focalDigests: Vector[String],
+      referenceDigests: Vector[String]
+  )
+  case UnmatchedFocalRefused(focalDigests: Vector[String])
 
   def message: String = this match
     case InvalidDefinition(n, v) =>
@@ -138,13 +148,35 @@ enum PlanError derives CanEqual:
       s"A window tally must partition its trial: outsideScreen=$screen and outsideWindow=$window " +
         s"of total=$total, outsideScreenMicros=$screenMicros and outsideWindowMicros=$windowMicros " +
         s"of totalMicros=$totalMicros."
+    case InvalidOccurrence(value) => s"An occurrence counts presentations from 1, got $value."
+    case BlankKeyField(field)     => s"Trial key field '$field' must not be blank."
+    case OccurrenceUnavailable(layout, matched) =>
+      s"Matched-reference rule ${matched.render} needs occurrences, but layout " +
+        s"${layout.name}@${layout.version} declares none."
+    case MatchItemConflict(digests) =>
+      s"Trials $digests share a trial identity but name different match items."
+    case MatchedCardinality(matched, focal, references) =>
+      s"Under ${matched.render}, focal trials $focal have more than one matched reference and " +
+        s"reference groups $references more than one reference per item; choose an occurrence."
+    case UnmatchedFocalRefused(focal) =>
+      s"Focal trials $focal have no matched reference, and the plan refuses unmatched focal trials."
 
-/** A registered interpretation of user keys. Identity and matching stay in K. */
+/** A registered interpretation of user keys. Identity and matching stay in K.
+  *
+  * `occurrence`, when present, says which presentation of its item a trial
+  * is, so a pairing rule can choose among repeated references. `trial`, when
+  * present, names the trial within its participant and phase: the layout then
+  * identifies a trial by participant, phase, trial and occurrence, and its
+  * `stimulus` is the item the trial is matched on, an attribute that must be
+  * the same for every key with that identity.
+  */
 final class StudyLayout[K](
     val id: DefinitionId,
     val participant: Projection[K, String],
     val stimulus: Projection[K, String],
-    val phase: Projection[K, String]
+    val phase: Projection[K, String],
+    val occurrence: Option[Projection[K, TrialOccurrence]] = None,
+    val trial: Option[Projection[K, String]] = None
 )(using val digest: KeyDigest[K], val ordering: Ordering[K])
 
 /** Ordinary study key; custom product keys work through StudyLayout and a codec. */
@@ -781,16 +813,19 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
     val estimates: Vector[StudyEstimate[U]],
     val policy: FailurePolicy,
     val method: StudyMethod[P, U, S, D],
-    val parameters: P
+    val parameters: P,
+    val pairing: StudyPairing
 )(using unit: UnitLabel[U]):
   /** The grid every density lies on. */
   def grid: Grid[U] = geometry.grid
 
   /** True when the plan means exactly what a version-1 saved study meant:
-    * the whole admission frame and scales declared in frame units.
+    * the whole admission frame, scales declared in frame units, and every
+    * matched reference averaged.
     */
   def isVersion1: Boolean =
-    geometry.isInstanceOf[StudyGeometry.WholeFrame[?]] && angularScale.isEmpty &&
+    pairing.isVersion1 && geometry.isInstanceOf[StudyGeometry.WholeFrame[?]] &&
+      angularScale.isEmpty &&
       scales.forall {
         case StudyScale.Native(_)  => true
         case StudyScale.Angular(_) => false
@@ -842,7 +877,8 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
         s"scale.$i" -> (Text("degrees") +: s.angularParameters.flatMap { case (k, v) =>
           Vector(Text(k), v)
         })
-      }
+      } ++
+      (if pairing.isVersion1 then Vector.empty else pairing.description)
 
   override def equals(other: Any): Boolean = other match
     case that: StudyPlan[?, ?, ?, ?, ?] => description == that.description
@@ -902,7 +938,8 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
       angularScale,
       policy,
       method,
-      parameters
+      parameters,
+      pairing
     )
 
   /** One scale's method specification; identical for pure and resumable execution. */
@@ -1014,12 +1051,16 @@ object StudyPlan:
       None,
       policy,
       method,
-      parameters
+      parameters,
+      StudyPairing.version1
     )
 
-  /** A study with an explicit geometry and scales. An angular scale is
-    * resolved through `angularScale`, whose frame must be the geometry's
-    * admission frame: one units-per-degree value per plan.
+  /** A study with an explicit geometry, scales and pairing. An angular scale
+    * is resolved through `angularScale`, whose frame must be the geometry's
+    * admission frame: one units-per-degree value per plan. The pairing
+    * defaults to exactly one matched reference per focal trial
+    * ([[StudyPairing.default]]); `SameOccurrence` and `Select` need a layout
+    * that declares occurrences.
     */
   def configure[K, U <: Unit2D, P, S, D](
       input: ArtifactRef[StudyInput[K, U]],
@@ -1032,9 +1073,18 @@ object StudyPlan:
       angularScale: Option[LinearAngularScale[U]],
       policy: FailurePolicy,
       method: StudyMethod[P, U, S, D],
-      parameters: P
+      parameters: P,
+      pairing: StudyPairing = StudyPairing.default
   )(using UnitLabel[U]): Either[PlanError, StudyPlan[K, U, P, S, D]] =
+    val needsOccurrence = pairing.matched match
+      case MatchedReferences.SameOccurrence | MatchedReferences.Select(_) => true
+      case MatchedReferences.RequireOne | MatchedReferences.MeanOfAll     => false
     for
+      _ <- Either.cond(
+        !needsOccurrence || layout.occurrence.isDefined,
+        (),
+        PlanError.OccurrenceUnavailable(layout.id, pairing.matched)
+      )
       _ <- Either.cond(
         focalPhase.trim.nonEmpty && referencePhase.trim.nonEmpty && focalPhase != referencePhase,
         (),
@@ -1080,5 +1130,6 @@ object StudyPlan:
       estimates,
       policy,
       method,
-      parameters
+      parameters,
+      pairing
     )

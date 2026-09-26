@@ -37,6 +37,15 @@ object StudyInputCodecs:
   val scanpath: DefinitionId = DefinitionId.scanpath
   val ledger: DefinitionId   = DefinitionId.admissionLedger
 
+  /** The trial-keyed route, matching `StudyCodecs.trialCosine`. */
+  def trial[U <: Unit2D: UnitLabel]: StudyInputCodec[TrialKey, U] =
+    new StudyInputCodec(
+      input,
+      ledger,
+      TrialKey.layout(TrialKeyDefinitions.trialLayout),
+      StudyCodecs.trialKey(TrialKeyDefinitions.trialKey)
+    )
+
   /** The ordinary participant/stimulus/phase route, matching `StudyCodecs.cosine`. */
   def study[U <: Unit2D: UnitLabel]: StudyInputCodec[StudyKey, U] =
     new StudyInputCodec(
@@ -646,6 +655,11 @@ private[codec] object StudyInputCodec:
               "kind"   -> Json.fromString("correctionConflict"),
               "first"  -> Json.fromInt(first),
               "second" -> Json.fromInt(second)
+            )
+          case QuarantineCause.ItemConflict(items) =>
+            Json.obj(
+              "kind"  -> Json.fromString("itemConflict"),
+              "items" -> Json.arr(items.map(Json.fromString)*)
             ))
       )
 
@@ -757,6 +771,8 @@ private[codec] object StudyInputCodec:
                 first  <- Wire.field[Int](cause, "first")
                 second <- Wire.field[Int](cause, "second")
               yield QuarantineCause.CorrectionConflict(first, second)
+            case "itemConflict" =>
+              Wire.field[Vector[String]](cause, "items").map(QuarantineCause.ItemConflict.apply)
             case other =>
               Left(CodecError.Field("kind", cause, s"unknown quarantine cause $other"))
         yield AdmissionReason.Quarantined(records, value)

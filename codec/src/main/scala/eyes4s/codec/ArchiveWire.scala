@@ -222,6 +222,24 @@ private[codec] object TemporalWire:
       case UnsupportedExecution(m, c) =>
         tagged("unsupportedExecution", "method" -> Wire.id(m), "capability" -> text(c.toString))
       case MissingAngularScale(scale) => tagged("missingAngularScale", "scale" -> int(scale))
+      case InvalidOccurrence(value)   => tagged("invalidOccurrence", "value" -> int(value))
+      case BlankKeyField(field)       => tagged("blankKeyField", "field" -> text(field))
+      case OccurrenceUnavailable(layout, matched) =>
+        tagged(
+          "occurrenceUnavailable",
+          "layout"  -> Wire.id(layout),
+          "matched" -> StudyWire.matched(matched)
+        )
+      case MatchItemConflict(digests) => tagged("matchItemConflict", "keys" -> strings(digests))
+      case MatchedCardinality(matched, focal, references) =>
+        tagged(
+          "matchedCardinality",
+          "matched"    -> StudyWire.matched(matched),
+          "focal"      -> strings(focal),
+          "references" -> strings(references)
+        )
+      case UnmatchedFocalRefused(focal) =>
+        tagged("unmatchedFocalRefused", "focal" -> strings(focal))
       case Geometry(e) => tagged("geometry", "error" -> ResultWire.geometryError(e))
       case InvalidWindowTally(screen, window, total, screenMicros, windowMicros, totalMicros) =>
         tagged(
@@ -275,6 +293,23 @@ private[codec] object TemporalWire:
         yield UnsupportedExecution(method, value)
       case "missingAngularScale" =>
         Wire.field[Int](json, "scale").map(MissingAngularScale.apply)
+      case "invalidOccurrence" => Wire.field[Int](json, "value").map(InvalidOccurrence.apply)
+      case "blankKeyField"     => str("field").map(BlankKeyField.apply)
+      case "occurrenceUnavailable" =>
+        (
+          Wire.definition(json, "layout"),
+          Wire.field[Json](json, "matched").flatMap(StudyWire.readMatched)
+        ).mapN(OccurrenceUnavailable.apply)
+      case "matchItemConflict" =>
+        Wire.field[Vector[String]](json, "keys").map(MatchItemConflict.apply)
+      case "matchedCardinality" =>
+        (
+          Wire.field[Json](json, "matched").flatMap(StudyWire.readMatched),
+          Wire.field[Vector[String]](json, "focal"),
+          Wire.field[Vector[String]](json, "references")
+        ).mapN(MatchedCardinality.apply)
+      case "unmatchedFocalRefused" =>
+        Wire.field[Vector[String]](json, "focal").map(UnmatchedFocalRefused.apply)
       case "geometry" => error.flatMap(ResultWire.readGeometryError).map(Geometry.apply)
       case "invalidWindowTally" =>
         (

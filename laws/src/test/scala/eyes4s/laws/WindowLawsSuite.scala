@@ -22,3 +22,4 @@ class WindowLawsSuite extends munit.DisciplineSuite:
   checkAll("LinearAngularScale", WindowLaws.angularScale(Tolerance.exactish))
   checkAll("Correction", WindowLaws.correction(Tolerance.exactish))
   checkAll("WindowTally", WindowLaws.tally)
+  checkAll("MatchedReferences", PairingLaws.pairing)

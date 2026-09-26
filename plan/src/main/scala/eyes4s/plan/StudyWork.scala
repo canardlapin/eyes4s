@@ -62,6 +62,30 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
   /** Totals of [[windowTallies]]: records outside the window and the screen. */
   def windowSummary: WindowSummary = WindowSummary.of(windowTallies)
 
+  /** How the plan pairs focal trials with matched and control references. */
+  val pairing: StudyPairing = plan.pairing
+
+  /** Whether every focal trial's matched reference is well defined under the
+    * plan's pairing, computed once from this exact matched schedule. The same
+    * value drives preflight, the refusal of [[work]] and [[preview]].
+    */
+  lazy val matchedCardinality: Either[PlanError, MatchedCardinality[K]] =
+    StudyPairingWork.cardinality(
+      plan.layout,
+      plan.pairing,
+      input.trials.rows.map(_.key),
+      referenceIndices.map(i => input.trials.rows(i).key),
+      matched
+    )
+
+  /** The refusal the pairing implies for this input, if any. A version-1
+    * pairing on a layout without trial identity never refuses, so its matched
+    * schedule is not traversed before execution.
+    */
+  private[plan] def pairingRefusal: Option[PlanError] =
+    if !plan.pairing.canRefuse && plan.layout.trial.isEmpty then None
+    else matchedCardinality.fold(Some(_), _.refusal(plan.layout.digest))
+
   /** Inspect the exact schedules and reduction choices without numerical work. */
   def preview: Either[PlanError, StudyPreview[K, U]] =
     checkUnchanged.map { _ =>
@@ -76,7 +100,9 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
         matched,
         controls,
         plan.policy,
-        windowTallies
+        windowTallies,
+        plan.pairing,
+        matchedCardinality
       )
     }
 
@@ -133,7 +159,9 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
       occupancy: (K, Scanpath[U]) => Either[StudyFailure[K], PointMeasure[U]],
       context: Vector[(String, Provenance.Param)]
   ): Either[PlanError, StudyCursor[K, U, S, D]] =
-    checkUnchanged.flatMap(_ => StudyWork.begin(plan, this, budget, occupancy, context))
+    checkUnchanged
+      .flatMap(_ => pairingRefusal.toLeft(()))
+      .flatMap(_ => StudyWork.begin(plan, this, budget, occupancy, context))
 
 object PreparedStudy:
   private[plan] def build[K, U <: Unit2D, P, S, D](
@@ -169,22 +197,13 @@ object PreparedStudy:
           .left
           .map(StudyFailure.Frame(t.key, _))
       )
-      matchedDesign = Pairing
-        .between[K, K]
-        .sameOn(plan.layout.participant, plan.layout.participant)
-        .sameOn(plan.layout.stimulus, plan.layout.stimulus)
-        .all
-      controlDesign = Pairing
-        .between[K, K]
-        .sameOn(plan.layout.participant, plan.layout.participant)
-        .differentOn(plan.layout.stimulus, plan.layout.stimulus)
-        .all
+      relations = StudyPairingWork.relations(plan.layout, plan.pairing, right)
       matched <- DirectedPairSchedule
-        .exhaustive(left, right, matchedDesign.relation, budget)
+        .exhaustive(left, right, relations._1, budget)
         .left
         .map(PlanError.Schedule.apply)
       controls <- DirectedPairSchedule
-        .exhaustive(left, right, controlDesign.relation, budget)
+        .exhaustive(left, right, relations._2, budget)
         .left
         .map(PlanError.Schedule.apply)
     yield new PreparedStudy(

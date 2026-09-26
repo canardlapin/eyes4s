@@ -50,7 +50,8 @@ enum Remedy derives CanEqual:
     ResolveDuplicateTrials, SupplyMatchedReference, SupplyControlReference,
     SupplyViewingGeometry, SupplyCommonMarks, ReviseSynchronizationMarks, ReviseViewingOrArea,
     ReviseDetectorParameters, SupplyEpoch, ReviseWindow, AcceptMissingObservation,
-    ReviewAnalysisWindow, ReviseScaleDeclaration
+    ReviewAnalysisWindow, ReviseScaleDeclaration, ChooseMatchedReference,
+    ResolveMatchItemConflict
 
 /** Outcomes that only execution decides. Preflight lists them instead of guessing. */
 enum UncheckedAspect derives CanEqual:
@@ -121,6 +122,23 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
     */
   case NoFixationInWindow(key: K, tally: WindowTally)
 
+  /** The focal trial has more than one matched reference: a blocker under a
+    * rule that requires one, a warning under the explicitly averaging
+    * `MeanOfAll`.
+    */
+  case MatchedCardinality(key: K, references: Vector[K], matched: MatchedReferences)
+
+  /** References of one participant and item that the control pool should
+    * reduce to one under the pairing rule, but cannot.
+    */
+  case AmbiguousReferences(references: Vector[K], matched: MatchedReferences)
+
+  /** The focal trial has no matched reference and the plan refuses such trials. */
+  case UnmatchedFocalRefused(key: K)
+
+  /** Keys the layout identifies as one trial name different match items. */
+  case MatchItemConflict(trials: Vector[K])
+
   def keys: Vector[K] = this match
     case FrameMismatch(k, _)          => Vector(k)
     case DuplicateTrial(k, _, _)      => Vector(k)
@@ -128,6 +146,10 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
     case UncontrolledFocal(k)         => Vector(k)
     case OffWindowFixations(k, _, _)  => Vector(k)
     case NoFixationInWindow(k, _)     => Vector(k)
+    case MatchedCardinality(k, rs, _) => k +: rs
+    case AmbiguousReferences(rs, _)   => rs
+    case UnmatchedFocalRefused(k)     => Vector(k)
+    case MatchItemConflict(ks)        => ks
     case UndescribedMethod(_)         => Vector.empty
     case InconsistentDescriptor(_, _) => Vector.empty
     case MissingArtifact(_)           => Vector.empty
@@ -136,8 +158,11 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
     case Refused(_)                   => Vector.empty
 
   def severity: Severity = this match
-    case MissingArtifact(_) | ArtifactMismatch(_, _) | OverBudget(_) | Refused(_) =>
+    case MissingArtifact(_) | ArtifactMismatch(_, _) | OverBudget(_) | Refused(_) |
+        AmbiguousReferences(_, _) | UnmatchedFocalRefused(_) | MatchItemConflict(_) =>
       Severity.Blocker
+    case MatchedCardinality(_, _, matched) =>
+      if matched == MatchedReferences.MeanOfAll then Severity.Warning else Severity.Blocker
     case UndescribedMethod(_) | InconsistentDescriptor(_, _) | FrameMismatch(_, _) |
         DuplicateTrial(_, _, _) | UnmatchedFocal(_) | UncontrolledFocal(_) |
         OffWindowFixations(_, _, _) | NoFixationInWindow(_, _) =>
@@ -149,7 +174,8 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
     case MissingArtifact(_) | ArtifactMismatch(_, _) => FindingClass.UnavailableInput
     case FrameMismatch(_, _)                         => FindingClass.IncompatibleInput
     case DuplicateTrial(_, _, _) | UnmatchedFocal(_) | UncontrolledFocal(_) |
-        OffWindowFixations(_, _, _) | NoFixationInWindow(_, _) =>
+        OffWindowFixations(_, _, _) | NoFixationInWindow(_, _) | MatchedCardinality(_, _, _) |
+        AmbiguousReferences(_, _) | UnmatchedFocalRefused(_) | MatchItemConflict(_) =>
       FindingClass.DataDependent
 
   def remedy: Remedy = this match
@@ -165,6 +191,10 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
     case UncontrolledFocal(_)         => Remedy.SupplyControlReference
     case OffWindowFixations(_, _, _)  => Remedy.ReviewAnalysisWindow
     case NoFixationInWindow(_, _)     => Remedy.ReviewAnalysisWindow
+    case MatchedCardinality(_, _, _)  => Remedy.ChooseMatchedReference
+    case AmbiguousReferences(_, _)    => Remedy.ChooseMatchedReference
+    case UnmatchedFocalRefused(_)     => Remedy.SupplyMatchedReference
+    case MatchItemConflict(_)         => Remedy.ResolveMatchItemConflict
 
   def message: String = this match
     case UndescribedMethod(m) =>
@@ -192,6 +222,19 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
     case NoFixationInWindow(k, t) =>
       s"Trial $k has no fixation inside the analysis window (${t.outsideWindow} outside the " +
         s"window, ${t.outsideScreen} outside the screen, of ${t.total}); it fails at every scale."
+    case MatchedCardinality(k, rs, matched) =>
+      if matched == MatchedReferences.MeanOfAll then
+        s"Focal trial $k has ${rs.size} matched references $rs; MeanOfAll averages them."
+      else
+        s"Focal trial $k has ${rs.size} matched references $rs; ${matched.render} requires " +
+          "one, so choose an occurrence."
+    case AmbiguousReferences(rs, matched) =>
+      s"References $rs share a participant and item; under ${matched.render} the control pool " +
+        "needs one of them, so choose an occurrence."
+    case UnmatchedFocalRefused(k) =>
+      s"Focal trial $k has no matched reference, and the plan refuses unmatched focal trials."
+    case MatchItemConflict(ks) =>
+      s"Trials $ks are one trial by identity but name different match items."
 
 /** Findings for the synchronized, angular, detected and AOI-assigned recording recipe. */
 enum RecordingFinding extends PreflightFinding derives CanEqual:
@@ -616,6 +659,11 @@ object Preflight:
     case PlanError.MissingAngularScale(_) | PlanError.Geometry(_) |
         PlanError.InvalidWindowTally(_, _, _, _, _, _) =>
       Remedy.ReviseScaleDeclaration
+    case PlanError.InvalidOccurrence(_) | PlanError.BlankKeyField(_) |
+        PlanError.OccurrenceUnavailable(_, _) | PlanError.MatchedCardinality(_, _, _) =>
+      Remedy.ChooseMatchedReference
+    case PlanError.MatchItemConflict(_)     => Remedy.ResolveMatchItemConflict
+    case PlanError.UnmatchedFocalRefused(_) => Remedy.SupplyMatchedReference
 
   private[plan] def remedyFor(error: TemporalStudyError): Remedy = error match
     case TemporalStudyError.Input(e)     => remedyFor(e)
@@ -726,13 +774,26 @@ object Preflight:
       controls <- complete(work.controls).left.map(e =>
         StudyFinding.OverBudget(BudgetError.Schedule(e))
       )
-    yield work.matched.ambiguities.map {
-      case PairingAmbiguity.DuplicateLeft(key, positions) =>
-        StudyFinding.DuplicateTrial(key, PairingSide.Focal, positions)
-      case PairingAmbiguity.DuplicateRight(key, positions) =>
-        StudyFinding.DuplicateTrial(key, PairingSide.Reference, positions)
-    } ++ matched.unmatchedLeft.map(StudyFinding.UnmatchedFocal(_)) ++
-      controls.unmatchedLeft.map(StudyFinding.UncontrolledFocal(_))
+      cardinality <- work.matchedCardinality.left.map {
+        case PlanError.Schedule(e) => StudyFinding.OverBudget(BudgetError.Schedule(e))
+        case other                 => StudyFinding.Refused(other)
+      }
+    yield
+      val refuse = work.pairing.unmatched == UnmatchedFocalPolicy.Refuse
+      val policy = work.pairing.matched
+      work.matched.ambiguities.map {
+        case PairingAmbiguity.DuplicateLeft(key, positions) =>
+          StudyFinding.DuplicateTrial(key, PairingSide.Focal, positions)
+        case PairingAmbiguity.DuplicateRight(key, positions) =>
+          StudyFinding.DuplicateTrial(key, PairingSide.Reference, positions)
+      } ++ cardinality.itemConflicts.map(StudyFinding.MatchItemConflict(_)) ++
+        matched.unmatchedLeft.map(k =>
+          if refuse then StudyFinding.UnmatchedFocalRefused(k)
+          else StudyFinding.UnmatchedFocal(k)
+        ) ++
+        cardinality.multiple.map((k, rs) => StudyFinding.MatchedCardinality(k, rs, policy)) ++
+        cardinality.blockingReferences.map(StudyFinding.AmbiguousReferences(_, policy)) ++
+        controls.unmatchedLeft.map(StudyFinding.UncontrolledFocal(_))
 
   private def complete[KL, KR](
       schedule: DirectedPairSchedule[KL, KR]

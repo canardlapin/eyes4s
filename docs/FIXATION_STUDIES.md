@@ -28,7 +28,12 @@ values to your study's declared geometry before using a different recording setu
 `FixationColumns.of` names the ordinal, x, y, onset, duration and support-count columns.
 `FixationKeyReader.study` names participant, stimulus and phase columns. The names are interpreted
 only at this raw-file boundary; the library constructs typed `StudyKey` values for analysis.
-Custom keys use a typed `FixationKeyReader` and the same importer. The built-in reader assigns
+Custom keys use a typed `FixationKeyReader` and the same importer. `FixationKeyReader.trial`
+reads a `TrialKey`: participant, phase, trial label and occurrence (1 when no occurrence column is
+named) identify the trial, and the item it is matched on is an attribute beside that identity. Two
+retrieval trials may share a display and remember different items, and a retrieval trial may name
+an item no encoding trial showed. Records of one trial identity that name different items
+quarantine the trial with `QuarantineCause.ItemConflict(items)`. The built-in reader assigns
 a distinct nominal clock to each trial; it does not assert synchronization between trials.
 
 Pass the source `TimestampUnit` explicitly. Decimal timestamps round to the nearest microsecond,
@@ -91,6 +96,32 @@ resolves through the plan's one `LinearAngularScale` (a declared, uniform units-
 the admission frame, not a calibration). The description records the degrees and the units per
 degree beside the resolved pixel bandwidth. Degrees are measured from the frame centre with `y`
 upward (`LinearAngularScale.angular`, and `on(window)` for degrees from the image centre).
+
+## Repeated items and matched references
+
+When an item is studied more than once, a focal trial can have several matched references.
+`StudyPlan.configure` takes a `StudyPairing`; its default, `StudyPairing.default`, requires exactly
+one (`MatchedReferences.RequireOne`). The alternatives need a layout with occurrences, such as
+`TrialKey.layout`: `SameOccurrence` pairs a retrieval trial of occurrence n with the encoding trial
+of occurrence n, and `Select(First | Last | At(n))` keeps one occurrence of each item.
+`MeanOfAll`, the version-1 meaning, averages every matched reference and must be chosen explicitly.
+The control pool applies the same selection, so each other item contributes one reference per
+participant (`ControlReferences.SameSelection`); `ControlReferences.AllOccurrences` uses every
+occurrence as a control. A focal trial without a matched reference is reported as no match
+(`UnmatchedFocalPolicy.ReportNoMatch`) or refuses the study (`Refuse`).
+
+`PreparedStudy.matchedCardinality` is computed once from the prepared matched schedule: focal
+trials with several matched references and their references, reference groups the control pool
+cannot reduce to one, unmatched focal trials, and trials whose identity names two items. The same
+value produces the preflight findings (`StudyFinding.MatchedCardinality`, a blocker under a
+one-reference rule and a warning under `MeanOfAll`; `AmbiguousReferences`;
+`UnmatchedFocalRefused`; `MatchItemConflict`, each suggesting `ChooseMatchedReference`,
+`SupplyMatchedReference` or `ResolveMatchItemConflict`), refuses execution with
+`PlanError.MatchedCardinality`, `UnmatchedFocalRefused` or `MatchItemConflict` naming the trials by
+key digest, and appears in `StudyPreview.matchedCardinality`. `StudyPlan.of` and a decoded
+`eyes4s.study@1` plan mean `MeanOfAll`, so a custom layout that repeats items now receives a warning
+instead of averaging silently; for `StudyKey` nothing changes, because it never has more than one
+matched reference.
 
 ## Interpret and export
 

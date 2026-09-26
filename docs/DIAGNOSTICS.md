@@ -299,6 +299,12 @@ fails after rewriting, so review the change and run it again.
 | `plan.missing-angular-scale` | `MissingAngularScale` | `scale` |
 | `plan.geometry` | `Geometry` | `underlying` |
 | `plan.invalid-window-tally` | `InvalidWindowTally` | `outsideScreen`, `outsideWindow`, `total`, `outsideScreenMicros`, `outsideWindowMicros`, `totalMicros` |
+| `plan.invalid-occurrence` | `InvalidOccurrence` | `value` |
+| `plan.blank-key-field` | `BlankKeyField` | `field` |
+| `plan.occurrence-unavailable` | `OccurrenceUnavailable` | `layout`, `matched` |
+| `plan.match-item-conflict` | `MatchItemConflict` | `keyDigests` |
+| `plan.matched-cardinality` | `MatchedCardinality` | `matched`, `focalDigests`, `referenceDigests` |
+| `plan.unmatched-focal-refused` | `UnmatchedFocalRefused` | `focalDigests` |
 
 ### `study-failure` — `StudyFailure`
 
@@ -800,6 +806,10 @@ fails after rewriting, so review the change and run it again.
 | `study-finding.uncontrolled-focal` | `UncontrolledFocal` | `key` |
 | `study-finding.off-window-fixations` | `OffWindowFixations` | `key`, `tally`, `policy` |
 | `study-finding.no-fixation-in-window` | `NoFixationInWindow` | `key`, `tally` |
+| `study-finding.matched-cardinality` | `MatchedCardinality` | `key`, `references`, `matched` |
+| `study-finding.ambiguous-references` | `AmbiguousReferences` | `references`, `matched` |
+| `study-finding.unmatched-focal-refused` | `UnmatchedFocalRefused` | `key` |
+| `study-finding.match-item-conflict` | `MatchItemConflict` | `trials` |
 
 ### `recording-finding` — `RecordingFinding`
 
@@ -875,6 +885,7 @@ fails after rewriting, so review the change and run it again.
 | `quarantine.invalid-extent` | `InvalidExtent` | `reason` |
 | `quarantine.unmappable-fixation` | `UnmappableFixation` | `index`, `from`, `to`, `x`, `y` |
 | `quarantine.correction-conflict` | `CorrectionConflict` | `first`, `second` |
+| `quarantine.item-conflict` | `ItemConflict` | `items` |
 
 ### `admission` — `AdmissionError`
 

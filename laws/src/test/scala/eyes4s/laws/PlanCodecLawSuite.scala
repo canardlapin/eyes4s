@@ -48,8 +48,9 @@ import org.scalacheck.{Gen, Test}
 class PlanCodecLawSuite extends munit.DisciplineSuite:
   import PlanCodecLawSuite.*
 
-  private type Cosine   = StudyPlan[StudyKey, Px, Unit, Similarity, SignedDifference]
-  private type Temporal = TemporalStudyPlan[StudyKey, Px, Unit, Similarity, SignedDifference]
+  private type Cosine    = StudyPlan[StudyKey, Px, Unit, Similarity, SignedDifference]
+  private type Temporal  = TemporalStudyPlan[StudyKey, Px, Unit, Similarity, SignedDifference]
+  private type TrialPlan = StudyPlan[TrialKey, Px, Unit, Similarity, SignedDifference]
 
   private val studies   = StudyCodecs.cosine[Px]
   private val temporals =
@@ -82,6 +83,14 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
   checkAll(
     "configured study plan",
     CodecLaws.roundTrip(studies.codec, configuredPlans, sameStudy)
+  )
+  checkAll(
+    "trial study plan",
+    CodecLaws.roundTrip(
+      StudyCodecs.trialCosine[Px].codec,
+      trialPlans,
+      (a: TrialPlan, b: TrialPlan) => a.description == b.description && a.input == b.input
+    )
   )
   checkAll(
     "temporal study plan",
@@ -222,6 +231,41 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
     )
     assert(killed(native, configuredPlans, sameStudy))
     assert(survives(studies.codec, configuredPlans, sameStudy))
+  }
+
+  test("the trial-plan law kills a reset pairing and a widened control pool") {
+    val codec = StudyCodecs.trialCosine[Px].codec
+    val same  = (a: TrialPlan, b: TrialPlan) => a.description == b.description
+    def with_(p: TrialPlan, pairing: StudyPairing): Option[TrialPlan] =
+      StudyPlan
+        .configure(
+          p.input,
+          p.layout,
+          p.geometry,
+          p.focalPhase,
+          p.referencePhase,
+          p.weight,
+          p.scales,
+          p.angularScale,
+          p.policy,
+          p.method,
+          p.parameters,
+          pairing
+        )
+        .toOption
+    val reset = mutant(codec)(p =>
+      Option
+        .when(p.pairing != StudyPairing.default)(p)
+        .flatMap(with_(_, StudyPairing.default))
+    )
+    assert(killed(reset, trialPlans, same))
+    val widened = mutant(codec)(p =>
+      Option
+        .when(p.pairing.controls == ControlReferences.SameSelection)(p)
+        .flatMap(p => with_(p, p.pairing.copy(controls = ControlReferences.AllOccurrences)))
+    )
+    assert(killed(widened, trialPlans, same))
+    assert(survives(codec, trialPlans, same))
   }
 
   test("the temporal-plan law kills a dropped window and a flipped boundary") {
@@ -421,6 +465,7 @@ object PlanCodecLawSuite:
         Option.when(degrees.nonEmpty || extra)(
           sure(LinearAngularScale.of(geometry.admission, ppd))
         )
+      pairing <- pairings(occurrences = false)
     yield sure(
       StudyPlan.configure(
         input,
@@ -433,7 +478,69 @@ object PlanCodecLawSuite:
         angular,
         policy,
         StudyMethod.cosine[Px](DefinitionId.cosine),
-        ()
+        (),
+        pairing
+      )
+    )
+
+  /** Every pairing rule; the occurrence rules only where the layout has
+    * occurrences.
+    */
+  def pairings(occurrences: Boolean): Gen[StudyPairing] =
+    val rules = Vector[Gen[MatchedReferences]](
+      Gen.const(MatchedReferences.RequireOne),
+      Gen.const(MatchedReferences.MeanOfAll)
+    ) ++ (if occurrences then
+            Vector[Gen[MatchedReferences]](
+              Gen.const(MatchedReferences.SameOccurrence),
+              Gen
+                .oneOf(
+                  Gen.const(OccurrenceChoice.First),
+                  Gen.const(OccurrenceChoice.Last),
+                  Gen.choose(1, 4).map(n => OccurrenceChoice.At(sure(TrialOccurrence.of(n))))
+                )
+                .map(MatchedReferences.Select(_))
+            )
+          else Vector.empty)
+    for
+      matched   <- Gen.oneOf(rules).flatMap(identity)
+      controls  <- Gen.oneOf(ControlReferences.values.toIndexedSeq)
+      unmatched <- Gen.oneOf(UnmatchedFocalPolicy.values.toIndexedSeq)
+    yield StudyPairing(matched, controls, unmatched)
+
+  val trialKeys: Gen[TrialKey] = for
+    participant <- labels
+    phase       <- labels
+    trial       <- labels
+    occurrence  <- Gen.oneOf(Gen.const(1), Gen.choose(1, 1000), Gen.const(Int.MaxValue))
+    item        <- labels
+  yield sure(TrialKey.of(participant, phase, trial, sure(TrialOccurrence.of(occurrence)), item))
+
+  /** Trial-keyed plans under every pairing rule. */
+  val trialPlans: Gen[StudyPlan[TrialKey, Px, Unit, Similarity, SignedDifference]] =
+    for
+      input  <- references.map(r => sure(ArtifactRef.parse[StudyInput[TrialKey, Px]](r)))
+      frame  <- frames
+      nx     <- Gen.choose(1, 32)
+      ny     <- Gen.choose(1, 32)
+      phases <- distinctLabels
+      (focal, reference) = phases
+      scales  <- estimates
+      pairing <- pairings(occurrences = true)
+    yield sure(
+      StudyPlan.configure(
+        input,
+        TrialKey.layout(TrialKeyDefinitions.trialLayout),
+        StudyGeometry.WholeFrame(sure(Grid.over(frame, nx, ny))),
+        focal,
+        reference,
+        Weight.Duration,
+        scales.map(StudyScale.Native(_)),
+        None,
+        FailurePolicy.RequireAll,
+        StudyMethod.cosine[Px](DefinitionId.cosine),
+        (),
+        pairing
       )
     )
 

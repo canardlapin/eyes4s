@@ -45,6 +45,45 @@ object StudyCodecs:
       VersionedCodec.unit(DefinitionId.unit)
     )
 
+  /** The trial-keyed cosine study: trials identified by participant, phase,
+    * trial and occurrence, matched on their item.
+    */
+  def trialCosine[U <: Unit2D](using
+      UnitLabel[U]
+  ): StudyCodec[TrialKey, U, Unit, Similarity, SignedDifference] =
+    new StudyCodec(
+      DefinitionId.study,
+      TrialKey.layout(TrialKeyDefinitions.trialLayout),
+      trialKey(TrialKeyDefinitions.trialKey),
+      StudyMethod.cosine[U](DefinitionId.cosine),
+      VersionedCodec.unit(DefinitionId.unit)
+    )
+
+  /** A [[TrialKey]] with its item beside its identity. */
+  def trialKey(schema: DefinitionId): VersionedCodec[TrialKey] =
+    VersionedCodec.of[TrialKey](schema)(k =>
+      Json.obj(
+        "participant" -> Json.fromString(k.participant),
+        "phase"       -> Json.fromString(k.phase),
+        "trial"       -> Json.fromString(k.trial),
+        "occurrence"  -> Json.fromInt(k.occurrence.value),
+        "item"        -> Json.fromString(k.item)
+      )
+    ) { json =>
+      for
+        participant <- Wire.field[String](json, "participant")
+        phase       <- Wire.field[String](json, "phase")
+        trial       <- Wire.field[String](json, "trial")
+        raw         <- Wire.field[Int](json, "occurrence")
+        occurrence  <- TrialOccurrence.of(raw).left.map(CodecError.Definition.apply)
+        item        <- Wire.field[String](json, "item")
+        key         <- TrialKey
+          .of(participant, phase, trial, occurrence, item)
+          .left
+          .map(CodecError.Definition.apply)
+      yield key
+    }
+
   def key(schema: DefinitionId): VersionedCodec[StudyKey] =
     VersionedCodec.of[StudyKey](schema)(k =>
       Json.obj(
@@ -115,6 +154,7 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
         )
     Right(
       Json.obj(
+        "pairing"      -> StudyWire.pairing(plan.pairing),
         "geometry"     -> geometry,
         "scales"       -> Json.arr(plan.scales.map(StudyWire.scale[U])*),
         "angularScale" -> plan.angularScale.fold(Json.Null)(s =>
@@ -219,6 +259,7 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
           }
           angularJson <- Wire.field[Option[Json]](json, "angularScale")
           angular     <- angularJson.filterNot(_.isNull).traverse(readAngular(_, geometry))
+          pairing     <- Wire.field[Json](json, "pairing").flatMap(StudyWire.readPairing)
           plan        <- StudyPlan
             .configure(
               input,
@@ -231,7 +272,8 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
               angular,
               policy,
               method,
-              params
+              params,
+              pairing
             )
             .left
             .map(CodecError.Definition.apply)
@@ -366,6 +408,71 @@ private[codec] object StudyWire:
           )
       case other => Left(CodecError.Field("policy", json, s"unknown policy $other"))
     }
+
+  def matched(value: MatchedReferences): Json = value match
+    case MatchedReferences.RequireOne     => Json.obj("kind" -> Json.fromString("requireOne"))
+    case MatchedReferences.SameOccurrence =>
+      Json.obj("kind" -> Json.fromString("sameOccurrence"))
+    case MatchedReferences.MeanOfAll      => Json.obj("kind" -> Json.fromString("meanOfAll"))
+    case MatchedReferences.Select(choice) =>
+      Json.obj(
+        "kind"   -> Json.fromString("select"),
+        "choice" -> (choice match
+          case OccurrenceChoice.First => Json.obj("kind" -> Json.fromString("first"))
+          case OccurrenceChoice.Last  => Json.obj("kind" -> Json.fromString("last"))
+          case OccurrenceChoice.At(n) =>
+            Json.obj("kind" -> Json.fromString("at"), "occurrence" -> Json.fromInt(n.value)))
+      )
+
+  def readMatched(json: Json): Either[CodecError, MatchedReferences] =
+    Wire.field[String](json, "kind").flatMap {
+      case "requireOne"     => Right(MatchedReferences.RequireOne)
+      case "sameOccurrence" => Right(MatchedReferences.SameOccurrence)
+      case "meanOfAll"      => Right(MatchedReferences.MeanOfAll)
+      case "select"         =>
+        Wire.field[Json](json, "choice").flatMap { choice =>
+          Wire.field[String](choice, "kind").flatMap {
+            case "first" => Right(MatchedReferences.Select(OccurrenceChoice.First))
+            case "last"  => Right(MatchedReferences.Select(OccurrenceChoice.Last))
+            case "at"    =>
+              Wire
+                .field[Int](choice, "occurrence")
+                .flatMap(TrialOccurrence.of(_).left.map(CodecError.Definition.apply))
+                .map(n => MatchedReferences.Select(OccurrenceChoice.At(n)))
+            case other =>
+              Left(CodecError.Field("choice", choice, s"unknown occurrence choice $other"))
+          }
+        }
+      case other =>
+        Left(CodecError.Field("matched", json, s"unknown matched-reference rule $other"))
+    }
+
+  private val controlNames = Vector(
+    ControlReferences.SameSelection  -> "sameSelection",
+    ControlReferences.AllOccurrences -> "allOccurrences"
+  )
+  private val unmatchedNames = Vector(
+    UnmatchedFocalPolicy.ReportNoMatch -> "reportNoMatch",
+    UnmatchedFocalPolicy.Refuse        -> "refuse"
+  )
+
+  def pairing(value: StudyPairing): Json = Json.obj(
+    "matched"   -> matched(value.matched),
+    "controls"  -> Json.fromString(controlNames.toMap.apply(value.controls)),
+    "unmatched" -> Json.fromString(unmatchedNames.toMap.apply(value.unmatched))
+  )
+
+  def readPairing(json: Json): Either[CodecError, StudyPairing] = for
+    m        <- Wire.field[Json](json, "matched").flatMap(readMatched)
+    c        <- Wire.field[String](json, "controls")
+    controls <- controlNames
+      .collectFirst { case (v, `c`) => v }
+      .toRight(CodecError.Field("controls", json, s"unknown control pool $c"))
+    u         <- Wire.field[String](json, "unmatched")
+    unmatched <- unmatchedNames
+      .collectFirst { case (v, `u`) => v }
+      .toRight(CodecError.Field("unmatched", json, s"unknown unmatched-focal policy $u"))
+  yield StudyPairing(m, controls, unmatched)
 
   def offWindow(policy: OffWindowPolicy): String = policy match
     case OffWindowPolicy.Exclude   => "exclude"

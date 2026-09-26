@@ -158,7 +158,15 @@ object DiagnosticSamples:
       ),
       PlanError.MissingAngularScale(1),
       PlanError.Geometry(frameError),
-      PlanError.InvalidWindowTally(3, 2, 4, 10L, 20L, 25L)
+      PlanError.InvalidWindowTally(3, 2, 4, 10L, 20L, 25L),
+      PlanError.InvalidOccurrence(0),
+      PlanError.BlankKeyField("item"),
+      PlanError
+        .OccurrenceUnavailable(DefinitionId.studyLayout, MatchedReferences.SameOccurrence),
+      PlanError.MatchItemConflict(Vector(digest, digest2)),
+      PlanError
+        .MatchedCardinality(MatchedReferences.RequireOne, Vector(digest), Vector(digest2)),
+      PlanError.UnmatchedFocalRefused(Vector(digest))
     ),
     family[StudyFailure[StudyKey]]("StudyFailure")(
       StudyFailure.Frame(k1, frameError),
@@ -616,7 +624,11 @@ object DiagnosticSamples:
       StudyFinding.UnmatchedFocal(k1),
       StudyFinding.UncontrolledFocal(k1),
       StudyFinding.OffWindowFixations(k1, tally, OffWindowPolicy.FailTrial),
-      StudyFinding.NoFixationInWindow(k1, tally)
+      StudyFinding.NoFixationInWindow(k1, tally),
+      StudyFinding.MatchedCardinality(k1, Vector(k2), MatchedReferences.RequireOne),
+      StudyFinding.AmbiguousReferences(Vector(k1, k2), MatchedReferences.SameOccurrence),
+      StudyFinding.UnmatchedFocalRefused(k1),
+      StudyFinding.MatchItemConflict(Vector(k1, k2))
     ),
     family[RecordingFinding]("RecordingFinding")(
       RecordingFinding.UndescribedMethod(DefinitionId.cosine),
@@ -690,7 +702,8 @@ object DiagnosticSamples:
       QuarantineCause.InvalidTransition(1, "reversed"),
       QuarantineCause.InvalidExtent("reversed"),
       QuarantineCause.UnmappableFixation(2, fid, deg, 1.5, 2.5),
-      QuarantineCause.CorrectionConflict(0, 1)
+      QuarantineCause.CorrectionConflict(0, 1),
+      QuarantineCause.ItemConflict(Vector("beach-042", "dog-077"))
     ),
     family[AdmissionError]("AdmissionError")(
       AdmissionError.NonPositiveRecord(0),

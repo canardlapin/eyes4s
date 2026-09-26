@@ -46,11 +46,20 @@ object FixationColumns:
     else Right(new FixationColumns(ordinal, x, y, onset, duration, sampleCount))
 
 /** A typed boundary reader for user keys; only the raw file boundary uses column strings. */
+/** An attribute a key carries beside its identity, such as the item a trial
+  * is matched on: keys with one identity must carry one value.
+  */
+private[io] trait KeyAttribute[K]:
+  type Identity
+  def identity(key: K): Identity
+  def value(key: K): String
+
 final class FixationKeyReader[K] private (
     val columns: Vector[String],
     val read: Map[String, String] => Either[String, K],
     val clock: K => ClockId,
-    val participant: Option[K => String]
+    val participant: Option[K => String],
+    private[io] val attribute: Option[KeyAttribute[K]] = None
 )(using val digest: KeyDigest[K], val ordering: Ordering[K])
 object FixationKeyReader:
   def of[K: KeyDigest: Ordering](columns: Vector[String])(
@@ -80,6 +89,56 @@ object FixationKeyReader:
       ) || columns.distinct.size != columns.size
     then Left(FixationImportError.Columns(columns))
     else Right(new FixationKeyReader(columns, read, clock, participant))
+
+  /** Trial keys: participant, phase and trial columns, an optional occurrence
+    * column (1 when absent) and the item column the trial is matched on. Rows
+    * of one trial identity that name different items quarantine the trial
+    * with `QuarantineCause.ItemConflict`.
+    */
+  def trial(
+      participant: String,
+      phase: String,
+      trial: String,
+      item: String,
+      occurrence: Option[String] = None
+  ): Either[FixationImportError, FixationKeyReader[TrialKey]] =
+    val columns = Vector(participant, phase, trial, item) ++ occurrence.toVector
+    make[TrialKey](
+      columns,
+      fields =>
+        def text(column: String) =
+          fields.get(column).filter(_.nonEmpty).toRight(s"Missing column '$column'.")
+        for
+          p <- text(participant)
+          f <- text(phase)
+          t <- text(trial)
+          i <- text(item)
+          n <- occurrence.fold[Either[String, TrialOccurrence]](Right(TrialOccurrence.first))(
+            column =>
+              text(column).flatMap(raw =>
+                raw.toIntOption
+                  .toRight(s"Occurrence '$raw' in column '$column' is not an integer.")
+                  .flatMap(TrialOccurrence.of(_).left.map(_.message))
+              )
+          )
+          key <- TrialKey.of(p, f, t, n, i).left.map(_.message)
+        yield key
+      ,
+      key => ClockId(s"fixation-trial:${KeyDigest[TrialKey].digest(key).render}"),
+      Some(_.participant)
+    ).map(reader =>
+      new FixationKeyReader(
+        reader.columns,
+        reader.read,
+        reader.clock,
+        reader.participant,
+        Some(new KeyAttribute[TrialKey]:
+          type Identity = (String, String, String, Int)
+          def identity(key: TrialKey) =
+            (key.participant, key.phase, key.trial, key.occurrence.value)
+          def value(key: TrialKey) = key.item)
+      )
+    )
 
   def study(
       participant: String,
@@ -315,7 +374,21 @@ object FixationCsv:
         }
         val invalid = parsed.collect { case Left(error) => error }
         val valid   = parsed.collect { case Right(value) => value }
-        val groups  =
+        // Keys of one identity that carry different attribute values, with
+        // the values they carry in order.
+        val itemConflicts: Map[K, Vector[String]] = keys.attribute.fold(Map.empty) { rule =>
+          (valid.map(_.key) ++ invalid.flatMap(_.key)).distinct
+            .groupBy(rule.identity)
+            .values
+            .collect {
+              case group if group.map(rule.value).distinct.size > 1 =>
+                val items = group.map(rule.value).distinct.sorted
+                group.map(_ -> items)
+            }
+            .flatten
+            .toMap
+        }
+        val groups =
           valid.groupBy(_.key).toVector.sortBy(_._1).map { case (key, observations) =>
             val ordered  = observations.sortBy(_.ordinal)
             val affected = invalid.filter(_.key.contains(key)).map(_.rowNumber)
@@ -324,6 +397,11 @@ object FixationCsv:
             val path     = (affected.nonEmpty, conflict) match
               case (true, _) =>
                 Left(FixationRowError.Trial(allRows, QuarantineCause.RejectedRecords))
+              case (false, _) if itemConflicts.contains(key) =>
+                Left(
+                  FixationRowError
+                    .Trial(allRows, QuarantineCause.ItemConflict(itemConflicts(key)))
+                )
               case (false, Some((first, second))) =>
                 Left(
                   FixationRowError.Trial(

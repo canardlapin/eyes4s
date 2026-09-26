@@ -44,6 +44,13 @@
         
       }
     },
+    "pairing" : {
+      "matched" : {
+        "kind" : "requireOne"
+      },
+      "controls" : "sameSelection",
+      "unmatched" : "reportNoMatch"
+    },
     "geometry" : {
       "kind" : "windowed",
       "admission" : {

@@ -93,6 +93,24 @@ object Diagnostics:
       case Geometry(underlying) =>
         val inner = CauseDiagnostics.geometry(underlying)
         diagnostic(C.plan, e, e.message, inner.subject)(cause(inner))
+      case InvalidOccurrence(value) => diagnostic[Nothing](C.plan, e, e.message)(int(value))
+      case BlankKeyField(field)     =>
+        diagnostic(C.plan, e, e.message, Vector(Locus.Field(field)))(name(field))
+      case OccurrenceUnavailable(layout, matched) =>
+        diagnostic(C.plan, e, e.message, Vector(Locus.Definition(layout)))(
+          definition(layout),
+          token(matched.toString)
+        )
+      case MatchItemConflict(digests) =>
+        diagnostic(C.plan, e, e.message, digests.map(Locus.TrialDigest(_)))(names(digests))
+      case MatchedCardinality(matched, focal, references) =>
+        diagnostic(C.plan, e, e.message, focal.map(Locus.TrialDigest(_)))(
+          token(matched.toString),
+          names(focal),
+          names(references)
+        )
+      case UnmatchedFocalRefused(focal) =>
+        diagnostic(C.plan, e, e.message, focal.map(Locus.TrialDigest(_)))(names(focal))
       case InvalidWindowTally(screen, window, total, screenMicros, windowMicros, totalMicros) =>
         diagnostic[Nothing](C.plan, e, e.message)(
           int(screen),
@@ -694,6 +712,23 @@ object Diagnostics:
           Operand.Key(key),
           windowTally(tally)
         )
+      case MatchedCardinality(key, references, matched) =>
+        diagnostic(C.studyFinding, f, f.message, trial(key))(
+          Operand.Key(key),
+          keys(references),
+          token(matched.toString)
+        )
+      case AmbiguousReferences(references, matched) =>
+        diagnostic(C.studyFinding, f, f.message, Vector(Locus.Trials(references)))(
+          keys(references),
+          token(matched.toString)
+        )
+      case UnmatchedFocalRefused(key) =>
+        diagnostic(C.studyFinding, f, f.message, trial(key))(Operand.Key(key))
+      case MatchItemConflict(conflicting) =>
+        diagnostic(C.studyFinding, f, f.message, Vector(Locus.Trials(conflicting)))(
+          keys(conflicting)
+        )
     finding(projected, f.severity, f.category, f.remedy)
 
   def recordingFinding(f: RecordingFinding): Diagnostic[Nothing] =
@@ -904,6 +939,7 @@ object Diagnostics:
         )
       case CorrectionConflict(first, second) =>
         diagnostic[Nothing](C.quarantine, e, e.message)(int(first), int(second))
+      case ItemConflict(items) => diagnostic[Nothing](C.quarantine, e, e.message)(names(items))
 
   def admission(e: AdmissionError): Diagnostic[Nothing] =
     import AdmissionError.*
