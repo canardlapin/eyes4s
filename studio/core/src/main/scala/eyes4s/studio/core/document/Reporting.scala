@@ -32,13 +32,20 @@ import io.circe.{Codec, Decoder, Encoder}
 
 /** What happened to a run, as the document records it. Whether a completed
   * run is current or stale is derived (S2.7) from the revisions it names,
-  * never stored.
+  * never stored. A running run's job handle is session state, not science:
+  * it lives in [[JobHandle]] beside the science.
   */
 enum RunLifecycle derives CanEqual, Codec.AsObject:
-  case Running(job: JobId)
+  case Running
   case Completed
   case Cancelled(at: Option[StageKind])
   case Failed
+
+/** The backend job executing a running run. Ephemeral: a job id means
+  * nothing after the backend restarts, so it is kept out of the document's
+  * science and its hash.
+  */
+final case class JobHandle(run: RunId, job: JobId) derives CanEqual, Codec.AsObject
 
 /** One run of an analysis revision on a dataset revision, and the eyes4s
   * result archive it produced once completed.
@@ -107,6 +114,14 @@ enum ReportingFilter derives CanEqual:
     */
   case OutsideWindowAtMost(share: Share)
 
+  /** The canonical order of a spec's filters: `Keep` by attribute and
+    * values, then `OutsideWindowAtMost` by share.
+    */
+  def sortKey: (Int, String, Double) = this match
+    case Keep(attribute, values) =>
+      (0, (attribute.label +: values.values).mkString("\u0000"), 0.0)
+    case OutsideWindowAtMost(share) => (1, "", share.value)
+
 object ReportingFilter:
   import io.circe.syntax.*
 
@@ -157,7 +172,9 @@ enum ReportingWeight derives CanEqual, Codec.AsObject:
 
 /** The studio mirror of UI-C's `ReportSpec`, kept minimal while UI-C is
   * pending: how results are grouped, filtered and weighted, with no rerun.
-  * `minimumPerGroup` is off (`None`) by default.
+  * `minimumPerGroup` is off (`None`) by default. `filters` is a set: kept
+  * deduplicated and in [[ReportingFilter.sortKey]] order, so the same filters
+  * in any order are the same spec and hash alike.
   */
 final case class ReportingSpec private (
     id: ReportingId,
@@ -179,7 +196,16 @@ object ReportingSpec:
   ): Either[DocumentError, ReportingSpec] =
     Checks
       .nonBlank("reporting name", name)
-      .map(new ReportingSpec(id, _, groupBy, filters, minimumPerGroup, weighting))
+      .map(
+        new ReportingSpec(
+          id,
+          _,
+          groupBy,
+          filters.distinct.sortBy(_.sortKey),
+          minimumPerGroup,
+          weighting
+        )
+      )
 
   /** A spec with the defaults: no filter, no minimum, participant means. */
   def grouped(

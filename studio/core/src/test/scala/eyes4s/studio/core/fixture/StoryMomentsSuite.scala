@@ -98,9 +98,11 @@ class StoryMomentsSuite extends munit.FunSuite:
     assertEquals(scales(t3, rev5), Some(scalesRev5))
     assertEquals(
       t3.running.map(r => (r.id, r.analysis, r.dataset, r.state)),
-      Vector((run8, rev5, r3, RunLifecycle.Running(run8Job)))
+      Vector((run8, rev5, r3, RunLifecycle.Running))
     )
     assertEquals(t3.presentation.shownRun, Some(RunId(7)))
+    assertEquals(t3.job(run8), Some(run8Job))
+    assertEquals(t3.analysis(rev5).map(_.recipe.window.isDefined), Some(true))
   }
 
   test("sources carry the golden fixture's real SHA-256 and no invented identity") {

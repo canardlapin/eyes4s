@@ -16,7 +16,7 @@
 
 package eyes4s.studio.core.document
 
-import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, RunId}
+import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId}
 import io.circe.{Codec, Decoder, Encoder}
 
 /** Why a studio document value was refused (ticket S2.1). Every case names
@@ -45,6 +45,9 @@ enum DocumentError derives CanEqual:
   case NoPanels(figure: FigureId)
   case DuplicatePanels(figure: FigureId, letters: Vector[String])
   case DuplicateLayouts(perspectives: Vector[Perspective])
+  case BadDefinition(name: String, version: Int)
+  case EmptyWindow(xMin: Double, yMin: Double, xMax: Double, yMax: Double)
+  case BadSchemaId(name: String, version: Int)
 
   // A draft against its base revision.
   case NoChanges(draft: AnalysisRevision, base: AnalysisRevision)
@@ -58,6 +61,8 @@ enum DocumentError derives CanEqual:
       found: String
   )
   case DraftNotLatest(draft: AnalysisRevision, latest: AnalysisRevision)
+  case RebaseToSame(draft: AnalysisRevision, dataset: DatasetRevision)
+  case RebaseNotAdmitted(draft: AnalysisRevision, dataset: DatasetRevision)
 
   // Cross-references inside a document.
   case UnorderedIds(kind: String, ids: Vector[String])
@@ -65,6 +70,8 @@ enum DocumentError derives CanEqual:
   case UnknownAnalysis(referrer: String, revision: AnalysisRevision)
   case UnknownRun(referrer: String, run: RunId)
   case UnknownReporting(referrer: String, reporting: ReportingId)
+  case JobNotRunning(run: RunId, job: JobId)
+  case DuplicateJobs(run: RunId, jobs: Vector[JobId])
   case ParentNotEarlier(dataset: DatasetRevision, parent: DatasetRevision)
   case PanelScaleNotInRun(
       figure: FigureId,
@@ -106,6 +113,20 @@ enum DocumentError derives CanEqual:
       s"${figure.label} repeats panels ${labels.mkString(", ")}."
     case DuplicateLayouts(perspectives) =>
       s"More than one saved layout for ${perspectives.map(_.label).mkString(", ")}."
+    case BadDefinition(name, version) =>
+      s"Definition $name@$version is not a valid eyes4s definition identity."
+    case EmptyWindow(x0, y0, x1, y1) =>
+      s"Analysis window [$x0, $x1) × [$y0, $y1) is empty."
+    case BadSchemaId(name, version) =>
+      s"Studio schema identity $name@$version is not a valid definition identity."
+    case RebaseToSame(draft, dataset) =>
+      s"Draft ${draft.label} rebases onto ${dataset.label}, which its base already uses."
+    case RebaseNotAdmitted(draft, dataset) =>
+      s"Draft ${draft.label} rebases onto ${dataset.label}, which is not admitted."
+    case JobNotRunning(run, job) =>
+      s"Job ${job.number} is recorded for ${run.label}, which is not running."
+    case DuplicateJobs(run, jobs) =>
+      s"${run.label} has more than one job: ${jobs.map(_.number).mkString(", ")}."
     case NoChanges(draft, base) => s"Draft ${draft.label} changes nothing in ${base.label}."
     case RepeatedField(draft, field) =>
       s"Draft ${draft.label} changes the ${field.label} more than once."

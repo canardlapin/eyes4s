@@ -18,7 +18,7 @@ package eyes4s.studio.core.document
 
 import eyes4s.codec.SchemaLadder
 import eyes4s.plan.DefinitionId
-import eyes4s.studio.core.backend.{AnalysisRevision, RunId}
+import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId}
 import io.circe.syntax.*
 import io.circe.{Decoder, Encoder, Json}
 import org.scalacheck.Gen
@@ -73,8 +73,10 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
 
   property("every generated document round-trips through the versioned codec") {
     forAll(document) { (d: StudioDocument) =>
-      val codec = StudioDocument.codec
-      assertEquals(codec.encode(d).flatMap(j => codec.parse(j.noSpaces)), Right(d))
+      assertEquals(
+        StudioDocument.encode(d).flatMap(j => StudioDocument.parse(j.noSpaces)),
+        Right(d)
+      )
     }
   }
 
@@ -88,7 +90,7 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
       o => o.keys.toVector == o.keys.toVector.sorted && o.values.forall(sorted)
     )
     forAll(document) { (d: StudioDocument) =>
-      assert(StudioDocument.codec.encode(d).exists(sorted))
+      assert(StudioDocument.encode(d).exists(sorted))
     }
   }
 
@@ -98,7 +100,7 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
 
   test("every sample encodes exactly as pinned") {
     val actual = DocumentSamples.all.map(s => s.name -> s.json.noSpaces).toMap ++ Map(
-      "document.t1" -> StudioDocument.codec
+      "document.t1" -> StudioDocument
         .encode(DocumentSamples.t1)
         .fold(_.message, _.noSpaces)
     )
@@ -117,7 +119,7 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
   }
 
   test("the document envelope carries its schema name and version") {
-    val json = StudioDocument.codec.encode(DocumentSamples.t2)
+    val json = StudioDocument.encode(DocumentSamples.t2)
     assertEquals(
       json.map(
         _.hcursor
@@ -126,38 +128,40 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
             Decoder.forProduct2("name", "version")((n: String, v: Int) => (n, v))
           )
       ),
-      Right(Right(("eyes4s.studio.document", 1)))
+      Right(Right(("studio.document", 1)))
     )
     val future = json.map(
       _.deepMerge(
         Json.obj(
           "schema" -> Json.obj(
-            "name"    -> "eyes4s.studio.document".asJson,
+            "name"    -> "studio.document".asJson,
             "version" -> 9.asJson
           )
         )
       )
     )
-    assert(future.flatMap(StudioDocument.codec.decode).isLeft, future)
+    assert(future.flatMap(StudioDocument.decode).isLeft, future)
   }
 
   test("a pinned version-1 document upcasts through a later CR3 ladder version") {
     // A hypothetical version 2 that adds a `notes` member. Version 1 expresses
     // every value, so the codec still writes version 1; `lift` rewrites a
     // stored version-1 document as version 2 with the same meaning.
+    val v1                               = StudioDocument.ladder.toOption.get
+    val ids                              = StudioSchemaIds.ids.toOption.get
     val v2: SchemaLadder[StudioDocument] =
-      StudioDocument.ladder.next(
+      v1.next(
         _ => true,
         json => json.deepMerge(Json.obj("notes" -> Json.arr()))
       )(d =>
-        StudioDocument.codec
+        StudioDocument
           .encode(d)
           .map(
             _.hcursor.downField("value").focus.get.deepMerge(Json.obj("notes" -> Json.arr()))
           )
       )(json =>
-        StudioDocument.ladder.readAt(
-          StudioDocumentSchemas.document,
+        v1.readAt(
+          ids.document,
           json.mapObject(_.remove("notes"))
         )
       )
@@ -171,15 +175,15 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
     assertEquals(v2.codec.encode(DocumentSamples.t1), Right(pinned))
     assertEquals(
       v2.versions,
-      Vector(StudioDocumentSchemas.document, DefinitionId.builtIn("eyes4s.studio.document", 2))
+      Vector(ids.document) ++ DefinitionId.of("studio.document", 2).toOption
     )
   }
 
   test("decoding re-validates every value and every cross-reference") {
-    val doc = StudioDocument.codec.encode(DocumentSamples.t2).toOption.get
+    val doc = StudioDocument.encode(DocumentSamples.t2).toOption.get
     def refused(patch: Json => Json): Unit =
       val broken = patch(doc)
-      assert(StudioDocument.codec.decode(broken).isLeft, broken.noSpaces.take(200))
+      assert(StudioDocument.decode(broken).isLeft, broken.noSpaces.take(200))
     def value(f: Json => Json)(j: Json): Json =
       j.mapObject(o => o.add("value", f(o("value").get)))
     // A run naming an analysis revision the document does not have.
@@ -271,17 +275,17 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
     val rev4 = t2.analyses(1)
     val base = rev4.recipe
     assertEquals(
-      Draft.of(AnalysisRevision(5), rev4.id, Vector.empty),
+      Draft.of(AnalysisRevision(5), rev4.id, None, Vector.empty),
       Left(DocumentError.NoChanges(AnalysisRevision(5), rev4.id))
     )
     val same = RecipeChange.Grid(base.grid, base.grid)
     assertEquals(
-      Draft.of(AnalysisRevision(5), rev4.id, Vector(same)),
+      Draft.of(AnalysisRevision(5), rev4.id, None, Vector(same)),
       Left(DocumentError.IdentityChange(AnalysisRevision(5), RecipeField.Grid, "64×48"))
     )
     val wrong = RecipeChange.Grid(right(GridSize.of(8, 8)), right(GridSize.of(16, 16)))
     assertEquals(
-      Draft.against(AnalysisRevision(5), rev4, Vector(wrong)).left.map(_.message),
+      Draft.against(AnalysisRevision(5), rev4, None, Vector(wrong)).left.map(_.message),
       Left("Draft rev 5 changes the grid from 8×8, but rev 4 has 64×48.")
     )
     assertEquals(
@@ -295,9 +299,91 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
             t2.runs,
             t2.reporting,
             t2.figures,
-            t2.presentation
+            t2.presentation,
+            t2.jobs
           )
         ),
       Left(DocumentError.DraftNotLatest(AnalysisRevision(4), rev4.id))
     )
+  }
+
+  test("every eyes4s StudyField has a recipe field and a change case") {
+    val core = eyes4s.plan.StudyField.values.toVector
+    assertEquals(core.map(RecipeField.of(_).core), core)
+    assertEquals(RecipeField.values.toVector.map(_.core), core)
+    val t2    = DocumentSamples.t2
+    val base  = t2.analyses(1).recipe
+    val other = DocumentSamples.all.collect {
+      case s if s.name.startsWith("change.") => s.value
+    }
+    val fields = other.collect { case c: RecipeChange => c.field }
+    assertEquals(fields.toSet, RecipeField.values.toSet)
+    other.collect { case c: RecipeChange => c }.foreach { c =>
+      assertEquals(c.mismatch(base), None, c.render)
+      assertEquals(RecipeChange.between(base, c.applyTo(base)), Vector(c))
+      assertEquals(c.inverse.applyTo(c.applyTo(base)), base)
+    }
+  }
+
+  test("a draft may rebase onto a newly admitted dataset, never onto its own or a draft") {
+    val t2     = DocumentSamples.t2
+    val t1     = DocumentSamples.t1
+    val rev3   = t2.analyses(0)
+    val r2     = DatasetRevision(2)
+    val r3     = DatasetRevision(3)
+    val rebase = Draft.between(AnalysisRevision(5), rev3, rev3.recipe, Some(r3))
+    assertEquals(rebase.map(d => (d.changeCount, d.render)), Right((1, "data → r3")))
+    assertEquals(
+      Draft.between(AnalysisRevision(5), rev3, rev3.recipe, Some(r2)),
+      Left(DocumentError.RebaseToSame(AnalysisRevision(5), r2))
+    )
+    // In t1, r3 is still pending admission.
+    assertEquals(
+      Draft
+        .between(AnalysisRevision(4), t1.analyses(0), t1.analyses(0).recipe, Some(r3))
+        .flatMap(d =>
+          StudioDocument.of(
+            t1.datasets,
+            t1.analyses,
+            Some(d),
+            t1.runs,
+            t1.reporting,
+            t1.figures,
+            t1.presentation,
+            t1.jobs
+          )
+        ),
+      Left(DocumentError.RebaseNotAdmitted(AnalysisRevision(4), r3))
+    )
+  }
+
+  test("job handles name one running run each") {
+    val t3 = DocumentSamples.t3
+    assertEquals(
+      t3.withJobs(Vector(JobHandle(RunId(7), JobId(2)))),
+      Left(DocumentError.JobNotRunning(RunId(7), JobId(2)))
+    )
+    assertEquals(
+      t3.withJobs(Vector(JobHandle(RunId(8), JobId(1)), JobHandle(RunId(8), JobId(2)))),
+      Left(DocumentError.DuplicateJobs(RunId(8), Vector(JobId(1), JobId(2))))
+    )
+    assert(t3.withJobs(Vector.empty).isRight)
+  }
+
+  test("reporting filters are a canonical set") {
+    val response = right(Covariate.of("response"))
+    val keep     =
+      ReportingFilter.Keep(response, right(ValueSet.of(response, Vector("Remembered"))))
+    val out = ReportingFilter.OutsideWindowAtMost(right(Share.of(0.25)))
+    def spec(fs: Vector[ReportingFilter]) =
+      ReportingSpec.of(
+        right(ReportingId.of("s")),
+        "S",
+        None,
+        fs,
+        None,
+        ReportingWeight.ParticipantMeans
+      )
+    assertEquals(spec(Vector(out, keep, out)), spec(Vector(keep, out)))
+    assertEquals(spec(Vector(out, keep)).map(_.filters), Right(Vector(keep, out)))
   }

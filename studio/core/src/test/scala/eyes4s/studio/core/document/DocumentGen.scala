@@ -184,16 +184,53 @@ object DocumentGen:
     pick.map(MatchedChoice.Select(_)),
     Gen.const(MatchedChoice.MeanOfAll)
   )
+  val definition: Gen[DefinitionRef] =
+    Gen
+      .zip(
+        Gen.oneOf("eyes4s.cosine", "eyes4s.participant-stimulus-phase", "lab.method"),
+        Gen.choose(1, 3)
+      )
+      .map((n, v) => right(DefinitionRef.of(n, v)))
+  val method: Gen[MethodSpec] =
+    for
+      d  <- definition
+      ps <- Gen
+        .listOfN(2, Gen.zip(word, text).map(MethodParameter.apply))
+        .flatMap(Gen.someOf(_))
+    yield MethodSpec(d, ps.toVector)
+  val failure: Gen[FailureChoice] = Gen.oneOf(
+    Gen.const(FailureChoice.RequireAll),
+    Gen.choose(1, 5).map(n => FailureChoice.SuccessfulOnly(right(MinimumSuccessful.of(n))))
+  )
+  val window: Gen[AnalysisWindow] =
+    for
+      x0 <- Gen.choose(0.0, 900.0)
+      y0 <- Gen.choose(0.0, 500.0)
+      w  <- Gen.choose(1.0, 1000.0)
+      h  <- Gen.choose(1.0, 500.0)
+    yield right(AnalysisWindow.of(x0, y0, x0 + w, y0 + h))
   val recipe: Gen[Recipe] =
     for
+      in <- Gen.option(semantic)
+      l  <- definition
+      me <- method
       ph <- Gen.zip(phase, phase).map(PhasePair.apply)
+      w  <- Gen.oneOf(WeightChoice.values.toSeq)
+      f  <- failure
       g  <- grid
-      s  <- scales
-      m  <- matched
-      c  <- Gen.oneOf(ControlChoice.values.toSeq)
-      u  <- Gen.oneOf(UnmatchedChoice.values.toSeq)
-      i  <- initial
-    yield Recipe(ph, g, s, m, c, u, i)
+      wi <- Gen.option(window)
+      ow <-
+        if wi.isEmpty then Gen.const(None)
+        else Gen.some(Gen.oneOf(OffWindowChoice.values.toSeq))
+      s <- scales
+      a <- Gen.option(
+        Gen.oneOf(20.0, 35.0, 40.5).map(v => right(DeclaredPixelsPerDegree.of(v)))
+      )
+      m <- matched
+      c <- Gen.oneOf(ControlChoice.values.toSeq)
+      u <- Gen.oneOf(UnmatchedChoice.values.toSeq)
+      i <- initial
+    yield Recipe(in, l, me, ph, w, f, g, wi, ow, s, a, m, c, u, i)
   val studio: Gen[StudioFields] =
     for
       p <- Gen.oneOf(Preset.values.toSeq)
@@ -212,13 +249,24 @@ object DocumentGen:
   val change: Gen[RecipeChange] =
     Gen.zip(recipe, recipe).map(RecipeChange.between).suchThat(_.nonEmpty).flatMap(Gen.oneOf(_))
 
-  def draft(base: AnalysisRevisionSpec, id: Int): Gen[Option[Draft]] =
-    recipe.map(r => Draft.between(AnalysisRevision(id), base, r).toOption)
+  /** A draft of `base`, rebased onto one of `admitted` other than its own
+    * dataset some of the time.
+    */
+  def draft(
+      base: AnalysisRevisionSpec,
+      id: Int,
+      admitted: Vector[DatasetRevision] = Vector.empty
+  ): Gen[Option[Draft]] =
+    val targets = admitted.filterNot(_ == base.dataset)
+    for
+      r <- recipe
+      d <- if targets.isEmpty then Gen.const(None) else Gen.option(Gen.oneOf(targets))
+    yield Draft.between(AnalysisRevision(id), base, r, d).toOption
 
   // --- Runs, reporting, figures ---------------------------------------------
 
   val lifecycle: Gen[RunLifecycle] = Gen.oneOf(
-    Gen.choose(1, 9).map(j => RunLifecycle.Running(JobId(j))),
+    Gen.const(RunLifecycle.Running),
     Gen.const(RunLifecycle.Completed),
     Gen.option(Gen.oneOf(StageKind.values.toSeq)).map(RunLifecycle.Cancelled(_)),
     Gen.const(RunLifecycle.Failed)
@@ -293,7 +341,10 @@ object DocumentGen:
       as <- Gen.sequence[Vector[AnalysisRevisionSpec], AnalysisRevisionSpec](
         (1 to na).map(i => analysis(i, (1 to nd).toVector))
       )
-      dr <- Gen.oneOf(as).flatMap(base => Gen.option(draft(base, na + 1)).map(_.flatten))
+      admitted = ds.filter(_.decision.isAdmitted).map(_.id)
+      dr <- Gen
+        .oneOf(as)
+        .flatMap(base => Gen.option(draft(base, na + 1, admitted)).map(_.flatten))
       nr <- Gen.choose(0, 3)
       rs <- Gen.sequence[Vector[RunRef], RunRef](
         (1 to nr).map { i =>
@@ -323,4 +374,15 @@ object DocumentGen:
         }
       )
       view <- presentation(rs.map(_.id))
-    yield right(StudioDocument.of(ds, as, dr, rs, reps, fs, view))
+      js   <- jobs(rs)
+    yield right(StudioDocument.of(ds, as, dr, rs, reps, fs, view, js))
+
+  /** Job handles for some of the running runs. */
+  def jobs(runs: Vector[RunRef]): Gen[Vector[JobHandle]] =
+    Gen
+      .someOf(runs.filter(_.state == RunLifecycle.Running))
+      .flatMap(rs =>
+        Gen.sequence[Vector[JobHandle], JobHandle](
+          rs.map(r => Gen.choose(1, 99).map(j => JobHandle(r.id, JobId(j))))
+        )
+      )

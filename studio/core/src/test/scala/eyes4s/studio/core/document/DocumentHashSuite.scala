@@ -17,7 +17,7 @@
 package eyes4s.studio.core.document
 
 import eyes4s.codec.{ByteDigest, CanonicalDigest}
-import eyes4s.studio.core.backend.{AnalysisRevision, RunId}
+import eyes4s.studio.core.backend.{AnalysisRevision, JobId, RunId}
 import org.scalacheck.Prop.forAll
 
 /** The document's scientific identity (ticket S2.1): the CR3 digest of its
@@ -59,8 +59,10 @@ class DocumentHashSuite extends munit.ScalaCheckSuite:
 
   property("the hash survives a round trip through the stored document") {
     forAll(document) { (d: StudioDocument) =>
-      val codec = StudioDocument.codec
-      assertEquals(codec.encode(d).flatMap(codec.decode).map(hash), Right(hash(d)))
+      assertEquals(
+        StudioDocument.encode(d).flatMap(StudioDocument.decode).map(hash),
+        Right(hash(d))
+      )
     }
   }
 
@@ -91,7 +93,8 @@ class DocumentHashSuite extends munit.ScalaCheckSuite:
         runs(t2.runs),
         reporting(t2.reporting),
         figures(t2.figures),
-        t2.presentation
+        t2.presentation,
+        t2.jobs
       )
     )
 
@@ -242,4 +245,29 @@ class DocumentHashSuite extends munit.ScalaCheckSuite:
     val changed = mutations.map((name, d) => name -> hash(d))
     assertEquals(changed.filter(_._2 == base).map(_._1), Vector.empty)
     assertEquals(changed.map(_._2).distinct.size, changed.size)
+  }
+
+  property("job handles never change the scientific hash") {
+    forAll(document) { (d: StudioDocument) =>
+      forAll(jobs(d.runs)) { (js: Vector[JobHandle]) =>
+        assertEquals(d.withJobs(js).map(hash), Right(hash(d)))
+      }
+    }
+  }
+
+  test("t3's hash is the same without run 8's job handle") {
+    assertEquals(t3.withJobs(Vector.empty).map(hash), Right(hash(t3)))
+    assertEquals(t3.withJobs(Vector(JobHandle(RunId(8), JobId(42)))).map(hash), Right(hash(t3)))
+  }
+
+  test("the order of reporting filters does not change the hash") {
+    val keep = ReportingFilter.Keep(
+      right(Covariate.of("response")),
+      right(ValueSet.of(right(Covariate.of("response")), Vector("Remembered")))
+    )
+    val out = ReportingFilter.OutsideWindowAtMost(right(Share.of(0.5)))
+    assertEquals(
+      hash(rebuild(reporting = _ => reported(filters = Vector(out, keep)))),
+      hash(rebuild(reporting = _ => reported(filters = Vector(keep, out, keep))))
+    )
   }

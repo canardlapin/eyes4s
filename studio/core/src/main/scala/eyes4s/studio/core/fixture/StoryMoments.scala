@@ -140,15 +140,32 @@ object StoryMoments:
       )
     )
 
+  /** The recipe of every story revision: the participant-stimulus-phase
+    * layout, cosine similarity, duration weighting, the image frame as the
+    * analysis window (off-window fixations excluded), grid 64×48 and declared
+    * 35 px/°. The input is unbound on the fake backend.
+    */
   def recipe(scales: Vector[Double]): Either[DocumentError, Recipe] =
     for
       sigmas <- scales.traverse(Sigma.of)
       set    <- ScaleSet.of(sigmas)
       grid   <- GridSize.of(64, 48)
+      layout <- DefinitionRef.of("eyes4s.participant-stimulus-phase", 1)
+      cosine <- DefinitionRef.of("eyes4s.cosine", 1)
+      window <- AnalysisWindow.of(448.0, 156.0, 1472.0, 924.0)
+      ppd    <- DeclaredPixelsPerDegree.of(35.0)
     yield Recipe(
+      None,
+      layout,
+      MethodSpec(cosine, Vector.empty),
       PhasePair(Phase.Retrieval, Phase.Encoding),
+      WeightChoice.Duration,
+      FailureChoice.RequireAll,
       grid,
+      Some(window),
+      Some(OffWindowChoice.Exclude),
       set,
+      Some(ppd),
       MatchedChoice.RequireOne,
       ControlChoice.SameSelection,
       UnmatchedChoice.ReportNoMatch,
@@ -182,7 +199,7 @@ object StoryMoments:
   val run6Ref: RunRef =
     run(run6, rev4, r3, RunLifecycle.Cancelled(Some(StageKind.Comparing)))
   val run7Ref: RunRef = run(run7, rev4, r3, RunLifecycle.Completed)
-  val run8Ref: RunRef = run(run8, rev5, r3, RunLifecycle.Running(run8Job))
+  val run8Ref: RunRef = run(run8, rev5, r3, RunLifecycle.Running)
 
   val byResponseId: Either[DocumentError, ReportingId] = ReportingId.of("by-retrieval-response")
 
@@ -278,7 +295,8 @@ object StoryMoments:
           Vector(run5Ref),
           Vector(rep),
           Vector(f2),
-          view
+          view,
+          Vector.empty
         )
       yield doc).leftMap(_.message)
     }
@@ -304,7 +322,8 @@ object StoryMoments:
           Vector(run5Ref, run6Ref, run7Ref),
           Vector(rep),
           Vector(f1, f2),
-          view
+          view,
+          Vector.empty
         )
       yield doc).leftMap(_.message)
     }
@@ -329,7 +348,8 @@ object StoryMoments:
           Vector(run5Ref, run6Ref, run7Ref, run8Ref),
           Vector(rep),
           Vector(f1, f2),
-          view
+          view,
+          Vector(JobHandle(run8, run8Job))
         )
       yield doc).leftMap(_.message)
     }

@@ -131,6 +131,47 @@ object DocumentSamples:
     Sample("preset.Custom", Preset.Custom),
     Sample("analysis.rev4", rev4),
     Sample("run.Running", t3.runs(3)),
+    Sample("job-handle", t3.jobs(0)),
+    Sample(
+      "change.Input",
+      RecipeChange.Input(None, Some(right(SemanticIdentity.of("00112233445566ff"))))
+    ),
+    Sample(
+      "change.Layout",
+      RecipeChange.Layout(base.layout, right(DefinitionRef.of("lab.layout", 2)))
+    ),
+    Sample(
+      "change.Method",
+      RecipeChange.Method(
+        base.method,
+        MethodSpec(right(DefinitionRef.of("lab.method", 1)), Vector(MethodParameter("k", "3")))
+      )
+    ),
+    Sample("change.Weighting", RecipeChange.Weighting(base.weighting, WeightChoice.Uniform)),
+    Sample(
+      "change.Failures",
+      RecipeChange.Failures(
+        base.failurePolicy,
+        FailureChoice.SuccessfulOnly(right(MinimumSuccessful.of(2)))
+      )
+    ),
+    Sample("change.Window", RecipeChange.Window(base.window, None)),
+    Sample(
+      "change.OffWindow",
+      RecipeChange.OffWindow(base.offWindow, Some(OffWindowChoice.FailTrial))
+    ),
+    Sample("change.AngularScale", RecipeChange.AngularScale(base.angularScale, None)),
+    Sample(
+      "draft.rebase",
+      right(
+        Draft.between(
+          AnalysisRevision(4),
+          t1.analyses(0),
+          t1.analyses(0).recipe,
+          Some(DatasetRevision(3))
+        )
+      )
+    ),
     Sample("run.Cancelled", t2.runs(1)),
     Sample("run.Completed", t2.runs(2)),
     Sample("lifecycle.Failed", RunLifecycle.Failed),
