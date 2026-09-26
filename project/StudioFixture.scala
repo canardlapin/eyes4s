@@ -47,7 +47,10 @@ object StudioFixture {
     val listing = cache / "stimuli.txt"
     val names   = stimuli.map(_.getName).sorted.mkString("\n")
     if (!listing.exists || IO.read(listing) != names) IO.write(listing, names)
-    cached(inputs + listing).toSeq.sortBy(_.getName)
+    // The generator's own source is an input too: changing what it emits must
+    // regenerate even when the fixture files are unchanged (found at merge of S2.1).
+    val generator = root / "project" / "StudioFixture.scala"
+    cached(inputs + listing + generator).toSeq.sortBy(_.getName)
   }
 
   /** JVM class files cap one string constant at 65,535 modified-UTF-8 bytes;
@@ -191,6 +194,13 @@ object StudioFixture {
     ).collect { case (rule, false) => rule }
   }
 
+  private def sha256(file: File): String =
+    java.security.MessageDigest
+      .getInstance("SHA-256")
+      .digest(IO.readBytes(file))
+      .map(b => f"${b & 0xff}%02x")
+      .mkString
+
   /** `GoldenInventory`: every golden trial with its disposition, and the
     * window totals of the admitted trials.
     */
@@ -262,6 +272,9 @@ object StudioFixture {
           |  */
           |private[core] object GoldenInventory:
           |  val sourceRecords: Int = ${fixes.size}
+          |  /** SHA-256 of the exact bytes of trials.csv and fixations.csv (S2.1). */
+          |  val trialsSha256: String = ${literal(sha256(dir / "trials.csv"))}
+          |  val fixationsSha256: String = ${literal(sha256(dir / "fixations.csv"))}
           |  val distinctItems: Int = ${items.size}
           |  val imagesPresent: Int = ${items.count(present)}
           |  val missingImages: Vector[String] = ${missing
