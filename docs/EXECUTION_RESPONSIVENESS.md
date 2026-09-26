@@ -1,5 +1,74 @@
 # Execution responsiveness
 
+## Update: resumable detection assembly, 2026-09-19
+
+Follow-up `bd-01M2WTSXKJWP6AS2QVHX3CW9RB` makes final detection assembly
+resumable. The unchanged 600k-sample workload now meets the 100 ms target on
+the recorded M3 Max / OpenJDK 25.0.1 runtime. The [full report and measured
+source digests](evidence/detection-assembly-final.md) retain every workload:
+
+| Recording | Quanta | Max step ms | Max runner gap ms | Max cancellation ms | 100 ms |
+|---|---|---:|---:|---:|---|
+| 60k samples | default | 12.835 | 11.462 | 19.786 | meets |
+| 60k samples | smallest | 19.378 | 12.425 | 2.406 | meets |
+| 600k samples | default | 63.237 | 48.047 | 15.311 | meets |
+| 600k samples | smallest | 46.100 | 31.641 | 15.710 | meets |
+
+`DetectionCursor.advance(sampleMaximum, assemblyMaximum)` separately bounds
+feeding and assembly operations; its one-argument overload uses the same limit
+for both. `DetectionPage.workUnits` counts fed samples before assembly and
+operations within one assembly phase thereafter. `consumed` remains a source
+sample count. `RecordingPlan` uses `WorkQuanta.samples` for both limits, with
+`RecordingStage.Assembling(phase)` and matching segments. Feeding retains exact
+sample totals; data-dependent assembly totals are explicitly `Unknown`. Empty
+phases may be absent. Assembly covers emissions, support searches, structural
+validation, fixation summaries (including median selection), source hashing and
+lineage, gap checks, and labels/report accounting. All continuation state is
+immutable; direct execution drains the same work. Hashes and numerical accumulation
+order are preserved, and no partial artifact is returned on cancellation.
+
+The observation cap increased to eight million steps to cover all 5,235,966
+steps of the smallest-quantum 600k run. It changes neither the workload nor the
+latency threshold. Outcome-contract violations: none. The 1024-square Gaussian
+stress case still misses; X2 remains deferred under its existing consumer trigger.
+Synchronization, warping, interpolation finalization and AOI assignment remain
+whole steps where previously documented and are measured in this report. Custom
+machine steps/flushes and irregular-recording setup are not universally bounded
+by assembly quanta. No larger envelope, hosted supported-JDK qualification or
+universal real-time guarantee is claimed.
+
+The earlier support-search and original X6 reports below are historical evidence;
+their recorded failures have not been removed.
+
+## Update: detection support, 2026-09-19
+
+The historical measurements below remain intact. The current local implementation
+replaces both exhaustive event-support scans (Detection and EventSeries) with shared
+binary timestamp bounds, and memoizes immutable Recording extent and content hash.
+The first attempt removed quadratic scaling but narrowly missed the 60k-sample target;
+its [full report](evidence/detection-support-initial.md) is retained. Duplicate hashing
+was then removed, without changing the workload, runtime arguments or 100 ms threshold.
+The [final full report](evidence/detection-support-final.md) records:
+
+| Recording | Quanta | Max step ms | Max runner gap ms | Max cancellation ms | 100 ms |
+|---|---|---:|---:|---:|---|
+| 60k samples | default | 45.119 | 43.588 | 54.720 | meets |
+| 60k samples | smallest | 46.985 | 60.254 | 35.895 | meets |
+| 600k samples | default | 409.852 | 403.803 | 361.905 | misses |
+| 600k samples | smallest | 331.708 | 401.948 | 319.441 | misses |
+
+This qualifies the ticket's 60k workload on M3 Max/JDK 25 only. It removes the quadratic
+failure but does not make final detection assembly resumable: the retained 600k case
+still misses. APP-9's broader long-recording responsiveness remains open and requires
+bounded assembly. All runs reported no outcome-contract violations. The JVM flags and
+full workload results are in the reports. No supported-JDK hosted qualification is claimed.
+
+Measured source: base `131970d` plus the support-search changes. Final source SHA-256:
+
+- `core/src/main/scala/eyes4s/core/Recording.scala`: `11e085f799121d32577957ece141a1cae6046dcf00cf55c0e114524100013a4f`
+- `core/src/main/scala/eyes4s/core/DetectionSupport.scala`: `f197eeea958e90206b54295e29b55c52efb428b94872e689f9567b52fb1cd9ba`
+- `detect/src/main/scala/eyes4s/detect/DetectionResult.scala`: `f40dc3a8ccb2e6286983ac4f0fc3cc6e1b8a4e2b8a0d6000c7710325c85a537f`
+
 Evidence for UI-X6 (`bd-01M2N2QCWATK57DT0TEWTRJTCP`), measured 2026-09-17 on base
 revision `cb57ccf` plus the X6 working tree. It answers one question from the UI
 foundation plan: does the shipped runner, which estimates one trial per step
@@ -187,7 +256,9 @@ feeds the last sample. That step flushes the machine and assembles the
 `Detection.supportFor` (`detect/src/main/scala/eyes4s/detect/DetectionResult.scala`)
 finds each event's sample range by filtering every sample of the recording:
 
-```scala
+Historical implementation excerpt (not current executable guidance):
+
+```text
 indices = (0 until recording.size).filter(index =>
   event.span.contains(recording.samples(index).t)
 )

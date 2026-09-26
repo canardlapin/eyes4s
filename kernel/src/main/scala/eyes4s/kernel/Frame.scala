@@ -72,7 +72,7 @@ final case class Bounds[U <: Unit2D] private (
 
   def area: Double = width * height
 
-  def centre: Pt[U] = Pt((xMin + xMax) / 2.0, (yMin + yMax) / 2.0)
+  def centre: Pt[U] = Pt(xMin + width / 2.0, yMin + height / 2.0)
 
   /** Half-open in both axes, matching [[Interval]]'s convention for time. */
   def contains(p: Pt[U]): Boolean =
@@ -100,6 +100,8 @@ object Bounds:
       Left(GeometryError.NonFiniteBounds(xMin, yMin, xMax, yMax))
     else if xMax <= xMin || yMax <= yMin then
       Left(GeometryError.DegenerateBounds(xMin, yMin, xMax, yMax))
+    else if !((xMax - xMin).isFinite && (yMax - yMin).isFinite) then
+      Left(GeometryError.NonFiniteBounds(xMin, yMin, xMax, yMax))
     else Right(Bounds(xMin, yMin, xMax, yMax))
 
   /** `[0, w) x [0, h)`, the usual device rectangle. */

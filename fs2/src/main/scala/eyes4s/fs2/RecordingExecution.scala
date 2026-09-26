@@ -126,7 +126,8 @@ object RecordingExecution:
     )
 
   /** Totals a recording plan can state before a segment runs; see
-    * [[eyes4s.plan.RecordingSegment.total]]. All are exact.
+    * [[eyes4s.plan.RecordingSegment.total]]. Feeding totals are exact;
+    * data-dependent assembly phase totals are unknown.
     */
   def total(samples: Int, segment: RecordingSegment): SegmentTotal =
     RecordingSegment.total(samples, segment)

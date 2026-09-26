@@ -97,18 +97,21 @@ object StudySegment:
   */
 enum RecordingSegment derives CanEqual:
   case Synchronizing, Warping, Interpolating, Detecting, Assigning
+  case Assembling(phase: eyes4s.core.AssemblyPhase)
 
 object RecordingSegment:
   def of(stage: RecordingStage): RecordingSegment = stage match
-    case RecordingStage.Synchronizing    => Synchronizing
-    case RecordingStage.Warping          => Warping
-    case RecordingStage.Interpolating(_) => Interpolating
-    case RecordingStage.Detecting(_)     => Detecting
-    case RecordingStage.Assigning        => Assigning
+    case RecordingStage.Synchronizing     => Synchronizing
+    case RecordingStage.Warping           => Warping
+    case RecordingStage.Interpolating(_)  => Interpolating
+    case RecordingStage.Detecting(_)      => Detecting
+    case RecordingStage.Assembling(phase) => Assembling(phase)
+    case RecordingStage.Assigning         => Assigning
 
   /** Totals a recording plan can state before a segment runs: the whole
     * steps are one unit each, and each chunked machine feeds exactly every
-    * sample, its flush and assembly charged to the last chunk.
+    * sample, with flush charged to the last feeding chunk. Assembly phases
+    * count operations and have unknown totals until their data-dependent work ends.
     */
   def total(samples: Int, segment: RecordingSegment): SegmentTotal = segment match
     case Synchronizing => SegmentTotal.Exact(1L)
@@ -116,6 +119,7 @@ object RecordingSegment:
     case Interpolating => SegmentTotal.Exact(samples.toLong)
     case Detecting     => SegmentTotal.Exact(samples.toLong)
     case Assigning     => SegmentTotal.Exact(1L)
+    case Assembling(_) => SegmentTotal.Unknown
 
 /** The counted span of a temporal run: one `Preparing` segment per cell, and
   * the cell's study segments stamped with the cell.

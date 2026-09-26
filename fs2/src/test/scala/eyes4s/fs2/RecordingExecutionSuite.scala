@@ -250,7 +250,7 @@ class RecordingExecutionSuite extends munit.CatsEffectSuite:
       val (fine, _)   = pure(work, quanta(1))
       val (coarse, _) = pure(work, quanta(4096))
       assert(fine.size > coarse.size, clue((fine.size, coarse.size)))
-      assertEquals(coarse.size, 5)
+      assertEquals(coarse.size, 5 + AssemblyPhase.values.length)
     }
   }
 
@@ -283,7 +283,7 @@ class RecordingExecutionSuite extends munit.CatsEffectSuite:
     }
   }
 
-  test("segments run in scientific order with exact totals that the run meets") {
+  test("segments retain exact sample totals and explicitly unknown assembly totals") {
     runner.events(work, recording, four).compile.toVector.map { events =>
       val progress = progressOf(events)
       assertEquals(
@@ -292,7 +292,8 @@ class RecordingExecutionSuite extends munit.CatsEffectSuite:
           RecordingSegment.Synchronizing,
           RecordingSegment.Warping,
           RecordingSegment.Interpolating,
-          RecordingSegment.Detecting,
+          RecordingSegment.Detecting
+        ) ++ AssemblyPhase.values.toVector.map(RecordingSegment.Assembling(_)) ++ Vector(
           RecordingSegment.Assigning
         )
       )
@@ -313,17 +314,26 @@ class RecordingExecutionSuite extends munit.CatsEffectSuite:
           RecordingSegment.Interpolating -> SegmentTotal.Exact(40L),
           RecordingSegment.Detecting     -> SegmentTotal.Exact(40L),
           RecordingSegment.Assigning     -> SegmentTotal.Exact(1L)
-        )
+        ) ++ AssemblyPhase.values
+          .map(p => RecordingSegment.Assembling(p) -> SegmentTotal.Unknown)
+          .toMap
       )
       totals.foreach {
         case (segment, SegmentTotal.Exact(units)) => assertEquals(last(segment), units)
-        case other                                => fail(s"not exact: $other")
+        case (RecordingSegment.Assembling(_), SegmentTotal.Unknown) => ()
+        case other => fail(s"unexpected total: $other")
       }
       assertEquals(
         progress.filter(_.segment == RecordingSegment.Detecting).map(_.stage),
         (0 until 40 by 4).map(RecordingStage.Detecting(_)).toVector
       )
-      assertEquals(progress.last.totalUnits, 83L)
+      assertEquals(
+        progress
+          .filterNot(_.stage.isInstanceOf[RecordingStage.Assembling])
+          .map(_.stepUnits.toLong)
+          .sum,
+        83L
+      )
     }
   }
 
@@ -405,6 +415,29 @@ class RecordingExecutionSuite extends munit.CatsEffectSuite:
       assertEquals(stages(4), RecordingStage.Interpolating(8))
       assertEquals(stages(15), RecordingStage.Detecting(12))
       assertEquals(stages(positions(2)._2), RecordingStage.Assigning)
+    }
+  }
+
+  test(
+    "cancellation within every assembly phase publishes no partial result and flushes exactly once"
+  ) {
+    val (steps, _) = pure(work, quanta(1))
+    AssemblyPhase.values.toVector.traverse_ { phase =>
+      val at = steps.indexWhere(_._1 == RecordingStage.Assembling(phase))
+      assert(at >= 0, phase.toString)
+      var flushes  = 0
+      val counting = plan(method = instrumented(_ => (), () => flushes += 1))
+      // Locate the phase in the instrumented run itself.
+      val (counted, _) = pure(counting, quanta(1))
+      val position     = counted.indexWhere(_._1 == RecordingStage.Assembling(phase))
+      flushes = 0
+      cancelAfter(counting, quanta(1), position + 1).map { case (outcome, observed, begun) =>
+        assertEquals(outcome.progress.map(_.stage), Some(RecordingStage.Assembling(phase)))
+        assert(outcome.isInstanceOf[RunOutcome.Cancelled[?, ?, ?, ?, ?]])
+        assertEquals(flushes, 1)
+        assertEquals(begun, position + 2)
+        assertEquals(observed.size, 1)
+      }
     }
   }
 

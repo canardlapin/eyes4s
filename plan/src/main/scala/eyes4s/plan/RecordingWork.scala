@@ -32,6 +32,7 @@ enum RecordingStage derives CanEqual:
   case Warping
   case Interpolating(sample: Int)
   case Detecting(sample: Int)
+  case Assembling(phase: AssemblyPhase)
   case Assigning
 
 private[plan] sealed trait RecordingPhase
@@ -68,7 +69,8 @@ private[plan] object RecordingPhase:
   * In order: synchronization (one whole step), the angular warp (one whole
   * step), gap interpolation in chunks of `quanta.samples` samples, event
   * detection in chunks of `quanta.samples` samples through
-  * [[eyes4s.detect.DetectionCursor]], and area assignment (one whole step).
+  * [[eyes4s.detect.DetectionCursor]], resumable artifact assembly (the same
+  * sample quantum bounds assembly operations), and area assignment (one whole step).
   * The interpolation and detection machines are stepped, never re-run, so
   * their flush happens exactly once, inside the step that feeds the last
   * sample; a cursor abandoned earlier has manufactured no event. Every
@@ -87,8 +89,11 @@ final class RecordingCursor[P] private[plan] (
     case Synchronizing                => RecordingStage.Synchronizing
     case _: Warping                   => RecordingStage.Warping
     case Interpolating(_, _, _, _, f) => RecordingStage.Interpolating(f.consumed)
-    case Detecting(_, _, _, _, _, d)  => RecordingStage.Detecting(d.consumed)
-    case _: Assigning                 => RecordingStage.Assigning
+    case Detecting(_, _, _, _, _, d)  =>
+      d.assemblyPhase.fold[RecordingStage](RecordingStage.Detecting(d.consumed))(
+        RecordingStage.Assembling(_)
+      )
+    case _: Assigning => RecordingStage.Assigning
 
   /** The recording's sample count: the exact total of each chunked stage. */
   def samples: Int = recording.size

@@ -58,14 +58,17 @@ enum SampleClass derives CanEqual:
   case Unclassified
 
 /** One class for every source sample, in source order. */
-final class SampleLabels private (private val values: IArray[SampleClass]):
+final class SampleLabels private (private val values: Vector[SampleClass]):
   def size: Int                            = values.length
   def get(index: Int): Option[SampleClass] = values.lift(index)
   def toVector: Vector[SampleClass]        = values.toVector
 
 object SampleLabels:
   private[detect] def from(values: Array[SampleClass]): SampleLabels =
-    new SampleLabels(IArray.from(values))
+    new SampleLabels(values.toVector)
+
+  private[detect] def fromVector(values: Vector[SampleClass]): SampleLabels =
+    new SampleLabels(values)
 
 /** Non-fatal fact that remains visible in a detection report. */
 enum DetectionWarning derives CanEqual:
@@ -379,8 +382,7 @@ object Detection:
           Left(DetectionResultError.DetectorEmissionFailed(source, detector, failed, error))
         case Right(_) => Right(())
 
-  /** Assemble a result from emissions already checked to be all `Right`. */
-  private[detect] def assembleEmissions[U <: Unit2D](
+  private[detect] def assemblyWork[U <: Unit2D](
       source: RecordingRef,
       recording: Recording[U],
       identity: DetectorIdentity,
@@ -388,80 +390,75 @@ object Detection:
       temporalSupport: SampleSupportLedger,
       emissions: Vector[DetectionEmission[U]],
       parameters: Vector[(String, Provenance.Param)]
-  ): Either[DetectionResultError, DetectionResult[U]] =
-    val detector = identity.detectorRef
-    locally {
-      val events = emissions.collect { case Right(event) => event }
-      for
-        support <- supportFor(source, recording, detector, events)
-        series  <- EventSeries
-          .of(recording, source, events, support)
-          .left
-          .map(DetectionResultError.SourceSupport(source, detector, _))
-        bridged <- validateGaps(
-          source,
-          recording,
-          detector,
-          gapPolicy,
-          temporalSupport,
-          support
-        )
-        result <- assemble(
-          source,
-          recording,
-          identity,
-          gapPolicy,
-          temporalSupport,
-          series,
-          bridged,
-          parameters
-        )
-      yield result
+  ): AssemblyWork[Either[DetectionResultError, DetectionResult[U]]] =
+    import AssemblyWork.*
+    fold(AssemblyPhase.Emissions, 0, emissions.size, Vector.empty[Event[U]]) { (events, i) =>
+      emissions(i).fold(_ => events, events :+ _)
+    }.flatMap { events =>
+      continue(supportWork(source, recording, identity.detectorRef, events)) { support =>
+        continue(
+          EventSeries
+            .assembly(recording, source, events, support)
+            .map(
+              _.left.map(DetectionResultError.SourceSupport(source, identity.detectorRef, _))
+            )
+        ) { series =>
+          continue(
+            gapsWork(
+              source,
+              recording,
+              identity.detectorRef,
+              gapPolicy,
+              temporalSupport,
+              support
+            )
+          ) { bridged =>
+            assembleWork(
+              source,
+              recording,
+              identity,
+              gapPolicy,
+              temporalSupport,
+              series,
+              bridged,
+              parameters
+            )
+          }
+        }
+      }
     }
 
-  private def supportFor[U <: Unit2D](
+  private def continue[A, B](work: AssemblyWork[Either[DetectionResultError, A]])(
+      next: A => AssemblyWork[Either[DetectionResultError, B]]
+  ): AssemblyWork[Either[DetectionResultError, B]] = work.flatMap {
+    case Left(error)  => AssemblyWork.Done(Left(error))
+    case Right(value) => next(value)
+  }
+
+  private[detect] def supportFor[U <: Unit2D](
       source: RecordingRef,
       recording: Recording[U],
       detector: DetectorRef,
       events: Vector[Event[U]]
   ): Either[DetectionResultError, Vector[SampleRange]] =
-    events.zipWithIndex.foldLeft[Either[DetectionResultError, Vector[SampleRange]]](
-      Right(Vector.empty)
-    ) { case (acc, (event, eventIndex)) =>
-      for
-        ranges <- acc
-        _      <- Either.cond(
-          event.span.onset.toMicros >= recording.extent.onset.toMicros &&
-            event.span.offset.toMicros <= recording.extent.offset.toMicros,
-          (),
-          DetectionResultError.EventOutsideRecording(
-            source,
-            detector,
-            eventIndex,
-            event.span,
-            recording.extent
-          )
-        )
-        indices = (0 until recording.size).filter(index =>
-          event.span.contains(recording.samples(index).t)
-        )
-        range <- (indices.headOption, indices.lastOption) match
-          case (Some(first), Some(last)) =>
-            SampleRange
-              .of(first, last + 1)
-              .left
-              .map(
-                DetectionResultError.InvalidDerivedRange(
-                  source,
-                  detector,
-                  s"event[$eventIndex]-support",
-                  first,
-                  last + 1,
-                  _
-                )
-              )
-          case _ =>
-            Left(
+    supportWork(source, recording, detector, events).complete
+
+  private def supportWork[U <: Unit2D](
+      source: RecordingRef,
+      recording: Recording[U],
+      detector: DetectorRef,
+      events: Vector[Event[U]]
+  ): AssemblyWork[Either[DetectionResultError, Vector[SampleRange]]] =
+    AssemblyWork.foldEither(AssemblyPhase.Support, 0, events.size, Vector.empty[SampleRange]) {
+      (built, eventIndex) =>
+        val event = events(eventIndex)
+        AssemblyWork.Done {
+          for
+            ranges <- Right(built)
+            _      <- Either.cond(
+              event.span.onset.toMicros >= recording.extent.onset.toMicros &&
+                event.span.offset.toMicros <= recording.extent.offset.toMicros,
+              (),
               DetectionResultError.EventOutsideRecording(
                 source,
                 detector,
@@ -470,7 +467,34 @@ object Detection:
                 recording.extent
               )
             )
-      yield ranges :+ range
+            bounds = recording.sampleBounds(event.span)
+            range <- bounds match
+              case (first, until) if first < until =>
+                SampleRange
+                  .of(first, until)
+                  .left
+                  .map(
+                    DetectionResultError.InvalidDerivedRange(
+                      source,
+                      detector,
+                      s"event[$eventIndex]-support",
+                      first,
+                      until,
+                      _
+                    )
+                  )
+              case _ =>
+                Left(
+                  DetectionResultError.EventOutsideRecording(
+                    source,
+                    detector,
+                    eventIndex,
+                    event.span,
+                    recording.extent
+                  )
+                )
+          yield ranges :+ range
+        }
     }
 
   private def validateGaps[U <: Unit2D](
@@ -481,39 +505,69 @@ object Detection:
       temporalSupport: SampleSupportLedger,
       support: Vector[SampleRange]
   ): Either[DetectionResultError, Vector[SampleRange]] =
-    support.zipWithIndex.foldLeft[Either[DetectionResultError, Vector[SampleRange]]](
-      Right(Vector.empty)
-    ) { case (acc, (eventRange, eventIndex)) =>
-      for
-        collected <- acc
-        gaps      <- contiguousRanges(
-          source,
-          detector,
-          s"event[$eventIndex]-invalid-support",
-          (eventRange.from until eventRange.until).filter(index =>
-            !recording.samples(index).isUsable
-          )
-        )
-        accepted <- gaps.foldLeft[Either[DetectionResultError, Vector[SampleRange]]](
-          Right(collected)
-        ) { (gapAcc, gap) =>
-          val duration = representedDuration(temporalSupport, gap)
-          policy match
-            case GapPolicy.Bridge(maximum) if duration.toMicros <= maximum.span.toMicros =>
-              gapAcc.map(_ :+ gap)
-            case _ =>
-              Left(
-                DetectionResultError.GapPolicyViolation(
+    gapsWork(source, recording, detector, policy, temporalSupport, support).complete
+
+  private def gapsWork[U <: Unit2D](
+      source: RecordingRef,
+      recording: Recording[U],
+      detector: DetectorRef,
+      policy: GapPolicy,
+      temporalSupport: SampleSupportLedger,
+      support: Vector[SampleRange]
+  ): AssemblyWork[Either[DetectionResultError, Vector[SampleRange]]] =
+    import AssemblyWork.*
+    foldEither(AssemblyPhase.Gaps, 0, support.size, Vector.empty[SampleRange]) {
+      (collected, eventIndex) =>
+        val range = support(eventIndex)
+        def close(
+            result: Either[DetectionResultError, Vector[SampleRange]],
+            start: Option[Int],
+            until: Int,
+            duration: Long
+        ): Either[DetectionResultError, Vector[SampleRange]] = start match
+          case None       => result
+          case Some(from) =>
+            SampleRange
+              .of(from, until)
+              .left
+              .map(
+                DetectionResultError.InvalidDerivedRange(
                   source,
                   detector,
-                  eventIndex,
-                  gap,
-                  duration,
-                  policy
+                  s"event[$eventIndex]-invalid-support",
+                  from,
+                  until,
+                  _
                 )
               )
-        }
-      yield accepted
+              .flatMap { gap =>
+                policy match
+                  case GapPolicy.Bridge(maximum) if duration <= maximum.span.toMicros =>
+                    result.map(_ :+ gap)
+                  case _ =>
+                    Left(
+                      DetectionResultError.GapPolicyViolation(
+                        source,
+                        detector,
+                        eventIndex,
+                        gap,
+                        Span.micros(duration),
+                        policy
+                      )
+                    )
+              }
+        val initial: (Either[DetectionResultError, Vector[SampleRange]], Option[Int], Long) =
+          (Right(collected), None, 0L)
+        fold(AssemblyPhase.Gaps, range.from, range.until, initial) {
+          case ((result, start, duration), i) =>
+            if !recording.samples(i).isUsable then
+              (
+                result,
+                start.orElse(Some(i)),
+                duration + temporalSupport.durationAtKnownIndex(i).toMicros
+              )
+            else (close(result, start, i, duration), None, 0L)
+        }.map { case (result, start, duration) => close(result, start, range.until, duration) }
     }
 
   private def assemble[U <: Unit2D](
@@ -526,151 +580,145 @@ object Detection:
       bridged: Vector[SampleRange],
       parameters: Vector[(String, Provenance.Param)]
   ): Either[DetectionResultError, DetectionResult[U]] =
+    assembleWork(
+      source,
+      recording,
+      identity,
+      gapPolicy,
+      temporalSupport,
+      series,
+      bridged,
+      parameters
+    ).complete
+
+  private def assembleWork[U <: Unit2D](
+      source: RecordingRef,
+      recording: Recording[U],
+      identity: DetectorIdentity,
+      gapPolicy: GapPolicy,
+      temporalSupport: SampleSupportLedger,
+      series: EventSeries[U],
+      bridged: Vector[SampleRange],
+      parameters: Vector[(String, Provenance.Param)]
+  ): AssemblyWork[Either[DetectionResultError, DetectionResult[U]]] =
     val detector = identity.detectorRef
-    val classes  = Array.tabulate(recording.size) { index =>
-      recording.samples(index).gaze match
-        case Gaze.Tracked(_, _) => SampleClass.Unclassified
-        case Gaze.Blink()       => SampleClass.Blink
-        case Gaze.Lost()        => SampleClass.Missing
-        case Gaze.OffScreen(_)  => SampleClass.OffSurface
-    }
-
-    series.events.indices.foreach { eventIndex =>
-      val eventClass = series.events(eventIndex) match
-        case _: Event.Fixation[U] => SampleClass.Fixation
-        case _: Event.Saccade[U]  => SampleClass.Saccade
-        case _: Event.Pursuit[U]  => SampleClass.Pursuit
-        case _: Event.Blink[U]    => SampleClass.Blink
-      val range = series.support(eventIndex)
-      (range.from until range.until).foreach { sampleIndex =>
-        if recording.samples(sampleIndex).isUsable then classes(sampleIndex) = eventClass
+    final case class Accounting(
+        labels: Vector[SampleClass],
+        event: Int,
+        durations: Vector[Long],
+        open: Option[Int],
+        openDuration: Long,
+        ranges: Vector[SampleRange],
+        warnings: Vector[DetectionWarning]
+    )
+    def close(state: Accounting, until: Int): Either[DetectionResultError, Accounting] =
+      state.open match
+        case None       => Right(state)
+        case Some(from) =>
+          SampleRange
+            .of(from, until)
+            .left
+            .map(
+              DetectionResultError
+                .InvalidDerivedRange(source, detector, "unclassified-support", from, until, _)
+            )
+            .map { range =>
+              state.copy(
+                open = None,
+                openDuration = 0L,
+                ranges = state.ranges :+ range,
+                warnings = state.warnings :+ DetectionWarning
+                  .UnclassifiedSupport(source, detector, range, Span.micros(state.openDuration))
+              )
+            }
+    val initial = Accounting(
+      Vector.empty,
+      0,
+      Vector.fill(SampleClass.values.length)(0L),
+      None,
+      0L,
+      Vector.empty,
+      Vector.empty
+    )
+    AssemblyWork
+      .foldEither(AssemblyPhase.LabelsAndReport, 0, recording.size, initial) { (state, i) =>
+        var event = state.event
+        while event < series.size && series.support(event).until <= i do event += 1
+        val sample = recording.samples(i)
+        val label  = sample.gaze match
+          case Gaze.Blink()       => SampleClass.Blink
+          case Gaze.Lost()        => SampleClass.Missing
+          case Gaze.OffScreen(_)  => SampleClass.OffSurface
+          case Gaze.Tracked(_, _) =>
+            if event < series.size && series.support(event).contains(i) then
+              series.events(event) match
+                case _: Event.Fixation[U] => SampleClass.Fixation
+                case _: Event.Saccade[U]  => SampleClass.Saccade
+                case _: Event.Pursuit[U]  => SampleClass.Pursuit
+                case _: Event.Blink[U]    => SampleClass.Blink
+            else SampleClass.Unclassified
+        val duration = temporalSupport.durationAtKnownIndex(i).toMicros
+        val updated  = state.copy(
+          labels = state.labels :+ label,
+          event = event,
+          durations =
+            state.durations.updated(label.ordinal, state.durations(label.ordinal) + duration)
+        )
+        AssemblyWork.Done {
+          if label == SampleClass.Unclassified then
+            Right(
+              updated.copy(
+                open = state.open.orElse(Some(i)),
+                openDuration = state.openDuration + duration
+              )
+            )
+          else close(updated, i)
+        }
       }
-    }
-
-    for unclassified <- contiguousRanges(
-        source,
-        detector,
-        "unclassified-support",
-        classes.indices.filter(i => classes(i) == SampleClass.Unclassified)
-      )
-    yield
-      val labels   = SampleLabels.from(classes)
-      val warnings = unclassified.map { range =>
-        DetectionWarning.UnclassifiedSupport(
+      .map(_.flatMap(close(_, recording.size)).map { state =>
+        val report = DetectionReport(
           source,
           detector,
-          range,
-          representedDuration(temporalSupport, range)
+          gapPolicy,
+          temporalSupport.policy,
+          temporalSupport.censoredTime,
+          recording.size,
+          SampleClass.values.toVector.map(c => c -> Span.micros(state.durations(c.ordinal))),
+          state.ranges,
+          bridged,
+          state.warnings
         )
-      }
-      val durations = SampleClass.values.toVector.map { sampleClass =>
-        val micros = classes.indices
-          .filter(index => classes(index) == sampleClass)
-          .map(index => temporalSupport.durationAtKnownIndex(index).toMicros)
-          .sum
-        sampleClass -> Span.micros(micros)
-      }
-      val report = DetectionReport(
-        source,
-        detector,
-        gapPolicy,
-        temporalSupport.policy,
-        temporalSupport.censoredTime,
-        recording.size,
-        durations,
-        unclassified,
-        bridged,
-        warnings
-      )
-      val step = Provenance.Step(
-        "detect",
-        Vector(
-          "detector"  -> Provenance.Param.Text(detector.name),
-          "version"   -> Provenance.Param.Text(detector.version),
-          "source"    -> Provenance.Param.Text(source.value),
-          "gapPolicy" -> Provenance.Param.Text(gapPolicy.render)
-        ) ++ parameters
-      )
-      new DetectionResult(
-        identity,
-        labels,
-        series,
-        report,
-        Provenance.raw(recording.contentHash).andThen(step)
-      )
-
-  private def contiguousRanges(
-      source: RecordingRef,
-      detector: DetectorRef,
-      role: String,
-      indices: Seq[Int]
-  ): Either[DetectionResultError, Vector[SampleRange]] =
-    indices.headOption match
-      case None        => Right(Vector.empty)
-      case Some(first) =>
-        val boundaries = indices.tail.foldLeft(Vector.empty[(Int, Int)] -> (first, first)) {
-          case ((completed, (from, last)), index) =>
-            if index == last + 1 then completed      -> (from, index)
-            else (completed :+ (from -> (last + 1))) -> (index, index)
-        }
-        val (completed, (from, last)) = boundaries
-        (completed :+ (from -> (last + 1))).foldLeft[
-          Either[DetectionResultError, Vector[SampleRange]]
-        ](Right(Vector.empty)) { case (acc, (rangeFrom, rangeUntil)) =>
-          for
-            built <- acc
-            range <- SampleRange
-              .of(rangeFrom, rangeUntil)
-              .left
-              .map(
-                DetectionResultError.InvalidDerivedRange(
-                  source,
-                  detector,
-                  role,
-                  rangeFrom,
-                  rangeUntil,
-                  _
-                )
-              )
-          yield built :+ range
-        }
-
-  private def representedDuration(
-      temporalSupport: SampleSupportLedger,
-      range: SampleRange
-  ): Span =
-    Span.micros(
-      (range.from until range.until).foldLeft(0L) { (total, index) =>
-        total + temporalSupport.durationAtKnownIndex(index).toMicros
-      }
-    )
+        val step = Provenance.Step(
+          "detect",
+          Vector(
+            "detector"  -> Provenance.Param.Text(detector.name),
+            "version"   -> Provenance.Param.Text(detector.version),
+            "source"    -> Provenance.Param.Text(source.value),
+            "gapPolicy" -> Provenance.Param.Text(gapPolicy.render)
+          ) ++ parameters
+        )
+        new DetectionResult(
+          identity,
+          SampleLabels.fromVector(state.labels),
+          series,
+          report,
+          Provenance.raw(series.lineage.contentHash).andThen(step)
+        )
+      })
 
 end Detection
 
-/** One bounded step of detection. `samples` is the number the step fed. */
+/** One bounded step: charged samples while feeding, operations during assembly. */
 enum DetectionPage[U <: Unit2D]:
-  case More(samples: Int, next: DetectionCursor[U])
-  case Done(samples: Int, result: Either[DetectionResultError, DetectionResult[U]])
+  case More(workUnits: Int, next: DetectionCursor[U])
+  case Done(workUnits: Int, result: Either[DetectionResultError, DetectionResult[U]])
 
-/** Detection part-way through a recording, see [[Detection.stepped]].
-  *
-  * Each `advance` feeds at most `maximum` samples to the detector's machine
-  * through a [[MachineCursor]]; the step that feeds the last sample also
-  * flushes the machine once and assembles the result exactly as `Detection.run`
-  * does, so a completed cursor is bit-for-bit `run`'s result whatever the
-  * chunking, and an event that spans a chunk boundary is emitted where the
-  * machine emits it. A cursor abandoned before its last step has flushed
-  * nothing: no event, and no result, is manufactured for a cancelled run.
-  *
-  * A step's units are its samples; the flush and assembly are charged to the
-  * last step. An emission failure ends the cursor at the step that observes
-  * it, with the same error `run` reports.
-  *
-  * Bounded-step requirement for independently implemented detectors: the
-  * machine's per-sample `step` and its `flush` are the units of work this
-  * cursor can cut between; a `step` that does unbounded work on one sample is
-  * not made interruptible by chunking. Detectors register once, through
-  * `EventDetector.of`; there is no separate bounded registration.
+/** Immutable detection cursor. Feeding consumes at most `maximum` samples;
+  * after the last feed and flush, assembly advances at most `maximum` operations
+  * within one [[AssemblyPhase]]. Pages charge samples while feeding and assembly
+  * operations thereafter. `consumed` always counts only source samples.
+  * Cancellation during assembly exposes no partial artifact. A custom machine's
+  * per-sample step and flush remain indivisible operations.
   */
 final class DetectionCursor[U <: Unit2D] private (
     source: RecordingRef,
@@ -680,16 +728,43 @@ final class DetectionCursor[U <: Unit2D] private (
     temporalSupport: SampleSupportLedger,
     parameters: Vector[(String, Provenance.Param)],
     machine: MachineCursor[Sample[U], DetectionEmission[U]],
-    checked: Int
+    checked: Int,
+    assembly: Option[AssemblyWork[Either[DetectionResultError, DetectionResult[U]]]] = None
 ):
   /** Samples fed so far and the recording's sample count. */
-  def consumed: Int = machine.consumed
-  def total: Int    = machine.total
+  def consumed: Int = if assembly.nonEmpty then total else machine.consumed
+  def assemblyPhase: Option[AssemblyPhase] = assembly.flatMap(_.phase)
+  def total: Int                           = machine.total
 
   /** Each page checks only the emissions it added: `checked` counts those
     * already known to be `Right`, so a run scans every emission once.
     */
-  def advance(maximum: Int): DetectionPage[U] =
+  def advance(maximum: Int): DetectionPage[U] = advance(maximum, maximum)
+
+  /** Independently control feeding and assembly operation quanta. */
+  def advance(maximum: Int, assemblyMaximum: Int): DetectionPage[U] = assembly match
+    case Some(work) =>
+      val (units, next) = work.advance(assemblyMaximum)
+      next match
+        case AssemblyWork.Done(result) => DetectionPage.Done(units, result)
+        case _                         =>
+          DetectionPage.More(
+            units,
+            new DetectionCursor(
+              source,
+              recording,
+              identity,
+              gapPolicy,
+              temporalSupport,
+              parameters,
+              machine,
+              checked,
+              Some(next)
+            )
+          )
+    case None => feed(maximum)
+
+  private def feed(maximum: Int): DetectionPage[U] =
     machine.advance(maximum) match
       case MachinePage.More(units, next) =>
         Detection.firstFailure(source, identity.detectorRef, next.emitted, checked) match
@@ -709,12 +784,11 @@ final class DetectionCursor[U <: Unit2D] private (
               )
             )
       case MachinePage.Done(units, emissions) =>
-        DetectionPage.Done(
-          units,
-          Detection
-            .firstFailure(source, identity.detectorRef, emissions, checked)
-            .flatMap(_ =>
-              Detection.assembleEmissions(
+        Detection.firstFailure(source, identity.detectorRef, emissions, checked) match
+          case Left(error) => DetectionPage.Done(units, Left(error))
+          case Right(())   =>
+            val work = AssemblyWork.defer(AssemblyPhase.Emissions) {
+              Detection.assemblyWork(
                 source,
                 recording,
                 identity,
@@ -723,8 +797,21 @@ final class DetectionCursor[U <: Unit2D] private (
                 emissions,
                 parameters
               )
+            }
+            DetectionPage.More(
+              units,
+              new DetectionCursor(
+                source,
+                recording,
+                identity,
+                gapPolicy,
+                temporalSupport,
+                parameters,
+                machine,
+                emissions.size,
+                Some(work)
+              )
             )
-        )
 
 object DetectionCursor:
   private[detect] def begin[U <: Unit2D](
@@ -747,7 +834,7 @@ object DetectionCursor:
       0
     )
 
-  /** Drive a cursor to completion in chunks of `maximum` samples. */
+  /** Drain feeding and assembly with at most `maximum` work units per step. */
   def complete[U <: Unit2D](
       cursor: DetectionCursor[U],
       maximum: Int

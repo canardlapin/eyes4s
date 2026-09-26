@@ -150,14 +150,30 @@ final class Recording[U <: Unit2D] private (
   /** The extent covered, half-open past the final sample by one period so that
     * the last sample occupies time rather than being instantaneous.
     */
-  def extent: Interval =
+  lazy val extent: Interval =
     val tail = rate.nominalPeriod.getOrElse(medianInterval)
     Interval.of(clock, first.t, last.t + tail).toOption.get
 
   def duration: Span = extent.duration
 
+  /** Timestamp bounds only: callers retain their own clock, extent and empty
+    * support errors. Recording construction proves timestamps strictly ordered.
+    */
+  private[eyes4s] def sampleBounds(span: Interval): (Int, Int) =
+    def lowerBound(time: Instant): Int =
+      var low  = 0
+      var high = size
+      while low < high do
+        val middle = low + (high - low) / 2
+        if samples(middle).t.toMicros < time.toMicros then low = middle + 1
+        else high = middle
+      low
+    (lowerBound(span.onset), lowerBound(span.offset))
+
   /** Deterministic content identity for derived-artifact provenance. */
-  def contentHash: ContentHash =
+  lazy val contentHash: ContentHash = contentHashWork.complete
+
+  private[eyes4s] def contentHashWork: AssemblyWork[ContentHash] =
     val samplingHash = samplingEvidence match
       case fixed: SamplingEvidence.Fixed =>
         ContentHash.combineAll(
@@ -196,7 +212,12 @@ final class Recording[U <: Unit2D] private (
         samplingHash
       )
     )
-    val sampleHashes = (0 until size).map { index =>
+    AssemblyWork.fold(
+      AssemblyPhase.SourceIdentity,
+      0,
+      size,
+      ContentHash.combine(ContentHash.empty, metadata)
+    ) { (hash, index) =>
       val sample = samples(index)
       val state  = sample.gaze match
         case Gaze.Tracked(point, pupil) =>
@@ -221,15 +242,17 @@ final class Recording[U <: Unit2D] private (
           )
         case Gaze.Blink() => ContentHash.ofString("blink")
         case Gaze.Lost()  => ContentHash.ofString("lost")
-      ContentHash.combineAll(
-        Seq(
-          ContentHash.ofString(sample.t.toMicros.toString),
-          state,
-          ContentHash.ofString(sample.lineage.render)
+      ContentHash.combine(
+        hash,
+        ContentHash.combineAll(
+          Seq(
+            ContentHash.ofString(sample.t.toMicros.toString),
+            state,
+            ContentHash.ofString(sample.lineage.render)
+          )
         )
       )
     }
-    ContentHash.combineAll(metadata +: sampleHashes)
 
   /** Median inter-sample interval, which is what an irregular recording has
     * instead of a nominal period.

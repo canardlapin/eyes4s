@@ -115,77 +115,101 @@ object EventSeries:
       events: Vector[Event[U]],
       support: Vector[SampleRange]
   ): Either[DetectionSupportError, EventSeries[U]] =
-    for
-      _ <- Either.cond(
-        events.length == support.length,
-        (),
-        DetectionSupportError.EventSupportCountMismatch(source, events.length, support.length)
-      )
-      _ <- events.indices
-        .find(index => events(index).span.clock != recording.clock)
-        .fold[Either[DetectionSupportError, Unit]](Right(())) { index =>
-          Left(
-            DetectionSupportError.EventClockMismatch(
-              source,
-              index,
-              recording.clock,
-              events(index).span.clock
-            )
-          )
-        }
-      _ <- support.indices
-        .find(index => support(index).until > recording.size)
-        .fold[Either[DetectionSupportError, Unit]](Right(())) { index =>
-          Left(
-            DetectionSupportError.SampleRangeOutsideRecording(
-              source,
-              index,
-              support(index),
-              recording.size
-            )
-          )
-        }
-      _ <- support.indices
-        .drop(1)
-        .find(index => support(index).from < support(index - 1).until)
-        .fold[Either[DetectionSupportError, Unit]](Right(())) { index =>
-          Left(
-            DetectionSupportError.OverlappingSampleRanges(
-              source,
-              index,
-              support(index - 1),
-              support(index)
-            )
-          )
-        }
-      supportedEvents <- events.indices.foldLeft[
-        Either[DetectionSupportError, Vector[Event[U]]]
-      ](Right(Vector.empty)) { (acc, index) =>
-        for
-          built <- acc
-          event <- sourceSupportedEvent(recording, source, events(index), support(index), index)
-        yield built :+ event
-      }
-    yield new EventSeries(
-      recording,
-      source,
-      supportedEvents,
-      support,
-      EventSourceLineage(
-        recording.frame.id,
-        recording.contentHash,
-        recording.samples.map(_.lineage).toVector
-      )
-    )
+    assembly(recording, source, events, support).complete
 
-  private def sourceSupportedEvent[U <: Unit2D](
+  private[eyes4s] def assembly[U <: Unit2D](
+      recording: Recording[U],
+      source: RecordingRef,
+      events: Vector[Event[U]],
+      support: Vector[SampleRange]
+  ): AssemblyWork[Either[DetectionSupportError, EventSeries[U]]] =
+    import AssemblyWork.*
+    val validation = AssemblyPhase.EventValidation
+    def checks(from: Int)(f: Int => Either[DetectionSupportError, Unit]) =
+      foldEither(validation, from, events.size, ())((_, i) => Done(f(i)))
+    def continue[A, B](work: AssemblyWork[Either[DetectionSupportError, A]])(
+        f: A => AssemblyWork[Either[DetectionSupportError, B]]
+    ): AssemblyWork[Either[DetectionSupportError, B]] = work.flatMap {
+      case Left(error)  => Done(Left(error))
+      case Right(value) => f(value)
+    }
+    defer(validation) {
+      if events.size != support.size then
+        Done(
+          Left(
+            DetectionSupportError.EventSupportCountMismatch(source, events.size, support.size)
+          )
+        )
+      else
+        continue(checks(0) { i =>
+          Either.cond(
+            events(i).span.clock == recording.clock,
+            (),
+            DetectionSupportError
+              .EventClockMismatch(source, i, recording.clock, events(i).span.clock)
+          )
+        }) { _ =>
+          continue(checks(0) { i =>
+            Either.cond(
+              support(i).until <= recording.size,
+              (),
+              DetectionSupportError
+                .SampleRangeOutsideRecording(source, i, support(i), recording.size)
+            )
+          }) { _ =>
+            continue(checks(1) { i =>
+              Either.cond(
+                support(i).from >= support(i - 1).until,
+                (),
+                DetectionSupportError
+                  .OverlappingSampleRanges(source, i, support(i - 1), support(i))
+              )
+            }) { _ =>
+              continue(
+                foldEither(
+                  AssemblyPhase.EventSummaries,
+                  0,
+                  events.size,
+                  Vector.empty[Event[U]]
+                ) { (built, i) =>
+                  sourceSupportedEventWork(recording, source, events(i), support(i), i)
+                    .map(_.map(built :+ _))
+                }
+              ) { built =>
+                recording.contentHashWork.flatMap { hash =>
+                  fold(
+                    AssemblyPhase.SourceIdentity,
+                    0,
+                    recording.size,
+                    Vector.empty[SampleLineage]
+                  ) { (lineage, i) =>
+                    lineage :+ recording.samples(i).lineage
+                  }.map { lineage =>
+                    Right(
+                      new EventSeries(
+                        recording,
+                        source,
+                        built,
+                        support,
+                        EventSourceLineage(recording.frame.id, hash, lineage)
+                      )
+                    )
+                  }
+                }
+              }
+            }
+          }
+        }
+    }
+
+  private def sourceSupportedEventWork[U <: Unit2D](
       recording: Recording[U],
       source: RecordingRef,
       event: Event[U],
       declared: SampleRange,
       eventIndex: Int
-  ): Either[DetectionSupportError, Event[U]] =
-    for
+  ): AssemblyWork[Either[DetectionSupportError, Event[U]]] =
+    val checked = for
       _ <- Either.cond(
         event.span.onset.toMicros >= recording.extent.onset.toMicros &&
           event.span.offset.toMicros <= recording.extent.offset.toMicros,
@@ -209,11 +233,14 @@ object EventSeries:
           derived
         )
       )
-      supported <- event match
-        case fixation: Event.Fixation[U] =>
-          deriveFixation(recording, source, fixation, declared, eventIndex).map(identity)
-        case other => Right(other)
-    yield supported
+    yield ()
+    checked match
+      case Left(error) => AssemblyWork.Done(Left(error))
+      case Right(())   =>
+        event match
+          case fixation: Event.Fixation[U] =>
+            deriveFixationWork(recording, source, fixation, declared, eventIndex)
+          case other => AssemblyWork.Done(Right(other))
 
   private def rangeForSpan[U <: Unit2D](
       recording: Recording[U],
@@ -221,62 +248,119 @@ object EventSeries:
       eventIndex: Int,
       span: Interval
   ): Either[DetectionSupportError, SampleRange] =
-    val indices =
-      recording.samples.indices.filter(index => span.contains(recording.samples(index).t))
-    indices.headOption match
-      case None => Left(DetectionSupportError.EventSpanHasNoSamples(source, eventIndex, span))
-      case Some(first) =>
-        val until = indices.lastOption.fold(first + 1)(_ + 1)
-        SampleRange
-          .of(first, until)
-          .left
-          .map(_ =>
-            DetectionSupportError.InvalidDerivedSampleRange(
-              source,
-              eventIndex,
-              span,
-              first,
-              until
-            )
+    val (first, until) = recording.sampleBounds(span)
+    if first == until then
+      Left(DetectionSupportError.EventSpanHasNoSamples(source, eventIndex, span))
+    else
+      SampleRange
+        .of(first, until)
+        .left
+        .map(_ =>
+          DetectionSupportError.InvalidDerivedSampleRange(
+            source,
+            eventIndex,
+            span,
+            first,
+            until
           )
+        )
 
-  private def deriveFixation[U <: Unit2D](
+  private def deriveFixationWork[U <: Unit2D](
       recording: Recording[U],
       source: RecordingRef,
       fixation: Event.Fixation[U],
       range: SampleRange,
       eventIndex: Int
-  ): Either[DetectionSupportError, Event[U]] =
-    val points = (range.from until range.until).flatMap { sampleIndex =>
-      val sample = recording.samples(sampleIndex)
-      if sample.isUsable then sample.position else None
-    }.toVector
-    if points.isEmpty then
-      Left(DetectionSupportError.NoUsableSourceSamples(source, eventIndex, range))
-    else
-      val centre  = centroid(points)
-      val rebuilt = fixation.dispersion match
-        case Some(spread) =>
-          Event.Fixation.of(
-            fixation.span,
-            centre,
-            dispersion(points, centre, spread.method),
-            spread.method,
-            points.length
-          )
-        case None => Event.Fixation.withoutDispersion(fixation.span, centre, points.length)
-      rebuilt.left
-        .map(DetectionSupportError.InvalidDerivedFixation(source, eventIndex, range, _))
-        .map { value =>
-          val evidenced = (value.dispersionStatus, fixation.dispersionStatus) match
-            case (
-                  DispersionStatus.Available(rebuiltSpread, _),
-                  DispersionStatus.Available(_, evidence: SummaryEvidence.Recomputed)
-                ) =>
-              Event.Fixation.withRecomputedDispersion(value, rebuiltSpread, evidence)
-            case _ => Event.Fixation.withSourceSupport(value, source, range)
-          evidenced: Event[U]
+  ): AssemblyWork[Either[DetectionSupportError, Event[U]]] =
+    import AssemblyWork.*
+    val phase = AssemblyPhase.EventSummaries
+    fold(phase, range.from, range.until, Vector.empty[Pt[U]]) { (points, i) =>
+      val sample = recording.samples(i)
+      if sample.isUsable then sample.position.fold(points)(points :+ _) else points
+    }.flatMap { points =>
+      if points.isEmpty then
+        Done(Left(DetectionSupportError.NoUsableSourceSamples(source, eventIndex, range)))
+      else
+        fold(phase, 0, points.size, (0.0, 0.0)) { case ((x, y), i) =>
+          (x + points(i).x, y + points(i).y)
+        }.flatMap { case (x, y) =>
+          val centre = Pt[U](x / points.size, y / points.size)
+          val spread = fixation.dispersion match
+            case None        => Done(None)
+            case Some(value) => dispersionWork(points, centre, value.method).map(Some(_))
+          spread.map { measured =>
+            val rebuilt = (fixation.dispersion, measured) match
+              case (Some(original), Some(value)) =>
+                Event.Fixation.of(fixation.span, centre, value, original.method, points.size)
+              case _ => Event.Fixation.withoutDispersion(fixation.span, centre, points.size)
+            rebuilt.left
+              .map(DetectionSupportError.InvalidDerivedFixation(source, eventIndex, range, _))
+              .map { value =>
+                val evidenced = (value.dispersionStatus, fixation.dispersionStatus) match
+                  case (
+                        DispersionStatus.Available(rebuiltSpread, _),
+                        DispersionStatus.Available(_, evidence: SummaryEvidence.Recomputed)
+                      ) =>
+                    Event.Fixation.withRecomputedDispersion(value, rebuiltSpread, evidence)
+                  case _ => Event.Fixation.withSourceSupport(value, source, range)
+                evidenced: Event[U]
+              }
+          }
         }
+    }
+
+  private def dispersionWork[U <: Unit2D](
+      points: Vector[Pt[U]],
+      centre: Pt[U],
+      method: DispersionMethod
+  ): AssemblyWork[Double] =
+    import AssemblyWork.*
+    val phase = AssemblyPhase.EventSummaries
+    method match
+      case DispersionMethod.RmsRadius =>
+        fold(phase, 0, points.size, 0.0)((sum, i) =>
+          sum + math.pow(centre.distanceTo(points(i)), 2.0)
+        )
+          .map(sum => math.sqrt(sum / points.size))
+      case DispersionMethod.BoundingBoxWidth | DispersionMethod.BoundingBoxDiagonal =>
+        val first = points.head
+        fold(phase, 1, points.size, (first.x, first.x, first.y, first.y)) {
+          case ((xmin, xmax, ymin, ymax), i) =>
+            val p = points(i)
+            (math.min(xmin, p.x), math.max(xmax, p.x), math.min(ymin, p.y), math.max(ymax, p.y))
+        }.map { case (xmin, xmax, ymin, ymax) =>
+          if method == DispersionMethod.BoundingBoxWidth then xmax - xmin
+          else math.hypot(xmax - xmin, ymax - ymin)
+        }
+      case DispersionMethod.MedianAbsoluteDeviation =>
+        medianWork(points.size)(i => points(i).x).flatMap { x =>
+          medianWork(points.size)(i => points(i).y).flatMap { y =>
+            val medianPoint = Pt[U](x, y)
+            medianWork(points.size)(i => points(i).distanceTo(medianPoint))
+          }
+        }
+
+  /** Persistent ordered counts keep both insertion and median selection resumable. */
+  private def medianWork(size: Int)(value: Int => Double): AssemblyWork[Double] =
+    import AssemblyWork.*
+    val phase = AssemblyPhase.EventSummaries
+    fold(phase, 0, size, scala.collection.immutable.TreeMap.empty[Double, Int]) { (counts, i) =>
+      val v = value(i)
+      counts.updated(v, counts.getOrElse(v, 0) + 1)
+    }.flatMap { counts =>
+      def select(
+          remaining: scala.collection.immutable.TreeMap[Double, Int],
+          before: Int,
+          lower: Option[Double]
+      ): AssemblyWork[Double] = defer(phase) {
+        val (v, count) = remaining.head
+        val end        = before + count
+        val lo = if before <= (size - 1) / 2 && end > (size - 1) / 2 then Some(v) else lower
+        if end > size / 2 then Done(if size % 2 == 1 then v else (lo.getOrElse(v) + v) / 2.0)
+        else select(remaining.removed(v), end, lo)
+      }
+      select(counts, 0, None)
+    }
 
   private def transformEvent[U <: Unit2D, V <: Unit2D](
       recording: Recording[U],

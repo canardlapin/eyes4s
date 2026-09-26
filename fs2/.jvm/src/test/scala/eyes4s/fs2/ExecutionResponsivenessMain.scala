@@ -176,8 +176,9 @@ private[fs2] final case class ResponsivenessResult(
 private[fs2] object ExecutionResponsivenessHarness:
   val schemaVersion: String = "eyes4s-execution-responsiveness-v1"
   val budgetNanos: Long     = 100L * 1000L * 1000L
-  val runnerCap: Long       = 2_000_000L
-  val spreadTrials: Int     = 6
+  // The 600k recording now has 5.24m steps at quantum one, including assembly.
+  val runnerCap: Long   = 8_000_000L
+  val spreadTrials: Int = 6
 
   private def get[E, A](either: Either[E, A]): A =
     either.fold(
@@ -207,11 +208,12 @@ private[fs2] object ExecutionResponsivenessHarness:
     case StudyStage.Contrasting(_)   => "contrasting"
 
   def recordingKind(stage: RecordingStage): String = stage match
-    case RecordingStage.Synchronizing    => "synchronizing"
-    case RecordingStage.Warping          => "warping"
-    case RecordingStage.Interpolating(_) => "interpolating"
-    case RecordingStage.Detecting(_)     => "detecting"
-    case RecordingStage.Assigning        => "assigning"
+    case RecordingStage.Synchronizing     => "synchronizing"
+    case RecordingStage.Warping           => "warping"
+    case RecordingStage.Interpolating(_)  => "interpolating"
+    case RecordingStage.Detecting(_)      => "detecting"
+    case RecordingStage.Assembling(phase) => s"assembly-$phase"
+    case RecordingStage.Assigning         => "assigning"
 
   def temporalKind(stage: TemporalStage): String = stage match
     case TemporalStage.Preparing(_, _, _)    => "preparing"
