@@ -20,7 +20,11 @@ vectors must not enter through a silent conversion: normalization changes some e
 The old `Distribution.fisherZ` retains its historical ±0.999999999999 clamp. Callers must choose
 the endpoint policy explicitly. Distance correlation is not spatial transport and does not mean
 that two maps are equal: reverse-ordered cell values can have distance correlation one. This
-baseline implementation takes quadratic time and linear auxiliary storage in the number of cells.
+baseline implementation takes quadratic time and linear auxiliary storage in the number of cells,
+so it is refused with `CompareError.WorkLimitExceeded` above `DistanceCorrelationLimit.default`
+(2^28 unordered cell pairs, at most 23,170 cells). Pass an explicit limit through
+`MapComparison.scales` or `MapSimilarityMethod.instanceWithin` to admit a larger grid; the
+measured cost is in [Execution responsiveness](EXECUTION_RESPONSIVENESS.md#bounded-synchronous-measures).
 
 `Distribution.cosine` also exposes the `Kernel` contract: its scores are inner
 products of maps normalized to unit Euclidean length. The independent Gram-matrix

@@ -664,6 +664,7 @@
           "compareJVM/eyes4s.compare.ComparisonWorkSuite",
           "compareJVM/eyes4s.compare.DistributionSuite",
           "compareJVM/eyes4s.compare.TransportLiftSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.design.EvaluationWorkSuite",
           "designJVM/eyes4s.design.FiniteControlReferenceSuite",
@@ -712,6 +713,7 @@
           "compareJVM/eyes4s.compare.ComparisonWorkSuite",
           "compareJVM/eyes4s.compare.DistributionSuite",
           "compareJVM/eyes4s.compare.TransportLiftSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.design.EvaluationWorkSuite",
           "designJVM/eyes4s.design.FiniteControlReferenceSuite",
@@ -746,6 +748,7 @@
           "compareJVM/consumer.PublicCompareSuite",
           "compareJVM/eyes4s.compare.DistributionSuite",
           "compareJVM/eyes4s.compare.TransportLiftSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
           "lawsJVM/eyes4s.laws.BaselineMapLawSuite",
@@ -757,6 +760,7 @@
         "owner": "eyes4s/compare/Distribution$$anon$10",
         "suites": [
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
           "lawsJVM/eyes4s.laws.BaselineMapLawSuite"
@@ -768,6 +772,7 @@
         "suites": [
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
           "compareJVM/eyes4s.compare.DistributionSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
           "lawsJVM/eyes4s.laws.BaselineMapLawSuite"
@@ -778,6 +783,7 @@
         "owner": "eyes4s/compare/Distribution$$anon$12",
         "suites": [
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
           "lawsJVM/eyes4s.laws.BaselineMapLawSuite"
@@ -788,6 +794,7 @@
         "owner": "eyes4s/compare/Distribution$$anon$13",
         "suites": [
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
           "lawsJVM/eyes4s.laws.BaselineMapLawSuite"
@@ -830,6 +837,7 @@
         "suites": [
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
           "compareJVM/eyes4s.compare.DistributionSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
           "lawsJVM/eyes4s.examples.MatchedControlSuite",
@@ -842,6 +850,7 @@
         "suites": [
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
           "compareJVM/eyes4s.compare.DistributionSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "lawsJVM/eyes4s.laws.BaselineMapLawSuite"
         ]
@@ -852,6 +861,7 @@
         "suites": [
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
           "compareJVM/eyes4s.compare.DistributionSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
           "lawsJVM/eyes4s.laws.BaselineMapLawSuite"
@@ -945,6 +955,7 @@
         "owner": "eyes4s/compare/Distribution$$anon$10",
         "suites": [
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
           "lawsJVM/eyes4s.laws.BaselineMapLawSuite"
@@ -956,6 +967,7 @@
         "suites": [
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
           "compareJVM/eyes4s.compare.DistributionSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
           "lawsJVM/eyes4s.laws.BaselineMapLawSuite"
@@ -966,6 +978,7 @@
         "owner": "eyes4s/compare/Distribution$$anon$12",
         "suites": [
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
           "lawsJVM/eyes4s.laws.BaselineMapLawSuite"
@@ -976,6 +989,7 @@
         "owner": "eyes4s/compare/Distribution$$anon$13",
         "suites": [
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
           "lawsJVM/eyes4s.laws.BaselineMapLawSuite"
@@ -1072,6 +1086,7 @@
         "suites": [
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
           "compareJVM/eyes4s.compare.DistributionSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
           "lawsJVM/eyes4s.examples.MatchedControlSuite",
@@ -1094,6 +1109,7 @@
         "suites": [
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
           "compareJVM/eyes4s.compare.DistributionSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
           "lawsJVM/eyes4s.laws.BaselineMapLawSuite"
@@ -1193,6 +1209,7 @@
           "compareJVM/eyes4s.compare.ComparisonWorkSuite",
           "compareJVM/eyes4s.compare.DistributionSuite",
           "compareJVM/eyes4s.compare.TransportLiftSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.design.EvaluationWorkSuite",
           "designJVM/eyes4s.design.FiniteControlReferenceSuite",
@@ -4218,6 +4235,7 @@
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
           "compareJVM/eyes4s.compare.DistributionSuite",
           "compareJVM/eyes4s.compare.TransportLiftSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.design.RepetitionSuite",
           "fs2ModuleJVM/eyes4s.fs2.StudyExecutionSuite",
@@ -4282,6 +4300,7 @@
           "compareJVM/eyes4s.compare.ComparisonWorkSuite",
           "compareJVM/eyes4s.compare.DistributionSuite",
           "compareJVM/eyes4s.compare.TransportLiftSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.design.EvaluationWorkSuite",
           "designJVM/eyes4s.design.FiniteControlReferenceSuite",
@@ -4361,6 +4380,7 @@
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
           "compareJVM/eyes4s.compare.DistributionSuite",
           "compareJVM/eyes4s.compare.TransportLiftSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.design.RepetitionSuite",
           "fs2ModuleJVM/eyes4s.fs2.StudyExecutionSuite",
@@ -4506,6 +4526,7 @@
           "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
           "compareJVM/eyes4s.compare.DistributionSuite",
           "compareJVM/eyes4s.compare.TransportLiftSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.design.RepetitionSuite",
           "fs2ModuleJVM/eyes4s.fs2.StudyExecutionSuite",
@@ -4569,6 +4590,7 @@
           "compareJVM/eyes4s.compare.ComparisonWorkSuite",
           "compareJVM/eyes4s.compare.DistributionSuite",
           "compareJVM/eyes4s.compare.TransportLiftSuite",
+          "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
           "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
           "designJVM/eyes4s.design.EvaluationWorkSuite",
           "designJVM/eyes4s.design.FiniteControlReferenceSuite",
@@ -6014,7 +6036,7 @@
     "class eyes4s.compare.ComparisonStep": {
       "classification": "data-sum",
       "instance": "eyes4s/compare/ComparisonStep$Done",
-      "suite": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite"
+      "suite": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite"
     },
     "class eyes4s.compare.ComparisonValueError": {
       "classification": "data-sum",
@@ -6024,7 +6046,7 @@
     "class eyes4s.compare.ComparisonWorkError": {
       "classification": "data-sum",
       "instance": "eyes4s/compare/ComparisonWorkError$InvalidBudget",
-      "suite": "compareJVM/eyes4s.compare.ComparisonWorkSuite"
+      "suite": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite"
     },
     "class eyes4s.compare.CrqaError": {
       "classification": "data-sum",
@@ -6079,7 +6101,7 @@
     "class eyes4s.compare.MapSimilarityMethod": {
       "classification": "data-sum",
       "instance": "eyes4s/compare/MapSimilarityMethod$$anon$1",
-      "suite": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite"
+      "suite": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite"
     },
     "class eyes4s.compare.MeasureScale": {
       "classification": "data-sum",
@@ -8087,13 +8109,13 @@
     "method eyes4s.compare.AlignmentPath.matches():": "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite",
     "method eyes4s.compare.AlignmentPath.render():": "compareJVM/consumer.PublicCompareSuite",
     "method eyes4s.compare.BoundedCompare$.mapScore(3,eyes4s.compare.BoundedCompare,1,eyes4s.compare.MeasureInfo,scala.Function1):eyes4s.compare.BoundedCompare": "compareJVM/eyes4s.compare.ComparisonWorkSuite",
-    "method eyes4s.compare.BoundedCompare.compare(java.lang.Object,java.lang.Object):scala.util.Either": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
+    "method eyes4s.compare.BoundedCompare.compare(java.lang.Object,java.lang.Object):scala.util.Either": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
     "method eyes4s.compare.Compare$package$.MeasureDistance$.of(scala.Double):scala.util.Either": "compareJVM/consumer.PublicCompareSuite",
     "method eyes4s.compare.Compare$package$.MeasureDistance$.render(scala.Double):java.lang.String": "compareJVM/consumer.PublicCompareSuite",
     "method eyes4s.compare.Compare$package$.MeasureDistance$.value(scala.Double):scala.Double": "compareJVM/consumer.PublicCompareSuite",
     "method eyes4s.compare.Compare$package$.Similarity$.of(scala.Double):scala.util.Either": "compareJVM/consumer.PublicCompareSuite",
     "method eyes4s.compare.Compare$package$.Similarity$.render(scala.Double):java.lang.String": "compareJVM/consumer.PublicCompareSuite",
-    "method eyes4s.compare.Compare$package$.Similarity$.value(scala.Double):scala.Double": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
+    "method eyes4s.compare.Compare$package$.Similarity$.value(scala.Double):scala.Double": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
     "method eyes4s.compare.Compare$package$.Similarity01$.of(java.lang.String,scala.Double):scala.util.Either": "compareJVM/consumer.PublicCompareSuite",
     "method eyes4s.compare.Compare$package$.Similarity01$.value(scala.Double):scala.Double": "compareJVM/consumer.PublicCompareSuite",
     "method eyes4s.compare.Compare.scale():": "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -8117,7 +8139,7 @@
     "method eyes4s.compare.ComparisonCursor$.decided(1,scala.util.Either):eyes4s.compare.ComparisonCursor": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
     "method eyes4s.compare.ComparisonQuantum$.of(scala.Int):scala.util.Either": "compareJVM/eyes4s.compare.ComparisonWorkSuite",
     "method eyes4s.compare.ComparisonValueError.message():": "codecJVM/eyes4s.codec.DiagnosticsDocJvmSuite",
-    "method eyes4s.compare.ComparisonWork$.complete(1,eyes4s.compare.ComparisonCursor):scala.Tuple2": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
+    "method eyes4s.compare.ComparisonWork$.complete(1,eyes4s.compare.ComparisonCursor):scala.Tuple2": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
     "method eyes4s.compare.ComparisonWork$.start(3,eyes4s.compare.BoundedCompare,java.lang.Object,java.lang.Object,eyes4s.compare.ComparisonBudget):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.compare.ComparisonWorkError.message():": "codecJVM/eyes4s.codec.DiagnosticsDocJvmSuite",
     "method eyes4s.compare.Crqa$.analyse(1,eyes4s.core.Scanpath,eyes4s.core.Scanpath,eyes4s.compare.CrqaConfig):scala.util.Either": "compareJVM/consumer.PublicCompareSuite",
@@ -8132,18 +8154,21 @@
     "method eyes4s.compare.CrqaConfig$.standard(1,scala.Double):eyes4s.compare.CrqaConfig": "compareJVM/consumer.PublicCompareSuite",
     "method eyes4s.compare.CrqaError.message():": "compareJVM/eyes4s.compare.CrqaSuite",
     "method eyes4s.compare.CrqaParameterError.message():": "compareJVM/consumer.PublicCompareSuite",
-    "method eyes4s.compare.Distribution$.cosine(1):eyes4s.compare.BoundedCompare": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
-    "method eyes4s.compare.Distribution$.distanceCorrelation(1):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
-    "method eyes4s.compare.Distribution$.extendedJaccard(1):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
-    "method eyes4s.compare.Distribution$.fisherZ(1):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
-    "method eyes4s.compare.Distribution$.fisherZMachineEpsilon(1):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
+    "method eyes4s.compare.DistanceCorrelationLimit$.of(scala.Long):scala.util.Either": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
+    "method eyes4s.compare.DistanceCorrelationLimit$.pairs(scala.Int):scala.Long": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
+    "method eyes4s.compare.Distribution$.cosine(1):eyes4s.compare.BoundedCompare": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
+    "method eyes4s.compare.Distribution$.distanceCorrelation(1):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
+    "method eyes4s.compare.Distribution$.distanceCorrelationWithin(1,eyes4s.compare.DistanceCorrelationLimit):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
+    "method eyes4s.compare.Distribution$.extendedJaccard(1):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
+    "method eyes4s.compare.Distribution$.fisherZ(1):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
+    "method eyes4s.compare.Distribution$.fisherZMachineEpsilon(1):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
     "method eyes4s.compare.Distribution$.flooredKullbackLeibler(1,scala.Double,eyes4s.kernel.LogBase):eyes4s.compare.Compare": "compareJVM/eyes4s.compare.DistributionSuite",
     "method eyes4s.compare.Distribution$.hellinger(1):eyes4s.compare.Metric": "compareJVM/eyes4s.compare.DistributionSuite",
     "method eyes4s.compare.Distribution$.jensenShannon(1,eyes4s.kernel.LogBase):eyes4s.compare.Semimetric": "compareJVM/eyes4s.compare.DistributionSuite",
     "method eyes4s.compare.Distribution$.kullbackLeibler(1,eyes4s.kernel.LogBase):eyes4s.compare.Divergence": "compareJVM/eyes4s.compare.DistributionSuite",
-    "method eyes4s.compare.Distribution$.l1Similarity(1):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
-    "method eyes4s.compare.Distribution$.pearson(1):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
-    "method eyes4s.compare.Distribution$.spearman(1):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
+    "method eyes4s.compare.Distribution$.l1Similarity(1):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
+    "method eyes4s.compare.Distribution$.pearson(1):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
+    "method eyes4s.compare.Distribution$.spearman(1):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
     "method eyes4s.compare.Distribution$.totalVariation(1):eyes4s.compare.Metric": "compareJVM/consumer.PublicCompareSuite",
     "method eyes4s.compare.FixationComparisonError.message():": "compareJVM/consumer.PublicCompareSuite",
     "method eyes4s.compare.FixationOverlap$.compare(1,eyes4s.core.FixationTrajectory,eyes4s.core.FixationTrajectory,eyes4s.kernel.ClockId,scala.collection.immutable.Vector,eyes4s.compare.OverlapThreshold,eyes4s.compare.FixationGroundDistance,eyes4s.core.TrajectoryEndpoint,eyes4s.compare.MissingOverlapPolicy):scala.util.Either": "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite",
@@ -8157,15 +8182,16 @@
     "method eyes4s.compare.FixationTransportResult.similarity():": "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite",
     "method eyes4s.compare.Lift$.viaSmoothing(2,eyes4s.compare.Compare,eyes4s.surface.Smoother,eyes4s.kernel.Grid,eyes4s.core.Weight):eyes4s.compare.Compare": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
     "method eyes4s.compare.Lift$.viaSmoothingSymmetric(2,eyes4s.compare.SymmetricCompare,eyes4s.surface.Smoother,eyes4s.kernel.Grid,eyes4s.core.Weight):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
-    "method eyes4s.compare.MapComparison$.scales(1,eyes4s.compare.MapScales,eyes4s.compare.MapScales,eyes4s.compare.MapSimilarityMethod):eyes4s.compare.MapScaleComparison": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
+    "method eyes4s.compare.MapComparison$.scales(1,eyes4s.compare.MapScales,eyes4s.compare.MapScales,eyes4s.compare.MapSimilarityMethod,eyes4s.compare.DistanceCorrelationLimit):eyes4s.compare.MapScaleComparison": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
     "method eyes4s.compare.MapComparisonError.message():": "compareJVM/consumer.PublicCompareSuite",
     "method eyes4s.compare.MapScaleComparison.contributing():": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
     "method eyes4s.compare.MapScaleComparison.mean():": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
     "method eyes4s.compare.MapScaleComparison.requested():": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
     "method eyes4s.compare.MapScaleFailure.message():": "compareJVM/consumer.PublicCompareSuite",
-    "method eyes4s.compare.MapScales$.of(1,scala.collection.immutable.Vector):scala.util.Either": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
+    "method eyes4s.compare.MapScales$.of(1,scala.collection.immutable.Vector):scala.util.Either": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
     "method eyes4s.compare.MapSimilarityMethod$.fromReference(java.lang.String):scala.util.Either": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
-    "method eyes4s.compare.MapSimilarityMethod.instance(1):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
+    "method eyes4s.compare.MapSimilarityMethod.instance(1):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
+    "method eyes4s.compare.MapSimilarityMethod.instanceWithin(1,eyes4s.compare.DistanceCorrelationLimit):eyes4s.compare.SymmetricCompare": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
     "method eyes4s.compare.MeasureInfo.render():": "compareJVM/eyes4s.compare.DistributionSuite",
     "method eyes4s.compare.MeasureScale.render():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.compare.Metric.distance(java.lang.Object,java.lang.Object):scala.util.Either": "compareJVM/consumer.PublicCompareSuite",
@@ -8414,7 +8440,7 @@
     "method eyes4s.design.FittedTemplate$.fitNoIntercept(1,eyes4s.design.TemplateTraining):scala.util.Either": "designJVM/eyes4s.templateconsumer.NativeTemplateSuite",
     "method eyes4s.design.FittedTemplate$.importNoIntercept(1,eyes4s.design.TemplateTraining,java.lang.String,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.Int,scala.Int,java.lang.String):scala.util.Either": "designJVM/eyes4s.design.TemplateFitSuite",
     "method eyes4s.design.FittedTemplate.evaluate(eyes4s.design.TemplateHeldOut):scala.util.Either": "designJVM/eyes4s.templateconsumer.NativeTemplateSuite",
-    "method eyes4s.design.KeyDigest$.apply(1,eyes4s.design.KeyDigest):eyes4s.design.KeyDigest": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "method eyes4s.design.KeyDigest$.apply(1,eyes4s.design.KeyDigest):eyes4s.design.KeyDigest": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.design.KeyDigest$.derived(1,scala.deriving.Mirror$.Product,eyes4s.design.KeyDigest$.ProductDigest):eyes4s.design.KeyDigest": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.design.KeyDigest$.given_KeyDigest_Boolean$.digest(scala.Boolean):scala.Long": "designJVM/eyes4s.design.CrossPlatformDeterminismSuite",
     "method eyes4s.design.KeyDigest$.given_KeyDigest_Double$.digest(scala.Double):scala.Long": "designJVM/eyes4s.design.CrossPlatformDeterminismSuite",
@@ -9877,6 +9903,8 @@
     "value eyes4s.compare.Crqa$package$.EmbeddingDelay$.one": "compareJVM/consumer.PublicCompareSuite",
     "value eyes4s.compare.Crqa$package$.EmbeddingDimension$.one": "compareJVM/consumer.PublicCompareSuite",
     "value eyes4s.compare.Crqa$package$.LineLengthMinimum$.two": "compareJVM/consumer.PublicCompareSuite",
+    "value eyes4s.compare.DistanceCorrelationLimit$.DefaultMaximumPairs": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
+    "value eyes4s.compare.DistanceCorrelationLimit$.default": "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite",
     "value eyes4s.compare.FixationTransportConfig$.DefaultMaximumWork": "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite",
     "value eyes4s.compare.SinkhornConfig$.default": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
     "value eyes4s.core.BinocularRecording.left": "coreJVM/eyes4s.core.RecordingSuite",
@@ -10610,6 +10638,16 @@
       "transport distinguishes a small displacement from a large one",
       "zero directions is refused at construction"
     ],
+    "compareJS/eyes4s.compareconsumer.DistanceCorrelationLimitSuite": [
+      "a negative limit is a typed error; zero and Long.MaxValue are valid",
+      "below the bound the result matches the full-matrix formulation",
+      "grid disagreement precedes the bound, and the bound precedes the constancy check",
+      "map comparison threads an explicit limit, and linear methods ignore it",
+      "pairs counts unordered distinct cell pairs without Int overflow",
+      "the bound refuses one pair below the request and admits it exactly and one above",
+      "the default admits 23,170 cells and refuses 23,171 before visiting a pair",
+      "the refusal names the measure, the cells, the pair count and the limit"
+    ],
     "compareJS/eyes4s.compareconsumer.MapComparisonSuite": [
       "Fisher endpoint policies are explicit and legacy behavior is retained",
       "constant, one-cell, invalid mass and nominal geometry policies remain explicit",
@@ -10617,6 +10655,7 @@
       "exact small transport oracle, pinned emd output, sliced W1 and squared-cost Sinkhorn are distinct",
       "identical: every supported method agrees with the independent oracle and pinned vector/density dispatch",
       "missing, duplicate and failed scales never disappear from means or denominators",
+      "near-identical: every supported method agrees with the independent oracle and pinned vector/density dispatch",
       "non-square generated scales agree with independent two-dimensional Gaussian and cosine oracles",
       "orthogonal: every supported method agrees with the independent oracle and pinned vector/density dispatch",
       "regular: every supported method agrees with the independent oracle and pinned vector/density dispatch",
@@ -10629,7 +10668,7 @@
       "base: five portable components match exported R calls; sixth availability is retained",
       "changed: five portable components match exported R calls; sixth availability is retained",
       "duration: five portable components match exported R calls; sixth availability is retained",
-      "explicit direct-default grids reproduce asymmetric support and distance overflow stays located",
+      "explicit direct-default grids span both paths' onsets and distance overflow stays located",
       "minimum three and half-open onset windows preserve component failures",
       "overlap missing support, empty query, threshold, identity and endpoint policies are values",
       "singleton transport separates spatial, onset, squared cost, root cost and similarity",
@@ -10803,7 +10842,7 @@
     ],
     "designJS/eyes4s.design.FiniteControlReferenceSuite": [
       "finite native controls exclude every true-match copy, retain multiplicity and count before selection",
-      "pinned R draws reproduce analytic means but preserve sample-before-exclude divergence",
+      "pinned R draws reproduce analytic means over distinct templates, as native pairing against templates does",
       "seeds can change eligible subsets; duplicate occurrence keys remain ambiguity data"
     ],
     "designJS/eyes4s.design.PairConstructionLawSuite": [
@@ -11499,9 +11538,9 @@
     "kernelJS/eyes4s.kernel.EntropyConformanceSuite": [
       "a shifted lattice: eyesim stops in stopifnot, eyes4s returns GridMismatch",
       "a signed map with positive total: eyes4s refuses to build the Mass and names the cell",
-      "a signed map with positive total: eyesim returns a finite number from its positive cells alone",
+      "a signed map with positive total: eyesim refuses it, as eyes4s does, rather than scoring its positive cells",
       "an exact difference map: eyes4s cannot ask, by type or by construction",
-      "an exact difference map: eyesim returns NA because its total is within machine epsilon of zero",
+      "an exact difference map: eyesim refuses it because a cell is negative, whatever its total",
       "an unnormalised count map normalises to the entropy eyesim computes from the counts",
       "at a zero cell eyesim / is -Inf, Inf or NaN; eyes4s floors both cells at 1e-12 and stays finite",
       "entropy and relative entropy on positive maps equal eyesim and the oracle in both bases",
@@ -12464,9 +12503,9 @@
     "planJS/eyes4s.pointconsumer.PointSamplingSuite": [
       "checked plan components cannot be fabricated by an external consumer",
       "clock and frame disagreements are operand-bearing failures, including no containing cell",
-      "control population preserves source occurrences, excludes all true copies and uses the focal path",
+      "control population counts each distinct template once, excludes all true copies and uses the focal path",
       "final endpoint is explicit; empty and all-missing bins keep their counts",
-      "finite keyed controls are deterministic and order invariant with exact occurrence identities",
+      "finite keyed controls are deterministic and order invariant with exact template identities",
       "matching failures and duplicate source keys retain every row and query",
       "mean of control-time means differs from pooled control values and preserves failure counts",
       "point bins preserve adjacent microseconds above the double integer limit and reject invalid boundaries",
@@ -12993,6 +13032,16 @@
       "transport distinguishes a small displacement from a large one",
       "zero directions is refused at construction"
     ],
+    "compareJVM/eyes4s.compareconsumer.DistanceCorrelationLimitSuite": [
+      "a negative limit is a typed error; zero and Long.MaxValue are valid",
+      "below the bound the result matches the full-matrix formulation",
+      "grid disagreement precedes the bound, and the bound precedes the constancy check",
+      "map comparison threads an explicit limit, and linear methods ignore it",
+      "pairs counts unordered distinct cell pairs without Int overflow",
+      "the bound refuses one pair below the request and admits it exactly and one above",
+      "the default admits 23,170 cells and refuses 23,171 before visiting a pair",
+      "the refusal names the measure, the cells, the pair count and the limit"
+    ],
     "compareJVM/eyes4s.compareconsumer.MapComparisonSuite": [
       "Fisher endpoint policies are explicit and legacy behavior is retained",
       "constant, one-cell, invalid mass and nominal geometry policies remain explicit",
@@ -13000,6 +13049,7 @@
       "exact small transport oracle, pinned emd output, sliced W1 and squared-cost Sinkhorn are distinct",
       "identical: every supported method agrees with the independent oracle and pinned vector/density dispatch",
       "missing, duplicate and failed scales never disappear from means or denominators",
+      "near-identical: every supported method agrees with the independent oracle and pinned vector/density dispatch",
       "non-square generated scales agree with independent two-dimensional Gaussian and cosine oracles",
       "orthogonal: every supported method agrees with the independent oracle and pinned vector/density dispatch",
       "regular: every supported method agrees with the independent oracle and pinned vector/density dispatch",
@@ -13012,7 +13062,7 @@
       "base: five portable components match exported R calls; sixth availability is retained",
       "changed: five portable components match exported R calls; sixth availability is retained",
       "duration: five portable components match exported R calls; sixth availability is retained",
-      "explicit direct-default grids reproduce asymmetric support and distance overflow stays located",
+      "explicit direct-default grids span both paths' onsets and distance overflow stays located",
       "minimum three and half-open onset windows preserve component failures",
       "overlap missing support, empty query, threshold, identity and endpoint policies are values",
       "singleton transport separates spatial, onset, squared cost, root cost and similarity",
@@ -13186,7 +13236,7 @@
     ],
     "designJVM/eyes4s.design.FiniteControlReferenceSuite": [
       "finite native controls exclude every true-match copy, retain multiplicity and count before selection",
-      "pinned R draws reproduce analytic means but preserve sample-before-exclude divergence",
+      "pinned R draws reproduce analytic means over distinct templates, as native pairing against templates does",
       "seeds can change eligible subsets; duplicate occurrence keys remain ambiguity data"
     ],
     "designJVM/eyes4s.design.PairConstructionLawSuite": [
@@ -13956,9 +14006,9 @@
     "kernelJVM/eyes4s.kernel.EntropyConformanceSuite": [
       "a shifted lattice: eyesim stops in stopifnot, eyes4s returns GridMismatch",
       "a signed map with positive total: eyes4s refuses to build the Mass and names the cell",
-      "a signed map with positive total: eyesim returns a finite number from its positive cells alone",
+      "a signed map with positive total: eyesim refuses it, as eyes4s does, rather than scoring its positive cells",
       "an exact difference map: eyes4s cannot ask, by type or by construction",
-      "an exact difference map: eyesim returns NA because its total is within machine epsilon of zero",
+      "an exact difference map: eyesim refuses it because a cell is negative, whatever its total",
       "an unnormalised count map normalises to the entropy eyesim computes from the counts",
       "at a zero cell eyesim / is -Inf, Inf or NaN; eyes4s floors both cells at 1e-12 and stays finite",
       "entropy and relative entropy on positive maps equal eyesim and the oracle in both bases",
@@ -14943,9 +14993,9 @@
     "planJVM/eyes4s.pointconsumer.PointSamplingSuite": [
       "checked plan components cannot be fabricated by an external consumer",
       "clock and frame disagreements are operand-bearing failures, including no containing cell",
-      "control population preserves source occurrences, excludes all true copies and uses the focal path",
+      "control population counts each distinct template once, excludes all true copies and uses the focal path",
       "final endpoint is explicit; empty and all-missing bins keep their counts",
-      "finite keyed controls are deterministic and order invariant with exact occurrence identities",
+      "finite keyed controls are deterministic and order invariant with exact template identities",
       "matching failures and duplicate source keys retain every row and query",
       "mean of control-time means differs from pooled control values and preserves failure counts",
       "point bins preserve adjacent microseconds above the double integer limit and reject invalid boundaries",

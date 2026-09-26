@@ -28,8 +28,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Rendered codes, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 385
-  private val PinnedDigest = "8b57e4c5b808ad94"
+  private val PinnedCount  = 386
+  private val PinnedDigest = "336c5fca3f885a78"
 
   test(
     "every cataloged family is sampled, in catalog order, through its own Diagnose instance"

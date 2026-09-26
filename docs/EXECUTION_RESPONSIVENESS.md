@@ -278,6 +278,39 @@ assignment 21–30 ms. By linear projection the first of them passes 100 ms at a
 `supportFor` first, then decide whether assembly and the whole steps need their
 own chunking for long recordings.
 
+## Bounded synchronous measures
+
+Some measures run as one synchronous, uncancellable call with no cursor, so a
+typed work limit, checked before any work, is what keeps one call short. Each row
+is the current default and the measured cost of its largest admitted input.
+
+| Measure | Work unit | Default limit | Largest admitted input | Measured at that input | Refusal |
+|---|---|---:|---|---:|---|
+| `Distribution.distanceCorrelation` (`MapSimilarityMethod.DistanceCorrelation`) | unordered cell pair, `n(n-1)/2` | 2^28 = 268,435,456 | 23,170 cells (152×152 = 23,104) | 442–472 ms | `CompareError.WorkLimitExceeded(measure, cells, pairs, limit)` |
+
+Distance correlation visits each unordered cell pair twice: once for the
+distance-matrix row sums and once for the centred products. It holds O(cells)
+state. Measured 2026-09-25 on the pinned M3 Max, OpenJDK 25.0.1, in sbt's test JVM
+with uniform random maps, one warm-up call per size:
+
+| Grid | Cells | Pairs | Current ms | Previous full-matrix ms |
+|---|---:|---:|---:|---:|
+| 64×64 | 4,096 | 8,386,560 | 15 | 47 |
+| 96×96 | 9,216 | 42,462,720 | 72 | 205 |
+| 128×128 | 16,384 | 134,209,536 | 227 | 748 |
+| 2317×10 | 23,170 | 268,412,865 | 446 | 1,264 |
+| 160×160 | 25,600 | 327,667,200 | 556 | 1,573 |
+| 256×256 | 65,536 | 2,147,450,880 | 3,575 | 10,981 |
+
+That is about 1.7 ns per pair. The previous formulation visited all n² ordered
+pairs three times; the current one visits n(n-1)/2 pairs twice. The two agree to
+rounding: the largest relative difference observed was 2.8e-12, and the pinned
+eyesim fixtures still pass at `MapTolerance = 1e-12`. A 256×256 grid is refused by
+default; a caller that accepts a call of several seconds passes
+`DistanceCorrelationLimit.of(n)` to `Distribution.distanceCorrelationWithin`,
+`MapSimilarityMethod.instanceWithin` or `MapComparison.scales`. Repetition plans
+use the default limit, and the limit is not on the plan wire.
+
 ## Reproduce
 
 ```sh

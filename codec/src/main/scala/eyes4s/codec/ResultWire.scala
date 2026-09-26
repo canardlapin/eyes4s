@@ -566,6 +566,14 @@ private[codec] object ResultWire:
           "cells"   -> Json.fromInt(c),
           "limit"   -> Json.fromInt(l)
         )
+      case WorkLimitExceeded(m, c, p, l) =>
+        tagged(
+          "workLimitExceeded",
+          "measure" -> Json.fromString(m),
+          "cells"   -> Json.fromInt(c),
+          "pairs"   -> long(p),
+          "limit"   -> long(l)
+        )
       case InvalidSubstitutionCost(m, l, r, v) =>
         tagged(
           "invalidSubstitutionCost",
@@ -627,6 +635,13 @@ private[codec] object ResultWire:
           c <- Wire.field[Int](json, "cells")
           l <- Wire.field[Int](json, "limit")
         yield CostMatrixLimitExceeded(m, c, l)
+      case "workLimitExceeded" =>
+        for
+          m <- measure
+          c <- Wire.field[Int](json, "cells")
+          p <- readLong(json, "pairs")
+          l <- readLong(json, "limit")
+        yield WorkLimitExceeded(m, c, p, l)
       case "invalidSubstitutionCost" =>
         for
           m <- measure

@@ -206,6 +206,7 @@ object DiagnosticCatalog:
     "ZeroNorm",
     "RelativeEntropySupport",
     "CostMatrixLimitExceeded",
+    "WorkLimitExceeded",
     "InvalidSubstitutionCost",
     "InvalidScore",
     "TooShort"
