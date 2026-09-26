@@ -68,11 +68,13 @@ input), `Refused` (a blocker carrying the family's own refusal as a catalogued
 `Diagnostic[K]` and the remedy its cause implies) and `DataDependent` (a
 warning carrying its cause and the non-empty trials execution will fail).
 Severity and class follow from the case. `AnalysisFinding.refused(error)`
-derives a refusal's remedy on the dedicated families' rule: a `PlanError` or
-`TemporalStudyError` takes the remedy `StudyFinding.Refused` and
-`TemporalFinding.Refused` give it, a `RecordingPlanError` suggests
-`ReviseDetectorParameters`, a finding keeps its own, and any other cause falls
-back to `ReconcileMethodDescriptor`.
+takes a refusal's remedy from the cause's `Remedial` instance, which follows
+the dedicated families' rule: a `PlanError` or `TemporalStudyError` takes the
+remedy `StudyFinding.Refused` and `TemporalFinding.Refused` give it, a
+`RecordingPlanError` suggests `ReviseDetectorParameters`, and a finding keeps
+its own. There is no catch-all instance: a family whose error type has none
+does not compile until it provides one, or states a constant remedy
+explicitly with `Remedial.fixed`.
 Their report, `AnalysisReport[K, A]`, confirms against the current description
 and input exactly as the other reports do. `AnalysisKind` lists every analysis
 the library offers with the family that carries it; the analyses without a

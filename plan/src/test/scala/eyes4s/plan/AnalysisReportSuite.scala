@@ -198,12 +198,11 @@ class AnalysisReportSuite extends munit.FunSuite:
       AnalysisFinding.refused[PlanError, StudyKey](PlanError.MissingAngularScale(1)).remedy,
       Remedy.ReviseScaleDeclaration
     )
-    // A cause with no dedicated mapping falls back explicitly.
+    // A cause with no dedicated mapping takes the generic remedy only when asked.
+    given Remedial[DescriptorError] = Remedial.fixed(Remedy.ReconcileMethodDescriptor)
     assertEquals(
       AnalysisFinding
-        .refused[DescriptorError, StudyKey](
-          DescriptorError.MissingMethod(DefinitionId.cosine)
-        )
+        .refused[DescriptorError, StudyKey](DescriptorError.MissingMethod(DefinitionId.cosine))
         .remedy,
       Remedy.ReconcileMethodDescriptor
     )
@@ -218,6 +217,24 @@ class AnalysisReportSuite extends munit.FunSuite:
     assertEquals(
       compiletime.testing.typeCheckErrors(
         "AnalysisFinding.DataDependent(cause, NonEmptyVector.one(k1))"
+      ),
+      Nil
+    )
+  }
+
+  test("a refusal whose cause states no remedy does not compile") {
+    val missing = compiletime.testing.typeCheckErrors(
+      "AnalysisFinding.refused[DescriptorError, StudyKey](DescriptorError.MissingMethod(DefinitionId.cosine))"
+    )
+    assert(missing.exists(_.message.contains("Remedial")), missing.map(_.message))
+    assertEquals(
+      compiletime.testing.typeCheckErrors(
+        """{
+          given Remedial[DescriptorError] = Remedial.fixed(Remedy.ReconcileMethodDescriptor)
+          AnalysisFinding.refused[DescriptorError, StudyKey](
+            DescriptorError.MissingMethod(DefinitionId.cosine)
+          )
+        }"""
       ),
       Nil
     )

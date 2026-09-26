@@ -962,21 +962,38 @@ enum AnalysisFinding[K] extends PreflightFinding[K] derives CanEqual:
     case DataDependent(d, ks) => s"Trials ${ks.toVector} will fail (${d.code}): ${d.message}"
 
 object AnalysisFinding:
-  /** A refusal with the remedy its cause implies, on the rule the dedicated
-    * families use: a `PlanError` or `TemporalStudyError` through
-    * `Preflight.remedyFor`, a `RecordingPlanError` as `ReviseDetectorParameters`,
-    * a preflight finding keeping its own remedy. Any other cause falls back
-    * explicitly to `ReconcileMethodDescriptor`.
+  /** A refusal with the remedy its cause implies. The cause's type must have
+    * a [[Remedial]] instance, so a family whose error type states no remedy
+    * does not compile; a family that wants the generic remedy says so with
+    * [[Remedial.fixed]].
     */
-  def refused[E, K](error: E)(using diagnose: Diagnose[E, K]): AnalysisFinding[K] =
-    Refused(diagnose(error), remedyOf(error))
+  def refused[E, K](error: E)(using
+      diagnose: Diagnose[E, K],
+      remedial: Remedial[E]
+  ): AnalysisFinding[K] =
+    Refused(diagnose(error), remedial.remedy(error))
 
-  private[plan] def remedyOf(error: Any): Remedy = error match
-    case e: PlanError           => Preflight.remedyFor(e)
-    case e: TemporalStudyError  => Preflight.remedyFor(e)
-    case _: RecordingPlanError  => Remedy.ReviseDetectorParameters
-    case f: PreflightFinding[?] => f.remedy
-    case _                      => Remedy.ReconcileMethodDescriptor
+/** The remedy a refusal's cause implies. Instances follow the rule the
+  * dedicated finding types use; there is deliberately no catch-all instance.
+  */
+trait Remedial[-E]:
+  def remedy(error: E): Remedy
+
+object Remedial:
+  /** An explicit, constant remedy for every error of the type. */
+  def fixed[E](value: Remedy): Remedial[E] = (_: E) => value
+
+  /** As `StudyFinding.Refused` derives it. */
+  given plan: Remedial[PlanError] = Preflight.remedyFor(_: PlanError)
+
+  /** As `TemporalFinding.Refused` derives it. */
+  given temporal: Remedial[TemporalStudyError] = Preflight.remedyFor(_: TemporalStudyError)
+
+  /** As `RecordingFinding.Refused` gives it. */
+  given recording: Remedial[RecordingPlanError] = fixed(Remedy.ReviseDetectorParameters)
+
+  /** A finding keeps its own remedy. */
+  given finding: Remedial[PreflightFinding[?]] = _.remedy
 
 /** The preflight report of a recipe family that uses [[AnalysisFinding]]:
   * findings bound to the plan description and the identity of the input `A`
