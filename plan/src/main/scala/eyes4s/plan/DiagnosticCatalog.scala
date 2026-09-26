@@ -558,7 +558,9 @@ object DiagnosticCatalog:
     "PlanMismatch",
     "ReductionMembership",
     "Orientation",
-    "NoContrast"
+    "NoContrast",
+    "Geometry",
+    "GeometryDescription"
   )
 
   // ---------------------------------------------------------------- appended by CR5
@@ -802,6 +804,10 @@ object DiagnosticCatalog:
     "InvalidFamily",
     "InvalidName"
   )
+  val massLevel: DiagnosticFamily = error("mass-level")(
+    "InvalidCoverage",
+    "InsufficientTotal"
+  )
   val fixationEntropy: DiagnosticFamily = error("fixation-entropy")(
     "FrameMismatch",
     "DegenerateLattice",
@@ -952,7 +958,10 @@ object DiagnosticCatalog:
     diagnosticCode,
     fixationEntropy,
     template,
-    analysisFinding
+    analysisFinding,
+    SourceDiagnostics.identity,
+    SourceDiagnostics.importDescription,
+    massLevel
   )
 
   /** Every live family, grouped as documented. */

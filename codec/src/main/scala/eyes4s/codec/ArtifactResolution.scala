@@ -147,7 +147,12 @@ enum RelationMismatch derives CanEqual:
     */
   case ReportMembers(scale: Int, unknown: Vector[String])
 
+  /** A source relation disagrees with its ledger or import description. */
+  case SourceBinding(field: String, expected: String, found: String)
+
   def message: String = this match
+    case SourceBinding(field, expected, found) =>
+      s"Source binding $field declares $found; expected $expected."
     case Prerequisites(errors)        => errors.map(_.message).mkString(" ")
     case ResultInput(expected, found) =>
       s"The result was computed on input $found, not $expected."
@@ -319,6 +324,26 @@ trait ArtifactDecoders[K, U <: Unit2D]:
   def ledger(document: Json): Either[CodecError, AdmissionLedger[K]]
   def result(document: Json): Either[CodecError, LoadedResult[K, U]]
 
+  /** A primary replay description, refused unless explicitly registered. */
+  def importSpec(document: Json): Either[CodecError, ImportSpec[K, U]] =
+    ArtifactDecoders.unregistered("import-spec", document)
+
+  final def withImportSpecs(codec: VersionedCodec[ImportSpec[K, U]]): ArtifactDecoders[K, U] =
+    new ArtifactDecoders.Delegating[K, U](this):
+      override def importSpec(document: Json) =
+        ArtifactDecoders.admitted("import-spec", document, Vector(codec.schema))(
+          codec.decode(document)
+        )
+
+  /** A packed result receives only payloads named by its result-payload-of edges.
+    * Custom decoders retain their original refusal unless they support this route.
+    */
+  def resultWithPayloads(
+      document: Json,
+      @annotation.unused payloads: PayloadRef => Option[VerifiedPayload]
+  ): Either[CodecError, LoadedResult[K, U]] =
+    result(document)
+
   /** A standalone recording; `payloads` serves the verified payloads a packed
     * recording's `payload-of` relations name.
     */
@@ -421,6 +446,11 @@ object ArtifactDecoders:
     def input(document: Json)  = base.input(document)
     def ledger(document: Json) = base.ledger(document)
     def result(document: Json) = base.result(document)
+    override def resultWithPayloads(
+        document: Json,
+        payloads: PayloadRef => Option[VerifiedPayload]
+    ) =
+      base.resultWithPayloads(document, payloads)
     def recording(document: Json, payloads: PayloadRef => Option[VerifiedPayload]) =
       base.recording(document, payloads)
     def recordingInput(document: Json) = base.recordingInput(document)
@@ -433,6 +463,7 @@ object ArtifactDecoders:
     override def temporalPlan(document: Json)    = base.temporalPlan(document)
     override def temporalResult(document: Json)  = base.temporalResult(document)
     override def report(document: Json)          = base.report(document)
+    override def importSpec(document: Json)      = base.importSpec(document)
 
   /** Nothing is registered for the role: refuse the document's schema. */
   private def unregistered[A](role: String, document: Json): Either[CodecError, A] =
@@ -468,6 +499,11 @@ object ArtifactDecoders:
       def input(document: Json)  = inputs.decodeInput(document)
       def ledger(document: Json) = inputs.decodeLedger(document)
       def result(document: Json) = results.decode(document)
+      override def resultWithPayloads(
+          document: Json,
+          payloads: PayloadRef => Option[VerifiedPayload]
+      ) =
+        results.decodeWithPayloads(document, payloads)
 
       def recording(document: Json, payloads: PayloadRef => Option[VerifiedPayload]) =
         val supported = Vector(
@@ -531,7 +567,7 @@ object ArtifactDecoders:
     )((registry, method) =>
       registry.flatMap(_.register(StudyResultCodecs.registered[U](method).registration))
     )
-  yield of(plans, inputs, results)
+  yield of(plans, inputs, results).withImportSpecs(ImportSpecCodec.study[U])
 
   /** The trial-keyed route of every registered map method
     * ([[ComparisonMethods.all]]): participant, phase, trial and occurrence
@@ -574,7 +610,10 @@ final class ResolvedManifest[K, U <: Unit2D] private[codec] (
     val temporalPlans: Vector[(ArtifactName, LoadedTemporal[K, U])],
     val temporalResults: Vector[(ArtifactName, LoadedTemporalResult[K, U])],
     val reportSpecs: Vector[(ArtifactName, eyes4s.results.ReportSpec)] = Vector.empty,
-    val reports: Vector[(ArtifactName, eyes4s.results.Report[K])] = Vector.empty
+    val reports: Vector[(ArtifactName, eyes4s.results.Report[K])] = Vector.empty,
+    val sourceFiles: Vector[(ArtifactName, String)] = Vector.empty,
+    val importSpecs: Vector[(ArtifactName, ImportSpec[K, U])] = Vector.empty,
+    val inventorySpecs: Vector[(ArtifactName, InventoryImportSpec)] = Vector.empty
 ):
   def plan(name: ArtifactName): Option[LoadedStudy[K, U]]    = plans.collectFirst(at(name))
   def input(name: ArtifactName): Option[StudyInput[K, U]]    = inputs.collectFirst(at(name))
@@ -598,6 +637,13 @@ final class ResolvedManifest[K, U <: Unit2D] private[codec] (
     reportSpecs.collectFirst(at(name))
   def report(name: ArtifactName): Option[eyes4s.results.Report[K]] =
     reports.collectFirst(at(name))
+
+  /** Byte-verified strict UTF-8 contents, not replay verification evidence. */
+  def sourceFile(name: ArtifactName): Option[String] = sourceFiles.collectFirst(at(name))
+  def importSpec(name: ArtifactName): Option[ImportSpec[K, U]] =
+    importSpecs.collectFirst(at(name))
+  def inventorySpec(name: ArtifactName): Option[InventoryImportSpec] =
+    inventorySpecs.collectFirst(at(name))
 
   private def at[A](name: ArtifactName): PartialFunction[(ArtifactName, A), A] = {
     case (n, value) if n == name => value
@@ -721,6 +767,9 @@ object ArtifactResolver:
     case TemporalResult(value: LoadedTemporalResult[K, U])
     case Spec(value: eyes4s.results.ReportSpec)
     case Reported(value: eyes4s.results.Report[K])
+    case SourceText(value: String)
+    case Import(value: ImportSpec[K, U])
+    case InventoryImport(value: InventoryImportSpec)
 
   private def decode[K, U <: Unit2D](
       manifest: ScientificManifest,
@@ -733,9 +782,18 @@ object ArtifactResolver:
         entry -> VerifiedPayload.trusted(PayloadRef(entry.sha256, l), bytes)
       )
     }
-    val payloads  = packed.map((entry, payload) => entry.name -> payload).toMap
+    val payloads = packed.map((entry, payload) => entry.name -> payload).toMap
+    val sources: Vector[(ManifestEntry, Either[ResolveError, Decoded[K, U]])] =
+      verified.collect {
+        case (entry, bytes) if entry.role == ArtifactRole.SourceFile =>
+          entry -> Utf8
+            .decode(bytes)
+            .left
+            .map(ResolveError.Text(entry.name, _))
+            .map(Decoded.SourceText(_))
+      }
     val documents = verified.collect {
-      case (entry, bytes) if entry.role != ArtifactRole.Payload =>
+      case (entry, bytes) if entry.media == MediaKind.JsonText =>
         entry -> document(entry, bytes)
     }
     // Study inputs first: a temporal input embedding its base by reference needs it.
@@ -756,7 +814,7 @@ object ArtifactResolver:
           decodeOne(manifest, entry, json, decoders, payloads, decodedInputs)
         )
     }
-    val all = (inputs ++ others ++ packed.map((entry, payload) =>
+    val all = (inputs ++ others ++ sources ++ packed.map((entry, payload) =>
       entry -> Right(Decoded.Payload(payload))
     )).map((entry, value) => entry.name -> value).toMap
     accumulate(
@@ -805,11 +863,29 @@ object ArtifactResolver:
       inputs: Map[ArtifactName, StudyInput[K, U]]
   ): Either[ResolveError, Decoded[K, U]] =
     entry.role match
+      case ArtifactRole.ImportSpec =>
+        if entry.schema == SourceCodecDefinitions.inventorySpec then
+          attempt(entry, ImportSpecCodec.inventory.decode(json)).map(Decoded.InventoryImport(_))
+        else attempt(entry, decoders.importSpec(json)).map(Decoded.Import(_))
+      case ArtifactRole.SourceFile =>
+        Left(
+          ResolveError.Schema(entry.name, entry.schema, SourceImportDefinitions.fixationParser)
+        )
       case ArtifactRole.StudyPlan => attempt(entry, decoders.plan(json)).map(Decoded.Plan(_))
       case ArtifactRole.AdmissionLedger =>
         attempt(entry, decoders.ledger(json)).map(Decoded.Ledger(_))
       case ArtifactRole.StudyResult =>
-        attempt(entry, decoders.result(json)).map(Decoded.Result(_))
+        if entry.schema != DensityArchiveDefinitions.studyResultV2 then
+          attempt(entry, decoders.result(json)).map(Decoded.Result(_))
+        else
+          val related = manifest.relations
+            .collect {
+              case ManifestRelation.ResultPayloadOf(result, payload) if result == entry.name =>
+                payload
+            }
+            .flatMap(payloads.get)
+          attempt(entry, decoders.resultWithPayloads(json, ref => related.find(_.ref == ref)))
+            .map(Decoded.Result(_))
       case ArtifactRole.RecordingInput =>
         attempt(entry, decoders.recordingInput(json)).flatMap(value =>
           checkIdentity(entry, value.hash).as(Decoded.Recorded(value))
@@ -846,7 +922,7 @@ object ArtifactResolver:
         attempt(entry, decoders.input(json)).flatMap(value =>
           checkIdentity(entry, value.hash).as(Decoded.Input(value))
         )
-      case ArtifactRole.Payload =>
+      case ArtifactRole.Payload | ArtifactRole.ResultPayload =>
         Left(ResolveError.Schema(entry.name, entry.schema, DefinitionId.packedArray))
       case ArtifactRole.RecordingPlan =>
         attempt(entry, decoders.recordingPlan(json)).map(Decoded.RecordingPlan(_))
@@ -933,6 +1009,21 @@ object ArtifactResolver:
                 input.channels.contentHash.render
               )
             )
+        case (
+              relation @ ManifestRelation.ResultPayloadOf(result, _),
+              Vector(Some(Decoded.Result(_)), Some(Decoded.Payload(payload)))
+            ) =>
+          val references = verified.collectFirst {
+            case (entry, bytes) if entry.name == result =>
+              document(entry, bytes).flatMap(json =>
+                attempt(entry, ResultManifest.references(json))
+              )
+          }
+          references match
+            case Some(Right(refs)) if refs.contains(payload.ref) => None
+            case Some(Right(_))    => fail(RelationMismatch.UnreferencedPayload(payload.ref))
+            case Some(Left(error)) => Some(error)
+            case None => fail(RelationMismatch.Unavailable(relation.endpoints.map(_._2)))
         case (
               ManifestRelation.PayloadOf(_, _),
               Vector(Some(Decoded.Channels(_, references)), Some(Decoded.Payload(payload)))
@@ -1060,12 +1151,91 @@ object ArtifactResolver:
                     )
                 }.flatMap(fail)
             case _ => fail(RelationMismatch.Unavailable(relation.endpoints.map(_._2)))
+        case (r: ManifestRelation.LedgerSource, _) =>
+          sourceRelation(manifest, decoded, r).flatMap(fail)
         case _ =>
           // Unreachable after a successful decoding phase over a well-formed
           // manifest; refused rather than skipped should it ever be reached.
           fail(RelationMismatch.Unavailable(relation.endpoints.map(_._2)))
     }
     NonEmptyVector.fromVector(errors).toLeft(())
+
+  private def sourceRelation[K, U <: Unit2D](
+      manifest: ScientificManifest,
+      decoded: Map[ArtifactName, Decoded[K, U]],
+      relation: ManifestRelation.LedgerSource
+  ): Option[RelationMismatch] =
+    import RelationMismatch.SourceBinding
+    def check[A](field: String, expected: A, found: A): Option[RelationMismatch] =
+      Option.when(expected != found)(SourceBinding(field, expected.toString, found.toString))
+    def declaration(
+        source: SourceRef,
+        expected: SourceInterpretation.Declared
+    ): Option[RelationMismatch] =
+      check("interpretation", expected: SourceInterpretation, source.interpretation)
+        .orElse(
+          check(
+            "parser",
+            Some(expected.parser),
+            manifest.entry(relation.sourceFile).map(_.schema)
+          )
+        )
+    (
+      decoded.get(relation.ledger),
+      decoded.get(relation.sourceFile),
+      decoded.get(relation.importSpec)
+    ) match
+      case (
+            Some(Decoded.Ledger(ledger)),
+            Some(Decoded.SourceText(_)),
+            Some(Decoded.Import(spec))
+          ) if relation.role == LedgerSourceRole.Primary =>
+        val inventories = manifest.relations.collect {
+          case r @ ManifestRelation.LedgerSource(l, _, _, LedgerSourceRole.TrialInventory)
+              if l == relation.ledger =>
+            r
+        }
+        declaration(ledger.source, SourceInterpretation.fixation(spec))
+          .orElse(
+            check(
+              "inventory relation count",
+              if spec.inventory.isDefined then 1 else 0,
+              inventories.size
+            )
+          )
+          .orElse(
+            check("inventory presence", spec.inventory.isDefined, ledger.inventory.isDefined)
+          )
+          .orElse(spec.inventory.flatMap { expected =>
+            check(
+              "inventory identity",
+              Some(expected.identity),
+              ledger.inventory.flatMap(_.source.identity)
+            )
+              .orElse(inventories.headOption.flatMap { r =>
+                val found = decoded.get(r.importSpec).collect {
+                  case Decoded.InventoryImport(value) => value
+                }
+                check("inventory description", Some(expected.spec), found)
+              })
+          })
+      case (
+            Some(Decoded.Ledger(ledger)),
+            Some(Decoded.SourceText(_)),
+            Some(Decoded.InventoryImport(spec))
+          ) if relation.role == LedgerSourceRole.TrialInventory =>
+        ledger.inventory match
+          case Some(inventory) =>
+            declaration(inventory.source, SourceInterpretation.inventory(spec))
+          case None => Some(SourceBinding("inventory presence", "present", "absent"))
+      case _ =>
+        Some(
+          SourceBinding(
+            "source role",
+            relation.role.wire,
+            s"incompatible endpoints ${relation.endpoints.map(_._2.value).mkString(", ")}"
+          )
+        )
 
   private def assemble[K, U <: Unit2D](
       manifest: ScientificManifest,
@@ -1087,5 +1257,8 @@ object ArtifactResolver:
       ordered.collect { case (n, Decoded.TemporalPlan(v)) => n -> v },
       ordered.collect { case (n, Decoded.TemporalResult(v)) => n -> v },
       ordered.collect { case (n, Decoded.Spec(v)) => n -> v },
-      ordered.collect { case (n, Decoded.Reported(v)) => n -> v }
+      ordered.collect { case (n, Decoded.Reported(v)) => n -> v },
+      ordered.collect { case (n, Decoded.SourceText(v)) => n -> v },
+      ordered.collect { case (n, Decoded.Import(v)) => n -> v },
+      ordered.collect { case (n, Decoded.InventoryImport(v)) => n -> v }
     )

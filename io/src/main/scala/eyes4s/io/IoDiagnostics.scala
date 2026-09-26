@@ -27,6 +27,25 @@ import eyes4s.plan.*
 object IoDiagnosticCatalog:
   import DiagnosticFamily.error
 
+  val sourceAdmission: DiagnosticFamily = error("source-admission")(
+    "Import",
+    "Ledger",
+    "UnsupportedReplay",
+    "MissingInventory",
+    "InventoryIdentity",
+    "MissingItem"
+  )
+
+  val ledgerVerification: DiagnosticFamily = error("ledger-verification")(
+    "LegacyUnverified",
+    "Import",
+    "SourceChanged",
+    "LedgerMismatch",
+    "InputMismatch",
+    "InputEvidenceMismatch",
+    "ManifestBinding"
+  )
+
   val fixationImport: DiagnosticFamily = error("fixation-import")(
     "Csv",
     "Columns",
@@ -259,7 +278,9 @@ object IoDiagnosticCatalog:
     eyeLinkSessionConfig,
     eyeLinkOracle,
     eyeLinkConformance,
-    eyeLinkCorpus
+    eyeLinkCorpus,
+    sourceAdmission,
+    ledgerVerification
   )
 
   /** Every stable code, in catalog order. */
@@ -281,6 +302,22 @@ object IoDiagnostics:
   /** A SHA-256 digest is an artifact identity, rendered in lower-case hex. */
   private given DiagnosticOperand[Sha256, Nothing] =
     DiagnosticOperand.of(digest => Operand.Artifact(digest.hex))
+
+  private given sourceIdentity: DiagnosticOperand[SourceIdentity, Nothing] =
+    DiagnosticOperand.of(id => Operand.Artifact(id.digest))
+
+  given sourceAdmission: Diagnose[SourceAdmissionError, Nothing] =
+    Diagnose.derived[SourceAdmissionError, Nothing](C.sourceAdmission)(_.message)
+
+  private given identityChanges: DiagnosticOperand[IdentityChanges, Nothing] =
+    DiagnosticOperand.of(changes =>
+      Operand.Items(
+        changes.values.toVector.sortBy(_.ordinal).map(value => Operand.Token(value.toString))
+      )
+    )
+
+  given ledgerVerification: Diagnose[LedgerVerificationError, Nothing] =
+    Diagnose.derived[LedgerVerificationError, Nothing](C.ledgerVerification)(_.message)
 
   given fixationImport: Diagnose[FixationImportError, Nothing] =
     Diagnose.derived[FixationImportError, Nothing](C.fixationImport, rejectedRecords)(_.message)

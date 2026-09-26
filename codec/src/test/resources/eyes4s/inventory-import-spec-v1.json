@@ -1,0 +1,14 @@
+{
+  "schema": {
+    "name": "eyes4s.inventory-import-spec",
+    "version": 1
+  },
+  "value": {
+    "participant": "participant",
+    "phase": "phase",
+    "trial": "trial",
+    "occurrence": null,
+    "item": "item",
+    "attributes": []
+  }
+}

@@ -66,6 +66,7 @@ object SchemaRegistry:
   private val plans      = () => new PlanCodecLawSuite
   private val inputs     = () => new StudyInputCodecLawSuite
   private val results    = () => new StudyResultCodecLawSuite
+  private val densities  = () => new DensityArchiveLawSuite
   private val recordings = () => new RecordingInputCodecLawSuite
   private val artifacts  = () => new ArtifactCodecLawSuite
   private val codecs     = () => new CodecLawsSuite
@@ -193,6 +194,42 @@ object SchemaRegistry:
       codecLaw(inputs, "admission ledger with inventory")
     ),
     Entry(
+      SourceCodecDefinitions.sourceRef,
+      Kind.Document,
+      Vector("source-ref-v1.json", "source-inventory-ref-v1.json"),
+      codecLaw(() => new SourceIdentityLawsSuite, "source reference")
+    ),
+    Entry(
+      SourceCodecDefinitions.importSpec,
+      Kind.Document,
+      Vector("import-spec-v1.json"),
+      codecLaw(() => new SourceIdentityLawsSuite, "import spec")
+    ),
+    Entry(
+      SourceCodecDefinitions.inventorySpec,
+      Kind.Document,
+      Vector("inventory-import-spec-v1.json"),
+      codecLaw(() => new SourceIdentityLawsSuite, "inventory import spec")
+    ),
+    Entry(
+      SourceCodecDefinitions.admissionLedgerV4,
+      Kind.Document,
+      Vector("ledger-v4.json"),
+      codecLaw(() => new SourceIdentityLawsSuite, "source ledger")
+    ),
+    Entry(
+      SourceImportDefinitions.fixationParser,
+      Kind.Definition,
+      Vector("source-ref-v1.json"),
+      codecLaw(() => new SourceIdentityLawsSuite, "source reference")
+    ),
+    Entry(
+      SourceImportDefinitions.inventoryParser,
+      Kind.Definition,
+      Vector("source-inventory-ref-v1.json"),
+      codecLaw(() => new SourceIdentityLawsSuite, "source reference")
+    ),
+    Entry(
       DefinitionId.recording,
       Kind.Document,
       Vector("recording-standalone-v1.json"),
@@ -227,6 +264,12 @@ object SchemaRegistry:
       Kind.Document,
       Vector("study-result-v1.json"),
       codecLaw(results, "cosine study result")
+    ),
+    Entry(
+      DensityArchiveDefinitions.studyResultV2,
+      Kind.Document,
+      Vector("study-result-v2.json"),
+      codecLaw(densities, "density archive document")
     ),
     Entry(
       DefinitionId.similarity,
@@ -410,7 +453,8 @@ object SchemaRegistry:
 
   /** The published ladder laws of each multi-version schema, by name. */
   val ladderLaws: Map[String, Vector[Law]] = Map(
-    "eyes4s.study" ->
+    "eyes4s.study-result" -> ladderLaw(densities, "density archive versions"),
+    "eyes4s.study"        ->
       (ladderLaw(plans, "study plan versions") ++ ladderLaw(
         plans,
         "trial study plan versions"
@@ -690,7 +734,12 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
     val versioned = SchemaRegistry.versioned(builtIns ++ conventional, resource)
     assertEquals(
       versioned.map(_.name),
-      Vector("eyes4s.admission-ledger", "eyes4s.study", "eyes4s.template-recipe")
+      Vector(
+        "eyes4s.admission-ledger",
+        "eyes4s.study",
+        "eyes4s.study-result",
+        "eyes4s.template-recipe"
+      )
     )
     assertEquals(versionProblems(builtIns ++ conventional, versioned), Vector.empty)
     assertEquals(
@@ -948,15 +997,20 @@ private object Decoders:
         Some(StudyInputCodecs.study[Px].ledger)
       case InventoryDefinitions.admissionLedgerV3 =>
         Some(StudyInputCodecs.trial[Px].ledger)
-      case DefinitionId.recording          => Some(RecordingInputCodecs.recording[Px])
-      case DefinitionId.binocularRecording =>
+      case SourceCodecDefinitions.sourceRef         => Some(SourceIdentityCodec.source)
+      case SourceCodecDefinitions.importSpec        => Some(ImportSpecCodec.study[Px])
+      case SourceCodecDefinitions.inventorySpec     => Some(ImportSpecCodec.inventory)
+      case SourceCodecDefinitions.admissionLedgerV4 => Some(StudyInputCodecs.study[Px].ledger)
+      case DefinitionId.recording                   => Some(RecordingInputCodecs.recording[Px])
+      case DefinitionId.binocularRecording          =>
         Some(RecordingInputCodecs.binocular[Px])
       case DefinitionId.recordingInput     => Some(RecordingInputCodecs.input[Px])
       case DefinitionId.temporalStudyInput =>
         Some(TemporalInputCodecs.study[Px]().input)
       case DefinitionId.timeline =>
         Some(TimelineCodecs.timeline(id, StudyCodecs.key(DefinitionId.studyKey)))
-      case DefinitionId.studyResult     => Some(StudyResultCodecs.cosine[Px].codec)
+      case DefinitionId.studyResult | DensityArchiveDefinitions.studyResultV2 =>
+        Some(new DensityArchiveCodec(StudyResultCodecs.cosine[Px]).codec)
       case DefinitionId.manifest        => Some(ScientificManifest.codec)
       case DefinitionId.similarity      => Some(StudyResultCodecs.similarity())
       case DefinitionId.measureDistance =>
