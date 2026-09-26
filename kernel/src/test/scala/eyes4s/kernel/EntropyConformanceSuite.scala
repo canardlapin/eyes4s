@@ -251,13 +251,17 @@ class EntropyConformanceSuite extends munit.FunSuite:
   // Signed maps treated as mass: verified intentional divergence
   // -------------------------------------------------------------------------
 
+  private def assertRefusesNegativeMass(e: EyesimEntropy, what: String): Unit =
+    Vector(e.bits, e.relativeBits, e.nats, e.relativeNats).foreach {
+      case RValue.Error(message) =>
+        assert(message.contains("requires non-negative mass"), clue((what, message)))
+      case other => fail(s"$what: expected eyesim to refuse a map with a negative cell, got $other")
+    }
+
   test(
-    "an exact difference map: eyesim returns NA because its total is within machine epsilon of zero"
+    "an exact difference map: eyesim refuses it because a cell is negative, whatever its total"
   ) {
-    assertEquals(
-      eyesimEntropyDifferencePQ,
-      EyesimEntropy(RValue.NA, RValue.NA, RValue.NA, RValue.NA)
-    )
+    assertRefusesNegativeMass(eyesimEntropyDifferencePQ, "difference p - q")
     assertEqualsDouble(machineEpsilon, Math.ulp(1.0), 0.0)
     assertEqualsDouble(exactDifferencePQ.sum, 0.0, 0.0)
   }
@@ -281,24 +285,11 @@ class EntropyConformanceSuite extends munit.FunSuite:
   }
 
   test(
-    "a signed map with positive total: eyesim returns a finite number from its positive cells alone"
+    "a signed map with positive total: eyesim refuses it, as eyes4s does, rather than scoring its positive cells"
   ) {
-    // Pinned: not NA, not an error, a number.
-    assertEqualsDouble(finite(eyesimEntropySigned.nats), 0.5623351446188083, tol)
-    assertEqualsDouble(finite(eyesimEntropySigned.bits), 0.8112781244591328, tol)
-    // The number is -(0.5 ln 0.5 + 0.75 ln 0.75): the positive cells over the
-    // signed total 1.0, which sum to 1.25, so it is not the entropy of anything.
-    assertEqualsDouble(finite(eyesimEntropySigned.nats), formulaEntropySigned.nats, tol)
-    assertEqualsDouble(
-      finite(eyesimEntropySigned.relativeNats),
-      formulaEntropySigned.relativeNats,
-      tol
-    )
-    assertEqualsDouble(
-      finite(eyesimEntropySigned.nats),
-      -(0.5 * math.log(0.5) + 0.75 * math.log(0.75)),
-      tol
-    )
+    // Earlier eyesim revisions returned -(0.5 ln 0.5 + 0.75 ln 0.75), the
+    // positive cells over the signed total, which is not the entropy of anything.
+    assertRefusesNegativeMass(eyesimEntropySigned, "signed")
     assertEqualsDouble(signed.sum, 1.0, 0.0)
   }
 

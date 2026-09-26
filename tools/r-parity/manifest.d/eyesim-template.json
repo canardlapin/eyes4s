@@ -10,7 +10,7 @@
     },
     "template-cv-reference": {
       "path": "tools/r-parity/fixtures/template-cv.json",
-      "sha256": "aac80a6099eb1aece56eab73d8349a76e6ea972264525357657873dab0a9dbcb",
+      "sha256": "c8f89f2e7a3e2e91b03bb9c4ffca1f3693437e7a63947a9e852d8dec7dc9d5ba",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Pinned public CV calls, missing/duplicate behavior and RNG state"
     },
@@ -80,7 +80,7 @@
       ],
       "independent_case": "Exact fixed-feature slopes (1,2), prediction 7 and response-700 control; learned mean (2/3,1/3), slope sqrt(5), held-out prediction 3/sqrt(2), changed held-out map prediction 1; exact rational surface OLS oracle; analytic cosine and per-fold exclusions.",
       "status": "verified-intentional-divergence",
-      "divergence": "Native learned mean/cosine trial response regression is a named recipe, not eyesim learned-transform parity. Explicit recorded folds replace R RNG assignment; pinned CV mutates session RNG. R selects first duplicate reference and drops unmatched source rows, while native pairing retains ambiguity/missing records. Normalized cellwise OLS and trial prediction remain different estimands. PCA/CORAL/CCA and robust/NNLS variants are not claimed.",
+      "divergence": "Native learned mean/cosine trial response regression is a named recipe, not eyesim learned-transform parity. Explicit recorded folds replace R RNG assignment; pinned CV restores the caller's RNG stream. R selects first duplicate reference and drops unmatched source rows, while native pairing retains ambiguity/missing records. Normalized cellwise OLS and trial prediction remain different estimands. PCA/CORAL/CCA and robust/NNLS variants are not claimed.",
       "evidence": [
         "docs/TEMPLATE_CV.md",
         "docs/TEMPLATE_FITTING.md",

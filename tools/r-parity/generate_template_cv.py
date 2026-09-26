@@ -26,7 +26,8 @@ def main():
         a=bykey[r['key']]['values']; b=refs[r['matched']]
         expected=sum(x*y for x,y in zip(a,b))/math.sqrt(sum(x*x for x in a)*sum(x*x for x in b))
         assert abs(expected-r['eye_sim']) <= 1e-12,(r,expected)
-    # Preserve the pinned RNG side effect as measured, rather than changing the oracle.
+    # The pinned CV restores the caller's RNG stream; fold and permutation draws still run under seed.
+    assert actual['rng_restored'] is True
     assert actual['duplicate_reference']['rows']==actual['normal']['rows']
     assert [r['key'] for r in actual['missing_reference']['rows']]==['s2','s3','s4','s5']
     header=(ROOT/'design/src/main/scala/eyes4s/design/TemplateFit.scala').read_text().split('package ')[0]
@@ -40,5 +41,5 @@ def main():
     for p,c in [(OUTPUT,json.dumps(out,indent=2)+'\n'),(SCALA,scala)]:
         if args.check: assert p.read_text()==c,f'Fixture drift: {p}'
         else: p.write_text(c)
-    print('Template CV cosine, fold exclusions, duplicate/missing behavior and RNG side effect measured against pinned exported call.')
+    print('Template CV cosine, fold exclusions, duplicate/missing behavior and restored caller RNG measured against pinned exported call.')
 if __name__=='__main__': main()

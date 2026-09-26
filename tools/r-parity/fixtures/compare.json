@@ -1,6 +1,6 @@
 {
-  "eyesim_revision": "ecb9c496257bce51acd5330af6a5e7a8d5b84e05",
-  "input_sha256": "b7dab445fdcf3f6f69e8d4b9204528670c3fc60d1691b495a53f962268657feb",
+  "eyesim_revision": "aeb098e242a99f0bf9197e767bac4c75e4483aab",
+  "input_sha256": "97f1a84f92027d5e139dde13a8d01f7d6588169110cf0ecfdcd103827268dc55",
   "independent": {
     "regular": {
       "pearson": -0.35000000000000003,
@@ -37,6 +37,15 @@
       "l1": 1.0,
       "jaccard": 1.0,
       "dcov": 1.0
+    },
+    "near-identical": {
+      "pearson": 0.9999999999999928,
+      "spearman": 1.0,
+      "fisherz": 18.36840028483855,
+      "cosine": 0.9999999999999987,
+      "l1": 0.99999998,
+      "jaccard": 0.9999999999999973,
+      "dcov": 0.9999999999999931
     }
   },
   "transport_oracle": {
@@ -518,6 +527,124 @@
         }
       },
       {
+        "name": "near-identical",
+        "vector": {
+          "pearson": {
+            "result": {
+              "values": 0.999999999999993,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": 18.3684002848386,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 0.999999999999999,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 0.99999998,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 0.999999999999997,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 0.999999999999993,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "error": "method 'emd' requires eye_density objects with x, y, z components"
+            },
+            "warnings": []
+          }
+        },
+        "density": {
+          "pearson": {
+            "result": {
+              "values": 0.999999999999993,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": 18.3684002848386,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 0.999999999999999,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 0.99999998,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 0.999999999999997,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 0.999999999999993,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          }
+        }
+      },
+      {
         "name": "constant",
         "vector": {
           "pearson": {
@@ -536,7 +663,7 @@
           },
           "fisherz": {
             "result": {
-              "values": 1,
+              "values": 18.3684002848386,
               "names": null
             },
             "warnings": []
@@ -593,7 +720,7 @@
           },
           "fisherz": {
             "result": {
-              "values": 1,
+              "values": 18.3684002848386,
               "names": null
             },
             "warnings": []
@@ -890,7 +1017,7 @@
           },
           "fisherz": {
             "result": {
-              "values": 1,
+              "values": 18.3684002848386,
               "names": null
             },
             "warnings": []
@@ -947,7 +1074,7 @@
           },
           "fisherz": {
             "result": {
-              "values": 1,
+              "values": 18.3684002848386,
               "names": null
             },
             "warnings": []
@@ -2354,57 +2481,49 @@
     "geometry": {
       "pearson": {
         "result": {
-          "values": 1,
-          "names": null
+          "error": "similarity(): density maps are on different lattices. Both maps must have the same x and y grid coordinates (same bounds and outdim)."
         },
         "warnings": []
       },
       "spearman": {
         "result": {
-          "values": 1,
-          "names": null
+          "error": "similarity(): density maps are on different lattices. Both maps must have the same x and y grid coordinates (same bounds and outdim)."
         },
         "warnings": []
       },
       "fisherz": {
         "result": {
-          "values": 18.3684002848386,
-          "names": null
+          "error": "similarity(): density maps are on different lattices. Both maps must have the same x and y grid coordinates (same bounds and outdim)."
         },
         "warnings": []
       },
       "cosine": {
         "result": {
-          "values": 1,
-          "names": null
+          "error": "similarity(): density maps are on different lattices. Both maps must have the same x and y grid coordinates (same bounds and outdim)."
         },
         "warnings": []
       },
       "l1": {
         "result": {
-          "values": 1,
-          "names": null
+          "error": "similarity(): density maps are on different lattices. Both maps must have the same x and y grid coordinates (same bounds and outdim)."
         },
         "warnings": []
       },
       "jaccard": {
         "result": {
-          "values": 1,
-          "names": null
+          "error": "similarity(): density maps are on different lattices. Both maps must have the same x and y grid coordinates (same bounds and outdim)."
         },
         "warnings": []
       },
       "dcov": {
         "result": {
-          "values": 1,
-          "names": null
+          "error": "similarity(): density maps are on different lattices. Both maps must have the same x and y grid coordinates (same bounds and outdim)."
         },
         "warnings": []
       },
       "emd": {
         "result": {
-          "values": 1,
-          "names": null
+          "error": "similarity(): density maps are on different lattices. Both maps must have the same x and y grid coordinates (same bounds and outdim)."
         },
         "warnings": []
       }

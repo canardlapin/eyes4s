@@ -1,5 +1,5 @@
 {
-  "eyesim_revision": "ecb9c496257bce51acd5330af6a5e7a8d5b84e05",
+  "eyesim_revision": "aeb098e242a99f0bf9197e767bac4c75e4483aab",
   "input_sha256": "2abb65b005035e452f4daefcfe114f68e5844530451367483e19e86131a7e04d",
   "tolerance": {
     "absolute": 1e-12,
@@ -209,7 +209,7 @@
       },
       "warnings": "did not find matching template map for all source maps. Removing non-matching elements."
     },
-    "rng_restored": false,
+    "rng_restored": true,
     "R": "4.5.1"
   }
 }

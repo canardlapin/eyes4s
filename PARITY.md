@@ -156,8 +156,8 @@ and the signed vector `[0.5, -0.25, 0.75, 0]`.
 | `+` and `-` on `mass_p`, `mass_q` | `+` is the two-map mean `[0.375, 0.25, 0.25, 0.125]` classed `eye_density_add`; `-` is `[0.25, 0, 0, -0.25]` classed `eye_density_delta`; neither carries a `sigma`. | `Mass.mean` and `Mass.difference` coincide cell by cell and with the exact rationals; the difference is typed `Signed` ("eyesim + is the two-map mean ...", "eyesim - is the cell-wise difference ..."). **Verified equivalent.** |
 | `/` on `mass_r`, `mass_q` and on `mass_p`, `mass_q` | `log(e1/e2)` with no floor: `r / q` is finite everywhere; at `mass_p`'s zero cell `p / q` is `-Inf`, `q / p` is `Inf`, `p / p` is `NaN`. | `Mass.logRatio` agrees to `1e-12` wherever eyesim is finite; at the zero cell it floors both cells at `1e-12` (`log(1e-12 / 0.25) = -26.2447`), and `floor = 0.0` is refused as `NonFiniteValue` ("at a zero cell eyesim / is -Inf, Inf or NaN; eyes4s floors both cells at 1e-12 and stays finite"). **Verified intentional divergence.** |
 | `*` and a shifted lattice | `*` stops with `undefined operation`; a map whose `x` differs stops in `stopifnot` with `all(e1$x == e2$x) is not TRUE`. | No product typechecks; a second grid returns `GridMismatch` ("eyesim * stops ...", "a shifted lattice ..."). **Verified intentional divergence.** |
-| `fixation_entropy` on `mass_p - mass_q` | `NA`: the total is exactly zero, within `.Machine$double.eps`. | `difference(...).entropy()` does not typecheck; `Surface.mass` and `Surface.intensity` return `NegativeValue(3, -0.25)` ("an exact difference map: ..."). **Verified intentional divergence.** |
-| `fixation_entropy` on the signed vector | 0.5623 nats, 0.8113 bits, 0.4056 relative: the positive cells `0.5` and `0.75` over the signed total `1.0`, so the "probabilities" sum to 1.25. The fixture's labelled reading of the formula reproduces the number. | `Surface.mass` and `Surface.intensity` return `NegativeValue(1, -0.25)`; `Signed` has no entropy ("a signed map with positive total: ..."). **Verified intentional divergence.** |
+| `fixation_entropy` on `mass_p - mass_q` | An error: `fixation_entropy() requires non-negative mass`. Earlier revisions returned `NA` because the total is exactly zero. | `difference(...).entropy()` does not typecheck; `Surface.mass` and `Surface.intensity` return `NegativeValue(3, -0.25)` ("an exact difference map: ..."). **Verified intentional divergence.** |
+| `fixation_entropy` on the signed vector | The same non-negative-mass error. Earlier revisions returned 0.5623 nats from the positive cells over the signed total, which is not the entropy of anything. | `Surface.mass` and `Surface.intensity` return `NegativeValue(1, -0.25)`; `Signed` has no entropy ("a signed map with positive total: ..."). Both now refuse, by error or by type. **Verified intentional divergence** as a case, because of the log-ratio row below. |
 | `fixation_entropy` on `p / q` and `p / p` | `p / q` gives exactly 0 in every base: the `-Inf` cell is dropped and the single positive finite cell holds all the mass. `p / p` gives `NA`: its finite cells sum to zero. | The log ratio is `Signed` and has no entropy ("the log-ratio map: ..."). **Verified intentional divergence.** |
 
 The eyesim `fixation_entropy.fixation_group` (density and grid methods) and
@@ -496,3 +496,44 @@ step within the fixed numerical tolerance, so their derived table identities rem
 The learned input-hash formatted-geometry defect discovered here is fixed and independently
 pinned across runtimes; OLS rank tolerance now has numeric provenance. These are export and
 interop guarantees; the numerical qualification of each method stays in its own case evidence.
+
+
+## eyesim pin moved to the audit-fixed master (2026-09-25)
+
+The pin now names eyesim master after its eyes4s parity-audit correctness fixes (owner decision
+2026-09-25). Every registered fixture was regenerated from the isolated archive of that
+revision; `DESCRIPTION` imports and the R lock are unchanged. The following measured behaviours
+changed and supersede the dated statements above; no case changed status.
+
+- **Trajectories.** Both `sample_fixations` paths hold the final fixation after its onset and take
+  the later of tied onsets, so `sample_density(times)`, `template_sample`, `fixation_overlap` and
+  `sample_density_time` score times after the last onset. Parity tests now use
+  `TrajectoryEndpoint.HoldLastOnset`; `OnsetRange` remains a named native alternative.
+  `rep_fixations` gives 29 replicas at 0.29 seconds and 100 Hz, as native replication does.
+- **Controls.** `template_similarity`, `fixation_similarity`, `scanpath_similarity`,
+  `template_similarity_cv` and `sample_density_time` remove every true-match copy and count each
+  template once before drawing. A cap of one therefore always yields a control when one is
+  eligible. `PointSamplingPlan` counted the source-occurrence multiset; it now counts each matched
+  template once, as the reference does, and the regenerated point-sampling fixture agrees.
+  Native pairing against a one-row-per-template table reproduces the exhaustive finite-control
+  reference row for row. RNG draws are still not claimed equal.
+- **Bins and overlap.** Every `sample_density_time` bin is half-open, including the last, as
+  `PointBinEndpoint.HalfOpen` is. The overlap facade defaults to the direct threshold 60, and the
+  direct default grid spans both paths' onsets, so the score no longer depends on argument order.
+  The heterogeneous partial-control fixture now uses one bin `[0, 30)` so that it still separates
+  nested from pooled control means.
+- **Maps.** Density `similarity` refuses maps on different lattices, as native grid agreement does.
+  Fisher z snaps r within 64 machine epsilons of plus or minus one to it before the clamp, so
+  every perfect correlation gives atanh(1 - 2^-52); `Distribution.fisherZMachineEpsilon` now
+  does the same, and a near-identical fixture pair (r = 1 - 32.4 eps) pins it. Identical constant
+  maps give that value in eyesim and remain `ConstantInput` natively.
+- **Entropy and KDE.** `fixation_entropy` refuses maps with a negative cell, so the exact
+  difference and the signed vector are now errors where eyesim returned `NA` and a positive-cell
+  number; the log-ratio rows are unchanged. `eye_density` honours explicit weights and weighted
+  MASS works; both agree with a direct weighted Gaussian at the fixed 1e-7 rounding tolerance.
+- **Other.** `mm_position_emd` uses all fixations, which changes the pinned sixth component that
+  eyes4s leaves unavailable. `template_similarity_cv` restores the caller's RNG stream.
+
+The new pin also exports GazeWeave replay and transport entry points. They are outside the
+thirteen baseline rows and are noted for a later epic (owner 2026-09-25); eyes4s does not
+implement them.

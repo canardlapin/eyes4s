@@ -1,8 +1,8 @@
 {
-  "eyesim_revision": "ecb9c496257bce51acd5330af6a5e7a8d5b84e05",
+  "eyesim_revision": "aeb098e242a99f0bf9197e767bac4c75e4483aab",
   "input_sha256": "0b2e5036ee1c8aee63e27b3a99d08f8e4bffa3402e9ff67e4cba5bd68aef0300",
   "input_license": "Apache-2.0; synthetic data authored for eyes4s",
-  "oracle": "Exact rational arithmetic for the two-map mean and the difference; 60-digit decimal logarithms for the Shannon entropy of each normalised vector and for the log ratio away from zero cells. eyesim's fixation_entropy.eye_density (entropy_from_mass) and Ops.eye_density are called on hand-built eye_density objects over the pinned lattice. Non-finite cells, NA entropies and errors are pinned as eyesim literals. The eyesim_formula block is a reading of entropy_from_mass on signed maps: it records what eyesim computes there, not an estimand eyes4s implements.",
+  "oracle": "Exact rational arithmetic for the two-map mean and the difference; 60-digit decimal logarithms for the Shannon entropy of each normalised vector and for the log ratio away from zero cells. eyesim's fixation_entropy.eye_density (entropy_from_mass) and Ops.eye_density are called on hand-built eye_density objects over the pinned lattice. Non-finite cells, NA entropies and errors are pinned as eyesim literals. The eyesim_formula block is a reading of entropy_from_mass on signed, difference and log-ratio maps: it records what eyesim computes or refuses there, not an estimand eyes4s implements.",
   "lattice_order": "z is the nx-by-ny matrix z[ix, iy]; as.numeric(z) is column-major, so cell k = iy * nx + ix, the eyes4s Grid index",
   "numerical_tolerance": {
     "absolute": 1e-12,
@@ -155,22 +155,22 @@
     "eyesim_formula": {
       "signed": {
         "2": {
-          "raw": "0.811278124459132863909695792039137618430139194230639204658187",
-          "normalized": "0.405639062229566431954847896019568809215069597115319602329093"
+          "raw": "error",
+          "normalized": "error"
         },
         "e": {
-          "raw": "0.562335144618808350288030315297414691237051907249795927792834",
-          "normalized": "0.405639062229566431954847896019568809215069597115319602329093"
+          "raw": "error",
+          "normalized": "error"
         }
       },
       "minus_p_q": {
         "2": {
-          "raw": "NA",
-          "normalized": "NA"
+          "raw": "error",
+          "normalized": "error"
         },
         "e": {
-          "raw": "NA",
-          "normalized": "NA"
+          "raw": "error",
+          "normalized": "error"
         }
       },
       "div_p_q": {
@@ -289,22 +289,22 @@
       "signed": {
         "2": {
           "raw": {
-            "kind": "finite",
-            "value": 0.8112781244591328
+            "kind": "error",
+            "detail": "fixation_entropy() requires non-negative mass, but the map has negative values (for example a difference of two densities)."
           },
           "normalized": {
-            "kind": "finite",
-            "value": 0.4056390622295664
+            "kind": "error",
+            "detail": "fixation_entropy() requires non-negative mass, but the map has negative values (for example a difference of two densities)."
           }
         },
         "e": {
           "raw": {
-            "kind": "finite",
-            "value": 0.5623351446188083
+            "kind": "error",
+            "detail": "fixation_entropy() requires non-negative mass, but the map has negative values (for example a difference of two densities)."
           },
           "normalized": {
-            "kind": "finite",
-            "value": 0.4056390622295664
+            "kind": "error",
+            "detail": "fixation_entropy() requires non-negative mass, but the map has negative values (for example a difference of two densities)."
           }
         }
       },
@@ -333,18 +333,22 @@
       "minus_p_q": {
         "2": {
           "raw": {
-            "kind": "NA"
+            "kind": "error",
+            "detail": "fixation_entropy() requires non-negative mass, but the map has negative values (for example a difference of two densities)."
           },
           "normalized": {
-            "kind": "NA"
+            "kind": "error",
+            "detail": "fixation_entropy() requires non-negative mass, but the map has negative values (for example a difference of two densities)."
           }
         },
         "e": {
           "raw": {
-            "kind": "NA"
+            "kind": "error",
+            "detail": "fixation_entropy() requires non-negative mass, but the map has negative values (for example a difference of two densities)."
           },
           "normalized": {
-            "kind": "NA"
+            "kind": "error",
+            "detail": "fixation_entropy() requires non-negative mass, but the map has negative values (for example a difference of two densities)."
           }
         }
       },

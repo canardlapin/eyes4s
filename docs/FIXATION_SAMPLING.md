@@ -13,11 +13,14 @@ Queries can be repeated or out of order. Every time is retained with its source
 fixation index and point, or a named missing reason. Clock compatibility goes
 through `Agreement`. This is deterministic evaluation, not random sampling.
 
-The pinned `sample_fixations` fast and slow calls match these policies on ordered
-and singleton paths. On duplicated onsets R's fast path averages coordinates and
-its slow path takes the later row; native Scanpath rejects duplicates. R's empty
-fixation-group constructor fails; native empty trajectory returns one missing row
-per query. The reference errors and warnings remain in the fixture.
+The pinned `sample_fixations` fast and slow calls both hold the final fixation
+after its onset and take the later row on duplicated onsets, so they sample the
+same positions and match `HoldLastOnset` on ordered and singleton paths.
+`OnsetRange` is the native alternative that is missing after the last onset; it
+agrees with the reference up to that onset. Native Scanpath rejects duplicated
+onsets. R's empty fixation-group constructor fails; native empty trajectory
+returns one missing row per query. The reference errors and warnings remain in
+the fixture.
 
 `DurationReplication` takes a parsed positive `ReplicationPeriod` and a required
 maximum row count. Counts are `max(1, durationMicros / periodMicros)` using exact
@@ -27,9 +30,9 @@ neither Int nor Long overflow changes cardinality. Replicas retain source indice
 and fixation objects; they do not pretend to form a Scanpath with duplicate onsets.
 
 At duration 290000 microseconds and period 10000 microseconds native replication
-produces 29 rows. Pinned R truncates `0.29 / (1/100)` to 28 because of binary
-floating-point rounding. This is an intentional precision divergence, not a reason
-to round native counts down. Zero and sub-period durations produce one row under
+produces 29 rows, as the pinned `rep_fixations` now does: it counts
+`floor(duration * resolution)` with a floating-point tolerance, where earlier
+revisions truncated `0.29 / (1/100)` to 28. Zero and sub-period durations produce one row under
 the standalone count contract; actual fixation construction still requires
 positive duration.
 
@@ -50,15 +53,18 @@ There is no promise of R PRNG identity. R seed and RNGkind are recorded in
 `tools/r-parity/fixtures/sampling.json` with both optimized density-cosine and
 generic fixation-overlap facade calls.
 
-The pinned R algorithm samples the candidate multiset first, then removes only
-the first true-match occurrence. Other true-match copies can survive. With two
-copies of match A and one B, its exhaustive A control mean includes A and B;
-with orthogonal maps it is 0.5 over two controls. Native eligibility removes both
-A copies first, yielding the single B control with similarity 0. Cap-one R draws
-can leave no control after exclusion; native positive-cap selection has a control
-whenever its eligible pool is nonempty. These denominator differences are retained,
-not presented as sampling parity. Missing and duplicate reference handling is
-separately pinned by the matched-control and template-CV fixtures.
+The pinned R algorithm removes every true-match copy, keeps each distinct
+template once, and only then draws up to the cap without replacement. With two
+copies of match A and one B, the exhaustive control for an A row is B alone, with
+similarity 0 on orthogonal maps, and the control for B is A once. Its realized
+count is `min(cap, distinct eligible templates)`, so a cap of one always yields a
+control when one is eligible. Native relations reach the same population and
+denominators when the right-hand table holds one row per template; pairing
+against source occurrences instead keeps their multiplicity by construction.
+`FiniteControlReferenceSuite` checks the template-table pairing against every
+exhaustive reference row. The draws themselves are not claimed equal. Missing and
+duplicate reference handling is separately pinned by the matched-control and
+template-CV fixtures.
 
 The shared trajectory is consumed by `PreparedDensityLookup.along`; the
 [density fixture](DENSITY_SAMPLING.md) checks both `sample_density(times)` and

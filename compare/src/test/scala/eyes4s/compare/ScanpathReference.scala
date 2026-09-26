@@ -22,13 +22,13 @@ object ScanpathReference:
   final case class Path(name: String,x: Vector[Double],y: Vector[Double],onset: Vector[Double],duration: Vector[Double],expected: Vector[Double])
   val paths: Vector[Path] = Vector(
     Path("base",Vector(100.0,300.0,500.0),Vector(100.0,200.0,100.0),Vector(0.0,100.0,200.0),Vector(50.0,50.0,50.0),Vector(1.0,1.0,1.0,1.0,1.0,1.0)),
-    Path("translated",Vector(130.0,330.0,530.0),Vector(140.0,240.0,140.0),Vector(0.0,100.0,200.0),Vector(50.0,50.0,50.0),Vector(1.0,1.0,1.0,0.944098300562505,1.0,0.944098300562866)),
+    Path("translated",Vector(130.0,330.0,530.0),Vector(140.0,240.0,140.0),Vector(0.0,100.0,200.0),Vector(50.0,50.0,50.0),Vector(1.0,1.0,1.0,0.944098300562505,1.0,0.944098300562297)),
     Path("duration",Vector(100.0,300.0,500.0),Vector(100.0,200.0,100.0),Vector(0.0,100.0,200.0),Vector(25.0,100.0,50.0),Vector(1.0,1.0,1.0,1.0,0.5,1.0)),
-    Path("changed",Vector(100.0,250.0,450.0),Vector(100.0,250.0,200.0),Vector(0.0,100.0,200.0),Vector(25.0,75.0,50.0),Vector(0.966260339764574,0.913989565188685,0.983829717972475,0.960471529247895,0.583333333333333,0.931534680312993)),
-    Path("tie",Vector(100.0,300.0,500.0),Vector(100.0,100.0,100.0),Vector(0.0,100.0,200.0),Vector(50.0,50.0,50.0),Vector(0.944098300562505,0.852416382349567,0.973606797749979,0.944098300562505,1.0,0.920943058496301)),
-    Path("stationary",Vector(100.0,100.0,100.0),Vector(100.0,100.0,100.0),Vector(0.0,100.0,200.0),Vector(50.0,50.0,50.0),Vector(0.875,0.852416382349567,0.75,0.875,1.0,0.823223304705645))
+    Path("changed",Vector(100.0,250.0,450.0),Vector(100.0,250.0,200.0),Vector(0.0,100.0,200.0),Vector(25.0,75.0,50.0),Vector(0.966260339764574,0.913989565188685,0.983829717972475,0.960471529247895,0.583333333333333,0.908712907082481)),
+    Path("tie",Vector(100.0,300.0,500.0),Vector(100.0,100.0,100.0),Vector(0.0,100.0,200.0),Vector(50.0,50.0,50.0),Vector(0.944098300562505,0.852416382349567,0.973606797749979,0.944098300562505,1.0,0.935450277562969)),
+    Path("stationary",Vector(100.0,100.0,100.0),Vector(100.0,100.0,100.0),Vector(0.0,100.0,200.0),Vector(50.0,50.0,50.0),Vector(0.875,0.852416382349567,0.75,0.875,1.0,0.704196010814631))
   )
   val tieSelf: Vector[Double] = Vector(1.0,1.0,1.0,1.0,1.0,1.0)
-  val overlap: Vector[(String,Double,Int,Double)] = Vector(("euclidean",49.999,0,0),("euclidean",50,0,0),("euclidean",50.001,4,0.666666666666667),("euclidean",60,4,0.666666666666667),("euclidean",70,4,0.666666666666667),("euclidean",70.001,4,0.666666666666667),("manhattan",49.999,0,0),("manhattan",50,0,0),("manhattan",50.001,0,0),("manhattan",60,0,0),("manhattan",70,0,0),("manhattan",70.001,4,0.666666666666667))
+  val overlap: Vector[(String,Double,Int,Double)] = Vector(("euclidean",49.999,0,0),("euclidean",50,0,0),("euclidean",50.001,5,0.833333333333333),("euclidean",60,5,0.833333333333333),("euclidean",70,5,0.833333333333333),("euclidean",70.001,5,0.833333333333333),("manhattan",49.999,0,0),("manhattan",50,0,0),("manhattan",50.001,0,0),("manhattan",60,0,0),("manhattan",70,0,0),("manhattan",70.001,5,0.833333333333333))
   val transport: Vector[(Double,Double,Double,Boolean)] = Vector((0.01,0.9487302525140882,0.948732031806375,false),(0.1,0.8423472701100141,0.842347270316768,true),(1,0.8055672615407382,0.805567261600944,true))
 // format: on

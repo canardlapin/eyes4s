@@ -1,5 +1,5 @@
 {
-  "eyesim_revision": "ecb9c496257bce51acd5330af6a5e7a8d5b84e05",
+  "eyesim_revision": "aeb098e242a99f0bf9197e767bac4c75e4483aab",
   "input_sha256": "9c65b5380d284878e856451018c605e24487e1fa2dcfd5f4b32836edc86af7a9",
   "direct_gaussian": {
     "ks-FALSE-FALSE": {
@@ -121,6 +121,71 @@
         6.825368044892048e-09
       ],
       "max_absolute_difference": 4.4821471922862344e-08
+    },
+    "MASS-TRUE-FALSE": {
+      "values": [
+        0.025911328578028386,
+        0.0021269313706708494,
+        2.424684652839062e-15,
+        4.787091868286347e-11,
+        5.831871777473113e-10,
+        6.42277621131051e-05,
+        5.2731969273812946e-06,
+        0.0002847495224210929,
+        0.0031432041044551847,
+        0.03829205209217535,
+        5.908463172080768e-23,
+        4.2810359218412075e-07,
+        0.11487615627652605,
+        4.2815146310280364e-07,
+        5.831871777473334e-10
+      ],
+      "max_absolute_difference": 4.104455184582301e-09
+    },
+    "MASS-TRUE-TRUE": {
+      "values": [
+        0.14028509996197877,
+        0.01151530223733253,
+        1.3127351917733494e-14,
+        2.591753098446584e-10,
+        3.1574016469460024e-09,
+        0.0003477319968846126,
+        2.85493256684707e-05,
+        0.0015416467394435808,
+        0.017017448590741054,
+        0.2073148946926311,
+        3.198868572952542e-22,
+        2.317772129776347e-06,
+        0.6219446840778933,
+        2.3180313050861916e-06,
+        3.1574016469461224e-09
+      ],
+      "max_absolute_difference": 4.932566847069879e-08
+    },
+    "MASS-explicit-weights": {
+      "weights": [
+        100,
+        1,
+        1
+      ],
+      "values": [
+        0.8072345271050428,
+        0.06626184504658104,
+        7.553796369080343e-14,
+        7.456788309537472e-11,
+        9.084227854718452e-10,
+        0.0020009343411418637,
+        0.00016424724362541307,
+        0.0001478501609755095,
+        0.004896125453664645,
+        0.059647012057729175,
+        1.1619460709222558e-21,
+        2.222837266899512e-07,
+        0.059647012057729175,
+        2.223582945730465e-07,
+        9.084227854718567e-10
+      ],
+      "max_absolute_difference": 4.983902449049479e-08
     }
   },
   "reference": {
@@ -366,16 +431,86 @@
         "messages": "ks package not found or not selected. Using MASS::kde2d (or custom kde2d_weighted if applicable).\n"
       },
       "MASS-TRUE-FALSE": {
-        "value": null,
-        "warnings": "kde2d_weighted failed for sigma=1. Error: invalid 'times' argument",
+        "value": {
+          "x": [
+            0,
+            1.25,
+            2.5,
+            3.75,
+            5
+          ],
+          "y": [
+            0,
+            1.5,
+            3
+          ],
+          "z": [
+            0.02591133,
+            0.00212693,
+            0,
+            0,
+            0,
+            6.423e-05,
+            5.27e-06,
+            0.00028475,
+            0.0031432,
+            0.03829205,
+            0,
+            4.3e-07,
+            0.11487616,
+            4.3e-07,
+            0
+          ],
+          "dim": [
+            5,
+            3
+          ],
+          "sigma": 1
+        },
+        "warnings": [],
         "messages": [
           "ks package not found or not selected. Using MASS::kde2d (or custom kde2d_weighted if applicable).\n",
           "Using custom kde2d_weighted(). Ensure it handles weights appropriately.\n"
         ]
       },
       "MASS-TRUE-TRUE": {
-        "value": null,
-        "warnings": "kde2d_weighted failed for sigma=1. Error: invalid 'times' argument",
+        "value": {
+          "x": [
+            0,
+            1.25,
+            2.5,
+            3.75,
+            5
+          ],
+          "y": [
+            0,
+            1.5,
+            3
+          ],
+          "z": [
+            0.1402851,
+            0.0115153,
+            0,
+            0,
+            0,
+            0.0003477,
+            2.85e-05,
+            0.0015416,
+            0.0170174,
+            0.2073149,
+            0,
+            2.3e-06,
+            0.6219447,
+            2.3e-06,
+            0
+          ],
+          "dim": [
+            5,
+            3
+          ],
+          "sigma": 1
+        },
+        "warnings": [],
         "messages": [
           "ks package not found or not selected. Using MASS::kde2d (or custom kde2d_weighted if applicable).\n",
           "Using custom kde2d_weighted(). Ensure it handles weights appropriately.\n"
@@ -397,20 +532,20 @@
           3
         ],
         "z": [
-          0.060651,
-          0.0049785,
+          0.8072345,
+          0.0662618,
           0,
           0,
           0,
-          0.0001503,
-          1.23e-05,
-          0.0011109,
-          0.0367867,
-          0.4481535,
+          0.0020009,
+          0.0001642,
+          0.0001479,
+          0.0048961,
+          0.059647,
           0,
-          1.7e-06,
-          0.4481535,
-          1.7e-06,
+          2e-07,
+          0.059647,
+          2e-07,
           0
         ],
         "dim": [
@@ -420,7 +555,10 @@
         "sigma": 1
       },
       "warnings": [],
-      "messages": "ks package not found or not selected. Using MASS::kde2d (or custom kde2d_weighted if applicable).\n"
+      "messages": [
+        "ks package not found or not selected. Using MASS::kde2d (or custom kde2d_weighted if applicable).\n",
+        "Using custom kde2d_weighted(). Ensure it handles weights appropriately.\n"
+      ]
     },
     "scales": {
       "value": [
@@ -558,11 +696,47 @@
     },
     "groups_mass": {
       "value": {
-        "groups": [],
-        "maps": []
+        "groups": "full",
+        "maps": [
+          {
+            "x": [
+              0,
+              1.25,
+              2.5,
+              3.75,
+              5
+            ],
+            "y": [
+              0,
+              1.5,
+              3
+            ],
+            "z": [
+              0.1402851,
+              0.0115153,
+              0,
+              0,
+              0,
+              0.0003477,
+              2.85e-05,
+              0.0015416,
+              0.0170174,
+              0.2073149,
+              0,
+              2.3e-06,
+              0.6219447,
+              2.3e-06,
+              0
+            ],
+            "dim": [
+              5,
+              3
+            ],
+            "sigma": 1
+          }
+        ]
       },
       "warnings": [
-        "kde2d_weighted failed for sigma=1. Error: invalid 'times' argument",
         "Not enough fixations (need >= 2) to compute density. Returning NULL. Provided: 1",
         "Removing rows with NULL density results in density_by()."
       ],
@@ -815,7 +989,7 @@
           "time": 0.5
         },
         {
-          "z": null,
+          "z": 0.0833333333333333,
           "time": 0.500001
         }
       ],
@@ -849,7 +1023,7 @@
           "time": 0.5
         },
         {
-          "z": null,
+          "z": 10,
           "time": 0.500001
         }
       ],
