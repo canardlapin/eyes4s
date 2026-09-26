@@ -2859,6 +2859,7 @@
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
           "ioJVM/eyes4s.io.ArtifactLoadingSuite",
           "ioJVM/eyes4s.io.BaselineExportsSuite",
+          "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
@@ -3242,6 +3243,7 @@
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
           "ioJVM/eyes4s.io.ArtifactLoadingSuite",
           "ioJVM/eyes4s.io.BaselineExportsSuite",
+          "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
           "ioJVM/eyes4s.io.InspectionSourceSuite",
@@ -3331,6 +3333,7 @@
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
           "ioJVM/eyes4s.io.ArtifactLoadingSuite",
           "ioJVM/eyes4s.io.BaselineExportsSuite",
+          "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
           "ioJVM/eyes4s.io.InspectionSourceSuite",
@@ -3422,6 +3425,7 @@
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
           "ioJVM/eyes4s.io.ArtifactLoadingSuite",
           "ioJVM/eyes4s.io.BaselineExportsSuite",
+          "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
           "ioJVM/eyes4s.io.InspectionSourceSuite",
@@ -3573,6 +3577,7 @@
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
           "ioJVM/eyes4s.io.ArtifactLoadingSuite",
           "ioJVM/eyes4s.io.BaselineExportsSuite",
+          "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
           "ioJVM/eyes4s.io.InspectionSourceSuite",
@@ -6686,6 +6691,7 @@
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
           "ioJVM/eyes4s.io.ArtifactLoadingSuite",
           "ioJVM/eyes4s.io.BaselineExportsSuite",
+          "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
@@ -9838,6 +9844,11 @@
       "instance": "eyes4s/io/CoordinateUnit$$anon$10",
       "suite": "ioJVM/eyes4s.io.PsychologyWorkflowSuite"
     },
+    "class eyes4s.io.CsvLayoutError": {
+      "classification": "data-sum",
+      "instance": "eyes4s/io/CsvLayoutError$Csv",
+      "suite": "ioJVM/eyes4s.io.CsvLayoutSuite"
+    },
     "class eyes4s.io.DelimitedDiagnostic": {
       "classification": "data-sum",
       "instance": "eyes4s/io/DelimitedDiagnostic$NoAcceptedRows",
@@ -10637,6 +10648,16 @@
       "classification": "data-sum",
       "instance": "eyes4s/plan/RecipeParameterError$Configuration",
       "suite": "planJVM/eyes4s.plan.MethodDescriptorSuite"
+    },
+    "class eyes4s.plan.RecordIdentityError": {
+      "classification": "data-sum",
+      "instance": "eyes4s/plan/RecordIdentityError$$anon$1",
+      "suite": "planJVM/eyes4s.plan.RecordIdentitySuite"
+    },
+    "class eyes4s.plan.RecordRole": {
+      "classification": "data-sum",
+      "instance": "eyes4s/plan/RecordRole$$anon$2",
+      "suite": "planJVM/eyes4s.plan.RecordIdentitySuite"
     },
     "class eyes4s.plan.RecordingChannels": {
       "classification": "data-sum",
@@ -12040,6 +12061,12 @@
     "method eyes4s.io.ContrastExportError.message():": "ioJVM/consumer.PublicIoSuite",
     "method eyes4s.io.ConversionEvidenceWarning.message():": "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
     "method eyes4s.io.CoordinateUnit.label():": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
+    "method eyes4s.io.CsvLayout$.scan(java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.CsvLayoutSuite",
+    "method eyes4s.io.CsvLayout.header():": "ioJVM/eyes4s.io.CsvLayoutSuite",
+    "method eyes4s.io.CsvLayout.records():": "ioJVM/eyes4s.io.CsvLayoutSuite",
+    "method eyes4s.io.CsvLayout.toString():": "ioJVM/eyes4s.io.CsvLayoutSuite",
+    "method eyes4s.io.CsvLayout.verbatim(eyes4s.plan.DataRecord):scala.util.Either": "ioJVM/eyes4s.io.CsvLayoutSuite",
+    "method eyes4s.io.CsvLayoutError.message():": "ioJVM/eyes4s.io.CsvLayoutSuite",
     "method eyes4s.io.DecodedTidyCsvDocument.encode():": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "method eyes4s.io.DecodedTidyCsvDocument.header():": "ioJVM/eyes4s.io.TidyResultSuite",
     "method eyes4s.io.DecodedTidyCsvDocument.rows():": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
@@ -12721,6 +12748,9 @@
     "method eyes4s.laws.PayloadLaws$.shippedRecording(1,eyes4s.codec.PackedRecordingCodec,org.scalacheck.Gen,scala.Function2):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.laws.PayloadLaws.packedArrays(1,org.scalacheck.Gen,scala.Function2,scala.Function2,scala.Function1):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.laws.PayloadLaws.packedRecording(1,org.scalacheck.Gen,scala.Function2,scala.Function1,scala.Function2):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
+    "method eyes4s.laws.RecordIdentityLaws$.conversion():": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
+    "method eyes4s.laws.RecordIdentityLaws$.fixations():": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
+    "method eyes4s.laws.RecordIdentityLaws$.lines(org.scalacheck.Gen):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
     "method eyes4s.laws.RecordingResultEquivalence$.same(1,eyes4s.plan.RecordingAnalysis,eyes4s.plan.RecordingAnalysis):scala.Boolean": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
     "method eyes4s.laws.RecordingResultEquivalence$.sameAssignment(1,eyes4s.aoi.AoiAssignment,eyes4s.aoi.AoiAssignment):scala.Boolean": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
     "method eyes4s.laws.RecordingResultEquivalence$.sameDetection(1,eyes4s.detect.DetectionResult,eyes4s.detect.DetectionResult):scala.Boolean": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
@@ -12841,6 +12871,11 @@
     "method eyes4s.plan.ComponentValue.hashCode():": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ControlReferences.name():": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.plan.CorrectionScope.covers(java.lang.Object,scala.Function1):scala.Boolean": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
+    "method eyes4s.plan.CsvRecord$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.CsvRecord.dataRecord():": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.CsvRecord.role():": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.DataRecord$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.DataRecord.csv():": "planJVM/eyes4s.plan.RecordIdentitySuite",
     "method eyes4s.plan.DefinitionId$.of(java.lang.String,scala.Int):scala.util.Either": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
     "method eyes4s.plan.DensityView.cells():": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.DensityView.equals(java.lang.Object):scala.Boolean": "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -12899,6 +12934,8 @@
     "method eyes4s.plan.ExactDouble.equals(java.lang.Object):scala.Boolean": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ExactDouble.hashCode():": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ExactDouble.toString():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "method eyes4s.plan.FixationNumber$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.FixationNumber.position():": "planJVM/eyes4s.plan.RecordIdentitySuite",
     "method eyes4s.plan.InitialFixationError.message():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.InitialFixationPolicy$.dropFirst(1):eyes4s.plan.InitialFixationPolicy": "planJVM/eyes4s.plan.TemporalCursorSuite",
     "method eyes4s.plan.InitialFixationPolicy$.dropLeadingInClosedDisc(1,eyes4s.kernel.Pt,scala.Double):scala.util.Either": "planJVM/eyes4s.plan.InitialFixationSuite",
@@ -12929,6 +12966,9 @@
     "method eyes4s.plan.InventoryTrial.itemConflict():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.InventoryTrial.keyItem():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.LedgerRefusal$.of(2,eyes4s.plan.StudyInput,eyes4s.plan.AdmissionLedger,eyes4s.plan.AdmissionError):eyes4s.plan.LedgerRefusal": "planJVM/eyes4s.plan.ResultInspectionSuite",
+    "method eyes4s.plan.LineSpan$.of(eyes4s.plan.SourceLine,eyes4s.plan.SourceLine):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.LineSpan.contains(eyes4s.plan.SourceLine):scala.Boolean": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.LineSpan.count():": "planJVM/eyes4s.plan.RecordIdentitySuite",
     "method eyes4s.plan.Listing.contains(eyes4s.plan.ResultRef):scala.Boolean": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.Listing.first(eyes4s.plan.PageSize):eyes4s.plan.Page": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.Listing.get(eyes4s.plan.ResultRef):scala.Option": "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -13014,6 +13054,24 @@
     "method eyes4s.plan.RecipeParameters$.sigmaX(1,eyes4s.kernel.UnitLabel):eyes4s.plan.ParameterDescriptor": "codecJVM/eyes4s.codec.StudyCodecSuite",
     "method eyes4s.plan.RecipeParameters$.sigmaY(1,eyes4s.kernel.UnitLabel):eyes4s.plan.ParameterDescriptor": "codecJVM/eyes4s.codec.StudyCodecSuite",
     "method eyes4s.plan.RecordAttributes$.of(scala.Int,eyes4s.plan.Attributes):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "method eyes4s.plan.RecordIdentity$package$.csvRecord(1,eyes4s.plan.SourceRecord):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordIdentity$package$.dataRecord(1,eyes4s.plan.FixationSource):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordIdentity$package$.dataRecord(1,eyes4s.plan.SourceRecord):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordIdentity$package$.entryAt(1,eyes4s.plan.StudySources,eyes4s.plan.DataRecord):scala.Option": "ioJVM/eyes4s.io.CsvLayoutSuite",
+    "method eyes4s.plan.RecordIdentity$package$.fixationAt(1,eyes4s.plan.StudySources,java.lang.Object,eyes4s.plan.ScanpathPosition):scala.util.Either": "ioJVM/eyes4s.io.CsvLayoutSuite",
+    "method eyes4s.plan.RecordIdentity$package$.position(1,eyes4s.plan.FixationSource):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordIdentity$package$.trialAt(1,eyes4s.plan.StudySources,eyes4s.plan.DataRecord):scala.Option": "ioJVM/eyes4s.io.CsvLayoutSuite",
+    "method eyes4s.plan.RecordIdentityError.message():": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordLines$.of(scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordLines$.uniform(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordLines.equals(java.lang.Object):scala.Boolean": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordLines.hashCode():": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordLines.header():": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
+    "method eyes4s.plan.RecordLines.isUniform():": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
+    "method eyes4s.plan.RecordLines.lines():": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordLines.owner(eyes4s.plan.SourceLine):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordLines.span(eyes4s.plan.DataRecord):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordLines.toString():": "planJVM/eyes4s.plan.RecordIdentitySuite",
     "method eyes4s.plan.RecordingAnalysis$.reconstruct(1,eyes4s.plan.RecordingPlan,eyes4s.core.Recording,eyes4s.core.Recording,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
     "method eyes4s.plan.RecordingAnalysis.description():": "planJVM/eyes4s.plan.RecordingCursorSuite",
     "method eyes4s.plan.RecordingAnalysis.input():": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
@@ -13087,6 +13145,8 @@
     "method eyes4s.plan.ScaleInspection.pairs(eyes4s.plan.StudyDesign):eyes4s.plan.Listing": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ScaleInspection.reductions(eyes4s.plan.StudyDesign):eyes4s.plan.Listing": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ScaleInspection.report(eyes4s.plan.StudyDesign):eyes4s.design.ReductionReport": "planJVM/eyes4s.plan.ResultInspectionSuite",
+    "method eyes4s.plan.ScanpathPosition$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.ScanpathPosition.number():": "planJVM/eyes4s.plan.RecordIdentitySuite",
     "method eyes4s.plan.ScoreComponent$.of(2,java.lang.String,java.lang.String,eyes4s.plan.ParameterUnits,eyes4s.compare.MeasureScale,eyes4s.plan.ScoreDirection,scala.Function1,scala.Function1):scala.util.Either": "planJVM/eyes4s.plan.MethodDescriptorSuite",
     "method eyes4s.plan.ScoreSchema$.of(2,scala.collection.immutable.Vector):eyes4s.plan.ScoreSchema": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.ScoreSchema$.study(5,eyes4s.plan.StudyPlan):scala.util.Either": "planJVM/eyes4s.plan.InitialFixationSuite",
@@ -13094,6 +13154,7 @@
     "method eyes4s.plan.ScoreSchema.difference(java.lang.Object):eyes4s.plan.ScoreView": "planJVM/eyes4s.plan.StudyWindowSuite",
     "method eyes4s.plan.ScoreSchema.ids():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.ScoreSchema.score(java.lang.Object):eyes4s.plan.ScoreView": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.SourceLine$.of(scala.Long):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
     "method eyes4s.plan.SourceLink.mapKeys(1,scala.Function1):eyes4s.plan.SourceLink": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.SourceLink.trialKeys():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.SourceRecord.isAdmitted():": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
@@ -13518,6 +13579,9 @@
     "value eyes4s.codec.PixelUnit$.pixels": "codecJVM/eyes4s.codec.ArchiveManifestSuite",
     "value eyes4s.codec.PointSamplingCodec.archive": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "value eyes4s.codec.PointSamplingCodec.plan": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
+    "value eyes4s.codec.RecordIdentityCodecs$.dataRecord": "codecJVM/eyes4s.codec.RecordIdentityFixturesJvmSuite",
+    "value eyes4s.codec.RecordIdentityCodecs$.fixationNumber": "codecJVM/eyes4s.codec.RecordIdentityFixturesJvmSuite",
+    "value eyes4s.codec.RecordIdentityCodecs$.scanpathPosition": "codecJVM/eyes4s.codec.RecordIdentityFixturesJvmSuite",
     "value eyes4s.codec.RecordingInputCodecs$.binocularSchema": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.codec.RecordingInputCodecs$.inputSchema": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.codec.RecordingInputCodecs$.maximumSamples": "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
@@ -13801,6 +13865,11 @@
     "value eyes4s.laws.PairingLaws$.genChoice": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "value eyes4s.laws.PairingLaws$.genInput": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "value eyes4s.laws.PairingLaws$.genPairing": "lawsJVM/eyes4s.laws.WindowLawsSuite",
+    "value eyes4s.laws.RecordIdentityLaws$.csvValues": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
+    "value eyes4s.laws.RecordIdentityLaws$.layouts": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
+    "value eyes4s.laws.RecordIdentityLaws$.lineCounts": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
+    "value eyes4s.laws.RecordIdentityLaws$.positionValues": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
+    "value eyes4s.laws.RecordIdentityLaws$.recordValues": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
     "value eyes4s.laws.ReportGenerators$.confidence": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "value eyes4s.laws.ReportGenerators$.confidenceTerm": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "value eyes4s.laws.ReportGenerators$.genCase": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -13857,6 +13926,9 @@
     "value eyes4s.plan.ComparisonMethods$.l1Similarity": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.plan.ComparisonMethods$.pearson": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.plan.ComparisonMethods$.spearman": "lawsJVM/consumer.PublicLawsSuite",
+    "value eyes4s.plan.CsvRecord$.header": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "value eyes4s.plan.DataRecord$.given_Ordering_DataRecord": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "value eyes4s.plan.DataRecord$.maximum": "planJVM/eyes4s.plan.RecordIdentitySuite",
     "value eyes4s.plan.DefinitionId$.admissionLedger": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.plan.DefinitionId$.binocularRecording": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.plan.DefinitionId$.cosine": "lawsJVM/consumer.PublicLawsSuite",
@@ -14097,6 +14169,7 @@
     "value eyes4s.plan.Remedial$.recording": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "value eyes4s.plan.Remedial$.temporal": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "value eyes4s.plan.RepetitionRelations$.withinParticipant": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "value eyes4s.plan.ScanpathPosition$.maximum": "planJVM/eyes4s.plan.RecordIdentitySuite",
     "value eyes4s.plan.StudyInspection.failures": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "value eyes4s.plan.StudyKey$.given_KeyDigest_StudyKey": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
     "value eyes4s.plan.StudyKey$.given_Ordering_StudyKey": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
@@ -14329,6 +14402,12 @@
       "int64, int32 and float64 payloads have pinned little-endian bytes and digests",
       "layouts refuse empty shapes, negative extents, oversized arrays and mismatched values",
       "verification checks length and digest and keeps a private copy of the bytes"
+    ],
+    "codecJS/eyes4s.codec.RecordIdentityCodecSuite": [
+      "another convention, an extra member, a non-object or an out-of-range value is refused",
+      "each identity is one member named for its counting convention",
+      "every identity round-trips exactly, at the ends of its range too",
+      "the pinned document holds the fixture's record 7,214 and its fixation 6"
     ],
     "codecJS/eyes4s.codec.RecordingMethodsSuite": [
       "I-DT direct, interpreted and restored detection agree with stationary event oracle",
@@ -15208,6 +15287,14 @@
       "scalar and structured pair failures retain endpoints, component order and denominator evidence",
       "template and OLS adapters have independent analytic numerical targets and explicit exclusions",
       "temporal exports retain exact 64-bit queries, missing support, controls and final endpoint"
+    ],
+    "ioJS/eyes4s.io.CsvLayoutSuite": [
+      "a fixation import's ledger records are the layout's records, drift and all",
+      "a pinned text with quoted line breaks: every record's lines, and every line's record",
+      "any text: the layout refuses exactly what the decoder refuses, with its error",
+      "generated texts: the decoder's records, on the lines their quoted breaks give",
+      "refusals name the decoder's error or the missing header",
+      "the decoder's edge records: a trailing empty quoted field is no record, a blank line is"
     ],
     "ioJS/eyes4s.io.CsvNumberSuite": [
       "every binary exponent, both signs and adversarial mantissas round-trip exactly",
@@ -16444,6 +16531,18 @@
       "trial study plan: versionedCodec.reencoding is canonical",
       "trial study plan: versionedCodec.round trip preserves the value"
     ],
+    "lawsJS/eyes4s.laws.RecordIdentityLawsSuite": [
+      "FixationIdentity: fixationIdentity.positions below 0 and numbers below 1 are refused",
+      "FixationIdentity: fixationIdentity.the fixation number of position p is p + 1, and back",
+      "RecordIdentity: recordIdentity.every CSV record is the header or exactly one data record",
+      "RecordIdentity: recordIdentity.the CSV record of data record n is n + 1, and it is that data record",
+      "RecordIdentity: recordIdentity.the conversion is one to one",
+      "RecordIdentity: recordIdentity.values outside the ranges are refused, naming the value",
+      "RecordLines: recordLines.a layout of one-line records puts data record n on line n + 1",
+      "RecordLines: recordLines.every line of a span belongs to its record, and nothing lies beyond",
+      "RecordLines: recordLines.the spans follow each other from line 1 to the last line, without gap",
+      "outside eyes4s.plan no identity is built or copied without its smart constructor"
+    ],
     "lawsJS/eyes4s.laws.RecordingInputCodecLawSuite": [
       "binocular recording: versionedCodec.reencoding is canonical",
       "binocular recording: versionedCodec.round trip preserves the value",
@@ -16797,6 +16896,15 @@
       "study and temporal findings coincide with constructor/run refusals and trial failures",
       "temporal table: artifact, anchors, coverage, windows, method and repetition design",
       "the shipped recipe families are listable"
+    ],
+    "planJS/eyes4s.plan.RecordIdentitySuite": [
+      "a data record cannot be passed where a CSV record is expected, nor the reverse",
+      "a line span counts and contains its lines, both ends included",
+      "an Int, a position or a record is not another identity",
+      "every refusal names the value it refused",
+      "fixture record 7,214 is CSV record 7,215; fixation 6 is scanpath position 5",
+      "layouts compare by their records' lines",
+      "ledger and source-index record numbers read as typed identities"
     ],
     "planJS/eyes4s.plan.RecordingCursorSuite": [
       "prerequisites refuse before any step; a synchronization failure is the first step's",
@@ -17240,6 +17348,16 @@
       "int64, int32 and float64 payloads have pinned little-endian bytes and digests",
       "layouts refuse empty shapes, negative extents, oversized arrays and mismatched values",
       "verification checks length and digest and keeps a private copy of the bytes"
+    ],
+    "codecJVM/eyes4s.codec.RecordIdentityCodecSuite": [
+      "another convention, an extra member, a non-object or an out-of-range value is refused",
+      "each identity is one member named for its counting convention",
+      "every identity round-trips exactly, at the ends of its range too",
+      "the pinned document holds the fixture's record 7,214 and its fixation 6"
+    ],
+    "codecJVM/eyes4s.codec.RecordIdentityFixturesJvmSuite": [
+      "the pinned identity document has its independently known digest",
+      "the pinned identity document is the writer's output and the portable mirror"
     ],
     "codecJVM/eyes4s.codec.RecordingMethodsSuite": [
       "I-DT direct, interpreted and restored detection agree with stationary event oracle",
@@ -18168,6 +18286,14 @@
       "scalar and structured pair failures retain endpoints, component order and denominator evidence",
       "template and OLS adapters have independent analytic numerical targets and explicit exclusions",
       "temporal exports retain exact 64-bit queries, missing support, controls and final endpoint"
+    ],
+    "ioJVM/eyes4s.io.CsvLayoutSuite": [
+      "a fixation import's ledger records are the layout's records, drift and all",
+      "a pinned text with quoted line breaks: every record's lines, and every line's record",
+      "any text: the layout refuses exactly what the decoder refuses, with its error",
+      "generated texts: the decoder's records, on the lines their quoted breaks give",
+      "refusals name the decoder's error or the missing header",
+      "the decoder's edge records: a trailing empty quoted field is no record, a blank line is"
     ],
     "ioJVM/eyes4s.io.CsvNumberSuite": [
       "every binary exponent, both signs and adversarial mantissas round-trip exactly",
@@ -19482,6 +19608,18 @@
       "trial study plan: versionedCodec.reencoding is canonical",
       "trial study plan: versionedCodec.round trip preserves the value"
     ],
+    "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite": [
+      "FixationIdentity: fixationIdentity.positions below 0 and numbers below 1 are refused",
+      "FixationIdentity: fixationIdentity.the fixation number of position p is p + 1, and back",
+      "RecordIdentity: recordIdentity.every CSV record is the header or exactly one data record",
+      "RecordIdentity: recordIdentity.the CSV record of data record n is n + 1, and it is that data record",
+      "RecordIdentity: recordIdentity.the conversion is one to one",
+      "RecordIdentity: recordIdentity.values outside the ranges are refused, naming the value",
+      "RecordLines: recordLines.a layout of one-line records puts data record n on line n + 1",
+      "RecordLines: recordLines.every line of a span belongs to its record, and nothing lies beyond",
+      "RecordLines: recordLines.the spans follow each other from line 1 to the last line, without gap",
+      "outside eyes4s.plan no identity is built or copied without its smart constructor"
+    ],
     "lawsJVM/eyes4s.laws.RecordingInputCodecLawSuite": [
       "binocular recording: versionedCodec.reencoding is canonical",
       "binocular recording: versionedCodec.round trip preserves the value",
@@ -19856,6 +19994,15 @@
       "study and temporal findings coincide with constructor/run refusals and trial failures",
       "temporal table: artifact, anchors, coverage, windows, method and repetition design",
       "the shipped recipe families are listable"
+    ],
+    "planJVM/eyes4s.plan.RecordIdentitySuite": [
+      "a data record cannot be passed where a CSV record is expected, nor the reverse",
+      "a line span counts and contains its lines, both ends included",
+      "an Int, a position or a record is not another identity",
+      "every refusal names the value it refused",
+      "fixture record 7,214 is CSV record 7,215; fixation 6 is scanpath position 5",
+      "layouts compare by their records' lines",
+      "ledger and source-index record numbers read as typed identities"
     ],
     "planJVM/eyes4s.plan.RecordingCursorSuite": [
       "prerequisites refuse before any step; a synchronization failure is the first step's",
