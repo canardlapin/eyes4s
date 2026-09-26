@@ -611,13 +611,25 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
     new StudyResultRegistration[K, U]:
       val id                                                         = method.id
       def decode(json: Json): Either[CodecError, LoadedResult[K, U]] =
-        codec.decode(json).map { value =>
-          new LoadedResult[K, U]:
-            type Score      = S
-            type Difference = D
-            def result = value
-            def encode = codec.encode(value)
-        }
+        codec.decode(json).map(loaded)
+      def decodeWithPayloads(
+          json: Json,
+          payloads: PayloadRef => Option[VerifiedPayload]
+      ): Either[CodecError, LoadedResult[K, U]] =
+        val archives = new DensityArchiveCodec(StudyResultCodec.this)
+        archives.codec
+          .decode(json)
+          .flatMap(
+            _.materialize(payloads).left
+              .map(error => CodecError.Field("density", json, error.message))
+          )
+          .map(loaded)
+      private def loaded(value: StudyResult[K, U, S, D]): LoadedResult[K, U] =
+        new LoadedResult[K, U]:
+          type Score      = S
+          type Difference = D
+          def result = value
+          def encode = codec.encode(value)
 
 /** A decoded result whose score and difference types stay abstract but typed. */
 trait LoadedResult[K, U <: Unit2D]:
@@ -629,6 +641,10 @@ trait LoadedResult[K, U <: Unit2D]:
 sealed trait StudyResultRegistration[K, U <: Unit2D]:
   def id: DefinitionId
   def decode(json: Json): Either[CodecError, LoadedResult[K, U]]
+  def decodeWithPayloads(
+      json: Json,
+      payloads: PayloadRef => Option[VerifiedPayload]
+  ): Either[CodecError, LoadedResult[K, U]]
 
 /** Result codecs registered by method identity; lookup reads the payload's
   * `method` and refuses missing or duplicate registrations.
@@ -647,6 +663,17 @@ final class StudyResultRegistry[K, U <: Unit2D] private (
     method     <- Wire.definition(payload, "method")
     registered <- entries.find(_.id == method).toRight(CodecError.MissingResultCodec(method))
     result     <- registered.decode(json)
+  yield result
+
+  /** Materialize packed result archives using only the supplied verified chunks. */
+  def decodeWithPayloads(
+      json: Json,
+      payloads: PayloadRef => Option[VerifiedPayload]
+  ): Either[CodecError, LoadedResult[K, U]] = for
+    payload    <- Wire.field[Json](json, "value")
+    method     <- Wire.definition(payload, "method")
+    registered <- entries.find(_.id == method).toRight(CodecError.MissingResultCodec(method))
+    result     <- registered.decodeWithPayloads(json, payloads)
   yield result
 
 object StudyResultRegistry:
