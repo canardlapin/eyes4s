@@ -70,15 +70,15 @@ enum SourceTextError[+K] derives CanEqual:
 
 object SourceTextError:
   given diagnose[K]: Diagnose[SourceTextError[K], K] =
-    Diagnose.derived[SourceTextError[K], K](
-      IoDiagnosticCatalog.sourceText,
-      (e: SourceTextError[K]) =>
-        e match
-          case Field(record, _, _) => Vector(Locus.Record(record.csv.value))
-          case RecordedMismatch(record, _, _, _, _, _, _) =>
-            Vector(Locus.Record(record.csv.value))
-          case _ => Vector.empty
-    )(_.message)
+    Diagnose.derived[SourceTextError[K], K](IoDiagnosticCatalog.sourceText, subject[K])(
+      _.message
+    )
+
+  /** The record a refusal names. */
+  private def subject[K](error: SourceTextError[K]): Vector[Locus[K]] = error match
+    case Field(record, _, _)                        => Vector(Locus.Record(record.csv.value))
+    case RecordedMismatch(record, _, _, _, _, _, _) => Vector(Locus.Record(record.csv.value))
+    case _                                          => Vector.empty
 
 /** One source record with its verbatim text and lines. An admitted record's
   * fixation carries its recorded position (`trail.recorded`).

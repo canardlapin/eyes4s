@@ -163,20 +163,20 @@ enum ProvenanceError[+K] derives CanEqual:
 object ProvenanceError:
   given diagnose[K]: Diagnose[ProvenanceError[K], K] =
     given DiagnosticOperand[K, K] = DiagnosticOperand.key[K]
-    Diagnose.derived[ProvenanceError[K], K](
-      DiagnosticCatalog.coordinateProvenance,
-      (e: ProvenanceError[K]) =>
-        e match
-          case UnknownTrial(key)             => Vector(Locus.Trial(key))
-          case AmbiguousTrial(key, _)        => Vector(Locus.Trial(key))
-          case FixationOutOfRange(key, p, _) =>
-            Vector(Locus.Trial(key), Locus.Fixation(p.value))
-          case TrialFrame(key, _)            => Vector(Locus.Trial(key))
-          case CorrectionConflict(key, _, _) => Vector(Locus.Trial(key))
-          case Unmappable(key, p, _) => Vector(Locus.Trial(key), Locus.Fixation(p.value))
-          case PageStart(from, _)    => Vector(Locus.Record(from.csv.value))
-          case _                     => Vector.empty
-    )(_.message)
+    Diagnose.derived[ProvenanceError[K], K](DiagnosticCatalog.coordinateProvenance, subject[K])(
+      _.message
+    )
+
+  /** The trial, fixation or record a refusal names. */
+  private def subject[K](error: ProvenanceError[K]): Vector[Locus[K]] = error match
+    case UnknownTrial(key)             => Vector(Locus.Trial(key))
+    case AmbiguousTrial(key, _)        => Vector(Locus.Trial(key))
+    case FixationOutOfRange(key, p, _) => Vector(Locus.Trial(key), Locus.Fixation(p.value))
+    case TrialFrame(key, _)            => Vector(Locus.Trial(key))
+    case CorrectionConflict(key, _, _) => Vector(Locus.Trial(key))
+    case Unmappable(key, p, _)         => Vector(Locus.Trial(key), Locus.Fixation(p.value))
+    case PageStart(from, _)            => Vector(Locus.Record(from.csv.value))
+    case _                             => Vector.empty
 
 /** One source record of a ledger and, when it was admitted into the input,
   * the provenance of the fixation it supplied.
