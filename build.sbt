@@ -303,7 +303,8 @@ trustWorkflowContents := {
     "release.yml"     -> release,
     "clean.yml"       -> bundledCleanWorkflow,
     "performance.yml" -> eyeLinkPerformanceWorkflow,
-    "evidence.yml"    -> scheduledEvidenceWorkflow
+    "evidence.yml"    -> scheduledEvidenceWorkflow,
+    "studio.yml"      -> studioWorkflowContents.value
   )
 }
 
@@ -378,6 +379,13 @@ githubWorkflowCheck := {
   requireText("evidence.yml", "workflow_dispatch:")
   requireText("evidence.yml", "python3 tools/api-audit/run.py")
   requireText("evidence.yml", "python3 tools/check-docs.py --platform none --run-consumer")
+
+  // Studio CI lives in its own workflow; the library matrix never runs it.
+  requireText("studio.yml", "xvfb-run -a")
+  requireText("studio.yml", "studioAll studioStyleCheck")
+  requireText("studio.yml", "paths: [studio/**")
+  requireText("studio.yml", "macos-15")
+  forbidText("checks.yml", "studio")
 }
 
 // Both boundary invariants run in CI, not just on a developer's machine.
@@ -1031,8 +1039,8 @@ addCommandAlias(
     .mkString(";", ";", "")
 )
 
-// Studio CI (S0.4): jobs beside the core matrix in checks.yml, on JDK 25, never
-// in the library matrix. Linux runs everything under a virtual display and owns
+// Studio CI (S0.4): its own workflow, studio.yml, on JDK 25, never in the
+// library matrix or checks.yml. Linux runs everything under a virtual display and owns
 // snapshots (and, later, goldens); macOS runs the functional FX tests only.
 // OpenJFX natives are named per runner with -Djavafx.platform.
 lazy val studioJdk = JavaSpec.temurin("25")
@@ -1081,8 +1089,18 @@ lazy val studioLinuxJob = WorkflowJob(
       params = Map(
         "name"              -> "studio-snapshots-linux-${{ github.sha }}",
         "path"              -> "target/studio-snapshots/",
-        "if-no-files-found" -> "error"
+        "if-no-files-found" -> "warn"
       )
+    ),
+    WorkflowStep.Run(
+      List(
+        "if [ -z \"$(find target/studio-snapshots -name '*.png' -print -quit 2>/dev/null)\" ]; then",
+        "  echo '::error::no PNG under target/studio-snapshots: the FX snapshot tests wrote nothing'",
+        "  exit 1",
+        "fi"
+      ),
+      name = Some("Require studio snapshots"),
+      cond = Some("success()")
     )
   ),
   sbtStepPreamble = Nil,
@@ -1102,13 +1120,50 @@ lazy val studioMacosJob = WorkflowJob(
     )
   ),
   sbtStepPreamble = Nil,
-  oses = List("macos-latest"),
+  oses = List("macos-15"),
   scalas = Nil,
   javas = List(studioJdk),
   timeoutMinutes = Some(60)
 )
 
-ThisBuild / githubWorkflowAddedJobs ++= Seq(studioLinuxJob, studioMacosJob)
+// studio.yml: rendered with the same generator as checks.yml, and listed in
+// trustWorkflowContents so githubWorkflowCheck keeps it current.
+lazy val studioWorkflowPaths = List(
+  "studio/**",
+  "fixtures/studio-golden/**",
+  "tools/studio-fixture/**",
+  "docs/studio/fixture/**",
+  "build.sbt",
+  "project/**",
+  ".github/workflows/studio.yml"
+) ++ Seq(
+  "kernel",
+  "core",
+  "detect",
+  "surface",
+  "aoi",
+  "compare",
+  "design",
+  "plan",
+  "codec",
+  "fs2"
+)
+  .map(dir => s"$dir/**")
+
+lazy val studioWorkflowContents = taskKey[String]("Render the Eyes Studio workflow.")
+
+studioWorkflowContents := GenerativePlugin.compileWorkflow(
+  "Studio",
+  githubWorkflowTargetBranches.value.toList,
+  Nil,
+  Paths.Include(studioWorkflowPaths),
+  githubWorkflowPREventTypes.value.toList,
+  Some(Permissions.Specify.defaultRestrictive.withPackages(PermissionValue.None)),
+  githubWorkflowEnv.value,
+  githubWorkflowConcurrency.value,
+  List(studioLinuxJob, studioMacosJob),
+  githubWorkflowSbtCommand.value
+)
 
 // ---------------------------------------------------------------------------
 // Aliases

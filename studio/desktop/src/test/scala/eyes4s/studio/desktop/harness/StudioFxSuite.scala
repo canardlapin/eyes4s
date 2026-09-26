@@ -92,7 +92,11 @@ final class FxStage private (
     runOnFx(scene.setRoot(root))
     awaitLayout()
 
-  /** Applies CSS and layout, then waits until a full pulse has rendered. */
+  /** Applies CSS and layout now, then waits for the layout pass of the next pulse.
+    *
+    * It returns from a post-layout pulse listener, so that pulse may not have
+    * rendered yet; snapshots render synchronously and do not need it to.
+    */
   def awaitLayout(): Unit =
     val pulsed = CountDownLatch(1)
     runOnFx {

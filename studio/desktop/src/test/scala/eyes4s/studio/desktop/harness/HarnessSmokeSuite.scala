@@ -19,7 +19,7 @@ package eyes4s.studio.desktop.harness
 import java.nio.file.Files
 import javafx.scene.control.{Button, Label, TextField}
 import javafx.scene.input.KeyCode
-import javafx.scene.layout.VBox
+import javafx.scene.layout.{Pane, StackPane, VBox}
 import javax.imageio.ImageIO
 
 /** The harness itself: a board-sized stage, robot input and 1x/2x snapshots. */
@@ -72,6 +72,37 @@ class HarnessSmokeSuite extends StudioFxSuite:
     fx.robot.click(c.field)
     fx.robot.typeText("P17")
     assertEquals(fx.runOnFx(c.field.getText), "P17")
+  }
+
+  fxStage.test("a click is hit-tested before it is delivered") { fx =>
+    val c     = counter(fx)
+    val cover = fx.runOnFx {
+      val pane = Pane()
+      pane.setPickOnBounds(true)
+      pane
+    }
+    val elsewhere = fx.runOnFx(Button("Elsewhere"))
+
+    def refusal(node: javafx.scene.Node): String =
+      intercept[AssertionError](fx.robot.click(node)).getMessage
+
+    assert(refusal(elsewhere).contains("not in this test's scene"))
+
+    fx.runOnFx(c.button.setDisable(true))
+    assert(refusal(c.button).contains("disabled"))
+    fx.runOnFx(c.button.setDisable(false))
+
+    fx.runOnFx(c.button.setVisible(false))
+    assert(refusal(c.button).contains("not visible"))
+    fx.runOnFx(c.button.setVisible(true))
+
+    fx.show(fx.runOnFx(StackPane(VBox(12, c.button, c.label, c.field), cover)))
+    assert(refusal(c.button).contains("lands on Pane"))
+    assertEquals(fx.runOnFx(c.label.getText), "Clicked 0")
+
+    fx.runOnFx(cover.setMouseTransparent(true))
+    fx.robot.click(c.button)
+    assertEquals(fx.runOnFx(c.label.getText), "Clicked 1")
   }
 
   test("snapshot path segments are file-name safe") {
