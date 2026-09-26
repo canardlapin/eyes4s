@@ -109,6 +109,14 @@ enum Locus[+K] derives CanEqual:
     */
   case Line(source: String, line: Long)
 
+  /** A participant of a report, by the name the study layout projects. */
+  case Participant(name: String)
+
+  /** A report group: one level of each grouping term, as `(term, level)`,
+    * in grouping order; no levels is the whole report.
+    */
+  case Group(levels: Vector[(String, String)])
+
   /** Trial keys this locus names. */
   def trialKeys: Vector[K] = this match
     case Trial(key)             => Vector(key)
@@ -142,6 +150,8 @@ enum Locus[+K] derives CanEqual:
     case Path(path)             => Path(path)
     case Relation(kind, source) => Relation(kind, source)
     case Line(source, line)     => Line(source, line)
+    case Participant(name)      => Participant(name)
+    case Group(levels)          => Group(levels)
 
 /** A double compared by its bit pattern: NaN equals NaN and `-0.0` differs
   * from `0.0`, so a projection of a non-finite failure equals itself and exact

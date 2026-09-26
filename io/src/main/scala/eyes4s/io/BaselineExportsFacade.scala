@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package eyes4s.studio.app
+package eyes4s.io
 
-class AppModelSuite extends munit.FunSuite:
-
-  test("update applies each intent once, purely") {
-    val once = AppModel.update(AppModel.initial, Intent.Acknowledge)
-    assertEquals(once.intentsApplied, 1L)
-    assertEquals(AppModel.update(AppModel.initial, Intent.Acknowledge), once)
-    assertEquals(AppModel.initial.intentsApplied, 0L)
-  }
+/** The baseline export adapters under their former name: [[ResultExports]]
+  * itself, so every table they build is a table of the one result-table
+  * layer with the same identity. New code calls [[ResultExports]], and
+  * reports use [[eyes4s.results.ReportTables]].
+  */
+@deprecated(
+  "BaselineExports is a compatibility facade; use ResultExports, which builds the same tables",
+  "0.1"
+)
+val BaselineExports: ResultExports.type = ResultExports

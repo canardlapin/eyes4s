@@ -138,6 +138,21 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
       "temporal-result-v1",
       ResultArchiveMirrors.temporalResultVersionOne,
       ArchiveFixtures.temporalResults.codec
+    ),
+    Pinned(
+      "covariate-schema-v1",
+      ReportFixtureMirrors.covariateSchemaVersionOne,
+      ReportCodecs.covariates
+    ),
+    Pinned(
+      "report-spec-v1",
+      ReportFixtureMirrors.reportSpecVersionOne,
+      ReportCodecs.reportSpec
+    ),
+    Pinned(
+      "report-v1",
+      ReportFixtureMirrors.reportVersionOne,
+      ReportCodecs.report(ReportFixtures.keys)
     )
   ) ++ scoreEnvelopes
 
@@ -178,12 +193,15 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
         "eyes4s.admission-ledger@2",
         "eyes4s.admission-ledger@3",
         "eyes4s.binocular-recording@1",
+        "eyes4s.covariate-schema@1",
         "eyes4s.manifest@1",
         "eyes4s.measure-distance@1",
         "eyes4s.recording-input@1",
         "eyes4s.recording-plan@1",
         "eyes4s.recording-result@1",
         "eyes4s.recording@1",
+        "eyes4s.report-spec@1",
+        "eyes4s.report@1",
         "eyes4s.scalar@1",
         "eyes4s.signed-difference@1",
         "eyes4s.similarity@1",

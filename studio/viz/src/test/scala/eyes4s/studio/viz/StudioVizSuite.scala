@@ -21,5 +21,5 @@ import eyes4s.studio.app.AppModel
 class StudioVizSuite extends munit.FunSuite:
 
   test("a caption is derived from the app model") {
-    assertEquals(StudioViz.caption(AppModel.initial), "intents applied: 0")
+    assertEquals(AppModel.newProject.map(StudioViz.caption), Right("No dataset · no analysis"))
   }

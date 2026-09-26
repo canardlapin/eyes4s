@@ -310,6 +310,57 @@ object StudioLint {
     }
 
   // ---------------------------------------------------------------------------
+  // Rule 5: unbound report constructors
+  // ---------------------------------------------------------------------------
+
+  /** eyes4s report constructors that take no source binding. Studio obtains
+    * bound reports only through `eyes4s.codec.ReportSources.study`; these are
+    * `private[eyes4s]`, which studio packages can technically reach.
+    */
+  val forbiddenMembers: Seq[String] = Seq(
+    "Report.reduce",
+    "Report.reconstruct",
+    "ReportSource.of",
+    "ReportSource.study",
+    "ReportSource.fromQueries"
+  )
+
+  /** Every studio source root, portable and desktop alike. */
+  val allStudioSourceRoots: Seq[String] =
+    Seq("studio/core", "studio/app", "studio/viz", "studio/desktop")
+
+  private val memberPattern = {
+    val alts = forbiddenMembers.map { m =>
+      val Array(owner, member) = m.split('.')
+      s"(?<![\\w$$])${owner}\\s*\\.\\s*${member}(?![\\w$$])"
+    }
+    alts.mkString("|").r
+  }
+
+  /** Every reference to a forbidden member in one source (code only). */
+  def scanMembers(fileName: String, source: String): Seq[Violation] = {
+    val code                = codeOnly(source)
+    def lineOf(offset: Int) = code.take(offset).count(_ == '\n') + 1
+    memberPattern
+      .findAllMatchIn(code)
+      .map(m => Violation(fileName, lineOf(m.start), m.matched.replaceAll("\\s", "")))
+      .toList
+  }
+
+  /** Every forbidden member reference under all studio source roots. */
+  def scanMemberTree(buildRoot: File): Seq[Violation] =
+    allStudioSourceRoots.flatMap { root =>
+      val dir     = buildRoot / root
+      val sources =
+        if (dir.exists) (dir ** "*.scala").get.filterNot(_.getPath.contains("/target/"))
+        else Nil
+      sources.sortBy(_.getPath).flatMap { f =>
+        val relative = IO.relativize(buildRoot, f).getOrElse(f.getPath)
+        scanMembers(relative, IO.read(f))
+      }
+    }
+
+  // ---------------------------------------------------------------------------
   // Resolved artifacts and the project graph
   // ---------------------------------------------------------------------------
 
@@ -526,6 +577,29 @@ object StudioLint {
       "transitive library-to-studio path was missed"
     )
 
+    // Rule 5: unbound report constructors.
+    Seq(
+      "val r = Report.reduce(spec, source)"            -> "Report.reduce",
+      "val r = eyes4s.results.Report.reconstruct(x)"   -> "Report.reconstruct",
+      "import eyes4s.results.ReportSource.fromQueries" -> "ReportSource.fromQueries",
+      "val s = ReportSource . study(a)"                -> "ReportSource.study",
+      "val s = ReportSource.of(q)"                     -> "ReportSource.of"
+    ).foreach { case (source, member) =>
+      val found = scanMembers("planted.scala", source)
+      expect(
+        found.exists(_.reference == member),
+        s"member lint missed '$member' in: $source ($found)"
+      )
+    }
+    Seq(
+      "val s = ReportSources.study(plans, inputs, results)",
+      "val r = report.reduce(xs)",
+      "// Report.reduce is private",
+      "val t = \"Report.reduce\""
+    ).foreach { source =>
+      val found = scanMembers("clean.scala", source)
+      expect(found.isEmpty, s"member lint flagged clean source: $source ($found)")
+    }
     failures.result()
   }
 }

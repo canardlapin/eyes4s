@@ -76,6 +76,10 @@ enum CodecError derives CanEqual:
     * `path` decodes, but the writer writes `canonical`, as `rule` says.
     */
   case NonCanonical(path: String, found: Json, canonical: Json, rule: String)
+  // UI-C: report documents.
+  case Report(underlying: eyes4s.results.ReportError[?])
+  case ReportSpec(underlying: eyes4s.results.SpecError)
+  case Covariates(underlying: eyes4s.results.CovariateError[?])
 
   def message: String = this match
     case InvalidJson(_, reason)     => s"Invalid project JSON: $reason"
@@ -139,6 +143,9 @@ enum CodecError derives CanEqual:
     case NonCanonical(path, found, canonical, rule) =>
       s"$path is not in canonical form ($rule): found ${found.noSpaces}, " +
         s"written as ${canonical.noSpaces}."
+    case Report(e)     => e.message
+    case ReportSpec(e) => e.message
+    case Covariates(e) => e.message
 
 /** A typed, explicitly versioned codec. Unsupported old versions fail precisely.
   * The wire envelope separates schema identity from any method identity in its payload.
