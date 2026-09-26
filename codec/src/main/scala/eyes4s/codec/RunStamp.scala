@@ -66,3 +66,25 @@ enum RunStampError[Plan, Input]:
       s"Run plan ${reported.display} differs from current ${current.display}; changed fields: ${changes.map(_.field).mkString(", ")}."
     case ChangedInput(reported, current) =>
       s"Run input ${reported.display} differs from current ${current.display}."
+
+/** The persisted claim uses named members; their positions never identify their roles. */
+private[codec] object RunStampWire:
+  def write[P, I](stamp: RunStamp[P, I]): io.circe.Json = io.circe.Json.obj(
+    "plan"  -> io.circe.Json.fromString(stamp.plan.sha256.hex),
+    "input" -> io.circe.Json.fromString(stamp.input.sha256.hex)
+  )
+
+  def read[P, I](json: io.circe.Json): Either[CodecError, RunStamp[P, I]] =
+    def digest[A](field: String): Either[CodecError, CanonicalDigest[A]] =
+      Wire
+        .field[String](json, field)
+        .flatMap(raw =>
+          CanonicalDigest
+            .parse[A](raw)
+            .left
+            .map(error => CodecError.Field(field, json, error.message))
+        )
+    for
+      plan  <- digest[P]("plan")
+      input <- digest[I]("input")
+    yield new RunStamp(plan, input)

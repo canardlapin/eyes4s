@@ -140,8 +140,24 @@ final class StudyResultArchive[K, U <: Unit2D, P, S, D] private[codec] (
     private[codec] val rows: Vector[Vector[(K, Json)]],
     private[codec] val identities: DocumentIdentities,
     val description: Vector[(String, Vector[Provenance.Param])],
+    val stampClaim: Option[RunStamp[StudyPlan[K, U, P, S, D], StudyInput[K, U]]],
     private[codec] val original: Boolean
 )(using UnitLabel[U]):
+  /** Verify a saved claim against freshly encoded plan/input documents.
+    * None is explicitly legacy/unstamped, never a verified run stamp.
+    */
+  def checkStamp(
+      current: StampedStudy[K, U, P, S, D]
+  ): Either[RunStampError[StudyPlan[K, U, P, S, D], StudyInput[K, U]], Option[
+    RunStamp[StudyPlan[K, U, P, S, D], StudyInput[K, U]]
+  ]] =
+    stampClaim match
+      case None        => Right(None)
+      case Some(saved) =>
+        saved
+          .check(current.stamp, PlanChange.between(description, current.plan.description))
+          .map(_ => Some(saved))
+
   def densityReader(
       payloads: PayloadRef => Option[VerifiedPayload] = _ => None,
       recompute: Option[(Int, Int, K) => Either[DensityError[K], Mass[U]]] = None
@@ -443,11 +459,56 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
       archive <- read(saved, storage == DensityStorage.Inline)
     yield new DensityArchiveBundle(archive, chunks)
 
+  /** Persist a completion-bound stamp under the existing version-2 ladder.
+    * Even inline densities use v2 when stamped; unstamped v1 remains byte-stable.
+    */
+  def encodeStamped(
+      value: StampedStudyResult[K, U, P, S, D],
+      storage: DensityStorage = DensityStorage.Recomputable
+  ): Either[CodecError, DensityArchiveBundle[K, U, P, S, D]] =
+    for
+      bundle <- encode(value.result, storage)
+      base =
+        if bundle.archive.original then DensityWire.lift(bundle.archive.payload)
+        else bundle.archive.payload
+      payload = base.mapObject(_.add("runStamp", RunStampWire.write(value.stamp)))
+      archive <- read(payload, false)
+    yield new DensityArchiveBundle(archive, bundle.chunks)
+
   /** A recomputer tied to this result codec's method, a saved plan and input.
     * Each call estimates one trial only, through the ordinary estimator seam.
     * The row index is retained even when multiple input rows share a full key.
     */
   def recomputer(
+      plan: StudyPlan[K, U, P, S, D],
+      input: StudyInput[K, U],
+      archive: StudyResultArchive[K, U, P, S, D]
+  ): (Int, Int, K) => Either[DensityError[K], Mass[U]] =
+    if archive.stampClaim.nonEmpty then
+      (scale, _, key) =>
+        Left(
+          DensityError.SourceMismatch(
+            scale,
+            key,
+            "checked canonical plan/input stamp",
+            "legacy recomputer has no canonical codecs"
+          )
+        )
+    else recomputeUnchecked(plan, input, archive)
+
+  /** A stamped archive can only recompute after its canonical claim agrees. */
+  def checkedRecomputer(
+      current: StampedStudy[K, U, P, S, D],
+      archive: StudyResultArchive[K, U, P, S, D]
+  ): Either[
+    RunStampError[StudyPlan[K, U, P, S, D], StudyInput[K, U]],
+    (Int, Int, K) => Either[DensityError[K], Mass[U]]
+  ] =
+    archive
+      .checkStamp(current)
+      .map(_ => recomputeUnchecked(current.plan, current.prepared.input, archive))
+
+  private def recomputeUnchecked(
       plan: StudyPlan[K, U, P, S, D],
       input: StudyInput[K, U],
       archive: StudyResultArchive[K, U, P, S, D]
@@ -501,6 +562,16 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
         (),
         CodecError.Field("unit", payload, s"expected ${unit.symbol}")
       )
+      stamp <- payload.hcursor.downField("runStamp").focus match
+        case None                    => Right(None)
+        case Some(value) if original =>
+          Left(CodecError.Field("runStamp", value, "version 1 has no run stamp"))
+        case Some(value) =>
+          RunStampWire
+            .read[StudyPlan[K, U, P, S, D], StudyInput[K, U]](value)
+            .left
+            .map(Wire.at("runStamp"))
+            .map(Some(_))
       identities  <- Wire.field[Json](payload, "identities").flatMap(DocumentIdentities.read)
       fields      <- Wire.field[Vector[Json]](payload, "description")
       description <- fields.traverse(j =>
@@ -596,9 +667,18 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
           key -> unwrapped
         })
       val saved = if inlineOnly then
-        DensityWire.replaceOutcomes(payload, normalized.map(_.map(_._2)))
+        val inline = DensityWire.replaceOutcomes(payload, normalized.map(_.map(_._2)))
+        if stamp.nonEmpty then DensityWire.lift(inline) else inline
       else payload
-      new StudyResultArchive(this, saved, normalized, identities, description, inlineOnly)
+      new StudyResultArchive(
+        this,
+        saved,
+        normalized,
+        identities,
+        description,
+        stamp,
+        inlineOnly && stamp.isEmpty
+      )
 
 private[codec] object DensityWire:
   def inline[U <: Unit2D](mass: Mass[U]): Json = ResultWire.tagged(
