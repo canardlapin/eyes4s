@@ -517,7 +517,9 @@ def pureModuleSettingsForbidding(also: (String, String) => Boolean) = Seq(
     val log        = streams.value.log
     val moduleName = name.value
     val offenders  = update.value.allModules
-      .filter(m => forbiddenInPureModules(m.organization, m.name) || also(m.organization, m.name))
+      .filter(m =>
+        forbiddenInPureModules(m.organization, m.name) || also(m.organization, m.name)
+      )
       .map(m => s"${m.organization}:${m.name}:${m.revision}")
       .distinct
       .sorted
