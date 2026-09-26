@@ -745,6 +745,11 @@ class PreflightSuite extends munit.FunSuite:
       Vector((FindingClass.UnavailableInput, Remedy.SupplyEpoch))
     )
     assertEquals(missing.affectedTrials, Vector(b))
+    assertEquals(missing.diagnostics.map(_.affectedTrials), Vector(Vector(b)))
+    assertEquals(
+      missing.diagnostics.map(_.code.render),
+      Vector("temporal-finding.missing-epoch")
+    )
     assertEquals(missing.ready, true)
     assertEquals(
       temporalPlan(overflow)
@@ -796,6 +801,10 @@ class PreflightSuite extends munit.FunSuite:
       )
     )
     assertEquals(mp.preflight(Some(misframed)).affectedTrials, Vector(a))
+    assertEquals(
+      mp.preflight(Some(misframed)).diagnostics.flatMap(_.affectedTrials).distinct,
+      Vector(a)
+    )
     val result = get(mp.run(misframed))
     result.scales.foreach { scale =>
       assertEquals(scale.estimation.collect { case (k, Left(_)) => k }, Vector(a))
@@ -1053,6 +1062,13 @@ class PreflightSuite extends munit.FunSuite:
 
     val rp      = recordingPlan(method = misversionedDetector)
     val rreport = rp.preflight(Some(recording))
+    val absent  = rp.preflight(None)
+    assertEquals(
+      absent.diagnostics.map(_.code.render),
+      absent.findings.map(Diagnostic.of(_).code.render)
+    )
+    assert(absent.diagnostics.nonEmpty)
+    assert(absent.diagnostics.forall(_.affectedTrials.isEmpty))
     assertEquals(
       rreport.findings,
       Vector(

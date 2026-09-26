@@ -24,7 +24,7 @@ import eyes4s.design.*
 import eyes4s.detect.*
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.Px
-import eyes4s.surface.EstimateError
+import eyes4s.surface.*
 import scala.compiletime.constValueTuple
 import scala.deriving.Mirror
 
@@ -57,6 +57,15 @@ object DiagnosticSamples:
       labelsOf[E],
       samples.toVector.map(sample => sample -> (diagnose(sample): Diagnostic[Any]))
     )
+
+  /** A family whose samples the compiler generates: one value of every
+    * case, from [[DiagnosticExample]]s.
+    */
+  inline def generated[E <: scala.reflect.Enum](enumName: String)(using
+      diagnose: Diagnose[E, ?],
+      mirror: Mirror.SumOf[E]
+  ): FamilySamples =
+    family[E](enumName)(DiagnosticExample.everyCase[E]*)
 
   private def get[E, A](e: Either[E, A]): A =
     e.fold(error => throw new AssertionError(s"$error"), identity)
@@ -649,7 +658,11 @@ object DiagnosticSamples:
       StudyFinding.MatchedCardinality(k1, Vector(k2), MatchedReferences.RequireOne),
       StudyFinding.AmbiguousReferences(Vector(k1, k2), MatchedReferences.SameOccurrence),
       StudyFinding.UnmatchedFocalRefused(k1),
-      StudyFinding.MatchItemConflict(Vector(k1, k2))
+      StudyFinding.MatchItemConflict(Vector(k1, k2)),
+      StudyFinding.NoFixationKept(
+        k1,
+        get(InitialFixationTally.of(3, 3, Span.micros(40), Span.micros(40)))
+      )
     ),
     family[RecordingFinding]("RecordingFinding")(
       RecordingFinding.UndescribedMethod(DefinitionId.cosine),
@@ -692,7 +705,7 @@ object DiagnosticSamples:
       BudgetError.CandidateVisits(2, 3, 1, 5L),
       BudgetError.Schedule(PairScheduleError.InvalidQuantum(0))
     ),
-    family[PreflightError]("PreflightError")(
+    family[PreflightError[StudyKey]]("PreflightError")(
       PreflightError.ChangedPlan(
         RecipeFamily.FixationStudy,
         Vector(PlanChange("grid", Vector.empty, Vector(Provenance.Param.Text("g"))))
@@ -799,5 +812,42 @@ object DiagnosticSamples:
       ),
       InspectionError.Orientation(1, StudyDesign.Matched, ReductionOrientation.EdgesOnce),
       InspectionError.NoContrast(2)
-    )
+    ),
+    generated[TimelineError]("TimelineError"),
+    generated[MovingError]("MovingError"),
+    generated[TimeQuantityError]("TimeQuantityError"),
+    generated[OccupancyError]("OccupancyError"),
+    generated[ReplicationError]("ReplicationError"),
+    generated[TemporalSupportError]("TemporalSupportError"),
+    generated[AlgorithmMetadataError]("AlgorithmMetadataError"),
+    generated[EkEstimationError]("EkEstimationError"),
+    generated[MergeError]("MergeError"),
+    generated[DensityLookupError]("DensityLookupError"),
+    generated[DensityPointFailure]("DensityPointFailure"),
+    generated[IqrBandwidthError]("IqrBandwidthError"),
+    generated[SmootherCardError]("SmootherCardError"),
+    generated[ComparisonConfigurationError]("ComparisonConfigurationError"),
+    generated[CrqaParameterError]("CrqaParameterError"),
+    generated[CrqaError]("CrqaError"),
+    generated[FixationComparisonError]("FixationComparisonError"),
+    generated[OverlapFailure]("OverlapFailure"),
+    generated[MapScaleFailure]("MapScaleFailure"),
+    generated[MapComparisonError]("MapComparisonError"),
+    generated[ScanpathComponentError]("ScanpathComponentError"),
+    generated[DecompositionError]("DecompositionError"),
+    generated[PairingError]("PairingError"),
+    generated[SessionError]("SessionError"),
+    generated[ReductionPolicyError]("ReductionPolicyError"),
+    generated[WorkQuantaError]("WorkQuantaError"),
+    generated[EvaluationWorkError]("EvaluationWorkError"),
+    generated[RepetitionMeanError]("RepetitionMeanError"),
+    generated[LearnedTemplateError]("LearnedTemplateError"),
+    generated[LeastSquaresError]("LeastSquaresError"),
+    generated[TemplateFitError]("TemplateFitError"),
+    generated[RngError]("RngError"),
+    generated[EpochError[StudyKey, String]]("EpochError"),
+    generated[PointSamplingError]("PointSamplingError"),
+    generated[RecipeParameterError]("RecipeParameterError"),
+    generated[RepetitionPlanError]("RepetitionPlanError"),
+    generated[DiagnosticCodeError]("DiagnosticCodeError")
   )

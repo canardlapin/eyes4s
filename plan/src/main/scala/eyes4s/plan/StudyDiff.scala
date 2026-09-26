@@ -315,10 +315,7 @@ enum StudyRevisionError derives CanEqual:
 
 object StudyRevisionError:
   given diagnose: Diagnose[StudyRevisionError, Nothing] =
-    new Diagnose[StudyRevisionError, Nothing]:
-      val family: DiagnosticFamily = DiagnosticCatalog.studyRevision
-      def apply(error: StudyRevisionError): Diagnostic[Nothing] =
-        RevisionDiagnostics.studyRevision(error)
+    Diagnose.instance(DiagnosticCatalog.studyRevision)(RevisionDiagnostics.studyRevision)
 
 /** Structural differences between study plans. */
 object StudyDiff:

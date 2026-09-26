@@ -208,12 +208,28 @@ class InitialFixationSuite extends munit.FunSuite:
     assertEquals(work.initialFixationSummary, InitialFixationSummary(4, 11, 2, 1, 4, 0))
     // encodeB is emptied by the policy, not by the window: preflight does not
     // blame the window for it.
+    val report = p.preflight(Some(input))
     assert(
-      !p.preflight(Some(input)).findings.exists {
+      !report.findings.exists {
         case StudyFinding.NoFixationInWindow(key, _) => key == encodeB
         case _                                       => false
       }
     )
+    // Preflight names the emptied trial, as a warning keyed to it, before the
+    // run fails it at every scale.
+    val emptied = report.findings.collect { case f @ StudyFinding.NoFixationKept(_, _) => f }
+    assertEquals(
+      emptied.map(f =>
+        (f.key, f.tally.dropped, f.tally.total, f.tally.droppedDuration.toMicros)
+      ),
+      Vector((encodeB, 2, 2, 300L))
+    )
+    assertEquals(emptied.map(_.severity), Vector(Severity.Warning))
+    assertEquals(emptied.map(_.remedy), Vector(Remedy.ReviseInitialFixationPolicy))
+    assert(report.ready)
+    assert(report.affectedTrials.contains(encodeB))
+    val coded = report.diagnostics.filter(_.code.render == "study-finding.no-fixation-kept")
+    assertEquals(coded.map(_.affectedTrials), Vector(Vector(encodeB)))
     val result     = get(p.run(input))
     val inspection =
       ResultInspection.study(p, result, input, None).fold(e => fail(s"$e"), identity)

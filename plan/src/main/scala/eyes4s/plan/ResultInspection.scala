@@ -583,7 +583,7 @@ object ResultInspection:
                   )
                 )
                 .left
-                .map(e => located(ref.loci, Diagnostics.temporal(e), sources))
+                .map(e => located(ref.loci, Projections.temporal(e), sources))
             )
           })(_.ref)
           inspected <- inspectStudy(cell.result, sources, schema, Some(rep -> window))
@@ -670,7 +670,7 @@ object ResultInspection:
         key,
         outcomes(key).map(
           _.fold(
-            f => EstimationOutcome.Failed(place(ref, Diagnostics.failure(f))),
+            f => EstimationOutcome.Failed(place(ref, Projections.failure(f))),
             mass => EstimationOutcome.Estimated(new DensityView(mass))
           )
         )
@@ -693,7 +693,7 @@ object ResultInspection:
           design,
           row.left,
           row.right,
-          row.result.left.map(f => place(ref, Diagnostics.failure(f))).map(schema.score)
+          row.result.left.map(f => place(ref, Projections.failure(f))).map(schema.score)
         )
       }
     def reductions(
@@ -704,7 +704,7 @@ object ResultInspection:
       scale.analyses.reduced(design).entries.traverse { row =>
         val ref     = ResultRef.Reduction(index, design, row.key)
         val outcome =
-          row.result.left.map(e => place(ref, Diagnostics.reduction(e))).map(schema.score)
+          row.result.left.map(e => place(ref, Projections.reduction(e))).map(schema.score)
         val members = byFocal.getOrElse(row.key, Vector.empty).map { pair =>
           val status = (pair.outcome, outcome) match
             case (Left(failure), _)    => Membership.FailedPair(failure)
@@ -742,7 +742,7 @@ object ResultInspection:
             located(
               cell.toVector.flatMap((r, w) => Vector(Locus.Repetition(r), Locus.Window(w))) :+
                 Locus.Scale(index),
-              Diagnostics.contrast(error),
+              Projections.contrast(error),
               sources
             )
           )
@@ -759,7 +759,7 @@ object ResultInspection:
               row.control
                 .map(r => address(ResultRef.Reduction(index, StudyDesign.Control, r.key))),
               row.difference.left
-                .map(e => place(ref, Diagnostics.contrastRow(e)))
+                .map(e => place(ref, Projections.contrastRow(e)))
                 .map(schema.difference)
             )
           })(_.ref)

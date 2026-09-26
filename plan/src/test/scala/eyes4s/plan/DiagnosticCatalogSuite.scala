@@ -28,8 +28,24 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Rendered codes, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 445
-  private val PinnedDigest = "fb7ffbd3d3db7f63"
+  private val PinnedCount  = 602
+  private val PinnedDigest = "1b1038f9c8b3a78c"
+
+  /** The table before CR5: codes are only ever added, never changed or
+    * removed, so taking away the codes CR5 added leaves exactly this table.
+    */
+  private val StableCount  = 445
+  private val StableDigest = "fb7ffbd3d3db7f63"
+
+  /** The codes CR5 added: the families appended after `inspection`, and
+    * preflight's finding for a trial the initial-fixation policy empties.
+    */
+  private val Cr5Codes: Set[String] =
+    DiagnosticCatalog.families
+      .dropWhile(_ ne DiagnosticCatalog.inspection)
+      .drop(1)
+      .flatMap(_.codes.map(_.render))
+      .toSet + "study-finding.no-fixation-kept"
 
   test(
     "every cataloged family is sampled, in catalog order, through its own Diagnose instance"
@@ -110,6 +126,9 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
       )
     )
     val rendered = DiagnosticCatalog.codes.map(_.render)
+    val stable   = rendered.filterNot(Cr5Codes)
+    assertEquals(stable.size, StableCount)
+    assertEquals(ContentHash.ofString(stable.mkString("\n")).render, StableDigest)
     assertEquals(rendered.size, PinnedCount)
     assertEquals(ContentHash.ofString(rendered.mkString("\n")).render, PinnedDigest)
     assertEquals(
@@ -301,6 +320,100 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
         )
       )
     )
+  }
+
+  test("every finding's diagnostic names exactly its typed affected trials") {
+    val findings = all.filter(f => Set("study-finding", "temporal-finding")(f.family.name))
+    assert(findings.size == 2)
+    findings.flatMap(_.samples).foreach { (sample, diagnostic) =>
+      val keys = sample match
+        case f: StudyFinding[?, ?]    => f.keys
+        case f: TemporalFinding[?, ?] => f.keys
+        case other                    => fail(s"not a finding: $other")
+      assertEquals(diagnostic.affectedTrials, keys.distinct, s"$sample")
+    }
+    val k1                                = DiagnosticSamples.k1
+    val k2                                = DiagnosticSamples.k2
+    val cardinality: Diagnostic[StudyKey] = Diagnostic.of(
+      StudyFinding
+        .MatchedCardinality[StudyKey, Unit2D.Px](k1, Vector(k2), MatchedReferences.RequireOne)
+    )
+    assertEquals(cardinality.affectedTrials, Vector(k1, k2))
+  }
+
+  test("a preflight refusal keeps its blockers' typed keys") {
+    val k1       = DiagnosticSamples.k1
+    val k2       = DiagnosticSamples.k2
+    val blockers = Vector[PreflightFinding[StudyKey]](
+      StudyFinding.UnmatchedFocalRefused[StudyKey, Unit2D.Px](k1),
+      StudyFinding.MatchItemConflict[StudyKey, Unit2D.Px](Vector(k2, k1)),
+      RecordingFinding.MissingViewing(eyes4s.core.RecordingRef("r"))
+    )
+    val refusal = PreflightError.NotReady(RecipeFamily.FixationStudy, blockers)
+    assertEquals(refusal.affectedTrials, Vector(k1, k2))
+    val diagnostic: Diagnostic[StudyKey] = Diagnostic.of(refusal)
+    assertEquals(diagnostic.code.render, "preflight.not-ready")
+    assertEquals(diagnostic.affectedTrials, Vector(k1, k2))
+    assertEquals(
+      diagnostic.causes.map(_.code.render),
+      Vector(
+        "study-finding.unmatched-focal-refused",
+        "study-finding.match-item-conflict",
+        "recording-finding.missing-viewing"
+      )
+    )
+    assertEquals(
+      Diagnostic.of(PreflightError.Refused(PlanError.EmptyScales(0))).affectedTrials,
+      Vector.empty
+    )
+    assertEquals(PreflightError.Refused(PlanError.EmptyScales(0)).affectedTrials, Vector.empty)
+  }
+
+  test("every diagnostic is reported by EyesCore; a host reports its own checks") {
+    all.flatMap(_.samples).foreach((_, d) => assertEquals(d.source, DiagnosticSource.EyesCore))
+    val code = DiagnosticCode
+      .host("studio-check", "matched-cardinality")
+      .getOrElse(fail("a kebab-case code"))
+    assertEquals(code.render, "studio-check.matched-cardinality")
+    val check = Diagnostic.host[StudyKey](
+      code,
+      DiagnosticSeverity.Error,
+      Vector(Locus.Trial(DiagnosticSamples.k1)),
+      Vector("references" -> Operand.Keys(Vector(DiagnosticSamples.k2))),
+      "Choose an occurrence."
+    )
+    assertEquals(check.source, DiagnosticSource.Host)
+    assertEquals(check.affectedTrials, Vector(DiagnosticSamples.k1, DiagnosticSamples.k2))
+    assertEquals(
+      DiagnosticCode.host("Studio", "x"),
+      Left(DiagnosticCodeError.InvalidFamily("Studio"))
+    )
+    assertEquals(
+      DiagnosticCode.host("studio", "x y"),
+      Left(DiagnosticCodeError.InvalidName("x y"))
+    )
+  }
+
+  test("keys map through subject, operands, causes and source links") {
+    val k1     = DiagnosticSamples.k1
+    val k2     = DiagnosticSamples.k2
+    val linked = Diagnostic
+      .of(StudyFailure.Frame(k1, GeometryError.NonFiniteSigma(1.5)))
+      .linked(
+        Vector(
+          SourceLink.Fixation(k2, 0),
+          SourceLink.Missing(MissingSource.CollidingDigest("d", Vector(k1, k2)))
+        )
+      )
+    val erased = linked.mapKeys(new ErasedKey(_))
+    assertEquals(erased.keys, Vector(new ErasedKey(k1)))
+    assertEquals(erased.narrow[StudyKey], Some(linked))
+    assertEquals(erased.narrow[String], None)
+    assertEquals(new ErasedKey(k1).narrow[StudyKey], Some(k1))
+    assertEquals(new ErasedKey(k1).toString, k1.toString)
+    assertEquals(new ErasedKey(k1).hashCode, k1.##)
+    assertNotEquals(new ErasedKey(k1), new ErasedKey(k2))
+    assertEquals(linked.mapKeys(_.participant).affectedTrials, Vector(k1.participant))
   }
 
   // ---------------------------------------------------------------- alignment

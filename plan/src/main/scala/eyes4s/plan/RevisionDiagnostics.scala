@@ -16,11 +16,11 @@
 
 package eyes4s.plan
 
-/** Diagnostics of the initial-fixation and plan-revision families. Their
-  * [[Diagnose]] instances live in the error companions, so `Diagnostic.of`
-  * finds them through the errors' implicit scope.
+/** The projections behind the initial-fixation and plan-revision
+  * [[Diagnose]] instances, which live in the error companions so
+  * `Diagnostic.of` finds them through the errors' implicit scope.
   */
-object RevisionDiagnostics:
+private[plan] object RevisionDiagnostics:
   import DiagnosticSupport.*
   import DiagnosticCatalog as C
 
@@ -69,5 +69,5 @@ object RevisionDiagnostics:
           optional(offWindow.map(p => token(p.toString)))
         )
       case Plan(underlying) =>
-        val inner = Diagnostics.plan(underlying)
+        val inner = Projections.plan(underlying)
         diagnostic(C.studyRevision, e, e.message, inner.subject)(cause(inner))

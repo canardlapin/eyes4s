@@ -375,12 +375,11 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
       def decode(json: Json): Either[CodecError, LoadedStudy[K, U]] =
         codec.decode(json).map { value =>
           new LoadedStudy[K, U]:
+            type Parameters = P
             type Score      = S
             type Difference = D
-            def description                                    = value.description
-            def encode                                         = codec.encode(value)
-            def prerequisites(input: Option[StudyInput[K, U]]) = value.prerequisites(input)
-            def run(input: StudyInput[K, U])                   = value.run(input)
+            val plan   = value
+            def encode = codec.encode(value)
         }
 
 private[codec] object StudyCodec:
@@ -420,14 +419,32 @@ private[codec] object StudyCodec:
       )
     )
 
-/** Existential method output remains typed inside this value after runtime lookup. */
-trait LoadedStudy[K, U <: Unit2D]:
+/** A study plan resolved by method identity at run time. Its parameter,
+  * score and difference types are abstract but fixed, so `plan` is the typed
+  * plan itself: preflight, prepare, execute and inspect it exactly as the
+  * plan the application built, with no encode and re-decode.
+  */
+sealed trait LoadedStudy[K, U <: Unit2D]:
+  type Parameters
   type Score
   type Difference
-  def description: Vector[(String, Vector[Provenance.Param])]
+
+  /** The typed plan, as decoded. */
+  def plan: StudyPlan[K, U, Parameters, Score, Difference]
   def encode: Either[CodecError, Json]
-  def prerequisites(input: Option[StudyInput[K, U]]): Vector[PlanError]
-  def run(input: StudyInput[K, U]): Either[PlanError, StudyResult[K, U, Score, Difference]]
+
+  def description: Vector[(String, Vector[Provenance.Param])]           = plan.description
+  def prerequisites(input: Option[StudyInput[K, U]]): Vector[PlanError] =
+    plan.prerequisites(input)
+
+  /** The plan's typed availability report; see `StudyPlan.preflight`. */
+  def preflight(
+      available: Option[StudyInput[K, U]],
+      budget: PairScheduleBudget = PairScheduleBudget.default
+  ): StudyReport[K, U] = plan.preflight(available, budget)
+
+  def run(input: StudyInput[K, U]): Either[PlanError, StudyResult[K, U, Score, Difference]] =
+    plan.run(input)
 
 sealed trait StudyRegistration[K, U <: Unit2D]:
   def id: DefinitionId

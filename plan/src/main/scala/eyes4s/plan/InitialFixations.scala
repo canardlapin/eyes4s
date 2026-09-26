@@ -58,10 +58,7 @@ enum InitialFixationError derives CanEqual:
 
 object InitialFixationError:
   given diagnose: Diagnose[InitialFixationError, Nothing] =
-    new Diagnose[InitialFixationError, Nothing]:
-      val family: DiagnosticFamily = DiagnosticCatalog.initialFixation
-      def apply(error: InitialFixationError): Diagnostic[Nothing] =
-        RevisionDiagnostics.initialFixation(error)
+    Diagnose.instance(DiagnosticCatalog.initialFixation)(RevisionDiagnostics.initialFixation)
 
 /** Which fixations at the start of every trial a study leaves out, applied
   * identically to focal (query) and reference trials, before the analysis
