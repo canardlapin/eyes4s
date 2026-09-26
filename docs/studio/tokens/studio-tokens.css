@@ -1,0 +1,114 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/* Generated from eyes4s.studio.app.tokens.Tokens (ticket S1.1). Do not edit:
+ * change Tokens.scala and run `sbt studioTokens`. */
+
+/* Eyes Studio tokens as web custom properties, for a future web shell. */
+.es {
+  --ground: #ECE9E2;
+  --surface: #FBFAF7;
+  --surface-2: #F3F1EC;
+  --surface-3: #E9E6DF;
+  --hairline: #DAD6CC;
+  --ink: #1C1E21;
+  --ink-2: #464B52;
+  --ink-3: #5E636A;
+  --accent: #0E6E68;
+  --accent-soft: #DCEFEC;
+  --on-accent: #FFFFFF;
+  --query: #3A2E6E;
+  --query-soft: #E6E2F2;
+  --match: #2F6DB5;
+  --match-soft: #E0EAF6;
+  --match-text: #255A98;
+  --control: #B86E0E;
+  --control-fill: #D98A1C;
+  --control-text: #9A4A07;
+  --control-soft: #F7E7D0;
+  --fail: #A3261B;
+  --fail-soft: #F6DEDA;
+  --warn-text: #7A4F00;
+  --warn-soft: #FBF1D9;
+  --neutral-mark: rgba(28,30,33,.35);
+  --sel-ring-inner: #FFFFFF;
+  --tl-bg: #ECECEC;
+  --tl-text: #4D4D4D;
+  --sel-ring: 0 0 0 2px #FFFFFF,0 0 0 4px #1C1E21;
+  --stage: #1A1A1A;
+  --on-stage: #D9D6CF;
+  --halo: #FFFFFF;
+  --ramp-0: #F9D9EA;
+  --ramp-1: #E58FB9;
+  --ramp-2: #B83F86;
+  --ramp-3: #6B0F4F;
+  --div-neg: #2E5A9C;
+  --div-mid: #F3F1EC;
+  --div-pos: #B4442F;
+  --screen: #9A9A96;
+}
+
+.es.dark {
+  --ground: #121315;
+  --surface: #1B1C1F;
+  --surface-2: #222327;
+  --surface-3: #2A2C31;
+  --hairline: #34363C;
+  --ink: #ECEAE5;
+  --ink-2: #BDBAB3;
+  --ink-3: #9C9990;
+  --accent: #43B5AA;
+  --accent-soft: #183A37;
+  --on-accent: #0B1413;
+  --query: #D6CBFF;
+  --query-soft: #2B2544;
+  --match: #5C95E0;
+  --match-soft: #1D2A3D;
+  --match-text: #7FB0EE;
+  --control: #E8A23C;
+  --control-fill: #E8A23C;
+  --control-text: #EBB066;
+  --control-soft: #3A2A14;
+  --fail: #F08A7E;
+  --fail-soft: #3A1E1B;
+  --warn-text: #E7C274;
+  --warn-soft: #33290F;
+  --neutral-mark: rgba(236,234,229,.35);
+  --sel-ring-inner: #000000;
+  --tl-bg: #2B2B2B;
+  --tl-text: #B0B0B0;
+  --sel-ring: 0 0 0 2px #000000,0 0 0 4px #ECEAE5;
+}
+
+[data-stage=dark],
+.es[data-stage=dark] {
+  --stage: #1A1A1A;
+  --on-stage: #D9D6CF;
+  --halo: #FFFFFF;
+}
+
+[data-stage=mid],
+.es[data-stage=mid] {
+  --stage: #808080;
+  --on-stage: #000000;
+  --halo: #FFFFFF;
+}
+
+[data-stage=light],
+.es[data-stage=light] {
+  --stage: #F2F2F2;
+  --on-stage: #1C1E21;
+  --halo: #1C1E21;
+}
