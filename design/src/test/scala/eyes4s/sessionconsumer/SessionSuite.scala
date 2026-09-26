@@ -30,7 +30,7 @@ class SessionSuite extends munit.FunSuite:
   private val key                                 = right(SessionKey.of("trial"))
   private val second                              = right(SessionKey.of("second"))
   private val absent                              = right(SessionKey.of("absent"))
-  private val empty                               = Session.empty(frame, clock)
+  private val empty                               = Session.empty(frame)
   private def rec(f: Frame[Px] = frame, c: ClockId = clock): Recording[Px] =
     right(
       Recording.of(
@@ -81,7 +81,6 @@ class SessionSuite extends munit.FunSuite:
     assertEquals(empty.recording(key), None)
     s.recordings.foreach { case (_, value) =>
       assert(Agreement.frames(s.frame, value.frame).isRight)
-      assert(Agreement.clocks(s.clock, value.clock).isRight)
     }
     s.aoiSets.foreach { case (_, value) =>
       assert(Agreement.frames(s.frame, value.frame).isRight)
@@ -111,13 +110,19 @@ class SessionSuite extends munit.FunSuite:
     }
   }
 
-  test("recording clock admission is nominal and errors identify both timelines") {
-    val result = empty.addRecording(key, rec(c = ClockId("other-clock")))
-    assert(result.isLeft)
-    val error = result.swap.toOption.get
-    assert(error.isInstanceOf[SessionError.Clock])
-    assert(error.message.contains("tracker"))
-    assert(error.message.contains("other-clock"))
+  test("independently acquired recordings keep their own clocks in one shared frame") {
+    assert(typeCheckErrors("Session.empty(frame, clock)").nonEmpty)
+    val first = rec(c = ClockId("tracker-a"))
+    val other = rec(c = ClockId("tracker-b"))
+    val s     = right(right(empty.addRecording(key, first)).addRecording(second, other))
+    assertEquals(s.recording(key).map(_.clock), Some(ClockId("tracker-a")))
+    assertEquals(s.recording(second).map(_.clock), Some(ClockId("tracker-b")))
+    // Membership is not a synchronisation claim: the clocks remain distinct timelines.
+    assert(Agreement.clocks(first.clock, other.clock).isLeft)
+    assertEquals(
+      right(s.replaceRecording(key, rec(c = ClockId("tracker-c")))).recordings.size,
+      2
+    )
   }
 
   test("grid aliases agree in specification; distinct discretisations remain admissible") {
@@ -151,7 +156,10 @@ class SessionSuite extends munit.FunSuite:
     assertEquals(changed.grids.map(_._1), Vector(key, second))
     val foreign = right(Frame.screen("foreign", 100, 100))
     assert(two.replaceRecording(key, rec(foreign)).isLeft)
-    assert(two.replaceRecording(key, rec(c = ClockId("foreign"))).isLeft)
+    assertEquals(
+      right(two.replaceRecording(key, rec(c = ClockId("foreign")))).recording(key).map(_.clock),
+      Some(ClockId("foreign"))
+    )
     assert(two.replaceAoiSet(key, areas(foreign)).isLeft)
     assert(two.replaceGrid(key, grid(foreign)).isLeft)
     assertEquals(
@@ -203,7 +211,7 @@ class SessionSuite extends munit.FunSuite:
   test("external consumers cannot forge construction, keys, units or mutable access") {
     assert(
       typeCheckErrors(
-        """new eyes4s.design.Session(null, null, Vector.empty, Vector.empty, Vector.empty)"""
+        """new eyes4s.design.Session(null, Vector.empty, Vector.empty, Vector.empty)"""
       ).nonEmpty
     )
     assert(typeCheckErrors("""val key: eyes4s.design.SessionKey = "forged"""").nonEmpty)
@@ -212,7 +220,7 @@ class SessionSuite extends munit.FunSuite:
       import eyes4s.kernel.*
       val frame = Frame.screen("px", 100, 100).toOption.get
       val angular = Frame.angular("deg", 10, 10).toOption.get
-      val s = Session.empty(frame, ClockId("clock"))
+      val s = Session.empty(frame)
       s.addGrid(SessionKey.of("key").toOption.get, Grid.over(angular, 2, 2).toOption.get)
     """).nonEmpty)
     assert(typeCheckErrors("""
