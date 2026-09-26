@@ -9847,7 +9847,7 @@
     "class eyes4s.io.CsvLayoutError": {
       "classification": "data-sum",
       "instance": "eyes4s/io/CsvLayoutError$Csv",
-      "suite": "ioJVM/eyes4s.io.CsvLayoutSuite"
+      "suite": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite"
     },
     "class eyes4s.io.DelimitedDiagnostic": {
       "classification": "data-sum",
@@ -12066,7 +12066,7 @@
     "method eyes4s.io.CsvLayout.records():": "ioJVM/eyes4s.io.CsvLayoutSuite",
     "method eyes4s.io.CsvLayout.toString():": "ioJVM/eyes4s.io.CsvLayoutSuite",
     "method eyes4s.io.CsvLayout.verbatim(eyes4s.plan.DataRecord):scala.util.Either": "ioJVM/eyes4s.io.CsvLayoutSuite",
-    "method eyes4s.io.CsvLayoutError.message():": "ioJVM/eyes4s.io.CsvLayoutSuite",
+    "method eyes4s.io.CsvLayoutError.message():": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "method eyes4s.io.DecodedTidyCsvDocument.encode():": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "method eyes4s.io.DecodedTidyCsvDocument.header():": "ioJVM/eyes4s.io.TidyResultSuite",
     "method eyes4s.io.DecodedTidyCsvDocument.rows():": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
@@ -13703,6 +13703,7 @@
     "value eyes4s.io.BaselineExportsFacade$package$.BaselineExports": "ioJVM/eyes4s.io.ResultTableLayerSuite",
     "value eyes4s.io.ContrastCsv$.header": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "value eyes4s.io.ContrastCsv$.schemaVersion": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "value eyes4s.io.CsvLayoutError$.diagnose": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.Edf2AscReceipt.canonicalDigest": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "value eyes4s.io.EyeLinkAscBlocks$.machine": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "value eyes4s.io.EyeLinkAscCanonicalManifest$.SchemaVersion": "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
@@ -13746,6 +13747,7 @@
     "value eyes4s.io.IoDiagnosticCatalog$.ascStreamConfiguration": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.codes": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.contrastExport": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
+    "value eyes4s.io.IoDiagnosticCatalog$.csvLayout": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.delimitedSchema": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.edf2AscProvenance": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.eyeLinkConformance": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
@@ -14086,6 +14088,7 @@
     "value eyes4s.plan.DiagnosticCatalog$.quarantine": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.recipeParameter": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.reconstruction": "planJVM/consumer.PublicPlanSuite",
+    "value eyes4s.plan.DiagnosticCatalog$.recordIdentity": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.recording": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.recordingFinding": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.recordingInput": "planJVM/consumer.PublicPlanSuite",
@@ -14162,6 +14165,7 @@
     "value eyes4s.plan.RecipeParameters$.syncMark": "planJVM/eyes4s.plan.MethodDescriptorSuite",
     "value eyes4s.plan.RecipeParameters$.syncModel": "planJVM/eyes4s.plan.PreflightSuite",
     "value eyes4s.plan.RecipeParameters$.weight": "planJVM/eyes4s.plan.StudyCursorSuite",
+    "value eyes4s.plan.RecordIdentityError$.diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.RecordingMethodDescriptor.execution": "codecJVM/eyes4s.codec.RecordingMethodsSuite",
     "value eyes4s.plan.RecordingReport.family": "planJVM/eyes4s.plan.PreflightSuite",
     "value eyes4s.plan.Remedial$.finding": "planJVM/eyes4s.plan.AnalysisReportSuite",
