@@ -75,3 +75,36 @@ class WindowConstructionSuite extends munit.FunSuite:
       new WindowTally(5, 5, 1, Span.zero, Span.zero, Span.zero)
     """))
   }
+
+  test("windows, scales, corrections and tallies render, compare and summarise") {
+    import eyes4s.codec.StudyInputCodecs
+    import eyes4s.kernel.*
+    import eyes4s.plan.*
+    def get[E, A](e: Either[E, A]): A = e.fold(x => fail(s"$x"), identity)
+    val screen                        = get(Frame.screen("s", 20, 10))
+    val window = get(Subframe.of(screen, FrameId("w"), get(Bounds.of[Unit2D.Px](5, 2, 15, 8))))
+    assertEquals(window.origin, Pt[Unit2D.Px](5, 2))
+    assertEquals(
+      window,
+      get(Subframe.centred(screen, FrameId("w"), get(Extent.of[Unit2D.Px](10, 6))))
+    )
+    assertEquals(
+      window.hashCode,
+      get(Subframe.of(screen, FrameId("w"), window.region)).hashCode
+    )
+    assert(window.render.contains("w"))
+    val scale = get(LinearAngularScale.of(screen, 35))
+    assertEquals(scale, get(LinearAngularScale.of(screen, 35)))
+    assertEquals(scale.hashCode, get(LinearAngularScale.of(screen, 35)).hashCode)
+    assertNotEquals(scale, get(LinearAngularScale.of(screen, 36)))
+    assertEquals(
+      Vector(Correction.FlipX, Correction.FlipY, get(Correction.translate(1.5, -2.5)))
+        .map(_.render),
+      Vector("flipX", "flipY", "translate(1.5, -2.5)")
+    )
+    val tally =
+      get(WindowTally.of(1, 2, 8, Span.micros(100), Span.micros(300), Span.micros(1000)))
+    assertEquals(tally.outsideScreenShare, Some(0.1))
+    assert(tally.render.contains("outside window 2 of 8"))
+    assertEquals(StudyInputCodecs.trial[Unit2D.Px].keys.schema, TrialKeyDefinitions.trialKey)
+  }

@@ -44,10 +44,7 @@ final case class TrialKey private (
     trial: String,
     occurrence: TrialOccurrence,
     item: String
-) derives CanEqual:
-  /** The identity fields, without the item. */
-  def identity: (String, String, String, TrialOccurrence) =
-    (participant, phase, trial, occurrence)
+) derives CanEqual
 
 object TrialKey:
   def of(

@@ -30,7 +30,6 @@ object TrialOccurrence:
 
   extension (o: TrialOccurrence) def value: Int = o
 
-  given Ordering[TrialOccurrence]                  = Ordering.Int
   given CanEqual[TrialOccurrence, TrialOccurrence] = CanEqual.derived
   given KeyDigest[TrialOccurrence]                 = KeyDigest[Int].digest(_)
 

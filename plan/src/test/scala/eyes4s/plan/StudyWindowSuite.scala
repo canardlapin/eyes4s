@@ -107,6 +107,7 @@ class StudyWindowSuite extends munit.FunSuite:
     val work    = get(get(plan(windowed(OffWindowPolicy.Exclude))).prepare(input))
     val preview = get(work.preview)
     assertEquals(preview.windowTallies, work.windowTallies)
+    assertEquals(work.windowSummary, preview.windowSummary)
     assertEquals(preview.windowSummary, WindowSummary(3, 1, 10, 2, 1, 4))
   }
 

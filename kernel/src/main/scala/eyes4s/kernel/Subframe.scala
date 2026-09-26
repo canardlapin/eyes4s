@@ -71,10 +71,6 @@ final class Subframe[U <: Unit2D] private (
       HalfOpenPlacement.Inside(frame.bounds.clamp(Pt[U](p.x - region.xMin, p.y - region.yMin)))
     else HalfOpenPlacement.Outside(p)
 
-  /** The same window on a parent that agrees with this one's parent. */
-  def agrees(other: Frame[U]): Either[GeometryError, Subframe[U]] =
-    Agreement.frames(parent, other).map(_ => this)
-
   override def equals(that: Any): Boolean = that match
     case s: Subframe[?] => parent == s.parent && frame == s.frame && region == s.region
     case _              => false
@@ -146,9 +142,6 @@ final class LinearAngularScale[U <: Unit2D] private (
   /** A bandwidth in degrees, expressed in this frame's units. */
   def sigma(degrees: Sigma[Unit2D.Deg]): Either[GeometryError, Sigma[U]] =
     Sigma.of[U](degrees.value * unitsPerDegree)
-
-  /** A length in degrees, expressed in this frame's units. */
-  def length(degrees: Double): Double = degrees * unitsPerDegree
 
   /** The angular frame this scale induces, centred on the frame's centre. */
   def angularFrame(id: FrameId): Either[GeometryError, Frame[Unit2D.Deg]] =

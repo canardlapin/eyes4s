@@ -148,6 +148,14 @@ class OccurrencePairingSuite extends munit.FunSuite:
     )
     assertEquals(get(work.preview).matchedCardinality, work.matchedCardinality)
     assertEquals(get(work.matchedCardinality).multiple.map(_._1), Vector(r1, r2, r3))
+    assert(get(work.matchedCardinality).blocking)
+    assert(
+      !get(
+        get(
+          get(plan(pairing(MatchedReferences.SameOccurrence))).prepare(input)
+        ).matchedCardinality
+      ).blocking
+    )
   }
 
   test("SameOccurrence pairs recall n with study n, and narrows the controls alike") {
