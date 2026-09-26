@@ -36,6 +36,22 @@ sbt headerCheckAll scalafmtCheckAll scalafmtSbtCheck githubWorkflowCheck
 sbt testAll checkBoundaries
 ```
 
+What runs where (all generated from `build.sbt`):
+
+- `checks.yml`, every push and PR: format/header/workflow checks, compile and test per
+  matrix project (`rootJVM`, `rootJS`), MiMa, docs, boundaries, the site build, and
+  `python3 tools/check-docs.py --platform jvm|js --skip-consumer` in the matching project.
+  sbt-typelevel compiles with `-Werror` there; reproduce locally with
+  `GITHUB_ACTIONS=true sbt 'project rootJVM' Test/compile 'project rootJS' Test/compile`.
+- `evidence.yml`, weekly and on `workflow_dispatch`: the public API audit
+  (`python3 tools/api-audit/run.py`, which runs `check.py`) and the published-artifact
+  consumer (`python3 tools/check-docs.py --platform none --run-consumer`, built under
+  `target/study-consumer`).
+- `performance.yml`, weekly and on demand: the two-hour EyeLink performance court.
+
+Locally, `python3 tools/check-docs.py` (default `--platform all`) needs both platforms'
+test reports, a current `docs/tlSite`, and a consumer receipt from `--run-consumer`.
+
 `.github/workflows/` is **generated** by sbt-typelevel. Do not hand-edit it; change
 `build.sbt` and run `sbt githubWorkflowGenerate`.
 

@@ -120,13 +120,13 @@ jobs:
         if: matrix.project == 'rootJVM' && matrix.java == 'temurin@17'
         run: sbt docs/tlSite
 
-      - name: Check public documentation coverage
+      - name: Check public documentation coverage (JVM evidence)
         if: matrix.project == 'rootJVM' && matrix.java == 'temurin@17'
-        run: python3 tools/check-docs.py --run-consumer
+        run: python3 tools/check-docs.py --platform jvm --skip-consumer
 
-      - name: Audit public API inventory and executed evidence
-        if: matrix.project == 'rootJVM' && matrix.java == 'temurin@17'
-        run: python3 tools/api-audit/run.py
+      - name: Check public documentation coverage (Scala.js evidence)
+        if: matrix.project == 'rootJS' && matrix.java == 'temurin@17'
+        run: python3 tools/check-docs.py --platform js --skip-consumer
 
       - name: Run EyeLink performance smoke court
         if: matrix.project == 'rootJVM' && matrix.java == 'temurin@17'

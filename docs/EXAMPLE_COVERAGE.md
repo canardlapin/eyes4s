@@ -16,9 +16,12 @@ plans and historical evidence are explicitly classified. New pages require revie
   packaged source identity, fresh-process reconstruction and independent numerical targets on JVM
   and Scala.js. Cached evidence is tied to the exact library/consumer source fingerprint.
 
-Run `sbt testAll docs/tlSite`, then `python3 tools/check-docs.py --run-consumer`. The generated CI
-runs this verification on its designated JVM job. `python3 tools/check-docs.py` rechecks existing
-matching evidence without rerunning the isolated consumer. It refuses a changed candidate.
+Run `sbt testAll docs/tlSite`, then `python3 tools/check-docs.py --run-consumer`. The consumer is
+built under `target/study-consumer`. `python3 tools/check-docs.py` rechecks existing matching
+evidence without rerunning the isolated consumer. It refuses a changed candidate, including a
+changed oracle fixture. Per push, each CI matrix project checks only its own reports
+(`--platform jvm` or `--platform js`, with `--skip-consumer`); the scheduled `evidence.yml`
+workflow rebuilds and checks the consumer.
 
 Incomplete fragments with undefined setup were replaced by links to complete executed programs.
 The schema declaration pattern and old quadratic assembly excerpt are explicitly illustrative or

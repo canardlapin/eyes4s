@@ -5,7 +5,8 @@ It covers all twelve published modules on JVM and Scala.js. Numerical correctnes
 still requires the independent fixtures, analytic oracles, laws and mutation tests
 linked from the method guides; an invocation alone does not establish correctness.
 
-Run the same gate used by the generated CI workflow:
+Run the same gate used by the scheduled `evidence.yml` workflow (weekly and on demand; it is
+too slow for every push):
 
 ```sh
 python3 tools/api-audit/run.py
