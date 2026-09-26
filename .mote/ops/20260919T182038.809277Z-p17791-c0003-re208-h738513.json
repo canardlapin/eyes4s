@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s","entity":"eyesim-compare","kind":"note","note_kind":"progress","op":"20260919T182038.809277Z-p17791-c0003-re208-h738513","text":"Implement bounded missing map similarities and explicit scale comparison; pin actual vector/density/multiscale dispatch and exact-EMD divergences.","ts":"2026-09-19T18:20:38.809277Z","v":1}

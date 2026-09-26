@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s","entity":"eyesim-scanpath","kind":"note","note_kind":"progress","op":"20260919T183852.618539Z-p27086-c0003-r0a83-hc83996","text":"Pin exported R scanpath and fixation routes; implement explicit trajectory overlap and spatiotemporal transport with typed failures and component availability.","ts":"2026-09-19T18:38:52.618539Z","v":1}

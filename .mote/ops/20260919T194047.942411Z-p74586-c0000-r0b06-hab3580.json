@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s","entity":"eyesim-export","kind":"reserve_open","mode":"exclusive","op":"20260919T194047.942411Z-p74586-c0000-r0b06-hab3580","paths":["codec/src/main/scala/eyes4s/codec/ExportMetadata.scala","codec/src/main/scala/eyes4s/codec/PointSamplingCodec.scala"],"reservation_id":"rv-01M2XJZ0E6VQP4ME4G6MDJ1APR","ts":"2026-09-19T19:40:47.942411Z","ttl_s":3600,"v":2}

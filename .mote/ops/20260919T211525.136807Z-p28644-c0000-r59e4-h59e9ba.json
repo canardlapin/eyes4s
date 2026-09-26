@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s","entity":"v-coverage","kind":"reserve_open","mode":"exclusive","op":"20260919T211525.136807Z-p28644-c0000-r59e4-h59e9ba","paths":["codec/src/test/scala/eyes4s/codec/ArchiveManifestSuite.scala","design/src/test/scala/eyes4s/design/PairedSuite.scala"],"reservation_id":"rv-01M2XRC8JGMV88VN2AH0KWWB9C","ts":"2026-09-19T21:15:25.136807Z","ttl_s":3600,"v":2}

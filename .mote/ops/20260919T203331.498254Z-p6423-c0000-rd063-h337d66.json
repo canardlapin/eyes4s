@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s","entity":"v-coverage","kind":"reserve_open","mode":"exclusive","op":"20260919T203331.498254Z-p6423-c0000-rd063-h337d66","paths":["build.sbt","project/ApiAudit.scala",".github/workflows/checks.yml"],"reservation_id":"rv-01M2XNZHVA1F224ED1K17JQD4E","ts":"2026-09-19T20:33:31.498254Z","ttl_s":3600,"v":2}
