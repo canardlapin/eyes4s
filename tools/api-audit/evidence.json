@@ -8944,6 +8944,11 @@
       "instance": "eyes4s/surface/KernelBandwidth$Isotropic",
       "suite": "surfaceJVM/consumer.PublicSurfaceSuite"
     },
+    "class eyes4s.surface.LatticePlacement": {
+      "classification": "data-sum",
+      "instance": "eyes4s/surface/LatticePlacement$Inside",
+      "suite": "surfaceJVM/eyes4s.surface.FixationEntropySuite"
+    },
     "class eyes4s.surface.LatticeUpperEdge": {
       "classification": "data-sum",
       "instance": "eyes4s/surface/LatticeUpperEdge$$anon$3",
@@ -11171,8 +11176,7 @@
     "method eyes4s.surface.OccupancyLattice$.of(1,eyes4s.kernel.Frame,eyes4s.kernel.Bounds,scala.Int,scala.Int,eyes4s.surface.LatticeUpperEdge):scala.util.Either": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
     "method eyes4s.surface.OccupancyLattice$.overFrame(1,eyes4s.kernel.Frame,scala.Int,scala.Int,eyes4s.surface.LatticeUpperEdge):scala.util.Either": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
     "method eyes4s.surface.OccupancyLattice$.paddedRange(1,eyes4s.core.Scanpath,scala.Int,scala.Int,scala.Double,eyes4s.surface.LatticeUpperEdge):scala.util.Either": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
-    "method eyes4s.surface.OccupancyLattice.cellOf(eyes4s.kernel.Pt):scala.Option": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
-    "method eyes4s.surface.OccupancyLattice.clampedCellOf(eyes4s.kernel.Pt):scala.Int": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
+    "method eyes4s.surface.OccupancyLattice.place(eyes4s.kernel.Pt):eyes4s.surface.LatticePlacement": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
     "method eyes4s.surface.OccupancyLattice.render(eyes4s.kernel.UnitLabel):java.lang.String": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
     "method eyes4s.surface.OccupancyLattice.size():": "surfaceJVM/eyes4s.surface.FixationEntropySuite",
     "method eyes4s.surface.PreparedDensityLookup.along(eyes4s.core.TrajectorySamples,eyes4s.surface.DensityLookupPolicy):scala.util.Either": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
@@ -14347,9 +14351,12 @@
       "the grid method ignores duration weighting in eyesim; dwell weights are an eyes4s choice"
     ],
     "surfaceJS/eyes4s.surface.FixationEntropySuite": [
+      "a cell-entropy failure other than an empty lattice keeps its underlying error",
       "a lattice needs cells and a padded range needs a valid padding",
       "a lattice or grid in another frame is refused with both frame names",
+      "a non-finite point is placed nowhere, never in cell 0",
       "a pyramid's levels give the same entropies as the multiscale route",
+      "a scale entropy is only built from its map, so its fields cannot disagree",
       "a weighted reduction needs one finite non-negative weight per scale, with positive total",
       "a zero span is widened to one frame unit before padding, as eyesim does",
       "an estimate failure names its scale",
@@ -17155,9 +17162,12 @@
       "the grid method ignores duration weighting in eyesim; dwell weights are an eyes4s choice"
     ],
     "surfaceJVM/eyes4s.surface.FixationEntropySuite": [
+      "a cell-entropy failure other than an empty lattice keeps its underlying error",
       "a lattice needs cells and a padded range needs a valid padding",
       "a lattice or grid in another frame is refused with both frame names",
+      "a non-finite point is placed nowhere, never in cell 0",
       "a pyramid's levels give the same entropies as the multiscale route",
+      "a scale entropy is only built from its map, so its fields cannot disagree",
       "a weighted reduction needs one finite non-negative weight per scale, with positive total",
       "a zero span is widened to one frame unit before padding, as eyesim does",
       "an estimate failure names its scale",
