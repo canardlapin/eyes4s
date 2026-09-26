@@ -447,6 +447,8 @@ object Report:
       val present = c.perParticipant.count(_.value.isPresent)
       val listed  = c.perParticipant.map(_.queries).sum
       if c.members.size != c.queries then Some(cellError(c, "members differ from queries"))
+      else if !c.members.forall(ownRow(c.role, spec.scale, _)) then
+        Some(cellError(c, s"a member is not the ${c.role} row of scale ${spec.scale}"))
       else if c.failed < 0 then Some(cellError(c, "a negative failure count"))
       else if listed != c.queries then Some(cellError(c, "participant queries differ"))
       else if spec.reduce != ReducePolicy.PooledQueries && present != c.participants then
@@ -481,6 +483,17 @@ object Report:
       .toLeft(new Report(spec, binding, groups, cells, contrasts, accounting, findings))
 
   // ------------------------------------------------------------------- reduction
+
+  /** Whether `ref` addresses `role`'s stored row at `scale`: the matched or
+    * control reduction, or the contrast row.
+    */
+  private def ownRow[K](role: Role, scale: Int, ref: ResultRef[K]): Boolean = (role, ref) match
+    case (Role.Matched, ResultRef.Reduction(s, eyes4s.plan.StudyDesign.Matched, _)) =>
+      s == scale
+    case (Role.Control, ResultRef.Reduction(s, eyes4s.plan.StudyDesign.Control, _)) =>
+      s == scale
+    case (Role.Difference, ResultRef.ContrastRow(s, _)) => s == scale
+    case _                                              => false
 
   private enum TermValue derives CanEqual:
     case Num(value: Double)

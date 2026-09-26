@@ -30,6 +30,8 @@ object IoDiagnosticSamples:
   given DiagnosticExample[Sha256] = DiagnosticExample.of(seed => Sha256.ofUtf8(s"digest-$seed"))
 
   // Nested errors, one explicit case each (see DiagnosticExample).
+  given DiagnosticExample[CsvLayoutError] =
+    DiagnosticExample.of(seed => CsvLayoutError.Csv(TidyCsvError.MalformedCsv(seed, 'q')))
   given DiagnosticExample[TidyCsvError] =
     DiagnosticExample.of(seed => TidyCsvError.WrongColumnCount(seed, seed + 1, seed + 2))
   given DiagnosticExample[TidyResultError] =
@@ -72,7 +74,8 @@ object IoDiagnosticSamples:
     generated[EyeLinkAscSessionConfigError]("EyeLinkAscSessionConfigError"),
     generated[EyeLinkOracleError]("EyeLinkOracleError"),
     generated[EyeLinkConformanceError]("EyeLinkConformanceError"),
-    generated[EyeLinkCorpusError]("EyeLinkCorpusError")
+    generated[EyeLinkCorpusError]("EyeLinkCorpusError"),
+    generated[CsvLayoutError]("CsvLayoutError")
   )
 
   val laws: Vector[FamilySamples] = Vector(

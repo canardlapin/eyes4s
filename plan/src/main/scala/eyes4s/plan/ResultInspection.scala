@@ -206,15 +206,25 @@ object ScoreSchema:
   def study[K, U <: Unit2D, P, S, D](
       plan: StudyPlan[K, U, P, S, D]
   ): Either[DescriptorError, ScoreSchema[S, D]] =
-    plan.method.descriptor match
+    method(plan.method, plan.parameters)
+
+  /** The described components of `method` under `parameters`, which must
+    * name the method's contrast components in order; an undescribed method
+    * has none.
+    */
+  def method[P, U <: Unit2D, S, D](
+      method: StudyMethod[P, U, S, D],
+      parameters: P
+  ): Either[DescriptorError, ScoreSchema[S, D]] =
+    method.descriptor match
       case None             => Right(undescribed)
       case Some(descriptor) =>
-        descriptor.components(plan.parameters).flatMap { components =>
+        descriptor.components(parameters).flatMap { components =>
           val ids = components.map(_.id)
           Either.cond(
-            ids == plan.method.difference.components,
+            ids == method.difference.components,
             of(components),
-            DescriptorError.ComponentMismatch(ids, plan.method.difference.components)
+            DescriptorError.ComponentMismatch(ids, method.difference.components)
           )
         }
 

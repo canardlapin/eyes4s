@@ -13,6 +13,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
@@ -26,6 +27,7 @@
         "owner": "eyes4s/codec/ArtifactDecoders$Delegating",
         "suites": [
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "lawsJVM/consumer.PublicLawsSuite"
         ]
@@ -81,6 +83,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
           "codecJVM/eyes4s.codec.StudyV2JvmSuite",
@@ -94,6 +97,7 @@
         "descriptor": "(Lio/circe/Json;)Lscala/util/Either;",
         "owner": "eyes4s/codec/ArtifactDecoders$Delegating",
         "suites": [
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "lawsJVM/consumer.PublicLawsSuite"
         ]
@@ -173,6 +177,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
           "ioJVM/eyes4s.io.ArtifactLoadingSuite",
@@ -184,6 +189,7 @@
         "descriptor": "(Lio/circe/Json;)Lscala/util/Either;",
         "owner": "eyes4s/codec/ArtifactDecoders$Delegating",
         "suites": [
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "lawsJVM/consumer.PublicLawsSuite"
         ]
@@ -238,6 +244,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
@@ -317,6 +324,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultCodecSuite",
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
@@ -336,6 +344,16 @@
         ]
       }
     ],
+    "method eyes4s.codec.LoadedStudy.parametersDocument():": [
+      {
+        "descriptor": "()Lscala/util/Either;",
+        "owner": "eyes4s/codec/StudyCodec$$anon$2",
+        "suites": [
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
+          "codecJVM/eyes4s.codec.ReportManifestSuite"
+        ]
+      }
+    ],
     "method eyes4s.codec.LoadedStudy.plan():": [
       {
         "descriptor": "()Leyes4s/plan/StudyPlan;",
@@ -346,6 +364,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.StudyCodecSuite",
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
@@ -479,6 +498,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
           "codecJVM/eyes4s.codec.StudyCodecSuite",
@@ -504,6 +524,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
           "codecJVM/eyes4s.codec.StudyCodecSuite",
@@ -526,6 +547,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultCodecSuite",
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
@@ -549,6 +571,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultCodecSuite",
           "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
@@ -1008,6 +1031,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -1045,8 +1069,6 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -1054,7 +1076,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -1087,6 +1108,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -1124,8 +1146,6 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -1133,7 +1153,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -1197,6 +1216,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -1239,9 +1259,7 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
           "lawsJVM/eyes4s.laws.KernelLawsSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -1249,7 +1267,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -1282,6 +1299,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -1320,8 +1338,6 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -1329,7 +1345,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -1362,6 +1377,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -1399,8 +1415,6 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -1408,7 +1422,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -1441,6 +1454,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -1477,8 +1491,6 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -1486,7 +1498,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -1527,6 +1538,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -1563,8 +1575,6 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -1572,7 +1582,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -1818,6 +1827,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -1855,8 +1865,6 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -1864,7 +1872,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -1899,6 +1906,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -1935,8 +1943,6 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -1944,7 +1950,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -1979,6 +1984,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -2015,8 +2021,6 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -2024,7 +2028,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -2059,6 +2062,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -2095,8 +2099,6 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -2104,7 +2106,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -2139,6 +2140,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -2172,8 +2174,6 @@
           "lawsJVM/consumer.PublicLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -2181,7 +2181,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -2209,6 +2208,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
           "codecJVM/eyes4s.codec.StudyV2JvmSuite",
@@ -2236,6 +2236,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
           "codecJVM/eyes4s.codec.StudyV2JvmSuite",
@@ -2270,6 +2271,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -2305,8 +2307,6 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -2314,7 +2314,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -2347,6 +2346,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -2383,8 +2383,6 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -2392,7 +2390,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -2425,6 +2422,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -2461,8 +2459,6 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -2470,7 +2466,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -2503,6 +2498,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -2540,8 +2536,6 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -2549,7 +2543,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -2582,6 +2575,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -2618,8 +2612,6 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -2627,7 +2619,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -2660,6 +2651,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -2696,8 +2688,6 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -2705,7 +2695,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -2738,6 +2727,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -2774,8 +2764,6 @@
           "lawsJVM/eyes4s.laws.CodecLawsSuite",
           "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -2783,7 +2771,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -2874,6 +2861,7 @@
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.PackedRecordingSuite",
           "codecJVM/eyes4s.codec.RecordingMethodsSuite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -2916,6 +2904,7 @@
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
           "ioJVM/eyes4s.io.ArtifactLoadingSuite",
           "ioJVM/eyes4s.io.BaselineExportsSuite",
+          "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
@@ -3107,6 +3096,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -3140,8 +3130,6 @@
           "lawsJVM/eyes4s.examples.MatchedControlSuite",
           "lawsJVM/eyes4s.laws.ContrastSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -3149,7 +3137,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -3269,6 +3256,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.PackedRecordingSuite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -3302,6 +3290,7 @@
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
           "ioJVM/eyes4s.io.ArtifactLoadingSuite",
           "ioJVM/eyes4s.io.BaselineExportsSuite",
+          "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
           "ioJVM/eyes4s.io.InspectionSourceSuite",
@@ -3358,6 +3347,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.PackedRecordingSuite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -3391,6 +3381,7 @@
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
           "ioJVM/eyes4s.io.ArtifactLoadingSuite",
           "ioJVM/eyes4s.io.BaselineExportsSuite",
+          "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
           "ioJVM/eyes4s.io.InspectionSourceSuite",
@@ -3449,6 +3440,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.PackedRecordingSuite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -3482,6 +3474,7 @@
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
           "ioJVM/eyes4s.io.ArtifactLoadingSuite",
           "ioJVM/eyes4s.io.BaselineExportsSuite",
+          "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
           "ioJVM/eyes4s.io.InspectionSourceSuite",
@@ -3597,6 +3590,7 @@
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
           "codecJVM/eyes4s.codec.PackedRecordingSuite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -3633,6 +3627,7 @@
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
           "ioJVM/eyes4s.io.ArtifactLoadingSuite",
           "ioJVM/eyes4s.io.BaselineExportsSuite",
+          "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
           "ioJVM/eyes4s.io.InspectionSourceSuite",
@@ -3772,6 +3767,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -3873,6 +3869,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -4231,6 +4228,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -4312,6 +4310,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -4378,6 +4377,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -4459,6 +4459,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -6179,6 +6180,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -6349,6 +6351,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -6510,6 +6513,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -6625,6 +6629,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -6661,13 +6666,10 @@
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
           "ioJVM/eyes4s.io.TidyResultSuite",
-          "kernelJVM/eyes4s.kernel.PlanarUnitSuite",
           "lawsJVM/eyes4s.examples.MatchedControlSuite",
           "lawsJVM/eyes4s.laws.AdditionalRecipeCodecLawSuite",
           "lawsJVM/eyes4s.laws.ContrastSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -6676,7 +6678,6 @@
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -6689,31 +6690,6 @@
           "planJVM/eyes4s.plan.TemporalCursorSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
-        ]
-      }
-    ],
-    "method eyes4s.kernel.UnitLabel.planar():": [
-      {
-        "descriptor": "()Leyes4s/kernel/PlanarUnit;",
-        "owner": "eyes4s/kernel/UnitLabel$$anon$1",
-        "suites": [
-          "codecJVM/eyes4s.codec.DescriptorPersistenceSuite",
-          "codecJVM/eyes4s.codec.StudyCodecSuite",
-          "ioJVM/eyes4s.io.FamilyConformanceSuite",
-          "ioJVM/eyes4s.io.FixationStudySuite",
-          "ioJVM/eyes4s.io.StudioAcceptanceSuite",
-          "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
-          "kernelJVM/eyes4s.kernel.PlanarUnitSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-          "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "planJVM/eyes4s.plan.InitialFixationSuite",
-          "planJVM/eyes4s.plan.MethodDescriptorSuite",
-          "planJVM/eyes4s.plan.OccurrencePairingSuite",
-          "planJVM/eyes4s.plan.PreflightSuite",
-          "planJVM/eyes4s.plan.StudyCursorSuite",
-          "planJVM/eyes4s.plan.StudyWindowSuite"
         ]
       }
     ],
@@ -6746,6 +6722,7 @@
           "codecJVM/eyes4s.codec.PackedRecordingSuite",
           "codecJVM/eyes4s.codec.RecordingMethodsSuite",
           "codecJVM/eyes4s.codec.RecordingV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -6775,6 +6752,7 @@
           "ioJVM/eyes4s.io.ArtifactFilesSuite",
           "ioJVM/eyes4s.io.ArtifactLoadingSuite",
           "ioJVM/eyes4s.io.BaselineExportsSuite",
+          "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
@@ -6793,15 +6771,12 @@
           "ioJVM/eyes4s.io.WindowConstructionSuite",
           "kernelJVM/consumer.PublicKernelSuite",
           "kernelJVM/eyes4s.kernel.GeometrySuite",
-          "kernelJVM/eyes4s.kernel.PlanarUnitSuite",
           "lawsJVM/eyes4s.examples.MatchedControlSuite",
           "lawsJVM/eyes4s.laws.AdditionalRecipeCodecLawSuite",
           "lawsJVM/eyes4s.laws.ArtifactCodecLawSuite",
           "lawsJVM/eyes4s.laws.ContrastSuite",
           "lawsJVM/eyes4s.laws.DomainCodecLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.RecordingInputCodecLawSuite",
@@ -6816,7 +6791,6 @@
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.AdmissionLedgerSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -7195,588 +7169,6 @@
         ]
       }
     ],
-    "method eyes4s.plan.Endpoint.value():": [
-      {
-        "descriptor": "()D",
-        "owner": "eyes4s/plan/Endpoint$Closed",
-        "suites": [
-          "codecJVM/eyes4s.codec.ArchiveWireSuite",
-          "codecJVM/eyes4s.codec.CodecDiagnosticCatalogSuite",
-          "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
-          "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-          "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
-        ]
-      },
-      {
-        "descriptor": "()D",
-        "owner": "eyes4s/plan/Endpoint$Open",
-        "suites": [
-          "codecJVM/eyes4s.codec.ArchiveWireSuite",
-          "codecJVM/eyes4s.codec.CodecDiagnosticCatalogSuite",
-          "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
-          "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-          "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
-        ]
-      }
-    ],
-    "method eyes4s.plan.FieldError.field():": [
-      {
-        "descriptor": "()Leyes4s/plan/FieldId;",
-        "owner": "eyes4s/plan/FieldError$Duplicate",
-        "suites": [
-          "codecJVM/eyes4s.codec.ArchiveWireSuite",
-          "codecJVM/eyes4s.codec.CodecDiagnosticCatalogSuite",
-          "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
-          "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-          "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
-        ]
-      },
-      {
-        "descriptor": "()Leyes4s/plan/FieldId;",
-        "owner": "eyes4s/plan/FieldError$ItemCount",
-        "suites": [
-          "codecJVM/eyes4s.codec.ArchiveWireSuite",
-          "codecJVM/eyes4s.codec.CodecDiagnosticCatalogSuite",
-          "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
-          "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-          "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
-        ]
-      },
-      {
-        "descriptor": "()Leyes4s/plan/FieldId;",
-        "owner": "eyes4s/plan/FieldError$Malformed",
-        "suites": [
-          "codecJVM/eyes4s.codec.ArchiveWireSuite",
-          "codecJVM/eyes4s.codec.CodecDiagnosticCatalogSuite",
-          "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
-          "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-          "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
-        ]
-      },
-      {
-        "descriptor": "()Leyes4s/plan/FieldId;",
-        "owner": "eyes4s/plan/FieldError$Missing",
-        "suites": [
-          "codecJVM/eyes4s.codec.ArchiveWireSuite",
-          "codecJVM/eyes4s.codec.CodecDiagnosticCatalogSuite",
-          "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
-          "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-          "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
-        ]
-      },
-      {
-        "descriptor": "()Leyes4s/plan/FieldId;",
-        "owner": "eyes4s/plan/FieldError$NotAChoice",
-        "suites": [
-          "codecJVM/eyes4s.codec.ArchiveWireSuite",
-          "codecJVM/eyes4s.codec.CodecDiagnosticCatalogSuite",
-          "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
-          "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-          "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
-        ]
-      },
-      {
-        "descriptor": "()Leyes4s/plan/FieldId;",
-        "owner": "eyes4s/plan/FieldError$OutOfBounds",
-        "suites": [
-          "codecJVM/eyes4s.codec.ArchiveWireSuite",
-          "codecJVM/eyes4s.codec.CodecDiagnosticCatalogSuite",
-          "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
-          "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-          "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
-        ]
-      },
-      {
-        "descriptor": "()Leyes4s/plan/FieldId;",
-        "owner": "eyes4s/plan/FieldError$Refused",
-        "suites": [
-          "codecJVM/eyes4s.codec.ArchiveWireSuite",
-          "codecJVM/eyes4s.codec.CodecDiagnosticCatalogSuite",
-          "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
-          "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-          "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
-        ]
-      },
-      {
-        "descriptor": "()Leyes4s/plan/FieldId;",
-        "owner": "eyes4s/plan/FieldError$RepeatedPart",
-        "suites": [
-          "codecJVM/eyes4s.codec.ArchiveWireSuite",
-          "codecJVM/eyes4s.codec.CodecDiagnosticCatalogSuite",
-          "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
-          "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-          "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
-        ]
-      },
-      {
-        "descriptor": "()Leyes4s/plan/FieldId;",
-        "owner": "eyes4s/plan/FieldError$UnknownField",
-        "suites": [
-          "codecJVM/eyes4s.codec.ArchiveWireSuite",
-          "codecJVM/eyes4s.codec.CodecDiagnosticCatalogSuite",
-          "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
-          "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-          "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
-        ]
-      },
-      {
-        "descriptor": "()Leyes4s/plan/FieldId;",
-        "owner": "eyes4s/plan/FieldError$UnknownPart",
-        "suites": [
-          "codecJVM/eyes4s.codec.ArchiveWireSuite",
-          "codecJVM/eyes4s.codec.CodecDiagnosticCatalogSuite",
-          "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
-          "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-          "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
-        ]
-      },
-      {
-        "descriptor": "()Leyes4s/plan/FieldId;",
-        "owner": "eyes4s/plan/FieldError$Unordered",
-        "suites": [
-          "codecJVM/eyes4s.codec.ArchiveWireSuite",
-          "codecJVM/eyes4s.codec.CodecDiagnosticCatalogSuite",
-          "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
-          "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-          "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
-        ]
-      }
-    ],
-    "method eyes4s.plan.FormField.parse(eyes4s.plan.RawValue):scala.util.Either": [
-      {
-        "descriptor": "(Leyes4s/plan/RawValue;)Lscala/util/Either;",
-        "owner": "eyes4s/plan/NumericField",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite"
-        ]
-      }
-    ],
-    "method eyes4s.plan.FormField.raw(java.lang.Object):eyes4s.plan.RawValue": [
-      {
-        "descriptor": "(Ljava/lang/Object;)Leyes4s/plan/RawValue;",
-        "owner": "eyes4s/plan/NumericField",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite"
-        ]
-      }
-    ],
-    "method eyes4s.plan.FormField.view():": [
-      {
-        "descriptor": "()Leyes4s/plan/FieldView;",
-        "owner": "eyes4s/plan/NumericField",
-        "suites": [
-          "codecJVM/eyes4s.codec.ArchiveManifestSuite",
-          "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
-          "codecJVM/eyes4s.codec.DescriptorPersistenceSuite",
-          "codecJVM/eyes4s.codec.InputPayloadCodecSuite",
-          "codecJVM/eyes4s.codec.InputsManifestV1JvmSuite",
-          "codecJVM/eyes4s.codec.InputsManifestV1Suite",
-          "codecJVM/eyes4s.codec.RecordingMethodsSuite",
-          "codecJVM/eyes4s.codec.RecordingV1Suite",
-          "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
-          "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
-          "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
-          "codecJVM/eyes4s.codec.StudyCodecSuite",
-          "fs2ModuleJVM/eyes4s.fs2.RecordingExecutionSuite",
-          "ioJVM/eyes4s.io.FamilyConformanceSuite",
-          "ioJVM/eyes4s.io.FixationStudySuite",
-          "ioJVM/eyes4s.io.FreshProcessReconstructionJvmSuite",
-          "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
-          "ioJVM/eyes4s.io.StudioAcceptanceSuite",
-          "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
-          "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-          "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
-          "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
-          "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
-          "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "planJVM/eyes4s.plan.InitialFixationSuite",
-          "planJVM/eyes4s.plan.MethodDescriptorSuite",
-          "planJVM/eyes4s.plan.OccurrencePairingSuite",
-          "planJVM/eyes4s.plan.PreflightSuite",
-          "planJVM/eyes4s.plan.RecordingCursorSuite",
-          "planJVM/eyes4s.plan.ResultInspectionSuite",
-          "planJVM/eyes4s.plan.StudyCursorSuite",
-          "planJVM/eyes4s.plan.StudyWindowSuite"
-        ]
-      }
-    ],
-    "method eyes4s.plan.Numeral.compare(java.lang.Object,scala.Double):scala.Int": [
-      {
-        "descriptor": "(Ljava/lang/Object;D)I",
-        "owner": "eyes4s/plan/Numeral$int32$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite"
-        ]
-      },
-      {
-        "descriptor": "(Ljava/lang/Object;D)I",
-        "owner": "eyes4s/plan/Numeral$int64$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite"
-        ]
-      },
-      {
-        "descriptor": "(Ljava/lang/Object;D)I",
-        "owner": "eyes4s/plan/Numeral$real$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite"
-        ]
-      }
-    ],
-    "method eyes4s.plan.Numeral.exactly(scala.Double):scala.Option": [
-      {
-        "descriptor": "(D)Lscala/Option;",
-        "owner": "eyes4s/plan/Numeral$int32$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite"
-        ]
-      },
-      {
-        "descriptor": "(D)Lscala/Option;",
-        "owner": "eyes4s/plan/Numeral$int64$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite"
-        ]
-      },
-      {
-        "descriptor": "(D)Lscala/Option;",
-        "owner": "eyes4s/plan/Numeral$real$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite"
-        ]
-      }
-    ],
-    "method eyes4s.plan.Numeral.extreme(scala.Boolean):java.lang.Object": [
-      {
-        "descriptor": "(Z)Ljava/lang/Object;",
-        "owner": "eyes4s/plan/Numeral$int32$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite"
-        ]
-      },
-      {
-        "descriptor": "(Z)Ljava/lang/Object;",
-        "owner": "eyes4s/plan/Numeral$int64$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite"
-        ]
-      },
-      {
-        "descriptor": "(Z)Ljava/lang/Object;",
-        "owner": "eyes4s/plan/Numeral$real$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite"
-        ]
-      }
-    ],
-    "method eyes4s.plan.Numeral.nearest(scala.Double):java.lang.Object": [
-      {
-        "descriptor": "(D)Ljava/lang/Object;",
-        "owner": "eyes4s/plan/Numeral$int32$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite"
-        ]
-      },
-      {
-        "descriptor": "(D)Ljava/lang/Object;",
-        "owner": "eyes4s/plan/Numeral$int64$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite"
-        ]
-      },
-      {
-        "descriptor": "(D)Ljava/lang/Object;",
-        "owner": "eyes4s/plan/Numeral$real$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite"
-        ]
-      }
-    ],
-    "method eyes4s.plan.Numeral.read(java.lang.String):scala.Option": [
-      {
-        "descriptor": "(Ljava/lang/String;)Lscala/Option;",
-        "owner": "eyes4s/plan/Numeral$int32$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite"
-        ]
-      },
-      {
-        "descriptor": "(Ljava/lang/String;)Lscala/Option;",
-        "owner": "eyes4s/plan/Numeral$int64$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite"
-        ]
-      },
-      {
-        "descriptor": "(Ljava/lang/String;)Lscala/Option;",
-        "owner": "eyes4s/plan/Numeral$real$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite"
-        ]
-      }
-    ],
-    "method eyes4s.plan.Numeral.shape():": [
-      {
-        "descriptor": "()Leyes4s/plan/NumberShape;",
-        "owner": "eyes4s/plan/Numeral$int32$",
-        "suites": [
-          "codecJVM/eyes4s.codec.ArchiveManifestSuite",
-          "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
-          "codecJVM/eyes4s.codec.DescriptorPersistenceSuite",
-          "codecJVM/eyes4s.codec.InputPayloadCodecSuite",
-          "codecJVM/eyes4s.codec.InputsManifestV1JvmSuite",
-          "codecJVM/eyes4s.codec.InputsManifestV1Suite",
-          "codecJVM/eyes4s.codec.RecordingMethodsSuite",
-          "codecJVM/eyes4s.codec.RecordingV1Suite",
-          "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
-          "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
-          "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
-          "codecJVM/eyes4s.codec.StudyCodecSuite",
-          "fs2ModuleJVM/eyes4s.fs2.RecordingExecutionSuite",
-          "ioJVM/eyes4s.io.FamilyConformanceSuite",
-          "ioJVM/eyes4s.io.FixationStudySuite",
-          "ioJVM/eyes4s.io.FreshProcessReconstructionJvmSuite",
-          "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
-          "ioJVM/eyes4s.io.StudioAcceptanceSuite",
-          "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
-          "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-          "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
-          "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
-          "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
-          "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "planJVM/eyes4s.plan.InitialFixationSuite",
-          "planJVM/eyes4s.plan.MethodDescriptorSuite",
-          "planJVM/eyes4s.plan.OccurrencePairingSuite",
-          "planJVM/eyes4s.plan.PreflightSuite",
-          "planJVM/eyes4s.plan.RecordingCursorSuite",
-          "planJVM/eyes4s.plan.ResultInspectionSuite",
-          "planJVM/eyes4s.plan.StudyCursorSuite",
-          "planJVM/eyes4s.plan.StudyWindowSuite"
-        ]
-      },
-      {
-        "descriptor": "()Leyes4s/plan/NumberShape;",
-        "owner": "eyes4s/plan/Numeral$int64$",
-        "suites": [
-          "codecJVM/eyes4s.codec.ArchiveManifestSuite",
-          "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
-          "codecJVM/eyes4s.codec.DescriptorPersistenceSuite",
-          "codecJVM/eyes4s.codec.InputPayloadCodecSuite",
-          "codecJVM/eyes4s.codec.InputsManifestV1JvmSuite",
-          "codecJVM/eyes4s.codec.InputsManifestV1Suite",
-          "codecJVM/eyes4s.codec.RecordingMethodsSuite",
-          "codecJVM/eyes4s.codec.RecordingV1Suite",
-          "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
-          "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
-          "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
-          "codecJVM/eyes4s.codec.StudyCodecSuite",
-          "fs2ModuleJVM/eyes4s.fs2.RecordingExecutionSuite",
-          "ioJVM/eyes4s.io.FamilyConformanceSuite",
-          "ioJVM/eyes4s.io.FixationStudySuite",
-          "ioJVM/eyes4s.io.FreshProcessReconstructionJvmSuite",
-          "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
-          "ioJVM/eyes4s.io.StudioAcceptanceSuite",
-          "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
-          "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-          "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
-          "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
-          "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
-          "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "planJVM/eyes4s.plan.InitialFixationSuite",
-          "planJVM/eyes4s.plan.MethodDescriptorSuite",
-          "planJVM/eyes4s.plan.OccurrencePairingSuite",
-          "planJVM/eyes4s.plan.PreflightSuite",
-          "planJVM/eyes4s.plan.RecordingCursorSuite",
-          "planJVM/eyes4s.plan.ResultInspectionSuite",
-          "planJVM/eyes4s.plan.StudyCursorSuite",
-          "planJVM/eyes4s.plan.StudyWindowSuite"
-        ]
-      },
-      {
-        "descriptor": "()Leyes4s/plan/NumberShape;",
-        "owner": "eyes4s/plan/Numeral$real$",
-        "suites": [
-          "codecJVM/eyes4s.codec.ArchiveManifestSuite",
-          "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
-          "codecJVM/eyes4s.codec.DescriptorPersistenceSuite",
-          "codecJVM/eyes4s.codec.InputPayloadCodecSuite",
-          "codecJVM/eyes4s.codec.InputsManifestV1JvmSuite",
-          "codecJVM/eyes4s.codec.InputsManifestV1Suite",
-          "codecJVM/eyes4s.codec.RecordingMethodsSuite",
-          "codecJVM/eyes4s.codec.RecordingV1Suite",
-          "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
-          "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
-          "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
-          "codecJVM/eyes4s.codec.StudyCodecSuite",
-          "fs2ModuleJVM/eyes4s.fs2.RecordingExecutionSuite",
-          "ioJVM/eyes4s.io.FamilyConformanceSuite",
-          "ioJVM/eyes4s.io.FixationStudySuite",
-          "ioJVM/eyes4s.io.FreshProcessReconstructionJvmSuite",
-          "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
-          "ioJVM/eyes4s.io.StudioAcceptanceSuite",
-          "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
-          "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-          "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
-          "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
-          "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
-          "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
-          "planJVM/eyes4s.plan.InitialFixationSuite",
-          "planJVM/eyes4s.plan.MethodDescriptorSuite",
-          "planJVM/eyes4s.plan.OccurrencePairingSuite",
-          "planJVM/eyes4s.plan.PreflightSuite",
-          "planJVM/eyes4s.plan.RecordingCursorSuite",
-          "planJVM/eyes4s.plan.ResultInspectionSuite",
-          "planJVM/eyes4s.plan.StudyCursorSuite",
-          "planJVM/eyes4s.plan.StudyWindowSuite"
-        ]
-      }
-    ],
-    "method eyes4s.plan.Numeral.step(java.lang.Object,scala.Boolean):scala.Option": [
-      {
-        "descriptor": "(Ljava/lang/Object;Z)Lscala/Option;",
-        "owner": "eyes4s/plan/Numeral$int32$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite"
-        ]
-      },
-      {
-        "descriptor": "(Ljava/lang/Object;Z)Lscala/Option;",
-        "owner": "eyes4s/plan/Numeral$int64$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite"
-        ]
-      },
-      {
-        "descriptor": "(Ljava/lang/Object;Z)Lscala/Option;",
-        "owner": "eyes4s/plan/Numeral$real$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite"
-        ]
-      }
-    ],
-    "method eyes4s.plan.Numeral.toDouble(java.lang.Object):scala.Double": [
-      {
-        "descriptor": "(Ljava/lang/Object;)D",
-        "owner": "eyes4s/plan/Numeral$int32$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite"
-        ]
-      },
-      {
-        "descriptor": "(Ljava/lang/Object;)D",
-        "owner": "eyes4s/plan/Numeral$int64$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite"
-        ]
-      },
-      {
-        "descriptor": "(Ljava/lang/Object;)D",
-        "owner": "eyes4s/plan/Numeral$real$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite"
-        ]
-      }
-    ],
-    "method eyes4s.plan.Numeral.write(java.lang.Object):java.lang.String": [
-      {
-        "descriptor": "(Ljava/lang/Object;)Ljava/lang/String;",
-        "owner": "eyes4s/plan/Numeral$int32$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite"
-        ]
-      },
-      {
-        "descriptor": "(Ljava/lang/Object;)Ljava/lang/String;",
-        "owner": "eyes4s/plan/Numeral$int64$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite"
-        ]
-      },
-      {
-        "descriptor": "(Ljava/lang/Object;)Ljava/lang/String;",
-        "owner": "eyes4s/plan/Numeral$real$",
-        "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite"
-        ]
-      }
-    ],
     "method eyes4s.plan.ParameterField.encoded(java.lang.Object):eyes4s.kernel.Provenance$.Param": [
       {
         "descriptor": "(Ljava/lang/Object;)Leyes4s/kernel/Provenance$Param;",
@@ -7791,8 +7183,6 @@
           "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.FreshProcessReconstructionJvmSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -8402,8 +7792,6 @@
         "descriptor": "()Leyes4s/plan/StudyField;",
         "owner": "eyes4s/plan/StudyChange$InitialFixations",
         "suites": [
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite"
@@ -8830,6 +8218,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -8856,8 +8245,6 @@
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -8865,7 +8252,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -8888,8 +8274,6 @@
           "codecJVM/eyes4s.codec.StudyV3JvmSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
@@ -8916,6 +8300,7 @@
           "codecJVM/eyes4s.codec.ManifestSuite",
           "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
           "codecJVM/eyes4s.codec.ManifestV1Suite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1Suite",
@@ -8942,8 +8327,6 @@
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -8951,7 +8334,6 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -8974,8 +8356,6 @@
           "codecJVM/eyes4s.codec.StudyV3JvmSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
@@ -9090,6 +8470,7 @@
         "owner": "eyes4s/results/LevelTerm",
         "suites": [
           "codecJVM/eyes4s.codec.ReportFixturesJvmSuite",
+          "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
           "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
           "ioJVM/eyes4s.io.ResultTableLayerSuite",
@@ -9352,12 +8733,9 @@
           "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.FreshProcessReconstructionJvmSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
-          "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
           "lawsJVM/eyes4s.laws.PlanCodecLawSuite",
           "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
-          "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.PreflightSuite"
         ]
@@ -9507,8 +8885,8 @@
     },
     "class eyes4s.codec.RelationMismatch": {
       "classification": "data-sum",
-      "instance": "eyes4s/codec/RelationMismatch$$anon$3",
-      "suite": "codecJVM/eyes4s.codec.ManifestV1JvmSuite"
+      "instance": "eyes4s/codec/RelationMismatch$ReportComponents",
+      "suite": "codecJVM/eyes4s.codec.ReportImpostorSuite"
     },
     "class eyes4s.codec.ResolveError": {
       "classification": "data-sum",
@@ -10530,6 +9908,11 @@
       "instance": "eyes4s/io/CoordinateUnit$$anon$10",
       "suite": "ioJVM/eyes4s.io.PsychologyWorkflowSuite"
     },
+    "class eyes4s.io.CsvLayoutError": {
+      "classification": "data-sum",
+      "instance": "eyes4s/io/CsvLayoutError$Csv",
+      "suite": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite"
+    },
     "class eyes4s.io.DelimitedDiagnostic": {
       "classification": "data-sum",
       "instance": "eyes4s/io/DelimitedDiagnostic$NoAcceptedRows",
@@ -10830,11 +10213,6 @@
       "instance": "eyes4s/kernel/Overlap$$anon$1",
       "suite": "lawsJVM/consumer.PublicLawsSuite"
     },
-    "class eyes4s.kernel.PlanarUnit": {
-      "classification": "data-sum",
-      "instance": "eyes4s/kernel/PlanarUnit$$anon$1",
-      "suite": "kernelJVM/consumer.PublicKernelSuite"
-    },
     "class eyes4s.kernel.Provenance$.Param": {
       "classification": "data-sum",
       "instance": "eyes4s/kernel/Provenance$Param$Num",
@@ -11115,14 +10493,9 @@
       "instance": "eyes4s/plan/BudgetError$CandidateVisits",
       "suite": "planJVM/eyes4s.plan.PreflightSuite"
     },
-    "class eyes4s.plan.ChoiceSource": {
-      "classification": "data-sum",
-      "instance": "eyes4s/plan/ChoiceSource$Fixed",
-      "suite": "planJVM/eyes4s.plan.RecordingCursorSuite"
-    },
     "class eyes4s.plan.ComparisonProperty": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/ComparisonProperty$$anon$6",
+      "instance": "eyes4s/plan/ComparisonProperty$$anon$5",
       "suite": "lawsJVM/consumer.PublicLawsSuite"
     },
     "class eyes4s.plan.ControlReferences": {
@@ -11134,11 +10507,6 @@
       "classification": "data-sum",
       "instance": "eyes4s/plan/CorrectionScope$Participant",
       "suite": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite"
-    },
-    "class eyes4s.plan.Counted": {
-      "classification": "data-sum",
-      "instance": "eyes4s/plan/Counted$$anon$1",
-      "suite": "planJVM/eyes4s.plan.RecordingCursorSuite"
     },
     "class eyes4s.plan.DescriptorError": {
       "classification": "data-sum",
@@ -11170,11 +10538,6 @@
       "instance": "eyes4s/plan/Disposition$Admitted",
       "suite": "planJVM/eyes4s.plan.AdmissionLedgerSuite"
     },
-    "class eyes4s.plan.Endpoint": {
-      "classification": "data-sum",
-      "instance": "eyes4s/plan/Endpoint$Closed",
-      "suite": "planJVM/eyes4s.plan.RecordingCursorSuite"
-    },
     "class eyes4s.plan.EpochError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/EpochError$DurationOverflow",
@@ -11192,23 +10555,8 @@
     },
     "class eyes4s.plan.ExecutionCapability": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/ExecutionCapability$$anon$7",
+      "instance": "eyes4s/plan/ExecutionCapability$$anon$6",
       "suite": "lawsJVM/consumer.PublicLawsSuite"
-    },
-    "class eyes4s.plan.Expected": {
-      "classification": "data-sum",
-      "instance": "eyes4s/plan/Expected$Number",
-      "suite": "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
-    },
-    "class eyes4s.plan.FieldError": {
-      "classification": "data-sum",
-      "instance": "eyes4s/plan/FieldError$Duplicate",
-      "suite": "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
-    },
-    "class eyes4s.plan.FieldKind": {
-      "classification": "data-sum",
-      "instance": "eyes4s/plan/FieldKind$$anon$8",
-      "suite": "planJVM/consumer.PublicPlanSuite"
     },
     "class eyes4s.plan.FinalBin": {
       "classification": "data-sum",
@@ -11220,16 +10568,6 @@
       "instance": "eyes4s/plan/FindingClass$$anon$3",
       "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
     },
-    "class eyes4s.plan.FormField": {
-      "classification": "behavior-or-sealed-data",
-      "instance": "eyes4s/plan/NumericField",
-      "suite": "planJVM/eyes4s.plan.RecordingCursorSuite"
-    },
-    "class eyes4s.plan.GroupRule": {
-      "classification": "data-sum",
-      "instance": "eyes4s/plan/GroupRule$$anon$7",
-      "suite": "planJVM/eyes4s.plan.RecordingCursorSuite"
-    },
     "class eyes4s.plan.InitialFixationError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/InitialFixationError$NoFixationKept",
@@ -11239,11 +10577,6 @@
       "classification": "behavior-or-sealed-data",
       "instance": "eyes4s/plan/InitialFixationPolicy$KeepAll",
       "suite": "ioJVM/docconsumer.DocumentationExamplesSuite"
-    },
-    "class eyes4s.plan.InputDomain": {
-      "classification": "data-sum",
-      "instance": "eyes4s/plan/InputDomain$$anon$6",
-      "suite": "planJVM/eyes4s.plan.RecordingCursorSuite"
     },
     "class eyes4s.plan.InspectionError": {
       "classification": "data-sum",
@@ -11280,16 +10613,6 @@
       "instance": "eyes4s/plan/MissingSource$$anon$4",
       "suite": "planJVM/eyes4s.plan.InitialFixationSuite"
     },
-    "class eyes4s.plan.NumberShape": {
-      "classification": "data-sum",
-      "instance": "eyes4s/plan/NumberShape$$anon$3",
-      "suite": "planJVM/eyes4s.plan.RecordingCursorSuite"
-    },
-    "class eyes4s.plan.Numeral": {
-      "classification": "behavior-or-sealed-data",
-      "instance": "eyes4s/plan/Numeral$int32$",
-      "suite": "planJVM/eyes4s.plan.RecordingCursorSuite"
-    },
     "class eyes4s.plan.Occurrence": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/Occurrence$$anon$1",
@@ -11322,8 +10645,8 @@
     },
     "class eyes4s.plan.ParameterDomain": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/ParameterDomain$$anon$2",
-      "suite": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite"
+      "instance": "eyes4s/plan/ParameterDomain$DomainValue",
+      "suite": "planJVM/consumer.PublicPlanSuite"
     },
     "class eyes4s.plan.ParameterField": {
       "classification": "behavior-or-sealed-data",
@@ -11333,7 +10656,7 @@
     "class eyes4s.plan.ParameterUnits": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/ParameterUnits$$anon$1",
-      "suite": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite"
+      "suite": "planJVM/consumer.PublicPlanSuite"
     },
     "class eyes4s.plan.ParticipantScope": {
       "classification": "data-sum",
@@ -11375,20 +10698,10 @@
       "instance": "eyes4s/plan/StudyReport",
       "suite": "planJVM/eyes4s.plan.StudyCursorSuite"
     },
-    "class eyes4s.plan.Quantity": {
-      "classification": "data-sum",
-      "instance": "eyes4s/plan/Quantity$$anon$2",
-      "suite": "lawsJVM/consumer.PublicLawsSuite"
-    },
     "class eyes4s.plan.QuarantineCause": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/QuarantineCause$$anon$1",
       "suite": "planJVM/eyes4s.plan.AdmissionLedgerSuite"
-    },
-    "class eyes4s.plan.RawValue": {
-      "classification": "data-sum",
-      "instance": "eyes4s/plan/RawValue$Choice",
-      "suite": "planJVM/eyes4s.plan.StudyCursorSuite"
     },
     "class eyes4s.plan.RecipeFamily": {
       "classification": "data-sum",
@@ -11399,6 +10712,16 @@
       "classification": "data-sum",
       "instance": "eyes4s/plan/RecipeParameterError$Configuration",
       "suite": "planJVM/eyes4s.plan.MethodDescriptorSuite"
+    },
+    "class eyes4s.plan.RecordIdentityError": {
+      "classification": "data-sum",
+      "instance": "eyes4s/plan/RecordIdentityError$$anon$1",
+      "suite": "planJVM/eyes4s.plan.RecordIdentitySuite"
+    },
+    "class eyes4s.plan.RecordRole": {
+      "classification": "data-sum",
+      "instance": "eyes4s/plan/RecordRole$$anon$2",
+      "suite": "planJVM/eyes4s.plan.RecordIdentitySuite"
     },
     "class eyes4s.plan.RecordingChannels": {
       "classification": "data-sum",
@@ -11472,7 +10795,7 @@
     },
     "class eyes4s.plan.ScoreDirection": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/ScoreDirection$$anon$5",
+      "instance": "eyes4s/plan/ScoreDirection$$anon$4",
       "suite": "lawsJVM/consumer.PublicLawsSuite"
     },
     "class eyes4s.plan.SegmentTotal": {
@@ -11484,11 +10807,6 @@
       "classification": "data-sum",
       "instance": "eyes4s/plan/Severity$$anon$2",
       "suite": "planJVM/eyes4s.plan.StudyCursorSuite"
-    },
-    "class eyes4s.plan.Side": {
-      "classification": "data-sum",
-      "instance": "eyes4s/plan/Side$$anon$4",
-      "suite": "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
     },
     "class eyes4s.plan.SourceLink": {
       "classification": "data-sum",
@@ -11900,7 +11218,7 @@
     "method eyes4s.codec.ArtifactDecoders.temporalPlan(io.circe.Json):scala.util.Either": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.codec.ArtifactDecoders.temporalResult(io.circe.Json):scala.util.Either": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.codec.ArtifactDecoders.withRecordings(eyes4s.codec.RecordingRegistry,eyes4s.codec.RecordingResultRegistry,eyes4s.codec.PixelUnit):eyes4s.codec.ArtifactDecoders": "codecJVM/eyes4s.codec.ArchiveManifestSuite",
-    "method eyes4s.codec.ArtifactDecoders.withReports(eyes4s.codec.VersionedCodec):eyes4s.codec.ArtifactDecoders": "codecJVM/eyes4s.codec.ReportManifestSuite",
+    "method eyes4s.codec.ArtifactDecoders.withReports(eyes4s.codec.VersionedCodec):eyes4s.codec.ArtifactDecoders": "codecJVM/eyes4s.codec.ReportImpostorSuite",
     "method eyes4s.codec.ArtifactDecoders.withTemporal(eyes4s.codec.TemporalRegistry,eyes4s.codec.TemporalResultRegistry):eyes4s.codec.ArtifactDecoders": "codecJVM/eyes4s.codec.ArchiveManifestSuite",
     "method eyes4s.codec.ArtifactName$.of(java.lang.String):scala.util.Either": "codecJVM/eyes4s.codec.InspectionManifestJvmSuite",
     "method eyes4s.codec.ArtifactName.toString():": "codecJVM/eyes4s.codec.CodecDiagnosticCatalogSuite",
@@ -11923,7 +11241,7 @@
     "method eyes4s.codec.CanonicalDigest.hashCode():": "codecJVM/eyes4s.codec.CanonicalDigestSuite",
     "method eyes4s.codec.CanonicalDigest.sameAs(eyes4s.codec.CanonicalDigest):scala.Boolean": "codecJVM/eyes4s.codec.CanonicalDigestSuite",
     "method eyes4s.codec.CanonicalDigest.toString():": "codecJVM/eyes4s.codec.CanonicalDigestSuite",
-    "method eyes4s.codec.CodecError.message():": "codecJVM/eyes4s.codec.InspectionArchiveSuite",
+    "method eyes4s.codec.CodecError.message():": "codecJVM/eyes4s.codec.ReportImpostorSuite",
     "method eyes4s.codec.DocumentIdentities.addClock(eyes4s.kernel.ClockId):eyes4s.codec.DocumentIdentities": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.codec.DocumentIdentities.addFrame(1,eyes4s.kernel.Frame,eyes4s.kernel.UnitLabel):scala.util.Either": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.codec.DocumentIdentities.addGrid(1,eyes4s.kernel.Grid,eyes4s.kernel.UnitLabel):scala.util.Either": "codecJVM/eyes4s.codec.ResultV1JvmSuite",
@@ -11946,6 +11264,7 @@
     "method eyes4s.codec.EpochCodecs$.plan(1,eyes4s.plan.DefinitionId,eyes4s.codec.VersionedCodec):eyes4s.codec.VersionedCodec": "codecJVM/eyes4s.codec.EpochCodecSuite",
     "method eyes4s.codec.LoadedRecordingPlan$.of(1,eyes4s.codec.LoadedRecording,eyes4s.codec.PixelUnit):eyes4s.codec.LoadedRecordingPlan": "codecJVM/eyes4s.codec.ArchiveManifestSuite",
     "method eyes4s.codec.LoadedRecordingPlan.description():": "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+    "method eyes4s.codec.LoadedResult.scoreSchema(io.circe.Json):scala.util.Either": "codecJVM/eyes4s.codec.ReportImpostorSuite",
     "method eyes4s.codec.LoadedStudy.description():": "codecJVM/eyes4s.codec.InspectionManifestJvmSuite",
     "method eyes4s.codec.LoadedStudy.preflight(scala.Option,eyes4s.design.PairScheduleBudget):eyes4s.plan.StudyReport": "codecJVM/eyes4s.codec.StudyCodecSuite",
     "method eyes4s.codec.LoadedStudy.prerequisites(scala.Option):scala.collection.immutable.Vector": "codecJVM/eyes4s.codec.InspectionManifestJvmSuite",
@@ -11997,9 +11316,9 @@
     "method eyes4s.codec.RecordingResultRegistry.schemas():": "codecJVM/eyes4s.codec.ArchiveManifestSuite",
     "method eyes4s.codec.RelationMismatch.message():": "codecJVM/eyes4s.codec.CodecDiagnosticCatalogSuite",
     "method eyes4s.codec.RepetitionPlanCodec$.of(2,eyes4s.plan.DefinitionId,eyes4s.plan.RepetitionRegistry,eyes4s.codec.VersionedCodec,eyes4s.kernel.UnitLabel):eyes4s.codec.VersionedCodec": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
-    "method eyes4s.codec.ReportCodecs$.digest(1,eyes4s.codec.CanonicalDigest,java.lang.String):scala.util.Either": "codecJVM/eyes4s.codec.ReportManifestSuite",
+    "method eyes4s.codec.ReportCodecs$.digest(1,eyes4s.codec.CanonicalDigest,java.lang.String):scala.util.Either": "codecJVM/eyes4s.codec.ReportImpostorSuite",
     "method eyes4s.codec.ReportCodecs$.report(1,eyes4s.codec.VersionedCodec):eyes4s.codec.VersionedCodec": "codecJVM/eyes4s.codec.ReportFixturesJvmSuite",
-    "method eyes4s.codec.ReportSources$.study(5,eyes4s.codec.StudyCodec,eyes4s.codec.StudyInputCodec,eyes4s.codec.StudyResultCodec,eyes4s.plan.StudyPlan,eyes4s.plan.StudyInput,eyes4s.plan.StudyResult,scala.Option,eyes4s.results.CovariateSchema):scala.util.Either": "codecJVM/eyes4s.codec.ReportManifestSuite",
+    "method eyes4s.codec.ReportSources$.study(5,eyes4s.codec.StudyCodec,eyes4s.codec.StudyInputCodec,eyes4s.codec.StudyResultCodec,eyes4s.plan.StudyPlan,eyes4s.plan.StudyInput,eyes4s.plan.StudyResult,scala.Option,eyes4s.results.CovariateSchema):scala.util.Either": "codecJVM/eyes4s.codec.ReportImpostorSuite",
     "method eyes4s.codec.ResolveError.entryName():": "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
     "method eyes4s.codec.ResolveError.message():": "codecJVM/eyes4s.codec.InspectionManifestJvmSuite",
     "method eyes4s.codec.ResolvedManifest.input(eyes4s.codec.ArtifactName):scala.Option": "codecJVM/eyes4s.codec.InspectionManifestJvmSuite",
@@ -12039,14 +11358,14 @@
     "method eyes4s.codec.StoredArtifact$.ledger(2,java.lang.String,eyes4s.codec.StudyInputCodec,eyes4s.plan.AdmissionLedger):scala.util.Either": "codecJVM/eyes4s.codec.ManifestV1JvmSuite",
     "method eyes4s.codec.StoredArtifact$.packedRecording(1,java.lang.String,eyes4s.core.Recording,eyes4s.kernel.UnitLabel):scala.util.Either": "codecJVM/eyes4s.codec.ManifestSuite",
     "method eyes4s.codec.StoredArtifact$.payload(java.lang.String,eyes4s.codec.VerifiedPayload):scala.util.Either": "codecJVM/eyes4s.codec.InputsManifestV1JvmSuite",
-    "method eyes4s.codec.StoredArtifact$.plan(5,java.lang.String,eyes4s.codec.StudyCodec,eyes4s.plan.StudyPlan):scala.util.Either": "codecJVM/eyes4s.codec.ReportManifestSuite",
+    "method eyes4s.codec.StoredArtifact$.plan(5,java.lang.String,eyes4s.codec.StudyCodec,eyes4s.plan.StudyPlan):scala.util.Either": "codecJVM/eyes4s.codec.ReportImpostorSuite",
     "method eyes4s.codec.StoredArtifact$.recording(1,java.lang.String,eyes4s.core.Recording,eyes4s.kernel.UnitLabel):scala.util.Either": "codecJVM/eyes4s.codec.InputsManifestV1JvmSuite",
     "method eyes4s.codec.StoredArtifact$.recordingInput(1,java.lang.String,eyes4s.plan.RecordingInput,eyes4s.kernel.UnitLabel):scala.util.Either": "codecJVM/eyes4s.codec.ArchiveManifestSuite",
     "method eyes4s.codec.StoredArtifact$.recordingPlan(1,java.lang.String,eyes4s.codec.RecordingPlanCodec,eyes4s.plan.RecordingPlan):scala.util.Either": "codecJVM/eyes4s.codec.ArchiveManifestSuite",
     "method eyes4s.codec.StoredArtifact$.recordingResult(1,java.lang.String,eyes4s.codec.RecordingResultCodec,eyes4s.plan.RecordingAnalysis):scala.util.Either": "codecJVM/eyes4s.codec.ArchiveManifestSuite",
-    "method eyes4s.codec.StoredArtifact$.report(1,java.lang.String,eyes4s.codec.VersionedCodec,eyes4s.results.Report):scala.util.Either": "codecJVM/eyes4s.codec.ReportManifestSuite",
-    "method eyes4s.codec.StoredArtifact$.reportSpec(java.lang.String,eyes4s.results.ReportSpec):scala.util.Either": "codecJVM/eyes4s.codec.ReportManifestSuite",
-    "method eyes4s.codec.StoredArtifact$.result(5,java.lang.String,eyes4s.codec.StudyResultCodec,eyes4s.plan.StudyResult):scala.util.Either": "codecJVM/eyes4s.codec.ReportManifestSuite",
+    "method eyes4s.codec.StoredArtifact$.report(1,java.lang.String,eyes4s.codec.VersionedCodec,eyes4s.results.Report):scala.util.Either": "codecJVM/eyes4s.codec.ReportImpostorSuite",
+    "method eyes4s.codec.StoredArtifact$.reportSpec(java.lang.String,eyes4s.results.ReportSpec):scala.util.Either": "codecJVM/eyes4s.codec.ReportImpostorSuite",
+    "method eyes4s.codec.StoredArtifact$.result(5,java.lang.String,eyes4s.codec.StudyResultCodec,eyes4s.plan.StudyResult):scala.util.Either": "codecJVM/eyes4s.codec.ReportImpostorSuite",
     "method eyes4s.codec.StoredArtifact$.temporalInput(2,java.lang.String,eyes4s.codec.TemporalInputCodec,eyes4s.plan.TemporalStudyInput):scala.util.Either": "codecJVM/eyes4s.codec.ArchiveManifestSuite",
     "method eyes4s.codec.StoredArtifact$.temporalPlan(5,java.lang.String,eyes4s.codec.TemporalStudyCodec,eyes4s.plan.TemporalStudyPlan):scala.util.Either": "codecJVM/eyes4s.codec.ArchiveManifestSuite",
     "method eyes4s.codec.StoredArtifact$.temporalResult(5,java.lang.String,eyes4s.codec.TemporalResultCodec,eyes4s.plan.TemporalStudyResult):scala.util.Either": "codecJVM/eyes4s.codec.ArchiveManifestSuite",
@@ -12071,7 +11390,7 @@
     "method eyes4s.codec.StudyRegistry$.empty(2):eyes4s.codec.StudyRegistry": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.codec.StudyRegistry.decode(io.circe.Json):scala.util.Either": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.codec.StudyRegistry.register(eyes4s.codec.StudyRegistration):scala.util.Either": "lawsJVM/consumer.PublicLawsSuite",
-    "method eyes4s.codec.StudyResultCodec.<init>(5,eyes4s.plan.DefinitionId,eyes4s.plan.StudyLayout,eyes4s.codec.VersionedCodec,eyes4s.plan.StudyMethod,eyes4s.codec.VersionedCodec,eyes4s.codec.VersionedCodec,eyes4s.kernel.UnitLabel):eyes4s.codec.StudyResultCodec": "lawsJVM/consumer.PublicLawsSuite",
+    "method eyes4s.codec.StudyResultCodec.<init>(5,eyes4s.plan.DefinitionId,eyes4s.plan.StudyLayout,eyes4s.codec.VersionedCodec,eyes4s.plan.StudyMethod,eyes4s.codec.VersionedCodec,eyes4s.codec.VersionedCodec,scala.Option,eyes4s.kernel.UnitLabel):eyes4s.codec.StudyResultCodec": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.codec.StudyResultCodec.registration():": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.codec.StudyResultCodecs$.cosine(1,eyes4s.kernel.UnitLabel):eyes4s.codec.StudyResultCodec": "codecJVM/eyes4s.codec.ResultV1JvmSuite",
     "method eyes4s.codec.StudyResultCodecs$.measureDistance(eyes4s.plan.DefinitionId):eyes4s.codec.VersionedCodec": "codecJVM/eyes4s.codec.InputsManifestV1JvmSuite",
@@ -12115,7 +11434,7 @@
     "method eyes4s.codec.VersionedCodec$.trials(3,eyes4s.plan.DefinitionId,eyes4s.codec.VersionedCodec,eyes4s.codec.VersionedCodec,eyes4s.codec.VersionedCodec):eyes4s.codec.VersionedCodec": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.codec.VersionedCodec$.unit(eyes4s.plan.DefinitionId):eyes4s.codec.VersionedCodec": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.codec.VersionedCodec.decode(io.circe.Json):scala.util.Either": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
-    "method eyes4s.codec.VersionedCodec.digest(java.lang.Object):scala.util.Either": "codecJVM/eyes4s.codec.CanonicalDigestSuite",
+    "method eyes4s.codec.VersionedCodec.digest(java.lang.Object):scala.util.Either": "codecJVM/eyes4s.codec.ReportImpostorSuite",
     "method eyes4s.codec.VersionedCodec.encode(java.lang.Object):scala.util.Either": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.codec.VersionedCodec.parse(java.lang.String):scala.util.Either": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.compare.Alignment$.needlemanWunsch(scala.Double):eyes4s.compare.Alignment": "compareJVM/consumer.PublicCompareSuite",
@@ -12807,6 +12126,12 @@
     "method eyes4s.io.ContrastExportError.message():": "ioJVM/consumer.PublicIoSuite",
     "method eyes4s.io.ConversionEvidenceWarning.message():": "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
     "method eyes4s.io.CoordinateUnit.label():": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
+    "method eyes4s.io.CsvLayout$.scan(java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.CsvLayoutSuite",
+    "method eyes4s.io.CsvLayout.header():": "ioJVM/eyes4s.io.CsvLayoutSuite",
+    "method eyes4s.io.CsvLayout.records():": "ioJVM/eyes4s.io.CsvLayoutSuite",
+    "method eyes4s.io.CsvLayout.toString():": "ioJVM/eyes4s.io.CsvLayoutSuite",
+    "method eyes4s.io.CsvLayout.verbatim(eyes4s.plan.DataRecord):scala.util.Either": "ioJVM/eyes4s.io.CsvLayoutSuite",
+    "method eyes4s.io.CsvLayoutError.message():": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "method eyes4s.io.DecodedTidyCsvDocument.encode():": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "method eyes4s.io.DecodedTidyCsvDocument.header():": "ioJVM/eyes4s.io.TidyResultSuite",
     "method eyes4s.io.DecodedTidyCsvDocument.rows():": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
@@ -13099,13 +12424,13 @@
     "method eyes4s.kernel.Interval.render():": "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite",
     "method eyes4s.kernel.Interval.shift(scala.Long):eyes4s.kernel.Interval": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.LengthUnit.symbol():": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-    "method eyes4s.kernel.LinearAngularScale$.of(1,eyes4s.kernel.Frame,scala.Double):scala.util.Either": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
+    "method eyes4s.kernel.LinearAngularScale$.of(1,eyes4s.kernel.Frame,scala.Double):scala.util.Either": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.kernel.LinearAngularScale.angular(eyes4s.kernel.FrameId):scala.util.Either": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "method eyes4s.kernel.LinearAngularScale.angularFrame(eyes4s.kernel.FrameId):scala.util.Either": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "method eyes4s.kernel.LinearAngularScale.equals(java.lang.Object):scala.Boolean": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
     "method eyes4s.kernel.LinearAngularScale.hashCode():": "ioJVM/eyes4s.io.WindowConstructionSuite",
     "method eyes4s.kernel.LinearAngularScale.on(eyes4s.kernel.Subframe):scala.util.Either": "lawsJVM/eyes4s.laws.WindowLawsSuite",
-    "method eyes4s.kernel.LinearAngularScale.sigma(scala.Double):scala.util.Either": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
+    "method eyes4s.kernel.LinearAngularScale.sigma(scala.Double):scala.util.Either": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.kernel.LogBase.unitName():": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.LogBase.value():": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.Machine$.apply(3,eyes4s.kernel.Detector):eyes4s.kernel.Machine": "lawsJVM/consumer.PublicLawsSuite",
@@ -13162,9 +12487,6 @@
     "method eyes4s.kernel.Perspective.horizontalExtent():": "kernelJVM/eyes4s.kernel.WarpSuite",
     "method eyes4s.kernel.Perspective.render():": "kernelJVM/eyes4s.kernel.WarpSuite",
     "method eyes4s.kernel.Perspective.verticalExtent():": "kernelJVM/eyes4s.kernel.WarpSuite",
-    "method eyes4s.kernel.PlanarUnit$.of(1,eyes4s.kernel.UnitLabel):eyes4s.kernel.PlanarUnit": "kernelJVM/eyes4s.kernel.PlanarUnitSuite",
-    "method eyes4s.kernel.PlanarUnit.name():": "kernelJVM/consumer.PublicKernelSuite",
-    "method eyes4s.kernel.PlanarUnit.symbol():": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.PlannedTimeline$.from(1,eyes4s.kernel.Timeline):eyes4s.kernel.PlannedTimeline": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.PlannedTimeline$.of(1,eyes4s.kernel.ClockId,scala.collection.immutable.Vector):scala.util.Either": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.PlannedTimeline.clock():": "kernelJVM/eyes4s.kernel.TimelineSuite",
@@ -13263,7 +12585,7 @@
     "method eyes4s.kernel.Span$package$.Span$.toSeconds(scala.Long):scala.Double": "coreJVM/consumer.PublicCoreSuite",
     "method eyes4s.kernel.Span$package$.Span$.unary_-(scala.Long):scala.Long": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.Subframe$.centred(1,eyes4s.kernel.Frame,eyes4s.kernel.FrameId,eyes4s.kernel.Extent):scala.util.Either": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
-    "method eyes4s.kernel.Subframe$.of(1,eyes4s.kernel.Frame,eyes4s.kernel.FrameId,eyes4s.kernel.Bounds):scala.util.Either": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
+    "method eyes4s.kernel.Subframe$.of(1,eyes4s.kernel.Frame,eyes4s.kernel.FrameId,eyes4s.kernel.Bounds):scala.util.Either": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.kernel.Subframe$.whole(1,eyes4s.kernel.Frame,eyes4s.kernel.FrameId):scala.util.Either": "planJVM/eyes4s.plan.StudyWindowSuite",
     "method eyes4s.kernel.Subframe.enter():": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "method eyes4s.kernel.Subframe.equals(java.lang.Object):scala.Boolean": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
@@ -13344,7 +12666,7 @@
     "method eyes4s.kernel.Timeline.size():": "kernelJVM/eyes4s.kernel.TimelineSuite",
     "method eyes4s.kernel.Timeline.toString():": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.TimelineError.message():": "kernelJVM/consumer.PublicKernelSuite",
-    "method eyes4s.kernel.UnitLabel$.apply(1,eyes4s.kernel.UnitLabel):eyes4s.kernel.UnitLabel": "kernelJVM/eyes4s.kernel.PlanarUnitSuite",
+    "method eyes4s.kernel.UnitLabel$.apply(1,eyes4s.kernel.UnitLabel):eyes4s.kernel.UnitLabel": "kernelJVM/eyes4s.kernel.GeometrySuite",
     "method eyes4s.kernel.Vec2$.polar(1,scala.Double,scala.Double):eyes4s.kernel.Vec2": "kernelJVM/eyes4s.kernel.GeometrySuite",
     "method eyes4s.kernel.Vec2$.zero(1):eyes4s.kernel.Vec2": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.Vec2.*(scala.Double):eyes4s.kernel.Vec2": "kernelJVM/consumer.PublicKernelSuite",
@@ -13425,11 +12747,6 @@
     "method eyes4s.laws.ExecutionLaws$.oracle(5,eyes4s.laws.ExecutionLaws$.Family,java.lang.Object):scala.util.Either": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.laws.ExecutionLaws$.quanta(scala.collection.immutable.Seq,scala.collection.immutable.Seq,scala.collection.immutable.Seq):org.scalacheck.Gen": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.laws.ExecutionLaws$.trace(5,eyes4s.laws.ExecutionLaws$.Family,java.lang.Object,scala.Function1):eyes4s.laws.ExecutionLaws$.Trace": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-    "method eyes4s.laws.FormLaws$.inspection(org.scalacheck.Gen):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.FormLawSuite",
-    "method eyes4s.laws.FormLaws$.numbers(3,eyes4s.plan.NumericField):org.scalacheck.Gen": "lawsJVM/eyes4s.laws.FormLawSuite",
-    "method eyes4s.laws.FormLaws$.numeric(3,eyes4s.plan.NumericField,org.scalacheck.Gen):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.FormLawSuite",
-    "method eyes4s.laws.FormLaws$.parts(eyes4s.plan.FieldView):scala.collection.immutable.Vector": "lawsJVM/eyes4s.laws.FormLawSuite",
-    "method eyes4s.laws.FormLaws$.probes(3,eyes4s.plan.NumericField):scala.collection.immutable.Vector": "lawsJVM/eyes4s.laws.FormLawSuite",
     "method eyes4s.laws.Generators$.genBounds(1):org.scalacheck.Gen": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.laws.Generators$.genChain(1):org.scalacheck.Gen": "lawsJVM/eyes4s.laws.KernelLawsSuite",
     "method eyes4s.laws.Generators$.genFixationsIn(1,eyes4s.kernel.Frame,eyes4s.kernel.ClockId):org.scalacheck.Gen": "lawsJVM/consumer.PublicLawsSuite",
@@ -13496,6 +12813,9 @@
     "method eyes4s.laws.PayloadLaws$.shippedRecording(1,eyes4s.codec.PackedRecordingCodec,org.scalacheck.Gen,scala.Function2):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.laws.PayloadLaws.packedArrays(1,org.scalacheck.Gen,scala.Function2,scala.Function2,scala.Function1):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.laws.PayloadLaws.packedRecording(1,org.scalacheck.Gen,scala.Function2,scala.Function1,scala.Function2):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
+    "method eyes4s.laws.RecordIdentityLaws$.conversion():": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
+    "method eyes4s.laws.RecordIdentityLaws$.fixations():": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
+    "method eyes4s.laws.RecordIdentityLaws$.lines(org.scalacheck.Gen):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
     "method eyes4s.laws.RecordingResultEquivalence$.same(1,eyes4s.plan.RecordingAnalysis,eyes4s.plan.RecordingAnalysis):scala.Boolean": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
     "method eyes4s.laws.RecordingResultEquivalence$.sameAssignment(1,eyes4s.aoi.AoiAssignment,eyes4s.aoi.AoiAssignment):scala.Boolean": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
     "method eyes4s.laws.RecordingResultEquivalence$.sameDetection(1,eyes4s.detect.DetectionResult,eyes4s.detect.DetectionResult):scala.Boolean": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
@@ -13614,10 +12934,13 @@
     "method eyes4s.plan.ComparisonMethods$.resolve(eyes4s.plan.DefinitionId):scala.Option": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.plan.ComponentValue.equals(java.lang.Object):scala.Boolean": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ComponentValue.hashCode():": "planJVM/eyes4s.plan.ResultInspectionSuite",
-    "method eyes4s.plan.ComponentValue.units():": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
     "method eyes4s.plan.ControlReferences.name():": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.plan.CorrectionScope.covers(java.lang.Object,scala.Function1):scala.Boolean": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
-    "method eyes4s.plan.DefaultValue$.of(eyes4s.plan.RawValue,java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.FormDescriptorSuite",
+    "method eyes4s.plan.CsvRecord$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.CsvRecord.dataRecord():": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.CsvRecord.role():": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.DataRecord$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.DataRecord.csv():": "planJVM/eyes4s.plan.RecordIdentitySuite",
     "method eyes4s.plan.DefinitionId$.of(java.lang.String,scala.Int):scala.util.Either": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
     "method eyes4s.plan.DensityView.cells():": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.DensityView.equals(java.lang.Object):scala.Boolean": "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -13634,7 +12957,6 @@
     "method eyes4s.plan.Diagnose$.contrast(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.Diagnose$.contrastRow(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.Diagnose$.epoch(2):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.Diagnose$.formField(2,eyes4s.plan.Diagnose):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.Diagnose$.inspection(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.Diagnose$.ledgerRefusal(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.Diagnose$.preflight(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.AnalysisReportSuite",
@@ -13663,10 +12985,6 @@
     "method eyes4s.plan.DiagnosticFamily.code(scala.Int):eyes4s.plan.DiagnosticCode": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.DiagnosticFamily.label(scala.Int):scala.Option": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.DiagnosticFamily.toString():": "planJVM/consumer.PublicPlanSuite",
-    "method eyes4s.plan.Endpoint.admits(scala.Double,eyes4s.plan.Side):scala.Boolean": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.Endpoint.admitsBy(scala.Function1,eyes4s.plan.Side):scala.Boolean": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.Endpoint.isClosed():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.Endpoint.render(eyes4s.plan.Side):java.lang.String": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.EpochError.message():": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.EpochPlan$.of(1,eyes4s.plan.MarkSelector,eyes4s.kernel.Window,scala.Long,eyes4s.plan.FinalBin):scala.util.Either": "planJVM/eyes4s.plan.EpochPlanSuite",
     "method eyes4s.plan.EpochPlan.resolve(1,java.lang.Object,eyes4s.kernel.ObservedTimeline,eyes4s.kernel.ClockId,scala.Long,cats.kernel.Eq):scala.util.Either": "planJVM/eyes4s.plan.EpochPlanSuite",
@@ -13681,20 +12999,8 @@
     "method eyes4s.plan.ExactDouble.equals(java.lang.Object):scala.Boolean": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ExactDouble.hashCode():": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ExactDouble.toString():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.FieldError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.FieldId$.of(java.lang.String):scala.util.Either": "planJVM/consumer.PublicPlanSuite",
-    "method eyes4s.plan.FieldId.prefixed(java.lang.String):eyes4s.plan.FieldId": "planJVM/eyes4s.plan.PreflightSuite",
-    "method eyes4s.plan.FieldId.toString():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.FieldKind.measures():": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.FieldView$.of(eyes4s.plan.FieldId,scala.Int,java.lang.String,eyes4s.plan.FieldKind,scala.Option):scala.util.Either": "planJVM/consumer.PublicPlanSuite",
-    "method eyes4s.plan.FieldView.check(eyes4s.plan.RawValue):scala.util.Either": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.FieldView.equals(java.lang.Object):scala.Boolean": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.FieldView.hashCode():": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.FieldView.prefixed(java.lang.String):eyes4s.plan.FieldView": "planJVM/eyes4s.plan.PreflightSuite",
-    "method eyes4s.plan.FieldView.quantity():": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.FieldView.toString():": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.FieldView.withDefault(eyes4s.plan.DefaultValue):scala.util.Either": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.FormView.field(eyes4s.plan.FieldId):scala.Option": "planJVM/eyes4s.plan.FormDescriptorSuite",
+    "method eyes4s.plan.FixationNumber$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.FixationNumber.position():": "planJVM/eyes4s.plan.RecordIdentitySuite",
     "method eyes4s.plan.InitialFixationError.message():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.InitialFixationPolicy$.dropFirst(1):eyes4s.plan.InitialFixationPolicy": "planJVM/eyes4s.plan.TemporalCursorSuite",
     "method eyes4s.plan.InitialFixationPolicy$.dropLeadingInClosedDisc(1,eyes4s.kernel.Pt,scala.Double):scala.util.Either": "planJVM/eyes4s.plan.InitialFixationSuite",
@@ -13725,6 +13031,9 @@
     "method eyes4s.plan.InventoryTrial.itemConflict():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.InventoryTrial.keyItem():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.LedgerRefusal$.of(2,eyes4s.plan.StudyInput,eyes4s.plan.AdmissionLedger,eyes4s.plan.AdmissionError):eyes4s.plan.LedgerRefusal": "planJVM/eyes4s.plan.ResultInspectionSuite",
+    "method eyes4s.plan.LineSpan$.of(eyes4s.plan.SourceLine,eyes4s.plan.SourceLine):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.LineSpan.contains(eyes4s.plan.SourceLine):scala.Boolean": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.LineSpan.count():": "planJVM/eyes4s.plan.RecordIdentitySuite",
     "method eyes4s.plan.Listing.contains(eyes4s.plan.ResultRef):scala.Boolean": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.Listing.first(eyes4s.plan.PageSize):eyes4s.plan.Page": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.Listing.get(eyes4s.plan.ResultRef):scala.Option": "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -13738,78 +13047,24 @@
     "method eyes4s.plan.MatchedCardinality.refusal(eyes4s.plan.StudyLayout):scala.Option": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.MatchedReferences.render():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.MethodDescriptor$.of(3,eyes4s.plan.DefinitionId,eyes4s.plan.ParameterSet,scala.Function1,scala.Function1,scala.collection.immutable.Set,eyes4s.plan.ExecutionCapability):eyes4s.plan.MethodDescriptor": "lawsJVM/consumer.PublicLawsSuite",
-    "method eyes4s.plan.MethodDescriptor.formView():": "planJVM/eyes4s.plan.FormDescriptorSuite",
     "method eyes4s.plan.MethodDescriptor.verify(java.lang.Object,scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.MethodExecution.capability():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.MethodExecution.compare():": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.plan.MissingSource.mapKeys(1,scala.Function1):eyes4s.plan.MissingSource": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.MissingSource.trialKeys():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.NamedParameterDefault$.of(1,java.lang.String,java.lang.Object,java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.Numeral$.forShape(eyes4s.plan.NumberShape):eyes4s.plan.Numeral": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.Numeral$.int32$.compare(scala.Int,scala.Double):scala.Int": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.Numeral$.int32$.exactly(scala.Double):scala.Option": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.Numeral$.int32$.extreme(scala.Boolean):scala.Int": "lawsJVM/eyes4s.laws.FormLawSuite",
-    "method eyes4s.plan.Numeral$.int32$.nearest(scala.Double):scala.Int": "lawsJVM/eyes4s.laws.FormLawSuite",
-    "method eyes4s.plan.Numeral$.int32$.read(java.lang.String):scala.Option": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.Numeral$.int32$.step(scala.Int,scala.Boolean):scala.Option": "lawsJVM/eyes4s.laws.FormLawSuite",
-    "method eyes4s.plan.Numeral$.int32$.toDouble(scala.Int):scala.Double": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.Numeral$.int32$.write(scala.Int):java.lang.String": "lawsJVM/eyes4s.laws.FormLawSuite",
-    "method eyes4s.plan.Numeral$.int64$.compare(scala.Long,scala.Double):scala.Int": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.Numeral$.int64$.exactly(scala.Double):scala.Option": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.Numeral$.int64$.extreme(scala.Boolean):scala.Long": "lawsJVM/eyes4s.laws.FormLawSuite",
-    "method eyes4s.plan.Numeral$.int64$.nearest(scala.Double):scala.Long": "lawsJVM/eyes4s.laws.FormLawSuite",
-    "method eyes4s.plan.Numeral$.int64$.read(java.lang.String):scala.Option": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.Numeral$.int64$.step(scala.Long,scala.Boolean):scala.Option": "lawsJVM/eyes4s.laws.FormLawSuite",
-    "method eyes4s.plan.Numeral$.int64$.toDouble(scala.Long):scala.Double": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.Numeral$.int64$.write(scala.Long):java.lang.String": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.Numeral$.real$.compare(scala.Double,scala.Double):scala.Int": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.Numeral$.real$.exactly(scala.Double):scala.Option": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.Numeral$.real$.extreme(scala.Boolean):scala.Double": "lawsJVM/eyes4s.laws.FormLawSuite",
-    "method eyes4s.plan.Numeral$.real$.nearest(scala.Double):scala.Double": "lawsJVM/eyes4s.laws.FormLawSuite",
-    "method eyes4s.plan.Numeral$.real$.read(java.lang.String):scala.Option": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.Numeral$.real$.step(scala.Double,scala.Boolean):scala.Option": "lawsJVM/eyes4s.laws.FormLawSuite",
-    "method eyes4s.plan.Numeral$.real$.toDouble(scala.Double):scala.Double": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.Numeral$.real$.write(scala.Double):java.lang.String": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.NumericBounds$.atLeast(scala.Double):scala.util.Either": "lawsJVM/eyes4s.laws.FormLawSuite",
-    "method eyes4s.plan.NumericBounds$.of(scala.Option,scala.Option):scala.util.Either": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.NumericBounds.contains(scala.Double):scala.Boolean": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.NumericBounds.endpoints():": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.NumericBounds.render():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.NumericBounds.violation(scala.Double):scala.Option": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.NumericBounds.violationBy(scala.Function1):scala.Option": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.NumericField$.of(3,eyes4s.plan.FieldId,scala.Int,java.lang.String,eyes4s.plan.Quantity,eyes4s.plan.NumericBounds,scala.Option,scala.Function1,scala.Function1,scala.Function1,eyes4s.plan.Numeral):scala.util.Either": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.NumericField.parse(eyes4s.plan.RawValue):scala.util.Either": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.NumericField.raw(java.lang.Object):eyes4s.plan.RawValue": "planJVM/eyes4s.plan.FormDescriptorSuite",
     "method eyes4s.plan.ObservedSynchronization.fit(eyes4s.kernel.ClockId):scala.util.Either": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.plan.OccurrenceChoice.render():": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "method eyes4s.plan.Operand.mapKeys(1,scala.Function1):eyes4s.plan.Operand": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.Operand.trialKeys():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.PageSize$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
-    "method eyes4s.plan.ParameterDescriptor$.numeric(3,eyes4s.plan.NumericField):eyes4s.plan.ParameterDescriptor": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.ParameterDescriptor.<init>(3,eyes4s.plan.ParameterInfo,scala.Function1,scala.Function1,scala.Option,scala.Option):eyes4s.plan.ParameterDescriptor": "planJVM/consumer.PublicPlanSuite",
+    "method eyes4s.plan.ParameterDescriptor.<init>(3,eyes4s.plan.ParameterInfo,scala.Function1,scala.Function1,scala.Option):eyes4s.plan.ParameterDescriptor": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.ParameterDescriptor.bind(1,scala.Function1,scala.Function1):eyes4s.plan.ParameterField": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.ParameterDescriptor.parse(java.lang.Object):scala.util.Either": "planJVM/consumer.PublicPlanSuite",
-    "method eyes4s.plan.ParameterDescriptor.validate(eyes4s.plan.RawValue):scala.util.Either": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.ParameterField.validate(eyes4s.plan.RawValue):scala.util.Either": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.ParameterField.view():": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.ParameterInfo$.of(eyes4s.plan.FieldView):eyes4s.plan.ParameterInfo": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.ParameterInfo$.of(java.lang.String,scala.Int,java.lang.String,eyes4s.plan.FieldKind):scala.util.Either": "planJVM/consumer.PublicPlanSuite",
-    "method eyes4s.plan.ParameterInfo$.of(java.lang.String,scala.Int,java.lang.String,eyes4s.plan.ParameterUnits,eyes4s.plan.ParameterDomain):scala.util.Either": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-    "method eyes4s.plan.ParameterInfo.allowed():": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-    "method eyes4s.plan.ParameterInfo.equals(java.lang.Object):scala.Boolean": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.ParameterInfo.hashCode():": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.ParameterInfo.id():": "planJVM/consumer.PublicPlanSuite",
-    "method eyes4s.plan.ParameterInfo.kind():": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.ParameterInfo.meaning():": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.ParameterInfo.quantity():": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.ParameterInfo.toString():": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.ParameterInfo.units():": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-    "method eyes4s.plan.ParameterInfo.version():": "planJVM/eyes4s.plan.FormDescriptorSuite",
+    "method eyes4s.plan.ParameterInfo$.of(java.lang.String,scala.Int,java.lang.String,eyes4s.plan.ParameterUnits,eyes4s.plan.ParameterDomain):scala.util.Either": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.ParameterSet$.of(1,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.ParameterSet.validate(eyes4s.plan.FieldId,eyes4s.plan.RawValue):scala.util.Either": "planJVM/eyes4s.plan.FormDescriptorSuite",
     "method eyes4s.plan.ParameterSet.values(java.lang.Object):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.ParameterSet.verify(java.lang.Object,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.StudyCursorSuite",
-    "method eyes4s.plan.ParameterSet.views():": "planJVM/eyes4s.plan.FormDescriptorSuite",
     "method eyes4s.plan.ParticipantScope.rule():": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "method eyes4s.plan.PlanChange$.between(scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.PlanError.message():": "planJVM/eyes4s.plan.AnalysisReportSuite",
@@ -13846,8 +13101,6 @@
     "method eyes4s.plan.PreparedTemporalStudy.trials():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.PreparedTemporalStudy.windows():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.PreparedTemporalStudy.work(eyes4s.compare.ComparisonBudget):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.plan.Quantity.isNumeric():": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.Quantity.symbol():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.QuarantineCause$.isVersion1(eyes4s.plan.QuarantineCause):scala.Boolean": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.QuarantineCause$.of(eyes4s.core.ScanpathError):eyes4s.plan.QuarantineCause": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
     "method eyes4s.plan.QuarantineCause$.version(eyes4s.plan.QuarantineCause):scala.Int": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
@@ -13855,21 +13108,35 @@
     "method eyes4s.plan.RecipeDescriptors$.recording(1,eyes4s.plan.RecordingPlan):scala.util.Either": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.RecipeDescriptors$.study(5,eyes4s.plan.StudyPlan,eyes4s.kernel.UnitLabel):scala.util.Either": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.RecipeDescriptors$.temporal(5,eyes4s.plan.TemporalStudyPlan,eyes4s.kernel.UnitLabel):scala.util.Either": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.RecipeInspection.description():": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.RecipeInspection.views():": "planJVM/eyes4s.plan.FormDescriptorSuite",
+    "method eyes4s.plan.RecipeInspection.description():": "codecJVM/eyes4s.codec.DescriptorPersistenceSuite",
     "method eyes4s.plan.RecipeParameterError.message():": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.RecipeParameters$.anisotropic(1,eyes4s.kernel.UnitLabel):eyes4s.plan.ParameterDescriptor": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
+    "method eyes4s.plan.RecipeParameters$.anisotropic(1,eyes4s.kernel.UnitLabel):eyes4s.plan.ParameterDescriptor": "ioJVM/eyes4s.io.FixationStudySuite",
     "method eyes4s.plan.RecipeParameters$.bounds(1,eyes4s.kernel.UnitLabel):eyes4s.plan.ParameterDescriptor": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.RecipeParameters$.forms$.sigma(1,eyes4s.kernel.UnitLabel):eyes4s.plan.NumericField": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.RecipeParameters$.forms$.sigmaX(1,eyes4s.kernel.UnitLabel):eyes4s.plan.NumericField": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "method eyes4s.plan.RecipeParameters$.forms$.sigmaY(1,eyes4s.kernel.UnitLabel):eyes4s.plan.NumericField": "planJVM/eyes4s.plan.FormDescriptorSuite",
     "method eyes4s.plan.RecipeParameters$.frame(1,eyes4s.kernel.UnitLabel):eyes4s.plan.ParameterDescriptor": "planJVM/eyes4s.plan.MethodDescriptorSuite",
     "method eyes4s.plan.RecipeParameters$.gaussian(1,eyes4s.kernel.UnitLabel):eyes4s.plan.ParameterDescriptor": "planJVM/eyes4s.plan.MethodDescriptorSuite",
     "method eyes4s.plan.RecipeParameters$.grid(1):eyes4s.plan.ParameterDescriptor": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.RecipeParameters$.sigma(1,eyes4s.kernel.UnitLabel):eyes4s.plan.ParameterDescriptor": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.RecipeParameters$.sigmaX(1,eyes4s.kernel.UnitLabel):eyes4s.plan.ParameterDescriptor": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-    "method eyes4s.plan.RecipeParameters$.sigmaY(1,eyes4s.kernel.UnitLabel):eyes4s.plan.ParameterDescriptor": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
+    "method eyes4s.plan.RecipeParameters$.sigmaX(1,eyes4s.kernel.UnitLabel):eyes4s.plan.ParameterDescriptor": "codecJVM/eyes4s.codec.StudyCodecSuite",
+    "method eyes4s.plan.RecipeParameters$.sigmaY(1,eyes4s.kernel.UnitLabel):eyes4s.plan.ParameterDescriptor": "codecJVM/eyes4s.codec.StudyCodecSuite",
     "method eyes4s.plan.RecordAttributes$.of(scala.Int,eyes4s.plan.Attributes):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "method eyes4s.plan.RecordIdentity$package$.csvRecord(1,eyes4s.plan.SourceRecord):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordIdentity$package$.dataRecord(1,eyes4s.plan.FixationSource):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordIdentity$package$.dataRecord(1,eyes4s.plan.SourceRecord):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordIdentity$package$.entryAt(1,eyes4s.plan.StudySources,eyes4s.plan.DataRecord):scala.Option": "ioJVM/eyes4s.io.CsvLayoutSuite",
+    "method eyes4s.plan.RecordIdentity$package$.fixationAt(1,eyes4s.plan.StudySources,java.lang.Object,eyes4s.plan.ScanpathPosition):scala.util.Either": "ioJVM/eyes4s.io.CsvLayoutSuite",
+    "method eyes4s.plan.RecordIdentity$package$.position(1,eyes4s.plan.FixationSource):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordIdentity$package$.trialAt(1,eyes4s.plan.StudySources,eyes4s.plan.DataRecord):scala.Option": "ioJVM/eyes4s.io.CsvLayoutSuite",
+    "method eyes4s.plan.RecordIdentityError.message():": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordLines$.of(scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordLines$.uniform(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordLines.equals(java.lang.Object):scala.Boolean": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordLines.hashCode():": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordLines.header():": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
+    "method eyes4s.plan.RecordLines.isUniform():": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
+    "method eyes4s.plan.RecordLines.lines():": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordLines.owner(eyes4s.plan.SourceLine):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordLines.span(eyes4s.plan.DataRecord):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.RecordLines.toString():": "planJVM/eyes4s.plan.RecordIdentitySuite",
     "method eyes4s.plan.RecordingAnalysis$.reconstruct(1,eyes4s.plan.RecordingPlan,eyes4s.core.Recording,eyes4s.core.Recording,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
     "method eyes4s.plan.RecordingAnalysis.description():": "planJVM/eyes4s.plan.RecordingCursorSuite",
     "method eyes4s.plan.RecordingAnalysis.input():": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
@@ -13895,15 +13162,14 @@
     "method eyes4s.plan.RecordingInput.reference():": "lawsJVM/eyes4s.laws.ManifestLawSuite",
     "method eyes4s.plan.RecordingInput.synchronize():": "codecJVM/eyes4s.codec.InputPayloadV1Suite",
     "method eyes4s.plan.RecordingInputError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.RecordingMethod$.engbertKliegl(eyes4s.plan.DefinitionId):eyes4s.plan.RecordingMethod": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-    "method eyes4s.plan.RecordingMethod$.idt(eyes4s.plan.DefinitionId):eyes4s.plan.RecordingMethod": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
+    "method eyes4s.plan.RecordingMethod$.engbertKliegl(eyes4s.plan.DefinitionId):eyes4s.plan.RecordingMethod": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
+    "method eyes4s.plan.RecordingMethod$.idt(eyes4s.plan.DefinitionId):eyes4s.plan.RecordingMethod": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
     "method eyes4s.plan.RecordingMethod$.ivt(eyes4s.plan.DefinitionId):eyes4s.plan.RecordingMethod": "planJVM/eyes4s.plan.RecordingCursorSuite",
     "method eyes4s.plan.RecordingMethod.<init>(1,eyes4s.plan.DefinitionId,scala.Function1,scala.Function2,scala.Option):eyes4s.plan.RecordingMethod": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "method eyes4s.plan.RecordingMethodDescriptor$.engbertKliegl(eyes4s.plan.DefinitionId):eyes4s.plan.RecordingMethodDescriptor": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-    "method eyes4s.plan.RecordingMethodDescriptor$.idt(eyes4s.plan.DefinitionId):eyes4s.plan.RecordingMethodDescriptor": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
+    "method eyes4s.plan.RecordingMethodDescriptor$.engbertKliegl(eyes4s.plan.DefinitionId):eyes4s.plan.RecordingMethodDescriptor": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
+    "method eyes4s.plan.RecordingMethodDescriptor$.idt(eyes4s.plan.DefinitionId):eyes4s.plan.RecordingMethodDescriptor": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
     "method eyes4s.plan.RecordingMethodDescriptor$.ivt(eyes4s.plan.DefinitionId):eyes4s.plan.RecordingMethodDescriptor": "planJVM/eyes4s.plan.RecordingCursorSuite",
     "method eyes4s.plan.RecordingMethodDescriptor.<init>(1,eyes4s.plan.DefinitionId,eyes4s.plan.ParameterSet,eyes4s.detect.AlgorithmCard):eyes4s.plan.RecordingMethodDescriptor": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "method eyes4s.plan.RecordingMethodDescriptor.formView():": "planJVM/eyes4s.plan.FormDescriptorSuite",
     "method eyes4s.plan.RecordingPlan$.of(1,eyes4s.plan.ArtifactRef,eyes4s.core.RecordingRef,eyes4s.kernel.Frame,eyes4s.kernel.ClockId,eyes4s.kernel.ClockId,eyes4s.kernel.FrameId,scala.Option,eyes4s.kernel.SyncFitMode,scala.collection.immutable.Vector,scala.Option,scala.Long,scala.collection.immutable.Vector,eyes4s.plan.RecordingMethod,java.lang.Object):scala.util.Either": "planJVM/eyes4s.plan.RecordingCursorSuite",
     "method eyes4s.plan.RecordingPlan.description():": "planJVM/eyes4s.plan.RecordingCursorSuite",
     "method eyes4s.plan.RecordingPlan.diff(eyes4s.plan.RecordingPlan):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.PreflightSuite",
@@ -13944,15 +13210,17 @@
     "method eyes4s.plan.ScaleInspection.pairs(eyes4s.plan.StudyDesign):eyes4s.plan.Listing": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ScaleInspection.reductions(eyes4s.plan.StudyDesign):eyes4s.plan.Listing": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ScaleInspection.report(eyes4s.plan.StudyDesign):eyes4s.design.ReductionReport": "planJVM/eyes4s.plan.ResultInspectionSuite",
-    "method eyes4s.plan.ScoreComponent$.of(2,java.lang.String,java.lang.String,eyes4s.plan.ParameterUnits,eyes4s.compare.MeasureScale,eyes4s.plan.ScoreDirection,scala.Function1,scala.Function1):scala.util.Either": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-    "method eyes4s.plan.ScoreComponent$.of(2,java.lang.String,java.lang.String,eyes4s.plan.Quantity,eyes4s.compare.MeasureScale,eyes4s.plan.ScoreDirection,scala.Function1,scala.Function1):scala.util.Either": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.ScoreComponent.units():": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
+    "method eyes4s.plan.ScanpathPosition$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.ScanpathPosition.number():": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "method eyes4s.plan.ScoreComponent$.of(2,java.lang.String,java.lang.String,eyes4s.plan.ParameterUnits,eyes4s.compare.MeasureScale,eyes4s.plan.ScoreDirection,scala.Function1,scala.Function1):scala.util.Either": "planJVM/eyes4s.plan.MethodDescriptorSuite",
+    "method eyes4s.plan.ScoreSchema$.method(4,eyes4s.plan.StudyMethod,java.lang.Object):scala.util.Either": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.ScoreSchema$.of(2,scala.collection.immutable.Vector):eyes4s.plan.ScoreSchema": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.ScoreSchema$.study(5,eyes4s.plan.StudyPlan):scala.util.Either": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.ScoreSchema$.undescribed(2):eyes4s.plan.ScoreSchema": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ScoreSchema.difference(java.lang.Object):eyes4s.plan.ScoreView": "planJVM/eyes4s.plan.StudyWindowSuite",
     "method eyes4s.plan.ScoreSchema.ids():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.ScoreSchema.score(java.lang.Object):eyes4s.plan.ScoreView": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.SourceLine$.of(scala.Long):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
     "method eyes4s.plan.SourceLink.mapKeys(1,scala.Function1):eyes4s.plan.SourceLink": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.SourceLink.trialKeys():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.SourceRecord.isAdmitted():": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
@@ -14042,7 +13310,7 @@
     "method eyes4s.plan.StudyDiff$.between(5,eyes4s.plan.StudyPlan,eyes4s.plan.StudyPlan):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.StudyDiff$.render(5,scala.collection.immutable.Vector,eyes4s.kernel.UnitLabel):java.lang.String": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
     "method eyes4s.plan.StudyDiff$.revise(5,eyes4s.plan.StudyPlan,scala.collection.immutable.Vector,eyes4s.kernel.UnitLabel):scala.util.Either": "planJVM/eyes4s.plan.TemporalCursorSuite",
-    "method eyes4s.plan.StudyEstimate.name():": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
+    "method eyes4s.plan.StudyEstimate.name():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
     "method eyes4s.plan.StudyEstimate.parameters():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyEstimate.provenanceSteps():": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
     "method eyes4s.plan.StudyFailure$.keys(1,eyes4s.plan.StudyFailure):scala.collection.immutable.Vector": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
@@ -14187,7 +13455,7 @@
     "method eyes4s.plan.WindowTally.insideDuration():": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "method eyes4s.plan.WindowTally.outside():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.WindowTally.outsideDuration():": "lawsJVM/eyes4s.laws.WindowLawsSuite",
-    "method eyes4s.plan.WindowTally.outsideScreenShare():": "ioJVM/eyes4s.io.WindowConstructionSuite",
+    "method eyes4s.plan.WindowTally.outsideScreenShare():": "codecJVM/eyes4s.codec.ReportImpostorSuite",
     "method eyes4s.plan.WindowTally.outsideWindowShare():": "planJVM/eyes4s.plan.StudyWindowSuite",
     "method eyes4s.plan.WindowTally.render():": "ioJVM/eyes4s.io.WindowConstructionSuite",
     "method eyes4s.results.Accounting$.of(eyes4s.results.Role,scala.Int,scala.Int,scala.Int,scala.Int,scala.Int,scala.Int,scala.Int):scala.util.Either": "resultsJVM/eyes4s.results.CovariateSuite",
@@ -14377,6 +13645,9 @@
     "value eyes4s.codec.PixelUnit$.pixels": "codecJVM/eyes4s.codec.ArchiveManifestSuite",
     "value eyes4s.codec.PointSamplingCodec.archive": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "value eyes4s.codec.PointSamplingCodec.plan": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
+    "value eyes4s.codec.RecordIdentityCodecs$.dataRecord": "codecJVM/eyes4s.codec.RecordIdentityFixturesJvmSuite",
+    "value eyes4s.codec.RecordIdentityCodecs$.fixationNumber": "codecJVM/eyes4s.codec.RecordIdentityFixturesJvmSuite",
+    "value eyes4s.codec.RecordIdentityCodecs$.scanpathPosition": "codecJVM/eyes4s.codec.RecordIdentityFixturesJvmSuite",
     "value eyes4s.codec.RecordingInputCodecs$.binocularSchema": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.codec.RecordingInputCodecs$.inputSchema": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.codec.RecordingInputCodecs$.maximumSamples": "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
@@ -14498,6 +13769,7 @@
     "value eyes4s.io.BaselineExportsFacade$package$.BaselineExports": "ioJVM/eyes4s.io.ResultTableLayerSuite",
     "value eyes4s.io.ContrastCsv$.header": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "value eyes4s.io.ContrastCsv$.schemaVersion": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "value eyes4s.io.CsvLayoutError$.diagnose": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.Edf2AscReceipt.canonicalDigest": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "value eyes4s.io.EyeLinkAscBlocks$.machine": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "value eyes4s.io.EyeLinkAscCanonicalManifest$.SchemaVersion": "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
@@ -14541,6 +13813,7 @@
     "value eyes4s.io.IoDiagnosticCatalog$.ascStreamConfiguration": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.codes": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.contrastExport": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
+    "value eyes4s.io.IoDiagnosticCatalog$.csvLayout": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.delimitedSchema": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.edf2AscProvenance": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.eyeLinkConformance": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
@@ -14660,6 +13933,11 @@
     "value eyes4s.laws.PairingLaws$.genChoice": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "value eyes4s.laws.PairingLaws$.genInput": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "value eyes4s.laws.PairingLaws$.genPairing": "lawsJVM/eyes4s.laws.WindowLawsSuite",
+    "value eyes4s.laws.RecordIdentityLaws$.csvValues": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
+    "value eyes4s.laws.RecordIdentityLaws$.layouts": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
+    "value eyes4s.laws.RecordIdentityLaws$.lineCounts": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
+    "value eyes4s.laws.RecordIdentityLaws$.positionValues": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
+    "value eyes4s.laws.RecordIdentityLaws$.recordValues": "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite",
     "value eyes4s.laws.ReportGenerators$.confidence": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "value eyes4s.laws.ReportGenerators$.confidenceTerm": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "value eyes4s.laws.ReportGenerators$.genCase": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -14716,6 +13994,9 @@
     "value eyes4s.plan.ComparisonMethods$.l1Similarity": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.plan.ComparisonMethods$.pearson": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.plan.ComparisonMethods$.spearman": "lawsJVM/consumer.PublicLawsSuite",
+    "value eyes4s.plan.CsvRecord$.header": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "value eyes4s.plan.DataRecord$.given_Ordering_DataRecord": "planJVM/eyes4s.plan.RecordIdentitySuite",
+    "value eyes4s.plan.DataRecord$.maximum": "planJVM/eyes4s.plan.RecordIdentitySuite",
     "value eyes4s.plan.DefinitionId$.admissionLedger": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.plan.DefinitionId$.binocularRecording": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.plan.DefinitionId$.cosine": "lawsJVM/consumer.PublicLawsSuite",
@@ -14849,7 +14130,6 @@
     "value eyes4s.plan.DiagnosticCatalog$.families": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.fixationComparison": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.fixationEntropy": "planJVM/consumer.PublicPlanSuite",
-    "value eyes4s.plan.DiagnosticCatalog$.formField": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.geometry": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.initialFixation": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.inspection": "planJVM/consumer.PublicPlanSuite",
@@ -14874,6 +14154,7 @@
     "value eyes4s.plan.DiagnosticCatalog$.quarantine": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.recipeParameter": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.reconstruction": "planJVM/consumer.PublicPlanSuite",
+    "value eyes4s.plan.DiagnosticCatalog$.recordIdentity": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.recording": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.recordingFinding": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.recordingInput": "planJVM/consumer.PublicPlanSuite",
@@ -14910,14 +14191,6 @@
     "value eyes4s.plan.DiagnosticCatalog$.workQuanta": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticFamily.codes": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.InitialFixationError$.diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Numeral$.exactIntegers": "planJVM/eyes4s.plan.FormDescriptorSuite",
-    "value eyes4s.plan.Numeral$.int32$.shape": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "value eyes4s.plan.Numeral$.int64$.shape": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "value eyes4s.plan.Numeral$.real$.shape": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "value eyes4s.plan.NumericBounds$.atLeastOne": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "value eyes4s.plan.NumericBounds$.nonNegative": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "value eyes4s.plan.NumericBounds$.positive": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "value eyes4s.plan.NumericBounds$.unbounded": "planJVM/eyes4s.plan.RecordingCursorSuite",
     "value eyes4s.plan.PageSize$.maximum": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "value eyes4s.plan.ParameterSet$.empty": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.plan.PointSamplingSpec$.method": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
@@ -14941,21 +14214,12 @@
     "value eyes4s.plan.RecipeParameters$.area": "planJVM/eyes4s.plan.MethodDescriptorSuite",
     "value eyes4s.plan.RecipeParameters$.boundary": "planJVM/eyes4s.plan.MethodDescriptorSuite",
     "value eyes4s.plan.RecipeParameters$.edges": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "value eyes4s.plan.RecipeParameters$.ekEtaX": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-    "value eyes4s.plan.RecipeParameters$.ekEtaY": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-    "value eyes4s.plan.RecipeParameters$.ekMinimumSamples": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
+    "value eyes4s.plan.RecipeParameters$.ekEtaX": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
+    "value eyes4s.plan.RecipeParameters$.ekEtaY": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
+    "value eyes4s.plan.RecipeParameters$.ekMinimumSamples": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "value eyes4s.plan.RecipeParameters$.failurePolicy": "planJVM/eyes4s.plan.StudyCursorSuite",
-    "value eyes4s.plan.RecipeParameters$.forms$.ekEtaX": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "value eyes4s.plan.RecipeParameters$.forms$.ekEtaY": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "value eyes4s.plan.RecipeParameters$.forms$.ekMinimumSamples": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "value eyes4s.plan.RecipeParameters$.forms$.idtHeight": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "value eyes4s.plan.RecipeParameters$.forms$.idtWidth": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "value eyes4s.plan.RecipeParameters$.forms$.interpolationGap": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "value eyes4s.plan.RecipeParameters$.forms$.ivtThreshold": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "value eyes4s.plan.RecipeParameters$.forms$.minimumDuration": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "value eyes4s.plan.RecipeParameters$.forms$.residualLimit": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "value eyes4s.plan.RecipeParameters$.idtHeight": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
-    "value eyes4s.plan.RecipeParameters$.idtWidth": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
+    "value eyes4s.plan.RecipeParameters$.idtHeight": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
+    "value eyes4s.plan.RecipeParameters$.idtWidth": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
     "value eyes4s.plan.RecipeParameters$.interpolationGap": "planJVM/eyes4s.plan.MethodDescriptorSuite",
     "value eyes4s.plan.RecipeParameters$.ivtThreshold": "planJVM/eyes4s.plan.RecordingCursorSuite",
     "value eyes4s.plan.RecipeParameters$.minimumDuration": "planJVM/eyes4s.plan.RecordingCursorSuite",
@@ -14967,6 +14231,7 @@
     "value eyes4s.plan.RecipeParameters$.syncMark": "planJVM/eyes4s.plan.MethodDescriptorSuite",
     "value eyes4s.plan.RecipeParameters$.syncModel": "planJVM/eyes4s.plan.PreflightSuite",
     "value eyes4s.plan.RecipeParameters$.weight": "planJVM/eyes4s.plan.StudyCursorSuite",
+    "value eyes4s.plan.RecordIdentityError$.diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.RecordingMethodDescriptor.execution": "codecJVM/eyes4s.codec.RecordingMethodsSuite",
     "value eyes4s.plan.RecordingReport.family": "planJVM/eyes4s.plan.PreflightSuite",
     "value eyes4s.plan.Remedial$.finding": "planJVM/eyes4s.plan.AnalysisReportSuite",
@@ -14974,6 +14239,7 @@
     "value eyes4s.plan.Remedial$.recording": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "value eyes4s.plan.Remedial$.temporal": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "value eyes4s.plan.RepetitionRelations$.withinParticipant": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "value eyes4s.plan.ScanpathPosition$.maximum": "planJVM/eyes4s.plan.RecordIdentitySuite",
     "value eyes4s.plan.StudyInspection.failures": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "value eyes4s.plan.StudyKey$.given_KeyDigest_StudyKey": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
     "value eyes4s.plan.StudyKey$.given_Ordering_StudyKey": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
@@ -15207,6 +14473,12 @@
       "layouts refuse empty shapes, negative extents, oversized arrays and mismatched values",
       "verification checks length and digest and keeps a private copy of the bytes"
     ],
+    "codecJS/eyes4s.codec.RecordIdentityCodecSuite": [
+      "another convention, an extra member, a non-object or an out-of-range value is refused",
+      "each identity is one member named for its counting convention",
+      "every identity round-trips exactly, at the ends of its range too",
+      "the pinned document holds the fixture's record 7,214 and its fixation 6"
+    ],
     "codecJS/eyes4s.codec.RecordingMethodsSuite": [
       "I-DT direct, interpreted and restored detection agree with stationary event oracle",
       "axis thresholds and minimum sample count change the actual detector",
@@ -15223,15 +14495,23 @@
       "frozen recording v1 independently fixes units, nominal IDs, parameters and exact times",
       "v1 fixture exposes changes in frame identity, axis and time unit without relying on roundtrip"
     ],
+    "codecJS/eyes4s.codec.ReportImpostorSuite": [
+      "a result codec without its plan's parameter codec cannot re-evaluate: a typed refusal",
+      "an impostor plan method with other components is a typed refusal, not a throw",
+      "an undescribed impostor is refused as well; the ordinary decoders resolve"
+    ],
     "codecJS/eyes4s.codec.ReportManifestSuite": [
       "a report bound to another result, input, plan or ledger is refused, naming the field",
       "a report bound to the stored plan, input, result and ledger resolves",
+      "a report cannot cite another scale's or role's rows, and its members drill down",
       "a report is refused without a report decoder, and needs exactly one report-of",
       "a report naming another input than its result's is refused",
       "a report of another specification than the stored one is refused",
       "a report of other trials, bound to this study's documents, is refused naming them",
       "a report that reads covariates needs a bound ledger that carries a trials table",
       "a report without covariates writes its absent ledger as null, and reads it back",
+      "a stored report whose values the shipped reduction does not give is refused",
+      "a stored report with other accounting than the reduction's is refused naming the part",
       "the public source binds exactly the plan, input, result and ledger it reads"
     ],
     "codecJS/eyes4s.codec.ResultArchivesV1Suite": [
@@ -16086,6 +15366,14 @@
       "template and OLS adapters have independent analytic numerical targets and explicit exclusions",
       "temporal exports retain exact 64-bit queries, missing support, controls and final endpoint"
     ],
+    "ioJS/eyes4s.io.CsvLayoutSuite": [
+      "a fixation import's ledger records are the layout's records, drift and all",
+      "a pinned text with quoted line breaks: every record's lines, and every line's record",
+      "any text: the layout refuses exactly what the decoder refuses, with its error",
+      "generated texts: the decoder's records, on the lines their quoted breaks give",
+      "refusals name the decoder's error or the missing header",
+      "the decoder's edge records: a trailing empty quoted field is no record, a blank line is"
+    ],
     "ioJS/eyes4s.io.CsvNumberSuite": [
       "every binary exponent, both signs and adversarial mantissas round-trip exactly",
       "non-finite helper inputs have explicit spellings rather than throwing",
@@ -16614,10 +15902,6 @@
       "Perspective owns strict positivity and offers raw-millimetre construction",
       "raw Doubles cannot inhabit Length"
     ],
-    "kernelJS/eyes4s.kernel.PlanarUnitSuite": [
-      "each phantom unit's label names its own planar unit, symbol and name",
-      "planar units are distinct in symbol and cover every phantom unit"
-    ],
     "kernelJS/eyes4s.kernel.SyncEvidenceSuite": [
       "centered affine fitting recovers a hand-computable offset and drift",
       "centered affine fitting remains accurate far from the source epoch",
@@ -17078,128 +16362,6 @@
       "the plans' own runs are the shipped instances driven at the default quanta",
       "the shipped study instance fails no law alone and every mutant fails the laws that name it"
     ],
-    "lawsJS/eyes4s.laws.FormLawSuite": [
-      "a field that reads its value back wrongly fails the raw round trip",
-      "a lower bound stricter than the constructor is caught at the edge",
-      "closing sigma's open lower bound is caught at the edge",
-      "dropping sigma's lower bound is caught at the shape's extreme",
-      "ekEtaX: formField.a declared default parses",
-      "ekEtaX: formField.a typed value's raw form parses back to it",
-      "ekEtaX: formField.a value outside the bounds is refused naming the bound",
-      "ekEtaX: formField.any spelling of a number parses as its canonical text does",
-      "ekEtaX: formField.canonical number text reads back exactly",
-      "ekEtaX: formField.the declared bounds and the domain constructor agree at the edges",
-      "ekEtaX: formField.the shape stage refuses what is not a number, naming the field",
-      "ekEtaY: formField.a declared default parses",
-      "ekEtaY: formField.a typed value's raw form parses back to it",
-      "ekEtaY: formField.a value outside the bounds is refused naming the bound",
-      "ekEtaY: formField.any spelling of a number parses as its canonical text does",
-      "ekEtaY: formField.canonical number text reads back exactly",
-      "ekEtaY: formField.the declared bounds and the domain constructor agree at the edges",
-      "ekEtaY: formField.the shape stage refuses what is not a number, naming the field",
-      "ekMinimumSamples: formField.a declared default parses",
-      "ekMinimumSamples: formField.a typed value's raw form parses back to it",
-      "ekMinimumSamples: formField.a value outside the bounds is refused naming the bound",
-      "ekMinimumSamples: formField.any spelling of a number parses as its canonical text does",
-      "ekMinimumSamples: formField.canonical number text reads back exactly",
-      "ekMinimumSamples: formField.the declared bounds and the domain constructor agree at the edges",
-      "ekMinimumSamples: formField.the shape stage refuses what is not a number, naming the field",
-      "every shipped field passes, so each mutant below differs by one change",
-      "idtHeight: formField.a declared default parses",
-      "idtHeight: formField.a typed value's raw form parses back to it",
-      "idtHeight: formField.a value outside the bounds is refused naming the bound",
-      "idtHeight: formField.any spelling of a number parses as its canonical text does",
-      "idtHeight: formField.canonical number text reads back exactly",
-      "idtHeight: formField.the declared bounds and the domain constructor agree at the edges",
-      "idtHeight: formField.the shape stage refuses what is not a number, naming the field",
-      "idtWidth: formField.a declared default parses",
-      "idtWidth: formField.a typed value's raw form parses back to it",
-      "idtWidth: formField.a value outside the bounds is refused naming the bound",
-      "idtWidth: formField.any spelling of a number parses as its canonical text does",
-      "idtWidth: formField.canonical number text reads back exactly",
-      "idtWidth: formField.the declared bounds and the domain constructor agree at the edges",
-      "idtWidth: formField.the shape stage refuses what is not a number, naming the field",
-      "interpolationGap: formField.a declared default parses",
-      "interpolationGap: formField.a typed value's raw form parses back to it",
-      "interpolationGap: formField.a value outside the bounds is refused naming the bound",
-      "interpolationGap: formField.any spelling of a number parses as its canonical text does",
-      "interpolationGap: formField.canonical number text reads back exactly",
-      "interpolationGap: formField.the declared bounds and the domain constructor agree at the edges",
-      "interpolationGap: formField.the shape stage refuses what is not a number, naming the field",
-      "ivtThreshold: formField.a declared default parses",
-      "ivtThreshold: formField.a typed value's raw form parses back to it",
-      "ivtThreshold: formField.a value outside the bounds is refused naming the bound",
-      "ivtThreshold: formField.any spelling of a number parses as its canonical text does",
-      "ivtThreshold: formField.canonical number text reads back exactly",
-      "ivtThreshold: formField.the declared bounds and the domain constructor agree at the edges",
-      "ivtThreshold: formField.the shape stage refuses what is not a number, naming the field",
-      "minimumDuration: formField.a declared default parses",
-      "minimumDuration: formField.a typed value's raw form parses back to it",
-      "minimumDuration: formField.a value outside the bounds is refused naming the bound",
-      "minimumDuration: formField.any spelling of a number parses as its canonical text does",
-      "minimumDuration: formField.canonical number text reads back exactly",
-      "minimumDuration: formField.the declared bounds and the domain constructor agree at the edges",
-      "minimumDuration: formField.the shape stage refuses what is not a number, naming the field",
-      "opening the interpolation gap's closed lower bound is caught at the edge",
-      "recording inspection: formInspection.a field whose values hold numbers has a numeric part",
-      "recording inspection: formInspection.every field's view restates its id and meaning",
-      "recording inspection: formInspection.every numeric part names a numeric quantity",
-      "recording inspection: formInspection.every view is well formed: FieldView.of rebuilds it",
-      "residualLimit: formField.a declared default parses",
-      "residualLimit: formField.a typed value's raw form parses back to it",
-      "residualLimit: formField.a value outside the bounds is refused naming the bound",
-      "residualLimit: formField.any spelling of a number parses as its canonical text does",
-      "residualLimit: formField.canonical number text reads back exactly",
-      "residualLimit: formField.the declared bounds and the domain constructor agree at the edges",
-      "residualLimit: formField.the shape stage refuses what is not a number, naming the field",
-      "sigmaX[Px]: formField.a declared default parses",
-      "sigmaX[Px]: formField.a typed value's raw form parses back to it",
-      "sigmaX[Px]: formField.a value outside the bounds is refused naming the bound",
-      "sigmaX[Px]: formField.any spelling of a number parses as its canonical text does",
-      "sigmaX[Px]: formField.canonical number text reads back exactly",
-      "sigmaX[Px]: formField.the declared bounds and the domain constructor agree at the edges",
-      "sigmaX[Px]: formField.the shape stage refuses what is not a number, naming the field",
-      "sigmaY[Deg]: formField.a declared default parses",
-      "sigmaY[Deg]: formField.a typed value's raw form parses back to it",
-      "sigmaY[Deg]: formField.a value outside the bounds is refused naming the bound",
-      "sigmaY[Deg]: formField.any spelling of a number parses as its canonical text does",
-      "sigmaY[Deg]: formField.canonical number text reads back exactly",
-      "sigmaY[Deg]: formField.the declared bounds and the domain constructor agree at the edges",
-      "sigmaY[Deg]: formField.the shape stage refuses what is not a number, naming the field",
-      "sigma[Deg]: formField.a declared default parses",
-      "sigma[Deg]: formField.a typed value's raw form parses back to it",
-      "sigma[Deg]: formField.a value outside the bounds is refused naming the bound",
-      "sigma[Deg]: formField.any spelling of a number parses as its canonical text does",
-      "sigma[Deg]: formField.canonical number text reads back exactly",
-      "sigma[Deg]: formField.the declared bounds and the domain constructor agree at the edges",
-      "sigma[Deg]: formField.the shape stage refuses what is not a number, naming the field",
-      "sigma[Norm]: formField.a declared default parses",
-      "sigma[Norm]: formField.a typed value's raw form parses back to it",
-      "sigma[Norm]: formField.a value outside the bounds is refused naming the bound",
-      "sigma[Norm]: formField.any spelling of a number parses as its canonical text does",
-      "sigma[Norm]: formField.canonical number text reads back exactly",
-      "sigma[Norm]: formField.the declared bounds and the domain constructor agree at the edges",
-      "sigma[Norm]: formField.the shape stage refuses what is not a number, naming the field",
-      "sigma[Px]: formField.a declared default parses",
-      "sigma[Px]: formField.a typed value's raw form parses back to it",
-      "sigma[Px]: formField.a value outside the bounds is refused naming the bound",
-      "sigma[Px]: formField.any spelling of a number parses as its canonical text does",
-      "sigma[Px]: formField.canonical number text reads back exactly",
-      "sigma[Px]: formField.the declared bounds and the domain constructor agree at the edges",
-      "sigma[Px]: formField.the shape stage refuses what is not a number, naming the field",
-      "study inspection: formInspection.a field whose values hold numbers has a numeric part",
-      "study inspection: formInspection.every field's view restates its id and meaning",
-      "study inspection: formInspection.every numeric part names a numeric quantity",
-      "study inspection: formInspection.every view is well formed: FieldView.of rebuilds it",
-      "temporal inspection: formInspection.a field whose values hold numbers has a numeric part",
-      "temporal inspection: formInspection.every field's view restates its id and meaning",
-      "temporal inspection: formInspection.every numeric part names a numeric quantity",
-      "temporal inspection: formInspection.every view is well formed: FieldView.of rebuilds it",
-      "trial-keyed study inspection: formInspection.a field whose values hold numbers has a numeric part",
-      "trial-keyed study inspection: formInspection.every field's view restates its id and meaning",
-      "trial-keyed study inspection: formInspection.every numeric part names a numeric quantity",
-      "trial-keyed study inspection: formInspection.every view is well formed: FieldView.of rebuilds it"
-    ],
     "lawsJS/eyes4s.laws.KernelLawsSuite": [
       "Angle.order: order.antisymmetry",
       "Angle.order: order.antisymmetry eq",
@@ -17380,14 +16542,6 @@
       "Warp.tangent: warp.tangent.linear -> angular -> linear",
       "Warp.tangent: warp.tangent.the centre has zero eccentricity"
     ],
-    "lawsJS/eyes4s.laws.LegacyDescriptorSuite": [
-      "a legacy domain with no translation is refused, naming the field",
-      "every pinned field is reached by some shipped inspection",
-      "every shipped field projects to its pinned legacy units and domain",
-      "legacy score components and component values keep their units",
-      "the legacy constructor translates every translatable domain",
-      "the recipe parameters outside the inspection tables project as pinned"
-    ],
     "lawsJS/eyes4s.laws.ManifestLawSuite": [
       "a mutant whose writer is lawful is not killed: the criterion does not fire spuriously",
       "saved study graph: verifiedManifest.a written graph resolves by address, reading each artifact once",
@@ -17454,6 +16608,18 @@
       "trial study plan versions: schemaLadder.upcasting a vN payload writes exactly what each later version writes",
       "trial study plan: versionedCodec.reencoding is canonical",
       "trial study plan: versionedCodec.round trip preserves the value"
+    ],
+    "lawsJS/eyes4s.laws.RecordIdentityLawsSuite": [
+      "FixationIdentity: fixationIdentity.positions below 0 and numbers below 1 are refused",
+      "FixationIdentity: fixationIdentity.the fixation number of position p is p + 1, and back",
+      "RecordIdentity: recordIdentity.every CSV record is the header or exactly one data record",
+      "RecordIdentity: recordIdentity.the CSV record of data record n is n + 1, and it is that data record",
+      "RecordIdentity: recordIdentity.the conversion is one to one",
+      "RecordIdentity: recordIdentity.values outside the ranges are refused, naming the value",
+      "RecordLines: recordLines.a layout of one-line records puts data record n on line n + 1",
+      "RecordLines: recordLines.every line of a span belongs to its record, and nothing lies beyond",
+      "RecordLines: recordLines.the spans follow each other from line 1 to the last line, without gap",
+      "outside eyes4s.plan no identity is built or copied without its smart constructor"
     ],
     "lawsJS/eyes4s.laws.RecordingInputCodecLawSuite": [
       "binocular recording: versionedCodec.reencoding is canonical",
@@ -17745,26 +16911,6 @@
       "epoch errors support strict equality like every other domain error",
       "stable occurrence selection, zero-based Nth, and named missing/ambiguous errors"
     ],
-    "planJS/eyes4s.plan.FormDescriptorSuite": [
-      "64-bit parts compare exactly, in their own type",
-      "a group checks its parts and its rule; a variant, an option and a list check theirs",
-      "a parameter's form must present the parameter's own view",
-      "a part's error names its path: the group, the case, the option or the item",
-      "a rule names parts of the kind it compares",
-      "a typed value's raw form is canonical text and parses back",
-      "a view is checked when it is built: part ids, rule parts, integral bounds, defaults",
-      "an out-of-bounds value is refused naming the field, value, bound, side and unit",
-      "bounds need finite endpoints with the lower strictly below the upper",
-      "canonical number text is the shortest decimal that reads back exactly",
-      "each method field validates on its own, without a whole recipe",
-      "every shipped form field's view is well formed",
-      "hard doubles have pinned canonical text, and underflow is refused like overflow",
-      "host accessors: views by id, value equality, inspection and detector forms",
-      "host views are plain data: no type members, and units are static",
-      "library defaults are declared with their reason and pass their field's checks",
-      "one number grammar on every platform: signs, fractions, exponents, whitespace",
-      "the stages run in order: shape, then bounds, then the domain constructor"
-    ],
     "planJS/eyes4s.plan.InitialFixationSuite": [
       "a change of layout or method is typed, inverted and rendered by identity",
       "a trial left without fixations fails at every scale; the others are mapped",
@@ -17828,6 +16974,15 @@
       "study and temporal findings coincide with constructor/run refusals and trial failures",
       "temporal table: artifact, anchors, coverage, windows, method and repetition design",
       "the shipped recipe families are listable"
+    ],
+    "planJS/eyes4s.plan.RecordIdentitySuite": [
+      "a data record cannot be passed where a CSV record is expected, nor the reverse",
+      "a line span counts and contains its lines, both ends included",
+      "an Int, a position or a record is not another identity",
+      "every refusal names the value it refused",
+      "fixture record 7,214 is CSV record 7,215; fixation 6 is scanpath position 5",
+      "layouts compare by their records' lines",
+      "ledger and source-index record numbers read as typed identities"
     ],
     "planJS/eyes4s.plan.RecordingCursorSuite": [
       "prerequisites refuse before any step; a synchronization failure is the first step's",
@@ -18272,6 +17427,16 @@
       "layouts refuse empty shapes, negative extents, oversized arrays and mismatched values",
       "verification checks length and digest and keeps a private copy of the bytes"
     ],
+    "codecJVM/eyes4s.codec.RecordIdentityCodecSuite": [
+      "another convention, an extra member, a non-object or an out-of-range value is refused",
+      "each identity is one member named for its counting convention",
+      "every identity round-trips exactly, at the ends of its range too",
+      "the pinned document holds the fixture's record 7,214 and its fixation 6"
+    ],
+    "codecJVM/eyes4s.codec.RecordIdentityFixturesJvmSuite": [
+      "the pinned identity document has its independently known digest",
+      "the pinned identity document is the writer's output and the portable mirror"
+    ],
     "codecJVM/eyes4s.codec.RecordingMethodsSuite": [
       "I-DT direct, interpreted and restored detection agree with stationary event oracle",
       "axis thresholds and minimum sample count change the actual detector",
@@ -18293,15 +17458,23 @@
       "the pinned report documents have independently known digests",
       "the pinned report documents match the portable mirrors"
     ],
+    "codecJVM/eyes4s.codec.ReportImpostorSuite": [
+      "a result codec without its plan's parameter codec cannot re-evaluate: a typed refusal",
+      "an impostor plan method with other components is a typed refusal, not a throw",
+      "an undescribed impostor is refused as well; the ordinary decoders resolve"
+    ],
     "codecJVM/eyes4s.codec.ReportManifestSuite": [
       "a report bound to another result, input, plan or ledger is refused, naming the field",
       "a report bound to the stored plan, input, result and ledger resolves",
+      "a report cannot cite another scale's or role's rows, and its members drill down",
       "a report is refused without a report decoder, and needs exactly one report-of",
       "a report naming another input than its result's is refused",
       "a report of another specification than the stored one is refused",
       "a report of other trials, bound to this study's documents, is refused naming them",
       "a report that reads covariates needs a bound ledger that carries a trials table",
       "a report without covariates writes its absent ledger as null, and reads it back",
+      "a stored report whose values the shipped reduction does not give is refused",
+      "a stored report with other accounting than the reduction's is refused naming the part",
       "the public source binds exactly the plan, input, result and ledger it reads"
     ],
     "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite": [
@@ -19200,6 +18373,14 @@
       "template and OLS adapters have independent analytic numerical targets and explicit exclusions",
       "temporal exports retain exact 64-bit queries, missing support, controls and final endpoint"
     ],
+    "ioJVM/eyes4s.io.CsvLayoutSuite": [
+      "a fixation import's ledger records are the layout's records, drift and all",
+      "a pinned text with quoted line breaks: every record's lines, and every line's record",
+      "any text: the layout refuses exactly what the decoder refuses, with its error",
+      "generated texts: the decoder's records, on the lines their quoted breaks give",
+      "refusals name the decoder's error or the missing header",
+      "the decoder's edge records: a trailing empty quoted field is no record, a blank line is"
+    ],
     "ioJVM/eyes4s.io.CsvNumberSuite": [
       "every binary exponent, both signs and adversarial mantissas round-trip exactly",
       "non-finite helper inputs have explicit spellings rather than throwing",
@@ -19799,10 +18980,6 @@
       "Perspective owns strict positivity and offers raw-millimetre construction",
       "raw Doubles cannot inhabit Length"
     ],
-    "kernelJVM/eyes4s.kernel.PlanarUnitSuite": [
-      "each phantom unit's label names its own planar unit, symbol and name",
-      "planar units are distinct in symbol and cover every phantom unit"
-    ],
     "kernelJVM/eyes4s.kernel.SyncEvidenceSuite": [
       "centered affine fitting recovers a hand-computable offset and drift",
       "centered affine fitting remains accurate far from the source epoch",
@@ -20263,128 +19440,6 @@
       "the plans' own runs are the shipped instances driven at the default quanta",
       "the shipped study instance fails no law alone and every mutant fails the laws that name it"
     ],
-    "lawsJVM/eyes4s.laws.FormLawSuite": [
-      "a field that reads its value back wrongly fails the raw round trip",
-      "a lower bound stricter than the constructor is caught at the edge",
-      "closing sigma's open lower bound is caught at the edge",
-      "dropping sigma's lower bound is caught at the shape's extreme",
-      "ekEtaX: formField.a declared default parses",
-      "ekEtaX: formField.a typed value's raw form parses back to it",
-      "ekEtaX: formField.a value outside the bounds is refused naming the bound",
-      "ekEtaX: formField.any spelling of a number parses as its canonical text does",
-      "ekEtaX: formField.canonical number text reads back exactly",
-      "ekEtaX: formField.the declared bounds and the domain constructor agree at the edges",
-      "ekEtaX: formField.the shape stage refuses what is not a number, naming the field",
-      "ekEtaY: formField.a declared default parses",
-      "ekEtaY: formField.a typed value's raw form parses back to it",
-      "ekEtaY: formField.a value outside the bounds is refused naming the bound",
-      "ekEtaY: formField.any spelling of a number parses as its canonical text does",
-      "ekEtaY: formField.canonical number text reads back exactly",
-      "ekEtaY: formField.the declared bounds and the domain constructor agree at the edges",
-      "ekEtaY: formField.the shape stage refuses what is not a number, naming the field",
-      "ekMinimumSamples: formField.a declared default parses",
-      "ekMinimumSamples: formField.a typed value's raw form parses back to it",
-      "ekMinimumSamples: formField.a value outside the bounds is refused naming the bound",
-      "ekMinimumSamples: formField.any spelling of a number parses as its canonical text does",
-      "ekMinimumSamples: formField.canonical number text reads back exactly",
-      "ekMinimumSamples: formField.the declared bounds and the domain constructor agree at the edges",
-      "ekMinimumSamples: formField.the shape stage refuses what is not a number, naming the field",
-      "every shipped field passes, so each mutant below differs by one change",
-      "idtHeight: formField.a declared default parses",
-      "idtHeight: formField.a typed value's raw form parses back to it",
-      "idtHeight: formField.a value outside the bounds is refused naming the bound",
-      "idtHeight: formField.any spelling of a number parses as its canonical text does",
-      "idtHeight: formField.canonical number text reads back exactly",
-      "idtHeight: formField.the declared bounds and the domain constructor agree at the edges",
-      "idtHeight: formField.the shape stage refuses what is not a number, naming the field",
-      "idtWidth: formField.a declared default parses",
-      "idtWidth: formField.a typed value's raw form parses back to it",
-      "idtWidth: formField.a value outside the bounds is refused naming the bound",
-      "idtWidth: formField.any spelling of a number parses as its canonical text does",
-      "idtWidth: formField.canonical number text reads back exactly",
-      "idtWidth: formField.the declared bounds and the domain constructor agree at the edges",
-      "idtWidth: formField.the shape stage refuses what is not a number, naming the field",
-      "interpolationGap: formField.a declared default parses",
-      "interpolationGap: formField.a typed value's raw form parses back to it",
-      "interpolationGap: formField.a value outside the bounds is refused naming the bound",
-      "interpolationGap: formField.any spelling of a number parses as its canonical text does",
-      "interpolationGap: formField.canonical number text reads back exactly",
-      "interpolationGap: formField.the declared bounds and the domain constructor agree at the edges",
-      "interpolationGap: formField.the shape stage refuses what is not a number, naming the field",
-      "ivtThreshold: formField.a declared default parses",
-      "ivtThreshold: formField.a typed value's raw form parses back to it",
-      "ivtThreshold: formField.a value outside the bounds is refused naming the bound",
-      "ivtThreshold: formField.any spelling of a number parses as its canonical text does",
-      "ivtThreshold: formField.canonical number text reads back exactly",
-      "ivtThreshold: formField.the declared bounds and the domain constructor agree at the edges",
-      "ivtThreshold: formField.the shape stage refuses what is not a number, naming the field",
-      "minimumDuration: formField.a declared default parses",
-      "minimumDuration: formField.a typed value's raw form parses back to it",
-      "minimumDuration: formField.a value outside the bounds is refused naming the bound",
-      "minimumDuration: formField.any spelling of a number parses as its canonical text does",
-      "minimumDuration: formField.canonical number text reads back exactly",
-      "minimumDuration: formField.the declared bounds and the domain constructor agree at the edges",
-      "minimumDuration: formField.the shape stage refuses what is not a number, naming the field",
-      "opening the interpolation gap's closed lower bound is caught at the edge",
-      "recording inspection: formInspection.a field whose values hold numbers has a numeric part",
-      "recording inspection: formInspection.every field's view restates its id and meaning",
-      "recording inspection: formInspection.every numeric part names a numeric quantity",
-      "recording inspection: formInspection.every view is well formed: FieldView.of rebuilds it",
-      "residualLimit: formField.a declared default parses",
-      "residualLimit: formField.a typed value's raw form parses back to it",
-      "residualLimit: formField.a value outside the bounds is refused naming the bound",
-      "residualLimit: formField.any spelling of a number parses as its canonical text does",
-      "residualLimit: formField.canonical number text reads back exactly",
-      "residualLimit: formField.the declared bounds and the domain constructor agree at the edges",
-      "residualLimit: formField.the shape stage refuses what is not a number, naming the field",
-      "sigmaX[Px]: formField.a declared default parses",
-      "sigmaX[Px]: formField.a typed value's raw form parses back to it",
-      "sigmaX[Px]: formField.a value outside the bounds is refused naming the bound",
-      "sigmaX[Px]: formField.any spelling of a number parses as its canonical text does",
-      "sigmaX[Px]: formField.canonical number text reads back exactly",
-      "sigmaX[Px]: formField.the declared bounds and the domain constructor agree at the edges",
-      "sigmaX[Px]: formField.the shape stage refuses what is not a number, naming the field",
-      "sigmaY[Deg]: formField.a declared default parses",
-      "sigmaY[Deg]: formField.a typed value's raw form parses back to it",
-      "sigmaY[Deg]: formField.a value outside the bounds is refused naming the bound",
-      "sigmaY[Deg]: formField.any spelling of a number parses as its canonical text does",
-      "sigmaY[Deg]: formField.canonical number text reads back exactly",
-      "sigmaY[Deg]: formField.the declared bounds and the domain constructor agree at the edges",
-      "sigmaY[Deg]: formField.the shape stage refuses what is not a number, naming the field",
-      "sigma[Deg]: formField.a declared default parses",
-      "sigma[Deg]: formField.a typed value's raw form parses back to it",
-      "sigma[Deg]: formField.a value outside the bounds is refused naming the bound",
-      "sigma[Deg]: formField.any spelling of a number parses as its canonical text does",
-      "sigma[Deg]: formField.canonical number text reads back exactly",
-      "sigma[Deg]: formField.the declared bounds and the domain constructor agree at the edges",
-      "sigma[Deg]: formField.the shape stage refuses what is not a number, naming the field",
-      "sigma[Norm]: formField.a declared default parses",
-      "sigma[Norm]: formField.a typed value's raw form parses back to it",
-      "sigma[Norm]: formField.a value outside the bounds is refused naming the bound",
-      "sigma[Norm]: formField.any spelling of a number parses as its canonical text does",
-      "sigma[Norm]: formField.canonical number text reads back exactly",
-      "sigma[Norm]: formField.the declared bounds and the domain constructor agree at the edges",
-      "sigma[Norm]: formField.the shape stage refuses what is not a number, naming the field",
-      "sigma[Px]: formField.a declared default parses",
-      "sigma[Px]: formField.a typed value's raw form parses back to it",
-      "sigma[Px]: formField.a value outside the bounds is refused naming the bound",
-      "sigma[Px]: formField.any spelling of a number parses as its canonical text does",
-      "sigma[Px]: formField.canonical number text reads back exactly",
-      "sigma[Px]: formField.the declared bounds and the domain constructor agree at the edges",
-      "sigma[Px]: formField.the shape stage refuses what is not a number, naming the field",
-      "study inspection: formInspection.a field whose values hold numbers has a numeric part",
-      "study inspection: formInspection.every field's view restates its id and meaning",
-      "study inspection: formInspection.every numeric part names a numeric quantity",
-      "study inspection: formInspection.every view is well formed: FieldView.of rebuilds it",
-      "temporal inspection: formInspection.a field whose values hold numbers has a numeric part",
-      "temporal inspection: formInspection.every field's view restates its id and meaning",
-      "temporal inspection: formInspection.every numeric part names a numeric quantity",
-      "temporal inspection: formInspection.every view is well formed: FieldView.of rebuilds it",
-      "trial-keyed study inspection: formInspection.a field whose values hold numbers has a numeric part",
-      "trial-keyed study inspection: formInspection.every field's view restates its id and meaning",
-      "trial-keyed study inspection: formInspection.every numeric part names a numeric quantity",
-      "trial-keyed study inspection: formInspection.every view is well formed: FieldView.of rebuilds it"
-    ],
     "lawsJVM/eyes4s.laws.GenerateScientificValidationArtifactSuite": [
       "release writer binds canonical output to a clean current commit",
       "release writer rejects a source revision other than current HEAD",
@@ -20572,14 +19627,6 @@
       "Warp.tangent: warp.tangent.linear -> angular -> linear",
       "Warp.tangent: warp.tangent.the centre has zero eccentricity"
     ],
-    "lawsJVM/eyes4s.laws.LegacyDescriptorSuite": [
-      "a legacy domain with no translation is refused, naming the field",
-      "every pinned field is reached by some shipped inspection",
-      "every shipped field projects to its pinned legacy units and domain",
-      "legacy score components and component values keep their units",
-      "the legacy constructor translates every translatable domain",
-      "the recipe parameters outside the inspection tables project as pinned"
-    ],
     "lawsJVM/eyes4s.laws.ManifestLawSuite": [
       "a mutant whose writer is lawful is not killed: the criterion does not fire spuriously",
       "saved study graph: verifiedManifest.a written graph resolves by address, reading each artifact once",
@@ -20646,6 +19693,18 @@
       "trial study plan versions: schemaLadder.upcasting a vN payload writes exactly what each later version writes",
       "trial study plan: versionedCodec.reencoding is canonical",
       "trial study plan: versionedCodec.round trip preserves the value"
+    ],
+    "lawsJVM/eyes4s.laws.RecordIdentityLawsSuite": [
+      "FixationIdentity: fixationIdentity.positions below 0 and numbers below 1 are refused",
+      "FixationIdentity: fixationIdentity.the fixation number of position p is p + 1, and back",
+      "RecordIdentity: recordIdentity.every CSV record is the header or exactly one data record",
+      "RecordIdentity: recordIdentity.the CSV record of data record n is n + 1, and it is that data record",
+      "RecordIdentity: recordIdentity.the conversion is one to one",
+      "RecordIdentity: recordIdentity.values outside the ranges are refused, naming the value",
+      "RecordLines: recordLines.a layout of one-line records puts data record n on line n + 1",
+      "RecordLines: recordLines.every line of a span belongs to its record, and nothing lies beyond",
+      "RecordLines: recordLines.the spans follow each other from line 1 to the last line, without gap",
+      "outside eyes4s.plan no identity is built or copied without its smart constructor"
     ],
     "lawsJVM/eyes4s.laws.RecordingInputCodecLawSuite": [
       "binocular recording: versionedCodec.reencoding is canonical",
@@ -20958,26 +20017,6 @@
       "epoch errors support strict equality like every other domain error",
       "stable occurrence selection, zero-based Nth, and named missing/ambiguous errors"
     ],
-    "planJVM/eyes4s.plan.FormDescriptorSuite": [
-      "64-bit parts compare exactly, in their own type",
-      "a group checks its parts and its rule; a variant, an option and a list check theirs",
-      "a parameter's form must present the parameter's own view",
-      "a part's error names its path: the group, the case, the option or the item",
-      "a rule names parts of the kind it compares",
-      "a typed value's raw form is canonical text and parses back",
-      "a view is checked when it is built: part ids, rule parts, integral bounds, defaults",
-      "an out-of-bounds value is refused naming the field, value, bound, side and unit",
-      "bounds need finite endpoints with the lower strictly below the upper",
-      "canonical number text is the shortest decimal that reads back exactly",
-      "each method field validates on its own, without a whole recipe",
-      "every shipped form field's view is well formed",
-      "hard doubles have pinned canonical text, and underflow is refused like overflow",
-      "host accessors: views by id, value equality, inspection and detector forms",
-      "host views are plain data: no type members, and units are static",
-      "library defaults are declared with their reason and pass their field's checks",
-      "one number grammar on every platform: signs, fractions, exponents, whitespace",
-      "the stages run in order: shape, then bounds, then the domain constructor"
-    ],
     "planJVM/eyes4s.plan.InitialFixationSuite": [
       "a change of layout or method is typed, inverted and rendered by identity",
       "a trial left without fixations fails at every scale; the others are mapped",
@@ -21041,6 +20080,15 @@
       "study and temporal findings coincide with constructor/run refusals and trial failures",
       "temporal table: artifact, anchors, coverage, windows, method and repetition design",
       "the shipped recipe families are listable"
+    ],
+    "planJVM/eyes4s.plan.RecordIdentitySuite": [
+      "a data record cannot be passed where a CSV record is expected, nor the reverse",
+      "a line span counts and contains its lines, both ends included",
+      "an Int, a position or a record is not another identity",
+      "every refusal names the value it refused",
+      "fixture record 7,214 is CSV record 7,215; fixation 6 is scanpath position 5",
+      "layouts compare by their records' lines",
+      "ledger and source-index record numbers read as typed identities"
     ],
     "planJVM/eyes4s.plan.RecordingCursorSuite": [
       "prerequisites refuse before any step; a synchronization failure is the first step's",

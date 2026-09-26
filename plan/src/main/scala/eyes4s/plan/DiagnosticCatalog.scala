@@ -862,6 +862,23 @@ object DiagnosticCatalog:
     "DataDependent"
   )
 
+  // ---------------------------------------------------------------- appended by UI-G
+  /** Record, line and fixation identities, and record layouts. */
+  val recordIdentity: DiagnosticFamily = error("record-identity")(
+    "DataRecordOutOfRange",
+    "CsvRecordNotPositive",
+    "HeaderRecord",
+    "SourceLineNotPositive",
+    "LineSpanOrder",
+    "ScanpathPositionOutOfRange",
+    "FixationNumberNotPositive",
+    "RecordCountOutOfRange",
+    "NoHeaderRecord",
+    "RecordLineCount",
+    "RecordBeyond",
+    "LineBeyond"
+  )
+
   // ---------------------------------------------------------------- appended by CR6a
   /** A raw form value refused by its field: shape, declared bounds, a rule
     * across the field's parts, or the domain constructor.
@@ -981,6 +998,7 @@ object DiagnosticCatalog:
     fixationEntropy,
     template,
     analysisFinding,
+    recordIdentity,
     formField
   )
 

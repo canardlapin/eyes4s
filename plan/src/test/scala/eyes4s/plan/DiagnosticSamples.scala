@@ -874,6 +874,7 @@ object DiagnosticSamples:
         NonEmptyVector.one(k1)
       )
     ),
+    generated[RecordIdentityError]("RecordIdentityError"),
     family[FieldError[RecipeParameterError]]("FieldError")(
       FieldError.Missing(FieldId.literal("sigma")),
       FieldError.Malformed(

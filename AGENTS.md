@@ -83,8 +83,10 @@ The full gate takes 60–90 minutes, so run it once per branch.
   (`GITHUB_ACTIONS=true sbt 'project rootJVM' Test/compile 'project rootJS' Test/compile`).
 - **Merge `main` once**, after review, then run the full gate on the merged tree:
   everything under "Before opening a PR", plus `python3 tools/api-audit/run.py --record`
-  and `python3 tools/study-consumer/verify.py`. Report the SHA and `HEAD^{tree}` that the
-  gate covers.
+  and `python3 tools/study-consumer/verify.py`. Record the audit **first** and commit the
+  inventory: `DiagnosticCoverageJvmSuite` reads the committed inventory, so a `testAll`
+  that runs before the re-record passes against a stale inventory and the branch lands red.
+  Report the SHA and `HEAD^{tree}` that the gate covers.
 - **Land by tree identity.** The merge into `main` must have the tree that was gated. When
   `main` has moved by a change that cannot affect the branch (another package's sources, the
   tracker, docs), the `-Werror` compile and `checkBoundaries` on the new merge suffice.

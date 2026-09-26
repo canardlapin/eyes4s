@@ -142,10 +142,32 @@ enum RelationMismatch derives CanEqual:
     */
   case ReportLedger(ledger: String, input: String)
 
-  /** The report's cells cite trials the bound result did not estimate at
-    * `scale`.
+  /** The report's cells cite result rows that are not rows of the bound
+    * result at the report's `scale`: a trial it did not estimate, or a
+    * reference to another scale or another role's row.
     */
   case ReportMembers(scale: Int, unknown: Vector[String])
+
+  /** Re-evaluating the report over the stored documents gives another cell:
+    * the first that differs, by group, role and component.
+    */
+  case ReportCell(
+      group: String,
+      role: String,
+      component: String,
+      stored: String,
+      recomputed: String
+  )
+
+  /** Re-evaluating the report gives another `part` (groups, contrasts,
+    * accounting or findings), or refuses to evaluate it.
+    */
+  case ReportRecomputed(part: String, stored: String, recomputed: String)
+
+  /** The plan's method names score components `planned`, the result's method
+    * `result`: the result was not scored by the plan's method.
+    */
+  case ReportComponents(planned: Vector[String], result: Vector[String])
 
   def message: String = this match
     case Prerequisites(errors)        => errors.map(_.message).mkString(" ")
@@ -174,7 +196,14 @@ enum RelationMismatch derives CanEqual:
     case ReportLedger(ledger, input) =>
       s"The report reads covariates from '$ledger', which no ledger-of relation joins to '$input'."
     case ReportMembers(scale, unknown) =>
-      s"The report's cells cite trials $unknown that the result did not estimate at scale $scale."
+      s"The report's cells cite $unknown, which are not rows of the result at scale $scale."
+    case ReportCell(group, role, component, stored, recomputed) =>
+      s"Re-evaluating the report gives another $role cell of $component in $group: " +
+        s"stored $stored, recomputed $recomputed."
+    case ReportRecomputed(part, stored, recomputed) =>
+      s"Re-evaluating the report gives other $part: stored $stored, recomputed $recomputed."
+    case ReportComponents(planned, result) =>
+      s"The plan's method scores components $planned, but the result's method scores $result."
 
 /** Why a manifest or one of its artifacts was refused. Every case names the
   * manifest address, the entry or the relation at fault; integrity cases are
@@ -1015,16 +1044,31 @@ object ArtifactResolver:
               }
               val plan  = computed.map(_._1)
               val bound = value.binding
-              // Every cell member must be a trial the bound result estimated at
-              // the report's scale: a report of other trials cites nothing here.
+              // Every cell member must be the cell role's row, at the report's
+              // scale, of a trial the bound result estimated there: a report of
+              // other trials, or of another scale, cites nothing here.
+              val scale     = value.spec.scale
               val estimated = loaded.result.scales
-                .lift(value.spec.scale)
-                .fold(Set.empty[Any])(_.estimation.map(_._1).toSet)
+                .lift(scale)
+                .fold(Set.empty[K])(_.estimation.map(_._1).toSet)
+              def own(role: eyes4s.results.Role, ref: ResultRef[K]): Boolean =
+                (role, ref) match
+                  case (
+                        eyes4s.results.Role.Matched,
+                        ResultRef.Reduction(`scale`, StudyDesign.Matched, k)
+                      ) =>
+                    estimated.contains(k)
+                  case (
+                        eyes4s.results.Role.Control,
+                        ResultRef.Reduction(`scale`, StudyDesign.Control, k)
+                      ) =>
+                    estimated.contains(k)
+                  case (eyes4s.results.Role.Difference, ResultRef.ContrastRow(`scale`, k)) =>
+                    estimated.contains(k)
+                  case _ => false
               val strangers = value.cells
-                .flatMap(_.members)
-                .flatMap(_.loci.flatMap(_.trialKeys))
+                .flatMap(c => c.members.filterNot(own(c.role, _)))
                 .distinct
-                .filterNot(estimated.contains)
               if value.spec != stored then
                 fail(RelationMismatch.ReportSpec(value.spec.id.value, stored.id.value))
               else if computed.exists(_._2 != input) then
@@ -1042,9 +1086,7 @@ object ArtifactResolver:
                   RelationMismatch.ReportLedger(ledger.fold("")(_.value), input.value)
                 )
               else if strangers.nonEmpty then
-                fail(
-                  RelationMismatch.ReportMembers(value.spec.scale, strangers.map(_.toString))
-                )
+                fail(RelationMismatch.ReportMembers(scale, strangers.map(_.toString)))
               else
                 Vector(
                   ("plan", Some(bound.plan.hex), plan.flatMap(digestOf)),
@@ -1058,6 +1100,24 @@ object ArtifactResolver:
                       cited.fold("none")("sha256:" + _),
                       found.fold("none")("sha256:" + _)
                     )
+                }.orElse {
+                  // The binding names these documents: the stored report must
+                  // be exactly what the shipped reduction computes over them.
+                  (
+                    plan.flatMap(decoded.get),
+                    decoded.get(input),
+                    ledger.map(decoded.get)
+                  ) match
+                    case (Some(Decoded.Plan(study)), Some(Decoded.Input(on)), covariates)
+                        if study.description == loaded.result.description &&
+                          loaded.result.input == on.reference =>
+                      val sourceLedger = covariates.flatten.collect { case Decoded.Ledger(l) =>
+                        l
+                      }
+                      ReportSources.reevaluate(study, on, loaded, sourceLedger, value)
+                    // The result-of relation refuses a result another plan
+                    // computed; there is nothing to re-evaluate against.
+                    case _ => None
                 }.flatMap(fail)
             case _ => fail(RelationMismatch.Unavailable(relation.endpoints.map(_._2)))
         case _ =>

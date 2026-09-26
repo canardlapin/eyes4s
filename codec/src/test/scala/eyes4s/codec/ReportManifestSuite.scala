@@ -245,7 +245,7 @@ class ReportManifestSuite extends munit.FunSuite:
       case ResolveError.Relation(_, RelationMismatch.ReportMembers(0, unknown)) => unknown
     }
     assertEquals(named.size, 1, refused)
-    assert(named.head.contains(StudyKey("p1", "a", "recall").toString), named)
+    assert(named.head.exists(_.contains(StudyKey("p1", "a", "recall").toString)), named)
   }
 
   test("a report naming another input than its result's is refused") {
@@ -256,5 +256,117 @@ class ReportManifestSuite extends munit.FunSuite:
         case _                                                                       => false
       }),
       refused
+    )
+  }
+
+  /** The report with its cells changed, rebuilt through the checked reconstruction. */
+  private def tampered(
+      report: Report[StudyKey]
+  )(change: Cell[StudyKey] => Cell[StudyKey]): Report[StudyKey] =
+    get(
+      Report.reconstruct(
+        report.spec,
+        report.binding,
+        report.groups,
+        report.cells.map(change),
+        report.contrasts,
+        report.accounting,
+        report.findings
+      )
+    )
+
+  test("a stored report whose values the shipped reduction does not give is refused") {
+    val honest = get(Report.evaluate(spec, get(source())))
+    assert(resolve(graph(honest)).isRight)
+    // The review's case: +1000 on every estimate, with every binding intact.
+    val inflated = tampered(honest)(c => c.copy(estimate = c.estimate.map(_ + 1000)))
+    val first    = get(honest.cells.find(_.estimate.isPresent).toRight("no estimate"))
+    val refused  = resolve(graph(inflated))
+    val named    = refused.left.toOption.toVector.flatten.collect {
+      case ResolveError.Relation(_, RelationMismatch.ReportCell(g, r, c, stored, recomputed)) =>
+        (g, r, c, stored, recomputed)
+    }
+    assertEquals(named.size, 1, refused)
+    val (group, role, component, stored, recomputed) = named.head
+    assertEquals(
+      (group, role, component),
+      (first.group.render, first.role.toString, first.component)
+    )
+    assertEquals(
+      stored,
+      get(inflated.cell(first.group, first.role, first.component).toRight("cell")).toString
+    )
+    assertEquals(recomputed, first.toString)
+  }
+
+  test("a report cannot cite another scale's or role's rows, and its members drill down") {
+    val honest = get(Report.evaluate(spec, get(source())))
+    def rebuilt(change: ResultRef[StudyKey] => ResultRef[StudyKey]) =
+      Report.reconstruct(
+        honest.spec,
+        honest.binding,
+        honest.groups,
+        honest.cells.map(c => c.copy(members = c.members.map(change))),
+        honest.contrasts,
+        honest.accounting,
+        honest.findings
+      )
+    val shifted = rebuilt {
+      case ResultRef.ContrastRow(_, k)       => ResultRef.ContrastRow(1, k)
+      case ResultRef.Reduction(_, design, k) => ResultRef.Reduction(1, design, k)
+      case other                             => other
+    }
+    assert(shifted.left.exists(_.message.contains("row of scale 0")), shifted)
+    val crossed = rebuilt {
+      case ResultRef.ContrastRow(s, k) => ResultRef.Reduction(s, StudyDesign.Control, k)
+      case other                       => other
+    }
+    assert(crossed.left.exists(_.message.contains("row of scale 0")), crossed)
+    // What resolves is what drills down: every member is a row the inspection finds.
+    val resolved   = get(resolve(graph(honest)))
+    val report     = get(resolved.report(name("report")).toRight("report"))
+    val inspection = get(ResultInspection.study(plan, result, input, None))
+    report.cells.flatMap(_.members).foreach {
+      case ref @ ResultRef.ContrastRow(_, _) =>
+        assert(inspection.contrastRow(ref).isRight, s"$ref")
+      case ref => assert(inspection.reduction(ref).isRight, s"$ref")
+    }
+  }
+
+  test(
+    "a stored report with other accounting than the reduction's is refused naming the part"
+  ) {
+    val honest = get(Report.evaluate(spec, get(source())))
+    val books  = honest.accounting.map(a =>
+      get(
+        Accounting.of(
+          a.role,
+          a.eligible + 1,
+          a.kept,
+          a.filteredOut + 1,
+          a.unknownPredicate,
+          a.failed,
+          a.missingGroupAttribute,
+          a.belowMinimum
+        )
+      )
+    )
+    val changed = get(
+      Report.reconstruct(
+        honest.spec,
+        honest.binding,
+        honest.groups,
+        honest.cells,
+        honest.contrasts,
+        books,
+        honest.findings
+      )
+    )
+    assert(
+      resolve(graph(changed)).left.exists(_.exists {
+        case ResolveError.Relation(_, RelationMismatch.ReportRecomputed("accounting", _, _)) =>
+          true
+        case _ => false
+      })
     )
   }

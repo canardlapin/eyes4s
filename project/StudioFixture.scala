@@ -260,6 +260,14 @@ object StudioFixture {
       (Seq(k._1, k._2, k._3, k._4, r(col(th, "item")), r(col(th, "response")), offScreen) ++ s)
         .mkString("\t")
     }
+    // S3.4: each admitted trial's scanpath as data record numbers (header
+    // excluded), in ordinal order. Off-screen records are admitted but kept out
+    // of the scanpath under ExcludeRecord, so they have no fixation position.
+    val scanpaths = statuses.collect { case (k, Seq("admitted")) =>
+      val records = byTrial(k).filter(rec => rec.valid && !rec.offScreen)
+      (Seq(k._1, k._2, k._3, k._4) :+
+        records.sortBy(_.ordinal.getOrElse(0)).map(_.number).mkString(",")).mkString("\t")
+    }
 
     // S2.10: each trial's display as trials.csv states it (participant, phase,
     // trial, occurrence, item, display_kind, image_file), and each stimulus
@@ -310,6 +318,15 @@ object StudioFixture {
           |    */
           |  val trials: String = Vector(
           |    ${chunked(lines.mkString("\n"))}
+          |  ).mkString
+          |
+          |  /** One tab-separated line per admitted trial, in inventory order:
+          |    * participant, phase, trial, occurrence, then its scanpath's
+          |    * fixations.csv data records (1-based, header excluded), in ordinal
+          |    * order and `,`-separated. Off-screen records are not in a scanpath.
+          |    */
+          |  val scanpaths: String = Vector(
+          |    ${chunked(scanpaths.mkString("\n"))}
           |  ).mkString
           |
           |  /** One tab-separated line per trial, in inventory order: participant,
