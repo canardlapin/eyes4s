@@ -57,7 +57,7 @@
       ],
       "eyes4s_public_api": [
         "PredictorSet.of",
-        "SurfaceDecomposition.ols",
+        "Template.decompose",
         "LeastSquares.fit"
       ],
       "fixture_inputs": [

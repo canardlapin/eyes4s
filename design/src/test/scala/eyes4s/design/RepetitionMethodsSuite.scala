@@ -17,6 +17,7 @@
 package eyes4s.repetitionconsumer
 
 import eyes4s.compare.*
+import eyes4s.compare.eyesim.EyesimCompat
 import eyes4s.design.*
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.Px
@@ -46,7 +47,7 @@ class RepetitionMethodsSuite extends munit.FunSuite:
     test(
       s"$method: directed same/other-condition means and endpoints agree with the independent Cartesian oracle and R"
     ) {
-      val instance = get(MapSimilarityMethod.fromReference(method)).instance[Px]
+      val instance = get(EyesimCompat.fromReference(method)).similarity[Px]
       Vector(true, false).foreach { same =>
         val design = if same then
           Pairing.within[String].sameOn(condition).excludingSelf.directed
@@ -84,7 +85,7 @@ class RepetitionMethodsSuite extends munit.FunSuite:
     test(
       s"$method: nested available-scale mean preserves every row and differs from pooled averaging when support varies"
     ) {
-      val vocabulary = get(MapSimilarityMethod.fromReference(method))
+      val vocabulary = get(EyesimCompat.fromReference(method))
       rows.foreach { focal =>
         Vector(true, false).foreach { same =>
           val candidates =
@@ -139,5 +140,5 @@ class RepetitionMethodsSuite extends munit.FunSuite:
         .result
         .isLeft
     )
-    assert(MapSimilarityMethod.fromReference("emd").isLeft)
+    assert(EyesimCompat.fromReference("emd").isLeft)
   }

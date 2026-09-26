@@ -25,7 +25,7 @@ import io.circe.Json
 class LearnedTemplateRecipeSuite extends munit.FunSuite:
   private def get[E, A](value: Either[E, A]): A = value.fold(e => fail(e.toString), identity)
   private val grid  = get(Grid.over(get(Frame.screen("template", 2, 1)), 2, 1))
-  private val codec = LearnedTemplateRecipeCodec.of[String, Px](
+  private val codec = TemplateRecipeCodec.of[String, Mass[Px]](
     get(DefinitionId.of("test.learned-template", 1)),
     VersionedCodec.string(get(DefinitionId.of("test.key", 1)))
   )
@@ -39,9 +39,11 @@ class LearnedTemplateRecipeSuite extends munit.FunSuite:
     val mass = get(
       Surface.mass(grid, IArray.from(values), Provenance.raw(ContentHash.ofString(key)))
     )
-    get(MapTemplateObservation.of(key, group, matched, mass, response))
-  private val split = get(
-    MapTemplateSplit.of(
+    get(TemplateObservation.of(key, group, mass, response, Some(matched)))
+  private val design = get(TemplateDesign.meanMap[Px]("participant", "score"))
+  private val split  = get(
+    TemplateSplit.of(
+      design,
       Vector(
         row("a", "p1", "a", Vector(1, 0), 2),
         row("b", "p2", "b", Vector(1, 0), 2),
@@ -49,9 +51,7 @@ class LearnedTemplateRecipeSuite extends munit.FunSuite:
         row("excluded", "p1", "held", Vector(0, 1), 900),
         row("held", "p4", "held", Vector(0.5, 0.5), 7)
       ),
-      Set("p4"),
-      "participant",
-      "score"
+      Set("p4")
     )
   )
 
@@ -67,11 +67,11 @@ class LearnedTemplateRecipeSuite extends munit.FunSuite:
     assertEquals(restored.heldOut.hash, split.heldOut.hash)
     assertEquals(restored.excluded.map(_.row.key), Vector("excluded"))
     assertEquals(restored.rows.map(_.key), split.rows.map(_.key))
-    val a = get(LearnedTemplate.fit(split.training));
-    val b = get(LearnedTemplate.fit(restored.training))
-    assertEquals(a.mean.values.toVector, b.mean.values.toVector)
-    assertEquals(a.mean.provenance.digest, b.mean.provenance.digest)
-    assertEquals(a.slope, b.slope)
+    val a = get(Template.fit(split.training));
+    val b = get(Template.fit(restored.training))
+    assertEquals(a.template.map(_.values.toVector), b.template.map(_.values.toVector))
+    assertEquals(a.template.map(_.provenance.digest), b.template.map(_.provenance.digest))
+    assertEquals(a.coefficients, b.coefficients)
     assertEquals(get(a.evaluate(split.heldOut)).rows, get(b.evaluate(restored.heldOut)).rows)
     assertEquals(get(codec.encode(restored)), encoded)
   }
@@ -94,7 +94,7 @@ class LearnedTemplateRecipeSuite extends munit.FunSuite:
     val bad  = rows.head.mapObject(_.add("values", Json.arr(Json.fromInt(-1), Json.fromInt(2))))
     reject(value.mapObject(_.add("rows", Json.arr((bad +: rows.tail)*))))
     reject(value.mapObject(_.add("rows", Json.arr((rows :+ rows.head)*))))
-    val angularCodec = LearnedTemplateRecipeCodec.of[String, Unit2D.Deg](
+    val angularCodec = TemplateRecipeCodec.of[String, Mass[Unit2D.Deg]](
       codec.schema,
       VersionedCodec.string(get(DefinitionId.of("test.key", 1)))
     )
@@ -103,16 +103,15 @@ class LearnedTemplateRecipeSuite extends munit.FunSuite:
 
   test("held-out groups have one canonical wire order; unsorted input is refused") {
     val twoHeld = get(
-      MapTemplateSplit.of(
+      TemplateSplit.of(
+        design,
         Vector(
           row("a", "p1", "a", Vector(1, 0), 2),
           row("b", "p2", "b", Vector(1, 0), 2),
           row("c", "p3", "c", Vector(0, 1), 1),
           row("held", "p4", "held", Vector(0.5, 0.5), 7)
         ),
-        Set("p4", "p3"),
-        "participant",
-        "score"
+        Set("p4", "p3")
       )
     )
     val encoded = get(codec.encode(twoHeld))

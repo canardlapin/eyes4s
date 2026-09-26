@@ -6,14 +6,17 @@ The R fixtures in [scanpath.json](../tools/r-parity/fixtures/scanpath.json) meas
 suite remains separate evidence. Only `igraph` 2.3.1 was added to the R dependency lock; every
 existing package record and the selected T4transport backend are unchanged.
 
-## Six component slots, five native scores
+## Five native scores; the sixth has no slot
 
-`ScanpathComparison.baseline` returns all six named component slots in reference order:
-VectorShape, Direction, Length, Position, Duration, PositionEmd. The first five delegate to
-`MultiMatch` with a minimum of three fixations per operand. Short input produces five located
-comparison failures. PositionEmd always carries an explicit unavailable value, consistent with
-the decision on `eyesim-compare`; it is never replaced by an unrelated approximation. The
-existing `MultiMatch` API still supports two-fixation paths and returns its five-field product.
+`ScanpathComparison.baseline` is `MultiMatch` over two `BaselineScanpath`s and returns its
+five-field `MultiMatchScore`: vector shape, direction, length, position and duration. eyesim's
+baseline requires three fixations per operand; `BaselineScanpath.of(path, operand)` states that
+cardinality once and refuses a shorter path as `CompareError.TooShort` naming the operand, its
+fixation count and the minimum (`BaselineScanpath.MinimumFixations`), so a short path never
+reaches the comparison. `MultiMatch` itself still admits two-fixation paths. eyesim's sixth,
+transport-backed position component has no native exact-EMD solver (the decision on
+`eyesim-compare`); rather than a public slot that is always unavailable, there is no slot, and it
+is never replaced by an unrelated approximation.
 
 On the non-square 800×400 frame, translated, duration-changed, geometry-changed, straight and
 stationary paths agree with the pinned five R components at `AnalyticTolerance = 1e-12`.
@@ -22,14 +25,14 @@ unchanged. Paired duration ratios 25/50 and 50/100 give duration similarity 1/2.
 by twice the screen diagonal; position and length by the diagonal; direction by π. Tied
 straight-path self-alignment is measured separately. The fixture retains the sixth component,
 including a duration-reweighted case whose pinned backend returns one; that is a measured
-backend outcome, not an exact transport oracle.
+backend outcome, not an exact transport oracle, and it has no native counterpart.
 
 `Scanpath.within(window, anchor, Overlap.OnsetInside)` expresses the reference half-open onset
 window. A final onset at 200 is excluded by [0,200), admitted by [0,201), and an empty selection
 is a typed failure. R returns six missing components for short paths, a scalar missing result
 for an empty filtered path, and errors for duplicate onsets or zero-duration transport. Native
-checked paths/fixations refuse the invalid construction, and the baseline result keeps its
-component shape. Frame geometry supplies native normalization; R requires a separate screensize.
+checked paths/fixations refuse the invalid construction, and a short path is refused at
+`BaselineScanpath` admission. Frame geometry supplies native normalization; R requires a separate screensize.
 
 ## Fixation overlap
 

@@ -422,13 +422,13 @@ object BaselineExports:
   yield Vector(sources, controls, samples, bins)
 
   def fixedTemplate[K: KeyDigest](
-      split: TemplateSplit[K],
+      split: TemplateSplit[K, Vector[Double]],
       schema: DefinitionId,
       keys: VersionedCodec[K]
   ): Either[ResultExportError, Vector[ResultTable]] = for
-    saved  <- encoded(NativeTemplateRecipeCodec.of(schema, keys).encode(split))
-    fitted <- FittedTemplate
-      .fitNoIntercept(split.training)
+    saved  <- encoded(TemplateRecipeCodec.of[K, Vector[Double]](schema, keys).encode(split))
+    fitted <- Template
+      .fit(split.training)
       .left
       .map(e => ResultExportError.Context("template fit", e.message))
     evaluation <- fitted
@@ -437,21 +437,23 @@ object BaselineExports:
       .map(e => ResultExportError.Context("template evaluation", e.message))
     context = Json.obj(
       "recipe"        -> saved,
-      "method"        -> Json.fromString(fitted.methodId),
+      "method"        -> Json.fromString(fitted.method),
       "backend"       -> Json.fromString(fitted.backend),
       "training_hash" -> Json.fromString(evaluation.trainingHash.render),
       "held_out_hash" -> Json.fromString(evaluation.heldOutHash.render),
       "key_schema"    -> keySchema(keys),
-      "response_unit" -> Json.fromString(split.basis.responseUnit),
+      "response_unit" -> Json.fromString(split.design.responseUnit),
       "residual_sign" -> Json.fromString("observed minus predicted")
     )
     coefficients <- ResultTable.of(
       ResultFamily.TemplateCoefficients,
       Vector(
         text("feature"),
-        number("coefficient", split.basis.responseUnit + " / feature unit", false)
+        number("coefficient", split.design.responseUnit + " / feature unit", false)
       ),
-      split.basis.columns.zip(fitted.coefficients).map((name, v) => Vector(T(name), N(v))),
+      split.design.featureNames
+        .zip(fitted.coefficients)
+        .map((name, v) => Vector(T(name), N(v))),
       context
     )
     rows <- evaluation.rows.traverse { r =>
@@ -462,7 +464,7 @@ object BaselineExports:
             "message" -> Json.fromString(e.message)
           )
         )
-        Vector(k, T(r.fold), N(r.observed)) ++ scalar(result.map(_._1)) ++ Vector(
+        Vector(k, T(r.splitGroup), N(r.observed)) ++ scalar(result.map(_._1)) ++ Vector(
           result.fold(_ => M, p => N(p._2))
         )
       }
@@ -472,21 +474,21 @@ object BaselineExports:
       Vector(
         text("key_json"),
         text("fold"),
-        number("observed", split.basis.responseUnit, false),
-        number("predicted", split.basis.responseUnit)
-      ) ++ outcome ++ Vector(number("residual", split.basis.responseUnit)),
+        number("observed", split.design.responseUnit, false),
+        number("predicted", split.design.responseUnit)
+      ) ++ outcome ++ Vector(number("residual", split.design.responseUnit)),
       rows,
       context
     )
   yield Vector(coefficients, predictions)
 
   def learnedTemplate[K: KeyDigest, U <: Unit2D: UnitLabel](
-      split: MapTemplateSplit[K, U],
+      split: TemplateSplit[K, Mass[U]],
       schema: DefinitionId,
       keys: VersionedCodec[K]
   ): Either[ResultExportError, Vector[ResultTable]] = for
-    saved  <- encoded(LearnedTemplateRecipeCodec.of[K, U](schema, keys).encode(split))
-    fitted <- LearnedTemplate
+    saved  <- encoded(TemplateRecipeCodec.of[K, Mass[U]](schema, keys).encode(split))
+    fitted <- Template
       .fit(split.training)
       .left
       .map(e => ResultExportError.Context("learned template fit", e.message))
@@ -494,10 +496,10 @@ object BaselineExports:
       .evaluate(split.heldOut)
       .left
       .map(e => ResultExportError.Context("learned template evaluation", e.message))
-    unit    = split.training.responseUnit
+    unit    = split.design.responseUnit
     context = Json.obj(
       "recipe"         -> saved,
-      "method"         -> Json.fromString(LearnedTemplate.method),
+      "method"         -> Json.fromString(fitted.method),
       "training_hash"  -> Json.fromString(evaluation.trainingHash.render),
       "held_out_hash"  -> Json.fromString(evaluation.heldOutHash.render),
       "key_schema"     -> keySchema(keys),
@@ -510,7 +512,9 @@ object BaselineExports:
     coefficients <- ResultTable.of(
       ResultFamily.TemplateCoefficients,
       Vector(text("feature"), number("coefficient", unit + " / cosine similarity", false)),
-      Vector(Vector(T("training-mean cosine"), N(fitted.slope))),
+      split.design.featureNames
+        .zip(fitted.coefficients)
+        .map((name, v) => Vector(T(name), N(v))),
       context
     )
     rows <- evaluation.rows.traverse { r =>
@@ -521,7 +525,7 @@ object BaselineExports:
             "message" -> Json.fromString(e.message)
           )
         )
-        Vector(k, T(r.splitGroup), T(r.matchGroup), N(r.observed)) ++ scalar(
+        Vector(k, T(r.splitGroup), r.matchGroup.fold(M)(T(_)), N(r.observed)) ++ scalar(
           result.map(_._1)
         ) ++ Vector(result.fold(_ => M, p => N(p._2)))
       }
@@ -540,7 +544,13 @@ object BaselineExports:
     )
     excludedRows <- split.excluded.traverse(e =>
       key(e.row.key, keys).map(k =>
-        Vector(k, T(e.row.splitGroup), T(e.row.matchGroup), T("excluded"), T(e.reason.toString))
+        Vector(
+          k,
+          T(e.row.splitGroup),
+          e.row.matchGroup.fold(M)(T(_)),
+          T("excluded"),
+          T(e.reason.toString)
+        )
       )
     )
     excluded <- ResultTable.of(

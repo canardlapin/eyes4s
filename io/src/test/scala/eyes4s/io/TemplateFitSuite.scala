@@ -16,6 +16,7 @@
 
 package eyes4s.io
 
+import eyes4s.design.{TemplateDesign, TemplateError}
 import eyes4s.examples.TemplateFitGuide
 import io.circe.Json
 import munit.FunSuite
@@ -24,7 +25,7 @@ import scala.compiletime.testing.typeCheckErrors
 class TemplateFitSuite extends FunSuite:
   private def get[E, A](e: Either[E, A]): A = e.fold(e => fail(s"$e"), identity)
   private val LinearFitTolerance            = 1e-12
-  private def split(y: Double = 7.0)        = get(TemplateFitGuide.input(y))
+  private def split(y: Double = 7.0)        = get(TemplateFitGuide.historicalInput(y))
   private def prepared(y: Double = 7.0)     = get(TemplateFitGuide.prepare(split(y)))
 
   test("training CSV bytes have the same pinned decimal spelling on JVM and Scala.js") {
@@ -57,7 +58,7 @@ class TemplateFitSuite extends FunSuite:
     val result = get(TemplateFitGuide.evaluate(p.savedRecipe, TemplateFitReference.receipt))
     assertEquals(result.rows.size, 1)
     assertEquals(result.rows.head.key, "e")
-    assertEquals(result.rows.head.fold, "test")
+    assertEquals(result.rows.head.splitGroup, "test")
     val (prediction, residual) = get(result.rows.head.result)
     assertEqualsDouble(prediction, 7.0, LinearFitTolerance)
     assertEqualsDouble(residual, 0.0, LinearFitTolerance)
@@ -105,9 +106,16 @@ class TemplateFitSuite extends FunSuite:
     val codec    = get(TemplateFitGuide.codec)
     val json     = get(codec.encode(split()))
     val restored = get(codec.decode(json))
-    assertEquals(restored.heldOutFolds, Set("test"))
+    assertEquals(restored.heldOutGroups, Set("test"))
     assertEquals(restored.rows.map(_.key), Vector("a", "b", "c", "d", "e"))
-    assertEquals(TemplateFitCsv.training(restored.training), prepared().trainingCsv)
+    assertEquals(TemplateFitCsv.training(restored.training), Right(prepared().trainingCsv))
+    // A native design is not exported for an R fit whose receipt it would refuse.
+    assertEquals(
+      TemplateFitCsv.training(get(TemplateFitGuide.input()).training).left.toOption,
+      Some(
+        TemplateCsvError.Fit(TemplateError.Route(TemplateDesign.nativeMethod, "R lm export"))
+      )
+    )
     val payload = json.hcursor.downField("value").focus.get
     val altered = payload.mapObject(_.add("trainingHash", Json.fromString("bad")))
     assert(codec.decode(json.mapObject(_.add("value", altered))).isLeft)
@@ -116,7 +124,7 @@ class TemplateFitSuite extends FunSuite:
     val wrongVersion = json.mapObject(
       _.add(
         "schema",
-        Json.obj("name" -> Json.fromString(codec.schema.name), "version" -> Json.fromInt(2))
+        Json.obj("name" -> Json.fromString(codec.schema.name), "version" -> Json.fromInt(3))
       )
     )
     assert(codec.decode(wrongVersion).isLeft)
@@ -126,28 +134,35 @@ class TemplateFitSuite extends FunSuite:
     assert(typeCheckErrors("""
       import eyes4s.io.*
       import eyes4s.design.*
-      def leak(h: TemplateHeldOut[String]): String = TemplateFitCsv.training(h)
+      def leak(h: TemplateHeldOut[String, Vector[Double]]) = TemplateFitCsv.training(h)
     """).nonEmpty)
   }
 
   test("native guide saves, reopens and evaluates without an external receipt") {
-    val saved      = get(TemplateFitGuide.saveNative(split()))
+    val saved      = get(TemplateFitGuide.saveNative(get(TemplateFitGuide.input())))
     val evaluation = get(TemplateFitGuide.evaluateNative(saved))
     assertEqualsDouble(get(evaluation.rows.head.result)._1, 7.0, LinearFitTolerance)
-    val changed =
-      get(TemplateFitGuide.evaluateNative(get(TemplateFitGuide.saveNative(split(700.0)))))
+    val changed = get(
+      TemplateFitGuide.evaluateNative(
+        get(TemplateFitGuide.saveNative(get(TemplateFitGuide.input(700.0))))
+      )
+    )
     assertEquals(evaluation.trainingHash, changed.trainingHash)
     assertEqualsDouble(get(changed.rows.head.result)._2, 693.0, LinearFitTolerance)
-    assert(get(TemplateFitGuide.codec).parse(saved).isLeft)
-    assert(get(TemplateFitGuide.nativeCodec).parse(prepared().savedRecipe).isLeft)
+    // One codec reads both recipes; each is fitted only by its own route.
+    assertEquals(
+      TemplateFitGuide.evaluateNative(prepared().savedRecipe).left.toOption,
+      Some(TemplateError.Route(TemplateDesign.importedLmMethod, "native fit"))
+    )
+    assert(TemplateFitGuide.evaluate(saved, TemplateFitReference.receipt).isLeft)
   }
 
   test("native recipe refuses forged method and fitting conventions") {
-    val codec = get(TemplateFitGuide.nativeCodec)
-    val json  = get(codec.encode(split()))
+    val codec = get(TemplateFitGuide.codec)
+    val json  = get(codec.encode(get(TemplateFitGuide.input())))
     val value = json.hcursor.downField("value").focus.get
     Vector(
-      "method"        -> Json.fromString(eyes4s.design.FittedTemplate.method),
+      "method"        -> Json.fromString("eyes4s.no-intercept-scaled-householder-qr/1"),
       "intercept"     -> Json.fromBoolean(true),
       "rankTolerance" -> Json.fromDoubleOrNull(1e-12),
       "trainingHash"  -> Json.fromString("bad")
