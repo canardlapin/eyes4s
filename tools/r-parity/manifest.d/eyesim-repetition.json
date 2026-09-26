@@ -10,7 +10,7 @@
     },
     "repetition-methods-reference": {
       "path": "tools/r-parity/fixtures/repetition-methods.json",
-      "sha256": "adc6139cba8c806a0df20a687f490f806ffb3b966bc975b0ec8f262c5380156c",
+      "sha256": "53d2ebca7d09e6df74d3acc7d5789d6d5edb7369f79ec81f5f6463a895b0c248",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Method/scale evidence or pinned three-occasion custom-key persisted plan"
     },

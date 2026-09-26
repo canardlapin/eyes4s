@@ -28,8 +28,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Every issued code, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 618
-  private val PinnedDigest = "00e718ced26f23d8"
+  private val PinnedCount  = 635
+  private val PinnedDigest = "8c39fed1ab143c89"
 
   /** The issued table before CR5: codes are only ever issued, never changed
     * or reused, and a retired code keeps its place, so taking away the codes
@@ -38,8 +38,9 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val StableCount  = 445
   private val StableDigest = "fb7ffbd3d3db7f63"
 
-  /** The codes CR5 added: the families appended after `inspection` up to
-    * `diagnostic-code`, and preflight's finding for a trial the
+  /** The codes added since that table apart from CR2's: the families
+    * appended after `inspection` up to `template` (CR5's, then
+    * `fixation-entropy`), and preflight's finding for a trial the
     * initial-fixation policy empties.
     */
   private val Cr5Codes: Set[String] =

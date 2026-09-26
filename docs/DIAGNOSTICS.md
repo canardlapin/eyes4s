@@ -1314,6 +1314,28 @@ fails after rewriting, so review the change and run it again.
 | `diagnostic-code.invalid-family` | `InvalidFamily` | `family` |
 | `diagnostic-code.invalid-name` | `InvalidName` | `name` |
 
+### `fixation-entropy` — `FixationEntropyError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `fixation-entropy.frame-mismatch` | `FrameMismatch` | `path`, `target`, `underlying` |
+| `fixation-entropy.degenerate-lattice` | `DegenerateLattice` | `nx`, `ny` |
+| `fixation-entropy.invalid-padding` | `InvalidPadding` | `padding` |
+| `fixation-entropy.lattice-bounds` | `LatticeBounds` | `underlying` |
+| `fixation-entropy.fixation-outside-lattice` | `FixationOutsideLattice` | `fixation`, `x`, `y` |
+| `fixation-entropy.no-occupancy` | `NoOccupancy` | `fixations`, `outside` |
+| `fixation-entropy.occupancy` | `Occupancy` | `underlying` |
+| `fixation-entropy.bandwidth` | `Bandwidth` | `underlying` |
+| `fixation-entropy.estimate` | `Estimate` | `sigma`, `underlying` |
+| `fixation-entropy.no-scales` | `NoScales` |  |
+| `fixation-entropy.duplicate-scale` | `DuplicateScale` | `sigma` |
+| `fixation-entropy.scale-grid` | `ScaleGrid` | `sigma`, `underlying` |
+| `fixation-entropy.missing-scale-weight` | `MissingScaleWeight` | `sigma` |
+| `fixation-entropy.unknown-scale-weight` | `UnknownScaleWeight` | `sigma` |
+| `fixation-entropy.invalid-scale-weight` | `InvalidScaleWeight` | `sigma`, `weight` |
+| `fixation-entropy.degenerate-scale-weights` | `DegenerateScaleWeights` | `total` |
+| `fixation-entropy.non-finite-position` | `NonFinitePosition` | `fixation`, `x`, `y` |
+
 ### `template` — `TemplateError`
 
 | Code | Case | Operands |

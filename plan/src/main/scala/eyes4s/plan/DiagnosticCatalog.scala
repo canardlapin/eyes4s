@@ -802,6 +802,26 @@ object DiagnosticCatalog:
     "InvalidFamily",
     "InvalidName"
   )
+  val fixationEntropy: DiagnosticFamily = error("fixation-entropy")(
+    "FrameMismatch",
+    "DegenerateLattice",
+    "InvalidPadding",
+    "LatticeBounds",
+    "FixationOutsideLattice",
+    "NoOccupancy",
+    "Occupancy",
+    "Bandwidth",
+    "Estimate",
+    "NoScales",
+    "DuplicateScale",
+    "ScaleGrid",
+    "MissingScaleWeight",
+    "UnknownScaleWeight",
+    "InvalidScaleWeight",
+    "DegenerateScaleWeights",
+    "NonFinitePosition"
+  )
+
   val template: DiagnosticFamily = error("template")(
     "Basis",
     "Definition",
@@ -919,6 +939,7 @@ object DiagnosticCatalog:
     recipeParameter,
     repetitionPlan,
     diagnosticCode,
+    fixationEntropy,
     template
   )
 

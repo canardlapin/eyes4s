@@ -1,0 +1,148 @@
+{
+  "schema": 1,
+  "ticket": "eyesim-entropy",
+  "fixtures": {
+    "derived-entropy-input": {
+      "path": "tools/r-parity/fixtures/cases/eyesim-entropy.json",
+      "sha256": "95529f30a07cba77c1b9977a66b9d7780ab8b5a471ef97da2dca6e82f2908541",
+      "license": "Apache-2.0; synthetic data authored for eyes4s",
+      "role": "Fixation group, explicit and padded lattices, density bandwidth and output lattice, a descending sigma vector, supplied scale maps with a massless scale, and explicit scale weights"
+    },
+    "derived-entropy-reference": {
+      "path": "tools/r-parity/fixtures/derived-entropy.json",
+      "sha256": "df982143803897cdb8df931e8792f2328a4516260670817e1908d45a68928205",
+      "license": "Apache-2.0; synthetic data authored for eyes4s",
+      "role": "Pinned public eyesim fixation_entropy on a fixation group (grid and density methods) and on multiscale objects (mean and none), eyesim's own density maps, NA values and errors, R environment, and the exact-rational, decimal, continuous-Gaussian and discrete-kernel oracles"
+    },
+    "derived-entropy-scala": {
+      "path": "surface/src/test/scala/eyes4s/surface/DerivedEntropyReference.scala",
+      "sha256": "370c9bedb6395d6db78991a9262dd7980ff5c32b07ab11d7fdc01c57ec510f6b",
+      "license": "Apache-2.0; synthetic data authored for eyes4s",
+      "role": "Portable pinned values consumed by FixationEntropyConformanceSuite on the JVM and Scala.js"
+    }
+  },
+  "regeneration": {
+    "derived-entropy-reference": {
+      "command": "python3 tools/r-parity/generate_derived_entropy.py --eyesim {eyesim} --check",
+      "requires_eyesim": true,
+      "outputs": [
+        "derived-entropy-reference",
+        "derived-entropy-scala"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "fixation-group-density-entropy",
+      "row": "entropy-map-arithmetic",
+      "eyesim_entry_points": [
+        "fixation_entropy.fixation_group",
+        "eye_density",
+        "suggest_sigma"
+      ],
+      "methods": [
+        "density",
+        "explicit sigma",
+        "suggested sigma",
+        "duration_weighted",
+        "one fixation"
+      ],
+      "estimand": "Shannon entropy of a fixation group's smoothed map: eyesim's continuous ks estimate at an endpoint-inclusive lattice, eyes4s's native discrete estimate on a grid over the frame.",
+      "conventions": [
+        "the entropy step is entropy_from_mass in eyesim and Mass.entropy in eyes4s, and they agree on the same map",
+        "eyesim evaluates ks::kde directly (fewer than 500 points) at outdim endpoint-inclusive points, each observation within a 3.7-standard-deviation support box, then normalises and rounds with zapsmall(z, 7)",
+        "eyes4s bins fixations into half-open cells of a grid over the scanpath's frame and applies a truncated discrete Gaussian under an explicit edge policy; fixations outside the frame are listed, not smoothed",
+        "suggest_sigma clamps against the padded data range; IqrBandwidth clamps against the frame or not at all",
+        "eyesim returns NA for one fixation; eyes4s smooths it with an explicit sigma and refuses the IQR suggestion",
+        "absolute tolerance 1e-12; 1e-8 per cell and 1e-7 in entropy for eyesim's rounded map against the continuous oracle"
+      ],
+      "backend_dependencies": [
+        "ks",
+        "stats"
+      ],
+      "eyes4s_public_api": [
+        "FixationEntropy.density",
+        "DensityBandwidth",
+        "DensityEntropy",
+        "IqrBandwidth.suggest",
+        "Smoother.gaussian",
+        "EdgePolicy",
+        "Mass.entropy"
+      ],
+      "fixture_inputs": [
+        "derived-entropy-input",
+        "derived-entropy-reference",
+        "derived-entropy-scala"
+      ],
+      "independent_case": "Six fixations on a 60 by 40 frame with a 6 by 4 output lattice: the decimal entropy of eyesim's own pinned map reproduces eyesim's value at 1e-12; a continuous Gaussian confined to ks's support box at eyesim's evaluation points reproduces every rounded cell to 1e-8 and the entropy to 1e-7; a direct two-dimensional discrete-kernel sum gives the eyes4s native entropy under both edge policies and both weightings. The all-default call (suggest_sigma clamped on the padded range, padded bounds, a 50 by 50 lattice) matches the same continuous oracle to 1e-7.",
+      "status": "verified-intentional-divergence",
+      "evidence": [
+        "tools/r-parity/fixtures/derived-entropy.json",
+        "surface/src/test/scala/eyes4s/surface/DerivedEntropyReference.scala",
+        "surface/src/test/scala/eyes4s/surface/FixationEntropyConformanceSuite.scala",
+        "docs/EYESIM_CAPABILITIES.md"
+      ],
+      "gap_issue": null,
+      "related_issues": [
+        "eyesim-kde"
+      ],
+      "regeneration_ids": [
+        "derived-entropy-reference"
+      ],
+      "divergence": "The divergence is the estimator's, recorded by the KDE row: eyes4s entropy of eyesim's own density map equals eyesim's density entropy at 1e-12, but FixationEntropy.density smooths with the native discrete Gaussian on cell centres over the frame, not ks at endpoint-inclusive points, so the values differ (by about 0.018 nats here). Fixations outside the frame are listed by index rather than contributing kernel tails. The unclamped IQR bandwidth agrees; eyesim's default clamps to 15% of the padded data range (8.25 here) while the eyes4s clamp uses the frame (7.5). One fixation gives NA in eyesim under both default and explicit sigma; eyes4s gives a finite entropy for an explicit sigma and a typed Bandwidth error for the IQR rule."
+    },
+    {
+      "id": "multiscale-entropy-reduction-policy",
+      "row": "entropy-map-arithmetic",
+      "eyesim_entry_points": [
+        "fixation_entropy.eye_density_multiscale",
+        "fixation_entropy.fixation_group"
+      ],
+      "methods": [
+        "mean with a massless scale",
+        "request order",
+        "sigma vector on a fixation group",
+        "explicit scale weights"
+      ],
+      "estimand": "How per-scale entropies become one number when a scale has no mass, when scales arrive out of order, and when scales are weighted.",
+      "conventions": [
+        "eyesim's multiscale mean is mean(ent, na.rm = TRUE), so a scale whose map has no mass is NA and silently leaves the mean",
+        "eyes4s cannot hold a massless scale: Intensity.normalised refuses it with DegenerateTotal before any reduction",
+        "eyesim keeps the requested sigma order and names values sigma_<s>; eyes4s orders scales ascending and labels each value with its Sigma",
+        "fixation_entropy.fixation_group with a sigma vector returns the mean by default and forwards aggregate, so aggregate = \"none\" returns the per-scale values of the eye_density_multiscale method",
+        "eyes4s ScaleReduction.Weighted takes one explicit weight per scale; eyesim has no weights"
+      ],
+      "backend_dependencies": [
+        "base R",
+        "ks"
+      ],
+      "eyes4s_public_api": [
+        "MultiscaleEntropy.reduce",
+        "ScaleReduction",
+        "EntropyQuantity",
+        "FixationEntropy.multiscale",
+        "Intensity.normalised",
+        "SurfaceError.DegenerateTotal"
+      ],
+      "fixture_inputs": [
+        "derived-entropy-input",
+        "derived-entropy-reference",
+        "derived-entropy-scala"
+      ],
+      "independent_case": "A fourth, all-zero map at sigma 4 beside the three supplied maps: eyesim's per-scale output is NA there and its mean equals the three-map mean exactly. Weights [1, 3] on sigmas 1 and 3 give (H(q) + 3 H(p)) / 4 exactly (1.625 bits), and [1, 3] on the native scales 6 and 12 are checked against the discrete-kernel oracle.",
+      "status": "verified-intentional-divergence",
+      "evidence": [
+        "tools/r-parity/fixtures/derived-entropy.json",
+        "surface/src/test/scala/eyes4s/surface/DerivedEntropyReference.scala",
+        "surface/src/test/scala/eyes4s/surface/FixationEntropyConformanceSuite.scala",
+        "surface/src/test/scala/eyes4s/surface/FixationEntropySuite.scala",
+        "docs/EYESIM_CAPABILITIES.md"
+      ],
+      "gap_issue": null,
+      "regeneration_ids": [
+        "derived-entropy-reference"
+      ],
+      "divergence": "eyesim drops a massless (NA) scale from its mean without notice; eyes4s refuses the scale at normalisation, so every reported mean is over every requested scale. eyesim reports scales in request order; eyes4s in ascending sigma, labelled, and the labelled values agree. A sigma vector on a fixation group with aggregate = \"none\" gives the same per-scale values as the multiscale object, and eyes4s agrees with them by sigma label. Weighted reduction is an eyes4s extension checked against its oracle only."
+    }
+  ]
+}
