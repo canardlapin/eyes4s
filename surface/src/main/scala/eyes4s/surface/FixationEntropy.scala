@@ -204,7 +204,8 @@ object OccupancyLattice:
     of(frame, frame.bounds, nx, ny, upperEdge)
 
   /** eyesim's default bounds: the observed range of the fixation centres along
-    * each axis, widened by `padding` times its span on both sides. A zero span
+    * each axis, widened by `padding` times its span on both sides. A span no
+    * larger than the machine epsilon (`math.ulp(1.0)`, R's `.Machine$double.eps`)
     * is replaced by one frame unit before padding.
     *
     * The bounds depend on the data, so two scanpaths' entropies on their own
@@ -225,7 +226,7 @@ object OccupancyLattice:
       val ys                                               = path.fixations.map(_.centre.y)
       def padded(lo: Double, hi: Double): (Double, Double) =
         val raw  = hi - lo
-        val span = if !raw.isFinite || raw <= 2.220446049250313e-16 then 1.0 else raw
+        val span = if !raw.isFinite || raw <= math.ulp(1.0) then 1.0 else raw
         (lo - padding * span, hi + padding * span)
       val (x0, x1) = padded(xs.min, xs.max)
       val (y0, y1) = padded(ys.min, ys.max)
@@ -437,31 +438,30 @@ object FixationEntropy:
       base: LogBase
   ): Either[FixationEntropyError, OccupancyEntropy[U]] =
     for
-      _        <- sameFrame(path, lattice.frame)
-      assigned <- path.fixations.indices.foldLeft[Either[
-        FixationEntropyError,
-        Vector[(Int, Option[Int])]
-      ]](Right(Vector.empty)) { (acc, i) =>
-        acc.flatMap { done =>
-          val c = path.fixations(i).centre
-          lattice.cellOf(c) match
-            case some @ Some(_) => Right(done :+ (i -> some))
-            case None           =>
-              outsidePolicy match
-                case OutsideLattice.Refuse =>
-                  Left(FixationEntropyError.FixationOutsideLattice(i, c.x, c.y))
-                case OutsideLattice.Exclude         => Right(done :+ (i -> None))
-                case OutsideLattice.ClampToEdgeCell =>
-                  Right(done :+ (i -> Some(lattice.clampedCellOf(c))))
+      _      <- sameFrame(path, lattice.frame)
+      placed <- path.fixations.indices
+        .foldLeft[Either[FixationEntropyError, Vector[Placement]]](
+          Right(Vector.empty)
+        ) { (acc, i) =>
+          acc.flatMap { done =>
+            val c = path.fixations(i).centre
+            lattice.cellOf(c) match
+              case Some(cell) => Right(done :+ Placement(i, Some(cell), outside = false))
+              case None       =>
+                outsidePolicy match
+                  case OutsideLattice.Refuse =>
+                    Left(FixationEntropyError.FixationOutsideLattice(i, c.x, c.y))
+                  case OutsideLattice.Exclude =>
+                    Right(done :+ Placement(i, None, outside = true))
+                  case OutsideLattice.ClampToEdgeCell =>
+                    Right(done :+ Placement(i, Some(lattice.clampedCellOf(c)), outside = true))
+          }
         }
-      }
       measure <- path.occupancy(weight).left.map(FixationEntropyError.Occupancy.apply)
-      outside = assigned.collect {
-        case (i, _) if lattice.cellOf(path.fixations(i).centre).isEmpty => i
-      }
-      cells = {
+      outside = placed.filter(_.outside).map(_.fixation)
+      cells   = {
         val acc = Array.fill(lattice.size)(0.0)
-        assigned.foreach { case (i, cell) => cell.foreach(k => acc(k) += measure.weights(i)) }
+        placed.foreach(p => p.cell.foreach(k => acc(k) += measure.weights(p.fixation)))
         IArray.unsafeFromArray(acc)
       }
       entropy <- Entropy
@@ -524,6 +524,9 @@ object FixationEntropy:
       result <- MultiscaleEntropy.build(levels, base, outside)
     yield result
 
+  /** Where one fixation was counted, if anywhere, and whether it lay outside. */
+  private final case class Placement(fixation: Int, cell: Option[Int], outside: Boolean)
+
   private def sameFrame[U <: Unit2D](
       path: Scanpath[U],
       target: Frame[U]
@@ -547,12 +550,12 @@ object FixationEntropy:
     for
       _       <- sameFrame(path, grid.frame)
       measure <- path.occupancy(weight).left.map(FixationEntropyError.Occupancy.apply)
-      outside = path.fixations.indices.filterNot(i =>
+      (inside, outside) = path.fixations.indices.partition(i =>
         grid.frame.contains(path.fixations(i).centre)
       )
-      inside = path.fixations.indices.filterNot(outside.contains).map(measure.weights(_)).sum
+      insideMass = inside.map(measure.weights(_)).sum
       _ <- Either.cond(
-        inside > 0.0,
+        insideMass > 0.0,
         (),
         FixationEntropyError.NoOccupancy(path.n, outside.length)
       )

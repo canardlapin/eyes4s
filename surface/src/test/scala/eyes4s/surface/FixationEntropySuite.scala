@@ -264,14 +264,14 @@ class FixationEntropySuite extends munit.FunSuite:
       ),
       FixationEntropyError.NoOccupancy(6, 4)                   -> Vector("6", "4"),
       FixationEntropyError.Estimate(0.5, EstimateError.NoMass) -> Vector("0.5"),
-      FixationEntropyError.DuplicateScale(12.0)                -> Vector("12.0"),
-      FixationEntropyError.MissingScaleWeight(6.0)             -> Vector("6.0"),
+      FixationEntropyError.DuplicateScale(12.5)                -> Vector("12.5"),
+      FixationEntropyError.MissingScaleWeight(6.25)            -> Vector("6.25"),
       FixationEntropyError.UnknownScaleWeight(7.5)             -> Vector("7.5"),
-      FixationEntropyError.InvalidScaleWeight(6.0, -2.0)       -> Vector("6.0", "-2.0"),
-      FixationEntropyError.DegenerateScaleWeights(0.0)         -> Vector("0.0"),
-      FixationEntropyError.Occupancy(SurfaceError.NegativeWeight(2, -1.0)) -> Vector(
+      FixationEntropyError.InvalidScaleWeight(6.25, -2.5)      -> Vector("6.25", "-2.5"),
+      FixationEntropyError.DegenerateScaleWeights(Double.NaN)  -> Vector("NaN"),
+      FixationEntropyError.Occupancy(SurfaceError.NegativeWeight(2, -1.5)) -> Vector(
         "2",
-        "-1.0"
+        "-1.5"
       )
     ).foreach { (error, operands) =>
       operands.foreach(o => assert(error.message.contains(o), s"${error.message} lacks $o"))
