@@ -902,3 +902,112 @@ object Preflight:
           Left(PreflightError.ChangedInput(family, ref, actual))
         case _ if blockers.nonEmpty => Left(PreflightError.NotReady(family, blockers))
         case _                      => Right(())
+
+/** The finding shape shared by every recipe family added after the fixation,
+  * recording and temporal studies. A family states its own checks as typed
+  * errors of its own catalogued families and carries them here as
+  * diagnostics, so no family adds a finding type to this sealed hierarchy.
+  *
+  * Severity, class and remedy follow from the case alone: a missing or
+  * mismatched artifact and a refusal are blockers, a data-dependent failure
+  * is a warning that names the trials execution will fail.
+  */
+enum AnalysisFinding[K] extends PreflightFinding[K] derives CanEqual:
+  /** The plan's input artifact was not supplied. */
+  case MissingArtifact(expected: ArtifactRef[?])
+
+  /** An input artifact other than the one the plan names was supplied. */
+  case ArtifactMismatch(expected: ArtifactRef[?], actual: ArtifactRef[?])
+
+  /** The plan's constructors or prerequisites refuse the recipe as a whole;
+    * `underlying` is the refusal projected through its own family.
+    */
+  case Refused(underlying: Diagnostic[K])
+
+  /** Execution proceeds, but the named trials fail deterministically for the
+    * reason `underlying` gives.
+    */
+  case DataDependent(underlying: Diagnostic[K], trials: Vector[K])
+
+  def keys: Vector[K] = this match
+    case MissingArtifact(_)            => Vector.empty
+    case ArtifactMismatch(_, _)        => Vector.empty
+    case Refused(underlying)           => underlying.affectedTrials
+    case DataDependent(underlying, ks) => (ks ++ underlying.affectedTrials).distinct
+
+  def severity: Severity = this match
+    case MissingArtifact(_) | ArtifactMismatch(_, _) | Refused(_) => Severity.Blocker
+    case DataDependent(_, _)                                      => Severity.Warning
+
+  def category: FindingClass = this match
+    case MissingArtifact(_) | ArtifactMismatch(_, _) => FindingClass.UnavailableInput
+    case Refused(_)                                  => FindingClass.InvalidSetting
+    case DataDependent(_, _)                         => FindingClass.DataDependent
+
+  def remedy: Remedy = this match
+    case MissingArtifact(_)     => Remedy.SupplyReferencedArtifact
+    case ArtifactMismatch(_, _) => Remedy.RetargetPlanToAvailableInput
+    case Refused(_)             => Remedy.ReconcileMethodDescriptor
+    case DataDependent(_, _)    => Remedy.AcceptMissingObservation
+
+  def message: String = this match
+    case MissingArtifact(e)     => s"Analysis requires artifact ${e.digest}."
+    case ArtifactMismatch(e, a) =>
+      s"Analysis requires artifact ${e.digest}, supplied ${a.digest}."
+    case Refused(d)           => s"Analysis refused (${d.code}): ${d.message}"
+    case DataDependent(d, ks) => s"Trials $ks will fail (${d.code}): ${d.message}"
+
+/** The preflight report of a recipe family that uses [[AnalysisFinding]]:
+  * findings bound to the plan description and the identity of the input `A`
+  * observed at preflight time, confirmed exactly as the other reports are.
+  */
+final class AnalysisReport[K, A] private (
+    val family: RecipeFamily,
+    val description: Vector[(String, Vector[Provenance.Param])],
+    val expected: ArtifactRef[A],
+    val available: Option[ArtifactRef[A]],
+    val findings: Vector[AnalysisFinding[K]],
+    val notChecked: Vector[UncheckedAspect]
+) extends PreflightReport[AnalysisFinding[K]]:
+
+  /** Distinct affected trial keys, in finding order. */
+  def affectedTrials: Vector[K] = findings.flatMap(_.keys).distinct
+
+  /** The findings as diagnostics, in finding order, keys typed. */
+  def diagnostics: Vector[Diagnostic[K]] = findings.map(Diagnostic.of(_))
+
+  /** Refuse a plan whose description changed since preflight, an input
+    * other than the one preflight saw, or any remaining blocker.
+    */
+  def confirm(
+      current: Vector[(String, Vector[Provenance.Param])],
+      actual: ArtifactRef[A]
+  ): Either[PreflightError[K], Unit] =
+    Preflight.confirm(family, description, current, available, actual, blockers)
+
+object AnalysisReport:
+  /** A report whose artifact findings are derived here, before the family's
+    * own: `MissingArtifact` when nothing was supplied, `ArtifactMismatch`
+    * when another artifact was.
+    */
+  private[plan] def of[K, A](
+      family: RecipeFamily,
+      description: Vector[(String, Vector[Provenance.Param])],
+      expected: ArtifactRef[A],
+      available: Option[ArtifactRef[A]],
+      findings: Vector[AnalysisFinding[K]],
+      notChecked: Vector[UncheckedAspect]
+  ): AnalysisReport[K, A] =
+    val artifact: Vector[AnalysisFinding[K]] = available match
+      case None                         => Vector(AnalysisFinding.MissingArtifact(expected))
+      case Some(ref) if ref != expected =>
+        Vector(AnalysisFinding.ArtifactMismatch(expected, ref))
+      case Some(_) => Vector.empty
+    new AnalysisReport(
+      family,
+      description,
+      expected,
+      available,
+      artifact ++ findings,
+      notChecked
+    )

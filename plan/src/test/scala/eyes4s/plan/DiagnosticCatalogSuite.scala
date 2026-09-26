@@ -28,12 +28,12 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Every issued code, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 635
-  private val PinnedDigest = "8c39fed1ab143c89"
+  private val PinnedCount  = 639
+  private val PinnedDigest = "6a3a13f40fcdda23"
 
   /** The issued table before CR5: codes are only ever issued, never changed
     * or reused, and a retired code keeps its place, so taking away the codes
-    * CR5 and CR2 added leaves exactly this table.
+    * CR5, CR2 and CR4 added leaves exactly this table.
     */
   private val StableCount  = 445
   private val StableDigest = "fb7ffbd3d3db7f63"
@@ -53,6 +53,10 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
 
   /** The codes CR2 added: the unified template family. */
   private val Cr2Codes: Set[String] = DiagnosticCatalog.template.codes.map(_.render).toSet
+
+  /** The codes CR4 added: the generic analysis finding. */
+  private val Cr4Codes: Set[String] =
+    DiagnosticCatalog.analysisFinding.codes.map(_.render).toSet
 
   test(
     "every cataloged family is sampled, in catalog order, through its own Diagnose instance"
@@ -151,7 +155,7 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
       )
     )
     val rendered = DiagnosticCatalog.issued.map(_.render)
-    val stable   = rendered.filterNot(code => Cr5Codes(code) || Cr2Codes(code))
+    val stable = rendered.filterNot(code => Cr5Codes(code) || Cr2Codes(code) || Cr4Codes(code))
     assertEquals(stable.size, StableCount)
     assertEquals(ContentHash.ofString(stable.mkString("\n")).render, StableDigest)
     assertEquals(rendered.size, PinnedCount)
@@ -348,12 +352,15 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   }
 
   test("every finding's diagnostic names exactly its typed affected trials") {
-    val findings = all.filter(f => Set("study-finding", "temporal-finding")(f.family.name))
-    assert(findings.size == 2)
+    val findings = all.filter(f =>
+      Set("study-finding", "temporal-finding", "analysis-finding")(f.family.name)
+    )
+    assert(findings.size == 3)
     findings.flatMap(_.samples).foreach { (sample, diagnostic) =>
       val keys = sample match
         case f: StudyFinding[?, ?]    => f.keys
         case f: TemporalFinding[?, ?] => f.keys
+        case f: AnalysisFinding[?]    => f.keys
         case other                    => fail(s"not a finding: $other")
       assertEquals(diagnostic.affectedTrials, keys.distinct, s"$sample")
     }

@@ -61,6 +61,18 @@ a blocker), focal trials with several matched references
 trial without a match (`UnmatchedFocalRefused`, replacing the `UnmatchedFocal`
 warning). These blockers are exactly the ones on which execution refuses.
 
+Recipe families added after these three share one finding type,
+`AnalysisFinding[K]`, instead of adding their own: `MissingArtifact` and
+`ArtifactMismatch` (blockers the report derives from the expected and supplied
+input), `Refused` (a blocker carrying the family's own refusal as a catalogued
+`Diagnostic[K]`) and `DataDependent` (a warning carrying its cause and the
+trials execution will fail). Severity, class and remedy follow from the case.
+Their report, `AnalysisReport[K, A]`, confirms against the current description
+and input exactly as the other reports do. `AnalysisKind` lists every analysis
+the library offers with the family that carries it; the analyses without a
+family yet are `AnalysisKind.withoutFamily`, and trial epochs are an
+`AnalysisComponent`, not an analysis.
+
 `affectedTrials` lists distinct keys in the layout's canonical order. Finding
 order is deterministic: plan-level checks, then trials in source order, then the
 schedule's duplicate, unmatched and uncontrolled keys in schedule order. The

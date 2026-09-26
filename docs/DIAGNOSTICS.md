@@ -1357,6 +1357,15 @@ fails after rewriting, so review the change and run it again.
 | `template.evaluation` | `Evaluation` | `failed`, `total` |
 | `template.aggregate` | `Aggregate` | `operation`, `value` |
 
+### `analysis-finding` — `AnalysisFinding`
+
+| Code | Case | Operands |
+|---|---|---|
+| `analysis-finding.missing-artifact` | `MissingArtifact` | `expected` |
+| `analysis-finding.artifact-mismatch` | `ArtifactMismatch` | `expected`, `actual` |
+| `analysis-finding.refused` | `Refused` | `underlying` |
+| `analysis-finding.data-dependent` | `DataDependent` | `underlying`, `trials` |
+
 ### `codec` — `CodecError`
 
 | Code | Case | Operands |

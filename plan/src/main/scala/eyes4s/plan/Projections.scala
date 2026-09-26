@@ -868,6 +868,32 @@ private[eyes4s] object Projections:
         )(Operand.Key(key), name(window))
     finding(projected, f.severity, f.category, f.remedy)
 
+  /** A generic finding keeps the diagnostic it carries as its cause; a
+    * data-dependent one names its trials before the cause's own subject.
+    */
+  def analysisFinding[K](f: AnalysisFinding[K]): Diagnostic[K] =
+    import AnalysisFinding.*
+    val projected: Diagnostic[K] = f match
+      case MissingArtifact(expected) =>
+        diagnostic(C.analysisFinding, f, f.message, Vector(Locus.Artifact(expected.digest)))(
+          artifact(expected.digest)
+        )
+      case ArtifactMismatch(expected, actual) =>
+        diagnostic(C.analysisFinding, f, f.message, Vector(Locus.Artifact(expected.digest)))(
+          artifact(expected.digest),
+          artifact(actual.digest)
+        )
+      case Refused(underlying) =>
+        diagnostic(C.analysisFinding, f, f.message, underlying.subject)(cause(underlying))
+      case DataDependent(underlying, trials) =>
+        diagnostic(
+          C.analysisFinding,
+          f,
+          f.message,
+          merge(Vector(Locus.Trials(trials)), underlying)
+        )(cause(underlying), Operand.Keys(trials))
+    finding(projected, f.severity, f.category, f.remedy)
+
   /** Any preflight finding, keys typed. A study or temporal finding in a
     * `PreflightFinding[K]` carries keys of type `K` (the finding type is
     * covariant in its key through `PreflightFinding`), and no projection
@@ -881,6 +907,7 @@ private[eyes4s] object Projections:
     case recording: RecordingFinding => recordingFinding(recording)
     case temporal: TemporalFinding[K @unchecked, Unit2D @unchecked] =>
       temporalFinding[K, Unit2D](temporal)
+    case analysis: AnalysisFinding[K @unchecked] => analysisFinding[K](analysis)
 
   def preflight[K](e: PreflightError[K]): Diagnostic[K] =
     import PreflightError.*

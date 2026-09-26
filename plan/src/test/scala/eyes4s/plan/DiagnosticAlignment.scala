@@ -127,6 +127,8 @@ final class DiagnosticAlignment(
       fields.headOption.contains("kind" -> Operand.Token(v.productPrefix)) &&
       fields.size == v.productArity + 1
     case (v: scala.reflect.Enum, Operand.Cause(d)) => nestedCode(v, d)
+    // A diagnostic a generic finding carries is its own, already projected, cause.
+    case (v: Diagnostic[?], Operand.Cause(d))      => d == v
     case (v: scala.reflect.Enum, Operand.Token(x)) =>
       !errorLike(v) && (x == v.toString || (v match
         case p: FailurePolicy => x == p.render
