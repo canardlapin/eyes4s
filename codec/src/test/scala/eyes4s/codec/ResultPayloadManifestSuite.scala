@@ -17,6 +17,7 @@
 package eyes4s.codec
 
 import eyes4s.kernel.*
+import eyes4s.kernel.Unit2D.Px
 import eyes4s.plan.*
 import io.circe.Json
 
@@ -255,6 +256,47 @@ class ResultPayloadManifestSuite extends munit.FunSuite:
         reason.contains("recomputed")
       case _ => false
     }))
+  }
+
+  test("legacy custom decoders retain inline success and exact packed refusal") {
+    var documents = Vector.empty[Json]
+    val legacy    = new ArtifactDecoders[StudyKey, Px]:
+      def plan(d: Json)   = decoders.plan(d)
+      def input(d: Json)  = decoders.input(d)
+      def ledger(d: Json) = decoders.ledger(d)
+      def result(d: Json) =
+        documents :+= d
+        decoders.result(d)
+      def recording(d: Json, p: PayloadRef => Option[VerifiedPayload]) =
+        decoders.recording(d, p)
+      def recordingInput(d: Json) = decoders.recordingInput(d)
+      def temporalInput(
+          d: Json,
+          b: ArtifactRef[StudyInput[StudyKey, Px]] => Option[StudyInput[StudyKey, Px]]
+      ) = decoders.temporalInput(d, b)
+
+    val inline = get(results.codec.encode(result))
+    val loaded = get(legacy.resultWithPayloads(inline, _ => fail("unexpected payload lookup")))
+    assertEquals(loaded.encode, Right(inline))
+    assertEquals(documents, Vector(inline))
+
+    val document = get(Documents.parse(packed.result.bytes))
+    val refusal  = decoders.result(document).left.toOption.getOrElse(fail("expected refusal"))
+    assertEquals(
+      legacy.resultWithPayloads(document, _ => fail("unexpected payload lookup")).left.toOption,
+      Some(refusal)
+    )
+    assertEquals(documents, Vector(inline, document))
+    val saved    = save()
+    val resolved = ArtifactResolver.resolve(saved.address, saved.source, legacy)
+    assert(
+      resolved.left.toOption.exists(
+        _.toVector.contains(
+          ResolveError.Decode(packed.result.name, refusal)
+        )
+      )
+    )
+    assertEquals(documents, Vector(inline, document, document))
   }
 
   test("delegating decorators preserve packed result registration") {
