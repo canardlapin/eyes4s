@@ -32,7 +32,7 @@ published artifacts. Each is pinned to one full Git SHA in
 | Provider | Revision | Modules used | Coordinates |
 |---|---|---|---|
 | Intaglio | `2fa5c682f4a95b8e73daad78dd9302d7aff46e11` | core, interaction, svg (JVM+JS); javafx (JVM) | `io.github.canardlapin::intaglio-*` |
-| scaladock | `3ed443e99e53c8af0cf5c5707abcbb70c125f705` | core, fx (JVM) | `io.github.bbuchsbaum::scaladock-*` |
+| scaladock | `628c46fce92c4d31b0b08459ac0f18777b5ba527` | core, fx (JVM) | `io.github.canardlapin::scaladock-*` |
 
 The build resolves each as the ordinary library version `0.0.0-<full SHA>`.
 [`publish-pins.sh`](publish-pins.sh) produces those artifacts: it fetches the
@@ -56,7 +56,7 @@ else, for example an offline mirror; the checked-out SHA is still verified.
 
 ### "not found: …:0.0.0-<sha>"
 
-If sbt cannot resolve `io.github.canardlapin::intaglio-*` or `io.github.bbuchsbaum::scaladock-*`
+If sbt cannot resolve `io.github.canardlapin::intaglio-*` or `io.github.canardlapin::scaladock-*`
 at `0.0.0-<sha>`, the pins are not published locally. Run `bash studio/publish-pins.sh`
 once per pin change, then retry.
 
@@ -69,13 +69,14 @@ which is Studio's runtime. Keep the pin on a commit where that job is green.
 
 ### What the scaladock pin provides
 
-At `3ed443e` scaladock has asynchronous close admission (`Dock.requestClose`,
+At `628c46f` scaladock has asynchronous close admission (`Dock.requestClose`,
 `PaneView.prepareClose`, `requestCloseAll`) and true minimize. The tab header
 height is `LayoutSettings.headerPx` (default 32), passed to `Dock(...)`. The
 header button glyphs are CSS shapes (`.dock-icon.close`, `.minimize`,
 `.maximize`, `.popout`, `.dock-back`, `.chevron-down`), which a
-`DockTheme.Custom` stylesheet can redefine. scaladock has no host-supplied
-header action, so a "more actions" button needs an upstream hook (UP-scaladock).
+`DockTheme.Custom` stylesheet can redefine. Since `628c46f` it also has retained panes and `Perspectives(dock)` (see its docs/workspaces.md),
+remappable keyboard actions (`setKeyBindings`, `perform(DockAction)`), a tab-menu hook
+(`setTabMenu`) and accessible tab and button roles.
 
 ## Local-checkout override
 
