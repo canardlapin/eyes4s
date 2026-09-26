@@ -483,6 +483,27 @@ object ArtifactDecoders:
     )
   yield of(plans, inputs, results)
 
+  /** The trial-keyed route of every registered map method
+    * ([[ComparisonMethods.all]]): participant, phase, trial and occurrence
+    * keys matched on their item, as `StudyCodecs.trialSimilarity` saves them.
+    */
+  def trial[U <: Unit2D: UnitLabel]: Either[CodecError, ArtifactDecoders[TrialKey, U]] = for
+    plans <- ComparisonMethods.all.foldLeft(
+      Right(StudyRegistry.empty[TrialKey, U]): Either[CodecError, StudyRegistry[TrialKey, U]]
+    )((registry, method) =>
+      registry.flatMap(_.register(StudyCodecs.trialSimilarity[U](method).registration))
+    )
+    inputs  <- StudyInputRegistry.empty[TrialKey, U].register(StudyInputCodecs.trial[U])
+    results <- ComparisonMethods.all.foldLeft(
+      Right(StudyResultRegistry.empty[TrialKey, U]): Either[
+        CodecError,
+        StudyResultRegistry[TrialKey, U]
+      ]
+    )((registry, method) =>
+      registry.flatMap(_.register(StudyResultCodecs.trialRegistered[U](method).registration))
+    )
+  yield of(plans, inputs, results)
+
 /** A verified, decoded scientific object graph, in manifest order. Every
   * value was admitted only after its bytes matched the declared length and
   * SHA-256, its envelope the declared schema, its reconstruction the declared

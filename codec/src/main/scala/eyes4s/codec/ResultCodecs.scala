@@ -38,6 +38,12 @@ object StudyResultCodecs:
   ): StudyResultCodec[StudyKey, U, Unit, Similarity, SignedDifference] =
     StudyCodecs.similarity[U](method).results(similarity(), signedDifference())
 
+  /** The trial-keyed route of a registered map method, matching `StudyCodecs.trialSimilarity`. */
+  def trialRegistered[U <: Unit2D: UnitLabel](
+      method: ComparisonMethod
+  ): StudyResultCodec[TrialKey, U, Unit, Similarity, SignedDifference] =
+    StudyCodecs.trialSimilarity[U](method).results(similarity(), signedDifference())
+
   /** A finite similarity; a non-finite value is refused as the score type refuses it. */
   def similarity(schema: DefinitionId = DefinitionId.similarity): VersionedCodec[Similarity] =
     VersionedCodec.checked[Similarity](schema)(value =>

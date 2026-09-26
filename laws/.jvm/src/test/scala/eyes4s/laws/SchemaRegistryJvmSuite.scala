@@ -176,7 +176,8 @@ object SchemaRegistry:
       TrialKeyDefinitions.trialLayout,
       Kind.Definition,
       Vector("study-trial-v2.json"),
-      codecLaw(plans, "trial study plan")
+      codecLaw(plans, "trial study plan") ++
+        methodPlans.flatMap((id, _) => codecLaw(plans, s"${id.name} trial study plan"))
     ),
     Entry(
       StudyInputDefinitions.admissionLedgerV2,
@@ -309,7 +310,15 @@ object SchemaRegistry:
       codecLaw(temporal, "temporal study result")
     )
   ) ++ methodPlans.map((id, fixture) =>
-    Entry(id, Kind.Definition, Vector(fixture), codecLaw(plans, s"${id.name} study plan"))
+    Entry(
+      id,
+      Kind.Definition,
+      Vector(fixture),
+      codecLaw(plans, s"${id.name} study plan") ++ codecLaw(
+        plans,
+        s"${id.name} trial study plan"
+      )
+    )
   )
 
   /** Shipped codecs whose schema identity the caller supplies, pinned under
@@ -883,7 +892,7 @@ private object Decoders:
       get(DefinitionId.of("eyes4s.ivt-parameters", 1))
     )
     // A study plan is read by the codec of the registered method it names.
-    def study: VersionedCodec[?] =
+    def method: Option[ComparisonMethod] =
       document.hcursor
         .downField("value")
         .downField("method")
@@ -895,9 +904,10 @@ private object Decoders:
             version <- json.hcursor.get[Int]("version").toOption
             method  <- DefinitionId.of(name, version).toOption
             entry   <- ComparisonMethods.resolve(method)
-          yield StudyCodecs.similarity[Px](entry).codec
+          yield entry
         )
-        .getOrElse(StudyCodecs.cosine[Px].codec)
+    def study: VersionedCodec[?] =
+      method.fold(StudyCodecs.cosine[Px].codec)(StudyCodecs.similarity[Px](_).codec)
     id match
       case DefinitionId.study           => Some(study)
       case DefinitionId.studyInput      => Some(StudyInputCodecs.study[Px].input)
@@ -908,7 +918,11 @@ private object Decoders:
             .downField("layout")
             .get[String]("name")
             .contains(TrialKeyDefinitions.trialLayout.name) =>
-        Some(StudyCodecs.trialCosine[Px].codec)
+        Some(
+          method.fold(StudyCodecs.trialCosine[Px].codec)(
+            StudyCodecs.trialSimilarity[Px](_).codec
+          )
+        )
       case StudyCodecDefinitions.studyV2           => Some(StudyCodecs.cosine[Px].codec)
       case StudyCodecDefinitions.studyV3           => Some(StudyCodecs.cosine[Px].codec)
       case StudyInputDefinitions.admissionLedgerV2 =>
