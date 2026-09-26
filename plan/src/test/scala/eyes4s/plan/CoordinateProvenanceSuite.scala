@@ -144,6 +144,31 @@ class CoordinateProvenanceSuite extends munit.FunSuite:
     assert(trail(1).angular.exists(_.position.x > 0))
   }
 
+  test("under FailTrial, a trial with a fixation outside the window maps none of its own") {
+    val failing = get(
+      StudyGeometry.windowed(
+        window,
+        get(Grid.over(window.frame, 64, 48)),
+        OffWindowPolicy.FailTrial
+      )
+    )
+    val strict = plan(failing)
+    val tally  = get(get(strict.windowTallies(input).toMap.get(retrieval).toRight("no tally")))
+    val trails = get(CoordinateProvenance.of(strict, input, None))
+    val placements =
+      (0 to 3).map(i => get(trails.fixation(retrieval, at(i))).trail.placement).toVector
+    assertEquals(
+      placements,
+      Vector(
+        MapPlacement.DroppedInitial,
+        MapPlacement.OutsideScreen,
+        MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial),
+        MapPlacement.TrialFailed(tally)
+      )
+    )
+    assertEquals((tally.outsideWindow, tally.inside), (1, 1))
+  }
+
   test("a whole-frame plan measures degrees from the screen's centre and has no window") {
     val whole = get(
       CoordinateProvenance.of(

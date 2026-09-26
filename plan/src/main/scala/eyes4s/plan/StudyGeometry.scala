@@ -31,6 +31,27 @@ enum OffWindowPolicy derives CanEqual:
   /** Fail the whole trial when any fixation lies outside the window. */
   case FailTrial
 
+/** Where one fixation's centre falls against the admission frame (the
+  * screen) and, for a windowed plan, its half-open analysis window. This is
+  * the one classification: [[WindowTally]] counts it, and coordinate
+  * provenance reports it per fixation.
+  */
+enum CentrePlacement derives CanEqual:
+  case OutsideScreen
+  case OutsideWindow
+  case Inside
+
+object CentrePlacement:
+  /** Outside the screen first, then outside the window (when there is one). */
+  def of[U <: Unit2D](
+      screen: Frame[U],
+      window: Option[Subframe[U]],
+      centre: Pt[U]
+  ): CentrePlacement =
+    if !screen.contains(centre) then OutsideScreen
+    else if window.exists(w => !w.locate(centre).isInside) then OutsideWindow
+    else Inside
+
 /** How one trial's fixations fall against the admission frame (the screen)
   * and the plan's analysis window, by count and by duration. Only a
   * fixation's centre decides. The three classes partition the trial:
@@ -127,7 +148,9 @@ object WindowTally:
       frame: Frame[U],
       path: Scanpath[U]
   ): Either[GeometryError, WindowTally] =
-    Agreement.frames(frame, path.frame).map(_ => tally(path, p => frame.contains(p), _ => true))
+    Agreement
+      .frames(frame, path.frame)
+      .map(_ => tally(path, CentrePlacement.of(frame, None, _)))
 
   /** Count a scanpath's fixations against a window of its admission frame. */
   def window[U <: Unit2D](
@@ -136,12 +159,11 @@ object WindowTally:
   ): Either[GeometryError, WindowTally] =
     Agreement
       .frames(window.parent, path.frame)
-      .map(_ => tally(path, p => window.parent.contains(p), p => window.locate(p).isInside))
+      .map(_ => tally(path, CentrePlacement.of(window.parent, Some(window), _)))
 
   private def tally[U <: Unit2D](
       path: Scanpath[U],
-      onScreen: Pt[U] => Boolean,
-      inWindow: Pt[U] => Boolean
+      place: Pt[U] => CentrePlacement
   ): WindowTally =
     var screen         = 0
     var window         = 0
@@ -152,12 +174,14 @@ object WindowTally:
     while i < path.n do
       val fixation = path.fixations(i)
       totalDuration = totalDuration + fixation.duration
-      if !onScreen(fixation.centre) then
-        screen += 1
-        screenDuration = screenDuration + fixation.duration
-      else if !inWindow(fixation.centre) then
-        window += 1
-        windowDuration = windowDuration + fixation.duration
+      place(fixation.centre) match
+        case CentrePlacement.OutsideScreen =>
+          screen += 1
+          screenDuration = screenDuration + fixation.duration
+        case CentrePlacement.OutsideWindow =>
+          window += 1
+          windowDuration = windowDuration + fixation.duration
+        case CentrePlacement.Inside => ()
       i += 1
     new WindowTally(screen, window, path.n, screenDuration, windowDuration, totalDuration)
 
@@ -289,14 +313,19 @@ private[plan] object StudyWindowing:
       key: K,
       path: Scanpath[U]
   ): Either[StudyFailure[K], Unit] =
+    tally(geometry, path) match
+      case Left(e)                        => Left(StudyFailure.Frame(key, e))
+      case Right(t) if fails(geometry, t) => Left(StudyFailure.OffWindow(key, t))
+      case Right(_)                       => Right(())
+
+  /** Whether a trial with this tally fails: nothing would remain in its map,
+    * or the window policy fails trials with fixations outside the window.
+    */
+  def fails[U <: Unit2D](geometry: StudyGeometry[U], tally: WindowTally): Boolean =
     val failTrial = geometry match
       case StudyGeometry.Windowed(_, _, OffWindowPolicy.FailTrial) => true
       case _                                                       => false
-    tally(geometry, path) match
-      case Left(e)                                      => Left(StudyFailure.Frame(key, e))
-      case Right(t) if t.allOutside                     => Left(StudyFailure.OffWindow(key, t))
-      case Right(t) if failTrial && t.outsideWindow > 0 => Left(StudyFailure.OffWindow(key, t))
-      case Right(_)                                     => Right(())
+    tally.allOutside || (failTrial && tally.outsideWindow > 0)
 
   /** Restrict an occupancy on the admission frame to the map's frame, in the
     * map's coordinates. Positions outside are left out; the trial's tally

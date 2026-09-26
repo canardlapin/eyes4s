@@ -46,7 +46,9 @@ final case class CorrectionApplied(rule: Int, correction: Correction) derives Ca
 /** Where a fixation falls against a study's map. Each fixation falls in
   * exactly one place, decided in this order: the initial-fixation policy
   * drops it; its centre is outside the admission frame (the screen); it is
-  * on the screen but outside the analysis window; or it is in the map.
+  * on the screen but outside the analysis window ([[CentrePlacement]] decides
+  * both); its trial fails as a whole, so it is in no map; or it is in the
+  * map.
   */
 enum MapPlacement derives CanEqual:
   case DroppedInitial
@@ -54,6 +56,12 @@ enum MapPlacement derives CanEqual:
 
   /** On the screen, outside the window; the policy says what the study does. */
   case OutsideWindow(policy: OffWindowPolicy)
+
+  /** In the window, but the trial fails with `StudyFailure.OffWindow` for the
+    * tally of its kept fixations (under `OffWindowPolicy.FailTrial`, a
+    * fixation of it lies outside the window), so no map is built from it.
+    */
+  case TrialFailed(tally: WindowTally)
   case InMap
 
 /** How a study measures degrees of visual angle: from the centre (`origin`)
@@ -336,6 +344,7 @@ object CoordinateProvenance:
   * window, the initial-fixation rule and the correction rules.
   */
 private final class StudyPlanGeometry[K, U <: Unit2D](
+    geometry: StudyGeometry[U],
     val admission: Frame[U],
     val window: Option[Subframe[U]],
     offWindow: OffWindowPolicy,
@@ -347,11 +356,17 @@ private final class StudyPlanGeometry[K, U <: Unit2D](
     policy.fold(Right(None))(_.correctionFor(key, participant))
 
   def placement(path: Scanpath[U], index: Int, centre: Pt[U]): MapPlacement =
-    if index < rule.select(path).tally.dropped then MapPlacement.DroppedInitial
-    else if !admission.contains(centre) then MapPlacement.OutsideScreen
-    else if window.exists(w => !w.locate(centre).isInside) then
-      MapPlacement.OutsideWindow(offWindow)
-    else MapPlacement.InMap
+    val selected = rule.select(path)
+    if index < selected.tally.dropped then MapPlacement.DroppedInitial
+    else
+      CentrePlacement.of(admission, window, centre) match
+        case CentrePlacement.OutsideScreen => MapPlacement.OutsideScreen
+        case CentrePlacement.OutsideWindow => MapPlacement.OutsideWindow(offWindow)
+        case CentrePlacement.Inside        =>
+          selected.kept
+            .flatMap(kept => StudyWindowing.tally(geometry, kept).toOption)
+            .filter(StudyWindowing.fails(geometry, _))
+            .fold(MapPlacement.InMap)(MapPlacement.TrialFailed(_))
 
 private object StudyPlanGeometry:
   def apply[K, U <: Unit2D](
@@ -362,6 +377,7 @@ private object StudyPlanGeometry:
       case StudyGeometry.Windowed(w, _, policy) => (Some(w), policy)
       case StudyGeometry.WholeFrame(_)          => (None, OffWindowPolicy.Exclude)
     new StudyPlanGeometry(
+      plan.geometry,
       plan.geometry.admission,
       window,
       offWindow,

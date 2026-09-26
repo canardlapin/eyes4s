@@ -638,7 +638,7 @@ object FixationCsv:
         )
       )
 
-  private def finite(
+  private[io] def finite(
       fields: Map[String, String],
       column: String
   ): Either[FixationRowError, Double] =
