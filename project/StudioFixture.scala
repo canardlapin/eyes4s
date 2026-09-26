@@ -191,6 +191,13 @@ object StudioFixture {
     ).collect { case (rule, false) => rule }
   }
 
+  private def sha256(file: File): String =
+    java.security.MessageDigest
+      .getInstance("SHA-256")
+      .digest(IO.readBytes(file))
+      .map(b => f"${b & 0xff}%02x")
+      .mkString
+
   /** `GoldenInventory`: every golden trial with its disposition, and the
     * window totals of the admitted trials.
     */
@@ -262,6 +269,9 @@ object StudioFixture {
           |  */
           |private[core] object GoldenInventory:
           |  val sourceRecords: Int = ${fixes.size}
+          |  /** SHA-256 of the exact bytes of trials.csv and fixations.csv (S2.1). */
+          |  val trialsSha256: String = ${literal(sha256(dir / "trials.csv"))}
+          |  val fixationsSha256: String = ${literal(sha256(dir / "fixations.csv"))}
           |  val distinctItems: Int = ${items.size}
           |  val imagesPresent: Int = ${items.count(present)}
           |  val missingImages: Vector[String] = ${missing
