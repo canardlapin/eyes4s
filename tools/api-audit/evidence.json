@@ -8809,8 +8809,8 @@
       "suite": "planJVM/eyes4s.plan.SourceIdentitySuite"
     },
     "class eyes4s.plan.SourceInterpretation": {
-      "classification": "data-sum",
-      "instance": "eyes4s/plan/SourceInterpretation$$anon$2",
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/SourceInterpretation$LegacyUnspecified$",
       "suite": "planJVM/eyes4s.plan.AdmissionLedgerSuite"
     },
     "class eyes4s.plan.SourceKeyColumns": {
@@ -8822,6 +8822,11 @@
       "classification": "data-sum",
       "instance": "eyes4s/plan/SourceLink$Missing",
       "suite": "planJVM/eyes4s.plan.InitialFixationSuite"
+    },
+    "class eyes4s.plan.SourceOptionsSchema": {
+      "classification": "data-sum",
+      "instance": "eyes4s/plan/SourceOptionsSchema$$anon$2",
+      "suite": "planJVM/eyes4s.plan.SourceIdentitySuite"
     },
     "class eyes4s.plan.SourceRounding": {
       "classification": "data-sum",
@@ -9135,7 +9140,7 @@
     "method eyes4s.codec.EpochCodecs$.plan(1,eyes4s.plan.DefinitionId,eyes4s.codec.VersionedCodec):eyes4s.codec.VersionedCodec": "codecJVM/eyes4s.codec.EpochCodecSuite",
     "method eyes4s.codec.ImportSpecCodec$.custom(2,eyes4s.codec.VersionedCodec,eyes4s.design.KeyDigest,eyes4s.kernel.UnitLabel):eyes4s.codec.VersionedCodec": "codecJVM/eyes4s.codec.ImportSpecSuite",
     "method eyes4s.codec.ImportSpecCodec$.study(1,eyes4s.kernel.UnitLabel):eyes4s.codec.VersionedCodec": "codecJVM/eyes4s.codec.ImportSpecSuite",
-    "method eyes4s.codec.ImportSpecCodec$.trial(1,eyes4s.kernel.UnitLabel):eyes4s.codec.VersionedCodec": "ioJVM/eyes4s.io.SourceAdmissionSuite",
+    "method eyes4s.codec.ImportSpecCodec$.trial(1,eyes4s.kernel.UnitLabel):eyes4s.codec.VersionedCodec": "codecJVM/eyes4s.codec.ImportSpecSuite",
     "method eyes4s.codec.LearnedTemplateRecipeCodec$.of(2,eyes4s.plan.DefinitionId,eyes4s.codec.VersionedCodec,eyes4s.design.KeyDigest,eyes4s.kernel.UnitLabel):eyes4s.codec.VersionedCodec": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.codec.LoadedRecordingPlan$.of(1,eyes4s.codec.LoadedRecording,eyes4s.codec.PixelUnit):eyes4s.codec.LoadedRecordingPlan": "codecJVM/eyes4s.codec.ArchiveManifestSuite",
     "method eyes4s.codec.LoadedRecordingPlan.description():": "codecJVM/eyes4s.codec.ArchiveManifestSuite",
@@ -11004,10 +11009,18 @@
     "method eyes4s.plan.SourceComparison$.of(scala.Boolean,eyes4s.plan.SourceRef,eyes4s.plan.SourceRef):eyes4s.plan.SourceComparison": "planJVM/eyes4s.plan.SourceIdentitySuite",
     "method eyes4s.plan.SourceFixationColumns$.of(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,eyes4s.plan.SampleCountRule,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.SourceIdentitySuite",
     "method eyes4s.plan.SourceFixationColumns.names():": "planJVM/eyes4s.plan.SourceIdentitySuite",
-    "method eyes4s.plan.SourceIdentity$.of(eyes4s.plan.ArtifactRef,eyes4s.plan.SourceFormat,eyes4s.plan.DefinitionId,scala.Long):eyes4s.plan.SourceIdentity": "planJVM/eyes4s.plan.SourceIdentitySuite",
+    "method eyes4s.plan.SourceIdentity$.of(eyes4s.plan.ArtifactRef,eyes4s.plan.SourceInterpretation$.Declared):eyes4s.plan.SourceIdentity": "planJVM/eyes4s.plan.SourceIdentitySuite",
     "method eyes4s.plan.SourceIdentity$.parse(java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.SourceIdentitySuite",
     "method eyes4s.plan.SourceIdentity.digest():": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.plan.SourceIdentityError.message():": "planJVM/eyes4s.plan.SourceIdentitySuite",
+    "method eyes4s.plan.SourceInterpretation$.Declared$.unapply(eyes4s.plan.SourceInterpretation$.Declared):scala.Tuple3": "planJVM/eyes4s.plan.SourceIdentitySuite",
+    "method eyes4s.plan.SourceInterpretation$.Declared.equals(java.lang.Object):scala.Boolean": "planJVM/eyes4s.plan.SourceIdentitySuite",
+    "method eyes4s.plan.SourceInterpretation$.Declared.hashCode():": "planJVM/eyes4s.plan.SourceIdentitySuite",
+    "method eyes4s.plan.SourceInterpretation$.Declared.optionsSchema():": "planJVM/eyes4s.plan.SourceIdentitySuite",
+    "method eyes4s.plan.SourceInterpretation$.Declared.toString():": "planJVM/eyes4s.plan.SourceIdentitySuite",
+    "method eyes4s.plan.SourceInterpretation$.declared(eyes4s.plan.SourceFormat,eyes4s.plan.DefinitionId,eyes4s.plan.SourceOptionsSchema,scala.Long):scala.util.Either": "planJVM/eyes4s.plan.SourceIdentitySuite",
+    "method eyes4s.plan.SourceInterpretation$.fixation(2,eyes4s.plan.ImportSpec):eyes4s.plan.SourceInterpretation$.Declared": "planJVM/eyes4s.plan.SourceIdentitySuite",
+    "method eyes4s.plan.SourceInterpretation$.inventory(eyes4s.plan.InventoryImportSpec):eyes4s.plan.SourceInterpretation$.Declared": "ioJVM/eyes4s.io.SourceAdmissionSuite",
     "method eyes4s.plan.SourceKeyColumns.names():": "planJVM/eyes4s.plan.SourceIdentitySuite",
     "method eyes4s.plan.SourceLink.mapKeys(1,scala.Function1):eyes4s.plan.SourceLink": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.SourceLink.trialKeys():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
@@ -11854,7 +11867,7 @@
     "value eyes4s.plan.SourceDiagnostics$.importDescription": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.SourceIdentity$.versionTag": "planJVM/eyes4s.plan.SourceIdentitySuite",
     "value eyes4s.plan.SourceImportDefinitions$.fixationParser": "planJVM/eyes4s.plan.SourceIdentitySuite",
-    "value eyes4s.plan.SourceImportDefinitions$.inventoryParser": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
+    "value eyes4s.plan.SourceImportDefinitions$.inventoryParser": "planJVM/eyes4s.plan.SourceIdentitySuite",
     "value eyes4s.plan.StudyInspection.failures": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "value eyes4s.plan.StudyKey$.given_KeyDigest_StudyKey": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
     "value eyes4s.plan.StudyKey$.given_Ordering_StudyKey": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
@@ -11978,10 +11991,12 @@
     ],
     "codecJS/eyes4s.codec.ImportSpecSuite": [
       "altering an option without updating the declared digest is refused",
+      "custom codecs refuse built-in key descriptions before successful encoding",
       "custom key and clock identities persist without inventing a replay implementation",
       "declared import descriptions round-trip with their identity",
       "frozen identity is identical on JVM and Scala.js",
-      "pinned version one descriptions and version four ledger remain readable"
+      "pinned version one descriptions and version four ledger remain readable",
+      "source wire rejects incompatible parser and options schema at their fields"
     ],
     "codecJS/eyes4s.codec.InputPayloadCodecSuite": [
       "by-reference temporal payloads resolve the base study or name the missing artifact",
@@ -14396,8 +14411,11 @@
     "planJS/eyes4s.plan.SourceIdentitySuite": [
       "blank and overlapping columns are rejected by public constructors",
       "construction failures name their operands",
+      "declared interpretation cannot bypass checking with a constructor or copy",
+      "declared interpretations check supported parsers and options schemas together",
       "identical bytes under changed options are stale",
       "key columns and correction policy have the same key type",
+      "legacy and checked interpretations retain their explicit diagnostic structure",
       "stable identity tag and display names outside semantic identity",
       "unit, admission decision and rejected source records affect identity"
     ],
@@ -14661,10 +14679,12 @@
     ],
     "codecJVM/eyes4s.codec.ImportSpecSuite": [
       "altering an option without updating the declared digest is refused",
+      "custom codecs refuse built-in key descriptions before successful encoding",
       "custom key and clock identities persist without inventing a replay implementation",
       "declared import descriptions round-trip with their identity",
       "frozen identity is identical on JVM and Scala.js",
-      "pinned version one descriptions and version four ledger remain readable"
+      "pinned version one descriptions and version four ledger remain readable",
+      "source wire rejects incompatible parser and options schema at their fields"
     ],
     "codecJVM/eyes4s.codec.InputPayloadCodecSuite": [
       "by-reference temporal payloads resolve the base study or name the missing artifact",
@@ -17249,8 +17269,11 @@
     "planJVM/eyes4s.plan.SourceIdentitySuite": [
       "blank and overlapping columns are rejected by public constructors",
       "construction failures name their operands",
+      "declared interpretation cannot bypass checking with a constructor or copy",
+      "declared interpretations check supported parsers and options schemas together",
       "identical bytes under changed options are stale",
       "key columns and correction policy have the same key type",
+      "legacy and checked interpretations retain their explicit diagnostic structure",
       "stable identity tag and display names outside semantic identity",
       "unit, admission decision and rejected source records affect identity"
     ],
