@@ -83,7 +83,7 @@ Three counting conventions meet at a source file, and each is its own type in `e
 |---|---|---|
 | `DataRecord` | data records from 1, the header excluded; the number a reader is shown | fixations.csv record 7,214 |
 | `CsvRecord` | CSV records from 1, the header being record 1; the convention of ledger, locus and source-link numbers | CSV record 7,215 |
-| `SourceLine` | physical lines from 1; a line ends at a line feed, and a lone carriage return does not end one | the record's first line |
+| `SourceLine` | physical lines from 1 under `LineBreak.LineFeed`: a line ends at a line feed, and a lone carriage return does not end one | the record's first line |
 
 `dataRecord.csv` is always the value plus one, and `csvRecord.role` is `RecordRole.Header` for
 record 1 and `RecordRole.Data(record)` for every other, so the two convert both ways without loss.
@@ -91,11 +91,41 @@ Lines are another matter: a record whose quoted field holds a line break occupie
 so from there on a record's line is not its number plus one. `CsvLayout.scan(text)` (`eyes4s-io`)
 reads the records exactly as the importer's decoder does and gives each record's text
 (`layout.verbatim(record)`) and a `RecordLines` layout: `span(record)` is the record's
-`LineSpan`, and `owner(line)` is the record a line belongs to. The ledger still stores `Int`
+`LineSpan`, and `owner(line)` is the record a line belongs to (a line's place within its record,
+from 0, is `line - span.first`). The layout covers the lines from 1 to `lines`, the last line of
+the last record; text after it that the decoder reads as no record (an empty quoted field `""`
+after the final line feed) is beyond the layout, and `owner` refuses it. Derive line numbers from
+the layout, never by splitting the text: Java's `String.lines()` and most editors also end a line
+at a lone carriage return, so their numbers can disagree. The ledger still stores `Int`
 CSV record numbers; `entry.dataRecord`, `fixationSource.dataRecord`, `sources.entryAt(record)`,
 `sources.trialAt(record)` and `sources.fixationAt(key, position)` read them as the typed
 identities. A fixation's position in its scanpath is a `ScanpathPosition` (from 0), and its
 display number a `FixationNumber` (from 1): fixation 6 is position 5.
+
+### Coordinates and source records
+
+`CoordinateProvenance.of(plan, input, ledger)` gives every admitted fixation's coordinates under
+the plan, each in a named frame. `provenance.fixation(key, position)` is a `FixationProvenance`:
+the fixation's interval, its source and data record (or the `MissingSource` that says why none is
+known), and a `CoordinateTrail`:
+
+| Member | Meaning |
+|---|---|
+| `recorded` | the source's position fields as text and their parse before correction, in the admission frame; filled by `eyes4s-io` from the source text |
+| `correction` | the admission policy's rule that moved the trial's positions (its index and the `Correction`), if any |
+| `admitted` | the position the study input holds, in the admission frame (the screen) |
+| `window` | the same position in the analysis window's frame (image units), for a windowed plan; positions outside the window keep their window coordinates |
+| `placement` | `DroppedInitial`, `OutsideScreen`, `OutsideWindow(policy)` or `InMap`, decided in that order, as the plan's tallies count them |
+| `angular` | degrees under the plan's `AngularReference`: from the centre (`origin`) of the `measured` frame (the window, or the screen for a whole-frame plan), at the declared `unitsPerDegree`, into the `degrees` frame named `<measured>/degrees`, whose `x` runs right and `y` up |
+
+`provenance.records` lists the ledger's source records in record order. Its `total` is the
+ledger's record count, known before any page is built; `first(size)` and `page(from, size)`
+build the provenance of their own admitted records only, and each page names the data record the
+next one starts at. `FixationSourceText.of(text, ledger.source)` (`eyes4s-io`) reads the source
+text, refusing one whose decoded records do not have the ledger's source digest; its `first` and
+`page` add each record's verbatim text and `LineSpan`, and for an admitted record parse the
+position columns as the importer does and check that correcting the parse gives the admitted
+position bit for bit (`SourceTextError.RecordedMismatch` names the record otherwise).
 
 ## Join a trial inventory
 

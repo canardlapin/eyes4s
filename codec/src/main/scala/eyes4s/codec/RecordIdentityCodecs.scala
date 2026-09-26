@@ -32,7 +32,12 @@ import io.circe.{Codec, Decoder, DecodingFailure, Encoder, Json}
   *
   * Decoding rebuilds each value through its smart constructor and refuses
   * any other member name, an extra member, a value that is not a JSON
-  * integer (a string is refused), or a number outside the range.
+  * number (a numeric string is refused), a number not spelled as an integer
+  * (`7214.0` and `7.214e3` are refused on the JVM; the Scala.js parser does
+  * not keep a number's spelling), and a number outside the range. A member
+  * given twice cannot be seen here, since circe's parsed object keeps one of
+  * them; refusing a repeated member is the job of whatever parses the
+  * document's text.
   * These forms carry no schema identity of their own; the document that
   * holds them is versioned.
   */
@@ -47,15 +52,12 @@ object RecordIdentityCodecs:
         cursor.keys.map(_.toVector) match
           case Some(Vector(`name`)) =>
             val member = cursor.downField(name)
-            member.focus.flatMap(_.asNumber).flatMap(_.toInt) match
-              case Some(n) => of(n).left.map(e => DecodingFailure(e.message, member.history))
-              case None    =>
-                Left(
-                  DecodingFailure(
-                    s"Member '$name' must be an integer, found ${member.focus.fold("nothing")(_.noSpaces)}.",
-                    member.history
-                  )
-                )
+            member.focus
+              .toRight("nothing")
+              .flatMap(summon[Wire.Member[Int]].read)
+              .left
+              .map(reason => DecodingFailure(s"Member '$name': $reason.", member.history))
+              .flatMap(n => of(n).left.map(e => DecodingFailure(e.message, member.history)))
           case other =>
             Left(
               DecodingFailure(

@@ -1385,6 +1385,22 @@ fails after rewriting, so review the change and run it again.
 | `record-identity.record-beyond` | `RecordBeyond` | `record`, `records` |
 | `record-identity.line-beyond` | `LineBeyond` | `line`, `lines` |
 
+### `coordinate-provenance` — `ProvenanceError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `coordinate-provenance.input-mismatch` | `InputMismatch` | `plan`, `input` |
+| `coordinate-provenance.ledger` | `Ledger` | `refusal` |
+| `coordinate-provenance.angular` | `Angular` | `underlying` |
+| `coordinate-provenance.unknown-trial` | `UnknownTrial` | `key` |
+| `coordinate-provenance.ambiguous-trial` | `AmbiguousTrial` | `key`, `occurrences` |
+| `coordinate-provenance.fixation-out-of-range` | `FixationOutOfRange` | `key`, `position`, `fixations` |
+| `coordinate-provenance.trial-frame` | `TrialFrame` | `key`, `underlying` |
+| `coordinate-provenance.correction-conflict` | `CorrectionConflict` | `key`, `first`, `second` |
+| `coordinate-provenance.unmappable` | `Unmappable` | `key`, `position`, `into` |
+| `coordinate-provenance.identity` | `Identity` | `underlying` |
+| `coordinate-provenance.page-start` | `PageStart` | `from`, `records` |
+
 ### `codec` — `CodecError`
 
 | Code | Case | Operands |
@@ -1905,6 +1921,18 @@ fails after rewriting, so review the change and run it again.
 |---|---|---|
 | `csv-layout.csv` | `Csv` | `underlying` |
 | `csv-layout.layout` | `Layout` | `underlying` |
+
+### `source-text` — `SourceTextError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `source-text.layout` | `Layout` | `underlying` |
+| `source-text.source-digest` | `SourceDigest` | `label`, `ledger`, `text` |
+| `source-text.source-mismatch` | `SourceMismatch` | `text`, `listing` |
+| `source-text.column` | `Column` | `column`, `header` |
+| `source-text.field` | `Field` | `record`, `column`, `text` |
+| `source-text.recorded-mismatch` | `RecordedMismatch` | `record`, `recordedX`, `recordedY`, `correctedX`, `correctedY`, `admittedX`, `admittedY` |
+| `source-text.provenance` | `Provenance` | `underlying` |
 
 ### `arrow-export` — `ArrowExportError`
 

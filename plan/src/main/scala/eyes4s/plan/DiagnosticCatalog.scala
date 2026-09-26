@@ -869,6 +869,21 @@ object DiagnosticCatalog:
     "LineBeyond"
   )
 
+  /** A fixation's coordinate provenance and pages of source records. */
+  val coordinateProvenance: DiagnosticFamily = error("coordinate-provenance")(
+    "InputMismatch",
+    "Ledger",
+    "Angular",
+    "UnknownTrial",
+    "AmbiguousTrial",
+    "FixationOutOfRange",
+    "TrialFrame",
+    "CorrectionConflict",
+    "Unmappable",
+    "Identity",
+    "PageStart"
+  )
+
   /** Families whose error type no longer exists. Their codes stay issued, in
     * their original place in [[issuedFamilies]], so a retired code is never
     * reused with another meaning; no live error projects to one.
@@ -970,7 +985,8 @@ object DiagnosticCatalog:
     fixationEntropy,
     template,
     analysisFinding,
-    recordIdentity
+    recordIdentity,
+    coordinateProvenance
   )
 
   /** Every live family, grouped as documented. */

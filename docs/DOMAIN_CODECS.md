@@ -109,7 +109,10 @@ policy rather than changing the meaning of the 16-hex one.
 `ScanpathPosition` as an object with one member named for its counting convention:
 `{"data-record":7214}`, `{"fixation-number":6}`, `{"scanpath-position":5}`. A stored number
 therefore can't be read in another convention. Decoding refuses any other member, an extra member,
-a value that is not a JSON integer, and a number outside the type's range. These forms have no
+a value that is not a JSON number, a number not spelled as an integer (`7214.0` and `7.214e3`, on
+the JVM; the Scala.js parser does not keep a number's spelling), and a number outside the type's
+range. A repeated member cannot be seen by the decoder, since circe's parsed object keeps one of
+them. These forms have no
 schema identity of their own: the application document that holds them is versioned. The pinned
 document `codec/src/test/resources/values/record-identity-v1.json` is checked byte for byte on
 the JVM and through a portable mirror on Scala.js.

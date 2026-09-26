@@ -81,6 +81,7 @@ object DiagnosticExample extends DiagnosticExampleStructures:
   given DiagnosticExample[DataRecord]       = of(seed => get(DataRecord.of(seed + 101)))
   given DiagnosticExample[CsvRecord]        = of(seed => get(CsvRecord.of(seed + 202)))
   given DiagnosticExample[SourceLine]       = of(seed => get(SourceLine.of(seed + 303L)))
+  given DiagnosticExample[ScanpathPosition] = of(seed => get(ScanpathPosition.of(seed + 404)))
 
   // Nested errors are given one explicit case each, so a generated family
   // never derives a chain of wrapped errors (which the compiler would refuse
@@ -88,6 +89,15 @@ object DiagnosticExample extends DiagnosticExampleStructures:
   given DiagnosticExample[GeometryError] = of(seed => GeometryError.NonFiniteSigma(seed + 0.5))
   given DiagnosticExample[RecordIdentityError] =
     of(seed => RecordIdentityError.CsvRecordNotPositive(-seed))
+  given DiagnosticExample[LedgerRefusal[StudyKey]] = of(seed =>
+    LedgerRefusal(
+      AdmissionError.UnadmittedTrial(seed),
+      Vector(StudyKey(s"p$seed", "i", "recall")),
+      Vector.empty
+    )
+  )
+  given DiagnosticExample[ProvenanceError[StudyKey]] =
+    of(seed => ProvenanceError.UnknownTrial(StudyKey(s"p$seed", "i", "recall")))
   given DiagnosticExample[SurfaceError] =
     of(seed => SurfaceError.LengthMismatch(seed, seed + 1))
   given DiagnosticExample[TimeError] =
