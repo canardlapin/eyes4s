@@ -830,6 +830,176 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
   )
 
 // ---------------------------------------------------------------------------
+// Eyes Studio                                   (DESIGN_SPEC section 13, S0.2)
+//
+// The application, not the library. None of these projects joins the root
+// aggregate, compileAll or testAll: the library CI matrix must not grow, and
+// studio-desktop needs a newer JDK than that matrix runs. They build and test
+// through the `studioAll` alias only, and are never published.
+//
+//   studio-core     document, commands, services, StudyBackend. Effect-permitted.
+//   studio-app      UI-neutral Elm-style presentation layer. Pure.
+//   studio-viz      Intaglio scene builders. Pure.
+//   studio-desktop  JavaFX shell. JVM-only, effect-permitted.
+//
+// The first three cross-build for Scala.js and may name no JavaFX artifact or
+// JVM platform package; see project/StudioLint.scala and `checkStudioBoundaries`.
+// ---------------------------------------------------------------------------
+
+// JavaFX 24 class files require JDK 22 or later. The library keeps release 11.
+val javaFxV           = "24.0.1"
+val studioDesktopJdkV = 22
+
+lazy val checkStudioBoundaries =
+  taskKey[Unit]("Fail if a library module depends on studio, or portable studio names JavaFX.")
+
+// The resolved-graph half of the portable-studio rule: a portable studio project
+// may resolve no JavaFX artifact, directly or transitively.
+lazy val portableStudioSettings = Seq(
+  checkModuleBoundaries := {
+    val log        = streams.value.log
+    val moduleName = name.value
+    val offenders  = update.value.allModules
+      .filter(m => StudioLint.forbiddenInPortableStudio(m.organization, m.name))
+      .map(m => s"${m.organization}:${m.name}:${m.revision}")
+      .distinct
+      .sorted
+    if (offenders.nonEmpty)
+      sys.error(
+        s"""|Studio boundary violation in $moduleName.
+            |
+            |Portable studio projects cross-build for Scala.js and must not resolve
+            |a JavaFX artifact, but the resolved dependency graph contains:
+            |${offenders.map("  - " + _).mkString("\n")}
+            |
+            |Move the JavaFX-facing code to studio-desktop (DESIGN_SPEC section 13).""".stripMargin
+      )
+    else
+      log.info(s"$moduleName: studio boundaries OK (no JavaFX artifacts)")
+  }
+)
+
+// Rules 1 and 3 of StudioLint, preceded by its self-test on planted violations.
+ThisBuild / checkStudioBoundaries := {
+  val log       = streams.value.log
+  val buildRoot = (ThisBuild / baseDirectory).value
+
+  val selfTest = StudioLint.selfTest
+  if (selfTest.nonEmpty)
+    sys.error(
+      s"""|StudioLint self-test failed: a studio boundary rule no longer detects
+          |a planted violation.
+          |${selfTest.map("  - " + _).mkString("\n")}""".stripMargin
+    )
+
+  val graph = buildDependencies.value.classpath.map { case (project, deps) =>
+    project.project -> deps.map(_.project.project)
+  }
+  val edges = StudioLint.libraryToStudioEdges(graph, _.startsWith("studio"))
+  if (edges.nonEmpty)
+    sys.error(
+      s"""|Studio boundary violation: a library module depends on a studio project.
+          |
+          |${edges.map(p => "  - " + p.mkString(" -> ")).mkString("\n")}
+          |
+          |eyes4s modules must stay usable without the application. Move the
+          |shared code into the library, or the dependency into studio.""".stripMargin
+    )
+
+  val imports = StudioLint.scanTree(buildRoot)
+  if (imports.nonEmpty)
+    sys.error(
+      s"""|Studio boundary violation: portable studio sources name a JVM-only package.
+          |
+          |${imports.map("  - " + _.render).mkString("\n")}
+          |
+          |studio-core, studio-app and studio-viz cross-build for Scala.js and may not
+          |name ${StudioLint.forbiddenPackages.mkString(", ")}. Put the code in
+          |studio-desktop behind a platform-service interface (DESIGN_SPEC section 13).""".stripMargin
+    )
+
+  log.info(
+    s"studio boundaries OK (lint self-test passed; ${graph.size} project(s) have no " +
+      "library-to-studio edge; no JVM-only package in portable studio sources)"
+  )
+}
+
+/** Document, commands, revisions, services and the StudyBackend protocol. */
+lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("studio/core"))
+  .enablePlugins(NoPublishPlugin)
+  .dependsOn(plan, codec, fs2Module)
+  .settings(commonSettings, portableStudioSettings)
+  .settings(name := "eyes4s-studio-core")
+
+/** UI-neutral presentation: app model, intents, pure update, view-models. */
+lazy val studioApp = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("studio/app"))
+  .enablePlugins(NoPublishPlugin)
+  .dependsOn(studioCore)
+  .settings(commonSettings, portableStudioSettings)
+  .settings(name := "eyes4s-studio-app")
+
+/** Intaglio scene builders over view-models. Intaglio is pinned in S0.3. */
+lazy val studioViz = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("studio/viz"))
+  .enablePlugins(NoPublishPlugin)
+  .dependsOn(studioApp)
+  .settings(commonSettings, portableStudioSettings)
+  .settings(name := "eyes4s-studio-viz")
+
+// OpenJFX publishes one native jar per platform, selected by classifier.
+lazy val javaFxClassifier: String = {
+  val os      = sys.props.getOrElse("os.name", "").toLowerCase
+  val arch    = sys.props.getOrElse("os.arch", "").toLowerCase
+  val aarch64 = arch == "aarch64" || arch == "arm64"
+  if (os.contains("mac")) { if (aarch64) "mac-aarch64" else "mac" }
+  else if (os.contains("win")) "win"
+  else if (os.contains("linux")) { if (aarch64) "linux-aarch64" else "linux" }
+  else s"unsupported-os-$os" // resolution then fails and names the host
+}
+
+/** The JavaFX shell: renders view-models and dispatches intents. JVM only. */
+lazy val studioDesktop = project
+  .in(file("studio/desktop"))
+  .enablePlugins(NoPublishPlugin)
+  .dependsOn(studioViz.jvm)
+  .settings(commonSettings)
+  .settings(
+    name         := "eyes4s-studio-desktop",
+    tlJdkRelease := Some(studioDesktopJdkV),
+    libraryDependencies ++= Seq("javafx-base", "javafx-graphics", "javafx-controls").map(
+      "org.openjfx" % _ % javaFxV classifier javaFxClassifier
+    )
+  )
+
+lazy val studioCrossModules = Seq("studioCore", "studioApp", "studioViz")
+lazy val studioProjects     =
+  studioCrossModules.flatMap(m => allPlatforms.map(p => s"$m$p")) :+ "studioDesktop"
+
+// Everything checkBoundaries runs for studio: the build-level rules, then the
+// resolved-graph rule on each portable studio project.
+lazy val studioBoundaryChecks =
+  "checkStudioBoundaries" +:
+    studioCrossModules.flatMap(m => allPlatforms.map(p => s"$m$p/checkModuleBoundaries"))
+
+addCommandAlias(
+  "studioAll",
+  (studioProjects.map(p => s"$p/test") :+ "studioAppJS/fastLinkJS").mkString(";", ";", "")
+)
+
+// The root headerCheckAll and scalafmtCheckAll cover the aggregate only.
+addCommandAlias(
+  "studioStyleCheck",
+  studioProjects
+    .flatMap(p => Seq(s"$p/headerCheckAll", s"$p/scalafmtCheckAll"))
+    .mkString(";", ";", "")
+)
+
+// ---------------------------------------------------------------------------
 // Aliases
 // ---------------------------------------------------------------------------
 
@@ -874,13 +1044,15 @@ addCommandAlias(
 )
 
 // checkModuleBoundaries is per-module (it inspects each module's own resolved
-// graph); checkKernelPurity is build-level. `checkBoundaries` runs both.
+// graph); checkKernelPurity and checkStudioBoundaries are build-level.
+// `checkBoundaries` runs all of them.
 addCommandAlias(
   "checkBoundaries",
   (Seq("checkKernelPurity") ++
     allModules
       .filterNot(m => m == "fs2Module" || m == "io")
-      .flatMap(m => allPlatforms.map(p => s"$m$p/checkModuleBoundaries")))
+      .flatMap(m => allPlatforms.map(p => s"$m$p/checkModuleBoundaries")) ++
+    studioBoundaryChecks)
     .mkString(";", ";", "")
 )
 

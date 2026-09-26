@@ -18,7 +18,22 @@ codec/     eyes4s-codec    JSON codecs, versioned schema
 laws/      eyes4s-laws     Discipline rule sets and generators (MAIN-scope deps)
 fs2/       eyes4s-fs2      streaming execution                  } the only modules
 io/        eyes4s-io       ASC, CSV, export                     } allowed effects
+
+studio/core/     eyes4s-studio-core     document, commands, StudyBackend (JVM+JS; effect-permitted)
+studio/app/      eyes4s-studio-app      Elm-style model, intents, update, view-models (JVM+JS; pure)
+studio/viz/      eyes4s-studio-viz      Intaglio scene builders (JVM+JS; pure)
+studio/desktop/  eyes4s-studio-desktop  JavaFX shell, platform services (JVM only; effect-permitted)
 ```
+
+The studio projects are the Eyes Studio application (`docs/studio/DESIGN_SPEC.md` §13).
+They are not published, not in the root aggregate, and not in `compileAll`/`testAll`;
+build them with `sbt studioAll` and check their style with `sbt studioStyleCheck`.
+studio-desktop compiles for JDK 22+ (JavaFX 24). studio-app and studio-viz are pure
+by contract: they resolve Cats Effect transitively through studio-core, so
+`checkModuleBoundaries` cannot enforce it. `checkBoundaries` does enforce that no
+library module depends on a studio project, that studio-core/app/viz resolve no
+JavaFX artifact, and that their sources name no `javafx`, `scaladock.fx`,
+`java.io` or `java.nio` package (`project/StudioLint.scala`).
 
 ## Build and test
 
