@@ -52,7 +52,8 @@ class MenusSuite extends munit.FunSuite:
     val name            = ok(ProjectName.of("recall-study"))
     val (renamed, done) = run(t2, Intent.RenameProject(name))
     assertEquals(renamed.project, Some(name))
-    assertEquals(done, Vector(AppEffect.Persist))
+    assertEquals(done, Vector(AppEffect.Persist(renamed.save.edits)))
+    assertEquals(renamed.save.edits, t2.save.edits.next)
     assertEquals(Menus.windowTitle(renamed), "recall-study.eyes — Edited")
     assertEquals(run(t2, Intent.RenameProject(StoryModels.project)), (t2, Vector.empty))
   }
@@ -166,6 +167,30 @@ class MenusSuite extends munit.FunSuite:
     assertEquals(run(next, Intent.FocusPreviousPane)._1.focusedPane, t2.focusedPane)
     val chord = eyes4s.studio.app.keys.KeyChord.shift(eyes4s.studio.app.keys.Key.F6)
     assertEquals(run(next, Intent.KeyPressed(chord))._1.focusedPane, t2.focusedPane)
+  }
+
+  test("S1.8: a save that finishes after a later edit leaves the project edited") {
+    def name(s: String)                 = ok(ProjectName.of(s))
+    def persisted(e: Vector[AppEffect]) = e.collect { case AppEffect.Persist(mark) => mark }
+    val (a, ea)                         = run(t2, Intent.RenameProject(name("recall-a")))
+    val (b, eb)                         = run(a, Intent.RenameProject(name("recall-b")))
+    val (markA, markB)                  = (persisted(ea).head, persisted(eb).head)
+    assert(markB.value > markA.value)
+    val at = ok(eyes4s.studio.app.ClockTime.of(11, 2))
+    // The save of edit A lands after edit B: the time moves, the flag stays.
+    val stale = run(b, Intent.Saved(at, markA))._1
+    assertEquals(stale.save.last, Some(at))
+    assert(stale.save.edited)
+    assertEquals(Shell.status(stale).saved, "Saved 11:02")
+    assertEquals(Menus.windowTitle(stale), "recall-b.eyes — Edited")
+    // B's save covers everything; a late A after it changes nothing.
+    val later = ok(eyes4s.studio.app.ClockTime.of(11, 3))
+    val clean = run(stale, Intent.Saved(later, markB))._1
+    assert(!clean.save.edited)
+    val late = run(clean, Intent.Saved(at, markA))._1
+    assert(!late.save.edited)
+    assertEquals(late.save.covered, markB)
+    assertEquals(late.save.last, Some(later))
   }
 
   test("S1.9: the menu bar is the registry: every command, its shortcut and enablement") {

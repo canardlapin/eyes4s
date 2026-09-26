@@ -106,6 +106,18 @@ class CommandRegistrySuite extends munit.ScalaCheckSuite:
     assertEquals(sectionOf(CommandRegistry.maximize), Some(MenuSection.Window))
   }
 
+  test("S1.9: with a native menu bar the window handles no chord a menu accelerator carries") {
+    val accelerated = CommandRegistry.menus.flatMap(_._2).flatMap(_.shortcut).toSet
+    assertEquals(CommandRegistry.menuAccelerators, accelerated)
+    val native = CommandRegistry.windowKeymap(nativeMenu = true)
+    assertEquals(native.keySet.intersect(accelerated), Set.empty[KeyChord])
+    // Nothing is lost: each chord has exactly one path, window or menu.
+    assertEquals(native.keySet ++ accelerated, CommandRegistry.keymap.keySet)
+    // Without a native menu bar (Linux, Windows) the window handles them all.
+    assertEquals(CommandRegistry.windowKeymap(nativeMenu = false), CommandRegistry.keymap)
+    assert(CommandRegistry.shortcutTable().contains("Verified by hand on macOS: pending."))
+  }
+
   test("S1.9: the shortcut table lists every command once, with its shortcut and id") {
     val table = CommandRegistry.shortcutTable()
     val rows  = table.linesIterator.filter(_.startsWith("| ")).drop(1).toVector

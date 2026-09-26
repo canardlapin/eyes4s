@@ -154,16 +154,16 @@ class A11yTreeSuite extends ShellFxSuite:
   fxStage.test("focus is drawn in the accent: a crumb, a toggle and a pane") { stage =>
     val w      = boot(stage, StoryModels.t2Compare)
     val accent = fx(Tokens.themed(Theme.Light, ThemedToken.Accent))
-    // JavaFX sets :focused only while the window has focus, which another
-    // test JVM's window or the desktop can hold; the ring is checked when
-    // this stage can take it.
-    runOnFx { stage.stage.toFront(); stage.stage.requestFocus() }
-    val deadline = System.nanoTime + 5_000_000_000L
-    while !runOnFx(stage.stage.isFocused) && System.nanoTime < deadline do Thread.sleep(25)
-    assume(runOnFx(stage.stage.isFocused), "the test stage could not take window focus")
+    // Keyboard focus is real: each node becomes the scene's focus owner.
+    // JavaFX shows :focused only while the window itself has focus, which a
+    // headless run cannot guarantee, so the focus state is rendered
+    // explicitly: the node's :focused pseudo-class is set, CSS applied, and
+    // its first background fill read. The check always runs.
+    val Focused                = javafx.css.PseudoClass.getPseudoClass("focused")
     def ring(r: Region): Color = runOnFx {
       r.requestFocus()
-      assert(r.isFocused, s"$r did not take focus")
+      assert(stage.scene.getFocusOwner eq r, s"$r is not the focus owner")
+      r.pseudoClassStateChanged(Focused, true)
       r.applyCss()
       r.getBackground.getFills.get(0).getFill.asInstanceOf[Color]
     }
@@ -175,4 +175,6 @@ class A11yTreeSuite extends ShellFxSuite:
     assertEquals(ring(toggle), accent)
     assertEquals(ring(pane), accent)
     assertEquals(runOnFx(pane.getAccessibleRole), StudioPanes.accessibleRole(A11yRole.Plot))
+    // The rendered focus state, for a human to compare with the boards.
+    stage.snapshot(eyes4s.studio.desktop.harness.StudioTheme.Light)
   }

@@ -244,7 +244,7 @@ object StudioDriver:
         Applicative[F].pure(done.record(DriverRecord.Dialog(dialog)))
       // Saving belongs to S2.4, and the rest act on a shell's own window and
       // dock; headless, each is only recorded.
-      case AppEffect.Persist | AppEffect.Journal(_) | AppEffect.RevealProject |
+      case AppEffect.Persist(_) | AppEffect.Journal(_) | AppEffect.RevealProject |
           AppEffect.ResetLayouts(_) | AppEffect.Dock(_) =>
         Applicative[F].pure(done)
 

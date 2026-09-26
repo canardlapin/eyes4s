@@ -9,6 +9,10 @@ also an item of the menu named in the first column. Inside a plot, the
 arrow keys move a roving cursor, Enter selects and Esc clears; Tab leaves
 the plot (DESIGN_SPEC section 10).
 
+On macOS the native menu bar's accelerators are the only path for these
+chords (the window's key handler skips them, `CommandRegistry.windowKeymap`),
+so a key press cannot fire a command twice. Verified by hand on macOS: pending.
+
 | Menu | Command | Shortcut | Id |
 |---|---|---|---|
 | File | Import sources… | — | `data.import` |

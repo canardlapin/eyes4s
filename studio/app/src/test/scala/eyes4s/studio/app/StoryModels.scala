@@ -106,7 +106,7 @@ object StoryModels:
     play(AppModel.open(document, Some(project)), _ => Intent.ItemsLoaded(items))
 
   private def saved(model: AppModel): AppModel =
-    AppModel.update(model, Intent.Saved(savedAt))._1
+    AppModel.update(model, Intent.Saved(savedAt, model.save.edits))._1
 
   private def draftReady(document: StudioDocument): Intent =
     Intent.SessionChanged(

@@ -92,8 +92,12 @@ class AppUpdateLawsSuite extends munit.ScalaCheckSuite:
         mirrored.foreach {
           case (entry, Right(step)) =>
             assertEquals(t.after.history, step.history, t.intent)
-            val doc     = step.history.document
-            val mapped  = step.effects.map(AppEffect.of(_, doc))
+            val doc = step.history.document
+            // A persisting step is the model's next edit, and names it.
+            val mapped = step.effects.map(AppEffect.of(_, doc, t.after.save.edits))
+            if step.effects.contains(eyes4s.studio.core.command.Effect.Persist) then
+              assertEquals(t.after.save.edits, t.before.save.edits.next, t.intent)
+            else assertEquals(t.after.save.edits, t.before.save.edits, t.intent)
             val submits = mapped.collect {
               case AppEffect.Execution(ExecutionEffect.Submit(s)) => s
             }
@@ -139,7 +143,7 @@ class AppUpdateLawsSuite extends munit.ScalaCheckSuite:
             assertEquals(t.after.selection, t.before.selection)
             assertEquals(t.after.document, t.before.document)
           case Intent.Select(_) | Intent.JobsChanged(_) | Intent.SessionChanged(_) |
-              Intent.ItemsLoaded(_) | Intent.Saved(_) | Intent.SaveFailed(_) |
+              Intent.ItemsLoaded(_) | Intent.Saved(_, _) | Intent.SaveFailed(_) |
               Intent.FocusPane(_) | Intent.FocusNextPane | Intent.ToggleMaximize |
               Intent.PaneSubject(_, _) | Intent.Dismiss | Intent.RequestDiscardDraft |
               Intent.RequestImport =>
@@ -288,7 +292,7 @@ class AppUpdateLawsSuite extends munit.ScalaCheckSuite:
       Vector(
         AppEffect.Journal(JournalEntry.Apply(Command.SaveAndRun(None))),
         AppEffect.Execution(ExecutionEffect.Submit(stamp)),
-        AppEffect.Persist
+        AppEffect.Persist(m.save.edits)
       )
     )
     assertEquals(m.jobs.shelf.required, Some(stamp))

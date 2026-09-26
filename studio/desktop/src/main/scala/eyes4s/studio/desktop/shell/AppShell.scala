@@ -35,7 +35,11 @@ final class AppShell(
     host: PerspectiveHost,
     dispatch: Intent => Unit,
     messages: Messages,
-    model: () => AppModel
+    model: () => AppModel,
+    /** Whether the menu bar is the platform's native one (macOS). A test
+      * of the window's own key path passes `false`, as on Linux.
+      */
+    val nativeMenu: Boolean = AppShell.systemMenuBar
 ):
 
   val appBar: AppBar             = AppBar(dispatch)
@@ -55,9 +59,9 @@ final class AppShell(
     * keymap below carries the shortcuts.
     */
   val menuBar: MenuBar = MenuBar()
-  menuBar.setUseSystemMenuBar(true)
+  menuBar.setUseSystemMenuBar(nativeMenu)
   menuBar.setFocusTraversable(false)
-  if !AppShell.systemMenuBar then
+  if !nativeMenu then
     menuBar.setManaged(false)
     menuBar.setVisible(false)
 
@@ -77,10 +81,16 @@ final class AppShell(
   // The keymap: a registered chord that no focused control consumed is the
   // app's; it is consumed here, so the scene's menu accelerators (which run
   // after the handlers) never dispatch it a second time.
+  /** The chords this window handles itself (S1.9): none that a native menu
+    * accelerator already carries.
+    */
+  val windowKeys: Map[eyes4s.studio.app.keys.KeyChord, eyes4s.studio.app.keys.CommandId] =
+    CommandRegistry.windowKeymap(nativeMenu)
+
   root.addEventHandler(
     KeyEvent.KEY_PRESSED,
     (e: KeyEvent) =>
-      ShellKeys.chords(e).find(CommandRegistry.keymap.contains).foreach { c =>
+      ShellKeys.chords(e).find(windowKeys.contains).foreach { c =>
         dispatch(Intent.KeyPressed(c))
         e.consume()
       }

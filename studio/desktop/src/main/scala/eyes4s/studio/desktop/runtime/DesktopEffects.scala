@@ -90,13 +90,13 @@ final class DesktopEffects(
     case AppEffect.ResetLayouts(p)   => resetLayouts(p)
     case AppEffect.Dock(command)     => dock(command)
     case e @ AppEffect.RevealProject => report(EffectProblem.NotWired(e, "S2.9"))
-    case e @ AppEffect.Persist       =>
+    case e @ AppEffect.Persist(mark) =>
       project.fold(report(EffectProblem.NotWired(e, "S2.9"))) {
         _.save { outcome =>
           ui { () =>
             outcome match
               case Left(reason) => dispatch(Intent.SaveFailed(reason))
-              case Right(_)     => clock().foreach(t => dispatch(Intent.Saved(t)))
+              case Right(_)     => clock().foreach(t => dispatch(Intent.Saved(t, mark)))
           }
         }
       }

@@ -134,12 +134,13 @@ object StudioWindow:
       dialogs: Option[PlatformDialogs] = None,
       messages: Messages = Messages.english,
       project: Option[ProjectPort] = None,
-      clock: () => Option[ClockTime] = DesktopEffects.wallClock
+      clock: () => Option[ClockTime] = DesktopEffects.wallClock,
+      nativeMenu: Boolean = AppShell.systemMenuBar
   )(using IORuntime): Either[WindowError, StudioWindow] =
     for
       sheets <- StudioStyles.stylesheets(theme).left.map(WindowError.Styles(_))
       dock   <- dockTheme.left.map(WindowError.Styles(_))
-      window <- build(initial, moment, dock, dialogs, messages, project, clock)
+      window <- build(initial, moment, dock, dialogs, messages, project, clock, nativeMenu)
     yield
       window.root.getStylesheets.setAll(sheets*)
       window
@@ -151,7 +152,8 @@ object StudioWindow:
       dialogs: Option[PlatformDialogs],
       messages: Messages,
       project: Option[ProjectPort],
-      clock: () => Option[ClockTime]
+      clock: () => Option[ClockTime],
+      nativeMenu: Boolean
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None
@@ -188,7 +190,7 @@ object StudioWindow:
     val booted = AppModel.update(initial, Intent.JobsChanged(session.jobs))._1
     val r      = StudioRuntime(booted, effects)
     runtime = Some(r)
-    val shell      = AppShell(host, dispatch, messages, () => r.model)
+    val shell      = AppShell(host, dispatch, messages, () => r.model, nativeMenu)
     val unreadable = host.restore(booted.document.presentation.layouts, booted)
     if unreadable.nonEmpty then
       r.dispatch(

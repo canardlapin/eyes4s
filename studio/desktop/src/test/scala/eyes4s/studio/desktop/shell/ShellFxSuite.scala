@@ -65,11 +65,23 @@ abstract class ShellFxSuite extends StudioFxSuite:
       dialogs: PlatformDialogs = Dialogs(None),
       theme: Theme = Theme.Light,
       project: Option[ProjectPort] = None,
-      clock: () => Option[ClockTime] = DesktopEffects.wallClock
+      clock: () => Option[ClockTime] = DesktopEffects.wallClock,
+      // Synthetic key events never reach a native menu, so the shell suites
+      // exercise the window's own key path, as it runs on Linux; KeymapFxSuite
+      // checks the native split separately.
+      nativeMenu: Boolean = false
   ): StudioWindow =
     val w = runOnFx(
       StudioWindow
-        .open(model, moment, theme, dialogs = Some(dialogs), project = project, clock = clock)
+        .open(
+          model,
+          moment,
+          theme,
+          dialogs = Some(dialogs),
+          project = project,
+          clock = clock,
+          nativeMenu = nativeMenu
+        )
         .fold(e => fail(e.message), identity)
     )
     opened += w

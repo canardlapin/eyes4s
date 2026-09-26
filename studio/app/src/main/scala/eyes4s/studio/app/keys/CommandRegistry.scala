@@ -305,6 +305,19 @@ object CommandRegistry:
   val keymap: Map[KeyChord, CommandId] =
     all.flatMap(c => c.shortcut.map(_ -> c.id)).toMap
 
+  /** The chords a menu item carries as its accelerator: every command with a
+    * shortcut is an item of the menu bar (S1.9).
+    */
+  lazy val menuAccelerators: Set[KeyChord] = menus.flatMap(_._2).flatMap(_.shortcut).toSet
+
+  /** The chords a window's own key handler dispatches. Where the menu bar is
+    * native (macOS), the menu's accelerator is the only path for its chord,
+    * so one key press can never dispatch its command twice; elsewhere the
+    * menu bar is hidden and the window handles every chord.
+    */
+  def windowKeymap(nativeMenu: Boolean): Map[KeyChord, CommandId] =
+    if nativeMenu then keymap.filterNot((chord, _) => menuAccelerators(chord)) else keymap
+
   /** A command's shortcut as the boards print it ("⌘1"), or "". */
   def shortcutText(command: AppCommand): String = command.shortcut.fold("")(_.render)
 
@@ -337,6 +350,10 @@ object CommandRegistry:
       "also an item of the menu named in the first column. Inside a plot, the",
       "arrow keys move a roving cursor, Enter selects and Esc clears; Tab leaves",
       "the plot (DESIGN_SPEC section 10).",
+      "",
+      "On macOS the native menu bar's accelerators are the only path for these",
+      "chords (the window's key handler skips them, `CommandRegistry.windowKeymap`),",
+      "so a key press cannot fire a command twice. Verified by hand on macOS: pending.",
       "",
       "| Menu | Command | Shortcut | Id |",
       "|---|---|---|---|"

@@ -117,6 +117,33 @@ class KeymapFxSuite extends ShellFxSuite:
     }
   }
 
+  fxStage.test(
+    "native menu bar: the window leaves accelerated chords to the menu; one press, one step"
+  ) { fx =>
+    val w = boot(fx, StoryModels.t2Explore, nativeMenu = true)
+    assert(w.shell.nativeMenu)
+    // Structural: the window's own keymap holds no chord a menu item carries.
+    assertEquals(
+      w.shell.windowKeys.keySet.intersect(CommandRegistry.menuAccelerators),
+      Set.empty
+    )
+    val start   = model(w)
+    val oneBack = AppModel.update(start, Intent.Back)._1.location
+    // ⌘[ once: whichever path takes it (the native menu on macOS, a scene
+    // accelerator elsewhere), Back happens at most once.
+    press(fx, CommandRegistry.back.shortcut.get)
+    assert(Set(start.location, oneBack).contains(model(w).location), model(w).location)
+    // The menu item is the path: firing it goes back exactly one step.
+    dispatch(fx, w, Intent.Navigate(start.location))
+    val here = model(w)
+    val item = runOnFx(
+      w.shell.menus.flatMap(_.getItems.asScala).find(_.getId == "navigate.back").get
+    )
+    runOnFx(item.fire())
+    fx.awaitLayout()
+    assertEquals(model(w).location, AppModel.update(here, Intent.Back)._1.location)
+  }
+
   fxStage.test("⌘Z and ⌘⇧Z undo and redo a science edit") { fx =>
     val w = boot(fx, StoryModels.t2Compare)
     dispatch(fx, w, Intent.RequestDiscardDraft)
