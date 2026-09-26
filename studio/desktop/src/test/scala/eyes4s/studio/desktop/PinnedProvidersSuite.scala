@@ -21,7 +21,7 @@ import eyes4s.studio.viz.StudioScenes
 import intaglio.javafx.JavaFxRenderer
 import scaladock.dsl.*
 import scaladock.fx.{Dock, PaneFactories}
-import scaladock.{LayoutState, PaneCodec, PaneType}
+import scaladock.{LayoutSettings, LayoutState, PaneCodec, PaneType}
 
 /** The pinned scaladock and Intaglio JavaFX backend link against the shell's
   * JavaFX without starting the toolkit (S0.3). No node is constructed.
@@ -37,6 +37,16 @@ class PinnedProvidersSuite extends munit.FunSuite:
       )
     )
     assertEquals(layout.panes.map(_.title), Vector("Left", "Right"))
+  }
+
+  test("the studio's 28px tab header is a scaladock layout setting") {
+    // DESIGN_SPEC section 2 item 5; scaladock's default is 32.
+    val settings = LayoutSettings(headerPx = 28)
+    assertEquals(settings.headerPx, 28.0)
+    assertEquals(settings.dividerPx, LayoutSettings.default.dividerPx)
+    // Typechecks only if Dock takes the settings at construction.
+    val make: LayoutSettings => Dock = s => Dock(PaneFactories.empty, settings = s)
+    assert(make ne null)
   }
 
   test("scaladock-fx types resolve against the shell's JavaFX") {
