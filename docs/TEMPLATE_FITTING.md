@@ -64,8 +64,10 @@ The saved recipe includes **both partitions**, their data and the explicit held-
 it is not the fitting request and should not be sent to the backend. Restore rejects unsupported
 schema/method versions, duplicate keys/folds, invalid data and mismatched training identity.
 
-The native method `eyes4s.no-intercept-scaled-householder-qr/1` uses unit-norm column scaling
-and Householder QR at fixed relative rank tolerance `1e-12`. There is no implicit intercept,
+The native method `eyes4s.no-intercept-scaled-householder-qr/2` uses unit-norm column scaling
+and Householder QR at fixed relative rank tolerance `1e-7`, the `lm` convention. Revision 1 used
+`1e-12`, which admits near-collinear designs whose coefficients are rounding noise; its recipes
+are refused as an unsupported method rather than refitted under a different policy. There is no implicit intercept,
 silent row deletion or rank-deficient coefficient substitution. Rank, shape and arithmetic
 errors retain the training identity and solver operands. The native codec records the method,
 no-intercept convention and tolerance, and refuses changes to them.

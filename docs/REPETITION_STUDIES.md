@@ -106,8 +106,17 @@ case runs the complete save, fresh-registration reopen and rerun workflow on bot
    `Projection[K, O]` keep their actual value types. An occasion may be a product such as
    `(phase, repetition)`; it need not be a display string. The example uses an integer
    participant and a typed occasion product across three occasions.
-2. Choose `RepetitionRelations.withinParticipant` for reinstatement, or `conditionGroups` for
-   the reference condition-only estimand. `RepetitionRelations.of` accepts finite conjunctions
+2. Choose `RepetitionRelations.withinParticipant` for reinstatement, or
+   `referenceConditionGrouping(scope)` for the reference condition-grouping estimand. The latter
+   matches each trial with every other trial of **its own occasion** and controls it with every
+   trial of **another occasion**. It is not a reinstatement contrast: same-stimulus pairs across
+   occasions, the pairs reinstatement matches, land among its controls, which is the inverted
+   contrast recorded as eyesim issue #28. The `ParticipantScope` argument has no default:
+   `WithinParticipant` adds `SameParticipant` to both roles, `AcrossParticipants` adds
+   `DifferentParticipant`, and `Pooled` crosses participant boundaries exactly as
+   `repetitive_similarity(condition_var = ...)` does. On the wire a plan stores its rule list,
+   not the constructor name, so a saved pooled plan (`[SameOccasion]` / `[DifferentOccasion]`)
+   decodes unchanged. `RepetitionRelations.of` accepts finite conjunctions
    of same/different participant, stimulus and occasion rules. It rejects empty, duplicate,
    contradictory or potentially overlapping matched/control relations. Both roles are directed
    and exclude full-key self edges. The relation order is preserved in diagnostics and provenance.

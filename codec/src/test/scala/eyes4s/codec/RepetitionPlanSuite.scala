@@ -296,13 +296,58 @@ class RepetitionPlanSuite extends munit.FunSuite:
     assert(codec.parse(SavedStudyFixtures.versionOne).isLeft)
   }
 
+  test("condition grouping names its estimand and requires an explicit participant scope") {
+    // The old unscoped name reproduced eyesim issue #28's inverted contrast silently.
+    assert(typeCheckErrors("eyes4s.plan.RepetitionRelations.conditionGroups").nonEmpty)
+    assert(
+      typeCheckErrors(
+        "val r: eyes4s.plan.RepetitionRelations = eyes4s.plan.RepetitionRelations.referenceConditionGrouping"
+      ).nonEmpty
+    )
+    def run(scope: ParticipantScope) = get(
+      RepetitionPlan.of(
+        layout,
+        RepetitionRelations.referenceConditionGrouping(scope),
+        MapSimilarityMethod.Cosine,
+        Selection.All,
+        FailurePolicy.RequireAll,
+        grid,
+        Trials(rows)
+      )
+    ).run
+    val within = run(ParticipantScope.WithinParticipant)
+    val across = run(ParticipantScope.AcrossParticipants)
+    val pooled = run(ParticipantScope.Pooled)
+    val scoped = Set(RepetitionRule.SameParticipant, RepetitionRule.DifferentParticipant)
+    ParticipantScope.values.foreach { scope =>
+      val r = RepetitionRelations.referenceConditionGrouping(scope)
+      assertEquals(r.matched.filter(scoped), r.controls.filter(scoped))
+      assertEquals(r.matched.filter(scoped), scope.rule.toVector)
+    }
+    assertEquals(within.matched.rows.size, 12)
+    assert(within.matched.rows.forall(r => r.left.person == r.right.person))
+    assert(within.controls.rows.forall(r => r.left.person == r.right.person))
+    assertEquals(across.matched.rows.size, 24)
+    assert(across.matched.rows.forall(r => r.left.person != r.right.person))
+    assertEquals(pooled.matched.rows.size, 36)
+    // Every scope puts same-stimulus pairs from other occasions among the CONTROLS:
+    // this estimand is condition grouping, not reinstatement.
+    Vector(within, pooled).foreach { result =>
+      assert(
+        result.controls.rows.exists(r =>
+          r.left.person == r.right.person && r.left.stimulus == r.right.stimulus
+        )
+      )
+    }
+  }
+
   test(
     "finite registered relation vocabulary covers condition groups and alternative typed axes"
   ) {
     val conditions = get(
       RepetitionPlan.of(
         layout,
-        RepetitionRelations.conditionGroups,
+        RepetitionRelations.referenceConditionGrouping(ParticipantScope.Pooled),
         MapSimilarityMethod.Cosine,
         Selection.All,
         FailurePolicy.RequireAll,

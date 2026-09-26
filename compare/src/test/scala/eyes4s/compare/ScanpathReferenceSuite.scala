@@ -315,6 +315,74 @@ class ScanpathReferenceSuite extends munit.FunSuite:
     )
   }
 
+  test("transport work is bounded in total, not only per iteration") {
+    // 200 x 200 costs pass the per-iteration size limit; ten thousand iterations
+    // of an unattainable tolerance would otherwise run synchronously for seconds.
+    def long(offset: Double) = get(
+      Scanpath.of(
+        frame,
+        clock,
+        IArray.from((0 until 200).map { i =>
+          singleton((i * 3.7 + offset) % 800, (i * 1.3) % 400, i * 20L, 10).first
+        })
+      )
+    )
+    val c = get(
+      FixationTransportConfig
+        .of[Px](10, 10, Span.millis(100), 1, .01, marginalTolerance = 1e-300)
+    )
+    val started = System.nanoTime()
+    val result  = FixationTransport.compare(long(0), long(11), c)
+    val seconds = (System.nanoTime() - started) / 1e9
+    assert(
+      result.left.exists(e => e.message.contains("work limit") && e.message.contains("200")),
+      clue((result.map(_.iterations), seconds))
+    )
+    val budget = FixationTransportConfig.DefaultMaximumWork
+    assert(
+      result match
+        case Left(FixationComparisonError.WorkLimit(200, 200, n, r, `budget`)) =>
+          n.toLong == budget / 40000 && r > 1e-300
+        case _ => false
+    )
+    // A budget that cannot afford one iteration refuses before allocating the costs.
+    val small = get(
+      FixationTransportConfig.of[Px](10, 10, Span.millis(100), 1, .01, maximumWork = 39999L)
+    )
+    assertEquals(
+      FixationTransport.compare(long(0), long(11), small),
+      Left(FixationComparisonError.WorkLimit(200, 200, 0, Double.PositiveInfinity, 39999L))
+    )
+    assert(FixationTransportConfig.of[Px](1, 1, Span.millis(1), 0, .1, maximumWork = 0L).isLeft)
+    // A budget large enough for the iteration cap keeps the ordinary convergence error.
+    val capped = get(
+      FixationTransportConfig
+        .of[Px](1, 1, Span.millis(1), 0, .5, maximumIterations = 1, maximumWork = 4L)
+    )
+    def two(d1: Long, d2: Long) = get(
+      Scanpath.of(
+        frame,
+        clock,
+        IArray(singleton(0, 0, 0, d1).first, singleton(1, 0, 100, d2).first)
+      )
+    )
+    assert(
+      FixationTransport.compare(two(80, 20), two(30, 70), capped) match
+        case Left(FixationComparisonError.NonConvergence(2, 2, 1, _, _)) => true
+        case _                                                           => false
+    )
+  }
+
+  test("a nonfinite cost names the first offending cell") {
+    val tiny =
+      get(FixationTransportConfig.of[Px](java.lang.Double.MIN_VALUE, 1, Span.millis(1), 0, .1))
+    assert(
+      FixationTransport.compare(base, translated, tiny) match
+        case Left(FixationComparisonError.Numerical(0, 0, v)) => !v.isFinite
+        case other                                            => fail(other.toString)
+    )
+  }
+
   test(
     "transport retains exact relative microseconds beyond double integer precision and checks identities"
   ) {

@@ -149,7 +149,7 @@ class TemplateFitSuite extends FunSuite:
     Vector(
       "method"        -> Json.fromString(eyes4s.design.FittedTemplate.method),
       "intercept"     -> Json.fromBoolean(true),
-      "rankTolerance" -> Json.fromDoubleOrNull(1e-7),
+      "rankTolerance" -> Json.fromDoubleOrNull(1e-12),
       "trainingHash"  -> Json.fromString("bad")
     ).foreach { (field, replacement) =>
       assert(

@@ -1,16 +1,20 @@
 # Checked Session membership
 
-`eyes4s.design.Session[U]` is an immutable container with a declared `Frame[U]`
-and `ClockId`. `Session.empty(frame, clock)` starts with no members. Its arguments
-are already domain values, so empty construction cannot fail. No coordinate
-transformation, synchronization or resampling occurs during admission.
+`eyes4s.design.Session[U]` is an immutable container with a declared `Frame[U]`.
+`Session.empty(frame)` starts with no members. Its argument is already a domain
+value, so empty construction cannot fail. No coordinate transformation,
+synchronization or resampling occurs during admission.
 
 Use `SessionKey.of` to parse a nonblank key. Nonblank whitespace is retained;
 `"trial"` and `" trial "` are distinct keys. Recordings, AOI sets and grids have
 separate key namespaces. `addRecording`, `addAoiSet` and `addGrid` return
 `Either[SessionError, Session[U]]`, rejecting an existing key in that namespace.
-All values must share the complete frame identity and specification. Recordings
-must also share the clock. All compatibility checks use `kernel.Agreement`.
+All values must share the complete frame identity and specification, checked with
+`kernel.Agreement`. A Session declares **no timeline**: each recording keeps its own
+`ClockId`. Independently acquired recordings run on independent clocks, and a shared
+display does not make them one timeline; forcing one `ClockId` would assert a
+synchronisation nobody established. An analysis that needs two recordings on one
+timeline checks `Agreement.clocks` on those recordings itself.
 
 `replaceRecording`, `replaceAoiSet` and `replaceGrid` require an existing key and
 recheck the replacement. Replacement preserves insertion position. The matching
@@ -33,7 +37,7 @@ Session, where it simply performs that Session's independent lookup.
 
 The external-package `eyes4s.sessionconsumer.SessionSuite` exercises construction,
 every mutation operation, total access, refusal stability, frame specification
-conflicts, clock conflicts and grid aliases on JVM and JS. Compile-time tests
+conflicts, coexisting recordings with distinct clocks and grid aliases on JVM and JS. Compile-time tests
 reject constructor access, raw-string keys, mixed spatial units and mutable
 access. The array probe uses safe `IArray.from` conversion and proves that later
 changes to the original mutable array cannot change the recording. Deliberate
