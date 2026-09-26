@@ -27,8 +27,8 @@ import eyes4s.plan.*
 class ResultsDiagnosticCatalogSuite extends munit.FunSuite:
   import ResultsDiagnostics.given
 
-  private val PinnedCount  = 50
-  private val PinnedDigest = "5a453ed0d2d7f703"
+  private val PinnedCount  = 58
+  private val PinnedDigest = "e0d790790e971b5f"
 
   private val all       = DiagnosticSamples.all ++ ResultsDiagnosticSamples.all
   private val alignment = DiagnosticAlignment(

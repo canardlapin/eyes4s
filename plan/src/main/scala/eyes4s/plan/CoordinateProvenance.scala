@@ -219,6 +219,13 @@ final class CoordinateProvenance[K, U <: Unit2D] private (
   /** The plan's admission frame, which admitted positions are in. */
   def admission: Frame[U] = plan.admission
 
+  /** The scanpath positions of a trial's fixations, in order. */
+  def positions(key: K): Either[ProvenanceError[K], Vector[ScanpathPosition]] =
+    paths.get(key) match
+      case None               => Left(ProvenanceError.UnknownTrial(key))
+      case Some(Vector(path)) => Right((0 until path.n).toVector.map(new ScanpathPosition(_)))
+      case Some(found)        => Left(ProvenanceError.AmbiguousTrial(key, found.size))
+
   /** The provenance of the fixation at a scanpath position of a trial. */
   def fixation(
       key: K,

@@ -859,5 +859,6 @@ object DiagnosticSamples:
       )
     ),
     generated[RecordIdentityError]("RecordIdentityError"),
-    generated[ProvenanceError[StudyKey]]("ProvenanceError")
+    generated[ProvenanceError[StudyKey]]("ProvenanceError"),
+    generated[NavigationError[StudyKey]]("NavigationError")
   )

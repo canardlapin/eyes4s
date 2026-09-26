@@ -110,20 +110,50 @@ object PageSize:
   */
 final case class Page[K, A](entries: Vector[A], next: Option[ResultRef[K]])
 
+/** A position in a listing, counted from 0: the first entry is at offset 0.
+  * An application that scrolls a listing asks for pages by offset.
+  */
+final case class ListingOffset private[plan] (value: Int) derives CanEqual
+
+object ListingOffset:
+  val start: ListingOffset = new ListingOffset(0)
+
+  def of(value: Int): Either[NavigationError[Nothing], ListingOffset] =
+    Either.cond(value >= 0, new ListingOffset(value), NavigationError.NegativeOffset(value))
+
+/** One page by offset: at most the requested number of entries from
+  * `offset`, the listing's `total`, and the offset the next page starts at.
+  * A page from the end of the listing, or beyond it, is empty.
+  */
+final case class OffsetPage[A](
+    entries: Vector[A],
+    offset: ListingOffset,
+    total: Int,
+    next: Option[ListingOffset]
+)
+
 /** An immutable, keyed view in the result's own order. Entries are reached by
-  * typed reference, and pages start at a reference rather than a row number.
+  * typed reference, and pages start at a reference or an offset.
+  *
+  * The references are checked when the listing is built (no reference may
+  * address two entries), and its [[total]] is known then; an entry itself is
+  * built from the stored row only when a page or a lookup asks for it.
   */
 final class Listing[K, A] private (
-    entries: Vector[A],
+    refs: Vector[ResultRef[K]],
     positions: Map[ResultRef[K], Int],
-    reference: A => ResultRef[K]
+    entry: Int => A
 ):
-  def size: Int                            = entries.size
-  def isEmpty: Boolean                     = entries.isEmpty
+  def size: Int                            = refs.size
+  def total: Int                           = refs.size
+  def isEmpty: Boolean                     = refs.isEmpty
   def contains(ref: ResultRef[K]): Boolean = positions.contains(ref)
-  def get(ref: ResultRef[K]): Option[A]    = positions.get(ref).map(entries)
+  def get(ref: ResultRef[K]): Option[A]    = positions.get(ref).map(entry)
 
-  private[plan] def inOrder: Vector[A] = entries
+  /** The references of the listing, in its order, without building an entry. */
+  def references: Vector[ResultRef[K]] = refs
+
+  private[plan] def inOrder: Vector[A] = refs.indices.toVector.map(entry)
 
   /** The first page. */
   def first(size: PageSize): Page[K, A] = at(0, size)
@@ -132,24 +162,43 @@ final class Listing[K, A] private (
   def page(from: ResultRef[K], size: PageSize): Either[InspectionError[K], Page[K, A]] =
     positions.get(from).toRight(InspectionError.UnknownReference(from)).map(at(_, size))
 
+  /** The page that starts at `offset`. */
+  def page(offset: ListingOffset, size: PageSize): OffsetPage[A] =
+    val start = math.min(offset.value, refs.size)
+    val end   = math.min(refs.size, start + size.value)
+    OffsetPage(
+      (start until end).toVector.map(entry),
+      offset,
+      refs.size,
+      Option.when(end < refs.size)(new ListingOffset(end))
+    )
+
   private def at(start: Int, size: PageSize): Page[K, A] =
-    val end = math.min(entries.size, start + size.value)
-    Page(entries.slice(start, end), entries.lift(end).map(reference))
+    val end = math.min(refs.size, start + size.value)
+    Page((start until end).toVector.map(entry), refs.lift(end))
 
 object Listing:
   /** Refuses a reference that addresses more than one entry. */
   private[plan] def of[K, A](entries: Vector[A])(
       reference: A => ResultRef[K]
   ): Either[InspectionError[K], Listing[K, A]] =
-    entries.zipWithIndex
+    projected(entries)(reference)(identity)
+
+  /** A listing of stored rows whose entries are built on demand. The
+    * references are computed and checked now; `project` runs per lookup.
+    */
+  private[plan] def projected[K, R, A](rows: Vector[R])(reference: R => ResultRef[K])(
+      project: R => A
+  ): Either[InspectionError[K], Listing[K, A]] =
+    val refs = rows.map(reference)
+    refs.zipWithIndex
       .foldLeft[Either[InspectionError[K], Map[ResultRef[K], Int]]](Right(Map.empty)) {
-        case (Right(seen), (entry, index)) =>
-          val ref = reference(entry)
+        case (Right(seen), (ref, index)) =>
           if seen.contains(ref) then Left(InspectionError.DuplicateReference(ref))
           else Right(seen.updated(ref, index))
         case (failed, _) => failed
       }
-      .map(new Listing(entries, _, reference))
+      .map(new Listing(refs, _, i => project(rows(i))))
 
 /** One named score or difference component, read from the typed value by the
   * method's descriptor. No component is computed here. Values compare by bit
@@ -357,6 +406,71 @@ final class ScaleInspection[K, U <: Unit2D, S, D] private[plan] (
   def report(design: StudyDesign): ReductionReport[K] = design match
     case StudyDesign.Matched => matchedReduced.diagnostics
     case StudyDesign.Control => controlReduced.diagnostics
+
+  private def source(design: StudyDesign) = design match
+    case StudyDesign.Matched => matchedSource
+    case StudyDesign.Control => controlSource
+
+  // Pair positions by focal and by reference trial, built on first use.
+  private lazy val byFocal: Map[StudyDesign, Map[K, Vector[Int]]] =
+    StudyDesign.values.toVector.map { design =>
+      val rows = source(design).rows
+      design -> rows.indices.toVector.groupBy(i => rows(i).left)
+    }.toMap
+  private lazy val byReference: Map[StudyDesign, Map[K, Vector[Int]]] =
+    StudyDesign.values.toVector.map { design =>
+      val rows = source(design).rows
+      design -> rows.indices.toVector.groupBy(i => rows(i).right)
+    }.toMap
+
+  private def refs(
+      index: Map[StudyDesign, Map[K, Vector[Int]]],
+      design: StudyDesign,
+      key: K
+  ): Vector[ResultRef[K]] =
+    index(design).getOrElse(key, Vector.empty).map(pairs(design).references)
+
+  /** The pairs of one design whose query (focal) trial is `key`, in pair
+    * order: every pair row is reached from its query trial here.
+    */
+  def pairsOfQuery(design: StudyDesign, key: K): Vector[ResultRef[K]] =
+    refs(byFocal, design, key)
+
+  /** Every pair a trial takes part in at this scale: as the query, as the
+    * matched reference, and as a control reference.
+    */
+  def usedBy(key: K): UsedBy[K] =
+    UsedBy(
+      StudyDesign.values.toVector.flatMap(refs(byFocal, _, key)),
+      refs(byReference, StudyDesign.Matched, key),
+      refs(byReference, StudyDesign.Control, key)
+    )
+
+  /** How many pairs a trial takes part in, counted from the stored rows
+    * without building any pair entry or reference.
+    */
+  def usedByCounts(key: K): UsedByCounts =
+    def count(index: Map[StudyDesign, Map[K, Vector[Int]]], design: StudyDesign) =
+      index(design).get(key).fold(0)(_.size)
+    UsedByCounts(
+      count(byFocal, StudyDesign.Matched) + count(byFocal, StudyDesign.Control),
+      count(byReference, StudyDesign.Matched),
+      count(byReference, StudyDesign.Control)
+    )
+
+/** How many of a scale's pairs use one trial: as the query (focal) trial of
+  * matched and control pairs, as the matched reference, and as a control
+  * reference.
+  */
+final case class UsedByCounts(asQuery: Int, asMatched: Int, asControl: Int) derives CanEqual
+
+/** The pairs of a scale that use one trial, by role, in pair order. */
+final case class UsedBy[K](
+    asQuery: Vector[ResultRef[K]],
+    asMatched: Vector[ResultRef[K]],
+    asControl: Vector[ResultRef[K]]
+) derives CanEqual:
+  def counts: UsedByCounts = UsedByCounts(asQuery.size, asMatched.size, asControl.size)
 
 /** A navigable, renderer-neutral view of one completed study result and the
   * sources of its input. Nothing is recomputed: every value is read from the
@@ -672,20 +786,23 @@ object ResultInspection:
       cell.fold(ref)((repetition, window) => ResultRef.InCell(repetition, window, ref))
     def place(ref: ResultRef[K], diagnostic: Diagnostic[K]) =
       located(address(ref).loci, diagnostic, sources)
-    val outcomes   = scale.estimation.groupMap(_._1)(_._2)
-    val estimation = scale.estimation.map(_._1).distinct.map { key =>
-      val ref = ResultRef.Estimation(index, key)
-      EstimationEntry(
-        address(ref),
-        key,
-        outcomes(key).map(
-          _.fold(
-            f => EstimationOutcome.Failed(place(ref, Projections.failure(f))),
-            mass => EstimationOutcome.Estimated(new DensityView(mass))
+    val outcomes = scale.estimation.groupMap(_._1)(_._2)
+    def estimation: Either[InspectionError[K], Listing[K, EstimationEntry[K, U]]] =
+      Listing.projected(scale.estimation.map(_._1).distinct)(key =>
+        address(ResultRef.Estimation(index, key))
+      ) { key =>
+        val ref = ResultRef.Estimation(index, key)
+        EstimationEntry(
+          address(ref),
+          key,
+          outcomes(key).map(
+            _.fold(
+              f => EstimationOutcome.Failed(place(ref, Projections.failure(f))),
+              mass => EstimationOutcome.Estimated(new DensityView(mass))
+            )
           )
         )
-      )
-    }
+      }
     def checked(design: StudyDesign): Either[InspectionError[K], Unit] =
       val orientation = scale.analyses.reduced(design).diagnostics.orientation
       val stored      =
@@ -695,8 +812,10 @@ object ResultInspection:
       else if schema.components.nonEmpty && schema.ids != stored then
         Left(InspectionError.Components(DescriptorError.ComponentMismatch(schema.ids, stored)))
       else Right(())
-    def pairs(design: StudyDesign): Vector[PairEntry[K, S]] =
-      scale.analyses.source(design).rows.map { row =>
+    def pairs(design: StudyDesign): Either[InspectionError[K], Listing[K, PairEntry[K, S]]] =
+      Listing.projected(scale.analyses.source(design).rows)(row =>
+        address(ResultRef.PairRow(index, design, row.left, row.right))
+      ) { row =>
         val ref = ResultRef.PairRow(index, design, row.left, row.right)
         PairEntry(
           address(ref),
@@ -706,45 +825,61 @@ object ResultInspection:
           row.result.left.map(f => place(ref, Projections.failure(f))).map(schema.score)
         )
       }
+    // Each reduction's membership is checked against the stored pair rows
+    // now, by count; its members are built when the entry is asked for.
     def reductions(
-        design: StudyDesign,
-        pairs: Vector[PairEntry[K, S]]
-    ): Either[InspectionError[K], Vector[ReductionEntry[K, S]]] =
-      val byFocal = pairs.groupBy(_.focal)
-      scale.analyses.reduced(design).entries.traverse { row =>
-        val ref     = ResultRef.Reduction(index, design, row.key)
-        val outcome =
-          row.result.left.map(e => place(ref, Projections.reduction(e))).map(schema.score)
-        val members = byFocal.getOrElse(row.key, Vector.empty).map { pair =>
-          val status = (pair.outcome, outcome) match
-            case (Left(failure), _)    => Membership.FailedPair(failure)
-            case (Right(_), Left(why)) => Membership.Withheld(why)
-            case (Right(_), Right(_))  => Membership.Contributing
-          Member(pair.ref, pair.reference, status)
-        }
-        val entry = ReductionEntry(
-          address(ref),
-          design,
-          row.key,
-          outcome,
-          row.selected,
-          row.successful,
-          row.failed,
-          row.contributing,
-          members
-        )
+        design: StudyDesign
+    ): Either[InspectionError[K], Listing[K, ReductionEntry[K, S]]] =
+      val rows                           = scale.analyses.source(design).rows
+      val byFocal                        = rows.indices.toVector.groupBy(i => rows(i).left)
+      val reduced                        = scale.analyses.reduced(design).entries
+      def membersOf(key: K): Vector[Int] = byFocal.getOrElse(key, Vector.empty)
+      val counted                        = reduced.traverse { row =>
+        val members      = membersOf(row.key)
+        val successes    = members.count(i => rows(i).result.isRight)
+        val contributors = if row.result.isRight then successes else 0
         Either.cond(
-          members.size == row.selected && entry.contributors.size == row.contributing,
-          entry,
+          members.size == row.selected && contributors == row.contributing,
+          (),
           InspectionError.ReductionMembership(
-            entry.ref,
+            address(ResultRef.Reduction(index, design, row.key)),
             row.selected,
             members.size,
             row.contributing,
-            entry.contributors.size
+            contributors
           )
         )
       }
+      counted.flatMap(_ =>
+        Listing.projected(reduced)(row =>
+          address(ResultRef.Reduction(index, design, row.key))
+        ) { row =>
+          val ref     = ResultRef.Reduction(index, design, row.key)
+          val outcome =
+            row.result.left.map(e => place(ref, Projections.reduction(e))).map(schema.score)
+          val members = membersOf(row.key).map { i =>
+            val pair    = rows(i)
+            val pairRef = ResultRef.PairRow(index, design, pair.left, pair.right)
+            val status  = (pair.result, outcome) match
+              case (Left(failure), _) =>
+                Membership.FailedPair(place(pairRef, Projections.failure(failure)))
+              case (Right(_), Left(why)) => Membership.Withheld(why)
+              case (Right(_), Right(_))  => Membership.Contributing
+            Member(address(pairRef), pair.right, status)
+          }
+          ReductionEntry(
+            address(ref),
+            design,
+            row.key,
+            outcome,
+            row.selected,
+            row.successful,
+            row.failed,
+            row.contributing,
+            members
+          )
+        }
+      )
     val contrast: Either[InspectionError[K], ScaleContrast[K, D]] = scale.contrast match
       case Left(error) =>
         Right(
@@ -759,7 +894,7 @@ object ResultInspection:
         )
       case Right(value) =>
         Listing
-          .of(value.rows.map { row =>
+          .projected(value.rows)(row => address(ResultRef.ContrastRow(index, row.key))) { row =>
             val ref = ResultRef.ContrastRow(index, row.key)
             ContrastEntry(
               address(ref),
@@ -772,20 +907,16 @@ object ResultInspection:
                 .map(e => place(ref, Projections.contrastRow(e)))
                 .map(schema.difference)
             )
-          })(_.ref)
+          }
           .map(ScaleContrast.Rows(_))
-    val matchedPairs = pairs(StudyDesign.Matched)
-    val controlPairs = pairs(StudyDesign.Control)
     for
       _                 <- checked(StudyDesign.Matched)
       _                 <- checked(StudyDesign.Control)
-      estimationListing <- Listing.of(estimation)(_.ref)
-      matchedListing    <- Listing.of(matchedPairs)(_.ref)
-      controlListing    <- Listing.of(controlPairs)(_.ref)
-      matchedRows       <- reductions(StudyDesign.Matched, matchedPairs)
-      controlRows       <- reductions(StudyDesign.Control, controlPairs)
-      matchedReduced    <- Listing.of(matchedRows)(_.ref)
-      controlReduced    <- Listing.of(controlRows)(_.ref)
+      estimationListing <- estimation
+      matchedListing    <- pairs(StudyDesign.Matched)
+      controlListing    <- pairs(StudyDesign.Control)
+      matchedReduced    <- reductions(StudyDesign.Matched)
+      controlReduced    <- reductions(StudyDesign.Control)
       contrastView      <- contrast
     yield new ScaleInspection(
       index,

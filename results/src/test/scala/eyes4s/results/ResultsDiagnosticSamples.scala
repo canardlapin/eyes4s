@@ -53,5 +53,6 @@ object ResultsDiagnosticSamples:
     generated[ReportError[StudyKey]]("ReportError"),
     generated[SpecError]("SpecError"),
     generated[CovariateError[StudyKey]]("CovariateError"),
-    generated[ResultTableError]("ResultTableError")
+    generated[ResultTableError]("ResultTableError"),
+    generated[ReportNavigationError[StudyKey]]("ReportNavigationError")
   )
