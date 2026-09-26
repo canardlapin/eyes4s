@@ -879,6 +879,21 @@ object DiagnosticCatalog:
     "LineBeyond"
   )
 
+  /** A fixation's coordinate provenance and pages of source records. */
+  val coordinateProvenance: DiagnosticFamily = error("coordinate-provenance")(
+    "InputMismatch",
+    "Ledger",
+    "Angular",
+    "UnknownTrial",
+    "AmbiguousTrial",
+    "FixationOutOfRange",
+    "TrialFrame",
+    "CorrectionConflict",
+    "Unmappable",
+    "Identity",
+    "PageStart"
+  )
+
   // ---------------------------------------------------------------- appended by CR6a
   /** A raw form value refused by its field: shape, declared bounds, a rule
     * across the field's parts, or the domain constructor.
@@ -999,6 +1014,7 @@ object DiagnosticCatalog:
     template,
     analysisFinding,
     recordIdentity,
+    coordinateProvenance,
     formField
   )
 

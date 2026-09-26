@@ -28,8 +28,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Every issued code, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 671
-  private val PinnedDigest = "ca8f64e6f3bff6b9"
+  private val PinnedCount  = 682
+  private val PinnedDigest = "f5b6816c533ed80a"
 
   /** The issued table before CR5: codes are only ever issued, never changed
     * or reused, and a retired code keeps its place, so taking away the codes
@@ -58,9 +58,13 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val Cr4Codes: Set[String] =
     DiagnosticCatalog.analysisFinding.codes.map(_.render).toSet
 
-  /** The codes UI-G added: record, line and fixation identities. */
+  /** The codes UI-G added: record, line and fixation identities, and
+    * coordinate provenance.
+    */
   private val UiGCodes: Set[String] =
-    DiagnosticCatalog.recordIdentity.codes.map(_.render).toSet
+    (DiagnosticCatalog.recordIdentity.codes ++ DiagnosticCatalog.coordinateProvenance.codes)
+      .map(_.render)
+      .toSet
 
   /** The codes CR6a added: the form-field family and the descriptor cases
     * for field ids, bounds, rules, defaults and legacy translation.

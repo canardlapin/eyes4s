@@ -875,6 +875,7 @@ object DiagnosticSamples:
       )
     ),
     generated[RecordIdentityError]("RecordIdentityError"),
+    generated[ProvenanceError[StudyKey]]("ProvenanceError"),
     family[FieldError[RecipeParameterError]]("FieldError")(
       FieldError.Missing(FieldId.literal("sigma")),
       FieldError.Malformed(

@@ -142,10 +142,23 @@ enum RecordRole derives CanEqual:
   case Header
   case Data(record: DataRecord)
 
-/** A physical line of a text source, counted from 1. A line ends at a line
-  * feed: a CRLF ends one line, and a carriage return on its own does not end
-  * a line. A record whose quoted field holds a line feed occupies more than
-  * one line, so a line number is not a record number (see [[RecordLines]]).
+/** What ends a physical line of a text source. eyes4s reads CSV text under
+  * one convention, [[LineBreak.LineFeed]], and every [[SourceLine]] and
+  * [[RecordLines]] layout counts lines under it. Java's `String.lines()` and
+  * most editors also end a line at a lone carriage return, so a line number
+  * taken from them can disagree; an application derives line numbers from a
+  * [[RecordLines]] layout, never by splitting the text itself.
+  */
+enum LineBreak derives CanEqual:
+  /** A line feed ends a line: a CRLF is one break, and a carriage return on
+    * its own is a character of the line, as the CSV decoder reads it.
+    */
+  case LineFeed
+
+/** A physical line of a text source, counted from 1, under
+  * [[LineBreak.LineFeed]]. A record whose quoted field holds a line feed
+  * occupies more than one line, so a line number is not a record number (see
+  * [[RecordLines]]).
   */
 final case class SourceLine private[plan] (value: Long) derives CanEqual
 
@@ -186,6 +199,11 @@ final case class ScanpathPosition private[plan] (value: Int) derives CanEqual:
   def number: FixationNumber = new FixationNumber(value + 1)
 
 object ScanpathPosition:
+  private[eyes4s] given DiagnosticOperand[ScanpathPosition, Nothing] =
+    DiagnosticOperand.of(p =>
+      Operand.Fields(Vector("value" -> Operand.Integer(BigInt(p.value))))
+    )
+
   /** The largest position, so that its fixation number is an `Int`. */
   val maximum: Int = Int.MaxValue - 1
 
@@ -212,11 +230,15 @@ object FixationNumber:
     )
 
 /** Where each record of a delimited text lies among its physical lines
-  * ([[SourceLine]]), the header being CSV record 1. Both directions are exact
-  * and total over the text: every data record has a span, and every line of
-  * the text belongs to exactly one record. A record occupies more than one
-  * line exactly when a quoted field holds a line feed; only such records are
-  * stored, so a text without them costs nothing per record.
+  * ([[SourceLine]], under [[lineBreak]]), the header being CSV record 1. Both
+  * directions are exact: every data record has a span, and every line from
+  * line 1 to [[lines]] belongs to exactly one record. That covers every line
+  * of the text that holds a record. Text after the last record that the
+  * decoder does not read as one (an empty quoted field `""` after the final
+  * line feed) belongs to no record, so its line is beyond [[lines]] and
+  * [[owner]] refuses it. A record occupies more than one line exactly when a
+  * quoted field holds a line feed; only such records are stored, so a text
+  * without them costs nothing per record.
   *
   * `eyes4s-io` builds the layout of a text (`CsvLayout.scan`), reading record
   * boundaries as its CSV decoder does.
@@ -266,7 +288,13 @@ final class RecordLines private (
       RecordIdentityError.RecordBeyond(record, records)
     )
 
-  /** The record a line belongs to: the header or a data record. */
+  /** The line convention the layout counts under. */
+  def lineBreak: LineBreak = LineBreak.LineFeed
+
+  /** The record a line belongs to: the header or a data record. A line's
+    * place within its record, counted from 0, is `line - span.first` of that
+    * record's [[span]] (or of [[header]]).
+    */
   def owner(line: SourceLine): Either[RecordIdentityError, RecordRole] =
     if line.value > lines then Left(RecordIdentityError.LineBeyond(line, lines))
     else
