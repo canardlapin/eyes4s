@@ -1,0 +1,1 @@
+{"actor":"claude-eyes4s-backlog","entity":"q-app-target","kind":"note","note_kind":"decision","op":"20260926T000334.915690Z-p41263-c0000-r82ad-hb0b41a","text":"Resolved by the owner 2026-09-25: JVM desktop with JavaFX; plotting/graphics in Intaglio where it makes sense. Scala.js remains relevant only for modules a browser host would use.","ts":"2026-09-26T00:03:34.915690Z","v":1}
