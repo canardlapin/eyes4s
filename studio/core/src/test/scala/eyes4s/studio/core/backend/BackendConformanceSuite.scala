@@ -41,7 +41,7 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
     fa.flatMap(e => IO.fromEither(e.leftMap(err => new AssertionError(err.message))))
 
   private def page(offset: Int, size: Int): PageRequest =
-    PageRequest.of(offset, size).fold(m => throw new AssertionError(m), identity)
+    PageRequest.of(offset, size).fold(e => throw new AssertionError(e.message), identity)
 
   /** Every page of a listing, following `next`. */
   private def all[A](size: Int)(get: PageRequest => IO[(PageInfo, Vector[A])]): IO[Vector[A]] =
@@ -55,26 +55,29 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
       }
     go(0, Vector.empty)
 
-  test("admission reports the FIXTURE.md inventory") {
+  test("admission reports the FIXTURE.md inventory and window totals") {
     subject.flatMap(s => ok(s.backend.admission(s.dataset))).map { a =>
       assertEquals(a.state, DatasetState.Admitted)
-      assertEquals(a.inventoryTrials, 960)
-      assertEquals(a.admitted, 937)
-      assertEquals(a.quarantinedTrials, 17)
-      assertEquals(a.absent, 6)
+      assertEquals((a.inventoryTrials, a.admitted, a.absent), (960, 937, 6))
+      // FIXTURE.md counts no-fixations among its 17 quarantined trials.
+      assertEquals(a.quarantinedTrials + a.noFixations, 17)
       assertEquals(
-        a.quarantined.map(q => q.cause -> q.trials).toMap,
+        a.quarantined.map(q => q.code -> q.trials).toMap,
         Map(
-          QuarantineCause.DuplicateOrdinals -> 4,
-          QuarantineCause.NoFixations       -> 5,
-          QuarantineCause.Overlap           -> 6,
-          QuarantineCause.RejectedRecords   -> 2
+          "quarantine.duplicate-ordinals" -> 4,
+          "quarantine.overlap"            -> 6,
+          "quarantine.rejected-records"   -> 2
         )
       )
+      assertEquals(a.noFixations, 5)
       assertEquals(a.fixationRecords, 11520)
       assertEquals((a.items, a.imagesFound), (259, 257))
       assertEquals(a.missingImages.map(_.item).sorted, Vector("forest-044", "kitchen-081"))
-      assertEquals((a.outsideWindowRecords, a.outsideWindowTrials), (543, 409))
+      val w = a.window
+      assertEquals((w.outsideWindow, w.trialsOutsideWindow), (543, 409))
+      assertEquals((w.outsideScreen, w.trialsOutsideScreen, w.outsideScreenMicros), (0, 0, 0L))
+      assertEquals((w.trials, w.untallied, w.sourceRecords), (937, 0, Some(11520)))
+      assert(w.outsideWindowMicros > 0L && w.outsideWindowMicros < w.totalMicros, w)
     }
   }
 
@@ -86,12 +89,15 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
     yield
       assertEquals(entries.size, summary.inventoryTrials)
       assertEquals(entries.map(_.trial).distinct.size, entries.size)
-      val dispositions = entries.groupMapReduce(_.disposition)(_ => 1)(_ + _)
-      assertEquals(dispositions.getOrElse(TrialDisposition.Admitted, 0), summary.admitted)
-      assertEquals(dispositions.getOrElse(TrialDisposition.Absent, 0), summary.absent)
-      summary.quarantined.foreach { q =>
-        assertEquals(dispositions.getOrElse(TrialDisposition.Quarantined(q.cause), 0), q.trials)
-      }
+      def count(p: TrialDisposition => Boolean) = entries.count(e => p(e.disposition))
+      assertEquals(count(_ == TrialDisposition.Admitted), summary.admitted)
+      assertEquals(count(_ == TrialDisposition.Absent), summary.absent)
+      assertEquals(count(_ == TrialDisposition.NoFixations), summary.noFixations)
+      val byCode = entries
+        .collect { case LedgerEntry(_, _, _, TrialDisposition.Quarantined(c), _) => c.code }
+        .groupMapReduce(identity)(_ => 1)(_ + _)
+      assertEquals(byCode, summary.quarantined.map(q => q.code -> q.trials).toMap)
+      assertEquals(entries.map(_.outsideFrame.size).sum, summary.window.outsideScreen)
   }
 
   test("the preview's counts agree with its rows") {
@@ -107,6 +113,15 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
       assertEquals(rows.count(_.eligibility == Eligibility.Eligible), preview.eligibleQueries)
       assertEquals(preview.pairRows, preview.pairRowsPerScale * preview.scales.size)
       assert(rows.forall(_.query.phase == Phase.Retrieval))
+      rows.foreach { row =>
+        row.eligibility match
+          case Eligibility.NoMatch(d) =>
+            assertEquals(d.code, "study-finding.unmatched-focal")
+            assert(d.subject.contains(DiagnosticLocus.Trial(row.query)), d)
+          case Eligibility.QueryNotAdmitted(disposition) =>
+            assertNotEquals(disposition, TrialDisposition.Admitted)
+          case Eligibility.Eligible => ()
+      }
   }
 
   test("the current run's result agrees with its query rows") {
@@ -128,6 +143,8 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
         contributing = rows.count(_.status.isInstanceOf[QueryStatus.Contributing])
       )
       assertEquals(tally, c)
+      // Groups are labelled by the values the inventory attribute takes.
+      assertEquals(result.groups.map(_.label).toSet, rows.map(_.response).toSet)
       result.participants.foreach { p =>
         val mine = rows.filter(_.query.participant == p.participant)
         assertEquals(mine.size, p.requested, p.participant)
@@ -136,6 +153,7 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
           p.contributing,
           p.participant
         )
+        assertEquals(p.groups.map(_.label), result.groups.map(_.label), p.participant)
       }
   }
 
@@ -164,14 +182,14 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
     yield
       assertEquals(trail.take(1), Vector(ProvenanceStep.Run(s.current)))
       assert(trail.exists(_.isInstanceOf[ProvenanceStep.Analysis]), trail)
-      assert(trail.exists(_ == ProvenanceStep.Design(PairDesign.Matched)), trail)
+      assert(trail.contains(ProvenanceStep.Design(PairDesign.Matched)), trail)
       assertEquals(
         trail.collect { case ProvenanceStep.Trial(k, _) => k },
         Vector(row.query, row.matched)
       )
   }
 
-  test("refusals are values with stable codes") {
+  test("refusals are values with stable codes and typed subjects") {
     for
       s    <- subject
       run  <- s.backend.result(RunId(9999))
@@ -183,42 +201,56 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
       assertEquals(job.left.map(_.code), Left("studio-backend.unknown-job"))
       assertEquals(rev.left.map(_.code), Left("studio-backend.unknown-revision"))
       assertEquals(data.left.map(_.code), Left("studio-backend.unknown-dataset"))
+      assertEquals(
+        run.left.map(_.diagnostic.subject),
+        Left(Vector(DiagnosticLocus.Run(RunId(9999))))
+      )
   }
 
-  test("a submitted job reports monotone progress and ends with exactly one Finished") {
+  test("a subscription reports run-monotone progress and ends with exactly one Finished") {
     for
       s      <- subject
       status <- ok(s.backend.submit(s.draft))
-      stream <- ok(s.backend.events(status.job))
+      before <- ok(s.backend.outcome(status.job))
+      stream <- ok(s.backend.subscribe(status.job))
       fiber  <- stream.compile.toVector.start
       _      <- s.finish(status.job)
       events <- fiber.joinWithNever
       out    <- ok(s.backend.outcome(status.job))
       runs   <- s.backend.runs
     yield
-      assertEquals(events.lastOption, Some(JobEvent.Finished(out)))
+      assertEquals(before, None)
+      assertEquals(events.lastOption, out.map(JobEvent.Finished(_)))
       assertEquals(events.count(_.isInstanceOf[JobEvent.Finished]), 1)
-      val progress = events.collect { case JobEvent.Advanced(p) => p } ++ out.progress
-      progress.foreach(p => assert(p.total.bound.forall(p.done <= _), p))
+      val progress =
+        events.collect { case JobEvent.Advanced(p) => p } ++ out.flatMap(_.progress)
+      progress.foreach { p =>
+        assertEquals(p.meter.kind, p.segment.kind)
+        assertEquals(p.meter.unit, p.segment.unit)
+      }
+      val pairs = progress.map(_.totals.completedPairs)
+      assertEquals(pairs, pairs.sorted)
+      assertEquals(
+        progress.map(_.totals.completedMaps),
+        progress.map(_.totals.completedMaps).sorted
+      )
       assertEquals(progress.map(_.step), progress.map(_.step).sorted)
-      assert(out.isInstanceOf[JobOutcome.Completed], out)
+      assert(out.exists(_.isInstanceOf[JobOutcome.Completed]), out)
       assert(runs.exists(r => r.run == status.run && r.revision == s.draft), runs)
   }
 
-  test("cancelling a job settles it Cancelled, once") {
+  test("cancelling a job settles it Cancelled, once, and the current run stays current") {
     for
       s      <- subject
       status <- ok(s.backend.submit(s.draft))
       first  <- ok(s.backend.cancel(status.job))
       again  <- ok(s.backend.cancel(status.job))
       out    <- ok(s.backend.outcome(status.job))
-      after  <- ok(s.backend.job(status.job))
       runs   <- s.backend.runs
     yield
-      assert(first.isInstanceOf[JobOutcome.Cancelled], first)
+      assert(out.exists(_.isInstanceOf[JobOutcome.Cancelled]), out)
+      assertEquals(first.state, JobState.Finished(out.get))
       assertEquals(again, first)
-      assertEquals(out, first)
-      assertEquals(after.state, JobState.Finished(first))
       assert(
         runs.exists(r => r.run == status.run && r.state.isInstanceOf[RunState.Cancelled]),
         runs
@@ -226,7 +258,18 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
       assert(runs.exists(r => r.run == s.current && r.state == RunState.Current), runs)
   }
 
-  test("the JSON transport answers exactly as the backend does in process") {
+  test("the enveloped JSON transport answers exactly as the backend does in process") {
+    def wire(request: Envelope[BackendRequest]): IO[Vector[Envelope[ServerFrame]]] =
+      for
+        s  <- subject
+        in <- IO.fromEither(
+          io.circe.parser.decode[Envelope[BackendRequest]](request.asJson.noSpaces)
+        )
+        out  <- StudyBackend.handle(s.backend)(in).compile.toVector
+        back <- out.traverse(f =>
+          IO.fromEither(io.circe.parser.decode[Envelope[ServerFrame]](f.asJson.noSpaces))
+        )
+      yield back
     for
       s   <- subject
       row <- ok(s.backend.queries(s.current, page(0, 1))).map(_.rows.head)
@@ -241,19 +284,54 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
         BackendRequest.Queries(s.current, page(10, 10)),
         BackendRequest.Inspect(s.current, ResultAddress.ContrastRow(1, row.query)),
         BackendRequest.ProvenanceOf(s.current, ResultAddress.ContrastRow(1, row.query)),
-        BackendRequest.Result(RunId(9999))
+        BackendRequest.Result(RunId(9999)),
+        BackendRequest.Subscribe(JobId(9999))
+      ).zipWithIndex.map((r, i) => Envelope(RequestId(i.toLong), r))
+      direct <- requests.traverse(r =>
+        subject.flatMap(t => StudyBackend.handle(t.backend)(r).compile.toVector)
       )
-      direct <- requests.traverse(StudyBackend.serve(s.backend))
-      wired  <- requests.traverse { r =>
-        IO.fromEither(r.asJson.as[BackendRequest])
-          .flatMap(StudyBackend.serve(s.backend))
-          .flatMap(a =>
-            IO.fromEither(io.circe.parser.decode[BackendResponse](a.asJson.noSpaces))
-          )
-      }
+      wired  <- requests.traverse(wire)
+      future <- wire(Envelope(ProtocolVersion(2, 0), RequestId(99), BackendRequest.Runs))
     yield
       assertEquals(wired, direct)
-      assertEquals(direct.count(_.isInstanceOf[BackendResponse.Refused]), 1)
+      assert(direct.forall(_.size == 1), direct)
+      assertEquals(direct.map(_.head.id), requests.map(_.id))
+      assertEquals(
+        direct.flatten.count {
+          case Envelope(_, _, ServerFrame.Response(BackendResponse.Refused(_))) => true
+          case _                                                                => false
+        },
+        2
+      )
+      assertEquals(
+        future.map(_.body),
+        Vector(
+          ServerFrame.Response(
+            BackendResponse.Refused(
+              BackendError.UnsupportedVersion(ProtocolVersion(2, 0), ProtocolVersion.Current)
+            )
+          )
+        )
+      )
+  }
+
+  test("a subscription over the transport streams event frames under its request id") {
+    for
+      s      <- subject
+      status <- ok(s.backend.submit(s.draft))
+      fiber  <- StudyBackend
+        .handle(s.backend)(Envelope(RequestId(7), BackendRequest.Subscribe(status.job)))
+        .compile
+        .toVector
+        .start
+      _      <- s.finish(status.job)
+      frames <- fiber.joinWithNever
+    yield
+      assert(frames.nonEmpty)
+      assert(frames.forall(_.id == RequestId(7)), frames)
+      frames.last.body match
+        case ServerFrame.Event(JobEvent.Finished(o)) => assertEquals(o.job, status.job)
+        case other                                   => fail(s"last frame is $other")
   }
 
 object BackendConformanceSuite:

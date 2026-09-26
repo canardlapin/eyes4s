@@ -965,17 +965,10 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
     // S3.0: studio-core may not read files (it links for Scala.js), so the mock
     // study and the acceptance fixture's inventory are generated sources.
     Compile / sourceGenerators += Def.task {
-      val root = (ThisBuild / baseDirectory).value
-      val out  = (Compile / sourceManaged).value / "eyes4s" / "studio"
-      Seq(
-        StudioFixture.embedJson(
-          root / "docs" / "studio" / "fixture" / "fixture.json",
-          out / "FixtureJson.scala"
-        ),
-        StudioFixture.goldenInventory(
-          root / "fixtures" / "studio-golden",
-          out / "GoldenInventory.scala"
-        )
+      StudioFixture.generate(
+        (ThisBuild / baseDirectory).value,
+        (Compile / sourceManaged).value / "eyes4s" / "studio",
+        streams.value.cacheDirectory / "studio-fixture"
       )
     }.taskValue
   )

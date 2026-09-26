@@ -34,7 +34,7 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
     fa.flatMap(e => IO.fromEither(e.leftMap(err => new AssertionError(err.toString))))
 
   private def page(offset: Int, size: Int): PageRequest =
-    PageRequest.of(offset, size).fold(m => throw new AssertionError(m), identity)
+    PageRequest.of(offset, size).fold(e => throw new AssertionError(e.message), identity)
 
   private val raw: Json =
     io.circe.parser
@@ -46,7 +46,6 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
 
   private val run7 = RunId(7)
   private val rev5 = AnalysisRevision(5)
-  private val held = ProgressTotal.Exact(44845L)
 
   private def key(participant: String, trial: String) =
     TrialKey(
@@ -62,7 +61,7 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       before <- fake.jobs
       _      <- IO.sleep(50.millis)
       after  <- fake.jobs
-      stream <- ok(fake.events(before.head.job))
+      stream <- ok(fake.subscribe(before.head.job))
       first  <- stream.take(1).compile.toVector
     yield
       assertEquals(before, after)
@@ -71,74 +70,124 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       assertEquals((job.run, job.revision, job.dataset), (RunId(8), rev5, DatasetRevision(3)))
       job.state match
         case JobState.Running(p) =>
-          assertEquals((p.stage, p.done, p.total), (JobStage.Comparing, 21400L, held))
+          assertEquals(p.segment.kind, StageKind.Comparing)
+          assertEquals(
+            (p.totals.completedPairs, p.totals.totalPairs),
+            (21400L, ProgressTotal.Exact(44845L))
+          )
+          // 21,400 = two whole scales of 8,969 pairs, 457 matched and 3,005 controls.
+          assertEquals(p.segment, Segment.Comparing(2, PairDesign.Control))
+          assertEquals(
+            (p.meter.unit, p.meter.done, p.meter.total),
+            (CountUnit.Pairs, 3005L, ProgressTotal.Exact(8512L))
+          )
+          assertEquals(
+            (p.totals.completedMaps, p.totals.totalMaps),
+            (3L * 937, ProgressTotal.Exact(5L * 937))
+          )
           assertEquals(first, Vector(JobEvent.Advanced(p)))
         case other => fail(s"run 8 is not running: $other")
   }
 
-  test("a test holds a submitted job at any step, forward only") {
+  test("a test holds a submitted job at any step; run-level progress never moves back") {
     for
       fake   <- FakeStudyBackend.create[IO](StoryMoment.T2)
       status <- ok(fake.submit(rev5))
       queued <- ok(fake.job(status.job))
-      p      <- ok(fake.advanceTo(status.job, JobStage.Comparing, 21400L))
+      p      <- ok(fake.advanceToPairs(status.job, 21400L))
       now    <- ok(fake.job(status.job))
-      back   <- fake.advanceTo(status.job, JobStage.Estimating, 1L)
-      less   <- fake.advanceTo(status.job, JobStage.Comparing, 100L)
-      beyond <- fake.advanceTo(status.job, JobStage.Comparing, 44846L)
+      back   <- fake.advanceTo(status.job, Segment.Estimating(0), 1L)
+      less   <- fake.advanceToPairs(status.job, 100L)
+      beyond <- fake.advanceToPairs(status.job, 44846L)
+      over   <- fake.advanceTo(status.job, Segment.Comparing(2, PairDesign.Control), 9000L)
+      again  <- ok(fake.advanceTo(status.job, Segment.Estimating(3), 10L))
       second <- fake.submit(AnalysisRevision(4))
       out    <- ok(fake.cancel(status.job))
-      late   <- fake.advanceTo(status.job, JobStage.Comparing, 30000L)
+      late   <- fake.advanceToPairs(status.job, 30000L)
       runs   <- fake.runs
     yield
       assertEquals(queued.state, JobState.Queued)
       assertEquals((status.run, status.revision), (RunId(8), rev5))
-      assertEquals((p.stage, p.done, p.total, p.step), (JobStage.Comparing, 21400L, held, 1L))
+      assertEquals((p.totals.completedPairs, p.step), (21400L, 1L))
       assertEquals(now.state, JobState.Running(p))
       assertEquals(
         back,
         Left(
-          FakeControlError.StageRegressed(status.job, JobStage.Comparing, JobStage.Estimating)
+          FakeControlError.Regressed(status.job, p.segment, 3005L, Segment.Estimating(0), 1L)
         )
       )
       assertEquals(
         less,
-        Left(FakeControlError.ProgressRegressed(status.job, JobStage.Comparing, 21400L, 100L))
-      )
-      assertEquals(
-        beyond,
         Left(
-          FakeControlError.Progress(
-            ProgressError.BeyondTotal(status.job, JobStage.Comparing, 44846L, held)
+          FakeControlError.Regressed(
+            status.job,
+            p.segment,
+            3005L,
+            Segment.Comparing(0, PairDesign.Matched),
+            100L
           )
         )
       )
+      assertEquals(
+        beyond,
+        Left(FakeControlError.PairsOutOfRange(status.job, 44846L, ProgressTotal.Exact(44845L)))
+      )
+      assertEquals(
+        over,
+        Left(
+          FakeControlError.Progress(
+            ProgressError.BeyondTotal("meter", 9000L, ProgressTotal.Exact(8512L))
+          )
+        )
+      )
+      // Stages repeat per scale: Estimating again, at scale 3, after Comparing at 2.
+      assertEquals((again.segment, again.step), (Segment.Estimating(3), 2L))
+      assertEquals(again.totals.completedPairs, 3L * 8969)
       assertEquals(second, Left(BackendError.AlreadyRunning(AnalysisRevision(4), status.job)))
-      assertEquals(out, JobOutcome.Cancelled(status.job, RunId(8), Some(p)))
+      assertEquals(
+        out.state,
+        JobState.Finished(JobOutcome.Cancelled(status.job, RunId(8), Some(again)))
+      )
       assert(late.isLeft, late)
       assertEquals(
         runs.find(_.run == RunId(8)).map(_.state),
-        Some(RunState.Cancelled(Some(JobStage.Comparing)))
+        Some(RunState.Cancelled(Some(StageKind.Estimating)))
       )
   }
 
   test("a failed job carries its diagnostics and fails its run") {
     val diagnostic = StudioDiagnostic(
-      "study-failure.estimation",
+      "study-failure.off-window",
       DiagnosticLevel.Error,
-      Vector("P05 · ret_04"),
+      DiagnosticOrigin.EyesCore,
+      Vector(DiagnosticLocus.Trial(key("P05", "ret_04"))),
       "empty map"
     )
     for
       fake   <- FakeStudyBackend.create[IO](StoryMoment.T2)
       status <- ok(fake.submit(rev5))
       out    <- ok(fake.fail(status.job, Vector(diagnostic)))
+      polled <- ok(fake.outcome(status.job))
       runs   <- fake.runs
       result <- fake.result(status.run)
     yield
       assertEquals(out, JobOutcome.Failed(status.job, status.run, Vector(diagnostic), None))
+      assertEquals(polled, Some(out))
       assertEquals(runs.last.state, RunState.Failed)
       assertEquals(result, Left(BackendError.NoResult(status.run, RunState.Failed)))
+  }
+
+  test("a completed job reaches every total") {
+    for
+      fake <- FakeStudyBackend.create[IO](StoryMoment.T3)
+      job  <- fake.jobs.map(_.head.job)
+      out  <- ok(fake.complete(job))
+    yield out match
+      case JobOutcome.Completed(_, _, last) =>
+        assertEquals(last.segment, Segment.Contrasting(4))
+        assertEquals(last.totals.completedPairs, 44845L)
+        assertEquals(last.totals.completedMaps, 5L * 937)
+      case other => fail(s"not completed: $other")
   }
 
   test("the story history is runs 5 to 8 of FIXTURE.md") {
@@ -165,11 +214,7 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       assertEquals(t2j, Vector.empty)
       assertEquals(
         t2r.map(_.state),
-        Vector(
-          RunState.Stale,
-          RunState.Cancelled(Some(JobStage.Comparing)),
-          RunState.Current
-        )
+        Vector(RunState.Stale, RunState.Cancelled(Some(StageKind.Comparing)), RunState.Current)
       )
       assertEquals(t3r.map(_.run.number), Vector(5, 6, 7, 8))
       assertEquals(t3r.last.state, RunState.Running(JobId(1)))
@@ -188,7 +233,12 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
   }
 
   test("every fixture.json query and score is served exactly") {
-    val participants = get[Vector[Json]](raw.hcursor, "participants")
+    val participants                        = get[Vector[Json]](raw.hcursor, "participants")
+    def slugOf(d: TrialDisposition): String = d match
+      case TrialDisposition.Absent         => "absent"
+      case TrialDisposition.NoFixations    => "no-fixations"
+      case TrialDisposition.Quarantined(c) => c.code.stripPrefix("quarantine.")
+      case TrialDisposition.Admitted       => "admitted"
     for
       fake <- FakeStudyBackend.create[IO](StoryMoment.T2)
       rows <- ok(fake.queries(run7, page(0, 4096))).map(_.rows)
@@ -201,16 +251,16 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
           val row = byKey(k)
           assertEquals(row.item, get[String](c, "item"))
           assertEquals(row.matched, key(id, get[String](c, "match")))
-          assertEquals(row.response.toString, get[String](c, "response"))
+          assertEquals(row.response.label, get[String](c, "response"))
           assertEquals(row.controls, get[Option[Int]](c, "controls"))
+          def reason = get[String](c, "reason")
           (get[String](c, "status"), row.status) match
             case ("ok", QueryStatus.Contributing(m, b, d)) =>
-              val (rm, rb, rd) =
-                (
-                  get[Vector[Double]](c, "M"),
-                  get[Vector[Double]](c, "B"),
-                  get[Vector[Double]](c, "D")
-                )
+              val (rm, rb, rd) = (
+                get[Vector[Double]](c, "M"),
+                get[Vector[Double]](c, "B"),
+                get[Vector[Double]](c, "D")
+              )
               assertEquals((m, b, d), (rm, rb, rd))
               rm.indices.toVector
                 .traverse_ { s =>
@@ -231,12 +281,16 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
                   }
                 }
                 .as(1)
-            case ("failed", QueryStatus.Failed(reason)) =>
-              IO(assertEquals(reason, get[String](c, "reason"))).as(1)
-            case ("no match", QueryStatus.NoMatch(reason)) =>
-              IO(assertEquals(reason, get[String](c, "reason"))).as(1)
-            case ("query not admitted", QueryStatus.NotAdmitted(reason)) =>
-              IO(assertEquals(reason, get[String](c, "reason"))).as(1)
+            case ("failed", QueryStatus.Failed(d)) =>
+              IO {
+                assertEquals((d.code, d.message), ("study-failure.off-window", reason))
+                assertEquals(d.subject, Vector(DiagnosticLocus.Trial(k)))
+              }.as(1)
+            case ("no match", QueryStatus.NoMatch(d)) =>
+              IO(assertEquals((d.code, d.message), ("study-finding.unmatched-focal", reason)))
+                .as(1)
+            case ("query not admitted", QueryStatus.NotAdmitted(disposition)) =>
+              IO(assertEquals(slugOf(disposition), reason)).as(1)
             case (s, status) => IO(fail(s"$id ${k.trial}: fixture status $s, served $status"))
         }
       }
@@ -245,7 +299,7 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       assertEquals(rows.size, 480)
   }
 
-  test("participant summaries and grand means are fixture.json's") {
+  test("participant summaries and grand means are fixture.json's, grouped by response") {
     val s = raw.hcursor.downField("summary")
     for
       fake   <- FakeStudyBackend.create[IO](StoryMoment.T2)
@@ -254,22 +308,17 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       assertEquals(result.grandD, get[Double](s, "grand_D_all"))
       assertEquals(result.grandDByScale, get[Vector[Double]](s, "grand_D_by_scale"))
       assertEquals(result.scales, get[Vector[String]](s, "scales"))
-      assertEquals(result.pairRowsPerScale, 8969L)
-      assertEquals(result.pairRows, 35876L)
+      assertEquals((result.pairRowsPerScale, result.pairRows), (8969L, 35876L))
       assertEquals(
-        result.remembered,
-        GroupSummary(
-          24,
-          get[Double](s, "grand_D_Remembered"),
-          get[Vector[Double]](s, "grand_D_by_scale_Remembered")
-        )
-      )
-      assertEquals(
-        result.forgotten,
-        GroupSummary(
-          24,
-          get[Double](s, "grand_D_Forgotten"),
-          get[Vector[Double]](s, "grand_D_by_scale_Forgotten")
+        result.groups,
+        Vector("Remembered", "Forgotten").map(l =>
+          GroupSummary(
+            "response",
+            Response(l),
+            get[Int](s, s"n_$l"),
+            get[Double](s, s"grand_D_$l"),
+            get[Vector[Double]](s, s"grand_D_by_scale_$l")
+          )
         )
       )
       assertEquals((result.pairedN, result.groupNMinimum, result.groupNMaximum), (24, 2, 17))
@@ -281,6 +330,7 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
         def group(name: String) =
           val g = c.downField(name)
           GroupMeans(
+            Response(name),
             get[Int](g, "n"),
             get[Double](g, "M"),
             get[Double](g, "B"),
@@ -301,32 +351,26 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
               get[Double](all, "D"),
               get[Vector[Double]](all, "D_by_scale")
             ),
-            group("Remembered"),
-            group("Forgotten")
+            Vector(group("Remembered"), group("Forgotten"))
           )
         )
       }
   }
 
   test("the focus query: P17 ret_07 · beach-042 against enc_03 and 19 controls at 2°") {
-    val focus   = key("P17", "ret_07")
-    val matched = key("P17", "enc_03")
+    val focus    = key("P17", "ret_07")
+    val matched  = key("P17", "enc_03")
+    val control  = ResultAddress.PairRow(2, PairDesign.Control, focus, key("P17", "enc_01"))
+    val atScale1 = ResultAddress.PairRow(1, PairDesign.Control, focus, key("P17", "enc_01"))
+    val absent   = ResultAddress.ContrastRow(2, key("P17", "ret_09"))
     for
       fake <- FakeStudyBackend.create[IO](StoryMoment.T2)
       rows <- ok(fake.queries(run7, page(0, 4096))).map(_.rows)
       row = rows.find(_.query == focus).get
-      control <- ok(
-        fake.inspect(
-          run7,
-          ResultAddress.PairRow(2, PairDesign.Control, focus, key("P17", "enc_01"))
-        )
-      )
-      other <- fake.inspect(
-        run7,
-        ResultAddress.PairRow(1, PairDesign.Control, focus, key("P17", "enc_01"))
-      )
-      absent <- ok(fake.inspect(run7, ResultAddress.ContrastRow(2, key("P17", "ret_09"))))
-      trail  <- ok(
+      pair  <- ok(fake.inspect(run7, control))
+      other <- fake.inspect(run7, atScale1)
+      gone  <- ok(fake.inspect(run7, absent))
+      trail <- ok(
         fake.provenance(run7, ResultAddress.PairRow(2, PairDesign.Matched, focus, matched))
       )
     yield
@@ -343,21 +387,14 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
           Vector(0.19, 0.29, 0.38, 0.23)
         )
       )
+      assertEquals(pair, Inspection.Pair(control, "street-112", 0.61))
       assertEquals(
-        control,
-        Inspection.Pair(
-          ResultAddress.PairRow(2, PairDesign.Control, focus, key("P17", "enc_01")),
-          "street-112",
-          0.61
-        )
+        other,
+        Left(BackendError.Unavailable(DiagnosticLocus.Address(atScale1)))
       )
-      assert(other.left.exists(_.code == "studio-backend.unavailable"), other)
       assertEquals(
-        absent,
-        Inspection.Unscored(
-          ResultAddress.ContrastRow(2, key("P17", "ret_09")),
-          QueryStatus.NotAdmitted("absent")
-        )
+        gone,
+        Inspection.Unscored(absent, QueryStatus.NotAdmitted(TrialDisposition.Absent))
       )
       assertEquals(
         trail.trail,
@@ -401,10 +438,11 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       scores <- controls.traverse { t =>
         ok(
           fake.inspect(run7, ResultAddress.PairRow(2, PairDesign.Control, focus, key("P17", t)))
-        ).map {
-          case Inspection.Pair(_, item, score) => (item, score)
-          case other                           => fail(s"not a pair: $other")
-        }
+        )
+          .map {
+            case Inspection.Pair(_, item, score) => (item, score)
+            case other                           => fail(s"not a pair: $other")
+          }
       }
     yield
       assertEquals(scores.size, 19)
@@ -413,7 +451,7 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       assertEqualsDouble(scores.map(_._2).sum / 19, 0.35, 0.005)
   }
 
-  test("only run 7 has scores") {
+  test("only run 7 has scores; data r2 is not in the fixture") {
     for
       fake <- FakeStudyBackend.create[IO](StoryMoment.T3)
       r5   <- fake.result(RunId(5))
@@ -422,5 +460,8 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
     yield
       assertEquals(r5, Left(BackendError.NoResult(RunId(5), RunState.Stale)))
       assertEquals(r8, Left(BackendError.NoResult(RunId(8), RunState.Running(JobId(1)))))
-      assert(r2.left.exists(_.code == "studio-backend.unavailable"), r2)
+      assertEquals(
+        r2,
+        Left(BackendError.Unavailable(DiagnosticLocus.Dataset(DatasetRevision(2))))
+      )
   }

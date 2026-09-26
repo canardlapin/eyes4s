@@ -42,7 +42,7 @@ enum StoryMoment derives CanEqual:
 
 object StoryMoment:
   /** The running chip of every board: "Run 8 · Comparing · 21,400 / 44,845
-    * pairs" (DESIGN_SPEC section 12).
+    * pairs" (DESIGN_SPEC section 12), counted over every scale.
     */
   val RunningPairs: Long = 21400L
 
@@ -50,33 +50,47 @@ object StoryMoment:
 enum FakeControlError derives CanEqual:
   case UnknownJob(job: JobId, known: Vector[JobId])
   case NotRunning(job: JobId, state: JobState)
-  case NotStarted(job: JobId)
-  case UnscriptedStage(job: JobId, stage: JobStage, script: Vector[JobStage])
-  case StageRegressed(job: JobId, from: JobStage, to: JobStage)
-  case ProgressRegressed(job: JobId, stage: JobStage, from: Long, to: Long)
+  case UnscriptedSegment(job: JobId, segment: Segment)
+
+  /** Run-level progress may not move back: `(segment, done)` is ordered by
+    * the script position of the segment, then by `done`.
+    */
+  case Regressed(job: JobId, from: Segment, fromDone: Long, to: Segment, toDone: Long)
+
+  /** No comparison segment of the script ends at or after this run-wide count. */
+  case PairsOutOfRange(job: JobId, pairs: Long, total: ProgressTotal)
   case Progress(underlying: ProgressError)
 
   def message: String = this match
     case UnknownJob(job, known) =>
       s"No job ${job.number}; the fake has ${known.map(_.number).mkString(", ")}."
-    case NotRunning(job, state) => s"Job ${job.number} is not running (state $state)."
-    case NotStarted(job)        => s"Job ${job.number} has reported no progress yet."
-    case UnscriptedStage(job, stage, script) =>
-      s"Job ${job.number} has no stage $stage; its script is ${script.mkString(", ")}."
-    case StageRegressed(job, from, to) =>
-      s"Job ${job.number} cannot move back from $from to $to."
-    case ProgressRegressed(job, stage, from, to) =>
-      s"Job ${job.number} cannot move $stage progress back from $from to $to."
+    case NotRunning(job, state)          => s"Job ${job.number} has finished (state $state)."
+    case UnscriptedSegment(job, segment) =>
+      s"Job ${job.number} has no segment $segment in its script."
+    case Regressed(job, from, fromDone, to, toDone) =>
+      s"Job ${job.number} cannot move back from $fromDone of $from to $toDone of $to."
+    case PairsOutOfRange(job, pairs, total) =>
+      s"Job ${job.number} cannot hold at $pairs pairs of $total."
     case Progress(underlying) => underlying.message
+
+/** One segment of a fake job's script with its stated total. */
+final case class ScriptedSegment(segment: Segment, total: ProgressTotal) derives CanEqual
 
 /** A test double of [[StudyBackend]] that serves docs/studio/fixture/fixture.json
   * exactly, and the inventory of fixtures/studio-golden as the ledger.
   *
-  * Jobs never advance by themselves. A test moves one with [[advanceTo]] and
-  * ends it with [[complete]], [[fail]] or `cancel`, so any step of a run can be
-  * held deterministically.
+  * The ledger's dispositions and window totals are recomputed at build time
+  * (project/StudioFixture.scala) from the rules the fixture README states for
+  * eyes4s `FixationCsv.read` under `OffScreenPolicy.ExcludeRecord`; eyes4s
+  * does not compute them here. `StudioFixtureCountsSuite` checks them against
+  * fixture.json trial by trial.
   *
-  * The fake computes nothing: every number it serves is a value of the
+  * Jobs never advance by themselves. A test moves one with [[advanceTo]] or
+  * [[advanceToPairs]] and ends it with [[complete]], [[fail]] or `cancel`, so
+  * any step of a run can be held deterministically. A job's script orders its
+  * segments by scale, then stage, as eyes4s runs them.
+  *
+  * The fake computes no science: every score it serves is a value of the
   * fixture. Only run 7 (rev 4, data r3) has scores; the fixture has no numbers
   * for data r2 or for a completed rev 5.
   */
@@ -95,8 +109,9 @@ final class FakeStudyBackend[F[_]] private (
   /** The run whose scores fixture.json holds. */
   private val scoredRun = RunId(7)
 
-  private val byKey: Map[TrialKey, MockQuery] = study.queries.map(q => q.key -> q).toMap
-  private val items: Map[TrialKey, String] = study.inventory.map(e => e.trial -> e.item).toMap
+  private val byKey: Map[TrialKey, MockQuery]      = study.queries.map(q => q.key -> q).toMap
+  private val ledgerOf: Map[TrialKey, LedgerEntry] =
+    study.inventory.map(e => e.trial -> e).toMap
 
   private def scalesOf(revision: AnalysisRevision): Vector[String] =
     if revision.number >= 5 then summary.scales :+ Rev5Scale else summary.scales
@@ -104,13 +119,38 @@ final class FakeStudyBackend[F[_]] private (
   private def pairRowsOf(revision: AnalysisRevision): Long =
     if revision.number >= 5 then summary.pairRowsRev5 else summary.pairRowsAllScales
 
-  /** Each job's stages and their stated totals. */
-  def script(revision: AnalysisRevision): Vector[(JobStage, ProgressTotal)] = Vector(
-    JobStage.Estimating  -> ProgressTotal.Unknown,
-    JobStage.Comparing   -> ProgressTotal.Exact(pairRowsOf(revision)),
-    JobStage.Reducing    -> ProgressTotal.Unknown,
-    JobStage.Contrasting -> ProgressTotal.AtMost(summary.eligibleQueries.toLong)
-  )
+  /** A job's segments in run order, each with its stated total: every
+    * admitted trial's map, each eligible query's matched pair and its
+    * controls, one key per eligible query and design, and at most one contrast
+    * row per eligible query, at every scale.
+    */
+  def script(revision: AnalysisRevision): Vector[ScriptedSegment] =
+    val eligible = summary.eligibleQueries.toLong
+    val controls = summary.pairRowsPerScale - eligible
+    scalesOf(revision).indices.toVector.flatMap { s =>
+      Vector(
+        ScriptedSegment(Segment.Estimating(s), ProgressTotal.Exact(summary.admitted.toLong)),
+        ScriptedSegment(
+          Segment.Comparing(s, PairDesign.Matched),
+          ProgressTotal.Exact(eligible)
+        ),
+        ScriptedSegment(
+          Segment.Comparing(s, PairDesign.Control),
+          ProgressTotal.Exact(controls)
+        ),
+        ScriptedSegment(Segment.Reducing(s, PairDesign.Matched), ProgressTotal.Exact(eligible)),
+        ScriptedSegment(Segment.Reducing(s, PairDesign.Control), ProgressTotal.Exact(eligible)),
+        ScriptedSegment(Segment.Contrasting(s), ProgressTotal.AtMost(eligible))
+      )
+    }
+
+  private def full(s: ScriptedSegment): Long = s.total.bound.getOrElse(0L)
+
+  private def sumOf(plan: Vector[ScriptedSegment], unit: CountUnit): Long =
+    plan.filter(_.segment.unit == unit).map(full).sum
+
+  /** The run-wide pair total of a revision's script. */
+  def totalPairs(revision: AnalysisRevision): Long = sumOf(script(revision), CountUnit.Pairs)
 
   // -------------------------------------------------------------------------
   // Admission and the ledger
@@ -122,22 +162,37 @@ final class FakeStudyBackend[F[_]] private (
         case None =>
           Left(BackendError.UnknownDataset(d, s.datasets.keys.toVector.sortBy(_.number)))
         case Some(_) if d != servedDataset =>
-          Left(BackendError.Unavailable(d.label, "the fixture describes dataset r3 only"))
+          Left(BackendError.Unavailable(DiagnosticLocus.Dataset(d)))
         case Some(st) => Right(st)
     }
 
   def admission(d: DatasetRevision): F[Either[BackendError, AdmissionSummary]] =
     dataset(d).map(_.map { st =>
+      val bySlug = summary.quarantineBySlug.toMap
       AdmissionSummary(
         d,
         st,
         summary.inventoryTrials,
         summary.admitted,
-        summary.quarantineByCause,
+        summary.quarantineBySlug.collect {
+          case (slug, n) if slug != NoFixationsSlug => QuarantineCount(s"quarantine.$slug", n)
+        },
+        bySlug.getOrElse(NoFixationsSlug, 0),
         summary.absent,
         summary.fixationRecords,
-        summary.outsideWindowRecords,
-        summary.outsideWindowTrials,
+        WindowTotals(
+          outsideWindow = GoldenInventory.outsideWindow,
+          outsideScreen = GoldenInventory.outsideScreen,
+          total = GoldenInventory.talliedRecords,
+          trialsOutsideWindow = GoldenInventory.trialsOutsideWindow,
+          trialsOutsideScreen = GoldenInventory.trialsOutsideScreen,
+          trials = GoldenInventory.talliedTrials,
+          untallied = 0,
+          sourceRecords = Some(GoldenInventory.sourceRecords),
+          outsideWindowMicros = GoldenInventory.outsideWindowMicros,
+          outsideScreenMicros = GoldenInventory.outsideScreenMicros,
+          totalMicros = GoldenInventory.talliedMicros
+        ),
         summary.itemsInPool,
         summary.imagesFound,
         summary.missingImages,
@@ -161,19 +216,16 @@ final class FakeStudyBackend[F[_]] private (
         case None =>
           Left(BackendError.UnknownRevision(r, s.revisions.keys.toVector.sortBy(_.number)))
         case Some(d) if d != servedDataset =>
-          Left(
-            BackendError.Unavailable(r.label, s"it resolves on ${d.label}, not in the fixture")
-          )
+          Left(BackendError.Unavailable(DiagnosticLocus.Revision(r)))
         case Some(d) => Right(d)
     }
 
   def preview(r: AnalysisRevision): F[Either[BackendError, PreviewSummary]] =
     revision(r).map(_.map { d =>
-      val scales = scalesOf(r)
       PreviewSummary(
         r,
         d,
-        scales,
+        scalesOf(r),
         focalTrials = study.queries.size,
         referenceTrials = study.inventory.count(_.trial.phase == Phase.Encoding),
         requestedQueries = summary.contrasts.requested,
@@ -184,9 +236,34 @@ final class FakeStudyBackend[F[_]] private (
       )
     })
 
+  private def dispositionOf(q: MockQuery): TrialDisposition =
+    ledgerOf.get(q.key).fold(TrialDisposition.Absent)(_.disposition)
+
+  /** eyes4s `StudyFinding.UnmatchedFocal`, reported as no match by the
+    * persisted policy (FIXTURE.md).
+    */
+  private def unmatched(q: MockQuery): StudioDiagnostic =
+    StudioDiagnostic(
+      "study-finding.unmatched-focal",
+      DiagnosticLevel.Warning,
+      DiagnosticOrigin.EyesCore,
+      Vector(DiagnosticLocus.Trial(q.key)),
+      q.reason.getOrElse("")
+    )
+
+  /** eyes4s `StudyFailure.OffWindow`: no fixation of the trial lies in its map. */
+  private def offWindow(q: MockQuery): StudioDiagnostic =
+    StudioDiagnostic(
+      "study-failure.off-window",
+      DiagnosticLevel.Error,
+      DiagnosticOrigin.EyesCore,
+      Vector(DiagnosticLocus.Trial(q.key)),
+      q.reason.getOrElse("")
+    )
+
   private def eligibility(q: MockQuery): Eligibility = q.status match
-    case QueryNotAdmitted => Eligibility.QueryNotAdmitted(q.reason.getOrElse(""))
-    case NoMatchStatus    => Eligibility.NoMatch(q.reason.getOrElse(""))
+    case QueryNotAdmitted => Eligibility.QueryNotAdmitted(dispositionOf(q))
+    case NoMatchStatus    => Eligibility.NoMatch(unmatched(q))
     case _                => Eligibility.Eligible
 
   def previewRows(
@@ -232,7 +309,7 @@ final class FakeStudyBackend[F[_]] private (
         }
     }
 
-  def events(id: JobId): F[Either[BackendError, Stream[F, JobEvent]]] =
+  def subscribe(id: JobId): F[Either[BackendError, Stream[F, JobEvent]]] =
     state.get.map { s =>
       s.job(id).toRight(unknownJob(s, id)).map { _ =>
         state.discrete
@@ -250,63 +327,76 @@ final class FakeStudyBackend[F[_]] private (
       }
     }
 
-  def outcome(id: JobId): F[Either[BackendError, JobOutcome]] =
-    state.get.flatMap { s =>
-      s.job(id) match
-        case None    => F.pure(Left(unknownJob(s, id)))
-        case Some(_) =>
-          state.discrete
-            .map(_.job(id).map(_.state))
-            .collectFirst { case Some(JobState.Finished(o)) => o }
-            .compile
-            .lastOrError
-            .map(Right(_))
+  def outcome(id: JobId): F[Either[BackendError, Option[JobOutcome]]] =
+    state.get.map { s =>
+      s.job(id)
+        .toRight(unknownJob(s, id))
+        .map(_.state match
+          case JobState.Finished(o) => Some(o)
+          case _                    => None)
     }
 
-  def cancel(id: JobId): F[Either[BackendError, JobOutcome]] =
+  def cancel(id: JobId): F[Either[BackendError, JobStatus]] =
     state.modify { s =>
       s.job(id) match
-        case None                                              => (s, Left(unknownJob(s, id)))
-        case Some(JobStatus(_, _, _, _, JobState.Finished(o))) => (s, Right(o))
-        case Some(j)                                           =>
+        case None                           => (s, Left(unknownJob(s, id)))
+        case Some(j) if isFinished(j.state) => (s, Right(j))
+        case Some(j)                        =>
           val last    = progressOf(j.state)
           val outcome = JobOutcome.Cancelled(j.job, j.run, last)
-          (s.finish(j, outcome, RunState.Cancelled(last.map(_.stage))), Right(outcome))
+          val next    = s.finish(j, outcome, RunState.Cancelled(last.map(_.segment.kind)))
+          (next, next.job(id).toRight(unknownJob(next, id)))
     }
 
   // -------------------------------------------------------------------------
   // Test control
   // -------------------------------------------------------------------------
 
-  /** Move a job to `done` units of `stage` and hold it there. Stages follow
-    * [[script]]; neither the stage nor its progress may move back.
-    */
-  def advanceTo(
+  /** The progress of `job` at `done` units of the script's segment `index`. */
+  private def progressAt(
+      j: JobStatus,
+      plan: Vector[ScriptedSegment],
+      index: Int,
+      done: Long,
+      step: Long
+  ): Either[FakeControlError, JobProgress] =
+    val here                       = plan(index)
+    val before                     = plan.take(index)
+    def completed(unit: CountUnit) =
+      sumOf(before, unit) + (if here.segment.unit == unit then done else 0L)
+    (for
+      meter  <- StageMeter.of(here.segment.kind, here.segment.unit, done, here.total)
+      totals <- RunTotals.of(
+        completed(CountUnit.Maps),
+        ProgressTotal.Exact(sumOf(plan, CountUnit.Maps)),
+        completed(CountUnit.Pairs),
+        ProgressTotal.Exact(sumOf(plan, CountUnit.Pairs))
+      )
+      progress <- JobProgress.of(j.job, j.run, step, here.segment, meter, totals)
+    yield progress).leftMap(FakeControlError.Progress(_))
+
+  /** Move to `index`, `done` and hold there; progress never moves back. */
+  private def moveTo(
       id: JobId,
-      stage: JobStage,
-      done: Long
-  ): F[Either[FakeControlError, JobProgress]] =
+      target: (JobStatus, Vector[ScriptedSegment]) => Either[FakeControlError, (Int, Long)]
+  ) =
     state.modify { s =>
       val result =
         for
           j <- active(s, id)
           plan = script(j.revision)
-          total <- plan
-            .collectFirst { case (`stage`, t) => t }
-            .toRight(FakeControlError.UnscriptedStage(id, stage, plan.map(_._1)))
+          (index, done) <- target(j, plan)
           prior = progressOf(j.state)
           _ <- prior.fold(Right(())) { p =>
-            val from = plan.indexWhere(_._1 == p.stage)
-            val to   = plan.indexWhere(_._1 == stage)
-            if to < from then Left(FakeControlError.StageRegressed(id, p.stage, stage))
-            else if to == from && done < p.done then
-              Left(FakeControlError.ProgressRegressed(id, stage, p.done, done))
+            val from = plan.indexWhere(_.segment == p.segment)
+            if index < from || (index == from && done < p.meter.done) then
+              Left(
+                FakeControlError
+                  .Regressed(id, p.segment, p.meter.done, plan(index).segment, done)
+              )
             else Right(())
           }
-          step = prior.fold(1L)(_.step + 1)
-          progress <- JobProgress
-            .of(id, j.run, step, stage, done, total)
-            .leftMap(FakeControlError.Progress(_))
+          progress <- progressAt(j, plan, index, done, prior.fold(1L)(_.step + 1))
         yield (j, progress)
       result match
         case Left(e)              => (s, Left(e))
@@ -314,7 +404,42 @@ final class FakeStudyBackend[F[_]] private (
           (s.update(j.copy(state = JobState.Running(progress))), Right(progress))
     }
 
-  /** Finish a job successfully: its last stage completes and its run becomes
+  /** Move a job to `done` units of `segment` and hold it there. */
+  def advanceTo(
+      id: JobId,
+      segment: Segment,
+      done: Long
+  ): F[Either[FakeControlError, JobProgress]] =
+    moveTo(
+      id,
+      (_, plan) =>
+        val index = plan.indexWhere(_.segment == segment)
+        Either.cond(index >= 0, (index, done), FakeControlError.UnscriptedSegment(id, segment))
+    )
+
+  /** Move a job to the comparison where `pairs` pairs have been compared over
+    * the whole run, and hold it there: the chip's "x / total pairs".
+    */
+  def advanceToPairs(id: JobId, pairs: Long): F[Either[FakeControlError, JobProgress]] =
+    moveTo(
+      id,
+      (j, plan) =>
+        val starts = plan.scanLeft(0L)((acc, s) =>
+          acc + (if s.segment.unit == CountUnit.Pairs then full(s) else 0L)
+        )
+        plan.indices
+          .find(i =>
+            plan(i).segment.unit == CountUnit.Pairs && pairs > starts(i) &&
+              pairs <= starts(i) + full(plan(i))
+          )
+          .map(i => (i, pairs - starts(i)))
+          .toRight(
+            FakeControlError
+              .PairsOutOfRange(id, pairs, ProgressTotal.Exact(totalPairs(j.revision)))
+          )
+    )
+
+  /** Finish a job successfully: every segment completes and its run becomes
     * `Completed`. The fixture has no scores for the new run.
     */
   def complete(id: JobId): F[Either[FakeControlError, JobOutcome]] =
@@ -322,11 +447,14 @@ final class FakeStudyBackend[F[_]] private (
       val result =
         for
           j <- active(s, id)
-          p <- progressOf(j.state).toRight(FakeControlError.NotStarted(id))
-          (stage, total) = script(j.revision).last
-          last <- JobProgress
-            .of(id, j.run, p.step + 1, stage, total.bound.getOrElse(0L), total)
-            .leftMap(FakeControlError.Progress(_))
+          plan = script(j.revision)
+          last <- progressAt(
+            j,
+            plan,
+            plan.size - 1,
+            full(plan.last),
+            progressOf(j.state).fold(1L)(_.step + 1)
+          )
         yield (j, JobOutcome.Completed(id, j.run, last))
       result match
         case Left(e)             => (s, Left(e))
@@ -377,8 +505,7 @@ final class FakeStudyBackend[F[_]] private (
         summary.contrasts,
         summary.grandD,
         summary.grandDByScale,
-        summary.remembered,
-        summary.forgotten,
+        summary.groups,
         summary.pairedN,
         summary.groupNRange._1,
         summary.groupNRange._2,
@@ -387,9 +514,9 @@ final class FakeStudyBackend[F[_]] private (
     })
 
   private def status(q: MockQuery): QueryStatus = q.status match
-    case QueryNotAdmitted => QueryStatus.NotAdmitted(q.reason.getOrElse(""))
-    case NoMatchStatus    => QueryStatus.NoMatch(q.reason.getOrElse(""))
-    case FailedStatus     => QueryStatus.Failed(q.reason.getOrElse(""))
+    case QueryNotAdmitted => QueryStatus.NotAdmitted(dispositionOf(q))
+    case NoMatchStatus    => QueryStatus.NoMatch(unmatched(q))
+    case FailedStatus     => QueryStatus.Failed(offWindow(q))
     case _                =>
       QueryStatus.Contributing(
         q.m.getOrElse(Vector.empty),
@@ -418,16 +545,16 @@ final class FakeStudyBackend[F[_]] private (
       .filter(_ => summary.scales.indices.contains(address.scale))
       .toRight(BackendError.UnknownReference(run, address))
 
-  private def unavailable(address: ResultAddress, reason: String) =
-    Left(BackendError.Unavailable(address.toString, reason))
+  private def unavailable(address: ResultAddress) =
+    Left(BackendError.Unavailable(DiagnosticLocus.Address(address)))
 
   def inspect(run: RunId, address: ResultAddress): F[Either[BackendError, Inspection]] =
     scored(run).map(_.flatMap { _ =>
       locate(run, address).flatMap { q =>
         val s = address.scale
         (status(q), address) match
-          case (_, ResultAddress.Estimation(_, _)) =>
-            unavailable(address, "the fixture holds no density estimates")
+          // The fixture holds no density estimates.
+          case (_, ResultAddress.Estimation(_, _)) => unavailable(address)
           case (QueryStatus.Contributing(m, b, d), ResultAddress.ContrastRow(_, _)) =>
             Right(Inspection.Contrast(address, m(s), b(s), d(s)))
           case (
@@ -452,14 +579,11 @@ final class FakeStudyBackend[F[_]] private (
                 QueryStatus.Contributing(_, _, _),
                 ResultAddress.PairRow(_, PairDesign.Control, _, ref)
               ) =>
+            // The fixture scores control pairs of P17 ret_07 at 2° only.
             q.controlScores2deg.find(c => MockStudy.key(q.participant, c.trial) == ref) match
               case Some(c) if summary.scales.lift(s).contains(FocusScale) =>
                 Right(Inspection.Pair(address, c.item, c.score))
-              case _ =>
-                unavailable(
-                  address,
-                  "the fixture scores control pairs of P17 ret_07 at 2° only"
-                )
+              case _ => unavailable(address)
           case (unscored, _) => Right(Inspection.Unscored(address, unscored))
       }
     })
@@ -468,9 +592,9 @@ final class FakeStudyBackend[F[_]] private (
     scored(run).map(_.flatMap { r =>
       locate(run, address).flatMap { _ =>
         val trial = (k: TrialKey) =>
-          items
+          ledgerOf
             .get(k)
-            .map(ProvenanceStep.Trial(k, _))
+            .map(e => ProvenanceStep.Trial(k, e.item))
             .toRight(BackendError.UnknownReference(run, address))
         val head = Vector(
           ProvenanceStep.Run(r.run),
@@ -502,6 +626,7 @@ object FakeStudyBackend:
   private val QueryNotAdmitted = "query not admitted"
   private val NoMatchStatus    = "no match"
   private val FailedStatus     = "failed"
+  private val NoFixationsSlug  = "no-fixations"
 
   private[fixture] final case class State(
       datasets: Map[DatasetRevision, DatasetState],
@@ -551,7 +676,7 @@ object FakeStudyBackend:
         Map(rev3 -> r2, rev4                  -> r3, rev5 -> r3),
         Vector(
           RunSummary(RunId(5), rev3, r2, RunState.Stale),
-          RunSummary(RunId(6), rev4, r3, RunState.Cancelled(Some(JobStage.Comparing))),
+          RunSummary(RunId(6), rev4, r3, RunState.Cancelled(Some(StageKind.Comparing))),
           RunSummary(RunId(7), rev4, r3, RunState.Current)
         ),
         Vector.empty
@@ -573,7 +698,7 @@ object FakeStudyBackend:
             case Left(e)  => defect(e.message)
             case Right(j) =>
               backend
-                .advanceTo(j.job, JobStage.Comparing, StoryMoment.RunningPairs)
+                .advanceToPairs(j.job, StoryMoment.RunningPairs)
                 .flatMap(_.fold(e => defect(e.message), _ => F.unit))
           }
         case _ => F.unit

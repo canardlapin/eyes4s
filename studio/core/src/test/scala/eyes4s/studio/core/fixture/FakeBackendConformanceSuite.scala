@@ -22,26 +22,21 @@ import eyes4s.studio.core.backend.*
 /** BackendConformanceSuite (fake): the contract on [[FakeStudyBackend]]. */
 class FakeBackendConformanceSuite extends BackendConformanceSuite:
 
+  private def orFail[E, A](result: IO[Either[E, A]]): IO[Unit] =
+    result.flatMap(e => IO.fromEither(e.left.map(err => new AssertionError(err.toString))).void)
+
   def subject: IO[BackendConformanceSuite.Subject] =
     FakeStudyBackend.create[IO](StoryMoment.T2).map { fake =>
-      def step(job: JobId, stage: JobStage, done: Long): IO[Unit] =
-        fake
-          .advanceTo(job, stage, done)
-          .flatMap(e => IO.fromEither(e.left.map(err => new AssertionError(err.message))).void)
       BackendConformanceSuite.Subject(
         fake,
         DatasetRevision(3),
         RunId(7),
         AnalysisRevision(5),
         job =>
-          step(job, JobStage.Estimating, 937) >>
-            step(job, JobStage.Comparing, 100) >>
-            step(job, JobStage.Comparing, 44845) >>
-            step(job, JobStage.Contrasting, 457) >>
-            fake
-              .complete(job)
-              .flatMap(e =>
-                IO.fromEither(e.left.map(err => new AssertionError(err.message))).void
-              )
+          orFail(fake.advanceTo(job, Segment.Estimating(0), 937)) >>
+            orFail(fake.advanceToPairs(job, 100)) >>
+            orFail(fake.advanceToPairs(job, StoryMoment.RunningPairs)) >>
+            orFail(fake.advanceTo(job, Segment.Contrasting(4), 457)) >>
+            orFail(fake.complete(job))
       )
     }

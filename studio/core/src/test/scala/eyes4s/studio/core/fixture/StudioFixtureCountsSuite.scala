@@ -50,31 +50,48 @@ class StudioFixtureCountsSuite extends munit.FunSuite:
     assert(inventory.forall(e => (e.trial.phase == Phase.Retrieval) == e.response.isDefined))
   }
 
-  test("admission: 937 admitted, 17 quarantined by cause, 6 absent") {
-    val tally = inventory.groupMapReduce(_.disposition)(_ => 1)(_ + _)
+  test("admission: 937 admitted, 17 quarantined (5 as no fixations), 6 absent") {
+    val tally = inventory.groupMapReduce(_.disposition match
+      case TrialDisposition.Quarantined(c) => c.code
+      case other                           => other.productPrefix)(_ => 1)(_ + _)
     assertEquals(
       tally,
       Map(
-        TrialDisposition.Admitted                                       -> 937,
-        TrialDisposition.Absent                                         -> 6,
-        TrialDisposition.Quarantined(QuarantineCause.DuplicateOrdinals) -> 4,
-        TrialDisposition.Quarantined(QuarantineCause.NoFixations)       -> 5,
-        TrialDisposition.Quarantined(QuarantineCause.Overlap)           -> 6,
-        TrialDisposition.Quarantined(QuarantineCause.RejectedRecords)   -> 2
+        "Admitted"                      -> 937,
+        "Absent"                        -> 6,
+        "NoFixations"                   -> 5,
+        "quarantine.duplicate-ordinals" -> 4,
+        "quarantine.overlap"            -> 6,
+        "quarantine.rejected-records"   -> 2
       )
     )
     assertEquals(
       (summary.inventoryTrials, summary.admitted, summary.quarantined, summary.absent),
       (960, 937, 17, 6)
     )
-    summary.quarantineByCause.foreach { q =>
-      assertEquals(tally(TrialDisposition.Quarantined(q.cause)), q.trials, q.cause)
+    summary.quarantineBySlug.foreach { (slug, n) =>
+      val key = if slug == "no-fixations" then "NoFixations" else s"quarantine.$slug"
+      assertEquals(tally(key), n, slug)
     }
   }
 
-  test("records, items, images and the analysis window") {
-    assertEquals(GoldenInventory.fixationRecords, 11520)
-    assertEquals(summary.fixationRecords, GoldenInventory.fixationRecords)
+  test("overlap quarantines carry eyes4s operands: the fixation index and both spans") {
+    val overlaps = inventory.collect {
+      case LedgerEntry(k, _, _, TrialDisposition.Quarantined(o: QuarantineCause.Overlap), _) =>
+        k -> o
+    }
+    assertEquals(overlaps.size, 6)
+    overlaps.foreach { (k, o) =>
+      assert(o.index >= 1, o)
+      val clock = s"on fixation-trial:${k.participant}/${k.phase.label}/${k.trial}#1"
+      assert(o.previous.endsWith(clock) && o.current.endsWith(clock), o)
+      assert(o.previous.startsWith("[") && o.previous.contains("ms, "), o)
+    }
+  }
+
+  test("records, items, images and the window totals under ExcludeRecord") {
+    assertEquals(GoldenInventory.sourceRecords, 11520)
+    assertEquals(summary.fixationRecords, GoldenInventory.sourceRecords)
     assertEquals(GoldenInventory.distinctItems, 259)
     assertEquals(inventory.map(_.item).distinct.size, 259)
     assertEquals(summary.itemsInPool, 259)
@@ -87,10 +104,16 @@ class StudioFixtureCountsSuite extends munit.FunSuite:
       assertEquals(users.size, m.encodingTrials, m.item)
     }
     assertEquals(
-      (GoldenInventory.outsideWindowRecords, GoldenInventory.outsideWindowTrials),
+      (GoldenInventory.outsideWindow, GoldenInventory.trialsOutsideWindow),
       (543, 409)
     )
     assertEquals((summary.outsideWindowRecords, summary.outsideWindowTrials), (543, 409))
+    // The golden fixture has no off-screen records, so nothing is excluded as such.
+    assertEquals((GoldenInventory.outsideScreen, GoldenInventory.trialsOutsideScreen), (0, 0))
+    assert(inventory.forall(_.outsideFrame.isEmpty))
+    // README: the reader admits 11,311 records in the 937 accepted trials.
+    assertEquals((GoldenInventory.talliedTrials, GoldenInventory.talliedRecords), (937, 11311))
+    assert(GoldenInventory.outsideWindowMicros < GoldenInventory.talliedMicros)
   }
 
   test("every fixture.json query agrees with the golden inventory") {
@@ -104,6 +127,7 @@ class StudioFixtureCountsSuite extends munit.FunSuite:
         case "query not admitted" =>
           val expected = entry.disposition match
             case TrialDisposition.Absent         => "absent"
+            case TrialDisposition.NoFixations    => "no-fixations"
             case TrialDisposition.Quarantined(c) => c.code.stripPrefix("quarantine.")
             case TrialDisposition.Admitted       => "admitted"
           assertEquals(q.reason, Some(expected), q.key)

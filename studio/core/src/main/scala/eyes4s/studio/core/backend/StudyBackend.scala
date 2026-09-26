@@ -19,7 +19,7 @@ package eyes4s.studio.core.backend
 import cats.Functor
 import cats.syntax.functor.*
 import fs2.Stream
-import io.circe.Codec
+import io.circe.{Codec, Decoder, Encoder}
 
 /** Why the backend refused a request. Every case names its operands; `code` is
   * a stable identity in the `studio-backend` family.
@@ -30,24 +30,26 @@ enum BackendError derives CanEqual, Codec.AsObject:
   case UnknownRun(run: RunId, known: Vector[RunId])
   case UnknownJob(job: JobId, known: Vector[JobId])
 
-  /** The backend knows the subject but holds no data for this request. */
-  case Unavailable(subject: String, reason: String)
+  /** The backend knows the subject but holds no data for it. */
+  case Unavailable(subject: DiagnosticLocus)
 
   /** The run exists but has no result to serve. */
   case NoResult(run: RunId, state: RunState)
 
   case UnknownReference(run: RunId, address: ResultAddress)
   case AlreadyRunning(revision: AnalysisRevision, job: JobId)
+  case UnsupportedVersion(requested: ProtocolVersion, supported: ProtocolVersion)
 
   def code: String = this match
-    case UnknownDataset(_, _)   => "studio-backend.unknown-dataset"
-    case UnknownRevision(_, _)  => "studio-backend.unknown-revision"
-    case UnknownRun(_, _)       => "studio-backend.unknown-run"
-    case UnknownJob(_, _)       => "studio-backend.unknown-job"
-    case Unavailable(_, _)      => "studio-backend.unavailable"
-    case NoResult(_, _)         => "studio-backend.no-result"
-    case UnknownReference(_, _) => "studio-backend.unknown-reference"
-    case AlreadyRunning(_, _)   => "studio-backend.already-running"
+    case UnknownDataset(_, _)     => "studio-backend.unknown-dataset"
+    case UnknownRevision(_, _)    => "studio-backend.unknown-revision"
+    case UnknownRun(_, _)         => "studio-backend.unknown-run"
+    case UnknownJob(_, _)         => "studio-backend.unknown-job"
+    case Unavailable(_)           => "studio-backend.unavailable"
+    case NoResult(_, _)           => "studio-backend.no-result"
+    case UnknownReference(_, _)   => "studio-backend.unknown-reference"
+    case AlreadyRunning(_, _)     => "studio-backend.already-running"
+    case UnsupportedVersion(_, _) => "studio-backend.unsupported-version"
 
   def message: String = this match
     case UnknownDataset(d, known) =>
@@ -58,14 +60,26 @@ enum BackendError derives CanEqual, Codec.AsObject:
       s"No ${r.label}; the backend has ${known.map(_.label).mkString(", ")}."
     case UnknownJob(j, known) =>
       s"No job ${j.number}; the backend has ${known.map(_.number).mkString(", ")}."
-    case Unavailable(subject, reason) => s"$subject is unavailable: $reason."
-    case NoResult(r, state)           => s"${r.label} has no result (state $state)."
-    case UnknownReference(r, a)       => s"${r.label} has no result item $a."
-    case AlreadyRunning(r, j)         =>
+    case Unavailable(subject)   => s"The backend holds no data for ${subject.render}."
+    case NoResult(r, state)     => s"${r.label} has no result (it is ${state.label})."
+    case UnknownReference(r, a) => s"${r.label} has no result item: ${a.render}."
+    case AlreadyRunning(r, j)   =>
       s"Cannot submit ${r.label}: job ${j.number} is still running."
+    case UnsupportedVersion(requested, supported) =>
+      s"Protocol ${requested.render} is not supported; this backend speaks ${supported.render}."
 
   def diagnostic: StudioDiagnostic =
-    StudioDiagnostic(code, DiagnosticLevel.Error, Vector.empty, message)
+    val subject = this match
+      case UnknownDataset(d, _)   => Vector(DiagnosticLocus.Dataset(d))
+      case UnknownRevision(r, _)  => Vector(DiagnosticLocus.Revision(r))
+      case UnknownRun(r, _)       => Vector(DiagnosticLocus.Run(r))
+      case UnknownJob(j, _)       => Vector(DiagnosticLocus.Job(j))
+      case Unavailable(s)         => Vector(s)
+      case NoResult(r, _)         => Vector(DiagnosticLocus.Run(r))
+      case UnknownReference(r, a) => Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Address(a))
+      case AlreadyRunning(r, j)   => Vector(DiagnosticLocus.Revision(r), DiagnosticLocus.Job(j))
+      case UnsupportedVersion(_, _) => Vector.empty
+    StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
 
 /** Everything Eyes Studio asks of eyes4s (DESIGN_SPEC section 13, S3.0): the
   * admission summary and ledger, preview paging, jobs with progress, results,
@@ -73,9 +87,10 @@ enum BackendError derives CanEqual, Codec.AsObject:
   *
   * Requests and responses are the serializable values of this package, so the
   * same protocol serves an in-process backend and an IPC sidecar
-  * ([[BackendRequest]], [[StudyBackend.serve]]). `FakeStudyBackend` serves the
-  * mock study; the real backend over eyes4s arrives in S3.7. Both pass
-  * `BackendConformanceSuite`.
+  * ([[Envelope]], [[StudyBackend.handle]]). No method blocks on a job: a job's
+  * end arrives as the last frame of [[subscribe]] or by polling [[outcome]].
+  * `FakeStudyBackend` serves the mock study; the real backend over eyes4s
+  * arrives in S3.7. Both pass `BackendConformanceSuite`.
   *
   * Refusals are values. An effect fails only on a defect of the backend itself.
   */
@@ -104,18 +119,18 @@ trait StudyBackend[F[_]]:
 
   def job(id: JobId): F[Either[BackendError, JobStatus]]
 
-  /** The job's progress, ending with exactly one `Finished`. A finished job's
-    * stream is that single event.
+  /** The job's progress from now on, ending with exactly one `Finished`. A
+    * finished job's stream is that single event.
     */
-  def events(id: JobId): F[Either[BackendError, Stream[F, JobEvent]]]
+  def subscribe(id: JobId): F[Either[BackendError, Stream[F, JobEvent]]]
 
-  /** Request cancellation; returns the outcome once the job has settled. A
-    * finished job's outcome is returned unchanged.
+  /** Request cancellation and return the job's status; cancellation settles
+    * as a `Finished(Cancelled)` event unless the job has already ended.
     */
-  def cancel(id: JobId): F[Either[BackendError, JobOutcome]]
+  def cancel(id: JobId): F[Either[BackendError, JobStatus]]
 
-  /** The job's outcome, once it has settled. */
-  def outcome(id: JobId): F[Either[BackendError, JobOutcome]]
+  /** The job's outcome if it has settled; never waits. */
+  def outcome(id: JobId): F[Either[BackendError, Option[JobOutcome]]]
 
   def result(run: RunId): F[Either[BackendError, ResultSummary]]
 
@@ -126,9 +141,7 @@ trait StudyBackend[F[_]]:
 
   def provenance(run: RunId, address: ResultAddress): F[Either[BackendError, Provenance]]
 
-/** A request of the [[StudyBackend]] protocol, one case per method; progress
-  * streams travel separately as [[JobEvent]]s.
-  */
+/** A request of the [[StudyBackend]] protocol, one case per method. */
 enum BackendRequest derives CanEqual, Codec.AsObject:
   case Admission(dataset: DatasetRevision)
   case Ledger(dataset: DatasetRevision, page: PageRequest)
@@ -138,6 +151,9 @@ enum BackendRequest derives CanEqual, Codec.AsObject:
   case Submit(revision: AnalysisRevision)
   case Jobs
   case Job(id: JobId)
+
+  /** Answered by a stream of [[ServerFrame.Event]] frames. */
+  case Subscribe(id: JobId)
   case Cancel(id: JobId)
   case Outcome(id: JobId)
   case Result(run: RunId)
@@ -155,34 +171,93 @@ enum BackendResponse derives CanEqual, Codec.AsObject:
   case Runs(runs: Vector[RunSummary])
   case Job(status: JobStatus)
   case Jobs(jobs: Vector[JobStatus])
-  case Outcome(outcome: JobOutcome)
+  case Outcome(job: JobId, outcome: Option[JobOutcome])
   case Result(summary: ResultSummary)
   case Queries(page: QueryPage)
   case Inspected(inspection: Inspection)
   case ProvenanceOf(provenance: Provenance)
 
+/** A frame from backend to client: the one response to a request, or one
+  * event of a subscription.
+  */
+enum ServerFrame derives CanEqual, Codec.AsObject:
+  case Response(response: BackendResponse)
+  case Event(event: JobEvent)
+
+/** The protocol's version. A backend answers any request whose major version
+  * it speaks; minor versions only add.
+  */
+final case class ProtocolVersion(major: Int, minor: Int) derives CanEqual, Codec.AsObject:
+  def render: String = s"$major.$minor"
+
+object ProtocolVersion:
+  val Current: ProtocolVersion = ProtocolVersion(1, 0)
+
+/** A client's correlation id; every frame answering a request carries it. */
+final case class RequestId(value: Long) derives CanEqual
+
+object RequestId:
+  given Codec[RequestId] = ProtocolCodecs.wrapper(RequestId(_), _.value)
+
+/** One message on a transport, in either direction. */
+final case class Envelope[A](version: ProtocolVersion, id: RequestId, body: A) derives CanEqual
+
+object Envelope:
+  def apply[A](id: RequestId, body: A): Envelope[A] =
+    Envelope(ProtocolVersion.Current, id, body)
+
+  given [A: Encoder]: Encoder.AsObject[Envelope[A]] =
+    Encoder.forProduct3("version", "id", "body")(e => (e.version, e.id, e.body))
+
+  given [A: Decoder]: Decoder[Envelope[A]] =
+    Decoder.forProduct3("version", "id", "body")(Envelope.apply[A])
+
 object StudyBackend:
 
-  /** Answer one protocol request: the server side of any transport. */
+  /** Answer one enveloped request: the server side of any transport. Every
+    * frame carries the request's id and the current version.
+    */
+  def handle[F[_]: Functor](
+      backend: StudyBackend[F]
+  )(request: Envelope[BackendRequest]): Stream[F, Envelope[ServerFrame]] =
+    val frames =
+      if request.version.major != ProtocolVersion.Current.major then
+        Stream.emit(
+          ServerFrame.Response(
+            BackendResponse.Refused(
+              BackendError.UnsupportedVersion(request.version, ProtocolVersion.Current)
+            )
+          )
+        )
+      else serve(backend)(request.body)
+    frames.map(Envelope(request.id, _))
+
+  /** Answer one request: a single response, or a subscription's events. */
   def serve[F[_]: Functor](backend: StudyBackend[F])(
       request: BackendRequest
-  ): F[BackendResponse] =
+  ): Stream[F, ServerFrame] =
     import BackendRequest as Q
     import BackendResponse as A
     def answer[V](result: F[Either[BackendError, V]])(wrap: V => BackendResponse) =
-      result.map(_.fold(A.Refused(_), wrap))
+      Stream.eval(result.map(r => ServerFrame.Response(r.fold(A.Refused(_), wrap))))
+    def always(result: F[BackendResponse]) = Stream.eval(result.map(ServerFrame.Response(_)))
     request match
       case Q.Admission(d)       => answer(backend.admission(d))(A.Admission(_))
       case Q.Ledger(d, p)       => answer(backend.ledger(d, p))(A.Ledger(_))
       case Q.Preview(r)         => answer(backend.preview(r))(A.Preview(_))
       case Q.PreviewRows(r, p)  => answer(backend.previewRows(r, p))(A.PreviewRows(_))
-      case Q.Runs               => backend.runs.map(A.Runs(_))
+      case Q.Runs               => always(backend.runs.map(A.Runs(_)))
       case Q.Submit(r)          => answer(backend.submit(r))(A.Job(_))
-      case Q.Jobs               => backend.jobs.map(A.Jobs(_))
+      case Q.Jobs               => always(backend.jobs.map(A.Jobs(_)))
       case Q.Job(j)             => answer(backend.job(j))(A.Job(_))
-      case Q.Cancel(j)          => answer(backend.cancel(j))(A.Outcome(_))
-      case Q.Outcome(j)         => answer(backend.outcome(j))(A.Outcome(_))
+      case Q.Cancel(j)          => answer(backend.cancel(j))(A.Job(_))
+      case Q.Outcome(j)         => answer(backend.outcome(j))(A.Outcome(j, _))
       case Q.Result(r)          => answer(backend.result(r))(A.Result(_))
       case Q.Queries(r, p)      => answer(backend.queries(r, p))(A.Queries(_))
       case Q.Inspect(r, a)      => answer(backend.inspect(r, a))(A.Inspected(_))
       case Q.ProvenanceOf(r, a) => answer(backend.provenance(r, a))(A.ProvenanceOf(_))
+      case Q.Subscribe(j)       =>
+        Stream.eval(backend.subscribe(j)).flatMap {
+          case Left(e)       => Stream.emit(ServerFrame.Response(A.Refused(e)))
+          case Right(events) => events.map(ServerFrame.Event(_))
+        }
