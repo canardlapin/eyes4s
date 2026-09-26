@@ -10,7 +10,7 @@
     },
     "template-cv-reference": {
       "path": "tools/r-parity/fixtures/template-cv.json",
-      "sha256": "aac80a6099eb1aece56eab73d8349a76e6ea972264525357657873dab0a9dbcb",
+      "sha256": "c8f89f2e7a3e2e91b03bb9c4ffca1f3693437e7a63947a9e852d8dec7dc9d5ba",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Pinned public CV calls, missing/duplicate behavior and RNG state"
     },

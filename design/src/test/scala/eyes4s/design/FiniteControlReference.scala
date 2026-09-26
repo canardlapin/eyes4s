@@ -29,17 +29,17 @@ object FiniteControlReference:
     Result(0,"c1",None,None,Vector()),
     Result(0,"d1",None,None,Vector()),
     Result(0,"c2",None,None,Vector()),
-    Result(1,"a1",Some(0),None,Vector()),
-    Result(1,"a2",Some(0),None,Vector()),
+    Result(1,"a1",Some(1),Some(0.0),Vector(2)),
+    Result(1,"a2",Some(1),Some(0.0),Vector(2)),
     Result(1,"b1",Some(1),Some(0.0),Vector(1)),
-    Result(1,"c1",Some(0),None,Vector()),
-    Result(1,"d1",Some(0),None,Vector()),
+    Result(1,"c1",Some(1),Some(0.707106781186547),Vector(4)),
+    Result(1,"d1",Some(1),Some(0.707106781186547),Vector(3)),
     Result(1,"c2",Some(1),Some(0.707106781186547),Vector(4)),
-    Result(20,"a1",Some(2),Some(0.5),Vector(1,2)),
-    Result(20,"a2",Some(2),Some(0.5),Vector(1,2)),
-    Result(20,"b1",Some(2),Some(0.0),Vector(1,1)),
-    Result(20,"c1",Some(2),Some(0.853553390593274),Vector(4,3)),
-    Result(20,"d1",Some(2),Some(0.707106781186547),Vector(3,3)),
-    Result(20,"c2",Some(2),Some(0.853553390593274),Vector(4,3))
+    Result(20,"a1",Some(1),Some(0.0),Vector(2)),
+    Result(20,"a2",Some(1),Some(0.0),Vector(2)),
+    Result(20,"b1",Some(1),Some(0.0),Vector(1)),
+    Result(20,"c1",Some(1),Some(0.707106781186547),Vector(4)),
+    Result(20,"d1",Some(1),Some(0.707106781186547),Vector(3)),
+    Result(20,"c2",Some(1),Some(0.707106781186547),Vector(4))
   )
 // format: on

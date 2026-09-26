@@ -24,7 +24,8 @@ object MapReference:
     Case("regular",Vector(0.05,0.1,0.15,0.2,0.25,0.25),Vector(0.3,0.1,0.1,0.2,0.1,0.2),Vector(("pearson",-0.35000000000000003),("spearman",-0.23483410915693106),("fisherz",-0.3654437542713962),("cosine",0.7749999999999999),("l1",0.75),("jaccard",0.6326530612244898),("dcov",0.5467003647630306))),
     Case("ties",Vector(0.0,0.2,0.2,0.6),Vector(0.6,0.2,0.2,0.0),Vector(("pearson",-0.8947368421052632),("spearman",-1.0),("fisherz",-1.4451858789480823),("cosine",0.18181818181818182),("l1",0.4),("jaccard",0.1),("dcov",0.9147320339189784))),
     Case("orthogonal",Vector(1.0,0.0,0.0,0.0),Vector(0.0,1.0,0.0,0.0),Vector(("pearson",-0.3333333333333333),("spearman",-0.3333333333333333),("fisherz",-0.34657359027997264),("cosine",0.0),("l1",0.0),("jaccard",0.0),("dcov",0.3333333333333333))),
-    Case("identical",Vector(0.1,0.2,0.3,0.4),Vector(0.1,0.2,0.3,0.4),Vector(("pearson",1.0),("spearman",1.0),("fisherz",18.36840028483855),("cosine",1.0),("l1",1.0),("jaccard",1.0),("dcov",1.0)))
+    Case("identical",Vector(0.1,0.2,0.3,0.4),Vector(0.1,0.2,0.3,0.4),Vector(("pearson",1.0),("spearman",1.0),("fisherz",18.36840028483855),("cosine",1.0),("l1",1.0),("jaccard",1.0),("dcov",1.0))),
+    Case("near-identical",Vector(0.1,0.2,0.3,0.4),Vector(0.1,0.2,0.29999998,0.40000002),Vector(("pearson",0.9999999999999928),("spearman",1.0),("fisherz",18.36840028483855),("cosine",0.9999999999999987),("l1",0.99999998),("jaccard",0.9999999999999973),("dcov",0.9999999999999931)))
   )
   val orderedScales: Vector[(String,Vector[(Double,Double)])] = Vector(("pearson",Vector((2.0,1),(1.0,-1))),("spearman",Vector((2.0,1),(1.0,-1))),("fisherz",Vector((2.0,18.3684002848386),(1.0,-18.3684002848386))),("cosine",Vector((2.0,1),(1.0,0.666666666666667))),("l1",Vector((2.0,1),(1.0,0.6))),("jaccard",Vector((2.0,1),(1.0,0.5))),("dcov",Vector((2.0,1),(1.0,1))))
   val emdDiracSimilarity: Double = 0.414213562373095

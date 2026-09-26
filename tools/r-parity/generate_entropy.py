@@ -11,9 +11,10 @@ decimal logarithms for the Shannon entropy of a normalised vector and the log
 ratio away from zero cells. Where eyesim's answer is a non-finite value (`NA`,
 `Inf`, `-Inf`, `NaN`) or an error, that output is pinned as a literal so the
 divergence from eyes4s is evidenced rather than asserted. The reading of
-eyesim's positive-cell formula on signed maps is labelled as such: it
-documents what eyesim computes, not an independent estimand. No network
-access or writes to the source checkout occur.
+eyesim's formula on maps eyes4s refuses by type (signed, difference and
+log-ratio maps) is labelled as such: it documents what eyesim computes, or
+that it refuses, not an independent estimand. No network access or writes to
+the source checkout occur.
 """
 from __future__ import annotations
 
@@ -39,6 +40,7 @@ FLOOR = Decimal("1e-12")  # eyes4s Mass.logRatio default floor.
 MACHINE_EPS = Decimal("2.220446049250313e-16")  # R .Machine$double.eps.
 BASES = {"2": Decimal(2), "e": Decimal(1).exp()}
 NA = "NA"
+ERROR = "error"  # eyesim refuses the map; the pinned message is recorded beside it.
 
 getcontext().prec = 60
 
@@ -101,14 +103,17 @@ def floored_log_ratio(a: list[Fraction], b: list[Fraction]) -> list[Decimal]:
 def eyesim_formula(cells: list, base: Decimal, normalize: bool) -> Decimal | str:
     """A reading of eyesim's entropy_from_mass at the pinned revision.
 
-    Non-finite cells are dropped, the remainder is divided by its signed total,
-    only positive cells enter the sum, and the normaliser is the log of the count
-    of finite cells. This is what eyesim computes on a signed map, not a claim
-    that the number means anything.
+    Non-finite cells are dropped; a remaining negative cell is refused with an
+    error; the remainder is divided by its total, only positive cells enter the
+    sum, and the normaliser is the log of the count of finite cells. This is
+    what eyesim computes on the maps eyes4s refuses by type, not a claim that
+    the number means anything.
     """
     finite = [dec(c) for c in cells if not isinstance(c, str)]
     if not finite:
         return NA
+    if any(v < 0 for v in finite):
+        return ERROR
     total = sum(finite, Decimal(0))
     if total <= MACHINE_EPS:
         return NA
@@ -191,10 +196,10 @@ def oracle(spec: dict) -> dict:
     assert exact["entropy"]["mass_p"]["2"]["raw"] == Decimal(
         "1.5"
     ), "the selected mass has 1.5 bits"
-    assert exact["eyesim_formula"]["minus_p_q"]["e"]["raw"] == NA
+    assert exact["eyesim_formula"]["minus_p_q"]["e"]["raw"] == ERROR
     assert exact["eyesim_formula"]["div_p_p"]["e"]["raw"] == NA
     assert exact["eyesim_formula"]["div_p_q"]["e"]["raw"] == Decimal(0)
-    assert isinstance(exact["eyesim_formula"]["signed"]["e"]["raw"], Decimal)
+    assert exact["eyesim_formula"]["signed"]["e"]["raw"] == ERROR
     return exact
 
 
@@ -221,7 +226,9 @@ def close(r_value: dict, target: Decimal | str, where) -> None:
 
 
 def verify(reference: dict, exact: dict) -> None:
-    assert float(reference["machine_eps"]) == float(MACHINE_EPS), reference["machine_eps"]
+    assert float(reference["machine_eps"]) == float(MACHINE_EPS), reference[
+        "machine_eps"
+    ]
     for name in ["mass_p", "mass_q", "mass_r", "counts"]:
         for base in BASES:
             for kind in ["raw", "normalized"]:
@@ -230,9 +237,9 @@ def verify(reference: dict, exact: dict) -> None:
                     exact["entropy"][name][base][kind],
                     (name, base, kind),
                 )
-    assert reference["entropy"]["mass_p_density_class"] == reference["entropy"]["mass_p"], (
-        "fixation_entropy.density and fixation_entropy.eye_density must agree"
-    )
+    assert (
+        reference["entropy"]["mass_p_density_class"] == reference["entropy"]["mass_p"]
+    ), "fixation_entropy.density and fixation_entropy.eye_density must agree"
     for name in ["signed", "minus_p_q", "div_p_q", "div_p_p"]:
         for base in BASES:
             for kind in ["raw", "normalized"]:
@@ -241,6 +248,9 @@ def verify(reference: dict, exact: dict) -> None:
                     exact["eyesim_formula"][name][base][kind],
                     ("formula", name, base, kind),
                 )
+                if exact["eyesim_formula"][name][base][kind] == ERROR:
+                    detail = reference["entropy"][name][base][kind]["detail"]
+                    assert "non-negative mass" in detail, (name, detail)
     ops = reference["ops"]
     pairs = {
         "plus_p_q": [dec(v) for v in exact["mean_p_q"]],
@@ -302,6 +312,7 @@ def scala(exact: dict, reference: dict) -> str:
             "NaN": "RValue.NaN",
             "Inf": "RValue.Inf",
             "-Inf": "RValue.NegInf",
+            "error": f"RValue.Error({json.dumps(cell.get('detail', ''))})",
         }[kind]
 
     def rvs(cells: list) -> str:
@@ -357,13 +368,14 @@ def scala(exact: dict, reference: dict) -> str:
         "  /** The eyes4s Mass.logRatio default floor, restated so the floored oracle names it. */",
         f"  val floor = {float(FLOOR)!r}",
         f"  val machineEpsilon = {float(MACHINE_EPS)!r}",
-        "  /** A value as R reports it. NA is not a Double, so it is a case of its own. */",
+        "  /** A value as R reports it. NA is not a Double, so it is a case of its own; Error is a refusal and its message. */",
         "  enum RValue derives CanEqual:",
         "    case Finite(value: Double)",
         "    case NA",
         "    case NaN",
         "    case Inf",
         "    case NegInf",
+        "    case Error(message: String)",
         "  /** eyesim entropy output: base 2 raw and normalised, then base e raw and normalised. */",
         "  final case class EyesimEntropy(bits: RValue, relativeBits: RValue, nats: RValue, relativeNats: RValue)",
         "  final case class ExactEntropy(bits: Double, relativeBits: Double, nats: Double, relativeNats: Double)",
@@ -397,8 +409,6 @@ def scala(exact: dict, reference: dict) -> str:
         f"  val exactEntropyP = {exact_entropy(exact['entropy']['mass_p'])}",
         f"  val exactEntropyQ = {exact_entropy(exact['entropy']['mass_q'])}",
         f"  val exactEntropyR = {exact_entropy(exact['entropy']['mass_r'])}",
-        "  // A reading of eyesim's positive-cell formula on the signed vector: what it computes, not an estimand.",
-        f"  val formulaEntropySigned = {exact_entropy(exact['eyesim_formula']['signed'])}",
         "  // Ops.eye_density at the pinned revision.",
         f"  val eyesimPlusPQ = {operation('plus_p_q')}",
         f"  val eyesimMinusPQ = {operation('minus_p_q')}",
@@ -463,8 +473,9 @@ def main() -> None:
             "away from zero cells. eyesim's fixation_entropy.eye_density (entropy_from_mass) and "
             "Ops.eye_density are called on hand-built eye_density objects over the pinned lattice. "
             "Non-finite cells, NA entropies and errors are pinned as eyesim literals. The "
-            "eyesim_formula block is a reading of entropy_from_mass on signed maps: it records what "
-            "eyesim computes there, not an estimand eyes4s implements."
+            "eyesim_formula block is a reading of entropy_from_mass on signed, difference and "
+            "log-ratio maps: it records what eyesim computes or refuses there, not an estimand "
+            "eyes4s implements."
         ),
         "lattice_order": spec["lattice"]["order"],
         "numerical_tolerance": {"absolute": TOLERANCE, "relative": 0},

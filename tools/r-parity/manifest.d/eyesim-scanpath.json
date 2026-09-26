@@ -10,13 +10,13 @@
     },
     "scanpath-reference": {
       "path": "tools/r-parity/fixtures/scanpath.json",
-      "sha256": "bc08519acae50bdeea4757a08b46756b55736903c6d70ffa7ba7bd410636436c",
+      "sha256": "1e33db8aa1ed30247b9b17e5c4f9602eec0fdd283473a66346df518683141fa7",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Exported R route, analytic oracles, solver plans and retained failure evidence"
     },
     "scanpath-scala": {
       "path": "compare/src/test/scala/eyes4s/compare/ScanpathReference.scala",
-      "sha256": "f46646342fbd754e9cb089fc8eb1fdc7d40f3ee20fd7f91ba631b77bedc456ed",
+      "sha256": "05fde27ba89bb809f63d24c5958af99e07d9f56785580f35f4c541fedbb91f26",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Exported R route, analytic oracles, solver plans and retained failure evidence"
     }

@@ -52,8 +52,14 @@ class FixationTrajectorySuite extends munit.FunSuite:
         val slow       = get(trajectory.sample(clock, times, TrajectoryEndpoint.HoldLastOnset))
         assertEquals(fast.rows.map(_.time.toMicros), c.queries)
         assertEquals(slow.rows.map(_.time.toMicros), c.queries)
-        c.fast.foreach(expected => assertEquals(points(fast.rows), expected))
+        // Both eyesim paths hold the final fixation after its onset, as HoldLastOnset does.
+        c.fast.foreach(expected => assertEquals(points(slow.rows), expected))
         c.slow.foreach(expected => assertEquals(points(slow.rows), expected))
+        // OnsetRange is the native alternative: identical up to the last onset, missing after it.
+        val last = c.onsets.max
+        points(fast.rows).zip(points(slow.rows)).zip(c.queries).foreach { case ((f, s), t) =>
+          assertEquals(f, if t > last then None else s)
+        }
         assertEquals(fast.frame, frame); assertEquals(fast.clock, clock)
         assert(trajectory.sample(ClockId("other"), times, TrajectoryEndpoint.OnsetRange).isLeft)
         assert(

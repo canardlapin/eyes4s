@@ -164,7 +164,7 @@ class DensityLookupSuite extends munit.FunSuite:
     val trajectory = get(
       FixationTrajectory
         .fromScanpath(path)
-        .sample(clock, KdeReference.times_us.map(Instant.micros), TrajectoryEndpoint.OnsetRange)
+        .sample(clock, KdeReference.times_us.map(Instant.micros), TrajectoryEndpoint.HoldLastOnset)
     )
     val prepared = get(DensityLookup.prepare(surface, DensityNormalization.Sum))
     val rows     = get(prepared.along(trajectory, DensityLookupPolicy.NearestClampedRIndex))
@@ -178,5 +178,6 @@ class DensityLookupSuite extends munit.FunSuite:
         .along(trajectory, DensityLookupPolicy.NearestClampedRIndex)
     )
     assertEquals(raw.map(_.value.toOption), KdeReference.template_sample)
-    assert(rows.head.value.isLeft && rows.last.value.isLeft)
+    // eyesim holds the final fixation after its onset, as HoldLastOnset does.
+    assert(rows.head.value.isLeft && rows.last.value.isRight)
   }

@@ -10,13 +10,13 @@
     },
     "kde-reference": {
       "path": "tools/r-parity/fixtures/kde.json",
-      "sha256": "7de88d9536a2647049b3040c5f566c0be45d9eac07f6f60cff27df7a9261b8e2",
+      "sha256": "de2e2ba85868214d5e40711864fa7a3b0247c8a6632d17acb3dd8099b965f6af",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Locked exported reference calls, failures and analytic comparisons"
     },
     "kde-scala": {
       "path": "surface/src/test/scala/eyes4s/surface/KdeReference.scala",
-      "sha256": "88624d718e3f33db60b9c5fa52f573a107e50ea54611545a640a38ed310309c7",
+      "sha256": "e05e367e4973bd1d57daedfe4fbe120c7b57e2d366bbb996393a3c2b52abf1f5",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Portable measured reference expectations"
     }

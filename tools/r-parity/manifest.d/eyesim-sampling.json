@@ -10,19 +10,19 @@
     },
     "sampling-reference": {
       "path": "tools/r-parity/fixtures/sampling.json",
-      "sha256": "10d56aae2452126da6a8c0d7e74aaa0a773b14168fb36b862dacaad21eb27246",
+      "sha256": "7183080abf6750bf2728284867f2857cb61858855a8b0efe88f5a2edd9c216da",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Locked exported reference calls, failures and analytic comparisons"
     },
     "sampling-scala": {
       "path": "core/src/test/scala/eyes4s/core/SamplingReference.scala",
-      "sha256": "d214b9135e158e1261ff1ddf6eb22e2492557d0a7ab4348fdc29839237d230c2",
+      "sha256": "4f398866a34ff1423301ac4e1befc8bde937ac689aa19850ea320186c7ebb0db",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Portable measured reference expectations"
     },
     "finite-control-scala": {
       "path": "design/src/test/scala/eyes4s/design/FiniteControlReference.scala",
-      "sha256": "aed87c6d4e66530a2699afdbc6b6947510995a2edddcbe091d471e6275f47a24",
+      "sha256": "5565b05119f4e198ad54254c0040986d820db103d37bdc7fbd7fe9e4148cac6f",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Measured finite control draws and denominators"
     }
