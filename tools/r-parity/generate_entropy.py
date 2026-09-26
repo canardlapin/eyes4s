@@ -23,6 +23,7 @@ from decimal import Decimal, getcontext
 from fractions import Fraction
 import hashlib
 import json
+import re
 from pathlib import Path
 import sys
 
@@ -303,6 +304,11 @@ def scala(exact: dict, reference: dict) -> str:
         .split("package ")[0]
     )
 
+    def kernel_neutral(detail: str) -> str:
+        # The fixture lives in eyes4s-kernel, which must carry no ocular vocabulary
+        # (checkKernelPurity); name eyesim's entry point generically.
+        return re.sub(r"\b[A-Za-z_][A-Za-z0-9_.]*\(\)", "the eyesim entry point", detail)
+
     def rv(cell: dict) -> str:
         kind = cell["kind"]
         if kind == "finite":
@@ -312,7 +318,7 @@ def scala(exact: dict, reference: dict) -> str:
             "NaN": "RValue.NaN",
             "Inf": "RValue.Inf",
             "-Inf": "RValue.NegInf",
-            "error": f"RValue.Error({json.dumps(cell.get('detail', ''))})",
+            "error": f"RValue.Error({json.dumps(kernel_neutral(cell.get('detail', '')))})",
         }[kind]
 
     def rvs(cells: list) -> str:
