@@ -327,7 +327,8 @@ object SchemaRegistry:
     "a value is written under the earliest version that expresses it",
     "a document written as vN decodes with a vN-only reader",
     "upcasting a vN payload writes exactly what each later version writes",
-    "a lifted document decodes to the value and re-encodes to the earliest document"
+    "a lifted document decodes to the value and re-encodes to the earliest document",
+    "a refused document stays refused after lifting"
   ).map(p => s"schemaLadder.$p")
   private def ladderLaw(suite: () => munit.Suite, name: String): Vector[Law] =
     ladderProperties.map(Law(suite, name, _))
@@ -342,32 +343,46 @@ object SchemaRegistry:
     */
   final case class Versioned(name: String, ladders: Vector[Rungs], laws: Vector[Law])
 
-  val versioned: Vector[Versioned] = Vector(
-    Versioned(
-      "eyes4s.study",
-      Vector(
-        Rungs(StudyCodecs.cosine[Px].ladder, Vector("study-v1.json", "study-v2.json")),
-        Rungs(StudyCodecs.trialCosine[Px].ladder, Vector("study-trial-v2.json"))
-      ),
-      ladderLaw(plans, "study plan versions") ++ ladderLaw(plans, "trial study plan versions")
-    ),
-    Versioned(
-      "eyes4s.admission-ledger",
-      Vector(
-        Rungs(
-          StudyInputCodecs.study[Px].ledgerLadder,
-          Vector(
-            "admission-ledger-v1.json",
-            "admission-ledger-complete-v1.json",
-            "admission-ledger-v2.json"
-          )
-        ),
-        Rungs(StudyInputCodecs.trial[Px].ledgerLadder, Vector("admission-ledger-v3.json"))
-      ),
-      ladderLaw(inputs, "admission ledger versions") ++
-        ladderLaw(inputs, "inventory ledger versions")
-    )
+  /** The published ladder laws of each multi-version schema, by name. */
+  val ladderLaws: Map[String, Vector[Law]] = Map(
+    "eyes4s.study" ->
+      (ladderLaw(plans, "study plan versions") ++ ladderLaw(
+        plans,
+        "trial study plan versions"
+      )),
+    "eyes4s.admission-ledger" ->
+      (ladderLaw(inputs, "admission ledger versions") ++
+        ladderLaw(inputs, "inventory ledger versions"))
   )
+
+  /** Every ladder a registered document fixture is decoded through, found
+    * from the shipped codecs rather than listed: a codec that exposes a
+    * ladder is a multi-version schema, whether or not its later versions
+    * were registered.
+    */
+  def versioned(
+      entries: Vector[Entry],
+      read: String => Option[Array[Byte]],
+      laws: Map[String, Vector[Law]] = ladderLaws
+  ): Vector[Versioned] =
+    val rungs = for
+      entry    <- entries.filter(_.kind == Kind.Document)
+      file     <- entry.fixtures.filter(_.endsWith(".json"))
+      bytes    <- read(file).toVector
+      document <- io.circe.parser.parse(new String(bytes, "UTF-8")).toOption.toVector
+      ladder   <- Decoders.codecOf(entry.id, document).flatMap(_.ladder).toVector
+    yield ladder.latest.name -> Rungs(ladder, Vector(file))
+    rungs
+      .groupBy(_._1)
+      .toVector
+      .sortBy(_._1)
+      .map((name, found) =>
+        Versioned(
+          name,
+          found.map(_._2).distinctBy(_.fixtures),
+          laws.getOrElse(name, Vector.empty)
+        )
+      )
 
   def get[E, A](value: Either[E, A]): A =
     value.fold(e => throw new IllegalStateException(s"$e"), identity)
@@ -604,6 +619,8 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
     }
 
   test("every multi-version schema has a ladder, a fixture per version and lifts them") {
+    val versioned = SchemaRegistry.versioned(builtIns ++ conventional, resource)
+    assertEquals(versioned.map(_.name), Vector("eyes4s.admission-ledger", "eyes4s.study"))
     assertEquals(versionProblems(builtIns ++ conventional, versioned), Vector.empty)
     assertEquals(
       lawProblems(
@@ -614,8 +631,19 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
   }
 
   test("the version checks fail for a missing ladder, version, fixture or upcast") {
-    val entries = builtIns ++ conventional
-    val study   = versioned.find(_.name == "eyes4s.study").get
+    val entries   = builtIns ++ conventional
+    val versioned = SchemaRegistry.versioned(entries, resource)
+    val study     = versioned.find(_.name == "eyes4s.study").get
+    // A shipped codec with a second rung whose version was never registered:
+    // the ladder is found from the codec, not from a list.
+    val onlyV1 = entries.filterNot(_.id == StudyCodecDefinitions.studyV2)
+    assert(
+      versionProblems(onlyV1, SchemaRegistry.versioned(onlyV1, resource)).exists(
+        _.startsWith(
+          "eyes4s.study ladder has versions Vector(1, 2), but Vector(1) are registered"
+        )
+      )
+    )
     // A schema with two registered versions and no ladder.
     assertEquals(
       versionProblems(entries, versioned.filterNot(_ == study)),
@@ -790,48 +818,77 @@ private object Decoders:
   private def through[A](codec: VersionedCodec[A], document: Json): Either[CodecError, Json] =
     codec.decode(document).flatMap(codec.encode)
 
-  def reencode(
-      id: DefinitionId,
-      document: Json,
-      resource: String => Option[Array[Byte]]
-  ): Either[CodecError, Json] =
+  /** The shipped codec of a registered document schema, for `document`
+    * (which selects a key layout where a schema has several), or `None` for
+    * the packed recording, whose decoder also takes its payloads.
+    */
+  def codecOf(id: DefinitionId, document: Json): Option[VersionedCodec[?]] =
     val recordingPlan = RecordingCodecs.ivt(
       id,
       get(DefinitionId.of("eyes4s.recording.ivt", 1)),
       get(DefinitionId.of("eyes4s.ivt-parameters", 1))
     )
     id match
-      case DefinitionId.study           => through(StudyCodecs.cosine[Px].codec, document)
-      case DefinitionId.studyInput      => through(StudyInputCodecs.study[Px].input, document)
-      case DefinitionId.admissionLedger => through(StudyInputCodecs.study[Px].ledger, document)
+      case DefinitionId.study           => Some(StudyCodecs.cosine[Px].codec)
+      case DefinitionId.studyInput      => Some(StudyInputCodecs.study[Px].input)
+      case DefinitionId.admissionLedger => Some(StudyInputCodecs.study[Px].ledger)
       case StudyCodecDefinitions.studyV2
           if document.hcursor
             .downField("value")
             .downField("layout")
             .get[String]("name")
             .contains(TrialKeyDefinitions.trialLayout.name) =>
-        through(StudyCodecs.trialCosine[Px].codec, document)
-      case StudyCodecDefinitions.studyV2 => through(StudyCodecs.cosine[Px].codec, document)
+        Some(StudyCodecs.trialCosine[Px].codec)
+      case StudyCodecDefinitions.studyV2           => Some(StudyCodecs.cosine[Px].codec)
       case StudyInputDefinitions.admissionLedgerV2 =>
-        through(StudyInputCodecs.study[Px].ledger, document)
+        Some(StudyInputCodecs.study[Px].ledger)
       case InventoryDefinitions.admissionLedgerV3 =>
-        through(StudyInputCodecs.trial[Px].ledger, document)
-      case DefinitionId.recording => through(RecordingInputCodecs.recording[Px], document)
+        Some(StudyInputCodecs.trial[Px].ledger)
+      case DefinitionId.recording          => Some(RecordingInputCodecs.recording[Px])
       case DefinitionId.binocularRecording =>
-        through(RecordingInputCodecs.binocular[Px], document)
-      case DefinitionId.recordingInput     => through(RecordingInputCodecs.input[Px], document)
+        Some(RecordingInputCodecs.binocular[Px])
+      case DefinitionId.recordingInput     => Some(RecordingInputCodecs.input[Px])
       case DefinitionId.temporalStudyInput =>
-        through(TemporalInputCodecs.study[Px]().input, document)
+        Some(TemporalInputCodecs.study[Px]().input)
       case DefinitionId.timeline =>
-        through(TimelineCodecs.timeline(id, StudyCodecs.key(DefinitionId.studyKey)), document)
-      case DefinitionId.studyResult     => through(StudyResultCodecs.cosine[Px].codec, document)
-      case DefinitionId.manifest        => through(ScientificManifest.codec, document)
-      case DefinitionId.similarity      => through(StudyResultCodecs.similarity(), document)
+        Some(TimelineCodecs.timeline(id, StudyCodecs.key(DefinitionId.studyKey)))
+      case DefinitionId.studyResult     => Some(StudyResultCodecs.cosine[Px].codec)
+      case DefinitionId.manifest        => Some(ScientificManifest.codec)
+      case DefinitionId.similarity      => Some(StudyResultCodecs.similarity())
       case DefinitionId.measureDistance =>
-        through(StudyResultCodecs.measureDistance(), document)
-      case DefinitionId.scalar           => through(StudyResultCodecs.scalar(), document)
+        Some(StudyResultCodecs.measureDistance())
+      case DefinitionId.scalar           => Some(StudyResultCodecs.scalar())
       case DefinitionId.signedDifference =>
-        through(StudyResultCodecs.signedDifference(), document)
+        Some(StudyResultCodecs.signedDifference())
+      case DefinitionId.recordingResult =>
+        val idt = RecordingCodecs.idt(
+          get(DefinitionId.of("eyes4s.recording-plan", 1)),
+          get(DefinitionId.of("eyes4s.recording.idt", 1)),
+          get(DefinitionId.of("eyes4s.idt-parameters", 1))
+        )
+        Some(idt.results.codec)
+      case DefinitionId.temporalResult =>
+        Some(
+          TemporalResultCodecs
+            .cosine[Px](get(DefinitionId.of("eyes4s.temporal-study", 1)))
+            .codec
+        )
+      case other if other.name == "eyes4s.recording-plan" =>
+        Some(recordingPlan.codec)
+      case other if other.name == "eyes4s.temporal-study" =>
+        Some(new TemporalStudyCodec(other, StudyCodecs.cosine[Px]).codec)
+      case other if other == AdditionalRecipeCodecs.point.resultSchema =>
+        Some(AdditionalRecipeCodecs.point.archive)
+      case other if other == AdditionalRecipeCodecs.repetition.schema =>
+        Some(AdditionalRecipeCodecs.repetition)
+      case _ => None
+
+  def reencode(
+      id: DefinitionId,
+      document: Json,
+      resource: String => Option[Array[Byte]]
+  ): Either[CodecError, Json] =
+    id match
       case DefinitionId.packedRecording =>
         val codec = PackedRecordingCodecs.recording[Px]
         for
@@ -844,29 +901,10 @@ private object Decoders:
           value   <- codec.decode(document, ref => payloads.find(_.ref == ref))
           encoded <- codec.encode(value)
         yield encoded.document
-      case DefinitionId.recordingResult =>
-        val idt = RecordingCodecs.idt(
-          get(DefinitionId.of("eyes4s.recording-plan", 1)),
-          get(DefinitionId.of("eyes4s.recording.idt", 1)),
-          get(DefinitionId.of("eyes4s.idt-parameters", 1))
-        )
-        through(idt.results.codec, document)
-      case DefinitionId.temporalResult =>
-        through(
-          TemporalResultCodecs
-            .cosine[Px](get(DefinitionId.of("eyes4s.temporal-study", 1)))
-            .codec,
-          document
-        )
-      case other if other.name == "eyes4s.recording-plan" =>
-        through(recordingPlan.codec, document)
-      case other if other.name == "eyes4s.temporal-study" =>
-        through(new TemporalStudyCodec(other, StudyCodecs.cosine[Px]).codec, document)
-      case other if other == AdditionalRecipeCodecs.point.resultSchema =>
-        through(AdditionalRecipeCodecs.point.archive, document)
-      case other if other == AdditionalRecipeCodecs.repetition.schema =>
-        through(AdditionalRecipeCodecs.repetition, document)
-      case other => Left(CodecError.Unsupported(other.name, "no registered decoder"))
+      case other =>
+        codecOf(other, document)
+          .toRight(CodecError.Unsupported(other.name, "no registered decoder"))
+          .flatMap(codec => through(codec, document))
 
 private object Envelopes:
   def schemaOf(envelope: Json): Either[String, DefinitionId] = for

@@ -100,13 +100,17 @@ final class SchemaLadder[A] private (
     else Right(rungs.slice(start + 1, end + 1).foldLeft(payload)((json, r) => r.upcast(json)))
 
   /** Rewrite a stored document of any listed version as a document of the
-    * latest version with the same meaning. Decoding the result gives the same
-    * value as decoding the original, and [[codec]] re-encodes it as the
-    * original earliest document.
+    * latest version with the same meaning. The document is first read with
+    * its own version's reader, so a document that version refuses is refused
+    * here with the same error: lifting never makes an invalid document valid
+    * (a later reader's wider vocabulary would otherwise admit it). Decoding
+    * the result gives the same value as decoding the original, and [[codec]]
+    * re-encodes it as the original earliest document.
     */
   def lift(document: Json): Either[CodecError, Json] = for
     found   <- Wire.definition(document, "schema")
     payload <- Wire.field[Json](document, "value")
+    _       <- readAt(found, payload)
     lifted  <- upcastTo(found, latest, payload)
   yield Json.obj("schema" -> Wire.id(latest), "value" -> lifted)
 

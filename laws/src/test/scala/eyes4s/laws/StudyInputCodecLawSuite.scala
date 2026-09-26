@@ -534,6 +534,63 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
       (a: AdmissionLedger[TrialKey], b: AdmissionLedger[TrialKey]) => a == b
     )
   )
+
+  /** Replace every quarantine cause in a written ledger with `cause`. */
+  private def causeEdit(cause: Json): Json => Json = document =>
+    document.hcursor
+      .downField("value")
+      .downField("records")
+      .withFocus(_.mapArray(_.map { record =>
+        record.hcursor
+          .downField("reason")
+          .downField("cause")
+          .set(cause)
+          .top
+          .getOrElse(record)
+      }))
+      .top
+      .getOrElse(document)
+
+  /** Generic payload damage, and quarantine causes from each later version's
+    * vocabulary written into a ledger of any version.
+    */
+  private val ledgerEdits: Gen[Json => Json] = Gen.oneOf(
+    SchemaLadderLaws.payloadEdits,
+    Gen.const(
+      causeEdit(
+        Json.obj(
+          "kind"        -> Json.fromString("occurrenceConflict"),
+          "occurrences" -> Json.arr(Json.fromInt(1), Json.fromInt(2))
+        )
+      )
+    ),
+    Gen.const(
+      causeEdit(
+        Json.obj(
+          "kind"        -> Json.fromString("notInInventory"),
+          "participant" -> Json.fromString("p"),
+          "phase"       -> Json.fromString("f"),
+          "trial"       -> Json.fromString("t"),
+          "occurrence"  -> Json.fromInt(1)
+        )
+      )
+    )
+  )
+
+  private val trialKeys: Gen[TrialKey] = for
+    participant <- Gen.oneOf("p1", "p2")
+    phase       <- Gen.oneOf("encode", "recall")
+    trial       <- Gen.oneOf("t1", "t2", "t3")
+    occurrence  <- Gen.choose(1, 2)
+    item        <- Gen.oneOf("a", "b")
+  yield TrialKey
+    .of(participant, phase, trial, checked(TrialOccurrence.of(occurrence)), item)
+    .fold(e => throw new IllegalStateException(s"$e"), identity)
+  private def quarantineTrialKey(k: TrialKey): TrialKey =
+    TrialKey
+      .of("quarantined-" + k.participant, k.phase, k.trial, k.occurrence, k.item)
+      .fold(e => throw new IllegalStateException(s"$e"), identity)
+
   checkAll(
     "admission ledger versions",
     SchemaLadderLaws.ladder(
@@ -542,15 +599,21 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
         ledgers(studyKeys, quarantineStudyKey),
         policyLedgers(studyKeys, quarantineStudyKey)
       ),
-      (a: AdmissionLedger[StudyKey], b: AdmissionLedger[StudyKey]) => a == b
+      (a: AdmissionLedger[StudyKey], b: AdmissionLedger[StudyKey]) => a == b,
+      ledgerEdits
     )
   )
   checkAll(
     "inventory ledger versions",
     SchemaLadderLaws.ladder(
       StudyInputCodecs.trial[Px].ledgerLadder,
-      inventoryLedgers,
-      (a: AdmissionLedger[TrialKey], b: AdmissionLedger[TrialKey]) => a == b
+      Gen.oneOf(
+        inventoryLedgers,
+        ledgers(trialKeys, quarantineTrialKey),
+        policyLedgers(trialKeys, quarantineTrialKey)
+      ),
+      (a: AdmissionLedger[TrialKey], b: AdmissionLedger[TrialKey]) => a == b,
+      ledgerEdits
     )
   )
   checkAll(

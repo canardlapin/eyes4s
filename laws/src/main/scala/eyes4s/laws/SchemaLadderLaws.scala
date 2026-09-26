@@ -38,13 +38,19 @@ import org.typelevel.discipline.Laws
   *   - '''upcast''': for every later version `M`, `upcast^(M-E)(write_E(x))`
   *     is exactly `write_M(x)`, so `read_M(upcast^(M-E)(write_E(x)))` is `x`;
   *   - '''canonical''': the document lifted to the latest version decodes to
-  *     `x` and re-encodes to the earliest document, so writing is idempotent.
+  *     `x` and re-encodes to the earliest document, so writing is idempotent;
+  *   - '''refusal''': a document the codec refuses stays refused after
+  *     lifting, so `lift` never turns an invalid document into a valid one.
+  *     `edits` supplies the invalid documents: each edit is applied to a
+  *     written document, and [[SchemaLadderLaws.payloadEdits]] are generic
+  *     ones; pass edits that reach vocabulary a version does not have.
   */
 trait SchemaLadderLaws extends Laws:
   def ladder[A](
       ladder: SchemaLadder[A],
       gen: Gen[A],
-      equivalent: (A, A) => Boolean
+      equivalent: (A, A) => Boolean,
+      edits: Gen[Json => Json] = SchemaLadderLaws.payloadEdits
   ): RuleSet =
     val codec                                                       = ladder.codec
     def written(value: A): Either[CodecError, (DefinitionId, Json)] = for
@@ -105,6 +111,34 @@ trait SchemaLadderLaws extends Laws:
             decoded.exists(equivalent(value, _)) &&
             decoded.flatMap(codec.encode).map(_.noSpaces) == Right(document.noSpaces)
           }
+        },
+      "a refused document stays refused after lifting" -> forAll(gen, edits) { (value, edit) =>
+        codec.encode(value).exists { document =>
+          val edited = edit(document)
+          codec.decode(edited).isRight || ladder.lift(edited).flatMap(codec.decode).isLeft
         }
+      }
     )
-object SchemaLadderLaws extends SchemaLadderLaws
+object SchemaLadderLaws extends SchemaLadderLaws:
+  /** Generic damage to a written document's payload: one top-level member
+    * deleted, set to `null`, to a string or to an empty array.
+    */
+  val payloadEdits: Gen[Json => Json] =
+    for
+      pick        <- Gen.choose(0, 63)
+      replacement <- Gen.oneOf(
+        Option.empty[Json],
+        Some(Json.Null),
+        Some(Json.fromString("x")),
+        Some(Json.arr())
+      )
+    yield (document: Json) =>
+      document.hcursor
+        .downField("value")
+        .withFocus(_.mapObject { members =>
+          members.keys.toVector.lift(pick % math.max(1, members.size)) match
+            case None      => members
+            case Some(key) => replacement.fold(members.remove(key))(members.add(key, _))
+        })
+        .top
+        .getOrElse(document)
