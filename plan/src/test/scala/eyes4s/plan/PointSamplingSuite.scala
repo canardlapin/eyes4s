@@ -67,7 +67,8 @@ class PointSamplingSuite extends munit.FunSuite:
       controls: PointControlSelection = PointControlSelection.Candidates(Selection.All),
       times: Vector[Long] = PointSamplingReference.queries,
       boundaries: Vector[Long] = PointSamplingReference.boundaries,
-      endpoint: PointBinEndpoint = PointBinEndpoint.IncludeFinalEndpoint,
+      endpoint: PointBinEndpoint = PointBinEndpoint.HalfOpen,
+      trajectory: TrajectoryEndpoint = TrajectoryEndpoint.HoldLastOnset,
       queryClock: ClockId = clock,
       lookup: DensityLookupPolicy = DensityLookupPolicy.NearestClampedRIndex,
       binPolicy: FailurePolicy = policy
@@ -78,7 +79,7 @@ class PointSamplingSuite extends munit.FunSuite:
       Some(get(PointBins.of(queryClock, boundaries.map(Instant.micros), endpoint))),
       normalization,
       lookup,
-      TrajectoryEndpoint.OnsetRange,
+      trajectory,
       controls,
       policy,
       binPolicy
@@ -115,7 +116,7 @@ class PointSamplingSuite extends munit.FunSuite:
         )
       )
       assertEquals(result.rows.map(_.key), input.trials.rows.map(_.key));
-      assertEquals(result.unbinned, Vector(5, 6))
+      assertEquals(result.unbinned, Vector(0, 4, 5, 6))
       result.rows.foreach { row =>
         val expected = PointSamplingReference.results
           .find(r => r.normalization == name && r.cap == cap && r.key == row.key.phase)
@@ -130,19 +131,22 @@ class PointSamplingSuite extends munit.FunSuite:
           case Some(values) =>
             same(row.points.map(_.control.flatMap(_.result.toOption)), values)
             same(row.bins.map(_.control.flatMap(_.result.toOption)), expected.controlBins.get)
-        assertEquals(row.bins.map(_.queries), Vector(Vector(1, 3), Vector(0, 2, 4)))
-        assertEquals(row.bins.map(_.observed.requested), Vector(2, 3))
-        assertEquals(row.bins.map(_.observed.contributing), Vector(2, 3))
+        assertEquals(row.bins.map(_.queries), Vector(Vector(1, 3), Vector(2)))
+        assertEquals(row.bins.map(_.observed.requested), Vector(2, 1))
+        assertEquals(row.bins.map(_.observed.contributing), Vector(2, 1))
       }
   }
   test(
-    "control population preserves source occurrences, excludes all true copies and uses the focal path"
+    "control population counts each distinct template once, excludes all true copies and uses the focal path"
   ) {
     val rows = run().rows
-    assertEquals(rows.map(_.eligibleControls), Vector(2, 2, 3, 3, 0))
+    // Template A is matched by both a1 and a2 but is one candidate, as in eyesim.
+    assertEquals(rows.map(_.eligibleControls), Vector(2, 2, 2, 2, 0))
     assertEquals(rows(0).controls.map(_.occurrence.phase).toSet, Set("b1", "c1"))
-    assertEquals(rows(2).controls.map(_.occurrence.phase).toSet, Set("a1", "a2", "c1"))
-    assertEquals(rows(2).controls.count(_.template.stimulus == "A"), 2)
+    assertEquals(rows(2).controls.map(_.template.stimulus).toSet, Set("A", "C"))
+    assertEquals(rows(2).controls.count(_.template.stimulus == "A"), 1)
+    // The first matching source occurrence is reported for the shared template.
+    assertEquals(rows(2).controls.find(_.template.stimulus == "A").get.occurrence.phase, "a1")
     assertEquals(
       rows(0).controls.find(_.occurrence.phase == "b1").get.values.take(3),
       Vector(Right(6.0), Right(2.0), Right(9.0))
@@ -153,13 +157,13 @@ class PointSamplingSuite extends munit.FunSuite:
     assertEquals(rows(0).points(5).control.get.requested, 2)
   }
   test(
-    "finite keyed controls are deterministic and order invariant with exact occurrence identities"
+    "finite keyed controls are deterministic and order invariant with exact template identities"
   ) {
     def selection(cap: Int) = PointControlSelection.Candidates(
       Selection.BottomK(get(PairLimit.of(cap)), Seed(Long.MinValue + 7), SampleId("points"))
     )
     def edges(r: PointSamplingResult[StudyKey, Px]) =
-      r.rows.flatMap(row => row.controls.map(c => row.key -> c.occurrence)).toSet
+      r.rows.flatMap(row => row.controls.map(c => row.key -> c.template)).toSet
     val one = run(spec(controls = selection(1)))
     assertEquals(one.rows.map(_.controls.size), Vector(1, 1, 1, 1, 0))
     assertEquals(
@@ -171,16 +175,23 @@ class PointSamplingSuite extends munit.FunSuite:
   }
   test("final endpoint is explicit; empty and all-missing bins keep their counts") {
     assertEquals(
-      run(spec(endpoint = PointBinEndpoint.HalfOpen)).rows.head.bins.map(_.queries),
-      Vector(Vector(1, 3), Vector(2))
+      run(spec(endpoint = PointBinEndpoint.IncludeFinalEndpoint)).rows.head.bins.map(_.queries),
+      Vector(Vector(1, 3), Vector(0, 2, 4))
     )
-    val r = run(spec(boundaries = Vector(-10000, 0, 10000, 20000, 30000, 40000))).rows.head
+    val extended = Vector(-10000L, 0L, 10000L, 20000L, 30000L, 40000L)
+    // HoldLastOnset (eyesim) samples 21 ms; OnsetRange leaves it missing after the last onset.
+    val held = run(spec(boundaries = extended)).rows.head
+    assertEquals(held.bins.map(_.observed.successful), Vector(0, 2, 1, 3, 0))
+    val r = run(
+      spec(boundaries = extended, trajectory = TrajectoryEndpoint.OnsetRange)
+    ).rows.head
     assertEquals(r.bins.map(_.observed.requested), Vector(1, 2, 1, 3, 0))
     assertEquals(r.bins.map(_.observed.successful), Vector(0, 2, 1, 2, 0))
     assert(r.bins.head.observed.result.isLeft); assert(r.bins.last.observed.result.isLeft)
     val strict = run(
       spec(
-        boundaries = Vector(-10000, 0, 10000, 20000, 30000, 40000),
+        boundaries = extended,
+        trajectory = TrajectoryEndpoint.OnsetRange,
         binPolicy = FailurePolicy.RequireAll
       )
     ).rows.head

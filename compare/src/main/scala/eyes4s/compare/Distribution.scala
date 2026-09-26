@@ -488,19 +488,35 @@ object Distribution:
           .compare(a, b)
           .flatMap(d => Similarity.computed(info.name, 1 - d.value))
 
-  /** Separate endpoint policy from the historical 1e-12-clamped fisherZ instance. */
+  /** Separate endpoint policy from the historical 1e-12-clamped fisherZ instance.
+    *
+    * The eyesim `similarity(method = "fisherz")` endpoints: a Pearson r within 64 machine epsilons
+    * (64 * 2^-52) of plus or minus one is rounding error on a perfect correlation, such as a
+    * rescaled copy of a map, and is snapped to exactly plus or minus one; the result is then
+    * clamped to plus/minus (1-2^-52). Every perfect correlation therefore gives
+    * atanh(1-2^-52), about 18.3684, rather than a value that depends on the rounding of r.
+    *
+    * Constant maps are not correlations: two constant maps, even identical ones, are
+    * [[CompareError.ConstantInput]], as for [[pearson]]. eyesim instead returns atanh(1-2^-52)
+    * for identical constant maps; that is a recorded intentional divergence (baseline case
+    * `distribution-method-matrix`).
+    */
   def fisherZMachineEpsilon[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
     new SymmetricCompare[Mass[U], Similarity]:
       val info = MeasureInfo(
         "Fisher z (machine epsilon endpoints)",
-        "atanh(Pearson), clamped at plus/minus (1-2^-52)",
+        "atanh(Pearson), r within 64 eps of plus/minus 1 snapped to it, clamped at plus/minus (1-2^-52)",
         MeasureScale.FisherZ,
         None
       )
       def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Similarity] =
         pearson[U].compare(a, b).flatMap { r =>
-          val bound = 1.0 - math.ulp(1.0)
-          val value = math.max(-bound, math.min(bound, r.value))
+          val eps     = math.ulp(1.0)
+          val snap    = 64 * eps
+          val snapped =
+            if r.value > 1 - snap then 1.0 else if r.value < -1 + snap then -1.0 else r.value
+          val bound = 1.0 - eps
+          val value = math.max(-bound, math.min(bound, snapped))
           Similarity.computed(info.name, 0.5 * math.log((1 + value) / (1 - value)))
         }
 

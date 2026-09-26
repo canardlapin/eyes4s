@@ -160,6 +160,9 @@ object PointSamplingMean:
         Either.cond(mean.isFinite, mean, PointSamplingError.NonFinite(level, good.size, mean))
     new PointMean(values.size, good.size, policy, result)
 
+/** One control template: `template` is its key and `occurrence` the first admitted source that
+  * matched it, in source order. Each distinct template is a single candidate.
+  */
 final case class PointControl[K](
     occurrence: K,
     template: K,
@@ -212,9 +215,11 @@ final class PointSamplingResult[K, U <: Unit2D] private[plan] (
     val provenance: Provenance
 )
 
-/** Static templates sampled along each focal path. Candidate multiplicity is the source-occurrence
-  * multiset after checked template matching; all same-stimulus copies are excluded before selection.
-  * Missing/ambiguous sources stay in result rows, and never become an arbitrary first match.
+/** Static templates sampled along each focal path. Control candidates are the distinct templates
+  * matched by at least one admitted source: each counts once however many sources match it, and is
+  * represented by the first such source occurrence. All same-stimulus templates are excluded before
+  * selection. Missing/ambiguous sources stay in result rows, and never become an arbitrary first
+  * match.
   */
 final class PointSamplingPlan[K, U <: Unit2D] private (
     val layout: StudyLayout[K],
@@ -244,12 +249,19 @@ final class PointSamplingPlan[K, U <: Unit2D] private (
     val admitted = Trials(
       sources.zip(resolved).collect { case (row, Right(index)) => Trial(row.key, (), index) }
     )
+    // One candidate per distinct matched template, keyed by the template itself, so a template
+    // matched by several sources is neither counted nor drawn more than once, and selection does
+    // not depend on source order. Its first matching source occurrence is reported beside it.
+    val firstOccurrence = admitted.rows.groupBy(_.value).view.mapValues(_.head.key).toMap
+    val candidates      = Trials(templates.rows.zipWithIndex.collect {
+      case (t, i) if firstOccurrence.contains(i) => Trial(t.key, (), i)
+    })
     val relation =
       Relation.sameOn(layout.participant).and(Relation.differentOn(layout.stimulus))
     val paired = spec.controls match
       case PointControlSelection.Disabled              => None
       case PointControlSelection.Candidates(selection) =>
-        Some(pair(admitted, admitted, PairDesign.BetweenDirected(relation, selection)))
+        Some(pair(admitted, candidates, PairDesign.BetweenDirected(relation, selection)))
     val selected = paired.toVector.flatMap(_.pairs).groupBy(_._1.key)
     val prepared = templates.rows.zipWithIndex.map { (row, i) =>
       DensityLookup
@@ -277,8 +289,8 @@ final class PointSamplingPlan[K, U <: Unit2D] private (
       val matched  = sample(target)
       val controls = selected.getOrElse(row.key, Vector.empty).map { (_, candidate) =>
         PointControl(
+          firstOccurrence(candidate.value),
           candidate.key,
-          templates.rows(candidate.value).key,
           sample(Right(candidate.value))
         )
       }
@@ -328,7 +340,7 @@ final class PointSamplingPlan[K, U <: Unit2D] private (
         }
       }
       val eligible = if paired.isEmpty || target.isLeft then 0
-      else admitted.rows.count(t => relation.accepts(row.key, t.key))
+      else candidates.rows.count(t => relation.accepts(row.key, t.key))
       PointTrialResult(
         rowIndex,
         row.key,
