@@ -65,9 +65,10 @@ object PlotSurface:
   // pixel, so 480 x 1.25 is 600 pixels even when the product rounds up.
   private val SnapEpsilon = 1e-6
 
-  /** The largest raster edge accepted, in device pixels: the texture limit
-    * JavaFX's hardware pipelines guarantee, so an accepted surface can always
-    * be drawn.
+  /** The largest raster edge accepted, in device pixels. It is a conservative
+    * bound chosen to stay within the texture size JavaFX pipelines commonly
+    * support; it is not a limit JavaFX guarantees, and a pipeline with a
+    * smaller maximum texture can still fail to draw an accepted surface.
     */
   val MaxDevicePixels: Int = 8192
 

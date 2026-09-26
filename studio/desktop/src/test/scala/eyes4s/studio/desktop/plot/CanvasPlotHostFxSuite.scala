@@ -20,7 +20,19 @@ import eyes4s.studio.app.tokens.{Colour, Theme, ThemedToken, Tokens}
 import eyes4s.studio.desktop.harness.{FxStage, SnapshotScale, StudioFxSuite, StudioTheme}
 import eyes4s.studio.desktop.typography.StudioFonts
 import eyes4s.studio.viz.plot.*
-import intaglio.{DevicePoint, Grob, Interval, Point, Scene, Size, Viewport, value}
+import intaglio.{
+  DevicePoint,
+  Grob,
+  Interval,
+  Point,
+  RasterDimensions,
+  RasterImage,
+  Rgba32,
+  Scene,
+  Size,
+  Viewport,
+  value
+}
 import intaglio.javafx.{JavaFxCommand, JavaFxRenderer}
 import javafx.application.Platform
 import javafx.geometry.Point2D
@@ -188,6 +200,13 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
                   f"${image.getRGB(px, py) & 0xffffff}%06X, not the ${token.cssName} token"
               )
             }
+            // Outside the panel the host draws the scene's surface fill.
+            val corner   = runOnFx(host.localToScene(Point2D(4.0, 4.0)))
+            val (cx, cy) = ((corner.getX * k).toInt, (corner.getY * k).toInt)
+            assert(
+              near(image, cx, cy, Tokens.themed(theme, ThemedToken.Surface)),
+              f"surface at ${k}x: pixel ($cx, $cy) is ${image.getRGB(cx, cy) & 0xffffff}%06X"
+            )
             file
           }
           assertEquals(
@@ -378,6 +397,75 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
       assertEquals(runOnFx(host.frame).map(_.surface.deviceScale), Some(3.0))
       assertEquals(queue.size, 0)
       runOnFx(host.dispose())
+  }
+
+  fxStage.test("a surface too large to draw fails with a typed error, not Waiting") { fx =>
+    val (host, _) = hostIn(fx)
+    runOnFx {
+      host.setOutputScaleOverride(Some(6.0)) // 1440 x 6 = 8640 device pixels
+      host.show(reference(Theme.Light))
+    }
+    awaitStatus(host)(_.isInstanceOf[PlotHostStatus.Failed]) match
+      case PlotHostStatus.Failed(CanvasPlotError.Surface(e: PlotSceneError.InvalidSurface)) =>
+        assertEquals((e.logicalWidth, e.logicalHeight, e.deviceScale), (1440.0, 900.0, 6.0))
+        assert(e.message.contains("1440.0x900.0"), e.message)
+      case other => fail(s"unexpected $other")
+    assertEquals(runOnFx(host.frame), None)
+    runOnFx(host.setOutputScaleOverride(Some(1.0)))
+    awaitFrame(host, 1.0)
+    runOnFx(host.dispose())
+  }
+
+  // A scene with one raster of `side` x `side` pixels in its data panel.
+  private def rasterScene(id: SceneId, side: Int): PlotScene =
+    val viewport = Viewport.unsafe(
+      xScale = Interval.unsafe(0.0, 1.0),
+      yScale = Interval.unsafe(0.0, 1.0)
+    )
+    val image = RasterImage.tabulate(RasterDimensions.unsafe(side, side))((x, y) =>
+      Rgba32.unsafe(x * 40, y * 40, 0)
+    )
+    val grob = Grob.imageUnsafe(image, Point.npcUnsafe(0.5, 0.5), Size.npcUnsafe(0.5, 0.5))
+    right(
+      PlotScene(
+        id,
+        Scene(Vector(Grob.group(Vector(grob), Some(viewport)))),
+        right(DataPanel(id, viewport))
+      )
+    )
+
+  fxStage.test("a new scene value under the same id gets fresh renderer caches") { fx =>
+    val adapters = ConcurrentLinkedQueue[RecordingContext]()
+    val host     = runOnFx(
+      CanvasPlotHost(
+        CanvasPlotHost.sharedCompiler,
+        _ => { val r = RecordingContext(); adapters.add(r); r }
+      )
+    )
+    fx.show(runOnFx(StackPane(host)))
+    val id     = right(SceneId("studio.test.raster"))
+    val first  = rasterScene(id, 2)
+    val second = rasterScene(id, 3)
+    runOnFx {
+      host.setOutputScaleOverride(Some(1.0))
+      host.show(first)
+    }
+    awaitFrame(host, 1.0)
+    runOnFx(host.show(second))
+    awaitStatus(host) {
+      case PlotHostStatus.Drawn(f) => f.plan.scene eq second.scene
+      case _                       => false
+    }
+    // Showing the same value again redraws with the same caches.
+    runOnFx(host.show(second))
+    awaitStatus(host)(_.isInstanceOf[PlotHostStatus.Drawn])
+    def images(r: RecordingContext) =
+      r.log.filter(_.startsWith("drawImage(")).map(_.takeWhile(_ != ',')).distinct
+    assertEquals(
+      adapters.asScala.toList.map(images),
+      List(Vector("drawImage(2x2"), Vector("drawImage(3x3"))
+    )
+    runOnFx(host.dispose())
   }
 
   // ---------------------------------------------------------------------------

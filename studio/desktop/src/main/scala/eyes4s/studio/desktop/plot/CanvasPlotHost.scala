@@ -17,11 +17,11 @@
 package eyes4s.studio.desktop.plot
 
 import eyes4s.studio.viz.plot.{PlotScene, PlotSurface, PlotTransform, SceneId}
-import intaglio.javafx.{JavaFxCanvasContext, JavaFxRenderer}
+import intaglio.javafx.{JavaFxCanvasContext, JavaFxGraphicsContext, JavaFxRenderer}
 import javafx.application.Platform
 import javafx.beans.property.{ReadOnlyObjectProperty, ReadOnlyObjectWrapper}
 import javafx.beans.value.{ChangeListener, ObservableValue}
-import javafx.scene.canvas.Canvas
+import javafx.scene.canvas.{Canvas, GraphicsContext}
 import javafx.scene.layout.Region
 import javafx.scene.shape.Rectangle
 import javafx.scene.transform.Scale
@@ -36,7 +36,9 @@ enum PlotHostStatus derives CanEqual:
   /** No scene. */
   case Empty
 
-  /** A scene, but no surface yet: the host is not in a window or has no area. */
+  /** A scene, but no surface yet: the host is not in a window or has no area. An
+    * unusable surface (too large, or a non-square output scale) is [[Failed]].
+    */
   case Waiting(sceneId: SceneId)
 
   /** The scene is being compiled for `surface`; the previous frame, if any, stays up. */
@@ -45,7 +47,7 @@ enum PlotHostStatus derives CanEqual:
   /** `frame` is on the canvas. */
   case Drawn(frame: PlotFrame)
 
-  /** The scene could not be shown; the canvas is blank. */
+  /** The scene could not be shown on this surface; the canvas is blank. */
   case Failed(error: CanvasPlotError)
 
   /** The host was disposed and shows nothing. */
@@ -61,6 +63,8 @@ enum PlotHostStatus derives CanEqual:
   * '''HiDPI.''' The canvas has one pixel per device pixel: its raster is the
   * surface's device size, and a `1/scale` transform brings it back to layout
   * size, so a 2x display gets a 2x raster rather than an upscaled 1x one.
+  * Device pixels are assumed square: a window whose horizontal and vertical
+  * output scales differ is refused with [[CanvasPlotError.AnisotropicScale]].
   * [[setOutputScaleOverride]] replaces the window's scale, for snapshots and
   * tests.
   *
@@ -72,13 +76,26 @@ enum PlotHostStatus derives CanEqual:
   *
   * '''Hooks for input (S4.2).''' [[frame]] exposes the drawn [[PlotFrame]]: its
   * scene identity, its transform, and the render plan a picking plan must be
-  * compiled from. The host itself handles no input.
+  * compiled from. The host itself handles no input. An input adapter listens
+  * on the host `Region`, not on the canvas: the canvas is an unmanaged child
+  * whose local coordinates are device pixels, while the host's local
+  * coordinates are the logical canvas coordinates of
+  * [[eyes4s.studio.viz.plot.CanvasPoint]].
   *
   * '''Disposal.''' [[dispose]] stops listening to the scene and window,
   * releases the canvas raster and the renderer's image and pattern caches, and
-  * ignores compiles still in flight. A host is used on the FX thread only.
+  * ignores compiles still in flight. The renderer's caches are also dropped
+  * whenever a different scene value is shown, even under the same
+  * [[eyes4s.studio.viz.plot.SceneId]], so replaced rasters do not accumulate.
+  * A host is used on the FX thread only.
   */
-final class CanvasPlotHost(compiler: Executor) extends Region:
+final class CanvasPlotHost private[plot] (
+    compiler: Executor,
+    renderer: GraphicsContext => JavaFxGraphicsContext
+) extends Region:
+
+  /** A host compiling on `compiler`. */
+  def this(compiler: Executor) = this(compiler, gc => JavaFxCanvasContext(gc))
 
   /** A host compiling on the shared studio plot compiler. */
   def this() = this(CanvasPlotHost.sharedCompiler)
@@ -99,25 +116,28 @@ final class CanvasPlotHost(compiler: Executor) extends Region:
   private val statusWrapper =
     ReadOnlyObjectWrapper[PlotHostStatus](this, "status", PlotHostStatus.Empty)
 
-  private var plotScene: Option[PlotScene]         = None
-  private var scaleOverride: Option[Double]        = None
-  private var surface: Option[PlotSurface]         = None
-  private var drawing: Option[JavaFxCanvasContext] = None
-  private var shown: Option[PlotFrame]             = None
-  private var requested: Long                      = 0L
-  private var inFlight: Boolean                    = false
-  private var disposed: Boolean                    = false
+  private var plotScene: Option[PlotScene]  = None
+  private var scaleOverride: Option[Double] = None
+  // Right(None): no surface yet; Left: the surface cannot be used.
+  private var surface: Either[CanvasPlotError, Option[PlotSurface]] = Right(None)
+  private var drawing: Option[JavaFxGraphicsContext]                = None
+  private var shown: Option[PlotFrame]                              = None
+  private var requested: Long                                       = 0L
+  private var inFlight: Boolean                                     = false
+  private var disposed: Boolean                                     = false
 
   // The output scale of the window this host is in. The chain observes the
   // current scene's window property and that window's scale only while the
   // listener below is attached, and follows the host from scene to scene.
-  private val windowScale: ObservableValue[Number] =
-    sceneProperty
-      .flatMap[Window](_.windowProperty)
-      .flatMap[Number](_.outputScaleXProperty)
+  private val window: ObservableValue[Window] = sceneProperty.flatMap[Window](_.windowProperty)
+  private val windowScaleX: ObservableValue[Number] =
+    window.flatMap[Number](_.outputScaleXProperty)
+  private val windowScaleY: ObservableValue[Number] =
+    window.flatMap[Number](_.outputScaleYProperty)
 
   private val relayout: ChangeListener[Any] = (_, _, _) => updateSurface()
-  windowScale.addListener(relayout)
+  windowScaleX.addListener(relayout)
+  windowScaleY.addListener(relayout)
   widthProperty.addListener(relayout)
   heightProperty.addListener(relayout)
 
@@ -134,15 +154,29 @@ final class CanvasPlotHost(compiler: Executor) extends Region:
   /** The transform of the frame on the canvas, if any. */
   def transform: Option[PlotTransform] = frame.map(_.transform)
 
-  /** The device scale the host lays out for: the override, else the window's. */
+  /** The device scale the host lays out for: the override, else the window's
+    * horizontal output scale (which must equal its vertical one).
+    */
   def outputScale: Option[Double] =
-    scaleOverride.orElse(Option(windowScale.getValue).map(_.doubleValue))
+    scaleOverride.orElse(Option(windowScaleX.getValue).map(_.doubleValue))
+
+  // The override, else the window's scale if its pixels are square.
+  private def squareScale: Either[CanvasPlotError, Option[Double]] =
+    scaleOverride match
+      case Some(s) => Right(Some(s))
+      case None    =>
+        (Option(windowScaleX.getValue), Option(windowScaleY.getValue)) match
+          case (Some(x), Some(y)) if x.doubleValue != y.doubleValue =>
+            Left(CanvasPlotError.AnisotropicScale(x.doubleValue, y.doubleValue))
+          case (Some(x), _) => Right(Some(x.doubleValue))
+          case (None, _)    => Right(None)
 
   /** Shows `scene`, replacing the current one. */
   def show(scene: PlotScene): Unit =
     onFxThread("show")
     if !disposed then
-      if !plotScene.exists(_.id == scene.id) then drawing = None
+      // A new scene value may carry new rasters: start with empty caches.
+      if !plotScene.exists(_ eq scene) then drawing = None
       plotScene = Some(scene)
       schedule()
 
@@ -165,13 +199,14 @@ final class CanvasPlotHost(compiler: Executor) extends Region:
     onFxThread("dispose")
     if !disposed then
       disposed = true
-      windowScale.removeListener(relayout)
+      windowScaleX.removeListener(relayout)
+      windowScaleY.removeListener(relayout)
       widthProperty.removeListener(relayout)
       heightProperty.removeListener(relayout)
       bounds.widthProperty.unbind()
       bounds.heightProperty.unbind()
       plotScene = None
-      surface = None
+      surface = Right(None)
       drawing = None
       blank()
       canvas.setWidth(0.0)
@@ -188,7 +223,16 @@ final class CanvasPlotHost(compiler: Executor) extends Region:
 
   private def updateSurface(): Unit =
     if !disposed then
-      val next = outputScale.flatMap(PlotSurface(getWidth, getHeight, _).toOption)
+      // No area yet (not laid out) is waiting; an area that cannot be a
+      // surface is a failure that names its size and scale.
+      val next = squareScale.flatMap {
+        case Some(scale) if getWidth > 0.0 && getHeight > 0.0 =>
+          PlotSurface(getWidth, getHeight, scale)
+            .map(Some(_))
+            .left
+            .map(CanvasPlotError.Surface(_))
+        case _ => Right(None)
+      }
       if next != surface then
         surface = next
         schedule()
@@ -198,10 +242,13 @@ final class CanvasPlotHost(compiler: Executor) extends Region:
   private def schedule(): Unit =
     requested += 1
     (plotScene, surface) match
-      case (Some(scene), Some(target)) =>
+      case (Some(scene), Right(Some(target))) =>
         statusWrapper.set(PlotHostStatus.Compiling(scene.id, target))
         if !inFlight then launch(scene, target, requested)
-      case (Some(scene), None) =>
+      case (Some(_), Left(error)) =>
+        blank()
+        statusWrapper.set(PlotHostStatus.Failed(error))
+      case (Some(scene), Right(None)) =>
         blank()
         statusWrapper.set(PlotHostStatus.Waiting(scene.id))
       case (None, _) =>
@@ -261,8 +308,8 @@ final class CanvasPlotHost(compiler: Executor) extends Region:
             statusWrapper.set(PlotHostStatus.Failed(error))
       else
         (plotScene, surface) match
-          case (Some(scene), Some(target)) => launch(scene, target, requested)
-          case _                           => ()
+          case (Some(scene), Right(Some(target))) => launch(scene, target, requested)
+          case _                                  => ()
 
   private def draw(frame: PlotFrame): Unit =
     val width  = frame.surface.deviceWidth.toDouble
@@ -275,7 +322,7 @@ final class CanvasPlotHost(compiler: Executor) extends Region:
     // With no transform or clip, clearing the whole canvas also discards its
     // queued commands, so redraws do not accumulate.
     gc.clearRect(0.0, 0.0, width, height)
-    val context = drawing.getOrElse(JavaFxCanvasContext(gc))
+    val context = drawing.getOrElse(renderer(gc))
     drawing = Some(context)
     JavaFxRenderer.draw(frame.program, context)
 

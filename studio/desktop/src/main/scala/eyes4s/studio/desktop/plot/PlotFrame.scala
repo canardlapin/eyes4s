@@ -20,11 +20,21 @@ import eyes4s.studio.viz.plot.{PlotScene, PlotSceneError, PlotSurface, PlotTrans
 import intaglio.RenderPlan
 import intaglio.javafx.{JavaFxProgram, JavaFxRenderError, JavaFxRenderer}
 
-/** Why a canvas host could not show a scene. Every case names the scene. */
+/** Why a canvas host could not show a scene. Every case names the scene or the
+  * surface values it refused.
+  */
 enum CanvasPlotError derives CanEqual:
 
   /** The scene, its surface or its transform was refused. */
   case Scene(error: PlotSceneError)
+
+  /** The host's size and output scale do not make a usable surface. */
+  case Surface(error: PlotSceneError)
+
+  /** The window's horizontal and vertical output scales differ; device pixels
+    * must be square.
+    */
+  case AnisotropicScale(scaleX: Double, scaleY: Double)
 
   /** Intaglio's JavaFX backend refused to compile the scene on its surface. */
   case Compile(sceneId: SceneId, surface: PlotSurface, error: JavaFxRenderError)
@@ -33,7 +43,11 @@ enum CanvasPlotError derives CanEqual:
   case Unexpected(sceneId: SceneId, surface: PlotSurface, description: String)
 
   def message: String = this match
-    case Scene(e)                => e.message
+    case Scene(e)               => e.message
+    case Surface(e)             => e.message
+    case AnisotropicScale(x, y) =>
+      s"the window's output scale is ${x}x horizontally and ${y}x vertically; " +
+        "the canvas host needs square device pixels"
     case Compile(id, surface, e) =>
       s"scene ${id.value} on a ${surface.deviceWidth}x${surface.deviceHeight} surface: " +
         s"Intaglio JavaFX compile failed: ${e.message}"
