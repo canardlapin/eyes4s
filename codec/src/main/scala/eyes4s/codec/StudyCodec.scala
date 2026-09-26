@@ -385,7 +385,15 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
       scores: VersionedCodec[S],
       differences: VersionedCodec[D]
   ): StudyResultCodec[K, U, P, S, D] =
-    new StudyResultCodec(DefinitionId.studyResult, layout, keys, method, scores, differences)
+    new StudyResultCodec(
+      DefinitionId.studyResult,
+      layout,
+      keys,
+      method,
+      scores,
+      differences,
+      Some(parameters)
+    )
 
   def registration: StudyRegistration[K, U] =
     new StudyRegistration[K, U]:
@@ -396,8 +404,9 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
             type Parameters = P
             type Score      = S
             type Difference = D
-            val plan   = value
-            def encode = codec.encode(value)
+            val plan               = value
+            def encode             = codec.encode(value)
+            def parametersDocument = parameters.encode(value.parameters)
         }
 
 private[codec] object StudyCodec:
@@ -450,6 +459,9 @@ sealed trait LoadedStudy[K, U <: Unit2D]:
   /** The typed plan, as decoded. */
   def plan: StudyPlan[K, U, Parameters, Score, Difference]
   def encode: Either[CodecError, Json]
+
+  /** The plan's method parameters as their own versioned document. */
+  def parametersDocument: Either[CodecError, Json]
 
   def description: Vector[(String, Vector[Provenance.Param])]           = plan.description
   def prerequisites(input: Option[StudyInput[K, U]]): Vector[PlanError] =

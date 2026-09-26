@@ -45,8 +45,32 @@ object ReportSources:
       ledger: Option[AdmissionLedger[K]],
       covariates: CovariateSchema
   ): Either[CodecError, ReportSource[K]] =
-    val keys                                                 = input.trials.rows.map(_.key)
-    val table: Either[CodecError, Option[CovariateTable[K]]] = ledger match
+    val table = covariateTable(plan, input, ledger, covariates)
+    for
+      found   <- table
+      binding <- ReportCodecs.binding(
+        (plans.codec, plan),
+        (inputs.input, input),
+        (results.codec, result),
+        ledger.map(l => (inputs.ledger, l))
+      )
+      source <- ReportSource
+        .study(plan, input, result, found, binding)
+        .left
+        .map(CodecError.Report.apply)
+    yield source
+
+  /** The covariates of `input`'s keys from `ledger`'s trials table, when
+    * `covariates` declares any; none is needed otherwise.
+    */
+  private def covariateTable[K, U <: Unit2D, P, S, D](
+      plan: StudyPlan[K, U, P, S, D],
+      input: StudyInput[K, U],
+      ledger: Option[AdmissionLedger[K]],
+      covariates: CovariateSchema
+  ): Either[CodecError, Option[CovariateTable[K]]] =
+    val keys = input.trials.rows.map(_.key)
+    ledger match
       case None =>
         Either.cond(
           covariates.covariates.isEmpty,
@@ -70,16 +94,83 @@ object ReportSources:
                 .map(CodecError.Covariates.apply)
                 .map(Some(_))
         }
-    for
-      found   <- table
-      binding <- ReportCodecs.binding(
-        (plans.codec, plan),
-        (inputs.input, input),
-        (results.codec, result),
-        ledger.map(l => (inputs.ledger, l))
-      )
-      source <- ReportSource
-        .study(plan, input, result, found, binding)
+
+  /** Re-evaluate a stored report over the decoded documents its binding was
+    * verified against, and refuse it unless it is exactly what the shipped
+    * reduction computes: the first differing cell is named, or else the first
+    * differing part. Only window tallies and a linear reduction are
+    * recomputed; no pair is scored.
+    *
+    * No type is assumed shared between the plan and the result: the plan
+    * supplies the layout, window tallies and covariates, and the result is
+    * reduced through its own method's score schema.
+    */
+  private[codec] def reevaluate[K, U <: Unit2D](
+      plan: LoadedStudy[K, U],
+      input: StudyInput[K, U],
+      result: LoadedResult[K, U],
+      ledger: Option[AdmissionLedger[K]],
+      stored: Report[K]
+  ): Option[RelationMismatch] =
+    // The result is read with its own method's components: the plan's
+    // parameters, re-read by the result codec's parameter codec, give the
+    // result method's score schema, typed by the result's scores. The plan's
+    // and the result's methods must name the same components.
+    val planComponents = ScoreSchema.study(plan.plan).map(_.ids)
+    val resultSchema   = plan.parametersDocument.flatMap(result.scoreSchema)
+    val components     = (planComponents, resultSchema) match
+      case (Right(planned), Right(schema)) if planned != schema.ids =>
+        Some(RelationMismatch.ReportComponents(planned, schema.ids))
+      case _ => None
+    lazy val recomputed = for
+      schema     <- resultSchema
+      covariates <- CovariateSchema
+        .of(stored.spec.covariates)
         .left
-        .map(CodecError.Report.apply)
-    yield source
+        .map(e => CodecError.Covariates(e))
+      table <- covariateTable(plan.plan, input, ledger, covariates)
+      source = ReportSource.of(
+        result.result,
+        plan.plan.layout,
+        plan.plan.windowTallies(input),
+        table,
+        schema,
+        stored.binding
+      )
+      report <- Report.evaluate(stored.spec, source).left.map(CodecError.Report.apply)
+    yield report
+    components.orElse(recomputed match
+      case Left(error) =>
+        Some(
+          RelationMismatch.ReportRecomputed("evaluation", "the stored report", error.message)
+        )
+      case Right(fresh) if fresh == stored => None
+      case Right(fresh)                    => Some(difference(stored, fresh)))
+
+  /** The first cell (by position) that differs, else the first other part. */
+  private def difference[K](stored: Report[K], fresh: Report[K]): RelationMismatch =
+    val size  = math.max(stored.cells.size, fresh.cells.size)
+    val cells = (0 until size).iterator
+      .map(i => (stored.cells.lift(i), fresh.cells.lift(i)))
+      .collectFirst {
+        case (a, b) if a != b =>
+          val at = a.orElse(b).get
+          RelationMismatch.ReportCell(
+            at.group.render,
+            at.role.toString,
+            at.component,
+            a.fold("no cell")(_.toString),
+            b.fold("no cell")(_.toString)
+          )
+      }
+    cells.getOrElse {
+      def part[A](name: String, a: A, b: A)(using CanEqual[A, A]) =
+        Option.when(a != b)(RelationMismatch.ReportRecomputed(name, a.toString, b.toString))
+      part("groups", stored.groups, fresh.groups)
+        .orElse(part("contrasts", stored.contrasts, fresh.contrasts))
+        .orElse(part("accounting", stored.accounting, fresh.accounting))
+        .orElse(part("findings", stored.findings, fresh.findings))
+        .getOrElse(
+          RelationMismatch.ReportRecomputed("report", stored.toString, fresh.toString)
+        )
+    }
