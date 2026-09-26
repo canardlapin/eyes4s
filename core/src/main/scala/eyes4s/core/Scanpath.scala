@@ -112,6 +112,28 @@ final class Scanpath[U <: Unit2D] private (
       i += 1
     acc
 
+  /** The scanpath without its first `count` fixations, or `None` when no
+    * fixation remains. A suffix of an ordered, non-overlapping scanpath is
+    * one, so this is total: the transitions between kept fixations, the
+    * extent from the first kept onset and the source support of a
+    * source-supported path are kept as they were. A `count` of zero or less
+    * returns this very scanpath.
+    */
+  private[eyes4s] def dropLeading(count: Int): Option[Scanpath[U]] =
+    if count <= 0 then Some(this)
+    else if count >= n then None
+    else
+      Some(
+        new Scanpath(
+          frame,
+          clock,
+          fixations.drop(count),
+          transitions.drop(count),
+          extent.clampedFrom(fixations(count).span.onset),
+          sourceSeries.map(_.dropLeading(count))
+        )
+      )
+
   /** Fixations selected by a window, under an explicit straddling policy. */
   def within(
       w: Window,
