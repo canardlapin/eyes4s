@@ -254,7 +254,8 @@ object DiagnosticCatalog:
     "NonFiniteVelocity",
     "NegativeVelocity",
     "NonFiniteDistance",
-    "NegativeDistance"
+    "NegativeDistance",
+    "BoundsExtentOverflow"
   )
   val time: DiagnosticFamily = error("time")(
     "ReversedInterval",

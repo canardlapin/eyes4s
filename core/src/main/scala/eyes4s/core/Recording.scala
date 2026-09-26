@@ -170,10 +170,24 @@ final class Recording[U <: Unit2D] private (
       low
     (lowerBound(span.onset), lowerBound(span.offset))
 
+  // Shared by `contentHash` and `contentHashWork`: whichever finishes first records the
+  // hash, and the other reuses it. Racing writers store the same deterministic value.
+  @volatile private var knownContentHash: Option[ContentHash] = None
+
   /** Deterministic content identity for derived-artifact provenance. */
   lazy val contentHash: ContentHash = contentHashWork.complete
 
+  /** Resumable hashing; a hash already computed by either route is returned at once. */
   private[eyes4s] def contentHashWork: AssemblyWork[ContentHash] =
+    knownContentHash match
+      case Some(hash) => AssemblyWork.Done(hash)
+      case None       =>
+        hashingWork.map { hash =>
+          knownContentHash = Some(hash)
+          hash
+        }
+
+  private def hashingWork: AssemblyWork[ContentHash] =
     val samplingHash = samplingEvidence match
       case fixed: SamplingEvidence.Fixed =>
         ContentHash.combineAll(
@@ -676,8 +690,9 @@ final class BinocularRecording[U <: Unit2D] private (
       IArray.tabulate(size)(i => Sample(timestamps(i), g(i)))
     )
 
-  def left: Recording[U]  = project(leftGaze, Eye.Left)
-  def right: Recording[U] = project(rightGaze, Eye.Right)
+  /** Projected once, so each eye's cached content hash is reused. */
+  lazy val left: Recording[U]  = project(leftGaze, Eye.Left)
+  lazy val right: Recording[U] = project(rightGaze, Eye.Right)
 
   /** Deterministic content identity: the ordered combination of the two eye
     * projections, which already cover the shared timing, frame and sampling.

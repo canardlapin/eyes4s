@@ -396,6 +396,7 @@ object DiagnosticSamples:
     family[GeometryError]("GeometryError")(
       GeometryError.DegenerateBounds(0, 1, 2, 3),
       GeometryError.NonFiniteBounds(0, 2, Inf, 1),
+      GeometryError.BoundsExtentOverflow(-Double.MaxValue, 0, Double.MaxValue, 1),
       frameError,
       GeometryError.FrameIdentityConflict(fid, frame.spec, otherFrame.spec),
       GeometryError.NonFiniteLength(Inf, LengthUnit.Millimetres),

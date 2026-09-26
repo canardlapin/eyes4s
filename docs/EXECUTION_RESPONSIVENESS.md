@@ -17,8 +17,11 @@ source digests](evidence/detection-assembly-final.md) retain every workload:
 `DetectionCursor.advance(sampleMaximum, assemblyMaximum)` separately bounds
 feeding and assembly operations; its one-argument overload uses the same limit
 for both. `DetectionPage.workUnits` counts fed samples before assembly and
-operations within one assembly phase thereafter. `consumed` remains a source
-sample count. `RecordingPlan` uses `WorkQuanta.samples` for both limits, with
+operations within one assembly phase thereafter (the field was previously
+`samples`). `consumed` remains a source sample count. The page that feeds the last
+sample now returns `More` with a cursor in assembly, and `consumed` equals `total`
+from then on; only an assembly page (or a detector failure) returns `Done`. A cursor
+consumer must loop until `Done`, not stop at `consumed == total`. `RecordingPlan` uses `WorkQuanta.samples` for both limits, with
 `RecordingStage.Assembling(phase)` and matching segments. Feeding retains exact
 sample totals; data-dependent assembly totals are explicitly `Unknown`. Empty
 phases may be absent. Assembly covers emissions, support searches, structural

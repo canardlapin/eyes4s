@@ -19,10 +19,218 @@ package eyes4s.detect
 import eyes4s.core.*
 import eyes4s.kernel.*
 
-/** Pre-resumable assembly retained as an independent report, gap and label oracle.
-  * EventSeries reconstruction has its own direct numerical oracle in the suite.
+/** Pre-resumable assembly retained as an independent oracle for labels, gaps, reports,
+  * event summaries and lineage. Nothing here calls the production `EventSeries`: the
+  * source-support series is rebuilt with the direct linear-scan and sort-based formulas of
+  * 131970d (`core/.../DetectionSupport.scala`), so a defect in the resumable assembly
+  * cannot also appear in its expected value.
   */
 private object DetectionAssemblyOracle:
+
+  /** An event as the comparison sees it. Fixation evidence constructors are private to
+    * core, so a fixation is compared through its public fields.
+    */
+  enum EventView[U <: Unit2D] derives CanEqual:
+    case Fixation(
+        span: Interval,
+        centre: Pt[U],
+        status: DispersionStatus[U],
+        sampleCount: Int
+    )
+    case Other(event: Event[U])
+
+  def viewOf[U <: Unit2D](event: Event[U]): EventView[U] = event match
+    case fixation: Event.Fixation[U] =>
+      EventView.Fixation(
+        fixation.span,
+        fixation.centre,
+        fixation.dispersionStatus,
+        fixation.sampleCount
+      )
+    case other => EventView.Other(other)
+
+  /** Everything the suites compare about one `DetectionResult`. */
+  final case class ResultView[U <: Unit2D](
+      labels: Vector[SampleClass],
+      events: Vector[EventView[U]],
+      support: Vector[SampleRange],
+      lineage: EventSourceLineage,
+      report: DetectionReport,
+      provenance: String
+  )
+
+  def viewOf[U <: Unit2D](result: DetectionResult[U]): ResultView[U] = ResultView(
+    result.labels.toVector,
+    result.eventSeries.events.map(viewOf),
+    result.eventSeries.support,
+    result.eventSeries.lineage,
+    result.report,
+    result.provenance.render
+  )
+
+  /** The 131970d `EventSeries.of`, with the same validation order and error values. */
+  def referenceSeries[U <: Unit2D](
+      recording: Recording[U],
+      source: RecordingRef,
+      events: Vector[Event[U]],
+      support: Vector[SampleRange]
+  ): Either[DetectionSupportError, (Vector[EventView[U]], EventSourceLineage)] =
+    def first(indices: Seq[Int])(bad: Int => Boolean)(
+        error: Int => DetectionSupportError
+    ): Either[DetectionSupportError, Unit] =
+      indices.find(bad).fold(Right(()))(index => Left(error(index)))
+    for
+      _ <- Either.cond(
+        events.length == support.length,
+        (),
+        DetectionSupportError.EventSupportCountMismatch(source, events.length, support.length)
+      )
+      _ <- first(events.indices)(i => events(i).span.clock != recording.clock) { i =>
+        DetectionSupportError.EventClockMismatch(
+          source,
+          i,
+          recording.clock,
+          events(i).span.clock
+        )
+      }
+      _ <- first(support.indices)(i => support(i).until > recording.size) { i =>
+        DetectionSupportError.SampleRangeOutsideRecording(source, i, support(i), recording.size)
+      }
+      _ <- first(support.indices.drop(1))(i => support(i).from < support(i - 1).until) { i =>
+        DetectionSupportError.OverlappingSampleRanges(source, i, support(i - 1), support(i))
+      }
+      views <- events.indices.foldLeft[Either[DetectionSupportError, Vector[EventView[U]]]](
+        Right(Vector.empty)
+      ) { (acc, i) =>
+        for
+          built <- acc
+          view  <- referenceEvent(recording, source, events(i), support(i), i)
+        yield built :+ view
+      }
+    yield (
+      views,
+      EventSourceLineage(
+        recording.frame.id,
+        contentHash(recording),
+        recording.samples.map(_.lineage).toVector
+      )
+    )
+
+  private def referenceEvent[U <: Unit2D](
+      recording: Recording[U],
+      source: RecordingRef,
+      event: Event[U],
+      declared: SampleRange,
+      eventIndex: Int
+  ): Either[DetectionSupportError, EventView[U]] =
+    for
+      _ <- Either.cond(
+        event.span.onset.toMicros >= recording.extent.onset.toMicros &&
+          event.span.offset.toMicros <= recording.extent.offset.toMicros,
+        (),
+        DetectionSupportError.EventSpanOutsideRecording(
+          source,
+          eventIndex,
+          event.span,
+          recording.extent
+        )
+      )
+      indices = recording.samples.indices.filter(i =>
+        event.span.contains(recording.samples(i).t)
+      )
+      derived <- indices.headOption match
+        case None =>
+          Left(DetectionSupportError.EventSpanHasNoSamples(source, eventIndex, event.span))
+        case Some(from) =>
+          val until = indices.last + 1
+          SampleRange
+            .of(from, until)
+            .left
+            .map(_ =>
+              DetectionSupportError
+                .InvalidDerivedSampleRange(source, eventIndex, event.span, from, until)
+            )
+      _ <- Either.cond(
+        declared == derived,
+        (),
+        DetectionSupportError
+          .EventSampleRangeMismatch(source, eventIndex, event.span, declared, derived)
+      )
+      view <- event match
+        case fixation: Event.Fixation[U] =>
+          referenceFixation(recording, source, fixation, declared, eventIndex)
+        case other => Right(EventView.Other(other))
+    yield view
+
+  private def referenceFixation[U <: Unit2D](
+      recording: Recording[U],
+      source: RecordingRef,
+      fixation: Event.Fixation[U],
+      range: SampleRange,
+      eventIndex: Int
+  ): Either[DetectionSupportError, EventView[U]] =
+    val points = (range.from until range.until).flatMap { i =>
+      val sample = recording.samples(i)
+      if sample.isUsable then sample.position else None
+    }.toVector
+    if points.isEmpty then
+      Left(DetectionSupportError.NoUsableSourceSamples(source, eventIndex, range))
+    else
+      val centre =
+        Pt[U](points.map(_.x).sum / points.length, points.map(_.y).sum / points.length)
+      val rebuilt = fixation.dispersion match
+        case Some(spread) =>
+          Event.Fixation.of(
+            fixation.span,
+            centre,
+            referenceDispersion(points, centre, spread.method),
+            spread.method,
+            points.length
+          )
+        case None => Event.Fixation.withoutDispersion(fixation.span, centre, points.length)
+      rebuilt.left
+        .map(DetectionSupportError.InvalidDerivedFixation(source, eventIndex, range, _))
+        .map { value =>
+          val status: DispersionStatus[U] =
+            (value.dispersionStatus, fixation.dispersionStatus) match
+              case (
+                    DispersionStatus.Available(spread, _),
+                    DispersionStatus.Available(_, evidence: SummaryEvidence.Recomputed)
+                  ) =>
+                DispersionStatus.Available(spread, evidence)
+              case (DispersionStatus.Available(spread, SummaryEvidence.Declared), _) =>
+                DispersionStatus.Available(
+                  spread,
+                  SummaryEvidence.SourceSupported(source, range)
+                )
+              case (other, _) => other
+          EventView.Fixation(fixation.span, centre, status, points.length)
+        }
+
+  def referenceDispersion[U <: Unit2D](
+      points: Vector[Pt[U]],
+      centre: Pt[U],
+      method: DispersionMethod
+  ): Double = method match
+    case DispersionMethod.RmsRadius =>
+      math.sqrt(points.map(p => math.pow(centre.distanceTo(p), 2.0)).sum / points.length)
+    case DispersionMethod.BoundingBoxWidth =>
+      points.map(_.x).max - points.map(_.x).min
+    case DispersionMethod.BoundingBoxDiagonal =>
+      math.hypot(
+        points.map(_.x).max - points.map(_.x).min,
+        points.map(_.y).max - points.map(_.y).min
+      )
+    case DispersionMethod.MedianAbsoluteDeviation =>
+      val middle = Pt[U](referenceMedian(points.map(_.x)), referenceMedian(points.map(_.y)))
+      referenceMedian(points.map(_.distanceTo(middle)))
+
+  def referenceMedian(values: Vector[Double]): Double =
+    val sorted = values.sorted
+    val middle = sorted.length / 2
+    if sorted.length % 2 == 1 then sorted(middle)
+    else (sorted(middle - 1) + sorted(middle)) / 2.0
+
   private[detect] def assembleEmissions[U <: Unit2D](
       source: RecordingRef,
       recording: Recording[U],
@@ -31,15 +239,13 @@ private object DetectionAssemblyOracle:
       temporalSupport: SampleSupportLedger,
       emissions: Vector[DetectionEmission[U]],
       parameters: Vector[(String, Provenance.Param)]
-  ): Either[DetectionResultError, DetectionResult[U]] =
+  ): Either[DetectionResultError, ResultView[U]] =
     val detector = identity.detectorRef
     locally {
       val events = emissions.collect { case Right(event) => event }
       for
         support <- supportFor(source, recording, detector, events)
-        series  <- EventSeries
-          .of(recording, source, events, support)
-          .left
+        series  <- referenceSeries(recording, source, events, support).left
           .map(DetectionResultError.SourceSupport(source, detector, _))
         bridged <- validateGaps(
           source,
@@ -56,6 +262,7 @@ private object DetectionAssemblyOracle:
           gapPolicy,
           temporalSupport,
           series,
+          support,
           bridged,
           parameters
         )
@@ -165,10 +372,11 @@ private object DetectionAssemblyOracle:
       identity: DetectorIdentity,
       gapPolicy: GapPolicy,
       temporalSupport: SampleSupportLedger,
-      series: EventSeries[U],
+      series: (Vector[EventView[U]], EventSourceLineage),
+      support: Vector[SampleRange],
       bridged: Vector[SampleRange],
       parameters: Vector[(String, Provenance.Param)]
-  ): Either[DetectionResultError, DetectionResult[U]] =
+  ): Either[DetectionResultError, ResultView[U]] =
     val detector = identity.detectorRef
     val classes  = Array.tabulate(recording.size) { index =>
       recording.samples(index).gaze match
@@ -178,13 +386,15 @@ private object DetectionAssemblyOracle:
         case Gaze.OffScreen(_)  => SampleClass.OffSurface
     }
 
-    series.events.indices.foreach { eventIndex =>
-      val eventClass = series.events(eventIndex) match
-        case _: Event.Fixation[U] => SampleClass.Fixation
-        case _: Event.Saccade[U]  => SampleClass.Saccade
-        case _: Event.Pursuit[U]  => SampleClass.Pursuit
-        case _: Event.Blink[U]    => SampleClass.Blink
-      val range = series.support(eventIndex)
+    val (events, lineage) = series
+    events.indices.foreach { eventIndex =>
+      val eventClass = events(eventIndex) match
+        case _: EventView.Fixation[U]              => SampleClass.Fixation
+        case EventView.Other(_: Event.Fixation[U]) => SampleClass.Fixation
+        case EventView.Other(_: Event.Saccade[U])  => SampleClass.Saccade
+        case EventView.Other(_: Event.Pursuit[U])  => SampleClass.Pursuit
+        case EventView.Other(_: Event.Blink[U])    => SampleClass.Blink
+      val range = support(eventIndex)
       (range.from until range.until).foreach { sampleIndex =>
         if recording.samples(sampleIndex).isUsable then classes(sampleIndex) = eventClass
       }
@@ -197,7 +407,7 @@ private object DetectionAssemblyOracle:
         classes.indices.filter(i => classes(i) == SampleClass.Unclassified)
       )
     yield
-      val labels   = SampleLabels.from(classes)
+      val labels   = classes.toVector
       val warnings = unclassified.map { range =>
         DetectionWarning.UnclassifiedSupport(
           source,
@@ -234,12 +444,13 @@ private object DetectionAssemblyOracle:
           "gapPolicy" -> Provenance.Param.Text(gapPolicy.render)
         ) ++ parameters
       )
-      new DetectionResult(
-        identity,
+      ResultView(
         labels,
-        series,
+        events,
+        support,
+        lineage,
         report,
-        Provenance.raw(recording.contentHash).andThen(step)
+        Provenance.raw(contentHash(recording)).andThen(step).render
       )
 
   private def contiguousRanges(
