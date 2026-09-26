@@ -85,13 +85,20 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
     * value drives preflight, the refusal of [[work]] and [[preview]].
     */
   lazy val matchedCardinality: Either[PlanError, MatchedCardinality[K]] =
-    counts.map(_.cardinality)
+    StudyPairingWork.cardinality(
+      plan.layout,
+      plan.pairing,
+      input.trials.rows.map(_.key),
+      referenceIndices.map(i => input.trials.rows(i).key),
+      matched
+    )
 
   /** Begin the exact-count traversal without performing any pair visits. */
   def countWork: Either[PlanError, CountCursor[K]] = CountCursor.of(plan, this)
 
   /** Synchronous convenience; effectful consumers execute [[countWork]] through
-    * the shared runner for cancellation between pages. This same traversal supplies cardinality.
+    * the shared runner for cancellation between pages. Its result includes matched
+    * cardinality; matched-only callers do not traverse controls.
     */
   lazy val counts: Either[PlanError, StudyCounts[K]] =
     countWork.flatMap(cursor => Stepwise.complete(cursor, WorkQuanta.default))

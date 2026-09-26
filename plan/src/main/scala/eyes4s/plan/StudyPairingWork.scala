@@ -18,6 +18,8 @@ package eyes4s.plan
 
 import eyes4s.design.*
 
+import scala.annotation.tailrec
+
 /** The relations a pairing rule schedules, and the cardinality it implies.
   *
   * A selection by occurrence depends only on a reference's own participant
@@ -114,6 +116,35 @@ private[plan] object StudyPairingWork:
         }
         .toVector
         .sortBy(_.head)
+    }
+
+  /** Every matched pair of the schedule, by focal key in schedule order. */
+  private def matchedPairs[K](
+      schedule: DirectedPairSchedule[K, K]
+  ): Either[PairScheduleError, (Vector[(K, K)], PairingReport[K, K])] =
+    @tailrec
+    def loop(
+        cursor: PairCursor[K, K],
+        acc: Vector[(K, K)]
+    ): Either[PairScheduleError, (Vector[(K, K)], PairingReport[K, K])] =
+      cursor.advance(PairQuantum.default) match
+        case Left(e)                                => Left(e)
+        case Right(PairPage.Done(pairs, _, report)) =>
+          Right((acc ++ pairs.map(p => p.left -> p.right), report))
+        case Right(PairPage.More(pairs, _, next)) =>
+          loop(next, acc ++ pairs.map(p => p.left -> p.right))
+    loop(schedule.start, Vector.empty)
+
+  /** Matched-only callers do not depend on the control schedule or its budget. */
+  def cardinality[K](
+      layout: StudyLayout[K],
+      pairing: StudyPairing,
+      keys: Vector[K],
+      references: Vector[K],
+      matched: DirectedPairSchedule[K, K]
+  ): Either[PlanError, MatchedCardinality[K]] =
+    matchedPairs(matched).left.map(PlanError.Schedule.apply).map { (pairs, report) =>
+      cardinalityFromPairs(layout, pairing, keys, references, pairs, report)
     }
 
   private[plan] def cardinalityFromPairs[K](

@@ -22,6 +22,8 @@ import eyes4s.kernel.{Provenance, Unit2D}
 /** A cancellable count of both exact study schedules, without estimating maps
   * or comparing them. Each step is one pair page, bounded by the pair quantum.
   * Completion includes unmatched-reference diagnostics, even for empty schedules.
+  * The quantum bounds candidate visits. Matched-phase completion also aggregates
+  * retained pairs and source keys for cardinality; that work is not quantum-bounded.
   */
 final class CountCursor[K] private[plan] (
     private val cursor: PairCursor[K, K],

@@ -23,10 +23,10 @@ import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.Px
 
 class StudyCountsSuite extends munit.FunSuite:
-  private def get[E, A](e: Either[E, A]): A            = e.fold(e => fail(s"$e"), identity)
-  private val frame                                    = get(Frame.screen("counting", 2, 2))
-  private val grid                                     = get(Grid.over(frame, 2, 2))
-  private def trial(key: StudyKey, offscreen: Boolean) =
+  private def get[E, A](e: Either[E, A]): A        = e.fold(e => fail(s"$e"), identity)
+  private val frame                                = get(Frame.screen("counting", 2, 2))
+  private val grid                                 = get(Grid.over(frame, 2, 2))
+  private def trial[K](key: K, offscreen: Boolean) =
     val clock    = ClockId(key.toString)
     val fixation = get(
       Event.Fixation.withoutDispersion(
@@ -135,4 +135,70 @@ class StudyCountsSuite extends munit.FunSuite:
     assertEquals(c.eligibleQueries, 3L)
     assertEquals(c.matched.eligiblePairs, 2L)
     assertEquals(c.controls.eligiblePairs, 4L)
+  }
+
+  test("matched cardinality remains available when only the control budget is exceeded") {
+    val ks = Vector(
+      StudyKey("p", "a", "recall"),
+      StudyKey("p", "a", "encode"),
+      StudyKey("p", "b", "encode"),
+      StudyKey("p", "c", "encode")
+    )
+    val (plan, unrestricted) = prepare(ks, scales = 1)
+    val limited = get(plan.prepare(unrestricted.input, get(PairScheduleBudget.of(4, 100L, 1))))
+    assert(limited.counts.left.toOption.exists {
+      case PlanError.Schedule(PairScheduleError.SelectedBudget(_, 2L, 1)) => true
+      case _                                                              => false
+    })
+    val actual   = get(limited.matchedCardinality)
+    val expected = get(unrestricted.matchedCardinality)
+    assertEquals(actual.multiple, expected.multiple)
+    assertEquals(actual.ambiguousReferences, expected.ambiguousReferences)
+    assertEquals(actual.unmatched, expected.unmatched)
+    assertEquals(actual.itemConflicts, expected.itemConflicts)
+    assertEquals(get(get(limited.preview).matchedCardinality).multiple, expected.multiple)
+  }
+
+  test("matched ambiguity retains refusal precedence over an oversized control schedule") {
+    def key(phase: String, label: String, item: String) =
+      get(TrialKey.of("p", phase, label, TrialOccurrence.first, item))
+    val focal = key("recall", "q", "a")
+    val ks    = Vector(
+      focal,
+      key("encode", "a1", "a"),
+      key("encode", "a2", "a"),
+      key("encode", "b", "b"),
+      key("encode", "c", "c"),
+      key("encode", "d", "d")
+    )
+    val input = StudyInput(Trials(ks.map(k => trial(k, false))))
+    val plan  = get(
+      StudyPlan.configure(
+        input.reference,
+        TrialKey.layout(TrialKeyDefinitions.trialLayout),
+        StudyGeometry.WholeFrame(grid),
+        "recall",
+        "encode",
+        Weight.Duration,
+        Vector(StudyScale.Native(StudyEstimate.Binned())),
+        None,
+        FailurePolicy.RequireAll,
+        StudyMethod.cosine[Px](DefinitionId.cosine),
+        (),
+        StudyPairing.default
+      )
+    )
+    val unlimited = get(plan.prepare(input))
+    val limited   = get(plan.prepare(input, get(PairScheduleBudget.of(6, 100L, 2))))
+    assert(limited.counts.left.toOption.exists {
+      case PlanError.Schedule(PairScheduleError.SelectedBudget(_, 3L, 2)) => true
+      case _                                                              => false
+    })
+    val expected = unlimited.work().left.toOption
+    assert(expected.exists {
+      case PlanError.MatchedCardinality(MatchedReferences.RequireOne, keys, _) =>
+        keys == Vector(KeyDigest[TrialKey].digest(focal).render)
+      case _ => false
+    })
+    assertEquals(limited.work().left.toOption, expected)
   }
