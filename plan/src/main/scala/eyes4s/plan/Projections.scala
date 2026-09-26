@@ -16,22 +16,20 @@
 
 package eyes4s.plan
 
-import eyes4s.aoi.AoiError
-import eyes4s.compare.*
 import eyes4s.core.*
 import eyes4s.design.*
-import eyes4s.detect.*
 import eyes4s.kernel.*
-import eyes4s.surface.EstimateError
 
-/** Diagnostics for every cataloged error family.
+/** The projections behind the study, recording, preflight, admission and
+  * inspection [[Diagnose]] instances. Applications project through
+  * `Diagnostic.of` and the instances; these functions are their bodies.
   *
   * Each projection is total over its enum and keeps every field as a named
   * operand. A wrapper case (a scale, repetition or refusal around another
   * error) prefixes its own locus to the wrapped error's subject, so the
   * diagnostic still names the innermost failing object.
   */
-object Diagnostics:
+private[eyes4s] object Projections:
   import DiagnosticSupport.*
   import DiagnosticCatalog as C
 
@@ -855,18 +853,26 @@ object Diagnostics:
         )(Operand.Key(key), name(window))
     finding(projected, f.severity, f.category, f.remedy)
 
-  /** Any preflight finding; trial keys keep their runtime values. */
-  def preflightFinding(f: PreflightFinding): Diagnostic[Any] = f match
-    case study: StudyFinding[?, ?]       => studyFinding(study)
-    case recording: RecordingFinding     => recordingFinding(recording)
-    case temporal: TemporalFinding[?, ?] => temporalFinding(temporal)
+  /** Any preflight finding, keys typed. A study or temporal finding in a
+    * `PreflightFinding[K]` carries keys of type `K` (the finding type is
+    * covariant in its key through `PreflightFinding`), and no projection
+    * depends on the unit, so the unchecked type arguments are sound. They
+    * stay sound only while no finding projection needs an `Ordering`, a type
+    * test or any other evidence for `K` or `U`.
+    */
+  def preflightFinding[K](f: PreflightFinding[K]): Diagnostic[K] = f match
+    case study: StudyFinding[K @unchecked, Unit2D @unchecked] =>
+      studyFinding[K, Unit2D](study)
+    case recording: RecordingFinding => recordingFinding(recording)
+    case temporal: TemporalFinding[K @unchecked, Unit2D @unchecked] =>
+      temporalFinding[K, Unit2D](temporal)
 
-  def preflight(e: PreflightError): Diagnostic[Any] =
+  def preflight[K](e: PreflightError[K]): Diagnostic[K] =
     import PreflightError.*
     def family(value: RecipeFamily) = token(value.toString)
     e match
       case ChangedPlan(value, changes) =>
-        diagnostic[Any](C.preflight, e, e.message)(
+        diagnostic[K](C.preflight, e, e.message)(
           family(value),
           Operand.Items(
             changes.map(change =>
@@ -885,7 +891,7 @@ object Diagnostics:
           artifact(actual.digest)
         )
       case NotReady(value, blockers) =>
-        diagnostic[Any](C.preflight, e, e.message)(
+        diagnostic[K](C.preflight, e, e.message)(
           family(value),
           Operand.Causes(blockers.map(preflightFinding))
         )
@@ -1235,142 +1241,3 @@ object Diagnostics:
         )(int(scale), token(design.toString), token(found.toString))
       case NoContrast(scale) =>
         diagnostic(C.inspection, e, e.message, Vector(Locus.Scale(scale)))(int(scale))
-
-  // ---------------------------------------------------------------- lower-level causes
-
-  def geometry(e: GeometryError): Diagnostic[Nothing] = CauseDiagnostics.geometry(e)
-  def surface(e: SurfaceError): Diagnostic[Nothing]   = CauseDiagnostics.surface(e)
-  def time(e: TimeError): Diagnostic[Nothing]         = CauseDiagnostics.time(e)
-  def estimate(e: EstimateError): Diagnostic[Nothing] = CauseDiagnostics.estimate(e)
-  def compare(e: CompareError): Diagnostic[Nothing]   = CauseDiagnostics.compare(e)
-  def comparisonValue(e: ComparisonValueError): Diagnostic[Nothing] =
-    CauseDiagnostics.comparisonValue(e)
-  def comparisonWork(e: ComparisonWorkError): Diagnostic[Nothing] =
-    CauseDiagnostics.comparisonWork(e)
-  def pairSchedule(e: PairScheduleError): Diagnostic[Nothing] = CauseDiagnostics.pairSchedule(e)
-  def evaluationSpec(e: EvaluationSpecError): Diagnostic[Nothing] =
-    CauseDiagnostics.evaluationSpecError(e)
-  def scoreMean(e: ScoreMeanError): Diagnostic[Nothing]   = CauseDiagnostics.scoreMean(e)
-  def difference(e: DifferenceError): Diagnostic[Nothing] = CauseDiagnostics.difference(e)
-  def contrastCompatibility(e: ContrastCompatibilityError): Diagnostic[Nothing] =
-    CauseDiagnostics.contrastCompatibility(e)
-  def windowOccupancy(e: WindowOccupancyError): Diagnostic[Nothing] =
-    CauseDiagnostics.windowOccupancy(e)
-  def syncEvidence(e: SyncEvidenceError): Diagnostic[Nothing] = CauseDiagnostics.syncEvidence(e)
-  def core(e: CoreError): Diagnostic[Nothing]                 = CauseDiagnostics.core(e)
-  def recording(e: RecordingError): Diagnostic[Nothing] = CauseDiagnostics.recordingData(e)
-  def scanpath(e: ScanpathError): Diagnostic[Nothing]   = CauseDiagnostics.scanpath(e)
-  def event(e: EventError): Diagnostic[Nothing]         = CauseDiagnostics.event(e)
-  def detectionSupport(e: DetectionSupportError): Diagnostic[Nothing] =
-    CauseDiagnostics.detectionSupport(e)
-  def detectorDefinition(e: DetectorDefinitionError): Diagnostic[Nothing] =
-    CauseDiagnostics.detectorDefinition(e)
-  def detectionResult(e: DetectionResultError): Diagnostic[Nothing] =
-    CauseDiagnostics.detectionResult(e)
-  def detectionFailure(e: DetectionFailure): Diagnostic[Nothing] =
-    CauseDiagnostics.detectionFailure(e)
-  def kinematics(e: KinematicsError): Diagnostic[Nothing]       = CauseDiagnostics.kinematics(e)
-  def configuration(e: ConfigurationError): Diagnostic[Nothing] =
-    CauseDiagnostics.configuration(e)
-  def aoi(e: AoiError): Diagnostic[Nothing]               = CauseDiagnostics.aoi(e)
-  def descriptor(e: DescriptorError): Diagnostic[Nothing] = CauseDiagnostics.descriptor(e)
-
-/** A projection of one typed error family into diagnostics. Instances exist
-  * for every cataloged family, so `Diagnostic.of(error)` works for any of them.
-  */
-trait Diagnose[E, +K]:
-  def family: DiagnosticFamily
-  def apply(error: E): Diagnostic[K]
-
-object Diagnose:
-  import DiagnosticCatalog as C
-
-  private def instance[E, K](of: DiagnosticFamily)(f: E => Diagnostic[K]): Diagnose[E, K] =
-    new Diagnose[E, K]:
-      val family: DiagnosticFamily       = of
-      def apply(error: E): Diagnostic[K] = f(error)
-
-  given plan: Diagnose[PlanError, Nothing]            = instance(C.plan)(Diagnostics.plan)
-  given studyFailure[K]: Diagnose[StudyFailure[K], K] =
-    instance(C.studyFailure)(Diagnostics.failure[K])
-  given studyResult[K]: Diagnose[StudyResultError[K], K] =
-    instance(C.studyResult)(Diagnostics.result[K])
-  given temporal: Diagnose[TemporalStudyError, Nothing] =
-    instance(C.temporal)(Diagnostics.temporal)
-  given recordingPlan: Diagnose[RecordingPlanError, Nothing] =
-    instance(C.recordingPlan)(Diagnostics.recordingPlan)
-  given recordingInput: Diagnose[RecordingInputError, Nothing] =
-    instance(C.recordingInput)(Diagnostics.recordingInput)
-  given recordingResult: Diagnose[RecordingResultError, Nothing] =
-    instance(C.recordingResult)(Diagnostics.recordingResult)
-  given temporalResult[K]: Diagnose[TemporalResultError[K], K] =
-    instance(C.temporalResult)(Diagnostics.temporalResult[K])
-  given reduction[K]: Diagnose[ReductionError[K], K] =
-    instance(C.reduction)(Diagnostics.reduction[K])
-  given reconstruction[K]: Diagnose[ReconstructionError[K], K] =
-    instance(C.reconstruction)(Diagnostics.reconstruction[K])
-  given contrast[K]: Diagnose[ContrastError[K], K] =
-    instance(C.contrast)(Diagnostics.contrast[K])
-  given contrastRow[K]: Diagnose[ContrastRowError[K], K] =
-    instance(C.contrastRow)(Diagnostics.contrastRow[K])
-  given contrastCompatibility: Diagnose[ContrastCompatibilityError, Nothing] =
-    instance(C.contrastCompatibility)(Diagnostics.contrastCompatibility)
-  given difference: Diagnose[DifferenceError, Nothing] =
-    instance(C.difference)(Diagnostics.difference)
-  given scoreMean: Diagnose[ScoreMeanError, Nothing] =
-    instance(C.scoreMean)(Diagnostics.scoreMean)
-  given evaluationSpec: Diagnose[EvaluationSpecError, Nothing] =
-    instance(C.evaluationSpec)(Diagnostics.evaluationSpec)
-  given pairSchedule: Diagnose[PairScheduleError, Nothing] =
-    instance(C.pairSchedule)(Diagnostics.pairSchedule)
-  given comparisonWork: Diagnose[ComparisonWorkError, Nothing] =
-    instance(C.comparisonWork)(Diagnostics.comparisonWork)
-  given compare: Diagnose[CompareError, Nothing] = instance(C.compare)(Diagnostics.compare)
-  given comparisonValue: Diagnose[ComparisonValueError, Nothing] =
-    instance(C.comparisonValue)(Diagnostics.comparisonValue)
-  given estimate: Diagnose[EstimateError, Nothing] = instance(C.estimate)(Diagnostics.estimate)
-  given surface: Diagnose[SurfaceError, Nothing]   = instance(C.surface)(Diagnostics.surface)
-  given geometry: Diagnose[GeometryError, Nothing] = instance(C.geometry)(Diagnostics.geometry)
-  given time: Diagnose[TimeError, Nothing]         = instance(C.time)(Diagnostics.time)
-  given windowOccupancy: Diagnose[WindowOccupancyError, Nothing] =
-    instance(C.windowOccupancy)(Diagnostics.windowOccupancy)
-  given syncEvidence: Diagnose[SyncEvidenceError, Nothing] =
-    instance(C.syncEvidence)(Diagnostics.syncEvidence)
-  given core: Diagnose[CoreError, Nothing]           = instance(C.core)(Diagnostics.core)
-  given recording: Diagnose[RecordingError, Nothing] =
-    instance(C.recording)(Diagnostics.recording)
-  given scanpath: Diagnose[ScanpathError, Nothing] = instance(C.scanpath)(Diagnostics.scanpath)
-  given event: Diagnose[EventError, Nothing]       = instance(C.event)(Diagnostics.event)
-  given detectionSupport: Diagnose[DetectionSupportError, Nothing] =
-    instance(C.detectionSupport)(Diagnostics.detectionSupport)
-  given detectorDefinition: Diagnose[DetectorDefinitionError, Nothing] =
-    instance(C.detectorDefinition)(Diagnostics.detectorDefinition)
-  given detectionResult: Diagnose[DetectionResultError, Nothing] =
-    instance(C.detectionResult)(Diagnostics.detectionResult)
-  given detectionFailure: Diagnose[DetectionFailure, Nothing] =
-    instance(C.detectionFailure)(Diagnostics.detectionFailure)
-  given kinematics: Diagnose[KinematicsError, Nothing] =
-    instance(C.kinematics)(Diagnostics.kinematics)
-  given configuration: Diagnose[ConfigurationError, Nothing] =
-    instance(C.configuration)(Diagnostics.configuration)
-  given aoi: Diagnose[AoiError, Nothing]               = instance(C.aoi)(Diagnostics.aoi)
-  given descriptor: Diagnose[DescriptorError, Nothing] =
-    instance(C.descriptor)(Diagnostics.descriptor)
-  given studyFinding[K, U <: Unit2D]: Diagnose[StudyFinding[K, U], K] =
-    instance(C.studyFinding)(Diagnostics.studyFinding[K, U])
-  given recordingFinding: Diagnose[RecordingFinding, Nothing] =
-    instance(C.recordingFinding)(Diagnostics.recordingFinding)
-  given temporalFinding[K, U <: Unit2D]: Diagnose[TemporalFinding[K, U], K] =
-    instance(C.temporalFinding)(Diagnostics.temporalFinding[K, U])
-  given budget: Diagnose[BudgetError, Nothing]   = instance(C.budget)(Diagnostics.budget)
-  given preflight: Diagnose[PreflightError, Any] = instance(C.preflight)(Diagnostics.preflight)
-  given admissionReason: Diagnose[AdmissionReason, Nothing] =
-    instance(C.admissionReason)(Diagnostics.admissionReason)
-  given quarantine: Diagnose[QuarantineCause, Nothing] =
-    instance(C.quarantine)(Diagnostics.quarantine)
-  given admission: Diagnose[AdmissionError, Nothing] =
-    instance(C.admission)(Diagnostics.admission)
-  given inventory: Diagnose[InventoryError, Nothing] =
-    instance(C.inventory)(Diagnostics.inventory)
-  given inspection[K]: Diagnose[InspectionError[K], K] =
-    instance(C.inspection)(Diagnostics.inspection[K])

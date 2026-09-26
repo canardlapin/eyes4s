@@ -95,7 +95,7 @@ final class DiagnosticAlignment(
         case v: eyes4s.compare.MeasureScale => Some(measureScale(v))
         case v: EvaluationScale             => Some(evaluationScale(v))
         case v: eyes4s.detect.GapPolicy     => Some(gapPolicy(v))
-        case v: LedgerRefusal[?]            => Some(Operand.Cause(Diagnostics.ledgerRefusal(v)))
+        case v: LedgerRefusal[?]            => Some(Operand.Cause(Projections.ledgerRefusal(v)))
         case v: WindowTally                 => Some(windowTally(v))
         case _                              => None)
 
@@ -169,7 +169,25 @@ final class DiagnosticAlignment(
           )
         case (item, found) => matches(item, found)
       }
+    case (v: Set[?], Operand.Names(xs))    => xs == v.toVector.map(_.toString).sorted
+    case (v: Byte, Operand.Integer(n))     => n == BigInt(v)
+    case (v: Char, Operand.Text(x))        => x == v.toString
+    case (v: BigDecimal, Operand.Text(x))  => x == v.toString
+    case (v: Boolean, Operand.Token(x))    => x == v.toString
+    case (v: Long, Operand.Artifact(x))    => x == f"$v%016x" // a ContentHash
+    case (v: PredictorId, Operand.Name(x)) => x == v.value
+    case (v: eyes4s.core.TemporalSupport, Operand.Token(x)) => x == v.render
+    // Any other sum case with fields: its kind, then its named fields.
+    case (v: scala.reflect.Enum, Operand.Fields(("kind", Operand.Token(label)) +: rest)) =>
+      !errorLike(v) && label == v.productPrefix && named(v, rest)
+    // Any other product: its named fields.
+    case (v: Product, Operand.Fields(fields)) if !v.isInstanceOf[scala.reflect.Enum] =>
+      named(v, fields)
     case _ => false
+
+  private def named(value: Product, fields: Vector[(String, Operand[Any])]): Boolean =
+    fields.map(_._1) == value.productElementNames.toVector &&
+      value.productIterator.toVector.zip(fields).forall((v, field) => matches(v, field._2))
 
   /** Every family's check at once, for a suite: problems as readable lines. */
   def problems: Vector[String] =

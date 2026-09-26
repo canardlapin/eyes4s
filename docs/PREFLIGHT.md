@@ -83,9 +83,13 @@ guess them.
 
 `report.prepare(plan, input, budget)` returns the `PreparedStudy` for the same
 plan and input; `RecordingReport.confirm` and `TemporalReport.confirm` return
-`Unit`. Each refuses with a typed `PreflightError` when the plan description
-changed (`ChangedPlan` with the field diff), the input identity changed
-(`ChangedInput` with both references), or blockers remain (`NotReady`).
+`Unit`. Each refuses with a typed `PreflightError[K]` when the plan
+description changed (`ChangedPlan` with the field diff), the input identity
+changed (`ChangedInput` with both references), or blockers remain
+(`NotReady`, whose blockers keep their typed keys; `affectedTrials` lists
+them). A recording report refuses with `PreflightError[Nothing]`. A report's
+`diagnostics`, and `Diagnostic.of` on any refusal, give coded diagnostics with
+typed `affectedTrials` (see [DIAGNOSTICS.md](DIAGNOSTICS.md)).
 Preparation and execution revalidate the artifact identity again; a stale report
 never bypasses them.
 

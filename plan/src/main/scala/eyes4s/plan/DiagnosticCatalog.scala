@@ -544,6 +544,240 @@ object DiagnosticCatalog:
     "NoContrast"
   )
 
+  // ---------------------------------------------------------------- appended by CR5
+  // Every other public error enum of the pure modules. Appended after the
+  // families above, whose codes are unchanged.
+  val timeline: DiagnosticFamily = error("timeline")(
+    "BlankClock"
+  )
+  val moving: DiagnosticFamily = error("moving")(
+    "NoSegments",
+    "OverlappingSegments",
+    "Clock",
+    "Frame"
+  )
+  val timeQuantity: DiagnosticFamily = error("time-quantity")(
+    "NegativeNonNegativeSpan",
+    "NonPositiveSpan",
+    "NegativeNonNegativeLong",
+    "NonNegativeLongOverflow"
+  )
+  val occupancy: DiagnosticFamily = error("occupancy")(
+    "Measure"
+  )
+  val replication: DiagnosticFamily = error("replication")(
+    "Period",
+    "Duration",
+    "MaximumRows",
+    "Cardinality"
+  )
+  val temporalSupport: DiagnosticFamily = error("temporal-support")(
+    "NonPositiveFixedPeriod",
+    "NegativeMaximumGap",
+    "NegativeEdgeSupport"
+  )
+  val algorithmMetadata: DiagnosticFamily = error("algorithm-metadata")(
+    "EmptyAlgorithmId",
+    "InvalidDoi",
+    "InvalidVersion",
+    "InvalidAuthors",
+    "InvalidYear",
+    "EmptyCitationTitle",
+    "EmptyAlgorithmName",
+    "NoCitations",
+    "NoAssumptions",
+    "NoReferences"
+  )
+  val ekEstimation: DiagnosticFamily = error("ek-estimation")(
+    "InvalidSampling",
+    "InsufficientVelocities",
+    "DegenerateVelocitySpread"
+  )
+  val merge: DiagnosticFamily = error("merge")(
+    "Interval",
+    "Range",
+    "Event",
+    "SourceSupport"
+  )
+  val densityLookup: DiagnosticFamily = error("density-lookup")(
+    "Arithmetic",
+    "Surface"
+  )
+  val densityPointFailure: DiagnosticFamily = error("density-point-failure")(
+    "NonFinitePoint",
+    "OutsideGrid",
+    "Trajectory"
+  )
+  val iqrBandwidth: DiagnosticFamily = error("iqr-bandwidth")(
+    "TooFewPoints",
+    "Sigma"
+  )
+  val smootherCard: DiagnosticFamily = error("smoother-card")(
+    "EmptyText",
+    "InvalidParameters"
+  )
+  val comparisonConfiguration: DiagnosticFamily = error("comparison-configuration")(
+    "InvalidProjectionDirections",
+    "InvalidRegularisation",
+    "InvalidIterationCount",
+    "InvalidCellLimit",
+    "InvalidProbabilityFloor",
+    "InvalidGapCost"
+  )
+  val crqaParameter: DiagnosticFamily = error("crqa-parameter")(
+    "NonPositiveEmbeddingDimension",
+    "NonPositiveEmbeddingDelay",
+    "NonPositiveLineMinimum",
+    "InvalidTargetRecurrenceRate"
+  )
+  val crqa: DiagnosticFamily = error("crqa")(
+    "Geometry",
+    "TooShort",
+    "MatrixTooLarge",
+    "NonFinitePosition",
+    "NonFiniteEmbeddedDistance",
+    "SelectedRadius"
+  )
+  val fixationComparison: DiagnosticFamily = error("fixation-comparison")(
+    "Parameter",
+    "Frames",
+    "Clock",
+    "EmptyQueries",
+    "MissingSupport",
+    "MatrixSize",
+    "Numerical",
+    "NonConvergence",
+    "SolverNumerical",
+    "WorkLimit",
+    "Score"
+  )
+  val overlapFailure: DiagnosticFamily = error("overlap-failure")(
+    "Missing",
+    "NonfiniteDistance"
+  )
+  val mapScaleFailure: DiagnosticFamily = error("map-scale-failure")(
+    "MissingLeft",
+    "MissingRight",
+    "Comparison"
+  )
+  val mapComparison: DiagnosticFamily = error("map-comparison")(
+    "UnsupportedMethod",
+    "Scales",
+    "Grid",
+    "Incomplete",
+    "Score"
+  )
+  val scanpathComponent: DiagnosticFamily = error("scanpath-component")(
+    "Comparison",
+    "Unavailable"
+  )
+  val decomposition: DiagnosticFamily = error("decomposition")(
+    "PredictorName",
+    "PredictorKeys",
+    "Geometry",
+    "Solve",
+    "Numerical"
+  )
+  val pairing: DiagnosticFamily = error("pairing")(
+    "NonPositiveLimit"
+  )
+  val session: DiagnosticFamily = error("session")(
+    "InvalidKey",
+    "DuplicateKey",
+    "MissingKey",
+    "Frame",
+    "GridIdentity"
+  )
+  val reductionPolicy: DiagnosticFamily = error("reduction-policy")(
+    "NonPositiveMinimumSuccessful"
+  )
+  val workQuanta: DiagnosticFamily = error("work-quanta")(
+    "InvalidSampleQuantum"
+  )
+  val evaluationWork: DiagnosticFamily = error("evaluation-work")(
+    "Schedule",
+    "Comparison"
+  )
+  val repetitionMean: DiagnosticFamily = error("repetition-mean")(
+    "Incomplete",
+    "Mean"
+  )
+  val learnedTemplate: DiagnosticFamily = error("learned-template")(
+    "Observation",
+    "Definition",
+    "DuplicateKey",
+    "Split",
+    "Geometry",
+    "Feature",
+    "Fit",
+    "Identity",
+    "Numerical"
+  )
+  val leastSquares: DiagnosticFamily = error("least-squares")(
+    "Shape",
+    "NonFinite",
+    "RankTolerance",
+    "RankDeficient",
+    "ColumnArithmetic",
+    "RowArithmetic"
+  )
+  val templateFit: DiagnosticFamily = error("template-fit")(
+    "Fit",
+    "Basis",
+    "Observation",
+    "Width",
+    "DuplicateKey",
+    "Split",
+    "Receipt",
+    "Numerical",
+    "Evaluation"
+  )
+  val rng: DiagnosticFamily = error("rng")(
+    "NonPositiveBound"
+  )
+  val epoch: DiagnosticFamily = error("epoch")(
+    "Clock",
+    "AnchorMatches",
+    "AnchorOverflow",
+    "DurationOverflow",
+    "NonDivisible",
+    "BinLimit"
+  )
+  val pointSampling: DiagnosticFamily = error("point-sampling")(
+    "Boundaries",
+    "Clock",
+    "Frames",
+    "MissingTemplate",
+    "AmbiguousTemplate",
+    "DuplicateSource",
+    "Density",
+    "Point",
+    "Insufficient",
+    "NonFinite"
+  )
+  val recipeParameter: DiagnosticFamily = error("recipe-parameter")(
+    "Geometry",
+    "Time",
+    "Configuration",
+    "Temporal",
+    "Reduction",
+    "Synchronization",
+    "Recording"
+  )
+  val repetitionPlan: DiagnosticFamily = error("repetition-plan")(
+    "ProjectionIds",
+    "DuplicateLayout",
+    "MissingLayout",
+    "Rules",
+    "OverlappingRelations",
+    "Grid",
+    "Specification"
+  )
+  val diagnosticCode: DiagnosticFamily = error("diagnostic-code")(
+    "InvalidFamily",
+    "InvalidName"
+  )
+
   /** Every family, grouped as documented. */
   val families: Vector[DiagnosticFamily] = Vector(
     plan,
@@ -593,7 +827,44 @@ object DiagnosticCatalog:
     quarantine,
     inventory,
     admission,
-    inspection
+    inspection,
+    timeline,
+    moving,
+    timeQuantity,
+    occupancy,
+    replication,
+    temporalSupport,
+    algorithmMetadata,
+    ekEstimation,
+    merge,
+    densityLookup,
+    densityPointFailure,
+    iqrBandwidth,
+    smootherCard,
+    comparisonConfiguration,
+    crqaParameter,
+    crqa,
+    fixationComparison,
+    overlapFailure,
+    mapScaleFailure,
+    mapComparison,
+    scanpathComponent,
+    decomposition,
+    pairing,
+    session,
+    reductionPolicy,
+    workQuanta,
+    evaluationWork,
+    repetitionMean,
+    learnedTemplate,
+    leastSquares,
+    templateFit,
+    rng,
+    epoch,
+    pointSampling,
+    recipeParameter,
+    repetitionPlan,
+    diagnosticCode
   )
 
   /** Every stable code, in catalog order. */

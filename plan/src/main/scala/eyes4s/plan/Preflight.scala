@@ -85,18 +85,24 @@ enum BudgetError derives CanEqual:
 
   def message: String = plan.message
 
-sealed trait PreflightFinding:
+/** A finding of any shipped recipe family. `K` is the family's trial key;
+  * recording findings name no trial and are `PreflightFinding[Nothing]`.
+  */
+sealed trait PreflightFinding[+K]:
   def severity: Severity
   def category: FindingClass
   def remedy: Remedy
   def message: String
+
+  /** The trials this finding concerns, as typed keys. */
+  def keys: Vector[K]
 
 /** Findings for the within-participant matched/control fixation study. Trial
   * keys stay typed; duplicate positions index the focal or reference operand.
   * `Refused` carries any other constructor refusal so a new prerequisite in
   * `StudyPlan` surfaces as a blocker rather than being dropped.
   */
-enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
+enum StudyFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
   case UndescribedMethod(method: DefinitionId)
   case InconsistentDescriptor(method: DefinitionId, underlying: DescriptorError)
   case MissingArtifact(expected: ArtifactRef[StudyInput[K, U]])
@@ -237,7 +243,7 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
       s"Trials $ks are one trial by identity but name different match items."
 
 /** Findings for the synchronized, angular, detected and AOI-assigned recording recipe. */
-enum RecordingFinding extends PreflightFinding derives CanEqual:
+enum RecordingFinding extends PreflightFinding[Nothing] derives CanEqual:
   case UndescribedMethod(method: DefinitionId)
   case InconsistentDescriptor(method: DefinitionId, underlying: DescriptorError)
   case MissingArtifact(expected: ArtifactRef[Recording[Px]])
@@ -254,6 +260,9 @@ enum RecordingFinding extends PreflightFinding derives CanEqual:
   case AngularFrame(frame: FrameId, underlying: GeometryError)
   case AreaWarp(area: String, corner: AreaCorner)
   case DetectorDefinition(method: DefinitionId, underlying: DetectorDefinitionError)
+
+  /** A recording finding names no trial. */
+  def keys: Vector[Nothing] = Vector.empty
 
   def severity: Severity = this match
     case UndescribedMethod(_) | InconsistentDescriptor(_, _) => Severity.Warning
@@ -309,7 +318,7 @@ enum RecordingFinding extends PreflightFinding derives CanEqual:
   * repetition whose focal/reference phases produced them; base findings hold
   * for every repetition.
   */
-enum TemporalFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
+enum TemporalFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
   case MissingArtifact(expected: ArtifactRef[TemporalStudyInput[K, U]])
   case ArtifactMismatch(
       expected: ArtifactRef[TemporalStudyInput[K, U]],
@@ -381,12 +390,19 @@ enum TemporalFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
     case NoObservedCoverage(k, w)  =>
       s"Trial $k has no observed coverage inside window '$w'; its window mass is undefined."
 
-/** Why a preflight report cannot be acted on now. */
-enum PreflightError derives CanEqual:
+/** Why a preflight report cannot be acted on now. `K` is the recipe family's
+  * trial key, so the blockers of `NotReady` keep their typed keys.
+  */
+enum PreflightError[+K] derives CanEqual:
   case ChangedPlan(family: RecipeFamily, changes: Vector[PlanChange])
   case ChangedInput(family: RecipeFamily, reported: ArtifactRef[?], actual: ArtifactRef[?])
-  case NotReady(family: RecipeFamily, blockers: Vector[PreflightFinding])
+  case NotReady(family: RecipeFamily, blockers: Vector[PreflightFinding[K]])
   case Refused(underlying: PlanError)
+
+  /** The trials the remaining blockers concern, each once in blocker order. */
+  def affectedTrials: Vector[K] = this match
+    case NotReady(_, blockers) => blockers.flatMap(_.keys).distinct
+    case _                     => Vector.empty
 
   def message: String = this match
     case ChangedPlan(f, changes) =>
@@ -400,7 +416,7 @@ enum PreflightError derives CanEqual:
   * observed at preflight time. Readiness is the absence of blockers; it is not
   * a guarantee that estimation, comparison or detection succeeds on the data.
   */
-sealed abstract class PreflightReport[F <: PreflightFinding]:
+sealed abstract class PreflightReport[F <: PreflightFinding[?]]:
   def family: RecipeFamily
   def description: Vector[(String, Vector[Provenance.Param])]
   def findings: Vector[F]
@@ -424,6 +440,9 @@ final class StudyReport[K, U <: Unit2D] private[plan] (
   /** Distinct affected trial keys in the layout's canonical order. */
   def affectedTrials: Vector[K] = findings.flatMap(_.keys).distinct.sorted
 
+  /** The findings as diagnostics, in finding order, keys typed. */
+  def diagnostics: Vector[Diagnostic[K]] = findings.map(Diagnostic.of(_))
+
   /** Prepare the same plan against the same input; anything changed since
     * preflight, or any blocker, is refused. Preparation itself revalidates
     * the artifact identity again.
@@ -432,7 +451,7 @@ final class StudyReport[K, U <: Unit2D] private[plan] (
       plan: StudyPlan[K, U, P, S, D],
       input: StudyInput[K, U],
       budget: PairScheduleBudget = PairScheduleBudget.default
-  ): Either[PreflightError, PreparedStudy[K, U, P, S, D]] =
+  ): Either[PreflightError[K], PreparedStudy[K, U, P, S, D]] =
     for
       _ <- Preflight.confirm(
         family,
@@ -454,10 +473,13 @@ final class RecordingReport private[plan] (
 ) extends PreflightReport[RecordingFinding]:
   val family: RecipeFamily = RecipeFamily.EventRecording
 
+  /** The findings as diagnostics, in finding order; they name no trial. */
+  def diagnostics: Vector[Diagnostic[Nothing]] = findings.map(Diagnostic.of(_))
+
   def confirm[P](
       plan: RecordingPlan[P],
       recording: Recording[Px]
-  ): Either[PreflightError, Unit] =
+  ): Either[PreflightError[Nothing], Unit] =
     Preflight.confirm(
       family,
       description,
@@ -479,10 +501,13 @@ final class TemporalReport[K, U <: Unit2D] private[plan] (
 
   def affectedTrials: Vector[K] = findings.flatMap(_.keys).distinct.sorted
 
+  /** The findings as diagnostics, in finding order, keys typed. */
+  def diagnostics: Vector[Diagnostic[K]] = findings.map(Diagnostic.of(_))
+
   def confirm[P, S, D](
       plan: TemporalStudyPlan[K, U, P, S, D],
       input: TemporalStudyInput[K, U]
-  ): Either[PreflightError, Unit] =
+  ): Either[PreflightError[K], Unit] =
     Preflight.confirm(
       family,
       description,
@@ -832,14 +857,14 @@ object Preflight:
               }
     }
 
-  private[plan] def confirm(
+  private[plan] def confirm[K](
       family: RecipeFamily,
       reported: Vector[(String, Vector[Provenance.Param])],
       current: Vector[(String, Vector[Provenance.Param])],
       available: Option[ArtifactRef[?]],
       actual: ArtifactRef[?],
-      blockers: Vector[PreflightFinding]
-  ): Either[PreflightError, Unit] =
+      blockers: Vector[PreflightFinding[K]]
+  ): Either[PreflightError[K], Unit] =
     val changed = PlanChange.between(reported, current)
     if changed.nonEmpty then Left(PreflightError.ChangedPlan(family, changed))
     else

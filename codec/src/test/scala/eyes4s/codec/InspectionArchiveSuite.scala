@@ -166,7 +166,7 @@ class InspectionArchiveSuite extends munit.FunSuite:
     val refusal =
       get(StudySources.of(pinnedInput, refused).swap.left.map(_ => "expected a refusal"))
     assertEquals(refusal.error, AdmissionError.UnadmittedTrial(0))
-    val diagnostic = Diagnostics.ledgerRefusal(refusal)
+    val diagnostic = Diagnostic.of(refusal)
     assertEquals(diagnostic.code.render, "admission.unadmitted-trial")
     assertEquals(diagnostic.subject, Vector(Locus.Trial(dropped)))
     assertEquals(diagnostic.keys, Vector(dropped))
@@ -260,8 +260,10 @@ class InspectionArchiveSuite extends munit.FunSuite:
         Json.fromInt(5)
       )
     val diagnostic = results.codec.decode(tampered) match
-      case Left(CodecError.Entry(_, CodecError.Reconstruction(error))) =>
-        Diagnostics.reconstruction(error): Diagnostic[Any]
+      case Left(error @ CodecError.Entry(_, CodecError.Reconstruction(_))) =>
+        import CodecDiagnostics.given
+        val erased = Diagnostic.of(error).causes.flatMap(_.causes)
+        erased.flatMap(_.narrow[StudyKey]).headOption.getOrElse(fail(s"no typed cause $erased"))
       case other => fail(s"unexpected $other")
     assertEquals(diagnostic.code.render, "reconstruction.denominator")
     assertEquals(diagnostic.subject, Vector(Locus.Trial(key("s1", "a", "recall"))))

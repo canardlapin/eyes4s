@@ -156,7 +156,7 @@ class FixationJourneySuite extends munit.CatsEffectSuite:
         (missing.severity, missing.category, missing.remedy),
         (Severity.Blocker, FindingClass.UnavailableInput, Remedy.SupplyReferencedArtifact)
       )
-      val coded = Diagnostics.studyFinding(missing)
+      val coded = Diagnostic.of(missing)
       assertEquals(coded.code.render, "study-finding.missing-artifact")
       assertEquals(
         (coded.category, coded.remedy),
@@ -190,7 +190,7 @@ class FixationJourneySuite extends munit.CatsEffectSuite:
         Vector(9L -> 8)
       )
       assertEquals(
-        selected.findings.map(Diagnostics.studyFinding(_).code.render),
+        selected.findings.map(Diagnostic.of(_).code.render),
         Vector("study-finding.over-budget")
       )
       // The explicit working budget: ready, with the execution-only aspects named.
@@ -563,7 +563,7 @@ class FixationJourneySuite extends munit.CatsEffectSuite:
         }
         assertEquals(
           get(broken.contrast).rows
-            .map(_.difference.left.map(Diagnostics.contrastRow(_).code.render)),
+            .map(_.difference.left.map(Diagnostic.of(_).code.render)),
           Vector.fill(6)(Left("contrast-row.reduction-failures"))
         )
         assert(
@@ -609,7 +609,7 @@ class FixationJourneySuite extends munit.CatsEffectSuite:
     test(s"$name: a table on another display fails every trial by its frame, as evidence") {
       // UI-G1 invalid geometry: a degenerate display is refused by its constructor.
       assertEquals(
-        Frame.screen("display", 0, 2).left.map(e => Diagnostics.geometry(e).code.render),
+        Frame.screen("display", 0, 2).left.map(e => Diagnostic.of(e).code.render),
         Left("geometry.degenerate-bounds")
       )
       // The journey's table read on a display named like the plan's, with other bounds.
@@ -636,7 +636,7 @@ class FixationJourneySuite extends munit.CatsEffectSuite:
       )
       assertEquals(
         report.findings
-          .map(f => Diagnostics.studyFinding(f))
+          .map(f => Diagnostic.of(f))
           .map(d => d.code.render -> d.causes.map(_.code.render))
           .distinct,
         Vector("study-finding.frame-mismatch" -> Vector("geometry.frame-identity-conflict"))
@@ -649,12 +649,12 @@ class FixationJourneySuite extends munit.CatsEffectSuite:
           val result = j.completed(outcome)
           val scale  = result.scales.head
           assertEquals(
-            scale.estimation.map((k, e) => k -> e.left.map(Diagnostics.failure(_).code.render)),
+            scale.estimation.map((k, e) => k -> e.left.map(Diagnostic.of(_).code.render)),
             keys.map(k => k -> Left("study-failure.frame"))
           )
           assertEquals(
             get(scale.contrast).rows
-              .map(_.difference.left.map(Diagnostics.contrastRow(_).code.render)),
+              .map(_.difference.left.map(Diagnostic.of(_).code.render)),
             Vector.fill(6)(Left("contrast-row.reduction-failures"))
           )
           // Each failure is located at its scale and trial.
@@ -687,7 +687,7 @@ class FixationJourneySuite extends munit.CatsEffectSuite:
           ) -> Vector(trial)
         )
       )
-      val unadmitted = Diagnostics.ledgerRefusal(get(refusal.toRight("accepted")))
+      val unadmitted = Diagnostic.of(get(refusal.toRight("accepted")))
       assertEquals(unadmitted.code.render, "admission.unadmitted-trial")
       assertEquals(unadmitted.keys, Vector(trial))
       assertEquals(unadmitted.sources, j.trialLinks(refused.source, "s1", "b", "encode"))

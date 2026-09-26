@@ -47,7 +47,11 @@ class CodecDiagnosticCatalogSuite extends munit.FunSuite:
       case v: ManifestRelation => CodecDiagnosticSupport.relation(v)
       case v: Json             => CodecDiagnosticSupport.json(v)
     },
-    { case (v: Char, Operand.Text(x)) => x == v.toString }
+    {
+      case (v: Char, Operand.Text(x)) => x == v.toString
+      // Keys inside a codec error are erased to their runtime values.
+      case (v: StudyKey, Operand.Key(x: ErasedKey)) => x.value == v
+    }
   )
 
   test("every codec family is sampled, in catalog order, through its own Diagnose instance") {
@@ -122,15 +126,20 @@ class CodecDiagnosticCatalogSuite extends munit.FunSuite:
       )
     )
     assertEquals(entry.code.render, "resolve.decode")
+    // The codec cannot state the key type; the application narrows to its own.
+    assertEquals(entry.keys, Vector(new ErasedKey(key)))
+    assertEquals(entry.narrow[Int], None)
+    val typed = entry.narrow[StudyKey].getOrElse(fail("the keys are study keys"))
+    assertEquals(typed.affectedTrials, Vector(key))
     assertEquals(
-      entry.subject,
+      typed.subject,
       Vector(
         Locus.Entry("result"),
         Locus.Path("scales[0].analyses.matched.entries[0]"),
         Locus.Trial(key)
       )
     )
-    assertEquals(entry.keys, Vector(key))
+    assertEquals(typed.keys, Vector(key))
     val relation = Diagnostic.of(
       ResolveError.Relation(
         ManifestRelation.LedgerOf(

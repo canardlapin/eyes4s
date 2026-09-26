@@ -138,7 +138,7 @@ object CodecDiagnosticCatalog:
   val all: Vector[DiagnosticFamily] = DiagnosticCatalog.families ++ families
 
 /** Operand and locus helpers for the codec's own structured values. */
-private[codec] object CodecDiagnosticSupport:
+private[eyes4s] object CodecDiagnosticSupport:
   import DiagnosticSupport.*
 
   def digest(value: ByteDigest): Operand[Nothing]    = artifact(value.hex)
@@ -177,13 +177,12 @@ private[codec] object CodecDiagnosticSupport:
     Locus.Relation(value.kind, value.source.value)
   def manifestAt(value: ByteDigest): Locus[Nothing] = Locus.Artifact(value.hex)
 
-/** Diagnostics for the codec's error families. Wrapped plan, admission,
-  * recording and result errors project through [[Diagnostics]], so a decode
-  * failure names the trial, record or sample it concerns; keys inside a
-  * wrapped result error keep their runtime values, hence `Diagnostic[Any]`.
-  * Import `CodecDiagnostics.given` for `Diagnostic.of` over these families.
+/** The projections behind [[CodecDiagnostics]]. Wrapped plan, admission,
+  * recording and result errors project through their own families, so a
+  * decode failure names the trial, record or sample it concerns. Keys keep
+  * their runtime values here; the instances wrap them as [[ErasedKey]].
   */
-object CodecDiagnostics:
+private[codec] object CodecProjections:
   import CodecDiagnosticSupport.*
   import DiagnosticSupport.*
   import CodecDiagnosticCatalog as C
@@ -205,7 +204,7 @@ object CodecDiagnostics:
         diagnostic(C.codec, e, e.message, path(where))(name(where), json(input), text(reason))
       case Schema(expected, found) =>
         diagnostic[Any](C.codec, e, e.message)(definition(expected), definition(found))
-      case Definition(underlying)         => wrap(Diagnostics.plan(underlying))
+      case Definition(underlying)         => wrap(Projections.plan(underlying))
       case DuplicateKeys(schema, indices) =>
         diagnostic[Any](C.codec, e, e.message)(definition(schema), ints(indices))
       case MissingIdentity(kind, id) =>
@@ -233,13 +232,13 @@ object CodecDiagnostics:
           artifact(declared),
           artifact(reconstructed)
         )
-      case Admission(underlying)        => wrap(Diagnostics.admission(underlying))
-      case Recording(where, underlying) => atPath(where, Diagnostics.recording(underlying))
-      case Support(where, underlying) => atPath(where, Diagnostics.detectionSupport(underlying))
+      case Admission(underlying)        => wrap(Projections.admission(underlying))
+      case Recording(where, underlying) => atPath(where, Diagnose.recording(underlying))
+      case Support(where, underlying)   => atPath(where, Diagnose.detectionSupport(underlying))
       case Synchronization(where, underlying) =>
-        atPath(where, Diagnostics.syncEvidence(underlying))
-      case Input(underlying)                    => wrap(Diagnostics.recordingInput(underlying))
-      case Temporal(underlying)                 => wrap(Diagnostics.temporal(underlying))
+        atPath(where, Diagnose.syncEvidence(underlying))
+      case Input(underlying)                    => wrap(Projections.recordingInput(underlying))
+      case Temporal(underlying)                 => wrap(Projections.temporal(underlying))
       case SampleBound(where, samples, maximum) =>
         diagnostic(C.codec, e, e.message, path(where))(name(where), int(samples), int(maximum))
       case SynchronizationFit(where, declaredOffset, declaredDrift, refitOffset, refitDrift) =>
@@ -250,8 +249,8 @@ object CodecDiagnostics:
           Operand.Micros(refitOffset),
           real(refitDrift)
         )
-      case Reconstruction(underlying)       => wrap(Diagnostics.reconstruction(underlying))
-      case Result(underlying)               => wrap(Diagnostics.result(underlying))
+      case Reconstruction(underlying)       => wrap(Projections.reconstruction(underlying))
+      case Result(underlying)               => wrap(Projections.result(underlying))
       case ScoreComponents(expected, found) =>
         diagnostic[Any](C.codec, e, e.message)(names(expected), names(found))
       case MissingResultCodec(method) =>
@@ -276,8 +275,8 @@ object CodecDiagnostics:
           json(declared),
           json(derived)
         )
-      case RecordingResult(underlying) => wrap(Diagnostics.recordingResult(underlying))
-      case TemporalResult(underlying)  => wrap(Diagnostics.temporalResult(underlying))
+      case RecordingResult(underlying) => wrap(Projections.recordingResult(underlying))
+      case TemporalResult(underlying)  => wrap(Projections.temporalResult(underlying))
       case NonCanonical(where, found, canonical, rule) =>
         diagnostic(C.codec, e, e.message, path(where))(
           name(where),
@@ -364,7 +363,7 @@ object CodecDiagnostics:
     import RelationMismatch.*
     e match
       case Prerequisites(errors) =>
-        val inner = errors.map(Diagnostics.plan)
+        val inner = errors.map(Projections.plan)
         diagnostic(C.relation, e, e.message, inner.flatMap(_.subject).distinct)(
           Operand.Causes(inner)
         )
@@ -375,7 +374,7 @@ object CodecDiagnostics:
         )
       case Description(values) => diagnostic[Any](C.relation, e, e.message)(changes(values))
       case Admission(error)    =>
-        val inner = Diagnostics.admission(error)
+        val inner = Projections.admission(error)
         diagnostic(C.relation, e, e.message, inner.subject)(cause(inner))
       case RefusedAdmission           => diagnostic[Any](C.relation, e, e.message)()
       case BaseStudy(expected, found) =>
@@ -393,12 +392,12 @@ object CodecDiagnostics:
       case Unavailable(endpoints) =>
         diagnostic(C.relation, e, e.message, endpoints.map(at))(names(endpoints.map(_.value)))
       case RecordingPrerequisites(errors) =>
-        val inner = errors.map(Diagnostics.recordingInput)
+        val inner = errors.map(Projections.recordingInput)
         diagnostic(C.relation, e, e.message, inner.flatMap(_.subject).distinct)(
           Operand.Causes(inner)
         )
       case TemporalPrerequisites(errors) =>
-        val inner = errors.map(Diagnostics.temporal)
+        val inner = errors.map(Projections.temporal)
         diagnostic(C.relation, e, e.message, inner.flatMap(_.subject).distinct)(
           Operand.Causes(inner)
         )
@@ -478,18 +477,27 @@ object CodecDiagnostics:
       case InvalidCharacter(value, index, character) =>
         d(text(value), int(index), text(character.toString))
 
-  private def instance[E, K](of: DiagnosticFamily)(f: E => Diagnostic[K]): Diagnose[E, K] =
-    new Diagnose[E, K]:
-      val family: DiagnosticFamily       = of
-      def apply(error: E): Diagnostic[K] = f(error)
+/** The codec's [[Diagnose]] instances. Import `CodecDiagnostics.given` for
+  * `Diagnostic.of` over the codec's families. A decoded study's key type is
+  * not known statically where the codec reports, so trial keys inside a
+  * wrapped plan, admission or result error are [[ErasedKey]]s; narrow a
+  * diagnostic to the application's key type with `ErasedKey.narrow`.
+  */
+object CodecDiagnostics:
+  import CodecDiagnosticCatalog as C
+  import CodecProjections.*
 
-  given codecError: Diagnose[CodecError, Any]            = instance(C.codec)(codec)
-  given resolveError: Diagnose[ResolveError, Any]        = instance(C.resolve)(resolve)
+  private def erased[E](of: DiagnosticFamily)(f: E => Diagnostic[Any]): Diagnose[E, ErasedKey] =
+    Diagnose.instance(of)(error => f(error).mapKeys(new ErasedKey(_)))
+
+  given codecError: Diagnose[CodecError, ErasedKey]      = erased(C.codec)(codec)
+  given resolveError: Diagnose[ResolveError, ErasedKey]  = erased(C.resolve)(resolve)
   given sourceFailures: Diagnose[SourceFailure, Nothing] =
-    instance(C.sourceFailure)(sourceFailure)
-  given relationMismatches: Diagnose[RelationMismatch, Any] =
-    instance(C.relation)(relationMismatch)
-  given manifestError: Diagnose[ManifestError, Nothing]     = instance(C.manifest)(manifest)
-  given payloadError: Diagnose[PayloadError, Nothing]       = instance(C.payload)(payload)
+    Diagnose.instance(C.sourceFailure)(sourceFailure)
+  given relationMismatches: Diagnose[RelationMismatch, ErasedKey] =
+    erased(C.relation)(relationMismatch)
+  given manifestError: Diagnose[ManifestError, Nothing] =
+    Diagnose.instance(C.manifest)(manifest)
+  given payloadError: Diagnose[PayloadError, Nothing] = Diagnose.instance(C.payload)(payload)
   given byteDigestError: Diagnose[ByteDigestError, Nothing] =
-    instance(C.byteDigest)(byteDigest)
+    Diagnose.instance(C.byteDigest)(byteDigest)
