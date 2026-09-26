@@ -240,7 +240,16 @@ object IoDiagnosticCatalog:
 
   /** Every family, in the order documented. */
   // ---------------------------------------------------------------- appended by UI-G
-  val csvLayout: DiagnosticFamily = error("csv-layout")("Csv", "Layout")
+  val csvLayout: DiagnosticFamily  = error("csv-layout")("Csv", "Layout")
+  val sourceText: DiagnosticFamily = error("source-text")(
+    "Layout",
+    "SourceDigest",
+    "SourceMismatch",
+    "Column",
+    "Field",
+    "RecordedMismatch",
+    "Provenance"
+  )
 
   val families: Vector[DiagnosticFamily] = Vector(
     fixationImport,
@@ -263,7 +272,8 @@ object IoDiagnosticCatalog:
     eyeLinkOracle,
     eyeLinkConformance,
     eyeLinkCorpus,
-    csvLayout
+    csvLayout,
+    sourceText
   )
 
   /** Every stable code, in catalog order. */

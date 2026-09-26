@@ -858,5 +858,6 @@ object DiagnosticSamples:
         NonEmptyVector.one(k1)
       )
     ),
-    generated[RecordIdentityError]("RecordIdentityError")
+    generated[RecordIdentityError]("RecordIdentityError"),
+    generated[ProvenanceError[StudyKey]]("ProvenanceError")
   )

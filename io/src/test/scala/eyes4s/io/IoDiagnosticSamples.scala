@@ -75,7 +75,8 @@ object IoDiagnosticSamples:
     generated[EyeLinkOracleError]("EyeLinkOracleError"),
     generated[EyeLinkConformanceError]("EyeLinkConformanceError"),
     generated[EyeLinkCorpusError]("EyeLinkCorpusError"),
-    generated[CsvLayoutError]("CsvLayoutError")
+    generated[CsvLayoutError]("CsvLayoutError"),
+    generated[SourceTextError[StudyKey]]("SourceTextError")
   )
 
   val laws: Vector[FamilySamples] = Vector(
