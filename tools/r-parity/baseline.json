@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "eyesim": {
-    "revision": "aeb098e242a99f0bf9197e767bac4c75e4483aab",
+    "revision": "735d010911c5ec86fae430c8a0010b8107a4431c",
     "version": "0.1.0.9000",
     "license": "MIT",
     "inventory_sources": [
@@ -44,7 +44,7 @@
   "fixtures": {
     "admission-reference": {
       "path": "tools/r-parity/fixtures/admission.json",
-      "sha256": "a24eb7f59c88a498b710d5ac7c5e3252d56a58694011e2e2d190e31d9a4b78ea",
+      "sha256": "dbd81431cded67b0cd64fc1b592c3b8037c95e1c4646c71f2a10471495c5ef5a",
       "license": "Apache-2.0",
       "role": "Pinned public admission behavior, R environment and independently checked row/coordinate/time accounting"
     },
@@ -74,7 +74,7 @@
     },
     "reference-lock": {
       "path": "tools/r-parity/fixtures/reference-lock.json",
-      "sha256": "a1fbaf7253cce157869feb7ed12d5b78fed214ad3bd1228238b0068bc1ea2146",
+      "sha256": "60f9ab01275f8682c26e4359d9a5fb55e6881ca0c9705cfc63b48121b023ed71",
       "license": "Apache-2.0",
       "role": "R and eyesim dependency versions and numerical conventions"
     },
@@ -98,7 +98,7 @@
     },
     "transforms-reference": {
       "path": "tools/r-parity/fixtures/transforms.json",
-      "sha256": "4f83a8cb2adfac4e8aaaa0974997bea184349f136aa57b42e31fab2dacf4afaa",
+      "sha256": "b7f7415bd9fda907801ba094ceaa4fd37fd3a440759368f2979ff9fa0036c142",
       "license": "Apache-2.0",
       "role": "Pinned public eyesim center/rescale/normalize output, observed fitted-transform behaviour on coordinate tables, R environment, and the exact affine oracle with a training-only solve, held-out target and mutants"
     },
@@ -110,19 +110,19 @@
     },
     "template-reference": {
       "path": "tools/r-parity/fixtures/template.json",
-      "sha256": "398f4547cc4ede5c0ecad3ac61adf8c055d6643fbe56ef6496c5a5a83109d51f",
+      "sha256": "60b5c8f76fa82e7cc4255662d87fcc794e5972689b08b662d93181f65fd7f026",
       "license": "Apache-2.0",
       "role": "Actual R QR coefficient receipt, exact rational held-out oracle, contaminated-fit mutant and pinned eyesim normalized-map regression"
     },
     "repetition-reference": {
       "path": "tools/r-parity/fixtures/repetition.json",
-      "sha256": "8cc340e5de3ff90112f8b347b6707bf39e947474d116cf95581f4d026663fa3e",
+      "sha256": "e7bbc8993d52e86894d98dab57aaf2e232a1b2518201f7b932634fdaad5e78d5",
       "license": "Apache-2.0",
       "role": "Pinned public phase-only cosine repetition outputs, duplicate/singleton/empty cases, R environment and exact rational within-participant reinstatement oracle"
     },
     "entropy-reference": {
       "path": "tools/r-parity/fixtures/entropy.json",
-      "sha256": "736519233f1c0c5026025b7c9d26e3c1820f1e601da3a5b7919cfe90366a0f88",
+      "sha256": "03d64f15810ce81d0f86ad68f7aae8f57a061784e4747ad4b6b2c564d4de0125",
       "license": "Apache-2.0",
       "role": "Pinned public eyesim fixation_entropy and Ops.eye_density output on the two-by-two entropy lattice, including NA/Inf/NaN cells and errors, R environment, and the exact rational and 60-digit decimal oracle with a labelled reading of eyesim's positive-cell formula"
     }

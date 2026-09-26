@@ -10,13 +10,13 @@
     },
     "derived-entropy-reference": {
       "path": "tools/r-parity/fixtures/derived-entropy.json",
-      "sha256": "e962514cab781e95850b94ee270f7cf2ed06efba6015d24324684b887894172d",
+      "sha256": "df982143803897cdb8df931e8792f2328a4516260670817e1908d45a68928205",
       "license": "Apache-2.0; synthetic data authored for eyes4s",
       "role": "Pinned public eyesim fixation_entropy on a fixation group (grid and density methods) and on multiscale objects (mean and none), eyesim's own density maps, NA values and errors, R environment, and the exact-rational, decimal, continuous-Gaussian and discrete-kernel oracles"
     },
     "derived-entropy-scala": {
       "path": "surface/src/test/scala/eyes4s/surface/DerivedEntropyReference.scala",
-      "sha256": "e452a4755863832af1418b125e348310266ffdcb4831b42814f75ea8d5ec9346",
+      "sha256": "370c9bedb6395d6db78991a9262dd7980ff5c32b07ab11d7fdc01c57ec510f6b",
       "license": "Apache-2.0; synthetic data authored for eyes4s",
       "role": "Portable pinned values consumed by FixationEntropyConformanceSuite on the JVM and Scala.js"
     }
@@ -109,7 +109,7 @@
         "eyesim's multiscale mean is mean(ent, na.rm = TRUE), so a scale whose map has no mass is NA and silently leaves the mean",
         "eyes4s cannot hold a massless scale: Intensity.normalised refuses it with DegenerateTotal before any reduction",
         "eyesim keeps the requested sigma order and names values sigma_<s>; eyes4s orders scales ascending and labels each value with its Sigma",
-        "fixation_entropy.fixation_group with a sigma vector returns only the mean; aggregate = \"none\" reaches ks::kde and is an error",
+        "fixation_entropy.fixation_group with a sigma vector returns the mean by default and forwards aggregate, so aggregate = \"none\" returns the per-scale values of the eye_density_multiscale method",
         "eyes4s ScaleReduction.Weighted takes one explicit weight per scale; eyesim has no weights"
       ],
       "backend_dependencies": [
@@ -142,7 +142,7 @@
       "regeneration_ids": [
         "derived-entropy-reference"
       ],
-      "divergence": "eyesim drops a massless (NA) scale from its mean without notice; eyes4s refuses the scale at normalisation, so every reported mean is over every requested scale. eyesim reports scales in request order; eyes4s in ascending sigma, labelled, and the labelled values agree. The per-scale values of a sigma vector on a fixation group cannot be requested in eyesim (aggregate is forwarded to ks::kde and rejected); eyes4s returns them. Weighted reduction is an eyes4s extension checked against its oracle only."
+      "divergence": "eyesim drops a massless (NA) scale from its mean without notice; eyes4s refuses the scale at normalisation, so every reported mean is over every requested scale. eyesim reports scales in request order; eyes4s in ascending sigma, labelled, and the labelled values agree. A sigma vector on a fixation group with aggregate = \"none\" gives the same per-scale values as the multiscale object, and eyes4s agrees with them by sigma label. Weighted reduction is an eyes4s extension checked against its oracle only."
     }
   ]
 }

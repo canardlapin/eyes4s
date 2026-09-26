@@ -513,8 +513,9 @@ def verify(reference: dict, exact: dict, spec: dict) -> None:
             assert (
                 ms["from_group"][base][kind] == ms["mean"][base][kind]
             ), "a sigma vector gives the mean"
-    assert ms["from_group_none"]["kind"] == "error"
-    assert "aggregate" in ms["from_group_none"]["detail"], ms["from_group_none"]
+            assert (
+                ms["from_group_none"][base][kind] == ms["none"][base][kind]
+            ), "aggregate = none from a fixation group gives every scale"
 
     sup = reference["supplied_scales"]
     zero = f"sigma_{spec['supplied_scales']['zero_sigma']}"
@@ -728,7 +729,7 @@ def scala(exact: dict, reference: dict, spec: dict) -> str:
         f"  val eyesimMultiscaleNone = {labelled(ms['none'])}",
         f"  val eyesimMultiscaleMean = {eyesim_entropy(ms['mean'])}",
         f"  val eyesimMultiscaleFromGroup = {eyesim_entropy(ms['from_group'])}",
-        f"  val eyesimMultiscaleFromGroupNone = {rv(ms['from_group_none'])}",
+        f"  val eyesimMultiscaleFromGroupNone = {labelled(ms['from_group_none'])}",
         "  val nativeMultiscale = Vector(",
     ]
     for s, e in exact["native_multiscale"].items():

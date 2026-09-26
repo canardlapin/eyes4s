@@ -1,5 +1,5 @@
 {
-  "eyesim_revision": "aeb098e242a99f0bf9197e767bac4c75e4483aab",
+  "eyesim_revision": "735d010911c5ec86fae430c8a0010b8107a4431c",
   "input_sha256": "95529f30a07cba77c1b9977a66b9d7780ab8b5a471ef97da2dca6e82f2908541",
   "input_license": "Apache-2.0; synthetic data authored for eyes4s",
   "oracle": "Exact rational lattice counts and 60-digit decimal entropies for the grid method; the decimal entropy of eyesim's own pinned density maps; a continuous isotropic Gaussian at eyesim's endpoint-inclusive evaluation points, checked at the rounding tolerance of eyesim's zapsmall; a direct two-dimensional discrete-kernel sum for the eyes4s native estimate; per-scale entropies, their mean and an explicitly weighted mean for the multiscale reductions. NA values and errors are pinned as eyesim literals.",
@@ -1001,8 +1001,78 @@
         }
       },
       "from_group_none": {
-        "kind": "error",
-        "detail": "Unsupported ks::kde() argument(s) in `...`: aggregate. eye_density() sets x, H, gridsize, xmin, xmax, w, and eval.points itself."
+        "2": {
+          "raw": {
+            "kind": "vector",
+            "names": [
+              "sigma_12",
+              "sigma_6"
+            ],
+            "values": [
+              {
+                "kind": "finite",
+                "value": 4.32704653210245
+              },
+              {
+                "kind": "finite",
+                "value": 3.6186799547317117
+              }
+            ]
+          },
+          "normalized": {
+            "kind": "vector",
+            "names": [
+              "sigma_12",
+              "sigma_6"
+            ],
+            "values": [
+              {
+                "kind": "finite",
+                "value": 0.9437474202726546
+              },
+              {
+                "kind": "finite",
+                "value": 0.7892496294489953
+              }
+            ]
+          }
+        },
+        "e": {
+          "raw": {
+            "kind": "vector",
+            "names": [
+              "sigma_12",
+              "sigma_6"
+            ],
+            "values": [
+              {
+                "kind": "finite",
+                "value": 2.9992801038785033
+              },
+              {
+                "kind": "finite",
+                "value": 2.5082778079710772
+              }
+            ]
+          },
+          "normalized": {
+            "kind": "vector",
+            "names": [
+              "sigma_12",
+              "sigma_6"
+            ],
+            "values": [
+              {
+                "kind": "finite",
+                "value": 0.9437474202726549
+              },
+              {
+                "kind": "finite",
+                "value": 0.7892496294489956
+              }
+            ]
+          }
+        }
       }
     },
     "supplied_scales": {

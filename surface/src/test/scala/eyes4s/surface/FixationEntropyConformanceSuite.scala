@@ -397,10 +397,13 @@ class FixationEntropyConformanceSuite extends munit.FunSuite:
     assertEquals(run(LogBase.E).scales.map(_.value), R.multiscaleSigmas.sorted)
   }
 
-  test("aggregate = none is unreachable from eyesim's fixation-group route") {
-    R.eyesimMultiscaleFromGroupNone match
-      case R.RValue.Error(message) => assert(message.contains("aggregate"), message)
-      case other                   => fail(s"expected the pinned error, got $other")
+  test("eyesim's fixation-group route returns every scale, and eyes4s agrees by sigma label") {
+    val run = multiscaleOf(
+      get(Grid.over(get(Frame.screen("eyesim-scales", R.densityNx, R.densityNy)), 6, 4)),
+      R.eyesimMultiscaleMaps
+    )
+    agreeWithEyesim(run, R.eyesimMultiscaleFromGroupNone, R.eyesimMultiscaleFromGroup)
+    assertEquals(R.eyesimMultiscaleFromGroupNone, R.eyesimMultiscaleNone)
   }
 
   test("native multiscale entropy: per scale, mean and weighted mean equal the oracle") {

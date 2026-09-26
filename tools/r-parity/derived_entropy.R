@@ -94,13 +94,15 @@ multiscale <- list(
   maps = lapply(ms, function(d) list(sigma = d$sigma, z = as.numeric(d$z))),
   none = grid_of(function(n, b) fixation_entropy(ms, normalize = n, base = b, aggregate = "none")),
   mean = grid_of(function(n, b) fixation_entropy(ms, normalize = n, base = b, aggregate = "mean")),
-  # The fixation_group method with a sigma vector: its only reduction is the mean.
+  # The fixation_group method with a sigma vector: its default reduction is the mean,
+  # and it forwards aggregate to the multiscale method.
   from_group = grid_of(function(n, b) fixation_entropy(
     fg, normalize = n, base = b, method = "density", sigma = ms_sigmas,
     xbounds = dens$xbounds, ybounds = dens$ybounds, outdim = dens$outdim)),
-  from_group_none = observe(fixation_entropy(
-    fg, method = "density", sigma = ms_sigmas, xbounds = dens$xbounds,
-    ybounds = dens$ybounds, outdim = dens$outdim, aggregate = "none"))
+  from_group_none = grid_of(function(n, b) fixation_entropy(
+    fg, normalize = n, base = b, method = "density", sigma = ms_sigmas,
+    xbounds = dens$xbounds, ybounds = dens$ybounds, outdim = dens$outdim,
+    aggregate = "none"))
 )
 
 # Supplied maps packaged the way eye_density packages a sigma vector, so the
