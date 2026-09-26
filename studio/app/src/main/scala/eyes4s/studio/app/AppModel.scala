@@ -37,7 +37,11 @@ object AppModel:
   /** The model before any intent is applied. */
   val initial: AppModel = new AppModel(0L)
 
-  /** The Elm-style update: a pure function of the model and one intent. */
+  /** The Elm-style update: a pure function of the model and one intent.
+    *
+    * The effect channel (for example `(AppModel, List[Effect])`) is decided in
+    * S1.0; this placeholder returns the model alone.
+    */
   def update(model: AppModel, intent: Intent): AppModel =
     intent match
       case Intent.Acknowledge => new AppModel(model.intentsApplied + 1L)

@@ -846,7 +846,8 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
 // JVM platform package; see project/StudioLint.scala and `checkStudioBoundaries`.
 // ---------------------------------------------------------------------------
 
-// JavaFX 24 class files require JDK 22 or later. The library keeps release 11.
+// studio-desktop: minimum JDK 22 (JavaFX 24); JDK 25 LTS recommended and used
+// in CI. The library keeps release 11.
 val javaFxV           = "24.0.1"
 val studioDesktopJdkV = 22
 
@@ -965,15 +966,19 @@ lazy val studioViz = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings, portableStudioSettings)
   .settings(name := "eyes4s-studio-viz")
 
-// OpenJFX publishes one native jar per platform, selected by classifier.
+// OpenJFX publishes one native jar per platform, selected by classifier. The
+// host is detected; `-Djavafx.platform=<classifier>` overrides it. Packaging
+// runs once per OS on a native runner (S0.4), so no build mixes classifiers.
 lazy val javaFxClassifier: String = {
-  val os      = sys.props.getOrElse("os.name", "").toLowerCase
-  val arch    = sys.props.getOrElse("os.arch", "").toLowerCase
-  val aarch64 = arch == "aarch64" || arch == "arm64"
-  if (os.contains("mac")) { if (aarch64) "mac-aarch64" else "mac" }
-  else if (os.contains("win")) "win"
-  else if (os.contains("linux")) { if (aarch64) "linux-aarch64" else "linux" }
-  else s"unsupported-os-$os" // resolution then fails and names the host
+  val os       = sys.props.getOrElse("os.name", "").toLowerCase
+  val arch     = sys.props.getOrElse("os.arch", "").toLowerCase
+  val aarch64  = arch == "aarch64" || arch == "arm64"
+  val detected =
+    if (os.contains("mac")) { if (aarch64) "mac-aarch64" else "mac" }
+    else if (os.contains("win")) "win"
+    else if (os.contains("linux")) { if (aarch64) "linux-aarch64" else "linux" }
+    else s"unsupported-os-$os" // resolution then fails and names the host
+  sys.props.get("javafx.platform").getOrElse(detected)
 }
 
 /** The JavaFX shell: renders view-models and dispatches intents. JVM only. */
