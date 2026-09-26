@@ -205,8 +205,8 @@ rewriting behaviour. Rules:
   backend). One conformance suite covers every transport.
 - **One token source.** It generates JavaFX CSS, web CSS variables and Scala constants. Strings
   come from resource bundles owned by `studio-app`.
-- **Enforcement.** The boundary check fails if `javafx.*`, `scaladock.fx` or `java.io`/`java.nio`
-  appear outside `studio-desktop` and the platform implementations. The port contract is written
+- **Enforcement.** The boundary check fails if `javafx.*`, `scaladock.fx`, `java.io` or `java.nio.file`/`java.nio.channels`
+  appear outside `studio-desktop` and the platform implementations (`java.nio.ByteBuffer` and `java.nio.charset` are portable and allowed), and `cats.effect`/`fs2` in `studio-app` and `studio-viz`. The port contract is written
   up in `docs/studio/PORTING.md`.
 
 **Off-screen fixations.** A finite fixation outside the screen does not quarantine its trial by
