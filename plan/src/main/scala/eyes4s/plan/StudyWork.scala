@@ -47,10 +47,7 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
     val controls: DirectedPairSchedule[K, K],
     val candidateVisitsAcrossScales: Long,
     val budget: PairScheduleBudget,
-    private[plan] val countCardinality: (
-        Vector[(K, Vector[K])],
-        PairingReport[K, K]
-    ) => MatchedCardinality[K],
+    private[plan] val countCardinality: CountCardinalityIndex[K],
     private[plan] val keysPerDesign: Long
 ):
   private[plan] val countIdentity = new StudyCountIdentity
@@ -194,11 +191,8 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
           PlanError.ChangedPreparedPlan(methodId, layoutId)
         )
       )
-      .flatMap(_ => counts.cardinality.refusal(plan.layout).toLeft(()))
+      .flatMap(_ => counts.pairingRefusal.toLeft(()))
       .flatMap(_ => StudyWork.begin(plan, this, budget, occupancy, Vector.empty))
-
-  private[plan] def countRefusal(cardinality: MatchedCardinality[K]): Option[PlanError] =
-    cardinality.refusal(plan.layout)
 
   /** Resumable execution that refuses a method without bounded comparison
     * support, so an unsupported synchronous extension is diagnosed before any
@@ -298,7 +292,13 @@ object PreparedStudy:
       candidateVisits.toLong,
       budget,
       StudyPairingWork
-        .cardinalityBuilder(plan.layout, plan.pairing, input.trials.rows.map(_.key), right),
+        .cardinalityBuilder(
+          plan.layout,
+          plan.pairing,
+          input.trials.rows.map(_.key),
+          right,
+          left
+        ),
       left.distinct.size.toLong
     )
 
@@ -428,6 +428,30 @@ final class StudyCursor[K, U <: Unit2D, S, D] private[plan] (
       case Contrasting(analyses, _)              =>
         analyses.matchedSource.rows.size.toLong + analyses.controlSource.rows.size
     previous + current
+
+  /** Recorded reduction keys over every scientific scale and both designs. */
+  def completedReductionKeys: Long =
+    val previous = completed.iterator
+      .map(result =>
+        result.analyses.matched.entries.size.toLong + result.analyses.control.entries.size
+      )
+      .sum
+    val current = phase match
+      case Estimate(_) | CompareMatched(_)      => 0L
+      case ReduceMatched(_, cursor)             => cursor.reducedKeys.toLong
+      case CompareControl(_, matched, _)        => matched.entries.size.toLong
+      case ReduceControl(_, matched, _, cursor) =>
+        matched.entries.size.toLong + cursor.reducedKeys
+      case Contrasting(analyses, _) =>
+        analyses.matched.entries.size.toLong + analyses.control.entries.size
+    previous + current
+
+  /** Recorded contrast rows; a refused contrast contributes no invented rows. */
+  def completedContrastRows: Long =
+    completed.iterator.map(_.contrast.toOption.fold(0L)(_.rows.size.toLong)).sum +
+      (phase match
+        case Contrasting(_, cursor) => cursor.contrastedKeys.toLong
+        case _                      => 0L)
 
   /** The exact units of the reduction the next `advance` works on, known
     * once its scores are realised; `None` outside a reducing stage.

@@ -43,7 +43,8 @@ final class StudyCounts[K] private[plan] (
     private[plan] val input: ArtifactRef[?],
     private[plan] val description: Vector[(String, Vector[Provenance.Param])],
     private[plan] val owner: StudyCountIdentity,
-    val keysPerDesign: Long
+    val keysPerDesign: Long,
+    private[plan] val pairingRefusal: Option[PlanError]
 ):
   val pairRowsPerScale: Long   = matched.eligiblePairs + controls.eligiblePairs
   val totalPairs: Long         = pairRowsPerScale * scales

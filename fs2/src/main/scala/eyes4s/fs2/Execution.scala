@@ -88,14 +88,17 @@ final class Run[F[_], Id, Stage, Segment, E, R] private[fs2] (
   * `total` is asked once per segment, as the segment begins, with the cursor
   * about to take its first step, so a family can state a total only that
   * cursor knows (a reduction's, once its scores are realised) and the runner
-  * reports one total for the whole segment.
+  * reports one total for the whole segment. `completedStage`, when supplied,
+  * projects the executed step from its before cursor and full result, including
+  * terminal Done. It is committed in the same uncancelable region as the step.
   */
 final class Submission[Id, C, Stage, Segment, E, R](
     val id: Id,
     val quanta: WorkQuanta,
     val begin: () => Either[E, C],
     val segment: Stage => Segment,
-    val total: (Segment, C) => SegmentTotal
+    val total: (Segment, C) => SegmentTotal,
+    val completedStage: Option[(C, WorkStep[Stage, C, R]) => Either[E, Stage]] = None
 )(using val stepwise: Stepwise[C, Stage, E, R])
 
 /** Interpret any stepwise cursor under Cats Effect: the one runner every plan
@@ -265,14 +268,23 @@ object Execution:
           Right(State(cursor, 0L, None, 0L, SegmentTotal.Unknown, 0L, None))
 
     def step(state: State): (Vector[Event], Option[State]) =
-      work.stepwise.advance(state.cursor, work.quanta) match
+      val executed = for
+        step  <- work.stepwise.advance(state.cursor, work.quanta)
+        stage <- work.completedStage match
+          case Some(project) => project(state.cursor, step)
+          case None          =>
+            Right(step match
+              case WorkStep.More(stage, _, _) => stage
+              case WorkStep.Done(_, _)        => work.stepwise.stage(state.cursor))
+      yield (stage, step)
+      executed match
         case Left(error) =>
           (Vector(RunEvent.Finished(RunOutcome.Failed(work.id, error, state.last))), None)
-        case Right(WorkStep.More(stage, units, next)) =>
+        case Right((stage, WorkStep.More(_, units, next))) =>
           val (progress, advanced) = record(state, stage, units)
           (Vector(RunEvent.Advanced(progress)), Some(advanced.copy(cursor = next)))
-        case Right(WorkStep.Done(units, result)) =>
-          val (progress, _) = record(state, work.stepwise.stage(state.cursor), units)
+        case Right((stage, WorkStep.Done(units, result))) =>
+          val (progress, _) = record(state, stage, units)
           (
             Vector(
               RunEvent.Advanced(progress),

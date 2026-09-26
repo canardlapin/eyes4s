@@ -114,3 +114,114 @@ class CountedStudyCursorSuite extends munit.FunSuite:
     assert(other.preview(counts).isRight)
     assert(prepared.countedWork(get(other.counts)).isLeft)
   }
+
+  test("refusal assembly is paged with no ordering or digest callbacks after preparation") {
+    def key(phase: String, label: String, item: String) =
+      get(TrialKey.of("p", phase, label, TrialOccurrence.first, item))
+    val unmatched = (0 until 40).reverse.toVector.map(i => key("recall", s"q-$i", s"item-$i"))
+    val ambiguous = (0 until 12).reverse.toVector.flatMap { i =>
+      Vector(
+        key("recall", s"q-$i", s"item-$i"),
+        key("encode", s"a-$i", s"item-$i"),
+        key("encode", s"b-$i", s"item-$i")
+      )
+    }
+    val conflicts = (0 until 12).reverse.toVector.flatMap { i =>
+      Vector(key("recall", s"q-$i", s"item-$i"), key("recall", s"q-$i", s"other-$i"))
+    }
+    Vector(unmatched, ambiguous, conflicts).foreach { keys =>
+      val base        = TrialKey.layout(TrialKeyDefinitions.trialLayout)
+      var projections = 0
+      var ordering    = 0
+      var digests     = 0
+      def observed[A](p: Projection[TrialKey, A]): Projection[TrialKey, A] =
+        Projection.named("observed")(k => { projections += 1; p(k) })
+      val digest = new KeyDigest[TrialKey]:
+        def digest(k: TrialKey): ContentHash = { digests += 1; base.digest.digest(k) }
+      val order = new Ordering[TrialKey]:
+        def compare(a: TrialKey, b: TrialKey): Int = {
+          ordering += 1; base.ordering.compare(a, b)
+        }
+      val layout = new StudyLayout(
+        base.id,
+        observed(base.participant),
+        observed(base.stimulus),
+        observed(base.phase),
+        base.occurrence.map(observed),
+        base.trial.map(observed)
+      )(using digest, order)
+      val source     = StudyInput(Trials(keys.map(k => Trial(k, (), path))))
+      val configured = get(
+        StudyPlan.configure(
+          source.reference,
+          layout,
+          StudyGeometry.WholeFrame(grid),
+          "recall",
+          "encode",
+          Weight.Duration,
+          Vector(StudyScale.Native(StudyEstimate.Binned[Px]())),
+          None,
+          FailurePolicy.RequireAll,
+          StudyMethod.cosine[Px](DefinitionId.cosine),
+          (),
+          StudyPairing.default.copy(unmatched = UnmatchedFocalPolicy.Refuse)
+        )
+      )
+      val prepared = get(configured.prepare(source))
+      val expected = get(prepared.matchedCardinality).refusal(layout)
+      assert(expected.nonEmpty)
+      if keys == unmatched then
+        assertEquals(
+          expected,
+          Some(
+            PlanError.UnmatchedFocalRefused(
+              unmatched.sorted(using base.ordering).map(k => base.digest.digest(k).render)
+            )
+          )
+        )
+      Vector(1, 3, 64).foreach { size =>
+        val quanta = WorkQuanta(get(PairQuantum.of(size)), ComparisonQuantum.default)
+        projections = 0
+        ordering = 0
+        digests = 0
+        var diagnosticSteps = 0
+        @annotation.tailrec
+        def loop(cursor: CountCursor[TrialKey]): StudyCounts[TrialKey] =
+          val before = projections
+          val step   = get(cursor.advance(quanta))
+          assert(projections - before <= 8 * size)
+          assertEquals(ordering, 0)
+          assertEquals(digests, 0)
+          step match
+            case WorkStep.More(_, units, next) =>
+              assert(units <= size)
+              if next.visited == cursor.visited && units > 0 then diagnosticSteps += 1
+              loop(next)
+            case WorkStep.Done(units, counts) =>
+              assert(units <= size)
+              counts
+        val counts = loop(get(prepared.countWork))
+        assertEquals(counts.pairingRefusal, expected)
+        if keys == unmatched then assert(diagnosticSteps > 0)
+        val beforeStartup = (projections, ordering, digests)
+        assertEquals(prepared.countedWork(counts).left.toOption, expected)
+        assertEquals((projections, ordering, digests), beforeStartup)
+        @annotation.tailrec
+        def composite(
+            cursor: CountedStudyCursor[TrialKey, Px, Unit, Similarity, SignedDifference]
+        ): StudyRunError =
+          cursor.advance(quanta) match
+            case Left(error)                          => error
+            case Right(WorkStep.More(stage, _, next)) =>
+              assert(stage.isInstanceOf[StudyRunStage.Counting])
+              composite(next)
+            case Right(WorkStep.Done(_, _)) => fail("invalid pairing produced a result")
+        assertEquals(
+          composite(get(CountedStudyCursor.of(prepared))),
+          StudyRunError.Plan(expected.get)
+        )
+        assertEquals(ordering, 0)
+        assertEquals(digests, 0)
+      }
+    }
+  }
