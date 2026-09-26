@@ -79,6 +79,11 @@ class InventoryReviewSuite extends munit.FunSuite:
       columns
     )
     assert(rejected.isLeft)
+    // The occurrence is part of a declared trial's identity, not of its label.
+    def e1(occurrence: Int) =
+      get(TrialIdentity.of("P1", "E", "e1", get(TrialOccurrence.of(occurrence))))
+    assertEquals(inventory.trial(e1(1)).map(_.records), Some(Vector(2)))
+    assertEquals(inventory.trial(e1(2)), None)
     val result = run("P1,E,e1,2,beach,1,5,5,0,40,20\n")
     assertEquals(
       result.trials.head.disposition,
