@@ -451,9 +451,35 @@ case through `Diagnose`.
 This entry point is synchronous; it does not promise cooperative cancellation. Legacy sources
 with unspecified interpretation remain unverified, and custom readers without a supported
 interpreter are refused. The pure resolver retains its structural guarantee and existing forgery
-fixtures; it cannot perform this source check. Manifest-to-source wiring remains tracked under
-`bd-01M2SC6N15J2N7PHD4DXBE43VD`. Replay proves consistency of the supplied archive, not who
-created it: replacing the source, options, ledger and input together is not an authenticity check.
+fixtures; it cannot perform this source check. Replay proves consistency of the supplied archive,
+not who created it: replacing the source, options, ledger and input together is not an authenticity
+check.
+
+Source replay is wired additively into `eyes4s.manifest@1`; earlier manifests retain their exact
+encoding. Store a CSV's original bytes with `StoredArtifact.sourceFile(name, format, bytes)`.
+Its `SourceFile` entry has binary media, exact length and SHA-256, and the existing parser definition
+as its schema; it has no packed-array layout or semantic identity. Store the primary description
+with `StoredArtifact.importSpec` and, when present, the inventory description with
+`StoredArtifact.inventoryImportSpec`. Both have the `ImportSpec` artifact role and their existing
+versioned JSON schemas.
+
+`LedgerSource(ledger, sourceFile, importSpec, LedgerSourceRole.Primary)` binds the primary file;
+an inventory admission also requires a `TrialInventory` source relation and its independent
+inventory specification. Each role occurs at most once per ledger. A source-linked ledger must
+have a primary relation. The resolver checks the declared parser/options and inventory identity
+and description against the ledger, decodes source bytes as strict UTF-8, and exposes the source
+text and descriptions on `ResolvedManifest`. Unknown artifact or source roles are typed codec
+refusals. This checks declarations and byte integrity; it does not replay the import.
+
+Register primary descriptions through `ArtifactDecoders.withImportSpecs`; the built-in
+`ArtifactDecoders.study` includes the study-key registration. Trial-key manifests register
+`ImportSpecCodec.trial` explicitly. `ArtifactDecoders.Delegating` forwards the registration.
+After resolution, call `ManifestReverification.verify(resolved, ledgerName)` in `io` to follow
+both source relations and the existing `LedgerOf` input relation and obtain `VerifiedAdmission`.
+Missing source/input bindings are `LedgerVerificationError.ManifestBinding`; source-less older
+manifests remain readable but cannot gain verification. `ArtifactFiles.directory` retains its
+root-relative, no-escape storage checks for source entries, including symbolic links. Replay
+remains synchronous; bounded execution is a separate slice.
 
 Both payloads are artifacts of their own; plan JSON references the input by digest only. The pinned
 [study-input-v1.json](../codec/src/test/resources/eyes4s/study-input-v1.json) and

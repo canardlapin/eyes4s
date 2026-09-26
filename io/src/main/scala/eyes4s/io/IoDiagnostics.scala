@@ -42,7 +42,8 @@ object IoDiagnosticCatalog:
     "SourceChanged",
     "LedgerMismatch",
     "InputMismatch",
-    "InputEvidenceMismatch"
+    "InputEvidenceMismatch",
+    "ManifestBinding"
   )
 
   val fixationImport: DiagnosticFamily = error("fixation-import")(

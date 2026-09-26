@@ -1471,6 +1471,7 @@ fails after rewriting, so review the change and run it again.
 | `relation.report-input` | `ReportInput` | `input`, `computed` |
 | `relation.report-ledger` | `ReportLedger` | `ledger`, `input` |
 | `relation.report-members` | `ReportMembers` | `scale`, `unknown` |
+| `relation.source-binding` | `SourceBinding` | `field`, `expected`, `found` |
 
 ### `manifest` — `ManifestError`
 
@@ -1911,6 +1912,7 @@ fails after rewriting, so review the change and run it again.
 | `ledger-verification.ledger-mismatch` | `LedgerMismatch` | `source`, `component`, `expected`, `actual` |
 | `ledger-verification.input-mismatch` | `InputMismatch` | `source`, `expected`, `actual` |
 | `ledger-verification.input-evidence-mismatch` | `InputEvidenceMismatch` | `source`, `component`, `trial`, `fixation`, `expected`, `actual` |
+| `ledger-verification.manifest-binding` | `ManifestBinding` | `ledger`, `kind`, `count` |
 
 ### `arrow-export` — `ArrowExportError`
 

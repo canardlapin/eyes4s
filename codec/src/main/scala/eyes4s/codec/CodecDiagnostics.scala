@@ -108,7 +108,8 @@ object CodecDiagnosticCatalog:
     "ReportBinding",
     "ReportInput",
     "ReportLedger",
-    "ReportMembers"
+    "ReportMembers",
+    "SourceBinding"
   )
   val manifest: DiagnosticFamily = error("manifest")(
     "InvalidName",
@@ -417,6 +418,8 @@ private[codec] object CodecProjections:
         )
       case ReportSpec(report, stored) =>
         diagnostic[Any](C.relation, e, e.message)(name(report), name(stored))
+      case SourceBinding(field, expected, found) =>
+        diagnostic[Any](C.relation, e, e.message)(token(field), text(expected), text(found))
       case ReportBinding(field, bound, stored) =>
         diagnostic[Any](C.relation, e, e.message)(token(field), text(bound), text(stored))
       case ReportInput(input, computed) =>

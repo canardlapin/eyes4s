@@ -306,6 +306,8 @@ enum LedgerVerificationError derives CanEqual:
       actual: String
   )
 
+  case ManifestBinding(ledger: String, kind: String, count: Int)
+
   def message: String = this match
     case LegacyUnverified(source) =>
       s"Source '${source.label}' (${source.records.digest}) has legacy unspecified interpretation; replay cannot verify it."
@@ -314,6 +316,8 @@ enum LedgerVerificationError derives CanEqual:
       s"Source '${expected.label}' identity ${expected.identity.map(_.digest)} differs from '${actual.label}' ${actual.identity.map(_.digest)} in ${causes.values}."
     case LedgerMismatch(source, component, expected, actual) =>
       s"Source '$source' ledger $component declares $expected; replay produced $actual."
+    case ManifestBinding(ledger, kind, count) =>
+      s"Ledger artifact '$ledger' has $count $kind bindings; expected exactly one."
     case InputMismatch(source, expected, actual) =>
       s"Source '$source' input ${expected.render} differs from replayed input ${actual.render}."
     case InputEvidenceMismatch(source, component, trial, fixation, expected, actual) =>
