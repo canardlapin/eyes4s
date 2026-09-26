@@ -50,6 +50,14 @@ class MapComparisonSuite extends munit.FunSuite:
   test("Fisher endpoint policies are explicit and legacy behavior is retained") {
     val a = mass(Vector(.1, .2, .3, .4), grid(4))
     near(get(Distribution.fisherZMachineEpsilon[Px].compare(a, a)).value, 18.36840028483855)
+    // r = -1 + 32.4 eps is within 64 eps of -1, so it is snapped as eyesim does, not clamped alone.
+    val reversed = mass(Vector(.40000002, .29999998, .2, .1), grid(4))
+    val r        = get(Distribution.pearson[Px].compare(a, reversed)).value
+    assert(r > -1 + 8 * math.ulp(1.0) && r < -1 + 64 * math.ulp(1.0), clue(r))
+    near(
+      get(Distribution.fisherZMachineEpsilon[Px].compare(a, reversed)).value,
+      -18.36840028483855
+    )
     near(
       get(Distribution.fisherZ[Px].compare(a, a)).value,
       0.5 * math.log((1 + .999999999999) / (1 - .999999999999))

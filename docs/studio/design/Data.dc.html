@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Eyes Studio — Data · verify import</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=Source+Serif+4:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+/* ===== Eyes Studio tokens (the only place colours are written) ===== */
+.es{--ground:#ECE9E2;--surface:#FBFAF7;--surface-2:#F3F1EC;--surface-3:#E9E6DF;--hairline:#DAD6CC;--ink:#1C1E21;--ink-2:#464B52;--ink-3:#5E636A;--accent:#0E6E68;--accent-soft:#DCEFEC;--on-accent:#FFFFFF;--query:#3A2E6E;--query-soft:#E6E2F2;--match:#2F6DB5;--match-soft:#E0EAF6;--match-text:#255A98;--control:#B86E0E;--control-fill:#D98A1C;--control-text:#9A4A07;--control-soft:#F7E7D0;--fail:#A3261B;--fail-soft:#F6DEDA;--warn-text:#7A4F00;--warn-soft:#FBF1D9;--stage:#1A1A1A;--on-stage:#D9D6CF;--neutral-mark:rgba(28,30,33,.35);--sel-ring:0 0 0 2px #FFFFFF,0 0 0 4px #1C1E21;--tl-bg:#ECECEC;--tl-text:#4D4D4D}
+.es [data-stage=light],.es[data-stage=light]{--stage:#F2F2F2;--on-stage:#1C1E21}.es [data-stage=mid],.es[data-stage=mid]{--stage:#808080;--on-stage:#FFFFFF}
+.es.dark{--ground:#121315;--surface:#1B1C1F;--surface-2:#222327;--surface-3:#2A2C31;--hairline:#34363C;--ink:#ECEAE5;--ink-2:#BDBAB3;--ink-3:#9C9990;--accent:#43B5AA;--accent-soft:#183A37;--on-accent:#0B1413;--query:#D6CBFF;--query-soft:#2B2544;--match:#5C95E0;--match-soft:#1D2A3D;--match-text:#7FB0EE;--control:#E8A23C;--control-fill:#E8A23C;--control-text:#EBB066;--control-soft:#3A2A14;--fail:#F08A7E;--fail-soft:#3A1E1B;--warn-text:#E7C274;--warn-soft:#33290F;--neutral-mark:rgba(236,234,229,.35);--sel-ring:0 0 0 2px #000000,0 0 0 4px #ECEAE5;--tl-bg:#2B2B2B;--tl-text:#B0B0B0}
+.es{font-family:"IBM Plex Sans",-apple-system,"Helvetica Neue",sans-serif;font-size:12px;color:var(--ink);background:var(--ground)}
+.es button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
+.es a{color:var(--accent)}.es a:hover{color:var(--ink)}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.t11{font-size:11px}.t13{font-size:13px;font-weight:600}.t16{font-size:16px}.t28{font-size:28px;font-weight:500;letter-spacing:-.02em}
+.row{display:flex;align-items:center;gap:8px}
+.chip{display:flex;align-items:center;gap:6px;height:24px;padding:0 9px;border:1px solid var(--hairline);border-radius:6px;background:var(--surface);color:var(--ink-2);white-space:nowrap}
+.seg{display:flex;gap:2px;padding:2px;background:var(--surface-3);border-radius:7px}
+.seg button{border:0;background:transparent;height:28px;padding:0 12px;border-radius:5px;color:var(--ink-2);display:flex;align-items:center;gap:7px;font-weight:500}
+.seg button .k{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-2)}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--hairline)}
+.grp{display:flex;flex-direction:column;background:var(--surface);min-width:0;min-height:0}
+.hdr{height:28px;flex:none;display:flex;align-items:stretch;background:var(--surface-2);border-bottom:1px solid var(--hairline)}
+.tab{display:flex;align-items:center;gap:6px;padding:0 12px;color:var(--ink-2);border:0;border-right:1px solid var(--hairline);background:transparent;white-space:nowrap}
+.tab.sel{background:var(--surface);color:var(--ink);font-weight:600;margin-bottom:-1px}
+.tab.sel.focus{box-shadow:inset 0 2px 0 var(--accent)}
+.hbtns{margin-left:auto;display:flex;align-items:center;gap:2px;padding:0 6px}
+.ib{width:22px;height:22px;border:0;background:transparent;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--ink-3);padding:0}
+.tb{height:30px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--hairline);background:var(--surface)}
+.lbl{font-size:11px;font-weight:600;color:var(--ink-3)}
+.tog{height:22px;border:1px solid var(--hairline);background:var(--surface);border-radius:4px;padding:0 8px;color:var(--ink-2)}
+.tog.on{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.crumb{height:22px;border:0;background:transparent;border-radius:4px;padding:0 6px;color:var(--ink-2)}
+.crumb:hover{background:var(--surface-3)}
+.crumb.cur{color:var(--ink);font-weight:600}
+.sep{color:var(--ink-3)}
+.kind{font-size:11px;font-weight:600;padding:1px 6px;border-radius:3px;border:1px solid var(--hairline);color:var(--ink-2);background:var(--surface-2)}
+.sect{border-top:1px solid var(--hairline);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.kv{display:grid;grid-template-columns:118px minmax(0,1fr);row-gap:5px;column-gap:8px;margin:0}
+.kv dt{color:var(--ink-3);margin:0}.kv dd{margin:0}
+.btn{height:26px;padding:0 10px;border-radius:4px;border:1px solid var(--hairline);background:var(--surface);font-weight:500}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.stage{background:var(--stage)}
+/* Data-specific */
+.src{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-bottom:1px solid var(--hairline)}
+.maprow{display:grid;grid-template-columns:120px minmax(0,1fr) 150px 96px;gap:10px;align-items:center;height:28px;padding:0 14px;border-bottom:1px solid var(--surface-3)}
+.sel2{height:22px;border:1px solid var(--hairline);border-radius:4px;background:var(--surface);color:var(--ink);font:inherit;padding:0 4px}
+.cnt{border:0;background:transparent;padding:0 4px;height:22px;border-radius:4px;text-decoration:underline;text-decoration-color:var(--hairline);text-underline-offset:3px;font-family:"IBM Plex Mono",monospace}
+.cnt:hover{background:var(--surface-3)}
+.led{display:grid;grid-template-columns:minmax(0,1fr) 90px;align-items:center;height:26px;padding:0 14px;border-bottom:1px solid var(--surface-3)}
+.keyblk{display:flex;align-items:center;height:26px;padding:0 10px;border:1px solid var(--ink-2);border-radius:4px;background:var(--surface);font-weight:500}
+.fld{height:22px;border:1px solid var(--hairline);border-radius:4px;background:var(--surface);color:var(--ink);font:inherit;padding:0 6px;width:84px}
+.thumb{display:flex;flex-direction:column;gap:3px}
+</style>
+</helmet>
+
+<div class="{{rootClass}}" style="width:1440px;height:900px;display:flex;flex-direction:column;overflow:hidden">
+
+<!-- 1 · Native title bar (system-drawn; shown for context only) -->
+<div style="height:28px;flex:none;display:flex;align-items:center;padding:0 12px;background:var(--tl-bg);position:relative">
+<div style="display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:#FF5F57"></span><span style="width:12px;height:12px;border-radius:50%;background:#FEBC2E"></span><span style="width:12px;height:12px;border-radius:50%;background:#28C840"></span></div>
+<div style="position:absolute;left:0;right:0;text-align:center;color:var(--tl-text);pointer-events:none">memory-study.eyes</div>
+</div>
+
+<!-- 2 · App bar -->
+<header style="height:44px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px 0 14px;background:var(--surface);border-bottom:1px solid var(--hairline)">
+<div class="row" style="gap:7px;margin-right:4px">
+<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M1.5 10C4 5.5 7 3.5 10 3.5S16 5.5 18.5 10C16 14.5 13 16.5 10 16.5S4 14.5 1.5 10Z" fill="none" stroke="var(--ink)" stroke-width="1.5"/><circle cx="10" cy="10" r="3.2" fill="var(--ink)"/><circle cx="11.2" cy="8.8" r="1" fill="var(--surface)"/></svg>
+<span class="t13" style="letter-spacing:-.01em">Eyes Studio</span>
+</div>
+<button class="chip"><span>memory-study</span><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+<div style="flex:1"></div>
+<nav class="seg" aria-label="Perspectives">
+<button class="on" aria-current="page">Data <span class="k">⌘1</span></button>
+<button>Explore <span class="k">⌘2</span></button>
+<button>Analysis <span class="k">⌘3</span></button>
+<button>Compare <span class="k">⌘4</span></button>
+<button>Figures <span class="k">⌘5</span></button>
+</nav>
+<div style="flex:1"></div>
+<button class="chip" aria-label="Jobs: none running"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h6"/></svg>No jobs</button>
+</header>
+
+<!-- 3 · Context strip: trail + freshness -->
+<div style="height:32px;flex:none;display:flex;align-items:center;gap:4px;padding:0 10px;background:var(--surface);border-bottom:1px solid var(--hairline)">
+<button class="ib" aria-label="Back (⌘[)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3 5 8l5 5"/></svg></button>
+<button class="ib" aria-label="Forward (⌘])"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m6 3 5 5-5 5"/></svg></button>
+<nav class="row" style="gap:2px;margin-left:4px" aria-label="Trail">
+<button class="crumb">Dataset r3 (draft)</button><span class="sep">›</span>
+<button class="crumb cur" aria-current="location">Admission</button>
+</nav>
+<div style="flex:1"></div>
+<span class="chip" style="height:22px;border-style:dashed;border-color:var(--ink-2);color:var(--ink)">Dataset r3 · draft · no run on r3 yet</span>
+<span class="chip" style="height:22px;background:var(--warn-soft);color:var(--warn-text);border-color:var(--warn-soft)">Run 5 (rev 3) used r2 · becomes stale when r3 is admitted</span>
+</div>
+
+<!-- 5 · Dock -->
+<div style="flex:1;min-height:0;display:flex;gap:1px;background:var(--hairline)">
+
+<!-- Navigator: Sources -->
+<section class="grp" style="width:252px;flex:none" aria-label="Sources navigator">
+<div class="hdr"><button class="tab sel">Sources</button><div class="hbtns"><button class="ib" aria-label="Minimize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
+<div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+<div class="src" style="box-shadow:inset 0 0 0 2px var(--ink);background:var(--surface-2)">
+<div class="row" style="justify-content:space-between"><span class="t13 mono" style="font-size:12px">fixations.csv</span><span class="kind">Fixations</span></div>
+<span class="mono t11" style="color:var(--ink-2)">11,520 records · 11 columns mapped</span>
+<span class="mono t11" style="color:var(--ink-3)">byte digest recorded · copied into project</span>
+</div>
+<div class="src">
+<div class="row" style="justify-content:space-between"><span class="t13 mono" style="font-size:12px">trials.csv</span><span class="kind">Inventory</span></div>
+<span class="mono t11" style="color:var(--ink-2)">960 trials · inventory</span>
+<span class="mono t11" style="color:var(--ink-3)">byte digest recorded · copied into project</span>
+</div>
+<div class="src">
+<div class="row" style="justify-content:space-between"><span class="t13 mono" style="font-size:12px">stimuli/</span><span class="kind">Images</span></div>
+<span class="mono t11" style="color:var(--ink-2)">257 of 259 images found</span>
+<span class="mono t11" style="color:var(--ink-3)">matched by filename = item · copied</span>
+</div>
+<div style="padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+<span class="lbl">What each trial displayed</span>
+<div class="t11" style="display:grid;grid-template-columns:18px minmax(0,1fr) auto;row-gap:5px;column-gap:6px;align-items:center">
+<svg width="14" height="11" viewBox="0 0 14 11" aria-hidden="true"><rect x=".75" y=".75" width="12.5" height="9.5" fill="var(--surface-3)" stroke="var(--ink-2)" stroke-width="1.5"/><path d="M2 9l3.5-4 3 3 2-2 2 3" fill="none" stroke="var(--ink-2)" stroke-width="1.2"/></svg><span>Image · Encoding</span><span class="mono">476</span>
+<svg width="14" height="11" viewBox="0 0 14 11" aria-hidden="true"><rect x=".75" y=".75" width="12.5" height="9.5" fill="#9A9A96" stroke="var(--ink-2)" stroke-width="1.5"/><path d="M7 3.5v4M5 5.5h4" stroke="#FFFFFF" stroke-width="1.2"/></svg><span>Blank + fixation cross · Retrieval</span><span class="mono">480</span>
+<svg width="14" height="11" viewBox="0 0 14 11" aria-hidden="true"><rect x=".75" y=".75" width="12.5" height="9.5" fill="none" stroke="var(--ink-3)" stroke-width="1.5" stroke-dasharray="2 2"/></svg><span style="color:var(--ink-3)">Blank · Cue · Unknown</span><span class="mono" style="color:var(--ink-3)">0</span>
+</div>
+</div>
+<div style="margin:0 12px;padding:10px;border:1px solid var(--warn-text);border-radius:6px;background:var(--warn-soft);display:flex;flex-direction:column;gap:6px">
+<div class="row" style="gap:6px"><svg width="14" height="11" viewBox="0 0 14 11" aria-hidden="true"><defs><pattern id="hs" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="3" stroke="var(--warn-text)" stroke-width="1.2"/></pattern></defs><rect x=".75" y=".75" width="12.5" height="9.5" fill="url(#hs)" stroke="var(--warn-text)" stroke-width="1.5"/></svg><span style="font-weight:600;color:var(--warn-text)">2 image files missing</span></div>
+<span class="t11" style="color:var(--ink);line-height:1.45">forest-044.png, kitchen-081.png. Their 4 Encoding trials (P01 enc_08, enc_15; P24 enc_05, enc_18) are drawn as <strong>missing asset</strong>, never as blank. Gaze and scores are unaffected.</span>
+<div class="row"><button class="btn" style="height:22px">Repair…</button><button class="btn" style="height:22px">Show 4 trials</button></div>
+</div>
+</div>
+</section>
+
+<!-- Centre -->
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+
+<!-- Column mapping -->
+<section class="grp" style="flex:none;height:432px" aria-label="Column mapping">
+<div class="hdr"><button class="tab sel focus">Column mapping</button><button class="tab">Trial metadata</button><div class="hbtns"><span class="kind" style="margin-right:6px">Dataset · re-admit</span><button class="ib" aria-label="Maximize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
+<div class="t11" style="display:grid;grid-template-columns:120px minmax(0,1fr) 150px 96px;gap:10px;padding:6px 14px 5px;font-weight:600;color:var(--ink-3);border-bottom:1px solid var(--hairline);background:var(--surface-2)">
+<span>fixations.csv column</span><span>First records</span><span>Role</span><span>Units (declared)</span>
+</div>
+<sc-for list="{{cols}}" as="c" hint-placeholder-count="11">
+<div class="maprow">
+<span class="mono">{{c.col}}</span>
+<span class="mono t11" style="color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{c.sample}}</span>
+<label style="position:absolute;left:-9999px" for="{{c.id}}">Role for {{c.col}}</label>
+<select class="sel2" id="{{c.id}}"><option>{{c.role}}</option></select>
+<span class="mono t11" style="color:{{c.uc}}">{{c.units}}</span>
+</div>
+</sc-for>
+<div style="padding:10px 14px;display:flex;flex-direction:column;gap:7px;border-top:1px solid var(--hairline);margin-top:auto">
+<div class="row" style="justify-content:space-between"><span class="t13">Trial identity</span><span class="t11" style="color:var(--ink-2)">Every record and every inventory entry must resolve to exactly one key.</span></div>
+<div class="row" style="gap:6px">
+<span class="keyblk">Participant</span><span class="sep">+</span><span class="keyblk">Phase</span><span class="sep">+</span><span class="keyblk">Trial</span><span class="sep">+</span><span class="keyblk">Occurrence</span>
+<span class="sep">=</span>
+<span class="mono">960 unique keys</span>
+<span class="t11" style="color:var(--ink-2)">· 0 duplicates · Occurrence is 1 for every trial</span>
+</div>
+</div>
+</section>
+
+<!-- Admission -->
+<section class="grp" style="flex:1;min-height:0" aria-label="Admission">
+<div class="hdr"><button class="tab sel">Admission</button><button class="tab">Records outside frame</button><div class="hbtns"><button class="ib" aria-label="Maximize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
+<div style="flex:1;display:flex;min-height:0">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column">
+<div class="t11" style="display:grid;grid-template-columns:minmax(0,1fr) 90px;padding:6px 14px 5px;font-weight:600;color:var(--ink-3);border-bottom:1px solid var(--hairline);background:var(--surface-2)"><span>Counted from the trials.csv inventory</span><span style="text-align:right">Trials</span></div>
+<div class="led"><span style="font-weight:600">Inventory</span><span style="text-align:right"><button class="cnt" style="font-weight:600">960</button></span></div>
+<div class="led"><span>Admitted</span><span style="text-align:right"><button class="cnt">937</button></span></div>
+<div class="led" style="background:var(--surface-2)"><span>Quarantined — whole trial held back when any record is invalid</span><span style="text-align:right"><button class="cnt">17</button></span></div>
+<sc-for list="{{causes}}" as="q" hint-placeholder-count="4">
+<div class="led" style="padding-left:30px"><span class="mono t11" style="color:var(--ink-2)">{{q.c}}</span><span style="text-align:right"><button class="cnt" aria-label="{{q.aria}}">{{q.n}}</button></span></div>
+</sc-for>
+<div class="led"><span>Absent — in trials.csv, no fixation records at all <span class="kind">pending UI-H</span></span><span style="text-align:right"><button class="cnt">6</button></span></div>
+<div class="t11" style="padding:7px 14px;color:var(--ink-2);line-height:1.45">937 + 17 + 6 = 960. <strong>no-fixations</strong>: the trial has records but none is admissible. <strong>Absent</strong>: listed in the inventory, no records in fixations.csv. Each count opens its trials and records.</div>
+</div>
+<div style="width:300px;flex:none;border-left:1px solid var(--hairline);padding:12px 14px;display:flex;flex-direction:column;gap:9px">
+<span class="t13">Admit dataset r3</span>
+<fieldset style="border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px">
+<legend style="position:absolute;left:-9999px">Admission decision</legend>
+<label class="row" style="align-items:flex-start;gap:8px"><input type="radio" name="adm" style="margin:2px 0 0;accent-color:var(--accent)"><span><strong>Require complete</strong><br><span class="t11" style="color:var(--ink-2)">Refuses r3 while 17 trials are quarantined (eyes4s admission). The 6 absent trials are counted by the inventory join (pending UI-H).</span></span></label>
+<label class="row" style="align-items:flex-start;gap:8px"><input type="radio" name="adm" checked style="margin:2px 0 0;accent-color:var(--accent)"><span><strong>Review exclusions</strong><br><span class="t11" style="color:var(--ink-2)">Admits 937 trials; 17 quarantined and 6 absent are recorded with their causes in r3.</span></span></label>
+</fieldset>
+<div class="t11" style="color:var(--ink-2);line-height:1.45">Changes from r2: onset declared in ms; Block mapped to occurrence; 4 trials change status. Admitting creates dataset r3. Run 5 stays on r2 and is marked stale.</div>
+<button class="btn pri" style="align-self:flex-start">Admit as r3</button>
+</div>
+</div>
+</section>
+</div>
+
+<!-- Geometry -->
+<section class="grp" style="width:372px;flex:none" aria-label="Geometry">
+<div class="hdr"><button class="tab sel">Geometry</button><div class="hbtns"><span class="kind" style="margin-right:6px">Dataset · re-admit</span><button class="ib" aria-label="Minimize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
+<div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+<div style="padding:10px 14px;display:flex;flex-direction:column;gap:7px">
+<dl class="kv">
+<dt>Gaze coordinates</dt><dd>Screen px · origin top-left · y down</dd>
+<dt>Screen</dt><dd class="mono">1920 × 1080 px</dd>
+<dt>Image placement</dt><dd class="mono">1024 × 768 at (448, 156)</dd>
+<dt>Analysis window</dt><dd>Image frame</dd>
+<dt>Pixels per degree</dt><dd><span class="mono">35</span> <span class="t11" style="color:var(--warn-text)">· declared, not calibrated</span></dd>
+</dl>
+<div class="row" style="gap:10px">
+<label class="row t11" style="gap:5px" for="vd">Viewing distance<input id="vd" class="fld" placeholder="not recorded"></label>
+<label class="row t11" style="gap:5px" for="sw">Screen width<input id="sw" class="fld" placeholder="not recorded"></label>
+</div>
+<div class="t11" style="padding:6px 8px;border:1px solid var(--hairline);border-radius:4px;background:var(--surface-2);display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:10px;row-gap:2px">
+<span style="color:var(--ink-3)">Record 7,214 raw</span><span class="mono">screen (1148, 456) px</span>
+<span style="color:var(--ink-3)">→ image frame</span><span class="mono">(700, 300) px · (+5.4°, +2.4°)</span>
+<span style="color:var(--ink-3)">Degrees</span><span class="t11">from image centre · x right · y up</span>
+</div>
+</div>
+<div class="sect" style="gap:8px">
+<div class="row" style="justify-content:space-between"><span class="t13">Check placement</span><span class="t11" style="color:var(--ink-2)">screen outline · image frame</span></div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+<sc-for list="{{thumbs}}" as="t" hint-placeholder-count="4">
+<div class="thumb">
+<svg width="164" height="92" viewBox="0 0 1920 1080" class="stage" role="img" aria-label="{{t.aria}}">
+<rect width="1920" height="1080" fill="var(--stage)"/>
+<rect x="448" y="156" width="1024" height="768" fill="{{t.fill}}"/>
+<sc-if value="{{t.missing}}" hint-placeholder-val="{{false}}"><rect x="448" y="156" width="1024" height="768" fill="url(#hs2)"/></sc-if>
+<sc-if value="{{t.cross}}" hint-placeholder-val="{{false}}"><path d="M960 510v60M930 540h60" stroke="#E7E5E0" stroke-width="8"/></sc-if>
+<rect x="448" y="156" width="1024" height="768" fill="none" stroke="var(--on-stage)" stroke-width="6" stroke-dasharray="24 14"/>
+<g fill="var(--neutral-mark)" stroke="#FFFFFF" stroke-width="5.3"><circle cx="{{t.x1}}" cy="{{t.y1}}" r="26"/><circle cx="{{t.x2}}" cy="{{t.y2}}" r="34"/><circle cx="{{t.x3}}" cy="{{t.y3}}" r="22"/><circle cx="{{t.x4}}" cy="{{t.y4}}" r="30"/></g>
+</svg>
+<span class="t11 mono" style="color:var(--ink-2)">{{t.label}}</span>
+</div>
+</sc-for>
+</div>
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs><pattern id="hs2" width="60" height="60" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="60" stroke="var(--warn-text)" stroke-width="18"/></pattern></defs></svg>
+<div class="row" style="gap:10px;align-items:flex-start">
+<svg width="164" height="92" viewBox="0 0 1920 1080" role="img" aria-label="Density of all 11,520 fixation records overlaid, screen coordinates">
+<defs><radialGradient id="ad"><stop offset="0" stop-color="#6B0F4F"/><stop offset=".4" stop-color="#B83F86"/><stop offset=".75" stop-color="#E58FB9"/><stop offset="1" stop-color="#F9D9EA" stop-opacity="0"/></radialGradient></defs>
+<rect width="1920" height="1080" fill="var(--stage)"/>
+<g opacity=".6"><ellipse cx="960" cy="540" rx="520" ry="380" fill="url(#ad)"/>
+<ellipse cx="900" cy="470" rx="260" ry="190" fill="url(#ad)"/></g>
+<rect x="448" y="156" width="1024" height="768" fill="none" stroke="var(--on-stage)" stroke-width="6" stroke-dasharray="24 14"/>
+</svg>
+<div class="t11" style="display:flex;flex-direction:column;gap:5px;line-height:1.4">
+<span style="font-weight:600">All trials overlaid</span>
+<span style="color:var(--ink-2)">11,520 records, screen coordinates. A flipped or shifted participant shows up as mass away from the image frame.</span>
+<button class="btn" style="height:22px;align-self:flex-start">Mark trial as wrong orientation…</button>
+</div>
+</div>
+</div>
+<div class="sect" style="gap:4px">
+<div class="row" style="justify-content:space-between"><span style="font-weight:600">Outside image frame</span><button class="cnt">543 of 11,520 records · 409 trials</button></div>
+<span class="t11" style="color:var(--ink-2);line-height:1.45">Reported, not dropped from the data. Excluded from maps because the analysis window is the image frame; each trial lists its own count.</span>
+</div>
+</div>
+</section>
+</div>
+
+<!-- 6 · Status bar -->
+<footer class="t11" style="height:24px;flex:none;display:flex;align-items:center;gap:12px;padding:0 12px;background:var(--surface-2);border-top:1px solid var(--hairline);color:var(--ink-2)">
+<span class="row" style="gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--ink)"></span>Selected:<span class="mono" style="color:var(--ink)">fixations.csv › Admission</span></span>
+<span style="width:1px;height:12px;background:var(--hairline)"></span>
+<span>Mapping and geometry changes apply when r3 is admitted</span>
+<div style="flex:1"></div>
+<span>No jobs</span>
+<span style="width:1px;height:12px;background:var(--hairline)"></span>
+<span>Saved 10:24</span>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cols = [
+      ['Subject','P01, P01, P01, P01','Participant','—'],
+      ['Phase','enc, enc, enc, enc','Phase','—'],
+      ['TrialID','enc_01, enc_01, enc_01','Trial','—'],
+      ['Block','1, 1, 1, 1','Occurrence','—'],
+      ['Image','beach-007, beach-007','Match item','—'],
+      ['FixNum','1, 2, 3, 4','Ordinal','—'],
+      ['FixX','1030, 812, 930, 1301','x','screen px'],
+      ['FixY','456, 603, 512, 388','y','screen px'],
+      ['FixStart','0, 214, 498, 861','Onset','ms'],
+      ['FixDur','198, 262, 341, 175','Duration','ms'],
+      ['NSamples','99, 131, 170, 87','Sample count','samples']
+    ].map((c, i) => ({ id: 'm' + i, col: c[0], sample: c[1], role: c[2], units: c[3], uc: c[3] === '—' ? 'var(--ink-3)' : 'var(--ink)' }));
+    const causes = [['overlap',6],['no-fixations',5],['duplicate-ordinals',4],['rejected-records',2]]
+      .map(([c, n]) => ({ c, n, aria: n + ' trials quarantined for ' + c }));
+    const thumbs = [
+      { label: 'P03 · enc_02 · image', fill: '#8FA3AB', missing: false, cross: false, aria: 'P03 enc_02, image trial, gaze inside frame', x1:700,y1:420,x2:980,y2:500,x3:1200,y3:380,x4:860,y4:700 },
+      { label: 'P17 · ret_07 · blank + cross', fill: '#9A9A96', missing: false, cross: true, aria: 'P17 ret_07, blank with fixation cross', x1:960,y1:540,x2:778,y2:596,x3:1148,y3:456,x4:1088,y4:716 },
+      { label: 'P01 · enc_08 · missing asset', fill: '#3A3A3A', missing: true, cross: false, aria: 'P01 enc_08, forest-044.png missing, drawn hatched', x1:760,y1:360,x2:1010,y2:560,x3:1260,y3:640,x4:620,y4:480 },
+      { label: 'P05 · ret_04 · 11 of 11 outside', fill: '#9A9A96', missing: false, cross: true, aria: 'P05 ret_04, all fixations outside the image frame', x1:260,y1:120,x2:1620,y2:980,x3:1700,y3:140,x4:240,y4:960 }
+    ];
+    return { rootClass: this.props.dark ? 'es dark' : 'es', cols, causes, thumbs };
+  }
+}
+</script>
+</body>
+</html>

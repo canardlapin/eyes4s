@@ -10,19 +10,19 @@
     },
     "sampling-reference": {
       "path": "tools/r-parity/fixtures/sampling.json",
-      "sha256": "10d56aae2452126da6a8c0d7e74aaa0a773b14168fb36b862dacaad21eb27246",
+      "sha256": "7183080abf6750bf2728284867f2857cb61858855a8b0efe88f5a2edd9c216da",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Locked exported reference calls, failures and analytic comparisons"
     },
     "sampling-scala": {
       "path": "core/src/test/scala/eyes4s/core/SamplingReference.scala",
-      "sha256": "d214b9135e158e1261ff1ddf6eb22e2492557d0a7ab4348fdc29839237d230c2",
+      "sha256": "4f398866a34ff1423301ac4e1befc8bde937ac689aa19850ea320186c7ebb0db",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Portable measured reference expectations"
     },
     "finite-control-scala": {
       "path": "design/src/test/scala/eyes4s/design/FiniteControlReference.scala",
-      "sha256": "aed87c6d4e66530a2699afdbc6b6947510995a2edddcbe091d471e6275f47a24",
+      "sha256": "5565b05119f4e198ad54254c0040986d820db103d37bdc7fbd7fe9e4148cac6f",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Measured finite control draws and denominators"
     }
@@ -56,10 +56,10 @@
       "estimand": "The fixation position in force at each requested time, the rows implied by each fixation's duration at a stated temporal resolution, and the template-density value at the sampled positions. Every output is a deterministic function of its inputs; eyesim draws nothing at random here.",
       "conventions": [
         "a time before the first onset is NA on both paths",
-        "after the last onset the fast path returns NA while the slow path holds the last fixation",
+        "after the last onset both paths hold the last fixation",
         "neither path consults duration, so a gap between fixations keeps the preceding position",
-        "equal onsets are averaged by the fast path and resolved to the later row by the slow path",
-        "rep_fixations repeats each row as.integer(duration / (1 / resolution)) times, truncating and never fewer than once",
+        "equal onsets resolve to the later row on both paths",
+        "rep_fixations repeats each row floor(duration * resolution) times with a floating-point tolerance, never fewer than once",
         "sample_density returns NA wherever the sampled trajectory is NA",
         "requested and realized cardinality both retained"
       ],
@@ -96,7 +96,7 @@
         "sampling-reference",
         "kde-reference"
       ],
-      "divergence": "Ordered and singleton onset trajectories and density-time composition agree. Native duplicate onsets are refused, empty support is explicit missing data, and exact integer replication yields 29 rather than R floating truncation 28 at 0.29 seconds and 100 Hz."
+      "divergence": "Ordered and singleton onset trajectories agree with both pinned paths under HoldLastOnset, as do density-time composition and the 29-row replication at 0.29 seconds and 100 Hz. Native duplicate onsets are refused where the pinned paths take the later row, and empty support is explicit missing data where R's constructor fails. OnsetRange remains a named native alternative."
     },
     {
       "id": "matched-control-finite-sampling",
@@ -158,7 +158,7 @@
         "template-cv",
         "kde-reference"
       ],
-      "divergence": "Pinned R samples a multiset before removing its first true-match occurrence; repeated true matches can survive and cap-one draws can yield zero controls. Native relations exclude all same-match candidates before keyed BottomK, retain occurrence multiplicity, and produce min(cap,eligible). Zero cap is a native typed error versus R no-control analysis. R optimized/generic cap-one draws differ; no PRNG identity is claimed. Native missing/ambiguous keys remain values. template_sample is deterministic density lookup, measured with the shared trajectory."
+      "divergence": "Pinned R removes every true-match copy and counts each distinct template once before drawing, so its realized count is min(cap,eligible templates). Native relations exclude all same-match candidates before keyed BottomK and produce min(cap,eligible); pairing against a one-row-per-template table reproduces every exhaustive reference row, while pairing against source occurrences keeps their multiplicity by construction. Zero cap is a native typed error versus R no-control analysis. R optimized/generic cap-one draws differ; no PRNG identity is claimed. Native missing/ambiguous keys remain values. template_sample is deterministic density lookup, measured with the shared trajectory."
     }
   ]
 }

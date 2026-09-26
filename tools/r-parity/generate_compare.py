@@ -1,76 +1,207 @@
 #!/usr/bin/env python3
 """Measure actual vector/density/multiscale dispatch and small transport oracles."""
-import argparse,hashlib,json,math
+import argparse, hashlib, json, math
 from fractions import Fraction as F
 from pathlib import Path
 import sys
-sys.dont_write_bytecode=True
-import parity
-HERE,ROOT=parity.HERE,parity.ROOT
-INPUT=HERE/'fixtures/cases/eyesim-compare.json'
-OUTPUT=HERE/'fixtures/compare.json'
-SCALA=ROOT/'compare/src/test/scala/eyes4s/compare/MapReference.scala'
-def scalar(record):
-    r=record['result']
-    if 'error' in r:return None
-    v=r['values'];return v[0] if isinstance(v,list) and len(v)==1 else v
 
-def oracle(a,b,method):
-    a=[F(str(x)) for x in a];b=[F(str(x)) for x in b];n=len(a)
-    def ranks(x):return [F(sum(v<t for v in x)*2+sum(v==t for v in x)+1,2) for t in x]
-    if method=='spearman':a,b=ranks(a),ranks(b)
-    if method in ('pearson','spearman','fisherz'):
-        ma,mb=sum(a)/n,sum(b)/n
-        aa=sum((x-ma)**2 for x in a);bb=sum((x-mb)**2 for x in b)
-        if not aa or not bb:return None
-        r=float(sum((x-ma)*(y-mb) for x,y in zip(a,b,strict=True)))/math.sqrt(float(aa*bb))
-        return math.atanh(max(-1+2**-52,min(1-2**-52,r))) if method=='fisherz' else r
-    if method=='cosine':return float(sum(x*y for x,y in zip(a,b,strict=True)))/math.sqrt(float(sum(x*x for x in a)*sum(y*y for y in b)))
-    if method=='l1':return float(1-sum(abs(x/sum(a)-y/sum(b)) for x,y in zip(a,b,strict=True))/2)
-    if method=='jaccard':
-        dot=sum(x*y for x,y in zip(a,b,strict=True));return float(dot/(sum(x*x for x in a)+sum(y*y for y in b)-dot))
-    if method=='dcov':
+sys.dont_write_bytecode = True
+import parity
+
+HERE, ROOT = parity.HERE, parity.ROOT
+INPUT = HERE / "fixtures/cases/eyesim-compare.json"
+OUTPUT = HERE / "fixtures/compare.json"
+SCALA = ROOT / "compare/src/test/scala/eyes4s/compare/MapReference.scala"
+
+
+def scalar(record):
+    r = record["result"]
+    if "error" in r:
+        return None
+    v = r["values"]
+    return v[0] if isinstance(v, list) and len(v) == 1 else v
+
+
+def oracle(a, b, method):
+    a = [F(str(x)) for x in a]
+    b = [F(str(x)) for x in b]
+    n = len(a)
+
+    def ranks(x):
+        return [F(sum(v < t for v in x) * 2 + sum(v == t for v in x) + 1, 2) for t in x]
+
+    if method == "spearman":
+        a, b = ranks(a), ranks(b)
+    if method in ("pearson", "spearman", "fisherz"):
+        ma, mb = sum(a) / n, sum(b) / n
+        aa = sum((x - ma) ** 2 for x in a)
+        bb = sum((x - mb) ** 2 for x in b)
+        if not aa or not bb:
+            return None
+        r = float(
+            sum((x - ma) * (y - mb) for x, y in zip(a, b, strict=True))
+        ) / math.sqrt(float(aa * bb))
+        if method != "fisherz":
+            return r
+        # An r within 64 machine epsilons of +/-1 is +/-1; the endpoints are then clamped to 1-eps.
+        if r > 1 - 64 * 2**-52:
+            r = 1.0
+        if r < -1 + 64 * 2**-52:
+            r = -1.0
+        return math.atanh(max(-1 + 2**-52, min(1 - 2**-52, r)))
+    if method == "cosine":
+        return float(sum(x * y for x, y in zip(a, b, strict=True))) / math.sqrt(
+            float(sum(x * x for x in a) * sum(y * y for y in b))
+        )
+    if method == "l1":
+        return float(
+            1 - sum(abs(x / sum(a) - y / sum(b)) for x, y in zip(a, b, strict=True)) / 2
+        )
+    if method == "jaccard":
+        dot = sum(x * y for x, y in zip(a, b, strict=True))
+        return float(dot / (sum(x * x for x in a) + sum(y * y for y in b) - dot))
+    if method == "dcov":
+
         def centred(x):
-            d=[[abs(u-v) for v in x] for u in x];means=[sum(row)/n for row in d];grand=sum(means)/n
-            return [d[i][j]-means[i]-means[j]+grand for i in range(n) for j in range(n)]
-        x,y=centred(a),centred(b);cross=sum(u*v for u,v in zip(x,y,strict=True));aa=sum(u*u for u in x);bb=sum(v*v for v in y)
-        return math.sqrt(float(cross)/math.sqrt(float(aa*bb))) if aa and bb else None
+            d = [[abs(u - v) for v in x] for u in x]
+            means = [sum(row) / n for row in d]
+            grand = sum(means) / n
+            return [
+                d[i][j] - means[i] - means[j] + grand
+                for i in range(n)
+                for j in range(n)
+            ]
+
+        x, y = centred(a), centred(b)
+        cross = sum(u * v for u, v in zip(x, y, strict=True))
+        aa = sum(u * u for u in x)
+        bb = sum(v * v for v in y)
+        return (
+            math.sqrt(float(cross) / math.sqrt(float(aa * bb))) if aa and bb else None
+        )
+
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--eyesim',type=Path,required=True);p.add_argument('--check',action='store_true');args=p.parse_args()
-    inputs=json.loads(INPUT.read_text())
-    with parity.r_session('eyes4s-compare-') as session:
-        lib=session.install_eyesim(args.eyesim);out=session.tmp/'reference.json'
-        session.rscript(HERE/'compare.R',lib,INPUT,out);actual=json.loads(out.read_text())
-    exact={}
-    for c,r in zip(inputs['cases'],actual['records'],strict=True):
-        if c['name'] not in ['regular','ties','orthogonal','identical']:continue
-        exact[c['name']]={}
-        for method in inputs['methods'][:-1]:
-            expected=oracle(c['a'],c['b'],method);v=scalar(r['vector'][method]);exact[c['name']][method]=expected
-            assert v is not None and abs(v-expected)<=1e-12,(c['name'],method,v,expected)
-            assert abs(scalar(r['density'][method])-expected)<=1e-12
-    assert abs(scalar(actual['transport']['dirac'])-1/(1+math.sqrt(2)))<=1e-12
-    assert abs(scalar(actual['transport']['split'])-0.5)<=1e-12
-    header=(ROOT/'compare/src/main/scala/eyes4s/compare/Distribution.scala').read_text().split('package ')[0]
-    scala=header+'package eyes4s.compare\n\n// Generated by tools/r-parity/generate_compare.py.\n// format: off\nobject MapReference:\n'
-    scala+='  final case class Case(name: String,a: Vector[Double],b: Vector[Double],expected: Vector[(String,Double)])\n'
-    def vec(v):return 'Vector('+','.join(repr(float(x)) for x in v)+')'
-    scala+='  val cases: Vector[Case] = Vector(\n'+',\n'.join('    Case('+','.join([json.dumps(c['name']),vec(c['a']),vec(c['b']),'Vector('+','.join('('+json.dumps(m)+','+repr(v)+')' for m,v in exact[c['name']].items())+')'])+')' for c in inputs['cases'] if c['name'] in exact)+'\n  )\n'
-    ordered=[]
-    for method in inputs['methods'][:-1]:
-        record=actual['scales']['ordered'][method]
-        result=record['none']['result']
-        values=result['values'];names=result['names']
-        assert abs(scalar(record['mean'])-sum(values)/len(values))<=1e-12
-        labels=[float(name.removeprefix('sigma_')) for name in names]
-        ordered.append('('+json.dumps(method)+',Vector('+','.join('('+repr(sigma)+','+repr(value)+')' for sigma,value in zip(labels,values,strict=True))+'))')
-    scala+='  val orderedScales: Vector[(String,Vector[(Double,Double)])] = Vector('+','.join(ordered)+')\n'
-    scala+='  val emdDiracSimilarity: Double = '+repr(scalar(actual['transport']['dirac']))+'\n'
-    scala+='  val emdSplitSimilarity: Double = '+repr(scalar(actual['transport']['split']))+'\n// format: on\n'
-    document=dict(eyesim_revision=parity.pinned_revision(),input_sha256=hashlib.sha256(INPUT.read_bytes()).hexdigest(),independent=exact,transport_oracle=dict(dirac_distance=math.sqrt(2),split_distance=1),reference=actual)
-    for path,content in [(OUTPUT,json.dumps(document,indent=2)+'\n'),(SCALA,scala)]:
-        if args.check:assert path.read_text()==content,f'Fixture drift: {path}'
-        else:path.write_text(content)
-    print('Map dispatch, methods and scale failure behavior measured with rational scalar and exact small transport oracles.')
-if __name__=='__main__':main()
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--eyesim", type=Path, required=True)
+    p.add_argument("--check", action="store_true")
+    args = p.parse_args()
+    inputs = json.loads(INPUT.read_text())
+    with parity.r_session("eyes4s-compare-") as session:
+        lib = session.install_eyesim(args.eyesim)
+        out = session.tmp / "reference.json"
+        session.rscript(HERE / "compare.R", lib, INPUT, out)
+        actual = json.loads(out.read_text())
+    exact = {}
+    for c, r in zip(inputs["cases"], actual["records"], strict=True):
+        if c["name"] not in ["regular", "ties", "orthogonal", "identical", "near-identical"]:
+            continue
+        exact[c["name"]] = {}
+        for method in inputs["methods"][:-1]:
+            expected = oracle(c["a"], c["b"], method)
+            v = scalar(r["vector"][method])
+            exact[c["name"]][method] = expected
+            assert v is not None and abs(v - expected) <= 1e-12, (
+                c["name"],
+                method,
+                v,
+                expected,
+            )
+            assert abs(scalar(r["density"][method]) - expected) <= 1e-12
+    # r = 1 - 32.4 eps exactly; eyesim snaps it to 1, so Fisher z is the clamped endpoint.
+    assert exact["near-identical"]["fisherz"] == math.atanh(1 - 2**-52) == exact["identical"]["fisherz"]
+    assert 1 - exact["near-identical"]["pearson"] > 8 * 2**-52
+    assert abs(scalar(actual["transport"]["dirac"]) - 1 / (1 + math.sqrt(2))) <= 1e-12
+    assert abs(scalar(actual["transport"]["split"]) - 0.5) <= 1e-12
+    header = (
+        (ROOT / "compare/src/main/scala/eyes4s/compare/Distribution.scala")
+        .read_text()
+        .split("package ")[0]
+    )
+    scala = (
+        header
+        + "package eyes4s.compare\n\n// Generated by tools/r-parity/generate_compare.py.\n// format: off\nobject MapReference:\n"
+    )
+    scala += "  final case class Case(name: String,a: Vector[Double],b: Vector[Double],expected: Vector[(String,Double)])\n"
+
+    def vec(v):
+        return "Vector(" + ",".join(repr(float(x)) for x in v) + ")"
+
+    scala += (
+        "  val cases: Vector[Case] = Vector(\n"
+        + ",\n".join(
+            "    Case("
+            + ",".join(
+                [
+                    json.dumps(c["name"]),
+                    vec(c["a"]),
+                    vec(c["b"]),
+                    "Vector("
+                    + ",".join(
+                        "(" + json.dumps(m) + "," + repr(v) + ")"
+                        for m, v in exact[c["name"]].items()
+                    )
+                    + ")",
+                ]
+            )
+            + ")"
+            for c in inputs["cases"]
+            if c["name"] in exact
+        )
+        + "\n  )\n"
+    )
+    ordered = []
+    for method in inputs["methods"][:-1]:
+        record = actual["scales"]["ordered"][method]
+        result = record["none"]["result"]
+        values = result["values"]
+        names = result["names"]
+        assert abs(scalar(record["mean"]) - sum(values) / len(values)) <= 1e-12
+        labels = [float(name.removeprefix("sigma_")) for name in names]
+        ordered.append(
+            "("
+            + json.dumps(method)
+            + ",Vector("
+            + ",".join(
+                "(" + repr(sigma) + "," + repr(value) + ")"
+                for sigma, value in zip(labels, values, strict=True)
+            )
+            + "))"
+        )
+    scala += (
+        "  val orderedScales: Vector[(String,Vector[(Double,Double)])] = Vector("
+        + ",".join(ordered)
+        + ")\n"
+    )
+    scala += (
+        "  val emdDiracSimilarity: Double = "
+        + repr(scalar(actual["transport"]["dirac"]))
+        + "\n"
+    )
+    scala += (
+        "  val emdSplitSimilarity: Double = "
+        + repr(scalar(actual["transport"]["split"]))
+        + "\n// format: on\n"
+    )
+    document = dict(
+        eyesim_revision=parity.pinned_revision(),
+        input_sha256=hashlib.sha256(INPUT.read_bytes()).hexdigest(),
+        independent=exact,
+        transport_oracle=dict(dirac_distance=math.sqrt(2), split_distance=1),
+        reference=actual,
+    )
+    for path, content in [
+        (OUTPUT, json.dumps(document, indent=2) + "\n"),
+        (SCALA, scala),
+    ]:
+        if args.check:
+            assert path.read_text() == content, f"Fixture drift: {path}"
+        else:
+            path.write_text(content)
+    print(
+        "Map dispatch, methods and scale failure behavior measured with rational scalar and exact small transport oracles."
+    )
+
+
+if __name__ == "__main__":
+    main()

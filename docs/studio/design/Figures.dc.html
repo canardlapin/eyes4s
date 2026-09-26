@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Eyes Studio — Figures</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=Source+Serif+4:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+/* ===== Eyes Studio tokens (the only place colours are written) ===== */
+.es{--ground:#ECE9E2;--surface:#FBFAF7;--surface-2:#F3F1EC;--surface-3:#E9E6DF;--hairline:#DAD6CC;--ink:#1C1E21;--ink-2:#464B52;--ink-3:#5E636A;--accent:#0E6E68;--accent-soft:#DCEFEC;--on-accent:#FFFFFF;--query:#3A2E6E;--query-soft:#E6E2F2;--match:#2F6DB5;--match-soft:#E0EAF6;--match-text:#255A98;--control:#B86E0E;--control-fill:#D98A1C;--control-text:#9A4A07;--control-soft:#F7E7D0;--fail:#A3261B;--fail-soft:#F6DEDA;--warn-text:#7A4F00;--warn-soft:#FBF1D9;--stage:#1A1A1A;--on-stage:#D9D6CF;--neutral-mark:rgba(28,30,33,.35);--sel-ring:0 0 0 2px #FFFFFF,0 0 0 4px #1C1E21;--tl-bg:#ECECEC;--tl-text:#4D4D4D}
+.es [data-stage=light],.es[data-stage=light]{--stage:#F2F2F2;--on-stage:#1C1E21}.es [data-stage=mid],.es[data-stage=mid]{--stage:#808080;--on-stage:#FFFFFF}
+.es.dark{--ground:#121315;--surface:#1B1C1F;--surface-2:#222327;--surface-3:#2A2C31;--hairline:#34363C;--ink:#ECEAE5;--ink-2:#BDBAB3;--ink-3:#9C9990;--accent:#43B5AA;--accent-soft:#183A37;--on-accent:#0B1413;--query:#D6CBFF;--query-soft:#2B2544;--match:#5C95E0;--match-soft:#1D2A3D;--match-text:#7FB0EE;--control:#E8A23C;--control-fill:#E8A23C;--control-text:#EBB066;--control-soft:#3A2A14;--fail:#F08A7E;--fail-soft:#3A1E1B;--warn-text:#E7C274;--warn-soft:#33290F;--neutral-mark:rgba(236,234,229,.35);--sel-ring:0 0 0 2px #000000,0 0 0 4px #ECEAE5;--tl-bg:#2B2B2B;--tl-text:#B0B0B0}
+/* Figures-only token: a figure page is paper in both themes; its ink is fixed too */
+.es{--paper:#FFFFFF;--paper-ink:#1C1E21;--paper-ink-2:#464B52;--paper-rule:#C9C5BC;--fig-query:#3A2E6E;--fig-match:#2F6DB5;--fig-control:#D98A1C}
+.es{font-family:"IBM Plex Sans",-apple-system,"Helvetica Neue",sans-serif;font-size:12px;color:var(--ink);background:var(--ground)}
+.es button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
+.es a{color:var(--accent)}.es a:hover{color:var(--ink)}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.t11{font-size:11px}.t13{font-size:13px;font-weight:600}.t16{font-size:16px}.t28{font-size:28px;font-weight:500;letter-spacing:-.02em}
+.row{display:flex;align-items:center;gap:8px}
+.chip{display:flex;align-items:center;gap:6px;height:24px;padding:0 9px;border:1px solid var(--hairline);border-radius:6px;background:var(--surface);color:var(--ink-2);white-space:nowrap}
+.seg{display:flex;gap:2px;padding:2px;background:var(--surface-3);border-radius:7px}
+.seg button{border:0;background:transparent;height:28px;padding:0 12px;border-radius:5px;color:var(--ink-2);display:flex;align-items:center;gap:7px;font-weight:500}
+.seg button .k{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-2)}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--hairline)}
+.grp{display:flex;flex-direction:column;background:var(--surface);min-width:0;min-height:0}
+.hdr{height:28px;flex:none;display:flex;align-items:stretch;background:var(--surface-2);border-bottom:1px solid var(--hairline)}
+.tab{display:flex;align-items:center;gap:6px;padding:0 12px;color:var(--ink-2);border:0;border-right:1px solid var(--hairline);background:transparent;white-space:nowrap}
+.tab.sel{background:var(--surface);color:var(--ink);font-weight:600;margin-bottom:-1px}
+.tab.sel.focus{box-shadow:inset 0 2px 0 var(--accent)}
+.hbtns{margin-left:auto;display:flex;align-items:center;gap:2px;padding:0 6px}
+.ib{width:22px;height:22px;border:0;background:transparent;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--ink-3);padding:0}
+.tb{height:30px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--hairline);background:var(--surface)}
+.lbl{font-size:11px;font-weight:600;color:var(--ink-3)}
+.tog{height:22px;border:1px solid var(--hairline);background:var(--surface);border-radius:4px;padding:0 8px;color:var(--ink-2)}
+.tog.on{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.crumb{height:22px;border:0;background:transparent;border-radius:4px;padding:0 6px;color:var(--ink-2)}
+.crumb:hover{background:var(--surface-3)}
+.crumb.cur{color:var(--ink);font-weight:600}
+.sep{color:var(--ink-3)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px}
+.kind{font-size:11px;font-weight:600;padding:1px 6px;border-radius:3px;border:1px solid var(--hairline);color:var(--ink-2);background:var(--surface-2)}
+.sect{border-top:1px solid var(--hairline);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.kv{display:grid;grid-template-columns:118px minmax(0,1fr);row-gap:5px;column-gap:8px;margin:0}
+.kv dt{color:var(--ink-3);margin:0}.kv dd{margin:0}
+.btn{height:26px;padding:0 10px;border-radius:4px;border:1px solid var(--hairline);background:var(--surface);font-weight:500}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.stage{background:var(--stage)}
+/* Figures board */
+.fi{display:grid;grid-template-columns:14px minmax(0,1fr) auto;align-items:center;gap:6px;height:26px;padding:0 10px 0 24px;border:0;background:transparent;width:100%;text-align:left;color:var(--ink)}
+.fi.sel{box-shadow:inset 0 0 0 2px var(--ink);background:var(--surface-2)}
+.fig{font-family:"IBM Plex Sans",sans-serif;color:var(--paper-ink)}
+.pl{font-size:10px;font-weight:600}
+.fc{font-size:9px;color:var(--paper-ink-2);line-height:1.3}
+.panel{position:relative;display:flex;flex-direction:column;gap:3px;border-radius:2px}
+.panel.sel{box-shadow:var(--sel-ring)}
+.hatch{background:repeating-linear-gradient(135deg,var(--warn-soft) 0 6px,var(--surface) 6px 12px)}
+.ck{display:flex;align-items:center;gap:8px}
+.ck input{accent-color:var(--accent);margin:0}
+.serif{font-family:"Source Serif 4",Georgia,serif}
+</style>
+</helmet>
+
+<div class="{{rootClass}}" style="width:1440px;height:900px;display:flex;flex-direction:column;overflow:hidden">
+
+<!-- 1 · Native title bar (system-drawn; shown for context only) -->
+<div style="height:28px;flex:none;display:flex;align-items:center;padding:0 12px;background:var(--tl-bg);position:relative">
+<div style="display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:#FF5F57"></span><span style="width:12px;height:12px;border-radius:50%;background:#FEBC2E"></span><span style="width:12px;height:12px;border-radius:50%;background:#28C840"></span></div>
+<div style="position:absolute;left:0;right:0;text-align:center;color:var(--tl-text);pointer-events:none">memory-study.eyes</div>
+</div>
+
+<!-- 2 · App bar -->
+<header style="height:44px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px 0 14px;background:var(--surface);border-bottom:1px solid var(--hairline)">
+<div class="row" style="gap:7px;margin-right:4px">
+<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M1.5 10C4 5.5 7 3.5 10 3.5S16 5.5 18.5 10C16 14.5 13 16.5 10 16.5S4 14.5 1.5 10Z" fill="none" stroke="var(--ink)" stroke-width="1.5"/><circle cx="10" cy="10" r="3.2" fill="var(--ink)"/><circle cx="11.2" cy="8.8" r="1" fill="var(--surface)"/></svg>
+<span class="t13" style="letter-spacing:-.01em">Eyes Studio</span>
+</div>
+<button class="chip"><span>memory-study</span><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+<div style="flex:1"></div>
+<nav class="seg" aria-label="Perspectives">
+<button>Data <span class="k">⌘1</span></button>
+<button>Explore <span class="k">⌘2</span></button>
+<button>Analysis <span class="k">⌘3</span></button>
+<button>Compare <span class="k">⌘4</span></button>
+<button class="on" aria-current="page">Figures <span class="k">⌘5</span></button>
+</nav>
+<div style="flex:1"></div>
+<button class="chip" aria-label="Jobs: none running"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h6"/></svg>No jobs</button>
+</header>
+
+<!-- 3 · Context strip: trail + freshness -->
+<div style="height:32px;flex:none;display:flex;align-items:center;gap:4px;padding:0 10px;background:var(--surface);border-bottom:1px solid var(--hairline)">
+<button class="ib" aria-label="Back (⌘[)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3 5 8l5 5"/></svg></button>
+<button class="ib" aria-label="Forward (⌘])"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m6 3 5 5-5 5"/></svg></button>
+<nav class="row" style="gap:2px;margin-left:4px" aria-label="Trail">
+<button class="crumb">Figures</button><span class="sep">›</span>
+<button class="crumb">Figure 1</button><span class="sep">›</span>
+<button class="crumb cur" aria-current="location">{{panelCrumb}}</button>
+</nav>
+<div style="flex:1"></div>
+<span class="chip" style="height:22px"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></span>Analysis rev 4 · run 7 · data r3 · current</span>
+<button class="chip" style="height:22px;border-style:dashed;border-color:var(--ink-2);color:var(--ink)">Draft rev 5 · 1 change · ready</button>
+</div>
+
+<!-- 4 · Draft banner (Compare/Figures only, while a draft differs) -->
+<div style="height:30px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--surface-2);border-bottom:1px dashed var(--ink-2)">
+<span style="font-weight:600">Figure 1 shows run 7 (analysis rev 4).</span>
+<span style="color:var(--ink-2)">Draft rev 5 adds σ 8° and has not been run. Figures never follow a draft.</span>
+<div style="flex:1"></div>
+<button class="btn" style="height:22px">Review in Analysis</button>
+<button class="btn" style="height:22px">Discard draft</button>
+</div>
+
+<!-- 5 · Dock -->
+<div style="flex:1;min-height:0;display:flex;gap:1px;background:var(--hairline)">
+
+<!-- Navigator -->
+<section class="grp" style="width:240px;flex:none" aria-label="Figures navigator">
+<div class="hdr"><button class="tab sel">Figures</button><div class="hbtns"><button class="ib" aria-label="Minimize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
+<div class="tb"><button class="btn" style="height:22px">New figure</button><div style="flex:1"></div><span class="lbl">2 figures</span></div>
+<div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+<div style="padding:8px 10px 4px;display:flex;flex-direction:column;gap:2px">
+<div class="row" style="justify-content:space-between"><span class="t13">Figure 1</span><span class="row t11" style="gap:5px;color:var(--ink-2)"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></span>current</span></div>
+<span class="t11 mono" style="color:var(--ink-2)">run 7 · rev 4 · data r3</span>
+<span class="t11" style="color:var(--ink-2)">Reporting: By retrieval response</span>
+</div>
+<sc-for list="{{panels}}" as="p" hint-placeholder-count="5">
+<button class="{{p.cls}}" onClick="{{p.pick}}" aria-label="{{p.aria}}"><span class="mono" style="font-weight:600">{{p.letter}}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{p.name}}</span><span class="t11 mono" style="color:var(--ink-3)">{{p.scope}}</span></button>
+</sc-for>
+<div style="margin:12px 10px 0;border:1px solid var(--hairline);border-radius:6px;overflow:hidden">
+<div class="hatch" style="padding:8px 10px;display:flex;flex-direction:column;gap:3px">
+<div class="row" style="justify-content:space-between"><span class="t13">Figure 2</span><span class="t11" style="font-weight:600;color:var(--warn-text)">Stale</span></div>
+<span class="t11 mono" style="color:var(--ink-2)">run 5 · rev 3 · data r2</span>
+</div>
+<div style="padding:8px 10px;display:flex;flex-direction:column;gap:6px;background:var(--surface)">
+<span class="t11" style="color:var(--ink-2);line-height:1.45">Bound to run 5 · rev 3 · data r2, which is no longer current: dataset r3 changed the admission status of 4 trials. The figure still shows run 5 exactly as it was.</span>
+<div class="row" style="gap:6px"><button class="btn" style="height:22px">Rebind…</button><button class="btn" style="height:22px">Keep as rev 3</button></div>
+</div>
+</div>
+</div>
+<div class="t11" style="border-top:1px solid var(--hairline);padding:8px 12px;color:var(--ink-2);line-height:1.45">A figure binds to one run and one reporting spec. It never follows the latest result.</div>
+</section>
+
+<!-- Centre: page + methods -->
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+<section class="grp" style="flex:1;min-height:0" aria-label="Figure 1 page">
+<div class="hdr"><button class="tab sel focus">Figure 1</button><button class="tab">Table</button><div class="hbtns"><button class="ib" aria-label="Maximize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
+<div class="tb">
+<span class="lbl">Page</span><span class="mono t11">183 mm · two-column</span>
+<span style="width:1px;height:14px;background:var(--hairline)"></span>
+<button class="{{greyCls}}" onClick="{{toggleGrey}}">Greyscale check</button>
+<span class="t11" style="color:var(--ink-2)">{{greyNote}}</span>
+<div style="flex:1"></div>
+<span class="mono t11" style="color:var(--ink-3)">100% · 3.5 px/mm</span>
+</div>
+<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:var(--surface-3)">
+<div class="fig" tabindex="0" role="group" aria-label="Figure 1 page, 5 panels; arrow keys move between panels" style="width:640px;height:420px;box-sizing:border-box;padding:12px 14px 10px;background:var(--paper);box-shadow:0 1px 3px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:9px;filter:{{greyFilter}}">
+
+<!-- Row 1: A, B, C -->
+<div style="display:flex;gap:10px;height:156px">
+<!-- A -->
+<div class="{{clsA}}" style="width:170px">
+<span class="pl">A <span style="font-weight:400">Encoding · enc_03 · beach-042</span></span>
+<svg width="170" height="128" viewBox="0 0 1024 768" role="img" aria-label="Panel A: encoding gaze on beach-042, 13 fixations">
+<rect width="1024" height="330" fill="#C9D3D6"/><rect y="330" width="1024" height="150" fill="#8FA3AB"/><rect y="480" width="1024" height="288" fill="#D9CDB4"/>
+<circle cx="820" cy="140" r="54" fill="#E9E4D6"/>
+<path d="M300 480V330M300 330q-60-30-110 0M300 330q60-40 120-10M300 330q-20-60-50-80M300 330q30-60 80-68" stroke="#5E6660" stroke-width="10" fill="none"/>
+<path d="M580 600 740 470l20 130Z" fill="#A45C4A" opacity=".75"/><rect x="640" y="600" width="12" height="90" fill="#6E5B4A"/>
+<polyline points="512,384 300,430 540,360 700,300 640,560" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-dasharray="14 10"/>
+<g fill="var(--fig-match)" stroke="#FFFFFF" stroke-width="5"><path d="M512 370 526 384 512 398 498 384Z"/><path d="M300 400 330 430 300 460 270 430Z"/><path d="M540 324 576 360 540 396 504 360Z"/><path d="M700 274 726 300 700 326 674 300Z"/><path d="M640 538 662 560 640 582 618 560Z"/></g>
+</svg>
+<span class="fc">Displayed: image. Diamonds: fixations (area ∝ duration); dashes: order only.</span>
+</div>
+<!-- B -->
+<div class="{{clsB}}" style="width:170px">
+<span class="pl">B <span style="font-weight:400">Retrieval · ret_07</span></span>
+<svg width="170" height="128" viewBox="0 0 1024 768" role="img" aria-label="Panel B: retrieval gaze on blank screen with fixation cross, 12 fixations">
+<rect width="1024" height="768" fill="#9A9A96"/>
+<path d="M512 354v60M482 384h60" stroke="#E7E5E0" stroke-width="6"/>
+<polyline points="512,384 330,440 290,470 520,370 590,400 700,300 730,320 640,560 600,540 420,610" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-dasharray="14 10"/>
+<g fill="var(--fig-query)" stroke="#FFFFFF" stroke-width="5"><circle cx="512" cy="384" r="14"/><circle cx="330" cy="440" r="28"/><circle cx="290" cy="470" r="20"/><circle cx="520" cy="370" r="32"/><circle cx="590" cy="400" r="22"/><circle cx="700" cy="300" r="30"/><circle cx="730" cy="320" r="16"/><circle cx="640" cy="560" r="26"/><circle cx="600" cy="540" r="18"/><circle cx="420" cy="610" r="20"/></g>
+</svg>
+<span class="fc">Displayed: blank + fixation cross. The remembered image was not shown.</span>
+</div>
+<!-- C -->
+<div class="{{clsC}}" style="flex:1;min-width:0">
+<span class="pl">C <span style="font-weight:400">Density maps, σ 2° · single trial P17 ret_07</span></span>
+<div style="display:flex;gap:6px">
+<div style="display:flex;flex-direction:column;gap:2px">
+<svg width="84" height="63" viewBox="0 0 1024 768" role="img" aria-label="Query map ret_07">
+<defs><radialGradient id="fq"><stop offset="0" stop-color="#6B0F4F"/><stop offset=".35" stop-color="#B83F86"/><stop offset=".7" stop-color="#E58FB9"/><stop offset="1" stop-color="#F9D9EA" stop-opacity="0"/></radialGradient></defs>
+<rect width="1024" height="768" fill="var(--stage)"/>
+<ellipse cx="320" cy="445" rx="150" ry="120" fill="url(#fq)"/><ellipse cx="560" cy="385" rx="170" ry="130" fill="url(#fq)"/><ellipse cx="700" cy="300" rx="120" ry="100" fill="url(#fq)"/><ellipse cx="640" cy="560" rx="110" ry="90" fill="url(#fq)"/>
+<g fill="none" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="12"><ellipse cx="545" cy="400" rx="300" ry="190"/><ellipse cx="560" cy="385" rx="90" ry="70"/></g><g fill="none" stroke="#1C1E21" stroke-opacity=".8" stroke-width="6"><ellipse cx="545" cy="400" rx="300" ry="190"/><ellipse cx="560" cy="385" rx="90" ry="70"/></g>
+</svg>
+<span class="fc row" style="gap:3px"><svg width="7" height="7" viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4" fill="var(--fig-query)"/></svg>Query ret_07</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px">
+<svg width="84" height="63" viewBox="0 0 1024 768" role="img" aria-label="Matched map enc_03, cosine 0.73">
+<defs><radialGradient id="fmm"><stop offset="0" stop-color="#6B0F4F"/><stop offset=".35" stop-color="#B83F86"/><stop offset=".7" stop-color="#E58FB9"/><stop offset="1" stop-color="#F9D9EA" stop-opacity="0"/></radialGradient></defs>
+<rect width="1024" height="768" fill="var(--stage)"/>
+<ellipse cx="300" cy="430" rx="160" ry="125" fill="url(#fmm)"/><ellipse cx="540" cy="360" rx="150" ry="120" fill="url(#fmm)"/><ellipse cx="700" cy="300" rx="120" ry="100" fill="url(#fmm)"/><ellipse cx="640" cy="560" rx="100" ry="85" fill="url(#fmm)"/>
+<g fill="none" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="12"><ellipse cx="520" cy="400" rx="300" ry="190"/><ellipse cx="540" cy="360" rx="92" ry="72"/></g><g fill="none" stroke="#1C1E21" stroke-opacity=".8" stroke-width="6"><ellipse cx="520" cy="400" rx="300" ry="190"/><ellipse cx="540" cy="360" rx="92" ry="72"/></g>
+</svg>
+<span class="fc row" style="gap:3px"><svg width="7" height="7" viewBox="0 0 8 8" aria-hidden="true"><path d="M4 0 8 4 4 8 0 4Z" fill="var(--fig-match)"/></svg>Matched enc_03 · 0.73</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px">
+<svg width="84" height="63" viewBox="0 0 1024 768" role="img" aria-label="Highest-scoring control street-112, cosine 0.61">
+<defs><radialGradient id="fmc"><stop offset="0" stop-color="#6B0F4F"/><stop offset=".35" stop-color="#B83F86"/><stop offset=".7" stop-color="#E58FB9"/><stop offset="1" stop-color="#F9D9EA" stop-opacity="0"/></radialGradient></defs>
+<rect width="1024" height="768" fill="var(--stage)"/>
+<ellipse cx="420" cy="300" rx="160" ry="125" fill="url(#fmc)"/><ellipse cx="610" cy="420" rx="150" ry="120" fill="url(#fmc)"/><ellipse cx="760" cy="560" rx="120" ry="100" fill="url(#fmc)"/>
+<g fill="none" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="12"><ellipse cx="590" cy="420" rx="290" ry="200"/><ellipse cx="610" cy="420" rx="92" ry="72"/></g><g fill="none" stroke="#1C1E21" stroke-opacity=".8" stroke-width="6"><ellipse cx="590" cy="420" rx="290" ry="200"/><ellipse cx="610" cy="420" rx="92" ry="72"/></g>
+</svg>
+<span class="fc row" style="gap:3px"><svg width="7" height="7" viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="3" fill="none" stroke="var(--fig-control)" stroke-width="1.5"/></svg>Control street-112 · 0.61</span>
+</div>
+</div>
+<span class="fc">Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38. Magenta: fixation duration mass per cell, shared limits; lines: 50% and 90% mass.</span>
+</div>
+</div>
+
+<!-- Row 2: D, E -->
+<div style="display:flex;gap:10px;height:196px">
+<!-- D -->
+<div class="{{clsD}}" style="width:330px">
+<sc-if value="{{isD}}" hint-placeholder-val="{{true}}">
+<div class="t11" style="position:absolute;right:0;top:-22px;height:18px;display:flex;align-items:center;gap:5px;padding:0 7px;border-radius:4px;background:var(--ink);color:var(--surface);font-family:'IBM Plex Mono',monospace;white-space:nowrap"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>panel: σ 2° · all admitted queries</div>
+</sc-if>
+<span class="pl">D <span style="font-weight:400">Reinstatement by retrieval response, σ 2°</span></span>
+<svg width="330" height="164" viewBox="0 0 330 164" role="img" aria-label="Panel D: participant mean D for Remembered and Forgotten retrieval trials, 24 participants each, paired lines; grand means plus 0.30 and plus 0.15">
+<g font-family="IBM Plex Sans" font-size="9" fill="var(--paper-ink-2)">
+<text x="34" y="{{yt6}}" text-anchor="end">0.6</text><text x="34" y="{{yt4}}" text-anchor="end">0.4</text><text x="34" y="{{yt2}}" text-anchor="end">0.2</text><text x="34" y="{{yt0}}" text-anchor="end">0</text><text x="34" y="{{ytm2}}" text-anchor="end">−0.2</text>
+</g>
+<text transform="translate(9 84) rotate(-90)" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="var(--paper-ink)">Δ cosine (D = M − B)</text>
+<path d="M40 {{y6}}V{{ym3}}" stroke="var(--paper-rule)" stroke-width="1"/>
+<path d="M40 {{y0}}H250" stroke="var(--paper-ink)" stroke-width="1"/>
+<path d="{{dLines}}" stroke="var(--paper-rule)" stroke-width="0.8" fill="none"/>
+<path d="{{remDots}}" fill="var(--paper-ink)"/>
+<path d="{{forgDots}}" fill="var(--paper)" stroke="var(--paper-ink-2)" stroke-width="1"/>
+<path d="M76 {{yRem}}H124" stroke="var(--paper-ink)" stroke-width="2.5"/>
+<path d="M186 {{yForg}}H234" stroke="var(--paper-ink-2)" stroke-width="2.5" stroke-dasharray="4 2"/>
+<g font-family="IBM Plex Sans" font-size="9" fill="var(--paper-ink)">
+<text x="100" y="158" text-anchor="middle">Remembered</text><text x="210" y="158" text-anchor="middle">Forgotten</text>
+<text x="128" y="{{yRemT}}">+0.30</text><text x="238" y="{{yForgT}}">+0.15</text>
+</g>
+<g font-family="IBM Plex Sans" font-size="9" fill="var(--paper-ink-2)">
+<text x="258" y="24">n = 24 each</text><text x="258" y="36">paired n = 24</text><text x="258" y="52">bars: grand mean</text><text x="258" y="64">of participant</text><text x="258" y="76">means, equal</text><text x="258" y="88">weight</text>
+</g>
+</svg>
+<span class="fc">Each pair of dots is one participant; per participant, 2–17 queries per group. Descriptive only: no intervals or tests. P05 (lowest) had 3 failed contrasts; its means use 17 of 20 queries.</span>
+</div>
+<!-- E -->
+<div class="{{clsE}}" style="flex:1;min-width:0">
+<span class="pl">E <span style="font-weight:400">Scale profile by retrieval response (scales declared before run)</span></span>
+<svg width="272" height="164" viewBox="0 0 272 164" role="img" aria-label="Panel E: grand mean D by smoothing scale 0.5, 1, 2 and 4 degrees. Remembered 0.15, 0.24, 0.30, 0.19; Forgotten 0.07, 0.12, 0.15, 0.09">
+<g font-family="IBM Plex Sans" font-size="9" fill="var(--paper-ink-2)">
+<text x="30" y="{{e5}}" text-anchor="end">0.5</text><text x="30" y="{{e3}}" text-anchor="end">0.3</text><text x="30" y="{{e1}}" text-anchor="end">0.1</text><text x="30" y="{{e0t}}" text-anchor="end">0</text>
+</g>
+<text transform="translate(8 80) rotate(-90)" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="var(--paper-ink)">Δ cosine (D)</text>
+<path d="M36 {{e0}}H250" stroke="var(--paper-ink)" stroke-width="1"/>
+<path d="{{eMean}}" stroke="var(--paper-ink)" stroke-width="2" fill="none"/>
+<path d="{{eMeanDots}}" fill="var(--paper-ink)"/>
+<path d="{{eForg}}" stroke="var(--paper-ink-2)" stroke-width="2" stroke-dasharray="4 2" fill="none"/>
+<path d="{{eForgDots}}" fill="var(--paper)" stroke="var(--paper-ink-2)" stroke-width="1"/>
+<g font-family="IBM Plex Sans" font-size="9"><text x="246" y="{{eRemL}}" fill="var(--paper-ink)">Rem.</text><text x="246" y="{{eForgL}}" fill="var(--paper-ink-2)">Forg.</text></g>
+<g font-family="IBM Plex Sans" font-size="9" fill="var(--paper-ink)">
+<text x="60" y="152" text-anchor="middle">0.5°</text><text x="120" y="152" text-anchor="middle">1°</text><text x="180" y="152" text-anchor="middle">2°</text><text x="240" y="152" text-anchor="middle">4°</text>
+<text x="150" y="163" text-anchor="middle" fill="var(--paper-ink-2)">Gaussian σ (log scale)</text>
+</g>
+</svg>
+<span class="fc">Grand mean of participant means, equal weight; solid Remembered, dashed Forgotten; n = 24 each. Each scale computed separately.</span>
+</div>
+</div>
+<div class="fc" style="font-size:9px;border-top:1px solid var(--paper-rule);padding-top:4px">Figure 1. Matched-minus-control spatial similarity of retrieval gaze (dataset r3, analysis rev 4, run 7). Spatial correspondence, not sequential replay.</div>
+</div>
+</div>
+</section>
+
+<!-- methods.md -->
+<section class="grp" style="height:236px;flex:none" aria-label="methods.md">
+<div class="hdr"><button class="tab sel">methods.md</button><button class="tab">Diff vs generated</button><div class="hbtns"><button class="ib" aria-label="Maximize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
+<div class="tb">
+<span class="t11" style="color:var(--ink-2)">Generated from run 7 and reporting spec "By retrieval response" · 1 sentence edited by you</span>
+<div style="flex:1"></div>
+<button class="btn" style="height:22px">Show diff</button>
+<button class="btn" style="height:22px">Regenerate</button>
+</div>
+<div style="flex:1;min-height:0;overflow:hidden;padding:10px 18px;display:flex;gap:18px">
+<div class="serif" style="flex:1;font-size:12px;line-height:1.55;color:var(--ink)">
+Fixations (fixations.csv, 11,520 records; dataset r3) were admitted per trial against the trials.csv inventory of 960 trials: 937 admitted, 17 quarantined (overlap 6, no-fixations 5, duplicate-ordinals 4, rejected-records 2) and 6 absent (no fixation records). Positions were analysed in the 1024 × 768 image frame placed in a 1920 × 1080 screen; 543 of 11,520 fixation records (4.7%), in 409 trials, fell outside the frame and were excluded from the maps; they are reported per trial. Degrees are measured from the image centre (x right, y up) using a declared, uncalibrated 35 px/° with linear conversion. The initial-fixation policy was Keep all: every fixation, including the first, was kept. Each trial was represented as a duration-weighted fixation density map on a 64 × 48 grid (cell 0.46°), smoothed with Gaussian kernels at σ = 0.5°, 1°, 2° and 4°, declared before the run. Of 480 retrieval queries, 457 were eligible; for each of the 457 eligible queries, cosine similarity was computed to the matched encoding trial (M) and to every admitted encoding trial of another item from the same participant (19 per query; 18 where one encoding trial was not admitted); their mean is B, and D = M − B. A contrast required all of its pairs: 454 contributed, 3 failed (empty map), 9 had no admitted matched trial and 14 queries were not admitted. D was averaged within participant, then across participants with equal weight, separately by retrieval response (n = 24 each; paired n = 24). Per participant, groups held 2–17 queries; the minimum of 3 queries per group was not applied in this reporting spec (P17 and P21 each have 2 Forgotten queries). D measures spatial correspondence, not sequential replay. D does not separate participant-specific reinstatement from item-driven salience common to all viewers of that image, and may retain residual centre bias. Analysis rev 4, run 7; eyes4s [VERSION].
+</div>
+</div>
+</section>
+</div>
+
+<!-- Inspector -->
+<section class="grp" style="width:300px;flex:none" aria-label="Panel inspector">
+<div class="hdr"><button class="tab sel">Panel {{panelLetter}}</button><div class="hbtns"><button class="ib" aria-label="Minimize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
+<div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+<div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+<div class="row" style="justify-content:space-between"><span class="t13">Figure 1 binding</span><span class="kind row" style="gap:4px"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>Locked · scientific</span></div>
+<dl class="kv">
+<dt>Run</dt><dd class="mono">run 7 · rev 4 · data r3</dd>
+<dt>Reporting spec</dt><dd>By retrieval response</dd>
+<dt>Unit</dt><dd>Participant means, equal weight</dd>
+</dl>
+<div class="row" style="gap:6px"><button class="btn" style="height:24px">Open in Compare</button><button class="btn" style="height:24px">Rebind figure…</button></div>
+<span class="t11" style="color:var(--ink-2);line-height:1.45">One run and one reporting spec for the whole figure; methods.md cites them once. Rebinding makes a new figure version; the old one stays reproducible.</span>
+</div>
+<div class="sect">
+<div class="row" style="justify-content:space-between"><span class="t13">Panel {{panelLetter}}</span><span class="kind">Panel choice</span></div>
+<dl class="kv">
+<dt>Scale</dt><dd class="mono">{{bScale}}</dd>
+<dt>Trial selection</dt><dd>{{bSel}}</dd>
+</dl>
+<div class="sect">
+<div class="row" style="justify-content:space-between"><span class="t13">Appearance</span><span class="kind">View only</span></div>
+<div class="row" style="justify-content:space-between"><span>Text size</span><span class="seg" style="padding:1px"><button style="height:20px;padding:0 8px">6 pt</button><button class="on" style="height:20px;padding:0 8px">7 pt</button><button style="height:20px;padding:0 8px">8 pt</button></span></div>
+<div class="row" style="justify-content:space-between"><span>Participant lines</span><span class="seg" style="padding:1px"><button class="on" style="height:20px;padding:0 8px">Show</button><button style="height:20px;padding:0 8px">Hide</button></span></div>
+<div class="row" style="justify-content:space-between"><span>Panel width</span><span class="mono">94 mm</span></div>
+</div>
+<div class="sect" style="flex:1">
+<span class="t13">Export</span>
+<div class="row" style="justify-content:space-between"><span>Figure format</span><span class="seg" style="padding:1px"><button class="on" style="height:20px;padding:0 8px">SVG</button><button style="height:20px;padding:0 8px">PDF</button><button style="height:20px;padding:0 8px">PNG</button></span></div>
+<div class="lbl" style="margin-top:2px">Bundle</div>
+<div style="display:flex;flex-direction:column;gap:5px">
+<label class="ck"><input type="checkbox" checked><span class="mono">figure-1.svg</span></label>
+<label class="ck"><input type="checkbox" checked><span class="mono">results.csv</span><span class="t11" style="color:var(--ink-3)">480 queries × 4 σ</span></label>
+<label class="ck"><input type="checkbox" checked><span class="mono">comparisons.csv</span><span class="t11" style="color:var(--ink-3)">35,876 pair rows</span></label>
+<label class="ck"><input type="checkbox" checked><span class="mono">participants.csv</span><span class="t11" style="color:var(--ink-3)">24 × 2 groups</span></label>
+<label class="ck"><input type="checkbox" checked><span class="mono">methods.md</span></label>
+<label class="ck"><input type="checkbox"><span class="mono">project snapshot</span><span class="t11" style="color:var(--ink-3)">includes images</span></label>
+</div>
+<div style="flex:1"></div>
+<button class="btn pri" style="height:28px">Export bundle…</button>
+</div>
+</div>
+</section>
+</div>
+
+<!-- 6 · Status bar -->
+<footer class="t11" style="height:24px;flex:none;display:flex;align-items:center;gap:12px;padding:0 12px;background:var(--surface-2);border-top:1px solid var(--hairline);color:var(--ink-2)">
+<span class="row" style="gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--ink)"></span>Selected:<span class="mono" style="color:var(--ink)">Figure 1 › {{panelCrumb}} (run 7 · σ 2°)</span></span>
+<span style="width:1px;height:12px;background:var(--hairline)"></span>
+<span>Arrow keys move between panels · Enter opens the binding</span>
+<div style="flex:1"></div>
+<span>No jobs</span>
+<span style="width:1px;height:12px;background:var(--hairline)"></span>
+<span>Saved 10:24</span>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { panel: 'D', grey: false }; }
+  renderVals() {
+    const rem  = [.26,.27,.38,.36,-.03,.30,.32,.31,.34,.45,.28,.34,.17,.29,.18,.45,.38,.42,.29,.26,.32,.27,.34,.36];
+    const forg = [.06,.12,.15,.18,-.23,.17,.10,.15,.24,.33,.11,.19,.03,.22,-.08,.28,.32,.37,.06,.12,.27,.06,.21,.17];
+    const all  = [.17,.22,.33,.29,-.08,.25,.27,.25,.32,.43,.22,.28,.11,.27,.10,.38,.38,.41,.24,.22,.31,.19,.30,.30];
+    const f = v => v.toFixed(1);
+    // Panel D: Δ cosine from −0.3 to +0.6
+    const y = v => 12 + (0.6 - v) / 0.9 * 132;
+    const jit = k => ((k * 7) % 9 - 4) * 2.6;
+    const circ = (x, yy, r) => `M${f(x - r)} ${f(yy)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`;
+    const dLines = rem.map((r, k) => `M${f(100 + jit(k))} ${f(y(r))}L${f(210 + jit(k))} ${f(y(forg[k]))}`).join('');
+    const remDots = rem.map((r, k) => circ(100 + jit(k), y(r), 2.6)).join('');
+    const forgDots = forg.map((r, k) => circ(210 + jit(k), y(r), 2.6)).join('');
+    // Panel E: D from −0.1 to 0.5 over log-spaced σ
+    const ey = v => 10 + (0.5 - v) / 0.6 * 126;
+    const xs = [60, 120, 180, 240], prof = [0.5, 0.78, 1.0, 0.62];
+    const mean = [0.15, 0.24, 0.30, 0.19], fmean = [0.07, 0.12, 0.15, 0.09];
+    const eMean = mean.map((m, i) => (i ? 'L' : 'M') + xs[i] + ' ' + f(ey(m))).join('');
+    const eMeanDots = mean.map((m, i) => circ(xs[i], ey(m), 3)).join('');
+    const eForg = fmean.map((m, i) => (i ? 'L' : 'M') + xs[i] + ' ' + f(ey(m))).join('');
+    const eForgDots = fmean.map((m, i) => circ(xs[i], ey(m), 2.6)).join('');
+    const P = this.state.panel;
+    const defs = [
+      ['A','Encoding gaze','trial'],['B','Retrieval gaze','trial'],['C','Density maps','trial'],
+      ['D','Participant D by response','study'],['E','Scale profile by response','study']
+    ];
+    const bind = {
+      A: ['—', 'P17 enc_03 · beach-042 (1 trial)'],
+      B: ['—', 'P17 ret_07 · beach-042 (1 trial)'],
+      C: ['σ 2°', 'P17 ret_07 · matched + highest control'],
+      D: ['σ 2°', 'All admitted retrieval queries'],
+      E: ['0.5° · 1° · 2° · 4°', 'All admitted retrieval queries']
+    }[P];
+    const cls = l => l === P ? 'panel sel' : 'panel';
+    return {
+      rootClass: this.props.dark ? 'es dark' : 'es',
+      panels: defs.map(([l, n, s]) => ({ letter: l, name: n, scope: s, cls: l === P ? 'fi sel' : 'fi',
+        aria: 'Panel ' + l + ', ' + n, pick: () => this.setState({ panel: l }) })),
+      clsA: cls('A'), clsB: cls('B'), clsC: cls('C'), clsD: cls('D'), clsE: cls('E'), isD: P === 'D',
+      panelLetter: P, panelCrumb: 'Panel ' + P,
+      bScale: bind[0], bSel: bind[1],
+      greyCls: this.state.grey ? 'tog on' : 'tog',
+      toggleGrey: () => this.setState({ grey: !this.state.grey }),
+      greyFilter: this.state.grey ? 'grayscale(1)' : 'none',
+      greyNote: this.state.grey ? 'Roles still differ by shape and lightness' : 'Preview the figure as a greyscale print',
+      dLines, remDots, forgDots,
+      y6: f(y(0.6)), ym3: f(y(-0.3)), y0: f(y(0)),
+      yt6: f(y(0.6) + 3), yt4: f(y(0.4) + 3), yt2: f(y(0.2) + 3), yt0: f(y(0) + 3), ytm2: f(y(-0.2) + 3),
+      yRem: f(y(0.30)), yForg: f(y(0.15)), yRemT: f(y(0.30) + 3), yForgT: f(y(0.15) + 3),
+      eMean, eMeanDots, eForg, eForgDots, eRemL: f(ey(0.19) + 3), eForgL: f(ey(0.09) + 3),
+      e0: f(ey(0)), e5: f(ey(0.5) + 3), e3: f(ey(0.3) + 3), e1: f(ey(0.1) + 3), e0t: f(ey(0) + 3)
+    };
+  }
+}
+</script>
+</body>
+</html>

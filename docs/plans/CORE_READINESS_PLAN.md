@@ -39,7 +39,7 @@ temporal plans. Each family must provide:
 | CR6 | Form-grade descriptors | Typed numeric bounds, defaults, unit enums, raw-input JSON, no path-dependent types at the host boundary | new |
 | CR7 | Fixation-level AOI | Fixation and scanpath dwell, entries and visits, after the owner's visit decision | `bd-01M2R18YTC8BF4T1890QX991RW` |
 | CR8 | Interactive bounds | Cursors or work bounds on quadratic measures (distance correlation, fixation transport), measured envelopes | new |
-| CR9 | Hygiene | Move EyeLink evidence apparatus out of `io` main, limit Scala.js to browser-relevant modules, replace dated tracker logs with current-state docs | new |
+| CR9 | Hygiene | Move EyeLink evidence apparatus out of `io` main, replace dated tracker logs with current-state docs. Keep the full Scala.js cross-build: Studio must remain swappable to a Scala.js client (owner, 2026-09-26) | new |
 
 ## Studio requirements
 

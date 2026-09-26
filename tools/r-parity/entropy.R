@@ -88,11 +88,18 @@ entropy_inputs <- c(
        mass_p_density_class = p_density_class),
   ops[c("minus_p_q", "div_p_q", "div_p_p")]
 )
+# An entropy that fails is pinned as an error with its message rather than stopping the script.
+entropy_value <- function(map, normalize, base) {
+  tryCatch(
+    r_value(eyesim::fixation_entropy(map, normalize = normalize, base = base)),
+    error = function(e) list(kind = "error", detail = conditionMessage(e))
+  )
+}
 entropies <- lapply(entropy_inputs, function(map) {
   per_base <- lapply(seq_along(bases), function(i) {
     list(
-      raw = r_value(eyesim::fixation_entropy(map, normalize = FALSE, base = bases[[i]])),
-      normalized = r_value(eyesim::fixation_entropy(map, normalize = TRUE, base = bases[[i]]))
+      raw = entropy_value(map, FALSE, bases[[i]]),
+      normalized = entropy_value(map, TRUE, bases[[i]])
     )
   })
   names(per_base) <- base_labels

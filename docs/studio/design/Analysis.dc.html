@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Eyes Studio — Analysis</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=Source+Serif+4:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+/* ===== Eyes Studio tokens (the only place colours are written) ===== */
+.es{--ground:#ECE9E2;--surface:#FBFAF7;--surface-2:#F3F1EC;--surface-3:#E9E6DF;--hairline:#DAD6CC;--ink:#1C1E21;--ink-2:#464B52;--ink-3:#5E636A;--accent:#0E6E68;--accent-soft:#DCEFEC;--on-accent:#FFFFFF;--query:#3A2E6E;--query-soft:#E6E2F2;--match:#2F6DB5;--match-soft:#E0EAF6;--match-text:#255A98;--control:#B86E0E;--control-fill:#D98A1C;--control-text:#9A4A07;--control-soft:#F7E7D0;--fail:#A3261B;--fail-soft:#F6DEDA;--warn-text:#7A4F00;--warn-soft:#FBF1D9;--stage:#1A1A1A;--on-stage:#D9D6CF;--neutral-mark:rgba(28,30,33,.35);--sel-ring:0 0 0 2px #FFFFFF,0 0 0 4px #1C1E21;--tl-bg:#ECECEC;--tl-text:#4D4D4D}
+.es [data-stage=light],.es[data-stage=light]{--stage:#F2F2F2;--on-stage:#1C1E21}.es [data-stage=mid],.es[data-stage=mid]{--stage:#808080;--on-stage:#FFFFFF}
+.es.dark{--ground:#121315;--surface:#1B1C1F;--surface-2:#222327;--surface-3:#2A2C31;--hairline:#34363C;--ink:#ECEAE5;--ink-2:#BDBAB3;--ink-3:#9C9990;--accent:#43B5AA;--accent-soft:#183A37;--on-accent:#0B1413;--query:#D6CBFF;--query-soft:#2B2544;--match:#5C95E0;--match-soft:#1D2A3D;--match-text:#7FB0EE;--control:#E8A23C;--control-fill:#E8A23C;--control-text:#EBB066;--control-soft:#3A2A14;--fail:#F08A7E;--fail-soft:#3A1E1B;--warn-text:#E7C274;--warn-soft:#33290F;--neutral-mark:rgba(236,234,229,.35);--sel-ring:0 0 0 2px #000000,0 0 0 4px #ECEAE5;--tl-bg:#2B2B2B;--tl-text:#B0B0B0}
+.es{font-family:"IBM Plex Sans",-apple-system,"Helvetica Neue",sans-serif;font-size:12px;color:var(--ink);background:var(--ground)}
+.es button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
+.es a{color:var(--accent)}.es a:hover{color:var(--ink)}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.t11{font-size:11px}.t13{font-size:13px;font-weight:600}.t16{font-size:16px}.t28{font-size:28px;font-weight:500;letter-spacing:-.02em}
+.row{display:flex;align-items:center;gap:8px}
+.chip{display:flex;align-items:center;gap:6px;height:24px;padding:0 9px;border:1px solid var(--hairline);border-radius:6px;background:var(--surface);color:var(--ink-2);white-space:nowrap}
+.seg{display:flex;gap:2px;padding:2px;background:var(--surface-3);border-radius:7px}
+.seg button{border:0;background:transparent;height:28px;padding:0 12px;border-radius:5px;color:var(--ink-2);display:flex;align-items:center;gap:7px;font-weight:500}
+.seg button .k{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-2)}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--hairline)}
+.grp{display:flex;flex-direction:column;background:var(--surface);min-width:0;min-height:0}
+.hdr{height:28px;flex:none;display:flex;align-items:stretch;background:var(--surface-2);border-bottom:1px solid var(--hairline)}
+.tab{display:flex;align-items:center;gap:6px;padding:0 12px;color:var(--ink-2);border:0;border-right:1px solid var(--hairline);background:transparent;white-space:nowrap}
+.tab.sel{background:var(--surface);color:var(--ink);font-weight:600;margin-bottom:-1px}
+.tab.sel.focus{box-shadow:inset 0 2px 0 var(--accent)}
+.hbtns{margin-left:auto;display:flex;align-items:center;gap:2px;padding:0 6px}
+.ib{width:22px;height:22px;border:0;background:transparent;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--ink-3);padding:0}
+.tb{height:30px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--hairline);background:var(--surface)}
+.lbl{font-size:11px;font-weight:600;color:var(--ink-3)}
+.tog{height:22px;border:1px solid var(--hairline);background:var(--surface);border-radius:4px;padding:0 8px;color:var(--ink-2)}
+.tog.on{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.crumb{height:22px;border:0;background:transparent;border-radius:4px;padding:0 6px;color:var(--ink-2)}
+.crumb:hover{background:var(--surface-3)}
+.crumb.cur{color:var(--ink);font-weight:600}
+.sep{color:var(--ink-3)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px}
+.kind{font-size:11px;font-weight:600;padding:1px 6px;border-radius:3px;border:1px solid var(--hairline);color:var(--ink-2);background:var(--surface-2)}
+.sect{border-top:1px solid var(--hairline);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.kv{display:grid;grid-template-columns:118px minmax(0,1fr);row-gap:5px;column-gap:8px;margin:0}
+.kv dt{color:var(--ink-3);margin:0}.kv dd{margin:0}
+.btn{height:26px;padding:0 10px;border-radius:4px;border:1px solid var(--hairline);background:var(--surface);font-weight:500}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn:disabled{cursor:not-allowed}
+.stage{background:var(--stage)}
+/* Analysis board specifics */
+.nav{display:grid;grid-template-columns:12px minmax(0,1fr) auto;align-items:center;gap:6px;min-height:26px;padding:3px 10px 3px 20px;border:0;background:transparent;width:100%;text-align:left;color:var(--ink)}
+.nav.sel{box-shadow:inset 0 0 0 2px var(--ink);background:var(--surface-2)}
+.preset{flex:1;display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border:1px solid var(--hairline);border-radius:6px;background:var(--surface)}
+.preset.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.tok{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 6px;border-radius:4px;border:1px dashed var(--ink-3);font-weight:600;background:var(--surface)}
+.fld{display:grid;grid-template-columns:128px minmax(0,1fr) 190px;gap:10px;align-items:start;padding:6px 0;border-bottom:1px solid var(--surface-3)}
+.meta{font-size:11px;color:var(--ink-3);line-height:1.4}
+.sc{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:11px;border:1px solid var(--hairline);background:var(--surface-2)}
+.sc.new{border:1px dashed var(--ink-2);background:var(--surface)}
+.fchip{height:22px;padding:0 8px;border-radius:4px;border:1px solid var(--hairline);background:var(--surface);display:flex;align-items:center;gap:6px}
+.fchip.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.dt{display:grid;grid-template-columns:52px 70px 100px 110px 66px minmax(0,1fr);gap:8px;align-items:center;height:24px;padding:0 12px;border-bottom:1px solid var(--surface-3)}
+.find{border:1px solid var(--hairline);border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;background:var(--surface)}
+</style>
+</helmet>
+
+<div class="{{rootClass}}" style="width:1440px;height:900px;display:flex;flex-direction:column;overflow:hidden">
+
+<!-- 1 · Native title bar (system-drawn; shown for context only) -->
+<div style="height:28px;flex:none;display:flex;align-items:center;padding:0 12px;background:var(--tl-bg);position:relative">
+<div style="display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:#FF5F57"></span><span style="width:12px;height:12px;border-radius:50%;background:#FEBC2E"></span><span style="width:12px;height:12px;border-radius:50%;background:#28C840"></span></div>
+<div style="position:absolute;left:0;right:0;text-align:center;color:var(--tl-text);pointer-events:none">memory-study.eyes</div>
+</div>
+
+<!-- 2 · App bar -->
+<header style="height:44px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px 0 14px;background:var(--surface);border-bottom:1px solid var(--hairline)">
+<div class="row" style="gap:7px;margin-right:4px">
+<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M1.5 10C4 5.5 7 3.5 10 3.5S16 5.5 18.5 10C16 14.5 13 16.5 10 16.5S4 14.5 1.5 10Z" fill="none" stroke="var(--ink)" stroke-width="1.5"/><circle cx="10" cy="10" r="3.2" fill="var(--ink)"/><circle cx="11.2" cy="8.8" r="1" fill="var(--surface)"/></svg>
+<span class="t13" style="letter-spacing:-.01em">Eyes Studio</span>
+</div>
+<button class="chip"><span>memory-study</span><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+<div style="flex:1"></div>
+<nav class="seg" aria-label="Perspectives">
+<button>Data <span class="k">⌘1</span></button>
+<button>Explore <span class="k">⌘2</span></button>
+<button class="on" aria-current="page">Analysis <span class="k">⌘3</span></button>
+<button>Compare <span class="k">⌘4</span></button>
+<button>Figures <span class="k">⌘5</span></button>
+</nav>
+<div style="flex:1"></div>
+<button class="chip" aria-label="Jobs: none running"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h6"/></svg>No jobs</button>
+</header>
+
+<!-- 3 · Context strip: trail + freshness -->
+<div style="height:32px;flex:none;display:flex;align-items:center;gap:4px;padding:0 10px;background:var(--surface);border-bottom:1px solid var(--hairline)">
+<button class="ib" aria-label="Back (⌘[)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3 5 8l5 5"/></svg></button>
+<button class="ib" aria-label="Forward (⌘])"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m6 3 5 5-5 5"/></svg></button>
+<nav class="row" style="gap:2px;margin-left:4px" aria-label="Trail">
+<button class="crumb">Analyses</button><span class="sep">›</span>
+<button class="crumb">Reinstatement · Enc→Ret</button><span class="sep">›</span>
+<button class="crumb cur" aria-current="location">Draft rev 5</button>
+</nav>
+<div style="flex:1"></div>
+<span class="chip" style="height:22px"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></span>Analysis rev 4 · run 7 · data r3 · current</span>
+<button class="chip" style="height:22px;border-style:dashed;border-color:var(--ink-2);color:var(--ink)">Draft rev 5 · 1 change · ready</button>
+</div>
+
+<!-- 5 · Dock -->
+<div style="flex:1;min-height:0;display:flex;gap:1px;background:var(--hairline)">
+
+<!-- Navigator -->
+<section class="grp" style="width:236px;flex:none" aria-label="Analyses navigator">
+<div class="hdr"><button class="tab sel">Analyses</button><div class="hbtns"><button class="ib" aria-label="Minimize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
+<div class="tb"><button class="tog">New analysis…</button><div style="flex:1"></div><button class="ib" aria-label="Compare two revisions"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 2v12M11 2v12M2 5h6M8 11h6"/></svg></button></div>
+<div style="flex:1;overflow:hidden;padding-top:4px">
+<button class="nav" style="padding-left:10px;font-weight:600"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span>Reinstatement · Enc→Ret</span><span></span></button>
+<button class="nav sel" aria-current="true"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="9" height="9" rx="1" fill="none" stroke="var(--ink-2)" stroke-dasharray="2 1.5"/></svg><span><span style="font-weight:600">Draft rev 5</span><span class="t11" style="display:block;color:var(--ink-2)">scales +8° · not run</span></span><span class="pill" style="background:var(--accent-soft);color:var(--accent)">ready</span></button>
+<button class="nav"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="3.5" fill="var(--accent)"/></svg><span>rev 4 · run 7<span class="t11" style="display:block;color:var(--ink-2)">data r3 · current</span></span><span class="t11 mono" style="color:var(--ink-3)">10:02</span></button>
+<button class="nav"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4" fill="none" stroke="var(--ink-3)" stroke-width="1.5"/><path d="M3.5 8.5 8.5 3.5" stroke="var(--ink-3)" stroke-width="1.5"/></svg><span>rev 4 · run 6<span class="t11" style="display:block;color:var(--ink-2)">cancelled at Comparing</span></span><span class="t11 mono" style="color:var(--ink-3)">09:48</span></button>
+<button class="nav"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="1" y="1" width="10" height="10" fill="var(--warn-soft)" stroke="var(--warn-text)"/><path d="M1 7 5 11M1 3l8 8M5 1l6 6" stroke="var(--warn-text)" stroke-width=".8"/></svg><span>rev 3 · run 5<span class="t11" style="display:block;color:var(--warn-text)">data r2 · stale vs r3</span></span><span class="t11 mono" style="color:var(--ink-3)">Sep 24</span></button>
+<div class="lbl" style="padding:14px 12px 4px">Other analyses</div>
+<button class="nav" style="padding-left:10px"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2 6.5 5 3.5 8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span>Reinstatement · first 2 s</span><span class="t11 mono" style="color:var(--ink-3)">rev 1</span></button>
+</div>
+<div class="t11" style="border-top:1px solid var(--hairline);padding:8px 12px;color:var(--ink-2);line-height:1.45">Revisions are immutable. Editing rev 4 made Draft rev 5; runs stay attached to the revision that produced them.</div>
+</section>
+
+<!-- Centre -->
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+
+<!-- Recipe -->
+<section class="grp" style="flex:none;height:478px" aria-label="Recipe">
+<div class="hdr"><button class="tab sel focus">Recipe · Draft rev 5</button><button class="tab">Diff vs rev 4</button><button class="tab">Description</button><div class="hbtns"><button class="ib" aria-label="Maximize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
+<div style="flex:1;overflow:hidden;padding:10px 16px;display:flex;flex-direction:column;gap:8px">
+<fieldset style="border:0;margin:0;padding:0;display:flex;gap:8px">
+<legend class="lbl" style="padding:0 0 5px">Preset · sets defaults and wording; one engine underneath</legend>
+<label class="preset on"><input type="radio" name="preset" checked style="margin:2px 0 0;accent-color:var(--accent)"><span><span style="font-weight:600;display:block">Encoding → Retrieval</span><span class="t11" style="color:var(--ink-2)">Query: Retrieval · Reference: Encoding · match on item</span></span></label>
+<label class="preset"><input type="radio" name="preset" style="margin:2px 0 0;accent-color:var(--accent)"><span><span style="font-weight:600;display:block">Perception → Imagery</span><span class="t11" style="color:var(--ink-2)">Query: Imagery on blank · Reference: Perception</span></span></label>
+<label class="preset"><input type="radio" name="preset" style="margin:2px 0 0;accent-color:var(--accent)"><span><span style="font-weight:600;display:block">Study → Recognition</span><span class="t11" style="color:var(--ink-2)">Old probes only. Lures and novel: No corresponding study trial (by design)</span></span></label>
+</fieldset>
+<div style="line-height:2;font-size:13px;padding:6px 10px;border:1px solid var(--hairline);border-radius:6px;background:var(--surface-2)">
+For each <span class="tok" style="color:var(--query);border-color:var(--query)"><svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4" fill="var(--query)"/></svg>Retrieval</span> trial, compare its <span class="tok">duration-weighted fixation density</span> inside the <span class="tok">image frame</span> with the <span class="tok" style="color:var(--match-text);border-color:var(--match)"><svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true"><path d="M4 .5 7.5 4 4 7.5.5 4Z" fill="var(--match)"/></svg>Encoding</span> trial of the same <span class="tok">match item</span> from the same participant, and with every <span class="tok" style="color:var(--control-text);border-color:var(--control)"><svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="3" fill="none" stroke="var(--control)" stroke-width="1.5"/></svg>Encoding</span> trial of other items from that participant, by <span class="tok">cosine</span> at each scale.
+</div>
+<div style="display:flex;flex-direction:column">
+<div class="fld"><span class="lbl" style="padding-top:3px">Scales σ</span>
+<div style="display:flex;flex-direction:column;gap:5px">
+<div class="row" style="gap:5px;flex-wrap:wrap"><span class="sc mono">0.5°</span><span class="sc mono">1°</span><span class="sc mono">2°</span><span class="sc mono">4°</span><span class="sc new mono">8° · new</span><button class="tog" aria-label="Add scale">+ Add</button><span class="t11" style="color:var(--ink-2)">cell 0.46° (16 px)</span></div>
+<div class="t11" style="color:var(--warn-text);display:flex;flex-direction:column;gap:2px"><span>σ 0.5° ≈ 1.1 cells: below 2 cells, the map is grid-limited.</span><span>σ 8° ≈ 280 px on a 29° × 22° image: maps are near-uniform.</span></div>
+</div>
+<span class="meta mono">smoother.sigma · degrees<br>allowed &gt; 0 · each scale kept separate</span></div>
+<div class="fld"><span class="lbl" style="padding-top:3px">Window</span><span>Image frame 1024 × 768 px inside the 1920 × 1080 screen. Gaze outside is excluded from the map and reported per trial (543 of 11,520 records).</span><span class="meta mono">window.region · px <span class="kind" style="font-family:'IBM Plex Sans'">pending UI-A</span><br>allowed image frame | screen</span></div>
+<div class="fld"><span class="lbl" style="padding-top:3px">Initial fixation</span>
+<div class="row" style="gap:12px;flex-wrap:wrap">
+<label class="row" style="gap:5px"><input type="radio" name="init" checked style="margin:0;accent-color:var(--accent)">Keep all</label>
+<label class="row" style="gap:5px"><input type="radio" name="init" style="margin:0;accent-color:var(--accent)">Drop first <span class="t11 mono" style="color:var(--ink-3)">937 fixations, 1 per admitted trial</span></label>
+<label class="row" style="gap:5px"><input type="radio" name="init" style="margin:0;accent-color:var(--accent)">Drop consecutive leading fixations within 1.5° of the cross <span class="t11" style="color:var(--ink-3)">count shown when chosen</span></label>
+</div><span class="meta mono">fixation.initial · queries and references alike <span class="kind" style="font-family:'IBM Plex Sans'">pending UI-F</span></span></div>
+<div class="fld"><span class="lbl" style="padding-top:3px">Grid · units</span><span><span class="mono">64 × 48</span> cells on the image frame. <span class="mono">35 px/°</span> declared in Data, not calibrated; linear conversion.</span><span class="meta mono">grid.cells · count<br>units.pxPerDegree · declared <span class="kind" style="font-family:'IBM Plex Sans'">pending UI-A</span></span></div>
+<div class="fld"><span class="lbl" style="padding-top:3px">Controls · failure</span><span>All eligible controls, averaged pairwise (not cosine to an averaged map). Require all: one failed required pair makes the contrast unavailable.</span><span class="meta mono">controls.sampling · all<br>reduction.failure · RequireAll</span></div>
+<div class="fld" style="border-bottom:0"><span class="lbl" style="padding-top:3px">Queries without a matched reference</span><span class="row" style="gap:8px;flex-wrap:wrap"><label class="row" style="gap:5px"><input type="radio" name="nomatch" checked style="margin:0;accent-color:var(--accent)">Report as no match</label><span class="t11" style="color:var(--ink-2)">9 queries this revision · counted, never dropped</span><span class="kind">Analysis · rerun</span></span><span class="meta mono">design.unmatched · persisted<br>allowed report as no match</span></div>
+</div>
+</div>
+</section>
+
+<!-- Resolved design -->
+<section class="grp" style="flex:1;min-height:0" aria-label="Resolved design">
+<div class="hdr"><button class="tab sel">Resolved design</button><button class="tab">Table</button><div class="hbtns"><button class="ib" aria-label="Maximize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
+<div class="tb" style="gap:6px">
+<button class="fchip on">All requested <span class="mono">480</span></button>
+<button class="fchip">Eligible <span class="mono">457</span></button>
+<button class="fchip">No match <span class="mono">9</span></button>
+<button class="fchip">Query not admitted <span class="mono">14</span></button>
+<button class="fchip" disabled style="color:var(--ink-3)">No study trial, by design <span class="mono">—</span></button>
+<div style="flex:1"></div>
+<span class="t11 row" style="gap:5px;color:var(--ink-2)"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></span>paged · exact</span>
+</div>
+<div class="dt t11" style="height:22px;font-weight:600;color:var(--ink-3);background:var(--surface-2)"><span>P</span><span>Query</span><span>Item</span><span>Matched</span><span style="text-align:right">Controls</span><span>Status</span></div>
+<div style="flex:1;overflow:hidden" tabindex="0" role="table" aria-label="Resolved design, 480 requested queries; arrow keys move the row cursor">
+<div class="dt"><span>P17</span><span class="mono">ret_07</span><span>beach-042</span><span class="mono" style="color:var(--match-text)">enc_03</span><span class="mono" style="text-align:right">19</span><span>Eligible</span></div>
+<div class="dt"><span>P17</span><span class="mono">ret_08</span><span>bridge-019</span><span class="mono" style="color:var(--match-text)">enc_10</span><span class="mono" style="text-align:right">19</span><span>Eligible</span></div>
+<div class="dt"><span>P17</span><span class="mono">ret_09</span><span>market-066</span><span class="mono" style="color:var(--ink-3)">—</span><span class="mono" style="text-align:right;color:var(--ink-3)">—</span><span style="color:var(--warn-text)">Query not admitted · absent from fixations.csv</span></div>
+<div class="dt"><span>P03</span><span class="mono">ret_11</span><span>dog-217</span><span class="mono" style="color:var(--ink-3)">—</span><span class="mono" style="text-align:right;color:var(--ink-3)">—</span><span style="color:var(--warn-text)">No match · enc_11 quarantined (overlap)</span></div>
+<div class="dt"><span>P03</span><span class="mono">ret_01</span><span>stadium-747</span><span class="mono" style="color:var(--match-text)">enc_01</span><span class="mono" style="text-align:right">18</span><span>Eligible · 1 control fewer (enc_11 not admitted)</span></div>
+<div class="dt"><span>P05</span><span class="mono">ret_04</span><span>bakery-698</span><span class="mono" style="color:var(--match-text)">enc_02</span><span class="mono" style="text-align:right">19</span><span style="color:var(--warn-text)">Eligible · 0 of 11 fixations inside window</span></div>
+</div>
+<div class="t11" style="border-top:1px solid var(--hairline);padding:6px 12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 16px;color:var(--ink-2)">
+<span>Candidate pairs before paging <span class="mono">230,400</span> per scale (480 retrieval × 480 Encoding, Cartesian · eyes4s candidatePairCount). Exact eligible after paging <span class="mono">8,969</span> per scale: 286 queries × (1 + 19) and 171 × (1 + 18).</span>
+<span class="mono" style="color:var(--ink-3)">input digest sha256:9f2c…e41 · plan rev 5</span>
+<span class="row" style="gap:6px">While paging, counts read <span class="chip" style="height:18px;padding:0 6px;font-size:11px;border-style:dashed">counting eligible pairs… 18 of 24 participants</span> and the run stays disabled.</span>
+<span>Preview and run use this same prepared design.</span>
+</div>
+</section>
+</div>
+
+<!-- Preflight -->
+<section class="grp" style="width:330px;flex:none" aria-label="Preflight">
+<div class="hdr"><button class="tab sel">Preflight</button><button class="tab">Diagnostics</button><div class="hbtns"><button class="ib" aria-label="Minimize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
+<div style="flex:1;overflow:hidden;padding:10px 12px;display:flex;flex-direction:column;gap:8px">
+<div class="row" style="justify-content:space-between"><span class="t13">Studio check</span><span class="kind">Eyes Studio rule, not eyes4s</span></div>
+<div class="find">
+<div class="row" style="gap:6px"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.5 5 9l4.5-6" fill="none" stroke="var(--accent)" stroke-width="2"/></svg><span style="font-weight:600">Matched cardinality: 0 queries with &gt;1 matched reference · checked</span></div>
+<span class="t11" style="color:var(--ink-2);line-height:1.45">Blocks a run only when a query has 2 or more matched references (eyes4s would average them into M). Retired when UI-B lands.</span>
+</div>
+<div class="find">
+<div class="row" style="gap:6px"><span class="pill" style="background:var(--warn-soft);color:var(--warn-text)">Warning</span><span style="font-weight:600">Empty map in window</span><span class="kind">pending UI-A</span></div>
+<span class="t11" style="color:var(--ink-2)">3 trials (P05) · 0 of 11 fixations inside the window · will be reported as failed</span>
+</div>
+<div class="row" style="justify-content:space-between;margin-top:4px"><span class="t13">eyes4s preflight</span><span class="t11 mono" style="color:var(--ink-3)">StudyReport · rev 5</span></div>
+<div class="find">
+<div class="row" style="gap:6px"><span class="pill" style="background:var(--warn-soft);color:var(--warn-text)">Warning</span><span style="font-weight:600">Focal trials without match</span></div>
+<span class="t11" style="color:var(--ink-2)">DataDependent · 9 trials affected · reported as no match (recipe policy)</span>
+</div>
+<div class="find">
+<div class="row" style="gap:6px"><span class="pill" style="background:var(--warn-soft);color:var(--warn-text)">Warning</span><span style="font-weight:600">DuplicateTrial</span></div>
+<span class="t11" style="color:var(--ink-2)">DataDependent · 0 trials affected · checked</span>
+</div>
+<div class="t11" style="color:var(--ink-2);line-height:1.5"><span style="font-weight:600;color:var(--ink-3)">Admission (dataset r3)</span><br>Require complete (eyes4s ledger) covers the 17 quarantined trials. The 6 absent trials come from the trials.csv inventory join <span class="kind">pending UI-H</span></div>
+<div class="t11" style="color:var(--ink-2);line-height:1.5"><span style="font-weight:600;color:var(--ink-3)">Not checked</span><br>Stimulus image content · calibration quality · sample-level validity (fixation input only)</div>
+<div style="flex:1"></div>
+<div class="find" style="gap:6px">
+<div class="row" style="justify-content:space-between"><span class="t13">Run</span><span class="kind">Analysis · rerun</span></div>
+<dl class="kv mono t11" style="grid-template-columns:128px minmax(0,1fr)">
+<dt style="font-family:'IBM Plex Sans'">Pair rows</dt><dd>8,969 × 5 scales = 44,845</dd>
+<dt style="font-family:'IBM Plex Sans'">Budget</dt><dd>pairs ≤ 50,000 · cells ≤ 20M</dd>
+<dt style="font-family:'IBM Plex Sans'">Change vs rev 4</dt><dd>scales +8°</dd>
+</dl>
+<button class="btn pri" style="height:30px">Save &amp; run rev 5 · 44,845 pairs</button>
+<span class="t11" style="color:var(--ink-2)">Ready · 0 blockers · 2 warnings reported with the run</span>
+</div>
+</div>
+</section>
+</div>
+
+<!-- 6 · Status bar -->
+<footer class="t11" style="height:24px;flex:none;display:flex;align-items:center;gap:12px;padding:0 12px;background:var(--surface-2);border-top:1px solid var(--hairline);color:var(--ink-2)">
+<span class="row" style="gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--ink)"></span>Selected:<span class="mono" style="color:var(--ink)">Draft rev 5 › Scales</span></span>
+<span style="width:1px;height:12px;background:var(--hairline)"></span>
+<span>Edits change the draft only · runs are never relabelled</span>
+<div style="flex:1"></div>
+<span>No jobs</span>
+<span style="width:1px;height:12px;background:var(--hairline)"></span>
+<span>Saved 10:24</span>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { rootClass: this.props.dark ? 'es dark' : 'es' };
+  }
+}
+</script>
+</body>
+</html>

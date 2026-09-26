@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Eyes Studio — System</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=Source+Serif+4:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+/* ===== Eyes Studio tokens (the only place colours are written) ===== */
+.es{--ground:#ECE9E2;--surface:#FBFAF7;--surface-2:#F3F1EC;--surface-3:#E9E6DF;--hairline:#DAD6CC;--ink:#1C1E21;--ink-2:#464B52;--ink-3:#5E636A;--accent:#0E6E68;--accent-soft:#DCEFEC;--on-accent:#FFFFFF;--query:#3A2E6E;--query-soft:#E6E2F2;--match:#2F6DB5;--match-soft:#E0EAF6;--match-text:#255A98;--control:#B86E0E;--control-fill:#D98A1C;--control-text:#9A4A07;--control-soft:#F7E7D0;--fail:#A3261B;--fail-soft:#F6DEDA;--warn-text:#7A4F00;--warn-soft:#FBF1D9;--stage:#1A1A1A;--on-stage:#D9D6CF;--neutral-mark:rgba(28,30,33,.35);--sel-ring:0 0 0 2px #FFFFFF,0 0 0 4px #1C1E21;--tl-bg:#ECECEC;--tl-text:#4D4D4D}
+.es [data-stage=light],.es[data-stage=light]{--stage:#F2F2F2;--on-stage:#1C1E21}.es [data-stage=mid],.es[data-stage=mid]{--stage:#808080;--on-stage:#FFFFFF}
+.es.dark{--ground:#121315;--surface:#1B1C1F;--surface-2:#222327;--surface-3:#2A2C31;--hairline:#34363C;--ink:#ECEAE5;--ink-2:#BDBAB3;--ink-3:#9C9990;--accent:#43B5AA;--accent-soft:#183A37;--on-accent:#0B1413;--query:#D6CBFF;--query-soft:#2B2544;--match:#5C95E0;--match-soft:#1D2A3D;--match-text:#7FB0EE;--control:#E8A23C;--control-fill:#E8A23C;--control-text:#EBB066;--control-soft:#3A2A14;--fail:#F08A7E;--fail-soft:#3A1E1B;--warn-text:#E7C274;--warn-soft:#33290F;--neutral-mark:rgba(236,234,229,.35);--sel-ring:0 0 0 2px #000000,0 0 0 4px #ECEAE5;--tl-bg:#2B2B2B;--tl-text:#B0B0B0}
+/* Data palettes (theme-independent) */
+.es{--ramp-0:#F9D9EA;--ramp-1:#E58FB9;--ramp-2:#B83F86;--ramp-3:#6B0F4F;--div-neg:#2E5A9C;--div-mid:#F3F1EC;--div-pos:#B4442F;--screen:#9A9A96;--halo:#FFFFFF}
+.es{font-family:"IBM Plex Sans",-apple-system,"Helvetica Neue",sans-serif;font-size:12px;color:var(--ink);background:var(--ground)}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.t11{font-size:11px}.t13{font-size:13px;font-weight:600}.t16{font-size:16px}.t28{font-size:28px;font-weight:500;letter-spacing:-.02em}
+.row{display:flex;align-items:center;gap:8px}
+.col{display:flex;flex-direction:column;gap:12px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--hairline);border-radius:6px;padding:11px 13px;display:flex;flex-direction:column;gap:8px}
+.h{display:flex;align-items:baseline;gap:8px}
+.n{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3)}
+.lbl{font-size:11px;font-weight:600;color:var(--ink-3)}
+.sw{width:64px;height:15px;border-radius:3px;border:1px solid var(--hairline);display:block}
+.tk{display:grid;grid-template-columns:minmax(0,1fr) 64px 64px;align-items:center;column-gap:8px;row-gap:3px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border:1px solid var(--hairline);border-radius:6px;background:var(--surface);color:var(--ink-2);white-space:nowrap}
+.kind{font-size:11px;font-weight:600;padding:1px 6px;border-radius:3px;border:1px solid var(--hairline);color:var(--ink-2);background:var(--surface-2);white-space:nowrap}
+.kbd{font-family:"IBM Plex Mono",monospace;font-size:11px;border:1px solid var(--hairline);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--surface);color:var(--ink);white-space:nowrap}
+.es button{font-family:inherit;font-size:inherit}
+.tag{font-size:11px;font-weight:600;padding:0 6px;border-radius:3px;white-space:nowrap;line-height:17px}
+.tag.st{background:var(--accent-soft);color:var(--accent)}
+.tag.up{background:var(--surface-3);color:var(--ink-2)}
+.tag.bl{background:var(--fail-soft);color:var(--fail)}
+.mm{display:grid;grid-template-columns:18px minmax(0,1fr);column-gap:6px;row-gap:3px;align-items:start}
+.bar{border:1px solid var(--ink-3);border-radius:2px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--ink-2)}
+</style>
+</helmet>
+
+<div class="es" style="width:1440px;height:900px;box-sizing:border-box;padding:22px 24px;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+
+<header class="row" style="justify-content:space-between;align-items:flex-end">
+<div class="row" style="gap:10px;align-items:center">
+<svg width="26" height="26" viewBox="0 0 20 20" aria-hidden="true"><path d="M1.5 10C4 5.5 7 3.5 10 3.5S16 5.5 18.5 10C16 14.5 13 16.5 10 16.5S4 14.5 1.5 10Z" fill="none" stroke="var(--ink)" stroke-width="1.5"/><circle cx="10" cy="10" r="3.2" fill="var(--ink)"/><circle cx="11.2" cy="8.8" r="1" fill="var(--surface)"/></svg>
+<div>
+<div class="t28">Eyes Studio · System</div>
+<div style="color:var(--ink-2)">Tokens, marks, states and module boundaries for the <span class="mono">studio</span> module · round 3</div>
+</div>
+</div>
+<div class="t11" style="color:var(--ink-3);text-align:right;line-height:1.5">Colours live only in the token block · views and Intaglio scenes use looked-up colours<br>Light chrome by default · dark maintained and checked every round · image stage is its own token</div>
+</header>
+
+<div style="flex:1;min-height:0;display:grid;grid-template-columns:300px 300px 336px minmax(0,1fr);gap:14px">
+
+<!-- ===== Column A ===== -->
+<div class="col">
+<section class="card" aria-label="Colour tokens">
+<div class="h"><span class="n">01</span><span class="t13">Colour tokens</span></div>
+<div class="tk t11">
+<span class="lbl">Token</span><span class="lbl">Light</span><span class="lbl">Dark</span>
+<span class="mono">--ground</span><span class="sw" style="background:var(--ground)"></span><span class="es dark sw" style="background:var(--ground)"></span>
+<span class="mono">--surface</span><span class="sw" style="background:var(--surface)"></span><span class="es dark sw" style="background:var(--surface)"></span>
+<span class="mono">--surface-2 · -3</span><span class="sw" style="background:linear-gradient(90deg,var(--surface-2) 50%,var(--surface-3) 50%)"></span><span class="es dark sw" style="background:linear-gradient(90deg,var(--surface-2) 50%,var(--surface-3) 50%)"></span>
+<span class="mono">--hairline</span><span class="sw" style="background:var(--hairline)"></span><span class="es dark sw" style="background:var(--hairline)"></span>
+<span class="mono">--ink · -2 · -3</span><span class="sw" style="background:linear-gradient(90deg,var(--ink) 33%,var(--ink-2) 33% 66%,var(--ink-3) 66%)"></span><span class="es dark sw" style="background:linear-gradient(90deg,var(--ink) 33%,var(--ink-2) 33% 66%,var(--ink-3) 66%)"></span>
+<span class="mono">--accent · soft</span><span class="sw" style="background:linear-gradient(90deg,var(--accent) 60%,var(--accent-soft) 60%)"></span><span class="es dark sw" style="background:linear-gradient(90deg,var(--accent) 60%,var(--accent-soft) 60%)"></span>
+<span class="mono">--query</span><span class="sw" style="background:var(--query)"></span><span class="es dark sw" style="background:var(--query)"></span>
+<span class="mono">--match · text</span><span class="sw" style="background:linear-gradient(90deg,var(--match) 60%,var(--match-text) 60%)"></span><span class="es dark sw" style="background:linear-gradient(90deg,var(--match) 60%,var(--match-text) 60%)"></span>
+<span class="mono">--control · fill · text</span><span class="sw" style="background:linear-gradient(90deg,var(--control) 40%,var(--control-fill) 40% 70%,var(--control-text) 70%)"></span><span class="es dark sw" style="background:linear-gradient(90deg,var(--control) 40%,var(--control-fill) 40% 70%,var(--control-text) 70%)"></span>
+<span class="mono">--fail · soft</span><span class="sw" style="background:linear-gradient(90deg,var(--fail) 60%,var(--fail-soft) 60%)"></span><span class="es dark sw" style="background:linear-gradient(90deg,var(--fail) 60%,var(--fail-soft) 60%)"></span>
+<span class="mono">--warn-text · soft</span><span class="sw" style="background:linear-gradient(90deg,var(--warn-text) 60%,var(--warn-soft) 60%)"></span><span class="es dark sw" style="background:linear-gradient(90deg,var(--warn-text) 60%,var(--warn-soft) 60%)"></span>
+<span class="mono">--stage · on-stage</span><span class="sw" style="background:linear-gradient(90deg,var(--stage) 60%,var(--on-stage) 60%)"></span><span class="es dark sw" style="background:linear-gradient(90deg,var(--stage) 60%,var(--on-stage) 60%)"></span>
+</div>
+<div class="t11" style="color:var(--ink-2);line-height:1.45">Teal has three jobs only: keyboard focus, primary action, “current”. Selection is role-free: a white-and-ink ring.</div>
+</section>
+
+<section class="card" aria-label="Type scale">
+<div class="h"><span class="n">04</span><span class="t13">Type scale · five sizes</span></div>
+<div style="display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:baseline;column-gap:8px;row-gap:5px">
+<span class="n">11</span><span class="t11" style="color:var(--ink-3);font-weight:600">Label · table header</span><span class="mono t11">480 · 454</span>
+<span class="n">12</span><span>Body text and controls</span><span class="mono">0.35</span>
+<span class="n">13</span><span class="t13">Pane and section title</span><span class="mono t13">rev 4</span>
+<span class="n">16</span><span class="t16">Section figure</span><span class="mono t16">0.73</span>
+<span class="n">28</span><span class="t28" style="font-size:22px">Hero number</span><span class="mono t28">+0.38</span>
+</div>
+<div class="t11" style="color:var(--ink-2)">IBM Plex Sans for words; Plex Mono for every numeral and ID (JavaFX has no tabular figures). Source Serif 4 only in methods prose.</div>
+</section>
+</div>
+
+<!-- ===== Column B ===== -->
+<div class="col">
+<section class="card" aria-label="Role marks">
+<div class="h"><span class="n">02</span><span class="t13">Role marks · hue + shape + lightness</span></div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">
+<div style="background:var(--surface-2);border-radius:4px;padding:8px 0;display:flex;justify-content:center;gap:10px"><svg width="72" height="22" aria-label="Role marks on light"><circle cx="11" cy="11" r="7" fill="var(--query)"/><path d="M36 3 44 11 36 19 28 11Z" fill="var(--match)"/><circle cx="61" cy="11" r="6.5" fill="none" stroke="var(--control)" stroke-width="2"/></svg></div>
+<div class="es dark" style="background:var(--surface);border-radius:4px;padding:8px 0;display:flex;justify-content:center"><svg width="72" height="22" aria-label="Role marks on dark"><circle cx="11" cy="11" r="7" fill="var(--query)"/><path d="M36 3 44 11 36 19 28 11Z" fill="var(--match)"/><circle cx="61" cy="11" r="6.5" fill="none" stroke="var(--control)" stroke-width="2"/></svg></div>
+<div style="background:var(--stage);border-radius:4px;padding:8px 0;display:flex;justify-content:center"><svg width="72" height="22" aria-label="Role marks on image stage"><circle cx="11" cy="11" r="7" fill="var(--query)" stroke="var(--halo)" stroke-width="1.5"/><path d="M36 3 44 11 36 19 28 11Z" fill="var(--match)" stroke="var(--halo)" stroke-width="1.5"/><circle cx="61" cy="11" r="6.5" fill="none" stroke="var(--control)" stroke-width="2"/></svg></div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px" class="t11">
+<span><b style="color:var(--query)">Query</b> · filled circle · dark violet</span>
+<span><b style="color:var(--match-text)">Matched</b> · diamond · mid blue</span>
+<span><b style="color:var(--control-text)">Control</b> · hollow circle · amber (filled marks use --control-fill)</span>
+</div>
+<div class="t11" style="color:var(--ink-2)">Roles exist only in Analysis, Compare and Figures. Explore marks are neutral grey with a white halo. D carries no hue: ink, sign by position from zero.</div>
+</section>
+
+<section class="card" aria-label="Map ramps">
+<div class="h"><span class="n">03</span><span class="t13">Map ramps</span></div>
+<div class="row" style="gap:10px;align-items:stretch">
+<svg width="92" height="70" viewBox="0 0 92 70" style="border-radius:4px;flex:none" aria-label="Mass map with 50 and 90 percent isolines on a grey screen">
+<defs><radialGradient id="sysr"><stop offset="0" stop-color="var(--ramp-3)"/><stop offset=".35" stop-color="var(--ramp-2)"/><stop offset=".7" stop-color="var(--ramp-1)"/><stop offset="1" stop-color="var(--ramp-0)" stop-opacity="0"/></radialGradient></defs>
+<rect width="92" height="70" fill="var(--screen)"/>
+<ellipse cx="44" cy="36" rx="38" ry="30" fill="url(#sysr)" opacity=".85"/>
+<ellipse cx="44" cy="36" rx="26" ry="20" fill="none" stroke="var(--ink)" stroke-opacity=".6"/>
+<ellipse cx="44" cy="36" rx="11" ry="9" fill="none" stroke="var(--ink)" stroke-opacity=".6"/>
+</svg>
+<div style="flex:1;display:flex;flex-direction:column;gap:5px;justify-content:center">
+<span class="lbl">Mass · sequential, opaque per cell</span>
+<span style="height:12px;border-radius:2px;background:linear-gradient(90deg,var(--ramp-0),var(--ramp-1),var(--ramp-2),var(--ramp-3))"></span>
+<span class="t11" style="color:var(--ink-2)">Isolines at 50% and 90% of mass. Units: fixation duration mass per cell.</span>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<span class="lbl">Difference maps only · diverging, zero pinned</span>
+<span style="height:12px;border-radius:2px;background:linear-gradient(90deg,var(--div-neg),var(--div-mid) 50%,var(--div-pos))"></span>
+<div class="row mono t11" style="justify-content:space-between;color:var(--ink-3)"><span>−</span><span>0</span><span>+</span></div>
+</div>
+</section>
+
+<section class="card" aria-label="Display kinds">
+<div class="h"><span class="n">07</span><span class="t13">Display kinds · what was on screen</span></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--warn-soft)"/><rect width="3" height="6" fill="var(--hairline)"/></pattern></defs></svg>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 6px" class="t11">
+<div style="display:flex;flex-direction:column;gap:3px"><svg width="44" height="33" viewBox="0 0 44 33" aria-hidden="true"><rect width="44" height="14" fill="#C9D3D6"/><rect y="14" width="44" height="7" fill="#8FA3AB"/><rect y="21" width="44" height="12" fill="#D9CDB4"/></svg><span>Image</span></div>
+<div style="display:flex;flex-direction:column;gap:3px"><svg width="44" height="33" viewBox="0 0 44 33" aria-hidden="true"><rect width="44" height="33" fill="var(--screen)"/></svg><span>Blank</span></div>
+<div style="display:flex;flex-direction:column;gap:3px"><svg width="44" height="33" viewBox="0 0 44 33" aria-hidden="true"><rect width="44" height="33" fill="var(--screen)"/><path d="M22 12v9M17.5 16.5h9" stroke="var(--halo)" stroke-width="1.5"/></svg><span>Blank + fixation cross</span></div>
+<div style="display:flex;flex-direction:column;gap:3px"><svg width="44" height="33" viewBox="0 0 44 33" aria-hidden="true"><rect width="44" height="33" fill="var(--screen)"/><text x="22" y="20" text-anchor="middle" font-size="9" font-family="IBM Plex Sans" fill="var(--halo)">beach</text></svg><span>Cue</span></div>
+<div style="display:flex;flex-direction:column;gap:3px"><svg width="44" height="33" viewBox="0 0 44 33" aria-hidden="true"><rect x=".5" y=".5" width="43" height="32" fill="none" stroke="var(--ink-3)" stroke-dasharray="3 2"/><text x="22" y="21" text-anchor="middle" font-size="12" font-family="IBM Plex Sans" fill="var(--ink-3)">?</text></svg><span>Unknown</span></div>
+<div style="display:flex;flex-direction:column;gap:3px"><svg width="44" height="33" viewBox="0 0 44 33" aria-hidden="true"><rect width="44" height="33" fill="url(#hatch)"/><path d="M17 12l10 9M27 12l-10 9" stroke="var(--warn-text)" stroke-width="1.5"/></svg><span>Missing asset</span></div>
+</div>
+<div class="t11" style="color:var(--ink-2)">Missing is never drawn as blank. A remembered-image underlay is always labelled “not displayed during this trial”.</div>
+</section>
+<section class="card" aria-label="Keyboard model">
+<div class="h"><span class="n">09</span><span class="t13">Keyboard</span></div>
+<div style="display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:10px;row-gap:5px;align-items:center" class="t11">
+<span class="row" style="gap:3px"><span class="kbd">←</span><span class="kbd">→</span><span class="kbd">↑</span><span class="kbd">↓</span></span><span style="color:var(--ink-2)">Plot is one focus stop; roving cursor to nearest mark</span>
+<span class="row" style="gap:3px"><span class="kbd">↩</span><span class="kbd">esc</span></span><span style="color:var(--ink-2)">Select to the bus · clear</span>
+<span class="kbd" style="justify-self:start">F6</span><span style="color:var(--ink-2)">Next pane; Tab leaves a plot</span>
+<span class="kbd" style="justify-self:start">⌘1–5</span><span style="color:var(--ink-2)">Perspectives</span>
+<span class="row" style="gap:3px"><span class="kbd">⌘[</span><span class="kbd">⌘]</span></span><span style="color:var(--ink-2)">Trail back / forward</span>
+<span class="kbd" style="justify-self:start">⌘⇧↩</span><span style="color:var(--ink-2)">Maximize the focused group</span>
+</div>
+</section>
+</div>
+
+<!-- ===== Column C ===== -->
+<div class="col">
+<section class="card" aria-label="Freshness states">
+<div class="h"><span class="n">05</span><span class="t13">Freshness · every result says where it came from</span></div>
+<div style="display:grid;grid-template-columns:62px minmax(0,1fr);row-gap:6px;column-gap:8px;align-items:center" class="t11">
+<span class="lbl">Current</span><span class="chip"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></span>Analysis rev 4 · run 7 · data r3 · current</span>
+<span class="lbl">Draft</span><span class="chip" style="border-style:dashed;border-color:var(--ink-2);color:var(--ink)">Draft rev 5 · 1 change · ready</span>
+<span class="lbl">Blocked</span><div style="border:1px solid var(--fail);background:var(--fail-soft);border-radius:6px;padding:4px 8px;display:flex;flex-direction:column;gap:3px;color:var(--ink)"><span><b style="color:var(--fail)">Studio check</b> · 2 matched references for P11 ret_05 (occurrences 1, 2)</span><span class="row" style="gap:6px"><button class="chip" style="height:20px;cursor:pointer">Choose occurrence…</button><span style="color:var(--ink-2)">Save &amp; run disabled</span></span></div>
+<span class="lbl">Stale</span><span class="chip" style="background:repeating-linear-gradient(45deg,var(--warn-soft) 0 4px,var(--surface) 4px 8px);color:var(--warn-text);border-color:var(--warn-text)">Stale · run 5 belongs to rev 3</span>
+<span class="lbl">Running</span><span class="chip" style="flex-direction:column;align-items:stretch;justify-content:center;gap:2px;height:28px"><span class="mono">Run 8 · Comparing · 21,400 / 44,845 pairs</span><span style="height:3px;background:var(--surface-3);border-radius:2px;display:block"><span style="display:block;width:60%;height:3px;background:var(--accent);border-radius:2px"></span></span></span>
+<span class="lbl">Failed</span><span class="chip" style="background:var(--fail-soft);color:var(--fail);border-color:var(--fail)"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2l6 6M8 2 2 8" stroke="currentColor" stroke-width="1.6"/></svg>Run 8 failed · 2 diagnostics</span>
+<span class="lbl">No run</span><div style="border:1px dashed var(--ink-3);border-radius:6px;padding:6px 8px;display:flex;align-items:center;justify-content:space-between;gap:6px;background:var(--surface-2)"><span><b>Compare</b> · No run yet</span><button class="chip" style="height:20px;cursor:pointer;color:var(--ink)">Open Analysis ⌘3</button></div>
+</div>
+</section>
+
+<section class="card" aria-label="Kinds of change">
+<div class="h"><span class="n">06</span><span class="t13">Four kinds of change</span></div>
+<div style="display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:10px;row-gap:6px;align-items:baseline" class="t11">
+<span class="kind">Dataset · re-admit</span><span style="color:var(--ink-2)">Mapping, geometry, admission → new dataset revision; runs marked stale.</span>
+<span class="kind">Analysis · rerun</span><span style="color:var(--ink-2)">Draft → Save &amp; run → immutable revision and run.</span>
+<span class="kind">Reporting · no rerun</span><span style="color:var(--ink-2)">Grouping, filters, weighting; reuses pair scores.</span>
+<span class="kind">View only</span><span style="color:var(--ink-2)">Palette, stage, zoom, overlays; values unchanged.</span>
+</div>
+</section>
+
+<section class="card" aria-label="Shell anatomy">
+<div class="h"><span class="n">08</span><span class="t13">Shell anatomy</span></div>
+<div style="display:grid;grid-template-columns:120px minmax(0,1fr);column-gap:10px;row-gap:3px;align-items:center" class="t11">
+<span class="bar" style="height:12px">title · 28</span><span style="color:var(--ink-2)">Native macOS bar; system-drawn</span>
+<span class="bar" style="height:18px">app · 44</span><span style="color:var(--ink-2)">Mark, project, perspectives, Jobs</span>
+<span class="bar" style="height:14px">context · 32</span><span style="color:var(--ink-2)">Back/forward, trail, freshness, draft</span>
+<span class="bar" style="height:13px;border-style:dashed">banner · 30</span><span style="color:var(--ink-2)">Compare/Figures, only while a draft differs</span>
+<span style="height:74px;border:1px solid var(--ink-3);border-radius:2px;display:grid;grid-template-columns:22px minmax(0,1fr) 26px;gap:1px;background:var(--ink-3);overflow:hidden"><span style="background:var(--surface-2)"></span><span style="display:grid;grid-template-rows:minmax(0,1fr) 22px;gap:1px"><span style="display:grid;grid-template-columns:1fr 1fr;gap:1px"><span style="background:var(--surface)"></span><span style="background:var(--surface)"></span></span><span style="background:var(--surface)"></span></span><span style="background:var(--surface-2)"></span></span><span style="color:var(--ink-2)">Dock (scaladock): navigator left, 28px tab headers, 1px splitters, every plot has a Table tab</span>
+<span class="bar" style="height:11px">status · 24</span><span style="color:var(--ink-2)">Selected path · hint · job + Cancel · Saved</span>
+</div>
+<div class="row t11" style="gap:4px;flex-wrap:wrap">
+<span class="chip" style="height:20px">Data ⌘1</span><span class="chip" style="height:20px">Explore ⌘2</span><span class="chip" style="height:20px">Analysis ⌘3</span><span class="chip" style="height:20px">Compare ⌘4</span><span class="chip" style="height:20px">Figures ⌘5</span>
+</div>
+<div class="t11" style="color:var(--ink-2);line-height:1.45">One scaladock Dock per perspective in a StackPane (Dock.load would dispose panes missing from a layout). A PaneRegistry keeps singletons; an inactive perspective hides its floating windows.</div>
+</section>
+
+</div>
+
+<!-- ===== Column D: module map ===== -->
+<section class="card" aria-label="Studio module map" style="min-height:0">
+<div class="h" style="justify-content:space-between"><div class="h"><span class="n">10</span><span class="t13">Module map · <span class="mono">studio</span></span></div><span class="row t11" style="gap:4px"><span class="tag st">studio</span><span class="tag up">upstream</span><span class="tag bl">blocker</span></span></div>
+<div class="t11" style="color:var(--ink-2);line-height:1.4"><span class="mono">studio</span> → eyes4s, eyes4s-fs2, Intaglio, scaladock; nothing depends on it. No science here: matching, smoothing, comparison and reduction stay in eyes4s.</div>
+
+<div class="lbl">Studio-owned, in build order</div>
+<div class="mm t11">
+<span class="n">1</span><div><span class="mono" style="font-weight:500">StudioDocument</span> <span style="color:var(--ink-2)">— sources, admission, revisions, specs; atomic autosave</span></div>
+<span class="n">2</span><div><span class="mono" style="font-weight:500">RunStore</span> <span style="color:var(--ink-2)">— result archives kept for figure rebinding; retention policy</span></div>
+<span class="n">3</span><div><span class="mono" style="font-weight:500">ExecutionService</span> <span style="color:var(--ink-2)">— fs2 runs, progress, cancel, stale rejection → Jobs</span></div>
+<span class="n">4</span><div><span class="mono" style="font-weight:500">SelectionBus</span> <span style="color:var(--ink-2)">— typed StudioRef → status path, trail, projected input</span></div>
+<span class="n">5</span><div><span class="mono" style="font-weight:500">CanvasPlotHost · TrialView</span> <span style="color:var(--ink-2)">— Intaglio scene on a Canvas; layers, σ</span></div>
+<span class="n">6</span><div><span class="mono" style="font-weight:500">MapRasterCache</span> <span style="color:var(--ink-2)">— ARGB rasters keyed (trial, σ, palette, limits)</span></div>
+<span class="n">7</span><div><span class="mono" style="font-weight:500">AssetRegistry</span> <span style="color:var(--ink-2)">— display kinds, image files, placement in the frame</span></div>
+<span class="n">8</span><div><span class="mono" style="font-weight:500">Shell · PaneRegistry</span> <span style="color:var(--ink-2)">— Dock per perspective, singletons, keymap, strips</span></div>
+<span class="n">9</span><div><span class="mono" style="font-weight:500">Inspector from descriptors</span> <span style="color:var(--ink-2)">— fields → forms; plan.diff banner</span></div>
+<span class="n">10</span><div><span class="mono" style="font-weight:500">StudioChecks</span> <span style="color:var(--ink-2)">— blocks ≥2 matched references; deleted once UI-B lands</span></div>
+<span class="n">11</span><div><span class="mono" style="font-weight:500">ReportingEditor</span> <span style="color:var(--ink-2)">— group, filter, weighting over ReportSpec (UI-C)</span></div>
+<span class="n">12</span><div><span class="mono" style="font-weight:500">TimelineView</span> <span style="color:var(--ink-2)">— intervals, brush, playhead; never crops analysis</span></div>
+<span class="n">13</span><div><span class="mono" style="font-weight:500">Tables</span> <span style="color:var(--ink-2)">— virtualized; the keyboard twin of every plot</span></div>
+<span class="n">14</span><div><span class="mono" style="font-weight:500">ImportWizard</span> <span style="color:var(--ink-2)">— roles, identity, trials.csv join, geometry, ledger</span></div>
+<span class="n">15</span><div><span class="mono" style="font-weight:500">Figure composer · methods</span> <span style="color:var(--ink-2)">— one run + spec per figure; bundle</span></div>
+</div>
+<div class="t11" style="color:var(--ink-2);line-height:1.4;border-left:0;background:var(--surface-2);border-radius:4px;padding:5px 8px">Scale: control strip switches to a histogram above 50 controls; rasters cached (trial, σ, palette, limits); inspections off the FX thread.</div>
+
+<div class="lbl">Upstream asks · keyed to tickets</div>
+<div style="display:grid;grid-template-columns:34px 62px minmax(0,1fr) auto;column-gap:6px;row-gap:3px;align-items:baseline" class="t11">
+<span class="mono" style="font-weight:600">UI-A</span><span class="tag up" style="justify-self:start">eyes4s</span><span>Analysis window, off-window policy, px/° in plan, frame corrections</span><span class="tag bl">blocker</span>
+<span class="mono" style="font-weight:600">UI-B</span><span class="tag up" style="justify-self:start">eyes4s</span><span>Matched cardinality + occurrence-aware StudyLayout</span><span class="tag bl">blocker</span>
+<span class="mono" style="font-weight:600">UI-C</span><span class="tag up" style="justify-self:start">eyes4s</span><span>ReportSpec over StudyResult + trial covariates</span><span></span>
+<span class="mono" style="font-weight:600">UI-D</span><span class="tag up" style="justify-self:start">eyes4s</span><span>Progress totals, stale rejection, preview counts after paging</span><span></span>
+<span class="mono" style="font-weight:600">UI-E</span><span class="tag up" style="justify-self:start">eyes4s</span><span>Density grids from result archives</span><span></span>
+<span class="mono" style="font-weight:600">UI-F</span><span class="tag up" style="justify-self:start">eyes4s</span><span>Initial-fixation policy field; plan.diff</span><span></span>
+<span class="mono" style="font-weight:600">UI-G</span><span class="tag up" style="justify-self:start">eyes4s</span><span>Provenance, paged inspection, ResultRef trail</span><span></span>
+<span class="mono" style="font-weight:600">UI-H</span><span class="tag up" style="justify-self:start">eyes4s</span><span>FixationCsv sampleCount, attributes, trials.csv inventory</span><span></span>
+<span class="mono" style="color:var(--ink-3)">—</span><span class="tag up" style="justify-self:start">Intaglio</span><span>JavaFX input adapter: pointer, keys, HiDPI, overlay</span><span class="tag bl">blocker</span>
+<span class="mono" style="color:var(--ink-3)">—</span><span class="tag up" style="justify-self:start">Intaglio</span><span>Scalar-field raster layer + legend; raster in SVG/PDF</span><span></span>
+<span class="mono" style="color:var(--ink-3)">—</span><span class="tag up" style="justify-self:start">scaladock</span><span>Keyboard between groups, tab menu, pane retention</span><span class="t11" style="color:var(--ink-3)">nice</span>
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

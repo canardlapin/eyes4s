@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Eyes Studio — Compare · summary</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=Source+Serif+4:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+/* ===== Eyes Studio tokens (the only place colours are written) ===== */
+.es{--ground:#ECE9E2;--surface:#FBFAF7;--surface-2:#F3F1EC;--surface-3:#E9E6DF;--hairline:#DAD6CC;--ink:#1C1E21;--ink-2:#464B52;--ink-3:#5E636A;--accent:#0E6E68;--accent-soft:#DCEFEC;--on-accent:#FFFFFF;--query:#3A2E6E;--query-soft:#E6E2F2;--match:#2F6DB5;--match-soft:#E0EAF6;--match-text:#255A98;--control:#B86E0E;--control-fill:#D98A1C;--control-text:#9A4A07;--control-soft:#F7E7D0;--fail:#A3261B;--fail-soft:#F6DEDA;--warn-text:#7A4F00;--warn-soft:#FBF1D9;--stage:#1A1A1A;--on-stage:#D9D6CF;--neutral-mark:rgba(28,30,33,.35);--sel-ring:0 0 0 2px #FFFFFF,0 0 0 4px #1C1E21;--tl-bg:#ECECEC;--tl-text:#4D4D4D}
+.es [data-stage=light],.es[data-stage=light]{--stage:#F2F2F2;--on-stage:#1C1E21}.es [data-stage=mid],.es[data-stage=mid]{--stage:#808080;--on-stage:#FFFFFF}
+.es.dark{--ground:#121315;--surface:#1B1C1F;--surface-2:#222327;--surface-3:#2A2C31;--hairline:#34363C;--ink:#ECEAE5;--ink-2:#BDBAB3;--ink-3:#9C9990;--accent:#43B5AA;--accent-soft:#183A37;--on-accent:#0B1413;--query:#D6CBFF;--query-soft:#2B2544;--match:#5C95E0;--match-soft:#1D2A3D;--match-text:#7FB0EE;--control:#E8A23C;--control-fill:#E8A23C;--control-text:#EBB066;--control-soft:#3A2A14;--fail:#F08A7E;--fail-soft:#3A1E1B;--warn-text:#E7C274;--warn-soft:#33290F;--neutral-mark:rgba(236,234,229,.35);--sel-ring:0 0 0 2px #000000,0 0 0 4px #ECEAE5;--tl-bg:#2B2B2B;--tl-text:#B0B0B0}
+.es{font-family:"IBM Plex Sans",-apple-system,"Helvetica Neue",sans-serif;font-size:12px;color:var(--ink);background:var(--ground)}
+.es button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
+.es a{color:var(--accent)}.es a:hover{color:var(--ink)}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.t11{font-size:11px}.t13{font-size:13px;font-weight:600}.t16{font-size:16px}.t28{font-size:28px;font-weight:500;letter-spacing:-.02em}
+.row{display:flex;align-items:center;gap:8px}
+.chip{display:flex;align-items:center;gap:6px;height:24px;padding:0 9px;border:1px solid var(--hairline);border-radius:6px;background:var(--surface);color:var(--ink-2);white-space:nowrap}
+.seg{display:flex;gap:2px;padding:2px;background:var(--surface-3);border-radius:7px}
+.seg button{border:0;background:transparent;height:28px;padding:0 12px;border-radius:5px;color:var(--ink-2);display:flex;align-items:center;gap:7px;font-weight:500}
+.seg button .k{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-2)}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--hairline)}
+.grp{display:flex;flex-direction:column;background:var(--surface);min-width:0;min-height:0}
+.hdr{height:28px;flex:none;display:flex;align-items:stretch;background:var(--surface-2);border-bottom:1px solid var(--hairline)}
+.tab{display:flex;align-items:center;gap:6px;padding:0 12px;color:var(--ink-2);border:0;border-right:1px solid var(--hairline);background:transparent;white-space:nowrap}
+.tab.sel{background:var(--surface);color:var(--ink);font-weight:600;margin-bottom:-1px}
+.tab.sel.focus{box-shadow:inset 0 2px 0 var(--accent)}
+.hbtns{margin-left:auto;display:flex;align-items:center;gap:2px;padding:0 6px}
+.ib{width:22px;height:22px;border:0;background:transparent;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--ink-3);padding:0}
+.tb{height:30px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--hairline);background:var(--surface)}
+.lbl{font-size:11px;font-weight:600;color:var(--ink-3)}
+.tog{height:22px;border:1px solid var(--hairline);background:var(--surface);border-radius:4px;padding:0 8px;color:var(--ink-2)}
+.tog.on{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.crumb{height:22px;border:0;background:transparent;border-radius:4px;padding:0 6px;color:var(--ink-2)}
+.crumb:hover{background:var(--surface-3)}
+.crumb.cur{color:var(--ink);font-weight:600}
+.sep{color:var(--ink-3)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px}
+.kind{font-size:11px;font-weight:600;padding:1px 6px;border-radius:3px;border:1px solid var(--hairline);color:var(--ink-2);background:var(--surface-2)}
+.sect{border-top:1px solid var(--hairline);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.kv{display:grid;grid-template-columns:118px minmax(0,1fr);row-gap:5px;column-gap:8px;margin:0}
+.kv dt{color:var(--ink-3);margin:0}.kv dd{margin:0}
+.btn{height:26px;padding:0 10px;border-radius:4px;border:1px solid var(--hairline);background:var(--surface);font-weight:500}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.stage{background:var(--stage)}
+/* board-specific */
+.pi{display:grid;grid-template-columns:40px minmax(0,1fr) 48px;align-items:center;gap:6px;height:25px;padding:0 12px;border:0;background:transparent;width:100%;text-align:left;color:var(--ink)}
+.pi.sel{box-shadow:inset 0 0 0 2px var(--ink);background:var(--surface-2);font-weight:600}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{position:sticky;top:0;background:var(--surface-2);font-size:11px;font-weight:600;color:var(--ink-3);text-align:right;padding:0 10px;height:26px;border-bottom:1px solid var(--hairline);white-space:nowrap}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td{font-family:"IBM Plex Mono",ui-monospace,monospace;text-align:right;padding:0 10px;height:24px;border-bottom:1px solid var(--surface-3);white-space:nowrap}
+.tbl tr.sel td{background:var(--surface-2);box-shadow:inset 0 2px 0 var(--ink),inset 0 -2px 0 var(--ink)}
+.cnt{height:22px;border:1px solid var(--hairline);background:var(--surface);border-radius:4px;padding:0 8px;display:flex;align-items:center;gap:6px}
+</style>
+</helmet>
+
+<div class="es" style="width:1440px;height:900px;display:flex;flex-direction:column;overflow:hidden">
+
+<!-- 1 · Native title bar (system-drawn; shown for context only) -->
+<div style="height:28px;flex:none;display:flex;align-items:center;padding:0 12px;background:var(--tl-bg);position:relative">
+<div style="display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:#FF5F57"></span><span style="width:12px;height:12px;border-radius:50%;background:#FEBC2E"></span><span style="width:12px;height:12px;border-radius:50%;background:#28C840"></span></div>
+<div style="position:absolute;left:0;right:0;text-align:center;color:var(--tl-text);pointer-events:none">memory-study.eyes</div>
+</div>
+
+<!-- 2 · App bar -->
+<header style="height:44px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px 0 14px;background:var(--surface);border-bottom:1px solid var(--hairline)">
+<div class="row" style="gap:7px;margin-right:4px">
+<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M1.5 10C4 5.5 7 3.5 10 3.5S16 5.5 18.5 10C16 14.5 13 16.5 10 16.5S4 14.5 1.5 10Z" fill="none" stroke="var(--ink)" stroke-width="1.5"/><circle cx="10" cy="10" r="3.2" fill="var(--ink)"/><circle cx="11.2" cy="8.8" r="1" fill="var(--surface)"/></svg>
+<span class="t13" style="letter-spacing:-.01em">Eyes Studio</span>
+</div>
+<button class="chip"><span>memory-study</span><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+<div style="flex:1"></div>
+<nav class="seg" aria-label="Perspectives">
+<button>Data <span class="k">⌘1</span></button>
+<button>Explore <span class="k">⌘2</span></button>
+<button>Analysis <span class="k">⌘3</span></button>
+<button class="on" aria-current="page">Compare <span class="k">⌘4</span></button>
+<button>Figures <span class="k">⌘5</span></button>
+</nav>
+<div style="flex:1"></div>
+<!-- Jobs chip: running -->
+<div class="chip" style="gap:8px;padding-right:3px;color:var(--ink)" role="status" aria-label="Run 8 comparing, 21,400 of 44,845 pairs">
+<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 2a6 6 0 1 1-6 6"/></svg>
+<span style="font-weight:600">Run 8</span><span style="color:var(--ink-2)">Comparing</span>
+<span class="mono t11">21,400 / 44,845 pairs</span>
+<span style="width:64px;height:4px;border-radius:2px;background:var(--surface-3);position:relative;overflow:hidden"><span style="position:absolute;left:0;top:0;bottom:0;width:48%;background:var(--accent)"></span></span>
+<button class="btn" style="height:18px;padding:0 7px;font-size:11px">Cancel</button>
+</div>
+</header>
+
+<!-- 3 · Context strip: trail + freshness -->
+<div style="height:32px;flex:none;display:flex;align-items:center;gap:4px;padding:0 10px;background:var(--surface);border-bottom:1px solid var(--hairline)">
+<button class="ib" aria-label="Back (⌘[)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3 5 8l5 5"/></svg></button>
+<button class="ib" aria-label="Forward (⌘])"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m6 3 5 5-5 5"/></svg></button>
+<nav class="row" style="gap:2px;margin-left:4px" aria-label="Trail">
+<button class="crumb cur" aria-current="location">Summary · by retrieval response</button>
+</nav>
+<div style="flex:1"></div>
+<span class="chip" style="height:22px"><span style="width:7px;height:7px;border-radius:50%;border:1.5px solid var(--ink-2);box-sizing:border-box"></span>Showing analysis rev 4 · run 7 · data r3</span>
+<span class="chip" style="height:22px;color:var(--ink)"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></span>Rev 5 · run 8 running · 48%</span>
+</div>
+
+<!-- 4 · Banner: newer run in progress -->
+<div style="height:30px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--surface-2);border-bottom:1px dashed var(--ink-2)">
+<span style="font-weight:600">Showing run 7 (rev 4).</span>
+<span style="color:var(--ink-2)">Run 8 (rev 5, adds σ 8°) is running — results will not replace this view until you choose Show.</span>
+<div style="flex:1"></div>
+<button class="btn" style="height:22px" disabled aria-disabled="true">Show run 8 · when finished</button>
+</div>
+
+<!-- 5 · Dock -->
+<div style="flex:1;min-height:0;display:flex;gap:1px;background:var(--hairline)">
+
+<!-- Navigator -->
+<section class="grp" style="width:200px;flex:none" aria-label="Participants navigator">
+<div class="hdr"><button class="tab sel">Participants</button><div class="hbtns"><button class="ib" aria-label="Minimize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
+<div class="t11" style="display:grid;grid-template-columns:40px minmax(0,1fr) 48px;gap:6px;padding:6px 12px 4px;font-weight:600;color:var(--ink-3)"><span>P</span><span>Contrib.</span><span style="text-align:right">D · 2°</span></div>
+<div style="flex:1;overflow:hidden">
+<sc-for list="{{nav}}" as="p" hint-placeholder-count="24">
+<button class="{{p.cls}}" aria-label="{{p.aria}}"><span class="mono">{{p.id}}</span><span class="mono t11" style="color:{{p.cc}}">{{p.c}}</span><span class="mono" style="text-align:right">{{p.d}}</span></button>
+</sc-for>
+</div>
+</section>
+
+<!-- Centre -->
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+<div style="flex:none;height:410px;display:flex;gap:1px">
+
+<!-- Participant plot -->
+<section class="grp" style="flex:1.35" aria-label="Participant D by retrieval response">
+<div class="hdr"><button class="tab sel focus">Participants · D by response</button><button class="tab">Table</button><div class="hbtns"><button class="ib" aria-label="Maximize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
+<div class="tb">
+<span class="lbl">σ</span>
+<div class="seg" style="padding:1px"><button style="height:20px;padding:0 8px">0.5°</button><button style="height:20px;padding:0 8px">1°</button><button class="on" style="height:20px;padding:0 8px">2°</button><button style="height:20px;padding:0 8px">4°</button></div>
+<div style="flex:1"></div>
+<span class="t11" style="color:var(--ink-2)">Descriptive only · no intervals or tests</span>
+</div>
+<div style="flex:1;position:relative;padding:4px 10px 0" tabindex="0" role="group" aria-label="Participant D plot. One focus stop; arrow keys move between participants, Enter selects.">
+<svg width="560" height="340" viewBox="0 0 560 340" role="img" aria-label="Participant mean D at sigma 2 degrees for Remembered and Forgotten retrieval trials, 24 participants, lines join each participant's two means.">
+<!-- y axis -->
+<g font-family="IBM Plex Mono" font-size="11" fill="var(--ink-3)" text-anchor="end">
+<text x="54" y="{{y05}}" dy="4">+0.5</text><text x="54" y="{{y04}}" dy="4">+0.4</text><text x="54" y="{{y03}}" dy="4">+0.3</text><text x="54" y="{{y02}}" dy="4">+0.2</text><text x="54" y="{{y01}}" dy="4">+0.1</text><text x="54" y="{{y00}}" dy="4" fill="var(--ink)">0</text><text x="54" y="{{ym01}}" dy="4">−0.1</text><text x="54" y="{{ym02}}" dy="4">−0.2</text><text x="54" y="{{ym03}}" dy="4">−0.3</text>
+</g>
+<path d="{{grid}}" stroke="var(--surface-3)" stroke-width="1"/>
+<line x1="62" x2="470" y1="{{y00}}" y2="{{y00}}" stroke="var(--ink)" stroke-width="1.5"/>
+<text x="16" y="170" font-family="IBM Plex Sans" font-size="11" fill="var(--ink-3)" transform="rotate(-90 16 170)" text-anchor="middle">D (Δ cosine), participant mean</text>
+<!-- links -->
+<path d="{{links}}" stroke="var(--ink-3)" stroke-opacity=".45" stroke-width="1" fill="none"/>
+<!-- Remembered: filled ink; Forgotten: hollow ink-3 -->
+<path d="{{remDots}}" fill="var(--ink)"/>
+<path d="{{forDots}}" fill="var(--surface)" stroke="var(--ink-3)" stroke-width="1.5"/>
+<!-- grand means -->
+<line x1="{{remX0}}" x2="{{remX1}}" y1="{{yRemMean}}" y2="{{yRemMean}}" stroke="var(--ink)" stroke-width="4"/>
+<line x1="{{forX0}}" x2="{{forX1}}" y1="{{yForMean}}" y2="{{yForMean}}" stroke="var(--ink-3)" stroke-width="4" stroke-dasharray="6 3"/>
+<text x="{{remX0}}" y="{{yRemMean}}" dx="-6" dy="4" text-anchor="end" font-family="IBM Plex Mono" font-size="11" font-weight="500" fill="var(--ink)">+0.30</text>
+<text x="{{forX1}}" y="{{yForMean}}" dx="6" dy="4" font-family="IBM Plex Mono" font-size="11" font-weight="500" fill="var(--ink-2)">+0.15</text>
+<!-- selected P17: role-free selection ring -->
+<path d="{{selLink}}" stroke="var(--ink)" stroke-width="2" fill="none"/>
+<path d="{{selRing}}" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+<path d="{{selRing2}}" fill="none" stroke="var(--ink)" stroke-width="2"/>
+<!-- P05 failed marker -->
+<path d="{{failMark}}" fill="none" stroke="var(--fail)" stroke-width="1.5" stroke-dasharray="3 2"/>
+<!-- column labels -->
+<g font-family="IBM Plex Sans" font-size="12" text-anchor="middle">
+<text x="{{remX}}" y="330" font-weight="600" fill="var(--ink)">Remembered</text>
+<text x="{{forX}}" y="330" font-weight="600" fill="var(--ink-2)">Forgotten</text>
+</g>
+<g font-family="IBM Plex Mono" font-size="11" text-anchor="middle" fill="var(--ink-3)">
+<text x="{{remX}}" y="316">n = 24</text><text x="{{forX}}" y="316">n = 24</text>
+</g>
+</svg>
+<!-- annotations (HTML, so they reflow) -->
+<div style="position:absolute;left:{{p17Left}};top:{{p17Top}};background:var(--surface);border:1px solid var(--ink);border-radius:6px;padding:6px 8px;display:flex;flex-direction:column;gap:3px;box-shadow:0 2px 6px rgba(28,30,33,.12)">
+<span style="font-weight:600">P17 <span class="t11 mono" style="font-weight:400;color:var(--ink-2)">19 of 20 contributing</span></span>
+<span class="mono t11">Rem +0.38 (n 17) · Forg +0.32 (n 2)</span>
+<a href="Main.dc.html" style="font-weight:600" aria-label="Explain P17: opens Compare query layout with trail Summary · by retrieval response › Remembered › P17">Explain P17 →</a>
+<span class="t11" style="color:var(--ink-3)">keeps: by retrieval response › Remembered › P17</span>
+</div>
+<div style="position:absolute;left:{{p05Left}};top:{{p05Top}};background:var(--fail-soft);border:1px dashed var(--fail);border-radius:6px;padding:5px 8px;display:flex;flex-direction:column;gap:2px;max-width:170px">
+<span class="t11" style="font-weight:600;color:var(--fail)">P05 · 3 failed</span>
+<span class="t11" style="color:var(--ink)">failed · empty map · no value. Not counted in either mean; not zero.</span>
+</div>
+<div class="t11" style="position:absolute;right:14px;top:10px;display:flex;flex-direction:column;gap:4px;color:var(--ink-2);text-align:right">
+<span>Paired n = 24 participants</span>
+<span>Means: equal participant weight</span>
+<span>Unit below each dot: query trial</span>
+<span>Per-group n: 2–17 queries per participant</span>
+</div>
+</div>
+</section>
+
+<!-- Scale profile -->
+<section class="grp" style="flex:1" aria-label="Scale profile">
+<div class="hdr"><button class="tab sel">Scale profile</button><button class="tab">Table</button><div class="hbtns"><button class="ib" aria-label="Maximize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
+<div class="tb">
+<span class="kind">Protocol scales · declared in rev 4</span>
+<div style="flex:1"></div>
+<span class="t11" style="color:var(--ink-2)">All queries · run 7</span>
+</div>
+<div style="flex:1;padding:4px 10px 0;position:relative" tabindex="0" role="group" aria-label="Scale profile plot. One focus stop; arrow keys move between scales.">
+<svg width="400" height="330" viewBox="0 0 400 330" role="img" aria-label="Grand mean D by smoothing scale: 0.13 at 0.5 degrees, 0.20 at 1, 0.26 at 2, 0.16 at 4. Faint lines are the 24 participants.">
+<g font-family="IBM Plex Mono" font-size="11" fill="var(--ink-3)" text-anchor="end">
+<text x="44" y="{{sy05}}" dy="4">+0.5</text><text x="44" y="{{sy04}}" dy="4">+0.4</text><text x="44" y="{{sy03}}" dy="4">+0.3</text><text x="44" y="{{sy02}}" dy="4">+0.2</text><text x="44" y="{{sy01}}" dy="4">+0.1</text><text x="44" y="{{sy00}}" dy="4" fill="var(--ink)">0</text><text x="44" y="{{sym01}}" dy="4">−0.1</text>
+</g>
+<path d="{{sgrid}}" stroke="var(--surface-3)" stroke-width="1"/>
+<line x1="52" x2="380" y1="{{sy00}}" y2="{{sy00}}" stroke="var(--ink)" stroke-width="1.5"/>
+<text x="14" y="150" font-family="IBM Plex Sans" font-size="11" fill="var(--ink-3)" transform="rotate(-90 14 150)" text-anchor="middle">D (Δ cosine)</text>
+<path d="{{plines}}" stroke="var(--ink-3)" stroke-opacity=".28" stroke-width="1" fill="none"/>
+<path d="{{p17line}}" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="4 3" fill="none"/>
+<path d="{{meanLine}}" stroke="var(--ink)" stroke-width="3" fill="none"/>
+<path d="{{meanDots}}" fill="var(--ink)"/>
+<g font-family="IBM Plex Mono" font-size="11" font-weight="500" fill="var(--ink)" text-anchor="middle">
+<text x="{{sx0}}" y="{{mly0}}">+0.13</text><text x="{{sx1}}" y="{{mly1}}">+0.20</text><text x="{{sx2}}" y="{{mly2}}">+0.26</text><text x="{{sx3}}" y="{{mly3}}">+0.16</text>
+</g>
+<g font-family="IBM Plex Mono" font-size="11" fill="var(--ink-2)" text-anchor="middle">
+<text x="{{sx0}}" y="296">0.5°</text><text x="{{sx1}}" y="296">1°</text><text x="{{sx2}}" y="296">2°</text><text x="{{sx3}}" y="296">4°</text>
+</g>
+<text x="216" y="318" font-family="IBM Plex Sans" font-size="11" fill="var(--ink-3)" text-anchor="middle">Gaussian σ (log spacing) · cell 0.46°</text>
+</svg>
+<div class="t11" style="position:absolute;right:14px;top:10px;display:flex;flex-direction:column;gap:4px;align-items:flex-end;color:var(--ink-2)">
+<span class="row" style="gap:6px"><span style="width:18px;height:3px;background:var(--ink)"></span>Grand mean, 24 participants</span>
+<span class="row" style="gap:6px"><span style="width:18px;height:0;border-top:1.5px dashed var(--ink)"></span>P17 (selected)</span>
+<span class="row" style="gap:6px"><span style="width:18px;height:1px;background:var(--ink-3);opacity:.5"></span>Each participant</span>
+<span style="max-width:170px;text-align:right">Scales are reported separately; never averaged or picked by score.</span>
+</div>
+</div>
+</section>
+</div>
+
+<!-- Participant table -->
+<section class="grp" style="flex:1;min-height:0" aria-label="Participant table">
+<div class="hdr"><button class="tab sel">Participant table · σ 2°</button><button class="tab">Query table</button><div class="hbtns"><button class="ib" aria-label="Maximize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
+<div style="flex:1;min-height:0;overflow:hidden" tabindex="0" role="group" aria-label="Participant table. One focus stop; arrow keys move the row cursor.">
+<table class="tbl">
+<caption style="position:absolute;left:-9999px">Participant summary at sigma 2 degrees, run 7</caption>
+<thead><tr><th scope="col">Participant</th><th scope="col">Requested</th><th scope="col">Contributing</th><th scope="col">Failed</th><th scope="col">No match</th><th scope="col">Not admitted</th><th scope="col" style="color:var(--match-text)">Mean M</th><th scope="col" style="color:var(--control-text)">Mean B</th><th scope="col" style="color:var(--ink)">Mean D</th><th scope="col">Remembered D (n)</th><th scope="col">Forgotten D (n)</th></tr></thead>
+<tbody>
+<tr class="sel" aria-selected="true"><td style="font-family:'IBM Plex Sans';font-weight:600">P17 <span class="t11" style="font-weight:400;color:var(--ink-3)">pinned · selected</span></td><td>20</td><td>19</td><td>0</td><td>0</td><td>1</td><td>0.73</td><td>0.35</td><td style="font-weight:600">+0.38</td><td>+0.38 (17)</td><td>+0.32 (2)</td></tr>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+<tr><td style="font-family:'IBM Plex Sans'">{{r.id}}</td><td>{{r.req}}</td><td>{{r.con}}</td><td style="color:{{r.fc}};font-weight:{{r.fw}}">{{r.fail}}</td><td>{{r.nm}}</td><td>{{r.na}}</td><td>{{r.m}}</td><td>{{r.b}}</td><td style="font-weight:600">{{r.d}}</td><td>{{r.rem}}</td><td>{{r.forg}}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<!-- Count strip -->
+<div class="t11" style="height:34px;flex:none;border-top:1px solid var(--hairline);display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--surface-2);color:var(--ink-2)">
+<span style="font-weight:600;color:var(--ink)">Query contrasts</span>
+<button class="cnt"><span class="mono" style="color:var(--ink)">480</span>requested</button><span>=</span>
+<button class="cnt"><span class="mono" style="color:var(--ink)">454</span>contributing</button><span>+</span>
+<button class="cnt" style="border-color:var(--fail)"><span class="mono" style="color:var(--fail)">3</span>failed · empty map</button><span>+</span>
+<button class="cnt"><span class="mono" style="color:var(--ink)">9</span>no match · reference not admitted</button><span>+</span>
+<button class="cnt"><span class="mono" style="color:var(--ink)">14</span>query not admitted</button>
+<span class="cnt" style="border-style:dashed;color:var(--ink-3)"><span class="mono">n/a</span>by design · not in this preset</span>
+<div style="flex:1"></div>
+<span>Pair scores: <span class="mono">35,876</span> (8,969 per scale × 4)</span>
+</div>
+</section>
+</div>
+
+<!-- Reporting inspector -->
+<section class="grp" style="width:300px;flex:none" aria-label="Reporting inspector">
+<div class="hdr"><button class="tab sel">Reporting</button><div class="hbtns"><button class="ib" aria-label="Minimize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
+<div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+<div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+<div class="row" style="justify-content:space-between"><span class="t13">By retrieval response</span><span class="kind">Reporting · no rerun</span></div>
+<div class="t11" style="color:var(--ink-2);line-height:1.45">Reuses run 7's 35,876 pair scores. Grouping, filtering and weighting never change a pair score or a control set.</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<label for="gb" class="lbl">Group by</label>
+<select id="gb" style="height:26px;border:1px solid var(--hairline);border-radius:4px;background:var(--surface);color:var(--ink);font:inherit;padding:0 6px"><option>Retrieval response (trials.csv · response)</option><option>None</option></select>
+<span class="t11" style="color:var(--ink-3)">Remembered · Forgotten · every admitted query has a value</span>
+</div>
+<fieldset style="border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:5px">
+<legend class="lbl" style="padding:0;margin-bottom:4px">Filter queries</legend>
+<label class="row" style="gap:6px"><input type="checkbox" checked disabled style="accent-color:var(--accent)">All contributing retrieval queries (454)</label>
+<label class="row" style="gap:6px;align-items:flex-start"><input type="checkbox" style="accent-color:var(--accent);margin-top:2px"><span>Exclude queries with &gt;25% of fixation duration outside the analysis window <span class="t11" style="display:block;color:var(--ink-3)">count shown when applied</span></span></label>
+<label class="row" style="gap:6px;align-items:flex-start"><input type="checkbox" style="accent-color:var(--accent);margin-top:2px"><span>Minimum queries per group: <span class="mono">3</span> <span class="t11" style="display:block;color:var(--ink-3)">off · would drop 2 Forgotten cells (P17 n 2, P21 n 2)</span></span></label>
+</fieldset>
+<fieldset style="border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:5px">
+<legend class="lbl" style="padding:0;margin-bottom:4px">Summary unit and weighting</legend>
+<span class="t11" style="color:var(--ink-2)">Query trial → participant mean → grand mean</span>
+<label class="row" style="gap:6px"><input type="radio" name="w" checked style="accent-color:var(--accent)">Equal weight per participant</label>
+<label class="row" style="gap:6px"><input type="radio" name="w" style="accent-color:var(--accent)">Weight by contributing queries</label>
+</fieldset>
+</div>
+<div class="sect">
+<span class="lbl">What D measures</span>
+<div style="line-height:1.5">D is the matched-minus-control spatial similarity of duration-weighted fixation density. It reflects spatial correspondence, not sequential replay. D does not separate participant-specific reinstatement from item-driven salience common to all viewers of that image, and may retain residual centre bias.</div>
+</div>
+<div class="sect">
+<div class="row" style="justify-content:space-between"><span class="lbl">Saved reporting specs</span><button class="btn" style="height:22px">Save as…</button></div>
+<button class="btn" style="height:auto;padding:6px 8px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left"><span>All queries · participant means</span><span class="t11 mono" style="color:var(--ink-3)">run 7 · not used by a figure</span></button>
+<button class="btn" style="height:auto;padding:6px 8px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;box-shadow:inset 0 0 0 2px var(--ink)"><span style="font-weight:600">By retrieval response</span><span class="t11 mono" style="color:var(--ink-3)">run 7 · current view · used by Figure 1</span></button>
+</div>
+</div>
+</section>
+</div>
+
+<!-- 6 · Status bar -->
+<footer class="t11" style="height:24px;flex:none;display:flex;align-items:center;gap:12px;padding:0 12px;background:var(--surface-2);border-top:1px solid var(--hairline);color:var(--ink-2)">
+<span class="row" style="gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--ink)"></span>Selected:<span class="mono" style="color:var(--ink)">P17 · by retrieval response · σ 2°</span></span>
+<span style="width:1px;height:12px;background:var(--hairline)"></span>
+<span>Enter on a participant opens its queries · F6 next pane</span>
+<div style="flex:1"></div>
+<span class="row" style="gap:6px">Run 8 · Comparing <span class="mono">21,400 / 44,845</span><button class="btn" style="height:18px;padding:0 7px;font-size:11px">Cancel</button></span>
+<span style="width:1px;height:12px;background:var(--hairline)"></span>
+<span>Saved 10:24</span>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    // FIXTURE.md participant table (σ 2°): id, req, contrib, failed, noMatch, notAdmitted, M, B, D, remD, remN, forD, forN
+    const P = [
+      ['P01',20,19,0,0,1,.52,.35,.17,.26,11,.06,8],['P02',20,19,0,0,1,.58,.36,.22,.27,13,.12,6],
+      ['P03',20,19,0,1,0,.68,.35,.33,.38,15,.15,4],['P04',20,19,0,0,1,.65,.36,.29,.36,12,.18,7],
+      ['P05',20,17,3,0,0,.27,.34,-.08,-.03,13,-.23,4],['P06',20,19,0,0,1,.59,.34,.25,.30,11,.17,8],
+      ['P07',20,19,0,1,0,.62,.35,.27,.32,15,.10,4],['P08',20,19,0,1,0,.61,.35,.25,.31,12,.15,7],
+      ['P09',20,19,0,0,1,.67,.35,.32,.34,15,.24,4],['P10',20,19,0,1,0,.78,.35,.43,.45,16,.33,3],
+      ['P11',20,19,0,1,0,.57,.35,.22,.28,13,.11,6],['P12',20,19,0,0,1,.64,.35,.28,.34,12,.19,7],
+      ['P13',20,19,0,0,1,.47,.36,.11,.17,11,.03,8],['P14',20,19,0,1,0,.62,.35,.27,.29,14,.22,5],
+      ['P15',20,19,0,1,0,.45,.35,.10,.18,13,-.08,6],['P16',20,19,0,0,1,.74,.35,.38,.45,12,.28,7],
+      ['P17',20,19,0,0,1,.73,.35,.38,.38,17,.32,2],['P18',20,19,0,1,0,.76,.35,.41,.42,16,.37,3],
+      ['P19',20,19,0,0,1,.59,.35,.24,.29,15,.06,4],['P20',20,19,0,0,1,.59,.37,.22,.26,14,.12,5],
+      ['P21',20,19,0,1,0,.67,.35,.31,.32,17,.27,2],['P22',20,19,0,0,1,.54,.35,.19,.27,12,.06,7],
+      ['P23',20,19,0,0,1,.64,.34,.30,.34,14,.21,5],['P24',20,19,0,0,1,.65,.34,.30,.36,13,.17,6]
+    ];
+    const sgn = v => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(2);
+    // participant plot geometry
+    const Y = d => 20 + (0.5 - d) / 0.8 * 280;
+    const remX = 190, forX = 370;
+    const jit = i => ((i * 7) % 11 - 5) * 2.2;
+    const circ = (x, y, r) => `M${(x - r).toFixed(1)} ${y.toFixed(1)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`;
+    let links = '', rem = '', forg = '';
+    P.forEach((p, i) => {
+      const x1 = remX + jit(i), x2 = forX + jit(i + 3), y1 = Y(p[9]), y2 = Y(p[11]);
+      if (p[0] !== 'P17') links += `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`;
+      rem += circ(x1, y1, 4); forg += circ(x2, y2, 4);
+    });
+    const i17 = 16, p17 = P[i17];
+    const s1x = remX + jit(i17), s1y = Y(p17[9]), s2x = forX + jit(i17 + 3), s2y = Y(p17[11]);
+    const i05 = 4, p05 = P[i05];
+    const f5x = forX + jit(i05 + 3), f5y = Y(p05[11]);
+    let grid = '';
+    [0.5, 0.4, 0.3, 0.2, 0.1, -0.1, -0.2, -0.3].forEach(v => { grid += `M62 ${Y(v).toFixed(1)}H470`; });
+    // scale profile geometry (log2 spacing)
+    const SX = [70, 170, 270, 370];
+    const SY = d => 24 + (0.5 - d) / 0.6 * 250;
+    const prof = [.5, .78, 1, .62];
+    let plines = '';
+    P.forEach(p => { plines += prof.map((f, k) => `${k ? 'L' : 'M'}${SX[k]} ${SY(p[8] * f).toFixed(1)}`).join(''); });
+    const p17s = [0.19, 0.29, 0.38, 0.23];
+    const mean = [0.13, 0.20, 0.26, 0.16];
+    const meanLine = mean.map((v, k) => `${k ? 'L' : 'M'}${SX[k]} ${SY(v).toFixed(1)}`).join('');
+    const meanDots = mean.map((v, k) => circ(SX[k], SY(v), 4.5)).join('');
+    let sgrid = '';
+    [0.5, 0.4, 0.3, 0.2, 0.1, -0.1].forEach(v => { sgrid += `M52 ${SY(v).toFixed(1)}H380`; });
+    const rows = P.filter(p => p[0] !== 'P17').slice(0, 8).map(p => ({
+      id: p[0], req: p[1], con: p[2], fail: p[3], nm: p[4], na: p[5],
+      fc: p[3] ? 'var(--fail)' : 'var(--ink)', fw: p[3] ? 600 : 400,
+      m: p[6].toFixed(2), b: p[7].toFixed(2), d: sgn(p[8]),
+      rem: sgn(p[9]) + ' (' + p[10] + ')', forg: sgn(p[11]) + ' (' + p[12] + ')'
+    }));
+    const nav = P.map(p => ({
+      id: p[0], cls: p[0] === 'P17' ? 'pi sel' : 'pi',
+      c: p[3] ? p[2] + ' of 20 · ' + p[3] + ' failed' : p[2] + ' of 20',
+      cc: p[3] ? 'var(--fail)' : 'var(--ink-3)', d: sgn(p[8]),
+      aria: p[0] + ', ' + p[2] + ' of 20 contributing, mean D ' + p[8].toFixed(2)
+    }));
+    return {
+      yes: true, nav, rows,
+      grid, links, remDots: rem, forDots: forg,
+      y05: Y(.5), y04: Y(.4), y03: Y(.3), y02: Y(.2), y01: Y(.1), y00: Y(0), ym01: Y(-.1), ym02: Y(-.2), ym03: Y(-.3),
+      remX, forX, remX0: remX - 26, remX1: remX + 26, forX0: forX - 26, forX1: forX + 26,
+      yRemMean: Y(0.30), yForMean: Y(0.15),
+      selLink: `M${s1x} ${s1y}L${s2x} ${s2y}`,
+      selRing: circ(s1x, s1y, 6) + circ(s2x, s2y, 6), selRing2: circ(s1x, s1y, 8) + circ(s2x, s2y, 8),
+      failMark: circ(f5x, f5y + 26, 6) + `M${f5x} ${(f5y + 11).toFixed(1)}V${(f5y + 20).toFixed(1)}`,
+      p17Left: (s2x + 26) + 'px', p17Top: (s2y - 24) + 'px',
+      p05Left: (f5x + 22) + 'px', p05Top: (f5y - 8) + 'px',
+      sgrid, plines, meanLine, meanDots,
+      p17line: p17s.map((v, k) => `${k ? 'L' : 'M'}${SX[k]} ${SY(v).toFixed(1)}`).join(''),
+      sy05: SY(.5), sy04: SY(.4), sy03: SY(.3), sy02: SY(.2), sy01: SY(.1), sy00: SY(0), sym01: SY(-.1),
+      sx0: SX[0], sx1: SX[1], sx2: SX[2], sx3: SX[3],
+      mly0: SY(mean[0]) + 18, mly1: SY(mean[1]) + 18, mly2: SY(mean[2]) - 10, mly3: SY(mean[3]) + 18
+    };
+  }
+}
+</script>
+</body>
+</html>

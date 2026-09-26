@@ -18,7 +18,7 @@ for(backend in c("ks","MASS")) for(weighted in c(FALSE,TRUE)) for(normalized in 
   name <- paste(backend,weighted,normalized,sep="-")
   estimates[[name]] <- attempt(function()extract(eyesim::eye_density(fg,sigma=i$sigma,xbounds=i$xbounds,ybounds=i$ybounds,outdim=c(i$nx,i$ny),duration_weighted=weighted,normalize=normalized,kde_pkg=backend)))
 }
-# Explicit weights are accepted by the facade but ignored at this pinned revision.
+# Explicit weights, one per fixation; generate_kde.py checks them against a direct weighted Gaussian.
 explicit <- attempt(function()extract(eyesim::eye_density(fg,sigma=i$sigma,xbounds=i$xbounds,ybounds=i$ybounds,outdim=c(i$nx,i$ny),weights=c(100,1,1),kde_pkg="MASS")))
 scales <- attempt(function()extract(eyesim::eye_density(fg,sigma=c(1,2),xbounds=i$xbounds,ybounds=i$ybounds,outdim=c(i$nx,i$ny),kde_pkg="MASS")))
 window <- attempt(function()extract(eyesim::eye_density(fg,sigma=1,window=c(0.1,0.2),min_fixations=2)))

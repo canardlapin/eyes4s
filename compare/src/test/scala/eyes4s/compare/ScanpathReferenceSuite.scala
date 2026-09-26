@@ -165,11 +165,12 @@ class ScanpathReferenceSuite extends munit.FunSuite:
           queries,
           get(OverlapThreshold.of[Px](threshold)),
           distance,
-          TrajectoryEndpoint.OnsetRange,
+          // eyesim holds each path's final fixation after its onset.
+          TrajectoryEndpoint.HoldLastOnset,
           MissingOverlapPolicy.CountAsNonOverlap
         )
       )
-      assertEquals(r.requested, 6); assertEquals(r.contributing, 4);
+      assertEquals(r.requested, 6); assertEquals(r.contributing, 5);
       assertEquals(r.overlaps, count)
       assertEqualsDouble(get(r.similarity).value, score, AnalyticTolerance)
       assertEquals(r.rows.map(_.time), queries)
@@ -442,9 +443,10 @@ class ScanpathReferenceSuite extends munit.FunSuite:
   }
 
   test(
-    "explicit direct-default grids reproduce asymmetric support and distance overflow stays located"
+    "explicit direct-default grids span both paths' onsets and distance overflow stays located"
   ) {
-    val queries = (0L to 200L by 20L).map(Instant.millis).toVector
+    // eyesim's direct default grid runs from 0 to the later of both paths' final onsets by 20.
+    def grid(last: Long) = (0L to last by 20L).map(Instant.millis).toVector
     def run(a: Scanpath[Px], b: Scanpath[Px], times: Vector[Instant]) = get(
       FixationOverlap.compare(
         FixationTrajectory.fromScanpath(a),
@@ -453,15 +455,17 @@ class ScanpathReferenceSuite extends munit.FunSuite:
         times,
         get(OverlapThreshold.of[Px](60)),
         FixationGroundDistance.Euclidean,
-        TrajectoryEndpoint.OnsetRange,
+        TrajectoryEndpoint.HoldLastOnset,
         MissingOverlapPolicy.CountAsNonOverlap
       )
     )
-    assertEquals(run(base, translated, queries).overlaps, 11)
+    assertEquals(run(base, translated, grid(200)).overlaps, 11)
     val longer     = path(ScanpathReference.paths(1).copy(onset = Vector(0, 100, 400)))
-    val asymmetric = run(base, longer, queries)
-    assertEquals(asymmetric.overlaps, 10); assertEquals(asymmetric.requested, 11)
-    assertEqualsDouble(get(asymmetric.similarity).value, 10.0 / 11, AnalyticTolerance)
+    val asymmetric = run(base, longer, grid(400))
+    assertEquals(asymmetric.overlaps, 11); assertEquals(asymmetric.requested, 21)
+    assertEqualsDouble(get(asymmetric.similarity).value, 11.0 / 21, AnalyticTolerance)
+    // The grid is symmetric in its arguments, so swapping them cannot change the score.
+    assertEquals(run(longer, base, grid(400)).overlaps, 11)
     val overflow = run(
       singleton(Double.MaxValue, 0, 0),
       singleton(-Double.MaxValue, 0, 0),

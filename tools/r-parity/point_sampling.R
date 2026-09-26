@@ -15,9 +15,10 @@ run<-function(norm,cap,s=source,r=ref,times=num(input$queries),bins=num(input$bi
  as.data.frame(out[setdiff(names(out),"fixgroup")])
 })
 normalizations<-setNames(lapply(unlist(input$normalizations),function(n)setNames(lapply(num(input$caps),function(cap)run(n,cap)),paste0("cap_",num(input$caps)))),unlist(input$normalizations))
-# Reproduce only the declared finite selection to retain its exact candidate occurrences.
+# Reproduce only the declared finite selection: every true-match copy is removed and each
+# distinct template counts once before the draw, as sample_density_time does at the pin.
 indices<-match(source$matched,ref$matched)
-selected<-lapply(num(input$caps),function(cap){set.seed(input$seed);list(cap=cap,rows=lapply(seq_len(nrow(source)),function(i){mind<-indices[source$stratum==source$stratum[i]];mind<-mind[mind!=indices[i]];eligible<-mind;if(cap==0)mind<-integer() else if(cap<length(mind))mind<-sample(mind,cap);list(key=source$key[i],eligible=eligible,selected=mind)}))})
+selected<-lapply(num(input$caps),function(cap){set.seed(input$seed);list(cap=cap,rows=lapply(seq_len(nrow(source)),function(i){mind<-indices[source$stratum==source$stratum[i]];mind<-unique(mind[mind!=indices[i]]);eligible<-mind;if(cap==0)mind<-integer() else if(cap<length(mind))mind<-sample(mind,cap);list(key=source$key[i],eligible=eligible,selected=mind)}))})
 missing<-source[1,];missing$key<-"unmatched";missing$matched<-"absent"
 duplicate<-rbind(ref,ref[1,]);duplicate$density[[nrow(duplicate)]]<-map(list(8,4,2,1))
 boundaries<-list(extended=run("none",20,bins=num(input$extended_bins)),unmatched=run("none",20,s=rbind(source,missing)),duplicate=run("none",20,r=duplicate),empty_source=run("none",20,s=source[FALSE,]),empty_queries=run("none",20,times=numeric()),no_bins=run("none",20,bins=NULL))
@@ -25,5 +26,6 @@ boundaries<-list(extended=run("none",20,bins=num(input$extended_bins)),unmatched
 # reject nonfinite cells; retain the R result and qualify the aggregation independently.
 partial<-ref;partial$density[[2]]<-map(list(2,NULL,3,9))
 partial$density[[3]]<-map(list(9,3,NULL,1))
-boundaries$partial_controls<-run("none",20,r=partial)
-jsonlite::write_json(list(normalizations=normalizations,selected=selected,boundaries=boundaries,bin_membership=cut(num(input$queries),num(input$bins),right=FALSE,include.lowest=TRUE,labels=FALSE),R=as.character(getRversion()),RNGkind=RNGkind(),seed=input$seed),args[[3L]],auto_unbox=TRUE,pretty=TRUE,digits=NA,na="null",null="null")
+# One bin [0, 30) holds both paired and single-control times; generate_point_sampling.py uses the same bin.
+boundaries$partial_controls<-run("none",20,r=partial,bins=c(0,30))
+jsonlite::write_json(list(normalizations=normalizations,selected=selected,boundaries=boundaries,bin_membership=cut(num(input$queries),num(input$bins),right=FALSE,labels=FALSE),R=as.character(getRversion()),RNGkind=RNGkind(),seed=input$seed),args[[3L]],auto_unbox=TRUE,pretty=TRUE,digits=NA,na="null",null="null")

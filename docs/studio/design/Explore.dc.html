@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Eyes Studio — Explore</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=Source+Serif+4:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+/* ===== Eyes Studio tokens (the only place colours are written) ===== */
+.es{--ground:#ECE9E2;--surface:#FBFAF7;--surface-2:#F3F1EC;--surface-3:#E9E6DF;--hairline:#DAD6CC;--ink:#1C1E21;--ink-2:#464B52;--ink-3:#5E636A;--accent:#0E6E68;--accent-soft:#DCEFEC;--on-accent:#FFFFFF;--query:#3A2E6E;--query-soft:#E6E2F2;--match:#2F6DB5;--match-soft:#E0EAF6;--match-text:#255A98;--control:#B86E0E;--control-fill:#D98A1C;--control-text:#9A4A07;--control-soft:#F7E7D0;--fail:#A3261B;--fail-soft:#F6DEDA;--warn-text:#7A4F00;--warn-soft:#FBF1D9;--stage:#1A1A1A;--on-stage:#D9D6CF;--neutral-mark:rgba(28,30,33,.35);--sel-ring:0 0 0 2px #FFFFFF,0 0 0 4px #1C1E21;--tl-bg:#ECECEC;--tl-text:#4D4D4D}
+.es [data-stage=light],.es[data-stage=light]{--stage:#F2F2F2;--on-stage:#1C1E21}.es [data-stage=mid],.es[data-stage=mid]{--stage:#808080;--on-stage:#FFFFFF}
+.es.dark{--ground:#121315;--surface:#1B1C1F;--surface-2:#222327;--surface-3:#2A2C31;--hairline:#34363C;--ink:#ECEAE5;--ink-2:#BDBAB3;--ink-3:#9C9990;--accent:#43B5AA;--accent-soft:#183A37;--on-accent:#0B1413;--query:#D6CBFF;--query-soft:#2B2544;--match:#5C95E0;--match-soft:#1D2A3D;--match-text:#7FB0EE;--control:#E8A23C;--control-fill:#E8A23C;--control-text:#EBB066;--control-soft:#3A2A14;--fail:#F08A7E;--fail-soft:#3A1E1B;--warn-text:#E7C274;--warn-soft:#33290F;--neutral-mark:rgba(236,234,229,.35);--sel-ring:0 0 0 2px #000000,0 0 0 4px #ECEAE5;--tl-bg:#2B2B2B;--tl-text:#B0B0B0}
+.es{font-family:"IBM Plex Sans",-apple-system,"Helvetica Neue",sans-serif;font-size:12px;color:var(--ink);background:var(--ground)}
+.es button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
+.es a{color:var(--accent)}.es a:hover{color:var(--ink)}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.t11{font-size:11px}.t13{font-size:13px;font-weight:600}.t16{font-size:16px}.t28{font-size:28px;font-weight:500;letter-spacing:-.02em}
+.row{display:flex;align-items:center;gap:8px}
+.chip{display:flex;align-items:center;gap:6px;height:24px;padding:0 9px;border:1px solid var(--hairline);border-radius:6px;background:var(--surface);color:var(--ink-2);white-space:nowrap}
+.seg{display:flex;gap:2px;padding:2px;background:var(--surface-3);border-radius:7px}
+.seg button{border:0;background:transparent;height:28px;padding:0 12px;border-radius:5px;color:var(--ink-2);display:flex;align-items:center;gap:7px;font-weight:500}
+.seg button .k{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-2)}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--hairline)}
+.grp{display:flex;flex-direction:column;background:var(--surface);min-width:0;min-height:0}
+.hdr{height:28px;flex:none;display:flex;align-items:stretch;background:var(--surface-2);border-bottom:1px solid var(--hairline)}
+.tab{display:flex;align-items:center;gap:6px;padding:0 12px;color:var(--ink-2);border:0;border-right:1px solid var(--hairline);background:transparent;white-space:nowrap}
+.tab.sel{background:var(--surface);color:var(--ink);font-weight:600;margin-bottom:-1px}
+.tab.sel.focus{box-shadow:inset 0 2px 0 var(--accent)}
+.hbtns{margin-left:auto;display:flex;align-items:center;gap:2px;padding:0 6px}
+.ib{width:22px;height:22px;border:0;background:transparent;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--ink-3);padding:0}
+.tb{height:30px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--hairline);background:var(--surface)}
+.lbl{font-size:11px;font-weight:600;color:var(--ink-3)}
+.tog{height:22px;border:1px solid var(--hairline);background:var(--surface);border-radius:4px;padding:0 8px;color:var(--ink-2)}
+.tog.on{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.crumb{height:22px;border:0;background:transparent;border-radius:4px;padding:0 6px;color:var(--ink-2)}
+.crumb:hover{background:var(--surface-3)}
+.crumb.cur{color:var(--ink);font-weight:600}
+.sep{color:var(--ink-3)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px}
+.kind{font-size:11px;font-weight:600;padding:1px 6px;border-radius:3px;border:1px solid var(--hairline);color:var(--ink-2);background:var(--surface-2)}
+.sect{border-top:1px solid var(--hairline);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.kv{display:grid;grid-template-columns:118px minmax(0,1fr);row-gap:5px;column-gap:8px;margin:0}
+.kv dt{color:var(--ink-3);margin:0}.kv dd{margin:0}
+.btn{height:26px;padding:0 10px;border-radius:4px;border:1px solid var(--hairline);background:var(--surface);font-weight:500}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.qi{display:grid;grid-template-columns:12px 50px minmax(0,1fr) 44px 40px;align-items:center;gap:6px;height:26px;padding:0 10px 0 20px;border:0;background:transparent;width:100%;text-align:left;color:var(--ink)}
+.qi.sel{box-shadow:inset 0 0 0 2px var(--ink);background:var(--surface-2)}
+.qh{display:grid;grid-template-columns:12px minmax(0,1fr) 88px;align-items:center;gap:6px;height:26px;padding:0 10px;border:0;background:transparent;width:100%;text-align:left;font-weight:600;color:var(--ink)}
+.cdot{position:absolute;width:9px;height:9px;margin:-5px 0 0 -5px;border-radius:50%;border:1.5px solid var(--control);background:var(--surface);padding:0;box-sizing:border-box}
+.cdot.on{box-shadow:var(--sel-ring);background:var(--control)}
+.stage{background:var(--stage)}
+</style>
+</helmet>
+
+<div class="{{rootClass}}" style="width:1440px;height:900px;display:flex;flex-direction:column;overflow:hidden">
+
+<!-- 1 · Native title bar (system-drawn; shown for context only) -->
+<div style="height:28px;flex:none;display:flex;align-items:center;padding:0 12px;background:var(--tl-bg);position:relative">
+<div style="display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:#FF5F57"></span><span style="width:12px;height:12px;border-radius:50%;background:#FEBC2E"></span><span style="width:12px;height:12px;border-radius:50%;background:#28C840"></span></div>
+<div style="position:absolute;left:0;right:0;text-align:center;color:var(--tl-text);pointer-events:none">memory-study.eyes</div>
+</div>
+
+<!-- 2 · App bar -->
+<header style="height:44px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px 0 14px;background:var(--surface);border-bottom:1px solid var(--hairline)">
+<div class="row" style="gap:7px;margin-right:4px">
+<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M1.5 10C4 5.5 7 3.5 10 3.5S16 5.5 18.5 10C16 14.5 13 16.5 10 16.5S4 14.5 1.5 10Z" fill="none" stroke="var(--ink)" stroke-width="1.5"/><circle cx="10" cy="10" r="3.2" fill="var(--ink)"/><circle cx="11.2" cy="8.8" r="1" fill="var(--surface)"/></svg>
+<span class="t13" style="letter-spacing:-.01em">Eyes Studio</span>
+</div>
+<button class="chip"><span>memory-study</span><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+<div style="flex:1"></div>
+<nav class="seg" aria-label="Perspectives">
+<button>Data <span class="k">⌘1</span></button>
+<button class="on" aria-current="page">Explore <span class="k">⌘2</span></button>
+<button>Analysis <span class="k">⌘3</span></button>
+<button>Compare <span class="k">⌘4</span></button>
+<button>Figures <span class="k">⌘5</span></button>
+</nav>
+<div style="flex:1"></div>
+<button class="chip" aria-label="Jobs: none running"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h6"/></svg>No jobs</button>
+</header>
+
+<!-- 3 · Context strip: trail + freshness -->
+<div style="height:32px;flex:none;display:flex;align-items:center;gap:4px;padding:0 10px;background:var(--surface);border-bottom:1px solid var(--hairline)">
+<button class="ib" aria-label="Back (⌘[)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3 5 8l5 5"/></svg></button>
+<button class="ib" aria-label="Forward (⌘])"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m6 3 5 5-5 5"/></svg></button>
+<nav class="row" style="gap:2px;margin-left:4px" aria-label="Trail">
+<button class="crumb">Summary · by retrieval response</button><span class="sep">›</span>
+<button class="crumb">Remembered</button><span class="sep">›</span>
+<button class="crumb">P17</button><span class="sep">›</span>
+<button class="crumb">ret_07 · beach-042</button><span class="sep">›</span>
+<button class="crumb">pair ret_07 × enc_03</button><span class="sep">›</span>
+<button class="crumb">enc_03 · fixation {{selN}}</button><span class="sep">›</span>
+<button class="crumb cur" aria-current="location">fixations.csv record {{selRec}}</button>
+</nav>
+<div style="flex:1"></div>
+<span class="chip" style="height:22px"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></span>Analysis rev 4 · run 7 · data r3 · current</span>
+</div>
+
+<!-- 5 · Dock -->
+<div style="flex:1;min-height:0;display:flex;gap:1px;background:var(--hairline)">
+
+<!-- Navigator -->
+<section class="grp" style="width:252px;flex:none" aria-label="Trials navigator">
+<div class="hdr"><button class="tab sel">Trials</button><button class="tab">Items</button><div class="hbtns"><button class="ib" aria-label="Minimize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
+<div class="tb" style="gap:6px">
+<label for="tf" style="position:absolute;left:-9999px">Filter trials</label>
+<input id="tf" placeholder="Filter participant, trial, item" style="flex:1;height:22px;border:1px solid var(--hairline);border-radius:4px;background:var(--surface);color:var(--ink);padding:0 8px;font:inherit">
+</div>
+<div style="flex:1;overflow:hidden">
+<button class="qh"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2 6.5 5 3.5 8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span>P16</span><span class="mono t11" style="text-align:right;font-weight:400;color:var(--ink-2)">40 · 1 quar.</span></button>
+<button class="qh"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span>P17</span><span class="mono t11" style="text-align:right;font-weight:400;color:var(--ink-2)">40 · 1 absent</span></button>
+<div class="t11" style="padding:4px 10px 2px 26px;font-weight:600;color:var(--ink-3)">Encoding · 20 · image</div>
+<sc-for list="{{trials}}" as="t" hint-placeholder-count="10">
+<button class="{{t.cls}}" style="grid-template-columns:14px 50px minmax(0,1fr) 40px" aria-label="{{t.aria}}">
+<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="2.5" width="9" height="7" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M2 9 5 6l2 2 1.5-1.5L10 8" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+<span class="mono" style="font-weight:{{t.fw}}">{{t.id}}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{t.item}}</span><span class="mono t11" style="text-align:right;color:var(--ink-3)">{{t.nf}}</span>
+</button>
+</sc-for>
+<div class="t11" style="padding:6px 10px 2px 26px;font-weight:600;color:var(--ink-3)">Retrieval · 20 · blank + cross</div>
+<button class="qi" style="grid-template-columns:14px 50px minmax(0,1fr) 40px" aria-label="ret_01 to ret_20, collapsed">
+<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="2.5" width="9" height="7" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M6 4.5v3M4.5 6h3" stroke="currentColor" stroke-width="1"/></svg>
+<span class="mono">ret_01–20</span><span>19 admitted</span><span></span>
+</button>
+<button class="qi" style="grid-template-columns:14px 50px minmax(0,1fr) 40px" aria-label="ret_09 market-066, absent: in trials.csv, no fixation records">
+<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="2.5" width="9" height="7" fill="none" stroke="var(--warn-text)" stroke-width="1.2" stroke-dasharray="2 1.5"/></svg>
+<span class="mono">ret_09</span><span style="color:var(--warn-text)">absent · no records</span><span></span>
+</button>
+<button class="qh"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2 6.5 5 3.5 8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span>P18</span><span class="mono t11" style="text-align:right;font-weight:400;color:var(--ink-2)">40 · 1 absent</span></button>
+</div>
+<div class="t11" style="border-top:1px solid var(--hairline);padding:8px 12px;color:var(--ink-2);display:flex;flex-direction:column;gap:3px">
+<span class="row" style="gap:6px"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="2.5" width="9" height="7" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M2 9 5 6l2 2 1.5-1.5L10 8" fill="none" stroke="currentColor" stroke-width="1"/></svg>Image<svg width="12" height="12" viewBox="0 0 12 12" style="margin-left:6px" aria-hidden="true"><rect x="1.5" y="2.5" width="9" height="7" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M6 4.5v3M4.5 6h3" stroke="currentColor" stroke-width="1"/></svg>Blank + cross<svg width="12" height="12" viewBox="0 0 12 12" style="margin-left:6px" aria-hidden="true"><rect x="1.5" y="2.5" width="9" height="7" fill="none" stroke="var(--warn-text)" stroke-width="1.2" stroke-dasharray="2 1.5"/></svg>Not admitted</span>
+<span>Explore is view-only. Nothing here changes an analysis.</span>
+</div>
+</section>
+
+<!-- Centre -->
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+
+<!-- Trial view -->
+<section class="grp" style="flex:none;height:452px" aria-label="Trial view">
+<div class="hdr"><button class="tab sel focus">P17 · enc_03 · beach-042</button><button class="tab">Table</button><button class="tab">Small multiples</button><div class="hbtns"><button class="ib" aria-label="Maximize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button><button class="ib" aria-label="Pop out"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 3h4v4M13 3 7.5 8.5M11 10v3H3V5h3"/></svg></button></div></div>
+<div class="tb">
+<div class="row" style="gap:4px"><button class="tog on">Points</button><button class="tog on">Order</button><button class="tog on">Map</button></div>
+<span class="chip" style="height:22px;border-style:dashed;border-color:var(--ink-2)">Map: preview · σ 2° · not a result</span>
+<div style="flex:1"></div>
+<span class="t11" style="color:var(--ink-2)">Canvas focused · arrows move · Enter selects · Esc clears</span>
+<button class="ib" aria-label="Previous fixation" onClick="{{prev}}"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3 5 8l5 5"/></svg></button>
+<button class="ib" aria-label="Next fixation" onClick="{{next}}"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m6 3 5 5-5 5"/></svg></button>
+</div>
+<div class="stage" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+<div style="position:relative;width:{{stageW}};height:{{stageH}};box-shadow:0 0 0 2px var(--accent);border-radius:2px" tabindex="0" role="group" aria-label="Trial canvas P17 enc_03: 13 fixations. One focus stop; arrow keys move the cursor, Enter selects.">
+<svg width="{{stageW}}" height="{{stageH}}" viewBox="-60 -40 1144 848" style="display:block;position:absolute;left:0;top:0" aria-hidden="true">
+<defs><radialGradient id="me"><stop offset="0" stop-color="#6B0F4F"/><stop offset=".35" stop-color="#B83F86"/><stop offset=".7" stop-color="#E58FB9"/><stop offset="1" stop-color="#F9D9EA" stop-opacity="0"/></radialGradient></defs>
+<rect width="1024" height="330" fill="#C9D3D6"/><rect y="330" width="1024" height="150" fill="#8FA3AB"/><rect y="480" width="1024" height="288" fill="#D9CDB4"/>
+<circle cx="820" cy="140" r="54" fill="#E9E4D6"/>
+<path d="M300 480V330M300 330q-60-30-110 0M300 330q60-40 120-10M300 330q-20-60-50-80M300 330q30-60 80-68" stroke="#5E6660" stroke-width="10" fill="none"/>
+<path d="M580 600 740 470l20 130Z" fill="#A45C4A" opacity=".75"/><rect x="640" y="600" width="12" height="90" fill="#6E5B4A"/>
+<rect x="0" y="0" width="1024" height="768" fill="none" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="1030" y="-12" font-size="22" fill="var(--on-stage)" font-family="IBM Plex Sans" text-anchor="end">analysis window · image frame 1024×768</text>
+<g opacity=".6"><ellipse cx="300" cy="400" rx="150" ry="120" fill="url(#me)"/><ellipse cx="570" cy="380" rx="150" ry="120" fill="url(#me)"/><ellipse cx="700" cy="290" rx="120" ry="100" fill="url(#me)"/><ellipse cx="620" cy="580" rx="130" ry="100" fill="url(#me)"/></g>
+<g fill="none" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="4"><ellipse cx="560" cy="430" rx="310" ry="230"/><ellipse cx="580" cy="370" rx="100" ry="70"/></g><g fill="none" stroke="#1C1E21" stroke-opacity=".8" stroke-width="2"><ellipse cx="560" cy="430" rx="310" ry="230"/><ellipse cx="580" cy="370" rx="100" ry="70"/></g>
+<polyline points="{{path}}" fill="none" stroke="#FFFFFF" stroke-width="5.3" stroke-dasharray="10 8"/>
+<text x="-50" y="800" font-size="22" fill="var(--on-stage)" font-family="IBM Plex Sans">Lines show order between fixation centres, not measured saccades</text>
+</svg>
+<sc-for list="{{fix}}" as="f" hint-placeholder-count="13">
+<button tabindex="-1" onClick="{{f.pick}}" aria-label="{{f.aria}}" style="position:absolute;left:{{f.x}};top:{{f.y}};width:{{f.d}};height:{{f.d}};margin-left:{{f.m}};margin-top:{{f.m}};border-radius:50%;padding:0;border:{{f.border}};background:{{f.bg}};box-shadow:{{f.ring}}"></button>
+</sc-for>
+</div>
+<div class="row t11" style="width:{{stageW}};justify-content:space-between;color:var(--on-stage)">
+<span>Displayed: image beach-042.png · 1024×768 at (448, 156) in 1920×1080</span><span>Marker area ∝ duration</span>
+</div>
+</div>
+</section>
+
+<!-- Timeline -->
+<section class="grp" style="flex:none;height:150px" aria-label="Timeline">
+<div class="hdr"><button class="tab sel">Timeline</button><button class="tab">Table</button><div class="hbtns"></div></div>
+<div class="tb">
+<button class="ib" aria-label="Play"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3v10l9-5z"/></svg></button>
+<button class="ib" aria-label="Step back"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 3v10M13 3 6 8l7 5z"/></svg></button>
+<button class="ib" aria-label="Step forward"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v10M3 3l7 5-7 5z"/></svg></button>
+<span class="seg" style="padding:1px"><button style="height:20px;padding:0 8px">0.5×</button><button class="on" style="height:20px;padding:0 8px">1×</button><button style="height:20px;padding:0 8px">2×</button></span>
+<span class="mono t11" style="color:var(--ink-2)">playhead 2.16 s · brush 1.20–2.80 s</span>
+<div style="flex:1"></div>
+<span class="t11" style="color:var(--ink-2)">Brushing highlights; it does not crop the analysis</span>
+</div>
+<div style="flex:1;position:relative;margin:0 16px" tabindex="0" role="group" aria-label="Timeline: 13 fixation intervals. One focus stop; arrow keys move between intervals.">
+<div style="position:absolute;left:{{brL}};width:{{brW}};top:6px;bottom:22px;background:var(--surface-3);border-left:1px solid var(--ink-3);border-right:1px solid var(--ink-3)"></div>
+<div style="position:absolute;left:0;right:0;bottom:22px;height:1px;background:var(--hairline)"></div>
+<sc-for list="{{fix}}" as="f" hint-placeholder-count="13">
+<button tabindex="-1" onClick="{{f.pick}}" aria-label="{{f.taria}}" style="position:absolute;left:{{f.tl}};width:{{f.tw}};bottom:23px;height:34px;padding:0;border:0;border-radius:2px;background:{{f.tbg}};box-shadow:{{f.ring}}"></button>
+</sc-for>
+<div style="position:absolute;left:43.2%;top:0;bottom:18px;width:2px;background:var(--ink)"></div>
+<div class="mono t11" style="position:absolute;left:0;right:0;bottom:2px;display:flex;justify-content:space-between;color:var(--ink-3)"><span>0 s</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5 s</span></div>
+</div>
+</section>
+
+<!-- Source records -->
+<section class="grp" style="flex:1;min-height:0" aria-label="Source records">
+<div class="hdr"><button class="tab sel">Source records</button><button class="tab">trials.csv</button><div class="hbtns"></div></div>
+<div class="mono t11" style="display:grid;grid-template-columns:70px 44px 46px 60px 60px 74px 74px 70px 70px minmax(0,1fr);gap:8px;padding:5px 16px;background:var(--surface-2);border-bottom:1px solid var(--hairline);color:var(--ink-3);font-family:'IBM Plex Sans';font-weight:600">
+<span>Record</span><span>Trial</span><span>Ordinal</span><span>Onset ms</span><span>Dur ms</span><span>Screen x,y</span><span>Image x,y</span><span>Samples</span><span>Window</span><span></span>
+</div>
+<div style="flex:1;overflow:hidden" tabindex="0" role="grid" aria-label="Source records from fixations.csv. One focus stop; arrow keys move the row cursor.">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="5">
+<button tabindex="-1" onClick="{{r.pick}}" class="mono t11" aria-label="{{r.aria}}" style="display:grid;grid-template-columns:70px 44px 46px 60px 60px 74px 74px 70px 70px minmax(0,1fr);gap:8px;width:100%;text-align:left;padding:0 16px;height:22px;align-items:center;border:0;background:{{r.bg}};box-shadow:{{r.ring}};color:var(--ink)">
+<span>{{r.rec}}</span><span>enc_03</span><span>{{r.n}}</span><span>{{r.on}}</span><span>{{r.du}}</span><span>{{r.sx}}</span><span>{{r.ix}}</span><span>{{r.sm}}</span><span style="color:{{r.wc}}">{{r.win}}</span><span></span>
+</button>
+</sc-for>
+</div>
+</section>
+</div>
+
+<!-- Inspector -->
+<section class="grp" style="width:300px;flex:none" aria-label="Inspector">
+<div class="hdr"><button class="tab sel">Inspector</button><div class="hbtns"><button class="ib" aria-label="Minimize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
+<div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+<div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+<div class="row" style="justify-content:space-between"><span class="t13">Fixation {{selN}} of 13</span><span class="kind">View only</span></div>
+<dl class="kv">
+<dt>Onset · duration</dt><dd class="mono">{{sOn}} ms · {{sDu}} ms</dd>
+<dt>Image frame px</dt><dd class="mono">{{sIx}}</dd>
+<dt>Screen px (raw)</dt><dd class="mono">{{sSx}}</dd>
+<dt>Degrees from centre</dt><dd class="mono">{{sDeg}}</dd>
+<dt>Analysis window</dt><dd style="color:{{sWc}}">{{sWin}}</dd>
+</dl>
+<div class="t11" style="color:var(--ink-2)">Degrees from image centre, x right, y up; declared 35 px/° (not calibrated), linear.</div>
+</div>
+<div class="sect">
+<span class="t13">Source</span>
+<dl class="kv">
+<dt>File</dt><dd class="mono">fixations.csv</dd>
+<dt>Record</dt><dd class="mono">{{selRec}} of 11,520</dd>
+<dt>Digest</dt><dd class="mono">sha256:9f2c…e41</dd>
+<dt>Ledger</dt><dd>Admitted · dataset r3</dd>
+</dl>
+<button class="btn" style="align-self:flex-start">Show raw record</button>
+</div>
+<div class="sect">
+<span class="t13">Used by (run 7)</span>
+<a href="Main.dc.html" style="line-height:1.5">ret_07 contrast (matched reference)</a>
+<a href="Main.dc.html">18 other admitted P17 queries (as a control)</a>
+</div>
+<div class="sect">
+<span class="t13">Trial</span>
+<dl class="kv">
+<dt>Key</dt><dd class="mono">P17 · Encoding · enc_03 · occ 1</dd>
+<dt>Display</dt><dd>Image · beach-042.png</dd>
+<dt>Match item</dt><dd>beach-042</dd>
+<dt>Extent · fixations</dt><dd class="mono">5.0 s · 13 · 1 outside</dd>
+</dl>
+</div>
+</div>
+</section>
+</div>
+
+<!-- 6 · Status bar -->
+<footer class="t11" style="height:24px;flex:none;display:flex;align-items:center;gap:12px;padding:0 12px;background:var(--surface-2);border-top:1px solid var(--hairline);color:var(--ink-2)">
+<span class="row" style="gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--ink)"></span>Selected:<span class="mono" style="color:var(--ink)">P17 › enc_03 › fixation {{selN}} · fixations.csv record {{selRec}}</span></span>
+<span style="width:1px;height:12px;background:var(--hairline)"></span>
+<span>View state only · no analysis changed</span>
+<div style="flex:1"></div>
+<span>No jobs</span>
+<span style="width:1px;height:12px;background:var(--hairline)"></span>
+<span>Saved 10:24</span>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { sel: 5 }; }
+  renderVals() {
+    const F0 = [[512,384,180],[300,430,320],[260,340,260],[540,360,380],[610,410,240],[700,300,412],[760,250,200],[640,560,350],[590,600,220],[420,620,300],[820,560,260],[1080,420,110],[540,380,360]];
+    let t0 = 0; const F = F0.map(([x, y, du], k) => { if (k > 0) t0 += k <= 5 ? 156 : 80; const on = t0; t0 += du; return [x, y, on, du]; });
+    const W = 448, H = Math.round(448 * 848 / 1144), s = W / 1144, T = 5000;
+    const sel = this.state.sel;
+    const fmt = n => n.toLocaleString('en-US');
+    const deg = v => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(1) + '°';
+    const fix = F.map(([x, y, on, du], k) => {
+      const d = Math.round(10 + Math.sqrt(du) * 1.1);
+      const on_ = k === sel, out = x < 0 || x > 1024 || y < 0 || y > 768;
+      return {
+        x: ((x + 60) * s).toFixed(1) + 'px', y: ((y + 40) * s).toFixed(1) + 'px', d: d + 'px', m: (-d / 2) + 'px',
+        bg: out ? 'transparent' : 'var(--neutral-mark)', border: out ? '2px dashed #FFFFFF' : '2px solid #FFFFFF',
+        ring: on_ ? 'var(--sel-ring), 0 0 0 7px var(--accent)' : 'none',
+        tl: (on / T * 100).toFixed(2) + '%', tw: (du / T * 100).toFixed(2) + '%',
+        tbg: on_ ? 'var(--ink)' : (out ? 'var(--surface-3)' : 'var(--ink-3)'),
+        aria: 'Fixation ' + (k + 1) + ', ' + du + ' ms' + (out ? ', outside analysis window' : ''),
+        taria: 'Fixation ' + (k + 1) + ' interval ' + on + ' to ' + (on + du) + ' ms',
+        pick: () => this.setState({ sel: k })
+      };
+    });
+    const lo = Math.max(0, Math.min(sel - 2, F.length - 5));
+    const rows = F.slice(lo, lo + 5).map(([x, y, on, du], j) => {
+      const k = lo + j, out = x > 1024;
+      return { rec: fmt(7209 + k), n: k + 1, on: fmt(on), du, sx: (x + 448) + ',' + (y + 156), ix: x + ',' + y,
+        sm: Math.round(du / 2), win: out ? 'outside' : 'inside', wc: out ? 'var(--warn-text)' : 'var(--ink-2)',
+        bg: k === sel ? 'var(--surface-2)' : 'transparent', ring: k === sel ? 'inset 0 0 0 2px var(--ink)' : 'none',
+        aria: 'Record ' + (7209 + k) + ', fixation ' + (k + 1), pick: () => this.setState({ sel: k }) };
+    });
+    const f = F[sel], out = f[0] > 1024;
+    const enc = [['enc_01','street-112',''],['enc_02','kitchen-017',''],['enc_03','beach-042',13],['enc_04','tower-150',''],['enc_05','desert-305',''],['enc_06','field-613',''],['enc_07','canyon-126',''],['enc_08','dog-077',''],['enc_09','forest-008',''],['enc_10','bridge-019','']];
+    const trials = enc.map(([id, item, nf]) => ({ id, item, nf, cls: id === 'enc_03' ? 'qi sel' : 'qi', fw: id === 'enc_03' ? 600 : 400, aria: id + ' ' + item + (nf ? ', ' + nf + ' fixations' : '') }));
+    return {
+      rootClass: this.props.dark ? 'es dark' : 'es',
+      fix, rows, trials, stageW: W + 'px', stageH: H + 'px',
+      path: F.map(p => p[0] + ',' + p[1]).join(' '),
+      brL: (1200 / T * 100) + '%', brW: (1600 / T * 100) + '%',
+      prev: () => this.setState({ sel: Math.max(0, sel - 1) }),
+      next: () => this.setState({ sel: Math.min(F.length - 1, sel + 1) }),
+      selN: sel + 1, selRec: fmt(7209 + sel),
+      sOn: fmt(f[2]), sDu: f[3], sIx: f[0] + ', ' + f[1], sSx: (f[0] + 448) + ', ' + (f[1] + 156),
+      sDeg: deg((f[0] - 512) / 35) + ', ' + deg((384 - f[1]) / 35),
+      sWin: out ? 'Outside · excluded from maps, reported' : 'Inside', sWc: out ? 'var(--warn-text)' : 'var(--ink)'
+    };
+  }
+}
+</script>
+</body>
+</html>

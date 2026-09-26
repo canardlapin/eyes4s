@@ -1,0 +1,13096 @@
+{
+ "participants": [
+  {
+   "id": "P01",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "beach-007",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.25,
+      0.32,
+      0.2
+     ],
+     "B": [
+      0.15,
+      0.32,
+      0.36,
+      0.59
+     ],
+     "M": [
+      0.31,
+      0.57,
+      0.68,
+      0.79
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "forest-044",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.04,
+      0.06,
+      0.08,
+      0.05
+     ],
+     "B": [
+      0.27,
+      0.29,
+      0.35,
+      0.64
+     ],
+     "M": [
+      0.31,
+      0.35,
+      0.43,
+      0.69
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "kitchen-081",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.1,
+      0.16,
+      0.2,
+      0.12
+     ],
+     "B": [
+      0.21,
+      0.27,
+      0.35,
+      0.63
+     ],
+     "M": [
+      0.31,
+      0.43,
+      0.55,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "street-118",
+     "match": "enc_02",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.04,
+      -0.06,
+      -0.07,
+      -0.04
+     ],
+     "B": [
+      0.22,
+      0.27,
+      0.36,
+      0.64
+     ],
+     "M": [
+      0.18,
+      0.21,
+      0.29,
+      0.6
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "garden-155",
+     "match": "enc_09",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.27,
+      0.42,
+      0.54,
+      0.33
+     ],
+     "B": [
+      0.19,
+      0.31,
+      0.36,
+      0.63
+     ],
+     "M": [
+      0.46,
+      0.73,
+      0.9,
+      0.96
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "office-192",
+     "match": "enc_16",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.09,
+      0.12,
+      0.08
+     ],
+     "B": [
+      0.19,
+      0.28,
+      0.39,
+      0.6
+     ],
+     "M": [
+      0.25,
+      0.37,
+      0.51,
+      0.68
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "dog-229",
+     "match": "enc_03",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.09,
+      0.12,
+      0.07
+     ],
+     "B": [
+      0.17,
+      0.31,
+      0.33,
+      0.65
+     ],
+     "M": [
+      0.23,
+      0.4,
+      0.45,
+      0.72
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "bridge-266",
+     "match": "enc_10",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.19,
+      0.25,
+      0.15
+     ],
+     "B": [
+      0.22,
+      0.33,
+      0.36,
+      0.57
+     ],
+     "M": [
+      0.34,
+      0.52,
+      0.61,
+      0.72
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "market-303",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.2,
+      0.26,
+      0.16
+     ],
+     "B": [
+      0.23,
+      0.29,
+      0.33,
+      0.65
+     ],
+     "M": [
+      0.36,
+      0.49,
+      0.59,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "tower-340",
+     "match": "enc_04",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.03,
+      0.04,
+      0.05,
+      0.03
+     ],
+     "B": [
+      0.19,
+      0.28,
+      0.38,
+      0.69
+     ],
+     "M": [
+      0.22,
+      0.32,
+      0.43,
+      0.72
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "harbor-377",
+     "match": "enc_11",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.1,
+      0.16,
+      0.2,
+      0.12
+     ],
+     "B": [
+      0.17,
+      0.24,
+      0.33,
+      0.65
+     ],
+     "M": [
+      0.27,
+      0.4,
+      0.53,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "library-414",
+     "match": "enc_18",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.17,
+      0.22,
+      0.14
+     ],
+     "B": [
+      0.19,
+      0.33,
+      0.32,
+      0.64
+     ],
+     "M": [
+      0.3,
+      0.5,
+      0.54,
+      0.78
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "desert-451",
+     "match": "enc_05",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.2,
+      0.26,
+      0.16
+     ],
+     "B": [
+      0.21,
+      0.26,
+      0.35,
+      0.61
+     ],
+     "M": [
+      0.34,
+      0.46,
+      0.61,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "church-488",
+     "match": "enc_12",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.04,
+      0.06,
+      0.08,
+      0.05
+     ],
+     "B": [
+      0.2,
+      0.22,
+      0.34,
+      0.6
+     ],
+     "M": [
+      0.24,
+      0.28,
+      0.42,
+      0.65
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "station-525",
+     "match": "enc_19",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.01,
+      0.01,
+      0.02,
+      0.01
+     ],
+     "B": [
+      0.21,
+      0.28,
+      0.35,
+      0.62
+     ],
+     "M": [
+      0.22,
+      0.29,
+      0.37,
+      0.63
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "field-562",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.18,
+      0.23,
+      0.14
+     ],
+     "B": [
+      0.2,
+      0.28,
+      0.33,
+      0.6
+     ],
+     "M": [
+      0.31,
+      0.46,
+      0.56,
+      0.74
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "cafe-599",
+     "match": "enc_13",
+     "response": "Remembered",
+     "status": "query not admitted",
+     "reason": "absent"
+    },
+    {
+     "trial": "ret_18",
+     "item": "museum-636",
+     "match": "enc_20",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.01,
+      -0.02,
+      -0.02,
+      -0.02
+     ],
+     "B": [
+      0.23,
+      0.36,
+      0.37,
+      0.66
+     ],
+     "M": [
+      0.22,
+      0.34,
+      0.35,
+      0.64
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "canyon-673",
+     "match": "enc_07",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.23,
+      0.3,
+      0.19
+     ],
+     "B": [
+      0.22,
+      0.26,
+      0.33,
+      0.62
+     ],
+     "M": [
+      0.37,
+      0.49,
+      0.63,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "bakery-710",
+     "match": "enc_14",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.07,
+      0.11,
+      0.14,
+      0.09
+     ],
+     "B": [
+      0.23,
+      0.3,
+      0.38,
+      0.57
+     ],
+     "M": [
+      0.3,
+      0.41,
+      0.52,
+      0.66
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P02",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "harbor-377",
+     "match": "enc_01",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.09,
+      0.11,
+      0.07
+     ],
+     "B": [
+      0.18,
+      0.31,
+      0.34,
+      0.63
+     ],
+     "M": [
+      0.24,
+      0.4,
+      0.45,
+      0.7
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "library-414",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.1,
+      0.15,
+      0.19,
+      0.12
+     ],
+     "B": [
+      0.22,
+      0.29,
+      0.36,
+      0.63
+     ],
+     "M": [
+      0.32,
+      0.44,
+      0.55,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "desert-451",
+     "match": "enc_15",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.18,
+      0.22,
+      0.14
+     ],
+     "B": [
+      0.24,
+      0.27,
+      0.3,
+      0.67
+     ],
+     "M": [
+      0.35,
+      0.45,
+      0.52,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "church-488",
+     "match": "enc_02",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.1,
+      0.16,
+      0.2,
+      0.13
+     ],
+     "B": [
+      0.21,
+      0.27,
+      0.28,
+      0.65
+     ],
+     "M": [
+      0.31,
+      0.43,
+      0.48,
+      0.78
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "station-525",
+     "match": "enc_09",
+     "response": "Remembered",
+     "status": "query not admitted",
+     "reason": "no-fixations"
+    },
+    {
+     "trial": "ret_06",
+     "item": "field-562",
+     "match": "enc_16",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.04,
+      0.06,
+      0.08,
+      0.05
+     ],
+     "B": [
+      0.17,
+      0.32,
+      0.3,
+      0.63
+     ],
+     "M": [
+      0.21,
+      0.38,
+      0.38,
+      0.68
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "cafe-599",
+     "match": "enc_03",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.1,
+      0.16,
+      0.21,
+      0.13
+     ],
+     "B": [
+      0.18,
+      0.34,
+      0.4,
+      0.62
+     ],
+     "M": [
+      0.28,
+      0.5,
+      0.61,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "museum-636",
+     "match": "enc_10",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.18,
+      0.23,
+      0.14
+     ],
+     "B": [
+      0.21,
+      0.29,
+      0.33,
+      0.63
+     ],
+     "M": [
+      0.32,
+      0.47,
+      0.56,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "canyon-673",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.29,
+      0.38,
+      0.23
+     ],
+     "B": [
+      0.16,
+      0.28,
+      0.37,
+      0.6
+     ],
+     "M": [
+      0.35,
+      0.57,
+      0.75,
+      0.83
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "bakery-710",
+     "match": "enc_04",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.21,
+      0.27,
+      0.17
+     ],
+     "B": [
+      0.26,
+      0.32,
+      0.38,
+      0.64
+     ],
+     "M": [
+      0.4,
+      0.53,
+      0.65,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "stadium-747",
+     "match": "enc_11",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.03,
+      -0.05,
+      -0.06,
+      -0.04
+     ],
+     "B": [
+      0.18,
+      0.3,
+      0.37,
+      0.62
+     ],
+     "M": [
+      0.15,
+      0.25,
+      0.31,
+      0.58
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "lake-784",
+     "match": "enc_18",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.31,
+      0.4,
+      0.25
+     ],
+     "B": [
+      0.15,
+      0.31,
+      0.37,
+      0.65
+     ],
+     "M": [
+      0.35,
+      0.62,
+      0.77,
+      0.9
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "alley-821",
+     "match": "enc_05",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.26,
+      0.33,
+      0.2
+     ],
+     "B": [
+      0.22,
+      0.27,
+      0.36,
+      0.64
+     ],
+     "M": [
+      0.38,
+      0.53,
+      0.69,
+      0.84
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "farm-858",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.07,
+      0.11,
+      0.14,
+      0.08
+     ],
+     "B": [
+      0.22,
+      0.29,
+      0.36,
+      0.6
+     ],
+     "M": [
+      0.29,
+      0.4,
+      0.5,
+      0.68
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "beach-895",
+     "match": "enc_19",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.27,
+      0.35,
+      0.21
+     ],
+     "B": [
+      0.21,
+      0.3,
+      0.36,
+      0.6
+     ],
+     "M": [
+      0.38,
+      0.57,
+      0.71,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "forest-032",
+     "match": "enc_06",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.09,
+      0.11,
+      0.07
+     ],
+     "B": [
+      0.23,
+      0.28,
+      0.33,
+      0.62
+     ],
+     "M": [
+      0.29,
+      0.37,
+      0.44,
+      0.69
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "kitchen-069",
+     "match": "enc_13",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.31,
+      0.4,
+      0.25
+     ],
+     "B": [
+      0.19,
+      0.27,
+      0.39,
+      0.64
+     ],
+     "M": [
+      0.39,
+      0.58,
+      0.79,
+      0.89
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "street-106",
+     "match": "enc_20",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.03,
+      0.05,
+      0.07,
+      0.04
+     ],
+     "B": [
+      0.26,
+      0.25,
+      0.38,
+      0.64
+     ],
+     "M": [
+      0.29,
+      0.3,
+      0.45,
+      0.68
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "garden-143",
+     "match": "enc_07",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.21,
+      0.27,
+      0.17
+     ],
+     "B": [
+      0.27,
+      0.32,
+      0.41,
+      0.69
+     ],
+     "M": [
+      0.41,
+      0.53,
+      0.68,
+      0.86
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "office-180",
+     "match": "enc_14",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.25,
+      0.33,
+      0.2
+     ],
+     "B": [
+      0.19,
+      0.3,
+      0.42,
+      0.65
+     ],
+     "M": [
+      0.35,
+      0.55,
+      0.75,
+      0.85
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P03",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "stadium-747",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.07,
+      0.11,
+      0.14,
+      0.08
+     ],
+     "B": [
+      0.23,
+      0.29,
+      0.39,
+      0.65
+     ],
+     "M": [
+      0.3,
+      0.4,
+      0.53,
+      0.73
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "lake-784",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.21,
+      0.27,
+      0.17
+     ],
+     "B": [
+      0.2,
+      0.28,
+      0.37,
+      0.64
+     ],
+     "M": [
+      0.34,
+      0.49,
+      0.64,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "alley-821",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.26,
+      0.33,
+      0.21
+     ],
+     "B": [
+      0.24,
+      0.34,
+      0.31,
+      0.64
+     ],
+     "M": [
+      0.41,
+      0.6,
+      0.64,
+      0.85
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "farm-858",
+     "match": "enc_02",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.23,
+      0.35,
+      0.45,
+      0.28
+     ],
+     "B": [
+      0.24,
+      0.32,
+      0.33,
+      0.65
+     ],
+     "M": [
+      0.47,
+      0.67,
+      0.78,
+      0.93
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "beach-895",
+     "match": "enc_09",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.19,
+      0.25,
+      0.15
+     ],
+     "B": [
+      0.26,
+      0.3,
+      0.37,
+      0.67
+     ],
+     "M": [
+      0.38,
+      0.49,
+      0.62,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "forest-032",
+     "match": "enc_16",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.08,
+      0.13,
+      0.17,
+      0.1
+     ],
+     "B": [
+      0.18,
+      0.31,
+      0.35,
+      0.68
+     ],
+     "M": [
+      0.26,
+      0.44,
+      0.52,
+      0.78
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "kitchen-069",
+     "match": "enc_03",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.3,
+      0.38,
+      0.24
+     ],
+     "B": [
+      0.23,
+      0.28,
+      0.33,
+      0.65
+     ],
+     "M": [
+      0.42,
+      0.58,
+      0.71,
+      0.89
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "street-106",
+     "match": "enc_10",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.33,
+      0.42,
+      0.26
+     ],
+     "B": [
+      0.2,
+      0.25,
+      0.35,
+      0.63
+     ],
+     "M": [
+      0.41,
+      0.58,
+      0.77,
+      0.89
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "garden-143",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.29,
+      0.38,
+      0.23
+     ],
+     "B": [
+      0.24,
+      0.26,
+      0.36,
+      0.65
+     ],
+     "M": [
+      0.43,
+      0.55,
+      0.74,
+      0.88
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "office-180",
+     "match": "enc_04",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.3,
+      0.39,
+      0.24
+     ],
+     "B": [
+      0.21,
+      0.26,
+      0.3,
+      0.63
+     ],
+     "M": [
+      0.4,
+      0.56,
+      0.69,
+      0.87
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "dog-217",
+     "match": "enc_11",
+     "response": "Remembered",
+     "status": "no match",
+     "reason": "matched Encoding trial not admitted"
+    },
+    {
+     "trial": "ret_12",
+     "item": "bridge-254",
+     "match": "enc_18",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.31,
+      0.39,
+      0.24
+     ],
+     "B": [
+      0.23,
+      0.31,
+      0.33,
+      0.63
+     ],
+     "M": [
+      0.43,
+      0.62,
+      0.72,
+      0.87
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "market-291",
+     "match": "enc_05",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.1,
+      0.15,
+      0.19,
+      0.12
+     ],
+     "B": [
+      0.17,
+      0.27,
+      0.35,
+      0.63
+     ],
+     "M": [
+      0.27,
+      0.42,
+      0.54,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "tower-328",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.22,
+      0.34,
+      0.43,
+      0.27
+     ],
+     "B": [
+      0.24,
+      0.26,
+      0.35,
+      0.64
+     ],
+     "M": [
+      0.46,
+      0.6,
+      0.78,
+      0.91
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "harbor-365",
+     "match": "enc_19",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.18,
+      0.23,
+      0.14
+     ],
+     "B": [
+      0.28,
+      0.29,
+      0.35,
+      0.58
+     ],
+     "M": [
+      0.4,
+      0.47,
+      0.58,
+      0.72
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "library-402",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.24,
+      0.38,
+      0.49,
+      0.3
+     ],
+     "B": [
+      0.19,
+      0.3,
+      0.36,
+      0.64
+     ],
+     "M": [
+      0.43,
+      0.68,
+      0.85,
+      0.94
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "desert-439",
+     "match": "enc_13",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.31,
+      0.48,
+      0.61,
+      0.38
+     ],
+     "B": [
+      0.2,
+      0.29,
+      0.35,
+      0.66
+     ],
+     "M": [
+      0.51,
+      0.77,
+      0.96,
+      1.04
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "church-476",
+     "match": "enc_20",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.01,
+      0.01,
+      0.02,
+      0.01
+     ],
+     "B": [
+      0.24,
+      0.29,
+      0.37,
+      0.62
+     ],
+     "M": [
+      0.25,
+      0.3,
+      0.39,
+      0.63
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "station-513",
+     "match": "enc_07",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.22,
+      0.34,
+      0.44,
+      0.27
+     ],
+     "B": [
+      0.2,
+      0.31,
+      0.31,
+      0.66
+     ],
+     "M": [
+      0.42,
+      0.65,
+      0.75,
+      0.93
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "field-550",
+     "match": "enc_14",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.27,
+      0.34,
+      0.21
+     ],
+     "B": [
+      0.2,
+      0.29,
+      0.33,
+      0.63
+     ],
+     "M": [
+      0.37,
+      0.56,
+      0.67,
+      0.84
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P04",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "dog-217",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.28,
+      0.43,
+      0.55,
+      0.34
+     ],
+     "B": [
+      0.22,
+      0.29,
+      0.32,
+      0.62
+     ],
+     "M": [
+      0.5,
+      0.72,
+      0.87,
+      0.96
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "bridge-254",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.26,
+      0.33,
+      0.2
+     ],
+     "B": [
+      0.29,
+      0.3,
+      0.41,
+      0.62
+     ],
+     "M": [
+      0.45,
+      0.56,
+      0.74,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "market-291",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.24,
+      0.38,
+      0.49,
+      0.3
+     ],
+     "B": [
+      0.19,
+      0.31,
+      0.41,
+      0.64
+     ],
+     "M": [
+      0.43,
+      0.69,
+      0.9,
+      0.94
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "tower-328",
+     "match": "enc_02",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.1,
+      0.12,
+      0.08
+     ],
+     "B": [
+      0.17,
+      0.28,
+      0.32,
+      0.61
+     ],
+     "M": [
+      0.23,
+      0.38,
+      0.44,
+      0.69
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "harbor-365",
+     "match": "enc_09",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.07,
+      0.11,
+      0.15,
+      0.09
+     ],
+     "B": [
+      0.22,
+      0.3,
+      0.36,
+      0.64
+     ],
+     "M": [
+      0.29,
+      0.41,
+      0.51,
+      0.73
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "library-402",
+     "match": "enc_16",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.18,
+      0.23,
+      0.15
+     ],
+     "B": [
+      0.24,
+      0.3,
+      0.33,
+      0.63
+     ],
+     "M": [
+      0.36,
+      0.48,
+      0.56,
+      0.78
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "desert-439",
+     "match": "enc_03",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.27,
+      0.34,
+      0.21
+     ],
+     "B": [
+      0.2,
+      0.31,
+      0.32,
+      0.64
+     ],
+     "M": [
+      0.37,
+      0.58,
+      0.66,
+      0.85
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "church-476",
+     "match": "enc_10",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.09,
+      0.12,
+      0.07
+     ],
+     "B": [
+      0.23,
+      0.27,
+      0.39,
+      0.63
+     ],
+     "M": [
+      0.29,
+      0.36,
+      0.51,
+      0.7
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "station-513",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.32,
+      0.41,
+      0.25
+     ],
+     "B": [
+      0.21,
+      0.27,
+      0.38,
+      0.63
+     ],
+     "M": [
+      0.41,
+      0.59,
+      0.79,
+      0.88
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "field-550",
+     "match": "enc_04",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.08,
+      0.13,
+      0.17,
+      0.1
+     ],
+     "B": [
+      0.25,
+      0.29,
+      0.34,
+      0.69
+     ],
+     "M": [
+      0.33,
+      0.42,
+      0.51,
+      0.79
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "cafe-587",
+     "match": "enc_11",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.05,
+      0.08,
+      0.1,
+      0.06
+     ],
+     "B": [
+      0.25,
+      0.29,
+      0.31,
+      0.61
+     ],
+     "M": [
+      0.3,
+      0.37,
+      0.41,
+      0.67
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "museum-624",
+     "match": "enc_18",
+     "response": "Remembered",
+     "status": "query not admitted",
+     "reason": "overlap"
+    },
+    {
+     "trial": "ret_13",
+     "item": "canyon-661",
+     "match": "enc_05",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.27,
+      0.35,
+      0.22
+     ],
+     "B": [
+      0.17,
+      0.27,
+      0.36,
+      0.61
+     ],
+     "M": [
+      0.34,
+      0.54,
+      0.71,
+      0.83
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "bakery-698",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.31,
+      0.39,
+      0.24
+     ],
+     "B": [
+      0.26,
+      0.26,
+      0.38,
+      0.64
+     ],
+     "M": [
+      0.46,
+      0.57,
+      0.77,
+      0.88
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "stadium-735",
+     "match": "enc_19",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.25,
+      0.4,
+      0.51,
+      0.31
+     ],
+     "B": [
+      0.21,
+      0.23,
+      0.37,
+      0.63
+     ],
+     "M": [
+      0.46,
+      0.63,
+      0.88,
+      0.94
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "lake-772",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.1,
+      0.15,
+      0.19,
+      0.12
+     ],
+     "B": [
+      0.16,
+      0.33,
+      0.33,
+      0.63
+     ],
+     "M": [
+      0.26,
+      0.48,
+      0.52,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "alley-809",
+     "match": "enc_13",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.09,
+      0.14,
+      0.17,
+      0.11
+     ],
+     "B": [
+      0.16,
+      0.34,
+      0.31,
+      0.64
+     ],
+     "M": [
+      0.25,
+      0.48,
+      0.48,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "farm-846",
+     "match": "enc_20",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.18,
+      0.28,
+      0.35,
+      0.22
+     ],
+     "B": [
+      0.23,
+      0.28,
+      0.38,
+      0.57
+     ],
+     "M": [
+      0.41,
+      0.56,
+      0.73,
+      0.79
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "beach-883",
+     "match": "enc_07",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.27,
+      0.34,
+      0.21
+     ],
+     "B": [
+      0.23,
+      0.27,
+      0.39,
+      0.65
+     ],
+     "M": [
+      0.4,
+      0.54,
+      0.73,
+      0.86
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "forest-020",
+     "match": "enc_14",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.22,
+      0.29,
+      0.18
+     ],
+     "B": [
+      0.24,
+      0.3,
+      0.4,
+      0.6
+     ],
+     "M": [
+      0.38,
+      0.52,
+      0.69,
+      0.78
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P05",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "cafe-587",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.04,
+      0.06,
+      0.08,
+      0.05
+     ],
+     "B": [
+      0.22,
+      0.33,
+      0.33,
+      0.6
+     ],
+     "M": [
+      0.26,
+      0.39,
+      0.41,
+      0.65
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "museum-624",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.09,
+      0.12,
+      0.07
+     ],
+     "B": [
+      0.21,
+      0.27,
+      0.35,
+      0.61
+     ],
+     "M": [
+      0.27,
+      0.36,
+      0.47,
+      0.68
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "canyon-661",
+     "match": "enc_15",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.15,
+      -0.24,
+      -0.3,
+      -0.19
+     ],
+     "B": [
+      0.26,
+      0.35,
+      0.33,
+      0.62
+     ],
+     "M": [
+      0.11,
+      0.11,
+      0.03,
+      0.43
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "bakery-698",
+     "match": "enc_02",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "failed",
+     "reason": "empty map: 0 of 11 fixations inside analysis window"
+    },
+    {
+     "trial": "ret_05",
+     "item": "stadium-735",
+     "match": "enc_09",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.06,
+      -0.1,
+      -0.13,
+      -0.08
+     ],
+     "B": [
+      0.23,
+      0.3,
+      0.28,
+      0.59
+     ],
+     "M": [
+      0.17,
+      0.2,
+      0.15,
+      0.51
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "lake-772",
+     "match": "enc_16",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.12,
+      -0.18,
+      -0.23,
+      -0.15
+     ],
+     "B": [
+      0.25,
+      0.25,
+      0.34,
+      0.63
+     ],
+     "M": [
+      0.13,
+      0.07,
+      0.11,
+      0.48
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "alley-809",
+     "match": "enc_03",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.1,
+      -0.16,
+      -0.2,
+      -0.13
+     ],
+     "B": [
+      0.21,
+      0.24,
+      0.36,
+      0.65
+     ],
+     "M": [
+      0.11,
+      0.08,
+      0.16,
+      0.52
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "farm-846",
+     "match": "enc_10",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.04,
+      -0.06,
+      -0.08,
+      -0.05
+     ],
+     "B": [
+      0.23,
+      0.27,
+      0.37,
+      0.65
+     ],
+     "M": [
+      0.19,
+      0.21,
+      0.29,
+      0.6
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "beach-883",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.06,
+      -0.09,
+      -0.11,
+      -0.07
+     ],
+     "B": [
+      0.25,
+      0.24,
+      0.36,
+      0.63
+     ],
+     "M": [
+      0.19,
+      0.15,
+      0.25,
+      0.56
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "forest-020",
+     "match": "enc_04",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.03,
+      0.04,
+      0.05,
+      0.03
+     ],
+     "B": [
+      0.18,
+      0.32,
+      0.3,
+      0.61
+     ],
+     "M": [
+      0.21,
+      0.36,
+      0.35,
+      0.64
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "kitchen-057",
+     "match": "enc_11",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "failed",
+     "reason": "empty map: 0 of 11 fixations inside analysis window"
+    },
+    {
+     "trial": "ret_12",
+     "item": "street-094",
+     "match": "enc_18",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.11,
+      -0.17,
+      -0.22,
+      -0.13
+     ],
+     "B": [
+      0.22,
+      0.35,
+      0.33,
+      0.7
+     ],
+     "M": [
+      0.11,
+      0.18,
+      0.11,
+      0.57
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "garden-131",
+     "match": "enc_05",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.07,
+      -0.11,
+      -0.14,
+      -0.08
+     ],
+     "B": [
+      0.17,
+      0.31,
+      0.34,
+      0.64
+     ],
+     "M": [
+      0.1,
+      0.2,
+      0.2,
+      0.56
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "office-168",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.07,
+      0.11,
+      0.14,
+      0.09
+     ],
+     "B": [
+      0.25,
+      0.27,
+      0.42,
+      0.61
+     ],
+     "M": [
+      0.32,
+      0.38,
+      0.56,
+      0.7
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "dog-205",
+     "match": "enc_19",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.04,
+      0.06,
+      0.08,
+      0.05
+     ],
+     "B": [
+      0.25,
+      0.26,
+      0.35,
+      0.6
+     ],
+     "M": [
+      0.29,
+      0.32,
+      0.43,
+      0.65
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "bridge-242",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "failed",
+     "reason": "empty map: 0 of 11 fixations inside analysis window"
+    },
+    {
+     "trial": "ret_17",
+     "item": "market-279",
+     "match": "enc_13",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.01,
+      0.02,
+      0.03,
+      0.02
+     ],
+     "B": [
+      0.24,
+      0.27,
+      0.37,
+      0.7
+     ],
+     "M": [
+      0.25,
+      0.29,
+      0.4,
+      0.72
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "tower-316",
+     "match": "enc_20",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.04,
+      -0.06,
+      -0.08,
+      -0.05
+     ],
+     "B": [
+      0.22,
+      0.2,
+      0.32,
+      0.63
+     ],
+     "M": [
+      0.18,
+      0.14,
+      0.24,
+      0.58
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "harbor-353",
+     "match": "enc_07",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.1,
+      -0.16,
+      -0.21,
+      -0.13
+     ],
+     "B": [
+      0.21,
+      0.28,
+      0.34,
+      0.65
+     ],
+     "M": [
+      0.11,
+      0.12,
+      0.13,
+      0.52
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "library-390",
+     "match": "enc_14",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.04,
+      -0.06,
+      -0.08,
+      -0.05
+     ],
+     "B": [
+      0.23,
+      0.32,
+      0.36,
+      0.6
+     ],
+     "M": [
+      0.19,
+      0.26,
+      0.28,
+      0.55
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P06",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "kitchen-057",
+     "match": "enc_01",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.04,
+      0.06,
+      0.08,
+      0.05
+     ],
+     "B": [
+      0.17,
+      0.26,
+      0.34,
+      0.62
+     ],
+     "M": [
+      0.21,
+      0.32,
+      0.42,
+      0.67
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "street-094",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.2,
+      0.25,
+      0.16
+     ],
+     "B": [
+      0.24,
+      0.25,
+      0.29,
+      0.61
+     ],
+     "M": [
+      0.37,
+      0.45,
+      0.54,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "garden-131",
+     "match": "enc_15",
+     "response": "Remembered",
+     "status": "query not admitted",
+     "reason": "no-fixations"
+    },
+    {
+     "trial": "ret_04",
+     "item": "office-168",
+     "match": "enc_02",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.18,
+      0.23,
+      0.14
+     ],
+     "B": [
+      0.24,
+      0.25,
+      0.36,
+      0.6
+     ],
+     "M": [
+      0.35,
+      0.43,
+      0.59,
+      0.74
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "dog-205",
+     "match": "enc_09",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.05,
+      0.08,
+      0.1,
+      0.06
+     ],
+     "B": [
+      0.23,
+      0.26,
+      0.37,
+      0.63
+     ],
+     "M": [
+      0.28,
+      0.34,
+      0.47,
+      0.69
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "bridge-242",
+     "match": "enc_16",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.26,
+      0.4,
+      0.51,
+      0.32
+     ],
+     "B": [
+      0.24,
+      0.28,
+      0.3,
+      0.61
+     ],
+     "M": [
+      0.5,
+      0.68,
+      0.81,
+      0.93
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "market-279",
+     "match": "enc_03",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.09,
+      0.13,
+      0.17,
+      0.11
+     ],
+     "B": [
+      0.22,
+      0.29,
+      0.33,
+      0.65
+     ],
+     "M": [
+      0.31,
+      0.42,
+      0.5,
+      0.76
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "tower-316",
+     "match": "enc_10",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.18,
+      0.24,
+      0.15
+     ],
+     "B": [
+      0.17,
+      0.28,
+      0.42,
+      0.64
+     ],
+     "M": [
+      0.29,
+      0.46,
+      0.66,
+      0.79
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "harbor-353",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.1,
+      0.16,
+      0.21,
+      0.13
+     ],
+     "B": [
+      0.23,
+      0.32,
+      0.4,
+      0.6
+     ],
+     "M": [
+      0.33,
+      0.48,
+      0.61,
+      0.73
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "library-390",
+     "match": "enc_04",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.21,
+      0.27,
+      0.17
+     ],
+     "B": [
+      0.16,
+      0.32,
+      0.33,
+      0.56
+     ],
+     "M": [
+      0.3,
+      0.53,
+      0.6,
+      0.73
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "desert-427",
+     "match": "enc_11",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.1,
+      0.13,
+      0.08
+     ],
+     "B": [
+      0.18,
+      0.33,
+      0.33,
+      0.69
+     ],
+     "M": [
+      0.24,
+      0.43,
+      0.46,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "church-464",
+     "match": "enc_18",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.09,
+      0.15,
+      0.19,
+      0.12
+     ],
+     "B": [
+      0.18,
+      0.32,
+      0.33,
+      0.62
+     ],
+     "M": [
+      0.27,
+      0.47,
+      0.52,
+      0.74
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "station-501",
+     "match": "enc_05",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.18,
+      0.23,
+      0.14
+     ],
+     "B": [
+      0.24,
+      0.27,
+      0.29,
+      0.61
+     ],
+     "M": [
+      0.36,
+      0.45,
+      0.52,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "field-538",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.23,
+      0.29,
+      0.18
+     ],
+     "B": [
+      0.2,
+      0.32,
+      0.3,
+      0.65
+     ],
+     "M": [
+      0.35,
+      0.55,
+      0.59,
+      0.83
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "cafe-575",
+     "match": "enc_19",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.09,
+      0.11,
+      0.07
+     ],
+     "B": [
+      0.22,
+      0.27,
+      0.34,
+      0.63
+     ],
+     "M": [
+      0.28,
+      0.36,
+      0.45,
+      0.7
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "museum-612",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.22,
+      0.34,
+      0.44,
+      0.27
+     ],
+     "B": [
+      0.28,
+      0.36,
+      0.34,
+      0.64
+     ],
+     "M": [
+      0.5,
+      0.7,
+      0.78,
+      0.91
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "canyon-649",
+     "match": "enc_13",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.04,
+      0.07,
+      0.09,
+      0.05
+     ],
+     "B": [
+      0.25,
+      0.27,
+      0.39,
+      0.64
+     ],
+     "M": [
+      0.29,
+      0.34,
+      0.48,
+      0.69
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "bakery-686",
+     "match": "enc_20",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.24,
+      0.31,
+      0.19
+     ],
+     "B": [
+      0.2,
+      0.27,
+      0.33,
+      0.66
+     ],
+     "M": [
+      0.36,
+      0.51,
+      0.64,
+      0.85
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "stadium-723",
+     "match": "enc_07",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.18,
+      0.28,
+      0.36,
+      0.22
+     ],
+     "B": [
+      0.2,
+      0.28,
+      0.32,
+      0.65
+     ],
+     "M": [
+      0.38,
+      0.56,
+      0.68,
+      0.87
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "lake-760",
+     "match": "enc_14",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.24,
+      0.37,
+      0.48,
+      0.3
+     ],
+     "B": [
+      0.28,
+      0.28,
+      0.38,
+      0.66
+     ],
+     "M": [
+      0.52,
+      0.65,
+      0.86,
+      0.96
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P07",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "desert-427",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.23,
+      0.35,
+      0.45,
+      0.28
+     ],
+     "B": [
+      0.24,
+      0.32,
+      0.37,
+      0.59
+     ],
+     "M": [
+      0.47,
+      0.67,
+      0.82,
+      0.87
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "church-464",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.19,
+      0.25,
+      0.15
+     ],
+     "B": [
+      0.15,
+      0.29,
+      0.33,
+      0.7
+     ],
+     "M": [
+      0.27,
+      0.48,
+      0.58,
+      0.85
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "station-501",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.25,
+      0.32,
+      0.2
+     ],
+     "B": [
+      0.21,
+      0.24,
+      0.38,
+      0.62
+     ],
+     "M": [
+      0.37,
+      0.49,
+      0.7,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "field-538",
+     "match": "enc_02",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.19,
+      0.25,
+      0.15
+     ],
+     "B": [
+      0.12,
+      0.33,
+      0.33,
+      0.61
+     ],
+     "M": [
+      0.24,
+      0.52,
+      0.58,
+      0.76
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "cafe-575",
+     "match": "enc_09",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.26,
+      0.33,
+      0.21
+     ],
+     "B": [
+      0.24,
+      0.34,
+      0.36,
+      0.71
+     ],
+     "M": [
+      0.41,
+      0.6,
+      0.69,
+      0.92
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "museum-612",
+     "match": "enc_16",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.25,
+      0.33,
+      0.2
+     ],
+     "B": [
+      0.2,
+      0.33,
+      0.39,
+      0.62
+     ],
+     "M": [
+      0.36,
+      0.58,
+      0.72,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "canyon-649",
+     "match": "enc_03",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      -0.01,
+      -0.01,
+      -0.02,
+      -0.01
+     ],
+     "B": [
+      0.21,
+      0.32,
+      0.34,
+      0.64
+     ],
+     "M": [
+      0.2,
+      0.31,
+      0.32,
+      0.63
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "bakery-686",
+     "match": "enc_10",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.24,
+      0.38,
+      0.49,
+      0.3
+     ],
+     "B": [
+      0.17,
+      0.25,
+      0.34,
+      0.63
+     ],
+     "M": [
+      0.41,
+      0.63,
+      0.83,
+      0.93
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "stadium-723",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.33,
+      0.42,
+      0.26
+     ],
+     "B": [
+      0.23,
+      0.28,
+      0.37,
+      0.6
+     ],
+     "M": [
+      0.44,
+      0.61,
+      0.79,
+      0.86
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "lake-760",
+     "match": "enc_04",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.27,
+      0.34,
+      0.21
+     ],
+     "B": [
+      0.23,
+      0.27,
+      0.35,
+      0.65
+     ],
+     "M": [
+      0.4,
+      0.54,
+      0.69,
+      0.86
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "alley-797",
+     "match": "enc_11",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      -0.0,
+      -0.0,
+      -0.0,
+      -0.0
+     ],
+     "B": [
+      0.23,
+      0.34,
+      0.34,
+      0.66
+     ],
+     "M": [
+      0.23,
+      0.34,
+      0.34,
+      0.66
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "farm-834",
+     "match": "enc_18",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.17,
+      0.22,
+      0.13
+     ],
+     "B": [
+      0.22,
+      0.31,
+      0.34,
+      0.61
+     ],
+     "M": [
+      0.33,
+      0.48,
+      0.56,
+      0.74
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "beach-871",
+     "match": "enc_05",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.07,
+      0.11,
+      0.15,
+      0.09
+     ],
+     "B": [
+      0.22,
+      0.29,
+      0.35,
+      0.65
+     ],
+     "M": [
+      0.29,
+      0.4,
+      0.5,
+      0.74
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "forest-008",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.19,
+      0.24,
+      0.15
+     ],
+     "B": [
+      0.24,
+      0.27,
+      0.37,
+      0.65
+     ],
+     "M": [
+      0.36,
+      0.46,
+      0.61,
+      0.8
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "kitchen-045",
+     "match": "enc_19",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.17,
+      0.21,
+      0.13
+     ],
+     "B": [
+      0.28,
+      0.31,
+      0.33,
+      0.63
+     ],
+     "M": [
+      0.39,
+      0.48,
+      0.54,
+      0.76
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "street-082",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.18,
+      0.23,
+      0.15
+     ],
+     "B": [
+      0.23,
+      0.32,
+      0.33,
+      0.61
+     ],
+     "M": [
+      0.35,
+      0.5,
+      0.56,
+      0.76
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "garden-119",
+     "match": "enc_13",
+     "response": "Forgotten",
+     "status": "no match",
+     "reason": "matched Encoding trial not admitted"
+    },
+    {
+     "trial": "ret_18",
+     "item": "office-156",
+     "match": "enc_20",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.08,
+      0.13,
+      0.17,
+      0.1
+     ],
+     "B": [
+      0.21,
+      0.3,
+      0.32,
+      0.61
+     ],
+     "M": [
+      0.29,
+      0.43,
+      0.49,
+      0.71
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "dog-193",
+     "match": "enc_07",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.3,
+      0.39,
+      0.24
+     ],
+     "B": [
+      0.21,
+      0.29,
+      0.41,
+      0.68
+     ],
+     "M": [
+      0.4,
+      0.59,
+      0.8,
+      0.92
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "bridge-230",
+     "match": "enc_14",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.31,
+      0.4,
+      0.25
+     ],
+     "B": [
+      0.21,
+      0.3,
+      0.35,
+      0.66
+     ],
+     "M": [
+      0.41,
+      0.61,
+      0.75,
+      0.91
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P08",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "alley-797",
+     "match": "enc_01",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.07,
+      0.1,
+      0.13,
+      0.08
+     ],
+     "B": [
+      0.2,
+      0.28,
+      0.36,
+      0.66
+     ],
+     "M": [
+      0.27,
+      0.38,
+      0.49,
+      0.74
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "farm-834",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.1,
+      0.13,
+      0.08
+     ],
+     "B": [
+      0.24,
+      0.26,
+      0.32,
+      0.61
+     ],
+     "M": [
+      0.3,
+      0.36,
+      0.45,
+      0.69
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "beach-871",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.29,
+      0.37,
+      0.23
+     ],
+     "B": [
+      0.25,
+      0.28,
+      0.36,
+      0.59
+     ],
+     "M": [
+      0.44,
+      0.57,
+      0.73,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "forest-008",
+     "match": "enc_02",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.32,
+      0.41,
+      0.25
+     ],
+     "B": [
+      0.23,
+      0.23,
+      0.36,
+      0.61
+     ],
+     "M": [
+      0.43,
+      0.55,
+      0.77,
+      0.86
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "kitchen-045",
+     "match": "enc_09",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.21,
+      0.27,
+      0.17
+     ],
+     "B": [
+      0.24,
+      0.31,
+      0.33,
+      0.62
+     ],
+     "M": [
+      0.38,
+      0.52,
+      0.6,
+      0.79
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "street-082",
+     "match": "enc_16",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.03,
+      0.05,
+      0.06,
+      0.04
+     ],
+     "B": [
+      0.23,
+      0.33,
+      0.42,
+      0.62
+     ],
+     "M": [
+      0.26,
+      0.38,
+      0.48,
+      0.66
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "garden-119",
+     "match": "enc_03",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.27,
+      0.34,
+      0.21
+     ],
+     "B": [
+      0.23,
+      0.26,
+      0.36,
+      0.64
+     ],
+     "M": [
+      0.4,
+      0.53,
+      0.7,
+      0.85
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "office-156",
+     "match": "enc_10",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.22,
+      0.28,
+      0.17
+     ],
+     "B": [
+      0.24,
+      0.25,
+      0.33,
+      0.6
+     ],
+     "M": [
+      0.38,
+      0.47,
+      0.61,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "dog-193",
+     "match": "enc_17",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.02,
+      0.03,
+      0.04,
+      0.02
+     ],
+     "B": [
+      0.24,
+      0.28,
+      0.32,
+      0.57
+     ],
+     "M": [
+      0.26,
+      0.31,
+      0.36,
+      0.59
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "bridge-230",
+     "match": "enc_04",
+     "response": "Remembered",
+     "status": "no match",
+     "reason": "matched Encoding trial not admitted"
+    },
+    {
+     "trial": "ret_11",
+     "item": "market-267",
+     "match": "enc_11",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.02,
+      0.03,
+      0.04,
+      0.03
+     ],
+     "B": [
+      0.19,
+      0.28,
+      0.35,
+      0.66
+     ],
+     "M": [
+      0.21,
+      0.31,
+      0.39,
+      0.69
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "tower-304",
+     "match": "enc_18",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.21,
+      0.27,
+      0.17
+     ],
+     "B": [
+      0.22,
+      0.29,
+      0.36,
+      0.63
+     ],
+     "M": [
+      0.36,
+      0.5,
+      0.63,
+      0.8
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "harbor-341",
+     "match": "enc_05",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.23,
+      0.3,
+      0.18
+     ],
+     "B": [
+      0.2,
+      0.36,
+      0.29,
+      0.62
+     ],
+     "M": [
+      0.35,
+      0.59,
+      0.59,
+      0.8
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "library-378",
+     "match": "enc_12",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.17,
+      0.22,
+      0.13
+     ],
+     "B": [
+      0.3,
+      0.31,
+      0.36,
+      0.57
+     ],
+     "M": [
+      0.41,
+      0.48,
+      0.58,
+      0.7
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "desert-415",
+     "match": "enc_19",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.19,
+      0.24,
+      0.15
+     ],
+     "B": [
+      0.22,
+      0.31,
+      0.38,
+      0.61
+     ],
+     "M": [
+      0.34,
+      0.5,
+      0.62,
+      0.76
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "church-452",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.2,
+      0.26,
+      0.16
+     ],
+     "B": [
+      0.23,
+      0.24,
+      0.38,
+      0.61
+     ],
+     "M": [
+      0.36,
+      0.44,
+      0.64,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "station-489",
+     "match": "enc_13",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.25,
+      0.32,
+      0.2
+     ],
+     "B": [
+      0.24,
+      0.27,
+      0.34,
+      0.62
+     ],
+     "M": [
+      0.4,
+      0.52,
+      0.66,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "field-526",
+     "match": "enc_20",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.32,
+      0.41,
+      0.25
+     ],
+     "B": [
+      0.26,
+      0.3,
+      0.36,
+      0.69
+     ],
+     "M": [
+      0.46,
+      0.62,
+      0.77,
+      0.94
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "cafe-563",
+     "match": "enc_07",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.23,
+      0.3,
+      0.18
+     ],
+     "B": [
+      0.2,
+      0.29,
+      0.35,
+      0.69
+     ],
+     "M": [
+      0.35,
+      0.52,
+      0.65,
+      0.87
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "museum-600",
+     "match": "enc_14",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.32,
+      0.4,
+      0.25
+     ],
+     "B": [
+      0.23,
+      0.32,
+      0.39,
+      0.67
+     ],
+     "M": [
+      0.43,
+      0.64,
+      0.79,
+      0.92
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P09",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "market-267",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.27,
+      0.43,
+      0.54,
+      0.34
+     ],
+     "B": [
+      0.23,
+      0.26,
+      0.3,
+      0.61
+     ],
+     "M": [
+      0.5,
+      0.69,
+      0.84,
+      0.95
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "tower-304",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.23,
+      0.29,
+      0.18
+     ],
+     "B": [
+      0.26,
+      0.3,
+      0.36,
+      0.66
+     ],
+     "M": [
+      0.41,
+      0.53,
+      0.65,
+      0.84
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "harbor-341",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.25,
+      0.4,
+      0.51,
+      0.31
+     ],
+     "B": [
+      0.24,
+      0.32,
+      0.38,
+      0.67
+     ],
+     "M": [
+      0.49,
+      0.72,
+      0.89,
+      0.98
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "library-378",
+     "match": "enc_02",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.27,
+      0.34,
+      0.21
+     ],
+     "B": [
+      0.26,
+      0.31,
+      0.3,
+      0.6
+     ],
+     "M": [
+      0.43,
+      0.58,
+      0.64,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "desert-415",
+     "match": "enc_09",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.27,
+      0.35,
+      0.21
+     ],
+     "B": [
+      0.25,
+      0.27,
+      0.33,
+      0.57
+     ],
+     "M": [
+      0.42,
+      0.54,
+      0.68,
+      0.78
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "church-452",
+     "match": "enc_16",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.24,
+      0.31,
+      0.19
+     ],
+     "B": [
+      0.21,
+      0.29,
+      0.31,
+      0.65
+     ],
+     "M": [
+      0.36,
+      0.53,
+      0.62,
+      0.84
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "station-489",
+     "match": "enc_03",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.18,
+      0.23,
+      0.14
+     ],
+     "B": [
+      0.23,
+      0.32,
+      0.35,
+      0.61
+     ],
+     "M": [
+      0.35,
+      0.5,
+      0.58,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "field-526",
+     "match": "enc_10",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.17,
+      0.22,
+      0.14
+     ],
+     "B": [
+      0.28,
+      0.25,
+      0.41,
+      0.62
+     ],
+     "M": [
+      0.39,
+      0.42,
+      0.63,
+      0.76
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "cafe-563",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.32,
+      0.41,
+      0.25
+     ],
+     "B": [
+      0.22,
+      0.31,
+      0.4,
+      0.63
+     ],
+     "M": [
+      0.42,
+      0.63,
+      0.81,
+      0.88
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "museum-600",
+     "match": "enc_04",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.23,
+      0.3,
+      0.18
+     ],
+     "B": [
+      0.28,
+      0.27,
+      0.34,
+      0.63
+     ],
+     "M": [
+      0.43,
+      0.5,
+      0.64,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "canyon-637",
+     "match": "enc_11",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.27,
+      0.35,
+      0.22
+     ],
+     "B": [
+      0.17,
+      0.29,
+      0.31,
+      0.59
+     ],
+     "M": [
+      0.34,
+      0.56,
+      0.66,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "bakery-674",
+     "match": "enc_18",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.18,
+      0.23,
+      0.14
+     ],
+     "B": [
+      0.25,
+      0.24,
+      0.37,
+      0.6
+     ],
+     "M": [
+      0.37,
+      0.42,
+      0.6,
+      0.74
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "stadium-711",
+     "match": "enc_05",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.17,
+      0.21,
+      0.13
+     ],
+     "B": [
+      0.16,
+      0.28,
+      0.38,
+      0.63
+     ],
+     "M": [
+      0.27,
+      0.45,
+      0.59,
+      0.76
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "lake-748",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.31,
+      0.4,
+      0.25
+     ],
+     "B": [
+      0.26,
+      0.27,
+      0.35,
+      0.62
+     ],
+     "M": [
+      0.46,
+      0.58,
+      0.75,
+      0.87
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "alley-785",
+     "match": "enc_19",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.25,
+      0.32,
+      0.2
+     ],
+     "B": [
+      0.24,
+      0.32,
+      0.37,
+      0.69
+     ],
+     "M": [
+      0.4,
+      0.57,
+      0.69,
+      0.89
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "farm-822",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.3,
+      0.38,
+      0.24
+     ],
+     "B": [
+      0.24,
+      0.22,
+      0.36,
+      0.58
+     ],
+     "M": [
+      0.43,
+      0.52,
+      0.74,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "beach-859",
+     "match": "enc_13",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.19,
+      0.25,
+      0.15
+     ],
+     "B": [
+      0.21,
+      0.3,
+      0.32,
+      0.6
+     ],
+     "M": [
+      0.33,
+      0.49,
+      0.57,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "forest-896",
+     "match": "enc_20",
+     "response": "Forgotten",
+     "status": "query not admitted",
+     "reason": "duplicate-ordinals"
+    },
+    {
+     "trial": "ret_19",
+     "item": "kitchen-033",
+     "match": "enc_07",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.17,
+      0.22,
+      0.14
+     ],
+     "B": [
+      0.21,
+      0.27,
+      0.36,
+      0.6
+     ],
+     "M": [
+      0.32,
+      0.44,
+      0.58,
+      0.74
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "street-070",
+     "match": "enc_14",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.09,
+      0.14,
+      0.19,
+      0.12
+     ],
+     "B": [
+      0.24,
+      0.31,
+      0.35,
+      0.63
+     ],
+     "M": [
+      0.33,
+      0.45,
+      0.54,
+      0.75
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P10",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "canyon-637",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.24,
+      0.31,
+      0.19
+     ],
+     "B": [
+      0.23,
+      0.31,
+      0.35,
+      0.68
+     ],
+     "M": [
+      0.38,
+      0.55,
+      0.66,
+      0.87
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "bakery-674",
+     "match": "enc_08",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.23,
+      0.3,
+      0.18
+     ],
+     "B": [
+      0.17,
+      0.32,
+      0.37,
+      0.6
+     ],
+     "M": [
+      0.32,
+      0.55,
+      0.67,
+      0.78
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "stadium-711",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.23,
+      0.36,
+      0.46,
+      0.29
+     ],
+     "B": [
+      0.2,
+      0.26,
+      0.37,
+      0.6
+     ],
+     "M": [
+      0.43,
+      0.62,
+      0.83,
+      0.89
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "lake-748",
+     "match": "enc_02",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.3,
+      0.47,
+      0.6,
+      0.37
+     ],
+     "B": [
+      0.21,
+      0.31,
+      0.33,
+      0.65
+     ],
+     "M": [
+      0.51,
+      0.78,
+      0.93,
+      1.02
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "alley-785",
+     "match": "enc_09",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.21,
+      0.27,
+      0.16
+     ],
+     "B": [
+      0.25,
+      0.28,
+      0.31,
+      0.63
+     ],
+     "M": [
+      0.38,
+      0.49,
+      0.58,
+      0.79
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "farm-822",
+     "match": "enc_16",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.25,
+      0.38,
+      0.49,
+      0.31
+     ],
+     "B": [
+      0.21,
+      0.26,
+      0.34,
+      0.62
+     ],
+     "M": [
+      0.46,
+      0.64,
+      0.83,
+      0.93
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "beach-859",
+     "match": "enc_03",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.25,
+      0.39,
+      0.5,
+      0.31
+     ],
+     "B": [
+      0.28,
+      0.31,
+      0.37,
+      0.67
+     ],
+     "M": [
+      0.53,
+      0.7,
+      0.87,
+      0.98
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "forest-896",
+     "match": "enc_10",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.33,
+      0.42,
+      0.26
+     ],
+     "B": [
+      0.23,
+      0.28,
+      0.35,
+      0.63
+     ],
+     "M": [
+      0.44,
+      0.61,
+      0.77,
+      0.89
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "kitchen-033",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.24,
+      0.38,
+      0.48,
+      0.3
+     ],
+     "B": [
+      0.22,
+      0.35,
+      0.33,
+      0.64
+     ],
+     "M": [
+      0.46,
+      0.73,
+      0.81,
+      0.94
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "street-070",
+     "match": "enc_04",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.32,
+      0.49,
+      0.63,
+      0.39
+     ],
+     "B": [
+      0.24,
+      0.28,
+      0.4,
+      0.6
+     ],
+     "M": [
+      0.56,
+      0.77,
+      1.03,
+      0.99
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "garden-107",
+     "match": "enc_11",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.29,
+      0.38,
+      0.23
+     ],
+     "B": [
+      0.22,
+      0.33,
+      0.39,
+      0.62
+     ],
+     "M": [
+      0.41,
+      0.62,
+      0.77,
+      0.85
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "office-144",
+     "match": "enc_18",
+     "response": "Remembered",
+     "status": "no match",
+     "reason": "matched Encoding trial not admitted"
+    },
+    {
+     "trial": "ret_13",
+     "item": "dog-181",
+     "match": "enc_05",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.25,
+      0.38,
+      0.49,
+      0.31
+     ],
+     "B": [
+      0.23,
+      0.27,
+      0.33,
+      0.66
+     ],
+     "M": [
+      0.48,
+      0.65,
+      0.82,
+      0.97
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "bridge-218",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.24,
+      0.38,
+      0.48,
+      0.3
+     ],
+     "B": [
+      0.22,
+      0.3,
+      0.34,
+      0.57
+     ],
+     "M": [
+      0.46,
+      0.68,
+      0.82,
+      0.87
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "market-255",
+     "match": "enc_19",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.27,
+      0.34,
+      0.21
+     ],
+     "B": [
+      0.21,
+      0.29,
+      0.34,
+      0.63
+     ],
+     "M": [
+      0.38,
+      0.56,
+      0.68,
+      0.84
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "tower-292",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.25,
+      0.39,
+      0.5,
+      0.31
+     ],
+     "B": [
+      0.15,
+      0.31,
+      0.29,
+      0.68
+     ],
+     "M": [
+      0.4,
+      0.7,
+      0.79,
+      0.99
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "harbor-329",
+     "match": "enc_13",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.24,
+      0.31,
+      0.19
+     ],
+     "B": [
+      0.24,
+      0.27,
+      0.36,
+      0.63
+     ],
+     "M": [
+      0.4,
+      0.51,
+      0.67,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "library-366",
+     "match": "enc_20",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.23,
+      0.36,
+      0.46,
+      0.29
+     ],
+     "B": [
+      0.21,
+      0.28,
+      0.31,
+      0.65
+     ],
+     "M": [
+      0.44,
+      0.64,
+      0.77,
+      0.94
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "desert-403",
+     "match": "enc_07",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.33,
+      0.42,
+      0.26
+     ],
+     "B": [
+      0.2,
+      0.27,
+      0.39,
+      0.62
+     ],
+     "M": [
+      0.41,
+      0.6,
+      0.81,
+      0.88
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "church-440",
+     "match": "enc_14",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.31,
+      0.4,
+      0.25
+     ],
+     "B": [
+      0.21,
+      0.27,
+      0.35,
+      0.65
+     ],
+     "M": [
+      0.41,
+      0.58,
+      0.75,
+      0.9
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P11",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "garden-107",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.21,
+      0.27,
+      0.17
+     ],
+     "B": [
+      0.28,
+      0.36,
+      0.35,
+      0.58
+     ],
+     "M": [
+      0.41,
+      0.57,
+      0.62,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "office-144",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.25,
+      0.32,
+      0.2
+     ],
+     "B": [
+      0.24,
+      0.32,
+      0.3,
+      0.57
+     ],
+     "M": [
+      0.4,
+      0.57,
+      0.62,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "dog-181",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.1,
+      0.15,
+      0.2,
+      0.12
+     ],
+     "B": [
+      0.19,
+      0.31,
+      0.38,
+      0.61
+     ],
+     "M": [
+      0.29,
+      0.46,
+      0.58,
+      0.73
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "bridge-218",
+     "match": "enc_02",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.32,
+      0.41,
+      0.26
+     ],
+     "B": [
+      0.22,
+      0.31,
+      0.35,
+      0.59
+     ],
+     "M": [
+      0.43,
+      0.63,
+      0.76,
+      0.85
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "market-255",
+     "match": "enc_09",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.25,
+      0.32,
+      0.2
+     ],
+     "B": [
+      0.22,
+      0.26,
+      0.37,
+      0.65
+     ],
+     "M": [
+      0.38,
+      0.51,
+      0.69,
+      0.85
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "tower-292",
+     "match": "enc_16",
+     "response": "Remembered",
+     "status": "no match",
+     "reason": "matched Encoding trial not admitted"
+    },
+    {
+     "trial": "ret_07",
+     "item": "harbor-329",
+     "match": "enc_03",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.25,
+      0.32,
+      0.2
+     ],
+     "B": [
+      0.22,
+      0.31,
+      0.38,
+      0.57
+     ],
+     "M": [
+      0.38,
+      0.56,
+      0.7,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "library-366",
+     "match": "enc_10",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.01,
+      0.02,
+      0.03,
+      0.02
+     ],
+     "B": [
+      0.24,
+      0.3,
+      0.34,
+      0.63
+     ],
+     "M": [
+      0.25,
+      0.32,
+      0.37,
+      0.65
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "desert-403",
+     "match": "enc_17",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.17,
+      0.21,
+      0.13
+     ],
+     "B": [
+      0.22,
+      0.27,
+      0.29,
+      0.63
+     ],
+     "M": [
+      0.33,
+      0.44,
+      0.5,
+      0.76
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "church-440",
+     "match": "enc_04",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.09,
+      0.14,
+      0.18,
+      0.11
+     ],
+     "B": [
+      0.2,
+      0.34,
+      0.33,
+      0.6
+     ],
+     "M": [
+      0.29,
+      0.48,
+      0.51,
+      0.71
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "station-477",
+     "match": "enc_11",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.02,
+      0.03,
+      0.04,
+      0.03
+     ],
+     "B": [
+      0.22,
+      0.27,
+      0.37,
+      0.62
+     ],
+     "M": [
+      0.24,
+      0.3,
+      0.41,
+      0.65
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "field-514",
+     "match": "enc_18",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.19,
+      0.24,
+      0.15
+     ],
+     "B": [
+      0.2,
+      0.27,
+      0.32,
+      0.6
+     ],
+     "M": [
+      0.32,
+      0.46,
+      0.56,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "cafe-551",
+     "match": "enc_05",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.1,
+      0.15,
+      0.19,
+      0.12
+     ],
+     "B": [
+      0.2,
+      0.28,
+      0.35,
+      0.62
+     ],
+     "M": [
+      0.3,
+      0.43,
+      0.54,
+      0.74
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "museum-588",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.21,
+      0.27,
+      0.17
+     ],
+     "B": [
+      0.21,
+      0.28,
+      0.37,
+      0.66
+     ],
+     "M": [
+      0.34,
+      0.49,
+      0.64,
+      0.83
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "canyon-625",
+     "match": "enc_19",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.1,
+      0.13,
+      0.08
+     ],
+     "B": [
+      0.19,
+      0.3,
+      0.38,
+      0.62
+     ],
+     "M": [
+      0.25,
+      0.4,
+      0.51,
+      0.7
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "bakery-662",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.26,
+      0.33,
+      0.2
+     ],
+     "B": [
+      0.26,
+      0.36,
+      0.31,
+      0.67
+     ],
+     "M": [
+      0.42,
+      0.62,
+      0.64,
+      0.87
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "stadium-699",
+     "match": "enc_13",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.27,
+      0.34,
+      0.21
+     ],
+     "B": [
+      0.19,
+      0.38,
+      0.33,
+      0.61
+     ],
+     "M": [
+      0.36,
+      0.65,
+      0.67,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "lake-736",
+     "match": "enc_20",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.17,
+      0.22,
+      0.13
+     ],
+     "B": [
+      0.19,
+      0.3,
+      0.31,
+      0.64
+     ],
+     "M": [
+      0.3,
+      0.47,
+      0.53,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "alley-773",
+     "match": "enc_07",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.03,
+      0.05,
+      0.07,
+      0.04
+     ],
+     "B": [
+      0.21,
+      0.35,
+      0.35,
+      0.67
+     ],
+     "M": [
+      0.24,
+      0.4,
+      0.42,
+      0.71
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "farm-810",
+     "match": "enc_14",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.08,
+      0.12,
+      0.16,
+      0.1
+     ],
+     "B": [
+      0.24,
+      0.34,
+      0.39,
+      0.58
+     ],
+     "M": [
+      0.32,
+      0.46,
+      0.55,
+      0.68
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P12",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "station-477",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.2,
+      0.25,
+      0.16
+     ],
+     "B": [
+      0.22,
+      0.3,
+      0.34,
+      0.63
+     ],
+     "M": [
+      0.35,
+      0.5,
+      0.59,
+      0.79
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "field-514",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.21,
+      0.27,
+      0.17
+     ],
+     "B": [
+      0.25,
+      0.3,
+      0.37,
+      0.67
+     ],
+     "M": [
+      0.39,
+      0.51,
+      0.64,
+      0.84
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "cafe-551",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.08,
+      0.13,
+      0.16,
+      0.1
+     ],
+     "B": [
+      0.27,
+      0.27,
+      0.31,
+      0.64
+     ],
+     "M": [
+      0.35,
+      0.4,
+      0.47,
+      0.74
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "museum-588",
+     "match": "enc_02",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.26,
+      0.34,
+      0.21
+     ],
+     "B": [
+      0.25,
+      0.3,
+      0.35,
+      0.63
+     ],
+     "M": [
+      0.42,
+      0.56,
+      0.69,
+      0.84
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "canyon-625",
+     "match": "enc_09",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.09,
+      0.13,
+      0.17,
+      0.11
+     ],
+     "B": [
+      0.22,
+      0.28,
+      0.33,
+      0.59
+     ],
+     "M": [
+      0.31,
+      0.41,
+      0.5,
+      0.7
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "bakery-662",
+     "match": "enc_16",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.21,
+      0.27,
+      0.17
+     ],
+     "B": [
+      0.23,
+      0.34,
+      0.4,
+      0.64
+     ],
+     "M": [
+      0.37,
+      0.55,
+      0.67,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "stadium-699",
+     "match": "enc_03",
+     "response": "Forgotten",
+     "status": "query not admitted",
+     "reason": "overlap"
+    },
+    {
+     "trial": "ret_08",
+     "item": "lake-736",
+     "match": "enc_10",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.3,
+      0.47,
+      0.6,
+      0.37
+     ],
+     "B": [
+      0.23,
+      0.27,
+      0.33,
+      0.64
+     ],
+     "M": [
+      0.53,
+      0.74,
+      0.93,
+      1.01
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "alley-773",
+     "match": "enc_17",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.23,
+      0.36,
+      0.46,
+      0.28
+     ],
+     "B": [
+      0.2,
+      0.3,
+      0.34,
+      0.6
+     ],
+     "M": [
+      0.43,
+      0.66,
+      0.8,
+      0.88
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "farm-810",
+     "match": "enc_04",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.09,
+      0.14,
+      0.18,
+      0.11
+     ],
+     "B": [
+      0.21,
+      0.3,
+      0.35,
+      0.67
+     ],
+     "M": [
+      0.3,
+      0.44,
+      0.53,
+      0.78
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "beach-847",
+     "match": "enc_11",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.33,
+      0.43,
+      0.27
+     ],
+     "B": [
+      0.2,
+      0.31,
+      0.35,
+      0.62
+     ],
+     "M": [
+      0.41,
+      0.64,
+      0.78,
+      0.89
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "forest-884",
+     "match": "enc_18",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.01,
+      0.02,
+      0.02,
+      0.02
+     ],
+     "B": [
+      0.21,
+      0.31,
+      0.32,
+      0.67
+     ],
+     "M": [
+      0.22,
+      0.33,
+      0.34,
+      0.69
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "kitchen-021",
+     "match": "enc_05",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.18,
+      0.23,
+      0.14
+     ],
+     "B": [
+      0.21,
+      0.29,
+      0.38,
+      0.64
+     ],
+     "M": [
+      0.32,
+      0.47,
+      0.61,
+      0.78
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "street-058",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.22,
+      0.35,
+      0.44,
+      0.27
+     ],
+     "B": [
+      0.23,
+      0.27,
+      0.4,
+      0.62
+     ],
+     "M": [
+      0.45,
+      0.62,
+      0.84,
+      0.89
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "garden-095",
+     "match": "enc_19",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.1,
+      0.12,
+      0.08
+     ],
+     "B": [
+      0.17,
+      0.25,
+      0.32,
+      0.62
+     ],
+     "M": [
+      0.23,
+      0.35,
+      0.44,
+      0.7
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "office-132",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.18,
+      0.28,
+      0.36,
+      0.22
+     ],
+     "B": [
+      0.24,
+      0.32,
+      0.35,
+      0.62
+     ],
+     "M": [
+      0.42,
+      0.6,
+      0.71,
+      0.84
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "dog-169",
+     "match": "enc_13",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.08,
+      0.12,
+      0.16,
+      0.1
+     ],
+     "B": [
+      0.22,
+      0.31,
+      0.37,
+      0.6
+     ],
+     "M": [
+      0.3,
+      0.43,
+      0.53,
+      0.7
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "bridge-206",
+     "match": "enc_20",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.1,
+      0.15,
+      0.2,
+      0.12
+     ],
+     "B": [
+      0.24,
+      0.25,
+      0.38,
+      0.66
+     ],
+     "M": [
+      0.34,
+      0.4,
+      0.58,
+      0.78
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "market-243",
+     "match": "enc_07",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.3,
+      0.38,
+      0.24
+     ],
+     "B": [
+      0.24,
+      0.36,
+      0.35,
+      0.67
+     ],
+     "M": [
+      0.43,
+      0.66,
+      0.73,
+      0.91
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "tower-280",
+     "match": "enc_14",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.29,
+      0.37,
+      0.23
+     ],
+     "B": [
+      0.24,
+      0.3,
+      0.34,
+      0.59
+     ],
+     "M": [
+      0.43,
+      0.59,
+      0.71,
+      0.82
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P13",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "beach-847",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.1,
+      0.15,
+      0.19,
+      0.12
+     ],
+     "B": [
+      0.25,
+      0.28,
+      0.38,
+      0.62
+     ],
+     "M": [
+      0.35,
+      0.43,
+      0.57,
+      0.74
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "forest-884",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.04,
+      0.07,
+      0.09,
+      0.05
+     ],
+     "B": [
+      0.17,
+      0.29,
+      0.36,
+      0.61
+     ],
+     "M": [
+      0.21,
+      0.36,
+      0.45,
+      0.66
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "kitchen-021",
+     "match": "enc_15",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.1,
+      0.13,
+      0.08
+     ],
+     "B": [
+      0.26,
+      0.31,
+      0.4,
+      0.6
+     ],
+     "M": [
+      0.32,
+      0.41,
+      0.53,
+      0.68
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "street-058",
+     "match": "enc_02",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.0,
+      0.01,
+      0.01,
+      0.01
+     ],
+     "B": [
+      0.2,
+      0.3,
+      0.34,
+      0.58
+     ],
+     "M": [
+      0.2,
+      0.31,
+      0.35,
+      0.59
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "garden-095",
+     "match": "enc_09",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.01,
+      0.01,
+      0.02,
+      0.01
+     ],
+     "B": [
+      0.2,
+      0.29,
+      0.33,
+      0.69
+     ],
+     "M": [
+      0.21,
+      0.3,
+      0.35,
+      0.7
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "office-132",
+     "match": "enc_16",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.1,
+      0.13,
+      0.08
+     ],
+     "B": [
+      0.3,
+      0.29,
+      0.38,
+      0.61
+     ],
+     "M": [
+      0.36,
+      0.39,
+      0.51,
+      0.69
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "dog-169",
+     "match": "enc_03",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.26,
+      0.33,
+      0.21
+     ],
+     "B": [
+      0.23,
+      0.29,
+      0.31,
+      0.66
+     ],
+     "M": [
+      0.4,
+      0.55,
+      0.64,
+      0.87
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "bridge-206",
+     "match": "enc_10",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.01,
+      0.01,
+      0.01,
+      0.01
+     ],
+     "B": [
+      0.2,
+      0.33,
+      0.31,
+      0.65
+     ],
+     "M": [
+      0.21,
+      0.34,
+      0.32,
+      0.66
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "market-243",
+     "match": "enc_17",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.01,
+      -0.01,
+      -0.01,
+      -0.01
+     ],
+     "B": [
+      0.22,
+      0.32,
+      0.4,
+      0.64
+     ],
+     "M": [
+      0.21,
+      0.31,
+      0.39,
+      0.63
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "tower-280",
+     "match": "enc_04",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.2,
+      0.26,
+      0.16
+     ],
+     "B": [
+      0.17,
+      0.3,
+      0.41,
+      0.66
+     ],
+     "M": [
+      0.3,
+      0.5,
+      0.67,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "harbor-317",
+     "match": "enc_11",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.19,
+      0.24,
+      0.15
+     ],
+     "B": [
+      0.21,
+      0.27,
+      0.38,
+      0.67
+     ],
+     "M": [
+      0.33,
+      0.46,
+      0.62,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "library-354",
+     "match": "enc_18",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.01,
+      -0.01,
+      -0.01,
+      -0.01
+     ],
+     "B": [
+      0.21,
+      0.26,
+      0.37,
+      0.64
+     ],
+     "M": [
+      0.2,
+      0.25,
+      0.36,
+      0.63
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "desert-391",
+     "match": "enc_05",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.09,
+      0.14,
+      0.18,
+      0.11
+     ],
+     "B": [
+      0.22,
+      0.32,
+      0.34,
+      0.61
+     ],
+     "M": [
+      0.31,
+      0.46,
+      0.52,
+      0.72
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "church-428",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.09,
+      0.15,
+      0.19,
+      0.12
+     ],
+     "B": [
+      0.21,
+      0.34,
+      0.33,
+      0.63
+     ],
+     "M": [
+      0.3,
+      0.49,
+      0.52,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "station-465",
+     "match": "enc_19",
+     "response": "Remembered",
+     "status": "query not admitted",
+     "reason": "no-fixations"
+    },
+    {
+     "trial": "ret_16",
+     "item": "field-502",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.09,
+      0.15,
+      0.19,
+      0.12
+     ],
+     "B": [
+      0.26,
+      0.33,
+      0.36,
+      0.61
+     ],
+     "M": [
+      0.35,
+      0.48,
+      0.55,
+      0.73
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "cafe-539",
+     "match": "enc_13",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.04,
+      0.06,
+      0.08,
+      0.05
+     ],
+     "B": [
+      0.19,
+      0.24,
+      0.33,
+      0.7
+     ],
+     "M": [
+      0.23,
+      0.3,
+      0.41,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "museum-576",
+     "match": "enc_20",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.03,
+      -0.04,
+      -0.06,
+      -0.04
+     ],
+     "B": [
+      0.22,
+      0.3,
+      0.41,
+      0.58
+     ],
+     "M": [
+      0.19,
+      0.26,
+      0.35,
+      0.54
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "canyon-613",
+     "match": "enc_07",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.02,
+      0.02,
+      0.03,
+      0.02
+     ],
+     "B": [
+      0.23,
+      0.31,
+      0.36,
+      0.64
+     ],
+     "M": [
+      0.25,
+      0.33,
+      0.39,
+      0.66
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "bakery-650",
+     "match": "enc_14",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.04,
+      0.07,
+      0.09,
+      0.05
+     ],
+     "B": [
+      0.21,
+      0.3,
+      0.37,
+      0.6
+     ],
+     "M": [
+      0.25,
+      0.37,
+      0.46,
+      0.65
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P14",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "harbor-317",
+     "match": "enc_01",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.29,
+      0.37,
+      0.23
+     ],
+     "B": [
+      0.17,
+      0.24,
+      0.35,
+      0.62
+     ],
+     "M": [
+      0.36,
+      0.53,
+      0.72,
+      0.85
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "library-354",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.09,
+      0.14,
+      0.18,
+      0.11
+     ],
+     "B": [
+      0.24,
+      0.31,
+      0.27,
+      0.58
+     ],
+     "M": [
+      0.33,
+      0.45,
+      0.45,
+      0.69
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "desert-391",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.08,
+      0.13,
+      0.17,
+      0.1
+     ],
+     "B": [
+      0.26,
+      0.3,
+      0.34,
+      0.67
+     ],
+     "M": [
+      0.34,
+      0.43,
+      0.51,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "church-428",
+     "match": "enc_02",
+     "response": "Remembered",
+     "status": "no match",
+     "reason": "matched Encoding trial not admitted"
+    },
+    {
+     "trial": "ret_05",
+     "item": "station-465",
+     "match": "enc_09",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.09,
+      0.12,
+      0.07
+     ],
+     "B": [
+      0.2,
+      0.3,
+      0.35,
+      0.61
+     ],
+     "M": [
+      0.26,
+      0.39,
+      0.47,
+      0.68
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "field-502",
+     "match": "enc_16",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.21,
+      0.27,
+      0.17
+     ],
+     "B": [
+      0.2,
+      0.28,
+      0.37,
+      0.64
+     ],
+     "M": [
+      0.33,
+      0.49,
+      0.64,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "cafe-539",
+     "match": "enc_03",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.22,
+      0.34,
+      0.43,
+      0.27
+     ],
+     "B": [
+      0.25,
+      0.31,
+      0.36,
+      0.63
+     ],
+     "M": [
+      0.47,
+      0.65,
+      0.79,
+      0.9
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "museum-576",
+     "match": "enc_10",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.33,
+      0.43,
+      0.27
+     ],
+     "B": [
+      0.27,
+      0.22,
+      0.37,
+      0.63
+     ],
+     "M": [
+      0.48,
+      0.55,
+      0.8,
+      0.9
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "canyon-613",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.25,
+      0.32,
+      0.2
+     ],
+     "B": [
+      0.25,
+      0.31,
+      0.35,
+      0.64
+     ],
+     "M": [
+      0.41,
+      0.56,
+      0.67,
+      0.84
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "bakery-650",
+     "match": "enc_04",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.18,
+      0.24,
+      0.15
+     ],
+     "B": [
+      0.25,
+      0.29,
+      0.38,
+      0.7
+     ],
+     "M": [
+      0.37,
+      0.47,
+      0.62,
+      0.85
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "stadium-687",
+     "match": "enc_11",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.03,
+      0.05,
+      0.07,
+      0.04
+     ],
+     "B": [
+      0.27,
+      0.28,
+      0.3,
+      0.57
+     ],
+     "M": [
+      0.3,
+      0.33,
+      0.37,
+      0.61
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "lake-724",
+     "match": "enc_18",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.26,
+      0.33,
+      0.21
+     ],
+     "B": [
+      0.24,
+      0.31,
+      0.36,
+      0.61
+     ],
+     "M": [
+      0.41,
+      0.57,
+      0.69,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "alley-761",
+     "match": "enc_05",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.23,
+      0.29,
+      0.18
+     ],
+     "B": [
+      0.22,
+      0.31,
+      0.35,
+      0.62
+     ],
+     "M": [
+      0.37,
+      0.54,
+      0.64,
+      0.8
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "farm-798",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.18,
+      0.23,
+      0.15
+     ],
+     "B": [
+      0.22,
+      0.31,
+      0.37,
+      0.65
+     ],
+     "M": [
+      0.34,
+      0.49,
+      0.6,
+      0.8
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "beach-835",
+     "match": "enc_19",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.18,
+      0.28,
+      0.36,
+      0.22
+     ],
+     "B": [
+      0.22,
+      0.31,
+      0.32,
+      0.66
+     ],
+     "M": [
+      0.4,
+      0.59,
+      0.68,
+      0.88
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "forest-872",
+     "match": "enc_06",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.21,
+      0.26,
+      0.16
+     ],
+     "B": [
+      0.19,
+      0.32,
+      0.38,
+      0.59
+     ],
+     "M": [
+      0.32,
+      0.53,
+      0.64,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "kitchen-009",
+     "match": "enc_13",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.18,
+      0.23,
+      0.14
+     ],
+     "B": [
+      0.23,
+      0.28,
+      0.38,
+      0.61
+     ],
+     "M": [
+      0.35,
+      0.46,
+      0.61,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "street-046",
+     "match": "enc_20",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.22,
+      0.28,
+      0.17
+     ],
+     "B": [
+      0.22,
+      0.3,
+      0.37,
+      0.66
+     ],
+     "M": [
+      0.36,
+      0.52,
+      0.65,
+      0.83
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "garden-083",
+     "match": "enc_07",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.27,
+      0.35,
+      0.21
+     ],
+     "B": [
+      0.24,
+      0.3,
+      0.32,
+      0.6
+     ],
+     "M": [
+      0.41,
+      0.57,
+      0.67,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "office-120",
+     "match": "enc_14",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.21,
+      0.27,
+      0.17
+     ],
+     "B": [
+      0.2,
+      0.28,
+      0.36,
+      0.65
+     ],
+     "M": [
+      0.33,
+      0.49,
+      0.63,
+      0.82
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P15",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "stadium-687",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.26,
+      0.33,
+      0.21
+     ],
+     "B": [
+      0.19,
+      0.26,
+      0.33,
+      0.69
+     ],
+     "M": [
+      0.36,
+      0.52,
+      0.66,
+      0.9
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "lake-724",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.09,
+      0.14,
+      0.18,
+      0.11
+     ],
+     "B": [
+      0.24,
+      0.28,
+      0.41,
+      0.64
+     ],
+     "M": [
+      0.33,
+      0.42,
+      0.59,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "alley-761",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.09,
+      0.14,
+      0.18,
+      0.11
+     ],
+     "B": [
+      0.22,
+      0.28,
+      0.31,
+      0.7
+     ],
+     "M": [
+      0.31,
+      0.42,
+      0.49,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "farm-798",
+     "match": "enc_02",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      -0.08,
+      -0.13,
+      -0.16,
+      -0.1
+     ],
+     "B": [
+      0.25,
+      0.26,
+      0.36,
+      0.58
+     ],
+     "M": [
+      0.17,
+      0.13,
+      0.2,
+      0.48
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "beach-835",
+     "match": "enc_09",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.09,
+      0.14,
+      0.18,
+      0.11
+     ],
+     "B": [
+      0.23,
+      0.29,
+      0.37,
+      0.63
+     ],
+     "M": [
+      0.32,
+      0.43,
+      0.55,
+      0.74
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "forest-872",
+     "match": "enc_16",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      -0.02,
+      -0.04,
+      -0.05,
+      -0.03
+     ],
+     "B": [
+      0.25,
+      0.32,
+      0.38,
+      0.67
+     ],
+     "M": [
+      0.23,
+      0.28,
+      0.33,
+      0.64
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "kitchen-009",
+     "match": "enc_03",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.07,
+      0.1,
+      0.13,
+      0.08
+     ],
+     "B": [
+      0.3,
+      0.27,
+      0.29,
+      0.57
+     ],
+     "M": [
+      0.37,
+      0.37,
+      0.42,
+      0.65
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "street-046",
+     "match": "enc_10",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.2,
+      0.25,
+      0.16
+     ],
+     "B": [
+      0.21,
+      0.27,
+      0.36,
+      0.63
+     ],
+     "M": [
+      0.34,
+      0.47,
+      0.61,
+      0.79
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "garden-083",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.1,
+      0.13,
+      0.08
+     ],
+     "B": [
+      0.28,
+      0.25,
+      0.31,
+      0.62
+     ],
+     "M": [
+      0.34,
+      0.35,
+      0.44,
+      0.7
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "office-120",
+     "match": "enc_04",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.09,
+      0.14,
+      0.18,
+      0.11
+     ],
+     "B": [
+      0.23,
+      0.35,
+      0.32,
+      0.61
+     ],
+     "M": [
+      0.32,
+      0.49,
+      0.5,
+      0.72
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "dog-157",
+     "match": "enc_11",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.1,
+      0.16,
+      0.21,
+      0.13
+     ],
+     "B": [
+      0.27,
+      0.28,
+      0.35,
+      0.7
+     ],
+     "M": [
+      0.37,
+      0.44,
+      0.56,
+      0.83
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "bridge-194",
+     "match": "enc_18",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.05,
+      0.07,
+      0.09,
+      0.06
+     ],
+     "B": [
+      0.25,
+      0.25,
+      0.3,
+      0.63
+     ],
+     "M": [
+      0.3,
+      0.32,
+      0.39,
+      0.69
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "market-231",
+     "match": "enc_05",
+     "response": "Remembered",
+     "status": "no match",
+     "reason": "matched Encoding trial not admitted"
+    },
+    {
+     "trial": "ret_14",
+     "item": "tower-268",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      -0.02,
+      -0.03,
+      -0.04,
+      -0.03
+     ],
+     "B": [
+      0.2,
+      0.26,
+      0.37,
+      0.62
+     ],
+     "M": [
+      0.18,
+      0.23,
+      0.33,
+      0.59
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "harbor-305",
+     "match": "enc_19",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.17,
+      0.22,
+      0.14
+     ],
+     "B": [
+      0.2,
+      0.33,
+      0.35,
+      0.71
+     ],
+     "M": [
+      0.31,
+      0.5,
+      0.57,
+      0.85
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "library-342",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.04,
+      0.07,
+      0.08,
+      0.05
+     ],
+     "B": [
+      0.2,
+      0.23,
+      0.37,
+      0.69
+     ],
+     "M": [
+      0.24,
+      0.3,
+      0.45,
+      0.74
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "desert-379",
+     "match": "enc_13",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      -0.08,
+      -0.12,
+      -0.15,
+      -0.09
+     ],
+     "B": [
+      0.29,
+      0.26,
+      0.38,
+      0.66
+     ],
+     "M": [
+      0.21,
+      0.14,
+      0.23,
+      0.57
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "church-416",
+     "match": "enc_20",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      -0.03,
+      -0.04,
+      -0.06,
+      -0.03
+     ],
+     "B": [
+      0.17,
+      0.29,
+      0.33,
+      0.66
+     ],
+     "M": [
+      0.14,
+      0.25,
+      0.27,
+      0.63
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "station-453",
+     "match": "enc_07",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.18,
+      0.29,
+      0.37,
+      0.23
+     ],
+     "B": [
+      0.24,
+      0.27,
+      0.31,
+      0.61
+     ],
+     "M": [
+      0.42,
+      0.56,
+      0.68,
+      0.84
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "field-490",
+     "match": "enc_14",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      -0.07,
+      -0.1,
+      -0.13,
+      -0.08
+     ],
+     "B": [
+      0.24,
+      0.31,
+      0.42,
+      0.62
+     ],
+     "M": [
+      0.17,
+      0.21,
+      0.29,
+      0.54
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P16",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "dog-157",
+     "match": "enc_01",
+     "response": "Forgotten",
+     "status": "query not admitted",
+     "reason": "duplicate-ordinals"
+    },
+    {
+     "trial": "ret_02",
+     "item": "bridge-194",
+     "match": "enc_08",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.23,
+      0.29,
+      0.18
+     ],
+     "B": [
+      0.23,
+      0.32,
+      0.31,
+      0.65
+     ],
+     "M": [
+      0.37,
+      0.55,
+      0.6,
+      0.83
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "market-231",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.26,
+      0.41,
+      0.52,
+      0.32
+     ],
+     "B": [
+      0.19,
+      0.22,
+      0.34,
+      0.59
+     ],
+     "M": [
+      0.45,
+      0.63,
+      0.86,
+      0.91
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "tower-268",
+     "match": "enc_02",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.18,
+      0.23,
+      0.14
+     ],
+     "B": [
+      0.17,
+      0.28,
+      0.38,
+      0.61
+     ],
+     "M": [
+      0.28,
+      0.46,
+      0.61,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "harbor-305",
+     "match": "enc_09",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.33,
+      0.43,
+      0.26
+     ],
+     "B": [
+      0.22,
+      0.24,
+      0.34,
+      0.63
+     ],
+     "M": [
+      0.43,
+      0.57,
+      0.77,
+      0.89
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "library-342",
+     "match": "enc_16",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.21,
+      0.26,
+      0.16
+     ],
+     "B": [
+      0.21,
+      0.27,
+      0.36,
+      0.65
+     ],
+     "M": [
+      0.34,
+      0.48,
+      0.62,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "desert-379",
+     "match": "enc_03",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.22,
+      0.28,
+      0.17
+     ],
+     "B": [
+      0.24,
+      0.3,
+      0.33,
+      0.62
+     ],
+     "M": [
+      0.38,
+      0.52,
+      0.61,
+      0.79
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "church-416",
+     "match": "enc_10",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.29,
+      0.37,
+      0.23
+     ],
+     "B": [
+      0.22,
+      0.32,
+      0.32,
+      0.62
+     ],
+     "M": [
+      0.41,
+      0.61,
+      0.69,
+      0.85
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "station-453",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.32,
+      0.41,
+      0.25
+     ],
+     "B": [
+      0.22,
+      0.32,
+      0.39,
+      0.69
+     ],
+     "M": [
+      0.42,
+      0.64,
+      0.8,
+      0.94
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "field-490",
+     "match": "enc_04",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.26,
+      0.4,
+      0.51,
+      0.32
+     ],
+     "B": [
+      0.23,
+      0.27,
+      0.41,
+      0.68
+     ],
+     "M": [
+      0.49,
+      0.67,
+      0.92,
+      1.0
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "cafe-527",
+     "match": "enc_11",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.23,
+      0.35,
+      0.45,
+      0.28
+     ],
+     "B": [
+      0.26,
+      0.31,
+      0.38,
+      0.61
+     ],
+     "M": [
+      0.49,
+      0.66,
+      0.83,
+      0.89
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "museum-564",
+     "match": "enc_18",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.31,
+      0.39,
+      0.24
+     ],
+     "B": [
+      0.2,
+      0.33,
+      0.36,
+      0.58
+     ],
+     "M": [
+      0.4,
+      0.64,
+      0.75,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "canyon-601",
+     "match": "enc_05",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.33,
+      0.42,
+      0.26
+     ],
+     "B": [
+      0.21,
+      0.31,
+      0.36,
+      0.64
+     ],
+     "M": [
+      0.42,
+      0.64,
+      0.78,
+      0.9
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "bakery-638",
+     "match": "enc_12",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.2,
+      0.25,
+      0.16
+     ],
+     "B": [
+      0.2,
+      0.24,
+      0.32,
+      0.58
+     ],
+     "M": [
+      0.33,
+      0.44,
+      0.57,
+      0.74
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "stadium-675",
+     "match": "enc_19",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.26,
+      0.4,
+      0.51,
+      0.32
+     ],
+     "B": [
+      0.22,
+      0.28,
+      0.29,
+      0.66
+     ],
+     "M": [
+      0.48,
+      0.68,
+      0.8,
+      0.98
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "lake-712",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.3,
+      0.47,
+      0.6,
+      0.37
+     ],
+     "B": [
+      0.23,
+      0.28,
+      0.38,
+      0.61
+     ],
+     "M": [
+      0.53,
+      0.75,
+      0.98,
+      0.98
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "alley-749",
+     "match": "enc_13",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.22,
+      0.28,
+      0.17
+     ],
+     "B": [
+      0.2,
+      0.32,
+      0.35,
+      0.6
+     ],
+     "M": [
+      0.34,
+      0.54,
+      0.63,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "farm-786",
+     "match": "enc_20",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.26,
+      0.34,
+      0.21
+     ],
+     "B": [
+      0.25,
+      0.3,
+      0.36,
+      0.66
+     ],
+     "M": [
+      0.42,
+      0.56,
+      0.7,
+      0.87
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "beach-823",
+     "match": "enc_07",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.3,
+      0.39,
+      0.24
+     ],
+     "B": [
+      0.2,
+      0.32,
+      0.35,
+      0.58
+     ],
+     "M": [
+      0.39,
+      0.62,
+      0.74,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "forest-860",
+     "match": "enc_14",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.29,
+      0.37,
+      0.23
+     ],
+     "B": [
+      0.25,
+      0.3,
+      0.35,
+      0.63
+     ],
+     "M": [
+      0.44,
+      0.59,
+      0.72,
+      0.86
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P17",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "street-112",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.22,
+      0.29,
+      0.18
+     ],
+     "B": [
+      0.28,
+      0.26,
+      0.37,
+      0.61
+     ],
+     "M": [
+      0.42,
+      0.48,
+      0.66,
+      0.79
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "dog-077",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.24,
+      0.31,
+      0.19
+     ],
+     "B": [
+      0.2,
+      0.3,
+      0.37,
+      0.64
+     ],
+     "M": [
+      0.35,
+      0.54,
+      0.68,
+      0.83
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "office-203",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.33,
+      0.42,
+      0.26
+     ],
+     "B": [
+      0.2,
+      0.27,
+      0.37,
+      0.6
+     ],
+     "M": [
+      0.41,
+      0.6,
+      0.79,
+      0.86
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "kitchen-017",
+     "match": "enc_02",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.3,
+      0.38,
+      0.23
+     ],
+     "B": [
+      0.21,
+      0.26,
+      0.3,
+      0.61
+     ],
+     "M": [
+      0.4,
+      0.56,
+      0.68,
+      0.84
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "forest-008",
+     "match": "enc_09",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.1,
+      0.15,
+      0.2,
+      0.12
+     ],
+     "B": [
+      0.19,
+      0.31,
+      0.33,
+      0.66
+     ],
+     "M": [
+      0.29,
+      0.46,
+      0.53,
+      0.78
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "garden-054",
+     "match": "enc_16",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.25,
+      0.39,
+      0.5,
+      0.31
+     ],
+     "B": [
+      0.19,
+      0.3,
+      0.36,
+      0.65
+     ],
+     "M": [
+      0.44,
+      0.69,
+      0.86,
+      0.96
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "beach-042",
+     "match": "enc_03",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.29,
+      0.38,
+      0.23
+     ],
+     "B": [
+      0.22,
+      0.29,
+      0.35,
+      0.63
+     ],
+     "M": [
+      0.41,
+      0.58,
+      0.73,
+      0.86
+     ],
+     "control_scores_2deg": [
+      {
+       "item": "street-112",
+       "trial": "enc_01",
+       "cos": 0.61
+      },
+      {
+       "item": "dog-077",
+       "trial": "enc_08",
+       "cos": 0.52
+      },
+      {
+       "item": "office-203",
+       "trial": "enc_15",
+       "cos": 0.47
+      },
+      {
+       "item": "kitchen-017",
+       "trial": "enc_02",
+       "cos": 0.44
+      },
+      {
+       "item": "forest-008",
+       "trial": "enc_09",
+       "cos": 0.41
+      },
+      {
+       "item": "garden-054",
+       "trial": "enc_16",
+       "cos": 0.39
+      },
+      {
+       "item": "bridge-019",
+       "trial": "enc_10",
+       "cos": 0.37
+      },
+      {
+       "item": "market-066",
+       "trial": "enc_17",
+       "cos": 0.36
+      },
+      {
+       "item": "tower-150",
+       "trial": "enc_04",
+       "cos": 0.35
+      },
+      {
+       "item": "harbor-231",
+       "trial": "enc_11",
+       "cos": 0.33
+      },
+      {
+       "item": "library-388",
+       "trial": "enc_18",
+       "cos": 0.31
+      },
+      {
+       "item": "desert-305",
+       "trial": "enc_05",
+       "cos": 0.3
+      },
+      {
+       "item": "church-417",
+       "trial": "enc_12",
+       "cos": 0.29
+      },
+      {
+       "item": "station-529",
+       "trial": "enc_19",
+       "cos": 0.27
+      },
+      {
+       "item": "field-613",
+       "trial": "enc_06",
+       "cos": 0.27
+      },
+      {
+       "item": "cafe-702",
+       "trial": "enc_13",
+       "cos": 0.26
+      },
+      {
+       "item": "museum-814",
+       "trial": "enc_20",
+       "cos": 0.26
+      },
+      {
+       "item": "canyon-126",
+       "trial": "enc_07",
+       "cos": 0.24
+      },
+      {
+       "item": "bakery-240",
+       "trial": "enc_14",
+       "cos": 0.2
+      }
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "bridge-019",
+     "match": "enc_10",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.18,
+      0.27,
+      0.35,
+      0.22
+     ],
+     "B": [
+      0.2,
+      0.31,
+      0.36,
+      0.61
+     ],
+     "M": [
+      0.38,
+      0.58,
+      0.71,
+      0.83
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "market-066",
+     "match": "enc_17",
+     "response": "Remembered",
+     "status": "query not admitted",
+     "reason": "absent"
+    },
+    {
+     "trial": "ret_10",
+     "item": "tower-150",
+     "match": "enc_04",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.23,
+      0.37,
+      0.47,
+      0.29
+     ],
+     "B": [
+      0.17,
+      0.29,
+      0.37,
+      0.69
+     ],
+     "M": [
+      0.4,
+      0.66,
+      0.84,
+      0.98
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "harbor-231",
+     "match": "enc_11",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.29,
+      0.38,
+      0.23
+     ],
+     "B": [
+      0.23,
+      0.28,
+      0.34,
+      0.67
+     ],
+     "M": [
+      0.42,
+      0.57,
+      0.72,
+      0.9
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "library-388",
+     "match": "enc_18",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.31,
+      0.39,
+      0.24
+     ],
+     "B": [
+      0.2,
+      0.26,
+      0.33,
+      0.53
+     ],
+     "M": [
+      0.4,
+      0.57,
+      0.72,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "desert-305",
+     "match": "enc_05",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.21,
+      0.27,
+      0.17
+     ],
+     "B": [
+      0.23,
+      0.25,
+      0.38,
+      0.61
+     ],
+     "M": [
+      0.36,
+      0.46,
+      0.65,
+      0.78
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "church-417",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.3,
+      0.39,
+      0.24
+     ],
+     "B": [
+      0.17,
+      0.33,
+      0.37,
+      0.65
+     ],
+     "M": [
+      0.36,
+      0.63,
+      0.76,
+      0.89
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "station-529",
+     "match": "enc_19",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.19,
+      0.25,
+      0.15
+     ],
+     "B": [
+      0.2,
+      0.31,
+      0.33,
+      0.64
+     ],
+     "M": [
+      0.32,
+      0.5,
+      0.58,
+      0.79
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "field-613",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.27,
+      0.41,
+      0.53,
+      0.33
+     ],
+     "B": [
+      0.21,
+      0.3,
+      0.35,
+      0.63
+     ],
+     "M": [
+      0.48,
+      0.71,
+      0.88,
+      0.96
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "cafe-702",
+     "match": "enc_13",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.22,
+      0.34,
+      0.44,
+      0.27
+     ],
+     "B": [
+      0.25,
+      0.33,
+      0.31,
+      0.62
+     ],
+     "M": [
+      0.47,
+      0.67,
+      0.75,
+      0.89
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "museum-814",
+     "match": "enc_20",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.33,
+      0.43,
+      0.26
+     ],
+     "B": [
+      0.23,
+      0.3,
+      0.34,
+      0.66
+     ],
+     "M": [
+      0.44,
+      0.63,
+      0.77,
+      0.92
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "canyon-126",
+     "match": "enc_07",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.32,
+      0.42,
+      0.26
+     ],
+     "B": [
+      0.25,
+      0.29,
+      0.4,
+      0.64
+     ],
+     "M": [
+      0.46,
+      0.61,
+      0.82,
+      0.9
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "bakery-240",
+     "match": "enc_14",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.27,
+      0.34,
+      0.21
+     ],
+     "B": [
+      0.22,
+      0.25,
+      0.32,
+      0.61
+     ],
+     "M": [
+      0.39,
+      0.52,
+      0.66,
+      0.82
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P18",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "kitchen-897",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.22,
+      0.34,
+      0.44,
+      0.27
+     ],
+     "B": [
+      0.21,
+      0.26,
+      0.39,
+      0.65
+     ],
+     "M": [
+      0.43,
+      0.6,
+      0.83,
+      0.92
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "street-034",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.32,
+      0.41,
+      0.25
+     ],
+     "B": [
+      0.19,
+      0.32,
+      0.36,
+      0.57
+     ],
+     "M": [
+      0.39,
+      0.64,
+      0.77,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "garden-071",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.25,
+      0.39,
+      0.5,
+      0.31
+     ],
+     "B": [
+      0.23,
+      0.33,
+      0.31,
+      0.61
+     ],
+     "M": [
+      0.48,
+      0.72,
+      0.81,
+      0.92
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "office-108",
+     "match": "enc_02",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.31,
+      0.39,
+      0.24
+     ],
+     "B": [
+      0.19,
+      0.29,
+      0.35,
+      0.62
+     ],
+     "M": [
+      0.39,
+      0.6,
+      0.74,
+      0.86
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "dog-145",
+     "match": "enc_09",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.22,
+      0.35,
+      0.44,
+      0.28
+     ],
+     "B": [
+      0.22,
+      0.33,
+      0.32,
+      0.62
+     ],
+     "M": [
+      0.44,
+      0.68,
+      0.76,
+      0.9
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "bridge-182",
+     "match": "enc_16",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.2,
+      0.25,
+      0.16
+     ],
+     "B": [
+      0.22,
+      0.32,
+      0.37,
+      0.65
+     ],
+     "M": [
+      0.35,
+      0.52,
+      0.62,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "market-219",
+     "match": "enc_03",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.29,
+      0.45,
+      0.58,
+      0.36
+     ],
+     "B": [
+      0.2,
+      0.3,
+      0.33,
+      0.63
+     ],
+     "M": [
+      0.49,
+      0.75,
+      0.91,
+      0.99
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "tower-256",
+     "match": "enc_10",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.21,
+      0.27,
+      0.17
+     ],
+     "B": [
+      0.26,
+      0.27,
+      0.37,
+      0.59
+     ],
+     "M": [
+      0.39,
+      0.48,
+      0.64,
+      0.76
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "harbor-293",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.32,
+      0.41,
+      0.26
+     ],
+     "B": [
+      0.24,
+      0.28,
+      0.36,
+      0.66
+     ],
+     "M": [
+      0.45,
+      0.6,
+      0.77,
+      0.92
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "library-330",
+     "match": "enc_04",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.23,
+      0.36,
+      0.46,
+      0.28
+     ],
+     "B": [
+      0.24,
+      0.3,
+      0.33,
+      0.65
+     ],
+     "M": [
+      0.47,
+      0.66,
+      0.79,
+      0.93
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "desert-367",
+     "match": "enc_11",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.24,
+      0.31,
+      0.19
+     ],
+     "B": [
+      0.23,
+      0.31,
+      0.28,
+      0.66
+     ],
+     "M": [
+      0.39,
+      0.55,
+      0.59,
+      0.85
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "church-404",
+     "match": "enc_18",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.26,
+      0.34,
+      0.21
+     ],
+     "B": [
+      0.18,
+      0.3,
+      0.31,
+      0.62
+     ],
+     "M": [
+      0.35,
+      0.56,
+      0.65,
+      0.83
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "station-441",
+     "match": "enc_05",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.29,
+      0.46,
+      0.59,
+      0.36
+     ],
+     "B": [
+      0.23,
+      0.32,
+      0.36,
+      0.64
+     ],
+     "M": [
+      0.52,
+      0.78,
+      0.95,
+      1.0
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "field-478",
+     "match": "enc_12",
+     "response": "Remembered",
+     "status": "no match",
+     "reason": "matched Encoding trial not admitted"
+    },
+    {
+     "trial": "ret_15",
+     "item": "cafe-515",
+     "match": "enc_19",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.23,
+      0.3,
+      0.18
+     ],
+     "B": [
+      0.24,
+      0.3,
+      0.33,
+      0.68
+     ],
+     "M": [
+      0.39,
+      0.53,
+      0.63,
+      0.86
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "museum-552",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.25,
+      0.4,
+      0.51,
+      0.31
+     ],
+     "B": [
+      0.25,
+      0.32,
+      0.39,
+      0.59
+     ],
+     "M": [
+      0.5,
+      0.72,
+      0.9,
+      0.9
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "canyon-589",
+     "match": "enc_13",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.18,
+      0.28,
+      0.37,
+      0.23
+     ],
+     "B": [
+      0.19,
+      0.32,
+      0.35,
+      0.64
+     ],
+     "M": [
+      0.37,
+      0.6,
+      0.72,
+      0.87
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "bakery-626",
+     "match": "enc_20",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.3,
+      0.39,
+      0.24
+     ],
+     "B": [
+      0.22,
+      0.35,
+      0.35,
+      0.63
+     ],
+     "M": [
+      0.42,
+      0.65,
+      0.74,
+      0.87
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "stadium-663",
+     "match": "enc_07",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.26,
+      0.4,
+      0.51,
+      0.32
+     ],
+     "B": [
+      0.25,
+      0.23,
+      0.36,
+      0.62
+     ],
+     "M": [
+      0.51,
+      0.63,
+      0.87,
+      0.94
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "lake-700",
+     "match": "enc_14",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.29,
+      0.37,
+      0.23
+     ],
+     "B": [
+      0.24,
+      0.28,
+      0.34,
+      0.62
+     ],
+     "M": [
+      0.43,
+      0.57,
+      0.71,
+      0.85
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P19",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "desert-367",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.18,
+      0.28,
+      0.36,
+      0.22
+     ],
+     "B": [
+      0.21,
+      0.34,
+      0.35,
+      0.58
+     ],
+     "M": [
+      0.39,
+      0.62,
+      0.71,
+      0.8
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "church-404",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.25,
+      0.32,
+      0.2
+     ],
+     "B": [
+      0.24,
+      0.27,
+      0.36,
+      0.58
+     ],
+     "M": [
+      0.4,
+      0.52,
+      0.68,
+      0.78
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "station-441",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.07,
+      0.12,
+      0.15,
+      0.09
+     ],
+     "B": [
+      0.2,
+      0.29,
+      0.4,
+      0.6
+     ],
+     "M": [
+      0.27,
+      0.41,
+      0.55,
+      0.69
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "field-478",
+     "match": "enc_02",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.18,
+      0.22,
+      0.14
+     ],
+     "B": [
+      0.24,
+      0.31,
+      0.41,
+      0.66
+     ],
+     "M": [
+      0.35,
+      0.49,
+      0.63,
+      0.8
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "cafe-515",
+     "match": "enc_09",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.02,
+      0.03,
+      0.04,
+      0.02
+     ],
+     "B": [
+      0.25,
+      0.34,
+      0.3,
+      0.63
+     ],
+     "M": [
+      0.27,
+      0.37,
+      0.34,
+      0.65
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "museum-552",
+     "match": "enc_16",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.1,
+      0.16,
+      0.2,
+      0.13
+     ],
+     "B": [
+      0.19,
+      0.27,
+      0.34,
+      0.63
+     ],
+     "M": [
+      0.29,
+      0.43,
+      0.54,
+      0.76
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "canyon-589",
+     "match": "enc_03",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.08,
+      0.13,
+      0.17,
+      0.1
+     ],
+     "B": [
+      0.28,
+      0.24,
+      0.35,
+      0.61
+     ],
+     "M": [
+      0.36,
+      0.37,
+      0.52,
+      0.71
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "bakery-626",
+     "match": "enc_10",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.08,
+      0.12,
+      0.16,
+      0.1
+     ],
+     "B": [
+      0.19,
+      0.29,
+      0.34,
+      0.61
+     ],
+     "M": [
+      0.27,
+      0.41,
+      0.5,
+      0.71
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "stadium-663",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.33,
+      0.43,
+      0.27
+     ],
+     "B": [
+      0.22,
+      0.28,
+      0.34,
+      0.61
+     ],
+     "M": [
+      0.43,
+      0.61,
+      0.77,
+      0.88
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "lake-700",
+     "match": "enc_04",
+     "response": "Remembered",
+     "status": "query not admitted",
+     "reason": "overlap"
+    },
+    {
+     "trial": "ret_11",
+     "item": "alley-737",
+     "match": "enc_11",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.19,
+      0.24,
+      0.15
+     ],
+     "B": [
+      0.23,
+      0.27,
+      0.31,
+      0.62
+     ],
+     "M": [
+      0.35,
+      0.46,
+      0.55,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "farm-774",
+     "match": "enc_18",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.03,
+      0.04,
+      0.05,
+      0.03
+     ],
+     "B": [
+      0.21,
+      0.31,
+      0.4,
+      0.59
+     ],
+     "M": [
+      0.24,
+      0.35,
+      0.45,
+      0.62
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "beach-811",
+     "match": "enc_05",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.23,
+      0.29,
+      0.18
+     ],
+     "B": [
+      0.24,
+      0.27,
+      0.37,
+      0.61
+     ],
+     "M": [
+      0.39,
+      0.5,
+      0.66,
+      0.79
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "forest-848",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.33,
+      0.42,
+      0.26
+     ],
+     "B": [
+      0.18,
+      0.31,
+      0.37,
+      0.64
+     ],
+     "M": [
+      0.39,
+      0.64,
+      0.79,
+      0.9
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "kitchen-885",
+     "match": "enc_19",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.18,
+      0.28,
+      0.37,
+      0.23
+     ],
+     "B": [
+      0.16,
+      0.33,
+      0.32,
+      0.63
+     ],
+     "M": [
+      0.34,
+      0.61,
+      0.69,
+      0.86
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "street-022",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.17,
+      0.22,
+      0.14
+     ],
+     "B": [
+      0.25,
+      0.28,
+      0.36,
+      0.66
+     ],
+     "M": [
+      0.36,
+      0.45,
+      0.58,
+      0.8
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "garden-059",
+     "match": "enc_13",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.26,
+      0.33,
+      0.21
+     ],
+     "B": [
+      0.19,
+      0.32,
+      0.31,
+      0.6
+     ],
+     "M": [
+      0.36,
+      0.58,
+      0.64,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "office-096",
+     "match": "enc_20",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.01,
+      -0.02,
+      -0.03,
+      -0.02
+     ],
+     "B": [
+      0.24,
+      0.32,
+      0.38,
+      0.66
+     ],
+     "M": [
+      0.23,
+      0.3,
+      0.35,
+      0.64
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "dog-133",
+     "match": "enc_07",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.22,
+      0.34,
+      0.44,
+      0.27
+     ],
+     "B": [
+      0.22,
+      0.29,
+      0.3,
+      0.63
+     ],
+     "M": [
+      0.44,
+      0.63,
+      0.74,
+      0.9
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "bridge-170",
+     "match": "enc_14",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.08,
+      0.13,
+      0.17,
+      0.11
+     ],
+     "B": [
+      0.19,
+      0.3,
+      0.4,
+      0.62
+     ],
+     "M": [
+      0.27,
+      0.43,
+      0.57,
+      0.73
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P20",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "alley-737",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.23,
+      0.3,
+      0.18
+     ],
+     "B": [
+      0.26,
+      0.3,
+      0.35,
+      0.61
+     ],
+     "M": [
+      0.41,
+      0.53,
+      0.65,
+      0.79
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "farm-774",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.19,
+      0.25,
+      0.15
+     ],
+     "B": [
+      0.24,
+      0.27,
+      0.33,
+      0.65
+     ],
+     "M": [
+      0.36,
+      0.46,
+      0.58,
+      0.8
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "beach-811",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.19,
+      0.25,
+      0.15
+     ],
+     "B": [
+      0.2,
+      0.3,
+      0.39,
+      0.66
+     ],
+     "M": [
+      0.32,
+      0.49,
+      0.64,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "forest-848",
+     "match": "enc_02",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.03,
+      -0.04,
+      -0.06,
+      -0.03
+     ],
+     "B": [
+      0.2,
+      0.3,
+      0.32,
+      0.62
+     ],
+     "M": [
+      0.17,
+      0.26,
+      0.26,
+      0.59
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "kitchen-885",
+     "match": "enc_09",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.19,
+      0.24,
+      0.15
+     ],
+     "B": [
+      0.23,
+      0.29,
+      0.41,
+      0.66
+     ],
+     "M": [
+      0.35,
+      0.48,
+      0.65,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "street-022",
+     "match": "enc_16",
+     "response": "Forgotten",
+     "status": "query not admitted",
+     "reason": "no-fixations"
+    },
+    {
+     "trial": "ret_07",
+     "item": "garden-059",
+     "match": "enc_03",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.19,
+      0.24,
+      0.15
+     ],
+     "B": [
+      0.25,
+      0.24,
+      0.35,
+      0.63
+     ],
+     "M": [
+      0.37,
+      0.43,
+      0.59,
+      0.78
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "office-096",
+     "match": "enc_10",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.18,
+      0.23,
+      0.14
+     ],
+     "B": [
+      0.24,
+      0.31,
+      0.36,
+      0.6
+     ],
+     "M": [
+      0.36,
+      0.49,
+      0.59,
+      0.74
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "dog-133",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.2,
+      0.26,
+      0.16
+     ],
+     "B": [
+      0.21,
+      0.25,
+      0.39,
+      0.61
+     ],
+     "M": [
+      0.34,
+      0.45,
+      0.65,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "bridge-170",
+     "match": "enc_04",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.23,
+      0.3,
+      0.19
+     ],
+     "B": [
+      0.22,
+      0.28,
+      0.36,
+      0.62
+     ],
+     "M": [
+      0.37,
+      0.51,
+      0.66,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "market-207",
+     "match": "enc_11",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.26,
+      0.34,
+      0.21
+     ],
+     "B": [
+      0.24,
+      0.31,
+      0.41,
+      0.67
+     ],
+     "M": [
+      0.41,
+      0.57,
+      0.75,
+      0.88
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "tower-244",
+     "match": "enc_18",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.08,
+      0.12,
+      0.15,
+      0.1
+     ],
+     "B": [
+      0.24,
+      0.29,
+      0.34,
+      0.62
+     ],
+     "M": [
+      0.32,
+      0.41,
+      0.49,
+      0.72
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "harbor-281",
+     "match": "enc_05",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.19,
+      0.25,
+      0.15
+     ],
+     "B": [
+      0.18,
+      0.25,
+      0.38,
+      0.62
+     ],
+     "M": [
+      0.3,
+      0.44,
+      0.63,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "library-318",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.24,
+      0.37,
+      0.48,
+      0.3
+     ],
+     "B": [
+      0.25,
+      0.34,
+      0.44,
+      0.64
+     ],
+     "M": [
+      0.49,
+      0.71,
+      0.92,
+      0.94
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "desert-355",
+     "match": "enc_19",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.09,
+      0.14,
+      0.18,
+      0.11
+     ],
+     "B": [
+      0.27,
+      0.27,
+      0.34,
+      0.68
+     ],
+     "M": [
+      0.36,
+      0.41,
+      0.52,
+      0.79
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "church-392",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.17,
+      0.22,
+      0.14
+     ],
+     "B": [
+      0.25,
+      0.29,
+      0.36,
+      0.6
+     ],
+     "M": [
+      0.36,
+      0.46,
+      0.58,
+      0.74
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "station-429",
+     "match": "enc_13",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.07,
+      0.11,
+      0.15,
+      0.09
+     ],
+     "B": [
+      0.23,
+      0.23,
+      0.41,
+      0.67
+     ],
+     "M": [
+      0.3,
+      0.34,
+      0.56,
+      0.76
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "field-466",
+     "match": "enc_20",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.17,
+      0.22,
+      0.13
+     ],
+     "B": [
+      0.25,
+      0.28,
+      0.36,
+      0.57
+     ],
+     "M": [
+      0.36,
+      0.45,
+      0.58,
+      0.7
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "cafe-503",
+     "match": "enc_07",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "B": [
+      0.22,
+      0.28,
+      0.35,
+      0.63
+     ],
+     "M": [
+      0.22,
+      0.28,
+      0.35,
+      0.63
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "museum-540",
+     "match": "enc_14",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.21,
+      0.27,
+      0.17
+     ],
+     "B": [
+      0.21,
+      0.3,
+      0.33,
+      0.62
+     ],
+     "M": [
+      0.34,
+      0.51,
+      0.6,
+      0.79
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P21",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "market-207",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.22,
+      0.28,
+      0.17
+     ],
+     "B": [
+      0.2,
+      0.3,
+      0.36,
+      0.66
+     ],
+     "M": [
+      0.34,
+      0.52,
+      0.64,
+      0.83
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "tower-244",
+     "match": "enc_08",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.17,
+      0.22,
+      0.14
+     ],
+     "B": [
+      0.22,
+      0.27,
+      0.37,
+      0.63
+     ],
+     "M": [
+      0.33,
+      0.44,
+      0.59,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "harbor-281",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.26,
+      0.33,
+      0.2
+     ],
+     "B": [
+      0.22,
+      0.25,
+      0.33,
+      0.66
+     ],
+     "M": [
+      0.38,
+      0.51,
+      0.66,
+      0.86
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "library-318",
+     "match": "enc_02",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.22,
+      0.28,
+      0.17
+     ],
+     "B": [
+      0.21,
+      0.33,
+      0.35,
+      0.65
+     ],
+     "M": [
+      0.35,
+      0.55,
+      0.63,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "desert-355",
+     "match": "enc_09",
+     "response": "Forgotten",
+     "status": "no match",
+     "reason": "matched Encoding trial not admitted"
+    },
+    {
+     "trial": "ret_06",
+     "item": "church-392",
+     "match": "enc_16",
+     "response": "Forgotten",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.25,
+      0.32,
+      0.2
+     ],
+     "B": [
+      0.19,
+      0.26,
+      0.34,
+      0.64
+     ],
+     "M": [
+      0.35,
+      0.51,
+      0.66,
+      0.84
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "station-429",
+     "match": "enc_03",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.33,
+      0.42,
+      0.26
+     ],
+     "B": [
+      0.2,
+      0.3,
+      0.32,
+      0.6
+     ],
+     "M": [
+      0.41,
+      0.63,
+      0.74,
+      0.86
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "field-466",
+     "match": "enc_10",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.32,
+      0.41,
+      0.26
+     ],
+     "B": [
+      0.2,
+      0.29,
+      0.34,
+      0.64
+     ],
+     "M": [
+      0.41,
+      0.61,
+      0.75,
+      0.9
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "cafe-503",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.23,
+      0.29,
+      0.18
+     ],
+     "B": [
+      0.18,
+      0.27,
+      0.35,
+      0.63
+     ],
+     "M": [
+      0.33,
+      0.5,
+      0.64,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "museum-540",
+     "match": "enc_04",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.04,
+      0.06,
+      0.07,
+      0.04
+     ],
+     "B": [
+      0.32,
+      0.29,
+      0.44,
+      0.62
+     ],
+     "M": [
+      0.36,
+      0.35,
+      0.51,
+      0.66
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "canyon-577",
+     "match": "enc_11",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.26,
+      0.34,
+      0.21
+     ],
+     "B": [
+      0.21,
+      0.37,
+      0.32,
+      0.61
+     ],
+     "M": [
+      0.38,
+      0.63,
+      0.66,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "bakery-614",
+     "match": "enc_18",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.24,
+      0.37,
+      0.47,
+      0.29
+     ],
+     "B": [
+      0.22,
+      0.32,
+      0.34,
+      0.63
+     ],
+     "M": [
+      0.46,
+      0.69,
+      0.81,
+      0.92
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "stadium-651",
+     "match": "enc_05",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.25,
+      0.32,
+      0.2
+     ],
+     "B": [
+      0.24,
+      0.29,
+      0.34,
+      0.59
+     ],
+     "M": [
+      0.4,
+      0.54,
+      0.66,
+      0.79
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "lake-688",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.21,
+      0.26,
+      0.16
+     ],
+     "B": [
+      0.15,
+      0.33,
+      0.32,
+      0.66
+     ],
+     "M": [
+      0.28,
+      0.54,
+      0.58,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "alley-725",
+     "match": "enc_19",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.26,
+      0.4,
+      0.52,
+      0.32
+     ],
+     "B": [
+      0.22,
+      0.27,
+      0.32,
+      0.68
+     ],
+     "M": [
+      0.48,
+      0.67,
+      0.84,
+      1.0
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "farm-762",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.08,
+      0.12,
+      0.16,
+      0.1
+     ],
+     "B": [
+      0.22,
+      0.31,
+      0.34,
+      0.64
+     ],
+     "M": [
+      0.3,
+      0.43,
+      0.5,
+      0.74
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "beach-799",
+     "match": "enc_13",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.23,
+      0.36,
+      0.46,
+      0.29
+     ],
+     "B": [
+      0.21,
+      0.34,
+      0.36,
+      0.6
+     ],
+     "M": [
+      0.44,
+      0.7,
+      0.82,
+      0.89
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "forest-836",
+     "match": "enc_20",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.27,
+      0.34,
+      0.21
+     ],
+     "B": [
+      0.24,
+      0.26,
+      0.37,
+      0.62
+     ],
+     "M": [
+      0.41,
+      0.53,
+      0.71,
+      0.83
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "kitchen-873",
+     "match": "enc_07",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.18,
+      0.24,
+      0.15
+     ],
+     "B": [
+      0.24,
+      0.27,
+      0.35,
+      0.6
+     ],
+     "M": [
+      0.36,
+      0.45,
+      0.59,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "street-010",
+     "match": "enc_14",
+     "response": "Remembered",
+     "controls": 18,
+     "status": "ok",
+     "D": [
+      0.12,
+      0.19,
+      0.25,
+      0.15
+     ],
+     "B": [
+      0.21,
+      0.27,
+      0.43,
+      0.62
+     ],
+     "M": [
+      0.33,
+      0.46,
+      0.68,
+      0.77
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P22",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "canyon-577",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.26,
+      0.33,
+      0.2
+     ],
+     "B": [
+      0.21,
+      0.34,
+      0.4,
+      0.65
+     ],
+     "M": [
+      0.37,
+      0.6,
+      0.73,
+      0.85
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "bakery-614",
+     "match": "enc_08",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.09,
+      0.11,
+      0.07
+     ],
+     "B": [
+      0.23,
+      0.25,
+      0.31,
+      0.61
+     ],
+     "M": [
+      0.29,
+      0.34,
+      0.42,
+      0.68
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "stadium-651",
+     "match": "enc_15",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.05,
+      0.08,
+      0.1,
+      0.06
+     ],
+     "B": [
+      0.24,
+      0.29,
+      0.33,
+      0.65
+     ],
+     "M": [
+      0.29,
+      0.37,
+      0.43,
+      0.71
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "lake-688",
+     "match": "enc_02",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.04,
+      0.06,
+      0.07,
+      0.04
+     ],
+     "B": [
+      0.19,
+      0.26,
+      0.37,
+      0.68
+     ],
+     "M": [
+      0.23,
+      0.32,
+      0.44,
+      0.72
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "alley-725",
+     "match": "enc_09",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.31,
+      0.4,
+      0.25
+     ],
+     "B": [
+      0.23,
+      0.33,
+      0.37,
+      0.59
+     ],
+     "M": [
+      0.43,
+      0.64,
+      0.77,
+      0.84
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "farm-762",
+     "match": "enc_16",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.2,
+      0.25,
+      0.16
+     ],
+     "B": [
+      0.19,
+      0.28,
+      0.39,
+      0.6
+     ],
+     "M": [
+      0.32,
+      0.48,
+      0.64,
+      0.76
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "beach-799",
+     "match": "enc_03",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.26,
+      0.34,
+      0.21
+     ],
+     "B": [
+      0.25,
+      0.28,
+      0.32,
+      0.62
+     ],
+     "M": [
+      0.42,
+      0.54,
+      0.66,
+      0.83
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "forest-836",
+     "match": "enc_10",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.04,
+      0.06,
+      0.08,
+      0.05
+     ],
+     "B": [
+      0.2,
+      0.3,
+      0.29,
+      0.62
+     ],
+     "M": [
+      0.24,
+      0.36,
+      0.37,
+      0.67
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "kitchen-873",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.08,
+      0.12,
+      0.15,
+      0.09
+     ],
+     "B": [
+      0.24,
+      0.29,
+      0.31,
+      0.56
+     ],
+     "M": [
+      0.32,
+      0.41,
+      0.46,
+      0.65
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "street-010",
+     "match": "enc_04",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.26,
+      0.33,
+      0.21
+     ],
+     "B": [
+      0.17,
+      0.3,
+      0.33,
+      0.65
+     ],
+     "M": [
+      0.34,
+      0.56,
+      0.66,
+      0.86
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "garden-047",
+     "match": "enc_11",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.29,
+      0.37,
+      0.23
+     ],
+     "B": [
+      0.25,
+      0.3,
+      0.36,
+      0.56
+     ],
+     "M": [
+      0.44,
+      0.59,
+      0.73,
+      0.79
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "office-084",
+     "match": "enc_18",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.01,
+      0.02,
+      0.03,
+      0.02
+     ],
+     "B": [
+      0.26,
+      0.28,
+      0.34,
+      0.63
+     ],
+     "M": [
+      0.27,
+      0.3,
+      0.37,
+      0.65
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "dog-121",
+     "match": "enc_05",
+     "response": "Forgotten",
+     "status": "query not admitted",
+     "reason": "rejected-records"
+    },
+    {
+     "trial": "ret_14",
+     "item": "bridge-158",
+     "match": "enc_12",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      -0.02,
+      -0.04,
+      -0.05,
+      -0.03
+     ],
+     "B": [
+      0.25,
+      0.29,
+      0.36,
+      0.64
+     ],
+     "M": [
+      0.23,
+      0.25,
+      0.31,
+      0.61
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "market-195",
+     "match": "enc_19",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.21,
+      0.27,
+      0.17
+     ],
+     "B": [
+      0.23,
+      0.32,
+      0.38,
+      0.64
+     ],
+     "M": [
+      0.36,
+      0.53,
+      0.65,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "tower-232",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.2,
+      0.26,
+      0.16
+     ],
+     "B": [
+      0.24,
+      0.3,
+      0.39,
+      0.61
+     ],
+     "M": [
+      0.37,
+      0.5,
+      0.65,
+      0.77
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "harbor-269",
+     "match": "enc_13",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.03,
+      0.04,
+      0.05,
+      0.03
+     ],
+     "B": [
+      0.21,
+      0.29,
+      0.36,
+      0.63
+     ],
+     "M": [
+      0.24,
+      0.33,
+      0.41,
+      0.66
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "library-306",
+     "match": "enc_20",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.04,
+      0.06,
+      0.08,
+      0.05
+     ],
+     "B": [
+      0.24,
+      0.34,
+      0.33,
+      0.66
+     ],
+     "M": [
+      0.28,
+      0.4,
+      0.41,
+      0.71
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "desert-343",
+     "match": "enc_07",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.2,
+      0.31,
+      0.4,
+      0.25
+     ],
+     "B": [
+      0.21,
+      0.27,
+      0.37,
+      0.64
+     ],
+     "M": [
+      0.41,
+      0.58,
+      0.77,
+      0.89
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "church-380",
+     "match": "enc_14",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.02,
+      0.04,
+      0.05,
+      0.03
+     ],
+     "B": [
+      0.23,
+      0.34,
+      0.4,
+      0.6
+     ],
+     "M": [
+      0.25,
+      0.38,
+      0.45,
+      0.63
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P23",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "garden-047",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.33,
+      0.42,
+      0.26
+     ],
+     "B": [
+      0.26,
+      0.3,
+      0.33,
+      0.63
+     ],
+     "M": [
+      0.47,
+      0.63,
+      0.75,
+      0.89
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "office-084",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.24,
+      0.38,
+      0.49,
+      0.3
+     ],
+     "B": [
+      0.27,
+      0.33,
+      0.35,
+      0.61
+     ],
+     "M": [
+      0.51,
+      0.71,
+      0.84,
+      0.91
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "dog-121",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.22,
+      0.28,
+      0.17
+     ],
+     "B": [
+      0.19,
+      0.31,
+      0.32,
+      0.67
+     ],
+     "M": [
+      0.33,
+      0.53,
+      0.6,
+      0.84
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "bridge-158",
+     "match": "enc_02",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.23,
+      0.3,
+      0.19
+     ],
+     "B": [
+      0.23,
+      0.25,
+      0.3,
+      0.64
+     ],
+     "M": [
+      0.38,
+      0.48,
+      0.6,
+      0.83
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "market-195",
+     "match": "enc_09",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.09,
+      0.12,
+      0.08
+     ],
+     "B": [
+      0.24,
+      0.32,
+      0.32,
+      0.65
+     ],
+     "M": [
+      0.3,
+      0.41,
+      0.44,
+      0.73
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "tower-232",
+     "match": "enc_16",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.23,
+      0.29,
+      0.18
+     ],
+     "B": [
+      0.19,
+      0.3,
+      0.35,
+      0.63
+     ],
+     "M": [
+      0.33,
+      0.53,
+      0.64,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "harbor-269",
+     "match": "enc_03",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.04,
+      0.06,
+      0.07,
+      0.04
+     ],
+     "B": [
+      0.18,
+      0.29,
+      0.35,
+      0.63
+     ],
+     "M": [
+      0.22,
+      0.35,
+      0.42,
+      0.67
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "library-306",
+     "match": "enc_10",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.05,
+      0.08,
+      0.1,
+      0.06
+     ],
+     "B": [
+      0.17,
+      0.33,
+      0.32,
+      0.63
+     ],
+     "M": [
+      0.22,
+      0.41,
+      0.42,
+      0.69
+     ]
+    },
+    {
+     "trial": "ret_09",
+     "item": "desert-343",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.29,
+      0.37,
+      0.23
+     ],
+     "B": [
+      0.18,
+      0.3,
+      0.37,
+      0.67
+     ],
+     "M": [
+      0.37,
+      0.59,
+      0.74,
+      0.9
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "church-380",
+     "match": "enc_04",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.17,
+      0.21,
+      0.13
+     ],
+     "B": [
+      0.22,
+      0.29,
+      0.31,
+      0.62
+     ],
+     "M": [
+      0.33,
+      0.46,
+      0.52,
+      0.75
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "station-417",
+     "match": "enc_11",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.22,
+      0.28,
+      0.17
+     ],
+     "B": [
+      0.17,
+      0.32,
+      0.4,
+      0.61
+     ],
+     "M": [
+      0.31,
+      0.54,
+      0.68,
+      0.78
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "field-454",
+     "match": "enc_18",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.13,
+      0.2,
+      0.25,
+      0.16
+     ],
+     "B": [
+      0.25,
+      0.28,
+      0.32,
+      0.6
+     ],
+     "M": [
+      0.38,
+      0.48,
+      0.57,
+      0.76
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "cafe-491",
+     "match": "enc_05",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.32,
+      0.41,
+      0.25
+     ],
+     "B": [
+      0.19,
+      0.35,
+      0.37,
+      0.64
+     ],
+     "M": [
+      0.4,
+      0.67,
+      0.78,
+      0.89
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "museum-528",
+     "match": "enc_12",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.24,
+      0.37,
+      0.47,
+      0.29
+     ],
+     "B": [
+      0.21,
+      0.28,
+      0.35,
+      0.66
+     ],
+     "M": [
+      0.45,
+      0.65,
+      0.82,
+      0.95
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "canyon-565",
+     "match": "enc_19",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.25,
+      0.32,
+      0.2
+     ],
+     "B": [
+      0.19,
+      0.32,
+      0.35,
+      0.61
+     ],
+     "M": [
+      0.35,
+      0.57,
+      0.67,
+      0.81
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "bakery-602",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.14,
+      0.22,
+      0.28,
+      0.17
+     ],
+     "B": [
+      0.24,
+      0.3,
+      0.31,
+      0.62
+     ],
+     "M": [
+      0.38,
+      0.52,
+      0.59,
+      0.79
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "stadium-639",
+     "match": "enc_13",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.24,
+      0.31,
+      0.19
+     ],
+     "B": [
+      0.21,
+      0.31,
+      0.34,
+      0.64
+     ],
+     "M": [
+      0.36,
+      0.55,
+      0.65,
+      0.83
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "lake-676",
+     "match": "enc_20",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.22,
+      0.35,
+      0.44,
+      0.28
+     ],
+     "B": [
+      0.21,
+      0.28,
+      0.36,
+      0.63
+     ],
+     "M": [
+      0.43,
+      0.63,
+      0.8,
+      0.91
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "alley-713",
+     "match": "enc_07",
+     "response": "Remembered",
+     "status": "query not admitted",
+     "reason": "overlap"
+    },
+    {
+     "trial": "ret_20",
+     "item": "farm-750",
+     "match": "enc_14",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.26,
+      0.33,
+      0.21
+     ],
+     "B": [
+      0.24,
+      0.26,
+      0.38,
+      0.63
+     ],
+     "M": [
+      0.41,
+      0.52,
+      0.71,
+      0.84
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P24",
+   "queries": [
+    {
+     "trial": "ret_01",
+     "item": "station-417",
+     "match": "enc_01",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.1,
+      0.13,
+      0.08
+     ],
+     "B": [
+      0.23,
+      0.33,
+      0.31,
+      0.61
+     ],
+     "M": [
+      0.29,
+      0.43,
+      0.44,
+      0.69
+     ]
+    },
+    {
+     "trial": "ret_02",
+     "item": "field-454",
+     "match": "enc_08",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.24,
+      0.38,
+      0.49,
+      0.3
+     ],
+     "B": [
+      0.27,
+      0.27,
+      0.36,
+      0.61
+     ],
+     "M": [
+      0.51,
+      0.65,
+      0.85,
+      0.91
+     ]
+    },
+    {
+     "trial": "ret_03",
+     "item": "cafe-491",
+     "match": "enc_15",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.23,
+      0.36,
+      0.47,
+      0.29
+     ],
+     "B": [
+      0.23,
+      0.29,
+      0.29,
+      0.61
+     ],
+     "M": [
+      0.46,
+      0.65,
+      0.76,
+      0.9
+     ]
+    },
+    {
+     "trial": "ret_04",
+     "item": "museum-528",
+     "match": "enc_02",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.25,
+      0.32,
+      0.2
+     ],
+     "B": [
+      0.18,
+      0.26,
+      0.33,
+      0.63
+     ],
+     "M": [
+      0.34,
+      0.51,
+      0.65,
+      0.83
+     ]
+    },
+    {
+     "trial": "ret_05",
+     "item": "canyon-565",
+     "match": "enc_09",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.24,
+      0.38,
+      0.49,
+      0.3
+     ],
+     "B": [
+      0.17,
+      0.28,
+      0.36,
+      0.68
+     ],
+     "M": [
+      0.41,
+      0.66,
+      0.85,
+      0.98
+     ]
+    },
+    {
+     "trial": "ret_06",
+     "item": "bakery-602",
+     "match": "enc_16",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.18,
+      0.28,
+      0.36,
+      0.22
+     ],
+     "B": [
+      0.23,
+      0.3,
+      0.35,
+      0.64
+     ],
+     "M": [
+      0.41,
+      0.58,
+      0.71,
+      0.86
+     ]
+    },
+    {
+     "trial": "ret_07",
+     "item": "stadium-639",
+     "match": "enc_03",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.18,
+      0.28,
+      0.36,
+      0.23
+     ],
+     "B": [
+      0.21,
+      0.29,
+      0.36,
+      0.62
+     ],
+     "M": [
+      0.39,
+      0.57,
+      0.72,
+      0.85
+     ]
+    },
+    {
+     "trial": "ret_08",
+     "item": "lake-676",
+     "match": "enc_10",
+     "response": "Forgotten",
+     "status": "query not admitted",
+     "reason": "duplicate-ordinals"
+    },
+    {
+     "trial": "ret_09",
+     "item": "alley-713",
+     "match": "enc_17",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.19,
+      0.3,
+      0.38,
+      0.24
+     ],
+     "B": [
+      0.22,
+      0.36,
+      0.37,
+      0.63
+     ],
+     "M": [
+      0.41,
+      0.66,
+      0.75,
+      0.87
+     ]
+    },
+    {
+     "trial": "ret_10",
+     "item": "farm-750",
+     "match": "enc_04",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.26,
+      0.33,
+      0.21
+     ],
+     "B": [
+      0.27,
+      0.28,
+      0.33,
+      0.63
+     ],
+     "M": [
+      0.44,
+      0.54,
+      0.66,
+      0.84
+     ]
+    },
+    {
+     "trial": "ret_11",
+     "item": "beach-007",
+     "match": "enc_11",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.15,
+      0.23,
+      0.3,
+      0.18
+     ],
+     "B": [
+      0.15,
+      0.3,
+      0.36,
+      0.6
+     ],
+     "M": [
+      0.3,
+      0.53,
+      0.66,
+      0.78
+     ]
+    },
+    {
+     "trial": "ret_12",
+     "item": "forest-044",
+     "match": "enc_18",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.21,
+      0.33,
+      0.42,
+      0.26
+     ],
+     "B": [
+      0.21,
+      0.33,
+      0.34,
+      0.62
+     ],
+     "M": [
+      0.42,
+      0.66,
+      0.76,
+      0.88
+     ]
+    },
+    {
+     "trial": "ret_13",
+     "item": "kitchen-081",
+     "match": "enc_05",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.11,
+      0.17,
+      0.22,
+      0.14
+     ],
+     "B": [
+      0.22,
+      0.3,
+      0.43,
+      0.64
+     ],
+     "M": [
+      0.33,
+      0.47,
+      0.65,
+      0.78
+     ]
+    },
+    {
+     "trial": "ret_14",
+     "item": "street-118",
+     "match": "enc_12",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.04,
+      0.07,
+      0.09,
+      0.06
+     ],
+     "B": [
+      0.21,
+      0.26,
+      0.32,
+      0.64
+     ],
+     "M": [
+      0.25,
+      0.33,
+      0.41,
+      0.7
+     ]
+    },
+    {
+     "trial": "ret_15",
+     "item": "garden-155",
+     "match": "enc_19",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.25,
+      0.32,
+      0.2
+     ],
+     "B": [
+      0.25,
+      0.29,
+      0.36,
+      0.62
+     ],
+     "M": [
+      0.41,
+      0.54,
+      0.68,
+      0.82
+     ]
+    },
+    {
+     "trial": "ret_16",
+     "item": "office-192",
+     "match": "enc_06",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.17,
+      0.26,
+      0.34,
+      0.21
+     ],
+     "B": [
+      0.25,
+      0.29,
+      0.37,
+      0.63
+     ],
+     "M": [
+      0.42,
+      0.55,
+      0.71,
+      0.84
+     ]
+    },
+    {
+     "trial": "ret_17",
+     "item": "dog-229",
+     "match": "enc_13",
+     "response": "Remembered",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.16,
+      0.25,
+      0.32,
+      0.2
+     ],
+     "B": [
+      0.15,
+      0.28,
+      0.35,
+      0.66
+     ],
+     "M": [
+      0.31,
+      0.53,
+      0.67,
+      0.86
+     ]
+    },
+    {
+     "trial": "ret_18",
+     "item": "bridge-266",
+     "match": "enc_20",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.06,
+      0.1,
+      0.13,
+      0.08
+     ],
+     "B": [
+      0.19,
+      0.28,
+      0.33,
+      0.63
+     ],
+     "M": [
+      0.25,
+      0.38,
+      0.46,
+      0.71
+     ]
+    },
+    {
+     "trial": "ret_19",
+     "item": "market-303",
+     "match": "enc_07",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.1,
+      0.15,
+      0.2,
+      0.12
+     ],
+     "B": [
+      0.32,
+      0.25,
+      0.3,
+      0.6
+     ],
+     "M": [
+      0.42,
+      0.4,
+      0.5,
+      0.72
+     ]
+    },
+    {
+     "trial": "ret_20",
+     "item": "tower-340",
+     "match": "enc_14",
+     "response": "Forgotten",
+     "controls": 19,
+     "status": "ok",
+     "D": [
+      0.02,
+      0.04,
+      0.05,
+      0.03
+     ],
+     "B": [
+      0.21,
+      0.32,
+      0.33,
+      0.66
+     ],
+     "M": [
+      0.23,
+      0.36,
+      0.38,
+      0.69
+     ]
+    }
+   ]
+  }
+ ],
+ "summary": {
+  "participants": [
+   {
+    "id": "P01",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 0,
+    "not_admitted": 1,
+    "Remembered": {
+     "n": 11,
+     "M": 0.6,
+     "B": 0.34,
+     "D": 0.26
+    },
+    "Forgotten": {
+     "n": 8,
+     "M": 0.42,
+     "B": 0.36,
+     "D": 0.06
+    },
+    "all": {
+     "M": 0.52,
+     "B": 0.35,
+     "D": 0.17,
+     "D_by_scale": [
+      0.09,
+      0.13,
+      0.17,
+      0.11
+     ]
+    }
+   },
+   {
+    "id": "P02",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 0,
+    "not_admitted": 1,
+    "Remembered": {
+     "n": 13,
+     "M": 0.63,
+     "B": 0.36,
+     "D": 0.27
+    },
+    "Forgotten": {
+     "n": 6,
+     "M": 0.48,
+     "B": 0.35,
+     "D": 0.12
+    },
+    "all": {
+     "M": 0.58,
+     "B": 0.36,
+     "D": 0.22,
+     "D_by_scale": [
+      0.11,
+      0.17,
+      0.22,
+      0.14
+     ]
+    }
+   },
+   {
+    "id": "P03",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 1,
+    "not_admitted": 0,
+    "Remembered": {
+     "n": 15,
+     "M": 0.72,
+     "B": 0.34,
+     "D": 0.38
+    },
+    "Forgotten": {
+     "n": 4,
+     "M": 0.51,
+     "B": 0.35,
+     "D": 0.15
+    },
+    "all": {
+     "M": 0.68,
+     "B": 0.35,
+     "D": 0.33,
+     "D_by_scale": [
+      0.17,
+      0.26,
+      0.33,
+      0.21
+     ]
+    }
+   },
+   {
+    "id": "P04",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 0,
+    "not_admitted": 1,
+    "Remembered": {
+     "n": 12,
+     "M": 0.73,
+     "B": 0.37,
+     "D": 0.36
+    },
+    "Forgotten": {
+     "n": 7,
+     "M": 0.52,
+     "B": 0.34,
+     "D": 0.18
+    },
+    "all": {
+     "M": 0.65,
+     "B": 0.36,
+     "D": 0.29,
+     "D_by_scale": [
+      0.15,
+      0.23,
+      0.29,
+      0.18
+     ]
+    }
+   },
+   {
+    "id": "P05",
+    "requested": 20,
+    "contributing": 17,
+    "failed": 3,
+    "no_match": 0,
+    "not_admitted": 0,
+    "Remembered": {
+     "n": 13,
+     "M": 0.32,
+     "B": 0.34,
+     "D": -0.03
+    },
+    "Forgotten": {
+     "n": 4,
+     "M": 0.11,
+     "B": 0.34,
+     "D": -0.23
+    },
+    "all": {
+     "M": 0.27,
+     "B": 0.34,
+     "D": -0.08,
+     "D_by_scale": [
+      -0.04,
+      -0.06,
+      -0.08,
+      -0.05
+     ]
+    }
+   },
+   {
+    "id": "P06",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 0,
+    "not_admitted": 1,
+    "Remembered": {
+     "n": 11,
+     "M": 0.64,
+     "B": 0.34,
+     "D": 0.3
+    },
+    "Forgotten": {
+     "n": 8,
+     "M": 0.52,
+     "B": 0.35,
+     "D": 0.17
+    },
+    "all": {
+     "M": 0.59,
+     "B": 0.34,
+     "D": 0.25,
+     "D_by_scale": [
+      0.12,
+      0.19,
+      0.25,
+      0.15
+     ]
+    }
+   },
+   {
+    "id": "P07",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 1,
+    "not_admitted": 0,
+    "Remembered": {
+     "n": 15,
+     "M": 0.68,
+     "B": 0.36,
+     "D": 0.32
+    },
+    "Forgotten": {
+     "n": 4,
+     "M": 0.43,
+     "B": 0.33,
+     "D": 0.1
+    },
+    "all": {
+     "M": 0.62,
+     "B": 0.35,
+     "D": 0.27,
+     "D_by_scale": [
+      0.14,
+      0.21,
+      0.27,
+      0.17
+     ]
+    }
+   },
+   {
+    "id": "P08",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 1,
+    "not_admitted": 0,
+    "Remembered": {
+     "n": 12,
+     "M": 0.66,
+     "B": 0.35,
+     "D": 0.31
+    },
+    "Forgotten": {
+     "n": 7,
+     "M": 0.52,
+     "B": 0.36,
+     "D": 0.15
+    },
+    "all": {
+     "M": 0.61,
+     "B": 0.35,
+     "D": 0.25,
+     "D_by_scale": [
+      0.13,
+      0.2,
+      0.25,
+      0.16
+     ]
+    }
+   },
+   {
+    "id": "P09",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 0,
+    "not_admitted": 1,
+    "Remembered": {
+     "n": 15,
+     "M": 0.69,
+     "B": 0.35,
+     "D": 0.34
+    },
+    "Forgotten": {
+     "n": 4,
+     "M": 0.59,
+     "B": 0.34,
+     "D": 0.24
+    },
+    "all": {
+     "M": 0.67,
+     "B": 0.35,
+     "D": 0.32,
+     "D_by_scale": [
+      0.16,
+      0.25,
+      0.32,
+      0.2
+     ]
+    }
+   },
+   {
+    "id": "P10",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 1,
+    "not_admitted": 0,
+    "Remembered": {
+     "n": 16,
+     "M": 0.8,
+     "B": 0.34,
+     "D": 0.45
+    },
+    "Forgotten": {
+     "n": 3,
+     "M": 0.7,
+     "B": 0.37,
+     "D": 0.33
+    },
+    "all": {
+     "M": 0.78,
+     "B": 0.35,
+     "D": 0.43,
+     "D_by_scale": [
+      0.22,
+      0.34,
+      0.43,
+      0.27
+     ]
+    }
+   },
+   {
+    "id": "P11",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 1,
+    "not_admitted": 0,
+    "Remembered": {
+     "n": 13,
+     "M": 0.62,
+     "B": 0.35,
+     "D": 0.28
+    },
+    "Forgotten": {
+     "n": 6,
+     "M": 0.46,
+     "B": 0.35,
+     "D": 0.11
+    },
+    "all": {
+     "M": 0.57,
+     "B": 0.35,
+     "D": 0.22,
+     "D_by_scale": [
+      0.11,
+      0.17,
+      0.22,
+      0.14
+     ]
+    }
+   },
+   {
+    "id": "P12",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 0,
+    "not_admitted": 1,
+    "Remembered": {
+     "n": 12,
+     "M": 0.7,
+     "B": 0.36,
+     "D": 0.34
+    },
+    "Forgotten": {
+     "n": 7,
+     "M": 0.53,
+     "B": 0.34,
+     "D": 0.19
+    },
+    "all": {
+     "M": 0.64,
+     "B": 0.35,
+     "D": 0.28,
+     "D_by_scale": [
+      0.14,
+      0.22,
+      0.28,
+      0.18
+     ]
+    }
+   },
+   {
+    "id": "P13",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 0,
+    "not_admitted": 1,
+    "Remembered": {
+     "n": 11,
+     "M": 0.53,
+     "B": 0.36,
+     "D": 0.17
+    },
+    "Forgotten": {
+     "n": 8,
+     "M": 0.39,
+     "B": 0.37,
+     "D": 0.03
+    },
+    "all": {
+     "M": 0.47,
+     "B": 0.36,
+     "D": 0.11,
+     "D_by_scale": [
+      0.05,
+      0.09,
+      0.11,
+      0.07
+     ]
+    }
+   },
+   {
+    "id": "P14",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 1,
+    "not_admitted": 0,
+    "Remembered": {
+     "n": 14,
+     "M": 0.64,
+     "B": 0.35,
+     "D": 0.29
+    },
+    "Forgotten": {
+     "n": 5,
+     "M": 0.57,
+     "B": 0.35,
+     "D": 0.22
+    },
+    "all": {
+     "M": 0.62,
+     "B": 0.35,
+     "D": 0.27,
+     "D_by_scale": [
+      0.14,
+      0.21,
+      0.27,
+      0.17
+     ]
+    }
+   },
+   {
+    "id": "P15",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 1,
+    "not_admitted": 0,
+    "Remembered": {
+     "n": 13,
+     "M": 0.53,
+     "B": 0.34,
+     "D": 0.18
+    },
+    "Forgotten": {
+     "n": 6,
+     "M": 0.29,
+     "B": 0.36,
+     "D": -0.08
+    },
+    "all": {
+     "M": 0.45,
+     "B": 0.35,
+     "D": 0.1,
+     "D_by_scale": [
+      0.05,
+      0.08,
+      0.1,
+      0.06
+     ]
+    }
+   },
+   {
+    "id": "P16",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 0,
+    "not_admitted": 1,
+    "Remembered": {
+     "n": 12,
+     "M": 0.8,
+     "B": 0.36,
+     "D": 0.45
+    },
+    "Forgotten": {
+     "n": 7,
+     "M": 0.62,
+     "B": 0.34,
+     "D": 0.28
+    },
+    "all": {
+     "M": 0.74,
+     "B": 0.35,
+     "D": 0.38,
+     "D_by_scale": [
+      0.19,
+      0.3,
+      0.38,
+      0.24
+     ]
+    }
+   },
+   {
+    "id": "P17",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 0,
+    "not_admitted": 1,
+    "Remembered": {
+     "n": 17,
+     "M": 0.74,
+     "B": 0.35,
+     "D": 0.38
+    },
+    "Forgotten": {
+     "n": 2,
+     "M": 0.64,
+     "B": 0.32,
+     "D": 0.32
+    },
+    "all": {
+     "M": 0.73,
+     "B": 0.35,
+     "D": 0.38,
+     "D_by_scale": [
+      0.19,
+      0.29,
+      0.38,
+      0.23
+     ]
+    }
+   },
+   {
+    "id": "P18",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 1,
+    "not_admitted": 0,
+    "Remembered": {
+     "n": 16,
+     "M": 0.77,
+     "B": 0.34,
+     "D": 0.42
+    },
+    "Forgotten": {
+     "n": 3,
+     "M": 0.72,
+     "B": 0.35,
+     "D": 0.37
+    },
+    "all": {
+     "M": 0.76,
+     "B": 0.35,
+     "D": 0.41,
+     "D_by_scale": [
+      0.21,
+      0.32,
+      0.41,
+      0.26
+     ]
+    }
+   },
+   {
+    "id": "P19",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 0,
+    "not_admitted": 1,
+    "Remembered": {
+     "n": 15,
+     "M": 0.64,
+     "B": 0.35,
+     "D": 0.29
+    },
+    "Forgotten": {
+     "n": 4,
+     "M": 0.43,
+     "B": 0.37,
+     "D": 0.06
+    },
+    "all": {
+     "M": 0.59,
+     "B": 0.35,
+     "D": 0.24,
+     "D_by_scale": [
+      0.12,
+      0.19,
+      0.24,
+      0.15
+     ]
+    }
+   },
+   {
+    "id": "P20",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 0,
+    "not_admitted": 1,
+    "Remembered": {
+     "n": 14,
+     "M": 0.64,
+     "B": 0.38,
+     "D": 0.26
+    },
+    "Forgotten": {
+     "n": 5,
+     "M": 0.46,
+     "B": 0.34,
+     "D": 0.12
+    },
+    "all": {
+     "M": 0.59,
+     "B": 0.37,
+     "D": 0.22,
+     "D_by_scale": [
+      0.11,
+      0.17,
+      0.22,
+      0.14
+     ]
+    }
+   },
+   {
+    "id": "P21",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 1,
+    "not_admitted": 0,
+    "Remembered": {
+     "n": 17,
+     "M": 0.67,
+     "B": 0.35,
+     "D": 0.32
+    },
+    "Forgotten": {
+     "n": 2,
+     "M": 0.62,
+     "B": 0.35,
+     "D": 0.27
+    },
+    "all": {
+     "M": 0.67,
+     "B": 0.35,
+     "D": 0.31,
+     "D_by_scale": [
+      0.16,
+      0.25,
+      0.31,
+      0.19
+     ]
+    }
+   },
+   {
+    "id": "P22",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 0,
+    "not_admitted": 1,
+    "Remembered": {
+     "n": 12,
+     "M": 0.63,
+     "B": 0.36,
+     "D": 0.27
+    },
+    "Forgotten": {
+     "n": 7,
+     "M": 0.4,
+     "B": 0.34,
+     "D": 0.06
+    },
+    "all": {
+     "M": 0.54,
+     "B": 0.35,
+     "D": 0.19,
+     "D_by_scale": [
+      0.1,
+      0.15,
+      0.19,
+      0.12
+     ]
+    }
+   },
+   {
+    "id": "P23",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 0,
+    "not_admitted": 1,
+    "Remembered": {
+     "n": 14,
+     "M": 0.68,
+     "B": 0.34,
+     "D": 0.34
+    },
+    "Forgotten": {
+     "n": 5,
+     "M": 0.55,
+     "B": 0.35,
+     "D": 0.21
+    },
+    "all": {
+     "M": 0.64,
+     "B": 0.34,
+     "D": 0.3,
+     "D_by_scale": [
+      0.15,
+      0.24,
+      0.3,
+      0.19
+     ]
+    }
+   },
+   {
+    "id": "P24",
+    "requested": 20,
+    "contributing": 19,
+    "failed": 0,
+    "no_match": 0,
+    "not_admitted": 1,
+    "Remembered": {
+     "n": 13,
+     "M": 0.7,
+     "B": 0.34,
+     "D": 0.36
+    },
+    "Forgotten": {
+     "n": 6,
+     "M": 0.52,
+     "B": 0.34,
+     "D": 0.17
+    },
+    "all": {
+     "M": 0.65,
+     "B": 0.34,
+     "D": 0.3,
+     "D_by_scale": [
+      0.15,
+      0.23,
+      0.3,
+      0.19
+     ]
+    }
+   }
+  ],
+  "inventory_trials": 960,
+  "admitted": 937,
+  "quarantined": 17,
+  "absent": 6,
+  "quarantine_by_cause": {
+   "duplicate-ordinals": 4,
+   "no-fixations": 5,
+   "overlap": 6,
+   "rejected-records": 2
+  },
+  "fixation_records": 11520,
+  "items_in_pool": 259,
+  "images_found": 257,
+  "images_missing": 2,
+  "query_contrasts": {
+   "requested": 480,
+   "query_not_admitted": 14,
+   "no_match": 9,
+   "failed": 3,
+   "contributing": 454
+  },
+  "pair_rows_per_scale": 8969,
+  "pair_rows_all_scales": 35876,
+  "scales": [
+   "0.5\u00b0",
+   "1\u00b0",
+   "2\u00b0",
+   "4\u00b0"
+  ],
+  "grand_D_all": 0.26,
+  "grand_D_by_scale": [
+   0.13,
+   0.2,
+   0.26,
+   0.16
+  ],
+  "grand_D_Remembered": 0.3,
+  "grand_D_Forgotten": 0.15,
+  "n_Remembered": 24,
+  "n_Forgotten": 24,
+  "n_paired": 24,
+  "outside_window_records": 543,
+  "outside_window_trials": 409,
+  "focus_outside": {
+   "ret_07": "1 of 12 fixations \u00b7 4% of duration",
+   "enc_03": "1 of 13 fixations \u00b7 3% of duration"
+  },
+  "focus_fixation": {
+   "trial": "P17 enc_03",
+   "fixation": 6,
+   "record": 7214,
+   "image_px": [
+    700,
+    300
+   ],
+   "screen_px": [
+    1148,
+    456
+   ],
+   "deg_from_centre_y_up": [
+    5.4,
+    2.4
+   ],
+   "onset_ms": 2160,
+   "duration_ms": 412
+  },
+  "missing_images": {
+   "forest-044": {
+    "participants": [
+     "P01",
+     "P24"
+    ],
+    "encoding_trials": 2
+   },
+   "kitchen-081": {
+    "participants": [
+     "P01",
+     "P24"
+    ],
+    "encoding_trials": 2
+   }
+  },
+  "dataset_history": {
+   "r2": "onset units undeclared; Block not mapped to occurrence",
+   "r3": "onset declared ms; Block \u2192 occurrence; 4 trials change status vs r2 (overlap \u2192 admitted 3, admitted \u2192 no-fixations 1)"
+  },
+  "runs": {
+   "run 5": "analysis rev 3 \u00b7 data r2 \u00b7 stale",
+   "run 6": "rev 4 \u00b7 data r3 \u00b7 cancelled at Comparing",
+   "run 7": "rev 4 \u00b7 data r3 \u00b7 current",
+   "run 8": "rev 5 \u00b7 data r3 \u00b7 running (moment t3)"
+  },
+  "pair_rows_rev5": 44845,
+  "eligible_queries": 457,
+  "candidate_pairs_cartesian_per_scale": 230400,
+  "paired_group_n_range": [
+   2,
+   17
+  ],
+  "P17_queries_as_control_for_enc_03": 18,
+  "grand_D_by_scale_Remembered": [
+   0.15,
+   0.24,
+   0.3,
+   0.19
+  ],
+  "grand_D_by_scale_Forgotten": [
+   0.07,
+   0.12,
+   0.15,
+   0.09
+  ]
+ }
+}

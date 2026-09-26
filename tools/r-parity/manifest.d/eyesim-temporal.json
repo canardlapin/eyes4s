@@ -10,13 +10,13 @@
     },
     "point-sampling-reference": {
       "path": "tools/r-parity/fixtures/point-sampling.json",
-      "sha256": "45cab7e9306d1122a91a3bf688552d93cc1b653763ee32473a34a40312cd1b31",
+      "sha256": "07df93df7a3fa645b280f7c303e57a192ee9fe3f20a4541a7c8e941dae9cdb4a",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Static point sampling, independently verified reference or saved public workflow"
     },
     "point-sampling-scala": {
       "path": "plan/src/test/scala/eyes4s/plan/PointSamplingReference.scala",
-      "sha256": "57d58056dac883e229fa4cbec6e1c868db4365f5c3e2123583e8bff17da0b917",
+      "sha256": "4675c4baaa527d8516893db01146f304665d5b0f1a0367bb44df0c23fd5eb19a",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Static point sampling, independently verified reference or saved public workflow"
     },
@@ -61,7 +61,7 @@
       "estimand": "Static template-density values evaluated by nearest-grid lookup along the fast constant-step focal fixation trajectory at requested times and optionally aggregated into bins.",
       "conventions": [
         "query-time and fixation-time units explicit",
-        "cut(right=FALSE, include.lowest=TRUE): measure the final endpoint explicitly",
+        "cut(right=FALSE): every bin is half-open, including the last; measure the final endpoint explicitly",
         "matching and permutation strata explicit",
         "control means are formed per time before bin aggregation",
         "missing trajectory or template support retained"
@@ -100,7 +100,7 @@
       "regeneration_ids": [
         "point-sampling"
       ],
-      "divergence": "Four normalization modes, unsorted/repeated queries, final-bin endpoint, source-occurrence multiset and exhaustive controls match independently checked reference values. Native retains unmatched/ambiguous/duplicate source errors instead of dropped rows or first-match selection; uses explicit clock/frame identities and keyed finite selection rather than R RNG; disallows nonfinite template cells. Raw R partial-cell failures remain, with nested versus pooled aggregation independently qualified. Named arithmetic recipe and complete replay-verified result persist on JVM/JS, separate from duration occupancy."
+      "divergence": "Four normalization modes, unsorted/repeated queries, the half-open final bin, the held final fixation, distinct-template controls and exhaustive controls match independently checked reference values under HalfOpen and HoldLastOnset. Native retains unmatched/ambiguous/duplicate source errors instead of dropped rows or first-match selection; uses explicit clock/frame identities and keyed finite selection rather than R RNG; disallows nonfinite template cells. Raw R partial-cell failures remain, with nested versus pooled aggregation independently qualified. Named arithmetic recipe and complete replay-verified result persist on JVM/JS, separate from duration occupancy."
     }
   ]
 }

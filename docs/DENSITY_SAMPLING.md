@@ -18,17 +18,19 @@ window/minimum-count behavior and failures are stored in
 The pinned backends do not share one bandwidth convention: `ks` receives sigma
 squared as the covariance, whereas MASS and the custom fallback interpret sigma
 through a division by four. An independent continuous Gaussian oracle confirms
-the unweighted MASS outputs within the fixed 1e-7 reference rounding tolerance.
+the unweighted, duration-weighted and explicitly weighted MASS outputs within the
+fixed 1e-7 reference rounding tolerance.
 The stored ks approximation differs from direct Gaussian evaluation by up to
 about 6.73e-6 in this fixture; the difference is recorded, not called exact parity.
 Native discrete smoothing has a different grid/kernel/edge contract and is
 checked against its own independent oracle at 1e-12.
 
-Several measured reference defects matter to callers. The explicit `weights`
-argument is ignored at the pinned revision; duration weighting is a different
-path. Weighted MASS fails on this non-square grid (`invalid 'times' argument`),
-and `density_by` then drops failed groups. Both the failure and warning are kept.
-The ks group call retains the full group and drops the short one. The native
+At the pinned revision the explicit `weights` argument is honoured and takes
+precedence over duration weighting, and weighted MASS works on this non-square
+grid; earlier revisions ignored the weights and failed with `invalid 'times'
+argument`. `density_by` still drops groups whose estimate fails: both the ks and
+MASS group calls retain the full group and drop the one-fixation group with a
+warning, which the fixture keeps. The native
 weighted estimate works under either edge policy; use `Trials.traverseV` when
 processing groups so failures retain their source operands. Native estimation
 does not impose R's arbitrary minimum of two fixations. Window and straddling
@@ -75,8 +77,10 @@ The lookup fixture uses the actual native cell-centre coordinates in
 endpoint-inclusive output lattice.
 
 `PreparedDensityLookup.along` consumes `TrajectorySamples`, preserving each time
-and missing trajectory reason. The fixture matches both exported
-`sample_density(times, normalize="sum")` and `template_sample` with raw values.
+and missing trajectory reason. Sampled under `TrajectoryEndpoint.HoldLastOnset`,
+which like the reference holds the final fixation after its onset, the fixture
+matches both exported `sample_density(times, normalize="sum")` and
+`template_sample` with raw values.
 This same composition is available to temporal binning. It requires no R at runtime.
 
 Offline regeneration:

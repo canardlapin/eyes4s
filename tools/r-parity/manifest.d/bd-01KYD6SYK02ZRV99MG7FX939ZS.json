@@ -10,7 +10,7 @@
     },
     "decomposition-reference": {
       "path": "tools/r-parity/fixtures/decomposition.json",
-      "sha256": "f30f65583b611834e035336fa72a0ebcaac69dd57fecfe6a95dc4b57e902ddf7",
+      "sha256": "e9416b3b7e03ba6dcd32192ff02fb3a4bd6f246035dfa103582f6a055857de18",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Pinned public eyesim lm outputs and exact rational oracle"
     },

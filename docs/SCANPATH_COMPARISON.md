@@ -44,13 +44,16 @@ queries, including unsupported ones. `RequireComplete` retains the same rows but
 summary when support is incomplete. `requested`, `contributing` and `overlaps` are distinct.
 Nonfinite distance arithmetic is also a located failure, not an infinity score.
 
-The pinned direct R entry point defaults to threshold 60 and `seq(0,max(x$onset),by=20)`, ending
-at the **left** final onset. Its fixation-group similarity facade defaults to threshold 40 and
-requires `time_samples`. For the translated fixture, the direct default is one, the facade
-with explicit queries is zero, and the asymmetric left-grid example is 10/11. The native API
-requires explicit parameters; it does not infer a left-dependent grid or an untyped time unit.
-The six explicit millisecond queries contain four supported times; when the threshold exceeds
-Euclidean distance 50 (or Manhattan distance 70), the result is 4/6. At equality it is zero.
+The pinned direct R entry point defaults to threshold 60 and
+`seq(0, max(c(x$onset, y$onset)), by = 20)`, spanning both paths' onsets, and its
+fixation-group similarity facade now shares the threshold 60 and requires `time_samples`.
+Both hold each path's final fixation after its onset. For the translated fixture, the direct
+default is one, the facade with explicit queries is 5/6, and the longer-path grid example is
+11/21 whichever path comes first. The native API requires explicit parameters; it does not infer
+a grid or an untyped time unit. With `TrajectoryEndpoint.HoldLastOnset` the six explicit
+millisecond queries contain five supported times; when the threshold exceeds Euclidean distance
+50 (or Manhattan distance 70), the result is 5/6. At equality it is zero. `OnsetRange` instead
+leaves the query after the last onset unsupported.
 
 ## Spatiotemporal entropic transport
 

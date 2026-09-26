@@ -87,10 +87,12 @@ print(
 # A finite inventory, backed by actual successful test reports. Compilation and a
 # prose name match alone are insufficient. This does not measure every API entry.
 inventory = json.loads((ROOT / "tools/doc-examples.json").read_text())
+# docs/studio belongs to the Studio application, not to the library documentation.
 paths = {"README.md"} | {
     str(p.relative_to(ROOT))
     for base in ("docs", "site-docs")
     for p in (ROOT / base).rglob("*.md")
+    if not p.is_relative_to(ROOT / "docs/studio")
 }
 if paths != set(inventory["pages"]):
     raise SystemExit(

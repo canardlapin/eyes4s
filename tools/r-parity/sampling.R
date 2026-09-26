@@ -28,10 +28,11 @@ controls <- lapply(unlist(input$caps),function(cap) {
   set.seed(input$seed)
   selected <- lapply(seq_len(nrow(source)),function(i) {
     if(cap<=0) return(integer())
+    # The pinned draw: every copy of the true match is removed, each template counts once,
+    # and only then are up to `cap` drawn without replacement.
     candidates <- matchind[source$stratum==source$stratum[i]]
+    candidates <- unique(candidates[candidates!=matchind[i]])
     if(cap<length(candidates)) candidates <- sample(candidates,cap)
-    pos <- match(matchind[i],candidates)
-    if(!is.na(pos)) candidates <- candidates[-pos]
     candidates
   })
   list(cap=cap,rows=as.data.frame(result[setdiff(names(result),"density")]),selected_reference_indices=selected)

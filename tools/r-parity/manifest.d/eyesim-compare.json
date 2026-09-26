@@ -4,19 +4,19 @@
   "fixtures": {
     "compare-input": {
       "path": "tools/r-parity/fixtures/cases/eyesim-compare.json",
-      "sha256": "b7dab445fdcf3f6f69e8d4b9204528670c3fc60d1691b495a53f962268657feb",
+      "sha256": "97f1a84f92027d5e139dde13a8d01f7d6588169110cf0ecfdcd103827268dc55",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Pinned dispatch and independent map comparison expectations"
     },
     "compare-reference": {
       "path": "tools/r-parity/fixtures/compare.json",
-      "sha256": "e6e5a0000c646d8e463fe25eb1e6dab73923497324c1888c8a065e5bac3359dd",
+      "sha256": "8857fe00696fd1f6252d5316f63fd1075e47f97679e96fc9d88796205ad01130",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Pinned dispatch and independent map comparison expectations"
     },
     "compare-scala": {
       "path": "compare/src/test/scala/eyes4s/compare/MapReference.scala",
-      "sha256": "659c3e78e6f5a7fca08ab309b44fd3744685c583c6990aa2df06bcb70e172612",
+      "sha256": "c04fe57d7a83fddf2479bfc3295b164cc49c7fcb92eeb25ab9ed36baf07e366f",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Pinned dispatch and independent map comparison expectations"
     }
@@ -101,7 +101,7 @@
       "regeneration_ids": [
         "compare-reference"
       ],
-      "divergence": "Seven normalized nonconstant map methods agree with rational oracles and pinned vector/density calls at 1e-12. Native rejects constant correlation, malformed Mass and foreign grids; pinned raw/signed/missing/one-cell results remain recorded. Legacy Fisher clamp is separate. Frozen emd dispatch uses T4transport, not a general exact backend. Analytically exact small plans match pinned outputs and differ from native sliced W1 and squared-cost Sinkhorn; no exact solver or approximation alias."
+      "divergence": "Seven normalized nonconstant map methods agree with rational oracles and pinned vector/density calls at 1e-12. Both refuse foreign grids. Fisher z snaps r within 64 eps of plus/minus one before its machine-epsilon clamp in both, pinned by a near-identical pair. Native rejects constant correlation, including identical constants that R scores as one (Fisher z 18.37), and malformed Mass; pinned raw/signed/missing/one-cell results remain recorded. Legacy Fisher clamp is separate. Frozen emd dispatch uses T4transport, not a general exact backend. Analytically exact small plans match pinned outputs and differ from native sliced W1 and squared-cost Sinkhorn; no exact solver or approximation alias."
     },
     {
       "id": "multiscale-density-and-comparison",

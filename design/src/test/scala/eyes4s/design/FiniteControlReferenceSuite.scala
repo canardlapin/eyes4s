@@ -76,7 +76,7 @@ class FiniteControlReferenceSuite extends munit.FunSuite:
   }
 
   test(
-    "pinned R draws reproduce analytic means but preserve sample-before-exclude divergence"
+    "pinned R draws reproduce analytic means over distinct templates, as native pairing against templates does"
   ) {
     val references = FiniteControlReference.sources.groupBy(_.matched)
     val order      = FiniteControlReference.sources.map(_.matched).distinct
@@ -96,21 +96,25 @@ class FiniteControlReferenceSuite extends munit.FunSuite:
         if scores.isEmpty then assertEquals(r.mean, None)
         else assertEqualsDouble(r.mean.get, scores.sum / scores.size, ControlTolerance)
     }
+    // eyesim removes every true-match copy and counts each template once before drawing, so the
+    // exhaustive baseline for a1 is template b alone and a cap of one always yields one control.
     val r = FiniteControlReference.results.find(r => r.cap == 20 && r.key == "a1").get
-    assertEquals(r.count, Some(2))
-    assertEqualsDouble(r.mean.get, 0.5, ControlTolerance)
-    val native = pair(
-      trials,
-      trials,
-      get(relation.bottomK(20, Seed(42), SampleId("finite-controls")))
-    ).pairs.filter(_._1.key.occurrence == "a1")
-    assertEquals(native.size, 1)
-    assertEqualsDouble(
-      get(Distribution.cosine[Px].compare(native.head._1.value, native.head._2.value)).value,
-      0.0,
-      ControlTolerance
-    )
-    assert(FiniteControlReference.results.exists(r => r.cap == 1 && r.count.contains(0)))
+    assertEquals(r.count, Some(1))
+    assertEqualsDouble(r.mean.get, 0.0, ControlTolerance)
+    assert(FiniteControlReference.results.filter(_.cap == 1).forall(_.count.contains(1)))
+    // Pairing against the distinct-template table, not the source occurrences, gives eyesim's
+    // exhaustive population and realized denominators row for row.
+    val templates = Trials(rows.distinctBy(_.key.matched))
+    val native    =
+      pair(trials, templates, get(relation.bottomK(20, Seed(42), SampleId("finite-controls"))))
+    FiniteControlReference.results.filter(_.cap == 20).foreach { expected =>
+      val selected = native.pairs.filter(_._1.key.occurrence == expected.key)
+      assertEquals(Some(selected.size), expected.count, expected.key)
+      val scores =
+        selected.map((l, r) => get(Distribution.cosine[Px].compare(l.value, r.value)).value)
+      expected.mean
+        .foreach(m => assertEqualsDouble(scores.sum / scores.size, m, ControlTolerance))
+    }
   }
 
   test("seeds can change eligible subsets; duplicate occurrence keys remain ambiguity data") {
