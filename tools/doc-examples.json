@@ -54,7 +54,10 @@
     "site-docs/templates.md": "executed mdoc site",
     "docs/evidence/documentation-2026-09-19.md": "internal decision or historical evidence",
     "docs/PUBLIC_API_COVERAGE.md": "internal decision or historical evidence",
-    "docs/evidence/api-audit-2026-09-19.md": "internal decision or historical evidence"
+    "docs/evidence/api-audit-2026-09-19.md": "internal decision or historical evidence",
+    "docs/REDUCING_RESULTS.md": "public guide",
+    "site-docs/summaries.md": "executed mdoc site",
+    "docs/plans/CR4_PLAN.md": "internal decision or historical evidence"
   },
   "fences": {
     "README.md": {

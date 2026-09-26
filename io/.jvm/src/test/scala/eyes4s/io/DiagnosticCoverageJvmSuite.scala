@@ -84,6 +84,7 @@ class DiagnosticCoverageJvmSuite extends munit.FunSuite:
       "compare",
       "design",
       "plan",
+      "results",
       "codec",
       "laws",
       "io"

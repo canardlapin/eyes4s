@@ -1,9 +1,21 @@
 # Reusable result tables
 
-`BaselineExports` produces checked `ResultTable` values for the finite schema matrix below.
+`ResultExports` produces checked `ResultTable` values for the finite schema matrix below.
 Each table has ordered typed columns, immutable rows, and a versioned JSON metadata sidecar.
 Call `table.csv.encode` on JVM or Scala.js. On JVM, `ArrowResultExport.write[IO](table, path)`
 writes an IPC stream from those same rows. Neither route needs R.
+
+There is one result-table layer. `ResultTable`, its columns, cells and families live in the pure
+`eyes4s-results` module (JVM and Scala.js, no JSON library), with the table's context and JSON
+cells as `eyes4s.results.TableJson`; `eyes4s-io` keeps the circe entry point
+`eyes4s.io.ResultTable.of(family, columns, rows, context: Json)`, the `csv` rendering and the
+Arrow writer, and the same names as aliases. Reports render into the same layer as the
+`ReportCells`, `ReportParticipants` and `ReportContrasts` families
+(see [reducing study results](REDUCING_RESULTS.md)). `BaselineExports` is a deprecated facade
+that exports `ResultExports`: its tables are the same tables, with the same identities. The move
+kept every pinned artifact byte-identical: `python3 tools/result-export/generate_exports.py
+--bytes-only` rewrites the export example and compares every CSV, metadata and Arrow file with
+`receipt-v1.json`, without the R and PyArrow readers.
 
 The complete [public example](../io/src/test/scala/eyes4s/examples/BaselineExportGuide.scala)
 constructs analyses, calls every adapter, and is executed by `BaselineExportsSuite` on both

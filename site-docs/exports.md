@@ -1,12 +1,14 @@
 # Export results without losing failures
 
-Use `BaselineExports` to derive checked tables from pair scores, reductions, contrasts,
+Use `ResultExports` to derive checked tables from pair scores, reductions, contrasts,
 repetition, point sampling, template fits, surface OLS, and saved spatial or temporal studies.
 These adapters retain the original recipe and source identities. The
 [complete executable example](https://github.com/canardlapin/eyes4s/blob/main/io/src/test/scala/eyes4s/examples/BaselineExportGuide.scala)
 covers each result family with asserted numerical outputs.
 
-Every `ResultTable` has typed columns, explicit units, context and a content identity.
+Every `ResultTable` has typed columns, explicit units, context and a content identity. The table
+layer itself is the pure `eyes4s-results` module, which also renders
+[reports](summaries.md); `eyes4s-io` adds this circe entry point and the CSV and Arrow writers.
 CSV uses a validity column for each nullable field, so an empty string cannot impersonate
 missing data. Preserve the metadata JSON beside the CSV. An archive for replay is a separate artifact.
 

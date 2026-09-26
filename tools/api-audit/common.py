@@ -3,7 +3,7 @@ import hashlib
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'target/api-audit'
-MODULES = ('kernel','core','detect','surface','aoi','compare','design','plan','codec','laws','fs2','io')
+MODULES = ('kernel','core','detect','surface','aoi','compare','design','plan','results','codec','laws','fs2','io')
 PROJECTS = {m: ('fs2Module' if m == 'fs2' else m) for m in MODULES}
 
 def fingerprint():
