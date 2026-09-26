@@ -4,8 +4,11 @@ import argparse
 import collections
 import hashlib
 import json
+import os
 import xml.etree.ElementTree as ET
 from common import ROOT, OUT, MODULES, PROJECTS, fingerprint
+from inventory import key, public_inventory, inventory_text
+from candidate import RUN_ENV, select_inventory, write_provenance
 
 BASE = ROOT / 'tools/api-audit'
 parser = argparse.ArgumentParser()
@@ -13,7 +16,6 @@ parser.add_argument('--record', action='store_true')
 args = parser.parse_args()
 def fail(message): raise SystemExit('API audit: '+message)
 def read(path): return json.loads(path.read_text())
-def key(row): return row['kind']+' '+row['id']
 def write(path, value): path.write_text(json.dumps(value,indent=2,sort_keys=True)+'\n')
 receipt = read(OUT/'receipt.json')
 if receipt['fingerprint'] != fingerprint(): fail('source candidate changed; run tools/api-audit/run.py')
@@ -45,21 +47,20 @@ for hit in execution['invocations']:
 # Preserve all declarations in generated reports, and freeze intentional public declarations.
 # Compiler scaffolding is mechanically classified in report.py, never hand-excluded by name.
 public = [x for x in rows if x['classification'] not in ('internal','compiler-generated')]
-js = {key(x): x for x in read(OUT/'inventory-js.json')['entries'] if x['category'] not in ('internal','compiler-generated')}
-jvm = {key(x): x for x in public}
-if set(js)-set(jvm): fail('unexpected JS-only declarations '+repr(sorted(set(js)-set(jvm))[:8]))
-for k in set(jvm)&set(js):
-    if jvm[k]['sourceType'] != js[k]['sourceType']: fail('unexplained platform type difference '+k)
-only_jvm = set(jvm)-set(js)
-for k in only_jvm:
-    if not jvm[k]['source'].startswith('io/.jvm/src/main/'): fail('unexplained JVM-only declaration '+k)
-inventory = {}
-for x in public:
-    inventory[key(x)] = [x['classification'],x['source'],'jvm' if key(x) in only_jvm else 'jvm+js',x['deprecated'],
-        sorted(i for i in x['inherited'] if i.startswith('eyes4s.')), x['sourceType']]
+try:
+    inventory = public_inventory(rows, read(OUT/'inventory-js.json')['entries'])
+except ValueError as error:
+    fail(str(error))
+only_jvm = {name for name, row in inventory.items() if row[2] == 'jvm'}
+if RUN_ENV in os.environ:
+    try:
+        if inventory != read(select_inventory()):
+            fail('final inventory differs from pre-test candidate')
+    except ValueError as error:
+        fail(str(error))
 if args.record:
     # One symbol per line keeps the large, complete inventory diffable.
-    (BASE/'inventory.json').write_text('{\n'+',\n'.join('  '+json.dumps(k)+': '+json.dumps(v) for k,v in sorted(inventory.items()))+'\n}\n')
+    (BASE/'inventory.json').write_text(inventory_text(inventory))
 elif inventory != read(BASE/'inventory.json'):
     previous = read(BASE/'inventory.json')
     drift = [k for k in set(previous)|set(inventory) if previous.get(k)!=inventory.get(k)]
@@ -172,5 +173,10 @@ summary = {'publicDeclarations':len(public),'runtimeEntries':len(runtime),'uncov
            'executedSuites':len(suites),'mappedSuites':len(reviewed['suites']),'mappedJsSuites':len(reviewed['jsSuites']),
            'classificationCounts':dict(collections.Counter(x['classification'] for x in rows)),
            'candidate':receipt}
+if fingerprint() != receipt['fingerprint']:
+    fail('source candidate changed during final checks')
 write(OUT/'summary.json',summary)
+if args.record:
+    write_provenance(BASE/'inventory-provenance.json', BASE/'inventory.json',
+                     receipt['fingerprint'], 'committed')
 print(f'API audit passed: {len(runtime)} runtime entries, {len(abstracts)} abstractions, {len(only_jvm)} explicit JVM-only declarations; zero uncovered entries.')

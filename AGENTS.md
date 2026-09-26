@@ -96,11 +96,16 @@ The full gate takes 60–90 minutes, so run it once per branch.
 
 - **While iterating**, run the affected suites with `testOnly` and the `-Werror` compile
   (`GITHUB_ACTIONS=true sbt 'project rootJVM' Test/compile 'project rootJS' Test/compile`).
+- **Before ordinary diagnostic coverage tests**, run `python3 tools/api-audit/run.py --prepare`
+  after changing fingerprinted source, test or build inputs. This compiler-only preparation
+  produces a validated local inventory; it does not run the full audit or record qualification.
+  Coverage requires that fresh preparation or fresh committed inventory provenance. Stale or
+  missing evidence fails with the prepare command; leftover audit files are never a fallback.
 - **Merge `main` once**, after review, then run the full gate on the merged tree:
   everything under "Before opening a PR", plus `python3 tools/api-audit/run.py --record`
-  and `python3 tools/study-consumer/verify.py`. Record the audit **first** and commit the
-  inventory: `DiagnosticCoverageJvmSuite` reads the committed inventory, so a `testAll`
-  that runs before the re-record passes against a stale inventory and the branch lands red.
+  and `python3 tools/study-consumer/verify.py`. The audit generates its compiler inventory
+  before running tests; `--record` also records inventory provenance after successful checks.
+  Commit the generated inventory, evidence and provenance together.
   Report the SHA and `HEAD^{tree}` that the gate covers. `python3 tools/landing-gate/gate.py`
   runs these steps in this order on a committed tree (`--from STEP` resumes after a fix).
 - **Land by tree identity.** The merge into `main` must have the tree that was gated. When
