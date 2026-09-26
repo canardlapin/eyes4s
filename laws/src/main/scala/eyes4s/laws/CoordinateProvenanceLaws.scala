@@ -259,10 +259,10 @@ object CoordinateProvenanceLaws extends Laws:
       window    <- WindowLaws.genWindow
       windowed  <- Gen.oneOf(true, false)
       failTrial <- Gen.oneOf(true, false)
-      screen = window.parent
-      b      = screen.bounds
-      w      = window.region
-      point  =
+      screen     = window.parent
+      b          = screen.bounds
+      w          = window.region
+      straddling =
         for
           x <- Gen.oneOf(
             coordinate(w.xMin, w.xMax, b.xMin - 50, b.xMax + 50),
@@ -273,7 +273,30 @@ object CoordinateProvenanceLaws extends Laws:
             coordinate(b.yMin, b.yMax, b.yMin - 50, b.yMax + 50)
           )
         yield Pt[Px](x, y)
-      keys = Vector(
+      inside = Gen
+        .zip(
+          Gen.choose(w.xMin, java.lang.Math.nextDown(w.xMax)),
+          Gen.choose(w.yMin, java.lang.Math.nextDown(w.yMax))
+        )
+        .map((x, y) => Pt[Px](x, y))
+      // On the screen but left or right of the window, when there is room.
+      beside = Vector(
+        Option.when(w.xMin > b.xMin)(Gen.choose(b.xMin, java.lang.Math.nextDown(w.xMin))),
+        Option.when(w.xMax < b.xMax)(Gen.choose(w.xMax, java.lang.Math.nextDown(b.xMax)))
+      ).flatten
+      outsideWindow =
+        if beside.isEmpty then straddling
+        else
+          Gen
+            .zip(
+              Gen.oneOf(beside).flatMap(identity),
+              Gen.choose(b.yMin, java.lang.Math.nextDown(b.yMax))
+            )
+            .map((x, y) => Pt[Px](x, y))
+      // Trials mix fixations in, beside and around the window, so a trial
+      // with exactly one fixation outside it is common.
+      point = Gen.frequency(3 -> inside, 2 -> outsideWindow, 3 -> straddling)
+      keys  = Vector(
         StudyKey("p1", "a", "recall"),
         StudyKey("p1", "a", "encode"),
         StudyKey("p2", "b", "recall")
