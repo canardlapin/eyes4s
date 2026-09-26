@@ -70,6 +70,21 @@ object LedgerRefusal:
       case FixationCount(index, _, _)       => (Vector.empty, atPosition(index))
       case OutsideFrameRecord(record, _)    => (Vector(record), named(record))
       case CorrectionConflict(record, _, _) => (Vector(record), named(record))
+      case Inventory(underlying)            =>
+        // The ledger's own records the inventory error names; inventory
+        // records and records the ledger lacks are not ledger sources.
+        val numbers = underlying match
+          case InventoryError.RecordOrder(_, rs)              => rs
+          case InventoryError.SharedRecord(r, _)              => Vector(r)
+          case InventoryError.AbsentMismatch(_, _, rs)        => rs
+          case InventoryError.AttributeRecord(r)              => Vector(r)
+          case InventoryError.ForeignRecord(_, r, _)          => Vector(r)
+          case InventoryError.UnclaimedRecord(r, _)           => Vector(r)
+          case InventoryError.DispositionMismatch(_, _, r, _) => Vector(r)
+          case InventoryError.ItemMismatch(_, r, _, _)        => Vector(r)
+          case _                                              => Vector.empty
+        val known = numbers.filter(r => ledger.records.exists(_.record == r))
+        (known, known.flatMap(named))
     val keys  = trials.distinct
     val links =
       if records.nonEmpty then records.distinct.map(SourceLink.Record(ledger.source, _))

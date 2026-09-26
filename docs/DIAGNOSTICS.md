@@ -87,9 +87,10 @@ Not cataloged, and so without codes: the errors that no cataloged error wraps.
 A test checks that none of them is in a catalog.
 
 <!-- BEGIN NOT CATALOGED -->
-- io import, export and EyeLink errors: `FixationImportError`,
-  `FixationRowError` (the importer turns it into a cataloged admission
-  reason), `TidyCsvError`, `TidyResultError`, `ContrastExportError`,
+- io import, export and EyeLink errors: `FixationImportError` (its
+  inventory case wraps the cataloged inventory error of a refused trial
+  inventory), `FixationRowError` (the importer turns it into a cataloged
+  admission reason), `TidyCsvError`, `TidyResultError`, `ContrastExportError`,
   `TemplateCsvError`, `DelimitedSchemaError`, `PsychologyWorkflowError`,
   `Sha256Error`, `Edf2AscProvenanceError`, `AscSampleMaterializationError`,
   `AscSourceLineError`, `AscStreamConfigurationError`,
@@ -888,6 +889,28 @@ fails after rewriting, so review the change and run it again.
 | `quarantine.correction-conflict` | `CorrectionConflict` | `first`, `second` |
 | `quarantine.item-conflict` | `ItemConflict` | `items` |
 | `quarantine.occurrence-conflict` | `OccurrenceConflict` | `occurrences` |
+| `quarantine.not-in-inventory` | `NotInInventory` | `participant`, `phase`, `trial`, `occurrence` |
+| `quarantine.inventory-item-conflict` | `InventoryItemConflict` | `inventory`, `records` |
+
+### `inventory` — `InventoryError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `inventory.width` | `Width` | `record`, `expected`, `actual` |
+| `inventory.field` | `Field` | `record`, `column`, `value`, `requirement` |
+| `inventory.conflict` | `Conflict` | `participant`, `phase`, `trial`, `records`, `columns` |
+| `inventory.duplicate-attribute` | `DuplicateAttribute` | `names` |
+| `inventory.duplicate-trial` | `DuplicateTrial` | `participant`, `phase`, `trial`, `occurrence` |
+| `inventory.record-order` | `RecordOrder` | `trial`, `records` |
+| `inventory.shared-record` | `SharedRecord` | `record`, `trials` |
+| `inventory.absent-mismatch` | `AbsentMismatch` | `trial`, `disposition`, `records` |
+| `inventory.attribute-record` | `AttributeRecord` | `record` |
+| `inventory.unknown-record` | `UnknownRecord` | `trial`, `record` |
+| `inventory.foreign-record` | `ForeignRecord` | `trial`, `record`, `found` |
+| `inventory.unclaimed-record` | `UnclaimedRecord` | `record`, `trial` |
+| `inventory.disposition-mismatch` | `DispositionMismatch` | `trial`, `disposition`, `record`, `found` |
+| `inventory.item-mismatch` | `ItemMismatch` | `trial`, `record`, `expected`, `actual` |
+| `inventory.no-trial-projection` | `NoTrialProjection` | `layout` |
 
 ### `admission` — `AdmissionError`
 
@@ -907,6 +930,7 @@ fails after rewriting, so review the change and run it again.
 | `admission.fixation-count` | `FixationCount` | `index`, `fixations`, `records` |
 | `admission.outside-frame-record` | `OutsideFrameRecord` | `record`, `policy` |
 | `admission.correction-conflict` | `CorrectionConflict` | `record`, `first`, `second` |
+| `admission.inventory` | `Inventory` | `underlying` |
 
 ### `inspection` — `InspectionError`
 
