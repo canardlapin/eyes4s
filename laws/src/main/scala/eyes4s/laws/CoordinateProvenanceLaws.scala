@@ -65,10 +65,6 @@ object CoordinateProvenanceLaws extends Laws:
       CoordinateProvenance
         .of(plan, input, Some(ledger))
         .fold(e => sys.error(e.message), identity)
-    override def toString: String =
-      s"Case(${plan.geometry}, ${input.trials.rows.map(t =>
-          t.key -> t.value.fixations.map(_.centre).toVector
-        )})"
 
   private def get[E, A](e: Either[E, A]): A = e.fold(error => sys.error(s"$error"), identity)
 
