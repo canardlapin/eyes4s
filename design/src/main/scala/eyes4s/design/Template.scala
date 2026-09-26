@@ -131,9 +131,6 @@ sealed trait TemplateDesign[X]:
   /** Names of the regression features, in coefficient order. */
   def featureNames: Vector[String]
 
-  /** Unit of one feature, for a coefficient's unit `response / feature`. */
-  def featureUnit: String
-
   private[design] def admit(key: String, input: X): Either[TemplateError, Unit]
   private[design] def digest[K: KeyDigest](rows: Vector[TemplateObservation[K, X]]): ContentHash
 
@@ -188,7 +185,6 @@ object TemplateDesign:
       case FixedRoute.ImportedLm => importedLmMethod
     def responseUnit: String         = basis.responseUnit
     def featureNames: Vector[String] = basis.columns
-    def featureUnit: String          = "feature unit"
 
     private[design] def admit(key: String, input: Vector[Double]): Either[TemplateError, Unit] =
       Either.cond(
@@ -244,8 +240,6 @@ object TemplateDesign:
       extends TemplateDesign[Mass[U]]:
     def method: String               = meanMapMethod
     def featureNames: Vector[String] = Vector("training-mean cosine")
-    def featureUnit: String          = "cosine similarity"
-    def unitSymbol: String           = unit.symbol
 
     private[design] def admit(key: String, input: Mass[U]): Either[TemplateError, Unit] =
       Right(())

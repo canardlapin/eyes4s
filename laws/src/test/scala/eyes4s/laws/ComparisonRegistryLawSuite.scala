@@ -68,6 +68,7 @@ class ComparisonRegistryLawSuite extends munit.DisciplineSuite:
     assertEquals(ComparisonMethods.cosine.id, DefinitionId.cosine)
     ComparisonMethods.all.foreach { entry =>
       assertEquals(ComparisonMethods.resolve(entry.id).map(_.id), Some(entry.id))
+      assertEquals(entry.toString, s"${entry.id.name}@${entry.id.version}")
       assertEquals(ComparisonMethods.of(entry.method).map(_.id), Right(entry.id))
       assert(entry.study[Norm].descriptor.isDefined, entry.id)
     }
