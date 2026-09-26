@@ -176,3 +176,45 @@ Round-2 scores: interaction 8 APPROVE, buildability 8 APPROVE, visual 8 APPROVE,
 - Upstream tickets: UI-A window/px°/corrections · UI-B matched cardinality + occurrence layout ·
   UI-C ReportSpec · UI-D progress/stale/preview counts · UI-E density grids · UI-F initial
   fixation + plan.diff · UI-G provenance/paging/ResultRef · UI-H FixationCsv extras + inventory.
+
+## 13. Owner decisions 2026-09-26: portability and off-screen gaze
+
+**Portable by construction.** Ship on the JVM with JavaFX, but structure the app so that a
+future UI technology (Electron or Tauri with Scala.js, or a browser) can be added without
+rewriting behaviour. Rules:
+
+- **Layers.**
+  - `studio-core` (document, commands, revisions, services, `StudyBackend`), `studio-app` (the
+    UI-neutral presentation layer) and `studio-viz` (Intaglio scene builders) are cross-built
+    for JVM and Scala.js. CI links them for JS on every PR.
+  - `studio-desktop` (JavaFX, scaladock, Intaglio's JavaFX backend, JVM platform services,
+    packaging) is the only JVM-only UI layer.
+- **Elm-style presentation.** `studio-app` owns the app model, the intents (user actions), the
+  pure `update`, and the view-models every screen renders: perspectives, the trail, selection,
+  freshness, banners, form state, table rows, formatted strings. A UI shell renders view-models
+  and dispatches intents; it holds no behaviour. Every user-visible behaviour has a headless test
+  at the `studio-app` level.
+- **UI-neutral layout.** Perspectives and pane layouts are declared as a `LayoutSpec` in
+  `studio-app`. `studio-desktop` maps them to scaladock, and a web shell would map them to a web
+  docking library.
+- **Platform services behind interfaces:** file system, project store, dialogs, clipboard, fonts,
+  scheduler/clock, and external open. JVM implementations live in `studio-desktop`.
+- **Serializable backend protocol.** `StudyBackend` requests, responses and progress events have
+  cross-built codecs. There are two transports: in-process (JVM today, Scala.js later, since the
+  eyes4s plan, codec and fs2 modules cross-build) and an IPC sidecar (a web shell calling a JVM
+  backend). One conformance suite covers every transport.
+- **One token source.** It generates JavaFX CSS, web CSS variables and Scala constants. Strings
+  come from resource bundles owned by `studio-app`.
+- **Enforcement.** The boundary check fails if `javafx.*`, `scaladock.fx` or `java.io`/`java.nio`
+  appear outside `studio-desktop` and the platform implementations. The port contract is written
+  up in `docs/studio/PORTING.md`.
+
+**Off-screen fixations.** A finite fixation outside the screen does not quarantine its trial by
+default. The configurable `OffScreenPolicy` is `ExcludeRecord` (the default) or `QuarantineTrial`;
+changing it is a "Dataset · re-admit" change. Excluded records are reported under their own tally
+and cause, "outside screen", separately from "outside window", and the methods text cites the
+policy. Non-finite or unparseable coordinates still quarantine as before.
+
+**Control pool with repeated references.** The occurrence selection used for the matched
+reference also applies to the control pool, so each other item contributes one reference per
+participant. "All occurrences as controls" is a named option that is never the default.

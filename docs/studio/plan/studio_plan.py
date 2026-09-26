@@ -3,6 +3,7 @@
     python3 docs/studio/plan/studio_plan.py render            # rewrite docs/studio/IMPLEMENTATION_PLAN.md
     python3 docs/studio/plan/studio_plan.py mote --dry-run    # print the mote commands
     python3 docs/studio/plan/studio_plan.py mote              # create missing beads, record ids.json
+    python3 docs/studio/plan/studio_plan.py sync              # update text of existing beads that changed
 
 Point A: eyes4s core (StudyPlan, preflight, preview, fs2 execution, codecs, diagnostics) plus the
 UI-A..UI-H core tickets; no studio code. Point B: the approved design in docs/studio/design/
@@ -2061,6 +2062,86 @@ SERIAL_GATES = False
 PREAMBLE_SHORT = "Studio merges behind StudyBackend with FakeStudyBackend; see the plan preamble."
 
 
+# ---------------------------------------------------------------------------------------------
+# Owner decisions 2026-09-26 (DESIGN_SPEC §13): portable-by-construction architecture;
+# off-screen fixations excluded and reported by default; control pool follows occurrence selection.
+# ---------------------------------------------------------------------------------------------
+PREAMBLE = PREAMBLE + (" Portability (DESIGN_SPEC §13): studio-core, studio-app (UI-neutral presentation: model, intents, update, "
+    "view-models, LayoutSpec, commands, strings) and studio-viz are cross-built JVM + Scala.js and linked for JS in CI; studio-desktop "
+    "is a thin JavaFX shell that renders view-models and dispatches intents. Every behaviour is tested headlessly in studio-app.")
+COMMON = COMMON + (" Behaviour lives in studio-app (or studio-core) with headless tests; the JavaFX layer only binds view-models to "
+    "nodes and dispatches intents; no javafx, scaladock.fx or java.io/java.nio outside studio-desktop.")
+
+_x = _find("S0.1")
+_x["title"] = "Decision: studio module layout, toolchain and portability"
+_x["scope"] = ("Owner decision 2026-09-26: JVM + JavaFX now, portable by construction (DESIGN_SPEC §13). Projects under studio/: "
+    "studio-core (crossProject JVM+JS: document, commands, revisions, services, StudyBackend protocol, fake backend), studio-app "
+    "(crossProject: Elm-style presentation layer — app model, intents, update, view-models, LayoutSpec, command registry, strings, "
+    "formatting), studio-viz (crossProject: Intaglio scene builders over intaglio core/interaction/svg), studio-desktop (JVM: JavaFX "
+    "shell, scaladock, Intaglio javafx backend, platform services, packaging). JDK 25 LTS for studio-desktop (JavaFX 24 needs JDK ≥ 22); "
+    "cross projects keep the core JDK target. Scala 3.7.4, sbt 1.12.14. eyes4s kernel…codec and fs2 already cross-build for JS; only "
+    "io's ArrowResultExport and ArtifactFiles are JVM-only.")
+_x["ac"] = ["Decision note on the bead (portability rationale, alternatives: JavaFX-only monolith; web-first).",
+            "Performance reference machine named when S10.6 starts (model, CPU, RAM, macOS)."]
+
+_x = _find("S0.2")
+_x["title"] = "Add studio-core, studio-app, studio-viz (JVM+JS) and studio-desktop (JVM) with boundary rules"
+_x["scope"] = ("Create the four projects per S0.1. Extend checkModuleBoundaries: no eyes4s module depends on studio-*; studio-core, "
+    "studio-app and studio-viz resolve no javafx/scaladock-fx and compile for Scala.js; a source lint rejects javafx.*, scaladock.fx, "
+    "java.io and java.nio imports outside studio-desktop.")
+_x["ac"] = ["`sbt studioCoreJVM/test studioCoreJS/test studioAppJVM/test studioAppJS/test studioVizJVM/test studioVizJS/test studioDesktop/test` run.",
+            "CI links studio-app for JS (fastLinkJS) on every PR.",
+            "Boundary check and import lint fail on planted violations (negative fixtures).",
+            "AGENTS.md names studio-core and studio-desktop as effect-permitted and studio-app/studio-viz as pure."]
+
+_insert_after("S0.8",
+    _mk("S0.9", "S0", "Portability contract: platform interfaces, backend transports, PORTING.md", 0, "—",
+        "Define platform service interfaces in studio-core (FileSystem, ProjectStore, Dialogs, Clipboard, Fonts, Scheduler/Clock, ExternalOpen) "
+        "with JVM implementations in studio-desktop; BackendTransport with InProcess (JVM now; Scala.js later) and an IPC sidecar protocol spec "
+        "(framed JSON over stdio/WebSocket) using the cross-built StudyBackend codecs; docs/studio/PORTING.md explains what a new shell must "
+        "implement (render view-models, dispatch intents, map LayoutSpec, provide platform services, pass the UI-neutral acceptance suite and visual parity).",
+        ["Interfaces compile on JVM and JS; no JVM type leaks into studio-core/studio-app signatures.",
+         "BackendConformanceSuite runs over InProcess and a loopback IPC transport (JVM) with identical results.",
+         "PORTING.md reviewed; it lists the exact acceptance a port must pass."],
+        ["PlatformInterfacesSuite (JVM+JS)", "TransportConformanceSuite"], deps=["S0.2", "S3.0"]))
+
+_insert_after("S1.0" if any(x["key"] == "S1.0" for x in T) else "S1.1",
+    _mk("S1.0", "S1", "studio-app presentation framework: model, intents, update, view-models", 0, "all boards",
+        "Elm-style core cross-built JVM+JS: AppModel, Intent ADT, pure update returning effects-as-data, view-model projections per pane; "
+        "LayoutSpec for perspectives and pane layouts; command registry and keymap as data; string bundles and formatting. The JavaFX shell "
+        "subscribes to view-model streams and dispatches intents.",
+        ["update is pure and total (property tests over generated intent sequences).",
+         "A headless harness renders every view-model to text snapshots (golden) for the fixture moments t1/t2/t3.",
+         "Links for JS in CI."],
+        ["AppUpdateLawsSuite (JVM+JS)", "ViewModelSnapshotSuite"], deps=["S0.2", "S2.2"]))
+for _k in ("S1.4", "S1.5a", "S1.6", "S1.7", "S1.8", "S1.9", "S1.10", "S1.11", "S1.13", "S3.6"):
+    _deps(_k, add=["S1.0"])
+for _k in [x["key"] for x in T if x["epic"] in ("S5", "S6", "S7", "S8", "S9")]:
+    _deps(_k, add=["S1.0"])
+_find("S1.1")["scope"] += " The same token source also generates web CSS custom properties for a future web shell."
+_find("S1.1")["ac"].append("Web CSS variables generated from the same source (checked in CI, not shipped).")
+_find("S1.5a")["scope"] += " Perspectives and default layouts are declared as a UI-neutral LayoutSpec in studio-app; studio-desktop maps LayoutSpec to scaladock."
+_find("S1.9")["scope"] += " The registry and keymap are data in studio-app; the menu bar is a JavaFX rendering of them."
+_find("S1.13")["scope"] += " Bundles live in studio-app (cross-built)."
+_find("S3.0")["scope"] += " Requests, responses and progress events have cross-built codecs so the same protocol serves in-process and IPC transports."
+_find("S3.6")["scope"] += " The driver dispatches studio-app intents and reads view-models, so the same acceptance suite can validate any future UI shell."
+for _k in ("S4.5b", "S4.5c", "S4.5d", "S4.5e", "S4.6"):
+    _find(_k)["scope"] = "(studio-viz builder, cross-built; hosted by studio-desktop) " + _find(_k)["scope"]
+_find("S5.5")["scope"] += (" OffScreenPolicy setting (Dataset · re-admit): ExcludeRecord (default) or QuarantineTrial; 'outside screen' "
+    "tallied and shown separately from 'outside window'.")
+_find("S5.5")["ac"].append("Switching OffScreenPolicy creates a dataset draft; counts for 'outside screen' and 'outside window' are shown separately.")
+_find("S5.6")["scope"] += " Ledger shows 'outside screen' exclusions as a reported count, not a quarantine cause, under ExcludeRecord."
+_find("S9.4")["scope"] += " Methods cite the OffScreenPolicy and the occurrence-selection rule for matched references and controls."
+_insert_after("S10.8",
+    _mk("S10.9", "S10", "Portability proof: minimal Scala.js shell", 2, "Explore.dc.html",
+        "Spike (not a release gate): a browser page that links studio-app + studio-viz for JS, renders the Explore perspective from view-models with "
+        "Intaglio's canvas/SVG backend, dispatches intents, and runs the fake backend in-process.",
+        ["The Explore linked-selection scenario (E2E-03) passes against the web shell via the StudioDriver.",
+         "Findings recorded in PORTING.md (gaps, bundle size)."],
+        ["E2E-03 on the web shell"], deps=["S1.0", "S0.9", "S6.6"]))
+
+GATES = [(k, t_, p, b, ds + (["S0.9", "S1.0"] if k == "G0" else [])) for k, t_, p, b, ds in GATES]  # S10.9 is a spike, deliberately ungated
+
 def body_of(x):
     lines = [
         f"Plan key {x['key']} (docs/studio/IMPLEMENTATION_PLAN.md). Board: {x['board']}.",
@@ -2239,6 +2320,22 @@ def create(dry):
     print(f"{len(ids)} beads, {len(done)} edges")
 
 
+def sync(dry):
+    """Update title/body/priority of existing beads whose generated text changed."""
+    ids = json.load(open(IDS))
+    want = {x["key"]: (f"{x['key']} {x['title']}", body_of(x), x["prio"]) for x in T}
+    want.update({k: (t_, b + "\n\nRequires: " + ", ".join(ds), p) for k, t_, p, b, ds in GATES})
+    n = 0
+    for key, (title, body, prio) in want.items():
+        if key not in ids:
+            continue
+        cur = json.loads(subprocess.run(["mote", "--json", "show", ids[key]], cwd=ROOT, capture_output=True, text=True).stdout)
+        if cur["body"] != body or cur["title"] != title or cur["priority"] != prio:
+            n += 1
+            if not dry:
+                mote(["set", ids[key], f"title={title}", f"body={body}", f"priority={prio}"], False)
+    print(f"{n} beads {'would be ' if dry else ''}updated")
+
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "render"
     if cmd == "render":
@@ -2246,5 +2343,7 @@ if __name__ == "__main__":
         print("rendered")
     elif cmd == "mote":
         create("--dry-run" in sys.argv)
+    elif cmd == "sync":
+        sync("--dry-run" in sys.argv)
     else:
         sys.exit(__doc__)
