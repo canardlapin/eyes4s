@@ -72,7 +72,7 @@ class ReportImpostorSuite extends munit.FunSuite:
       ScoreComponent.of[TwoComponent, TwoDifference](
         name,
         s"the $name component",
-        ParameterUnits.Dimensionless,
+        Quantity.Dimensionless,
         MeasureScale.UnboundedSimilarity,
         ScoreDirection.HigherIsCloser
       )(read, delta)
