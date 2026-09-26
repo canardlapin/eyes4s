@@ -110,4 +110,5 @@ object IoDiagnosticSamples:
 
   /** Every portable family of every catalog, in documented order. */
   val all: Vector[FamilySamples] =
-    DiagnosticSamples.all ++ eyes4s.codec.CodecDiagnosticSamples.all ++ laws ++ io
+    DiagnosticSamples.all ++ eyes4s.codec.CodecDiagnosticSamples.all ++
+      eyes4s.results.ResultsDiagnosticSamples.all ++ laws ++ io

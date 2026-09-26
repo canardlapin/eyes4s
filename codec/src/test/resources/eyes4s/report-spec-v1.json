@@ -1,0 +1,95 @@
+{
+  "schema" : {
+    "name" : "eyes4s.report-spec",
+    "version" : 1
+  },
+  "value" : {
+    "id" : "memory by confidence",
+    "scale" : 0,
+    "roles" : [
+      "difference",
+      "matched"
+    ],
+    "components" : [
+      "value"
+    ],
+    "filter" : {
+      "kind" : "and",
+      "left" : {
+        "kind" : "cmp",
+        "term" : {
+          "kind" : "window",
+          "measure" : "outside-window-share"
+        },
+        "comparison" : "less-or-equal",
+        "threshold" : 0.25
+      },
+      "right" : {
+        "kind" : "not",
+        "inner" : {
+          "kind" : "is-missing",
+          "term" : {
+            "kind" : "categorical-covariate",
+            "name" : "memory",
+            "levels" : [
+              "Remembered",
+              "Forgotten"
+            ]
+          }
+        }
+      }
+    },
+    "groupBy" : [
+      {
+        "kind" : "by-bins",
+        "term" : {
+          "kind" : "numeric-covariate",
+          "name" : "confidence",
+          "unit" : "rating"
+        },
+        "bins" : [
+          {
+            "label" : "low",
+            "from" : 1.0,
+            "until" : 3.0,
+            "upper" : "excluded"
+          },
+          {
+            "label" : "high",
+            "from" : 3.0,
+            "until" : 4.0,
+            "upper" : "included"
+          }
+        ]
+      },
+      {
+        "kind" : "by-level",
+        "term" : {
+          "kind" : "categorical-covariate",
+          "name" : "memory",
+          "levels" : [
+            "Remembered",
+            "Forgotten"
+          ]
+        }
+      }
+    ],
+    "reduce" : {
+      "kind" : "participant-means",
+      "minimumQueries" : 2
+    },
+    "contrast" : {
+      "term" : {
+        "kind" : "categorical-covariate",
+        "name" : "memory",
+        "levels" : [
+          "Remembered",
+          "Forgotten"
+        ]
+      },
+      "minuend" : "Remembered",
+      "subtrahend" : "Forgotten"
+    },
+    "spread" : "standard-deviation-and-error"
+  }
+}

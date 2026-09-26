@@ -72,6 +72,7 @@ object SchemaRegistry:
   private val graphs     = () => new ManifestLawSuite
   private val recorded   = () => new RecordingResultCodecLawSuite
   private val temporal   = () => new TemporalResultCodecLawSuite
+  private val reports    = () => new ReportLawSuite
   private val templates  = () => new TemplateRecipeLawSuite
 
   /** The study plan fixtures of the registered map methods other than cosine. */
@@ -343,6 +344,24 @@ object SchemaRegistry:
       Kind.Document,
       Vector("temporal-result-v1.json"),
       codecLaw(temporal, "temporal study result")
+    ),
+    Entry(
+      ReportCodecDefinitions.covariateSchema,
+      Kind.Document,
+      Vector("covariate-schema-v1.json"),
+      codecLaw(reports, "covariate schema")
+    ),
+    Entry(
+      ReportCodecDefinitions.reportSpec,
+      Kind.Document,
+      Vector("report-spec-v1.json"),
+      codecLaw(reports, "report spec")
+    ),
+    Entry(
+      ReportCodecDefinitions.report,
+      Kind.Document,
+      Vector("report-v1.json"),
+      codecLaw(reports, "study report")
     )
   ) ++ methodPlans.map((id, fixture) =>
     Entry(id, Kind.Definition, Vector(fixture), codecLaw(plans, s"${id.name} study plan"))
@@ -992,6 +1011,10 @@ private object Decoders:
         Some(AdditionalRecipeCodecs.point.archive)
       case other if other == AdditionalRecipeCodecs.repetition.schema =>
         Some(AdditionalRecipeCodecs.repetition)
+      case ReportCodecDefinitions.covariateSchema => Some(ReportCodecs.covariates)
+      case ReportCodecDefinitions.reportSpec      => Some(ReportCodecs.reportSpec)
+      case ReportCodecDefinitions.report          =>
+        Some(ReportCodecs.report(StudyCodecs.key(DefinitionId.studyKey)))
       case other if other.name == TemplateRecipeCodecs.schema.name =>
         Some(TemplateRecipeCodecs.of(document))
       case _ => None

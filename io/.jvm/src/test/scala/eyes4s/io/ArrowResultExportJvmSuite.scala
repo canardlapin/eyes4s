@@ -49,7 +49,7 @@ class ArrowResultExportJvmSuite extends munit.CatsEffectSuite:
                 val root = reader.getVectorSchemaRoot
                 assertEquals(
                   root.getSchema.getCustomMetadata.get("eyes4s.result_metadata"),
-                  t.metadata.noSpaces
+                  t.metadata.circe.noSpaces
                 )
                 assertEquals(
                   root.getSchema.getFields.asScala.map(_.getName).toVector,

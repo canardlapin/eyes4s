@@ -121,6 +121,10 @@ object ProtocolPins:
       """{"Job":{"job":1}}""",
     "locus.Line" ->
       """{"Line":{"source":"s.asc","line":12}}""",
+    "locus.Participant" ->
+      """{"Participant":{"name":"P17"}}""",
+    "locus.Group" ->
+      """{"Group":{"levels":[{"term":"response","level":"Remembered"}]}}""",
     "locus.Pair" ->
       """{"Pair":{"focal":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"reference":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}}}""",
     "locus.Path" ->
