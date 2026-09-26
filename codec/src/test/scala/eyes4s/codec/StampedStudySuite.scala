@@ -16,8 +16,8 @@
 
 package eyes4s.codec
 
-import eyes4s.compare.ComparisonQuantum
-import eyes4s.design.{FailurePolicy, PairQuantum, WorkQuanta}
+import eyes4s.compare.{ComparisonQuantum, Similarity}
+import eyes4s.design.{FailurePolicy, PairQuantum, SignedDifference, WorkQuanta}
 import eyes4s.kernel.Unit2D.Px
 import eyes4s.plan.*
 import io.circe.Json
@@ -47,6 +47,78 @@ class StampedStudySuite extends munit.FunSuite:
     )
     assertEquals(completed.stamp.check(stepped.stamp, Vector.empty), Right(()))
     assert(get(completed.checkAgainst(bound)) eq completed.result)
+  }
+
+  test("the stamped scientific adapter reports the next trial and binds completion") {
+    type Cursor = StampedStudyCursor[StudyKey, Px, Unit, Similarity, SignedDifference]
+    type Result = StampedStudyResult[StudyKey, Px, Unit, Similarity, SignedDifference]
+    val adapter = Stepwise[Cursor, StudyStage, PlanError, Result]
+    val first   = get(bound.work())
+    val quantum = WorkQuanta(get(PairQuantum.of(1)), get(ComparisonQuantum.of(1)))
+    assertEquals(first.stage, StudyStage.Estimating(0, 0))
+    assertEquals(adapter.stage(first), StudyStage.Estimating(0, 0))
+    val next = get(adapter.advance(first, quantum)) match
+      case WorkStep.More(stage, units, cursor) =>
+        assertEquals(stage, StudyStage.Estimating(0, 0))
+        assertEquals(units, 1)
+        cursor
+      case WorkStep.Done(_, _) => fail("completed before estimating the remaining trials")
+    assertEquals(next.stage, StudyStage.Estimating(0, 1))
+    assertEquals(adapter.stage(next), StudyStage.Estimating(0, 1))
+    val finished = get(Stepwise.complete(next, quantum))
+    assertEquals(
+      get(results.codec.encode(finished.result)),
+      get(results.codec.encode(completed.result))
+    )
+    assert(finished.stamp eq bound.stamp)
+    assert(get(finished.checkAgainst(bound)) eq finished.result)
+  }
+
+  test("the stamped counted adapter crosses counting into metered scientific work") {
+    type Cursor = StampedCountedStudyCursor[StudyKey, Px, Unit, Similarity, SignedDifference]
+    type Result = StampedStudyResult[StudyKey, Px, Unit, Similarity, SignedDifference]
+    val adapter = Stepwise[Cursor, StudyRunStage, StudyRunError, Result]
+    val quantum = WorkQuanta(get(PairQuantum.of(1)), get(ComparisonQuantum.of(1)))
+    val first   = get(bound.countedWork())
+    assertEquals(first.stage, StudyRunStage.Counting(StudyDesign.Matched, 0L))
+    assertEquals(adapter.stage(first), StudyRunStage.Counting(StudyDesign.Matched, 0L))
+    @annotation.tailrec
+    def counted(cursor: Cursor): Cursor = adapter.stage(cursor) match
+      case StudyRunStage.Counting(_, _) =>
+        get(adapter.advance(cursor, quantum)) match
+          case WorkStep.More(stage, units, next) =>
+            assert(stage.isInstanceOf[StudyRunStage.Counting])
+            assert(units <= 1)
+            counted(next)
+          case WorkStep.Done(_, _) => fail("counting produced a scientific result")
+      case StudyRunStage.Running(_, _) => cursor
+    def estimating(stage: StudyRunStage, trial: Int, done: Long): Unit = stage match
+      case StudyRunStage.Running(actual, meter) =>
+        assertEquals(actual, StudyStage.Estimating(0, trial))
+        assertEquals(meter.kind, StageKind.Estimating)
+        assertEquals(meter.unit, CountUnit.Maps)
+        assertEquals(meter.done, done)
+        // The pinned fixture has two participants, three stimuli and two phases at one scale.
+        assertEquals(meter.total, SegmentTotal.Exact(12L))
+      case other => fail(s"expected estimation, got $other")
+    val running = counted(first)
+    estimating(running.stage, 0, 0L)
+    estimating(adapter.stage(running), 0, 0L)
+    val next = get(adapter.advance(running, quantum)) match
+      case WorkStep.More(stage, units, cursor) =>
+        estimating(stage, 0, 1L)
+        assertEquals(units, 1)
+        cursor
+      case WorkStep.Done(_, _) => fail("completed after only one map")
+    estimating(next.stage, 1, 1L)
+    estimating(adapter.stage(next), 1, 1L)
+    val finished = get(Stepwise.complete(next, quantum))
+    assertEquals(
+      get(results.codec.encode(finished.result)),
+      get(results.codec.encode(completed.result))
+    )
+    assert(finished.stamp eq bound.stamp)
+    assert(get(finished.checkAgainst(bound)) eq finished.result)
   }
 
   test("a completed envelope refuses a different prepared plan") {

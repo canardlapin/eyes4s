@@ -96,6 +96,57 @@ class CountedStudyCursorSuite extends munit.FunSuite:
     assertEquals(counts.cardinality.multiple, get(prepared.matchedCardinality).multiple)
   }
 
+  test("the Stepwise adapter exposes counting and the next scientific trial with its meter") {
+    type Cursor = CountedStudyCursor[StudyKey, Px, Unit, Similarity, SignedDifference]
+    val adapter = Stepwise[Cursor, StudyRunStage, StudyRunError, StudyResult[
+      StudyKey,
+      Px,
+      Similarity,
+      SignedDifference
+    ]]
+    val (plan, prepared) = prepare(() => ())
+    val quantum          = WorkQuanta(get(PairQuantum.of(1)), get(ComparisonQuantum.of(1)))
+    val first            = get(CountedStudyCursor.of(prepared))
+    assertEquals(adapter.stage(first), StudyRunStage.Counting(StudyDesign.Matched, 0L))
+    @annotation.tailrec
+    def counted(cursor: Cursor): Cursor = adapter.stage(cursor) match
+      case StudyRunStage.Counting(_, _) =>
+        get(adapter.advance(cursor, quantum)) match
+          case WorkStep.More(stage, units, next) =>
+            assert(stage.isInstanceOf[StudyRunStage.Counting])
+            assert(units <= 1)
+            counted(next)
+          case WorkStep.Done(_, _) => fail("counting produced a scientific result")
+      case StudyRunStage.Running(_, _) => cursor
+    def estimating(stage: StudyRunStage, trial: Int, done: Long): Unit = stage match
+      case StudyRunStage.Running(actual, meter) =>
+        assertEquals(actual, StudyStage.Estimating(0, trial))
+        assertEquals(meter.kind, StageKind.Estimating)
+        assertEquals(meter.unit, CountUnit.Maps)
+        assertEquals(meter.done, done)
+        assertEquals(meter.total, SegmentTotal.Exact(40L))
+      case other => fail(s"expected estimation, got $other")
+    val running = counted(first)
+    estimating(adapter.stage(running), 0, 0L)
+    val next = get(adapter.advance(running, quantum)) match
+      case WorkStep.More(stage, units, cursor) =>
+        estimating(stage, 0, 1L)
+        assertEquals(units, 1)
+        cursor
+      case WorkStep.Done(_, _) => fail("completed after only one map")
+    estimating(adapter.stage(next), 1, 1L)
+    val finished = get(Stepwise.complete(next, quantum))
+    val expected = get(plan.run(input))
+    assertEquals(finished.scales.size, 1)
+    assertEquals(finished.scales.head.estimation.size, 40)
+    val rows = get(finished.scales.head.contrast).rows
+    assertEquals(rows.size, 20)
+    assertEquals(
+      rows.map(row => (row.key, row.difference)),
+      get(expected.scales.head.contrast).rows.map(row => (row.key, row.difference))
+    )
+  }
+
   test("completed-count startup performs no pair traversal and rejects another preparation") {
     var projections      = 0
     val (plan, prepared) = prepare(() => projections += 1)

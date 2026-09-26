@@ -102,6 +102,46 @@ class StampedManifestSuite extends munit.FunSuite:
     }
   }
 
+  test("a legacy decoder defaults to no claim but cannot hide a forged raw stamp") {
+    val legacy = new ArtifactDecoders.Delegating(decoders):
+      override def resultWithPayloads(d: Json, p: PayloadRef => Option[VerifiedPayload]) =
+        super.resultWithPayloads(d, p).map { loaded =>
+          new LoadedResult[StudyKey, Px]:
+            type Score      = loaded.Score
+            type Difference = loaded.Difference
+            def result = loaded.result
+            def encode = loaded.encode
+        }
+    val loaded = get(resolve(save(), legacy)).results.head._2
+    assertEquals(loaded.stampClaim, None)
+    assertEquals(get(loaded.encode), get(Documents.parse(packed.result.bytes)))
+    val document = get(Documents.parse(packed.result.bytes))
+    Vector("plan", "input").foreach { field =>
+      val altered = document.mapObject(o =>
+        o.add(
+          "value",
+          o("value").get.mapObject(v =>
+            v.add(
+              "runStamp",
+              v("runStamp").get.mapObject(_.add(field, Json.fromString("0" * 64)))
+            )
+          )
+        )
+      )
+      val artifact =
+        get(StoredArtifact.document("result", ArtifactRole.StudyResult, altered, None))
+      val errors = resolve(save(packed.copy(result = artifact)), legacy).left.toOption
+        .getOrElse(fail("legacy decoder concealed a forged raw stamp"))
+      assert(errors.exists {
+        case ResolveError.Relation(_, RelationMismatch.RunPlan(reported, current, changes)) =>
+          field == "plan" && reported.hex == "0" * 64 && current == completed.stamp.plan.sha256 && changes.isEmpty
+        case ResolveError.Relation(_, RelationMismatch.RunInput(reported, current)) =>
+          field == "input" && reported.hex == "0" * 64 && current == completed.stamp.input.sha256
+        case _ => false
+      })
+    }
+  }
+
   test("changed input evidence cannot pass by retaining the legacy input identity") {
     val frame = get(Frame.screen("manifest-stamp", 10, 10))
     val clock = ClockId("manifest-stamp")
