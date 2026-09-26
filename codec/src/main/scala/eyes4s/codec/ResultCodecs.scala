@@ -137,7 +137,8 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
     val keys: VersionedCodec[K],
     val method: StudyMethod[P, U, S, D],
     val scores: VersionedCodec[S],
-    val differences: VersionedCodec[D]
+    val differences: VersionedCodec[D],
+    val parameters: Option[VersionedCodec[P]] = None
 )(using unit: UnitLabel[U]):
   private given Ordering[K] = layout.ordering
 
@@ -634,8 +635,20 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
         new LoadedResult[K, U]:
           type Score      = S
           type Difference = D
-          def result = value
-          def encode = codec.encode(value)
+          def result                                     = value
+          def encode                                     = codec.encode(value)
+          override def scoreSchema(planParameters: Json) =
+            parameters match
+              case None       => super.scoreSchema(planParameters)
+              case Some(read) =>
+                read
+                  .decode(planParameters)
+                  .flatMap(p =>
+                    ScoreSchema
+                      .method(method, p)
+                      .left
+                      .map(e => CodecError.Field("parameters", planParameters, e.message))
+                  )
 
 /** A decoded result whose score and difference types stay abstract but typed. */
 trait LoadedResult[K, U <: Unit2D]:
@@ -643,6 +656,21 @@ trait LoadedResult[K, U <: Unit2D]:
   type Difference
   def result: StudyResult[K, U, Score, Difference]
   def encode: Either[CodecError, Json]
+
+  /** The components of the result's own method, under the method
+    * parameters of the plan document `planParameters` (a plan's
+    * `LoadedStudy.parametersDocument`), read with the result codec's own
+    * parameter codec, so the components are typed by the result's scores.
+    * A result decoded without a parameter codec cannot describe them.
+    */
+  def scoreSchema(planParameters: Json): Either[CodecError, ScoreSchema[Score, Difference]] =
+    Left(
+      CodecError.Field(
+        "parameters",
+        planParameters,
+        "the result codec was built without its plan's parameter codec"
+      )
+    )
 
 sealed trait StudyResultRegistration[K, U <: Unit2D]:
   def id: DefinitionId
