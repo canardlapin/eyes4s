@@ -6574,7 +6574,7 @@
     "class eyes4s.detect.DetectionResultError": {
       "classification": "data-sum",
       "instance": "eyes4s/detect/DetectionResultError$EventOutsideRecording",
-      "suite": "detectJVM/eyes4s.detect.DetectionAssemblySuite"
+      "suite": "detectJVM/eyes4s.detect.DetectionSupportSearchSuite"
     },
     "class eyes4s.detect.DetectionWarning": {
       "classification": "data-sum",
@@ -7179,12 +7179,12 @@
     "class eyes4s.io.TimestampRounding": {
       "classification": "data-sum",
       "instance": "eyes4s/io/TimestampRounding$$anon$9",
-      "suite": "ioJVM/eyes4s.io.TemporalContrastSuite"
+      "suite": "ioJVM/eyes4s.io.RepetitionGuideSuite"
     },
     "class eyes4s.io.TimestampUnit": {
       "classification": "data-sum",
       "instance": "eyes4s/io/TimestampUnit$$anon$6",
-      "suite": "ioJVM/eyes4s.io.TemporalContrastSuite"
+      "suite": "ioJVM/eyes4s.io.RepetitionGuideSuite"
     },
     "class eyes4s.kernel.Detector": {
       "classification": "behavior-or-sealed-data",
@@ -7193,7 +7193,7 @@
     },
     "class eyes4s.kernel.GeometryError": {
       "classification": "data-sum",
-      "instance": "eyes4s/kernel/GeometryError$DegenerateEllipse",
+      "instance": "eyes4s/kernel/GeometryError$BoundsExtentOverflow",
       "suite": "kernelJVM/consumer.PublicKernelSuite"
     },
     "class eyes4s.kernel.Interp": {
@@ -8196,12 +8196,10 @@
     "method eyes4s.compare.Transport$.sinkhorn(1,eyes4s.compare.SinkhornConfig):eyes4s.compare.Compare": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
     "method eyes4s.compare.Transport$.slicedWasserstein(1,scala.Int):eyes4s.compare.Semimetric": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
     "method eyes4s.core.BinocularRecording$.of(1,eyes4s.kernel.Frame,eyes4s.kernel.ClockId,eyes4s.core.Rate,scala.Option,scala.Long[],eyes4s.core.Gaze[],eyes4s.core.Gaze[],scala.Long):scala.util.Either": "coreJVM/consumer.PublicCoreSuite",
-    "method eyes4s.core.BinocularRecording.contentHash():": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
+    "method eyes4s.core.BinocularRecording.contentHash():": "coreJVM/eyes4s.core.RecordingSuite",
     "method eyes4s.core.BinocularRecording.cyclopean(eyes4s.core.Fusion):eyes4s.core.Recording": "coreJVM/eyes4s.core.RecordingSuite",
     "method eyes4s.core.BinocularRecording.disparity():": "coreJVM/eyes4s.core.RecordingSuite",
-    "method eyes4s.core.BinocularRecording.left():": "coreJVM/eyes4s.core.RecordingSuite",
     "method eyes4s.core.BinocularRecording.render():": "coreJVM/consumer.PublicCoreSuite",
-    "method eyes4s.core.BinocularRecording.right():": "coreJVM/eyes4s.core.RecordingSuite",
     "method eyes4s.core.BinocularRecording.size():": "coreJVM/consumer.PublicCoreSuite",
     "method eyes4s.core.CoreError$.widen(1,scala.util.Either):scala.util.Either": "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite",
     "method eyes4s.core.CoreError$.widenDetectionSupport(1,scala.util.Either):scala.util.Either": "coreJVM/eyes4s.core.DetectionSupportSuite",
@@ -8380,7 +8378,7 @@
     "method eyes4s.design.ContrastCursor.contrastedKeys():": "designJVM/eyes4s.design.EvaluationWorkSuite",
     "method eyes4s.design.ContrastError.message():": "codecJVM/eyes4s.codec.DiagnosticsDocJvmSuite",
     "method eyes4s.design.ContrastRow$.reconstruct(3,java.lang.Object,scala.Option,scala.Option,scala.util.Either):scala.util.Either": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
-    "method eyes4s.design.ContrastRowError.message():": "ioJVM/eyes4s.io.TemporalContrastSuite",
+    "method eyes4s.design.ContrastRowError.message():": "codecJVM/eyes4s.codec.DiagnosticsDocJvmSuite",
     "method eyes4s.design.ContrastWork$.complete(3,eyes4s.design.ContrastCursor):eyes4s.design.Contrast": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.design.Contrastable$.apply(2,eyes4s.design.Contrastable):eyes4s.design.Contrastable": "lawsJVM/eyes4s.laws.ContrastSuite",
     "method eyes4s.design.Contrastable$.given_Contrastable_Double_SignedDifference$.subtract(scala.Double,scala.Double):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -8486,7 +8484,7 @@
     "method eyes4s.design.ReductionCursor.advance(eyes4s.design.PairQuantum):eyes4s.design.ReductionPage": "designJVM/consumer.PublicDesignSuite",
     "method eyes4s.design.ReductionCursor.declaredUnits():": "designJVM/eyes4s.design.EvaluationWorkSuite",
     "method eyes4s.design.ReductionCursor.reducedKeys():": "designJVM/eyes4s.design.EvaluationWorkSuite",
-    "method eyes4s.design.ReductionError.message():": "ioJVM/eyes4s.io.TemporalContrastSuite",
+    "method eyes4s.design.ReductionError.message():": "codecJVM/eyes4s.codec.DiagnosticsDocJvmSuite",
     "method eyes4s.design.ReductionPolicyError.message():": "planJVM/eyes4s.plan.MethodDescriptorSuite",
     "method eyes4s.design.ReductionReport$.reconstruct(1,eyes4s.design.ReductionOrientation,eyes4s.design.FailurePolicy,scala.Long,scala.Int,scala.Int,scala.Int,scala.Int,scala.Int,scala.collection.immutable.Vector):scala.util.Either": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
     "method eyes4s.design.ReductionRow$.reconstruct(2,java.lang.Object,scala.util.Either,scala.Int,scala.Int,scala.Int):scala.util.Either": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
@@ -8846,16 +8844,16 @@
     "method eyes4s.io.EyeLinkPortableConformanceRow$.create(java.lang.String,eyes4s.io.Sha256,java.lang.String,eyes4s.io.EyeLinkConformanceStatus,scala.Option,java.lang.String,eyes4s.io.EyeLinkConformanceStatus,scala.Option,scala.Int,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
     "method eyes4s.io.EyeLinkPortableConformanceSummary$.create(scala.collection.immutable.Vector):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
     "method eyes4s.io.EyeLinkSupport$.find(java.lang.String):scala.Option": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-    "method eyes4s.io.FixationColumns$.of(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.TemporalContrastSuite",
-    "method eyes4s.io.FixationColumns.names():": "ioJVM/eyes4s.io.TemporalContrastSuite",
-    "method eyes4s.io.FixationCsv$.read(2,java.lang.String,eyes4s.io.FixationColumns,eyes4s.io.FixationKeyReader,eyes4s.kernel.Frame,eyes4s.io.TimestampUnit,eyes4s.io.TimestampRounding,eyes4s.kernel.UnitLabel):scala.util.Either": "ioJVM/eyes4s.io.TemporalContrastSuite",
+    "method eyes4s.io.FixationColumns$.of(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.RepetitionGuideSuite",
+    "method eyes4s.io.FixationColumns.names():": "ioJVM/eyes4s.io.RepetitionGuideSuite",
+    "method eyes4s.io.FixationCsv$.read(2,java.lang.String,eyes4s.io.FixationColumns,eyes4s.io.FixationKeyReader,eyes4s.kernel.Frame,eyes4s.io.TimestampUnit,eyes4s.io.TimestampRounding,eyes4s.kernel.UnitLabel):scala.util.Either": "ioJVM/eyes4s.io.RepetitionGuideSuite",
     "method eyes4s.io.FixationEvidence$.ledger(2,java.lang.String,eyes4s.io.FixationImport,eyes4s.plan.AdmissionDecision):scala.util.Either": "ioJVM/eyes4s.io.InspectionSourceSuite",
     "method eyes4s.io.FixationEvidence$.reason(eyes4s.io.FixationRowError):eyes4s.plan.AdmissionReason": "ioJVM/eyes4s.io.InspectionSourceSuite",
     "method eyes4s.io.FixationEvidence$.source(2,java.lang.String,eyes4s.io.FixationImport):eyes4s.plan.SourceRef": "ioJVM/eyes4s.io.InspectionSourceSuite",
-    "method eyes4s.io.FixationImport.requireComplete():": "ioJVM/eyes4s.io.TemporalContrastSuite",
+    "method eyes4s.io.FixationImport.requireComplete():": "ioJVM/eyes4s.io.RepetitionGuideSuite",
     "method eyes4s.io.FixationImportError.message():": "ioJVM/consumer.PublicIoSuite",
-    "method eyes4s.io.FixationKeyReader$.of(1,scala.collection.immutable.Vector,scala.Function1,scala.Function1,eyes4s.design.KeyDigest,scala.math.Ordering):scala.util.Either": "ioJVM/eyes4s.io.TemporalContrastSuite",
-    "method eyes4s.io.FixationKeyReader$.study(java.lang.String,java.lang.String,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.TemporalContrastSuite",
+    "method eyes4s.io.FixationKeyReader$.of(1,scala.collection.immutable.Vector,scala.Function1,scala.Function1,eyes4s.design.KeyDigest,scala.math.Ordering):scala.util.Either": "ioJVM/eyes4s.io.RepetitionGuideSuite",
+    "method eyes4s.io.FixationKeyReader$.study(java.lang.String,java.lang.String,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.RepetitionGuideSuite",
     "method eyes4s.io.FixationRowError.message():": "ioJVM/consumer.PublicIoSuite",
     "method eyes4s.io.PsychologyWorkflow$.prepare(eyes4s.io.AdserpWorkflowPlan,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "method eyes4s.io.PsychologyWorkflow$.run(eyes4s.io.AdserpWorkflowPlan,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
@@ -9881,6 +9879,8 @@
     "value eyes4s.compare.Crqa$package$.LineLengthMinimum$.two": "compareJVM/consumer.PublicCompareSuite",
     "value eyes4s.compare.FixationTransportConfig$.DefaultMaximumWork": "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite",
     "value eyes4s.compare.SinkhornConfig$.default": "compareJVM/eyes4s.compareconsumer.MapComparisonSuite",
+    "value eyes4s.core.BinocularRecording.left": "coreJVM/eyes4s.core.RecordingSuite",
+    "value eyes4s.core.BinocularRecording.right": "coreJVM/eyes4s.core.RecordingSuite",
     "value eyes4s.core.Recording$package$.SamplingTolerance$.Exact": "codecJVM/eyes4s.codec.DiagnosticsDocJvmSuite",
     "value eyes4s.core.Recording$package$.SamplingTolerance$.TimestampQuantisation": "coreJVM/consumer.PublicCoreSuite",
     "value eyes4s.core.Recording.contentHash": "coreJVM/eyes4s.core.DetectionSupportSuite",
@@ -9978,6 +9978,7 @@
     "value eyes4s.io.TemplateFitCsv$.receiptHeader": "ioJVM/eyes4s.io.TemplateFitSuite",
     "value eyes4s.io.TemporalContrastCsv$.contextHeader": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "value eyes4s.io.TemporalContrastCsv$.coverageHeader": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "value eyes4s.io.TemporalContrastCsv$.schemaVersion": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "value eyes4s.io.TidyCsv$.header": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "value eyes4s.io.TidyCsv$.schemaVersion": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "value eyes4s.kernel.ContentHash$package$.ContentHash$.empty": "kernelJVM/consumer.PublicKernelSuite",
@@ -10679,6 +10680,7 @@
       "a sample leaving the target frame becomes off-screen, not lost",
       "a window selects samples relative to an anchor",
       "binocular construction cannot bypass spatial or fixed-rate validation",
+      "binocular eye projections are built once and keep their cached identity",
       "binocular samples must be paired",
       "blink and signal loss stay distinguishable",
       "cyclopean fusion by mean takes the midpoint",
@@ -10702,6 +10704,7 @@
       "recording content identity distinguishes absent and present pupil values",
       "recording content identity includes values and sample origin",
       "recording content identity is pinned across JVM and Scala.js",
+      "resumable content hashing reuses a hash computed by either route",
       "single-sample irregular edges are explicit",
       "temporal-support scalar constructors reject invalid operands",
       "the extent covers the final sample's own period, not just its instant",
@@ -11076,9 +11079,12 @@
       "window validity policy is explicit and missing observations preserve the centre"
     ],
     "detectJS/eyes4s.detect.DetectionAssemblySuite": [
+      "EventSeries.of equals the linear-scan reference for arbitrary declared support",
       "assembly matches the pre-change exhaustive labels, gaps, reports and hash across independent quanta",
       "every fixation dispersion retains the original direct numerical formula",
-      "first structural failure and legacy last forbidden gap within the first failing event are unchanged"
+      "first structural failure and legacy last forbidden gap within the first failing event are unchanged",
+      "median absolute deviation meets tied and even-count medians like the reference",
+      "randomized assembly equals the 131970d reference in labels, events, gaps and reports"
     ],
     "detectJS/eyes4s.detect.DetectionResultSuite": [
       "Break rejects an event spanning invalid source support",
@@ -11457,7 +11463,8 @@
     ],
     "ioJS/eyes4s.io.TemporalContrastSuite": [
       "anisotropic temporal plans round-trip and export named widths in every window",
-      "compiled guide admits the actual CSV and exports every window/scale contrast and trial ledger"
+      "compiled guide admits the actual CSV and exports every window/scale contrast and trial ledger",
+      "typed temporal coverage exports exclusion counts and indices for 0, 1 and 2 exclusions"
     ],
     "ioJS/eyes4s.io.TidyResultSuite": [
       "RFC-4180 export has fixed order, explicit missingness, and lossless round-trip",
@@ -11519,6 +11526,7 @@
       "diagonal is computed from the bounds, once",
       "difference of positions is a displacement; position plus displacement is a position",
       "displacement round-trips through polar form",
+      "finite bounds whose extent overflows are named as overflow, not as non-finite",
       "frame identity is nominal, not structural",
       "frame mismatch error explains that the unit is not enough",
       "normalised folds into (-pi, pi]",
@@ -13055,6 +13063,7 @@
       "a sample leaving the target frame becomes off-screen, not lost",
       "a window selects samples relative to an anchor",
       "binocular construction cannot bypass spatial or fixed-rate validation",
+      "binocular eye projections are built once and keep their cached identity",
       "binocular samples must be paired",
       "blink and signal loss stay distinguishable",
       "cyclopean fusion by mean takes the midpoint",
@@ -13078,6 +13087,7 @@
       "recording content identity distinguishes absent and present pupil values",
       "recording content identity includes values and sample origin",
       "recording content identity is pinned across JVM and Scala.js",
+      "resumable content hashing reuses a hash computed by either route",
       "single-sample irregular edges are explicit",
       "temporal-support scalar constructors reject invalid operands",
       "the extent covers the final sample's own period, not just its instant",
@@ -13452,9 +13462,12 @@
       "window validity policy is explicit and missing observations preserve the centre"
     ],
     "detectJVM/eyes4s.detect.DetectionAssemblySuite": [
+      "EventSeries.of equals the linear-scan reference for arbitrary declared support",
       "assembly matches the pre-change exhaustive labels, gaps, reports and hash across independent quanta",
       "every fixation dispersion retains the original direct numerical formula",
-      "first structural failure and legacy last forbidden gap within the first failing event are unchanged"
+      "first structural failure and legacy last forbidden gap within the first failing event are unchanged",
+      "median absolute deviation meets tied and even-count medians like the reference",
+      "randomized assembly equals the 131970d reference in labels, events, gaps and reports"
     ],
     "detectJVM/eyes4s.detect.DetectionResultSuite": [
       "Break rejects an event spanning invalid source support",
@@ -13573,6 +13586,7 @@
     "ioJVM/eyes4s.io.ArrowResultExportJvmSuite": [
       "IPC preserves nullability, exact signed Int64 and metadata while closing every allocation",
       "a failed output closes the writer, stream and all vectors while preserving borrowed allocator ownership",
+      "a missing Arrow jar or --add-opens is a typed Left, not a fatal runtime error",
       "empty IPC still has the complete schema, and invalid limits do not create files"
     ],
     "ioJVM/eyes4s.io.ArtifactFilesSuite": [
@@ -13754,8 +13768,8 @@
       "cancellation never flushes a partial physical line as complete",
       "downstream cancellation runs the upstream finalizer",
       "repeated path cancellation does not leak file descriptors",
-      "task-level path import is observationally equal to byte import",
-      "two hundred thousand lines stream without downstream materialization"
+      "streamed lines are emitted while the source is still producing",
+      "task-level path import is observationally equal to byte import"
     ],
     "ioJVM/eyes4s.io.EyeLinkAscStreamingSuite": [
       "LF, CRLF, blank, and final unterminated lines retain exact locations",
@@ -13906,7 +13920,8 @@
     ],
     "ioJVM/eyes4s.io.TemporalContrastSuite": [
       "anisotropic temporal plans round-trip and export named widths in every window",
-      "compiled guide admits the actual CSV and exports every window/scale contrast and trial ledger"
+      "compiled guide admits the actual CSV and exports every window/scale contrast and trial ledger",
+      "typed temporal coverage exports exclusion counts and indices for 0, 1 and 2 exclusions"
     ],
     "ioJVM/eyes4s.io.TidyResultSuite": [
       "RFC-4180 export has fixed order, explicit missingness, and lossless round-trip",
@@ -13968,6 +13983,7 @@
       "diagonal is computed from the bounds, once",
       "difference of positions is a displacement; position plus displacement is a position",
       "displacement round-trips through polar form",
+      "finite bounds whose extent overflows are named as overflow, not as non-finite",
       "frame identity is nominal, not structural",
       "frame mismatch error explains that the unit is not enough",
       "normalised folds into (-pi, pi]",
