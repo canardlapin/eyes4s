@@ -16,14 +16,13 @@
 
 package eyes4s.io
 
-/** The baseline export adapters under their former name. Every table they
-  * build is a table of the one result-table layer, with the same identity;
-  * new code calls [[ResultExports]], and reports use
-  * [[eyes4s.results.ReportTables]].
+/** The baseline export adapters under their former name: [[ResultExports]]
+  * itself, so every table they build is a table of the one result-table
+  * layer with the same identity. New code calls [[ResultExports]], and
+  * reports use [[eyes4s.results.ReportTables]].
   */
 @deprecated(
   "BaselineExports is a compatibility facade; use ResultExports, which builds the same tables",
   "0.1"
 )
-object BaselineExports:
-  export ResultExports.*
+val BaselineExports: ResultExports.type = ResultExports

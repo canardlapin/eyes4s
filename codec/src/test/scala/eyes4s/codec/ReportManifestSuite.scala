@@ -99,6 +99,11 @@ class ReportManifestSuite extends munit.FunSuite:
     val resolved = get(resolve(graph(report)))
     assertEquals(resolved.report(name("report")), Some(report))
     assertEquals(resolved.reportSpec(name("spec")), Some(spec))
+    // A decorator forwards the report decoder rather than dropping it.
+    val saved     = graph(report)
+    val decorated = new ArtifactDecoders.Delegating(decoders.withReports(reports))
+    val again     = ArtifactResolver.resolve(saved.address, saved.source, decorated)
+    assertEquals(again.toOption.flatMap(_.report(name("report"))), Some(report))
     assertEquals(
       get(ReportCodecs.digest(get(results.codec.digest(result)), "result")),
       binding.result

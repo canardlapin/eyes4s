@@ -127,12 +127,7 @@ final class QueryTable[K] private (
     val components: Vector[String],
     val covariates: CovariateSchema,
     val queries: Vector[Query[K]]
-):
-  /** The same queries in another order. */
-  def reorder(
-      order: Vector[Query[K]] => Vector[Query[K]]
-  ): Either[ReportError[K], QueryTable[K]] =
-    QueryTable.of(scale, components, covariates, order(queries))
+)
 
 object QueryTable:
   def of[K](
