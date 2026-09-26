@@ -31,6 +31,7 @@ enum Modifier derives CanEqual:
   */
 enum Key derives CanEqual:
   case Digit1, Digit2, Digit3, Digit4, Digit5, Z, BracketLeft, BracketRight, Enter, Escape, F6
+  case Tab
 
   def symbol: String = this match
     case Digit1       => "1"
@@ -44,6 +45,7 @@ enum Key derives CanEqual:
     case Enter        => "↩"
     case Escape       => "esc"
     case F6           => "F6"
+    case Tab          => "⇥"
 
 /** A key with its modifiers. */
 final case class KeyChord(key: Key, modifiers: Set[Modifier]) derives CanEqual:
@@ -57,3 +59,7 @@ object KeyChord:
   def command(key: Key): KeyChord      = KeyChord(key, Set(Modifier.Command))
   def commandShift(key: Key): KeyChord =
     KeyChord(key, Set(Modifier.Command, Modifier.Shift))
+  def shift(key: Key): KeyChord        = KeyChord(key, Set(Modifier.Shift))
+  def control(key: Key): KeyChord      = KeyChord(key, Set(Modifier.Control))
+  def controlShift(key: Key): KeyChord =
+    KeyChord(key, Set(Modifier.Control, Modifier.Shift))

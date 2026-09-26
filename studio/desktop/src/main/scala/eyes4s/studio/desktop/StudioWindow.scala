@@ -1,0 +1,191 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eyes4s.studio.desktop
+
+import cats.effect.unsafe.IORuntime
+import eyes4s.studio.app.{AppModel, Intent, PlatformDialog}
+import eyes4s.studio.app.layout.StudioLayouts
+import eyes4s.studio.app.text.{MessageId, Messages}
+import eyes4s.studio.app.tokens.Theme
+import eyes4s.studio.app.ProjectName
+import eyes4s.studio.core.fixture.StoryMoment
+import eyes4s.studio.desktop.dock.{DockGesture, PerspectiveHost}
+import eyes4s.studio.desktop.runtime.{
+  DesktopEffects,
+  PlatformDialogs,
+  StudioRuntime,
+  StudioSession
+}
+import eyes4s.studio.desktop.shell.AppShell
+import javafx.application.Platform
+import javafx.scene.control.{Alert, TextInputDialog}
+import scaladock.fx.DockTheme
+
+/** Why a studio window could not open. Unreadable saved layouts never
+  * stop it: they show their defaults, with a notice.
+  */
+enum WindowError:
+  case Styles(missing: MissingStylesheet)
+
+  def message: String = this match
+    case Styles(m) => m.message
+
+/** One studio window's parts (tickets S1.4, S1.5a): the services, the Elm
+  * runtime, the perspective host and the shell that renders it.
+  */
+final class StudioWindow private (
+    val session: StudioSession,
+    val runtime: StudioRuntime,
+    val host: PerspectiveHost,
+    val shell: AppShell,
+    val effects: DesktopEffects
+):
+  /** The window content, with the studio stylesheets. */
+  def root: javafx.scene.Parent = shell.root
+
+  /** The title the native window shows now. */
+  def title: String = eyes4s.studio.app.vm.Menus.windowTitle(runtime.model)
+
+  /** Store each perspective's arrangement in the document (view-only). */
+  def captureLayouts(): Unit = runtime.dispatch(Intent.LayoutsCaptured(host.capture()))
+
+  /** Keep `stage`'s title on the model's window title (S1.4). */
+  def bind(stage: javafx.stage.Stage): Unit = runtime.listen(_ => stage.setTitle(title))
+
+  def close(): Unit = session.close()
+
+object StudioWindow:
+
+  /** The studio's dock theme: `studio-dock.css`, which maps scaladock's
+    * variables onto the studio tokens.
+    */
+  val dockThemeResource: String = s"${tokens.TokenFiles.resourceDirectory}/studio-dock.css"
+
+  def dockTheme: Either[MissingStylesheet, DockTheme] =
+    Option(getClass.getClassLoader.getResource(dockThemeResource))
+      .toRight(MissingStylesheet(dockThemeResource))
+      .map(url => DockTheme.Custom(url.toExternalForm))
+
+  /** The answer to Rename…: the typed name, or why it was refused. */
+  def renameAnswer(text: String): Intent =
+    ProjectName.of(text).fold(Intent.RenameRefused(_), Intent.RenameProject(_))
+
+  /** The model's intent for a gesture the dock made itself, if the model does
+    * not already agree. A gesture is judged when it is delivered, against
+    * whether the dock is maximized *then*: a restore that a later maximize
+    * has overtaken is not replayed.
+    */
+  def follow(model: AppModel, gesture: DockGesture, dockMaximized: Boolean): Option[Intent] =
+    gesture match
+      case DockGesture.Focused(p) =>
+        Option.when(model.focusedPane != p)(Intent.FocusPane(p))
+      case DockGesture.Maximized(p) =>
+        Option.when(dockMaximized && (!model.isMaximized || model.focusedPane != p))(
+          Intent.SetMaximized(Some(p))
+        )
+      case DockGesture.Restored =>
+        Option.when(!dockMaximized && model.isMaximized)(Intent.SetMaximized(None))
+
+  /** Platform dialogs as JavaFX dialogs (non-blocking). */
+  def fxDialogs(model: () => AppModel, messages: Messages): PlatformDialogs =
+    (dialog: PlatformDialog, dispatch: Intent => Unit) =>
+      dialog match
+        case PlatformDialog.RenameProject =>
+          val d = TextInputDialog(model().project.fold("")(_.value))
+          d.setTitle(messages(MessageId.CommandRenameProject))
+          d.setHeaderText(eyes4s.studio.app.vm.Menus.windowTitle(model(), messages))
+          d.setOnHidden(_ => Option(d.getResult).foreach(t => dispatch(renameAnswer(t))))
+          d.show()
+        case PlatformDialog.ProjectInfo =>
+          val a = Alert(Alert.AlertType.INFORMATION)
+          a.setTitle(messages(MessageId.CommandProjectInfo))
+          a.setHeaderText(eyes4s.studio.app.vm.Menus.windowTitle(model(), messages))
+          a.show()
+        case PlatformDialog.ImportSources | PlatformDialog.OpenProject =>
+          System.err.println(s"$dialog is not available until S5.2 and S2.9.")
+
+  /** Open a window on `initial`, served by the fake backend at `moment`.
+    * On the JavaFX thread. Each execution-service event reaches the model as
+    * [[Intent.Execution]] on the JavaFX thread; jobs the document's running
+    * runs name are adopted first (t3's run 8).
+    */
+  def open(
+      initial: AppModel,
+      moment: StoryMoment,
+      theme: Theme = Theme.Light,
+      dialogs: Option[PlatformDialogs] = None,
+      messages: Messages = Messages.english
+  )(using IORuntime): Either[WindowError, StudioWindow] =
+    for
+      sheets <- StudioStyles.stylesheets(theme).left.map(WindowError.Styles(_))
+      dock   <- dockTheme.left.map(WindowError.Styles(_))
+      window <- build(initial, moment, dock, dialogs, messages)
+    yield
+      window.root.getStylesheets.setAll(sheets*)
+      window
+
+  private def build(
+      initial: AppModel,
+      moment: StoryMoment,
+      dockTheme: DockTheme,
+      dialogs: Option[PlatformDialogs],
+      messages: Messages
+  )(using IORuntime): Either[WindowError, StudioWindow] =
+    // Late-bound: the runtime, the host and the effects refer to each other.
+    var runtime: Option[StudioRuntime] = None
+    def dispatch(i: Intent): Unit      = runtime.foreach(_.dispatch(i))
+    def later(i: Intent): Unit         = Platform.runLater(() => dispatch(i))
+
+    val session = StudioSession.start(moment, e => later(Intent.Execution(e)))
+    // A gesture is reported after the dock's own update has finished, and
+    // judged against the model and the dock it then meets.
+    var dockOf: () => Boolean = () => false
+    val host                  = PerspectiveHost(
+      StudioLayouts.spec,
+      dockTheme,
+      gesture =>
+        Platform.runLater { () =>
+          runtime.foreach(r => follow(r.model, gesture, dockOf()).foreach(r.dispatch))
+        }
+    )
+    dockOf = () => host.dock.state.maximized.isDefined
+    val effects = DesktopEffects(
+      session,
+      dialogs.getOrElse(fxDialogs(() => runtime.fold(initial)(_.model), messages)),
+      p =>
+        host.reset(p)
+        runtime.foreach(r => host.sync(r.model))
+      ,
+      host.perform,
+      f => Platform.runLater(() => f())
+    )
+    val adopted = session.adopt(initial.document)
+    adopted.collect { case Left(e) => e }.foreach(e => System.err.println(e.message))
+    val booted = AppModel.update(initial, Intent.JobsChanged(session.jobs))._1
+    val r      = StudioRuntime(booted, effects)
+    runtime = Some(r)
+    val shell      = AppShell(host, dispatch, messages)
+    val unreadable = host.restore(booted.document.presentation.layouts, booted)
+    if unreadable.nonEmpty then
+      r.dispatch(
+        Intent.LayoutsUnreadable(
+          unreadable.map(_.perspective),
+          unreadable.map(_.reason).distinct.mkString("; ")
+        )
+      )
+    r.listen(shell.render)
+    Right(StudioWindow(session, r, host, shell, effects))
