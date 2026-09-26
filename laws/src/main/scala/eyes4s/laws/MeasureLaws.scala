@@ -198,6 +198,80 @@ trait MeasureLaws extends Laws:
         separates(d.compare, distinct, minSeparation)
     )
 
+  /** A [[Kernel]] promises symmetry and positive semi-definiteness: every Gram
+    * matrix `K(i, j) = k(x_i, x_j)` has `c' K c >= 0` for every real `c`.
+    *
+    * Tested on Gram matrices of `size` generated inputs against generated
+    * coefficient vectors, with the diagonal checked on its own (`k(x, x) >= 0`).
+    * The quadratic form may fall below zero only by `tol` relative to the sum
+    * of `|c_i c_j K(i, j)|`, the rounding it can accumulate. Inputs the kernel
+    * refuses are skipped, not counted as a violation.
+    */
+  def kernel[A](
+      k: Kernel[A],
+      gen: Gen[A],
+      size: Int = 4,
+      tol: Tolerance = Tolerance.exactish
+  ): RuleSet =
+    val coefficients = Gen.listOfN(size, Gen.choose(-1.0, 1.0)).map(_.toVector)
+    new SimpleRuleSet(
+      s"kernel.${k.info.name}",
+      "symmetric" -> forAll(gen, gen) { (a, b) =>
+        (k.compare(a, b), k.compare(b, a)) match
+          case (Right(x), Right(y)) => Prop(tol.approxEquals(x.value, y.value))
+          case (Left(_), Left(_))   => Prop(true)
+          case _                    => Prop(false) :| "defined in one direction only"
+      },
+      "self-similarity is non-negative" -> forAll(gen) { a =>
+        k.compare(a, a).fold(_ => Prop(true), s => Prop(s.value >= -tol.absolute) :| s"$s")
+      },
+      "every Gram matrix is positive semi-definite" ->
+        forAll(Gen.listOfN(size, gen).map(_.toVector), coefficients) { (xs, c) =>
+          val gram = for
+            i <- xs.indices.toVector
+            j <- xs.indices.toVector
+          yield k.compare(xs(i), xs(j)).map(s => c(i) * c(j) * s.value)
+          if gram.exists(_.isLeft) then Prop(true) :| "refused inputs are not a violation"
+          else
+            val terms = gram.flatMap(_.toOption)
+            val form  = terms.sum
+            val scale = terms.map(math.abs).sum
+            Prop(form >= -(tol.absolute + tol.relative * scale)) :|
+              s"c'Kc = $form for c = $c"
+        }
+    )
+
+  /** Every score lies in the range the measure's info declares: a bounded,
+    * correlation or probability scale within its bounds (up to `tol`), an
+    * unbounded or distance scale finite. The claim an application reads from
+    * [[MeasureInfo.scale]] is thereby the measure's actual range.
+    */
+  def withinScale[A, S](
+      c: Compare[A, A, S],
+      gen: Gen[A],
+      value: S => Double,
+      tol: Tolerance = Tolerance.exactish
+  ): RuleSet =
+    val (lo, hi) = c.info.scale match
+      case MeasureScale.Bounded(l, h) => (l, h)
+      case MeasureScale.Correlation   => (-1.0, 1.0)
+      case MeasureScale.Probability   => (0.0, 1.0)
+      case MeasureScale.DistanceLike  => (0.0, Double.PositiveInfinity)
+      case MeasureScale.FisherZ | MeasureScale.UnboundedSimilarity =>
+        (Double.NegativeInfinity, Double.PositiveInfinity)
+    new SimpleRuleSet(
+      s"scale.${c.info.name}",
+      s"scores lie in the declared ${c.info.scale.render}" -> forAll(gen, gen) { (a, b) =>
+        c.compare(a, b)
+          .fold(
+            _ => Prop(true),
+            s =>
+              val v = value(s)
+              Prop(v.isFinite && v >= lo - tol.absolute && v <= hi + tol.absolute) :| s"$v"
+          )
+      }
+    )
+
   /** Every measure can describe itself well enough for an application to
     * present it (PRD APP-15).
     */

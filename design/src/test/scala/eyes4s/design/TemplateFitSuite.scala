@@ -29,14 +29,14 @@ class TemplateFitSuite extends FunSuite:
   private def split(response: Double = 7.0, features: Vector[Double] = Vector(3.0, 2.0)) =
     get(
       TemplateSplit.of(
-        basis,
+        TemplateDesign.importedLm(basis),
         train :+ get(TemplateObservation.of("e", "test", features, response)),
         Set("test")
       )
     )
-  private def model(s: TemplateSplit[String]) =
+  private def model(s: TemplateSplit[String, Vector[Double]]) =
     get(
-      FittedTemplate.importNoIntercept(
+      Template.importFit(
         s.training,
         s.training.hash.render,
         basis.columns,
@@ -62,24 +62,43 @@ class TemplateFitSuite extends FunSuite:
   test("split accounts for every row and rejects duplicate keys or nonexistent folds") {
     val s = split()
     assertEquals(s.training.rows.size + s.heldOut.rows.size, s.rows.size)
-    assert(TemplateSplit.of(basis, s.rows :+ train.head, Set("test")).isLeft)
-    assert(TemplateSplit.of(basis, s.rows, Set("typo")).isLeft)
-    assert(TemplateSplit.of(basis, s.rows, Set.empty[String]).isLeft)
-    assert(TemplateSplit.of(basis, s.rows, Set("test", "training")).isLeft)
+    assert(
+      TemplateSplit
+        .of(TemplateDesign.importedLm(basis), s.rows :+ train.head, Set("test"))
+        .isLeft
+    )
+    assert(TemplateSplit.of(TemplateDesign.importedLm(basis), s.rows, Set("typo")).isLeft)
+    assert(TemplateSplit.of(TemplateDesign.importedLm(basis), s.rows, Set.empty[String]).isLeft)
+    assert(
+      TemplateSplit.of(TemplateDesign.importedLm(basis), s.rows, Set("test", "training")).isLeft
+    )
     val duplicateAcrossFolds =
       train :+ get(TemplateObservation.of("a", "test", Vector(1.0, 1.0), 2.0))
-    assert(TemplateSplit.of(basis, duplicateAcrossFolds, Set("test")).isLeft)
+    assert(
+      TemplateSplit
+        .of(TemplateDesign.importedLm(basis), duplicateAcrossFolds, Set("test"))
+        .isLeft
+    )
   }
 
   test("admission rejects non-finite data, invalid basis and width without dropping rows") {
     assert(TemplateBasis.of("fixed", Vector("a", "a"), "score").isLeft)
-    assert(TemplateObservation.of("bad", "train", Vector(Double.NaN), 1.0).isLeft)
+    val nonFinite = get(TemplateObservation.of("bad", "test", Vector(Double.NaN, 1.0), 1.0))
+    assertEquals(
+      TemplateSplit
+        .of(TemplateDesign.importedLm(basis), train :+ nonFinite, Set("test"))
+        .left
+        .toOption
+        .map(_.productPrefix),
+      Some("Features")
+    )
     assert(TemplateObservation.of("bad", "", Vector(1.0), 1.0).isLeft)
+    assert(TemplateObservation.of("bad", "train", Vector(1.0), 1.0, Some(" ")).isLeft)
     assert(TemplateObservation.of("bad", "train", Vector(1.0), Double.PositiveInfinity).isLeft)
     assert(
       TemplateSplit
         .of(
-          basis,
+          TemplateDesign.importedLm(basis),
           train :+ get(TemplateObservation.of("e", "test", Vector(1.0), 2.0)),
           Set("test")
         )
@@ -98,7 +117,7 @@ class TemplateFitSuite extends FunSuite:
         rank: Int = 2,
         n: Int = 2
     ) =
-      FittedTemplate.importNoIntercept(a.training, hash, columns, beta, rank, n, "test")
+      Template.importFit(a.training, hash, columns, beta, rank, n, "test")
     assert(accept(hash = "wrong").isLeft)
     assert(accept(columns = basis.columns.reverse).isLeft)
     assert(accept(beta = Vector(1.0)).isLeft)
@@ -107,7 +126,7 @@ class TemplateFitSuite extends FunSuite:
     assert(accept(n = 3).isLeft)
     val changed = get(
       TemplateSplit.of(
-        basis,
+        TemplateDesign.importedLm(basis),
         a.rows.updated(0, get(TemplateObservation.of("a", "training", Vector(1.0, 0.0), 9.0))),
         Set("test")
       )
@@ -128,6 +147,6 @@ class TemplateFitSuite extends FunSuite:
   test("held-out data cannot be substituted for the training capability") {
     assert(typeCheckErrors("""
       import eyes4s.design.*
-      def wrong(h: TemplateHeldOut[String]): TemplateTraining[String] = h
+      def wrong(h: TemplateHeldOut[String, Vector[Double]]): TemplateTraining[String, Vector[Double]] = h
     """).nonEmpty)
   }

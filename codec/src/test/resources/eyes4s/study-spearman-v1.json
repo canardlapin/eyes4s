@@ -1,0 +1,53 @@
+{
+  "schema" : {
+    "name" : "eyes4s.study",
+    "version" : 1
+  },
+  "value" : {
+    "layout" : {
+      "name" : "eyes4s.participant-stimulus-phase",
+      "version" : 1
+    },
+    "keySchema" : {
+      "name" : "eyes4s.study-key",
+      "version" : 1
+    },
+    "method" : {
+      "name" : "eyes4s.spearman",
+      "version" : 1
+    },
+    "input" : "cebe7474ab5c2aec",
+    "frame" : {
+      "id" : "matched-control-display",
+      "unit" : "px",
+      "xMin" : 0.0,
+      "yMin" : 0.0,
+      "xMax" : 2.0,
+      "yMax" : 2.0,
+      "yAxis" : "Down"
+    },
+    "gridId" : "matched-control-display@2x2",
+    "nx" : 2,
+    "ny" : 2,
+    "focalPhase" : "recall",
+    "referencePhase" : "encode",
+    "weight" : "Duration",
+    "policy" : {
+      "kind" : "requireAll"
+    },
+    "estimates" : [
+      {
+        "kind" : "binned"
+      }
+    ],
+    "parameters" : {
+      "schema" : {
+        "name" : "eyes4s.unit",
+        "version" : 1
+      },
+      "value" : {
+
+      }
+    }
+  }
+}

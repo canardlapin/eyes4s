@@ -84,15 +84,11 @@ class PublicCompareSuite extends munit.FunSuite:
       OverlapFailure.NonfiniteDistance(1.25, 2.25, 3.25, 4.25).message -> Vector(
         "(1.25,2.25)",
         "(3.25,4.25)"
-      ),
-      ScanpathComponentError
-        .Unavailable(ScanpathComponent.PositionEmd, "no backend-X")
-        .message -> Vector("PositionEmd", "no backend-X")
+      )
     )
     examples.foreach { (message, operands) =>
       operands.foreach(o => assert(message.contains(o), message))
     }
     val underlying = CompareError.TooShort("left-X", 1, 3)
     assertEquals(MapScaleFailure.Comparison(underlying).message, underlying.message)
-    assertEquals(ScanpathComponentError.Comparison(underlying).message, underlying.message)
   }

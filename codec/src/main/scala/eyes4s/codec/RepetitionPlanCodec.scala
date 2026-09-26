@@ -17,7 +17,7 @@
 package eyes4s.codec
 
 import cats.syntax.all.*
-import eyes4s.compare.*
+import eyes4s.compare.eyesim.EyesimCompat
 import eyes4s.design.*
 import eyes4s.kernel.*
 import eyes4s.plan.*
@@ -60,7 +60,7 @@ object RepetitionPlanCodec:
         "layout"         -> Wire.id(plan.layout.id),
         "keySchema"      -> Wire.id(keys.schema),
         "projections"    -> Json.arr(ids(plan.layout).map(Wire.id)*),
-        "method"         -> Json.fromString(plan.method.toString),
+        "method"         -> Json.fromString(plan.method.token),
         "methodRevision" -> Json.fromInt(1),
         "orientation"    -> Json.fromString("directed"),
         "self"           -> Json.fromString("exclude"),
@@ -102,9 +102,12 @@ object RepetitionPlanCodec:
           .flatMap(_.traverse(x => Wire.definition(Json.obj("id" -> x), "id")))
         _          <- requireValue("projections", projections, ids(layout))
         methodName <- Wire.field[String](json, "method")
-        method     <- MapSimilarityMethod.values
-          .find(_.toString == methodName)
-          .toRight(CodecError.Field("method", json, s"unsupported map method $methodName"))
+        // Registered methods and the compatibility-only legacy Fisher z,
+        // which saved plans may name.
+        method <- EyesimCompat
+          .fromToken(methodName)
+          .left
+          .map(_ => CodecError.Field("method", json, s"unsupported map method $methodName"))
         revision    <- Wire.field[Int](json, "methodRevision")
         _           <- requireValue("methodRevision", revision, 1)
         orientation <- Wire.field[String](json, "orientation")

@@ -684,6 +684,10 @@ object DiagnosticCatalog:
     "Incomplete",
     "Score"
   )
+
+  /** Retired: `ScanpathComponentError` left with the uninhabited six-slot
+    * scanpath result (see [[retired]]).
+    */
   val scanpathComponent: DiagnosticFamily = error("scanpath-component")(
     "Comparison",
     "Unavailable"
@@ -719,6 +723,8 @@ object DiagnosticCatalog:
     "Incomplete",
     "Mean"
   )
+
+  /** Retired: `LearnedTemplateError` became part of `TemplateError` (see [[retired]]). */
   val learnedTemplate: DiagnosticFamily = error("learned-template")(
     "Observation",
     "Definition",
@@ -738,6 +744,8 @@ object DiagnosticCatalog:
     "ColumnArithmetic",
     "RowArithmetic"
   )
+
+  /** Retired: `TemplateFitError` became part of `TemplateError` (see [[retired]]). */
   val templateFit: DiagnosticFamily = error("template-fit")(
     "Fit",
     "Basis",
@@ -794,9 +802,36 @@ object DiagnosticCatalog:
     "InvalidFamily",
     "InvalidName"
   )
+  val template: DiagnosticFamily = error("template")(
+    "Basis",
+    "Definition",
+    "Observation",
+    "Features",
+    "Width",
+    "DuplicateKey",
+    "Split",
+    "Geometry",
+    "Feature",
+    "Fit",
+    "Route",
+    "Identity",
+    "Receipt",
+    "Numerical",
+    "Evaluation",
+    "Aggregate"
+  )
 
-  /** Every family, grouped as documented. */
-  val families: Vector[DiagnosticFamily] = Vector(
+  /** Families whose error type no longer exists. Their codes stay issued, in
+    * their original place in [[issuedFamilies]], so a retired code is never
+    * reused with another meaning; no live error projects to one.
+    */
+  val retired: Vector[DiagnosticFamily] =
+    Vector(scanpathComponent, learnedTemplate, templateFit)
+
+  /** Every family ever issued, in issue order: families are only appended,
+    * and a retired family keeps its place.
+    */
+  val issuedFamilies: Vector[DiagnosticFamily] = Vector(
     plan,
     studyFailure,
     initialFixation,
@@ -883,8 +918,16 @@ object DiagnosticCatalog:
     pointSampling,
     recipeParameter,
     repetitionPlan,
-    diagnosticCode
+    diagnosticCode,
+    template
   )
 
-  /** Every stable code, in catalog order. */
+  /** Every live family, grouped as documented. */
+  val families: Vector[DiagnosticFamily] =
+    issuedFamilies.filterNot(family => retired.exists(_ eq family))
+
+  /** Every live code, in catalog order. */
   val codes: Vector[DiagnosticCode] = families.flatMap(_.codes)
+
+  /** Every code ever issued, live or retired, in issue order. */
+  val issued: Vector[DiagnosticCode] = issuedFamilies.flatMap(_.codes)

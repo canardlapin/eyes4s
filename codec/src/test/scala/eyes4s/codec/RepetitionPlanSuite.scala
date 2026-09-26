@@ -18,6 +18,7 @@ package eyes4s.repetitionconsumer
 
 import eyes4s.codec.*
 import eyes4s.compare.*
+import eyes4s.compare.eyesim.EyesimCompat
 import eyes4s.design.*
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.Px
@@ -136,7 +137,12 @@ class RepetitionPlanSuite extends munit.FunSuite:
         Projection.named[Key, Occasion]("occasion")(_.occasion),
         selection
       )
-      .evaluate(p.trials, p.inputHash, MapSimilarityMethod.Cosine.instance[Px], p.specification)
+      .evaluate(
+        p.trials,
+        p.inputHash,
+        MapSimilarityMethod.Cosine.similarity[Px],
+        p.specification
+      )
     assertEquals(a.matched, direct.matched); assertEquals(a.controls, direct.controls)
     assertEquals(l.id, reopened.layout.id)
     assertEquals(p.inputHash.render, "26dd8b9539bed70d")
@@ -180,8 +186,16 @@ class RepetitionPlanSuite extends munit.FunSuite:
     }
   }
   test("every finite map method saves and reruns without new opaque closures") {
-    MapSimilarityMethod.values.foreach { m =>
-      val p = plan(method = m); val restored = get(codec.parse(get(codec.encode(p)).noSpaces))
+    // The compatibility-only legacy Fisher z stays readable in saved plans.
+    (MapSimilarityMethod.values ++ EyesimCompat.methods).foreach { m =>
+      val p       = plan(method = m)
+      val encoded = get(codec.encode(p))
+      assertEquals(
+        encoded.hcursor.downField("value").get[String]("method"),
+        Right(m.token)
+      )
+      val restored = get(codec.parse(encoded.noSpaces))
+      assertEquals(restored.method, m)
       assertEquals(restored.run.matched, p.run.matched);
       assertEquals(restored.run.controls, p.run.controls)
     }

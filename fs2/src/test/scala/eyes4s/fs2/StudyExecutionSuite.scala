@@ -364,7 +364,7 @@ class StudyExecutionSuite extends munit.CatsEffectSuite:
       "synchronous cosine",
       _ => Vector.empty,
       _ => Distribution.cosine[Px]: Compare[Mass[Px], Mass[Px], Similarity],
-      Some(MethodDescriptor.cosine[Px](DefinitionId.cosine))
+      Some(ComparisonMethods.cosine.descriptor)
     )
     val whole = get(plan(method = synchronous).prepare(input))
     assertEquals(whole.capability, ExecutionCapability.SynchronousWholeOperation)
@@ -583,7 +583,7 @@ class StudyExecutionSuite extends munit.CatsEffectSuite:
           def compare(x: Mass[Px], y: Mass[Px]): Either[CompareError, Similarity] =
             throw new Broken
       ,
-      Some(MethodDescriptor.cosine[Px](DefinitionId.cosine))
+      Some(ComparisonMethods.cosine.descriptor)
     )
     val broken = get(plan(method = throwing).prepare(input))
     for

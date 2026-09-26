@@ -89,7 +89,7 @@ final class SurfaceOlsFit[U <: Unit2D] private[design] (
     val diagnostics: OlsDiagnostics
 )
 
-object SurfaceDecomposition:
+private[design] object SurfaceDecomposition:
   def ols[U <: Unit2D](
       response: Mass[U],
       predictors: PredictorSet[U],

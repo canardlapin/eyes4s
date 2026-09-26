@@ -361,7 +361,7 @@
       "estimand": "Held-out trial predictions from intercept-free OLS on predeclared fixed features, fitted from training rows only; distinct from eyesim's separate per-source normalized-map cell regression.",
       "conventions": ["typed unique trial keys and explicit disjoint fold partitions", "training-only CSV is distinct from the saved full recipe", "QR rank tolerance 1e-7; singular/underdetermined designs refused", "no learned feature construction or normalization", "absolute numerical tolerance 1e-12", "no coefficient standard errors or p-values"],
       "backend_dependencies": ["stats::lm.fit", "stats::lm", "broom", "tibble"],
-      "eyes4s_public_api": ["TemplateBasis", "TemplateObservation", "TemplateSplit", "TemplateFitCsv.training", "TemplateFitCsv.importFit", "TemplateRecipeCodec", "FittedTemplate.evaluate"],
+      "eyes4s_public_api": ["TemplateBasis", "TemplateObservation", "TemplateSplit", "TemplateFitCsv.training", "TemplateFitCsv.importFit", "TemplateRecipeCodec", "Template.importFit", "FittedTemplate.evaluate"],
       "fixture_inputs": ["baseline-small", "template-training", "template-reference"],
       "independent_case": "Exact rational normal equations give coefficients 1 and 2 and held-out prediction 7. Replacing only the held-out response by 700 leaves the exported training request and prediction unchanged. Deliberately including that row in fitting instead gives 701/8 and 709/8. The public eyesim normalized-map call returns 0.4 and 0.6 on the corresponding vectors.",
       "status": "verified-intentional-divergence",
