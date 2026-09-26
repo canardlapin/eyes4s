@@ -269,6 +269,19 @@ object StudioFixture {
         records.sortBy(_.ordinal.getOrElse(0)).map(_.number).mkString(",")).mkString("\t")
     }
 
+    // S2.10: each trial's display as trials.csv states it (participant, phase,
+    // trial, occurrence, item, display_kind, image_file), and each stimulus
+    // file's name, SHA-256 and byte length.
+    val displays = trials.map(r =>
+      Seq("participant", "phase", "trial", "occurrence", "item", "display_kind", "image_file")
+        .map(c => r(col(th, c)))
+        .mkString("\t")
+    )
+    val stimulusFiles = Option((dir / "stimuli").listFiles()).toVector.flatten
+      .filter(_.getName.endsWith(".png"))
+      .sortBy(_.getName)
+      .map(f => s"${f.getName}\t${sha256(f)}\t${f.length}")
+
     IO.write(
       out,
       s"""|${header}package eyes4s.studio.core.fixture
@@ -314,6 +327,21 @@ object StudioFixture {
           |    */
           |  val scanpaths: String = Vector(
           |    ${chunked(scanpaths.mkString("\n"))}
+          |  ).mkString
+          |
+          |  /** One tab-separated line per trial, in inventory order: participant,
+          |    * phase, trial, occurrence, item, display_kind and image_file, exactly
+          |    * as trials.csv holds them (S2.10).
+          |    */
+          |  val displays: String = Vector(
+          |    ${chunked(displays.mkString("\n"))}
+          |  ).mkString
+          |
+          |  /** One tab-separated line per file of stimuli/, by name: the file
+          |    * name, the SHA-256 of its bytes and its length in bytes (S2.10).
+          |    */
+          |  val stimuli: String = Vector(
+          |    ${chunked(stimulusFiles.mkString("\n"))}
           |  ).mkString
           |""".stripMargin,
       IO.utf8

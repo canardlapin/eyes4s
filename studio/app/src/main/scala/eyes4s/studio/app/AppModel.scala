@@ -43,6 +43,7 @@ import eyes4s.studio.core.document.{
   CoreBinding,
   DatasetRevisionSpec,
   DocumentError,
+  LayoutBlob,
   Perspective,
   PresentationState,
   StudioDocument
@@ -131,6 +132,14 @@ enum Notice derives CanEqual:
   /** A confirmation no longer applies (the draft it named has gone). */
   case Outdated(confirmation: Confirmation)
 
+  /** A value the user typed was refused (a blank project name). */
+  case Invalid(error: AppError)
+
+  /** The saved layouts of `perspectives` could not be read; they show their
+    * default arrangement instead (S1.5a).
+    */
+  case LayoutsReset(perspectives: Vector[Perspective], reason: String)
+
   def message: String = message(Messages.english)
 
   /** The notice's words; a command is named by its label ("Undo"). */
@@ -145,6 +154,9 @@ enum Notice derives CanEqual:
       why.fold(messages(MessageId.NoticeUnavailable, label))(e =>
         messages(MessageId.NoticeBlocked, label, e.message)
       )
+    case Invalid(e)               => e.message
+    case LayoutsReset(ps, reason) =>
+      messages(MessageId.NoticeLayoutsReset, ps.map(_.label).mkString(", "), reason)
     case Outdated(Confirmation.DiscardDraft(d)) =>
       s"Draft ${d.label} is no longer the draft; nothing was discarded."
 
@@ -166,8 +178,20 @@ object PaneState:
 // ---------------------------------------------------------------------------
 
 /** A dialog only the platform can show. */
+/** A docking gesture only the dock can carry out: it moves focus, and the
+  * dock reports the focus back as [[Intent.FocusPane]].
+  */
+enum DockCommand derives CanEqual:
+  case NextTab, PreviousTab
+
 enum PlatformDialog derives CanEqual:
   case ImportSources, OpenProject
+
+  /** Ask for the project's new name; the answer is [[Intent.RenameProject]]. */
+  case RenameProject
+
+  /** The project's location, size and format version (S1.4). */
+  case ProjectInfo
 
 /** What the application must do after an update: data, performed by the
   * shell and services, never by [[AppModel.update]] (DESIGN_SPEC section 13).
@@ -189,6 +213,18 @@ enum AppEffect derives CanEqual:
   case Journal(entry: JournalEntry)
 
   case OpenDialog(dialog: PlatformDialog)
+
+  /** Show the project bundle in the platform's file browser (S1.4). */
+  case RevealProject
+
+  /** Return every layout of `perspective` to its default arrangement
+    * (View › Reset perspective, S1.5a); the document's saved layout is
+    * cleared by the same update.
+    */
+  case ResetLayouts(perspective: Perspective)
+
+  /** Ctrl+Tab, Ctrl+Shift+Tab: the dock's own tab cycling. */
+  case Dock(command: DockCommand)
 
 object AppEffect:
   /** A command effect of studio-core as an app effect, against the document
@@ -260,8 +296,21 @@ enum Intent derives CanEqual:
   /** F6. */
   case FocusNextPane
 
+  /** ⇧F6. */
+  case FocusPreviousPane
+
+  /** ⌃⇥ and ⌃⇧⇥: the next or previous tab of the focused group. */
+  case NextTab
+  case PreviousTab
+
   /** ⌘⇧↩. */
   case ToggleMaximize
+
+  /** The dock itself (a group's header button) maximized the group showing
+    * `pane`, which takes focus, or, with `None`, restored the layout; the
+    * model follows in one step.
+    */
+  case SetMaximized(pane: Option[PaneId])
 
   /** A pane reports its local focus for the status bar, and takes focus. */
   case PaneSubject(pane: PaneId, subject: Vector[Place])
@@ -277,6 +326,28 @@ enum Intent derives CanEqual:
   case SessionChanged(facts: SessionFacts)
   case ItemsLoaded(items: TrialItems)
   case Saved(at: ClockTime)
+
+  // --- Project and layouts (S1.4, S1.5a) -------------------------------------------------------
+  /** The project chip's Rename…: the platform asks for the name. */
+  case RequestRename
+  case RenameProject(name: ProjectName)
+
+  /** The name typed for Rename… was refused. */
+  case RenameRefused(error: AppError)
+
+  /** The document's saved layouts of `perspectives` could not be read. */
+  case LayoutsUnreadable(perspectives: Vector[Perspective], reason: String)
+  case RevealProject
+  case ShowProjectInfo
+
+  /** View › Reset perspective: the current perspective's layouts. */
+  case ResetPerspective
+
+  /** The shell's current arrangement of each perspective, `None` where it
+    * is the default. Only those that differ from the document's are saved
+    * (a view-only [[Command.SaveLayout]] each).
+    */
+  case LayoutsCaptured(layouts: Vector[(Perspective, Option[LayoutBlob])])
 
 // ---------------------------------------------------------------------------
 // The model
@@ -496,13 +567,22 @@ object AppModel:
       CommandRegistry.keymap.get(chord).fold((m, none))(id => update(m, Intent.Invoke(id)))
     case Intent.FocusPane(pane) =>
       if m.layout.pane(pane).isDefined then (focus(m, pane), none) else (m, none)
-    case Intent.FocusNextPane =>
-      val l      = m.layout
-      val groups = l.groups
-      val at     = groups.indexWhere(_.panes.exists(_.id == m.focusedPane))
-      val next   = groups.lift((at + 1) % groups.size.max(1)).map(l.selectedPane(_).id)
-      val moved  = next.fold(m)(focus(m, _))
-      (moved.copy(panes = moved.panes.copy(maximized = moved.panes.maximized - l.id)), none)
+    case Intent.FocusNextPane      => (cycleGroup(m, +1), none)
+    case Intent.FocusPreviousPane  => (cycleGroup(m, -1), none)
+    case Intent.NextTab            => (m, Vector(AppEffect.Dock(DockCommand.NextTab)))
+    case Intent.PreviousTab        => (m, Vector(AppEffect.Dock(DockCommand.PreviousTab)))
+    case Intent.SetMaximized(pane) =>
+      val id = m.layout.id
+      pane match
+        case None =>
+          (m.copy(panes = m.panes.copy(maximized = m.panes.maximized - id)), none)
+        case Some(p) if m.layout.pane(p).isDefined =>
+          val focused = focus(m, p)
+          (
+            focused.copy(panes = focused.panes.copy(maximized = focused.panes.maximized + id)),
+            none
+          )
+        case Some(_) => (m, none)
     case Intent.ToggleMaximize =>
       val id  = m.layout.id
       val max = m.panes.maximized
@@ -524,7 +604,57 @@ object AppModel:
     case Intent.ItemsLoaded(items) => (m.copy(items = items), none)
     case Intent.Saved(at)          => (m.copy(save = SaveState(Some(at), edited = false)), none)
 
+    case Intent.RequestRename =>
+      (m, Vector(AppEffect.OpenDialog(PlatformDialog.RenameProject)))
+    case Intent.RenameProject(name) =>
+      if m.project.contains(name) then (m, none)
+      else (m.copy(project = Some(name), save = m.save.edit), Vector(AppEffect.Persist))
+    case Intent.RenameRefused(e) => (m.copy(notice = Some(Notice.Invalid(e))), none)
+    case Intent.LayoutsUnreadable(ps, reason) =>
+      (m.copy(notice = Some(Notice.LayoutsReset(ps, reason))), none)
+    case Intent.RevealProject =>
+      (m, m.project.fold(none)(_ => Vector(AppEffect.RevealProject)))
+    case Intent.ShowProjectInfo => (m, Vector(AppEffect.OpenDialog(PlatformDialog.ProjectInfo)))
+    case Intent.ResetPerspective =>
+      // The default arrangement: its default focus, nothing maximized.
+      val p       = m.perspective
+      val reset   = AppEffect.ResetLayouts(p)
+      val layouts = StudioLayouts.spec.layouts(p).map(_.id).toSet
+      val cleared = m.copy(panes =
+        m.panes.copy(
+          focus = m.panes.focus.filterNot((l, _) => layouts(l)),
+          maximized = m.panes.maximized -- layouts
+        )
+      )
+      if savedLayout(m, p).isEmpty then (cleared, Vector(reset))
+      else
+        val (next, effects) = update(cleared, Intent.Dispatch(Command.SaveLayout(p, None)))
+        (next, effects :+ reset)
+    case Intent.LayoutsCaptured(layouts) =>
+      layouts
+        .filter((p, blob) => savedLayout(m, p) != blob)
+        .foldLeft((m, none)) { case ((acc, effects), (p, blob)) =>
+          val (next, more) = update(acc, Intent.Dispatch(Command.SaveLayout(p, blob)))
+          (next, effects ++ more)
+        }
+
   // -------------------------------------------------------------------------
+
+  /** Focus the first pane of the group `step` groups on (F6, ⇧F6), leaving
+    * any maximize.
+    */
+  private def cycleGroup(m: AppModel, step: Int): AppModel =
+    val l      = m.layout
+    val groups = l.groups
+    val n      = groups.size.max(1)
+    val at     = groups.indexWhere(_.panes.exists(_.id == m.focusedPane))
+    val next   = groups.lift(Math.floorMod(at + step, n)).map(l.selectedPane(_).id)
+    val moved  = next.fold(m)(focus(m, _))
+    moved.copy(panes = moved.panes.copy(maximized = moved.panes.maximized - l.id))
+
+  /** The document's saved layout of `perspective`, if any. */
+  def savedLayout(m: AppModel, perspective: Perspective): Option[LayoutBlob] =
+    m.document.presentation.layouts.find(_.perspective == perspective).map(_.layout)
 
   private def undoEntry(stack: HistoryStack): JournalEntry = stack match
     case HistoryStack.Science      => JournalEntry.Undo
