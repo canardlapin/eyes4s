@@ -769,8 +769,12 @@ while the resolver is generic in the unit `U`, so `withRecordings` takes a `Pixe
 witness whose one instance is for `Px`, where its conversion is the identity. A manifest in any
 other unit cannot register recording plans (a type error, not a cast), and a decoded
 `LoadedRecordingPlan[U]` checks and runs against a recording input of the manifest's own unit
-through it (`disagreements(input)`, `run(input)`). A `LoadedTemporal[K, U]` keeps its parameter,
-score and difference types abstract, as `LoadedStudy` does.
+through it (`disagreements(input)`, `run(input)`). A `LoadedStudy[K, U]` and a
+`LoadedTemporal[K, U]` keep their parameter, score and difference types abstract but fixed, and
+expose the typed plan as `plan`: preflight, prepare, execute and inspect it directly
+(`loaded.preflight(available, budget).prepare(loaded.plan, input, budget)`, then
+`StudyExecution`, or `ResultInspection.study(loaded.plan, result, input, ledger)` on the result it
+runs), with no encode and re-decode.
 `ArtifactResolver.resolve(address, source, decoders)` reads the manifest, checks its digest against
 the address and decodes it, then resolves the graph in three phases, reporting every error of a
 phase as `NonEmptyVector[ResolveError]`:
@@ -1011,9 +1015,10 @@ into coded diagnostics. It runs once for the shipped cosine and once for the con
 key and score types. On the JVM the run is also stored in a directory, resolved through
 `ArtifactFiles`, and reloaded and rerun by a separate JVM launched over the consumer's own classpath,
 which `verify.py` checks holds only the consumer's own `example` classes, the packaged eyes4s jars
-(each compared by SHA-256 with the locally published artifact) and third-party jars. A reader reruns a resolved study by re-reading the plan and result through the
-typed codecs it registered, because `LoadedStudy` and `LoadedResult` keep their parameter and score
-types abstract.
+(each compared by SHA-256 with the locally published artifact) and third-party jars. A reader
+preflights and runs a resolved plan through `LoadedStudy.plan`; to compare an archived
+`LoadedResult` with the application's own score types it re-reads the result through the typed
+codec it registered, because the two registrations do not share their abstract types.
 
 UI-G1 extends the consumer to the recording and temporal routes, each for a shipped method (I-VT,
 cosine) and for one of the consumer's own (a laboratory detector with its own typed parameter

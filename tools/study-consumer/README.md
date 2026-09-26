@@ -209,15 +209,12 @@ envelope and the SHA-256 of every tested source file.
 
 What the consumer proves stops here; each limit is an open follow-up or a stated boundary:
 
-- io import errors (`FixationImportError`, EyeLink) have no stable diagnostic codes yet
-  (`bd-01M2SG4718MMQ8SDDMC0K13T33`); codec refusals of a constructor's value (a zero viewing
-  distance) carry the constructor's message as the reason of `codec.field`, not its typed error.
-- A resolved plan or result keeps its parameter and score types abstract (`LoadedStudy`,
-  `LoadedRecordingPlan`, `LoadedTemporal`); the application re-reads it through its typed codec
-  (`bd-01M2SG47CCG30E22SY3M4WA7DR`).
+- Codec refusals of a constructor's value (a zero viewing distance) carry the constructor's
+  message as the reason of `codec.field`, not its typed error.
+- A resolved plan exposes its typed plan (`LoadedStudy.plan`), but its parameter and score types
+  stay abstract; the journey still re-reads the plan and result through the route's typed codecs
+  so that they share the route's own score types.
 - No fixture has a scale where some pairs fail and others succeed (`bd-01M2SG47P8BZYP9BG35QWYNKHY`).
-- `PreflightError` has no key type, so its findings project to `Diagnostic[Any]`
-  (`bd-01M2SBT6HYM8WT3VHND10TSRGF`).
 - Detection support assembly is quadratic in events x samples, which the 10 s recording shows as its
   slowest step (`bd-01M2S5AX3E1E3PRGS3CR322HAX`); a recording descriptor always states
   `SynchronousWholeOperation`, although the runner feeds its machine in sample chunks.

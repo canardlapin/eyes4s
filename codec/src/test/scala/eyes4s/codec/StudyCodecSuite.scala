@@ -235,6 +235,16 @@ class StudyCodecSuite extends munit.FunSuite:
     assertEquals(loaded.description, plan().description)
     assertEquals(get(loaded.encode), json)
     assertEquals(get(loaded.run(input)).scales.size, 1)
+    // The resolved plan is the typed plan: preflight, prepare and inspect it
+    // without re-reading it through the application's own codec.
+    assertEquals(loaded.plan.description, plan().description)
+    assertEquals(loaded.prerequisites(Some(input)), Vector.empty)
+    val report = loaded.preflight(Some(input))
+    assert(report.ready, report.findings)
+    val prepared = get(report.prepare(loaded.plan, input))
+    assertEquals(get(prepared.run).scales.size, 1)
+    val result = get(loaded.run(input))
+    assert(ResultInspection.study(loaded.plan, result, input, None).isRight)
     assertEquals(
       registry.register(persistence.registration).left.toOption,
       Some(CodecError.DuplicateMethod(method.id))
