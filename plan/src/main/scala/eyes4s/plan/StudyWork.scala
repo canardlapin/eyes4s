@@ -39,6 +39,8 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
     val referenceIndices: Vector[Int],
     val excludedPhases: Vector[K],
     val frameChecks: Vector[Either[StudyFailure[K], Unit]],
+    val windowChecks: Vector[Either[StudyFailure[K], Unit]],
+    val windowTallies: Vector[(K, Either[GeometryError, WindowTally])],
     val matched: DirectedPairSchedule[K, K],
     val controls: DirectedPairSchedule[K, K],
     val candidateVisitsAcrossScales: Long,
@@ -54,6 +56,36 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
     */
   val grid: Grid[U] = plan.grid
 
+  /** Where the plan's maps live and what it does with fixations outside. */
+  val geometry: StudyGeometry[U] = plan.geometry
+
+  /** Totals of [[windowTallies]]: records outside the window and the screen. */
+  def windowSummary: WindowSummary = WindowSummary.of(windowTallies)
+
+  /** How the plan pairs focal trials with matched and control references. */
+  val pairing: StudyPairing = plan.pairing
+
+  /** Whether every focal trial's matched reference is well defined under the
+    * plan's pairing, computed once from this exact matched schedule. The same
+    * value drives preflight, the refusal of [[work]] and [[preview]].
+    */
+  lazy val matchedCardinality: Either[PlanError, MatchedCardinality[K]] =
+    StudyPairingWork.cardinality(
+      plan.layout,
+      plan.pairing,
+      input.trials.rows.map(_.key),
+      referenceIndices.map(i => input.trials.rows(i).key),
+      matched
+    )
+
+  /** The refusal the pairing implies for this input, if any. A version-1
+    * pairing on a layout without trial identity never refuses, so its matched
+    * schedule is not traversed before execution.
+    */
+  private[plan] def pairingRefusal: Option[PlanError] =
+    if !plan.pairing.canRefuse && plan.layout.trial.isEmpty then None
+    else matchedCardinality.fold(Some(_), _.refusal(plan.layout))
+
   /** Inspect the exact schedules and reduction choices without numerical work. */
   def preview: Either[PlanError, StudyPreview[K, U]] =
     checkUnchanged.map { _ =>
@@ -67,7 +99,10 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
         excludedPhases,
         matched,
         controls,
-        plan.policy
+        plan.policy,
+        windowTallies,
+        plan.pairing,
+        matchedCardinality
       )
     }
 
@@ -124,7 +159,9 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
       occupancy: (K, Scanpath[U]) => Either[StudyFailure[K], PointMeasure[U]],
       context: Vector[(String, Provenance.Param)]
   ): Either[PlanError, StudyCursor[K, U, S, D]] =
-    checkUnchanged.flatMap(_ => StudyWork.begin(plan, this, budget, occupancy, context))
+    checkUnchanged
+      .flatMap(_ => pairingRefusal.toLeft(()))
+      .flatMap(_ => StudyWork.begin(plan, this, budget, occupancy, context))
 
 object PreparedStudy:
   private[plan] def build[K, U <: Unit2D, P, S, D](
@@ -151,24 +188,22 @@ object PreparedStudy:
           budget.maxCandidatePairs
         )
       )
-      left          = focal.map(i => input.trials.rows(i).key)
-      right         = reference.map(i => input.trials.rows(i).key)
-      matchedDesign = Pairing
-        .between[K, K]
-        .sameOn(plan.layout.participant, plan.layout.participant)
-        .sameOn(plan.layout.stimulus, plan.layout.stimulus)
-        .all
-      controlDesign = Pairing
-        .between[K, K]
-        .sameOn(plan.layout.participant, plan.layout.participant)
-        .differentOn(plan.layout.stimulus, plan.layout.stimulus)
-        .all
+      left   = focal.map(i => input.trials.rows(i).key)
+      right  = reference.map(i => input.trials.rows(i).key)
+      frames = input.trials.rows.map(t =>
+        Agreement
+          .frames(plan.geometry.admission, t.value.frame)
+          .map(_ => ())
+          .left
+          .map(StudyFailure.Frame(t.key, _))
+      )
+      relations = StudyPairingWork.relations(plan.layout, plan.pairing, right)
       matched <- DirectedPairSchedule
-        .exhaustive(left, right, matchedDesign.relation, budget)
+        .exhaustive(left, right, relations._1, budget)
         .left
         .map(PlanError.Schedule.apply)
       controls <- DirectedPairSchedule
-        .exhaustive(left, right, controlDesign.relation, budget)
+        .exhaustive(left, right, relations._2, budget)
         .left
         .map(PlanError.Schedule.apply)
     yield new PreparedStudy(
@@ -181,13 +216,11 @@ object PreparedStudy:
         .filter(i => phases(i) != plan.focalPhase && phases(i) != plan.referencePhase)
         .map(i => input.trials.rows(i).key)
         .toVector,
-      input.trials.rows.map(t =>
-        Agreement
-          .frames(plan.grid.frame, t.value.frame)
-          .map(_ => ())
-          .left
-          .map(StudyFailure.Frame(t.key, _))
-      ),
+      frames,
+      frames.zip(input.trials.rows).map { case (frame, t) =>
+        frame.flatMap(_ => StudyWindowing.check(plan.geometry, t.key, t.value))
+      },
+      plan.windowTallies(input),
       matched,
       controls,
       candidateVisits.toLong,
@@ -227,7 +260,7 @@ private[plan] final class StudyEngine[K, U <: Unit2D, S, D](
     val controls: DirectedPairSchedule[K, K],
     val excludedPhases: Vector[K],
     val capability: ExecutionCapability,
-    val beginScale: Int => Either[PlanError, StudyScale[K, U, S, D]],
+    val beginScale: Int => Either[PlanError, StudyScaleWork[K, U, S, D]],
     val reduce: DirectedPairwiseAnalysis[K, K, StudyFailure[K], S] => ReductionCursor[K, S],
     val contrast: (
         Analysis[K, S],
@@ -238,7 +271,7 @@ private[plan] final class StudyEngine[K, U <: Unit2D, S, D](
   type Source = DirectedPairwiseAnalysis[K, K, StudyFailure[K], S]
 
 /** One scale's comparison instance and specification, created once per scale. */
-private[plan] final class StudyScale[K, U <: Unit2D, S, D](
+private[plan] final class StudyScaleWork[K, U <: Unit2D, S, D](
     val estimateTrial: Int => (K, Either[StudyFailure[K], Mass[U]]),
     val evaluate: (
         DirectedPairSchedule[K, K],
@@ -285,7 +318,7 @@ private[plan] object StudyPhase:
 final class StudyCursor[K, U <: Unit2D, S, D] private[plan] (
     private val engine: StudyEngine[K, U, S, D],
     private val scale: Int,
-    private val current: StudyScale[K, U, S, D],
+    private val current: StudyScaleWork[K, U, S, D],
     private val masses: Vector[(K, Either[StudyFailure[K], Mass[U]])],
     private val phase: StudyPhase[K, S, D],
     private val completed: Vector[StudyScaleResult[K, U, S, D]]
@@ -508,7 +541,7 @@ object StudyWork:
                     )
                   )
               }
-        yield new StudyScale[K, U, S, D](
+        yield new StudyScaleWork[K, U, S, D](
           trial => plan.estimateTrial(work, estimate, occupancy, trial),
           scaled
         )

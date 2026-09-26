@@ -114,6 +114,15 @@ private[eyes4s] object DiagnosticSupport:
     "ny"      -> int(spec.ny)
   )
 
+  def windowTally(value: WindowTally): Operand[Nothing] = fields(
+    "outsideScreen"         -> int(value.outsideScreen),
+    "outsideWindow"         -> int(value.outsideWindow),
+    "total"                 -> int(value.total),
+    "outsideScreenDuration" -> span(value.outsideScreenDuration),
+    "outsideWindowDuration" -> span(value.outsideWindowDuration),
+    "totalDuration"         -> span(value.totalDuration)
+  )
+
   /** A path that keeps an outer context and adds the inner subject's loci. */
   def merge[K](prefix: Vector[Locus[K]], inner: Diagnostic[K]): Vector[Locus[K]] =
     prefix ++ inner.subject.filterNot(prefix.contains)
@@ -189,6 +198,11 @@ private[plan] object CauseDiagnostics:
       case NegativeVelocity(value)              => d(real(value))
       case NonFiniteDistance(value)             => d(real(value))
       case NegativeDistance(value)              => d(real(value))
+      case SubframeOutsideParent(window, a, b, c, x, parent, spec) =>
+        d(frame(window), real(a), real(b), real(c), real(x), frame(parent), frameSpec(spec))
+      case SubframeIdentity(window)           => d(frame(window))
+      case NonPositiveAngularScale(id, value) => d(frame(id), real(value))
+      case NonFiniteTranslation(dx, dy)       => d(real(dx), real(dy))
 
   def surface(e: SurfaceError): Diagnostic[Nothing] =
     import SurfaceError.*

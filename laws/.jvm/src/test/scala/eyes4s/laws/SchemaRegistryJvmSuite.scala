@@ -143,6 +143,30 @@ object SchemaRegistry:
       codecLaw(inputs, "admission ledger")
     ),
     Entry(
+      StudyCodecDefinitions.studyV2,
+      Kind.Document,
+      Vector("study-v2.json", "study-trial-v2.json"),
+      codecLaw(plans, "configured study plan") ++ codecLaw(plans, "trial study plan")
+    ),
+    Entry(
+      TrialKeyDefinitions.trialKey,
+      Kind.Nested,
+      Vector("study-trial-v2.json"),
+      codecLaw(codecs, "trial key") ++ codecLaw(plans, "trial study plan")
+    ),
+    Entry(
+      TrialKeyDefinitions.trialLayout,
+      Kind.Definition,
+      Vector("study-trial-v2.json"),
+      codecLaw(plans, "trial study plan")
+    ),
+    Entry(
+      StudyInputDefinitions.admissionLedgerV2,
+      Kind.Document,
+      Vector("admission-ledger-v2.json"),
+      codecLaw(inputs, "admission ledger with policy")
+    ),
+    Entry(
       DefinitionId.recording,
       Kind.Document,
       Vector("recording-standalone-v1.json"),
@@ -610,7 +634,17 @@ private object Decoders:
       case DefinitionId.study           => through(StudyCodecs.cosine[Px].codec, document)
       case DefinitionId.studyInput      => through(StudyInputCodecs.study[Px].input, document)
       case DefinitionId.admissionLedger => through(StudyInputCodecs.study[Px].ledger, document)
-      case DefinitionId.recording       => through(RecordingInputCodecs.recording[Px], document)
+      case StudyCodecDefinitions.studyV2
+          if document.hcursor
+            .downField("value")
+            .downField("layout")
+            .get[String]("name")
+            .contains(TrialKeyDefinitions.trialLayout.name) =>
+        through(StudyCodecs.trialCosine[Px].codec, document)
+      case StudyCodecDefinitions.studyV2 => through(StudyCodecs.cosine[Px].codec, document)
+      case StudyInputDefinitions.admissionLedgerV2 =>
+        through(StudyInputCodecs.study[Px].ledger, document)
+      case DefinitionId.recording => through(RecordingInputCodecs.recording[Px], document)
       case DefinitionId.binocularRecording =>
         through(RecordingInputCodecs.binocular[Px], document)
       case DefinitionId.recordingInput     => through(RecordingInputCodecs.input[Px], document)

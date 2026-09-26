@@ -88,6 +88,45 @@ object Diagnostics:
           definition(method),
           token(capability.toString)
         )
+      case MissingAngularScale(scale) =>
+        diagnostic(C.plan, e, e.message, Vector(Locus.Scale(scale)))(int(scale))
+      case Geometry(underlying) =>
+        val inner = CauseDiagnostics.geometry(underlying)
+        diagnostic(C.plan, e, e.message, inner.subject)(cause(inner))
+      case InvalidOccurrence(value) => diagnostic[Nothing](C.plan, e, e.message)(int(value))
+      case BlankKeyField(field)     =>
+        diagnostic(C.plan, e, e.message, Vector(Locus.Field(field)))(name(field))
+      case OccurrenceUnavailable(layout, matched) =>
+        diagnostic(C.plan, e, e.message, Vector(Locus.Definition(layout)))(
+          definition(layout),
+          token(matched.toString)
+        )
+      case MatchItemConflict(groups) =>
+        diagnostic(C.plan, e, e.message, groups.flatten.map(Locus.TrialDigest(_)))(
+          Operand.Items(groups.map(names))
+        )
+      case MatchedCardinality(matched, focal, groups) =>
+        diagnostic(
+          C.plan,
+          e,
+          e.message,
+          (focal ++ groups.flatten).map(Locus.TrialDigest(_))
+        )(
+          token(matched.toString),
+          names(focal),
+          Operand.Items(groups.map(names))
+        )
+      case UnmatchedFocalRefused(focal) =>
+        diagnostic(C.plan, e, e.message, focal.map(Locus.TrialDigest(_)))(names(focal))
+      case InvalidWindowTally(screen, window, total, screenMicros, windowMicros, totalMicros) =>
+        diagnostic[Nothing](C.plan, e, e.message)(
+          int(screen),
+          int(window),
+          int(total),
+          long(screenMicros),
+          long(windowMicros),
+          long(totalMicros)
+        )
 
   def failure[K](e: StudyFailure[K]): Diagnostic[K] =
     import StudyFailure.*
@@ -109,6 +148,11 @@ object Diagnostics:
           e.message,
           inherit(Vector(Locus.Pair(left, right)), inner)
         )(Operand.Key(left), Operand.Key(right), cause(inner))
+      case OffWindow(key, tally) =>
+        diagnostic(C.studyFailure, e, e.message, Vector(Locus.Trial(key)))(
+          Operand.Key(key),
+          windowTally(tally)
+        )
 
   def result[K](e: StudyResultError[K]): Diagnostic[K] =
     import StudyResultError.*
@@ -664,6 +708,34 @@ object Diagnostics:
         diagnostic(C.studyFinding, f, f.message, trial(key))(Operand.Key(key))
       case UncontrolledFocal(key) =>
         diagnostic(C.studyFinding, f, f.message, trial(key))(Operand.Key(key))
+      case OffWindowFixations(key, tally, policy) =>
+        diagnostic(C.studyFinding, f, f.message, trial(key))(
+          Operand.Key(key),
+          windowTally(tally),
+          token(policy.toString)
+        )
+      case NoFixationInWindow(key, tally) =>
+        diagnostic(C.studyFinding, f, f.message, trial(key))(
+          Operand.Key(key),
+          windowTally(tally)
+        )
+      case MatchedCardinality(key, references, matched) =>
+        diagnostic(C.studyFinding, f, f.message, trial(key))(
+          Operand.Key(key),
+          keys(references),
+          token(matched.toString)
+        )
+      case AmbiguousReferences(references, matched) =>
+        diagnostic(C.studyFinding, f, f.message, Vector(Locus.Trials(references)))(
+          keys(references),
+          token(matched.toString)
+        )
+      case UnmatchedFocalRefused(key) =>
+        diagnostic(C.studyFinding, f, f.message, trial(key))(Operand.Key(key))
+      case MatchItemConflict(conflicting) =>
+        diagnostic(C.studyFinding, f, f.message, Vector(Locus.Trials(conflicting)))(
+          keys(conflicting)
+        )
     finding(projected, f.severity, f.category, f.remedy)
 
   def recordingFinding(f: RecordingFinding): Diagnostic[Nothing] =
@@ -872,6 +944,11 @@ object Diagnostics:
           real(x),
           real(y)
         )
+      case CorrectionConflict(first, second) =>
+        diagnostic[Nothing](C.quarantine, e, e.message)(int(first), int(second))
+      case ItemConflict(items) => diagnostic[Nothing](C.quarantine, e, e.message)(names(items))
+      case OccurrenceConflict(occurrences) =>
+        diagnostic[Nothing](C.quarantine, e, e.message)(ints(occurrences))
 
   def admission(e: AdmissionError): Diagnostic[Nothing] =
     import AdmissionError.*
@@ -914,6 +991,17 @@ object Diagnostics:
           int(index),
           int(fixations),
           int(records)
+        )
+      case OutsideFrameRecord(number, policy) =>
+        diagnostic(C.admission, e, e.message, record(number))(
+          int(number),
+          token(policy.toString)
+        )
+      case CorrectionConflict(number, first, second) =>
+        diagnostic(C.admission, e, e.message, record(number))(
+          int(number),
+          int(first),
+          int(second)
         )
 
   /** A ledger refusal resolved against its input: the admission error's

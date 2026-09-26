@@ -121,7 +121,10 @@ object DiagnosticSamples:
   private val temporalRef2 =
     get(ArtifactRef.parse[TemporalStudyInput[StudyKey, Px]](digest2))
 
-  private val frameError    = GeometryError.FrameMismatch(fid, deg)
+  private val frameError = GeometryError.FrameMismatch(fid, deg)
+  private val tally      = get(
+    WindowTally.of(1, 2, 5, Span.micros(10L), Span.micros(20L), Span.micros(100L))
+  )
   private val surfaceError  = SurfaceError.DegenerateTotal(0)
   private val timeError     = TimeError.ClockMismatch(clk, clk2)
   private val supportError  = DetectionSupportError.InvalidSampleRange(5, 2)
@@ -152,14 +155,30 @@ object DiagnosticSamples:
       PlanError.UnsupportedExecution(
         DefinitionId.cosine,
         ExecutionCapability.SynchronousWholeOperation
-      )
+      ),
+      PlanError.MissingAngularScale(1),
+      PlanError.Geometry(frameError),
+      PlanError.InvalidWindowTally(3, 2, 4, 10L, 20L, 25L),
+      PlanError.InvalidOccurrence(0),
+      PlanError.BlankKeyField("item"),
+      PlanError
+        .OccurrenceUnavailable(DefinitionId.studyLayout, MatchedReferences.SameOccurrence),
+      PlanError.MatchItemConflict(Vector(Vector(digest, digest2))),
+      PlanError
+        .MatchedCardinality(
+          MatchedReferences.RequireOne,
+          Vector(digest),
+          Vector(Vector(digest2))
+        ),
+      PlanError.UnmatchedFocalRefused(Vector(digest))
     ),
     family[StudyFailure[StudyKey]]("StudyFailure")(
       StudyFailure.Frame(k1, frameError),
       StudyFailure.Occupancy(k1, surfaceError),
       StudyFailure.Temporal(k1, TemporalStudyError.MissingEpoch(digest)),
       StudyFailure.Estimation(k1, EstimateError.NoMass),
-      StudyFailure.Comparison(k1, k2, CompareError.ZeroNorm("cosine", 0, 1))
+      StudyFailure.Comparison(k1, k2, CompareError.ZeroNorm("cosine", 0, 1)),
+      StudyFailure.OffWindow(k1, tally)
     ),
     family[StudyResultError[StudyKey]]("StudyResultError")(
       StudyResultError.Description("grid", Vector.empty),
@@ -414,7 +433,11 @@ object DiagnosticSamples:
       GeometryError.NonFiniteVelocity(Inf),
       GeometryError.NegativeVelocity(-1),
       GeometryError.NonFiniteDistance(Inf),
-      GeometryError.NegativeDistance(-2)
+      GeometryError.NegativeDistance(-2),
+      GeometryError.SubframeOutsideParent(deg, 0, 1, 5, 4, fid, frame.spec),
+      GeometryError.SubframeIdentity(fid),
+      GeometryError.NonPositiveAngularScale(fid, 0),
+      GeometryError.NonFiniteTranslation(Inf, 1)
     ),
     family[TimeError]("TimeError")(
       TimeError.ReversedInterval(clk, 10L, 5L),
@@ -604,7 +627,13 @@ object DiagnosticSamples:
       StudyFinding.FrameMismatch(k1, frameError),
       StudyFinding.DuplicateTrial(k1, PairingSide.Focal, Vector(0, 2)),
       StudyFinding.UnmatchedFocal(k1),
-      StudyFinding.UncontrolledFocal(k1)
+      StudyFinding.UncontrolledFocal(k1),
+      StudyFinding.OffWindowFixations(k1, tally, OffWindowPolicy.FailTrial),
+      StudyFinding.NoFixationInWindow(k1, tally),
+      StudyFinding.MatchedCardinality(k1, Vector(k2), MatchedReferences.RequireOne),
+      StudyFinding.AmbiguousReferences(Vector(k1, k2), MatchedReferences.SameOccurrence),
+      StudyFinding.UnmatchedFocalRefused(k1),
+      StudyFinding.MatchItemConflict(Vector(k1, k2))
     ),
     family[RecordingFinding]("RecordingFinding")(
       RecordingFinding.UndescribedMethod(DefinitionId.cosine),
@@ -677,7 +706,10 @@ object DiagnosticSamples:
       QuarantineCause.WrongClock(1, "a", "b"),
       QuarantineCause.InvalidTransition(1, "reversed"),
       QuarantineCause.InvalidExtent("reversed"),
-      QuarantineCause.UnmappableFixation(2, fid, deg, 1.5, 2.5)
+      QuarantineCause.UnmappableFixation(2, fid, deg, 1.5, 2.5),
+      QuarantineCause.CorrectionConflict(0, 1),
+      QuarantineCause.ItemConflict(Vector("beach-042", "dog-077")),
+      QuarantineCause.OccurrenceConflict(Vector(1, 2))
     ),
     family[AdmissionError]("AdmissionError")(
       AdmissionError.NonPositiveRecord(0),
@@ -691,7 +723,9 @@ object DiagnosticSamples:
       AdmissionError.AmbiguousTrial(Vector(0, 1)),
       AdmissionError.UnknownTrial(Vector(7)),
       AdmissionError.UnadmittedTrial(3),
-      AdmissionError.FixationCount(1, 4, 3)
+      AdmissionError.FixationCount(1, 4, 3),
+      AdmissionError.OutsideFrameRecord(4, OffScreenPolicy.QuarantineTrial),
+      AdmissionError.CorrectionConflict(4, 0, 1)
     ),
     family[InspectionError[StudyKey]]("InspectionError")(
       InspectionError.UnknownScale(3, 1),

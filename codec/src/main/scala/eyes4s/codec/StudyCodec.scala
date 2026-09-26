@@ -25,6 +25,13 @@ import eyes4s.plan.*
 import eyes4s.surface.*
 import io.circe.Json
 
+/** Built-in identities introduced with windowed, angular and occurrence-aware plans. */
+object StudyCodecDefinitions:
+  /** A study plan that records its geometry (whole frame or analysis window),
+    * its declared scales and units-per-degree, and its pairing policy.
+    */
+  val studyV2: DefinitionId = DefinitionId.builtIn("eyes4s.study", 2)
+
 /** Codecs for the concrete geometry needed by a fixation study. */
 object StudyCodecs:
   def cosine[U <: Unit2D](using
@@ -37,6 +44,45 @@ object StudyCodecs:
       StudyMethod.cosine[U](DefinitionId.cosine),
       VersionedCodec.unit(DefinitionId.unit)
     )
+
+  /** The trial-keyed cosine study: trials identified by participant, phase,
+    * trial and occurrence, matched on their item.
+    */
+  def trialCosine[U <: Unit2D](using
+      UnitLabel[U]
+  ): StudyCodec[TrialKey, U, Unit, Similarity, SignedDifference] =
+    new StudyCodec(
+      DefinitionId.study,
+      TrialKey.layout(TrialKeyDefinitions.trialLayout),
+      trialKey(TrialKeyDefinitions.trialKey),
+      StudyMethod.cosine[U](DefinitionId.cosine),
+      VersionedCodec.unit(DefinitionId.unit)
+    )
+
+  /** A [[TrialKey]] with its item beside its identity. */
+  def trialKey(schema: DefinitionId): VersionedCodec[TrialKey] =
+    VersionedCodec.of[TrialKey](schema)(k =>
+      Json.obj(
+        "participant" -> Json.fromString(k.participant),
+        "phase"       -> Json.fromString(k.phase),
+        "trial"       -> Json.fromString(k.trial),
+        "occurrence"  -> Json.fromInt(k.occurrence.value),
+        "item"        -> Json.fromString(k.item)
+      )
+    ) { json =>
+      for
+        participant <- Wire.field[String](json, "participant")
+        phase       <- Wire.field[String](json, "phase")
+        trial       <- Wire.field[String](json, "trial")
+        raw         <- Wire.field[Int](json, "occurrence")
+        occurrence  <- TrialOccurrence.of(raw).left.map(CodecError.Definition.apply)
+        item        <- Wire.field[String](json, "item")
+        key         <- TrialKey
+          .of(participant, phase, trial, occurrence, item)
+          .left
+          .map(CodecError.Definition.apply)
+      yield key
+    }
 
   def key(schema: DefinitionId): VersionedCodec[StudyKey] =
     VersionedCodec.of[StudyKey](schema)(k =>
@@ -71,8 +117,55 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
     val method: StudyMethod[P, U, S, D],
     val parameters: VersionedCodec[P]
 )(using unit: UnitLabel[U]):
+  /** The plan schema that records geometry, declared scales and pairing. */
+  val schemaV2: DefinitionId = DefinitionId.builtIn(schema.name, schema.version + 1)
+
+  /** Reads both plan versions; a version-1 plan maps the whole frame with
+    * scales in frame units. A plan is written as version 1 whenever it means
+    * exactly that, so a version-1 plan re-encodes to its own bytes.
+    */
   val codec: VersionedCodec[StudyPlan[K, U, P, S, D]] =
-    VersionedCodec.checked(schema)(write)(read)
+    VersionedCodec.versions[StudyPlan[K, U, P, S, D]]("study plan", schema, schema.version + 1)(
+      plan =>
+        write(plan).flatMap(base =>
+          if plan.isVersion1 then Right(schema -> base)
+          else
+            writeV2(plan).map(extra =>
+              schemaV2 -> Wire.append(base.mapObject(_.remove("estimates")), extra)
+            )
+        )
+    )((version, json) => read(json, version == schemaV2))
+
+  /** The version-2 members; `estimates` is replaced by the declared `scales`. */
+  private def writeV2(plan: StudyPlan[K, U, P, S, D]): Either[CodecError, Json] =
+    val geometry = plan.geometry match
+      case StudyGeometry.WholeFrame(_) => Json.obj("kind" -> Json.fromString("wholeFrame"))
+      case StudyGeometry.Windowed(window, _, policy) =>
+        Json.obj(
+          "kind"      -> Json.fromString("windowed"),
+          "admission" -> StudyCodecs.frame(window.parent),
+          "window"    -> Json.obj(
+            "id"   -> Json.fromString(window.frame.id.name),
+            "xMin" -> Json.fromDoubleOrNull(window.region.xMin),
+            "yMin" -> Json.fromDoubleOrNull(window.region.yMin),
+            "xMax" -> Json.fromDoubleOrNull(window.region.xMax),
+            "yMax" -> Json.fromDoubleOrNull(window.region.yMax)
+          ),
+          "offWindow" -> Json.fromString(StudyWire.offWindow(policy))
+        )
+    Right(
+      Json.obj(
+        "pairing"      -> StudyWire.pairing(plan.pairing),
+        "geometry"     -> geometry,
+        "scales"       -> Json.arr(plan.scales.map(StudyWire.scale[U])*),
+        "angularScale" -> plan.angularScale.fold(Json.Null)(s =>
+          Json.obj(
+            "frame"          -> Json.fromString(s.frame.id.name),
+            "unitsPerDegree" -> Json.fromDoubleOrNull(s.unitsPerDegree)
+          )
+        )
+      )
+    )
 
   private def write(plan: StudyPlan[K, U, P, S, D]): Either[CodecError, Json] = for
     _ <- Either.cond(
@@ -112,7 +205,7 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
       .definition(json, field)
       .flatMap(found => Either.cond(found == expected, (), CodecError.Schema(expected, found)))
 
-  private def read(json: Json): Either[CodecError, StudyPlan[K, U, P, S, D]] = for
+  private def read(json: Json, v2: Boolean): Either[CodecError, StudyPlan[K, U, P, S, D]] = for
     _      <- requireId(json, "layout", layout.id)
     _      <- requireId(json, "keySchema", keys.schema)
     _      <- requireId(json, "method", method.id)
@@ -134,15 +227,114 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
       .find(_.toString == weightName)
       .toRight(CodecError.Field("weight", json, s"unknown weight $weightName"))
     policy        <- Wire.field[Json](json, "policy").flatMap(StudyWire.readPolicy)
-    estimateJson  <- Wire.field[Vector[Json]](json, "estimates")
-    estimates     <- estimateJson.traverse(StudyWire.readEstimate[U])
     parameterJson <- Wire.field[Json](json, "parameters")
     params        <- parameters.decode(parameterJson)
-    plan          <- StudyPlan
-      .of(input, layout, grid, focal, reference, weight, estimates, policy, method, params)
-      .left
-      .map(CodecError.Definition.apply)
+    plan          <-
+      if !v2 then
+        for
+          estimateJson <- Wire.field[Vector[Json]](json, "estimates")
+          estimates    <- estimateJson.traverse(StudyWire.readEstimate[U])
+          plan         <- StudyPlan
+            .of(
+              input,
+              layout,
+              grid,
+              focal,
+              reference,
+              weight,
+              estimates,
+              policy,
+              method,
+              params
+            )
+            .left
+            .map(CodecError.Definition.apply)
+        yield plan
+      else
+        for
+          geometryJson <- Wire.field[Json](json, "geometry")
+          geometry     <- readGeometry(geometryJson, grid)
+          scaleJson    <- Wire.field[Vector[Json]](json, "scales")
+          scales       <- scaleJson.zipWithIndex.traverse { case (entry, index) =>
+            StudyWire.readScale[U](entry).left.map(Wire.at(s"scales[$index]"))
+          }
+          angularJson <- Wire.field[Option[Json]](json, "angularScale")
+          angular     <- angularJson.filterNot(_.isNull).traverse(readAngular(_, geometry))
+          pairing     <- Wire.field[Json](json, "pairing").flatMap(StudyWire.readPairing)
+          plan        <- StudyPlan
+            .configure(
+              input,
+              layout,
+              geometry,
+              focal,
+              reference,
+              weight,
+              scales,
+              angular,
+              policy,
+              method,
+              params,
+              pairing
+            )
+            .left
+            .map(CodecError.Definition.apply)
+        yield plan
   yield plan
+
+  private def readGeometry(json: Json, grid: Grid[U]): Either[CodecError, StudyGeometry[U]] =
+    Wire.field[String](json, "kind").flatMap {
+      case "wholeFrame" => Right(StudyGeometry.WholeFrame(grid))
+      case "windowed"   =>
+        for
+          admissionJson <- Wire.field[Json](json, "admission")
+          admission     <- StudyCodecs.readFrame[U](admissionJson)
+          window        <- Wire.field[Json](json, "window")
+          id            <- Wire.field[String](window, "id")
+          x0            <- DomainWire.finite(window, "xMin")
+          y0            <- DomainWire.finite(window, "yMin")
+          x1            <- DomainWire.finite(window, "xMax")
+          y1            <- DomainWire.finite(window, "yMax")
+          region        <- Bounds
+            .of[U](x0, y0, x1, y1)
+            .left
+            .map(e => CodecError.Field("window", window, e.message))
+          subframe <- Subframe
+            .of(admission, FrameId(id), region)
+            .left
+            .map(e => CodecError.Field("window", window, e.message))
+          name      <- Wire.field[String](json, "offWindow")
+          offWindow <- StudyWire
+            .readOffWindow(name)
+            .toRight(CodecError.Field("offWindow", json, s"unknown off-window policy $name"))
+          geometry <- StudyGeometry
+            .windowed(subframe, grid, offWindow)
+            .left
+            .map(e => CodecError.Field("window", window, e.message))
+        yield geometry
+      case other => Left(CodecError.Field("geometry", json, s"unknown geometry $other"))
+    }
+
+  private def readAngular(
+      json: Json,
+      geometry: StudyGeometry[U]
+  ): Either[CodecError, LinearAngularScale[U]] =
+    for
+      frame <- Wire.field[String](json, "frame")
+      _     <- Either.cond(
+        frame == geometry.admission.id.name,
+        (),
+        CodecError.Field(
+          "frame",
+          json,
+          s"units per degree are declared on frame $frame, but the plan admits ${geometry.admission.id.name}"
+        )
+      )
+      value <- DomainWire.finite(json, "unitsPerDegree")
+      scale <- LinearAngularScale
+        .of(geometry.admission, value)
+        .left
+        .map(e => CodecError.Field("unitsPerDegree", json, e.message))
+    yield scale
 
   /** The result archive for this plan family, with explicit score and difference codecs. */
   def results(
@@ -216,6 +408,90 @@ private[codec] object StudyWire:
               .map(e => CodecError.Field("minimum", json, e.message))
           )
       case other => Left(CodecError.Field("policy", json, s"unknown policy $other"))
+    }
+
+  def matched(value: MatchedReferences): Json = value match
+    case MatchedReferences.RequireOne     => Json.obj("kind" -> Json.fromString("requireOne"))
+    case MatchedReferences.SameOccurrence =>
+      Json.obj("kind" -> Json.fromString("sameOccurrence"))
+    case MatchedReferences.MeanOfAll      => Json.obj("kind" -> Json.fromString("meanOfAll"))
+    case MatchedReferences.Select(choice) =>
+      Json.obj(
+        "kind"   -> Json.fromString("select"),
+        "choice" -> (choice match
+          case OccurrenceChoice.First => Json.obj("kind" -> Json.fromString("first"))
+          case OccurrenceChoice.Last  => Json.obj("kind" -> Json.fromString("last"))
+          case OccurrenceChoice.At(n) =>
+            Json.obj("kind" -> Json.fromString("at"), "occurrence" -> Json.fromInt(n.value)))
+      )
+
+  def readMatched(json: Json): Either[CodecError, MatchedReferences] =
+    Wire.field[String](json, "kind").flatMap {
+      case "requireOne"     => Right(MatchedReferences.RequireOne)
+      case "sameOccurrence" => Right(MatchedReferences.SameOccurrence)
+      case "meanOfAll"      => Right(MatchedReferences.MeanOfAll)
+      case "select"         =>
+        Wire.field[Json](json, "choice").flatMap { choice =>
+          Wire.field[String](choice, "kind").flatMap {
+            case "first" => Right(MatchedReferences.Select(OccurrenceChoice.First))
+            case "last"  => Right(MatchedReferences.Select(OccurrenceChoice.Last))
+            case "at"    =>
+              Wire
+                .field[Int](choice, "occurrence")
+                .flatMap(TrialOccurrence.of(_).left.map(CodecError.Definition.apply))
+                .map(n => MatchedReferences.Select(OccurrenceChoice.At(n)))
+            case other =>
+              Left(CodecError.Field("choice", choice, s"unknown occurrence choice $other"))
+          }
+        }
+      case other =>
+        Left(CodecError.Field("matched", json, s"unknown matched-reference rule $other"))
+    }
+
+  private val controlNames   = ControlReferences.values.toVector.map(v => v -> v.name)
+  private val unmatchedNames = UnmatchedFocalPolicy.values.toVector.map(v => v -> v.name)
+
+  def pairing(value: StudyPairing): Json = Json.obj(
+    "matched"   -> matched(value.matched),
+    "controls"  -> Json.fromString(controlNames.toMap.apply(value.controls)),
+    "unmatched" -> Json.fromString(unmatchedNames.toMap.apply(value.unmatched))
+  )
+
+  def readPairing(json: Json): Either[CodecError, StudyPairing] = for
+    m        <- Wire.field[Json](json, "matched").flatMap(readMatched)
+    c        <- Wire.field[String](json, "controls")
+    controls <- controlNames
+      .collectFirst { case (v, `c`) => v }
+      .toRight(CodecError.Field("controls", json, s"unknown control pool $c"))
+    u         <- Wire.field[String](json, "unmatched")
+    unmatched <- unmatchedNames
+      .collectFirst { case (v, `u`) => v }
+      .toRight(CodecError.Field("unmatched", json, s"unknown unmatched-focal policy $u"))
+  yield StudyPairing(m, controls, unmatched)
+
+  def offWindow(policy: OffWindowPolicy): String = policy match
+    case OffWindowPolicy.Exclude   => "exclude"
+    case OffWindowPolicy.FailTrial => "failTrial"
+
+  def readOffWindow(name: String): Option[OffWindowPolicy] =
+    OffWindowPolicy.values.find(p => offWindow(p) == name)
+
+  def scale[U <: Unit2D](value: StudyScale[U]): Json = value match
+    case StudyScale.Native(e) =>
+      Json.obj("kind" -> Json.fromString("native"), "estimate" -> estimate(e))
+    case StudyScale.Angular(e) =>
+      Json.obj("kind" -> Json.fromString("degrees"), "estimate" -> estimate(e))
+
+  def readScale[U <: Unit2D](json: Json): Either[CodecError, StudyScale[U]] =
+    Wire.field[String](json, "kind").flatMap {
+      case "native" =>
+        Wire.field[Json](json, "estimate").flatMap(readEstimate[U]).map(StudyScale.Native(_))
+      case "degrees" =>
+        Wire
+          .field[Json](json, "estimate")
+          .flatMap(readEstimate[Unit2D.Deg])
+          .map(StudyScale.Angular[U](_))
+      case other => Left(CodecError.Field("scale", json, s"unknown scale kind $other"))
     }
 
   def estimate[U <: Unit2D](value: StudyEstimate[U]): Json = value match

@@ -359,8 +359,16 @@ final class StudyInspection[K, U <: Unit2D, S, D] private[plan] (
     val description: Vector[(String, Vector[Provenance.Param])],
     val sources: StudySources[K],
     val scales: Vector[ScaleInspection[K, U, S, D]],
-    val cell: Option[(String, String)]
+    val cell: Option[(String, String)],
+    val windowTallies: Vector[(K, Either[GeometryError, WindowTally])] = Vector.empty
 ):
+  /** One trial's fixations outside the analysis window and the screen, when
+    * the inspection was opened with its plan and input.
+    */
+  def windowTally(key: K): Option[WindowTally] = windowTallies.collectFirst {
+    case (`key`, Right(tally)) => tally
+  }
+
   def scale(index: Int): Either[InspectionError[K], ScaleInspection[K, U, S, D]] =
     scales.lift(index).toRight(InspectionError.UnknownScale(index, scales.size))
 
@@ -528,7 +536,14 @@ object ResultInspection:
       )
       schema <- ScoreSchema.study(plan).left.map(InspectionError.Components.apply)
       found  <- study(result, sources, schema)
-    yield found
+    yield new StudyInspection(
+      found.input,
+      found.description,
+      found.sources,
+      found.scales,
+      found.cell,
+      plan.windowTallies(input)
+    )
 
   /** Inspect every cell of a temporal result; cell studies share the base
     * input's sources, and every item and diagnostic is addressed to its cell.

@@ -34,6 +34,17 @@ import eyes4s.kernel.*
   * inputReference, layoutId, methodId and description stamp this snapshot. A UI
   * retaining it across edits can use checkCurrent before presenting it as current.
   * Registered behavior and projections must be pure and stable for their ids.
+  *
+  * windowTallies lists, in input order, how each trial falls against the
+  * screen and the plan's analysis window (a trial in another frame carries its
+  * refusal); a trial whose map
+  * would be empty, or that the window policy fails, fails at every scale with
+  * StudyFailure.OffWindow.
+  *
+  * matchedCardinality is the prepared study's own value: focal trials with
+  * more than one matched reference, ambiguous control references, unmatched
+  * focal trials and item conflicts under the plan's pairing, and whether they
+  * refuse the study.
   */
 final class StudyPreview[K, U <: Unit2D] private[plan] (
     val inputReference: ArtifactRef[StudyInput[K, U]],
@@ -45,8 +56,16 @@ final class StudyPreview[K, U <: Unit2D] private[plan] (
     val excludedPhases: Vector[K],
     val matched: DirectedPairSchedule[K, K],
     val controls: DirectedPairSchedule[K, K],
-    val failurePolicy: FailurePolicy
+    val failurePolicy: FailurePolicy,
+    val windowTallies: Vector[(K, Either[GeometryError, WindowTally])],
+    val pairing: StudyPairing,
+    val matchedCardinality: Either[PlanError, MatchedCardinality[K]]
 ):
+  /** Records outside the analysis window and the screen, across the input:
+    * for example "543 of 11,520 records in 409 trials".
+    */
+  def windowSummary: WindowSummary = WindowSummary.of(windowTallies)
+
   /** Both matched and control scores are averaged by the focal (left) key. */
   val reductionOrientation: ReductionOrientation = ReductionOrientation.ByLeft
 

@@ -1002,15 +1002,35 @@ class PreflightSuite extends munit.FunSuite:
   }
 
   test("data-dependent estimation failures are not checked here and are listed as such") {
+    // A zero-width Gaussian on this grid is refused by the smoother at run time
+    // only; preflight lists estimation as not checked rather than guessing.
+    val narrow = Vector[StudyEstimate[Px]](
+      StudyEstimate.Gaussian(get(Sigma.px(1e-9)), eyes4s.surface.EdgePolicy.Truncate)
+    )
+    val p      = plan(input, scales = narrow)
+    val report = p.preflight(Some(input))
+    assertEquals(report.findings, Vector.empty)
+    assert(report.notChecked.contains(UncheckedAspect.OccupancyEstimation))
+    val scale = get(p.run(input)).scales.head
+    assert(scale.estimation.forall(_._2.isLeft))
+  }
+
+  test("a trial entirely off the screen is reported before running and fails as off-window") {
     val outside = StudyInput(
       Trials(Vector(trial(a, 5.0, y = 5.0), trial(b, 1.5), trial(ar, 0.5), trial(br, 1.5)))
     )
     val p      = plan(outside)
     val report = p.preflight(Some(outside))
-    assertEquals(report.findings, Vector.empty)
-    assert(report.notChecked.contains(UncheckedAspect.OccupancyEstimation))
+    val tally  = get(WindowTally.screen(frame, outside.trials.rows.head.value))
+    assertEquals(tally.outsideScreen, 1)
+    assertEquals(tally.outsideWindow, 0)
+    assertEquals(report.findings, Vector(StudyFinding.NoFixationInWindow(a, tally)))
+    assertEquals(report.blockers, Vector.empty)
     val scale = get(p.run(outside)).scales.head
-    assertEquals(scale.estimation.collect { case (k, Left(_)) => k }, Vector(a))
+    assertEquals(
+      scale.estimation.collect { case (k, Left(f)) => k -> f },
+      Vector(a -> StudyFailure.OffWindow(a, tally))
+    )
   }
 
   test("inconsistent descriptors warn while execution proceeds") {

@@ -28,8 +28,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Rendered codes, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 386
-  private val PinnedDigest = "336c5fca3f885a78"
+  private val PinnedCount  = 411
+  private val PinnedDigest = "1dd53787bbbee891"
 
   test(
     "every cataloged family is sampled, in catalog order, through its own Diagnose instance"
@@ -118,7 +118,7 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
     )
     assertEquals(
       DiagnosticCatalog.studyFailure.codes.map(_.render).last,
-      "study-failure.comparison"
+      "study-failure.off-window"
     )
     assertEquals(
       DiagnosticFamily.slug("SynchronizationTargetIsSource"),

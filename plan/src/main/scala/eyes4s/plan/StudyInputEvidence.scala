@@ -54,6 +54,17 @@ enum QuarantineCause derives CanEqual:
   case InvalidExtent(reason: String)
   case UnmappableFixation(index: Int, from: FrameId, to: FrameId, x: Double, y: Double)
 
+  /** Two correction rules of the admission policy, by position, both cover
+    * the trial; which to apply is not decided for the analyst.
+    */
+  case CorrectionConflict(first: Int, second: Int)
+
+  /** Records of one trial identity name different match items. */
+  case ItemConflict(items: Vector[String])
+
+  /** Records of one trial identity name different occurrences. */
+  case OccurrenceConflict(occurrences: Vector[Int])
+
   def message: String = this match
     case RejectedRecords     => "one or more source rows were rejected"
     case DuplicateOrdinals   => "duplicate fixation ordinals"
@@ -64,8 +75,20 @@ enum QuarantineCause derives CanEqual:
     case InvalidExtent(r)                      => s"scanpath extent: $r"
     case UnmappableFixation(i, from, to, x, y) =>
       s"fixation $i at ($x, $y) cannot be mapped from ${from.name} to ${to.name}"
+    case CorrectionConflict(first, second) =>
+      s"correction rules $first and $second both apply to the trial"
+    case ItemConflict(items) => s"the trial's records name different match items $items"
+    case OccurrenceConflict(occurrences) =>
+      s"the trial's records name different occurrences $occurrences"
 
 object QuarantineCause:
+  /** True for the causes a version-1 ledger can name; correction, item and
+    * occurrence conflicts arrived with the admission policy.
+    */
+  def isVersion1(cause: QuarantineCause): Boolean = cause match
+    case CorrectionConflict(_, _) | ItemConflict(_) | OccurrenceConflict(_) => false
+    case _                                                                  => true
+
   /** Total over the scanpath constructor's errors; each case keeps its operands. */
   def of(error: ScanpathError): QuarantineCause = error match
     case ScanpathError.NoFixations                           => NoFixations
@@ -136,6 +159,8 @@ enum AdmissionError derives CanEqual:
   case UnknownTrial(records: Vector[Int])
   case UnadmittedTrial(index: Int)
   case FixationCount(index: Int, fixations: Int, records: Int)
+  case OutsideFrameRecord(record: Int, policy: OffScreenPolicy)
+  case CorrectionConflict(record: Int, first: Int, second: Int)
 
   def message: String = this match
     case NonPositiveRecord(r) => s"Source record numbers are positive, got $r."
@@ -156,6 +181,77 @@ enum AdmissionError derives CanEqual:
     case UnadmittedTrial(i)     => s"Input trial $i has no admitted source records."
     case FixationCount(i, f, r) =>
       s"Input trial $i has $f fixations but $r admitted source records."
+    case OutsideFrameRecord(r, policy) =>
+      s"Record $r is listed as admitted outside the frame, but under $policy it must be an " +
+        "admitted record listed once, in record order, and ExcludeRecord must be the policy."
+    case CorrectionConflict(r, first, second) =>
+      s"Admitted record $r belongs to a trial that correction rules $first and $second both cover."
+
+/** What admission does with a record whose coordinates are finite but lie
+  * outside the admission frame (off the screen). Unparseable or non-finite
+  * coordinates are never covered: they always reject the record and
+  * quarantine its trial.
+  */
+enum OffScreenPolicy derives CanEqual:
+  /** Admit the record and list it in the ledger as outside the frame; a study
+    * leaves it out of every map and reports it as "outside screen".
+    */
+  case ExcludeRecord
+
+  /** Reject the record and quarantine its whole trial: the version-1 meaning. */
+  case QuarantineTrial
+
+/** Which trials a correction rule covers. A participant scope matches the
+  * participant projection of the key layout it is resolved under.
+  */
+enum CorrectionScope[K] derives CanEqual:
+  case AllTrials()
+  case Participant(participant: String)
+  case Trial(key: K)
+
+  def covers(key: K, participant: K => String): Boolean = this match
+    case AllTrials()    => true
+    case Participant(p) => participant(key) == p
+    case Trial(k)       => k == key
+
+/** One recorded coordinate correction and the trials it covers. */
+final case class AppliedCorrection[K](scope: CorrectionScope[K], correction: Correction)
+    derives CanEqual
+
+/** The analyst's admission choices for one import, recorded in its ledger:
+  * the off-screen policy and the coordinate corrections, in rule order.
+  * Corrections apply to the parsed coordinates before containment is
+  * checked; raw fields and the source digest are untouched. At most one rule
+  * may cover a trial.
+  */
+final case class AdmissionPolicy[K](
+    offScreen: OffScreenPolicy,
+    corrections: Vector[AppliedCorrection[K]]
+) derives CanEqual:
+  /** True when the policy means exactly what a version-1 import meant. */
+  def isVersion1: Boolean = offScreen == OffScreenPolicy.QuarantineTrial && corrections.isEmpty
+
+  /** The rule covering a trial, by position, or the first two that both do. */
+  def correctionFor(
+      key: K,
+      participant: K => String
+  ): Either[(Int, Int), Option[(Int, Correction)]] =
+    val covering = corrections.zipWithIndex.filter(_._1.scope.covers(key, participant))
+    if covering.size > 1 then Left(covering(0)._2 -> covering(1)._2)
+    else Right(covering.headOption.map { case (rule, index) => index -> rule.correction })
+
+object AdmissionPolicy:
+  /** New imports: off-screen records are admitted and reported; no corrections. */
+  def default[K]: AdmissionPolicy[K] =
+    AdmissionPolicy(OffScreenPolicy.ExcludeRecord, Vector.empty)
+
+  /** The version-1 meaning: off-screen records quarantine their trial. */
+  def version1[K]: AdmissionPolicy[K] =
+    AdmissionPolicy(OffScreenPolicy.QuarantineTrial, Vector.empty)
+
+/** An admitted record whose position lies outside the admission frame. */
+final case class OutsideFrame(record: Int, x: Double, y: Double, frame: FrameId)
+    derives CanEqual
 
 /** The explicit admission ledger of one imported source: every source record
   * with exactly one disposition, in record order, plus the recorded outcome.
@@ -165,8 +261,32 @@ final case class AdmissionLedger[K] private (
     source: SourceRef,
     header: Vector[String],
     records: Vector[SourceRecord[K]],
-    outcome: AdmissionOutcome
+    outcome: AdmissionOutcome,
+    policy: AdmissionPolicy[K],
+    outsideFrame: Vector[OutsideFrame]
 ) derives CanEqual:
+  /** True when the ledger means exactly what a version-1 ledger meant. */
+  def isVersion1: Boolean =
+    policy.isVersion1 && outsideFrame.isEmpty && records.forall {
+      case SourceRecord(_, Disposition.Rejected(_, _, AdmissionReason.Quarantined(_, cause))) =>
+        QuarantineCause.isVersion1(cause)
+      case _ => true
+    }
+
+  /** Every admitted record must lie in a trial at most one correction rule
+    * covers, under the layout's participant projection.
+    */
+  def checkCorrections(participant: K => String): Either[AdmissionError, Unit] =
+    records.iterator
+      .collect { case SourceRecord(r, Disposition.Admitted(k, _)) => r -> k }
+      .map { case (r, k) =>
+        policy.correctionFor(k, participant).left.map { case (a, b) =>
+          AdmissionError.CorrectionConflict(r, a, b)
+        }
+      }
+      .collectFirst { case Left(e) => e }
+      .toLeft(())
+
   def admitted: Vector[SourceRecord[K]] = records.filter(_.isAdmitted)
   def rejected: Vector[SourceRecord[K]] = records.filterNot(_.isAdmitted)
 
@@ -211,12 +331,26 @@ final case class AdmissionLedger[K] private (
           .toLeft(())
 
 object AdmissionLedger:
-  /** Every invariant reports the first offending record in record order. */
+  /** A version-1 ledger: no corrections, and off-screen records quarantine. */
   def of[K](
       source: SourceRef,
       header: Vector[String],
       records: Vector[SourceRecord[K]],
       outcome: AdmissionOutcome
+  ): Either[AdmissionError, AdmissionLedger[K]] =
+    of(source, header, records, outcome, AdmissionPolicy.version1[K], Vector.empty)
+
+  /** Every invariant reports the first offending record in record order.
+    * Records listed as admitted outside the frame must be admitted, strictly
+    * increasing and only present under [[OffScreenPolicy.ExcludeRecord]].
+    */
+  def of[K](
+      source: SourceRef,
+      header: Vector[String],
+      records: Vector[SourceRecord[K]],
+      outcome: AdmissionOutcome,
+      policy: AdmissionPolicy[K],
+      outsideFrame: Vector[OutsideFrame]
   ): Either[AdmissionError, AdmissionLedger[K]] =
     val rejected      = records.count(!_.isAdmitted)
     val numbers       = records.map(_.record).toSet
@@ -267,11 +401,19 @@ object AdmissionLedger:
       case AdmissionOutcome.Complete => None
       case other if rejected == 0    => Some(AdmissionError.OutcomeMismatch(other, rejected))
       case _                         => None
+    def outside = outsideFrame.zipWithIndex.collectFirst {
+      case (entry, i)
+          if policy.offScreen != OffScreenPolicy.ExcludeRecord ||
+            !admittedNumbers.contains(entry.record) ||
+            (i > 0 && entry.record <= outsideFrame(i - 1).record) =>
+        AdmissionError.OutsideFrameRecord(entry.record, policy.offScreen)
+    }
     ordered
       .orElse(ordinals)
       .orElse(scopes)
       .orElse(consistent)
-      .toLeft(new AdmissionLedger(source, header, records, outcome))
+      .orElse(outside)
+      .toLeft(new AdmissionLedger(source, header, records, outcome, policy, outsideFrame))
 
   /** Derive the outcome from the analyst's decision and the rejected count. */
   def decide[K](
@@ -280,10 +422,23 @@ object AdmissionLedger:
       records: Vector[SourceRecord[K]],
       decision: AdmissionDecision
   ): Either[AdmissionError, AdmissionLedger[K]] =
+    decide(source, header, records, decision, AdmissionPolicy.version1[K], Vector.empty)
+
+  /** As [[decide]], recording the admission policy and the admitted records
+    * outside the frame.
+    */
+  def decide[K](
+      source: SourceRef,
+      header: Vector[String],
+      records: Vector[SourceRecord[K]],
+      decision: AdmissionDecision,
+      policy: AdmissionPolicy[K],
+      outsideFrame: Vector[OutsideFrame]
+  ): Either[AdmissionError, AdmissionLedger[K]] =
     val outcome =
       if records.forall(_.isAdmitted) then AdmissionOutcome.Complete
       else
         decision match
           case AdmissionDecision.RequireComplete  => AdmissionOutcome.Refused
           case AdmissionDecision.ReviewExclusions => AdmissionOutcome.ReviewedExclusions
-    of(source, header, records, outcome)
+    of(source, header, records, outcome, policy, outsideFrame)

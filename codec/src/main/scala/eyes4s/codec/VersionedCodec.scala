@@ -134,19 +134,34 @@ enum CodecError derives CanEqual:
 
 /** A typed, explicitly versioned codec. Unsupported old versions fail precisely.
   * The wire envelope separates schema identity from any method identity in its payload.
+  *
+  * `schema` is the latest version the codec writes. A codec built with
+  * [[VersionedCodec.versions]] also reads its earlier versions, each with its
+  * own original meaning, and writes each value under the earliest version
+  * that expresses it; `schemas` lists every version it reads.
   */
 final class VersionedCodec[A] private (
     val schema: DefinitionId,
-    write: A => Either[CodecError, Json],
-    read: Json => Either[CodecError, A]
+    val schemas: Vector[DefinitionId],
+    write: A => Either[CodecError, (DefinitionId, Json)],
+    read: (DefinitionId, Json) => Either[CodecError, A],
+    role: Option[String]
 ):
   def encode(value: A): Either[CodecError, Json] =
-    write(value).map(payload => Json.obj("schema" -> Wire.id(schema), "value" -> payload))
+    write(value).map { case (id, payload) =>
+      Json.obj("schema" -> Wire.id(id), "value" -> payload)
+    }
   def decode(json: Json): Either[CodecError, A] = for
-    found   <- Wire.definition(json, "schema")
-    _       <- Either.cond(found == schema, (), CodecError.Schema(schema, found))
+    found <- Wire.definition(json, "schema")
+    _     <- Either.cond(
+      schemas.contains(found),
+      (),
+      role.fold(CodecError.Schema(schema, found))(
+        CodecError.UnsupportedSchema(_, found, schemas)
+      )
+    )
     payload <- Wire.field[Json](json, "value")
-    result  <- read(payload)
+    result  <- read(found, payload)
   yield result
   def parse(input: String): Either[CodecError, A] =
     io.circe.parser
@@ -159,7 +174,13 @@ object VersionedCodec:
   def of[A](schema: DefinitionId)(write: A => Json)(
       read: Json => Either[CodecError, A]
   ): VersionedCodec[A] =
-    new VersionedCodec(schema, value => Right(write(value)), read)
+    new VersionedCodec(
+      schema,
+      Vector(schema),
+      value => Right(schema -> write(value)),
+      (_, json) => read(json),
+      None
+    )
 
   def string(schema: DefinitionId): VersionedCodec[String] = of(schema)(Json.fromString)(json =>
     json.asString.toRight(CodecError.Field("string", json, "expected a string"))
@@ -177,7 +198,45 @@ object VersionedCodec:
   def checked[A](schema: DefinitionId)(write: A => Either[CodecError, Json])(
       read: Json => Either[CodecError, A]
   ): VersionedCodec[A] =
-    new VersionedCodec(schema, write, read)
+    new VersionedCodec(
+      schema,
+      Vector(schema),
+      value => write(value).map(schema -> _),
+      (_, json) => read(json),
+      None
+    )
+
+  /** A codec over several versions of one schema. `write` chooses, for each
+    * value, the version it is written under (the earliest that expresses it)
+    * and its payload; `read` decodes a payload of any listed version with that
+    * version's meaning. The versions are `first` through version `latest` of
+    * `first`'s name; the last is the codec's `schema`. A document of any
+    * other version is refused as `CodecError.UnsupportedSchema(role, found,
+    * schemas)`.
+    */
+  private[codec] def versions[A](role: String, first: DefinitionId, latest: Int)(
+      write: A => Either[CodecError, (DefinitionId, Json)]
+  )(
+      read: (DefinitionId, Json) => Either[CodecError, A]
+  ): VersionedCodec[A] =
+    // Built here from one name and a version range, so the versions share a
+    // name and increase by construction.
+    val all = (first.version to math.max(first.version, latest)).toVector
+      .map(DefinitionId.builtIn(first.name, _))
+    new VersionedCodec(
+      all.last,
+      all,
+      value =>
+        write(value).flatMap { case (id, json) =>
+          Either.cond(
+            all.contains(id),
+            id -> json,
+            CodecError.UnsupportedSchema(role, id, all)
+          )
+        },
+      read,
+      Some(role)
+    )
 
   /** Entry-array encoding preserves arbitrary typed keys and rejects duplicates. */
   def entries[K: Ordering, V](
@@ -248,6 +307,12 @@ object VersionedCodec:
 private[codec] object Wire:
   def field[A: Decoder](json: Json, name: String): Either[CodecError, A] =
     json.hcursor.get[A](name).left.map(e => CodecError.Field(name, json, e.message))
+
+  /** The members of `base` followed by those of `later`, in that order. */
+  def append(base: Json, later: Json): Json =
+    Json.fromFields(
+      base.asObject.toVector.flatMap(_.toVector) ++ later.asObject.toVector.flatMap(_.toVector)
+    )
 
   /** Locate an error at a containing entry; nested locations join into one path. */
   def at(path: String)(error: CodecError): CodecError = error match

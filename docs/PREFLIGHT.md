@@ -45,6 +45,18 @@ angular frame or area corner the viewing geometry cannot map, and a detector
 definition its factory refuses. `TemporalFinding` adds trials without an epoch,
 coverage on another clock, windows that overflow an anchor, and windows with no
 observed coverage; repetition-level design findings name their repetition.
+A windowed or whole-frame study also reports, as warnings in input order, each
+trial with fixations outside its analysis window or the screen
+(`OffWindowFixations`, carrying the trial's `WindowTally` and the off-window
+policy) and each trial with none inside (`NoFixationInWindow`); both suggest
+`ReviewAnalysisWindow`. From the prepared study's `matchedCardinality` it
+reports trials that identify one trial but name two items (`MatchItemConflict`,
+a blocker), focal trials with several matched references
+(`MatchedCardinality`, a blocker unless the plan explicitly averages with
+`MeanOfAll`), reference groups the control pool cannot reduce to one
+(`AmbiguousReferences`), and, under `UnmatchedFocalPolicy.Refuse`, each focal
+trial without a match (`UnmatchedFocalRefused`, replacing the `UnmatchedFocal`
+warning). These blockers are exactly the ones on which execution refuses.
 
 `affectedTrials` lists distinct keys in the layout's canonical order. Finding
 order is deterministic: plan-level checks, then trials in source order, then the

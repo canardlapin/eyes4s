@@ -78,8 +78,9 @@ Scala.js by `SchemaCompatibilitySuite` over a pinned v1 document of every shippe
 the eighteen JSON codecs (study plan, study input, admission ledger, study result, recording,
 binocular recording, recording input, temporal input, timeline, manifest, the four score and
 difference schemas, the recording and temporal result archives, and the conventional
-`eyes4s.recording-plan@1` and `eyes4s.temporal-study@1` plan schemas), with a test that fails if a
-pinned schema is missing, and the packed recording,
+`eyes4s.recording-plan@1` and `eyes4s.temporal-study@1` plan schemas), plus a pinned v2 document
+of the study plan and admission ledger, with a test that fails if a pinned schema version is
+missing, and the packed recording,
 whose decoder also takes its payloads. The schema registry described under
 [Evidence](#evidence) checks the same fixtures on the JVM.
 
@@ -99,7 +100,13 @@ code and re-encode to the same JSON value on both platforms (and the same bytes 
 change to a pinned v1 writer's output fails the build rather than silently becoming a second v1.
 
 **Which decoders stay readable.** Every released version stays decodable, with its original
-meaning, in every later release. Version 1 is the first version of every shipped schema, so every
+meaning, in every later release. The study plan and the admission ledger have a version 2
+(`eyes4s.study@2`, `eyes4s.admission-ledger@2`, pinned by `study-v2.json` and
+`admission-ledger-v2.json`); their codecs read versions 1 and 2, decode a version-1 document with
+its version-1 meaning (the whole frame, scales in frame units, and the admission policy that
+quarantines off-screen records), and write each value under the earliest version that expresses it,
+so a version-1 document still re-encodes to its own bytes. For every other schema, version 1 is the
+first version, so every
 current decoder reads exactly version 1; there is no version 0 or earlier variant to keep or
 migrate from, and `DefinitionId` refuses a version below 1. Decoding never migrates. A migration
 from one version to the next will be offered only where it is scientifically lossless, preserving
