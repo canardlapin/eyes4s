@@ -1946,11 +1946,19 @@
         "labels": []
       },
       {
-        "name": "excluded_fixations",
+        "name": "excluded_fixation_count",
         "type": "Int64",
         "nullable": true,
         "unit": "count",
-        "meaning": "excluded_fixations",
+        "meaning": "excluded_fixation_count",
+        "labels": []
+      },
+      {
+        "name": "excluded_fixations_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
         "labels": []
       },
       {

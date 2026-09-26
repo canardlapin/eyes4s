@@ -406,10 +406,9 @@ class InspectionSourceSuite extends munit.FunSuite:
           assertEquals(row("status"), "ok")
           assertEquals(row("observed_us"), occupied.observedMicros.toString)
           assertEquals(row("missing_us"), occupied.missingMicros.toString)
-          assertEquals(
-            row("excluded_fixations"),
-            occupied.fixations.filter(_.retainedMicros == 0).map(_.index).mkString(",")
-          )
+          val excluded = occupied.fixations.filter(_.retainedMicros == 0).map(_.index)
+          assertEquals(row("excluded_fixation_count"), excluded.size.toString)
+          assertEquals(row("excluded_fixations_json"), excluded.mkString("[", ",", "]"))
           occupied.fixations.foreach { time =>
             val source = get(sources.fixation(key, time.index))
             val fields = records(source.record - 1)

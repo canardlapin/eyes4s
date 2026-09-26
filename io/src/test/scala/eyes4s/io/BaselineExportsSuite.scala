@@ -44,8 +44,8 @@ class BaselineExportsSuite extends munit.FunSuite:
         Some(t.identity.hex)
       )
       assertEquals(
-        t.metadata.hcursor.get[String]("row_count").toOption,
-        Some(t.rows.size.toString)
+        t.metadata.hcursor.get[Long]("row_count").toOption,
+        Some(t.rows.size.toLong)
       )
       assert(t.csv.rows.forall(_.head == t.identity.hex))
       val frozen = get(io.circe.parser.parse(BaselineExportSchemaFixture.versionOne)).hcursor

@@ -652,6 +652,7 @@ object BaselineExports:
       table <- legacy(
         ResultFamily.StudyContrasts,
         doc,
+        ContrastCsv.schemaVersion,
         Json.obj("plan" -> saved, "key_schema" -> keySchema(codec.keys))
       )
     yield table
@@ -667,22 +668,30 @@ object BaselineExports:
       .document(plan, result, codec, columns)
       .left
       .map(ResultExportError.Score.apply)
+    context = Json.obj("plan" -> saved, "key_schema" -> keySchema(codec.study.keys))
     contrasts <- legacy(
       ResultFamily.TemporalContrasts,
       docs.contrasts,
-      Json.obj("plan" -> saved)
+      TemporalContrastCsv.schemaVersion,
+      context
     )
-    coverage <- legacy(ResultFamily.TemporalCoverage, docs.coverage, Json.obj("plan" -> saved))
+    coverage <- legacy(
+      ResultFamily.TemporalCoverage,
+      docs.coverage,
+      TemporalContrastCsv.schemaVersion,
+      context
+    )
   yield Vector(contrasts, coverage)
 
   private def legacy(
       family: ResultFamily,
       doc: TidyCsvDocument,
+      sourceSchema: String,
       context: Json
   ): Either[ResultExportError, ResultTable] =
     val times    = Set("from_us", "until_us", "observed_us", "missing_us", "retained_us")
     val integers = times ++ Set(
-      "excluded_fixations",
+      "excluded_fixation_count",
       "method_version",
       "matched_selected",
       "matched_successful",
@@ -732,7 +741,7 @@ object BaselineExports:
         _,
         context.deepMerge(
           Json.obj(
-            "source_schema"     -> Json.fromString(ContrastCsv.schemaVersion),
+            "source_schema"     -> Json.fromString(sourceSchema),
             "evidence_location" -> Json.fromString(
               "plan_json, key_json, provenance and failure columns in each row"
             )
