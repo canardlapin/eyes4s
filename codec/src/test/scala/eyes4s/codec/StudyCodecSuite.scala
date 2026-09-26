@@ -235,6 +235,16 @@ class StudyCodecSuite extends munit.FunSuite:
     assertEquals(loaded.description, plan().description)
     assertEquals(get(loaded.encode), json)
     assertEquals(get(loaded.run(input)).scales.size, 1)
+    // The resolved plan is the typed plan: preflight, prepare and inspect it
+    // without re-reading it through the application's own codec.
+    assertEquals(loaded.plan.description, plan().description)
+    assertEquals(loaded.prerequisites(Some(input)), Vector.empty)
+    val report = loaded.preflight(Some(input))
+    assert(report.ready, report.findings)
+    val prepared = get(report.prepare(loaded.plan, input))
+    assertEquals(get(prepared.run).scales.size, 1)
+    val result = get(loaded.run(input))
+    assert(ResultInspection.study(loaded.plan, result, input, None).isRight)
     assertEquals(
       registry.register(persistence.registration).left.toOption,
       Some(CodecError.DuplicateMethod(method.id))
@@ -255,12 +265,18 @@ class StudyCodecSuite extends munit.FunSuite:
     val old  = json.mapObject(
       _.add(
         "schema",
-        Json.obj("name" -> Json.fromString("eyes4s.study"), "version" -> Json.fromInt(2))
+        Json.obj("name" -> Json.fromString("eyes4s.study"), "version" -> Json.fromInt(4))
       )
     )
     assertEquals(
       persistence.codec.decode(old).left.toOption,
-      Some(CodecError.Schema(persistence.schema, id("eyes4s.study", 2)))
+      Some(
+        CodecError.UnsupportedSchema(
+          "study plan",
+          id("eyes4s.study", 4),
+          Vector(DefinitionId.study, persistence.schemaV2, persistence.schemaV3)
+        )
+      )
     )
     val unknown = replaceValue(
       json,

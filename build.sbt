@@ -697,6 +697,7 @@ lazy val codec = crossProject(JVMPlatform, JSPlatform)
       // The plan catalog's samples and alignment check, so the codec suites
       // check both code tables together.
       file("plan/src/test/scala/eyes4s/plan/DiagnosticSamples.scala").getAbsoluteFile,
+      file("plan/src/test/scala/eyes4s/plan/DiagnosticExamples.scala").getAbsoluteFile,
       file("plan/src/test/scala/eyes4s/plan/DiagnosticAlignment.scala").getAbsoluteFile
     ),
     libraryDependencies ++= Seq(
@@ -770,7 +771,7 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .jvmSettings(ApiAudit.settings)
   .in(file("io"))
-  .dependsOn(fs2Module, codec)
+  .dependsOn(fs2Module, codec, laws % Test)
   .settings(commonSettings)
   .settings(
     name := "eyes4s-io",
@@ -779,7 +780,13 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
       file("docs/examples/StudyGuide.scala").getAbsoluteFile,
       file("docs/examples/TemporalStudyGuide.scala").getAbsoluteFile,
       file("codec/src/test/scala/eyes4s/codec/TemporalFixtures.scala").getAbsoluteFile,
-      file("codec/src/test/scala/eyes4s/codec/StudyInputFixtures.scala").getAbsoluteFile
+      file("codec/src/test/scala/eyes4s/codec/StudyInputFixtures.scala").getAbsoluteFile,
+      // Every catalog's samples and alignment check, so io checks all code
+      // tables together and enumerates every public error enum.
+      file("plan/src/test/scala/eyes4s/plan/DiagnosticSamples.scala").getAbsoluteFile,
+      file("plan/src/test/scala/eyes4s/plan/DiagnosticExamples.scala").getAbsoluteFile,
+      file("plan/src/test/scala/eyes4s/plan/DiagnosticAlignment.scala").getAbsoluteFile,
+      file("codec/src/test/scala/eyes4s/codec/CodecDiagnosticSamples.scala").getAbsoluteFile
     ),
     libraryDependencies += "co.fs2" %%% "fs2-io" % fs2V
   )

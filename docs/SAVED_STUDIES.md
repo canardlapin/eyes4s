@@ -14,8 +14,10 @@ and `StudyCodec` machinery available to method authors.
 ## Inspect, compare, execute
 
 `plan.description` exposes named fields with typed parameter values. `plan.diff(other)` reports
-changed fields with their before/after values. Plans have structural equality under those declared
-fields. A change of weighting, bandwidth, phase, failure policy, input digest or registered method
+changed description fields with their before/after values, and `plan.structuralDiff(other)` the
+typed change of each declared field, which `plan.revise(changes)` applies (see
+[comparing plan revisions](FIXATION_STUDIES.md#compare-plan-revisions)). Plans have structural
+equality under those declared fields. A change of weighting, bandwidth, phase, failure policy, input digest or registered method
 version is visible without executing either plan.
 
 `plan.prerequisites(None)` reports the missing input artifact. Supplying the wrong input reports
@@ -48,8 +50,11 @@ uses the layout's canonical key ordering.
 
 `work.preview` returns `Either[PlanError, StudyPreview[K, U]]`: a thin inspection
 facade over those same schedules. It exposes `focalKeys`, `referenceKeys`,
-`excludedPhases`, `failurePolicy`, and `reductionOrientation` (`ByLeft`, meaning
-the focal trial). Repeated stimulus occurrences with distinct full keys remain
+`excludedPhases`, `failurePolicy`, `reductionOrientation` (`ByLeft`, meaning
+the focal trial), `windowTallies`, each trial's fixations outside the analysis
+window and the screen, with their `windowSummary`, the plan's `pairing` and its
+`matchedCardinality`, the same value that refuses execution when a
+one-reference rule meets several matched references. Repeated stimulus occurrences with distinct full keys remain
 separate trials. Schedule indices and duplicate indices address the two key
 vectors. No maps or scores are computed by preview creation or paging.
 
@@ -325,7 +330,8 @@ estimation.
 ## Input payloads and admission ledgers
 
 `StudyInputCodecs.study[U]` supplies two versioned codecs for the ordinary participant/stimulus/phase
-route; `new StudyInputCodec(schema, ledgerSchema, layout, keyCodec)` builds them for a custom key
+route, and `StudyInputCodecs.trial[U]` (with `StudyCodecs.trialCosine`) the trial-keyed route of
+`eyes4s.trial-key@1` keys under the `eyes4s.participant-phase-trial-occurrence@1` layout; `new StudyInputCodec(schema, ledgerSchema, layout, keyCodec)` builds them for a custom key
 layout, so repeated presentations are kept apart by an explicit occurrence or session field in `K`
 rather than by a label or digest. `input` encodes a `StudyInput[K, U]` (`eyes4s.study-input@1`):
 the layout and key schema identities, the spatial unit, the declared input digest, a document
@@ -344,7 +350,9 @@ value with the same input reference. Errors inside a trial are located, for exam
 Scanpaths and fixation summaries backed by source samples are refused with `CodecError.Unsupported`
 rather than silently detached; their support belongs to the recording payload.
 
-`ledger` encodes an `AdmissionLedger[K]` (`eyes4s.admission-ledger@1`): the source reference (a label
+`ledger` encodes an `AdmissionLedger[K]` (`eyes4s.admission-ledger@1`, `@2` when it records an
+admission policy other than the version-1 one, or `@3` when it records a trial inventory; each
+ledger is written under the earliest version that expresses it): the source reference (a label
 and the portable digest of the decoded header and records), the header, the recorded outcome and one
 entry per source record in record order. An admitted record links its logical record number to the
 typed trial key and the ordinal it supplied; a rejected record keeps its raw fields, its key when one
@@ -352,7 +360,31 @@ could be read, and a typed `AdmissionReason`. A quarantined trial names the affe
 `QuarantineCause`. `AdmissionLedger.of` refuses unordered records, duplicate ordinals within a trial,
 quarantine scopes that omit their own record or name a record the ledger lacks, and an outcome
 inconsistent with the rejected count; `ledger.checkAgainst(input)` verifies that admitted records
-address every input trial exactly once per fixation. `StudyInputRegistry` registers codecs by key
+address every input trial exactly once per fixation. Version 2 adds the `AdmissionPolicy` (the
+off-screen policy and the correction rules, each with its scope) and the admitted records outside
+the frame; `AdmissionLedger.of` refuses such a record unless it is admitted, listed once in record
+order and admitted under `ExcludeRecord`, and decoding refuses a ledger in which two rules cover an
+admitted record's trial (`AdmissionError.CorrectionConflict`). A version-1 ledger decodes with the
+version-1 policy. Version 3 adds the `InventoryLedger` of an inventory admission
+([fixation studies](FIXATION_STUDIES.md#join-a-trial-inventory)): the inventory's own source
+reference and header, the declared attribute columns, every inventory trial (identity, inventory
+records, declared item, typed attributes, the items its records named, its fixation records and
+its `TrialDisposition`), the trials only the fixation table names, the declared record attribute
+columns with the typed attributes of admitted records, and the `SampleCountRule` the records were
+admitted under (a count column, or counts derived from duration at a recorded rate). Integer
+attributes are decimal strings, so 64-bit values survive Scala.js. Decoding rebuilds the inventory
+through the smart constructors of every part (`InventoryTrial.of`, `UnlistedTrial.of`,
+`RecordAttributes.of`, `InventoryLedger.of`) and joins it with `AdmissionLedger.inventoried`, so a
+saved inventory is refused (`AdmissionError.Inventory(InventoryError…)`) unless every attribute
+is of its declared column's kind, every trial's record items agree with its records and
+disposition, every keyed record is listed under its own trial and carries its trial's item, and
+every disposition agrees with its records. A version-3 document states its `inventory` member:
+the inventory, or `null` in the lift of a ledger without one (read with version 2's vocabulary and
+written back under version 1 or 2; see the [version policy](DOMAIN_CODECS.md#version-policy)), and
+only a ledger with an inventory may name `NotInInventory` or `InventoryItemConflict`
+(`AdmissionError.UninventoriedCause`); a key layout without a trial label
+cannot carry one (`InventoryError.NoTrialProjection`). A version-3 ledger is pinned by
+[admission-ledger-v3.json](../codec/src/test/resources/eyes4s/admission-ledger-v3.json). `StudyInputRegistry` registers codecs by key
 schema and refuses missing or duplicate registrations. `VersionedCodec.trials` is the generic
 row-array codec these payloads use.
 
@@ -739,8 +771,12 @@ while the resolver is generic in the unit `U`, so `withRecordings` takes a `Pixe
 witness whose one instance is for `Px`, where its conversion is the identity. A manifest in any
 other unit cannot register recording plans (a type error, not a cast), and a decoded
 `LoadedRecordingPlan[U]` checks and runs against a recording input of the manifest's own unit
-through it (`disagreements(input)`, `run(input)`). A `LoadedTemporal[K, U]` keeps its parameter,
-score and difference types abstract, as `LoadedStudy` does.
+through it (`disagreements(input)`, `run(input)`). A `LoadedStudy[K, U]` and a
+`LoadedTemporal[K, U]` keep their parameter, score and difference types abstract but fixed, and
+expose the typed plan as `plan`: preflight, prepare, execute and inspect it directly
+(`loaded.preflight(available, budget).prepare(loaded.plan, input, budget)`, then
+`StudyExecution`, or `ResultInspection.study(loaded.plan, result, input, ledger)` on the result it
+runs), with no encode and re-decode.
 `ArtifactResolver.resolve(address, source, decoders)` reads the manifest, checks its digest against
 the address and decodes it, then resolves the graph in three phases, reporting every error of a
 phase as `NonEmptyVector[ResolveError]`:
@@ -981,9 +1017,10 @@ into coded diagnostics. It runs once for the shipped cosine and once for the con
 key and score types. On the JVM the run is also stored in a directory, resolved through
 `ArtifactFiles`, and reloaded and rerun by a separate JVM launched over the consumer's own classpath,
 which `verify.py` checks holds only the consumer's own `example` classes, the packaged eyes4s jars
-(each compared by SHA-256 with the locally published artifact) and third-party jars. A reader reruns a resolved study by re-reading the plan and result through the
-typed codecs it registered, because `LoadedStudy` and `LoadedResult` keep their parameter and score
-types abstract.
+(each compared by SHA-256 with the locally published artifact) and third-party jars. A reader
+preflights and runs a resolved plan through `LoadedStudy.plan`; to compare an archived
+`LoadedResult` with the application's own score types it re-reads the result through the typed
+codec it registered, because the two registrations do not share their abstract types.
 
 UI-G1 extends the consumer to the recording and temporal routes, each for a shipped method (I-VT,
 cosine) and for one of the consumer's own (a laboratory detector with its own typed parameter
@@ -1022,7 +1059,16 @@ The JSON envelope has a schema identifier and version. Its payload separately re
 identifier/version, key schema, key layout, and parameter schema. Missing or unsupported versions
 are explicit failures. The pinned [version-one project](../codec/src/test/resources/eyes4s/study-v1.json)
 is exercised by the portable codec suite, so changing defaults cannot silently reinterpret it.
-Version 1 is the first version of every shipped schema, so there is no historical migration;
+The study plan and the admission ledger have a second version (`eyes4s.study@2` records the
+geometry, declared scales and units per degree, and the pairing; `eyes4s.admission-ledger@2` the
+admission policy) and a third (`eyes4s.study@3` records the
+[initial-fixation policy](FIXATION_STUDIES.md#initial-fixations); `eyes4s.admission-ledger@3` the
+trial inventory).
+Each is a `SchemaLadder`: its codec reads every version with that version's own meaning, writes
+each value under the earliest version that expresses it, so a version-1 document re-encodes to its
+own bytes, and `ladder.lift` rewrites a stored document as the latest version through each
+version's upcast. The other schemas
+have one version and no historical migration;
 [the schema compatibility policy](DOMAIN_CODECS.md#schema-compatibility) states what a new version
 means, which decoders stay readable, how unknown versions are refused and how unknown members are
 treated, and `SchemaCompatibilitySuite` enforces it on every pinned v1 document.

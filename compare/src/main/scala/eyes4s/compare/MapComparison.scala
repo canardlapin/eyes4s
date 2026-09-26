@@ -32,6 +32,15 @@ enum MapSimilarityMethod derives CanEqual:
     case ExtendedJaccard       => Distribution.extendedJaccard
     case DistanceCorrelation   => Distribution.distanceCorrelation
 
+  /** As [[instance]], with an explicit pair limit for the quadratic
+    * [[DistanceCorrelation]]. Every other method is linear in grid cells and ignores it.
+    */
+  def instanceWithin[U <: Unit2D](
+      limit: DistanceCorrelationLimit
+  ): SymmetricCompare[Mass[U], Similarity] = this match
+    case DistanceCorrelation => Distribution.distanceCorrelationWithin(limit)
+    case other               => other.instance[U]
+
 object MapSimilarityMethod:
   def fromReference(value: String): Either[MapComparisonError, MapSimilarityMethod] =
     value match
@@ -113,9 +122,11 @@ object MapComparison:
   def scales[U <: Unit2D](
       left: MapScales[U],
       right: MapScales[U],
-      method: MapSimilarityMethod
+      method: MapSimilarityMethod,
+      limit: DistanceCorrelationLimit = DistanceCorrelationLimit.default
   ): MapScaleComparison[U] =
-    val sigmas = (left.levels.map(_._1) ++ right.levels
+    val comparison = method.instanceWithin[U](limit)
+    val sigmas     = (left.levels.map(_._1) ++ right.levels
       .map(_._1)).groupBy(_.value).values.map(_.head).toVector.sortBy(_.value)
     new MapScaleComparison(
       method,
@@ -127,7 +138,7 @@ object MapComparison:
           case (None, _)                    => Left(MapScaleFailure.MissingLeft)
           case (_, None)                    => Left(MapScaleFailure.MissingRight)
           case (Some((_, a)), Some((_, b))) =>
-            method.instance[U].compare(a, b).left.map(MapScaleFailure.Comparison.apply)
+            comparison.compare(a, b).left.map(MapScaleFailure.Comparison.apply)
         sigma -> result
       }
     )

@@ -108,7 +108,7 @@ object AnalysisRoute:
       stimulus: String,
       phase: String,
       items: Map[String, Int]
-  ): Either[RouteError, AnalysisRoute[TrialKey, Multiplier, ScaledScore, SignedDifference]] =
+  ): Either[RouteError, AnalysisRoute[SubjectItemKey, Multiplier, ScaledScore, SignedDifference]] =
     def id(name: String) = DefinitionId.of(name, 1).left.map(RouteError.Definition.apply)
     for
       layoutId    <- id("my.lab.trial-layout")
@@ -121,15 +121,15 @@ object AnalysisRoute:
       scoreId     <- id("my.lab.scaled-score")
       method <- CustomMethod.describedMethod(methodId).left.map(RouteError.Descriptor.apply)
       reader <- FixationKeyReader
-        .of[TrialKey](Vector(participant, stimulus, phase))(
+        .of[SubjectItemKey](Vector(participant, stimulus, phase))(
           fields =>
             for
               subject <- fields.get(participant).toRight(s"missing $participant")
               label   <- fields.get(stimulus).toRight(s"missing $stimulus")
               item    <- items.get(label).toRight(s"unknown $stimulus $label")
               session <- fields.get(phase).toRight(s"missing $phase")
-            yield TrialKey(subject, item, session),
-          key => ClockId(s"my.lab.trial:${KeyDigest[TrialKey].digest(key).render}")
+            yield SubjectItemKey(subject, item, session),
+          key => ClockId(s"my.lab.trial:${KeyDigest[SubjectItemKey].digest(key).render}")
         )
         .left
         .map(RouteError.Reader.apply)
@@ -141,7 +141,7 @@ object AnalysisRoute:
       new AnalysisRoute(
         reader,
         study,
-        new StudyInputCodec[TrialKey, Px](inputId, ledgerId, layout, keys),
+        new StudyInputCodec[SubjectItemKey, Px](inputId, ledgerId, layout, keys),
         study.results(CustomMethod.scoreCodec(scoreId), StudyResultCodecs.signedDifference()),
         multiplier
       )

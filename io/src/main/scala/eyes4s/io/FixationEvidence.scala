@@ -45,8 +45,55 @@ object FixationEvidence:
       (admitted ++ rejected).sortBy(_._1).map { case (record, disposition) =>
         SourceRecord(record, disposition)
       },
-      decision
+      decision,
+      imported.policy,
+      imported.outsideFrame
     )
+
+  /** The ledger of an inventory admission: the fixation ledger joined to
+    * the inventory, whose records are referenced as `inventoryLabel`.
+    */
+  def ledger[U <: Unit2D](
+      label: String,
+      inventoryLabel: String,
+      imported: InventoryImport[U],
+      decision: AdmissionDecision
+  ): Either[AdmissionError, AdmissionLedger[TrialKey]] =
+    val fixations = imported.fixations
+    val admitted  = fixations.admitted.map(row =>
+      row.rowNumber -> Disposition.Admitted[TrialKey](row.key, row.ordinal)
+    )
+    val rejected = fixations.rejected.map(row =>
+      row.rowNumber -> Disposition.Rejected[TrialKey](row.raw, row.key, reason(row.error))
+    )
+    for
+      inventory <- InventoryLedger
+        .of(
+          imported.inventory.source(inventoryLabel),
+          imported.inventory.header,
+          imported.inventory.columns.attributes,
+          imported.trials,
+          imported.unlisted,
+          imported.recordAttributeColumns,
+          imported.recordAttributes,
+          imported.sampleCounts
+        )
+        .left
+        .map(AdmissionError.Inventory.apply)
+      joined <- AdmissionLedger.decide(
+        source(label, fixations),
+        fixations.header,
+        (admitted ++ rejected).sortBy(_._1).map { case (record, disposition) =>
+          SourceRecord(record, disposition)
+        },
+        decision,
+        fixations.policy,
+        fixations.outsideFrame,
+        inventory,
+        TrialIdentity.of,
+        _.item
+      )
+    yield joined
 
   def reason(error: FixationRowError): AdmissionReason = error match
     case FixationRowError.Width(expected, actual) => AdmissionReason.Width(expected, actual)

@@ -312,6 +312,21 @@ private[codec] object ResultWire:
       case NegativeVelocity(v)  => tagged("negativeVelocity", "value" -> double(v))
       case NonFiniteDistance(v) => tagged("nonFiniteDistance", "value" -> double(v))
       case NegativeDistance(v)  => tagged("negativeDistance", "value" -> double(v))
+      case SubframeOutsideParent(window, x0, y0, x1, y1, parent, spec) =>
+        tagged(
+          "subframeOutsideParent",
+          "window" -> frameId(window),
+          "xMin"   -> double(x0),
+          "yMin"   -> double(y0),
+          "xMax"   -> double(x1),
+          "yMax"   -> double(y1),
+          "parent" -> frameSpec(parent, spec)
+        )
+      case SubframeIdentity(window) => tagged("subframeIdentity", "window" -> frameId(window))
+      case NonPositiveAngularScale(frame, value) =>
+        tagged("nonPositiveAngularScale", "frame" -> frameId(frame), "value" -> double(value))
+      case NonFiniteTranslation(dx, dy) =>
+        tagged("nonFiniteTranslation", "dx" -> double(dx), "dy" -> double(dy))
 
   def readGeometryError(json: Json): Either[CodecError, GeometryError] =
     import GeometryError.*
@@ -374,7 +389,27 @@ private[codec] object ResultWire:
       case "negativeVelocity"  => value(NegativeVelocity.apply)
       case "nonFiniteDistance" => value(NonFiniteDistance.apply)
       case "negativeDistance"  => value(NegativeDistance.apply)
-      case other               => Left(unknown(json, "geometry error", other))
+      case "subframeOutsideParent" =>
+        for
+          window <- readFrameId(json, "window")
+          x0     <- readDouble(json, "xMin")
+          y0     <- readDouble(json, "yMin")
+          x1     <- readDouble(json, "xMax")
+          y1     <- readDouble(json, "yMax")
+          parent <- Wire.field[Json](json, "parent").flatMap(readFrameSpec)
+        yield SubframeOutsideParent(window, x0, y0, x1, y1, parent.id, parent.spec)
+      case "subframeIdentity"        => readFrameId(json, "window").map(SubframeIdentity.apply)
+      case "nonPositiveAngularScale" =>
+        for
+          frame <- readFrameId(json, "frame")
+          v     <- readDouble(json, "value")
+        yield NonPositiveAngularScale(frame, v)
+      case "nonFiniteTranslation" =>
+        for
+          dx <- readDouble(json, "dx")
+          dy <- readDouble(json, "dy")
+        yield NonFiniteTranslation(dx, dy)
+      case other => Left(unknown(json, "geometry error", other))
     }
 
   def surfaceError(error: SurfaceError): Json =
@@ -566,6 +601,14 @@ private[codec] object ResultWire:
           "cells"   -> Json.fromInt(c),
           "limit"   -> Json.fromInt(l)
         )
+      case WorkLimitExceeded(m, c, p, l) =>
+        tagged(
+          "workLimitExceeded",
+          "measure" -> Json.fromString(m),
+          "cells"   -> Json.fromInt(c),
+          "pairs"   -> long(p),
+          "limit"   -> long(l)
+        )
       case InvalidSubstitutionCost(m, l, r, v) =>
         tagged(
           "invalidSubstitutionCost",
@@ -627,6 +670,13 @@ private[codec] object ResultWire:
           c <- Wire.field[Int](json, "cells")
           l <- Wire.field[Int](json, "limit")
         yield CostMatrixLimitExceeded(m, c, l)
+      case "workLimitExceeded" =>
+        for
+          m <- measure
+          c <- Wire.field[Int](json, "cells")
+          p <- readLong(json, "pairs")
+          l <- readLong(json, "limit")
+        yield WorkLimitExceeded(m, c, p, l)
       case "invalidSubstitutionCost" =>
         for
           m <- measure
@@ -880,6 +930,16 @@ private[codec] object ResultWire:
         .map(key =>
           tagged("temporal", "key" -> key, "error" -> TemporalWire.temporalStudyError(e))
         )
+    case StudyFailure.OffWindow(k, tally) =>
+      keys
+        .encode(k)
+        .map(key => tagged("offWindow", "key" -> key, "tally" -> windowTally(tally)))
+    case StudyFailure.InitialFixations(k, e) =>
+      keys
+        .encode(k)
+        .map(key =>
+          tagged("initialFixations", "key" -> key, "error" -> initialFixationError(e))
+        )
 
   def readStudyFailure[K](keys: VersionedCodec[K])(
       json: Json
@@ -913,8 +973,109 @@ private[codec] object ResultWire:
           k <- key
           e <- error.flatMap(TemporalWire.readTemporalStudyError)
         yield StudyFailure.Temporal(k, e)
+      case "offWindow" =>
+        for
+          k <- key
+          t <- Wire.field[Json](json, "tally").flatMap(readWindowTally)
+        yield StudyFailure.OffWindow(k, t)
+      case "initialFixations" =>
+        for
+          k <- key
+          e <- error.flatMap(readInitialFixationError)
+        yield StudyFailure.InitialFixations(k, e)
       case other => Left(unknown(json, "study failure", other))
     }
+
+  /** An initial-fixation refusal with its operands. */
+  def initialFixationError(error: InitialFixationError): Json =
+    import InitialFixationError.*
+    error match
+      case NonPositiveRadius(r) => tagged("nonPositiveRadius", "radiusDegrees" -> double(r))
+      case NonFiniteCross(x, y) => tagged("nonFiniteCross", "x" -> double(x), "y" -> double(y))
+      case CrossOffFrame(x, y, frame) =>
+        tagged(
+          "crossOffFrame",
+          "x"     -> double(x),
+          "y"     -> double(y),
+          "frame" -> Json.fromString(frame.name)
+        )
+      case MissingAngularScale(r) => tagged("missingAngularScale", "radiusDegrees" -> double(r))
+      case InvalidTally(dropped, total, droppedMicros, totalMicros) =>
+        tagged(
+          "invalidTally",
+          "dropped"       -> Json.fromInt(dropped),
+          "total"         -> Json.fromInt(total),
+          "droppedMicros" -> long(droppedMicros),
+          "totalMicros"   -> long(totalMicros)
+        )
+      case NoFixationKept(dropped, micros) =>
+        tagged(
+          "noFixationKept",
+          "dropped"       -> Json.fromInt(dropped),
+          "droppedMicros" -> long(micros)
+        )
+
+  def readInitialFixationError(json: Json): Either[CodecError, InitialFixationError] =
+    import InitialFixationError.*
+    kind(json).flatMap {
+      case "nonPositiveRadius" => readDouble(json, "radiusDegrees").map(NonPositiveRadius.apply)
+      case "nonFiniteCross"    =>
+        for
+          x <- readDouble(json, "x")
+          y <- readDouble(json, "y")
+        yield NonFiniteCross(x, y)
+      case "crossOffFrame" =>
+        for
+          x     <- readDouble(json, "x")
+          y     <- readDouble(json, "y")
+          frame <- Wire.field[String](json, "frame")
+        yield CrossOffFrame(x, y, FrameId(frame))
+      case "missingAngularScale" =>
+        readDouble(json, "radiusDegrees").map(MissingAngularScale.apply)
+      case "invalidTally" =>
+        for
+          dropped       <- Wire.field[Int](json, "dropped")
+          total         <- Wire.field[Int](json, "total")
+          droppedMicros <- readLong(json, "droppedMicros")
+          totalMicros   <- readLong(json, "totalMicros")
+        yield InvalidTally(dropped, total, droppedMicros, totalMicros)
+      case "noFixationKept" =>
+        for
+          dropped <- Wire.field[Int](json, "dropped")
+          micros  <- readLong(json, "droppedMicros")
+        yield NoFixationKept(dropped, micros)
+      case other => Left(unknown(json, "initial-fixation error", other))
+    }
+
+  /** A trial's window tally: counts and signed-microsecond duration strings. */
+  def windowTally(tally: WindowTally): Json = Json.obj(
+    "outsideScreen"         -> Json.fromInt(tally.outsideScreen),
+    "outsideWindow"         -> Json.fromInt(tally.outsideWindow),
+    "total"                 -> Json.fromInt(tally.total),
+    "outsideScreenDuration" -> DomainWire.time(tally.outsideScreenDuration.toMicros),
+    "outsideWindowDuration" -> DomainWire.time(tally.outsideWindowDuration.toMicros),
+    "totalDuration"         -> DomainWire.time(tally.totalDuration.toMicros)
+  )
+
+  def readWindowTally(json: Json): Either[CodecError, WindowTally] = for
+    screen         <- Wire.field[Int](json, "outsideScreen")
+    window         <- Wire.field[Int](json, "outsideWindow")
+    total          <- Wire.field[Int](json, "total")
+    screenDuration <- DomainWire.micros(json, "outsideScreenDuration")
+    windowDuration <- DomainWire.micros(json, "outsideWindowDuration")
+    totalDuration  <- DomainWire.micros(json, "totalDuration")
+    tally          <- WindowTally
+      .of(
+        screen,
+        window,
+        total,
+        Span.micros(screenDuration),
+        Span.micros(windowDuration),
+        Span.micros(totalDuration)
+      )
+      .left
+      .map(CodecError.Definition.apply)
+  yield tally
 
   // ---- evaluation metadata ---------------------------------------------
 
@@ -1058,6 +1219,8 @@ private[codec] object ResultWire:
       method     <- Wire.field[String](json, "method")
       revision   <- Wire.field[String](json, "revision")
       parameters <- readParams(json, "parameters")
+      rawParams  <- Wire.field[Vector[Json]](json, "parameters")
+      _          <- Wire.ascending("parameters", parameters.map(_._1).zip(rawParams))
       components <- Wire.field[Vector[String]](json, "components")
       geometry   <- Wire.field[Json](json, "geometry").flatMap(readEvaluationGeometry[U])
       time       <- Wire.field[Json](json, "time").flatMap(readEvaluationTime)

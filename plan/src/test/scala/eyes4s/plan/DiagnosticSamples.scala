@@ -24,7 +24,7 @@ import eyes4s.design.*
 import eyes4s.detect.*
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.Px
-import eyes4s.surface.EstimateError
+import eyes4s.surface.*
 import scala.compiletime.constValueTuple
 import scala.deriving.Mirror
 
@@ -57,6 +57,15 @@ object DiagnosticSamples:
       labelsOf[E],
       samples.toVector.map(sample => sample -> (diagnose(sample): Diagnostic[Any]))
     )
+
+  /** A family whose samples the compiler generates: one value of every
+    * case, from [[DiagnosticExample]]s.
+    */
+  inline def generated[E <: scala.reflect.Enum](enumName: String)(using
+      diagnose: Diagnose[E, ?],
+      mirror: Mirror.SumOf[E]
+  ): FamilySamples =
+    family[E](enumName)(DiagnosticExample.everyCase[E]*)
 
   private def get[E, A](e: Either[E, A]): A =
     e.fold(error => throw new AssertionError(s"$error"), identity)
@@ -121,7 +130,10 @@ object DiagnosticSamples:
   private val temporalRef2 =
     get(ArtifactRef.parse[TemporalStudyInput[StudyKey, Px]](digest2))
 
-  private val frameError    = GeometryError.FrameMismatch(fid, deg)
+  private val frameError = GeometryError.FrameMismatch(fid, deg)
+  private val tally      = get(
+    WindowTally.of(1, 2, 5, Span.micros(10L), Span.micros(20L), Span.micros(100L))
+  )
   private val surfaceError  = SurfaceError.DegenerateTotal(0)
   private val timeError     = TimeError.ClockMismatch(clk, clk2)
   private val supportError  = DetectionSupportError.InvalidSampleRange(5, 2)
@@ -152,14 +164,46 @@ object DiagnosticSamples:
       PlanError.UnsupportedExecution(
         DefinitionId.cosine,
         ExecutionCapability.SynchronousWholeOperation
-      )
+      ),
+      PlanError.MissingAngularScale(1),
+      PlanError.Geometry(frameError),
+      PlanError.InvalidWindowTally(3, 2, 4, 10L, 20L, 25L),
+      PlanError.InvalidOccurrence(0),
+      PlanError.BlankKeyField("item"),
+      PlanError
+        .OccurrenceUnavailable(DefinitionId.studyLayout, MatchedReferences.SameOccurrence),
+      PlanError.MatchItemConflict(Vector(Vector(digest, digest2))),
+      PlanError
+        .MatchedCardinality(
+          MatchedReferences.RequireOne,
+          Vector(digest),
+          Vector(Vector(digest2))
+        ),
+      PlanError.UnmatchedFocalRefused(Vector(digest)),
+      PlanError.InitialFixations(InitialFixationError.MissingAngularScale(1.5))
     ),
     family[StudyFailure[StudyKey]]("StudyFailure")(
       StudyFailure.Frame(k1, frameError),
       StudyFailure.Occupancy(k1, surfaceError),
       StudyFailure.Temporal(k1, TemporalStudyError.MissingEpoch(digest)),
       StudyFailure.Estimation(k1, EstimateError.NoMass),
-      StudyFailure.Comparison(k1, k2, CompareError.ZeroNorm("cosine", 0, 1))
+      StudyFailure.Comparison(k1, k2, CompareError.ZeroNorm("cosine", 0, 1)),
+      StudyFailure.OffWindow(k1, tally),
+      StudyFailure.InitialFixations(k1, InitialFixationError.NoFixationKept(2, 400L))
+    ),
+    family[InitialFixationError]("InitialFixationError")(
+      InitialFixationError.NonPositiveRadius(-1.0),
+      InitialFixationError.NonFiniteCross(Inf, 2.0),
+      InitialFixationError.CrossOffFrame(9.0, 1.0, fid),
+      InitialFixationError.MissingAngularScale(1.5),
+      InitialFixationError.InvalidTally(3, 2, 30L, 20L),
+      InitialFixationError.NoFixationKept(2, 400L)
+    ),
+    family[StudyRevisionError]("StudyRevisionError")(
+      StudyRevisionError.DuplicateField(StudyField.Scales),
+      StudyRevisionError.Stale(StudyField.Weighting, "weight Duration", "weight Uniform"),
+      StudyRevisionError.IncompleteWindow(Some("image"), None),
+      StudyRevisionError.Plan(PlanError.EmptyScales(0))
     ),
     family[StudyResultError[StudyKey]]("StudyResultError")(
       StudyResultError.Description("grid", Vector.empty),
@@ -365,6 +409,7 @@ object DiagnosticSamples:
       CompareError.ZeroNorm("cosine", 0, 1),
       CompareError.RelativeEntropySupport("kl", 3, 0.1, 0),
       CompareError.CostMatrixLimitExceeded("emd", 100, 10),
+      CompareError.WorkLimitExceeded("distance correlation", 100, 4950L, 10L),
       CompareError.InvalidSubstitutionCost("dtw", 1, 2, Inf),
       CompareError.InvalidScore("cosine", ComparisonValueError.NonFiniteSimilarity(Inf)),
       CompareError.TooShort("path", 1, 2)
@@ -413,7 +458,11 @@ object DiagnosticSamples:
       GeometryError.NonFiniteVelocity(Inf),
       GeometryError.NegativeVelocity(-1),
       GeometryError.NonFiniteDistance(Inf),
-      GeometryError.NegativeDistance(-2)
+      GeometryError.NegativeDistance(-2),
+      GeometryError.SubframeOutsideParent(deg, 0, 1, 5, 4, fid, frame.spec),
+      GeometryError.SubframeIdentity(fid),
+      GeometryError.NonPositiveAngularScale(fid, 0),
+      GeometryError.NonFiniteTranslation(Inf, 1)
     ),
     family[TimeError]("TimeError")(
       TimeError.ReversedInterval(clk, 10L, 5L),
@@ -603,7 +652,17 @@ object DiagnosticSamples:
       StudyFinding.FrameMismatch(k1, frameError),
       StudyFinding.DuplicateTrial(k1, PairingSide.Focal, Vector(0, 2)),
       StudyFinding.UnmatchedFocal(k1),
-      StudyFinding.UncontrolledFocal(k1)
+      StudyFinding.UncontrolledFocal(k1),
+      StudyFinding.OffWindowFixations(k1, tally, OffWindowPolicy.FailTrial),
+      StudyFinding.NoFixationInWindow(k1, tally),
+      StudyFinding.MatchedCardinality(k1, Vector(k2), MatchedReferences.RequireOne),
+      StudyFinding.AmbiguousReferences(Vector(k1, k2), MatchedReferences.SameOccurrence),
+      StudyFinding.UnmatchedFocalRefused(k1),
+      StudyFinding.MatchItemConflict(Vector(k1, k2)),
+      StudyFinding.NoFixationKept(
+        k1,
+        get(InitialFixationTally.of(3, 3, Span.micros(40), Span.micros(40)))
+      )
     ),
     family[RecordingFinding]("RecordingFinding")(
       RecordingFinding.UndescribedMethod(DefinitionId.cosine),
@@ -646,7 +705,7 @@ object DiagnosticSamples:
       BudgetError.CandidateVisits(2, 3, 1, 5L),
       BudgetError.Schedule(PairScheduleError.InvalidQuantum(0))
     ),
-    family[PreflightError]("PreflightError")(
+    family[PreflightError[StudyKey]]("PreflightError")(
       PreflightError.ChangedPlan(
         RecipeFamily.FixationStudy,
         Vector(PlanChange("grid", Vector.empty, Vector(Provenance.Param.Text("g"))))
@@ -676,7 +735,37 @@ object DiagnosticSamples:
       QuarantineCause.WrongClock(1, "a", "b"),
       QuarantineCause.InvalidTransition(1, "reversed"),
       QuarantineCause.InvalidExtent("reversed"),
-      QuarantineCause.UnmappableFixation(2, fid, deg, 1.5, 2.5)
+      QuarantineCause.UnmappableFixation(2, fid, deg, 1.5, 2.5),
+      QuarantineCause.CorrectionConflict(0, 1),
+      QuarantineCause.ItemConflict(Vector("beach-042", "dog-077")),
+      QuarantineCause.OccurrenceConflict(Vector(1, 2)),
+      QuarantineCause.NotInInventory("P01", "Encoding", "enc_99", 1),
+      QuarantineCause.InventoryItemConflict("beach-042", Vector("dog-077"))
+    ),
+    family[InventoryError]("InventoryError")(
+      InventoryError.Width(3, 8, 7),
+      InventoryError.Field(4, "occurrence", "x", "a positive integer"),
+      InventoryError.Conflict("P01", "Encoding", "enc_01", Vector(2, 3), Vector("item")),
+      InventoryError.DuplicateAttribute(Vector("response")),
+      InventoryError.DuplicateTrial("P01", "Encoding", "enc_01", 1),
+      InventoryError.RecordOrder("P01/Encoding/enc_01#1", Vector(3, 2)),
+      InventoryError.SharedRecord(5, Vector("P01/Encoding/enc_01#1", "P01/Encoding/enc_02#1")),
+      InventoryError.AbsentMismatch("P01/Encoding/enc_01#1", "absent", Vector(2)),
+      InventoryError.AttributeRecord(6),
+      InventoryError.UnknownRecord("P01/Encoding/enc_01#1", 99),
+      InventoryError.ForeignRecord("P01/Encoding/enc_01#1", 4, "P01/Encoding/enc_02#1"),
+      InventoryError.UnclaimedRecord(4, "P01/Encoding/enc_02#1"),
+      InventoryError.DispositionMismatch(
+        "P01/Encoding/enc_01#1",
+        "admitted",
+        4,
+        "rejected (Number)"
+      ),
+      InventoryError.ItemMismatch("P01/Encoding/enc_01#1", 4, "beach-042", "dog-077"),
+      InventoryError.NoTrialProjection(DefinitionId.studyLayout),
+      InventoryError.RecordItems("P01/Encoding/enc_01#1", "absent", Vector("beach-042")),
+      InventoryError.AttributeNames("record 4", Vector("rt"), Vector("pupil")),
+      InventoryError.AttributeKindMismatch("P01/Encoding/enc_01#1", "rt", "Integer", "Text")
     ),
     family[AdmissionError]("AdmissionError")(
       AdmissionError.NonPositiveRecord(0),
@@ -690,7 +779,11 @@ object DiagnosticSamples:
       AdmissionError.AmbiguousTrial(Vector(0, 1)),
       AdmissionError.UnknownTrial(Vector(7)),
       AdmissionError.UnadmittedTrial(3),
-      AdmissionError.FixationCount(1, 4, 3)
+      AdmissionError.FixationCount(1, 4, 3),
+      AdmissionError.OutsideFrameRecord(4, OffScreenPolicy.QuarantineTrial),
+      AdmissionError.CorrectionConflict(4, 0, 1),
+      AdmissionError.Inventory(InventoryError.UnclaimedRecord(4, "P01/Encoding/enc_02#1")),
+      AdmissionError.UninventoriedCause(4, QuarantineCause.NotInInventory("P01", "E", "x", 1))
     ),
     family[InspectionError[StudyKey]]("InspectionError")(
       InspectionError.UnknownScale(3, 1),
@@ -719,5 +812,42 @@ object DiagnosticSamples:
       ),
       InspectionError.Orientation(1, StudyDesign.Matched, ReductionOrientation.EdgesOnce),
       InspectionError.NoContrast(2)
-    )
+    ),
+    generated[TimelineError]("TimelineError"),
+    generated[MovingError]("MovingError"),
+    generated[TimeQuantityError]("TimeQuantityError"),
+    generated[OccupancyError]("OccupancyError"),
+    generated[ReplicationError]("ReplicationError"),
+    generated[TemporalSupportError]("TemporalSupportError"),
+    generated[AlgorithmMetadataError]("AlgorithmMetadataError"),
+    generated[EkEstimationError]("EkEstimationError"),
+    generated[MergeError]("MergeError"),
+    generated[DensityLookupError]("DensityLookupError"),
+    generated[DensityPointFailure]("DensityPointFailure"),
+    generated[IqrBandwidthError]("IqrBandwidthError"),
+    generated[SmootherCardError]("SmootherCardError"),
+    generated[ComparisonConfigurationError]("ComparisonConfigurationError"),
+    generated[CrqaParameterError]("CrqaParameterError"),
+    generated[CrqaError]("CrqaError"),
+    generated[FixationComparisonError]("FixationComparisonError"),
+    generated[OverlapFailure]("OverlapFailure"),
+    generated[MapScaleFailure]("MapScaleFailure"),
+    generated[MapComparisonError]("MapComparisonError"),
+    generated[ScanpathComponentError]("ScanpathComponentError"),
+    generated[DecompositionError]("DecompositionError"),
+    generated[PairingError]("PairingError"),
+    generated[SessionError]("SessionError"),
+    generated[ReductionPolicyError]("ReductionPolicyError"),
+    generated[WorkQuantaError]("WorkQuantaError"),
+    generated[EvaluationWorkError]("EvaluationWorkError"),
+    generated[RepetitionMeanError]("RepetitionMeanError"),
+    generated[LearnedTemplateError]("LearnedTemplateError"),
+    generated[LeastSquaresError]("LeastSquaresError"),
+    generated[TemplateFitError]("TemplateFitError"),
+    generated[RngError]("RngError"),
+    generated[EpochError[StudyKey, String]]("EpochError"),
+    generated[PointSamplingError]("PointSamplingError"),
+    generated[RecipeParameterError]("RecipeParameterError"),
+    generated[RepetitionPlanError]("RepetitionPlanError"),
+    generated[DiagnosticCodeError]("DiagnosticCodeError")
   )

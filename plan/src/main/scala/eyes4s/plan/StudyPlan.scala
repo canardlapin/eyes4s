@@ -100,6 +100,27 @@ enum PlanError derives CanEqual:
   case ChangedPreparedPlan(method: DefinitionId, layout: DefinitionId)
   case ComparisonWork(underlying: ComparisonWorkError)
   case UnsupportedExecution(method: DefinitionId, capability: ExecutionCapability)
+  case MissingAngularScale(scale: Int)
+  case Geometry(underlying: GeometryError)
+  case InvalidWindowTally(
+      outsideScreen: Int,
+      outsideWindow: Int,
+      total: Int,
+      outsideScreenMicros: Long,
+      outsideWindowMicros: Long,
+      totalMicros: Long
+  )
+  case InvalidOccurrence(value: Int)
+  case BlankKeyField(field: String)
+  case OccurrenceUnavailable(layout: DefinitionId, matched: MatchedReferences)
+  case MatchItemConflict(trialDigests: Vector[Vector[String]])
+  case MatchedCardinality(
+      matched: MatchedReferences,
+      focalDigests: Vector[String],
+      referenceGroups: Vector[Vector[String]]
+  )
+  case UnmatchedFocalRefused(focalDigests: Vector[String])
+  case InitialFixations(underlying: InitialFixationError)
 
   def message: String = this match
     case InvalidDefinition(n, v) =>
@@ -121,13 +142,52 @@ enum PlanError derives CanEqual:
     case ComparisonWork(e)                        => e.message
     case UnsupportedExecution(method, capability) =>
       s"Method ${method.name}@${method.version} executes as $capability and cannot promise bounded comparison work."
+    case MissingAngularScale(scale) =>
+      s"Scale $scale is declared in degrees, but the plan declares no units-per-degree scale."
+    case Geometry(e) => e.message
+    case InvalidWindowTally(screen, window, total, screenMicros, windowMicros, totalMicros) =>
+      s"A window tally must partition its trial: outsideScreen=$screen and outsideWindow=$window " +
+        s"of total=$total, outsideScreenMicros=$screenMicros and outsideWindowMicros=$windowMicros " +
+        s"of totalMicros=$totalMicros."
+    case InvalidOccurrence(value) => s"An occurrence counts presentations from 1, got $value."
+    case BlankKeyField(field)     => s"Trial key field '$field' must not be blank."
+    case OccurrenceUnavailable(layout, matched) =>
+      s"Matched-reference rule ${matched.render} needs occurrences, but layout " +
+        s"${layout.name}@${layout.version} declares none."
+    case MatchItemConflict(groups) =>
+      s"Keys ${groups.map(_.mkString(", ")).mkString("; ")} each name one trial but " +
+        "disagree on its occurrence or match item."
+    case MatchedCardinality(matched, focal, groups) =>
+      val parts = Vector(
+        Option.when(focal.nonEmpty)(
+          s"focal trials ${focal.mkString(", ")} have more than one matched reference"
+        ),
+        Option.when(groups.nonEmpty)(
+          s"references ${groups.map(_.mkString(", ")).mkString("; ")} give an item more than " +
+            "one reference in the control pool"
+        )
+      ).flatten
+      s"Under ${matched.render}, ${parts.mkString(", and ")}; choose an occurrence."
+    case UnmatchedFocalRefused(focal) =>
+      s"Focal trials $focal have no matched reference, and the plan refuses unmatched focal trials."
+    case InitialFixations(e) => e.message
 
-/** A registered interpretation of user keys. Identity and matching stay in K. */
+/** A registered interpretation of user keys. Identity and matching stay in K.
+  *
+  * `occurrence`, when present, says which presentation of its item a trial
+  * is, so a pairing rule can choose among repeated references. `trial`, when
+  * present, names the trial within its participant and phase: the layout then
+  * identifies a trial by participant, phase, trial and occurrence, and its
+  * `stimulus` is the item the trial is matched on, an attribute that must be
+  * the same for every key with that identity.
+  */
 final class StudyLayout[K](
     val id: DefinitionId,
     val participant: Projection[K, String],
     val stimulus: Projection[K, String],
-    val phase: Projection[K, String]
+    val phase: Projection[K, String],
+    val occurrence: Option[Projection[K, TrialOccurrence]] = None,
+    val trial: Option[Projection[K, String]] = None
 )(using val digest: KeyDigest[K], val ordering: Ordering[K])
 
 /** Ordinary study key; custom product keys work through StudyLayout and a codec. */
@@ -261,21 +321,48 @@ enum StudyFailure[K] derives CanEqual:
   case Estimation(key: K, underlying: EstimateError)
   case Comparison(left: K, right: K, underlying: CompareError)
 
+  /** None of the trial's fixations lies in its map (each is outside the
+    * analysis window or the screen, counted separately in the tally), or,
+    * under [[OffWindowPolicy.FailTrial]], one lies on the screen but outside
+    * the window.
+    */
+  case OffWindow(key: K, tally: WindowTally)
+
+  /** The plan's initial-fixation policy left the trial without a fixation
+    * ([[InitialFixationError.NoFixationKept]]).
+    */
+  case InitialFixations(key: K, underlying: InitialFixationError)
+
   def message: String = this match
     case Frame(k, e)         => s"Trial $k: ${e.message}"
     case Temporal(k, e)      => s"Trial $k: ${e.message}"
     case Occupancy(k, e)     => s"Trial $k: ${e.message}"
     case Estimation(k, e)    => s"Trial $k: ${e.message}"
     case Comparison(l, r, e) => s"Trials $l and $r: ${e.message}"
+    case OffWindow(k, tally) =>
+      val counts = Vector(
+        Option.when(tally.outsideWindow > 0)(
+          s"${tally.outsideWindow} of ${tally.total} fixations outside the analysis window"
+        ),
+        Option.when(tally.outsideScreen > 0)(
+          s"${tally.outsideScreen} of ${tally.total} fixations outside the screen"
+        )
+      ).flatten
+      s"Trial $k has ${counts.mkString(" and ")}" +
+        (if tally.allOutside then "; its map would be empty."
+         else "; the plan fails trials with fixations outside the window.")
+    case InitialFixations(k, e) => s"Trial $k: ${e.message}"
 
 object StudyFailure:
   /** The trial keys a failure names, in operand order. */
   def keys[K](failure: StudyFailure[K]): Vector[K] = failure match
-    case StudyFailure.Frame(k, _)         => Vector(k)
-    case StudyFailure.Temporal(k, _)      => Vector(k)
-    case StudyFailure.Occupancy(k, _)     => Vector(k)
-    case StudyFailure.Estimation(k, _)    => Vector(k)
-    case StudyFailure.Comparison(l, r, _) => Vector(l, r)
+    case StudyFailure.Frame(k, _)            => Vector(k)
+    case StudyFailure.Temporal(k, _)         => Vector(k)
+    case StudyFailure.Occupancy(k, _)        => Vector(k)
+    case StudyFailure.Estimation(k, _)       => Vector(k)
+    case StudyFailure.Comparison(l, r, _)    => Vector(l, r)
+    case StudyFailure.OffWindow(k, _)        => Vector(k)
+    case StudyFailure.InitialFixations(k, _) => Vector(k)
 
 /** Typed evidence of how a method's comparison executes. A synchronous closure
   * runs whole per pair; only a [[BoundedCompare]] can be declared bounded, so
@@ -736,19 +823,54 @@ object StudyResult:
 
 /** A saved study describes exhaustive matched and different-stimulus controls
   * within each participant. Scale results remain separate; no implicit pooling.
+  *
+  * `geometry` says where maps live (the whole admission frame, or a half-open
+  * window of it with an off-window policy); `scales` are the estimation scales
+  * as declared, in frame units or in degrees, and `estimates` are the same
+  * scales resolved to frame units through the plan's one `angularScale`.
   */
 final class StudyPlan[K, U <: Unit2D, P, S, D] private (
     val input: ArtifactRef[StudyInput[K, U]],
     val layout: StudyLayout[K],
-    val grid: Grid[U],
+    val geometry: StudyGeometry[U],
     val focalPhase: String,
     val referencePhase: String,
     val weight: Weight,
+    val scales: Vector[StudyScale[U]],
+    val angularScale: Option[LinearAngularScale[U]],
     val estimates: Vector[StudyEstimate[U]],
     val policy: FailurePolicy,
     val method: StudyMethod[P, U, S, D],
-    val parameters: P
+    val parameters: P,
+    val pairing: StudyPairing,
+    val initialFixationRule: InitialFixationRule[U]
 )(using unit: UnitLabel[U]):
+  /** The grid every density lies on. */
+  def grid: Grid[U] = geometry.grid
+
+  /** Which fixations at the start of every trial, focal and reference alike,
+    * the study leaves out.
+    */
+  def initialFixations: InitialFixationPolicy[U] = initialFixationRule.policy
+
+  /** True when a version-2 saved study expresses the plan: every fixation
+    * is kept.
+    */
+  def keepsAllFixations: Boolean = initialFixations.isKeepAll
+
+  /** True when the plan means exactly what a version-1 saved study meant:
+    * the whole admission frame, scales declared in frame units, every
+    * matched reference averaged and every fixation kept.
+    */
+  def isVersion1: Boolean =
+    keepsAllFixations &&
+      pairing.isVersion1 && geometry.isInstanceOf[StudyGeometry.WholeFrame[?]] &&
+      angularScale.isEmpty &&
+      scales.forall {
+        case StudyScale.Native(_)  => true
+        case StudyScale.Angular(_) => false
+      }
+
   def inspect: Either[DescriptorError, RecipeInspection] = RecipeDescriptors.study(this)
 
   /** Typed availability report; see [[Preflight.study]]. */
@@ -757,6 +879,10 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
       budget: PairScheduleBudget = PairScheduleBudget.default
   ): StudyReport[K, U] = Preflight.study(this, available, budget)
 
+  /** Fields in the version-1 order; a later field appears only when the plan
+    * departs from the version-1 meaning, so an unchanged plan keeps its
+    * description, its equality and the results it reconstructs.
+    */
   def description: Vector[(String, Vector[Provenance.Param])] =
     import Provenance.Param.*
     Vector(
@@ -782,21 +908,85 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
       } ++
       estimates.zipWithIndex.map { case (s, i) =>
         s"estimate.$i" -> s.parameters.flatMap { case (k, v) => Vector(Text(k), v) }
-      }
+      } ++
+      StudyWindowing.description(geometry) ++
+      angularScale.toVector.map(s =>
+        "angularScale" -> Vector(Text(s.frame.id.name), Num(s.unitsPerDegree))
+      ) ++
+      scales.zipWithIndex.collect { case (s @ StudyScale.Angular(_), i) =>
+        s"scale.$i" -> (Text("degrees") +: s.angularParameters.flatMap { case (k, v) =>
+          Vector(Text(k), v)
+        })
+      } ++
+      (if pairing.isVersion1 then Vector.empty else pairing.description) ++
+      Option
+        .unless(keepsAllFixations)("initialFixations" -> initialFixations.parameters)
+        .toVector
 
   override def equals(other: Any): Boolean = other match
     case that: StudyPlan[?, ?, ?, ?, ?] => description == that.description
     case _                              => false
   override def hashCode: Int = description.hashCode
 
+  /** Description fields that differ, by name; see [[structuralDiff]] for the
+    * typed changes a review panel shows.
+    */
   def diff(that: StudyPlan[K, U, P, S, D]): Vector[PlanChange] =
     PlanChange.between(description, that.description)
+
+  /** The typed, per-field changes from this plan to `that`, in
+    * [[StudyField]] order ([[StudyDiff.between]]).
+    */
+  def structuralDiff(that: StudyPlan[K, U, P, S, D]): Vector[StudyChange[K, U, P, S, D]] =
+    StudyDiff.between(this, that)
+
+  /** This plan with `changes` applied ([[StudyDiff.revise]]). */
+  def revise(
+      changes: Vector[StudyChange[K, U, P, S, D]]
+  ): Either[StudyRevisionError, StudyPlan[K, U, P, S, D]] =
+    StudyDiff.revise(this, changes)
 
   def prerequisites(available: Option[StudyInput[K, U]]): Vector[PlanError] = available match
     case None => Vector(PlanError.MissingArtifact(input.digest))
     case Some(value) if value.reference != input =>
       Vector(PlanError.ArtifactMismatch(input.digest, value.reference.digest))
     case _ => Vector.empty
+
+  /** Every trial's tally, in input order: its fixations outside the analysis
+    * window (none for a whole-frame plan) and outside the screen, among the
+    * fixations the initial-fixation policy keeps. A trial in another frame
+    * than the admission frame is kept, with the refusal that prevents
+    * tallying it. Derived from the input and the plan alone.
+    */
+  def windowTallies(
+      available: StudyInput[K, U]
+  ): Vector[(K, Either[GeometryError, WindowTally])] =
+    available.trials.rows.map { t =>
+      t.key -> Agreement
+        .frames(geometry.admission, t.value.frame)
+        .flatMap(_ =>
+          initialFixationRule
+            .select(t.value)
+            .kept
+            .fold(Right(WindowTally.none))(StudyWindowing.tally(geometry, _))
+        )
+    }
+
+  /** Every trial's initial-fixation tally, in input order: the leading
+    * fixations the policy drops, of all the trial's fixations. Dropped
+    * fixations are left out before the window is considered, so each
+    * fixation is dropped, outside the screen, outside the window or in the
+    * map. A trial in another frame carries the refusal that prevents
+    * tallying it.
+    */
+  def initialFixationTallies(
+      available: StudyInput[K, U]
+  ): Vector[(K, Either[GeometryError, InitialFixationTally])] =
+    available.trials.rows.map { t =>
+      t.key -> Agreement
+        .frames(geometry.admission, t.value.frame)
+        .map(_ => initialFixationRule.select(t.value).tally)
+    }
 
   def run(available: StudyInput[K, U]): Either[PlanError, StudyResult[K, U, S, D]] =
     prepare(available).flatMap(_.run)
@@ -815,6 +1005,30 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
       context: Vector[(String, Provenance.Param)]
   ): Either[PlanError, StudyResult[K, U, S, D]] =
     this.prepare(available).flatMap(_.execute(prepare, context))
+
+  /** The same plan with other phases and weighting, as a temporal repetition
+    * runs it; geometry and scales are kept.
+    */
+  private[plan] def withPhases(
+      focal: String,
+      reference: String,
+      weighting: Weight
+  ): Either[PlanError, StudyPlan[K, U, P, S, D]] =
+    StudyPlan.configure(
+      input,
+      layout,
+      geometry,
+      focal,
+      reference,
+      weighting,
+      scales,
+      angularScale,
+      policy,
+      method,
+      parameters,
+      pairing,
+      initialFixations
+    )
 
   /** One scale's method specification; identical for pure and resumable execution. */
   private[plan] def specification(
@@ -847,7 +1061,10 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
     val trial = work.input.trials.rows(index)
     val mass  = for
       _         <- work.frameChecks(index)
-      occupancy <- prepare(trial.key, trial.value)
+      _         <- work.windowChecks(index)
+      kept      <- work.keptPath(index)
+      whole     <- prepare(trial.key, kept)
+      occupancy <- StudyWindowing.restrict(geometry, trial.key, whole)
       mass      <- estimate match
         case StudyEstimate.Anisotropic(x, y, edges) =>
           Smoother
@@ -874,7 +1091,9 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
     trial.key -> mass
 
 object StudyPlan:
-  /** Ordinary within-participant matched/control cosine study, using the same interpreter. */
+  /** Ordinary within-participant matched/control cosine study under the
+    * version-1 meaning (see [[of]]); new studies use [[configure]].
+    */
   def cosine[U <: Unit2D](
       input: ArtifactRef[StudyInput[StudyKey, U]],
       grid: Grid[U],
@@ -899,6 +1118,11 @@ object StudyPlan:
       ()
     )
 
+  /** The version-1 study: the whole frame of `grid`, scales in frame units,
+    * and every matched reference averaged ([[StudyPairing.version1]]). This
+    * is the route of saved version-1 studies and eyesim parity; new studies
+    * use [[configure]], whose default requires one matched reference.
+    */
   def of[K, U <: Unit2D, P, S, D](
       input: ArtifactRef[StudyInput[K, U]],
       layout: StudyLayout[K],
@@ -911,40 +1135,104 @@ object StudyPlan:
       method: StudyMethod[P, U, S, D],
       parameters: P
   )(using UnitLabel[U]): Either[PlanError, StudyPlan[K, U, P, S, D]] =
-    if focalPhase.trim.isEmpty || referencePhase.trim.isEmpty || focalPhase == referencePhase
-    then Left(PlanError.InvalidPhases(focalPhase, referencePhase))
-    else if estimates.isEmpty then Left(PlanError.EmptyScales(0))
-    else if estimates.distinct.size != estimates.size then
-      Left(PlanError.DuplicateScales(estimates.map(_.name)))
-    else
-      estimates
-        .traverse { estimate =>
-          EvaluationSpec
-            .of(
-              method.id.name,
-              method.id.version.toString,
-              method.parameters(parameters).map { case (k, v) =>
-                s"method.$k" -> v
-              } ++
-                estimate.parameters.map { case (k, v) => s"estimate.$k" -> v },
-              method.difference.components,
-              EvaluationGeometry.onGrid(grid),
-              EvaluationTime.OrderFree
-            )
-            .left
-            .map(PlanError.Specification.apply)
-        }
-        .map(_ =>
-          new StudyPlan(
-            input,
-            layout,
-            grid,
-            focalPhase,
-            referencePhase,
-            weight,
-            estimates,
-            policy,
-            method,
-            parameters
+    configure(
+      input,
+      layout,
+      StudyGeometry.WholeFrame(grid),
+      focalPhase,
+      referencePhase,
+      weight,
+      estimates.map(StudyScale.Native(_)),
+      None,
+      policy,
+      method,
+      parameters,
+      StudyPairing.version1
+    )
+
+  /** A study with an explicit geometry, scales and pairing. An angular scale
+    * is resolved through `angularScale`, whose frame must be the geometry's
+    * admission frame: one units-per-degree value per plan. The pairing
+    * defaults to exactly one matched reference per focal trial
+    * ([[StudyPairing.default]]); `SameOccurrence` and `Select` need a layout
+    * that declares occurrences. The initial-fixation policy defaults to
+    * keeping every fixation; a policy around the fixation cross needs its
+    * cross on the admission frame and the plan's `angularScale`.
+    */
+  def configure[K, U <: Unit2D, P, S, D](
+      input: ArtifactRef[StudyInput[K, U]],
+      layout: StudyLayout[K],
+      geometry: StudyGeometry[U],
+      focalPhase: String,
+      referencePhase: String,
+      weight: Weight,
+      scales: Vector[StudyScale[U]],
+      angularScale: Option[LinearAngularScale[U]],
+      policy: FailurePolicy,
+      method: StudyMethod[P, U, S, D],
+      parameters: P,
+      pairing: StudyPairing = StudyPairing.default,
+      initialFixations: InitialFixationPolicy[U] = InitialFixationPolicy.keepAll[U]
+  )(using UnitLabel[U]): Either[PlanError, StudyPlan[K, U, P, S, D]] =
+    val needsOccurrence = pairing.matched match
+      case MatchedReferences.SameOccurrence | MatchedReferences.Select(_) => true
+      case MatchedReferences.RequireOne | MatchedReferences.MeanOfAll     => false
+    for
+      _ <- Either.cond(
+        !needsOccurrence || layout.occurrence.isDefined,
+        (),
+        PlanError.OccurrenceUnavailable(layout.id, pairing.matched)
+      )
+      _ <- Either.cond(
+        focalPhase.trim.nonEmpty && referencePhase.trim.nonEmpty && focalPhase != referencePhase,
+        (),
+        PlanError.InvalidPhases(focalPhase, referencePhase)
+      )
+      _ <- Either.cond(scales.nonEmpty, (), PlanError.EmptyScales(0))
+      _ <- angularScale.traverse(s =>
+        Agreement.frames(s.frame, geometry.admission).left.map(PlanError.Geometry.apply)
+      )
+      estimates <- scales.zipWithIndex.traverse { case (scale, index) =>
+        scale.resolve(angularScale, index)
+      }
+      _ <- Either.cond(
+        scales.distinct.size == scales.size && estimates.distinct.size == estimates.size,
+        (),
+        PlanError.DuplicateScales(estimates.map(_.name))
+      )
+      _ <- estimates.traverse { estimate =>
+        EvaluationSpec
+          .of(
+            method.id.name,
+            method.id.version.toString,
+            method.parameters(parameters).map { case (k, v) =>
+              s"method.$k" -> v
+            } ++
+              estimate.parameters.map { case (k, v) => s"estimate.$k" -> v },
+            method.difference.components,
+            EvaluationGeometry.onGrid(geometry.grid),
+            EvaluationTime.OrderFree
           )
-        )
+          .left
+          .map(PlanError.Specification.apply)
+      }
+      initial <- InitialFixationRule
+        .of(initialFixations, geometry.admission, angularScale)
+        .left
+        .map(PlanError.InitialFixations.apply)
+    yield new StudyPlan(
+      input,
+      layout,
+      geometry,
+      focalPhase,
+      referencePhase,
+      weight,
+      scales,
+      angularScale,
+      estimates,
+      policy,
+      method,
+      parameters,
+      pairing,
+      initial
+    )

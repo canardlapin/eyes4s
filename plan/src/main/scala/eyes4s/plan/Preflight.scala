@@ -49,7 +49,9 @@ enum Remedy derives CanEqual:
     ReconcileMethodDescriptor, RaiseBudgetOrReduceStudy, AlignFrame, AlignClock,
     ResolveDuplicateTrials, SupplyMatchedReference, SupplyControlReference,
     SupplyViewingGeometry, SupplyCommonMarks, ReviseSynchronizationMarks, ReviseViewingOrArea,
-    ReviseDetectorParameters, SupplyEpoch, ReviseWindow, AcceptMissingObservation
+    ReviseDetectorParameters, SupplyEpoch, ReviseWindow, AcceptMissingObservation,
+    ReviewAnalysisWindow, ReviseScaleDeclaration, ChooseMatchedReference,
+    ResolveMatchItemConflict, ReviseInitialFixationPolicy
 
 /** Outcomes that only execution decides. Preflight lists them instead of guessing. */
 enum UncheckedAspect derives CanEqual:
@@ -83,18 +85,24 @@ enum BudgetError derives CanEqual:
 
   def message: String = plan.message
 
-sealed trait PreflightFinding:
+/** A finding of any shipped recipe family. `K` is the family's trial key;
+  * recording findings name no trial and are `PreflightFinding[Nothing]`.
+  */
+sealed trait PreflightFinding[+K]:
   def severity: Severity
   def category: FindingClass
   def remedy: Remedy
   def message: String
+
+  /** The trials this finding concerns, as typed keys. */
+  def keys: Vector[K]
 
 /** Findings for the within-participant matched/control fixation study. Trial
   * keys stay typed; duplicate positions index the focal or reference operand.
   * `Refused` carries any other constructor refusal so a new prerequisite in
   * `StudyPlan` surfaces as a blocker rather than being dropped.
   */
-enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
+enum StudyFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
   case UndescribedMethod(method: DefinitionId)
   case InconsistentDescriptor(method: DefinitionId, underlying: DescriptorError)
   case MissingArtifact(expected: ArtifactRef[StudyInput[K, U]])
@@ -109,11 +117,51 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
   case UnmatchedFocal(key: K)
   case UncontrolledFocal(key: K)
 
+  /** Some of the trial's fixations lie outside the analysis window or the
+    * screen: left out of its map, or failing the trial under
+    * [[OffWindowPolicy.FailTrial]] when any lies outside the window.
+    */
+  case OffWindowFixations(key: K, tally: WindowTally, policy: OffWindowPolicy)
+
+  /** None of the trial's fixations lies inside the analysis window; it fails
+    * at every scale.
+    */
+  case NoFixationInWindow(key: K, tally: WindowTally)
+
+  /** The focal trial has more than one matched reference: a blocker under a
+    * rule that requires one, a warning under the explicitly averaging
+    * `MeanOfAll`.
+    */
+  case MatchedCardinality(key: K, references: Vector[K], matched: MatchedReferences)
+
+  /** References of one participant and item that the control pool should
+    * reduce to one under the pairing rule, but cannot.
+    */
+  case AmbiguousReferences(references: Vector[K], matched: MatchedReferences)
+
+  /** The focal trial has no matched reference and the plan refuses such trials. */
+  case UnmatchedFocalRefused(key: K)
+
+  /** Keys the layout identifies as one trial name different match items. */
+  case MatchItemConflict(trials: Vector[K])
+
+  /** The plan's initial-fixation policy drops every fixation of the trial,
+    * so its map would be empty and it fails at every scale.
+    */
+  case NoFixationKept(key: K, tally: InitialFixationTally)
+
   def keys: Vector[K] = this match
     case FrameMismatch(k, _)          => Vector(k)
     case DuplicateTrial(k, _, _)      => Vector(k)
     case UnmatchedFocal(k)            => Vector(k)
     case UncontrolledFocal(k)         => Vector(k)
+    case OffWindowFixations(k, _, _)  => Vector(k)
+    case NoFixationInWindow(k, _)     => Vector(k)
+    case MatchedCardinality(k, rs, _) => k +: rs
+    case AmbiguousReferences(rs, _)   => rs
+    case UnmatchedFocalRefused(k)     => Vector(k)
+    case MatchItemConflict(ks)        => ks
+    case NoFixationKept(k, _)         => Vector(k)
     case UndescribedMethod(_)         => Vector.empty
     case InconsistentDescriptor(_, _) => Vector.empty
     case MissingArtifact(_)           => Vector.empty
@@ -122,10 +170,14 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
     case Refused(_)                   => Vector.empty
 
   def severity: Severity = this match
-    case MissingArtifact(_) | ArtifactMismatch(_, _) | OverBudget(_) | Refused(_) =>
+    case MissingArtifact(_) | ArtifactMismatch(_, _) | OverBudget(_) | Refused(_) |
+        AmbiguousReferences(_, _) | UnmatchedFocalRefused(_) | MatchItemConflict(_) =>
       Severity.Blocker
+    case MatchedCardinality(_, _, matched) =>
+      if matched == MatchedReferences.MeanOfAll then Severity.Warning else Severity.Blocker
     case UndescribedMethod(_) | InconsistentDescriptor(_, _) | FrameMismatch(_, _) |
-        DuplicateTrial(_, _, _) | UnmatchedFocal(_) | UncontrolledFocal(_) =>
+        DuplicateTrial(_, _, _) | UnmatchedFocal(_) | UncontrolledFocal(_) |
+        OffWindowFixations(_, _, _) | NoFixationInWindow(_, _) | NoFixationKept(_, _) =>
       Severity.Warning
 
   def category: FindingClass = this match
@@ -133,7 +185,10 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
       FindingClass.InvalidSetting
     case MissingArtifact(_) | ArtifactMismatch(_, _) => FindingClass.UnavailableInput
     case FrameMismatch(_, _)                         => FindingClass.IncompatibleInput
-    case DuplicateTrial(_, _, _) | UnmatchedFocal(_) | UncontrolledFocal(_) =>
+    case DuplicateTrial(_, _, _) | UnmatchedFocal(_) | UncontrolledFocal(_) |
+        OffWindowFixations(_, _, _) | NoFixationInWindow(_, _) | MatchedCardinality(_, _, _) |
+        AmbiguousReferences(_, _) | UnmatchedFocalRefused(_) | MatchItemConflict(_) |
+        NoFixationKept(_, _) =>
       FindingClass.DataDependent
 
   def remedy: Remedy = this match
@@ -147,6 +202,13 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
     case DuplicateTrial(_, _, _)      => Remedy.ResolveDuplicateTrials
     case UnmatchedFocal(_)            => Remedy.SupplyMatchedReference
     case UncontrolledFocal(_)         => Remedy.SupplyControlReference
+    case OffWindowFixations(_, _, _)  => Remedy.ReviewAnalysisWindow
+    case NoFixationInWindow(_, _)     => Remedy.ReviewAnalysisWindow
+    case MatchedCardinality(_, _, _)  => Remedy.ChooseMatchedReference
+    case AmbiguousReferences(_, _)    => Remedy.ChooseMatchedReference
+    case UnmatchedFocalRefused(_)     => Remedy.SupplyMatchedReference
+    case MatchItemConflict(_)         => Remedy.ResolveMatchItemConflict
+    case NoFixationKept(_, _)         => Remedy.ReviseInitialFixationPolicy
 
   def message: String = this match
     case UndescribedMethod(m) =>
@@ -164,9 +226,35 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
       s"Focal trial $k has no same-stimulus reference within participant."
     case UncontrolledFocal(k) =>
       s"Focal trial $k has no different-stimulus control within participant."
+    case OffWindowFixations(k, t, policy) =>
+      val fate =
+        if policy == OffWindowPolicy.FailTrial && t.outsideWindow > 0 then
+          "the trial fails at every scale"
+        else "they are left out of its map"
+      s"Trial $k has ${t.outsideWindow} of ${t.total} fixations outside the analysis window " +
+        s"and ${t.outsideScreen} outside the screen; $fate."
+    case NoFixationInWindow(k, t) =>
+      s"Trial $k has no fixation inside the analysis window (${t.outsideWindow} outside the " +
+        s"window, ${t.outsideScreen} outside the screen, of ${t.total}); it fails at every scale."
+    case MatchedCardinality(k, rs, matched) =>
+      if matched == MatchedReferences.MeanOfAll then
+        s"Focal trial $k has ${rs.size} matched references $rs; MeanOfAll averages them."
+      else
+        s"Focal trial $k has ${rs.size} matched references $rs; ${matched.render} requires " +
+          "one, so choose an occurrence."
+    case AmbiguousReferences(rs, matched) =>
+      s"References $rs share a participant and item; under ${matched.render} the control pool " +
+        "needs one of them, so choose an occurrence."
+    case UnmatchedFocalRefused(k) =>
+      s"Focal trial $k has no matched reference, and the plan refuses unmatched focal trials."
+    case MatchItemConflict(ks) =>
+      s"Trials $ks are one trial by identity but name different match items."
+    case NoFixationKept(k, t) =>
+      s"Trial $k: the initial-fixation policy ${t.render}, so its map would be empty; " +
+        "it fails at every scale."
 
 /** Findings for the synchronized, angular, detected and AOI-assigned recording recipe. */
-enum RecordingFinding extends PreflightFinding derives CanEqual:
+enum RecordingFinding extends PreflightFinding[Nothing] derives CanEqual:
   case UndescribedMethod(method: DefinitionId)
   case InconsistentDescriptor(method: DefinitionId, underlying: DescriptorError)
   case MissingArtifact(expected: ArtifactRef[Recording[Px]])
@@ -183,6 +271,9 @@ enum RecordingFinding extends PreflightFinding derives CanEqual:
   case AngularFrame(frame: FrameId, underlying: GeometryError)
   case AreaWarp(area: String, corner: AreaCorner)
   case DetectorDefinition(method: DefinitionId, underlying: DetectorDefinitionError)
+
+  /** A recording finding names no trial. */
+  def keys: Vector[Nothing] = Vector.empty
 
   def severity: Severity = this match
     case UndescribedMethod(_) | InconsistentDescriptor(_, _) => Severity.Warning
@@ -238,7 +329,7 @@ enum RecordingFinding extends PreflightFinding derives CanEqual:
   * repetition whose focal/reference phases produced them; base findings hold
   * for every repetition.
   */
-enum TemporalFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
+enum TemporalFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
   case MissingArtifact(expected: ArtifactRef[TemporalStudyInput[K, U]])
   case ArtifactMismatch(
       expected: ArtifactRef[TemporalStudyInput[K, U]],
@@ -310,12 +401,19 @@ enum TemporalFinding[K, U <: Unit2D] extends PreflightFinding derives CanEqual:
     case NoObservedCoverage(k, w)  =>
       s"Trial $k has no observed coverage inside window '$w'; its window mass is undefined."
 
-/** Why a preflight report cannot be acted on now. */
-enum PreflightError derives CanEqual:
+/** Why a preflight report cannot be acted on now. `K` is the recipe family's
+  * trial key, so the blockers of `NotReady` keep their typed keys.
+  */
+enum PreflightError[+K] derives CanEqual:
   case ChangedPlan(family: RecipeFamily, changes: Vector[PlanChange])
   case ChangedInput(family: RecipeFamily, reported: ArtifactRef[?], actual: ArtifactRef[?])
-  case NotReady(family: RecipeFamily, blockers: Vector[PreflightFinding])
+  case NotReady(family: RecipeFamily, blockers: Vector[PreflightFinding[K]])
   case Refused(underlying: PlanError)
+
+  /** The trials the remaining blockers concern, each once in blocker order. */
+  def affectedTrials: Vector[K] = this match
+    case NotReady(_, blockers) => blockers.flatMap(_.keys).distinct
+    case _                     => Vector.empty
 
   def message: String = this match
     case ChangedPlan(f, changes) =>
@@ -329,7 +427,7 @@ enum PreflightError derives CanEqual:
   * observed at preflight time. Readiness is the absence of blockers; it is not
   * a guarantee that estimation, comparison or detection succeeds on the data.
   */
-sealed abstract class PreflightReport[F <: PreflightFinding]:
+sealed abstract class PreflightReport[F <: PreflightFinding[?]]:
   def family: RecipeFamily
   def description: Vector[(String, Vector[Provenance.Param])]
   def findings: Vector[F]
@@ -353,6 +451,9 @@ final class StudyReport[K, U <: Unit2D] private[plan] (
   /** Distinct affected trial keys in the layout's canonical order. */
   def affectedTrials: Vector[K] = findings.flatMap(_.keys).distinct.sorted
 
+  /** The findings as diagnostics, in finding order, keys typed. */
+  def diagnostics: Vector[Diagnostic[K]] = findings.map(Diagnostic.of(_))
+
   /** Prepare the same plan against the same input; anything changed since
     * preflight, or any blocker, is refused. Preparation itself revalidates
     * the artifact identity again.
@@ -361,7 +462,7 @@ final class StudyReport[K, U <: Unit2D] private[plan] (
       plan: StudyPlan[K, U, P, S, D],
       input: StudyInput[K, U],
       budget: PairScheduleBudget = PairScheduleBudget.default
-  ): Either[PreflightError, PreparedStudy[K, U, P, S, D]] =
+  ): Either[PreflightError[K], PreparedStudy[K, U, P, S, D]] =
     for
       _ <- Preflight.confirm(
         family,
@@ -383,10 +484,13 @@ final class RecordingReport private[plan] (
 ) extends PreflightReport[RecordingFinding]:
   val family: RecipeFamily = RecipeFamily.EventRecording
 
+  /** The findings as diagnostics, in finding order; they name no trial. */
+  def diagnostics: Vector[Diagnostic[Nothing]] = findings.map(Diagnostic.of(_))
+
   def confirm[P](
       plan: RecordingPlan[P],
       recording: Recording[Px]
-  ): Either[PreflightError, Unit] =
+  ): Either[PreflightError[Nothing], Unit] =
     Preflight.confirm(
       family,
       description,
@@ -408,10 +512,13 @@ final class TemporalReport[K, U <: Unit2D] private[plan] (
 
   def affectedTrials: Vector[K] = findings.flatMap(_.keys).distinct.sorted
 
+  /** The findings as diagnostics, in finding order, keys typed. */
+  def diagnostics: Vector[Diagnostic[K]] = findings.map(Diagnostic.of(_))
+
   def confirm[P, S, D](
       plan: TemporalStudyPlan[K, U, P, S, D],
       input: TemporalStudyInput[K, U]
-  ): Either[PreflightError, Unit] =
+  ): Either[PreflightError[K], Unit] =
     Preflight.confirm(
       family,
       description,
@@ -461,7 +568,9 @@ object Preflight:
         available.toVector.flatMap { input =>
           prepared(plan, input, budget).fold(
             e => Vector(e),
-            work => frames(work) ++ schedule(work).fold(e => Vector(e), identity)
+            work =>
+              frames(work) ++ emptied(work) ++ windows(work) ++
+                schedule(work).fold(e => Vector(e), identity)
           )
         }
     new StudyReport(
@@ -527,7 +636,7 @@ object Preflight:
       recordingUnchecked
     )
 
-  def temporal[K, U <: Unit2D: UnitLabel, P, S, D](
+  def temporal[K, U <: Unit2D, P, S, D](
       plan: TemporalStudyPlan[K, U, P, S, D],
       available: Option[TemporalStudyInput[K, U]],
       budget: PairScheduleBudget = PairScheduleBudget.default
@@ -541,19 +650,8 @@ object Preflight:
         available.toVector.flatMap { a =>
           val input       = a.study
           val repetitions = plan.repetitions.map { r =>
-            r.name -> StudyPlan
-              .of(
-                plan.base.input,
-                plan.base.layout,
-                plan.base.grid,
-                r.focalPhase,
-                r.referencePhase,
-                plan.base.weight,
-                plan.base.estimates,
-                plan.base.policy,
-                plan.base.method,
-                plan.base.parameters
-              )
+            r.name -> plan.base
+              .withPhases(r.focalPhase, r.referencePhase, plan.base.weight)
               .left
               .map(TemporalFinding.RepetitionPlan(r.name, _))
               .flatMap(p =>
@@ -562,7 +660,7 @@ object Preflight:
           }
           val frameFindings = repetitions
             .collectFirst { case (_, Right(work)) =>
-              frames(work).map(TemporalFinding.Study(_))
+              (frames(work) ++ emptied(work) ++ windows(work)).map(TemporalFinding.Study(_))
             }
             .getOrElse(Vector.empty)
           val scheduleFindings = repetitions.flatMap {
@@ -595,6 +693,17 @@ object Preflight:
         PlanError.DuplicateScales(_) | PlanError.Specification(_) |
         PlanError.ChangedPreparedPlan(_, _) | PlanError.UnsupportedExecution(_, _) =>
       Remedy.ReconcileMethodDescriptor
+    case PlanError.MissingAngularScale(_) | PlanError.Geometry(_) |
+        PlanError.InvalidWindowTally(_, _, _, _, _, _) =>
+      Remedy.ReviseScaleDeclaration
+    case PlanError.InvalidOccurrence(_) | PlanError.BlankKeyField(_) |
+        PlanError.OccurrenceUnavailable(_, _) | PlanError.MatchedCardinality(_, _, _) =>
+      Remedy.ChooseMatchedReference
+    case PlanError.MatchItemConflict(_)     => Remedy.ResolveMatchItemConflict
+    case PlanError.UnmatchedFocalRefused(_) => Remedy.SupplyMatchedReference
+    case PlanError.InitialFixations(InitialFixationError.MissingAngularScale(_)) =>
+      Remedy.ReviseScaleDeclaration
+    case PlanError.InitialFixations(_) => Remedy.ReviseInitialFixationPolicy
 
   private[plan] def remedyFor(error: TemporalStudyError): Remedy = error match
     case TemporalStudyError.Input(e)     => remedyFor(e)
@@ -682,6 +791,34 @@ object Preflight:
       StudyFinding.FrameMismatch(key, e)
     }
 
+  /** Trials the initial-fixation policy leaves without fixations, in input
+    * order: execution fails them with `InitialFixationError.NoFixationKept`.
+    */
+  private def emptied[K, U <: Unit2D, P, S, D](
+      work: PreparedStudy[K, U, P, S, D]
+  ): Vector[StudyFinding[K, U]] =
+    work.initialFixationTallies.collect {
+      case (key, Right(tally)) if tally.total > 0 && tally.kept == 0 =>
+        StudyFinding.NoFixationKept(key, tally)
+    }
+
+  /** Trials with fixations outside the window or the screen, in input order.
+    * A trial the initial-fixation policy leaves without fixations has an
+    * empty tally and fails for that reason, not the window's.
+    */
+  private def windows[K, U <: Unit2D, P, S, D](
+      work: PreparedStudy[K, U, P, S, D]
+  ): Vector[StudyFinding[K, U]] =
+    val policy = work.geometry match
+      case StudyGeometry.Windowed(_, _, p) => p
+      case StudyGeometry.WholeFrame(_)     => OffWindowPolicy.Exclude
+    work.windowTallies.collect {
+      case (key, Right(tally)) if tally.total > 0 && tally.allOutside =>
+        StudyFinding.NoFixationInWindow(key, tally)
+      case (key, Right(tally)) if tally.anyOutside =>
+        StudyFinding.OffWindowFixations(key, tally, policy)
+    }
+
   private def schedule[K, U <: Unit2D, P, S, D](
       work: PreparedStudy[K, U, P, S, D]
   ): Either[StudyFinding[K, U], Vector[StudyFinding[K, U]]] =
@@ -692,13 +829,26 @@ object Preflight:
       controls <- complete(work.controls).left.map(e =>
         StudyFinding.OverBudget(BudgetError.Schedule(e))
       )
-    yield work.matched.ambiguities.map {
-      case PairingAmbiguity.DuplicateLeft(key, positions) =>
-        StudyFinding.DuplicateTrial(key, PairingSide.Focal, positions)
-      case PairingAmbiguity.DuplicateRight(key, positions) =>
-        StudyFinding.DuplicateTrial(key, PairingSide.Reference, positions)
-    } ++ matched.unmatchedLeft.map(StudyFinding.UnmatchedFocal(_)) ++
-      controls.unmatchedLeft.map(StudyFinding.UncontrolledFocal(_))
+      cardinality <- work.matchedCardinality.left.map {
+        case PlanError.Schedule(e) => StudyFinding.OverBudget(BudgetError.Schedule(e))
+        case other                 => StudyFinding.Refused(other)
+      }
+    yield
+      val refuse = work.pairing.unmatched == UnmatchedFocalPolicy.Refuse
+      val policy = work.pairing.matched
+      work.matched.ambiguities.map {
+        case PairingAmbiguity.DuplicateLeft(key, positions) =>
+          StudyFinding.DuplicateTrial(key, PairingSide.Focal, positions)
+        case PairingAmbiguity.DuplicateRight(key, positions) =>
+          StudyFinding.DuplicateTrial(key, PairingSide.Reference, positions)
+      } ++ cardinality.itemConflicts.map(StudyFinding.MatchItemConflict(_)) ++
+        matched.unmatchedLeft.map(k =>
+          if refuse then StudyFinding.UnmatchedFocalRefused(k)
+          else StudyFinding.UnmatchedFocal(k)
+        ) ++
+        cardinality.multiple.map((k, rs) => StudyFinding.MatchedCardinality(k, rs, policy)) ++
+        cardinality.blockingReferences.map(StudyFinding.AmbiguousReferences(_, policy)) ++
+        controls.unmatchedLeft.map(StudyFinding.UncontrolledFocal(_))
 
   private def complete[KL, KR](
       schedule: DirectedPairSchedule[KL, KR]
@@ -736,14 +886,14 @@ object Preflight:
               }
     }
 
-  private[plan] def confirm(
+  private[plan] def confirm[K](
       family: RecipeFamily,
       reported: Vector[(String, Vector[Provenance.Param])],
       current: Vector[(String, Vector[Provenance.Param])],
       available: Option[ArtifactRef[?]],
       actual: ArtifactRef[?],
-      blockers: Vector[PreflightFinding]
-  ): Either[PreflightError, Unit] =
+      blockers: Vector[PreflightFinding[K]]
+  ): Either[PreflightError[K], Unit] =
     val changed = PlanChange.between(reported, current)
     if changed.nonEmpty then Left(PreflightError.ChangedPlan(family, changed))
     else

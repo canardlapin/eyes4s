@@ -319,3 +319,38 @@ class TemporalCursorSuite extends munit.FunSuite:
       )
     )
   }
+
+  test("every cell maps the fixations the base plan's initial-fixation policy keeps") {
+    val dropFirst = get(
+      base(clean).revise(
+        Vector(
+          StudyChange.InitialFixations(
+            InitialFixationPolicy.keepAll[Px],
+            InitialFixationPolicy.dropFirst[Px]
+          )
+        )
+      )
+    )
+    val temporal = get(
+      TemporalStudyPlan
+        .of(dropFirst, clean.reference, windows, repetitions, FixationBoundary.ClipDuration)
+    )
+    val result = get(temporal.run(clean))
+    val early  =
+      result.cells.find(c => c.window.name == "early" && c.repetition.name == "recall").get
+    // a keeps (1.5, 0.5) from 1000 and (0.5, 1.5) from 2000; only the first
+    // lies in [0, 1500).
+    assertEquals(
+      early.occupancy.collectFirst { case (`a`, Right(o)) => o.measure.positions.toVector },
+      Some(Vector(Pt[Px](1.5, 0.5)))
+    )
+    val noneKept = InitialFixationError.NoFixationKept(1, 1000L)
+    assertEquals(
+      early.occupancy.collectFirst { case (`lone`, Left(e)) => e },
+      Some(TemporalStudyError.Input(PlanError.InitialFixations(noneKept)))
+    )
+    assertEquals(
+      early.result.scales.head.estimation.collectFirst { case (`lone`, Left(f)) => f },
+      Some(StudyFailure.InitialFixations(lone, noneKept))
+    )
+  }

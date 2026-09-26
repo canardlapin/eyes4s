@@ -221,6 +221,39 @@ private[codec] object TemporalWire:
       case ComparisonWork(e) => tagged("comparisonWork", "error" -> comparisonWorkError(e))
       case UnsupportedExecution(m, c) =>
         tagged("unsupportedExecution", "method" -> Wire.id(m), "capability" -> text(c.toString))
+      case MissingAngularScale(scale) => tagged("missingAngularScale", "scale" -> int(scale))
+      case InvalidOccurrence(value)   => tagged("invalidOccurrence", "value" -> int(value))
+      case BlankKeyField(field)       => tagged("blankKeyField", "field" -> text(field))
+      case OccurrenceUnavailable(layout, matched) =>
+        tagged(
+          "occurrenceUnavailable",
+          "layout"  -> Wire.id(layout),
+          "matched" -> StudyWire.matched(matched)
+        )
+      case MatchItemConflict(groups) =>
+        tagged("matchItemConflict", "keys" -> Json.arr(groups.map(strings)*))
+      case MatchedCardinality(matched, focal, groups) =>
+        tagged(
+          "matchedCardinality",
+          "matched"    -> StudyWire.matched(matched),
+          "focal"      -> strings(focal),
+          "references" -> Json.arr(groups.map(strings)*)
+        )
+      case UnmatchedFocalRefused(focal) =>
+        tagged("unmatchedFocalRefused", "focal" -> strings(focal))
+      case Geometry(e) => tagged("geometry", "error" -> ResultWire.geometryError(e))
+      case InvalidWindowTally(screen, window, total, screenMicros, windowMicros, totalMicros) =>
+        tagged(
+          "invalidWindowTally",
+          "outsideScreen"       -> int(screen),
+          "outsideWindow"       -> int(window),
+          "total"               -> int(total),
+          "outsideScreenMicros" -> long(screenMicros),
+          "outsideWindowMicros" -> long(windowMicros),
+          "totalMicros"         -> long(totalMicros)
+        )
+      case InitialFixations(e) =>
+        tagged("initialFixations", "error" -> ResultWire.initialFixationError(e))
 
   def readPlanError(json: Json): Either[CodecError, PlanError] =
     import PlanError.*
@@ -261,6 +294,37 @@ private[codec] object TemporalWire:
               CodecError.Field("capability", json, s"unknown execution capability $name")
             )
         yield UnsupportedExecution(method, value)
+      case "missingAngularScale" =>
+        Wire.field[Int](json, "scale").map(MissingAngularScale.apply)
+      case "invalidOccurrence" => Wire.field[Int](json, "value").map(InvalidOccurrence.apply)
+      case "blankKeyField"     => str("field").map(BlankKeyField.apply)
+      case "occurrenceUnavailable" =>
+        (
+          Wire.definition(json, "layout"),
+          Wire.field[Json](json, "matched").flatMap(StudyWire.readMatched)
+        ).mapN(OccurrenceUnavailable.apply)
+      case "matchItemConflict" =>
+        Wire.field[Vector[Vector[String]]](json, "keys").map(MatchItemConflict.apply)
+      case "matchedCardinality" =>
+        (
+          Wire.field[Json](json, "matched").flatMap(StudyWire.readMatched),
+          Wire.field[Vector[String]](json, "focal"),
+          Wire.field[Vector[Vector[String]]](json, "references")
+        ).mapN(MatchedCardinality.apply)
+      case "unmatchedFocalRefused" =>
+        Wire.field[Vector[String]](json, "focal").map(UnmatchedFocalRefused.apply)
+      case "geometry" => error.flatMap(ResultWire.readGeometryError).map(Geometry.apply)
+      case "invalidWindowTally" =>
+        (
+          Wire.field[Int](json, "outsideScreen"),
+          Wire.field[Int](json, "outsideWindow"),
+          Wire.field[Int](json, "total"),
+          readLong(json, "outsideScreenMicros"),
+          readLong(json, "outsideWindowMicros"),
+          readLong(json, "totalMicros")
+        ).mapN(InvalidWindowTally.apply)
+      case "initialFixations" =>
+        error.flatMap(ResultWire.readInitialFixationError).map(InitialFixations.apply)
       case other => Left(unknown(json, "plan error", other))
     }
 

@@ -1,0 +1,119 @@
+{
+  "schema" : {
+    "name" : "eyes4s.admission-ledger",
+    "version" : 2
+  },
+  "value" : {
+    "keySchema" : {
+      "name" : "eyes4s.study-key",
+      "version" : 1
+    },
+    "source" : {
+      "label" : "v2.csv",
+      "records" : "e352c084702f33cb"
+    },
+    "header" : [
+      "participant",
+      "image",
+      "phase",
+      "fixation",
+      "x",
+      "y",
+      "onset",
+      "duration",
+      "n"
+    ],
+    "outcome" : "complete",
+    "records" : [
+      {
+        "record" : 2,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "p1",
+            "stimulus" : "a",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 0
+      },
+      {
+        "record" : 3,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "p1",
+            "stimulus" : "a",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 1
+      },
+      {
+        "record" : 4,
+        "kind" : "admitted",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "p2",
+            "stimulus" : "a",
+            "phase" : "encode"
+          }
+        },
+        "ordinal" : 0
+      }
+    ],
+    "offScreen" : "excludeRecord",
+    "corrections" : [
+      {
+        "scope" : {
+          "kind" : "participant",
+          "participant" : "p2"
+        },
+        "correction" : {
+          "kind" : "flipY"
+        }
+      },
+      {
+        "scope" : {
+          "kind" : "trial",
+          "key" : {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "p1",
+              "stimulus" : "a",
+              "phase" : "encode"
+            }
+          }
+        },
+        "correction" : {
+          "kind" : "translate",
+          "dx" : 1.0,
+          "dy" : -0.5
+        }
+      }
+    ],
+    "outsideFrame" : [
+      {
+        "record" : 3,
+        "x" : 17.0,
+        "y" : 2.5,
+        "frame" : "v2-screen"
+      }
+    ]
+  }
+}

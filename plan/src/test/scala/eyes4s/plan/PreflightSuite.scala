@@ -745,6 +745,11 @@ class PreflightSuite extends munit.FunSuite:
       Vector((FindingClass.UnavailableInput, Remedy.SupplyEpoch))
     )
     assertEquals(missing.affectedTrials, Vector(b))
+    assertEquals(missing.diagnostics.map(_.affectedTrials), Vector(Vector(b)))
+    assertEquals(
+      missing.diagnostics.map(_.code.render),
+      Vector("temporal-finding.missing-epoch")
+    )
     assertEquals(missing.ready, true)
     assertEquals(
       temporalPlan(overflow)
@@ -796,6 +801,10 @@ class PreflightSuite extends munit.FunSuite:
       )
     )
     assertEquals(mp.preflight(Some(misframed)).affectedTrials, Vector(a))
+    assertEquals(
+      mp.preflight(Some(misframed)).diagnostics.flatMap(_.affectedTrials).distinct,
+      Vector(a)
+    )
     val result = get(mp.run(misframed))
     result.scales.foreach { scale =>
       assertEquals(scale.estimation.collect { case (k, Left(_)) => k }, Vector(a))
@@ -1002,15 +1011,35 @@ class PreflightSuite extends munit.FunSuite:
   }
 
   test("data-dependent estimation failures are not checked here and are listed as such") {
+    // A zero-width Gaussian on this grid is refused by the smoother at run time
+    // only; preflight lists estimation as not checked rather than guessing.
+    val narrow = Vector[StudyEstimate[Px]](
+      StudyEstimate.Gaussian(get(Sigma.px(1e-9)), eyes4s.surface.EdgePolicy.Truncate)
+    )
+    val p      = plan(input, scales = narrow)
+    val report = p.preflight(Some(input))
+    assertEquals(report.findings, Vector.empty)
+    assert(report.notChecked.contains(UncheckedAspect.OccupancyEstimation))
+    val scale = get(p.run(input)).scales.head
+    assert(scale.estimation.forall(_._2.isLeft))
+  }
+
+  test("a trial entirely off the screen is reported before running and fails as off-window") {
     val outside = StudyInput(
       Trials(Vector(trial(a, 5.0, y = 5.0), trial(b, 1.5), trial(ar, 0.5), trial(br, 1.5)))
     )
     val p      = plan(outside)
     val report = p.preflight(Some(outside))
-    assertEquals(report.findings, Vector.empty)
-    assert(report.notChecked.contains(UncheckedAspect.OccupancyEstimation))
+    val tally  = get(WindowTally.screen(frame, outside.trials.rows.head.value))
+    assertEquals(tally.outsideScreen, 1)
+    assertEquals(tally.outsideWindow, 0)
+    assertEquals(report.findings, Vector(StudyFinding.NoFixationInWindow(a, tally)))
+    assertEquals(report.blockers, Vector.empty)
     val scale = get(p.run(outside)).scales.head
-    assertEquals(scale.estimation.collect { case (k, Left(_)) => k }, Vector(a))
+    assertEquals(
+      scale.estimation.collect { case (k, Left(f)) => k -> f },
+      Vector(a -> StudyFailure.OffWindow(a, tally))
+    )
   }
 
   test("inconsistent descriptors warn while execution proceeds") {
@@ -1033,6 +1062,13 @@ class PreflightSuite extends munit.FunSuite:
 
     val rp      = recordingPlan(method = misversionedDetector)
     val rreport = rp.preflight(Some(recording))
+    val absent  = rp.preflight(None)
+    assertEquals(
+      absent.diagnostics.map(_.code.render),
+      absent.findings.map(Diagnostic.of(_).code.render)
+    )
+    assert(absent.diagnostics.nonEmpty)
+    assert(absent.diagnostics.forall(_.affectedTrials.isEmpty))
     assertEquals(
       rreport.findings,
       Vector(

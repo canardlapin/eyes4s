@@ -28,6 +28,37 @@ final case class DiagnosticCode private[eyes4s] (family: String, name: String) d
   def render: String            = s"$family.$name"
   override def toString: String = render
 
+object DiagnosticCode:
+  private val Slug = "[a-z][a-z0-9]*(-[a-z0-9]+)*".r
+
+  /** A code for a host application's own check, which it reports with
+    * [[DiagnosticSource.Host]]. Both parts must be lower-case kebab-case
+    * slugs, the form every library code takes.
+    */
+  def host(family: String, name: String): Either[DiagnosticCodeError, DiagnosticCode] =
+    for
+      _ <- Either.cond(Slug.matches(family), (), DiagnosticCodeError.InvalidFamily(family))
+      _ <- Either.cond(Slug.matches(name), (), DiagnosticCodeError.InvalidName(name))
+    yield DiagnosticCode(family, name)
+
+/** Why a host's diagnostic code was refused. */
+enum DiagnosticCodeError derives CanEqual:
+  case InvalidFamily(family: String)
+  case InvalidName(name: String)
+
+  def message: String = this match
+    case InvalidFamily(family) =>
+      s"Diagnostic family '$family' is not a lower-case kebab-case slug."
+    case InvalidName(name) => s"Diagnostic name '$name' is not a lower-case kebab-case slug."
+
+/** Who reported a diagnostic. Every diagnostic this library projects is
+  * `EyesCore`; a host application reports its own checks as `Host`, so an
+  * application can show the two as separate, labelled sources without
+  * inspecting codes.
+  */
+enum DiagnosticSource derives CanEqual:
+  case EyesCore, Host
+
 /** An error prevents the operation, or the named item, from producing a value.
   * A warning leaves execution possible but names a deterministic risk or a
   * missing explanation (preflight warnings are the only source).
@@ -72,6 +103,45 @@ enum Locus[+K] derives CanEqual:
 
   /** A typed manifest relation, by its kind and its source entry. */
   case Relation(kind: String, source: String)
+
+  /** A physical line of a named text source, such as an EyeLink ASC file,
+    * counted from 1.
+    */
+  case Line(source: String, line: Long)
+
+  /** Trial keys this locus names. */
+  def trialKeys: Vector[K] = this match
+    case Trial(key)             => Vector(key)
+    case Trials(keys)           => keys
+    case Pair(focal, reference) => Vector(focal, reference)
+    case _                      => Vector.empty
+
+  /** The same locus with its trial keys transformed. */
+  def mapKeys[K2](f: K => K2): Locus[K2] = this match
+    case Trial(key)             => Trial(f(key))
+    case Trials(keys)           => Trials(keys.map(f))
+    case Pair(focal, reference) => Pair(f(focal), f(reference))
+    case Artifact(digest)       => Artifact(digest)
+    case Definition(id)         => Definition(id)
+    case Field(name)            => Field(name)
+    case Scale(index)           => Scale(index)
+    case Design(design)         => Design(design)
+    case Repetition(name)       => Repetition(name)
+    case Window(name)           => Window(name)
+    case TrialDigest(digest)    => TrialDigest(digest)
+    case Fixation(index)        => Fixation(index)
+    case Record(number)         => Record(number)
+    case Records(numbers)       => Records(numbers)
+    case InputTrial(index)      => InputTrial(index)
+    case Recording(source)      => Recording(source)
+    case Area(id)               => Area(id)
+    case Event(index)           => Event(index)
+    case Sample(index)          => Sample(index)
+    case Samples(from, until)   => Samples(from, until)
+    case Entry(name)            => Entry(name)
+    case Path(path)             => Path(path)
+    case Relation(kind, source) => Relation(kind, source)
+    case Line(source, line)     => Line(source, line)
 
 /** A double compared by its bit pattern: NaN equals NaN and `-0.0` differs
   * from `0.0`, so a projection of a non-finite failure equals itself and exact
@@ -132,6 +202,47 @@ enum Operand[+K] derives CanEqual:
   /** An optional operand that is absent; distinct from zero or empty. */
   case Absent
 
+  /** Trial keys this operand carries, nested causes included, in order. */
+  def trialKeys: Vector[K] = this match
+    case Key(value)          => Vector(value)
+    case Keys(values)        => values
+    case Fields(values)      => values.flatMap(_._2.trialKeys)
+    case Items(values)       => values.flatMap(_.trialKeys)
+    case Cause(diagnostic)   => diagnostic.affectedTrials
+    case Causes(diagnostics) => diagnostics.flatMap(_.affectedTrials)
+    case _                   => Vector.empty
+
+  /** Every key, source links of nested causes included. */
+  private[plan] def everyKey: Vector[K] = this match
+    case Fields(values)      => values.flatMap(_._2.everyKey)
+    case Items(values)       => values.flatMap(_.everyKey)
+    case Cause(diagnostic)   => diagnostic.everyKey
+    case Causes(diagnostics) => diagnostics.flatMap(_.everyKey)
+    case other               => other.trialKeys
+
+  /** The same operand with its trial keys transformed. */
+  def mapKeys[K2](f: K => K2): Operand[K2] = this match
+    case Key(value)          => Key(f(value))
+    case Keys(values)        => Keys(values.map(f))
+    case Fields(values)      => Fields(values.map((name, value) => name -> value.mapKeys(f)))
+    case Items(values)       => Items(values.map(_.mapKeys(f)))
+    case Cause(diagnostic)   => Cause(diagnostic.mapKeys(f))
+    case Causes(diagnostics) => Causes(diagnostics.map(_.mapKeys(f)))
+    case Integer(value)      => Integer(value)
+    case Integers(values)    => Integers(values)
+    case Real(value)         => Real(value)
+    case Micros(value)       => Micros(value)
+    case Token(value)        => Token(value)
+    case Name(value)         => Name(value)
+    case Names(values)       => Names(values)
+    case Text(value)         => Text(value)
+    case Definition(id)      => Definition(id)
+    case Artifact(digest)    => Artifact(digest)
+    case Parameters(values)  => Parameters(values)
+    case Params(values)      => Params(values)
+    case Lineage(value)      => Lineage(value)
+    case Absent              => Absent
+
 /** Why no source evidence could be named for a subject. */
 enum MissingSource[+K] derives CanEqual:
   /** The input was not linked to an admission ledger. */
@@ -161,6 +272,30 @@ enum MissingSource[+K] derives CanEqual:
   /** The ledger rejected every record of this key, so it has no fixations. */
   case NotAdmitted(key: K, records: Vector[Int])
 
+  /** Trial keys this reason names. */
+  def trialKeys: Vector[K] = this match
+    case UnknownTrial(key)             => Vector(key)
+    case FixationOutOfRange(key, _, _) => Vector(key)
+    case NotSourceSupported(key)       => Vector(key)
+    case AmbiguousTrial(key, _)        => Vector(key)
+    case CollidingDigest(_, keys)      => keys
+    case NotAdmitted(key, _)           => Vector(key)
+    case NoLedger                      => Vector.empty
+    case UnknownDigest(_)              => Vector.empty
+    case UnknownInputTrial(_, _)       => Vector.empty
+
+  /** The same reason with its trial keys transformed. */
+  def mapKeys[K2](f: K => K2): MissingSource[K2] = this match
+    case NoLedger                             => NoLedger
+    case UnknownTrial(key)                    => UnknownTrial(f(key))
+    case FixationOutOfRange(key, index, size) => FixationOutOfRange(f(key), index, size)
+    case NotSourceSupported(key)              => NotSourceSupported(f(key))
+    case AmbiguousTrial(key, occurrences)     => AmbiguousTrial(f(key), occurrences)
+    case UnknownDigest(digest)                => UnknownDigest(digest)
+    case CollidingDigest(digest, keys)        => CollidingDigest(digest, keys.map(f))
+    case UnknownInputTrial(index, trials)     => UnknownInputTrial(index, trials)
+    case NotAdmitted(key, records)            => NotAdmitted(f(key), records)
+
 /** Where the scientific evidence for a subject lives. */
 enum SourceLink[+K] derives CanEqual:
   /** A logical record of a ledgered source: the header is record 1. The
@@ -179,15 +314,29 @@ enum SourceLink[+K] derives CanEqual:
   /** An explicit missing locator; never an empty or guessed link. */
   case Missing(reason: MissingSource[K])
 
+  /** Trial keys this link names. */
+  def trialKeys: Vector[K] = this match
+    case Fixation(key, _) => Vector(key)
+    case Missing(reason)  => reason.trialKeys
+    case _                => Vector.empty
+
+  /** The same link with its trial keys transformed. */
+  def mapKeys[K2](f: K => K2): SourceLink[K2] = this match
+    case Record(source, record)                    => Record(source, record)
+    case Fixation(key, index)                      => Fixation(f(key), index)
+    case Samples(recording, artifact, from, until) => Samples(recording, artifact, from, until)
+    case Missing(reason)                           => Missing(reason.mapKeys(f))
+
 /** A renderer-neutral projection of one typed error or finding.
   *
   * `code` is the stable identity, `subject` names the failing object, and
   * `operands` carry every field of the underlying case under its field name,
   * nested errors included as [[Operand.Cause]]. `sources` hold source links
   * once a [[StudySources]] index has linked the diagnostic. A preflight
-  * finding also carries its library-owned category and remedy. `message` is a
-  * default English rendering; it is never an identity and may differ between
-  * platforms where numbers render differently.
+  * finding also carries its library-owned category and remedy. `source` says
+  * who reported it: this library or a host application's own check.
+  * `message` is a default English rendering; it is never an identity and may
+  * differ between platforms where numbers render differently.
   */
 final case class Diagnostic[+K](
     code: DiagnosticCode,
@@ -197,7 +346,8 @@ final case class Diagnostic[+K](
     sources: Vector[SourceLink[K]],
     message: String,
     category: Option[FindingClass] = None,
-    remedy: Option[Remedy] = None
+    remedy: Option[Remedy] = None,
+    source: DiagnosticSource = DiagnosticSource.EyesCore
 ) derives CanEqual:
   def operand(name: String): Option[Operand[K]] = operands.collectFirst {
     case (n, value) if n == name => value
@@ -211,12 +361,33 @@ final case class Diagnostic[+K](
   }
 
   /** Trial keys this diagnostic's subject names, in subject order. */
-  def keys: Vector[K] = subject.flatMap {
-    case Locus.Trial(key)             => Vector(key)
-    case Locus.Trials(keys)           => keys
-    case Locus.Pair(focal, reference) => Vector(focal, reference)
-    case _                            => Vector.empty
-  }
+  def keys: Vector[K] = subject.flatMap(_.trialKeys)
+
+  /** Every trial key the diagnostic names, as typed keys: its subject, then
+    * its operands and nested causes, each key once in first-seen order. An
+    * application opens exactly these trials to act on the diagnostic.
+    */
+  def affectedTrials: Vector[K] = (keys ++ operands.flatMap(_._2.trialKeys)).distinct
+
+  /** The same diagnostic with every trial key transformed: subject, operands,
+    * nested causes and source links.
+    */
+  def mapKeys[K2](f: K => K2): Diagnostic[K2] =
+    Diagnostic(
+      code,
+      severity,
+      subject.map(_.mapKeys(f)),
+      operands.map((name, value) => name -> value.mapKeys(f)),
+      sources.map(_.mapKeys(f)),
+      message,
+      category,
+      remedy,
+      source
+    )
+
+  /** Every key anywhere in the diagnostic, source links included. */
+  private[plan] def everyKey: Vector[K] =
+    keys ++ operands.flatMap(_._2.everyKey) ++ sources.flatMap(_.trialKeys)
 
   /** The same diagnostic located inside a coarser context (scale, design, window). */
   def within[K2 >: K](context: Locus[K2]*): Diagnostic[K2] =
@@ -230,6 +401,58 @@ final case class Diagnostic[+K](
 object Diagnostic:
   /** Project any cataloged error through its [[Diagnose]] instance. */
   def of[E, K](error: E)(using diagnose: Diagnose[E, K]): Diagnostic[K] = diagnose(error)
+
+  /** A host application's own check, reported with [[DiagnosticSource.Host]]
+    * and a code from `DiagnosticCode.host`, so it is never mistaken for a
+    * library diagnostic.
+    */
+  def host[K](
+      code: DiagnosticCode,
+      severity: DiagnosticSeverity,
+      subject: Vector[Locus[K]],
+      operands: Vector[(String, Operand[K])],
+      message: String
+  ): Diagnostic[K] =
+    Diagnostic(
+      code,
+      severity,
+      subject,
+      operands,
+      Vector.empty,
+      message,
+      source = DiagnosticSource.Host
+    )
+
+/** A trial key whose static type the reporting operation cannot state: a key
+  * inside an error the codec raised while decoding a saved study of some key
+  * schema. `narrow` recovers the typed key when the application knows it.
+  */
+final class ErasedKey private[eyes4s] (val value: Any):
+  /** The key, when it has the type the application expects. `K` must be a
+    * class type such as a case class: a type test cannot tell the arguments
+    * of a generic type apart, and on Scala.js a whole-number `Double` passes
+    * a test for `Int`.
+    */
+  def narrow[K](using test: scala.reflect.TypeTest[Any, K]): Option[K] = test.unapply(value)
+
+  override def equals(other: Any): Boolean = other match
+    case that: ErasedKey => value == that.value
+    case _               => false
+  override def hashCode: Int    = value.##
+  override def toString: String = value.toString
+
+object ErasedKey:
+  given CanEqual[ErasedKey, ErasedKey] = CanEqual.derived
+
+  extension (diagnostic: Diagnostic[ErasedKey])
+    /** The diagnostic with typed keys, or `None` when any key it carries,
+      * source links included, is not a `K`: the error then came from a study
+      * of another key schema.
+      */
+    def narrow[K](using test: scala.reflect.TypeTest[Any, K]): Option[Diagnostic[K]] =
+      val erased = diagnostic.everyKey.distinct
+      val typed  = erased.flatMap(key => key.narrow[K].map(key -> _)).toMap
+      Option.when(typed.size == erased.size)(diagnostic.mapKeys(typed))
 
 /** One enum of typed errors or findings and its code table. `labels` are the
   * enum's case names in declaration order; the code of a case is the family
