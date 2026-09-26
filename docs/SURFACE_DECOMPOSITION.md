@@ -1,6 +1,7 @@
 # OLS over mass surfaces
 
-`SurfaceDecomposition.ols(response, predictors, intercept, rankTolerance)` fits one
+`Template.decompose(response, predictors, intercept, rankTolerance)`, the template family's
+decomposition entry point, fits one
 response `Mass[U]` from a checked `PredictorSet[U]`. Each predictor has a nonblank,
 nominal `PredictorId`; duplicate IDs and empty sets fail. `Agreement.grids` checks
 predictor and response grids, including nominal identity and geometry. Rows are

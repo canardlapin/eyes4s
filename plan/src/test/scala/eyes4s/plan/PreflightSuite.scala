@@ -96,7 +96,7 @@ class PreflightSuite extends munit.FunSuite:
               comparisons += 1
               inner.start(x, y)
         },
-        Some(MethodDescriptor.cosine[Px](DefinitionId.cosine))
+        Some(ComparisonMethods.cosine.descriptor)
       )
 
   private val undescribed =
@@ -113,7 +113,7 @@ class PreflightSuite extends munit.FunSuite:
       "misversioned",
       _ => Vector.empty,
       _ => Distribution.cosine[Px],
-      Some(MethodDescriptor.cosine[Px](DefinitionId.cosine))
+      Some(ComparisonMethods.cosine.descriptor)
     )
 
   // ---------------------------------------------------------------- recording fixtures

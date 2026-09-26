@@ -194,8 +194,6 @@ object Diagnose:
     derived(C.mapScaleFailure)(_.message)
   given mapComparison: Diagnose[MapComparisonError, Nothing] =
     derived(C.mapComparison)(_.message)
-  given scanpathComponent: Diagnose[ScanpathComponentError, Nothing] =
-    derived(C.scanpathComponent)(_.message)
   given decomposition: Diagnose[DecompositionError, Nothing] =
     derived(C.decomposition)(_.message)
   given pairing: Diagnose[PairingError, Nothing]                 = derived(C.pairing)(_.message)
@@ -207,11 +205,9 @@ object Diagnose:
     derived(C.evaluationWork)(_.message)
   given repetitionMean: Diagnose[RepetitionMeanError, Nothing] =
     derived(C.repetitionMean)(_.message)
-  given learnedTemplate: Diagnose[LearnedTemplateError, Nothing] =
-    derived(C.learnedTemplate)(_.message)
   given leastSquares: Diagnose[LeastSquaresError, Nothing] =
     derived(C.leastSquares)(_.message)
-  given templateFit: Diagnose[TemplateFitError, Nothing]     = derived(C.templateFit)(_.message)
+  given template: Diagnose[TemplateError, Nothing]           = derived(C.template)(_.message)
   given rng: Diagnose[RngError, Nothing]                     = derived(C.rng)(_.message)
   given pointSampling: Diagnose[PointSamplingError, Nothing] =
     derived(C.pointSampling)(_.message)

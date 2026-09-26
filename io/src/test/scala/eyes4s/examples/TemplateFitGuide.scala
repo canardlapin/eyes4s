@@ -24,39 +24,43 @@ import eyes4s.plan.*
 
 /** Exact public-API example used by docs/TEMPLATE_FITTING.md and the JVM CLI.
   * Fixed features, no learned preprocessing. Every operation returns a typed error.
+  * One recipe codec saves both routes: the native fit and the historical R `lm` import.
   */
 object TemplateFitGuide:
-  type Error = TemplateFitError | CodecError | PlanError | TemplateCsvError
+  type Error = TemplateError | CodecError | PlanError | TemplateCsvError
   final case class Prepared(savedRecipe: String, trainingCsv: String)
-  def codec: Either[PlanError, VersionedCodec[TemplateSplit[String]]] = for
-    recipe <- DefinitionId.of("eyes4s.template-fit-recipe", 1)
+  def codec: Either[PlanError, VersionedCodec[TemplateSplit[String, Vector[Double]]]] = for
+    recipe <- DefinitionId.of("eyes4s.template-recipe", 1)
     key    <- DefinitionId.of("example.trial-key", 1)
-  yield TemplateRecipeCodec.of(recipe, VersionedCodec.string(key))
+  yield TemplateRecipeCodec.of[String, Vector[Double]](recipe, VersionedCodec.string(key))
 
-  def nativeCodec: Either[PlanError, VersionedCodec[TemplateSplit[String]]] = for
-    recipe <- DefinitionId.of("eyes4s.native-template-fit-recipe", 1)
-    key    <- DefinitionId.of("example.trial-key", 1)
-  yield NativeTemplateRecipeCodec.of(recipe, VersionedCodec.string(key))
-
-  def saveNative(split: TemplateSplit[String]): Either[Error, String] = for
-    persistence <- nativeCodec
+  def saveNative(split: TemplateSplit[String, Vector[Double]]): Either[Error, String] = for
+    persistence <- codec
     json        <- persistence.encode(split)
   yield json.spaces2
 
   def evaluateNative(savedRecipe: String): Either[Error, TemplateEvaluation[String]] = for
-    persistence <- nativeCodec
+    persistence <- codec
     split       <- persistence.parse(savedRecipe)
-    model       <- FittedTemplate.fitNoIntercept(split.training)
-    result      <- model.evaluate(split.heldOut)
-  yield result
+    validated   <- Template.crossValidate(split)
+  yield validated.evaluation
 
-  def input(heldOutResponse: Double = 7.0): Either[TemplateFitError, TemplateSplit[String]] =
+  /** The worked split: natively fitted by default, or fitted by R's `lm`
+    * from a training-only export when `route` is `ImportedLm`.
+    */
+  def input(
+      heldOutResponse: Double = 7.0,
+      route: TemplateDesign.FixedRoute = TemplateDesign.FixedRoute.Native
+  ): Either[TemplateError, TemplateSplit[String, Vector[Double]]] =
     for
       basis <- TemplateBasis.of(
         "fixed-template-features/1",
         Vector("template-a", "template-b"),
         "score"
       )
+      design = route match
+        case TemplateDesign.FixedRoute.Native     => TemplateDesign.fixed(basis)
+        case TemplateDesign.FixedRoute.ImportedLm => TemplateDesign.importedLm(basis)
       rows <- Vector(
         ("a", "train-a", Vector(1.0, 0.0), 1.0),
         ("b", "train-a", Vector(0.0, 1.0), 2.0),
@@ -64,13 +68,20 @@ object TemplateFitGuide:
         ("d", "train-b", Vector(2.0, 1.0), 4.0),
         ("e", "test", Vector(3.0, 2.0), heldOutResponse)
       ).traverse { (k, f, x, y) => TemplateObservation.of(k, f, x, y) }
-      split <- TemplateSplit.of(basis, rows, Set("test"))
+      split <- TemplateSplit.of(design, rows, Set("test"))
     yield split
 
-  def prepare(split: TemplateSplit[String]): Either[Error, Prepared] = for
+  /** The worked split for the R `lm` route. */
+  def historicalInput(
+      heldOutResponse: Double = 7.0
+  ): Either[TemplateError, TemplateSplit[String, Vector[Double]]] =
+    input(heldOutResponse, TemplateDesign.FixedRoute.ImportedLm)
+
+  def prepare(split: TemplateSplit[String, Vector[Double]]): Either[Error, Prepared] = for
     persistence <- codec
     saved       <- persistence.encode(split)
-  yield Prepared(saved.spaces2, TemplateFitCsv.training(split.training))
+    csv         <- TemplateFitCsv.training(split.training)
+  yield Prepared(saved.spaces2, csv)
 
   def evaluate(
       savedRecipe: String,
@@ -83,7 +94,7 @@ object TemplateFitGuide:
   yield result
 
   def message(error: Error): String = error match
-    case e: TemplateFitError => e.message
+    case e: TemplateError    => e.message
     case e: TemplateCsvError => e.message
     case e: CodecError       => e.message
     case e: PlanError        => e.message

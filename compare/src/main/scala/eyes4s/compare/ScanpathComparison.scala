@@ -19,54 +19,40 @@ package eyes4s.compare
 import eyes4s.core.*
 import eyes4s.kernel.*
 
-enum ScanpathComponent derives CanEqual:
-  case VectorShape, Direction, Length, Position, Duration, PositionEmd
+/** A scanpath long enough for eyesim's baseline scanpath comparison: at least
+  * [[BaselineScanpath.MinimumFixations]] fixations, where eyesim returns
+  * missing components for anything shorter. Native [[MultiMatch]] itself
+  * admits two-fixation paths; this type states the stricter baseline
+  * cardinality once, so a short path is refused before comparison.
+  */
+final class BaselineScanpath[U <: Unit2D] private (val path: Scanpath[U])
 
-enum ScanpathComponentError derives CanEqual:
-  case Comparison(error: CompareError)
-  case Unavailable(component: ScanpathComponent, reason: String)
-  def message: String = this match
-    case Comparison(e)     => e.message
-    case Unavailable(c, r) => s"Scanpath component $c unavailable: $r"
+object BaselineScanpath:
+  /** eyesim `multi_match` requires three fixations per operand. */
+  val MinimumFixations: Int = 3
 
-final class ScanpathComponents private[compare] (
-    val values: Vector[(ScanpathComponent, Either[ScanpathComponentError, Similarity])]
-)
-object ScanpathComparison:
-  /** R-baseline cardinality and six named slots. Native MultiMatch's five-component API
-    * remains separately available for two-fixation paths. No hidden EMD substitution.
+  /** Admit `path` as the `operand` side of a baseline comparison; a shorter
+    * path is [[CompareError.TooShort]] naming the operand, its fixation count
+    * and the minimum.
     */
-  def baseline[U <: Unit2D](left: Scanpath[U], right: Scanpath[U]): ScanpathComponents =
-    val score = for
-      _ <- Either.cond(left.n >= 3, (), CompareError.TooShort("left scanpath", left.n, 3))
-      _ <- Either.cond(right.n >= 3, (), CompareError.TooShort("right scanpath", right.n, 3))
-      s <- MultiMatch[U].compare(left, right)
-    yield s
-    val selectors = Vector[(ScanpathComponent, MultiMatchScore => Double)](
-      ScanpathComponent.VectorShape -> (_.shape),
-      ScanpathComponent.Direction   -> (_.direction),
-      ScanpathComponent.Length      -> (_.length),
-      ScanpathComponent.Position    -> (_.position),
-      ScanpathComponent.Duration    -> (_.duration)
+  def of[U <: Unit2D](
+      path: Scanpath[U],
+      operand: CompareOperand
+  ): Either[CompareError, BaselineScanpath[U]] =
+    Either.cond(
+      path.n >= MinimumFixations,
+      new BaselineScanpath(path),
+      CompareError.TooShort(s"${operand.render} scanpath", path.n, MinimumFixations)
     )
-    val available = selectors.map { (component, select) =>
-      component -> score.left
-        .map(ScanpathComponentError.Comparison.apply)
-        .flatMap(s =>
-          Similarity
-            .of(select(s))
-            .left
-            .map(e =>
-              ScanpathComponentError
-                .Comparison(CompareError.InvalidScore(component.toString, e))
-            )
-        )
-    }
-    new ScanpathComponents(
-      available :+ (ScanpathComponent.PositionEmd -> Left(
-        ScanpathComponentError.Unavailable(
-          ScanpathComponent.PositionEmd,
-          "pinned optional transport backend has no native exact-EMD alias; see eyesim-compare decision"
-        )
-      ))
-    )
+
+object ScanpathComparison:
+  /** The eyesim baseline scanpath comparison: [[MultiMatch]] over two
+    * scanpaths admitted at the baseline cardinality. The five MultiMatch
+    * components are the result; eyesim's sixth, transport-backed position
+    * component has no native exact-EMD solver and no slot here.
+    */
+  def baseline[U <: Unit2D](
+      left: BaselineScanpath[U],
+      right: BaselineScanpath[U]
+  ): Either[CompareError, MultiMatchScore] =
+    MultiMatch[U].compare(left.path, right.path)

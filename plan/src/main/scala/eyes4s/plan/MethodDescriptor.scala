@@ -189,16 +189,18 @@ object ScoreComponent:
       new ScoreComponent(id, meaning, units, range, direction, score, difference),
       DescriptorError.InvalidComponent(id, meaning, range)
     )
-  private[plan] def cosine: ScoreComponent[Similarity, SignedDifference] =
-    new ScoreComponent(
-      "value",
-      "Cosine similarity; difference is matched minus control",
-      ParameterUnits.Dimensionless,
-      MeasureScale.Bounded(0, 1),
-      ScoreDirection.HigherIsCloser,
-      _.value,
-      _.value
-    )
+
+  /** A similarity component whose difference is a signed difference, for a
+    * registered method whose range comes from its measure's declared scale.
+    */
+  private[plan] def literal(
+      id: String,
+      meaning: String,
+      units: ParameterUnits,
+      range: MeasureScale,
+      direction: ScoreDirection
+  ): ScoreComponent[Similarity, SignedDifference] =
+    new ScoreComponent(id, meaning, units, range, direction, _.value, _.value)
 
 final class MethodDescriptor[P, S, D] private (
     val id: DefinitionId,
@@ -237,22 +239,6 @@ object MethodDescriptor:
       execution: ExecutionCapability = ExecutionCapability.SynchronousWholeOperation
   ): MethodDescriptor[P, S, D] =
     new MethodDescriptor(id, parameters, info, components, properties, execution)
-
-  def cosine[U <: Unit2D](
-      id: DefinitionId
-  ): MethodDescriptor[Unit, Similarity, SignedDifference] =
-    of(
-      id,
-      ParameterSet.empty,
-      _ => Distribution.cosine[U].info,
-      _ => Right(Vector(ScoreComponent.cosine)),
-      Set(
-        ComparisonProperty.Symmetric,
-        ComparisonProperty.NonNegative,
-        ComparisonProperty.Bounded
-      ),
-      ExecutionCapability.BoundedComparison
-    )
 
 final class RecordingMethodDescriptor[P](
     val id: DefinitionId,

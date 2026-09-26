@@ -63,7 +63,7 @@
       ],
       "eyes4s_public_api": [
         "ScanpathComparison.baseline",
-        "ScanpathComponents",
+        "BaselineScanpath.of",
         "MultiMatch",
         "Scanpath.within",
         "Overlap.OnsetInside"
@@ -85,7 +85,7 @@
       "regeneration_ids": [
         "scanpath-reference"
       ],
-      "divergence": "Five components match exported R on non-square translated, duration/geometry changed, straight, stationary and tied self paths at 1e-12. Baseline wrapper keeps six named slots and requires three fixations; sixth EMD remains explicit unavailable consistent with no-exact-solver decision. Legacy five-component MultiMatch two-fixation support remains. Native checked admission and empty/window/component errors replace R shape-changing missing outputs. Python evidence remains separately identified. Measured sixth backend values are not exact-EMD oracles."
+      "divergence": "Five components match exported R on non-square translated, duration/geometry changed, straight, stationary and tied self paths at 1e-12. The baseline is MultiMatch over scanpaths admitted at three fixations (BaselineScanpath), returning the five components; the sixth EMD component has no native slot, consistent with the no-exact-solver decision. Legacy five-component MultiMatch two-fixation support remains. Native checked admission and empty/window/component errors replace R shape-changing missing outputs. Python evidence remains separately identified. Measured sixth backend values are not exact-EMD oracles."
     },
     {
       "id": "fixation-overlap-and-transport",

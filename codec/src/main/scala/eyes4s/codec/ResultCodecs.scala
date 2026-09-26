@@ -30,7 +30,13 @@ object StudyResultCodecs:
   /** The ordinary cosine route, matching `StudyCodecs.cosine`. */
   def cosine[U <: Unit2D: UnitLabel]
       : StudyResultCodec[StudyKey, U, Unit, Similarity, SignedDifference] =
-    StudyCodecs.cosine[U].results(similarity(), signedDifference())
+    registered[U](ComparisonMethods.cosine)
+
+  /** The ordinary route of a registered map method, matching `StudyCodecs.similarity`. */
+  def registered[U <: Unit2D: UnitLabel](
+      method: ComparisonMethod
+  ): StudyResultCodec[StudyKey, U, Unit, Similarity, SignedDifference] =
+    StudyCodecs.similarity[U](method).results(similarity(), signedDifference())
 
   /** A finite similarity; a non-finite value is refused as the score type refuses it. */
   def similarity(schema: DefinitionId = DefinitionId.similarity): VersionedCodec[Similarity] =

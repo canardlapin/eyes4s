@@ -185,7 +185,7 @@ final class RepetitionPlan[K, U <: Unit2D] private (
   def run: RepetitionPlanResult[K] =
     given KeyDigest[K] = layout.digest
     given Ordering[K]  = layout.ordering
-    val comparison     = method.instance[U]
+    val comparison     = method.similarity[U]
     val info           = EvaluationInfo.comparison(comparison, specification)
     val matched        = pair(trials, layout.design(relations.matched, Selection.All))
     val control        = pair(trials, layout.design(relations.controls, controls))
@@ -256,7 +256,7 @@ object RepetitionPlan:
           case FailurePolicy.RequireAll              => "RequireAll"
           case FailurePolicy.SuccessfulOnly(minimum) => s"SuccessfulOnly(${minimum.value})"
         val meanings = identity ++ Vector(
-          method.toString,
+          method.token,
           "map-method-version:1",
           relations.matched.mkString(","),
           relations.controls.mkString(","),
@@ -267,7 +267,7 @@ object RepetitionPlan:
         val hash = ContentHash.combineAll(input +: meanings.map(ContentHash.ofString))
         EvaluationSpec
           .of(
-            s"repetition-${method.toString}",
+            s"repetition-${method.token}",
             "1",
             Vector("plan" -> Provenance.Param.Text(hash.render)),
             Vector("value"),

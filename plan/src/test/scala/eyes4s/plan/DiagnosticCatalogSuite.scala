@@ -27,26 +27,37 @@ import eyes4s.kernel.*
 class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
-  /** Rendered codes, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 623
-  private val PinnedDigest = "80b4551dc0d94616"
+  /** Every issued code, one per line, pinned by count and portable digest. */
+  private val PinnedCount  = 639
+  private val PinnedDigest = "9c61ed3f46cad302"
 
-  /** The table before CR5: codes are only ever added, never changed or
-    * removed, so taking away the codes CR5 added leaves exactly this table.
+  /** The issued table before CR5: codes are only ever issued, never changed
+    * or reused, and a retired code keeps its place, so taking away the codes
+    * CR5, CR2 and UI-E added leaves exactly this table.
     */
-  private val StableCount  = 447
-  private val StableDigest = "5d721f482870e468"
+  private val StableCount  = 445
+  private val StableDigest = "fb7ffbd3d3db7f63"
 
-  /** The codes added since that table: the families appended after
-    * `inspection` (CR5's, then `mass-level` and `fixation-entropy`), and preflight's finding
-    * for a trial the initial-fixation policy empties.
+  /** The codes added since that table apart from CR2's: the families
+    * appended after `inspection` up to `template` (CR5's, then
+    * `fixation-entropy`), and preflight's finding for a trial the
+    * initial-fixation policy empties.
     */
   private val Cr5Codes: Set[String] =
-    DiagnosticCatalog.families
+    DiagnosticCatalog.issuedFamilies
       .dropWhile(_ ne DiagnosticCatalog.inspection)
       .drop(1)
+      .takeWhile(_ ne DiagnosticCatalog.template)
       .flatMap(_.codes.map(_.render))
       .toSet + "study-finding.no-fixation-kept"
+
+  /** The codes CR2 added: the unified template family. */
+  private val Cr2Codes: Set[String] = DiagnosticCatalog.template.codes.map(_.render).toSet
+
+  /** UI-E adds a family and two cases to the existing inspection family. */
+  private val UiECodes: Set[String] =
+    DiagnosticCatalog.massLevel.codes.map(_.render).toSet ++
+      Set("inspection.geometry", "inspection.geometry-description")
 
   test(
     "every cataloged family is sampled, in catalog order, through its own Diagnose instance"
@@ -79,6 +90,24 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
           s"$sample"
         )
       }
+    }
+  }
+
+  test("retired families keep their codes issued and project from no live error") {
+    val retired = DiagnosticCatalog.retired.flatMap(_.codes)
+    assertEquals(
+      DiagnosticCatalog.retired.map(_.name),
+      Vector("scanpath-component", "learned-template", "template-fit")
+    )
+    assert(retired.forall(DiagnosticCatalog.issued.contains))
+    assert(retired.forall(code => !DiagnosticCatalog.codes.contains(code)))
+    assertEquals(
+      DiagnosticCatalog.issued.filterNot(retired.contains),
+      DiagnosticCatalog.codes
+    )
+    assertEquals(DiagnosticCatalog.issued.distinct.size, DiagnosticCatalog.issued.size)
+    all.flatMap(_.samples).foreach { case (_, d) =>
+      assert(!retired.contains(d.code), d.code.render)
     }
   }
 
@@ -126,8 +155,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
         "estimate.kernel-support-overflow"
       )
     )
-    val rendered = DiagnosticCatalog.codes.map(_.render)
-    val stable   = rendered.filterNot(Cr5Codes)
+    val rendered = DiagnosticCatalog.issued.map(_.render)
+    val stable = rendered.filterNot(code => Cr5Codes(code) || Cr2Codes(code) || UiECodes(code))
     assertEquals(stable.size, StableCount)
     assertEquals(ContentHash.ofString(stable.mkString("\n")).render, StableDigest)
     assertEquals(rendered.size, PinnedCount)

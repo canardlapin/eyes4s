@@ -156,7 +156,7 @@ class MethodDescriptorSuite extends munit.FunSuite:
   }
 
   test("cosine score meaning and detector scientific card are reused without stronger claims") {
-    val descriptor = MethodDescriptor.cosine[Px](DefinitionId.cosine)
+    val descriptor = ComparisonMethods.cosine.descriptor
     assertEquals(descriptor.info(()), Distribution.cosine[Px].info)
     assertEquals(get(descriptor.components(())).map(_.id), Vector("value"))
     val component = get(descriptor.components(())).head
@@ -199,7 +199,7 @@ class MethodDescriptorSuite extends munit.FunSuite:
     assert(set.verify(sigma, Vector("sigma" -> Provenance.Param.Num(3))).isLeft) // value mutant
     assert(set.verify(sigma, Vector("sigma" -> Provenance.Param.Num(2))).isRight)
     assert(ParameterSet.of(set.fields ++ set.fields).isLeft)
-    val descriptor = MethodDescriptor.cosine[Px](DefinitionId.cosine)
+    val descriptor = ComparisonMethods.cosine.descriptor
     assert(descriptor.verify((), Vector.empty, Vector("unexpected")).isLeft)
   }
 
@@ -282,7 +282,7 @@ class MethodDescriptorSuite extends munit.FunSuite:
           DefinitionId.cosine,
           ParameterSet.empty,
           _ => Distribution.cosine[Px].info,
-          _ => Right(Vector(ScoreComponent.cosine)),
+          _ => Right(Vector(ComparisonMethods.cosine.component)),
           Set(ComparisonProperty.Symmetric),
           ExecutionCapability.SynchronousWholeOperation
         )
