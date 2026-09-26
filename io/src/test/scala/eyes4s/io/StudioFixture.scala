@@ -27,10 +27,10 @@ package eyes4s.io
   * assertions.
   */
 object StudioFixture:
-  /** What the acceptance suite reads: the fixation table and the inventory
-    * of trials by participant and trial label.
+  /** What the acceptance suite reads: the fixation table and the trials
+    * table (the inventory), as `fixtures/studio-golden` lays them out.
     */
-  final case class Source(fixations: String, inventory: Vector[(String, String)])
+  final case class Source(fixations: String, trials: String)
 
   val Seed = 20260925L
 
@@ -200,8 +200,7 @@ object StudioFixture:
       "y",
       "onset_ms",
       "duration_ms",
-      "sample_count",
-      "item"
+      "sample_count"
     )
     val rows = recorded.flatMap { t =>
       val n         = counts(t.id)
@@ -238,11 +237,44 @@ object StudioFixture:
           y.toString,
           start.toString,
           durations(i).toString,
-          samples.toString,
-          t.item
+          samples.toString
         )
       }
     }
     Rfc4180.encode(header +: rows)
 
-  def source: Source = Source(fixations, inventory)
+  /** The trials table: every inventory trial with its item, display kind,
+    * image file (encoding only) and response (retrieval only; the focus
+    * query is Remembered, the others alternate).
+    */
+  lazy val trialsTable: String =
+    val header = Vector(
+      "participant",
+      "phase",
+      "trial",
+      "occurrence",
+      "item",
+      "display_kind",
+      "image_file",
+      "response"
+    )
+    val rows = trials.sortBy(t => (t.participant, t.phase, t.trial)).map { t =>
+      val encoding = t.phase == "Encoding"
+      val response =
+        if encoding then ""
+        else if t.id == focusQuery || t.trial.drop(4).toInt % 2 == 1 then "Remembered"
+        else "Forgotten"
+      Vector(
+        t.participant,
+        t.phase,
+        t.trial,
+        "1",
+        t.item,
+        if encoding then "image" else "blank+fixation-cross",
+        if encoding then s"${t.item}.png" else "",
+        response
+      )
+    }
+    Rfc4180.encode(header +: rows)
+
+  def source: Source = Source(fixations, trialsTable)

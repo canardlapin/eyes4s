@@ -20,9 +20,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
 /** The same acceptance tests over the canonical `fixtures/studio-golden`
-  * tables. The fixation table carries no item, which is a trial attribute in
-  * `trials.csv`; until the importer passes trial attributes through (UI-H),
-  * this reader joins it onto each record by the trial key.
+  * tables, read unchanged: the importer joins `trials.csv` to
+  * `fixations.csv`, so no test code touches either table.
   */
 object StudioGolden:
   private def directory: Path =
@@ -33,27 +32,14 @@ object StudioGolden:
       .find(Files.isDirectory(_))
       .getOrElse(throw new IllegalStateException("fixtures/studio-golden not found"))
 
-  private def table(name: String): Vector[Vector[String]] =
-    Rfc4180
-      .decode(Files.readString(directory.resolve(name), StandardCharsets.UTF_8))
-      .fold(e => throw new IllegalStateException(e.message), identity)
+  private def file(name: String): String =
+    Files.readString(directory.resolve(name), StandardCharsets.UTF_8)
 
   lazy val source: StudioFixture.Source =
-    val trials                                                          = table("trials.csv")
-    val fixations                                                       = table("fixations.csv")
-    val th                                                              = trials.head
-    def at(row: Vector[String], header: Vector[String], column: String) =
-      row(header.indexOf(column))
-    val identity = Vector("participant", "phase", "trial", "occurrence")
-    val items    = trials.tail
-      .map(r => identity.map(at(r, th, _)) -> at(r, th, "item"))
-      .toMap
-    val fh = fixations.head
-    StudioFixture.Source(
-      Rfc4180.encode(
-        (fh :+ "item") +: fixations.tail.map(r => r :+ items(identity.map(at(r, fh, _))))
-      ),
-      trials.tail.map(r => (at(r, th, "participant"), at(r, th, "trial")))
-    )
+    StudioFixture.Source(file("fixations.csv"), file("trials.csv"))
 
-class StudioGoldenJvmSuite extends StudioAcceptance(StudioGolden.source)
+/** The golden README states 209 records in quarantined trials, so 11,311
+  * admitted of 11,520 (`tools/studio-fixture/verify_counts.py` recomputes it).
+  */
+class StudioGoldenJvmSuite extends StudioAcceptance(StudioGolden.source):
+  override protected def rejectedRecords: Option[Int] = Some(209)

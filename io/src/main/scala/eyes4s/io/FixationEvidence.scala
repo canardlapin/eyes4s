@@ -50,6 +50,30 @@ object FixationEvidence:
       imported.outsideFrame
     )
 
+  /** The ledger of an inventory admission: the fixation ledger joined to
+    * the inventory, whose records are referenced as `inventoryLabel`.
+    */
+  def ledger[U <: Unit2D](
+      label: String,
+      inventoryLabel: String,
+      imported: InventoryImport[U],
+      decision: AdmissionDecision
+  ): Either[AdmissionError, AdmissionLedger[TrialKey]] =
+    for
+      base      <- ledger(label, imported.fixations, decision)
+      inventory <- InventoryLedger
+        .of(
+          imported.inventory.source(inventoryLabel),
+          imported.inventory.header,
+          imported.trials,
+          imported.unlisted,
+          imported.recordAttributes
+        )
+        .left
+        .map(AdmissionError.Inventory.apply)
+      joined <- base.withInventory(inventory, TrialIdentity.of, _.item)
+    yield joined
+
   def reason(error: FixationRowError): AdmissionReason = error match
     case FixationRowError.Width(expected, actual) => AdmissionReason.Width(expected, actual)
     case FixationRowError.Key(text)               => AdmissionReason.Key(text)
