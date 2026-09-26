@@ -52,15 +52,17 @@ object EyesimCompat:
 
   /** Fisher z with the historical symmetric clamp of r at plus/minus
     * 0.999999999999, before eyes4s adopted the machine-epsilon endpoints of
-    * [[Distribution.fisherZ]]. A perfect correlation gives about 14.16 here
-    * and about 18.37 there; callers choose the endpoint policy explicitly.
+    * [[Distribution.fisherZ]], which was this function until CR2. A perfect
+    * correlation gives about 14.16 here and about 18.37 there; callers choose
+    * the endpoint policy explicitly.
     */
   def fisherZLegacy[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
     new SymmetricCompare[Mass[U], Similarity]:
       private val r = Distribution.pearson[U]
-      val info      = MeasureInfo(
-        "Fisher z (legacy clamp)",
-        "atanh of the Pearson correlation clamped at plus/minus 0.999999999999; unbounded",
+      // The measure name and summary results saved before CR2 carry for this clamp.
+      val info = MeasureInfo(
+        "Fisher z",
+        "atanh of the Pearson correlation; unbounded, and the form to average",
         MeasureScale.FisherZ,
         None
       )

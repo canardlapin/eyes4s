@@ -497,6 +497,11 @@ object Distribution:
 
   /** Fisher-z transformed Pearson correlation, with explicit endpoints.
     *
+    * Its measure name, "Fisher z (machine epsilon endpoints)", is the name
+    * saved results have always carried for this policy. Before CR2 this
+    * function was the legacy clamp, whose results carry the name "Fisher z"
+    * (now `EyesimCompat.fisherZLegacy`).
+    *
     * The form to average across trials or participants. Unbounded, which is
     * the point: averaging raw correlations understates the mean because the
     * scale compresses near the ends.
@@ -518,7 +523,7 @@ object Distribution:
   def fisherZ[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
     new SymmetricCompare[Mass[U], Similarity]:
       val info = MeasureInfo(
-        "Fisher z",
+        "Fisher z (machine epsilon endpoints)",
         "atanh(Pearson), r within 64 eps of plus/minus 1 snapped to it, clamped at plus/minus (1-2^-52); unbounded, and the form to average",
         MeasureScale.FisherZ,
         None

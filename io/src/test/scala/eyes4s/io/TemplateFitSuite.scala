@@ -108,7 +108,14 @@ class TemplateFitSuite extends FunSuite:
     val restored = get(codec.decode(json))
     assertEquals(restored.heldOutGroups, Set("test"))
     assertEquals(restored.rows.map(_.key), Vector("a", "b", "c", "d", "e"))
-    assertEquals(TemplateFitCsv.training(restored.training), prepared().trainingCsv)
+    assertEquals(TemplateFitCsv.training(restored.training), Right(prepared().trainingCsv))
+    // A native design is not exported for an R fit whose receipt it would refuse.
+    assertEquals(
+      TemplateFitCsv.training(get(TemplateFitGuide.input()).training).left.toOption,
+      Some(
+        TemplateCsvError.Fit(TemplateError.Route(TemplateDesign.nativeMethod, "R lm export"))
+      )
+    )
     val payload = json.hcursor.downField("value").focus.get
     val altered = payload.mapObject(_.add("trainingHash", Json.fromString("bad")))
     assert(codec.decode(json.mapObject(_.add("value", altered))).isLeft)
@@ -127,7 +134,7 @@ class TemplateFitSuite extends FunSuite:
     assert(typeCheckErrors("""
       import eyes4s.io.*
       import eyes4s.design.*
-      def leak(h: TemplateHeldOut[String, Vector[Double]]): String = TemplateFitCsv.training(h)
+      def leak(h: TemplateHeldOut[String, Vector[Double]]) = TemplateFitCsv.training(h)
     """).nonEmpty)
   }
 

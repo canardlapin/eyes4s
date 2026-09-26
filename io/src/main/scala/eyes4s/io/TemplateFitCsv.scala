@@ -43,18 +43,31 @@ object TemplateFitCsv:
     "rank_tolerance"
   )
 
-  /** Accepts only the training capability, never the whole split or held-out responses.
+  /** Accepts only the training capability, never the whole split or held-out responses,
+    * and only for the historical design (`TemplateDesign.importedLm`): a native design is
+    * refused, since `Template.importFit` would refuse its receipt.
     * Transport row indices preserve order; original typed keys remain in the saved recipe.
     * Decimal cells use lossless rounded round-trip spelling, identical on JVM and Scala.js.
     * Trailing decimal zeros are omitted (1.0 becomes "1"); exponents use uppercase E
     * with an explicit positive sign (1000.0 becomes "1E+3"). Signed zero is preserved.
     */
-  def training[K](input: TemplateTraining[K, Vector[Double]]): String =
+  def training[K](
+      input: TemplateTraining[K, Vector[Double]]
+  ): Either[TemplateCsvError, String] =
     val header =
       Vector("method", "training_hash", "basis", "response_unit", "row", "fold", "response") ++
         input.design.featureNames.map("feature:" + _)
-    val basis = input.design match
-      case fixed: TemplateDesign.Fixed => fixed.basis.id
+    input.design match
+      case fixed: TemplateDesign.Fixed if fixed.route == TemplateDesign.FixedRoute.ImportedLm =>
+        Right(encode(input, header, fixed.basis.id))
+      case other =>
+        Left(TemplateCsvError.Fit(TemplateError.Route(other.method, "R lm export")))
+
+  private def encode[K](
+      input: TemplateTraining[K, Vector[Double]],
+      header: Vector[String],
+      basis: String
+  ): String =
     Rfc4180.encode(header +: input.rows.zipWithIndex.map { (row, index) =>
       Vector(
         TemplateDesign.importedLmMethod,

@@ -191,14 +191,11 @@ object TemplateDesign:
     def featureUnit: String          = "feature unit"
 
     private[design] def admit(key: String, input: Vector[Double]): Either[TemplateError, Unit] =
-      if input.isEmpty || !input.forall(_.isFinite) then
-        Left(TemplateError.Features(key, input))
-      else
-        Either.cond(
-          input.size == basis.columns.size,
-          (),
-          TemplateError.Width(key, basis.columns.size, input.size)
-        )
+      Either.cond(
+        input.size == basis.columns.size,
+        (),
+        TemplateError.Width(key, basis.columns.size, input.size)
+      )
 
     /** Rows without match groups hash as fixed-feature recipes always have;
       * rows with match groups add a marker and every row's group.
@@ -317,7 +314,7 @@ object TemplateDesign:
         learned: Option[Mass[U]]
     ): Either[TemplateError, Vector[Double]] =
       learned
-        .toRight(TemplateError.Feature(key, CompareError.TooShort("training mean", 0, 1)))
+        .toRight(TemplateError.Route(meanMapMethod, "features without a learned template"))
         .flatMap(mean =>
           Distribution
             .cosine[U]
@@ -365,18 +362,44 @@ final class TemplateObservation[K, X] private (
     val response: Double
 )
 object TemplateObservation:
+  /** A checked row. The input is checked by its [[TemplateInput]]: a feature
+    * vector must be nonempty and finite; a map is valid by construction.
+    */
   def of[K, X](
       key: K,
       splitGroup: String,
       input: X,
       response: Double,
       matchGroup: Option[String] = None
-  ): Either[TemplateError, TemplateObservation[K, X]] =
-    Either.cond(
-      splitGroup.trim.nonEmpty && matchGroup.forall(_.trim.nonEmpty) && response.isFinite,
-      new TemplateObservation(key, splitGroup, matchGroup, input, response),
-      TemplateError.Observation(key.toString, splitGroup, matchGroup, response)
-    )
+  )(using valid: TemplateInput[X]): Either[TemplateError, TemplateObservation[K, X]] =
+    for
+      _ <- Either.cond(
+        splitGroup.trim.nonEmpty && matchGroup.forall(_.trim.nonEmpty) && response.isFinite,
+        (),
+        TemplateError.Observation(key.toString, splitGroup, matchGroup, response)
+      )
+      _ <- valid.check(key.toString, input)
+    yield new TemplateObservation(key, splitGroup, matchGroup, input, response)
+
+/** What a template row's input must satisfy on its own, before any design
+  * sees it.
+  */
+trait TemplateInput[X]:
+  def check(key: String, input: X): Either[TemplateError, Unit]
+
+object TemplateInput:
+  /** A feature vector is nonempty and finite. */
+  given features: TemplateInput[Vector[Double]] with
+    def check(key: String, input: Vector[Double]): Either[TemplateError, Unit] =
+      Either.cond(
+        input.nonEmpty && input.forall(_.isFinite),
+        (),
+        TemplateError.Features(key, input)
+      )
+
+  /** A map is checked by its own constructor. */
+  given maps[U <: Unit2D]: TemplateInput[Mass[U]] with
+    def check(key: String, input: Mass[U]): Either[TemplateError, Unit] = Right(())
 
 enum TemplateExclusionReason derives CanEqual:
   case HeldOutMatchGroup

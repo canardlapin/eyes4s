@@ -80,7 +80,8 @@ object TemplateFitGuide:
   def prepare(split: TemplateSplit[String, Vector[Double]]): Either[Error, Prepared] = for
     persistence <- codec
     saved       <- persistence.encode(split)
-  yield Prepared(saved.spaces2, TemplateFitCsv.training(split.training))
+    csv         <- TemplateFitCsv.training(split.training)
+  yield Prepared(saved.spaces2, csv)
 
   def evaluate(
       savedRecipe: String,

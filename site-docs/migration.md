@@ -33,7 +33,10 @@ an invalid eyes4s interval.
 An image-only match can mix participants. Write both participant and stimulus projections when
 that is your question. Never interpret a changed denominator or dropped match as numerical noise.
 Cosine, correlation, distance and signed contrasts have different scales. A constant-map Pearson
-failure is data, not a substitute zero correlation.
+failure is data, not a substitute zero correlation. `Distribution.fisherZ` uses eyesim's
+machine-epsilon endpoints (every perfect correlation gives atanh(1 - 2^-52), about 18.37); the
+earlier 1e-12 clamp (about 14.16) is `EyesimCompat.fisherZLegacy`, and results each saved carry
+their own measure name.
 
 Start with [the four-trial example](getting-started.md), inspect admission and pair diagnostics,
 then reproduce your own estimand with explicit conventions. The repository's

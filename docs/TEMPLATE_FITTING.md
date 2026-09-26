@@ -74,7 +74,16 @@ schema/method versions, duplicate keys/groups, invalid data and mismatched train
 R-labelled fixed and training-mean map), told apart by `method`, so a recipe saved under `S@n`
 decodes unchanged and re-encodes byte for byte. `S@(n+1)` also expresses fixed-feature rows with
 match groups; a split without them is still written as `S@n`. The pinned fixtures
-`template-recipe-*.json` and `TemplateRecipeLawSuite` carry both versions and the ladder laws.
+`template-recipe-*.json` and `TemplateRecipeLawSuite` carry both versions and the ladder laws;
+the three version-1 fixtures were written by the earlier codecs themselves, before they were
+removed.
+
+One codec now reads every method under one schema: the method in the payload selects the design,
+and each design is fitted only by its own route (below), so a recipe cannot be refitted under
+another method's conventions. Earlier releases asked for distinct schema identities for native
+and R-labelled recipes. Where a caller used distinct *names*, each name's recipes re-encode
+byte for byte. Where a caller used the same name at two versions, the higher version now means
+"with match groups" to this codec; give such recipes their own names before reading them.
 
 The native method `eyes4s.no-intercept-scaled-householder-qr/2` (`TemplateDesign.nativeMethod`)
 uses unit-norm column scaling
@@ -87,7 +96,8 @@ no-intercept convention and tolerance, and the codec refuses changes to them.
 
 The historical design `TemplateDesign.importedLm(basis)` and `Template.importFit` retain their
 original R-labelled meaning (`eyes4s.no-intercept-r-lm-qr/1`) and `1e-7` rank convention.
-`TemplateFitCsv` import/export remain optional interop; they are not required for a native
+`TemplateFitCsv` import/export remain optional interop for that design only (a native design is
+refused at export, since its receipt would be refused); they are not required for a native
 workflow. Each design is fitted only by its own route: `Template.fit` refuses a historical
 design and `Template.importFit` a native one, as `TemplateError.Route`. An imported receipt is
 trusted-backend provenance, not proof against forged coefficients.

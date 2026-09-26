@@ -45,6 +45,9 @@ refuses a compatibility-only method, which has no built-in identity.
 other name; `fisherZLegacy` is the historical Fisher z with its ±0.999999999999 clamp; its method
 form `EyesimCompat.FisherZLegacy` is not registered, and saved repetition plans that name it stay
 readable through `EyesimCompat.fromToken`. Callers choose the endpoint policy explicitly.
+`Distribution.fisherZ` was the legacy clamp before CR2; the measure names saved results carry are
+unchanged ("Fisher z (machine epsilon endpoints)" and "Fisher z" for the legacy clamp), so a saved
+result still names the policy that produced it.
 
 Distance correlation is not spatial transport and does not mean that two maps are equal:
 reverse-ordered cell values can have distance correlation one. This baseline implementation takes

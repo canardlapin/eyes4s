@@ -83,15 +83,17 @@ class TemplateFitSuite extends FunSuite:
 
   test("admission rejects non-finite data, invalid basis and width without dropping rows") {
     assert(TemplateBasis.of("fixed", Vector("a", "a"), "score").isLeft)
-    val nonFinite = get(TemplateObservation.of("bad", "test", Vector(Double.NaN, 1.0), 1.0))
     assertEquals(
-      TemplateSplit
-        .of(TemplateDesign.importedLm(basis), train :+ nonFinite, Set("test"))
+      TemplateObservation
+        .of("bad", "test", Vector(Double.NaN, 1.0), 1.0)
         .left
         .toOption
-        .map(_.productPrefix),
-      Some("Features")
+        .collect { case TemplateError.Features(key, features) =>
+          key -> features.size
+        },
+      Some("bad" -> 2)
     )
+    assert(TemplateObservation.of("bad", "test", Vector.empty[Double], 1.0).isLeft)
     assert(TemplateObservation.of("bad", "", Vector(1.0), 1.0).isLeft)
     assert(TemplateObservation.of("bad", "train", Vector(1.0), 1.0, Some(" ")).isLeft)
     assert(TemplateObservation.of("bad", "train", Vector(1.0), Double.PositiveInfinity).isLeft)

@@ -36,8 +36,11 @@ enum MapMethodInterface derives CanEqual:
   /** Symmetric and nothing stronger; its law suite checks symmetry. */
   case Symmetric
 
-/** A registered map-similarity method: a closed vocabulary whose members keep
-  * the interface their measure satisfies.
+/** A map-similarity method whose members keep the interface their measure
+  * satisfies. The registered vocabulary is [[MapSimilarityMethod.values]];
+  * only code in `eyes4s.compare` and its subpackages can add a member (the
+  * constructors are package-private), which `eyes4s.compare.eyesim.EyesimCompat`
+  * does for its unregistered compatibility method.
   *
   * Each member scores two checked `Mass[U]` on agreeing nominal grids as a
   * [[Similarity]] (larger is closer) through [[similarity]]. The three
