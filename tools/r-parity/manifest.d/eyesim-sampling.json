@@ -1,0 +1,164 @@
+{
+  "schema": 1,
+  "ticket": "eyesim-sampling",
+  "fixtures": {
+    "sampling-input": {
+      "path": "tools/r-parity/fixtures/cases/eyesim-sampling.json",
+      "sha256": "9a5fdfe9597b21cbb548633d37001360eae6b36297ea52a0016f2643327e4a31",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Non-square synthetic inputs and explicit boundary cases"
+    },
+    "sampling-reference": {
+      "path": "tools/r-parity/fixtures/sampling.json",
+      "sha256": "10d56aae2452126da6a8c0d7e74aaa0a773b14168fb36b862dacaad21eb27246",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Locked exported reference calls, failures and analytic comparisons"
+    },
+    "sampling-scala": {
+      "path": "core/src/test/scala/eyes4s/core/SamplingReference.scala",
+      "sha256": "d214b9135e158e1261ff1ddf6eb22e2492557d0a7ab4348fdc29839237d230c2",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Portable measured reference expectations"
+    },
+    "finite-control-scala": {
+      "path": "design/src/test/scala/eyes4s/design/FiniteControlReference.scala",
+      "sha256": "aed87c6d4e66530a2699afdbc6b6947510995a2edddcbe091d471e6275f47a24",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Measured finite control draws and denominators"
+    }
+  },
+  "regeneration": {
+    "sampling-reference": {
+      "command": "python3 tools/r-parity/generate_sampling.py --eyesim {eyesim} --check",
+      "requires_eyesim": true,
+      "outputs": [
+        "sampling-reference",
+        "sampling-scala",
+        "finite-control-scala"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "fixation-trajectory-evaluation",
+      "row": "fixation-sampling",
+      "eyesim_entry_points": [
+        "sample_fixations",
+        "rep_fixations",
+        "sample_density"
+      ],
+      "methods": [
+        "fast step lookup (stats::approx, constant, f = 0)",
+        "slow last-onset lookup (fast = FALSE)",
+        "duration-proportional row replication at a temporal resolution",
+        "density lookup along the sampled trajectory (sample_density with times)"
+      ],
+      "estimand": "The fixation position in force at each requested time, the rows implied by each fixation's duration at a stated temporal resolution, and the template-density value at the sampled positions. Every output is a deterministic function of its inputs; eyesim draws nothing at random here.",
+      "conventions": [
+        "a time before the first onset is NA on both paths",
+        "after the last onset the fast path returns NA while the slow path holds the last fixation",
+        "neither path consults duration, so a gap between fixations keeps the preceding position",
+        "equal onsets are averaged by the fast path and resolved to the later row by the slow path",
+        "rep_fixations repeats each row as.integer(duration / (1 / resolution)) times, truncating and never fewer than once",
+        "sample_density returns NA wherever the sampled trajectory is NA",
+        "requested and realized cardinality both retained"
+      ],
+      "backend_dependencies": [
+        "stats::approx",
+        "purrr",
+        "dplyr"
+      ],
+      "eyes4s_public_api": [
+        "FixationTrajectory.fromScanpath",
+        "FixationTrajectory.empty",
+        "FixationTrajectory.sample",
+        "DurationReplication.counts",
+        "DurationReplication.replicate",
+        "PreparedDensityLookup.along"
+      ],
+      "fixture_inputs": [
+        "sampling-input",
+        "sampling-reference",
+        "sampling-scala",
+        "kde-input",
+        "kde-reference",
+        "kde-scala"
+      ],
+      "independent_case": "A two-fixation path queried before its first onset, at and between onsets, after the last onset and after the last fixation ends separates the fast and slow endpoint policies from a duration-aware lookup; a duration of 0.29 at resolution 100, 29 steps in exact arithmetic, exposes the floating-point truncation to 28 rows; a duplicated onset exposes the averaging.",
+      "status": "verified-intentional-divergence",
+      "evidence": [
+        "docs/FIXATION_SAMPLING.md",
+        "core/src/test/scala/eyes4s/core/FixationTrajectorySuite.scala",
+        "surface/src/test/scala/eyes4s/surface/DensityLookupSuite.scala"
+      ],
+      "gap_issue": null,
+      "regeneration_ids": [
+        "sampling-reference",
+        "kde-reference"
+      ],
+      "divergence": "Ordered and singleton onset trajectories and density-time composition agree. Native duplicate onsets are refused, empty support is explicit missing data, and exact integer replication yields 29 rather than R floating truncation 28 at 0.29 seconds and 100 Hz."
+    },
+    {
+      "id": "matched-control-finite-sampling",
+      "row": "matched-controls",
+      "eyesim_entry_points": [
+        "template_similarity",
+        "fixation_similarity",
+        "template_sample"
+      ],
+      "methods": [
+        "finite permutations",
+        "permute_on strata",
+        "template point sampling"
+      ],
+      "estimand": "A seeded finite sample of eligible controls with the realized candidate set and denominator retained.",
+      "conventions": [
+        "R seed and RNGkind recorded for optimized density and generic fixation facades",
+        "native excludes all true-match copies before selection",
+        "occurrence multiplicity and stratum retained",
+        "realized and eligible denominators distinct",
+        "positive native cap; zero explicitly rejected",
+        "deterministic template_sample composition"
+      ],
+      "backend_dependencies": [
+        "future",
+        "furrr",
+        "purrr"
+      ],
+      "eyes4s_public_api": [
+        "Pairing.between",
+        "Pairing.Between.differentOn",
+        "Pairing.Between.bottomK",
+        "pair",
+        "PreparedDensityLookup.along"
+      ],
+      "fixture_inputs": [
+        "sampling-input",
+        "sampling-reference",
+        "sampling-scala",
+        "finite-control-scala",
+        "template-cv-reference",
+        "kde-reference"
+      ],
+      "independent_case": "A cap of one over the two eligible controls detects priority, target-exclusion and denominator errors.",
+      "status": "verified-intentional-divergence",
+      "evidence": [
+        "docs/FIXATION_SAMPLING.md",
+        "design/src/test/scala/eyes4s/design/FiniteControlReferenceSuite.scala",
+        "design/src/test/scala/eyes4s/design/SamplingMutationSuite.scala",
+        "design/src/test/scala/eyes4s/design/TemplateCvSuite.scala",
+        "surface/src/test/scala/eyes4s/surface/DensityLookupSuite.scala"
+      ],
+      "gap_issue": null,
+      "related_issues": [
+        "bd-01KYD6T48ZREC657WRGSAHM1R3"
+      ],
+      "regeneration_ids": [
+        "sampling-reference",
+        "template-cv",
+        "kde-reference"
+      ],
+      "divergence": "Pinned R samples a multiset before removing its first true-match occurrence; repeated true matches can survive and cap-one draws can yield zero controls. Native relations exclude all same-match candidates before keyed BottomK, retain occurrence multiplicity, and produce min(cap,eligible). Zero cap is a native typed error versus R no-control analysis. R optimized/generic cap-one draws differ; no PRNG identity is claimed. Native missing/ambiguous keys remain values. template_sample is deterministic density lookup, measured with the shared trajectory."
+    }
+  ]
+}

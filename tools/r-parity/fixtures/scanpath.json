@@ -1,0 +1,1329 @@
+{
+  "eyesim_revision": "ecb9c496257bce51acd5330af6a5e7a8d5b84e05",
+  "input_sha256": "cb5c1703150147e5ef70e566aa0aa67e0fa6ba2da4b82a3b24565f9ffc69eca8",
+  "reference": {
+    "paths": [
+      {
+        "name": "base",
+        "construction": {
+          "result": [
+            {
+              "index": 1,
+              "x": 100,
+              "y": 100,
+              "duration": 50,
+              "onset": 0,
+              "group_index": 0,
+              "lenx": 200,
+              "leny": 100,
+              "rho": 223.606797749979,
+              "theta": 0.463647609000806
+            },
+            {
+              "index": 2,
+              "x": 300,
+              "y": 200,
+              "duration": 50,
+              "onset": 100,
+              "group_index": 0,
+              "lenx": 200,
+              "leny": -100,
+              "rho": 223.606797749979,
+              "theta": -0.463647609000806
+            },
+            {
+              "index": 3,
+              "x": 500,
+              "y": 100,
+              "duration": 50,
+              "onset": 200,
+              "group_index": 0,
+              "lenx": 0,
+              "leny": 0,
+              "rho": 0,
+              "theta": 0
+            }
+          ],
+          "warnings": []
+        },
+        "direct": {
+          "result": {
+            "values": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "names": [
+              "mm_vector",
+              "mm_direction",
+              "mm_length",
+              "mm_position",
+              "mm_duration",
+              "mm_position_emd"
+            ]
+          },
+          "warnings": []
+        },
+        "facade": {
+          "result": {
+            "values": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "names": [
+              "mm_vector",
+              "mm_direction",
+              "mm_length",
+              "mm_position",
+              "mm_duration",
+              "mm_position_emd"
+            ]
+          },
+          "warnings": []
+        }
+      },
+      {
+        "name": "translated",
+        "construction": {
+          "result": [
+            {
+              "index": 1,
+              "x": 130,
+              "y": 140,
+              "duration": 50,
+              "onset": 0,
+              "group_index": 0,
+              "lenx": 200,
+              "leny": 100,
+              "rho": 223.606797749979,
+              "theta": 0.463647609000806
+            },
+            {
+              "index": 2,
+              "x": 330,
+              "y": 240,
+              "duration": 50,
+              "onset": 100,
+              "group_index": 0,
+              "lenx": 200,
+              "leny": -100,
+              "rho": 223.606797749979,
+              "theta": -0.463647609000806
+            },
+            {
+              "index": 3,
+              "x": 530,
+              "y": 140,
+              "duration": 50,
+              "onset": 200,
+              "group_index": 0,
+              "lenx": 0,
+              "leny": 0,
+              "rho": 0,
+              "theta": 0
+            }
+          ],
+          "warnings": []
+        },
+        "direct": {
+          "result": {
+            "values": [
+              1,
+              1,
+              1,
+              0.944098300562505,
+              1,
+              0.944098300562866
+            ],
+            "names": [
+              "mm_vector",
+              "mm_direction",
+              "mm_length",
+              "mm_position",
+              "mm_duration",
+              "mm_position_emd"
+            ]
+          },
+          "warnings": []
+        },
+        "facade": {
+          "result": {
+            "values": [
+              1,
+              1,
+              1,
+              0.944098300562505,
+              1,
+              0.944098300562866
+            ],
+            "names": [
+              "mm_vector",
+              "mm_direction",
+              "mm_length",
+              "mm_position",
+              "mm_duration",
+              "mm_position_emd"
+            ]
+          },
+          "warnings": []
+        }
+      },
+      {
+        "name": "duration",
+        "construction": {
+          "result": [
+            {
+              "index": 1,
+              "x": 100,
+              "y": 100,
+              "duration": 25,
+              "onset": 0,
+              "group_index": 0,
+              "lenx": 200,
+              "leny": 100,
+              "rho": 223.606797749979,
+              "theta": 0.463647609000806
+            },
+            {
+              "index": 2,
+              "x": 300,
+              "y": 200,
+              "duration": 100,
+              "onset": 100,
+              "group_index": 0,
+              "lenx": 200,
+              "leny": -100,
+              "rho": 223.606797749979,
+              "theta": -0.463647609000806
+            },
+            {
+              "index": 3,
+              "x": 500,
+              "y": 100,
+              "duration": 50,
+              "onset": 200,
+              "group_index": 0,
+              "lenx": 0,
+              "leny": 0,
+              "rho": 0,
+              "theta": 0
+            }
+          ],
+          "warnings": []
+        },
+        "direct": {
+          "result": {
+            "values": [
+              1,
+              1,
+              1,
+              1,
+              0.5,
+              1
+            ],
+            "names": [
+              "mm_vector",
+              "mm_direction",
+              "mm_length",
+              "mm_position",
+              "mm_duration",
+              "mm_position_emd"
+            ]
+          },
+          "warnings": []
+        },
+        "facade": {
+          "result": {
+            "values": [
+              1,
+              1,
+              1,
+              1,
+              0.5,
+              1
+            ],
+            "names": [
+              "mm_vector",
+              "mm_direction",
+              "mm_length",
+              "mm_position",
+              "mm_duration",
+              "mm_position_emd"
+            ]
+          },
+          "warnings": []
+        }
+      },
+      {
+        "name": "changed",
+        "construction": {
+          "result": [
+            {
+              "index": 1,
+              "x": 100,
+              "y": 100,
+              "duration": 25,
+              "onset": 0,
+              "group_index": 0,
+              "lenx": 150,
+              "leny": 150,
+              "rho": 212.132034355964,
+              "theta": 0.785398163397448
+            },
+            {
+              "index": 2,
+              "x": 250,
+              "y": 250,
+              "duration": 75,
+              "onset": 100,
+              "group_index": 0,
+              "lenx": 200,
+              "leny": -50,
+              "rho": 206.155281280883,
+              "theta": -0.244978663126864
+            },
+            {
+              "index": 3,
+              "x": 450,
+              "y": 200,
+              "duration": 50,
+              "onset": 200,
+              "group_index": 0,
+              "lenx": 0,
+              "leny": 0,
+              "rho": 0,
+              "theta": 0
+            }
+          ],
+          "warnings": []
+        },
+        "direct": {
+          "result": {
+            "values": [
+              0.966260339764574,
+              0.913989565188685,
+              0.983829717972475,
+              0.960471529247895,
+              0.583333333333333,
+              0.931534680312993
+            ],
+            "names": [
+              "mm_vector",
+              "mm_direction",
+              "mm_length",
+              "mm_position",
+              "mm_duration",
+              "mm_position_emd"
+            ]
+          },
+          "warnings": []
+        },
+        "facade": {
+          "result": {
+            "values": [
+              0.966260339764574,
+              0.913989565188685,
+              0.983829717972475,
+              0.960471529247895,
+              0.583333333333333,
+              0.931534680312993
+            ],
+            "names": [
+              "mm_vector",
+              "mm_direction",
+              "mm_length",
+              "mm_position",
+              "mm_duration",
+              "mm_position_emd"
+            ]
+          },
+          "warnings": []
+        }
+      },
+      {
+        "name": "tie",
+        "construction": {
+          "result": [
+            {
+              "index": 1,
+              "x": 100,
+              "y": 100,
+              "duration": 50,
+              "onset": 0,
+              "group_index": 0,
+              "lenx": 200,
+              "leny": 0,
+              "rho": 200,
+              "theta": 0
+            },
+            {
+              "index": 2,
+              "x": 300,
+              "y": 100,
+              "duration": 50,
+              "onset": 100,
+              "group_index": 0,
+              "lenx": 200,
+              "leny": 0,
+              "rho": 200,
+              "theta": 0
+            },
+            {
+              "index": 3,
+              "x": 500,
+              "y": 100,
+              "duration": 50,
+              "onset": 200,
+              "group_index": 0,
+              "lenx": 0,
+              "leny": 0,
+              "rho": 0,
+              "theta": 0
+            }
+          ],
+          "warnings": []
+        },
+        "direct": {
+          "result": {
+            "values": [
+              0.944098300562505,
+              0.852416382349567,
+              0.973606797749979,
+              0.944098300562505,
+              1,
+              0.920943058496301
+            ],
+            "names": [
+              "mm_vector",
+              "mm_direction",
+              "mm_length",
+              "mm_position",
+              "mm_duration",
+              "mm_position_emd"
+            ]
+          },
+          "warnings": []
+        },
+        "facade": {
+          "result": {
+            "values": [
+              0.944098300562505,
+              0.852416382349567,
+              0.973606797749979,
+              0.944098300562505,
+              1,
+              0.920943058496301
+            ],
+            "names": [
+              "mm_vector",
+              "mm_direction",
+              "mm_length",
+              "mm_position",
+              "mm_duration",
+              "mm_position_emd"
+            ]
+          },
+          "warnings": []
+        }
+      },
+      {
+        "name": "stationary",
+        "construction": {
+          "result": [
+            {
+              "index": 1,
+              "x": 100,
+              "y": 100,
+              "duration": 50,
+              "onset": 0,
+              "group_index": 0,
+              "lenx": 0,
+              "leny": 0,
+              "rho": 0,
+              "theta": 0
+            },
+            {
+              "index": 2,
+              "x": 100,
+              "y": 100,
+              "duration": 50,
+              "onset": 100,
+              "group_index": 0,
+              "lenx": 0,
+              "leny": 0,
+              "rho": 0,
+              "theta": 0
+            },
+            {
+              "index": 3,
+              "x": 100,
+              "y": 100,
+              "duration": 50,
+              "onset": 200,
+              "group_index": 0,
+              "lenx": 0,
+              "leny": 0,
+              "rho": 0,
+              "theta": 0
+            }
+          ],
+          "warnings": []
+        },
+        "direct": {
+          "result": {
+            "values": [
+              0.875,
+              0.852416382349567,
+              0.75,
+              0.875,
+              1,
+              0.823223304705645
+            ],
+            "names": [
+              "mm_vector",
+              "mm_direction",
+              "mm_length",
+              "mm_position",
+              "mm_duration",
+              "mm_position_emd"
+            ]
+          },
+          "warnings": []
+        },
+        "facade": {
+          "result": {
+            "values": [
+              0.875,
+              0.852416382349567,
+              0.75,
+              0.875,
+              1,
+              0.823223304705645
+            ],
+            "names": [
+              "mm_vector",
+              "mm_direction",
+              "mm_length",
+              "mm_position",
+              "mm_duration",
+              "mm_position_emd"
+            ]
+          },
+          "warnings": []
+        }
+      },
+      {
+        "name": "short",
+        "construction": {
+          "result": [
+            {
+              "index": 1,
+              "x": 100,
+              "y": 100,
+              "duration": 50,
+              "onset": 0,
+              "group_index": 0,
+              "lenx": 200,
+              "leny": 100,
+              "rho": 223.606797749979,
+              "theta": 0.463647609000806
+            },
+            {
+              "index": 2,
+              "x": 300,
+              "y": 200,
+              "duration": 50,
+              "onset": 100,
+              "group_index": 0,
+              "lenx": 0,
+              "leny": 0,
+              "rho": 0,
+              "theta": 0
+            }
+          ],
+          "warnings": []
+        },
+        "direct": {
+          "result": {
+            "values": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "names": [
+              "mm_vector",
+              "mm_direction",
+              "mm_length",
+              "mm_position",
+              "mm_duration",
+              "mm_position_emd"
+            ]
+          },
+          "warnings": "multi_match requires 3 or more coordinates in each scanpath, returning NAs"
+        },
+        "facade": {
+          "result": {
+            "values": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "names": [
+              "mm_vector",
+              "mm_direction",
+              "mm_length",
+              "mm_position",
+              "mm_duration",
+              "mm_position_emd"
+            ]
+          },
+          "warnings": "multi_match requires 3 or more coordinates in each scanpath, returning NAs"
+        }
+      },
+      {
+        "name": "singleton",
+        "construction": {
+          "result": [
+            {
+              "index": 1,
+              "x": 100,
+              "y": 100,
+              "duration": 50,
+              "onset": 0,
+              "group_index": 0,
+              "lenx": 0,
+              "leny": 0,
+              "rho": 0,
+              "theta": 0
+            }
+          ],
+          "warnings": []
+        },
+        "direct": {
+          "result": {
+            "values": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "names": [
+              "mm_vector",
+              "mm_direction",
+              "mm_length",
+              "mm_position",
+              "mm_duration",
+              "mm_position_emd"
+            ]
+          },
+          "warnings": "multi_match requires 3 or more coordinates in each scanpath, returning NAs"
+        },
+        "facade": {
+          "result": {
+            "values": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "names": [
+              "mm_vector",
+              "mm_direction",
+              "mm_length",
+              "mm_position",
+              "mm_duration",
+              "mm_position_emd"
+            ]
+          },
+          "warnings": "multi_match requires 3 or more coordinates in each scanpath, returning NAs"
+        }
+      },
+      {
+        "name": "duplicate",
+        "construction": {
+          "result": [
+            {
+              "index": 1,
+              "x": 100,
+              "y": 100,
+              "duration": 50,
+              "onset": 0,
+              "group_index": 0,
+              "lenx": 200,
+              "leny": 100,
+              "rho": 223.606797749979,
+              "theta": 0.463647609000806
+            },
+            {
+              "index": 2,
+              "x": 300,
+              "y": 200,
+              "duration": 50,
+              "onset": 0,
+              "group_index": 0,
+              "lenx": 200,
+              "leny": -100,
+              "rho": 223.606797749979,
+              "theta": -0.463647609000806
+            },
+            {
+              "index": 3,
+              "x": 500,
+              "y": 100,
+              "duration": 50,
+              "onset": 200,
+              "group_index": 0,
+              "lenx": 0,
+              "leny": 0,
+              "rho": 0,
+              "theta": 0
+            }
+          ],
+          "warnings": []
+        },
+        "direct": {
+          "result": {
+            "error": "multi_match: y `onset` vector must be strictly increasing"
+          },
+          "warnings": []
+        },
+        "facade": {
+          "result": {
+            "error": "multi_match: y `onset` vector must be strictly increasing"
+          },
+          "warnings": []
+        }
+      },
+      {
+        "name": "zero-duration",
+        "construction": {
+          "result": [
+            {
+              "index": 1,
+              "x": 100,
+              "y": 100,
+              "duration": 0,
+              "onset": 0,
+              "group_index": 0,
+              "lenx": 200,
+              "leny": 100,
+              "rho": 223.606797749979,
+              "theta": 0.463647609000806
+            },
+            {
+              "index": 2,
+              "x": 300,
+              "y": 200,
+              "duration": 0,
+              "onset": 100,
+              "group_index": 0,
+              "lenx": 200,
+              "leny": -100,
+              "rho": 223.606797749979,
+              "theta": -0.463647609000806
+            },
+            {
+              "index": 3,
+              "x": 500,
+              "y": 100,
+              "duration": 0,
+              "onset": 200,
+              "group_index": 0,
+              "lenx": 0,
+              "leny": 0,
+              "rho": 0,
+              "theta": 0
+            }
+          ],
+          "warnings": []
+        },
+        "direct": {
+          "result": {
+            "error": "missing value where TRUE/FALSE needed"
+          },
+          "warnings": []
+        },
+        "facade": {
+          "result": {
+            "error": "missing value where TRUE/FALSE needed"
+          },
+          "warnings": []
+        }
+      },
+      {
+        "name": "empty",
+        "construction": {
+          "result": {
+            "error": "Tibble columns must have compatible sizes.\n* Size 2: Existing data.\n* Size 0: Column `x`.\ni Only values of size one are recycled."
+          },
+          "warnings": []
+        },
+        "direct": {
+          "result": {
+            "error": "Tibble columns must have compatible sizes.\n* Size 2: Existing data.\n* Size 0: Column `x`.\ni Only values of size one are recycled."
+          },
+          "warnings": []
+        },
+        "facade": {
+          "result": {
+            "error": "Tibble columns must have compatible sizes.\n* Size 2: Existing data.\n* Size 0: Column `x`.\ni Only values of size one are recycled."
+          },
+          "warnings": []
+        }
+      }
+    ],
+    "tie_self": {
+      "result": {
+        "values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "names": [
+          "mm_vector",
+          "mm_direction",
+          "mm_length",
+          "mm_position",
+          "mm_duration",
+          "mm_position_emd"
+        ]
+      },
+      "warnings": []
+    },
+    "scanpath_table": {
+      "result": [
+        {
+          "id": "one",
+          "matchind": 1,
+          "mm_vector": 1,
+          "mm_direction": 1,
+          "mm_length": 1,
+          "mm_position": 0.944098300562505,
+          "mm_duration": 1,
+          "mm_position_emd": 0.944098300562866
+        }
+      ],
+      "warnings": [
+        "package 'future' was built under R version 4.5.2",
+        "package 'purrr' was built under R version 4.5.2"
+      ]
+    },
+    "windows": [
+      {
+        "result": {
+          "values": [
+            1,
+            1,
+            1,
+            0.944098300562505,
+            1,
+            0.944098300562866
+          ],
+          "names": [
+            "mm_vector",
+            "mm_direction",
+            "mm_length",
+            "mm_position",
+            "mm_duration",
+            "mm_position_emd"
+          ]
+        },
+        "warnings": []
+      },
+      {
+        "result": {
+          "values": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "names": [
+            "mm_vector",
+            "mm_direction",
+            "mm_length",
+            "mm_position",
+            "mm_duration",
+            "mm_position_emd"
+          ]
+        },
+        "warnings": "multi_match requires 3 or more coordinates in each scanpath, returning NAs"
+      },
+      {
+        "result": {
+          "values": null,
+          "names": null
+        },
+        "warnings": "no observations in 'x'"
+      }
+    ],
+    "missing_screen": {
+      "result": {
+        "error": "method `multi_match` requires a `screensize` argument (e.g. c(1000,1000)"
+      },
+      "warnings": []
+    },
+    "overlap": [
+      {
+        "method": "euclidean",
+        "rows": [
+          {
+            "threshold": 49.999,
+            "out": {
+              "result": {
+                "overlap": 0,
+                "perc": 0
+              },
+              "warnings": []
+            }
+          },
+          {
+            "threshold": 50,
+            "out": {
+              "result": {
+                "overlap": 0,
+                "perc": 0
+              },
+              "warnings": []
+            }
+          },
+          {
+            "threshold": 50.001,
+            "out": {
+              "result": {
+                "overlap": 4,
+                "perc": 0.666666666666667
+              },
+              "warnings": []
+            }
+          },
+          {
+            "threshold": 60,
+            "out": {
+              "result": {
+                "overlap": 4,
+                "perc": 0.666666666666667
+              },
+              "warnings": []
+            }
+          },
+          {
+            "threshold": 70,
+            "out": {
+              "result": {
+                "overlap": 4,
+                "perc": 0.666666666666667
+              },
+              "warnings": []
+            }
+          },
+          {
+            "threshold": 70.001,
+            "out": {
+              "result": {
+                "overlap": 4,
+                "perc": 0.666666666666667
+              },
+              "warnings": []
+            }
+          }
+        ]
+      },
+      {
+        "method": "manhattan",
+        "rows": [
+          {
+            "threshold": 49.999,
+            "out": {
+              "result": {
+                "overlap": 0,
+                "perc": 0
+              },
+              "warnings": []
+            }
+          },
+          {
+            "threshold": 50,
+            "out": {
+              "result": {
+                "overlap": 0,
+                "perc": 0
+              },
+              "warnings": []
+            }
+          },
+          {
+            "threshold": 50.001,
+            "out": {
+              "result": {
+                "overlap": 0,
+                "perc": 0
+              },
+              "warnings": []
+            }
+          },
+          {
+            "threshold": 60,
+            "out": {
+              "result": {
+                "overlap": 0,
+                "perc": 0
+              },
+              "warnings": []
+            }
+          },
+          {
+            "threshold": 70,
+            "out": {
+              "result": {
+                "overlap": 0,
+                "perc": 0
+              },
+              "warnings": []
+            }
+          },
+          {
+            "threshold": 70.001,
+            "out": {
+              "result": {
+                "overlap": 4,
+                "perc": 0.666666666666667
+              },
+              "warnings": []
+            }
+          }
+        ]
+      }
+    ],
+    "defaults": {
+      "direct": {
+        "result": {
+          "overlap": 11,
+          "perc": 1
+        },
+        "warnings": []
+      },
+      "facade_missing": {
+        "result": {
+          "error": "method `overlap` requires a vector of `time_samples`"
+        },
+        "warnings": []
+      },
+      "facade": {
+        "result": {
+          "values": 0,
+          "names": null
+        },
+        "warnings": []
+      },
+      "empty_queries": {
+        "result": {
+          "overlap": 0,
+          "perc": null
+        },
+        "warnings": []
+      },
+      "asymmetric_grid": {
+        "result": {
+          "overlap": 10,
+          "perc": 0.909090909090909
+        },
+        "warnings": []
+      }
+    },
+    "transport": {
+      "singleton": {
+        "result": {
+          "values": 0.472135954999579,
+          "names": null
+        },
+        "warnings": []
+      },
+      "no_time": {
+        "result": {
+          "values": 0.666666666666667,
+          "names": null
+        },
+        "warnings": []
+      },
+      "base": {
+        "result": {
+          "values": 0.842347270316768,
+          "names": null
+        },
+        "warnings": []
+      },
+      "lambdas": [
+        {
+          "lambda": 0.01,
+          "result": {
+            "result": {
+              "values": 0.948732031806375,
+              "names": null
+            },
+            "warnings": []
+          }
+        },
+        {
+          "lambda": 0.1,
+          "result": {
+            "result": {
+              "values": 0.842347270316768,
+              "names": null
+            },
+            "warnings": []
+          }
+        },
+        {
+          "lambda": 1,
+          "result": {
+            "result": {
+              "values": 0.805567261600944,
+              "names": null
+            },
+            "warnings": []
+          }
+        }
+      ],
+      "backend": "T4transport::sinkhornD",
+      "default_p": 2,
+      "two_point": {
+        "result": {
+          "distance": 0.34525776171162,
+          "plan": [
+            [
+              0.440398538988941,
+              0.0596014610110588
+            ],
+            [
+              0.0596014610110588,
+              0.440398538988941
+            ]
+          ]
+        },
+        "warnings": []
+      },
+      "one_step": {
+        "result": {
+          "distance": 0.505636248612437,
+          "plan": [
+            [
+              0.290182033090384,
+              0.245850049001242
+            ],
+            [
+              0.00981796690961581,
+              0.454149950998757
+            ]
+          ]
+        },
+        "warnings": []
+      },
+      "zero_duration": {
+        "result": {
+          "error": "missing value where TRUE/FALSE needed"
+        },
+        "warnings": []
+      },
+      "plans": [
+        {
+          "lambda": 0.01,
+          "default": {
+            "distance": 0.0540384075533018,
+            "plan": [
+              [
+                0.331256545884318,
+                0.00206781709510398,
+                2.7928776686459e-08
+              ],
+              [
+                0.00207675927816322,
+                0.32918872902497,
+                0.00206784492786372
+              ],
+              [
+                2.8170852240883e-08,
+                0.0020767872132594,
+                0.331265460476693
+              ]
+            ],
+            "residual": 8.94252747124513e-06
+          },
+          "extended": {
+            "distance": 0.0540403827021523,
+            "plan": [
+              [
+                0.331261004244966,
+                0.00207229363900589,
+                2.80494535638751e-08
+              ],
+              [
+                0.00207230103871327,
+                0.32918873863254,
+                0.00207229366207979
+              ],
+              [
+                2.80496538811614e-08,
+                0.00207230106178724,
+                0.3312610116218
+              ]
+            ],
+            "residual": 7.39990774212274e-09
+          }
+        },
+        {
+          "lambda": 0.1,
+          "default": {
+            "distance": 0.18715883013896,
+            "plan": [
+              [
+                0.196300529673731,
+                0.0985118456731533,
+                0.0385209534417996
+              ],
+              [
+                0.0985118482233799,
+                0.136309638525193,
+                0.0985118465847601
+              ],
+              [
+                0.0385209554362229,
+                0.0985118491349867,
+                0.196300533306774
+              ]
+            ],
+            "residual": 4.54464987864611e-09
+          },
+          "extended": {
+            "distance": 0.18715883013896,
+            "plan": [
+              [
+                0.196300529673731,
+                0.0985118456731533,
+                0.0385209534417996
+              ],
+              [
+                0.0985118482233799,
+                0.136309638525193,
+                0.0985118465847601
+              ],
+              [
+                0.0385209554362229,
+                0.0985118491349867,
+                0.196300533306774
+              ]
+            ],
+            "residual": 4.54464987864611e-09
+          }
+        },
+        {
+          "lambda": 1,
+          "default": {
+            "distance": 0.241361271326556,
+            "plan": [
+              [
+                0.120449655049707,
+                0.110534791202694,
+                0.102348885214876
+              ],
+              [
+                0.11053479185701,
+                0.112263749686693,
+                0.110534791789607
+              ],
+              [
+                0.102348886426616,
+                0.110534792443947,
+                0.12044965632885
+              ]
+            ],
+            "residual": 1.86607956864648e-09
+          },
+          "extended": {
+            "distance": 0.241361271326556,
+            "plan": [
+              [
+                0.120449655049707,
+                0.110534791202694,
+                0.102348885214876
+              ],
+              [
+                0.11053479185701,
+                0.112263749686693,
+                0.110534791789607
+              ],
+              [
+                0.102348886426616,
+                0.110534792443947,
+                0.12044965632885
+              ]
+            ],
+            "residual": 1.86607956864648e-09
+          }
+        }
+      ],
+      "independent_primal_oracle": [
+        {
+          "lambda_value": 0.01,
+          "similarity": 0.9487302525140882,
+          "squared_cost": 0.002920363140191966,
+          "marginal_residual": 9.992007221626409e-15,
+          "iterations": 2149,
+          "reference_delta": 1.7792922868409278e-06,
+          "reference_pass_1e_7": false
+        },
+        {
+          "lambda_value": 0.1,
+          "similarity": 0.8423472701100141,
+          "squared_cost": 0.03502842780805539,
+          "marginal_residual": 6.439293542825908e-15,
+          "iterations": 20,
+          "reference_delta": 2.0675394729607888e-10,
+          "reference_pass_1e_7": true
+        },
+        {
+          "lambda_value": 1,
+          "similarity": 0.8055672615407382,
+          "squared_cost": 0.05825526334115627,
+          "marginal_residual": 5.551115123125783e-17,
+          "iterations": 6,
+          "reference_delta": 6.020584031318776e-11,
+          "reference_pass_1e_7": true
+        }
+      ]
+    },
+    "fixation_table": {
+      "result": [
+        {
+          "id": "one",
+          "matchind": 1,
+          "eye_sim": 0.842347270316768
+        }
+      ],
+      "warnings": []
+    },
+    "R": "4.5.1"
+  }
+}

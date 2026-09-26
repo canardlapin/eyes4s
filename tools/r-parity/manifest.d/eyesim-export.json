@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "ticket": "eyesim-export",
+  "fixtures": {
+    "export-schemas": {
+      "path": "tools/result-export/schema-v1.json",
+      "sha256": "31b6e03dea506dff5c06107d464147ad1425b8bd4fbd58c27ed6be5afaf476ac",
+      "license": "Apache-2.0; synthetic public export examples authored for eyes4s",
+      "role": "Frozen canonical export schemas, emitted artifact receipt or independent reader"
+    },
+    "export-receipt": {
+      "path": "tools/result-export/receipt-v1.json",
+      "sha256": "a85d187b76602ef00b9127f29c921b53aace512ba8cfba2ec239d4c5e1905c3c",
+      "license": "Apache-2.0; synthetic public export examples authored for eyes4s",
+      "role": "Frozen canonical export schemas, emitted artifact receipt or independent reader"
+    },
+    "export-public-example": {
+      "path": "io/src/test/scala/eyes4s/examples/BaselineExportGuide.scala",
+      "sha256": "a53a1cf1e7c221241bb7fbfc3a50cb1f66b85a4d63b80af5c9a713f4564dd40d",
+      "license": "Apache-2.0; synthetic public export examples authored for eyes4s",
+      "role": "Frozen canonical export schemas, emitted artifact receipt or independent reader"
+    },
+    "export-r-consumer": {
+      "path": "tools/result-export/check_exports.R",
+      "sha256": "a5389bf958ba36a745adf4ffd52a1db3efef3e1f43649442f2b43dfe21357047",
+      "license": "Apache-2.0; synthetic public export examples authored for eyes4s",
+      "role": "Frozen canonical export schemas, emitted artifact receipt or independent reader"
+    },
+    "export-arrow-consumer": {
+      "path": "tools/result-export/check_arrow.py",
+      "sha256": "a2d39d1d9a4102f83b35e1d5be29ef36991202c4395383240dd93dc1e787a539",
+      "license": "Apache-2.0; synthetic public export examples authored for eyes4s",
+      "role": "Frozen canonical export schemas, emitted artifact receipt or independent reader"
+    }
+  },
+  "regeneration": {
+    "baseline-exports": {
+      "command": "python3 tools/result-export/generate_exports.py --check",
+      "requires_eyesim": false,
+      "outputs": [
+        "export-receipt"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "complete-baseline-result-exports",
+      "row": "reuse-export",
+      "eyesim_entry_points": [
+        "template_similarity",
+        "fixation_similarity",
+        "repetitive_similarity",
+        "sample_density_time",
+        "template_regression",
+        "template_multireg"
+      ],
+      "methods": [
+        "all supported scalar and structured comparisons",
+        "pairwise and reduced repetition",
+        "temporal samples and bins",
+        "model predictions"
+      ],
+      "estimand": "Reusable rows for every supported baseline output with complete scientific and execution provenance.",
+      "conventions": [
+        "keys and units explicit",
+        "method and parameters explicit",
+        "realized denominators explicit",
+        "failures and exclusions explicit",
+        "source and plan identity explicit"
+      ],
+      "backend_dependencies": [
+        "base R consumption",
+        "Arrow IPC optional on JVM"
+      ],
+      "eyes4s_public_api": [
+        "ResultTable",
+        "BaselineExports.pairs",
+        "BaselineExports.reductions",
+        "BaselineExports.contrasts",
+        "BaselineExports.repetition",
+        "BaselineExports.points",
+        "BaselineExports.fixedTemplate",
+        "BaselineExports.learnedTemplate",
+        "BaselineExports.ols",
+        "BaselineExports.study",
+        "BaselineExports.temporal",
+        "ArrowResultExport.write"
+      ],
+      "fixture_inputs": [
+        "export-schemas",
+        "export-receipt",
+        "export-public-example",
+        "export-r-consumer",
+        "export-arrow-consumer"
+      ],
+      "independent_case": "A schema audit requires every result variant, including failures and structured scores, to preserve its identifying columns.",
+      "status": "verified-intentional-divergence",
+      "evidence": [
+        "docs/RESULT_EXPORTS.md",
+        "docs/evidence/baseline-export-2026-09-19.md",
+        "io/src/test/scala/eyes4s/io/BaselineExportsSuite.scala",
+        "io/.jvm/src/test/scala/eyes4s/io/ArrowResultExportJvmSuite.scala"
+      ],
+      "gap_issue": null,
+      "related_issues": [
+        "eyesim-template",
+        "eyesim-repetition",
+        "eyesim-temporal"
+      ],
+      "regeneration_ids": [
+        "baseline-exports"
+      ],
+      "divergence": "Finite typed result-family matrix uses canonical rows and linked versioned scientific metadata instead of R list columns. Shared JVM/JS CSV retains every admitted row, structured component, failure, count, key, exact time and provenance. Optional JVM-only Arrow 19.0.0 writes the same rows with explicit schema/nullability/units/UTF-8 label policy and bounded owned resources. Actual emitted artifacts are independently read in base R and PyArrow 19.0.1; readers detect corrupted scores. Learned outputs retain a one-ulp runtime difference rather than forcing equal content identities. Existing scientific JSON archives remain authoritative."
+    }
+  ]
+}

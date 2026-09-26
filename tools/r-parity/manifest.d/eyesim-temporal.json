@@ -1,0 +1,106 @@
+{
+  "schema": 1,
+  "ticket": "eyesim-temporal",
+  "fixtures": {
+    "point-sampling-input": {
+      "path": "tools/r-parity/fixtures/cases/eyesim-temporal.json",
+      "sha256": "a09d5a6795d1b627d1c38d37a4d45f4db13f3f4b19eedc57a26136a8cfbf59f3",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Static point sampling, independently verified reference or saved public workflow"
+    },
+    "point-sampling-reference": {
+      "path": "tools/r-parity/fixtures/point-sampling.json",
+      "sha256": "45cab7e9306d1122a91a3bf688552d93cc1b653763ee32473a34a40312cd1b31",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Static point sampling, independently verified reference or saved public workflow"
+    },
+    "point-sampling-scala": {
+      "path": "plan/src/test/scala/eyes4s/plan/PointSamplingReference.scala",
+      "sha256": "57d58056dac883e229fa4cbec6e1c868db4365f5c3e2123583e8bff17da0b917",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Static point sampling, independently verified reference or saved public workflow"
+    },
+    "point-sampling-v1": {
+      "path": "codec/src/test/resources/eyes4s/point-sampling-v1.json",
+      "sha256": "9bba528587619bed99aa95ce953055c8ec937e42e1710bc69bef008f36d8948e",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Static point sampling, independently verified reference or saved public workflow"
+    },
+    "point-sampling-archive-scala": {
+      "path": "codec/src/test/scala/eyes4s/codec/PointSamplingFixture.scala",
+      "sha256": "a95c830617494fb6bd39b1d720f60a9b87a92e7a82a6d4d9cbc8000cb7ffbba7",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Static point sampling, independently verified reference or saved public workflow"
+    }
+  },
+  "regeneration": {
+    "point-sampling": {
+      "command": "python3 tools/r-parity/generate_point_sampling.py --eyesim {eyesim} --check",
+      "requires_eyesim": true,
+      "outputs": [
+        "point-sampling-reference",
+        "point-sampling-scala"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "temporal-template-density-sampling",
+      "row": "temporal",
+      "eyesim_entry_points": [
+        "sample_density_time"
+      ],
+      "methods": [
+        "none",
+        "max",
+        "sum",
+        "zscore",
+        "time bins",
+        "permutation baseline"
+      ],
+      "estimand": "Static template-density values evaluated by nearest-grid lookup along the fast constant-step focal fixation trajectory at requested times and optionally aggregated into bins.",
+      "conventions": [
+        "query-time and fixation-time units explicit",
+        "cut(right=FALSE, include.lowest=TRUE): measure the final endpoint explicitly",
+        "matching and permutation strata explicit",
+        "control means are formed per time before bin aggregation",
+        "missing trajectory or template support retained"
+      ],
+      "backend_dependencies": [
+        "stats::approx",
+        "dplyr",
+        "purrr"
+      ],
+      "eyes4s_public_api": [
+        "PointSamplingPlan.of",
+        "PointSamplingSpec.of",
+        "PointBins.of",
+        "PointSamplingMean",
+        "PointSamplingCodec",
+        "PointSamplingArchive.run"
+      ],
+      "fixture_inputs": [
+        "point-sampling-input",
+        "point-sampling-reference",
+        "point-sampling-scala",
+        "point-sampling-v1",
+        "point-sampling-archive-scala"
+      ],
+      "independent_case": "Exact onset steps, asymmetric nearest-grid lookup, finite occurrence selection and two-stage bin arithmetic; nested partial-control mean 11/3 versus pooled 4.",
+      "status": "verified-intentional-divergence",
+      "evidence": [
+        "docs/POINT_SAMPLING.md",
+        "plan/src/test/scala/eyes4s/plan/PointSamplingSuite.scala",
+        "codec/src/test/scala/eyes4s/codec/PointSamplingCodecSuite.scala"
+      ],
+      "gap_issue": null,
+      "related_issues": [
+        "bd-01KYDZ80ANFH3HW11946E4QTR8"
+      ],
+      "regeneration_ids": [
+        "point-sampling"
+      ],
+      "divergence": "Four normalization modes, unsorted/repeated queries, final-bin endpoint, source-occurrence multiset and exhaustive controls match independently checked reference values. Native retains unmatched/ambiguous/duplicate source errors instead of dropped rows or first-match selection; uses explicit clock/frame identities and keyed finite selection rather than R RNG; disallows nonfinite template cells. Raw R partial-cell failures remain, with nested versus pooled aggregation independently qualified. Named arithmetic recipe and complete replay-verified result persist on JVM/JS, separate from duration occupancy."
+    }
+  ]
+}

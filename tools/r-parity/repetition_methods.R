@@ -1,0 +1,19 @@
+args<-commandArgs(trailingOnly=TRUE)
+.libPaths(c(args[[1L]],.libPaths()));library(eyesim)
+input<-jsonlite::fromJSON(args[[2L]],simplifyVector=FALSE)
+attempt<-function(f) {
+ warnings<-character();r<-tryCatch(withCallingHandlers(f(),warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart("muffleWarning")}),error=function(e)list(error=conditionMessage(e)))
+ list(result=r,warnings=warnings)
+}
+map<-function(v,sigma=1){d<-eyesim::gen_density(c(0,1),c(0,1),matrix(unlist(v),2));d$sigma<-sigma;d}
+rows<-input$rows
+single<-tibble::tibble(key=vapply(rows,`[[`,"","key"),participant=vapply(rows,`[[`,"","participant"),stimulus=vapply(rows,`[[`,"","stimulus"),occasion=vapply(rows,`[[`,"","occasion"),density=lapply(rows,function(r)map(r$values)))
+scales<-single
+scales$density<-lapply(seq_along(rows),function(i)structure(list(map(rows[[i]]$scale1,1),map(rows[[i]]$values,2)),class=c("eye_density_multiscale","list")))
+run<-function(tab,method,pairwise,aggregation)attempt(function(){r<-eyesim::repetitive_similarity(tab,condition_var="occasion",method=method,pairwise=pairwise,multiscale_aggregation=aggregation);as.data.frame(r[setdiff(names(r),"density")])})
+methods<-setNames(lapply(unlist(input$methods),function(m)list(
+ single=list(pairwise=run(single,m,TRUE,"mean"),reduced=run(single,m,FALSE,"mean")),
+ scales=list(mean=run(scales,m,TRUE,"mean"),none=run(scales,m,TRUE,"none")),
+ duplicate=run(rbind(single,single[1,]),m,TRUE,"mean"),
+ singleton=run(single[1,],m,TRUE,"mean"),empty=run(single[FALSE,],m,TRUE,"mean"))),unlist(input$methods))
+jsonlite::write_json(list(methods=methods,R=as.character(getRversion())),args[[3L]],auto_unbox=TRUE,pretty=TRUE,digits=NA,na="null",null="null")

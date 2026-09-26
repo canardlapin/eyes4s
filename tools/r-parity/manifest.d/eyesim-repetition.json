@@ -1,0 +1,110 @@
+{
+  "schema": 1,
+  "ticket": "eyesim-repetition",
+  "fixtures": {
+    "repetition-methods-input": {
+      "path": "tools/r-parity/fixtures/cases/eyesim-repetition.json",
+      "sha256": "80c38cf2b83949406e1212165ea05725063b8c3b574ebe0f955a8c6a38b03c14",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Method/scale evidence or pinned three-occasion custom-key persisted plan"
+    },
+    "repetition-methods-reference": {
+      "path": "tools/r-parity/fixtures/repetition-methods.json",
+      "sha256": "6ccdf9ced47463ebeac90d51f851d244ab83cf49b0fb1602a2b46f6d32a126e9",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Method/scale evidence or pinned three-occasion custom-key persisted plan"
+    },
+    "repetition-methods-scala": {
+      "path": "design/src/test/scala/eyes4s/design/RepetitionMethodsReference.scala",
+      "sha256": "01131e5948afa22bb1f5694e8100a2ede6c53f3ad38c88f50d3d2b7f035c9b30",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Method/scale evidence or pinned three-occasion custom-key persisted plan"
+    },
+    "repetition-plan-v1": {
+      "path": "codec/src/test/resources/eyes4s/repetition-plan-v1.json",
+      "sha256": "c06ee5dff6d78db6a98b824c4def1cb558b5198b68f3b0363bcd014ed82357f4",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Method/scale evidence or pinned three-occasion custom-key persisted plan"
+    },
+    "repetition-plan-scala": {
+      "path": "codec/src/test/scala/eyes4s/codec/RepetitionPlanFixture.scala",
+      "sha256": "a4fdac256557c64792ede4191bd5f7d73457525a1b80a3bf6e83e473093a8086",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Method/scale evidence or pinned three-occasion custom-key persisted plan"
+    }
+  },
+  "regeneration": {
+    "repetition-methods": {
+      "command": "python3 tools/r-parity/generate_repetition_methods.py --eyesim {eyesim} --check",
+      "requires_eyesim": true,
+      "outputs": [
+        "repetition-methods-reference",
+        "repetition-methods-scala"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "repetition-and-reinstatement",
+      "row": "repetition",
+      "eyesim_entry_points": [
+        "repetitive_similarity"
+      ],
+      "methods": [
+        "pearson",
+        "spearman",
+        "fisherz",
+        "cosine",
+        "l1",
+        "jaccard",
+        "dcov",
+        "emd",
+        "pairwise true",
+        "pairwise false"
+      ],
+      "estimand": "For each focal trial, comparisons to same-condition and different-condition trials under an explicit participant and identity relation.",
+      "conventions": [
+        "directed focal/reference roles",
+        "self-edge policy explicit",
+        "same and different denominators retained",
+        "scale aggregation mean or none"
+      ],
+      "backend_dependencies": [
+        "dplyr",
+        "purrr",
+        "comparison-specific optional backends"
+      ],
+      "eyes4s_public_api": [
+        "RepetitionDesign",
+        "RepetitionAggregation.scales",
+        "RepetitionAggregation.comparisons",
+        "RepetitionPlan.of",
+        "RepetitionLayout.of",
+        "RepetitionRegistry",
+        "RepetitionPlanCodec.of"
+      ],
+      "fixture_inputs": [
+        "repetition-methods-input",
+        "repetition-methods-reference",
+        "repetition-methods-scala",
+        "repetition-plan-v1",
+        "repetition-plan-scala"
+      ],
+      "independent_case": "Exhaustive Cartesian pair enumeration detects reference join, self-edge and denominator defects.",
+      "status": "verified-intentional-divergence",
+      "evidence": [
+        "docs/REPETITION_STUDIES.md",
+        "design/src/test/scala/eyes4s/design/RepetitionMethodsSuite.scala",
+        "codec/src/test/scala/eyes4s/codec/RepetitionPlanSuite.scala"
+      ],
+      "gap_issue": null,
+      "related_issues": [
+        "bd-01KYD6T48ZREC657WRGSAHM1R3"
+      ],
+      "regeneration_ids": [
+        "repetition-methods"
+      ],
+      "divergence": "Seven supplied-map method means agree with independent Cartesian/rational and pinned pairwise true/false evidence. Reference condition groups cross participant/stimulus; native reinstatement has explicit relations and excludes ambiguous full keys. Typed two-stage scale/comparison means retain every failure and denominator; partial-success policy matches nested reference means, strict policy intentionally refuses omissions. EMD retains prior intentional unavailable/backend qualification, including multiscale errors. Separate all-occasion supplied-map schema reconstructs typed projection registrations, disjoint finite relations, exact BottomK selections, keys, counts, identities and provenance across three occasions on JVM/JS. Old two-phase study v1 stays readable. Multiscale aggregation is explicit outside the single-map persisted recipe."
+    }
+  ]
+}

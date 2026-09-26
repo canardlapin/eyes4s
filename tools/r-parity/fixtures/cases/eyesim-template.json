@@ -1,0 +1,81 @@
+{
+  "seed": 42,
+  "n_folds": 2,
+  "source": [
+    {
+      "key": "s1",
+      "group": "p1",
+      "match": "a",
+      "values": [
+        1,
+        0
+      ]
+    },
+    {
+      "key": "s2",
+      "group": "p2",
+      "match": "b",
+      "values": [
+        0,
+        1
+      ]
+    },
+    {
+      "key": "s3",
+      "group": "p3",
+      "match": "c",
+      "values": [
+        1,
+        1
+      ]
+    },
+    {
+      "key": "s4",
+      "group": "p4",
+      "match": "d",
+      "values": [
+        2,
+        1
+      ]
+    },
+    {
+      "key": "s5",
+      "group": "p2",
+      "match": "c",
+      "values": [
+        1,
+        2
+      ]
+    }
+  ],
+  "reference": [
+    {
+      "match": "a",
+      "values": [
+        2,
+        1
+      ]
+    },
+    {
+      "match": "b",
+      "values": [
+        1,
+        2
+      ]
+    },
+    {
+      "match": "c",
+      "values": [
+        1,
+        1
+      ]
+    },
+    {
+      "match": "d",
+      "values": [
+        1,
+        0
+      ]
+    }
+  ]
+}

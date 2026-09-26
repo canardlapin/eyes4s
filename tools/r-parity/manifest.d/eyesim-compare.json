@@ -1,0 +1,164 @@
+{
+  "schema": 1,
+  "ticket": "eyesim-compare",
+  "fixtures": {
+    "compare-input": {
+      "path": "tools/r-parity/fixtures/cases/eyesim-compare.json",
+      "sha256": "b7dab445fdcf3f6f69e8d4b9204528670c3fc60d1691b495a53f962268657feb",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Pinned dispatch and independent map comparison expectations"
+    },
+    "compare-reference": {
+      "path": "tools/r-parity/fixtures/compare.json",
+      "sha256": "e6e5a0000c646d8e463fe25eb1e6dab73923497324c1888c8a065e5bac3359dd",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Pinned dispatch and independent map comparison expectations"
+    },
+    "compare-scala": {
+      "path": "compare/src/test/scala/eyes4s/compare/MapReference.scala",
+      "sha256": "659c3e78e6f5a7fca08ab309b44fd3744685c583c6990aa2df06bcb70e172612",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Pinned dispatch and independent map comparison expectations"
+    }
+  },
+  "regeneration": {
+    "compare-reference": {
+      "command": "python3 tools/r-parity/generate_compare.py --eyesim {eyesim} --check",
+      "requires_eyesim": true,
+      "outputs": [
+        "compare-reference",
+        "compare-scala"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "distribution-method-matrix",
+      "row": "map-fixation-comparison",
+      "eyesim_entry_points": [
+        "similarity.default",
+        "similarity.density",
+        "similarity.eye_density_multiscale",
+        "similarity.fixation_group"
+      ],
+      "methods": [
+        "pearson",
+        "spearman",
+        "fisherz",
+        "cosine",
+        "l1",
+        "jaccard",
+        "dcov",
+        "emd",
+        "sinkhorn",
+        "overlap"
+      ],
+      "estimand": "The named association, similarity or distance on common spatial support; multiscale results retain scale before any explicit mean.",
+      "conventions": [
+        "method scale and direction explicit",
+        "constant and zero vectors explicit",
+        "grid intersection versus equality explicit",
+        "multiscale supports pearson, spearman, fisherz, cosine, l1, jaccard and dcov only",
+        "l1 returns 1 minus total variation; dcov calls energy::dcor; jaccard uses proxy eJaccard",
+        "exact EMD is a measured intentional divergence target; no exact native solver per owner decision 2026-09-18"
+      ],
+      "backend_dependencies": [
+        "proxy",
+        "energy suggested",
+        "transport suggested",
+        "emdist suggested",
+        "T4transport suggested"
+      ],
+      "eyes4s_public_api": [
+        "MapSimilarityMethod",
+        "Distribution.spearman",
+        "Distribution.extendedJaccard",
+        "Distribution.distanceCorrelation",
+        "Distribution.l1Similarity",
+        "Distribution.fisherZMachineEpsilon",
+        "Lift.viaSmoothingSymmetric",
+        "Transport.slicedWasserstein",
+        "Transport.sinkhorn"
+      ],
+      "fixture_inputs": [
+        "compare-input",
+        "compare-reference",
+        "compare-scala"
+      ],
+      "independent_case": "Nonconstant, constant and zero four-cell vectors expose undefined correlations, zero norms and scale-direction mistakes.",
+      "status": "verified-intentional-divergence",
+      "evidence": [
+        "docs/MAP_COMPARISON.md",
+        "compare/src/test/scala/eyes4s/compare/MapComparisonSuite.scala",
+        "laws/src/test/scala/eyes4s/laws/BaselineMapLawSuite.scala"
+      ],
+      "gap_issue": null,
+      "related_issues": [
+        "eyesim-scanpath",
+        "bd-01M02N4E54KR43Q5JSSMCV4G2E"
+      ],
+      "planned_evidence": "One pinned and one independent case for every method and failure boundary.",
+      "regeneration_ids": [
+        "compare-reference"
+      ],
+      "divergence": "Seven normalized nonconstant map methods agree with rational oracles and pinned vector/density calls at 1e-12. Native rejects constant correlation, malformed Mass and foreign grids; pinned raw/signed/missing/one-cell results remain recorded. Legacy Fisher clamp is separate. Frozen emd dispatch uses T4transport, not a general exact backend. Analytically exact small plans match pinned outputs and differ from native sliced W1 and squared-cost Sinkhorn; no exact solver or approximation alias."
+    },
+    {
+      "id": "multiscale-density-and-comparison",
+      "row": "multiscale",
+      "eyesim_entry_points": [
+        "eye_density",
+        "similarity.eye_density_multiscale",
+        "fixation_entropy.eye_density_multiscale"
+      ],
+      "methods": [
+        "sigma vector",
+        "scale-wise comparison",
+        "mean",
+        "none"
+      ],
+      "estimand": "A labelled result at every requested bandwidth, optionally reduced by an explicit scale-weighted policy.",
+      "conventions": [
+        "sigma labels retained",
+        "unmatched scales never silently dropped",
+        "edge policy explicit",
+        "mean denominator and weights explicit"
+      ],
+      "backend_dependencies": [
+        "ks",
+        "MASS",
+        "comparison-specific optional backends"
+      ],
+      "eyes4s_public_api": [
+        "MapScales.of",
+        "MapComparison.scales",
+        "MapScaleComparison.mean",
+        "Pyramid.of"
+      ],
+      "fixture_inputs": [
+        "compare-input",
+        "compare-reference",
+        "compare-scala",
+        "kde-reference"
+      ],
+      "independent_case": "The 60-digit three-scale oracle detects sigma reuse and silent scale collapse, but intentionally does not claim eyesim KDE parity.",
+      "status": "verified-intentional-divergence",
+      "evidence": [
+        "docs/MAP_COMPARISON.md",
+        "compare/src/test/scala/eyes4s/compare/MapComparisonSuite.scala",
+        "laws/src/test/scala/eyes4s/laws/BaselineMapLawSuite.scala"
+      ],
+      "gap_issue": null,
+      "related_issues": [
+        "eyesim-kde",
+        "bd-01KYFTQ7P9VXC3SR4TBYV02P6H"
+      ],
+      "planned_evidence": "Pinned eyesim scale-labelled output on a non-symmetric edge case and explicit unequal-scale failures.",
+      "regeneration_ids": [
+        "compare-reference",
+        "kde-reference"
+      ],
+      "divergence": "Named matched-scale values and complete means agree. Native sorts unique positive scales, preserves the union and every missing/failed row, exposes requested/contributing counts and refuses incomplete means. R preserves left common-scale order, collapses duplicates, intersects scales and removes missing results when averaging. Native non-square 5x3 Gaussian scales checked against independent 2-D kernel and cosine oracles; continuous-backend KDE divergence stays explicit. Multiscale emd errors at the pin."
+    }
+  ]
+}

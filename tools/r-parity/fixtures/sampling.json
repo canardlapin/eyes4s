@@ -1,0 +1,714 @@
+{
+  "eyesim_revision": "ecb9c496257bce51acd5330af6a5e7a8d5b84e05",
+  "input_sha256": "9a5fdfe9597b21cbb548633d37001360eae6b36297ea52a0016f2643327e4a31",
+  "tolerance": {
+    "absolute": 1e-12,
+    "relative": 0
+  },
+  "reference": {
+    "trajectories": [
+      {
+        "name": "ordered",
+        "fast": {
+          "result": {
+            "x": [
+              null,
+              0,
+              0,
+              4,
+              4,
+              10,
+              null,
+              0
+            ],
+            "y": [
+              null,
+              1,
+              1,
+              3,
+              3,
+              5,
+              null,
+              1
+            ],
+            "onset": [
+              -0.1,
+              0.1,
+              0.15,
+              0.2,
+              0.3,
+              0.5,
+              0.51,
+              0.1
+            ],
+            "duration": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          "warnings": []
+        },
+        "slow": {
+          "result": {
+            "x": [
+              null,
+              0,
+              0,
+              4,
+              4,
+              10,
+              10,
+              0
+            ],
+            "y": [
+              null,
+              1,
+              1,
+              3,
+              3,
+              5,
+              5,
+              1
+            ],
+            "onset": [
+              -0.1,
+              0.1,
+              0.15,
+              0.2,
+              0.3,
+              0.5,
+              0.51,
+              0.1
+            ],
+            "duration": [
+              null,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "warnings": []
+        }
+      },
+      {
+        "name": "singleton",
+        "fast": {
+          "result": {
+            "x": [
+              null,
+              3,
+              null,
+              null,
+              null,
+              null,
+              null,
+              3
+            ],
+            "y": [
+              null,
+              4,
+              null,
+              null,
+              null,
+              null,
+              null,
+              4
+            ],
+            "onset": [
+              -0.1,
+              0.1,
+              0.15,
+              0.2,
+              0.3,
+              0.5,
+              0.51,
+              0.1
+            ],
+            "duration": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          "warnings": []
+        },
+        "slow": {
+          "result": {
+            "x": [
+              null,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3
+            ],
+            "y": [
+              null,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "onset": [
+              -0.1,
+              0.1,
+              0.15,
+              0.2,
+              0.3,
+              0.5,
+              0.51,
+              0.1
+            ],
+            "duration": [
+              null,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "warnings": []
+        }
+      },
+      {
+        "name": "duplicate",
+        "fast": {
+          "result": {
+            "x": [
+              null,
+              2,
+              2,
+              2,
+              2,
+              10,
+              null,
+              2
+            ],
+            "y": [
+              null,
+              2,
+              2,
+              2,
+              2,
+              5,
+              null,
+              2
+            ],
+            "onset": [
+              -0.1,
+              0.1,
+              0.15,
+              0.2,
+              0.3,
+              0.5,
+              0.51,
+              0.1
+            ],
+            "duration": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          "warnings": [
+            "collapsing to unique 'x' values",
+            "collapsing to unique 'x' values"
+          ]
+        },
+        "slow": {
+          "result": {
+            "x": [
+              null,
+              4,
+              4,
+              4,
+              4,
+              10,
+              10,
+              4
+            ],
+            "y": [
+              null,
+              3,
+              3,
+              3,
+              3,
+              5,
+              5,
+              3
+            ],
+            "onset": [
+              -0.1,
+              0.1,
+              0.15,
+              0.2,
+              0.3,
+              0.5,
+              0.51,
+              0.1
+            ],
+            "duration": [
+              null,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "warnings": []
+        }
+      },
+      {
+        "name": "empty",
+        "fast": {
+          "result": {
+            "error": "Tibble columns must have compatible sizes.\n* Size 2: Existing data.\n* Size 0: Column `duration`.\ni Only values of size one are recycled."
+          },
+          "warnings": []
+        },
+        "slow": {
+          "result": {
+            "error": "Tibble columns must have compatible sizes.\n* Size 2: Existing data.\n* Size 0: Column `duration`.\ni Only values of size one are recycled."
+          },
+          "warnings": []
+        }
+      }
+    ],
+    "replication": {
+      "counts": [
+        28,
+        1,
+        1,
+        1,
+        3
+      ],
+      "indices": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        3,
+        4,
+        5,
+        5,
+        5
+      ]
+    },
+    "controls": [
+      {
+        "cap": 0,
+        "rows": [
+          {
+            "key": "a1",
+            "matched": "a",
+            "stratum": "q1",
+            "matchind": 1,
+            "eye_sim": 1
+          },
+          {
+            "key": "a2",
+            "matched": "a",
+            "stratum": "q1",
+            "matchind": 1,
+            "eye_sim": 1
+          },
+          {
+            "key": "b1",
+            "matched": "b",
+            "stratum": "q1",
+            "matchind": 2,
+            "eye_sim": 1
+          },
+          {
+            "key": "c1",
+            "matched": "c",
+            "stratum": "q2",
+            "matchind": 3,
+            "eye_sim": 1
+          },
+          {
+            "key": "d1",
+            "matched": "d",
+            "stratum": "q2",
+            "matchind": 4,
+            "eye_sim": 1
+          },
+          {
+            "key": "c2",
+            "matched": "c",
+            "stratum": "q2",
+            "matchind": 3,
+            "eye_sim": 1
+          }
+        ],
+        "selected_reference_indices": [
+          [],
+          [],
+          [],
+          [],
+          [],
+          []
+        ]
+      },
+      {
+        "cap": 1,
+        "rows": [
+          {
+            "key": "a1",
+            "matched": "a",
+            "stratum": "q1",
+            "matchind": 1,
+            "eye_sim": 1,
+            "perm_sim": null,
+            "eye_sim_diff": null,
+            "n_perm": 0
+          },
+          {
+            "key": "a2",
+            "matched": "a",
+            "stratum": "q1",
+            "matchind": 1,
+            "eye_sim": 1,
+            "perm_sim": null,
+            "eye_sim_diff": null,
+            "n_perm": 0
+          },
+          {
+            "key": "b1",
+            "matched": "b",
+            "stratum": "q1",
+            "matchind": 2,
+            "eye_sim": 1,
+            "perm_sim": 0,
+            "eye_sim_diff": 1,
+            "n_perm": 1
+          },
+          {
+            "key": "c1",
+            "matched": "c",
+            "stratum": "q2",
+            "matchind": 3,
+            "eye_sim": 1,
+            "perm_sim": null,
+            "eye_sim_diff": null,
+            "n_perm": 0
+          },
+          {
+            "key": "d1",
+            "matched": "d",
+            "stratum": "q2",
+            "matchind": 4,
+            "eye_sim": 1,
+            "perm_sim": null,
+            "eye_sim_diff": null,
+            "n_perm": 0
+          },
+          {
+            "key": "c2",
+            "matched": "c",
+            "stratum": "q2",
+            "matchind": 3,
+            "eye_sim": 1,
+            "perm_sim": 0.707106781186547,
+            "eye_sim_diff": 0.292893218813452,
+            "n_perm": 1
+          }
+        ],
+        "selected_reference_indices": [
+          [],
+          [],
+          1,
+          [],
+          [],
+          4
+        ]
+      },
+      {
+        "cap": 20,
+        "rows": [
+          {
+            "key": "a1",
+            "matched": "a",
+            "stratum": "q1",
+            "matchind": 1,
+            "eye_sim": 1,
+            "perm_sim": 0.5,
+            "eye_sim_diff": 0.5,
+            "n_perm": 2
+          },
+          {
+            "key": "a2",
+            "matched": "a",
+            "stratum": "q1",
+            "matchind": 1,
+            "eye_sim": 1,
+            "perm_sim": 0.5,
+            "eye_sim_diff": 0.5,
+            "n_perm": 2
+          },
+          {
+            "key": "b1",
+            "matched": "b",
+            "stratum": "q1",
+            "matchind": 2,
+            "eye_sim": 1,
+            "perm_sim": 0,
+            "eye_sim_diff": 1,
+            "n_perm": 2
+          },
+          {
+            "key": "c1",
+            "matched": "c",
+            "stratum": "q2",
+            "matchind": 3,
+            "eye_sim": 1,
+            "perm_sim": 0.853553390593274,
+            "eye_sim_diff": 0.146446609406726,
+            "n_perm": 2
+          },
+          {
+            "key": "d1",
+            "matched": "d",
+            "stratum": "q2",
+            "matchind": 4,
+            "eye_sim": 1,
+            "perm_sim": 0.707106781186547,
+            "eye_sim_diff": 0.292893218813453,
+            "n_perm": 2
+          },
+          {
+            "key": "c2",
+            "matched": "c",
+            "stratum": "q2",
+            "matchind": 3,
+            "eye_sim": 1,
+            "perm_sim": 0.853553390593274,
+            "eye_sim_diff": 0.146446609406726,
+            "n_perm": 2
+          }
+        ],
+        "selected_reference_indices": [
+          [
+            1,
+            2
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            4,
+            3
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            3
+          ]
+        ]
+      }
+    ],
+    "fixation_controls": [
+      {
+        "result": [
+          {
+            "key": "a1",
+            "eye_sim": 1
+          },
+          {
+            "key": "a2",
+            "eye_sim": 1
+          },
+          {
+            "key": "b1",
+            "eye_sim": 1
+          },
+          {
+            "key": "c1",
+            "eye_sim": 1
+          },
+          {
+            "key": "d1",
+            "eye_sim": 1
+          },
+          {
+            "key": "c2",
+            "eye_sim": 1
+          }
+        ],
+        "warnings": [
+          "package 'future' was built under R version 4.5.2",
+          "package 'purrr' was built under R version 4.5.2"
+        ]
+      },
+      {
+        "result": [
+          {
+            "key": "a1",
+            "eye_sim": 1,
+            "perm_sim": 0,
+            "eye_sim_diff": 1,
+            "n_perm": 1
+          },
+          {
+            "key": "a2",
+            "eye_sim": 1,
+            "perm_sim": null,
+            "eye_sim_diff": null,
+            "n_perm": 0
+          },
+          {
+            "key": "b1",
+            "eye_sim": 1,
+            "perm_sim": 0,
+            "eye_sim_diff": 1,
+            "n_perm": 1
+          },
+          {
+            "key": "c1",
+            "eye_sim": 1,
+            "perm_sim": null,
+            "eye_sim_diff": null,
+            "n_perm": 0
+          },
+          {
+            "key": "d1",
+            "eye_sim": 1,
+            "perm_sim": null,
+            "eye_sim_diff": null,
+            "n_perm": 0
+          },
+          {
+            "key": "c2",
+            "eye_sim": 1,
+            "perm_sim": 0,
+            "eye_sim_diff": 1,
+            "n_perm": 1
+          }
+        ],
+        "warnings": [
+          "no matching candidate indices for permutation test. Skipping.",
+          "no matching candidate indices for permutation test. Skipping.",
+          "no matching candidate indices for permutation test. Skipping."
+        ]
+      },
+      {
+        "result": [
+          {
+            "key": "a1",
+            "eye_sim": 1,
+            "perm_sim": 0.5,
+            "eye_sim_diff": 0.5,
+            "n_perm": 2
+          },
+          {
+            "key": "a2",
+            "eye_sim": 1,
+            "perm_sim": 0.5,
+            "eye_sim_diff": 0.5,
+            "n_perm": 2
+          },
+          {
+            "key": "b1",
+            "eye_sim": 1,
+            "perm_sim": 0,
+            "eye_sim_diff": 1,
+            "n_perm": 2
+          },
+          {
+            "key": "c1",
+            "eye_sim": 1,
+            "perm_sim": 0.5,
+            "eye_sim_diff": 0.5,
+            "n_perm": 2
+          },
+          {
+            "key": "d1",
+            "eye_sim": 1,
+            "perm_sim": 0,
+            "eye_sim_diff": 1,
+            "n_perm": 2
+          },
+          {
+            "key": "c2",
+            "eye_sim": 1,
+            "perm_sim": 0.5,
+            "eye_sim_diff": 0.5,
+            "n_perm": 2
+          }
+        ],
+        "warnings": []
+      }
+    ],
+    "R": "4.5.1",
+    "RNGkind": [
+      "Mersenne-Twister",
+      "Inversion",
+      "Rejection"
+    ],
+    "seed": 42
+  }
+}

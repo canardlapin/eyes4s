@@ -1,0 +1,151 @@
+{
+  "schema": 1,
+  "ticket": "eyesim-kde",
+  "fixtures": {
+    "kde-input": {
+      "path": "tools/r-parity/fixtures/cases/eyesim-kde.json",
+      "sha256": "9c65b5380d284878e856451018c605e24487e1fa2dcfd5f4b32836edc86af7a9",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Non-square synthetic inputs and explicit boundary cases"
+    },
+    "kde-reference": {
+      "path": "tools/r-parity/fixtures/kde.json",
+      "sha256": "7de88d9536a2647049b3040c5f566c0be45d9eac07f6f60cff27df7a9261b8e2",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Locked exported reference calls, failures and analytic comparisons"
+    },
+    "kde-scala": {
+      "path": "surface/src/test/scala/eyes4s/surface/KdeReference.scala",
+      "sha256": "88624d718e3f33db60b9c5fa52f573a107e50ea54611545a640a38ed310309c7",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Portable measured reference expectations"
+    }
+  },
+  "regeneration": {
+    "kde-reference": {
+      "command": "python3 tools/r-parity/generate_kde.py --eyesim {eyesim} --check",
+      "requires_eyesim": true,
+      "outputs": [
+        "kde-reference",
+        "kde-scala"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "kde-estimation-and-bandwidth",
+      "row": "density",
+      "eyesim_entry_points": [
+        "eye_density",
+        "density_by",
+        "get_density",
+        "gen_density",
+        "suggest_sigma"
+      ],
+      "methods": [
+        "ks",
+        "MASS",
+        "single sigma",
+        "sigma vector",
+        "Silverman-IQR suggestion"
+      ],
+      "estimand": "A weighted Gaussian intensity or normalized mass evaluated on an explicit rectangular grid.",
+      "conventions": [
+        "native sigma is standard deviation; pinned MASS divides its argument by four",
+        "native cell-centre binned truncated kernel differs from continuous backend grids",
+        "uniform and explicit duration weights; explicit R weights argument ignored",
+        "R duration_weighted defaults differ by entry point",
+        "R window filtering precedes minimum count two",
+        "type-7 IQR rule and explicit display clamp",
+        "native group processing retains typed failures"
+      ],
+      "backend_dependencies": [
+        "ks",
+        "MASS",
+        "stats",
+        "dplyr"
+      ],
+      "eyes4s_public_api": [
+        "PointMeasure.of",
+        "Smoother.gaussian",
+        "Smoother.anisotropic",
+        "IqrBandwidth.suggest",
+        "Bandwidth.silverman",
+        "Bandwidth.scott",
+        "Grid",
+        "Mass",
+        "Intensity"
+      ],
+      "fixture_inputs": [
+        "kde-input",
+        "kde-reference",
+        "kde-scala"
+      ],
+      "independent_case": "A 5 by 3 non-square grid with reversed explicit weights detects axis, weighting, normalization and edge-policy mistakes.",
+      "status": "verified-intentional-divergence",
+      "evidence": [
+        "docs/DENSITY_SAMPLING.md",
+        "surface/src/test/scala/eyes4s/surface/KdeReferenceSuite.scala",
+        "tools/r-parity/fixtures/kde.json"
+      ],
+      "gap_issue": null,
+      "regeneration_ids": [
+        "kde-reference"
+      ],
+      "divergence": "Native weighted discrete Gaussian and source-edge correction are qualified by a direct 2-D discrete oracle at 1e-12, not claimed identical to continuous ks/MASS. MASS unweighted agrees with independent continuous Gaussian at fixed 1e-7 rounding tolerance; ks direct-evaluation differences are retained. Pinned explicit weights are ignored and weighted MASS fails on the selected non-square grid. R density_by drops failed groups; native errors remain operands. IQR suggestion agrees for valid positive outputs; singleton/zero unbounded sigma is a typed error, not NA/zero bandwidth."
+    },
+    {
+      "id": "density-point-evaluation",
+      "row": "density",
+      "eyesim_entry_points": [
+        "sample_density",
+        "template_sample"
+      ],
+      "methods": [
+        "none",
+        "max",
+        "sum",
+        "zscore"
+      ],
+      "estimand": "Normalized surface value at the nearest sampled grid coordinate (rounded interpolated index), with edge clamping, for each requested fixation coordinate.",
+      "conventions": [
+        "evaluation is deterministic and is not random sampling",
+        "normalization precedes nearest-grid lookup",
+        "coordinate-to-index interpolation then R round; density values are not bilinearly interpolated",
+        "finite outside coordinates clamp via approx rule=2; missing coordinates remain missing",
+        "out-of-domain behavior is explicit",
+        "output cardinality matches query cardinality or reports failures"
+      ],
+      "backend_dependencies": [
+        "stats::approx"
+      ],
+      "eyes4s_public_api": [
+        "DensityLookup.prepare",
+        "PreparedDensityLookup.sample",
+        "PreparedDensityLookup.along",
+        "DensityLookupPolicy",
+        "DensityNormalization",
+        "Surface.sampleAt"
+      ],
+      "fixture_inputs": [
+        "kde-input",
+        "kde-reference",
+        "kde-scala"
+      ],
+      "independent_case": "Two inside and two outside queries distinguish interpolation, clipping and partial indexing.",
+      "status": "verified-intentional-divergence",
+      "evidence": [
+        "docs/DENSITY_SAMPLING.md",
+        "surface/src/test/scala/eyes4s/surface/DensityLookupSuite.scala"
+      ],
+      "gap_issue": null,
+      "related_issues": [
+        "bd-01KYFTQ7P9VXC3SR4TBYV02P6H"
+      ],
+      "regeneration_ids": [
+        "kde-reference"
+      ],
+      "divergence": "Named nearest/clamped one-based-even-index lookup agrees on identical cell-centre coordinates, including normalization and shared fast trajectory composition. Existing containing-cell/outside-missing semantics remain a separate policy. Z-scored output is Signed. Exactly constant fields remain raw; singleton native z-score remains raw while pinned R errors. Nonfinite queries/arithmetic yield located or typed failures."
+    }
+  ]
+}

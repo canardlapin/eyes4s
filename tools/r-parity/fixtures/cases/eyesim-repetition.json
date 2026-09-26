@@ -1,0 +1,140 @@
+{
+  "rows": [
+    {
+      "key": "p1/a/0",
+      "participant": "p1",
+      "stimulus": "a",
+      "occasion": "0",
+      "values": [
+        0.1,
+        0.2,
+        0.3,
+        0.4
+      ],
+      "scale1": [
+        0.25,
+        0.25,
+        0.25,
+        0.25
+      ]
+    },
+    {
+      "key": "p1/b/0",
+      "participant": "p1",
+      "stimulus": "b",
+      "occasion": "0",
+      "values": [
+        0.4,
+        0.3,
+        0.2,
+        0.1
+      ],
+      "scale1": [
+        0.1,
+        0.4,
+        0.1,
+        0.4
+      ]
+    },
+    {
+      "key": "p1/a/1",
+      "participant": "p1",
+      "stimulus": "a",
+      "occasion": "1",
+      "values": [
+        0.1,
+        0.4,
+        0.1,
+        0.4
+      ],
+      "scale1": [
+        0.2,
+        0.2,
+        0.5,
+        0.1
+      ]
+    },
+    {
+      "key": "p1/b/1",
+      "participant": "p1",
+      "stimulus": "b",
+      "occasion": "1",
+      "values": [
+        0.2,
+        0.2,
+        0.5,
+        0.1
+      ],
+      "scale1": [
+        0.3,
+        0.1,
+        0.2,
+        0.4
+      ]
+    },
+    {
+      "key": "p1/a/2",
+      "participant": "p1",
+      "stimulus": "a",
+      "occasion": "2",
+      "values": [
+        0.3,
+        0.1,
+        0.2,
+        0.4
+      ],
+      "scale1": [
+        0.25,
+        0.15,
+        0.4,
+        0.2
+      ]
+    },
+    {
+      "key": "p1/b/2",
+      "participant": "p1",
+      "stimulus": "b",
+      "occasion": "2",
+      "values": [
+        0.25,
+        0.15,
+        0.4,
+        0.2
+      ],
+      "scale1": [
+        0.1,
+        0.1,
+        0.2,
+        0.6
+      ]
+    },
+    {
+      "key": "p2/a/0",
+      "participant": "p2",
+      "stimulus": "a",
+      "occasion": "0",
+      "values": [
+        0.1,
+        0.2,
+        0.3,
+        0.4
+      ],
+      "scale1": [
+        0.1,
+        0.4,
+        0.1,
+        0.4
+      ]
+    }
+  ],
+  "methods": [
+    "pearson",
+    "spearman",
+    "fisherz",
+    "cosine",
+    "l1",
+    "jaccard",
+    "dcov",
+    "emd"
+  ]
+}

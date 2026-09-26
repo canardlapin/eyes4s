@@ -1,0 +1,215 @@
+{
+  "eyesim_revision": "ecb9c496257bce51acd5330af6a5e7a8d5b84e05",
+  "input_sha256": "2abb65b005035e452f4daefcfe114f68e5844530451367483e19e86131a7e04d",
+  "tolerance": {
+    "absolute": 1e-12,
+    "relative": 0
+  },
+  "reference": {
+    "normal": {
+      "rows": [
+        {
+          "key": "s1",
+          "participant": "p1",
+          "matched": "a",
+          ".cv_fold": 1,
+          "eye_sim": 0.894427190999916
+        },
+        {
+          "key": "s2",
+          "participant": "p2",
+          "matched": "b",
+          ".cv_fold": 2,
+          "eye_sim": 0.894427190999916
+        },
+        {
+          "key": "s3",
+          "participant": "p3",
+          "matched": "c",
+          ".cv_fold": 1,
+          "eye_sim": 1
+        },
+        {
+          "key": "s4",
+          "participant": "p4",
+          "matched": "d",
+          ".cv_fold": 2,
+          "eye_sim": 0.894427190999916
+        },
+        {
+          "key": "s5",
+          "participant": "p2",
+          "matched": "c",
+          ".cv_fold": 2,
+          "eye_sim": 0.948683298050514
+        }
+      ],
+      "metadata": {
+        "split_on": "participant",
+        "n_folds": 2,
+        "seed": 42,
+        "similarity_transform": null,
+        "folds": [
+          {
+            "fold": 1,
+            "train_source_n": 2,
+            "eval_source_n": 2,
+            "train_match_n": 2,
+            "eval_match_n": 2,
+            "overlap_match_n": 0,
+            "dropped_overlap_train_n": 1,
+            "transform_info": null,
+            "note": "ok"
+          },
+          {
+            "fold": 2,
+            "train_source_n": 1,
+            "eval_source_n": 3,
+            "train_match_n": 1,
+            "eval_match_n": 3,
+            "overlap_match_n": 0,
+            "dropped_overlap_train_n": 1,
+            "transform_info": null,
+            "note": "ok"
+          }
+        ]
+      },
+      "warnings": []
+    },
+    "duplicate_reference": {
+      "rows": [
+        {
+          "key": "s1",
+          "participant": "p1",
+          "matched": "a",
+          ".cv_fold": 1,
+          "eye_sim": 0.894427190999916
+        },
+        {
+          "key": "s2",
+          "participant": "p2",
+          "matched": "b",
+          ".cv_fold": 2,
+          "eye_sim": 0.894427190999916
+        },
+        {
+          "key": "s3",
+          "participant": "p3",
+          "matched": "c",
+          ".cv_fold": 1,
+          "eye_sim": 1
+        },
+        {
+          "key": "s4",
+          "participant": "p4",
+          "matched": "d",
+          ".cv_fold": 2,
+          "eye_sim": 0.894427190999916
+        },
+        {
+          "key": "s5",
+          "participant": "p2",
+          "matched": "c",
+          ".cv_fold": 2,
+          "eye_sim": 0.948683298050514
+        }
+      ],
+      "metadata": {
+        "split_on": "participant",
+        "n_folds": 2,
+        "seed": 42,
+        "similarity_transform": null,
+        "folds": [
+          {
+            "fold": 1,
+            "train_source_n": 2,
+            "eval_source_n": 2,
+            "train_match_n": 2,
+            "eval_match_n": 2,
+            "overlap_match_n": 0,
+            "dropped_overlap_train_n": 1,
+            "transform_info": null,
+            "note": "ok"
+          },
+          {
+            "fold": 2,
+            "train_source_n": 1,
+            "eval_source_n": 3,
+            "train_match_n": 1,
+            "eval_match_n": 3,
+            "overlap_match_n": 0,
+            "dropped_overlap_train_n": 1,
+            "transform_info": null,
+            "note": "ok"
+          }
+        ]
+      },
+      "warnings": []
+    },
+    "missing_reference": {
+      "rows": [
+        {
+          "key": "s2",
+          "participant": "p2",
+          "matched": "b",
+          ".cv_fold": 2,
+          "eye_sim": 0.894427190999916
+        },
+        {
+          "key": "s3",
+          "participant": "p3",
+          "matched": "c",
+          ".cv_fold": 1,
+          "eye_sim": 1
+        },
+        {
+          "key": "s4",
+          "participant": "p4",
+          "matched": "d",
+          ".cv_fold": 2,
+          "eye_sim": 0.894427190999916
+        },
+        {
+          "key": "s5",
+          "participant": "p2",
+          "matched": "c",
+          ".cv_fold": 2,
+          "eye_sim": 0.948683298050514
+        }
+      ],
+      "metadata": {
+        "split_on": "participant",
+        "n_folds": 2,
+        "seed": 42,
+        "similarity_transform": null,
+        "folds": [
+          {
+            "fold": 1,
+            "train_source_n": 2,
+            "eval_source_n": 2,
+            "train_match_n": 2,
+            "eval_match_n": 2,
+            "overlap_match_n": 0,
+            "dropped_overlap_train_n": 1,
+            "transform_info": null,
+            "note": "ok"
+          },
+          {
+            "fold": 2,
+            "train_source_n": 1,
+            "eval_source_n": 3,
+            "train_match_n": 1,
+            "eval_match_n": 3,
+            "overlap_match_n": 0,
+            "dropped_overlap_train_n": 1,
+            "transform_info": null,
+            "note": "ok"
+          }
+        ]
+      },
+      "warnings": "did not find matching template map for all source maps. Removing non-matching elements."
+    },
+    "rng_restored": false,
+    "R": "4.5.1"
+  }
+}

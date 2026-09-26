@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "ticket": "bd-01KYD6SYK02ZRV99MG7FX939ZS",
+  "fixtures": {
+    "decomposition-input": {
+      "path": "tools/r-parity/fixtures/cases/bd-01KYD6SYK02ZRV99MG7FX939ZS.json",
+      "sha256": "6ba146fbfa9c0674f2bb705011f52f80429aa3e38e76934dc7d2f6ecc83fb7ed",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Independent small full-rank OLS inputs"
+    },
+    "decomposition-reference": {
+      "path": "tools/r-parity/fixtures/decomposition.json",
+      "sha256": "f30f65583b611834e035336fa72a0ebcaac69dd57fecfe6a95dc4b57e902ddf7",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Pinned public eyesim lm outputs and exact rational oracle"
+    },
+    "decomposition-scala": {
+      "path": "laws/src/test/scala/eyes4s/laws/DecompositionReference.scala",
+      "sha256": "a36c9f58162f1dab88fb7da830c1fe69a3f83646e8d040a75a4acc385afefd50",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Portable rational OLS expectations checked against pinned eyesim"
+    }
+  },
+  "regeneration": {
+    "decomposition": {
+      "command": "python3 tools/r-parity/generate_decomposition.py --eyesim {eyesim} --check",
+      "requires_eyesim": true,
+      "outputs": [
+        "decomposition-reference",
+        "decomposition-scala"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "surface-decomposition-ols",
+      "row": "template-models",
+      "status": "verified-equivalent",
+      "estimand": "Cellwise normalized-map OLS with explicit intercept, keyed coefficients and Signed predictions/residuals; descriptive centered or uncentered R-squared",
+      "eyesim_entry_points": [
+        "template_regression",
+        "template_multireg"
+      ],
+      "methods": [
+        "lm with intercept",
+        "lm without intercept"
+      ],
+      "conventions": [
+        "Mass predictors/response on one nominal grid",
+        "full column rank; no dropped predictors",
+        "centered R-squared with intercept, uncentered without",
+        "rank threshold on unit-norm columns"
+      ],
+      "backend_dependencies": [
+        "stats::lm",
+        "native Householder QR"
+      ],
+      "eyes4s_public_api": [
+        "PredictorSet.of",
+        "SurfaceDecomposition.ols",
+        "LeastSquares.fit"
+      ],
+      "fixture_inputs": [
+        "decomposition-input",
+        "decomposition-reference",
+        "decomposition-scala"
+      ],
+      "independent_case": "Exact Fraction normal equations solved by Gauss-Jordan independently of floating QR; intercept, no-intercept, nonzero residual, signed-coefficient cases.",
+      "evidence": [
+        "laws/src/test/scala/eyes4s/laws/SurfaceDecompositionSuite.scala",
+        "tools/r-parity/fixtures/decomposition.json",
+        "docs/SURFACE_DECOMPOSITION.md"
+      ],
+      "regeneration_ids": [
+        "decomposition"
+      ]
+    }
+  ]
+}

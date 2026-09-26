@@ -1,0 +1,145 @@
+{
+  "schema": 1,
+  "ticket": "eyesim-scanpath",
+  "fixtures": {
+    "scanpath-input": {
+      "path": "tools/r-parity/fixtures/cases/eyesim-scanpath.json",
+      "sha256": "cb5c1703150147e5ef70e566aa0aa67e0fa6ba2da4b82a3b24565f9ffc69eca8",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Exported R route, analytic oracles, solver plans and retained failure evidence"
+    },
+    "scanpath-reference": {
+      "path": "tools/r-parity/fixtures/scanpath.json",
+      "sha256": "bc08519acae50bdeea4757a08b46756b55736903c6d70ffa7ba7bd410636436c",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Exported R route, analytic oracles, solver plans and retained failure evidence"
+    },
+    "scanpath-scala": {
+      "path": "compare/src/test/scala/eyes4s/compare/ScanpathReference.scala",
+      "sha256": "f46646342fbd754e9cb089fc8eb1fdc7d40f3ee20fd7f91ba631b77bedc456ed",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Exported R route, analytic oracles, solver plans and retained failure evidence"
+    }
+  },
+  "regeneration": {
+    "scanpath-reference": {
+      "command": "python3 tools/r-parity/generate_scanpath.py --eyesim {eyesim} --check",
+      "requires_eyesim": true,
+      "outputs": [
+        "scanpath-reference",
+        "scanpath-scala"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "scanpath-multimatch",
+      "row": "scanpaths",
+      "eyesim_entry_points": [
+        "scanpath",
+        "scanpath_similarity",
+        "multi_match"
+      ],
+      "methods": [
+        "multimatch",
+        "mm_vector",
+        "mm_direction",
+        "mm_length",
+        "mm_position",
+        "mm_duration",
+        "mm_position_emd"
+      ],
+      "estimand": "Component-wise ordered scanpath similarity after monotone alignment, optionally within a time window.",
+      "conventions": [
+        "strictly increasing onset",
+        "at least three fixations",
+        "screen-size normalization",
+        "eyesim exposes a sixth order-insensitive EMD component"
+      ],
+      "backend_dependencies": [
+        "base R",
+        "igraph suggested",
+        "emdist suggested"
+      ],
+      "eyes4s_public_api": [
+        "ScanpathComparison.baseline",
+        "ScanpathComponents",
+        "MultiMatch",
+        "Scanpath.within",
+        "Overlap.OnsetInside"
+      ],
+      "fixture_inputs": [
+        "scanpath-input",
+        "scanpath-reference",
+        "scanpath-scala"
+      ],
+      "independent_case": "Three-point paths on a 100 by 50 screen distinguish direction, length, position and duration normalization.",
+      "status": "verified-intentional-divergence",
+      "evidence": [
+        "docs/SCANPATH_COMPARISON.md",
+        "compare/src/test/scala/eyes4s/compare/ScanpathReferenceSuite.scala",
+        "tools/r-parity/fixtures/scanpath.json"
+      ],
+      "gap_issue": null,
+      "planned_evidence": "Pinned eyesim fixture reconciled separately from the existing Python implementation conformance.",
+      "regeneration_ids": [
+        "scanpath-reference"
+      ],
+      "divergence": "Five components match exported R on non-square translated, duration/geometry changed, straight, stationary and tied self paths at 1e-12. Baseline wrapper keeps six named slots and requires three fixations; sixth EMD remains explicit unavailable consistent with no-exact-solver decision. Legacy five-component MultiMatch two-fixation support remains. Native checked admission and empty/window/component errors replace R shape-changing missing outputs. Python evidence remains separately identified. Measured sixth backend values are not exact-EMD oracles."
+    },
+    {
+      "id": "fixation-overlap-and-transport",
+      "row": "scanpaths",
+      "eyesim_entry_points": [
+        "fixation_similarity",
+        "fixation_overlap",
+        "similarity.fixation_group"
+      ],
+      "methods": [
+        "sinkhorn",
+        "overlap",
+        "euclidean",
+        "manhattan"
+      ],
+      "estimand": "Order-insensitive fixation-pattern transport or proportion of sampled trajectory positions within a spatial threshold.",
+      "conventions": [
+        "direct fixation_overlap defaults to threshold 60 and 20-unit times; similarity.fixation_group defaults to threshold 40 and requires time_samples",
+        "overlap uses strict distance < threshold and all requested times in its denominator",
+        "distance metric explicit",
+        "fixation Sinkhorn uses normalized x/y/onset and duration weights, returning 1/(1+cost); distinguish it from a raw cost or debiased divergence"
+      ],
+      "backend_dependencies": [
+        "T4transport suggested",
+        "transport suggested",
+        "stats::approx"
+      ],
+      "eyes4s_public_api": [
+        "FixationOverlap.compare",
+        "FixationTrajectory",
+        "OverlapThreshold",
+        "MissingOverlapPolicy",
+        "FixationTransportConfig.of",
+        "FixationTransport.compare",
+        "FixationTransportResult"
+      ],
+      "fixture_inputs": [
+        "scanpath-input",
+        "scanpath-reference",
+        "scanpath-scala"
+      ],
+      "independent_case": "The selected paths cross the distance threshold between query times and distinguish interpolation from fixation-only matching.",
+      "status": "verified-intentional-divergence",
+      "evidence": [
+        "docs/SCANPATH_COMPARISON.md",
+        "compare/src/test/scala/eyes4s/compare/ScanpathReferenceSuite.scala",
+        "tools/r-parity/fixtures/scanpath.json"
+      ],
+      "gap_issue": null,
+      "planned_evidence": "Reference outputs for both overlap metrics and a dependency-locked Sinkhorn case.",
+      "regeneration_ids": [
+        "scanpath-reference"
+      ],
+      "divergence": "Explicit queries, strict threshold, Euclidean/Manhattan distances and all-requested denominator agree; native complete-support policy and located failures are separate. Native scaled position/onset duration-weighted log-domain entropic transport uses p=2 squared cost, root cost and 1/(1+rootCost), not debiased divergence or a metric. Independent primal and analytic oracles qualify converged native results. Default T4transport lambda=.01 fails frozen 1e-7 comparison gate (delta 1.78e-6, marginal residual 8.94e-6); retained default/extended plans document stopping divergence. Native nonconvergence/overflow/matrix size/identity failures are explicit."
+    }
+  ]
+}

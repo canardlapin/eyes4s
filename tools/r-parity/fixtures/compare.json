@@ -1,0 +1,2414 @@
+{
+  "eyesim_revision": "ecb9c496257bce51acd5330af6a5e7a8d5b84e05",
+  "input_sha256": "b7dab445fdcf3f6f69e8d4b9204528670c3fc60d1691b495a53f962268657feb",
+  "independent": {
+    "regular": {
+      "pearson": -0.35000000000000003,
+      "spearman": -0.23483410915693106,
+      "fisherz": -0.3654437542713962,
+      "cosine": 0.7749999999999999,
+      "l1": 0.75,
+      "jaccard": 0.6326530612244898,
+      "dcov": 0.5467003647630306
+    },
+    "ties": {
+      "pearson": -0.8947368421052632,
+      "spearman": -1.0,
+      "fisherz": -1.4451858789480823,
+      "cosine": 0.18181818181818182,
+      "l1": 0.4,
+      "jaccard": 0.1,
+      "dcov": 0.9147320339189784
+    },
+    "orthogonal": {
+      "pearson": -0.3333333333333333,
+      "spearman": -0.3333333333333333,
+      "fisherz": -0.34657359027997264,
+      "cosine": 0.0,
+      "l1": 0.0,
+      "jaccard": 0.0,
+      "dcov": 0.3333333333333333
+    },
+    "identical": {
+      "pearson": 1.0,
+      "spearman": 1.0,
+      "fisherz": 18.36840028483855,
+      "cosine": 1.0,
+      "l1": 1.0,
+      "jaccard": 1.0,
+      "dcov": 1.0
+    }
+  },
+  "transport_oracle": {
+    "dirac_distance": 1.4142135623730951,
+    "split_distance": 1
+  },
+  "reference": {
+    "records": [
+      {
+        "name": "regular",
+        "vector": {
+          "pearson": {
+            "result": {
+              "values": -0.35,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": -0.234834109156931,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": -0.365443754271396,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 0.775,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 0.75,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 0.63265306122449,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 0.546700364763031,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "error": "method 'emd' requires eye_density objects with x, y, z components"
+            },
+            "warnings": []
+          }
+        },
+        "density": {
+          "pearson": {
+            "result": {
+              "values": -0.35,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": -0.234834109156931,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": -0.365443754271396,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 0.775,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 0.75,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 0.63265306122449,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 0.546700364763031,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "values": 0.519490604589148,
+              "names": null
+            },
+            "warnings": []
+          }
+        }
+      },
+      {
+        "name": "ties",
+        "vector": {
+          "pearson": {
+            "result": {
+              "values": -0.894736842105263,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": -1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": -1.44518587894808,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 0.181818181818182,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 0.4,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 0.1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 0.914732033918978,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "error": "method 'emd' requires eye_density objects with x, y, z components"
+            },
+            "warnings": []
+          }
+        },
+        "density": {
+          "pearson": {
+            "result": {
+              "values": -0.894736842105263,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": -1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": -1.44518587894808,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 0.181818181818182,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 0.4,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 0.1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 0.914732033918978,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "values": 0.339056739844638,
+              "names": null
+            },
+            "warnings": []
+          }
+        }
+      },
+      {
+        "name": "orthogonal",
+        "vector": {
+          "pearson": {
+            "result": {
+              "values": -0.333333333333333,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": -0.333333333333333,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": -0.346573590279973,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 0,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 0,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 0,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 0.333333333333333,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "error": "method 'emd' requires eye_density objects with x, y, z components"
+            },
+            "warnings": []
+          }
+        },
+        "density": {
+          "pearson": {
+            "result": {
+              "values": -0.333333333333333,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": -0.333333333333333,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": -0.346573590279973,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 0,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 0,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 0,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 0.333333333333333,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "values": 0.5,
+              "names": null
+            },
+            "warnings": []
+          }
+        }
+      },
+      {
+        "name": "identical",
+        "vector": {
+          "pearson": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": 18.3684002848386,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "error": "method 'emd' requires eye_density objects with x, y, z components"
+            },
+            "warnings": []
+          }
+        },
+        "density": {
+          "pearson": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": 18.3684002848386,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          }
+        }
+      },
+      {
+        "name": "constant",
+        "vector": {
+          "pearson": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "error": "method 'emd' requires eye_density objects with x, y, z components"
+            },
+            "warnings": []
+          }
+        },
+        "density": {
+          "pearson": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          }
+        }
+      },
+      {
+        "name": "constant-one",
+        "vector": {
+          "pearson": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Method pearson requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+          },
+          "spearman": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Method spearman requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+          },
+          "fisherz": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Method fisherz requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+          },
+          "cosine": {
+            "result": {
+              "values": 0.912870929175277,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 0.8,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 0.833333333333333,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Method dcov requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+          },
+          "emd": {
+            "result": {
+              "error": "method 'emd' requires eye_density objects with x, y, z components"
+            },
+            "warnings": []
+          }
+        },
+        "density": {
+          "pearson": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Method pearson requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+          },
+          "spearman": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Method spearman requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+          },
+          "fisherz": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Method fisherz requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+          },
+          "cosine": {
+            "result": {
+              "values": 0.912870929175277,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 0.8,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 0.833333333333333,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Method dcov requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+          },
+          "emd": {
+            "result": {
+              "values": 0.585786441675618,
+              "names": null
+            },
+            "warnings": []
+          }
+        }
+      },
+      {
+        "name": "one-cell",
+        "vector": {
+          "pearson": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "spearman": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "fisherz": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "cosine": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "l1": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "jaccard": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "dcov": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "emd": {
+            "result": {
+              "error": "method 'emd' requires eye_density objects with x, y, z components"
+            },
+            "warnings": []
+          }
+        },
+        "density": {
+          "pearson": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "spearman": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "fisherz": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "cosine": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "l1": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "jaccard": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "dcov": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "emd": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          }
+        }
+      },
+      {
+        "name": "zero",
+        "vector": {
+          "pearson": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Cannot normalize for L1 distance; sum is too small."
+          },
+          "jaccard": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "error": "method 'emd' requires eye_density objects with x, y, z components"
+            },
+            "warnings": []
+          }
+        },
+        "density": {
+          "pearson": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Cannot normalize for L1 distance; sum is too small."
+          },
+          "jaccard": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "error": "missing value where TRUE/FALSE needed"
+            },
+            "warnings": []
+          }
+        }
+      },
+      {
+        "name": "empty",
+        "vector": {
+          "pearson": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "spearman": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "fisherz": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "cosine": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "l1": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "jaccard": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "dcov": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Less than 2 common valid data points for similarity calculation."
+          },
+          "emd": {
+            "result": {
+              "error": "method 'emd' requires eye_density objects with x, y, z components"
+            },
+            "warnings": []
+          }
+        },
+        "density": null
+      },
+      {
+        "name": "missing",
+        "vector": {
+          "pearson": {
+            "result": {
+              "values": -1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": -1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": -18.3684002848386,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 0.6,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 0.5,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 0.428571428571429,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "error": "method 'emd' requires eye_density objects with x, y, z components"
+            },
+            "warnings": []
+          }
+        },
+        "density": {
+          "pearson": {
+            "result": {
+              "values": -1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": -1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": -18.3684002848386,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 0.6,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 0.5,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 0.428571428571429,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "error": "missing value where TRUE/FALSE needed"
+            },
+            "warnings": []
+          }
+        }
+      },
+      {
+        "name": "unequal",
+        "vector": {
+          "pearson": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": [
+              "longer object length is not a multiple of shorter object length",
+              "Method pearson requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+            ]
+          },
+          "spearman": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": [
+              "longer object length is not a multiple of shorter object length",
+              "Method spearman requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+            ]
+          },
+          "fisherz": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": [
+              "longer object length is not a multiple of shorter object length",
+              "Method fisherz requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+            ]
+          },
+          "cosine": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": "longer object length is not a multiple of shorter object length"
+          },
+          "l1": {
+            "result": {
+              "error": "missing value where TRUE/FALSE needed"
+            },
+            "warnings": "longer object length is not a multiple of shorter object length"
+          },
+          "jaccard": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": "longer object length is not a multiple of shorter object length"
+          },
+          "dcov": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": [
+              "longer object length is not a multiple of shorter object length",
+              "Method dcov requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+            ]
+          },
+          "emd": {
+            "result": {
+              "error": "method 'emd' requires eye_density objects with x, y, z components"
+            },
+            "warnings": []
+          }
+        },
+        "density": null
+      },
+      {
+        "name": "signed",
+        "vector": {
+          "pearson": {
+            "result": {
+              "values": -1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": -1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": -18.3684002848386,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": -1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": [
+              "L1 distance interpretation assumes non-negative densities.",
+              "Cannot normalize for L1 distance; sum is too small."
+            ]
+          },
+          "jaccard": {
+            "result": {
+              "values": -0.333333333333333,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Cannot normalize for dcov; sum is too small."
+          },
+          "emd": {
+            "result": {
+              "error": "method 'emd' requires eye_density objects with x, y, z components"
+            },
+            "warnings": []
+          }
+        },
+        "density": {
+          "pearson": {
+            "result": {
+              "values": -1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": -1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": -18.3684002848386,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": -1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": [
+              "L1 distance interpretation assumes non-negative densities.",
+              "Cannot normalize for L1 distance; sum is too small."
+            ]
+          },
+          "jaccard": {
+            "result": {
+              "values": -0.333333333333333,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "Cannot normalize for dcov; sum is too small."
+          },
+          "emd": {
+            "result": {
+              "error": "* sinkhornD : input 'wx' should contain no negative values."
+            },
+            "warnings": []
+          }
+        }
+      },
+      {
+        "name": "raw-amplitude",
+        "vector": {
+          "pearson": {
+            "result": {
+              "values": -1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": -1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": -18.3684002848386,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 0.714285714285714,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 0.666666666666667,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 0.555555555555556,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "error": "method 'emd' requires eye_density objects with x, y, z components"
+            },
+            "warnings": []
+          }
+        },
+        "density": {
+          "pearson": {
+            "result": {
+              "values": -1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "spearman": {
+            "result": {
+              "values": -1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "fisherz": {
+            "result": {
+              "values": -18.3684002848386,
+              "names": null
+            },
+            "warnings": []
+          },
+          "cosine": {
+            "result": {
+              "values": 0.714285714285714,
+              "names": null
+            },
+            "warnings": []
+          },
+          "l1": {
+            "result": {
+              "values": 0.666666666666667,
+              "names": null
+            },
+            "warnings": []
+          },
+          "jaccard": {
+            "result": {
+              "values": 0.555555555555556,
+              "names": null
+            },
+            "warnings": []
+          },
+          "dcov": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          },
+          "emd": {
+            "result": {
+              "values": 0.550664414998662,
+              "names": null
+            },
+            "warnings": []
+          }
+        }
+      }
+    ],
+    "scales": {
+      "ordered": {
+        "pearson": {
+          "none": {
+            "result": {
+              "values": [
+                1,
+                -1
+              ],
+              "names": [
+                "sigma_2",
+                "sigma_1"
+              ]
+            },
+            "warnings": []
+          },
+          "mean": {
+            "result": {
+              "values": 0,
+              "names": null
+            },
+            "warnings": []
+          }
+        },
+        "spearman": {
+          "none": {
+            "result": {
+              "values": [
+                1,
+                -1
+              ],
+              "names": [
+                "sigma_2",
+                "sigma_1"
+              ]
+            },
+            "warnings": []
+          },
+          "mean": {
+            "result": {
+              "values": 0,
+              "names": null
+            },
+            "warnings": []
+          }
+        },
+        "fisherz": {
+          "none": {
+            "result": {
+              "values": [
+                18.3684002848386,
+                -18.3684002848386
+              ],
+              "names": [
+                "sigma_2",
+                "sigma_1"
+              ]
+            },
+            "warnings": []
+          },
+          "mean": {
+            "result": {
+              "values": 0,
+              "names": null
+            },
+            "warnings": []
+          }
+        },
+        "cosine": {
+          "none": {
+            "result": {
+              "values": [
+                1,
+                0.666666666666667
+              ],
+              "names": [
+                "sigma_2",
+                "sigma_1"
+              ]
+            },
+            "warnings": []
+          },
+          "mean": {
+            "result": {
+              "values": 0.833333333333333,
+              "names": null
+            },
+            "warnings": []
+          }
+        },
+        "l1": {
+          "none": {
+            "result": {
+              "values": [
+                1,
+                0.6
+              ],
+              "names": [
+                "sigma_2",
+                "sigma_1"
+              ]
+            },
+            "warnings": []
+          },
+          "mean": {
+            "result": {
+              "values": 0.8,
+              "names": null
+            },
+            "warnings": []
+          }
+        },
+        "jaccard": {
+          "none": {
+            "result": {
+              "values": [
+                1,
+                0.5
+              ],
+              "names": [
+                "sigma_2",
+                "sigma_1"
+              ]
+            },
+            "warnings": []
+          },
+          "mean": {
+            "result": {
+              "values": 0.75,
+              "names": null
+            },
+            "warnings": []
+          }
+        },
+        "dcov": {
+          "none": {
+            "result": {
+              "values": [
+                1,
+                1
+              ],
+              "names": [
+                "sigma_2",
+                "sigma_1"
+              ]
+            },
+            "warnings": []
+          },
+          "mean": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": []
+          }
+        },
+        "emd": {
+          "none": {
+            "result": {
+              "error": "'arg' should be one of \"pearson\", \"spearman\", \"fisherz\", \"cosine\", \"l1\", \"jaccard\", \"dcov\""
+            },
+            "warnings": []
+          },
+          "mean": {
+            "result": {
+              "error": "'arg' should be one of \"pearson\", \"spearman\", \"fisherz\", \"cosine\", \"l1\", \"jaccard\", \"dcov\""
+            },
+            "warnings": []
+          }
+        }
+      },
+      "unmatched": {
+        "pearson": {
+          "none": {
+            "result": {
+              "values": 1,
+              "names": "sigma_2"
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 2"
+          },
+          "mean": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 2"
+          }
+        },
+        "spearman": {
+          "none": {
+            "result": {
+              "values": 1,
+              "names": "sigma_2"
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 2"
+          },
+          "mean": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 2"
+          }
+        },
+        "fisherz": {
+          "none": {
+            "result": {
+              "values": 18.3684002848386,
+              "names": "sigma_2"
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 2"
+          },
+          "mean": {
+            "result": {
+              "values": 18.3684002848386,
+              "names": null
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 2"
+          }
+        },
+        "cosine": {
+          "none": {
+            "result": {
+              "values": 1,
+              "names": "sigma_2"
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 2"
+          },
+          "mean": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 2"
+          }
+        },
+        "l1": {
+          "none": {
+            "result": {
+              "values": 1,
+              "names": "sigma_2"
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 2"
+          },
+          "mean": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 2"
+          }
+        },
+        "jaccard": {
+          "none": {
+            "result": {
+              "values": 1,
+              "names": "sigma_2"
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 2"
+          },
+          "mean": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 2"
+          }
+        },
+        "dcov": {
+          "none": {
+            "result": {
+              "values": 1,
+              "names": "sigma_2"
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 2"
+          },
+          "mean": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 2"
+          }
+        },
+        "emd": {
+          "none": {
+            "result": {
+              "error": "'arg' should be one of \"pearson\", \"spearman\", \"fisherz\", \"cosine\", \"l1\", \"jaccard\", \"dcov\""
+            },
+            "warnings": []
+          },
+          "mean": {
+            "result": {
+              "error": "'arg' should be one of \"pearson\", \"spearman\", \"fisherz\", \"cosine\", \"l1\", \"jaccard\", \"dcov\""
+            },
+            "warnings": []
+          }
+        }
+      },
+      "duplicate": {
+        "pearson": {
+          "none": {
+            "result": {
+              "values": 1,
+              "names": "sigma_1"
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 1"
+          },
+          "mean": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 1"
+          }
+        },
+        "spearman": {
+          "none": {
+            "result": {
+              "values": 1,
+              "names": "sigma_1"
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 1"
+          },
+          "mean": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 1"
+          }
+        },
+        "fisherz": {
+          "none": {
+            "result": {
+              "values": 18.3684002848386,
+              "names": "sigma_1"
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 1"
+          },
+          "mean": {
+            "result": {
+              "values": 18.3684002848386,
+              "names": null
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 1"
+          }
+        },
+        "cosine": {
+          "none": {
+            "result": {
+              "values": 1,
+              "names": "sigma_1"
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 1"
+          },
+          "mean": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 1"
+          }
+        },
+        "l1": {
+          "none": {
+            "result": {
+              "values": 1,
+              "names": "sigma_1"
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 1"
+          },
+          "mean": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 1"
+          }
+        },
+        "jaccard": {
+          "none": {
+            "result": {
+              "values": 1,
+              "names": "sigma_1"
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 1"
+          },
+          "mean": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 1"
+          }
+        },
+        "dcov": {
+          "none": {
+            "result": {
+              "values": 1,
+              "names": "sigma_1"
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 1"
+          },
+          "mean": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": "Not all sigmas matched between multiscale objects. Comparing only common sigmas: 1"
+          }
+        },
+        "emd": {
+          "none": {
+            "result": {
+              "error": "'arg' should be one of \"pearson\", \"spearman\", \"fisherz\", \"cosine\", \"l1\", \"jaccard\", \"dcov\""
+            },
+            "warnings": []
+          },
+          "mean": {
+            "result": {
+              "error": "'arg' should be one of \"pearson\", \"spearman\", \"fisherz\", \"cosine\", \"l1\", \"jaccard\", \"dcov\""
+            },
+            "warnings": []
+          }
+        }
+      },
+      "partial_failure": {
+        "pearson": {
+          "none": {
+            "result": {
+              "values": [
+                null,
+                1
+              ],
+              "names": [
+                "sigma_1",
+                "sigma_2"
+              ]
+            },
+            "warnings": "Method pearson requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+          },
+          "mean": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": "Method pearson requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+          }
+        },
+        "spearman": {
+          "none": {
+            "result": {
+              "values": [
+                null,
+                1
+              ],
+              "names": [
+                "sigma_1",
+                "sigma_2"
+              ]
+            },
+            "warnings": "Method spearman requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+          },
+          "mean": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": "Method spearman requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+          }
+        },
+        "fisherz": {
+          "none": {
+            "result": {
+              "values": [
+                null,
+                18.3684002848386
+              ],
+              "names": [
+                "sigma_1",
+                "sigma_2"
+              ]
+            },
+            "warnings": "Method fisherz requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+          },
+          "mean": {
+            "result": {
+              "values": 18.3684002848386,
+              "names": null
+            },
+            "warnings": "Method fisherz requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+          }
+        },
+        "cosine": {
+          "none": {
+            "result": {
+              "values": [
+                0.912870929175277,
+                1
+              ],
+              "names": [
+                "sigma_1",
+                "sigma_2"
+              ]
+            },
+            "warnings": []
+          },
+          "mean": {
+            "result": {
+              "values": 0.956435464587638,
+              "names": null
+            },
+            "warnings": []
+          }
+        },
+        "l1": {
+          "none": {
+            "result": {
+              "values": [
+                0.8,
+                1
+              ],
+              "names": [
+                "sigma_1",
+                "sigma_2"
+              ]
+            },
+            "warnings": []
+          },
+          "mean": {
+            "result": {
+              "values": 0.9,
+              "names": null
+            },
+            "warnings": []
+          }
+        },
+        "jaccard": {
+          "none": {
+            "result": {
+              "values": [
+                0.833333333333333,
+                1
+              ],
+              "names": [
+                "sigma_1",
+                "sigma_2"
+              ]
+            },
+            "warnings": []
+          },
+          "mean": {
+            "result": {
+              "values": 0.916666666666667,
+              "names": null
+            },
+            "warnings": []
+          }
+        },
+        "dcov": {
+          "none": {
+            "result": {
+              "values": [
+                null,
+                1
+              ],
+              "names": [
+                "sigma_1",
+                "sigma_2"
+              ]
+            },
+            "warnings": "Method dcov requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+          },
+          "mean": {
+            "result": {
+              "values": 1,
+              "names": null
+            },
+            "warnings": "Method dcov requires variance in both inputs, or identical inputs if variance is zero. One or both have near-zero variance and are not identical."
+          }
+        },
+        "emd": {
+          "none": {
+            "result": {
+              "error": "'arg' should be one of \"pearson\", \"spearman\", \"fisherz\", \"cosine\", \"l1\", \"jaccard\", \"dcov\""
+            },
+            "warnings": []
+          },
+          "mean": {
+            "result": {
+              "error": "'arg' should be one of \"pearson\", \"spearman\", \"fisherz\", \"cosine\", \"l1\", \"jaccard\", \"dcov\""
+            },
+            "warnings": []
+          }
+        }
+      },
+      "none_common": {
+        "pearson": {
+          "none": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "No common sigmas found between multiscale objects. Cannot compute similarity."
+          },
+          "mean": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "No common sigmas found between multiscale objects. Cannot compute similarity."
+          }
+        },
+        "spearman": {
+          "none": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "No common sigmas found between multiscale objects. Cannot compute similarity."
+          },
+          "mean": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "No common sigmas found between multiscale objects. Cannot compute similarity."
+          }
+        },
+        "fisherz": {
+          "none": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "No common sigmas found between multiscale objects. Cannot compute similarity."
+          },
+          "mean": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "No common sigmas found between multiscale objects. Cannot compute similarity."
+          }
+        },
+        "cosine": {
+          "none": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "No common sigmas found between multiscale objects. Cannot compute similarity."
+          },
+          "mean": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "No common sigmas found between multiscale objects. Cannot compute similarity."
+          }
+        },
+        "l1": {
+          "none": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "No common sigmas found between multiscale objects. Cannot compute similarity."
+          },
+          "mean": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "No common sigmas found between multiscale objects. Cannot compute similarity."
+          }
+        },
+        "jaccard": {
+          "none": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "No common sigmas found between multiscale objects. Cannot compute similarity."
+          },
+          "mean": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "No common sigmas found between multiscale objects. Cannot compute similarity."
+          }
+        },
+        "dcov": {
+          "none": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "No common sigmas found between multiscale objects. Cannot compute similarity."
+          },
+          "mean": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "No common sigmas found between multiscale objects. Cannot compute similarity."
+          }
+        },
+        "emd": {
+          "none": {
+            "result": {
+              "error": "'arg' should be one of \"pearson\", \"spearman\", \"fisherz\", \"cosine\", \"l1\", \"jaccard\", \"dcov\""
+            },
+            "warnings": []
+          },
+          "mean": {
+            "result": {
+              "error": "'arg' should be one of \"pearson\", \"spearman\", \"fisherz\", \"cosine\", \"l1\", \"jaccard\", \"dcov\""
+            },
+            "warnings": []
+          }
+        }
+      },
+      "empty": {
+        "pearson": {
+          "none": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "One or both multiscale objects are empty."
+          },
+          "mean": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "One or both multiscale objects are empty."
+          }
+        },
+        "spearman": {
+          "none": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "One or both multiscale objects are empty."
+          },
+          "mean": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "One or both multiscale objects are empty."
+          }
+        },
+        "fisherz": {
+          "none": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "One or both multiscale objects are empty."
+          },
+          "mean": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "One or both multiscale objects are empty."
+          }
+        },
+        "cosine": {
+          "none": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "One or both multiscale objects are empty."
+          },
+          "mean": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "One or both multiscale objects are empty."
+          }
+        },
+        "l1": {
+          "none": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "One or both multiscale objects are empty."
+          },
+          "mean": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "One or both multiscale objects are empty."
+          }
+        },
+        "jaccard": {
+          "none": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "One or both multiscale objects are empty."
+          },
+          "mean": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "One or both multiscale objects are empty."
+          }
+        },
+        "dcov": {
+          "none": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "One or both multiscale objects are empty."
+          },
+          "mean": {
+            "result": {
+              "values": null,
+              "names": null
+            },
+            "warnings": "One or both multiscale objects are empty."
+          }
+        },
+        "emd": {
+          "none": {
+            "result": {
+              "error": "'arg' should be one of \"pearson\", \"spearman\", \"fisherz\", \"cosine\", \"l1\", \"jaccard\", \"dcov\""
+            },
+            "warnings": []
+          },
+          "mean": {
+            "result": {
+              "error": "'arg' should be one of \"pearson\", \"spearman\", \"fisherz\", \"cosine\", \"l1\", \"jaccard\", \"dcov\""
+            },
+            "warnings": []
+          }
+        }
+      }
+    },
+    "transport": {
+      "dirac": {
+        "result": {
+          "values": 0.414213562373095,
+          "names": null
+        },
+        "warnings": []
+      },
+      "split": {
+        "result": {
+          "values": 0.500000000000001,
+          "names": null
+        },
+        "warnings": []
+      },
+      "backend": "T4transport::sinkhornD"
+    },
+    "geometry": {
+      "pearson": {
+        "result": {
+          "values": 1,
+          "names": null
+        },
+        "warnings": []
+      },
+      "spearman": {
+        "result": {
+          "values": 1,
+          "names": null
+        },
+        "warnings": []
+      },
+      "fisherz": {
+        "result": {
+          "values": 18.3684002848386,
+          "names": null
+        },
+        "warnings": []
+      },
+      "cosine": {
+        "result": {
+          "values": 1,
+          "names": null
+        },
+        "warnings": []
+      },
+      "l1": {
+        "result": {
+          "values": 1,
+          "names": null
+        },
+        "warnings": []
+      },
+      "jaccard": {
+        "result": {
+          "values": 1,
+          "names": null
+        },
+        "warnings": []
+      },
+      "dcov": {
+        "result": {
+          "values": 1,
+          "names": null
+        },
+        "warnings": []
+      },
+      "emd": {
+        "result": {
+          "values": 1,
+          "names": null
+        },
+        "warnings": []
+      }
+    },
+    "R": "4.5.1"
+  }
+}

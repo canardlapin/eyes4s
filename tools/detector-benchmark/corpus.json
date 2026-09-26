@@ -1,0 +1,671 @@
+{
+  "schema": 1,
+  "dataset": "Lund2013",
+  "repository": "https://github.com/richardandersson/EyeMovementDetectorEvaluation",
+  "revision": "3e12416ab3fd6254c81811cf03f8e5d67c5d7129",
+  "license": {
+    "evidence": "LICENSE",
+    "redistribution": "Raw data not vendored; fetch pinned upstream files separately.",
+    "declared": "GNU General Public License version 3 (upstream repository LICENSE)"
+  },
+  "selection": "All .mat files under annotated_data/data used in the article; corrected Zemblys2018 MN annotation replaces original UH29 image Europe MN.",
+  "labels": {
+    "0": "unlabelled",
+    "1": "fixation",
+    "2": "saccade",
+    "3": "glissade",
+    "4": "pursuit",
+    "5": "blink",
+    "6": "undefined"
+  },
+  "columns": {
+    "timestamp_microseconds": 0,
+    "x_pixels": 3,
+    "y_pixels": 4,
+    "annotation": 5
+  },
+  "files": [
+    {
+      "path": "annotated_data/data used in the article/dots/TH20_trial1_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/TH20_trial1_labelled_MN.mat",
+      "bytes": 19033,
+      "sha256": "8a4fc11a06eaa1b6a1a3cbe86e07d150a5901f31b54ceb9974d18bc65d3fa5a0",
+      "recording": "TH20_trial1",
+      "annotator": "MN",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/TH20_trial1_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/TH20_trial1_labelled_RA.mat",
+      "bytes": 19029,
+      "sha256": "21b024d8b5c575ad80e17147d075768ae513ebee97dd557c20f20b0e27f5596b",
+      "recording": "TH20_trial1",
+      "annotator": "RA",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/TH38_trial1_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/TH38_trial1_labelled_MN.mat",
+      "bytes": 15700,
+      "sha256": "ac1001c5a1d918cc923b20ce2f07fa083736dafd7b5f6a4197aee1d5304b2abe",
+      "recording": "TH38_trial1",
+      "annotator": "MN",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/TH38_trial1_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/TH38_trial1_labelled_RA.mat",
+      "bytes": 15691,
+      "sha256": "1f59739aed96577bbd42011b1f3a64e8135255a9cd6a1853c125383943324040",
+      "recording": "TH38_trial1",
+      "annotator": "RA",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/TL22_trial17_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/TL22_trial17_labelled_MN.mat",
+      "bytes": 6296,
+      "sha256": "4e4f325f1d9dfdb0dbdcfaf77909bc2f89203dfd41982608d711560b132d59d7",
+      "recording": "TL22_trial17",
+      "annotator": "MN",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/TL22_trial17_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/TL22_trial17_labelled_RA.mat",
+      "bytes": 6294,
+      "sha256": "edd0ce31ad2357e0236395ae1d63f8be0a1d26545d61aa44e22f2f19c0973242",
+      "recording": "TL22_trial17",
+      "annotator": "RA",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/TL24_trial17_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/TL24_trial17_labelled_MN.mat",
+      "bytes": 6433,
+      "sha256": "20723ea6c88bf909b45afcefc1dab42334f4b830d6e21e88558a10511e0af456",
+      "recording": "TL24_trial17",
+      "annotator": "MN",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/TL24_trial17_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/TL24_trial17_labelled_RA.mat",
+      "bytes": 6429,
+      "sha256": "6ea6f7a7288441cecff5b3373b53dc8f78710f5c9110d96c02fc550015ebc362",
+      "recording": "TL24_trial17",
+      "annotator": "RA",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/UH21_trial17_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/UH21_trial17_labelled_MN.mat",
+      "bytes": 7507,
+      "sha256": "30cd93e828920c29476b4f820b95918e6bc52747d78df350cbb74d119e416c22",
+      "recording": "UH21_trial17",
+      "annotator": "MN",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/UH21_trial17_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/UH21_trial17_labelled_RA.mat",
+      "bytes": 7522,
+      "sha256": "2cc81c2c98651071f106446ebd8440a1a5d351949407d81ea775aae967a654e0",
+      "recording": "UH21_trial17",
+      "annotator": "RA",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/UH21_trial1_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/UH21_trial1_labelled_MN.mat",
+      "bytes": 19265,
+      "sha256": "4a8ab4022a1194b8d7d2b3c177c57a8a7fce35453ec3e32b15610c9bd7918011",
+      "recording": "UH21_trial1",
+      "annotator": "MN",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/UH21_trial1_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/UH21_trial1_labelled_RA.mat",
+      "bytes": 19347,
+      "sha256": "1fc0e94ea57f088d5f231e04ebcf6779b3ef8ecdb78ad7ef8b26d04c0b14a307",
+      "recording": "UH21_trial1",
+      "annotator": "RA",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/UH25_trial1_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/UH25_trial1_labelled_MN.mat",
+      "bytes": 15739,
+      "sha256": "7f77ab41106f085d79672225578d0794e81b04328ee6cdc1da5bcaeab5f49fe4",
+      "recording": "UH25_trial1",
+      "annotator": "MN",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/UH25_trial1_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/UH25_trial1_labelled_RA.mat",
+      "bytes": 15756,
+      "sha256": "87499626ce341c2135acd7e6322cafb446a0449017a18b01e0693d9396e7b2ef",
+      "recording": "UH25_trial1",
+      "annotator": "RA",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/UH33_trial17_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/UH33_trial17_labelled_MN.mat",
+      "bytes": 6278,
+      "sha256": "2a8847b34b432f6ab45978b0264f953344f377cba6a009da056fe726419fd150",
+      "recording": "UH33_trial17",
+      "annotator": "MN",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/UH33_trial17_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/UH33_trial17_labelled_RA.mat",
+      "bytes": 6313,
+      "sha256": "bdb49efae3b6772c8ded18abd815457fe1aebd7dd010755342473721031740ec",
+      "recording": "UH33_trial17",
+      "annotator": "RA",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/UL27_trial17_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/UL27_trial17_labelled_MN.mat",
+      "bytes": 6410,
+      "sha256": "97c5952df16010f92fc541d02338a30fea7dbd9dd6dcc4cd48a0c7e8a71b710f",
+      "recording": "UL27_trial17",
+      "annotator": "MN",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/UL27_trial17_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/UL27_trial17_labelled_RA.mat",
+      "bytes": 6418,
+      "sha256": "44e92a1022c1b097eafab6e5035357125735c052c660c2f5fd7408c603a4064f",
+      "recording": "UL27_trial17",
+      "annotator": "RA",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/UL31_trial1_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/UL31_trial1_labelled_MN.mat",
+      "bytes": 15814,
+      "sha256": "b26dc8f168f0566826c5debee4fe66c3d472fcd3d165cb9561d2283b646342c6",
+      "recording": "UL31_trial1",
+      "annotator": "MN",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/UL31_trial1_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/UL31_trial1_labelled_RA.mat",
+      "bytes": 15830,
+      "sha256": "19abd4e7f21f09065c19100be2a9a221feeb1d78a844063b1e1410cdc60a8765",
+      "recording": "UL31_trial1",
+      "annotator": "RA",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/UL39_trial1_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/UL39_trial1_labelled_MN.mat",
+      "bytes": 15193,
+      "sha256": "b928558d00dbf10d2beff3b67a97f3a9d068ddb32ae50c34a906e0df75dc63ee",
+      "recording": "UL39_trial1",
+      "annotator": "MN",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/dots/UL39_trial1_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/dots/UL39_trial1_labelled_RA.mat",
+      "bytes": 15206,
+      "sha256": "497049fce740d3cb7c713109cef01907292ab0ced6f27dc16caafbac2adb9c3b",
+      "recording": "UL39_trial1",
+      "annotator": "RA",
+      "stimulus_class": "dots"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/TH34_img_Europe_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/TH34_img_Europe_labelled_MN.mat",
+      "bytes": 70857,
+      "sha256": "df5535b2629921de02790353592499ca7b0671e9d428b414916c41284c0dd6a8",
+      "recording": "TH34_img_Europe",
+      "annotator": "MN",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/TH34_img_Europe_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/TH34_img_Europe_labelled_RA.mat",
+      "bytes": 70760,
+      "sha256": "f7f9f948f60272e9843da818396d8c536a0f946a4137a1de351a0a765c54c4f6",
+      "recording": "TH34_img_Europe",
+      "annotator": "RA",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/TH34_img_vy_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/TH34_img_vy_labelled_MN.mat",
+      "bytes": 67732,
+      "sha256": "7ebd92057d5b5966e692dc62fd864198e3d21b0a6deb79c6118c1de5975e5117",
+      "recording": "TH34_img_vy",
+      "annotator": "MN",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/TH34_img_vy_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/TH34_img_vy_labelled_RA.mat",
+      "bytes": 67791,
+      "sha256": "cde33394e1e4c1a478ee877aa886853f952d7ee848a5691e43a92593a533aec2",
+      "recording": "TH34_img_vy",
+      "annotator": "RA",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/TL20_img_konijntjes_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/TL20_img_konijntjes_labelled_MN.mat",
+      "bytes": 73123,
+      "sha256": "643b06746646946a9843e9dca2ad60710a3695b3c8f2635bbbc70abec947e207",
+      "recording": "TL20_img_konijntjes",
+      "annotator": "MN",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/TL20_img_konijntjes_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/TL20_img_konijntjes_labelled_RA.mat",
+      "bytes": 73205,
+      "sha256": "7ba9ecdb07f511bd1d4259f1bc80b7599b0adf5380b8be423173b6b7733518a0",
+      "recording": "TL20_img_konijntjes",
+      "annotator": "RA",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/TL28_img_konijntjes_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/TL28_img_konijntjes_labelled_MN.mat",
+      "bytes": 74103,
+      "sha256": "c7c5d5a61c63fea97c40c43cd2314066e32f2a6ea8dbdc8f5b94bc5b73729880",
+      "recording": "TL28_img_konijntjes",
+      "annotator": "MN",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/TL28_img_konijntjes_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/TL28_img_konijntjes_labelled_RA.mat",
+      "bytes": 74005,
+      "sha256": "d34dc1a645496f4c89cb60f0a32507504ae216f79736734216c9db2eb208b70e",
+      "recording": "TL28_img_konijntjes",
+      "annotator": "RA",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UH21_img_Rome_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UH21_img_Rome_labelled_MN.mat",
+      "bytes": 70083,
+      "sha256": "6647f5817795bb91e062c7ad06f6ac8ff1405833026a984d67d69bc5738210d5",
+      "recording": "UH21_img_Rome",
+      "annotator": "MN",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UH21_img_Rome_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UH21_img_Rome_labelled_RA.mat",
+      "bytes": 70196,
+      "sha256": "c3d906c653b89ed14a8366de20507004685c639ee2852b27a7b3bffd4fcbc2e6",
+      "recording": "UH21_img_Rome",
+      "annotator": "RA",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UH27_img_vy_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UH27_img_vy_labelled_MN.mat",
+      "bytes": 69862,
+      "sha256": "f37f7ee3e39858cf7081e77a3b4a62b2349dd4a8ee7deb4f16644fe549242d9d",
+      "recording": "UH27_img_vy",
+      "annotator": "MN",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UH27_img_vy_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UH27_img_vy_labelled_RA.mat",
+      "bytes": 69926,
+      "sha256": "3dbc3bdddc4cb03f762404cdec44e67a2978f11144cd154fc3968a8b041e9bc1",
+      "recording": "UH27_img_vy",
+      "annotator": "RA",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/fix_by_Zemblys2018/UH29_img_Europe_labelled_FIX_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/fix_by_Zemblys2018/UH29_img_Europe_labelled_FIX_MN.mat",
+      "bytes": 59933,
+      "sha256": "e8ce5b7c0ecad662f72f7331f3ed0ffa2c88c677d90b6ad888de03552e5873f6",
+      "recording": "UH29_img_Europe",
+      "annotator": "MN",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UH29_img_Europe_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UH29_img_Europe_labelled_RA.mat",
+      "bytes": 70941,
+      "sha256": "c7e02fdc283663c4c834d8e25eb6b7875179abab810a2938b5d6e4f4648cbfbe",
+      "recording": "UH29_img_Europe",
+      "annotator": "RA",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UH33_img_vy_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UH33_img_vy_labelled_MN.mat",
+      "bytes": 71456,
+      "sha256": "7bc2ab16a4bad90ff36f367c6ef5f2026eb8ca43bb07b79a2b88e9814a380c02",
+      "recording": "UH33_img_vy",
+      "annotator": "MN",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UH33_img_vy_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UH33_img_vy_labelled_RA.mat",
+      "bytes": 71546,
+      "sha256": "259707b98ce32e90f56550df8e5ebd15b1de17759fb5c73fe02a96e49288e5b4",
+      "recording": "UH33_img_vy",
+      "annotator": "RA",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UH47_img_Europe_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UH47_img_Europe_labelled_MN.mat",
+      "bytes": 30020,
+      "sha256": "1197e58b44bb9ffac8b764569b7f8ce4462e7be16c443a6d1e402120ce3c8380",
+      "recording": "UH47_img_Europe",
+      "annotator": "MN",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UH47_img_Europe_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UH47_img_Europe_labelled_RA.mat",
+      "bytes": 30045,
+      "sha256": "08733d1a7d2b243a5b01cfa8fff5baa94e819fdf2c169308d318ea8d1d5685b5",
+      "recording": "UH47_img_Europe",
+      "annotator": "RA",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UL23_img_Europe_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UL23_img_Europe_labelled_MN.mat",
+      "bytes": 71554,
+      "sha256": "445dd8bb179abb0b9b7253995447fc22692a41f0e6188a98861a68685ad1663b",
+      "recording": "UL23_img_Europe",
+      "annotator": "MN",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UL23_img_Europe_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UL23_img_Europe_labelled_RA.mat",
+      "bytes": 71584,
+      "sha256": "014973fce81fffc6c4ab91a61a6ee544f940aa6c5c540d2ba680050196fbff2c",
+      "recording": "UL23_img_Europe",
+      "annotator": "RA",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UL31_img_konijntjes_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UL31_img_konijntjes_labelled_MN.mat",
+      "bytes": 66617,
+      "sha256": "eac5c89e682fd4b9412210ac812d2c1b0b238412e06406b162f02de3e121ecda",
+      "recording": "UL31_img_konijntjes",
+      "annotator": "MN",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UL31_img_konijntjes_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UL31_img_konijntjes_labelled_RA.mat",
+      "bytes": 66925,
+      "sha256": "7f95a3a4d15f9b1caff329c2736c3a0f4ddb46acd951b5890ae37c813b87bb5d",
+      "recording": "UL31_img_konijntjes",
+      "annotator": "RA",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UL39_img_konijntjes_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UL39_img_konijntjes_labelled_MN.mat",
+      "bytes": 68632,
+      "sha256": "e56dd212d43d2846c4dc52e13ae5507d4e118d1abd7a23455738126eb8750328",
+      "recording": "UL39_img_konijntjes",
+      "annotator": "MN",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UL39_img_konijntjes_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UL39_img_konijntjes_labelled_RA.mat",
+      "bytes": 68972,
+      "sha256": "f75e68aff149286f32faf2c77d63552ea17d65dbc53cf79e99feedb4751db3bb",
+      "recording": "UL39_img_konijntjes",
+      "annotator": "RA",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UL43_img_Rome_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UL43_img_Rome_labelled_MN.mat",
+      "bytes": 72975,
+      "sha256": "3721cd1e97e5ac289f422b3dba8fc76874a833f74297305268518b3b428923d5",
+      "recording": "UL43_img_Rome",
+      "annotator": "MN",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UL43_img_Rome_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UL43_img_Rome_labelled_RA.mat",
+      "bytes": 72999,
+      "sha256": "678692b2b00dcb3f768ae61475809ed43273709b71ceb0ae369191c79a227195",
+      "recording": "UL43_img_Rome",
+      "annotator": "RA",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UL47_img_konijntjes_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UL47_img_konijntjes_labelled_MN.mat",
+      "bytes": 30158,
+      "sha256": "48498e71d1558d54d5d152a9a06b43919dc248cec81b40e6240f7901cc0bf98f",
+      "recording": "UL47_img_konijntjes",
+      "annotator": "MN",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/img/UL47_img_konijntjes_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/img/UL47_img_konijntjes_labelled_RA.mat",
+      "bytes": 30111,
+      "sha256": "3fffafc527bfae24c323c9dbb8033c1107ec53c866d56c596be68ddf38305a6d",
+      "recording": "UL47_img_konijntjes",
+      "annotator": "RA",
+      "stimulus_class": "image"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/TH34_video_BergoDalbana_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/TH34_video_BergoDalbana_labelled_MN.mat",
+      "bytes": 54706,
+      "sha256": "8fd50aaba7d26f7af6a7d1ec75856903fa05361f0c0176ada1e78ff4e86e4a8c",
+      "recording": "TH34_video_BergoDalbana",
+      "annotator": "MN",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/TH34_video_BergoDalbana_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/TH34_video_BergoDalbana_labelled_RA.mat",
+      "bytes": 54717,
+      "sha256": "5b3b7e8eb13fe328c7c8f482f3b0e51146f52bf5af97bf1f1487fde32f34163d",
+      "recording": "TH34_video_BergoDalbana",
+      "annotator": "RA",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/TH38_video_dolphin_fov_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/TH38_video_dolphin_fov_labelled_MN.mat",
+      "bytes": 57797,
+      "sha256": "d9b276915398751ff9d33e5250929c76942ae44df02712e0c1f2dcfc0fea58a9",
+      "recording": "TH38_video_dolphin_fov",
+      "annotator": "MN",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/TH38_video_dolphin_fov_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/TH38_video_dolphin_fov_labelled_RA.mat",
+      "bytes": 57765,
+      "sha256": "c7c2c3a85a4c783f48fcc585bc89afd6c4a0ae9f19b3c336e766b9bf0021c18a",
+      "recording": "TH38_video_dolphin_fov",
+      "annotator": "RA",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/TL30_video_triple_jump_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/TL30_video_triple_jump_labelled_MN.mat",
+      "bytes": 41039,
+      "sha256": "3152b698f7ed53f20dda53bede4dabac9f1e3c90cad877e43301d739f70f150e",
+      "recording": "TL30_video_triple_jump",
+      "annotator": "MN",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/TL30_video_triple_jump_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/TL30_video_triple_jump_labelled_RA.mat",
+      "bytes": 40995,
+      "sha256": "3ac468184ac4c8ea5959d4a4f496848de3a06c31c08dfa24d936c202587d5099",
+      "recording": "TL30_video_triple_jump",
+      "annotator": "RA",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/UH21_video_BergoDalbana_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/UH21_video_BergoDalbana_labelled_MN.mat",
+      "bytes": 54877,
+      "sha256": "6158dac4a851ff2c3c3a934224c81a879b9f7dee2bc95009cc7274cfafc9793d",
+      "recording": "UH21_video_BergoDalbana",
+      "annotator": "MN",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/UH21_video_BergoDalbana_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/UH21_video_BergoDalbana_labelled_RA.mat",
+      "bytes": 54913,
+      "sha256": "422e2c2c8014e3afa298fa8e5fa35de34db6f159a39608c028710db694cc4f3d",
+      "recording": "UH21_video_BergoDalbana",
+      "annotator": "RA",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/UH29_video_dolphin_fov_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/UH29_video_dolphin_fov_labelled_MN.mat",
+      "bytes": 56986,
+      "sha256": "744e5695074439f63a78d84a02063d9264815ca18280200810215e2830082900",
+      "recording": "UH29_video_dolphin_fov",
+      "annotator": "MN",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/UH29_video_dolphin_fov_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/UH29_video_dolphin_fov_labelled_RA.mat",
+      "bytes": 57070,
+      "sha256": "8993befbdf7efb8678c3404598ab950a08a18df8b82fdbd3801d15f3e769b1b0",
+      "recording": "UH29_video_dolphin_fov",
+      "annotator": "RA",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/UH47_video_BergoDalbana_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/UH47_video_BergoDalbana_labelled_MN.mat",
+      "bytes": 24002,
+      "sha256": "ee63f3889cc086d27646f27d0869901d62071bdeb1509fd36957c6f7e6af480f",
+      "recording": "UH47_video_BergoDalbana",
+      "annotator": "MN",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/UH47_video_BergoDalbana_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/UH47_video_BergoDalbana_labelled_RA.mat",
+      "bytes": 24071,
+      "sha256": "cf040baaeead70891cb82ce7f52f0b9ca8e19e8ec9989ab80b0b5ec9985ba0c9",
+      "recording": "UH47_video_BergoDalbana",
+      "annotator": "RA",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/UL23_video_triple_jump_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/UL23_video_triple_jump_labelled_MN.mat",
+      "bytes": 40925,
+      "sha256": "28cfe58649725a994a2299b1f4fac34bc405ad6d159c39855ea3683f4674b554",
+      "recording": "UL23_video_triple_jump",
+      "annotator": "MN",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/UL23_video_triple_jump_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/UL23_video_triple_jump_labelled_RA.mat",
+      "bytes": 40916,
+      "sha256": "69ed274dfcf2b82334021777ae22d5697bc89aa0c5f672edb10e7e9e42be656c",
+      "recording": "UL23_video_triple_jump",
+      "annotator": "RA",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/UL27_video_triple_jump_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/UL27_video_triple_jump_labelled_MN.mat",
+      "bytes": 39951,
+      "sha256": "c95b46687c3ae6da7ce17d23c4ac77bce47c6f3ceb3cf22d0cfcdbf696d7531a",
+      "recording": "UL27_video_triple_jump",
+      "annotator": "MN",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/UL27_video_triple_jump_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/UL27_video_triple_jump_labelled_RA.mat",
+      "bytes": 39993,
+      "sha256": "6a5288f018e59f6b805a39f7d1ae2fce017a7c2e84b109afe7eeda71c5510b41",
+      "recording": "UL27_video_triple_jump",
+      "annotator": "RA",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/UL31_video_triple_jump_labelled_MN.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/UL31_video_triple_jump_labelled_MN.mat",
+      "bytes": 39005,
+      "sha256": "8f64aa2eebcc6f00912f7ea705d055ee4eff8509ee54a366a3e9a5ea124d442c",
+      "recording": "UL31_video_triple_jump",
+      "annotator": "MN",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "annotated_data/data used in the article/video/UL31_video_triple_jump_labelled_RA.mat",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/data%20used%20in%20the%20article/video/UL31_video_triple_jump_labelled_RA.mat",
+      "bytes": 39094,
+      "sha256": "576bb0291ad58127e1e6b40f4d29d062b7cb133f7a0d388a21a409c1c75168b4",
+      "recording": "UL31_video_triple_jump",
+      "annotator": "RA",
+      "stimulus_class": "video"
+    },
+    {
+      "path": "LICENSE",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/LICENSE",
+      "bytes": 35141,
+      "sha256": "589ed823e9a84c56feb95ac58e7cf384626b9cbf4fda2a907bc36e103de1bad2"
+    },
+    {
+      "path": "readme.md",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/readme.md",
+      "bytes": 572,
+      "sha256": "b02fa41d737479a28f77c947af116a93bdb486c3a097386dbb1881b7318d6470"
+    },
+    {
+      "path": "annotated_data/fix_by_Zemblys2018/readme.md",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/annotated_data/fix_by_Zemblys2018/readme.md",
+      "bytes": 156,
+      "sha256": "11a132ddbaf97a07954e841c63efc9503a76414ca4750e131ab1541c7ae3695b"
+    },
+    {
+      "path": "matlab_annotator/EventTag.m",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/matlab_annotator/EventTag.m",
+      "bytes": 27776,
+      "sha256": "89d081c327d43122874f34a9c3c75e5723c30b3d04b1329c8370863fcf5da954"
+    },
+    {
+      "path": "matlab_annotator/pixels2degrees.m",
+      "url": "https://raw.githubusercontent.com/richardandersson/EyeMovementDetectorEvaluation/3e12416ab3fd6254c81811cf03f8e5d67c5d7129/matlab_annotator/pixels2degrees.m",
+      "bytes": 751,
+      "sha256": "f31aeb6067d31336648f2e1dc9db62d6fd8ea66f2acce4cbfd701b81a5db4d5e"
+    }
+  ]
+}
