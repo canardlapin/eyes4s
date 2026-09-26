@@ -51,6 +51,7 @@ class CanonicalDigestSuite extends munit.FunSuite:
       "sha256:0903e0e3ed3cde2b08810207e2e813b52ffa707b9f22cf1f9dfe9306ffd9b05d"
     )
     assertEquals(get(CanonicalDigest.parse[Json](digest.sha256.hex)), digest)
+    assertEquals(digest.toString, digest.display)
     // Printed and re-parsed text renders the same numbers, whatever the platform
     // printed. Scala.js prints -0.0 as 0 and parses integers as doubles, so the
     // signed zero and the integer beyond 2^53 are left out here.

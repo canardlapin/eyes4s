@@ -76,14 +76,6 @@ final class StudyInputCodec[K, U <: Unit2D](
   val input: VersionedCodec[StudyInput[K, U]] =
     VersionedCodec.checked(schema)(writeInput)(readInput)
 
-  /** The ledger schema that also records the admission policy. */
-  val ledgerSchemaV2: DefinitionId =
-    DefinitionId.builtIn(ledgerSchema.name, ledgerSchema.version + 1)
-
-  /** The ledger schema that also records a trial inventory. */
-  val ledgerSchemaV3: DefinitionId =
-    DefinitionId.builtIn(ledgerSchema.name, ledgerSchema.version + 2)
-
   /** All three ledger versions. A version-1 ledger is an admission under
     * `AdmissionPolicy.version1`; a version-2 ledger adds the admission policy
     * and the admitted records outside the frame; a version-3 ledger adds the
