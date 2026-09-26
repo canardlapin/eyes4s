@@ -112,7 +112,8 @@ class FiniteControlReferenceSuite extends munit.FunSuite:
       assertEquals(Some(selected.size), expected.count, expected.key)
       val scores =
         selected.map((l, r) => get(Distribution.cosine[Px].compare(l.value, r.value)).value)
-      expected.mean.foreach(m => assertEqualsDouble(scores.sum / scores.size, m, ControlTolerance))
+      expected.mean
+        .foreach(m => assertEqualsDouble(scores.sum / scores.size, m, ControlTolerance))
     }
   }
 

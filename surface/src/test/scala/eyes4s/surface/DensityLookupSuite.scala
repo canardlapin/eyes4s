@@ -164,7 +164,11 @@ class DensityLookupSuite extends munit.FunSuite:
     val trajectory = get(
       FixationTrajectory
         .fromScanpath(path)
-        .sample(clock, KdeReference.times_us.map(Instant.micros), TrajectoryEndpoint.HoldLastOnset)
+        .sample(
+          clock,
+          KdeReference.times_us.map(Instant.micros),
+          TrajectoryEndpoint.HoldLastOnset
+        )
     )
     val prepared = get(DensityLookup.prepare(surface, DensityNormalization.Sum))
     val rows     = get(prepared.along(trajectory, DensityLookupPolicy.NearestClampedRIndex))

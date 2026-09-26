@@ -255,7 +255,8 @@ class EntropyConformanceSuite extends munit.FunSuite:
     Vector(e.bits, e.relativeBits, e.nats, e.relativeNats).foreach {
       case RValue.Error(message) =>
         assert(message.contains("requires non-negative mass"), clue((what, message)))
-      case other => fail(s"$what: expected eyesim to refuse a map with a negative cell, got $other")
+      case other =>
+        fail(s"$what: expected eyesim to refuse a map with a negative cell, got $other")
     }
 
   test(
