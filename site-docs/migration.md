@@ -20,7 +20,8 @@ below refer only to the pinned cases.
 | `sample_density_time` | `PointSamplingPlan` for static templates on focal trajectories | Exact query times and final-bin policy; per-query control means precede bin means. `TemporalStudyPlan` remains the separate windowed-map estimand. |
 | `template_regression`, `template_multireg`, `template_similarity_cv` | Native fixed-feature QR and training-only learned mean-map recipes | Held-out changes cannot alter training. Cellwise OLS is a separate estimand; legacy R fit import is optional. |
 | `affine_transform`, `contract_transform` | No fitted density-space adapter; outside the baseline, planned for a later adapter module with PCA, CORAL and CCA | Supplied coordinate `Warp`s are not substitutes for learned density transforms. |
-| Result tables | `BaselineExports`, `ResultTable`, optional JVM `ArrowResultExport` | CSV plus schema/identity sidecars and Arrow preserve keys, failures and denominators. Export views are distinct from replay archives. |
+| Result tables | `ResultExports` (formerly `BaselineExports`), `ResultTable`, optional JVM `ArrowResultExport` | CSV plus schema/identity sidecars and Arrow preserve keys, failures and denominators. Export views are distinct from replay archives. |
+| Group summaries | `ReportSpec`, `Report.evaluate`, `ReportTables` | Participant means with equal weight, typed trial covariates, counted exclusions, no zero for a missing value; see [reports](summaries.md). |
 
 ## Differences to review in a migrated analysis
 

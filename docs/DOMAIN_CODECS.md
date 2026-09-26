@@ -108,9 +108,10 @@ policy rather than changing the meaning of the 16-hex one.
 Every stored document is an envelope, `{"schema": {"name", "version"}, "value"}`. The version is
 one positive integer; there are no minor versions. The rules below are enforced on the JVM and
 Scala.js by `SchemaCompatibilitySuite` over a pinned v1 document of every shipped document schema:
-the eighteen JSON codecs (study plan, study input, admission ledger, study result, recording,
+the twenty-one JSON codecs (study plan, study input, admission ledger, study result, recording,
 binocular recording, recording input, temporal input, timeline, manifest, the four score and
-difference schemas, the recording and temporal result archives, and the conventional
+difference schemas, the recording and temporal result archives, the covariate schema, report
+specification and report of [reducing study results](REDUCING_RESULTS.md), and the conventional
 `eyes4s.recording-plan@1` and `eyes4s.temporal-study@1` plan schemas), plus a pinned v2 document
 of the study plan and admission ledger and a pinned v3 document of each, with a test that fails if a pinned schema version is
 missing, and the packed recording,

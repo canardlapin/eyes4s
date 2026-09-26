@@ -173,6 +173,34 @@ trait ReportLaws extends Laws:
               }
             case _ => report(reduce, c).isDefined
         },
+      "negating the filter swaps passed and filtered-out queries and keeps the unknown" ->
+        forAll(cases) { c =>
+          c.spec.filter match
+            case None    => report(reduce, c).isDefined
+            case Some(p) =>
+              (for
+                negated <- respec(c.spec)(filter = Some(Predicate.Not(p)))
+                a       <- report(reduce, c)
+                b       <- reduce(negated, c.table).toOption
+              yield a.accounting.zip(b.accounting).forall { (x, y) =>
+                x.unknownPredicate == y.unknownPredicate &&
+                x.filteredOut == y.kept + y.failed && y.filteredOut == x.kept + x.failed
+              }).getOrElse(false)
+        },
+      "a decided conjunct or disjunct decides the filter" ->
+        forAll(cases) { c =>
+          // No query's item is this one, so the level test is false for every query.
+          val never  = Predicate.In(LevelTerm.Layout(LayoutField.Item), Vector("\u0000never"))
+          val filter = c.spec.filter.getOrElse(never)
+          (for
+            conjunction <- respec(c.spec)(filter = Some(filter && never))
+            disjunction <- respec(c.spec)(filter = Some(filter || !never))
+            a           <- reduce(conjunction, c.table).toOption
+            b           <- reduce(disjunction, c.table).toOption
+          yield a.accounting.forall(x => x.filteredOut == x.eligible) &&
+            b.accounting.forall(x => x.filteredOut == 0 && x.unknownPredicate == 0))
+            .getOrElse(false)
+        },
       "every eligible query is accounted for once" ->
         forAll(cases) { c =>
           report(reduce, c).exists { r =>
@@ -317,7 +345,10 @@ object ReportLaws extends ReportLaws:
       val ok = values.forall(_.isDefined) &&
         cell.perParticipant.map(_.participant) == perParticipant.map(_._1) &&
         cell.perParticipant.zip(perParticipant).forall((v, e) => near(v.value, e._2)) &&
-        near(cell.estimate, mean(averaged)) && spreadNear(cell.dispersion.sd, sd(averaged))
+        near(cell.estimate, mean(averaged)) && spreadNear(cell.dispersion.sd, sd(averaged)) &&
+        cell.participants == (minimum match
+          case Some(_) => perParticipant.count(_._2.isDefined)
+          case None    => perParticipant.size)
       (cell, perParticipant.toMap, ok)
     }
     val contrastsOk = r.contrasts.forall { s =>

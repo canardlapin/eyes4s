@@ -1505,7 +1505,8 @@ module cross-compiles for JVM and Scala.js; there is no Native axis in the build
 | `eyes4s-compare` | core, surface, aoi | built | `Compare` hierarchy, alignment kernel, MultiMatch, ScanMatch, CRQA, distribution measures, Sinkhorn/sliced OT, `Saliency.nss` |
 | `eyes4s-design` | core, compare | built | trials, relations, pair designs, pair schedules, evaluation, reductions, contrasts, `KeyDigest`, deterministic RNG |
 | `eyes4s-plan` | design, detect | built | `StudyPlan`, `PreparedStudy`, `RecordingPlan`, `TemporalStudyPlan`, `MethodDescriptor`, `RecipeDescriptors` |
-| `eyes4s-codec` | plan, circe | built | `VersionedCodec`, `DomainCodecs`, `DocumentIdentities`, study / recording / temporal plan codecs and registries |
+| `eyes4s-results` | plan | built | `ReportSpec`, `Report` (pure reductions over stored study rows with typed trial covariates), `ResultTable` (the one result-table layer, no JSON library) |
+| `eyes4s-codec` | plan, results, circe | built | `VersionedCodec`, `DomainCodecs`, `DocumentIdentities`, study / recording / temporal plan codecs and registries |
 | `eyes4s-laws` | kernel … codec + munit, scalacheck, discipline-munit (**main** deps) | built | rule sets: warp category, region Boolean algebra, surface module, metric axioms, machine composition, detector metamorphic laws, codec laws, contrast laws |
 | `eyes4s-fs2` | core, detect, plan, fs2, cats-effect | built | `Machine.toPipe` |
 | `eyes4s-io` | fs2 module, codec, fs2-io | built | EyeLink ASC (streaming, native records, sessions, conformance, edf2asc provenance), delimited fixation tables, tidy AOI results, contrast CSV, psychology workflow |

@@ -14,6 +14,7 @@ aoi/       eyes4s-aoi      AoiSet, dwell, transitions
 compare/   eyes4s-compare  Compare hierarchy, alignment, MultiMatch, OT
 design/    eyes4s-design   Trials, Pairing, Session, contrasts, RNG
 plan/      eyes4s-plan     analyses as descriptions, the typed registry
+results/   eyes4s-results  report specifications and reports, the one result-table layer
 codec/     eyes4s-codec    JSON codecs, versioned schema
 laws/      eyes4s-laws     Discipline rule sets and generators (MAIN-scope deps)
 fs2/       eyes4s-fs2      streaming execution                  } the only modules

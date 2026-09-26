@@ -258,6 +258,11 @@ class ReportSuite extends munit.FunSuite:
     )
     assertEquals(estimate(r, r.groups(0)), Value.Missing(Absence.EmptyGroup))
     assert(Bins.of(Vector(high, low)).isLeft)
+    // A closed upper edge holds its end value; an open one does not.
+    assert(
+      high.contains(5.0) && high.contains(3.0) && !low.contains(3.0) && !high.contains(5.5)
+    )
+    assertEquals(bins.locate(5.0), Some(high))
     assert(Bins.of(Vector(get(Bin.of("a", 0, 3, UpperEdge.Included)), high)).isLeft)
     assertNotEquals(
       typeCheckErrors("Grouping.ByLevel(NumericTerm.Occurrence)"),

@@ -24,7 +24,9 @@ enum's instance. The instances of the plan and every pure module below it are
 in `Diagnose`'s companion and need no import. The codec's families
 (`CodecError`, `ResolveError`, `SourceFailure`, `RelationMismatch`,
 `ManifestError`, `PayloadError`, `ByteDigestError`) project through
-`CodecDiagnostics`, io's through `IoDiagnostics`, the laws module's through
+`CodecDiagnostics`, the results module's (report findings and refusals,
+covariates and result tables) through `eyes4s.results.ResultsDiagnostics`, io's through
+`IoDiagnostics`, the laws module's through
 `LawsDiagnostics` and the JVM-only Arrow export through `ArrowDiagnostics`;
 import their `given`s to use `Diagnostic.of` on them.
 
