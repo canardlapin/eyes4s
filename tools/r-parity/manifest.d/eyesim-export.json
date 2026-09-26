@@ -4,13 +4,13 @@
   "fixtures": {
     "export-schemas": {
       "path": "tools/result-export/schema-v1.json",
-      "sha256": "31b6e03dea506dff5c06107d464147ad1425b8bd4fbd58c27ed6be5afaf476ac",
+      "sha256": "3a0bcdec6c06622cf9ff8637d847f59bb7c7f71076222f557417efe003090b92",
       "license": "Apache-2.0; synthetic public export examples authored for eyes4s",
       "role": "Frozen canonical export schemas, emitted artifact receipt or independent reader"
     },
     "export-receipt": {
       "path": "tools/result-export/receipt-v1.json",
-      "sha256": "a85d187b76602ef00b9127f29c921b53aace512ba8cfba2ec239d4c5e1905c3c",
+      "sha256": "4926beab5445c7a71bad2ea3cca3886f47ff095d92c9f44ba9ac9e7991a2b6a6",
       "license": "Apache-2.0; synthetic public export examples authored for eyes4s",
       "role": "Frozen canonical export schemas, emitted artifact receipt or independent reader"
     },
