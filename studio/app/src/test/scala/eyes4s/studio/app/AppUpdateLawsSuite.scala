@@ -62,6 +62,15 @@ class AppUpdateLawsSuite extends munit.ScalaCheckSuite:
             b.lead +: b.detail +: b.actions.map(_.label)
           ) ++ vm.context.draft.map(_.text) :+ vm.appBar.jobs.text
         texts.foreach(s => assert(!s.contains("{"), s"$s after ${t.intent}"))
+        // S1.11: every stop of every reachable model has a role and a name.
+        eyes4s.studio.app.vm.A11y
+          .tabOrder(m)
+          .foreach(s => assert(s.name.trim.nonEmpty, s"$s after ${t.intent}"))
+        // S1.8: the status bar always has its four slots.
+        assert(
+          vm.status.selected.forall(_.nonEmpty) && vm.status.noSelection.nonEmpty,
+          t.intent
+        )
       }
     }
   }
@@ -130,9 +139,10 @@ class AppUpdateLawsSuite extends munit.ScalaCheckSuite:
             assertEquals(t.after.selection, t.before.selection)
             assertEquals(t.after.document, t.before.document)
           case Intent.Select(_) | Intent.JobsChanged(_) | Intent.SessionChanged(_) |
-              Intent.ItemsLoaded(_) | Intent.Saved(_) | Intent.FocusPane(_) |
-              Intent.FocusNextPane | Intent.ToggleMaximize | Intent.PaneSubject(_, _) |
-              Intent.Dismiss | Intent.RequestDiscardDraft | Intent.RequestImport =>
+              Intent.ItemsLoaded(_) | Intent.Saved(_) | Intent.SaveFailed(_) |
+              Intent.FocusPane(_) | Intent.FocusNextPane | Intent.ToggleMaximize |
+              Intent.PaneSubject(_, _) | Intent.Dismiss | Intent.RequestDiscardDraft |
+              Intent.RequestImport =>
             assertEquals(t.after.document, t.before.document, t.intent)
           case _ => ()
       }

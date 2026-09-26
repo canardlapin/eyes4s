@@ -230,7 +230,8 @@ object AppGen:
     3 -> event(m),
     1 -> Gen
       .zip(Gen.choose(0, 23), Gen.choose(0, 59))
-      .map((h, mm) => Intent.Saved(ok(ClockTime.of(h, mm))))
+      .map((h, mm) => Intent.Saved(ok(ClockTime.of(h, mm)))),
+    1 -> Gen.const(Intent.SaveFailed("disk full"))
   )
 
   /** A step of a walk: the model before and the intent applied to it. */

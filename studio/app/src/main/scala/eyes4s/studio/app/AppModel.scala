@@ -142,6 +142,9 @@ enum Notice derives CanEqual:
     */
   case LayoutsReset(perspectives: Vector[Perspective], reason: String)
 
+  /** The platform's save of the project failed; the last save stands. */
+  case SaveFailed(reason: String)
+
   def message: String = message(Messages.english)
 
   /** The notice's words; a command is named by its label ("Undo"). */
@@ -159,6 +162,7 @@ enum Notice derives CanEqual:
     case Invalid(e)               => e.message
     case LayoutsReset(ps, reason) =>
       messages(MessageId.NoticeLayoutsReset, ps.map(_.label).mkString(", "), reason)
+    case SaveFailed(reason)                     => messages(MessageId.NoticeSaveFailed, reason)
     case Outdated(Confirmation.DiscardDraft(d)) =>
       s"Draft ${d.label} is no longer the draft; nothing was discarded."
 
@@ -327,7 +331,12 @@ enum Intent derives CanEqual:
   /** Progress, outcomes and the latest draft check (freshness inputs). */
   case SessionChanged(facts: SessionFacts)
   case ItemsLoaded(items: TrialItems)
+
+  /** The project session finished an atomic save at `at` (S2.4a). */
   case Saved(at: ClockTime)
+
+  /** The project session's save failed; `reason` names what failed. */
+  case SaveFailed(reason: String)
 
   // --- Project and layouts (S1.4, S1.5a) -------------------------------------------------------
   /** The project chip's Rename…: the platform asks for the name. */
@@ -609,6 +618,7 @@ object AppModel:
     case Intent.SessionChanged(f)  => (m.copy(session = f), none)
     case Intent.ItemsLoaded(items) => (m.copy(items = items), none)
     case Intent.Saved(at)          => (m.copy(save = SaveState(Some(at), edited = false)), none)
+    case Intent.SaveFailed(reason) => (m.copy(notice = Some(Notice.SaveFailed(reason))), none)
 
     case Intent.RequestRename =>
       (m, Vector(AppEffect.OpenDialog(PlatformDialog.RenameProject)))

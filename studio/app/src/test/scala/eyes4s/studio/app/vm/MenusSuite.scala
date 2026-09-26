@@ -168,6 +168,65 @@ class MenusSuite extends munit.FunSuite:
     assertEquals(run(next, Intent.KeyPressed(chord))._1.focusedPane, t2.focusedPane)
   }
 
+  test("S1.9: the menu bar is the registry: every command, its shortcut and enablement") {
+    import eyes4s.studio.app.keys.CommandRegistry
+    for m <- Vector(t2, StoryModels.t3Summary, StoryModels.firstRun) do
+      val bar   = Menus.bar(m)
+      val items = bar.flatMap(_.items)
+      assertEquals(bar.map(_.title), Vector("File", "Edit", "View", "Go", "Run", "Window"))
+      assertEquals(items.map(_.command), CommandRegistry.menus.flatMap(_._2.map(_.id)))
+      items.foreach { i =>
+        val c = CommandRegistry.find(i.command).get
+        assertEquals(i.shortcut, c.shortcut, i.label)
+        assertEquals(i.enabled, c.enabled(m), i.label)
+        assertEquals(i.intent, c.intent(m).getOrElse(Intent.Invoke(c.id)), i.label)
+        assert(!i.label.contains("{"), i.label)
+      }
+    val go = Menus.bar(t2).find(_.title == "Go").get
+    assertEquals(
+      go.items.map(i => (i.label, i.enabled)),
+      Vector("Back" -> true, "Forward" -> false)
+    )
+    // A disabled item explains itself when invoked anyway.
+    val forward = go.items(1)
+    val refused = run(t2, forward.intent)._1
+    assertEquals(
+      Shell.project(refused).notice.map(_.text),
+      Some("Forward is not available now.")
+    )
+  }
+
+  test("S1.9: a tab's context menu offers the plot's table twin and Reset perspective") {
+    def pane(id: String) = ok(eyes4s.studio.app.layout.PaneId.of(id))
+    val plot             = Menus.tab(t2, pane("compare.query-trial"))
+    assertEquals(plot.map(_.label), Vector("Show table", "Reset perspective"))
+    assertEquals(plot.head.intent, Intent.FocusPane(pane("compare.query-trial.table")))
+    val table = Menus.tab(t2, pane("compare.query-trial.table"))
+    assertEquals(table.map(_.label), Vector("Show plot", "Reset perspective"))
+    assertEquals(table.head.intent, Intent.FocusPane(pane("compare.query-trial")))
+    assertEquals(
+      Menus.tab(t2, pane("compare.inspector")).map(_.label),
+      Vector("Reset perspective")
+    )
+    // A pane of another layout gets nothing.
+    assertEquals(Menus.tab(t2, pane("figures.page")), Vector.empty)
+    // Show table focuses the twin.
+    assertEquals(run(t2, plot.head.intent)._1.focusedPane, pane("compare.query-trial.table"))
+  }
+
+  test("Discard draft asks in words: the draft and its changes; Keep draft dismisses") {
+    val asking = run(t2, Intent.RequestDiscardDraft)._1
+    val c      = Shell.confirmation(asking).get
+    assertEquals(c.text, "Discard draft rev 5 and its 1 change? Runs are not affected.")
+    assertEquals((c.confirm.label, c.confirm.intent), ("Discard draft", Intent.Confirm))
+    assertEquals((c.cancel.label, c.cancel.intent), ("Keep draft", Intent.Dismiss))
+    assertEquals(Shell.confirmation(run(asking, c.cancel.intent)._1), None)
+    val discarded = run(asking, c.confirm.intent)._1
+    assertEquals(discarded.document.draft, None)
+    assertEquals(Shell.confirmation(discarded), None)
+    assertEquals(Shell.confirmation(t2), None)
+  }
+
   test("⌃⇥ and ⌃⇧⇥ are the dock's tab cycling, as effects") {
     import eyes4s.studio.app.keys.{Key, KeyChord}
     import eyes4s.studio.app.DockCommand

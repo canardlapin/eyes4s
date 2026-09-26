@@ -17,6 +17,8 @@
 package eyes4s.studio.desktop.dock
 
 import eyes4s.studio.app.layout.{LayoutSpec, PaneDecl}
+import eyes4s.studio.app.vm.{A11y, A11yRole}
+import javafx.scene.AccessibleRole
 import javafx.scene.control.Label
 import javafx.scene.layout.VBox
 import scaladock.{PaneCodec, PaneContent, PaneId, PaneType}
@@ -52,8 +54,10 @@ final class StudioPanes(spec: LayoutSpec):
   val factories: PaneFactories =
     PaneFactories.empty.register(StudioPanes.placeholder) { state =>
       val id    = summon[PaneContext[ujson.Value]].paneId
-      val title = declared.get(id.value).fold(id.value)(_.title.text)
-      val view  = StudioPanes.Placeholder(id, title, state)
+      val decl  = declared.get(id.value)
+      val title = decl.fold(id.value)(_.title.text)
+      val role  = decl.fold(A11yRole.Region)(d => A11y.role(d.kind))
+      val view  = StudioPanes.Placeholder(id, title, role, state)
       created += id
       live.update(id, view.node)
       new PaneView[ujson.Value]:
@@ -73,8 +77,28 @@ object StudioPanes:
   /** The content every declared pane starts with. */
   val content: PaneContent = PaneContent(placeholder, ujson.Null)
 
-  /** A titled, empty panel. */
-  private final class Placeholder(id: PaneId, title: String, val state: ujson.Value):
+  /** A pane's role as JavaFX names it (S1.11): a plot is an image with a
+    * summary, a table and a navigator have row cursors, anything else is a
+    * group of controls.
+    */
+  def accessibleRole(role: A11yRole): AccessibleRole = role match
+    case A11yRole.Plot         => AccessibleRole.IMAGE_VIEW
+    case A11yRole.Table        => AccessibleRole.TABLE_VIEW
+    case A11yRole.List         => AccessibleRole.LIST_VIEW
+    case A11yRole.Button       => AccessibleRole.BUTTON
+    case A11yRole.ToggleButton => AccessibleRole.TOGGLE_BUTTON
+    case A11yRole.MenuButton   => AccessibleRole.MENU_BUTTON
+    case A11yRole.Region       => AccessibleRole.PARENT
+
+  /** A titled, empty panel: one focus stop (DESIGN_SPEC section 10), named
+    * by its title, with its kind's role.
+    */
+  private final class Placeholder(
+      id: PaneId,
+      title: String,
+      role: A11yRole,
+      val state: ujson.Value
+  ):
     val node: VBox =
       val heading = Label(title)
       heading.getStyleClass.addAll("pane-placeholder-title", "t13")
@@ -82,4 +106,6 @@ object StudioPanes:
       box.getStyleClass.add("pane-placeholder")
       box.setId(s"pane-${id.value}")
       box.setAccessibleText(title)
+      box.setAccessibleRole(accessibleRole(role))
+      box.setFocusTraversable(true)
       box

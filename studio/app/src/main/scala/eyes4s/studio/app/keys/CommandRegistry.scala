@@ -18,7 +18,7 @@ package eyes4s.studio.app.keys
 
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.execution.JobPhase
-import eyes4s.studio.app.text.MessageId
+import eyes4s.studio.app.text.{MessageId, Messages}
 import eyes4s.studio.core.command.{CommandError, HistoryStack}
 import eyes4s.studio.core.document.Perspective
 
@@ -32,6 +32,20 @@ object CommandId:
 
   private[keys] def declared(value: String): CommandId = new CommandId(value)
 
+/** The menu of the system menu bar a command is listed in (S1.9), in bar
+  * order. macOS adds the application menu itself.
+  */
+enum MenuSection derives CanEqual:
+  case File, Edit, View, Go, Run, Window
+
+  def title: MessageId = this match
+    case File   => MessageId.MenuFile
+    case Edit   => MessageId.MenuEdit
+    case View   => MessageId.MenuView
+    case Go     => MessageId.MenuGo
+    case Run    => MessageId.MenuRun
+    case Window => MessageId.MenuWindow
+
 /** A user action as data: its id, label, shortcut, and the intent it stands
   * for in a given model. It is enabled exactly when that intent exists
   * (S1.9: the menu bar and keymap are renderings of these).
@@ -39,6 +53,7 @@ object CommandId:
 final class AppCommand private[keys] (
     val id: CommandId,
     val label: MessageId,
+    val section: MenuSection,
     val shortcut: Option[KeyChord],
     resolve: AppModel => Option[Intent],
     why: AppModel => Option[CommandError] = (_: AppModel) => None
@@ -65,6 +80,7 @@ object CommandRegistry:
     AppCommand(
       CommandId.declared(s"perspective.${p.label.toLowerCase}"),
       label,
+      MenuSection.View,
       Some(KeyChord.command(key)),
       always(Intent.SwitchPerspective(p))
     )
@@ -81,14 +97,16 @@ object CommandRegistry:
 
   val back: AppCommand = AppCommand(
     CommandId.declared("navigate.back"),
-    MessageId.Back,
+    MessageId.CommandBack,
+    MenuSection.Go,
     Some(KeyChord.command(Key.BracketLeft)),
     m => Option.when(m.navigation.canGoBack)(Intent.Back)
   )
 
   val forward: AppCommand = AppCommand(
     CommandId.declared("navigate.forward"),
-    MessageId.Forward,
+    MessageId.CommandForward,
+    MenuSection.Go,
     Some(KeyChord.command(Key.BracketRight)),
     m => Option.when(m.navigation.canGoForward)(Intent.Forward)
   )
@@ -96,6 +114,7 @@ object CommandRegistry:
   val undo: AppCommand = AppCommand(
     CommandId.declared("edit.undo"),
     MessageId.CommandUndo,
+    MenuSection.Edit,
     Some(KeyChord.command(Key.Z)),
     m => Option.when(m.history.science.canUndo)(Intent.Undo(HistoryStack.Science)),
     m => m.history.undoOn(HistoryStack.Science).left.toOption
@@ -104,6 +123,7 @@ object CommandRegistry:
   val redo: AppCommand = AppCommand(
     CommandId.declared("edit.redo"),
     MessageId.CommandRedo,
+    MenuSection.Edit,
     Some(KeyChord.commandShift(Key.Z)),
     m => Option.when(m.history.science.canRedo)(Intent.Redo(HistoryStack.Science)),
     m => m.history.redoOn(HistoryStack.Science).left.toOption
@@ -112,6 +132,7 @@ object CommandRegistry:
   val undoView: AppCommand = AppCommand(
     CommandId.declared("view.undo"),
     MessageId.CommandUndoView,
+    MenuSection.Edit,
     None,
     m => Option.when(m.history.presentation.canUndo)(Intent.Undo(HistoryStack.Presentation)),
     m => m.history.undoOn(HistoryStack.Presentation).left.toOption
@@ -120,6 +141,7 @@ object CommandRegistry:
   val redoView: AppCommand = AppCommand(
     CommandId.declared("view.redo"),
     MessageId.CommandRedoView,
+    MenuSection.Edit,
     None,
     m => Option.when(m.history.presentation.canRedo)(Intent.Redo(HistoryStack.Presentation)),
     m => m.history.redoOn(HistoryStack.Presentation).left.toOption
@@ -128,6 +150,7 @@ object CommandRegistry:
   val nextPane: AppCommand = AppCommand(
     CommandId.declared("pane.next"),
     MessageId.CommandNextPane,
+    MenuSection.Window,
     Some(KeyChord.plain(Key.F6)),
     m => Option.when(m.layout.groups.size > 1)(Intent.FocusNextPane)
   )
@@ -135,6 +158,7 @@ object CommandRegistry:
   val previousPane: AppCommand = AppCommand(
     CommandId.declared("pane.previous"),
     MessageId.CommandPreviousPane,
+    MenuSection.Window,
     Some(KeyChord.shift(Key.F6)),
     m => Option.when(m.layout.groups.size > 1)(Intent.FocusPreviousPane)
   )
@@ -142,6 +166,7 @@ object CommandRegistry:
   val nextTab: AppCommand = AppCommand(
     CommandId.declared("tab.next"),
     MessageId.CommandNextTab,
+    MenuSection.Window,
     Some(KeyChord.control(Key.Tab)),
     always(Intent.NextTab)
   )
@@ -149,6 +174,7 @@ object CommandRegistry:
   val previousTab: AppCommand = AppCommand(
     CommandId.declared("tab.previous"),
     MessageId.CommandPreviousTab,
+    MenuSection.Window,
     Some(KeyChord.controlShift(Key.Tab)),
     always(Intent.PreviousTab)
   )
@@ -156,6 +182,7 @@ object CommandRegistry:
   val maximize: AppCommand = AppCommand(
     CommandId.declared("pane.maximize"),
     MessageId.CommandMaximize,
+    MenuSection.Window,
     Some(KeyChord.commandShift(Key.Enter)),
     always(Intent.ToggleMaximize)
   )
@@ -164,6 +191,7 @@ object CommandRegistry:
   val cancelRun: AppCommand = AppCommand(
     CommandId.declared("run.cancel"),
     MessageId.CommandCancelRun,
+    MenuSection.Run,
     None,
     m =>
       m.jobs.active
@@ -178,6 +206,7 @@ object CommandRegistry:
   val showRun: AppCommand = AppCommand(
     CommandId.declared("run.show"),
     MessageId.CommandShowRun,
+    MenuSection.Run,
     None,
     m => m.jobs.ready.map(notice => Intent.ShowRun(notice.run))
   )
@@ -185,6 +214,7 @@ object CommandRegistry:
   val reviewDraft: AppCommand = AppCommand(
     CommandId.declared("draft.review"),
     MessageId.CommandReviewDraft,
+    MenuSection.Run,
     None,
     m => m.document.draft.map(_ => Intent.ReviewDraft)
   )
@@ -192,6 +222,7 @@ object CommandRegistry:
   val discardDraft: AppCommand = AppCommand(
     CommandId.declared("draft.discard"),
     MessageId.CommandDiscardDraft,
+    MenuSection.Run,
     None,
     m => m.document.draft.map(_ => Intent.RequestDiscardDraft)
   )
@@ -199,6 +230,7 @@ object CommandRegistry:
   val importSources: AppCommand = AppCommand(
     CommandId.declared("data.import"),
     MessageId.CommandImport,
+    MenuSection.File,
     None,
     always(Intent.RequestImport)
   )
@@ -208,6 +240,7 @@ object CommandRegistry:
   val renameProject: AppCommand = AppCommand(
     CommandId.declared("project.rename"),
     MessageId.CommandRenameProject,
+    MenuSection.File,
     None,
     always(Intent.RequestRename)
   )
@@ -216,6 +249,7 @@ object CommandRegistry:
   val revealProject: AppCommand = AppCommand(
     CommandId.declared("project.reveal"),
     MessageId.CommandRevealProject,
+    MenuSection.File,
     None,
     m => m.project.map(_ => Intent.RevealProject)
   )
@@ -223,6 +257,7 @@ object CommandRegistry:
   val projectInfo: AppCommand = AppCommand(
     CommandId.declared("project.info"),
     MessageId.CommandProjectInfo,
+    MenuSection.File,
     None,
     always(Intent.ShowProjectInfo)
   )
@@ -230,6 +265,7 @@ object CommandRegistry:
   val resetPerspective: AppCommand = AppCommand(
     CommandId.declared("view.reset-perspective"),
     MessageId.CommandResetPerspective,
+    MenuSection.View,
     None,
     always(Intent.ResetPerspective)
   )
@@ -271,6 +307,40 @@ object CommandRegistry:
 
   /** A command's shortcut as the boards print it ("⌘1"), or "". */
   def shortcutText(command: AppCommand): String = command.shortcut.fold("")(_.render)
+
+  /** The commands of each menu, in bar order and, within a menu, in
+    * registry order. Every command is in exactly one menu.
+    */
+  def menus: Vector[(MenuSection, Vector[AppCommand])] =
+    MenuSection.values.toVector.map(s => s -> all.filter(_.section == s)).filter(_._2.nonEmpty)
+
+  /** docs/studio/SHORTCUTS.md, generated from the registry (S1.9): one row
+    * per command, grouped by menu, with its id and shortcut. A test checks
+    * the committed file against this text.
+    */
+  def shortcutTable(messages: Messages = Messages.english): String =
+    def cell(s: String) = s.replace("|", "\\|")
+    val rows            = menus.flatMap { (section, commands) =>
+      commands.map { c =>
+        val keys = c.shortcut.fold("—")(k => s"`${cell(k.render)}`")
+        s"| ${messages(section.title)} | ${cell(messages(c.label))} | $keys | `${c.id.value}` |"
+      }
+    }
+    (Vector(
+      "# Eyes Studio keyboard shortcuts",
+      "",
+      "Generated from `CommandRegistry` (studio-app, ticket S1.9); do not edit by hand.",
+      "`KeymapFxSuite` fails when this file and the registry disagree; regenerate",
+      "it with `EYES4S_UPDATE_GOLDENS=1`.",
+      "",
+      "⌘ is Command on macOS and Control on Linux and Windows. Every command is",
+      "also an item of the menu named in the first column. Inside a plot, the",
+      "arrow keys move a roving cursor, Enter selects and Esc clears; Tab leaves",
+      "the plot (DESIGN_SPEC section 10).",
+      "",
+      "| Menu | Command | Shortcut | Id |",
+      "|---|---|---|---|"
+    ) ++ rows).mkString("", "\n", "\n")
 
   def forPerspective(p: Perspective): AppCommand = p match
     case Perspective.Data     => data
