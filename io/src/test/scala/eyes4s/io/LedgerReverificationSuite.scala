@@ -17,6 +17,8 @@
 package eyes4s.io
 
 import eyes4s.codec.*
+import eyes4s.core.*
+import eyes4s.design.{Trial, Trials}
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.Px
 import eyes4s.plan.*
@@ -78,6 +80,237 @@ class LedgerReverificationSuite extends munit.FunSuite:
         causes.values(IdentityChange.Records)
       case _ => false
     })
+  }
+
+  test("codec-roundtripped fabricated dispersion cannot acquire verification") {
+    val row     = original.accepted.trials.rows.head
+    val path    = row.value
+    val f       = path.first
+    val changed = get(
+      Event.Fixation
+        .of(f.span, f.centre, 42.0, DispersionMethod.BoundingBoxWidth, f.sampleCount)
+    )
+    val fakePath = get(Scanpath.of(path.frame, path.clock, IArray(changed)))
+    val fake     = StudyInput(Trials(Vector(Trial(row.key, (), fakePath))))
+    assertNotEquals(fakePath.first.dispersionStatus, f.dispersionStatus)
+    assertEquals(fake.hash, original.accepted.hash)
+    assertEquals(original.ledger.checkAgainst(fake), Right(()))
+    val codec    = StudyInputCodecs.study[Px].input
+    val restored = get(codec.decode(get(codec.encode(fake))))
+    assertEquals(restored.hash, original.accepted.hash)
+    assertEquals(
+      restored.trials.rows.head.value.first.dispersionStatus,
+      changed.dispersionStatus
+    )
+    assert(
+      verify(input = restored).left.toOption.exists {
+        case LedgerVerificationError.InputEvidenceMismatch(
+              "fixations.csv",
+              InputComponent.Fixation,
+              Some(0),
+              Some(0),
+              expected,
+              actual
+            ) =>
+          expected != actual
+        case _ => false
+      },
+      "codec-roundtripped fabricated dispersion must be refused at trial 0 fixation 0"
+    )
+  }
+
+  test("equal decoded input verifies structurally rather than by object identity") {
+    val codec   = StudyInputCodecs.study[Px].input
+    val decoded = get(codec.decode(get(codec.encode(original.accepted))))
+    assert(!(decoded.trials.rows.head.value eq original.accepted.trials.rows.head.value))
+    assert(verify(input = decoded).isRight)
+  }
+
+  private def withPath(path: Scanpath[Px]): StudyInput[StudyKey, Px] =
+    StudyInput(Trials(Vector(Trial(original.accepted.trials.rows.head.key, (), path))))
+
+  private def mismatch(
+      left: StudyInput[StudyKey, Px],
+      right: StudyInput[StudyKey, Px],
+      component: InputComponent,
+      trial: Option[Int],
+      fixation: Option[Int]
+  ): Unit =
+    val error = VerifiedAdmission.compareInput("semantic.csv", left, right).swap.toOption.get
+    error match
+      case LedgerVerificationError.InputEvidenceMismatch(
+            source,
+            found,
+            t,
+            f,
+            expected,
+            actual
+          ) =>
+        assertEquals(source, "semantic.csv")
+        assertEquals(found, component)
+        assertEquals(t, trial)
+        assertEquals(f, fixation)
+        assertNotEquals(expected, actual)
+        assert(error.message.contains(source))
+        assert(error.message.contains(component.toString))
+      case other => fail(s"expected located input evidence mismatch, got $other")
+
+  test("semantic binding distinguishes dispersion value, method, evidence and missingness") {
+    val f = original.accepted.trials.rows.head.value.first
+    def declared(value: Double, method: DispersionMethod) =
+      get(Event.Fixation.of(f.span, f.centre, value, method, 2))
+    def detached(fixation: Event.Fixation[Px]) =
+      withPath(get(Scanpath.of(frame, f.span.clock, IArray(fixation))))
+    val base      = declared(2.0, DispersionMethod.RmsRadius)
+    val recording = get(
+      Recording.of(
+        frame,
+        f.span.clock,
+        Rate.Fixed(get(Hz(20))),
+        Eye.Left,
+        None,
+        IArray(
+          Sample(Instant.millis(0), Gaze.Tracked(Pt[Px](8, 20), None)),
+          Sample(Instant.millis(50), Gaze.Tracked(Pt[Px](12, 20), None))
+        )
+      )
+    )
+    val series = get(
+      EventSeries.of(
+        recording,
+        RecordingRef("semantic-source"),
+        Vector(base),
+        Vector(get(SampleRange.of(0, 2)))
+      )
+    )
+    val supported   = get(Scanpath.fromEvents(series))
+    val recomputed  = get(supported.warp(Warp.id(frame)))
+    val absent      = get(Event.Fixation.withoutDispersion(f.span, f.centre, 2))
+    val invalidated =
+      get(get(Scanpath.of(frame, f.span.clock, IArray(base))).warp(Warp.id(frame)))
+    Vector(
+      declared(3.0, DispersionMethod.RmsRadius),
+      declared(2.0, DispersionMethod.BoundingBoxWidth),
+      supported.first,
+      recomputed.first,
+      absent,
+      invalidated.first
+    ).foreach { changed =>
+      val left  = detached(base)
+      val right = detached(changed)
+      assertEquals(left.hash, right.hash)
+      mismatch(left, right, InputComponent.Fixation, Some(0), Some(0))
+    }
+    mismatch(
+      detached(absent),
+      detached(invalidated.first),
+      InputComponent.Fixation,
+      Some(0),
+      Some(0)
+    )
+    val codec        = StudyInputCodecs.study[Px].input
+    val roundtripped = get(codec.decode(get(codec.encode(withPath(supported)))))
+    assertEquals(
+      VerifiedAdmission.compareInput("same source", withPath(supported), roundtripped),
+      Right(())
+    )
+    val changedEye =
+      get(Recording.of(frame, f.span.clock, recording.rate, Eye.Right, None, recording.samples))
+    val changedSamples = get(
+      Recording.of(
+        frame,
+        f.span.clock,
+        recording.rate,
+        Eye.Left,
+        None,
+        recording.samples.map(sample => sample.copy(lineage = SampleLineage.interpolated))
+      )
+    )
+    Vector(changedEye, changedSamples).foreach { changedRecording =>
+      val changedSeries =
+        get(EventSeries.of(changedRecording, series.source, Vector(base), series.support))
+      val changedPath = get(Scanpath.fromEvents(changedSeries))
+      assertEquals(changedPath.first, supported.first)
+      mismatch(
+        withPath(supported),
+        withPath(changedPath),
+        InputComponent.SourceRecording,
+        Some(0),
+        None
+      )
+    }
+    // Dropping exact source samples while retaining the same supported summary is a distinct input.
+    mismatch(
+      withPath(supported),
+      detached(supported.first),
+      InputComponent.Source,
+      Some(0),
+      None
+    )
+  }
+
+  test("semantic binding locates trial cardinality, order, geometry and fixation changes") {
+    val originalPath                 = original.accepted.trials.rows.head.value
+    val f                            = originalPath.first
+    val key                          = original.accepted.trials.rows.head.key
+    val secondKey                    = key.copy(stimulus = "other")
+    def rows(keys: Vector[StudyKey]) =
+      StudyInput(Trials(keys.map(k => Trial(k, (), originalPath))))
+    mismatch(
+      rows(Vector(key)),
+      rows(Vector(key, secondKey)),
+      InputComponent.TrialCount,
+      None,
+      None
+    )
+    mismatch(
+      rows(Vector(key, secondKey)),
+      rows(Vector(secondKey, key)),
+      InputComponent.TrialKey,
+      Some(0),
+      None
+    )
+    val changedFrame = get(Frame.screen(frame.id.name, 200, 100))
+    mismatch(
+      original.accepted,
+      withPath(get(Scanpath.of(changedFrame, originalPath.clock, IArray(f)))),
+      InputComponent.Frame,
+      Some(0),
+      None
+    )
+    val clock       = ClockId("different-clock")
+    val span        = get(Interval.of(clock, f.span.onset, f.span.offset))
+    val changedTime = get(Event.Fixation.withoutDispersion(span, f.centre, f.sampleCount))
+    mismatch(
+      original.accepted,
+      withPath(get(Scanpath.of(frame, clock, IArray(changedTime)))),
+      InputComponent.Clock,
+      Some(0),
+      None
+    )
+    val later = get(
+      Event.Fixation.withoutDispersion(
+        get(Interval.of(originalPath.clock, Instant.millis(200), Instant.millis(300))),
+        f.centre,
+        f.sampleCount
+      )
+    )
+    mismatch(
+      original.accepted,
+      withPath(get(Scanpath.of(frame, originalPath.clock, IArray(f, later)))),
+      InputComponent.FixationCount,
+      Some(0),
+      None
+    )
+    val changedPosition =
+      get(Event.Fixation.withoutDispersion(f.span, Pt[Px](11, 20), f.sampleCount))
+    mismatch(
+      original.accepted,
+      withPath(get(Scanpath.of(frame, originalPath.clock, IArray(changedPosition)))),
+      InputComponent.Fixation,
+      Some(0),
+      Some(0)
+    )
   }
 
   test("standalone rejection deletion passes pure binding and is refused by source replay") {

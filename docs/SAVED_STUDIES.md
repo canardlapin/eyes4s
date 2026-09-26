@@ -439,8 +439,12 @@ re-importing the source file and comparing the ledger the importer produces.
 `LedgerReverification.verify(label, contents, spec, ledger, input, inventory)` performs that
 check in `io`. It compares fresh admission with the saved source interpretation, header, every
 record disposition, policy, outcome, outside-frame evidence, complete inventory evidence and
-input digest. It returns privately constructed `VerifiedAdmission` only after all comparisons
-pass. Its `admitted` input is absent for a refused admission. `LedgerVerificationError` names
+input digest. Hash equality alone is insufficient: it also compares the complete ordered
+trial keys, frame and clock agreement, fixation values (including dispersion status, value,
+method and evidence), and retained source identity, sample ranges and recording data.
+`InputEvidenceMismatch` identifies the differing component and trial/fixation index.
+It returns privately constructed `VerifiedAdmission` only after all comparisons pass. Its
+`admitted` input is absent for a refused admission. `LedgerVerificationError` names
 the source and differing component or input identities, and `IoDiagnostics.given` projects every
 case through `Diagnose`.
 

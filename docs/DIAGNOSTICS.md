@@ -1825,6 +1825,7 @@ fails after rewriting, so review the change and run it again.
 | `ledger-verification.source-changed` | `SourceChanged` | `expected`, `actual`, `causes` |
 | `ledger-verification.ledger-mismatch` | `LedgerMismatch` | `source`, `component`, `expected`, `actual` |
 | `ledger-verification.input-mismatch` | `InputMismatch` | `source`, `expected`, `actual` |
+| `ledger-verification.input-evidence-mismatch` | `InputEvidenceMismatch` | `source`, `component`, `trial`, `fixation`, `expected`, `actual` |
 
 ### `arrow-export` — `ArrowExportError`
 

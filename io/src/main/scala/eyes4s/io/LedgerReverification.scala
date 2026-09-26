@@ -16,6 +16,7 @@
 
 package eyes4s.io
 
+import eyes4s.core.*
 import eyes4s.kernel.*
 import eyes4s.plan.*
 
@@ -36,6 +37,11 @@ enum LedgerComponent derives CanEqual:
   case Header, Records, Outcome, Policy, OutsideFrame, InventoryPresence
   case InventoryHeader, InventoryAttributes, InventoryTrials, UnlistedTrials
   case RecordAttributeColumns, RecordAttributes, SampleCounts
+
+/** The exact input component that disagrees with fresh source admission. */
+enum InputComponent derives CanEqual:
+  case TrialCount, TrialKey, Frame, Clock, FixationCount, Fixation
+  case Source, SampleSupport, SourceRecording
 
 /** Source-bound verification. The synchronous entry point drains admission;
   * it does not itself promise cooperative cancellation.
@@ -118,7 +124,124 @@ object VerifiedAdmission:
         (),
         LedgerVerificationError.InputMismatch(label, input.hash, replay.accepted.hash)
       )
+      _ <- compareInput(label, input, replay.accepted)
     yield new VerifiedAdmission(replay.spec, expected, input)
+
+  /** Hash equality is only a fast check: it does not bind every scientific
+    * field. Compare the complete ordered data before granting verification.
+    * Transitions and extent are derived by Scanpath from these fixations.
+    */
+  private[io] def compareInput[K, U <: Unit2D](
+      label: String,
+      expected: StudyInput[K, U],
+      actual: StudyInput[K, U]
+  ): Either[LedgerVerificationError, Unit] =
+    def check[A](
+        component: InputComponent,
+        trial: Option[Int],
+        fixation: Option[Int],
+        left: => A,
+        right: => A
+    )(agrees: Boolean): Either[LedgerVerificationError, Unit] =
+      Either.cond(
+        agrees,
+        (),
+        LedgerVerificationError.InputEvidenceMismatch(
+          label,
+          component,
+          trial,
+          fixation,
+          left.toString,
+          right.toString
+        )
+      )
+    val left  = expected.trials.rows
+    val right = actual.trials.rows
+    check(InputComponent.TrialCount, None, None, left.size, right.size)(left.size == right.size)
+      .flatMap { _ =>
+        left
+          .zip(right)
+          .zipWithIndex
+          .foldLeft[Either[LedgerVerificationError, Unit]](Right(())) {
+            case (result, ((a, b), index)) =>
+              result.flatMap { _ =>
+                val x     = a.value
+                val y     = b.value
+                val trial = Some(index)
+                for
+                  _ <- check(InputComponent.TrialKey, trial, None, a.key, b.key)(a.key == b.key)
+                  _ <- check(InputComponent.Frame, trial, None, x.frame, y.frame)(
+                    Agreement.frames(x.frame, y.frame).isRight
+                  )
+                  _ <- check(InputComponent.Clock, trial, None, x.clock, y.clock)(
+                    Agreement.clocks(x.clock, y.clock).isRight
+                  )
+                  _ <- check(InputComponent.FixationCount, trial, None, x.n, y.n)(x.n == y.n)
+                  _ <- (0 until x.n).foldLeft[Either[LedgerVerificationError, Unit]](
+                    Right(())
+                  ) { (result, fix) =>
+                    result.flatMap { _ =>
+                      // Fixation is a structural value: span, centre, support and
+                      // complete dispersion status/value/method/evidence all participate.
+                      check(
+                        InputComponent.Fixation,
+                        trial,
+                        Some(fix),
+                        x.fixations(fix),
+                        y.fixations(fix)
+                      )(x.fixations(fix) == y.fixations(fix))
+                    }
+                  }
+                  _ <- check(InputComponent.Source, trial, None, x.source, y.source)(
+                    x.source == y.source
+                  )
+                  _ <- check(
+                    InputComponent.SampleSupport,
+                    trial,
+                    None,
+                    x.sampleSupport,
+                    y.sampleSupport
+                  )(x.sampleSupport == y.sampleSupport)
+                  _ <- check(
+                    InputComponent.SourceRecording,
+                    trial,
+                    None,
+                    x.sourceRecording.map(recordingData),
+                    y.sourceRecording.map(recordingData)
+                  )(sameRecording(x.sourceRecording, y.sourceRecording))
+                yield ()
+              }
+          }
+      }
+
+  private def recordingData[U <: Unit2D](recording: Recording[U]) =
+    (
+      recording.frame,
+      recording.clock,
+      recording.rate,
+      recording.eye,
+      recording.pupilUnit,
+      recording.samplingTolerance.toSpan,
+      recording.samplingEvidence,
+      recording.samples.iterator
+        .map(sample => (sample.t, sample.gaze, sample.lineage.toVector))
+        .toVector
+    )
+
+  private def sameRecording[U <: Unit2D](
+      left: Option[Recording[U]],
+      right: Option[Recording[U]]
+  ): Boolean =
+    (left, right) match
+      case (None, None)       => true
+      case (Some(a), Some(b)) =>
+        Agreement.frames(a.frame, b.frame).isRight && Agreement
+          .clocks(a.clock, b.clock)
+          .isRight &&
+        a.rate == b.rate && a.eye == b.eye && a.pupilUnit == b.pupilUnit &&
+        a.samplingTolerance == b.samplingTolerance && a.samplingEvidence == b.samplingEvidence &&
+        a.samples.iterator.sameElements(b.samples.iterator)
+      case _ => false
 
   private def inventory(
       a: InventoryLedger,
@@ -174,6 +297,15 @@ enum LedgerVerificationError derives CanEqual:
   )
   case InputMismatch(source: String, expected: ContentHash, actual: ContentHash)
 
+  case InputEvidenceMismatch(
+      source: String,
+      component: InputComponent,
+      trial: Option[Int],
+      fixation: Option[Int],
+      expected: String,
+      actual: String
+  )
+
   def message: String = this match
     case LegacyUnverified(source) =>
       s"Source '${source.label}' (${source.records.digest}) has legacy unspecified interpretation; replay cannot verify it."
@@ -184,3 +316,5 @@ enum LedgerVerificationError derives CanEqual:
       s"Source '$source' ledger $component declares $expected; replay produced $actual."
     case InputMismatch(source, expected, actual) =>
       s"Source '$source' input ${expected.render} differs from replayed input ${actual.render}."
+    case InputEvidenceMismatch(source, component, trial, fixation, expected, actual) =>
+      s"Source '$source' input $component at trial $trial fixation $fixation declares $expected; replay produced $actual."
