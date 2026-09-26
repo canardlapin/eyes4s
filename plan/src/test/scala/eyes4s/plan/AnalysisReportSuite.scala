@@ -222,6 +222,32 @@ class AnalysisReportSuite extends munit.FunSuite:
     )
   }
 
+  test("each Remedial instance states the remedy of its error type directly") {
+    assertEquals(
+      summon[Remedial[PlanError]].remedy(PlanError.MissingAngularScale(1)),
+      Remedy.ReviseScaleDeclaration
+    )
+    assertEquals(
+      summon[Remedial[TemporalStudyError]].remedy(TemporalStudyError.WindowNames(Vector.empty)),
+      Remedy.ReviseWindow
+    )
+    assertEquals(
+      summon[Remedial[RecordingPlanError]]
+        .remedy(RecordingPlanError.MissingViewing(RecordingRef("r"))),
+      Remedy.ReviseDetectorParameters
+    )
+    assertEquals(
+      summon[Remedial[StudyFinding[StudyKey, Px]]].remedy(StudyFinding.UnmatchedFocal(k1)),
+      Remedy.SupplyMatchedReference
+    )
+    assertEquals(
+      Remedial
+        .fixed[DescriptorError](Remedy.AlignClock)
+        .remedy(DescriptorError.MissingMethod(DefinitionId.cosine)),
+      Remedy.AlignClock
+    )
+  }
+
   test("a refusal whose cause states no remedy does not compile") {
     val missing = compiletime.testing.typeCheckErrors(
       "AnalysisFinding.refused[DescriptorError, StudyKey](DescriptorError.MissingMethod(DefinitionId.cosine))"

@@ -981,19 +981,25 @@ trait Remedial[-E]:
 
 object Remedial:
   /** An explicit, constant remedy for every error of the type. */
-  def fixed[E](value: Remedy): Remedial[E] = (_: E) => value
+  def fixed[E](value: Remedy): Remedial[E] = new Fixed(value)
 
   /** As `StudyFinding.Refused` derives it. */
-  given plan: Remedial[PlanError] = Preflight.remedyFor(_: PlanError)
+  given plan: Remedial[PlanError] = new Remedial[PlanError]:
+    def remedy(error: PlanError): Remedy = Preflight.remedyFor(error)
 
   /** As `TemporalFinding.Refused` derives it. */
-  given temporal: Remedial[TemporalStudyError] = Preflight.remedyFor(_: TemporalStudyError)
+  given temporal: Remedial[TemporalStudyError] = new Remedial[TemporalStudyError]:
+    def remedy(error: TemporalStudyError): Remedy = Preflight.remedyFor(error)
 
   /** As `RecordingFinding.Refused` gives it. */
   given recording: Remedial[RecordingPlanError] = fixed(Remedy.ReviseDetectorParameters)
 
   /** A finding keeps its own remedy. */
-  given finding: Remedial[PreflightFinding[?]] = _.remedy
+  given finding: Remedial[PreflightFinding[?]] = new Remedial[PreflightFinding[?]]:
+    def remedy(error: PreflightFinding[?]): Remedy = error.remedy
+
+  private final class Fixed[E](value: Remedy) extends Remedial[E]:
+    def remedy(error: E): Remedy = value
 
 /** The preflight report of a recipe family that uses [[AnalysisFinding]]:
   * findings bound to the plan description and the identity of the input `A`
