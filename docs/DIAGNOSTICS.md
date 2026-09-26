@@ -28,6 +28,13 @@ in `Diagnose`'s companion and need no import. The codec's families
 `LawsDiagnostics` and the JVM-only Arrow export through `ArrowDiagnostics`;
 import their `given`s to use `Diagnostic.of` on them.
 
+Codes are only ever issued. When an error type is removed its family is retired:
+`DiagnosticCatalog.retired` keeps the family and its codes in their place in
+`DiagnosticCatalog.issued`, so no code is reused with another meaning, while
+`DiagnosticCatalog.families` and the table below list only the live ones. The
+retired families are `scanpath-component` (the six-slot scanpath result) and
+`learned-template` and `template-fit`, which became the `template` family.
+
 The codec cannot state the key type of a study it decodes, so trial keys
 inside a codec, resolution or relation error (and an io export error that
 wraps one) are `ErasedKey`s. `diagnostic.narrow[K]` returns the diagnostic
@@ -1181,13 +1188,6 @@ fails after rewriting, so review the change and run it again.
 | `map-comparison.incomplete` | `Incomplete` | `requested`, `failures` |
 | `map-comparison.score` | `Score` | `underlying` |
 
-### `scanpath-component` — `ScanpathComponentError`
-
-| Code | Case | Operands |
-|---|---|---|
-| `scanpath-component.comparison` | `Comparison` | `error` |
-| `scanpath-component.unavailable` | `Unavailable` | `component`, `reason` |
-
 ### `decomposition` — `DecompositionError`
 
 | Code | Case | Operands |
@@ -1240,20 +1240,6 @@ fails after rewriting, so review the change and run it again.
 | `repetition-mean.incomplete` | `Incomplete` | `level`, `requested`, `successful`, `required` |
 | `repetition-mean.mean` | `Mean` | `error` |
 
-### `learned-template` — `LearnedTemplateError`
-
-| Code | Case | Operands |
-|---|---|---|
-| `learned-template.observation` | `Observation` | `key`, `splitGroup`, `matchGroup`, `response` |
-| `learned-template.definition` | `Definition` | `splitUnit`, `responseUnit` |
-| `learned-template.duplicate-key` | `DuplicateKey` | `key` |
-| `learned-template.split` | `Split` | `requested`, `available`, `training`, `heldOut`, `excluded` |
-| `learned-template.geometry` | `Geometry` | `key`, `underlying` |
-| `learned-template.feature` | `Feature` | `key`, `underlying` |
-| `learned-template.fit` | `Fit` | `trainingHash`, `underlying` |
-| `learned-template.identity` | `Identity` | `expected`, `actual` |
-| `learned-template.numerical` | `Numerical` | `key`, `prediction`, `response` |
-
 ### `least-squares` — `LeastSquaresError`
 
 | Code | Case | Operands |
@@ -1264,20 +1250,6 @@ fails after rewriting, so review the change and run it again.
 | `least-squares.rank-deficient` | `RankDeficient` | `column`, `pivot`, `threshold` |
 | `least-squares.column-arithmetic` | `ColumnArithmetic` | `operation`, `column` |
 | `least-squares.row-arithmetic` | `RowArithmetic` | `operation`, `row` |
-
-### `template-fit` — `TemplateFitError`
-
-| Code | Case | Operands |
-|---|---|---|
-| `template-fit.fit` | `Fit` | `trainingHash`, `underlying` |
-| `template-fit.basis` | `Basis` | `id`, `columns`, `responseUnit` |
-| `template-fit.observation` | `Observation` | `key`, `fold`, `features`, `response` |
-| `template-fit.width` | `Width` | `key`, `expected`, `actual` |
-| `template-fit.duplicate-key` | `DuplicateKey` | `key` |
-| `template-fit.split` | `Split` | `requested`, `available`, `training`, `heldOut` |
-| `template-fit.receipt` | `Receipt` | `expected`, `actual`, `reason` |
-| `template-fit.numerical` | `Numerical` | `key`, `operation` |
-| `template-fit.evaluation` | `Evaluation` | `failed`, `total` |
 
 ### `rng` — `RngError`
 
@@ -1363,6 +1335,27 @@ fails after rewriting, so review the change and run it again.
 | `fixation-entropy.invalid-scale-weight` | `InvalidScaleWeight` | `sigma`, `weight` |
 | `fixation-entropy.degenerate-scale-weights` | `DegenerateScaleWeights` | `total` |
 | `fixation-entropy.non-finite-position` | `NonFinitePosition` | `fixation`, `x`, `y` |
+
+### `template` — `TemplateError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `template.basis` | `Basis` | `id`, `columns`, `responseUnit` |
+| `template.definition` | `Definition` | `splitUnit`, `responseUnit` |
+| `template.observation` | `Observation` | `key`, `splitGroup`, `matchGroup`, `response` |
+| `template.features` | `Features` | `key`, `features` |
+| `template.width` | `Width` | `key`, `expected`, `actual` |
+| `template.duplicate-key` | `DuplicateKey` | `key` |
+| `template.split` | `Split` | `requested`, `available`, `training`, `heldOut`, `excluded` |
+| `template.geometry` | `Geometry` | `key`, `underlying` |
+| `template.feature` | `Feature` | `key`, `underlying` |
+| `template.fit` | `Fit` | `trainingHash`, `underlying` |
+| `template.route` | `Route` | `method`, `route` |
+| `template.identity` | `Identity` | `expected`, `actual` |
+| `template.receipt` | `Receipt` | `expected`, `actual`, `reason` |
+| `template.numerical` | `Numerical` | `key`, `prediction`, `response` |
+| `template.evaluation` | `Evaluation` | `failed`, `total` |
+| `template.aggregate` | `Aggregate` | `operation`, `value` |
 
 ### `codec` — `CodecError`
 

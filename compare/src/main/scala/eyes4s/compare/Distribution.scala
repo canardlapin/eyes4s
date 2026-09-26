@@ -353,27 +353,6 @@ object Distribution:
       )
     )
 
-  /** Fisher-z transformed Pearson correlation.
-    *
-    * The form to average across trials or participants. Unbounded, which is
-    * the point: averaging raw correlations understates the mean because the
-    * scale compresses near the ends.
-    */
-  def fisherZ[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
-    new SymmetricCompare[Mass[U], Similarity]:
-      private val r = pearson[U]
-      val info      = MeasureInfo(
-        "Fisher z",
-        "atanh of the Pearson correlation; unbounded, and the form to average",
-        MeasureScale.FisherZ,
-        None
-      )
-      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Similarity] =
-        r.compare(a, b).flatMap { s =>
-          val clamped = math.max(-0.999999999999, math.min(0.999999999999, s.value))
-          Similarity.computed("Fisher z", 0.5 * math.log((1 + clamped) / (1 - clamped)))
-        }
-
   /** Rank correlation with average ranks for exact ties. Constant inputs are errors. */
   def spearman[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
     new SymmetricCompare[Mass[U], Similarity]:
@@ -516,38 +495,36 @@ object Distribution:
             )
           }
 
-  /** The reference l1 similarity is 1 minus total variation, with larger values closer. */
-  def l1Similarity[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
-    new SymmetricCompare[Mass[U], Similarity]:
-      val info = MeasureInfo(
-        "one minus total variation",
-        "reference l1 similarity; larger is closer",
-        MeasureScale.Bounded(0, 1),
-        None
-      )
-      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Similarity] =
-        totalVariation[U]
-          .compare(a, b)
-          .flatMap(d => Similarity.computed(info.name, 1 - d.value))
-
-  /** Separate endpoint policy from the historical 1e-12-clamped fisherZ instance.
+  /** Fisher-z transformed Pearson correlation, with explicit endpoints.
     *
-    * The eyesim `similarity(method = "fisherz")` endpoints: a Pearson r within 64 machine epsilons
-    * (64 * 2^-52) of plus or minus one is rounding error on a perfect correlation, such as a
-    * rescaled copy of a map, and is snapped to exactly plus or minus one; the result is then
-    * clamped to plus/minus (1-2^-52). Every perfect correlation therefore gives
-    * atanh(1-2^-52), about 18.3684, rather than a value that depends on the rounding of r.
+    * Its measure name, "Fisher z (machine epsilon endpoints)", is the name
+    * saved results have always carried for this policy. Before CR2 this
+    * function was the legacy clamp, whose results carry the name "Fisher z"
+    * (now `EyesimCompat.fisherZLegacy`).
+    *
+    * The form to average across trials or participants. Unbounded, which is
+    * the point: averaging raw correlations understates the mean because the
+    * scale compresses near the ends.
+    *
+    * A Pearson r within 64 machine epsilons (64 * 2^-52) of plus or minus one is
+    * rounding error on a perfect correlation, such as a rescaled copy of a map,
+    * and is snapped to exactly plus or minus one; the result is then clamped to
+    * plus/minus (1-2^-52). Every perfect correlation therefore gives
+    * atanh(1-2^-52), about 18.3684, rather than a value that depends on the
+    * rounding of r. This is also eyesim's `similarity(method = "fisherz")`
+    * endpoint policy. The historical 1e-12 clamp is
+    * `eyes4s.compare.eyesim.EyesimCompat.fisherZLegacy`.
     *
     * Constant maps are not correlations: two constant maps, even identical ones, are
     * [[CompareError.ConstantInput]], as for [[pearson]]. eyesim instead returns atanh(1-2^-52)
     * for identical constant maps; that is a recorded intentional divergence (baseline case
     * `distribution-method-matrix`).
     */
-  def fisherZMachineEpsilon[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
+  def fisherZ[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
     new SymmetricCompare[Mass[U], Similarity]:
       val info = MeasureInfo(
         "Fisher z (machine epsilon endpoints)",
-        "atanh(Pearson), r within 64 eps of plus/minus 1 snapped to it, clamped at plus/minus (1-2^-52)",
+        "atanh(Pearson), r within 64 eps of plus/minus 1 snapped to it, clamped at plus/minus (1-2^-52); unbounded, and the form to average",
         MeasureScale.FisherZ,
         None
       )

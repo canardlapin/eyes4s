@@ -604,7 +604,7 @@ class TemporalExecutionSuite extends munit.CatsEffectSuite:
           def compare(x: Mass[Px], y: Mass[Px]): Either[CompareError, Similarity] =
             throw new Broken
       ,
-      Some(MethodDescriptor.cosine[Px](DefinitionId.cosine))
+      Some(ComparisonMethods.cosine.descriptor)
     )
     val broken = get(plan(clean, throwing).prepare(clean))
     for

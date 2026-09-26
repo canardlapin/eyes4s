@@ -17,9 +17,18 @@ bag accepted by execution.
 
 `StudyMethod.descriptor` provides the existing `MeasureInfo`, typed score and
 difference component accessors, per-component ranges/units/directions, and declared
-comparison properties. Cosine is symmetric, nonnegative and bounded; this API
-does not classify it as a metric. Component construction may fail with a typed
+comparison properties. Component construction may fail with a typed
 descriptor error, including when a range depends on parameters.
+
+Every registered map method has one: `ComparisonMethods` holds an entry per
+`MapSimilarityMethod` with its built-in identity and descriptor, and `entry.study`
+is the study method that carries it ([map comparison](MAP_COMPARISON.md#the-registry-and-study-methods)).
+The component range is the measure's declared scale; the properties are symmetric
+always, bounded for a bounded or correlation scale, and nonnegative when the lower
+bound is. Cosine is therefore symmetric, nonnegative and bounded, Pearson symmetric
+and bounded, Fisher z symmetric only; no descriptor classifies a method as a metric.
+The published `ComparisonMethodLaws.registered` checks each entry's descriptor against
+its measure.
 
 `RecordingMethod.descriptor` retains the canonical `AlgorithmCard`. Its citations,
 implementation version, assumptions, deviations and source references remain the
@@ -30,8 +39,9 @@ that an entire recording recipe supports bounded cancellation.
 consult these descriptors before a recipe runs.
 
 A study plan's inspection reports its method's execution capability:
-`BoundedComparison` for cosine and for an extension built on a bounded
-comparison cursor, `SynchronousWholeOperation` for an arbitrary closure. A
+`BoundedComparison` for cosine (the registered kernel) and for an extension built on
+a bounded comparison cursor, `SynchronousWholeOperation` for every other registered
+method and for an arbitrary closure. A
 temporal plan reports its base study's capability, since every cell runs the
 base study's cursor (UI-G1 found it reporting the whole-operation default).
 Recording recipes report `SynchronousWholeOperation`: the runner feeds the

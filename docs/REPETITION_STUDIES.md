@@ -120,7 +120,7 @@ case runs the complete save, fresh-registration reopen and rerun workflow on bot
    of same/different participant, stimulus and occasion rules. It rejects empty, duplicate,
    contradictory or potentially overlapping matched/control relations. Both roles are directed
    and exclude full-key self edges. The relation order is preserved in diagnostics and provenance.
-3. Choose a `MapSimilarityMethod`, `Selection.All` or checked `Selection.BottomK`, and
+3. Choose a registered `MapSimilarityMethod`, `Selection.All` or checked `Selection.BottomK`, and
    `FailurePolicy`. Matched comparisons are exhaustive. Controls use the existing keyed sampler
    after eligibility and all true-match exclusions; no new RNG or sampler is introduced.
 4. Construct with `RepetitionPlan.of`. Every map must agree with the declared nominal grid.

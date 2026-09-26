@@ -193,8 +193,8 @@ class DistanceCorrelationLimitSuite extends munit.FunSuite:
     MapSimilarityMethod.values.filterNot(_ == MapSimilarityMethod.DistanceCorrelation).foreach {
       method =>
         assertEquals(
-          method.instanceWithin[Px](limit(0)).compare(ramp, wave),
-          method.instance[Px].compare(ramp, wave),
+          method.similarityWithin[Px](limit(0)).compare(ramp, wave),
+          method.similarity[Px].compare(ramp, wave),
           clue(method)
         )
     }

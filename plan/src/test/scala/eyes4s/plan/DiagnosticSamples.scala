@@ -833,7 +833,6 @@ object DiagnosticSamples:
     generated[OverlapFailure]("OverlapFailure"),
     generated[MapScaleFailure]("MapScaleFailure"),
     generated[MapComparisonError]("MapComparisonError"),
-    generated[ScanpathComponentError]("ScanpathComponentError"),
     generated[DecompositionError]("DecompositionError"),
     generated[PairingError]("PairingError"),
     generated[SessionError]("SessionError"),
@@ -841,14 +840,13 @@ object DiagnosticSamples:
     generated[WorkQuantaError]("WorkQuantaError"),
     generated[EvaluationWorkError]("EvaluationWorkError"),
     generated[RepetitionMeanError]("RepetitionMeanError"),
-    generated[LearnedTemplateError]("LearnedTemplateError"),
     generated[LeastSquaresError]("LeastSquaresError"),
-    generated[TemplateFitError]("TemplateFitError"),
     generated[RngError]("RngError"),
     generated[EpochError[StudyKey, String]]("EpochError"),
     generated[PointSamplingError]("PointSamplingError"),
     generated[RecipeParameterError]("RecipeParameterError"),
     generated[RepetitionPlanError]("RepetitionPlanError"),
     generated[DiagnosticCodeError]("DiagnosticCodeError"),
-    generated[FixationEntropyError]("FixationEntropyError")
+    generated[FixationEntropyError]("FixationEntropyError"),
+    generated[TemplateError]("TemplateError")
   )
