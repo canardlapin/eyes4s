@@ -19,6 +19,7 @@ package eyes4s.surface
 import eyes4s.core.*
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.Px
+import scala.compiletime.testing.typeCheckErrors
 
 /** Lattice membership and every typed refusal of the fixation-entropy route. */
 class FixationEntropySuite extends munit.FunSuite:
@@ -47,14 +48,47 @@ class FixationEntropySuite extends munit.FunSuite:
   test("cells are half-open except a closed upper edge, which is a named choice") {
     val closed = lattice(LatticeUpperEdge.Closed)
     val open   = lattice(LatticeUpperEdge.Open)
-    assertEquals(closed.cellOf(Pt[Px](10, 10)), Some(5))
-    assertEquals(closed.cellOf(Pt[Px](9.999, 9.999)), Some(0))
-    assertEquals(closed.cellOf(Pt[Px](40, 20)), Some(7))
-    assertEquals(open.cellOf(Pt[Px](40, 20)), None)
-    assertEquals(open.cellOf(Pt[Px](39.999, 19.999)), Some(7))
-    assertEquals(closed.cellOf(Pt[Px](-0.001, 5)), None)
-    assertEquals(closed.clampedCellOf(Pt[Px](-5, 25)), 4)
-    assertEquals(closed.clampedCellOf(Pt[Px](55, -1)), 3)
+    import LatticePlacement.*
+    assertEquals(closed.place(Pt[Px](10, 10)), Inside(5))
+    assertEquals(closed.place(Pt[Px](9.999, 9.999)), Inside(0))
+    assertEquals(closed.place(Pt[Px](40, 20)), Inside(7))
+    assertEquals(open.place(Pt[Px](40, 20)), Outside(7))
+    assertEquals(open.place(Pt[Px](39.999, 19.999)), Inside(7))
+    assertEquals(closed.place(Pt[Px](-0.001, 5)), Outside(0))
+    assertEquals(closed.place(Pt[Px](-5, 25)), Outside(4))
+    assertEquals(closed.place(Pt[Px](55, -1)), Outside(3))
+  }
+
+  test("a non-finite point is placed nowhere, never in cell 0") {
+    val closed = lattice(LatticeUpperEdge.Closed)
+    Vector(
+      Pt[Px](Double.NaN, Double.NaN),
+      Pt[Px](Double.NaN, 5),
+      Pt[Px](5, Double.PositiveInfinity),
+      Pt[Px](Double.NegativeInfinity, 5)
+    ).foreach { p =>
+      closed.place(p) match
+        case LatticePlacement.NonFinite(x, y) =>
+          assert(x.equals(p.x) && y.equals(p.y), s"($x, $y) is not $p")
+        case other => fail(s"$p was placed as $other")
+    }
+  }
+
+  test("a cell-entropy failure other than an empty lattice keeps its underlying error") {
+    assertEquals(
+      FixationEntropy.cellEntropyFailure(5, 2, SurfaceError.DegenerateTotal(0.0)),
+      FixationEntropyError.NoOccupancy(5, 2)
+    )
+    Vector(
+      SurfaceError.DegenerateTotal(Double.PositiveInfinity),
+      SurfaceError.NegativeValue(3, -1.5),
+      SurfaceError.NonFiniteValue(1, Double.PositiveInfinity)
+    ).foreach { e =>
+      assertEquals(
+        FixationEntropy.cellEntropyFailure(5, 2, e),
+        FixationEntropyError.Occupancy(e)
+      )
+    }
   }
 
   test("a lattice needs cells and a padded range needs a valid padding") {
@@ -294,6 +328,19 @@ class FixationEntropySuite extends munit.FunSuite:
     assertEquals(LatticeUpperEdge.values.length, 2)
   }
 
+  test("a scale entropy is only built from its map, so its fields cannot disagree") {
+    assert(
+      typeCheckErrors(
+        "ScaleEntropy(Sigma.px(1.0).toOption.get, Entropy(9.0, LogBase.E), 0.1)"
+      ).nonEmpty
+    )
+    assert(
+      typeCheckErrors(
+        "(null: ScaleEntropy[Px]).copy(relativeEntropy = 2.0)"
+      ).nonEmpty
+    )
+  }
+
   test("every error message names its operands") {
     Vector(
       FixationEntropyError.DegenerateLattice(0, 7)                -> Vector("0", "7"),
@@ -303,13 +350,14 @@ class FixationEntropySuite extends munit.FunSuite:
         "70.5",
         "12.25"
       ),
-      FixationEntropyError.NoOccupancy(6, 4)                   -> Vector("6", "4"),
-      FixationEntropyError.Estimate(0.5, EstimateError.NoMass) -> Vector("0.5"),
-      FixationEntropyError.DuplicateScale(12.5)                -> Vector("12.5"),
-      FixationEntropyError.MissingScaleWeight(6.25)            -> Vector("6.25"),
-      FixationEntropyError.UnknownScaleWeight(7.5)             -> Vector("7.5"),
-      FixationEntropyError.InvalidScaleWeight(6.25, -2.5)      -> Vector("6.25", "-2.5"),
-      FixationEntropyError.DegenerateScaleWeights(Double.NaN)  -> Vector("NaN"),
+      FixationEntropyError.NoOccupancy(6, 4)                     -> Vector("6", "4"),
+      FixationEntropyError.NonFinitePosition(4, Double.NaN, 1.5) -> Vector("4", "NaN", "1.5"),
+      FixationEntropyError.Estimate(0.5, EstimateError.NoMass)   -> Vector("0.5"),
+      FixationEntropyError.DuplicateScale(12.5)                  -> Vector("12.5"),
+      FixationEntropyError.MissingScaleWeight(6.25)              -> Vector("6.25"),
+      FixationEntropyError.UnknownScaleWeight(7.5)               -> Vector("7.5"),
+      FixationEntropyError.InvalidScaleWeight(6.25, -2.5)        -> Vector("6.25", "-2.5"),
+      FixationEntropyError.DegenerateScaleWeights(Double.NaN)    -> Vector("NaN"),
       FixationEntropyError.Occupancy(SurfaceError.NegativeWeight(2, -1.5)) -> Vector(
         "2",
         "-1.5"

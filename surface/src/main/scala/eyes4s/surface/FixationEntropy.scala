@@ -73,6 +73,9 @@ enum FixationEntropyError derives CanEqual:
   /** Scale weights must have a positive, finite total. */
   case DegenerateScaleWeights(total: Double)
 
+  /** A fixation position that is not a finite point, which no lattice cell holds. */
+  case NonFinitePosition(fixation: Int, x: Double, y: Double)
+
   def message: String = this match
     case FrameMismatch(path, target, e) =>
       s"The scanpath is in frame '$path' and the entropy lattice or grid is over '$target': ${e.message}"
@@ -101,6 +104,8 @@ enum FixationEntropyError derives CanEqual:
       s"The weight of the scale sigma=$sigma must be finite and non-negative; it was $weight."
     case DegenerateScaleWeights(total) =>
       s"Scale weights must have a positive, finite total; the total was $total."
+    case NonFinitePosition(index, x, y) =>
+      s"Fixation $index at ($x, $y) is not a finite position, so no lattice cell holds it."
 
 end FixationEntropyError
 
@@ -129,6 +134,20 @@ enum OutsideLattice derives CanEqual:
   */
 enum LatticeUpperEdge derives CanEqual:
   case Closed, Open
+
+/** Where a point falls on an [[OccupancyLattice]]. */
+enum LatticePlacement derives CanEqual:
+
+  /** In the cell with this index. */
+  case Inside(cell: Int)
+
+  /** Outside the lattice; `nearestEdgeCell` is the edge cell nearest along
+    * each axis, where [[OutsideLattice.ClampToEdgeCell]] counts it.
+    */
+  case Outside(nearestEdgeCell: Int)
+
+  /** Not a finite point: in no cell and near none. */
+  case NonFinite(x: Double, y: Double)
 
 /** An equal-width counting lattice over explicit bounds in a scanpath's frame.
   *
@@ -164,17 +183,24 @@ final class OccupancyLattice[U <: Unit2D] private (
   private def clampAlong(v: Double, lower: Double, upper: Double, n: Int): Int =
     cellAlong(v, lower, upper, n).getOrElse(if v < lower then 0 else n - 1)
 
-  /** The cell holding a point, or `None` outside the lattice. */
-  def cellOf(p: Pt[U]): Option[Int] =
-    for
-      ix <- cellAlong(p.x, bounds.xMin, bounds.xMax, nx)
-      iy <- cellAlong(p.y, bounds.yMin, bounds.yMax, ny)
-    yield iy * nx + ix
-
-  /** The nearest edge cell along each axis for a point outside the lattice. */
-  def clampedCellOf(p: Pt[U]): Int =
-    clampAlong(p.y, bounds.yMin, bounds.yMax, ny) * nx +
-      clampAlong(p.x, bounds.xMin, bounds.xMax, nx)
+  /** Where a point falls: in a cell, outside (with its nearest edge cell), or
+    * nowhere at all when a coordinate is not finite.
+    */
+  def place(p: Pt[U]): LatticePlacement =
+    if !p.x.isFinite || !p.y.isFinite then LatticePlacement.NonFinite(p.x, p.y)
+    else
+      val inside =
+        for
+          ix <- cellAlong(p.x, bounds.xMin, bounds.xMax, nx)
+          iy <- cellAlong(p.y, bounds.yMin, bounds.yMax, ny)
+        yield iy * nx + ix
+      inside match
+        case Some(cell) => LatticePlacement.Inside(cell)
+        case None       =>
+          LatticePlacement.Outside(
+            clampAlong(p.y, bounds.yMin, bounds.yMax, ny) * nx +
+              clampAlong(p.x, bounds.xMin, bounds.xMax, nx)
+          )
 
   def render(using u: UnitLabel[U]): String =
     s"lattice ${nx}x$ny over ${bounds.render} in ${frame.id}, upper edge $upperEdge"
@@ -288,12 +314,20 @@ final class DensityEntropy[U <: Unit2D] private[surface] (
     val outside: Vector[Int]
 )
 
-/** One scale's entropy. */
-final case class ScaleEntropy[U <: Unit2D](
+/** One scale's entropy, computed from its map: the three fields always agree. */
+final case class ScaleEntropy[U <: Unit2D] private (
     sigma: Sigma[U],
     entropy: Entropy,
     relativeEntropy: Double
 ) derives CanEqual
+
+object ScaleEntropy:
+  private[surface] def of[U <: Unit2D](
+      sigma: Sigma[U],
+      mass: Mass[U],
+      base: LogBase
+  ): ScaleEntropy[U] =
+    new ScaleEntropy(sigma, mass.entropy(base), mass.relativeEntropy(base))
 
 /** Entropies of one map at several bandwidths, in ascending order of sigma.
   *
@@ -373,7 +407,7 @@ object MultiscaleEntropy:
 
   private def level[U <: Unit2D](scale: (Sigma[U], Mass[U]), base: LogBase): ScaleEntropy[U] =
     val (sigma, mass) = scale
-    ScaleEntropy(sigma, mass.entropy(base), mass.relativeEntropy(base))
+    ScaleEntropy.of(sigma, mass, base)
 
   private[surface] def build[U <: Unit2D](
       levels: Vector[(Sigma[U], Mass[U])],
@@ -445,16 +479,19 @@ object FixationEntropy:
         ) { (acc, i) =>
           acc.flatMap { done =>
             val c = path.fixations(i).centre
-            lattice.cellOf(c) match
-              case Some(cell) => Right(done :+ Placement(i, Some(cell), outside = false))
-              case None       =>
+            lattice.place(c) match
+              case LatticePlacement.Inside(cell) =>
+                Right(done :+ Placement(i, Some(cell), outside = false))
+              case LatticePlacement.NonFinite(x, y) =>
+                Left(FixationEntropyError.NonFinitePosition(i, x, y))
+              case LatticePlacement.Outside(edge) =>
                 outsidePolicy match
                   case OutsideLattice.Refuse =>
                     Left(FixationEntropyError.FixationOutsideLattice(i, c.x, c.y))
                   case OutsideLattice.Exclude =>
                     Right(done :+ Placement(i, None, outside = true))
                   case OutsideLattice.ClampToEdgeCell =>
-                    Right(done :+ Placement(i, Some(lattice.clampedCellOf(c)), outside = true))
+                    Right(done :+ Placement(i, Some(edge), outside = true))
           }
         }
       measure <- path.occupancy(weight).left.map(FixationEntropyError.Occupancy.apply)
@@ -467,7 +504,7 @@ object FixationEntropy:
       entropy <- Entropy
         .ofWeights(cells, base)
         .left
-        .map(_ => FixationEntropyError.NoOccupancy(path.n, outside.length))
+        .map(cellEntropyFailure(path.n, outside.length, _))
     yield new OccupancyEntropy(
       lattice,
       weight,
@@ -523,6 +560,19 @@ object FixationEntropy:
         }
       result <- MultiscaleEntropy.build(levels, base, outside)
     yield result
+
+  /** An empty lattice (no mass at all) is [[FixationEntropyError.NoOccupancy]];
+    * any other failure of the cell entropy keeps its own error and operands.
+    */
+  private[surface] def cellEntropyFailure(
+      fixations: Int,
+      outside: Int,
+      error: SurfaceError
+  ): FixationEntropyError =
+    error match
+      case SurfaceError.DegenerateTotal(total) if total == 0.0 =>
+        FixationEntropyError.NoOccupancy(fixations, outside)
+      case other => FixationEntropyError.Occupancy(other)
 
   /** Where one fixation was counted, if anywhere, and whether it lay outside. */
   private final case class Placement(fixation: Int, cell: Option[Int], outside: Boolean)

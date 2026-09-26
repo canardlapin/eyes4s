@@ -810,7 +810,8 @@ object DiagnosticCatalog:
     "MissingScaleWeight",
     "UnknownScaleWeight",
     "InvalidScaleWeight",
-    "DegenerateScaleWeights"
+    "DegenerateScaleWeights",
+    "NonFinitePosition"
   )
 
   /** Every family, grouped as documented. */

@@ -10,13 +10,13 @@
     },
     "derived-entropy-reference": {
       "path": "tools/r-parity/fixtures/derived-entropy.json",
-      "sha256": "a4afa517a2ebe99f4883b7f314faf1629df879f5da391193581241022be5b72b",
+      "sha256": "e962514cab781e95850b94ee270f7cf2ed06efba6015d24324684b887894172d",
       "license": "Apache-2.0; synthetic data authored for eyes4s",
       "role": "Pinned public eyesim fixation_entropy on a fixation group (grid and density methods) and on multiscale objects (mean and none), eyesim's own density maps, NA values and errors, R environment, and the exact-rational, decimal, continuous-Gaussian and discrete-kernel oracles"
     },
     "derived-entropy-scala": {
       "path": "surface/src/test/scala/eyes4s/surface/DerivedEntropyReference.scala",
-      "sha256": "0768d92e444e586c42d18f599c68117aa40a4e9ffd149b0b2bdfb94b95362ceb",
+      "sha256": "e452a4755863832af1418b125e348310266ffdcb4831b42814f75ea8d5ec9346",
       "license": "Apache-2.0; synthetic data authored for eyes4s",
       "role": "Portable pinned values consumed by FixationEntropyConformanceSuite on the JVM and Scala.js"
     }
@@ -74,7 +74,7 @@
         "derived-entropy-reference",
         "derived-entropy-scala"
       ],
-      "independent_case": "Six fixations on a 60 by 40 frame with a 6 by 4 output lattice: the decimal entropy of eyesim's own pinned map reproduces eyesim's value at 1e-12; a continuous Gaussian confined to ks's support box at eyesim's evaluation points reproduces every rounded cell to 1e-8 and the entropy to 1e-7; a direct two-dimensional discrete-kernel sum gives the eyes4s native entropy under both edge policies and both weightings.",
+      "independent_case": "Six fixations on a 60 by 40 frame with a 6 by 4 output lattice: the decimal entropy of eyesim's own pinned map reproduces eyesim's value at 1e-12; a continuous Gaussian confined to ks's support box at eyesim's evaluation points reproduces every rounded cell to 1e-8 and the entropy to 1e-7; a direct two-dimensional discrete-kernel sum gives the eyes4s native entropy under both edge policies and both weightings. The all-default call (suggest_sigma clamped on the padded range, padded bounds, a 50 by 50 lattice) matches the same continuous oracle to 1e-7.",
       "status": "verified-intentional-divergence",
       "evidence": [
         "tools/r-parity/fixtures/derived-entropy.json",

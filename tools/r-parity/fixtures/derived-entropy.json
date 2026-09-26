@@ -445,6 +445,7 @@
     },
     "suggested_sigma_unclamped": "15.0954759011799205773068539918497123013135744389835596481383",
     "suggested_sigma_padded": "8.25",
+    "continuous_density_default": "0.962403544420760107445129623001213662194307060283329786579538",
     "native_multiscale": {
       "6": {
         "2": {

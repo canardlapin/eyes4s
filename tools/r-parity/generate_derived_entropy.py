@@ -54,6 +54,8 @@ TOLERANCE = 1e-12  # Decimal logarithms and sums of a few dozen cells.
 # the entropy computed from them.
 ROUNDED_CELL_TOLERANCE = 1e-8
 ROUNDED_MAP_TOLERANCE = 1e-7
+# fixation_entropy.fixation_group's default outdim; the call under test passes none.
+DEFAULT_OUTDIM = (50, 50)
 KS_SUPPORT = Decimal("3.7")  # ks::kde default `supp`, in standard deviations.
 BREAKPOINT_MARGIN = Fraction(
     1, 10**6
@@ -366,6 +368,19 @@ def oracle(spec: dict) -> dict:
         "suggested_sigma_padded": suggested_sigma(
             xs, ys, padded_bounds(xs, ys, frac(spec["padded_lattices"][0]["padding"]))
         ),
+        # fixation_entropy(fg, method = "density") with every default: the
+        # clamped suggestion over the padded bounds at the default outdim.
+        "continuous_density_default": shannon(
+            continuous_map(
+                xs,
+                ys,
+                ones,
+                suggested_sigma(xs, ys, padded_bounds(xs, ys, frac(spec["padded_lattices"][0]["padding"]))),
+                padded_bounds(xs, ys, frac(spec["padded_lattices"][0]["padding"]))[0:2],
+                padded_bounds(xs, ys, frac(spec["padded_lattices"][0]["padding"]))[2:4],
+                DEFAULT_OUTDIM,
+            )
+        )["e"]["normalized"],
         "native_multiscale": native_scales,
         "native_multiscale_mean": {
             b: {k: mean(native_scales, k, b) for k in kinds} for b in BASES
@@ -467,7 +482,12 @@ def verify(reference: dict, exact: dict, spec: dict) -> None:
         exact["suggested_sigma_padded"],
         "suggest_sigma padded",
     )
-    assert dd["entropy"]["kind"] == "finite"
+    close(
+        dd["entropy"],
+        exact["continuous_density_default"],
+        "default density entropy against the continuous oracle",
+        ROUNDED_MAP_TOLERANCE,
+    )
     assert dd["single_default"] == {"kind": NA} and dd["single_explicit_sigma"] == {
         "kind": NA
     }
@@ -690,6 +710,8 @@ def scala(exact: dict, reference: dict, spec: dict) -> str:
     lines += [
         "  // Default bandwidth: suggest_sigma with and without eyesim's padded display clamp.",
         f"  val eyesimDensityDefault = {rv(dd['entropy'])}",
+        "  /** The continuous oracle of that default call: sigma clamped on the padded range, padded bounds, 50 by 50, relative nats. */",
+        f"  val continuousDensityDefault = {float(exact['continuous_density_default'])!r}",
         f"  val eyesimSuggestedSigmaUnclamped = {rv(dd['suggested_sigma_unclamped'])}",
         f"  val eyesimSuggestedSigmaPadded = {rv(dd['suggested_sigma_padded'])}",
         f"  val eyesimSingleDensityDefault = {rv(dd['single_default'])}",

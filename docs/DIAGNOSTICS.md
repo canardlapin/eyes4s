@@ -1362,6 +1362,7 @@ fails after rewriting, so review the change and run it again.
 | `fixation-entropy.unknown-scale-weight` | `UnknownScaleWeight` | `sigma` |
 | `fixation-entropy.invalid-scale-weight` | `InvalidScaleWeight` | `sigma`, `weight` |
 | `fixation-entropy.degenerate-scale-weights` | `DegenerateScaleWeights` | `total` |
+| `fixation-entropy.non-finite-position` | `NonFinitePosition` | `fixation`, `x`, `y` |
 
 ### `codec` — `CodecError`
 

@@ -113,8 +113,8 @@ class FixationEntropyConformanceSuite extends munit.FunSuite:
     assertEquals(result.outside, R.outsideLattice)
     // (20, 20) sits on interior breakpoints and belongs to the upper cell on
     // both axes; (60, 40) is the closed upper corner.
-    assertEquals(get(explicitLattice.cellOf(Pt[Px](20, 20)).toRight("none")), 4)
-    assertEquals(get(explicitLattice.cellOf(Pt[Px](60, 40)).toRight("none")), 5)
+    assertEquals(explicitLattice.place(Pt[Px](20, 20)), LatticePlacement.Inside(4))
+    assertEquals(explicitLattice.place(Pt[Px](60, 40)), LatticePlacement.Inside(5))
   }
 
   test(
@@ -295,7 +295,13 @@ class FixationEntropyConformanceSuite extends munit.FunSuite:
       get(IqrBandwidth.suggest(measure, IqrBandwidthClamp.DisplayOneToFifteenPercent)).value
     assertEqualsDouble(framed, 0.15 * (R.frameWidth + R.frameHeight) / 2.0, Tolerance)
     assert(math.abs(framed - finite(R.eyesimSuggestedSigmaPadded)) > 0.5)
-    assert(finite(R.eyesimDensityDefault) > 0.0)
+    // eyesim's default: suggest_sigma clamped on the padded range, over the
+    // padded bounds at outdim 50 by 50, relative entropy in nats.
+    assertEqualsDouble(
+      finite(R.eyesimDensityDefault),
+      R.continuousDensityDefault,
+      RoundedMapTolerance
+    )
   }
 
   test("one fixation: eyesim's density entropy is NA, the native entropy is defined") {
