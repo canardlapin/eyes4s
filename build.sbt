@@ -992,8 +992,21 @@ lazy val studioDesktop = project
     tlJdkRelease := Some(studioDesktopJdkV),
     libraryDependencies ++= Seq("javafx-base", "javafx-graphics", "javafx-controls").map(
       "org.openjfx" % _ % javaFxV classifier javaFxClassifier
-    )
+    ),
+    // FX tests (StudioFxSuite, S0.4) start the toolkit once per forked JVM.
+    Test / fork := true,
+    Test / javaOptions ++= studioFxTestOptions((ThisBuild / baseDirectory).value)
   )
+
+// Snapshots go to <build>/target/studio-snapshots/<suite>/<test>/<theme>-<scale>x.png.
+// java.awt.headless keeps AWT (used only for PNG encoding) off the display. On CI,
+// as in scaladock, JavaFX renders through the software pipeline; Linux CI wraps
+// sbt in xvfb-run. Greyscale text antialiasing keeps software snapshots stable.
+def studioFxTestOptions(buildRoot: File): Seq[String] =
+  Seq(
+    s"-Deyes4s.studio.snapshots=${(buildRoot / "target" / "studio-snapshots").getAbsolutePath}",
+    "-Djava.awt.headless=true"
+  ) ++ (if (sys.env.contains("CI")) Seq("-Dprism.order=sw", "-Dprism.lcdtext=false") else Nil)
 
 lazy val studioCrossModules = Seq("studioCore", "studioApp", "studioViz")
 lazy val studioProjects     =
@@ -1017,6 +1030,85 @@ addCommandAlias(
     .flatMap(p => Seq(s"$p/headerCheckAll", s"$p/scalafmtCheckAll"))
     .mkString(";", ";", "")
 )
+
+// Studio CI (S0.4): jobs beside the core matrix in checks.yml, on JDK 25, never
+// in the library matrix. Linux runs everything under a virtual display and owns
+// snapshots (and, later, goldens); macOS runs the functional FX tests only.
+// OpenJFX natives are named per runner with -Djavafx.platform.
+lazy val studioJdk = JavaSpec.temurin("25")
+
+def studioJobSetup: List[WorkflowStep] =
+  List(WorkflowStep.CheckoutFull, WorkflowStep.SetupSbt) ::: WorkflowStep.SetupJava(
+    List(studioJdk)
+  )
+
+lazy val studioLinuxJob = WorkflowJob(
+  "studio-linux",
+  "Studio (Linux, headless JavaFX)",
+  studioJobSetup ::: List(
+    WorkflowStep.Use(
+      UseRef.Public("actions", "setup-python", "v6"),
+      name = Some("Setup Python"),
+      params = Map("python-version" -> "3.14")
+    ),
+    WorkflowStep.Run(
+      List(
+        "tmp=\"$(mktemp -d)\"",
+        "(cd \"$tmp\" && python3 \"$GITHUB_WORKSPACE/docs/studio/fixture/make_fixture.py\" > /dev/null)",
+        "diff -u docs/studio/fixture/FIXTURE.md \"$tmp/FIXTURE.md\"",
+        "diff -u docs/studio/fixture/fixture.json \"$tmp/fixture.json\""
+      ),
+      name = Some("Check the studio design fixture regenerates")
+    ),
+    WorkflowStep.Run(
+      List("python3 tools/studio-fixture/generate.py --check"),
+      name = Some("Check the studio acceptance fixture is current")
+    ),
+    WorkflowStep.Run(
+      List("python3 tools/studio-fixture/verify_counts.py"),
+      name = Some("Verify studio fixture counts")
+    ),
+    WorkflowStep.Run(
+      List(
+        "xvfb-run -a -s '-screen 0 1920x1200x24' sbt -J-Xmx8g -Djavafx.platform=linux studioAll studioStyleCheck"
+      ),
+      name = Some("Build and test studio (xvfb, software pipeline)")
+    ),
+    WorkflowStep.Use(
+      UseRef.Public("actions", "upload-artifact", "v4"),
+      name = Some("Upload studio snapshots"),
+      cond = Some("always()"),
+      params = Map(
+        "name"              -> "studio-snapshots-linux-${{ github.sha }}",
+        "path"              -> "target/studio-snapshots/",
+        "if-no-files-found" -> "error"
+      )
+    )
+  ),
+  sbtStepPreamble = Nil,
+  oses = List("ubuntu-22.04"),
+  scalas = Nil,
+  javas = List(studioJdk),
+  timeoutMinutes = Some(60)
+)
+
+lazy val studioMacosJob = WorkflowJob(
+  "studio-macos",
+  "Studio (macOS, functional JavaFX)",
+  studioJobSetup ::: List(
+    WorkflowStep.Run(
+      List("sbt -J-Xmx4g -Djavafx.platform=mac-aarch64 studioDesktop/test"),
+      name = Some("Run functional JavaFX tests (no goldens)")
+    )
+  ),
+  sbtStepPreamble = Nil,
+  oses = List("macos-latest"),
+  scalas = Nil,
+  javas = List(studioJdk),
+  timeoutMinutes = Some(60)
+)
+
+ThisBuild / githubWorkflowAddedJobs ++= Seq(studioLinuxJob, studioMacosJob)
 
 // ---------------------------------------------------------------------------
 // Aliases
