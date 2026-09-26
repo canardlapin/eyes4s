@@ -211,6 +211,10 @@ object AppGen:
     2 -> Gen.oneOf(Perspective.values.toSeq).map(Intent.SwitchPerspective(_)),
     2 -> location(m).map(Intent.Navigate(_)),
     1 -> Gen.choose(-1, 8).map(Intent.OpenCrumb(_)),
+    // S3.4: explain any place a trail can hold, from wherever the model is.
+    2 -> trail(m).flatMap(t =>
+      if t.isEmpty then Gen.const(Intent.Back) else Gen.oneOf(t).map(Intent.Explain(_))
+    ),
     2 -> select(m),
     1 -> Gen.zip(Gen.oneOf(views), Gen.option(Gen.oneOf(refs(m)))).map(Intent.HoverOver(_, _)),
     1 -> jobIds(m).map(Intent.CancelJob(_)),
