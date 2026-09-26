@@ -72,6 +72,13 @@ enum ArtifactRole(val wire: String, val media: MediaKind, val identityBearing: B
   case TemporalPlan    extends ArtifactRole("temporal-plan", MediaKind.JsonText, false)
   case TemporalResult  extends ArtifactRole("temporal-result", MediaKind.JsonText, false)
 
+  /** A report specification and an evaluated report (`eyes4s.report-spec@1`,
+    * `eyes4s.report@1`); a report cites what it was evaluated over by
+    * canonical digest.
+    */
+  case ReportSpec extends ArtifactRole("report-spec", MediaKind.JsonText, false)
+  case Report     extends ArtifactRole("report", MediaKind.JsonText, false)
+
 /** One stored artifact: its role, the schema of its content, its media kind,
   * the exact byte length and SHA-256 of its bytes, the semantic identity for
   * identity-bearing roles and the layout of a payload.
@@ -181,6 +188,20 @@ enum ManifestRelation derives CanEqual:
     */
   case TemporalResultOf(result: ArtifactName, plan: ArtifactName, input: ArtifactName)
 
+  /** The report is the specification evaluated over the result, which was
+    * computed on the input, with covariates from the ledger when it reads
+    * any: the report's binding names the canonical digests of the result,
+    * the input, the result's plan and the ledger, and its specification is
+    * the spec entry's. Exactly one per report.
+    */
+  case ReportOf(
+      report: ArtifactName,
+      spec: ArtifactName,
+      result: ArtifactName,
+      input: ArtifactName,
+      covariates: Option[ArtifactName]
+  )
+
   def kind: String = this match
     case PlanInput(_, _)            => "plan-input"
     case ResultOf(_, _, _)          => "result-of"
@@ -192,6 +213,7 @@ enum ManifestRelation derives CanEqual:
     case RecordingResultOf(_, _, _) => "recording-result-of"
     case TemporalPlanInput(_, _)    => "temporal-plan-input"
     case TemporalResultOf(_, _, _)  => "temporal-result-of"
+    case ReportOf(_, _, _, _, _)    => "report-of"
 
   /** Every endpoint as its wire field, entry name and required role; the
     * relation's source entry first.
@@ -247,6 +269,13 @@ enum ManifestRelation derives CanEqual:
         ("plan", plan, ArtifactRole.TemporalPlan),
         ("input", input, ArtifactRole.TemporalInput)
       )
+    case ReportOf(report, spec, result, input, covariates) =>
+      Vector(
+        ("report", report, ArtifactRole.Report),
+        ("spec", spec, ArtifactRole.ReportSpec),
+        ("result", result, ArtifactRole.StudyResult),
+        ("input", input, ArtifactRole.StudyInput)
+      ) ++ covariates.map(("covariates", _, ArtifactRole.AdmissionLedger))
 
   def source: ArtifactName = this match
     case PlanInput(plan, _)              => plan
@@ -259,6 +288,7 @@ enum ManifestRelation derives CanEqual:
     case RecordingResultOf(result, _, _) => result
     case TemporalPlanInput(plan, _)      => plan
     case TemporalResultOf(result, _, _)  => result
+    case ReportOf(report, _, _, _, _)    => report
 
   def render: String =
     endpoints
@@ -414,6 +444,7 @@ object ScientificManifest:
       .orElse(
         multiplicity(ArtifactRole.TemporalResult, "temporal-result-of", _ == 1, "exactly one")
       )
+      .orElse(multiplicity(ArtifactRole.Report, "report-of", _ == 1, "exactly one"))
     duplicateName
       .orElse(endpointErrors)
       .orElse(duplicateRelation)
@@ -445,9 +476,14 @@ object ScientificManifest:
       )
     }*),
     "relations" -> Json.arr(manifest.relations.map { r =>
+      // A report without covariates writes its absent ledger as null.
+      val absent = r match
+        case ManifestRelation.ReportOf(_, _, _, _, None) => Vector("covariates" -> Json.Null)
+        case _                                           => Vector.empty
       Json.fromFields(
-        ("kind" -> Json.fromString(r.kind)) +:
-          r.endpoints.map { case (field, name, _) => field -> Json.fromString(name.value) }
+        (("kind" -> Json.fromString(r.kind)) +:
+          r.endpoints.map { case (field, name, _) => field -> Json.fromString(name.value) }) ++
+          absent
       )
     }*)
   )
@@ -521,6 +557,16 @@ object ScientificManifest:
       case "temporal-result-of" =>
         (name(json, "result"), name(json, "plan"), name(json, "input"))
           .mapN(ManifestRelation.TemporalResultOf.apply)
+      case "report-of" =>
+        (
+          name(json, "report"),
+          name(json, "spec"),
+          name(json, "result"),
+          name(json, "input"),
+          Wire
+            .field[Option[String]](json, "covariates")
+            .flatMap(_.traverse(v => ArtifactName.of(v).left.map(CodecError.Manifest.apply)))
+        ).mapN(ManifestRelation.ReportOf.apply)
       case other => Left(CodecError.Field("kind", json, s"unknown relation kind '$other'"))
     }
 
@@ -685,6 +731,21 @@ object StoredArtifact:
     persistence.input
       .encode(value)
       .flatMap(document(name, ArtifactRole.TemporalInput, _, Some(value.hash)))
+
+  def reportSpec(
+      name: String,
+      value: eyes4s.results.ReportSpec
+  ): Either[CodecError, StoredArtifact] =
+    ReportCodecs.reportSpec
+      .encode(value)
+      .flatMap(document(name, ArtifactRole.ReportSpec, _, None))
+
+  def report[K](
+      name: String,
+      persistence: VersionedCodec[eyes4s.results.Report[K]],
+      value: eyes4s.results.Report[K]
+  ): Either[CodecError, StoredArtifact] =
+    persistence.encode(value).flatMap(document(name, ArtifactRole.Report, _, None))
 
   def recordingPlan[P](
       name: String,

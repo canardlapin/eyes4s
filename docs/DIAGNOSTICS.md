@@ -1382,6 +1382,9 @@ fails after rewriting, so review the change and run it again.
 | `codec.recording-result` | `RecordingResult` | `underlying` |
 | `codec.temporal-result` | `TemporalResult` | `underlying` |
 | `codec.non-canonical` | `NonCanonical` | `path`, `found`, `canonical`, `rule` |
+| `codec.report` | `Report` | `underlying` |
+| `codec.report-spec` | `ReportSpec` | `underlying` |
+| `codec.covariates` | `Covariates` | `underlying` |
 
 ### `resolve` — `ResolveError`
 
@@ -1429,6 +1432,8 @@ fails after rewriting, so review the change and run it again.
 | `relation.unavailable` | `Unavailable` | `endpoints` |
 | `relation.recording-prerequisites` | `RecordingPrerequisites` | `errors` |
 | `relation.temporal-prerequisites` | `TemporalPrerequisites` | `errors` |
+| `relation.report-spec` | `ReportSpec` | `report`, `stored` |
+| `relation.report-binding` | `ReportBinding` | `field`, `bound`, `stored` |
 
 ### `manifest` — `ManifestError`
 
@@ -1466,6 +1471,79 @@ fails after rewriting, so review the change and run it again.
 |---|---|---|
 | `byte-digest.wrong-length` | `WrongLength` | `value`, `length` |
 | `byte-digest.invalid-character` | `InvalidCharacter` | `value`, `index`, `character` |
+
+### `report` — `ReportFinding`
+
+| Code | Case | Operands |
+|---|---|---|
+| `report.empty-group` | `EmptyGroup` | `group`, `role` |
+| `report.unpaired-participant` | `UnpairedParticipant` | `participant`, `stratum`, `role`, `missing` |
+| `report.missing-covariate` | `MissingCovariate` | `key`, `term` |
+| `report.unknown-predicate` | `UnknownPredicate` | `key`, `term` |
+| `report.below-minimum` | `BelowMinimum` | `participant`, `group`, `role`, `queries`, `required` |
+| `report.undefined-window-share` | `UndefinedWindowShare` | `key`, `measure` |
+| `report.covariate-type` | `CovariateType` | `key`, `covariate`, `raw`, `expected` |
+
+### `report-error` — `ReportError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `report-error.unknown-scale` | `UnknownScale` | `scale`, `scales` |
+| `report-error.scale-mismatch` | `ScaleMismatch` | `spec`, `table` |
+| `report-error.unknown-component` | `UnknownComponent` | `component`, `available` |
+| `report-error.undescribed-scores` | `UndescribedScores` | `requested` |
+| `report-error.unknown-covariate` | `UnknownCovariate` | `covariate`, `declared` |
+| `report-error.covariate-mismatch` | `CovariateMismatch` | `covariate`, `report`, `table` |
+| `report-error.plan-mismatch` | `PlanMismatch` | `changes` |
+| `report-error.input-mismatch` | `InputMismatch` | `result`, `input` |
+| `report-error.stale-binding` | `StaleBinding` | `field`, `bound`, `current` |
+| `report-error.malformed-digest` | `MalformedDigest` | `field`, `value` |
+| `report-error.duplicate-query` | `DuplicateQuery` | `key` |
+| `report-error.component-count` | `ComponentCount` | `key`, `components`, `found` |
+| `report-error.blank-participant` | `BlankParticipant` | `key` |
+| `report-error.invalid-query` | `InvalidQuery` | `key`, `reason` |
+| `report-error.inconsistent-accounting` | `InconsistentAccounting` | `role`, `eligible`, `kept`, `filteredOut`, `unknownPredicate`, `failed`, `missingGroupAttribute` |
+| `report-error.inconsistent-cell` | `InconsistentCell` | `group`, `role`, `component`, `reason` |
+| `report-error.components` | `Components` | `underlying` |
+
+### `report-spec` — `SpecError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `report-spec.blank-id` | `BlankId` | `value` |
+| `report-spec.negative-scale` | `NegativeScale` | `scale` |
+| `report-spec.invalid-selection` | `InvalidSelection` | `roles`, `components` |
+| `report-spec.invalid-minimum` | `InvalidMinimum` | `value` |
+| `report-spec.non-finite-threshold` | `NonFiniteThreshold` | `term`, `threshold` |
+| `report-spec.empty-levels` | `EmptyLevels` | `term` |
+| `report-spec.undeclared-level` | `UndeclaredLevel` | `term`, `level`, `declared` |
+| `report-spec.invalid-bin` | `InvalidBin` | `label`, `from`, `until` |
+| `report-spec.invalid-bins` | `InvalidBins` | `labels` |
+| `report-spec.duplicate-grouping` | `DuplicateGrouping` | `terms` |
+| `report-spec.covariate-declarations` | `CovariateDeclarations` | `covariate`, `declared` |
+| `report-spec.contrast-term` | `ContrastTerm` | `term`, `groupings` |
+| `report-spec.contrast-levels` | `ContrastLevels` | `term`, `minuend`, `subtrahend`, `declared` |
+
+### `covariate` — `CovariateError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `covariate.blank-name` | `BlankName` | `value` |
+| `covariate.blank-unit` | `BlankUnit` | `symbol` |
+| `covariate.invalid-levels` | `InvalidLevels` | `levels`, `repeated` |
+| `covariate.duplicate-covariate` | `DuplicateCovariate` | `names` |
+| `covariate.duplicate-key` | `DuplicateKey` | `key` |
+| `covariate.unknown-attribute` | `UnknownAttribute` | `covariate`, `declared` |
+| `covariate.incompatible-kind` | `IncompatibleKind` | `covariate`, `declared`, `attribute` |
+
+### `result-table` — `ResultTableError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `result-table.schema` | `Schema` | `columns`, `reason` |
+| `result-table.cell` | `Cell` | `row`, `column`, `value`, `reason` |
+| `result-table.width` | `Width` | `row`, `expected`, `actual` |
+| `result-table.context` | `Context` | `operand`, `reason` |
 
 ### `detector-validation` — `DetectorValidationError`
 

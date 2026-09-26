@@ -72,6 +72,7 @@ object SchemaRegistry:
   private val graphs     = () => new ManifestLawSuite
   private val recorded   = () => new RecordingResultCodecLawSuite
   private val temporal   = () => new TemporalResultCodecLawSuite
+  private val reports    = () => new ReportLawSuite
 
   /** One identity: its kind, its pinned fixtures and its laws. A document's
     * first fixture carries it as its envelope schema.
@@ -295,6 +296,24 @@ object SchemaRegistry:
       Kind.Document,
       Vector("temporal-result-v1.json"),
       codecLaw(temporal, "temporal study result")
+    ),
+    Entry(
+      ReportCodecDefinitions.covariateSchema,
+      Kind.Document,
+      Vector("covariate-schema-v1.json"),
+      codecLaw(reports, "covariate schema")
+    ),
+    Entry(
+      ReportCodecDefinitions.reportSpec,
+      Kind.Document,
+      Vector("report-spec-v1.json"),
+      codecLaw(reports, "report spec")
+    ),
+    Entry(
+      ReportCodecDefinitions.report,
+      Kind.Document,
+      Vector("report-v1.json"),
+      codecLaw(reports, "study report")
     )
   )
 
@@ -899,6 +918,10 @@ private object Decoders:
         Some(AdditionalRecipeCodecs.point.archive)
       case other if other == AdditionalRecipeCodecs.repetition.schema =>
         Some(AdditionalRecipeCodecs.repetition)
+      case ReportCodecDefinitions.covariateSchema => Some(ReportCodecs.covariates)
+      case ReportCodecDefinitions.reportSpec      => Some(ReportCodecs.reportSpec)
+      case ReportCodecDefinitions.report          =>
+        Some(ReportCodecs.report(StudyCodecs.key(DefinitionId.studyKey)))
       case _ => None
 
   def reencode(

@@ -1,0 +1,168 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eyes4s.codec
+
+/** The pinned report documents as portable text, for Scala.js; the JVM
+  * checks that the resources are these documents as JSON values.
+  */
+object ReportFixtureMirrors:
+  val covariateSchemaVersionOne: String = Vector(
+    """{"schema":{"name":"eyes4s.covariate-schema","version":1},"value":{"covariates":[{"name":"m""",
+    """emory","type":{"kind":"categorical","levels":["Remembered","Forgotten"]}},{"name":"confide""",
+    """nce","type":{"kind":"numeric","unit":"rating"}},{"name":"certainty","type":{"kind":"ordina""",
+    """l","levels":["guess","sure"]}},{"name":"seen","type":{"kind":"binary"}}]}}"""
+  ).mkString
+
+  val reportSpecVersionOne: String = Vector(
+    """{"schema":{"name":"eyes4s.report-spec","version":1},"value":{"id":"memory by confidence","""",
+    """scale":0,"roles":["difference","matched"],"components":["value"],"filter":{"kind":"and","l""",
+    """eft":{"kind":"cmp","term":{"kind":"window","measure":"outside-window-share"},"comparison":""",
+    """"less-or-equal","threshold":0.25},"right":{"kind":"not","inner":{"kind":"is-missing","term""",
+    """":{"kind":"categorical-covariate","name":"memory","levels":["Remembered","Forgotten"]}}}},""",
+    """"groupBy":[{"kind":"by-bins","term":{"kind":"numeric-covariate","name":"confidence","unit"""",
+    """:"rating"},"bins":[{"label":"low","from":1.0,"until":3.0,"upper":"excluded"},{"label":"hig""",
+    """h","from":3.0,"until":4.0,"upper":"included"}]},{"kind":"by-level","term":{"kind":"categor""",
+    """ical-covariate","name":"memory","levels":["Remembered","Forgotten"]}}],"reduce":{"kind":"p""",
+    """articipant-means","minimumQueries":2},"contrast":{"term":{"kind":"categorical-covariate","""",
+    """name":"memory","levels":["Remembered","Forgotten"]},"minuend":"Remembered","subtrahend":"F""",
+    """orgotten"},"spread":"standard-deviation-and-error"}}"""
+  ).mkString
+
+  val reportVersionOne: String = Vector(
+    """{"schema":{"name":"eyes4s.report","version":1},"value":{"spec":{"schema":{"name":"eyes4s.r""",
+    """eport-spec","version":1},"value":{"id":"memory by confidence","scale":0,"roles":["differen""",
+    """ce","matched"],"components":["value"],"filter":{"kind":"and","left":{"kind":"cmp","term":{""",
+    """"kind":"window","measure":"outside-window-share"},"comparison":"less-or-equal","threshold"""",
+    """:0.25},"right":{"kind":"not","inner":{"kind":"is-missing","term":{"kind":"categorical-cova""",
+    """riate","name":"memory","levels":["Remembered","Forgotten"]}}}},"groupBy":[{"kind":"by-bins""",
+    """","term":{"kind":"numeric-covariate","name":"confidence","unit":"rating"},"bins":[{"label"""",
+    """:"low","from":1.0,"until":3.0,"upper":"excluded"},{"label":"high","from":3.0,"until":4.0,"""",
+    """upper":"included"}]},{"kind":"by-level","term":{"kind":"categorical-covariate","name":"mem""",
+    """ory","levels":["Remembered","Forgotten"]}}],"reduce":{"kind":"participant-means","minimumQ""",
+    """ueries":2},"contrast":{"term":{"kind":"categorical-covariate","name":"memory","levels":["R""",
+    """emembered","Forgotten"]},"minuend":"Remembered","subtrahend":"Forgotten"},"spread":"standa""",
+    """rd-deviation-and-error"}},"binding":{"plan":"111111111111111111111111111111111111111111111""",
+    """1111111111111111111","input":"222222222222222222222222222222222222222222222222222222222222""",
+    """2222","result":"3333333333333333333333333333333333333333333333333333333333333333","covaria""",
+    """tes":"4444444444444444444444444444444444444444444444444444444444444444"},"groups":[[{"term""",
+    """":"covariate:confidence","level":"low"},{"term":"covariate:memory","level":"Remembered"}],""",
+    """[{"term":"covariate:confidence","level":"low"},{"term":"covariate:memory","level":"Forgott""",
+    """en"}],[{"term":"covariate:confidence","level":"high"},{"term":"covariate:memory","level":"""",
+    """Remembered"}],[{"term":"covariate:confidence","level":"high"},{"term":"covariate:memory","""",
+    """level":"Forgotten"}]],"cells":[{"group":[{"term":"covariate:confidence","level":"low"},{"t""",
+    """erm":"covariate:memory","level":"Remembered"}],"role":"difference","component":"value","es""",
+    """timate":{"missing":{"kind":"empty-group"}},"spread":{"n":0,"sd":{"missing":{"kind":"empty-""",
+    """group"}},"sem":{"missing":{"kind":"empty-group"}}},"participants":0,"queries":0,"perPartic""",
+    """ipant":[],"members":[]},{"group":[{"term":"covariate:confidence","level":"low"},{"term":"c""",
+    """ovariate:memory","level":"Remembered"}],"role":"matched","component":"value","estimate":{"""",
+    """missing":{"kind":"empty-group"}},"spread":{"n":0,"sd":{"missing":{"kind":"empty-group"}},"""",
+    """sem":{"missing":{"kind":"empty-group"}}},"participants":0,"queries":0,"perParticipant":[],""",
+    """"members":[]},{"group":[{"term":"covariate:confidence","level":"low"},{"term":"covariate:m""",
+    """emory","level":"Forgotten"}],"role":"difference","component":"value","estimate":{"missing"""",
+    """:{"kind":"empty-group"}},"spread":{"n":0,"sd":{"missing":{"kind":"empty-group"}},"sem":{"m""",
+    """issing":{"kind":"empty-group"}}},"participants":0,"queries":0,"perParticipant":[],"members""",
+    """":[]},{"group":[{"term":"covariate:confidence","level":"low"},{"term":"covariate:memory","""",
+    """level":"Forgotten"}],"role":"matched","component":"value","estimate":{"missing":{"kind":"e""",
+    """mpty-group"}},"spread":{"n":0,"sd":{"missing":{"kind":"empty-group"}},"sem":{"missing":{"k""",
+    """ind":"empty-group"}}},"participants":0,"queries":0,"perParticipant":[],"members":[]},{"gro""",
+    """up":[{"term":"covariate:confidence","level":"high"},{"term":"covariate:memory","level":"Re""",
+    """membered"}],"role":"difference","component":"value","estimate":{"present":0.5},"spread":{"""",
+    """n":2,"sd":{"present":0.1767766952966369},"sem":{"present":0.125}},"participants":2,"querie""",
+    """s":5,"perParticipant":[{"participant":"p1","queries":2,"value":{"present":0.375}},{"partic""",
+    """ipant":"p2","queries":1,"value":{"missing":{"kind":"below-minimum","queries":1,"required":""",
+    """2}}},{"participant":"p3","queries":2,"value":{"present":0.625}}],"members":[{"schema":{"na""",
+    """me":"eyes4s.study-key","version":1},"value":{"participant":"p1","stimulus":"a","phase":"re""",
+    """call"}},{"schema":{"name":"eyes4s.study-key","version":1},"value":{"participant":"p1","sti""",
+    """mulus":"b","phase":"recall"}},{"schema":{"name":"eyes4s.study-key","version":1},"value":{"""",
+    """participant":"p2","stimulus":"a","phase":"recall"}},{"schema":{"name":"eyes4s.study-key","""",
+    """version":1},"value":{"participant":"p3","stimulus":"a","phase":"recall"}},{"schema":{"name""",
+    """":"eyes4s.study-key","version":1},"value":{"participant":"p3","stimulus":"e","phase":"reca""",
+    """ll"}}]},{"group":[{"term":"covariate:confidence","level":"high"},{"term":"covariate:memory""",
+    """","level":"Remembered"}],"role":"matched","component":"value","estimate":{"present":1.0},"""",
+    """spread":{"n":2,"sd":{"present":0.1767766952966369},"sem":{"present":0.125}},"participants"""",
+    """:2,"queries":5,"perParticipant":[{"participant":"p1","queries":2,"value":{"present":0.875}""",
+    """},{"participant":"p2","queries":1,"value":{"missing":{"kind":"below-minimum","queries":1,"""",
+    """required":2}}},{"participant":"p3","queries":2,"value":{"present":1.125}}],"members":[{"sc""",
+    """hema":{"name":"eyes4s.study-key","version":1},"value":{"participant":"p1","stimulus":"a","""",
+    """phase":"recall"}},{"schema":{"name":"eyes4s.study-key","version":1},"value":{"participant"""",
+    """:"p1","stimulus":"b","phase":"recall"}},{"schema":{"name":"eyes4s.study-key","version":1},""",
+    """"value":{"participant":"p2","stimulus":"a","phase":"recall"}},{"schema":{"name":"eyes4s.st""",
+    """udy-key","version":1},"value":{"participant":"p3","stimulus":"a","phase":"recall"}},{"sche""",
+    """ma":{"name":"eyes4s.study-key","version":1},"value":{"participant":"p3","stimulus":"e","ph""",
+    """ase":"recall"}}]},{"group":[{"term":"covariate:confidence","level":"high"},{"term":"covari""",
+    """ate:memory","level":"Forgotten"}],"role":"difference","component":"value","estimate":{"pre""",
+    """sent":-0.25},"spread":{"n":1,"sd":{"missing":{"kind":"undefined","reason":{"kind":"too-few""",
+    """-for-spread","n":1}}},"sem":{"missing":{"kind":"undefined","reason":{"kind":"too-few-for-s""",
+    """pread","n":1}}}},"participants":1,"queries":2,"perParticipant":[{"participant":"p1","queri""",
+    """es":2,"value":{"present":-0.25}}],"members":[{"schema":{"name":"eyes4s.study-key","version""",
+    """":1},"value":{"participant":"p1","stimulus":"c","phase":"recall"}},{"schema":{"name":"eyes""",
+    """4s.study-key","version":1},"value":{"participant":"p1","stimulus":"d","phase":"recall"}}]}""",
+    """,{"group":[{"term":"covariate:confidence","level":"high"},{"term":"covariate:memory","leve""",
+    """l":"Forgotten"}],"role":"matched","component":"value","estimate":{"present":0.25},"spread"""",
+    """:{"n":1,"sd":{"missing":{"kind":"undefined","reason":{"kind":"too-few-for-spread","n":1}}}""",
+    ""","sem":{"missing":{"kind":"undefined","reason":{"kind":"too-few-for-spread","n":1}}}},"par""",
+    """ticipants":1,"queries":2,"perParticipant":[{"participant":"p1","queries":2,"value":{"prese""",
+    """nt":0.25}}],"members":[{"schema":{"name":"eyes4s.study-key","version":1},"value":{"partici""",
+    """pant":"p1","stimulus":"c","phase":"recall"}},{"schema":{"name":"eyes4s.study-key","version""",
+    """":1},"value":{"participant":"p1","stimulus":"d","phase":"recall"}}]}],"contrasts":[{"strat""",
+    """um":[{"term":"covariate:confidence","level":"low"}],"term":"covariate:memory","minuend":"R""",
+    """emembered","subtrahend":"Forgotten","role":"difference","component":"value","estimate":{"m""",
+    """issing":{"kind":"unpaired"}},"spread":{"n":0,"sd":{"missing":{"kind":"unpaired"}},"sem":{"""",
+    """missing":{"kind":"unpaired"}}},"paired":[],"unpaired":[]},{"stratum":[{"term":"covariate:c""",
+    """onfidence","level":"low"}],"term":"covariate:memory","minuend":"Remembered","subtrahend":"""",
+    """Forgotten","role":"matched","component":"value","estimate":{"missing":{"kind":"unpaired"}}""",
+    ""","spread":{"n":0,"sd":{"missing":{"kind":"unpaired"}},"sem":{"missing":{"kind":"unpaired"}""",
+    """}},"paired":[],"unpaired":[]},{"stratum":[{"term":"covariate:confidence","level":"high"}],""",
+    """"term":"covariate:memory","minuend":"Remembered","subtrahend":"Forgotten","role":"differen""",
+    """ce","component":"value","estimate":{"present":0.625},"spread":{"n":1,"sd":{"missing":{"kin""",
+    """d":"undefined","reason":{"kind":"too-few-for-spread","n":1}}},"sem":{"missing":{"kind":"un""",
+    """defined","reason":{"kind":"too-few-for-spread","n":1}}}},"paired":[{"participant":"p1","qu""",
+    """eries":4,"value":{"present":0.625}}],"unpaired":[{"participant":"p3","present":"Remembered""",
+    """","missing":"Forgotten"}]},{"stratum":[{"term":"covariate:confidence","level":"high"}],"te""",
+    """rm":"covariate:memory","minuend":"Remembered","subtrahend":"Forgotten","role":"matched","c""",
+    """omponent":"value","estimate":{"present":0.625},"spread":{"n":1,"sd":{"missing":{"kind":"un""",
+    """defined","reason":{"kind":"too-few-for-spread","n":1}}},"sem":{"missing":{"kind":"undefine""",
+    """d","reason":{"kind":"too-few-for-spread","n":1}}}},"paired":[{"participant":"p1","queries"""",
+    """:4,"value":{"present":0.625}}],"unpaired":[{"participant":"p3","present":"Remembered","mis""",
+    """sing":"Forgotten"}]}],"accounting":[{"role":"difference","eligible":11,"kept":8,"filteredO""",
+    """ut":1,"unknownPredicate":1,"failed":1,"missingGroupAttribute":1,"belowMinimum":1},{"role":""",
+    """"matched","eligible":11,"kept":8,"filteredOut":1,"unknownPredicate":1,"failed":1,"missingG""",
+    """roupAttribute":1,"belowMinimum":1}],"findings":[{"kind":"undefined-window-share","key":{"s""",
+    """chema":{"name":"eyes4s.study-key","version":1},"value":{"participant":"p2","stimulus":"c",""",
+    """"phase":"recall"}},"measure":"outside-window-share"},{"kind":"unknown-predicate","key":{"s""",
+    """chema":{"name":"eyes4s.study-key","version":1},"value":{"participant":"p2","stimulus":"c",""",
+    """"phase":"recall"}},"term":"window:outside-window-share"},{"kind":"covariate-type","key":{"""",
+    """schema":{"name":"eyes4s.study-key","version":1},"value":{"participant":"p2","stimulus":"d"""",
+    ""","phase":"recall"}},"covariate":"confidence","raw":"high","expected":"numeric(rating)"},{"""",
+    """kind":"missing-covariate","key":{"schema":{"name":"eyes4s.study-key","version":1},"value":""",
+    """{"participant":"p2","stimulus":"d","phase":"recall"}},"term":"covariate:confidence"},{"kin""",
+    """d":"below-minimum","participant":"p2","group":[{"term":"covariate:confidence","level":"hig""",
+    """h"},{"term":"covariate:memory","level":"Remembered"}],"role":"difference","queries":1,"req""",
+    """uired":2},{"kind":"empty-group","group":[{"term":"covariate:confidence","level":"low"},{"t""",
+    """erm":"covariate:memory","level":"Remembered"}],"role":"difference"},{"kind":"empty-group",""",
+    """"group":[{"term":"covariate:confidence","level":"low"},{"term":"covariate:memory","level":""",
+    """"Forgotten"}],"role":"difference"},{"kind":"below-minimum","participant":"p2","group":[{"t""",
+    """erm":"covariate:confidence","level":"high"},{"term":"covariate:memory","level":"Remembered""",
+    """"}],"role":"matched","queries":1,"required":2},{"kind":"empty-group","group":[{"term":"cov""",
+    """ariate:confidence","level":"low"},{"term":"covariate:memory","level":"Remembered"}],"role"""",
+    """:"matched"},{"kind":"empty-group","group":[{"term":"covariate:confidence","level":"low"},{""",
+    """"term":"covariate:memory","level":"Forgotten"}],"role":"matched"},{"kind":"unpaired-partic""",
+    """ipant","participant":"p3","stratum":[{"term":"covariate:confidence","level":"high"}],"role""",
+    """":"difference","missing":"Forgotten"},{"kind":"unpaired-participant","participant":"p3","s""",
+    """tratum":[{"term":"covariate:confidence","level":"high"}],"role":"matched","missing":"Forgo""",
+    """tten"}]}}"""
+  ).mkString

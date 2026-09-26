@@ -126,6 +126,14 @@ enum RelationMismatch derives CanEqual:
   /** `plan.prerequisites(input)` refused the temporal input. */
   case TemporalPrerequisites(errors: Vector[TemporalStudyError])
 
+  /** The report's specification is not the spec entry's. */
+  case ReportSpec(report: String, stored: String)
+
+  /** The report is bound to another `field` (plan, input, result or
+    * covariates) than the stored document, by canonical digest.
+    */
+  case ReportBinding(field: String, bound: String, stored: String)
+
   def message: String = this match
     case Prerequisites(errors)        => errors.map(_.message).mkString(" ")
     case ResultInput(expected, found) =>
@@ -144,6 +152,10 @@ enum RelationMismatch derives CanEqual:
       s"No decoded value of the required role for ${endpoints.map(_.value).mkString(", ")}."
     case RecordingPrerequisites(errors) => errors.map(_.message).mkString(" ")
     case TemporalPrerequisites(errors)  => errors.map(_.message).mkString(" ")
+    case ReportSpec(report, stored)     =>
+      s"The report was evaluated under specification '$report', not the stored '$stored'."
+    case ReportBinding(field, bound, stored) =>
+      s"The report is bound to $field $bound, but the stored $field is $stored."
 
 /** Why a manifest or one of its artifacts was refused. Every case names the
   * manifest address, the entry or the relation at fault; integrity cases are
@@ -323,6 +335,24 @@ trait ArtifactDecoders[K, U <: Unit2D]:
   def temporalResult(document: Json): Either[CodecError, LoadedTemporalResult[K, U]] =
     ArtifactDecoders.unregistered("temporal-result", document)
 
+  /** A report over this manifest's keys; refused unless registered through
+    * [[withReports]]. A report specification needs no registration.
+    */
+  def report(document: Json): Either[CodecError, eyes4s.results.Report[K]] =
+    ArtifactDecoders.unregistered("report", document)
+
+  /** These decoders, with reports decoded through `reports` (usually
+    * `ReportCodecs.report(keys)` over the study key codec).
+    */
+  final def withReports(
+      reports: VersionedCodec[eyes4s.results.Report[K]]
+  ): ArtifactDecoders[K, U] =
+    new ArtifactDecoders.Delegating[K, U](this):
+      override def report(document: Json) =
+        ArtifactDecoders.admitted("report", document, Vector(reports.schema))(
+          reports.decode(document)
+        )
+
   /** These decoders, with recording plans and results decoded through the
     * given registries. `pixels` witnesses that this manifest's unit is the
     * display pixels a recording plan runs in; the plans' checks against
@@ -383,6 +413,7 @@ object ArtifactDecoders:
     override def recordingResult(document: Json) = base.recordingResult(document)
     override def temporalPlan(document: Json)    = base.temporalPlan(document)
     override def temporalResult(document: Json)  = base.temporalResult(document)
+    override def report(document: Json)          = base.report(document)
 
   /** Nothing is registered for the role: refuse the document's schema. */
   private def unregistered[A](role: String, document: Json): Either[CodecError, A] =
@@ -490,7 +521,9 @@ final class ResolvedManifest[K, U <: Unit2D] private[codec] (
     val recordingPlans: Vector[(ArtifactName, LoadedRecordingPlan[U])],
     val recordingResults: Vector[(ArtifactName, LoadedRecordingResult)],
     val temporalPlans: Vector[(ArtifactName, LoadedTemporal[K, U])],
-    val temporalResults: Vector[(ArtifactName, LoadedTemporalResult[K, U])]
+    val temporalResults: Vector[(ArtifactName, LoadedTemporalResult[K, U])],
+    val reportSpecs: Vector[(ArtifactName, eyes4s.results.ReportSpec)] = Vector.empty,
+    val reports: Vector[(ArtifactName, eyes4s.results.Report[K])] = Vector.empty
 ):
   def plan(name: ArtifactName): Option[LoadedStudy[K, U]]    = plans.collectFirst(at(name))
   def input(name: ArtifactName): Option[StudyInput[K, U]]    = inputs.collectFirst(at(name))
@@ -510,6 +543,10 @@ final class ResolvedManifest[K, U <: Unit2D] private[codec] (
     temporalPlans.collectFirst(at(name))
   def temporalResult(name: ArtifactName): Option[LoadedTemporalResult[K, U]] =
     temporalResults.collectFirst(at(name))
+  def reportSpec(name: ArtifactName): Option[eyes4s.results.ReportSpec] =
+    reportSpecs.collectFirst(at(name))
+  def report(name: ArtifactName): Option[eyes4s.results.Report[K]] =
+    reports.collectFirst(at(name))
 
   private def at[A](name: ArtifactName): PartialFunction[(ArtifactName, A), A] = {
     case (n, value) if n == name => value
@@ -579,7 +616,7 @@ object ArtifactResolver:
         manifest.entries.map(entry => verify(entry, source).map(entry -> _))
       )
       decoded <- decode(manifest, verified, decoders)
-      _       <- relations(manifest, decoded)
+      _       <- relations(manifest, decoded, verified)
     yield assemble(manifest, decoded)
 
   private def read(
@@ -631,6 +668,8 @@ object ArtifactResolver:
     case RecordingResult(value: LoadedRecordingResult)
     case TemporalPlan(value: LoadedTemporal[K, U])
     case TemporalResult(value: LoadedTemporalResult[K, U])
+    case Spec(value: eyes4s.results.ReportSpec)
+    case Reported(value: eyes4s.results.Report[K])
 
   private def decode[K, U <: Unit2D](
       manifest: ScientificManifest,
@@ -766,11 +805,22 @@ object ArtifactResolver:
         attempt(entry, decoders.temporalPlan(json)).map(Decoded.TemporalPlan(_))
       case ArtifactRole.TemporalResult =>
         attempt(entry, decoders.temporalResult(json)).map(Decoded.TemporalResult(_))
+      case ArtifactRole.ReportSpec =>
+        attempt(entry, ReportCodecs.reportSpec.decode(json)).map(Decoded.Spec(_))
+      case ArtifactRole.Report => attempt(entry, decoders.report(json)).map(Decoded.Reported(_))
 
   private def relations[K, U <: Unit2D](
       manifest: ScientificManifest,
-      decoded: Map[ArtifactName, Decoded[K, U]]
+      decoded: Map[ArtifactName, Decoded[K, U]],
+      verified: Vector[(ManifestEntry, IArray[Byte])]
   ): Resolution[Unit] =
+    // The canonical digest of a stored document, as a report's binding cites it.
+    def digestOf(name: ArtifactName): Option[String] =
+      verified
+        .collectFirst { case (entry, bytes) if entry.name == name => document(entry, bytes) }
+        .flatMap(_.toOption)
+        .flatMap(json => CanonicalDigest.document[Json](json).toOption)
+        .map(_.sha256.hex)
     val errors = manifest.relations.flatMap { relation =>
       def fail(mismatch: RelationMismatch) = Some(ResolveError.Relation(relation, mismatch))
       (relation, relation.endpoints.map(e => decoded.get(e._2))) match
@@ -894,6 +944,42 @@ object ArtifactResolver:
               )
             )
           else None
+        case (ManifestRelation.ReportOf(report, spec, result, input, ledger), _) =>
+          (
+            decoded.get(report),
+            decoded.get(spec),
+            decoded.get(result),
+            decoded.get(input),
+            ledger.map(decoded.get)
+          ) match
+            case (
+                  Some(Decoded.Reported(value)),
+                  Some(Decoded.Spec(stored)),
+                  Some(Decoded.Result(_)),
+                  Some(Decoded.Input(_)),
+                  covariates
+                ) if covariates.forall(_.exists(_.isInstanceOf[Decoded.Ledger[?, ?]])) =>
+              val plan = manifest.relations.collectFirst {
+                case ManifestRelation.ResultOf(`result`, plan, _) => plan
+              }
+              val bound = value.binding
+              if value.spec != stored then
+                fail(RelationMismatch.ReportSpec(value.spec.id.value, stored.id.value))
+              else
+                Vector(
+                  ("plan", Some(bound.plan.hex), plan.flatMap(digestOf)),
+                  ("input", Some(bound.input.hex), digestOf(input)),
+                  ("result", Some(bound.result.hex), digestOf(result)),
+                  ("covariates", bound.covariates.map(_.hex), ledger.flatMap(digestOf))
+                ).collectFirst {
+                  case (field, cited, found) if cited != found =>
+                    RelationMismatch.ReportBinding(
+                      field,
+                      cited.fold("none")("sha256:" + _),
+                      found.fold("none")("sha256:" + _)
+                    )
+                }.flatMap(fail)
+            case _ => fail(RelationMismatch.Unavailable(relation.endpoints.map(_._2)))
         case _ =>
           // Unreachable after a successful decoding phase over a well-formed
           // manifest; refused rather than skipped should it ever be reached.
@@ -919,5 +1005,7 @@ object ArtifactResolver:
       ordered.collect { case (n, Decoded.RecordingPlan(v)) => n -> v },
       ordered.collect { case (n, Decoded.RecordingResult(v)) => n -> v },
       ordered.collect { case (n, Decoded.TemporalPlan(v)) => n -> v },
-      ordered.collect { case (n, Decoded.TemporalResult(v)) => n -> v }
+      ordered.collect { case (n, Decoded.TemporalResult(v)) => n -> v },
+      ordered.collect { case (n, Decoded.Spec(v)) => n -> v },
+      ordered.collect { case (n, Decoded.Reported(v)) => n -> v }
     )

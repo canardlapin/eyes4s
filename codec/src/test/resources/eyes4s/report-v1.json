@@ -1,0 +1,1053 @@
+{
+  "schema" : {
+    "name" : "eyes4s.report",
+    "version" : 1
+  },
+  "value" : {
+    "spec" : {
+      "schema" : {
+        "name" : "eyes4s.report-spec",
+        "version" : 1
+      },
+      "value" : {
+        "id" : "memory by confidence",
+        "scale" : 0,
+        "roles" : [
+          "difference",
+          "matched"
+        ],
+        "components" : [
+          "value"
+        ],
+        "filter" : {
+          "kind" : "and",
+          "left" : {
+            "kind" : "cmp",
+            "term" : {
+              "kind" : "window",
+              "measure" : "outside-window-share"
+            },
+            "comparison" : "less-or-equal",
+            "threshold" : 0.25
+          },
+          "right" : {
+            "kind" : "not",
+            "inner" : {
+              "kind" : "is-missing",
+              "term" : {
+                "kind" : "categorical-covariate",
+                "name" : "memory",
+                "levels" : [
+                  "Remembered",
+                  "Forgotten"
+                ]
+              }
+            }
+          }
+        },
+        "groupBy" : [
+          {
+            "kind" : "by-bins",
+            "term" : {
+              "kind" : "numeric-covariate",
+              "name" : "confidence",
+              "unit" : "rating"
+            },
+            "bins" : [
+              {
+                "label" : "low",
+                "from" : 1.0,
+                "until" : 3.0,
+                "upper" : "excluded"
+              },
+              {
+                "label" : "high",
+                "from" : 3.0,
+                "until" : 4.0,
+                "upper" : "included"
+              }
+            ]
+          },
+          {
+            "kind" : "by-level",
+            "term" : {
+              "kind" : "categorical-covariate",
+              "name" : "memory",
+              "levels" : [
+                "Remembered",
+                "Forgotten"
+              ]
+            }
+          }
+        ],
+        "reduce" : {
+          "kind" : "participant-means",
+          "minimumQueries" : 2
+        },
+        "contrast" : {
+          "term" : {
+            "kind" : "categorical-covariate",
+            "name" : "memory",
+            "levels" : [
+              "Remembered",
+              "Forgotten"
+            ]
+          },
+          "minuend" : "Remembered",
+          "subtrahend" : "Forgotten"
+        },
+        "spread" : "standard-deviation-and-error"
+      }
+    },
+    "binding" : {
+      "plan" : "1111111111111111111111111111111111111111111111111111111111111111",
+      "input" : "2222222222222222222222222222222222222222222222222222222222222222",
+      "result" : "3333333333333333333333333333333333333333333333333333333333333333",
+      "covariates" : "4444444444444444444444444444444444444444444444444444444444444444"
+    },
+    "groups" : [
+      [
+        {
+          "term" : "covariate:confidence",
+          "level" : "low"
+        },
+        {
+          "term" : "covariate:memory",
+          "level" : "Remembered"
+        }
+      ],
+      [
+        {
+          "term" : "covariate:confidence",
+          "level" : "low"
+        },
+        {
+          "term" : "covariate:memory",
+          "level" : "Forgotten"
+        }
+      ],
+      [
+        {
+          "term" : "covariate:confidence",
+          "level" : "high"
+        },
+        {
+          "term" : "covariate:memory",
+          "level" : "Remembered"
+        }
+      ],
+      [
+        {
+          "term" : "covariate:confidence",
+          "level" : "high"
+        },
+        {
+          "term" : "covariate:memory",
+          "level" : "Forgotten"
+        }
+      ]
+    ],
+    "cells" : [
+      {
+        "group" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "low"
+          },
+          {
+            "term" : "covariate:memory",
+            "level" : "Remembered"
+          }
+        ],
+        "role" : "difference",
+        "component" : "value",
+        "estimate" : {
+          "missing" : {
+            "kind" : "empty-group"
+          }
+        },
+        "spread" : {
+          "n" : 0,
+          "sd" : {
+            "missing" : {
+              "kind" : "empty-group"
+            }
+          },
+          "sem" : {
+            "missing" : {
+              "kind" : "empty-group"
+            }
+          }
+        },
+        "participants" : 0,
+        "queries" : 0,
+        "perParticipant" : [
+        ],
+        "members" : [
+        ]
+      },
+      {
+        "group" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "low"
+          },
+          {
+            "term" : "covariate:memory",
+            "level" : "Remembered"
+          }
+        ],
+        "role" : "matched",
+        "component" : "value",
+        "estimate" : {
+          "missing" : {
+            "kind" : "empty-group"
+          }
+        },
+        "spread" : {
+          "n" : 0,
+          "sd" : {
+            "missing" : {
+              "kind" : "empty-group"
+            }
+          },
+          "sem" : {
+            "missing" : {
+              "kind" : "empty-group"
+            }
+          }
+        },
+        "participants" : 0,
+        "queries" : 0,
+        "perParticipant" : [
+        ],
+        "members" : [
+        ]
+      },
+      {
+        "group" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "low"
+          },
+          {
+            "term" : "covariate:memory",
+            "level" : "Forgotten"
+          }
+        ],
+        "role" : "difference",
+        "component" : "value",
+        "estimate" : {
+          "missing" : {
+            "kind" : "empty-group"
+          }
+        },
+        "spread" : {
+          "n" : 0,
+          "sd" : {
+            "missing" : {
+              "kind" : "empty-group"
+            }
+          },
+          "sem" : {
+            "missing" : {
+              "kind" : "empty-group"
+            }
+          }
+        },
+        "participants" : 0,
+        "queries" : 0,
+        "perParticipant" : [
+        ],
+        "members" : [
+        ]
+      },
+      {
+        "group" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "low"
+          },
+          {
+            "term" : "covariate:memory",
+            "level" : "Forgotten"
+          }
+        ],
+        "role" : "matched",
+        "component" : "value",
+        "estimate" : {
+          "missing" : {
+            "kind" : "empty-group"
+          }
+        },
+        "spread" : {
+          "n" : 0,
+          "sd" : {
+            "missing" : {
+              "kind" : "empty-group"
+            }
+          },
+          "sem" : {
+            "missing" : {
+              "kind" : "empty-group"
+            }
+          }
+        },
+        "participants" : 0,
+        "queries" : 0,
+        "perParticipant" : [
+        ],
+        "members" : [
+        ]
+      },
+      {
+        "group" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "high"
+          },
+          {
+            "term" : "covariate:memory",
+            "level" : "Remembered"
+          }
+        ],
+        "role" : "difference",
+        "component" : "value",
+        "estimate" : {
+          "present" : 0.5
+        },
+        "spread" : {
+          "n" : 2,
+          "sd" : {
+            "present" : 0.1767766952966369
+          },
+          "sem" : {
+            "present" : 0.125
+          }
+        },
+        "participants" : 2,
+        "queries" : 5,
+        "perParticipant" : [
+          {
+            "participant" : "p1",
+            "queries" : 2,
+            "value" : {
+              "present" : 0.375
+            }
+          },
+          {
+            "participant" : "p2",
+            "queries" : 1,
+            "value" : {
+              "missing" : {
+                "kind" : "below-minimum",
+                "queries" : 1,
+                "required" : 2
+              }
+            }
+          },
+          {
+            "participant" : "p3",
+            "queries" : 2,
+            "value" : {
+              "present" : 0.625
+            }
+          }
+        ],
+        "members" : [
+          {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "p1",
+              "stimulus" : "a",
+              "phase" : "recall"
+            }
+          },
+          {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "p1",
+              "stimulus" : "b",
+              "phase" : "recall"
+            }
+          },
+          {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "p2",
+              "stimulus" : "a",
+              "phase" : "recall"
+            }
+          },
+          {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "p3",
+              "stimulus" : "a",
+              "phase" : "recall"
+            }
+          },
+          {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "p3",
+              "stimulus" : "e",
+              "phase" : "recall"
+            }
+          }
+        ]
+      },
+      {
+        "group" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "high"
+          },
+          {
+            "term" : "covariate:memory",
+            "level" : "Remembered"
+          }
+        ],
+        "role" : "matched",
+        "component" : "value",
+        "estimate" : {
+          "present" : 1.0
+        },
+        "spread" : {
+          "n" : 2,
+          "sd" : {
+            "present" : 0.1767766952966369
+          },
+          "sem" : {
+            "present" : 0.125
+          }
+        },
+        "participants" : 2,
+        "queries" : 5,
+        "perParticipant" : [
+          {
+            "participant" : "p1",
+            "queries" : 2,
+            "value" : {
+              "present" : 0.875
+            }
+          },
+          {
+            "participant" : "p2",
+            "queries" : 1,
+            "value" : {
+              "missing" : {
+                "kind" : "below-minimum",
+                "queries" : 1,
+                "required" : 2
+              }
+            }
+          },
+          {
+            "participant" : "p3",
+            "queries" : 2,
+            "value" : {
+              "present" : 1.125
+            }
+          }
+        ],
+        "members" : [
+          {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "p1",
+              "stimulus" : "a",
+              "phase" : "recall"
+            }
+          },
+          {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "p1",
+              "stimulus" : "b",
+              "phase" : "recall"
+            }
+          },
+          {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "p2",
+              "stimulus" : "a",
+              "phase" : "recall"
+            }
+          },
+          {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "p3",
+              "stimulus" : "a",
+              "phase" : "recall"
+            }
+          },
+          {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "p3",
+              "stimulus" : "e",
+              "phase" : "recall"
+            }
+          }
+        ]
+      },
+      {
+        "group" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "high"
+          },
+          {
+            "term" : "covariate:memory",
+            "level" : "Forgotten"
+          }
+        ],
+        "role" : "difference",
+        "component" : "value",
+        "estimate" : {
+          "present" : -0.25
+        },
+        "spread" : {
+          "n" : 1,
+          "sd" : {
+            "missing" : {
+              "kind" : "undefined",
+              "reason" : {
+                "kind" : "too-few-for-spread",
+                "n" : 1
+              }
+            }
+          },
+          "sem" : {
+            "missing" : {
+              "kind" : "undefined",
+              "reason" : {
+                "kind" : "too-few-for-spread",
+                "n" : 1
+              }
+            }
+          }
+        },
+        "participants" : 1,
+        "queries" : 2,
+        "perParticipant" : [
+          {
+            "participant" : "p1",
+            "queries" : 2,
+            "value" : {
+              "present" : -0.25
+            }
+          }
+        ],
+        "members" : [
+          {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "p1",
+              "stimulus" : "c",
+              "phase" : "recall"
+            }
+          },
+          {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "p1",
+              "stimulus" : "d",
+              "phase" : "recall"
+            }
+          }
+        ]
+      },
+      {
+        "group" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "high"
+          },
+          {
+            "term" : "covariate:memory",
+            "level" : "Forgotten"
+          }
+        ],
+        "role" : "matched",
+        "component" : "value",
+        "estimate" : {
+          "present" : 0.25
+        },
+        "spread" : {
+          "n" : 1,
+          "sd" : {
+            "missing" : {
+              "kind" : "undefined",
+              "reason" : {
+                "kind" : "too-few-for-spread",
+                "n" : 1
+              }
+            }
+          },
+          "sem" : {
+            "missing" : {
+              "kind" : "undefined",
+              "reason" : {
+                "kind" : "too-few-for-spread",
+                "n" : 1
+              }
+            }
+          }
+        },
+        "participants" : 1,
+        "queries" : 2,
+        "perParticipant" : [
+          {
+            "participant" : "p1",
+            "queries" : 2,
+            "value" : {
+              "present" : 0.25
+            }
+          }
+        ],
+        "members" : [
+          {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "p1",
+              "stimulus" : "c",
+              "phase" : "recall"
+            }
+          },
+          {
+            "schema" : {
+              "name" : "eyes4s.study-key",
+              "version" : 1
+            },
+            "value" : {
+              "participant" : "p1",
+              "stimulus" : "d",
+              "phase" : "recall"
+            }
+          }
+        ]
+      }
+    ],
+    "contrasts" : [
+      {
+        "stratum" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "low"
+          }
+        ],
+        "term" : "covariate:memory",
+        "minuend" : "Remembered",
+        "subtrahend" : "Forgotten",
+        "role" : "difference",
+        "component" : "value",
+        "estimate" : {
+          "missing" : {
+            "kind" : "unpaired"
+          }
+        },
+        "spread" : {
+          "n" : 0,
+          "sd" : {
+            "missing" : {
+              "kind" : "unpaired"
+            }
+          },
+          "sem" : {
+            "missing" : {
+              "kind" : "unpaired"
+            }
+          }
+        },
+        "paired" : [
+        ],
+        "unpaired" : [
+        ]
+      },
+      {
+        "stratum" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "low"
+          }
+        ],
+        "term" : "covariate:memory",
+        "minuend" : "Remembered",
+        "subtrahend" : "Forgotten",
+        "role" : "matched",
+        "component" : "value",
+        "estimate" : {
+          "missing" : {
+            "kind" : "unpaired"
+          }
+        },
+        "spread" : {
+          "n" : 0,
+          "sd" : {
+            "missing" : {
+              "kind" : "unpaired"
+            }
+          },
+          "sem" : {
+            "missing" : {
+              "kind" : "unpaired"
+            }
+          }
+        },
+        "paired" : [
+        ],
+        "unpaired" : [
+        ]
+      },
+      {
+        "stratum" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "high"
+          }
+        ],
+        "term" : "covariate:memory",
+        "minuend" : "Remembered",
+        "subtrahend" : "Forgotten",
+        "role" : "difference",
+        "component" : "value",
+        "estimate" : {
+          "present" : 0.625
+        },
+        "spread" : {
+          "n" : 1,
+          "sd" : {
+            "missing" : {
+              "kind" : "undefined",
+              "reason" : {
+                "kind" : "too-few-for-spread",
+                "n" : 1
+              }
+            }
+          },
+          "sem" : {
+            "missing" : {
+              "kind" : "undefined",
+              "reason" : {
+                "kind" : "too-few-for-spread",
+                "n" : 1
+              }
+            }
+          }
+        },
+        "paired" : [
+          {
+            "participant" : "p1",
+            "queries" : 4,
+            "value" : {
+              "present" : 0.625
+            }
+          }
+        ],
+        "unpaired" : [
+          {
+            "participant" : "p3",
+            "present" : "Remembered",
+            "missing" : "Forgotten"
+          }
+        ]
+      },
+      {
+        "stratum" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "high"
+          }
+        ],
+        "term" : "covariate:memory",
+        "minuend" : "Remembered",
+        "subtrahend" : "Forgotten",
+        "role" : "matched",
+        "component" : "value",
+        "estimate" : {
+          "present" : 0.625
+        },
+        "spread" : {
+          "n" : 1,
+          "sd" : {
+            "missing" : {
+              "kind" : "undefined",
+              "reason" : {
+                "kind" : "too-few-for-spread",
+                "n" : 1
+              }
+            }
+          },
+          "sem" : {
+            "missing" : {
+              "kind" : "undefined",
+              "reason" : {
+                "kind" : "too-few-for-spread",
+                "n" : 1
+              }
+            }
+          }
+        },
+        "paired" : [
+          {
+            "participant" : "p1",
+            "queries" : 4,
+            "value" : {
+              "present" : 0.625
+            }
+          }
+        ],
+        "unpaired" : [
+          {
+            "participant" : "p3",
+            "present" : "Remembered",
+            "missing" : "Forgotten"
+          }
+        ]
+      }
+    ],
+    "accounting" : [
+      {
+        "role" : "difference",
+        "eligible" : 11,
+        "kept" : 8,
+        "filteredOut" : 1,
+        "unknownPredicate" : 1,
+        "failed" : 1,
+        "missingGroupAttribute" : 1,
+        "belowMinimum" : 1
+      },
+      {
+        "role" : "matched",
+        "eligible" : 11,
+        "kept" : 8,
+        "filteredOut" : 1,
+        "unknownPredicate" : 1,
+        "failed" : 1,
+        "missingGroupAttribute" : 1,
+        "belowMinimum" : 1
+      }
+    ],
+    "findings" : [
+      {
+        "kind" : "undefined-window-share",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "p2",
+            "stimulus" : "c",
+            "phase" : "recall"
+          }
+        },
+        "measure" : "outside-window-share"
+      },
+      {
+        "kind" : "unknown-predicate",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "p2",
+            "stimulus" : "c",
+            "phase" : "recall"
+          }
+        },
+        "term" : "window:outside-window-share"
+      },
+      {
+        "kind" : "covariate-type",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "p2",
+            "stimulus" : "d",
+            "phase" : "recall"
+          }
+        },
+        "covariate" : "confidence",
+        "raw" : "high",
+        "expected" : "numeric(rating)"
+      },
+      {
+        "kind" : "missing-covariate",
+        "key" : {
+          "schema" : {
+            "name" : "eyes4s.study-key",
+            "version" : 1
+          },
+          "value" : {
+            "participant" : "p2",
+            "stimulus" : "d",
+            "phase" : "recall"
+          }
+        },
+        "term" : "covariate:confidence"
+      },
+      {
+        "kind" : "below-minimum",
+        "participant" : "p2",
+        "group" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "high"
+          },
+          {
+            "term" : "covariate:memory",
+            "level" : "Remembered"
+          }
+        ],
+        "role" : "difference",
+        "queries" : 1,
+        "required" : 2
+      },
+      {
+        "kind" : "empty-group",
+        "group" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "low"
+          },
+          {
+            "term" : "covariate:memory",
+            "level" : "Remembered"
+          }
+        ],
+        "role" : "difference"
+      },
+      {
+        "kind" : "empty-group",
+        "group" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "low"
+          },
+          {
+            "term" : "covariate:memory",
+            "level" : "Forgotten"
+          }
+        ],
+        "role" : "difference"
+      },
+      {
+        "kind" : "below-minimum",
+        "participant" : "p2",
+        "group" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "high"
+          },
+          {
+            "term" : "covariate:memory",
+            "level" : "Remembered"
+          }
+        ],
+        "role" : "matched",
+        "queries" : 1,
+        "required" : 2
+      },
+      {
+        "kind" : "empty-group",
+        "group" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "low"
+          },
+          {
+            "term" : "covariate:memory",
+            "level" : "Remembered"
+          }
+        ],
+        "role" : "matched"
+      },
+      {
+        "kind" : "empty-group",
+        "group" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "low"
+          },
+          {
+            "term" : "covariate:memory",
+            "level" : "Forgotten"
+          }
+        ],
+        "role" : "matched"
+      },
+      {
+        "kind" : "unpaired-participant",
+        "participant" : "p3",
+        "stratum" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "high"
+          }
+        ],
+        "role" : "difference",
+        "missing" : "Forgotten"
+      },
+      {
+        "kind" : "unpaired-participant",
+        "participant" : "p3",
+        "stratum" : [
+          {
+            "term" : "covariate:confidence",
+            "level" : "high"
+          }
+        ],
+        "role" : "matched",
+        "missing" : "Forgotten"
+      }
+    ]
+  }
+}

@@ -62,7 +62,10 @@ object CodecDiagnosticCatalog:
     "Derived",
     "RecordingResult",
     "TemporalResult",
-    "NonCanonical"
+    "NonCanonical",
+    "Report",
+    "ReportSpec",
+    "Covariates"
   )
   val resolve: DiagnosticFamily = error("resolve")(
     "MissingManifest",
@@ -100,7 +103,9 @@ object CodecDiagnosticCatalog:
     "UnreferencedPayload",
     "Unavailable",
     "RecordingPrerequisites",
-    "TemporalPrerequisites"
+    "TemporalPrerequisites",
+    "ReportSpec",
+    "ReportBinding"
   )
   val manifest: DiagnosticFamily = error("manifest")(
     "InvalidName",
@@ -284,6 +289,12 @@ private[codec] object CodecProjections:
           json(canonical),
           text(rule)
         )
+      case Report(underlying) =>
+        wrap(eyes4s.results.ResultsDiagnostics.reportError[Any](underlying))
+      case ReportSpec(underlying) =>
+        wrap(eyes4s.results.ResultsDiagnostics.reportSpec(underlying))
+      case Covariates(underlying) =>
+        wrap(eyes4s.results.ResultsDiagnostics.covariate[Any](underlying))
 
   def resolve(e: ResolveError): Diagnostic[Any] =
     import ResolveError.*
@@ -401,6 +412,10 @@ private[codec] object CodecProjections:
         diagnostic(C.relation, e, e.message, inner.flatMap(_.subject).distinct)(
           Operand.Causes(inner)
         )
+      case ReportSpec(report, stored) =>
+        diagnostic[Any](C.relation, e, e.message)(name(report), name(stored))
+      case ReportBinding(field, bound, stored) =>
+        diagnostic[Any](C.relation, e, e.message)(token(field), text(bound), text(stored))
 
   def manifest(e: ManifestError): Diagnostic[Nothing] =
     import ManifestError.*
