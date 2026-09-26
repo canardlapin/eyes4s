@@ -2142,6 +2142,12 @@ _insert_after("S10.8",
 
 GATES = [(k, t_, p, b, ds + (["S0.9", "S1.0"] if k == "G0" else [])) for k, t_, p, b, ds in GATES]  # S10.9 is a spike, deliberately ungated
 
+# Triage 2026-09-26 (lead request): p0 = tickets in the G0/G1 closure only; post-MVP items to p3.
+for _k in ['S0.7b', 'S3.7', 'S5.3', 'S5.5', 'S7.1', 'S7.2', 'S7.3', 'S8.7', 'S10.2', 'S10.3', 'S10.4']:
+    _find(_k)["prio"] = 1
+for _k in ["S10.9", "S6.7", "S1.13"]:
+    _find(_k)["prio"] = 3
+
 def body_of(x):
     lines = [
         f"Plan key {x['key']} (docs/studio/IMPLEMENTATION_PLAN.md). Board: {x['board']}.",
