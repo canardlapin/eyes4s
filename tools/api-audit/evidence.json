@@ -7438,6 +7438,42 @@
         ]
       }
     ],
+    "method eyes4s.plan.Remedial.remedy(java.lang.Object):eyes4s.plan.Remedy": [
+      {
+        "descriptor": "(Ljava/lang/Object;)Leyes4s/plan/Remedy;",
+        "owner": "eyes4s/plan/Remedial$$anon$13",
+        "suites": [
+          "codecJVM/eyes4s.codec.ArchiveWireSuite",
+          "codecJVM/eyes4s.codec.CodecDiagnosticCatalogSuite",
+          "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
+          "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
+          "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.AnalysisReportSuite",
+          "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
+        ]
+      },
+      {
+        "descriptor": "(Ljava/lang/Object;)Leyes4s/plan/Remedy;",
+        "owner": "eyes4s/plan/Remedial$$anon$14",
+        "suites": [
+          "planJVM/eyes4s.plan.AnalysisReportSuite"
+        ]
+      },
+      {
+        "descriptor": "(Ljava/lang/Object;)Leyes4s/plan/Remedy;",
+        "owner": "eyes4s/plan/Remedial$$anon$15",
+        "suites": [
+          "planJVM/eyes4s.plan.AnalysisReportSuite"
+        ]
+      },
+      {
+        "descriptor": "(Ljava/lang/Object;)Leyes4s/plan/Remedy;",
+        "owner": "eyes4s/plan/Remedial$Fixed",
+        "suites": [
+          "planJVM/eyes4s.plan.AnalysisReportSuite"
+        ]
+      }
+    ],
     "method eyes4s.plan.Stepwise.advance(java.lang.Object,eyes4s.design.WorkQuanta):scala.util.Either": [
       {
         "descriptor": "(Ljava/lang/Object;Leyes4s/design/WorkQuanta;)Lscala/util/Either;",
@@ -10242,8 +10278,8 @@
     },
     "class eyes4s.plan.DescriptorError": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/DescriptorError$MissingMethod",
-      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
+      "instance": "eyes4s/plan/DescriptorError$ExecutionMismatch",
+      "suite": "planJVM/eyes4s.plan.StudyCursorSuite"
     },
     "class eyes4s.plan.Diagnose": {
       "classification": "behavior-or-sealed-data",
@@ -10422,13 +10458,13 @@
     },
     "class eyes4s.plan.PreflightFinding": {
       "classification": "behavior-or-sealed-data",
-      "instance": "eyes4s/plan/AnalysisFinding$ArtifactMismatch",
-      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
+      "instance": "eyes4s/plan/StudyFinding$InconsistentDescriptor",
+      "suite": "planJVM/eyes4s.plan.StudyCursorSuite"
     },
     "class eyes4s.plan.PreflightReport": {
       "classification": "behavior-or-sealed-data",
-      "instance": "eyes4s/plan/AnalysisReport",
-      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
+      "instance": "eyes4s/plan/StudyReport",
+      "suite": "planJVM/eyes4s.plan.StudyCursorSuite"
     },
     "class eyes4s.plan.QuarantineCause": {
       "classification": "data-sum",
@@ -10438,7 +10474,7 @@
     "class eyes4s.plan.RecipeFamily": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/RecipeFamily$$anon$1",
-      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
+      "suite": "planJVM/eyes4s.plan.StudyCursorSuite"
     },
     "class eyes4s.plan.RecipeParameterError": {
       "classification": "data-sum",
@@ -10479,6 +10515,11 @@
       "classification": "data-sum",
       "instance": "eyes4s/plan/RecordingStage$$anon$1",
       "suite": "planJVM/eyes4s.plan.RecordingCursorSuite"
+    },
+    "class eyes4s.plan.Remedial": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/Remedial$$anon$13",
+      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
     },
     "class eyes4s.plan.Remedy": {
       "classification": "data-sum",
@@ -10523,7 +10564,7 @@
     "class eyes4s.plan.Severity": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/Severity$$anon$2",
-      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
+      "suite": "planJVM/eyes4s.plan.StudyCursorSuite"
     },
     "class eyes4s.plan.SourceLink": {
       "classification": "data-sum",
@@ -10562,8 +10603,8 @@
     },
     "class eyes4s.plan.StudyFinding": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/StudyFinding$FrameMismatch",
-      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
+      "instance": "eyes4s/plan/StudyFinding$InconsistentDescriptor",
+      "suite": "planJVM/eyes4s.plan.StudyCursorSuite"
     },
     "class eyes4s.plan.StudyGeometry": {
       "classification": "behavior-or-sealed-data",
@@ -10633,7 +10674,7 @@
     "class eyes4s.plan.UncheckedAspect": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/UncheckedAspect$$anon$5",
-      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
+      "suite": "planJVM/eyes4s.plan.StudyCursorSuite"
     },
     "class eyes4s.plan.UnmatchedFocalPolicy": {
       "classification": "data-sum",
@@ -12448,7 +12489,7 @@
     "method eyes4s.plan.AdmissionPolicy.correctionFor(java.lang.Object,scala.Function1):scala.util.Either": "lawsJVM/eyes4s.laws.ManifestLawSuite",
     "method eyes4s.plan.AdmissionPolicy.isVersion1():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.AdmissionReason.message():": "planJVM/eyes4s.plan.ResultInspectionSuite",
-    "method eyes4s.plan.AnalysisFinding$.refused(2,java.lang.Object,eyes4s.plan.Diagnose):eyes4s.plan.AnalysisFinding": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "method eyes4s.plan.AnalysisFinding$.refused(2,java.lang.Object,eyes4s.plan.Diagnose,eyes4s.plan.Remedial):eyes4s.plan.AnalysisFinding": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.AnalysisFinding.category():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.AnalysisFinding.keys():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.AnalysisFinding.message():": "planJVM/eyes4s.plan.AnalysisReportSuite",
@@ -12622,7 +12663,7 @@
     "method eyes4s.plan.PreflightError.affectedTrials():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.PreflightError.message():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.PreflightReport.availability():": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "method eyes4s.plan.PreflightReport.blockers():": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "method eyes4s.plan.PreflightReport.blockers():": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.PreflightReport.ready():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.PreflightReport.warnings():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.PreparedStudy.boundedWork(eyes4s.compare.ComparisonBudget):scala.util.Either": "planJVM/eyes4s.plan.StudyCursorSuite",
@@ -12705,6 +12746,7 @@
     "method eyes4s.plan.RecordingWork$.complete(1,eyes4s.plan.RecordingCursor,eyes4s.design.WorkQuanta):scala.util.Either": "planJVM/eyes4s.plan.RecordingCursorSuite",
     "method eyes4s.plan.ReductionEntry.contributors():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.ReductionEntry.exclusions():": "planJVM/eyes4s.plan.ResultInspectionSuite",
+    "method eyes4s.plan.Remedial$.fixed(1,eyes4s.plan.Remedy):eyes4s.plan.Remedial": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.RepetitionContrast$.withinParticipant(java.lang.String,java.lang.String,java.lang.String):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.RepetitionLayout$.of(4,eyes4s.plan.DefinitionId,eyes4s.plan.DefinitionId,eyes4s.design.Projection,eyes4s.plan.DefinitionId,eyes4s.design.Projection,eyes4s.plan.DefinitionId,eyes4s.design.Projection,eyes4s.design.KeyDigest,scala.math.Ordering):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.RepetitionLayout.design(scala.collection.immutable.Vector,eyes4s.design.Selection):eyes4s.design.PairDesign$.WithinDirected": "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -12833,7 +12875,7 @@
     "method eyes4s.plan.StudyFinding.keys():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.StudyFinding.message():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.StudyFinding.remedy():": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "method eyes4s.plan.StudyFinding.severity():": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "method eyes4s.plan.StudyFinding.severity():": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.StudyGeometry$.WholeFrame.admission():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyGeometry$.Windowed.admission():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.StudyGeometry$.windowed(1,eyes4s.kernel.Subframe,eyes4s.kernel.Grid,eyes4s.plan.OffWindowPolicy):scala.util.Either": "planJVM/eyes4s.plan.InitialFixationSuite",
@@ -13550,7 +13592,7 @@
     "value eyes4s.plan.PointSamplingSpec$.method": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
     "value eyes4s.plan.Preflight$.families": "planJVM/eyes4s.plan.PreflightSuite",
     "value eyes4s.plan.Preflight$.recordingUnchecked": "planJVM/eyes4s.plan.PreflightSuite",
-    "value eyes4s.plan.Preflight$.studyUnchecked": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "value eyes4s.plan.Preflight$.studyUnchecked": "planJVM/eyes4s.plan.StudyCursorSuite",
     "value eyes4s.plan.Preflight$.temporalUnchecked": "planJVM/eyes4s.plan.PreflightSuite",
     "value eyes4s.plan.PreparedStudy.estimates": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "value eyes4s.plan.PreparedStudy.geometry": "planJVM/eyes4s.plan.StudyCursorSuite",
@@ -13587,6 +13629,10 @@
     "value eyes4s.plan.RecipeParameters$.weight": "planJVM/eyes4s.plan.StudyCursorSuite",
     "value eyes4s.plan.RecordingMethodDescriptor.execution": "codecJVM/eyes4s.codec.RecordingMethodsSuite",
     "value eyes4s.plan.RecordingReport.family": "planJVM/eyes4s.plan.PreflightSuite",
+    "value eyes4s.plan.Remedial$.finding": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "value eyes4s.plan.Remedial$.plan": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "value eyes4s.plan.Remedial$.recording": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "value eyes4s.plan.Remedial$.temporal": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "value eyes4s.plan.RepetitionRelations$.withinParticipant": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "value eyes4s.plan.StudyInspection.failures": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "value eyes4s.plan.StudyKey$.given_KeyDigest_StudyKey": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
@@ -16132,8 +16178,10 @@
     ],
     "planJS/eyes4s.plan.AnalysisReportSuite": [
       "a data-dependent finding names at least one trial, by type",
+      "a refusal whose cause states no remedy does not compile",
       "a refusal's remedy follows its cause, as the dedicated families derive it",
       "confirm refuses a changed plan, a changed input and any blocker",
+      "each Remedial instance states the remedy of its error type directly",
       "findings name their operands: artifacts, the carried cause and the failing trials",
       "severity, class and remedy follow from the case",
       "the report derives the artifact finding before the family's own"
@@ -19108,8 +19156,10 @@
     ],
     "planJVM/eyes4s.plan.AnalysisReportSuite": [
       "a data-dependent finding names at least one trial, by type",
+      "a refusal whose cause states no remedy does not compile",
       "a refusal's remedy follows its cause, as the dedicated families derive it",
       "confirm refuses a changed plan, a changed input and any blocker",
+      "each Remedial instance states the remedy of its error type directly",
       "findings name their operands: artifacts, the carried cause and the failing trials",
       "severity, class and remedy follow from the case",
       "the report derives the artifact finding before the family's own"
