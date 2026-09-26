@@ -263,8 +263,10 @@ private[plan] object CauseDiagnostics:
       case EmptyInput(m, o, total)               => d(name(m), token(o.toString), real(total))
       case ZeroNorm(m, l, r)                     => d(name(m), real(l), real(r))
       case RelativeEntropySupport(m, cell, l, r) => d(name(m), int(cell), real(l), real(r))
-      case CostMatrixLimitExceeded(m, cells, limit) => d(name(m), int(cells), int(limit))
-      case InvalidSubstitutionCost(m, l, r, value)  =>
+      case CostMatrixLimitExceeded(m, cells, limit)  => d(name(m), int(cells), int(limit))
+      case WorkLimitExceeded(m, cells, pairs, limit) =>
+        d(name(m), int(cells), long(pairs), long(limit))
+      case InvalidSubstitutionCost(m, l, r, value) =>
         d(name(m), int(l), int(r), real(value))
       case InvalidScore(m, underlying) => d(name(m), cause(comparisonValue(underlying)))
       case TooShort(what, got, needed) => d(name(what), int(got), int(needed))

@@ -433,11 +433,25 @@ object Distribution:
           else Similarity.computed(info.name, dot / denominator)
         }
 
-  /** Biased sample distance correlation of the cell values (energy::dcor convention).
-    * O(n squared) time and O(n) storage; this baseline instance is not a spatial metric.
-    * Constant operands are errors, including identical uniform maps.
+  /** Biased sample distance correlation of the cell values (energy::dcor convention),
+    * refused above [[DistanceCorrelationLimit.default]] cell pairs. See
+    * [[distanceCorrelationWithin]].
     */
   def distanceCorrelation[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
+    distanceCorrelationWithin(DistanceCorrelationLimit.default)
+
+  /** Biased sample distance correlation of the cell values (energy::dcor convention).
+    * O(n squared) time in grid cells and O(n) storage; this baseline instance is not a
+    * spatial metric. Constant operands are errors, including identical uniform maps.
+    *
+    * A grid of `n` cells visits `n(n-1)/2` unordered cell pairs, twice. When that pair
+    * count exceeds `limit.maximumPairs` the call returns
+    * [[CompareError.WorkLimitExceeded]] before any pair is visited; the check follows the
+    * grid check and precedes the constancy check.
+    */
+  def distanceCorrelationWithin[U <: Unit2D](
+      limit: DistanceCorrelationLimit
+  ): SymmetricCompare[Mass[U], Similarity] =
     new SymmetricCompare[Mass[U], Similarity]:
       val info = MeasureInfo(
         "distance correlation",
@@ -446,34 +460,61 @@ object Distribution:
         None
       )
       def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Similarity] =
-        aligned(a, b).flatMap(n => constantOperands(info.name, a, b, n).toLeft(n)).flatMap {
-          n =>
-            def means(m: Mass[U]): (Array[Double], Double) =
-              val rows = Array.fill(n)(0.0)
-              var i    = 0
-              while i < n do
-                var j = 0
-                while j < n do
-                  rows(i) += math.abs(m.values(i) - m.values(j)) / n
-                  j += 1
-                i += 1
-              (rows, rows.sum / n)
-            val (ax, grandX) = means(a); val (by, grandY) = means(b)
-            var xx           = 0.0; var yy                = 0.0; var xy = 0.0; var i = 0
+        aligned(a, b)
+          .flatMap { n =>
+            val pairs = DistanceCorrelationLimit.pairs(n)
+            Either.cond(
+              pairs <= limit.maximumPairs,
+              n,
+              CompareError.WorkLimitExceeded(info.name, n, pairs, limit.maximumPairs)
+            )
+          }
+          .flatMap(n => constantOperands(info.name, a, b, n).toLeft(n))
+          .flatMap { n =>
+            val x = a.values; val y = b.values
+            // Pass 1: row sums of both distance matrices, visiting each unordered pair once.
+            val rowX = new Array[Double](n); val rowY = new Array[Double](n)
+            var i    = 0
             while i < n do
-              var j = 0
+              val xi = x(i); val yi = y(i)
+              var sx = 0.0; var sy  = 0.0
+              var j  = i + 1
               while j < n do
-                val x = math.abs(a.values(i) - a.values(j)) - ax(i) - ax(j) + grandX
-                val y = math.abs(b.values(i) - b.values(j)) - by(i) - by(j) + grandY
-                xx += x * x; yy += y * y; xy += x * y
+                val dx = math.abs(xi - x(j)); val dy = math.abs(yi - y(j))
+                sx += dx; sy += dy; rowX(j) += dx; rowY(j) += dy
+                j += 1
+              rowX(i) += sx; rowY(i) += sy
+              i += 1
+            var grandX = 0.0; var grandY = 0.0
+            i = 0
+            while i < n do
+              rowX(i) /= n; rowY(i) /= n; grandX += rowX(i); grandY += rowY(i)
+              i += 1
+            grandX /= n; grandY /= n
+            // Pass 2: centred products. The matrices are symmetric with a zero raw diagonal,
+            // so each off-diagonal pair counts twice and the diagonal once.
+            var xx  = 0.0; var yy  = 0.0; var xy  = 0.0
+            var dxx = 0.0; var dyy = 0.0; var dxy = 0.0
+            i = 0
+            while i < n do
+              val xi = x(i); val yi             = y(i)
+              val cx = grandX - rowX(i); val cy = grandY - rowY(i)
+              val ux = cx - rowX(i); val uy     = cy - rowY(i)
+              dxx += ux * ux; dyy += uy * uy; dxy += ux * uy
+              var j = i + 1
+              while j < n do
+                val p = math.abs(xi - x(j)) + cx - rowX(j)
+                val q = math.abs(yi - y(j)) + cy - rowY(j)
+                xx += p * p; yy += q * q; xy += p * q
                 j += 1
               i += 1
+            xx = 2 * xx + dxx; yy = 2 * yy + dyy; xy = 2 * xy + dxy
             // Non-constant raw values have a nonzero double-centred distance matrix.
             Similarity.computed(
               info.name,
               math.sqrt(math.max(0.0, math.min(1.0, xy / math.sqrt(xx) / math.sqrt(yy))))
             )
-        }
+          }
 
   /** The reference l1 similarity is 1 minus total variation, with larger values closer. */
   def l1Similarity[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
@@ -522,3 +563,28 @@ object Distribution:
         }
 
 end Distribution
+
+/** Bound on the unordered cell pairs one distance-correlation call may visit.
+  *
+  * Distance correlation is quadratic in grid cells and runs as one synchronous,
+  * uncancellable call, so an unbounded call on a large grid blocks its caller for
+  * seconds (about 3.6 s at 256 by 256). A caller that accepts a longer call raises the
+  * limit explicitly with [[DistanceCorrelationLimit.of]].
+  */
+final class DistanceCorrelationLimit private (val maximumPairs: Long)
+object DistanceCorrelationLimit:
+  /** 2^28 pairs: the largest admitted grid has 23,170 cells (152 by 152 is 23,104).
+    * Measured at about 0.45 s per call on a laptop JVM (docs/EXECUTION_RESPONSIVENESS.md),
+    * matching the half-second precedent of `FixationTransportConfig.DefaultMaximumWork`.
+    */
+  val DefaultMaximumPairs: Long = 1L << 28
+
+  val default: DistanceCorrelationLimit = new DistanceCorrelationLimit(DefaultMaximumPairs)
+
+  /** Unordered distinct cell pairs of a grid of `cells` cells: `cells(cells-1)/2`. */
+  def pairs(cells: Int): Long = cells.toLong * (cells.toLong - 1) / 2
+
+  /** A nonnegative pair limit; `Long.MaxValue` removes the bound. */
+  def of(maximumPairs: Long): Either[ComparisonWorkError, DistanceCorrelationLimit] =
+    if maximumPairs < 0 then Left(ComparisonWorkError.InvalidBudget(maximumPairs))
+    else Right(new DistanceCorrelationLimit(maximumPairs))
