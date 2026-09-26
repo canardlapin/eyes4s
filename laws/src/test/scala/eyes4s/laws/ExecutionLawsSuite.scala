@@ -30,6 +30,8 @@ import eyes4s.examples.MatchedControlFixtures
 import org.scalacheck.{Gen, Prop, Test}
 import org.scalacheck.Prop.propBoolean
 
+import scala.concurrent.duration.*
+
 /** The published execution laws over the three shipped families, and the
   * mutants that show each law is load-bearing.
   *
@@ -86,6 +88,10 @@ class ExecutionLawsSuite extends munit.DisciplineSuite:
 
   override def scalaCheckTestParameters =
     super.scalaCheckTestParameters.withMinSuccessfulTests(40).withInitialSeed(0x45584543L)
+
+  // The mutant matrix runs every mutant against every law: ~11 s locally, ~35 s on a
+  // hosted 4-vCPU runner, past munit's 30 s default. The work is fixed by the seeds.
+  override val munitTimeout: Duration = 3.minutes
 
   private val killParameters =
     Test.Parameters.default.withMinSuccessfulTests(40).withInitialSeed(0x4b494c4cL)
