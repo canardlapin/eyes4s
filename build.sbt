@@ -946,7 +946,32 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
   .enablePlugins(NoPublishPlugin)
   .dependsOn(plan, codec, fs2Module)
   .settings(commonSettings, portableStudioSettings)
-  .settings(name := "eyes4s-studio-core")
+  .settings(
+    name := "eyes4s-studio-core",
+    // S3.0: the backend protocol's codecs (circe, pinned with eyes4s-codec) and
+    // its effect tests.
+    libraryDependencies ++= Seq(
+      "io.circe"      %%% "circe-core"        % circeV,
+      "io.circe"      %%% "circe-parser"      % circeV,
+      "org.typelevel" %%% "munit-cats-effect" % munitCatsEffectV % Test
+    ),
+    // S3.0: studio-core may not read files (it links for Scala.js), so the mock
+    // study and the acceptance fixture's inventory are generated sources.
+    Compile / sourceGenerators += Def.task {
+      val root = (ThisBuild / baseDirectory).value
+      val out  = (Compile / sourceManaged).value / "eyes4s" / "studio"
+      Seq(
+        StudioFixture.embedJson(
+          root / "docs" / "studio" / "fixture" / "fixture.json",
+          out / "FixtureJson.scala"
+        ),
+        StudioFixture.goldenInventory(
+          root / "fixtures" / "studio-golden",
+          out / "GoldenInventory.scala"
+        )
+      )
+    }.taskValue
+  )
 
 /** UI-neutral presentation: app model, intents, pure update, view-models. */
 lazy val studioApp = crossProject(JVMPlatform, JSPlatform)
