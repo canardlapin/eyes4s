@@ -1,0 +1,26 @@
+{
+  "api_audit": "passed after all mutations restored",
+  "jvm_tests": 2062,
+  "js_tests": 1968,
+  "documentation_consumer_jvm_tests": 192,
+  "documentation_consumer_js_tests": 181,
+  "documentation_consumer_fingerprint": "3b841093d7bebce6727f127b483b7c98b611a5f9c920af16c5ecdacc934ae3fd",
+  "quality_tasks": [
+    "headerCheckAll",
+    "scalafmtCheckAll",
+    "scalafmtSbtCheck",
+    "githubWorkflowCheck",
+    "checkBoundaries",
+    "docs/tlSite"
+  ],
+  "documentation_inventory": {
+    "classified_pages": 54,
+    "external_fences": 5,
+    "linked_programs": 21
+  },
+  "logs": {
+    "/tmp/eyes4s-api-audit-final.log": "13cb1634cea8d3021c5a8632a71a5c04e65208fabaf7341f1c362e2416948161",
+    "/tmp/eyes4s-twelve-final-quality.log": "ee8b9fba28de6476ce6be67180a78e43ad8216c2fb682b87faca407484323011",
+    "/tmp/eyes4s-twelve-final-docs.log": "0d13e97f7dcda54f54bf28146abfe8f53184cfb4b9f8cad24da177d0ef793a73"
+  }
+}

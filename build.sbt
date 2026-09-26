@@ -318,8 +318,14 @@ ThisBuild / githubWorkflowBuild += WorkflowStep.Sbt(
 )
 
 ThisBuild / githubWorkflowBuild += WorkflowStep.Run(
-  List("python3 tools/check-docs.py"),
+  List("python3 tools/check-docs.py --run-consumer"),
   name = Some("Check public documentation coverage"),
+  cond = Some("matrix.project == 'rootJVM' && matrix.java == 'temurin@17'")
+)
+
+ThisBuild / githubWorkflowBuild += WorkflowStep.Run(
+  List("python3 tools/api-audit/run.py"),
+  name = Some("Audit public API inventory and executed evidence"),
   cond = Some("matrix.project == 'rootJVM' && matrix.java == 'temurin@17'")
 )
 
@@ -511,6 +517,7 @@ lazy val root = tlCrossRootProject
   */
 lazy val kernel = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
+  .jvmSettings(ApiAudit.settings)
   .in(file("kernel"))
   .settings(commonSettings, pureModuleSettings)
   .settings(
@@ -523,6 +530,7 @@ lazy val kernel = crossProject(JVMPlatform, JSPlatform)
   */
 lazy val core = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
+  .jvmSettings(ApiAudit.settings)
   .in(file("core"))
   .dependsOn(kernel)
   .settings(commonSettings, pureModuleSettings)
@@ -531,6 +539,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
 /** Detector instances, filters, and the Machine runner. */
 lazy val detect = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
+  .jvmSettings(ApiAudit.settings)
   .in(file("detect"))
   .dependsOn(core)
   .settings(commonSettings, pureModuleSettings)
@@ -539,6 +548,7 @@ lazy val detect = crossProject(JVMPlatform, JSPlatform)
 /** Smoothers, bandwidth selection, pyramids, entropy. */
 lazy val surface = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
+  .jvmSettings(ApiAudit.settings)
   .in(file("surface"))
   .dependsOn(core)
   .settings(commonSettings, pureModuleSettings)
@@ -547,6 +557,7 @@ lazy val surface = crossProject(JVMPlatform, JSPlatform)
 /** AOI sets, dwell/entry/run statistics, transition matrices. */
 lazy val aoi = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
+  .jvmSettings(ApiAudit.settings)
   .in(file("aoi"))
   .dependsOn(core)
   .settings(commonSettings, pureModuleSettings)
@@ -555,6 +566,7 @@ lazy val aoi = crossProject(JVMPlatform, JSPlatform)
 /** Compare hierarchy, alignment kernel, MultiMatch, distribution measures, OT. */
 lazy val compare = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
+  .jvmSettings(ApiAudit.settings)
   .in(file("compare"))
   .dependsOn(core, surface, aoi)
   .settings(commonSettings, pureModuleSettings)
@@ -563,6 +575,7 @@ lazy val compare = crossProject(JVMPlatform, JSPlatform)
 /** Trials, pairings, baselines, contrasts, deterministic RNG. */
 lazy val design = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
+  .jvmSettings(ApiAudit.settings)
   .in(file("design"))
   .dependsOn(core, compare)
   .settings(commonSettings, pureModuleSettings)
@@ -571,6 +584,7 @@ lazy val design = crossProject(JVMPlatform, JSPlatform)
 /** Analyses as descriptions: plan ADTs, interpreters, and the typed registry. */
 lazy val plan = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
+  .jvmSettings(ApiAudit.settings)
   .in(file("plan"))
   .dependsOn(design, detect)
   .settings(commonSettings, pureModuleSettings)
@@ -579,6 +593,7 @@ lazy val plan = crossProject(JVMPlatform, JSPlatform)
 /** JSON codecs with a versioned schema, so a project file round-trips. */
 lazy val codec = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
+  .jvmSettings(ApiAudit.settings)
   .in(file("codec"))
   .dependsOn(plan)
   .settings(commonSettings, pureModuleSettings)
@@ -605,11 +620,16 @@ lazy val codec = crossProject(JVMPlatform, JSPlatform)
   */
 lazy val laws = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
+  .jvmSettings(ApiAudit.settings)
   .in(file("laws"))
   .dependsOn(kernel, core, detect, surface, aoi, compare, design, plan, codec)
   .settings(pureModuleSettings)
   .settings(
     name := "eyes4s-laws",
+    Test / unmanagedSources ++= Seq(
+      file("codec/src/test/scala/eyes4s/codec/PointSamplingFixture.scala").getAbsoluteFile,
+      file("codec/src/test/scala/eyes4s/codec/RepetitionPlanFixture.scala").getAbsoluteFile
+    ),
     libraryDependencies ++= Seq(
       "org.scalameta"  %%% "munit"            % munitV,
       "org.scalameta"  %%% "munit-scalacheck" % munitScalacheckV,
@@ -626,6 +646,7 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
 /** Streaming execution: Machine.toPipe, progress events, cancellation. */
 lazy val fs2Module = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
+  .jvmSettings(ApiAudit.settings)
   .in(file("fs2"))
   .dependsOn(core, detect, plan)
   .settings(commonSettings)
@@ -654,6 +675,7 @@ lazy val fs2Module = crossProject(JVMPlatform, JSPlatform)
 /** Ingest and export: EyeLink ASC, CSV, Mirror-derived metadata decoders. */
 lazy val io = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
+  .jvmSettings(ApiAudit.settings)
   .in(file("io"))
   .dependsOn(fs2Module, codec)
   .settings(commonSettings)
@@ -669,10 +691,38 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
     libraryDependencies += "co.fs2" %%% "fs2-io" % fs2V
   )
   .jvmSettings(
+    Test / sourceGenerators += Def.task {
+      val out  = (Test / sourceManaged).value / "DocumentationExamplesSuite.scala"
+      val exit = scala.sys.process
+        .Process(
+          Seq("python3", "tools/documentation-examples.py", out.getAbsolutePath),
+          file(".")
+        )
+        .!
+      require(exit == 0, "Documentation example generation failed")
+      Seq(out)
+    }.taskValue,
+    // Optional JVM-only Arrow transport; portable tables have no Arrow dependency.
+    libraryDependencies ++= Seq(
+      "org.apache.arrow" % "arrow-vector"        % "19.0.0"         % Optional,
+      "org.apache.arrow" % "arrow-memory-unsafe" % "19.0.0"         % Optional,
+      "org.typelevel"   %% "munit-cats-effect"   % munitCatsEffectV % Test
+    ),
+    Test / fork := true,
+    Test / javaOptions ++= Seq(
+      "-Xmx2g",
+      "-Dfile.encoding=UTF-8",
+      "-Dstdout.encoding=UTF-8",
+      "--add-opens=java.base/java.nio=ALL-UNNAMED"
+    ),
     Test / unmanagedSourceDirectories += file("tools/study-cli").getAbsoluteFile,
     Test / parallelExecution := false,
     Test / run / fork        := true,
-    Test / run / javaOptions ++= Seq("-Xms64m", "-Xmx256m"),
+    Test / run / javaOptions ++= Seq(
+      "-Xms64m",
+      "-Xmx256m",
+      "--add-opens=java.base/java.nio=ALL-UNNAMED"
+    ),
     // UI-S6: FreshProcessReconstructionJvmSuite writes and reads saved studies in
     // separate, freshly started JVMs over this test classpath, from the pinned
     // v1 codec fixtures. The classpath is written as a test resource because an
@@ -740,3 +790,18 @@ addCommandAlias(
       .flatMap(m => allPlatforms.map(p => s"$m$p/checkModuleBoundaries")))
     .mkString(";", ";", "")
 )
+
+lazy val apiAuditInputs =
+  taskKey[Unit]("Export resolved compiler classpaths for the public API audit")
+apiAuditInputs := {
+  val output = file("target/api-audit")
+  IO.createDirectory(output)
+  val jvm = (LocalProject(
+    "ioJVM"
+  ) / Compile / fullClasspath).value.files ++ (laws.jvm / Compile / fullClasspath).value.files
+  val js = (LocalProject(
+    "ioJS"
+  ) / Compile / fullClasspath).value.files ++ (laws.js / Compile / fullClasspath).value.files
+  IO.writeLines(output / "classpath-jvm.txt", jvm.distinct.map(_.getAbsolutePath))
+  IO.writeLines(output / "classpath-js.txt", js.distinct.map(_.getAbsolutePath))
+}

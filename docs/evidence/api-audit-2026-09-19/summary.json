@@ -1,0 +1,33 @@
+{
+  "abstractions": 412,
+  "candidate": {
+    "base_sha": "131970d78fd0a7d18ed72e4b8ccf1d2a5a136279",
+    "fingerprint": "d133f6a09cdd91264d26f90222e827ff2d6736d49298bb9cf94171591fbbae0a",
+    "finished": 1789853757.5118332,
+    "started": 1789853446.276969
+  },
+  "classificationCounts": {
+    "abstract-constructor": 408,
+    "abstract-member": 119,
+    "abstraction-or-container": 2461,
+    "compile-time-equality-witness": 441,
+    "compiler-default-argument": 120,
+    "compiler-generated": 30074,
+    "enum-case-value": 526,
+    "internal": 6333,
+    "module-initializer": 2072,
+    "module-reference": 447,
+    "runtime-entry": 2342,
+    "structural-accessor": 4194,
+    "structural-constructor": 1263,
+    "type-level": 88
+  },
+  "executedSuites": 377,
+  "jvmOnlyDeclarations": 29,
+  "mappedJsSuites": 178,
+  "mappedSuites": 199,
+  "phantomUnits": 5,
+  "publicDeclarations": 14481,
+  "runtimeEntries": 2342,
+  "uncovered": 0
+}

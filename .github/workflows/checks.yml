@@ -122,7 +122,11 @@ jobs:
 
       - name: Check public documentation coverage
         if: matrix.project == 'rootJVM' && matrix.java == 'temurin@17'
-        run: python3 tools/check-docs.py
+        run: python3 tools/check-docs.py --run-consumer
+
+      - name: Audit public API inventory and executed evidence
+        if: matrix.project == 'rootJVM' && matrix.java == 'temurin@17'
+        run: python3 tools/api-audit/run.py
 
       - name: Run EyeLink performance smoke court
         if: matrix.project == 'rootJVM' && matrix.java == 'temurin@17'

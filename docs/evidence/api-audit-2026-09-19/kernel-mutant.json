@@ -1,0 +1,5 @@
+{
+  "mutation": "cosine score negated",
+  "test": "consumer.KernelConformanceSuite",
+  "rejected": true
+}

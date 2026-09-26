@@ -1,0 +1,12 @@
+[
+  {
+    "mutant": "new unmapped README Scala fence",
+    "exit": 1,
+    "failure": "Unmapped Scala fences: README.md"
+  },
+  {
+    "mutant": "renamed execution mapping",
+    "exit": 1,
+    "failure": "Failed, skipped or misnamed execution evidence: /Users/bbuchsbaum/code/scala/eyes4s/io/.jvm/target/test-reports/TEST-eyes4s.io.StudyGuideOracleSuite.xml: {'nonexistent documentation test'}"
+  }
+]

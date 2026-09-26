@@ -1,0 +1,17 @@
+[
+  {
+    "mutation": "remove an entry/test mapping",
+    "rejected": true,
+    "diagnostic": "API audit: missing or extra entry/test mappings"
+  },
+  {
+    "mutation": "rename a mapped test to an arbitrary string",
+    "rejected": true,
+    "diagnostic": "API audit: removed, misnamed, or changed test mapping aoiJVM/consumer.PublicAoiSuite"
+  },
+  {
+    "mutation": "compile a new uninvoked public entry point",
+    "rejected": true,
+    "diagnostic": "API audit: 1 unexercised entries; inspect target/api-audit/uncovered.tsv"
+  }
+]

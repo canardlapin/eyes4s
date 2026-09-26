@@ -1,0 +1,369 @@
+{
+  "pages": {
+    "docs/AOI_LAWS.md": "public guide",
+    "docs/CONTRAST_CONTRACT.md": "public guide",
+    "docs/DENSITY_SAMPLING.md": "public guide",
+    "docs/DEVELOPMENT_PLAN.md": "internal decision or historical evidence",
+    "docs/DIAGNOSTICS.md": "public guide",
+    "docs/DOMAIN_CODECS.md": "public guide",
+    "docs/EPOCH_PLANS.md": "public guide",
+    "docs/EXAMPLE_COVERAGE.md": "public guide",
+    "docs/EXECUTION_RESPONSIVENESS.md": "public guide",
+    "docs/EXTENDING_STUDIES.md": "public guide",
+    "docs/EYESIM_CAPABILITIES.md": "public guide",
+    "docs/FIXATION_SAMPLING.md": "public guide",
+    "docs/FIXATION_STUDIES.md": "public guide",
+    "docs/MAP_COMPARISON.md": "public guide",
+    "docs/METHOD_DESCRIPTORS.md": "public guide",
+    "docs/POINT_SAMPLING.md": "public guide",
+    "docs/PREFLIGHT.md": "public guide",
+    "docs/REPETITION_STUDIES.md": "public guide",
+    "docs/RESULT_EXPORTS.md": "public guide",
+    "docs/SAVED_STUDIES.md": "public guide",
+    "docs/SCANPATH_COMPARISON.md": "public guide",
+    "docs/SESSION.md": "public guide",
+    "docs/START_HERE.md": "public guide",
+    "docs/SURFACE_DECOMPOSITION.md": "public guide",
+    "docs/TEMPLATE_CV.md": "public guide",
+    "docs/TEMPLATE_FITTING.md": "public guide",
+    "docs/TRACKER_ACTIONS_2026-09-19.md": "internal decision or historical evidence",
+    "docs/TRACKER_REVIEW_2026-09-19.md": "internal decision or historical evidence",
+    "docs/TRACKER_TRIAGE_2026-09-17.md": "internal decision or historical evidence",
+    "docs/UI_APP_VISION.md": "internal decision or historical evidence",
+    "docs/UI_FOUNDATION_PLAN.md": "internal decision or historical evidence",
+    "docs/VISION.md": "internal decision or historical evidence",
+    "docs/evidence/baseline-export-2026-09-19.md": "internal decision or historical evidence",
+    "docs/evidence/detection-assembly-final.md": "internal decision or historical evidence",
+    "docs/evidence/detection-support-final.md": "internal decision or historical evidence",
+    "docs/evidence/detection-support-initial.md": "internal decision or historical evidence",
+    "docs/formats/eyelink-asc.md": "public guide",
+    "docs/formats/eyelink-corpus.md": "public guide",
+    "docs/formats/eyelink-oracles.md": "public guide",
+    "docs/plans/EYESIM_BASELINE_PLAN.md": "internal decision or historical evidence",
+    "README.md": "public overview",
+    "site-docs/concepts.md": "executed mdoc site",
+    "site-docs/exports.md": "executed mdoc site",
+    "site-docs/fixation-studies.md": "executed mdoc site",
+    "site-docs/getting-started.md": "executed mdoc site",
+    "site-docs/index.md": "executed mdoc site",
+    "site-docs/migration.md": "executed mdoc site",
+    "site-docs/recordings.md": "executed mdoc site",
+    "site-docs/reference.md": "executed mdoc site",
+    "site-docs/repetition.md": "executed mdoc site",
+    "site-docs/templates.md": "executed mdoc site",
+    "docs/evidence/documentation-2026-09-19.md": "internal decision or historical evidence",
+    "docs/PUBLIC_API_COVERAGE.md": "internal decision or historical evidence",
+    "docs/evidence/api-audit-2026-09-19.md": "internal decision or historical evidence"
+  },
+  "fences": {
+    "README.md": {
+      "count": 2,
+      "runner": "docconsumer.DocumentationExamplesSuite"
+    },
+    "docs/formats/eyelink-asc.md": {
+      "count": 3,
+      "runner": "docconsumer.DocumentationExamplesSuite"
+    }
+  },
+  "linked_sources": {
+    "codec/src/test/scala/eyes4s/codec/PointSamplingCodecSuite.scala": {
+      "module": "codec",
+      "suite": "eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
+      "tests": [
+        "fresh codec reopens complete recipe and replay-verified results with exact controls, Unicode keys and failures",
+        "disabled controls, absent bins, empty queries, empty sources and matching failures survive persistence",
+        "microseconds above 2^53 persist as exact integers with explicit out-of-range results",
+        "changed derived values, counts, keys, policies or provenance are rejected during replay",
+        "unknown methods, stale hashes, changed geometry and unsorted bins cannot decode as valid plans"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
+    },
+    "codec/src/test/scala/eyes4s/codec/RepetitionPlanSuite.scala": {
+      "module": "codec",
+      "suite": "eyes4s.repetitionconsumer.RepetitionPlanSuite",
+      "tests": [
+        "save and reopen through fresh typed registrations reproduces exact endpoints, controls, counts and provenance",
+        "finite controls use the original keyed sampler and survive order changes; higher cap nests",
+        "every finite map method saves and reruns without new opaque closures",
+        "duplicate and unmatched keys, empty input and constant-method failures survive persistence",
+        "unknown schemas, projections, rules, method revisions, seeds and forged digests fail as values",
+        "legacy v1 two-phase study remains readable with its original meaning",
+        "finite registered relation vocabulary covers condition groups and alternative typed axes"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
+    },
+    "design/src/test/scala/eyes4s/design/RepetitionSuite.scala": {
+      "module": "design",
+      "suite": "eyes4s.design.RepetitionSuite",
+      "tests": [
+        "public repetition agrees with independent rational pairs and per-focal contrasts",
+        "pinned eyesim phase-only means describe a different, cross-participant estimand",
+        "finite-cap controls exclude targets before sampling and are stable under reordering",
+        "duplicate full keys are excluded in full; missing and empty strata stay explicit",
+        "failed comparisons remain pair outcomes and retain realized reduction denominators",
+        "convenience evaluation is identical to explicit pair and evaluate composition"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
+    },
+    "docs/examples/StudyGuide.scala": {
+      "module": "io",
+      "suite": "eyes4s.io.StudyGuideOracleSuite",
+      "tests": [
+        "scalar binned StudyGuide output matches the pre-extraction pinned rows",
+        "matched, control and difference cells use pinned cross-runtime decimal bytes",
+        "multiscale StudyGuide output matches the pre-extraction pinned rows",
+        "failure rows, excluded trials and denominators match the pre-extraction pinned rows"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
+    },
+    "docs/examples/TemporalStudyGuide.scala": {
+      "module": "io",
+      "suite": "eyes4s.io.TemporalContrastSuite",
+      "tests": [
+        "anisotropic temporal plans round-trip and export named widths in every window",
+        "compiled guide admits the actual CSV and exports every window/scale contrast and trial ledger"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
+    },
+    "fs2/src/test/scala/eyes4s/fs2/StudyExecutionSuite.scala": {
+      "module": "fs2",
+      "suite": "eyes4s.fs2.StudyExecutionSuite",
+      "tests": [
+        "events at every quantum replay the pure cursor's stages and plan.run's result",
+        "a run id is a function of the input, plan revision and quanta",
+        "segments run in scientific order with monotone counts and typed totals",
+        "a synchronous method bounds comparison by whole pairs",
+        "a fully matched schedule and one without reference trials stay within their bounds",
+        "start commits the pure result once and cancelling afterwards changes nothing",
+        "a detached, a slow and a disposed observer never stall the run",
+        "cancelling before any work settles Cancelled with no progress",
+        "cancelling during estimation, comparison, reduction and before commit lands between steps",
+        "interrupting the pull stream ends it between steps without a terminal event",
+        "a defect thrown inside a step is raised from the outcome, not hidden as a hang or a cancel",
+        "a refused comparison budget settles Failed with the PlanError and no progress"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
+    },
+    "io/src/test/scala/eyes4s/examples/BaselineExportGuide.scala": {
+      "module": "io",
+      "suite": "eyes4s.io.BaselineExportsSuite",
+      "tests": [
+        "compiled public workflows cover every frozen result family and emit portable typed CSV",
+        "scalar and structured pair failures retain endpoints, component order and denominator evidence",
+        "reductions and contrasts retain failure counts and signed differences without fabricated denominators",
+        "temporal exports retain exact 64-bit queries, missing support, controls and final endpoint",
+        "template and OLS adapters have independent analytic numerical targets and explicit exclusions",
+        "canonical admission refuses wrong widths, nonfinite scores, wrong scalar types and invalid labels",
+        "CSV validity preserves missing versus empty text, quoting and negative zero without sentinels",
+        "overflowing held-out prediction stays a failed row with its key and observed response",
+        "JSON columns are canonical values and malformed JSON is refused"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
+    },
+    "io/src/test/scala/eyes4s/examples/RepetitionGuide.scala": {
+      "module": "io",
+      "suite": "eyes4s.io.RepetitionGuideSuite",
+      "tests": [
+        "the exact guide admits, saves, restores, executes and exports the rational fixture",
+        "saved two-phase results agree with direct all-occasion repetition at each focal key",
+        "bad input stays inspectable and blocks a saved analysis without dropping a trial"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
+    },
+    "io/src/test/scala/eyes4s/examples/TemplateFitGuide.scala": {
+      "module": "io",
+      "suite": "eyes4s.io.TemplateFitSuite",
+      "tests": [
+        "training CSV bytes have the same pinned decimal spelling on JVM and Scala.js",
+        "Scala training export matches R input metadata exactly and numeric fields as Doubles",
+        "exact guide saves, restores, imports the R fit and evaluates the held-out key",
+        "held-out response mutant changes evaluation only, never training or predictions",
+        "import refuses stale hashes, rank/row mismatches, duplicate features and malformed receipts",
+        "recipe roundtrip retains fold assignment, typed keys, data and refuses stale versions/hashes",
+        "the fitting export does not accept a held-out capability",
+        "native guide saves, reopens and evaluates without an external receipt",
+        "native recipe refuses forged method and fitting conventions"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
+    },
+    "io/src/test/scala/eyes4s/io/InspectionSourceSuite.scala": {
+      "module": "io",
+      "suite": "eyes4s.io.InspectionSourceSuite",
+      "tests": [
+        "a result row drills down to the logical CSV record that supplied it",
+        "every rejected CSV row is a diagnostic naming its logical record and typed reason",
+        "the contrast export and the projection share one set of named result semantics",
+        "the temporal export and the temporal projection agree cell by cell and link to records",
+        "a two-component export and its projection carry the same named components"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
+    },
+    "io/src/test/scala/eyes4s/io/RepetitionGuideSuite.scala": {
+      "module": "io",
+      "suite": "eyes4s.io.RepetitionGuideSuite",
+      "tests": [
+        "the exact guide admits, saves, restores, executes and exports the rational fixture",
+        "saved two-phase results agree with direct all-occasion repetition at each focal key",
+        "bad input stays inspectable and blocks a saved analysis without dropping a trial"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
+    },
+    "laws/src/test/scala/eyes4s/examples/MatchedControlExample.scala": {
+      "module": "laws",
+      "suite": "eyes4s.examples.MatchedControlSuite",
+      "tests": [
+        "existing fixation summaries reach duration-weighted mass without a raw recording",
+        "selected pairs and reductions agree with rational enumeration and pinned eyesim",
+        "reordering source and reference trials preserves pair membership and keyed results",
+        "image-only matching is distinguishable from the intended participant-image relation",
+        "an unmatched focal trial survives as a named reduction failure",
+        "duplicate focal keys are excluded from evaluation and retained as ambiguity failures",
+        "duplicate references are reported instead of selecting the first matching row",
+        "incompatible reference geometry retains failed pairs and explicit reduction denominators",
+        "constant Pearson is undefined despite the reference returning one",
+        "structured score means preserve components and their signed difference needs a new result type",
+        "production contrast agrees with every pinned rational target and denominator",
+        "production structured contrast agrees with the independent five-component target"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
+    },
+    "laws/src/test/scala/eyes4s/examples/MatchedControlSuite.scala": {
+      "module": "laws",
+      "suite": "eyes4s.examples.MatchedControlSuite",
+      "tests": [
+        "existing fixation summaries reach duration-weighted mass without a raw recording",
+        "selected pairs and reductions agree with rational enumeration and pinned eyesim",
+        "reordering source and reference trials preserves pair membership and keyed results",
+        "image-only matching is distinguishable from the intended participant-image relation",
+        "an unmatched focal trial survives as a named reduction failure",
+        "duplicate focal keys are excluded from evaluation and retained as ambiguity failures",
+        "duplicate references are reported instead of selecting the first matching row",
+        "incompatible reference geometry retains failed pairs and explicit reduction denominators",
+        "constant Pearson is undefined despite the reference returning one",
+        "structured score means preserve components and their signed difference needs a new result type",
+        "production contrast agrees with every pinned rational target and denominator",
+        "production structured contrast agrees with the independent five-component target"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
+    },
+    "laws/src/test/scala/eyes4s/laws/AoiLawsSuite.scala": {
+      "module": "laws",
+      "suite": "eyes4s.laws.AoiLawsSuite",
+      "tests": [
+        "static AOIs: aoi.accounting.dwell proportions use analysable union plus background",
+        "static AOIs: aoi.accounting.one membership per source sample",
+        "static AOIs: aoi.accounting.per-area dwell and policy partition agree",
+        "static AOIs: aoi.accounting.represented support is conserved",
+        "static AOIs: aoi.accounting.union background exclusions and overlap have independent totals",
+        "zero analysable time: aoi.accounting.dwell proportions use analysable union plus background",
+        "zero analysable time: aoi.accounting.one membership per source sample",
+        "zero analysable time: aoi.accounting.per-area dwell and policy partition agree",
+        "zero analysable time: aoi.accounting.represented support is conserved",
+        "zero analysable time: aoi.accounting.union background exclusions and overlap have independent totals",
+        "analytic three-way overlap distinguishes replicated mass from visible union"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
+    },
+    "plan/src/test/scala/eyes4s/plan/PointSamplingSuite.scala": {
+      "module": "plan",
+      "suite": "eyes4s.pointconsumer.PointSamplingSuite",
+      "tests": [
+        "public static workflow agrees with independently checked R values for every normalization and exhaustive/disabled controls",
+        "control population preserves source occurrences, excludes all true copies and uses the focal path",
+        "finite keyed controls are deterministic and order invariant with exact occurrence identities",
+        "final endpoint is explicit; empty and all-missing bins keep their counts",
+        "matching failures and duplicate source keys retain every row and query",
+        "clock and frame disagreements are operand-bearing failures, including no containing cell",
+        "point bins preserve adjacent microseconds above the double integer limit and reject invalid boundaries",
+        "mean of control-time means differs from pooled control values and preserves failure counts",
+        "checked plan components cannot be fabricated by an external consumer"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
+    },
+    "tools/study-cli/BaselineExportMain.scala": {
+      "module": "io",
+      "suite": "docconsumer.DocumentationExamplesSuite",
+      "tests": [
+        "documented baseline artifact command writes every checked table"
+      ],
+      "platforms": [
+        "jvm"
+      ]
+    },
+    "tools/study-cli/TemplateFitCli.scala": {
+      "module": "io",
+      "suite": "docconsumer.DocumentationExamplesSuite",
+      "tests": [
+        "documented native template CLI fits and reopens its exact recipe"
+      ],
+      "platforms": [
+        "jvm"
+      ]
+    },
+    "tools/study-consumer/src/main/scala/example/CustomDetector.scala": {
+      "runner": "isolated consumer",
+      "suite": "example.ConsumerSuite",
+      "reason": "Packaged-artifact journeys invoke this exact extension route; verify.py checks copied source hashes and JVM/JS outcomes."
+    },
+    "tools/study-consumer/src/main/scala/example/CustomMethod.scala": {
+      "runner": "isolated consumer",
+      "suite": "example.ConsumerSuite",
+      "reason": "Packaged-artifact journeys invoke this exact extension route; verify.py checks copied source hashes and JVM/JS outcomes."
+    },
+    "tools/study-consumer/src/main/scala/example/RecordingRoute.scala": {
+      "runner": "isolated consumer",
+      "suite": "example.RecordingJourneySuite",
+      "reason": "Packaged-artifact journeys invoke this exact extension route; verify.py checks copied source hashes and JVM/JS outcomes."
+    },
+    "tools/study-consumer/src/main/scala/example/TemporalRoute.scala": {
+      "runner": "isolated consumer",
+      "suite": "example.TemporalJourneySuite",
+      "reason": "Packaged-artifact journeys invoke this exact extension route; verify.py checks copied source hashes and JVM/JS outcomes."
+    }
+  }
+}

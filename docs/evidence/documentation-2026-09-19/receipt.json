@@ -1,0 +1,1020 @@
+{
+  "ownerPid": 11317,
+  "pages": [
+    {
+      "title": "The model in five ideas",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": "The model in five ideas",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "#"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "concepts.html",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "title": "Export results without losing failures",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": "Export results without losing failures",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "#"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "exports.html",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "title": "Compare fixation maps",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": "Compare fixation maps",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "#"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "fixation-studies.html",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "title": "Your first study",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": "Your first study",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "#"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "getting-started.html",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "title": "eyes4s",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": "eyes4s",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "index.html",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "title": "Migrating from eyesim",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": "Migrating from eyesim",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "#"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "migration.html",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "title": "An acquired recording to AOI results",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": "An acquired recording to AOI results",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "#"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "recordings.html",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "title": "Methods and support",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": "Methods and support",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "#"
+        }
+      ],
+      "overflow": [],
+      "page": "reference.html",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "title": "Test repetition without hiding the controls",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": "Test repetition without hiding the controls",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "#"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "repetition.html",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "title": "Fit on training data; evaluate held-out trials",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": "Fit on training data; evaluate held-out trials",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "#"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "templates.html",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "title": "The model in five ideas",
+      "width": 390,
+      "scrollWidth": 390,
+      "h1": "The model in five ideas",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "#"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "concepts.html",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "title": "Export results without losing failures",
+      "width": 390,
+      "scrollWidth": 390,
+      "h1": "Export results without losing failures",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "#"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "exports.html",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "title": "Compare fixation maps",
+      "width": 390,
+      "scrollWidth": 390,
+      "h1": "Compare fixation maps",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "#"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "fixation-studies.html",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "title": "Your first study",
+      "width": 390,
+      "scrollWidth": 390,
+      "h1": "Your first study",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "#"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "getting-started.html",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "title": "eyes4s",
+      "width": 390,
+      "scrollWidth": 390,
+      "h1": "eyes4s",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "index.html",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "title": "Migrating from eyesim",
+      "width": 390,
+      "scrollWidth": 390,
+      "h1": "Migrating from eyesim",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "#"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "migration.html",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "title": "An acquired recording to AOI results",
+      "width": 390,
+      "scrollWidth": 390,
+      "h1": "An acquired recording to AOI results",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "#"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "recordings.html",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "title": "Methods and support",
+      "width": 390,
+      "scrollWidth": 390,
+      "h1": "Methods and support",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "#"
+        }
+      ],
+      "overflow": [],
+      "page": "reference.html",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "title": "Test repetition without hiding the controls",
+      "width": 390,
+      "scrollWidth": 390,
+      "h1": "Test repetition without hiding the controls",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "#"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "templates.html"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "repetition.html",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "title": "Fit on training data; evaluate held-out trials",
+      "width": 390,
+      "scrollWidth": 390,
+      "h1": "Fit on training data; evaluate held-out trials",
+      "nav": [
+        {
+          "text": "Your first study",
+          "href": "getting-started.html"
+        },
+        {
+          "text": "The model in five ideas",
+          "href": "concepts.html"
+        },
+        {
+          "text": "Compare fixation maps",
+          "href": "fixation-studies.html"
+        },
+        {
+          "text": "An acquired recording to AOI results",
+          "href": "recordings.html"
+        },
+        {
+          "text": "Test repetition without hiding the controls",
+          "href": "repetition.html"
+        },
+        {
+          "text": "Fit on training data; evaluate held-out trials",
+          "href": "#"
+        },
+        {
+          "text": "Export results without losing failures",
+          "href": "exports.html"
+        },
+        {
+          "text": "Migrating from eyesim",
+          "href": "migration.html"
+        },
+        {
+          "text": "Methods and support",
+          "href": "reference.html"
+        }
+      ],
+      "overflow": [],
+      "page": "templates.html",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  ],
+  "errors": [],
+  "screenshots": [
+    "/tmp/eyes4s-doc-render/1440-exports.html.png",
+    "/tmp/eyes4s-doc-render/1440-index.html.png",
+    "/tmp/eyes4s-doc-render/1440-migration.html.png",
+    "/tmp/eyes4s-doc-render/1440-templates.html.png",
+    "/tmp/eyes4s-doc-render/390-exports.html.png",
+    "/tmp/eyes4s-doc-render/390-code-exports.html.png",
+    "/tmp/eyes4s-doc-render/390-index.html.png",
+    "/tmp/eyes4s-doc-render/390-migration.html.png",
+    "/tmp/eyes4s-doc-render/390-templates.html.png",
+    "/tmp/eyes4s-doc-render/390-code-templates.html.png"
+  ],
+  "browserPid": 11318,
+  "closed": true
+}
