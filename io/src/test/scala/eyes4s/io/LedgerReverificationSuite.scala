@@ -281,6 +281,44 @@ class LedgerReverificationSuite extends munit.FunSuite:
     })
   }
 
+  test("replay verification preserves refusal instead of admitting the accepted subset") {
+    val required = get(
+      ImportSpec.of(
+        spec.keys,
+        spec.columns,
+        spec.frame,
+        spec.timeUnit,
+        spec.policy,
+        AdmissionDecision.RequireComplete
+      )
+    )
+    val imported = get(SourceAdmission.read("refused.csv", csv, required))
+    assertEquals(imported.ledger.outcome, AdmissionOutcome.Refused)
+    assertEquals(imported.accepted.trials.rows.size, 1)
+    assertEquals(imported.admitted, None)
+    val verified = get(
+      LedgerReverification.verify(
+        "refused.csv",
+        csv,
+        required,
+        imported.ledger,
+        imported.accepted
+      )
+    )
+    assertEquals(verified.input.hash, imported.accepted.hash)
+    assertEquals(verified.admitted, None)
+  }
+
+  test("malformed source bytes refuse replay with the source-labelled import error") {
+    assert(verify(text = header + "\"unterminated").left.toOption.exists {
+      case LedgerVerificationError.Import(
+            SourceAdmissionError.Import("relocated.csv", FixationImportError.Csv(_))
+          ) =>
+        true
+      case _ => false
+    })
+  }
+
   test("verification evidence has no public constructor") {
     val errors = typeCheckErrors("""
       import eyes4s.io.*
