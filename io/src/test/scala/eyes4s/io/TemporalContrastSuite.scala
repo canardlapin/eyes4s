@@ -137,7 +137,9 @@ class TemporalContrastSuite extends munit.FunSuite:
     assert(outside.forall(_("retained_us") == "0"))
   }
 
-  test("typed temporal coverage exports exclusion counts and indices for 0, 1 and 2 exclusions") {
+  test(
+    "typed temporal coverage exports exclusion counts and indices for 0, 1 and 2 exclusions"
+  ) {
     // Onsets per trial are fixed by TemporalFixtures. With a [0, 620 ms) window a
     // fixation starting at or after 620 ms retains nothing: s1/a/encode excludes
     // none, s2/a/encode excludes index 3, and s1/b/encode excludes indices 2 and 3.
@@ -153,8 +155,9 @@ class TemporalContrastSuite extends munit.FunSuite:
         eyes4s.design.FailurePolicy.RequireAll
       )
     )
-    val window = get(StudyWindow.of("early", get(Window.of(Span.micros(0), Span.micros(620000)))))
-    val plan   = get(
+    val window =
+      get(StudyWindow.of("early", get(Window.of(Span.micros(0), Span.micros(620000)))))
+    val plan = get(
       TemporalStudyPlan.of(
         base,
         temporal.reference,
@@ -171,7 +174,10 @@ class TemporalContrastSuite extends munit.FunSuite:
     val tables   = get(BaselineExports.temporal(plan, result, codec, ScoreColumns.similarity))
     val coverage = tables.find(_.family == ResultFamily.TemporalCoverage).get
     def column(name: String) = coverage.columns.indexWhere(_.name == name)
-    assertEquals(coverage.columns(column("excluded_fixation_count")).kind, ResultColumnType.Int64)
+    assertEquals(
+      coverage.columns(column("excluded_fixation_count")).kind,
+      ResultColumnType.Int64
+    )
     assertEquals(
       coverage.columns(column("excluded_fixations_json")).kind,
       ResultColumnType.JsonUtf8
@@ -186,9 +192,10 @@ class TemporalContrastSuite extends munit.FunSuite:
         val key = get(
           codec.study.keys.decode(get(io.circe.parser.parse(row(column("key_json")).text)))
         )
-        val label = s"${key.participant}/${key.stimulus}/${key.phase}"
+        val label   = s"${key.participant}/${key.stimulus}/${key.phase}"
         val indices = get(
-          get(io.circe.parser.parse(row(column("excluded_fixations_json")).text)).as[Vector[Int]]
+          get(io.circe.parser.parse(row(column("excluded_fixations_json")).text))
+            .as[Vector[Int]]
         )
         assertEquals(
           row(column("excluded_fixation_count")),

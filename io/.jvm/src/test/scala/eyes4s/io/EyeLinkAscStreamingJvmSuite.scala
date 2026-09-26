@@ -125,13 +125,15 @@ class EyeLinkAscStreamingJvmSuite extends munit.FunSuite:
       firstProduced <- first.get
     yield (count, firstProduced)
 
-    run.unsafeToFuture().map { (count, firstProduced) =>
-      assertEquals(count, linesPerChunk.toLong * chunkCount.toLong)
-      assert(
-        firstProduced.exists(_ < chunkCount - 1),
-        s"first parsed line arrived after source chunk $firstProduced of ${chunkCount - 1}"
-      )
-    }(using munitExecutionContext)
+    run
+      .unsafeToFuture()
+      .map { (count, firstProduced) =>
+        assertEquals(count, linesPerChunk.toLong * chunkCount.toLong)
+        assert(
+          firstProduced.exists(_ < chunkCount - 1),
+          s"first parsed line arrived after source chunk $firstProduced of ${chunkCount - 1}"
+        )
+      }(using munitExecutionContext)
   }
 
   test("downstream cancellation runs the upstream finalizer") {

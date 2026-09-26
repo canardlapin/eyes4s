@@ -100,7 +100,9 @@ object ArrowResultExport:
       stream: OutputStream,
       allocator: BufferAllocator,
       batchRows: Int
-  ): F[Unit] = linked(schemaOf(table)).flatMap(schema => writeWith(table, schema, stream, allocator, batchRows))
+  ): F[Unit] = linked(schemaOf(table)).flatMap(schema =>
+    writeWith(table, schema, stream, allocator, batchRows)
+  )
 
   private def schemaOf(table: ResultTable): Schema =
     val columns = ResultColumn(
