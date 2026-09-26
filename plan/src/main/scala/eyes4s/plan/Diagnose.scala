@@ -219,6 +219,8 @@ object Diagnose:
     derived(C.repetitionPlan)(_.message)
   given diagnosticCode: Diagnose[DiagnosticCodeError, Nothing] =
     derived(C.diagnosticCode)(_.message)
+  given massLevel: Diagnose[MassLevelError, Nothing] = derived(C.massLevel)(_.message)
+
   given fixationEntropy: Diagnose[FixationEntropyError, Nothing] =
     derived(C.fixationEntropy)(_.message)
 

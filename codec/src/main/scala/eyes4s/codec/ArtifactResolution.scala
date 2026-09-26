@@ -335,6 +335,15 @@ trait ArtifactDecoders[K, U <: Unit2D]:
           codec.decode(document)
         )
 
+  /** A packed result receives only payloads named by its result-payload-of edges.
+    * Custom decoders retain their original refusal unless they support this route.
+    */
+  def resultWithPayloads(
+      document: Json,
+      @annotation.unused payloads: PayloadRef => Option[VerifiedPayload]
+  ): Either[CodecError, LoadedResult[K, U]] =
+    result(document)
+
   /** A standalone recording; `payloads` serves the verified payloads a packed
     * recording's `payload-of` relations name.
     */
@@ -437,6 +446,11 @@ object ArtifactDecoders:
     def input(document: Json)  = base.input(document)
     def ledger(document: Json) = base.ledger(document)
     def result(document: Json) = base.result(document)
+    override def resultWithPayloads(
+        document: Json,
+        payloads: PayloadRef => Option[VerifiedPayload]
+    ) =
+      base.resultWithPayloads(document, payloads)
     def recording(document: Json, payloads: PayloadRef => Option[VerifiedPayload]) =
       base.recording(document, payloads)
     def recordingInput(document: Json) = base.recordingInput(document)
@@ -485,6 +499,11 @@ object ArtifactDecoders:
       def input(document: Json)  = inputs.decodeInput(document)
       def ledger(document: Json) = inputs.decodeLedger(document)
       def result(document: Json) = results.decode(document)
+      override def resultWithPayloads(
+          document: Json,
+          payloads: PayloadRef => Option[VerifiedPayload]
+      ) =
+        results.decodeWithPayloads(document, payloads)
 
       def recording(document: Json, payloads: PayloadRef => Option[VerifiedPayload]) =
         val supported = Vector(
@@ -856,7 +875,17 @@ object ArtifactResolver:
       case ArtifactRole.AdmissionLedger =>
         attempt(entry, decoders.ledger(json)).map(Decoded.Ledger(_))
       case ArtifactRole.StudyResult =>
-        attempt(entry, decoders.result(json)).map(Decoded.Result(_))
+        if entry.schema != DensityArchiveDefinitions.studyResultV2 then
+          attempt(entry, decoders.result(json)).map(Decoded.Result(_))
+        else
+          val related = manifest.relations
+            .collect {
+              case ManifestRelation.ResultPayloadOf(result, payload) if result == entry.name =>
+                payload
+            }
+            .flatMap(payloads.get)
+          attempt(entry, decoders.resultWithPayloads(json, ref => related.find(_.ref == ref)))
+            .map(Decoded.Result(_))
       case ArtifactRole.RecordingInput =>
         attempt(entry, decoders.recordingInput(json)).flatMap(value =>
           checkIdentity(entry, value.hash).as(Decoded.Recorded(value))
@@ -893,7 +922,7 @@ object ArtifactResolver:
         attempt(entry, decoders.input(json)).flatMap(value =>
           checkIdentity(entry, value.hash).as(Decoded.Input(value))
         )
-      case ArtifactRole.Payload =>
+      case ArtifactRole.Payload | ArtifactRole.ResultPayload =>
         Left(ResolveError.Schema(entry.name, entry.schema, DefinitionId.packedArray))
       case ArtifactRole.RecordingPlan =>
         attempt(entry, decoders.recordingPlan(json)).map(Decoded.RecordingPlan(_))
@@ -980,6 +1009,21 @@ object ArtifactResolver:
                 input.channels.contentHash.render
               )
             )
+        case (
+              relation @ ManifestRelation.ResultPayloadOf(result, _),
+              Vector(Some(Decoded.Result(_)), Some(Decoded.Payload(payload)))
+            ) =>
+          val references = verified.collectFirst {
+            case (entry, bytes) if entry.name == result =>
+              document(entry, bytes).flatMap(json =>
+                attempt(entry, ResultManifest.references(json))
+              )
+          }
+          references match
+            case Some(Right(refs)) if refs.contains(payload.ref) => None
+            case Some(Right(_))    => fail(RelationMismatch.UnreferencedPayload(payload.ref))
+            case Some(Left(error)) => Some(error)
+            case None => fail(RelationMismatch.Unavailable(relation.endpoints.map(_._2)))
         case (
               ManifestRelation.PayloadOf(_, _),
               Vector(Some(Decoded.Channels(_, references)), Some(Decoded.Payload(payload)))

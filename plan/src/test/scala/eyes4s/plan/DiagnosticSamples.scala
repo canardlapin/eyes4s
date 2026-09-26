@@ -815,7 +815,16 @@ object DiagnosticSamples:
         4
       ),
       InspectionError.Orientation(1, StudyDesign.Matched, ReductionOrientation.EdgesOnce),
-      InspectionError.NoContrast(2)
+      InspectionError.NoContrast(2),
+      InspectionError.Geometry(
+        ResultRef.Estimation(0, k1),
+        GeometryError.FrameMismatch(fid, deg)
+      ),
+      InspectionError.GeometryDescription(
+        ResultRef.Estimation(0, k1),
+        "window",
+        Vector(Provenance.Param.Text("image"))
+      )
     ),
     generated[TimelineError]("TimelineError"),
     generated[MovingError]("MovingError"),
@@ -863,5 +872,6 @@ object DiagnosticSamples:
         Diagnostic.of(StudyFinding.UnmatchedFocal[StudyKey, Px](k2)),
         NonEmptyVector.one(k1)
       )
-    )
+    ),
+    generated[MassLevelError]("MassLevelError")
   )
