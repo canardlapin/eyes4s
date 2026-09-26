@@ -31,24 +31,29 @@ import io.circe.{Decoder, Encoder, Json}
 object StudioSchemaIds:
   val DocumentName: String = "studio.document"
   val ScienceName: String  = "studio.science"
+  val ProjectName: String  = "studio.project"
 
-  final case class Ids(document: DefinitionId, science: DefinitionId) derives CanEqual:
-    def all: Vector[DefinitionId] = Vector(document, science)
+  final case class Ids(document: DefinitionId, science: DefinitionId, project: DefinitionId)
+      derives CanEqual:
+    def all: Vector[DefinitionId] = Vector(document, science, project)
 
   private def id(name: String, version: Int): Either[DocumentError, DefinitionId] =
     DefinitionId.of(name, version).left.map(_ => DocumentError.BadSchemaId(name, version))
 
-  /** The whole document, presentation included (`project.json` in S2.3), and
-    * its science, whose digest is the document's scientific identity.
+  /** The whole document, presentation included; its science, whose digest
+    * is the document's scientific identity; and the first version of the
+    * `.eyes` bundle manifest, `project.json` (S2.3), whose later versions
+    * its `SchemaLadder` adds.
     */
   val ids: Either[DocumentError, Ids] =
     for
       document <- id(DocumentName, 1)
       science  <- id(ScienceName, 1)
-    yield Ids(document, science)
+      project  <- id(ProjectName, 1)
+    yield Ids(document, science, project)
 
   /** The ids as a codec failure, for building codecs. */
-  private[document] def forCodec: Either[CodecError, Ids] =
+  private[studio] def forCodec: Either[CodecError, Ids] =
     ids.left.map(e => CodecError.Unsupported("schema", e.message))
 
 /** The canonical JSON the document writer emits: every object's members in
