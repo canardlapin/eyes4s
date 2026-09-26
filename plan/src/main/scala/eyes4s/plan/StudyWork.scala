@@ -46,8 +46,15 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
     val matched: DirectedPairSchedule[K, K],
     val controls: DirectedPairSchedule[K, K],
     val candidateVisitsAcrossScales: Long,
-    val budget: PairScheduleBudget
+    val budget: PairScheduleBudget,
+    private[plan] val countCardinality: (
+        Vector[(K, Vector[K])],
+        PairingReport[K, K]
+    ) => MatchedCardinality[K],
+    private[plan] val keysPerDesign: Long
 ):
+  private[plan] val countIdentity = new StudyCountIdentity
+
   val inputReference: ArtifactRef[StudyInput[K, U]] = input.reference
   val layoutId: DefinitionId                        = plan.layout.id
   val methodId: DefinitionId                        = plan.method.id
@@ -172,6 +179,27 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
   ): Either[PlanError, StudyCursor[K, U, S, D]] =
     work(budget, occupancy, Vector.empty)
 
+  /** Start from counts produced by this exact prepared object, without revisiting pairs.
+    * Equivalent-looking descriptions or legacy input hashes are not ownership evidence.
+    */
+  def countedWork(
+      counts: StudyCounts[K],
+      budget: ComparisonBudget = ComparisonBudget.default
+  ): Either[PlanError, StudyCursor[K, U, S, D]] =
+    checkUnchanged
+      .flatMap(_ =>
+        Either.cond(
+          counts.owner eq countIdentity,
+          (),
+          PlanError.ChangedPreparedPlan(methodId, layoutId)
+        )
+      )
+      .flatMap(_ => counts.cardinality.refusal(plan.layout).toLeft(()))
+      .flatMap(_ => StudyWork.begin(plan, this, budget, occupancy, Vector.empty))
+
+  private[plan] def countRefusal(cardinality: MatchedCardinality[K]): Option[PlanError] =
+    cardinality.refusal(plan.layout)
+
   /** Resumable execution that refuses a method without bounded comparison
     * support, so an unsupported synchronous extension is diagnosed before any
     * work begins.
@@ -268,7 +296,10 @@ object PreparedStudy:
       matched,
       controls,
       candidateVisits.toLong,
-      budget
+      budget,
+      StudyPairingWork
+        .cardinalityBuilder(plan.layout, plan.pairing, input.trials.rows.map(_.key), right),
+      left.distinct.size.toLong
     )
 
 /** Which within-participant design a step worked on. */

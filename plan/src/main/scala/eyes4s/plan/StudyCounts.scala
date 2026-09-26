@@ -41,8 +41,15 @@ final class StudyCounts[K] private[plan] (
     val mapsPerScale: Long,
     val scales: Int,
     private[plan] val input: ArtifactRef[?],
-    private[plan] val description: Vector[(String, Vector[Provenance.Param])]
+    private[plan] val description: Vector[(String, Vector[Provenance.Param])],
+    private[plan] val owner: StudyCountIdentity,
+    val keysPerDesign: Long
 ):
-  val pairRowsPerScale: Long = matched.eligiblePairs + controls.eligiblePairs
-  val totalPairs: Long       = pairRowsPerScale * scales
-  val totalMaps: Long        = mapsPerScale * scales
+  val pairRowsPerScale: Long   = matched.eligiblePairs + controls.eligiblePairs
+  val totalPairs: Long         = pairRowsPerScale * scales
+  val totalMaps: Long          = mapsPerScale * scales
+  val totalReductionKeys: Long = keysPerDesign * 2L * scales
+  val totalContrastRows: Long  = keysPerDesign * scales
+
+/** Nominal evidence that completed counts came from this exact preparation. */
+private[plan] final class StudyCountIdentity

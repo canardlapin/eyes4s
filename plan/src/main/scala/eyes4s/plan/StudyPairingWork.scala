@@ -160,6 +160,15 @@ private[plan] object StudyPairingWork:
       .map(_._1)
       .distinct
       .collect { case k if byFocal(k).size > 1 => k -> byFocal(k).map(_._2) }
+    cardinalityBuilder(layout, pairing, keys, references)(multiple, report)
+
+  /** Source-only indexing belongs to preparation, never to the last count page. */
+  def cardinalityBuilder[K](
+      layout: StudyLayout[K],
+      pairing: StudyPairing,
+      keys: Vector[K],
+      references: Vector[K]
+  ): (Vector[(K, Vector[K])], PairingReport[K, K]) => MatchedCardinality[K] =
     val chosen   = chosenReferences(layout, pairing, references)
     val grouping = (pairing.matched, layout.occurrence) match
       case (MatchedReferences.SameOccurrence, Some(o)) =>
@@ -175,10 +184,12 @@ private[plan] object StudyPairingWork:
           .collect { case group if group.size > 1 => group }
           .toVector
           .sortBy(g => order(g.head))
-    new MatchedCardinality(
-      pairing,
-      multiple,
-      ambiguous,
-      report.unmatchedLeft,
-      itemConflicts(layout, keys)
-    )
+    val conflicts = itemConflicts(layout, keys)
+    (multiple, report) =>
+      new MatchedCardinality(
+        pairing,
+        multiple,
+        ambiguous,
+        report.unmatchedLeft,
+        conflicts
+      )

@@ -22,21 +22,27 @@ import eyes4s.kernel.{Provenance, Unit2D}
 /** A cancellable count of both exact study schedules, without estimating maps
   * or comparing them. Each step is one pair page, bounded by the pair quantum.
   * Completion includes unmatched-reference diagnostics, even for empty schedules.
-  * The quantum bounds candidate visits. Matched-phase completion also aggregates
-  * retained pairs and source keys for cardinality; that work is not quantum-bounded.
+  * Source-only cardinality metadata is indexed during preparation. Matched pairs
+  * aggregate in schedule order within each page; completion performs no bulk regrouping.
   */
 final class CountCursor[K] private[plan] (
     private val cursor: PairCursor[K, K],
     private val controls: DirectedPairSchedule[K, K],
     private val phase: CountPhase[K],
-    private val pairs: Vector[(K, K)],
+    private val groups: CountMatchedGroups[K],
     private val focal: Set[K],
-    private val cardinality: (Vector[(K, K)], PairingReport[K, K]) => MatchedCardinality[K],
+    private val cardinality: (
+        Vector[(K, Vector[K])],
+        PairingReport[K, K]
+    ) => MatchedCardinality[K],
     private val maps: Int,
     private val scales: Int,
     val visited: Long,
     private val input: ArtifactRef[?],
-    private val description: Vector[(String, Vector[Provenance.Param])]
+    private val description: Vector[(String, Vector[Provenance.Param])],
+    private val owner: StudyCountIdentity,
+    private val keysPerDesign: Long,
+    private val refused: MatchedCardinality[K] => Option[PlanError]
 ):
   def stage: StudyDesign = phase match
     case CountPhase.Matched()     => StudyDesign.Matched
@@ -61,7 +67,10 @@ final class CountCursor[K] private[plan] (
             scales,
             visited + units,
             input,
-            description
+            description,
+            owner,
+            keysPerDesign,
+            refused
           )
         )
       case PairPage.Done(page, units, report) =>
@@ -75,7 +84,7 @@ final class CountCursor[K] private[plan] (
         )
         phase match
           case CountPhase.Matched() =>
-            val matchedCardinality = cardinality(appendMatched(page), report)
+            val matchedCardinality = cardinality(appendMatched(page).finish, report)
             WorkStep.More(
               stage,
               units,
@@ -83,14 +92,17 @@ final class CountCursor[K] private[plan] (
                 controls.start,
                 controls,
                 CountPhase.Control(counts, matchedCardinality),
-                Vector.empty,
+                CountMatchedGroups.empty,
                 Set.empty,
                 cardinality,
                 maps,
                 scales,
                 visited + units,
                 input,
-                description
+                description,
+                owner,
+                keysPerDesign,
+                refused
               )
             )
           case CountPhase.Control(matched, matchedCardinality) =>
@@ -104,14 +116,41 @@ final class CountCursor[K] private[plan] (
                 maps.toLong,
                 scales,
                 input,
-                description
+                description,
+                owner,
+                keysPerDesign
               )
             )
     }
 
-  private def appendMatched(page: Vector[ScheduledPair[K, K]]): Vector[(K, K)] = phase match
-    case CountPhase.Matched()     => pairs ++ page.map(p => p.left -> p.right)
-    case CountPhase.Control(_, _) => Vector.empty
+  private[plan] def pairingRefusal: Option[PlanError] = phase match
+    case CountPhase.Matched()          => None
+    case CountPhase.Control(_, result) => refused(result)
+
+  private def appendMatched(page: Vector[ScheduledPair[K, K]]): CountMatchedGroups[K] =
+    phase match
+      case CountPhase.Matched()     => groups.append(page)
+      case CountPhase.Control(_, _) => CountMatchedGroups.empty
+
+/** The schedule is focal-major, so only one focal group is unfinished at a time. */
+private[plan] final case class CountMatchedGroups[K](
+    complete: Vector[(K, Vector[K])],
+    current: Option[(K, Vector[K])]
+):
+  def finish: Vector[(K, Vector[K])] = current match
+    case Some((key, values)) if values.size > 1 => complete :+ (key -> values)
+    case _                                      => complete
+
+  def append(page: Vector[ScheduledPair[K, K]]): CountMatchedGroups[K] =
+    page.foldLeft(this) { (state, pair) =>
+      state.current match
+        case Some((key, values)) if key == pair.left =>
+          state.copy(current = Some(key -> (values :+ pair.right)))
+        case _ => CountMatchedGroups(state.finish, Some(pair.left -> Vector(pair.right)))
+    }
+
+private[plan] object CountMatchedGroups:
+  def empty[K]: CountMatchedGroups[K] = CountMatchedGroups(Vector.empty, None)
 
 private[plan] enum CountPhase[K]:
   case Matched()
@@ -135,22 +174,17 @@ object CountCursor:
           work.matched.start,
           work.controls,
           CountPhase.Matched(),
-          Vector.empty,
+          CountMatchedGroups.empty,
           Set.empty,
-          (pairs, report) =>
-            StudyPairingWork.cardinalityFromPairs(
-              plan.layout,
-              plan.pairing,
-              work.input.trials.rows.map(_.key),
-              work.referenceIndices.map(i => work.input.trials.rows(i).key),
-              pairs,
-              report
-            ),
+          work.countCardinality,
           work.input.trials.rows.size,
           work.estimates.size,
           0L,
           work.inputReference,
-          work.description
+          work.description,
+          work.countIdentity,
+          work.keysPerDesign,
+          work.countRefusal
         )
       )
 
