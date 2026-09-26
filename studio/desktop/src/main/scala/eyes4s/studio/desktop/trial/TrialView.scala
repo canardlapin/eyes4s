@@ -50,8 +50,9 @@ enum TrialViewStatus derives CanEqual:
   * Decoded rasters are kept per asset for the life of the view.
   *
   * The host keeps the scene's aspect ([[TrialScene.fit]]), centred; the rest
-  * of the view is the stage colour. The view handles no input: picking and the
-  * roving cursor are S4.2. It is used on the FX thread only.
+  * of the view is the stage colour. The view handles no input itself:
+  * [[TrialInputAdapter]] adds picking, the roving cursor and the selection
+  * overlay (S4.2). It is used on the FX thread only.
   */
 final class TrialView(source: StimulusSource, loader: Executor) extends Region:
 
@@ -76,6 +77,9 @@ final class TrialView(source: StimulusSource, loader: Executor) extends Region:
 
   /** The canvas host, for the input adapter (S4.2) and tests. */
   def plotHost: CanvasPlotHost = host
+
+  /** The input the view shows, if any (its theme, stage and trial, for S4.2). */
+  def input: Option[TrialSceneInput] = current
 
   /** Shows `input`; its `rasters` are replaced by the ones this view loaded. */
   def show(input: TrialSceneInput): Unit =

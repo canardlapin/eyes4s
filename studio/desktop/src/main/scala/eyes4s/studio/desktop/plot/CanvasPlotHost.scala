@@ -53,6 +53,19 @@ enum PlotHostStatus derives CanEqual:
   /** The host was disposed and shows nothing. */
   case Disposed
 
+/** Draws feedback over a [[CanvasPlotHost]]'s frame without touching the
+  * scene (S4.2): hover, selection and focus rings.
+  */
+trait PlotOverlay:
+  /** Paints on the host's overlay canvas, whose raster is `frame`'s device
+    * raster (device pixels, cleared before each call). FX thread only.
+    */
+  def paint(gc: GraphicsContext, frame: PlotFrame): Unit
+
+/** How often a host compiled a scene, drew its base canvas and its overlay. */
+final case class PlotHostProfile(compiles: Long, baseDraws: Long, overlayDraws: Long)
+    derives CanEqual
+
 /** An Intaglio scene on a JavaFX canvas (S4.1).
   *
   * The host lays a [[PlotScene]] out for its current size and the output scale
@@ -75,12 +88,15 @@ enum PlotHostStatus derives CanEqual:
   * discarded, not drawn, and at most one compile per host is in flight.
   *
   * '''Hooks for input (S4.2).''' [[frame]] exposes the drawn [[PlotFrame]]: its
-  * scene identity, its transform, and the render plan a picking plan must be
-  * compiled from. The host itself handles no input. An input adapter listens
-  * on the host `Region`, not on the canvas: the canvas is an unmanaged child
-  * whose local coordinates are device pixels, while the host's local
-  * coordinates are the logical canvas coordinates of
-  * [[eyes4s.studio.viz.plot.CanvasPoint]].
+  * scene identity, its transform, its device scene with resolved viewport
+  * frames and its named picking plan. The host itself handles no input. An
+  * input adapter listens on the host `Region`, not on the canvases, which are
+  * mouse-transparent unmanaged children whose local coordinates are device
+  * pixels; the host's local coordinates are the logical canvas coordinates
+  * of [[eyes4s.studio.viz.plot.CanvasPoint]]. Feedback is drawn by a
+  * [[PlotOverlay]] on a second canvas above the scene: [[repaintOverlay]]
+  * redraws only that canvas, never compiling or redrawing the scene
+  * ([[profile]] counts both).
   *
   * '''Disposal.''' [[dispose]] stops listening to the scene and window,
   * releases the canvas raster and the renderer's image and pattern caches, and
@@ -100,11 +116,17 @@ final class CanvasPlotHost private[plot] (
   /** A host compiling on the shared studio plot compiler. */
   def this() = this(CanvasPlotHost.sharedCompiler)
 
-  private val canvas   = Canvas(0.0, 0.0)
-  private val toLayout = Scale(1.0, 1.0, 0.0, 0.0)
+  private val canvas          = Canvas(0.0, 0.0)
+  private val overlay         = Canvas(0.0, 0.0)
+  private val toLayout        = Scale(1.0, 1.0, 0.0, 0.0)
+  private val overlayToLayout = Scale(1.0, 1.0, 0.0, 0.0)
   canvas.setManaged(false)
+  canvas.setMouseTransparent(true)
   canvas.getTransforms.add(toLayout)
-  getChildren.add(canvas)
+  overlay.setManaged(false)
+  overlay.setMouseTransparent(true)
+  overlay.getTransforms.add(overlayToLayout)
+  getChildren.addAll(canvas, overlay)
   getStyleClass.add("plot-host")
 
   // The device raster rounds up to whole pixels; keep it inside the host.
@@ -125,6 +147,10 @@ final class CanvasPlotHost private[plot] (
   private var requested: Long                                       = 0L
   private var inFlight: Boolean                                     = false
   private var disposed: Boolean                                     = false
+  private var painter: Option[PlotOverlay]                          = None
+  private var compiles: Long                                        = 0L
+  private var baseDraws: Long                                       = 0L
+  private var overlayDraws: Long                                    = 0L
 
   // The output scale of the window this host is in. The chain observes the
   // current scene's window property and that window's scale only while the
@@ -180,6 +206,31 @@ final class CanvasPlotHost private[plot] (
       plotScene = Some(scene)
       schedule()
 
+  /** Draws `next` over the scene from now on; `None` removes the overlay. */
+  def setOverlay(next: Option[PlotOverlay]): Unit =
+    onFxThread("setOverlay")
+    if !disposed then
+      painter = next
+      repaintOverlay()
+
+  /** Redraws the overlay over the frame on the canvas; the scene is untouched. */
+  def repaintOverlay(): Unit =
+    onFxThread("repaintOverlay")
+    if !disposed then
+      val gc = overlay.getGraphicsContext2D
+      gc.clearRect(0.0, 0.0, overlay.getWidth, overlay.getHeight)
+      for
+        frame <- shown
+        paint <- painter
+      do
+        gc.save()
+        try paint.paint(gc, frame)
+        finally gc.restore()
+        overlayDraws += 1
+
+  /** How often this host compiled, drew the scene and drew the overlay. */
+  def profile: PlotHostProfile = PlotHostProfile(compiles, baseDraws, overlayDraws)
+
   /** Removes the scene and blanks the canvas. */
   def clear(): Unit =
     onFxThread("clear")
@@ -208,9 +259,12 @@ final class CanvasPlotHost private[plot] (
       plotScene = None
       surface = Right(None)
       drawing = None
+      painter = None
       blank()
       canvas.setWidth(0.0)
       canvas.setHeight(0.0)
+      overlay.setWidth(0.0)
+      overlay.setHeight(0.0)
       getChildren.clear()
       statusWrapper.set(PlotHostStatus.Disposed)
 
@@ -287,9 +341,11 @@ final class CanvasPlotHost private[plot] (
       if token == requested then
         result match
           case Right(frame) =>
+            compiles += 1
             try
               draw(frame)
               shown = Some(frame)
+              repaintOverlay()
               statusWrapper.set(PlotHostStatus.Drawn(frame))
             catch
               case NonFatal(e) =>
@@ -318,6 +374,10 @@ final class CanvasPlotHost private[plot] (
     if canvas.getHeight != height then canvas.setHeight(height)
     toLayout.setX(1.0 / frame.surface.deviceScale)
     toLayout.setY(1.0 / frame.surface.deviceScale)
+    if overlay.getWidth != width then overlay.setWidth(width)
+    if overlay.getHeight != height then overlay.setHeight(height)
+    overlayToLayout.setX(1.0 / frame.surface.deviceScale)
+    overlayToLayout.setY(1.0 / frame.surface.deviceScale)
     val gc = canvas.getGraphicsContext2D
     // With no transform or clip, clearing the whole canvas also discards its
     // queued commands, so redraws do not accumulate.
@@ -325,10 +385,12 @@ final class CanvasPlotHost private[plot] (
     val context = drawing.getOrElse(renderer(gc))
     drawing = Some(context)
     JavaFxRenderer.draw(frame.program, context)
+    baseDraws += 1
 
   private def blank(): Unit =
     shown = None
     canvas.getGraphicsContext2D.clearRect(0.0, 0.0, canvas.getWidth, canvas.getHeight)
+    overlay.getGraphicsContext2D.clearRect(0.0, 0.0, overlay.getWidth, overlay.getHeight)
 
 object CanvasPlotHost:
 
