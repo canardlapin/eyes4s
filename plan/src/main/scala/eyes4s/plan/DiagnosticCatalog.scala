@@ -841,6 +841,17 @@ object DiagnosticCatalog:
     "Aggregate"
   )
 
+  // ---------------------------------------------------------------- appended by CR4
+  /** The generic finding of the recipe families added after the fixation,
+    * recording and temporal studies; severity is the finding's own.
+    */
+  val analysisFinding: DiagnosticFamily = error("analysis-finding")(
+    "MissingArtifact",
+    "ArtifactMismatch",
+    "Refused",
+    "DataDependent"
+  )
+
   /** Families whose error type no longer exists. Their codes stay issued, in
     * their original place in [[issuedFamilies]], so a retired code is never
     * reused with another meaning; no live error projects to one.
@@ -940,7 +951,8 @@ object DiagnosticCatalog:
     repetitionPlan,
     diagnosticCode,
     fixationEntropy,
-    template
+    template,
+    analysisFinding
   )
 
   /** Every live family, grouped as documented. */

@@ -85,6 +85,15 @@ class StudyV2JvmSuite extends munit.FunSuite:
     )
   }
 
+  test("the pinned trial plan decodes byte-identically through the general trial route") {
+    val pinned = resource("study-trial-v2.json")
+    val cosine = StudyCodecs.trialSimilarity[Px](eyes4s.plan.ComparisonMethods.cosine).codec
+    assertEquals(get(cosine.encode(get(cosine.parse(pinned)))).spaces2, pinned)
+    val route  = get(ArtifactDecoders.trial[Px])
+    val loaded = get(route.plan(get(io.circe.parser.parse(pinned))))
+    assertEquals(get(loaded.encode).spaces2, pinned)
+  }
+
   test("the portable mirrors carry the same JSON values") {
     documents.foreach { (file, json, mirror) =>
       assertEquals(get(io.circe.parser.parse(mirror)), json, file)

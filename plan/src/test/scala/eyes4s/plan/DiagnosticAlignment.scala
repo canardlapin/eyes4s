@@ -127,6 +127,8 @@ final class DiagnosticAlignment(
       fields.headOption.contains("kind" -> Operand.Token(v.productPrefix)) &&
       fields.size == v.productArity + 1
     case (v: scala.reflect.Enum, Operand.Cause(d)) => nestedCode(v, d)
+    // A diagnostic a generic finding carries is its own, already projected, cause.
+    case (v: Diagnostic[?], Operand.Cause(d))      => d == v
     case (v: scala.reflect.Enum, Operand.Token(x)) =>
       !errorLike(v) && (x == v.toString || (v match
         case p: FailurePolicy => x == p.render
@@ -150,11 +152,12 @@ final class DiagnosticAlignment(
         case (n: Int, x) => x == BigInt(n)
         case _           => false
       }
-    case (v: Vector[?], Operand.Names(xs))      => xs == v.map(_.toString)
-    case (v: Vector[?], Operand.Keys(xs))       => xs == v
-    case (v: Vector[?], Operand.Params(xs))     => xs == v
-    case (v: Vector[?], Operand.Parameters(xs)) => xs == v
-    case (v: Vector[?], Operand.Items(xs))      =>
+    case (v: Vector[?], Operand.Names(xs))        => xs == v.map(_.toString)
+    case (v: Vector[?], Operand.Keys(xs))         => xs == v
+    case (v: NonEmptyVector[?], Operand.Keys(xs)) => xs == v.toVector
+    case (v: Vector[?], Operand.Params(xs))       => xs == v
+    case (v: Vector[?], Operand.Parameters(xs))   => xs == v
+    case (v: Vector[?], Operand.Items(xs))        =>
       xs.size == v.size && v.zip(xs).forall {
         case (change: PlanChange, Operand.Fields(fields)) =>
           fields == Vector(
