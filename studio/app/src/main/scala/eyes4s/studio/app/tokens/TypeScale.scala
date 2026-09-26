@@ -109,8 +109,9 @@ object FontFace:
     values.toList.filter(_.family == family).sortBy(_.weight.css)
 
   /** The bundled face of `family` closest to `weight`, the lighter one on a
-    * tie. Plex Mono ships 400 and 500 only, so a 600 title set in Mono uses
-    * 500; Source Serif 4 ships 400 and 600, so 500 uses 400.
+    * tie. The studio bundles Plex Mono at 400 and 500 only (DESIGN_SPEC
+    * section 7; upstream also ships a SemiBold), so a 600 title set in Mono
+    * uses 500. Source Serif 4 is bundled at 400 and 600, so 500 uses 400.
     */
   def nearest(family: TypeFamily, weight: TypeWeight): FontFace =
     // Every family has a regular face, so the list is never empty.

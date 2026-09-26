@@ -1243,7 +1243,7 @@ ThisBuild / checkStudioTypeScale := {
   val found = TypeScaleLint.scanTree((ThisBuild / baseDirectory).value)
   if (found.nonEmpty)
     sys.error(
-      s"""|Font size outside the type scale.
+      s"""|Font size outside the type scale, or a font weight.
           |
           |${found.map("  - " + _.render).mkString("\n")}
           |

@@ -249,6 +249,38 @@ class IconCatalogSuite extends StudioFxSuite:
       }
   }
 
+  test("-es-current aliases -es-ink, which every theme's token sheet defines on .root") {
+    import eyes4s.studio.app.tokens.{TokenCss, TokenRef}
+    import javafx.css.CssParser
+    import scala.jdk.CollectionConverters.ListHasAsScala
+    def rootDeclarations(css: String): Map[String, String] =
+      CssParser()
+        .parse(css)
+        .getRules
+        .asScala
+        .filter(_.getSelectors.asScala.exists(_.toString == "*.root"))
+        .flatMap(_.getDeclarations.asScala)
+        .map(d => d.getProperty -> d.getParsedValue.toString)
+        .toMap
+    val ink   = TokenCss.javaFxName(TokenRef.Themed(ThemedToken.Ink))
+    val icons = String(
+      getClass.getClassLoader
+        .getResourceAsStream(StudioStyles.iconStylesheetResource)
+        .readAllBytes,
+      UTF_8
+    )
+    assertEquals(ink, "-es-ink")
+    // The whole token, not a prefix: -es-ink-2 is not the alias.
+    val refersToInk = s"(?s).*(?<![\\w-])${ink}(?![\\w-]).*".r
+    assert(
+      refersToInk.matches(rootDeclarations(icons)("-es-current")),
+      rootDeclarations(icons)
+    )
+    Theme.values.foreach { theme =>
+      assert(rootDeclarations(TokenCss.javaFx(theme)).contains(ink), s"$theme defines no $ink")
+    }
+  }
+
   fxStage.test("a control recolours its icon by redefining -es-current") { fx =>
     val icon = fx.runOnFx {
       val g = StudioIcons.graphic(Icon.RoleQuery)

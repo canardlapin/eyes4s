@@ -20,8 +20,8 @@ import sbt._
   * 7, ticket S1.2).
   *
   * The scale is `eyes4s.studio.app.tokens.TypeSize`: 11, 12, 13, 16 and 28 px.
-  * The build cannot link studio code, so [[allowedPx]] repeats it and
-  * `TypeScaleSuite` (studio-desktop) fails if the two differ.
+  * The build cannot link studio code, so [[allowedPx]] repeats it, and
+  * `FontLoadSuite` (studio-desktop) fails if the two differ.
   *
   * The lint reads the main CSS, FXML and Scala sources of every studio project
   * and fails on a font size that is not one of the five, written in pixels:
@@ -31,6 +31,13 @@ import sbt._
   *     keyword; a bare number there is a weight);
   *   - in Scala, the same inside inline style strings, and the literal size of
   *     `Font.font(...)`, `Font.loadFont(...)` and `new Font(...)`.
+  *
+  * It also fails on any font weight. JavaFX maps every weight below bold to
+  * the regular face, so weights go through the faces' legacy family names
+  * (`FontFace.javaFxFamily`, `studio-type.css`). A weight is a
+  * `-fx-font-weight` or `font-weight` declaration, a weight in a font
+  * shorthand (`600`, `bold`, `bolder`, `lighter`), and in Scala any use of
+  * `FontWeight`.
   *
   * Comments are ignored. [[selfTest]] plants violations and clean inputs;
   * `checkStudioTypeScale` (in `studioStyleCheck`) runs it before the scan.
@@ -46,10 +53,15 @@ object TypeScaleLint {
   /** File extensions the lint reads. */
   val extensions: Seq[String] = Seq("scala", "css", "fxml")
 
-  /** One font size outside the scale, located by file and line. */
-  final case class Violation(file: String, line: Int, size: String) {
+  /** One font size outside the scale, or one font weight (`weight`), located
+    * by file and line.
+    */
+  final case class Violation(file: String, line: Int, size: String, weight: Boolean = false) {
     def render: String =
-      s"$file:$line  '$size' is not one of ${allowedPx.map(_ + "px").mkString(", ")}"
+      if (weight)
+        s"$file:$line  '$size' sets a font weight; name the face's family (studio-type.css)"
+      else
+        s"$file:$line  '$size' is not one of ${allowedPx.map(_ + "px").mkString(", ")}"
   }
 
   /** True when a path under a studio root is main source the lint reads. */
@@ -92,6 +104,17 @@ object TypeScaleLint {
     "(?<![\\w$])(?:Font\\s*\\.\\s*(?:font|loadFont)|new\\s+(?:javafx\\.scene\\.text\\.)?Font)\\s*\\(([^()]*)\\)".r
   private val numericLiteral = "^[+-]?(?:[0-9]+\\.?[0-9]*|\\.[0-9]+)[dDfF]?$".r
 
+  // `-fx-font-weight: 600` / `font-weight: bold`.
+  private val weightDeclaration =
+    "(?i)(?<![\\w-])(?:-fx-)?font-weight\\s*:\\s*([^;}\"\\n]+)".r
+
+  // A weight token in a shorthand value.
+  private val shorthandWeight =
+    "(?i)(?<![\\w.-])([1-9]00|bold|bolder|lighter)(?![\\w.-])".r
+
+  // javafx.scene.text.FontWeight, however it is imported.
+  private val fontWeight = "(?<![\\w$])FontWeight(?![\\w$])".r
+
   private val cssComment = "(?s)/\\*.*?\\*/".r
 
   private def allowed(value: String): Boolean = {
@@ -122,8 +145,19 @@ object TypeScaleLint {
       }
       shorthandSize.findAllMatchIn(value).collect {
         case s if !allowed(s.group(1)) => Violation(fileName, lineOf(m.start), s.group(1))
+      } ++ shorthandWeight.findAllMatchIn(value).map { w =>
+        Violation(fileName, lineOf(m.start), w.group(1), weight = true)
       }
     }
+    val declaredWeights = weightDeclaration.findAllMatchIn(readable).map { m =>
+      Violation(fileName, lineOf(m.start), m.matched.trim, weight = true)
+    }
+    val weightType =
+      if (!scala) Iterator.empty
+      else
+        fontWeight.findAllMatchIn(readable).map { m =>
+          Violation(fileName, lineOf(m.start), m.matched, weight = true)
+        }
     val calls =
       if (!scala) Iterator.empty
       else
@@ -136,7 +170,9 @@ object TypeScaleLint {
             else Some(Violation(fileName, lineOf(m.start), last))
           }
         }
-    (declared ++ short ++ calls).toSeq.sortBy(v => (v.line, v.size))
+    (declared ++ short ++ calls ++ declaredWeights ++ weightType).toSeq.sortBy(v =>
+      (v.line, v.size)
+    )
   }
 
   /** Every font size outside the scale in the studio sources under `buildRoot`. */
@@ -169,13 +205,21 @@ object TypeScaleLint {
       "H.scala" -> "node.setStyle(\"-fx-font-size: 20px;\")",
       "I.scala" -> "label.setFont(Font.font(\"IBM Plex Sans\", 14))",
       "J.scala" -> "Font.loadFont(in, 18.0)",
-      "K.scala" -> "new Font(\"IBM Plex Mono\", 10d)"
+      "K.scala" -> "new Font(\"IBM Plex Mono\", 10d)",
+      "l.css"   -> ".x { -fx-font-weight: 600; }",
+      "m.css"   -> ".x { -fx-font: bold 13px \"IBM Plex Sans\"; }",
+      "n.css"   -> ".x { -fx-font: 500 13px \"IBM Plex Sans\"; }",
+      "o.fxml"  -> "<Label style=\"-fx-font-weight: bold\"/>",
+      "P.scala" -> "node.setStyle(\"-fx-font-weight: 600\")",
+      "Q.scala" -> "Font.font(\"IBM Plex Sans\", FontWeight.SEMI_BOLD, 13)",
+      "R.scala" -> "import javafx.scene.text.{Font, FontWeight}"
     )
     val clean: Seq[(String, String)] = Seq(
       "a.css"   -> ".t13 { -fx-font-family: \"IBM Plex Sans SmBld\"; -fx-font-size: 13px; }",
-      "b.css"   -> ".x { -fx-font: 600 13px \"IBM Plex Sans\"; }",
+      "b.css"   -> ".x { -fx-font: 13px \"IBM Plex Sans SmBld\"; }",
       "c.css"   -> "/* -fx-font-size: 14px; */ .x { -fx-font-size: 28px; }",
-      "d.css"   -> ".x { -fx-font-weight: 600; -fx-font-family: \"IBM Plex Mono\"; }",
+      "d.css"   -> ".x { -fx-font-family: \"IBM Plex Mono Medm\"; }",
+      "J.scala" -> "// FontWeight.BOLD is not used\nval fontWeightless = 1",
       "E.scala" -> "// setStyle(\"-fx-font-size: 20px\")\nval x = 1",
       "F.scala" -> "Font.loadFont(in, TypeScale.body.px.toDouble)",
       "G.scala" -> "Font.font(\"IBM Plex Sans\", 12)",
