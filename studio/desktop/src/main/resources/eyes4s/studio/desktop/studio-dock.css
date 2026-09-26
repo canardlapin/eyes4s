@@ -1,0 +1,55 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* The studio's scaladock theme (ticket S1.5a), a DockTheme.Custom sheet.
+ *
+ * It maps every -dock-* variable onto a studio token, so it follows the
+ * light and dark token sheets (studio.css, studio-dark.css) with no colour
+ * of its own, and restyles the tab strip as the boards draw it: 28 px
+ * headers on surface-2, the selected tab on surface in ink 600, and the
+ * focused group's selected tab with a 2 px accent top rule. */
+
+.dock {
+  -dock-base: -es-surface;
+  -dock-surface: -es-surface-2;
+  -dock-surface-raised: -es-surface;
+  -dock-surface-veil: -es-surface-2;
+  -dock-outline: -es-hairline;
+  -dock-accent: -es-accent;
+  -dock-accent-soft: -es-accent-soft;
+  -dock-text: -es-ink-2;
+  -dock-text-strong: -es-ink;
+  -dock-hover: -es-surface-3;
+  -dock-pressed: -es-surface-3;
+  -dock-shadow: -es-neutral-mark;
+  -dock-selected-bar: -es-surface;
+  -dock-drop-scrim: -es-neutral-mark;
+  -dock-slot-fill: -es-accent-soft;
+}
+
+.dock-tab {
+  -fx-padding: 0 12 0 12;
+  -fx-border-color: transparent -es-hairline transparent transparent;
+  -fx-border-width: 0 1 0 0;
+}
+
+.dock-tab-title {
+  -fx-font-size: 12px;
+}
+
+.dock-tab:selected .dock-tab-title {
+  -fx-font-family: "IBM Plex Sans SmBld";
+}

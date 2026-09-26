@@ -854,5 +854,14 @@ object DiagnosticSamples:
     generated[FixationEntropyError]("FixationEntropyError"),
     generated[TemplateError]("TemplateError"),
     generated[SourceIdentityError]("SourceIdentityError"),
-    generated[ImportSpecError]("ImportSpecError")
+    generated[ImportSpecError]("ImportSpecError"),
+    family[AnalysisFinding[StudyKey]]("AnalysisFinding")(
+      AnalysisFinding.MissingArtifact(studyRef),
+      AnalysisFinding.ArtifactMismatch(studyRef, studyRef2),
+      AnalysisFinding.refused[PlanError, StudyKey](PlanError.MissingAngularScale(1)),
+      AnalysisFinding.DataDependent(
+        Diagnostic.of(StudyFinding.UnmatchedFocal[StudyKey, Px](k2)),
+        NonEmptyVector.one(k1)
+      )
+    )
   )

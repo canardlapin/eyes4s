@@ -33,7 +33,7 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
 
   /** The issued table before CR5: codes are only ever issued, never changed
     * or reused, and a retired code keeps its place, so taking away the codes
-    * CR5, CR2 and SourceRef added leaves exactly this table.
+    * CR5, CR2, CR4 and SourceRef added leaves exactly this table.
     */
   private val StableCount  = 445
   private val StableDigest = "fb7ffbd3d3db7f63"
@@ -59,6 +59,10 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
     (SourceDiagnostics.identity.codes ++ SourceDiagnostics.importDescription.codes)
       .map(_.render)
       .toSet
+
+  /** The codes CR4 added: the generic analysis finding. */
+  private val Cr4Codes: Set[String] =
+    DiagnosticCatalog.analysisFinding.codes.map(_.render).toSet
 
   test(
     "every cataloged family is sampled, in catalog order, through its own Diagnose instance"
@@ -158,7 +162,7 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
     )
     val rendered = DiagnosticCatalog.issued.map(_.render)
     val stable   =
-      rendered.filterNot(code => Cr5Codes(code) || Cr2Codes(code) || SourceCodes(code))
+      rendered.filterNot(code => Cr5Codes(code) || Cr2Codes(code) || Cr4Codes(code) || SourceCodes(code))
     assertEquals(stable.size, StableCount)
     assertEquals(ContentHash.ofString(stable.mkString("\n")).render, StableDigest)
     assertEquals(rendered.size, PinnedCount)
@@ -355,12 +359,15 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   }
 
   test("every finding's diagnostic names exactly its typed affected trials") {
-    val findings = all.filter(f => Set("study-finding", "temporal-finding")(f.family.name))
-    assert(findings.size == 2)
+    val findings = all.filter(f =>
+      Set("study-finding", "temporal-finding", "analysis-finding")(f.family.name)
+    )
+    assert(findings.size == 3)
     findings.flatMap(_.samples).foreach { (sample, diagnostic) =>
       val keys = sample match
         case f: StudyFinding[?, ?]    => f.keys
         case f: TemporalFinding[?, ?] => f.keys
+        case f: AnalysisFinding[?]    => f.keys
         case other                    => fail(s"not a finding: $other")
       assertEquals(diagnostic.affectedTrials, keys.distinct, s"$sample")
     }
