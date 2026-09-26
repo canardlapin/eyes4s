@@ -145,8 +145,14 @@ class PointSamplingSuite extends munit.FunSuite:
     assertEquals(rows(0).controls.map(_.occurrence.phase).toSet, Set("b1", "c1"))
     assertEquals(rows(2).controls.map(_.template.stimulus).toSet, Set("A", "C"))
     assertEquals(rows(2).controls.count(_.template.stimulus == "A"), 1)
-    // The first matching source occurrence is reported for the shared template.
-    assertEquals(rows(2).controls.find(_.template.stimulus == "A").get.occurrence.phase, "a1")
+    // The shared template is represented by one of its occurrences, whatever the source order.
+    def representative(r: Vector[PointTrialResult[StudyKey, Px]]) =
+      r.find(_.key.phase == "b1").get.controls.find(_.template.stimulus == "A").get.occurrence
+    assert(Set("a1", "a2").contains(representative(rows).phase))
+    assertEquals(
+      representative(run(source = StudyInput(Trials(input.trials.rows.reverse))).rows),
+      representative(rows)
+    )
     assertEquals(
       rows(0).controls.find(_.occurrence.phase == "b1").get.values.take(3),
       Vector(Right(6.0), Right(2.0), Right(9.0))

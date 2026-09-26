@@ -52,8 +52,10 @@ The candidate population is the set of **distinct templates** matched by at leas
 source; a template no source matches is never a candidate. Selection stays within participant and
 excludes every same-stimulus template before applying the cap. Two distinct source keys matched to
 template A therefore supply one candidate when evaluating B, and it is not eligible when
-evaluating A. Each `PointControl` names the template and the first admitted source occurrence
-that matched it. Every selected control template is sampled along the focal source's path, not
+evaluating A. Each `PointControl` names the template and the matching source occurrence that
+represents it: the one with the smallest key digest, so the choice does not depend on source
+order, and a template matched once is represented by that occurrence, leaving keyed selection
+and saved results for such inputs unchanged. Every selected control template is sampled along the focal source's path, not
 its own source's path. This is the reference population: `sample_density_time` counts each
 template once. Earlier eyes4s revisions counted the source-occurrence multiset, so a template
 matched by two sources was counted and could be drawn twice.

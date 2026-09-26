@@ -160,8 +160,9 @@ object PointSamplingMean:
         Either.cond(mean.isFinite, mean, PointSamplingError.NonFinite(level, good.size, mean))
     new PointMean(values.size, good.size, policy, result)
 
-/** One control template: `template` is its key and `occurrence` the first admitted source that
-  * matched it, in source order. Each distinct template is a single candidate.
+/** One control template: `template` is its key and `occurrence` the admitted source that
+  * represents it, the matching occurrence with the smallest key digest. Each distinct template is
+  * a single candidate.
   */
 final case class PointControl[K](
     occurrence: K,
@@ -217,7 +218,7 @@ final class PointSamplingResult[K, U <: Unit2D] private[plan] (
 
 /** Static templates sampled along each focal path. Control candidates are the distinct templates
   * matched by at least one admitted source: each counts once however many sources match it, and is
-  * represented by the first such source occurrence. All same-stimulus templates are excluded before
+  * represented by the matching source occurrence with the smallest key digest. All same-stimulus templates are excluded before
   * selection. Missing/ambiguous sources stay in result rows, and never become an arbitrary first
   * match.
   */
@@ -249,13 +250,18 @@ final class PointSamplingPlan[K, U <: Unit2D] private (
     val admitted = Trials(
       sources.zip(resolved).collect { case (row, Right(index)) => Trial(row.key, (), index) }
     )
-    // One candidate per distinct matched template, keyed by the template itself, so a template
-    // matched by several sources is neither counted nor drawn more than once, and selection does
-    // not depend on source order. Its first matching source occurrence is reported beside it.
-    val firstOccurrence = admitted.rows.groupBy(_.value).view.mapValues(_.head.key).toMap
-    val candidates      = Trials(templates.rows.zipWithIndex.collect {
-      case (t, i) if firstOccurrence.contains(i) => Trial(t.key, (), i)
-    })
+    // One candidate per distinct matched template, so a template matched by several sources is
+    // neither counted nor drawn more than once. It is represented by the matching source
+    // occurrence with the smallest key digest: independent of source order, and the occurrence
+    // itself when only one source matches, so keyed selection is unchanged for such inputs.
+    val candidates = Trials(
+      admitted.rows
+        .groupBy(_.value)
+        .values
+        .map(_.minBy(row => KeyDigest[K].digest(row.key).value))
+        .toVector
+        .sortBy(_.value)
+    )
     val relation =
       Relation.sameOn(layout.participant).and(Relation.differentOn(layout.stimulus))
     val paired = spec.controls match
@@ -289,8 +295,8 @@ final class PointSamplingPlan[K, U <: Unit2D] private (
       val matched  = sample(target)
       val controls = selected.getOrElse(row.key, Vector.empty).map { (_, candidate) =>
         PointControl(
-          firstOccurrence(candidate.value),
           candidate.key,
+          templates.rows(candidate.value).key,
           sample(Right(candidate.value))
         )
       }
