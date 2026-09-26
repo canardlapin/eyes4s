@@ -7145,7 +7145,8 @@
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.AnalysisReportSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
+          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
       {
@@ -7241,7 +7242,8 @@
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.AnalysisReportSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
+          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
       {
@@ -7304,7 +7306,8 @@
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.AnalysisReportSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
+          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
       {
@@ -7370,7 +7373,8 @@
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.AnalysisReportSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
+          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
       {
@@ -7575,7 +7579,8 @@
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.AnalysisReportSuite",
-          "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
+          "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
       {
