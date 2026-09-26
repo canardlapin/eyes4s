@@ -75,7 +75,7 @@ object BaselineExportGuide:
       if a == 3 then Left(CompareError.ZeroNorm("analytic failure", a, b)) else Right(a + b)
     }
     pairTable <- checked(
-      BaselineExports.pairs[StudyKey, Px, Double, SignedDifference](
+      ResultExports.pairs[StudyKey, Px, Double, SignedDifference](
         evaluated,
         keys,
         ScoreColumns.scalar,
@@ -84,7 +84,7 @@ object BaselineExportGuide:
     )
     reduced = evaluated.meanByLeft(FailurePolicy.RequireAll)
     reductionTable <- checked(
-      BaselineExports.reductions[StudyKey, Px, Double, SignedDifference](
+      ResultExports.reductions[StudyKey, Px, Double, SignedDifference](
         reduced,
         evaluated,
         keys,
@@ -94,7 +94,7 @@ object BaselineExportGuide:
     )
     compared      <- checked(contrast(reduced, reduced))
     contrastTable <- checked(
-      BaselineExports.contrasts[StudyKey, Px, Double, SignedDifference](
+      ResultExports.contrasts[StudyKey, Px, Double, SignedDifference](
         compared,
         evaluated,
         evaluated,
@@ -122,7 +122,7 @@ object BaselineExportGuide:
       if a == 3 then Left(CompareError.ZeroNorm("analytic failure", a, b)) else Right(multi)
     }
     structuredTable <- checked(
-      BaselineExports.pairs[StudyKey, Px, MultiMatchScore, MultiMatchDifference](
+      ResultExports.pairs[StudyKey, Px, MultiMatchScore, MultiMatchDifference](
         structured,
         keys,
         ScoreColumns.multiMatch,
@@ -173,7 +173,7 @@ object BaselineExportGuide:
       keys
     )
     pointTables <- checked(
-      BaselineExports.points(PointSamplingArchive.run(pointPlan), pointCodec)
+      ResultExports.points(PointSamplingArchive.run(pointPlan), pointCodec)
     )
     repeatLayout <- checked(
       RepetitionLayout.of[StudyKey, String, String, String](
@@ -202,7 +202,7 @@ object BaselineExportGuide:
       )
     )
     repeatTables <- checked(
-      BaselineExports.repetition(
+      ResultExports.repetition(
         repeatPlan,
         RepetitionPlanCodec.of[StudyKey, Px](repeatId, repeatRegistry, keys),
         keys
@@ -215,7 +215,7 @@ object BaselineExportGuide:
       .zip(baseKeys)
       .traverse { (r, k) => checked(TemplateObservation.of(k, r._3, Vector(r._1), r._2)) }
     split       <- checked(TemplateSplit.of(basis, observations, Set("held")))
-    fixedTables <- checked(BaselineExports.fixedTemplate(split, recipeId, keys))
+    fixedTables <- checked(ResultExports.fixedTemplate(split, recipeId, keys))
     learnedRows <- Vector(
       ("train", "a", masses(0), 2.0),
       ("train", "b", masses(1), 1.0),
@@ -235,11 +235,11 @@ object BaselineExportGuide:
     learnedSplit <- checked(
       MapTemplateSplit.of(learnedRows, Set("held"), "participant split", "response units")
     )
-    learnedTables <- checked(BaselineExports.learnedTemplate(learnedSplit, learnedId, keys))
+    learnedTables <- checked(ResultExports.learnedTemplate(learnedSplit, learnedId, keys))
     predictors    <- Vector("first", "second").traverse(s => checked(PredictorId.of(s)))
     predictorSet  <- checked(PredictorSet.of(predictors.zip(masses.take(2))))
     ols       <- checked(SurfaceDecomposition.ols(masses(2), predictorSet, Intercept.Exclude))
-    olsTables <- checked(BaselineExports.ols(ols))
+    olsTables <- checked(ResultExports.ols(ols))
     studyInput = StudyInput(
       Trials((for phase <- Vector("encode", "recall"); k <- baseKeys.take(2)
       yield Trial(k.copy(phase = phase), (), path)))
@@ -257,7 +257,7 @@ object BaselineExportGuide:
     )
     studyResult <- checked(studyPlan.run(studyInput))
     study       <- checked(
-      BaselineExports.study(
+      ResultExports.study(
         studyPlan,
         studyResult,
         StudyCodecs.cosine[Px],
@@ -289,7 +289,7 @@ object BaselineExportGuide:
     temporalResult <- checked(temporalPlan.run(temporalInput))
     temporalSchema <- id("temporal")
     temporal       <- checked(
-      BaselineExports.temporal(
+      ResultExports.temporal(
         temporalPlan,
         temporalResult,
         new TemporalStudyCodec(temporalSchema, StudyCodecs.cosine[Px]),
@@ -297,7 +297,7 @@ object BaselineExportGuide:
       )
     )
     empty <- checked(
-      ResultTable.of(pairTable.family, pairTable.columns, Vector.empty, pairTable.context)
+      ResultTable.of(pairTable.family, pairTable.columns, Vector.empty, pairTable.context.circe)
     )
   yield Vector(
     "pairs"            -> pairTable,

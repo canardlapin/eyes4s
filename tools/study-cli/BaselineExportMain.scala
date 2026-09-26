@@ -41,7 +41,7 @@ object BaselineExportMain extends IOApp:
             _ <- IO.blocking(
               Files.writeString(
                 root.resolve(name + ".metadata.json"),
-                table.metadata.spaces2 + "\n",
+                table.metadata.circe.spaces2 + "\n",
                 UTF_8
               )
             )

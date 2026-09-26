@@ -9,12 +9,18 @@ sys.path.insert(0,str(ROOT/"tools/r-parity"))
 import parity
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--check',action='store_true')
+p.add_argument('--bytes-only',action='store_true',help='compare the emitted artifacts with the receipt byte for byte, without the R and pyarrow readers')
 p.add_argument('--arrow-python',default=os.environ.get('EYES4S_ARROW_PYTHON',sys.executable))
 a=p.parse_args()
 def run(argv,**kw):return subprocess.run(argv,cwd=ROOT,check=True,**kw)
 with tempfile.TemporaryDirectory(prefix='eyes4s-baseline-exports-') as temp:
  root=Path(temp)
  run(['sbt','-J-Xmx4g',f'ioJVM/Test/runMain eyes4s.examples.BaselineExportMain {root}'])
+ if a.bytes_only:
+  pinned=json.loads((HERE/'receipt-v1.json').read_text())['artifacts']
+  emitted={f.name:dict(bytes=f.stat().st_size,sha256=hashlib.sha256(f.read_bytes()).hexdigest()) for f in sorted(root.iterdir()) if f.is_file()}
+  assert emitted==pinned,f'Export bytes drift: {sorted(k for k in set(pinned)|set(emitted) if pinned.get(k)!=emitted.get(k))}'
+  print(f'All {len(pinned)} pinned export artifacts are byte-identical.');sys.exit(0)
  with parity.r_session('eyes4s-export-reader-') as r:
   r.rscript(HERE/'check_exports.R',root)
  run([a.arrow_python,str(HERE/'check_arrow.py'),str(root)])

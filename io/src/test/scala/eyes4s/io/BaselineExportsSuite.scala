@@ -21,9 +21,14 @@ import io.circe.Json
 import scala.compiletime.testing.typeCheckErrors
 
 class BaselineExportsSuite extends munit.FunSuite:
-  private def get[E, A](e: Either[E, A]): A       = e.fold(x => fail(x.toString), identity)
-  private lazy val tables                         = get(BaselineExportGuide.tables).toMap
-  private val NumericTolerance                    = 1e-12
+  private def get[E, A](e: Either[E, A]): A = e.fold(x => fail(x.toString), identity)
+  private lazy val tables                   = get(BaselineExportGuide.tables).toMap
+  private val NumericTolerance              = 1e-12
+  private val reportFamilies                = Set(
+    ResultFamily.ReportCells,
+    ResultFamily.ReportParticipants,
+    ResultFamily.ReportContrasts
+  )
   private def cells(t: ResultTable, name: String) =
     t.rows.map(_(t.columns.indexWhere(_.name == name)))
   private def numbers(t: ResultTable, name: String) = cells(t, name).collect {
@@ -33,25 +38,29 @@ class BaselineExportsSuite extends munit.FunSuite:
   test(
     "compiled public workflows cover every frozen result family and emit portable typed CSV"
   ) {
-    assertEquals(tables.values.map(_.family).toSet, ResultFamily.values.toSet)
+    // The report families have their own workflow (the report test below).
+    assertEquals(tables.values.map(_.family).toSet, ResultFamily.values.toSet -- reportFamilies)
     tables.foreach { (name, t) =>
       val parsed = get(Rfc4180.decode(t.csv.encode))
       assertEquals(parsed.head, t.csv.header); assertEquals(parsed.tail, t.csv.rows)
       assertEquals(parsed.tail.size, t.rows.size, clue = name)
       assert(t.columns.forall(c => c.unit.nonEmpty && c.meaning.nonEmpty))
       assertEquals(
-        t.metadata.hcursor.get[String]("table_sha256").toOption,
+        t.metadata.circe.hcursor.get[String]("table_sha256").toOption,
         Some(t.identity.hex)
       )
       assertEquals(
-        t.metadata.hcursor.get[Long]("row_count").toOption,
+        t.metadata.circe.hcursor.get[Long]("row_count").toOption,
         Some(t.rows.size.toLong)
       )
       assert(t.csv.rows.forall(_.head == t.identity.hex))
       val frozen = get(io.circe.parser.parse(BaselineExportSchemaFixture.versionOne)).hcursor
         .downField(name)
       for field <- Vector("schema", "family", "columns") do
-        assertEquals(t.metadata.hcursor.downField(field).focus, frozen.downField(field).focus)
+        assertEquals(
+          t.metadata.circe.hcursor.downField(field).focus,
+          frozen.downField(field).focus
+        )
 
     }
   }
@@ -69,10 +78,10 @@ class BaselineExportsSuite extends munit.FunSuite:
     )
     assertEquals(numbers(m, "value").take(5), Vector(.1, .2, .3, .4, .5))
     assertEquals(cells(m, "status").count(_ == ResultCell.Text("failure")), 15)
-    assert(p.context.noSpaces.contains("eligiblePairCount"));
-    assert(p.context.noSpaces.contains("evaluation"))
+    assert(p.context.compact.contains("eligiblePairCount"));
+    assert(p.context.compact.contains("evaluation"))
     assertEquals(tables("empty-pairs").rows.size, 0)
-    assert(tables("empty-pairs").context.noSpaces.contains("example.sum"))
+    assert(tables("empty-pairs").context.compact.contains("example.sum"))
   }
   test(
     "reductions and contrasts retain failure counts and signed differences without fabricated denominators"
@@ -89,7 +98,7 @@ class BaselineExportsSuite extends munit.FunSuite:
       Vector(ResultCell.Integer(3), ResultCell.Integer(3), ResultCell.Integer(0))
     )
     assertEquals(
-      r.context.hcursor
+      r.context.circe.hcursor
         .downField("source")
         .downField("pairing")
         .get[String]("eligiblePairCount")
@@ -113,7 +122,7 @@ class BaselineExportsSuite extends munit.FunSuite:
     assertEquals(cells(b, "includes_final_endpoint").count(_ == ResultCell.Flag(true)), 9)
     assertEquals(tables("point-pointcontrols").rows.size, 30)
     assertEquals(tables("point-pointsources").rows.size, 3)
-    assert(p.context.noSpaces.contains("archive"))
+    assert(p.context.compact.contains("archive"))
   }
   test(
     "template and OLS adapters have independent analytic numerical targets and explicit exclusions"
@@ -219,7 +228,7 @@ class BaselineExportsSuite extends munit.FunSuite:
     val split  = get(TemplateSplit.of(basis, Vector(train, held), Set("held")))
     val keys   = VersionedCodec.string(get(DefinitionId.of("example.overflow-key", 1)))
     val result = get(
-      BaselineExports.fixedTemplate(
+      ResultExports.fixedTemplate(
         split,
         get(DefinitionId.of("example.overflow-recipe", 1)),
         keys

@@ -171,7 +171,7 @@ class TemporalContrastSuite extends munit.FunSuite:
       get(DefinitionId.of("exclusion-temporal", 1)),
       StudyCodecs.cosine[Unit2D.Px]
     )
-    val tables   = get(BaselineExports.temporal(plan, result, codec, ScoreColumns.similarity))
+    val tables   = get(ResultExports.temporal(plan, result, codec, ScoreColumns.similarity))
     val coverage = tables.find(_.family == ResultFamily.TemporalCoverage).get
     def column(name: String) = coverage.columns.indexWhere(_.name == name)
     assertEquals(
@@ -208,7 +208,7 @@ class TemporalContrastSuite extends munit.FunSuite:
     assertEquals(observed("s2/a/encode"), Vector(3))
     assertEquals(observed("s1/b/encode"), Vector(2, 3))
     tables.foreach { table =>
-      val context = table.context.hcursor
+      val context = table.context.circe.hcursor
       assertEquals(
         context.get[String]("source_schema").toOption,
         Some(TemporalContrastCsv.schemaVersion)

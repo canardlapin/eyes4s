@@ -16,40 +16,32 @@
 
 package eyes4s.io
 
-import io.circe.Json
+import eyes4s.results.TableJson
+import io.circe.{Json, JsonNumber}
 
-/** Finite export matrix; adding a family requires its own schema and artifact conformance. */
-enum ResultFamily derives CanEqual:
-  case PairScores, Reductions, Contrasts, PointSources, PointControls, PointSamples, PointBins
-  case TemplateCoefficients, TemplatePredictions, TemplateExclusions
-  case OlsCoefficients, OlsDiagnostics, OlsCells
-  case StudyContrasts, TemporalContrasts, TemporalCoverage
+// The result-table layer lives in eyes4s-results (pure, no JSON library), so a
+// Scala.js client reads the same tables. io keeps the circe-facing entry point
+// and the CSV and Arrow transports; these names keep existing io code
+// compiling against the one layer.
 
-enum ResultColumnType derives CanEqual:
-  case Utf8, JsonUtf8, Int64, Float64, Boolean
+/** See [[eyes4s.results.ResultFamily]]. */
+type ResultFamily = eyes4s.results.ResultFamily
+val ResultFamily: eyes4s.results.ResultFamily.type = eyes4s.results.ResultFamily
 
-/** Dictionary labels are written as UTF-8 in both transports, never inferred as numeric codes. */
-final case class ResultColumn(
-    name: String,
-    kind: ResultColumnType,
-    nullable: Boolean,
-    unit: String,
-    meaning: String,
-    labels: Vector[String] = Vector.empty
-) derives CanEqual
+/** See [[eyes4s.results.ResultColumnType]]. */
+type ResultColumnType = eyes4s.results.ResultColumnType
+val ResultColumnType: eyes4s.results.ResultColumnType.type = eyes4s.results.ResultColumnType
 
-enum ResultCell derives CanEqual:
-  case Text(value: String)
-  case Integer(value: Long)
-  case Number(value: Double)
-  case Flag(value: Boolean)
-  case Missing
-  def text: String = this match
-    case Text(v)    => v
-    case Integer(v) => v.toString
-    case Number(v)  => CsvNumber.render(v)
-    case Flag(v)    => v.toString
-    case Missing    => ""
+/** See [[eyes4s.results.ResultColumn]]. */
+type ResultColumn = eyes4s.results.ResultColumn
+val ResultColumn: eyes4s.results.ResultColumn.type = eyes4s.results.ResultColumn
+
+/** See [[eyes4s.results.ResultCell]]. */
+type ResultCell = eyes4s.results.ResultCell
+val ResultCell: eyes4s.results.ResultCell.type = eyes4s.results.ResultCell
+
+/** The one result table, [[eyes4s.results.ResultTable]]. */
+type ResultTable = eyes4s.results.ResultTable
 
 enum ResultExportError derives CanEqual:
   case Schema(columns: Vector[String], reason: String)
@@ -66,141 +58,88 @@ enum ResultExportError derives CanEqual:
     case Score(e)         => e.message
     case Context(o, r)    => s"Export context $o: $r."
 
-/** Immutable checked rows, shared by portable CSV and JVM Arrow IPC. */
-final class ResultTable private (
-    val family: ResultFamily,
-    val columns: Vector[ResultColumn],
-    val rows: Vector[Vector[ResultCell]],
-    val context: Json,
-    val identity: Sha256
-):
-  /** Nullable cells get explicit validity columns so empty strings and missing remain distinct. */
-  def csv: TidyCsvDocument =
-    val header = Vector("table_sha256") ++ columns.flatMap(c =>
-      if c.nullable then Vector(c.name, c.name + "__valid") else Vector(c.name)
-    )
-    val cells = rows.map(row =>
-      Vector(identity.hex) ++ row.zip(columns).flatMap { (v, c) =>
-        if c.nullable then Vector(v.text, (v != ResultCell.Missing).toString)
-        else Vector(v.text)
-      }
-    )
-    new TidyCsvDocument(header, cells)
-  def metadata: Json = Json.obj(
-    "schema"           -> Json.fromString(ResultTable.schema),
-    "family"           -> Json.fromString(family.toString),
-    "table_sha256"     -> Json.fromString(identity.hex),
-    "row_count"        -> Json.fromLong(rows.size.toLong),
-    "csv_nulls"        -> Json.fromString("explicit __valid column for each nullable field"),
-    "arrow_dictionary" -> Json.fromString("none; finite labels retained as UTF-8"),
-    "columns"          -> Json.arr(columns.map(ResultTable.columnJson)*),
-    "context"          -> context
-  )
+object ResultExportError:
+  /** The same refusal, as io has always reported it. */
+  def of(error: eyes4s.results.ResultTableError): ResultExportError = error match
+    case eyes4s.results.ResultTableError.Schema(c, r)     => Schema(c, r)
+    case eyes4s.results.ResultTableError.Cell(i, c, v, r) => Cell(i, c, v, r)
+    case eyes4s.results.ResultTableError.Width(i, e, a)   => Width(i, e, a)
+    case eyes4s.results.ResultTableError.Context(o, r)    => Context(o, r)
 
+/** The circe-facing constructor of [[eyes4s.results.ResultTable]]. */
 object ResultTable:
-  val schema: String                                = "eyes4s.result-table/1"
-  private[io] def columnJson(c: ResultColumn): Json = Json.obj(
-    "name"     -> Json.fromString(c.name),
-    "type"     -> Json.fromString(c.kind.toString),
-    "nullable" -> Json.fromBoolean(c.nullable),
-    "unit"     -> Json.fromString(c.unit),
-    "meaning"  -> Json.fromString(c.meaning),
-    "labels"   -> Json.arr(c.labels.map(Json.fromString)*)
-  )
+  val schema: String = eyes4s.results.ResultTable.schema
+
+  /** A checked table over a circe context (see
+    * [[eyes4s.results.ResultTable.of]]). JSON cells are admitted by circe's
+    * reader and kept in their canonical spelling, so identities are those io
+    * has always written.
+    */
   def of(
       family: ResultFamily,
       columns: Vector[ResultColumn],
       rows: Vector[Vector[ResultCell]],
       context: Json
   ): Either[ResultExportError, ResultTable] =
-    val names     = columns.map(_.name)
-    val wireNames = Vector("table_sha256") ++ columns.flatMap(c =>
-      if c.nullable then Vector(c.name, c.name + "__valid") else Vector(c.name)
-    )
-    val badSchema = columns.isEmpty || names.exists(
-      _.trim.isEmpty
-    ) || wireNames.distinct.size != wireNames.size ||
-      columns.exists(c =>
-        c.unit.trim.isEmpty || c.meaning.trim.isEmpty || c.labels.distinct != c.labels ||
-          (c.labels.nonEmpty && c.kind != ResultColumnType.Utf8)
-      )
-    if badSchema then
-      Left(
-        ResultExportError.Schema(
-          names,
-          "nonempty unique names, units, meanings and valid UTF-8 label domains required"
-        )
-      )
-    else if !context.isObject then
-      Left(ResultExportError.Context("metadata", "expected an object"))
-    else
-      val failure = rows.zipWithIndex.iterator
-        .flatMap { (row, i) =>
-          if row.size != columns.size then
-            Iterator.single(ResultExportError.Width(i, columns.size, row.size))
-          else
-            row
-              .zip(columns)
-              .iterator
-              .collectFirst {
-                case (v, c) if !valid(v, c) =>
-                  ResultExportError.Cell(
-                    i,
-                    c.name,
-                    v,
-                    "wrong kind, nonfinite number, disallowed label or missing required value"
-                  )
-              }
-              .iterator
-        }
-        .take(1)
-        .toVector
-        .headOption
-      failure match
-        case Some(e) => Left(e)
-        case None    =>
-          // CSV numbers have a portable exact round-trip spelling. Length framing prevents collisions
-          // between embedded delimiters; metadata identity also binds scientific context.
-          def pack(v: Vector[String]) = v.map(s => s.length.toString + ":" + s).mkString
-          val normalized              = rows.map(_.zip(columns).map { (v, c) =>
-            v match
-              case ResultCell.Text(s) if c.kind == ResultColumnType.JsonUtf8 =>
-                // Admission above proves parsing succeeds; retain a total fallback.
-                ResultCell.Text(io.circe.parser.parse(s).fold(_ => s, canonical))
-              case _ => v
-          })
-          val content = pack(
-            Vector(schema, family.toString, canonical(context)) ++ columns.map(c =>
-              canonical(columnJson(c))
-            ) ++
-              normalized.map(r =>
-                pack(
-                  r.map(v =>
-                    v match
-                      case ResultCell.Missing => "missing"
-                      case _                  => "present:" + v.text
-                  )
-                )
+    // circe decides which JSON cells are readable, as it always has: a cell it
+    // reads is passed on in its canonical spelling, and one it refuses is
+    // passed on as an empty text, which the table refuses at the same row and
+    // column. The refusal names the cell as it was supplied.
+    val admitted = rows.map(row =>
+      if row.size != columns.size then row
+      else
+        row.zip(columns).map { (v, c) =>
+          v match
+            case ResultCell.Text(s) if c.kind == ResultColumnType.JsonUtf8 =>
+              ResultCell.Text(
+                io.circe.parser.parse(s).fold(_ => "", j => ResultTableJson.canonical(j))
               )
-          )
-          Right(new ResultTable(family, columns, normalized, context, Sha256.ofUtf8(content)))
-  private def canonical(value: Json): String = value.fold(
-    "null",
-    _.toString,
-    n => n.toBigDecimal.fold(n.toString)(_.bigDecimal.stripTrailingZeros.toPlainString),
-    s => Json.fromString(s).noSpaces,
-    v => v.map(canonical).mkString("[", ",", "]"),
-    o =>
-      o.toVector
-        .sortBy(_._1)
-        .map((k, v) => Json.fromString(k).noSpaces + ":" + canonical(v))
-        .mkString("{", ",", "}")
+            case _ => v
+        }
+    )
+    eyes4s.results.ResultTable
+      .of(family, columns, admitted, ResultTableJson.of(context))
+      .left
+      .map {
+        case eyes4s.results.ResultTableError.Cell(i, c, _, reason) =>
+          ResultExportError.Cell(i, c, rows(i)(columns.indexWhere(_.name == c)), reason)
+        case other => ResultExportError.of(other)
+      }
+
+/** Conversions between circe documents and table JSON. */
+object ResultTableJson:
+  /** The same document as table JSON; each number keeps circe's spelling. */
+  def of(json: Json): TableJson = json.fold(
+    TableJson.Null,
+    TableJson.Bool(_),
+    n =>
+      TableJson.Number
+        .of(n.toString)
+        .orElse(n.toBigDecimal.flatMap(d => TableJson.Number.of(d.bigDecimal.toString)))
+        .getOrElse(TableJson.Text(n.toString)),
+    TableJson.Text(_),
+    items => TableJson.Arr(items.map(of)),
+    members => TableJson.Obj(members.toVector.map((k, v) => k -> of(v)))
   )
-  private def valid(v: ResultCell, c: ResultColumn): Boolean = (v, c.kind) match
-    case (ResultCell.Missing, _)                     => c.nullable
-    case (ResultCell.Text(s), ResultColumnType.Utf8) => c.labels.isEmpty || c.labels.contains(s)
-    case (ResultCell.Text(s), ResultColumnType.JsonUtf8)  => io.circe.parser.parse(s).isRight
-    case (ResultCell.Integer(_), ResultColumnType.Int64)  => true
-    case (ResultCell.Number(n), ResultColumnType.Float64) => n.isFinite
-    case (ResultCell.Flag(_), ResultColumnType.Boolean)   => true
-    case _                                                => false
+
+  /** The same document as circe JSON; each number keeps its spelling. */
+  def circe(json: TableJson): Json = json match
+    case TableJson.Null        => Json.Null
+    case TableJson.Bool(b)     => Json.fromBoolean(b)
+    case TableJson.Number(t)   => Json.fromJsonNumber(JsonNumber.fromDecimalStringUnsafe(t))
+    case TableJson.Text(s)     => Json.fromString(s)
+    case TableJson.Arr(items)  => Json.arr(items.map(circe)*)
+    case TableJson.Obj(fields) => Json.fromFields(fields.map((k, v) => k -> circe(v)))
+
+  /** The canonical spelling a table identity is taken over. */
+  def canonical(json: Json): String = of(json).canonical
+
+extension (table: ResultTable)
+  /** The table as RFC 4180 CSV: the table digest, then each column, with an
+    * explicit `__valid` column after each nullable one.
+    */
+  def csv: TidyCsvDocument = new TidyCsvDocument(table.csvHeader, table.csvRows)
+
+extension (json: TableJson)
+  /** The same document as circe JSON. */
+  def circe: Json = ResultTableJson.circe(json)

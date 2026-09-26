@@ -606,6 +606,7 @@ lazy val root = tlCrossRootProject
     compare,
     design,
     plan,
+    results,
     codec,
     laws,
     fs2Module,
@@ -691,12 +692,24 @@ lazy val plan = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings, pureModuleSettings)
   .settings(name := "eyes4s-plan")
 
+/** Reports and result tables: pure reductions over stored results with typed
+  * trial covariates, and the one result-table layer every export renders.
+  * No JSON library and no effect system, so a Scala.js client can use it.
+  */
+lazy val results = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
+  .jvmSettings(ApiAudit.settings)
+  .in(file("results"))
+  .dependsOn(plan)
+  .settings(commonSettings, pureModuleSettings)
+  .settings(name := "eyes4s-results")
+
 /** JSON codecs with a versioned schema, so a project file round-trips. */
 lazy val codec = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .jvmSettings(ApiAudit.settings)
   .in(file("codec"))
-  .dependsOn(plan)
+  .dependsOn(plan, results)
   .settings(commonSettings, pureModuleSettings)
   .settings(
     name := "eyes4s-codec",
@@ -724,7 +737,7 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .jvmSettings(ApiAudit.settings)
   .in(file("laws"))
-  .dependsOn(kernel, core, detect, surface, aoi, compare, design, plan, codec)
+  .dependsOn(kernel, core, detect, surface, aoi, compare, design, plan, results, codec)
   .settings(pureModuleSettings)
   .settings(
     name := "eyes4s-laws",
@@ -1153,6 +1166,7 @@ lazy val studioWorkflowPaths = List(
   "compare",
   "design",
   "plan",
+  "results",
   "codec",
   "fs2"
 )
@@ -1253,6 +1267,7 @@ lazy val allModules = Seq(
   "compare",
   "design",
   "plan",
+  "results",
   "codec",
   "laws",
   "fs2Module",

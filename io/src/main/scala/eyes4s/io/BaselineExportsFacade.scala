@@ -16,9 +16,14 @@
 
 package eyes4s.io
 
-/** The decimal spelling of result-table and CSV numbers. It is
-  * [[eyes4s.results.DecimalText]]'s, so a report table rendered by the
-  * results layer and a contrast CSV spell every number the same way.
+/** The baseline export adapters under their former name. Every table they
+  * build is a table of the one result-table layer, with the same identity;
+  * new code calls [[ResultExports]], and reports use
+  * [[eyes4s.results.ReportTables]].
   */
-private[io] object CsvNumber:
-  def render(value: Double): String = eyes4s.results.DecimalText.render(value)
+@deprecated(
+  "BaselineExports is a compatibility facade; use ResultExports, which builds the same tables",
+  "0.1"
+)
+object BaselineExports:
+  export ResultExports.*

@@ -24,8 +24,11 @@ import eyes4s.kernel.*
 import eyes4s.plan.*
 import io.circe.Json
 
-/** Adapters for the finite baseline matrix. These are export views, not new result archives. */
-object BaselineExports:
+/** Adapters for the finite baseline matrix. These are export views, not new result archives.
+  * Each builds a table of the one result-table layer ([[eyes4s.results.ResultTable]]); reports
+  * have their own families in [[eyes4s.results.ReportTables]].
+  */
+object ResultExports:
   import ResultCell.{Text as T, Integer as I, Number as N, Flag as B, Missing as M}
   private def text(name: String, meaning: String = "identifier", nullable: Boolean = false) =
     ResultColumn(
@@ -223,8 +226,8 @@ object BaselineExports:
         T("control") +: _
       ) ++ differences.flatten,
       Json.obj(
-        "matched" -> matched.context,
-        "control" -> control.context,
+        "matched" -> matched.context.circe,
+        "control" -> control.context.circe,
         "sign"    -> Json.fromString("matched minus control")
       )
     )
@@ -255,7 +258,7 @@ object BaselineExports:
         t.family,
         t.columns,
         t.rows,
-        t.context.deepMerge(
+        t.context.circe.deepMerge(
           Json.obj(
             "role"      -> Json.fromString(role),
             "plan"      -> saved,
