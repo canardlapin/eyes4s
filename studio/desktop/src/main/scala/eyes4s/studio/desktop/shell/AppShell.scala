@@ -141,7 +141,13 @@ final class AppShell(
           menu.setText(vm.title)
           menu.setMnemonicParsing(false)
           menu.getItems.setAll(vm.items.map { i =>
-            val item = AppShell.item(i.label, i.enabled, () => dispatch(i.intent))
+            // With a native menu bar the accelerator is the chord's only path,
+            // and a disabled item would swallow it silently. So an item with a
+            // shortcut stays enabled there; a disabled command's item carries
+            // Invoke, which refuses with its Unavailable notice, as the
+            // window's keymap does on Linux.
+            val live = i.enabled || (nativeMenu && i.shortcut.isDefined)
+            val item = AppShell.item(i.label, live, () => dispatch(i.intent))
             item.setId(i.command.value)
             i.shortcut.map(ShellKeys.combination).foreach(item.setAccelerator)
             item

@@ -144,6 +144,70 @@ class KeymapFxSuite extends ShellFxSuite:
     assertEquals(model(w).location, AppModel.update(here, Intent.Back)._1.location)
   }
 
+  /** Press ⌘[ at the window with no menu accelerator able to act (the menus
+    * are emptied), and report whether the window's handler consumed it (a
+    * scene-level probe after the root never sees a consumed event) and where
+    * the model ended.
+    */
+  private def pressBackAtWindow(fx: FxStage, w: StudioWindow): (Boolean, AppModel) =
+    runOnFx(w.shell.menuBar.getMenus.clear())
+    val reached = java.util.concurrent.atomic.AtomicBoolean(false)
+    val probe: javafx.event.EventHandler[javafx.scene.input.KeyEvent] =
+      e => if e.getCode == KeyCode.OPEN_BRACKET then reached.set(true)
+    runOnFx(fx.scene.addEventHandler(javafx.scene.input.KeyEvent.KEY_PRESSED, probe))
+    try
+      press(fx, CommandRegistry.back.shortcut.get)
+      (!reached.get, model(w))
+    finally runOnFx(fx.scene.removeEventHandler(javafx.scene.input.KeyEvent.KEY_PRESSED, probe))
+
+  fxStage.test(
+    "the window's key handler leaves a menu-owned chord alone only with a native menu"
+  ) { fx =>
+    val native            = boot(fx, StoryModels.t2Explore, nativeMenu = true)
+    val start             = model(native)
+    val (consumed, after) = pressBackAtWindow(fx, native)
+    assert(!consumed, "with a native menu the window consumed ⌘[")
+    assertEquals(after.location, start.location, "with a native menu the window dispatched ⌘[")
+    runOnFx(native.close())
+    opened.clear()
+    val own              = boot(fx, StoryModels.t2Explore, nativeMenu = false)
+    val (took, ownAfter) = pressBackAtWindow(fx, own)
+    assert(took, "without a native menu the window did not consume ⌘[")
+    assertEquals(ownAfter.location, AppModel.update(start, Intent.Back)._1.location)
+  }
+
+  fxStage.test("native menu: ⌘Z with nothing to undo still says why (Unavailable)") { fx =>
+    val w = boot(fx, StoryModels.t2Compare, nativeMenu = true)
+    assert(!CommandRegistry.undo.enabled(model(w)), "the fixture has something to undo")
+    // The window leaves ⌘Z to the menu: a press changes nothing by itself here.
+    press(fx, CommandRegistry.undo.shortcut.get)
+    // The native menu takes the accelerator; synthetic events cannot reach
+    // it, so the test does what it does: fire the item carrying ⌘Z, which
+    // must not be disabled (a disabled item swallows its key).
+    val combo = ShellKeys.combination(CommandRegistry.undo.shortcut.get)
+    val item  = runOnFx(
+      w.shell.menus.flatMap(_.getItems.asScala).find(_.getAccelerator == combo)
+    ).getOrElse(fail("no menu item carries ⌘Z"))
+    assert(runOnFx(!item.isDisable), "the ⌘Z item is disabled and would swallow the key")
+    runOnFx(item.fire())
+    fx.awaitLayout()
+    // The same notice the window's keymap gives without a native menu.
+    val linux = AppModel
+      .update(
+        StoryModels.t2Compare,
+        Intent.KeyPressed(CommandRegistry.undo.shortcut.get)
+      )
+      ._1
+      .notice
+    runOnFx(w.runtime.model.notice) match
+      case Some(n @ eyes4s.studio.app.Notice.Unavailable(id, _)) =>
+        assertEquals(id, CommandRegistry.undo.id)
+        assertEquals(Some(n), linux)
+        assertEquals(n.message, "Undo: There is no edit to undo.")
+      case other => fail(s"expected Unavailable for Undo, got $other")
+    assertEquals(model(w).document, StoryModels.t2Compare.document)
+  }
+
   fxStage.test("⌘Z and ⌘⇧Z undo and redo a science edit") { fx =>
     val w = boot(fx, StoryModels.t2Compare)
     dispatch(fx, w, Intent.RequestDiscardDraft)

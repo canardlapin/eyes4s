@@ -11,7 +11,13 @@ the plot (DESIGN_SPEC section 10).
 
 On macOS the native menu bar's accelerators are the only path for these
 chords (the window's key handler skips them, `CommandRegistry.windowKeymap`),
-so a key press cannot fire a command twice. Verified by hand on macOS: pending.
+so a key press cannot fire a command twice. An item with a shortcut stays
+enabled there, so a disabled command still says why ("Undo: There is no
+edit to undo.") instead of the menu swallowing the key.
+Verified by hand on macOS: pending. The hand check also covers text fields:
+while a text field has focus, the native menu sees ⌘Z (and ⌘⇧Z) before the
+field. Expected: the field's own undo wins while it has focus; the document's
+Undo applies only outside text fields. Pending: confirm which one wins today.
 
 | Menu | Command | Shortcut | Id |
 |---|---|---|---|
