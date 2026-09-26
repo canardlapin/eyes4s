@@ -221,6 +221,38 @@ class InitialFixationSuite extends munit.FunSuite:
     assertEquals(inspection.initialFixationTally(StudyKey("p9", "z", "recall")), None)
   }
 
+  test("every change states the value it starts from") {
+    val base   = get(plan(InitialFixationPolicy.keepAll))
+    val image  = get(Subframe.of(screen, FrameId("image"), get(Bounds.of[Px](5, 2, 15, 8))))
+    val onIt   = get(Grid.over(image.frame, 5, 3))
+    val window = get(
+      base.revise(
+        Vector(
+          StudyChange.Grid(base.grid, onIt),
+          StudyChange.Window(None, Some(image)),
+          StudyChange.OffWindow(None, Some(OffWindowPolicy.FailTrial)),
+          StudyChange.Controls(
+            ControlReferences.SameSelection,
+            ControlReferences.AllOccurrences
+          )
+        )
+      )
+    )
+    assertEquals(
+      base.structuralDiff(window).map(_.stated),
+      Vector(s"10×5 (${grid.id.name})", "the whole frame", "none", "SameSelection")
+    )
+    assertEquals(
+      window.structuralDiff(base).map(_.stated),
+      Vector(
+        s"5×3 (${onIt.id.name})",
+        "image [5, 15) × [2, 8) px",
+        "FailTrial",
+        "AllOccurrences"
+      )
+    )
+  }
+
   test("a change of layout or method is typed, inverted and rendered by identity") {
     val base         = get(plan(InitialFixationPolicy.keepAll))
     val otherLayout  = StudyKey.layout(get(DefinitionId.of("eyes4s.other-layout", 1)))
