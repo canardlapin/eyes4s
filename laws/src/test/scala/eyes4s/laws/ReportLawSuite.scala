@@ -19,7 +19,7 @@ package eyes4s.laws
 import eyes4s.codec.*
 import eyes4s.plan.{DefinitionId, StudyKey}
 import eyes4s.results.*
-import org.scalacheck.{Gen, Test}
+import org.scalacheck.Test
 
 /** The published report laws over the shipped reduction, the report codecs'
   * round trips, and mutants of the reduction each law set must refuse.

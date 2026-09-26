@@ -10,10 +10,10 @@ name: Studio
 on:
   pull_request:
     branches: ['**', '!update/**', '!pr/**']
-    paths: [studio/**, fixtures/studio-golden/**, tools/studio-fixture/**, docs/studio/fixture/**, build.sbt, project/**, .github/workflows/studio.yml, kernel/**, core/**, detect/**, surface/**, aoi/**, compare/**, design/**, plan/**, codec/**, fs2/**]
+    paths: [studio/**, fixtures/studio-golden/**, tools/studio-fixture/**, docs/studio/fixture/**, build.sbt, project/**, .github/workflows/studio.yml, kernel/**, core/**, detect/**, surface/**, aoi/**, compare/**, design/**, plan/**, results/**, codec/**, fs2/**]
   push:
     branches: ['**', '!update/**', '!pr/**']
-    paths: [studio/**, fixtures/studio-golden/**, tools/studio-fixture/**, docs/studio/fixture/**, build.sbt, project/**, .github/workflows/studio.yml, kernel/**, core/**, detect/**, surface/**, aoi/**, compare/**, design/**, plan/**, codec/**, fs2/**]
+    paths: [studio/**, fixtures/studio-golden/**, tools/studio-fixture/**, docs/studio/fixture/**, build.sbt, project/**, .github/workflows/studio.yml, kernel/**, core/**, detect/**, surface/**, aoi/**, compare/**, design/**, plan/**, results/**, codec/**, fs2/**]
 
 permissions:
   actions: none

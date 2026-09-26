@@ -60,9 +60,6 @@ trait ReportLaws extends Laws:
   private def table(c: ReportCase, queries: Vector[Query[StudyKey]]) =
     QueryTable.of(c.table.scale, c.table.components, c.table.covariates, queries).toOption
 
-  private def componentIndex(c: ReportCase, component: String): Int =
-    c.table.components.indexOf(component)
-
   /** Every law over generated cases. `witness` is a case in which one
     * participant has more queries than another with a different mean, so
     * pooling the queries would move the estimate.
@@ -296,13 +293,13 @@ object ReportLaws extends ReportLaws:
 
   private def mean(values: Vector[Exact]): Option[Exact] =
     Option.when(values.nonEmpty)(
-      values.foldLeft(Exact.ZERO)(_ add _).divide(new Exact(values.size), context)
+      values.foldLeft(Exact.ZERO)(_.add(_)).divide(new Exact(values.size), context)
     )
 
   private def sd(values: Vector[Exact]): Option[Double] =
     Option.when(values.size >= 2) {
       val m      = mean(values).get
-      val square = values.map(v => v.subtract(m).pow(2)).foldLeft(Exact.ZERO)(_ add _)
+      val square = values.map(v => v.subtract(m).pow(2)).foldLeft(Exact.ZERO)(_.add(_))
       math.sqrt(square.divide(new Exact(values.size - 1), context).doubleValue)
     }
 

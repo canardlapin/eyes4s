@@ -80,7 +80,8 @@ class ReportFixturesJvmSuite extends munit.FunSuite:
       reportSpecFile      -> ReportFixtureMirrors.reportSpecVersionOne,
       reportFile          -> ReportFixtureMirrors.reportVersionOne
     ).foreach { (file, mirror) =>
-      val text = String(get(GenerateManifestV1.resource(file)).toArray, "UTF-8")
+      val text =
+        String(IArray.genericWrapArray(get(GenerateManifestV1.resource(file))).toArray, "UTF-8")
       assertEquals(get(io.circe.parser.parse(text)), get(io.circe.parser.parse(mirror)), file)
     }
   }

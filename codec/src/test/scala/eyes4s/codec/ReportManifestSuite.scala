@@ -16,7 +16,6 @@
 
 package eyes4s.codec
 
-import eyes4s.kernel.Unit2D.Px
 import eyes4s.plan.*
 import eyes4s.results.*
 import io.circe.Json
