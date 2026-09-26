@@ -109,6 +109,9 @@ object CodecDiagnosticCatalog:
     "ReportInput",
     "ReportLedger",
     "ReportMembers",
+    "ReportCell",
+    "ReportRecomputed",
+    "ReportComponents",
     "SourceBinding",
     "RunPlan",
     "RunInput"
@@ -476,6 +479,18 @@ private[codec] object CodecProjections:
           int(scale),
           names(unknown)
         )
+      case ReportCell(group, role, component, stored, recomputed) =>
+        diagnostic[Any](C.relation, e, e.message)(
+          name(group),
+          token(role),
+          name(component),
+          text(stored),
+          text(recomputed)
+        )
+      case ReportRecomputed(part, stored, recomputed) =>
+        diagnostic[Any](C.relation, e, e.message)(token(part), text(stored), text(recomputed))
+      case ReportComponents(planned, result) =>
+        diagnostic[Any](C.relation, e, e.message)(names(planned), names(result))
 
   def manifest(e: ManifestError): Diagnostic[Nothing] =
     import ManifestError.*

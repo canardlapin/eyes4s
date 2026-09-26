@@ -21,6 +21,7 @@ import eyes4s.design.*
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.Px
 import eyes4s.plan.*
+import eyes4s.results.*
 import io.circe.Json
 
 class StampedManifestSuite extends munit.FunSuite:
@@ -174,6 +175,98 @@ class StampedManifestSuite extends munit.FunSuite:
   test("legacy results are still explicitly unstamped") {
     val written = get(ResultManifest.packed("result", results, ManifestFixtures.result))
     assertEquals(get(resolve(save(written))).results.head._2.stampClaim, None)
+  }
+
+  Vector(DensityStorage.Inline, DensityStorage.Packed).foreach { storage =>
+    test(s"$storage stamped reports retain the score schema and refuse altered estimates") {
+      val written  = get(ResultManifest.stamped("result", results, completed, storage))
+      val document = get(Documents.parse(written.result.bytes))
+      val binding  = ReportBinding(
+        get(ReportCodecs.digest(get(studies.codec.digest(plan)), "plan")),
+        get(ReportCodecs.digest(get(inputs.input.digest(input)), "input")),
+        get(ReportCodecs.digest(get(CanonicalDigest.document[Json](document)), "result")),
+        None
+      )
+      val spec = get(
+        ReportSpec.of(
+          get(ReportId.of("stamped by item")),
+          0,
+          get(ReportSelection.of(Vector(Role.Difference, Role.Matched), Vector("value"))),
+          groupBy = Vector(Grouping.ByLevel(LevelTerm.Layout(LayoutField.Item)))
+        )
+      )
+      val reports = ReportCodecs.report(studies.keys)
+      val honest  = get(
+        Report.evaluate(
+          spec,
+          get(ReportSource.study(plan, input, completed.result, None, binding))
+        )
+      )
+      def graph(report: Report[StudyKey]) =
+        val base = save(written)
+        get(
+          SavedManifest.of(
+            base.artifacts ++ Vector(
+              get(StoredArtifact.reportSpec("spec", spec)),
+              get(StoredArtifact.report("report", reports, report))
+            ),
+            base.manifest.relations :+ ManifestRelation.ReportOf(
+              ManifestFixtures.name("report"),
+              ManifestFixtures.name("spec"),
+              written.result.name,
+              inputArtifact.name,
+              None
+            )
+          )
+        )
+      val registry = new ArtifactDecoders.Delegating(decoders.withReports(reports))
+      val resolved = get(resolve(graph(honest), registry))
+      assertEquals(resolved.report(ManifestFixtures.name("report")), Some(honest))
+      val loaded = resolved.results.head._2
+      assertEquals(loaded.stampClaim.map(_.plan.sha256), Some(completed.stamp.plan.sha256))
+      assertEquals(loaded.stampClaim.map(_.input.sha256), Some(completed.stamp.input.sha256))
+      assertEquals(
+        get(loaded.scoreSchema(get(studies.parameters.encode(plan.parameters)))).ids,
+        get(ScoreSchema.study(plan)).ids
+      )
+      assertEquals(get(loaded.encode), document)
+
+      val first   = honest.cells.find(_.estimate.isPresent).getOrElse(fail("no estimate"))
+      val altered = get(
+        Report.reconstruct(
+          honest.spec,
+          honest.binding,
+          honest.groups,
+          honest.cells.map(c => c.copy(estimate = c.estimate.map(_ + 1000))),
+          honest.contrasts,
+          honest.accounting,
+          honest.findings
+        )
+      )
+      val errors = resolve(graph(altered), registry).left.toOption
+        .getOrElse(fail("accepted altered report"))
+      val cells = errors.collect {
+        case ResolveError.Relation(
+              _,
+              RelationMismatch.ReportCell(group, role, component, stored, fresh)
+            ) =>
+          (group, role, component, stored, fresh)
+      }
+      assertEquals(cells.size, 1, errors)
+      assertEquals(
+        cells.head,
+        (
+          first.group.render,
+          first.role.toString,
+          first.component,
+          altered
+            .cell(first.group, first.role, first.component)
+            .getOrElse(fail("missing cell"))
+            .toString,
+          first.toString
+        )
+      )
+    }
   }
 
   test("a different decoded plan with the same description fails canonical manifest binding") {

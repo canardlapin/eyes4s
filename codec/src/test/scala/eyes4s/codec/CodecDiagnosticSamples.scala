@@ -186,6 +186,9 @@ object CodecDiagnosticSamples:
       RelationMismatch.ReportInput("input", "base"),
       RelationMismatch.ReportLedger("ledger", "input"),
       RelationMismatch.ReportMembers(2, Vector("p9/a")),
+      RelationMismatch.ReportCell("item=a", "Difference", "value", "0.25", "1000.25"),
+      RelationMismatch.ReportRecomputed("accounting", "kept=4", "kept=3"),
+      RelationMismatch.ReportComponents(Vector("first", "second"), Vector("value")),
       RelationMismatch.SourceBinding("parser", "fixation-parser@1", "inventory-parser@1"),
       RelationMismatch.RunPlan(
         a,

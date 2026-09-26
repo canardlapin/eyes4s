@@ -137,7 +137,8 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
     val keys: VersionedCodec[K],
     val method: StudyMethod[P, U, S, D],
     val scores: VersionedCodec[S],
-    val differences: VersionedCodec[D]
+    val differences: VersionedCodec[D],
+    val parameters: Option[VersionedCodec[P]] = None
 )(using unit: UnitLabel[U]):
   private given Ordering[K] = layout.ordering
 
@@ -617,7 +618,7 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
     new StudyResultRegistration[K, U]:
       val id                                                         = method.id
       def decode(json: Json): Either[CodecError, LoadedResult[K, U]] =
-        codec.decode(json).map(loaded)
+        codec.decode(json).map(value => loaded(value, None))
       def decodeWithPayloads(
           json: Json,
           payloads: PayloadRef => Option[VerifiedPayload]
@@ -628,23 +629,33 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
             .materialize(payloads)
             .left
             .map(error => CodecError.Field("density", json, error.message))
-            .map { value =>
-              new LoadedResult[K, U]:
-                type Score      = S
-                type Difference = D
-                def result              = value
-                override def stampClaim = archive.stampClaim
-                def encode              =
-                  if archive.stampClaim.isEmpty then codec.encode(value)
-                  else archives.codec.encode(archive)
-            }
+            .map(value => loaded(value, Some(archive)))
         }
-      private def loaded(value: StudyResult[K, U, S, D]): LoadedResult[K, U] =
+      private def loaded(
+          value: StudyResult[K, U, S, D],
+          archive: Option[StudyResultArchive[K, U, P, S, D]]
+      ): LoadedResult[K, U] =
         new LoadedResult[K, U]:
           type Score      = S
           type Difference = D
-          def result = value
-          def encode = codec.encode(value)
+          def result              = value
+          override def stampClaim = archive.flatMap(_.stampClaim)
+          def encode              = archive.filter(_.stampClaim.nonEmpty) match
+            case None        => codec.encode(value)
+            case Some(saved) =>
+              new DensityArchiveCodec(StudyResultCodec.this).codec.encode(saved)
+          override def scoreSchema(planParameters: Json) =
+            parameters match
+              case None       => super.scoreSchema(planParameters)
+              case Some(read) =>
+                read
+                  .decode(planParameters)
+                  .flatMap(p =>
+                    ScoreSchema
+                      .method(method, p)
+                      .left
+                      .map(e => CodecError.Field("parameters", planParameters, e.message))
+                  )
 
 /** A decoded result whose score and difference types stay abstract but typed. */
 trait LoadedResult[K, U <: Unit2D]:
@@ -655,6 +666,21 @@ trait LoadedResult[K, U <: Unit2D]:
 
   /** None is a legacy result; a saved claim still requires actual plan/input verification. */
   def stampClaim: Option[RunStamp[?, StudyInput[K, U]]] = None
+
+  /** The components of the result's own method, under the method
+    * parameters of the plan document `planParameters` (a plan's
+    * `LoadedStudy.parametersDocument`), read with the result codec's own
+    * parameter codec, so the components are typed by the result's scores.
+    * A result decoded without a parameter codec cannot describe them.
+    */
+  def scoreSchema(planParameters: Json): Either[CodecError, ScoreSchema[Score, Difference]] =
+    Left(
+      CodecError.Field(
+        "parameters",
+        planParameters,
+        "the result codec was built without its plan's parameter codec"
+      )
+    )
 
 sealed trait StudyResultRegistration[K, U <: Unit2D]:
   def id: DefinitionId
