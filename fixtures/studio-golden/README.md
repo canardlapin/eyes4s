@@ -37,7 +37,7 @@ duration" is outside-fixation duration over total fixation duration of the trial
   `448 <= x < 1472`, `156 <= y < 924`. Image px = screen px − (448, 156).
 - **Time units are declared, not inferred:** `onset_ms` and `duration_ms` are
   integer milliseconds from trial start. `sample_count` is the number of gaze
-  samples at a declared 500 Hz (duration_ms / 2 for valid records).
+  samples at a declared 500 Hz (`duration_ms` is always even and `sample_count` = `duration_ms` / 2 on every valid record).
 - Declared 35 px/°; degrees are from image centre, x right, y up.
 
 ## `trials.csv` (960 rows)
@@ -80,13 +80,11 @@ order, a fixation begins before the previous one ends.
 | rejected-records | one record has `sample_count` 0; the others are valid | 2 |
 | no-fixations | **every** record has `sample_count` 0 | 5 |
 
-`no-fixations` cannot be produced by a trial that has records: `FixationCsv.read` builds
-a trial group only from valid rows, so `Scanpath.of` never sees an empty trial and
-`QuarantineCause.NoFixations` is unreachable from the reader. The closest faithful
-construction is used: the trial is in the inventory and has records, but every
-record is rejected, so no fixation is admissible. The current reader reports these
-records as row-level `Number` rejections carrying the trial key; classifying the
-trial as `no-fixations` needs the inventory join (UI-H).
+An inventory trial whose every record is rejected is NoFixations; this takes
+precedence over RejectedRecords (rule requested for UI-H). The current reader cannot
+report it: `FixationCsv.read` builds a trial group only from valid rows, so
+`Scanpath.of` never sees an empty trial, and these records come back as row-level
+`Number` rejections carrying the trial key.
 
 Read with a string key over `participant, phase, trial, occurrence`, the screen frame
 and `TimestampUnit.Milliseconds`, the current reader reports 937 accepted trials,

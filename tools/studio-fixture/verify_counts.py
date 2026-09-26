@@ -18,6 +18,7 @@ import runpy
 import struct
 import sys
 import tempfile
+import zlib
 from collections import defaultdict
 from pathlib import Path
 
@@ -78,16 +79,46 @@ def trial_status(rows) -> str:
     return "admitted"
 
 
-def png_size(path: Path):
-    head = path.read_bytes()[:24]
-    assert head[:8] == b"\x89PNG\r\n\x1a\n" and head[12:16] == b"IHDR", path
-    return struct.unpack(">II", head[16:24])
+PHASE = {"enc": "Encoding", "ret": "Retrieval"}
+
+
+def png_decodes(path: Path) -> bool:
+    """Parse every chunk, check CRCs, inflate IDAT and check the scanline layout;
+    then, when Pillow is installed, decode with it as an independent reader."""
+    data = path.read_bytes()
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        return False
+    pos, idat, size, bpp = 8, b"", None, None
+    while pos < len(data):
+        (n,) = struct.unpack(">I", data[pos : pos + 4])
+        kind, body = data[pos + 4 : pos + 8], data[pos + 8 : pos + 8 + n]
+        if struct.unpack(">I", data[pos + 8 + n : pos + 12 + n])[0] != zlib.crc32(kind + body):
+            return False
+        if kind == b"IHDR":
+            w, h, depth, colour = struct.unpack(">IIBB", body[:10])
+            size, bpp = (w, h), {3: 1, 2: 3}.get(colour) if depth == 8 else None
+        elif kind == b"IDAT":
+            idat += body
+        pos += 12 + n
+    if size != (1024, 768) or bpp is None:
+        return False
+    raw = zlib.decompress(idat)
+    stride = 1024 * bpp + 1
+    if len(raw) != 768 * stride or any(raw[i * stride] > 4 for i in range(768)):
+        return False
+    try:
+        from PIL import Image
+    except ImportError:
+        return True
+    with Image.open(path) as im:
+        im.load()
+        return im.size == (1024, 768)
 
 
 def main() -> int:
     trials = list(csv.DictReader((FIX / "trials.csv").open()))
     records = list(csv.DictReader((FIX / "fixations.csv").open()))
-    key = lambda r: (r["participant"], r["trial"], r["occurrence"])
+    key = lambda r: (r["participant"], r["phase"], r["trial"], r["occurrence"])
     by_trial = defaultdict(list)
     for n, r in enumerate(records, 1):
         r["_n"] = n
@@ -127,12 +158,12 @@ def main() -> int:
     # images
     items = {t["item"] for t in trials}
     pngs = {p.stem: p for p in (FIX / "stimuli").glob("*.png")}
-    sizes_ok = all(png_size(p) == (1024, 768) for p in pngs.values())
+    decoded = sum(png_decodes(p) for p in pngs.values())
     missing = sorted(items - set(pngs))
 
     # query contrasts (retrieval trials) and controls
     enc_by_item = {
-        (t["participant"], t["item"]): (t["participant"], t["trial"], t["occurrence"])
+        (t["participant"], t["item"]): key(t)
         for t in trials
         if t["phase"] == "Encoding"
     }
@@ -156,7 +187,7 @@ def main() -> int:
                 1
                 for e, s in status.items()
                 if e[0] == k[0]
-                and e[1].startswith("enc")
+                and e[1] == "Encoding"
                 and s == "admitted"
                 and e != m
             )
@@ -172,20 +203,42 @@ def main() -> int:
         )
         return round(100 * out / tot)
 
-    f17r, f17e = ("P17", "ret_07", "1"), ("P17", "enc_03", "1")
+    mk = lambda p, t: (p, PHASE[t[:3]], t, "1")
+    f17r, f17e = mk("P17", "ret_07"), mk("P17", "enc_03")
     rec = records[7214 - 1]
-    p05 = [("P05", t, "1") for t in ("ret_04", "ret_11", "ret_16")]
+    p05 = [mk("P05", t) for t in ("ret_04", "ret_11", "ret_16")]
 
     M = mock()
-    exp_q = {(p, t, "1"): c for (p, t), c in M["quarantine"].items()}
-    exp_abs = {(p, t, "1") for (p, t) in M["absent"]}
+    exp_q = {mk(p, t): c for (p, t), c in M["quarantine"].items()}
+    exp_abs = {mk(p, t) for (p, t) in M["absent"]}
     resp = {
-        (P["id"], q["trial"], "1"): q["response"]
+        mk(P["id"], q["trial"]): q["response"]
         for P in M["study"]["participants"]
         for q in P["queries"]
     }
     enc_of = M["enc_of_item"]
     got_resp = {k: t["response"] for k, t in inv.items() if t["phase"] == "Retrieval"}
+
+    # ordinals 1..n in file order, except in the duplicate-ordinal trials
+    ordinal_bad = [
+        k
+        for k, rows in by_trial.items()
+        if status[k] != "duplicate-ordinals"
+        and [int(r["ordinal"]) for r in rows] != list(range(1, len(rows) + 1))
+    ]
+    # sample_count = duration_ms * 500 Hz on every valid row
+    samples_bad = sum(
+        1 for r in records if row_ok(r) and int(r["sample_count"]) * 2 != int(r["duration_ms"])
+    )
+    # file order: trial keys nondecreasing and each trial's records contiguous
+    order = lambda k: (k[0], k[1], k[2], int(k[3]))
+    runs = [key(r) for i, r in enumerate(records) if i == 0 or key(records[i - 1]) != key(r)]
+    fix_sorted = runs == sorted(set(runs), key=order)
+    trials_sorted = [key(t) for t in trials] == sorted(inv, key=order)
+    phase_bad = sum(
+        1 for r in trials + records if PHASE.get(r["trial"][:3]) != r["phase"]
+    )
+    quarantined_records = sum(len(by_trial[k]) for k in quarantined)
 
     checks = [
         ("inventory trials", len(trials), 960),
@@ -203,6 +256,12 @@ def main() -> int:
             True,
         ),
         ("fixation records", len(records), 11520),
+        ("records in quarantined trials", quarantined_records, 209),
+        ("trials with non-contiguous ordinals (excl. duplicate)", len(ordinal_bad), 0),
+        ("valid rows with sample_count != duration/2", samples_bad, 0),
+        ("fixations.csv sorted, trials contiguous", fix_sorted, True),
+        ("trials.csv sorted", trials_sorted, True),
+        ("rows whose phase disagrees with trial prefix", phase_bad, 0),
         ("records outside window (on screen)", sum(out_rec.values()), 543),
         ("trials with outside records", sum(1 for v in out_rec.values() if v), 409),
         (
@@ -217,7 +276,7 @@ def main() -> int:
         ("images present", len(items & set(pngs)), 257),
         ("images missing", ", ".join(missing), "forest-044, kitchen-081"),
         ("extra images", len(set(pngs) - items), 0),
-        ("all images 1024x768", sizes_ok, True),
+        ("PNGs decoding at 1024x768", decoded, len(pngs)),
         ("queries requested", qc["requested"], 480),
         ("  contributing", qc["contributing"], 454),
         ("  failed (all outside window)", qc["failed"], 3),
@@ -242,7 +301,7 @@ def main() -> int:
         ),
         (
             "P17 ret_07 item / matched enc",
-            (inv[f17r]["item"], enc_by_item[("P17", "beach-042")][1]),
+            (inv[f17r]["item"], enc_by_item[("P17", "beach-042")][2]),
             ("beach-042", "enc_03"),
         ),
         (
@@ -266,7 +325,7 @@ def main() -> int:
         (
             "encoding order = mock",
             all(
-                enc_by_item[(t["participant"], t["item"])][1]
+                enc_by_item[(t["participant"], t["item"])][2]
                 == enc_of(int(t["trial"][4:]) - 1)
                 for t in trials
                 if t["phase"] == "Retrieval"

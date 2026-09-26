@@ -482,13 +482,13 @@ def timeline(r: random.Random, n: int) -> list[tuple[int, int]]:
     onset = r.randrange(40, 120)
     out = []
     for _ in range(n):
-        dur = max(80, min(700, round(r.gauss(290, 90))))
+        dur = 2 * max(40, min(350, round(r.gauss(290, 90) / 2)))  # even: whole 500 Hz samples
         out.append((onset, dur))
         onset += dur + r.randrange(24, 70)
     return out
 
 
-FOCUS_ENC_DURATIONS = [330, 380, 350, 420, 370, 412, 340, 310, 360, 125, 330, 300, 350]
+FOCUS_ENC_DURATIONS = [330, 380, 350, 420, 370, 412, 340, 310, 360, 126, 330, 300, 350]
 FOCUS_ENC_OUTSIDE = 10  # ordinal of the outside fixation in P17 enc_03
 FOCUS_RET_OUTSIDE = 9  # ordinal of the outside fixation in P17 ret_07
 
@@ -530,7 +530,7 @@ def build(d: dict):
             others = sum(
                 dur for i, (_, dur) in enumerate(times) if i + 1 != FOCUS_RET_OUTSIDE
             )
-            target = round(others * 0.04 / 0.96)
+            target = 2 * round(others * 0.02 / 0.96)
             times = [
                 (o, target if i + 1 == FOCUS_RET_OUTSIDE else dur)
                 for i, (o, dur) in enumerate(times)
@@ -674,7 +674,7 @@ duration" is outside-fixation duration over total fixation duration of the trial
   `448 <= x < 1472`, `156 <= y < 924`. Image px = screen px − (448, 156).
 - **Time units are declared, not inferred:** `onset_ms` and `duration_ms` are
   integer milliseconds from trial start. `sample_count` is the number of gaze
-  samples at a declared {SAMPLE_HZ} Hz (duration_ms / 2 for valid records).
+  samples at a declared {SAMPLE_HZ} Hz (`duration_ms` is always even and `sample_count` = `duration_ms` / 2 on every valid record).
 - Declared 35 px/°; degrees are from image centre, x right, y up.
 
 ## `trials.csv` (960 rows)
@@ -717,13 +717,11 @@ order, a fixation begins before the previous one ends.
 | rejected-records | one record has `sample_count` 0; the others are valid | {by_cause["rejected-records"]} |
 | no-fixations | **every** record has `sample_count` 0 | {by_cause["no-fixations"]} |
 
-`no-fixations` cannot be produced by a trial that has records: `FixationCsv.read` builds
-a trial group only from valid rows, so `Scanpath.of` never sees an empty trial and
-`QuarantineCause.NoFixations` is unreachable from the reader. The closest faithful
-construction is used: the trial is in the inventory and has records, but every
-record is rejected, so no fixation is admissible. The current reader reports these
-records as row-level `Number` rejections carrying the trial key; classifying the
-trial as `no-fixations` needs the inventory join (UI-H).
+An inventory trial whose every record is rejected is NoFixations; this takes
+precedence over RejectedRecords (rule requested for UI-H). The current reader cannot
+report it: `FixationCsv.read` builds a trial group only from valid rows, so
+`Scanpath.of` never sees an empty trial, and these records come back as row-level
+`Number` rejections carrying the trial key.
 
 Read with a string key over `participant, phase, trial, occurrence`, the screen frame
 and `TimestampUnit.Milliseconds`, the current reader reports 937 accepted trials,
