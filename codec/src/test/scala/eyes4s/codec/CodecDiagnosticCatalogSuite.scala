@@ -32,8 +32,8 @@ class CodecDiagnosticCatalogSuite extends munit.FunSuite:
   private val all   =
     DiagnosticSamples.all ++ codec ++ eyes4s.results.ResultsDiagnosticSamples.all
 
-  private val PinnedCount  = 98
-  private val PinnedDigest = "4c972e85365c2e22"
+  private val PinnedCount  = 100
+  private val PinnedDigest = "ae6aa670574e0762"
 
   private val alignment = DiagnosticAlignment(
     all,

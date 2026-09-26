@@ -185,7 +185,9 @@ object CodecDiagnosticSamples:
       RelationMismatch.ReportBinding("result", "sha256:" + "a" * 64, "sha256:" + "b" * 64),
       RelationMismatch.ReportInput("input", "base"),
       RelationMismatch.ReportLedger("ledger", "input"),
-      RelationMismatch.ReportMembers(2, Vector("p9/a"))
+      RelationMismatch.ReportMembers(2, Vector("p9/a")),
+      RelationMismatch.ReportCell("item=a", "Difference", "value", "0.25", "1000.25"),
+      RelationMismatch.ReportRecomputed("accounting", "kept=4", "kept=3")
     ),
     family[ManifestError]("ManifestError")(
       ManifestError.InvalidName(" padded"),

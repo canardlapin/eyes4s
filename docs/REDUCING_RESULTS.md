@@ -147,7 +147,16 @@ checks that the report's specification is the stored one (`ReportSpec`), that it
 one its result was computed on (`ReportInput`), that its ledger is a ledger of that input
 (`ReportLedger`), that every cell member is a trial the result estimated at the report's scale
 (`ReportMembers`), and that its binding names the stored result, input, the result's plan and the
-ledger (`ReportBinding(field, bound, stored)`).
+ledger (`ReportBinding(field, bound, stored)`). It then re-evaluates the specification over those
+decoded documents (window tallies and a linear reduction; no pair is scored) and requires the
+stored report to be exactly the result, refusing the first differing cell as
+`ReportCell(group, role, component, stored, recomputed)`, or else the first differing part (groups,
+contrasts, accounting or findings) as `ReportRecomputed(part, stored, recomputed)`. A hand-edited
+estimate, or a report written by another reduction, does not resolve.
+
+A cell's members are always the cell role's rows at the report's scale: `Report.reconstruct`,
+which the codec decodes through, refuses any other reference, so every member of a resolved report
+drills down through `ResultInspection`.
 
 ## Diagnostics
 
