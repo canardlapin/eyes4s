@@ -378,6 +378,14 @@ object RecipeDescriptors:
       "pairing",
       "Matched-reference rule, control pool and handling of focal trials without a match",
       allowed = ParameterDomain.DomainValue("StudyPairing")
+    ),
+    info(
+      "initialFixations",
+      "Initial fixations left out of every trial, focal and reference alike, before the " +
+        "window is considered: the first fixation, or the leading run whose centres lie in the " +
+        "closed disc of the given radius in degrees around the fixation cross (x, y in " +
+        "admission-frame units); absent when every fixation is kept",
+      allowed = ParameterDomain.DomainValue("InitialFixationPolicy")
     )
   )
   private def inspect(

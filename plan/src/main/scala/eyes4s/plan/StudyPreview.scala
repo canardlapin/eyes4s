@@ -41,6 +41,10 @@ import eyes4s.kernel.*
   * would be empty, or that the window policy fails, fails at every scale with
   * StudyFailure.OffWindow.
   *
+  * initialFixationTallies lists, in input order, how many leading fixations
+  * of each trial the plan's initial-fixation policy drops; the window
+  * tallies count only the fixations it keeps.
+  *
   * matchedCardinality is the prepared study's own value: focal trials with
   * more than one matched reference, ambiguous control references, unmatched
   * focal trials and item conflicts under the plan's pairing, and whether they
@@ -59,8 +63,13 @@ final class StudyPreview[K, U <: Unit2D] private[plan] (
     val failurePolicy: FailurePolicy,
     val windowTallies: Vector[(K, Either[GeometryError, WindowTally])],
     val pairing: StudyPairing,
-    val matchedCardinality: Either[PlanError, MatchedCardinality[K]]
+    val matchedCardinality: Either[PlanError, MatchedCardinality[K]],
+    val initialFixationTallies: Vector[(K, Either[GeometryError, InitialFixationTally])]
 ):
+  /** Initial fixations the plan's policy drops, across the input. */
+  def initialFixationSummary: InitialFixationSummary =
+    InitialFixationSummary.of(initialFixationTallies)
+
   /** Records outside the analysis window and the screen, across the input:
     * for example "543 of 11,520 records in 409 trials".
     */

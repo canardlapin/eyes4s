@@ -664,6 +664,9 @@ object Preflight:
       Remedy.ChooseMatchedReference
     case PlanError.MatchItemConflict(_)     => Remedy.ResolveMatchItemConflict
     case PlanError.UnmatchedFocalRefused(_) => Remedy.SupplyMatchedReference
+    case PlanError.InitialFixations(InitialFixationError.MissingAngularScale(_)) =>
+      Remedy.ReviseScaleDeclaration
+    case PlanError.InitialFixations(_) => Remedy.ReviewAnalysisWindow
 
   private[plan] def remedyFor(error: TemporalStudyError): Remedy = error match
     case TemporalStudyError.Input(e)     => remedyFor(e)

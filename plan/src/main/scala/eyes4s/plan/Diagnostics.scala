@@ -127,6 +127,9 @@ object Diagnostics:
           long(windowMicros),
           long(totalMicros)
         )
+      case InitialFixations(underlying) =>
+        val inner = RevisionDiagnostics.initialFixation(underlying)
+        diagnostic(C.plan, e, e.message, inner.subject)(cause(inner))
 
   def failure[K](e: StudyFailure[K]): Diagnostic[K] =
     import StudyFailure.*
@@ -153,6 +156,8 @@ object Diagnostics:
           Operand.Key(key),
           windowTally(tally)
         )
+      case InitialFixations(key, underlying) =>
+        trial(key, RevisionDiagnostics.initialFixation(underlying))
 
   def result[K](e: StudyResultError[K]): Diagnostic[K] =
     import StudyResultError.*

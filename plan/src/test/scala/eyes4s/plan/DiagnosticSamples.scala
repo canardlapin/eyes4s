@@ -170,7 +170,8 @@ object DiagnosticSamples:
           Vector(digest),
           Vector(Vector(digest2))
         ),
-      PlanError.UnmatchedFocalRefused(Vector(digest))
+      PlanError.UnmatchedFocalRefused(Vector(digest)),
+      PlanError.InitialFixations(InitialFixationError.MissingAngularScale(1.5))
     ),
     family[StudyFailure[StudyKey]]("StudyFailure")(
       StudyFailure.Frame(k1, frameError),
@@ -178,7 +179,22 @@ object DiagnosticSamples:
       StudyFailure.Temporal(k1, TemporalStudyError.MissingEpoch(digest)),
       StudyFailure.Estimation(k1, EstimateError.NoMass),
       StudyFailure.Comparison(k1, k2, CompareError.ZeroNorm("cosine", 0, 1)),
-      StudyFailure.OffWindow(k1, tally)
+      StudyFailure.OffWindow(k1, tally),
+      StudyFailure.InitialFixations(k1, InitialFixationError.NoFixationKept(2, 400L))
+    ),
+    family[InitialFixationError]("InitialFixationError")(
+      InitialFixationError.NonPositiveRadius(-1.0),
+      InitialFixationError.NonFiniteCross(Inf, 2.0),
+      InitialFixationError.CrossOffFrame(9.0, 1.0, fid),
+      InitialFixationError.MissingAngularScale(1.5),
+      InitialFixationError.InvalidTally(3, 2, 30L, 20L),
+      InitialFixationError.NoFixationKept(2, 400L)
+    ),
+    family[StudyRevisionError]("StudyRevisionError")(
+      StudyRevisionError.DuplicateField(StudyField.Scales),
+      StudyRevisionError.Stale(StudyField.Weighting, "weight Duration", "weight Uniform"),
+      StudyRevisionError.IncompleteWindow(Some("image"), None),
+      StudyRevisionError.Plan(PlanError.EmptyScales(0))
     ),
     family[StudyResultError[StudyKey]]("StudyResultError")(
       StudyResultError.Description("grid", Vector.empty),
