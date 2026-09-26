@@ -1337,6 +1337,7 @@ lazy val studioMacosJob = WorkflowJob(
 lazy val studioWorkflowPaths = List(
   "studio/**",
   "fixtures/studio-golden/**",
+  "fixtures/studio-bundles/**",
   "tools/studio-fixture/**",
   "docs/studio/fixture/**",
   "build.sbt",
