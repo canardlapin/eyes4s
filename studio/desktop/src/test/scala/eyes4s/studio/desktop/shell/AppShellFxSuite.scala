@@ -70,6 +70,7 @@ class AppShellFxSuite extends ShellFxSuite:
 
   boards.foreach { (board, model, layout, dark) =>
     fxStage.test(s"t2 · $board: the shell renders the S1.0 view-models; snapshot") { fx =>
+      assumeFullStage(fx)
       val w = boot(fx, model())
       assertEquals(runOnFx(w.host.active), Some(layout))
       assertNoDiff(texts(w).mkString("\n"), expected(w).mkString("\n"))
@@ -92,6 +93,7 @@ class AppShellFxSuite extends ShellFxSuite:
 
   fxStage.test("t2 · Main board: app bar, context strip and status bar read as the board") {
     fx =>
+      assumeFullStage(fx)
       val w = boot(fx, StoryModels.t2Compare)
       assertEquals(runOnFx(fx.stage.getTitle), "memory-study.eyes")
       val lines = texts(w)
@@ -120,6 +122,7 @@ class AppShellFxSuite extends ShellFxSuite:
   fxStage.test(
     "shell metrics: app bar 44, context strip 32, banner 30, tab headers 28, status bar 24"
   ) { fx =>
+    assumeFullStage(fx)
     val w                 = boot(fx, StoryModels.t2Compare)
     def height(r: Region) = runOnFx(r.getLayoutBounds.getHeight)
     assertEqualsDouble(height(w.shell.appBar.node), 44, 1)
@@ -255,6 +258,7 @@ class AppShellFxSuite extends ShellFxSuite:
   fxStage.test(
     "jobs chip running at t3: run 8 adopted from the fake backend; Cancel reaches it"
   ) { fx =>
+    assumeFullStage(fx)
     val w    = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
     val jobs = w.shell.appBar.jobs
     assertEquals(

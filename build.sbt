@@ -385,6 +385,7 @@ githubWorkflowCheck := {
   requireText("studio.yml", "studioAll studioStyleCheck")
   requireText("studio.yml", "paths: [studio/**")
   requireText("studio.yml", "macos-15")
+  requireText("studio.yml", "EYES4S_STUDIO_SMALL_DISPLAY: skip")
   forbidText("checks.yml", "studio")
 }
 
@@ -1322,7 +1323,10 @@ lazy val studioMacosJob = WorkflowJob(
   studioJobSetup ::: List(
     WorkflowStep.Run(
       List("sbt -J-Xmx4g -Djavafx.platform=mac-aarch64 studioDesktop/test"),
-      name = Some("Run functional JavaFX tests (no goldens)")
+      name = Some("Run functional JavaFX tests (no goldens)"),
+      // The runner's display is 1024x768, which clamps a 1440x900 stage: tests
+      // that need the full stage skip here and run in the Linux job.
+      env = Map("EYES4S_STUDIO_SMALL_DISPLAY" -> "skip")
     )
   ),
   sbtStepPreamble = Nil,
