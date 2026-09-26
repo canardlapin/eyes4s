@@ -1094,10 +1094,8 @@ lazy val studioDesktop = project
         (if (scaladockLocal.isDefined) Nil
          else Seq(scaladockPinned("core"), scaladockPinned("fx"))),
     // One JavaFX for the shell and both providers. Intaglio and scaladock
-    // declare it `Provided` (21.0.5 and 24.0.1), but scaladock-fx also depends
-    // on ScalaFX, which only its demo uses and which drags in every OpenJFX
-    // module at 24. Drop it, pin the rest, and fail on any other version.
-    excludeDependencies += ExclusionRule("org.scalafx"),
+    // declare it `Provided` (21.0.5 and 24.0.1); since scaladock 3ed443e ScalaFX
+    // is demo-only. Pin the three modules we use and fail on any other version.
     dependencyOverrides ++= Seq("javafx-base", "javafx-graphics", "javafx-controls").map(
       "org.openjfx" % _ % javaFxV
     ),

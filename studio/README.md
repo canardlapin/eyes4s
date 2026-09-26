@@ -32,7 +32,7 @@ published artifacts. Each is pinned to one full Git SHA in
 | Provider | Revision | Modules used | Coordinates |
 |---|---|---|---|
 | Intaglio | `2fa5c682f4a95b8e73daad78dd9302d7aff46e11` | core, interaction, svg (JVM+JS); javafx (JVM) | `io.github.canardlapin::intaglio-*` |
-| scaladock | `44c44f794645e93da9a479ef660b4c26a9a1da15` | core, fx (JVM) | `io.github.bbuchsbaum::scaladock-*` |
+| scaladock | `3ed443e99e53c8af0cf5c5707abcbb70c125f705` | core, fx (JVM) | `io.github.bbuchsbaum::scaladock-*` |
 
 The build resolves each as the ordinary library version `0.0.0-<full SHA>`.
 [`publish-pins.sh`](publish-pins.sh) produces those artifacts: it fetches the
@@ -54,9 +54,16 @@ record the pinned checkout paths.
 `--source NAME=<checkout or URL>` fetches the same pinned commit from somewhere
 else, for example an offline mirror; the checked-out SHA is still verified.
 
+### Re-pinning scaladock
+
+Read the "Behaviour changes — check these when updating a pin" section of scaladock's
+CHANGELOG.md for every commit between the old and new pin before changing
+`scaladock.revision`. scaladock's CI has a library-floor job (JDK 22, JavaFX 24.0.1),
+which is Studio's runtime. Keep the pin on a commit where that job is green.
+
 ### What the scaladock pin provides
 
-At `44c44f7` scaladock has asynchronous close admission (`Dock.requestClose`,
+At `3ed443e` scaladock has asynchronous close admission (`Dock.requestClose`,
 `PaneView.prepareClose`, `requestCloseAll`) and true minimize. The tab header
 height is `LayoutSettings.headerPx` (default 32), passed to `Dock(...)`. The
 header button glyphs are CSS shapes (`.dock-icon.close`, `.minimize`,
