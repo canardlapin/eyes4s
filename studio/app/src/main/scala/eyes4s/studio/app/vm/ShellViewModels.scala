@@ -83,6 +83,8 @@ final case class ContextStripVM(
     forward: ActionVM,
     trail: Vector[CrumbVM],
     freshness: FreshnessVM,
+    /** The newer run's chip beside the badge ("Rev 5 · run 8 running · 48%"). */
+    newer: Option[FreshnessVM],
     notes: Vector[String],
     draft: Option[DraftChipVM]
 ) derives CanEqual
@@ -109,11 +111,15 @@ final case class StatusBarVM(
     saved: String
 ) derives CanEqual
 
+/** A notice to show once (a refused command, undo at a barrier). */
+final case class NoticeVM(text: String, dismiss: Intent) derives CanEqual
+
 /** Everything the shell draws around the dock. */
 final case class ShellVM(
     window: WindowVM,
     appBar: AppBarVM,
     context: ContextStripVM,
     banner: Option[DraftBannerVM],
-    status: StatusBarVM
+    status: StatusBarVM,
+    notice: Option[NoticeVM]
 ) derives CanEqual

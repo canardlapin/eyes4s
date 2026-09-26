@@ -16,117 +16,82 @@
 
 package eyes4s.studio.app.jobs
 
-import eyes4s.studio.core.backend.{AnalysisRevision, RunId, StageKind}
-
-// The job seam of the presentation layer. The execution service (S3.1)
-// projects its jobs and its shelf of finished-but-not-shown runs into a
-// [[JobBoard]] and dispatches it as `Intent.JobsChanged`; the app never
-// runs, polls or cancels a job itself (it emits `AppEffect.CancelJob`).
-
-/** A pair total as the execution service knows it. Only an exact total is a
-  * number the user may read as "how many"; a total still being counted
-  * renders as "counting…", never as a number.
-  */
-enum MeterTotal derives CanEqual:
-  case Exact(pairs: Long)
-  case AtMost(pairs: Long)
-  case Counting
-
-/** Why a pair meter was refused; each case names its operands. */
-enum MeterError derives CanEqual:
-  case NegativeDone(done: Long)
-  case NegativeTotal(total: Long)
-  case BeyondTotal(done: Long, total: Long)
-
-  def message: String = this match
-    case NegativeDone(d)   => s"Completed pairs $d is negative."
-    case NegativeTotal(t)  => s"Pair total $t is negative."
-    case BeyondTotal(d, t) => s"Completed pairs $d exceed the total $t."
-
-/** How far a running job has got: its stage and pairs compared over every
-  * scale (the jobs chip reads this).
-  */
-final case class PairMeter private (stage: StageKind, done: Long, total: MeterTotal)
-    derives CanEqual:
-
-  /** done / total, only when the total is exact and positive. */
-  def fraction: Option[Double] = total match
-    case MeterTotal.Exact(t) if t > 0 => Some(done.toDouble / t.toDouble)
-    case _                            => None
-
-object PairMeter:
-  def of(stage: StageKind, done: Long, total: MeterTotal): Either[MeterError, PairMeter] =
-    val bound = total match
-      case MeterTotal.Exact(t)  => Some(t)
-      case MeterTotal.AtMost(t) => Some(t)
-      case MeterTotal.Counting  => None
-    if done < 0 then Left(MeterError.NegativeDone(done))
-    else
-      bound match
-        case Some(t) if t < 0    => Left(MeterError.NegativeTotal(t))
-        case Some(t) if done > t => Left(MeterError.BeyondTotal(done, t))
-        case _                   => Right(new PairMeter(stage, done, total))
-
-/** A job's lifecycle, as the execution service reports it. */
-enum JobPhase derives CanEqual:
-  case Queued, Running, Cancelling, Succeeded
-
-  /** `diagnostics` is the number of diagnostics the failure carries. */
-  case Failed(diagnostics: Int)
-  case Cancelled
-
-  /** A newer run of a later revision completed first; this one's result will
-    * never become current.
-    */
-  case Superseded
-
-  def isActive: Boolean = this match
-    case Queued | Running | Cancelling => true
-    case _                             => false
-
-/** One job, by the run it produces. */
-final case class JobSummary(
-    run: RunId,
-    revision: AnalysisRevision,
-    phase: JobPhase,
-    meter: Option[PairMeter]
-) derives CanEqual
+import eyes4s.studio.core.backend.{JobId, RunId, StudioDiagnostic}
+import eyes4s.studio.core.execution.{
+  ExecutionError,
+  ExecutionEvent,
+  ExecutionJob,
+  JobPhase,
+  RunReady,
+  RunShelf,
+  RunStamp
+}
 
 /** What the jobs chip and the status bar's job slot show. */
 enum JobHeadline derives CanEqual:
   case Idle
-  case Active(job: JobSummary)
-  case Failed(job: JobSummary, diagnostics: Int)
+  case Active(job: ExecutionJob)
+
+  /** The newest job failed; `diagnostics` are its stable-coded causes. */
+  case Failed(job: ExecutionJob, diagnostics: Vector[StudioDiagnostic])
 
   /** A finished run waiting for the user to choose Show ("Run 8 ready — Show"). */
-  case Ready(run: RunId)
+  case Ready(notice: RunReady)
 
-/** Every job the session knows, and `ready`: finished runs that have not
-  * replaced the shown run (the execution service's shelf). Results never
-  * swap under the user; Show is an intent.
+/** The presentation layer's projection of the execution service (S3.1):
+  * its jobs, keyed by [[JobId]], and the [[RunShelf]] the app keeps. It adds
+  * no state of its own: jobs arrive as [[ExecutionEvent]]s or a snapshot, and
+  * the shelf changes only through its own `receive`, `require`, `show` and
+  * `dismiss`.
   */
-final case class JobBoard(jobs: Vector[JobSummary], ready: Vector[RunId]) derives CanEqual:
+final case class JobBoard private (jobs: Vector[ExecutionJob], shelf: RunShelf)
+    derives CanEqual:
 
-  /** The newest active job; else the newest ready run; else the newest job
-    * when it failed; else idle.
+  /** Jobs newest first by job id. */
+  private def newestFirst: Vector[ExecutionJob] = jobs.sortBy(-_.id.number)
+
+  def job(id: JobId): Option[ExecutionJob] = jobs.find(_.id == id)
+
+  /** The newest job that has not settled. */
+  def active: Option[ExecutionJob] = newestFirst.find(!_.phase.isTerminal)
+
+  /** The ready notice (`RunShelf.pending`). */
+  def ready: Option[RunReady] = shelf.pending
+
+  /** The newest active job; else the ready notice; else the newest job when
+    * it failed; else idle.
     */
   def headline: JobHeadline =
-    val newest = jobs.sortBy(_.run.number)
-    newest
-      .findLast(_.phase.isActive)
+    active
       .map(JobHeadline.Active(_))
-      .orElse(ready.lastOption.map(JobHeadline.Ready(_)))
-      .orElse(newest.lastOption.collect { case j @ JobSummary(_, _, JobPhase.Failed(n), _) =>
-        JobHeadline.Failed(j, n)
+      .orElse(ready.map(JobHeadline.Ready(_)))
+      .orElse(newestFirst.headOption.collect {
+        case j @ ExecutionJob(_, _, _, JobPhase.Failed(diagnostics, _)) =>
+          JobHeadline.Failed(j, diagnostics)
       })
       .getOrElse(JobHeadline.Idle)
 
-  def active: Option[JobSummary] = jobs.sortBy(_.run.number).findLast(_.phase.isActive)
+  /** Fold one service event: a job's new state, or a ready notice. */
+  def receive(event: ExecutionEvent): JobBoard = event match
+    case ExecutionEvent.Changed(job) => copy(jobs = jobs.filterNot(_.id == job.id) :+ job)
+    case ExecutionEvent.Ready(_)     => copy(shelf = shelf.receive(event))
 
-  def isReady(run: RunId): Boolean = ready.contains(run)
+  /** Replace the jobs with a snapshot of the service's. */
+  def withJobs(snapshot: Vector[ExecutionJob]): JobBoard = JobBoard.from(snapshot, shelf)
 
-  /** The board once `run` has been shown: it leaves the shelf. */
-  def shown(run: RunId): JobBoard = copy(ready = ready.filterNot(_ == run))
+  def require(stamp: RunStamp): JobBoard = copy(shelf = shelf.require(stamp))
+
+  /** Show `run`: only the pending run can be shown (S8.8). */
+  def show(run: RunId): Either[ExecutionError, JobBoard] =
+    shelf.show(run).map(s => copy(shelf = s))
+
+  def dismiss(run: RunId): JobBoard = copy(shelf = shelf.dismiss(run))
 
 object JobBoard:
-  val empty: JobBoard = JobBoard(Vector.empty, Vector.empty)
+
+  /** The board of `jobs` (the last state of each job id wins) and `shelf`. */
+  def from(jobs: Vector[ExecutionJob], shelf: RunShelf): JobBoard =
+    JobBoard(jobs.reverse.distinctBy(_.id).reverse, shelf)
+
+  /** No jobs; the shelf of a document showing `shown`. */
+  def empty(shown: Option[RunId]): JobBoard = JobBoard(Vector.empty, RunShelf.of(shown))

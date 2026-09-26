@@ -17,9 +17,9 @@
 package eyes4s.studio.app.keys
 
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.app.jobs.JobPhase
+import eyes4s.studio.core.execution.JobPhase
 import eyes4s.studio.app.text.MessageId
-import eyes4s.studio.core.command.HistoryStack
+import eyes4s.studio.core.command.{CommandError, HistoryStack}
 import eyes4s.studio.core.document.Perspective
 
 /** A registered command's identity ("perspective.compare", "edit.undo"). */
@@ -40,12 +40,19 @@ final class AppCommand private[keys] (
     val id: CommandId,
     val label: MessageId,
     val shortcut: Option[KeyChord],
-    resolve: AppModel => Option[Intent]
+    resolve: AppModel => Option[Intent],
+    why: AppModel => Option[CommandError] = (_: AppModel) => None
 ):
   /** The intent this command dispatches now; never another Invoke or key. */
   def intent(model: AppModel): Option[Intent] = resolve(model)
 
   def enabled(model: AppModel): Boolean = resolve(model).isDefined
+
+  /** Why a disabled command is disabled, when the history says so (undo at
+    * a Save & run barrier: S2.2's UndoBlocked).
+    */
+  def reason(model: AppModel): Option[CommandError] =
+    if enabled(model) then None else why(model)
 
   override def toString: String = s"AppCommand(${id.value})"
 
@@ -90,28 +97,32 @@ object CommandRegistry:
     CommandId.declared("edit.undo"),
     MessageId.CommandUndo,
     Some(KeyChord.command(Key.Z)),
-    m => Option.when(m.history.science.canUndo)(Intent.Undo(HistoryStack.Science))
+    m => Option.when(m.history.science.canUndo)(Intent.Undo(HistoryStack.Science)),
+    m => m.history.undoOn(HistoryStack.Science).left.toOption
   )
 
   val redo: AppCommand = AppCommand(
     CommandId.declared("edit.redo"),
     MessageId.CommandRedo,
     Some(KeyChord.commandShift(Key.Z)),
-    m => Option.when(m.history.science.canRedo)(Intent.Redo(HistoryStack.Science))
+    m => Option.when(m.history.science.canRedo)(Intent.Redo(HistoryStack.Science)),
+    m => m.history.redoOn(HistoryStack.Science).left.toOption
   )
 
   val undoView: AppCommand = AppCommand(
     CommandId.declared("view.undo"),
     MessageId.CommandUndoView,
     None,
-    m => Option.when(m.history.presentation.canUndo)(Intent.Undo(HistoryStack.Presentation))
+    m => Option.when(m.history.presentation.canUndo)(Intent.Undo(HistoryStack.Presentation)),
+    m => m.history.undoOn(HistoryStack.Presentation).left.toOption
   )
 
   val redoView: AppCommand = AppCommand(
     CommandId.declared("view.redo"),
     MessageId.CommandRedoView,
     None,
-    m => Option.when(m.history.presentation.canRedo)(Intent.Redo(HistoryStack.Presentation))
+    m => Option.when(m.history.presentation.canRedo)(Intent.Redo(HistoryStack.Presentation)),
+    m => m.history.redoOn(HistoryStack.Presentation).left.toOption
   )
 
   val nextPane: AppCommand = AppCommand(
@@ -135,23 +146,19 @@ object CommandRegistry:
     None,
     m =>
       m.jobs.active
-        .filter(j => j.phase == JobPhase.Queued || j.phase == JobPhase.Running)
-        .filter(j => m.document.job(j.run).isDefined)
-        .map(j => Intent.CancelJob(j.run))
+        .filter(_.phase match
+          case JobPhase.Queued | JobPhase.Running(_) => true
+          case _                                     => false)
+        .filter(j => m.document.job(j.run).contains(j.id))
+        .map(j => Intent.CancelJob(j.id))
   )
 
-  /** Show the newest finished run waiting on the shelf. */
+  /** Show the run the shelf holds ready; disabled exactly when it holds none. */
   val showRun: AppCommand = AppCommand(
     CommandId.declared("run.show"),
     MessageId.CommandShowRun,
     None,
-    m =>
-      m.jobs.ready
-        .filter(r =>
-          m.document.run(r).isDefined && !m.document.presentation.shownRun.contains(r)
-        )
-        .lastOption
-        .map(Intent.ShowRun(_))
+    m => m.jobs.ready.map(notice => Intent.ShowRun(notice.run))
   )
 
   val reviewDraft: AppCommand = AppCommand(

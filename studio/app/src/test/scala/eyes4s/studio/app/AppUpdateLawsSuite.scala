@@ -21,6 +21,7 @@ import eyes4s.studio.app.nav.Location
 import eyes4s.studio.app.vm.Shell
 import eyes4s.studio.core.command.{Command, HistoryStack, JournalEntry}
 import eyes4s.studio.core.document.Perspective
+import eyes4s.studio.core.execution.ExecutionEffect
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Test
 
@@ -82,11 +83,21 @@ class AppUpdateLawsSuite extends munit.ScalaCheckSuite:
         mirrored.foreach {
           case (entry, Right(step)) =>
             assertEquals(t.after.history, step.history, t.intent)
-            assertEquals(
-              t.effects,
-              AppEffect.Journal(entry) +: step.effects.map(AppEffect.of),
-              t.intent
-            )
+            val doc     = step.history.document
+            val mapped  = step.effects.map(AppEffect.of(_, doc))
+            val submits = mapped.collect {
+              case AppEffect.Execution(ExecutionEffect.Submit(s)) => s
+            }
+            // A requirement changed without a submission is announced once.
+            val require = AppModel
+              .requestedStamp(doc)
+              .filter(s =>
+                submits.isEmpty && !AppModel.requestedStamp(t.before.document).contains(s)
+              )
+              .map(s => AppEffect.Execution(ExecutionEffect.Require(s)))
+            assertEquals(t.effects, (AppEffect.Journal(entry) +: mapped) ++ require, t.intent)
+            (submits ++ require.flatMap(_ => AppModel.requestedStamp(doc))).lastOption
+              .foreach(s => assertEquals(t.after.jobs.shelf.required, Some(s), t.intent))
             assertEquals(t.after.notice, None, t.intent)
           case (entry, Left(error)) =>
             assertEquals(t.after.history, t.before.history, t.intent)
@@ -167,12 +178,36 @@ class AppUpdateLawsSuite extends munit.ScalaCheckSuite:
       "shown run changed" -> count(t =>
         t.after.document.presentation.shownRun != t.before.document.presentation.shownRun
       ),
-      "job requested" -> count(_.effects.exists(_.isInstanceOf[AppEffect.RequestJob])),
-      "key invoked"   -> count(t =>
+      "job requested" -> count(_.effects.exists {
+        case AppEffect.Execution(ExecutionEffect.Submit(_)) => true
+        case _                                              => false
+      }),
+      "run shown from the shelf" -> count(t =>
+        t.intent.isInstanceOf[Intent.ShowRun] &&
+          t.after.jobs.shelf.shown != t.before.jobs.shelf.shown
+      ),
+      "key invoked" -> count(t =>
         t.intent.isInstanceOf[Intent.KeyPressed] && t.effects.nonEmpty
       )
     )
     reached.foreach((branch, n) => assert(n > 0, s"no generated step reached: $branch"))
+  }
+
+  property("Show goes through the shelf: refused with its NotReady exactly when it says so") {
+    forAll(session(20)) { traces =>
+      traces.foreach { t =>
+        t.intent match
+          case Intent.ShowRun(run) =>
+            t.before.jobs.show(run) match
+              case Left(error) =>
+                assertEquals(t.effects, Vector.empty, run)
+                assertEquals(t.after.history, t.before.history, run)
+                assertEquals(t.after.notice, Some(Notice.ExecutionRefused(error)), run)
+              case Right(_) =>
+                assertEquals(t.after.jobs.ready, None, run)
+          case _ => ()
+      }
+    }
   }
 
   property("a refused selection changes nothing but the notice") {
@@ -207,7 +242,8 @@ class AppUpdateLawsSuite extends munit.ScalaCheckSuite:
               case Some(resolved) =>
                 assertEquals((t.after, t.effects), AppModel.update(t.before, resolved))
               case None =>
-                assertEquals(t.after.notice, Some(Notice.Unavailable(id)))
+                val why = CommandRegistry.find(id).flatMap(_.reason(t.before))
+                assertEquals(t.after.notice, Some(Notice.Unavailable(id, why)))
                 assertEquals(t.effects, Vector.empty)
           case _ => ()
       }
@@ -232,34 +268,49 @@ class AppUpdateLawsSuite extends munit.ScalaCheckSuite:
   // Story-moment examples
   // -------------------------------------------------------------------------
 
-  test("t2: Save & run requests run 8 of rev 5 on r3, journals it and persists") {
+  test("t2: Save & run submits run 8's stamp, journals it, persists and requires it") {
+    import eyes4s.studio.core.fixture.StoryMoments.*
     val (m, effects) =
       AppModel.update(StoryModels.t2Compare, Intent.Dispatch(Command.SaveAndRun(None)))
-    import eyes4s.studio.core.fixture.StoryMoments.*
+    val stamp = AppModel.stampOf(m.document, rev5, r3)
     assertEquals(
       effects,
       Vector(
         AppEffect.Journal(JournalEntry.Apply(Command.SaveAndRun(None))),
-        AppEffect.RequestJob(run8, rev5, r3),
+        AppEffect.Execution(ExecutionEffect.Submit(stamp)),
         AppEffect.Persist
       )
     )
+    assertEquals(m.jobs.shelf.required, Some(stamp))
     assert(m.save.edited)
-    assertEquals(CommandRegistry.undo.enabled(m), false) // Save & run is a barrier
+  }
+
+  test("undo at the Save & run barrier says why, naming the command by its label") {
+    val (m, _) =
+      AppModel.update(StoryModels.t2Compare, Intent.Dispatch(Command.SaveAndRun(None)))
+    assertEquals(CommandRegistry.undo.enabled(m), false)
+    val (blocked, effects) =
+      AppModel.update(m, Intent.KeyPressed(CommandRegistry.undo.shortcut.get))
+    assertEquals(effects, Vector.empty)
+    assertEquals(
+      blocked.notice.map(_.message),
+      Some("Undo: Saving rev 5 started run 8; earlier edits can no longer be undone.")
+    )
+    assertEquals(vm.Shell.project(blocked).notice.map(_.text), blocked.notice.map(_.message))
   }
 
   test("t3: Cancel on the chip cancels run 8's job") {
+    import eyes4s.studio.core.fixture.StoryMoments.*
     val cancel       = vm.Shell.appBar(StoryModels.t3Summary).jobs.action.get
     val (_, effects) = AppModel.update(StoryModels.t3Summary, cancel.intent)
-    import eyes4s.studio.core.fixture.StoryMoments.*
-    assert(effects.contains(AppEffect.CancelJob(run8, run8Job)), effects)
+    assert(effects.contains(AppEffect.Execution(ExecutionEffect.Cancel(run8Job))), effects)
   }
 
   test("Showing another run rebases the selection and drops refs of the old run") {
     import eyes4s.studio.core.fixture.StoryMoments.*
     val m0 = StoryModels.t2Compare
     assertEquals(m0.selection.selected, Vector(StoryModels.pair))
-    val (m1, _) = AppModel.update(m0, Intent.ShowRun(run5))
+    val (m1, _) = AppModel.update(m0, Intent.Dispatch(Command.ShowRun(Some(run5))))
     assertEquals(m1.document.presentation.shownRun, Some(run5))
     assertEquals(m1.selection.selected, Vector.empty)
     assertEquals(m1.selection.context, m0.selection.context.next)

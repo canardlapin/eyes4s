@@ -16,11 +16,11 @@
 
 package eyes4s.studio.app
 
-import eyes4s.studio.app.jobs.{JobBoard, JobPhase, JobSummary, MeterTotal, PairMeter}
 import eyes4s.studio.app.keys.{CommandRegistry, Key, KeyChord, Modifier}
 import eyes4s.studio.app.layout.{PaneId, StudioLayouts}
 import eyes4s.studio.app.nav.{DataSection, Location, Place}
-import eyes4s.studio.core.backend.{RunId, StageKind}
+import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.execution.*
 import eyes4s.studio.core.command.{CommandGen, HistoryStack}
 import eyes4s.studio.core.document.{DocumentGen, Perspective, SourceRole}
 import eyes4s.studio.core.selection.*
@@ -84,38 +84,98 @@ object AppGen:
   private def run(m: AppModel): Gen[RunId] =
     Gen.oneOf(m.document.runs.map(_.id) :+ RunId(99))
 
-  private val meter: Gen[PairMeter] =
+  /** A progress report of `job` running `run`. */
+  private def progress(job: JobId, run: RunId): Gen[ExecutionProgress] =
     for
-      stage <- Gen.oneOf(StageKind.values.toSeq)
       total <- Gen.oneOf(
-        MeterTotal.Exact(44845L),
-        MeterTotal.AtMost(50000L),
-        MeterTotal.Counting
+        ProgressTotal.Exact(44845L),
+        ProgressTotal.AtMost(50000L),
+        ProgressTotal.Unknown
       )
       done <- Gen.choose(0L, 44845L)
-    yield ok(PairMeter.of(stage, done, total))
-
-  private val phase: Gen[JobPhase] = Gen.oneOf(
-    JobPhase.Queued,
-    JobPhase.Running,
-    JobPhase.Cancelling,
-    JobPhase.Succeeded,
-    JobPhase.Failed(2),
-    JobPhase.Failed(0),
-    JobPhase.Cancelled,
-    JobPhase.Superseded
-  )
-
-  private def board(m: AppModel): Gen[JobBoard] =
-    val runs = m.document.runs
-    for
-      jobs <- Gen.sequence[Vector[JobSummary], JobSummary](
-        runs.map(r =>
-          Gen.zip(phase, Gen.option(meter)).map((p, mt) => JobSummary(r.id, r.analysis, p, mt))
-        )
+      step <- Gen.choose(0L, 50L)
+    yield ExecutionProgress(
+      ok(
+        for
+          meter <- StageMeter
+            .of(StageKind.Comparing, CountUnit.Pairs, 0L, ProgressTotal.Unknown)
+          totals <- RunTotals.of(10L, ProgressTotal.Exact(10L), done, total)
+          p      <- JobProgress
+            .of(job, run, step, Segment.Comparing(0, PairDesign.Matched), meter, totals)
+        yield p
       )
-      ready <- Gen.someOf(runs.map(_.id)).map(_.toVector)
-    yield JobBoard(jobs, ready)
+    )
+
+  private val failure =
+    StudioDiagnostic(
+      "studio-execution.lost-job",
+      DiagnosticLevel.Error,
+      DiagnosticOrigin.Host,
+      Vector.empty,
+      "lost"
+    )
+
+  private def phase(job: JobId, run: RunId): Gen[JobPhase] =
+    val p = progress(job, run)
+    Gen
+      .oneOf(
+        Gen.const(JobPhase.Queued),
+        p.map(JobPhase.Running(_)),
+        Gen.option(p).map(JobPhase.Cancelling(_)),
+        p.map(JobPhase.Succeeded(_)),
+        Gen.option(p).map(JobPhase.Failed(Vector(failure, failure), _)),
+        Gen.option(p).map(JobPhase.Cancelled(_)),
+        Gen.option(p).map(JobPhase.Superseded(None, _))
+      )
+      .flatMap(identity)
+
+  /** A job of one of the document's runs, by its handle when it has one. */
+  private def job(m: AppModel): Gen[Option[ExecutionJob]] =
+    val runs = m.document.runs
+    if runs.isEmpty then Gen.const(None)
+    else
+      for
+        r <- Gen.oneOf(runs)
+        id = m.document.job(r.id).getOrElse(JobId(r.id.number + 100))
+        stamp <- Gen.frequency(
+          4 -> AppModel.stampOf(m.document, r.analysis, r.dataset),
+          1 -> AppModel.stampOf(m.document, r.analysis, DatasetRevision(99))
+        )
+        ph <- phase(id, r.id)
+      yield Some(ExecutionJob(id, r.id, stamp, ph))
+
+  /** The notice the shelf is waiting for: a run of the required stamp. */
+  private def awaited(m: AppModel): Option[Intent] =
+    for
+      stamp <- m.jobs.shelf.required
+      run   <- m.document.runs.findLast(r =>
+        r.analysis == stamp.revision && r.dataset == stamp.dataset
+      )
+    yield Intent.Execution(
+      ExecutionEvent.Ready(
+        RunReady(m.document.job(run.id).getOrElse(JobId(run.id.number + 100)), run.id, stamp)
+      )
+    )
+
+  private def event(m: AppModel): Gen[Intent] =
+    awaited(m).fold(Gen.const(Option.empty[Intent]))(i => Gen.oneOf(None, Some(i))).flatMap {
+      case Some(i) => Gen.const(i)
+      case None    => arbitraryEvent(m)
+    }
+
+  private def arbitraryEvent(m: AppModel): Gen[Intent] =
+    job(m).flatMap {
+      case None    => Gen.const(Intent.JobsChanged(Vector.empty))
+      case Some(j) =>
+        Gen.oneOf(
+          Intent.Execution(ExecutionEvent.Changed(j)),
+          Intent.Execution(ExecutionEvent.Ready(RunReady(j.id, j.run, j.stamp))),
+          Intent.JobsChanged(Vector(j))
+        )
+    }
+
+  private def jobIds(m: AppModel): Gen[JobId] =
+    Gen.oneOf(m.jobs.jobs.map(_.id) ++ m.document.jobs.map(_.job) :+ JobId(999))
 
   val chord: Gen[KeyChord] =
     Gen.frequency(
@@ -153,14 +213,17 @@ object AppGen:
     1 -> Gen.choose(-1, 8).map(Intent.OpenCrumb(_)),
     2 -> select(m),
     1 -> Gen.zip(Gen.oneOf(views), Gen.option(Gen.oneOf(refs(m)))).map(Intent.HoverOver(_, _)),
-    1 -> run(m).map(Intent.CancelJob(_)),
-    1 -> run(m).map(Intent.ShowRun(_)),
+    1 -> jobIds(m).map(Intent.CancelJob(_)),
+    2 -> Gen
+      .oneOf(m.jobs.ready.map(_.run).toVector ++ Vector(RunId(99)) ++ m.document.runs.map(_.id))
+      .map(Intent.ShowRun(_)),
+    1 -> run(m).map(Intent.DismissReady(_)),
     3 -> simple,
     2 -> Gen.oneOf(CommandRegistry.all).map(c => Intent.Invoke(c.id)),
     2 -> chord.map(Intent.KeyPressed(_)),
     1 -> Gen.oneOf(panes).map(Intent.FocusPane(_)),
     1 -> Gen.zip(Gen.oneOf(panes), trail(m)).map(Intent.PaneSubject(_, _)),
-    1 -> board(m).map(Intent.JobsChanged(_)),
+    3 -> event(m),
     1 -> Gen
       .zip(Gen.choose(0, 23), Gen.choose(0, 59))
       .map((h, mm) => Intent.Saved(ok(ClockTime.of(h, mm))))

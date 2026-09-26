@@ -16,10 +16,10 @@
 
 package eyes4s.studio.app
 
-import eyes4s.studio.app.jobs.{JobBoard, JobPhase, JobSummary, MeterTotal, PairMeter}
 import eyes4s.studio.app.layout.PaneId
 import eyes4s.studio.app.nav.{DataSection, Location, Place}
-import eyes4s.studio.core.backend.{PairDesign, Response, StageKind}
+import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.execution.{ExecutionJob, ExecutionProgress, JobPhase, RunStamp}
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.fixture.{MockStudy, StoryMoments}
 import eyes4s.studio.core.freshness.{DraftCheck, SessionFacts}
@@ -190,24 +190,43 @@ object StoryModels:
     )
   )
 
-  /** Run 8 at 21,400 of 44,845 pairs. */
-  val run8Running: JobBoard = JobBoard(
-    Vector(
-      JobSummary(
-        StoryMoments.run8,
-        StoryMoments.rev5,
-        JobPhase.Running,
-        Some(ok(PairMeter.of(StageKind.Comparing, 21400L, MeterTotal.Exact(44845L))))
+  /** Run 8's stamp: rev 5 on r3, as t3 saves it. */
+  lazy val run8Stamp: RunStamp = AppModel.stampOf(t3, StoryMoments.rev5, StoryMoments.r3)
+
+  /** A progress report of run 8's job: `pairs` of 44,845 compared, or of a
+    * total still being counted.
+    */
+  def run8Progress(pairs: Long, counting: Boolean = false): ExecutionProgress =
+    val total = if counting then ProgressTotal.Unknown else ProgressTotal.Exact(44845L)
+    ExecutionProgress(
+      ok(
+        for
+          meter <- StageMeter
+            .of(StageKind.Comparing, CountUnit.Pairs, 0L, ProgressTotal.Unknown)
+          totals <- RunTotals.of(4685L, ProgressTotal.Exact(4685L), pairs, total)
+          p      <- JobProgress.of(
+            StoryMoments.run8Job,
+            StoryMoments.run8,
+            1L,
+            Segment.Comparing(2, PairDesign.Matched),
+            meter,
+            totals
+          )
+        yield p
       )
-    ),
-    Vector.empty
-  )
+    )
+
+  def run8Job(phase: JobPhase): ExecutionJob =
+    ExecutionJob(StoryMoments.run8Job, StoryMoments.run8, run8Stamp, phase)
+
+  /** Run 8 at 21,400 of 44,845 pairs. */
+  lazy val run8Running: ExecutionJob = run8Job(JobPhase.Running(run8Progress(21400L)))
 
   /** Results.dc.html, t3: the summary, P17 selected, run 8 running. */
   def t3Summary: AppModel = saved(
     play(
       opened(t3),
-      _ => Intent.JobsChanged(run8Running),
+      _ => Intent.JobsChanged(Vector(run8Running)),
       m => select(m, "compare.participant-plot", p17Summary)
     )
   )

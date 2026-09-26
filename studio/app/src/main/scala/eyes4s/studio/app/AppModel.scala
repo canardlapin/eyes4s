@@ -21,8 +21,15 @@ import eyes4s.studio.app.jobs.JobBoard
 import eyes4s.studio.app.keys.{CommandId, CommandRegistry, KeyChord}
 import eyes4s.studio.app.layout.{LayoutId, PaneId, PerspectiveLayout, StudioLayouts}
 import eyes4s.studio.app.nav.{Location, Navigation, Place}
-import eyes4s.studio.app.text.Format
+import eyes4s.studio.app.text.{Format, MessageId, Messages}
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId, TrialKey}
+import eyes4s.studio.core.execution.{
+  ExecutionEffect,
+  ExecutionError,
+  ExecutionEvent,
+  ExecutionJob,
+  RunStamp
+}
 import eyes4s.studio.core.command.{
   Command,
   CommandError,
@@ -33,6 +40,7 @@ import eyes4s.studio.core.command.{
   Step
 }
 import eyes4s.studio.core.document.{
+  CoreBinding,
   DatasetRevisionSpec,
   DocumentError,
   Perspective,
@@ -109,16 +117,34 @@ enum Notice derives CanEqual:
   case Refused(entry: JournalEntry, error: CommandError)
   case SelectionRefused(error: SelectionError)
 
-  /** A command was invoked while disabled (or is not registered). */
-  case Unavailable(command: CommandId)
+  /** A command was invoked while disabled (or is not registered);
+    * `reason` is the history's own refusal when it has one (undo at a
+    * barrier: S2.2's UndoBlocked).
+    */
+  case Unavailable(command: CommandId, reason: Option[CommandError])
+
+  /** The execution service's rules refused a run action (Show before the
+    * run is ready: NotReady).
+    */
+  case ExecutionRefused(error: ExecutionError)
 
   /** A confirmation no longer applies (the draft it named has gone). */
   case Outdated(confirmation: Confirmation)
 
-  def message: String = this match
-    case Refused(_, error)                      => error.message
-    case SelectionRefused(e)                    => e.message
-    case Unavailable(c)                         => s"${c.value} is not available now."
+  def message: String = message(Messages.english)
+
+  /** The notice's words; a command is named by its label ("Undo"). */
+  def message(messages: Messages): String = this match
+    case Refused(_, error)   => error.message
+    case SelectionRefused(e) => e.message
+    case ExecutionRefused(e) => e.message
+    case Unavailable(c, why) =>
+      val label = CommandRegistry
+        .find(c)
+        .fold(c.value)(cmd => messages(cmd.label, CommandRegistry.shortcutText(cmd)))
+      why.fold(messages(MessageId.NoticeUnavailable, label))(e =>
+        messages(MessageId.NoticeBlocked, label, e.message)
+      )
     case Outdated(Confirmation.DiscardDraft(d)) =>
       s"Draft ${d.label} is no longer the draft; nothing was discarded."
 
@@ -147,16 +173,14 @@ enum PlatformDialog derives CanEqual:
   * shell and services, never by [[AppModel.update]] (DESIGN_SPEC section 13).
   */
 enum AppEffect derives CanEqual:
-  /** Start `run` of `analysis` on `dataset` (S3.1). The execution service
-    * records the requested stamp when it accepts the job.
+  /** Submit, cancel or require a run on the execution service (S3.1):
+    * Save & run submits its stamp; a changed requirement without a
+    * submission is `Require`.
     */
-  case RequestJob(run: RunId, analysis: AnalysisRevision, dataset: DatasetRevision)
+  case Execution(effect: ExecutionEffect)
 
   /** Verify `dataset`; `content` is the digest a later Admit must carry. */
   case RequestAdmission(dataset: DatasetRevision, content: CanonicalDigest[DatasetRevisionSpec])
-
-  /** Cancel the backend job running `run`. */
-  case CancelJob(run: RunId, job: JobId)
 
   /** The document changed; schedule a save (S2.4a/b). */
   case Persist
@@ -167,11 +191,14 @@ enum AppEffect derives CanEqual:
   case OpenDialog(dialog: PlatformDialog)
 
 object AppEffect:
-  /** A command effect of studio-core as an app effect. */
-  def of(effect: Effect): AppEffect = effect match
-    case Effect.RequestRun(run, analysis, dataset) => RequestJob(run, analysis, dataset)
+  /** A command effect of studio-core as an app effect, against the document
+    * the command produced.
+    */
+  def of(effect: Effect, document: StudioDocument): AppEffect = effect match
+    case Effect.RequestRun(_, analysis, dataset) =>
+      Execution(ExecutionEffect.Submit(AppModel.stampOf(document, analysis, dataset)))
     case Effect.RequestAdmission(dataset, content) => RequestAdmission(dataset, content)
-    case Effect.CancelJob(run, job)                => CancelJob(run, job)
+    case Effect.CancelJob(_, job)                  => Execution(ExecutionEffect.Cancel(job))
     case Effect.Persist                            => Persist
 
 /** A user action or a service fact the shell dispatches (DESIGN_SPEC
@@ -199,10 +226,15 @@ enum Intent derives CanEqual:
   case Redo(stack: HistoryStack)
 
   // --- Jobs and runs --------------------------------------------------------------------
-  case CancelJob(run: RunId)
+  case CancelJob(job: JobId)
 
-  /** Show a finished run: Compare and the banner move to it. */
+  /** Show a finished run through the shelf (`RunShelf.show`): Compare and
+    * the banner move to it. Refused (NotReady) unless it is the pending run.
+    */
   case ShowRun(run: RunId)
+
+  /** Put the ready notice away without showing its run. */
+  case DismissReady(run: RunId)
   case ReviewDraft
   case RequestDiscardDraft
 
@@ -229,8 +261,11 @@ enum Intent derives CanEqual:
   case PaneSubject(pane: PaneId, subject: Vector[Place])
 
   // --- Service facts ---------------------------------------------------------------------------
-  /** The execution service's jobs and ready shelf (S3.1). */
-  case JobsChanged(board: JobBoard)
+  /** One event of the execution service (S3.1), in publication order. */
+  case Execution(event: ExecutionEvent)
+
+  /** A snapshot of the execution service's jobs (on attach). */
+  case JobsChanged(jobs: Vector[ExecutionJob])
 
   /** Progress, outcomes and the latest draft check (freshness inputs). */
   case SessionChanged(facts: SessionFacts)
@@ -335,7 +370,9 @@ object AppModel:
       project,
       History.start(document),
       SessionFacts.empty,
-      JobBoard.empty,
+      requestedStamp(document).foldLeft(JobBoard.empty(document.presentation.shownRun))(
+        _.require(_)
+      ),
       Navigation.start(rootTrails(document)),
       SelectionState.empty,
       None,
@@ -400,16 +437,24 @@ object AppModel:
     case Intent.Undo(stack) => applyHistory(m, undoEntry(stack), m.history.undoOn(stack))
     case Intent.Redo(stack) => applyHistory(m, redoEntry(stack), m.history.redoOn(stack))
 
-    case Intent.CancelJob(run) => update(m, Intent.Dispatch(Command.CancelRun(run)))
-    case Intent.ShowRun(run)   =>
-      if m.document.presentation.shownRun.contains(run) then
-        (m.copy(jobs = m.jobs.shown(run)), none)
-      else
-        val (next, effects) = update(m, Intent.Dispatch(Command.ShowRun(Some(run))))
-        if next.document.presentation.shownRun.contains(run) then
-          (next.copy(jobs = next.jobs.shown(run)), effects)
-        else (next, effects)
-    case Intent.ReviewDraft =>
+    case Intent.CancelJob(job) =>
+      m.jobs.job(job) match
+        case Some(j) => update(m, Intent.Dispatch(Command.CancelRun(j.run)))
+        case None    =>
+          val refused = ExecutionError.UnknownJob(job, m.jobs.jobs.map(_.id))
+          (m.copy(notice = Some(Notice.ExecutionRefused(refused))), none)
+    case Intent.ShowRun(run) =>
+      m.jobs.show(run) match
+        case Left(error)  => (m.copy(notice = Some(Notice.ExecutionRefused(error))), none)
+        case Right(board) =>
+          if m.document.presentation.shownRun.contains(run) then (m.copy(jobs = board), none)
+          else
+            val (next, effects) = update(m, Intent.Dispatch(Command.ShowRun(Some(run))))
+            if next.document.presentation.shownRun.contains(run) then
+              (next.copy(jobs = board), effects)
+            else (next, effects)
+    case Intent.DismissReady(run) => (m.copy(jobs = m.jobs.dismiss(run)), none)
+    case Intent.ReviewDraft       =>
       navigate(m, Location(Perspective.Analysis, draftTrail(m.document)))
     case Intent.RequestDiscardDraft =>
       m.document.draft.fold((m, none))(d =>
@@ -434,7 +479,10 @@ object AppModel:
       CommandRegistry
         .find(id)
         .flatMap(_.intent(m))
-        .fold((m.copy(notice = Some(Notice.Unavailable(id))), none))(update(m, _))
+        .fold {
+          val why = CommandRegistry.find(id).flatMap(_.reason(m))
+          (m.copy(notice = Some(Notice.Unavailable(id, why))), none)
+        }(update(m, _))
     case Intent.KeyPressed(chord) =>
       CommandRegistry.keymap.get(chord).fold((m, none))(id => update(m, Intent.Invoke(id)))
     case Intent.FocusPane(pane) =>
@@ -461,7 +509,8 @@ object AppModel:
           none
         )
 
-    case Intent.JobsChanged(board) => (m.copy(jobs = board), none)
+    case Intent.Execution(event)   => (m.copy(jobs = m.jobs.receive(event)), none)
+    case Intent.JobsChanged(jobs)  => (m.copy(jobs = m.jobs.withJobs(jobs)), none)
     case Intent.SessionChanged(f)  => (m.copy(session = f), none)
     case Intent.ItemsLoaded(items) => (m.copy(items = items), none)
     case Intent.Saved(at)          => (m.copy(save = SaveState(Some(at), edited = false)), none)
@@ -487,13 +536,46 @@ object AppModel:
   ): (AppModel, Vector[AppEffect]) = result match
     case Left(error) => (m.copy(notice = Some(Notice.Refused(entry, error))), none)
     case Right(step) =>
-      val edited = step.effects.contains(Effect.Persist)
-      val next   = m.copy(
+      val edited  = step.effects.contains(Effect.Persist)
+      val doc     = step.history.document
+      val effects = step.effects.map(AppEffect.of(_, doc))
+      val submits = effects.collect { case AppEffect.Execution(ExecutionEffect.Submit(s)) => s }
+      // A requirement that changed without a submission (a plan bound to the
+      // running revision) is told to the service as Require.
+      val required = requestedStamp(doc)
+      val require  = required
+        .filter(s => submits.isEmpty && !requestedStamp(m.document).contains(s))
+        .map(s => AppEffect.Execution(ExecutionEffect.Require(s)))
+      val jobs = (submits ++ require.flatMap(_ => required)).foldLeft(m.jobs)(_.require(_))
+      val next = m.copy(
         history = step.history,
+        jobs = jobs,
         notice = None,
         save = if edited then m.save.edit else m.save
       )
-      (rebased(m, next), AppEffect.Journal(entry) +: step.effects.map(AppEffect.of))
+      (rebased(m, next), (AppEffect.Journal(entry) +: effects) ++ require)
+
+  /** The stamp of `analysis` on `dataset` as the document saves it. The
+    * study input's digest is the backend's to report, so it stays unbound
+    * here; no digest is invented.
+    */
+  def stampOf(
+      document: StudioDocument,
+      analysis: AnalysisRevision,
+      dataset: DatasetRevision
+  ): RunStamp =
+    RunStamp(
+      analysis,
+      dataset,
+      document.analysis(analysis).fold(CoreBinding.unbound)(_.plan),
+      CoreBinding.unbound
+    )
+
+  /** What the document currently wants results for: the stamp of its newest
+    * running run, if any.
+    */
+  def requestedStamp(document: StudioDocument): Option[RunStamp] =
+    document.running.lastOption.map(r => stampOf(document, r.analysis, r.dataset))
 
   /** When the shown run changes, the selection moves to a new context and
     * keeps only refs that do not belong to another run; hover likewise.

@@ -26,6 +26,11 @@ enum LayoutError derives CanEqual:
   case BadWeight(layout: String, weight: Double)
   case SelectedOutOfRange(pane: String, selected: Int, size: Int)
   case DuplicatePane(layout: String, pane: String)
+
+  /** One pane id declared with different titles or kinds in different
+    * layouts: a retained pane is one view, so it has one declaration.
+    */
+  case ConflictingPane(pane: String, layouts: Vector[String])
   case NoLayouts(perspective: Perspective)
 
   def message: String = this match
@@ -34,7 +39,9 @@ enum LayoutError derives CanEqual:
     case BadWeight(l, w)             => s"Layout $l has a split weight $w that is not positive."
     case SelectedOutOfRange(p, s, n) => s"Group of $p selects tab $s of $n."
     case DuplicatePane(l, p)         => s"Layout $l declares pane $p more than once."
-    case NoLayouts(p)                => s"Perspective ${p.label} declares no layout."
+    case ConflictingPane(p, ls)      =>
+      s"Pane $p is declared differently in layouts ${ls.mkString(", ")}."
+    case NoLayouts(p) => s"Perspective ${p.label} declares no layout."
 
 private[layout] object Ids:
   def valid(value: String): Boolean =
@@ -127,8 +134,11 @@ enum CompareLayout derives CanEqual:
   case Summary, Query
 
 /** The perspectives and their default layouts, declared UI-neutrally
-  * (DESIGN_SPEC section 13). A shell maps them to its docking library;
-  * studio-desktop maps each perspective to one scaladock Dock (S1.5a).
+  * (DESIGN_SPEC section 13). A shell maps them to its docking library.
+  * studio-desktop (S1.5a) maps them onto scaladock 628c46f `Perspectives(dock)`:
+  * one Dock with retained panes, and one named perspective per
+  * [[PerspectiveLayout]], named by its [[LayoutId]]. A [[PaneId]] that
+  * appears in several layouts is one retained, live view.
   */
 final case class LayoutSpec(
     perspectives: Vector[(Perspective, NonEmptyVector[PerspectiveLayout])]

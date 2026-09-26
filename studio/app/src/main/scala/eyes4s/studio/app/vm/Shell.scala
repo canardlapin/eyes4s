@@ -17,7 +17,9 @@
 package eyes4s.studio.app.vm
 
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.app.jobs.{JobHeadline, JobPhase, JobSummary, MeterTotal}
+import eyes4s.studio.app.jobs.JobHeadline
+import eyes4s.studio.core.backend.{ProgressTotal, RunId}
+import eyes4s.studio.core.execution.{ExecutionJob, JobPhase, Meter, MeterTotal}
 import eyes4s.studio.app.keys.CommandRegistry
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.text.{Format, MessageId, Messages}
@@ -44,7 +46,14 @@ object Shell:
 
   def project(model: AppModel, messages: Messages = Messages.english): ShellVM =
     val p = Projection(model, messages)
-    ShellVM(p.window, p.appBar, p.context, p.banner, p.status)
+    ShellVM(
+      p.window,
+      p.appBar,
+      p.context,
+      p.banner,
+      p.status,
+      model.notice.map(n => NoticeVM(n.message(messages), Intent.Dismiss))
+    )
 
   def appBar(model: AppModel, messages: Messages = Messages.english): AppBarVM =
     Projection(model, messages).appBar
@@ -91,14 +100,19 @@ object Shell:
       case MeterTotal.AtMost(n) => messages(JobAtMostTotal, Format.count(n))
       case MeterTotal.Counting  => messages(JobCountingTotal)
 
-    private def cancel(job: JobSummary): ActionVM =
+    /** done / total, only when the total is exact and positive. */
+    private def fraction(meter: Meter): Option[Double] = meter.total match
+      case MeterTotal.Exact(t) if t > 0 => Some(meter.done.toDouble / t.toDouble)
+      case _                            => None
+
+    private def cancel(job: ExecutionJob): ActionVM =
       ActionVM(
         messages(Cancel),
-        CommandRegistry.cancelRun.intent(m).contains(Intent.CancelJob(job.run)),
-        Intent.CancelJob(job.run)
+        CommandRegistry.cancelRun.intent(m).contains(Intent.CancelJob(job.id)),
+        Intent.CancelJob(job.id)
       )
 
-    private def failedTitle(job: JobSummary, diagnostics: Int): String =
+    private def failedTitle(job: ExecutionJob, diagnostics: Int): String =
       if diagnostics <= 0 then messages(JobFailed, job.run.number.toString)
       else
         messages(
@@ -134,7 +148,28 @@ object Shell:
               ""
             )
             chip.copy(accessible = chip.text)
-          case JobPhase.Cancelling =>
+          case JobPhase.Running(progress) =>
+            val stage = labels.stage(progress.stage)
+            val pairs = progress.pairs
+            val done  = Format.count(pairs.done)
+            JobsChipVM(
+              JobsChipState.Running,
+              title,
+              Some(stage),
+              Some(messages(JobPairs, done, total(pairs.total))),
+              fraction(pairs),
+              Some(cancel(job)),
+              None,
+              messages(
+                JobRunningAccessible,
+                job.run.number.toString,
+                stage.toLowerCase,
+                done,
+                total(pairs.total)
+              )
+            )
+          case _ =>
+            // Cancelling; a settled job is never the active one.
             val chip = JobsChipVM(
               JobsChipState.Cancelling,
               title,
@@ -146,41 +181,8 @@ object Shell:
               ""
             )
             chip.copy(accessible = chip.text)
-          case _ =>
-            job.meter match
-              case None =>
-                val chip = JobsChipVM(
-                  JobsChipState.Running,
-                  title,
-                  Some(messages(JobRunningUnmetered)),
-                  None,
-                  None,
-                  Some(cancel(job)),
-                  None,
-                  ""
-                )
-                chip.copy(accessible = chip.text)
-              case Some(meter) =>
-                val stage = labels.stage(meter.stage)
-                val done  = Format.count(meter.done)
-                JobsChipVM(
-                  JobsChipState.Running,
-                  title,
-                  Some(stage),
-                  Some(messages(JobPairs, done, total(meter.total))),
-                  meter.fraction,
-                  Some(cancel(job)),
-                  None,
-                  messages(
-                    JobRunningAccessible,
-                    job.run.number.toString,
-                    stage.toLowerCase,
-                    done,
-                    total(meter.total)
-                  )
-                )
       case JobHeadline.Failed(job, diagnostics) =>
-        val title = failedTitle(job, diagnostics)
+        val title = failedTitle(job, diagnostics.size)
         JobsChipVM(
           JobsChipState.Failed,
           title,
@@ -191,7 +193,8 @@ object Shell:
           Some(Intent.OpenDiagnostics),
           title
         )
-      case JobHeadline.Ready(run) =>
+      case JobHeadline.Ready(notice) =>
+        val run   = notice.run
         val title = messages(JobReady, run.number.toString)
         JobsChipVM(
           JobsChipState.Ready,
@@ -238,16 +241,40 @@ object Shell:
           Vector(messages(ToneNoRun)) ++ data.map(d => messages(BadgeDataPart, d.label))
         FreshnessVM(parts.mkString(messages(BadgePartSeparator)), FreshnessTone.NoRun)
       case Badge.Shown(run, standing, newer) =>
-        val word    = badgeState(standing)
-        val running = newer.map(r => messages(BadgeRunningNewer, r.revision.label))
-        val state   = (standing, running) match
-          case (RunStanding.Current, Some(r)) => r
-          case (_, Some(r))                   => messages(BadgeStateWithNewer, word, r)
-          case (_, None)                      => word
-        FreshnessVM(
-          messages(BadgeShown, run.analysis.label, run.id.label, run.dataset.label, state),
-          tone(b.tone)
-        )
+        val word  = badgeState(standing)
+        val parts = (run.analysis.label, run.id.label, run.dataset.label)
+        val text  = (standing, newer) match
+          case (_, None) => messages(BadgeShown, parts._1, parts._2, parts._3, word)
+          case (RunStanding.Current, Some(_)) =>
+            messages(BadgeShowing, parts._1, parts._2, parts._3)
+          case (_, Some(_)) => messages(BadgeShowingState, parts._1, parts._2, parts._3, word)
+        FreshnessVM(text, tone(b.tone))
+
+    /** The chip beside the badge while a newer run runs (Results board):
+      * "Rev 5 · run 8 running · 48%". The percentage is the pairs meter's
+      * fraction, from the execution service's job, else from the session's
+      * progress report; none while the total is not exact.
+      */
+    def newer(b: Badge): Option[FreshnessVM] = b match
+      case Badge.Shown(_, _, Some(r)) =>
+        val fromJob = m.jobs.jobs
+          .filter(_.run == r.run)
+          .flatMap(_.phase.lastReport)
+          .lastOption
+          .flatMap(p => fraction(p.pairs))
+        val fromSession = r.meter.collect {
+          case eyes4s.studio.core.freshness.RunMeter(_, done, ProgressTotal.Exact(t))
+              if t > 0 =>
+            done.toDouble / t.toDouble
+        }
+        val head = (r.revision.label.capitalize, r.run.label)
+        val text = fromJob
+          .orElse(fromSession)
+          .fold(messages(BadgeNewer, head._1, head._2))(f =>
+            messages(BadgeNewerPercent, head._1, head._2, Format.percent(f))
+          )
+        Some(FreshnessVM(text, FreshnessTone.Running))
+      case _ => None
 
     private def pendingBadge(d: DatasetRevisionSpec): (FreshnessVM, Vector[String]) =
       val state = d.decision match
@@ -312,6 +339,8 @@ object Shell:
           CrumbVM(labels.place(place, current = i == last), i == last, Intent.OpenCrumb(i))
         },
         freshness,
+        if pendingDataset.exists(_ => m.perspective == Perspective.Data) then None
+        else newer(m.freshness.badge),
         notes,
         // Explore is view-only: the boards show no draft chip there.
         draftChip.filter(_ => m.perspective != Perspective.Explore)
@@ -351,7 +380,9 @@ object Shell:
       case Place.At(StudioRef.FigurePanel(f, _)) => f
     }
 
-    private def showAction(run: eyes4s.studio.core.backend.RunId, finished: Boolean): ActionVM =
+    /** Show is enabled exactly when the shelf would show `run`. */
+    private def showAction(run: RunId): ActionVM =
+      val finished = m.jobs.show(run).isRight
       ActionVM(
         messages(if finished then ShowRun else ShowRunWhenFinished, run.number.toString),
         finished,
@@ -409,7 +440,7 @@ object Shell:
         DraftBannerVM(
           messages(BannerShowingBrief, shown.id.label, shown.analysis.label),
           detail,
-          Vector(showAction(running.run, m.jobs.isReady(running.run)))
+          Vector(showAction(running.run))
         )
       case Banner.NewerEnded(shown, ended) =>
         DraftBannerVM(
@@ -421,7 +452,7 @@ object Shell:
         DraftBannerVM(
           messages(BannerShowing, shown.id.label, shown.analysis.label),
           messages(BannerNewerCompleted, newer.id.number.toString, newer.analysis.label),
-          Vector(showAction(newer.id, finished = true))
+          Vector(showAction(newer.id))
         )
       case Banner.ShownStale(shown, reasons) =>
         val detail = reasons.head match
@@ -446,15 +477,17 @@ object Shell:
     def statusJob: StatusJobVM =
       val chip = jobsChip
       m.jobs.headline match
-        case JobHeadline.Active(job) if job.phase != JobPhase.Cancelling =>
-          val count = job.meter.map(meter =>
-            messages(JobCount, Format.count(meter.done), total(meter.total))
+        case JobHeadline.Active(ExecutionJob(_, _, _, JobPhase.Running(progress))) =>
+          val pairs = progress.pairs
+          val count = messages(JobCount, Format.count(pairs.done), total(pairs.total))
+          StatusJobVM(
+            (Vector(chip.title) ++ chip.stage).mkString(" · "),
+            Some(count),
+            chip.action
           )
-          val text = if count.isDefined then (Vector(chip.title) ++ chip.stage).mkString(" · ")
-          else chip.text
-          StatusJobVM(text, count, chip.action)
-        case JobHeadline.Ready(run) =>
-          StatusJobVM(chip.text, None, Some(showAction(run, finished = true)))
+        case JobHeadline.Active(_)     => StatusJobVM(chip.text, None, chip.action)
+        case JobHeadline.Ready(notice) =>
+          StatusJobVM(chip.text, None, Some(showAction(notice.run)))
         case _ => StatusJobVM(chip.text, None, None)
 
     /** The selected slot shows the focused pane's own subject when it has

@@ -47,9 +47,9 @@ object ShellText:
       s"context.nav: ${action(vm.back)} | ${action(vm.forward)}",
       s"context.trail: $trail",
       s"context.freshness: ${vm.freshness.text}"
-    ) ++ vm.notes.map(n => s"context.note: $n") ++ vm.draft.map(d =>
-      s"context.draft: ${d.text}"
-    )
+    ) ++ vm.newer.map(n => s"context.newer: ${n.text}") ++ vm.notes.map(n =>
+      s"context.note: $n"
+    ) ++ vm.draft.map(d => s"context.draft: ${d.text}")
 
   def banner(vm: Option[DraftBannerVM]): Vector[String] = vm.toVector.flatMap { b =>
     Vector(s"banner.lead: ${b.lead}") ++
@@ -66,5 +66,6 @@ object ShellText:
 
   def render(vm: ShellVM): String =
     (Vector(s"window: ${vm.window.title}${if vm.window.edited then " (edited)" else ""}") ++
-      appBar(vm.appBar) ++ context(vm.context) ++ banner(vm.banner) ++ status(vm.status))
+      appBar(vm.appBar) ++ context(vm.context) ++ banner(vm.banner) ++ status(vm.status) ++
+      vm.notice.map(n => s"notice: ${n.text}"))
       .mkString("\n")

@@ -170,6 +170,35 @@ class LayoutSpecSuite extends munit.FunSuite:
     do assert(g.panes.exists(_.kind == PaneKind.Table), s"${l.id} ${g.panes.head.id}")
   }
 
+  test("problems refuses a pane id declared differently in two layouts") {
+    def rename(node: LayoutNode): LayoutNode = node match
+      case LayoutNode.Split(axis, children) =>
+        LayoutNode.Split(axis, children.map((n, w) => (rename(n), w)))
+      case g: LayoutNode.Group =>
+        g.copy(panes =
+          g.panes.map(p =>
+            if p.id.value == "compare.scale-profile" then
+              p.copy(title = PaneTitle.Fixed("Profile"))
+            else p
+          )
+        )
+    val renamed = compareSummary.copy(root = rename(compareSummary.root))
+    val bad     = LayoutSpec(
+      spec.perspectives.map((p, ls) =>
+        (p, ls.map(l => if l.id == compareSummary.id then renamed else l))
+      )
+    )
+    assertEquals(
+      problems(bad),
+      Vector(
+        LayoutError.ConflictingPane(
+          "compare.scale-profile",
+          Vector("compare.query", "compare.summary")
+        )
+      )
+    )
+  }
+
   test("a pane shared by two layouts is one declaration (one live view per PaneId)") {
     val all = spec.all.flatMap(_.panes)
     all.groupBy(_.id).foreach { (id, decls) =>

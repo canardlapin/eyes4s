@@ -299,4 +299,13 @@ object StudioLayouts:
         case _ => Vector.empty
       duplicates ++ badIds ++ selections ++ weights(l.root)
     }
-    missing ++ perLayout
+    val conflicting = spec.all
+      .flatMap(l => l.panes.map(p => (p, l.id.value)))
+      .groupBy(_._1.id)
+      .toVector
+      .sortBy(_._1.value)
+      .collect {
+        case (id, uses) if uses.map(_._1).distinct.size > 1 =>
+          LayoutError.ConflictingPane(id.value, uses.map(_._2).distinct)
+      }
+    missing ++ perLayout ++ conflicting

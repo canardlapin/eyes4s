@@ -18,7 +18,7 @@ package eyes4s.studio.app.vm
 
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
 import eyes4s.studio.app.StoryModels.ok
-import eyes4s.studio.app.jobs.{JobBoard, JobPhase, JobSummary, MeterTotal, PairMeter}
+import eyes4s.studio.core.execution.{ExecutionEvent, JobPhase, RunReady}
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.{Draft, Perspective, PresentationState, StudioDocument}
 import eyes4s.studio.core.fixture.StoryMoments
@@ -150,7 +150,8 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
           |app.jobs.progress: 48%
           |context.nav: [Back (⌘[)] | [Forward (⌘])]
           |context.trail: *Summary · by retrieval response*
-          |context.freshness: Analysis rev 4 · run 7 · data r3 · running (rev 5)
+          |context.freshness: Showing analysis rev 4 · run 7 · data r3
+          |context.newer: Rev 5 · run 8 running · 48%
           |banner.lead: Showing run 7 (rev 4).
           |banner.detail: Run 8 (rev 5, adds σ 8°) is running — results will not replace this view until you choose Show.
           |banner.actions: [Show run 8 · when finished]
@@ -173,41 +174,72 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
   // System board state rows (09 Freshness, Jobs chip states)
   // -------------------------------------------------------------------------
 
-  private def withJobs(board: JobBoard): AppModel =
-    AppModel.update(StoryModels.t3Summary, Intent.JobsChanged(board))._1
+  private def withJob(phase: JobPhase): AppModel =
+    AppModel
+      .update(StoryModels.t3Summary, Intent.JobsChanged(Vector(StoryModels.run8Job(phase))))
+      ._1
 
-  private def run8(phase: JobPhase, meter: Option[PairMeter] = None) =
-    JobBoard(
-      Vector(JobSummary(StoryMoments.run8, StoryMoments.rev5, phase, meter)),
-      Vector.empty
+  private val diagnostic =
+    StudioDiagnostic(
+      "studio-execution.lost-job",
+      DiagnosticLevel.Error,
+      DiagnosticOrigin.Host,
+      Vector.empty,
+      "lost"
     )
 
   test("System board · jobs chip: failed, counting, queued, cancelling, ready") {
-    val failed = Shell.appBar(withJobs(run8(JobPhase.Failed(2)))).jobs
+    val failed =
+      Shell.appBar(withJob(JobPhase.Failed(Vector(diagnostic, diagnostic), None))).jobs
     assertEquals(failed.text, "Run 8 failed · 2 diagnostics")
     assertEquals(failed.open, Some(Intent.OpenDiagnostics))
-    val counting = ok(PairMeter.of(StageKind.Comparing, 21400L, MeterTotal.Counting))
+    val counting = withJob(JobPhase.Running(StoryModels.run8Progress(21400L, counting = true)))
     assertEquals(
-      Shell.appBar(withJobs(run8(JobPhase.Running, Some(counting)))).jobs.text,
+      Shell.appBar(counting).jobs.text,
       "Run 8 · Comparing · 21,400 / counting… pairs"
     )
-    assertEquals(
-      Shell.appBar(withJobs(run8(JobPhase.Running, Some(counting)))).jobs.progress,
-      None
-    )
-    assertEquals(Shell.appBar(withJobs(run8(JobPhase.Queued))).jobs.text, "Run 8 · Queued")
-    val cancelling = Shell.appBar(withJobs(run8(JobPhase.Cancelling))).jobs
+    assertEquals(Shell.appBar(counting).jobs.progress, None)
+    assertEquals(Shell.context(counting).newer.map(_.text), Some("Rev 5 · run 8 running"))
+    assertEquals(Shell.appBar(withJob(JobPhase.Queued)).jobs.text, "Run 8 · Queued")
+    val cancelling = Shell.appBar(withJob(JobPhase.Cancelling(None))).jobs
     assertEquals(cancelling.text, "Run 8 · Cancelling…")
     assertEquals(cancelling.action, None)
-    val ready = withJobs(run8(JobPhase.Succeeded).copy(ready = Vector(StoryMoments.run8)))
+    for phase <- Vector(JobPhase.Cancelled(None), JobPhase.Superseded(None, None)) do
+      assertEquals(Shell.appBar(withJob(phase)).jobs.text, "No jobs", phase)
+  }
+
+  test(
+    "Show waits for the shelf: NotReady until run 8's notice arrives for the required stamp"
+  ) {
+    val done = StoryModels.run8Job(JobPhase.Succeeded(StoryModels.run8Progress(44845L)))
+    val m0   = withJob(done.phase)
+    assertEquals(Shell.appBar(m0).jobs.text, "No jobs")
+    assertEquals(
+      Shell.banner(m0).map(_.actions.map(a => (a.label, a.enabled))),
+      Some(Vector("Show run 8 · when finished" -> false))
+    )
+    val (refused, effects) = AppModel.update(m0, Intent.ShowRun(StoryMoments.run8))
+    assertEquals(effects, Vector.empty)
+    assertEquals(
+      Shell.project(refused).notice.map(_.text),
+      Some("Run 8 is not ready to show; no run is ready.")
+    )
+    // A notice for another stamp is not the one requested: the shelf ignores it.
+    val other = RunReady(done.id, done.run, done.stamp.copy(dataset = DatasetRevision(9)))
+    val m1    = AppModel.update(m0, Intent.Execution(ExecutionEvent.Ready(other)))._1
+    assertEquals(m1.jobs.ready, None)
+    val notice = RunReady(done.id, done.run, done.stamp)
+    val ready  = AppModel.update(m0, Intent.Execution(ExecutionEvent.Ready(notice)))._1
     assertEquals(Shell.appBar(ready).jobs.text, "Run 8 ready — Show")
     assertEquals(Shell.status(ready).job.text, "Run 8 ready — Show")
     assertEquals(
       Shell.banner(ready).map(_.actions.map(a => (a.label, a.enabled))),
       Some(Vector("Show run 8" -> true))
     )
-    for phase <- Vector(JobPhase.Succeeded, JobPhase.Cancelled, JobPhase.Superseded) do
-      assertEquals(Shell.appBar(withJobs(run8(phase))).jobs.text, "No jobs", phase)
+    val shown = AppModel.update(ready, Intent.ShowRun(StoryMoments.run8))._1
+    assertEquals(shown.document.presentation.shownRun, Some(StoryMoments.run8))
+    assertEquals(shown.jobs.ready, None)
+    assertEquals(shown.jobs.shelf.shown, Some(StoryMoments.run8))
   }
 
   test("System board · draft chip with a blocker, and the stale figure note") {
@@ -239,6 +271,11 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
       val context = Shell.context(model)
       assertEquals(context.freshness.text, FreshnessText.badge(model.freshness.badge))
       assertEquals(context.draft.map(_.text), model.freshness.draft.map(FreshnessText.draft))
+      // The newer chip adds the job's percentage to the reference wording.
+      assertEquals(
+        context.newer.map(_.text.stripSuffix(" · 48%")),
+        FreshnessText.newer(model.freshness.badge)
+      )
   }
 
   test("Compare with no completed run: 'Compare · No run yet' and Open Analysis") {

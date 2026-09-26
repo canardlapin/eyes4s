@@ -29,7 +29,7 @@ enum MessageId derives CanEqual:
   case PerspectiveFigures
 
   // --- Jobs chip and status job slot ----------------------------------------
-  case JobsIdle, JobsIdleAccessible, JobTitle, JobQueued, JobCancelling, JobRunningUnmetered
+  case JobsIdle, JobsIdleAccessible, JobTitle, JobQueued, JobCancelling
   case JobPairs, JobCount, JobCountingTotal, JobAtMostTotal, JobRunningAccessible
   case JobFailed, JobFailedWith, JobCancelled, JobCancelledAt, JobReady
   case StageEstimating, StageComparing, StageReducing, StageContrasting
@@ -48,8 +48,7 @@ enum MessageId derives CanEqual:
 
   // --- Freshness -------------------------------------------------------------
   case BadgeShown, BadgeAnalysisPart, BadgeDataPart, BadgePartSeparator, BadgeEmpty
-  case BadgeDataset, BadgeRunningNewer
-  case BadgeStateWithNewer
+  case BadgeDataset, BadgeShowing, BadgeShowingState, BadgeNewer, BadgeNewerPercent
   case ToneCurrent, ToneStale, ToneRunning, ToneFailed, ToneCancelled, ToneNoRun
   case DatasetPending, DatasetVerifying, NoRunOnDataset, PendingNote
   case DraftChip, ChangesOne, ChangesMany, DraftReady, DraftUnchecked, BlockersOne
@@ -75,6 +74,9 @@ enum MessageId derives CanEqual:
   case CommandMaximize, CommandCancelRun, CommandShowRun, CommandReviewDraft
   case CommandDiscardDraft, CommandImport
 
+  // --- Notices ---------------------------------------------------------------------
+  case NoticeUnavailable, NoticeBlocked
+
 /** A message catalogue: one template per id. */
 trait Catalogue:
   def template(id: MessageId): String
@@ -99,7 +101,6 @@ object Catalogue:
       case JobTitle             => "Run {0}"
       case JobQueued            => "Queued"
       case JobCancelling        => "Cancelling…"
-      case JobRunningUnmetered  => "running"
       case JobPairs             => "{0} / {1} pairs"
       case JobCount             => "{0} / {1}"
       case JobCountingTotal     => "counting…"
@@ -147,31 +148,33 @@ object Catalogue:
       case DesignMatched            => "matched"
       case DesignControl            => "control"
 
-      case BadgeShown          => "Analysis {0} · {1} · data {2} · {3}"
-      case BadgeAnalysisPart   => "Analysis {0}"
-      case BadgeDataPart       => "data {0}"
-      case BadgePartSeparator  => " · "
-      case BadgeEmpty          => "No dataset · no analysis"
-      case BadgeDataset        => "Dataset {0} · {1} · {2}"
-      case BadgeRunningNewer   => "running ({0})"
-      case BadgeStateWithNewer => "{0} · {1}"
-      case ToneCurrent         => "current"
-      case ToneStale           => "stale"
-      case ToneRunning         => "running"
-      case ToneFailed          => "failed"
-      case ToneCancelled       => "cancelled"
-      case ToneNoRun           => "no run yet"
-      case DatasetPending      => "draft"
-      case DatasetVerifying    => "verifying"
-      case NoRunOnDataset      => "no run on {0} yet"
-      case PendingNote         => "Run {0} ({1}) used {2} · becomes stale when {3} is admitted"
-      case DraftChip           => "Draft {0} · {1} · {2}"
-      case ChangesOne          => "{0} change"
-      case ChangesMany         => "{0} changes"
-      case DraftReady          => "ready"
-      case DraftUnchecked      => "not checked"
-      case BlockersOne         => "{0} blocker"
-      case BlockersMany        => "{0} blockers"
+      case BadgeShown         => "Analysis {0} · {1} · data {2} · {3}"
+      case BadgeAnalysisPart  => "Analysis {0}"
+      case BadgeDataPart      => "data {0}"
+      case BadgePartSeparator => " · "
+      case BadgeEmpty         => "No dataset · no analysis"
+      case BadgeDataset       => "Dataset {0} · {1} · {2}"
+      case BadgeShowing       => "Showing analysis {0} · {1} · data {2}"
+      case BadgeShowingState  => "Showing analysis {0} · {1} · data {2} · {3}"
+      case BadgeNewer         => "{0} · {1} running"
+      case BadgeNewerPercent  => "{0} · {1} running · {2}"
+      case ToneCurrent        => "current"
+      case ToneStale          => "stale"
+      case ToneRunning        => "running"
+      case ToneFailed         => "failed"
+      case ToneCancelled      => "cancelled"
+      case ToneNoRun          => "no run yet"
+      case DatasetPending     => "draft"
+      case DatasetVerifying   => "verifying"
+      case NoRunOnDataset     => "no run on {0} yet"
+      case PendingNote        => "Run {0} ({1}) used {2} · becomes stale when {3} is admitted"
+      case DraftChip          => "Draft {0} · {1} · {2}"
+      case ChangesOne         => "{0} change"
+      case ChangesMany        => "{0} changes"
+      case DraftReady         => "ready"
+      case DraftUnchecked     => "not checked"
+      case BlockersOne        => "{0} blocker"
+      case BlockersMany       => "{0} blockers"
 
       case BannerShowing            => "Showing {0} (analysis {1})."
       case BannerShowingBrief       => "Showing {0} ({1})."
@@ -236,6 +239,9 @@ object Catalogue:
       case CommandReviewDraft  => "Review draft in Analysis"
       case CommandDiscardDraft => "Discard draft"
       case CommandImport       => "Import sources…"
+
+      case NoticeUnavailable => "{0} is not available now."
+      case NoticeBlocked     => "{0}: {1}"
 
 /** Renders catalogue templates. Total: an argument a template does not name
   * is ignored, and a placeholder with no argument is left as written, so a
