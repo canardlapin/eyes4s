@@ -75,6 +75,28 @@ records the outcome `Refused` when any record was rejected; `ReviewExclusions` r
 [saved studies](SAVED_STUDIES.md) for the input and ledger payloads that reconstruct the study,
 with the same input digest and results, without the importer.
 
+### Record numbers and lines
+
+Three counting conventions meet at a source file, and each is its own type in `eyes4s-plan`:
+
+| Type | Counts | Example |
+|---|---|---|
+| `DataRecord` | data records from 1, the header excluded; the number a reader is shown | fixations.csv record 7,214 |
+| `CsvRecord` | CSV records from 1, the header being record 1; the convention of ledger, locus and source-link numbers | CSV record 7,215 |
+| `SourceLine` | physical lines from 1; a line ends at a line feed, and a lone carriage return does not end one | the record's first line |
+
+`dataRecord.csv` is always the value plus one, and `csvRecord.role` is `RecordRole.Header` for
+record 1 and `RecordRole.Data(record)` for every other, so the two convert both ways without loss.
+Lines are another matter: a record whose quoted field holds a line break occupies several lines,
+so from there on a record's line is not its number plus one. `CsvLayout.scan(text)` (`eyes4s-io`)
+reads the records exactly as the importer's decoder does and gives each record's text
+(`layout.verbatim(record)`) and a `RecordLines` layout: `span(record)` is the record's
+`LineSpan`, and `owner(line)` is the record a line belongs to. The ledger still stores `Int`
+CSV record numbers; `entry.dataRecord`, `fixationSource.dataRecord`, `sources.entryAt(record)`,
+`sources.trialAt(record)` and `sources.fixationAt(key, position)` read them as the typed
+identities. A fixation's position in its scanpath is a `ScanpathPosition` (from 0), and its
+display number a `FixationNumber` (from 1): fixation 6 is position 5.
+
 ## Join a trial inventory
 
 A trials table (the inventory) lists every trial the design presented, including trials that
