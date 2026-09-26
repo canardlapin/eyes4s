@@ -26,7 +26,7 @@ class StudioSchemaIdsSuite extends munit.FunSuite:
   test("the studio schema ids are pinned") {
     assertEquals(
       StudioSchemaIds.ids.map(_.all.map(id => (id.name, id.version))),
-      Right(Vector(("studio.document", 1), ("studio.science", 1)))
+      Right(Vector(("studio.document", 1), ("studio.science", 1), ("studio.journal", 1)))
     )
   }
 

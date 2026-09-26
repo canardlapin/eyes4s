@@ -1,0 +1,110 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eyes4s.studio.core.command
+
+import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.document.*
+import eyes4s.studio.core.document.DocumentGen.right
+import eyes4s.studio.core.fixture.StoryMoments
+
+/** A named sample of every command case and journal entry, pinned in
+  * [[CommandPins]]. Built from the story moments.
+  */
+object CommandSamples:
+  import Command.*
+  import StoryMoments.{r2, r3, rev4, run5, run7, run8}
+
+  private val t1      = DocumentSamples.t1
+  private val t2      = DocumentSamples.t2
+  private val pending = t1.dataset(r3).get
+  private val draft   = t2.draft.get
+  private val rev4Rec = t2.analysis(rev4).get.recipe
+  private val spec    = t2.reporting.head
+  private val figure1 = t2.figures.head
+  private val panelA  = right(PanelLetter.of("A"))
+  private val rule    = CorrectionRule(CorrectionTarget.AllTrials, CoordinateCorrection.FlipY)
+
+  val commands: Vector[(String, Command)] = Vector(
+    "ImportSources" -> ImportSources(
+      Some(r2),
+      pending.sources,
+      pending.mapping,
+      pending.units,
+      pending.geometry
+    ),
+    "RestoreDataset"     -> RestoreDataset(pending),
+    "DiscardDataset"     -> DiscardDataset(r3),
+    "SetMapping"         -> SetMapping(r3, pending.mapping),
+    "SetUnits"           -> SetUnits(r3, DeclaredUnits(Some(TimeUnit.Seconds))),
+    "SetGeometry"        -> SetGeometry(r3, pending.geometry),
+    "SetOffScreenPolicy" -> SetOffScreenPolicy(r3, OffScreenChoice.QuarantineTrial),
+    "AddCorrection"      -> AddCorrection(r3, 0, rule),
+    "RemoveCorrection"   -> RemoveCorrection(r3, 0),
+    "VerifyDataset"      -> VerifyDataset(r3),
+    "Admit"              -> Admit(r3, CoreBinding.unbound, CoreBinding.unbound),
+    "StartDraft"         -> StartDraft(rev4, None, draft.changes),
+    "RestoreDraft"       -> RestoreDraft(draft),
+    "ChangeRecipe" -> ChangeRecipe(RecipeChange.Grid(rev4Rec.grid, right(GridSize.of(32, 24)))),
+    "RebaseDraft"  -> RebaseDraft(r2),
+    "DiscardDraft" -> DiscardDraft,
+    "SaveAndRun"   -> SaveAndRun(None),
+    "SaveAndRun.studio" -> SaveAndRun(
+      Some(StudioFields(Preset.Custom, right(RevisionName.of("σ 8° added")), "rerun"))
+    ),
+    "RecordRunOutcome" -> RecordRunOutcome(
+      run8,
+      RunLifecycle.Cancelled(Some(StageKind.Comparing)),
+      CoreBinding.unbound
+    ),
+    "PutReporting"    -> PutReporting(spec),
+    "RemoveReporting" -> RemoveReporting(spec.id),
+    "CreateFigure"    -> CreateFigure(run7, spec.id, figure1.panels.take(1)),
+    "RestoreFigure"   -> RestoreFigure(figure1),
+    "DeleteFigure"    -> DeleteFigure(figure1.id),
+    "BindFigure"      -> BindFigure(figure1.id, run5, spec.id),
+    "SetPanelScale"   -> SetPanelScale(figure1.id, panelA, PanelScale.At(right(Sigma.of(2.0)))),
+    "SetPanelSelection" -> SetPanelSelection(figure1.id, panelA, PanelSelection.AllQueries),
+    "SetPerspective"    -> SetPerspective(Perspective.Compare),
+    "SetTheme"          -> SetTheme(Theme.Dark),
+    "SetStage"          -> SetStage(StageAppearance.Mid),
+    "SetMapOpacity"     -> SetMapOpacity(right(MapOpacity.of(0.4))),
+    "SetUnderlay"       -> SetUnderlay(true),
+    "ShowRun"           -> ShowRun(Some(run7)),
+    "ShowRun.none"      -> ShowRun(None),
+    "SaveLayout" -> SaveLayout(Perspective.Figures, Some(LayoutBlob("""{"root":"figures"}"""))),
+    "SaveLayout.clear" -> SaveLayout(Perspective.Data, None)
+  )
+
+  val entries: Vector[(String, JournalEntry)] = Vector(
+    "entry.Apply"    -> JournalEntry.Apply(SetTheme(Theme.Dark)),
+    "entry.Undo"     -> JournalEntry.Undo,
+    "entry.Redo"     -> JournalEntry.Redo,
+    "entry.UndoView" -> JournalEntry.UndoView,
+    "entry.RedoView" -> JournalEntry.RedoView
+  )
+
+  /** A short session on t2: a figure edit, a view change, undo and redo,
+    * undoing the view change, then Save & run.
+    */
+  val session: Vector[JournalEntry] = Vector(
+    JournalEntry.Apply(SetPanelSelection(figure1.id, panelA, PanelSelection.AllQueries)),
+    JournalEntry.Apply(SetTheme(Theme.Dark)),
+    JournalEntry.Undo,
+    JournalEntry.Redo,
+    JournalEntry.UndoView,
+    JournalEntry.Apply(SaveAndRun(None))
+  )
