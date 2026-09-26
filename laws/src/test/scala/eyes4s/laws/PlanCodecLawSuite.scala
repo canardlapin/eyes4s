@@ -125,6 +125,18 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
       (a: TrialPlan, b: TrialPlan) => a.description == b.description && a.input == b.input
     )
   )
+  // Every other registered map method on the trial-keyed route.
+  ComparisonMethods.all.filterNot(_ eq ComparisonMethods.cosine).foreach { method =>
+    checkAll(
+      s"${method.id.name} trial study plan",
+      CodecLaws.roundTrip(
+        StudyCodecs.trialSimilarity[Px](method).codec,
+        trialSimilarityPlans(method),
+        (a: TrialPlan, b: TrialPlan) =>
+          a.description == b.description && a.input == b.input && a.method.id == method.id
+      )
+    )
+  }
   checkAll(
     "study plan versions",
     SchemaLadderLaws.ladder(
@@ -729,6 +741,12 @@ object PlanCodecLawSuite:
 
   /** Trial-keyed plans under every pairing rule. */
   val trialPlans: Gen[StudyPlan[TrialKey, Px, Unit, Similarity, SignedDifference]] =
+    trialSimilarityPlans(ComparisonMethods.cosine)
+
+  /** Trial-keyed plans of a registered map method under every pairing rule. */
+  def trialSimilarityPlans(
+      method: ComparisonMethod
+  ): Gen[StudyPlan[TrialKey, Px, Unit, Similarity, SignedDifference]] =
     for
       input  <- references.map(r => sure(ArtifactRef.parse[StudyInput[TrialKey, Px]](r)))
       frame  <- frames
@@ -749,7 +767,7 @@ object PlanCodecLawSuite:
         scales.map(StudyScale.Native(_)),
         None,
         FailurePolicy.RequireAll,
-        StudyMethod.cosine[Px](DefinitionId.cosine),
+        method.study[Px],
         (),
         pairing
       )

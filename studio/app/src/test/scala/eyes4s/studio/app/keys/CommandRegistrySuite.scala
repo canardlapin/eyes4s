@@ -46,6 +46,9 @@ class CommandRegistrySuite extends munit.ScalaCheckSuite:
         "edit.undo"            -> "⌘Z",
         "edit.redo"            -> "⌘⇧Z",
         "pane.next"            -> "F6",
+        "pane.previous"        -> "⇧F6",
+        "tab.next"             -> "⌃⇥",
+        "tab.previous"         -> "⌃⇧⇥",
         "pane.maximize"        -> "⌘⇧↩"
       )
     )

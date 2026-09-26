@@ -90,6 +90,8 @@ object Diagnose:
   given budget: Diagnose[BudgetError, Nothing]       = instance(C.budget)(Projections.budget)
   given preflight[K]: Diagnose[PreflightError[K], K] =
     instance(C.preflight)(Projections.preflight[K])
+  given analysisFinding[K]: Diagnose[AnalysisFinding[K], K] =
+    instance(C.analysisFinding)(Projections.analysisFinding[K])
   given admissionReason: Diagnose[AdmissionReason, Nothing] =
     instance(C.admissionReason)(Projections.admissionReason)
   given quarantine: Diagnose[QuarantineCause, Nothing] =

@@ -63,11 +63,20 @@ object StudyCodecs:
   def trialCosine[U <: Unit2D](using
       UnitLabel[U]
   ): StudyCodec[TrialKey, U, Unit, Similarity, SignedDifference] =
+    trialSimilarity[U](ComparisonMethods.cosine)
+
+  /** The trial-keyed route of a registered map method: trials identified by
+    * participant, phase, trial and occurrence, matched on their item; the
+    * plan records the method's built-in identity.
+    */
+  def trialSimilarity[U <: Unit2D](method: ComparisonMethod)(using
+      UnitLabel[U]
+  ): StudyCodec[TrialKey, U, Unit, Similarity, SignedDifference] =
     new StudyCodec(
       DefinitionId.study,
       TrialKey.layout(TrialKeyDefinitions.trialLayout),
       trialKey(TrialKeyDefinitions.trialKey),
-      ComparisonMethods.cosine.study[U],
+      method.study[U],
       VersionedCodec.unit(DefinitionId.unit)
     )
 
