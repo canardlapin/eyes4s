@@ -70,6 +70,7 @@ class StatusBarFxSuite extends ShellFxSuite:
   )
 
   fxStage.test("always four slots, 24 px, with the board's words") { fx =>
+    assumeFullStage(fx)
     boards.foreach { (board, model, moment) =>
       val w = boot(fx, model(), moment)
       assertEquals(
@@ -92,6 +93,7 @@ class StatusBarFxSuite extends ShellFxSuite:
   }
 
   fxStage.test("the selection path follows the selection bus within 100 ms") { fx =>
+    assumeFullStage(fx)
     val w = boot(fx, StoryModels.t2Compare)
     assertEquals(path(w), "Selected: P17 › ret_07 × enc_03 (matched) · σ 2°")
     // A view submits a selection input, as the trial view will (S4.2).
@@ -134,6 +136,7 @@ class StatusBarFxSuite extends ShellFxSuite:
   )
 
   fxStage.test("the job slot mirrors the jobs chip: running, progress, Cancel, failed") { fx =>
+    assumeFullStage(fx)
     val w              = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
     val bar            = w.shell.statusBar
     val chip           = w.shell.appBar.jobs

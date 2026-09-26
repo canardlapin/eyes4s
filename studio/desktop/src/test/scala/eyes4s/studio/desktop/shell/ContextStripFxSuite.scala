@@ -68,6 +68,7 @@ class ContextStripFxSuite extends ShellFxSuite:
 
   fxStage.test("every crumb is a live button: a click lands on its prefix, Back returns") {
     fx =>
+      assumeFullStage(fx)
       val w     = boot(fx, StoryModels.t2Explore)
       val start = location(w)
       val count = crumbs(w).size
@@ -91,6 +92,7 @@ class ContextStripFxSuite extends ShellFxSuite:
   fxStage.test(
     "E2E-17: fixation and record crumbs cross into Explore and back, by click and key"
   ) { fx =>
+    assumeFullStage(fx)
     val w = boot(fx, StoryModels.t2Compare)
     assertEquals(runOnFx(w.host.active), Some("compare.query"))
     // From the pair, explain the record: the trail crosses into Explore.
@@ -128,6 +130,7 @@ class ContextStripFxSuite extends ShellFxSuite:
   }
 
   fxStage.test("back and forward name their shortcuts and follow the history") { fx =>
+    assumeFullStage(fx)
     val w = boot(fx, StoryModels.t2Compare)
     assertEquals(runOnFx(backButton(w).getAccessibleText), "Back (⌘[)")
     assertEquals(runOnFx(forwardButton(w).getAccessibleText), "Forward (⌘])")
@@ -141,6 +144,7 @@ class ContextStripFxSuite extends ShellFxSuite:
   }
 
   fxStage.test("t2: the badge's teal dot, and the dashed draft chip opens Analysis") { fx =>
+    assumeFullStage(fx)
     val w     = boot(fx, StoryModels.t2Compare)
     val badge = chips(w)
     assertEquals(
@@ -170,6 +174,7 @@ class ContextStripFxSuite extends ShellFxSuite:
 
   fxStage.test("t3: the two-chip form: 'Showing …' with a hollow dot, then the running run") {
     fx =>
+      assumeFullStage(fx)
       val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
       val c = chips(w)
       assertEquals(
@@ -201,6 +206,7 @@ class ContextStripFxSuite extends ShellFxSuite:
   )
 
   fxStage.test("failed: run 8 fails; the badge stays current and a failed chip says so") { fx =>
+    assumeFullStage(fx)
     val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
     w.session.await(w.session.backend.fail(StoryMoments.run8Job, Vector(lost, lost)))
     eventually(fx, "the failed chip")(
@@ -217,6 +223,7 @@ class ContextStripFxSuite extends ShellFxSuite:
   }
 
   fxStage.test("stale: showing run 5 on r2 marks the badge stale") { fx =>
+    assumeFullStage(fx)
     val stale = AppModel
       .update(
         StoryModels.t2Compare,
@@ -231,6 +238,7 @@ class ContextStripFxSuite extends ShellFxSuite:
   }
 
   fxStage.test("a focused crumb keeps its focus while unrelated updates render") { fx =>
+    assumeFullStage(fx)
     val w = boot(fx, StoryModels.t2Explore)
     val c = crumbs(w)(2)
     runOnFx(c.requestFocus())

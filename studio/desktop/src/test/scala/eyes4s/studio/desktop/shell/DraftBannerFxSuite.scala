@@ -58,6 +58,7 @@ class DraftBannerFxSuite extends ShellFxSuite:
 
   fxStage.test("t2: Compare and Figures only; 30 px, dashed; the words of the plan diff") {
     fx =>
+      assumeFullStage(fx)
       val w = boot(fx, StoryModels.t2Compare)
       assert(shown(w))
       assertEquals(
@@ -93,6 +94,7 @@ class DraftBannerFxSuite extends ShellFxSuite:
   }
 
   fxStage.test("Review in Analysis opens the draft; the banner hides there") { fx =>
+    assumeFullStage(fx)
     val w = boot(fx, StoryModels.t2Compare)
     fx.robot.click(button(w, "Review in Analysis"))
     assertEquals(runOnFx(w.runtime.model.perspective), Perspective.Analysis)
@@ -102,6 +104,7 @@ class DraftBannerFxSuite extends ShellFxSuite:
 
   fxStage.test("Discard draft asks first: Keep draft keeps it, Discard draft discards it") {
     fx =>
+      assumeFullStage(fx)
       val w       = boot(fx, StoryModels.t2Compare)
       val confirm = w.shell.confirmation
       assert(runOnFx(!confirm.node.isVisible))
@@ -145,6 +148,7 @@ class DraftBannerFxSuite extends ShellFxSuite:
 
   fxStage.test("t3: 'Showing run 7 (rev 4).' then the run-8 sentence; Show waits for the run") {
     fx =>
+      assumeFullStage(fx)
       val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
       assertEquals(
         words(w),

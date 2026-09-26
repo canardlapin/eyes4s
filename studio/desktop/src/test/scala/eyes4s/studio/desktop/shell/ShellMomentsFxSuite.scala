@@ -38,6 +38,7 @@ class ShellMomentsFxSuite extends ShellFxSuite:
 
   for (moment, base, story) <- moments; p <- Perspective.values do
     fxStage.test(s"$moment · ${p.label}: the shell reads as its view-models; snapshot") { fx =>
+      assumeFullStage(fx)
       val model = at(base(), Intent.SwitchPerspective(p))
       val w     = boot(fx, model, story)
       assertEquals(runOnFx(w.runtime.model.perspective), p)

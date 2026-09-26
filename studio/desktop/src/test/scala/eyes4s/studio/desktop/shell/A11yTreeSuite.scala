@@ -91,6 +91,7 @@ class A11yTreeSuite extends ShellFxSuite:
 
   (perspectives ++ extra).foreach { (name, model, moment) =>
     fxStage.test(s"$name: every focusable node has an accessible role and name") { fx =>
+      assumeFullStage(fx)
       val w     = boot(fx, model(), moment)
       val nodes = focusable(w)
       assert(nodes.nonEmpty)
