@@ -384,8 +384,9 @@ capability value would be forgeable, since one obtained for frame A can be appli
 frame B; a container's contents were validated on entry. `Session` is also the project object the
 application layer needs.
 
-Status (2026-09-17): `Session` is not implemented; tracked by `x-session`. The only `Session`
-types in the tree are the EyeLink ASC session materialisers in `eyes4s-io`, which are unrelated.
+Status (2026-09-19): `design.Session` is implemented with checked recording, AOI-set and grid
+admission, persistent replacement/removal and Option lookup; see [Session](docs/SESSION.md).
+The EyeLink ASC session materialisers in `eyes4s-io` serve a separate ingestion role.
 Frame, grid and clock agreement between two carrying values is checked today by
 `kernel.Agreement`, which `PreparedStudy`, `RecordingPlan`, `contrast` and `DocumentIdentities`
 all call.
@@ -890,7 +891,7 @@ Event-aligned analyses use serializable selectors and bin policies:
 final case class MarkSelector[K](kind: K, occurrence: Occurrence)
 enum Occurrence:
   case RequireUnique, First, Last
-  case Nth(index: NonNegativeInt)
+  case Nth(index: NonNegativeLong) // zero-based
 
 final case class EpochPlan[K](
     anchor: MarkSelector[K],
@@ -908,11 +909,12 @@ There is no closure-valued predicate to serialize. Missing and ambiguous anchors
 selector and observed match count. A non-divisible final bin is rejected, included explicitly, or
 returned as an excluded tail — never silently discarded.
 
-Status (2026-09-17): `MarkSelector`, `Occurrence`, `EpochPlan` and `FinalBin` are not implemented;
-tracked by `bd-01KYDZ80ANFH3HW11946E4QTR8`. What exists today is the un-binned form in
-`eyes4s-plan`: `TrialEpoch(anchor: Instant, coverage: ObservedCoverage)` and `StudyWindow`, which
-resolves a named relative `Window` against an epoch into an absolute `Interval` or a
-`TemporalStudyError`, used by `TemporalStudyPlan`.
+Status (2026-09-19): `MarkSelector`, `Occurrence`, checked `EpochPlan.of` and `FinalBin`
+are implemented in `eyes4s-plan`, with `EpochCodecs.plan` in `codec`. Resolution takes an
+observed timeline, expected clock and explicit bin-allocation budget, and returns bins plus
+any excluded tail. See [epoch plans](docs/EPOCH_PLANS.md). The existing `TrialEpoch` and
+`StudyWindow` route in `TemporalStudyPlan` remains separate; selector resolution is not
+silently inserted into saved temporal recipes.
 
 Scalar summaries split along the duality, and the split is worth making explicit rather than filing
 everything under "occupancy". **Order-free**, i.e. functionals of a `PointMeasure`: nearest-neighbour
@@ -1304,8 +1306,11 @@ Diagnostics are descriptive — rank, conditioning, convergence, residual norms,
 cell-wise standard errors would falsely treat spatially autocorrelated cells as independent.
 Partial association is a different result type, not a coefficient.
 
-Status (2026-09-17): surface decomposition and partial association are not implemented; tracked by
-`bd-01KYD6SYK02ZRV99MG7FX939ZS`.
+Status (2026-09-19): the OLS slice is implemented as `SurfaceDecomposition.ols` over
+`PredictorSet[U]`, using native shared `LeastSquares` Householder QR. It returns Signed maps,
+keyed coefficients and descriptive diagnostics; see [surface decomposition](docs/SURFACE_DECOMPOSITION.md).
+NNLS, simplex fitting and partial association remain deferred under
+`bd-01M2T3ZCY7HJNFQ5G0Z6MQND0A`.
 
 The convenient surface keeps distinct scientific verbs: matched similarity, repetition similarity,
 surface decomposition, and temporal reinstatement. They are thin functions over the algebra above,
@@ -1888,7 +1893,7 @@ is in [`PRD.md`](PRD.md) §Resolved Decisions; the outcomes that changed the des
 - **Frame checking (`q-scope`).** No `Scope` capability. Kernel binary operations stay `Either`-only;
   ergonomics come from `Session`, a checked container that validates frame membership on insertion
   and is therefore total on the way out. A capability value is forgeable; a container's contents were
-  validated on entry. Status (2026-09-17): `Session` not implemented; tracked by `x-session`.
+  validated on entry. Implemented in `design.Session`; see [Session](docs/SESSION.md).
 - **Binocular (`q-binocular`).** `Recording` stays monocular; `BinocularRecording[U]` is a separate
   type with `left` / `right` / `cyclopean` projections and a vergence signal, landing at v0.3 so that
   ASC ingest cannot silently drop an eye. Implemented (`c-binocular`); the vergence signal is

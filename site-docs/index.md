@@ -11,7 +11,8 @@ failed comparisons and excluded observations instead of losing rows along the wa
 - [Compare fixation maps](fixation-studies.md): matched templates, explicit controls and exports.
 - [Analyze a raw recording](recordings.md): synchronization, visual angle, detection and AOIs.
 - [Test repetition](repetition.md): same-participant reinstatement with visible pair identities.
-- [Fit and evaluate templates](templates.md): training-only external fitting and held-out results.
+- [Fit and evaluate templates](templates.md): native training-only fitting and held-out results.
+- [Export results](exports.md): typed tables, explicit missing values and portable metadata.
 - [Migrate from eyesim](migration.md): supported routes and changes that affect your numbers.
 - [Methods and support](reference.md): units, failures, persistence and API documentation.
 

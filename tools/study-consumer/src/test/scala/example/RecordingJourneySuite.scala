@@ -208,7 +208,7 @@ class RecordingJourneySuite extends munit.CatsEffectSuite:
     }
 
     test(
-      s"$name: a run reports progress by segment with exact totals and ends in the pure analysis"
+      s"$name: a run reports declared totals and bounded assembly progress and ends in the pure analysis"
     ) {
       run.events.map { events =>
         val progress = progressOf(events)
@@ -221,7 +221,9 @@ class RecordingJourneySuite extends munit.CatsEffectSuite:
         // One whole step each for synchronization, the warp and the areas; the
         // two machines are fed two samples per step, all ten samples each.
         assertEquals(
-          blocks.map(b => (b.head.segment, b.head.segmentTotal, b.last.segmentUnits, b.size)),
+          blocks
+            .filterNot(_.head.segment.isInstanceOf[RecordingSegment.Assembling])
+            .map(b => (b.head.segment, b.head.segmentTotal, b.last.segmentUnits, b.size)),
           Vector(
             (RecordingSegment.Synchronizing, SegmentTotal.Exact(1), 1L, 1),
             (RecordingSegment.Warping, SegmentTotal.Exact(1), 1L, 1),
@@ -230,6 +232,24 @@ class RecordingJourneySuite extends munit.CatsEffectSuite:
             (RecordingSegment.Assigning, SegmentTotal.Exact(1), 1L, 1)
           )
         )
+        val assembly = blocks.filter(_.head.segment.isInstanceOf[RecordingSegment.Assembling])
+        assertEquals(
+          assembly.map(_.head.segment),
+          Vector(
+            AssemblyPhase.Emissions,
+            AssemblyPhase.Support,
+            AssemblyPhase.EventValidation,
+            AssemblyPhase.EventSummaries,
+            AssemblyPhase.SourceIdentity,
+            AssemblyPhase.Gaps,
+            AssemblyPhase.LabelsAndReport
+          ).map(RecordingSegment.Assembling(_))
+        )
+        assembly.foreach { block =>
+          assert(block.forall(_.segmentTotal == SegmentTotal.Unknown))
+          val units = 0L +: block.map(_.segmentUnits)
+          assert(units.sliding(2).forall(pair => pair(1) > pair(0) && pair(1) - pair(0) <= 2L))
+        }
         assertEquals(
           progress.collect { case p if p.segment == RecordingSegment.Detecting => p.stage },
           Vector(0, 2, 4, 6, 8).map(RecordingStage.Detecting(_))

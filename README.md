@@ -23,11 +23,10 @@ result is a tax paid in silent unit errors, y-flips, and comparisons between inc
 for
   display <- Frame.screen("bench", width = 1280, height = 1024)
   visual  <- Frame.angular("visual-field", width = 47.7, height = 28.0)
-  viewing <- Viewing.of(
-    distance = Length.mm(600),
-    screenWidth = Length.mm(530),
-    screenHeight = Length.mm(300)
-  )
+  distance <- Length.mm(600)
+  width    <- Length.mm(530)
+  height   <- Length.mm(300)
+  viewing  <- Viewing.of(distance, width, height)
 yield Viewing.angularWarp(viewing, display, visual)
 // Either[GeometryError, Warp[Px, Deg]]
 ```
@@ -65,8 +64,9 @@ comparison measures, relational design algebra, deterministic RNG, and published
 executable implementations and tests. AOI, delimited I/O, and the portable EyeLink ASC path
 also have implementations. Matched/control contrasts now retain signed results, compatibility
 checks, and per-key evidence. The fixation-study path has CSV admission, typed saved plans,
-versioned codecs, multiscale execution, and tidy exports. General detection/AOI/temporal plans and
-complete baseline coverage remain in progress. APIs can change before the
+versioned codecs, multiscale execution, and tidy exports. Recording and temporal execution, static-template point sampling, native template fitting,
+and reusable baseline exports are implemented. General AOI plans and the remaining entropy
+conformance still require work. APIs can change before the
 first release. EyeLink ASC parser evidence is not yet vendor or real-device certification; see the
 [support and import guide](docs/formats/eyelink-asc.md).
 

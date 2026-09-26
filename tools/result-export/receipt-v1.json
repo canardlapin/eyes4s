@@ -1,0 +1,280 @@
+{
+  "schema": 1,
+  "producer": "ioJVM/Test/runMain eyes4s.examples.BaselineExportMain OUTPUT_DIRECTORY",
+  "reader_commands": [
+    "LC_ALL=C Rscript tools/result-export/check_exports.R OUTPUT_DIRECTORY",
+    "python tools/result-export/check_arrow.py OUTPUT_DIRECTORY"
+  ],
+  "python_reader": "pyarrow 19.0.1; CPython 3.12.11",
+  "arrow_writer": "Apache Arrow Java 19.0.0",
+  "artifacts": {
+    "contrasts.arrow": {
+      "bytes": 16640,
+      "sha256": "1332e8899fd7f868377a4645f2724d9ce6096ab6e0225fc74ad07182999b7aff"
+    },
+    "contrasts.csv": {
+      "bytes": 4051,
+      "sha256": "0ec4e97f9c9b73ddfbef9a980261863ec95ada5737cd16b99fd41f6372a4315f"
+    },
+    "contrasts.metadata.json": {
+      "bytes": 20408,
+      "sha256": "7dbc554e36bc405333f2db35fe2d91fbd84ba241ae628b56ce7c494566b0d9bd"
+    },
+    "empty-pairs.arrow": {
+      "bytes": 4336,
+      "sha256": "6f6741a9e4d785806c983251009e4ffa4ee46d403c3f45418f1e7009f154e448"
+    },
+    "empty-pairs.csv": {
+      "bytes": 119,
+      "sha256": "fc527032d146ecfc37b63c70ac6912b57379d49fb6a8abd3f4be45d657e425de"
+    },
+    "empty-pairs.metadata.json": {
+      "bytes": 5199,
+      "sha256": "63505a6e439e3be44258866c56a89d0f1442ad50178db83febc1cda7ba1c7cca"
+    },
+    "fixed-templatecoefficients.arrow": {
+      "bytes": 2904,
+      "sha256": "cae38eb720b329e09bf83ec79f3774b45e257373a3240310bbe6f3af7113dae2"
+    },
+    "fixed-templatecoefficients.csv": {
+      "bytes": 112,
+      "sha256": "771729ace42a28512d186a6c4c3046b093228c00ef63d2737ee2114df9785011"
+    },
+    "fixed-templatecoefficients.metadata.json": {
+      "bytes": 3088,
+      "sha256": "44d7543351cd5ddad21a80375bba5f233442e22954989bf80c82c5804935fb09"
+    },
+    "fixed-templatepredictions.arrow": {
+      "bytes": 4944,
+      "sha256": "7f32256a4945fd701efccda17ced4413ad477d0a41f51708eb86ca6bba41d0c6"
+    },
+    "fixed-templatepredictions.csv": {
+      "bytes": 401,
+      "sha256": "f58a79b57fe73bee5bedda8f2b6ef4a8615fc5dfdbcb02dead9697d0da06dfb4"
+    },
+    "fixed-templatepredictions.metadata.json": {
+      "bytes": 4030,
+      "sha256": "de005194bb66e43d4d8deb69bec40bc1c216f287cccc06742cf4874595f00a2d"
+    },
+    "index.json": {
+      "bytes": 3933,
+      "sha256": "46d5753d76f14fb936725641d76c1235318e16164237cb894956ff66d0fea000"
+    },
+    "learned-templatecoefficients.arrow": {
+      "bytes": 4336,
+      "sha256": "c1968797c8783067d0b759f2f5b18cd2aab404ef17c83706cd99c5a8aa004294"
+    },
+    "learned-templatecoefficients.csv": {
+      "bytes": 140,
+      "sha256": "df922c585682acecea602dd0dd02fd4bd6c6f968126b94685a687485bd609ab7"
+    },
+    "learned-templatecoefficients.metadata.json": {
+      "bytes": 7051,
+      "sha256": "a06ad6b9825d857e139687b434532f67f224e75cae310dee809bc5034bde1725"
+    },
+    "learned-templateexclusions.arrow": {
+      "bytes": 5600,
+      "sha256": "0a997c1eecefa790f9f72909b7c66af8fe74e0124bdae0ecfa5e14129fc6adfe"
+    },
+    "learned-templateexclusions.csv": {
+      "bytes": 335,
+      "sha256": "e856a2a0b4d54130c6c8fa7896b8e9afc6b3b7b8a6ca11a27652daf344337c31"
+    },
+    "learned-templateexclusions.metadata.json": {
+      "bytes": 7598,
+      "sha256": "9ed4764fc7f7f88f0e70fac7bed7e5b2649b36b47576f957ef7e7e225dc068f9"
+    },
+    "learned-templatepredictions.arrow": {
+      "bytes": 6736,
+      "sha256": "b7374ba8692df926da1cb9acf3979d05d34298d312514170d4d12fc9ab5a0fed"
+    },
+    "learned-templatepredictions.csv": {
+      "bytes": 439,
+      "sha256": "49bca93797161eb28394d5796ffe5f33bc3c12df7563076e1d958aa1875ab3a0"
+    },
+    "learned-templatepredictions.metadata.json": {
+      "bytes": 8169,
+      "sha256": "0aa132ff7cf2c29c958b5f4b24560b7d21cce54346b2b9edc1c5d0ee73a39991"
+    },
+    "olscells.arrow": {
+      "bytes": 4040,
+      "sha256": "a7ebf329a74e7f76bd914e1f058754dc937f7405276982a57a73a221be3ea031"
+    },
+    "olscells.csv": {
+      "bytes": 374,
+      "sha256": "335e41178b73788766c8acd87d2ede44dbbb4f044a55b1311d043be6adc24d4b"
+    },
+    "olscells.metadata.json": {
+      "bytes": 2166,
+      "sha256": "3523a1852effdf312b67e372364bdec074b7470309caffcd7172a3e60a8376b4"
+    },
+    "olscoefficients.arrow": {
+      "bytes": 3080,
+      "sha256": "debc836019d946b2c3001a719363dc86bff088cd036f3137dcf045791a6d1baa"
+    },
+    "olscoefficients.csv": {
+      "bytes": 283,
+      "sha256": "869a3a3259cd90220ae4c59e55502eadbe0317a7b61f490592dc70ef7b363afc"
+    },
+    "olscoefficients.metadata.json": {
+      "bytes": 1966,
+      "sha256": "2d80f9296ed9600ec5d3341f7430755b3e14ba15ed12aa68894964423426374d"
+    },
+    "olsdiagnostics.arrow": {
+      "bytes": 3712,
+      "sha256": "e1289eb9915fe4cb2b1abb4b052ff361d2a04f0ac75287a559df587484e2df70"
+    },
+    "olsdiagnostics.csv": {
+      "bytes": 201,
+      "sha256": "9c6d2af7047ee47b49044432661aaea2fa27c001c07b7293c81f44855837446d"
+    },
+    "olsdiagnostics.metadata.json": {
+      "bytes": 2376,
+      "sha256": "c3e1960342abb94a61c2575c66689c24a6d44d05ab3472092632cbfa3d77d069"
+    },
+    "pairs.arrow": {
+      "bytes": 10304,
+      "sha256": "1784071f1399f1df1b7ef412d4ef7a6e5faaf0682f43414eb33e2d33a0d19196"
+    },
+    "pairs.csv": {
+      "bytes": 4379,
+      "sha256": "1aa80e9c92cccf8ac619c66ecba1f17c57fe620b3ffc473ce40905c3da0d256b"
+    },
+    "pairs.metadata.json": {
+      "bytes": 5199,
+      "sha256": "389109045d2281e4acd2ae209776d32592430fcfdefba150431b3adad708209f"
+    },
+    "point-pointbins.arrow": {
+      "bytes": 34160,
+      "sha256": "87dbf0001f612280b7397f3ed84b3e7c329eb7b3046e4f0a7ef0e01aca0c7630"
+    },
+    "point-pointbins.csv": {
+      "bytes": 6025,
+      "sha256": "d346736ec1739a86f245de09fc503ce0d20bd2bede604c594c25ba685197e7b5"
+    },
+    "point-pointbins.metadata.json": {
+      "bytes": 54133,
+      "sha256": "6896eb8f08f8f355e7791a9a60e0433ea5f5ac761b077045b5da6937d4e6b60f"
+    },
+    "point-pointcontrols.arrow": {
+      "bytes": 47176,
+      "sha256": "0035c407081ad8c800fb2b65591af6e6c972b3c3cf9cb4e474f39e6dc223b1eb"
+    },
+    "point-pointcontrols.csv": {
+      "bytes": 19699,
+      "sha256": "ad70a96af259255dbe7029aee7f1f70a7c19970f4597c9bda81dd9579e67da5c"
+    },
+    "point-pointcontrols.metadata.json": {
+      "bytes": 53435,
+      "sha256": "bbefbb49cd0856358ebb24ccf07fd0da0d9f6042f106036aa2a765244d9e0aa3"
+    },
+    "point-pointsamples.arrow": {
+      "bytes": 42864,
+      "sha256": "1607ab7805d444e05c50f7240993ff433a3314b58c63498f91529d29900d54e2"
+    },
+    "point-pointsamples.csv": {
+      "bytes": 10638,
+      "sha256": "c90433c892be5f5efa664eb31d6e8ee072e2e0dedda553ef60682540523cb675"
+    },
+    "point-pointsamples.metadata.json": {
+      "bytes": 54057,
+      "sha256": "d8fc10213d98849da3dd5d64b304126d8d5eb6c0f6bf98a8cb3e5194173c1717"
+    },
+    "point-pointsources.arrow": {
+      "bytes": 21800,
+      "sha256": "e1e4b84c190fa052ddcf79a8c5cdd99e8bd238e69ae2f241dc48e26faa6816f2"
+    },
+    "point-pointsources.csv": {
+      "bytes": 1477,
+      "sha256": "b72a806413abc33ef55dd44e255ba17064d550ebf0a7c05a0263fcfa2f51de51"
+    },
+    "point-pointsources.metadata.json": {
+      "bytes": 52911,
+      "sha256": "99d73847b1c3a390016c0ca47d8a3220f7482feb65563afbfc93af1a1c927212"
+    },
+    "reductions.arrow": {
+      "bytes": 8408,
+      "sha256": "cf3b56351f6e0a83e25f585beae82f2d1ad5a50c3b7e13a7aa2143116eb9c25b"
+    },
+    "reductions.csv": {
+      "bytes": 1181,
+      "sha256": "68bc4157d5867a5039aa02255e009c0aeab01878b36b535a883e92776ce12329"
+    },
+    "reductions.metadata.json": {
+      "bytes": 10264,
+      "sha256": "ad6fe8e795d5c71f42e4c8277a41f1db8b080d577cf7300f51a95dcb8094e830"
+    },
+    "repetition-0.arrow": {
+      "bytes": 11952,
+      "sha256": "763b3a971d67da6f0d2f6f973622267cd96036c6ed88e984cc5733e131f8bfbc"
+    },
+    "repetition-0.csv": {
+      "bytes": 2811,
+      "sha256": "fc89f544f77fe239c5c6a632a986e0fb1ca32a6afdbb1752681b2e8ec1d7f4de"
+    },
+    "repetition-0.metadata.json": {
+      "bytes": 14632,
+      "sha256": "aae8cc84a67ccb5cb944ca5a12baa8be721f553663bfa042127d7b50f89310ff"
+    },
+    "repetition-1.arrow": {
+      "bytes": 15768,
+      "sha256": "511a5c5c78ddfb7dbdeaae3f9445dd588d196182126a77176cd83818cff88ab1"
+    },
+    "repetition-1.csv": {
+      "bytes": 5577,
+      "sha256": "5d24eb6dec55f36858e640dc769eeb0fd4bebf156646a31007fe0a50786a0d95"
+    },
+    "repetition-1.metadata.json": {
+      "bytes": 14638,
+      "sha256": "1ae8afa2de7389cf48de4a9077556089047e6b44826bb32c73128348a1ac294f"
+    },
+    "structured-pairs.arrow": {
+      "bytes": 34552,
+      "sha256": "1f99cfc6867dabe9aeb873aa0410c4166315f824ffcfb86789c067edd1f2b750"
+    },
+    "structured-pairs.csv": {
+      "bytes": 21578,
+      "sha256": "f231e8b7c71ae9326c1b0c44b1bb987bc6ce1e15a189f8aa1e52b0863eda8563"
+    },
+    "structured-pairs.metadata.json": {
+      "bytes": 5802,
+      "sha256": "aae10b273966d9c926c4faee132fb489223bccf7296a563bc596d97d78d042a7"
+    },
+    "study.arrow": {
+      "bytes": 21192,
+      "sha256": "c975e4dc1fbb44928f8561f14dfcb0c0fa30ce2631e1b6d50080d5077a48005d"
+    },
+    "study.csv": {
+      "bytes": 6034,
+      "sha256": "6d9d347a3f5e58673fca308f8656b4eb76e55a6049712e3cd93864983339dc0e"
+    },
+    "study.metadata.json": {
+      "bytes": 8881,
+      "sha256": "046ff16781cb9be1126ab3ebb1179c00dd38d02949709c9b9e32bc92e7034f1b"
+    },
+    "temporalcontrasts.arrow": {
+      "bytes": 24968,
+      "sha256": "3c623da0a7d84cddd34c0d90a6d42fb35c9211727e8d5b566711ade4fb962e2d"
+    },
+    "temporalcontrasts.csv": {
+      "bytes": 7678,
+      "sha256": "1968b4d6e072d8ba74e188e1b8549d4ffc8834db809b14898a27dca7eb187df7"
+    },
+    "temporalcontrasts.metadata.json": {
+      "bytes": 10593,
+      "sha256": "c4967da5d91bf8fa4fbefb19fcf86f9f83f1d86ede6a64d14003c40a190bff4a"
+    },
+    "temporalcoverage.arrow": {
+      "bytes": 14840,
+      "sha256": "7942b4cabd571bf0436bb99cfd50b539cfc77aa6899e86e18d3b7a53bd231902"
+    },
+    "temporalcoverage.csv": {
+      "bytes": 6756,
+      "sha256": "b1b0a6f2c918b30e5f468a209ae87d5e96cb7e74d40a4f510197a79971bf327c"
+    },
+    "temporalcoverage.metadata.json": {
+      "bytes": 5517,
+      "sha256": "dc34c6e0cb0f9a579bd600ca23a9c77d8c4fc720c86a194461aa204f3d80a058"
+    }
+  }
+}

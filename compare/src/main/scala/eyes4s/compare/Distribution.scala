@@ -31,7 +31,8 @@ import eyes4s.kernel.*
   *   - Hellinger is a genuine [[Metric]];
   *   - Jensen-Shannon's square root is a metric, but the divergence itself is
   *     only a [[Semimetric]] -- it fails the triangle inequality;
-  *   - cosine and Pearson are [[SymmetricCompare]] and nothing stronger;
+  *   - cosine is a [[Kernel]] (dot products of unit-length map vectors);
+  *   - Pearson is a [[SymmetricCompare]];
   *   - Kullback-Leibler is a [[Divergence]], asymmetric, and therefore cannot
   *     be used for an unordered comparison at all.
   */
@@ -229,9 +230,8 @@ object Distribution:
     * through a [[ComparisonCursor]], so the comparison can pause inside a large
     * grid. Whole and incremental evaluation share this one accumulation.
     */
-  def cosine[U <: Unit2D]
-      : SymmetricCompare[Mass[U], Similarity] & BoundedCompare[Mass[U], Mass[U], Similarity] =
-    new SymmetricCompare[Mass[U], Similarity] with BoundedCompare[Mass[U], Mass[U], Similarity]:
+  def cosine[U <: Unit2D]: Kernel[Mass[U]] & BoundedCompare[Mass[U], Mass[U], Similarity] =
+    new Kernel[Mass[U]] with BoundedCompare[Mass[U], Mass[U], Similarity]:
       val info = MeasureInfo(
         "cosine",
         "inner product over norms; symmetric, bounded, NOT a metric",
@@ -355,6 +355,153 @@ object Distribution:
         r.compare(a, b).flatMap { s =>
           val clamped = math.max(-0.999999999999, math.min(0.999999999999, s.value))
           Similarity.computed("Fisher z", 0.5 * math.log((1 + clamped) / (1 - clamped)))
+        }
+
+  /** Rank correlation with average ranks for exact ties. Constant inputs are errors. */
+  def spearman[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
+    new SymmetricCompare[Mass[U], Similarity]:
+      val info = MeasureInfo(
+        "Spearman correlation",
+        "Pearson correlation of average cell ranks; not a metric",
+        MeasureScale.Correlation,
+        None
+      )
+      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Similarity] =
+        aligned(a, b).flatMap { n =>
+          def ranks(m: Mass[U]): Array[Double] =
+            val order  = (0 until n).sortBy(m.values(_))
+            val result = new Array[Double](n)
+            var start  = 0
+            while start < n do
+              var end = start + 1
+              while end < n && m.values(order(end)) == m.values(order(start)) do end += 1
+              val rank = (start.toDouble + end + 1) / 2
+              var j    = start
+              while j < end do
+                result(order(j)) = rank
+                j += 1
+              start = end
+            result
+          val x  = ranks(a); val y = ranks(b); val mean = (n.toDouble + 1) / 2
+          var xx = 0.0; var yy     = 0.0; var xy        = 0.0
+          var i  = 0
+          while i < n do
+            val dx = x(i) - mean; val dy = y(i) - mean
+            xx += dx * dx; yy += dy * dy; xy += dx * dy; i += 1
+          if xx == 0 || yy == 0 then
+            Left(
+              CompareError.ConstantInput(
+                info.name,
+                if xx == 0 && yy == 0 then CompareOperand.Both
+                else if xx == 0 then CompareOperand.Left
+                else CompareOperand.Right
+              )
+            )
+          else
+            Similarity.computed(
+              info.name,
+              math.max(-1.0, math.min(1.0, xy / math.sqrt(xx) / math.sqrt(yy)))
+            )
+        }
+
+  /** Extended Jaccard (Tanimoto): dot/(squared norms minus dot), not min/max overlap. */
+  def extendedJaccard[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
+    new SymmetricCompare[Mass[U], Similarity]:
+      val info = MeasureInfo(
+        "extended Jaccard",
+        "Tanimoto similarity of nonnegative cell vectors; not a metric",
+        MeasureScale.Bounded(0, 1),
+        None
+      )
+      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Similarity] =
+        aligned(a, b).flatMap { n =>
+          var dot = 0.0; var aa = 0.0; var bb = 0.0; var i = 0
+          while i < n do
+            val x = a.values(i); val y = b.values(i)
+            dot += x * y; aa += x * x; bb += y * y; i += 1
+          val denominator = aa + bb - dot
+          if denominator <= 0 then Left(CompareError.ZeroNorm(info.name, aa, bb))
+          else Similarity.computed(info.name, dot / denominator)
+        }
+
+  /** Biased sample distance correlation of the cell values (energy::dcor convention).
+    * O(n squared) time and O(n) storage; this baseline instance is not a spatial metric.
+    * Constant operands are errors, including identical uniform maps.
+    */
+  def distanceCorrelation[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
+    new SymmetricCompare[Mass[U], Similarity]:
+      val info = MeasureInfo(
+        "distance correlation",
+        "double-centred pairwise cell-value distances; not spatial transport",
+        MeasureScale.Bounded(0, 1),
+        None
+      )
+      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Similarity] =
+        aligned(a, b).flatMap { n =>
+          def means(m: Mass[U]): (Array[Double], Double) =
+            val rows = Array.fill(n)(0.0)
+            var i    = 0
+            while i < n do
+              var j = 0
+              while j < n do
+                rows(i) += math.abs(m.values(i) - m.values(j)) / n
+                j += 1
+              i += 1
+            (rows, rows.sum / n)
+          val (ax, grandX) = means(a); val (by, grandY) = means(b)
+          var xx           = 0.0; var yy                = 0.0; var xy = 0.0; var i = 0
+          while i < n do
+            var j = 0
+            while j < n do
+              val x = math.abs(a.values(i) - a.values(j)) - ax(i) - ax(j) + grandX
+              val y = math.abs(b.values(i) - b.values(j)) - by(i) - by(j) + grandY
+              xx += x * x; yy += y * y; xy += x * y
+              j += 1
+            i += 1
+          if xx == 0 || yy == 0 then
+            Left(
+              CompareError.ConstantInput(
+                info.name,
+                if xx == 0 && yy == 0 then CompareOperand.Both
+                else if xx == 0 then CompareOperand.Left
+                else CompareOperand.Right
+              )
+            )
+          else
+            Similarity.computed(
+              info.name,
+              math.sqrt(math.max(0.0, math.min(1.0, xy / math.sqrt(xx) / math.sqrt(yy))))
+            )
+        }
+
+  /** The reference l1 similarity is 1 minus total variation, with larger values closer. */
+  def l1Similarity[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
+    new SymmetricCompare[Mass[U], Similarity]:
+      val info = MeasureInfo(
+        "one minus total variation",
+        "reference l1 similarity; larger is closer",
+        MeasureScale.Bounded(0, 1),
+        None
+      )
+      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Similarity] =
+        totalVariation[U]
+          .compare(a, b)
+          .flatMap(d => Similarity.computed(info.name, 1 - d.value))
+
+  /** Separate endpoint policy from the historical 1e-12-clamped fisherZ instance. */
+  def fisherZMachineEpsilon[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
+    new SymmetricCompare[Mass[U], Similarity]:
+      val info = MeasureInfo(
+        "Fisher z (machine epsilon endpoints)",
+        "atanh(Pearson), clamped at plus/minus (1-2^-52)",
+        MeasureScale.FisherZ,
+        None
+      )
+      def compare(a: Mass[U], b: Mass[U]): Either[CompareError, Similarity] =
+        pearson[U].compare(a, b).flatMap { r =>
+          val bound = 1.0 - math.ulp(1.0)
+          val value = math.max(-bound, math.min(bound, r.value))
+          Similarity.computed(info.name, 0.5 * math.log((1 + value) / (1 - value)))
         }
 
 end Distribution

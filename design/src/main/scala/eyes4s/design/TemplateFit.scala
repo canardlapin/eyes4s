@@ -19,6 +19,7 @@ package eyes4s.design
 import eyes4s.kernel.ContentHash
 
 enum TemplateFitError derives CanEqual:
+  case Fit(trainingHash: ContentHash, underlying: LeastSquaresError)
   case Basis(id: String, columns: Vector[String], responseUnit: String)
   case Observation(key: String, fold: String, features: Vector[Double], response: Double)
   case Width(key: String, expected: Int, actual: Int)
@@ -28,7 +29,8 @@ enum TemplateFitError derives CanEqual:
   case Numerical(key: String, operation: String)
   case Evaluation(failed: Vector[String], total: Int)
   def message: String = this match
-    case Basis(i, c, u) =>
+    case Fit(hash, error) => s"Template training ${hash.render}: ${error.message}"
+    case Basis(i, c, u)   =>
       s"Template basis '$i' requires unique nonblank columns $c and response unit '$u'."
     case Observation(k, f, x, y) =>
       s"Template row $k in fold '$f' requires finite features $x and response $y."
@@ -180,14 +182,15 @@ final class TemplateEvaluation[K] private[design] (
         TemplateFitError.Numerical("held-out aggregate", "mean squared error")
       )
 
-/** Imported no-intercept coefficients, bound to immutable training inputs.
+/** Native or imported no-intercept coefficients, bound to immutable training inputs.
   * A receipt is provenance from a trusted backend, not a cryptographic proof of fitting.
   * No coefficient p-values or standard errors are accepted or exposed.
   */
 final class FittedTemplate[K] private (
     val training: TemplateTraining[K],
     val coefficients: Vector[Double],
-    val backend: String
+    val backend: String,
+    val methodId: String
 ):
   def evaluate(heldOut: TemplateHeldOut[K]): Either[TemplateFitError, TemplateEvaluation[K]] =
     if heldOut.trainingHash != training.hash then
@@ -217,6 +220,21 @@ final class FittedTemplate[K] private (
       )
 
 object FittedTemplate:
+  /** Full-rank scaled Householder QR, with no implicit intercept or preprocessing. */
+  val nativeMethod: String        = "eyes4s.no-intercept-scaled-householder-qr/1"
+  val nativeRankTolerance: Double = RelativeRankTolerance.default.value
+
+  def fitNoIntercept[K](
+      training: TemplateTraining[K]
+  ): Either[TemplateFitError, FittedTemplate[K]] =
+    LeastSquares
+      .fit(training.rows.map(_.features), training.rows.map(_.response))
+      .left
+      .map(TemplateFitError.Fit(training.hash, _))
+      .map(fit =>
+        new FittedTemplate(training, fit.coefficients, "eyes4s native Scala", nativeMethod)
+      )
+
   val method: String        = "eyes4s.no-intercept-r-lm-qr/1"
   val rankTolerance: Double = 1e-7
 
@@ -235,7 +253,7 @@ object FittedTemplate:
       rank == columns.size && observations == training.rows.size && observations >= rank && backend.trim.nonEmpty
     Either.cond(
       valid,
-      new FittedTemplate(training, coefficients, backend),
+      new FittedTemplate(training, coefficients, backend, method),
       TemplateFitError.Receipt(
         training.hash.render,
         trainingHash,

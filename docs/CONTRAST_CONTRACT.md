@@ -58,11 +58,7 @@ comparisons are exact.
 
 The core composition is:
 
-```scala
-val matched = evaluate(study, matchedDesign).meanByLeft(FailurePolicy.RequireAll)
-val control = evaluate(study, controlDesign).meanByLeft(FailurePolicy.RequireAll)
-val result = contrast(matched, control)
-```
+Run the complete [MatchedControlExample](../laws/src/test/scala/eyes4s/examples/MatchedControlExample.scala) with its [asserted results](../laws/src/test/scala/eyes4s/examples/MatchedControlSuite.scala). It constructs both designs, evaluates their edges, reduces by focal key, and contrasts the two reductions.
 
 The executable example defines a tuple-based `Ordering[StudyKey]`. `contrast` aligns by key equality
 and sorts the union using that explicit ordering. It rejects observed ordering ties between distinct

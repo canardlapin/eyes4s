@@ -88,6 +88,7 @@ class EyeLinkCorpusSuite extends munit.FunSuite:
     val fixture = manifest.fixtures.head
 
     assertEquals(fixture.id, "synthetic-one")
+    assert(fixture.toString.contains("synthetic-one"))
     assertEquals(fixture.kind, EyeLinkCorpusKind.Synthetic)
     assertEquals(fixture.permissionReference, "permission,scope%literal")
     assertEquals(fixture.samplingRatesHz, Vector(1000))
@@ -133,6 +134,7 @@ class EyeLinkCorpusSuite extends munit.FunSuite:
 
   test("coverage never promotes synthetic or planned fixtures to real evidence") {
     val manifest = parsed(row(syntheticBase), row(plannedPrivateBase))
+    manifest.coverage.dimensionPairs.foreach(p => assert(p.toString.contains(p.first)))
     val byId = manifest.coverage.capabilities.map(value => value.capability.id -> value).toMap
 
     assertEquals(

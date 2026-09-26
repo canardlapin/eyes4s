@@ -187,6 +187,7 @@ class ResponseEnvelopeJvmSuite extends munit.CatsEffectSuite:
     case RecordingStage.Warping          => "warping"
     case RecordingStage.Interpolating(_) => "interpolating"
     case RecordingStage.Detecting(_)     => "detecting"
+    case RecordingStage.Assembling(_)    => "assembling"
     case RecordingStage.Assigning        => "assigning"
 
   private def temporalKind(stage: TemporalStage): String = stage match

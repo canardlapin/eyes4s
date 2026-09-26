@@ -22,8 +22,8 @@ import java.nio.file.{Files, Path, StandardOpenOption}
 /** Developer/example CLI; not a hidden process-launching dependency of pure modules. */
 object TemplateFitCli:
   def main(args: Array[String]): Unit =
-    if args.length != 2 || !Set("export", "evaluate").contains(args(0)) then
-      sys.error("Usage: TemplateFitCli export|evaluate DIRECTORY")
+    if args.length != 2 || !Set("fit", "evaluate", "export", "import").contains(args(0)) then
+      sys.error("Usage: TemplateFitCli fit|evaluate|export|import DIRECTORY")
     val directory = Path.of(args(1))
     args(0) match
       case "export" =>
@@ -45,7 +45,31 @@ object TemplateFitCli:
           StandardOpenOption.CREATE_NEW
         )
         println(s"Exported training-only request and saved recipe to $directory")
+      case "fit" =>
+        Files.createDirectories(directory)
+        val saved = (for
+          split  <- TemplateFitGuide.input().left.map(TemplateFitGuide.message)
+          recipe <- TemplateFitGuide.saveNative(split).left.map(TemplateFitGuide.message)
+          _      <- TemplateFitGuide.evaluateNative(recipe).left.map(TemplateFitGuide.message)
+        yield recipe).fold(sys.error, identity)
+        Files.writeString(
+          directory.resolve("recipe.json"),
+          saved,
+          UTF_8,
+          StandardOpenOption.CREATE_NEW
+        )
+        println(s"Saved native fitting recipe to $directory; reopen with evaluate")
       case "evaluate" =>
+        val result = TemplateFitGuide
+          .evaluateNative(
+            Files.readString(directory.resolve("recipe.json"), UTF_8)
+          )
+          .fold(e => sys.error(TemplateFitGuide.message(e)), identity)
+        result.rows.foreach(row =>
+          println(s"${row.key}\t${row.fold}\t${row.observed}\t${row.result}")
+        )
+        println(s"held-out MSE = ${result.meanSquaredError}")
+      case "import" =>
         val result = TemplateFitGuide
           .evaluate(
             Files.readString(directory.resolve("recipe.json"), UTF_8),

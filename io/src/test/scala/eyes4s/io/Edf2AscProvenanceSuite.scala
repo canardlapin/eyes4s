@@ -41,6 +41,8 @@ class Edf2AscProvenanceSuite extends munit.FunSuite:
   }
 
   test("converter and argument constructors reject ambiguous evidence") {
+    assert(converter.toString.contains("edf2asc"))
+    assert(converter.toString.contains(executable.hex))
     assert(Edf2AscConverter.of(" ", executable, None).isLeft)
     assert(Edf2AscConverter.of("edf2asc", executable, Some(" ")).isLeft)
     assert(Edf2AscArguments.of(Vector("-s", " ")).isLeft)

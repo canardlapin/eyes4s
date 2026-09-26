@@ -362,6 +362,12 @@ class TemporalExecutionSuite extends munit.CatsEffectSuite:
           assertEquals(after.segmentUnits - before.segmentUnits, after.stepUnits.toLong)
         else assertEquals(after.segmentUnits, after.stepUnits.toLong)
       }
+      progress.map(_.segment).distinct.foreach { segment =>
+        assertEquals(
+          TemporalExecution.total(work, segment),
+          TemporalSegment.total(work, segment)
+        )
+      }
       val totals = progress.map(p => p.segment -> p.segmentTotal).distinct.toMap
       val last   = progress.groupBy(_.segment).view.mapValues(_.last.segmentUnits).toMap
       cells.foreach { case (r, w) =>

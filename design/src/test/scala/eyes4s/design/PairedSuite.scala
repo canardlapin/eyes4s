@@ -64,6 +64,8 @@ class PairedSuite extends munit.FunSuite:
     assertEquals(result.eligiblePairCount, 2L)
     assertEquals(result.selectedPairCount, 2)
     assertEquals(result.storage, PairStorage.BetweenDirected)
+    val publicView: Paired[Key, Meta, Key, Meta, Int, Int] = result
+    assertEquals(publicView.pairSpace.storage, PairStorage.BetweenDirected)
     assert(result.ambiguous.isEmpty)
   }
 

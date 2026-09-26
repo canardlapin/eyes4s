@@ -15,6 +15,8 @@ recording input payload (see [saved studies](SAVED_STUDIES.md)); fitted
 synchronization diagnostics belong to the completed-result archive work in S4.
 `TimelineCodecs` supplies the conditional `Timeline[A]`, `PlannedTimeline[A]`
 and `ObservedTimeline[A]` codecs given a codec for the mark values.
+`EpochCodecs.plan(schema, keyCodec)` similarly persists the selector, checked bin width
+and final-bin policy of an [epoch plan](EPOCH_PLANS.md), under explicit caller-supplied identities.
 
 ## Numeric policy
 
@@ -176,7 +178,9 @@ that does not exist. A new built-in schema without a law and a fixture therefore
 the file that introduces it, as a `val` of an object whose name ends in `Definitions`, built with
 the package-private `DefinitionId.builtIn`:
 
-```scala
+Illustrative declaration pattern (not an executable example):
+
+```text
 // Illustration: declared in the file that introduces the KDE method.
 object KdeDefinitions:
   val gaussianKde: DefinitionId = DefinitionId.builtIn("eyes4s.gaussian-kde", 1)

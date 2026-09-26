@@ -1,0 +1,1998 @@
+{
+  "pairs": {
+    "schema": "eyes4s.result-table/1",
+    "family": "PairScores",
+    "columns": [
+      {
+        "name": "edge_index",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "edge_index",
+        "labels": []
+      },
+      {
+        "name": "left_key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "right_key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "component",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "value",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "unitless",
+        "meaning": "value",
+        "labels": []
+      },
+      {
+        "name": "status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "label",
+        "meaning": "scientific outcome",
+        "labels": [
+          "success",
+          "failure",
+          "excluded"
+        ]
+      },
+      {
+        "name": "error_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "typed failure with operands",
+        "labels": []
+      }
+    ]
+  },
+  "structured-pairs": {
+    "schema": "eyes4s.result-table/1",
+    "family": "PairScores",
+    "columns": [
+      {
+        "name": "edge_index",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "edge_index",
+        "labels": []
+      },
+      {
+        "name": "left_key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "right_key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "component",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "value",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "unitless",
+        "meaning": "value",
+        "labels": []
+      },
+      {
+        "name": "status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "label",
+        "meaning": "scientific outcome",
+        "labels": [
+          "success",
+          "failure",
+          "excluded"
+        ]
+      },
+      {
+        "name": "error_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "typed failure with operands",
+        "labels": []
+      }
+    ]
+  },
+  "reductions": {
+    "schema": "eyes4s.result-table/1",
+    "family": "Reductions",
+    "columns": [
+      {
+        "name": "key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "component",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "value",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "unitless",
+        "meaning": "value",
+        "labels": []
+      },
+      {
+        "name": "status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "label",
+        "meaning": "scientific outcome",
+        "labels": [
+          "success",
+          "failure",
+          "excluded"
+        ]
+      },
+      {
+        "name": "error_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "typed failure with operands",
+        "labels": []
+      },
+      {
+        "name": "selected",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "selected",
+        "labels": []
+      },
+      {
+        "name": "successful",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "successful",
+        "labels": []
+      },
+      {
+        "name": "contributing",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "contributing",
+        "labels": []
+      }
+    ]
+  },
+  "contrasts": {
+    "schema": "eyes4s.result-table/1",
+    "family": "Contrasts",
+    "columns": [
+      {
+        "name": "role",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "matched, control or matched-minus-control",
+        "labels": []
+      },
+      {
+        "name": "key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "component",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "value",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "unitless",
+        "meaning": "value",
+        "labels": []
+      },
+      {
+        "name": "status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "label",
+        "meaning": "scientific outcome",
+        "labels": [
+          "success",
+          "failure",
+          "excluded"
+        ]
+      },
+      {
+        "name": "error_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "typed failure with operands",
+        "labels": []
+      },
+      {
+        "name": "selected",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "selected",
+        "labels": []
+      },
+      {
+        "name": "successful",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "successful",
+        "labels": []
+      },
+      {
+        "name": "contributing",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "contributing",
+        "labels": []
+      }
+    ]
+  },
+  "empty-pairs": {
+    "schema": "eyes4s.result-table/1",
+    "family": "PairScores",
+    "columns": [
+      {
+        "name": "edge_index",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "edge_index",
+        "labels": []
+      },
+      {
+        "name": "left_key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "right_key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "component",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "value",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "unitless",
+        "meaning": "value",
+        "labels": []
+      },
+      {
+        "name": "status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "label",
+        "meaning": "scientific outcome",
+        "labels": [
+          "success",
+          "failure",
+          "excluded"
+        ]
+      },
+      {
+        "name": "error_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "typed failure with operands",
+        "labels": []
+      }
+    ]
+  },
+  "study": {
+    "schema": "eyes4s.result-table/1",
+    "family": "StudyContrasts",
+    "columns": [
+      {
+        "name": "schema_version",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "scope",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "participant",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "stimulus",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "phase",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "key_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "estimator",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "sigma",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "spatial_unit column",
+        "meaning": "sigma",
+        "labels": []
+      },
+      {
+        "name": "edges",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "component",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "matched",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "score_scale column",
+        "meaning": "matched",
+        "labels": []
+      },
+      {
+        "name": "control",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "score_scale column",
+        "meaning": "control",
+        "labels": []
+      },
+      {
+        "name": "difference",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "score_scale column",
+        "meaning": "difference",
+        "labels": []
+      },
+      {
+        "name": "status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "reason",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "matched_selected",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "matched_selected",
+        "labels": []
+      },
+      {
+        "name": "matched_successful",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "matched_successful",
+        "labels": []
+      },
+      {
+        "name": "matched_failed",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "matched_failed",
+        "labels": []
+      },
+      {
+        "name": "matched_contributing",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "matched_contributing",
+        "labels": []
+      },
+      {
+        "name": "control_selected",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "control_selected",
+        "labels": []
+      },
+      {
+        "name": "control_successful",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "control_successful",
+        "labels": []
+      },
+      {
+        "name": "control_failed",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "control_failed",
+        "labels": []
+      },
+      {
+        "name": "control_contributing",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "control_contributing",
+        "labels": []
+      },
+      {
+        "name": "input_digest",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "frame_id",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "spatial_unit",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "method_id",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "method_version",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "method_version",
+        "labels": []
+      },
+      {
+        "name": "score_scale",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "matched_provenance",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "control_provenance",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "estimation_failures",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "plan_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "sigma_x",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "spatial_unit column",
+        "meaning": "sigma_x",
+        "labels": []
+      },
+      {
+        "name": "sigma_y",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "spatial_unit column",
+        "meaning": "sigma_y",
+        "labels": []
+      }
+    ]
+  },
+  "point-pointsources": {
+    "schema": "eyes4s.result-table/1",
+    "family": "PointSources",
+    "columns": [
+      {
+        "name": "source_index",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "source_index",
+        "labels": []
+      },
+      {
+        "name": "key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "template_key_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "label",
+        "meaning": "scientific outcome",
+        "labels": [
+          "success",
+          "failure",
+          "excluded"
+        ]
+      },
+      {
+        "name": "error_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "typed failure with operands",
+        "labels": []
+      },
+      {
+        "name": "eligible_controls",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "eligible_controls",
+        "labels": []
+      },
+      {
+        "name": "selected_controls",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "selected_controls",
+        "labels": []
+      }
+    ]
+  },
+  "point-pointcontrols": {
+    "schema": "eyes4s.result-table/1",
+    "family": "PointControls",
+    "columns": [
+      {
+        "name": "source_index",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "source_index",
+        "labels": []
+      },
+      {
+        "name": "key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "control_index",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "control_index",
+        "labels": []
+      },
+      {
+        "name": "occurrence_key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "template_key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "query_index",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "query_index",
+        "labels": []
+      },
+      {
+        "name": "time_us",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "microseconds",
+        "meaning": "time_us",
+        "labels": []
+      },
+      {
+        "name": "value",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "template amplitude",
+        "meaning": "value",
+        "labels": []
+      },
+      {
+        "name": "status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "label",
+        "meaning": "scientific outcome",
+        "labels": [
+          "success",
+          "failure",
+          "excluded"
+        ]
+      },
+      {
+        "name": "error_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "typed failure with operands",
+        "labels": []
+      }
+    ]
+  },
+  "point-pointsamples": {
+    "schema": "eyes4s.result-table/1",
+    "family": "PointSamples",
+    "columns": [
+      {
+        "name": "source_index",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "source_index",
+        "labels": []
+      },
+      {
+        "name": "key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "query_index",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "query_index",
+        "labels": []
+      },
+      {
+        "name": "time_us",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "microseconds",
+        "meaning": "time_us",
+        "labels": []
+      },
+      {
+        "name": "bin_index",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "bin_index",
+        "labels": []
+      },
+      {
+        "name": "x",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "px",
+        "meaning": "x",
+        "labels": []
+      },
+      {
+        "name": "y",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "px",
+        "meaning": "y",
+        "labels": []
+      },
+      {
+        "name": "role",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "value",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "template amplitude",
+        "meaning": "value",
+        "labels": []
+      },
+      {
+        "name": "status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "label",
+        "meaning": "scientific outcome",
+        "labels": [
+          "success",
+          "failure",
+          "excluded"
+        ]
+      },
+      {
+        "name": "error_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "typed failure with operands",
+        "labels": []
+      },
+      {
+        "name": "selected",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "selected",
+        "labels": []
+      },
+      {
+        "name": "successful",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "successful",
+        "labels": []
+      },
+      {
+        "name": "contributing",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "contributing",
+        "labels": []
+      }
+    ]
+  },
+  "point-pointbins": {
+    "schema": "eyes4s.result-table/1",
+    "family": "PointBins",
+    "columns": [
+      {
+        "name": "source_index",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "source_index",
+        "labels": []
+      },
+      {
+        "name": "key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "bin_index",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "bin_index",
+        "labels": []
+      },
+      {
+        "name": "from_us",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "microseconds",
+        "meaning": "from_us",
+        "labels": []
+      },
+      {
+        "name": "until_us",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "microseconds",
+        "meaning": "until_us",
+        "labels": []
+      },
+      {
+        "name": "includes_final_endpoint",
+        "type": "Boolean",
+        "nullable": false,
+        "unit": "boolean",
+        "meaning": "includes_final_endpoint",
+        "labels": []
+      },
+      {
+        "name": "query_indices_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "role",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "value",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "template amplitude",
+        "meaning": "value",
+        "labels": []
+      },
+      {
+        "name": "status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "label",
+        "meaning": "scientific outcome",
+        "labels": [
+          "success",
+          "failure",
+          "excluded"
+        ]
+      },
+      {
+        "name": "error_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "typed failure with operands",
+        "labels": []
+      },
+      {
+        "name": "selected",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "selected",
+        "labels": []
+      },
+      {
+        "name": "successful",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "successful",
+        "labels": []
+      },
+      {
+        "name": "contributing",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "contributing",
+        "labels": []
+      }
+    ]
+  },
+  "repetition-0": {
+    "schema": "eyes4s.result-table/1",
+    "family": "PairScores",
+    "columns": [
+      {
+        "name": "edge_index",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "edge_index",
+        "labels": []
+      },
+      {
+        "name": "left_key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "right_key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "component",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "value",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "unitless",
+        "meaning": "value",
+        "labels": []
+      },
+      {
+        "name": "status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "label",
+        "meaning": "scientific outcome",
+        "labels": [
+          "success",
+          "failure",
+          "excluded"
+        ]
+      },
+      {
+        "name": "error_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "typed failure with operands",
+        "labels": []
+      }
+    ]
+  },
+  "repetition-1": {
+    "schema": "eyes4s.result-table/1",
+    "family": "PairScores",
+    "columns": [
+      {
+        "name": "edge_index",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "edge_index",
+        "labels": []
+      },
+      {
+        "name": "left_key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "right_key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "component",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "value",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "unitless",
+        "meaning": "value",
+        "labels": []
+      },
+      {
+        "name": "status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "label",
+        "meaning": "scientific outcome",
+        "labels": [
+          "success",
+          "failure",
+          "excluded"
+        ]
+      },
+      {
+        "name": "error_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "typed failure with operands",
+        "labels": []
+      }
+    ]
+  },
+  "fixed-templatecoefficients": {
+    "schema": "eyes4s.result-table/1",
+    "family": "TemplateCoefficients",
+    "columns": [
+      {
+        "name": "feature",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "coefficient",
+        "type": "Float64",
+        "nullable": false,
+        "unit": "response units / feature unit",
+        "meaning": "coefficient",
+        "labels": []
+      }
+    ]
+  },
+  "fixed-templatepredictions": {
+    "schema": "eyes4s.result-table/1",
+    "family": "TemplatePredictions",
+    "columns": [
+      {
+        "name": "key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "fold",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "observed",
+        "type": "Float64",
+        "nullable": false,
+        "unit": "response units",
+        "meaning": "observed",
+        "labels": []
+      },
+      {
+        "name": "predicted",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "response units",
+        "meaning": "predicted",
+        "labels": []
+      },
+      {
+        "name": "status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "label",
+        "meaning": "scientific outcome",
+        "labels": [
+          "success",
+          "failure",
+          "excluded"
+        ]
+      },
+      {
+        "name": "error_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "typed failure with operands",
+        "labels": []
+      },
+      {
+        "name": "residual",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "response units",
+        "meaning": "residual",
+        "labels": []
+      }
+    ]
+  },
+  "learned-templatecoefficients": {
+    "schema": "eyes4s.result-table/1",
+    "family": "TemplateCoefficients",
+    "columns": [
+      {
+        "name": "feature",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "coefficient",
+        "type": "Float64",
+        "nullable": false,
+        "unit": "response units / cosine similarity",
+        "meaning": "coefficient",
+        "labels": []
+      }
+    ]
+  },
+  "learned-templatepredictions": {
+    "schema": "eyes4s.result-table/1",
+    "family": "TemplatePredictions",
+    "columns": [
+      {
+        "name": "key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "split_group",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "match_group",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "observed",
+        "type": "Float64",
+        "nullable": false,
+        "unit": "response units",
+        "meaning": "observed",
+        "labels": []
+      },
+      {
+        "name": "predicted",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "response units",
+        "meaning": "predicted",
+        "labels": []
+      },
+      {
+        "name": "status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "label",
+        "meaning": "scientific outcome",
+        "labels": [
+          "success",
+          "failure",
+          "excluded"
+        ]
+      },
+      {
+        "name": "error_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "typed failure with operands",
+        "labels": []
+      },
+      {
+        "name": "residual",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "response units",
+        "meaning": "residual",
+        "labels": []
+      }
+    ]
+  },
+  "learned-templateexclusions": {
+    "schema": "eyes4s.result-table/1",
+    "family": "TemplateExclusions",
+    "columns": [
+      {
+        "name": "key_json",
+        "type": "JsonUtf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "split_group",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "match_group",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "label",
+        "meaning": "scientific outcome",
+        "labels": [
+          "success",
+          "failure",
+          "excluded"
+        ]
+      },
+      {
+        "name": "reason",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      }
+    ]
+  },
+  "olscoefficients": {
+    "schema": "eyes4s.result-table/1",
+    "family": "OlsCoefficients",
+    "columns": [
+      {
+        "name": "predictor",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "role",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "value",
+        "type": "Float64",
+        "nullable": false,
+        "unit": "see value_unit",
+        "meaning": "value",
+        "labels": []
+      },
+      {
+        "name": "value_unit",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      }
+    ]
+  },
+  "olsdiagnostics": {
+    "schema": "eyes4s.result-table/1",
+    "family": "OlsDiagnostics",
+    "columns": [
+      {
+        "name": "rank",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "rank",
+        "labels": []
+      },
+      {
+        "name": "cells",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "cells",
+        "labels": []
+      },
+      {
+        "name": "residual_sum_squares",
+        "type": "Float64",
+        "nullable": false,
+        "unit": "squared response mass",
+        "meaning": "residual_sum_squares",
+        "labels": []
+      },
+      {
+        "name": "r_squared",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "unitless",
+        "meaning": "r_squared",
+        "labels": []
+      },
+      {
+        "name": "r_squared_status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "identifier",
+        "labels": []
+      },
+      {
+        "name": "scaled_diagonal_ratio",
+        "type": "Float64",
+        "nullable": false,
+        "unit": "unitless",
+        "meaning": "scaled_diagonal_ratio",
+        "labels": []
+      }
+    ]
+  },
+  "olscells": {
+    "schema": "eyes4s.result-table/1",
+    "family": "OlsCells",
+    "columns": [
+      {
+        "name": "cell_index",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "cell_index",
+        "labels": []
+      },
+      {
+        "name": "column_index",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "column_index",
+        "labels": []
+      },
+      {
+        "name": "row_index",
+        "type": "Int64",
+        "nullable": false,
+        "unit": "count",
+        "meaning": "row_index",
+        "labels": []
+      },
+      {
+        "name": "fitted",
+        "type": "Float64",
+        "nullable": false,
+        "unit": "response mass/cell",
+        "meaning": "fitted",
+        "labels": []
+      },
+      {
+        "name": "residual",
+        "type": "Float64",
+        "nullable": false,
+        "unit": "response mass/cell",
+        "meaning": "residual",
+        "labels": []
+      }
+    ]
+  },
+  "temporalcontrasts": {
+    "schema": "eyes4s.result-table/1",
+    "family": "TemporalContrasts",
+    "columns": [
+      {
+        "name": "repetition",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "window",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "from_us",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "microseconds",
+        "meaning": "from_us",
+        "labels": []
+      },
+      {
+        "name": "until_us",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "microseconds",
+        "meaning": "until_us",
+        "labels": []
+      },
+      {
+        "name": "fixation_boundary",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "schema_version",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "scope",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "participant",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "stimulus",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "phase",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "key_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "estimator",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "sigma",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "spatial_unit column",
+        "meaning": "sigma",
+        "labels": []
+      },
+      {
+        "name": "edges",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "component",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "matched",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "score_scale column",
+        "meaning": "matched",
+        "labels": []
+      },
+      {
+        "name": "control",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "score_scale column",
+        "meaning": "control",
+        "labels": []
+      },
+      {
+        "name": "difference",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "score_scale column",
+        "meaning": "difference",
+        "labels": []
+      },
+      {
+        "name": "status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "reason",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "matched_selected",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "matched_selected",
+        "labels": []
+      },
+      {
+        "name": "matched_successful",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "matched_successful",
+        "labels": []
+      },
+      {
+        "name": "matched_failed",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "matched_failed",
+        "labels": []
+      },
+      {
+        "name": "matched_contributing",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "matched_contributing",
+        "labels": []
+      },
+      {
+        "name": "control_selected",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "control_selected",
+        "labels": []
+      },
+      {
+        "name": "control_successful",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "control_successful",
+        "labels": []
+      },
+      {
+        "name": "control_failed",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "control_failed",
+        "labels": []
+      },
+      {
+        "name": "control_contributing",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "control_contributing",
+        "labels": []
+      },
+      {
+        "name": "input_digest",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "frame_id",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "spatial_unit",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "method_id",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "method_version",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "method_version",
+        "labels": []
+      },
+      {
+        "name": "score_scale",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "matched_provenance",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "control_provenance",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "estimation_failures",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "plan_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "sigma_x",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "spatial_unit column",
+        "meaning": "sigma_x",
+        "labels": []
+      },
+      {
+        "name": "sigma_y",
+        "type": "Float64",
+        "nullable": true,
+        "unit": "spatial_unit column",
+        "meaning": "sigma_y",
+        "labels": []
+      }
+    ]
+  },
+  "temporalcoverage": {
+    "schema": "eyes4s.result-table/1",
+    "family": "TemporalCoverage",
+    "columns": [
+      {
+        "name": "repetition",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "window",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "from_us",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "microseconds",
+        "meaning": "from_us",
+        "labels": []
+      },
+      {
+        "name": "until_us",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "microseconds",
+        "meaning": "until_us",
+        "labels": []
+      },
+      {
+        "name": "fixation_boundary",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "key_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "observed_us",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "microseconds",
+        "meaning": "observed_us",
+        "labels": []
+      },
+      {
+        "name": "missing_us",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "microseconds",
+        "meaning": "missing_us",
+        "labels": []
+      },
+      {
+        "name": "retained_us",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "microseconds",
+        "meaning": "retained_us",
+        "labels": []
+      },
+      {
+        "name": "excluded_fixations",
+        "type": "Int64",
+        "nullable": true,
+        "unit": "count",
+        "meaning": "excluded_fixations",
+        "labels": []
+      },
+      {
+        "name": "fixation_times_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "status",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "reason",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "input_digest",
+        "type": "Utf8",
+        "nullable": false,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      },
+      {
+        "name": "plan_json",
+        "type": "JsonUtf8",
+        "nullable": true,
+        "unit": "text",
+        "meaning": "existing CSV field; original schema and plan retained",
+        "labels": []
+      }
+    ]
+  }
+}

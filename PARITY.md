@@ -88,7 +88,7 @@ of six repetition tests to fail; the production source was restored byte-for-byt
 These are local checks, not the supported-JDK hosted release matrix. Other repetition methods,
 multiscale aggregation and arbitrary sampled-design persistence remain explicit gaps.
 
-### Training-only fixed-feature fitting
+### Historical training-only fixed-feature fitting (2026-09-17)
 
 The [template fitting workflow](docs/TEMPLATE_FITTING.md) now executes the fixed four-row
 training case through actual Scala CSV export, R `stats::lm.fit` with no intercept, coefficient
@@ -109,8 +109,9 @@ distinguishes no-intercept fitting from an accidental intercept.
 It returns `(0.4,0.6)`: each predictor and response is separately normalized before regression.
 That is a per-source fit over cells, not a held-out trial predictor. The fixture preserves this
 different basis and statistical unit rather than claiming universal template-model parity.
-Learned feature construction, cross-fitted transform workflows, `template_regression`, robust
-fits, NNLS and typed surface decomposition remain separate gaps. No coefficient standard errors,
+At that checkpoint, learned feature construction, cross-fitted transform workflows,
+`template_regression`, robust fits, NNLS and typed surface decomposition were separate gaps.
+The 2026-09-19 evidence below supersedes the bounded native-template and LM gaps. No coefficient standard errors,
 p-values or binomial-on-mass analysis is exposed by the new route.
 
 Local acceptance on 2026-09-17: actual JVM export → R 4.5.1 fit → saved-recipe reimport ran
@@ -213,7 +214,7 @@ means and subtraction; it is not a new MultiMatch algorithm conformance claim. S
 
 General KDE bandwidth/edge equivalence, finite control sampling (the residual table above),
 fixation-group and multiscale entropy inputs, eyesim temporal template-density sampling,
-template-model fitting, real study-data coverage, and the remaining
+fitted density-transform breadth, real study-data coverage, and the remaining
 [capability baseline](docs/EYESIM_CAPABILITIES.md) still require their own reference fixtures.
 Historical eyesim bug descriptions outside this report have not been revalidated by this slice.
 Earlier Python MultiMatch fixtures remain a separate conformance programme.
@@ -351,3 +352,147 @@ Java 17/21 matrix was not run. Local artifact publication is not a remote releas
   equivalent, five intentional divergences, fifteen gaps).
 
 These are local results. Hosted Java 17/21 CI and remote publication were not run.
+
+## Native surface OLS (2026-09-19)
+
+`surface-decomposition-ols` adds a bounded equivalent map-regression case under
+`bd-01KYD6SYK02ZRV99MG7FX939ZS`. Its per-ticket input and manifest avoid the frozen shared
+case list. Pinned public `template_multireg(method="lm")` and `template_regression(method="lm")`
+agree with exact rational coefficients and with native Householder QR for the declared
+normalized maps. Intercept/no-intercept, nonzero residual and signed coefficient cases pin
+the statistical unit: cells within a map. No cell-wise inference is claimed. See
+[SURFACE_DECOMPOSITION](docs/SURFACE_DECOMPOSITION.md) for rank and R-squared conventions.
+The bounded native template workflow is qualified below. `check_baseline.py` reports
+the current evidence counts.
+
+
+### Native template fitting and learned mean-map recipe (2026-09-19)
+
+The native fixed-feature guide now executes save/reopen/refit/evaluate without R, with a
+separate method and codec from historical R-labelled recipes. The actual JVM CLI produced
+prediction 7 and MSE 0; portable tests retain the exact slopes (1,2), response-700, rank,
+shape and no-implicit-intercept controls. Historical import remains optional interop.
+
+[LearnedTemplate](docs/TEMPLATE_CV.md) learns an equal-trial mean of normalized training maps,
+uses cosine as one feature and fits a through-origin response slope. The independent analytic
+case gives mean (2/3,1/3), slope sqrt(5), prediction 3/sqrt(2). Changing held-out map coordinates
+and response leaves learned state unchanged while changing prediction to 1 and residual to 699.
+An actual admission mutant that included held-out maps failed three tests. Restored source,
+saved learned recipes, exclusions and external capability probes pass on JVM and Scala.js.
+
+The pinned exported `template_similarity_cv` fixture separately measures explicit participant
+folds, matching, training exclusions and cosine scores. Each fold has a repeated match key in
+the other fold; native exclusions and scores agree within 1e-12. Full duplicate/missing outputs
+and warnings remain in the fixture. R's first-duplicate/drop-unmatched behavior and its measured
+RNG side effect (`rng_restored: false`) are intentional native divergences. Native fold membership
+is explicit. This is not learned-transform parity for PCA/CORAL/CCA. Normalized cellwise LM
+remains separately qualified by the rational surface-decomposition fixture; robust/NNLS variants
+remain deferred and logistic regression on continuous mass is excluded.
+
+
+### Shared trajectory, finite controls and density lookup (2026-09-19)
+
+[Fixation sampling](docs/FIXATION_SAMPLING.md) now has a shared exact-time trajectory route
+with named onset-range/hold-last policies and bounded exact duration replication. Ordered and
+singleton fast/slow paths agree with pinned exported calls. Duplicate/empty admission and
+0.29-second floating truncation remain explicit divergences. A boundary mutant failed three
+tests. Optimized density and generic fixation finite-control calls are both retained under
+recorded seed/RNGkind, including different cap-one counts. Native eligibility excludes every
+true-match copy before BottomK and keeps occurrence multiplicity and both denominators.
+
+[Density lookup](docs/DENSITY_SAMPLING.md) composes that same trajectory and matches pinned
+sample_density(times) and template_sample. Its named one-based-even nearest/clamped policy,
+normalization and query retention pass both runtimes; a zero-based-rounding mutant failed two
+tests. Exactly constant z-scores retain their field, with no epsilon. Signed output cannot be
+mistaken for Mass. The type-7 IQR suggestion and display clamp are separately measured.
+
+The non-square KDE fixture retains all backend outputs, failures and coordinate axes. Native
+weighted discrete smoothing has an independent direct 2-D kernel oracle under both edge policies.
+MASS unweighted agrees with a continuous Gaussian at fixed 1e-7 rounding tolerance; ks differs
+from direct evaluation by up to about 6.73e-6 in this fixture. Pinned explicit weights are ignored,
+weighted MASS fails, and density_by removes failures. None of those outcomes is hidden or claimed
+as successful backend parity. The native discrete estimator and explicit error retention are
+intentional scientific/API differences.
+
+
+### Map methods and supplied scales (2026-09-19)
+
+[Map comparison](docs/MAP_COMPARISON.md) now measures the complete exported vector, density and
+multiscale dispatch matrix. Spearman average ties, extended Jaccard, distance correlation and
+1-minus-TV have explicit native instances; the machine-epsilon Fisher endpoint policy is separate
+from the unchanged legacy instance. Rational numerical oracles, published symmetry laws,
+direct-versus-lift execution and non-square discrete Gaussian scale checks run on both runtimes.
+Constant/invalid admission, grid identity and strict failure-preserving scale means intentionally
+differ from the pinned R special cases and missing removal. All raw outcomes remain in the fixture.
+
+The frozen reference lock selects T4transport for the method labelled emd. Small analytically exact
+transport plans qualify those pinned outputs beside native sliced W1 and squared-cost Sinkhorn;
+the label does not establish general exact-backend parity. Multiscale emd remains unsupported.
+
+
+### Exported scanpath and fixation conformance (2026-09-19)
+
+[Scanpath comparison](docs/SCANPATH_COMPARISON.md) now measures actual R scanpath construction,
+direct MultiMatch and table facades. Five components agree on selected non-square cases; the
+sixth remains a named unavailable native result with every R backend outcome retained. Native
+short/invalid/window behavior is explicit, and Python conformance remains separate evidence.
+Shared-trajectory overlap pins both distance norms, strict equality, explicit times and the
+all-requested denominator. Direct/facade R defaults differ and remain documented.
+
+The new fixation transport route names duration weights, scaled position/onset, lambda, squared
+cost, root cost and similarity separately. It has independent primal/analytic oracles and a
+marginal-convergence gate. Pinned T4transport's default lambda .01 run fails the unchanged 1e-7
+comparison tolerance; its residual and extended-iteration plan remain evidence of an intentional
+solver divergence. No exact solver, metric, debiased-divergence or unconditional backend parity
+claim is made. The only new locked dependency is igraph 2.3.1; preexisting records are unchanged.
+
+
+### Repetition breadth and all-occasion persistence (2026-09-19)
+
+[Repetition studies](docs/REPETITION_STUDIES.md) now measure every baseline map dispatch through
+repetitive_similarity, including pairwise/reduced and multiscale mean/none outputs. Independent
+Cartesian and rational oracles qualify seven native methods. Heterogeneous scale failures expose
+the reference's nested comparison means; typed aggregation keeps source rows and explicit failure
+policies at both levels. Transport unavailability and the reference grouping/duplicate behavior
+remain declared differences.
+
+A separate supplied-map RepetitionPlan persists a finite relation vocabulary and typed projection
+registrations, with exact BottomK seed/cap and input/plan identities. The pinned three-occasion
+custom-key example reopens through a fresh registry on both runtimes and reproduces directed
+endpoints, counts, scores and provenance; the old two-phase study v1 fixture remains unchanged.
+The single-map recipe does not silently infer multiscale aggregation or KDE.
+
+
+## Static temporal point sampling (2026-09-19)
+
+[PointSamplingPlan](docs/POINT_SAMPLING.md) is now separate from windowed duration occupancy.
+The locked `sample_density_time` fixture and independent onset/grid/arithmetic oracle verify
+all four normalizations, repeated/unsorted queries, final-endpoint inclusion, source-occurrence
+control multiplicity and per-time then per-bin means at absolute `OracleTolerance = 1e-12`.
+A heterogeneous-control case gives nested 11/3 versus pooled 4. The reference drops unmatched
+sources and chooses the first duplicate template; native retains typed failures and every query.
+Native keyed finite selection preserves occurrence identities without claiming R PRNG equality.
+Reference missing field cells remain evidence; checked native fields refuse their admission.
+The complete plan and replay-verified result are saved under separate versioned schemas, with
+exact integer time/seed text and equal JVM/Scala.js JSON values. Earlier temporal-gap statements
+above describe their dated checkpoints; this evidence closes the static point-sampling case.
+
+
+## Finite baseline result exports (2026-09-19)
+
+The [result export matrix](docs/RESULT_EXPORTS.md) covers scalar/structured pairs, endpoint
+reductions and contrasts, repetition edges, point samples/bins, fixed and learned predictions,
+OLS coefficients/diagnostics/cells, and the existing study/duration-window outputs. Checked
+canonical rows drive both portable CSV and optional JVM-only Arrow IPC. Sidecars retain schemas,
+units, identities, method parameters, selection evidence, exclusions and provenance, including
+empty output. Exact Int64 values do not pass through Double; null bits/CSV validity columns
+distinguish missing values from empty strings.
+
+The compiled public example emits actual artifacts. Base R independently checks identities,
+counts and analytic scalar values; PyArrow checks every cell, schema, nullability and metadata
+and recomputes the content SHA-256. Both readers reject a changed score. Arrow write-failure
+tests prove explicit stream/vector cleanup. JVM/JS learned coefficients differ by one rounding
+step within the fixed numerical tolerance, so their derived table identities remain different.
+The learned input-hash formatted-geometry defect discovered here is fixed and independently
+pinned across runtimes; OLS rank tolerance now has numeric provenance. These are export and
+interop guarantees; the numerical qualification of each method stays in its own case evidence.

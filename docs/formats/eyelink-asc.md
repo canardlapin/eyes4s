@@ -75,13 +75,14 @@ val setup =
     stream <- AscStreamSettings.of("recording.asc", 1024 * 1024, 64 * 1024)
   yield (EyeLinkAscOrigin.Converted(receipt), stream, config)
 
-val imported = setup.map { case (origin, stream, config) =>
-  EyeLinkAscImport.readPath[IO](Path("recording.asc"), origin, stream, config)
+def importRecording(path: Path) = setup.map { case (origin, stream, config) =>
+  EyeLinkAscImport.readPath[IO](path, origin, stream, config)
 }
 ```
 
 Replace every placeholder with evidence from the actual conversion. `setup` retains constructor
-failures as typed values; `imported` is an `Either` containing the resource-safe `IO` import.
+failures as typed values; `importRecording(Path("recording.asc"))` returns an `Either` containing the resource-safe
+`IO` import. Execute that effect within your application; constructing it does not read the file.
 
 For exploratory byte input without a conversion receipt:
 

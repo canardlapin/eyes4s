@@ -415,6 +415,7 @@ class EyeLinkConformanceSuite extends munit.FunSuite:
     assert(!summary.vendorEdfCertified)
     assert(summary.renderTsv.contains("missing-external"))
     assertEquals(summary.renderTsv, EyeLinkPortableConformanceExpected.renderTsv)
+    assertEquals(summary.digest, Sha256.ofUtf8(EyeLinkPortableConformanceExpected.renderTsv))
   }
 
   test("a failed EDF comparison makes the available comparison summary fail") {

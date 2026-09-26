@@ -36,10 +36,10 @@ scientific inventory. Current source and tracker reconciliation distinguishes:
 
 | Epic | Delivered foundation | Remaining acceptance |
 |---|---|---|
-| Relational analysis (`bd-01KYD6CFWNAN0Y3TR59FJV8VMG`) | Typed relations/designs, indexed equality joins, shared exhaustive between/within scheduling, keyed sampling, edge analyses, explicit reductions/contrasts, mutation coverage and a direct repetition facade | Surface decomposition, partial association, broad parity and saved arbitrary within-design persistence |
-| Coherent roadmap (`bd-01M02N4AVNKKTEV3SA5PR0H4S8`) | Fixation, recording and temporal plan/codec routes; typed method descriptors, preflight, bounded study preview and two extension families | Complete baseline and packaged application-consumer proof, operational and release gates |
-| Psychology-facing API/docs (`bd-01M02N4EKAEA6EBB3TE0G4TYMP`) | Nine-page public guide, executed first study and acquired-recording save/restore examples, migration coverage of all 36 required entry points, local mdoc/Laika build and generated CI checks | Full fresh-consumer journey coverage, remaining example migration, public API Scaladoc, rendered browser review and hosted CI evidence |
-| Complete baseline (`bd-01M214CX2CTADNR6Q9D032Y1FB`) | Pinned admission divergences, exhaustive matched/control route, bounded temporal/scale examples, repetition-cosine divergence and a saved training-only fixed-feature R fit | Every implementation-gap case that `tools/r-parity/check_baseline.py` reports (it prints the current counts), including other comparison methods, KDE and trajectory sampling, learned template construction and surface decomposition |
+| Relational analysis (`bd-01KYD6CFWNAN0Y3TR59FJV8VMG`) | Typed relations/designs, indexed equality joins, shared exhaustive between/within scheduling, keyed sampling, edge analyses, explicit reductions/contrasts, mutation coverage, a direct repetition facade and native OLS surface decomposition | NNLS/simplex decomposition, partial association, broad parity and saved arbitrary within-design persistence |
+| Coherent roadmap (`bd-01M02N4AVNKKTEV3SA5PR0H4S8`) | Fixation, recording and temporal plan/codec routes; typed method descriptors, preflight, bounded study preview, two extension families and integrated packaged UI-G1 consumer proof | Complete baseline, long-recording responsiveness, operational and release gates |
+| Psychology-facing API/docs (`bd-01M02N4EKAEA6EBB3TE0G4TYMP`) | Nine-page public guide, executed first study and acquired-recording save/restore examples, migration coverage of all 36 required entry points, local mdoc/Laika build and generated CI checks | Remaining example migration, public API Scaladoc, rendered browser review and hosted CI evidence |
+| Complete baseline (`bd-01M214CX2CTADNR6Q9D032Y1FB`) | Pinned admission divergences, exhaustive matched/control route, bounded temporal/scale examples, repetition-cosine divergence native OLS surface fitting, serializable epoch binning, and a saved fixed-feature R route awaiting native replacement | Every implementation-gap case that `tools/r-parity/check_baseline.py` reports (it prints the current counts), including other comparison methods, KDE and trajectory sampling, learned template construction and replacing the old R-dependent template workflow |
 
 `PsychologyWorkflow` and `RecordingPlan` already retain synchronization, angle conversion,
 preprocessing, detection and AOI operations; recording persistence is not future work wholesale.
@@ -158,6 +158,9 @@ including user-defined keys/metadata/markers. Missing plugins, versions, artifac
 produce actionable typed failures. A changed plan produces a meaningful structural diff.
 
 ### M5 — Prove modular development and application consumption
+
+Status (2026-09-19): closed on the integrated UI-G0/UI-G1 consumer evidence.
+Long-recording responsiveness remains explicitly tracked under `app-progress`.
 
 The [UI-consumer infrastructure plan](UI_FOUNDATION_PLAN.md), lodged on 2026-09-16
 and revised on 2026-09-17, breaks the execution, scientific serialization, and

@@ -222,16 +222,7 @@ input. Paging then only slices the built listings.
 
 A drill-down from a contrast row to CSV records reads:
 
-```scala
-for
-  view      <- ResultInspection.study(plan, result, input, Some(ledger))
-  row       <- view.contrastRow(ResultRef.ContrastRow(0, focal))
-  matched   <- row.matched.toRight(InspectionError.UnknownReference(row.ref))
-  reduction <- view.reduction(matched)
-  member    <- reduction.members.headOption.toRight(InspectionError.UnknownReference(matched))
-  pair      <- view.pair(member.pair)
-yield view.sources.fixation(pair.reference, 0).map(_.record)
-```
+The complete [inspection example](../io/src/test/scala/eyes4s/io/InspectionSourceSuite.scala), in the test `a result row drills down to the logical CSV record that supplied it`, constructs the plan, input and ledger and follows the references to an asserted CSV record.
 
 `TemporalInspection.cell(repetition, window)` returns each trial's window
 occupancy (the fixation indices it retains link to their records through

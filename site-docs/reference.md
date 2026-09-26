@@ -9,7 +9,11 @@
 | Engbert–Kliegl | Typed thresholds and minimum samples | Microsaccades; consult the detector's `AlgorithmCard` for deviations. |
 | Gaussian maps | `Sigma[U]` SD and `EdgePolicy` | Intensity or normalized Mass; empty/degenerate occupancy fails explicitly. |
 | Pearson / Fisher z | Compatible Mass grids | Correlation / unbounded z; constants or singular transforms fail. |
-| Cosine | Compatible Mass grids | Finite similarity; not a metric. |
+| Cosine / extended Jaccard | Compatible Mass grids | Finite similarity; not a metric. |
+| Spearman / distance correlation | Compatible Mass grids | Average rank ties / biased energy convention; constants fail explicitly. |
+| Point density sampling | Fixed template and focal trajectory | Explicit normalization, lookup, query order and bin endpoints. |
+| Fixation overlap | Shared queries and position threshold | Strict threshold; missing support retains its denominator policy. |
+| Native template regression | Training rows and fixed features | Through-origin QR; rank failure is a value. |
 | Total variation / Hellinger | Compatible Mass grids | Metric distance. |
 | Jensen–Shannon | Compatible Mass grids | Semimetric, not a triangle-inequality claim for unsquared divergence. |
 | Sinkhorn | Regularization, iteration and allocation limits | Entropic transport cost; self-cost need not be zero. |

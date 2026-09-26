@@ -169,6 +169,10 @@ class ArchiveManifestSuite extends munit.FunSuite:
     assertEquals(archived.result.input, temporalValue.reference)
     assertEquals(archived.result.description, temporalLoaded.description)
     assertEquals(archived.result.cells.size, 8)
+    assertEquals(
+      get(archived.encode),
+      get(temporalResult.codec.encode(ArchiveFixtures.temporalResult))
+    )
   }
 
   test(

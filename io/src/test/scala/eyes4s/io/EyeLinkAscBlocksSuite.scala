@@ -129,6 +129,7 @@ class EyeLinkAscBlocksSuite extends munit.FunSuite:
     assertEquals(layout.eyeLayout, Some(AscEyeLayout.Right))
     assertEquals(layout.coordinateMode, Some(AscCoordinateMode.HeadReference))
     assertEquals(layout.rateHz.map(_.value), Some(BigDecimal(500)))
+    assertEquals(layout.rateHz.map(_.toString), Some("500"))
   }
 
   test("binocular combined remote layout retains head-target and unknown evidence") {

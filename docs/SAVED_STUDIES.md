@@ -131,11 +131,7 @@ the limit. `ComparisonBudget.default` is effectively unbounded.
 type once, `StudyExecution[IO]`, then either pull the deterministic sequence or
 start a run handle:
 
-```scala
-val runner = StudyExecution[IO]
-runner.events(work, budget, quanta)   // Stream[IO, StudyEvent]: Advanced(progress)* then Finished(outcome)
-runner.start(work, budget, quanta)    // Resource[IO, StudyRun]: id, progress, outcome, cancel
-```
+The executed [StudyExecutionSuite](../fs2/src/test/scala/eyes4s/fs2/StudyExecutionSuite.scala) demonstrates both routes: `events at every quantum replay the pure cursor's stages and plan.run's result` pulls the event stream; `start commits the pure result once and cancelling afterwards changes nothing` acquires the run resource and checks its outcome. Both use complete checked plans and explicit budgets.
 
 Every `StudyProgress` carries the `StudyRunId` (input digest, layout, method,
 description and both quanta, so the same submission yields the same id and the

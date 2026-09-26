@@ -89,6 +89,8 @@ class EyeLinkOracleSuite extends munit.FunSuite:
 
   test("canonical oracle preserves explicit values, missing fields, omissions, and escapes") {
     val original = manifest(descriptor(), unavailableRecord("L\tmeasured%value"))
+    assert(original.descriptor.toString.contains("synthetic-events-eyelinker"))
+    original.records.flatten.foreach(f => assert(f.toString.contains(f.fieldPath)))
     val rendered = original.renderTsv
     val reparsed = EyeLinkOracleManifest
       .parseTsv("embedded-oracle.tsv", rendered)

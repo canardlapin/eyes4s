@@ -1,0 +1,375 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eyes4s.repetitionconsumer
+
+import eyes4s.codec.*
+import eyes4s.compare.*
+import eyes4s.design.*
+import eyes4s.kernel.*
+import eyes4s.kernel.Unit2D.Px
+import eyes4s.plan.*
+import io.circe.{Json, Decoder}
+import scala.compiletime.testing.typeCheckErrors
+
+class RepetitionPlanSuite extends munit.FunSuite:
+  private def get[E, A](x: Either[E, A]): A = x.fold(e => fail(e.toString), identity)
+  private def id(name: String)              = get(DefinitionId.of(name, 1))
+  case class Occasion(phase: String, repeat: Int)
+  object Occasion:
+    given KeyDigest[Occasion] = KeyDigest.derived[Occasion]
+  case class Key(person: Int, stimulus: String, occasion: Occasion)
+  object Key:
+    given KeyDigest[Key] = KeyDigest.derived[Key]
+    given Ordering[Key]  =
+      Ordering.by(k => (k.person, k.stimulus, k.occasion.phase, k.occasion.repeat))
+  private def layout = get(
+    RepetitionLayout.of[Key, Int, String, Occasion](
+      id("example.repetition-layout"),
+      id("example.person"),
+      Projection.named("person")(_.person),
+      id("example.stimulus"),
+      Projection.named("stimulus")(_.stimulus),
+      id("example.occasion"),
+      Projection.named("occasion")(_.occasion)
+    )
+  )
+  private def registry = get(RepetitionRegistry.empty[Key].register(layout))
+  private def field[A: Decoder](json: Json, name: String): Either[CodecError, A] =
+    json.hcursor.get[A](name).left.map(e => CodecError.Field(name, json, e.message))
+  private def keys = VersionedCodec.of[Key](id("example.repetition-key"))(k =>
+    Json.obj(
+      "person"   -> Json.fromInt(k.person),
+      "stimulus" -> Json.fromString(k.stimulus),
+      "phase"    -> Json.fromString(k.occasion.phase),
+      "repeat"   -> Json.fromInt(k.occasion.repeat)
+    )
+  ) { json =>
+    for
+      p     <- field[Int](json, "person"); s   <- field[String](json, "stimulus");
+      phase <- field[String](json, "phase"); r <- field[Int](json, "repeat")
+    yield Key(p, s, Occasion(phase, r))
+  }
+  private def codec =
+    RepetitionPlanCodec.of[Key, Px](id("example.repetition-plan"), registry, keys)
+  private val grid = get(Grid.over(get(Frame.screen("repetition-plan", 5, 3)), 5, 3))
+  private val rows =
+    (for person <- Vector(1, 2); stimulus <- Vector("a", "b"); repeat <- Vector(0, 1, 2) yield
+      val key    = Key(person, stimulus, Occasion("repeat", repeat))
+      val values = IArray.tabulate(15)(i =>
+        if i == (person + repeat + (if stimulus == "a" then 0 else 5)) % 15 then 2.0 else 1.0
+      )
+      val map = get(
+        Surface
+          .intensity(grid, values, Provenance.raw(ContentHash.of(values)))
+          .flatMap(_.normalised)
+      )
+      Trial(key, (), map)
+    )
+  private val selection = Selection.BottomK(
+    get(PairLimit.of(2)),
+    Seed(Long.MinValue + 7),
+    SampleId("finite-controls")
+  )
+  private def plan(
+      trials: Trials[Key, Unit, Mass[Px]] = Trials(rows),
+      method: MapSimilarityMethod = MapSimilarityMethod.Cosine,
+      sel: Selection = selection
+  ) =
+    get(
+      RepetitionPlan.of(
+        layout,
+        RepetitionRelations.withinParticipant,
+        method,
+        sel,
+        FailurePolicy.RequireAll,
+        grid,
+        trials
+      )
+    )
+
+  test(
+    "save and reopen through fresh typed registrations reproduces exact endpoints, controls, counts and provenance"
+  ) {
+    val p        = plan(); val json = get(codec.encode(p));
+    val reopened = get(codec.parse(json.noSpaces))
+    assertEquals(reopened.planHash, p.planHash); assertEquals(reopened.inputHash, p.inputHash)
+    assertEquals(get(codec.encode(reopened)), json)
+    assertEquals(reopened.controls, selection)
+    val a = p.run; val b = reopened.run
+    assertEquals(a.matched, b.matched); assertEquals(a.controls, b.controls)
+    assertEquals(
+      get(a.contrasts).rows.map(r => (r.key, r.matched, r.control, r.difference)),
+      get(b.contrasts).rows.map(r => (r.key, r.matched, r.control, r.difference))
+    )
+    val expected = for
+      x <- rows; y <- rows
+      if x.key.person == y.key.person && x.key.stimulus == y.key.stimulus && x.key.occasion != y.key.occasion
+    yield x.key -> y.key
+    assertEquals(a.matched.rows.map(r => r.left -> r.right), expected)
+    assertEquals(a.matched.diagnostics.eligiblePairCount, 24L)
+    assertEquals(a.controls.diagnostics.eligiblePairCount, 24L)
+    assertEquals(a.controls.diagnostics.selectedPairCount, 24)
+    a.controls.rows.foreach(r =>
+      assert(
+        r.left.person == r.right.person && r.left.stimulus != r.right.stimulus && r.left.occasion != r.right.occasion
+      )
+    )
+    val l      = layout
+    val direct = RepetitionDesign
+      .withinParticipant(
+        Projection.named[Key, Int]("person")(_.person),
+        Projection.named[Key, String]("stimulus")(_.stimulus),
+        Projection.named[Key, Occasion]("occasion")(_.occasion),
+        selection
+      )
+      .evaluate(p.trials, p.inputHash, MapSimilarityMethod.Cosine.instance[Px], p.specification)
+    assertEquals(a.matched, direct.matched); assertEquals(a.controls, direct.controls)
+    assertEquals(l.id, reopened.layout.id)
+    assertEquals(p.inputHash.render, "26dd8b9539bed70d")
+    assertEquals(p.planHash.render, "18c9fcde538303e3")
+    assertEquals(get(codec.parse(RepetitionPlanFixture.versionOne)).run.matched, a.matched)
+    assertEquals(json, get(io.circe.parser.parse(RepetitionPlanFixture.versionOne)))
+  }
+  test(
+    "finite controls use the original keyed sampler and survive order changes; higher cap nests"
+  ) {
+    def edges(p: RepetitionPlan[Key, Px]) =
+      p.run.controls.rows.map(r => r.left -> r.right).toSet
+    val one = Selection.BottomK(
+      get(PairLimit.of(1)),
+      Seed(Long.MinValue + 7),
+      SampleId("finite-controls")
+    )
+    val a = plan(sel = one); val p = get(codec.parse(get(codec.encode(a)).noSpaces))
+    assertEquals(edges(a), edges(p));
+    assertEquals(edges(a), edges(plan(Trials(rows.reverse), sel = one)))
+    assert(edges(a).subsetOf(edges(plan())))
+    assertEquals(a.run.controls.diagnostics.selectedPairCount, 12)
+    assertEquals(
+      edges(a).toVector
+        .map((l, r) =>
+          s"${l.person}/${l.stimulus}/${l.occasion.repeat}->${r.person}/${r.stimulus}/${r.occasion.repeat}"
+        )
+        .sorted
+        .mkString(","),
+      "1/a/0->1/b/2,1/a/1->1/b/0,1/a/2->1/b/1,1/b/0->1/a/1,1/b/1->1/a/2,1/b/2->1/a/0,2/a/0->2/b/1,2/a/1->2/b/2,2/a/2->2/b/1,2/b/0->2/a/1,2/b/1->2/a/2,2/b/2->2/a/1"
+    )
+    val byKey = rows.map(_.key)
+    byKey.foreach { focal =>
+      val eligible = byKey.filter(k =>
+        k.person == focal.person && k.stimulus != focal.stimulus && k.occasion != focal.occasion
+      )
+      val wanted = eligible.minBy(k =>
+        Selection.priority(Seed(Long.MinValue + 7), SampleId("finite-controls"), focal, k)
+      )
+      assert(edges(a).contains(focal -> wanted))
+    }
+  }
+  test("every finite map method saves and reruns without new opaque closures") {
+    MapSimilarityMethod.values.foreach { m =>
+      val p = plan(method = m); val restored = get(codec.parse(get(codec.encode(p)).noSpaces))
+      assertEquals(restored.run.matched, p.run.matched);
+      assertEquals(restored.run.controls, p.run.controls)
+    }
+  }
+  test(
+    "duplicate and unmatched keys, empty input and constant-method failures survive persistence"
+  ) {
+    val duplicate = plan(Trials(rows :+ rows.head));
+    val reopened  = get(codec.parse(get(codec.encode(duplicate)).noSpaces))
+    assertEquals(reopened.run.matched, duplicate.run.matched)
+    assert(reopened.run.matched.diagnostics.ambiguous.nonEmpty)
+    val singleton = plan(Trials(rows.take(1)))
+    assert(
+      get(
+        codec.parse(get(codec.encode(singleton)).noSpaces)
+      ).run.matched.diagnostics.unmatchedLeft.nonEmpty
+    )
+    val empty = plan(Trials(Vector.empty))
+    assert(get(codec.parse(get(codec.encode(empty)).noSpaces)).run.matched.rows.isEmpty)
+    val constant =
+      get(Surface.mass(grid, IArray.fill(15)(1.0 / 15), Provenance.raw(ContentHash.empty)))
+    val partial = plan(
+      Trials(rows.updated(0, rows.head.copy(value = constant))),
+      MapSimilarityMethod.Pearson
+    )
+    val result = get(codec.parse(get(codec.encode(partial)).noSpaces)).run
+    assert(result.matched.rows.exists(_.result.isLeft))
+    assert(get(result.contrasts).rows.exists(_.difference.isLeft))
+  }
+  test(
+    "unknown schemas, projections, rules, method revisions, seeds and forged digests fail as values"
+  ) {
+    val encoded = get(codec.encode(plan()));
+    val value   = encoded.hcursor.downField("value").focus.get
+    def reject(field: String, replacement: Json): Unit = assert(
+      codec
+        .decode(encoded.mapObject(_.add("value", value.mapObject(_.add(field, replacement)))))
+        .isLeft
+    )
+    reject(
+      "layout",
+      Json.obj("name" -> Json.fromString("unknown"), "version" -> Json.fromInt(1))
+    )
+    reject("projections", Json.arr())
+    reject("matched", Json.arr(Json.fromString("UnknownProjection")))
+    reject("control", value.hcursor.downField("matched").focus.get)
+    reject("method", Json.fromString("emd")); reject("methodRevision", Json.fromInt(2))
+    reject("self", Json.fromString("include"));
+    reject("orientation", Json.fromString("undirected"))
+    reject("inputHash", Json.fromString("0000000000000000"));
+    reject("planHash", Json.fromString("stale"))
+    reject(
+      "selection",
+      Json.obj(
+        "kind"     -> Json.fromString("bottomK"),
+        "cap"      -> Json.fromInt(0),
+        "seed"     -> Json.fromString("1"),
+        "sampleId" -> Json.fromString("s")
+      )
+    )
+    reject(
+      "selection",
+      Json.obj(
+        "kind"     -> Json.fromString("bottomK"),
+        "cap"      -> Json.fromInt(1),
+        "seed"     -> Json.fromString("9223372036854775808"),
+        "sampleId" -> Json.fromString("s")
+      )
+    )
+    val wrongSchema = encoded.mapObject(
+      _.add(
+        "schema",
+        Json.obj(
+          "name"    -> Json.fromString("example.repetition-plan"),
+          "version" -> Json.fromInt(2)
+        )
+      )
+    )
+    assert(codec.decode(wrongSchema).isLeft)
+    assert(RepetitionRegistry.empty[Key].resolve(layout.id).isLeft)
+    assert(registry.register(layout).isLeft)
+    assert(RepetitionRelations.of(Vector.empty, Vector(RepetitionRule.SameOccasion)).isLeft)
+    assert(
+      RepetitionRelations
+        .of(
+          Vector(RepetitionRule.SameOccasion, RepetitionRule.DifferentOccasion),
+          Vector(RepetitionRule.SameStimulus)
+        )
+        .isLeft
+    )
+    assert(
+      RepetitionRelations
+        .of(
+          Vector(RepetitionRule.SameOccasion, RepetitionRule.SameOccasion),
+          Vector(RepetitionRule.DifferentOccasion)
+        )
+        .isLeft
+    )
+    assert(
+      typeCheckErrors("new eyes4s.plan.RepetitionRelations(Vector.empty,Vector.empty)").nonEmpty
+    )
+    assert(typeCheckErrors("new eyes4s.plan.RepetitionRegistry[String](Vector.empty)").nonEmpty)
+  }
+  test("legacy v1 two-phase study remains readable with its original meaning") {
+    val old     = StudyCodecs.cosine[Px]
+    val decoded = get(old.codec.parse(SavedStudyFixtures.versionOne))
+    assertEquals(decoded.focalPhase, "recall"); assertEquals(decoded.referencePhase, "encode")
+    assertEquals(
+      get(old.codec.encode(decoded)),
+      get(io.circe.parser.parse(SavedStudyFixtures.versionOne))
+    )
+    assert(codec.parse(SavedStudyFixtures.versionOne).isLeft)
+  }
+
+  test(
+    "finite registered relation vocabulary covers condition groups and alternative typed axes"
+  ) {
+    val conditions = get(
+      RepetitionPlan.of(
+        layout,
+        RepetitionRelations.conditionGroups,
+        MapSimilarityMethod.Cosine,
+        Selection.All,
+        FailurePolicy.RequireAll,
+        grid,
+        Trials(rows)
+      )
+    )
+    val restored = get(codec.parse(get(codec.encode(conditions)).noSpaces))
+    assertEquals(restored.run.matched, conditions.run.matched)
+    assertEquals(restored.run.matched.rows.size, 36)
+    val relations = get(
+      RepetitionRelations.of(
+        Vector(
+          RepetitionRule.DifferentParticipant,
+          RepetitionRule.SameStimulus,
+          RepetitionRule.SameOccasion
+        ),
+        Vector(
+          RepetitionRule.DifferentParticipant,
+          RepetitionRule.DifferentStimulus,
+          RepetitionRule.SameOccasion
+        )
+      )
+    )
+    val p = get(
+      RepetitionPlan.of(
+        layout,
+        relations,
+        MapSimilarityMethod.Cosine,
+        Selection.All,
+        get(FailurePolicy.successfulOnly(1)),
+        grid,
+        Trials(rows)
+      )
+    )
+    val result = get(codec.parse(get(codec.encode(p)).noSpaces)).run
+    assertEquals(result.matched.rows.size, 12); assertEquals(result.controls.rows.size, 12)
+    result.matched.rows.foreach(r =>
+      assert(
+        r.left.person != r.right.person && r.left.stimulus == r.right.stimulus && r.left.occasion == r.right.occasion
+      )
+    )
+    assert(
+      RepetitionLayout
+        .of[Key, Int, String, Occasion](
+          id("bad"),
+          id("same"),
+          Projection.named("person")(_.person),
+          id("same"),
+          Projection.named("stimulus")(_.stimulus),
+          id("occasion"),
+          Projection.named("occasion")(_.occasion)
+        )
+        .isLeft
+    )
+    val foreign = get(Grid.over(get(Frame.screen("other", 5, 3)), 5, 3))
+    assert(
+      RepetitionPlan
+        .of(
+          layout,
+          relations,
+          MapSimilarityMethod.Cosine,
+          Selection.All,
+          FailurePolicy.RequireAll,
+          foreign,
+          Trials(rows)
+        )
+        .isLeft
+    )
+  }

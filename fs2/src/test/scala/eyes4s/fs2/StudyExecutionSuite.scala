@@ -239,6 +239,21 @@ class StudyExecutionSuite extends munit.CatsEffectSuite:
         // Same quanta, same event sequence: progress values are compared exactly.
         assertEquals(progressOf(first), progressOf(second), q)
         val progress = progressOf(first)
+        progress.foreach { p =>
+          assertEquals(
+            StudyProgress(
+              p.run,
+              p.step,
+              p.stage,
+              p.stepUnits,
+              p.segment,
+              p.segmentUnits,
+              p.segmentTotal,
+              p.totalUnits
+            ),
+            p
+          )
+        }
         assertEquals(progress.map(p => (p.stage, p.stepUnits)), steps, q)
         assertEquals(progress.map(_.step), (1L to steps.size.toLong).toVector)
         assertEquals(progress.map(_.totalUnits), steps.scanLeft(0L)(_ + _._2).tail)

@@ -58,42 +58,13 @@ below omits `minimumField` (the same shape for microseconds), `detector` and `pa
 complete source is
 [`CustomDetector.scala`](../tools/study-consumer/src/main/scala/example/CustomDetector.scala):
 
-```scala
-def thresholdField: Either[DescriptorError, ParameterDescriptor[Double, IvtThreshold, String]] =
-  ParameterInfo
-    .of("thresholdDegPerSecond", 1, "Conservative I-VT velocity threshold on the angular samples",
-      ParameterUnits.PerSecond("deg"), ParameterDomain.PositiveFinite)
-    .map(info => new ParameterDescriptor(info, LabIvtParameters.threshold, identity))
-
-def descriptor(id: DefinitionId): Either[DescriptorError, RecordingMethodDescriptor[LabIvtParameters]] =
-  for
-    threshold <- thresholdField
-    minimum   <- minimumField
-    fields <- ParameterSet.of(Vector(
-      threshold.bind[LabIvtParameters](_.threshold)(t => Provenance.Param.Num(t.velocity.value)),
-      minimum.bind[LabIvtParameters](_.minimumDuration)(m =>
-        Provenance.Param.Text(m.span.toMicros.toString))))
-  yield new RecordingMethodDescriptor(id, fields, AlgorithmCards.ivt)
-
-def describedMethod(id: DefinitionId): Either[DescriptorError, RecordingMethod[LabIvtParameters]] =
-  descriptor(id).map(d => new RecordingMethod(id, d.parameters.values, detector, Some(d)))
-
-def persistence(schema: DefinitionId, methodId: DefinitionId, parameterSchema: DefinitionId)
-    : Either[DescriptorError, RecordingPlanCodec[LabIvtParameters]] =
-  describedMethod(methodId).map(new RecordingPlanCodec(schema, _, parameterCodec(parameterSchema)))
-```
+Read the complete `thresholdField`, `descriptor`, `describedMethod` and `persistence` definitions in the source above. `ConsumerLawsSuite` and the recording journey execute these definitions against packaged artifacts.
 
 The plan codec's `results` is its `recording-result@1` archive. An application registers both, and
 nothing else, before it resolves a saved recording; `withRecordings` takes the pixel witness, so a
 manifest in any other unit cannot register a recording plan (`RecordingRoute.decoders`):
 
-```scala
-for
-  base     <- ArtifactDecoders.study[Px]
-  plans    <- RecordingRegistry.empty.register(persistence.registration)
-  archived <- RecordingResultRegistry.empty.register(persistence.results.registration)
-yield base.withRecordings(plans, archived)
-```
+The complete [RecordingRoute.decoders](../tools/study-consumer/src/main/scala/example/RecordingRoute.scala) registers both plan and result codecs. The consumer recording journey executes this exact route.
 
 The described detector then behaves like a shipped one: `plan.inspect` lists its fields under
 `detector.`, preflight checks it (an undescribed method is a warning, never a blocker),
@@ -111,18 +82,7 @@ keys and scores carry over unchanged. `TemporalRoute` builds the temporal codecs
 route: the plan codec over the route's `StudyCodec`, the temporal input with its base study stored
 by reference beside it, and the `temporal-result@1` archive with the route's own score codecs:
 
-```scala
-val persistence = new TemporalStudyCodec(schema, route.persistence)
-val inputs = new TemporalInputCodec(TemporalInputCodecs.input, route.inputs,
-  StudyEmbedding.ByReference, TemporalInputCodecs.unresolved[K, Px])
-val results = persistence.results(route.results.scores, route.results.differences)
-
-for
-  base     <- route.decoders
-  plans    <- TemporalRegistry.empty[K, Px].register(persistence.registration)
-  archived <- TemporalResultRegistry.empty[K, Px].register(results.registration)
-yield base.withTemporal(plans, archived)
-```
+The complete [TemporalRoute](../tools/study-consumer/src/main/scala/example/TemporalRoute.scala) constructs and registers the plan, input and result codecs. The consumer temporal journey executes this exact route.
 
 The consumer's scaled cosine runs this way over `TrialKey`: every temporal contrast is the shipped
 cosine's doubled, bit for bit at the binned scale, and every ledger and contrast agrees with the

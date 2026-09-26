@@ -264,6 +264,7 @@ class EyeLinkAscNativeSuite extends munit.FunSuite:
     val result = parsed("SFIX L 1").head
 
     assert(result.record.isEmpty)
+    assert(result.hasErrors)
     assert(result.diagnostics.exists(_.isInstanceOf[AscNativeDiagnostic.BlockRequirement]))
     assert(result.diagnostics.exists(_.isInstanceOf[AscNativeDiagnostic.EventBlockMissing]))
   }

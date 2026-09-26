@@ -33,6 +33,23 @@ object TemplateFitGuide:
     key    <- DefinitionId.of("example.trial-key", 1)
   yield TemplateRecipeCodec.of(recipe, VersionedCodec.string(key))
 
+  def nativeCodec: Either[PlanError, VersionedCodec[TemplateSplit[String]]] = for
+    recipe <- DefinitionId.of("eyes4s.native-template-fit-recipe", 1)
+    key    <- DefinitionId.of("example.trial-key", 1)
+  yield NativeTemplateRecipeCodec.of(recipe, VersionedCodec.string(key))
+
+  def saveNative(split: TemplateSplit[String]): Either[Error, String] = for
+    persistence <- nativeCodec
+    json        <- persistence.encode(split)
+  yield json.spaces2
+
+  def evaluateNative(savedRecipe: String): Either[Error, TemplateEvaluation[String]] = for
+    persistence <- nativeCodec
+    split       <- persistence.parse(savedRecipe)
+    model       <- FittedTemplate.fitNoIntercept(split.training)
+    result      <- model.evaluate(split.heldOut)
+  yield result
+
   def input(heldOutResponse: Double = 7.0): Either[TemplateFitError, TemplateSplit[String]] =
     for
       basis <- TemplateBasis.of(

@@ -177,6 +177,7 @@ class ResultInspectionSuite extends munit.FunSuite:
 
   /** Every entry of a listing, reached only through reference-keyed pages. */
   private def whole[K, A](listing: Listing[K, A], size: Int): Vector[A] =
+    assertEquals(listing.isEmpty, listing.size == 0)
     val pageSize = get(PageSize.of(size))
     Iterator
       .iterate(Option(listing.first(pageSize)))(
@@ -202,7 +203,9 @@ class ResultInspectionSuite extends munit.FunSuite:
   // ---------------------------------------------------------------- tests
 
   test("a projected pair recovers exactly its focal, reference and source-ledger entries") {
-    val (result, inspection) = inspect(plan(input), input)
+    val candidate = plan(input)
+    assertEquals(candidate.hashCode, plan(input).hashCode)
+    val (result, inspection) = inspect(candidate, input)
     val ref                  = ResultRef.PairRow(0, StudyDesign.Matched, a, ar)
     val pair                 = get(inspection.pair(ref))
     assertEquals((pair.focal, pair.reference, pair.design), (a, ar, StudyDesign.Matched))
@@ -484,6 +487,7 @@ class ResultInspectionSuite extends munit.FunSuite:
       Vector(ScoreDirection.HigherIsCloser, ScoreDirection.LowerIsCloser)
     )
     assertEquals(view.components.map(_.value), Vector(view.value.overlap, view.value.spread))
+    view.components.foreach(c => assertEquals(c.hashCode, c.copy().hashCode))
     val matched = get(inspect2.reduction(get(row.matched.toRight("matched"))))
     val score   = get(matched.outcome.left.map(_.message))
     assertEquals(score.components.map(_.value), Vector(score.value.overlap, score.value.spread))
@@ -718,7 +722,9 @@ class ResultInspectionSuite extends munit.FunSuite:
   }
 
   test("numeric buffers are copies: mutating one never reaches the result") {
-    val (result, inspection) = inspect(plan(input), input)
+    val candidate = plan(input)
+    assertEquals(candidate.hashCode, plan(input).hashCode)
+    val (result, inspection) = inspect(candidate, input)
     val entry                = get(inspection.estimation(ResultRef.Estimation(0, a)))
     val density              = entry.outcomes match
       case Vector(EstimationOutcome.Estimated(d)) => d
@@ -731,10 +737,13 @@ class ResultInspectionSuite extends munit.FunSuite:
       (frame.id, grid.id, 2, 2)
     )
     assertEquals(density.provenance, stored.provenance)
+    val originalHash = density.hashCode
+    assert(density.toString.contains("2x2"))
     val cells = density.cells
     cells.asInstanceOf[Array[Double]](0) = 99.0
     assertEquals(stored.values.toVector, before)
     assertEquals(density.cells.toVector, before)
+    assertEquals(density.hashCode, originalHash)
     assertEquals(get(inspection.estimation(ResultRef.Estimation(0, a))), entry)
   }
 
@@ -774,7 +783,11 @@ class ResultInspectionSuite extends munit.FunSuite:
         whole(contrastRows, size).map(_.ref),
         get(stored.contrast).rows.map(r => ResultRef.ContrastRow(0, r.key))
       )
-      assert(whole(scale.estimation, size).forall(e => scale.estimation.get(e.ref).contains(e)))
+      assert(
+        whole(scale.estimation, size).forall(e =>
+          scale.estimation.contains(e.ref) && scale.estimation.get(e.ref).contains(e)
+        )
+      )
     }
     val size = get(PageSize.of(2))
     val page = scale.pairs(StudyDesign.Control).first(size)

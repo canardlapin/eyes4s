@@ -4,9 +4,7 @@
 rule set over a `Gen[AoiAssignment[U]]`. Use it with assignments from your own
 validated recordings and AOI geometry:
 
-```scala
-checkAll("my AOIs", AoiLaws.accounting(assignments, proportionTolerance))
-```
+The complete [AoiLawsSuite](../laws/src/test/scala/eyes4s/laws/AoiLawsSuite.scala) supplies checked assignments and a named tolerance, then executes the published laws on both platforms.
 
 The suite checks the following contracts of the shipped static sample-time API:
 

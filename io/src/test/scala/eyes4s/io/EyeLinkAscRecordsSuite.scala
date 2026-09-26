@@ -111,6 +111,7 @@ class EyeLinkAscRecordsSuite extends munit.FunSuite:
     result.record match
       case AscRecord.Message(fields) =>
         assertEquals(fields.token(0).flatMap(_.ascii), Some("100"))
+        assertEquals(fields.token(0).get.bytes.toVector, ascii("100").toVector)
         val payload = fields.remainderAfter(0).get.bytes.toVector
         assertEquals(payload.take(6), ascii("trial ").toVector)
         assert(payload.contains(0xc3.toByte))

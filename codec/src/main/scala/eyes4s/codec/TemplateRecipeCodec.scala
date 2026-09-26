@@ -27,6 +27,14 @@ object TemplateRecipeCodec:
       schema: DefinitionId,
       keys: VersionedCodec[K]
   ): VersionedCodec[TemplateSplit[K]] =
+    build(schema, keys, FittedTemplate.method, native = false)
+
+  private[codec] def build[K: KeyDigest](
+      schema: DefinitionId,
+      keys: VersionedCodec[K],
+      methodId: String,
+      native: Boolean
+  ): VersionedCodec[TemplateSplit[K]] =
     VersionedCodec.checked[TemplateSplit[K]](schema) { split =>
       split.rows
         .traverse { row =>
@@ -42,16 +50,27 @@ object TemplateRecipeCodec:
             )
         }
         .map(rows =>
-          Json.obj(
-            "method"       -> Json.fromString(FittedTemplate.method),
-            "basis"        -> Json.fromString(split.basis.id),
-            "columns"      -> Json.arr(split.basis.columns.map(Json.fromString)*),
-            "responseUnit" -> Json.fromString(split.basis.responseUnit),
-            "heldOutFolds" -> Json
-              .arr(split.heldOutFolds.toVector.sorted.map(Json.fromString)*),
-            "trainingHash" -> Json.fromString(split.training.hash.render),
-            "rows"         -> Json.arr(rows*)
-          )
+          Json
+            .obj(
+              "method"       -> Json.fromString(methodId),
+              "basis"        -> Json.fromString(split.basis.id),
+              "columns"      -> Json.arr(split.basis.columns.map(Json.fromString)*),
+              "responseUnit" -> Json.fromString(split.basis.responseUnit),
+              "heldOutFolds" -> Json
+                .arr(split.heldOutFolds.toVector.sorted.map(Json.fromString)*),
+              "trainingHash" -> Json.fromString(split.training.hash.render),
+              "rows"         -> Json.arr(rows*)
+            )
+            .mapObject(obj =>
+              if native then
+                obj
+                  .add("intercept", Json.fromBoolean(false))
+                  .add(
+                    "rankTolerance",
+                    Json.fromDoubleOrNull(FittedTemplate.nativeRankTolerance)
+                  )
+              else obj
+            )
         )
     } { json =>
       def domain[A](e: Either[TemplateFitError, A]): Either[CodecError, A] =
@@ -59,10 +78,26 @@ object TemplateRecipeCodec:
       for
         method <- Wire.field[String](json, "method")
         _      <- Either.cond(
-          method == FittedTemplate.method,
+          method == methodId,
           (),
-          CodecError.Field("method", json, s"expected ${FittedTemplate.method}, got $method")
+          CodecError.Field("method", json, s"expected ${methodId}, got $method")
         )
+        _ <-
+          if native then
+            for
+              intercept <- Wire.field[Boolean](json, "intercept")
+              tolerance <- Wire.field[Double](json, "rankTolerance")
+              _         <- Either.cond(
+                !intercept && tolerance == FittedTemplate.nativeRankTolerance,
+                (),
+                CodecError.Field(
+                  "native fitting convention",
+                  json,
+                  "expected no intercept and native rank tolerance"
+                )
+              )
+            yield ()
+          else Right(())
         id      <- Wire.field[String](json, "basis")
         columns <- Wire.field[Vector[String]](json, "columns")
         unit    <- Wire.field[String](json, "responseUnit")

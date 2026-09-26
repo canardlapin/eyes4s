@@ -8,19 +8,19 @@ below refer only to the pinned cases.
 |---|---|---|
 | `fixation_group`, `eye_table`, `as_eye_table`, `coords` | `FixationCsv`, `Scanpath`, `Trials` | Explicit units, ordering and row rejection; no silent clipping or unchecked reclassification. |
 | `center`, `rescale`, `normalize` | `Warp`, `Scanpath.warp` | Named source/target frames; coordinate normalization is not mass normalization. Supplied maps are verified. |
-| `eye_density`, `density_by`, `get_density`, `gen_density`, `suggest_sigma` | `occupancy`, `Smoother`, `Bandwidth`, `Pyramid` | Sigma is an SD and edges are explicit. General eyesim KDE/backend parity remains unverified. |
-| `sample_density`, `sample_fixations`, `rep_fixations` | `Surface.sampleAt` for deterministic map lookup | Random and temporal fixation/density sampling are not a complete equivalent route yet. |
+| `eye_density`, `density_by`, `get_density`, `gen_density`, `suggest_sigma` | `occupancy`, `Smoother`, `Bandwidth`, `Pyramid` | Sigma is an SD and edges are explicit. Analytic and pinned backend checks bound the evidence; the continuous/binned KDE discrepancy remains recorded. |
+| `sample_density`, `sample_fixations`, `rep_fixations` | `DensityLookup`, `FixationTrajectory`, `DurationReplication` | Explicit normalization, grid indexing and endpoints. Exact integer duration replication differs from R floating-point truncation. |
 | `fixation_entropy` | `Mass.entropy`, `relativeEntropy` | Supplied-map entropy verified. Signed surfaces cannot be entropy inputs; derived/multiscale inputs remain gaps. |
 | `Ops.eye_density` | `Mass.mean`, `difference`, `logRatio` | Named operations; subtraction is Signed. Log ratios floor zero cells explicitly. No implicit product-as-mass. |
-| `similarity` | `Distribution`, `Transport`, `Lift` | Result scale and mathematical interface are explicit. Full method-matrix conformance is incomplete. |
-| `scanpath`, `multi_match`, `scanpath_similarity` | `Scanpath`, `MultiMatch`, `Alignment` | Five named components, no padded transition. Python reference evidence is not eyesim-reference evidence. |
-| `fixation_similarity`, `fixation_overlap` | Study composition and comparison primitives | Exhaustive cosine study verified; full overlap/transport parity remains a gap. |
-| `template_similarity`, `template_sample` | `StudyPlan` and typed pair designs | Keys include participant. Duplicate/unmatched keys remain data; finite reference sampling is not yet covered. |
-| `repetitive_similarity` | `RepetitionDesign`, explicit pair/reduce operations | Within-participant reinstatement deliberately differs from eyesim phase-only grouping. |
-| `sample_density_time` | `TemporalStudyPlan` for windowed duration maps | A different estimand; static-template trajectory sampling remains a gap. |
-| `template_regression`, `template_multireg`, `template_similarity_cv` | Training-only fixed-feature export/fit/import | Trial-level QR route works; learned features/CV and normalized-map regression bridge remain gaps. |
+| `similarity` | `Distribution`, `Transport`, `Lift` | Result scale and mathematical interface are explicit. The eight map methods have pinned conformance; approximate transport is not a claim of general exact EMD. |
+| `scanpath`, `multi_match`, `scanpath_similarity` | `Scanpath`, `MultiMatch`, `Alignment` | Five named components and a separate EMD slot; eyesim minimum-length and unavailable-method behavior are explicit. |
+| `fixation_similarity`, `fixation_overlap` | `FixationComparison`, `FixationTransportConfig` | Shared query trajectory and strict overlap threshold; entropic position/time transport retains its convergence limits. |
+| `template_similarity`, `template_sample` | `StudyPlan` and typed pair designs | Keys include participant. Duplicate/unmatched keys remain data; exclusion order, multiplicity and finite caps are pinned. Native keyed RNG differs from R. |
+| `repetitive_similarity` | `RepetitionPlan`, `RepetitionDesign`, `RepetitionAggregation` | Arbitrary occasions and checked persisted relations. Scale means precede comparison means; participant grouping differs from eyesim. |
+| `sample_density_time` | `PointSamplingPlan` for static templates on focal trajectories | Exact query times and final-bin policy; per-query control means precede bin means. `TemporalStudyPlan` remains the separate windowed-map estimand. |
+| `template_regression`, `template_multireg`, `template_similarity_cv` | Native fixed-feature QR and training-only learned mean-map recipes | Held-out changes cannot alter training. Cellwise OLS is a separate estimand; legacy R fit import is optional. |
 | `affine_transform`, `contract_transform` | No fitted density-space adapter; outside the baseline, planned for a later adapter module with PCA, CORAL and CCA | Supplied coordinate `Warp`s are not substitutes for learned density transforms. |
-| Result tables | `ContrastCsv`, temporal CSV, typed results and versioned codecs | Keep keys, method identity, failures, exclusions and denominators. Not every baseline result family is implemented. |
+| Result tables | `BaselineExports`, `ResultTable`, optional JVM `ArrowResultExport` | CSV plus schema/identity sidecars and Arrow preserve keys, failures and denominators. Export views are distinct from replay archives. |
 
 ## Differences to review in a migrated analysis
 

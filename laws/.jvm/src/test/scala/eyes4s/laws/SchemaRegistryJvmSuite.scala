@@ -267,6 +267,18 @@ object SchemaRegistry:
     */
   val conventional: Vector[Entry] = Vector(
     Entry(
+      AdditionalRecipeCodecs.point.resultSchema,
+      Kind.Document,
+      Vector("point-sampling-v1.json"),
+      codecLaw(() => new AdditionalRecipeCodecLawSuite, "static point sampling archive")
+    ),
+    Entry(
+      AdditionalRecipeCodecs.repetition.schema,
+      Kind.Document,
+      Vector("repetition-plan-v1.json"),
+      codecLaw(() => new AdditionalRecipeCodecLawSuite, "all-occasion repetition plan")
+    ),
+    Entry(
       get(DefinitionId.of("eyes4s.recording-plan", 1)),
       Kind.Document,
       Vector("recording-v1.json"),
@@ -644,6 +656,10 @@ private object Decoders:
         through(recordingPlan.codec, document)
       case other if other.name == "eyes4s.temporal-study" =>
         through(new TemporalStudyCodec(other, StudyCodecs.cosine[Px]).codec, document)
+      case other if other == AdditionalRecipeCodecs.point.resultSchema =>
+        through(AdditionalRecipeCodecs.point.archive, document)
+      case other if other == AdditionalRecipeCodecs.repetition.schema =>
+        through(AdditionalRecipeCodecs.repetition, document)
       case other => Left(CodecError.Unsupported(other.name, "no registered decoder"))
 
 private object Envelopes:

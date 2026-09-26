@@ -129,3 +129,33 @@ class TemplateFitSuite extends FunSuite:
       def leak(h: TemplateHeldOut[String]): String = TemplateFitCsv.training(h)
     """).nonEmpty)
   }
+
+  test("native guide saves, reopens and evaluates without an external receipt") {
+    val saved      = get(TemplateFitGuide.saveNative(split()))
+    val evaluation = get(TemplateFitGuide.evaluateNative(saved))
+    assertEqualsDouble(get(evaluation.rows.head.result)._1, 7.0, LinearFitTolerance)
+    val changed =
+      get(TemplateFitGuide.evaluateNative(get(TemplateFitGuide.saveNative(split(700.0)))))
+    assertEquals(evaluation.trainingHash, changed.trainingHash)
+    assertEqualsDouble(get(changed.rows.head.result)._2, 693.0, LinearFitTolerance)
+    assert(get(TemplateFitGuide.codec).parse(saved).isLeft)
+    assert(get(TemplateFitGuide.nativeCodec).parse(prepared().savedRecipe).isLeft)
+  }
+
+  test("native recipe refuses forged method and fitting conventions") {
+    val codec = get(TemplateFitGuide.nativeCodec)
+    val json  = get(codec.encode(split()))
+    val value = json.hcursor.downField("value").focus.get
+    Vector(
+      "method"        -> Json.fromString(eyes4s.design.FittedTemplate.method),
+      "intercept"     -> Json.fromBoolean(true),
+      "rankTolerance" -> Json.fromDoubleOrNull(1e-7),
+      "trainingHash"  -> Json.fromString("bad")
+    ).foreach { (field, replacement) =>
+      assert(
+        codec
+          .decode(json.mapObject(_.add("value", value.mapObject(_.add(field, replacement)))))
+          .isLeft
+      )
+    }
+  }
