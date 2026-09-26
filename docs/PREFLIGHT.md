@@ -49,7 +49,10 @@ A windowed or whole-frame study also reports, as warnings in input order, each
 trial with fixations outside its analysis window or the screen
 (`OffWindowFixations`, carrying the trial's `WindowTally` and the off-window
 policy) and each trial with none inside (`NoFixationInWindow`); both suggest
-`ReviewAnalysisWindow`. From the prepared study's `matchedCardinality` it
+`ReviewAnalysisWindow`. Each trial the initial-fixation policy leaves without
+fixations is a warning of its own (`NoFixationKept`, carrying its
+`InitialFixationTally`; remedy `ReviseInitialFixationPolicy`), since execution
+fails it at every scale; such a trial is not also blamed on the window. From the prepared study's `matchedCardinality` it
 reports trials that identify one trial but name two items (`MatchItemConflict`,
 a blocker), focal trials with several matched references
 (`MatchedCardinality`, a blocker unless the plan explicitly averages with

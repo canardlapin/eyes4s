@@ -28,14 +28,24 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Rendered codes, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 589
-  private val PinnedDigest = "fff0f8af3a0993a3"
+  private val PinnedCount  = 602
+  private val PinnedDigest = "1b1038f9c8b3a78c"
 
-  /** The table before CR5 appended its families: codes are only ever
-    * appended, so this prefix never changes.
+  /** The table before CR5: codes are only ever added, never changed or
+    * removed, so taking away the codes CR5 added leaves exactly this table.
     */
-  private val StableCount  = 433
-  private val StableDigest = "9b4c9d3e331f41ee"
+  private val StableCount  = 445
+  private val StableDigest = "fb7ffbd3d3db7f63"
+
+  /** The codes CR5 added: the families appended after `inspection`, and
+    * preflight's finding for a trial the initial-fixation policy empties.
+    */
+  private val Cr5Codes: Set[String] =
+    DiagnosticCatalog.families
+      .dropWhile(_ ne DiagnosticCatalog.inspection)
+      .drop(1)
+      .flatMap(_.codes.map(_.render))
+      .toSet + "study-finding.no-fixation-kept"
 
   test(
     "every cataloged family is sampled, in catalog order, through its own Diagnose instance"
@@ -116,10 +126,9 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
       )
     )
     val rendered = DiagnosticCatalog.codes.map(_.render)
-    assertEquals(
-      ContentHash.ofString(rendered.take(StableCount).mkString("\n")).render,
-      StableDigest
-    )
+    val stable   = rendered.filterNot(Cr5Codes)
+    assertEquals(stable.size, StableCount)
+    assertEquals(ContentHash.ofString(stable.mkString("\n")).render, StableDigest)
     assertEquals(rendered.size, PinnedCount)
     assertEquals(ContentHash.ofString(rendered.mkString("\n")).render, PinnedDigest)
     assertEquals(
@@ -128,7 +137,7 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
     )
     assertEquals(
       DiagnosticCatalog.studyFailure.codes.map(_.render).last,
-      "study-failure.off-window"
+      "study-failure.initial-fixations"
     )
     assertEquals(
       DiagnosticFamily.slug("SynchronizationTargetIsSource"),

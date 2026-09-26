@@ -52,7 +52,8 @@ object DiagnosticCatalog:
     "OccurrenceUnavailable",
     "MatchItemConflict",
     "MatchedCardinality",
-    "UnmatchedFocalRefused"
+    "UnmatchedFocalRefused",
+    "InitialFixations"
   )
   val studyFailure: DiagnosticFamily =
     error("study-failure")(
@@ -61,8 +62,23 @@ object DiagnosticCatalog:
       "Temporal",
       "Estimation",
       "Comparison",
-      "OffWindow"
+      "OffWindow",
+      "InitialFixations"
     )
+  val initialFixation: DiagnosticFamily = error("initial-fixation")(
+    "NonPositiveRadius",
+    "NonFiniteCross",
+    "CrossOffFrame",
+    "MissingAngularScale",
+    "InvalidTally",
+    "NoFixationKept"
+  )
+  val studyRevision: DiagnosticFamily = error("study-revision")(
+    "DuplicateField",
+    "Stale",
+    "IncompleteWindow",
+    "Plan"
+  )
   val studyResult: DiagnosticFamily = error("study-result")(
     "Description",
     "InputMismatch",
@@ -433,7 +449,8 @@ object DiagnosticCatalog:
     "MatchedCardinality",
     "AmbiguousReferences",
     "UnmatchedFocalRefused",
-    "MatchItemConflict"
+    "MatchItemConflict",
+    "NoFixationKept"
   )
   val recordingFinding: DiagnosticFamily = error("recording-finding")(
     "UndescribedMethod",
@@ -782,6 +799,8 @@ object DiagnosticCatalog:
   val families: Vector[DiagnosticFamily] = Vector(
     plan,
     studyFailure,
+    initialFixation,
+    studyRevision,
     studyResult,
     temporal,
     recordingPlan,

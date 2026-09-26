@@ -51,7 +51,7 @@ enum Remedy derives CanEqual:
     SupplyViewingGeometry, SupplyCommonMarks, ReviseSynchronizationMarks, ReviseViewingOrArea,
     ReviseDetectorParameters, SupplyEpoch, ReviseWindow, AcceptMissingObservation,
     ReviewAnalysisWindow, ReviseScaleDeclaration, ChooseMatchedReference,
-    ResolveMatchItemConflict
+    ResolveMatchItemConflict, ReviseInitialFixationPolicy
 
 /** Outcomes that only execution decides. Preflight lists them instead of guessing. */
 enum UncheckedAspect derives CanEqual:
@@ -145,6 +145,11 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
   /** Keys the layout identifies as one trial name different match items. */
   case MatchItemConflict(trials: Vector[K])
 
+  /** The plan's initial-fixation policy drops every fixation of the trial,
+    * so its map would be empty and it fails at every scale.
+    */
+  case NoFixationKept(key: K, tally: InitialFixationTally)
+
   def keys: Vector[K] = this match
     case FrameMismatch(k, _)          => Vector(k)
     case DuplicateTrial(k, _, _)      => Vector(k)
@@ -156,6 +161,7 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
     case AmbiguousReferences(rs, _)   => rs
     case UnmatchedFocalRefused(k)     => Vector(k)
     case MatchItemConflict(ks)        => ks
+    case NoFixationKept(k, _)         => Vector(k)
     case UndescribedMethod(_)         => Vector.empty
     case InconsistentDescriptor(_, _) => Vector.empty
     case MissingArtifact(_)           => Vector.empty
@@ -171,7 +177,7 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
       if matched == MatchedReferences.MeanOfAll then Severity.Warning else Severity.Blocker
     case UndescribedMethod(_) | InconsistentDescriptor(_, _) | FrameMismatch(_, _) |
         DuplicateTrial(_, _, _) | UnmatchedFocal(_) | UncontrolledFocal(_) |
-        OffWindowFixations(_, _, _) | NoFixationInWindow(_, _) =>
+        OffWindowFixations(_, _, _) | NoFixationInWindow(_, _) | NoFixationKept(_, _) =>
       Severity.Warning
 
   def category: FindingClass = this match
@@ -181,7 +187,8 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
     case FrameMismatch(_, _)                         => FindingClass.IncompatibleInput
     case DuplicateTrial(_, _, _) | UnmatchedFocal(_) | UncontrolledFocal(_) |
         OffWindowFixations(_, _, _) | NoFixationInWindow(_, _) | MatchedCardinality(_, _, _) |
-        AmbiguousReferences(_, _) | UnmatchedFocalRefused(_) | MatchItemConflict(_) =>
+        AmbiguousReferences(_, _) | UnmatchedFocalRefused(_) | MatchItemConflict(_) |
+        NoFixationKept(_, _) =>
       FindingClass.DataDependent
 
   def remedy: Remedy = this match
@@ -201,6 +208,7 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
     case AmbiguousReferences(_, _)    => Remedy.ChooseMatchedReference
     case UnmatchedFocalRefused(_)     => Remedy.SupplyMatchedReference
     case MatchItemConflict(_)         => Remedy.ResolveMatchItemConflict
+    case NoFixationKept(_, _)         => Remedy.ReviseInitialFixationPolicy
 
   def message: String = this match
     case UndescribedMethod(m) =>
@@ -241,6 +249,9 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
       s"Focal trial $k has no matched reference, and the plan refuses unmatched focal trials."
     case MatchItemConflict(ks) =>
       s"Trials $ks are one trial by identity but name different match items."
+    case NoFixationKept(k, t) =>
+      s"Trial $k: the initial-fixation policy ${t.render}, so its map would be empty; " +
+        "it fails at every scale."
 
 /** Findings for the synchronized, angular, detected and AOI-assigned recording recipe. */
 enum RecordingFinding extends PreflightFinding[Nothing] derives CanEqual:
@@ -558,7 +569,8 @@ object Preflight:
           prepared(plan, input, budget).fold(
             e => Vector(e),
             work =>
-              frames(work) ++ windows(work) ++ schedule(work).fold(e => Vector(e), identity)
+              frames(work) ++ emptied(work) ++ windows(work) ++
+                schedule(work).fold(e => Vector(e), identity)
           )
         }
     new StudyReport(
@@ -648,7 +660,7 @@ object Preflight:
           }
           val frameFindings = repetitions
             .collectFirst { case (_, Right(work)) =>
-              (frames(work) ++ windows(work)).map(TemporalFinding.Study(_))
+              (frames(work) ++ emptied(work) ++ windows(work)).map(TemporalFinding.Study(_))
             }
             .getOrElse(Vector.empty)
           val scheduleFindings = repetitions.flatMap {
@@ -689,6 +701,9 @@ object Preflight:
       Remedy.ChooseMatchedReference
     case PlanError.MatchItemConflict(_)     => Remedy.ResolveMatchItemConflict
     case PlanError.UnmatchedFocalRefused(_) => Remedy.SupplyMatchedReference
+    case PlanError.InitialFixations(InitialFixationError.MissingAngularScale(_)) =>
+      Remedy.ReviseScaleDeclaration
+    case PlanError.InitialFixations(_) => Remedy.ReviseInitialFixationPolicy
 
   private[plan] def remedyFor(error: TemporalStudyError): Remedy = error match
     case TemporalStudyError.Input(e)     => remedyFor(e)
@@ -776,7 +791,21 @@ object Preflight:
       StudyFinding.FrameMismatch(key, e)
     }
 
-  /** Trials with fixations outside the window or the screen, in input order. */
+  /** Trials the initial-fixation policy leaves without fixations, in input
+    * order: execution fails them with `InitialFixationError.NoFixationKept`.
+    */
+  private def emptied[K, U <: Unit2D, P, S, D](
+      work: PreparedStudy[K, U, P, S, D]
+  ): Vector[StudyFinding[K, U]] =
+    work.initialFixationTallies.collect {
+      case (key, Right(tally)) if tally.total > 0 && tally.kept == 0 =>
+        StudyFinding.NoFixationKept(key, tally)
+    }
+
+  /** Trials with fixations outside the window or the screen, in input order.
+    * A trial the initial-fixation policy leaves without fixations has an
+    * empty tally and fails for that reason, not the window's.
+    */
   private def windows[K, U <: Unit2D, P, S, D](
       work: PreparedStudy[K, U, P, S, D]
   ): Vector[StudyFinding[K, U]] =
@@ -784,7 +813,7 @@ object Preflight:
       case StudyGeometry.Windowed(_, _, p) => p
       case StudyGeometry.WholeFrame(_)     => OffWindowPolicy.Exclude
     work.windowTallies.collect {
-      case (key, Right(tally)) if tally.allOutside =>
+      case (key, Right(tally)) if tally.total > 0 && tally.allOutside =>
         StudyFinding.NoFixationInWindow(key, tally)
       case (key, Right(tally)) if tally.anyOutside =>
         StudyFinding.OffWindowFixations(key, tally, policy)

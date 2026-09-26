@@ -252,6 +252,8 @@ private[codec] object TemporalWire:
           "outsideWindowMicros" -> long(windowMicros),
           "totalMicros"         -> long(totalMicros)
         )
+      case InitialFixations(e) =>
+        tagged("initialFixations", "error" -> ResultWire.initialFixationError(e))
 
   def readPlanError(json: Json): Either[CodecError, PlanError] =
     import PlanError.*
@@ -321,6 +323,8 @@ private[codec] object TemporalWire:
           readLong(json, "outsideWindowMicros"),
           readLong(json, "totalMicros")
         ).mapN(InvalidWindowTally.apply)
+      case "initialFixations" =>
+        error.flatMap(ResultWire.readInitialFixationError).map(InitialFixations.apply)
       case other => Left(unknown(json, "plan error", other))
     }
 

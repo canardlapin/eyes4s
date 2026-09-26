@@ -63,6 +63,7 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
   private val pinned: Vector[Pinned[?]] = Vector(
     Pinned("study-v1", SavedStudyFixtures.versionOne, studies.codec),
     Pinned("study-v2", StudyV2Mirrors.studyVersionTwo, studies.codec),
+    Pinned("study-v3", StudyV3Mirrors.studyVersionThree, studies.codec),
     Pinned(
       "study-trial-v2",
       StudyV2Mirrors.trialStudyVersionTwo,
@@ -190,6 +191,7 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
         "eyes4s.study-result@1",
         "eyes4s.study@1",
         "eyes4s.study@2",
+        "eyes4s.study@3",
         "eyes4s.temporal-result@1",
         "eyes4s.temporal-study-input@1",
         "eyes4s.temporal-study@1",
@@ -266,7 +268,11 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
         CodecError.UnsupportedSchema(
           "study plan",
           DefinitionId.studyInput,
-          Vector(DefinitionId.study, StudyCodecDefinitions.studyV2)
+          Vector(
+            DefinitionId.study,
+            StudyCodecDefinitions.studyV2,
+            StudyCodecDefinitions.studyV3
+          )
         )
       )
     )
@@ -318,15 +324,19 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
     assertEquals(
       plans
         .decode(
-          withSchema(parse(SavedStudyFixtures.versionOne), "eyes4s.study", Json.fromInt(3))
+          withSchema(parse(SavedStudyFixtures.versionOne), "eyes4s.study", Json.fromInt(4))
         )
         .left
         .toOption,
       Some(
         CodecError.UnsupportedSchema(
           "study plan",
-          id("eyes4s.study", 3),
-          Vector(DefinitionId.study, StudyCodecDefinitions.studyV2)
+          id("eyes4s.study", 4),
+          Vector(
+            DefinitionId.study,
+            StudyCodecDefinitions.studyV2,
+            StudyCodecDefinitions.studyV3
+          )
         )
       )
     )

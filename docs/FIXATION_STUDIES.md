@@ -177,6 +177,41 @@ A flip correction is a `HalfOpenReflection` about the frame's centre line: a pos
 half-open frame stays on it (the lower edge maps just below the upper edge) and one off it stays
 off, so a flip never moves a record on or off the screen.
 
+## Initial fixations
+
+`StudyPlan.configure` takes an `InitialFixationPolicy`, applied identically to focal (query) and
+reference trials. It defaults to `InitialFixationPolicy.keepAll`, which is what every version-1
+and version-2 plan means.
+
+| Policy | Dropped from each trial |
+|---|---|
+| `keepAll` | nothing |
+| `dropFirst` | the first fixation, wherever it lies |
+| `dropLeadingInClosedDisc(cross, radiusDegrees)` | the leading run of fixations whose centres lie in the closed disc of `radiusDegrees` around `cross`: every fixation before the first one farther from the cross; a later return to the cross is kept |
+
+The cross is a position in admission-frame units and must lie on the admission frame
+(`InitialFixationError.CrossOffFrame`). The distance is `centre.distanceTo(cross) /
+unitsPerDegree` through the plan's one `LinearAngularScale`, so this policy needs one
+(`InitialFixationError.MissingAngularScale`), and a centre exactly at the radius is within it.
+Refusals arrive as `PlanError.InitialFixations`, with the `initial-fixation.*` diagnostic codes and the
+remedy `ReviseInitialFixationPolicy` (`ReviseScaleDeclaration` for a missing scale). Preflight does
+not report a trial the policy empties as having no fixation in the window.
+
+Dropped fixations are removed before the analysis window and the screen are considered, so every
+fixation is exactly one of: dropped, outside the screen, outside the window, or in the map.
+`plan.initialFixationTallies(input)`, `PreparedStudy.initialFixationTallies`,
+`StudyPreview.initialFixationTallies` and `StudyInspection.initialFixationTally(key)` give, per
+trial in input order, an `InitialFixationTally` (dropped and total fixations and their durations,
+with `kept = total - dropped`); `initialFixationSummary` totals them. Window tallies count only the
+kept fixations. A trial whose fixations are all dropped fails at every scale with
+`StudyFailure.InitialFixations(key, InitialFixationError.NoFixationKept(dropped, micros))`; in a
+temporal study, every cell applies the base plan's policy before its window.
+
+The policy is a recorded plan field: the description gains
+`initialFixations -> [dropFirst]` or `[dropLeadingInClosedDisc, x, y, radius]` when anything is
+dropped, `RecipeInspection` explains it, and `policy.methods` gives one sentence a methods section
+can cite. The plan codec writes it as `eyes4s.study@3` (see [saved studies](SAVED_STUDIES.md)).
+
 ## Repeated items and matched references
 
 When an item is studied more than once, a focal trial can have several matched references.
@@ -207,7 +242,26 @@ matched reference.
 
 The guide constructs duration-weighted occupancy on the declared grid, normalizes it to mass,
 compares matched and control templates, and reduces with `RequireAll`. The saved/reloaded plan runs
-through those same operations. Change a scientific choice in the plan and inspect the resulting diff.
+through those same operations.
+
+## Compare plan revisions
+
+`plan.structuralDiff(revised)` (`StudyDiff.between`) lists the typed changes between two plans, one
+per declared field, in `StudyField` order: input, layout, method (with its parameters), phases,
+weight, failure policy, grid, window, off-window policy, scales, units per degree, the three
+pairing choices and the initial-fixation policy. Each `StudyChange` carries the field's typed value
+before and after (`StudyChange.Scales` also gives `added` and `removed`); layouts and methods are
+compared by identity. `StudyDiff.render(changes)` is a default English rendering, for example
+"scales +8°" or "matched references policy RequireOne → MeanOfAll"; an application localises from
+the field and the values. The diff of a plan with itself is empty, a diff is empty exactly when the
+two plans have the same description, and the diff in the other direction is `changes.map(_.inverse)`.
+
+`plan.revise(changes)` applies changes. Each change must start from the plan's current value of its
+field (`StudyRevisionError.Stale`, naming both), each field changes once (`DuplicateField`), a
+window needs its off-window policy (`IncompleteWindow`), and the revised plan is checked like any
+configured plan (`StudyRevisionError.Plan`). Applying `a.structuralDiff(b)` to `a` gives a plan
+equal to `b`. The published `StudyDiffLaws` and `InitialFixationLaws` state these rules; the
+field-level `plan.diff` over descriptions remains for stored descriptions.
 
 The export has one row per focal key, scale and score component. Scalar contrasts have one component;
 MultiMatch contrasts have five named signed components. Columns retain each operand, the difference,

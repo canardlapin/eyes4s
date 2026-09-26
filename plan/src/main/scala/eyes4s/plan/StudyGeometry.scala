@@ -118,6 +118,10 @@ object WindowTally:
         )
       )
 
+  /** The tally of a trial with no fixation left to count. */
+  private[plan] val none: WindowTally =
+    new WindowTally(0, 0, 0, Span.zero, Span.zero, Span.zero)
+
   /** Count a scanpath's fixations against its admission frame alone. */
   def screen[U <: Unit2D](
       frame: Frame[U],

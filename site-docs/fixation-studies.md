@@ -41,6 +41,27 @@ dimension; failures identify the axis. Both edge policies and duration/uniform w
 available. Equal supported widths give the same numerical surface as `Smoother.gaussian`, while
 provenance retains the selected method and both widths.
 
+## Leave out initial fixations
+
+Fixations at the start of a trial often sit on the fixation cross rather than on the display.
+`StudyPlan.configure` takes an `InitialFixationPolicy`, applied identically to query and
+reference trials: keep all (the default), drop the first fixation, or drop the leading run of
+fixations whose centres lie within a closed disc around the cross, measured in degrees through the
+plan's declared units per degree.
+
+```scala mdoc
+import eyes4s.kernel.Pt
+import eyes4s.kernel.Unit2D.Px
+import eyes4s.plan.InitialFixationPolicy
+
+val nearCross = InitialFixationPolicy.dropLeadingInClosedDisc(Pt[Px](960, 540), 1.5)
+nearCross.map(_.methods)
+```
+
+`plan.initialFixationTallies(input)` reports, per trial, how many fixations were dropped of how
+many; a trial left with none fails with a named failure. The policy appears in the plan's
+description, so a saved plan and its methods text cite it.
+
 ## Inspect before accepting
 
 `FixationCsv.admit` returns accepted trials, every rejected row and original fields. The default
@@ -60,7 +81,8 @@ use keyed candidate lookup; additional clauses still decide eligibility.
 ## Persist and export
 
 `StudyCodecs.cosine` encodes versioned parameters, geometry and input identity. `plan.diff` reports
-changed choices. `plan.preflight` reports missing or incompatible inputs without estimation.
+changed description fields; `plan.structuralDiff(revised)` gives the typed change of each field,
+and `StudyDiff.render` a line such as "scales +8°". `plan.preflight` reports missing or incompatible inputs without estimation.
 `ContrastCsv.document` exports keys, scale, method, counts, failures and the saved plan with scores.
 Contrast CSV schema 2 adds `sigma_x` and `sigma_y`. Isotropic rows retain `sigma` and repeat that
 width in both axis columns; anisotropic rows leave `sigma` empty and supply both axis widths.

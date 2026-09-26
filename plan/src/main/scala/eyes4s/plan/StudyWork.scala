@@ -41,6 +41,8 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
     val frameChecks: Vector[Either[StudyFailure[K], Unit]],
     val windowChecks: Vector[Either[StudyFailure[K], Unit]],
     val windowTallies: Vector[(K, Either[GeometryError, WindowTally])],
+    val initialFixationTallies: Vector[(K, Either[GeometryError, InitialFixationTally])],
+    private val keptPaths: Vector[Either[StudyFailure[K], Scanpath[U]]],
     val matched: DirectedPairSchedule[K, K],
     val controls: DirectedPairSchedule[K, K],
     val candidateVisitsAcrossScales: Long,
@@ -61,6 +63,19 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
 
   /** Totals of [[windowTallies]]: records outside the window and the screen. */
   def windowSummary: WindowSummary = WindowSummary.of(windowTallies)
+
+  /** Which fixations at the start of every trial the plan leaves out. */
+  val initialFixations: InitialFixationPolicy[U] = plan.initialFixations
+
+  /** Totals of [[initialFixationTallies]]: initial fixations dropped. */
+  def initialFixationSummary: InitialFixationSummary =
+    InitialFixationSummary.of(initialFixationTallies)
+
+  /** One trial's fixations after the initial-fixation policy, or the failure
+    * (another frame, or no fixation kept) that prevents mapping it.
+    */
+  private[plan] def keptPath(index: Int): Either[StudyFailure[K], Scanpath[U]] =
+    keptPaths(index)
 
   /** How the plan pairs focal trials with matched and control references. */
   val pairing: StudyPairing = plan.pairing
@@ -102,7 +117,8 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
         plan.policy,
         windowTallies,
         plan.pairing,
-        matchedCardinality
+        matchedCardinality,
+        initialFixationTallies
       )
     }
 
@@ -197,6 +213,9 @@ object PreparedStudy:
           .left
           .map(StudyFailure.Frame(t.key, _))
       )
+      kept = frames.zip(input.trials.rows).map { case (frame, t) =>
+        frame.flatMap(_ => plan.initialFixationRule.kept(t.key, t.value))
+      }
       relations = StudyPairingWork.relations(plan.layout, plan.pairing, right)
       matched <- DirectedPairSchedule
         .exhaustive(left, right, relations._1, budget)
@@ -217,10 +236,12 @@ object PreparedStudy:
         .map(i => input.trials.rows(i).key)
         .toVector,
       frames,
-      frames.zip(input.trials.rows).map { case (frame, t) =>
-        frame.flatMap(_ => StudyWindowing.check(plan.geometry, t.key, t.value))
+      kept.zip(input.trials.rows).map { case (path, t) =>
+        path.flatMap(StudyWindowing.check(plan.geometry, t.key, _))
       },
       plan.windowTallies(input),
+      plan.initialFixationTallies(input),
+      kept,
       matched,
       controls,
       candidateVisits.toLong,

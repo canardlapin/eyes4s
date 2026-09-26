@@ -125,6 +125,9 @@ private[eyes4s] object Projections:
           long(windowMicros),
           long(totalMicros)
         )
+      case InitialFixations(underlying) =>
+        val inner = RevisionDiagnostics.initialFixation(underlying)
+        diagnostic(C.plan, e, e.message, inner.subject)(cause(inner))
 
   def failure[K](e: StudyFailure[K]): Diagnostic[K] =
     import StudyFailure.*
@@ -151,6 +154,8 @@ private[eyes4s] object Projections:
           Operand.Key(key),
           windowTally(tally)
         )
+      case InitialFixations(key, underlying) =>
+        trial(key, RevisionDiagnostics.initialFixation(underlying))
 
   def result[K](e: StudyResultError[K]): Diagnostic[K] =
     import StudyResultError.*
@@ -733,6 +738,16 @@ private[eyes4s] object Projections:
       case MatchItemConflict(conflicting) =>
         diagnostic(C.studyFinding, f, f.message, Vector(Locus.Trials(conflicting)))(
           keys(conflicting)
+        )
+      case NoFixationKept(key, tally) =>
+        diagnostic(C.studyFinding, f, f.message, trial(key))(
+          Operand.Key(key),
+          fields(
+            "dropped"         -> int(tally.dropped),
+            "total"           -> int(tally.total),
+            "droppedDuration" -> span(tally.droppedDuration),
+            "totalDuration"   -> span(tally.totalDuration)
+          )
         )
     finding(projected, f.severity, f.category, f.remedy)
 

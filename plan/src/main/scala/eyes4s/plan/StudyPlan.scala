@@ -120,6 +120,7 @@ enum PlanError derives CanEqual:
       referenceGroups: Vector[Vector[String]]
   )
   case UnmatchedFocalRefused(focalDigests: Vector[String])
+  case InitialFixations(underlying: InitialFixationError)
 
   def message: String = this match
     case InvalidDefinition(n, v) =>
@@ -169,6 +170,7 @@ enum PlanError derives CanEqual:
       s"Under ${matched.render}, ${parts.mkString(", and ")}; choose an occurrence."
     case UnmatchedFocalRefused(focal) =>
       s"Focal trials $focal have no matched reference, and the plan refuses unmatched focal trials."
+    case InitialFixations(e) => e.message
 
 /** A registered interpretation of user keys. Identity and matching stay in K.
   *
@@ -326,6 +328,11 @@ enum StudyFailure[K] derives CanEqual:
     */
   case OffWindow(key: K, tally: WindowTally)
 
+  /** The plan's initial-fixation policy left the trial without a fixation
+    * ([[InitialFixationError.NoFixationKept]]).
+    */
+  case InitialFixations(key: K, underlying: InitialFixationError)
+
   def message: String = this match
     case Frame(k, e)         => s"Trial $k: ${e.message}"
     case Temporal(k, e)      => s"Trial $k: ${e.message}"
@@ -344,16 +351,18 @@ enum StudyFailure[K] derives CanEqual:
       s"Trial $k has ${counts.mkString(" and ")}" +
         (if tally.allOutside then "; its map would be empty."
          else "; the plan fails trials with fixations outside the window.")
+    case InitialFixations(k, e) => s"Trial $k: ${e.message}"
 
 object StudyFailure:
   /** The trial keys a failure names, in operand order. */
   def keys[K](failure: StudyFailure[K]): Vector[K] = failure match
-    case StudyFailure.Frame(k, _)         => Vector(k)
-    case StudyFailure.Temporal(k, _)      => Vector(k)
-    case StudyFailure.Occupancy(k, _)     => Vector(k)
-    case StudyFailure.Estimation(k, _)    => Vector(k)
-    case StudyFailure.Comparison(l, r, _) => Vector(l, r)
-    case StudyFailure.OffWindow(k, _)     => Vector(k)
+    case StudyFailure.Frame(k, _)            => Vector(k)
+    case StudyFailure.Temporal(k, _)         => Vector(k)
+    case StudyFailure.Occupancy(k, _)        => Vector(k)
+    case StudyFailure.Estimation(k, _)       => Vector(k)
+    case StudyFailure.Comparison(l, r, _)    => Vector(l, r)
+    case StudyFailure.OffWindow(k, _)        => Vector(k)
+    case StudyFailure.InitialFixations(k, _) => Vector(k)
 
 /** Typed evidence of how a method's comparison executes. A synchronous closure
   * runs whole per pair; only a [[BoundedCompare]] can be declared bounded, so
@@ -833,17 +842,29 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
     val policy: FailurePolicy,
     val method: StudyMethod[P, U, S, D],
     val parameters: P,
-    val pairing: StudyPairing
+    val pairing: StudyPairing,
+    val initialFixationRule: InitialFixationRule[U]
 )(using unit: UnitLabel[U]):
   /** The grid every density lies on. */
   def grid: Grid[U] = geometry.grid
 
+  /** Which fixations at the start of every trial, focal and reference alike,
+    * the study leaves out.
+    */
+  def initialFixations: InitialFixationPolicy[U] = initialFixationRule.policy
+
+  /** True when a version-2 saved study expresses the plan: every fixation
+    * is kept.
+    */
+  def keepsAllFixations: Boolean = initialFixations.isKeepAll
+
   /** True when the plan means exactly what a version-1 saved study meant:
-    * the whole admission frame, scales declared in frame units, and every
-    * matched reference averaged.
+    * the whole admission frame, scales declared in frame units, every
+    * matched reference averaged and every fixation kept.
     */
   def isVersion1: Boolean =
-    pairing.isVersion1 && geometry.isInstanceOf[StudyGeometry.WholeFrame[?]] &&
+    keepsAllFixations &&
+      pairing.isVersion1 && geometry.isInstanceOf[StudyGeometry.WholeFrame[?]] &&
       angularScale.isEmpty &&
       scales.forall {
         case StudyScale.Native(_)  => true
@@ -897,15 +918,33 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
           Vector(Text(k), v)
         })
       } ++
-      (if pairing.isVersion1 then Vector.empty else pairing.description)
+      (if pairing.isVersion1 then Vector.empty else pairing.description) ++
+      Option
+        .unless(keepsAllFixations)("initialFixations" -> initialFixations.parameters)
+        .toVector
 
   override def equals(other: Any): Boolean = other match
     case that: StudyPlan[?, ?, ?, ?, ?] => description == that.description
     case _                              => false
   override def hashCode: Int = description.hashCode
 
+  /** Description fields that differ, by name; see [[structuralDiff]] for the
+    * typed changes a review panel shows.
+    */
   def diff(that: StudyPlan[K, U, P, S, D]): Vector[PlanChange] =
     PlanChange.between(description, that.description)
+
+  /** The typed, per-field changes from this plan to `that`, in
+    * [[StudyField]] order ([[StudyDiff.between]]).
+    */
+  def structuralDiff(that: StudyPlan[K, U, P, S, D]): Vector[StudyChange[K, U, P, S, D]] =
+    StudyDiff.between(this, that)
+
+  /** This plan with `changes` applied ([[StudyDiff.revise]]). */
+  def revise(
+      changes: Vector[StudyChange[K, U, P, S, D]]
+  ): Either[StudyRevisionError, StudyPlan[K, U, P, S, D]] =
+    StudyDiff.revise(this, changes)
 
   def prerequisites(available: Option[StudyInput[K, U]]): Vector[PlanError] = available match
     case None => Vector(PlanError.MissingArtifact(input.digest))
@@ -914,14 +953,40 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
     case _ => Vector.empty
 
   /** Every trial's tally, in input order: its fixations outside the analysis
-    * window (none for a whole-frame plan) and outside the screen. A trial in
-    * another frame than the admission frame is kept, with the refusal that
-    * prevents tallying it. Derived from the input and the plan alone.
+    * window (none for a whole-frame plan) and outside the screen, among the
+    * fixations the initial-fixation policy keeps. A trial in another frame
+    * than the admission frame is kept, with the refusal that prevents
+    * tallying it. Derived from the input and the plan alone.
     */
   def windowTallies(
       available: StudyInput[K, U]
   ): Vector[(K, Either[GeometryError, WindowTally])] =
-    StudyWindowing.tallies(geometry, available.trials.rows.map(t => t.key -> t.value))
+    available.trials.rows.map { t =>
+      t.key -> Agreement
+        .frames(geometry.admission, t.value.frame)
+        .flatMap(_ =>
+          initialFixationRule
+            .select(t.value)
+            .kept
+            .fold(Right(WindowTally.none))(StudyWindowing.tally(geometry, _))
+        )
+    }
+
+  /** Every trial's initial-fixation tally, in input order: the leading
+    * fixations the policy drops, of all the trial's fixations. Dropped
+    * fixations are left out before the window is considered, so each
+    * fixation is dropped, outside the screen, outside the window or in the
+    * map. A trial in another frame carries the refusal that prevents
+    * tallying it.
+    */
+  def initialFixationTallies(
+      available: StudyInput[K, U]
+  ): Vector[(K, Either[GeometryError, InitialFixationTally])] =
+    available.trials.rows.map { t =>
+      t.key -> Agreement
+        .frames(geometry.admission, t.value.frame)
+        .map(_ => initialFixationRule.select(t.value).tally)
+    }
 
   def run(available: StudyInput[K, U]): Either[PlanError, StudyResult[K, U, S, D]] =
     prepare(available).flatMap(_.run)
@@ -961,7 +1026,8 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
       policy,
       method,
       parameters,
-      pairing
+      pairing,
+      initialFixations
     )
 
   /** One scale's method specification; identical for pure and resumable execution. */
@@ -996,7 +1062,8 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
     val mass  = for
       _         <- work.frameChecks(index)
       _         <- work.windowChecks(index)
-      whole     <- prepare(trial.key, trial.value)
+      kept      <- work.keptPath(index)
+      whole     <- prepare(trial.key, kept)
       occupancy <- StudyWindowing.restrict(geometry, trial.key, whole)
       mass      <- estimate match
         case StudyEstimate.Anisotropic(x, y, edges) =>
@@ -1088,7 +1155,9 @@ object StudyPlan:
     * admission frame: one units-per-degree value per plan. The pairing
     * defaults to exactly one matched reference per focal trial
     * ([[StudyPairing.default]]); `SameOccurrence` and `Select` need a layout
-    * that declares occurrences.
+    * that declares occurrences. The initial-fixation policy defaults to
+    * keeping every fixation; a policy around the fixation cross needs its
+    * cross on the admission frame and the plan's `angularScale`.
     */
   def configure[K, U <: Unit2D, P, S, D](
       input: ArtifactRef[StudyInput[K, U]],
@@ -1102,7 +1171,8 @@ object StudyPlan:
       policy: FailurePolicy,
       method: StudyMethod[P, U, S, D],
       parameters: P,
-      pairing: StudyPairing = StudyPairing.default
+      pairing: StudyPairing = StudyPairing.default,
+      initialFixations: InitialFixationPolicy[U] = InitialFixationPolicy.keepAll[U]
   )(using UnitLabel[U]): Either[PlanError, StudyPlan[K, U, P, S, D]] =
     val needsOccurrence = pairing.matched match
       case MatchedReferences.SameOccurrence | MatchedReferences.Select(_) => true
@@ -1146,6 +1216,10 @@ object StudyPlan:
           .left
           .map(PlanError.Specification.apply)
       }
+      initial <- InitialFixationRule
+        .of(initialFixations, geometry.admission, angularScale)
+        .left
+        .map(PlanError.InitialFixations.apply)
     yield new StudyPlan(
       input,
       layout,
@@ -1159,5 +1233,6 @@ object StudyPlan:
       policy,
       method,
       parameters,
-      pairing
+      pairing,
+      initial
     )
