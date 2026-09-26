@@ -18,8 +18,6 @@ package eyes4s.plan
 
 import eyes4s.design.*
 
-import scala.annotation.tailrec
-
 /** The relations a pairing rule schedules, and the cardinality it implies.
   *
   * A selection by occurrence depends only on a reference's own participant
@@ -118,56 +116,38 @@ private[plan] object StudyPairingWork:
         .sortBy(_.head)
     }
 
-  /** Every matched pair of the schedule, by focal key in schedule order. */
-  private def matchedPairs[K](
-      schedule: DirectedPairSchedule[K, K]
-  ): Either[PairScheduleError, (Vector[(K, K)], PairingReport[K, K])] =
-    @tailrec
-    def loop(
-        cursor: PairCursor[K, K],
-        acc: Vector[(K, K)]
-    ): Either[PairScheduleError, (Vector[(K, K)], PairingReport[K, K])] =
-      cursor.advance(PairQuantum.default) match
-        case Left(e)                                => Left(e)
-        case Right(PairPage.Done(pairs, _, report)) =>
-          Right((acc ++ pairs.map(p => p.left -> p.right), report))
-        case Right(PairPage.More(pairs, _, next)) =>
-          loop(next, acc ++ pairs.map(p => p.left -> p.right))
-    loop(schedule.start, Vector.empty)
-
-  def cardinality[K](
+  private[plan] def cardinalityFromPairs[K](
       layout: StudyLayout[K],
       pairing: StudyPairing,
       keys: Vector[K],
       references: Vector[K],
-      matched: DirectedPairSchedule[K, K]
-  ): Either[PlanError, MatchedCardinality[K]] =
-    matchedPairs(matched).left.map(PlanError.Schedule.apply).map { (pairs, report) =>
-      val byFocal  = pairs.groupBy(_._1)
-      val multiple = pairs
-        .map(_._1)
-        .distinct
-        .collect { case k if byFocal(k).size > 1 => k -> byFocal(k).map(_._2) }
-      val chosen   = chosenReferences(layout, pairing, references)
-      val grouping = (pairing.matched, layout.occurrence) match
-        case (MatchedReferences.SameOccurrence, Some(o)) =>
-          (k: K) => (layout.participant(k), layout.stimulus(k), Some(o(k).value))
-        case _ => (k: K) => (layout.participant(k), layout.stimulus(k), None)
-      val order     = chosen.zipWithIndex.toMap
-      val ambiguous =
-        if pairing.matched == MatchedReferences.MeanOfAll then Vector.empty
-        else
-          chosen
-            .groupBy(grouping)
-            .values
-            .collect { case group if group.size > 1 => group }
-            .toVector
-            .sortBy(g => order(g.head))
-      new MatchedCardinality(
-        pairing,
-        multiple,
-        ambiguous,
-        report.unmatchedLeft,
-        itemConflicts(layout, keys)
-      )
-    }
+      pairs: Vector[(K, K)],
+      report: PairingReport[K, K]
+  ): MatchedCardinality[K] =
+    val byFocal  = pairs.groupBy(_._1)
+    val multiple = pairs
+      .map(_._1)
+      .distinct
+      .collect { case k if byFocal(k).size > 1 => k -> byFocal(k).map(_._2) }
+    val chosen   = chosenReferences(layout, pairing, references)
+    val grouping = (pairing.matched, layout.occurrence) match
+      case (MatchedReferences.SameOccurrence, Some(o)) =>
+        (k: K) => (layout.participant(k), layout.stimulus(k), Some(o(k).value))
+      case _ => (k: K) => (layout.participant(k), layout.stimulus(k), None)
+    val order     = chosen.zipWithIndex.toMap
+    val ambiguous =
+      if pairing.matched == MatchedReferences.MeanOfAll then Vector.empty
+      else
+        chosen
+          .groupBy(grouping)
+          .values
+          .collect { case group if group.size > 1 => group }
+          .toVector
+          .sortBy(g => order(g.head))
+    new MatchedCardinality(
+      pairing,
+      multiple,
+      ambiguous,
+      report.unmatchedLeft,
+      itemConflicts(layout, keys)
+    )

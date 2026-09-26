@@ -85,13 +85,16 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
     * value drives preflight, the refusal of [[work]] and [[preview]].
     */
   lazy val matchedCardinality: Either[PlanError, MatchedCardinality[K]] =
-    StudyPairingWork.cardinality(
-      plan.layout,
-      plan.pairing,
-      input.trials.rows.map(_.key),
-      referenceIndices.map(i => input.trials.rows(i).key),
-      matched
-    )
+    counts.map(_.cardinality)
+
+  /** Begin the exact-count traversal without performing any pair visits. */
+  def countWork: Either[PlanError, CountCursor[K]] = CountCursor.of(plan, this)
+
+  /** Synchronous convenience; effectful consumers execute [[countWork]] through
+    * the shared runner for cancellation between pages. This same traversal supplies cardinality.
+    */
+  lazy val counts: Either[PlanError, StudyCounts[K]] =
+    countWork.flatMap(cursor => Stepwise.complete(cursor, WorkQuanta.default))
 
   /** The refusal the pairing implies for this input, if any. A version-1
     * pairing on a layout without trial identity never refuses, so its matched
@@ -102,7 +105,19 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
     else matchedCardinality.fold(Some(_), _.refusal(plan.layout))
 
   /** Inspect the exact schedules and reduction choices without numerical work. */
-  def preview: Either[PlanError, StudyPreview[K, U]] =
+  def preview: Either[PlanError, StudyPreview[K, U]] = previewWith(None)
+
+  /** Attach completed counts only to the prepared input and choices that produced them. */
+  def preview(counts: StudyCounts[K]): Either[PlanError, StudyPreview[K, U]] =
+    if counts.input != inputReference then
+      Left(PlanError.ArtifactMismatch(counts.input.digest, inputReference.digest))
+    else if counts.description != description then
+      Left(PlanError.ChangedPreparedPlan(methodId, layoutId))
+    else previewWith(Some(counts))
+
+  private def previewWith(
+      counts: Option[StudyCounts[K]]
+  ): Either[PlanError, StudyPreview[K, U]] =
     checkUnchanged.map { _ =>
       new StudyPreview(
         inputReference,
@@ -117,8 +132,9 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
         plan.policy,
         windowTallies,
         plan.pairing,
-        matchedCardinality,
-        initialFixationTallies
+        () => counts.fold(matchedCardinality)(c => Right(c.cardinality)),
+        initialFixationTallies,
+        counts
       )
     }
 
@@ -356,6 +372,24 @@ final class StudyCursor[K, U <: Unit2D, S, D] private[plan] (
     case Contrasting(_, _)         => StudyStage.Contrasting(scale)
 
   def capability: ExecutionCapability = engine.capability
+
+  /** Attempted maps over all scales, including failed estimations. */
+  def completedMaps: Long = completed.iterator.map(_.estimation.size.toLong).sum + masses.size
+
+  /** Decided pair rows over all scales, including failed comparisons. */
+  def completedPairs: Long =
+    val previous = completed.iterator.map { result =>
+      result.analyses.matchedSource.rows.size.toLong + result.analyses.controlSource.rows.size
+    }.sum
+    val current = phase match
+      case Estimate(_)                       => 0L
+      case CompareMatched(cursor)            => cursor.completedPairs.toLong
+      case ReduceMatched(source, _)          => source.rows.size.toLong
+      case CompareControl(source, _, cursor) => source.rows.size.toLong + cursor.completedPairs
+      case ReduceControl(matched, _, control, _) => matched.rows.size.toLong + control.rows.size
+      case Contrasting(analyses, _)              =>
+        analyses.matchedSource.rows.size.toLong + analyses.controlSource.rows.size
+    previous + current
 
   /** The exact units of the reduction the next `advance` works on, known
     * once its scores are realised; `None` outside a reducing stage.

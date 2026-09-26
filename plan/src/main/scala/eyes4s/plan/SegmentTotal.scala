@@ -27,4 +27,7 @@ package eyes4s.plan
 enum SegmentTotal derives CanEqual:
   case Exact(units: Long)
   case AtMost(units: Long)
+
+  /** An automatic traversal is still determining the exact total. */
+  case Counting
   case Unknown

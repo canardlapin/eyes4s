@@ -63,9 +63,13 @@ final class StudyPreview[K, U <: Unit2D] private[plan] (
     val failurePolicy: FailurePolicy,
     val windowTallies: Vector[(K, Either[GeometryError, WindowTally])],
     val pairing: StudyPairing,
-    val matchedCardinality: Either[PlanError, MatchedCardinality[K]],
-    val initialFixationTallies: Vector[(K, Either[GeometryError, InitialFixationTally])]
+    cardinality: () => Either[PlanError, MatchedCardinality[K]],
+    val initialFixationTallies: Vector[(K, Either[GeometryError, InitialFixationTally])],
+    val counts: Option[StudyCounts[K]]
 ):
+  /** Legacy synchronous cardinality access. Constructing a preview does not enumerate pairs. */
+  lazy val matchedCardinality: Either[PlanError, MatchedCardinality[K]] = cardinality()
+
   /** Initial fixations the plan's policy drops, across the input. */
   def initialFixationSummary: InitialFixationSummary =
     InitialFixationSummary.of(initialFixationTallies)

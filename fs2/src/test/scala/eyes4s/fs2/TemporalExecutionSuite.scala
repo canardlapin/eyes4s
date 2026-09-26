@@ -396,7 +396,8 @@ class TemporalExecutionSuite extends munit.CatsEffectSuite:
           totals(segment) match
             case SegmentTotal.Exact(units)  => assertEquals(last(segment), units, segment)
             case SegmentTotal.AtMost(units) => assert(last(segment) <= units, clue(segment))
-            case SegmentTotal.Unknown       => fail(s"$segment stated no total")
+            case SegmentTotal.Unknown | SegmentTotal.Counting =>
+              fail(s"$segment stated no total")
         }
       }
       // The reversed repetition has a different focal set, hence its own totals.
