@@ -28,8 +28,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Every issued code, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 666
-  private val PinnedDigest = "6b224d49a712c484"
+  private val PinnedCount  = 669
+  private val PinnedDigest = "85eb514afa7a5eff"
 
   /** The issued table before CR5: codes are only ever issued, never changed
     * or reused, and a retired code keeps its place, so taking away the codes
@@ -69,7 +69,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
     DiagnosticCatalog.massLevel.codes.map(_.render).toSet ++
       Set("inspection.geometry", "inspection.geometry-description")
 
-  private val UiDCodes: Set[String] = DiagnosticCatalog.stageMeter.codes.map(_.render).toSet
+  private val UiDCodes: Set[String] =
+    (DiagnosticCatalog.stageMeter.codes ++ DiagnosticCatalog.studyRun.codes).map(_.render).toSet
 
   /** G1 adds record identity diagnostics before SourceRef and UI-E land. */
   private val G1Codes: Set[String] =

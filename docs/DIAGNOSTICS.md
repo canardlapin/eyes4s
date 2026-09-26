@@ -1420,6 +1420,14 @@ fails after rewriting, so review the change and run it again.
 | `stage-meter.beyond-total` | `BeyondTotal` | `kind`, `unit`, `done`, `total` |
 | `stage-meter.regressed` | `Regressed` | `kind`, `unit`, `previous`, `next` |
 
+### `study-run` — `StudyRunError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `study-run.plan` | `Plan` | `underlying` |
+| `study-run.meter` | `Meter` | `underlying` |
+| `study-run.unexpected-completion` | `UnexpectedCompletion` | `design`, `visited` |
+
 ### `codec` — `CodecError`
 
 | Code | Case | Operands |
@@ -1516,6 +1524,8 @@ fails after rewriting, so review the change and run it again.
 | `relation.report-ledger` | `ReportLedger` | `ledger`, `input` |
 | `relation.report-members` | `ReportMembers` | `scale`, `unknown` |
 | `relation.source-binding` | `SourceBinding` | `field`, `expected`, `found` |
+| `relation.run-plan` | `RunPlan` | `reported`, `current`, `changes` |
+| `relation.run-input` | `RunInput` | `reported`, `current` |
 
 ### `manifest` — `ManifestError`
 
@@ -1573,6 +1583,13 @@ fails after rewriting, so review the change and run it again.
 | `density.materialize` | `Materialize` | `underlying` |
 | `density.unknown-row` | `UnknownRow` | `scale`, `row`, `count` |
 | `density.row-key-mismatch` | `RowKeyMismatch` | `scale`, `row`, `expected`, `actual` |
+
+### `run-stamp` — `RunStampError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `run-stamp.changed-plan` | `ChangedPlan` | `reported`, `current`, `changes` |
+| `run-stamp.changed-input` | `ChangedInput` | `reported`, `current` |
 
 ### `report` — `ReportFinding`
 

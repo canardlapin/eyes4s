@@ -203,6 +203,7 @@ object Diagnose:
   given reductionPolicy: Diagnose[ReductionPolicyError, Nothing] =
     derived(C.reductionPolicy)(_.message)
   given stageMeter: Diagnose[StageMeterError, Nothing] = derived(C.stageMeter)(_.message)
+  given studyRun: Diagnose[StudyRunError, Nothing]     = derived(C.studyRun)(_.message)
   given workQuanta: Diagnose[WorkQuantaError, Nothing] = derived(C.workQuanta)(_.message)
   given evaluationWork: Diagnose[EvaluationWorkError, Nothing] =
     derived(C.evaluationWork)(_.message)

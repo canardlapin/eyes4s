@@ -40,18 +40,19 @@ class IoDiagnosticCatalogSuite extends munit.FunSuite:
   private val alignment = DiagnosticAlignment(
     all,
     eyes4s.results.ResultsDiagnosticSamples.structured.orElse {
-      case v: ByteDigest       => CodecDiagnosticSupport.digest(v)
-      case v: ArtifactName     => CodecDiagnosticSupport.entry(v)
-      case v: ArtifactRole     => CodecDiagnosticSupport.role(v)
-      case v: MediaKind        => CodecDiagnosticSupport.media(v)
-      case v: ElementKind      => CodecDiagnosticSupport.element(v)
-      case v: PayloadLayout    => CodecDiagnosticSupport.layout(v)
-      case v: PayloadRef       => CodecDiagnosticSupport.payloadRef(v)
-      case v: ManifestRelation => CodecDiagnosticSupport.relation(v)
-      case v: Json             => CodecDiagnosticSupport.json(v)
-      case v: Sha256           => Operand.Artifact(v.hex)
-      case v: SourceIdentity   => Operand.Artifact(v.digest)
-      case v: IdentityChanges  =>
+      case v: ByteDigest         => CodecDiagnosticSupport.digest(v)
+      case v: CanonicalDigest[?] => CodecDiagnosticSupport.digest(v.sha256)
+      case v: ArtifactName       => CodecDiagnosticSupport.entry(v)
+      case v: ArtifactRole       => CodecDiagnosticSupport.role(v)
+      case v: MediaKind          => CodecDiagnosticSupport.media(v)
+      case v: ElementKind        => CodecDiagnosticSupport.element(v)
+      case v: PayloadLayout      => CodecDiagnosticSupport.layout(v)
+      case v: PayloadRef         => CodecDiagnosticSupport.payloadRef(v)
+      case v: ManifestRelation   => CodecDiagnosticSupport.relation(v)
+      case v: Json               => CodecDiagnosticSupport.json(v)
+      case v: Sha256             => Operand.Artifact(v.hex)
+      case v: SourceIdentity     => Operand.Artifact(v.digest)
+      case v: IdentityChanges    =>
         Operand.Items(v.values.toVector.sortBy(_.ordinal).map(x => Operand.Token(x.toString)))
     },
     { case (v: StudyKey, Operand.Key(x: ErasedKey)) => x.value == v }

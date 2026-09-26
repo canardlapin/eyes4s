@@ -882,5 +882,13 @@ object DiagnosticSamples:
       StageMeterError
         .BeyondTotal(StageKind.Reducing, CountUnit.Keys, 3L, SegmentTotal.AtMost(2L)),
       StageMeterError.Regressed(StageKind.Contrasting, CountUnit.Rows, 4L, 3L)
+    ),
+    family[StudyRunError]("StudyRunError")(
+      StudyRunError.Plan(PlanError.ArtifactMismatch("reported", "current")),
+      StudyRunError.Meter(
+        StageMeterError
+          .BeyondTotal(StageKind.Comparing, CountUnit.Pairs, 4L, SegmentTotal.Exact(3L))
+      ),
+      StudyRunError.UnexpectedCompletion(StudyDesign.Control, 42L)
     )
   )

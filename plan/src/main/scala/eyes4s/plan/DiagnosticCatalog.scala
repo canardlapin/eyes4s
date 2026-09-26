@@ -889,6 +889,8 @@ object DiagnosticCatalog:
     "Regressed"
   )
 
+  val studyRun: DiagnosticFamily = error("study-run")("Plan", "Meter", "UnexpectedCompletion")
+
   /** Every family ever issued, in issue order: families are only appended,
     * and a retired family keeps its place.
     */
@@ -987,7 +989,8 @@ object DiagnosticCatalog:
     SourceDiagnostics.identity,
     SourceDiagnostics.importDescription,
     massLevel,
-    stageMeter
+    stageMeter,
+    studyRun
   )
 
   /** Every live family, grouped as documented. */
