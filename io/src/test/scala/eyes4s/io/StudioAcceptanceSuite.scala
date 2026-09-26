@@ -24,7 +24,9 @@ import eyes4s.plan.*
 import eyes4s.surface.EdgePolicy
 
 /** End to end, the Eyes Studio mock study: trial-keyed fixations on a
-  * 1920 x 1080 screen admitted through `FixationCsv`, a 1024 x 768 image
+  * 1920 x 1080 screen admitted through `FixationCsv.admitInventory` against
+  * the trials table, which supplies each trial's item and attributes and
+  * accounts for absent trials, a 1024 x 768 image
   * window on a 64 x 48 grid, a 2-degree scale at a declared 35 px per degree,
   * and matched-minus-control contrasts under the default pairing (exactly one
   * matched reference, controls selected alike, unmatched focal trials
@@ -38,24 +40,54 @@ abstract class StudioAcceptance(source: => StudioFixture.Source) extends munit.F
   override val munitTimeout                 = scala.concurrent.duration.Duration(10, "min")
   private def get[E, A](e: Either[E, A]): A = e.fold(error => fail(s"$error"), identity)
 
+  /** The records in quarantined trials, where the fixture states it. */
+  protected def rejectedRecords: Option[Int] = None
+
   private val screen = get(Frame.screen("studio-screen", 1920, 1080))
   private val image  =
     get(Subframe.centred(screen, FrameId("studio-image"), get(Extent.of[Px](1024, 768))))
-  private val grid    = get(Grid.over(image.frame, 64, 48))
-  private val columns = get(
-    FixationColumns.of("ordinal", "x", "y", "onset_ms", "duration_ms", "sample_count")
+  private val grid         = get(Grid.over(image.frame, 64, 48))
+  private val trialColumns =
+    get(TrialColumns.of("participant", "phase", "trial", Some("occurrence")))
+  private val table = get(
+    FixationTable.of(
+      trialColumns,
+      "ordinal",
+      "x",
+      "y",
+      TimeColumns("onset_ms", "duration_ms", TimestampUnit.Milliseconds),
+      SampleCountRule.PositiveColumn("sample_count")
+    )
   )
-  private val keys = get(
-    FixationKeyReader.trial("participant", "phase", "trial", "item", Some("occurrence"))
+  private val inventoryColumns = get(
+    TrialInventoryColumns.of(
+      trialColumns,
+      Some("item"),
+      Vector("display_kind", "image_file", "response").map(
+        AttributeColumn(_, AttributeKind.Text)
+      )
+    )
   )
 
-  private lazy val imported = get(
-    FixationCsv.admit(source.fixations, columns, keys, screen, TimestampUnit.Milliseconds)
+  private lazy val admission = get(
+    FixationCsv.admitInventory(
+      source.fixations,
+      table,
+      get(TrialInventory.read(source.trials, inventoryColumns)),
+      screen
+    )
   )
-  private lazy val ledger = get(
-    FixationEvidence.ledger("fixations.csv", imported, AdmissionDecision.ReviewExclusions)
+  private lazy val imported = admission.fixations
+  private lazy val ledger   = get(
+    FixationEvidence.ledger(
+      "fixations.csv",
+      "trials.csv",
+      admission,
+      AdmissionDecision.ReviewExclusions
+    )
   )
-  private lazy val input = StudyInput(imported.accepted)
+  private lazy val inventory = ledger.inventory.getOrElse(fail("the ledger has no inventory"))
+  private lazy val input     = StudyInput(imported.accepted)
 
   private lazy val plan = get(
     StudyPlan.configure(
@@ -80,7 +112,9 @@ abstract class StudioAcceptance(source: => StudioFixture.Source) extends munit.F
   private lazy val result  = get(work.run)
   private lazy val tallies = work.windowTallies.collect { case (k, Right(t)) => k -> t }.toMap
 
-  private def trialIds(ks: Iterable[TrialKey])    = ks.map(k => (k.participant, k.trial)).toSet
+  private def trialIds(ks: Iterable[TrialKey]) = ks.map(k => (k.participant, k.trial)).toSet
+  private def identities(ts: Iterable[InventoryTrial]) =
+    ts.map(t => (t.identity.participant, t.identity.trial)).toSet
   private def key(id: (String, String)): TrialKey =
     input.trials.rows
       .map(_.key)
@@ -99,36 +133,62 @@ abstract class StudioAcceptance(source: => StudioFixture.Source) extends munit.F
     loop(s.start, Vector.empty)
 
   test("inventory: 960 trials = 937 admitted + 17 quarantined + 6 absent; 11,520 records") {
-    assertEquals(source.inventory.size, 960)
-    assertEquals(imported.sourceRows.size, 11520)
-    val admitted = trialIds(input.trials.rows.map(_.key))
-    // Trials with records but none admitted: quarantined, or every record rejected.
-    val quarantined = trialIds(imported.rejected.flatMap(_.key)) -- admitted
-    assertEquals(admitted.size, 937)
-    assertEquals(quarantined.size, 17)
-    val seen   = trialIds(imported.admitted.map(_.key) ++ imported.rejected.flatMap(_.key))
-    val absent = source.inventory.toSet -- seen
-    assertEquals(absent.size, 6)
-    assertEquals(admitted.size + quarantined.size + absent.size, source.inventory.size)
-    // The importer's own causes. A trial every record of which is rejected
-    // ("no fixations" in the Studio inventory) has no trial-level cause until
-    // the trial inventory (UI-H); its records are row-level rejections.
-    val quarantineCauses = ledger.records
-      .collect {
-        case SourceRecord(
-              _,
-              Disposition.Rejected(_, Some(k), AdmissionReason.Quarantined(_, cause))
-            ) =>
-          (k.participant, k.trial) -> cause.productPrefix
-      }
-      .toMap
-      .values
+    // Read from the ledger alone: the importer joins the inventory.
+    val trials = inventory.trials
+    assertEquals(trials.size, 960)
+    assertEquals(ledger.records.size, 11520)
+    assertEquals(inventory.admitted.size, 937)
+    assertEquals(inventory.quarantined.size, 17)
+    assertEquals(inventory.absent.size, 6)
+    assertEquals(inventory.unlisted, Vector.empty)
+    val byCause = inventory.quarantined
+      .map(_.disposition match
+        case TrialDisposition.Quarantined(cause) => cause.productPrefix
+        case other                               => other.label)
       .groupMapReduce(identity)(_ => 1)(_ + _)
     assertEquals(
-      quarantineCauses,
-      Map("RejectedRecords" -> 2, "Overlap" -> 6, "DuplicateOrdinals" -> 4)
+      byCause,
+      Map("DuplicateOrdinals" -> 4, "no fixations" -> 5, "Overlap" -> 6, "RejectedRecords" -> 2)
     )
-    assertEquals((quarantined -- trialIds(ledger.quarantined)).size, 5)
+    assertEquals(identities(inventory.absent), StudioFixture.absent)
+    // Trial by trial, against the fixture's own list (make_fixture.py's
+    // `quarantine`), not only by count.
+    val byTrial = inventory.quarantined.map(t =>
+      (t.identity.participant, t.identity.trial) -> (t.disposition match
+        case TrialDisposition.NoFixations => StudioFixture.Cause.NoFixations
+        case TrialDisposition.Quarantined(QuarantineCause.RejectedRecords) =>
+          StudioFixture.Cause.RejectedRecords
+        case TrialDisposition.Quarantined(QuarantineCause.DuplicateOrdinals) =>
+          StudioFixture.Cause.DuplicateOrdinals
+        case TrialDisposition.Quarantined(QuarantineCause.Overlap(_, _, _)) =>
+          StudioFixture.Cause.Overlap
+        case other => fail(s"unexpected disposition $other"))
+    )
+    assertEquals(byTrial.toMap, StudioFixture.quarantined)
+    assertEquals(byTrial.size, 17)
+    // Every record of a quarantined trial is rejected, and only those are.
+    val quarantinedRecords = inventory.quarantined.map(_.records.size).sum
+    assertEquals(ledger.rejected.size, quarantinedRecords)
+    assertEquals(ledger.admitted.size, 11520 - quarantinedRecords)
+    rejectedRecords.foreach(expected => assertEquals(quarantinedRecords, expected))
+    assertEquals(input.trials.rows.size, 937)
+  }
+
+  test("inventory attributes are typed values of the admitted trial") {
+    val query      = key(StudioFixture.focusQuery)
+    val attributes = inventory.attributes(query).getOrElse(fail("no attributes"))
+    assertEquals(attributes.get("response"), Some(AttributeValue.Text("Remembered")))
+    assertEquals(
+      attributes.get("display_kind"),
+      Some(AttributeValue.Text("blank+fixation-cross"))
+    )
+    assertEquals(attributes.get("image_file"), Some(AttributeValue.Blank))
+    assertEquals(admission.attributes(query), Some(attributes))
+    val matched = inventory.attributes(key(StudioFixture.focusMatched))
+    assertEquals(
+      matched.flatMap(_.get("image_file")),
+      Some(AttributeValue.Text("beach-042.png"))
+    )
   }
 
   test("window: 543 records fall outside the image, in 409 trials, none off the screen") {
@@ -151,7 +211,7 @@ abstract class StudioAcceptance(source: => StudioFixture.Source) extends munit.F
   }
 
   test("queries: 480 = 454 contributing + 3 failed + 9 without a match + 14 not admitted") {
-    val requested   = source.inventory.count(_._2.startsWith("ret_"))
+    val requested   = inventory.trials.count(_.identity.phase == "Retrieval")
     val focal       = work.focalIndices.map(i => input.trials.rows(i).key)
     val cardinality = get(work.matchedCardinality)
     assertEquals(cardinality.multiple, Vector.empty)

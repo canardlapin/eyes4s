@@ -79,7 +79,7 @@ the eighteen JSON codecs (study plan, study input, admission ledger, study resul
 binocular recording, recording input, temporal input, timeline, manifest, the four score and
 difference schemas, the recording and temporal result archives, and the conventional
 `eyes4s.recording-plan@1` and `eyes4s.temporal-study@1` plan schemas), plus a pinned v2 document
-of the study plan and admission ledger, with a test that fails if a pinned schema version is
+of the study plan and admission ledger and a pinned v3 document of the admission ledger, with a test that fails if a pinned schema version is
 missing, and the packed recording,
 whose decoder also takes its payloads. The schema registry described under
 [Evidence](#evidence) checks the same fixtures on the JVM.
@@ -105,7 +105,11 @@ meaning, in every later release. The study plan and the admission ledger have a 
 `admission-ledger-v2.json`); their codecs read versions 1 and 2, decode a version-1 document with
 its version-1 meaning (the whole frame, scales in frame units, and the admission policy that
 quarantines off-screen records), and write each value under the earliest version that expresses it,
-so a version-1 document still re-encodes to its own bytes. For every other schema, version 1 is the
+so a version-1 document still re-encodes to its own bytes. The admission ledger also has a version
+3 (`eyes4s.admission-ledger@3`, declared in `InventoryDefinitions` and pinned by
+`admission-ledger-v3.json`), which adds the trial inventory; its codec reads all three versions,
+writes a ledger without an inventory as version 1 or 2 exactly as before, and refuses a cause in a
+document older than the version that introduced it. For every other schema, version 1 is the
 first version, so every
 current decoder reads exactly version 1; there is no version 0 or earlier variant to keep or
 migrate from, and `DefinitionId` refuses a version below 1. Decoding never migrates. A migration

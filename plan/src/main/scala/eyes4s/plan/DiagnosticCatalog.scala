@@ -487,7 +487,29 @@ object DiagnosticCatalog:
     "UnmappableFixation",
     "CorrectionConflict",
     "ItemConflict",
-    "OccurrenceConflict"
+    "OccurrenceConflict",
+    "NotInInventory",
+    "InventoryItemConflict"
+  )
+  val inventory: DiagnosticFamily = error("inventory")(
+    "Width",
+    "Field",
+    "Conflict",
+    "DuplicateAttribute",
+    "DuplicateTrial",
+    "RecordOrder",
+    "SharedRecord",
+    "AbsentMismatch",
+    "AttributeRecord",
+    "UnknownRecord",
+    "ForeignRecord",
+    "UnclaimedRecord",
+    "DispositionMismatch",
+    "ItemMismatch",
+    "NoTrialProjection",
+    "RecordItems",
+    "AttributeNames",
+    "AttributeKindMismatch"
   )
   val admission: DiagnosticFamily = error("admission")(
     "NonPositiveRecord",
@@ -503,7 +525,9 @@ object DiagnosticCatalog:
     "UnadmittedTrial",
     "FixationCount",
     "OutsideFrameRecord",
-    "CorrectionConflict"
+    "CorrectionConflict",
+    "Inventory",
+    "UninventoriedCause"
   )
   val inspection: DiagnosticFamily = error("inspection")(
     "UnknownScale",
@@ -567,6 +591,7 @@ object DiagnosticCatalog:
     preflight,
     admissionReason,
     quarantine,
+    inventory,
     admission,
     inspection
   )

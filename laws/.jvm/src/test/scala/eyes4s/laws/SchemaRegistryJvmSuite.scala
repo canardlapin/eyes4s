@@ -167,6 +167,12 @@ object SchemaRegistry:
       codecLaw(inputs, "admission ledger with policy")
     ),
     Entry(
+      InventoryDefinitions.admissionLedgerV3,
+      Kind.Document,
+      Vector("admission-ledger-v3.json"),
+      codecLaw(inputs, "admission ledger with inventory")
+    ),
+    Entry(
       DefinitionId.recording,
       Kind.Document,
       Vector("recording-standalone-v1.json"),
@@ -644,6 +650,8 @@ private object Decoders:
       case StudyCodecDefinitions.studyV2 => through(StudyCodecs.cosine[Px].codec, document)
       case StudyInputDefinitions.admissionLedgerV2 =>
         through(StudyInputCodecs.study[Px].ledger, document)
+      case InventoryDefinitions.admissionLedgerV3 =>
+        through(StudyInputCodecs.trial[Px].ledger, document)
       case DefinitionId.recording => through(RecordingInputCodecs.recording[Px], document)
       case DefinitionId.binocularRecording =>
         through(RecordingInputCodecs.binocular[Px], document)

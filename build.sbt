@@ -770,7 +770,7 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .jvmSettings(ApiAudit.settings)
   .in(file("io"))
-  .dependsOn(fs2Module, codec)
+  .dependsOn(fs2Module, codec, laws % Test)
   .settings(commonSettings)
   .settings(
     name := "eyes4s-io",

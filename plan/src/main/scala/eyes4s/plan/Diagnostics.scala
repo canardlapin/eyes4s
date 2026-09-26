@@ -949,6 +949,112 @@ object Diagnostics:
       case ItemConflict(items) => diagnostic[Nothing](C.quarantine, e, e.message)(names(items))
       case OccurrenceConflict(occurrences) =>
         diagnostic[Nothing](C.quarantine, e, e.message)(ints(occurrences))
+      case NotInInventory(participant, phase, trial, occurrence) =>
+        diagnostic[Nothing](C.quarantine, e, e.message)(
+          name(participant),
+          name(phase),
+          name(trial),
+          int(occurrence)
+        )
+      case InventoryItemConflict(inventory, records) =>
+        diagnostic[Nothing](C.quarantine, e, e.message)(name(inventory), names(records))
+
+  def inventory(e: InventoryError): Diagnostic[Nothing] =
+    import InventoryError.*
+    def record(number: Int) = Vector(Locus.Record(number))
+    e match
+      case Width(number, expected, actual) =>
+        diagnostic(C.inventory, e, e.message, record(number))(
+          int(number),
+          int(expected),
+          int(actual)
+        )
+      case Field(number, column, value, requirement) =>
+        diagnostic(C.inventory, e, e.message, record(number))(
+          int(number),
+          name(column),
+          text(value),
+          text(requirement)
+        )
+      case Conflict(participant, phase, trial, numbers, columns) =>
+        diagnostic(C.inventory, e, e.message, Vector(Locus.Records(numbers)))(
+          name(participant),
+          name(phase),
+          name(trial),
+          ints(numbers),
+          names(columns)
+        )
+      case DuplicateAttribute(values) =>
+        diagnostic[Nothing](C.inventory, e, e.message)(names(values))
+      case DuplicateTrial(participant, phase, trial, occurrence) =>
+        diagnostic[Nothing](C.inventory, e, e.message)(
+          name(participant),
+          name(phase),
+          name(trial),
+          int(occurrence)
+        )
+      case RecordOrder(trial, numbers) =>
+        diagnostic(C.inventory, e, e.message, Vector(Locus.Records(numbers)))(
+          name(trial),
+          ints(numbers)
+        )
+      case SharedRecord(number, trials) =>
+        diagnostic(C.inventory, e, e.message, record(number))(int(number), names(trials))
+      case AbsentMismatch(trial, disposition, numbers) =>
+        diagnostic(C.inventory, e, e.message, Vector(Locus.Records(numbers)))(
+          name(trial),
+          token(disposition),
+          ints(numbers)
+        )
+      case AttributeRecord(number) =>
+        diagnostic(C.inventory, e, e.message, record(number))(int(number))
+      case UnknownRecord(trial, number) =>
+        diagnostic(C.inventory, e, e.message, record(number))(name(trial), int(number))
+      case ForeignRecord(trial, number, found) =>
+        diagnostic(C.inventory, e, e.message, record(number))(
+          name(trial),
+          int(number),
+          name(found)
+        )
+      case UnclaimedRecord(number, trial) =>
+        diagnostic(C.inventory, e, e.message, record(number))(int(number), name(trial))
+      case DispositionMismatch(trial, disposition, number, found) =>
+        diagnostic(C.inventory, e, e.message, record(number))(
+          name(trial),
+          token(disposition),
+          int(number),
+          text(found)
+        )
+      case ItemMismatch(trial, number, expected, actual) =>
+        diagnostic(C.inventory, e, e.message, record(number))(
+          name(trial),
+          int(number),
+          name(expected),
+          name(actual)
+        )
+      case NoTrialProjection(layout) =>
+        diagnostic(C.inventory, e, e.message, Vector(Locus.Definition(layout)))(
+          definition(layout)
+        )
+      case RecordItems(trial, disposition, items) =>
+        diagnostic[Nothing](C.inventory, e, e.message)(
+          name(trial),
+          token(disposition),
+          names(items)
+        )
+      case AttributeNames(owner, declared, found) =>
+        diagnostic[Nothing](C.inventory, e, e.message)(
+          name(owner),
+          names(declared),
+          names(found)
+        )
+      case AttributeKindMismatch(owner, attribute, declared, found) =>
+        diagnostic[Nothing](C.inventory, e, e.message)(
+          name(owner),
+          name(attribute),
+          token(declared),
+          token(found)
+        )
 
   def admission(e: AdmissionError): Diagnostic[Nothing] =
     import AdmissionError.*
@@ -1003,6 +1109,12 @@ object Diagnostics:
           int(first),
           int(second)
         )
+      case Inventory(underlying) =>
+        val inner = inventory(underlying)
+        diagnostic(C.admission, e, e.message, inner.subject)(cause(inner))
+      case UninventoriedCause(number, value) =>
+        val inner = quarantine(value)
+        diagnostic(C.admission, e, e.message, record(number))(int(number), cause(inner))
 
   /** A ledger refusal resolved against its input: the admission error's
     * code and operands, with the trials it concerns named by key and linked
@@ -1258,5 +1370,7 @@ object Diagnose:
     instance(C.quarantine)(Diagnostics.quarantine)
   given admission: Diagnose[AdmissionError, Nothing] =
     instance(C.admission)(Diagnostics.admission)
+  given inventory: Diagnose[InventoryError, Nothing] =
+    instance(C.inventory)(Diagnostics.inventory)
   given inspection[K]: Diagnose[InspectionError[K], K] =
     instance(C.inspection)(Diagnostics.inspection[K])

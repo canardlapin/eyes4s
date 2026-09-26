@@ -80,19 +80,54 @@ final class StudyInputCodec[K, U <: Unit2D](
   val ledgerSchemaV2: DefinitionId =
     DefinitionId.builtIn(ledgerSchema.name, ledgerSchema.version + 1)
 
-  /** Reads both ledger versions; a version-1 ledger is an admission under
-    * `AdmissionPolicy.version1`. A ledger is written as version 1 whenever it
-    * means exactly that, so a version-1 ledger re-encodes to its own bytes.
+  /** The ledger schema that also records a trial inventory. */
+  val ledgerSchemaV3: DefinitionId =
+    DefinitionId.builtIn(ledgerSchema.name, ledgerSchema.version + 2)
+
+  /** Reads all three ledger versions; a version-1 ledger is an admission
+    * under `AdmissionPolicy.version1`, and only a version-3 ledger carries a
+    * trial inventory. A ledger is written under the earliest version that
+    * expresses it (`AdmissionLedger.version`), so a version-1 or version-2
+    * ledger re-encodes to its own bytes.
     */
   val ledger: VersionedCodec[AdmissionLedger[K]] =
     VersionedCodec
-      .versions[AdmissionLedger[K]]("admission ledger", ledgerSchema, ledgerSchema.version + 1)(
+      .versions[AdmissionLedger[K]]("admission ledger", ledgerSchema, ledgerSchema.version + 2)(
         value =>
           writeLedger(value).flatMap(json =>
-            if value.isVersion1 then Right(ledgerSchema -> json)
-            else writePolicy(value).map(policy => ledgerSchemaV2 -> Wire.append(json, policy))
+            value.version match
+              case 1 => Right(ledgerSchema -> json)
+              case 2 =>
+                writePolicy(value).map(policy => ledgerSchemaV2 -> Wire.append(json, policy))
+              case _ =>
+                for
+                  policy    <- writePolicy(value)
+                  inventory <- value.inventory
+                    .toRight(
+                      CodecError.Unsupported(
+                        "inventory",
+                        "only a ledger with a trial inventory is written as version 3"
+                      )
+                    )
+                    .flatMap(inventory =>
+                      trialIdentity
+                        .toRight(noTrialProjection)
+                        .flatMap(_ => InventoryWire.write(inventory))
+                        .left
+                        .map(Wire.at("inventory"))
+                    )
+                yield ledgerSchemaV3 -> Wire.append(
+                  Wire.append(json, policy),
+                  Json.obj("inventory" -> inventory)
+                )
           )
-      )((version, json) => readLedger(json, version == ledgerSchemaV2))
+      )((version, json) => readLedger(json, version.version - ledgerSchema.version + 1))
+
+  /** A trial's identity under this layout, when the layout names a trial. */
+  private val trialIdentity: Option[K => TrialIdentity] = TrialIdentity.projection(layout)
+
+  private def noTrialProjection: CodecError =
+    CodecError.Admission(AdmissionError.Inventory(InventoryError.NoTrialProjection(layout.id)))
 
   private def rows(table: DocumentIdentities): VersionedCodec[Trials[K, Unit, Scanpath[U]]] =
     VersionedCodec.trials(
@@ -519,7 +554,7 @@ final class StudyInputCodec[K, U <: Unit2D](
 
   private def readLedger(
       json: Json,
-      withPolicy: Boolean
+      version: Int
   ): Either[CodecError, AdmissionLedger[K]] = for
     _      <- Wire.requireId(json, "keySchema", keys.schema)
     source <- Wire.field[Json](json, "source")
@@ -536,21 +571,50 @@ final class StudyInputCodec[K, U <: Unit2D](
       .toRight(CodecError.Field("outcome", json, s"unknown admission outcome $name"))
     entries <- Wire.field[Vector[Json]](json, "records")
     records <- entries.zipWithIndex.traverse { case (entry, index) =>
-      readRecord(entry, withPolicy).left.map(Wire.at(s"records[$index]"))
+      readRecord(entry, version).left.map(Wire.at(s"records[$index]"))
     }
     admission <-
-      if withPolicy then readPolicy(json)
+      if version >= 2 then readPolicy(json)
       else Right(AdmissionPolicy.version1[K] -> Vector.empty[OutsideFrame])
-    ledger <- AdmissionLedger
-      .of(SourceRef(label, ref), header, records, outcome, admission._1, admission._2)
-      .left
-      .map(CodecError.Admission.apply)
+    ledger <-
+      if version < 3 then
+        AdmissionLedger
+          .of(SourceRef(label, ref), header, records, outcome, admission._1, admission._2)
+          .left
+          .map(CodecError.Admission.apply)
+      else
+        // A version-3 ledger is exactly one with an inventory.
+        for
+          body <- Wire.field[Json](json, "inventory")
+          _    <- Either.cond(
+            !body.isNull,
+            (),
+            CodecError
+              .Field("inventory", json, "a version-3 ledger carries its trial inventory")
+          )
+          project   <- trialIdentity.toRight(noTrialProjection)
+          inventory <- InventoryWire.read(body).left.map(Wire.at("inventory"))
+          joined    <- AdmissionLedger
+            .inventoried(
+              SourceRef(label, ref),
+              header,
+              records,
+              outcome,
+              admission._1,
+              admission._2,
+              inventory,
+              project,
+              layout.stimulus(_)
+            )
+            .left
+            .map(CodecError.Admission.apply)
+        yield joined
     _ <- ledger.checkCorrections(layout.participant(_)).left.map(CodecError.Admission.apply)
   yield ledger
 
   private def readRecord(
       json: Json,
-      version2: Boolean
+      version: Int
   ): Either[CodecError, SourceRecord[K]] = for
     number      <- Wire.field[Int](json, "record")
     kind        <- Wire.field[String](json, "kind")
@@ -567,7 +631,7 @@ final class StudyInputCodec[K, U <: Unit2D](
           key     <- if keyJson.isNull then Right(None) else keys.decode(keyJson).map(Some(_))
           reason  <- Wire
             .field[Json](json, "reason")
-            .flatMap(StudyInputCodec.readReason(_, version2))
+            .flatMap(StudyInputCodec.readReason(_, version))
         yield Disposition.Rejected(raw, key, reason)
       case other => Left(CodecError.Field("kind", json, s"unknown disposition $other"))
   yield SourceRecord(number, disposition)
@@ -616,63 +680,79 @@ private[codec] object StudyInputCodec:
       Json.obj(
         "kind"    -> Json.fromString("quarantined"),
         "records" -> Json.arr(records.map(Json.fromInt)*),
-        "cause"   -> (cause match
-          case QuarantineCause.RejectedRecords =>
-            Json.obj("kind" -> Json.fromString("rejectedRecords"))
-          case QuarantineCause.DuplicateOrdinals =>
-            Json.obj("kind" -> Json.fromString("duplicateOrdinals"))
-          case QuarantineCause.Overlap(index, previous, current) =>
-            Json.obj(
-              "kind"     -> Json.fromString("overlap"),
-              "index"    -> Json.fromInt(index),
-              "previous" -> Json.fromString(previous),
-              "current"  -> Json.fromString(current)
-            )
-          case QuarantineCause.NoFixations =>
-            Json.obj("kind" -> Json.fromString("noFixations"))
-          case QuarantineCause.WrongClock(index, expected, actual) =>
-            Json.obj(
-              "kind"     -> Json.fromString("wrongClock"),
-              "index"    -> Json.fromInt(index),
-              "expected" -> Json.fromString(expected),
-              "actual"   -> Json.fromString(actual)
-            )
-          case QuarantineCause.InvalidTransition(index, reason) =>
-            Json.obj(
-              "kind"   -> Json.fromString("invalidTransition"),
-              "index"  -> Json.fromInt(index),
-              "reason" -> Json.fromString(reason)
-            )
-          case QuarantineCause.InvalidExtent(reason) =>
-            Json.obj(
-              "kind"   -> Json.fromString("invalidExtent"),
-              "reason" -> Json.fromString(reason)
-            )
-          case QuarantineCause.UnmappableFixation(index, from, to, x, y) =>
-            Json.obj(
-              "kind"  -> Json.fromString("unmappableFixation"),
-              "index" -> Json.fromInt(index),
-              "from"  -> Json.fromString(from.name),
-              "to"    -> Json.fromString(to.name),
-              "x"     -> Json.fromDoubleOrNull(x),
-              "y"     -> Json.fromDoubleOrNull(y)
-            )
-          case QuarantineCause.CorrectionConflict(first, second) =>
-            Json.obj(
-              "kind"   -> Json.fromString("correctionConflict"),
-              "first"  -> Json.fromInt(first),
-              "second" -> Json.fromInt(second)
-            )
-          case QuarantineCause.ItemConflict(items) =>
-            Json.obj(
-              "kind"  -> Json.fromString("itemConflict"),
-              "items" -> Json.arr(items.map(Json.fromString)*)
-            )
-          case QuarantineCause.OccurrenceConflict(occurrences) =>
-            Json.obj(
-              "kind"        -> Json.fromString("occurrenceConflict"),
-              "occurrences" -> Json.arr(occurrences.map(Json.fromInt)*)
-            ))
+        "cause"   -> StudyInputCodec.cause(cause)
+      )
+
+  def cause(value: QuarantineCause): Json = value match
+    case QuarantineCause.RejectedRecords =>
+      Json.obj("kind" -> Json.fromString("rejectedRecords"))
+    case QuarantineCause.DuplicateOrdinals =>
+      Json.obj("kind" -> Json.fromString("duplicateOrdinals"))
+    case QuarantineCause.Overlap(index, previous, current) =>
+      Json.obj(
+        "kind"     -> Json.fromString("overlap"),
+        "index"    -> Json.fromInt(index),
+        "previous" -> Json.fromString(previous),
+        "current"  -> Json.fromString(current)
+      )
+    case QuarantineCause.NoFixations =>
+      Json.obj("kind" -> Json.fromString("noFixations"))
+    case QuarantineCause.WrongClock(index, expected, actual) =>
+      Json.obj(
+        "kind"     -> Json.fromString("wrongClock"),
+        "index"    -> Json.fromInt(index),
+        "expected" -> Json.fromString(expected),
+        "actual"   -> Json.fromString(actual)
+      )
+    case QuarantineCause.InvalidTransition(index, reason) =>
+      Json.obj(
+        "kind"   -> Json.fromString("invalidTransition"),
+        "index"  -> Json.fromInt(index),
+        "reason" -> Json.fromString(reason)
+      )
+    case QuarantineCause.InvalidExtent(reason) =>
+      Json.obj(
+        "kind"   -> Json.fromString("invalidExtent"),
+        "reason" -> Json.fromString(reason)
+      )
+    case QuarantineCause.UnmappableFixation(index, from, to, x, y) =>
+      Json.obj(
+        "kind"  -> Json.fromString("unmappableFixation"),
+        "index" -> Json.fromInt(index),
+        "from"  -> Json.fromString(from.name),
+        "to"    -> Json.fromString(to.name),
+        "x"     -> Json.fromDoubleOrNull(x),
+        "y"     -> Json.fromDoubleOrNull(y)
+      )
+    case QuarantineCause.CorrectionConflict(first, second) =>
+      Json.obj(
+        "kind"   -> Json.fromString("correctionConflict"),
+        "first"  -> Json.fromInt(first),
+        "second" -> Json.fromInt(second)
+      )
+    case QuarantineCause.ItemConflict(items) =>
+      Json.obj(
+        "kind"  -> Json.fromString("itemConflict"),
+        "items" -> Json.arr(items.map(Json.fromString)*)
+      )
+    case QuarantineCause.OccurrenceConflict(occurrences) =>
+      Json.obj(
+        "kind"        -> Json.fromString("occurrenceConflict"),
+        "occurrences" -> Json.arr(occurrences.map(Json.fromInt)*)
+      )
+    case QuarantineCause.NotInInventory(participant, phase, trial, occurrence) =>
+      Json.obj(
+        "kind"        -> Json.fromString("notInInventory"),
+        "participant" -> Json.fromString(participant),
+        "phase"       -> Json.fromString(phase),
+        "trial"       -> Json.fromString(trial),
+        "occurrence"  -> Json.fromInt(occurrence)
+      )
+    case QuarantineCause.InventoryItemConflict(inventory, records) =>
+      Json.obj(
+        "kind"      -> Json.fromString("inventoryItemConflict"),
+        "inventory" -> Json.fromString(inventory),
+        "records"   -> Json.arr(records.map(Json.fromString)*)
       )
 
   val offScreenPolicies: Vector[(OffScreenPolicy, String)] = Vector(
@@ -714,18 +794,17 @@ private[codec] object StudyInputCodec:
     DispersionMethod.MedianAbsoluteDeviation -> "medianAbsoluteDeviation"
   )
 
-  /** A reason as a ledger of the given version may name it: a version-1
-    * ledger never names a cause that arrived with version 2.
+  /** A reason as a ledger of the given version may name it: a ledger never
+    * names a cause that arrived with a later version.
     */
-  def readReason(json: Json, version2: Boolean): Either[CodecError, AdmissionReason] =
+  def readReason(json: Json, version: Int): Either[CodecError, AdmissionReason] =
     readReason(json).flatMap {
-      case AdmissionReason.Quarantined(_, cause)
-          if !version2 && !QuarantineCause.isVersion1(cause) =>
+      case AdmissionReason.Quarantined(_, cause) if QuarantineCause.version(cause) > version =>
         Left(
           CodecError.Field(
             "cause",
             json,
-            s"a version-1 ledger cannot name ${cause.productPrefix}"
+            s"a version-$version ledger cannot name ${cause.productPrefix}"
           )
         )
       case reason => Right(reason)
@@ -763,53 +842,68 @@ private[codec] object StudyInputCodec:
         for
           records <- Wire.field[Vector[Int]](json, "records")
           cause   <- Wire.field[Json](json, "cause")
-          kind    <- Wire.field[String](cause, "kind")
-          value   <- kind match
-            case "rejectedRecords"   => Right(QuarantineCause.RejectedRecords)
-            case "duplicateOrdinals" => Right(QuarantineCause.DuplicateOrdinals)
-            case "overlap"           =>
-              for
-                index    <- Wire.field[Int](cause, "index")
-                previous <- Wire.field[String](cause, "previous")
-                current  <- Wire.field[String](cause, "current")
-              yield QuarantineCause.Overlap(index, previous, current)
-            case "noFixations" => Right(QuarantineCause.NoFixations)
-            case "wrongClock"  =>
-              for
-                index    <- Wire.field[Int](cause, "index")
-                expected <- Wire.field[String](cause, "expected")
-                actual   <- Wire.field[String](cause, "actual")
-              yield QuarantineCause.WrongClock(index, expected, actual)
-            case "invalidTransition" =>
-              for
-                index  <- Wire.field[Int](cause, "index")
-                reason <- Wire.field[String](cause, "reason")
-              yield QuarantineCause.InvalidTransition(index, reason)
-            case "invalidExtent" =>
-              Wire.field[String](cause, "reason").map(QuarantineCause.InvalidExtent.apply)
-            case "unmappableFixation" =>
-              for
-                index <- Wire.field[Int](cause, "index")
-                from  <- Wire.field[String](cause, "from")
-                to    <- Wire.field[String](cause, "to")
-                x     <- DomainWire.finite(cause, "x")
-                y     <- DomainWire.finite(cause, "y")
-              yield QuarantineCause.UnmappableFixation(index, FrameId(from), FrameId(to), x, y)
-            case "correctionConflict" =>
-              for
-                first  <- Wire.field[Int](cause, "first")
-                second <- Wire.field[Int](cause, "second")
-              yield QuarantineCause.CorrectionConflict(first, second)
-            case "itemConflict" =>
-              Wire.field[Vector[String]](cause, "items").map(QuarantineCause.ItemConflict.apply)
-            case "occurrenceConflict" =>
-              Wire
-                .field[Vector[Int]](cause, "occurrences")
-                .map(QuarantineCause.OccurrenceConflict.apply)
-            case other =>
-              Left(CodecError.Field("kind", cause, s"unknown quarantine cause $other"))
+          value   <- readCause(cause)
         yield AdmissionReason.Quarantined(records, value)
       case other => Left(CodecError.Field("kind", json, s"unknown admission reason $other"))
+    }
+
+  def readCause(cause: Json): Either[CodecError, QuarantineCause] =
+    Wire.field[String](cause, "kind").flatMap {
+      case "rejectedRecords"   => Right(QuarantineCause.RejectedRecords)
+      case "duplicateOrdinals" => Right(QuarantineCause.DuplicateOrdinals)
+      case "overlap"           =>
+        for
+          index    <- Wire.field[Int](cause, "index")
+          previous <- Wire.field[String](cause, "previous")
+          current  <- Wire.field[String](cause, "current")
+        yield QuarantineCause.Overlap(index, previous, current)
+      case "noFixations" => Right(QuarantineCause.NoFixations)
+      case "wrongClock"  =>
+        for
+          index    <- Wire.field[Int](cause, "index")
+          expected <- Wire.field[String](cause, "expected")
+          actual   <- Wire.field[String](cause, "actual")
+        yield QuarantineCause.WrongClock(index, expected, actual)
+      case "invalidTransition" =>
+        for
+          index  <- Wire.field[Int](cause, "index")
+          reason <- Wire.field[String](cause, "reason")
+        yield QuarantineCause.InvalidTransition(index, reason)
+      case "invalidExtent" =>
+        Wire.field[String](cause, "reason").map(QuarantineCause.InvalidExtent.apply)
+      case "unmappableFixation" =>
+        for
+          index <- Wire.field[Int](cause, "index")
+          from  <- Wire.field[String](cause, "from")
+          to    <- Wire.field[String](cause, "to")
+          x     <- DomainWire.finite(cause, "x")
+          y     <- DomainWire.finite(cause, "y")
+        yield QuarantineCause.UnmappableFixation(index, FrameId(from), FrameId(to), x, y)
+      case "correctionConflict" =>
+        for
+          first  <- Wire.field[Int](cause, "first")
+          second <- Wire.field[Int](cause, "second")
+        yield QuarantineCause.CorrectionConflict(first, second)
+      case "itemConflict" =>
+        Wire.field[Vector[String]](cause, "items").map(QuarantineCause.ItemConflict.apply)
+      case "occurrenceConflict" =>
+        Wire
+          .field[Vector[Int]](cause, "occurrences")
+          .map(QuarantineCause.OccurrenceConflict.apply)
+      case "notInInventory" =>
+        for
+          participant <- Wire.field[String](cause, "participant")
+          phase       <- Wire.field[String](cause, "phase")
+          trial       <- Wire.field[String](cause, "trial")
+          occurrence  <- Wire.field[Int](cause, "occurrence")
+        yield QuarantineCause.NotInInventory(participant, phase, trial, occurrence)
+      case "inventoryItemConflict" =>
+        for
+          inventory <- Wire.field[String](cause, "inventory")
+          records   <- Wire.field[Vector[String]](cause, "records")
+        yield QuarantineCause.InventoryItemConflict(inventory, records)
+      case other =>
+        Left(CodecError.Field("kind", cause, s"unknown quarantine cause $other"))
     }
 
 /** Registered key schemas for input and ledger payloads; lookup reads the
