@@ -54,26 +54,39 @@ object ExecutionEffect:
 
 /** The shown run and the ready notice beside it ("Run 8 ready — Show"), as a
   * pure value. A completion only ever fills `pending`; `shown` changes only
-  * through [[show]], and only to the pending run (S8.8, E2E-08). A notice
-  * whose stamp is no longer requested is withdrawn, so a run the user did
-  * not ask for is never offered.
+  * through [[show]], and only to the pending run (S8.8, E2E-08).
+  *
+  * The shelf keeps its own record of the stamp it was last told to
+  * [[require]] and accepts a notice only for that stamp: a second line of
+  * defence behind [[ExecutionTracker]], so a run the user did not ask for is
+  * never offered. A notice is withdrawn when the requirement changes, and an
+  * older run's notice never replaces a newer one's.
   */
-final case class RunShelf private (shown: Option[RunId], pending: Option[RunReady])
-    derives CanEqual:
+final case class RunShelf private (
+    shown: Option[RunId],
+    pending: Option[RunReady],
+    required: Option[RunStamp]
+) derives CanEqual:
 
   def receive(event: ExecutionEvent): RunShelf = event match
-    case ExecutionEvent.Ready(notice) => copy(pending = Some(notice))
-    case ExecutionEvent.Changed(_)    => this
+    case ExecutionEvent.Ready(notice)
+        if required.contains(notice.stamp) &&
+          pending.forall(_.run.number < notice.run.number) =>
+      copy(pending = Some(notice))
+    case _ => this
 
   /** The requested stamp is now `stamp`. */
-  def require(stamp: RunStamp): RunShelf = copy(pending = pending.filter(_.stamp == stamp))
+  def require(stamp: RunStamp): RunShelf =
+    copy(pending = pending.filter(_.stamp == stamp), required = Some(stamp))
 
   def show(run: RunId): Either[ExecutionError, RunShelf] = pending match
-    case Some(notice) if notice.run == run => Right(RunShelf(Some(run), None))
+    case Some(notice) if notice.run == run => Right(copy(shown = Some(run), pending = None))
     case _ => Left(ExecutionError.NotReady(run, pending.map(_.run)))
 
   def dismiss(run: RunId): RunShelf = copy(pending = pending.filterNot(_.run == run))
 
 object RunShelf:
-  /** The shelf of a document showing `shown`, with nothing ready. */
-  def of(shown: Option[RunId]): RunShelf = RunShelf(shown, None)
+  /** The shelf of a document showing `shown`, with nothing ready and nothing
+    * required yet: it offers no run until [[RunShelf.require]] names a stamp.
+    */
+  def of(shown: Option[RunId]): RunShelf = RunShelf(shown, None, None)

@@ -96,8 +96,11 @@ enum JobPhase derives CanEqual, Codec.AsObject:
   case Failed(diagnostics: Vector[StudioDiagnostic], last: Option[ExecutionProgress])
   case Cancelled(last: Option[ExecutionProgress])
 
-  /** `current` is what was requested when the completion arrived. */
-  case Superseded(current: Option[RunStamp], last: ExecutionProgress)
+  /** `current` is what was requested when the job was superseded: when its
+    * completion arrived, or, with no progress, when the backend accepted a
+    * submission that a newer intent had already replaced.
+    */
+  case Superseded(current: Option[RunStamp], last: Option[ExecutionProgress])
 
   def isTerminal: Boolean = this match
     case Queued | Running(_) | Cancelling(_) => false
@@ -111,7 +114,7 @@ enum JobPhase derives CanEqual, Codec.AsObject:
     case Succeeded(last)     => Some(last)
     case Failed(_, last)     => last
     case Cancelled(last)     => last
-    case Superseded(_, last) => Some(last)
+    case Superseded(_, last) => last
 
 /** One backend job as the service tracks it: the run it produces and the
   * stamp it was submitted with.

@@ -20,12 +20,17 @@ import eyes4s.codec.CanonicalDigest
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.CoreBinding
 import io.circe.syntax.*
-import org.scalacheck.Prop.forAll
 import org.scalacheck.Gen
+import org.scalacheck.Prop.forAll
 
 /** The rules of [[ExecutionTracker]] and [[RunShelf]] over generated
-  * interleavings of submissions, requirement changes, progress, cancel
+  * interleavings of submission intents, backend acceptances (which may
+  * arrive after newer intents), requirement changes, progress, cancel
   * requests, outcomes and Show (ticket S3.1, E2E-07, E2E-08).
+  *
+  * Which completions may be offered is judged by [[ExecutionTrackerSuite.Oracle]],
+  * a model of "the latest intent" computed from the op script alone, never
+  * from the tracker's own `requested` field.
   */
 class ExecutionTrackerSuite extends munit.ScalaCheckSuite:
   import ExecutionTrackerSuite.*
@@ -33,41 +38,32 @@ class ExecutionTrackerSuite extends munit.ScalaCheckSuite:
   override def scalaCheckTestParameters =
     super.scalaCheckTestParameters.withMinSuccessfulTests(300)
 
-  property("a completion is Ready only if its stamp is the requested one (E2E-07)") {
-    forAll(script) { ops =>
-      run(ops).forall { case Transition(before, _, events) =>
-        events.forall {
-          case ExecutionEvent.Ready(n)   => before.requested.contains(n.stamp)
-          case ExecutionEvent.Changed(j) =>
-            j.phase match
-              case JobPhase.Succeeded(_)     => before.requested.contains(j.stamp)
-              case JobPhase.Superseded(c, _) =>
-                !before.requested.contains(j.stamp) && c == before.requested
-              case _ => true
-        }
-      }
-    }
+  property("a run is offered exactly when the script's latest intent says so (E2E-07)") {
+    forAll(script)(ops => run(ops).forall(s => s.readies == s.expected))
+  }
+
+  property("the requested stamp is the script's latest intent") {
+    forAll(script)(ops =>
+      run(ops).forall(s => s.world.tracker.requestedStamp == s.oracle.latest)
+    )
   }
 
   property("every Succeeded is followed by exactly its Ready, and nothing else is Ready") {
     forAll(script) { ops =>
-      run(ops).forall { t =>
-        val succeeded = t.events.collect {
+      run(ops).forall { s =>
+        val succeeded = s.events.collect {
           case ExecutionEvent.Changed(j) if j.phase.isInstanceOf[JobPhase.Succeeded] =>
             RunReady(j.id, j.run, j.stamp)
         }
-        val ready = t.events.collect { case ExecutionEvent.Ready(n) => n }
-        succeeded == ready && (ready.isEmpty || t.events.last == ExecutionEvent.Ready(
-          ready.head
-        ))
+        succeeded == s.readies &&
+        s.readies.headOption.forall(n => s.events.lastOption.contains(ExecutionEvent.Ready(n)))
       }
     }
   }
 
   property("done units and steps never move back along a job") {
     forAll(script) { ops =>
-      val reports = changes(ops).groupBy(_.id).values
-      reports.forall { js =>
+      changes(ops).groupBy(_.id).values.forall { js =>
         val seen = js.flatMap(_.phase.lastReport)
         seen
           .zip(seen.drop(1))
@@ -76,7 +72,7 @@ class ExecutionTrackerSuite extends munit.ScalaCheckSuite:
     }
   }
 
-  property("a terminal phase absorbs, and Cancelling never runs again") {
+  property("a terminal phase absorbs, and Cancelling never runs or succeeds") {
     forAll(script) { ops =>
       changes(ops).groupBy(_.id).values.forall { js =>
         val phases   = js.map(_.phase)
@@ -84,8 +80,8 @@ class ExecutionTrackerSuite extends munit.ScalaCheckSuite:
         val cancel   = phases.indexWhere(_.isInstanceOf[JobPhase.Cancelling])
         (terminal < 0 || terminal == phases.size - 1) &&
         (cancel < 0 || phases.drop(cancel).forall {
-          case JobPhase.Running(_) | JobPhase.Queued => false
-          case _                                     => true
+          case JobPhase.Running(_) | JobPhase.Queued | JobPhase.Succeeded(_) => false
+          case _                                                             => true
         })
       }
     }
@@ -99,42 +95,103 @@ class ExecutionTrackerSuite extends munit.ScalaCheckSuite:
     }
   }
 
-  property("the shown run changes only by Show, and only to a run that was Ready") {
+  property("live jobs are kept; settled ones only the latest ten per revision") {
+    forAll(script) { ops =>
+      run(ops).forall { s =>
+        val jobs    = s.world.tracker.jobs
+        val settled = jobs.filter(_.phase.isTerminal).groupBy(_.stamp.revision).values
+        settled.forall(_.size <= ExecutionTracker.RetainedPerRevision) &&
+        s.oracle.jobs
+          .collect { case (id, j) if j.live => JobId(id) }
+          .forall(id => jobs.exists(_.id == id))
+      }
+    }
+  }
+
+  property("the shown run changes only by Show, to a run the oracle offered") {
     forAll(script) { ops =>
       val start   = RunShelf.of(Some(RunId(7)))
-      val ready   = scala.collection.mutable.Set.empty[RunId]
-      val (_, ok) = run(ops).zip(ops).foldLeft((start, true)) { case ((shelf, ok), (t, op)) =>
-        val received = t.events.foldLeft(shelf)(_.receive(_))
-        t.events.foreach { case ExecutionEvent.Ready(n) => ready += n.run; case _ => () }
-        val kept = ok && received.shown == shelf.shown
-        op match
-          case Op.Show(i) =>
-            val candidate = t.after.jobs.lift(i % (t.after.jobs.size max 1)).map(_.run)
-            candidate.fold((received, kept)) { r =>
-              received.show(r) match
-                case Right(next) => (next, kept && next.shown.contains(r) && ready.contains(r))
-                case Left(_)     => (received, kept)
-            }
-          case Op.Require(s) => (received.require(stamps(s)), kept)
+      val (_, ok) = run(ops).zip(ops).foldLeft((start, true)) { case ((shelf, ok), (s, op)) =>
+        val received     = s.events.foldLeft(shelf)(_.receive(_))
+        val kept         = ok && received.shown == shelf.shown
+        val (next, fine) = op match
+          case Op.Show(i) if s.oracle.created > 0 =>
+            val r = runOf(i % s.oracle.created + 1)
+            received.show(r) match
+              case Right(shown) =>
+                (shown, kept && shown.shown.contains(r) && s.oracle.offered.contains(r))
+              case Left(_) => (received, kept)
+          case Op.Intend(k)  => (received.require(stamps(k)), kept)
+          case Op.Require(k) => (received.require(stamps(k)), kept)
           case _             => (received, kept)
+        (next, fine && next.pending.forall(p => s.oracle.latest.contains(p.stamp)))
       }
       ok
     }
   }
 
-  property("a superseded run is never offered or shown") {
-    forAll(script) { ops =>
-      val transitions = run(ops)
-      val superseded  = transitions
-        .flatMap(_.events)
-        .collect {
-          case ExecutionEvent.Changed(j) if j.phase.isInstanceOf[JobPhase.Superseded] => j.run
-        }
-        .toSet
-      val offered =
-        transitions.flatMap(_.events).collect { case ExecutionEvent.Ready(n) => n.run }
-      offered.forall(r => !superseded.contains(r))
-    }
+  test("a submission accepted after a newer intent is Superseded from the start") {
+    val (intended, generation) = ExecutionTracker.empty.intend(stamps(1))
+    val required               = intended.require(stamps(2))
+    val status                 = JobStatus(JobId(1), RunId(8), rev5, r3, JobState.Queued)
+    required.track(status, stamps(1), generation) match
+      case Right((after, events, job)) =>
+        assertEquals(job.phase, JobPhase.Superseded(Some(stamps(2)), None))
+        assertEquals(events, Vector(ExecutionEvent.Changed(job)))
+        assertEquals(after.requestedStamp, Some(stamps(2)))
+      case Left(e) => fail(e.message)
+  }
+
+  test("of twelve settled rev 5 jobs the latest ten are kept, with every live one") {
+    def settledJob(t: ExecutionTracker, id: Int): ExecutionTracker =
+      val (intended, g) = t.intend(stamps(1))
+      val status        = JobStatus(JobId(id), RunId(id + 7), rev5, r3, JobState.Queued)
+      val outcome       = JobOutcome.Cancelled(JobId(id), RunId(id + 7), None)
+      (for
+        tracked <- intended.track(status, stamps(1), g)
+        settled <- tracked._1.observe(JobId(id), JobEvent.Finished(outcome))
+      yield settled._1).fold(e => fail(e.message), identity)
+    val many          = (1 to 12).foldLeft(ExecutionTracker.empty)(settledJob)
+    val (withLive, g) = many.intend(stamps(0))
+    val live          = JobStatus(JobId(13), RunId(20), rev4, r3, JobState.Queued)
+    val after         = withLive.track(live, stamps(0), g).fold(e => fail(e.message), _._1)
+    assertEquals(after.jobs.map(_.id.number), (3 to 13).toVector)
+    assertEquals(
+      after.job(JobId(1)).left.map(_.code),
+      Left("studio-execution.unknown-job")
+    )
+  }
+
+  test("a job being cancelled that completes is Cancelled, not Ready") {
+    val (intended, generation) = ExecutionTracker.empty.intend(stamps(1))
+    val status                 = JobStatus(JobId(1), RunId(8), rev5, r3, JobState.Queued)
+    val last   = report(JobId(1), RunId(8), 4L, Total, ProgressTotal.Exact(Total))
+    val result =
+      for
+        tracked   <- intended.track(status, stamps(1), generation)
+        cancelled <- tracked._1.cancelling(JobId(1))
+        settled   <- cancelled._1.observe(
+          JobId(1),
+          JobEvent.Finished(JobOutcome.Completed(JobId(1), RunId(8), last))
+        )
+      yield (settled._2, settled._3.phase)
+    result match
+      case Right((events, phase)) =>
+        assert(phase.isInstanceOf[JobPhase.Cancelled], phase)
+        assert(!events.exists(_.isInstanceOf[ExecutionEvent.Ready]), events)
+      case Left(e) => fail(e.message)
+  }
+
+  test("the shelf refuses a notice it did not require, and keeps the newer one") {
+    val older = RunReady(JobId(1), RunId(8), stamps(1))
+    val newer = RunReady(JobId(2), RunId(9), stamps(1))
+    val shelf = RunShelf.of(Some(RunId(7)))
+    assertEquals(shelf.receive(ExecutionEvent.Ready(newer)).pending, None)
+    val wanting = shelf.require(stamps(1))
+    val other   = RunReady(JobId(3), RunId(10), stamps(2))
+    assertEquals(wanting.receive(ExecutionEvent.Ready(other)).pending, None)
+    val both = wanting.receive(ExecutionEvent.Ready(newer)).receive(ExecutionEvent.Ready(older))
+    assertEquals(both.pending, Some(newer))
   }
 
   test("an unknown total reads as counting") {
@@ -148,9 +205,10 @@ class ExecutionTrackerSuite extends munit.ScalaCheckSuite:
 
   test("tracking the same job twice is refused, naming it") {
     val status = JobStatus(JobId(1), RunId(8), rev5, r3, JobState.Queued)
-    val once   = ExecutionTracker.empty.track(status, stamps(1)).map(_._1)
+    val (t, g) = ExecutionTracker.empty.intend(stamps(1))
+    val once   = t.track(status, stamps(1), g).map(_._1)
     assertEquals(
-      once.flatMap(_.track(status, stamps(1))).left.map(_.code),
+      once.flatMap(_.track(status, stamps(1), g)).left.map(_.code),
       Left("studio-execution.already-tracked")
     )
     assertEquals(
@@ -164,7 +222,7 @@ class ExecutionTrackerSuite extends munit.ScalaCheckSuite:
       JobId(1),
       RunId(8),
       stamps(2),
-      JobPhase.Superseded(Some(stamps(1)), progress0)
+      JobPhase.Superseded(Some(stamps(1)), Some(progress0))
     )
     val evts = Vector(
       ExecutionEvent.Changed(job),
@@ -218,7 +276,11 @@ object ExecutionTrackerSuite:
     ExecutionProgress(report(JobId(1), RunId(8), 1L, 21400L, ProgressTotal.Exact(Total)))
 
   enum Op:
-    case Track(stamp: Int)
+    /** A submission is sent: its intent is recorded, the backend has not answered. */
+    case Intend(stamp: Int)
+
+    /** The backend answers one in-flight submission, not necessarily the oldest. */
+    case Accept(submission: Int)
     case Require(stamp: Int)
     case Advance(job: Int, step: Long, pairs: Long)
     case Complete(job: Int, step: Long, pairs: Long)
@@ -228,15 +290,16 @@ object ExecutionTrackerSuite:
     case Show(job: Int)
 
   private val stampIx = Gen.choose(0, stamps.size - 1)
-  private val jobIx   = Gen.choose(0, 5)
+  private val jobIx   = Gen.choose(0, 40)
   private val step    = Gen.choose(0L, 30L)
   private val pairs   = Gen.choose(0L, Total)
 
   val op: Gen[Op] = Gen.frequency(
-    3 -> stampIx.map(Op.Track(_)),
+    4 -> stampIx.map(Op.Intend(_)),
+    4 -> Gen.choose(0, 3).map(Op.Accept(_)),
     2 -> stampIx.map(Op.Require(_)),
-    8 -> Gen.zip(jobIx, step, pairs).map(Op.Advance(_, _, _)),
-    2 -> Gen.zip(jobIx, step, pairs).map(Op.Complete(_, _, _)),
+    6 -> Gen.zip(jobIx, step, pairs).map(Op.Advance(_, _, _)),
+    3 -> Gen.zip(jobIx, step, pairs).map(Op.Complete(_, _, _)),
     2 -> jobIx.map(Op.CancelRequest(_)),
     1 -> Gen.zip(jobIx, step, pairs).map(Op.CancelledOutcome(_, _, _)),
     1 -> Gen.zip(jobIx, Gen.oneOf(true, false)).map(Op.FailedOutcome(_, _)),
@@ -244,12 +307,82 @@ object ExecutionTrackerSuite:
   )
 
   val script: Gen[Vector[Op]] =
-    Gen.choose(1, 60).flatMap(n => Gen.listOfN(n, op).map(_.toVector))
+    Gen.choose(1, 120).flatMap(n => Gen.listOfN(n, op).map(_.toVector))
 
-  final case class Transition(
-      before: ExecutionTracker,
-      after: ExecutionTracker,
-      events: Vector[ExecutionEvent]
+  def runOf(job: Int): RunId = RunId(job + 7)
+
+  // -------------------------------------------------------------------------
+  // The oracle: the script's own account of intents and job lives
+  // -------------------------------------------------------------------------
+
+  final case class OracleJob(stamp: RunStamp, live: Boolean, cancelling: Boolean)
+
+  /** `epoch` counts intents; a submission is accepted only if no intent came
+    * between it and the backend's answer. A completion is offered only for a
+    * live, uncancelled job whose stamp is the latest intent's.
+    */
+  final case class Oracle(
+      epoch: Int,
+      latest: Option[RunStamp],
+      inFlight: Vector[(Int, Int)],
+      jobs: Map[Int, OracleJob],
+      created: Int,
+      offered: Set[RunId]
+  ):
+    private def job(i: Int): Option[(Int, OracleJob)] =
+      Option.when(created > 0)(i % created + 1).flatMap(id => jobs.get(id).map(id -> _))
+
+    private def settle(i: Int): Oracle = job(i).fold(this) { (id, j) =>
+      copy(jobs = jobs.updated(id, j.copy(live = false)))
+    }
+
+    /** The next oracle and the notices this op must publish. */
+    def step(op: Op): (Oracle, Vector[RunReady]) = op match
+      case Op.Intend(k) =>
+        val next = epoch + 1
+        (
+          copy(epoch = next, latest = Some(stamps(k)), inFlight = inFlight :+ (k -> next)),
+          Vector.empty
+        )
+      case Op.Require(k) =>
+        (copy(epoch = epoch + 1, latest = Some(stamps(k))), Vector.empty)
+      case Op.Accept(i) if inFlight.nonEmpty =>
+        val at         = i % inFlight.size
+        val (k, since) = inFlight(at)
+        val id         = created + 1
+        val next       = copy(
+          inFlight = inFlight.patch(at, Nil, 1),
+          jobs = jobs.updated(id, OracleJob(stamps(k), since == epoch, false)),
+          created = id
+        )
+        (next, Vector.empty)
+      case Op.Complete(i, _, _) =>
+        job(i) match
+          case Some((id, j)) if j.live && !j.cancelling && latest.contains(j.stamp) =>
+            val notice = RunReady(JobId(id), runOf(id), j.stamp)
+            (settle(i).copy(offered = offered + notice.run), Vector(notice))
+          case _ => (settle(i), Vector.empty)
+      case Op.CancelledOutcome(i, _, _) => (settle(i), Vector.empty)
+      case Op.FailedOutcome(i, _)       => (settle(i), Vector.empty)
+      case Op.CancelRequest(i)          =>
+        job(i) match
+          case Some((id, j)) if j.live =>
+            (copy(jobs = jobs.updated(id, j.copy(cancelling = true))), Vector.empty)
+          case _ => (this, Vector.empty)
+      case _ => (this, Vector.empty)
+
+  object Oracle:
+    val empty: Oracle = Oracle(0, None, Vector.empty, Map.empty, 0, Set.empty)
+
+  // -------------------------------------------------------------------------
+  // The world: the tracker driven as ExecutionService drives it
+  // -------------------------------------------------------------------------
+
+  /** The tracker and the submissions whose backend answer is pending. */
+  final case class World(
+      tracker: ExecutionTracker,
+      inFlight: Vector[(Int, Long)],
+      created: Int
   )
 
   private val diagnostic = StudioDiagnostic(
@@ -260,78 +393,94 @@ object ExecutionTrackerSuite:
     "no fixation in the window"
   )
 
-  /** Apply one op; ops naming a job when none is tracked do nothing. */
-  def apply(t: ExecutionTracker, op: Op): Transition =
-    def pick(i: Int) = t.jobs.lift(i % (t.jobs.size max 1))
-    def on(
-        i: Int
-    )(f: ExecutionJob => Either[ExecutionError, ExecutionTracker.Step[ExecutionJob]]) =
-      pick(i)
-        .flatMap(j => f(j).toOption)
-        .fold(Transition(t, t, Vector.empty))((n, e, _) => Transition(t, n, e))
+  /** Apply one op; the events it published. Ops naming no job do nothing. */
+  def apply(w: World, op: Op): (World, Vector[ExecutionEvent]) =
+    val t = w.tracker
+    def on(i: Int)(
+        f: JobId => Either[ExecutionError, ExecutionTracker.Step[ExecutionJob]]
+    ): (World, Vector[ExecutionEvent]) =
+      Option
+        .when(w.created > 0)(JobId(i % w.created + 1))
+        .flatMap(id => f(id).toOption)
+        .fold((w, Vector.empty))((n, e, _) => (w.copy(tracker = n), e))
+    def at(id: JobId, st: Long, p: Long) =
+      report(id, runOf(id.number), st, p, ProgressTotal.Exact(Total))
     op match
-      case Op.Track(s) =>
-        val n      = t.jobs.size
-        val status =
-          JobStatus(JobId(n + 1), RunId(n + 8), stamps(s).revision, r3, JobState.Queued)
-        t.track(status, stamps(s))
-          .fold(_ => Transition(t, t, Vector.empty), (n, e, _) => Transition(t, n, e))
-      case Op.Require(s)        => Transition(t, t.require(stamps(s)), Vector.empty)
+      case Op.Intend(k) =>
+        val (n, g) = t.intend(stamps(k))
+        (w.copy(tracker = n, inFlight = w.inFlight :+ (k -> g)), Vector.empty)
+      case Op.Accept(i) if w.inFlight.nonEmpty =>
+        val index  = i % w.inFlight.size
+        val (k, g) = w.inFlight(index)
+        val id     = w.created + 1
+        val status = JobStatus(JobId(id), runOf(id), stamps(k).revision, r3, JobState.Queued)
+        val rest   = w.inFlight.patch(index, Nil, 1)
+        t.track(status, stamps(k), g)
+          .fold(
+            _ => (w.copy(inFlight = rest, created = id), Vector.empty),
+            (n, e, _) => (World(n, rest, id), e)
+          )
+      case Op.Accept(_)         => (w, Vector.empty)
+      case Op.Require(k)        => (w.copy(tracker = t.require(stamps(k))), Vector.empty)
       case Op.Advance(i, st, p) =>
-        on(i)(j =>
-          t.observe(
-            j.id,
-            JobEvent.Advanced(report(j.id, j.run, st, p, ProgressTotal.Exact(Total)))
-          )
-        )
+        on(i)(id => t.observe(id, JobEvent.Advanced(at(id, st, p))))
       case Op.Complete(i, st, p) =>
-        on(i)(j =>
+        on(i)(id =>
           t.observe(
-            j.id,
-            JobEvent.Finished(
-              JobOutcome.Completed(
-                j.id,
-                j.run,
-                report(j.id, j.run, st, p, ProgressTotal.Exact(Total))
-              )
-            )
+            id,
+            JobEvent.Finished(JobOutcome.Completed(id, runOf(id.number), at(id, st, p)))
           )
         )
-      case Op.CancelRequest(i)           => on(i)(j => t.cancelling(j.id))
+      case Op.CancelRequest(i)           => on(i)(id => t.cancelling(id))
       case Op.CancelledOutcome(i, st, p) =>
-        on(i)(j =>
+        on(i)(id =>
           t.observe(
-            j.id,
-            JobEvent.Finished(
-              JobOutcome.Cancelled(
-                j.id,
-                j.run,
-                Some(report(j.id, j.run, st, p, ProgressTotal.Exact(Total)))
-              )
-            )
+            id,
+            JobEvent.Finished(JobOutcome.Cancelled(id, runOf(id.number), Some(at(id, st, p))))
           )
         )
       case Op.FailedOutcome(i, explained) =>
-        on(i)(j =>
+        on(i)(id =>
           t.observe(
-            j.id,
+            id,
             JobEvent.Finished(
               JobOutcome.Failed(
-                j.id,
-                j.run,
+                id,
+                runOf(id.number),
                 if explained then Vector(diagnostic) else Vector.empty,
                 None
               )
             )
           )
         )
-      case Op.Show(_) => Transition(t, t, Vector.empty)
+      case Op.Show(_) => (w, Vector.empty)
 
-  def run(ops: Vector[Op]): Vector[Transition] =
+  /** One op's outcome: the world and oracle after it, the events the tracker
+    * published and the notices the oracle expected.
+    */
+  final case class Stepped(
+      world: World,
+      oracle: Oracle,
+      events: Vector[ExecutionEvent],
+      expected: Vector[RunReady]
+  ):
+    def readies: Vector[RunReady] = events.collect { case ExecutionEvent.Ready(n) => n }
+
+  private val start =
+    Stepped(
+      World(ExecutionTracker.empty, Vector.empty, 0),
+      Oracle.empty,
+      Vector.empty,
+      Vector.empty
+    )
+
+  def run(ops: Vector[Op]): Vector[Stepped] =
     ops
-      .scanLeft(Transition(ExecutionTracker.empty, ExecutionTracker.empty, Vector.empty))(
-        (prev, op) => apply(prev.after, op)
-      )
+      .scanLeft(start) { (prev, op) =>
+        val (w, events)   = apply(prev.world, op)
+        val (o, expected) = prev.oracle.step(op)
+        Stepped(w, o, events, expected)
+      }
       .drop(1)
 
   def changes(ops: Vector[Op]): Vector[ExecutionJob] =

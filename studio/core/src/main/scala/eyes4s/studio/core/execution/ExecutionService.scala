@@ -16,7 +16,7 @@
 
 package eyes4s.studio.core.execution
 
-import cats.effect.std.{Mutex, Supervisor}
+import cats.effect.std.{Mutex, Queue, Supervisor}
 import cats.effect.{Concurrent, Ref, Resource}
 import cats.syntax.all.*
 import eyes4s.studio.core.backend.*
@@ -34,12 +34,24 @@ import fs2.concurrent.Topic
   * `Succeeded` job publishes a [[RunReady]] notice. Nothing here changes the
   * shown run; promotion is the user's Show ([[RunIntent.Show]]).
   *
+  * An intent is recorded, under the service's lock, before the backend is
+  * asked: a submission whose intent was replaced while the backend answered
+  * is `Superseded` from the start and its backend job is cancelled.
+  *
+  * Events are applied under the lock and queued in order; one publisher
+  * fibre delivers them. A subscriber that falls `subscriberBuffer` events
+  * behind stalls delivery to every subscriber until it reads again (events
+  * wait in memory meanwhile, none is dropped), but never stalls a state
+  * change: submit, cancel and job watching go on.
+  *
   * Refusals are values. An effect fails only on a defect of the backend
   * itself.
   */
 trait ExecutionService[F[_]]:
 
-  /** Submit a run of `stamp.revision`; `stamp` becomes the requested stamp. */
+  /** Submit a run of `stamp.revision`; `stamp` becomes the requested stamp
+    * before the backend is asked.
+    */
   def submit(stamp: RunStamp): F[Either[ExecutionError, ExecutionJob]]
 
   /** Track a job the backend already runs (a reopened project's
@@ -72,33 +84,40 @@ trait ExecutionService[F[_]]:
 
 object ExecutionService:
 
-  /** Events a subscriber may fall behind by before publishing waits for it. */
+  /** Events a subscriber may fall behind by before delivery waits for it. */
   val SubscriberBuffer: Int = 4096
 
   /** The service over `backend`. Releasing it stops watching every job; it
     * does not cancel backend jobs.
     */
-  def resource[F[_]](backend: StudyBackend[F])(using
+  def resource[F[_]](backend: StudyBackend[F], subscriberBuffer: Int = SubscriberBuffer)(using
       F: Concurrent[F]
   ): Resource[F, ExecutionService[F]] =
     for
       supervisor <- Supervisor[F](await = false)
       topic      <- Resource.make(Topic[F, ExecutionEvent])(_.close.void)
-      state      <- Resource.eval(Ref.of[F, ExecutionTracker](ExecutionTracker.empty))
-      mutex      <- Resource.eval(Mutex[F])
-    yield new Live(backend, supervisor, topic, state, mutex)
+      outbox     <- Resource.eval(Queue.unbounded[F, ExecutionEvent])
+      _          <- F.background(
+        Stream.fromQueueUnterminated(outbox).through(topic.publish).compile.drain
+      )
+      state <- Resource.eval(Ref.of[F, ExecutionTracker](ExecutionTracker.empty))
+      mutex <- Resource.eval(Mutex[F])
+    yield new Live(backend, supervisor, topic, outbox, state, mutex, subscriberBuffer max 1)
 
   private final class Live[F[_]](
       backend: StudyBackend[F],
       supervisor: Supervisor[F],
       topic: Topic[F, ExecutionEvent],
+      outbox: Queue[F, ExecutionEvent],
       state: Ref[F, ExecutionTracker],
-      mutex: Mutex[F]
+      mutex: Mutex[F],
+      subscriberBuffer: Int
   )(using F: Concurrent[F])
       extends ExecutionService[F]:
 
-    /** Apply one transition and publish its events, both under the mutex, so
-      * subscribers see events in the order the state changed.
+    /** Apply one transition and queue its events, both under the mutex, so
+      * subscribers see events in the order the state changed. Queueing never
+      * waits; delivery happens on the publisher fibre.
       */
     private def step[A](
         transition: ExecutionTracker => Either[ExecutionError, ExecutionTracker.Step[A]]
@@ -108,14 +127,20 @@ object ExecutionService:
           transition(t) match
             case Left(e)                  => F.pure(Left(e))
             case Right((next, events, a)) =>
-              state.set(next) >> events.traverse_(topic.publish1) >> F.pure(Right(a))
+              state.set(next) >> events.traverse_(outbox.offer) >> F.pure(Right(a))
         }
       }
 
+    /** Record the intent to run `stamp`; its generation. */
+    private def intend(stamp: RunStamp): F[Long] =
+      mutex.lock.surround(state.modify(_.intend(stamp)))
+
     def submit(stamp: RunStamp): F[Either[ExecutionError, ExecutionJob]] =
-      backend.submit(stamp.revision).flatMap {
-        case Left(e)       => F.pure(Left(ExecutionError.Backend(e)))
-        case Right(status) => start(status, stamp)
+      intend(stamp).flatMap { generation =>
+        backend.submit(stamp.revision).flatMap {
+          case Left(e)       => F.pure(Left(ExecutionError.Backend(e)))
+          case Right(status) => start(status, stamp, generation)
+        }
       }
 
     def adopt(job: JobId, stamp: RunStamp): F[Either[ExecutionError, ExecutionJob]] =
@@ -124,13 +149,14 @@ object ExecutionService:
         else
           backend.job(job).flatMap {
             case Left(e)       => F.pure(Left(ExecutionError.Backend(e)))
-            case Right(status) => start(status, stamp)
+            case Right(status) => intend(stamp).flatMap(start(status, stamp, _))
           }
       }
 
     private def start(
         status: JobStatus,
-        stamp: RunStamp
+        stamp: RunStamp,
+        generation: Long
     ): F[Either[ExecutionError, ExecutionJob]] =
       if status.revision != stamp.revision || status.dataset != stamp.dataset then
         backend
@@ -141,9 +167,11 @@ object ExecutionService:
             )
           )
       else
-        step(_.track(status, stamp)).flatTap {
+        step(_.track(status, stamp, generation)).flatTap {
           case Right(j) if !j.phase.isTerminal => supervisor.supervise(watch(j.id)).void
-          case _                               => F.unit
+          case Right(ExecutionJob(id, _, _, JobPhase.Superseded(_, _))) =>
+            backend.cancel(id).void
+          case _ => F.unit
         }
 
     /** Fold the job's backend events until it settles. If the stream ends or
@@ -190,7 +218,7 @@ object ExecutionService:
 
     def job(id: JobId): F[Either[ExecutionError, ExecutionJob]] = state.get.map(_.job(id))
 
-    def requested: F[Option[RunStamp]] = state.get.map(_.requested)
+    def requested: F[Option[RunStamp]] = state.get.map(_.requestedStamp)
 
     def subscribe: Resource[F, Stream[F, ExecutionEvent]] =
-      topic.subscribeAwait(SubscriberBuffer)
+      topic.subscribeAwait(subscriberBuffer)

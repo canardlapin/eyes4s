@@ -16,7 +16,7 @@
 
 package eyes4s.studio.core.execution
 
-import cats.effect.{IO, Resource}
+import cats.effect.{Deferred, IO, Resource}
 import cats.syntax.all.*
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.fixture.{FakeControlError, FakeStudyBackend, StoryMoment}
@@ -88,8 +88,14 @@ class ExecutionServiceSuite extends CatsEffectSuite:
   private def phases(out: Timed): Vector[JobPhase] =
     out.collect { case (_, ExecutionEvent.Changed(j)) => j.phase }
 
+  /** The shelf of a reducer that asked for `stamp5` (the worst case for the
+    * stale tests: it would accept a wrong notice for the submitted stamp).
+    */
   private def shelf(out: Timed): RunShelf =
-    out.map(_._2).foldLeft(RunShelf.of(Some(run7)))(_.receive(_))
+    out.map(_._2).foldLeft(RunShelf.of(Some(run7)).require(stamp5))(_.receive(_))
+
+  private def untouched(s: RunShelf): Unit =
+    assertEquals((s.shown, s.pending), (Some(run7), None))
 
   private def pairsAt(p: JobPhase): Option[Long] = p.lastReport.map(_.pairs.done)
 
@@ -152,7 +158,7 @@ class ExecutionServiceSuite extends CatsEffectSuite:
           runs.find(_.run == run8).map(_.state),
           Some(RunState.Cancelled(Some(StageKind.Comparing)))
         )
-        assertEquals(shelf(out), RunShelf.of(Some(run7)))
+        untouched(shelf(out))
     }
   }
 
@@ -186,10 +192,10 @@ class ExecutionServiceSuite extends CatsEffectSuite:
         phases(out).last match
           case JobPhase.Superseded(current, last) =>
             assertEquals(current, Some(stamp5Changed))
-            assertEquals(last.pairs.done, fake.totalPairs(rev5))
+            assertEquals(last.map(_.pairs.done), Some(fake.totalPairs(rev5)))
           case other => fail(s"expected Superseded, got $other")
         assert(!out.exists(_._2.isInstanceOf[ExecutionEvent.Ready]), out)
-        assertEquals(shelf(out), RunShelf.of(Some(run7)))
+        untouched(shelf(out))
     }
   }
 
@@ -262,7 +268,7 @@ class ExecutionServiceSuite extends CatsEffectSuite:
             )
           case other => fail(s"expected Failed, got $other")
         assertEquals(runs.find(_.run == run8).map(_.state), Some(RunState.Failed))
-        assertEquals(shelf(out), RunShelf.of(Some(run7)))
+        untouched(shelf(out))
     }
   }
 
@@ -332,6 +338,60 @@ class ExecutionServiceSuite extends CatsEffectSuite:
     }
   }
 
+  test("E2E-07 race: require(B) while submit(A) awaits the backend supersedes A") {
+    for
+      fake    <- FakeStudyBackend.create[IO](StoryMoment.T2)
+      entered <- Deferred[IO, Unit]
+      gate    <- Deferred[IO, Unit]
+      result  <- ExecutionService.resource[IO](Gated(fake, entered, gate)).use { service =>
+        service.subscribe.use { events =>
+          for
+            collector <- collect(events).start
+            pending   <- service.submit(stamp5).start
+            _         <- entered.get
+            _         <- service.require(stamp5Changed)
+            _         <- gate.complete(())
+            job       <- pending.joinWithNever.flatMap(e => ok(IO.pure(e)))
+            out       <- collector.joinWithNever
+            requested <- service.requested
+            backend   <- ok(fake.job(job.id))
+            late      <- fake.complete(job.id)
+          yield (job, out, requested, backend, late)
+        }
+      }
+    yield
+      val (job, out, requested, backend, late) = result
+      assertEquals(job.phase, JobPhase.Superseded(Some(stamp5Changed), None))
+      assertEquals(requested, Some(stamp5Changed))
+      assert(!out.exists(_._2.isInstanceOf[ExecutionEvent.Ready]), out)
+      assert(!phases(out).exists(_.isInstanceOf[JobPhase.Succeeded]), out)
+      assert(backend.state.isInstanceOf[JobState.Finished], backend)
+      assert(late.left.exists(_.isInstanceOf[FakeControlError.NotRunning]), late)
+      val waiting =
+        out.map(_._2).foldLeft(RunShelf.of(Some(run7)).require(stamp5))(_.receive(_))
+      assertEquals(waiting.require(stamp5Changed).pending, None)
+      assertEquals(waiting.pending, None)
+  }
+
+  test("a stalled subscriber never blocks submit, progress or cancel") {
+    for
+      fake    <- FakeStudyBackend.create[IO](StoryMoment.T2)
+      settled <- ExecutionService.resource[IO](fake, subscriberBuffer = 1).use { service =>
+        service.subscribe.use { _ =>
+          for
+            job <- ok(service.submit(stamp5))
+            _   <- List(1000L, 5000L, Held).traverse_ { p =>
+              ok(fake.advanceToPairs(job.id, p)) >>
+                await(service, job.id) { case JobPhase.Running(q) => q.pairs.done == p }
+            }
+            _       <- ok(service.cancel(job.id)).timeout(1.second)
+            settled <- await(service, job.id) { case JobPhase.Cancelled(_) => true }
+          yield settled
+        }
+      }
+    yield assertEquals(pairsAt(settled.phase), Some(Held))
+  }
+
   test("refusals name their operands") {
     setup(StoryMoment.T2).use { (fake, service, _) =>
       val wrongData = RunStamp(rev5, DatasetRevision(2), stamp5.plan, stamp5.input)
@@ -392,3 +452,31 @@ private final class Silent(fake: FakeStudyBackend[IO]) extends StudyBackend[IO]:
 
   def subscribe(id: JobId): IO[Either[BackendError, Stream[IO, JobEvent]]] =
     IO.pure(Right(Stream.empty))
+
+/** The fake whose `submit` waits at `gate` after signalling `entered`: a
+  * submission held while the backend answers.
+  */
+private final class Gated(
+    fake: FakeStudyBackend[IO],
+    entered: Deferred[IO, Unit],
+    gate: Deferred[IO, Unit]
+) extends StudyBackend[IO]:
+  export fake.{
+    admission,
+    cancel,
+    inspect,
+    job,
+    jobs,
+    ledger,
+    outcome,
+    preview,
+    previewRows,
+    provenance,
+    queries,
+    result,
+    runs,
+    subscribe
+  }
+
+  def submit(revision: AnalysisRevision): IO[Either[BackendError, JobStatus]] =
+    entered.complete(()) >> gate.get >> fake.submit(revision)
