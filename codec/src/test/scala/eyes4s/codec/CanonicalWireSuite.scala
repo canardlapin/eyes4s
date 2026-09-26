@@ -219,7 +219,7 @@ class CanonicalWireSuite extends munit.FunSuite:
   }
 
   test(
-    "numbers are JSON numbers, integers are spelled as integers, and absence has one spelling"
+    "numbers are JSON numbers and absence has one spelling (integer spelling: IntegerSpellingJvmSuite)"
   ) {
     final case class Probe(n: Int, x: Double, note: Option[String])
     val probe = VersionedCodec.of[Probe](id("test.probe"))(p =>
@@ -243,11 +243,6 @@ class CanonicalWireSuite extends munit.FunSuite:
         case _                                => false
       }
     assert(refusedAt("n")(_ => Json.fromString("3")), "a numeric string")
-    assert(refusedAt("n")(_ => Json.fromDoubleOrNull(3.0)), "an integer spelled 3.0")
-    assert(
-      refusedAt("n")(_ => io.circe.parser.parse("3e0").toOption.get),
-      "an integer spelled 3e0"
-    )
     assert(refusedAt("x")(_ => Json.fromString("1.5")), "a numeric string")
     assert(refusedAt("x")(_ => Json.Null), "null for a number")
     val absent = encoded.hcursor.downField("value").downField("note").delete.top.get

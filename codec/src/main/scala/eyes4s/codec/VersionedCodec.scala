@@ -172,6 +172,12 @@ final class VersionedCodec[A] private (
     payload <- Wire.field[Json](json, "value")
     result  <- read(found, payload)
   yield result
+
+  /** The collision-resistant identity of `value`: the SHA-256 of its
+    * canonical document (see [[CanonicalDigest]]).
+    */
+  def digest(value: A): Either[CodecError, CanonicalDigest[A]] =
+    encode(value).map(CanonicalDigest.document)
   def parse(input: String): Either[CodecError, A] =
     io.circe.parser
       .parse(input)
