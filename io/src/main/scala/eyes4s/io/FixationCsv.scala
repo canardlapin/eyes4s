@@ -576,6 +576,31 @@ object FixationCsv:
       .setScale(0, BigDecimal.RoundingMode.CEILING)
     if samples > BigDecimal(Int.MaxValue) then Int.MaxValue else samples.toInt
 
+  /** The shared refusal precedence, after row grouping has collected its
+    * evidence. Duplicate detection remains lazy for synchronous admission;
+    * stepped replay can pass its incrementally accumulated result instead.
+    */
+  private[io] def trialRefusal(
+      rows: Vector[Int],
+      overrideCause: Option[(Vector[Int], QuarantineCause)],
+      hasRejected: Boolean,
+      conflict: Option[(Int, Int)],
+      duplicateOrdinals: => Boolean
+  ): Option[FixationRowError] =
+    overrideCause match
+      case Some((affected, cause)) => Some(FixationRowError.Trial(affected, cause))
+      case None if hasRejected     =>
+        Some(FixationRowError.Trial(rows, QuarantineCause.RejectedRecords))
+      case None =>
+        conflict match
+          case Some((first, second)) =>
+            Some(
+              FixationRowError.Trial(rows, QuarantineCause.CorrectionConflict(first, second))
+            )
+          case None if duplicateOrdinals =>
+            Some(FixationRowError.Trial(rows, QuarantineCause.DuplicateOrdinals))
+          case None => None
+
   /** Group parsed records into trials. A key in `overrides` is quarantined
     * with the given records and cause, under the given key; otherwise a trial
     * with a rejected record is quarantined as `RejectedRecords`, then
@@ -602,22 +627,16 @@ object FixationCsv:
         val affected = invalid.filter(_.key.contains(key)).map(_.rowNumber)
         val allRows  = (ordered.map(_.row) ++ affected).sorted
         val conflict = ordered.flatMap(_.conflict).headOption
-        val path     = (affected.nonEmpty, conflict) match
-          case _ if overrides.contains(key) =>
-            val (_, rows, cause) = overrides(key)
-            Left(FixationRowError.Trial(rows, cause))
-          case (true, _) =>
-            Left(FixationRowError.Trial(allRows, QuarantineCause.RejectedRecords))
-          case (false, Some((first, second))) =>
-            Left(
-              FixationRowError.Trial(
-                allRows,
-                QuarantineCause.CorrectionConflict(first, second)
-              )
-            )
-          case (false, None) if ordered.map(_.ordinal).distinct.size != ordered.size =>
-            Left(FixationRowError.Trial(allRows, QuarantineCause.DuplicateOrdinals))
-          case (false, None) =>
+        val refusal  = trialRefusal(
+          allRows,
+          overrides.get(key).map { case (_, rows, cause) => rows -> cause },
+          affected.nonEmpty,
+          conflict,
+          ordered.map(_.ordinal).distinct.size != ordered.size
+        )
+        val path = refusal match
+          case Some(error) => Left(error)
+          case None        =>
             Scanpath
               .of(frame, clock(key), IArray.from(ordered.map(_.fixation)))
               .left

@@ -37,10 +37,12 @@ private[io] object LedgerScalarPreflight:
       var failure: Option[LedgerResourceError] = None
       while index < token.length && possible && failure.isEmpty do
         val character = token.charAt(index)
-        if character >= '0' && character <= '9' then
+        // BigDecimal accepts Unicode decimal digits, including in exponents.
+        val decimalDigit = java.lang.Character.digit(character, 10)
+        if decimalDigit >= 0 then
           signAllowed = false
           if inExponent then
-            val digit = (character - '0').toLong
+            val digit = decimalDigit.toLong
             val bound = limits(LedgerResource.NumericExponentMagnitude)
             if exponent > bound / 10 || (exponent == bound / 10 && digit > bound % 10) then
               failure = Some(

@@ -81,3 +81,61 @@ class LedgerScalarPreflightSuite extends munit.FunSuite:
       assertEquals(LedgerScalarPreflight.decimal(value, limits(), at), Right(()), value)
     }
   }
+
+  test("Unicode decimal digits accepted by the numeric parser cannot bypass resource caps") {
+    // Small semantic controls: never ask BigDecimal to expand the large probes.
+    Vector("\u0661.\u0662\u0663", "\uff11.\uff12\uff13").foreach(value =>
+      assertEquals(BigDecimal(value), BigDecimal("1.23"))
+    )
+    assertEquals(BigDecimal("1e\u0661\u0662"), BigDecimal("1e12"))
+    val precision = limits(LedgerResource.NumericDigits -> 3L)
+    assertEquals(LedgerScalarPreflight.decimal("\u0661.\u0662\u0663", precision, at), Right(()))
+    Vector("\u0661\u0662\u0663\u0664", "\uff11\uff12\uff13\uff14", "1\u0662\uff13" + "4")
+      .foreach(value =>
+        assertEquals(
+          LedgerScalarPreflight.decimal(value, precision, at),
+          Left(LedgerResourceError.Exceeded(LedgerResource.NumericDigits, 3, BigInt(4), at))
+        )
+      )
+    val exponent = limits(LedgerResource.NumericExponentMagnitude -> 12L)
+    Vector("\u0661e13", "1e\u0661\u0663", "\uff11e-\uff11\uff13", "1e+\u0660\u0660\u0661\u0663")
+      .foreach(value =>
+        assertEquals(
+          LedgerScalarPreflight.decimal(value, exponent, at),
+          Left(
+            LedgerResourceError.Exceeded(
+              LedgerResource.NumericExponentMagnitude,
+              12,
+              BigInt(13),
+              at
+            )
+          )
+        )
+      )
+    assertEquals(
+      LedgerScalarPreflight.decimal("\u0661e1000000", exponent, at),
+      Left(
+        LedgerResourceError.Exceeded(
+          LedgerResource.NumericExponentMagnitude,
+          12,
+          BigInt(100),
+          at
+        )
+      )
+    )
+    assertEquals(
+      LedgerScalarPreflight.decimal(
+        "\u0661e13",
+        limits(
+          LedgerResource.FieldCodeUnits           -> 3L,
+          LedgerResource.NumericExponentMagnitude -> 12L
+        ),
+        at
+      ),
+      Left(LedgerResourceError.Exceeded(LedgerResource.FieldCodeUnits, 3, BigInt(4), at))
+    )
+    Vector(" \u0661", "\u0661 ", "\u2160", "\u00b2", "\u0661\u066b\u0662").foreach { value =>
+      assert(scala.util.Try(BigDecimal(value)).isFailure)
+      assertEquals(LedgerScalarPreflight.decimal(value, limits(), at), Right(()))
+    }
+  }

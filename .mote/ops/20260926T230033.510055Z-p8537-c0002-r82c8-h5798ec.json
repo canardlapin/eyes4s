@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s","entity":"bd-01M3FA6GY2YX7098MRYVKSR9ZK","kind":"note","note_kind":"progress","op":"20260926T230033.510055Z-p8537-c0002-r82c8-h5798ec","text":"Close demonstrated Unicode-decimal bypass of precision/exponent resource caps; sameJDK BigDecimal accepts Arabic digits.","ts":"2026-09-26T23:00:33.510055Z","v":1}
