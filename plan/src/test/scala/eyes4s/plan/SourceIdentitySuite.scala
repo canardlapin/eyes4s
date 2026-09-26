@@ -138,3 +138,93 @@ class SourceIdentitySuite extends munit.FunSuite:
       ).message.contains("item")
     )
   }
+
+  test("declared interpretations check supported parsers and options schemas together") {
+    val options = spec().digest
+    assertEquals(
+      SourceInterpretation.declared(
+        SourceFormat.FixationCsv,
+        SourceImportDefinitions.inventoryParser,
+        SourceOptionsSchema.FixationCsvV1,
+        options
+      ),
+      Left(
+        SourceIdentityError.Parser(
+          SourceFormat.FixationCsv,
+          SourceImportDefinitions.fixationParser,
+          SourceImportDefinitions.inventoryParser
+        )
+      )
+    )
+    assertEquals(
+      SourceInterpretation.declared(
+        SourceFormat.FixationCsv,
+        SourceImportDefinitions.fixationParser,
+        SourceOptionsSchema.TrialInventoryCsvV1,
+        options
+      ),
+      Left(
+        SourceIdentityError.OptionsSchema(
+          SourceFormat.FixationCsv,
+          SourceOptionsSchema.FixationCsvV1,
+          SourceOptionsSchema.TrialInventoryCsvV1
+        )
+      )
+    )
+    val declared = SourceInterpretation.fixation(spec())
+    val read     = get(
+      SourceInterpretation.declared(
+        declared.format,
+        declared.parser,
+        declared.optionsSchema,
+        declared.options
+      )
+    )
+    assertEquals(read, declared)
+    assertEquals(read.hashCode, declared.hashCode)
+    assert(read.toString.contains("FixationCsvV1"))
+    assert(!declared.equals("not an interpretation"))
+    val unknown = get(DefinitionId.of("custom.unsupported-parser", 1))
+    assert(
+      SourceInterpretation
+        .declared(declared.format, unknown, declared.optionsSchema, declared.options)
+        .isLeft
+    )
+  }
+
+  test("declared interpretation cannot bypass checking with a constructor or copy") {
+    val construction = typeCheckErrors("""
+      import eyes4s.plan.*
+      import eyes4s.kernel.ContentHash
+      new SourceInterpretation.Declared(SourceFormat.FixationCsv,
+        SourceImportDefinitions.inventoryParser, ContentHash.ofString("options"))
+    """)
+    assert(construction.exists(_.message.contains("constructor")), construction.toString)
+    val copying = typeCheckErrors("""
+      import eyes4s.plan.*
+      def bypass(value: SourceInterpretation.Declared) =
+        value.copy(parser = SourceImportDefinitions.inventoryParser)
+    """)
+    assert(copying.exists(_.message.contains("copy")), copying.toString)
+  }
+
+  test("legacy and checked interpretations retain their explicit diagnostic structure") {
+    val project = summon[DiagnosticOperand[SourceInterpretation, Nothing]]
+    assertEquals(
+      project(SourceInterpretation.LegacyUnspecified),
+      Operand.Token("LegacyUnspecified")
+    )
+    val declared = SourceInterpretation.fixation(spec())
+    assertEquals(
+      project(declared),
+      Operand.Fields(
+        Vector(
+          "kind"          -> Operand.Token("Declared"),
+          "format"        -> Operand.Token("FixationCsv"),
+          "parser"        -> Operand.Definition(SourceImportDefinitions.fixationParser),
+          "optionsSchema" -> Operand.Token("FixationCsvV1"),
+          "options"       -> Operand.Artifact(spec().digest.render)
+        )
+      )
+    )
+  }

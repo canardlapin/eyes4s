@@ -141,3 +141,80 @@ class ImportSpecSuite extends munit.FunSuite:
       json4
     )
   }
+
+  test("source wire rejects incompatible parser and options schema at their fields") {
+    val source = spec.source("checked.csv", Vector("x"), Vector(Vector("1")))
+    val json   = get(SourceIdentityCodec.source.encode(source))
+    def replace(field: String, value: io.circe.Json) = json.hcursor
+      .downField("value")
+      .downField("interpretation")
+      .downField(field)
+      .withFocus(_ => value)
+      .top
+      .get
+    // Recompute the inconsistent declaration's digest independently: checking
+    // only the combined hash would accept this original review counterexample.
+    val parser         = SourceImportDefinitions.inventoryParser
+    val forgedIdentity = ContentHash
+      .combineAll(
+        Vector(
+          ContentHash.ofString(SourceIdentity.versionTag),
+          ContentHash.ofString(SourceFormat.FixationCsv.toString),
+          ContentHash.ofString(parser.name),
+          ContentHash.ofString(parser.version.toString),
+          ContentHash.ofString(source.records.digest),
+          spec.digest
+        )
+      )
+      .render
+    val wrongParser = replace("parser", Wire.id(parser)).hcursor
+      .downField("value")
+      .downField("interpretation")
+      .downField("identity")
+      .withFocus(_ => io.circe.Json.fromString(forgedIdentity))
+      .top
+      .get
+    val wrongSchema = replace("optionsSchema", io.circe.Json.fromString("TrialInventoryCsvV1"))
+    val unknownSchema = replace("optionsSchema", io.circe.Json.fromString("future"))
+    Vector(
+      "parser"        -> wrongParser,
+      "optionsSchema" -> wrongSchema,
+      "optionsSchema" -> unknownSchema
+    ).foreach { (field, document) =>
+      assert(SourceIdentityCodec.source.decode(document).left.toOption.exists {
+        case CodecError.Field(actual, _, _) => actual == field
+        case _                              => false
+      })
+    }
+    val missing = json.hcursor
+      .downField("value")
+      .downField("interpretation")
+      .withFocus(_.mapObject(_.remove("optionsSchema")))
+      .top
+      .get
+    assert(SourceIdentityCodec.source.decode(missing).isLeft)
+  }
+
+  test("custom codecs refuse built-in key descriptions before successful encoding") {
+    val customStudy =
+      ImportSpecCodec.custom[StudyKey, Px](StudyCodecs.key(DefinitionId.studyKey))
+    assert(customStudy.encode(spec).left.toOption.exists {
+      case CodecError.Field("kind", _, _) => true
+      case _                              => false
+    })
+    val trial = get(
+      ImportSpec.of(
+        SourceKeyColumns.Trial("p", "phase", "trial", Some("item"), None),
+        columns,
+        frame,
+        SourceTimeUnit.Milliseconds,
+        AdmissionPolicy.default[TrialKey],
+        AdmissionDecision.RequireComplete
+      )
+    )
+    val customTrial =
+      ImportSpecCodec.custom[TrialKey, Px](StudyCodecs.trialKey(TrialKeyDefinitions.trialKey))
+    assert(customTrial.encode(trial).isLeft)
+    val builtIn = ImportSpecCodec.trial[Px]
+    assertEquals(get(builtIn.decode(get(builtIn.encode(trial)))).digest, trial.digest)
+  }

@@ -13,6 +13,7 @@
         "name": "eyes4s.trial-inventory-csv-parser",
         "version": 1
       },
+      "optionsSchema": "TrialInventoryCsvV1",
       "options": "3a6a492490fede29",
       "identityVersion": "eyes4s.source-identity/1",
       "identity": "e14cf26d5ad7c128"

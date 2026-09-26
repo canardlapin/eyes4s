@@ -36,6 +36,18 @@ object IoDiagnosticSamples:
       .get
   )
 
+  given DiagnosticExample[SourceInterpretation] = DiagnosticExample.of(seed =>
+    SourceInterpretation
+      .declared(
+        SourceFormat.FixationCsv,
+        SourceImportDefinitions.fixationParser,
+        SourceOptionsSchema.FixationCsvV1,
+        eyes4s.kernel.ContentHash.ofString(s"options-$seed")
+      )
+      .toOption
+      .get
+  )
+
   // Nested errors, one explicit case each (see DiagnosticExample).
   given DiagnosticExample[TidyCsvError] =
     DiagnosticExample.of(seed => TidyCsvError.WrongColumnCount(seed, seed + 1, seed + 2))

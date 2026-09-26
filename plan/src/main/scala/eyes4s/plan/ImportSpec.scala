@@ -98,11 +98,7 @@ final case class InventoryImportSpec private (
     SourceRef(
       label,
       ArtifactRef.of(SourceRef.digest(header, rows)),
-      SourceInterpretation.Declared(
-        SourceFormat.TrialInventoryCsv,
-        SourceImportDefinitions.inventoryParser,
-        digest
-      )
+      SourceInterpretation.inventory(this)
     )
 
 object InventoryImportSpec:
@@ -208,11 +204,7 @@ final class ImportSpec[K, U <: Unit2D] private (
     SourceRef(
       label,
       ArtifactRef.of(SourceRef.digest(header, rows)),
-      SourceInterpretation.Declared(
-        SourceFormat.FixationCsv,
-        SourceImportDefinitions.fixationParser,
-        digest
-      )
+      SourceInterpretation.fixation(this)
     )
 
 object ImportSpec:

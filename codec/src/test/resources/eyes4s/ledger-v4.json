@@ -18,6 +18,7 @@
           "name": "eyes4s.fixation-csv-parser",
           "version": 1
         },
+        "optionsSchema": "FixationCsvV1",
         "options": "36995201760330b5",
         "identityVersion": "eyes4s.source-identity/1",
         "identity": "8f6e78db3722138f"

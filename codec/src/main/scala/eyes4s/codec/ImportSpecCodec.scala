@@ -208,6 +208,13 @@ object ImportSpecCodec:
   ): VersionedCodec[ImportSpec[K, U]] =
     VersionedCodec.checked[ImportSpec[K, U]](SourceCodecDefinitions.importSpec)(value =>
       for
+        keyJson <- Right(writeKeys(value.keys))
+        keyKind <- Wire.field[String](keyJson, "kind")
+        _       <- Either.cond(
+          keyKind == "custom" || keyKind == kind,
+          (),
+          CodecError.Field("kind", keyJson, s"expected $kind or custom, found $keyKind")
+        )
         policy <- writePolicy(value.policy, keys)
         inv    <- value.inventory.traverse(i =>
           inventory
@@ -216,7 +223,7 @@ object ImportSpecCodec:
         )
       yield Json.obj(
         "keySchema" -> Wire.id(keys.schema),
-        "keys"      -> writeKeys(value.keys),
+        "keys"      -> keyJson,
         "columns"   -> Json.obj(
           "ordinal"    -> str(value.columns.ordinal),
           "x"          -> str(value.columns.x),

@@ -16,16 +16,80 @@
 
 package eyes4s.plan
 
-import eyes4s.kernel.ContentHash
+import eyes4s.kernel.{ContentHash, Unit2D}
 
 /** Interpretation of the complete decoded source, separate from its byte checksum. */
 enum SourceFormat derives CanEqual:
   case FixationCsv, TrialInventoryCsv
 
+/** The schema whose typed options produced a declaration's options digest:
+  * `eyes4s.import-spec@1` or `eyes4s.inventory-import-spec@1`.
+  */
+enum SourceOptionsSchema derives CanEqual:
+  case FixationCsvV1, TrialInventoryCsvV1
+
 /** Earlier ledgers did not record enough information to replay their importer. */
-enum SourceInterpretation derives CanEqual:
-  case LegacyUnspecified
-  case Declared(format: SourceFormat, parser: DefinitionId, options: ContentHash)
+sealed trait SourceInterpretation derives CanEqual
+
+object SourceInterpretation:
+  case object LegacyUnspecified extends SourceInterpretation
+
+  /** Construction checks the format, supported parser and options schema together. */
+  final class Declared private[SourceInterpretation] (
+      val format: SourceFormat,
+      val parser: DefinitionId,
+      val options: ContentHash
+  ) extends SourceInterpretation:
+    def optionsSchema: SourceOptionsSchema   = schemaFor(format)
+    override def equals(other: Any): Boolean = other match
+      case that: Declared =>
+        format == that.format && parser == that.parser && options == that.options
+      case _ => false
+    override def hashCode: Int    = (format, parser, options).hashCode
+    override def toString: String = s"Declared($format,$parser,$optionsSchema,$options)"
+
+  object Declared:
+    def unapply(value: Declared): (SourceFormat, DefinitionId, ContentHash) =
+      (value.format, value.parser, value.options)
+
+  private def parserFor(format: SourceFormat): DefinitionId = format match
+    case SourceFormat.FixationCsv       => SourceImportDefinitions.fixationParser
+    case SourceFormat.TrialInventoryCsv => SourceImportDefinitions.inventoryParser
+
+  private def schemaFor(format: SourceFormat): SourceOptionsSchema = format match
+    case SourceFormat.FixationCsv       => SourceOptionsSchema.FixationCsvV1
+    case SourceFormat.TrialInventoryCsv => SourceOptionsSchema.TrialInventoryCsvV1
+
+  def declared(
+      format: SourceFormat,
+      parser: DefinitionId,
+      optionsSchema: SourceOptionsSchema,
+      options: ContentHash
+  ): Either[SourceIdentityError, Declared] =
+    for
+      _ <- Either.cond(
+        parser == parserFor(format),
+        (),
+        SourceIdentityError.Parser(format, parserFor(format), parser)
+      )
+      _ <- Either.cond(
+        optionsSchema == schemaFor(format),
+        (),
+        SourceIdentityError.OptionsSchema(format, schemaFor(format), optionsSchema)
+      )
+    yield new Declared(format, parser, options)
+
+  /** A typed fixation description supplies compatible schema evidence directly. */
+  def fixation[K, U <: Unit2D](spec: ImportSpec[K, U]): Declared =
+    new Declared(SourceFormat.FixationCsv, SourceImportDefinitions.fixationParser, spec.digest)
+
+  /** A typed inventory description supplies compatible schema evidence directly. */
+  def inventory(spec: InventoryImportSpec): Declared =
+    new Declared(
+      SourceFormat.TrialInventoryCsv,
+      SourceImportDefinitions.inventoryParser,
+      spec.digest
+    )
 
 /** Versioned semantic identity. Labels, paths and byte checksums are not operands. */
 final case class SourceIdentity private (hash: ContentHash) derives CanEqual:
@@ -36,19 +100,17 @@ object SourceIdentity:
 
   def of(
       records: ArtifactRef[Vector[Vector[String]]],
-      format: SourceFormat,
-      parser: DefinitionId,
-      options: ContentHash
+      interpretation: SourceInterpretation.Declared
   ): SourceIdentity =
     new SourceIdentity(
       ContentHash.combineAll(
         Vector(
           ContentHash.ofString(versionTag),
-          ContentHash.ofString(format.toString),
-          ContentHash.ofString(parser.name),
-          ContentHash.ofString(parser.version.toString),
+          ContentHash.ofString(interpretation.format.toString),
+          ContentHash.ofString(interpretation.parser.name),
+          ContentHash.ofString(interpretation.parser.version.toString),
           ContentHash.ofString(records.digest),
-          options
+          interpretation.options
         )
       )
     )
@@ -61,9 +123,19 @@ object SourceIdentity:
 
 enum SourceIdentityError derives CanEqual:
   case InvalidDigest(value: String)
+  case Parser(format: SourceFormat, expected: DefinitionId, actual: DefinitionId)
+  case OptionsSchema(
+      format: SourceFormat,
+      expected: SourceOptionsSchema,
+      actual: SourceOptionsSchema
+  )
   def message: String = this match
     case InvalidDigest(value) =>
       s"Source identity '$value' must be 16 lowercase hexadecimal digits."
+    case Parser(format, expected, actual) =>
+      s"Source format $format requires parser $expected; found $actual."
+    case OptionsSchema(format, expected, actual) =>
+      s"Source format $format requires options schema $expected; found $actual."
 
 /** The actual identity components that differ, or missing legacy evidence. */
 enum IdentityChange derives CanEqual:

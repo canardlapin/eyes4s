@@ -28,10 +28,13 @@ class SourceIdentityLawsSuite extends munit.DisciplineSuite:
     SourceRef(
       "file.csv",
       ArtifactRef.of(SourceRef.digest(Vector("x"), Vector(Vector(text)))),
-      SourceInterpretation.Declared(
-        SourceFormat.FixationCsv,
-        SourceImportDefinitions.fixationParser,
-        ContentHash.ofString("options")
+      get(
+        SourceInterpretation.declared(
+          SourceFormat.FixationCsv,
+          SourceImportDefinitions.fixationParser,
+          SourceOptionsSchema.FixationCsvV1,
+          ContentHash.ofString("options")
+        )
       )
     )
   )
@@ -40,18 +43,21 @@ class SourceIdentityLawsSuite extends munit.DisciplineSuite:
     chosen <- Gen
       .someOf(
         IdentityChange.Format,
-        IdentityChange.Parser,
         IdentityChange.Options,
         IdentityChange.Records
       )
       .suchThat(_.nonEmpty)
   yield
-    val set    = chosen.toSet
+    // Phase 1 supports one parser/schema pair per format: a format change
+    // necessarily changes the parser too. Keep that expected cause explicit.
+    val set =
+      chosen.toSet ++ Option.when(chosen.contains(IdentityChange.Format))(IdentityChange.Parser)
     val format = if set(IdentityChange.Format) then SourceFormat.TrialInventoryCsv
     else SourceFormat.FixationCsv
-    val parser = if set(IdentityChange.Parser) then
-      get(DefinitionId.of(SourceImportDefinitions.fixationParser.name, 2))
+    val parser = if set(IdentityChange.Parser) then SourceImportDefinitions.inventoryParser
     else SourceImportDefinitions.fixationParser
+    val schema = if set(IdentityChange.Format) then SourceOptionsSchema.TrialInventoryCsvV1
+    else SourceOptionsSchema.FixationCsvV1
     val options =
       ContentHash.ofString(if set(IdentityChange.Options) then "changed" else "options")
     val records = if set(IdentityChange.Records) then
@@ -62,7 +68,7 @@ class SourceIdentityLawsSuite extends munit.DisciplineSuite:
       SourceRef(
         "different-label",
         records,
-        SourceInterpretation.Declared(format, parser, options)
+        get(SourceInterpretation.declared(format, parser, schema, options))
       ),
       set
     )

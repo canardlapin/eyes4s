@@ -391,6 +391,13 @@ row-array codec these payloads use.
 
 ### Declared source identity
 
+Declared interpretations have a private constructor. The checked
+`SourceInterpretation.declared` constructor accepts only the supported format,
+parser and `SourceOptionsSchema` combination; typed import descriptions supply
+that evidence through `.source`. The wire records `optionsSchema` and refuses an
+incompatible parser or schema at that field. A declared digest is still a claim
+about the options and records; source replay is the stronger consistency check.
+
 `ImportSpec[K, U]` is the pure, JVM/Scala.js description of fixation admission: typed key
 columns, fixation columns, frame, timestamp units and rounding, sample-count rule, attributes,
 correction policy and admission decision. Build it with `ImportSpec.of` and checked
