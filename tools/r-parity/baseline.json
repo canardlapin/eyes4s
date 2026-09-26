@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "eyesim": {
-    "revision": "aeb098e242a99f0bf9197e767bac4c75e4483aab",
+    "revision": "735d010911c5ec86fae430c8a0010b8107a4431c",
     "version": "0.1.0.9000",
     "license": "MIT",
     "inventory_sources": [
@@ -44,7 +44,7 @@
   "fixtures": {
     "admission-reference": {
       "path": "tools/r-parity/fixtures/admission.json",
-      "sha256": "a24eb7f59c88a498b710d5ac7c5e3252d56a58694011e2e2d190e31d9a4b78ea",
+      "sha256": "dbd81431cded67b0cd64fc1b592c3b8037c95e1c4646c71f2a10471495c5ef5a",
       "license": "Apache-2.0",
       "role": "Pinned public admission behavior, R environment and independently checked row/coordinate/time accounting"
     },
@@ -74,7 +74,7 @@
     },
     "reference-lock": {
       "path": "tools/r-parity/fixtures/reference-lock.json",
-      "sha256": "a1fbaf7253cce157869feb7ed12d5b78fed214ad3bd1228238b0068bc1ea2146",
+      "sha256": "60f9ab01275f8682c26e4359d9a5fb55e6881ca0c9705cfc63b48121b023ed71",
       "license": "Apache-2.0",
       "role": "R and eyesim dependency versions and numerical conventions"
     },
@@ -98,7 +98,7 @@
     },
     "transforms-reference": {
       "path": "tools/r-parity/fixtures/transforms.json",
-      "sha256": "4f83a8cb2adfac4e8aaaa0974997bea184349f136aa57b42e31fab2dacf4afaa",
+      "sha256": "b7f7415bd9fda907801ba094ceaa4fd37fd3a440759368f2979ff9fa0036c142",
       "license": "Apache-2.0",
       "role": "Pinned public eyesim center/rescale/normalize output, observed fitted-transform behaviour on coordinate tables, R environment, and the exact affine oracle with a training-only solve, held-out target and mutants"
     },
@@ -110,19 +110,19 @@
     },
     "template-reference": {
       "path": "tools/r-parity/fixtures/template.json",
-      "sha256": "398f4547cc4ede5c0ecad3ac61adf8c055d6643fbe56ef6496c5a5a83109d51f",
+      "sha256": "60b5c8f76fa82e7cc4255662d87fcc794e5972689b08b662d93181f65fd7f026",
       "license": "Apache-2.0",
       "role": "Actual R QR coefficient receipt, exact rational held-out oracle, contaminated-fit mutant and pinned eyesim normalized-map regression"
     },
     "repetition-reference": {
       "path": "tools/r-parity/fixtures/repetition.json",
-      "sha256": "8cc340e5de3ff90112f8b347b6707bf39e947474d116cf95581f4d026663fa3e",
+      "sha256": "e7bbc8993d52e86894d98dab57aaf2e232a1b2518201f7b932634fdaad5e78d5",
       "license": "Apache-2.0",
       "role": "Pinned public phase-only cosine repetition outputs, duplicate/singleton/empty cases, R environment and exact rational within-participant reinstatement oracle"
     },
     "entropy-reference": {
       "path": "tools/r-parity/fixtures/entropy.json",
-      "sha256": "736519233f1c0c5026025b7c9d26e3c1820f1e601da3a5b7919cfe90366a0f88",
+      "sha256": "03d64f15810ce81d0f86ad68f7aae8f57a061784e4747ad4b6b2c564d4de0125",
       "license": "Apache-2.0",
       "role": "Pinned public eyesim fixation_entropy and Ops.eye_density output on the two-by-two entropy lattice, including NA/Inf/NaN cells and errors, R environment, and the exact rational and 60-digit decimal oracle with a labelled reading of eyesim's positive-cell formula"
     }
@@ -223,18 +223,18 @@
       "id": "fixation-entropy-derived-inputs",
       "row": "entropy-map-arithmetic",
       "eyesim_entry_points": ["fixation_entropy.fixation_group", "fixation_entropy.eye_density_multiscale"],
-      "methods": ["density", "grid", "multiscale mean", "multiscale none"],
-      "estimand": "Entropy of a map derived from a fixation group by KDE or by occupancy-grid counts, and the mean or per-scale vector over a multiscale object.",
-      "conventions": ["duration weighting explicit", "suggest_sigma default bandwidth when sigma is NULL", "padded observed bounds when none are supplied", "grid counts use findInterval with the rightmost cell closed", "multiscale mean drops NA scales", "scale weights explicit"],
-      "backend_dependencies": ["base R", "ks", "MASS"],
-      "eyes4s_public_api": ["Mass.entropy", "Pyramid", "Smoother.gaussian"],
-      "fixture_inputs": ["baseline-small"],
-      "independent_case": "The density method depends on the unresolved KDE row; the grid method and the multiscale mean/none reductions can be pinned on the entropy lattice with the explicit scale weights [1, 3].",
-      "status": "implementation-gap",
-      "evidence": ["tools/r-parity/fixtures/entropy.json", "docs/EYESIM_CAPABILITIES.md"],
-      "gap_issue": "eyesim-entropy",
+      "methods": ["grid", "explicit bounds", "padded bounds", "multiscale mean", "multiscale none", "normalize true", "normalize false", "base 2", "base e"],
+      "estimand": "Shannon entropy of fixation counts in an equal-width lattice, and the per-scale values and unweighted mean of the entropies of a multiscale object.",
+      "conventions": ["cells are half-open with a closed last cell (findInterval, rightmost.closed = TRUE); eyes4s names this LatticeUpperEdge.Closed", "a fixation outside explicit bounds counts in the nearest edge cell (all.inside = TRUE); eyes4s names this OutsideLattice.ClampToEdgeCell and lists the fixation", "eyesim's default bounds are the observed range padded by 5% of its span, a zero span replaced by one unit; eyes4s names this OccupancyLattice.paddedRange", "the grid method counts fixations and ignores duration_weighted; eyes4s takes Weight.Uniform or Weight.Duration explicitly", "normalize divides by the log of the lattice cell count; one fixation has entropy 0", "multiscale values are matched by sigma label, and the mean is over every scale", "absolute tolerance 1e-12"],
+      "backend_dependencies": ["base R", "ks"],
+      "eyes4s_public_api": ["FixationEntropy.occupancy", "OccupancyLattice", "LatticeUpperEdge", "OutsideLattice", "OccupancyEntropy", "MultiscaleEntropy.of", "MultiscaleEntropy.values", "MultiscaleEntropy.reduce", "Entropy.ofWeights", "Weight"],
+      "fixture_inputs": ["derived-entropy-input", "derived-entropy-reference", "derived-entropy-scala"],
+      "independent_case": "Exact rational breakpoints and counts on a 3 by 2 lattice with fixations on an interior breakpoint, on the closed upper corner and outside along x, and on 4 by 3 and 10 by 10 padded lattices kept clear of breakpoints; 60-digit decimal entropies of the counts; the three supplied maps at sigmas 3, 1 and 2 (1.5, 2 and 1.84644 bits) and their mean; and the entropy of each of eyesim's own pinned scale maps.",
+      "status": "verified-equivalent",
+      "evidence": ["tools/r-parity/fixtures/derived-entropy.json", "surface/src/test/scala/eyes4s/surface/DerivedEntropyReference.scala", "surface/src/test/scala/eyes4s/surface/FixationEntropyConformanceSuite.scala", "docs/EYESIM_CAPABILITIES.md"],
+      "gap_issue": null,
       "related_issues": ["eyesim-kde"],
-      "planned_evidence": "Pinned fixation_group grid-method and multiscale mean/none output with explicit weights, and density-method output once the KDE row is settled."
+      "regeneration_ids": ["derived-entropy-reference"]
     },
     {
       "id": "density-map-mean-and-difference",
@@ -361,7 +361,7 @@
       "estimand": "Held-out trial predictions from intercept-free OLS on predeclared fixed features, fitted from training rows only; distinct from eyesim's separate per-source normalized-map cell regression.",
       "conventions": ["typed unique trial keys and explicit disjoint fold partitions", "training-only CSV is distinct from the saved full recipe", "QR rank tolerance 1e-7; singular/underdetermined designs refused", "no learned feature construction or normalization", "absolute numerical tolerance 1e-12", "no coefficient standard errors or p-values"],
       "backend_dependencies": ["stats::lm.fit", "stats::lm", "broom", "tibble"],
-      "eyes4s_public_api": ["TemplateBasis", "TemplateObservation", "TemplateSplit", "TemplateFitCsv.training", "TemplateFitCsv.importFit", "TemplateRecipeCodec", "FittedTemplate.evaluate"],
+      "eyes4s_public_api": ["TemplateBasis", "TemplateObservation", "TemplateSplit", "TemplateFitCsv.training", "TemplateFitCsv.importFit", "TemplateRecipeCodec", "Template.importFit", "FittedTemplate.evaluate"],
       "fixture_inputs": ["baseline-small", "template-training", "template-reference"],
       "independent_case": "Exact rational normal equations give coefficients 1 and 2 and held-out prediction 7. Replacing only the held-out response by 700 leaves the exported training request and prediction unchanged. Deliberately including that row in fitting instead gives 701/8 and 709/8. The public eyesim normalized-map call returns 0.4 and 0.6 on the corresponding vectors.",
       "status": "verified-intentional-divergence",

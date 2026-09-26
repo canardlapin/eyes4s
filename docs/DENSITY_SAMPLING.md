@@ -50,6 +50,37 @@ value is 0.6. A constant cloud clamps to 0.04; without the clamp its zero sigma
 is rejected by the native positive `Sigma` constructor. Fewer than two points
 return a typed error instead of R's NA.
 
+## Entropy from fixations
+
+`FixationEntropy` in `eyes4s-surface` goes from a `Scanpath` to a Shannon entropy in one call,
+with every choice eyesim's `fixation_entropy` makes implicitly passed as an argument:
+
+- `occupancy(path, lattice, weight, outside, base)` counts fixations (`Weight.Uniform`) or
+  accumulates dwell (`Weight.Duration`) in the cells of an `OccupancyLattice`. A lattice has
+  explicit bounds in the scanpath's frame (`of`, `overFrame`) or eyesim's data-dependent default,
+  the observed range padded by a fraction of its span (`paddedRange`). Its cells are half-open;
+  `LatticeUpperEdge.Closed` puts a point on the upper bound in the last cell, as eyesim does.
+  `OutsideLattice` says whether a fixation outside the lattice is refused, excluded or clamped to
+  the edge cell; excluded and clamped fixations are listed in the result.
+- `density(path, grid, bandwidth, edges, weight, base)` smooths the occupancy with
+  `Smoother.gaussian` at a `DensityBandwidth` (a fixed `Sigma` or the IQR rule above) and
+  measures the resulting `Mass`. Fixations outside the grid's frame are listed.
+- `multiscale(path, grid, sigmas, edges, weight, base)` does so at several bandwidths and returns a
+  `MultiscaleEntropy`, whose `values` are labelled by sigma and whose `reduce` takes an explicit
+  `ScaleReduction`: the unweighted `Mean()` or `Weighted` with one weight per scale.
+  `MultiscaleEntropy.of` does the same for supplied maps and `ofPyramid` for a `Pyramid`.
+
+Every result carries the raw entropy in the requested `LogBase` and the entropy relative to the
+log of the cell count, eyesim's `normalize = TRUE`. Failures are `FixationEntropyError` values
+naming the fixation, scale, weight or frames involved, with catalogued diagnostics
+(`fixation-entropy.*` in [DIAGNOSTICS.md](DIAGNOSTICS.md)).
+
+The grid route and the multiscale reductions reproduce the pinned eyesim values; the density route
+uses the native estimator, so its entropy differs from eyesim's `ks` map although the entropy of
+eyesim's own map agrees. eyesim drops a massless scale from its mean and returns `NA` for one
+fixation; here a massless scale cannot be normalised and one fixation has a defined entropy under
+a fixed bandwidth. See [PARITY.md](../PARITY.md#entropy-of-derived-inputs).
+
 ## Lookup and normalization
 
 `DensityLookup.prepare(surface, normalization)` returns a checked `Signed` field

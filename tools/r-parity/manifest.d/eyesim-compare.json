@@ -10,7 +10,7 @@
     },
     "compare-reference": {
       "path": "tools/r-parity/fixtures/compare.json",
-      "sha256": "8857fe00696fd1f6252d5316f63fd1075e47f97679e96fc9d88796205ad01130",
+      "sha256": "8b5820cee2165b77159e75a053340f427dd1f2c6c7ddee5b69aafe61697430cd",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Pinned dispatch and independent map comparison expectations"
     },
@@ -71,11 +71,13 @@
       ],
       "eyes4s_public_api": [
         "MapSimilarityMethod",
+        "ComparisonMethods",
+        "EyesimCompat.fromReference",
         "Distribution.spearman",
         "Distribution.extendedJaccard",
         "Distribution.distanceCorrelation",
-        "Distribution.l1Similarity",
-        "Distribution.fisherZMachineEpsilon",
+        "MapSimilarityMethod.L1Similarity",
+        "Distribution.fisherZ",
         "Lift.viaSmoothingSymmetric",
         "Transport.slicedWasserstein",
         "Transport.sinkhorn"
@@ -90,7 +92,7 @@
       "evidence": [
         "docs/MAP_COMPARISON.md",
         "compare/src/test/scala/eyes4s/compare/MapComparisonSuite.scala",
-        "laws/src/test/scala/eyes4s/laws/BaselineMapLawSuite.scala"
+        "laws/src/test/scala/eyes4s/laws/ComparisonRegistryLawSuite.scala"
       ],
       "gap_issue": null,
       "related_issues": [
@@ -146,7 +148,7 @@
       "evidence": [
         "docs/MAP_COMPARISON.md",
         "compare/src/test/scala/eyes4s/compare/MapComparisonSuite.scala",
-        "laws/src/test/scala/eyes4s/laws/BaselineMapLawSuite.scala"
+        "laws/src/test/scala/eyes4s/laws/ComparisonRegistryLawSuite.scala"
       ],
       "gap_issue": null,
       "related_issues": [

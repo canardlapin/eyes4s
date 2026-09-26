@@ -43,7 +43,7 @@ class SurfaceDecompositionSuite extends munit.FunSuite:
     test(s"${c.name}: native surface OLS agrees with exact rational and pinned public lm") {
       val predictors = get(PredictorSet.of(Vector(a -> mass(c.a), b -> mass(c.b))))
       val policy     = if c.intercept then Intercept.Include else Intercept.Exclude
-      val fit        = get(SurfaceDecomposition.ols(mass(c.y), predictors, policy))
+      val fit        = get(Template.decompose(mass(c.y), predictors, policy))
       val beta       = fit.intercept.toVector ++ fit.coefficients.map(_._2)
       beta.zip(c.coefficients).foreach((x, y) => near(x, y))
       assertEquals(fit.coefficients.map(_._1), Vector(a, b))
@@ -54,7 +54,7 @@ class SurfaceDecompositionSuite extends munit.FunSuite:
       assertEquals(fit.diagnostics.rank, c.coefficients.size)
       assert(fit.diagnostics.scaledDiagonalRatio.isFinite)
       val reversed = get(
-        SurfaceDecomposition.ols(
+        Template.decompose(
           mass(c.y),
           get(PredictorSet.of(predictors.entries.reverse)),
           policy
@@ -70,7 +70,7 @@ class SurfaceDecompositionSuite extends munit.FunSuite:
   test("rank refusal retains every column rather than dropping a predictor") {
     val m          = mass(Vector(0.5, 0, 0, 0.5, 0, 0))
     val predictors = get(PredictorSet.of(Vector(a -> m, b -> m)))
-    assert(SurfaceDecomposition.ols(m, predictors, Intercept.Exclude) match
+    assert(Template.decompose(m, predictors, Intercept.Exclude) match
       case Left(
             DecompositionError
               .Solve(keys, Intercept.Exclude, LeastSquaresError.RankDeficient(1, _, _))
@@ -92,8 +92,8 @@ class SurfaceDecompositionSuite extends munit.FunSuite:
     val foreign = mass(m.values.toVector, get(Grid.of(GridId("foreign"), frame, 3, 2)))
     assert(PredictorSet.of(Vector(a -> m, b -> foreign)).isLeft)
     assert(
-      SurfaceDecomposition
-        .ols(foreign, get(PredictorSet.of(Vector(a -> m))), Intercept.Exclude)
+      Template
+        .decompose(foreign, get(PredictorSet.of(Vector(a -> m))), Intercept.Exclude)
         .isLeft
     )
   }
@@ -102,7 +102,7 @@ class SurfaceDecompositionSuite extends munit.FunSuite:
     val x   = mass(Vector(0.5, 0, 0, 0.5, 0, 0))
     val y   = mass(Vector.fill(6)(1.0 / 6.0))
     val fit =
-      get(SurfaceDecomposition.ols(y, get(PredictorSet.of(Vector(a -> x))), Intercept.Include))
+      get(Template.decompose(y, get(PredictorSet.of(Vector(a -> x))), Intercept.Include))
     assertEquals(fit.diagnostics.rSquared, None)
     near(fit.intercept.get, 1.0 / 6.0)
     near(fit.coefficients.head._2, 0.0)

@@ -1,36 +1,66 @@
 # Map comparison contracts
 
-`MapSimilarityMethod` is the finite native similarity vocabulary. Each instance accepts checked
-`Mass[U]` on agreeing nominal grids and returns a `Similarity` or an operand-bearing error.
-It implements `SymmetricCompare`, without claiming a metric. `fromReference` accepts the seven
-non-transport names below and rejects unsupported names explicitly. Raw signed or unnormalized
-vectors must not enter through a silent conversion: normalization changes some estimands.
+`MapSimilarityMethod` is the registered native map-similarity vocabulary. Each member accepts
+checked `Mass[U]` on agreeing nominal grids and returns a `Similarity` or an operand-bearing
+error through `similarity[U]`, and keeps the interface its measure actually satisfies
+(AGENTS.md rule 9): a `KernelMethod` exposes its `Kernel`, a `MetricMethod` the `Metric` its
+similarity is derived from, and a `SymmetricMethod` claims symmetry and nothing stronger. Raw
+signed or unnormalized vectors must not enter through a silent conversion: normalization changes
+some estimands.
 
-| Reference name | Native instance | Quantity and direction | Vector / density / multiscale at pin |
-|---|---|---|---|
-| pearson | `Distribution.pearson` | centered correlation, [-1,1], larger closer | supported / supported / supported |
-| spearman | `Distribution.spearman` | Pearson of average tie ranks, [-1,1], larger closer | supported / supported / supported |
-| fisherz | `Distribution.fisherZMachineEpsilon` | atanh(Pearson), r within 64 eps of ±1 snapped to ±1, endpoints clamped to ±(1−2^-52), larger closer | supported / supported / supported |
-| cosine | `Distribution.cosine` | normalized dot product, [0,1] on Mass, larger closer | supported / supported / supported |
-| l1 | `Distribution.l1Similarity` | 1−total variation, [0,1], larger closer | supported / supported / supported |
-| jaccard | `Distribution.extendedJaccard` | dot/(squared norms−dot), [0,1], larger closer | supported / supported / supported |
-| dcov | `Distribution.distanceCorrelation` | biased distance **correlation** of cell values, [0,1], larger stronger dependence | supported / supported / supported |
-| emd | no similarity alias | pinned density result 1/(1+transport cost), larger closer | error / backend dependent / error |
+| Member | Interface | Reference name | Quantity and direction | Vector / density / multiscale at pin |
+|---|---|---|---|---|
+| `Pearson` | symmetric | pearson | centered correlation, [-1,1], larger closer | supported / supported / supported |
+| `Spearman` | symmetric | spearman | Pearson of average tie ranks, [-1,1], larger closer | supported / supported / supported |
+| `FisherZ` | symmetric | fisherz | atanh(Pearson), r within 64 eps of ±1 snapped to ±1, endpoints clamped to ±(1−2^-52), larger closer | supported / supported / supported |
+| `Cosine` | kernel | cosine | normalized dot product, [0,1] on Mass, larger closer | supported / supported / supported |
+| `L1Similarity` | metric-derived | l1 | 1 − total variation (a metric), [0,1], larger closer | supported / supported / supported |
+| `ExtendedJaccard` | symmetric | jaccard | dot/(squared norms−dot), [0,1], larger closer | supported / supported / supported |
+| `DistanceCorrelation` | symmetric | dcov | biased distance **correlation** of cell values, [0,1], larger stronger dependence | supported / supported / supported |
+| none | — | emd | pinned density result 1/(1+transport cost), larger closer | error / backend dependent / error |
 
-The old `Distribution.fisherZ` retains its historical ±0.999999999999 clamp. Callers must choose
-the endpoint policy explicitly. Distance correlation is not spatial transport and does not mean
-that two maps are equal: reverse-ordered cell values can have distance correlation one. This
-baseline implementation takes quadratic time and linear auxiliary storage in the number of cells,
-so it is refused with `CompareError.WorkLimitExceeded` above `DistanceCorrelationLimit.default`
-(2^28 unordered cell pairs, at most 23,170 cells). Pass an explicit limit through
-`MapComparison.scales` or `MapSimilarityMethod.instanceWithin` to admit a larger grid; the
-measured cost is in [Execution responsiveness](EXECUTION_RESPONSIVENESS.md#bounded-synchronous-measures).
+Each member's `token` is its stable wire identity in saved repetition plans (the historical enum
+names, so `FisherZ` is `FisherZMachineEpsilon` on the wire). `MapSimilarityMethod.fromToken`
+reads a registered token.
 
-`Distribution.cosine` also exposes the `Kernel` contract: its scores are inner
-products of maps normalized to unit Euclidean length. The independent Gram-matrix
-conformance test checks signed quadratic forms against squared feature-vector
-norms. This stronger interface does not change the cosine scores or make them a
-distance metric.
+## The registry and study methods
+
+`ComparisonMethods` (in `eyes4s-plan`) is the descriptor-backed registry: one `ComparisonMethod`
+entry per member, carrying the measure, a built-in `DefinitionId` and a `MethodDescriptor` whose
+score component takes its range from the measure's declared scale and whose properties and
+execution capability follow from its interface. Cosine keeps `DefinitionId.cosine`; the other
+identities are declared in `ComparisonMethodDefinitions`. `entry.study[U]` is the study method,
+so eyesim's `template_similarity(method = X)` is one call:
+`StudyPlan.similarity(ComparisonMethods.X, input, grid, focal, reference, weight, estimates, policy)`
+(`StudyPlan.cosine` is that call with cosine). A kernel resumes in bounded quanta; every other
+method runs as a whole synchronous operation. `StudyCodecs.similarity(entry)` and
+`StudyResultCodecs.registered(entry)` persist the plan and result under the method's identity,
+and `ArtifactDecoders.study` reads every registered method. `ComparisonMethods.of(method)`
+refuses a compatibility-only method, which has no built-in identity.
+
+## eyesim compatibility
+
+`eyes4s.compare.eyesim.EyesimCompat` holds what exists only for migration and parity:
+`fromReference` maps the seven non-transport eyesim names above to members and refuses every
+other name; `fisherZLegacy` is the historical Fisher z with its ±0.999999999999 clamp; its method
+form `EyesimCompat.FisherZLegacy` is not registered, and saved repetition plans that name it stay
+readable through `EyesimCompat.fromToken`. Callers choose the endpoint policy explicitly.
+`Distribution.fisherZ` was the legacy clamp before CR2; the measure names saved results carry are
+unchanged ("Fisher z (machine epsilon endpoints)" and "Fisher z" for the legacy clamp), so a saved
+result still names the policy that produced it.
+
+Distance correlation is not spatial transport and does not mean that two maps are equal:
+reverse-ordered cell values can have distance correlation one. This baseline implementation takes
+quadratic time and linear auxiliary storage in the number of cells, so it is refused with
+`CompareError.WorkLimitExceeded` above `DistanceCorrelationLimit.default` (2^28 unordered cell
+pairs, at most 23,170 cells). Pass an explicit limit through `MapComparison.scales` or
+`MapSimilarityMethod.similarityWithin` to admit a larger grid; the measured cost is in
+[Execution responsiveness](EXECUTION_RESPONSIVENESS.md#bounded-synchronous-measures).
+
+`Distribution.cosine` is a `Kernel`: its scores are inner products of maps normalized to unit
+Euclidean length. The kernel laws check signed quadratic forms of generated Gram matrices, and an
+independent Gram-matrix conformance test checks them against squared feature-vector norms. This
+stronger interface does not change the cosine scores or make them a distance metric.
 
 ## Measured input boundaries
 
@@ -85,13 +115,16 @@ LP/network-simplex solver or general exact-backend equivalence is claimed.
 
 ## Reproduction
 
-`MapComparisonSuite` executes the public route on JVM and Scala.js. `BaselineMapLawSuite` applies
-published symmetry and description laws to every vocabulary member. Numerical fixtures must
+`MapComparisonSuite` executes the public route on JVM and Scala.js. `ComparisonRegistryLawSuite`
+applies the published `ComparisonMethodLaws` to every registry entry: the laws of its declared
+interface (kernel Gram matrices, metric axioms and the declared transform, or symmetry), scores
+within the declared scale, and a descriptor and study method that agree with the measure; each
+rule set has a killed mutant. `PlanCodecLawSuite` round-trips every method identity in a saved plan. Numerical fixtures must
 reject incorrect tie ranks and an omitted distance-correlation square root. Reference regeneration
 is offline; ordinary builds need no R:
 
 ```sh
 python3 tools/r-parity/generate_compare.py --eyesim /path/to/eyesim --check
 sbt 'compareJVM/testOnly *MapComparisonSuite' 'compareJS/testOnly *MapComparisonSuite' \
-    'lawsJVM/testOnly *BaselineMapLawSuite' 'lawsJS/testOnly *BaselineMapLawSuite'
+    'lawsJVM/testOnly *ComparisonRegistryLawSuite' 'lawsJS/testOnly *ComparisonRegistryLawSuite'
 ```
