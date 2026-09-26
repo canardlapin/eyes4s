@@ -1115,6 +1115,8 @@ lazy val studioDesktop = project
   .in(file("studio/desktop"))
   .enablePlugins(NoPublishPlugin)
   .dependsOn(studioViz.jvm)
+  // S2.3: the file-system ProjectStore runs studio-core's conformance suite.
+  .dependsOn(studioCore.jvm % "test->test")
   .dependsOn(studioLocalRefs(intaglioLocal, "javafxJVM"): _*)
   .dependsOn(studioLocalRefs(scaladockLocal, "core", "fx"): _*)
   .settings(commonSettings)

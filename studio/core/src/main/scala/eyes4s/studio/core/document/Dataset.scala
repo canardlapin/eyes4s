@@ -85,8 +85,10 @@ enum SourceRole derives CanEqual, Codec.AsObject:
     case Fixations => "fixations"
     case Trials    => "trial inventory"
 
-/** A source's path inside the project bundle: relative, `/`-separated, with
-  * no empty, `.` or `..` segment.
+/** The name a source was imported under: relative, `/`-separated, with no
+  * empty, `.` or `..` segment. It is not where the bundle keeps the bytes:
+  * `ProjectBundle.inputPath` maps a source to its one stored path,
+  * `inputs/<sha256>/<last segment of this path>` (S2.3).
   */
 final case class SourcePath private (value: String) derives CanEqual
 
@@ -134,7 +136,7 @@ object DigestJson:
     Encoder[String].contramap(_.sha256.hex)
   )
 
-/** One imported file: its path in the bundle, the SHA-256 of its exact bytes
+/** One imported file: its import name, the SHA-256 of its exact bytes
   * and, once eyes4s has parsed it, its semantic identity.
   */
 final case class Source(
