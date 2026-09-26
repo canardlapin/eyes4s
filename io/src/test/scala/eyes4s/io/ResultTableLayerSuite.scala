@@ -148,10 +148,11 @@ class ResultTableLayerSuite extends munit.FunSuite:
     import eyes4s.codec.VersionedCodec
     import eyes4s.design.*
     import eyes4s.plan.DefinitionId
-    val basis  = get(TemplateBasis.of("feature", Vector("x"), "response"))
-    val train  = get(TemplateObservation.of("train", "train", Vector(1.0), 2.0))
-    val held   = get(TemplateObservation.of("held", "held", Vector(3.0), 7.0))
-    val split  = get(TemplateSplit.of(basis, Vector(train, held), Set("held")))
+    val basis = get(TemplateBasis.of("feature", Vector("x"), "response"))
+    val train = get(TemplateObservation.of("train", "train", Vector(1.0), 2.0))
+    val held  = get(TemplateObservation.of("held", "held", Vector(3.0), 7.0))
+    val split =
+      get(TemplateSplit.of(TemplateDesign.fixed(basis), Vector(train, held), Set("held")))
     val keys   = VersionedCodec.string(get(DefinitionId.of("example.facade-key", 1)))
     val recipe = get(DefinitionId.of("example.facade-recipe", 1))
     @annotation.nowarn("cat=deprecation")

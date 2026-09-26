@@ -222,10 +222,11 @@ class BaselineExportsSuite extends munit.FunSuite:
     import eyes4s.codec.*
     import eyes4s.design.*
     import eyes4s.plan.DefinitionId
-    val basis  = get(TemplateBasis.of("overflow feature", Vector("x"), "response"))
-    val train  = get(TemplateObservation.of("train", "train", Vector(1e-308), 1.0))
-    val held   = get(TemplateObservation.of("held", "held", Vector(2.0), 1.0))
-    val split  = get(TemplateSplit.of(basis, Vector(train, held), Set("held")))
+    val basis = get(TemplateBasis.of("overflow feature", Vector("x"), "response"))
+    val train = get(TemplateObservation.of("train", "train", Vector(1e-308), 1.0))
+    val held  = get(TemplateObservation.of("held", "held", Vector(2.0), 1.0))
+    val split =
+      get(TemplateSplit.of(TemplateDesign.fixed(basis), Vector(train, held), Set("held")))
     val keys   = VersionedCodec.string(get(DefinitionId.of("example.overflow-key", 1)))
     val result = get(
       ResultExports.fixedTemplate(

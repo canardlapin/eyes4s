@@ -195,6 +195,10 @@ today's default admission policy instead of version 1's, a v2 to v3 plan upcast 
 dropping the first fixation, a codec that writes the latest version instead of the earliest, and
 vocabularies that claim a policy ledger is a version-1 ledger or an initial-fixation plan a
 version-2 plan.
+`TemplateRecipeLawSuite` applies them to the template recipe ladder (fixed-feature and map
+inputs) under the conventional `eyes4s.template-recipe` schema: version 1 is the form the three
+earlier recipe codecs wrote, told apart by `method`, and version 2 adds match groups to
+fixed-feature rows; pinned recipes written by the earlier codecs decode and re-encode unchanged.
 `SchemaRegistryJvmSuite` finds the ladders from the shipped codecs that expose one (through the
 decoder of every registered document fixture), not from a list, and requires every schema name
 registered at more than one version to have one, each ladder's versions to be exactly the
@@ -209,7 +213,7 @@ to the value it decodes to as written, and re-encode to itself (see [Evidence](#
 | Where the version appears | Refusal |
 |---|---|
 | A document's envelope | `CodecError.Schema(expected, found)` |
-| The envelope of a schema with a `SchemaLadder` (the study plan, the admission ledger) | `CodecError.UnsupportedSchema(role, found, versions)` |
+| The envelope of a schema with a `SchemaLadder` (the study plan, the admission ledger, a template recipe) | `CodecError.UnsupportedSchema(role, found, versions)` |
 | Version 0, a negative or a non-integer version | `CodecError.Definition(PlanError.InvalidDefinition(name, version))`, or `CodecError.Field("version", …)` |
 | A nested identity a codec requires: layout, key, parameter, score or difference schema | `CodecError.Schema(expected, found)` |
 | An identity a registry selects on: a plan's method (a temporal plan's base method), an input's key schema, a result's method (a recording or temporal result's too) | `CodecError.MissingMethod`, `MissingKeySchema` or `MissingResultCodec` |

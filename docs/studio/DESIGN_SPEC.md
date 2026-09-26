@@ -234,3 +234,8 @@ The contrast suite found four places where the board values break this spec's ow
 Paper tokens for figures (`--paper`, `--paper-ink`, `--paper-ink-2`, `--paper-rule`) and isoline casing tokens (`--isoline-case`, `--isoline-ink`) come from the same source.
 Open: the figure palette's control colour (`#D98A1C` on white paper, 2.76:1) is resolved in S9.2b,
 and the colour lint does not yet catch named CSS colours or `Color.*` constants.
+
+**Font weights in JavaFX (S1.2).** JavaFX picks a static face by family name. It does not use
+`-fx-font-weight`. Weights therefore use the legacy family names from each face's name table:
+"IBM Plex Sans Medm" and "IBM Plex Sans SmBld", "IBM Plex Mono Medm", and "Source Serif 4 Semibold".
+The type lint rejects `-fx-font-weight` and `FontWeight` in studio sources.

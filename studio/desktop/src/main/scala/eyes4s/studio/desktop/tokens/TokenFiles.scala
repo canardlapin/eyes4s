@@ -16,7 +16,7 @@
 
 package eyes4s.studio.desktop.tokens
 
-import eyes4s.studio.app.tokens.{Theme, TokenCss}
+import eyes4s.studio.app.tokens.{Theme, TokenCss, TypeCss}
 
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, Path, Paths}
@@ -36,9 +36,9 @@ enum TokenFileProblem:
     case Stale(f)   => s"$f differs from the token source; run `sbt studioTokens`"
 
 /** The checked-in files generated from `eyes4s.studio.app.tokens.Tokens`
-  * (ticket S1.1): the JavaFX stylesheet of each theme, shipped as resources of
-  * this project, and the web custom properties under `docs/studio/tokens/`,
-  * checked in CI and not shipped.
+  * (ticket S1.1) and `TypeScale` (S1.2): the JavaFX stylesheet of each theme
+  * and of the type scale, shipped as resources of this project, and their web
+  * counterparts under `docs/studio/tokens/`, checked in CI and not shipped.
   *
   * `sbt studioTokens` rewrites them; `sbt studioTokensCheck` and
   * `TokenFilesSuite` fail when one is stale.
@@ -52,6 +52,9 @@ object TokenFiles:
   def stylesheetResource(theme: Theme): String =
     s"$resourceDirectory/${TokenCss.javaFxFileName(theme)}"
 
+  /** The classpath resource of the type scale's stylesheet (ticket S1.2). */
+  val typeStylesheetResource: String = s"$resourceDirectory/${TypeCss.javaFxFileName}"
+
   /** Every generated file. */
   val files: List[GeneratedFile] =
     Theme.values.toList.map { theme =>
@@ -59,7 +62,14 @@ object TokenFiles:
         s"studio/desktop/src/main/resources/${stylesheetResource(theme)}",
         TokenCss.javaFx(theme)
       )
-    } :+ GeneratedFile("docs/studio/tokens/studio-tokens.css", TokenCss.web)
+    } ++ List(
+      GeneratedFile(
+        s"studio/desktop/src/main/resources/$typeStylesheetResource",
+        TypeCss.javaFx
+      ),
+      GeneratedFile("docs/studio/tokens/studio-type.css", TypeCss.web),
+      GeneratedFile("docs/studio/tokens/studio-tokens.css", TokenCss.web)
+    )
 
   /** The files under `root` that do not match the token source. */
   def check(root: Path): List[TokenFileProblem] =

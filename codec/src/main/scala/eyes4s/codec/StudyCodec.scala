@@ -40,11 +40,20 @@ object StudyCodecs:
   def cosine[U <: Unit2D](using
       UnitLabel[U]
   ): StudyCodec[StudyKey, U, Unit, Similarity, SignedDifference] =
+    similarity[U](ComparisonMethods.cosine)
+
+  /** The ordinary participant/stimulus/phase route of a registered map
+    * method, matching `StudyPlan.similarity`; the plan records the method's
+    * built-in identity.
+    */
+  def similarity[U <: Unit2D](method: ComparisonMethod)(using
+      UnitLabel[U]
+  ): StudyCodec[StudyKey, U, Unit, Similarity, SignedDifference] =
     new StudyCodec(
       DefinitionId.study,
       StudyKey.layout(DefinitionId.studyLayout),
       key(DefinitionId.studyKey),
-      StudyMethod.cosine[U](DefinitionId.cosine),
+      method.study[U],
       VersionedCodec.unit(DefinitionId.unit)
     )
 
@@ -58,7 +67,7 @@ object StudyCodecs:
       DefinitionId.study,
       TrialKey.layout(TrialKeyDefinitions.trialLayout),
       trialKey(TrialKeyDefinitions.trialKey),
-      StudyMethod.cosine[U](DefinitionId.cosine),
+      ComparisonMethods.cosine.study[U],
       VersionedCodec.unit(DefinitionId.unit)
     )
 

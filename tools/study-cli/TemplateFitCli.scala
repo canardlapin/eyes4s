@@ -29,7 +29,7 @@ object TemplateFitCli:
       case "export" =>
         Files.createDirectories(directory)
         val prepared = (for
-          split  <- TemplateFitGuide.input().left.map(TemplateFitGuide.message)
+          split  <- TemplateFitGuide.historicalInput().left.map(TemplateFitGuide.message)
           result <- TemplateFitGuide.prepare(split).left.map(TemplateFitGuide.message)
         yield result).fold(sys.error, identity)
         Files.writeString(
@@ -66,7 +66,7 @@ object TemplateFitCli:
           )
           .fold(e => sys.error(TemplateFitGuide.message(e)), identity)
         result.rows.foreach(row =>
-          println(s"${row.key}\t${row.fold}\t${row.observed}\t${row.result}")
+          println(s"${row.key}\t${row.splitGroup}\t${row.observed}\t${row.result}")
         )
         println(s"held-out MSE = ${result.meanSquaredError}")
       case "import" =>
@@ -77,7 +77,7 @@ object TemplateFitCli:
           )
           .fold(e => sys.error(TemplateFitGuide.message(e)), identity)
         result.rows.foreach(row =>
-          println(s"${row.key}\t${row.fold}\t${row.observed}\t${row.result}")
+          println(s"${row.key}\t${row.splitGroup}\t${row.observed}\t${row.result}")
         )
         println(s"held-out MSE = ${result.meanSquaredError}")
       case _ => () // validated above; this executable is an effectful example, not a pure API

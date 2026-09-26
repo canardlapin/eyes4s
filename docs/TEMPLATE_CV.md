@@ -1,7 +1,8 @@
 # Training-only learned templates and explicit folds
 
-`LearnedTemplate` implements `eyes4s.training-mean-cosine-response/1`, a bounded
-native recipe. Each observation is one trial, with a normalized `Mass` map on a
+`TemplateDesign.meanMap[U](splitUnit, responseUnit)` implements
+`eyes4s.training-mean-cosine-response/1`, the learned design of the one template family
+(the [fixed-feature design](TEMPLATE_FITTING.md) is the other). Each observation is one trial, with a normalized `Mass` map on a
 shared nominal grid, finite response, typed key, split-group label and match-group
 label. The caller names the split unit (for example participant) and response unit.
 
@@ -12,8 +13,9 @@ with no intercept; beta is fitted by the shared native scaled Householder QR.
 This is prediction across trials, not regression across cells, and beta is not
 a mixture weight. There is no response weighting, implicit centering or tuning.
 
-`MapTemplateObservation.of` validates each row. `MapTemplateSplit.of` takes an
-explicit set of held-out split groups. Before fitting it excludes training
+`TemplateObservation.of(key, splitGroup, map, response, Some(matchGroup))` validates each
+row; this design requires a match group. `TemplateSplit.of(design, rows, heldOutGroups)` takes
+an explicit set of held-out split groups. Before fitting it excludes training
 candidates whose match group occurs in held-out data. Every such row is retained
 in `excluded` with `HeldOutMatchGroup`; no observation disappears. The resulting
 training and held-out capabilities are separate types. Empty partitions, repeated
@@ -21,20 +23,22 @@ trial keys and incompatible grids are typed errors. Group membership must be
 chosen at the appropriate independence unit; a label cannot establish that unit
 scientifically.
 
-`LearnedTemplate.fit(split.training)` can receive only training maps and responses.
-It returns the mean map, ordered training features, slope and full training receipt.
+`Template.fit(split.training)` can receive only training maps and responses.
+It returns the learned mean map (`template`), ordered training features, the slope (the one
+coefficient) and the full training receipt; `Template.crossValidate(split)` also evaluates.
 The digest includes recipe identity, split and response units, the spatial unit
 symbol (`UnitLabel[U]`, so identical numbers in pixels and in degrees differ),
 grid/frame specification, ordered keys, groups, map values and responses. `evaluate(split.heldOut)` checks training identity
 and retains every held-out key, group, response and prediction/residual or error.
 
-`LearnedTemplateRecipeCodec.of(schema, keyCodec)` saves the complete input recipe,
+`TemplateRecipeCodec.of[K, Mass[U]](schema, keyCodec)` saves the complete input recipe,
 including excluded rows and both partitions. `heldOutGroups` has one canonical wire
 form, ascending order without duplicates; any other order is a typed `CodecError`
 rather than a second spelling of the same recipe. Reopening reruns admission and
 exclusion rules and checks the training digest. Refit reconstructs the learned mean,
 features and slope; saved coefficients are not accepted as proof of native fitting.
-The compiled `LearnedTemplateRecipeSuite` exercises save/reopen/refit/evaluate on
+Recipes saved by the earlier learned-template codec decode unchanged (the ladder's first
+version). The compiled `LearnedTemplateRecipeSuite` exercises save/reopen/refit/evaluate on
 JVM and Scala.js, including invalid mass, wrong units and stale identities.
 
 ## Independent leakage evidence
@@ -57,7 +61,7 @@ The pinned exported `eyesim::template_similarity_cv` call uses cosine on supplie
 normalized maps, explicit participant grouping, two folds, seed 42 and no controls
 or learned similarity transform. Its actual fold assignment is recorded in
 `tools/r-parity/fixtures/template-cv.json`, with per-fold training/evaluation counts
-and overlap exclusions. Native `MapTemplateSplit`, `Pairing` and
+and overlap exclusions. Native `TemplateSplit`, `Pairing` and
 `Distribution.cosine` reproduce the recorded folds' exclusions and scores within
 absolute tolerance 1e-12. Each fold has a cross-fold repeated match key, so omission
 of the exclusion check cannot pass from an empty-overlap fixture.
@@ -73,7 +77,7 @@ The learned mean/cosine response recipe is intentionally a different estimand fr
 that untransformed matched-map CV call. It is not parity with PCA, CORAL, CCA or
 other learned density transforms. The separately measured `template_regression`
 and `template_multireg` LM paths are covered by
-[SurfaceDecomposition](SURFACE_DECOMPOSITION.md), including normalized predictors,
+[`Template.decompose`](SURFACE_DECOMPOSITION.md), including normalized predictors,
 baseline/source slopes, explicit intercept policy and Signed fitted/residual maps.
 Robust, NNLS and logistic variants remain outside this bounded baseline slice.
 

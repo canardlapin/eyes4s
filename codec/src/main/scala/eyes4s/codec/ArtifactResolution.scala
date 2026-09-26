@@ -513,13 +513,24 @@ object ArtifactDecoders:
         ).input.decode(document)
       yield value
 
-  /** The ordinary participant/stimulus/phase cosine route. */
+  /** The ordinary participant/stimulus/phase route of every registered map
+    * method ([[ComparisonMethods.all]]).
+    */
   def study[U <: Unit2D: UnitLabel]: Either[CodecError, ArtifactDecoders[StudyKey, U]] = for
-    plans   <- StudyRegistry.empty[StudyKey, U].register(StudyCodecs.cosine[U].registration)
+    plans <- ComparisonMethods.all.foldLeft(
+      Right(StudyRegistry.empty[StudyKey, U]): Either[CodecError, StudyRegistry[StudyKey, U]]
+    )((registry, method) =>
+      registry.flatMap(_.register(StudyCodecs.similarity[U](method).registration))
+    )
     inputs  <- StudyInputRegistry.empty[StudyKey, U].register(StudyInputCodecs.study[U])
-    results <- StudyResultRegistry
-      .empty[StudyKey, U]
-      .register(StudyResultCodecs.cosine[U].registration)
+    results <- ComparisonMethods.all.foldLeft(
+      Right(StudyResultRegistry.empty[StudyKey, U]): Either[
+        CodecError,
+        StudyResultRegistry[StudyKey, U]
+      ]
+    )((registry, method) =>
+      registry.flatMap(_.register(StudyResultCodecs.registered[U](method).registration))
+    )
   yield of(plans, inputs, results)
 
 /** A verified, decoded scientific object graph, in manifest order. Every

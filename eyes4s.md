@@ -1306,7 +1306,7 @@ Diagnostics are descriptive — rank, conditioning, convergence, residual norms,
 cell-wise standard errors would falsely treat spatially autocorrelated cells as independent.
 Partial association is a different result type, not a coefficient.
 
-Status (2026-09-19): the OLS slice is implemented as `SurfaceDecomposition.ols` over
+Status: the OLS slice is implemented as `Template.decompose` over
 `PredictorSet[U]`, using native shared `LeastSquares` Householder QR. It returns Signed maps,
 keyed coefficients and descriptive diagnostics; see [surface decomposition](docs/SURFACE_DECOMPOSITION.md).
 NNLS, simplex fitting and partial association remain deferred under

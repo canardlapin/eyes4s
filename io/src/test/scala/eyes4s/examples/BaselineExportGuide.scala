@@ -214,7 +214,7 @@ object BaselineExportGuide:
     observations <- Vector((1.0, 2.0, "train"), (2.0, 4.0, "train"), (3.0, 7.0, "held"))
       .zip(baseKeys)
       .traverse { (r, k) => checked(TemplateObservation.of(k, r._3, Vector(r._1), r._2)) }
-    split       <- checked(TemplateSplit.of(basis, observations, Set("held")))
+    split <- checked(TemplateSplit.of(TemplateDesign.fixed(basis), observations, Set("held")))
     fixedTables <- checked(ResultExports.fixedTemplate(split, recipeId, keys))
     learnedRows <- Vector(
       ("train", "a", masses(0), 2.0),
@@ -223,23 +223,24 @@ object BaselineExportGuide:
       ("train", "c", masses(2), 100.0)
     ).zipWithIndex.traverse { (r, i) =>
       checked(
-        MapTemplateObservation.of(
+        TemplateObservation.of(
           StudyKey(participant, i.toString, r._1),
           r._1,
-          r._2,
           r._3,
-          r._4
+          r._4,
+          Some(r._2)
         )
       )
     }
-    learnedSplit <- checked(
-      MapTemplateSplit.of(learnedRows, Set("held"), "participant split", "response units")
+    learnedDesign <- checked(
+      TemplateDesign.meanMap[Px]("participant split", "response units")
     )
+    learnedSplit  <- checked(TemplateSplit.of(learnedDesign, learnedRows, Set("held")))
     learnedTables <- checked(ResultExports.learnedTemplate(learnedSplit, learnedId, keys))
     predictors    <- Vector("first", "second").traverse(s => checked(PredictorId.of(s)))
     predictorSet  <- checked(PredictorSet.of(predictors.zip(masses.take(2))))
-    ols       <- checked(SurfaceDecomposition.ols(masses(2), predictorSet, Intercept.Exclude))
-    olsTables <- checked(ResultExports.ols(ols))
+    ols           <- checked(Template.decompose(masses(2), predictorSet, Intercept.Exclude))
+    olsTables     <- checked(ResultExports.ols(ols))
     studyInput = StudyInput(
       Trials((for phase <- Vector("encode", "recall"); k <- baseKeys.take(2)
       yield Trial(k.copy(phase = phase), (), path)))

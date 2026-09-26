@@ -1,0 +1,96 @@
+{
+  "schema" : {
+    "name" : "eyes4s.template-recipe",
+    "version" : 1
+  },
+  "value" : {
+    "method" : "eyes4s.no-intercept-r-lm-qr/1",
+    "basis" : "fixed-template-features/1",
+    "columns" : [
+      "template-a",
+      "template-b"
+    ],
+    "responseUnit" : "score",
+    "heldOutFolds" : [
+      "test"
+    ],
+    "trainingHash" : "8a3a3b110b6bcfac",
+    "rows" : [
+      {
+        "key" : {
+          "schema" : {
+            "name" : "example.trial-key",
+            "version" : 1
+          },
+          "value" : "a"
+        },
+        "fold" : "train-a",
+        "features" : [
+          1.0,
+          0.0
+        ],
+        "response" : 1.0
+      },
+      {
+        "key" : {
+          "schema" : {
+            "name" : "example.trial-key",
+            "version" : 1
+          },
+          "value" : "b"
+        },
+        "fold" : "train-a",
+        "features" : [
+          0.0,
+          1.0
+        ],
+        "response" : 2.0
+      },
+      {
+        "key" : {
+          "schema" : {
+            "name" : "example.trial-key",
+            "version" : 1
+          },
+          "value" : "c"
+        },
+        "fold" : "train-b",
+        "features" : [
+          1.0,
+          1.0
+        ],
+        "response" : 3.0
+      },
+      {
+        "key" : {
+          "schema" : {
+            "name" : "example.trial-key",
+            "version" : 1
+          },
+          "value" : "d"
+        },
+        "fold" : "train-b",
+        "features" : [
+          2.0,
+          1.0
+        ],
+        "response" : 4.0
+      },
+      {
+        "key" : {
+          "schema" : {
+            "name" : "example.trial-key",
+            "version" : 1
+          },
+          "value" : "e"
+        },
+        "fold" : "test",
+        "features" : [
+          3.0,
+          2.0
+        ],
+        "response" : 7.0
+      }
+    ]
+  }
+}

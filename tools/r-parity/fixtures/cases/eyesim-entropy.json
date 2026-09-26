@@ -1,0 +1,30 @@
+{
+  "description": "Inputs for fixation_entropy on derived inputs: a fixation group through the grid and density methods, and multiscale objects through the mean and none reductions. Synthetic data authored for eyes4s.",
+  "frame": [60, 40],
+  "fixation_group": {
+    "x": [5, 15, 20, 33, 60, 70],
+    "y": [5, 8, 20, 21, 40, 12],
+    "onset_ms": [0, 200, 500, 900, 1300, 1700],
+    "duration_ms": [100, 200, 250, 300, 150, 120],
+    "notes": "(20, 20) lies on an interior breakpoint of the explicit lattice along both axes; (60, 40) is its upper corner; (70, 12) is outside it along x."
+  },
+  "explicit_lattice": {"grid": [3, 2], "xbounds": [0, 60], "ybounds": [0, 40]},
+  "padded_lattices": [
+    {"grid": [4, 3], "padding": 0.05},
+    {"grid": [10, 10], "padding": 0.05}
+  ],
+  "density": {"sigma": 8, "outdim": [6, 4], "xbounds": [0, 60], "ybounds": [0, 40]},
+  "multiscale": {"sigmas": [12, 6], "scale_weights": [[6, 1], [12, 3]]},
+  "supplied_scales": {
+    "lattice": {"frame": [100, 50], "x": [25, 75], "y": [12.5, 37.5]},
+    "sigmas": [3, 1, 2],
+    "maps": [
+      [0.5, 0.25, 0.25, 0],
+      [0.25, 0.25, 0.25, 0.25],
+      [0.4, 0.3, 0.2, 0.1]
+    ],
+    "zero_sigma": 4,
+    "scale_weights": [[1, 1], [3, 3]]
+  },
+  "log_bases": [2, 2.718281828459045]
+}

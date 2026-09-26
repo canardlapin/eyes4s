@@ -34,7 +34,7 @@ object TokenCss:
   /** The JavaFX style class that selects a stage variant, e.g. `stage-mid`. */
   def stageStyleClass(stage: StageVariant): String = s"stage-${stage.cssName}"
 
-  private val license: String =
+  private[tokens] val licenseHeader: String =
     """|/*
        | * Copyright 2026 canardlapin
        | *
@@ -95,7 +95,7 @@ object TokenCss:
     val themeName = theme match
       case Theme.Light => "light"
       case Theme.Dark  => "dark"
-    license + generatedNote +
+    licenseHeader + generatedNote +
       s"\n/* Eyes Studio tokens, $themeName theme: JavaFX looked-up colours. */\n" +
       block(".root", root) +
       "\n/* Stage variants: set one of these style classes on the stage node. */\n" +
@@ -135,7 +135,7 @@ object TokenCss:
         stageDeclarations(stage, webName, _.webCss)
       )
     }
-    license + generatedNote +
+    licenseHeader + generatedNote +
       "\n/* Eyes Studio tokens as web custom properties, for a future web shell. */\n" +
       block(
         ".es",

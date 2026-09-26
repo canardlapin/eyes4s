@@ -15,6 +15,27 @@ Gaussian estimates remain separate labelled results. It does not pool bandwidths
 fixations equally. A Gaussian bandwidth is a standard deviation in the frame's units. Edge
 truncation and source-wise edge renormalization are different estimators: choose explicitly.
 
+### Choose the comparison method
+
+Cosine is the default, but every registered map method is a study method. `ComparisonMethods`
+holds one entry per method, each with its saved identity and a descriptor stating its scale,
+direction and properties; `StudyPlan.similarity` is the version-1 study with any of them, and
+`StudyPlan.configure` takes `entry.study`. The measure keeps its interface: cosine is a kernel,
+`l1` is one minus the total-variation metric, and the correlations are symmetric and nothing
+stronger. eyesim's `method =` names map to entries through `EyesimCompat.fromReference`.
+
+```scala mdoc
+import eyes4s.compare.eyesim.EyesimCompat
+import eyes4s.plan.ComparisonMethods
+
+val pearson = EyesimCompat.fromReference("pearson").flatMap(ComparisonMethods.of)
+pearson.map(entry => (entry.id.name, entry.method.info.scale.render, entry.properties))
+```
+
+A correlation is bounded in [-1, 1] and not safe to average directly; Fisher z
+(`ComparisonMethods.fisherZ`) is the averageable form. Distance correlation is quadratic in grid
+cells and refuses grids above its work limit.
+
 ### Smooth differently along x and y
 
 For a row-structured display, you may want a wider horizontal kernel without merging adjacent

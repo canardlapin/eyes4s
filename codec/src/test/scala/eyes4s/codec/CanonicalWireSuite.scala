@@ -34,17 +34,18 @@ class CanonicalWireSuite extends munit.FunSuite:
   private def strings(values: String*): Json = Json.arr(values.map(Json.fromString)*)
   private val ascending                      = "members are written in ascending order"
 
-  private val split: TemplateSplit[String] = get(
+  private val basis = get(TemplateBasis.of("basis/1", Vector("a"), "score"))
+  private val split: TemplateSplit[String, Vector[Double]] = get(
     for
-      basis <- TemplateBasis.of("basis/1", Vector("a"), "score")
       rows <- Vector(("k1", "f1", 1.0), ("k2", "f2", 2.0), ("k3", "f3", 3.0), ("k4", "f1", 4.0))
         .traverse((k, f, x) => TemplateObservation.of(k, f, Vector(x), x))
-      value <- TemplateSplit.of(basis, rows, Set("f2", "f3"))
+      value <- TemplateSplit.of(TemplateDesign.importedLm(basis), rows, Set("f2", "f3"))
     yield value
   )
 
   test("a template recipe's held-out folds are refused out of order") {
-    val codec = TemplateRecipeCodec.of(id("test.recipe"), VersionedCodec.string(id("test.key")))
+    val codec = TemplateRecipeCodec
+      .of[String, Vector[Double]](id("test.recipe"), VersionedCodec.string(id("test.key")))
     val encoded = get(codec.encode(split))
     assertEquals(
       encoded.hcursor.downField("value").get[Json]("heldOutFolds"),
@@ -63,11 +64,12 @@ class CanonicalWireSuite extends munit.FunSuite:
         )
       )
     )
-    val native =
-      NativeTemplateRecipeCodec.of(id("test.native"), VersionedCodec.string(id("test.key")))
+    val nativeSplit = get(
+      TemplateSplit.of(TemplateDesign.fixed(basis), split.rows, Set("f2", "f3"))
+    )
     val nativeReversed =
-      edit(get(native.encode(split)), "value", "heldOutFolds")(_ => strings("f3", "f2"))
-    assert(native.decode(nativeReversed).left.exists {
+      edit(get(codec.encode(nativeSplit)), "value", "heldOutFolds")(_ => strings("f3", "f2"))
+    assert(codec.decode(nativeReversed).left.exists {
       case CodecError.NonCanonical("heldOutFolds", _, _, _) => true
       case _                                                => false
     })
