@@ -872,6 +872,7 @@ object DiagnosticSamples:
       )
     ),
     generated[RecordIdentityError]("RecordIdentityError"),
+    generated[ProvenanceError[StudyKey]]("ProvenanceError"),
     generated[SourceIdentityError]("SourceIdentityError"),
     generated[ImportSpecError]("ImportSpecError"),
     generated[MassLevelError]("MassLevelError"),

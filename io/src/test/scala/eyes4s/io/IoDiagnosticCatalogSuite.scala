@@ -32,8 +32,8 @@ class IoDiagnosticCatalogSuite extends munit.FunSuite:
 
   private val all = IoDiagnosticSamples.all
 
-  private val IoCount    = 185
-  private val IoDigest   = "3fe35b37de91fc62"
+  private val IoCount    = 192
+  private val IoDigest   = "2803f0e7f6a92a55"
   private val LawsCount  = 21
   private val LawsDigest = "cec5dc887ffa1c46"
 

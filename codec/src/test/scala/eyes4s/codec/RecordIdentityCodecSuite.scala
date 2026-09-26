@@ -68,8 +68,11 @@ class RecordIdentityCodecSuite extends munit.ScalaCheckSuite:
     refused[DataRecord]("""{"data-record":7214,"line":7215}""", "members [data-record, line]")
     refused[DataRecord]("""7214""", "no object")
     refused[DataRecord]("""{"data-record":0}""", "Data record 0")
-    refused[DataRecord]("""{"data-record":"7214"}""", "an integer, found \"7214\"")
-    refused[DataRecord]("""{"data-record":7214.5}""", "an integer, found 7214.5")
+    refused[DataRecord]("""{"data-record":"7214"}""", "expected a JSON number, got \"7214\"")
+    refused[DataRecord](
+      """{"data-record":7214.5}""",
+      "expected an integer spelled as one, got 7214.5"
+    )
     refused[FixationNumber]("""{"scanpath-position":5}""", "single member 'fixation-number'")
     refused[FixationNumber]("""{"fixation-number":0}""", "Fixation number 0")
     refused[ScanpathPosition]("""{"fixation-number":6}""", "single member 'scanpath-position'")

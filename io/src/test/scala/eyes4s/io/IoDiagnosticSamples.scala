@@ -101,6 +101,7 @@ object IoDiagnosticSamples:
     generated[EyeLinkConformanceError]("EyeLinkConformanceError"),
     generated[EyeLinkCorpusError]("EyeLinkCorpusError"),
     generated[CsvLayoutError]("CsvLayoutError"),
+    generated[SourceTextError[StudyKey]]("SourceTextError"),
     generated[SourceAdmissionError]("SourceAdmissionError"),
     generated[LedgerVerificationError]("LedgerVerificationError")
   )

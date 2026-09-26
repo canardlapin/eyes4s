@@ -252,12 +252,24 @@ class CsvLayoutSuite extends munit.ScalaCheckSuite:
       "h\n\"\",\"\"" -> 1, // two empty fields are a record
       "h\n\n"        -> 1, // a blank line is a record of one empty field
       "h\n\r"        -> 1, // a lone CR is a character, not a terminator
-      "h\r\n"        -> 0
+      "h\r\n"        -> 0,
+      "h\n\"\"\"\""  -> 1  // an escaped quote is a character: """" is the field "
     )
     edges.foreach { (text, records) =>
       assertEquals(get(CsvLayout.scan(text)).records, records, text)
       assertEquals(get(Rfc4180.decode(text)).size - 1, records, text)
     }
+    assertEquals(get(get(CsvLayout.scan("h\n\"\"\"\"")).verbatim(data(1))), "\"\"\"\"")
+  }
+
+  test("text after the last record that holds no record is beyond the layout's lines") {
+    // The decoder reads no record from a lone "" after the final line feed, so
+    // line 2 belongs to no record: the layout covers line 1 only.
+    val layout = get(CsvLayout.scan("h\n\"\""))
+    assertEquals(layout.lines.lines, 1L)
+    assertEquals(layout.lines.owner(line(1)), Right(RecordRole.Header))
+    assertEquals(layout.lines.owner(line(2)), Left(RecordIdentityError.LineBeyond(line(2), 1L)))
+    assertEquals(layout.lines.lineBreak, LineBreak.LineFeed)
   }
 
   test("refusals name the decoder's error or the missing header") {
