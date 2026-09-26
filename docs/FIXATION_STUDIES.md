@@ -29,11 +29,13 @@ values to your study's declared geometry before using a different recording setu
 `FixationKeyReader.study` names participant, stimulus and phase columns. The names are interpreted
 only at this raw-file boundary; the library constructs typed `StudyKey` values for analysis.
 Custom keys use a typed `FixationKeyReader` and the same importer. `FixationKeyReader.trial`
-reads a `TrialKey`: participant, phase, trial label and occurrence (1 when no occurrence column is
-named) identify the trial, and the item it is matched on is an attribute beside that identity. Two
+reads a `TrialKey`: participant, phase and trial label identify the trial, and its occurrence (1
+when no occurrence column is named) and the item it is matched on are attributes of it. Two
 retrieval trials may share a display and remember different items, and a retrieval trial may name
-an item no encoding trial showed. Records of one trial identity that name different items
-quarantine the trial with `QuarantineCause.ItemConflict(items)`. The built-in reader assigns
+an item no encoding trial showed. Records of one trial that name different items, or different
+occurrences, quarantine the trial once, under its first key, with `QuarantineCause.ItemConflict(items)`
+or `OccurrenceConflict(occurrences)`; the prepared study refuses such keys with
+`PlanError.MatchItemConflict`. The built-in reader assigns
 a distinct nominal clock to each trial; it does not assert synchronization between trials.
 
 Pass the source `TimestampUnit` explicitly. Decimal timestamps round to the nearest microsecond,
@@ -86,9 +88,10 @@ the window are left out of the map under `OffWindowPolicy.Exclude`, or fail thei
 `StudyFailure.OffWindow` either way. Fixations off the screen are always left out of the map.
 
 `plan.windowTallies(input)`, `PreparedStudy.windowTallies` and `StudyPreview.windowTallies` give,
-per trial in input order, a `WindowTally`: fixations and fixation duration outside the window,
-outside the screen, and in total. `windowSummary` totals them ("543 of 11,520 records in 409
-trials"). Preflight reports `StudyFinding.OffWindowFixations` and `NoFixationInWindow` as
+per trial in input order, a `WindowTally` (fixations and fixation duration outside the window, none
+for a whole-frame plan, outside the screen, and in total), or the frame refusal of a trial in
+another frame. `windowSummary` totals them, and `WindowSummary.of(tallies, ledger)` adds the
+importer's source-record count ("543 of 11,520 records in 409 trials"). Preflight reports `StudyFinding.OffWindowFixations` and `NoFixationInWindow` as
 warnings, and `StudyInspection.windowTallies` gives the same tallies beside a completed result.
 
 Scales can be declared in degrees: `StudyScale.Angular(StudyEstimate.Gaussian(sigmaDeg, edges))`
@@ -96,6 +99,10 @@ resolves through the plan's one `LinearAngularScale` (a declared, uniform units-
 the admission frame, not a calibration). The description records the degrees and the units per
 degree beside the resolved pixel bandwidth. Degrees are measured from the frame centre with `y`
 upward (`LinearAngularScale.angular`, and `on(window)` for degrees from the image centre).
+
+A flip correction is a `HalfOpenReflection` about the frame's centre line: a position on the
+half-open frame stays on it (the lower edge maps just below the upper edge) and one off it stays
+off, so a flip never moves a record on or off the screen.
 
 ## Repeated items and matched references
 

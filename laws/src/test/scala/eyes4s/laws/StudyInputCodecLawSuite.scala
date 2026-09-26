@@ -179,7 +179,12 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
         Gen.choose(-5.0, 5.0),
         Gen.choose(-5.0, 5.0)
       )
-      .map(QuarantineCause.UnmappableFixation.apply)
+      .map(QuarantineCause.UnmappableFixation.apply),
+    // Causes that arrived with the admission policy: a ledger naming one can
+    // only be written as version 2.
+    Gen.zip(Gen.choose(0, 3), Gen.choose(4, 6)).map(QuarantineCause.CorrectionConflict.apply),
+    Gen.listOfN(2, text).map(v => QuarantineCause.ItemConflict(v.toVector)),
+    Gen.const(QuarantineCause.OccurrenceConflict(Vector(1, 2)))
   )
 
   /** One admitted record, one rejected record, or a quarantined trial of one

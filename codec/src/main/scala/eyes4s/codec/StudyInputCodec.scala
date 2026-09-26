@@ -85,12 +85,14 @@ final class StudyInputCodec[K, U <: Unit2D](
     * means exactly that, so a version-1 ledger re-encodes to its own bytes.
     */
   val ledger: VersionedCodec[AdmissionLedger[K]] =
-    VersionedCodec.versions[AdmissionLedger[K]](ledgerSchema, ledgerSchemaV2)(value =>
-      writeLedger(value).flatMap(json =>
-        if value.isVersion1 then Right(ledgerSchema -> json)
-        else writePolicy(value).map(policy => ledgerSchemaV2 -> Wire.append(json, policy))
-      )
-    )((version, json) => readLedger(json, version == ledgerSchemaV2))
+    VersionedCodec
+      .versions[AdmissionLedger[K]]("admission ledger", ledgerSchema, ledgerSchema.version + 1)(
+        value =>
+          writeLedger(value).flatMap(json =>
+            if value.isVersion1 then Right(ledgerSchema -> json)
+            else writePolicy(value).map(policy => ledgerSchemaV2 -> Wire.append(json, policy))
+          )
+      )((version, json) => readLedger(json, version == ledgerSchemaV2))
 
   private def rows(table: DocumentIdentities): VersionedCodec[Trials[K, Unit, Scanpath[U]]] =
     VersionedCodec.trials(
@@ -534,7 +536,7 @@ final class StudyInputCodec[K, U <: Unit2D](
       .toRight(CodecError.Field("outcome", json, s"unknown admission outcome $name"))
     entries <- Wire.field[Vector[Json]](json, "records")
     records <- entries.zipWithIndex.traverse { case (entry, index) =>
-      readRecord(entry).left.map(Wire.at(s"records[$index]"))
+      readRecord(entry, withPolicy).left.map(Wire.at(s"records[$index]"))
     }
     admission <-
       if withPolicy then readPolicy(json)
@@ -546,7 +548,10 @@ final class StudyInputCodec[K, U <: Unit2D](
     _ <- ledger.checkCorrections(layout.participant(_)).left.map(CodecError.Admission.apply)
   yield ledger
 
-  private def readRecord(json: Json): Either[CodecError, SourceRecord[K]] = for
+  private def readRecord(
+      json: Json,
+      version2: Boolean
+  ): Either[CodecError, SourceRecord[K]] = for
     number      <- Wire.field[Int](json, "record")
     kind        <- Wire.field[String](json, "kind")
     disposition <- kind match
@@ -560,7 +565,9 @@ final class StudyInputCodec[K, U <: Unit2D](
           raw     <- Wire.field[Vector[String]](json, "raw")
           keyJson <- Wire.field[Json](json, "key")
           key     <- if keyJson.isNull then Right(None) else keys.decode(keyJson).map(Some(_))
-          reason  <- Wire.field[Json](json, "reason").flatMap(StudyInputCodec.readReason)
+          reason  <- Wire
+            .field[Json](json, "reason")
+            .flatMap(StudyInputCodec.readReason(_, version2))
         yield Disposition.Rejected(raw, key, reason)
       case other => Left(CodecError.Field("kind", json, s"unknown disposition $other"))
   yield SourceRecord(number, disposition)
@@ -660,6 +667,11 @@ private[codec] object StudyInputCodec:
             Json.obj(
               "kind"  -> Json.fromString("itemConflict"),
               "items" -> Json.arr(items.map(Json.fromString)*)
+            )
+          case QuarantineCause.OccurrenceConflict(occurrences) =>
+            Json.obj(
+              "kind"        -> Json.fromString("occurrenceConflict"),
+              "occurrences" -> Json.arr(occurrences.map(Json.fromInt)*)
             ))
       )
 
@@ -701,6 +713,23 @@ private[codec] object StudyInputCodec:
     DispersionMethod.BoundingBoxDiagonal     -> "boundingBoxDiagonal",
     DispersionMethod.MedianAbsoluteDeviation -> "medianAbsoluteDeviation"
   )
+
+  /** A reason as a ledger of the given version may name it: a version-1
+    * ledger never names a cause that arrived with version 2.
+    */
+  def readReason(json: Json, version2: Boolean): Either[CodecError, AdmissionReason] =
+    readReason(json).flatMap {
+      case AdmissionReason.Quarantined(_, cause)
+          if !version2 && !QuarantineCause.isVersion1(cause) =>
+        Left(
+          CodecError.Field(
+            "cause",
+            json,
+            s"a version-1 ledger cannot name ${cause.productPrefix}"
+          )
+        )
+      case reason => Right(reason)
+    }
 
   def readReason(json: Json): Either[CodecError, AdmissionReason] =
     Wire.field[String](json, "kind").flatMap {
@@ -773,6 +802,10 @@ private[codec] object StudyInputCodec:
               yield QuarantineCause.CorrectionConflict(first, second)
             case "itemConflict" =>
               Wire.field[Vector[String]](cause, "items").map(QuarantineCause.ItemConflict.apply)
+            case "occurrenceConflict" =>
+              Wire
+                .field[Vector[Int]](cause, "occurrences")
+                .map(QuarantineCause.OccurrenceConflict.apply)
             case other =>
               Left(CodecError.Field("kind", cause, s"unknown quarantine cause $other"))
         yield AdmissionReason.Quarantined(records, value)

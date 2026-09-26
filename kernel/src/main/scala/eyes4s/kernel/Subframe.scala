@@ -177,28 +177,51 @@ object LinearAngularScale:
       Left(GeometryError.NonPositiveAngularScale(frame.id, unitsPerDegree))
     else Right(new LinearAngularScale(frame, unitsPerDegree))
 
+/** Reflection of a coordinate within a half-open interval `[lo, hi)`.
+  *
+  * The mirror image of `v` is `lo + hi - v`, which maps `[lo, hi)` onto
+  * `(lo, hi]`: the included lower edge would land on the excluded upper one.
+  * This reflection keeps membership instead. A position in `[lo, hi)` stays
+  * in it (the lower edge maps to the largest double below `hi`, and rounding
+  * is never allowed to carry an inside position onto `hi`), and a position
+  * outside stays outside (the excluded `hi` maps to the largest double below
+  * `lo`). Away from the edges it is the mirror image, and applying it twice
+  * returns a position within one unit in the last place.
+  */
+object HalfOpenReflection:
+  def reflect(lo: Double, hi: Double, v: Double): Double =
+    val mirrored = lo + hi - v
+    val inside   = v >= lo && v < hi
+    if inside then
+      if mirrored >= hi then java.lang.Math.nextDown(hi)
+      else if mirrored < lo then lo
+      else mirrored
+    else if mirrored >= lo && mirrored < hi then
+      if v >= hi then java.lang.Math.nextDown(lo) else hi
+    else mirrored
+
 /** A recorded correction of a source's coordinates, applied at admission
-  * before containment is checked. Each is an affine endomorphism of the frame
-  * the coordinates were declared in; the raw values themselves are never
+  * before containment is checked; the raw values themselves are never
   * rewritten.
   *
-  * `FlipX` and `FlipY` reflect about the frame's centre line, so each is its
-  * own inverse; `Translate` adds a finite displacement.
+  * `FlipX` and `FlipY` are [[HalfOpenReflection]]s about the frame's centre
+  * line: they keep a position on the frame exactly when it was on it, so a
+  * flip never moves a record on or off the screen. `Translate` adds a finite
+  * displacement.
   */
 sealed trait Correction derives CanEqual:
   def render: String
 
-  /** The correction as a warp from the declared source frame to the frame of
-    * admission. The source frame keeps its own identity; the warp is the only
-    * route between the two.
+  /** The corrected position of `p` in `frame`; absent when a translation
+    * leaves the finite doubles.
     */
-  def warp[U <: Unit2D](source: Frame[U], admission: Frame[U]): Warp[U, U] =
-    val b = source.bounds
-    val m = this match
-      case Correction.FlipX           => Mat3.affine(-1, 0, b.xMin + b.xMax, 0, 1, 0)
-      case Correction.FlipY           => Mat3.affine(1, 0, 0, 0, -1, b.yMin + b.yMax)
-      case Correction.Translate(x, y) => Mat3.translation(x, y)
-    Warp.Affine(source, admission, m)
+  def correct[U <: Unit2D](frame: Frame[U], p: Pt[U]): Option[Pt[U]] =
+    val b = frame.bounds
+    val q = this match
+      case Correction.FlipX => Pt[U](HalfOpenReflection.reflect(b.xMin, b.xMax, p.x), p.y)
+      case Correction.FlipY => Pt[U](p.x, HalfOpenReflection.reflect(b.yMin, b.yMax, p.y))
+      case Correction.Translate(x, y) => Pt[U](p.x + x, p.y + y)
+    Option.when(q.isFinite)(q)
 
 object Correction:
   case object FlipX extends Correction:

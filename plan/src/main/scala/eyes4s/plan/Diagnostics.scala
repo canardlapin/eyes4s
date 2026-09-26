@@ -101,13 +101,20 @@ object Diagnostics:
           definition(layout),
           token(matched.toString)
         )
-      case MatchItemConflict(digests) =>
-        diagnostic(C.plan, e, e.message, digests.map(Locus.TrialDigest(_)))(names(digests))
-      case MatchedCardinality(matched, focal, references) =>
-        diagnostic(C.plan, e, e.message, focal.map(Locus.TrialDigest(_)))(
+      case MatchItemConflict(groups) =>
+        diagnostic(C.plan, e, e.message, groups.flatten.map(Locus.TrialDigest(_)))(
+          Operand.Items(groups.map(names))
+        )
+      case MatchedCardinality(matched, focal, groups) =>
+        diagnostic(
+          C.plan,
+          e,
+          e.message,
+          (focal ++ groups.flatten).map(Locus.TrialDigest(_))
+        )(
           token(matched.toString),
           names(focal),
-          names(references)
+          Operand.Items(groups.map(names))
         )
       case UnmatchedFocalRefused(focal) =>
         diagnostic(C.plan, e, e.message, focal.map(Locus.TrialDigest(_)))(names(focal))
@@ -940,6 +947,8 @@ object Diagnostics:
       case CorrectionConflict(first, second) =>
         diagnostic[Nothing](C.quarantine, e, e.message)(int(first), int(second))
       case ItemConflict(items) => diagnostic[Nothing](C.quarantine, e, e.message)(names(items))
+      case OccurrenceConflict(occurrences) =>
+        diagnostic[Nothing](C.quarantine, e, e.message)(ints(occurrences))
 
   def admission(e: AdmissionError): Diagnostic[Nothing] =
     import AdmissionError.*

@@ -163,9 +163,13 @@ object DiagnosticSamples:
       PlanError.BlankKeyField("item"),
       PlanError
         .OccurrenceUnavailable(DefinitionId.studyLayout, MatchedReferences.SameOccurrence),
-      PlanError.MatchItemConflict(Vector(digest, digest2)),
+      PlanError.MatchItemConflict(Vector(Vector(digest, digest2))),
       PlanError
-        .MatchedCardinality(MatchedReferences.RequireOne, Vector(digest), Vector(digest2)),
+        .MatchedCardinality(
+          MatchedReferences.RequireOne,
+          Vector(digest),
+          Vector(Vector(digest2))
+        ),
       PlanError.UnmatchedFocalRefused(Vector(digest))
     ),
     family[StudyFailure[StudyKey]]("StudyFailure")(
@@ -704,7 +708,8 @@ object DiagnosticSamples:
       QuarantineCause.InvalidExtent("reversed"),
       QuarantineCause.UnmappableFixation(2, fid, deg, 1.5, 2.5),
       QuarantineCause.CorrectionConflict(0, 1),
-      QuarantineCause.ItemConflict(Vector("beach-042", "dog-077"))
+      QuarantineCause.ItemConflict(Vector("beach-042", "dog-077")),
+      QuarantineCause.OccurrenceConflict(Vector(1, 2))
     ),
     family[AdmissionError]("AdmissionError")(
       AdmissionError.NonPositiveRecord(0),

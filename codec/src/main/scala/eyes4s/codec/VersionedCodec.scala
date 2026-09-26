@@ -144,15 +144,22 @@ final class VersionedCodec[A] private (
     val schema: DefinitionId,
     val schemas: Vector[DefinitionId],
     write: A => Either[CodecError, (DefinitionId, Json)],
-    read: (DefinitionId, Json) => Either[CodecError, A]
+    read: (DefinitionId, Json) => Either[CodecError, A],
+    role: Option[String]
 ):
   def encode(value: A): Either[CodecError, Json] =
     write(value).map { case (id, payload) =>
       Json.obj("schema" -> Wire.id(id), "value" -> payload)
     }
   def decode(json: Json): Either[CodecError, A] = for
-    found   <- Wire.definition(json, "schema")
-    _       <- Either.cond(schemas.contains(found), (), CodecError.Schema(schema, found))
+    found <- Wire.definition(json, "schema")
+    _     <- Either.cond(
+      schemas.contains(found),
+      (),
+      role.fold(CodecError.Schema(schema, found))(
+        CodecError.UnsupportedSchema(_, found, schemas)
+      )
+    )
     payload <- Wire.field[Json](json, "value")
     result  <- read(found, payload)
   yield result
@@ -171,7 +178,8 @@ object VersionedCodec:
       schema,
       Vector(schema),
       value => Right(schema -> write(value)),
-      (_, json) => read(json)
+      (_, json) => read(json),
+      None
     )
 
   def string(schema: DefinitionId): VersionedCodec[String] = of(schema)(Json.fromString)(json =>
@@ -194,21 +202,27 @@ object VersionedCodec:
       schema,
       Vector(schema),
       value => write(value).map(schema -> _),
-      (_, json) => read(json)
+      (_, json) => read(json),
+      None
     )
 
   /** A codec over several versions of one schema. `write` chooses, for each
     * value, the version it is written under (the earliest that expresses it)
     * and its payload; `read` decodes a payload of any listed version with that
-    * version's meaning. The library lists versions of one schema name in
-    * increasing order; the last is the codec's `schema`.
+    * version's meaning. The versions are `first` through version `latest` of
+    * `first`'s name; the last is the codec's `schema`. A document of any
+    * other version is refused as `CodecError.UnsupportedSchema(role, found,
+    * schemas)`.
     */
-  private[codec] def versions[A](first: DefinitionId, later: DefinitionId*)(
+  private[codec] def versions[A](role: String, first: DefinitionId, latest: Int)(
       write: A => Either[CodecError, (DefinitionId, Json)]
   )(
       read: (DefinitionId, Json) => Either[CodecError, A]
   ): VersionedCodec[A] =
-    val all = first +: later.toVector
+    // Built here from one name and a version range, so the versions share a
+    // name and increase by construction.
+    val all = (first.version to math.max(first.version, latest)).toVector
+      .map(DefinitionId.builtIn(first.name, _))
     new VersionedCodec(
       all.last,
       all,
@@ -217,10 +231,11 @@ object VersionedCodec:
           Either.cond(
             all.contains(id),
             id -> json,
-            CodecError.Unsupported("schema", s"${id.name}@${id.version} is not one of $all")
+            CodecError.UnsupportedSchema(role, id, all)
           )
         },
-      read
+      read,
+      Some(role)
     )
 
   /** Entry-array encoding preserves arbitrary typed keys and rejects duplicates. */

@@ -360,13 +360,13 @@ final class StudyInspection[K, U <: Unit2D, S, D] private[plan] (
     val sources: StudySources[K],
     val scales: Vector[ScaleInspection[K, U, S, D]],
     val cell: Option[(String, String)],
-    val windowTallies: Vector[(K, WindowTally)] = Vector.empty
+    val windowTallies: Vector[(K, Either[GeometryError, WindowTally])] = Vector.empty
 ):
   /** One trial's fixations outside the analysis window and the screen, when
     * the inspection was opened with its plan and input.
     */
   def windowTally(key: K): Option[WindowTally] = windowTallies.collectFirst {
-    case (`key`, tally) => tally
+    case (`key`, Right(tally)) => tally
   }
 
   def scale(index: Int): Either[InspectionError[K], ScaleInspection[K, U, S, D]] =

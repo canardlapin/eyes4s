@@ -40,7 +40,7 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
     val excludedPhases: Vector[K],
     val frameChecks: Vector[Either[StudyFailure[K], Unit]],
     val windowChecks: Vector[Either[StudyFailure[K], Unit]],
-    val windowTallies: Vector[(K, WindowTally)],
+    val windowTallies: Vector[(K, Either[GeometryError, WindowTally])],
     val matched: DirectedPairSchedule[K, K],
     val controls: DirectedPairSchedule[K, K],
     val candidateVisitsAcrossScales: Long,
@@ -84,7 +84,7 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
     */
   private[plan] def pairingRefusal: Option[PlanError] =
     if !plan.pairing.canRefuse && plan.layout.trial.isEmpty then None
-    else matchedCardinality.fold(Some(_), _.refusal(plan.layout.digest))
+    else matchedCardinality.fold(Some(_), _.refusal(plan.layout))
 
   /** Inspect the exact schedules and reduction choices without numerical work. */
   def preview: Either[PlanError, StudyPreview[K, U]] =

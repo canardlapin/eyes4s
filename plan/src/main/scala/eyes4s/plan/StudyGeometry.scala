@@ -158,8 +158,11 @@ object WindowTally:
     new WindowTally(screen, window, path.n, screenDuration, windowDuration, totalDuration)
 
 /** Totals over a study's per-trial tallies: fixation records outside the
-  * window and outside the screen, all fixation records, and the trials with
-  * any of each.
+  * window and outside the screen, all tallied fixations, the trials with any
+  * of each, the trials tallied, and the trials not tallied because they are
+  * in another frame. `sourceRecords`, when the admission ledger is supplied,
+  * is the importer's count of source records, so an application can say
+  * "543 of 11,520 records".
   */
 final case class WindowSummary(
     outsideWindow: Int,
@@ -167,19 +170,31 @@ final case class WindowSummary(
     total: Int,
     trialsOutsideWindow: Int,
     trialsOutsideScreen: Int,
-    trials: Int
+    trials: Int,
+    untallied: Int,
+    sourceRecords: Option[Int]
 ) derives CanEqual
 
 object WindowSummary:
-  def of[K](tallies: Vector[(K, WindowTally)]): WindowSummary =
+  def of[K](tallies: Vector[(K, Either[GeometryError, WindowTally])]): WindowSummary =
+    val counted = tallies.collect { case (_, Right(t)) => t }
     WindowSummary(
-      tallies.map(_._2.outsideWindow).sum,
-      tallies.map(_._2.outsideScreen).sum,
-      tallies.map(_._2.total).sum,
-      tallies.count(_._2.outsideWindow > 0),
-      tallies.count(_._2.outsideScreen > 0),
-      tallies.size
+      counted.map(_.outsideWindow).sum,
+      counted.map(_.outsideScreen).sum,
+      counted.map(_.total).sum,
+      counted.count(_.outsideWindow > 0),
+      counted.count(_.outsideScreen > 0),
+      counted.size,
+      tallies.size - counted.size,
+      None
     )
+
+  /** The summary beside the count of source records the ledger admitted or rejected. */
+  def of[K](
+      tallies: Vector[(K, Either[GeometryError, WindowTally])],
+      ledger: AdmissionLedger[K]
+  ): WindowSummary =
+    of(tallies).copy(sourceRecords = Some(ledger.records.size))
 
 /** Where a study's maps live. `WholeFrame` maps the whole admission frame on
   * its grid, the version-1 meaning. `Windowed` maps a half-open window of the
@@ -259,8 +274,8 @@ private[plan] object StudyWindowing:
   def tallies[K, U <: Unit2D](
       geometry: StudyGeometry[U],
       trials: Vector[(K, Scanpath[U])]
-  ): Vector[(K, WindowTally)] =
-    trials.flatMap { case (key, path) => tally(geometry, path).toOption.map(key -> _) }
+  ): Vector[(K, Either[GeometryError, WindowTally])] =
+    trials.map { case (key, path) => key -> tally(geometry, path) }
 
   /** The trial fails when nothing would remain in its map, or when the
     * window policy fails trials with fixations outside the window.

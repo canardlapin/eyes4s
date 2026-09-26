@@ -208,3 +208,124 @@ class AdmissionPolicySuite extends munit.FunSuite:
     assertEquals(old.hcursor.downField("schema").get[Int]("version"), Right(1))
     assertEquals(get(codec.ledger.decode(old)).policy, AdmissionPolicy.version1[StudyKey])
   }
+
+  test("a flip keeps a record on the half-open screen on it, edges included") {
+    val edges = Vector(
+      row("p2", "a", 0, "0", "0", 0),
+      row("p2", "b", 0, "19.999999999999996", "9.999999999999998", 0)
+    )
+    val policy = AdmissionPolicy[StudyKey](
+      OffScreenPolicy.QuarantineTrial,
+      Vector(
+        AppliedCorrection(CorrectionScope.Trial(a2), Correction.FlipY),
+        AppliedCorrection(CorrectionScope.Trial(b2), Correction.FlipX)
+      )
+    )
+    val imported = admit(policy, edges)
+    assertEquals(imported.rejected, Vector.empty)
+    assertEquals(imported.accepted.rows.map(_.key), Vector(a2, b2))
+    imported.accepted.rows.foreach(t =>
+      t.value.fixations.foreach(f => assert(screen.contains(f.centre), s"${f.centre}"))
+    )
+  }
+
+  private val trialKeys = get(FixationKeyReader.trial("participant", "phase", "trial", "item"))
+  private val trialHeader =
+    Vector(
+      "participant",
+      "phase",
+      "trial",
+      "fixation",
+      "x",
+      "y",
+      "onset",
+      "duration",
+      "n",
+      "item"
+    )
+  private def trialRows(rows: Vector[String]*) =
+    get(
+      FixationCsv.read(
+        Rfc4180.encode(trialHeader +: rows.toVector),
+        columns,
+        trialKeys,
+        screen,
+        TimestampUnit.Milliseconds
+      )
+    )
+
+  test("a v1-policy ledger that names a v2-only cause is written as version 2") {
+    val imported = trialRows(
+      Vector("p1", "encode", "t1", "0", "2", "3", "0", "100", "10", "a"),
+      Vector("p1", "encode", "t1", "1", "4", "3", "200", "100", "10", "b")
+    )
+    val ledger =
+      get(FixationEvidence.ledger("t.csv", imported, AdmissionDecision.ReviewExclusions))
+    val json = get(StudyInputCodecs.trial[Px].ledger.encode(ledger))
+    assertEquals(json.hcursor.downField("schema").get[Int]("version"), Right(2))
+  }
+
+  test("records of one trial naming two items quarantine it once, naming both items") {
+    val imported = trialRows(
+      Vector("p1", "encode", "t1", "0", "2", "3", "0", "100", "10", "a"),
+      Vector("p1", "encode", "t1", "1", "4", "3", "200", "100", "10", "b"),
+      Vector("p1", "encode", "t2", "0", "4", "3", "0", "100", "10", "c")
+    )
+    assertEquals(imported.accepted.rows.map(_.key.trial), Vector("t2"))
+    assertEquals(
+      imported.rejected.map(r => r.rowNumber -> r.error).distinct,
+      Vector(
+        2 -> FixationRowError
+          .Trial(Vector(2, 3), QuarantineCause.ItemConflict(Vector("a", "b"))),
+        3 -> FixationRowError.Trial(
+          Vector(2, 3),
+          QuarantineCause.ItemConflict(Vector("a", "b"))
+        )
+      )
+    )
+    val ledger =
+      get(FixationEvidence.ledger("t.csv", imported, AdmissionDecision.ReviewExclusions))
+    assertEquals(ledger.quarantined.size, 1)
+  }
+
+  test("records of one trial naming two occurrences quarantine it, naming both") {
+    val keys = get(
+      FixationKeyReader.trial("participant", "phase", "trial", "item", Some("occurrence"))
+    )
+    val header =
+      Vector(
+        "participant",
+        "phase",
+        "trial",
+        "occurrence",
+        "fixation",
+        "x",
+        "y",
+        "onset",
+        "duration",
+        "n",
+        "item"
+      )
+    val imported = get(
+      FixationCsv.read(
+        Rfc4180.encode(
+          Vector(
+            header,
+            Vector("p1", "retrieval", "t1", "1", "0", "2", "3", "0", "100", "10", "d"),
+            Vector("p1", "retrieval", "t1", "2", "1", "4", "3", "200", "100", "10", "d")
+          )
+        ),
+        columns,
+        keys,
+        screen,
+        TimestampUnit.Milliseconds
+      )
+    )
+    assertEquals(imported.accepted.rows, Vector.empty)
+    assertEquals(
+      imported.rejected.map(_.error).distinct,
+      Vector(
+        FixationRowError.Trial(Vector(2, 3), QuarantineCause.OccurrenceConflict(Vector(1, 2)))
+      )
+    )
+  }

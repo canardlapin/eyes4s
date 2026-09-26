@@ -22,7 +22,12 @@ This is a local development route, not a promise that those coordinates exist on
 
 The CSV declares pixels and microseconds explicitly. `sample_count` is supplied fixation-summary
 support; no raw recording is manufactured from it. The admission report is available before
-`requireComplete` rejects any incomplete trial set.
+`requireComplete` rejects any incomplete trial set. `FixationCsv.admit` admits under the default
+`AdmissionPolicy` (a finite position off the screen is admitted, listed and left out of maps), and
+`StudyPlan.configure` states the geometry, the scales and the pairing, whose default requires
+exactly one matched reference per focal trial. `FixationCsv.read`, `StudyPlan.of` and
+`StudyPlan.cosine` remain as the version-1 routes, kept for saved version-1 studies and eyesim
+parity.
 
 ```scala mdoc:silent
 import eyes4s.codec.*
@@ -45,10 +50,12 @@ val study = for
   grid <- Grid.over(frame, 2, 1)
   columns <- FixationColumns.of("fixation", "x_px", "y_px", "onset_us", "duration_us", "sample_count")
   keys <- FixationKeyReader.study("participant", "image", "phase")
-  admitted <- FixationCsv.read(csv, columns, keys, frame, TimestampUnit.Microseconds)
+  admitted <- FixationCsv.admit(csv, columns, keys, frame, TimestampUnit.Microseconds)
   input <- admitted.requireComplete
-  plan <- StudyPlan.cosine(input.reference, grid, "recall", "encode", Weight.Duration,
-    Vector(StudyEstimate.Binned()), FailurePolicy.RequireAll)
+  plan <- StudyPlan.configure(input.reference, StudyKey.layout(DefinitionId.studyLayout),
+    StudyGeometry.WholeFrame(grid), "recall", "encode", Weight.Duration,
+    Vector(StudyScale.Native(StudyEstimate.Binned())), None, FailurePolicy.RequireAll,
+    StudyMethod.cosine[Px](DefinitionId.cosine), ())
   persistence = StudyCodecs.cosine[Px]
   json <- persistence.codec.encode(plan)
   restored <- persistence.codec.parse(json.noSpaces)

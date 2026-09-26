@@ -759,8 +759,9 @@ object Preflight:
       case StudyGeometry.Windowed(_, _, p) => p
       case StudyGeometry.WholeFrame(_)     => OffWindowPolicy.Exclude
     work.windowTallies.collect {
-      case (key, tally) if tally.allOutside => StudyFinding.NoFixationInWindow(key, tally)
-      case (key, tally) if tally.anyOutside =>
+      case (key, Right(tally)) if tally.allOutside =>
+        StudyFinding.NoFixationInWindow(key, tally)
+      case (key, Right(tally)) if tally.anyOutside =>
         StudyFinding.OffWindowFixations(key, tally, policy)
     }
 

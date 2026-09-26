@@ -93,6 +93,7 @@ class StudyWindowSuite extends munit.FunSuite:
         .toMap
         .get(key)
         .toRight("none")
+        .flatMap(identity)
     )
 
   test("tallies separate the window from the screen, by count and by duration") {
@@ -108,7 +109,7 @@ class StudyWindowSuite extends munit.FunSuite:
     val preview = get(work.preview)
     assertEquals(preview.windowTallies, work.windowTallies)
     assertEquals(work.windowSummary, preview.windowSummary)
-    assertEquals(preview.windowSummary, WindowSummary(3, 1, 10, 2, 1, 4))
+    assertEquals(preview.windowSummary, WindowSummary(3, 1, 10, 2, 1, 4, 0, None))
   }
 
   test(
@@ -276,7 +277,7 @@ class StudyWindowSuite extends munit.FunSuite:
     )
     assertEquals(
       get(get(plan(windowed(OffWindowPolicy.Exclude), source)).prepare(source)).windowTallies
-        .map(_._1),
+        .collect { case (k, Right(_)) => k },
       Vector(recallA, encodeA, encodeB)
     )
   }
@@ -294,4 +295,42 @@ class StudyWindowSuite extends munit.FunSuite:
     val inspected = get(ResultInspection.study(p, result, input, None))
     assertEquals(inspected.windowTallies, p.windowTallies(input))
     assertEquals(inspected.windowTally(recallA), Some(tally(recallA)))
+  }
+
+  test("a whole-frame trial entirely off the screen fails naming the screen, not a window") {
+    val off =
+      StudyInput(Trials(trials.updated(1, Trial(recallB, (), path(recallB, (25, 3), (-2, 4))))))
+    val result =
+      get(get(plan(StudyGeometry.WholeFrame(get(Grid.over(screen, 5, 3))), off)).run(off))
+    val failure = result.scales.head.estimation.collectFirst { case (`recallB`, Left(f)) => f }
+    val message = failure.map(_.message).getOrElse(fail("no failure"))
+    assert(message.contains("2 of 2 fixations outside the screen"), message)
+    assert(!message.contains("analysis window"), message)
+  }
+
+  test("a trial in another frame keeps its place in the tallies, as a refusal") {
+    val other = get(Frame.screen("elsewhere", 20, 10))
+    val clock = ClockId("elsewhere-2")
+    val moved = get(
+      Scanpath.of(
+        other,
+        clock,
+        IArray(
+          get(
+            Event.Fixation.withoutDispersion(
+              get(Interval.of(clock, Instant.micros(0), Instant.micros(10))),
+              Pt[Px](6, 3),
+              1
+            )
+          )
+        )
+      )
+    )
+    val source  = StudyInput(Trials(trials.updated(1, Trial(recallB, (), moved))))
+    val tallies = get(plan(windowed(OffWindowPolicy.Exclude), source)).windowTallies(source)
+    assertEquals(tallies.map(_._1), Vector(recallA, recallB, encodeA, encodeB))
+    assertEquals(
+      tallies(1)._2,
+      Left(GeometryError.FrameMismatch(screen.id, other.id))
+    )
   }

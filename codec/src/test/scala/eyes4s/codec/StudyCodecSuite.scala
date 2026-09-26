@@ -260,7 +260,13 @@ class StudyCodecSuite extends munit.FunSuite:
     )
     assertEquals(
       persistence.codec.decode(old).left.toOption,
-      Some(CodecError.Schema(persistence.schemaV2, id("eyes4s.study", 3)))
+      Some(
+        CodecError.UnsupportedSchema(
+          "study plan",
+          id("eyes4s.study", 3),
+          Vector(DefinitionId.study, persistence.schemaV2)
+        )
+      )
     )
     val unknown = replaceValue(
       json,

@@ -62,6 +62,9 @@ enum QuarantineCause derives CanEqual:
   /** Records of one trial identity name different match items. */
   case ItemConflict(items: Vector[String])
 
+  /** Records of one trial identity name different occurrences. */
+  case OccurrenceConflict(occurrences: Vector[Int])
+
   def message: String = this match
     case RejectedRecords     => "one or more source rows were rejected"
     case DuplicateOrdinals   => "duplicate fixation ordinals"
@@ -75,8 +78,17 @@ enum QuarantineCause derives CanEqual:
     case CorrectionConflict(first, second) =>
       s"correction rules $first and $second both apply to the trial"
     case ItemConflict(items) => s"the trial's records name different match items $items"
+    case OccurrenceConflict(occurrences) =>
+      s"the trial's records name different occurrences $occurrences"
 
 object QuarantineCause:
+  /** True for the causes a version-1 ledger can name; correction, item and
+    * occurrence conflicts arrived with the admission policy.
+    */
+  def isVersion1(cause: QuarantineCause): Boolean = cause match
+    case CorrectionConflict(_, _) | ItemConflict(_) | OccurrenceConflict(_) => false
+    case _                                                                  => true
+
   /** Total over the scanpath constructor's errors; each case keeps its operands. */
   def of(error: ScanpathError): QuarantineCause = error match
     case ScanpathError.NoFixations                           => NoFixations
@@ -254,7 +266,12 @@ final case class AdmissionLedger[K] private (
     outsideFrame: Vector[OutsideFrame]
 ) derives CanEqual:
   /** True when the ledger means exactly what a version-1 ledger meant. */
-  def isVersion1: Boolean = policy.isVersion1 && outsideFrame.isEmpty
+  def isVersion1: Boolean =
+    policy.isVersion1 && outsideFrame.isEmpty && records.forall {
+      case SourceRecord(_, Disposition.Rejected(_, _, AdmissionReason.Quarantined(_, cause))) =>
+        QuarantineCause.isVersion1(cause)
+      case _ => true
+    }
 
   /** Every admitted record must lie in a trial at most one correction rule
     * covers, under the layout's participant projection.

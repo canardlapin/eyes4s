@@ -6,7 +6,8 @@ participants; it does not mean within-participant reinstatement.
 
 ## Choose the estimand
 
-`StudyPlan.cosine` estimates a map per trial, compares each focal trial with its matched reference
+A study built with `StudyPlan.configure` (or the version-1 `StudyPlan.cosine`) estimates a map per
+trial, compares each focal trial with its matched reference
 and explicit within-participant other-image controls, then subtracts the control mean. Binned and
 Gaussian estimates remain separate labelled results. It does not pool bandwidths implicitly.
 
@@ -31,7 +32,8 @@ val directionalEstimates = for {
 } yield Vector(StudyEstimate.Anisotropic(horizontal, vertical, EdgePolicy.Renormalise))
 ```
 
-Pass these estimates to `StudyPlan.cosine` with a grid and input in degrees. For direct surface
+Pass these estimates, as `StudyScale.Native`, to `StudyPlan.configure` with a grid and input in
+degrees; for pixel data, declare them as `StudyScale.Angular` with a `LinearAngularScale`. For direct surface
 estimation, use `Smoother.anisotropic(sigmaX, sigmaY, edges).density(measure, grid)`.
 The axes follow the frame, not the scanpath direction: this is an axis-aligned Gaussian, not a
 rotated, adaptive or foveal kernel. Each width must be at least one fifth of its own grid cell
@@ -41,9 +43,11 @@ provenance retains the selected method and both widths.
 
 ## Inspect before accepting
 
-`FixationCsv.read` returns accepted trials, every rejected row and original fields. The default
+`FixationCsv.admit` returns accepted trials, every rejected row and original fields. The default
 `requireComplete` refuses incomplete input. Reviewing `accepted` is an explicit analytical choice,
-not permission to forget the rejection ledger. One bad keyed row quarantines its entire trial.
+not permission to forget the rejection ledger. One bad keyed row quarantines its entire trial; a
+finite position off the screen is admitted and reported under the default admission policy
+(`FixationCsv.read` is the version-1 route that quarantines it).
 
 Pair scores retain both keys and a success or failure. A mean has a failure policy and reports
 eligible, selected, successful and failed counts. `RequireAll` refuses a mean containing failures;

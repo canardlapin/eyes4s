@@ -41,7 +41,7 @@ enum OccurrenceChoice derives CanEqual:
   def render: String = this match
     case First => "first"
     case Last  => "last"
-    case At(n) => s"occurrence ${n.value}"
+    case At(n) => s"at:${n.value}"
 
 /** How a focal trial's matched reference is chosen when the layout allows
   * more than one: exactly one is required (the default), the reference of the
@@ -64,7 +64,7 @@ enum MatchedReferences derives CanEqual:
   def render: String = this match
     case RequireOne     => "requireOne"
     case SameOccurrence => "sameOccurrence"
-    case Select(c)      => s"select ${c.render}"
+    case Select(c)      => s"select:${c.render}"
     case MeanOfAll      => "meanOfAll"
 
 /** Which references form a focal trial's control pool. `SameSelection`
@@ -75,11 +75,21 @@ enum MatchedReferences derives CanEqual:
 enum ControlReferences derives CanEqual:
   case SameSelection, AllOccurrences
 
+  /** The stable name the plan's description and codec use. */
+  def name: String = this match
+    case SameSelection  => "sameSelection"
+    case AllOccurrences => "allOccurrences"
+
 /** What a focal trial without a matched reference does: reported as no match
   * (the default), or refusing the study.
   */
 enum UnmatchedFocalPolicy derives CanEqual:
   case ReportNoMatch, Refuse
+
+  /** The stable name the plan's description and codec use. */
+  def name: String = this match
+    case ReportNoMatch => "reportNoMatch"
+    case Refuse        => "refuse"
 
 /** How a study pairs focal trials with matched and control references. */
 final case class StudyPairing(
@@ -98,8 +108,8 @@ final case class StudyPairing(
     Vector(
       "pairing" -> Vector(
         Text(matched.render),
-        Text(controls.toString),
-        Text(unmatched.toString)
+        Text(controls.name),
+        Text(unmatched.name)
       )
     )
 
@@ -131,8 +141,8 @@ object StudyPairing:
   *    should reduce to one per participant and item (and occurrence under
   *    `SameOccurrence`) but does not, as the control pool uses them;
   *  - `unmatched`: focal trials without a matched reference;
-  *  - `itemConflicts`: trials the layout identifies as one trial but whose
-  *    match items differ.
+  *  - `itemConflicts`: keys the layout identifies as one trial (participant,
+  *    phase and trial label) that disagree on its occurrence or match item.
   *
   * The same value drives preflight, the refusal of `StudyWork` and the
   * preview.
@@ -157,17 +167,22 @@ final class MatchedCardinality[K] private[plan] (
       blockingReferences.nonEmpty ||
       (pairing.unmatched == UnmatchedFocalPolicy.Refuse && unmatched.nonEmpty)
 
-  /** The refusal this value implies, naming the trials by key digest. */
-  def refusal(digest: KeyDigest[K]): Option[PlanError] =
-    def names(keys: Vector[K]) = keys.map(k => digest.digest(k).render)
-    if itemConflicts.nonEmpty then
-      Some(PlanError.MatchItemConflict(names(itemConflicts.flatten)))
+  /** The refusal this value implies, naming the trials by key digest in
+    * the layout's key order, so the value does not depend on input order.
+    */
+  def refusal(layout: StudyLayout[K]): Option[PlanError] =
+    given Ordering[K]                          = layout.ordering
+    def names(keys: Vector[K]): Vector[String] =
+      keys.sorted.map(k => layout.digest.digest(k).render)
+    def groups(gs: Vector[Vector[K]]): Vector[Vector[String]] =
+      gs.map(_.sorted).sortBy(_.head).map(names)
+    if itemConflicts.nonEmpty then Some(PlanError.MatchItemConflict(groups(itemConflicts)))
     else if oneReference && (multiple.nonEmpty || blockingReferences.nonEmpty) then
       Some(
         PlanError.MatchedCardinality(
           pairing.matched,
           names(multiple.map(_._1)),
-          names(blockingReferences.flatten)
+          groups(blockingReferences)
         )
       )
     else if pairing.unmatched == UnmatchedFocalPolicy.Refuse && unmatched.nonEmpty then

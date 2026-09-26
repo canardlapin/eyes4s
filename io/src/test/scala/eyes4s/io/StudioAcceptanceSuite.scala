@@ -78,7 +78,7 @@ abstract class StudioAcceptance(source: => StudioFixture.Source) extends munit.F
   )
   private lazy val work    = get(plan.prepare(input))
   private lazy val result  = get(work.run)
-  private lazy val tallies = work.windowTallies.toMap
+  private lazy val tallies = work.windowTallies.collect { case (k, Right(t)) => k -> t }.toMap
 
   private def trialIds(ks: Iterable[TrialKey])    = ks.map(k => (k.participant, k.trial)).toSet
   private def key(id: (String, String)): TrialKey =
@@ -136,6 +136,8 @@ abstract class StudioAcceptance(source: => StudioFixture.Source) extends munit.F
     assertEquals(summary.outsideWindow, 543)
     assertEquals(summary.trialsOutsideWindow, 409)
     assertEquals(summary.outsideScreen, 0)
+    assertEquals(WindowSummary.of(work.windowTallies, ledger).sourceRecords, Some(11520))
+    assertEquals(summary.untallied, 0)
     assertEquals(imported.outsideFrame, Vector.empty)
     def percent(t: WindowTally) = t.outsideWindowShare.map(s => math.round(s * 100))
     val query                   = tallies(key(StudioFixture.focusQuery))

@@ -35,8 +35,9 @@ import eyes4s.kernel.*
   * retaining it across edits can use checkCurrent before presenting it as current.
   * Registered behavior and projections must be pure and stable for their ids.
   *
-  * windowTallies lists, in input order, how each trial in the admission frame
-  * falls against the screen and the plan's analysis window; a trial whose map
+  * windowTallies lists, in input order, how each trial falls against the
+  * screen and the plan's analysis window (a trial in another frame carries its
+  * refusal); a trial whose map
   * would be empty, or that the window policy fails, fails at every scale with
   * StudyFailure.OffWindow.
   *
@@ -56,7 +57,7 @@ final class StudyPreview[K, U <: Unit2D] private[plan] (
     val matched: DirectedPairSchedule[K, K],
     val controls: DirectedPairSchedule[K, K],
     val failurePolicy: FailurePolicy,
-    val windowTallies: Vector[(K, WindowTally)],
+    val windowTallies: Vector[(K, Either[GeometryError, WindowTally])],
     val pairing: StudyPairing,
     val matchedCardinality: Either[PlanError, MatchedCardinality[K]]
 ):

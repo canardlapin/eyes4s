@@ -243,16 +243,26 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
     pinned.foreach { p =>
       val next   = p.codec.schema.version + 1
       val bumped = withSchema(p.json, p.codec.schema.name, Json.fromInt(next))
-      assertEquals(
-        p.codec.decode(bumped).left.toOption,
-        Some(CodecError.Schema(p.codec.schema, id(p.codec.schema.name, next))),
-        p.label
-      )
+      // A codec that reads several versions names every version it reads.
+      val expected =
+        if p.codec.schemas.size > 1 then
+          val role =
+            if p.codec.schema.name == DefinitionId.study.name then "study plan"
+            else "admission ledger"
+          CodecError.UnsupportedSchema(role, id(p.codec.schema.name, next), p.codec.schemas)
+        else CodecError.Schema(p.codec.schema, id(p.codec.schema.name, next))
+      assertEquals(p.codec.decode(bumped).left.toOption, Some(expected), p.label)
     }
     // Nor does any codec read a document of another schema.
     assertEquals(
       studies.codec.parse(StudyInputFixtures.inputVersionOne).left.toOption,
-      Some(CodecError.Schema(StudyCodecDefinitions.studyV2, DefinitionId.studyInput))
+      Some(
+        CodecError.UnsupportedSchema(
+          "study plan",
+          DefinitionId.studyInput,
+          Vector(DefinitionId.study, StudyCodecDefinitions.studyV2)
+        )
+      )
     )
   }
 
@@ -306,7 +316,13 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
         )
         .left
         .toOption,
-      Some(CodecError.Schema(StudyCodecDefinitions.studyV2, id("eyes4s.study", 3)))
+      Some(
+        CodecError.UnsupportedSchema(
+          "study plan",
+          id("eyes4s.study", 3),
+          Vector(DefinitionId.study, StudyCodecDefinitions.studyV2)
+        )
+      )
     )
     assertEquals(
       studies.codec.decode(nested(SavedStudyFixtures.versionOne, "layout", 2)).left.toOption,

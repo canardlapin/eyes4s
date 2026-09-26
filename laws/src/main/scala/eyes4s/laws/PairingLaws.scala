@@ -54,7 +54,7 @@ trait PairingLaws extends Laws:
               val counts = pairs(work.matched).groupBy(_._1).values.map(_.size)
               Prop(counts.forall(_ == 1)) :| s"matched pairs per focal: $counts"
         },
-      "a study that runs under a one-reference rule draws one control per other item" -> forAll(
+      "a study that runs under a one-reference rule draws exactly one control from every other item" -> forAll(
         genCase
       ) { generated =>
         // The generated pairing and the default one, so the one-reference
@@ -65,11 +65,27 @@ trait PairingLaws extends Laws:
             c.pairing.controls == ControlReferences.SameSelection
           work.work() match
             case Right(_) if one =>
-              val perItem =
-                pairs(work.controls).groupBy((f, r) => (f, r.item)).values.map(_.size)
-              Prop(perItem.forall(_ == 1)) :| s"controls per focal and item: $perItem"
+              val controls = pairs(work.controls)
+              val focal    = unique(c.input).filter(_.phase == Focal)
+              Prop.all(focal.map { f =>
+                val drawn = controls.collect { case (`f`, r) => r.item }
+                val items = eligible(c, f).filter(_.item != f.item).map(_.item).distinct
+                Prop(drawn.sorted == items.sorted) :| s"$f draws $drawn, expected $items"
+              }*)
             case _ => Prop(true)
         }*)
+      },
+      "a trial label that names two items or occurrences is a conflict, and refuses" -> forAll(
+        genCase
+      ) { c =>
+        val keys     = c.input.trials.rows.map(_.key).distinct
+        val conflict = keys
+          .groupBy(k => (k.participant, k.phase, k.trial))
+          .values
+          .exists(g => g.map(k => (k.item, k.occurrence.value)).distinct.size > 1)
+        val work = prepared(c)
+        Prop(work.matchedCardinality.exists(_.itemConflicts.nonEmpty) == conflict) &&
+        Prop(!conflict || work.work().isLeft)
       },
       "preflight blocks exactly when execution refuses" -> forAll(genCase) { c =>
         val p       = plan(c)
@@ -91,18 +107,26 @@ trait PairingLaws extends Laws:
         val v1       = PairingLaws.version1(c.input).prepare(c.input).toOption.get
         Prop(pairs(averaged.matched) == pairs(v1.matched)) &&
         Prop(pairs(averaged.controls) == pairs(v1.controls)) &&
-        Prop(averaged.work().isRight)
+        Prop(
+          averaged.work().isRight ==
+            averaged.matchedCardinality.exists(_.itemConflicts.isEmpty)
+        ) :| "MeanOfAll refuses only a trial-identity conflict"
       },
-      "SameOccurrence pairs a focal trial only with references of its own occurrence" -> forAll(
+      "SameOccurrence schedules exactly the references of the focal trial's own occurrence" -> forAll(
         genCase
       ) { c =>
-        val work =
-          prepared(c.copy(pairing = c.pairing.copy(matched = MatchedReferences.SameOccurrence)))
-        Prop(
-          pairs(work.matched).forall((f, r) => f.occurrence == r.occurrence && f.item == r.item)
+        val same = c.copy(pairing =
+          StudyPairing(
+            MatchedReferences.SameOccurrence,
+            ControlReferences.SameSelection,
+            UnmatchedFocalPolicy.ReportNoMatch
+          )
         )
+        val work = prepared(same)
+        Prop(pairs(work.matched).toSet == expected(same, matched = true)) &&
+        Prop(pairs(work.controls).toSet == expected(same, matched = false))
       },
-      "Select keeps the chosen occurrence of each item, for matches and controls alike" -> forAll(
+      "Select schedules exactly the chosen occurrence of each item, for matches and controls" -> forAll(
         genCase,
         genChoice
       ) { (c, choice) =>
@@ -113,17 +137,30 @@ trait PairingLaws extends Laws:
             UnmatchedFocalPolicy.ReportNoMatch
           )
         )
-        val work       = prepared(chosen)
-        val references = c.input.trials.rows.map(_.key).filter(_.phase == Reference)
-        def expected(r: TrialKey): Boolean =
-          val occurrences = references
-            .filter(o => o.participant == r.participant && o.item == r.item)
-            .map(_.occurrence.value)
-          choice match
-            case OccurrenceChoice.First => r.occurrence.value == occurrences.min
-            case OccurrenceChoice.Last  => r.occurrence.value == occurrences.max
-            case OccurrenceChoice.At(n) => r.occurrence.value == n.value
-        Prop((pairs(work.matched) ++ pairs(work.controls)).forall((_, r) => expected(r)))
+        val work = prepared(chosen)
+        Prop(pairs(work.matched).toSet == expected(chosen, matched = true)) &&
+        Prop(pairs(work.controls).toSet == expected(chosen, matched = false))
+      },
+      "pairs, cardinality and refusal do not depend on input order" -> forAll(
+        genCase,
+        Gen.long
+      ) { (c, seed) =>
+        val rows     = new scala.util.Random(seed).shuffle(c.input.trials.rows)
+        val shuffled = c.copy(input = StudyInput(Trials(rows)))
+        val (a, b)   = (prepared(c), prepared(shuffled))
+        def summary(w: PreparedStudy[TrialKey, Px, Unit, Similarity, SignedDifference]) =
+          (
+            pairs(w.matched).toSet,
+            pairs(w.controls).toSet,
+            w.matchedCardinality.map(m =>
+              (
+                m.multiple.map((k, rs) => k -> rs.toSet).toSet,
+                m.itemConflicts.map(_.toSet).toSet
+              )
+            ),
+            w.work().left.toOption
+          )
+        Prop(summary(a) == summary(b))
       },
       "controls keep every occurrence only when asked to" -> forAll(genCase) { c =>
         val all = prepared(
@@ -142,6 +179,38 @@ object PairingLaws extends PairingLaws:
 
   /** One generated study and the pairing it is prepared under. */
   final case class Case(input: StudyInput[TrialKey, Px], pairing: StudyPairing)
+
+  /** Keys that occur once in the input; a repeated key is excluded from pairing. */
+  def unique(input: StudyInput[TrialKey, Px]): Vector[TrialKey] =
+    val keys = input.trials.rows.map(_.key)
+    keys.filter(k => keys.count(_ == k) == 1)
+
+  /** The references a focal trial may draw on under the case's rule,
+    * computed directly from the definitions rather than the schedule.
+    */
+  def eligible(c: Case, focal: TrialKey): Vector[TrialKey] =
+    val references =
+      unique(c.input).filter(r => r.phase == Reference && r.participant == focal.participant)
+    def chosen(r: TrialKey, choice: OccurrenceChoice) =
+      val occurrences = references.filter(_.item == r.item).map(_.occurrence.value)
+      choice match
+        case OccurrenceChoice.First => r.occurrence.value == occurrences.min
+        case OccurrenceChoice.Last  => r.occurrence.value == occurrences.max
+        case OccurrenceChoice.At(n) => r.occurrence.value == n.value
+    c.pairing.matched match
+      case MatchedReferences.SameOccurrence =>
+        references.filter(_.occurrence == focal.occurrence)
+      case MatchedReferences.Select(choice) => references.filter(chosen(_, choice))
+      case _                                => references
+
+  /** Every expected matched or control pair of a case whose controls follow
+    * the matched rule.
+    */
+  def expected(c: Case, matched: Boolean): Set[(TrialKey, TrialKey)] =
+    unique(c.input)
+      .filter(_.phase == Focal)
+      .flatMap(f => eligible(c, f).filter(r => (r.item == f.item) == matched).map(f -> _))
+      .toSet
 
   private val frame = Frame.screen("pairing", 2, 2).toOption.get
   private val grid  = Grid.over(frame, 2, 2).toOption.get
@@ -211,6 +280,10 @@ object PairingLaws extends PairingLaws:
           )
         yield (shown, recalled)
       )
+      // Sometimes a row repeated verbatim, or a recall trial that reuses a
+      // trial label with another item or occurrence (a conflict).
+      duplicate <- Gen.frequency(4 -> Gen.const(false), 1 -> Gen.const(true))
+      conflict  <- Gen.frequency(4 -> Gen.const(None), 1 -> Gen.oneOf(Some(true), Some(false)))
     yield
       var serial = 0
       def next() = { serial += 1; serial }
@@ -222,7 +295,25 @@ object PairingLaws extends PairingLaws:
           occurrence.map(o => key(participant, Focal, next(), o, s"item$i"))
         }
       }
-      StudyInput(Trials(keys.toVector.map(k => Trial(k, (), path(k)))))
+      val focal = keys.find(_.phase == Focal)
+      val extra =
+        (if duplicate then keys.headOption.toVector else Vector.empty) ++
+          conflict.toVector.flatMap(otherItem =>
+            focal.toVector.map(f =>
+              TrialKey
+                .of(
+                  f.participant,
+                  f.phase,
+                  f.trial,
+                  if otherItem then f.occurrence
+                  else TrialOccurrence.of(f.occurrence.value + 1).toOption.get,
+                  if otherItem then f.item + "-other" else f.item
+                )
+                .toOption
+                .get
+            )
+          )
+      StudyInput(Trials((keys.toVector ++ extra).map(k => Trial(k, (), path(k)))))
 
   val genCase: Gen[Case] = for
     input   <- genInput

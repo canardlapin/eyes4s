@@ -113,11 +113,11 @@ enum PlanError derives CanEqual:
   case InvalidOccurrence(value: Int)
   case BlankKeyField(field: String)
   case OccurrenceUnavailable(layout: DefinitionId, matched: MatchedReferences)
-  case MatchItemConflict(keyDigests: Vector[String])
+  case MatchItemConflict(trialDigests: Vector[Vector[String]])
   case MatchedCardinality(
       matched: MatchedReferences,
       focalDigests: Vector[String],
-      referenceDigests: Vector[String]
+      referenceGroups: Vector[Vector[String]]
   )
   case UnmatchedFocalRefused(focalDigests: Vector[String])
 
@@ -153,11 +153,20 @@ enum PlanError derives CanEqual:
     case OccurrenceUnavailable(layout, matched) =>
       s"Matched-reference rule ${matched.render} needs occurrences, but layout " +
         s"${layout.name}@${layout.version} declares none."
-    case MatchItemConflict(digests) =>
-      s"Trials $digests share a trial identity but name different match items."
-    case MatchedCardinality(matched, focal, references) =>
-      s"Under ${matched.render}, focal trials $focal have more than one matched reference and " +
-        s"reference groups $references more than one reference per item; choose an occurrence."
+    case MatchItemConflict(groups) =>
+      s"Keys ${groups.map(_.mkString(", ")).mkString("; ")} each name one trial but " +
+        "disagree on its occurrence or match item."
+    case MatchedCardinality(matched, focal, groups) =>
+      val parts = Vector(
+        Option.when(focal.nonEmpty)(
+          s"focal trials ${focal.mkString(", ")} have more than one matched reference"
+        ),
+        Option.when(groups.nonEmpty)(
+          s"references ${groups.map(_.mkString(", ")).mkString("; ")} give an item more than " +
+            "one reference in the control pool"
+        )
+      ).flatten
+      s"Under ${matched.render}, ${parts.mkString(", and ")}; choose an occurrence."
     case UnmatchedFocalRefused(focal) =>
       s"Focal trials $focal have no matched reference, and the plan refuses unmatched focal trials."
 
@@ -310,8 +319,10 @@ enum StudyFailure[K] derives CanEqual:
   case Estimation(key: K, underlying: EstimateError)
   case Comparison(left: K, right: K, underlying: CompareError)
 
-  /** The trial's fixations lie outside the plan's analysis window: all of
-    * them, or any of them under [[OffWindowPolicy.FailTrial]].
+  /** None of the trial's fixations lies in its map (each is outside the
+    * analysis window or the screen, counted separately in the tally), or,
+    * under [[OffWindowPolicy.FailTrial]], one lies on the screen but outside
+    * the window.
     */
   case OffWindow(key: K, tally: WindowTally)
 
@@ -322,9 +333,17 @@ enum StudyFailure[K] derives CanEqual:
     case Estimation(k, e)    => s"Trial $k: ${e.message}"
     case Comparison(l, r, e) => s"Trials $l and $r: ${e.message}"
     case OffWindow(k, tally) =>
-      s"Trial $k has ${tally.outside} of ${tally.total} fixations outside the analysis window" +
+      val counts = Vector(
+        Option.when(tally.outsideWindow > 0)(
+          s"${tally.outsideWindow} of ${tally.total} fixations outside the analysis window"
+        ),
+        Option.when(tally.outsideScreen > 0)(
+          s"${tally.outsideScreen} of ${tally.total} fixations outside the screen"
+        )
+      ).flatten
+      s"Trial $k has ${counts.mkString(" and ")}" +
         (if tally.allOutside then "; its map would be empty."
-         else "; the plan fails such trials.")
+         else "; the plan fails trials with fixations outside the window.")
 
 object StudyFailure:
   /** The trial keys a failure names, in operand order. */
@@ -894,11 +913,14 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
       Vector(PlanError.ArtifactMismatch(input.digest, value.reference.digest))
     case _ => Vector.empty
 
-  /** Per-trial counts of fixations outside the plan's analysis window, in
-    * input order, for every trial in the admission frame; empty for a
-    * whole-frame plan. Derived from the input and the plan alone.
+  /** Every trial's tally, in input order: its fixations outside the analysis
+    * window (none for a whole-frame plan) and outside the screen. A trial in
+    * another frame than the admission frame is kept, with the refusal that
+    * prevents tallying it. Derived from the input and the plan alone.
     */
-  def windowTallies(available: StudyInput[K, U]): Vector[(K, WindowTally)] =
+  def windowTallies(
+      available: StudyInput[K, U]
+  ): Vector[(K, Either[GeometryError, WindowTally])] =
     StudyWindowing.tallies(geometry, available.trials.rows.map(t => t.key -> t.value))
 
   def run(available: StudyInput[K, U]): Either[PlanError, StudyResult[K, U, S, D]] =
@@ -1002,7 +1024,9 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
     trial.key -> mass
 
 object StudyPlan:
-  /** Ordinary within-participant matched/control cosine study, using the same interpreter. */
+  /** Ordinary within-participant matched/control cosine study under the
+    * version-1 meaning (see [[of]]); new studies use [[configure]].
+    */
   def cosine[U <: Unit2D](
       input: ArtifactRef[StudyInput[StudyKey, U]],
       grid: Grid[U],
@@ -1027,7 +1051,11 @@ object StudyPlan:
       ()
     )
 
-  /** The version-1 study: the whole frame of `grid`, scales in frame units. */
+  /** The version-1 study: the whole frame of `grid`, scales in frame units,
+    * and every matched reference averaged ([[StudyPairing.version1]]). This
+    * is the route of saved version-1 studies and eyesim parity; new studies
+    * use [[configure]], whose default requires one matched reference.
+    */
   def of[K, U <: Unit2D, P, S, D](
       input: ArtifactRef[StudyInput[K, U]],
       layout: StudyLayout[K],

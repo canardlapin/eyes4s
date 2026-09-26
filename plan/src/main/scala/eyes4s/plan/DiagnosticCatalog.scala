@@ -486,7 +486,8 @@ object DiagnosticCatalog:
     "InvalidExtent",
     "UnmappableFixation",
     "CorrectionConflict",
-    "ItemConflict"
+    "ItemConflict",
+    "OccurrenceConflict"
   )
   val admission: DiagnosticFamily = error("admission")(
     "NonPositiveRecord",

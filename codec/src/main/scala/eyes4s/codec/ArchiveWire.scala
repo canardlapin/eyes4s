@@ -230,13 +230,14 @@ private[codec] object TemporalWire:
           "layout"  -> Wire.id(layout),
           "matched" -> StudyWire.matched(matched)
         )
-      case MatchItemConflict(digests) => tagged("matchItemConflict", "keys" -> strings(digests))
-      case MatchedCardinality(matched, focal, references) =>
+      case MatchItemConflict(groups) =>
+        tagged("matchItemConflict", "keys" -> Json.arr(groups.map(strings)*))
+      case MatchedCardinality(matched, focal, groups) =>
         tagged(
           "matchedCardinality",
           "matched"    -> StudyWire.matched(matched),
           "focal"      -> strings(focal),
-          "references" -> strings(references)
+          "references" -> Json.arr(groups.map(strings)*)
         )
       case UnmatchedFocalRefused(focal) =>
         tagged("unmatchedFocalRefused", "focal" -> strings(focal))
@@ -301,12 +302,12 @@ private[codec] object TemporalWire:
           Wire.field[Json](json, "matched").flatMap(StudyWire.readMatched)
         ).mapN(OccurrenceUnavailable.apply)
       case "matchItemConflict" =>
-        Wire.field[Vector[String]](json, "keys").map(MatchItemConflict.apply)
+        Wire.field[Vector[Vector[String]]](json, "keys").map(MatchItemConflict.apply)
       case "matchedCardinality" =>
         (
           Wire.field[Json](json, "matched").flatMap(StudyWire.readMatched),
           Wire.field[Vector[String]](json, "focal"),
-          Wire.field[Vector[String]](json, "references")
+          Wire.field[Vector[Vector[String]]](json, "references")
         ).mapN(MatchedCardinality.apply)
       case "unmatchedFocalRefused" =>
         Wire.field[Vector[String]](json, "focal").map(UnmatchedFocalRefused.apply)

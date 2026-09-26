@@ -127,28 +127,41 @@ trait WindowLaws extends Laws:
       }
     )
 
-  /** Recorded corrections: flips are involutions, a translation is undone by
-    * its negation, and every correction is an affine endomorphism.
+  /** Recorded corrections: flips keep a position on the frame exactly when
+    * it was on it and are involutions up to the last place, a translation is
+    * undone by its negation.
     */
   def correction(tol: Tolerance = Tolerance.exactish): RuleSet =
     new SimpleRuleSet(
       "correction",
-      "a flip applied twice is the identity" -> forAll(
-        genPlaced,
+      "a flip keeps a position on the half-open frame exactly when it was on it" -> forAll(
+        genOnParent,
         Gen.oneOf(Correction.FlipX, Correction.FlipY)
       ) { case ((w, p), flip) =>
-        val f = flip.warp(w.parent, w.parent)
-        Prop(f(p).flatMap(f.apply).exists(tol.approxEquals(_, p)))
+        flip.correct(w.parent, p) match
+          case Some(q) => Prop(w.parent.contains(q) == w.parent.contains(p)) :| s"$p -> $q"
+          case None    => Prop(false) :| s"undefined at $p"
       },
-      "a flip reflects about the frame's centre line" -> forAll(genPlaced) { case (w, p) =>
+      "a flip applied twice is the identity" -> forAll(
+        genOnParent,
+        Gen.oneOf(Correction.FlipX, Correction.FlipY)
+      ) { case ((w, p), flip) =>
+        Prop(
+          flip
+            .correct(w.parent, p)
+            .flatMap(flip.correct(w.parent, _))
+            .exists(tol.approxEquals(_, p))
+        )
+      },
+      "a flip reflects about the frame's centre line" -> forAll(genOnParent) { case (w, p) =>
         val c = w.parent.centre
         Prop(
           Correction.FlipY
-            .warp(w.parent, w.parent)(p)
+            .correct(w.parent, p)
             .exists(q => tol.approxEquals(q, Pt[Px](p.x, 2 * c.y - p.y)))
         ) && Prop(
           Correction.FlipX
-            .warp(w.parent, w.parent)(p)
+            .correct(w.parent, p)
             .exists(q => tol.approxEquals(q, Pt[Px](2 * c.x - p.x, p.y)))
         )
       },
@@ -157,10 +170,19 @@ trait WindowLaws extends Laws:
         Gen.choose(-500.0, 500.0),
         Gen.choose(-500.0, 500.0)
       ) { case ((w, p), dx, dy) =>
-        val there = Correction.translate(dx, dy).toOption.get.warp(w.parent, w.parent)
-        val back  = Correction.translate(-dx, -dy).toOption.get.warp(w.parent, w.parent)
-        Prop(there(p).exists(q => tol.approxEquals(q, Pt[Px](p.x + dx, p.y + dy)))) &&
-        Prop(there(p).flatMap(back.apply).exists(tol.approxEquals(_, p)))
+        val there = Correction.translate(dx, dy).toOption.get
+        val back  = Correction.translate(-dx, -dy).toOption.get
+        Prop(
+          there
+            .correct(w.parent, p)
+            .exists(q => tol.approxEquals(q, Pt[Px](p.x + dx, p.y + dy)))
+        ) &&
+        Prop(
+          there
+            .correct(w.parent, p)
+            .flatMap(back.correct(w.parent, _))
+            .exists(tol.approxEquals(_, p))
+        )
       },
       "a non-finite translation is refused" -> forAll(
         Gen.oneOf(Double.NaN, Double.PositiveInfinity, Double.NegativeInfinity)
@@ -285,6 +307,15 @@ object WindowLaws extends WindowLaws:
       b = w.parent.bounds
       x <- straddling(r.xMin, r.xMax, b.xMin - 50, b.xMax + 50)
       y <- straddling(r.yMin, r.yMax, b.yMin - 50, b.yMax + 50)
+    yield (w, Pt[Px](x, y))
+
+  /** A window and a position straddling the edges of its parent frame. */
+  val genOnParent: Gen[(Subframe[Px], Pt[Px])] =
+    for
+      w <- genWindow
+      b = w.parent.bounds
+      x <- straddling(b.xMin, b.xMax, b.xMin - 50, b.xMax + 50)
+      y <- straddling(b.yMin, b.yMax, b.yMin - 50, b.yMax + 50)
     yield (w, Pt[Px](x, y))
 
   val genScale: Gen[LinearAngularScale[Px]] =

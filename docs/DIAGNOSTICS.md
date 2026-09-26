@@ -302,8 +302,8 @@ fails after rewriting, so review the change and run it again.
 | `plan.invalid-occurrence` | `InvalidOccurrence` | `value` |
 | `plan.blank-key-field` | `BlankKeyField` | `field` |
 | `plan.occurrence-unavailable` | `OccurrenceUnavailable` | `layout`, `matched` |
-| `plan.match-item-conflict` | `MatchItemConflict` | `keyDigests` |
-| `plan.matched-cardinality` | `MatchedCardinality` | `matched`, `focalDigests`, `referenceDigests` |
+| `plan.match-item-conflict` | `MatchItemConflict` | `trialDigests` |
+| `plan.matched-cardinality` | `MatchedCardinality` | `matched`, `focalDigests`, `referenceGroups` |
 | `plan.unmatched-focal-refused` | `UnmatchedFocalRefused` | `focalDigests` |
 
 ### `study-failure` — `StudyFailure`
@@ -887,6 +887,7 @@ fails after rewriting, so review the change and run it again.
 | `quarantine.unmappable-fixation` | `UnmappableFixation` | `index`, `from`, `to`, `x`, `y` |
 | `quarantine.correction-conflict` | `CorrectionConflict` | `first`, `second` |
 | `quarantine.item-conflict` | `ItemConflict` | `items` |
+| `quarantine.occurrence-conflict` | `OccurrenceConflict` | `occurrences` |
 
 ### `admission` — `AdmissionError`
 

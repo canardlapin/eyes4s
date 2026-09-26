@@ -259,8 +259,8 @@ class OccurrencePairingSuite extends munit.FunSuite:
       Vector(StudyFinding.MatchItemConflict[TrialKey, Px](Vector(r1, twin)))
     )
     assert(p.run(source).left.toOption.exists {
-      case PlanError.MatchItemConflict(digests) => digests.size == 2
-      case _                                    => false
+      case PlanError.MatchItemConflict(groups) => groups.map(_.size) == Vector(2)
+      case _                                   => false
     })
   }
 
@@ -315,4 +315,38 @@ class OccurrencePairingSuite extends munit.FunSuite:
       get(plan(pairing(MatchedReferences.RequireOne, ControlReferences.AllOccurrences), source))
     assertEquals(all.preflight(Some(source)).blockers, Vector.empty)
     assert(all.run(source).isRight)
+  }
+
+  test("a refusal names focal trials and reference groups apart, and omits an empty half") {
+    val source  = inputOf(Vector(a1, a2, c1, r4))
+    val refused = get(plan(StudyPairing.default, source)).run(source).left.toOption
+    val message = refused.map(_.message).getOrElse(fail("not refused"))
+    assert(!message.contains("Vector()"), message)
+    assert(!message.contains("focal"), message)
+    val digest = KeyDigest[TrialKey]
+    assert(
+      message.contains(Vector(a1, a2).map(digest.digest(_).render).mkString(", ")),
+      message
+    )
+  }
+
+  test("a refusal is the same whatever the input order") {
+    val forward  = inputOf(keys)
+    val backward = inputOf(keys.reverse)
+    assertEquals(
+      get(plan(StudyPairing.default, forward)).run(forward).left.toOption,
+      get(plan(StudyPairing.default, backward)).run(backward).left.toOption
+    )
+  }
+
+  test("one trial label at two occurrences, or with two items, is one trial in conflict") {
+    val d      = ret("r9", 1, "d")
+    val e      = ret("r9", 2, "e")
+    val source = inputOf(keys :+ d :+ e)
+    val p      = get(plan(pairing(MatchedReferences.SameOccurrence), source))
+    assert(p.preflight(Some(source)).blockers.exists {
+      case StudyFinding.MatchItemConflict(ks) => ks.toSet == Set(d, e)
+      case _                                  => false
+    })
+    assert(p.run(source).isLeft)
   }

@@ -125,14 +125,15 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
     * exactly that, so a version-1 plan re-encodes to its own bytes.
     */
   val codec: VersionedCodec[StudyPlan[K, U, P, S, D]] =
-    VersionedCodec.versions[StudyPlan[K, U, P, S, D]](schema, schemaV2)(plan =>
-      write(plan).flatMap(base =>
-        if plan.isVersion1 then Right(schema -> base)
-        else
-          writeV2(plan).map(extra =>
-            schemaV2 -> Wire.append(base.mapObject(_.remove("estimates")), extra)
-          )
-      )
+    VersionedCodec.versions[StudyPlan[K, U, P, S, D]]("study plan", schema, schema.version + 1)(
+      plan =>
+        write(plan).flatMap(base =>
+          if plan.isVersion1 then Right(schema -> base)
+          else
+            writeV2(plan).map(extra =>
+              schemaV2 -> Wire.append(base.mapObject(_.remove("estimates")), extra)
+            )
+        )
     )((version, json) => read(json, version == schemaV2))
 
   /** The version-2 members; `estimates` is replaced by the declared `scales`. */
@@ -447,14 +448,8 @@ private[codec] object StudyWire:
         Left(CodecError.Field("matched", json, s"unknown matched-reference rule $other"))
     }
 
-  private val controlNames = Vector(
-    ControlReferences.SameSelection  -> "sameSelection",
-    ControlReferences.AllOccurrences -> "allOccurrences"
-  )
-  private val unmatchedNames = Vector(
-    UnmatchedFocalPolicy.ReportNoMatch -> "reportNoMatch",
-    UnmatchedFocalPolicy.Refuse        -> "refuse"
-  )
+  private val controlNames   = ControlReferences.values.toVector.map(v => v -> v.name)
+  private val unmatchedNames = UnmatchedFocalPolicy.values.toVector.map(v => v -> v.name)
 
   def pairing(value: StudyPairing): Json = Json.obj(
     "matched"   -> matched(value.matched),

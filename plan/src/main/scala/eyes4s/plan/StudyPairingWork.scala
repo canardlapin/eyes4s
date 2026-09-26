@@ -39,8 +39,8 @@ private[plan] object StudyPairingWork:
     val narrowing: Option[Relation[K, K]] = (pairing.matched, layout.occurrence) match
       case (MatchedReferences.SameOccurrence, Some(occurrence)) =>
         Some(Relation.sameOn(occurrence))
-      case (MatchedReferences.Select(choice), Some(occurrence)) =>
-        val chosen = selected(layout, occurrence, choice, references)
+      case (MatchedReferences.Select(choice), Some(_)) =>
+        val chosen = chosenReferences(layout, pairing, references).toSet
         Some(
           Relation.SameOn(
             Projection.named[K, Boolean]("selectable")(_ => true),
@@ -78,24 +78,41 @@ private[plan] object StudyPairingWork:
       }
       .toSet
 
-  /** Keys the layout identifies as one trial but that name different items,
-    * each conflict in the layout's key order.
+  /** The references a pairing rule can draw on: every reference key that
+    * occurs once (a repeated key is excluded from pairing), narrowed by a
+    * `Select` rule to its chosen occurrence of each item. The schedule's
+    * relations and the cardinality both use this one definition.
+    */
+  def chosenReferences[K](
+      layout: StudyLayout[K],
+      pairing: StudyPairing,
+      references: Vector[K]
+  ): Vector[K] =
+    val counts = references.groupMapReduce(identity)(_ => 1)(_ + _)
+    val unique = references.filter(counts(_) == 1)
+    (pairing.matched, layout.occurrence) match
+      case (MatchedReferences.Select(choice), Some(o)) =>
+        val kept = selected(layout, o, choice, unique)
+        unique.filter(kept.contains)
+      case _ => unique
+
+  /** Keys the layout identifies as one trial (participant, phase and trial
+    * label) that disagree on its occurrence or its match item, each conflict
+    * in the layout's key order.
     */
   def itemConflicts[K](layout: StudyLayout[K], keys: Vector[K]): Vector[Vector[K]] =
     given Ordering[K] = layout.ordering
     layout.trial.toVector.flatMap { trial =>
       keys.distinct
-        .groupBy(k =>
-          (
-            layout.participant(k),
-            layout.phase(k),
-            trial(k),
-            layout.occurrence.map(o => o(k).value)
-          )
-        )
+        .groupBy(k => (layout.participant(k), layout.phase(k), trial(k)))
         .values
         .collect {
-          case group if group.map(layout.stimulus(_)).distinct.size > 1 => group.sorted
+          case group
+              if group
+                .map(k => (layout.stimulus(k), layout.occurrence.map(o => o(k).value)))
+                .distinct
+                .size > 1 =>
+            group.sorted
         }
         .toVector
         .sortBy(_.head)
@@ -131,13 +148,7 @@ private[plan] object StudyPairingWork:
         .map(_._1)
         .distinct
         .collect { case k if byFocal(k).size > 1 => k -> byFocal(k).map(_._2) }
-      val counts = references.groupMapReduce(identity)(_ => 1)(_ + _)
-      val unique = references.filter(counts(_) == 1)
-      val chosen = (pairing.matched, layout.occurrence) match
-        case (MatchedReferences.Select(choice), Some(o)) =>
-          val kept = selected(layout, o, choice, unique)
-          unique.filter(kept.contains)
-        case _ => unique
+      val chosen   = chosenReferences(layout, pairing, references)
       val grouping = (pairing.matched, layout.occurrence) match
         case (MatchedReferences.SameOccurrence, Some(o)) =>
           (k: K) => (layout.participant(k), layout.stimulus(k), Some(o(k).value))
