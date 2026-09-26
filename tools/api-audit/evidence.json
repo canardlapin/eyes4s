@@ -1437,6 +1437,7 @@
           "ioJVM/eyes4s.io.InspectionSourceSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
+          "ioJVM/eyes4s.io.InventoryReviewSuite",
           "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
@@ -1786,6 +1787,7 @@
           "ioJVM/eyes4s.io.InspectionSourceSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
+          "ioJVM/eyes4s.io.InventoryReviewSuite",
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
@@ -1866,6 +1868,7 @@
           "ioJVM/eyes4s.io.InspectionSourceSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
+          "ioJVM/eyes4s.io.InventoryReviewSuite",
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
@@ -1948,6 +1951,7 @@
           "ioJVM/eyes4s.io.InspectionSourceSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
+          "ioJVM/eyes4s.io.InventoryReviewSuite",
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
@@ -2005,6 +2009,7 @@
           "ioJVM/eyes4s.io.AdmissionPolicySuite",
           "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
+          "ioJVM/eyes4s.io.InventoryReviewSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "lawsJVM/eyes4s.laws.AdditionalRecipeCodecLawSuite",
@@ -2088,6 +2093,7 @@
           "ioJVM/eyes4s.io.InspectionSourceSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
+          "ioJVM/eyes4s.io.InventoryReviewSuite",
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
@@ -7475,11 +7481,6 @@
       "instance": "eyes4s/io/ResultUnit$$anon$7",
       "suite": "ioJVM/eyes4s.io.PsychologyWorkflowSuite"
     },
-    "class eyes4s.io.SampleCountRule": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/SampleCountRule$PositiveColumn",
-      "suite": "ioJVM/eyes4s.io.RepetitionGuideSuite"
-    },
     "class eyes4s.io.Sha256Error": {
       "classification": "data-sum",
       "instance": "eyes4s/io/Sha256Error$InvalidCharacter",
@@ -7822,7 +7823,7 @@
     },
     "class eyes4s.plan.AttributeValue": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/AttributeValue$$anon$3",
+      "instance": "eyes4s/plan/AttributeValue$$anon$4",
       "suite": "planJVM/eyes4s.plan.InventoryLedgerSuite"
     },
     "class eyes4s.plan.Availability": {
@@ -7908,7 +7909,7 @@
     "class eyes4s.plan.InventoryError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/InventoryError$AbsentMismatch",
-      "suite": "planJVM/eyes4s.plan.InventoryLedgerSuite"
+      "suite": "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
     },
     "class eyes4s.plan.Locus": {
       "classification": "data-sum",
@@ -8090,6 +8091,11 @@
       "instance": "eyes4s/plan/ResultRef$ContrastRow",
       "suite": "planJVM/eyes4s.plan.StudyWindowSuite"
     },
+    "class eyes4s.plan.SampleCountRule": {
+      "classification": "data-sum",
+      "instance": "eyes4s/plan/SampleCountRule$DerivedFromDuration",
+      "suite": "planJVM/eyes4s.plan.InventoryLedgerSuite"
+    },
     "class eyes4s.plan.ScaleContrast": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/ScaleContrast$Rows",
@@ -8197,7 +8203,7 @@
     },
     "class eyes4s.plan.TrialDisposition": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/TrialDisposition$$anon$5",
+      "instance": "eyes4s/plan/TrialDisposition$$anon$6",
       "suite": "planJVM/eyes4s.plan.InventoryLedgerSuite"
     },
     "class eyes4s.plan.UncheckedAspect": {
@@ -9296,7 +9302,7 @@
     "method eyes4s.io.FixationKeyReader$.trial(java.lang.String,java.lang.String,java.lang.String,java.lang.String,scala.Option):scala.util.Either": "ioJVM/eyes4s.io.AdmissionPolicySuite",
     "method eyes4s.io.FixationKeyReader$.withParticipant(1,scala.collection.immutable.Vector,scala.Function1,scala.Function1,scala.Function1,eyes4s.design.KeyDigest,scala.math.Ordering):scala.util.Either": "ioJVM/eyes4s.io.RepetitionGuideSuite",
     "method eyes4s.io.FixationRowError.message():": "ioJVM/consumer.PublicIoSuite",
-    "method eyes4s.io.FixationTable$.of(eyes4s.io.TrialColumns,java.lang.String,java.lang.String,java.lang.String,eyes4s.io.TimeColumns,eyes4s.io.SampleCountRule,scala.Option,scala.collection.immutable.Vector):scala.util.Either": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+    "method eyes4s.io.FixationTable$.of(eyes4s.io.TrialColumns,java.lang.String,java.lang.String,java.lang.String,eyes4s.io.TimeColumns,eyes4s.plan.SampleCountRule,scala.Option,scala.collection.immutable.Vector):scala.util.Either": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
     "method eyes4s.io.FixationTable.names():": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
     "method eyes4s.io.InventoryImport.attributes(eyes4s.plan.TrialKey):scala.Option": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
     "method eyes4s.io.InventoryImport.requireComplete():": "ioJVM/eyes4s.io.InventoryAdmissionSuite",
@@ -9315,7 +9321,6 @@
     "method eyes4s.io.ResultTable$.of(eyes4s.io.ResultFamily,scala.collection.immutable.Vector,scala.collection.immutable.Vector,io.circe.Json):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.io.ResultTable.csv():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.io.ResultTable.metadata():": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.io.SampleCountRule.countColumn():": "ioJVM/eyes4s.io.RepetitionGuideSuite",
     "method eyes4s.io.SampleOriginCounts$.from(1,eyes4s.core.Recording):eyes4s.io.SampleOriginCounts": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "method eyes4s.io.ScoreColumns$.of(2,scala.collection.immutable.Vector,scala.Function1,scala.Function1):scala.util.Either": "ioJVM/eyes4s.io.InspectionSourceSuite",
     "method eyes4s.io.ScoreColumns.differences(java.lang.Object):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -9348,7 +9353,7 @@
     "method eyes4s.io.TrialColumns.names():": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
     "method eyes4s.io.TrialInventory$.read(java.lang.String,eyes4s.io.TrialInventoryColumns):scala.util.Either": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
     "method eyes4s.io.TrialInventory.source(java.lang.String):eyes4s.plan.SourceRef": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
-    "method eyes4s.io.TrialInventory.trial(eyes4s.plan.TrialIdentity):scala.Option": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+    "method eyes4s.io.TrialInventory.trial(eyes4s.plan.TrialIdentity):scala.Option": "ioJVM/eyes4s.io.InventoryReviewSuite",
     "method eyes4s.io.TrialInventoryColumns$.of(eyes4s.io.TrialColumns,scala.Option,scala.collection.immutable.Vector):scala.util.Either": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
     "method eyes4s.io.TrialInventoryColumns.names():": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
     "method eyes4s.io.ValidityCodebook$.of(scala.collection.immutable.Set,scala.collection.immutable.Set,scala.collection.immutable.Set,scala.collection.immutable.Set):scala.util.Either": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
@@ -9802,6 +9807,7 @@
     "method eyes4s.laws.InventoryLaws.<init>(scala.Function1):eyes4s.laws.InventoryLaws": "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
     "method eyes4s.laws.InventoryLaws.inventory():": "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
     "method eyes4s.laws.InventoryScenario$.gen():": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
+    "method eyes4s.laws.InventoryScenario$.label(eyes4s.plan.TrialIdentity):scala.Tuple3": "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite",
     "method eyes4s.laws.InventoryScenario.fixationTable():": "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
     "method eyes4s.laws.InventoryScenario.inventoryTable():": "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
     "method eyes4s.laws.InventoryScenario.recordsOf(eyes4s.plan.TrialIdentity):scala.collection.immutable.Vector": "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite",
@@ -9905,7 +9911,9 @@
     "method eyes4s.plan.AdmissionError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.AdmissionLedger$.decide(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionDecision):scala.util.Either": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
     "method eyes4s.plan.AdmissionLedger$.decide(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionDecision,eyes4s.plan.AdmissionPolicy,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
-    "method eyes4s.plan.AdmissionLedger$.of(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionOutcome):scala.util.Either": "lawsJVM/eyes4s.laws.ManifestLawSuite",
+    "method eyes4s.plan.AdmissionLedger$.decide(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionDecision,eyes4s.plan.AdmissionPolicy,scala.collection.immutable.Vector,eyes4s.plan.InventoryLedger,scala.Function1,scala.Function1):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "method eyes4s.plan.AdmissionLedger$.inventoried(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionOutcome,eyes4s.plan.AdmissionPolicy,scala.collection.immutable.Vector,eyes4s.plan.InventoryLedger,scala.Function1,scala.Function1):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "method eyes4s.plan.AdmissionLedger$.of(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionOutcome):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.AdmissionLedger$.of(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionOutcome,eyes4s.plan.AdmissionPolicy,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
     "method eyes4s.plan.AdmissionLedger.admitted():": "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite",
     "method eyes4s.plan.AdmissionLedger.checkAgainst(1,eyes4s.plan.StudyInput):scala.util.Either": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
@@ -9922,6 +9930,8 @@
     "method eyes4s.plan.AdmissionReason.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.ArtifactRef$.of(1,scala.Long):eyes4s.plan.ArtifactRef": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.plan.ArtifactRef$.parse(1,java.lang.String):scala.util.Either": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
+    "method eyes4s.plan.AttributeColumn$.check(java.lang.String,scala.collection.immutable.Vector,eyes4s.plan.Attributes):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "method eyes4s.plan.AttributeColumn.admits(eyes4s.plan.AttributeValue):scala.Boolean": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.AttributeColumn.parse(java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.Attributes$.of(scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.Attributes.get(java.lang.String):scala.Option": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
@@ -10029,14 +10039,16 @@
     "method eyes4s.plan.ExactDouble.toString():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.InspectionError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.InventoryError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.InventoryLedger$.of(eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "method eyes4s.plan.InventoryLedger$.of(eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.SampleCountRule):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.InventoryLedger.absent():": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
     "method eyes4s.plan.InventoryLedger.admitted():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.InventoryLedger.attributes(eyes4s.plan.TrialKey):scala.Option": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
     "method eyes4s.plan.InventoryLedger.quarantined():": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
     "method eyes4s.plan.InventoryLedger.trial(eyes4s.plan.TrialIdentity):scala.Option": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+    "method eyes4s.plan.InventoryTrial$.of(eyes4s.plan.TrialIdentity,scala.collection.immutable.Vector,scala.Option,eyes4s.plan.Attributes,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.TrialDisposition):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.InventoryTrial.item():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.InventoryTrial.itemConflict():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "method eyes4s.plan.InventoryTrial.keyItem():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.LedgerRefusal$.of(2,eyes4s.plan.StudyInput,eyes4s.plan.AdmissionLedger,eyes4s.plan.AdmissionError):eyes4s.plan.LedgerRefusal": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.Listing.contains(eyes4s.plan.ResultRef):scala.Boolean": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.Listing.first(eyes4s.plan.PageSize):eyes4s.plan.Page": "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -10100,7 +10112,7 @@
     "method eyes4s.plan.PreparedTemporalStudy.work(eyes4s.compare.ComparisonBudget):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.QuarantineCause$.isVersion1(eyes4s.plan.QuarantineCause):scala.Boolean": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.QuarantineCause$.of(eyes4s.core.ScanpathError):eyes4s.plan.QuarantineCause": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
-    "method eyes4s.plan.QuarantineCause$.version(eyes4s.plan.QuarantineCause):scala.Int": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "method eyes4s.plan.QuarantineCause$.version(eyes4s.plan.QuarantineCause):scala.Int": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
     "method eyes4s.plan.QuarantineCause.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.RecipeDescriptors$.recording(1,eyes4s.plan.RecordingPlan):scala.util.Either": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.RecipeDescriptors$.study(5,eyes4s.plan.StudyPlan,eyes4s.kernel.UnitLabel):scala.util.Either": "planJVM/eyes4s.plan.StudyCursorSuite",
@@ -10115,6 +10127,7 @@
     "method eyes4s.plan.RecipeParameters$.sigma(1,eyes4s.kernel.UnitLabel):eyes4s.plan.ParameterDescriptor": "planJVM/eyes4s.plan.MethodDescriptorSuite",
     "method eyes4s.plan.RecipeParameters$.sigmaX(1,eyes4s.kernel.UnitLabel):eyes4s.plan.ParameterDescriptor": "codecJVM/eyes4s.codec.StudyCodecSuite",
     "method eyes4s.plan.RecipeParameters$.sigmaY(1,eyes4s.kernel.UnitLabel):eyes4s.plan.ParameterDescriptor": "codecJVM/eyes4s.codec.StudyCodecSuite",
+    "method eyes4s.plan.RecordAttributes$.of(scala.Int,eyes4s.plan.Attributes):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.RecordingAnalysis$.reconstruct(1,eyes4s.plan.RecordingPlan,eyes4s.core.Recording,eyes4s.core.Recording,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
     "method eyes4s.plan.RecordingAnalysis.description():": "planJVM/eyes4s.plan.RecordingCursorSuite",
     "method eyes4s.plan.RecordingAnalysis.input():": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
@@ -10180,6 +10193,7 @@
     "method eyes4s.plan.ResultInspection$.study(5,eyes4s.plan.StudyPlan,eyes4s.plan.StudyResult,eyes4s.plan.StudyInput,scala.Option):scala.util.Either": "planJVM/eyes4s.plan.StudyWindowSuite",
     "method eyes4s.plan.ResultInspection$.temporal(5,eyes4s.plan.TemporalStudyResult,eyes4s.plan.StudySources,eyes4s.plan.ScoreSchema):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ResultRef.loci():": "planJVM/eyes4s.plan.StudyWindowSuite",
+    "method eyes4s.plan.SampleCountRule.countColumn():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.ScaleInspection.pairing(eyes4s.plan.StudyDesign):eyes4s.design.PairingReport": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ScaleInspection.pairs(eyes4s.plan.StudyDesign):eyes4s.plan.Listing": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ScaleInspection.reductions(eyes4s.plan.StudyDesign):eyes4s.plan.Listing": "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -10241,7 +10255,7 @@
     "method eyes4s.plan.StudyMethod.<init>(4,eyes4s.plan.DefinitionId,java.lang.String,scala.Function1,scala.Function1,scala.Option,eyes4s.design.ScoreMean,eyes4s.design.Contrastable):eyes4s.plan.StudyMethod": "planJVM/eyes4s.plan.StudyWorkSuite",
     "method eyes4s.plan.StudyMethod.capability():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyPairing$package$.TrialOccurrence$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.OccurrencePairingSuite",
-    "method eyes4s.plan.StudyPairing$package$.TrialOccurrence$.value(scala.Int):scala.Int": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "method eyes4s.plan.StudyPairing$package$.TrialOccurrence$.value(scala.Int):scala.Int": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "method eyes4s.plan.StudyPairing.canRefuse():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyPairing.description():": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "method eyes4s.plan.StudyPairing.isVersion1():": "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -10329,9 +10343,10 @@
     "method eyes4s.plan.TrialIdentity$.projection(1,eyes4s.plan.StudyLayout):scala.Option": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.plan.TrialIdentity.render():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.TrialIdentity.withItem(java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
-    "method eyes4s.plan.TrialKey$.layout(eyes4s.plan.DefinitionId):eyes4s.plan.StudyLayout": "planJVM/eyes4s.plan.InventoryLedgerSuite",
-    "method eyes4s.plan.TrialKey$.of(java.lang.String,java.lang.String,java.lang.String,scala.Int,java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "method eyes4s.plan.TrialKey$.layout(eyes4s.plan.DefinitionId):eyes4s.plan.StudyLayout": "planJVM/eyes4s.plan.OccurrencePairingSuite",
+    "method eyes4s.plan.TrialKey$.of(java.lang.String,java.lang.String,java.lang.String,scala.Int,java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "method eyes4s.plan.TrialSources.records():": "planJVM/eyes4s.plan.ResultInspectionSuite",
+    "method eyes4s.plan.UnlistedTrial$.of(eyes4s.plan.TrialIdentity,scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.UnmatchedFocalPolicy.name():": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.plan.WindowSummary$.of(1,scala.collection.immutable.Vector):eyes4s.plan.WindowSummary": "planJVM/eyes4s.plan.StudyWindowSuite",
     "method eyes4s.plan.WindowSummary$.of(1,scala.collection.immutable.Vector,eyes4s.plan.AdmissionLedger):eyes4s.plan.WindowSummary": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
@@ -10793,17 +10808,17 @@
     "value eyes4s.plan.StudyMethod.comparison": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "value eyes4s.plan.StudyPairing$.default": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "value eyes4s.plan.StudyPairing$.version1": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "value eyes4s.plan.StudyPairing$package$.TrialOccurrence$.first": "planJVM/eyes4s.plan.InventoryLedgerSuite",
-    "value eyes4s.plan.StudyPairing$package$.TrialOccurrence$.given_KeyDigest_TrialOccurrence": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "value eyes4s.plan.StudyPairing$package$.TrialOccurrence$.first": "planJVM/eyes4s.plan.OccurrencePairingSuite",
+    "value eyes4s.plan.StudyPairing$package$.TrialOccurrence$.given_KeyDigest_TrialOccurrence": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "value eyes4s.plan.StudyPreview.reductionOrientation": "planJVM/eyes4s.plan.StudyPreviewSuite",
     "value eyes4s.plan.StudyReport.family": "planJVM/eyes4s.plan.PreflightSuite",
     "value eyes4s.plan.TemporalReport.family": "planJVM/eyes4s.plan.PreflightSuite",
     "value eyes4s.plan.TrialIdentity$.given_KeyDigest_TrialIdentity": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
     "value eyes4s.plan.TrialIdentity$.given_Ordering_TrialIdentity": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
-    "value eyes4s.plan.TrialKey$.given_KeyDigest_TrialKey": "planJVM/eyes4s.plan.InventoryLedgerSuite",
-    "value eyes4s.plan.TrialKey$.given_Ordering_TrialKey": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "value eyes4s.plan.TrialKey$.given_KeyDigest_TrialKey": "planJVM/eyes4s.plan.OccurrencePairingSuite",
+    "value eyes4s.plan.TrialKey$.given_Ordering_TrialKey": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "value eyes4s.plan.TrialKeyDefinitions$.trialKey": "lawsJVM/eyes4s.laws.CodecLawsSuite",
-    "value eyes4s.plan.TrialKeyDefinitions$.trialLayout": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "value eyes4s.plan.TrialKeyDefinitions$.trialLayout": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "value eyes4s.surface.SmootherCards$.all": "surfaceJVM/eyes4s.surface.SmootherCardSuite",
     "value eyes4s.surface.SmootherCards$.anisotropic": "surfaceJVM/consumer.PublicSurfaceSuite",
     "value eyes4s.surface.SmootherCards$.gaussian": "surfaceJVM/consumer.PublicSurfaceSuite"
@@ -12071,6 +12086,7 @@
       "importer: trialInventory.an admitted trial admits every record under the inventory's item",
       "importer: trialInventory.each trial's disposition is the one its construction implies",
       "importer: trialInventory.every keyed record of an inventory trial carries the inventory's item",
+      "importer: trialInventory.every record whose trial fields parse is listed under its trial, blank item or not",
       "importer: trialInventory.partition: every inventory trial has one entry, in order, and every record one owner",
       "importer: trialInventory.records of a trial outside the inventory are listed and never admitted",
       "inventory ledger: versionedCodec.reencoding is canonical",
@@ -12089,6 +12105,19 @@
       "the ledger records the inventory and writes version 3; decoding re-checks it",
       "without a count column, support is the duration at a declared rate, rounded up",
       "without an item column on either side the route refuses"
+    ],
+    "ioJS/eyes4s.io.InventoryReviewSuite": [
+      "B1: a blank item cell keeps the record with its trial, which takes the inventory's item",
+      "B2': without an inventory item, a blank record item rejects the record with its key",
+      "B2: a blank item cell among good records is neither dropped nor detached",
+      "B3/item 3: a label's records with another occurrence are an occurrence conflict",
+      "B4/item 7: repeated inventory rows are compared on parsed values",
+      "B5/item 2: a forged inventory (absent trial with record items, mixed kinds) is refused",
+      "B6/item 4: a version-3 ledger must carry its inventory",
+      "B7/item 5: the inventory is refused with every defect, each naming row and column",
+      "item 4: a ledger without an inventory cannot name NotInInventory",
+      "item 6: derived sample counts and their rate are recorded in the ledger",
+      "item 8: numbers follow a strict decimal grammar"
     ],
     "ioJS/eyes4s.io.PsychologyWorkflowSuite": [
       "a real tracker excerpt reaches auditable tidy AOI results through the simple path",
@@ -12984,7 +13013,8 @@
       "study input: versionedCodec.reencoding is canonical",
       "study input: versionedCodec.round trip preserves the value",
       "the inventory ledger law kills a changed attribute, a dropped trial and a lost listing",
-      "the policy ledger law kills a dropped rule, a flipped policy and a lost off-frame record"
+      "the policy ledger law kills a dropped rule, a flipped policy and a lost off-frame record",
+      "the version-3 decoder refuses forged inventories the importer could not produce"
     ],
     "lawsJS/eyes4s.laws.StudyResultCodecLawSuite": [
       "cosine study result: versionedCodec.reencoding is canonical",
@@ -13107,12 +13137,15 @@
       "a layout without a trial label projects no identity",
       "a trial outside the inventory may not admit, and quarantines only as not listed",
       "a trial whose records are all rejected on their own is refused as RejectedRecords",
-      "absent exactly when a trial has no records",
+      "absent exactly when a trial has no records, and then it names no items",
       "an item conflict decides the cause of a quarantined trial",
+      "attributes match the declared columns, by name, order and kind",
       "attributes name their entries; causes know the ledger version that introduced them",
       "declared attribute kinds parse their cells; an empty cell is blank",
-      "identities, record ownership and order are checked when the inventory is built",
-      "joining refuses unknown, foreign and unclaimed records and mismatched items"
+      "identities, labels, record ownership and order are checked when the inventory is built",
+      "joining refuses unknown, foreign and unclaimed records and mismatched items",
+      "only a ledger with an inventory may name the inventory's causes",
+      "record items are sorted, distinct, and agree with the disposition"
     ],
     "planJS/eyes4s.plan.MethodDescriptorSuite": [
       "a hidden or misencoded parameter is rejected, including same names with different values",
@@ -14687,6 +14720,7 @@
       "importer: trialInventory.an admitted trial admits every record under the inventory's item",
       "importer: trialInventory.each trial's disposition is the one its construction implies",
       "importer: trialInventory.every keyed record of an inventory trial carries the inventory's item",
+      "importer: trialInventory.every record whose trial fields parse is listed under its trial, blank item or not",
       "importer: trialInventory.partition: every inventory trial has one entry, in order, and every record one owner",
       "importer: trialInventory.records of a trial outside the inventory are listed and never admitted",
       "inventory ledger: versionedCodec.reencoding is canonical",
@@ -14705,6 +14739,19 @@
       "the ledger records the inventory and writes version 3; decoding re-checks it",
       "without a count column, support is the duration at a declared rate, rounded up",
       "without an item column on either side the route refuses"
+    ],
+    "ioJVM/eyes4s.io.InventoryReviewSuite": [
+      "B1: a blank item cell keeps the record with its trial, which takes the inventory's item",
+      "B2': without an inventory item, a blank record item rejects the record with its key",
+      "B2: a blank item cell among good records is neither dropped nor detached",
+      "B3/item 3: a label's records with another occurrence are an occurrence conflict",
+      "B4/item 7: repeated inventory rows are compared on parsed values",
+      "B5/item 2: a forged inventory (absent trial with record items, mixed kinds) is refused",
+      "B6/item 4: a version-3 ledger must carry its inventory",
+      "B7/item 5: the inventory is refused with every defect, each naming row and column",
+      "item 4: a ledger without an inventory cannot name NotInInventory",
+      "item 6: derived sample counts and their rate are recorded in the ledger",
+      "item 8: numbers follow a strict decimal grammar"
     ],
     "ioJVM/eyes4s.io.PsychologyWorkflowSuite": [
       "a real tracker excerpt reaches auditable tidy AOI results through the simple path",
@@ -15629,7 +15676,8 @@
       "study input: versionedCodec.reencoding is canonical",
       "study input: versionedCodec.round trip preserves the value",
       "the inventory ledger law kills a changed attribute, a dropped trial and a lost listing",
-      "the policy ledger law kills a dropped rule, a flipped policy and a lost off-frame record"
+      "the policy ledger law kills a dropped rule, a flipped policy and a lost off-frame record",
+      "the version-3 decoder refuses forged inventories the importer could not produce"
     ],
     "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite": [
       "cosine study result: versionedCodec.reencoding is canonical",
@@ -15752,12 +15800,15 @@
       "a layout without a trial label projects no identity",
       "a trial outside the inventory may not admit, and quarantines only as not listed",
       "a trial whose records are all rejected on their own is refused as RejectedRecords",
-      "absent exactly when a trial has no records",
+      "absent exactly when a trial has no records, and then it names no items",
       "an item conflict decides the cause of a quarantined trial",
+      "attributes match the declared columns, by name, order and kind",
       "attributes name their entries; causes know the ledger version that introduced them",
       "declared attribute kinds parse their cells; an empty cell is blank",
-      "identities, record ownership and order are checked when the inventory is built",
-      "joining refuses unknown, foreign and unclaimed records and mismatched items"
+      "identities, labels, record ownership and order are checked when the inventory is built",
+      "joining refuses unknown, foreign and unclaimed records and mismatched items",
+      "only a ledger with an inventory may name the inventory's causes",
+      "record items are sorted, distinct, and agree with the disposition"
     ],
     "planJVM/eyes4s.plan.MethodDescriptorSuite": [
       "a hidden or misencoded parameter is rejected, including same names with different values",
