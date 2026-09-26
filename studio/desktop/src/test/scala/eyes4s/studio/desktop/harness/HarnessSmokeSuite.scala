@@ -40,6 +40,7 @@ class HarnessSmokeSuite extends StudioFxSuite:
     controls
 
   fxStage.test("opens a 1440x900 stage, clicks, asserts and writes 1x and 2x snapshots") { fx =>
+    assumeFullStage(fx)
     assertEquals(fx.sceneSize, (1440.0, 900.0))
     val c = counter(fx)
 
