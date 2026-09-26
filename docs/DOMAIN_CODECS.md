@@ -74,15 +74,22 @@ injects; decoding never reads. See
 **Which identity to persist.** Anything persisted or cited across files and runs is identified by
 SHA-256: stored bytes by their `ByteDigest`, which a manifest verifies, and values by their
 `CanonicalDigest`. A plan revision, the input a run used and the result a report or figure is
-bound to are cited by `CanonicalDigest`, and stale-run rejection compares those digests: the
-digest of the current plan (or input) against the one the run was stamped with. Because writing
-is canonical (one document per value, under the earliest version that expresses it; see the
+bound to should be cited by `CanonicalDigest`. This is the contract for stale-run rejection:
+compare the digest of the current plan (or input) with the one the run was stamped with. No
+shipped code compares them yet; UI-D wires the run stamp to `CanonicalDigest`. Because the writer
+emits one canonical document per value (under the earliest version that expresses it; see the
 [version policy](#version-policy) and [canonical wire forms](#canonical-wire-forms)), equal
 values have equal digests, and a changed value has a different digest except with SHA-256's
 negligible probability. The digest is taken over a portable binary rendering of the document's JSON
 value (a tag per node, lengths before contents, strings as UTF-16 code units, numbers as their
 IEEE-754 bits or, beyond 2^53, their exact integer), so the JVM and Scala.js agree although they
-print some doubles differently; `CanonicalDigestSuite` pins one on both platforms.
+print some doubles differently; `CanonicalDigestSuite` pins one on both platforms. A digested
+number must be exactly a 64-bit integer or a finite double: any other (2^64, 1e400,
+0.10000000000000001) is refused with `CodecError.Unsupported` rather than rounded onto another
+value's digest. Numbers the codecs write always qualify; Scala.js parses JSON text into doubles, so
+there a number in parsed text that no double represents has already been rounded and cannot be
+detected. `-0.0` and `0.0` digest differently, deliberately: a digest may tell equal values apart,
+but never identifies different ones.
 `CanonicalDigest[A]` is typed by the value it identifies, so a plan digest does not compare with
 an input digest (`sameAs`), and it neither converts to nor from a `ContentHash`. It persists as its
 64 hexadecimal digits (`CanonicalDigest.parse`) and is shown as `sha256:` and those digits.
@@ -153,15 +160,16 @@ records outside the frame, and its v2 to v3 upcast writes `"inventory": null`.
 The versions' vocabularies are nested: every value a version expresses is expressed by each later
 version. Writing is **earliest-version**: a value is written under the lowest version that
 expresses it (`ladder.earliest(value)`), so a pinned version-1 document re-encodes to its own
-bytes, an older release can read every document whose value it can express, and each value has one
-written document. Decoding reads each version with that version's own reader and never migrates.
+bytes, an older release can read every document whose value it can express, and the writer emits
+one canonical document per value. Decoding reads each version with that version's own reader and never migrates.
 `ladder.lift(document)` is the explicit migration: it rewrites a stored document of any listed
-version as the latest version with the same meaning, by applying the upcasts in order. Every reader
-accepts the lift of an earlier document, and the codec writes the decoded value back under its
-earliest version; a lifted version-3 ledger with a `null` inventory is read with version 2's
-vocabulary, so it may not name an inventory cause. A lifted document is the one sanctioned second
-spelling of a value; any other alternative spelling is refused (see [canonical wire
-forms](#canonical-wire-forms)).
+version as the latest version with the same meaning, by applying the upcasts in order. Because the
+vocabularies are nested, every later reader accepts later-version spellings of earlier values, and
+the codec writes the decoded value back under its earliest version; a version-3 ledger with a
+`null` inventory is read with version 2's vocabulary, so it may not name an inventory cause.
+`lift` first reads the document with its own version's reader and fails as that reader does, so
+it never turns a document its version refuses into a valid later one. Canonical-form refusals (see
+[canonical wire forms](#canonical-wire-forms)) apply within a version's vocabulary.
 
 The published `SchemaLadderLaws` state the policy over generated values of every version. Writing
 `write_N`, `read_N` and `upcast_N` for version N's writer, reader and upcast, and `E` for the version
@@ -173,15 +181,19 @@ the codec writes a value `x` under:
 | Old readers | the ladder cut at `E` (`ladder.upTo(E)`, what the release that introduced `E` read) decodes the written document to `x` |
 | Upcast | for every later version `M`, `upcast^(M-E)(write_E(x))` is exactly `write_M(x)`, so decoding the vN document and decoding its lift give the same value |
 | Canonical | the document lifted to the latest version decodes to `x` and re-encodes to the earliest document, so writing is canonical and idempotent |
+| Refusal | a document the codec refuses is still refused after `lift`; the invalid documents come from edits of written ones (generic payload damage by default, plus edits that reach a later version's vocabulary) |
 
 `PlanCodecLawSuite` and `StudyInputCodecLawSuite` apply them to the study-plan ladders (both key
 layouts) and the admission-ledger ladders (the study key layout for versions 1 and 2, the trial
-layout with inventories for version 3), and kill, by a falsified property from a fixed seed, a
+layout at all three versions), with ledger edits that write a version-2 or version-3 quarantine
+cause into a ledger of any version, and kill, by a falsified property from a fixed seed, a
 dropped upcast step (each step of the ledger in turn), an upcast that states another pairing or
 today's default admission policy instead of version 1's, a codec that writes the latest version
 instead of the earliest, and a vocabulary that claims a policy ledger is a version-1 ledger.
-`SchemaRegistryJvmSuite` requires every schema name registered at more than one version to have a
-registered ladder whose versions are exactly the registered ones, a pinned fixture of every
+`SchemaRegistryJvmSuite` finds the ladders from the shipped codecs that expose one (through the
+decoder of every registered document fixture), not from a list, and requires every schema name
+registered at more than one version to have one, each ladder's versions to be exactly the
+registered ones, a pinned fixture of every
 version, the ladder laws, and every pinned document of a version below the latest to lift, decode
 to the value it decodes to as written, and re-encode to itself (see [Evidence](#evidence)).
 
@@ -224,10 +236,12 @@ known one that differs is refused with `CodecError.Derived(path, declared, deriv
 
 ### Canonical wire forms
 
-Each value has one written document, and a decoder refuses a second spelling that would decode to
-the same value, so a document's bytes identify its value (apart from the lift of an earlier
-version, under the [version policy](#version-policy), and the unknown members and numeric
-spellings described above). A refusal is `CodecError.NonCanonical(path, found, canonical, rule)`,
+The writer emits one canonical document per value, and within a version's vocabulary a decoder
+refuses a second spelling that would decode to the same value. Later readers still accept
+later-version spellings of earlier values (the [version policy](#version-policy)), and unknown
+members and numeric spellings are treated as described above. A 64-bit integer member written as a
+JSON number must lie within ±2^53 on every platform, since Scala.js cannot tell larger integers
+from their neighbours; larger integers are written as decimal strings. A refusal is `CodecError.NonCanonical(path, found, canonical, rule)`,
 naming the member, what it found, what the writer writes and the rule, or `CodecError.Field` where
 the member has the wrong JSON type:
 

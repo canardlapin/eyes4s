@@ -177,7 +177,7 @@ final class VersionedCodec[A] private (
     * canonical document (see [[CanonicalDigest]]).
     */
   def digest(value: A): Either[CodecError, CanonicalDigest[A]] =
-    encode(value).map(CanonicalDigest.document)
+    encode(value).flatMap(CanonicalDigest.document)
   def parse(input: String): Either[CodecError, A] =
     io.circe.parser
       .parse(input)
@@ -378,11 +378,19 @@ private[codec] object Wire:
           .toRight(s"expected an integer spelled as one, got ${value.noSpaces}")
       )
 
+    /** Beyond 2^53 a JSON number is refused on every platform: Scala.js
+      * parses numbers into doubles, so it cannot tell such an integer from
+      * its neighbours. Integers that large are written as decimal strings.
+      */
     given Member[Long] = value =>
       number(value).flatMap(n =>
         n.toLong
           .filter(_.toString == n.toString)
           .toRight(s"expected an integer spelled as one, got ${value.noSpaces}")
+          .filterOrElse(
+            l => l <= (1L << 53) && l >= -(1L << 53),
+            s"an integer beyond 2^53 is written as a decimal string, got ${value.noSpaces}"
+          )
       )
 
     given [A](using inner: Member[A]): Member[Vector[A]] = value =>

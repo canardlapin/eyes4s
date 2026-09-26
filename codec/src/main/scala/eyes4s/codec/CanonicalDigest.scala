@@ -20,17 +20,23 @@ import io.circe.Json
 
 /** The collision-resistant identity of a value of type `A`: the SHA-256 of
   * its canonical document under its versioned codec, schema envelope
-  * included (`VersionedCodec#digest`). This is the identity to persist or cite across files and runs:
-  * a plan revision, the input a run used, the result a report or figure is
-  * bound to, and every stale-run comparison between them.
+  * included (`VersionedCodec#digest`). This is the identity to persist or
+  * cite across files and runs: a plan revision, the input a run used, the
+  * result a report or figure is bound to. Comparing these digests is the
+  * contract for stale-run rejection; UI-D wires the run stamp to it, and no
+  * shipped code compares them yet.
   *
-  * Writing is canonical (one document per value, under the earliest version
-  * that expresses it; see `SchemaLadder` and the canonical wire forms), so
-  * equal values have equal digests and a changed value has a different one
-  * except with SHA-256's negligible probability. The digest is taken over a
-  * portable binary rendering of the document's JSON value, not over printed
-  * text, so the JVM and Scala.js compute the same digest although they print
-  * some doubles differently.
+  * The writer emits one canonical document per value (under the earliest
+  * version that expresses it; see `SchemaLadder` and the canonical wire
+  * forms), so equal values have equal digests and a changed value has a
+  * different one except with SHA-256's negligible probability. The digest is
+  * taken over a portable binary rendering of the document's JSON value, not
+  * over printed text, so the JVM and Scala.js compute the same digest
+  * although they print some doubles differently. A number must be exactly a
+  * 64-bit integer or a finite double; any other number (2^64, 1e400,
+  * 0.10000000000000001) is refused with `CodecError.Unsupported`, never
+  * rounded into another value's digest. `-0.0` and `0.0` digest differently:
+  * a digest may distinguish equal values, never identify different ones.
   *
   * [[eyes4s.kernel.ContentHash]] and `eyes4s.plan.ArtifactRef` are a 64-bit,
   * non-cryptographic key: an in-memory change detector and the semantic
@@ -59,19 +65,58 @@ object CanonicalDigest:
   def parse[A](hex: String): Either[ByteDigestError, CanonicalDigest[A]] =
     ByteDigest.parse(hex).map(new CanonicalDigest(_))
 
-  private[codec] def document[A](json: Json): CanonicalDigest[A] =
-    new CanonicalDigest(ByteDigest.sha256(CanonicalBytes.of(json)))
+  private[codec] def document[A](json: Json): Either[CodecError, CanonicalDigest[A]] =
+    CanonicalBytes.of(json).map(bytes => new CanonicalDigest(ByteDigest.sha256(bytes)))
 
 /** A prefix-free binary rendering of a JSON value: a tag byte per node,
   * lengths before contents, strings as UTF-16 code units and object members
-  * in document order. A number is its IEEE-754 double bits, or its exact
-  * 64-bit integer where the double would round it, so a number has one
-  * rendering whichever platform printed or parsed it.
+  * in document order. A number is exactly a 64-bit integer or a finite
+  * double, and is rendered as its IEEE-754 double bits, or as the integer
+  * where the double would round it; distinct such numbers render
+  * differently. Any other number is refused. Scala.js parses JSON text into
+  * doubles, so a number in parsed text that no double represents cannot be
+  * detected there; numbers the codecs write are always representable.
   */
 private[codec] object CanonicalBytes:
   private val Exact = 1L << 53
 
-  def of(json: Json): IArray[Byte] =
+  /** The number is exactly a 64-bit integer or a finite double. */
+  private def representable(value: io.circe.JsonNumber): Boolean =
+    val exact = value.toBigDecimal
+    value.toLong.exists(l => exact.contains(BigDecimal(l))) || {
+      val d = value.toDouble
+      d.isFinite && exact.contains(BigDecimal.decimal(d))
+    }
+
+  /** The path of the first number that is neither, if any. */
+  private def unrepresentable(json: Json, path: String): Option[String] =
+    json.fold(
+      None,
+      _ => None,
+      n => Option.when(!representable(n))(path),
+      _ => None,
+      items =>
+        items.iterator.zipWithIndex
+          .map((item, i) => unrepresentable(item, s"$path[$i]"))
+          .collectFirst { case Some(p) => p },
+      members =>
+        members.toIterable.iterator
+          .map((key, member) => unrepresentable(member, s"$path.$key"))
+          .collectFirst { case Some(p) => p }
+    )
+
+  def of(json: Json): Either[CodecError, IArray[Byte]] =
+    unrepresentable(json, "$") match
+      case Some(path) =>
+        Left(
+          CodecError.Unsupported(
+            path,
+            "a digested number must be exactly a 64-bit integer or a finite double"
+          )
+        )
+      case None => Right(render(json))
+
+  private def render(json: Json): IArray[Byte] =
     val out                    = Array.newBuilder[Byte]
     def byte(value: Int): Unit =
       out += value.toByte

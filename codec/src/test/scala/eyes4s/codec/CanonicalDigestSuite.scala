@@ -77,6 +77,53 @@ class CanonicalDigestSuite extends munit.FunSuite:
     assertEquals(digests.distinct.size, digests.size)
   }
 
+  test("a number no 64-bit integer or finite double represents is refused, never rounded") {
+    val two64 = BigInt(2).pow(64)
+    Vector(
+      Json.fromBigInt(two64),
+      Json.fromBigInt(two64 + 1),
+      Json.fromBigDecimal(BigDecimal("0.10000000000000001")),
+      Json.fromBigDecimal(BigDecimal("1e400"))
+    ).foreach { number =>
+      assertEquals(
+        codec.digest(Json.obj("n" -> Json.arr(number))),
+        Left(
+          CodecError.Unsupported(
+            "$.value.n[0]",
+            "a digested number must be exactly a 64-bit integer or a finite double"
+          )
+        ),
+        number.noSpaces
+      )
+    }
+    // Representable numbers are accepted however they were built.
+    assert(codec.digest(Json.fromBigDecimal(BigDecimal("0.1"))).isRight)
+    assertEquals(
+      codec.digest(Json.fromBigDecimal(BigDecimal("0.1"))),
+      codec.digest(Json.fromDoubleOrNull(0.1))
+    )
+    assert(codec.digest(Json.fromLong(Long.MaxValue)).isRight)
+  }
+
+  test("-0.0 and 0.0 digest differently: a digest never identifies different values") {
+    assert(
+      !get(codec.digest(Json.fromDoubleOrNull(-0.0)))
+        .sameAs(get(codec.digest(Json.fromDoubleOrNull(0.0))))
+    )
+  }
+
+  test("a 64-bit integer member beyond 2^53 is refused as a JSON number") {
+    val schema = get(DefinitionId.of("test.long", 1))
+    val longs  = VersionedCodec.of[Long](schema)(Json.fromLong)(json =>
+      Wire.field[Long](Json.obj("n" -> json), "n")
+    )
+    assertEquals(longs.decode(get(longs.encode(1L << 53))), Right(1L << 53))
+    assert(longs.decode(get(longs.encode((1L << 53) + 2))).left.exists {
+      case CodecError.Field("n", _, reason) => reason.contains("beyond 2^53")
+      case _                                => false
+    })
+  }
+
   test("a value's digest survives decoding, lifting and re-encoding, and a change moves it") {
     val studies  = StudyCodecs.cosine[Px]
     val document = get(io.circe.parser.parse(SavedStudyFixtures.versionOne))
