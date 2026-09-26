@@ -103,7 +103,7 @@
       ],
       "estimand": "Order-insensitive fixation-pattern transport or proportion of sampled trajectory positions within a spatial threshold.",
       "conventions": [
-        "direct fixation_overlap defaults to threshold 60 and 20-unit times; similarity.fixation_group defaults to threshold 40 and requires time_samples",
+        "direct fixation_overlap defaults to threshold 60 and 20-unit times spanning both paths' onsets; similarity.fixation_group also defaults to threshold 60 and requires time_samples; both hold the last fixation",
         "overlap uses strict distance < threshold and all requested times in its denominator",
         "distance metric explicit",
         "fixation Sinkhorn uses normalized x/y/onset and duration weights, returning 1/(1+cost); distinguish it from a raw cost or debiased divergence"

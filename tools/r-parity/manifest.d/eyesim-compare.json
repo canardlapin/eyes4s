@@ -101,7 +101,7 @@
       "regeneration_ids": [
         "compare-reference"
       ],
-      "divergence": "Seven normalized nonconstant map methods agree with rational oracles and pinned vector/density calls at 1e-12. Native rejects constant correlation, malformed Mass and foreign grids; pinned raw/signed/missing/one-cell results remain recorded. Legacy Fisher clamp is separate. Frozen emd dispatch uses T4transport, not a general exact backend. Analytically exact small plans match pinned outputs and differ from native sliced W1 and squared-cost Sinkhorn; no exact solver or approximation alias."
+      "divergence": "Seven normalized nonconstant map methods agree with rational oracles and pinned vector/density calls at 1e-12. Both refuse foreign grids. Fisher z snaps r within 64 eps of plus/minus one before its machine-epsilon clamp in both, pinned by a near-identical pair. Native rejects constant correlation, including identical constants that R scores as one (Fisher z 18.37), and malformed Mass; pinned raw/signed/missing/one-cell results remain recorded. Legacy Fisher clamp is separate. Frozen emd dispatch uses T4transport, not a general exact backend. Analytically exact small plans match pinned outputs and differ from native sliced W1 and squared-cost Sinkhorn; no exact solver or approximation alias."
     },
     {
       "id": "multiscale-density-and-comparison",

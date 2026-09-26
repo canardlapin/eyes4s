@@ -61,7 +61,7 @@
       "estimand": "Static template-density values evaluated by nearest-grid lookup along the fast constant-step focal fixation trajectory at requested times and optionally aggregated into bins.",
       "conventions": [
         "query-time and fixation-time units explicit",
-        "cut(right=FALSE, include.lowest=TRUE): measure the final endpoint explicitly",
+        "cut(right=FALSE): every bin is half-open, including the last; measure the final endpoint explicitly",
         "matching and permutation strata explicit",
         "control means are formed per time before bin aggregation",
         "missing trajectory or template support retained"
@@ -100,7 +100,7 @@
       "regeneration_ids": [
         "point-sampling"
       ],
-      "divergence": "Four normalization modes, unsorted/repeated queries, final-bin endpoint, source-occurrence multiset and exhaustive controls match independently checked reference values. Native retains unmatched/ambiguous/duplicate source errors instead of dropped rows or first-match selection; uses explicit clock/frame identities and keyed finite selection rather than R RNG; disallows nonfinite template cells. Raw R partial-cell failures remain, with nested versus pooled aggregation independently qualified. Named arithmetic recipe and complete replay-verified result persist on JVM/JS, separate from duration occupancy."
+      "divergence": "Four normalization modes, unsorted/repeated queries, the half-open final bin, the held final fixation, distinct-template controls and exhaustive controls match independently checked reference values under HalfOpen and HoldLastOnset. Native retains unmatched/ambiguous/duplicate source errors instead of dropped rows or first-match selection; uses explicit clock/frame identities and keyed finite selection rather than R RNG; disallows nonfinite template cells. Raw R partial-cell failures remain, with nested versus pooled aggregation independently qualified. Named arithmetic recipe and complete replay-verified result persist on JVM/JS, separate from duration occupancy."
     }
   ]
 }

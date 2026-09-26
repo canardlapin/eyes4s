@@ -10,7 +10,7 @@ vectors must not enter through a silent conversion: normalization changes some e
 |---|---|---|---|
 | pearson | `Distribution.pearson` | centered correlation, [-1,1], larger closer | supported / supported / supported |
 | spearman | `Distribution.spearman` | Pearson of average tie ranks, [-1,1], larger closer | supported / supported / supported |
-| fisherz | `Distribution.fisherZMachineEpsilon` | atanh(Pearson), endpoints clamped to ±(1−2^-52), larger closer | supported / supported / supported |
+| fisherz | `Distribution.fisherZMachineEpsilon` | atanh(Pearson), r within 64 eps of ±1 snapped to ±1, endpoints clamped to ±(1−2^-52), larger closer | supported / supported / supported |
 | cosine | `Distribution.cosine` | normalized dot product, [0,1] on Mass, larger closer | supported / supported / supported |
 | l1 | `Distribution.l1Similarity` | 1−total variation, [0,1], larger closer | supported / supported / supported |
 | jaccard | `Distribution.extendedJaccard` | dot/(squared norms−dot), [0,1], larger closer | supported / supported / supported |
@@ -31,18 +31,22 @@ distance metric.
 ## Measured input boundaries
 
 The per-ticket [raw fixture](../tools/r-parity/fixtures/compare.json) retains every exported
-vector and density call, warning, error and missing value. Four admitted nonconstant Mass pairs
+vector and density call, warning, error and missing value. Five admitted nonconstant Mass pairs
 agree with an independent rational-arithmetic oracle and the reference at absolute tolerance
-`MapTolerance = 1e-12`. Cases include exact ties, orthogonal support and identical inputs.
+`MapTolerance = 1e-12`. Cases include exact ties, orthogonal support, identical inputs and a
+near-identical pair whose Pearson r is 1 − 32.4 eps: both implementations snap it to one, so its
+Fisher z equals the identical pair's atanh(1 − 2^-52), about 18.3684.
 
 Native correlation methods reject constant operands, including identical uniform maps; pinned R
-special-cases identical constants to one, even for Fisher z. R returns missing for all one-cell
+special-cases identical constants to Pearson one and Fisher z atanh(1 − 2^-52), and scores two
+all-zero vectors the same way. R returns missing for all one-cell
 vector methods; native cosine, Jaccard and L1 similarity are defined there, while correlations
 remain errors. Zero total mass, empty, signed, nonfinite and wrong-length values cannot construct
 Mass. R may remove common missing cells, recycle unequal vectors or return missing/error results;
 none of these operations authorizes a native cardinality change. Raw-amplitude and signed R calls
-are recorded separately from the normalized native domain. R density comparisons in the shifted
-coordinate case return one; native `Agreement.grids` rejects foreign geometry/identity.
+are recorded separately from the normalized native domain. In the shifted coordinate case the
+pinned R density comparison now refuses maps on different lattices, as native `Agreement.grids`
+rejects foreign geometry/identity; earlier revisions compared the cells as if aligned.
 
 ## Scales and smoothing
 

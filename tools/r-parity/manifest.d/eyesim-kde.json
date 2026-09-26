@@ -53,7 +53,7 @@
       "conventions": [
         "native sigma is standard deviation; pinned MASS divides its argument by four",
         "native cell-centre binned truncated kernel differs from continuous backend grids",
-        "uniform and explicit duration weights; explicit R weights argument ignored",
+        "uniform and explicit duration weights; explicit R weights take precedence over duration weighting",
         "R duration_weighted defaults differ by entry point",
         "R window filtering precedes minimum count two",
         "type-7 IQR rule and explicit display clamp",
@@ -92,7 +92,7 @@
       "regeneration_ids": [
         "kde-reference"
       ],
-      "divergence": "Native weighted discrete Gaussian and source-edge correction are qualified by a direct 2-D discrete oracle at 1e-12, not claimed identical to continuous ks/MASS. MASS unweighted agrees with independent continuous Gaussian at fixed 1e-7 rounding tolerance; ks direct-evaluation differences are retained. Pinned explicit weights are ignored and weighted MASS fails on the selected non-square grid. R density_by drops failed groups; native errors remain operands. IQR suggestion agrees for valid positive outputs; singleton/zero unbounded sigma is a typed error, not NA/zero bandwidth."
+      "divergence": "Native weighted discrete Gaussian and source-edge correction are qualified by a direct 2-D discrete oracle at 1e-12, not claimed identical to continuous ks/MASS. MASS unweighted agrees with independent continuous Gaussian at fixed 1e-7 rounding tolerance; ks direct-evaluation differences are retained. Pinned explicit weights are honoured and weighted MASS agrees with a direct weighted continuous Gaussian at the same 1e-7 tolerance. R density_by drops failed groups; native errors remain operands. IQR suggestion agrees for valid positive outputs; singleton/zero unbounded sigma is a typed error, not NA/zero bandwidth."
     },
     {
       "id": "density-point-evaluation",
