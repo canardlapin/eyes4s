@@ -46,8 +46,6 @@ object IoDiagnosticCatalog:
     "ManifestBinding"
   )
 
-  val csvLayout: DiagnosticFamily = error("csv-layout")("Csv", "Layout")
-
   val fixationImport: DiagnosticFamily = error("fixation-import")(
     "Csv",
     "Columns",
@@ -260,6 +258,9 @@ object IoDiagnosticCatalog:
   )
 
   /** Every family, in the order documented. */
+  // ---------------------------------------------------------------- appended by UI-G
+  val csvLayout: DiagnosticFamily = error("csv-layout")("Csv", "Layout")
+
   val families: Vector[DiagnosticFamily] = Vector(
     fixationImport,
     fixationRow,
@@ -281,9 +282,9 @@ object IoDiagnosticCatalog:
     eyeLinkOracle,
     eyeLinkConformance,
     eyeLinkCorpus,
+    csvLayout,
     sourceAdmission,
-    ledgerVerification,
-    csvLayout
+    ledgerVerification
   )
 
   /** Every stable code, in catalog order. */

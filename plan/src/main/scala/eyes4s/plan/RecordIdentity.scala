@@ -87,11 +87,6 @@ final case class DataRecord private[plan] (value: Int) derives CanEqual:
   def csv: CsvRecord = new CsvRecord(value + 1)
 
 object DataRecord:
-  private[eyes4s] given DiagnosticOperand[DataRecord, Nothing] =
-    DiagnosticOperand.of(r =>
-      Operand.Fields(Vector("value" -> Operand.Integer(BigInt(r.value))))
-    )
-
   /** The largest data record, so that its CSV record ordinal is an `Int`. */
   val maximum: Int = Int.MaxValue - 1
 
@@ -103,6 +98,11 @@ object DataRecord:
     )
 
   given Ordering[DataRecord] = Ordering.by(_.value)
+
+  private[eyes4s] given DiagnosticOperand[DataRecord, Nothing] =
+    DiagnosticOperand.of(r =>
+      Operand.Fields(Vector("value" -> Operand.Integer(BigInt(r.value))))
+    )
 
 /** A record of a delimited source in the RFC 4180 sense, counted from 1 with
   * the header as record 1. Admission ledgers, diagnostic loci and source
@@ -120,13 +120,13 @@ final case class CsvRecord private[plan] (value: Int) derives CanEqual:
     case RecordRole.Data(record) => Right(record)
 
 object CsvRecord:
+  /** The header record. */
+  val header: CsvRecord = new CsvRecord(1)
+
   private[eyes4s] given DiagnosticOperand[CsvRecord, Nothing] =
     DiagnosticOperand.of(r =>
       Operand.Fields(Vector("value" -> Operand.Integer(BigInt(r.value))))
     )
-
-  /** The header record. */
-  val header: CsvRecord = new CsvRecord(1)
 
   def of(value: Int): Either[RecordIdentityError, CsvRecord] =
     Either.cond(

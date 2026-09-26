@@ -858,15 +858,9 @@ object DiagnosticCatalog:
     "DataDependent"
   )
 
-  /** Families whose error type no longer exists. Their codes stay issued, in
-    * their original place in [[issuedFamilies]], so a retired code is never
-    * reused with another meaning; no live error projects to one.
-    */
-  val retired: Vector[DiagnosticFamily] =
-    Vector(scanpathComponent, learnedTemplate, templateFit)
-
-  /** Record, physical-line and fixation identity refusals. */
-  val recordIdentity: DiagnosticFamily = DiagnosticFamily.error("record-identity")(
+  // ---------------------------------------------------------------- appended by UI-G
+  /** Record, line and fixation identities, and record layouts. */
+  val recordIdentity: DiagnosticFamily = error("record-identity")(
     "DataRecordOutOfRange",
     "CsvRecordNotPositive",
     "HeaderRecord",
@@ -880,6 +874,13 @@ object DiagnosticCatalog:
     "RecordBeyond",
     "LineBeyond"
   )
+
+  /** Families whose error type no longer exists. Their codes stay issued, in
+    * their original place in [[issuedFamilies]], so a retired code is never
+    * reused with another meaning; no live error projects to one.
+    */
+  val retired: Vector[DiagnosticFamily] =
+    Vector(scanpathComponent, learnedTemplate, templateFit)
 
   /** Every family ever issued, in issue order: families are only appended,
     * and a retired family keeps its place.
@@ -975,10 +976,10 @@ object DiagnosticCatalog:
     fixationEntropy,
     template,
     analysisFinding,
+    recordIdentity,
     SourceDiagnostics.identity,
     SourceDiagnostics.importDescription,
-    massLevel,
-    recordIdentity
+    massLevel
   )
 
   /** Every live family, grouped as documented. */

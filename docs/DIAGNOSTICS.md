@@ -1370,6 +1370,23 @@ fails after rewriting, so review the change and run it again.
 | `analysis-finding.refused` | `Refused` | `underlying`, `suggested` |
 | `analysis-finding.data-dependent` | `DataDependent` | `underlying`, `trials` |
 
+### `record-identity` — `RecordIdentityError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `record-identity.data-record-out-of-range` | `DataRecordOutOfRange` | `value`, `maximum` |
+| `record-identity.csv-record-not-positive` | `CsvRecordNotPositive` | `value` |
+| `record-identity.header-record` | `HeaderRecord` | `record` |
+| `record-identity.source-line-not-positive` | `SourceLineNotPositive` | `value` |
+| `record-identity.line-span-order` | `LineSpanOrder` | `first`, `last` |
+| `record-identity.scanpath-position-out-of-range` | `ScanpathPositionOutOfRange` | `value`, `maximum` |
+| `record-identity.fixation-number-not-positive` | `FixationNumberNotPositive` | `value` |
+| `record-identity.record-count-out-of-range` | `RecordCountOutOfRange` | `records`, `maximum` |
+| `record-identity.no-header-record` | `NoHeaderRecord` |  |
+| `record-identity.record-line-count` | `RecordLineCount` | `record`, `lines` |
+| `record-identity.record-beyond` | `RecordBeyond` | `record`, `records` |
+| `record-identity.line-beyond` | `LineBeyond` | `line`, `lines` |
+
 ### `source-identity` — `SourceIdentityError`
 
 | Code | Case | Operands |
@@ -1393,23 +1410,6 @@ fails after rewriting, so review the change and run it again.
 |---|---|---|
 | `mass-level.invalid-coverage` | `InvalidCoverage` | `index`, `coverage` |
 | `mass-level.insufficient-total` | `InsufficientTotal` | `index`, `coverage`, `total` |
-
-### `record-identity` — `RecordIdentityError`
-
-| Code | Case | Operands |
-|---|---|---|
-| `record-identity.data-record-out-of-range` | `DataRecordOutOfRange` | `value`, `maximum` |
-| `record-identity.csv-record-not-positive` | `CsvRecordNotPositive` | `value` |
-| `record-identity.header-record` | `HeaderRecord` | `record` |
-| `record-identity.source-line-not-positive` | `SourceLineNotPositive` | `value` |
-| `record-identity.line-span-order` | `LineSpanOrder` | `first`, `last` |
-| `record-identity.scanpath-position-out-of-range` | `ScanpathPositionOutOfRange` | `value`, `maximum` |
-| `record-identity.fixation-number-not-positive` | `FixationNumberNotPositive` | `value` |
-| `record-identity.record-count-out-of-range` | `RecordCountOutOfRange` | `records`, `maximum` |
-| `record-identity.no-header-record` | `NoHeaderRecord` |  |
-| `record-identity.record-line-count` | `RecordLineCount` | `record`, `lines` |
-| `record-identity.record-beyond` | `RecordBeyond` | `record`, `records` |
-| `record-identity.line-beyond` | `LineBeyond` | `line`, `lines` |
 
 ### `codec` — `CodecError`
 
@@ -1946,6 +1946,13 @@ fails after rewriting, so review the change and run it again.
 | `eyelink-corpus.duplicate-local-path` | `DuplicateLocalPath` | `source`, `path`, `fixtureIds` |
 | `eyelink-corpus.empty-manifest` | `EmptyManifest` | `source` |
 
+### `csv-layout` — `CsvLayoutError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `csv-layout.csv` | `Csv` | `underlying` |
+| `csv-layout.layout` | `Layout` | `underlying` |
+
 ### `source-admission` — `SourceAdmissionError`
 
 | Code | Case | Operands |
@@ -1968,13 +1975,6 @@ fails after rewriting, so review the change and run it again.
 | `ledger-verification.input-mismatch` | `InputMismatch` | `source`, `expected`, `actual` |
 | `ledger-verification.input-evidence-mismatch` | `InputEvidenceMismatch` | `source`, `component`, `trial`, `fixation`, `expected`, `actual` |
 | `ledger-verification.manifest-binding` | `ManifestBinding` | `ledger`, `kind`, `count` |
-
-### `csv-layout` — `CsvLayoutError`
-
-| Code | Case | Operands |
-|---|---|---|
-| `csv-layout.csv` | `Csv` | `underlying` |
-| `csv-layout.layout` | `Layout` | `underlying` |
 
 ### `arrow-export` — `ArrowExportError`
 
