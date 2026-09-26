@@ -31,21 +31,31 @@ import io.circe.{Decoder, Encoder, Json}
 object StudioSchemaIds:
   val DocumentName: String = "studio.document"
   val ScienceName: String  = "studio.science"
+  val JournalName: String  = "studio.journal"
+  val DatasetName: String  = "studio.dataset-content"
 
-  final case class Ids(document: DefinitionId, science: DefinitionId) derives CanEqual:
-    def all: Vector[DefinitionId] = Vector(document, science)
+  final case class Ids(
+      document: DefinitionId,
+      science: DefinitionId,
+      journal: DefinitionId,
+      datasetContent: DefinitionId
+  ) derives CanEqual:
+    def all: Vector[DefinitionId] = Vector(document, science, journal, datasetContent)
 
   private def id(name: String, version: Int): Either[DocumentError, DefinitionId] =
     DefinitionId.of(name, version).left.map(_ => DocumentError.BadSchemaId(name, version))
 
-  /** The whole document, presentation included (`project.json` in S2.3), and
-    * its science, whose digest is the document's scientific identity.
+  /** The whole document, presentation included (`project.json` in S2.3), its
+    * science, whose digest is the document's scientific identity, and a line
+    * of the command journal (S2.2).
     */
   val ids: Either[DocumentError, Ids] =
     for
       document <- id(DocumentName, 1)
       science  <- id(ScienceName, 1)
-    yield Ids(document, science)
+      journal  <- id(JournalName, 1)
+      dataset  <- id(DatasetName, 1)
+    yield Ids(document, science, journal, dataset)
 
   /** The ids as a codec failure, for building codecs. */
   private[document] def forCodec: Either[CodecError, Ids] =
