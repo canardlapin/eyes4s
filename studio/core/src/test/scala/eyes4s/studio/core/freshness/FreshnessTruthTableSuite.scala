@@ -110,7 +110,7 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
     assertEquals(f.badge.tone, BadgeTone.Current)
     assertEquals(f.draft.map(FreshnessText.draft), Some("Draft rev 5 · 1 change · ready"))
     assertEquals(FreshnessText.jobs(f.activity), "No jobs")
-    val banner = "Showing run 7 (analysis rev 4). Draft rev 5 adds σ 8° — not run yet."
+    val banner = "Showing run 7 (analysis rev 4). Draft rev 5 adds σ 8° and has not been run."
     assertEquals(f.bannerFor(Perspective.Compare).map(FreshnessText.banner), Some(banner))
     assertEquals(f.bannerFor(Perspective.Figures).map(FreshnessText.banner), Some(banner))
     for p <- Vector(Perspective.Data, Perspective.Explore, Perspective.Analysis) do
@@ -151,7 +151,8 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
   test("t3 Compare · summary: run 8 running at 21,400 / 44,845 pairs; view stays on run 7") {
     val f =
       Freshness.of(t3, SessionFacts.empty.copy(progress = Vector(progress(run8Job, 1, 21400L))))
-    assertEquals(text(f), "Analysis rev 4 · run 7 · data r3 · running (rev 5)")
+    assertEquals(text(f), "Showing analysis rev 4 · run 7 · data r3")
+    assertEquals(FreshnessText.newer(f.badge), Some("Rev 5 · run 8 running · 48%"))
     assertEquals(FreshnessText.newerNote(f.badge), Some("superseded — rev 5 running"))
     assertEquals(
       FreshnessText.jobs(f.activity),
@@ -265,7 +266,7 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
       )
     assertEquals(
       text(Freshness.of(with6(RunLifecycle.Running), SessionFacts.empty)),
-      "Analysis rev 3 · run 5 · data r2 · running (rev 4)"
+      "Showing analysis rev 3 · run 5 · data r2"
     )
     // Completed: superseded.
     val f = Freshness.of(with6(RunLifecycle.Completed), SessionFacts.empty)
@@ -284,7 +285,8 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
     val foreign = progress(JobId(99), 1, 30000L)
     val f       = Freshness.of(t3, SessionFacts.empty.copy(progress = Vector(foreign)))
     assertEquals(FreshnessText.jobs(f.activity), "Run 8 · running")
-    assertEquals(text(f), "Analysis rev 4 · run 7 · data r3 · running (rev 5)")
+    assertEquals(text(f), "Showing analysis rev 4 · run 7 · data r3")
+    assertEquals(FreshnessText.newer(f.badge), Some("Rev 5 · run 8 running"))
   }
 
   test("the latest report (highest step) of the run's job is the one shown") {

@@ -1080,7 +1080,8 @@ lazy val studioApp = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("studio/app"))
   .enablePlugins(NoPublishPlugin)
-  .dependsOn(studioCore)
+  // S1.0: the app's law suites reuse studio-core's document and command generators.
+  .dependsOn(studioCore % "compile->compile;test->test")
   .settings(commonSettings, portableStudioSettings)
   .settings(name := "eyes4s-studio-app")
 
