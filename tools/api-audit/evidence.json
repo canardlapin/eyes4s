@@ -2718,6 +2718,7 @@
           "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
           "ioJVM/eyes4s.io.InventoryReviewSuite",
+          "ioJVM/eyes4s.io.LedgerReverificationSuite",
           "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.SourceAdmissionSuite",
@@ -3087,6 +3088,7 @@
           "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
           "ioJVM/eyes4s.io.InventoryReviewSuite",
+          "ioJVM/eyes4s.io.LedgerReverificationSuite",
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.SourceAdmissionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
@@ -3174,6 +3176,7 @@
           "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
           "ioJVM/eyes4s.io.InventoryReviewSuite",
+          "ioJVM/eyes4s.io.LedgerReverificationSuite",
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.SourceAdmissionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
@@ -3263,6 +3266,7 @@
           "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
           "ioJVM/eyes4s.io.InventoryReviewSuite",
+          "ioJVM/eyes4s.io.LedgerReverificationSuite",
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.SourceAdmissionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
@@ -3325,6 +3329,7 @@
           "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
           "ioJVM/eyes4s.io.InventoryReviewSuite",
+          "ioJVM/eyes4s.io.LedgerReverificationSuite",
           "ioJVM/eyes4s.io.SourceAdmissionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
@@ -3412,6 +3417,7 @@
           "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
           "ioJVM/eyes4s.io.InventoryReviewSuite",
+          "ioJVM/eyes4s.io.LedgerReverificationSuite",
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.SourceAdmissionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
@@ -6442,6 +6448,7 @@
           "ioJVM/eyes4s.io.InspectionSourceSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
+          "ioJVM/eyes4s.io.LedgerReverificationSuite",
           "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.SourceAdmissionSuite",
@@ -6520,6 +6527,7 @@
         "descriptor": "(Leyes4s/kernel/Pt;)Lscala/Option;",
         "owner": "eyes4s/kernel/Warp$Id",
         "suites": [
+          "ioJVM/eyes4s.io.LedgerReverificationSuite",
           "kernelJVM/consumer.PublicKernelSuite",
           "kernelJVM/eyes4s.kernel.WarpSuite",
           "lawsJVM/eyes4s.laws.KernelLawsSuite"
@@ -6587,6 +6595,7 @@
         "descriptor": "()Leyes4s/kernel/Frame;",
         "owner": "eyes4s/kernel/Warp$Id",
         "suites": [
+          "ioJVM/eyes4s.io.LedgerReverificationSuite",
           "kernelJVM/consumer.PublicKernelSuite",
           "kernelJVM/eyes4s.kernel.WarpSuite",
           "lawsJVM/eyes4s.laws.KernelLawsSuite"
@@ -6734,6 +6743,7 @@
         "descriptor": "()Leyes4s/kernel/Frame;",
         "owner": "eyes4s/kernel/Warp$Id",
         "suites": [
+          "ioJVM/eyes4s.io.LedgerReverificationSuite",
           "kernelJVM/consumer.PublicKernelSuite",
           "kernelJVM/eyes4s.kernel.WarpSuite",
           "lawsJVM/eyes4s.laws.KernelLawsSuite"
@@ -9529,6 +9539,21 @@
       "instance": "eyes4s/io/HeaderMode$$anon$5",
       "suite": "ioJVM/eyes4s.io.PsychologyWorkflowSuite"
     },
+    "class eyes4s.io.InputComponent": {
+      "classification": "data-sum",
+      "instance": "eyes4s/io/InputComponent$$anon$2",
+      "suite": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite"
+    },
+    "class eyes4s.io.LedgerComponent": {
+      "classification": "data-sum",
+      "instance": "eyes4s/io/LedgerComponent$$anon$1",
+      "suite": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite"
+    },
+    "class eyes4s.io.LedgerVerificationError": {
+      "classification": "data-sum",
+      "instance": "eyes4s/io/LedgerVerificationError$Import",
+      "suite": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite"
+    },
     "class eyes4s.io.NativeValidity": {
       "classification": "data-sum",
       "instance": "eyes4s/io/NativeValidity$$anon$13",
@@ -11568,6 +11593,8 @@
     "method eyes4s.io.FixationTable.names():": "ioJVM/eyes4s.io.SourceAdmissionSuite",
     "method eyes4s.io.InventoryImport.attributes(eyes4s.plan.TrialKey):scala.Option": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
     "method eyes4s.io.InventoryImport.requireComplete():": "ioJVM/eyes4s.io.InventoryAdmissionSuite",
+    "method eyes4s.io.LedgerReverification$.verify(2,java.lang.String,java.lang.String,eyes4s.plan.ImportSpec,eyes4s.plan.AdmissionLedger,eyes4s.plan.StudyInput,scala.Option):scala.util.Either": "ioJVM/eyes4s.io.LedgerReverificationSuite",
+    "method eyes4s.io.LedgerVerificationError.message():": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "method eyes4s.io.PsychologyWorkflow$.prepare(eyes4s.io.AdserpWorkflowPlan,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "method eyes4s.io.PsychologyWorkflow$.run(eyes4s.io.AdserpWorkflowPlan,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "method eyes4s.io.PsychologyWorkflow$.runAnalysis(1,eyes4s.io.StudyTrial,eyes4s.io.DelimitedImport,eyes4s.plan.RecordingPlan):scala.util.Either": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
@@ -11626,6 +11653,7 @@
     "method eyes4s.io.ValidityCodebook$.of(scala.collection.immutable.Set,scala.collection.immutable.Set,scala.collection.immutable.Set,scala.collection.immutable.Set):scala.util.Either": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "method eyes4s.io.ValidityCodebook.decode(java.lang.String):scala.Option": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "method eyes4s.io.ValidityCodebook.tokens():": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
+    "method eyes4s.io.VerifiedAdmission.admitted():": "ioJVM/eyes4s.io.LedgerReverificationSuite",
     "method eyes4s.io.WorkflowAoi$.of(java.lang.String,java.lang.String,scala.Double,scala.Double,scala.Double,scala.Double):scala.util.Either": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "method eyes4s.io.WorkflowSyncMark$.of(java.lang.String,scala.Long,scala.Long):scala.util.Either": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "method eyes4s.kernel.Agreement$.allClocks(scala.collection.immutable.Seq):scala.util.Either": "kernelJVM/consumer.PublicKernelSuite",
@@ -12999,6 +13027,7 @@
     "value eyes4s.io.IoDiagnosticCatalog$.families": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.fixationImport": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.fixationRow": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
+    "value eyes4s.io.IoDiagnosticCatalog$.ledgerVerification": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.psychologyWorkflow": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.resultExport": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.sha256": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
@@ -13020,6 +13049,7 @@
     "value eyes4s.io.IoDiagnostics$.eyeLinkSessionConfig": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnostics$.fixationImport": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnostics$.fixationRow": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
+    "value eyes4s.io.IoDiagnostics$.ledgerVerification": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnostics$.psychologyWorkflow": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnostics$.resultExport": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnostics$.sha256": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
@@ -14471,6 +14501,11 @@
       "template and OLS adapters have independent analytic numerical targets and explicit exclusions",
       "temporal exports retain exact 64-bit queries, missing support, controls and final endpoint"
     ],
+    "ioJS/eyes4s.io.CsvCursorSuite": [
+      "chunk boundaries preserve the pinned malformed and terminal record behavior",
+      "cursor snapshots can be advanced again without changing their result",
+      "record chunks preserve quoted newlines, escapes, empty fields and Unicode"
+    ],
     "ioJS/eyes4s.io.CsvNumberSuite": [
       "every binary exponent, both signs and adversarial mantissas round-trip exactly",
       "non-finite helper inputs have explicit spellings rather than throwing",
@@ -14744,6 +14779,22 @@
       "every sampled case that names a source and a line has that line as its subject",
       "generated samples give same-typed fields distinct values, so a swap is detected",
       "the io and laws code tables are pinned and so identical on the JVM and Scala.js"
+    ],
+    "ioJS/eyes4s.io.LedgerReverificationSuite": [
+      "a keyless rejection assigned to an arbitrary inventory trial passes pure checks but fails replay",
+      "codec-roundtripped fabricated dispersion cannot acquire verification",
+      "dropping a rejected row and rewriting its quarantine scope still fails replay",
+      "equal decoded input verifies structurally rather than by object identity",
+      "inventory attribute declaration absent from the header passes pure checks but fails replay",
+      "legacy unspecified sources and changed input cannot acquire verification",
+      "malformed source bytes refuse replay with the source-labelled import error",
+      "replay verification preserves refusal instead of admitting the accepted subset",
+      "sample-count rule and positive column forgeries pass pure checks but fail replay",
+      "semantic binding distinguishes dispersion value, method, evidence and missingness",
+      "semantic binding locates trial cardinality, order, geometry and fixation changes",
+      "source replay binds the input and every rejected record, ignoring display relocation",
+      "standalone rejection deletion passes pure binding and is refused by source replay",
+      "verification evidence has no public constructor"
     ],
     "ioJS/eyes4s.io.PsychologyWorkflowSuite": [
       "a real tracker excerpt reaches auditable tidy AOI results through the simple path",
@@ -17342,6 +17393,11 @@
       "template and OLS adapters have independent analytic numerical targets and explicit exclusions",
       "temporal exports retain exact 64-bit queries, missing support, controls and final endpoint"
     ],
+    "ioJVM/eyes4s.io.CsvCursorSuite": [
+      "chunk boundaries preserve the pinned malformed and terminal record behavior",
+      "cursor snapshots can be advanced again without changing their result",
+      "record chunks preserve quoted newlines, escapes, empty fields and Unicode"
+    ],
     "ioJVM/eyes4s.io.CsvNumberSuite": [
       "every binary exponent, both signs and adversarial mantissas round-trip exactly",
       "non-finite helper inputs have explicit spellings rather than throwing",
@@ -17679,6 +17735,22 @@
       "every sampled case that names a source and a line has that line as its subject",
       "generated samples give same-typed fields distinct values, so a swap is detected",
       "the io and laws code tables are pinned and so identical on the JVM and Scala.js"
+    ],
+    "ioJVM/eyes4s.io.LedgerReverificationSuite": [
+      "a keyless rejection assigned to an arbitrary inventory trial passes pure checks but fails replay",
+      "codec-roundtripped fabricated dispersion cannot acquire verification",
+      "dropping a rejected row and rewriting its quarantine scope still fails replay",
+      "equal decoded input verifies structurally rather than by object identity",
+      "inventory attribute declaration absent from the header passes pure checks but fails replay",
+      "legacy unspecified sources and changed input cannot acquire verification",
+      "malformed source bytes refuse replay with the source-labelled import error",
+      "replay verification preserves refusal instead of admitting the accepted subset",
+      "sample-count rule and positive column forgeries pass pure checks but fail replay",
+      "semantic binding distinguishes dispersion value, method, evidence and missingness",
+      "semantic binding locates trial cardinality, order, geometry and fixation changes",
+      "source replay binds the input and every rejected record, ignoring display relocation",
+      "standalone rejection deletion passes pure binding and is refused by source replay",
+      "verification evidence has no public constructor"
     ],
     "ioJVM/eyes4s.io.PsychologyWorkflowSuite": [
       "a real tracker excerpt reaches auditable tidy AOI results through the simple path",
