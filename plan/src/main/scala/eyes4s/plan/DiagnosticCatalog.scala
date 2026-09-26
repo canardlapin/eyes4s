@@ -865,6 +865,13 @@ object DiagnosticCatalog:
   val retired: Vector[DiagnosticFamily] =
     Vector(scanpathComponent, learnedTemplate, templateFit)
 
+  val stageMeter: DiagnosticFamily = error("stage-meter")(
+    "NegativeDone",
+    "NegativeTotal",
+    "BeyondTotal",
+    "Regressed"
+  )
+
   /** Every family ever issued, in issue order: families are only appended,
     * and a retired family keeps its place.
     */
@@ -961,7 +968,8 @@ object DiagnosticCatalog:
     analysisFinding,
     SourceDiagnostics.identity,
     SourceDiagnostics.importDescription,
-    massLevel
+    massLevel,
+    stageMeter
   )
 
   /** Every live family, grouped as documented. */

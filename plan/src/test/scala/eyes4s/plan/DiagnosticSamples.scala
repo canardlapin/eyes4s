@@ -873,5 +873,13 @@ object DiagnosticSamples:
     ),
     generated[SourceIdentityError]("SourceIdentityError"),
     generated[ImportSpecError]("ImportSpecError"),
-    generated[MassLevelError]("MassLevelError")
+    generated[MassLevelError]("MassLevelError"),
+    family[StageMeterError]("StageMeterError")(
+      StageMeterError.NegativeDone(StageKind.Comparing, CountUnit.Pairs, -1L),
+      StageMeterError
+        .NegativeTotal(StageKind.Estimating, CountUnit.Maps, SegmentTotal.Exact(-1L)),
+      StageMeterError
+        .BeyondTotal(StageKind.Reducing, CountUnit.Keys, 3L, SegmentTotal.AtMost(2L)),
+      StageMeterError.Regressed(StageKind.Contrasting, CountUnit.Rows, 4L, 3L)
+    )
   )

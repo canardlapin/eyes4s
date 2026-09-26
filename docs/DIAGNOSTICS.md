@@ -1394,6 +1394,15 @@ fails after rewriting, so review the change and run it again.
 | `mass-level.invalid-coverage` | `InvalidCoverage` | `index`, `coverage` |
 | `mass-level.insufficient-total` | `InsufficientTotal` | `index`, `coverage`, `total` |
 
+### `stage-meter` — `StageMeterError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `stage-meter.negative-done` | `NegativeDone` | `kind`, `unit`, `done` |
+| `stage-meter.negative-total` | `NegativeTotal` | `kind`, `unit`, `total` |
+| `stage-meter.beyond-total` | `BeyondTotal` | `kind`, `unit`, `done`, `total` |
+| `stage-meter.regressed` | `Regressed` | `kind`, `unit`, `previous`, `next` |
+
 ### `codec` — `CodecError`
 
 | Code | Case | Operands |

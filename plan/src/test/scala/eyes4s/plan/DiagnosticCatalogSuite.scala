@@ -28,12 +28,12 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Every issued code, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 650
-  private val PinnedDigest = "2acf5175136ecaf5"
+  private val PinnedCount  = 654
+  private val PinnedDigest = "c24110550ea2fe45"
 
   /** The issued table before CR5: codes are only ever issued, never changed
     * or reused, and a retired code keeps its place, so taking away the codes
-    * CR5, CR2, CR4, SourceRef and UI-E added leaves exactly this table.
+    * CR5, CR2, CR4, SourceRef, UI-E and UI-D added leaves exactly this table.
     */
   private val StableCount  = 445
   private val StableDigest = "fb7ffbd3d3db7f63"
@@ -68,6 +68,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val UiECodes: Set[String] =
     DiagnosticCatalog.massLevel.codes.map(_.render).toSet ++
       Set("inspection.geometry", "inspection.geometry-description")
+
+  private val UiDCodes: Set[String] = DiagnosticCatalog.stageMeter.codes.map(_.render).toSet
 
   test(
     "every cataloged family is sampled, in catalog order, through its own Diagnose instance"
@@ -170,7 +172,7 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
       rendered.filterNot(code =>
         Cr5Codes(code) || Cr2Codes(code) || Cr4Codes(code) || SourceCodes(code) || UiECodes(
           code
-        )
+        ) || UiDCodes(code)
       )
     assertEquals(stable.size, StableCount)
     assertEquals(ContentHash.ofString(stable.mkString("\n")).render, StableDigest)
