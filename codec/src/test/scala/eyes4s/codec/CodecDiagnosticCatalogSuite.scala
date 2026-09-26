@@ -29,14 +29,15 @@ class CodecDiagnosticCatalogSuite extends munit.FunSuite:
   import CodecDiagnostics.given
 
   private val codec = CodecDiagnosticSamples.all
-  private val all   = DiagnosticSamples.all ++ codec
+  private val all   =
+    DiagnosticSamples.all ++ codec ++ eyes4s.results.ResultsDiagnosticSamples.all
 
-  private val PinnedCount  = 105
-  private val PinnedDigest = "16654da0a7c0721c"
+  private val PinnedCount  = 113
+  private val PinnedDigest = "34f298895e57e590"
 
   private val alignment = DiagnosticAlignment(
     all,
-    {
+    eyes4s.results.ResultsDiagnosticSamples.structured.orElse {
       case v: ByteDigest       => CodecDiagnosticSupport.digest(v)
       case v: ArtifactName     => CodecDiagnosticSupport.entry(v)
       case v: ArtifactRole     => CodecDiagnosticSupport.role(v)
@@ -59,7 +60,11 @@ class CodecDiagnosticCatalogSuite extends munit.FunSuite:
     codec.zip(CodecDiagnosticCatalog.families).foreach { (sampled, family) =>
       assert(sampled.family eq family, sampled.enumName)
     }
-    assertEquals(all.map(_.family.name), CodecDiagnosticCatalog.all.map(_.name))
+    assertEquals(
+      all.map(_.family.name),
+      (CodecDiagnosticCatalog.all ++ eyes4s.results.ResultsDiagnosticCatalog.families)
+        .map(_.name)
+    )
   }
 
   test("each family's labels are the compiler's cases, and every case is sampled once") {

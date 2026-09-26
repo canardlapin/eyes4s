@@ -732,6 +732,7 @@ Relations are typed edges, checked against decoded values rather than names:
 | `RecordingResultOf` | recording result, recording plan, recording input | exactly one per recording result | the result's input reference is the input's channels (`contentHash`), its description is the plan's, and the plan agrees with this input's evidence (`RecordingInput.disagreements`), since the channels do not cover the source, viewing geometry or marks |
 | `TemporalPlanInput` | temporal plan, temporal input | exactly one per temporal plan | `plan.prerequisites(input)` is empty |
 | `TemporalResultOf` | temporal result, temporal plan, temporal input | exactly one per temporal result | the result's input reference is the temporal input's, and its description is the plan's |
+| `ReportOf` | report, report spec, result, input, ledger (or `null`) | exactly one per report | the report's specification is the spec entry's, and its binding names the canonical digests of the stored result, input, the result's plan (by its `ResultOf`) and ledger (`RelationMismatch.ReportBinding` names the field); reports decode through `ArtifactDecoders.withReports` (see [reducing study results](REDUCING_RESULTS.md)) |
 
 `ScientificManifest.of` checks structure only: unique names, relations naming existing entries of
 the required roles, a packed-recording owner for every `PayloadOf`, no repeated relation and the
@@ -742,7 +743,7 @@ only by resolution.
 
 **Writing.** `StoredArtifact.plan`, `input`, `ledger`, `result`, `recording`, `binocular`,
 `recordingInput`, `temporalInput`, `recordingPlan`, `recordingResult`, `temporalPlan`,
-`temporalResult` and `packedRecording` encode a typed value through its registered codec and store the UTF-8 of the pretty-printed document; `StoredArtifact.bytes` stores existing
+`temporalResult`, `reportSpec`, `report` and `packedRecording` encode a typed value through its registered codec and store the UTF-8 of the pretty-printed document; `StoredArtifact.bytes` stores existing
 JSON bytes verbatim (strict UTF-8 with a schema envelope, as the pinned fixture below does), and
 `StoredArtifact.payload` stores a verified payload. Every artifact holds a private copy of its bytes.
 `SavedManifest.of(artifacts, relations)` builds the manifest, its canonical bytes

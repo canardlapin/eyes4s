@@ -91,7 +91,8 @@ class DiagnosticsDocJvmSuite extends munit.FunSuite:
       .toVector
     assertEquals(
       codes,
-      (CodecDiagnosticCatalog.all.flatMap(_.codes) ++ LawsDiagnosticCatalog.codes ++
+      (CodecDiagnosticCatalog.all.flatMap(_.codes) ++
+        eyes4s.results.ResultsDiagnosticCatalog.codes ++ LawsDiagnosticCatalog.codes ++
         IoDiagnosticCatalog.codes ++ ArrowDiagnostics.arrowExport.codes).map(_.render)
     )
   }

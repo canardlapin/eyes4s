@@ -14,6 +14,7 @@ aoi/       eyes4s-aoi      AoiSet, dwell, transitions
 compare/   eyes4s-compare  Compare hierarchy, alignment, MultiMatch, OT
 design/    eyes4s-design   Trials, Pairing, Session, contrasts, RNG
 plan/      eyes4s-plan     analyses as descriptions, the typed registry
+results/   eyes4s-results  report specifications and reports, the one result-table layer
 codec/     eyes4s-codec    JSON codecs, versioned schema
 laws/      eyes4s-laws     Discipline rule sets and generators (MAIN-scope deps)
 fs2/       eyes4s-fs2      streaming execution                  } the only modules
@@ -73,6 +74,27 @@ test reports, a current `docs/tlSite`, and a consumer receipt from `--run-consum
 
 `.github/workflows/` is **generated** by sbt-typelevel. Do not hand-edit it; change
 `build.sbt` and run `sbt githubWorkflowGenerate`.
+
+### Landing a branch
+
+The full gate takes 60–90 minutes, so run it once per branch.
+
+- **While iterating**, run the affected suites with `testOnly` and the `-Werror` compile
+  (`GITHUB_ACTIONS=true sbt 'project rootJVM' Test/compile 'project rootJS' Test/compile`).
+- **Merge `main` once**, after review, then run the full gate on the merged tree:
+  everything under "Before opening a PR", plus `python3 tools/api-audit/run.py --record`
+  and `python3 tools/study-consumer/verify.py`. Report the SHA and `HEAD^{tree}` that the
+  gate covers.
+- **Land by tree identity.** The merge into `main` must have the tree that was gated. When
+  `main` has moved by a change that cannot affect the branch (another package's sources, the
+  tracker, docs), the `-Werror` compile and `checkBoundaries` on the new merge suffice.
+- **Batch landings**: land several reviewed branches in one window and gate the combined tree
+  once before pushing.
+- **Shared files.** `tools/api-audit/inventory.json` and `evidence.json` are re-recorded, never
+  hand-merged. Diagnostic catalog codes are append-only in landing order, and the stable table
+  never changes. `verify.py` publishes to the shared local ivy repository, so run one at a time.
+- **Split a ticket** larger than about half a day into slice beads that each land and close on
+  their own.
 
 ## Design contract
 

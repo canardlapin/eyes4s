@@ -62,7 +62,10 @@ object CodecDiagnosticCatalog:
     "Derived",
     "RecordingResult",
     "TemporalResult",
-    "NonCanonical"
+    "NonCanonical",
+    "Report",
+    "ReportSpec",
+    "Covariates"
   )
   val resolve: DiagnosticFamily = error("resolve")(
     "MissingManifest",
@@ -100,7 +103,12 @@ object CodecDiagnosticCatalog:
     "UnreferencedPayload",
     "Unavailable",
     "RecordingPrerequisites",
-    "TemporalPrerequisites"
+    "TemporalPrerequisites",
+    "ReportSpec",
+    "ReportBinding",
+    "ReportInput",
+    "ReportLedger",
+    "ReportMembers"
   )
   val manifest: DiagnosticFamily = error("manifest")(
     "InvalidName",
@@ -301,6 +309,12 @@ private[codec] object CodecProjections:
           json(canonical),
           text(rule)
         )
+      case Report(underlying) =>
+        wrap(eyes4s.results.ResultsDiagnostics.reportError[Any](underlying))
+      case ReportSpec(underlying) =>
+        wrap(eyes4s.results.ResultsDiagnostics.reportSpec(underlying))
+      case Covariates(underlying) =>
+        wrap(eyes4s.results.ResultsDiagnostics.covariate[Any](underlying))
 
   def resolve(e: ResolveError): Diagnostic[Any] =
     import ResolveError.*
@@ -417,6 +431,25 @@ private[codec] object CodecProjections:
         val inner = errors.map(Projections.temporal)
         diagnostic(C.relation, e, e.message, inner.flatMap(_.subject).distinct)(
           Operand.Causes(inner)
+        )
+      case ReportSpec(report, stored) =>
+        diagnostic[Any](C.relation, e, e.message)(name(report), name(stored))
+      case ReportBinding(field, bound, stored) =>
+        diagnostic[Any](C.relation, e, e.message)(token(field), text(bound), text(stored))
+      case ReportInput(input, computed) =>
+        diagnostic(C.relation, e, e.message, Vector(Locus.Entry(input)))(
+          name(input),
+          name(computed)
+        )
+      case ReportLedger(ledger, input) =>
+        diagnostic(C.relation, e, e.message, Vector(Locus.Entry(ledger)))(
+          name(ledger),
+          name(input)
+        )
+      case ReportMembers(scale, unknown) =>
+        diagnostic(C.relation, e, e.message, Vector(Locus.Scale(scale)))(
+          int(scale),
+          names(unknown)
         )
 
   def manifest(e: ManifestError): Diagnostic[Nothing] =

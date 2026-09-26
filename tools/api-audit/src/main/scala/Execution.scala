@@ -28,7 +28,7 @@ object Execution:
   def main(args: Array[String]): Unit =
     require(args.length == 2, "Execution ROOT OUTPUT")
     val root = Path.of(args(0)).toAbsolutePath.normalize
-    val modules = Vector("kernel", "core", "detect", "surface", "aoi", "compare", "design", "plan", "codec", "laws", "fs2", "io")
+    val modules = Vector("kernel", "core", "detect", "surface", "aoi", "compare", "design", "plan", "results", "codec", "laws", "fs2", "io")
     val classes = scala.collection.mutable.Map.empty[String, (Path, String)]
     val declarations = scala.collection.mutable.ArrayBuffer.empty[Json]
     for module <- modules do

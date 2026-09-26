@@ -10,10 +10,10 @@ name: Studio
 on:
   pull_request:
     branches: ['**', '!update/**', '!pr/**']
-    paths: [studio/**, fixtures/studio-golden/**, tools/studio-fixture/**, docs/studio/fixture/**, build.sbt, project/**, .github/workflows/studio.yml, kernel/**, core/**, detect/**, surface/**, aoi/**, compare/**, design/**, plan/**, codec/**, fs2/**]
+    paths: [studio/**, fixtures/studio-golden/**, tools/studio-fixture/**, docs/studio/fixture/**, build.sbt, project/**, .github/workflows/studio.yml, kernel/**, core/**, detect/**, surface/**, aoi/**, compare/**, design/**, plan/**, results/**, codec/**, fs2/**]
   push:
     branches: ['**', '!update/**', '!pr/**']
-    paths: [studio/**, fixtures/studio-golden/**, tools/studio-fixture/**, docs/studio/fixture/**, build.sbt, project/**, .github/workflows/studio.yml, kernel/**, core/**, detect/**, surface/**, aoi/**, compare/**, design/**, plan/**, codec/**, fs2/**]
+    paths: [studio/**, fixtures/studio-golden/**, tools/studio-fixture/**, docs/studio/fixture/**, build.sbt, project/**, .github/workflows/studio.yml, kernel/**, core/**, detect/**, surface/**, aoi/**, compare/**, design/**, plan/**, results/**, codec/**, fs2/**]
 
 permissions:
   actions: none
@@ -178,4 +178,4 @@ jobs:
         run: bash studio/publish-pins.sh
 
       - name: Build studio through the local-checkout override
-        run: sbt -J-Xmx6g -Djavafx.platform=linux -Dstudio.intaglio.local=target/studio-pins/intaglio-2fa5c682f4a95b8e73daad78dd9302d7aff46e11 -Dstudio.scaladock.local=target/studio-pins/scaladock-3ed443e99e53c8af0cf5c5707abcbb70c125f705 studioVizJVM/test studioVizJS/test studioDesktop/Test/compile studioDesktop/checkModuleBoundaries
+        run: sbt -J-Xmx6g -Djavafx.platform=linux -Dstudio.intaglio.local=target/studio-pins/intaglio-2fa5c682f4a95b8e73daad78dd9302d7aff46e11 -Dstudio.scaladock.local=target/studio-pins/scaladock-628c46fce92c4d31b0b08459ac0f18777b5ba527 studioVizJVM/test studioVizJS/test studioDesktop/Test/compile studioDesktop/checkModuleBoundaries

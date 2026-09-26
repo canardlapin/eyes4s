@@ -130,7 +130,10 @@ object ArrowResultExport:
         java.util.Collections.emptyList[Field]()
       )
     }
-    new Schema(fields.asJava, Map("eyes4s.result_metadata" -> table.metadata.noSpaces).asJava)
+    new Schema(
+      fields.asJava,
+      Map("eyes4s.result_metadata" -> table.metadata.circe.noSpaces).asJava
+    )
 
   private def writeWith[F[_]: Sync](
       table: ResultTable,

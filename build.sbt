@@ -509,12 +509,17 @@ def forbiddenInPureModules(org: String, name: String): Boolean =
   (org == "org.typelevel" && name.startsWith("cats-effect")) ||
     org == "co.fs2"
 
-lazy val pureModuleSettings = Seq(
+lazy val pureModuleSettings = pureModuleSettingsForbidding((_, _) => false)
+
+/** The pure-module boundary with `also` forbidden besides the effect systems. */
+def pureModuleSettingsForbidding(also: (String, String) => Boolean) = Seq(
   checkModuleBoundaries := {
     val log        = streams.value.log
     val moduleName = name.value
     val offenders  = update.value.allModules
-      .filter(m => forbiddenInPureModules(m.organization, m.name))
+      .filter(m =>
+        forbiddenInPureModules(m.organization, m.name) || also(m.organization, m.name)
+      )
       .map(m => s"${m.organization}:${m.name}:${m.revision}")
       .distinct
       .sorted
@@ -522,7 +527,8 @@ lazy val pureModuleSettings = Seq(
       sys.error(
         s"""|Module boundary violation in $moduleName.
             |
-            |Pure modules must not depend on an effect system, but the resolved
+            |Pure modules must not depend on an effect system (and eyes4s-results on no
+            |JSON library), but the resolved
             |dependency graph contains:
             |${offenders.map("  - " + _).mkString("\n")}
             |
@@ -606,6 +612,7 @@ lazy val root = tlCrossRootProject
     compare,
     design,
     plan,
+    results,
     codec,
     laws,
     fs2Module,
@@ -691,12 +698,34 @@ lazy val plan = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings, pureModuleSettings)
   .settings(name := "eyes4s-plan")
 
+/** Reports and result tables: pure reductions over stored results with typed
+  * trial covariates, and the one result-table layer every export renders.
+  * No JSON library and no effect system, so a Scala.js client can use it.
+  */
+lazy val results = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
+  .jvmSettings(ApiAudit.settings)
+  .in(file("results"))
+  .dependsOn(plan)
+  // No JSON library either, so a Scala.js client reads tables without one.
+  .settings(commonSettings, pureModuleSettingsForbidding((org, _) => org == "io.circe"))
+  .settings(
+    name := "eyes4s-results",
+    // The plan catalog's samples and alignment check, so the results suites
+    // check both code tables together.
+    Test / unmanagedSources ++= Seq(
+      file("plan/src/test/scala/eyes4s/plan/DiagnosticSamples.scala").getAbsoluteFile,
+      file("plan/src/test/scala/eyes4s/plan/DiagnosticExamples.scala").getAbsoluteFile,
+      file("plan/src/test/scala/eyes4s/plan/DiagnosticAlignment.scala").getAbsoluteFile
+    )
+  )
+
 /** JSON codecs with a versioned schema, so a project file round-trips. */
 lazy val codec = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .jvmSettings(ApiAudit.settings)
   .in(file("codec"))
-  .dependsOn(plan)
+  .dependsOn(plan, results)
   .settings(commonSettings, pureModuleSettings)
   .settings(
     name := "eyes4s-codec",
@@ -706,7 +735,10 @@ lazy val codec = crossProject(JVMPlatform, JSPlatform)
       // check both code tables together.
       file("plan/src/test/scala/eyes4s/plan/DiagnosticSamples.scala").getAbsoluteFile,
       file("plan/src/test/scala/eyes4s/plan/DiagnosticExamples.scala").getAbsoluteFile,
-      file("plan/src/test/scala/eyes4s/plan/DiagnosticAlignment.scala").getAbsoluteFile
+      file("plan/src/test/scala/eyes4s/plan/DiagnosticAlignment.scala").getAbsoluteFile,
+      file(
+        "results/src/test/scala/eyes4s/results/ResultsDiagnosticSamples.scala"
+      ).getAbsoluteFile
     ),
     libraryDependencies ++= Seq(
       "io.circe" %%% "circe-core"   % circeV,
@@ -724,7 +756,7 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .jvmSettings(ApiAudit.settings)
   .in(file("laws"))
-  .dependsOn(kernel, core, detect, surface, aoi, compare, design, plan, codec)
+  .dependsOn(kernel, core, detect, surface, aoi, compare, design, plan, results, codec)
   .settings(pureModuleSettings)
   .settings(
     name := "eyes4s-laws",
@@ -794,7 +826,10 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
       file("plan/src/test/scala/eyes4s/plan/DiagnosticSamples.scala").getAbsoluteFile,
       file("plan/src/test/scala/eyes4s/plan/DiagnosticExamples.scala").getAbsoluteFile,
       file("plan/src/test/scala/eyes4s/plan/DiagnosticAlignment.scala").getAbsoluteFile,
-      file("codec/src/test/scala/eyes4s/codec/CodecDiagnosticSamples.scala").getAbsoluteFile
+      file("codec/src/test/scala/eyes4s/codec/CodecDiagnosticSamples.scala").getAbsoluteFile,
+      file(
+        "results/src/test/scala/eyes4s/results/ResultsDiagnosticSamples.scala"
+      ).getAbsoluteFile
     ),
     libraryDependencies += "co.fs2" %%% "fs2-io" % fs2V
   )
@@ -1080,6 +1115,8 @@ lazy val studioDesktop = project
   .in(file("studio/desktop"))
   .enablePlugins(NoPublishPlugin)
   .dependsOn(studioViz.jvm)
+  // S2.3: the file-system ProjectStore runs studio-core's conformance suite.
+  .dependsOn(studioCore.jvm % "test->test")
   .dependsOn(studioLocalRefs(intaglioLocal, "javafxJVM"): _*)
   .dependsOn(studioLocalRefs(scaladockLocal, "core", "fx"): _*)
   .settings(commonSettings)
@@ -1095,7 +1132,7 @@ lazy val studioDesktop = project
          else Seq(scaladockPinned("core"), scaladockPinned("fx"))),
     // One JavaFX for the shell and both providers. Intaglio and scaladock
     // declare it `Provided` (21.0.5 and 24.0.1), which does not reach us; since
-    // scaladock 3ed443e ScalaFX is demo-only. No override: a clash must reach the
+    // scaladock 3ed443e (still at 628c46f) ScalaFX is demo-only. No override: a clash must reach the
     // guard below, which requires exactly base, graphics and controls at javaFxV.
     checkModuleBoundaries := {
       val log       = streams.value.log
@@ -1298,6 +1335,7 @@ lazy val studioWorkflowPaths = List(
   "compare",
   "design",
   "plan",
+  "results",
   "codec",
   "fs2"
 )
@@ -1427,6 +1465,7 @@ lazy val allModules = Seq(
   "compare",
   "design",
   "plan",
+  "results",
   "codec",
   "laws",
   "fs2Module",
