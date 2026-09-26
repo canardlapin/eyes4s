@@ -1,0 +1,43 @@
+{
+  "schema" : {
+    "name" : "eyes4s.covariate-schema",
+    "version" : 1
+  },
+  "value" : {
+    "covariates" : [
+      {
+        "name" : "memory",
+        "type" : {
+          "kind" : "categorical",
+          "levels" : [
+            "Remembered",
+            "Forgotten"
+          ]
+        }
+      },
+      {
+        "name" : "confidence",
+        "type" : {
+          "kind" : "numeric",
+          "unit" : "rating"
+        }
+      },
+      {
+        "name" : "certainty",
+        "type" : {
+          "kind" : "ordinal",
+          "levels" : [
+            "guess",
+            "sure"
+          ]
+        }
+      },
+      {
+        "name" : "seen",
+        "type" : {
+          "kind" : "binary"
+        }
+      }
+    ]
+  }
+}

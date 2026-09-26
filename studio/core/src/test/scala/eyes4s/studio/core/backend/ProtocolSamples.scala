@@ -125,6 +125,8 @@ object ProtocolSamples:
     DiagnosticLocus.Path(".a"),
     DiagnosticLocus.Relation("input", "result"),
     DiagnosticLocus.Line("s.asc", 12L),
+    DiagnosticLocus.Participant("P17"),
+    DiagnosticLocus.Group(Vector(GroupLevel("response", "Remembered"))),
     DiagnosticLocus.Dataset(DatasetRevision(2)),
     DiagnosticLocus.Revision(AnalysisRevision(3)),
     DiagnosticLocus.Run(RunId(5)),

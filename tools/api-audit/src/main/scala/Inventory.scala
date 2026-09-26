@@ -27,7 +27,7 @@ object Inventory:
     require(args.length == 4, "Inventory ROOT PLATFORM CLASSPATH_FILE OUTPUT")
     val root = Path.of(args(0)).toAbsolutePath.normalize
     val axis = args(1)
-    val modules = Vector("kernel", "core", "detect", "surface", "aoi", "compare", "design", "plan", "codec", "laws", "fs2", "io")
+    val modules = Vector("kernel", "core", "detect", "surface", "aoi", "compare", "design", "plan", "results", "codec", "laws", "fs2", "io")
     val files = modules.flatMap { module =>
       val stream = Files.walk(root.resolve(s"$module/.$axis/target/scala-3.7.4/classes"))
       try stream.iterator.asScala.filter(_.toString.endsWith(".tasty")).map(_.toString).toVector

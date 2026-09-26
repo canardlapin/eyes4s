@@ -53,6 +53,7 @@ Files[IO].tempDirectory.use { path => IO {
 }}.unsafeRunSync()
 """)
 code += test('documented baseline artifact command writes every checked table', """
+import eyes4s.io.csv
 Files[IO].tempDirectory.use { path =>
   eyes4s.examples.BaselineExportMain.run(List(path.toString)).map { exit =>
     assertEquals(exit, cats.effect.ExitCode.Success)

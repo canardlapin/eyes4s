@@ -39,7 +39,7 @@ class IoDiagnosticCatalogSuite extends munit.FunSuite:
 
   private val alignment = DiagnosticAlignment(
     all,
-    {
+    eyes4s.results.ResultsDiagnosticSamples.structured.orElse {
       case v: ByteDigest       => CodecDiagnosticSupport.digest(v)
       case v: ArtifactName     => CodecDiagnosticSupport.entry(v)
       case v: ArtifactRole     => CodecDiagnosticSupport.role(v)

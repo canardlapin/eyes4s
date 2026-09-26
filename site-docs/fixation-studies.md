@@ -32,7 +32,7 @@ val pearson = EyesimCompat.fromReference("pearson").flatMap(ComparisonMethods.of
 pearson.map(entry => (entry.id.name, entry.method.info.scale.render, entry.properties))
 ```
 
-A correlation is bounded in [-1, 1] and not safe to average directly; Fisher z
+A correlation is bounded in `[-1, 1]` and not safe to average directly; Fisher z
 (`ComparisonMethods.fisherZ`) is the averageable form. Distance correlation is quadratic in grid
 cells and refuses grids above its work limit.
 

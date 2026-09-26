@@ -130,7 +130,10 @@ object CodecDiagnosticSamples:
           "early",
           TemporalResultError.Density(k1, Some(digest), digest2)
         )
-      )
+      ),
+      CodecError.Report(eyes4s.results.ReportError.DuplicateQuery(k1)),
+      CodecError.ReportSpec(eyes4s.results.SpecError.NegativeScale(-2)),
+      CodecError.Covariates(eyes4s.results.CovariateError.BlankUnit(" "))
     ),
     family[ResolveError]("ResolveError")(
       ResolveError.MissingManifest(a),
@@ -177,7 +180,12 @@ object CodecDiagnosticSamples:
       ),
       RelationMismatch.TemporalPrerequisites(
         Vector(TemporalStudyError.Input(PlanError.ArtifactMismatch(digest, digest2)))
-      )
+      ),
+      RelationMismatch.ReportSpec("memory", "window"),
+      RelationMismatch.ReportBinding("result", "sha256:" + "a" * 64, "sha256:" + "b" * 64),
+      RelationMismatch.ReportInput("input", "base"),
+      RelationMismatch.ReportLedger("ledger", "input"),
+      RelationMismatch.ReportMembers(2, Vector("p9/a"))
     ),
     family[ManifestError]("ManifestError")(
       ManifestError.InvalidName(" padded"),
