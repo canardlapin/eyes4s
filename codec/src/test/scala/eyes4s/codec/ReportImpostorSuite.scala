@@ -193,3 +193,34 @@ class ReportImpostorSuite extends munit.FunSuite:
         .isRight
     )
   }
+
+  test(
+    "a result codec without its plan's parameter codec cannot re-evaluate: a typed refusal"
+  ) {
+    val bare = new StudyResultCodec(
+      results.schema,
+      results.layout,
+      results.keys,
+      results.method,
+      results.scores,
+      results.differences
+    )
+    val decoders = ArtifactDecoders
+      .of(
+        get(StudyRegistry.empty[StudyKey, Px].register(studies.registration)),
+        get(StudyInputRegistry.empty[StudyKey, Px].register(inputs)),
+        get(StudyResultRegistry.empty[StudyKey, Px].register(bare.registration))
+      )
+      .withReports(reports)
+    val refused =
+      ArtifactResolver.resolve(saved.address, saved.source, decoders).left.map(_.toVector)
+    assert(
+      refused.left.exists(_.exists {
+        case ResolveError
+              .Relation(_, RelationMismatch.ReportRecomputed("evaluation", _, why)) =>
+          why.contains("parameter codec")
+        case _ => false
+      }),
+      refused
+    )
+  }
