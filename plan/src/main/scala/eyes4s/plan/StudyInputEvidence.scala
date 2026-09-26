@@ -30,9 +30,9 @@ final case class SourceRef(
     interpretation: SourceInterpretation = SourceInterpretation.LegacyUnspecified
 ) derives CanEqual:
   def identity: Option[SourceIdentity] = interpretation match
-    case SourceInterpretation.LegacyUnspecified                 => None
-    case SourceInterpretation.Declared(format, parser, options) =>
-      Some(SourceIdentity.of(records, format, parser, options))
+    case SourceInterpretation.LegacyUnspecified  => None
+    case declared: SourceInterpretation.Declared =>
+      Some(SourceIdentity.of(records, declared))
 
 object SourceRef:
   def of(label: String, header: Vector[String], rows: Vector[Vector[String]]): SourceRef =

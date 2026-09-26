@@ -83,6 +83,19 @@ final class DiagnosticAlignment(
     structuredExtra
       .lift(value)
       .orElse(value match
+        case SourceInterpretation.LegacyUnspecified => Some(Operand.Token("LegacyUnspecified"))
+        case v: SourceInterpretation.Declared       =>
+          Some(
+            Operand.Fields(
+              Vector(
+                "kind"          -> Operand.Token("Declared"),
+                "format"        -> Operand.Token(v.format.toString),
+                "parser"        -> Operand.Definition(v.parser),
+                "optionsSchema" -> Operand.Token(v.optionsSchema.toString),
+                "options"       -> Operand.Artifact(v.options.render)
+              )
+            )
+          )
         case v: Interval                    => Some(interval(v))
         case v: eyes4s.core.SampleRange     => Some(range(v))
         case v: FrameSpec                   => Some(frameSpec(v))

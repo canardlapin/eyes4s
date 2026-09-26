@@ -36,6 +36,18 @@ object IoDiagnosticSamples:
       .get
   )
 
+  given DiagnosticExample[SourceInterpretation] = DiagnosticExample.of(seed =>
+    SourceInterpretation
+      .declared(
+        SourceFormat.FixationCsv,
+        SourceImportDefinitions.fixationParser,
+        SourceOptionsSchema.FixationCsvV1,
+        eyes4s.kernel.ContentHash.ofString(s"options-$seed")
+      )
+      .toOption
+      .get
+  )
+
   // Nested errors, one explicit case each (see DiagnosticExample).
   given DiagnosticExample[SourceAdmissionError] =
     DiagnosticExample.of(seed => SourceAdmissionError.MissingItem(s"source-$seed"))

@@ -1369,6 +1369,8 @@ fails after rewriting, so review the change and run it again.
 | Code | Case | Operands |
 |---|---|---|
 | `source-identity.invalid-digest` | `InvalidDigest` | `value` |
+| `source-identity.parser` | `Parser` | `format`, `expected`, `actual` |
+| `source-identity.options-schema` | `OptionsSchema` | `format`, `expected`, `actual` |
 
 ### `import-spec` — `ImportSpecError`
 

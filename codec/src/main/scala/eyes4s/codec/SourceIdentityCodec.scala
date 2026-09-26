@@ -50,15 +50,16 @@ object SourceIdentityCodec:
     val evidence = source.interpretation match
       case SourceInterpretation.LegacyUnspecified =>
         Json.obj("kind" -> Json.fromString("legacyUnspecified"))
-      case SourceInterpretation.Declared(format, parser, options) =>
+      case declared: SourceInterpretation.Declared =>
         Json.obj(
           "kind"            -> Json.fromString("declared"),
-          "format"          -> Json.fromString(format.toString),
-          "parser"          -> Wire.id(parser),
-          "options"         -> Json.fromString(options.render),
+          "format"          -> Json.fromString(declared.format.toString),
+          "parser"          -> Wire.id(declared.parser),
+          "optionsSchema"   -> Json.fromString(declared.optionsSchema.toString),
+          "options"         -> Json.fromString(declared.options.render),
           "identityVersion" -> Json.fromString(SourceIdentity.versionTag),
           "identity"        -> Json.fromString(
-            SourceIdentity.of(source.records, format, parser, options).digest
+            SourceIdentity.of(source.records, declared).digest
           )
         )
     Json.obj(
@@ -89,6 +90,17 @@ object SourceIdentityCodec:
           options     <- ContentHash
             .parse(optionsText)
             .toRight(CodecError.Field("options", evidence, "expected a content digest"))
+          schemaName <- Wire.field[String](evidence, "optionsSchema")
+          schema     <- SourceOptionsSchema.values
+            .find(_.toString == schemaName)
+            .toRight(
+              CodecError.Field("optionsSchema", evidence, s"unknown options schema $schemaName")
+            )
+          declared <- SourceInterpretation.declared(format, parser, schema, options).left.map {
+            case error: SourceIdentityError.Parser =>
+              CodecError.Field("parser", evidence, error.message)
+            case error => CodecError.Field("optionsSchema", evidence, error.message)
+          }
           tag <- Wire.field[String](evidence, "identityVersion")
           _   <- Either.cond(
             tag == SourceIdentity.versionTag,
@@ -100,14 +112,14 @@ object SourceIdentityCodec:
             )
           )
           identity <- Wire.field[String](evidence, "identity")
-          found = SourceIdentity.of(records, format, parser, options)
+          found = SourceIdentity.of(records, declared)
           _ <- Either.cond(
             identity == found.digest,
             (),
             CodecError
               .Field("identity", evidence, s"declared $identity, computed ${found.digest}")
           )
-        yield SourceRef(label, records, SourceInterpretation.Declared(format, parser, options))
+        yield SourceRef(label, records, declared)
       case other =>
         Left(CodecError.Field("kind", evidence, s"unknown source interpretation $other"))
   yield source

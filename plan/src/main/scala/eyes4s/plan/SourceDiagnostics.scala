@@ -18,7 +18,8 @@ package eyes4s.plan
 
 /** Diagnostic families for source identity and checked import descriptions. */
 object SourceDiagnostics:
-  val identity: DiagnosticFamily = DiagnosticFamily.error("source-identity")("InvalidDigest")
+  val identity: DiagnosticFamily =
+    DiagnosticFamily.error("source-identity")("InvalidDigest", "Parser", "OptionsSchema")
   val importDescription: DiagnosticFamily = DiagnosticFamily.error("import-spec")(
     "Columns",
     "BlankFrame",

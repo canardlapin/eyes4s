@@ -382,7 +382,18 @@ private[eyes4s] object DiagnosticOperand extends DiagnosticOperandCauses:
     of(value => Operand.Micros(value.toMicros))
   given nonNegativeLong: DiagnosticOperand[NonNegativeLong, Nothing] =
     of(value => DiagnosticSupport.long(value.toLong))
-  given contentHash: DiagnosticOperand[ContentHash, Nothing]   = of(h => artifact(h.render))
+  given contentHash: DiagnosticOperand[ContentHash, Nothing] = of(h => artifact(h.render))
+  given sourceInterpretation: DiagnosticOperand[SourceInterpretation, Nothing] = of {
+    case SourceInterpretation.LegacyUnspecified  => token("LegacyUnspecified")
+    case declared: SourceInterpretation.Declared =>
+      fields(
+        "kind"          -> token("Declared"),
+        "format"        -> token(declared.format.toString),
+        "parser"        -> definition(declared.parser),
+        "optionsSchema" -> token(declared.optionsSchema.toString),
+        "options"       -> artifact(declared.options.render)
+      )
+  }
   given frameId: DiagnosticOperand[FrameId, Nothing]           = of(frame)
   given clockId: DiagnosticOperand[ClockId, Nothing]           = of(clock)
   given gridId: DiagnosticOperand[GridId, Nothing]             = of(grid)
