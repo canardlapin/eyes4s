@@ -152,8 +152,8 @@ object DiagnosticExample extends DiagnosticExampleStructures:
     of(seed => InventoryError.Width(seed, seed + 1, seed + 2))
   given DiagnosticExample[QuarantineCause] =
     of(seed => QuarantineCause.Overlap(seed, s"[$seed,10)", s"[5,$seed)"))
-  given DiagnosticExample[TemplateFitError] =
-    of(seed => TemplateFitError.DuplicateKey(s"k$seed"))
+  given DiagnosticExample[TemplateError] =
+    of(seed => TemplateError.DuplicateKey(s"k$seed"))
 
   given option[A](using a: DiagnosticExample[A]): DiagnosticExample[Option[A]] =
     of(seed => Some(a(seed)))

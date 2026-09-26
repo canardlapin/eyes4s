@@ -23,7 +23,7 @@ enum TemplateCsvError derives CanEqual:
   case Csv(underlying: TidyCsvError)
   case Header(expected: Vector[String], actual: Vector[String])
   case Row(index: Int, fields: Vector[String], reason: String)
-  case Fit(underlying: TemplateFitError)
+  case Fit(underlying: TemplateError)
   def message: String = this match
     case Csv(e)       => e.message
     case Header(e, a) => s"Template CSV header $a differs from $e."
@@ -43,32 +43,47 @@ object TemplateFitCsv:
     "rank_tolerance"
   )
 
-  /** Accepts only the training capability, never the whole split or held-out responses.
+  /** Accepts only the training capability, never the whole split or held-out responses,
+    * and only for the historical design (`TemplateDesign.importedLm`): a native design is
+    * refused, since `Template.importFit` would refuse its receipt.
     * Transport row indices preserve order; original typed keys remain in the saved recipe.
     * Decimal cells use lossless rounded round-trip spelling, identical on JVM and Scala.js.
     * Trailing decimal zeros are omitted (1.0 becomes "1"); exponents use uppercase E
     * with an explicit positive sign (1000.0 becomes "1E+3"). Signed zero is preserved.
     */
-  def training[K](input: TemplateTraining[K]): String =
+  def training[K](
+      input: TemplateTraining[K, Vector[Double]]
+  ): Either[TemplateCsvError, String] =
     val header =
       Vector("method", "training_hash", "basis", "response_unit", "row", "fold", "response") ++
-        input.basis.columns.map("feature:" + _)
+        input.design.featureNames.map("feature:" + _)
+    input.design match
+      case fixed: TemplateDesign.Fixed if fixed.route == TemplateDesign.FixedRoute.ImportedLm =>
+        Right(encode(input, header, fixed.basis.id))
+      case other =>
+        Left(TemplateCsvError.Fit(TemplateError.Route(other.method, "R lm export")))
+
+  private def encode[K](
+      input: TemplateTraining[K, Vector[Double]],
+      header: Vector[String],
+      basis: String
+  ): String =
     Rfc4180.encode(header +: input.rows.zipWithIndex.map { (row, index) =>
       Vector(
-        FittedTemplate.method,
+        TemplateDesign.importedLmMethod,
         input.hash.render,
-        input.basis.id,
-        input.basis.responseUnit,
+        basis,
+        input.design.responseUnit,
         index.toString,
-        row.fold,
+        row.splitGroup,
         CsvNumber.render(row.response)
-      ) ++ row.features.map(CsvNumber.render)
+      ) ++ row.input.map(CsvNumber.render)
     })
 
   def importFit[K](
-      input: TemplateTraining[K],
+      input: TemplateTraining[K, Vector[Double]],
       csv: String
-  ): Either[TemplateCsvError, FittedTemplate[K]] =
+  ): Either[TemplateCsvError, FittedTemplate[K, Vector[Double]]] =
     for
       all <- Rfc4180.decode(csv).left.map(TemplateCsvError.Csv.apply)
       _   <- Either.cond(
@@ -78,12 +93,12 @@ object TemplateFitCsv:
       )
       rows = all.drop(1)
       _ <- Either.cond(
-        rows.size == input.basis.columns.size,
+        rows.size == input.design.featureNames.size,
         (),
         TemplateCsvError.Row(
           0,
           Vector.empty,
-          s"expected ${input.basis.columns.size} coefficient rows, got ${rows.size}"
+          s"expected ${input.design.featureNames.size} coefficient rows, got ${rows.size}"
         )
       )
       parsed <- rows.zipWithIndex.traverse { (row, index) =>
@@ -91,7 +106,7 @@ object TemplateFitCsv:
         for
           _ <- Either.cond(row.size == receiptHeader.size, (), bad("wrong width"))
           _ <- Either.cond(
-            row(0) == FittedTemplate.method,
+            row(0) == TemplateDesign.importedLmMethod,
             (),
             bad("unsupported fitting method")
           )
@@ -101,7 +116,7 @@ object TemplateFitCsv:
           rank  <- row(4).toIntOption.toRight(bad("invalid rank"))
           count <- row(5).toIntOption.toRight(bad("invalid observation count"))
           _     <- Either.cond(
-            row(7).toDoubleOption.contains(FittedTemplate.rankTolerance),
+            row(7).toDoubleOption.contains(TemplateDesign.importedLmRankTolerance),
             (),
             bad("unexpected rank tolerance")
           )
@@ -115,8 +130,8 @@ object TemplateFitCsv:
         (),
         TemplateCsvError.Row(0, Vector.empty, "inconsistent fit metadata")
       )
-      fit <- FittedTemplate
-        .importNoIntercept(
+      fit <- Template
+        .importFit(
           input,
           first._1,
           parsed.map(_._2),

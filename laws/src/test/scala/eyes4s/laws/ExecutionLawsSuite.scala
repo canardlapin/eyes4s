@@ -236,7 +236,7 @@ class ExecutionLawsSuite extends munit.DisciplineSuite:
     "synchronous cosine",
     _ => Vector.empty,
     _ => Distribution.cosine[Px]: Compare[Mass[Px], Mass[Px], Similarity],
-    Some(MethodDescriptor.cosine[Px](DefinitionId.cosine))
+    Some(ComparisonMethods.cosine.descriptor)
   )
   private val gaussian = StudyEstimate.Gaussian(get(Sigma.px(0.5)), EdgePolicy.Truncate)
 

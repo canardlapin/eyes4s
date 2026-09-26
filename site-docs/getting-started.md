@@ -55,7 +55,7 @@ val study = for
   plan <- StudyPlan.configure(input.reference, StudyKey.layout(DefinitionId.studyLayout),
     StudyGeometry.WholeFrame(grid), "recall", "encode", Weight.Duration,
     Vector(StudyScale.Native(StudyEstimate.Binned())), None, FailurePolicy.RequireAll,
-    StudyMethod.cosine[Px](DefinitionId.cosine), ())
+    ComparisonMethods.cosine.study[Px], ())
   persistence = StudyCodecs.cosine[Px]
   json <- persistence.codec.encode(plan)
   restored <- persistence.codec.parse(json.noSpaces)

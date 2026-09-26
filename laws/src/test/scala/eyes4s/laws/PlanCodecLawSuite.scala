@@ -83,6 +83,32 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
     a.description == b.description && a.input == b.input && a.parameters == b.parameters
 
   checkAll("study plan", CodecLaws.roundTrip(studies.codec, cosinePlans, sameStudy))
+  // Every other registered map method: its built-in identity round-trips in a saved plan.
+  ComparisonMethods.all.filterNot(_ eq ComparisonMethods.cosine).foreach { method =>
+    checkAll(
+      s"${method.id.name} study plan",
+      CodecLaws.roundTrip(
+        StudyCodecs.similarity[Px](method).codec,
+        similarityPlans(method),
+        sameStudy
+      )
+    )
+  }
+
+  test("a plan saved under one registered method is refused by another method's codec") {
+    val plans = ComparisonMethods.all.map(m =>
+      m -> similarityPlans(m)
+        .pureApply(org.scalacheck.Gen.Parameters.default, org.scalacheck.rng.Seed(7L))
+    )
+    plans.foreach { (method, plan) =>
+      assertEquals(plan.method.id, method.id)
+      val written = sure(StudyCodecs.similarity[Px](method).codec.encode(plan))
+      ComparisonMethods.all.foreach { other =>
+        val read = StudyCodecs.similarity[Px](other).codec.decode(written)
+        assertEquals(read.isRight, other eq method, s"${method.id} read as ${other.id}")
+      }
+    }
+  }
   checkAll(
     "configured study plan",
     CodecLaws.roundTrip(studies.codec, configuredPlans, sameStudy)
@@ -543,6 +569,32 @@ object PlanCodecLawSuite:
 
   val cosinePlans: Gen[StudyPlan[StudyKey, Px, Unit, Similarity, SignedDifference]] =
     cosine(Gen.oneOf(Weight.values.toIndexedSeq))
+
+  /** Version-1 plans of a registered map method. */
+  def similarityPlans(
+      method: ComparisonMethod
+  ): Gen[StudyPlan[StudyKey, Px, Unit, Similarity, SignedDifference]] = for
+    input  <- references.map(r => sure(ArtifactRef.parse[StudyInput[StudyKey, Px]](r)))
+    frame  <- frames
+    nx     <- Gen.choose(1, 64)
+    ny     <- Gen.choose(1, 64)
+    phases <- distinctLabels
+    (focal, reference) = phases
+    weight <- Gen.oneOf(Weight.values.toIndexedSeq)
+    scales <- estimates
+    policy <- policies
+  yield sure(
+    StudyPlan.similarity(
+      method,
+      input,
+      sure(Grid.over(frame, nx, ny)),
+      focal,
+      reference,
+      weight,
+      scales,
+      policy
+    )
+  )
 
   /** A window of a frame: a region inside it, sometimes the whole frame or
     * touching an edge.

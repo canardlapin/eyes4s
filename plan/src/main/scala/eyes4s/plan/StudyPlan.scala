@@ -404,17 +404,15 @@ final class StudyMethod[P, U <: Unit2D, S, D](
   def capability: ExecutionCapability               = execution.capability
 
 object StudyMethod:
-  /** No hidden parameters; geometry, weighting and estimation live in StudyPlan. */
+  /** The registered cosine method ([[ComparisonMethods.cosine]]) under `id`:
+    * `DefinitionId.cosine` for the built-in method, another identity for a
+    * caller's variant. Every other registered map method is
+    * `ComparisonMethods.<method>.study`.
+    */
   def cosine[U <: Unit2D](
       id: DefinitionId
   ): StudyMethod[Unit, U, Similarity, SignedDifference] =
-    new StudyMethod[Unit, U, Similarity, SignedDifference](
-      id,
-      "Cosine similarity",
-      _ => Vector.empty,
-      MethodExecution.Bounded(_ => Distribution.cosine[U]),
-      Some(MethodDescriptor.cosine[U](id))
-    )
+    ComparisonMethods.cosine.studyAs[U](id)
 
 /** A field-level structural difference suitable for a review panel. */
 final case class PlanChange(
@@ -1105,6 +1103,35 @@ object StudyPlan:
   )(using
       UnitLabel[U]
   ): Either[PlanError, StudyPlan[StudyKey, U, Unit, Similarity, SignedDifference]] =
+    similarity(
+      ComparisonMethods.cosine,
+      input,
+      grid,
+      focalPhase,
+      referencePhase,
+      weight,
+      estimates,
+      policy
+    )
+
+  /** Ordinary within-participant matched/control study with any registered
+    * map method, under the version-1 meaning (see [[of]]): eyesim's
+    * `template_similarity(method = X)` in one call. The method's built-in
+    * identity is recorded in the plan; `StudyPlan.cosine` is this call with
+    * [[ComparisonMethods.cosine]].
+    */
+  def similarity[U <: Unit2D](
+      method: ComparisonMethod,
+      input: ArtifactRef[StudyInput[StudyKey, U]],
+      grid: Grid[U],
+      focalPhase: String,
+      referencePhase: String,
+      weight: Weight,
+      estimates: Vector[StudyEstimate[U]],
+      policy: FailurePolicy
+  )(using
+      UnitLabel[U]
+  ): Either[PlanError, StudyPlan[StudyKey, U, Unit, Similarity, SignedDifference]] =
     of(
       input,
       StudyKey.layout(DefinitionId.studyLayout),
@@ -1114,7 +1141,7 @@ object StudyPlan:
       weight,
       estimates,
       policy,
-      StudyMethod.cosine[U](DefinitionId.cosine),
+      method.study[U],
       ()
     )
 

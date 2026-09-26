@@ -388,11 +388,11 @@ the current evidence counts.
 ### Native template fitting and learned mean-map recipe (2026-09-19)
 
 The native fixed-feature guide now executes save/reopen/refit/evaluate without R, with a
-separate method and codec from historical R-labelled recipes. The actual JVM CLI produced
+separate method from historical R-labelled recipes; one recipe codec reads both. The actual JVM CLI produced
 prediction 7 and MSE 0; portable tests retain the exact slopes (1,2), response-700, rank,
 shape and no-implicit-intercept controls. Historical import remains optional interop.
 
-[LearnedTemplate](docs/TEMPLATE_CV.md) learns an equal-trial mean of normalized training maps,
+The [training-mean map design](docs/TEMPLATE_CV.md) learns an equal-trial mean of normalized training maps,
 uses cosine as one feature and fits a through-origin response slope. The independent analytic
 case gives mean (2/3,1/3), slope sqrt(5), prediction 3/sqrt(2). Changing held-out map coordinates
 and response leaves learned state unchanged while changing prediction to 1 and residual to 699.
@@ -543,7 +543,7 @@ changed and supersede the dated statements above; no case changed status.
   nested from pooled control means.
 - **Maps.** Density `similarity` refuses maps on different lattices, as native grid agreement does.
   Fisher z snaps r within 64 machine epsilons of plus or minus one to it before the clamp, so
-  every perfect correlation gives atanh(1 - 2^-52); `Distribution.fisherZMachineEpsilon` now
+  every perfect correlation gives atanh(1 - 2^-52); `Distribution.fisherZ` now
   does the same, and a near-identical fixture pair (r = 1 - 32.4 eps) pins it. Identical constant
   maps give that value in eyesim and remain `ConstantInput` natively.
 - **Entropy and KDE.** `fixation_entropy` refuses maps with a negative cell, so the exact

@@ -29,7 +29,7 @@ class NativeTemplateSuite extends munit.FunSuite:
       y: Double = 7.0,
       x: Vector[Double] = Vector(3.0, 2.0),
       offset: Double = 0.0
-  ): TemplateSplit[String] =
+  ): TemplateSplit[String, Vector[Double]] =
     val basis = get(TemplateBasis.of("fixed/1", Vector("a", "b"), "score"))
     val train = Vector(Vector(1.0, 0.0), Vector(0.0, 1.0), Vector(1.0, 1.0), Vector(2.0, 1.0))
       .zip(Vector(1.0, 2.0, 3.0, 4.0))
@@ -39,17 +39,17 @@ class NativeTemplateSuite extends munit.FunSuite:
       }
     get(
       TemplateSplit.of(
-        basis,
+        TemplateDesign.fixed(basis),
         train :+ get(TemplateObservation.of("held", "test", x, y)),
         Set("test")
       )
     )
 
   test("native scaled QR recovers exact coefficients and held-out prediction") {
-    val s = split(); val fit = get(FittedTemplate.fitNoIntercept(s.training))
+    val s = split(); val fit = get(Template.fit(s.training))
     fit.coefficients.zip(Vector(1.0, 2.0)).foreach((a, b) => close(a, b))
-    assertEquals(fit.methodId, FittedTemplate.nativeMethod)
-    assertNotEquals(fit.methodId, FittedTemplate.method)
+    assertEquals(fit.method, TemplateDesign.nativeMethod)
+    assertNotEquals(fit.method, TemplateDesign.importedLmMethod)
     val evaluation = get(fit.evaluate(s.heldOut))
     close(get(evaluation.rows.head.result)._1, 7.0)
     close(get(evaluation.meanSquaredError), 0.0)
@@ -57,7 +57,7 @@ class NativeTemplateSuite extends munit.FunSuite:
 
   test("held-out responses and features cannot change the fit") {
     val a    = split(); val b = split(700.0); val c = split(700.0, Vector(4.0, 2.0))
-    val fits = Vector(a, b, c).map(s => get(FittedTemplate.fitNoIntercept(s.training)))
+    val fits = Vector(a, b, c).map(s => get(Template.fit(s.training)))
     assertEquals(fits.map(_.training.hash).distinct.size, 1)
     assertEquals(fits.map(_.coefficients).distinct.size, 1)
     val resultB = get(get(fits(1).evaluate(b.heldOut)).rows.head.result)
@@ -68,7 +68,7 @@ class NativeTemplateSuite extends munit.FunSuite:
 
   test("offset responses do not insert an implicit intercept") {
     // Exact normal equations: X'X=((6,3),(3,3)), X'1=(4,3); slopes shift by (1/3,2/3).
-    val fit = get(FittedTemplate.fitNoIntercept(split(offset = 3.0).training))
+    val fit = get(Template.fit(split(offset = 3.0).training))
     close(fit.coefficients(0), 2.0); close(fit.coefficients(1), 4.0)
   }
 
@@ -80,19 +80,25 @@ class NativeTemplateSuite extends munit.FunSuite:
       ("c", "test", Vector(3.0, 6.0))
     )
       .map((k, f, x) => get(TemplateObservation.of(k, f, x, 1.0)))
-    val s     = get(TemplateSplit.of(basis, rows, Set("test")))
-    val error = FittedTemplate.fitNoIntercept(s.training).swap.toOption.get
-    assert(error.isInstanceOf[TemplateFitError.Fit])
+    val s     = get(TemplateSplit.of(TemplateDesign.fixed(basis), rows, Set("test")))
+    val error = Template.fit(s.training).swap.toOption.get
+    assert(error.isInstanceOf[TemplateError.Fit])
     assert(error.message.contains(s.training.hash.render))
-    val short = get(TemplateSplit.of(basis, rows.take(1) ++ rows.takeRight(1), Set("test")))
-    assert(FittedTemplate.fitNoIntercept(short.training).isLeft)
+    val short = get(
+      TemplateSplit.of(
+        TemplateDesign.fixed(basis),
+        rows.take(1) ++ rows.takeRight(1),
+        Set("test")
+      )
+    )
+    assert(Template.fit(short.training).isLeft)
   }
 
   test("native fitting cannot consume held-out capability or unvalidated training") {
     assert(typeCheckErrors("""
-      def fit(h: eyes4s.design.TemplateHeldOut[String]) = eyes4s.design.FittedTemplate.fitNoIntercept(h)
+      def fit(h: eyes4s.design.TemplateHeldOut[String, Vector[Double]]) = eyes4s.design.Template.fit(h)
     """).nonEmpty)
     assert(typeCheckErrors("""
-      new eyes4s.design.TemplateTraining[String](null, Vector.empty, null)
+      new eyes4s.design.TemplateTraining[String, Vector[Double]](null, Vector.empty, null)
     """).nonEmpty)
   }

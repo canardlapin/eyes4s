@@ -111,7 +111,7 @@ decided (for example incompatible grids) records its outcome as a zero-unit
 What is bounded is declared, not assumed. `Distribution.cosine` is a
 `BoundedCompare`: its dot product and norms accumulate one cell per unit through
 a `ComparisonCursor`, and `compare` is the same cursor run to completion.
-`StudyMethod.cosine` therefore carries `MethodExecution.Bounded`, and
+The registered cosine study method (`ComparisonMethods.cosine.study`, or `StudyMethod.cosine` under another identity) therefore carries `MethodExecution.Bounded`, and
 `work.capability`, `plan.inspect.execution` and the method descriptor all report
 `ExecutionCapability.BoundedComparison`. A method built from an ordinary
 `Compare` closure carries `MethodExecution.Synchronous`: its pairs still run one

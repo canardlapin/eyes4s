@@ -32,7 +32,7 @@ temporal plans. Each family must provide:
 |---|---|---|---|
 | CR0 | Land and verify | Commit the 2026-09-19 tranche, fresh-context review fixes, CI blockers, eyesim pin move, push, hosted CI green | `bd-01M2RKFZVHASF2GRKGP8DT6C45` |
 | CR1 | Close the baseline | `eyesim-entropy`, `v-parity` zero-gap run, every map method available to `template_similarity`, matched/control scanpath plan | `eyesim-entropy`, `v-parity`, baseline epic |
-| CR2 | Consolidate before registering | One comparison-method registry that keeps `Metric`/`Kernel` typing, eyesim-compatibility variants in their own object, one template-fitting family, one pure result-table layer outside `io`/`fs2`, remove uninhabited public cases | new |
+| CR2 | Consolidate before registering | One comparison-method registry that keeps `Metric`/`Kernel` typing (`ComparisonMethods`, done), eyesim-compatibility variants in their own object (`EyesimCompat`, done), one template-fitting family (`Template`, `TemplateRecipeCodec`, done), one pure result-table layer outside `io`/`fs2` (with UI-C), remove uninhabited public cases (done) | `bd-01M3DH0RGYVC6TQXYD995PREY4` |
 | CR3 | Durable persistence | Upcast registry on `VersionedCodec`, one artifact-identity scheme, canonical wire forms | new |
 | CR4 | Uniform family contracts | Apply the definition of done to repetition, point sampling, epochs, templates and decomposition, map, scanpath and fixation comparison | new; absorbs `pl-analysis` |
 | CR5 | Diagnostics and typed access | `Diagnose[E]` instances for every public error enum, keyed preflight, io diagnostics, typed `LoadedStudy` | `bd-01M2SBT6HYM8WT3VHND10TSRGF`, `bd-01M2SG4718MMQ8SDDMC0K13T33`, `bd-01M2SG47CCG30E22SY3M4WA7DR` |
