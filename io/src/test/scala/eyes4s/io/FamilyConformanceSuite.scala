@@ -77,7 +77,7 @@ import scala.deriving.Mirror
   * |                                                         | stepwise and execution completion   |
   * | temporal inspect metadata loses the boundary field      | TemporalStudy inspect               |
   * | TemporalStudyCodec reads back only the first window     | TemporalStudy archive               |
-  * | BaselineExports tables lose every row                   | FixationStudy, TemporalStudy table  |
+  * | ResultExports tables lose every row                     | FixationStudy, TemporalStudy table  |
   * | ContrastCsv drops the last contrast row of each scale    | FixationStudy, TemporalStudy table  |
   * | ContrastCsv writes negated differences                  | FixationStudy, TemporalStudy table  |
   * | TemporalContrastCsv drops a trial's coverage row        | TemporalStudy table                 |
@@ -88,7 +88,7 @@ import scala.deriving.Mirror
   * The table obligation compares each table with what the result implies: the
   * contrast table's row count (one row per failed scale, else one per contrast
   * row) and its `difference` column in row order, and the coverage table's
-  * row count (one per trial and cell). `BaselineExports.contrasts` is not a
+  * row count (one per trial and cell). `ResultExports.contrasts` is not a
   * projection of any family's result (it takes `CompareError` sources, a study
   * result retains `StudyFailure` ones), so a mutant there is
   * `BaselineExportsSuite`'s to kill, not this suite's.
@@ -580,7 +580,7 @@ object FamilyWitnesses:
         plans.codec.decode(document).flatMap(p => plans.codec.encode(p).map(p.description -> _))
       def tables(result: Result) =
         Right(
-          BaselineExports
+          ResultExports
             .study(studyPlan, result, plans, ScoreColumns.similarity)
             .map { table =>
               val (rows, differences) = contrastRows(result)
@@ -624,8 +624,8 @@ object FamilyWitnesses:
         Left(
           Gap(
             Obligation.Table,
-            "a recording analysis has no ResultTable projection: BaselineExports tabulates " +
-              "study and temporal contrasts only, and event tables are UI-C's results module"
+            "a recording analysis has no ResultTable projection: ResultExports tabulates " +
+              "study and temporal contrasts only, and eyes4s-results has no event table family"
           )
         )
 
@@ -663,7 +663,7 @@ object FamilyWitnesses:
         plans.codec.decode(document).flatMap(p => plans.codec.encode(p).map(p.description -> _))
       def tables(result: Result) =
         Right(
-          BaselineExports.temporal(temporalPlan, result, plans, ScoreColumns.similarity).map {
+          ResultExports.temporal(temporalPlan, result, plans, ScoreColumns.similarity).map {
             tables =>
               val contrasts = result.cells.map(cell => contrastRows(cell.result))
               val coverage  = result.cells.map(_.occupancy.size).sum
