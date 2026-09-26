@@ -7197,6 +7197,7 @@
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.AnalysisReportSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.PreflightSuite"
         ]
@@ -7229,6 +7230,7 @@
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.AnalysisReportSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.PreflightSuite"
         ]
@@ -10240,8 +10242,8 @@
     },
     "class eyes4s.plan.DescriptorError": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/DescriptorError$ExecutionMismatch",
-      "suite": "planJVM/eyes4s.plan.StudyCursorSuite"
+      "instance": "eyes4s/plan/DescriptorError$MissingMethod",
+      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
     },
     "class eyes4s.plan.Diagnose": {
       "classification": "behavior-or-sealed-data",
@@ -10450,8 +10452,8 @@
     },
     "class eyes4s.plan.RecordingFinding": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/RecordingFinding$ArtifactMismatch",
-      "suite": "planJVM/eyes4s.plan.PreflightSuite"
+      "instance": "eyes4s/plan/RecordingFinding$Refused",
+      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
     },
     "class eyes4s.plan.RecordingInputError": {
       "classification": "data-sum",
@@ -10560,7 +10562,7 @@
     },
     "class eyes4s.plan.StudyFinding": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/StudyFinding$UnmatchedFocal",
+      "instance": "eyes4s/plan/StudyFinding$FrameMismatch",
       "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
     },
     "class eyes4s.plan.StudyGeometry": {
@@ -10600,8 +10602,8 @@
     },
     "class eyes4s.plan.TemporalFinding": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/TemporalFinding$ArtifactMismatch",
-      "suite": "planJVM/eyes4s.plan.PreflightSuite"
+      "instance": "eyes4s/plan/TemporalFinding$Refused",
+      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
     },
     "class eyes4s.plan.TemporalResultError": {
       "classification": "data-sum",
@@ -12446,6 +12448,7 @@
     "method eyes4s.plan.AdmissionPolicy.correctionFor(java.lang.Object,scala.Function1):scala.util.Either": "lawsJVM/eyes4s.laws.ManifestLawSuite",
     "method eyes4s.plan.AdmissionPolicy.isVersion1():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.AdmissionReason.message():": "planJVM/eyes4s.plan.ResultInspectionSuite",
+    "method eyes4s.plan.AnalysisFinding$.refused(2,java.lang.Object,eyes4s.plan.Diagnose):eyes4s.plan.AnalysisFinding": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.AnalysisFinding.category():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.AnalysisFinding.keys():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.AnalysisFinding.message():": "planJVM/eyes4s.plan.AnalysisReportSuite",
@@ -12490,7 +12493,7 @@
     "method eyes4s.plan.DensityView.ny():": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.DensityView.provenance():": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.DensityView.toString():": "planJVM/eyes4s.plan.ResultInspectionSuite",
-    "method eyes4s.plan.DescriptorError.message():": "planJVM/eyes4s.plan.PreflightSuite",
+    "method eyes4s.plan.DescriptorError.message():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.Diagnose$.analysisFinding(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.Diagnose$.contrast(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.Diagnose$.contrastRow(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
@@ -12667,7 +12670,7 @@
     "method eyes4s.plan.RecordingFinding.category():": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.RecordingFinding.keys():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.RecordingFinding.message():": "planJVM/eyes4s.plan.PreflightSuite",
-    "method eyes4s.plan.RecordingFinding.remedy():": "planJVM/eyes4s.plan.PreflightSuite",
+    "method eyes4s.plan.RecordingFinding.remedy():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.RecordingFinding.severity():": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.RecordingInput$.disagreements(1,eyes4s.plan.RecordingInput,eyes4s.plan.RecordingPlan):scala.collection.immutable.Vector": "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
     "method eyes4s.plan.RecordingInput$.of(1,eyes4s.core.RecordingRef,eyes4s.plan.RecordingChannels,scala.Option,scala.Option):scala.util.Either": "lawsJVM/eyes4s.laws.ManifestLawSuite",
@@ -12693,7 +12696,7 @@
     "method eyes4s.plan.RecordingPlan.prerequisites(scala.Option):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.RecordingCursorSuite",
     "method eyes4s.plan.RecordingPlan.run(eyes4s.core.Recording):scala.util.Either": "planJVM/eyes4s.plan.RecordingCursorSuite",
     "method eyes4s.plan.RecordingPlan.work(eyes4s.core.Recording):scala.util.Either": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "method eyes4s.plan.RecordingPlanError.message():": "planJVM/eyes4s.plan.MethodDescriptorSuite",
+    "method eyes4s.plan.RecordingPlanError.message():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.RecordingReport.confirm(1,eyes4s.plan.RecordingPlan,eyes4s.core.Recording):scala.util.Either": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.RecordingReport.diagnostics():": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.RecordingResultError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
@@ -12914,7 +12917,7 @@
     "method eyes4s.plan.TemporalFinding.category():": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.TemporalFinding.keys():": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.TemporalFinding.message():": "planJVM/eyes4s.plan.PreflightSuite",
-    "method eyes4s.plan.TemporalFinding.remedy():": "planJVM/eyes4s.plan.PreflightSuite",
+    "method eyes4s.plan.TemporalFinding.remedy():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.TemporalFinding.severity():": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.TemporalInspection.cell(java.lang.String,java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.TemporalInspection.cellNames():": "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -12926,7 +12929,7 @@
     "method eyes4s.plan.TemporalSegment$.of(eyes4s.plan.TemporalStage):eyes4s.plan.TemporalSegment": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.plan.TemporalSegment$.total(5,eyes4s.plan.PreparedTemporalStudy,eyes4s.plan.TemporalSegment):eyes4s.plan.SegmentTotal": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.plan.TemporalSegment$.total(5,eyes4s.plan.PreparedTemporalStudy,eyes4s.plan.TemporalSegment,eyes4s.plan.TemporalCursor):eyes4s.plan.SegmentTotal": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-    "method eyes4s.plan.TemporalStudyError.message():": "planJVM/eyes4s.plan.MethodDescriptorSuite",
+    "method eyes4s.plan.TemporalStudyError.message():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.TemporalStudyInput$.of(2,eyes4s.plan.StudyInput,scala.collection.immutable.Vector,eyes4s.design.KeyDigest,scala.math.Ordering):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.TemporalStudyInput.reference():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.TemporalStudyPlan$.of(5,eyes4s.plan.StudyPlan,eyes4s.plan.ArtifactRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.core.FixationBoundary,eyes4s.kernel.UnitLabel):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -13390,7 +13393,7 @@
     "value eyes4s.plan.Diagnose$.decomposition": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.densityLookup": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.densityPointFailure": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.descriptor": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "value eyes4s.plan.Diagnose$.descriptor": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "value eyes4s.plan.Diagnose$.detectionFailure": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.detectionResult": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.detectionSupport": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
@@ -13424,7 +13427,7 @@
     "value eyes4s.plan.Diagnose$.recording": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.recordingFinding": "planJVM/eyes4s.plan.PreflightSuite",
     "value eyes4s.plan.Diagnose$.recordingInput": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.recordingPlan": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "value eyes4s.plan.Diagnose$.recordingPlan": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "value eyes4s.plan.Diagnose$.recordingResult": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.reductionPolicy": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.repetitionMean": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
@@ -13438,7 +13441,7 @@
     "value eyes4s.plan.Diagnose$.surface": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.syncEvidence": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.template": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.temporal": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "value eyes4s.plan.Diagnose$.temporal": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "value eyes4s.plan.Diagnose$.temporalSupport": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "value eyes4s.plan.Diagnose$.time": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.Diagnose$.timeQuantity": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
@@ -16128,6 +16131,8 @@
       "negative ordinals are refused; duplicate ordinals name the first offender in record order"
     ],
     "planJS/eyes4s.plan.AnalysisReportSuite": [
+      "a data-dependent finding names at least one trial, by type",
+      "a refusal's remedy follows its cause, as the dedicated families derive it",
       "confirm refuses a changed plan, a changed input and any blocker",
       "findings name their operands: artifacts, the carried cause and the failing trials",
       "severity, class and remedy follow from the case",
@@ -19102,6 +19107,8 @@
       "negative ordinals are refused; duplicate ordinals name the first offender in record order"
     ],
     "planJVM/eyes4s.plan.AnalysisReportSuite": [
+      "a data-dependent finding names at least one trial, by type",
+      "a refusal's remedy follows its cause, as the dedicated families derive it",
       "confirm refuses a changed plan, a changed input and any blocker",
       "findings name their operands: artifacts, the carried cause and the failing trials",
       "severity, class and remedy follow from the case",
