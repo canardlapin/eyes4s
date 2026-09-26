@@ -202,15 +202,16 @@ object InventoryScenario:
     ) ++ Option.when(recordItems)(Gen.choose(1, 3).map(TrialPlan.ItemConflict.apply))
     Gen.oneOf(base).flatMap(identity)
 
-/** Laws of a fixation admission joined to a trial inventory. An instance
+/** Laws of a fixation admission joined to a trial inventory. `admit`
   * admits a generated [[InventoryScenario]] under the columns it documents and
   * returns the admission ledger with its inventory, or a message.
   *
   * The laws hold of the ledger alone, so they hold of a ledger saved and read
   * back as well as of the importer's own.
   */
-trait InventoryLaws extends Laws:
-  def admit(scenario: InventoryScenario): Either[String, AdmissionLedger[TrialKey]]
+final class InventoryLaws(
+    admit: InventoryScenario => Either[String, AdmissionLedger[TrialKey]]
+) extends Laws:
 
   private def withLedger(
       check: (InventoryScenario, AdmissionLedger[TrialKey], InventoryLedger) => Prop

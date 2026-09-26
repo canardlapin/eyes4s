@@ -70,12 +70,7 @@ object InventoryFixtures:
 class InventoryAdmissionLawSuite extends munit.DisciplineSuite:
   import InventoryFixtures.*
 
-  checkAll(
-    "importer",
-    (new InventoryLaws {
-      def admit(s: InventoryScenario) = InventoryFixtures.admit(s)
-    }).inventory
-  )
+  checkAll("importer", InventoryLaws(InventoryFixtures.admit).inventory)
 
   private val ledgers = StudyInputCodecs.trial[Px].ledger
   checkAll(
@@ -364,4 +359,13 @@ class InventoryAdmissionSuite extends munit.FunSuite:
       Right(3)
     )
     assertEquals(get(codec.decode(json)), ledger)
+  }
+
+  test("an inventory import refuses to complete while records are rejected") {
+    val clean = admitted("P1,Encoding,e1,1,1,5,5,0,40,20\n")
+    assertEquals(clean.requireComplete.map(_.trials.size), Right(1))
+    val dirty = admitted("P1,Encoding,e1,1,1,5,5,0,40,0\n")
+    assertEquals(dirty.requireComplete.isLeft, true)
+    val columns = get(FixationColumns.of("ordinal", "x", "y", "onset", "duration", "samples"))
+    assertEquals(columns.names, Vector("ordinal", "x", "y", "onset", "duration", "samples"))
   }

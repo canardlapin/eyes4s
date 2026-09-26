@@ -228,3 +228,15 @@ class InventoryLedgerSuite extends munit.FunSuite:
       Left(InventoryError.DuplicateAttribute(Vector("a")))
     )
   }
+
+  test("attributes name their entries; causes know the ledger version that introduced them") {
+    val values = get(Attributes.of(Vector("a" -> AttributeValue.Blank)))
+    assertEquals(values.names, Vector("a"))
+    assertEquals((values.isEmpty, Attributes.empty.isEmpty), (false, true))
+    assertEquals(QuarantineCause.isVersion1(QuarantineCause.Overlap(1, "a", "b")), true)
+    assertEquals(QuarantineCause.isVersion1(QuarantineCause.ItemConflict(Vector("a"))), false)
+    assertEquals(
+      QuarantineCause.version(QuarantineCause.NotInInventory("P1", "E", "t", 1)),
+      3
+    )
+  }
