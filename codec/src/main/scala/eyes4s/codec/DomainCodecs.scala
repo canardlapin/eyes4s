@@ -271,7 +271,6 @@ object DocumentIdentities:
     */
   private def once(
       member: String,
-      table: Json,
       declared: Vector[Json],
       id: Json => Option[String]
   ): Either[CodecError, Unit] =
@@ -291,9 +290,9 @@ object DocumentIdentities:
     fs         <- Wire.field[Vector[Json]](j, "frames")
     gs         <- Wire.field[Vector[Json]](j, "grids")
     cs         <- Wire.field[Vector[String]](j, "clocks")
-    _          <- once("frames", j, fs, _.hcursor.get[String]("id").toOption)
-    _          <- once("grids", j, gs, _.hcursor.get[String]("id").toOption)
-    _          <- once("clocks", j, cs.map(Json.fromString), _.asString)
+    _          <- once("frames", fs, _.hcursor.get[String]("id").toOption)
+    _          <- once("grids", gs, _.hcursor.get[String]("id").toOption)
+    _          <- once("clocks", cs.map(Json.fromString), _.asString)
     withFrames <- fs.foldLeft[Either[CodecError, DocumentIdentities]](Right(empty)) {
       (acc, f) =>
         for

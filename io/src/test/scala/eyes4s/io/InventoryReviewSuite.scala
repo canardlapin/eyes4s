@@ -110,12 +110,17 @@ class InventoryReviewSuite extends munit.FunSuite:
     assertEquals(read.map(_.trials.map(_.records)), Right(Vector(Vector(2, 3))))
   }
 
-  test("B6/item 4: a version-3 ledger must carry its inventory") {
+  test("B6/item 4: a version-3 ledger with a null inventory is never read as inventoried") {
+    // Under the version policy (docs/DOMAIN_CODECS.md), `"inventory": null` is
+    // the lift of a ledger without one: it reads with version 2's vocabulary
+    // and is written back under version 1 or 2, never as version 3.
     val codec  = StudyInputCodecs.trial[Px].ledger
     val json   = get(codec.encode(ledger(run("P1,E,e1,1,beach,1,5,5,0,40,20\n"))))
     val nulled =
       json.hcursor.downField("value").downField("inventory").set(io.circe.Json.Null).top.get
-    assert(codec.decode(nulled).isLeft)
+    assert(codec.decode(nulled).forall(l => l.inventory.isEmpty && l.version <= 2))
+    val missing = json.hcursor.downField("value").downField("inventory").delete.top.get
+    assert(codec.decode(missing).isLeft)
   }
 
   test("item 4: a ledger without an inventory cannot name NotInInventory") {
