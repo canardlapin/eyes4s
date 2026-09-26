@@ -45,6 +45,11 @@ angular frame or area corner the viewing geometry cannot map, and a detector
 definition its factory refuses. `TemporalFinding` adds trials without an epoch,
 coverage on another clock, windows that overflow an anchor, and windows with no
 observed coverage; repetition-level design findings name their repetition.
+A windowed or whole-frame study also reports, as warnings in input order, each
+trial with fixations outside its analysis window or the screen
+(`OffWindowFixations`, carrying the trial's `WindowTally` and the off-window
+policy) and each trial with none inside (`NoFixationInWindow`); both suggest
+`ReviewAnalysisWindow`.
 
 `affectedTrials` lists distinct keys in the layout's canonical order. Finding
 order is deterministic: plan-level checks, then trials in source order, then the

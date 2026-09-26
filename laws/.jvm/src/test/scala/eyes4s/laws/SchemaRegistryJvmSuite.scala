@@ -143,6 +143,18 @@ object SchemaRegistry:
       codecLaw(inputs, "admission ledger")
     ),
     Entry(
+      StudyCodecDefinitions.studyV2,
+      Kind.Document,
+      Vector("study-v2.json"),
+      codecLaw(plans, "configured study plan")
+    ),
+    Entry(
+      StudyInputDefinitions.admissionLedgerV2,
+      Kind.Document,
+      Vector("admission-ledger-v2.json"),
+      codecLaw(inputs, "admission ledger with policy")
+    ),
+    Entry(
       DefinitionId.recording,
       Kind.Document,
       Vector("recording-standalone-v1.json"),
@@ -607,10 +619,13 @@ private object Decoders:
       get(DefinitionId.of("eyes4s.ivt-parameters", 1))
     )
     id match
-      case DefinitionId.study           => through(StudyCodecs.cosine[Px].codec, document)
-      case DefinitionId.studyInput      => through(StudyInputCodecs.study[Px].input, document)
-      case DefinitionId.admissionLedger => through(StudyInputCodecs.study[Px].ledger, document)
-      case DefinitionId.recording       => through(RecordingInputCodecs.recording[Px], document)
+      case DefinitionId.study            => through(StudyCodecs.cosine[Px].codec, document)
+      case DefinitionId.studyInput       => through(StudyInputCodecs.study[Px].input, document)
+      case DefinitionId.admissionLedger  => through(StudyInputCodecs.study[Px].ledger, document)
+      case StudyCodecDefinitions.studyV2 => through(StudyCodecs.cosine[Px].codec, document)
+      case StudyInputDefinitions.admissionLedgerV2 =>
+        through(StudyInputCodecs.study[Px].ledger, document)
+      case DefinitionId.recording => through(RecordingInputCodecs.recording[Px], document)
       case DefinitionId.binocularRecording =>
         through(RecordingInputCodecs.binocular[Px], document)
       case DefinitionId.recordingInput     => through(RecordingInputCodecs.input[Px], document)

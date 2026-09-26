@@ -45,7 +45,9 @@ object FixationEvidence:
       (admitted ++ rejected).sortBy(_._1).map { case (record, disposition) =>
         SourceRecord(record, disposition)
       },
-      decision
+      decision,
+      imported.policy,
+      imported.outsideFrame
     )
 
   def reason(error: FixationRowError): AdmissionReason = error match

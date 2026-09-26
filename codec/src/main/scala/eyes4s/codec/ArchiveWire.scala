@@ -221,6 +221,18 @@ private[codec] object TemporalWire:
       case ComparisonWork(e) => tagged("comparisonWork", "error" -> comparisonWorkError(e))
       case UnsupportedExecution(m, c) =>
         tagged("unsupportedExecution", "method" -> Wire.id(m), "capability" -> text(c.toString))
+      case MissingAngularScale(scale) => tagged("missingAngularScale", "scale" -> int(scale))
+      case Geometry(e) => tagged("geometry", "error" -> ResultWire.geometryError(e))
+      case InvalidWindowTally(screen, window, total, screenMicros, windowMicros, totalMicros) =>
+        tagged(
+          "invalidWindowTally",
+          "outsideScreen"       -> int(screen),
+          "outsideWindow"       -> int(window),
+          "total"               -> int(total),
+          "outsideScreenMicros" -> long(screenMicros),
+          "outsideWindowMicros" -> long(windowMicros),
+          "totalMicros"         -> long(totalMicros)
+        )
 
   def readPlanError(json: Json): Either[CodecError, PlanError] =
     import PlanError.*
@@ -261,6 +273,18 @@ private[codec] object TemporalWire:
               CodecError.Field("capability", json, s"unknown execution capability $name")
             )
         yield UnsupportedExecution(method, value)
+      case "missingAngularScale" =>
+        Wire.field[Int](json, "scale").map(MissingAngularScale.apply)
+      case "geometry" => error.flatMap(ResultWire.readGeometryError).map(Geometry.apply)
+      case "invalidWindowTally" =>
+        (
+          Wire.field[Int](json, "outsideScreen"),
+          Wire.field[Int](json, "outsideWindow"),
+          Wire.field[Int](json, "total"),
+          readLong(json, "outsideScreenMicros"),
+          readLong(json, "outsideWindowMicros"),
+          readLong(json, "totalMicros")
+        ).mapN(InvalidWindowTally.apply)
       case other => Left(unknown(json, "plan error", other))
     }
 

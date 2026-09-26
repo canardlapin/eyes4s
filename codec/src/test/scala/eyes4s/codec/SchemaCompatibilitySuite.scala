@@ -62,6 +62,8 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
 
   private val pinned: Vector[Pinned[?]] = Vector(
     Pinned("study-v1", SavedStudyFixtures.versionOne, studies.codec),
+    Pinned("study-v2", StudyV2Mirrors.studyVersionTwo, studies.codec),
+    Pinned("admission-ledger-v2", StudyV2Mirrors.ledgerVersionTwo, inputs.ledger),
     Pinned("study-input-v1", StudyInputFixtures.inputVersionOne, inputs.input),
     Pinned("admission-ledger-v1", StudyInputFixtures.ledgerVersionOne, inputs.ledger),
     Pinned("study-result-v1", StudyResultFixtures.resultVersionOne, results.codec),
@@ -145,11 +147,24 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
       Pinned(s"score-codecs-v1 $label", envelope.noSpaces, codec)
     }
 
-  test("the pinned documents cover every shipped document schema") {
+  test("the pinned documents cover every version of every shipped document schema") {
     assertEquals(
-      pinned.map(_.codec.schema).distinct.map(id => s"${id.name}@${id.version}").sorted,
+      pinned.flatMap(_.codec.schemas).distinct.map(id => s"${id.name}@${id.version}").sorted,
+      pinned
+        .map(p => get(Wire.definition(p.json, "schema")))
+        .distinct
+        .map(id => s"${id.name}@${id.version}")
+        .sorted
+    )
+    assertEquals(
+      pinned
+        .map(p => get(Wire.definition(p.json, "schema")))
+        .distinct
+        .map(id => s"${id.name}@${id.version}")
+        .sorted,
       Vector(
         "eyes4s.admission-ledger@1",
+        "eyes4s.admission-ledger@2",
         "eyes4s.binocular-recording@1",
         "eyes4s.manifest@1",
         "eyes4s.measure-distance@1",
@@ -163,6 +178,7 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
         "eyes4s.study-input@1",
         "eyes4s.study-result@1",
         "eyes4s.study@1",
+        "eyes4s.study@2",
         "eyes4s.temporal-result@1",
         "eyes4s.temporal-study-input@1",
         "eyes4s.temporal-study@1",
@@ -220,17 +236,18 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
 
   test("an unknown major version of every pinned document is refused, naming both versions") {
     pinned.foreach { p =>
-      val bumped = withSchema(p.json, p.codec.schema.name, Json.fromInt(2))
+      val next   = p.codec.schema.version + 1
+      val bumped = withSchema(p.json, p.codec.schema.name, Json.fromInt(next))
       assertEquals(
         p.codec.decode(bumped).left.toOption,
-        Some(CodecError.Schema(p.codec.schema, id(p.codec.schema.name, 2))),
+        Some(CodecError.Schema(p.codec.schema, id(p.codec.schema.name, next))),
         p.label
       )
     }
     // Nor does any codec read a document of another schema.
     assertEquals(
       studies.codec.parse(StudyInputFixtures.inputVersionOne).left.toOption,
-      Some(CodecError.Schema(DefinitionId.study, DefinitionId.studyInput))
+      Some(CodecError.Schema(StudyCodecDefinitions.studyV2, DefinitionId.studyInput))
     )
   }
 
@@ -280,11 +297,11 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
     assertEquals(
       plans
         .decode(
-          withSchema(parse(SavedStudyFixtures.versionOne), "eyes4s.study", Json.fromInt(2))
+          withSchema(parse(SavedStudyFixtures.versionOne), "eyes4s.study", Json.fromInt(3))
         )
         .left
         .toOption,
-      Some(CodecError.Schema(DefinitionId.study, id("eyes4s.study", 2)))
+      Some(CodecError.Schema(StudyCodecDefinitions.studyV2, id("eyes4s.study", 3)))
     )
     assertEquals(
       studies.codec.decode(nested(SavedStudyFixtures.versionOne, "layout", 2)).left.toOption,

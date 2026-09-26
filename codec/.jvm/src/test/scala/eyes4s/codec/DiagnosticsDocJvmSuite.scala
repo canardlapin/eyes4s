@@ -66,7 +66,11 @@ class DiagnosticsDocJvmSuite extends munit.FunSuite:
     assert(start >= 0 && stop > start, "generated-section markers are missing")
     val expected = s"$Begin\n\n$generated\n\n$End"
     val current  = text.substring(start, stop + End.length)
-    if sys.env.get("EYES4S_WRITE_DIAGNOSTICS_DOC").contains("1") && current != expected then
+    if sys.env
+        .get("EYES4S_WRITE_DIAGNOSTICS_DOC")
+        .orElse(sys.props.get("EYES4S_WRITE_DIAGNOSTICS_DOC"))
+        .contains("1") && current != expected
+    then
       Files.writeString(
         path,
         text.substring(0, start) + expected + text.substring(stop + End.length),

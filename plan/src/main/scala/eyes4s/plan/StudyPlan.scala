@@ -100,6 +100,16 @@ enum PlanError derives CanEqual:
   case ChangedPreparedPlan(method: DefinitionId, layout: DefinitionId)
   case ComparisonWork(underlying: ComparisonWorkError)
   case UnsupportedExecution(method: DefinitionId, capability: ExecutionCapability)
+  case MissingAngularScale(scale: Int)
+  case Geometry(underlying: GeometryError)
+  case InvalidWindowTally(
+      outsideScreen: Int,
+      outsideWindow: Int,
+      total: Int,
+      outsideScreenMicros: Long,
+      outsideWindowMicros: Long,
+      totalMicros: Long
+  )
 
   def message: String = this match
     case InvalidDefinition(n, v) =>
@@ -121,6 +131,13 @@ enum PlanError derives CanEqual:
     case ComparisonWork(e)                        => e.message
     case UnsupportedExecution(method, capability) =>
       s"Method ${method.name}@${method.version} executes as $capability and cannot promise bounded comparison work."
+    case MissingAngularScale(scale) =>
+      s"Scale $scale is declared in degrees, but the plan declares no units-per-degree scale."
+    case Geometry(e) => e.message
+    case InvalidWindowTally(screen, window, total, screenMicros, windowMicros, totalMicros) =>
+      s"A window tally must partition its trial: outsideScreen=$screen and outsideWindow=$window " +
+        s"of total=$total, outsideScreenMicros=$screenMicros and outsideWindowMicros=$windowMicros " +
+        s"of totalMicros=$totalMicros."
 
 /** A registered interpretation of user keys. Identity and matching stay in K. */
 final class StudyLayout[K](
@@ -261,12 +278,21 @@ enum StudyFailure[K] derives CanEqual:
   case Estimation(key: K, underlying: EstimateError)
   case Comparison(left: K, right: K, underlying: CompareError)
 
+  /** The trial's fixations lie outside the plan's analysis window: all of
+    * them, or any of them under [[OffWindowPolicy.FailTrial]].
+    */
+  case OffWindow(key: K, tally: WindowTally)
+
   def message: String = this match
     case Frame(k, e)         => s"Trial $k: ${e.message}"
     case Temporal(k, e)      => s"Trial $k: ${e.message}"
     case Occupancy(k, e)     => s"Trial $k: ${e.message}"
     case Estimation(k, e)    => s"Trial $k: ${e.message}"
     case Comparison(l, r, e) => s"Trials $l and $r: ${e.message}"
+    case OffWindow(k, tally) =>
+      s"Trial $k has ${tally.outside} of ${tally.total} fixations outside the analysis window" +
+        (if tally.allOutside then "; its map would be empty."
+         else "; the plan fails such trials.")
 
 object StudyFailure:
   /** The trial keys a failure names, in operand order. */
@@ -276,6 +302,7 @@ object StudyFailure:
     case StudyFailure.Occupancy(k, _)     => Vector(k)
     case StudyFailure.Estimation(k, _)    => Vector(k)
     case StudyFailure.Comparison(l, r, _) => Vector(l, r)
+    case StudyFailure.OffWindow(k, _)     => Vector(k)
 
 /** Typed evidence of how a method's comparison executes. A synchronous closure
   * runs whole per pair; only a [[BoundedCompare]] can be declared bounded, so
@@ -736,19 +763,39 @@ object StudyResult:
 
 /** A saved study describes exhaustive matched and different-stimulus controls
   * within each participant. Scale results remain separate; no implicit pooling.
+  *
+  * `geometry` says where maps live (the whole admission frame, or a half-open
+  * window of it with an off-window policy); `scales` are the estimation scales
+  * as declared, in frame units or in degrees, and `estimates` are the same
+  * scales resolved to frame units through the plan's one `angularScale`.
   */
 final class StudyPlan[K, U <: Unit2D, P, S, D] private (
     val input: ArtifactRef[StudyInput[K, U]],
     val layout: StudyLayout[K],
-    val grid: Grid[U],
+    val geometry: StudyGeometry[U],
     val focalPhase: String,
     val referencePhase: String,
     val weight: Weight,
+    val scales: Vector[StudyScale[U]],
+    val angularScale: Option[LinearAngularScale[U]],
     val estimates: Vector[StudyEstimate[U]],
     val policy: FailurePolicy,
     val method: StudyMethod[P, U, S, D],
     val parameters: P
 )(using unit: UnitLabel[U]):
+  /** The grid every density lies on. */
+  def grid: Grid[U] = geometry.grid
+
+  /** True when the plan means exactly what a version-1 saved study meant:
+    * the whole admission frame and scales declared in frame units.
+    */
+  def isVersion1: Boolean =
+    geometry.isInstanceOf[StudyGeometry.WholeFrame[?]] && angularScale.isEmpty &&
+      scales.forall {
+        case StudyScale.Native(_)  => true
+        case StudyScale.Angular(_) => false
+      }
+
   def inspect: Either[DescriptorError, RecipeInspection] = RecipeDescriptors.study(this)
 
   /** Typed availability report; see [[Preflight.study]]. */
@@ -757,6 +804,10 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
       budget: PairScheduleBudget = PairScheduleBudget.default
   ): StudyReport[K, U] = Preflight.study(this, available, budget)
 
+  /** Fields in the version-1 order; a later field appears only when the plan
+    * departs from the version-1 meaning, so an unchanged plan keeps its
+    * description, its equality and the results it reconstructs.
+    */
   def description: Vector[(String, Vector[Provenance.Param])] =
     import Provenance.Param.*
     Vector(
@@ -782,6 +833,15 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
       } ++
       estimates.zipWithIndex.map { case (s, i) =>
         s"estimate.$i" -> s.parameters.flatMap { case (k, v) => Vector(Text(k), v) }
+      } ++
+      StudyWindowing.description(geometry) ++
+      angularScale.toVector.map(s =>
+        "angularScale" -> Vector(Text(s.frame.id.name), Num(s.unitsPerDegree))
+      ) ++
+      scales.zipWithIndex.collect { case (s @ StudyScale.Angular(_), i) =>
+        s"scale.$i" -> (Text("degrees") +: s.angularParameters.flatMap { case (k, v) =>
+          Vector(Text(k), v)
+        })
       }
 
   override def equals(other: Any): Boolean = other match
@@ -797,6 +857,13 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
     case Some(value) if value.reference != input =>
       Vector(PlanError.ArtifactMismatch(input.digest, value.reference.digest))
     case _ => Vector.empty
+
+  /** Per-trial counts of fixations outside the plan's analysis window, in
+    * input order, for every trial in the admission frame; empty for a
+    * whole-frame plan. Derived from the input and the plan alone.
+    */
+  def windowTallies(available: StudyInput[K, U]): Vector[(K, WindowTally)] =
+    StudyWindowing.tallies(geometry, available.trials.rows.map(t => t.key -> t.value))
 
   def run(available: StudyInput[K, U]): Either[PlanError, StudyResult[K, U, S, D]] =
     prepare(available).flatMap(_.run)
@@ -815,6 +882,28 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
       context: Vector[(String, Provenance.Param)]
   ): Either[PlanError, StudyResult[K, U, S, D]] =
     this.prepare(available).flatMap(_.execute(prepare, context))
+
+  /** The same plan with other phases and weighting, as a temporal repetition
+    * runs it; geometry and scales are kept.
+    */
+  private[plan] def withPhases(
+      focal: String,
+      reference: String,
+      weighting: Weight
+  ): Either[PlanError, StudyPlan[K, U, P, S, D]] =
+    StudyPlan.configure(
+      input,
+      layout,
+      geometry,
+      focal,
+      reference,
+      weighting,
+      scales,
+      angularScale,
+      policy,
+      method,
+      parameters
+    )
 
   /** One scale's method specification; identical for pure and resumable execution. */
   private[plan] def specification(
@@ -847,7 +936,9 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
     val trial = work.input.trials.rows(index)
     val mass  = for
       _         <- work.frameChecks(index)
-      occupancy <- prepare(trial.key, trial.value)
+      _         <- work.windowChecks(index)
+      whole     <- prepare(trial.key, trial.value)
+      occupancy <- StudyWindowing.restrict(geometry, trial.key, whole)
       mass      <- estimate match
         case StudyEstimate.Anisotropic(x, y, edges) =>
           Smoother
@@ -899,6 +990,7 @@ object StudyPlan:
       ()
     )
 
+  /** The version-1 study: the whole frame of `grid`, scales in frame units. */
   def of[K, U <: Unit2D, P, S, D](
       input: ArtifactRef[StudyInput[K, U]],
       layout: StudyLayout[K],
@@ -911,40 +1003,82 @@ object StudyPlan:
       method: StudyMethod[P, U, S, D],
       parameters: P
   )(using UnitLabel[U]): Either[PlanError, StudyPlan[K, U, P, S, D]] =
-    if focalPhase.trim.isEmpty || referencePhase.trim.isEmpty || focalPhase == referencePhase
-    then Left(PlanError.InvalidPhases(focalPhase, referencePhase))
-    else if estimates.isEmpty then Left(PlanError.EmptyScales(0))
-    else if estimates.distinct.size != estimates.size then
-      Left(PlanError.DuplicateScales(estimates.map(_.name)))
-    else
-      estimates
-        .traverse { estimate =>
-          EvaluationSpec
-            .of(
-              method.id.name,
-              method.id.version.toString,
-              method.parameters(parameters).map { case (k, v) =>
-                s"method.$k" -> v
-              } ++
-                estimate.parameters.map { case (k, v) => s"estimate.$k" -> v },
-              method.difference.components,
-              EvaluationGeometry.onGrid(grid),
-              EvaluationTime.OrderFree
-            )
-            .left
-            .map(PlanError.Specification.apply)
-        }
-        .map(_ =>
-          new StudyPlan(
-            input,
-            layout,
-            grid,
-            focalPhase,
-            referencePhase,
-            weight,
-            estimates,
-            policy,
-            method,
-            parameters
+    configure(
+      input,
+      layout,
+      StudyGeometry.WholeFrame(grid),
+      focalPhase,
+      referencePhase,
+      weight,
+      estimates.map(StudyScale.Native(_)),
+      None,
+      policy,
+      method,
+      parameters
+    )
+
+  /** A study with an explicit geometry and scales. An angular scale is
+    * resolved through `angularScale`, whose frame must be the geometry's
+    * admission frame: one units-per-degree value per plan.
+    */
+  def configure[K, U <: Unit2D, P, S, D](
+      input: ArtifactRef[StudyInput[K, U]],
+      layout: StudyLayout[K],
+      geometry: StudyGeometry[U],
+      focalPhase: String,
+      referencePhase: String,
+      weight: Weight,
+      scales: Vector[StudyScale[U]],
+      angularScale: Option[LinearAngularScale[U]],
+      policy: FailurePolicy,
+      method: StudyMethod[P, U, S, D],
+      parameters: P
+  )(using UnitLabel[U]): Either[PlanError, StudyPlan[K, U, P, S, D]] =
+    for
+      _ <- Either.cond(
+        focalPhase.trim.nonEmpty && referencePhase.trim.nonEmpty && focalPhase != referencePhase,
+        (),
+        PlanError.InvalidPhases(focalPhase, referencePhase)
+      )
+      _ <- Either.cond(scales.nonEmpty, (), PlanError.EmptyScales(0))
+      _ <- angularScale.traverse(s =>
+        Agreement.frames(s.frame, geometry.admission).left.map(PlanError.Geometry.apply)
+      )
+      estimates <- scales.zipWithIndex.traverse { case (scale, index) =>
+        scale.resolve(angularScale, index)
+      }
+      _ <- Either.cond(
+        scales.distinct.size == scales.size && estimates.distinct.size == estimates.size,
+        (),
+        PlanError.DuplicateScales(estimates.map(_.name))
+      )
+      _ <- estimates.traverse { estimate =>
+        EvaluationSpec
+          .of(
+            method.id.name,
+            method.id.version.toString,
+            method.parameters(parameters).map { case (k, v) =>
+              s"method.$k" -> v
+            } ++
+              estimate.parameters.map { case (k, v) => s"estimate.$k" -> v },
+            method.difference.components,
+            EvaluationGeometry.onGrid(geometry.grid),
+            EvaluationTime.OrderFree
           )
-        )
+          .left
+          .map(PlanError.Specification.apply)
+      }
+    yield new StudyPlan(
+      input,
+      layout,
+      geometry,
+      focalPhase,
+      referencePhase,
+      weight,
+      scales,
+      angularScale,
+      estimates,
+      policy,
+      method,
+      parameters
+    )

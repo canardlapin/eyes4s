@@ -48,8 +48,9 @@ uses the layout's canonical key ordering.
 
 `work.preview` returns `Either[PlanError, StudyPreview[K, U]]`: a thin inspection
 facade over those same schedules. It exposes `focalKeys`, `referenceKeys`,
-`excludedPhases`, `failurePolicy`, and `reductionOrientation` (`ByLeft`, meaning
-the focal trial). Repeated stimulus occurrences with distinct full keys remain
+`excludedPhases`, `failurePolicy`, `reductionOrientation` (`ByLeft`, meaning
+the focal trial) and `windowTallies`, each trial's fixations outside the analysis
+window and the screen, with their `windowSummary`. Repeated stimulus occurrences with distinct full keys remain
 separate trials. Schedule indices and duplicate indices address the two key
 vectors. No maps or scores are computed by preview creation or paging.
 
@@ -344,7 +345,8 @@ value with the same input reference. Errors inside a trial are located, for exam
 Scanpaths and fixation summaries backed by source samples are refused with `CodecError.Unsupported`
 rather than silently detached; their support belongs to the recording payload.
 
-`ledger` encodes an `AdmissionLedger[K]` (`eyes4s.admission-ledger@1`): the source reference (a label
+`ledger` encodes an `AdmissionLedger[K]` (`eyes4s.admission-ledger@1`, or `@2` when it records an
+admission policy other than the version-1 one): the source reference (a label
 and the portable digest of the decoded header and records), the header, the recorded outcome and one
 entry per source record in record order. An admitted record links its logical record number to the
 typed trial key and the ordinal it supplied; a rejected record keeps its raw fields, its key when one
@@ -352,7 +354,12 @@ could be read, and a typed `AdmissionReason`. A quarantined trial names the affe
 `QuarantineCause`. `AdmissionLedger.of` refuses unordered records, duplicate ordinals within a trial,
 quarantine scopes that omit their own record or name a record the ledger lacks, and an outcome
 inconsistent with the rejected count; `ledger.checkAgainst(input)` verifies that admitted records
-address every input trial exactly once per fixation. `StudyInputRegistry` registers codecs by key
+address every input trial exactly once per fixation. Version 2 adds the `AdmissionPolicy` (the
+off-screen policy and the correction rules, each with its scope) and the admitted records outside
+the frame; `AdmissionLedger.of` refuses such a record unless it is admitted, listed once in record
+order and admitted under `ExcludeRecord`, and decoding refuses a ledger in which two rules cover an
+admitted record's trial (`AdmissionError.CorrectionConflict`). A version-1 ledger decodes with the
+version-1 policy. `StudyInputRegistry` registers codecs by key
 schema and refuses missing or duplicate registrations. `VersionedCodec.trials` is the generic
 row-array codec these payloads use.
 
@@ -1022,7 +1029,11 @@ The JSON envelope has a schema identifier and version. Its payload separately re
 identifier/version, key schema, key layout, and parameter schema. Missing or unsupported versions
 are explicit failures. The pinned [version-one project](../codec/src/test/resources/eyes4s/study-v1.json)
 is exercised by the portable codec suite, so changing defaults cannot silently reinterpret it.
-Version 1 is the first version of every shipped schema, so there is no historical migration;
+The study plan and the admission ledger have a second version (`eyes4s.study@2` records the
+geometry, declared scales and units per degree; `eyes4s.admission-ledger@2` the admission policy).
+Their codecs read both versions, each with its own meaning, and write each value under the earliest
+version that expresses it, so a version-1 document re-encodes to its own bytes. The other schemas
+have one version and no historical migration;
 [the schema compatibility policy](DOMAIN_CODECS.md#schema-compatibility) states what a new version
 means, which decoders stay readable, how unknown versions are refused and how unknown members are
 treated, and `SchemaCompatibilitySuite` enforces it on every pinned v1 document.

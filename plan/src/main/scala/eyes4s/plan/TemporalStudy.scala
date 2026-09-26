@@ -468,19 +468,8 @@ final class TemporalStudyPlan[K, U <: Unit2D, P, S, D] private (
   def repetitionPlan(
       repetition: RepetitionContrast
   ): Either[TemporalStudyError, StudyPlan[K, U, P, S, D]] =
-    StudyPlan
-      .of(
-        base.input,
-        base.layout,
-        base.grid,
-        repetition.focalPhase,
-        repetition.referencePhase,
-        Weight.Duration,
-        base.estimates,
-        base.policy,
-        base.method,
-        base.parameters
-      )
+    base
+      .withPhases(repetition.focalPhase, repetition.referencePhase, Weight.Duration)
       .left
       .map(TemporalStudyError.Input.apply)
 

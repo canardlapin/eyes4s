@@ -34,6 +34,11 @@ import eyes4s.kernel.*
   * inputReference, layoutId, methodId and description stamp this snapshot. A UI
   * retaining it across edits can use checkCurrent before presenting it as current.
   * Registered behavior and projections must be pure and stable for their ids.
+  *
+  * windowTallies lists, in input order, how each trial in the admission frame
+  * falls against the screen and the plan's analysis window; a trial whose map
+  * would be empty, or that the window policy fails, fails at every scale with
+  * StudyFailure.OffWindow.
   */
 final class StudyPreview[K, U <: Unit2D] private[plan] (
     val inputReference: ArtifactRef[StudyInput[K, U]],
@@ -45,8 +50,14 @@ final class StudyPreview[K, U <: Unit2D] private[plan] (
     val excludedPhases: Vector[K],
     val matched: DirectedPairSchedule[K, K],
     val controls: DirectedPairSchedule[K, K],
-    val failurePolicy: FailurePolicy
+    val failurePolicy: FailurePolicy,
+    val windowTallies: Vector[(K, WindowTally)]
 ):
+  /** Records outside the analysis window and the screen, across the input:
+    * for example "543 of 11,520 records in 409 trials".
+    */
+  def windowSummary: WindowSummary = WindowSummary.of(windowTallies)
+
   /** Both matched and control scores are averaged by the focal (left) key. */
   val reductionOrientation: ReductionOrientation = ReductionOrientation.ByLeft
 

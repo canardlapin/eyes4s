@@ -296,6 +296,9 @@ fails after rewriting, so review the change and run it again.
 | `plan.changed-prepared-plan` | `ChangedPreparedPlan` | `method`, `layout` |
 | `plan.comparison-work` | `ComparisonWork` | `underlying` |
 | `plan.unsupported-execution` | `UnsupportedExecution` | `method`, `capability` |
+| `plan.missing-angular-scale` | `MissingAngularScale` | `scale` |
+| `plan.geometry` | `Geometry` | `underlying` |
+| `plan.invalid-window-tally` | `InvalidWindowTally` | `outsideScreen`, `outsideWindow`, `total`, `outsideScreenMicros`, `outsideWindowMicros`, `totalMicros` |
 
 ### `study-failure` — `StudyFailure`
 
@@ -306,6 +309,7 @@ fails after rewriting, so review the change and run it again.
 | `study-failure.temporal` | `Temporal` | `key`, `underlying` |
 | `study-failure.estimation` | `Estimation` | `key`, `underlying` |
 | `study-failure.comparison` | `Comparison` | `left`, `right`, `underlying` |
+| `study-failure.off-window` | `OffWindow` | `key`, `tally` |
 
 ### `study-result` — `StudyResultError`
 
@@ -591,6 +595,10 @@ fails after rewriting, so review the change and run it again.
 | `geometry.non-finite-distance` | `NonFiniteDistance` | `value` |
 | `geometry.negative-distance` | `NegativeDistance` | `value` |
 | `geometry.bounds-extent-overflow` | `BoundsExtentOverflow` | `xMin`, `yMin`, `xMax`, `yMax` |
+| `geometry.subframe-outside-parent` | `SubframeOutsideParent` | `window`, `xMin`, `yMin`, `xMax`, `yMax`, `parent`, `parentSpec` |
+| `geometry.subframe-identity` | `SubframeIdentity` | `window` |
+| `geometry.non-positive-angular-scale` | `NonPositiveAngularScale` | `frame`, `unitsPerDegree` |
+| `geometry.non-finite-translation` | `NonFiniteTranslation` | `dx`, `dy` |
 
 ### `time` — `TimeError`
 
@@ -790,6 +798,8 @@ fails after rewriting, so review the change and run it again.
 | `study-finding.duplicate-trial` | `DuplicateTrial` | `key`, `side`, `positions` |
 | `study-finding.unmatched-focal` | `UnmatchedFocal` | `key` |
 | `study-finding.uncontrolled-focal` | `UncontrolledFocal` | `key` |
+| `study-finding.off-window-fixations` | `OffWindowFixations` | `key`, `tally`, `policy` |
+| `study-finding.no-fixation-in-window` | `NoFixationInWindow` | `key`, `tally` |
 
 ### `recording-finding` — `RecordingFinding`
 
@@ -864,6 +874,7 @@ fails after rewriting, so review the change and run it again.
 | `quarantine.invalid-transition` | `InvalidTransition` | `index`, `reason` |
 | `quarantine.invalid-extent` | `InvalidExtent` | `reason` |
 | `quarantine.unmappable-fixation` | `UnmappableFixation` | `index`, `from`, `to`, `x`, `y` |
+| `quarantine.correction-conflict` | `CorrectionConflict` | `first`, `second` |
 
 ### `admission` — `AdmissionError`
 
@@ -881,6 +892,8 @@ fails after rewriting, so review the change and run it again.
 | `admission.unknown-trial` | `UnknownTrial` | `records` |
 | `admission.unadmitted-trial` | `UnadmittedTrial` | `index` |
 | `admission.fixation-count` | `FixationCount` | `index`, `fixations`, `records` |
+| `admission.outside-frame-record` | `OutsideFrameRecord` | `record`, `policy` |
+| `admission.correction-conflict` | `CorrectionConflict` | `record`, `first`, `second` |
 
 ### `inspection` — `InspectionError`
 

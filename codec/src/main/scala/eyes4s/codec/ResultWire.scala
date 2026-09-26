@@ -312,6 +312,21 @@ private[codec] object ResultWire:
       case NegativeVelocity(v)  => tagged("negativeVelocity", "value" -> double(v))
       case NonFiniteDistance(v) => tagged("nonFiniteDistance", "value" -> double(v))
       case NegativeDistance(v)  => tagged("negativeDistance", "value" -> double(v))
+      case SubframeOutsideParent(window, x0, y0, x1, y1, parent, spec) =>
+        tagged(
+          "subframeOutsideParent",
+          "window" -> frameId(window),
+          "xMin"   -> double(x0),
+          "yMin"   -> double(y0),
+          "xMax"   -> double(x1),
+          "yMax"   -> double(y1),
+          "parent" -> frameSpec(parent, spec)
+        )
+      case SubframeIdentity(window) => tagged("subframeIdentity", "window" -> frameId(window))
+      case NonPositiveAngularScale(frame, value) =>
+        tagged("nonPositiveAngularScale", "frame" -> frameId(frame), "value" -> double(value))
+      case NonFiniteTranslation(dx, dy) =>
+        tagged("nonFiniteTranslation", "dx" -> double(dx), "dy" -> double(dy))
 
   def readGeometryError(json: Json): Either[CodecError, GeometryError] =
     import GeometryError.*
@@ -374,7 +389,27 @@ private[codec] object ResultWire:
       case "negativeVelocity"  => value(NegativeVelocity.apply)
       case "nonFiniteDistance" => value(NonFiniteDistance.apply)
       case "negativeDistance"  => value(NegativeDistance.apply)
-      case other               => Left(unknown(json, "geometry error", other))
+      case "subframeOutsideParent" =>
+        for
+          window <- readFrameId(json, "window")
+          x0     <- readDouble(json, "xMin")
+          y0     <- readDouble(json, "yMin")
+          x1     <- readDouble(json, "xMax")
+          y1     <- readDouble(json, "yMax")
+          parent <- Wire.field[Json](json, "parent").flatMap(readFrameSpec)
+        yield SubframeOutsideParent(window, x0, y0, x1, y1, parent.id, parent.spec)
+      case "subframeIdentity"        => readFrameId(json, "window").map(SubframeIdentity.apply)
+      case "nonPositiveAngularScale" =>
+        for
+          frame <- readFrameId(json, "frame")
+          v     <- readDouble(json, "value")
+        yield NonPositiveAngularScale(frame, v)
+      case "nonFiniteTranslation" =>
+        for
+          dx <- readDouble(json, "dx")
+          dy <- readDouble(json, "dy")
+        yield NonFiniteTranslation(dx, dy)
+      case other => Left(unknown(json, "geometry error", other))
     }
 
   def surfaceError(error: SurfaceError): Json =
@@ -880,6 +915,10 @@ private[codec] object ResultWire:
         .map(key =>
           tagged("temporal", "key" -> key, "error" -> TemporalWire.temporalStudyError(e))
         )
+    case StudyFailure.OffWindow(k, tally) =>
+      keys
+        .encode(k)
+        .map(key => tagged("offWindow", "key" -> key, "tally" -> windowTally(tally)))
 
   def readStudyFailure[K](keys: VersionedCodec[K])(
       json: Json
@@ -913,8 +952,43 @@ private[codec] object ResultWire:
           k <- key
           e <- error.flatMap(TemporalWire.readTemporalStudyError)
         yield StudyFailure.Temporal(k, e)
+      case "offWindow" =>
+        for
+          k <- key
+          t <- Wire.field[Json](json, "tally").flatMap(readWindowTally)
+        yield StudyFailure.OffWindow(k, t)
       case other => Left(unknown(json, "study failure", other))
     }
+
+  /** A trial's window tally: counts and signed-microsecond duration strings. */
+  def windowTally(tally: WindowTally): Json = Json.obj(
+    "outsideScreen"         -> Json.fromInt(tally.outsideScreen),
+    "outsideWindow"         -> Json.fromInt(tally.outsideWindow),
+    "total"                 -> Json.fromInt(tally.total),
+    "outsideScreenDuration" -> DomainWire.time(tally.outsideScreenDuration.toMicros),
+    "outsideWindowDuration" -> DomainWire.time(tally.outsideWindowDuration.toMicros),
+    "totalDuration"         -> DomainWire.time(tally.totalDuration.toMicros)
+  )
+
+  def readWindowTally(json: Json): Either[CodecError, WindowTally] = for
+    screen         <- Wire.field[Int](json, "outsideScreen")
+    window         <- Wire.field[Int](json, "outsideWindow")
+    total          <- Wire.field[Int](json, "total")
+    screenDuration <- DomainWire.micros(json, "outsideScreenDuration")
+    windowDuration <- DomainWire.micros(json, "outsideWindowDuration")
+    totalDuration  <- DomainWire.micros(json, "totalDuration")
+    tally          <- WindowTally
+      .of(
+        screen,
+        window,
+        total,
+        Span.micros(screenDuration),
+        Span.micros(windowDuration),
+        Span.micros(totalDuration)
+      )
+      .left
+      .map(CodecError.Definition.apply)
+  yield tally
 
   // ---- evaluation metadata ---------------------------------------------
 

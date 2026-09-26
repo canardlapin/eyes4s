@@ -243,6 +243,62 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
       AdmissionLedger.decide(SourceRef.of(label, header, raws), header, records, decision)
     )
 
+  private val corrections: Gen[Correction] = Gen.oneOf(
+    Gen.const(Correction.FlipX),
+    Gen.const(Correction.FlipY),
+    Gen
+      .zip(Gen.choose(-500.0, 500.0), Gen.oneOf(Gen.choose(-500.0, 500.0), Gen.const(-0.0)))
+      .map((dx, dy) => checked(Correction.translate(dx, dy)))
+  )
+
+  /** Ledgers under an explicit admission policy: either off-screen policy,
+    * correction rules of every scope that never cover one admitted trial
+    * twice, and admitted records listed as outside the frame under
+    * ExcludeRecord. Nothing is discarded.
+    */
+  private def policyLedgers[K](keys: Gen[K], quarantine: K => K): Gen[AdmissionLedger[K]] =
+    for
+      base      <- ledgers(keys, quarantine)
+      offScreen <- Gen.oneOf(OffScreenPolicy.values.toIndexedSeq)
+      admitted = base.records.collect { case SourceRecord(r, Disposition.Admitted(k, _)) =>
+        r -> k
+      }
+      trial <-
+        if admitted.isEmpty then Gen.const(None)
+        else Gen.option(Gen.oneOf(admitted.map(_._2)))
+      global  <- Gen.oneOf(true, false)
+      first   <- corrections
+      second  <- corrections
+      outside <- Gen.someOf(admitted.map(_._1))
+      xs      <- Gen.listOfN(
+        outside.size,
+        Gen.oneOf(Gen.choose(-5000.0, -0.001), Gen.choose(801.0, 9000.0))
+      )
+    yield
+      // One global rule, or a trial rule beside a participant rule that
+      // covers no key: never two rules on one admitted trial.
+      val rules =
+        if global then Vector(AppliedCorrection(CorrectionScope.AllTrials[K](), first))
+        else
+          trial.toVector.map(k => AppliedCorrection(CorrectionScope.Trial(k), first)) :+
+            AppliedCorrection(CorrectionScope.Participant[K]("\u0000nobody"), second)
+      val listed =
+        if offScreen == OffScreenPolicy.ExcludeRecord then
+          outside.toVector.sorted
+            .zip(xs)
+            .map((r, x) => OutsideFrame(r, x, 12.5, FrameId("display")))
+        else Vector.empty
+      checked(
+        AdmissionLedger.of(
+          base.source,
+          base.header,
+          base.records,
+          base.outcome,
+          AdmissionPolicy(offScreen, rules),
+          listed
+        )
+      )
+
   // Quarantined keys are kept disjoint from admitted keys, as the importer guarantees.
   private def quarantineStudyKey(k: StudyKey): StudyKey =
     k.copy(participant = "quarantined-" + k.participant)
@@ -274,6 +330,14 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
     )
   )
   checkAll(
+    "admission ledger with policy",
+    CodecLaws.roundTrip(
+      standard.ledger,
+      policyLedgers(studyKeys, quarantineStudyKey),
+      (a: AdmissionLedger[StudyKey], b: AdmissionLedger[StudyKey]) => a == b
+    )
+  )
+  checkAll(
     "occurrence ledger",
     CodecLaws.roundTrip(
       custom.ledger,
@@ -301,30 +365,49 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
   private def mutant[A](codec: VersionedCodec[A])(
       change: A => Either[CodecError, A]
   ): VersionedCodec[A] =
-    VersionedCodec.checked[A](codec.schema)(a =>
-      codec
-        .encode(a)
-        .flatMap(j =>
-          j.hcursor.get[Json]("value").left.map(e => CodecError.Field("value", j, e.message))
-        )
-    )(raw =>
-      codec
-        .decode(
-          Json.obj(
-            "schema" -> Json.obj(
-              "name"    -> Json.fromString(codec.schema.name),
-              "version" -> Json.fromInt(codec.schema.version)
-            ),
-            "value" -> raw
-          )
-        )
-        .flatMap(change)
+    // The wrapped codec's whole document is the payload, so a value keeps the
+    // schema version it was written under.
+    VersionedCodec.checked[A](codec.schema)(codec.encode)(raw =>
+      codec.decode(raw).flatMap(change)
     )
 
   private def killed[A](codec: VersionedCodec[A], gen: Gen[A], eq: (A, A) => Boolean): Boolean =
     CodecLaws.roundTrip(codec, gen, eq).all.properties.exists { case (_, prop) =>
       !Test.check(Test.Parameters.default.withMinSuccessfulTests(40), prop).passed
     }
+
+  test(
+    "the policy ledger law kills a dropped rule, a flipped policy and a lost off-frame record"
+  ) {
+    type L = AdmissionLedger[StudyKey]
+    val eq = (a: L, b: L) => a == b
+    def rebuilt(l: L, policy: AdmissionPolicy[StudyKey], outside: Vector[OutsideFrame]) =
+      AdmissionLedger
+        .of(l.source, l.header, l.records, l.outcome, policy, outside)
+        .left
+        .map(CodecError.Admission.apply)
+    val gen         = policyLedgers(studyKeys, quarantineStudyKey)
+    val droppedRule = mutant(standard.ledger)(l =>
+      rebuilt(l, l.policy.copy(corrections = l.policy.corrections.drop(1)), l.outsideFrame)
+    )
+    assert(killed(droppedRule, gen, eq))
+    val flipped = mutant(standard.ledger)(l =>
+      if l.outsideFrame.nonEmpty then Right(l)
+      else
+        rebuilt(
+          l,
+          l.policy.copy(offScreen =
+            if l.policy.offScreen == OffScreenPolicy.ExcludeRecord then
+              OffScreenPolicy.QuarantineTrial
+            else OffScreenPolicy.ExcludeRecord
+          ),
+          l.outsideFrame
+        )
+    )
+    assert(killed(flipped, gen, eq))
+    val lost = mutant(standard.ledger)(l => rebuilt(l, l.policy, l.outsideFrame.drop(1)))
+    assert(killed(lost, gen, eq))
+  }
 
   test("published laws kill dropped ledger rows, reordered trials and collapsed occurrences") {
     val withAdmitted = ledgers(studyKeys, quarantineStudyKey).suchThat(_.admitted.nonEmpty)

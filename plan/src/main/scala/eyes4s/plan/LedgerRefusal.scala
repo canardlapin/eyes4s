@@ -63,11 +63,13 @@ object LedgerRefusal:
         (Vector(record, admitted), named(record) ++ named(admitted))
       case QuarantinedKeyAdmitted(record, admitted) =>
         (Vector(record, admitted), named(record) ++ named(admitted))
-      case OutcomeMismatch(_, _)      => (ledger.rejected.map(_.record), Vector.empty)
-      case AmbiguousTrial(indices)    => (Vector.empty, indices.flatMap(atPosition))
-      case UnknownTrial(numbers)      => (numbers, numbers.flatMap(named))
-      case UnadmittedTrial(index)     => (Vector.empty, atPosition(index))
-      case FixationCount(index, _, _) => (Vector.empty, atPosition(index))
+      case OutcomeMismatch(_, _)            => (ledger.rejected.map(_.record), Vector.empty)
+      case AmbiguousTrial(indices)          => (Vector.empty, indices.flatMap(atPosition))
+      case UnknownTrial(numbers)            => (numbers, numbers.flatMap(named))
+      case UnadmittedTrial(index)           => (Vector.empty, atPosition(index))
+      case FixationCount(index, _, _)       => (Vector.empty, atPosition(index))
+      case OutsideFrameRecord(record, _)    => (Vector(record), named(record))
+      case CorrectionConflict(record, _, _) => (Vector(record), named(record))
     val keys  = trials.distinct
     val links =
       if records.nonEmpty then records.distinct.map(SourceLink.Record(ledger.source, _))

@@ -43,10 +43,20 @@ object DiagnosticCatalog:
     "StudyWorkBudget",
     "ChangedPreparedPlan",
     "ComparisonWork",
-    "UnsupportedExecution"
+    "UnsupportedExecution",
+    "MissingAngularScale",
+    "Geometry",
+    "InvalidWindowTally"
   )
   val studyFailure: DiagnosticFamily =
-    error("study-failure")("Frame", "Occupancy", "Temporal", "Estimation", "Comparison")
+    error("study-failure")(
+      "Frame",
+      "Occupancy",
+      "Temporal",
+      "Estimation",
+      "Comparison",
+      "OffWindow"
+    )
   val studyResult: DiagnosticFamily = error("study-result")(
     "Description",
     "InputMismatch",
@@ -255,7 +265,11 @@ object DiagnosticCatalog:
     "NegativeVelocity",
     "NonFiniteDistance",
     "NegativeDistance",
-    "BoundsExtentOverflow"
+    "BoundsExtentOverflow",
+    "SubframeOutsideParent",
+    "SubframeIdentity",
+    "NonPositiveAngularScale",
+    "NonFiniteTranslation"
   )
   val time: DiagnosticFamily = error("time")(
     "ReversedInterval",
@@ -406,7 +420,9 @@ object DiagnosticCatalog:
     "FrameMismatch",
     "DuplicateTrial",
     "UnmatchedFocal",
-    "UncontrolledFocal"
+    "UncontrolledFocal",
+    "OffWindowFixations",
+    "NoFixationInWindow"
   )
   val recordingFinding: DiagnosticFamily = error("recording-finding")(
     "UndescribedMethod",
@@ -457,7 +473,8 @@ object DiagnosticCatalog:
     "WrongClock",
     "InvalidTransition",
     "InvalidExtent",
-    "UnmappableFixation"
+    "UnmappableFixation",
+    "CorrectionConflict"
   )
   val admission: DiagnosticFamily = error("admission")(
     "NonPositiveRecord",
@@ -471,7 +488,9 @@ object DiagnosticCatalog:
     "AmbiguousTrial",
     "UnknownTrial",
     "UnadmittedTrial",
-    "FixationCount"
+    "FixationCount",
+    "OutsideFrameRecord",
+    "CorrectionConflict"
   )
   val inspection: DiagnosticFamily = error("inspection")(
     "UnknownScale",

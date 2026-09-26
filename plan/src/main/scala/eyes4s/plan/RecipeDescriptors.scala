@@ -353,7 +353,32 @@ object RecipeDescriptors:
       "Nominal frame ID, spatial unit, xmin/ymin/xmax/ymax and y-axis direction",
       allowed = ParameterDomain.OrderedFiniteBounds
     ),
-    RecipeParameters.grid[Deg].info
+    RecipeParameters.grid[Deg].info,
+    info(
+      "admission",
+      "Admission frame of a windowed study: ID, unit, bounds and y-axis; the grid lies on the window",
+      allowed = ParameterDomain.OrderedFiniteBounds
+    ),
+    info(
+      "window",
+      "Analysis window: its frame ID and half-open region [xmin, xmax) x [ymin, ymax) of the admission frame",
+      allowed = ParameterDomain.OrderedFiniteBounds
+    ),
+    info(
+      "offWindow",
+      "Fixations on the screen but outside the window: excluded from the map, or failing the trial",
+      allowed = ParameterDomain.DomainValue("OffWindowPolicy")
+    ),
+    info(
+      "angularScale",
+      "Declared linear units per degree on the admission frame; not a calibration",
+      units = ParameterUnits.Mixed
+    ),
+    info(
+      "pairing",
+      "Matched-reference rule, control pool and handling of focal trials without a match",
+      allowed = ParameterDomain.DomainValue("StudyPairing")
+    )
   )
   private def inspect(
       description: Vector[(String, Vector[Provenance.Param])],
@@ -403,6 +428,13 @@ object RecipeDescriptors:
       result <- inspect(
         plan.description,
         studyFields ++
+          plan.scales.indices.map(i =>
+            info(
+              s"scale.$i",
+              "The scale as declared in degrees; estimate.i is its resolved frame-unit equivalent",
+              allowed = ParameterDomain.DomainValue("StudyScale")
+            )
+          ) ++
           method.parameters.fields.map(f => prefixed("method.", f.descriptor.info)) ++
           plan.estimates.zipWithIndex.map { case (estimate, i) =>
             val meaning = estimate match

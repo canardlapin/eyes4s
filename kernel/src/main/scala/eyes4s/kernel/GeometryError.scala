@@ -66,6 +66,26 @@ enum GeometryError derives CanEqual:
     */
   case BoundsExtentOverflow(xMin: Double, yMin: Double, xMax: Double, yMax: Double)
 
+  /** A window region that does not lie within its parent frame. */
+  case SubframeOutsideParent(
+      window: FrameId,
+      xMin: Double,
+      yMin: Double,
+      xMax: Double,
+      yMax: Double,
+      parent: FrameId,
+      parentSpec: FrameSpec
+  )
+
+  /** A window must have an identity distinct from its parent's. */
+  case SubframeIdentity(window: FrameId)
+
+  /** A declared linear angular scale must be finite and positive. */
+  case NonPositiveAngularScale(frame: FrameId, unitsPerDegree: Double)
+
+  /** A coordinate correction must translate by a finite displacement. */
+  case NonFiniteTranslation(dx: Double, dy: Double)
+
   def message: String = this match
     case DegenerateBounds(x0, y0, x1, y1) =>
       s"Bounds must have positive extent in both axes, got " +
@@ -119,5 +139,14 @@ enum GeometryError derives CanEqual:
       s"A distance must be finite, was $v."
     case NegativeDistance(v) =>
       s"A distance cannot be negative, was $v."
+    case SubframeOutsideParent(window, x0, y0, x1, y1, parent, spec) =>
+      s"Window '$window' region [$x0, $x1) x [$y0, $y1) does not lie within " +
+        s"frame '$parent' ${spec.render}."
+    case SubframeIdentity(window) =>
+      s"Window '$window' must have an identity distinct from the frame it is a window of."
+    case NonPositiveAngularScale(frame, value) =>
+      s"Frame '$frame' needs a finite, positive number of units per degree, got $value."
+    case NonFiniteTranslation(dx, dy) =>
+      s"A coordinate translation must be finite, got dx=$dx, dy=$dy."
 
 end GeometryError
