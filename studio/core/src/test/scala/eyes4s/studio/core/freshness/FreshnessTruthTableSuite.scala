@@ -137,7 +137,7 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
       fig2.standing,
       RunStanding.Stale(
         NonEmptyVector.of(
-          StaleReason.AnalysisMoved(rev3, rev4),
+          StaleReason.Superseded(run7, rev4),
           StaleReason.DatasetMoved(r2, r3)
         )
       )
@@ -151,7 +151,8 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
   test("t3 Compare · summary: run 8 running at 21,400 / 44,845 pairs; view stays on run 7") {
     val f =
       Freshness.of(t3, SessionFacts.empty.copy(progress = Vector(progress(run8Job, 1, 21400L))))
-    assertEquals(text(f), "Analysis rev 4 · run 7 · data r3 · running")
+    assertEquals(text(f), "Analysis rev 4 · run 7 · data r3 · running (rev 5)")
+    assertEquals(FreshnessText.newerNote(f.badge), Some("superseded — rev 5 running"))
     assertEquals(
       FreshnessText.jobs(f.activity),
       "Run 8 · Comparing · 21,400 / 44,845 pairs"
@@ -164,10 +165,16 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
           "choose Show."
       )
     )
-    // Saving rev 5 moved the analysis: run 7 itself is now stale.
+    // Saving and running rev 5 does not make run 7 stale; only run 8
+    // completing would.
+    assertEquals(f.standing(run7), Some(RunStanding.Current))
+    assertEquals(f.badge.tone, BadgeTone.Current)
     assertEquals(
-      f.standing(run7),
-      Some(RunStanding.Stale(NonEmptyVector.of(StaleReason.AnalysisMoved(rev4, rev5))))
+      f.figures.map(FreshnessText.figure),
+      Vector(
+        "Figure 1 · run 7 · rev 4 · data r3 · current",
+        "Figure 2 · run 5 · rev 3 · data r2 · stale"
+      )
     )
   }
 
@@ -175,17 +182,35 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
   // System board rows
   // -------------------------------------------------------------------------
 
-  test("Draft with blockers: error diagnostics block, warnings do not") {
+  test("Draft with blockers: the blocking diagnostics are carried; warnings do not block") {
+    val p11         = TrialKey("P11", Phase.Retrieval, "ret_05", 1)
+    val cardinality = StudioDiagnostic(
+      "studio.matched-cardinality",
+      DiagnosticLevel.Error,
+      DiagnosticOrigin.Host,
+      Vector(DiagnosticLocus.Trial(p11)),
+      "2 matched references for P11 ret_05 (occurrences 1, 2)"
+    )
     val check = DraftCheck.Checked(
       t2.draft.get,
-      Vector(
-        diagnostic(DiagnosticLevel.Error, "studio.matched-cardinality"),
-        diagnostic(DiagnosticLevel.Warning, "plan.duplicate-trial")
-      )
+      Vector(cardinality, diagnostic(DiagnosticLevel.Warning, "plan.duplicate-trial"))
     )
     val f = Freshness.of(t2, SessionFacts.empty.copy(draftCheck = check))
-    assertEquals(f.draft.map(_.readiness), Some(DraftReadiness.Blocked(1)))
+    assertEquals(
+      f.draft.map(_.readiness),
+      Some(DraftReadiness.Blocked(NonEmptyVector.of(cardinality)))
+    )
     assertEquals(f.draft.map(FreshnessText.draft), Some("Draft rev 5 · 1 change · 1 blocker"))
+    val blockers =
+      f.draft.map(_.readiness).collect { case DraftReadiness.Blocked(bs) => bs.toVector }
+    assertEquals(
+      blockers.map(_.map(_.subject)),
+      Some(Vector(Vector(DiagnosticLocus.Trial(p11))))
+    )
+    assertEquals(
+      blockers.map(_.map(FreshnessText.blocker)),
+      Some(Vector("Studio check · 2 matched references for P11 ret_05 (occurrences 1, 2)"))
+    )
   }
 
   test("a draft check of another draft value does not apply; the chip says not checked") {
@@ -220,13 +245,33 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
     )
   }
 
-  test("Stale (analysis moved): rev 4 saved on r2 leaves run 5 of rev 3 stale") {
-    val a3    = t1.analysis(rev3).get
-    val moved = rebuild(t1)(analyses = Vector(a3, a3.copy(id = rev4)))
-    val f     = Freshness.of(moved, SessionFacts.empty)
+  test("Stale (superseded): run 5 of rev 3 goes stale only when a rev 4 run completes") {
+    val a3                         = t1.analysis(rev3).get
+    val run6                       = RunId(6)
+    def with6(state: RunLifecycle) = rebuild(t1)(
+      analyses = Vector(a3, a3.copy(id = rev4)),
+      runs = t1.runs :+ RunRef(run6, rev4, r2, state, CoreBinding.unbound)
+    )
+    // Saved, but not run: still current.
+    val saved =
+      Freshness.of(rebuild(t1)(analyses = Vector(a3, a3.copy(id = rev4))), SessionFacts.empty)
+    assertEquals(saved.standing(run5), Some(RunStanding.Current))
+    // Running, failed or cancelled: still current.
+    for state <- Vector(RunLifecycle.Running, RunLifecycle.Failed, RunLifecycle.Cancelled(None))
+    do
+      assertEquals(
+        Freshness.of(with6(state), SessionFacts.empty).standing(run5),
+        Some(RunStanding.Current)
+      )
+    assertEquals(
+      text(Freshness.of(with6(RunLifecycle.Running), SessionFacts.empty)),
+      "Analysis rev 3 · run 5 · data r2 · running (rev 4)"
+    )
+    // Completed: superseded.
+    val f = Freshness.of(with6(RunLifecycle.Completed), SessionFacts.empty)
     assertEquals(
       f.standing(run5),
-      Some(RunStanding.Stale(NonEmptyVector.of(StaleReason.AnalysisMoved(rev3, rev4))))
+      Some(RunStanding.Stale(NonEmptyVector.of(StaleReason.Superseded(run6, rev4))))
     )
     assertEquals(text(f), "Analysis rev 3 · run 5 · data r2 · stale")
     assertEquals(
@@ -239,7 +284,7 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
     val foreign = progress(JobId(99), 1, 30000L)
     val f       = Freshness.of(t3, SessionFacts.empty.copy(progress = Vector(foreign)))
     assertEquals(FreshnessText.jobs(f.activity), "Run 8 · running")
-    assertEquals(f.badge.tone, BadgeTone.Running)
+    assertEquals(text(f), "Analysis rev 4 · run 7 · data r3 · running (rev 5)")
   }
 
   test("the latest report (highest step) of the run's job is the one shown") {
@@ -263,7 +308,13 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
       SessionFacts.empty.copy(outcomes = Vector(outcome))
     )
     assertEquals(FreshnessText.jobs(f.activity), "Run 8 failed · 2 diagnostics")
-    assertEquals(text(f), "Analysis rev 4 · run 7 · data r3 · failed")
+    // The failure is the job's, not run 7's: the badge and figures stay current.
+    assertEquals(text(f), "Analysis rev 4 · run 7 · data r3 · current")
+    assertEquals(f.standing(run7), Some(RunStanding.Current))
+    assertEquals(
+      f.bannerFor(Perspective.Compare).map(FreshnessText.banner),
+      Some("Run 8 failed · 2 diagnostics — still showing run 7 (analysis rev 4).")
+    )
     // Without the outcome (a reopened document) the count is not invented.
     val reopened = Freshness.of(finished(RunLifecycle.Failed), SessionFacts.empty)
     assertEquals(FreshnessText.jobs(reopened.activity), "Run 8 failed")
@@ -275,7 +326,11 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
       SessionFacts.empty
     )
     assertEquals(FreshnessText.jobs(f.activity), "Run 8 cancelled · Comparing")
-    assertEquals(text(f), "Analysis rev 4 · run 7 · data r3 · cancelled")
+    assertEquals(text(f), "Analysis rev 4 · run 7 · data r3 · current")
+    assertEquals(
+      f.banner.map(FreshnessText.banner),
+      Some("Run 8 cancelled · Comparing — still showing run 7 (analysis rev 4).")
+    )
   }
 
   test("a newer completed run that is not shown gets its own banner") {
@@ -288,6 +343,11 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
       )
     )
     assertEquals(f.standing(run8), Some(RunStanding.Current))
+    assertEquals(
+      f.standing(run7),
+      Some(RunStanding.Stale(NonEmptyVector.of(StaleReason.Superseded(run8, rev5))))
+    )
+    assertEquals(f.figure(ok(FigureId.of(1))).map(_.isStale), Some(true))
   }
 
   test("No run: nothing has run on the latest revision; Compare says No run yet") {
@@ -313,16 +373,33 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
   // Laws over generated documents
   // -------------------------------------------------------------------------
 
-  property("a completed run is current exactly when it names the latest revision and data") {
+  property(
+    "a completed run is current exactly when no later-revision run has completed after it " +
+      "and it used the latest admitted data"
+  ) {
     forAll(eyes4s.studio.core.document.DocumentGen.document) { (d: StudioDocument) =>
       val f = Freshness.of(d, SessionFacts.empty)
       f.runs.foreach { rf =>
-        if rf.run.state == RunLifecycle.Completed then
-          val current =
-            d.latestAnalysis.forall(_.id == rf.run.analysis) &&
-              d.latestAdmitted.forall(_.id == rf.run.dataset)
-          assertEquals(rf.standing == RunStanding.Current, current, rf.run.label)
+        val r = rf.run
+        if r.state == RunLifecycle.Completed then
+          val superseded = d.runs.exists(n =>
+            n.state == RunLifecycle.Completed && n.id.number > r.id.number &&
+              n.analysis.number > r.analysis.number
+          )
+          val current = !superseded && d.latestAdmitted.forall(_.id == r.dataset)
+          assertEquals(rf.standing == RunStanding.Current, current, r.label)
       }
+      // A saved revision alone never makes a run stale.
+      f.runs.foreach(rf =>
+        rf.standing match
+          case RunStanding.Stale(reasons) =>
+            reasons.toVector.foreach {
+              case StaleReason.Superseded(by, _) =>
+                assertEquals(d.run(by).map(_.state), Some(RunLifecycle.Completed))
+              case StaleReason.DatasetMoved(_, _) => ()
+            }
+          case _ => ()
+      )
       assertEquals(f.figures.map(_.figure), d.figures.map(_.id))
     }
   }

@@ -16,7 +16,13 @@
 
 package eyes4s.studio.core.freshness
 
-import eyes4s.studio.core.backend.{ProgressTotal, RunId, StageKind}
+import eyes4s.studio.core.backend.{
+  DiagnosticOrigin,
+  ProgressTotal,
+  RunId,
+  StageKind,
+  StudioDiagnostic
+}
 import eyes4s.studio.core.document.{Draft, RecipeChange, RunRef}
 
 /** The reference English rendering of the freshness values, in the board
@@ -44,7 +50,9 @@ object FreshnessText:
     case ProgressTotal.AtMost(n) => s"≤ ${count(n)}"
     case ProgressTotal.Unknown   => "counting…"
 
-  /** "Analysis rev 4 · run 7 · data r3 · current". */
+  /** "Analysis rev 4 · run 7 · data r3 · current"; while a newer run runs,
+    * "… · running (rev 5)" (or "… · stale · running (rev 5)").
+    */
   def badge(badge: Badge): String = badge match
     case Badge.NoRun(analysis, data) =>
       Vector(
@@ -52,9 +60,21 @@ object FreshnessText:
         Some(badge.tone.word),
         data.map(d => s"data ${d.label}")
       ).flatten.mkString(" · ")
-    case Badge.Shown(run, _, _) =>
-      s"Analysis ${run.analysis.label} · ${run.id.label} · data ${run.dataset.label} · " +
-        badge.tone.word
+    case Badge.Shown(run, standing, newer) =>
+      val running = newer.map(r => s"running (${r.revision.label})")
+      val state   = (standing, running) match
+        case (RunStanding.Current, Some(r)) => r
+        case (_, Some(r))                   => s"${badge.tone.word} · $r"
+        case (_, None)                      => badge.tone.word
+      s"Analysis ${run.analysis.label} · ${run.id.label} · data ${run.dataset.label} · $state"
+
+  /** The shown run's label while a newer revision runs: "superseded — rev 5
+    * running". Not a staleness: the run stays current until the newer one
+    * completes.
+    */
+  def newerNote(badge: Badge): Option[String] = badge match
+    case Badge.Shown(_, _, Some(r)) => Some(s"superseded — ${r.revision.label} running")
+    case _                          => None
 
   /** The jobs-chip text: "Run 8 · Comparing · 21,400 / 44,845 pairs",
     * "Run 8 failed · 2 diagnostics".
@@ -75,9 +95,9 @@ object FreshnessText:
   /** "Draft rev 5 · 1 change · ready". */
   def draft(chip: DraftChip): String =
     val state = chip.readiness match
-      case DraftReadiness.Unchecked  => "not checked"
-      case DraftReadiness.Ready      => "ready"
-      case DraftReadiness.Blocked(n) => plural(n, "blocker", "blockers")
+      case DraftReadiness.Unchecked   => "not checked"
+      case DraftReadiness.Ready       => "ready"
+      case DraftReadiness.Blocked(bs) => plural(bs.length, "blocker", "blockers")
     s"Draft ${chip.draft.id.label} · ${plural(chip.changes, "change", "changes")} · $state"
 
   /** "Stale · run 5 belongs to rev 3"; with only a dataset reason, "Stale ·
@@ -86,11 +106,21 @@ object FreshnessText:
   def stale(run: RunRef, standing: RunStanding): Option[String] = standing match
     case RunStanding.Stale(reasons) =>
       Some(reasons.head match
-        case StaleReason.AnalysisMoved(rev, _) =>
-          s"Stale · ${run.id.label} belongs to ${rev.label}"
+        case StaleReason.Superseded(_, _) =>
+          s"Stale · ${run.id.label} belongs to ${run.analysis.label}"
         case StaleReason.DatasetMoved(data, latest) =>
           s"Stale · ${run.id.label} used data ${data.label}; ${latest.label} is admitted")
     case _ => None
+
+  /** One blocker as the System board shows it: "Studio check · 2 matched
+    * references for P11 ret_05 (occurrences 1, 2)". The code stays the
+    * identity; the subject is the diagnostic's typed loci.
+    */
+  def blocker(d: StudioDiagnostic): String =
+    val origin = d.origin match
+      case DiagnosticOrigin.Host     => "Studio check"
+      case DiagnosticOrigin.EyesCore => "eyes4s"
+    s"$origin · ${d.message}"
 
   /** "adds σ 8°" when only scales were added; the changes otherwise. */
   def describe(changes: Vector[RecipeChange]): String = changes match
@@ -110,6 +140,8 @@ object FreshnessText:
       val what = if diff.isEmpty then "" else s", ${describe(diff)}"
       s"${title(running.run)} (${running.revision.label}$what) is running — results will " +
         "not replace this view until you choose Show."
+    case Banner.NewerEnded(shown, ended) =>
+      s"${activity(ended)} — still showing ${shown.id.label} (analysis ${shown.analysis.label})."
     case Banner.NewerCompleted(shown, newer, _) =>
       s"Showing ${shown.id.label} (analysis ${shown.analysis.label}). ${title(newer.id)} " +
         s"(${newer.analysis.label}) has finished — choose Show to see it."

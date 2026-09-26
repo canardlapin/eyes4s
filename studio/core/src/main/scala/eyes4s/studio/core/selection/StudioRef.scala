@@ -18,7 +18,68 @@ package eyes4s.studio.core.selection
 
 import eyes4s.studio.core.backend.{PairDesign, ResultAddress, Response, RunId, TrialKey}
 import eyes4s.studio.core.document.{FigureId, PanelLetter, ReportingId, SourceRole}
-import io.circe.Codec
+import io.circe.{Codec, Decoder, Encoder}
+
+/** Why a ref component was refused; every case names its operand. */
+enum RefError derives CanEqual:
+  case NegativeScale(value: Int)
+  case FixationIndexNotPositive(value: Int)
+  case RecordNotPositive(value: Int)
+
+  def message: String = this match
+    case NegativeScale(v)            => s"Scale index $v is negative."
+    case FixationIndexNotPositive(v) =>
+      s"Fixation index $v is not positive (fixations count from 1)."
+    case RecordNotPositive(v) => s"Record number $v is not positive (records count from 1)."
+
+private object RefCodecs:
+  def validated[A](of: Int => Either[RefError, A], unwrap: A => Int): Codec[A] =
+    Codec.from(Decoder[Int].emap(of(_).left.map(_.message)), Encoder[Int].contramap(unwrap))
+
+/** A result's scale index, as in eyes4s `ResultRef`: 0 or more. */
+final case class ScaleIndex private[selection] (value: Int) derives CanEqual
+
+object ScaleIndex:
+  def of(value: Int): Either[RefError, ScaleIndex] =
+    Either.cond(value >= 0, new ScaleIndex(value), RefError.NegativeScale(value))
+
+  given Codec[ScaleIndex] = RefCodecs.validated(of, _.value)
+
+/** A fixation's position within its trial, from 1 ("fixation 6"). */
+final case class FixationIndex private (value: Int) derives CanEqual
+
+object FixationIndex:
+  def of(value: Int): Either[RefError, FixationIndex] =
+    Either.cond(value >= 1, new FixationIndex(value), RefError.FixationIndexNotPositive(value))
+
+  given Codec[FixationIndex] = RefCodecs.validated(of, _.value)
+
+/** A record of a source file, from 1 ("fixations.csv record 7,214"). */
+final case class RecordNumber private (value: Int) derives CanEqual
+
+object RecordNumber:
+  def of(value: Int): Either[RefError, RecordNumber] =
+    Either.cond(value >= 1, new RecordNumber(value), RefError.RecordNotPositive(value))
+
+  given Codec[RecordNumber] = RefCodecs.validated(of, _.value)
+
+/** A backend [[ResultAddress]] (eyes4s `ResultRef`) whose scale index has been
+  * checked.
+  */
+final case class CheckedAddress private (value: ResultAddress) derives CanEqual:
+  def scale: ScaleIndex = new ScaleIndex(value.scale)
+
+object CheckedAddress:
+  def of(address: ResultAddress): Either[RefError, CheckedAddress] =
+    ScaleIndex.of(address.scale).map(_ => new CheckedAddress(address))
+
+  private[selection] def trusted(address: ResultAddress): CheckedAddress =
+    new CheckedAddress(address)
+
+  given Codec[CheckedAddress] = Codec.from(
+    Decoder[ResultAddress].emap(of(_).left.map(_.message)),
+    Encoder[ResultAddress].contramap(_.value)
+  )
 
 /** What a ref denotes (ticket S3.3). Selecting an aggregate never selects the
   * observations it summarizes, and selecting an observation never selects
@@ -28,43 +89,42 @@ enum RefKind derives CanEqual:
   /** A unit of the study (a participant), neither measured nor derived. */
   case Entity
 
-  /** A measured or row-level value: a trial, fixation, source record or pair
-    * score.
+  /** A measured or row-level value: a trial, fixation, source record, a
+    * trial's map or a pair score.
     */
   case Observation
 
-  /** A value computed over observations: a query contrast, a participant
-    * summary, a group cell, a figure panel.
+  /** A value computed over observations: a reduction, a query contrast, a
+    * participant summary, a group cell, a figure panel.
     */
   case Aggregate
 
 /** A typed reference to anything a studio view can show, select or trace a
   * number to (ticket S3.3; DESIGN_SPEC section 3's trail grammar).
   *
-  * Result refs are scoped by the run whose result they name and mirror eyes4s
-  * `ResultRef` where eyes4s has a shape: [[StudioRef.Pair]] is `PairRow` and
-  * [[StudioRef.QueryContrast]] is `ContrastRow` (see [[StudioRef.address]]).
-  * Scales are scale indices, as in `ResultRef`. Reporting refs
-  * ([[StudioRef.ParticipantSummary]], [[StudioRef.GroupCell]]) name the
-  * reporting spec that defines them (UI-C). UI-G may refine these shapes.
+  * Every run result is [[StudioRef.Result]]: a run and the eyes4s
+  * `ResultRef` address the backend already mirrors, so UI-G extends
+  * [[ResultAddress]] without changing this type. [[StudioRef.Pair]] and
+  * [[StudioRef.QueryContrast]] are constructors and extractors of `Result`.
+  * Reporting refs name the reporting spec that defines them (UI-C).
   */
 enum StudioRef derives CanEqual, Codec.AsObject:
   case Participant(participant: String)
   case Trial(key: TrialKey)
+  case Fixation(trial: TrialKey, index: FixationIndex)
 
-  /** The `index`-th fixation of a trial (1-based, "fixation 6"), as the fixation source orders them. */
-  case Fixation(trial: TrialKey, index: Int)
-
-  /** One record of a source file ("fixations.csv record 7,214"). A fixation
-    * source record names its fixation; a trial-inventory record names none.
+  /** One record of a source file. A fixation record names its fixation; a
+    * trial-inventory record names none.
     */
-  case SourceRecord(trial: TrialKey, fixation: Option[Int], source: SourceRole, record: Int)
+  case SourceRecord(
+      trial: TrialKey,
+      fixation: Option[FixationIndex],
+      source: SourceRole,
+      record: RecordNumber
+  )
 
-  /** eyes4s `ResultRef.PairRow` of one run. */
-  case Pair(run: RunId, scale: Int, design: PairDesign, focal: TrialKey, reference: TrialKey)
-
-  /** eyes4s `ResultRef.ContrastRow` of one run: a query's M, B and D. */
-  case QueryContrast(run: RunId, scale: Int, query: TrialKey)
+  /** One item of a run's result, by its eyes4s address. */
+  case Result(run: RunId, address: CheckedAddress)
 
   /** One participant's summary under a reporting spec, within a group when
     * the spec groups.
@@ -72,38 +132,40 @@ enum StudioRef derives CanEqual, Codec.AsObject:
   case ParticipantSummary(
       run: RunId,
       reporting: ReportingId,
-      scale: Int,
+      scale: ScaleIndex,
       group: Option[Response],
       participant: String
   )
 
   /** One group's cell of a reporting spec's summary. */
-  case GroupCell(run: RunId, reporting: ReportingId, scale: Int, group: Response)
+  case GroupCell(run: RunId, reporting: ReportingId, scale: ScaleIndex, group: Response)
 
   case FigurePanel(figure: FigureId, panel: PanelLetter)
 
   def kind: RefKind = this match
-    case Participant(_) => RefKind.Entity
-    case Trial(_) | Fixation(_, _) | SourceRecord(_, _, _, _) | Pair(_, _, _, _, _) =>
-      RefKind.Observation
-    case QueryContrast(_, _, _) | ParticipantSummary(_, _, _, _, _) | GroupCell(_, _, _, _) |
-        FigurePanel(_, _) =>
+    case Participant(_)                                       => RefKind.Entity
+    case Trial(_) | Fixation(_, _) | SourceRecord(_, _, _, _) => RefKind.Observation
+    case Result(_, address)                                   =>
+      address.value match
+        case ResultAddress.Estimation(_, _) | ResultAddress.PairRow(_, _, _, _) =>
+          RefKind.Observation
+        case ResultAddress.Reduction(_, _, _) | ResultAddress.ContrastRow(_, _) =>
+          RefKind.Aggregate
+    case ParticipantSummary(_, _, _, _, _) | GroupCell(_, _, _, _) | FigurePanel(_, _) =>
       RefKind.Aggregate
 
   def isAggregate: Boolean = kind == RefKind.Aggregate
 
-  /** The eyes4s result address, for the refs eyes4s has one for. */
-  def address: Option[ResultAddress] = this match
-    case Pair(_, scale, design, focal, reference) =>
-      Some(ResultAddress.PairRow(scale, design, focal, reference))
-    case QueryContrast(_, scale, query) => Some(ResultAddress.ContrastRow(scale, query))
-    case _                              => None
+  /** The eyes4s result address, for run results. */
+  def resultAddress: Option[ResultAddress] = this match
+    case Result(_, address) => Some(address.value)
+    case _                  => None
 
   /** The structural container of this ref, derivable from the ref alone:
     *
     *  - participant ⊃ trial ⊃ fixation ⊃ fixation record, and trial ⊃
     *    inventory record;
-    *  - query contrast ⊃ its pairs (same run and scale);
+    *  - query contrast ⊃ its reductions ⊃ their pairs (same run and scale).
     *  - group cell ⊃ participant summary (same run, spec and scale).
     *
     * Which group a query belongs to depends on the data; a view that knows it
@@ -115,13 +177,58 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     case Fixation(trial, _)                        => Some(Trial(trial))
     case SourceRecord(trial, Some(fixation), _, _) => Some(Fixation(trial, fixation))
     case SourceRecord(trial, None, _, _)           => Some(Trial(trial))
-    case Pair(run, scale, _, focal, _)             => Some(QueryContrast(run, scale, focal))
-    case QueryContrast(_, _, _)                    => None
+    case Result(run, address)                      =>
+      val within = address.value match
+        case ResultAddress.PairRow(s, design, focal, _) =>
+          Some(ResultAddress.Reduction(s, design, focal))
+        case ResultAddress.Reduction(s, _, key) => Some(ResultAddress.ContrastRow(s, key))
+        case ResultAddress.Estimation(_, _) | ResultAddress.ContrastRow(_, _) => None
+      within.map(a => Result(run, CheckedAddress.trusted(a)))
     case ParticipantSummary(run, reporting, scale, Some(group), _) =>
       Some(GroupCell(run, reporting, scale, group))
     case ParticipantSummary(_, _, _, None, _) => None
     case GroupCell(_, _, _, _)                => None
     case FigurePanel(_, _)                    => None
+
+object StudioRef:
+  /** A run result from a backend address, refusing a negative scale. */
+  def fromAddress(run: RunId, address: ResultAddress): Either[RefError, StudioRef] =
+    CheckedAddress.of(address).map(Result(run, _))
+
+  /** eyes4s `ResultRef.PairRow` of one run. */
+  object Pair:
+    def apply(
+        run: RunId,
+        scale: ScaleIndex,
+        design: PairDesign,
+        focal: TrialKey,
+        reference: TrialKey
+    ): StudioRef =
+      Result(
+        run,
+        CheckedAddress.trusted(ResultAddress.PairRow(scale.value, design, focal, reference))
+      )
+
+    def unapply(ref: StudioRef): Option[(RunId, ScaleIndex, PairDesign, TrialKey, TrialKey)] =
+      ref match
+        case Result(run, a) =>
+          a.value match
+            case ResultAddress.PairRow(_, design, focal, reference) =>
+              Some((run, a.scale, design, focal, reference))
+            case _ => None
+        case _ => None
+
+  /** eyes4s `ResultRef.ContrastRow` of one run: a query's M, B and D. */
+  object QueryContrast:
+    def apply(run: RunId, scale: ScaleIndex, query: TrialKey): StudioRef =
+      Result(run, CheckedAddress.trusted(ResultAddress.ContrastRow(scale.value, query)))
+
+    def unapply(ref: StudioRef): Option[(RunId, ScaleIndex, TrialKey)] = ref match
+      case Result(run, a) =>
+        a.value match
+          case ResultAddress.ContrastRow(_, query) => Some((run, a.scale, query))
+          case _                                   => None
+      case _ => None
 
 /** Where refs sit in a containment hierarchy: the structural one of
   * [[StudioRef.parent]], optionally extended by data a view holds (such as

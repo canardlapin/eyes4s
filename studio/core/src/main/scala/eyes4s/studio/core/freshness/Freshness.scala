@@ -34,21 +34,25 @@ import eyes4s.studio.core.document.*
 // Standing of one run
 // ---------------------------------------------------------------------------
 
-/** Why a completed run no longer reflects the latest saved science: a newer
-  * analysis revision was saved, or a newer dataset revision was admitted.
+/** Why a completed run is no longer the one to trust. Saving a newer
+  * analysis revision, or running it, never makes a run stale by itself: only
+  * a completed successor or newly admitted data does.
   */
 enum StaleReason derives CanEqual:
-  case AnalysisMoved(run: AnalysisRevision, latest: AnalysisRevision)
+  /** Run `by`, of the later analysis revision `revision`, has completed. */
+  case Superseded(by: RunId, revision: AnalysisRevision)
+
+  /** The run used `run`; `latest` is the latest admitted dataset revision. */
   case DatasetMoved(run: DatasetRevision, latest: DatasetRevision)
 
-/** A run's standing against the latest saved analysis revision and the
-  * latest admitted dataset revision. Only a completed run can be current or
-  * stale; the other lifecycles are reported as they are.
+/** A run's standing against its completed successors and the latest
+  * admitted dataset revision. Only a completed run can be current or stale;
+  * the other lifecycles are reported as they are.
   */
 enum RunStanding derives CanEqual:
   case Current
 
-  /** Analysis reason first, then dataset. */
+  /** Supersession first, then dataset. */
   case Stale(reasons: NonEmptyVector[StaleReason])
   case Running
   case Cancelled(at: Option[StageKind])
@@ -107,7 +111,7 @@ enum RunActivity derives CanEqual:
   def run: RunId
   def revision: AnalysisRevision
 
-/** The one-word state of the badge. */
+/** The one-word state of the shown run. */
 enum BadgeTone derives CanEqual:
   case Current, Stale, Running, Failed, Cancelled, NoRun
 
@@ -124,21 +128,21 @@ enum Badge derives CanEqual:
   /** No run to show: the latest saved revision and admitted data, if any. */
   case NoRun(analysis: Option[AnalysisRevision], data: Option[DatasetRevision])
 
-  /** The shown run, its standing, and a newer run's activity when there is
-    * one; the activity outranks the standing in the tone.
+  /** The shown run and its own standing. `newer` is a newer run still
+    * running: an indicator beside the standing, never a change of it. A newer
+    * run that failed or was cancelled is reported by the jobs chip and the
+    * banner, not here.
     */
-  case Shown(run: RunRef, standing: RunStanding, activity: Option[RunActivity])
+  case Shown(run: RunRef, standing: RunStanding, newer: Option[RunActivity.Running])
 
+  /** The shown run's own state; a newer run never changes it. */
   def tone: BadgeTone = this match
-    case NoRun(_, _)                                 => BadgeTone.NoRun
-    case Shown(_, _, Some(_: RunActivity.Running))   => BadgeTone.Running
-    case Shown(_, _, Some(_: RunActivity.Failed))    => BadgeTone.Failed
-    case Shown(_, _, Some(_: RunActivity.Cancelled)) => BadgeTone.Cancelled
-    case Shown(_, RunStanding.Current, None)         => BadgeTone.Current
-    case Shown(_, RunStanding.Stale(_), None)        => BadgeTone.Stale
-    case Shown(_, RunStanding.Running, None)         => BadgeTone.Running
-    case Shown(_, RunStanding.Failed, None)          => BadgeTone.Failed
-    case Shown(_, RunStanding.Cancelled(_), None)    => BadgeTone.Cancelled
+    case NoRun(_, _)                           => BadgeTone.NoRun
+    case Shown(_, RunStanding.Current, _)      => BadgeTone.Current
+    case Shown(_, RunStanding.Stale(_), _)     => BadgeTone.Stale
+    case Shown(_, RunStanding.Running, _)      => BadgeTone.Running
+    case Shown(_, RunStanding.Failed, _)       => BadgeTone.Failed
+    case Shown(_, RunStanding.Cancelled(_), _) => BadgeTone.Cancelled
 
 /** Whether Save & run is possible for the draft. */
 enum DraftReadiness derives CanEqual:
@@ -146,8 +150,10 @@ enum DraftReadiness derives CanEqual:
   case Unchecked
   case Ready
 
-  /** `blockers` error-level diagnostics; warnings do not block. */
-  case Blocked(blockers: Int)
+  /** The error-level diagnostics that block Save & run, each with its code
+    * and subject; warnings do not block.
+    */
+  case Blocked(blockers: NonEmptyVector[StudioDiagnostic])
 
 /** The dashed draft chip: "Draft rev 5 · 1 change · ready". */
 final case class DraftChip(draft: Draft, readiness: DraftReadiness) derives CanEqual:
@@ -162,6 +168,11 @@ enum Banner derives CanEqual:
     * turn the shown run's recipe into the running one's.
     */
   case NewerRunning(shown: RunRef, running: RunActivity.Running, changes: Vector[RecipeChange])
+
+  /** A newer run failed or was cancelled; the view keeps `shown`, whose
+    * standing it does not change.
+    */
+  case NewerEnded(shown: RunRef, ended: RunActivity)
 
   /** A newer run has completed but is not shown. */
   case NewerCompleted(shown: RunRef, newer: RunRef, changes: Vector[RecipeChange])
@@ -219,32 +230,35 @@ final case class Freshness(
 
 /** The pure freshness derivation (ticket S2.7).
   *
-  * A completed run is current exactly when it names the latest saved analysis
-  * revision and the latest admitted dataset revision; otherwise it is stale,
-  * with each reason that applies. A draft is not saved science and never
-  * makes a run stale; a dataset revision still being verified does not
-  * either, but is reported in [[Freshness.pending]].
+  * A completed run is stale when a newer run of a later analysis revision has
+  * completed ([[StaleReason.Superseded]]) or when it did not use the latest
+  * admitted dataset revision ([[StaleReason.DatasetMoved]]); otherwise it is
+  * current. Saving a revision, running it, or a newer run failing or being
+  * cancelled leaves it current. A draft is not saved science; a dataset
+  * revision still being verified is reported in [[Freshness.pending]].
   *
   * The shown run is the presentation's, or else the latest completed run, or
-  * else the latest run of any lifecycle. The newest run is the badge's
+  * else the latest run of any lifecycle. The newest run is the jobs chip's
   * activity when it is at least as new as the shown run and has not
-  * completed.
+  * completed; the badge carries it only while it runs.
   */
 object Freshness:
 
   def of(document: StudioDocument, session: SessionFacts): Freshness =
     val latestAnalysis = document.latestAnalysis.map(_.id)
     val latestData     = document.latestAdmitted.map(_.id)
+    val completed      = document.runs.filter(_.state == RunLifecycle.Completed)
 
     def standingOf(run: RunRef): RunStanding = run.state match
       case RunLifecycle.Running       => RunStanding.Running
       case RunLifecycle.Failed        => RunStanding.Failed
       case RunLifecycle.Cancelled(at) => RunStanding.Cancelled(at)
       case RunLifecycle.Completed     =>
+        val successor = completed.findLast(n =>
+          n.id.number > run.id.number && n.analysis.number > run.analysis.number
+        )
         val reasons =
-          latestAnalysis
-            .filter(_ != run.analysis)
-            .map(StaleReason.AnalysisMoved(run.analysis, _)) ++
+          successor.map(n => StaleReason.Superseded(n.id, n.analysis)) ++
             latestData.filter(_ != run.dataset).map(StaleReason.DatasetMoved(run.dataset, _))
         NonEmptyVector
           .fromVector(reasons.toVector)
@@ -264,7 +278,11 @@ object Freshness:
       .flatMap(activityOf(document, session, _))
 
     val badge = shown.fold(Badge.NoRun(latestAnalysis, latestData)) { s =>
-      Badge.Shown(s, standingOf(s), activity)
+      Badge.Shown(
+        s,
+        standingOf(s),
+        activity.collect { case r: RunActivity.Running if r.run != s.id => r }
+      )
     }
 
     val chip = document.draft.map(d => DraftChip(d, readiness(d, session.draftCheck)))
@@ -276,6 +294,13 @@ object Freshness:
         activity
           .collect { case r: RunActivity.Running if r.run.number > s.id.number => r }
           .map(r => Banner.NewerRunning(s, r, changes(document, s.analysis, r.revision)))
+          .orElse(
+            activity.collect {
+              case a @ (_: RunActivity.Failed | _: RunActivity.Cancelled)
+                  if a.run.number > s.id.number =>
+                Banner.NewerEnded(s, a)
+            }
+          )
           .orElse(
             newer
               .filter(_.state == RunLifecycle.Completed)
@@ -326,8 +351,9 @@ object Freshness:
 
   private def readiness(draft: Draft, check: DraftCheck): DraftReadiness = check match
     case DraftCheck.Checked(checked, diagnostics) if checked == draft =>
-      val blockers = diagnostics.count(_.level == DiagnosticLevel.Error)
-      if blockers == 0 then DraftReadiness.Ready else DraftReadiness.Blocked(blockers)
+      NonEmptyVector
+        .fromVector(diagnostics.filter(_.level == DiagnosticLevel.Error))
+        .fold(DraftReadiness.Ready)(DraftReadiness.Blocked(_))
     case _ => DraftReadiness.Unchecked
 
   /** The recipe changes from one saved revision to another. */

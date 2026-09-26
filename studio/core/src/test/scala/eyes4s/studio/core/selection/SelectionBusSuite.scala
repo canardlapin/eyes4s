@@ -17,7 +17,7 @@
 package eyes4s.studio.core.selection
 
 import cats.effect.IO
-import eyes4s.studio.core.backend.{PairDesign, Phase, Response, RunId, TrialKey}
+import eyes4s.studio.core.backend.{PairDesign, Phase, Response, ResultAddress, RunId, TrialKey}
 import eyes4s.studio.core.document.{FigureId, PanelLetter, ReportingId, SourceRole}
 import io.circe.syntax.*
 import munit.CatsEffectSuite
@@ -40,15 +40,17 @@ object SelectionGen:
     yield TrialKey(p, if t.startsWith("ret") then Phase.Retrieval else Phase.Encoding, t, 1)
 
   private val run   = Gen.oneOf(RunId(7), RunId(8))
-  private val scale = Gen.oneOf(0, 2)
+  private val scale = Gen.oneOf(0, 2).map(i => right(ScaleIndex.of(i)))
+  private val fix   = Gen.choose(1, 3).map(i => right(FixationIndex.of(i)))
+  private val rec   = Gen.choose(7213, 7215).map(i => right(RecordNumber.of(i)))
   private val spec  = right(ReportingId.of("by-retrieval-response"))
   private val group = Gen.oneOf(Response.Remembered, Response.Forgotten)
 
   val observation: Gen[StudioRef] = Gen.oneOf(
     key.map(StudioRef.Trial(_)),
-    Gen.zip(key, Gen.choose(1, 3)).map(StudioRef.Fixation(_, _)),
+    Gen.zip(key, fix).map(StudioRef.Fixation(_, _)),
     Gen
-      .zip(key, Gen.choose(1, 3), Gen.choose(7213, 7215))
+      .zip(key, fix, rec)
       .map((k, i, r) => StudioRef.SourceRecord(k, Some(i), SourceRole.Fixations, r)),
     Gen
       .zip(run, scale, key, key)
@@ -208,40 +210,51 @@ class SelectionBusSuite extends CatsEffectSuite with munit.ScalaCheckSuite:
   private val p17ret = TrialKey("P17", Phase.Retrieval, "ret_07", 1)
   private val p17enc = TrialKey("P17", Phase.Encoding, "enc_03", 1)
   private val v      = ok(ViewId.of("compare.table"))
+  private val s2     = ok(ScaleIndex.of(2))
+  private val f6     = ok(FixationIndex.of(6))
+  private val r7214  = ok(RecordNumber.of(7214))
 
-  test("the trail chain: participant ⊃ trial ⊃ fixation ⊃ record; contrast ⊃ pair") {
-    val record = StudioRef.SourceRecord(p17ret, Some(6), SourceRole.Fixations, 7214)
+  test(
+    "the trail chain: participant ⊃ trial ⊃ fixation ⊃ record; contrast ⊃ reduction ⊃ pair"
+  ) {
+    val record = StudioRef.SourceRecord(p17ret, Some(f6), SourceRole.Fixations, r7214)
     assertEquals(
       Lineage.structural.ancestors(record),
       Vector(
-        StudioRef.Fixation(p17ret, 6),
+        StudioRef.Fixation(p17ret, f6),
         StudioRef.Trial(p17ret),
         StudioRef.Participant("P17")
       )
     )
-    val pair = StudioRef.Pair(RunId(7), 2, PairDesign.Matched, p17ret, p17enc)
+    val pair = StudioRef.Pair(RunId(7), s2, PairDesign.Matched, p17ret, p17enc)
     assertEquals(
       Lineage.structural.ancestors(pair),
-      Vector(StudioRef.QueryContrast(RunId(7), 2, p17ret))
+      Vector(
+        ok(
+          StudioRef
+            .fromAddress(RunId(7), ResultAddress.Reduction(2, PairDesign.Matched, p17ret))
+        ),
+        StudioRef.QueryContrast(RunId(7), s2, p17ret)
+      )
     )
     assertEquals(
-      pair.address.map(_.render),
+      pair.resultAddress.map(_.render),
       Some("matched pair P17 · ret_07 × P17 · enc_03 at scale 2")
     )
     assertEquals(
-      StudioRef.QueryContrast(RunId(7), 2, p17ret).address,
+      StudioRef.QueryContrast(RunId(7), s2, p17ret).resultAddress,
       Some(eyes4s.studio.core.backend.ResultAddress.ContrastRow(2, p17ret))
     )
   }
 
   test("projection: selected, contains the selection, within the selection, unrelated") {
-    val fixation = StudioRef.Fixation(p17ret, 6)
+    val fixation = StudioRef.Fixation(p17ret, f6)
     val s        = run(SelectionState.empty, v, SelectionMode.Replace, Vector(fixation))
     assertEquals(s.relation(fixation), SelectionRelation.Selected)
     assertEquals(s.relation(StudioRef.Trial(p17ret)), SelectionRelation.ContainsSelection)
     assertEquals(s.relation(StudioRef.Participant("P17")), SelectionRelation.ContainsSelection)
     assertEquals(
-      s.relation(StudioRef.SourceRecord(p17ret, Some(6), SourceRole.Fixations, 7214)),
+      s.relation(StudioRef.SourceRecord(p17ret, Some(f6), SourceRole.Fixations, r7214)),
       SelectionRelation.WithinSelection
     )
     assertEquals(s.relation(StudioRef.Trial(p17enc)), SelectionRelation.Unrelated)
@@ -250,25 +263,26 @@ class SelectionBusSuite extends CatsEffectSuite with munit.ScalaCheckSuite:
   test("a view's lineage links a query contrast to its participant summary") {
     val spec    = ok(ReportingId.of("by-retrieval-response"))
     val summary =
-      StudioRef.ParticipantSummary(RunId(7), spec, 2, Some(Response.Remembered), "P17")
-    val query   = StudioRef.QueryContrast(RunId(7), 2, p17ret)
+      StudioRef.ParticipantSummary(RunId(7), spec, s2, Some(Response.Remembered), "P17")
+    val query   = StudioRef.QueryContrast(RunId(7), s2, p17ret)
     val lineage = Lineage.extended {
-      case StudioRef.QueryContrast(RunId(7), 2, k) if k.participant == "P17" => Vector(summary)
-      case _                                                                 => Vector.empty
+      case StudioRef.QueryContrast(RunId(7), `s2`, k) if k.participant == "P17" =>
+        Vector(summary)
+      case _ => Vector.empty
     }
     val s = run(SelectionState.empty, v, SelectionMode.Replace, Vector(summary))
     assertEquals(s.relation(query, lineage), SelectionRelation.WithinSelection)
     assertEquals(s.relation(query), SelectionRelation.Unrelated)
     assert(!s.isSelected(query))
     assertEquals(
-      s.relation(StudioRef.GroupCell(RunId(7), spec, 2, Response.Remembered)),
+      s.relation(StudioRef.GroupCell(RunId(7), spec, s2, Response.Remembered)),
       SelectionRelation.ContainsSelection
     )
   }
 
   test("rebase keeps only the refs that still mean something and restarts sequences") {
     val keep = StudioRef.Trial(p17ret)
-    val drop = StudioRef.QueryContrast(RunId(7), 2, p17ret)
+    val drop = StudioRef.QueryContrast(RunId(7), s2, p17ret)
     val s    = run(SelectionState.empty, v, SelectionMode.Replace, Vector(keep, drop))
     val next = s.rebase {
       case StudioRef.QueryContrast(RunId(7), _, _) => false
@@ -279,8 +293,67 @@ class SelectionBusSuite extends CatsEffectSuite with munit.ScalaCheckSuite:
     assertEquals(next.delivered, Map.empty)
   }
 
+  private val address: Gen[ResultAddress] =
+    for
+      s   <- Gen.choose(0, 4)
+      d   <- Gen.oneOf(PairDesign.Matched, PairDesign.Control)
+      k   <- key
+      ref <- key
+      a   <- Gen.oneOf(
+        ResultAddress.Estimation(s, k),
+        ResultAddress.PairRow(s, d, k, ref),
+        ResultAddress.Reduction(s, d, k),
+        ResultAddress.ContrastRow(s, k)
+      )
+    yield a
+
+  property("fromAddress round-trips every result address, through JSON too") {
+    forAll(address, Gen.oneOf(RunId(7), RunId(8))) { (a, r) =>
+      val ref = ok(StudioRef.fromAddress(r, a))
+      assertEquals(ref.resultAddress, Some(a))
+      assertEquals(ref.asJson.as[StudioRef], Right(ref))
+    }
+  }
+
+  test("Pair and QueryContrast are views of Result") {
+    val pair = StudioRef.Pair(RunId(7), s2, PairDesign.Control, p17ret, p17enc)
+    assertEquals(
+      pair,
+      ok(
+        StudioRef.fromAddress(
+          RunId(7),
+          ResultAddress.PairRow(2, PairDesign.Control, p17ret, p17enc)
+        )
+      )
+    )
+    pair match
+      case StudioRef.Pair(run, scale, design, focal, reference) =>
+        assertEquals(
+          (run, scale, design, focal, reference),
+          (RunId(7), s2, PairDesign.Control, p17ret, p17enc)
+        )
+      case other => fail(s"not a pair: $other")
+    assertEquals(StudioRef.QueryContrast.unapply(pair), None)
+    assertEquals(pair.kind, RefKind.Observation)
+    assertEquals(StudioRef.QueryContrast(RunId(7), s2, p17ret).kind, RefKind.Aggregate)
+  }
+
+  test("negative scales, zero fixation indices and zero records are refused") {
+    assertEquals(
+      StudioRef.fromAddress(RunId(7), ResultAddress.ContrastRow(-1, p17ret)),
+      Left(RefError.NegativeScale(-1))
+    )
+    assertEquals(ScaleIndex.of(-2), Left(RefError.NegativeScale(-2)))
+    assertEquals(FixationIndex.of(0), Left(RefError.FixationIndexNotPositive(0)))
+    assertEquals(RecordNumber.of(0), Left(RefError.RecordNotPositive(0)))
+    val bad = io.circe.parser.parse(
+      """{"Fixation":{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"index":0}}"""
+    )
+    assert(bad.flatMap(_.as[StudioRef]).isLeft)
+  }
+
   test("refs have a stable JSON form") {
-    val ref = StudioRef.Fixation(p17ret, 6)
+    val ref = StudioRef.Fixation(p17ret, f6)
     assertEquals(ref.asJson.as[StudioRef], Right(ref))
   }
 
