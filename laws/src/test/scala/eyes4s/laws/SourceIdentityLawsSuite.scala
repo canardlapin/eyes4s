@@ -151,6 +151,29 @@ class SourceIdentityLawsSuite extends munit.DisciplineSuite:
     )
   )
 
+  checkAll(
+    "declared and legacy source ledger versions",
+    SchemaLadderLaws.ladder(
+      StudyInputCodecs.study[Px].ledgerLadder,
+      ledgers.flatMap(value =>
+        Gen.oneOf(
+          value,
+          get(
+            AdmissionLedger.of(
+              SourceRef(value.source.label, value.source.records),
+              value.header,
+              value.records,
+              value.outcome,
+              value.policy,
+              value.outsideFrame
+            )
+          )
+        )
+      ),
+      (a: AdmissionLedger[StudyKey], b: AdmissionLedger[StudyKey]) => a == b
+    )
+  )
+
   private val ordinary = get(
     ImportSpec.of(
       SourceKeyColumns.Study("participant", "item", "phase"),

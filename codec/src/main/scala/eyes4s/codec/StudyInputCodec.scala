@@ -121,7 +121,13 @@ final class StudyInputCodec[K, U <: Unit2D](
                 .left
                 .map(Wire.at("inventory"))
           )
-        yield Wire.append(Wire.append(json, policy), Json.obj("inventory" -> inventory))
+        yield Wire.append(
+          Wire.append(json, policy),
+          Json.obj(
+            "source"    -> SourceIdentityCodec.write(value.source),
+            "inventory" -> inventory
+          )
+        )
       )(readLedger(_, 4))
 
   val ledger: VersionedCodec[AdmissionLedger[K]] = ledgerLadder.codec
@@ -794,22 +800,18 @@ private[codec] object StudyInputCodec:
   /** Old ledgers remain explicitly unspecified, including their inventory source. */
   def upcastV3(payload: Json): Json =
     payload.mapObject { fields =>
-      val source    = fields("source").map(SourceIdentityCodec.liftLegacy).getOrElse(Json.Null)
-      val inventory = fields("inventory")
-        .map { value =>
+      val source = fields("source").fold(fields)(value =>
+        fields.add("source", SourceIdentityCodec.liftLegacy(value))
+      )
+      fields("inventory").fold(source) { value =>
+        val inventory =
           if value.isNull then value
           else
             value.mapObject(f =>
-              f.add(
-                "source",
-                f("source")
-                  .map(SourceIdentityCodec.liftLegacy)
-                  .getOrElse(Json.Null)
-              )
+              f("source").fold(f)(s => f.add("source", SourceIdentityCodec.liftLegacy(s)))
             )
-        }
-        .getOrElse(Json.Null)
-      fields.add("source", source).add("inventory", inventory)
+        source.add("inventory", inventory)
+      }
     }
 
   def correction(value: Correction): Json = value match
