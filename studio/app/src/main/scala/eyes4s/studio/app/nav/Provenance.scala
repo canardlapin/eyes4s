@@ -165,25 +165,28 @@ object Provenance:
   /** No chain is deeper than this; a guard on [[explain]]'s climb. */
   val MaximumDepth: Int = 32
 
-  /** One step down from `place`: its children as places, in order. The
-    * summary and group places take their run and scale from `scope`. A query
-    * contrast's children are its matched pairs, then its control pairs where
-    * the backend holds them, each design's first `pairs` page. A record has
-    * none.
+  /** One step down from `place`: the `page` of its children, as places, in
+    * order. The summary and group places take their run and scale from
+    * `scope`. A query contrast's children are its matched pairs, then its
+    * control pairs (each design paged by `page`), and a backend that holds no
+    * control pairs for it (`NoPairs`) gives the matched ones alone; every
+    * other refusal is surfaced. A record has none.
     */
   def children[F[_]: Monad](
       navigator: StudyNavigator[F],
       place: Place,
       scope: SummaryScope,
-      pairs: PageRequest
+      page: PageRequest
   ): F[Either[NavigationError, Vector[Place]]] =
     def at(refs: Vector[StudioRef])        = refs.map(Place.At(_))
     def participants(cell: ReportRef.Cell) =
-      EitherT(navigator.participants(cell)).map(ps => ps.map(p => Place.At(p.summary)))
+      EitherT(navigator.participants(cell, page)).map(ps =>
+        ps.entries.map(p => Place.At(p.summary))
+      )
     place match
       case Place.Summary(reporting) =>
-        EitherT(navigator.cells(scope.run, reporting, scope.scale)).flatMap { cells =>
-          cells.flatTraverse { cell =>
+        EitherT(navigator.cells(scope.run, reporting, scope.scale, page)).flatMap { cells =>
+          cells.entries.flatTraverse { cell =>
             cell.group match
               case Some(g) =>
                 EitherT.rightT[F, NavigationError](Vector(Place.Group(reporting, g)))
@@ -195,14 +198,19 @@ object Provenance:
       case Place.At(ref) =>
         (ReportRef.of(ref), StudyNavigator.level(ref)) match
           case (Some(cell: ReportRef.Cell), _)     => participants(cell).value
-          case (Some(p: ReportRef.Participant), _) => navigator.queries(p).map(_.map(at))
-          case (None, Some(ChainLevel.Query))      =>
+          case (Some(p: ReportRef.Participant), _) =>
+            navigator.queries(p, page).map(_.map(q => at(q.entries)))
+          case (None, Some(ChainLevel.Query)) =>
             (for
-              matched <- EitherT(navigator.pairs(ref, PairDesign.Matched, pairs))
-              control <- EitherT.liftF(navigator.pairs(ref, PairDesign.Control, pairs))
-            yield at(matched.entries ++ control.fold(_ => Vector.empty, _.entries))).value
+              matched <- EitherT(navigator.pairs(ref, PairDesign.Matched, page))
+              control <- EitherT(navigator.pairs(ref, PairDesign.Control, page).map {
+                case Left(NavigationError.NoPairs(_, _)) => Right(Vector.empty)
+                case other                               => other.map(_.entries)
+              })
+            yield at(matched.entries ++ control)).value
           case (None, Some(ChainLevel.Pair)) => navigator.maps(ref).map(_.map(m => at(m.both)))
-          case (None, Some(ChainLevel.Map))  => navigator.fixations(ref).map(_.map(at))
+          case (None, Some(ChainLevel.Map))  =>
+            navigator.fixations(ref, page).map(_.map(f => at(f.entries)))
           case (None, Some(ChainLevel.Fixation)) =>
             navigator.record(ref).map(_.map(r => Vector(Place.At(r))))
           case _ => Monad[F].pure(Right(Vector.empty))

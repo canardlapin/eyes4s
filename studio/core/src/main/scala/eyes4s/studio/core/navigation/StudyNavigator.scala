@@ -161,8 +161,42 @@ enum NavigationError derives CanEqual:
     case NotInPair(map, pair)    => s"$map is not a map of $pair."
     case Source(subject, reason) => s"No source record for $subject: ${reason.message}"
 
-/** One page of refs a step walks down to. */
-final case class RefPage(entries: Vector[StudioRef], page: PageInfo) derives CanEqual
+/** One offset page of a step's listing (UI-G amendment A3): its entries,
+  * where it starts, the listing's total (known before any page is
+  * materialised) and where the next page starts, if any.
+  */
+final case class Page[+A](entries: Vector[A], offset: Int, total: Int, next: Option[Int])
+    derives CanEqual:
+  def map[B](f: A => B): Page[B] = Page(entries.map(f), offset, total, next)
+
+object Page:
+  /** The page `request` asks for of `all`. */
+  def of[A](all: Vector[A], request: PageRequest): Page[A] =
+    val entries = all.slice(request.offset, request.offset + request.size)
+    val info    = PageInfo.of(request, all.size, entries.size)
+    Page(entries, info.offset, info.total, info.next)
+
+/** How a trial's map enters the pairs of a run at one scale (UI-G's
+  * `usedBy` reverse index; amendment A1).
+  */
+enum UsedByRole derives CanEqual:
+  /** As the query of its own matched and control pairs. */
+  case AsQuery
+
+  /** As the matched reference of another query. */
+  case AsMatched
+
+  /** As a control reference of other queries. */
+  case AsControl
+
+/** The pairs a trial's map is used by, counted without listing them. */
+final case class UsedBy(asQuery: Int, asMatched: Int, asControl: Int) derives CanEqual:
+  def count(role: UsedByRole): Int = role match
+    case UsedByRole.AsQuery   => asQuery
+    case UsedByRole.AsMatched => asMatched
+    case UsedByRole.AsControl => asControl
+
+  def total: Int = asQuery + asMatched + asControl
 
 /** A pair's two maps: the query's and the reference's (both `Estimation`
   * refs of the pair's run and scale).
@@ -186,51 +220,75 @@ trait StudyNavigator[F[_]]:
   def cells(
       run: RunId,
       reporting: ReportingId,
-      scale: ScaleIndex
-  ): F[Either[NavigationError, Vector[ReportRef.Cell]]]
+      scale: ScaleIndex,
+      page: PageRequest
+  ): F[Either[NavigationError, Page[ReportRef.Cell]]]
 
   /** Every participant with a mean in `cell`, in study order. */
   def participants(
-      cell: ReportRef.Cell
-  ): F[Either[NavigationError, Vector[ReportRef.Participant]]]
+      cell: ReportRef.Cell,
+      page: PageRequest
+  ): F[Either[NavigationError, Page[ReportRef.Participant]]]
 
   /** The participant's query contrasts in the cell (`QueryContrast` refs), in
     * source order; only scored queries have one.
     */
-  def queries(participant: ReportRef.Participant): F[Either[NavigationError, Vector[StudioRef]]]
+  def queries(
+      participant: ReportRef.Participant,
+      page: PageRequest
+  ): F[Either[NavigationError, Page[StudioRef]]]
 
-  /** One page of a query contrast's pairs under `design` (`Pair` refs). */
+  /** A query contrast's pairs under `design` (`Pair` refs). */
   def pairs(
       contrast: StudioRef,
       design: PairDesign,
       page: PageRequest
-  ): F[Either[NavigationError, RefPage]]
+  ): F[Either[NavigationError, Page[StudioRef]]]
 
   /** A pair's two maps. */
   def maps(pair: StudioRef): F[Either[NavigationError, PairMaps]]
 
   /** A map's fixations (`Fixation` refs), in scanpath order. */
-  def fixations(map: StudioRef): F[Either[NavigationError, Vector[StudioRef]]]
+  def fixations(map: StudioRef, page: PageRequest): F[Either[NavigationError, Page[StudioRef]]]
 
   /** A fixation's source record (a `SourceRecord` ref), or
     * [[NavigationError.Source]] with the typed [[MissingSource]].
     */
   def record(fixation: StudioRef): F[Either[NavigationError, StudioRef]]
 
+  /** How many pairs of the map's run and scale use its trial, by role,
+    * without listing them (UI-G A1: `UsedBy.counts`).
+    */
+  def usedByCounts(map: StudioRef): F[Either[NavigationError, UsedBy]]
+
+  /** The pairs (`Pair` refs) that use the map's trial in `role`. Every pair
+    * listed here is also reachable from its query's contrast.
+    */
+  def usedBy(
+      map: StudioRef,
+      role: UsedByRole,
+      page: PageRequest
+  ): F[Either[NavigationError, Page[StudioRef]]]
+
 object StudyNavigator:
 
   /** The same navigator in another effect. */
   def mapK[F[_], G[_]](navigator: StudyNavigator[F])(fk: FunctionK[F, G]): StudyNavigator[G] =
     new StudyNavigator[G]:
-      def cells(run: RunId, reporting: ReportingId, scale: ScaleIndex) =
-        fk(navigator.cells(run, reporting, scale))
-      def participants(cell: ReportRef.Cell)          = fk(navigator.participants(cell))
-      def queries(participant: ReportRef.Participant) = fk(navigator.queries(participant))
+      def cells(run: RunId, reporting: ReportingId, scale: ScaleIndex, page: PageRequest) =
+        fk(navigator.cells(run, reporting, scale, page))
+      def participants(cell: ReportRef.Cell, page: PageRequest) =
+        fk(navigator.participants(cell, page))
+      def queries(participant: ReportRef.Participant, page: PageRequest) =
+        fk(navigator.queries(participant, page))
       def pairs(contrast: StudioRef, design: PairDesign, page: PageRequest) =
         fk(navigator.pairs(contrast, design, page))
-      def maps(pair: StudioRef)       = fk(navigator.maps(pair))
-      def fixations(map: StudioRef)   = fk(navigator.fixations(map))
-      def record(fixation: StudioRef) = fk(navigator.record(fixation))
+      def maps(pair: StudioRef)                        = fk(navigator.maps(pair))
+      def fixations(map: StudioRef, page: PageRequest) = fk(navigator.fixations(map, page))
+      def record(fixation: StudioRef)                  = fk(navigator.record(fixation))
+      def usedByCounts(map: StudioRef)                 = fk(navigator.usedByCounts(map))
+      def usedBy(map: StudioRef, role: UsedByRole, page: PageRequest) =
+        fk(navigator.usedBy(map, role, page))
 
   /** The level of a studio ref in the chain, if it is a chain step. */
   def level(ref: StudioRef): Option[ChainLevel] = ref match

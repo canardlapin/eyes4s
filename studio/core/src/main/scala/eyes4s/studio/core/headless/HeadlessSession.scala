@@ -93,11 +93,15 @@ final class HeadlessSession private (
   ): Future[Either[HeadlessError, Vector[ExecutionEvent]]] =
     run(
       IO.ref(Vector.empty[ExecutionEvent]).flatMap { seen =>
-        // Every event taken is kept, so a timeout still hands them out.
+        // Every event taken is kept, so a timeout still hands them out. Only
+        // the wait is cancelable: once an event is taken it is recorded, so a
+        // timeout cannot fall between the take and the record.
+        val takeOne: IO[(ExecutionEvent, Vector[ExecutionEvent])] =
+          IO.uncancelable(poll =>
+            poll(queue.take).flatMap(e => seen.updateAndGet(_ :+ e).map(e -> _))
+          )
         def loop: IO[Vector[ExecutionEvent]] =
-          queue.take.flatMap { e =>
-            seen.updateAndGet(_ :+ e).flatMap(all => if until(e) then IO.pure(all) else loop)
-          }
+          takeOne.flatMap((e, all) => if until(e) then IO.pure(all) else loop)
         loop
           .map(_.asRight[HeadlessError])
           .timeoutTo(within, seen.get.map(s => Left(HeadlessError.Timeout(within, s))))

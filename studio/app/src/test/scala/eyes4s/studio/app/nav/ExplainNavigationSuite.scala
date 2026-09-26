@@ -139,25 +139,89 @@ class ExplainNavigationSuite extends munit.FunSuite:
     }
   }
 
-  test("every chain from the summary ends in a record or a MissingSource") {
-    def walk(s: HeadlessSession, place: Place): Future[Vector[ChainEnd]] =
+  test("every chain from the summary ends in its fixation's own record") {
+    // Walk every step; pairs share maps, so each map is walked once.
+    def walk(s: HeadlessSession, place: Place): Future[Vector[Place]] =
       place match
-        case Place.At(ref @ StudioRef.Fixation(_, _)) =>
-          Provenance.end(s.navigator, ref).map(e => Vector(ok(e)))
+        case Place.At(StudioRef.TrialMap(_, _, _)) => Future.successful(Vector(place))
         case _ => children(s, place).flatMap(_.flatTraverse(walk(s, _)))
     withSession { s =>
-      walk(s, summary).map { ends =>
-        val records = ends.collect { case ChainEnd.Record(r) => r }
-        assert(ends.nonEmpty)
-        assertEquals(records.size + ends.count(_.isInstanceOf[ChainEnd.Missing]), ends.size)
-        assert(records.contains(record))
-        // Every record is a fixations.csv data record of the golden file.
-        records.foreach {
-          case StudioRef.SourceRecord(_, Some(_), _, n) =>
-            assert(n.value >= 1 && n.value <= 11520)
-          case other => fail(s"not a fixation record: $other")
+      for
+        maps  <- walk(s, summary).map(_.distinct)
+        fixes <- maps.flatTraverse(children(s, _))
+        ends  <- fixes.traverse {
+          case Place.At(f @ StudioRef.Fixation(_, _)) =>
+            Provenance.end(s.navigator, f).map(f -> ok(_))
+          case other => Future.failed(new AssertionError(s"not a fixation: $other"))
         }
-      }
+      yield
+        // Every map on a scored pair is an admitted trial's, so no chain is
+        // missing its source; each fixation has its own record of its trial.
+        val records = ends.collect {
+          case (
+                StudioRef.Fixation(t, i),
+                ChainEnd.Record(StudioRef.SourceRecord(rt, Some(ri), _, n))
+              ) =>
+            assertEquals((rt, ri), (t, i))
+            n.value
+        }
+        assertEquals(
+          records.size,
+          ends.size,
+          ends.filterNot(_._2.isInstanceOf[ChainEnd.Record]).take(3)
+        )
+        assertEquals(records.distinct.size, records.size)
+        assert(records.forall(n => n >= 1 && n <= 11520))
+        assert(
+          ends.contains(StudioRef.Fixation(p17enc03, fixation6) -> ChainEnd.Record(record))
+        )
+        // FIXTURE.md: admitted trials; every contributing query's maps are among them.
+        assert(maps.size <= 937, maps.size)
+    }
+  }
+
+  test("used-by counts and pages agree, and match FIXTURE.md for enc_03 and ret_07") {
+    val enc03 = StudioRef.TrialMap(run7, sigma2, p17enc03)
+    val ret07 = StudioRef.TrialMap(run7, sigma2, p17ret07)
+    withSession { s =>
+      val n = s.navigator
+      for
+        encCounts <- n.usedByCounts(enc03).map(ok)
+        retCounts <- n.usedByCounts(ret07).map(ok)
+        pages     <- UsedByRole.values.toVector.traverse(r => n.usedBy(enc03, r, page).map(ok))
+        asQuery   <- n.usedBy(ret07, UsedByRole.AsQuery, page).map(ok)
+        fromQuery <- children(s, Place.At(query))
+        small     <- n.usedBy(enc03, UsedByRole.AsControl, ok(PageRequest.of(10, 5))).map(ok)
+      yield
+        // "enc_03 is used by ret_07 as the matched reference and by the 18
+        // other admitted P17 queries as a control."
+        assertEquals(encCounts, UsedBy(0, 1, 18))
+        assertEquals(pages.map(_.total), Vector(0, 1, 18))
+        assertEquals(pages(1).entries, Vector(pair))
+        // ret_07's own pairs: its matched reference and 19 controls, the same
+        // pairs its contrast walks down to.
+        assertEquals(retCounts, UsedBy(20, 0, 0))
+        assertEquals(asQuery.entries.map(Place.At(_)), fromQuery)
+        assertEquals(
+          (small.offset, small.total, small.next, small.entries.size),
+          (10, 18, Some(15), 5)
+        )
+    }
+  }
+
+  test("each contributing query's control pool is the size fixture.json records") {
+    withSession { s =>
+      val contributing = study.queries.filter(_.d.isDefined)
+      contributing
+        .traverse(q =>
+          s.navigator
+            .pairs(StudioRef.QueryContrast(run7, sigma2, q.key), PairDesign.Control, page)
+        )
+        .map { results =>
+          contributing.zip(results).foreach { (q, r) =>
+            assertEquals(r.map(_.total), Right(q.controls.getOrElse(-1)), q.key.label)
+          }
+        }
     }
   }
 
@@ -166,19 +230,19 @@ class ExplainNavigationSuite extends munit.FunSuite:
     val stale     = ReportRef.Cell(StoryMoments.run5, reporting, sigma2, Some(remembered))
     val failed    = study.queries.find(_.status == "failed").get
     val failedRef = StudioRef.QueryContrast(run7, sigma2, failed.key)
-    val other     = StudioRef.QueryContrast(run7, sigma2, MockStudy.key("P03", "ret_01"))
     withSession { s =>
       val n = s.navigator
       for
-        unknownGroup <- n.participants(cell)
-        noResult     <- n.participants(stale)
+        unknownGroup <- n.participants(cell, page)
+        noResult     <- n.participants(stale, page)
         noContrast   <- n.pairs(failedRef, PairDesign.Matched, page)
         wrongLevel   <- n.maps(query)
-        noControls   <- n.pairs(other, PairDesign.Control, page)
-        badScale     <- n.cells(run7, reporting, ok(ScaleIndex.of(9)))
+        badScale     <- n.cells(run7, reporting, ok(ScaleIndex.of(9)), page)
+        notAMap      <- n.usedByCounts(query)
         notInCell    <- n.queries(
           ReportRef
-            .Participant(ReportRef.Cell(run7, reporting, sigma2, Some(remembered)), "P99")
+            .Participant(ReportRef.Cell(run7, reporting, sigma2, Some(remembered)), "P99"),
+          page
         )
       yield
         assertEquals(
@@ -197,13 +261,13 @@ class ExplainNavigationSuite extends munit.FunSuite:
             assertEquals(d.code, "study-failure.off-window")
           case other => fail(s"expected NoContrast, got $other")
         assertEquals(wrongLevel, Left(NavigationError.WrongLevel(query, ChainLevel.Pair)))
-        assertEquals(noControls, Left(NavigationError.NoPairs(other, PairDesign.Control)))
+        assertEquals(notAMap, Left(NavigationError.WrongLevel(query, ChainLevel.Map)))
         assertEquals(
           badScale,
           Left(NavigationError.Backend(BackendError.Unavailable(DiagnosticLocus.Scale(9))))
         )
         assert(notInCell.isLeft, notInCell)
-        List(unknownGroup, noResult, wrongLevel, noControls, badScale, notInCell).foreach {
+        List(unknownGroup, noResult, wrongLevel, badScale, notInCell).foreach {
           case Left(e) => assert(e.message.nonEmpty)
           case _       => ()
         }

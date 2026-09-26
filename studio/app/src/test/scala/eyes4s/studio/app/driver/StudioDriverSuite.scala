@@ -144,7 +144,7 @@ class StudioDriverSuite extends munit.ScalaCheckSuite:
     }
   }
 
-  test("a job's end is recorded as the run's outcome only while the run is running") {
+  test("the driver feeds a job's end as an intent; the update records the outcome") {
     val m     = opened(t3)
     val stamp = run8Stamp
     val done  = eyes4s.studio.core.execution.ExecutionJob(
@@ -161,7 +161,7 @@ class StudioDriverSuite extends munit.ScalaCheckSuite:
     // Fed again, the run is no longer running: nothing more is recorded.
     val again = fed.feed(Vector(ExecutionEvent.Changed(done)))
     assertEquals(again.model.document, fed.model.document)
-    assertEquals(StudioDriver.outcomeOf(fed.model, ExecutionEvent.Changed(done)), None)
+    assertEquals(AppModel.outcomeOf(fed.model.document, ExecutionEvent.Changed(done)), None)
   }
 
   test("scenarios compose in order and stop at the first failure, naming it") {

@@ -28,6 +28,7 @@ import eyes4s.studio.core.execution.{
   ExecutionError,
   ExecutionEvent,
   ExecutionJob,
+  JobPhase,
   RunStamp
 }
 import eyes4s.studio.core.command.{
@@ -46,6 +47,7 @@ import eyes4s.studio.core.document.{
   LayoutBlob,
   Perspective,
   PresentationState,
+  RunLifecycle,
   StudioDocument
 }
 import eyes4s.studio.core.freshness.{Freshness, SessionFacts}
@@ -598,7 +600,11 @@ object AppModel:
           none
         )
 
-    case Intent.Execution(event)   => (m.copy(jobs = m.jobs.receive(event)), none)
+    case Intent.Execution(event) =>
+      val received = m.copy(jobs = m.jobs.receive(event))
+      outcomeOf(received.document, event).fold((received, none)) { command =>
+        applyHistory(received, JournalEntry.Apply(command), received.history.apply(command))
+      }
     case Intent.JobsChanged(jobs)  => (m.copy(jobs = m.jobs.withJobs(jobs)), none)
     case Intent.SessionChanged(f)  => (m.copy(session = f), none)
     case Intent.ItemsLoaded(items) => (m.copy(items = items), none)
@@ -728,6 +734,26 @@ object AppModel:
         selection = after.selection.rebase(keep),
         hover = after.hover.filter(h => keep(h.target))
       )
+
+  /** The document command that records a settled job's run, while the
+    * document still has that run running: a job's end is a backend fact the
+    * document keeps (S3.1). A superseded job that had reported progress
+    * completed on the backend; one with none never ran.
+    */
+  def outcomeOf(document: StudioDocument, event: ExecutionEvent): Option[Command] =
+    event match
+      case ExecutionEvent.Changed(job)
+          if document.run(job.run).exists(_.state == RunLifecycle.Running) =>
+        val lifecycle = job.phase match
+          case JobPhase.Succeeded(_)    => Some(RunLifecycle.Completed)
+          case JobPhase.Failed(_, _)    => Some(RunLifecycle.Failed)
+          case JobPhase.Cancelled(last) => Some(RunLifecycle.Cancelled(last.map(_.stage)))
+          case JobPhase.Superseded(_, Some(_)) => Some(RunLifecycle.Completed)
+          case JobPhase.Superseded(_, None)    => Some(RunLifecycle.Cancelled(None))
+          case JobPhase.Queued | JobPhase.Running(_) | JobPhase.Cancelling(_) => None
+        // The result archive binds when the real backend reports it (S3.7).
+        lifecycle.map(Command.RecordRunOutcome(job.run, _, CoreBinding.unbound))
+      case _ => None
 
   /** The run a ref belongs to, if it is a run result. */
   def runOf(ref: StudioRef): Option[RunId] = ref match

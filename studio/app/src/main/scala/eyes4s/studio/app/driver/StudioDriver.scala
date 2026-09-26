@@ -31,9 +31,10 @@ import eyes4s.studio.core.bundle.{
   StoreError
 }
 import eyes4s.studio.core.command.Command
-import eyes4s.studio.core.document.{CoreBinding, RunLifecycle}
-import eyes4s.studio.core.execution.{ExecutionError, ExecutionEvent, JobPhase}
-import eyes4s.studio.core.headless.StudioServices
+import eyes4s.studio.core.backend.BackendError
+import eyes4s.studio.core.execution.{ExecutionError, ExecutionEvent}
+import eyes4s.studio.core.headless.{HeadlessError, StudioServices}
+import eyes4s.studio.core.navigation.NavigationError
 
 /** What the driver did outside the model, kept in order as a record. */
 enum DriverRecord derives CanEqual:
@@ -47,10 +48,23 @@ enum DriverRecord derives CanEqual:
   case Dialog(dialog: PlatformDialog)
 
   /** A service refused an effect; the model was told nothing. */
-  case Refused(effect: AppEffect, reason: String)
+  case Refused(effect: AppEffect, error: ServiceError)
 
   /** A scripted step that a later ticket implements. */
   case Stubbed(step: String, reason: String)
+
+/** A studio service's refusal, by the service that refused. */
+enum ServiceError derives CanEqual:
+  case Backend(error: BackendError)
+  case Execution(error: ExecutionError)
+  case Navigation(error: NavigationError)
+  case Headless(error: HeadlessError)
+
+  def message: String = this match
+    case Backend(e)    => e.message
+    case Execution(e)  => e.message
+    case Navigation(e) => e.message
+    case Headless(e)   => e.message
 
 /** Why a driver step failed. Every case names its operands. */
 enum DriverError derives CanEqual:
@@ -60,7 +74,8 @@ enum DriverError derives CanEqual:
   /** No registered command has this id text. */
   case UnknownCommand(name: String)
 
-  case Service(step: String, reason: String)
+  /** A service refused what the step asked of it. */
+  case Service(step: String, error: ServiceError)
   case Bundle(error: BundleError)
 
   /** A scenario's check did not hold. */
@@ -69,7 +84,7 @@ enum DriverError derives CanEqual:
   def message: String = this match
     case Refused(step, notice)               => s"$step was refused: ${notice.message}"
     case UnknownCommand(name)                => s"No registered command is called '$name'."
-    case Service(step, reason)               => s"$step: $reason"
+    case Service(step, error)                => s"$step: ${error.message}"
     case Bundle(error)                       => error.message
     case Expectation(step, expected, actual) =>
       s"$step: expected $expected, found $actual."
@@ -132,15 +147,11 @@ final case class StudioDriver private (
   def stub(step: String, reason: String): StudioDriver =
     record(DriverRecord.Stubbed(step, reason))
 
-  /** Feed execution events, in order, as the shell does: each as an intent,
-    * and a job's end as the run's recorded outcome when the document still
-    * has the run running.
+  /** Feed execution events, in order, as the shell does: each as an intent
+    * (the update records a settled job's run outcome itself).
     */
   def feed(events: Iterable[ExecutionEvent]): StudioDriver =
-    events.foldLeft(this) { (d, event) =>
-      val fed = d.dispatch(Intent.Execution(event))
-      StudioDriver.outcomeOf(fed.model, event).fold(fed)(c => fed.dispatch(Intent.Dispatch(c)))
-    }
+    dispatchAll(events.map(Intent.Execution(_)))
 
   // --- View-models ------------------------------------------------------------
 
@@ -193,20 +204,6 @@ object StudioDriver:
   def open(model: AppModel, messages: Messages = Messages.english): StudioDriver =
     StudioDriver(model, Vector.empty, Vector.empty, messages)
 
-  /** The document command that records a settled job's run, when the
-    * document still has that run running.
-    */
-  def outcomeOf(model: AppModel, event: ExecutionEvent): Option[Command] = event match
-    case ExecutionEvent.Changed(job)
-        if model.document.run(job.run).exists(_.state == RunLifecycle.Running) =>
-      val lifecycle = job.phase match
-        case JobPhase.Succeeded(_)    => Some(RunLifecycle.Completed)
-        case JobPhase.Failed(_, _)    => Some(RunLifecycle.Failed)
-        case JobPhase.Cancelled(last) => Some(RunLifecycle.Cancelled(last.map(_.stage)))
-        case _                        => None
-      lifecycle.map(Command.RecordRunOutcome(job.run, _, CoreBinding.unbound))
-    case _ => None
-
   /** Perform every queued effect on `services`, in order, and feed back the
     * events the services published meanwhile, until nothing is queued.
     * Service refusals are recorded, not raised: the app's own model decides
@@ -233,18 +230,23 @@ object StudioDriver:
     effect match
       case AppEffect.Execution(e) =>
         services.execute(e).map {
-          case Left(error: ExecutionError) =>
-            d.record(DriverRecord.Refused(effect, error.message))
+          case Left(error) =>
+            d.record(DriverRecord.Refused(effect, ServiceError.Execution(error)))
           case Right(()) => done
         }
       case AppEffect.RequestAdmission(dataset, _) =>
         services.admission(dataset).map {
-          case Left(error)    => d.record(DriverRecord.Refused(effect, error.message))
+          case Left(error) =>
+            d.record(DriverRecord.Refused(effect, ServiceError.Backend(error)))
           case Right(summary) => done.record(DriverRecord.Admission(summary))
         }
       case AppEffect.OpenDialog(dialog) =>
         Applicative[F].pure(done.record(DriverRecord.Dialog(dialog)))
-      case AppEffect.Persist | AppEffect.Journal(_) => Applicative[F].pure(done)
+      // Saving belongs to S2.4, and the rest act on a shell's own window and
+      // dock; headless, each is only recorded.
+      case AppEffect.Persist | AppEffect.Journal(_) | AppEffect.RevealProject |
+          AppEffect.ResetLayouts(_) | AppEffect.Dock(_) =>
+        Applicative[F].pure(done)
 
 /** One scripted step: a name and what it does to the driver. */
 final case class Step[F[_]](

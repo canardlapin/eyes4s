@@ -30,10 +30,13 @@ import eyes4s.studio.core.selection.{FixationIndex, RecordNumber, ScaleIndex, St
   * from fixtures/studio-golden; `GoldenInventory.scanpaths`).
   *
   * The fake computes no science. It knows one grouping, by retrieval
-  * response, and serves it for every reporting spec; control pairs exist
-  * only where fixture.json lists them (P17 ret_07 at 2°). `scored` refuses a
-  * run the fixture has no scores for; `status` is the backend's own reading
-  * of a query.
+  * response, and serves it for every reporting spec. A query's control
+  * references follow FIXTURE.md's stated pool (same participant, admitted
+  * encoding trials of other items), and the fake serves them only where that
+  * pool has exactly the `controls` count fixture.json records for the query;
+  * otherwise its control pairs are `NoPairs`. Pairs belong to contributing
+  * queries, the ones with a contrast row. `scored` refuses a run the fixture
+  * has no scores for; `status` is the backend's own reading of a query.
   */
 final class FakeNavigator[F[_]] private[fixture] (
     study: MockStudy,
@@ -67,10 +70,11 @@ final class FakeNavigator[F[_]] private[fixture] (
   def cells(
       run: RunId,
       reporting: ReportingId,
-      scale: ScaleIndex
-  ): F[Either[NavigationError, Vector[ReportRef.Cell]]] =
+      scale: ScaleIndex,
+      page: PageRequest
+  ): F[Either[NavigationError, Page[ReportRef.Cell]]] =
     scoredAt(run, scale.value)
-      .map(_ => groups.map(g => ReportRef.Cell(run, reporting, scale, Some(g))))
+      .map(_ => Page.of(groups.map(g => ReportRef.Cell(run, reporting, scale, Some(g))), page))
       .value
 
   private def inCell(cell: ReportRef.Cell): Step[Vector[ParticipantSummary]] =
@@ -84,28 +88,52 @@ final class FakeNavigator[F[_]] private[fixture] (
     }
 
   def participants(
-      cell: ReportRef.Cell
-  ): F[Either[NavigationError, Vector[ReportRef.Participant]]] =
-    inCell(cell).map(_.map(p => ReportRef.Participant(cell, p.participant))).value
+      cell: ReportRef.Cell,
+      page: PageRequest
+  ): F[Either[NavigationError, Page[ReportRef.Participant]]] =
+    inCell(cell)
+      .map(ps => Page.of(ps.map(p => ReportRef.Participant(cell, p.participant)), page))
+      .value
 
   def queries(
-      participant: ReportRef.Participant
-  ): F[Either[NavigationError, Vector[StudioRef]]] =
+      participant: ReportRef.Participant,
+      page: PageRequest
+  ): F[Either[NavigationError, Page[StudioRef]]] =
     val cell = participant.cell
     inCell(cell).flatMap { members =>
       pure(
         Either.cond(
           members.exists(_.participant == participant.participant),
-          study.queries
-            .filter(q =>
-              q.participant == participant.participant &&
-                cell.group.forall(_ == q.response) && contributing(status(q))
-            )
-            .map(q => StudioRef.QueryContrast(cell.run, cell.scale, q.key)),
+          Page.of(
+            study.queries
+              .filter(q =>
+                q.participant == participant.participant &&
+                  cell.group.forall(_ == q.response) && contributing(status(q))
+              )
+              .map(q => StudioRef.QueryContrast(cell.run, cell.scale, q.key)),
+            page
+          ),
           NavigationError.NotInCell(participant.participant, cell)
         )
       )
     }.value
+
+  /** The admitted encoding trials of the query's participant with another
+    * item (FIXTURE.md's control pool), when their number is the query's
+    * recorded `controls`.
+    */
+  private def controlsOf(q: MockQuery): Option[Vector[TrialKey]] =
+    val pool = study.inventory.collect {
+      case e
+          if e.trial.participant == q.participant && e.trial.phase == Phase.Encoding &&
+            e.disposition == TrialDisposition.Admitted && e.item != q.item =>
+        e.trial
+    }
+    Option.when(q.controls.contains(pool.size))(pool)
+
+  /** Every contributing query with its matched reference and controls. */
+  private lazy val designs: Vector[(MockQuery, Option[Vector[TrialKey]])] =
+    study.queries.filter(q => contributing(status(q))).map(q => q -> controlsOf(q))
 
   /** The query of a contrast ref, scored at its scale. */
   private def scoredQuery(contrast: StudioRef): Step[(RunId, ScaleIndex, MockQuery)] =
@@ -137,22 +165,14 @@ final class FakeNavigator[F[_]] private[fixture] (
       contrast: StudioRef,
       design: PairDesign,
       page: PageRequest
-  ): F[Either[NavigationError, RefPage]] =
+  ): F[Either[NavigationError, Page[StudioRef]]] =
     scoredQuery(contrast).flatMap { (run, s, q) =>
       val references: Either[NavigationError, Vector[TrialKey]] = design match
         case PairDesign.Matched => Right(Vector(q.matchedKey))
         case PairDesign.Control =>
-          Either.cond(
-            q.controlScores2deg.nonEmpty &&
-              summary.scales.lift(s.value).contains(FakeStudyBackend.FocusScale),
-            q.controlScores2deg.map(c => MockStudy.key(q.participant, c.trial)),
-            NavigationError.NoPairs(contrast, design)
-          )
+          controlsOf(q).toRight(NavigationError.NoPairs(contrast, design))
       pure(references.map { all =>
-        val entries = all
-          .slice(page.offset, page.offset + page.size)
-          .map(r => StudioRef.Pair(run, s, design, q.key, r))
-        RefPage(entries, PageInfo.of(page, all.size, entries.size))
+        Page.of(all.map(r => StudioRef.Pair(run, s, design, q.key, r)), page)
       })
     }.value
 
@@ -181,16 +201,23 @@ final class FakeNavigator[F[_]] private[fixture] (
         )
       )
 
-  def fixations(map: StudioRef): F[Either[NavigationError, Vector[StudioRef]]] = map match
-    case StudioRef.TrialMap(run, scale, key) =>
-      scoredAt(run, scale.value).flatMap { _ =>
-        pure(scanpath(map, key).map { records =>
-          records.indices.toVector.flatMap(i =>
-            FixationIndex.of(i + 1).toOption.map(StudioRef.Fixation(key, _))
-          )
-        })
-      }.value
-    case other => F.pure(Left(NavigationError.WrongLevel(other, ChainLevel.Map)))
+  def fixations(
+      map: StudioRef,
+      page: PageRequest
+  ): F[Either[NavigationError, Page[StudioRef]]] =
+    map match
+      case StudioRef.TrialMap(run, scale, key) =>
+        scoredAt(run, scale.value).flatMap { _ =>
+          pure(scanpath(map, key).map { records =>
+            Page.of(
+              records.indices.toVector.flatMap(i =>
+                FixationIndex.of(i + 1).toOption.map(StudioRef.Fixation(key, _))
+              ),
+              page
+            )
+          })
+        }.value
+      case other => F.pure(Left(NavigationError.WrongLevel(other, ChainLevel.Map)))
 
   def record(fixation: StudioRef): F[Either[NavigationError, StudioRef]] =
     F.pure(fixation match
@@ -208,6 +235,49 @@ final class FakeNavigator[F[_]] private[fixture] (
             )
         }
       case other => Left(NavigationError.WrongLevel(other, ChainLevel.Fixation)))
+
+  /** Every pair of the map's run and scale that uses its trial in `role`. */
+  private def using(map: StudioRef): Step[(RunId, ScaleIndex, TrialKey)] = map match
+    case StudioRef.TrialMap(run, scale, key) =>
+      scoredAt(run, scale.value).map(_ => (run, scale, key))
+    case other => pure(Left(NavigationError.WrongLevel(other, ChainLevel.Map)))
+
+  private def pairsUsing(
+      run: RunId,
+      scale: ScaleIndex,
+      key: TrialKey,
+      role: UsedByRole
+  ): Vector[StudioRef] =
+    def pair(q: MockQuery, design: PairDesign, reference: TrialKey) =
+      StudioRef.Pair(run, scale, design, q.key, reference)
+    role match
+      case UsedByRole.AsQuery =>
+        designs.collect {
+          case (q, controls) if q.key == key =>
+            pair(q, PairDesign.Matched, q.matchedKey) +:
+              controls.getOrElse(Vector.empty).map(pair(q, PairDesign.Control, _))
+        }.flatten
+      case UsedByRole.AsMatched =>
+        designs.collect {
+          case (q, _) if q.matchedKey == key => pair(q, PairDesign.Matched, key)
+        }
+      case UsedByRole.AsControl =>
+        designs.collect {
+          case (q, Some(controls)) if controls.contains(key) => pair(q, PairDesign.Control, key)
+        }
+
+  def usedByCounts(map: StudioRef): F[Either[NavigationError, UsedBy]] =
+    using(map).map { (run, scale, key) =>
+      def n(role: UsedByRole) = pairsUsing(run, scale, key, role).size
+      UsedBy(n(UsedByRole.AsQuery), n(UsedByRole.AsMatched), n(UsedByRole.AsControl))
+    }.value
+
+  def usedBy(
+      map: StudioRef,
+      role: UsedByRole,
+      page: PageRequest
+  ): F[Either[NavigationError, Page[StudioRef]]] =
+    using(map).map((run, scale, key) => Page.of(pairsUsing(run, scale, key, role), page)).value
 
 object FakeNavigator:
 

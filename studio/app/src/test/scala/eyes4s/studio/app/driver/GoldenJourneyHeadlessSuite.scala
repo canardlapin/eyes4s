@@ -26,7 +26,7 @@ import eyes4s.studio.core.command.{Command, Reducer}
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.execution.JobPhase
 import eyes4s.studio.core.fixture.{MockStudy, StoryMoment, StoryMoments}
-import eyes4s.studio.core.headless.HeadlessSession
+import eyes4s.studio.core.headless.{HeadlessError, HeadlessSession}
 import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
 
 import scala.concurrent.duration.*
@@ -93,10 +93,17 @@ class GoldenJourneyHeadlessSuite extends munit.FunSuite:
   private def sync(name: String)(f: StudioDriver => Either[DriverError, StudioDriver]): S =
     Step.pure[Future](name)(f)
 
-  private def service[E, A](name: String)(
-      fa: Future[Either[E, A]]
+  /** A backend read as a step's result; a refusal fails the step, typed. */
+  private def service[A](name: String)(
+      fa: Future[Either[BackendError, A]]
   ): Future[Either[DriverError, A]] =
-    fa.map(_.leftMap(e => DriverError.Service(name, e.toString)))
+    fa.map(_.leftMap(e => DriverError.Service(name, ServiceError.Backend(e))))
+
+  /** A fake control call as a step's result. */
+  private def control[A](name: String)(
+      fa: Future[Either[HeadlessError, A]]
+  ): Future[Either[DriverError, A]] =
+    fa.map(_.leftMap(e => DriverError.Service(name, ServiceError.Headless(e))))
 
   /** Feed execution events until the driver's state satisfies `done`: the
     * events already published first, then each new one as it arrives. The
@@ -108,7 +115,8 @@ class GoldenJourneyHeadlessSuite extends munit.FunSuite:
       if done(d) then Future.successful(Right(d))
       else
         session.awaitEvent(_ => true).flatMap {
-          case Left(e)       => Future.successful(Left(DriverError.Service(name, e.message)))
+          case Left(e) =>
+            Future.successful(Left(DriverError.Service(name, ServiceError.Headless(e))))
           case Right(events) => loop(d.feed(events))
         }
     Step(name, d => session.events.flatMap(events => loop(d.feed(events))))
@@ -135,7 +143,7 @@ class GoldenJourneyHeadlessSuite extends munit.FunSuite:
           case None     => Future.successful(fail(name, "a shown run", "none"))
           case Some(sc) =>
             Provenance.children(session.navigator, d.model.location.trail.last, sc, page).map {
-              case Left(e)         => Left(DriverError.Service(name, e.message))
+              case Left(e) => Left(DriverError.Service(name, ServiceError.Navigation(e)))
               case Right(children) =>
                 pick(children)
                   .toRight(
@@ -321,7 +329,7 @@ class GoldenJourneyHeadlessSuite extends munit.FunSuite:
         d =>
           run6Job(d).fold(
             e => Future.successful(Left(e)),
-            j => service("hold")(session.holdAtPairs(j, fixture.pairRowsPerScale)).map(_.as(d))
+            j => control("hold")(session.holdAtPairs(j, fixture.pairRowsPerScale)).map(_.as(d))
           )
       ),
       await(session, "run 6 comparing")(
@@ -339,7 +347,7 @@ class GoldenJourneyHeadlessSuite extends munit.FunSuite:
         d =>
           run6Job(d).fold(
             e => Future.successful(Left(e)),
-            j => service("complete")(session.complete(j)).map(_.as(d))
+            j => control("complete")(session.complete(j)).map(_.as(d))
           )
       ),
       await(session, "run 6 ready")(_.model.jobs.ready.exists(_.run == run6)),
@@ -485,7 +493,7 @@ class GoldenJourneyHeadlessSuite extends munit.FunSuite:
             PanelSelection.AllQueries
           )
         ))
-          .leftMap(e => DriverError.Service("figure", e.message))
+          .leftMap(e => DriverError.Expectation("figure", "a valid panel", e.message))
           .flatMap(panels => d.command(Command.CreateFigure(run6, reporting, panels)))
       ),
       check("Figure 3 binds run 6 and the spec")(d =>
