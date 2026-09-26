@@ -49,15 +49,15 @@ class ConsumerSuite extends munit.DisciplineSuite:
   private val frame  = get(Frame.screen("display", 2, 2))
   private val grid   = get(Grid.over(frame, 2, 2))
   private val reader = get(
-    FixationKeyReader.of[TrialKey](Vector("participant", "image", "phase"))(
+    FixationKeyReader.of[SubjectItemKey](Vector("participant", "image", "phase"))(
       fields =>
         for
           subject <- fields.get("participant").toRight("participant missing")
           image   <- fields.get("image").toRight("image missing")
           item  <- Map("a" -> 1, "b" -> 2, "c" -> 3).get(image).toRight(s"unknown image $image")
           phase <- fields.get("phase").toRight("phase missing")
-        yield TrialKey(subject, item, phase),
-      key => ClockId(KeyDigest[TrialKey].digest(key).render)
+        yield SubjectItemKey(subject, item, phase),
+      key => ClockId(KeyDigest[SubjectItemKey].digest(key).render)
     )
   )
   private val columns = get(
@@ -150,9 +150,9 @@ class ConsumerSuite extends munit.DisciplineSuite:
     CodecLaws.roundTrip(
       keys,
       Gen.zip(Gen.alphaStr, Gen.choose(1, 100), Gen.alphaStr).map { case (s, i, p) =>
-        TrialKey(s, i, p)
+        SubjectItemKey(s, i, p)
       },
-      (a: TrialKey, b: TrialKey) => a == b
+      (a: SubjectItemKey, b: SubjectItemKey) => a == b
     )
   )
   checkAll(
@@ -172,8 +172,8 @@ class ConsumerSuite extends munit.DisciplineSuite:
       persistence.codec,
       Gen.choose(0.1, 5.0).map(plan),
       (
-          a: StudyPlan[TrialKey, Px, Multiplier, ScaledScore, SignedDifference],
-          b: StudyPlan[TrialKey, Px, Multiplier, ScaledScore, SignedDifference]
+          a: StudyPlan[SubjectItemKey, Px, Multiplier, ScaledScore, SignedDifference],
+          b: StudyPlan[SubjectItemKey, Px, Multiplier, ScaledScore, SignedDifference]
       ) => a == b
     )
   )
@@ -207,21 +207,21 @@ class ConsumerSuite extends munit.DisciplineSuite:
     assertEquals(exported.rows.size, 18)
     assert(exported.rows.forall(_.size == ContrastCsv.header.size))
     val row = ContrastCsv.header.zip(exported.rows.head).toMap
-    assertEquals(get(keys.parse(row("key_json"))), TrialKey("s1", 1, "recall"))
+    assertEquals(get(keys.parse(row("key_json"))), SubjectItemKey("s1", 1, "recall"))
     assertEquals(row("method_id"), "my.lab.scaled-cosine")
   }
 
   test(
     "registry loads the external definition and exposes missing extensions without core edits"
   ) {
-    val registered = get(StudyRegistry.empty[TrialKey, Px].register(persistence.registration))
+    val registered = get(StudyRegistry.empty[SubjectItemKey, Px].register(persistence.registration))
     val json       = get(persistence.codec.encode(plan(2.0)))
     val loaded     = get(registered.decode(json))
     assertEquals(loaded.description, plan(2.0).description)
     assertEquals(get(loaded.encode), json)
     assertEquals(get(loaded.run(input)).scales.size, 3)
     assertEquals(
-      StudyRegistry.empty[TrialKey, Px].decode(json).left.toOption,
+      StudyRegistry.empty[SubjectItemKey, Px].decode(json).left.toOption,
       Some(CodecError.MissingMethod(method.id))
     )
     assertEquals(
@@ -248,11 +248,11 @@ class ConsumerSuite extends munit.DisciplineSuite:
       get(decoded.scales.head.contrast).rows.map(r => r.control.map(_.contributing)),
       Vector.fill(6)(Some(2))
     )
-    val registry = get(StudyResultRegistry.empty[TrialKey, Px].register(archive.registration))
+    val registry = get(StudyResultRegistry.empty[SubjectItemKey, Px].register(archive.registration))
     val loaded   = get(registry.decode(json))
     assertEquals(get(loaded.encode), json)
     assertEquals(
-      StudyResultRegistry.empty[TrialKey, Px].decode(json).left.toOption,
+      StudyResultRegistry.empty[SubjectItemKey, Px].decode(json).left.toOption,
       Some(CodecError.MissingResultCodec(method.id))
     )
     assertEquals(
@@ -275,8 +275,8 @@ class ConsumerSuite extends munit.DisciplineSuite:
         .codec,
       Gen.choose(0.1, 5.0).map(m => get(plan(m).run(input))),
       (
-          a: StudyResult[TrialKey, Px, ScaledScore, SignedDifference],
-          b: StudyResult[TrialKey, Px, ScaledScore, SignedDifference]
+          a: StudyResult[SubjectItemKey, Px, ScaledScore, SignedDifference],
+          b: StudyResult[SubjectItemKey, Px, ScaledScore, SignedDifference]
       ) =>
         StudyResultEquivalence.same(a, b)(
           (x, y) => x.value == y.value,
@@ -292,16 +292,16 @@ class ConsumerSuite extends munit.DisciplineSuite:
       StudyResultCodecs.signedDifference()
     )
   private val inputPersistence =
-    new StudyInputCodec[TrialKey, Px](
+    new StudyInputCodec[SubjectItemKey, Px](
       id("my.lab.study-input"),
       id("my.lab.admission-ledger"),
       layout,
       keys
     )
   private val customDecoders = ArtifactDecoders.of(
-    get(StudyRegistry.empty[TrialKey, Px].register(persistence.registration)),
-    get(StudyInputRegistry.empty[TrialKey, Px].register(inputPersistence)),
-    get(StudyResultRegistry.empty[TrialKey, Px].register(archive.registration))
+    get(StudyRegistry.empty[SubjectItemKey, Px].register(persistence.registration)),
+    get(StudyInputRegistry.empty[SubjectItemKey, Px].register(inputPersistence)),
+    get(StudyResultRegistry.empty[SubjectItemKey, Px].register(archive.registration))
   )
   private def savedStudy(multiplier: Double): Either[CodecError, SavedManifest] = for
     p <- StoredArtifact.plan("plan", persistence, plan(multiplier))
@@ -361,9 +361,9 @@ class ConsumerSuite extends munit.DisciplineSuite:
     )
     // Without the custom result registration the archive is refused by name.
     val unregistered = ArtifactDecoders.of(
-      get(StudyRegistry.empty[TrialKey, Px].register(persistence.registration)),
-      get(StudyInputRegistry.empty[TrialKey, Px].register(inputPersistence)),
-      StudyResultRegistry.empty[TrialKey, Px]
+      get(StudyRegistry.empty[SubjectItemKey, Px].register(persistence.registration)),
+      get(StudyInputRegistry.empty[SubjectItemKey, Px].register(inputPersistence)),
+      StudyResultRegistry.empty[SubjectItemKey, Px]
     )
     assertEquals(
       ArtifactResolver.resolve(saved.address, source, unregistered).left.map(_.toVector),
@@ -384,7 +384,7 @@ class ConsumerSuite extends munit.DisciplineSuite:
       Gen.choose(0.1, 5.0),
       (m: Double) => savedStudy(m).map(StoredGraph.of),
       customDecoders,
-      (m: Double, resolved: ResolvedManifest[TrialKey, Px]) =>
+      (m: Double, resolved: ResolvedManifest[SubjectItemKey, Px]) =>
         resolved.results.map(_._2.encode) ==
           Vector(archive.codec.encode(get(plan(m).run(input))))
     )
@@ -401,7 +401,7 @@ class ConsumerSuite extends munit.DisciplineSuite:
     assert(plan(2.0).diff(plan(3.0)).exists(_.field == "method.multiplier"))
     assert(
       typeCheckErrors(
-        """import example.*; import eyes4s.codec.*; def bad(c: VersionedCodec[Multiplier]): VersionedCodec[TrialKey] = c"""
+        """import example.*; import eyes4s.codec.*; def bad(c: VersionedCodec[Multiplier]): VersionedCodec[SubjectItemKey] = c"""
       ).nonEmpty
     )
   }
@@ -500,13 +500,13 @@ class ConsumerSuite extends munit.DisciplineSuite:
     val study      = plan(2.0)
     val result     = get(study.run(input))
     val inspection = get(ResultInspection.study(study, result, input, Some(ledger)))
-    val focal      = TrialKey("s1", 1, "recall")
+    val focal      = SubjectItemKey("s1", 1, "recall")
     val row        = get(inspection.contrastRow(ResultRef.ContrastRow(0, focal)))
     val difference = get(row.outcome.left.map(_.message))
     assertEquals(difference.components.map(_.id), Vector("value"))
     assertEquals(difference.components.map(_.value), Vector(difference.value.value))
     val matched = get(inspection.reduction(get(row.matched.toRight("no matched reduction"))))
-    assertEquals(matched.contributors, Vector(TrialKey("s1", 1, "encode")))
+    assertEquals(matched.contributors, Vector(SubjectItemKey("s1", 1, "encode")))
     val pair    = get(inspection.pair(matched.members.head.pair))
     val located = get(inspection.sources.fixation(pair.reference, 0))
     assertEquals((located.record, located.ordinal), (2, 0))

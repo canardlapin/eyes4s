@@ -107,7 +107,7 @@ consumer's own:
 | Route | Shipped | The consumer's own |
 |---|---|---|
 | Recording (`RecordingRoute`, `RecordingJourney`) | I-VT through `RecordingCodecs.ivt` | `CustomDetector`: a laboratory I-VT with its own parameter type, typed field descriptors (its own error type), `RecordingMethodDescriptor`, codec and schemas |
-| Temporal (`TemporalRoute`, `TemporalJourney`) | cosine over `StudyKey` | the scaled cosine over `TrialKey` with `Multiplier` and `ScaledScore` |
+| Temporal (`TemporalRoute`, `TemporalJourney`) | cosine over `StudyKey` | the scaled cosine over `SubjectItemKey` with `Multiplier` and `ScaledScore` |
 
 The recording journey starts from a normalized `RecordingInput` (channels, viewing geometry and
 observed synchronization marks): the pinned I-VT conformance fixture
