@@ -38,6 +38,9 @@ import java.nio.charset.StandardCharsets.UTF_8
   * bytes is refused), the last valid manifest as the
   * [[Sidecar.PreviousManifest]], the new `project.json` by compare-and-swap
   * against the manifest this session last saw, and finally a fresh journal.
+  * If an autosave had failed, the journal is first rewritten whole, so a
+  * crash before the swap still recovers everything; if that rewrite fails
+  * too, the save goes on and its receipt reports the narrower window.
   * Parts are content-addressed and never rewritten, so until the swap the old
   * manifest's parts are untouched, and after it every part the new manifest
   * names is already stored. A crash at any point therefore reopens at the old
@@ -48,7 +51,9 @@ import java.nio.charset.StandardCharsets.UTF_8
   * '''Last valid manifest.''' When `project.json` does not open (a damaged
   * part, say) the session opens the retained previous manifest instead and
   * reports [[ManifestSource.Previous]]; the next save replaces the damaged
-  * one.
+  * one. A journal that does not start from the previous manifest's document
+  * then most likely started from the damaged one: it is reported as
+  * [[Recovery.JournalOnDamagedManifest]] and kept until explicitly declined.
   *
   * '''Autosave journal.''' Each performed entry is appended to the
   * [[Sidecar.Journal]] as a [[CommandJournal]] line before [[perform]]
@@ -66,9 +71,20 @@ import java.nio.charset.StandardCharsets.UTF_8
   * it restores, the runs that were running with no job, and the checkpoint
   * check. Replay performs entries only; it never re-issues their effects.
   * [[accept]] saves the recovered document; [[decline]] archives the journal
-  * under `cache/journals/`. Until one of them, the session refuses edits and
-  * saves. A journal over an older document is superseded (a save finished,
-  * its journal reset did not) and is archived on open.
+  * under `journals/archive/`, which is not disposable like `cache/`. Until
+  * one of them, the session refuses edits and saves. A journal over an older
+  * document is superseded (a save finished, its journal reset did not) and is
+  * archived on open. Runs the saved document shows as running have no job any
+  * more; every open lists them ([[OpenReport.orphaned]]).
+  *
+  * '''Cancellation.''' Each operation runs under the session's mutex, and
+  * once it holds the mutex it is uncancelable: the store's writes and the
+  * session state that records them happen together, so a cancelled perform
+  * or save cannot leave a journaled entry unrecorded (a repeated sequence
+  * number) or a swapped manifest unrecorded (a stale compare-and-swap
+  * digest). Only waiting for the mutex can be cancelled. Opening and
+  * creating are uncancelable once the writer lock is taken, so a cancelled
+  * open never leaks the lock.
   */
 final class ProjectSession[F[_]: Concurrent] private (
     store: ProjectStore[F],
@@ -164,12 +180,20 @@ final class ProjectSession[F[_]: Concurrent] private (
         found   <- EitherT.fromEither[F](pending.recovery match
           case Recovery.Offered(o)               => Right(o)
           case Recovery.Unreplayable(journal, e) =>
-            Left(SessionError.NotReplayable(journal, e)))
-        saved <- saveFrom(s.copy(history = found.history, pending = None), lock)
+            Left(SessionError.NotReplayable(journal, e))
+          case Recovery.JournalOnDamagedManifest(journal, problem) =>
+            Left(SessionError.DamagedBase(journal, problem)))
+        // The journal on disk is the offer's, and replays to `found` exactly:
+        // it is not rewritten before the swap.
+        saved <- saveFrom(
+          s.copy(history = found.history, pending = None),
+          lock,
+          reconcile = false
+        )
       yield saved).value
     }
 
-  /** Set the pending journal aside: archive it under `cache/journals/` and
+  /** Set the pending journal aside: archive it under `journals/archive/` and
     * keep the saved document. Returns the archive's path.
     */
   def decline(journal: ByteDigest): F[Either[SessionError, BundlePath]] =
@@ -205,10 +229,12 @@ final class ProjectSession[F[_]: Concurrent] private (
       body: State => F[Either[SessionError, (State, A)]]
   ): F[Either[SessionError, A]] =
     mutex.lock.surround(
-      state.get.flatMap(body).flatMap {
-        case Right((next, a)) => state.set(next).as(Right(a))
-        case Left(e)          => Concurrent[F].pure(Left(e))
-      }
+      Concurrent[F].uncancelable(_ =>
+        state.get.flatMap(body).flatMap {
+          case Right((next, a)) => state.set(next).as(Right(a))
+          case Left(e)          => Concurrent[F].pure(Left(e))
+        }
+      )
     )
 
   private def held(s: State): Either[SessionError, WriterLock] =
@@ -254,9 +280,11 @@ final class ProjectSession[F[_]: Concurrent] private (
   /** The atomic save of `s`'s document; on success the state it leaves. */
   private def saveFrom(
       s: State,
-      lock: WriterLock
+      lock: WriterLock,
+      reconcile: Boolean = true
   ): EitherT[F, SessionError, (State, SaveReceipt)] =
     val document = stripped(s.history.document)
+    val behind   = reconcile && s.journal.durable != s.journal.lines.size
     for
       encoded <- EitherT.fromEither[F](
         ProjectBundle
@@ -265,6 +293,18 @@ final class ProjectSession[F[_]: Concurrent] private (
       )
       digest = ByteDigest.sha256(encoded.manifestBytes)
       swap   = !s.saved.current.contains(digest)
+      reconciled <-
+        if swap && behind then
+          EitherT.liftF[F, SessionError, Option[StoreError]](
+            store
+              .replaceSidecar(
+                lock,
+                Sidecar.Journal,
+                utf8(s.journal.lines.map(_ + "\n").mkString)
+              )
+              .map(_.left.toOption)
+          )
+        else EitherT.pure[F, SessionError](Option.empty[StoreError])
       written <-
         if !swap then EitherT.pure[F, SessionError](Vector.empty[BundlePath])
         else
@@ -291,7 +331,7 @@ final class ProjectSession[F[_]: Concurrent] private (
           History.start(document)
         )
       ),
-      SaveReceipt(digest, written, swap, reset.left.toOption)
+      SaveReceipt(digest, written, swap, reconciled, reset.left.toOption)
     )
 
   /** Write one part unless it is already stored; `Some(path)` if written. */
@@ -404,7 +444,7 @@ object ProjectSession:
         start <- EitherT.fromEither[F](
           CommandJournal.start(base).leftMap(SessionError.Journal("start the journal", _))
         )
-        finding <- EitherT(inspect(store, lock, base))
+        finding <- EitherT(inspect(store, lock, base, source))
         session <- EitherT.liftF(
           build(
             store,
@@ -420,7 +460,15 @@ object ProjectSession:
             )
           )
         )
-      yield Opened(session, OpenReport(source, opened.science, finding._1))).value
+      yield Opened(
+        session,
+        OpenReport(
+          source,
+          opened.science,
+          finding._1,
+          base.running.map(r => UnsubmittedRun(r.id, r.analysis, r.dataset, sinceSave = false))
+        )
+      )).value
     )
 
   /** Create a project in the empty bundle `store` holding `document` (its job
@@ -483,6 +531,11 @@ object ProjectSession:
   private def locked[F[_]: Concurrent, A](store: ProjectStore[F], owner: LockOwner)(
       body: WriterLock => F[Either[SessionError, A]]
   ): F[Either[SessionError, A]] =
+    Concurrent[F].uncancelable(_ => acquireThen(store, owner)(body))
+
+  private def acquireThen[F[_]: Concurrent, A](store: ProjectStore[F], owner: LockOwner)(
+      body: WriterLock => F[Either[SessionError, A]]
+  ): F[Either[SessionError, A]] =
     store.acquire(owner).flatMap {
       case Left(StoreError.Locked(requester, holder)) =>
         Concurrent[F].pure(Left(SessionError.WriterRefused(requester, holder)))
@@ -496,11 +549,14 @@ object ProjectSession:
           .onError { case _ => store.release(lock).attempt.void }
     }
 
-  /** Read the journal against the saved document `base`. */
+  /** Read the journal against the saved document `base`, opened from
+    * `source`.
+    */
   private def inspect[F[_]: Concurrent](
       store: ProjectStore[F],
       lock: WriterLock,
-      base: StudioDocument
+      base: StudioDocument,
+      source: ManifestSource
   ): F[Either[SessionError, (JournalFinding, Option[PendingJournal])]] =
     store.readSidecar(Sidecar.Journal).flatMap {
       case Left(StoreError.NoSidecar(_)) =>
@@ -512,7 +568,16 @@ object ProjectSession:
           Right((JournalFinding.Pending(r), Some(PendingJournal(r, bytes))))
         CommandJournal.replay(base, String(Array.from(bytes), UTF_8)) match
           case Left(JournalError.BaseMismatch(_, _)) =>
-            archive(store, lock, bytes).map(_.map(p => (JournalFinding.Superseded(p), None)))
+            source match
+              // A journal holding only its start line holds no work.
+              case ManifestSource.Previous(_) if entryLines(bytes) == 0 =>
+                Concurrent[F].pure(Right((JournalFinding.Clean, None)))
+              case ManifestSource.Previous(problem) =>
+                Concurrent[F].pure(pending(Recovery.JournalOnDamagedManifest(digest, problem)))
+              case ManifestSource.Current =>
+                archive(store, lock, bytes).map(
+                  _.map(p => (JournalFinding.Superseded(p), None))
+                )
           case Left(JournalError.Empty) =>
             Concurrent[F].pure(Right((JournalFinding.Clean, None)))
           case Left(e) => Concurrent[F].pure(pending(Recovery.Unreplayable(digest, e)))
@@ -542,9 +607,10 @@ object ProjectSession:
             Concurrent[F].pure(pending(Recovery.Offered(offer)))
     }
 
-  /** Archive journal bytes at `cache/journals/<sha256>.jsonl`, then remove
+  /** Archive journal bytes at `journals/archive/<sha256>.jsonl`, then remove
     * the journal. The copy is written first, so a crash between the two
-    * leaves the journal to be found again.
+    * leaves the journal to be found again; archiving the same bytes again
+    * writes nothing.
     */
   private def archive[F[_]: Concurrent](
       store: ProjectStore[F],
@@ -554,7 +620,7 @@ object ProjectSession:
     (for
       path <- EitherT.fromEither[F](
         BundlePath
-          .in(BundleArea.Cache, s"journals/${ByteDigest.sha256(bytes).hex}.jsonl")
+          .in(BundleArea.Journals, s"archive/${ByteDigest.sha256(bytes).hex}.jsonl")
           .leftMap(SessionError.Bundle("name the journal archive", _))
       )
       _ <- EitherT(ProjectBundle.writeImmutable(store, lock, path, bytes))
@@ -597,6 +663,10 @@ object ProjectSession:
       case some @ Some(_)                              => Right(some)
       case None if stripped(before.document) == target => Right(None)
       case None => Left(SessionError.Unjournalable(entry))
+
+  /** The journal's lines after its start line, torn ones included. */
+  private def entryLines(bytes: IArray[Byte]): Int =
+    String(Array.from(bytes), UTF_8).split('\n').count(_.nonEmpty) - 1
 
   /** The document without its session-only job handles. */
   private def stripped(d: StudioDocument): StudioDocument =

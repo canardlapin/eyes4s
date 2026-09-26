@@ -16,7 +16,7 @@
 
 package eyes4s.studio.core.session
 
-import cats.effect.{IO, Ref}
+import cats.effect.{Deferred, IO, Ref}
 import cats.syntax.all.*
 import eyes4s.codec.ByteDigest
 import eyes4s.studio.core.bundle.*
@@ -42,6 +42,19 @@ enum Failure derives CanEqual:
   /** The store reports an error and carries on. */
   case Report
 
+/** A paused mutation: `reached` completes when the store reaches it, and it
+  * resumes when the test completes `gate`.
+  */
+final case class Paused(reached: Deferred[IO, Unit], gate: Deferred[IO, Unit])
+
+/** What is armed: a failure, or a pause (Before or After the mutation). */
+private[session] enum Plan:
+  case Fail(step: Int, fault: Fault, failure: Failure)
+  case Pause(step: Int, fault: Fault, paused: Paused)
+
+  /** Fail the next mutation named `name`, once. */
+  case Named(name: String, fault: Fault, failure: Failure)
+
 /** The exception a crashed store raises. */
 case object Crashed extends RuntimeException("injected crash")
 
@@ -54,7 +67,7 @@ case object Crashed extends RuntimeException("injected crash")
 final class FaultyStore private (
     val underlying: ProjectStore[IO],
     count: Ref[IO, Int],
-    plan: Ref[IO, Option[(Int, Fault, Failure)]],
+    plan: Ref[IO, Vector[Plan]],
     dead: Ref[IO, Boolean],
     seen: Ref[IO, Option[WriterLock]],
     log: Ref[IO, Vector[String]]
@@ -64,10 +77,26 @@ final class FaultyStore private (
     * clear the log.
     */
   def arm(step: Int, fault: Fault, failure: Failure): IO[Unit] =
-    count.set(0) *> log.set(Vector.empty) *> plan.set(Some((step, fault, failure)))
+    count.set(0) *> log.set(Vector.empty) *> plan.set(Vector(Plan.Fail(step, fault, failure)))
+
+  /** Number mutations from 1 again and pause number `step` before or after
+    * the store performs it.
+    */
+  def pause(step: Int, fault: Fault): IO[Paused] =
+    (Deferred[IO, Unit], Deferred[IO, Unit])
+      .mapN(Paused(_, _))
+      .flatTap(p =>
+        count.set(0) *> log.set(Vector.empty) *> plan.set(Vector(Plan.Pause(step, fault, p)))
+      )
 
   /** Number mutations from 1 again with no fault armed, and clear the log. */
-  def reset: IO[Unit] = count.set(0) *> log.set(Vector.empty) *> plan.set(None)
+  def reset: IO[Unit] = count.set(0) *> log.set(Vector.empty) *> plan.set(Vector.empty)
+
+  /** Also fail the next mutation named `name` (as [[mutations]] lists it),
+    * once, whatever its number.
+    */
+  def armNamed(name: String, fault: Fault, failure: Failure): IO[Unit] =
+    plan.update(_ :+ Plan.Named(name, fault, failure))
 
   /** The mutations since the last [[arm]] or [[reset]], in order. */
   def mutations: IO[Vector[String]] = log.get
@@ -89,12 +118,29 @@ final class FaultyStore private (
       _     <- alive
       step  <- count.updateAndGet(_ + 1)
       _     <- log.update(_ :+ name)
-      armed <- plan.get
-      out   <- armed match
-        case Some((`step`, Fault.Before, failure)) => fail(failure)
-        case Some((`step`, Fault.After, failure))  => run *> fail(failure)
-        case Some((`step`, Fault.Torn, failure)) => torn.fold(IO.unit)(_.void) *> fail(failure)
-        case _                                   => run
+      armed <- plan.modify { plans =>
+        val i = plans.indexWhere {
+          case Plan.Fail(n, _, _)  => n == step
+          case Plan.Pause(n, _, _) => n == step
+          case Plan.Named(m, _, _) => m == name
+        }
+        plans.lift(i) match
+          case Some(p @ Plan.Named(_, _, _)) => (plans.patch(i, Nil, 1), Some(p))
+          case found                         => (plans, found)
+      }
+      failing = armed.collect {
+        case Plan.Fail(_, fault, failure)  => (fault, failure)
+        case Plan.Named(_, fault, failure) => (fault, failure)
+      }
+      out <- (failing, armed) match
+        case (Some((Fault.Before, failure)), _) => fail(failure)
+        case (Some((Fault.After, failure)), _)  => run *> fail(failure)
+        case (Some((Fault.Torn, failure)), _)   => torn.fold(IO.unit)(_.void) *> fail(failure)
+        case (None, Some(Plan.Pause(_, Fault.After, p))) =>
+          run <* (p.reached.complete(()) *> p.gate.get)
+        case (None, Some(Plan.Pause(_, _, p))) =>
+          p.reached.complete(()) *> p.gate.get *> run
+        case _ => run
     yield out
 
   def read(path: BundlePath): IO[Either[StoreError, IArray[Byte]]] =
@@ -133,7 +179,7 @@ object FaultyStore:
   def over(underlying: ProjectStore[IO]): IO[FaultyStore] =
     (
       Ref.of[IO, Int](0),
-      Ref.of[IO, Option[(Int, Fault, Failure)]](None),
+      Ref.of[IO, Vector[Plan]](Vector.empty),
       Ref.of[IO, Boolean](false),
       Ref.of[IO, Option[WriterLock]](None),
       Ref.of[IO, Vector[String]](Vector.empty)

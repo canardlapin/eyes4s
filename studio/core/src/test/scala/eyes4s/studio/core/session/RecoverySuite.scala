@@ -317,7 +317,7 @@ abstract class RecoveryConformance extends SessionConformance:
         assertEquals(save.map(_ => ()), Left(SessionError.RecoveryPending(digest)))
         assert(wrong.left.exists(_.isInstanceOf[SessionError.OtherRecovery]), wrong)
         assertEquals(twice, Left(SessionError.NoRecoveryPending(digest)))
-        assertEquals(archived.value, s"cache/journals/${digest.hex}.jsonl")
+        assertEquals(archived.value, s"journals/archive/${digest.hex}.jsonl")
         assertEquals(ByteDigest.sha256(copy), digest)
         assertEquals(gone, Left(StoreError.NoSidecar(Sidecar.Journal)))
         assertEquals(doc, base)
@@ -395,7 +395,7 @@ abstract class RecoveryConformance extends SessionConformance:
           case JournalFinding.Superseded(path) =>
             assertEquals(
               path.value,
-              s"cache/journals/${ByteDigest.sha256(BundleSamples.utf8(lines)).hex}.jsonl"
+              s"journals/archive/${ByteDigest.sha256(BundleSamples.utf8(lines)).hex}.jsonl"
             )
           case other => fail(s"expected a superseded journal, got $other")
         assertEquals(doc, base)

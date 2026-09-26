@@ -94,17 +94,28 @@ enum Recovery derives CanEqual:
     */
   case Unreplayable(digest: ByteDigest, error: JournalError)
 
+  /** `project.json` did not open (`problem`), so the session opened the
+    * previous manifest, and the journal starts from some other document:
+    * most likely the damaged one. Its work cannot be replayed on anything the
+    * bundle still holds, but it is kept, never taken for superseded; it can
+    * only be declined (archived) explicitly.
+    */
+  case JournalOnDamagedManifest(digest: ByteDigest, problem: BundleError)
+
   def journal: ByteDigest = this match
-    case Offered(offer)     => offer.journal
-    case Unreplayable(j, _) => j
+    case Offered(offer)                 => offer.journal
+    case Unreplayable(j, _)             => j
+    case JournalOnDamagedManifest(j, _) => j
 
 /** What opening found in the autosave journal. */
 enum JournalFinding derives CanEqual:
   /** No journal, or one with nothing to replay. */
   case Clean
 
-  /** A journal over an older document: the manifest already holds its work
-    * (a save completed but its journal reset did not). Archived at `archived`.
+  /** A journal over an older document than the current manifest's: the
+    * manifest already holds its work (a save completed but its journal reset
+    * did not). Archived at `archived`. Never reported when the session
+    * opened the previous manifest (see [[Recovery.JournalOnDamagedManifest]]).
     */
   case Superseded(archived: BundlePath)
 
@@ -122,11 +133,16 @@ enum ManifestSource derives CanEqual:
     */
   case Previous(problem: BundleError)
 
-/** What opening a project reported beside the session. */
+/** What opening a project reported beside the session. `orphaned` lists
+  * the runs the saved document shows as running: no job runs them any more,
+  * since a job belongs to the session that started it, so each is offered
+  * for resubmission on every open, recovery or not.
+  */
 final case class OpenReport(
     source: ManifestSource,
     science: ScienceCheck,
-    journal: JournalFinding
+    journal: JournalFinding,
+    orphaned: Vector[UnsubmittedRun]
 ) derives CanEqual
 
 /** What happened to an entry's autosave. */
@@ -144,8 +160,8 @@ enum JournalWrite derives CanEqual:
     */
   case NotJournaled
 
-  /** The write failed; the entry stands in memory, and the next autosave
-    * writes the journal whole.
+  /** The write failed; the entry stands in memory, and the next autosave,
+    * or the next save before it swaps the manifest, writes the journal whole.
     */
   case Failed(error: StoreError)
 
@@ -156,13 +172,17 @@ final case class Applied(step: Step, journal: JournalWrite) derives CanEqual
 
 /** A completed save: the manifest's digest, the parts it wrote (the others
   * were already present), whether the manifest was swapped (not when it was
-  * already these bytes), and the journal reset's failure, if it failed. A
-  * failed reset leaves a journal the next open recognises as superseded.
+  * already these bytes), the failure of the journal rewrite a save makes
+  * before its swap when an autosave had failed (`journalReconcile`), and the
+  * journal reset's failure. A failed reset leaves a journal the next open
+  * recognises as superseded. A failed reconcile is the one weaker window: a
+  * crash before this save's swap recovers only what the journal holds.
   */
 final case class SaveReceipt(
     manifest: ByteDigest,
     written: Vector[BundlePath],
     swapped: Boolean,
+    journalReconcile: Option[StoreError],
     journalReset: Option[StoreError]
 ) derives CanEqual
 
@@ -212,6 +232,9 @@ enum SessionError derives CanEqual:
   /** An unreplayable journal cannot be accepted, only declined. */
   case NotReplayable(journal: ByteDigest, error: JournalError)
 
+  /** A journal over a damaged manifest cannot be accepted, only declined. */
+  case DamagedBase(journal: ByteDigest, problem: BundleError)
+
   /** The session of `owner` was closed. */
   case Closed(owner: LockOwner)
 
@@ -240,6 +263,9 @@ enum SessionError derives CanEqual:
     case NotReplayable(journal, e) =>
       s"Journal ${journal.hex.take(12)} cannot be restored (${e.message}); it can only be " +
         "set aside."
+    case DamagedBase(journal, problem) =>
+      s"Journal ${journal.hex.take(12)} was written on a project.json that no longer opens " +
+        s"(${problem.message}); it cannot be restored, only set aside."
     case Closed(owner)                 => s"The session of ${owner.description} is closed."
     case CheckpointInterval(requested) =>
       s"A checkpoint interval of $requested entries is refused; it must be at least 1."

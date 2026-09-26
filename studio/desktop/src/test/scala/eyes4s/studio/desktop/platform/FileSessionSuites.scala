@@ -36,6 +36,14 @@ private object FileBundles:
 class FileAtomicSaveFaultSuite extends AtomicSaveFaultConformance:
   def bundle: Resource[IO, IO[ProjectStore[IO]]] = FileBundles.bundle
 
+/** Cancelling session operations on the file system (S2.4a review). */
+class FileSessionCancellationSuite extends SessionCancellationConformance:
+  def bundle: Resource[IO, IO[ProjectStore[IO]]] = FileBundles.bundle
+
+/** Faults beyond the save on the file system (S2.4a/b review). */
+class FileRecoveryFaultSuite extends RecoveryFaultConformance:
+  def bundle: Resource[IO, IO[ProjectStore[IO]]] = FileBundles.bundle
+
 /** The autosave journal and crash recovery on the file system (S2.4b). */
 class FileRecoverySuite extends RecoveryConformance:
   def bundle: Resource[IO, IO[ProjectStore[IO]]] = FileBundles.bundle
