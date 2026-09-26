@@ -72,6 +72,17 @@ object SchemaRegistry:
   private val graphs     = () => new ManifestLawSuite
   private val recorded   = () => new RecordingResultCodecLawSuite
   private val temporal   = () => new TemporalResultCodecLawSuite
+  private val templates  = () => new TemplateRecipeLawSuite
+
+  /** The study plan fixtures of the registered map methods other than cosine. */
+  private val methodPlans: Vector[(DefinitionId, String)] = Vector(
+    ComparisonMethodDefinitions.pearson             -> "study-pearson-v1.json",
+    ComparisonMethodDefinitions.spearman            -> "study-spearman-v1.json",
+    ComparisonMethodDefinitions.fisherZ             -> "study-fisher-z-v1.json",
+    ComparisonMethodDefinitions.l1Similarity        -> "study-l1-similarity-v1.json",
+    ComparisonMethodDefinitions.extendedJaccard     -> "study-extended-jaccard-v1.json",
+    ComparisonMethodDefinitions.distanceCorrelation -> "study-distance-correlation-v1.json"
+  )
 
   /** One identity: its kind, its pinned fixtures and its laws. A document's
     * first fixture carries it as its envelope schema.
@@ -93,8 +104,9 @@ object SchemaRegistry:
     Entry(
       DefinitionId.study,
       Kind.Document,
-      Vector("study-v1.json"),
-      codecLaw(plans, "study plan")
+      "study-v1.json" +: methodPlans.map(_._2),
+      codecLaw(plans, "study plan") ++
+        methodPlans.flatMap((id, _) => codecLaw(plans, s"${id.name} study plan"))
     ),
     Entry(
       DefinitionId.studyKey,
@@ -296,6 +308,8 @@ object SchemaRegistry:
       Vector("temporal-result-v1.json"),
       codecLaw(temporal, "temporal study result")
     )
+  ) ++ methodPlans.map((id, fixture) =>
+    Entry(id, Kind.Definition, Vector(fixture), codecLaw(plans, s"${id.name} study plan"))
   )
 
   /** Shipped codecs whose schema identity the caller supplies, pinned under
@@ -326,6 +340,23 @@ object SchemaRegistry:
       Kind.Document,
       Vector("temporal-study-v1.json"),
       codecLaw(plans, "temporal study plan")
+    ),
+    Entry(
+      TemplateRecipeCodecs.schema,
+      Kind.Document,
+      Vector(
+        "template-recipe-v1.json",
+        "template-recipe-lm-v1.json",
+        "template-recipe-maps-v1.json"
+      ),
+      codecLaw(templates, "fixed template recipe") ++
+        codecLaw(templates, "map template recipe")
+    ),
+    Entry(
+      get(DefinitionId.of("eyes4s.template-recipe", 2)),
+      Kind.Document,
+      Vector("template-recipe-grouped-v2.json"),
+      codecLaw(templates, "grouped template recipe")
     )
   )
 
@@ -358,7 +389,10 @@ object SchemaRegistry:
       )),
     "eyes4s.admission-ledger" ->
       (ladderLaw(inputs, "admission ledger versions") ++
-        ladderLaw(inputs, "inventory ledger versions"))
+        ladderLaw(inputs, "inventory ledger versions")),
+    "eyes4s.template-recipe" ->
+      (ladderLaw(templates, "template recipe versions") ++
+        ladderLaw(templates, "map template recipe versions"))
   )
 
   /** Every ladder a registered document fixture is decoded through, found
@@ -626,7 +660,10 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
 
   test("every multi-version schema has a ladder, a fixture per version and lifts them") {
     val versioned = SchemaRegistry.versioned(builtIns ++ conventional, resource)
-    assertEquals(versioned.map(_.name), Vector("eyes4s.admission-ledger", "eyes4s.study"))
+    assertEquals(
+      versioned.map(_.name),
+      Vector("eyes4s.admission-ledger", "eyes4s.study", "eyes4s.template-recipe")
+    )
     assertEquals(versionProblems(builtIns ++ conventional, versioned), Vector.empty)
     assertEquals(
       lawProblems(
@@ -670,9 +707,9 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
     assert(
       versionProblems(entries :+ v4, versioned).contains("eyes4s.study@4 has no pinned fixture")
     )
-    // A version whose only fixture is withdrawn.
+    // A version whose fixtures are all withdrawn.
     val withoutV1 = study.copy(ladders =
-      study.ladders.map(r => r.copy(fixtures = r.fixtures.filterNot(_ == "study-v1.json")))
+      study.ladders.map(r => r.copy(fixtures = r.fixtures.filterNot(_.endsWith("-v1.json"))))
     )
     assertEquals(
       versionProblems(entries, versioned.map(v => if v == study then withoutV1 else v)),
@@ -845,8 +882,24 @@ private object Decoders:
       get(DefinitionId.of("eyes4s.recording.ivt", 1)),
       get(DefinitionId.of("eyes4s.ivt-parameters", 1))
     )
+    // A study plan is read by the codec of the registered method it names.
+    def study: VersionedCodec[?] =
+      document.hcursor
+        .downField("value")
+        .downField("method")
+        .as[Json]
+        .toOption
+        .flatMap(json =>
+          for
+            name    <- json.hcursor.get[String]("name").toOption
+            version <- json.hcursor.get[Int]("version").toOption
+            method  <- DefinitionId.of(name, version).toOption
+            entry   <- ComparisonMethods.resolve(method)
+          yield StudyCodecs.similarity[Px](entry).codec
+        )
+        .getOrElse(StudyCodecs.cosine[Px].codec)
     id match
-      case DefinitionId.study           => Some(StudyCodecs.cosine[Px].codec)
+      case DefinitionId.study           => Some(study)
       case DefinitionId.studyInput      => Some(StudyInputCodecs.study[Px].input)
       case DefinitionId.admissionLedger => Some(StudyInputCodecs.study[Px].ledger)
       case StudyCodecDefinitions.studyV2
@@ -899,6 +952,8 @@ private object Decoders:
         Some(AdditionalRecipeCodecs.point.archive)
       case other if other == AdditionalRecipeCodecs.repetition.schema =>
         Some(AdditionalRecipeCodecs.repetition)
+      case other if other.name == TemplateRecipeCodecs.schema.name =>
+        Some(TemplateRecipeCodecs.of(document))
       case _ => None
 
   def reencode(

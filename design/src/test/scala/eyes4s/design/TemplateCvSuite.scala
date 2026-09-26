@@ -35,14 +35,15 @@ class TemplateCvSuite extends munit.FunSuite:
   private val refs   = Trials(
     TemplateCvReference.references.map((key, values) => Trial(key, (), mass(values)))
   )
+  private val cvDesign     = get(TemplateDesign.meanMap[Px]("participant", "unused response"))
   private val observations = TemplateCvReference.rows.map(r =>
     get(
-      MapTemplateObservation.of(
+      TemplateObservation.of(
         SourceKey(r.key, r.matched),
         r.group,
-        r.matched,
         mass(r.values),
-        1.0
+        1.0,
+        Some(r.matched)
       )
     )
   )
@@ -51,13 +52,13 @@ class TemplateCvSuite extends munit.FunSuite:
     TemplateCvReference.folds.foreach { (fold, trainingCount, heldCount, excludedCount) =>
       val heldGroups = TemplateCvReference.rows.filter(_.fold == fold).map(_.group).toSet
       val split      =
-        get(MapTemplateSplit.of(observations, heldGroups, "participant", "unused response"))
+        get(TemplateSplit.of(cvDesign, observations, heldGroups))
       assertEquals(split.training.rows.size, trainingCount)
       assertEquals(split.heldOut.rows.size, heldCount)
       assertEquals(split.excluded.size, excludedCount)
-      val heldMatches = split.heldOut.rows.map(_.matchGroup).toSet
-      assert(split.training.rows.forall(r => !heldMatches(r.matchGroup)))
-      val source  = Trials(split.heldOut.rows.map(r => Trial(r.key, (), r.map)))
+      val heldMatches = split.heldOut.rows.flatMap(_.matchGroup).toSet
+      assert(split.training.rows.forall(r => !r.matchGroup.exists(heldMatches)))
+      val source  = Trials(split.heldOut.rows.map(r => Trial(r.key, (), r.input)))
       val matched = pair(source, refs, design)
       assert(matched.unmatchedLeft.isEmpty && matched.ambiguous.isEmpty)
       matched.pairs.foreach { (left, right) =>
@@ -69,7 +70,7 @@ class TemplateCvSuite extends munit.FunSuite:
   }
 
   test("native matching retains missing source keys and refuses duplicate reference keys") {
-    val source  = Trials(observations.map(r => Trial(r.key, (), r.map)))
+    val source  = Trials(observations.map(r => Trial(r.key, (), r.input)))
     val missing = pair(source, Trials(refs.rows.filterNot(_.key == "a")), design)
     assertEquals(missing.unmatchedLeft.map(_.id), Vector("s1"))
     assertEquals(missing.pairs.size, source.size - 1)

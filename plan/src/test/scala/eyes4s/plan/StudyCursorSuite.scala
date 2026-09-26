@@ -284,7 +284,7 @@ class StudyCursorSuite extends munit.FunSuite:
             comparisons += 1
             inner.compare(x, y)
       ,
-      Some(MethodDescriptor.cosine[Px](DefinitionId.cosine))
+      Some(ComparisonMethods.cosine.descriptor)
     )
     val p    = plan(method = synchronous)
     val work = get(p.prepare(input))

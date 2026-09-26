@@ -10,7 +10,7 @@
     },
     "point-sampling-reference": {
       "path": "tools/r-parity/fixtures/point-sampling.json",
-      "sha256": "07df93df7a3fa645b280f7c303e57a192ee9fe3f20a4541a7c8e941dae9cdb4a",
+      "sha256": "d8e3fb82ef0a2130360f2be5246a958d48ae7af75a0acf052283de84a2a6a2e1",
       "license": "Apache-2.0; synthetic inputs authored for eyes4s",
       "role": "Static point sampling, independently verified reference or saved public workflow"
     },

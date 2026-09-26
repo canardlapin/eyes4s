@@ -17,6 +17,7 @@
 package eyes4s.compareconsumer
 
 import eyes4s.compare.*
+import eyes4s.compare.eyesim.EyesimCompat
 import eyes4s.core.*
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.Px
@@ -39,7 +40,7 @@ class MapComparisonSuite extends munit.FunSuite:
     ) {
       val g = grid(c.a.size); val a = mass(c.a, g); val b = mass(c.b, g)
       c.expected.foreach { (name, expected) =>
-        val method = get(MapSimilarityMethod.fromReference(name)).instance[Px]
+        val method = get(EyesimCompat.fromReference(name)).similarity[Px]
         near(get(method.compare(a, b)).value, expected)
         near(get(method.compare(b, a)).value, expected)
         assert(method.info.summary.nonEmpty)
@@ -49,23 +50,87 @@ class MapComparisonSuite extends munit.FunSuite:
 
   test("Fisher endpoint policies are explicit and legacy behavior is retained") {
     val a = mass(Vector(.1, .2, .3, .4), grid(4))
-    near(get(Distribution.fisherZMachineEpsilon[Px].compare(a, a)).value, 18.36840028483855)
+    near(get(Distribution.fisherZ[Px].compare(a, a)).value, 18.36840028483855)
     // r = -1 + 32.4 eps is within 64 eps of -1, so it is snapped as eyesim does, not clamped alone.
     val reversed = mass(Vector(.40000002, .29999998, .2, .1), grid(4))
     val r        = get(Distribution.pearson[Px].compare(a, reversed)).value
     assert(r > -1 + 8 * math.ulp(1.0) && r < -1 + 64 * math.ulp(1.0), clue(r))
     near(
-      get(Distribution.fisherZMachineEpsilon[Px].compare(a, reversed)).value,
+      get(Distribution.fisherZ[Px].compare(a, reversed)).value,
       -18.36840028483855
     )
     near(
-      get(Distribution.fisherZ[Px].compare(a, a)).value,
+      get(EyesimCompat.fisherZLegacy[Px].compare(a, a)).value,
       0.5 * math.log((1 + .999999999999) / (1 - .999999999999))
     )
-    assert(get(Distribution.fisherZ[Px].compare(a, a)).value < 15)
-    assert(MapSimilarityMethod.fromReference("emd").isLeft)
-    assert(MapSimilarityMethod.fromReference("sinkhorn").isLeft)
-    assert(MapSimilarityMethod.fromReference("unknown").isLeft)
+    assert(get(EyesimCompat.fisherZLegacy[Px].compare(a, a)).value < 15)
+    assertEquals(EyesimCompat.fromToken("FisherZLegacy"), Right(EyesimCompat.FisherZLegacy))
+    assert(MapSimilarityMethod.fromToken("FisherZLegacy").isLeft)
+    assert(!MapSimilarityMethod.values.contains(EyesimCompat.FisherZLegacy))
+    assert(EyesimCompat.fromReference("emd").isLeft)
+    assert(EyesimCompat.fromReference("sinkhorn").isLeft)
+    assert(EyesimCompat.fromReference("unknown").isLeft)
+  }
+
+  test("the registry keeps each method's interface, token and eyesim name") {
+    val kernel: Kernel[Mass[Px]] = MapSimilarityMethod.Cosine.kernel[Px]
+    val metric: Metric[Mass[Px]] = MapSimilarityMethod.L1Similarity.metric[Px]
+    assertEquals(kernel.info, Distribution.cosine[Px].info)
+    assertEquals(metric.info, Distribution.totalVariation[Px].info)
+    val g = grid(4); val a = mass(Vector(.1, .2, .3, .4), g)
+    val b = mass(Vector(.4, .1, .1, .4), g)
+    near(
+      get(MapSimilarityMethod.L1Similarity.similarity[Px].compare(a, b)).value,
+      1 - get(metric.compare(a, b)).value
+    )
+    assertEquals(
+      MapSimilarityMethod.values.map(_.interface),
+      Vector(
+        MapMethodInterface.Symmetric,
+        MapMethodInterface.Symmetric,
+        MapMethodInterface.Symmetric,
+        MapMethodInterface.Kernel,
+        MapMethodInterface.MetricDerived,
+        MapMethodInterface.Symmetric,
+        MapMethodInterface.Symmetric
+      )
+    )
+    // Tokens are frozen wire identity of saved repetition plans.
+    assertEquals(
+      MapSimilarityMethod.values.map(_.token),
+      Vector(
+        "Pearson",
+        "Spearman",
+        "FisherZMachineEpsilon",
+        "Cosine",
+        "L1Similarity",
+        "ExtendedJaccard",
+        "DistanceCorrelation"
+      )
+    )
+    MapSimilarityMethod.values.foreach { m =>
+      assertEquals(MapSimilarityMethod.fromToken(m.token), Right(m))
+      assertEquals(m.toString, m.token)
+      assertEquals(m.info, m.similarity[Px].info)
+    }
+    assertEquals(EyesimCompat.referenceNames.map(_._2), MapSimilarityMethod.values)
+    EyesimCompat.referenceNames.foreach((name, m) =>
+      assertEquals(EyesimCompat.fromReference(name), Right(m))
+    )
+    assertEquals(
+      MapSimilarityMethod.fromToken("emd"),
+      Left(MapComparisonError.UnsupportedMethod("emd"))
+    )
+    assert(EyesimCompat.fromToken("emd").isLeft)
+    assertEquals(EyesimCompat.FisherZLegacy.interface, MapMethodInterface.Symmetric)
+    assert(typeCheckErrors("eyes4s.compare.MapSimilarityMethod.Pearson.kernel").nonEmpty)
+    assert(typeCheckErrors("eyes4s.compare.MapSimilarityMethod.Cosine.metric").nonEmpty)
+    assert(
+      typeCheckErrors(
+        """object Forged extends eyes4s.compare.MapSimilarityMethod.SymmetricMethod("x"):
+             def similarity[U <: eyes4s.kernel.Unit2D] = eyes4s.compare.Distribution.pearson[U]"""
+      ).nonEmpty
+    )
   }
 
   test("constant, one-cell, invalid mass and nominal geometry policies remain explicit") {
@@ -75,12 +140,12 @@ class MapComparisonSuite extends munit.FunSuite:
       MapSimilarityMethod.Pearson,
       MapSimilarityMethod.Spearman,
       MapSimilarityMethod.DistanceCorrelation,
-      MapSimilarityMethod.FisherZMachineEpsilon
+      MapSimilarityMethod.FisherZ
     ).foreach { m =>
-      assert(m.instance[Px].compare(a, a).isLeft)
-      assert(m.instance[Px].compare(a, b).isLeft)
+      assert(m.similarity[Px].compare(a, a).isLeft)
+      assert(m.similarity[Px].compare(a, b).isLeft)
       assert(
-        m.instance[Px].compare(mass(Vector(1.0), grid(1)), mass(Vector(1.0), grid(1))).isLeft
+        m.similarity[Px].compare(mass(Vector(1.0), grid(1)), mass(Vector(1.0), grid(1))).isLeft
       )
     }
     Vector(
@@ -88,7 +153,7 @@ class MapComparisonSuite extends munit.FunSuite:
       MapSimilarityMethod.ExtendedJaccard,
       MapSimilarityMethod.L1Similarity
     ).foreach { m =>
-      near(get(m.instance[Px].compare(a, a)).value, 1.0)
+      near(get(m.similarity[Px].compare(a, a)).value, 1.0)
     }
     assert(
       Surface.mass(g, IArray(0.0, 0.0, 0.0, 0.0), Provenance.raw(ContentHash.empty)).isLeft
@@ -99,7 +164,7 @@ class MapComparisonSuite extends munit.FunSuite:
     assert(Surface.mass(g, IArray.empty, Provenance.raw(ContentHash.empty)).isLeft)
     val foreign = get(Grid.over(get(Frame.screen("foreign", 4, 1)), 4, 1))
     MapSimilarityMethod.values.foreach(m =>
-      assert(m.instance[Px].compare(b, mass(Vector(.1, .2, .3, .4), foreign)).isLeft)
+      assert(m.similarity[Px].compare(b, mass(Vector(.1, .2, .3, .4), foreign)).isLeft)
     )
     assert(typeCheckErrors("""
       def compare(s: eyes4s.kernel.Signed[eyes4s.kernel.Unit2D.Px]) = eyes4s.compare.Distribution.spearman[eyes4s.kernel.Unit2D.Px].compare(s,s)
@@ -120,7 +185,7 @@ class MapComparisonSuite extends munit.FunSuite:
     assertEquals(left.levels.map(_._1.value), Vector(1.0, 2.0))
     MapReference.orderedScales.foreach { (method, expected) =>
       val result =
-        MapComparison.scales(left, right, get(MapSimilarityMethod.fromReference(method)))
+        MapComparison.scales(left, right, get(EyesimCompat.fromReference(method)))
       assertEquals(result.requested, 2); assertEquals(result.contributing, 2)
       result.rows.foreach { (sigma, value) =>
         near(get(value).value, expected.find(_._1 == sigma.value).get._2)
@@ -184,8 +249,8 @@ class MapComparisonSuite extends munit.FunSuite:
     val ma       = get(smoother.density(get(a.occupancy()), g));
     val mb       = get(smoother.density(get(b.occupancy()), g))
     MapSimilarityMethod.values.foreach { method =>
-      val direct = method.instance[Px].compare(ma, mb)
-      val lifted = Lift.viaSmoothingSymmetric(method.instance[Px], smoother, g).compare(a, b)
+      val direct = method.similarity[Px].compare(ma, mb)
+      val lifted = Lift.viaSmoothingSymmetric(method.similarity[Px], smoother, g).compare(a, b)
       assertEquals(lifted, direct)
     }
   }

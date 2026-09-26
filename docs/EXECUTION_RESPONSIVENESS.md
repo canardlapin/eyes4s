@@ -308,7 +308,7 @@ rounding: the largest relative difference observed was 2.8e-12, and the pinned
 eyesim fixtures still pass at `MapTolerance = 1e-12`. A 256×256 grid is refused by
 default; a caller that accepts a call of several seconds passes
 `DistanceCorrelationLimit.of(n)` to `Distribution.distanceCorrelationWithin`,
-`MapSimilarityMethod.instanceWithin` or `MapComparison.scales`. Repetition plans
+`MapSimilarityMethod.similarityWithin` or `MapComparison.scales`. Repetition plans
 use the default limit, and the limit is not on the plan wire.
 
 ## Reproduce

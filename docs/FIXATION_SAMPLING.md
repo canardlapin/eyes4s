@@ -13,9 +13,9 @@ Queries can be repeated or out of order. Every time is retained with its source
 fixation index and point, or a named missing reason. Clock compatibility goes
 through `Agreement`. This is deterministic evaluation, not random sampling.
 
-The pinned `sample_fixations` fast and slow calls both hold the final fixation
-after its onset and take the later row on duplicated onsets, so they sample the
-same positions and match `HoldLastOnset` on ordered and singleton paths.
+The pinned `sample_fixations` fast and slow calls return the same object: both
+hold the final fixation after its onset and take the later row on duplicated
+onsets, and they match `HoldLastOnset` on ordered and singleton paths.
 `OnsetRange` is the native alternative that is missing after the last onset; it
 agrees with the reference up to that onset. Native Scanpath rejects duplicated
 onsets. R's empty fixation-group constructor fails; native empty trajectory

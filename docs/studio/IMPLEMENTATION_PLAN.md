@@ -69,7 +69,7 @@ Create the `studio` module family inside eyes4s with pinned JavaFX/scaladock/Int
 | S0.4 | Headless JavaFX harness, snapshots and studio CI jobs | 0 | S0.2 | — |
 | S0.6 | Design reference and fixture in the repo | 0 | — | — |
 | S0.7a | Generate the studio acceptance fixture (fixtures/studio-golden) from FIXTURE.md | 0 | S0.6 | — |
-| S0.7b | Verify the acceptance fixture through real eyes4s and freeze SCORES.json | 0 | S0.7a, UI-A, UI-B, UI-H, UI-C | — |
+| S0.7b | Verify the acceptance fixture through real eyes4s and freeze SCORES.json | 1 | S0.7a, UI-A, UI-B, UI-H, UI-C | — |
 | S0.8 | Bundled example project and story-moment seeds | 1 | S0.7a, S2.3, S3.0 | — |
 | S0.9 | Portability contract: platform interfaces, backend transports, PORTING.md | 0 | S0.2, S3.0 | — |
 
@@ -218,7 +218,7 @@ Tokens, fonts, icons, themes, and the shell every perspective shares: app bar, p
 | S1.10 | Theme switching light/dark incl. scaladock DockTheme mapping | 1 | S1.1, S1.5a, S1.0 | — |
 | S1.11 | Accessibility baseline for controls and single-stop plots | 1 | S1.5a, S4.2, S1.0 | — |
 | S1.12 | Logging and error reporting | 1 | S0.2 | — |
-| S1.13 | Internationalisation readiness | 2 | S1.4, S1.0 | — |
+| S1.13 | Internationalisation readiness | 3 | S1.4, S1.0 | — |
 | S1.14 | Licences, notices and About box | 1 | S1.2 | — |
 
 #### S1.1 · Tokens as JavaFX looked-up colours, light and dark, with stage variants
@@ -603,7 +603,7 @@ ExecutionService over eyes4s-fs2 (jobs, progress, cancel, stale rejection), prev
 |---|---|---|---|---|
 | S3.0 | StudyBackend interface and FakeStudyBackend | 0 | S0.2, S0.6 | — |
 | S3.6 | StudioDriver: headless scripting of every command | 0 | S2.2, S3.0, S1.0 | — |
-| S3.7 | Swap to the real eyes4s backend | 0 | S3.0, S0.7b, UI-A, UI-B, UI-C, UI-D, UI-E, UI-F, UI-G, UI-H, CR2, CR3, CR6 | — |
+| S3.7 | Swap to the real eyes4s backend | 1 | S3.0, S0.7b, UI-A, UI-B, UI-C, UI-D, UI-E, UI-F, UI-G, UI-H, CR2, CR3, CR6 | — |
 | S3.1 | ExecutionService: jobs, progress, cancel, stale rejection, Show | 0 | S2.1, S3.0 | UI-D |
 | S3.2 | Preview paging service for the resolved design | 0 | S3.1, S3.0 | UI-D |
 | S3.3 | SelectionBus and typed StudioRef | 0 | S2.1, S3.0 | UI-G |
@@ -891,9 +891,9 @@ First run, import wizard, trial identity, inventory join, geometry, admission le
 |---|---|---|---|---|
 | S5.1 | Data first-run screen | 1 | S1.5a, S0.7a, S0.8, S2.9, S1.0 | — |
 | S5.2 | Import wizard: column roles, declared units, presets | 0 | S2.2, S3.0, S1.0 | UI-H |
-| S5.3 | Trial identity key builder | 0 | S5.2, S1.0 | UI-B |
+| S5.3 | Trial identity key builder | 1 | S5.2, S1.0 | UI-B |
 | S5.4 | trials.csv inventory join and metadata | 0 | S5.2, S3.0, S1.0 | UI-H |
-| S5.5 | Geometry panel with recorded corrections | 0 | S4.3a, S1.0 | UI-A |
+| S5.5 | Geometry panel with recorded corrections | 1 | S4.3a, S1.0 | UI-A |
 | S5.6 | Admission ledger and dataset revisions | 0 | S5.4, S2.7, S1.0 | — |
 | S5.7 | Assets in Data: display kinds, missing assets and Repair | 1 | S2.5, S5.4, S2.10, S1.0 | — |
 | S5.8 | Dataset revision diff | 1 | S5.6, S1.0 | — |
@@ -1016,7 +1016,7 @@ Trials navigator, neutral TrialView, timeline with brush and playhead, source re
 | S6.4 | Source records table (virtualised) | 1 | S3.3, S1.0 | UI-G |
 | S6.5 | Fixation inspector with used-by links | 1 | S6.2, S3.4, S2.6, S1.0 | — |
 | S6.6 | Linked selection in Explore | 0 | S6.2, S6.3, S6.4, S6.5, S1.0 | — |
-| S6.7 | Explore small multiples | 2 | S6.2, S1.0 | — |
+| S6.7 | Explore small multiples | 3 | S6.2, S1.0 | — |
 
 #### S6.1 · Trials navigator
 
@@ -1110,9 +1110,9 @@ Presets, descriptor-driven recipe, drafts and plan.diff, scales, resolved design
 
 | Key | Ticket | P | Depends on | Swap deps (core) |
 |---|---|---|---|---|
-| S7.1 | Recipe presets (Enc→Ret, Perception→Imagery, Study→Recognition) | 0 | S2.2, S3.0, S1.0 | UI-B |
-| S7.2 | Descriptor-driven recipe form and sentence | 0 | S7.1, S1.0 | CR6, UI-F |
-| S7.3 | Draft editing, plan.diff and Save & run | 0 | S7.2, S3.1, S2.7, S1.0 | — |
+| S7.1 | Recipe presets (Enc→Ret, Perception→Imagery, Study→Recognition) | 1 | S2.2, S3.0, S1.0 | UI-B |
+| S7.2 | Descriptor-driven recipe form and sentence | 1 | S7.1, S1.0 | CR6, UI-F |
+| S7.3 | Draft editing, plan.diff and Save & run | 1 | S7.2, S3.1, S2.7, S1.0 | — |
 | S7.4 | Scales editor with cell size and warnings | 1 | S7.2, S1.0 | UI-A |
 | S7.5 | Resolved design table | 0 | S3.2, S1.0 | — |
 | S7.6 | Preflight pane and run card | 0 | S3.5, S7.5, S1.0 | — |
@@ -1217,7 +1217,7 @@ Query layout (queries, trial panels, scale ladder, readout, why-this-reference) 
 | S8.4 | Why-this-reference inspector | 1 | S8.2, S3.2, S1.0 | — |
 | S8.5 | Pairs table and scale profile tabs | 1 | S8.3, S1.0 | — |
 | S8.6 | Compare summary layout | 0 | S3.4, S4.5c, S4.5d, S8.8, S1.0 | — |
-| S8.7 | Reporting editor (no rerun) | 0 | S2.1, S3.0, S1.0 | UI-C |
+| S8.7 | Reporting editor (no rerun) | 1 | S2.1, S3.0, S1.0 | UI-C |
 | S8.8 | Run-in-progress behaviour | 0 | S3.1, S1.7, S1.0 | — |
 
 #### S8.1 · Compare query layout: Queries navigator and count strip
@@ -1418,8 +1418,8 @@ End-to-end journeys, adversarial science tests, visual parity with the design bo
 | Key | Ticket | P | Depends on | Swap deps (core) |
 |---|---|---|---|---|
 | S10.1 | E2E golden journey (headless driver and UI) | 0 | S5.6, S6.6, S7.6, S8.6, S9.5, S2.4a, S0.7a, S2.4b, S3.6 | — |
-| S10.2 | E2E scenario catalogue (E2E-02 … E2E-12) | 0 | S10.1, S7.1, S9.1, S2.4b, S2.5, S3.5 | — |
-| S10.3 | Adversarial science tests through the app | 0 | S10.1, S3.5 | — |
+| S10.2 | E2E scenario catalogue (E2E-02 … E2E-12) | 1 | S10.1, S7.1, S9.1, S2.4b, S2.5, S3.5 | — |
+| S10.3 | Adversarial science tests through the app | 1 | S10.1, S3.5 | — |
 | S10.4-render | Render the design boards to reference PNGs | 1 | S0.6 | — |
 | S10.4-Figures | Parity: Figures board | 1 | S10.4-render, S0.8 | — |
 | S10.4-Results | Parity: Results board | 1 | S10.4-render, S0.8 | — |
@@ -1430,12 +1430,12 @@ End-to-end journeys, adversarial science tests, visual parity with the design bo
 | S10.4-Data | Parity: Data board | 1 | S10.4-render, S0.8 | — |
 | S10.4-DataEmpty | Parity: DataEmpty board | 1 | S10.4-render, S0.8 | — |
 | S10.4-System | Parity: System board | 1 | S10.4-render, S0.8 | — |
-| S10.4 | Visual parity sign-off across all boards | 0 | S10.1, S1.10, S10.4-System, S10.4-DataEmpty, S10.4-Data, S10.4-Explore, S10.4-Analysis, S10.4-Main, S10.4-MainDark, S10.4-Results, S10.4-Figures | — |
+| S10.4 | Visual parity sign-off across all boards | 1 | S10.1, S1.10, S10.4-System, S10.4-DataEmpty, S10.4-Data, S10.4-Explore, S10.4-Analysis, S10.4-Main, S10.4-MainDark, S10.4-Results, S10.4-Figures | — |
 | S10.5 | Accessibility audit | 1 | S10.1, S1.11 | — |
 | S10.6 | Performance qualification | 1 | S10.1, S4.4 | — |
 | S10.7 | macOS packaging | 1 | S10.1, S1.14 | — |
 | S10.8 | Researcher usability qualification | 2 | S10.4, S10.7 | — |
-| S10.9 | Portability proof: minimal Scala.js shell | 2 | S1.0, S0.9, S6.6 | — |
+| S10.9 | Portability proof: minimal Scala.js shell | 3 | S1.0, S0.9, S6.6 | — |
 
 #### S10.1 · E2E golden journey (headless driver and UI)
 

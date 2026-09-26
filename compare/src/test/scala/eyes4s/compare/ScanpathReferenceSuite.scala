@@ -74,6 +74,14 @@ class ScanpathReferenceSuite extends munit.FunSuite:
         )
       )
     )
+  private def baseline(left: Scanpath[Px], right: Scanpath[Px]): Vector[Double] =
+    val score = get(
+      ScanpathComparison.baseline(
+        get(BaselineScanpath.of(left, CompareOperand.Left)),
+        get(BaselineScanpath.of(right, CompareOperand.Right))
+      )
+    )
+    Vector(score.shape, score.direction, score.length, score.position, score.duration)
   private def config(limit: Int) =
     get(
       FixationTransportConfig.of[Px](1000, 1000, Span.millis(3000), .8, .1, 10000, 1e-10, limit)
@@ -81,34 +89,38 @@ class ScanpathReferenceSuite extends munit.FunSuite:
 
   ScanpathReference.paths.foreach { p =>
     test(
-      s"${p.name}: five portable components match exported R calls; sixth availability is retained"
+      s"${p.name}: five portable components match exported R calls; the sixth has no slot"
     ) {
-      val result = ScanpathComparison.baseline(base, path(p))
-      assertEquals(result.values.map(_._1), ScanpathComponent.values.toVector)
-      result.values.take(5).zip(p.expected).foreach { case ((_, score), expected) =>
-        assertEqualsDouble(get(score).value, expected, AnalyticTolerance)
+      val result = baseline(base, path(p))
+      assertEquals(result.size, 5)
+      result.zip(p.expected).foreach { (score, expected) =>
+        assertEqualsDouble(score, expected, AnalyticTolerance)
       }
-      assert(result.values.last._2.isLeft)
+      // The baseline is MultiMatch, not a copy of it.
+      assertEquals(
+        result, {
+          val m = get(MultiMatch[Px].compare(base, path(p)))
+          Vector(m.shape, m.direction, m.length, m.position, m.duration)
+        }
+      )
     }
   }
   test(
     "analytic translation, duration, tied alignment and sixth backend value remain separate"
   ) {
-    val scores =
-      ScanpathComparison.baseline(base, translated).values.take(5).map(x => get(x._2).value)
+    val scores = baseline(base, translated)
     assertEqualsDouble(scores(3), 1 - 50 / math.hypot(800, 400), AnalyticTolerance)
     assertEqualsDouble(ScanpathReference.paths(1).expected(5), scores(3), AnalyticTolerance)
     val t = path(ScanpathReference.paths.find(_.name == "tie").get)
-    ScanpathComparison.baseline(t, t).values.take(5).zip(ScanpathReference.tieSelf).foreach {
-      case ((_, score), expected) =>
-        assertEqualsDouble(get(score).value, expected, AnalyticTolerance)
+    baseline(t, t).zip(ScanpathReference.tieSelf).foreach { (score, expected) =>
+      assertEqualsDouble(score, expected, AnalyticTolerance)
     }
-    val duration = ScanpathComparison.baseline(base, path(ScanpathReference.paths(2)))
-    assertEqualsDouble(get(duration.values(4)._2).value, .5, AnalyticTolerance)
+    val duration = baseline(base, path(ScanpathReference.paths(2)))
+    assertEqualsDouble(duration(4), .5, AnalyticTolerance)
     // Pinned sixth component on changed duration masses returns 1; it is not an exact OT oracle.
     assertEquals(ScanpathReference.paths(2).expected(5), 1.0)
   }
-  test("minimum three and half-open onset windows preserve component failures") {
+  test("minimum three is a typed admission naming the operand; half-open onset windows") {
     val two = get(
       base.within(
         get(Window.of(Span.zero, Span.millis(200))),
@@ -117,7 +129,15 @@ class ScanpathReferenceSuite extends munit.FunSuite:
       )
     )
     assertEquals(two.n, 2)
-    assert(ScanpathComparison.baseline(two, base).values.forall(_._2.isLeft))
+    assertEquals(
+      BaselineScanpath.of(two, CompareOperand.Left).left.toOption,
+      Some(CompareError.TooShort("left input scanpath", 2, 3))
+    )
+    assert(
+      typeCheckErrors(
+        "eyes4s.compare.ScanpathComparison.baseline(base, base)"
+      ).nonEmpty
+    )
     assert(MultiMatch[Px].compare(two, two).isRight)
     assert(
       base
@@ -128,7 +148,11 @@ class ScanpathReferenceSuite extends munit.FunSuite:
         )
         .isLeft
     )
-    assert(ScanpathComparison.baseline(singleton(1, 1, 0), base).values.forall(_._2.isLeft))
+    assertEquals(
+      BaselineScanpath.of(singleton(1, 1, 0), CompareOperand.Right).left.toOption,
+      Some(CompareError.TooShort("right input scanpath", 1, 3))
+    )
+    assertEquals(BaselineScanpath.MinimumFixations, 3)
     val all = get(
       base.within(
         get(Window.of(Span.zero, Span.millis(201))),
@@ -137,6 +161,7 @@ class ScanpathReferenceSuite extends munit.FunSuite:
       )
     )
     assertEquals(all.n, 3)
+    assert(BaselineScanpath.of(all, CompareOperand.Left).isRight)
     assert(
       Event.Fixation
         .of(
