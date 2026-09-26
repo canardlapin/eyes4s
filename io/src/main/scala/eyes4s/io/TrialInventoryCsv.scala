@@ -16,38 +16,10 @@
 
 package eyes4s.io
 
+import cats.data.NonEmptyVector
 import eyes4s.design.*
 import eyes4s.kernel.*
 import eyes4s.plan.*
-
-/** How a fixation record's sample support is declared. A fixation is
-  * supported by at least one sample, and the rule says where that support
-  * comes from.
-  */
-enum SampleCountRule derives CanEqual:
-  /** Counts are read from `column`. A count that is not a positive integer,
-    * 0 included, rejects its record with `FixationRowError.Number`; a trial
-    * every record of which is rejected so has no fixations.
-    */
-  case PositiveColumn(column: String)
-
-  /** The table has no count column: a record's count is its duration times
-    * `rate`, rounded up, so every record of positive duration has at least
-    * one sample.
-    */
-  case FromDuration(rate: Hz)
-
-  def countColumn: Option[String] = this match
-    case PositiveColumn(name) => Some(name)
-    case FromDuration(_)      => None
-
-  /** The count a record of `durationMicros` has under [[FromDuration]]. */
-  private[io] def derived(durationMicros: Long): Int = this match
-    case PositiveColumn(_)  => 1
-    case FromDuration(rate) =>
-      val samples = (BigDecimal(durationMicros) * BigDecimal(rate.value) / BigDecimal(1000000))
-        .setScale(0, BigDecimal.RoundingMode.CEILING)
-      if samples > BigDecimal(Int.MaxValue) then Int.MaxValue else math.max(1, samples.toInt)
 
 /** The onset and duration columns and the unit both are written in. The unit
   * is a declaration; it is never inferred from the values.
@@ -56,7 +28,8 @@ final case class TimeColumns(onset: String, duration: String, unit: TimestampUni
     derives CanEqual
 
 /** The columns that identify a trial: participant, phase, trial label and,
-  * optionally, occurrence (1 when no column is named).
+  * optionally, occurrence (1 when no column is named). The label (participant,
+  * phase and trial) identifies a trial; the occurrence is checked against it.
   */
 final case class TrialColumns private (
     participant: String,
@@ -66,27 +39,32 @@ final case class TrialColumns private (
 ) derives CanEqual:
   def names: Vector[String] = Vector(participant, phase, trial) ++ occurrence.toVector
 
-  /** The identity a record declares, or the column, value and requirement it fails. */
+  /** The identity a record declares, or every column, value and requirement
+    * it fails.
+    */
   private[io] def identity(
       fields: Map[String, String]
-  ): Either[(String, String, String), TrialIdentity] =
+  ): Either[Vector[(String, String, String)], TrialIdentity] =
     def text(column: String) =
       val value = fields.getOrElse(column, "")
       Either.cond(value.trim.nonEmpty, value, (column, value, "a non-blank value"))
-    for
-      p <- text(participant)
-      f <- text(phase)
-      t <- text(trial)
-      n <- occurrence.fold[Either[(String, String, String), TrialOccurrence]](
-        Right(TrialOccurrence.first)
-      )(column =>
-        val raw = fields.getOrElse(column, "")
-        raw.toIntOption
-          .flatMap(TrialOccurrence.of(_).toOption)
-          .toRight((column, raw, "a positive integer occurrence"))
-      )
-      id <- TrialIdentity.of(p, f, t, n).left.map(e => (participant, p, e.message))
-    yield id
+    val p = text(participant)
+    val f = text(phase)
+    val t = text(trial)
+    val n = occurrence.fold[Either[(String, String, String), TrialOccurrence]](
+      Right(TrialOccurrence.first)
+    )(column =>
+      val raw = fields.getOrElse(column, "")
+      Option
+        .when(raw.matches("[0-9]+"))(raw)
+        .flatMap(_.toIntOption)
+        .flatMap(TrialOccurrence.of(_).toOption)
+        .toRight((column, raw, "a positive integer occurrence"))
+    )
+    (p, f, t, n) match
+      case (Right(pv), Right(fv), Right(tv), Right(nv)) =>
+        TrialIdentity.of(pv, fv, tv, nv).left.map(e => Vector((participant, pv, e.message)))
+      case _ => Left(Vector(p, f, t, n).collect { case Left(e) => e })
 
 object TrialColumns:
   def of(
@@ -121,10 +99,20 @@ final class FixationTable private (
     val attributes: Vector[AttributeColumn]
 ):
   def names: Vector[String] =
-    trial.names ++ item.toVector ++ spec.names
+    trial.names ++ item.toVector ++ spec(false).names
 
-  private[io] def spec: RowSpec =
-    RowSpec(ordinal, x, y, time.onset, time.duration, samples, time.unit, attributes)
+  private[io] def spec(itemRequired: Boolean): RowSpec =
+    RowSpec(
+      ordinal,
+      x,
+      y,
+      time.onset,
+      time.duration,
+      samples,
+      time.unit,
+      attributes,
+      if itemRequired then item.toVector else Vector.empty
+    )
 
 object FixationTable:
   def of(
@@ -160,7 +148,8 @@ object TrialInventoryColumns:
     TrialColumns.distinct(columns.names).map(_ => columns)
 
 /** One declared trial: its identity, the inventory records that declare it
-  * (identical repeats collapse into one trial), its item and attributes.
+  * (repeats with equal parsed values collapse into one trial), its item and
+  * attributes.
   */
 final case class InventoryRow(
     identity: TrialIdentity,
@@ -170,7 +159,10 @@ final case class InventoryRow(
 ) derives CanEqual
 
 /** A trials table read under declared columns: every declared trial once, in
-  * first-record order. Record numbers count the header as record 1.
+  * first-record order. Record numbers count the header as record 1. A trial is
+  * identified by its label (participant, phase and trial); the occurrence
+  * column, when declared, is an attribute every record of the trial must
+  * agree with, not part of the join.
   */
 final class TrialInventory private (
     val header: Vector[String],
@@ -178,19 +170,37 @@ final class TrialInventory private (
     val columns: TrialInventoryColumns,
     val trials: Vector[InventoryRow]
 ):
-  private lazy val byIdentity = trials.map(t => t.identity -> t).toMap
+  private lazy val byLabel = trials.map(t => TrialInventory.label(t.identity) -> t).toMap
 
-  def trial(identity: TrialIdentity): Option[InventoryRow] = byIdentity.get(identity)
+  /** The declared trial with this identity, occurrence included. */
+  def trial(identity: TrialIdentity): Option[InventoryRow] =
+    labelled(identity).filter(_.identity == identity)
+
+  /** The declared trial with this identity's label, whatever its occurrence. */
+  private[io] def labelled(identity: TrialIdentity): Option[InventoryRow] =
+    byLabel.get(TrialInventory.label(identity))
 
   /** Nominal reference to the decoded inventory records. */
   def source(label: String): SourceRef = SourceRef.of(label, header, rows)
 
 object TrialInventory:
+  private[io] def label(id: TrialIdentity): (String, String, String) =
+    (id.participant, id.phase, id.trial)
+
+  private final case class Row(
+      number: Int,
+      identity: TrialIdentity,
+      item: Option[String],
+      attributes: Attributes
+  )
+
   /** Read a trials table. The inventory is a declaration, so any defective
-    * record refuses it: a record of the wrong width, a blank identity field
+    * record refuses it, and the refusal lists every defect, each naming its
+    * record and column: a record of the wrong width, a blank identity field
     * or item, an occurrence that is not a positive integer, an attribute that
-    * is not of its declared kind, or two records that declare one trial
-    * (participant, phase and trial label) with different values.
+    * is not of its declared kind, and every set of records that declare one
+    * label with different parsed values (`Conflict`, naming the records and
+    * the columns that differ).
     */
   def read(
       contents: String,
@@ -198,91 +208,89 @@ object TrialInventory:
   ): Either[FixationImportError, TrialInventory] =
     FixationCsv.table(contents, columns.names).flatMap { (header, rows) =>
       val parsed = rows.zipWithIndex.map { (raw, index) =>
-        val number                                                    = index + 2
-        val fields                                                    = header.zip(raw).toMap
-        def field(column: String, value: String, requirement: String) =
-          InventoryError.Field(number, column, value, requirement)
-        for
-          _ <- Either.cond(
-            raw.size == header.size,
-            (),
-            InventoryError.Width(number, header.size, raw.size)
+        val number = index + 2
+        val fields = header.zip(raw).toMap
+        if raw.size != header.size then
+          Left(Vector(InventoryError.Width(number, header.size, raw.size)))
+        else
+          def field(column: String, value: String, requirement: String) =
+            InventoryError.Field(number, column, value, requirement)
+          val identity = columns.trial.identity(fields).left.map(_.map(field.tupled))
+          val item     = columns.item.fold[Either[Vector[InventoryError], Option[String]]](
+            Right(None)
+          ) { column =>
+            val value = fields(column)
+            Either.cond(
+              value.trim.nonEmpty,
+              Some(value),
+              Vector(field(column, value, "a non-blank item"))
+            )
+          }
+          val values = columns.attributes.map(column =>
+            column
+              .parse(fields(column.name))
+              .left
+              .map(field(column.name, fields(column.name), _))
           )
-          identity <- columns.trial.identity(fields).left.map(field.tupled)
-          item     <- columns.item.fold[Either[InventoryError, Option[String]]](Right(None)) {
-            column =>
-              val value = fields(column)
-              Either.cond(
-                value.trim.nonEmpty,
-                Some(value),
-                field(column, value, "a non-blank item")
-              )
-          }
-          attributes <- columns.attributes
-            .foldLeft[Either[InventoryError, Vector[(String, AttributeValue)]]](
-              Right(Vector.empty)
-            ) { (acc, column) =>
-              acc.flatMap(done =>
-                column
-                  .parse(fields(column.name))
-                  .map(value => done :+ (column.name -> value))
-                  .left
-                  .map(field(column.name, fields(column.name), _))
-              )
-            }
-            .flatMap(Attributes.of)
-        yield (number, raw, identity, item, attributes)
+          val errors = identity.left.toSeq.flatten ++ item.left.toSeq.flatten ++
+            values.collect { case Left(e) => e }
+          if errors.nonEmpty then Left(errors.toVector)
+          else
+            for
+              id         <- identity
+              declared   <- item
+              attributes <- Attributes
+                .of(columns.attributes.map(_.name).zip(values.collect { case Right(v) => v }))
+                .left
+                .map(Vector(_))
+            yield Row(number, id, declared, attributes)
       }
-      parsed.collectFirst { case Left(error) => error } match
-        case Some(error) => Left(FixationImportError.Inventory(error))
-        case None        =>
-          val valid    = parsed.collect { case Right(row) => row }
-          val declared = columns.names.map(header.indexOf)
-          val labels   = valid.groupBy { case (_, _, id, _, _) =>
-            (id.participant, id.phase, id.trial)
-          }
-          val conflict = valid.iterator
-            .map { case (_, _, id, _, _) => labels((id.participant, id.phase, id.trial)) }
-            .collectFirst {
-              case group if group.map(r => declared.map(r._2)).distinct.size > 1 =>
-                val (_, _, id, _, _) = group.head
-                val differing        = columns.names.zip(declared).collect {
-                  case (name, i) if group.map(_._2(i)).distinct.size > 1 => name
-                }
-                InventoryError.Conflict(
-                  id.participant,
-                  id.phase,
-                  id.trial,
-                  group.map(_._1),
-                  differing
-                )
-            }
-          conflict match
-            case Some(error) => Left(FixationImportError.Inventory(error))
-            case None        =>
-              val trials = valid
-                .groupBy(_._3)
-                .values
-                .map(group =>
-                  val (_, _, id, item, attributes) = group.head
-                  InventoryRow(id, group.map(_._1), item, attributes)
-                )
-                .toVector
-                .sortBy(_.records.head)
-              Right(new TrialInventory(header, rows, columns, trials))
+      val rowErrors = parsed.collect { case Left(errors) => errors }.flatten
+      val valid     = parsed.collect { case Right(row) => row }
+      val groups = valid.groupBy(r => label(r.identity)).values.toVector.sortBy(_.head.number)
+      val conflicts = groups.flatMap { group =>
+        val first     = group.head
+        val differing =
+          columns.trial.occurrence.filter(_ =>
+            group.map(_.identity.occurrence.value).distinct.size > 1
+          ) ++ columns.item.filter(_ => group.map(_.item).distinct.size > 1) ++
+            columns.attributes
+              .map(_.name)
+              .filter(name => group.map(_.attributes.get(name)).distinct.size > 1)
+        Option.when(differing.nonEmpty)(
+          InventoryError.Conflict(
+            first.identity.participant,
+            first.identity.phase,
+            first.identity.trial,
+            group.map(_.number),
+            differing.toVector
+          )
+        )
+      }
+      NonEmptyVector.fromVector(rowErrors ++ conflicts) match
+        case Some(errors) => Left(FixationImportError.Inventory(errors))
+        case None         =>
+          val trials = groups.map(group =>
+            val first = group.head
+            InventoryRow(first.identity, group.map(_.number), first.item, first.attributes)
+          )
+          Right(new TrialInventory(header, rows, columns, trials))
     }
 
 /** A fixation table admitted against a trial inventory: the fixation import
   * (keyed by `TrialKey`, the item resolved from inventory and records), every
   * inventory trial with exactly one disposition, the trials only the fixation
-  * table names, and the declared attributes of admitted records.
+  * table names, the declared attributes of admitted records, and the
+  * declarations the ledger records with them.
   */
 final class InventoryImport[U <: Unit2D] private[io] (
     val fixations: FixationImport[TrialKey, U],
     val inventory: TrialInventory,
     val trials: Vector[InventoryTrial],
     val unlisted: Vector[UnlistedTrial],
-    val recordAttributes: Vector[RecordAttributes]
+    val recordAttributeColumns: Vector[AttributeColumn],
+    val recordAttributes: Vector[RecordAttributes],
+    val sampleCounts: SampleCountRule
 ):
   /** The inventory attributes of a trial key's trial. */
   def attributes(key: TrialKey): Option[Attributes] =
@@ -292,22 +300,26 @@ final class InventoryImport[U <: Unit2D] private[io] (
     fixations.requireComplete
 
 private[io] object InventoryAdmission:
-  /** Admit a fixation table against a trial inventory. Records are joined to
-    * inventory trials by identity (participant, phase, trial label,
-    * occurrence). Each inventory trial gets exactly one disposition:
+  /** Admit a fixation table against a trial inventory. Records join inventory
+    * trials by label (participant, phase and trial). Each inventory trial gets
+    * exactly one disposition:
     *
     *   - `Absent` when no record names it;
     *   - `NoFixations` when every one of its records is rejected on its own,
     *     which takes precedence over every quarantine cause;
     *   - `Quarantined(cause)` when its records conflict on the item (among
     *     themselves, `ItemConflict`, or with the inventory,
-    *     `InventoryItemConflict`), or on the importer's usual grounds;
+    *     `InventoryItemConflict`), on the occurrence (`OccurrenceConflict`,
+    *     naming the inventory's and the records' occurrences), or on the
+    *     importer's usual grounds;
     *   - `Admitted` otherwise.
     *
-    * Records of a trial the inventory does not declare are quarantined with
+    * Records of a label the inventory does not declare are quarantined with
     * `QuarantineCause.NotInInventory` and listed as unlisted trials; they are
     * never dropped. The item of a trial is the inventory's when it declares
-    * one, otherwise the one item its records name.
+    * one (a blank record item cell then takes it); otherwise the one item its
+    * records name, and a blank record item cell rejects that record, which
+    * stays with its trial.
     */
   def admit[U <: Unit2D](
       contents: String,
@@ -320,7 +332,7 @@ private[io] object InventoryAdmission:
     if table.item.isEmpty && inventory.columns.item.isEmpty then
       Left(FixationImportError.NoItemColumn(inventory.columns.names, table.names))
     else
-      FixationCsv.table(contents, table.names).map { (header, rows) =>
+      FixationCsv.table(contents, table.names).flatMap { (header, rows) =>
         join(header, rows, table, inventory, frame, policy, rounding)
       }
 
@@ -332,54 +344,71 @@ private[io] object InventoryAdmission:
       frame: Frame[U],
       policy: AdmissionPolicy[TrialKey],
       rounding: TimestampRounding
-  )(using UnitLabel[U]): InventoryImport[U] =
-    // A record's identity and, when the table declares one, its item.
-    def read(fields: Map[String, String]): Either[String, (TrialIdentity, Option[String])] =
-      for
-        id <- table.trial
-          .identity(fields)
-          .left
-          .map((c, v, r) => s"Column '$c' has '$v'; expected $r.")
-        item <- table.item.fold[Either[String, Option[String]]](Right(None)) { column =>
-          val value = fields.getOrElse(column, "")
-          Either.cond(value.trim.nonEmpty, Some(value), s"Missing column '$column'.")
-        }
-      yield id -> item
-    val named = rows.map(raw => read(header.zip(raw).toMap).toOption)
-    val items: Map[TrialIdentity, Vector[String]] =
-      named.flatten.groupMap(_._1)(_._2).view.mapValues(_.flatten.distinct.sorted).toMap
-    def recordItems(id: TrialIdentity) = items.getOrElse(id, Vector.empty)
-    def conflict(id: TrialIdentity, declared: Option[String]): Option[QuarantineCause] =
-      val named = recordItems(id)
-      if named.size > 1 then Some(QuarantineCause.ItemConflict(named))
+  )(using UnitLabel[U]): Either[FixationImportError, InventoryImport[U]] =
+    def identityOf(fields: Map[String, String]): Either[String, TrialIdentity] =
+      table.trial
+        .identity(fields)
+        .left
+        .map(_.map((c, v, r) => s"Column '$c' has '$v'; expected $r.").mkString(" "))
+    // A record's identity and the item its cell names, if the cell is not blank.
+    val named = rows.map { raw =>
+      val fields = header.zip(raw).toMap
+      identityOf(fields).toOption.map(id =>
+        id -> table.item.flatMap(fields.get).filter(_.trim.nonEmpty)
+      )
+    }
+    // Records join the inventory trial of their label; others stand alone.
+    def canonical(id: TrialIdentity): TrialIdentity =
+      inventory.labelled(id).fold(id)(_.identity)
+    val byTrial                        = named.flatten.groupMap(p => canonical(p._1))(identity)
+    def recordItems(id: TrialIdentity) =
+      byTrial.getOrElse(id, Vector.empty).flatMap(_._2).distinct.sorted
+    def itemConflict(id: TrialIdentity, declared: Option[String]): Option[QuarantineCause] =
+      val items = recordItems(id)
+      if items.size > 1 then Some(QuarantineCause.ItemConflict(items))
       else
         declared.flatMap(item =>
-          Option.when(named.exists(_ != item))(
-            QuarantineCause.InventoryItemConflict(item, named)
+          Option.when(items.exists(_ != item))(
+            QuarantineCause.InventoryItemConflict(item, items)
           )
         )
-    // The key each identity is admitted, or its records reported, under.
-    val keys: Map[TrialIdentity, TrialKey] = items.keys.iterator
-      .map { id =>
-        val declared = inventory.trial(id).flatMap(_.item)
-        id -> declared.orElse(recordItems(id).headOption)
-      }
-      .collect { case (id, Some(item)) => id.withItem(item).toOption.map(id -> _) }
-      .flatten
-      .toMap
-    val forced: Map[TrialIdentity, QuarantineCause] = items.keys.iterator
-      .flatMap(id =>
-        inventory.trial(id) match
-          case None =>
-            Some(
-              id -> QuarantineCause
-                .NotInInventory(id.participant, id.phase, id.trial, id.occurrence.value)
-            )
-          case Some(row) => conflict(id, row.item).map(id -> _)
-      )
-      .toMap
+    // The key each trial is admitted, or its records reported, under.
+    val keys: Map[TrialIdentity, TrialKey] = byTrial.keys.iterator.flatMap { id =>
+      inventory
+        .labelled(id)
+        .flatMap(_.item)
+        .orElse(recordItems(id).headOption)
+        .flatMap(item => id.withItem(item).toOption)
+        .map(id -> _)
+    }.toMap
+    // Every raw identity a forced quarantine applies to, with its trial.
+    val forced: Map[TrialIdentity, (TrialIdentity, QuarantineCause)] =
+      named.flatten
+        .map(_._1)
+        .distinct
+        .flatMap { id =>
+          inventory.labelled(id) match
+            case None =>
+              Some(
+                id -> (id -> QuarantineCause
+                  .NotInInventory(id.participant, id.phase, id.trial, id.occurrence.value))
+              )
+            case Some(row) =>
+              val occurrences =
+                (row.identity.occurrence.value +: byTrial(row.identity).map(
+                  _._1.occurrence.value
+                )).distinct.sorted
+              itemConflict(row.identity, row.item)
+                .orElse(
+                  Option.when(occurrences.size > 1)(
+                    QuarantineCause.OccurrenceConflict(occurrences)
+                  )
+                )
+                .map(cause => id -> (row.identity -> cause))
+        }
+        .toMap
     def clock(id: TrialIdentity): ClockId =
-      keys.get(id) match
+      keys.get(canonical(id)) match
         case Some(key) => ClockId(s"fixation-trial:${KeyDigest[TrialKey].digest(key).render}")
         case None => ClockId(s"fixation-trial:${KeyDigest[TrialIdentity].digest(id).render}")
     val scoped = AdmissionPolicy[TrialIdentity](
@@ -397,8 +426,8 @@ private[io] object InventoryAdmission:
     val parsed = FixationCsv.parseRows[TrialIdentity, U](
       header,
       rows,
-      table.spec,
-      fields => read(fields).map(_._1),
+      table.spec(itemRequired = inventory.columns.item.isEmpty),
+      identityOf,
       clock,
       frame,
       scoped,
@@ -408,21 +437,25 @@ private[io] object InventoryAdmission:
     val invalid = parsed.collect { case Left(error) => error }
     val valid   = parsed.collect { case Right(value) => value }
     val recordsOf: Map[TrialIdentity, Vector[Int]] =
-      (valid.map(v => v.key -> v.row) ++ invalid.flatMap(r => r.key.map(_ -> r.rowNumber)))
+      (valid.map(v => canonical(v.key) -> v.row) ++
+        invalid.flatMap(r => r.key.map(k => canonical(k) -> r.rowNumber)))
         .groupMap(_._1)(_._2)
         .view
         .mapValues(_.sorted)
         .toMap
-    val overrides =
-      forced.map((id, cause) => id -> (id, recordsOf.getOrElse(id, Vector.empty), cause))
+    val overrides = forced.map { case (id, (trial, cause)) =>
+      id -> (trial, recordsOf.getOrElse(trial, Vector.empty), cause)
+    }
     val (imported, attributes) =
       FixationCsv.assemble(header, rows, valid, invalid, frame, clock, overrides, scoped)
     val accepted = imported.accepted.rows.map(_.key).toSet
     val causes   = imported.rejected.collect {
-      case RejectedFixationRow(_, _, Some(id), FixationRowError.Trial(_, cause)) => id -> cause
+      case RejectedFixationRow(_, _, Some(id), FixationRowError.Trial(_, cause)) =>
+        canonical(id) -> cause
     }.toMap
-    val withValid = valid.map(_.key).toSet
-    val trials    = inventory.trials.map { row =>
+    val withValid                   = valid.map(v => canonical(v.key)).toSet
+    def rejected(e: InventoryError) = FixationImportError.Inventory(NonEmptyVector.one(e))
+    val trials                      = inventory.trials.traverseEither { row =>
       val records     = recordsOf.getOrElse(row.identity, Vector.empty)
       val disposition =
         if records.isEmpty then TrialDisposition.Absent
@@ -432,7 +465,7 @@ private[io] object InventoryAdmission:
           TrialDisposition.Quarantined(
             causes.getOrElse(row.identity, QuarantineCause.RejectedRecords)
           )
-      InventoryTrial(
+      InventoryTrial.of(
         row.identity,
         row.records,
         row.item,
@@ -444,30 +477,46 @@ private[io] object InventoryAdmission:
     }
     val unlisted = recordsOf.toVector
       .collect {
-        case (id, records) if inventory.trial(id).isEmpty =>
-          UnlistedTrial(id, recordItems(id), records)
+        case (id, records) if inventory.labelled(id).isEmpty => (id, records)
       }
-      .sortBy(_.records.head)
-    val fixations = new FixationImport[TrialKey, U](
-      imported.header,
-      imported.sourceRows,
-      Trials(
-        imported.accepted.rows.flatMap(t => keys.get(t.key).map(k => Trial(k, (), t.value)))
-      ),
-      imported.admitted.flatMap(r =>
-        keys.get(r.key).map(k => AdmittedFixationRow(r.rowNumber, k, r.ordinal))
-      ),
-      imported.rejected.map(r =>
-        RejectedFixationRow(r.rowNumber, r.raw, r.key.flatMap(keys.get), r.error)
-      ),
-      policy,
-      imported.outsideFrame
-    )
-    new InventoryImport(
-      fixations,
-      inventory,
-      trials,
-      unlisted,
-      if table.attributes.isEmpty then Vector.empty
-      else attributes.map((record, values) => RecordAttributes(record, values))
-    )
+      .sortBy(_._2.head)
+      .traverseEither((id, records) => UnlistedTrial.of(id, recordItems(id), records))
+    val perRecord =
+      if table.attributes.isEmpty then Right(Vector.empty)
+      else attributes.traverseEither((record, values) => RecordAttributes.of(record, values))
+    for
+      inventoried <- trials.left.map(rejected)
+      others      <- unlisted.left.map(rejected)
+      listed      <- perRecord.left.map(rejected)
+    yield
+      def keyOf(id: TrialIdentity) = keys.get(canonical(id))
+      val fixations                = new FixationImport[TrialKey, U](
+        imported.header,
+        imported.sourceRows,
+        Trials(
+          imported.accepted.rows.flatMap(t => keyOf(t.key).map(k => Trial(k, (), t.value)))
+        ),
+        imported.admitted.flatMap(r =>
+          keyOf(r.key).map(k => AdmittedFixationRow(r.rowNumber, k, r.ordinal))
+        ),
+        imported.rejected.map(r =>
+          RejectedFixationRow(r.rowNumber, r.raw, r.key.flatMap(keyOf), r.error)
+        ),
+        policy,
+        imported.outsideFrame
+      )
+      new InventoryImport(
+        fixations,
+        inventory,
+        inventoried,
+        others,
+        table.attributes,
+        listed,
+        table.samples
+      )
+
+  extension [A](values: Vector[A])
+    private def traverseEither[E, B](f: A => Either[E, B]): Either[E, Vector[B]] =
+      values.foldLeft[Either[E, Vector[B]]](Right(Vector.empty))((acc, a) =>
+        acc.flatMap(done => f(a).map(done :+ _))
+      )

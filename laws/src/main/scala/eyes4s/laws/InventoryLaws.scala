@@ -45,14 +45,20 @@ enum TrialPlan derives CanEqual:
   /** Valid records naming an item other than the inventory's. */
   case ItemConflict(records: Int)
 
+  /** Valid records of the trial's label with another occurrence than the
+    * inventory declares.
+    */
+  case OccurrenceConflict(records: Int)
+
   def count: Int = this match
-    case Absent               => 0
-    case Admitted(n)          => n
-    case AllRejected(n)       => n
-    case OneRejected(n)       => n
-    case DuplicateOrdinals(n) => n
-    case Overlap(n)           => n
-    case ItemConflict(n)      => n
+    case Absent                => 0
+    case Admitted(n)           => n
+    case AllRejected(n)        => n
+    case OneRejected(n)        => n
+    case DuplicateOrdinals(n)  => n
+    case Overlap(n)            => n
+    case ItemConflict(n)       => n
+    case OccurrenceConflict(n) => n
 
 /** One generated fixation record, before it is written to the table. */
 final case class ScenarioRecord(
@@ -74,6 +80,10 @@ final case class ScenarioRecord(
   *   - fixations: `participant, phase, trial, occurrence, ordinal, x, y,
   *     onset, duration, samples`, and `item` when `recordItems` is true.
   *
+  * A record's item cell is blank when its planned index is in `blankItems`;
+  * the inventory's item then applies. A trial is identified by its label
+  * (participant, phase and trial); occurrence is checked, not joined on.
+  *
   * Times are integer milliseconds; `samples` is a positive-count column;
   * positions lie inside a 100 x 100 frame. Records of all trials are
   * interleaved in file order by `order`, so no law can rely on trials being
@@ -83,7 +93,8 @@ final case class InventoryScenario(
     recordItems: Boolean,
     trials: Vector[(TrialIdentity, String, TrialPlan)],
     unlisted: Vector[(TrialIdentity, Int)],
-    order: Vector[Int]
+    order: Vector[Int],
+    blankItems: Set[Int] = Set.empty
 ) derives CanEqual:
   /** Every record in file order; record number = index + 2. */
   lazy val records: Vector[ScenarioRecord] =
@@ -91,11 +102,16 @@ final case class InventoryScenario(
       unlisted.flatMap((id, n) =>
         InventoryScenario.build(id, "unlisted", TrialPlan.Admitted(n))
       )
-    order.map(planned)
+    order.map(i =>
+      if recordItems && blankItems.contains(i) then planned(i).copy(item = "") else planned(i)
+    )
 
-  /** Record numbers of one identity, in file order. */
+  /** Record numbers of one trial label, in file order. */
   def recordsOf(identity: TrialIdentity): Vector[Int] =
-    records.zipWithIndex.collect { case (r, i) if r.identity == identity => i + 2 }
+    records.zipWithIndex.collect {
+      case (r, i) if InventoryScenario.label(r.identity) == InventoryScenario.label(identity) =>
+        i + 2
+    }
 
   def inventoryTable: String =
     val header = "participant,phase,trial,occurrence,item"
@@ -133,6 +149,8 @@ final case class InventoryScenario(
     }).mkString("", "\n", "\n")
 
 object InventoryScenario:
+  def label(id: TrialIdentity): (String, String, String) = (id.participant, id.phase, id.trial)
+
   private[laws] def build(
       id: TrialIdentity,
       item: String,
@@ -152,7 +170,11 @@ object InventoryScenario:
       val named = plan match
         case TrialPlan.ItemConflict(_) => item + "-other"
         case _                         => item
-      ScenarioRecord(id, ordinal, 10.0 + 7 * i, 20.0 + 5 * i, onset, 50L, samples, named)
+      val recorded = plan match
+        case TrialPlan.OccurrenceConflict(_) =>
+          trialIdentity(id.participant, id.phase, id.trial, 3 - id.occurrence.value)
+        case _ => id
+      ScenarioRecord(recorded, ordinal, 10.0 + 7 * i, 20.0 + 5 * i, onset, 50L, samples, named)
     }
 
   private def trialIdentity(
@@ -179,6 +201,7 @@ object InventoryScenario:
       items       <- Gen.listOfN(size, Gen.oneOf("beach", "dog", "tower"))
       unlistedN   <- Gen.listOfN(extra, Gen.choose(1, 2))
       keys        <- Gen.listOfN(size * 4 + extra * 2, Gen.choose(0, Int.MaxValue))
+      blanks      <- Gen.listOfN(size * 3 + extra * 2, Gen.oneOf(true, false, false))
     yield
       val ids = shape.zipWithIndex.map { case ((p, occurrence), i) =>
         trialIdentity(p, if i % 2 == 0 then "Encoding" else "Retrieval", s"t$i", occurrence)
@@ -189,7 +212,18 @@ object InventoryScenario:
       val unlisted = ids.drop(size).zip(unlistedN)
       val total    = plans.map(_.count).sum + unlistedN.sum
       val order    = (0 until total).toVector.sortBy(i => (keys(i % keys.size), i))
-      InventoryScenario(recordItems, trials.toVector, unlisted.toVector, order)
+      // Blank item cells, never in a trial whose records must name an item.
+      val conflicting = trials
+        .scanLeft(0)((start, t) => start + t._3.count)
+        .zip(trials)
+        .collect { case (start, (_, _, TrialPlan.ItemConflict(n))) => start until start + n }
+        .flatten
+        .toSet
+      val blank = blanks.zipWithIndex.collect {
+        case (true, i) if i < total && !conflicting.contains(i) && i < plans.map(_.count).sum =>
+          i
+      }.toSet
+      InventoryScenario(recordItems, trials.toVector, unlisted.toVector, order, blank)
 
   private def planGen(recordItems: Boolean): Gen[TrialPlan] =
     val base = Vector(
@@ -198,7 +232,8 @@ object InventoryScenario:
       Gen.choose(1, 3).map(TrialPlan.AllRejected.apply),
       Gen.choose(2, 3).map(TrialPlan.OneRejected.apply),
       Gen.choose(2, 3).map(TrialPlan.DuplicateOrdinals.apply),
-      Gen.choose(2, 3).map(TrialPlan.Overlap.apply)
+      Gen.choose(2, 3).map(TrialPlan.Overlap.apply),
+      Gen.choose(1, 2).map(TrialPlan.OccurrenceConflict.apply)
     ) ++ Option.when(recordItems)(Gen.choose(1, 3).map(TrialPlan.ItemConflict.apply))
     Gen.oneOf(base).flatMap(identity)
 
@@ -277,6 +312,10 @@ final class InventoryLaws(
               _ == TrialDisposition.Quarantined(
                 QuarantineCause.InventoryItemConflict(item, Vector(item + "-other"))
               )
+            case TrialPlan.OccurrenceConflict(_) =>
+              _ == TrialDisposition.Quarantined(
+                QuarantineCause.OccurrenceConflict(Vector(1, 2))
+              )
           Prop(expected(t.disposition)) :| s"${t.identity.render}: $plan gave ${t.disposition}"
         }*)
       },
@@ -299,6 +338,19 @@ final class InventoryLaws(
                 case _ => false
             )
           ) :| s"${id.render} records ${u.records}"
+        }*)
+      },
+    "every record whose trial fields parse is listed under its trial, blank item or not" ->
+      withLedger { (s, _, inventory) =>
+        val listed =
+          inventory.trials.map(t => InventoryScenario.label(t.identity) -> t.records) ++
+            inventory.unlisted.map(u => InventoryScenario.label(u.identity) -> u.records)
+        Prop.all(s.records.zipWithIndex.map { (r, i) =>
+          val owners = listed.collect {
+            case (label, records) if records.contains(i + 2) => label
+          }
+          Prop(owners == Vector(InventoryScenario.label(r.identity))) :|
+            s"record ${i + 2} (${r.identity.render}, item '${r.item}') is listed under $owners"
         }*)
       },
     "every keyed record of an inventory trial carries the inventory's item" ->

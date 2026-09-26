@@ -16,6 +16,7 @@
 
 package eyes4s.io
 
+import cats.data.NonEmptyVector
 import eyes4s.codec.*
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.Px
@@ -127,12 +128,14 @@ class InventoryAdmissionSuite extends munit.FunSuite:
       inventory("P1,Encoding,e1,1,beach,,1", "P1,Encoding,e1,2,dog,,1"),
       Left(
         FixationImportError.Inventory(
-          InventoryError.Conflict(
-            "P1",
-            "Encoding",
-            "e1",
-            Vector(2, 3),
-            Vector("occurrence", "item")
+          NonEmptyVector.one(
+            InventoryError.Conflict(
+              "P1",
+              "Encoding",
+              "e1",
+              Vector(2, 3),
+              Vector("occurrence", "item")
+            )
           )
         )
       )
@@ -141,19 +144,21 @@ class InventoryAdmissionSuite extends munit.FunSuite:
       inventory("P1,Encoding,e1,1,beach,,x"),
       Left(
         FixationImportError.Inventory(
-          InventoryError.Field(2, "count", "x", "a decimal integer")
+          NonEmptyVector.one(InventoryError.Field(2, "count", "x", "a decimal integer"))
         )
       )
     )
     assertEquals(
       inventory("P1,Encoding,e1,1,,,1"),
       Left(
-        FixationImportError.Inventory(InventoryError.Field(2, "item", "", "a non-blank item"))
+        FixationImportError.Inventory(
+          NonEmptyVector.one(InventoryError.Field(2, "item", "", "a non-blank item"))
+        )
       )
     )
     assertEquals(
       inventory("P1,Encoding,e1,1,beach,,1,extra"),
-      Left(FixationImportError.Inventory(InventoryError.Width(2, 7, 8)))
+      Left(FixationImportError.Inventory(NonEmptyVector.one(InventoryError.Width(2, 7, 8))))
     )
   }
 
@@ -266,8 +271,8 @@ class InventoryAdmissionSuite extends munit.FunSuite:
   }
 
   test("without a count column, support is the duration at a declared rate, rounded up") {
-    val rate    = get(Hz(500))
-    val table   = InventoryFixtures.table(item = false, SampleCountRule.FromDuration(rate))
+    val rate  = get(Hz(500))
+    val table = InventoryFixtures.table(item = false, SampleCountRule.DerivedFromDuration(rate))
     val noCount =
       "participant,phase,trial,occurrence,ordinal,x,y,onset,duration\n" +
         "P1,Encoding,e1,1,1,5,5,0,41\nP1,Encoding,e1,1,2,5,5,100,1\n"
@@ -302,8 +307,11 @@ class InventoryAdmissionSuite extends munit.FunSuite:
     assertEquals(
       good.recordAttributes,
       Vector(
-        RecordAttributes(2, get(Attributes.of(Vector("pupil" -> AttributeValue.Number(3.5))))),
-        RecordAttributes(3, get(Attributes.of(Vector("pupil" -> AttributeValue.Blank))))
+        get(
+          RecordAttributes
+            .of(2, get(Attributes.of(Vector("pupil" -> AttributeValue.Number(3.5)))))
+        ),
+        get(RecordAttributes.of(3, get(Attributes.of(Vector("pupil" -> AttributeValue.Blank)))))
       )
     )
     val bad = get(
@@ -316,7 +324,7 @@ class InventoryAdmissionSuite extends munit.FunSuite:
     )
     assertEquals(
       bad.fixations.rejected.map(_.error),
-      Vector(FixationRowError.Number("pupil", "wide", "a finite number"))
+      Vector(FixationRowError.Number("pupil", "wide", "a finite decimal number"))
     )
     assertEquals(bad.trials.head.disposition, TrialDisposition.NoFixations)
   }

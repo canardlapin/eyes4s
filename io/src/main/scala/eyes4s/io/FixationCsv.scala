@@ -175,7 +175,7 @@ enum FixationImportError derives CanEqual:
   case ParticipantScope(rules: Vector[Int])
 
   /** The trial inventory was refused. */
-  case Inventory(error: InventoryError)
+  case Inventory(errors: cats.data.NonEmptyVector[InventoryError])
 
   /** Neither the inventory nor the fixation table declares an item column,
     * so no trial can be matched.
@@ -191,7 +191,8 @@ enum FixationImportError derives CanEqual:
     case ParticipantScope(rules) =>
       s"Correction rules $rules are scoped to a participant, but the key reader names no " +
         "participant; use FixationKeyReader.withParticipant."
-    case Inventory(error)                   => s"Trial inventory: ${error.message}"
+    case Inventory(errors) =>
+      errors.toVector.map(_.message).mkString("Trial inventory: ", " ", "")
     case NoItemColumn(inventory, fixations) =>
       s"Neither the inventory columns $inventory nor the fixation columns $fixations " +
         "declare an item column; declare one in either table."
@@ -250,7 +251,8 @@ private[io] final case class RowSpec(
     duration: String,
     samples: SampleCountRule,
     unit: TimestampUnit,
-    attributes: Vector[AttributeColumn]
+    attributes: Vector[AttributeColumn],
+    nonBlank: Vector[String] = Vector.empty
 ):
   def names: Vector[String] =
     Vector(ordinal, x, y, onset, duration) ++ samples.countColumn.toVector ++ attributes.map(
@@ -440,11 +442,17 @@ object FixationCsv:
           (),
           FixationRowError.Width(header.size, raw.size)
         )
+        _ <- spec.nonBlank
+          .collectFirst {
+            case column if fields(column).trim.isEmpty =>
+              FixationRowError.Number(column, fields(column), "a non-blank item cell")
+          }
+          .toLeft(())
         ordinal <- integer(fields, spec.ordinal, positive = false)
         counted <- spec.samples match
           case SampleCountRule.PositiveColumn(column) =>
-            integer(fields, column, positive = true).map(Some(_))
-          case SampleCountRule.FromDuration(_) => Right(None)
+            integer(fields, column, positive = true).map(Left(_))
+          case SampleCountRule.DerivedFromDuration(rate) => Right(Right(rate))
         x <- finite(fields, spec.x)
         y <- finite(fields, spec.y)
         rule = policy.correctionFor(k, owner)
@@ -481,7 +489,7 @@ object FixationCsv:
               .Time(fields(spec.onset), fields(spec.duration), timeUnit, e.message)
           )
         fixation <- Event.Fixation
-          .withoutDispersion(span, centre, counted.getOrElse(spec.samples.derived(duration)))
+          .withoutDispersion(span, centre, counted.fold(identity, derivedCount(_, duration)))
           .left
           .map(e => FixationRowError.Event(e.message))
         attributes <- attributesOf(spec.attributes, fields)
@@ -518,11 +526,25 @@ object FixationCsv:
         )
       }
       .flatMap(entries =>
-        Attributes
-          .of(entries)
-          .left
-          .map(e => FixationRowError.Number(columns.map(_.name).mkString(","), "", e.message))
+        // Declarations have distinct names, so a repeated name cannot occur;
+        // were it to, the record names the repeated column.
+        Attributes.of(entries).left.map {
+          case InventoryError.DuplicateAttribute(names) =>
+            val column = names.headOption.getOrElse("")
+            FixationRowError
+              .Number(column, fields.getOrElse(column, ""), "a column declared once")
+          case other => FixationRowError.Event(other.message)
+        }
       )
+
+  /** A record's count under [[SampleCountRule.DerivedFromDuration]]: its
+    * duration times the rate, rounded up, so at least one for any positive
+    * duration.
+    */
+  private def derivedCount(rate: Hz, durationMicros: Long): Int =
+    val samples = (BigDecimal(durationMicros) * BigDecimal(rate.value) / BigDecimal(1000000))
+      .setScale(0, BigDecimal.RoundingMode.CEILING)
+    if samples > BigDecimal(Int.MaxValue) then Int.MaxValue else samples.toInt
 
   /** Group parsed records into trials. A key in `overrides` is quarantined
     * with the given records and cause, under the given key; otherwise a trial

@@ -151,6 +151,21 @@ abstract class StudioAcceptance(source: => StudioFixture.Source) extends munit.F
       Map("DuplicateOrdinals" -> 4, "no fixations" -> 5, "Overlap" -> 6, "RejectedRecords" -> 2)
     )
     assertEquals(identities(inventory.absent), StudioFixture.absent)
+    // Trial by trial, against the fixture's own list (make_fixture.py's
+    // `quarantine`), not only by count.
+    val byTrial = inventory.quarantined.map(t =>
+      (t.identity.participant, t.identity.trial) -> (t.disposition match
+        case TrialDisposition.NoFixations => StudioFixture.Cause.NoFixations
+        case TrialDisposition.Quarantined(QuarantineCause.RejectedRecords) =>
+          StudioFixture.Cause.RejectedRecords
+        case TrialDisposition.Quarantined(QuarantineCause.DuplicateOrdinals) =>
+          StudioFixture.Cause.DuplicateOrdinals
+        case TrialDisposition.Quarantined(QuarantineCause.Overlap(_, _, _)) =>
+          StudioFixture.Cause.Overlap
+        case other => fail(s"unexpected disposition $other"))
+    )
+    assertEquals(byTrial.toMap, StudioFixture.quarantined)
+    assertEquals(byTrial.size, 17)
     // Every record of a quarantined trial is rejected, and only those are.
     val quarantinedRecords = inventory.quarantined.map(_.records.size).sum
     assertEquals(ledger.rejected.size, quarantinedRecords)

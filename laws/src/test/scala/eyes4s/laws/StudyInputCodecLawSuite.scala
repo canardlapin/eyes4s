@@ -312,40 +312,57 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
 
   // ---------------------------------------------------------------- inventory
 
-  private val attributeValues: Gen[AttributeValue] = Gen.oneOf(
-    text.map(AttributeValue.Text.apply),
+  private def valueOf(kind: AttributeKind): Gen[AttributeValue] =
+    Gen.frequency(
+      1 -> Gen.const(AttributeValue.Blank),
+      3 -> (kind match
+        case AttributeKind.Text    => text.map(AttributeValue.Text.apply)
+        case AttributeKind.Integer =>
+          Gen
+            .oneOf(Gen.choose(Long.MinValue, Long.MaxValue), Gen.const(9007199254740993L))
+            .map(AttributeValue.Integer.apply)
+        case AttributeKind.Number =>
+          Gen.oneOf(Gen.choose(-1e12, 1e12), Gen.const(-0.0)).map(AttributeValue.Number.apply))
+    )
+  private def columnsGen(prefix: String): Gen[Vector[AttributeColumn]] =
     Gen
-      .oneOf(Gen.choose(Long.MinValue, Long.MaxValue), Gen.const(9007199254740993L))
-      .map(AttributeValue.Integer.apply),
-    Gen.oneOf(Gen.choose(-1e12, 1e12), Gen.const(-0.0)).map(AttributeValue.Number.apply),
-    Gen.const(AttributeValue.Blank)
+      .listOfN(3, Gen.oneOf(AttributeKind.values.toIndexedSeq))
+      .map(_.toVector.zipWithIndex.map((k, i) => AttributeColumn(s"$prefix$i", k)))
+  private def attributesOf(columns: Vector[AttributeColumn]): Gen[Attributes] =
+    Gen
+      .sequence[Vector[AttributeValue], AttributeValue](columns.map(c => valueOf(c.kind)))
+      .map(values => checked(Attributes.of(columns.map(_.name).zip(values))))
+  private val sampleCounts: Gen[SampleCountRule] = Gen.oneOf(
+    Gen.const(SampleCountRule.PositiveColumn("samples")),
+    Gen.choose(1.0, 2000.0).map(r => SampleCountRule.DerivedFromDuration(checked(Hz(r))))
   )
-  private val attributeSets: Gen[Attributes] =
-    Gen
-      .listOfN(3, attributeValues)
-      .map(values => checked(Attributes.of(Vector("a", "b", "c").zip(values))))
 
   /** A version-3 ledger built from a generated inventory scenario the way the
     * importer records it: one disposition per inventory trial, row-level
     * rejections for records with no samples, quarantined records naming
-    * their cause, and trials outside the inventory listed. Attributes of
-    * every kind are drawn for trials and admitted records.
+    * their cause, and trials outside the inventory listed. Declared attribute
+    * columns of every kind, and values of their kind or blank, are drawn for
+    * trials and admitted records.
     */
   private val inventoryLedgers: Gen[AdmissionLedger[TrialKey]] =
     for
-      scenario         <- InventoryScenario.gen
-      trialAttributes  <- Gen.listOfN(scenario.trials.size, attributeSets)
-      recordAttributes <- Gen.listOfN(scenario.records.size, Gen.option(attributeSets))
+      scenario      <- InventoryScenario.gen
+      trialColumns  <- columnsGen("t")
+      recordColumns <- columnsGen("r")
+      counts        <- sampleCounts
+      trialValues   <- Gen.listOfN(scenario.trials.size, attributesOf(trialColumns))
+      recordValues  <- Gen.listOfN(
+        scenario.records.size,
+        Gen.option(attributesOf(recordColumns))
+      )
     yield
-      val s       = scenario
-      val zero    = AdmissionReason.Number("samples", "0", "a positive integer")
-      val planned = s.trials
-      // Record numbers of each trial: its records appear once each in file order.
+      val s    = scenario
+      val zero = AdmissionReason.Number("samples", "0", "a positive integer")
       val numbers: Map[TrialIdentity, Vector[Int]] =
         (s.trials.map(_._1) ++ s.unlisted.map(_._1)).map(id => id -> s.recordsOf(id)).toMap
       def raw(n: Int) = Vector(n.toString, s.records(n - 2).identity.render)
       val dispositions: Vector[(Int, Disposition[TrialKey])] =
-        planned.flatMap { (id, item, plan) =>
+        s.trials.flatMap { (id, item, plan) =>
           val key                                 = checked(id.withItem(item))
           val rs                                  = numbers(id)
           def quarantined(cause: QuarantineCause) =
@@ -379,84 +396,103 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
               quarantined(QuarantineCause.Overlap(1, "[0,50)", "[20,70)"))
             case TrialPlan.ItemConflict(_) =>
               quarantined(QuarantineCause.InventoryItemConflict(item, Vector(item + "-other")))
+            case TrialPlan.OccurrenceConflict(_) =>
+              quarantined(QuarantineCause.OccurrenceConflict(Vector(1, 2)))
         } ++ s.unlisted.flatMap { (id, _) =>
           val rs    = numbers(id)
           val key   = Option.when(s.recordItems)(checked(id.withItem("unlisted")))
-          val cause = QuarantineCause.NotInInventory(
-            id.participant,
-            id.phase,
-            id.trial,
-            id.occurrence.value
-          )
+          val cause =
+            QuarantineCause.NotInInventory(
+              id.participant,
+              id.phase,
+              id.trial,
+              id.occurrence.value
+            )
           rs.map(n =>
             n -> Disposition.Rejected(raw(n), key, AdmissionReason.Quarantined(rs, cause))
           )
         }
       val records = dispositions.sortBy(_._1).map((n, d) => SourceRecord(n, d))
       val header  = Vector("participant", "phase", "trial")
-      val base    = checked(
+      val trials  =
+        s.trials.zip(trialValues).zipWithIndex.map { case (((id, item, plan), attrs), i) =>
+          val named =
+            if s.recordItems then
+              s.records
+                .filter(r => InventoryScenario.label(r.identity) == InventoryScenario.label(id))
+                .map(_.item)
+                .filter(_.nonEmpty)
+                .distinct
+                .sorted
+            else Vector.empty
+          checked(
+            InventoryTrial.of(
+              id,
+              Vector(i + 2),
+              Some(item),
+              attrs,
+              named,
+              numbers(id),
+              plan match
+                case TrialPlan.Absent         => TrialDisposition.Absent
+                case TrialPlan.Admitted(_)    => TrialDisposition.Admitted
+                case TrialPlan.AllRejected(_) => TrialDisposition.NoFixations
+                case TrialPlan.OneRejected(_) =>
+                  TrialDisposition.Quarantined(QuarantineCause.RejectedRecords)
+                case TrialPlan.DuplicateOrdinals(_) =>
+                  TrialDisposition.Quarantined(QuarantineCause.DuplicateOrdinals)
+                case TrialPlan.Overlap(_) =>
+                  TrialDisposition.Quarantined(QuarantineCause.Overlap(1, "[0,50)", "[20,70)"))
+                case TrialPlan.ItemConflict(_) =>
+                  TrialDisposition.Quarantined(
+                    QuarantineCause.InventoryItemConflict(item, Vector(item + "-other"))
+                  )
+                case TrialPlan.OccurrenceConflict(_) =>
+                  TrialDisposition.Quarantined(QuarantineCause.OccurrenceConflict(Vector(1, 2)))
+            )
+          )
+        }
+      val unlisted = s.unlisted.map((id, _) =>
+        checked(
+          UnlistedTrial.of(
+            id,
+            if s.recordItems then Vector("unlisted") else Vector.empty,
+            numbers(id)
+          )
+        )
+      )
+      val admitted = records.collect { case SourceRecord(n, Disposition.Admitted(_, _)) =>
+        n
+      }.toSet
+      val perRecord = recordValues.zipWithIndex.collect {
+        case (Some(attrs), i) if admitted.contains(i + 2) =>
+          checked(RecordAttributes.of(i + 2, attrs))
+      }
+      val inventory = checked(
+        InventoryLedger.of(
+          SourceRef.of("t.csv", header, s.trials.map(t => Vector(t._1.render))),
+          header,
+          trialColumns,
+          trials,
+          unlisted,
+          recordColumns,
+          perRecord.toVector,
+          counts
+        )
+      )
+      checked(
         AdmissionLedger.decide(
           SourceRef.of("f.csv", header, s.records.map(r => Vector(r.identity.render))),
           header,
           records,
           AdmissionDecision.ReviewExclusions,
           AdmissionPolicy.default[TrialKey],
-          Vector.empty
+          Vector.empty,
+          inventory,
+          TrialIdentity.of,
+          _.item
         )
       )
-      val trials =
-        planned.zip(trialAttributes).zipWithIndex.map { case (((id, item, plan), attrs), i) =>
-          val named = if s.recordItems && numbers(id).nonEmpty then
-            Vector(plan match
-              case TrialPlan.ItemConflict(_) => item + "-other"
-              case _                         => item)
-          else Vector.empty
-          InventoryTrial(
-            id,
-            Vector(i + 2),
-            Some(item),
-            attrs,
-            named,
-            numbers(id),
-            plan match
-              case TrialPlan.Absent         => TrialDisposition.Absent
-              case TrialPlan.Admitted(_)    => TrialDisposition.Admitted
-              case TrialPlan.AllRejected(_) => TrialDisposition.NoFixations
-              case TrialPlan.OneRejected(_) =>
-                TrialDisposition.Quarantined(QuarantineCause.RejectedRecords)
-              case TrialPlan.DuplicateOrdinals(_) =>
-                TrialDisposition.Quarantined(QuarantineCause.DuplicateOrdinals)
-              case TrialPlan.Overlap(_) =>
-                TrialDisposition.Quarantined(QuarantineCause.Overlap(1, "[0,50)", "[20,70)"))
-              case TrialPlan.ItemConflict(_) =>
-                TrialDisposition.Quarantined(
-                  QuarantineCause.InventoryItemConflict(item, Vector(item + "-other"))
-                )
-          )
-        }
-      val unlisted = s.unlisted.map((id, _) =>
-        UnlistedTrial(
-          id,
-          if s.recordItems then Vector("unlisted") else Vector.empty,
-          numbers(id)
-        )
-      )
-      val admitted = records.collect { case SourceRecord(n, Disposition.Admitted(_, _)) =>
-        n
-      }.toSet
-      val perRecord = recordAttributes.zipWithIndex.collect {
-        case (Some(attrs), i) if admitted.contains(i + 2) => RecordAttributes(i + 2, attrs)
-      }
-      val inventory = checked(
-        InventoryLedger.of(
-          SourceRef.of("t.csv", header, s.trials.map(t => Vector(t._1.render))),
-          header,
-          trials,
-          unlisted,
-          perRecord.toVector
-        )
-      )
-      checked(base.withInventory(inventory, TrialIdentity.of, _.item))
 
   private val standard = StudyInputCodecs.study[Px]
   private val custom   = new StudyInputCodec[OccurrenceKey, Px](
@@ -655,25 +691,48 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
     def rebuilt(i: InventoryLedger)(
         trials: Vector[InventoryTrial] = i.trials,
         unlisted: Vector[UnlistedTrial] = i.unlisted
-    ) = InventoryLedger.of(i.source, i.header, trials, unlisted, i.recordAttributes)
+    ) = InventoryLedger.of(
+      i.source,
+      i.header,
+      i.attributeColumns,
+      trials,
+      unlisted,
+      i.recordAttributeColumns,
+      i.recordAttributes,
+      i.sampleCounts
+    )
+    def withAttributes(t: InventoryTrial, values: Attributes) =
+      InventoryTrial.of(
+        t.identity,
+        t.rows,
+        t.inventoryItem,
+        values,
+        t.recordItems,
+        t.records,
+        t.disposition
+      )
     val changedAttribute = mutant(codec)(l =>
       rejoin(l)(i =>
-        rebuilt(i)(trials =
-          i.trials.map(t =>
-            t.copy(attributes =
-              checked(
-                Attributes.of(
-                  t.attributes.entries.map((n, v) =>
-                    n -> (v match
-                      case AttributeValue.Integer(x) => AttributeValue.Integer(x ^ 1L)
-                      case AttributeValue.Blank      => AttributeValue.Text("")
-                      case other                     => other)
+        i.trials
+          .foldLeft[Either[InventoryError, Vector[InventoryTrial]]](Right(Vector.empty))(
+            (acc, t) =>
+              acc.flatMap(done =>
+                withAttributes(
+                  t,
+                  checked(
+                    Attributes.of(
+                      t.attributes.entries.map((n, v) =>
+                        n -> (v match
+                          case AttributeValue.Integer(x) => AttributeValue.Integer(x ^ 1L)
+                          case AttributeValue.Text(x)    => AttributeValue.Text(x + "!")
+                          case other                     => other)
+                      )
+                    )
                   )
-                )
+                ).map(done :+ _)
               )
-            )
           )
-        )
+          .flatMap(trials => rebuilt(i)(trials = trials))
       )
     )
     assert(killed(changedAttribute, inventoryLedgers, eq))
@@ -691,4 +750,61 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
         eq
       )
     )
+  }
+
+  /** Forge a member of an encoded version-3 ledger's inventory. */
+  private def forged(json: Json)(change: io.circe.ACursor => io.circe.ACursor): Option[Json] =
+    change(json.hcursor.downField("value").downField("inventory")).top
+
+  test("the version-3 decoder refuses forged inventories the importer could not produce") {
+    val codec = StudyInputCodecs.trial[Px].ledger
+    val prop  = org.scalacheck.Prop.forAll(inventoryLedgers) { ledger =>
+      val json      = checked(codec.encode(ledger))
+      val inventory = ledger.inventory.get
+      val forgeries = Vector(
+        // An absent trial that names record items.
+        inventory.trials.indexWhere(_.disposition == TrialDisposition.Absent) match
+          case -1 => None
+          case i  =>
+            forged(json)(
+              _.downField("trials")
+                .downN(i)
+                .downField("recordItems")
+                .withFocus(_ => Json.arr(Json.fromString("zzz")))
+            )
+        ,
+        // One trial's attribute of another kind than its column declares.
+        forged(json)(
+          _.downField("attributeColumns")
+            .downN(0)
+            .downField("kind")
+            .withFocus(k =>
+              Json.fromString(if k.asString.contains("text") then "integer" else "text")
+            )
+        ).filter(_ =>
+          inventory.trials.exists(t =>
+            t.attributes.entries.headOption.exists(_._2 != AttributeValue.Blank)
+          )
+        ),
+        // An admitted trial that names a conflicting item.
+        inventory.trials.indexWhere(_.disposition == TrialDisposition.Admitted) match
+          case -1 => None
+          case i  =>
+            forged(json)(
+              _.downField("trials")
+                .downN(i)
+                .downField("recordItems")
+                .withFocus(_ => Json.arr(Json.fromString("aaa"), Json.fromString("zzz")))
+            )
+        ,
+        // A null inventory under version 3.
+        json.hcursor.downField("value").downField("inventory").set(Json.Null).top
+      ).flatten
+      org.scalacheck.Prop.all(
+        forgeries.map(f =>
+          org.scalacheck.Prop(codec.decode(f).isLeft) :| s"accepted ${f.noSpaces.take(200)}"
+        )*
+      )
+    }
+    assert(Test.check(Test.Parameters.default.withMinSuccessfulTests(100), prop).passed)
   }
