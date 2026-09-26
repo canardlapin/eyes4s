@@ -160,9 +160,28 @@ and the signed vector `[0.5, -0.25, 0.75, 0]`.
 | `fixation_entropy` on the signed vector | The same non-negative-mass error. Earlier revisions returned 0.5623 nats from the positive cells over the signed total, which is not the entropy of anything. | `Surface.mass` and `Surface.intensity` return `NegativeValue(1, -0.25)`; `Signed` has no entropy ("a signed map with positive total: ..."). Both now refuse, by error or by type. **Verified intentional divergence** as a case, because of the log-ratio row below. |
 | `fixation_entropy` on `p / q` and `p / p` | `p / q` gives exactly 0 in every base: the `-Inf` cell is dropped and the single positive finite cell holds all the mass. `p / p` gives `NA`: its finite cells sum to zero. | The log ratio is `Signed` and has no entropy ("the log-ratio map: ..."). **Verified intentional divergence.** |
 
-The eyesim `fixation_entropy.fixation_group` (density and grid methods) and
-`fixation_entropy.eye_density_multiscale` entry points are not pinned here; the density method
-depends on the KDE row, and both remain gap `eyesim-entropy`.
+### Entropy of derived inputs
+
+[derived-entropy.json](tools/r-parity/fixtures/derived-entropy.json) pins the public
+`fixation_entropy` on a six-fixation group (`method = "grid"` and `"density"`), on the
+`eye_density_multiscale` object `eye_density` builds from a descending sigma vector, and on
+hand-built multiscale objects over supplied maps, all from
+[fixtures/cases/eyesim-entropy.json](tools/r-parity/fixtures/cases/eyesim-entropy.json). The
+fixation group puts one fixation on an interior breakpoint of the explicit lattice, one on its
+upper corner and one outside it. The eyes4s route is `FixationEntropy` in `eyes4s-surface`:
+`occupancy` on an `OccupancyLattice`, `density` with a `DensityBandwidth`, and `multiscale`, with
+`MultiscaleEntropy.values` and `reduce` for the `none` and `mean` reductions.
+`surface/src/test/scala/eyes4s/surface/FixationEntropyConformanceSuite.scala` consumes the generated
+`DerivedEntropyReference` on JVM and Scala.js.
+
+| Case at the pinned revision | Observed eyesim behavior | eyes4s contract and evidence |
+|---|---|---|
+| `method = "grid"` on explicit bounds | Counts per cell of `seq(lo, hi, length.out = n + 1)` with `findInterval(..., rightmost.closed = TRUE, all.inside = TRUE)`: the breakpoint fixation goes to the upper cell, the corner to the last cell, the outside fixation to the nearest edge cell. `duration_weighted = TRUE` changes nothing. | `FixationEntropy.occupancy` with `LatticeUpperEdge.Closed`, `OutsideLattice.ClampToEdgeCell` and `Weight.Uniform` gives the same counts and, in both bases and both normalisations, the same entropy as eyesim and an exact rational oracle to `1e-12`; the clamped fixation is listed by index. `Exclude`, `Refuse` and `Weight.Duration` are named alternatives with their own oracle values. **Verified equivalent.** |
+| `method = "grid"` on eyesim's default bounds | The observed range padded by 5% of its span on each side, at 4 by 3 and at the default 10 by 10. One fixation has entropy 0. | `OccupancyLattice.paddedRange(path, nx, ny, 0.05, Closed)` reproduces the bounds, counts and entropies ("eyesim's default padded bounds reproduce its grid entropy and counts"); the scaladoc warns that data-dependent bounds make scanpaths incomparable. **Verified equivalent.** |
+| `aggregate = "none"` and `"mean"` on a multiscale object | Per-scale values named `sigma_<s>` in request order; the mean of all of them. | `MultiscaleEntropy.of` on eyesim's own scale maps and on the supplied maps gives the same value for every sigma label and the same mean in both bases and normalisations to `1e-12`; scales are held in ascending sigma. **Verified equivalent.** |
+| `method = "density"`, explicit sigma | `ks::kde` evaluated directly at the 6 by 4 endpoint-inclusive lattice, each fixation within a 3.7-SD support box, normalised and rounded by `zapsmall(z, 7)`, then `entropy_from_mass`. A continuous Gaussian with that support reproduces every cell to `1e-8` and the entropy to `1e-7`. | The entropy step agrees: `Mass.entropy` of eyesim's pinned map equals eyesim's value to `1e-12`. `FixationEntropy.density` smooths with the native discrete Gaussian on a grid over the frame, checked against a direct two-dimensional kernel sum under both edge policies and weightings; fixations outside the frame are listed. It differs from eyesim's value, as the KDE row records. **Verified intentional divergence.** |
+| Default bandwidth and one fixation | `suggest_sigma` clamps to 1-15% of the padded data range (8.25 here; 15.10 unclamped). One fixation gives `NA`, with or without an explicit sigma. | `IqrBandwidth` without a clamp gives 15.10; its display clamp uses the frame (7.5). One fixation has a finite native entropy with a fixed sigma and a typed `Bandwidth` error under the IQR rule. **Verified intentional divergence.** |
+| A massless scale, request order, and weights | `mean(ent, na.rm = TRUE)`: an all-zero scale is `NA` and leaves the mean silently. `fixation_entropy(fg, sigma = c(12, 6), aggregate = "none")` is an error, because `aggregate` is forwarded to `ks::kde`; only the mean is reachable from a fixation group. There are no scale weights. | A massless map cannot become a `Mass` (`DegenerateTotal`), so no reduction omits a scale; `FixationEntropy.multiscale` returns every scale; `ScaleReduction.Weighted` takes one weight per sigma and is checked against its oracle only. **Verified intentional divergence.** |
 
 ## Cases that must remain distinguishable
 
@@ -213,7 +232,7 @@ signed components of the analytic score fixture. The five-component fixture chec
 means and subtraction; it is not a new MultiMatch algorithm conformance claim. See [the contrast contract](docs/CONTRAST_CONTRACT.md).
 
 General KDE bandwidth/edge equivalence, finite control sampling (the residual table above),
-fixation-group and multiscale entropy inputs, eyesim temporal template-density sampling,
+eyesim temporal template-density sampling,
 fitted density-transform breadth, real study-data coverage, and the remaining
 [capability baseline](docs/EYESIM_CAPABILITIES.md) still require their own reference fixtures.
 Historical eyesim bug descriptions outside this report have not been revalidated by this slice.
