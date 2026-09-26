@@ -17,7 +17,7 @@
 package eyes4s.studio.core.document
 
 import cats.syntax.all.*
-import eyes4s.codec.{ByteDigest, CanonicalDigest}
+import eyes4s.codec.{ByteDigest, CanonicalDigest, CodecError, VersionedCodec}
 import eyes4s.kernel.Correction
 import eyes4s.plan.{AdmissionPolicy, ArtifactRef, CorrectionScope, OffScreenPolicy}
 import eyes4s.studio.core.backend.{DatasetRevision, TrialKey}
@@ -125,6 +125,13 @@ private[document] object DigestCodecs:
   given Codec[ByteDigest] = Codec.from(
     Decoder[String].emap(s => ByteDigest.parse(s).left.map(_.message)),
     Encoder[String].contramap(_.hex)
+  )
+
+/** A [[CanonicalDigest]] as JSON: its 64 lowercase hexadecimal digits. */
+object DigestJson:
+  given [A]: Codec[CanonicalDigest[A]] = Codec.from(
+    Decoder[String].emap(s => CanonicalDigest.parse[A](s).left.map(_.message)),
+    Encoder[String].contramap(_.sha256.hex)
   )
 
 /** One imported file: its path in the bundle, the SHA-256 of its exact bytes
@@ -428,22 +435,27 @@ object AdmissionChoice:
       }
       .map(AdmissionChoice(OffScreenChoice.of(policy.offScreen), _))
 
-/** What became of a dataset revision's admission. `Pending` is a draft being
-  * verified (story moment t1); `Admitted` binds the eyes4s admission ledger
-  * and trial inventory it produced.
+/** What became of a dataset revision's admission. `Pending` is a draft
+  * being edited; `Verifying` has been sent to the backend for verification
+  * (story moment t1) and records the content digest
+  * ([[DatasetRevisionSpec.contentDigest]]) of exactly what was sent; an
+  * admission is accepted only for that content. `Admitted` binds the eyes4s
+  * admission ledger and trial inventory it produced.
   */
 enum AdmissionDecision derives CanEqual:
   case Pending
+  case Verifying(content: CanonicalDigest[DatasetRevisionSpec])
   case Admitted(
       ledger: CoreBinding[AdmissionLedgerArtifact],
       inventory: CoreBinding[TrialInventoryArtifact]
   )
 
   def isAdmitted: Boolean = this match
-    case Pending        => false
-    case Admitted(_, _) => true
+    case Pending | Verifying(_) => false
+    case Admitted(_, _)         => true
 
 object AdmissionDecision:
+  import DigestJson.given
   given Codec.AsObject[AdmissionDecision] = Codec.AsObject.derived
 
 // ---------------------------------------------------------------------------
@@ -466,3 +478,24 @@ final case class DatasetRevisionSpec(
     decision: AdmissionDecision
 ) derives CanEqual,
       Codec.AsObject
+
+object DatasetRevisionSpec:
+  /** The CR3 digest of what a revision asks eyes4s to admit: the whole spec
+    * with its decision set to `Pending`, so verifying it does not change it.
+    */
+  def contentDigest(
+      spec: DatasetRevisionSpec
+  ): Either[CodecError, CanonicalDigest[DatasetRevisionSpec]] =
+    contentCodec.flatMap(_.digest(spec.copy(decision = AdmissionDecision.Pending)))
+
+  private val contentCodec: Either[CodecError, VersionedCodec[DatasetRevisionSpec]] =
+    StudioSchemaIds.forCodec.map { ids =>
+      VersionedCodec.checked[DatasetRevisionSpec](ids.datasetContent)(s =>
+        Right(CanonicalJson(s.asJson))
+      )(json =>
+        json
+          .as[DatasetRevisionSpec]
+          .left
+          .map(f => CodecError.Field("dataset", json, f.getMessage))
+      )
+    }
