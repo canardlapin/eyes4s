@@ -934,6 +934,12 @@ private[codec] object ResultWire:
       keys
         .encode(k)
         .map(key => tagged("offWindow", "key" -> key, "tally" -> windowTally(tally)))
+    case StudyFailure.InitialFixations(k, e) =>
+      keys
+        .encode(k)
+        .map(key =>
+          tagged("initialFixations", "key" -> key, "error" -> initialFixationError(e))
+        )
 
   def readStudyFailure[K](keys: VersionedCodec[K])(
       json: Json
@@ -972,7 +978,73 @@ private[codec] object ResultWire:
           k <- key
           t <- Wire.field[Json](json, "tally").flatMap(readWindowTally)
         yield StudyFailure.OffWindow(k, t)
+      case "initialFixations" =>
+        for
+          k <- key
+          e <- error.flatMap(readInitialFixationError)
+        yield StudyFailure.InitialFixations(k, e)
       case other => Left(unknown(json, "study failure", other))
+    }
+
+  /** An initial-fixation refusal with its operands. */
+  def initialFixationError(error: InitialFixationError): Json =
+    import InitialFixationError.*
+    error match
+      case NonPositiveRadius(r) => tagged("nonPositiveRadius", "radiusDegrees" -> double(r))
+      case NonFiniteCross(x, y) => tagged("nonFiniteCross", "x" -> double(x), "y" -> double(y))
+      case CrossOffFrame(x, y, frame) =>
+        tagged(
+          "crossOffFrame",
+          "x"     -> double(x),
+          "y"     -> double(y),
+          "frame" -> Json.fromString(frame.name)
+        )
+      case MissingAngularScale(r) => tagged("missingAngularScale", "radiusDegrees" -> double(r))
+      case InvalidTally(dropped, total, droppedMicros, totalMicros) =>
+        tagged(
+          "invalidTally",
+          "dropped"       -> Json.fromInt(dropped),
+          "total"         -> Json.fromInt(total),
+          "droppedMicros" -> long(droppedMicros),
+          "totalMicros"   -> long(totalMicros)
+        )
+      case NoFixationKept(dropped, micros) =>
+        tagged(
+          "noFixationKept",
+          "dropped"       -> Json.fromInt(dropped),
+          "droppedMicros" -> long(micros)
+        )
+
+  def readInitialFixationError(json: Json): Either[CodecError, InitialFixationError] =
+    import InitialFixationError.*
+    kind(json).flatMap {
+      case "nonPositiveRadius" => readDouble(json, "radiusDegrees").map(NonPositiveRadius.apply)
+      case "nonFiniteCross"    =>
+        for
+          x <- readDouble(json, "x")
+          y <- readDouble(json, "y")
+        yield NonFiniteCross(x, y)
+      case "crossOffFrame" =>
+        for
+          x     <- readDouble(json, "x")
+          y     <- readDouble(json, "y")
+          frame <- Wire.field[String](json, "frame")
+        yield CrossOffFrame(x, y, FrameId(frame))
+      case "missingAngularScale" =>
+        readDouble(json, "radiusDegrees").map(MissingAngularScale.apply)
+      case "invalidTally" =>
+        for
+          dropped       <- Wire.field[Int](json, "dropped")
+          total         <- Wire.field[Int](json, "total")
+          droppedMicros <- readLong(json, "droppedMicros")
+          totalMicros   <- readLong(json, "totalMicros")
+        yield InvalidTally(dropped, total, droppedMicros, totalMicros)
+      case "noFixationKept" =>
+        for
+          dropped <- Wire.field[Int](json, "dropped")
+          micros  <- readLong(json, "droppedMicros")
+        yield NoFixationKept(dropped, micros)
+      case other => Left(unknown(json, "initial-fixation error", other))
     }
 
   /** A trial's window tally: counts and signed-microsecond duration strings. */
