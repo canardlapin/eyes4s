@@ -1028,10 +1028,23 @@ ThisBuild / checkStudioBoundaries := {
           |studio-desktop (DESIGN_SPEC section 13).""".stripMargin
     )
 
+  val members = StudioLint.scanMemberTree(buildRoot)
+  if (members.nonEmpty)
+    sys.error(
+      s"""|Studio boundary violation: studio sources call an unbound report constructor.
+          |
+          |${members.map("  - " + _.render).mkString("\n")}
+          |
+          |Obtain bound reports through eyes4s.codec.ReportSources.study; the
+          |constructors ${StudioLint.forbiddenMembers.mkString(
+           ", "
+         )} take no source binding.""".stripMargin
+    )
+
   log.info(
     s"studio boundaries OK (lint self-test passed; ${graph.size} project(s) have no " +
       "library-to-studio edge; no JVM-only package in portable studio sources; " +
-      "no effect library in studio-app or studio-viz sources)"
+      "no effect library in studio-app or studio-viz sources; no unbound report constructor)"
   )
 }
 
