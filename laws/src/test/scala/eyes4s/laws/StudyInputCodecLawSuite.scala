@@ -310,6 +310,154 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
   private def quarantineOccurrenceKey(k: OccurrenceKey): OccurrenceKey =
     k.copy(participant = "quarantined-" + k.participant)
 
+  // ---------------------------------------------------------------- inventory
+
+  private val attributeValues: Gen[AttributeValue] = Gen.oneOf(
+    text.map(AttributeValue.Text.apply),
+    Gen
+      .oneOf(Gen.choose(Long.MinValue, Long.MaxValue), Gen.const(9007199254740993L))
+      .map(AttributeValue.Integer.apply),
+    Gen.oneOf(Gen.choose(-1e12, 1e12), Gen.const(-0.0)).map(AttributeValue.Number.apply),
+    Gen.const(AttributeValue.Blank)
+  )
+  private val attributeSets: Gen[Attributes] =
+    Gen
+      .listOfN(3, attributeValues)
+      .map(values => checked(Attributes.of(Vector("a", "b", "c").zip(values))))
+
+  /** A version-3 ledger built from a generated inventory scenario the way the
+    * importer records it: one disposition per inventory trial, row-level
+    * rejections for records with no samples, quarantined records naming
+    * their cause, and trials outside the inventory listed. Attributes of
+    * every kind are drawn for trials and admitted records.
+    */
+  private val inventoryLedgers: Gen[AdmissionLedger[TrialKey]] =
+    for
+      scenario         <- InventoryScenario.gen
+      trialAttributes  <- Gen.listOfN(scenario.trials.size, attributeSets)
+      recordAttributes <- Gen.listOfN(scenario.records.size, Gen.option(attributeSets))
+    yield
+      val s       = scenario
+      val zero    = AdmissionReason.Number("samples", "0", "a positive integer")
+      val planned = s.trials
+      // Record numbers of each trial: its records appear once each in file order.
+      val numbers: Map[TrialIdentity, Vector[Int]] =
+        (s.trials.map(_._1) ++ s.unlisted.map(_._1)).map(id => id -> s.recordsOf(id)).toMap
+      def raw(n: Int) = Vector(n.toString, s.records(n - 2).identity.render)
+      val dispositions: Vector[(Int, Disposition[TrialKey])] =
+        planned.flatMap { (id, item, plan) =>
+          val key                                 = checked(id.withItem(item))
+          val rs                                  = numbers(id)
+          def quarantined(cause: QuarantineCause) =
+            rs.map(n =>
+              n -> Disposition.Rejected(
+                raw(n),
+                Some(key),
+                AdmissionReason.Quarantined(rs, cause)
+              )
+            )
+          plan match
+            case TrialPlan.Absent      => Vector.empty
+            case TrialPlan.Admitted(_) =>
+              rs.map(n => n -> Disposition.Admitted(key, s.records(n - 2).ordinal))
+            case TrialPlan.AllRejected(_) =>
+              rs.map(n => n -> Disposition.Rejected(raw(n), Some(key), zero))
+            case TrialPlan.OneRejected(_) =>
+              rs.map(n =>
+                n -> (if s.records(n - 2).samples == 0 then
+                        Disposition.Rejected(raw(n), Some(key), zero)
+                      else
+                        Disposition.Rejected(
+                          raw(n),
+                          Some(key),
+                          AdmissionReason.Quarantined(rs, QuarantineCause.RejectedRecords)
+                        ))
+              )
+            case TrialPlan.DuplicateOrdinals(_) =>
+              quarantined(QuarantineCause.DuplicateOrdinals)
+            case TrialPlan.Overlap(_) =>
+              quarantined(QuarantineCause.Overlap(1, "[0,50)", "[20,70)"))
+            case TrialPlan.ItemConflict(_) =>
+              quarantined(QuarantineCause.InventoryItemConflict(item, Vector(item + "-other")))
+        } ++ s.unlisted.flatMap { (id, _) =>
+          val rs    = numbers(id)
+          val key   = Option.when(s.recordItems)(checked(id.withItem("unlisted")))
+          val cause = QuarantineCause.NotInInventory(
+            id.participant,
+            id.phase,
+            id.trial,
+            id.occurrence.value
+          )
+          rs.map(n =>
+            n -> Disposition.Rejected(raw(n), key, AdmissionReason.Quarantined(rs, cause))
+          )
+        }
+      val records = dispositions.sortBy(_._1).map((n, d) => SourceRecord(n, d))
+      val header  = Vector("participant", "phase", "trial")
+      val base    = checked(
+        AdmissionLedger.decide(
+          SourceRef.of("f.csv", header, s.records.map(r => Vector(r.identity.render))),
+          header,
+          records,
+          AdmissionDecision.ReviewExclusions,
+          AdmissionPolicy.default[TrialKey],
+          Vector.empty
+        )
+      )
+      val trials =
+        planned.zip(trialAttributes).zipWithIndex.map { case (((id, item, plan), attrs), i) =>
+          val named = if s.recordItems && numbers(id).nonEmpty then
+            Vector(plan match
+              case TrialPlan.ItemConflict(_) => item + "-other"
+              case _                         => item)
+          else Vector.empty
+          InventoryTrial(
+            id,
+            Vector(i + 2),
+            Some(item),
+            attrs,
+            named,
+            numbers(id),
+            plan match
+              case TrialPlan.Absent         => TrialDisposition.Absent
+              case TrialPlan.Admitted(_)    => TrialDisposition.Admitted
+              case TrialPlan.AllRejected(_) => TrialDisposition.NoFixations
+              case TrialPlan.OneRejected(_) =>
+                TrialDisposition.Quarantined(QuarantineCause.RejectedRecords)
+              case TrialPlan.DuplicateOrdinals(_) =>
+                TrialDisposition.Quarantined(QuarantineCause.DuplicateOrdinals)
+              case TrialPlan.Overlap(_) =>
+                TrialDisposition.Quarantined(QuarantineCause.Overlap(1, "[0,50)", "[20,70)"))
+              case TrialPlan.ItemConflict(_) =>
+                TrialDisposition.Quarantined(
+                  QuarantineCause.InventoryItemConflict(item, Vector(item + "-other"))
+                )
+          )
+        }
+      val unlisted = s.unlisted.map((id, _) =>
+        UnlistedTrial(
+          id,
+          if s.recordItems then Vector("unlisted") else Vector.empty,
+          numbers(id)
+        )
+      )
+      val admitted = records.collect { case SourceRecord(n, Disposition.Admitted(_, _)) =>
+        n
+      }.toSet
+      val perRecord = recordAttributes.zipWithIndex.collect {
+        case (Some(attrs), i) if admitted.contains(i + 2) => RecordAttributes(i + 2, attrs)
+      }
+      val inventory = checked(
+        InventoryLedger.of(
+          SourceRef.of("t.csv", header, s.trials.map(t => Vector(t._1.render))),
+          header,
+          trials,
+          unlisted,
+          perRecord.toVector
+        )
+      )
+      checked(base.withInventory(inventory, TrialIdentity.of, _.item))
+
   private val standard = StudyInputCodecs.study[Px]
   private val custom   = new StudyInputCodec[OccurrenceKey, Px](
     id("test.occurrence-input"),
@@ -340,6 +488,14 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
       standard.ledger,
       policyLedgers(studyKeys, quarantineStudyKey),
       (a: AdmissionLedger[StudyKey], b: AdmissionLedger[StudyKey]) => a == b
+    )
+  )
+  checkAll(
+    "admission ledger with inventory",
+    CodecLaws.roundTrip(
+      StudyInputCodecs.trial[Px].ledger,
+      inventoryLedgers,
+      (a: AdmissionLedger[TrialKey], b: AdmissionLedger[TrialKey]) => a == b
     )
   )
   checkAll(
@@ -476,6 +632,63 @@ class StudyInputCodecLawSuite extends munit.DisciplineSuite:
         forgetful.ledger,
         repeatedLedgers,
         (a: AdmissionLedger[OccurrenceKey], b: AdmissionLedger[OccurrenceKey]) => a == b
+      )
+    )
+  }
+
+  test(
+    "the inventory ledger law kills a changed attribute, a dropped trial and a lost listing"
+  ) {
+    type L = AdmissionLedger[TrialKey]
+    val eq    = (a: L, b: L) => a == b
+    val codec = StudyInputCodecs.trial[Px].ledger
+    def rejoin(l: L)(change: InventoryLedger => Either[InventoryError, InventoryLedger]) =
+      l.inventory.fold[Either[CodecError, L]](Right(l))(inventory =>
+        change(inventory).left
+          .map(e => CodecError.Admission(AdmissionError.Inventory(e)))
+          .flatMap(changed =>
+            l.withInventory(changed, TrialIdentity.of, _.item)
+              .left
+              .map(CodecError.Admission.apply)
+          )
+      )
+    def rebuilt(i: InventoryLedger)(
+        trials: Vector[InventoryTrial] = i.trials,
+        unlisted: Vector[UnlistedTrial] = i.unlisted
+    ) = InventoryLedger.of(i.source, i.header, trials, unlisted, i.recordAttributes)
+    val changedAttribute = mutant(codec)(l =>
+      rejoin(l)(i =>
+        rebuilt(i)(trials =
+          i.trials.map(t =>
+            t.copy(attributes =
+              checked(
+                Attributes.of(
+                  t.attributes.entries.map((n, v) =>
+                    n -> (v match
+                      case AttributeValue.Integer(x) => AttributeValue.Integer(x ^ 1L)
+                      case AttributeValue.Blank      => AttributeValue.Text("")
+                      case other                     => other)
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+    assert(killed(changedAttribute, inventoryLedgers, eq))
+    val droppedTrial = mutant(codec)(l =>
+      rejoin(l)(i =>
+        rebuilt(i)(trials = i.trials.filterNot(_.disposition == TrialDisposition.Absent))
+      )
+    )
+    assert(killed(droppedTrial, inventoryLedgers, eq))
+    val lostListing = mutant(codec)(l => rejoin(l)(i => rebuilt(i)(unlisted = Vector.empty)))
+    assert(
+      killed(
+        lostListing,
+        inventoryLedgers.suchThat(_.inventory.exists(_.unlisted.nonEmpty)),
+        eq
       )
     )
   }
