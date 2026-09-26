@@ -60,12 +60,14 @@ private[io] final case class LedgerEvidenceCursor[K] private (
     limits: LedgerExecutionLimits,
     keys: LedgerEvidenceKey[K],
     pending: List[(LedgerEvidenceVisit[K], LedgerResourceLocation)],
-    retained: Long
+    retained: Long,
+    inventoryRecords: Long
 ):
   def advance(quantum: SampleQuantum): Either[LedgerResourceError, LedgerEvidenceStep[K]] =
     import LedgerEvidenceVisit.*
     var todo                                 = pending
     var kept                                 = retained
+    var inventoryCount                       = inventoryRecords
     var units                                = 0
     var failure: Option[LedgerResourceError] = None
     var at = LedgerResourceLocation(LedgerResourceSource.ExpectedLedger)
@@ -77,6 +79,10 @@ private[io] final case class LedgerEvidenceCursor[K] private (
       limits.add(LedgerResource.RetainedEvidenceUnits, kept, amount, at) match
         case Left(error)  => failure = Some(error); false
         case Right(value) => kept = value; true
+    def inventoryRows(amount: Long): Boolean =
+      limits.add(LedgerResource.LogicalRecords, inventoryCount, amount, at) match
+        case Left(error)  => failure = Some(error); false
+        case Right(value) => inventoryCount = value; true
     def push(value: LedgerEvidenceVisit[K], location: LedgerResourceLocation = at): Unit =
       todo = (value, location) :: todo
     def texts(
@@ -183,16 +189,19 @@ private[io] final case class LedgerEvidenceCursor[K] private (
               at = at.copy(record = Some(values(index).record.toLong), field = None)
               texts(Vector(values(index).frame.name))
           case Inventory(value) =>
-            value.sampleCounts match
-              case SampleCountRule.PositiveColumn(name)   => texts(Vector(name))
-              case SampleCountRule.DerivedFromDuration(_) => ()
-            push(RecordAttributes(value.recordAttributes, 0))
-            push(Definitions(value.recordAttributeColumns, 0))
-            push(Unlisted(value.unlisted, 0))
-            push(Trials(value.trials, 0))
-            push(Definitions(value.attributeColumns, 0))
-            push(Header(value.header))
-            push(Source(value.source))
+            // The inventory has its own header and row count, independent of
+            // primary records and of how many rows collapse into each trial.
+            if check(LedgerResource.LogicalRecords, inventoryCount) then
+              value.sampleCounts match
+                case SampleCountRule.PositiveColumn(name)   => texts(Vector(name))
+                case SampleCountRule.DerivedFromDuration(_) => ()
+              push(RecordAttributes(value.recordAttributes, 0))
+              push(Definitions(value.recordAttributeColumns, 0))
+              push(Unlisted(value.unlisted, 0))
+              push(Trials(value.trials, 0))
+              push(Definitions(value.attributeColumns, 0))
+              push(Header(value.header))
+              push(Source(value.source))
           case Definitions(values, index) =>
             if (index != 0 || check(
                 LedgerResource.DeclaredAttributes,
@@ -216,25 +225,22 @@ private[io] final case class LedgerEvidenceCursor[K] private (
                   ()
               texts(Vector(name))
           case Trials(values, index) =>
-            if (index != 0 || check(
-                LedgerResource.LogicalRecords,
-                values.size.toLong
-              )) && index < values.size
-            then
-              next(values, index)(Trials(values, _))
+            if index < values.size then
               val value = values(index)
               at = at.copy(record = value.rows.headOption.map(_.toLong), field = None)
-              value.disposition match
-                case TrialDisposition.Quarantined(cause) => push(Cause(cause))
-                case TrialDisposition.Admitted | TrialDisposition.NoFixations |
-                    TrialDisposition.Absent =>
-                  ()
-              push(Integers(value.records))
-              texts(value.recordItems)
-              push(Attributes(value.attributes.entries, 0))
-              texts(value.inventoryItem.toVector)
-              push(Integers(value.rows))
-              identity(value.identity)
+              if inventoryRows(value.rows.size.toLong) then
+                next(values, index)(Trials(values, _))
+                value.disposition match
+                  case TrialDisposition.Quarantined(cause) => push(Cause(cause))
+                  case TrialDisposition.Admitted | TrialDisposition.NoFixations |
+                      TrialDisposition.Absent =>
+                    ()
+                push(Integers(value.records))
+                texts(value.recordItems)
+                push(Attributes(value.attributes.entries, 0))
+                texts(value.inventoryItem.toVector)
+                push(Integers(value.rows))
+                identity(value.identity)
           case Unlisted(values, index) =>
             if index < values.size then
               next(values, index)(Unlisted(values, _))
@@ -252,7 +258,9 @@ private[io] final case class LedgerEvidenceCursor[K] private (
       LedgerEvidenceStep(
         units,
         kept,
-        Option.when(todo.nonEmpty)(new LedgerEvidenceCursor(limits, keys, todo, kept))
+        Option.when(todo.nonEmpty)(
+          new LedgerEvidenceCursor(limits, keys, todo, kept, inventoryCount)
+        )
       )
     )
 
@@ -280,7 +288,7 @@ private[io] object LedgerEvidenceCursor:
           Outside(ledger.outsideFrame, 0)
         ) ++
           ledger.inventory.toList.map(Inventory.apply)
-        new LedgerEvidenceCursor(limits, shape, visits.map(_ -> at), 0L)
+        new LedgerEvidenceCursor(limits, shape, visits.map(_ -> at), 0L, 1L)
       }
     }
 

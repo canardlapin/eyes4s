@@ -281,6 +281,85 @@ class LedgerEvidenceCursorSuite extends munit.FunSuite:
     assert(drain(description, value, limits(LedgerResource.DeclaredAttributes -> 0L), 1).isLeft)
   }
 
+  test("inventory logical records count the header and every source row, not grouped trials") {
+    val invSpec = get(InventoryImportSpec.of("p", "phase", "trial", item = Some("item")))
+    val cases   = Vector(
+      (Vector.fill(100)("p,f,t,i"), 1),
+      (Vector("p,f,t,i", "p,f,other,j"), 2)
+    )
+    cases.foreach { (rows, trials) =>
+      val inventoryText = "p,phase,trial,item\n" + rows.mkString("", "\n", "\n")
+      val invSource = get(SourceAdmission.inventorySource("inventory", inventoryText, invSpec))
+      val description = get(
+        ImportSpec.of(
+          SourceKeyColumns.Trial("p", "phase", "trial", None, None),
+          columns,
+          frame,
+          SourceTimeUnit.Milliseconds,
+          AdmissionPolicy.default[TrialKey],
+          AdmissionDecision.ReviewExclusions,
+          inventory = Some(SourceInventory(invSpec, invSource.identity.get))
+        )
+      )
+      val csv   = "p,phase,trial,n,x,y,onset,duration,samples\np,f,t,0,10,20,0,100,10\n"
+      val value = get(
+        SourceAdmission.read("fixations", csv, description, Some("inventory" -> inventoryText))
+      ).ledger
+      assertEquals(value.inventory.get.trials.size, trials)
+      assertEquals(value.inventory.get.trials.map(_.rows.size).sum, rows.size)
+      val extent   = rows.size.toLong + 1
+      val expected =
+        drain(description, value, limits(LedgerResource.LogicalRecords -> extent), 1)
+      assert(expected.isRight)
+      Vector(1, 7, 1024).foreach { budget =>
+        assertEquals(
+          drain(description, value, limits(LedgerResource.LogicalRecords -> extent), budget),
+          expected
+        )
+        assertEquals(
+          drain(
+            description,
+            value,
+            limits(LedgerResource.LogicalRecords -> (extent + 1)),
+            budget
+          ),
+          expected
+        )
+        assertEquals(
+          drain(
+            description,
+            value,
+            limits(LedgerResource.LogicalRecords -> (extent - 1)),
+            budget
+          ),
+          Left(
+            LedgerResourceError.Exceeded(
+              LedgerResource.LogicalRecords,
+              extent - 1,
+              BigInt(extent),
+              LedgerResourceLocation(
+                LedgerResourceSource.ExpectedLedger,
+                Some(if trials == 1 then 2L else 3L)
+              )
+            )
+          )
+        )
+        if trials == 1 then
+          assertEquals(
+            drain(description, value, limits(LedgerResource.LogicalRecords -> 2L), budget),
+            Left(
+              LedgerResourceError.Exceeded(
+                LedgerResource.LogicalRecords,
+                2,
+                BigInt(101),
+                LedgerResourceLocation(LedgerResourceSource.ExpectedLedger, Some(2))
+              )
+            )
+          )
+      }
+    }
+  }
+
   test("unqualified digest evidence is refused without any callback") {
     var calls  = 0
     val custom = new KeyDigest[StudyKey]:
