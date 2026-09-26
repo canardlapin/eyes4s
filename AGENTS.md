@@ -28,12 +28,13 @@ studio/desktop/  eyes4s-studio-desktop  JavaFX shell, platform services (JVM onl
 The studio projects are the Eyes Studio application (`docs/studio/DESIGN_SPEC.md` §13).
 They are not published, not in the root aggregate, and not in `compileAll`/`testAll`;
 build them with `sbt studioAll` and check their style with `sbt studioStyleCheck`.
-studio-desktop compiles for JDK 22+ (JavaFX 24). studio-app and studio-viz are pure
-by contract: they resolve Cats Effect transitively through studio-core, so
-`checkModuleBoundaries` cannot enforce it. `checkBoundaries` does enforce that no
+studio-desktop compiles for JDK 22+ (JavaFX 24). studio-app and studio-viz are pure:
+they resolve Cats Effect transitively through studio-core, so purity is enforced on
+their sources rather than their dependency graph. `checkBoundaries` enforces that no
 library module depends on a studio project, that studio-core/app/viz resolve no
-JavaFX artifact, and that their sources name no `javafx`, `scaladock.fx`,
-`java.io` or `java.nio` package (`project/StudioLint.scala`).
+JavaFX artifact and their sources name no `javafx`, `scaladock.fx`, `java.io` or
+`java.nio` package, and that studio-app/viz sources name no `cats.effect` or `fs2`
+package (`project/StudioLint.scala`).
 
 ## Build and test
 

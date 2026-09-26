@@ -918,9 +918,23 @@ ThisBuild / checkStudioBoundaries := {
           |studio-desktop behind a platform-service interface (DESIGN_SPEC section 13).""".stripMargin
     )
 
+  val effects =
+    StudioLint.scanTree(buildRoot, StudioLint.pureSourceRoots, StudioLint.effectPackages)
+  if (effects.nonEmpty)
+    sys.error(
+      s"""|Studio boundary violation: pure presentation sources name an effect library.
+          |
+          |${effects.map("  - " + _.render).mkString("\n")}
+          |
+          |studio-app and studio-viz describe effects as data and may not name
+          |${StudioLint.effectPackages.mkString(", ")}. Run effects in studio-core or
+          |studio-desktop (DESIGN_SPEC section 13).""".stripMargin
+    )
+
   log.info(
     s"studio boundaries OK (lint self-test passed; ${graph.size} project(s) have no " +
-      "library-to-studio edge; no JVM-only package in portable studio sources)"
+      "library-to-studio edge; no JVM-only package in portable studio sources; " +
+      "no effect library in studio-app or studio-viz sources)"
   )
 }
 

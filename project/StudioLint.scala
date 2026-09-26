@@ -18,7 +18,7 @@ import sbt._
 
 /** Studio boundary rules (DESIGN_SPEC section 13, ticket S0.2).
   *
-  * Three rules keep Eyes Studio portable by construction:
+  * Four rules keep Eyes Studio portable by construction:
   *
   *   1. No eyes4s library module depends on a studio project, directly or
   *      transitively ([[libraryToStudioEdges]]).
@@ -27,6 +27,9 @@ import sbt._
   *   3. Portable studio sources name no `javafx`, `scaladock.fx`, `java.io` or
   *      `java.nio` package, in an import or a qualified reference
   *      ([[scanSource]]).
+  *   4. The pure presentation layers (studio-app, studio-viz) name no
+  *      `cats.effect` or `fs2` package: effects are data there
+  *      ([[effectPackages]], [[pureSourceRoots]]).
   *
   * Every rule is a pure function so that [[selfTest]] can run it against
   * planted violations. `checkBoundaries` runs the self-test before the real
@@ -46,10 +49,18 @@ object StudioLint {
     def render: String = s"$file:$line  '$reference'"
   }
 
-  // A reference starts at an identifier boundary: `eyes4s.javafx` or `myjava.io`
-  // is not the JDK package. `_root_.` is allowed in front.
-  private val referencePattern =
-    forbiddenPackages
+  /** Effect-library packages the pure presentation layers may not name. */
+  val effectPackages: Seq[String] = Seq("cats.effect", "fs2")
+
+  /** Source roots, relative to the build root, that must stay effect-free:
+    * effects are data there (DESIGN_SPEC section 13).
+    */
+  val pureSourceRoots: Seq[String] = Seq("studio/app", "studio/viz")
+
+  // A reference starts at an identifier boundary: `eyes4s.javafx`, `myjava.io`
+  // or `eyes4s.fs2` is not the forbidden package. `_root_.` is allowed in front.
+  private def referencePattern(packages: Seq[String]) =
+    packages
       .map(p => java.util.regex.Pattern.quote(p))
       .mkString("(?<![\\w.$])(?:_root_\\.)?(", "|", ")(?![\\w$])")
       .r
@@ -68,10 +79,14 @@ object StudioLint {
     }
   }
 
-  /** Every forbidden package reference in one source text. */
-  def scanSource(fileName: String, source: String): Seq[Violation] = {
+  /** Every reference to one of `packages` in one source text. */
+  def scanSource(
+      fileName: String,
+      source: String,
+      packages: Seq[String] = forbiddenPackages
+  ): Seq[Violation] = {
     val code = stripCommentsAndStrings(source)
-    referencePattern
+    referencePattern(packages)
       .findAllMatchIn(code)
       .map { m =>
         Violation(fileName, code.take(m.start).count(_ == '\n') + 1, m.matched)
@@ -79,16 +94,20 @@ object StudioLint {
       .toList
   }
 
-  /** Every forbidden package reference under the portable source roots. */
-  def scanTree(buildRoot: File): Seq[Violation] =
-    portableSourceRoots.flatMap { root =>
+  /** Every reference to one of `packages` under `roots`. */
+  def scanTree(
+      buildRoot: File,
+      roots: Seq[String] = portableSourceRoots,
+      packages: Seq[String] = forbiddenPackages
+  ): Seq[Violation] =
+    roots.flatMap { root =>
       val dir     = buildRoot / root
       val sources =
         if (dir.exists) (dir ** "*.scala").get.filterNot(_.getPath.contains("/target/"))
         else Nil
       sources.sortBy(_.getPath).flatMap { f =>
         val relative = IO.relativize(buildRoot, f).getOrElse(f.getPath)
-        scanSource(relative, IO.read(f))
+        scanSource(relative, IO.read(f), packages)
       }
     }
 
@@ -157,6 +176,41 @@ object StudioLint {
         s"source lint missed '$reference' in: ${source.replace('\n', ' ')}"
       )
     }
+    // Rule 4: the effect lint on the pure presentation layers.
+    val plantedEffects = Seq(
+      "import cats.effect.IO"                  -> "cats.effect",
+      "import cats.effect.{IO, Resource}"      -> "cats.effect",
+      "import cats.syntax.all.*, fs2.Stream"   -> "fs2",
+      "import fs2.*"                           -> "fs2",
+      "import _root_.fs2.Stream"               -> "_root_.fs2",
+      "def s: fs2.Stream[fs2.Pure, Int] = ???" -> "fs2",
+      "val io = cats.effect.IO.unit"           -> "cats.effect"
+    )
+    plantedEffects.foreach { case (source, reference) =>
+      val found = scanSource("planted.scala", source, effectPackages)
+      expect(
+        found.exists(_.reference == reference),
+        s"effect lint missed '$reference' in: $source"
+      )
+    }
+    val cleanEffects = Seq(
+      "import cats.syntax.all.*",
+      "import cats.data.NonEmptyList",
+      "import eyes4s.fs2.StudyExecution",
+      "import eyes4s.studio.core.fs2x.Thing",
+      "// import cats.effect.IO",
+      "val s = \"fs2.Stream\""
+    )
+    cleanEffects.foreach { source =>
+      val found = scanSource("clean.scala", source, effectPackages)
+      expect(found.isEmpty, s"effect lint flagged clean source: $source")
+    }
+    expect(
+      !pureSourceRoots.contains("studio/core") && pureSourceRoots.contains("studio/app") &&
+        pureSourceRoots.contains("studio/viz"),
+      s"effect lint covers the wrong source roots: $pureSourceRoots"
+    )
+
     val multiLine = scanSource("planted.scala", "package p\n\n// ok\nimport java.io.File\n")
     expect(multiLine.map(_.line) == Seq(4), s"source lint misreported a line: $multiLine")
 
