@@ -102,27 +102,71 @@ change to a pinned v1 writer's output fails the build rather than silently becom
 **Which decoders stay readable.** Every released version stays decodable, with its original
 meaning, in every later release. The study plan and the admission ledger have a version 2
 (`eyes4s.study@2`, `eyes4s.admission-ledger@2`, pinned by `study-v2.json` and
-`admission-ledger-v2.json`); their codecs read versions 1 and 2, decode a version-1 document with
-its version-1 meaning (the whole frame, scales in frame units, and the admission policy that
-quarantines off-screen records), and write each value under the earliest version that expresses it,
-so a version-1 document still re-encodes to its own bytes. The admission ledger also has a version
-3 (`eyes4s.admission-ledger@3`, declared in `InventoryDefinitions` and pinned by
-`admission-ledger-v3.json`), which adds the trial inventory; its codec reads all three versions,
-writes a ledger without an inventory as version 1 or 2 exactly as before, and refuses a cause in a
-document older than the version that introduced it. For every other schema, version 1 is the
-first version, so every
-current decoder reads exactly version 1; there is no version 0 or earlier variant to keep or
-migrate from, and `DefinitionId` refuses a version below 1. Decoding never migrates. A migration
-from one version to the next will be offered only where it is scientifically lossless, preserving
-every identity-bearing value and semantic identity, and then as an explicit function the caller
-applies, never inside a decoder; otherwise the older version is refused with a named
-incompatibility.
+`admission-ledger-v2.json`), and the admission ledger a version 3 (`eyes4s.admission-ledger@3`,
+declared in `InventoryDefinitions` and pinned by `admission-ledger-v3.json`), which adds the trial
+inventory. A version-1 document decodes with its version-1 meaning (the whole frame, scales in
+frame units, every matched reference averaged, and the admission policy that quarantines
+off-screen records), and a document older than the version that introduced a cause may not name
+it. For every other schema, version 1 is the first version, so every current decoder reads exactly
+version 1; there is no version 0 or earlier variant to keep or migrate from, and `DefinitionId`
+refuses a version below 1.
+
+### Version policy
+
+A schema with more than one version is a `SchemaLadder`, and there is no other way to give a
+schema a second version. A ladder lists consecutive versions of one schema name; each version has
+its own writer and reader, and each version after the first has an **upcast**: a total function
+from a payload of the previous version to a payload of the new version with the same meaning.
+`ladder.next(previousExpresses, upcast)(write)(read)` is the only way to add a version, so a
+version cannot exist without its upcast, and `ladder.codec` is the `VersionedCodec` the schema
+ships. The upcasts state what an earlier version left implicit: the study plan's v1 to v2 upcast
+turns `estimates` into native `scales` and writes the whole-frame geometry, the version-1 pairing
+and no angular scale; the ledger's v1 to v2 upcast writes the version-1 admission policy and no
+records outside the frame, and its v2 to v3 upcast writes `"inventory": null`.
+
+The versions' vocabularies are nested: every value a version expresses is expressed by each later
+version. Writing is **earliest-version**: a value is written under the lowest version that
+expresses it (`ladder.earliest(value)`), so a pinned version-1 document re-encodes to its own
+bytes, an older release can read every document whose value it can express, and each value has one
+written document. Decoding reads each version with that version's own reader and never migrates.
+`ladder.lift(document)` is the explicit migration: it rewrites a stored document of any listed
+version as the latest version with the same meaning, by applying the upcasts in order. Every reader
+accepts the lift of an earlier document, and the codec writes the decoded value back under its
+earliest version; a lifted version-3 ledger with a `null` inventory is read with version 2's
+vocabulary, so it may not name an inventory cause. A lifted document is the one sanctioned second
+spelling of a value; any other alternative spelling is refused (see [canonical wire
+forms](#canonical-wire-forms)).
+
+The published `SchemaLadderLaws` state the policy over generated values of every version. Writing
+`write_N`, `read_N` and `upcast_N` for version N's writer, reader and upcast, and `E` for the version
+the codec writes a value `x` under:
+
+| Law | Statement |
+|---|---|
+| Earliest | `read_N(write_N(x))` is `x` exactly when `N >= E`: `E` is the lowest version whose vocabulary expresses `x`, and the vocabularies are nested |
+| Old readers | the ladder cut at `E` (`ladder.upTo(E)`, what the release that introduced `E` read) decodes the written document to `x` |
+| Upcast | for every later version `M`, `upcast^(M-E)(write_E(x))` is exactly `write_M(x)`, so decoding the vN document and decoding its lift give the same value |
+| Canonical | the document lifted to the latest version decodes to `x` and re-encodes to the earliest document, so writing is canonical and idempotent |
+
+`PlanCodecLawSuite` and `StudyInputCodecLawSuite` apply them to the study-plan ladders (both key
+layouts) and the admission-ledger ladders (the study key layout for versions 1 and 2, the trial
+layout with inventories for version 3), and kill, by a falsified property from a fixed seed, a
+dropped upcast step (each step of the ledger in turn), an upcast that states another pairing or
+today's default admission policy instead of version 1's, a codec that writes the latest version
+instead of the earliest, and a vocabulary that claims a policy ledger is a version-1 ledger.
+`SchemaRegistryJvmSuite` requires every schema name registered at more than one version to have a
+registered ladder whose versions are exactly the registered ones, a pinned fixture of every
+version, the ladder laws, and every pinned document of a version below the latest to lift, decode
+to the value it decodes to as written, and re-encode to itself (see [Evidence](#evidence)).
+
+### Unknown versions and members
 
 **Unknown versions** are refused as values naming both identities:
 
 | Where the version appears | Refusal |
 |---|---|
 | A document's envelope | `CodecError.Schema(expected, found)` |
+| The envelope of a schema with a `SchemaLadder` (the study plan, the admission ledger) | `CodecError.UnsupportedSchema(role, found, versions)` |
 | Version 0, a negative or a non-integer version | `CodecError.Definition(PlanError.InvalidDefinition(name, version))`, or `CodecError.Field("version", …)` |
 | A nested identity a codec requires: layout, key, parameter, score or difference schema | `CodecError.Schema(expected, found)` |
 | An identity a registry selects on: a plan's method (a temporal plan's base method), an input's key schema, a result's method (a recording or temporal result's too) | `CodecError.MissingMethod`, `MissingKeySchema` or `MissingResultCodec` |

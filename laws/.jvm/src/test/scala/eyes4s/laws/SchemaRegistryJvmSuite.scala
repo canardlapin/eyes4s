@@ -323,6 +323,52 @@ object SchemaRegistry:
     )
   )
 
+  private val ladderProperties = Vector(
+    "a value is written under the earliest version that expresses it",
+    "a document written as vN decodes with a vN-only reader",
+    "upcasting a vN payload writes exactly what each later version writes",
+    "a lifted document decodes to the value and re-encodes to the earliest document"
+  ).map(p => s"schemaLadder.$p")
+  private def ladderLaw(suite: () => munit.Suite, name: String): Vector[Law] =
+    ladderProperties.map(Law(suite, name, _))
+
+  /** One shipped ladder of a multi-version schema and the pinned documents
+    * it reads.
+    */
+  final case class Rungs(ladder: SchemaLadder[?], fixtures: Vector[String])
+
+  /** A schema with more than one version: the shipped ladders that carry its
+    * versions (one per key layout), and the published ladder laws.
+    */
+  final case class Versioned(name: String, ladders: Vector[Rungs], laws: Vector[Law])
+
+  val versioned: Vector[Versioned] = Vector(
+    Versioned(
+      "eyes4s.study",
+      Vector(
+        Rungs(StudyCodecs.cosine[Px].ladder, Vector("study-v1.json", "study-v2.json")),
+        Rungs(StudyCodecs.trialCosine[Px].ladder, Vector("study-trial-v2.json"))
+      ),
+      ladderLaw(plans, "study plan versions") ++ ladderLaw(plans, "trial study plan versions")
+    ),
+    Versioned(
+      "eyes4s.admission-ledger",
+      Vector(
+        Rungs(
+          StudyInputCodecs.study[Px].ledgerLadder,
+          Vector(
+            "admission-ledger-v1.json",
+            "admission-ledger-complete-v1.json",
+            "admission-ledger-v2.json"
+          )
+        ),
+        Rungs(StudyInputCodecs.trial[Px].ledgerLadder, Vector("admission-ledger-v3.json"))
+      ),
+      ladderLaw(inputs, "admission ledger versions") ++
+        ladderLaw(inputs, "inventory ledger versions")
+    )
+  )
+
   def get[E, A](value: Either[E, A]): A =
     value.fold(e => throw new IllegalStateException(s"$e"), identity)
 
@@ -497,6 +543,124 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
     Using.resource(Files.list(directory))(
       _.iterator.asScala.filter(Files.isRegularFile(_)).map(_.getFileName.toString).toSet
     )
+
+  /** The version of a document's envelope. */
+  private def envelope(document: Json): Option[DefinitionId] =
+    Envelopes.schemaOf(document).toOption
+
+  /** Multi-version schemas without a ladder, ladders whose versions are not
+    * exactly the registered versions, versions without a pinned fixture, and
+    * pinned documents the ladder cannot lift: each must lift to the latest
+    * version, decode there to the value it decodes to as written, and
+    * re-encode to itself.
+    */
+  private def versionProblems(
+      entries: Vector[Entry],
+      schemas: Vector[Versioned],
+      read: String => Option[Array[Byte]] = resource
+  ): Vector[String] =
+    def parsed(file: String): Option[Json] =
+      read(file).flatMap(bytes => io.circe.parser.parse(new String(bytes, "UTF-8")).toOption)
+    def lifts[A](ladder: SchemaLadder[A], file: String, document: Json): Option[String] =
+      val codec   = ladder.codec
+      val lifted  = ladder.lift(document)
+      val direct  = codec.decode(document).flatMap(codec.encode)
+      val through = lifted.flatMap(codec.decode).flatMap(codec.encode)
+      Option.when(direct != Right(document) || through != Right(document))(
+        s"$file does not lift: decoded ${direct.map(_ => "ok")}, lifted ${through.map(_ => "ok")}"
+      )
+    val registered =
+      entries.map(_.id).groupBy(_.name).map((n, ids) => n -> ids.sortBy(_.version))
+    val multi      = registered.filter(_._2.size > 1)
+    val unladdered = multi.keys.toVector.sorted
+      .filterNot(name => schemas.exists(_.name == name))
+      .map(name => s"$name has versions ${multi(name).map(_.version)} but no registered ladder")
+    unladdered ++ schemas.flatMap { schema =>
+      val versions = registered.getOrElse(schema.name, Vector.empty)
+      val ladders  = schema.ladders.flatMap { rungs =>
+        Option
+          .when(rungs.ladder.versions != versions)(
+            s"${schema.name} ladder has versions ${rungs.ladder.versions.map(_.version)}, " +
+              s"but ${versions.map(_.version)} are registered"
+          )
+          .toVector
+      }
+      val pinned = schema.ladders.flatMap { rungs =>
+        rungs.fixtures.flatMap(file =>
+          parsed(file) match
+            case None           => Vector(file -> None)
+            case Some(document) => Vector(file -> Some(document -> rungs.ladder))
+        )
+      }
+      val missingVersions = versions
+        .filterNot(v => pinned.exists(_._2.exists((doc, _) => envelope(doc).contains(v))))
+        .map(v => s"${schema.name}@${v.version} has no pinned fixture")
+      val lifting = pinned.flatMap {
+        case (file, None)                    => Vector(s"missing pinned fixture $file")
+        case (file, Some((document, rungs))) => lifts(rungs, file, document).toVector
+      }
+      val laws = Option.when(schema.laws.isEmpty)(s"${schema.name} has no ladder law").toVector
+      ladders ++ missingVersions ++ lifting ++ laws
+    }
+
+  test("every multi-version schema has a ladder, a fixture per version and lifts them") {
+    assertEquals(versionProblems(builtIns ++ conventional, versioned), Vector.empty)
+    assertEquals(
+      lawProblems(
+        versioned.map(v => Entry(DefinitionId.study, Kind.Document, Vector.empty, v.laws))
+      ),
+      Vector.empty
+    )
+  }
+
+  test("the version checks fail for a missing ladder, version, fixture or upcast") {
+    val entries = builtIns ++ conventional
+    val study   = versioned.find(_.name == "eyes4s.study").get
+    // A schema with two registered versions and no ladder.
+    assertEquals(
+      versionProblems(entries, versioned.filterNot(_ == study)),
+      Vector("eyes4s.study has versions Vector(1, 2) but no registered ladder")
+    )
+    // A version declared and registered without extending the ladder.
+    val v3 = Entry(DefinitionId.builtIn("eyes4s.study", 3), Kind.Document, Vector(), Vector())
+    assert(
+      versionProblems(entries :+ v3, versioned)
+        .exists(
+          _.startsWith("eyes4s.study ladder has versions Vector(1, 2), but Vector(1, 2, 3)")
+        )
+    )
+    assert(
+      versionProblems(entries :+ v3, versioned).contains("eyes4s.study@3 has no pinned fixture")
+    )
+    // A version whose only fixture is withdrawn.
+    val withoutV1 = study.copy(ladders =
+      study.ladders.map(r => r.copy(fixtures = r.fixtures.filterNot(_ == "study-v1.json")))
+    )
+    assertEquals(
+      versionProblems(entries, versioned.map(v => if v == study then withoutV1 else v)),
+      Vector("eyes4s.study@1 has no pinned fixture")
+    )
+    // A ladder whose upcast is dropped: the v1 fixture no longer lifts.
+    val cosine  = StudyCodecs.cosine[Px].ladder
+    val v1      = cosine.versions.head
+    val dropped = SchemaLadder
+      .of[
+        StudyPlan[StudyKey, Px, Unit, eyes4s.compare.Similarity, eyes4s.design.SignedDifference]
+      ](
+        cosine.role,
+        v1
+      )(cosine.writeAt(v1, _))(cosine.readAt(v1, _))
+      .next(p => cosine.earliest(p) == v1, identity)(cosine.writeAt(cosine.latest, _))(
+        cosine.readAt(cosine.latest, _)
+      )
+    val broken =
+      study.copy(ladders = Vector(Rungs(dropped, Vector("study-v1.json", "study-v2.json"))))
+    assertEquals(
+      versionProblems(entries, versioned.map(v => if v == study then broken else v))
+        .map(_.takeWhile(_ != ':')),
+      Vector("study-v1.json does not lift")
+    )
+  }
 
   test("every built-in DefinitionId has exactly one registry entry, and nothing else does") {
     assert(declared.size >= 22, s"reflection found only ${declared.keys}")

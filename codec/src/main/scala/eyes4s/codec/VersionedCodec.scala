@@ -135,17 +135,18 @@ enum CodecError derives CanEqual:
 /** A typed, explicitly versioned codec. Unsupported old versions fail precisely.
   * The wire envelope separates schema identity from any method identity in its payload.
   *
-  * `schema` is the latest version the codec writes. A codec built with
-  * [[VersionedCodec.versions]] also reads its earlier versions, each with its
-  * own original meaning, and writes each value under the earliest version
-  * that expresses it; `schemas` lists every version it reads.
+  * `schema` is the latest version the codec writes. A codec built from a
+  * [[SchemaLadder]] (its `ladder`) also reads the ladder's earlier versions,
+  * each with its own original meaning, and writes each value under the
+  * earliest version that expresses it; `schemas` lists every version it reads.
   */
 final class VersionedCodec[A] private (
     val schema: DefinitionId,
     val schemas: Vector[DefinitionId],
     write: A => Either[CodecError, (DefinitionId, Json)],
     read: (DefinitionId, Json) => Either[CodecError, A],
-    role: Option[String]
+    role: Option[String],
+    val ladder: Option[SchemaLadder[A]]
 ):
   def encode(value: A): Either[CodecError, Json] =
     write(value).map { case (id, payload) =>
@@ -179,6 +180,7 @@ object VersionedCodec:
       Vector(schema),
       value => Right(schema -> write(value)),
       (_, json) => read(json),
+      None,
       None
     )
 
@@ -203,39 +205,25 @@ object VersionedCodec:
       Vector(schema),
       value => write(value).map(schema -> _),
       (_, json) => read(json),
+      None,
       None
     )
 
-  /** A codec over several versions of one schema. `write` chooses, for each
-    * value, the version it is written under (the earliest that expresses it)
-    * and its payload; `read` decodes a payload of any listed version with that
-    * version's meaning. The versions are `first` through version `latest` of
-    * `first`'s name; the last is the codec's `schema`. A document of any
-    * other version is refused as `CodecError.UnsupportedSchema(role, found,
-    * schemas)`.
+  /** The codec of a [[SchemaLadder]]: `write` chooses each value's version
+    * and payload, `read` decodes a payload of any of the ladder's versions.
     */
-  private[codec] def versions[A](role: String, first: DefinitionId, latest: Int)(
+  private[codec] def laddered[A](ladder: SchemaLadder[A])(
       write: A => Either[CodecError, (DefinitionId, Json)]
   )(
       read: (DefinitionId, Json) => Either[CodecError, A]
   ): VersionedCodec[A] =
-    // Built here from one name and a version range, so the versions share a
-    // name and increase by construction.
-    val all = (first.version to math.max(first.version, latest)).toVector
-      .map(DefinitionId.builtIn(first.name, _))
     new VersionedCodec(
-      all.last,
-      all,
-      value =>
-        write(value).flatMap { case (id, json) =>
-          Either.cond(
-            all.contains(id),
-            id -> json,
-            CodecError.UnsupportedSchema(role, id, all)
-          )
-        },
+      ladder.latest,
+      ladder.versions,
+      write,
       read,
-      Some(role)
+      Some(ladder.role),
+      Some(ladder)
     )
 
   /** Entry-array encoding preserves arbitrary typed keys and rejects duplicates. */

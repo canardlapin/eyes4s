@@ -376,7 +376,9 @@ through the smart constructors of every part (`InventoryTrial.of`, `UnlistedTria
 saved inventory is refused (`AdmissionError.Inventory(InventoryError…)`) unless every attribute
 is of its declared column's kind, every trial's record items agree with its records and
 disposition, every keyed record is listed under its own trial and carries its trial's item, and
-every disposition agrees with its records. A version-3 document must carry its inventory, and
+every disposition agrees with its records. A version-3 document states its `inventory` member:
+the inventory, or `null` in the lift of a ledger without one (read with version 2's vocabulary and
+written back under version 1 or 2; see the [version policy](DOMAIN_CODECS.md#version-policy)), and
 only a ledger with an inventory may name `NotInInventory` or `InventoryItemConflict`
 (`AdmissionError.UninventoriedCause`); a key layout without a trial label
 cannot carry one (`InventoryError.NoTrialProjection`). A version-3 ledger is pinned by
@@ -1052,8 +1054,10 @@ are explicit failures. The pinned [version-one project](../codec/src/test/resour
 is exercised by the portable codec suite, so changing defaults cannot silently reinterpret it.
 The study plan and the admission ledger have a second version (`eyes4s.study@2` records the
 geometry, declared scales and units per degree, and the pairing; `eyes4s.admission-ledger@2` the admission policy).
-Their codecs read both versions, each with its own meaning, and write each value under the earliest
-version that expresses it, so a version-1 document re-encodes to its own bytes. The other schemas
+Each is a `SchemaLadder`: its codec reads every version with that version's own meaning, writes
+each value under the earliest version that expresses it, so a version-1 document re-encodes to its
+own bytes, and `ladder.lift` rewrites a stored document as the latest version through each
+version's upcast. The other schemas
 have one version and no historical migration;
 [the schema compatibility policy](DOMAIN_CODECS.md#schema-compatibility) states what a new version
 means, which decoders stay readable, how unknown versions are refused and how unknown members are
