@@ -1821,6 +1821,16 @@ fails after rewriting, so review the change and run it again.
 | `source-admission.inventory-identity` | `InventoryIdentity` | `source`, `expected`, `actual` |
 | `source-admission.missing-item` | `MissingItem` | `source` |
 
+### `ledger-verification` — `LedgerVerificationError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `ledger-verification.legacy-unverified` | `LegacyUnverified` | `source` |
+| `ledger-verification.import` | `Import` | `underlying` |
+| `ledger-verification.source-changed` | `SourceChanged` | `expected`, `actual`, `causes` |
+| `ledger-verification.ledger-mismatch` | `LedgerMismatch` | `source`, `component`, `expected`, `actual` |
+| `ledger-verification.input-mismatch` | `InputMismatch` | `source`, `expected`, `actual` |
+
 ### `arrow-export` — `ArrowExportError`
 
 | Code | Case | Operands |
