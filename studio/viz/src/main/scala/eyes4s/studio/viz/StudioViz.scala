@@ -17,6 +17,7 @@
 package eyes4s.studio.viz
 
 import eyes4s.studio.app.AppModel
+import eyes4s.studio.app.vm.Shell
 
 /** Scene builders from view-models to Intaglio scenes.
   *
@@ -25,6 +26,5 @@ import eyes4s.studio.app.AppModel
   */
 object StudioViz:
 
-  /** A caption for the model, standing in for a scene until Intaglio lands. */
-  def caption(model: AppModel): String =
-    s"intents applied: ${model.intentsApplied}"
+  /** A caption for the model, standing in for a scene: its freshness badge. */
+  def caption(model: AppModel): String = Shell.context(model).freshness.text

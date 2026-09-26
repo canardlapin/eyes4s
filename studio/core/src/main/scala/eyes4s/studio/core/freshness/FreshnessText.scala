@@ -51,7 +51,9 @@ object FreshnessText:
     case ProgressTotal.Unknown   => "counting…"
 
   /** "Analysis rev 4 · run 7 · data r3 · current"; while a newer run runs,
-    * "… · running (rev 5)" (or "… · stale · running (rev 5)").
+    * the shown run alone, "Showing analysis rev 4 · run 7 · data r3" (with
+    * " · stale" when it is not current), beside the [[newer]] chip (Results
+    * board).
     */
   def badge(badge: Badge): String = badge match
     case Badge.NoRun(analysis, data) =>
@@ -61,12 +63,25 @@ object FreshnessText:
         data.map(d => s"data ${d.label}")
       ).flatten.mkString(" · ")
     case Badge.Shown(run, standing, newer) =>
-      val running = newer.map(r => s"running (${r.revision.label})")
-      val state   = (standing, running) match
-        case (RunStanding.Current, Some(r)) => r
-        case (_, Some(r))                   => s"${badge.tone.word} · $r"
-        case (_, None)                      => badge.tone.word
-      s"Analysis ${run.analysis.label} · ${run.id.label} · data ${run.dataset.label} · $state"
+      val shown = s"${run.analysis.label} · ${run.id.label} · data ${run.dataset.label}"
+      (standing, newer) match
+        case (_, None)                      => s"Analysis $shown · ${badge.tone.word}"
+        case (RunStanding.Current, Some(_)) => s"Showing analysis $shown"
+        case (_, Some(_))                   => s"Showing analysis $shown · ${badge.tone.word}"
+
+  /** The chip beside the badge while a newer run runs: "Rev 5 · run 8
+    * running · 48%", the percentage of pairs compared when the total is
+    * exact.
+    */
+  def newer(badge: Badge): Option[String] = badge match
+    case Badge.Shown(_, _, Some(r)) =>
+      val head    = s"${r.revision.label.capitalize} · ${r.run.label} running"
+      val percent = r.meter.collect {
+        case RunMeter(_, done, ProgressTotal.Exact(total)) if total > 0 =>
+          s"${math.round(done.toDouble / total.toDouble * 100)}%"
+      }
+      Some(percent.fold(head)(p => s"$head · $p"))
+    case _ => None
 
   /** The shown run's label while a newer revision runs: "superseded — rev 5
     * running". Not a staleness: the run stays current until the newer one
@@ -131,7 +146,7 @@ object FreshnessText:
   private def draftClause(draft: Draft, changes: Vector[RecipeChange], data: Option[String]) =
     val what =
       (data.toVector ++ Option.when(changes.nonEmpty)(describe(changes))).mkString("; ")
-    s"Draft ${draft.id.label} $what — not run yet."
+    s"Draft ${draft.id.label} $what and has not been run."
 
   /** The dock-wide banner. */
   def banner(banner: Banner): String = banner match

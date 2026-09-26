@@ -17,14 +17,19 @@
 package eyes4s.studio.viz
 
 import eyes4s.studio.app.{AppModel, Intent}
+import eyes4s.studio.app.nav.{Location, Place}
+import eyes4s.studio.core.document.Perspective
 import intaglio.svg.SvgRenderer
 
 /** The pinned Intaglio core, interaction and svg link on this platform. */
 class StudioScenesSuite extends munit.FunSuite:
 
   test("the intents scene compiles and renders to SVG, including the initial model") {
-    val acknowledged = AppModel.update(AppModel.initial, Intent.Acknowledge)
-    Seq(AppModel.initial, acknowledged).foreach { model =>
+    val initial = AppModel.newProject.fold(e => fail(e.message), identity)
+    val moved   = AppModel
+      .update(initial, Intent.Navigate(Location(Perspective.Figures, Vector(Place.Figures))))
+      ._1
+    Seq(initial, moved).foreach { model =>
       val svg = StudioScenes.intents(model).flatMap(SvgRenderer.render(_)).map(_.value)
       assert(svg.exists(_.contains("<svg")), svg.left.map(_.message))
     }

@@ -58,6 +58,7 @@ class PinnedProvidersSuite extends munit.FunSuite:
   }
 
   test("the Intaglio JavaFX backend compiles a studio scene off the FX thread") {
-    val program = StudioScenes.intents(AppModel.initial).flatMap(JavaFxRenderer.compile(_))
+    val model   = AppModel.newProject.fold(e => fail(e.message), identity)
+    val program = StudioScenes.intents(model).flatMap(JavaFxRenderer.compile(_))
     assert(program.isRight, program.left.map(_.message))
   }
