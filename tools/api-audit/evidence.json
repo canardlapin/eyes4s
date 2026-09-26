@@ -8467,12 +8467,12 @@
     "method eyes4s.codec.SchemaLadder$.of(1,java.lang.String,eyes4s.plan.DefinitionId,scala.Function1,scala.Function1):eyes4s.codec.SchemaLadder": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.codec.SchemaLadder.earliest(java.lang.Object):eyes4s.plan.DefinitionId": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.codec.SchemaLadder.latest():": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
-    "method eyes4s.codec.SchemaLadder.lift(io.circe.Json):scala.util.Either": "codecJVM/eyes4s.codec.CanonicalDigestSuite",
+    "method eyes4s.codec.SchemaLadder.lift(io.circe.Json):scala.util.Either": "codecJVM/eyes4s.codec.LadderLiftSuite",
     "method eyes4s.codec.SchemaLadder.next(scala.Function1,scala.Function1,scala.Function1,scala.Function1):eyes4s.codec.SchemaLadder": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.codec.SchemaLadder.readAt(eyes4s.plan.DefinitionId,io.circe.Json):scala.util.Either": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "method eyes4s.codec.SchemaLadder.upTo(eyes4s.plan.DefinitionId):scala.util.Either": "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite",
     "method eyes4s.codec.SchemaLadder.upcast(eyes4s.plan.DefinitionId,io.circe.Json):scala.util.Either": "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite",
-    "method eyes4s.codec.SchemaLadder.upcastTo(eyes4s.plan.DefinitionId,eyes4s.plan.DefinitionId,io.circe.Json):scala.util.Either": "codecJVM/eyes4s.codec.CanonicalDigestSuite",
+    "method eyes4s.codec.SchemaLadder.upcastTo(eyes4s.plan.DefinitionId,eyes4s.plan.DefinitionId,io.circe.Json):scala.util.Either": "codecJVM/eyes4s.codec.LadderLiftSuite",
     "method eyes4s.codec.SchemaLadder.writeAt(eyes4s.plan.DefinitionId,java.lang.Object):scala.util.Either": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.codec.ScientificManifest$.address(eyes4s.codec.ScientificManifest):scala.util.Either": "codecJVM/eyes4s.codec.ManifestV1Suite",
     "method eyes4s.codec.ScientificManifest$.bytes(eyes4s.codec.ScientificManifest):scala.util.Either": "codecJVM/eyes4s.codec.LedgerForgerySuite",
@@ -9894,7 +9894,7 @@
     "method eyes4s.laws.RegionLaws.lattice(1,eyes4s.kernel.Grid):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.KernelLawsSuite",
     "method eyes4s.laws.SampleSequenceLaws.exactTimestamps(2,org.scalacheck.Gen,eyes4s.kernel.Machine,eyes4s.laws.Timestamped,eyes4s.laws.Timestamped):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.DetectLawsSuite",
     "method eyes4s.laws.ScanpathLaws.wellFormed(1,org.scalacheck.Gen,eyes4s.laws.Tolerance):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.ScanpathLawsSuite",
-    "method eyes4s.laws.SchemaLadderLaws.ladder(1,eyes4s.codec.SchemaLadder,org.scalacheck.Gen,scala.Function2):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
+    "method eyes4s.laws.SchemaLadderLaws.ladder(1,eyes4s.codec.SchemaLadder,org.scalacheck.Gen,scala.Function2,org.scalacheck.Gen):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.laws.ScientificValidationArtifact$.generate(eyes4s.laws.ValidationBuildIdentity,eyes4s.laws.ValidationPlatform,eyes4s.laws.ValidationOracleInputs):scala.util.Either": "lawsJVM/eyes4s.laws.ScientificValidationFilesSuite",
     "method eyes4s.laws.ScientificValidationArtifact$package$.ArtifactDigest$.render(java.lang.String):java.lang.String": "lawsJVM/eyes4s.laws.ScientificValidationFilesSuite",
     "method eyes4s.laws.ScientificValidationArtifact$package$.ArtifactDigest$.sha256Utf8(java.lang.String):java.lang.String": "lawsJVM/eyes4s.laws.ScientificValidationFilesSuite",
@@ -10478,7 +10478,7 @@
     "value eyes4s.codec.StudyCodec.schemaV2": "codecJVM/eyes4s.codec.StudyCodecSuite",
     "value eyes4s.codec.StudyCodecDefinitions$.studyV2": "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
     "value eyes4s.codec.StudyInputCodec.input": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
-    "value eyes4s.codec.StudyInputCodec.ledger": "codecJVM/eyes4s.codec.InspectionManifestJvmSuite",
+    "value eyes4s.codec.StudyInputCodec.ledger": "codecJVM/eyes4s.codec.LadderLiftSuite",
     "value eyes4s.codec.StudyInputCodec.ledgerLadder": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "value eyes4s.codec.StudyInputCodecs$.input": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.codec.StudyInputCodecs$.ledger": "lawsJVM/consumer.PublicLawsSuite",
@@ -10672,6 +10672,7 @@
     "value eyes4s.laws.PairingLaws$.genChoice": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "value eyes4s.laws.PairingLaws$.genInput": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "value eyes4s.laws.PairingLaws$.genPairing": "lawsJVM/eyes4s.laws.WindowLawsSuite",
+    "value eyes4s.laws.SchemaLadderLaws$.payloadEdits": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "value eyes4s.laws.ScientificValidationArtifact$.CurrentSchemaVersion": "lawsJVM/eyes4s.laws.ScientificValidationFilesSuite",
     "value eyes4s.laws.ScientificValidationArtifact.scientificDigest": "lawsJVM/eyes4s.laws.ScientificValidationFilesSuite",
     "value eyes4s.laws.Tolerance$.exactish": "lawsJVM/eyes4s.laws.DetectorMetamorphicLawsSuite",
@@ -10916,6 +10917,9 @@
       "strict UTF-8 refuses lone surrogates, overlong forms and out-of-range code points"
     ],
     "codecJS/eyes4s.codec.CanonicalDigestSuite": [
+      "-0.0 and 0.0 digest differently: a digest never identifies different values",
+      "a 64-bit integer member beyond 2^53 is refused as a JSON number",
+      "a number no 64-bit integer or finite double represents is refused, never rounded",
       "a plan digest cannot be compared with an input digest",
       "a value's digest survives decoding, lifting and re-encoding, and a change moves it",
       "the digest is pinned, so the JVM and Scala.js agree on it",
@@ -10997,6 +11001,9 @@
       "the pinned admission ledger names every rejected record, key and typed reason",
       "the pinned study-result-v1 drills down to specific CSV record numbers",
       "the refused ledger, checked against the full input, names the trial it did not admit"
+    ],
+    "codecJS/eyes4s.codec.LadderLiftSuite": [
+      "a version-1 ledger naming a version-2 cause is refused by lift as by decode"
     ],
     "codecJS/eyes4s.codec.LearnedTemplateRecipeSuite": [
       "held-out groups have one canonical wire order; unsorted input is refused",
@@ -12976,6 +12983,7 @@
       "configured study plan: versionedCodec.round trip preserves the value",
       "study plan versions: schemaLadder.a document written as vN decodes with a vN-only reader",
       "study plan versions: schemaLadder.a lifted document decodes to the value and re-encodes to the earliest document",
+      "study plan versions: schemaLadder.a refused document stays refused after lifting",
       "study plan versions: schemaLadder.a value is written under the earliest version that expresses it",
       "study plan versions: schemaLadder.upcasting a vN payload writes exactly what each later version writes",
       "study plan: versionedCodec.reencoding is canonical",
@@ -12990,6 +12998,7 @@
       "the trial-plan law kills a reset pairing and a widened control pool",
       "trial study plan versions: schemaLadder.a document written as vN decodes with a vN-only reader",
       "trial study plan versions: schemaLadder.a lifted document decodes to the value and re-encodes to the earliest document",
+      "trial study plan versions: schemaLadder.a refused document stays refused after lifting",
       "trial study plan versions: schemaLadder.a value is written under the earliest version that expresses it",
       "trial study plan versions: schemaLadder.upcasting a vN payload writes exactly what each later version writes",
       "trial study plan: versionedCodec.reencoding is canonical",
@@ -13065,6 +13074,7 @@
     "lawsJS/eyes4s.laws.StudyInputCodecLawSuite": [
       "admission ledger versions: schemaLadder.a document written as vN decodes with a vN-only reader",
       "admission ledger versions: schemaLadder.a lifted document decodes to the value and re-encodes to the earliest document",
+      "admission ledger versions: schemaLadder.a refused document stays refused after lifting",
       "admission ledger versions: schemaLadder.a value is written under the earliest version that expresses it",
       "admission ledger versions: schemaLadder.upcasting a vN payload writes exactly what each later version writes",
       "admission ledger with inventory: versionedCodec.reencoding is canonical",
@@ -13077,6 +13087,7 @@
       "generic trials: versionedCodec.round trip preserves the value",
       "inventory ledger versions: schemaLadder.a document written as vN decodes with a vN-only reader",
       "inventory ledger versions: schemaLadder.a lifted document decodes to the value and re-encodes to the earliest document",
+      "inventory ledger versions: schemaLadder.a refused document stays refused after lifting",
       "inventory ledger versions: schemaLadder.a value is written under the earliest version that expresses it",
       "inventory ledger versions: schemaLadder.upcasting a vN payload writes exactly what each later version writes",
       "occurrence input: versionedCodec.reencoding is canonical",
@@ -13460,6 +13471,9 @@
       "strict UTF-8 refuses lone surrogates, overlong forms and out-of-range code points"
     ],
     "codecJVM/eyes4s.codec.CanonicalDigestSuite": [
+      "-0.0 and 0.0 digest differently: a digest never identifies different values",
+      "a 64-bit integer member beyond 2^53 is refused as a JSON number",
+      "a number no 64-bit integer or finite double represents is refused, never rounded",
       "a plan digest cannot be compared with an input digest",
       "a value's digest survives decoding, lifting and re-encoding, and a change moves it",
       "the digest is pinned, so the JVM and Scala.js agree on it",
@@ -13566,6 +13580,9 @@
     ],
     "codecJVM/eyes4s.codec.IntegerSpellingJvmSuite": [
       "an integer member spelled 3.0, 3e0 or -0 is refused"
+    ],
+    "codecJVM/eyes4s.codec.LadderLiftSuite": [
+      "a version-1 ledger naming a version-2 cause is refused by lift as by decode"
     ],
     "codecJVM/eyes4s.codec.LearnedTemplateRecipeSuite": [
       "held-out groups have one canonical wire order; unsorted input is refused",
@@ -15662,6 +15679,7 @@
       "configured study plan: versionedCodec.round trip preserves the value",
       "study plan versions: schemaLadder.a document written as vN decodes with a vN-only reader",
       "study plan versions: schemaLadder.a lifted document decodes to the value and re-encodes to the earliest document",
+      "study plan versions: schemaLadder.a refused document stays refused after lifting",
       "study plan versions: schemaLadder.a value is written under the earliest version that expresses it",
       "study plan versions: schemaLadder.upcasting a vN payload writes exactly what each later version writes",
       "study plan: versionedCodec.reencoding is canonical",
@@ -15676,6 +15694,7 @@
       "the trial-plan law kills a reset pairing and a widened control pool",
       "trial study plan versions: schemaLadder.a document written as vN decodes with a vN-only reader",
       "trial study plan versions: schemaLadder.a lifted document decodes to the value and re-encodes to the earliest document",
+      "trial study plan versions: schemaLadder.a refused document stays refused after lifting",
       "trial study plan versions: schemaLadder.a value is written under the earliest version that expresses it",
       "trial study plan versions: schemaLadder.upcasting a vN payload writes exactly what each later version writes",
       "trial study plan: versionedCodec.reencoding is canonical",
@@ -15768,6 +15787,7 @@
     "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite": [
       "admission ledger versions: schemaLadder.a document written as vN decodes with a vN-only reader",
       "admission ledger versions: schemaLadder.a lifted document decodes to the value and re-encodes to the earliest document",
+      "admission ledger versions: schemaLadder.a refused document stays refused after lifting",
       "admission ledger versions: schemaLadder.a value is written under the earliest version that expresses it",
       "admission ledger versions: schemaLadder.upcasting a vN payload writes exactly what each later version writes",
       "admission ledger with inventory: versionedCodec.reencoding is canonical",
@@ -15780,6 +15800,7 @@
       "generic trials: versionedCodec.round trip preserves the value",
       "inventory ledger versions: schemaLadder.a document written as vN decodes with a vN-only reader",
       "inventory ledger versions: schemaLadder.a lifted document decodes to the value and re-encodes to the earliest document",
+      "inventory ledger versions: schemaLadder.a refused document stays refused after lifting",
       "inventory ledger versions: schemaLadder.a value is written under the earliest version that expresses it",
       "inventory ledger versions: schemaLadder.upcasting a vN payload writes exactly what each later version writes",
       "occurrence input: versionedCodec.reencoding is canonical",
