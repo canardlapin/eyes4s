@@ -322,6 +322,14 @@ enum DiagnosticLocus derives CanEqual, Codec.AsObject:
   case Relation(kind: String, source: String)
   case Line(source: String, line: Long)
 
+  /** A participant of a report, by the name the study layout projects. */
+  case Participant(name: String)
+
+  /** A report group: one level of each grouping term, in grouping order; no
+    * levels is the whole report.
+    */
+  case Group(levels: Vector[GroupLevel])
+
   // Studio's own subjects.
   case Dataset(dataset: DatasetRevision)
   case Revision(revision: AnalysisRevision)
@@ -355,11 +363,18 @@ enum DiagnosticLocus derives CanEqual, Codec.AsObject:
     case Path(path)             => s"path $path"
     case Relation(kind, source) => s"$kind relation of $source"
     case Line(source, line)     => s"$source line $line"
-    case Dataset(dataset)       => s"dataset ${dataset.label}"
-    case Revision(revision)     => revision.label
-    case Run(run)               => run.label
-    case Job(job)               => s"job ${job.number}"
-    case Address(address)       => address.render
+    case Participant(name)      => s"participant $name"
+    case Group(levels)          =>
+      if levels.isEmpty then "whole report"
+      else levels.map(l => s"${l.term} = ${l.level}").mkString(" · ")
+    case Dataset(dataset)   => s"dataset ${dataset.label}"
+    case Revision(revision) => revision.label
+    case Run(run)           => run.label
+    case Job(job)           => s"job ${job.number}"
+    case Address(address)   => address.render
+
+/** One level of a grouping term in a report group locus. */
+final case class GroupLevel(term: String, level: String) derives CanEqual, Codec.AsObject
 
 object DiagnosticLocus:
   def of[K](locus: Locus[K], key: K => TrialKey): DiagnosticLocus = locus match
@@ -387,6 +402,8 @@ object DiagnosticLocus:
     case Locus.Path(path)             => Path(path)
     case Locus.Relation(kind, source) => Relation(kind, source)
     case Locus.Line(source, line)     => Line(source, line)
+    case Locus.Participant(name)      => Participant(name)
+    case Locus.Group(levels) => Group(levels.map((term, level) => GroupLevel(term, level)))
 
 /** A renderer-neutral diagnostic: eyes4s `Diagnostic` with a typed subject.
   * `code` is the stable identity (`family.case`); `message` is a default
