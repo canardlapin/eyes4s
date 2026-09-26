@@ -35,6 +35,7 @@ enum FixationComparisonError derives CanEqual:
       tolerance: Double
   )
   case SolverNumerical(left: Int, right: Int, cost: Double, residual: Double)
+  case WorkLimit(left: Int, right: Int, iterations: Int, residual: Double, limit: Long)
   case Score(error: ComparisonValueError)
   def message: String = this match
     case Parameter(n, v)      => s"Fixation comparison parameter $n=$v is invalid."
@@ -50,6 +51,8 @@ enum FixationComparisonError derives CanEqual:
       s"Fixation transport leftCount=$a, rightCount=$b: residual=$r exceeds tolerance=$t after $n iterations."
     case SolverNumerical(a, b, c, r) =>
       s"Fixation transport leftCount=$a, rightCount=$b produced cost=$c, residual=$r."
+    case WorkLimit(a, b, n, r, l) =>
+      s"Fixation transport leftCount=$a, rightCount=$b stopped after $n iterations with residual=$r: another iteration would exceed work limit=$l cost-cell iterations."
     case Score(e) => e.message
 
 final class OverlapThreshold[U <: Unit2D] private (val value: Double)
@@ -145,9 +148,17 @@ final class FixationTransportConfig[U <: Unit2D] private (
     val lambda: Double,
     val maximumIterations: Int,
     val marginalTolerance: Double,
-    val maximumCosts: Int
+    val maximumCosts: Int,
+    /** Bound on leftCount * rightCount * iterations for one call. */
+    val maximumWork: Long
 )
 object FixationTransportConfig:
+  /** Cost-cell iterations admitted by default: each is about three `exp` calls,
+    * so this keeps one synchronous, uncancellable call near half a second on a
+    * laptop JVM. The per-iteration `maximumCosts` bound alone admits 1e10.
+    */
+  val DefaultMaximumWork: Long = 50000000L
+
   def of[U <: Unit2D](
       xScale: Double,
       yScale: Double,
@@ -156,7 +167,8 @@ object FixationTransportConfig:
       lambda: Double,
       maximumIterations: Int = 10000,
       marginalTolerance: Double = 1e-10,
-      maximumCosts: Int = 1000000
+      maximumCosts: Int = 1000000,
+      maximumWork: Long = FixationTransportConfig.DefaultMaximumWork
   ): Either[FixationComparisonError, FixationTransportConfig[U]] =
     val positive = Vector(
       "xScale"            -> xScale,
@@ -165,7 +177,8 @@ object FixationTransportConfig:
       "lambda"            -> lambda,
       "maximumIterations" -> maximumIterations.toDouble,
       "marginalTolerance" -> marginalTolerance,
-      "maximumCosts"      -> maximumCosts.toDouble
+      "maximumCosts"      -> maximumCosts.toDouble,
+      "maximumWork"       -> maximumWork.toDouble
     )
     positive.find((_, v) => !v.isFinite || v <= 0) match
       case Some((n, v)) => Left(FixationComparisonError.Parameter(n, v))
@@ -181,7 +194,8 @@ object FixationTransportConfig:
             lambda,
             maximumIterations,
             marginalTolerance,
-            maximumCosts
+            maximumCosts,
+            maximumWork
           )
         )
 
@@ -220,6 +234,12 @@ object FixationTransport:
         (),
         FixationComparisonError.MatrixSize(left.n, right.n, config.maximumCosts)
       )
+      _ <- Either.cond(
+        left.n.toLong * right.n <= config.maximumWork,
+        (),
+        FixationComparisonError
+          .WorkLimit(left.n, right.n, 0, Double.PositiveInfinity, config.maximumWork)
+      )
       result <- solve(left, right, config)
     yield result
 
@@ -244,7 +264,7 @@ object FixationTransport:
         val d = dx * dx + dy * dy + dt * dt
         cost(i)(j) = d
         if !d.isFinite || !(d / c.lambda).isFinite then
-          bad = Some(FixationComparisonError.Numerical(i, j, d))
+          if bad.isEmpty then bad = Some(FixationComparisonError.Numerical(i, j, d))
         j += 1
       i += 1
     bad match
@@ -267,8 +287,11 @@ object FixationTransport:
           while k < count do
             sum += math.exp(f(k) - maximum); k += 1
           maximum + math.log(sum)
-        var iteration = 0; var residual = Double.PositiveInfinity; var total = 0.0
-        while iteration < c.maximumIterations && residual > c.marginalTolerance do
+        // Work is checked before each iteration, so a refusal costs at most the budget.
+        val cells      = n.toLong * m
+        val affordable = math.min(c.maximumIterations.toLong, c.maximumWork / cells).toInt
+        var iteration  = 0; var residual = Double.PositiveInfinity; var total = 0.0
+        while iteration < affordable && residual > c.marginalTolerance do
           i = 0
           while i < n do
             val row = i
@@ -284,13 +307,17 @@ object FixationTransport:
               val p = math.exp(u(i) + v(j) - cost(i)(j) / c.lambda)
               rows(i) += p; cols(j) += p; total += p * cost(i)(j); j += 1
             i += 1
-          residual = math.max(
-            rows.indices.map(k => math.abs(rows(k) - wa(k))).max,
-            cols.indices.map(k => math.abs(cols(k) - wb(k))).max
-          )
+          residual = 0.0; i = 0
+          while i < n do
+            residual = math.max(residual, math.abs(rows(i) - wa(i))); i += 1
+          j = 0
+          while j < m do
+            residual = math.max(residual, math.abs(cols(j) - wb(j))); j += 1
           iteration += 1
         if !total.isFinite || !residual.isFinite then
           Left(FixationComparisonError.SolverNumerical(n, m, total, residual))
+        else if residual > c.marginalTolerance && affordable < c.maximumIterations then
+          Left(FixationComparisonError.WorkLimit(n, m, iteration, residual, c.maximumWork))
         else if residual > c.marginalTolerance then
           Left(
             FixationComparisonError
