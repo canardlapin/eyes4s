@@ -18,8 +18,12 @@ uses Householder QR, then solves the triangular system and restores coefficient
 units. It never forms floating-point normal equations or silently drops a column.
 The baseline requires rows >= columns and full column rank. Zero or dependent
 columns fail with their index, observed pivot and threshold. The checked
-`RelativeRankTolerance` defaults to 1e-12 on scaled columns; this is an explicit
-numerical rank policy. Nonfinite inputs and arithmetic failures are named values.
+`RelativeRankTolerance` defaults to 1e-7 on scaled columns, the threshold `lm` uses
+and the one the imported template path already assumed; this is an explicit numerical
+rank policy. A tighter tolerance must be requested explicitly: at 1e-12 a design with
+`x2 = x1 ± 1e-10` and a nonzero residual returns coefficients near ±3e9 that are
+rounding noise. Nonfinite inputs and arithmetic failures are named values, and an
+arithmetic failure names only the column or the row it concerns.
 
 Diagnostics report rank, residual sum of squares and the ratio of extreme absolute
 scaled R diagonals. The latter is a conditioning warning proxy, **not a condition

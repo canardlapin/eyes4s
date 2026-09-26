@@ -43,6 +43,22 @@ enum RepetitionPlanError derives CanEqual:
     case Grid(i, e)       => s"Repetition row=$i: ${e.message}"
     case Specification(e) => e.message
 
+/** Which participants a named repetition relation may pair. Always explicit. */
+enum ParticipantScope derives CanEqual:
+  /** Both roles pair trials of the same participant only. */
+  case WithinParticipant
+
+  /** Both roles pair trials of different participants only. */
+  case AcrossParticipants
+
+  /** No participant restriction: pairs cross participant boundaries, as the reference does. */
+  case Pooled
+
+  def rule: Option[RepetitionRule] = this match
+    case WithinParticipant  => Some(RepetitionRule.SameParticipant)
+    case AcrossParticipants => Some(RepetitionRule.DifferentParticipant)
+    case Pooled             => None
+
 /** Finite conjunction vocabulary. Directed self-exclusion is fixed in this schema. */
 final class RepetitionRelations private (
     val matched: Vector[RepetitionRule],
@@ -61,10 +77,24 @@ object RepetitionRelations:
       RepetitionRule.DifferentStimulus
     )
   )
-  val conditionGroups: RepetitionRelations = new RepetitionRelations(
-    Vector(RepetitionRule.SameOccasion),
-    Vector(RepetitionRule.DifferentOccasion)
-  )
+
+  /** The reference condition-grouping estimand: each trial against every other
+    * trial of its own occasion (matched) and every trial of another occasion
+    * (controls), with the participant scope stated by the caller.
+    *
+    * This is NOT a reinstatement contrast. Controls include same-stimulus pairs
+    * across occasions -- the very pairs a reinstatement analysis matches -- so
+    * with [[ParticipantScope.Pooled]] it reproduces eyesim's
+    * `repetitive_similarity(condition_var = ...)` and the inverted contrast of
+    * eyesim issue #28. Use [[withinParticipant]] for reinstatement. There is no
+    * default scope (recorded decision: participant scope is required for
+    * repetition designs).
+    */
+  def referenceConditionGrouping(scope: ParticipantScope): RepetitionRelations =
+    new RepetitionRelations(
+      scope.rule.toVector :+ RepetitionRule.SameOccasion,
+      scope.rule.toVector :+ RepetitionRule.DifferentOccasion
+    )
   def of(
       matched: Vector[RepetitionRule],
       controls: Vector[RepetitionRule]
@@ -220,13 +250,18 @@ object RepetitionPlan:
           case Selection.All                        => "all"
           case Selection.BottomK(cap, seed, sample) =>
             s"bottomK:${cap.value}:${seed.value}:${sample.value}"
+        // Spelled out rather than taken from `toString`: saved v1 plans carry this
+        // hash, so these strings are frozen wire identity, not a debugging render.
+        val policyIdentity = policy match
+          case FailurePolicy.RequireAll              => "RequireAll"
+          case FailurePolicy.SuccessfulOnly(minimum) => s"SuccessfulOnly(${minimum.value})"
         val meanings = identity ++ Vector(
           method.toString,
           "map-method-version:1",
           relations.matched.mkString(","),
           relations.controls.mkString(","),
           selected,
-          policy.toString,
+          policyIdentity,
           "directed-exclude-self"
         )
         val hash = ContentHash.combineAll(input +: meanings.map(ContentHash.ofString))

@@ -237,6 +237,34 @@ class DistributionSuite extends munit.FunSuite:
     )
   }
 
+  test("rank and distance correlation share Pearson's relative constancy check") {
+    // Cells differing by one ulp are rounding noise, not signal. Ranking them, or
+    // double-centring their distances, rescales the noise to a unit spread.
+    val tick = mass(i => if i % 2 == 0 then 0.1 else Math.nextUp(0.1))
+    val same = mass(i => if i % 3 == 0 then Math.nextUp(0.1) else 0.1)
+    assert(tick.values.distinct.size > 1, clue(tick.values.toVector.distinct))
+    assertEquals(
+      Distribution.pearson[Px].compare(tick, same),
+      Left(CompareError.ConstantInput("Pearson correlation", CompareOperand.Both))
+    )
+    assertEquals(
+      Distribution.spearman[Px].compare(tick, same),
+      Left(CompareError.ConstantInput("Spearman correlation", CompareOperand.Both))
+    )
+    assertEquals(
+      Distribution.distanceCorrelation[Px].compare(tick, same),
+      Left(CompareError.ConstantInput("distance correlation", CompareOperand.Both))
+    )
+    assertEquals(
+      Distribution.spearman[Px].compare(ramp, tick),
+      Left(CompareError.ConstantInput("Spearman correlation", CompareOperand.Right))
+    )
+    assertEquals(
+      Distribution.distanceCorrelation[Px].compare(tick, ramp),
+      Left(CompareError.ConstantInput("distance correlation", CompareOperand.Left))
+    )
+  }
+
   test("a genuinely varying pair still correlates") {
     val other = mass(i => (grid.size - i).toDouble)
     val r     = Distribution.pearson[Px].compare(ramp, other).toOption.get.value

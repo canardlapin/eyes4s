@@ -37,7 +37,7 @@ final class EpochBins private[plan] (
     val excludedTail: Option[Interval]
 )
 
-enum EpochError[T, K]:
+enum EpochError[T, K] derives CanEqual:
   case Clock(trial: T, selector: MarkSelector[K], underlying: TimeError)
   case AnchorMatches(trial: T, selector: MarkSelector[K], count: Int)
   case AnchorOverflow(trial: T, selector: MarkSelector[K], anchor: Instant, window: Window)
