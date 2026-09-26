@@ -149,6 +149,12 @@ object SchemaRegistry:
       codecLaw(plans, "configured study plan") ++ codecLaw(plans, "trial study plan")
     ),
     Entry(
+      StudyCodecDefinitions.studyV3,
+      Kind.Document,
+      Vector("study-v3.json"),
+      codecLaw(plans, "initial-fixation study plan")
+    ),
+    Entry(
       TrialKeyDefinitions.trialKey,
       Kind.Nested,
       Vector("study-trial-v2.json"),
@@ -636,29 +642,33 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
     val study     = versioned.find(_.name == "eyes4s.study").get
     // A shipped codec with a second rung whose version was never registered:
     // the ladder is found from the codec, not from a list.
-    val onlyV1 = entries.filterNot(_.id == StudyCodecDefinitions.studyV2)
+    val onlyV1 = entries.filterNot(e =>
+      e.id == StudyCodecDefinitions.studyV2 || e.id == StudyCodecDefinitions.studyV3
+    )
     assert(
       versionProblems(onlyV1, SchemaRegistry.versioned(onlyV1, resource)).exists(
         _.startsWith(
-          "eyes4s.study ladder has versions Vector(1, 2), but Vector(1) are registered"
+          "eyes4s.study ladder has versions Vector(1, 2, 3), but Vector(1) are registered"
         )
       )
     )
     // A schema with two registered versions and no ladder.
     assertEquals(
       versionProblems(entries, versioned.filterNot(_ == study)),
-      Vector("eyes4s.study has versions Vector(1, 2) but no registered ladder")
+      Vector("eyes4s.study has versions Vector(1, 2, 3) but no registered ladder")
     )
     // A version declared and registered without extending the ladder.
-    val v3 = Entry(DefinitionId.builtIn("eyes4s.study", 3), Kind.Document, Vector(), Vector())
+    val v4 = Entry(DefinitionId.builtIn("eyes4s.study", 4), Kind.Document, Vector(), Vector())
     assert(
-      versionProblems(entries :+ v3, versioned)
+      versionProblems(entries :+ v4, versioned)
         .exists(
-          _.startsWith("eyes4s.study ladder has versions Vector(1, 2), but Vector(1, 2, 3)")
+          _.startsWith(
+            "eyes4s.study ladder has versions Vector(1, 2, 3), but Vector(1, 2, 3, 4)"
+          )
         )
     )
     assert(
-      versionProblems(entries :+ v3, versioned).contains("eyes4s.study@3 has no pinned fixture")
+      versionProblems(entries :+ v4, versioned).contains("eyes4s.study@4 has no pinned fixture")
     )
     // A version whose only fixture is withdrawn.
     val withoutV1 = study.copy(ladders =
@@ -671,6 +681,7 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
     // A ladder whose upcast is dropped: the v1 fixture no longer lifts.
     val cosine  = StudyCodecs.cosine[Px].ladder
     val v1      = cosine.versions.head
+    val v2      = cosine.versions(1)
     val dropped = SchemaLadder
       .of[
         StudyPlan[StudyKey, Px, Unit, eyes4s.compare.Similarity, eyes4s.design.SignedDifference]
@@ -678,11 +689,17 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
         cosine.role,
         v1
       )(cosine.writeAt(v1, _))(cosine.readAt(v1, _))
-      .next(p => cosine.earliest(p) == v1, identity)(cosine.writeAt(cosine.latest, _))(
-        cosine.readAt(cosine.latest, _)
+      .next(p => cosine.earliest(p) == v1, identity)(cosine.writeAt(v2, _))(
+        cosine.readAt(v2, _)
       )
+      .next(
+        p => cosine.earliest(p).version <= 2,
+        json => cosine.upcast(v2, json).fold(_ => json, _._2)
+      )(cosine.writeAt(cosine.latest, _))(cosine.readAt(cosine.latest, _))
     val broken =
-      study.copy(ladders = Vector(Rungs(dropped, Vector("study-v1.json", "study-v2.json"))))
+      study.copy(ladders =
+        Vector(Rungs(dropped, Vector("study-v1.json", "study-v2.json", "study-v3.json")))
+      )
     assertEquals(
       versionProblems(entries, versioned.map(v => if v == study then broken else v))
         .map(_.takeWhile(_ != ':')),
@@ -840,6 +857,7 @@ private object Decoders:
             .contains(TrialKeyDefinitions.trialLayout.name) =>
         Some(StudyCodecs.trialCosine[Px].codec)
       case StudyCodecDefinitions.studyV2           => Some(StudyCodecs.cosine[Px].codec)
+      case StudyCodecDefinitions.studyV3           => Some(StudyCodecs.cosine[Px].codec)
       case StudyInputDefinitions.admissionLedgerV2 =>
         Some(StudyInputCodecs.study[Px].ledger)
       case InventoryDefinitions.admissionLedgerV3 =>
