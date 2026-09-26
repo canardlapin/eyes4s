@@ -222,6 +222,11 @@ object Diagnose:
   given diagnosticCode: Diagnose[DiagnosticCodeError, Nothing] =
     derived(C.diagnosticCode)(_.message)
 
+  given sourceIdentity: Diagnose[SourceIdentityError, Nothing] =
+    derived(SourceDiagnostics.identity)(_.message)
+  given importSpec: Diagnose[ImportSpecError, Nothing] =
+    derived(SourceDiagnostics.importDescription)(_.message)
+
   /** An epoch error names its trial by key; the mark kind of its selector is
     * the application's own value and is carried as text.
     */

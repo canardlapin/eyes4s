@@ -50,6 +50,7 @@ class SourceAdmissionSuite extends munit.FunSuite:
   test("admission keeps rejected records in the declared source and ledger v4") {
     val imported = get(SourceAdmission.read("a.csv", csv, spec))
     assertEquals(imported.spec.digest, spec.digest)
+    assertEquals(imported.accepted.trials.rows.map(_.key), Vector(StudyKey("p", "i", "encode")))
     assertEquals(imported.ledger.records.size, 2)
     assertEquals(imported.ledger.rejected.size, 1)
     assertEquals(imported.ledger.version, 4)
