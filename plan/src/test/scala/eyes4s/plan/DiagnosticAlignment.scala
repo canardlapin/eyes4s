@@ -152,11 +152,12 @@ final class DiagnosticAlignment(
         case (n: Int, x) => x == BigInt(n)
         case _           => false
       }
-    case (v: Vector[?], Operand.Names(xs))      => xs == v.map(_.toString)
-    case (v: Vector[?], Operand.Keys(xs))       => xs == v
-    case (v: Vector[?], Operand.Params(xs))     => xs == v
-    case (v: Vector[?], Operand.Parameters(xs)) => xs == v
-    case (v: Vector[?], Operand.Items(xs))      =>
+    case (v: Vector[?], Operand.Names(xs))        => xs == v.map(_.toString)
+    case (v: Vector[?], Operand.Keys(xs))         => xs == v
+    case (v: NonEmptyVector[?], Operand.Keys(xs)) => xs == v.toVector
+    case (v: Vector[?], Operand.Params(xs))       => xs == v
+    case (v: Vector[?], Operand.Parameters(xs))   => xs == v
+    case (v: Vector[?], Operand.Items(xs))        =>
       xs.size == v.size && v.zip(xs).forall {
         case (change: PlanChange, Operand.Fields(fields)) =>
           fields == Vector(

@@ -16,6 +16,8 @@
 
 package eyes4s.plan
 
+import cats.data.NonEmptyVector
+import eyes4s.core.*
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.Px
 
@@ -56,9 +58,9 @@ class AnalysisReportSuite extends munit.FunSuite:
         (Severity.Blocker, FindingClass.UnavailableInput, Remedy.SupplyReferencedArtifact),
       AnalysisFinding.ArtifactMismatch[StudyKey](expected, other) ->
         (Severity.Blocker, FindingClass.UnavailableInput, Remedy.RetargetPlanToAvailableInput),
-      AnalysisFinding.Refused[StudyKey](refusal) ->
+      AnalysisFinding.refused[PlanError, StudyKey](PlanError.EmptyScales(0)) ->
         (Severity.Blocker, FindingClass.InvalidSetting, Remedy.ReconcileMethodDescriptor),
-      AnalysisFinding.DataDependent(cause, Vector(k1)) ->
+      AnalysisFinding.DataDependent(cause, NonEmptyVector.one(k1)) ->
         (Severity.Warning, FindingClass.DataDependent, Remedy.AcceptMissingObservation)
     )
     table.foreach { (finding, classification) =>
@@ -87,7 +89,7 @@ class AnalysisReportSuite extends munit.FunSuite:
     assertEquals(mismatch.subject, Vector(Locus.Artifact(expected.digest)))
     assert(mismatch.message.contains(expected.digest), mismatch.message)
     assert(mismatch.message.contains(other.digest), mismatch.message)
-    val failing = AnalysisFinding.DataDependent(cause, Vector(k1))
+    val failing = AnalysisFinding.DataDependent(cause, NonEmptyVector.one(k1))
     assertEquals(failing.keys, Vector(k1, k2))
     val d = Diagnostic.of(failing)
     assertEquals(d.operand("underlying"), Some(Operand.Cause(cause)))
@@ -96,13 +98,20 @@ class AnalysisReportSuite extends munit.FunSuite:
     assertEquals(d.affectedTrials, Vector(k1, k2))
     assert(failing.message.contains(cause.code.render), failing.message)
     assert(failing.message.contains(k1.toString), failing.message)
-    val refused = AnalysisFinding.Refused[StudyKey](refusal)
+    val refused = AnalysisFinding.refused[PlanError, StudyKey](PlanError.EmptyScales(0))
+    assertEquals(
+      Diagnostic.of(refused).operands,
+      Vector(
+        "underlying" -> Operand.Cause(refusal),
+        "suggested"  -> Operand.Token("ReconcileMethodDescriptor")
+      )
+    )
     assertEquals(refused.keys, Vector.empty)
     assert(refused.message.contains(refusal.code.render), refused.message)
   }
 
   test("the report derives the artifact finding before the family's own") {
-    val missing = report(None, AnalysisFinding.DataDependent(cause, Vector(k1)))
+    val missing = report(None, AnalysisFinding.DataDependent(cause, NonEmptyVector.one(k1)))
     assertEquals(missing.findings.head, AnalysisFinding.MissingArtifact[StudyKey](expected))
     assertEquals(missing.availability, Availability.Unavailable)
     val mismatched = report(Some(other))
@@ -110,7 +119,8 @@ class AnalysisReportSuite extends munit.FunSuite:
       mismatched.findings,
       Vector(AnalysisFinding.ArtifactMismatch[StudyKey](expected, other))
     )
-    val ready = report(Some(expected), AnalysisFinding.DataDependent(cause, Vector(k1)))
+    val ready =
+      report(Some(expected), AnalysisFinding.DataDependent(cause, NonEmptyVector.one(k1)))
     assert(ready.ready)
     assertEquals(ready.warnings.size, 1)
     assertEquals(ready.affectedTrials, Vector(k1, k2))
@@ -139,7 +149,11 @@ class AnalysisReportSuite extends munit.FunSuite:
       ready.confirm(description, other),
       Left(PreflightError.ChangedInput(RecipeFamily.FixationStudy, expected, other))
     )
-    val refused  = report(Some(expected), AnalysisFinding.Refused(refusal))
+    val refused =
+      report(
+        Some(expected),
+        AnalysisFinding.refused[PlanError, StudyKey](PlanError.EmptyScales(0))
+      )
     val notReady = refused.confirm(description, expected)
     assertEquals(
       notReady,
@@ -148,5 +162,63 @@ class AnalysisReportSuite extends munit.FunSuite:
     assertEquals(
       notReady.left.toOption.map(Diagnostic.of(_).causes.map(_.code.render)),
       Some(Vector("analysis-finding.refused"))
+    )
+  }
+
+  test("a refusal's remedy follows its cause, as the dedicated families derive it") {
+    val causes: Vector[(AnalysisFinding[StudyKey], Remedy)] = Vector(
+      AnalysisFinding.refused[PlanError, StudyKey](PlanError.MissingAngularScale(1)) ->
+        StudyFinding.Refused[StudyKey, Px](PlanError.MissingAngularScale(1)).remedy,
+      AnalysisFinding.refused[PlanError, StudyKey](
+        PlanError.MatchItemConflict(Vector(Vector("t")))
+      ) ->
+        StudyFinding
+          .Refused[StudyKey, Px](PlanError.MatchItemConflict(Vector(Vector("t"))))
+          .remedy,
+      AnalysisFinding.refused[TemporalStudyError, StudyKey](
+        TemporalStudyError.WindowNames(Vector.empty)
+      ) ->
+        TemporalFinding
+          .Refused[StudyKey, Px](TemporalStudyError.WindowNames(Vector.empty))
+          .remedy,
+      AnalysisFinding.refused[RecordingPlanError, StudyKey](
+        RecordingPlanError.MissingViewing(RecordingRef("r"))
+      ) -> RecordingFinding
+        .Refused(RecordingPlanError.MissingViewing(RecordingRef("r")))
+        .remedy,
+      AnalysisFinding.refused[StudyFinding[StudyKey, Px], StudyKey](
+        StudyFinding.FrameMismatch(k1, GeometryError.NonFiniteSigma(1.5))
+      ) -> Remedy.AlignFrame
+    )
+    causes.foreach { (finding, expected) =>
+      assertEquals(finding.remedy, expected, finding)
+      assertEquals(Diagnostic.of(finding).remedy, Some(expected), finding)
+    }
+    assertEquals(
+      AnalysisFinding.refused[PlanError, StudyKey](PlanError.MissingAngularScale(1)).remedy,
+      Remedy.ReviseScaleDeclaration
+    )
+    // A cause with no dedicated mapping falls back explicitly.
+    assertEquals(
+      AnalysisFinding
+        .refused[DescriptorError, StudyKey](
+          DescriptorError.MissingMethod(DefinitionId.cosine)
+        )
+        .remedy,
+      Remedy.ReconcileMethodDescriptor
+    )
+  }
+
+  test("a data-dependent finding names at least one trial, by type") {
+    assert(
+      compiletime.testing
+        .typeCheckErrors("AnalysisFinding.DataDependent(cause, Vector.empty[StudyKey])")
+        .nonEmpty
+    )
+    assertEquals(
+      compiletime.testing.typeCheckErrors(
+        "AnalysisFinding.DataDependent(cause, NonEmptyVector.one(k1))"
+      ),
+      Nil
     )
   }

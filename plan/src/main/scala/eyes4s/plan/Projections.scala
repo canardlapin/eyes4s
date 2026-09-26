@@ -883,15 +883,18 @@ private[eyes4s] object Projections:
           artifact(expected.digest),
           artifact(actual.digest)
         )
-      case Refused(underlying) =>
-        diagnostic(C.analysisFinding, f, f.message, underlying.subject)(cause(underlying))
+      case Refused(underlying, suggested) =>
+        diagnostic(C.analysisFinding, f, f.message, underlying.subject)(
+          cause(underlying),
+          token(suggested.toString)
+        )
       case DataDependent(underlying, trials) =>
         diagnostic(
           C.analysisFinding,
           f,
           f.message,
-          merge(Vector(Locus.Trials(trials)), underlying)
-        )(cause(underlying), Operand.Keys(trials))
+          merge(Vector(Locus.Trials(trials.toVector)), underlying)
+        )(cause(underlying), Operand.Keys(trials.toVector))
     finding(projected, f.severity, f.category, f.remedy)
 
   /** Any preflight finding, keys typed. A study or temporal finding in a

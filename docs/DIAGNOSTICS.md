@@ -1363,7 +1363,7 @@ fails after rewriting, so review the change and run it again.
 |---|---|---|
 | `analysis-finding.missing-artifact` | `MissingArtifact` | `expected` |
 | `analysis-finding.artifact-mismatch` | `ArtifactMismatch` | `expected`, `actual` |
-| `analysis-finding.refused` | `Refused` | `underlying` |
+| `analysis-finding.refused` | `Refused` | `underlying`, `suggested` |
 | `analysis-finding.data-dependent` | `DataDependent` | `underlying`, `trials` |
 
 ### `codec` — `CodecError`

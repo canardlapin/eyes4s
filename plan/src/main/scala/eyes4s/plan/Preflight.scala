@@ -16,6 +16,7 @@
 
 package eyes4s.plan
 
+import cats.data.NonEmptyVector
 import eyes4s.core.*
 import eyes4s.design.*
 import eyes4s.detect.DetectorDefinitionError
@@ -908,9 +909,11 @@ object Preflight:
   * errors of its own catalogued families and carries them here as
   * diagnostics, so no family adds a finding type to this sealed hierarchy.
   *
-  * Severity, class and remedy follow from the case alone: a missing or
-  * mismatched artifact and a refusal are blockers, a data-dependent failure
-  * is a warning that names the trials execution will fail.
+  * Severity and class follow from the case: a missing or mismatched artifact
+  * and a refusal are blockers, a data-dependent failure is a warning that
+  * names the trials execution will fail. The remedy of an artifact finding
+  * follows from its case too; a refusal carries the remedy its cause implies
+  * (build one with [[AnalysisFinding.refused]]).
   */
 enum AnalysisFinding[K] extends PreflightFinding[K] derives CanEqual:
   /** The plan's input artifact was not supplied. */
@@ -920,42 +923,60 @@ enum AnalysisFinding[K] extends PreflightFinding[K] derives CanEqual:
   case ArtifactMismatch(expected: ArtifactRef[?], actual: ArtifactRef[?])
 
   /** The plan's constructors or prerequisites refuse the recipe as a whole;
-    * `underlying` is the refusal projected through its own family.
+    * `underlying` is the refusal projected through its own family and
+    * `suggested` the remedy its cause implies.
     */
-  case Refused(underlying: Diagnostic[K])
+  case Refused(underlying: Diagnostic[K], suggested: Remedy)
 
-  /** Execution proceeds, but the named trials fail deterministically for the
-    * reason `underlying` gives.
+  /** Execution proceeds, but the named trials (at least one) fail
+    * deterministically for the reason `underlying` gives.
     */
-  case DataDependent(underlying: Diagnostic[K], trials: Vector[K])
+  case DataDependent(underlying: Diagnostic[K], trials: NonEmptyVector[K])
 
   def keys: Vector[K] = this match
     case MissingArtifact(_)            => Vector.empty
     case ArtifactMismatch(_, _)        => Vector.empty
-    case Refused(underlying)           => underlying.affectedTrials
-    case DataDependent(underlying, ks) => (ks ++ underlying.affectedTrials).distinct
+    case Refused(underlying, _)        => underlying.affectedTrials
+    case DataDependent(underlying, ks) => (ks.toVector ++ underlying.affectedTrials).distinct
 
   def severity: Severity = this match
-    case MissingArtifact(_) | ArtifactMismatch(_, _) | Refused(_) => Severity.Blocker
-    case DataDependent(_, _)                                      => Severity.Warning
+    case MissingArtifact(_) | ArtifactMismatch(_, _) | Refused(_, _) => Severity.Blocker
+    case DataDependent(_, _)                                         => Severity.Warning
 
   def category: FindingClass = this match
     case MissingArtifact(_) | ArtifactMismatch(_, _) => FindingClass.UnavailableInput
-    case Refused(_)                                  => FindingClass.InvalidSetting
+    case Refused(_, _)                               => FindingClass.InvalidSetting
     case DataDependent(_, _)                         => FindingClass.DataDependent
 
   def remedy: Remedy = this match
     case MissingArtifact(_)     => Remedy.SupplyReferencedArtifact
     case ArtifactMismatch(_, _) => Remedy.RetargetPlanToAvailableInput
-    case Refused(_)             => Remedy.ReconcileMethodDescriptor
+    case Refused(_, suggested)  => suggested
     case DataDependent(_, _)    => Remedy.AcceptMissingObservation
 
   def message: String = this match
     case MissingArtifact(e)     => s"Analysis requires artifact ${e.digest}."
     case ArtifactMismatch(e, a) =>
       s"Analysis requires artifact ${e.digest}, supplied ${a.digest}."
-    case Refused(d)           => s"Analysis refused (${d.code}): ${d.message}"
-    case DataDependent(d, ks) => s"Trials $ks will fail (${d.code}): ${d.message}"
+    case Refused(d, _)        => s"Analysis refused (${d.code}): ${d.message}"
+    case DataDependent(d, ks) => s"Trials ${ks.toVector} will fail (${d.code}): ${d.message}"
+
+object AnalysisFinding:
+  /** A refusal with the remedy its cause implies, on the rule the dedicated
+    * families use: a `PlanError` or `TemporalStudyError` through
+    * `Preflight.remedyFor`, a `RecordingPlanError` as `ReviseDetectorParameters`,
+    * a preflight finding keeping its own remedy. Any other cause falls back
+    * explicitly to `ReconcileMethodDescriptor`.
+    */
+  def refused[E, K](error: E)(using diagnose: Diagnose[E, K]): AnalysisFinding[K] =
+    Refused(diagnose(error), remedyOf(error))
+
+  private[plan] def remedyOf(error: Any): Remedy = error match
+    case e: PlanError           => Preflight.remedyFor(e)
+    case e: TemporalStudyError  => Preflight.remedyFor(e)
+    case _: RecordingPlanError  => Remedy.ReviseDetectorParameters
+    case f: PreflightFinding[?] => f.remedy
+    case _                      => Remedy.ReconcileMethodDescriptor
 
 /** The preflight report of a recipe family that uses [[AnalysisFinding]]:
   * findings bound to the plan description and the identity of the input `A`

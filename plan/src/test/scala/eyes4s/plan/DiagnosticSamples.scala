@@ -852,10 +852,10 @@ object DiagnosticSamples:
     family[AnalysisFinding[StudyKey]]("AnalysisFinding")(
       AnalysisFinding.MissingArtifact(studyRef),
       AnalysisFinding.ArtifactMismatch(studyRef, studyRef2),
-      AnalysisFinding.Refused(Diagnostic.of(PlanError.EmptyScales(0))),
+      AnalysisFinding.refused[PlanError, StudyKey](PlanError.MissingAngularScale(1)),
       AnalysisFinding.DataDependent(
         Diagnostic.of(StudyFinding.UnmatchedFocal[StudyKey, Px](k2)),
-        Vector(k1)
+        NonEmptyVector.one(k1)
       )
     )
   )

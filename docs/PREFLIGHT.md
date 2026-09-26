@@ -65,8 +65,14 @@ Recipe families added after these three share one finding type,
 `AnalysisFinding[K]`, instead of adding their own: `MissingArtifact` and
 `ArtifactMismatch` (blockers the report derives from the expected and supplied
 input), `Refused` (a blocker carrying the family's own refusal as a catalogued
-`Diagnostic[K]`) and `DataDependent` (a warning carrying its cause and the
-trials execution will fail). Severity, class and remedy follow from the case.
+`Diagnostic[K]` and the remedy its cause implies) and `DataDependent` (a
+warning carrying its cause and the non-empty trials execution will fail).
+Severity and class follow from the case. `AnalysisFinding.refused(error)`
+derives a refusal's remedy on the dedicated families' rule: a `PlanError` or
+`TemporalStudyError` takes the remedy `StudyFinding.Refused` and
+`TemporalFinding.Refused` give it, a `RecordingPlanError` suggests
+`ReviseDetectorParameters`, a finding keeps its own, and any other cause falls
+back to `ReconcileMethodDescriptor`.
 Their report, `AnalysisReport[K, A]`, confirms against the current description
 and input exactly as the other reports do. `AnalysisKind` lists every analysis
 the library offers with the family that carries it; the analyses without a
