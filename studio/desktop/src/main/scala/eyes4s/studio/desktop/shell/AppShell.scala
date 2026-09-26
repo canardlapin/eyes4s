@@ -81,11 +81,11 @@ final class AppShell(
   // The keymap: a registered chord that no focused control consumed is the
   // app's; it is consumed here, so the scene's menu accelerators (which run
   // after the handlers) never dispatch it a second time.
-  /** The chords this window handles itself (S1.9): none that a native menu
-    * accelerator already carries.
+  /** The chords this window handles itself now (S1.9): none that an enabled
+    * native menu item carries.
     */
-  val windowKeys: Map[eyes4s.studio.app.keys.KeyChord, eyes4s.studio.app.keys.CommandId] =
-    CommandRegistry.windowKeymap(nativeMenu)
+  def windowKeys: Map[eyes4s.studio.app.keys.KeyChord, eyes4s.studio.app.keys.CommandId] =
+    CommandRegistry.windowKeymap(nativeMenu, model())
 
   root.addEventHandler(
     KeyEvent.KEY_PRESSED,
@@ -141,13 +141,7 @@ final class AppShell(
           menu.setText(vm.title)
           menu.setMnemonicParsing(false)
           menu.getItems.setAll(vm.items.map { i =>
-            // With a native menu bar the accelerator is the chord's only path,
-            // and a disabled item would swallow it silently. So an item with a
-            // shortcut stays enabled there; a disabled command's item carries
-            // Invoke, which refuses with its Unavailable notice, as the
-            // window's keymap does on Linux.
-            val live = i.enabled || (nativeMenu && i.shortcut.isDefined)
-            val item = AppShell.item(i.label, live, () => dispatch(i.intent))
+            val item = AppShell.item(i.label, i.enabled, () => dispatch(i.intent))
             item.setId(i.command.value)
             i.shortcut.map(ShellKeys.combination).foreach(item.setAccelerator)
             item

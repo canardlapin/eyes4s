@@ -106,16 +106,33 @@ class CommandRegistrySuite extends munit.ScalaCheckSuite:
     assertEquals(sectionOf(CommandRegistry.maximize), Some(MenuSection.Window))
   }
 
-  test("S1.9: with a native menu bar the window handles no chord a menu accelerator carries") {
+  test("S1.9: with a native menu bar the window skips exactly the chords of enabled items") {
     val accelerated = CommandRegistry.menus.flatMap(_._2).flatMap(_.shortcut).toSet
     assertEquals(CommandRegistry.menuAccelerators, accelerated)
-    val native = CommandRegistry.windowKeymap(nativeMenu = true)
-    assertEquals(native.keySet.intersect(accelerated), Set.empty[KeyChord])
-    // Nothing is lost: each chord has exactly one path, window or menu.
-    assertEquals(native.keySet ++ accelerated, CommandRegistry.keymap.keySet)
-    // Without a native menu bar (Linux, Windows) the window handles them all.
-    assertEquals(CommandRegistry.windowKeymap(nativeMenu = false), CommandRegistry.keymap)
-    assert(CommandRegistry.shortcutTable().contains("Verified by hand on macOS: pending."))
+    val t2 = StoryModels.t2Compare
+    // Each chord has exactly one path: an enabled menu item, or the window.
+    for m <- Vector(t2, StoryModels.t3Summary, StoryModels.firstRun) do
+      val native = CommandRegistry.windowKeymap(nativeMenu = true, m)
+      CommandRegistry.keymap.foreach { (chord, id) =>
+        val enabledItem = accelerated(chord) && CommandRegistry.find(id).exists(_.enabled(m))
+        assertEquals(native.contains(chord), !enabledItem, id.value)
+      }
+      // Without a native menu bar (Linux, Windows) the window handles them all.
+      assertEquals(CommandRegistry.windowKeymap(nativeMenu = false, m), CommandRegistry.keymap)
+    // t2: nothing to undo, so ⌘Z is the window's (the Unavailable notice);
+    // Back is enabled, so ⌘[ is the menu's alone.
+    val native = CommandRegistry.windowKeymap(nativeMenu = true, t2)
+    assert(!CommandRegistry.undo.enabled(t2))
+    assert(native.contains(CommandRegistry.undo.shortcut.get))
+    assert(!native.contains(CommandRegistry.back.shortcut.get))
+    val table = CommandRegistry.shortcutTable()
+    assert(table.contains("Verified by hand on macOS: pending."), table)
+    assert(
+      table.contains(
+        "With nothing to undo, ⌘Z shows the Unavailable notice or beeps, and never undoes twice."
+      ),
+      table
+    )
   }
 
   test("S1.9: the shortcut table lists every command once, with its shortcut and id") {

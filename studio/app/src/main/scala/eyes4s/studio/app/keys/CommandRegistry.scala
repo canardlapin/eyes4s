@@ -310,13 +310,21 @@ object CommandRegistry:
     */
   lazy val menuAccelerators: Set[KeyChord] = menus.flatMap(_._2).flatMap(_.shortcut).toSet
 
-  /** The chords a window's own key handler dispatches. Where the menu bar is
-    * native (macOS), the menu's accelerator is the only path for its chord,
-    * so one key press can never dispatch its command twice; elsewhere the
-    * menu bar is hidden and the window handles every chord.
+  /** The chords a window's own key handler dispatches in `model`. Where the
+    * menu bar is native (macOS), an enabled menu item's accelerator is the
+    * only path for its chord, so one key press can never dispatch its command
+    * twice. A disabled item (greyed out, as the menu renders the enabled
+    * predicate) acts on nothing, so its chord stays the window's: if it
+    * reaches the window, KeyPressed raises the Unavailable notice as on
+    * Linux; if the native menu swallows it, macOS beeps. Elsewhere the menu
+    * bar is hidden and the window handles every chord.
     */
-  def windowKeymap(nativeMenu: Boolean): Map[KeyChord, CommandId] =
-    if nativeMenu then keymap.filterNot((chord, _) => menuAccelerators(chord)) else keymap
+  def windowKeymap(nativeMenu: Boolean, model: AppModel): Map[KeyChord, CommandId] =
+    if !nativeMenu then keymap
+    else
+      keymap.filterNot((chord, id) =>
+        menuAccelerators(chord) && find(id).exists(_.enabled(model))
+      )
 
   /** A command's shortcut as the boards print it ("⌘1"), or "". */
   def shortcutText(command: AppCommand): String = command.shortcut.fold("")(_.render)
@@ -353,13 +361,18 @@ object CommandRegistry:
       "",
       "On macOS the native menu bar's accelerators are the only path for these",
       "chords (the window's key handler skips them, `CommandRegistry.windowKeymap`),",
-      "so a key press cannot fire a command twice. An item with a shortcut stays",
-      "enabled there, so a disabled command still says why (\"Undo: There is no",
-      "edit to undo.\") instead of the menu swallowing the key.",
-      "Verified by hand on macOS: pending. The hand check also covers text fields:",
-      "while a text field has focus, the native menu sees ⌘Z (and ⌘⇧Z) before the",
-      "field. Expected: the field's own undo wins while it has focus; the document's",
-      "Undo applies only outside text fields. Pending: confirm which one wins today.",
+      "so a key press cannot fire a command twice. A disabled command's item is",
+      "greyed out, and its chord stays the window's, which answers with the",
+      "Unavailable notice (\"Undo: There is no edit to undo.\").",
+      "",
+      "Verified by hand on macOS: pending. The hand check covers:",
+      "",
+      "- A press fires its command once, never twice.",
+      "- With nothing to undo, ⌘Z shows the Unavailable notice or beeps, and never undoes twice.",
+      "- While a text field has focus, the native menu sees ⌘Z (and ⌘⇧Z) before the",
+      "  field. Expected: the field's own undo wins while it has focus; the",
+      "  document's Undo applies only outside text fields. Pending: confirm which",
+      "  one wins today.",
       "",
       "| Menu | Command | Shortcut | Id |",
       "|---|---|---|---|"
