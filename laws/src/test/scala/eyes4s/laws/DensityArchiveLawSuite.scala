@@ -91,14 +91,15 @@ class DensityArchiveLawSuite extends munit.DisciplineSuite:
       p1Recall: Vector[(Double, Double)],
       p1Encode: Vector[(Double, Double)],
       p2Recall: Vector[(Double, Double)],
-      p2Encode: Vector[(Double, Double)]
+      p2Encode: Vector[(Double, Double)],
+      repeatedKey: Boolean = false
   ): Case =
     val input = StudyInput(
       Trials(
         Vector(
           trial(StudyKey("p1", "item", "recall"), p1Recall),
           trial(StudyKey("p1", "item", "encode"), p1Encode),
-          trial(StudyKey("p2", "item", "recall"), p2Recall),
+          trial(StudyKey(if repeatedKey then "p1" else "p2", "item", "recall"), p2Recall),
           trial(StudyKey("p2", "item", "encode"), p2Encode)
         )
       )
@@ -122,6 +123,23 @@ class DensityArchiveLawSuite extends munit.DisciplineSuite:
     p2Recall <- points
     p2Encode <- points
   yield caseOf(p1Recall, p1Encode, p2Recall, p2Encode)
+
+  private val repeatedCases: Gen[Case] = for
+    p1Recall <- points
+    p1Encode <- points
+    p2Recall <- points
+    p2Encode <- points
+  yield caseOf(p1Recall, p1Encode, p2Recall, p2Encode, repeatedKey = true)
+
+  private val roundTripCases: Gen[Case] = Gen.oneOf(cases, repeatedCases)
+
+  private val distinctRepeatedCase = caseOf(
+    Vector((0.5, 0.5)),
+    Vector((1.5, 0.5)),
+    Vector((0.5, 1.5)),
+    Vector((1.5, 1.5)),
+    repeatedKey = true
+  )
 
   private val distinctCase = caseOf(
     Vector((0.5, 0.5)),
@@ -159,7 +177,7 @@ class DensityArchiveLawSuite extends munit.DisciplineSuite:
     "density archive inline",
     DensityArchiveLaws.roundTrip(
       archiveCodec,
-      cases,
+      roundTripCases,
       _.result,
       access,
       DensityStorage.Inline,
@@ -170,7 +188,7 @@ class DensityArchiveLawSuite extends munit.DisciplineSuite:
     "density archive packed",
     DensityArchiveLaws.roundTrip(
       archiveCodec,
-      cases,
+      roundTripCases,
       _.result,
       access,
       DensityStorage.Packed,
@@ -181,7 +199,7 @@ class DensityArchiveLawSuite extends munit.DisciplineSuite:
     "density archive recomputable",
     DensityArchiveLaws.roundTrip(
       archiveCodec,
-      cases,
+      roundTripCases,
       _.result,
       access,
       DensityStorage.Recomputable,
@@ -249,6 +267,30 @@ class DensityArchiveLawSuite extends munit.DisciplineSuite:
       firstMapForAll
     )
     assertEquals(failedOnly(rules), Vector("storage preserves each map identity"))
+  }
+
+  test("published roundtrip law rejects recomputation that aliases repeated-key occurrences") {
+    val aliasingAccess = (
+        value: Case,
+        bundle: DensityArchiveBundle[StudyKey, Px, Unit, Similarity, SignedDifference]
+    ) =>
+      val original = access(value, bundle)
+      DensityArchiveLaws.Access[StudyKey, Px](
+        original.payloads,
+        original.recompute.map { compute => (scale: Int, _: Int, key: StudyKey) =>
+          compute(scale, value.input.trials.rows.indexWhere(_.key == key), key)
+        }
+      )
+    val rules = DensityArchiveLaws.roundTrip(
+      archiveCodec,
+      Gen.const(distinctRepeatedCase),
+      _.result,
+      aliasingAccess,
+      DensityStorage.Recomputable,
+      same
+    )
+    assertEquals(rules.all.properties.size, 1)
+    assert(rules.all.properties.forall { case (_, property) => genuinelyFalsified(property) })
   }
 
   test("published schema ladder laws reject an identity v1-to-v2 upcast") {

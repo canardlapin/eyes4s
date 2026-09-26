@@ -33,7 +33,7 @@ trait DensityArchiveLaws extends Laws:
 
   final case class Access[K, U <: Unit2D](
       payloads: PayloadRef => Option[VerifiedPayload],
-      recompute: Option[(Int, K) => Either[DensityError[K], Mass[U]]]
+      recompute: Option[(Int, Int, K) => Either[DensityError[K], Mass[U]]]
   )
 
   type ViewReader[C, K, U <: Unit2D, P, S, D] =

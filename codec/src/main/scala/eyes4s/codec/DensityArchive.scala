@@ -106,6 +106,8 @@ enum DensityError[K]:
   case Decode(scale: Int, key: K, underlying: CodecError)
   case Geometry(underlying: InspectionError[K])
   case Materialize(underlying: CodecError)
+  case UnknownRow(scale: Int, row: Int, count: Int)
+  case RowKeyMismatch(scale: Int, row: Int, expected: K, actual: K)
   def message: String = this match
     case UnknownScale(s, n)      => s"Density scale $s is outside $n archived scales."
     case UnknownKey(s, k)        => s"Density scale=$s has no trial key=$k."
@@ -121,13 +123,16 @@ enum DensityError[K]:
       s"Density scale=$s key=$k expected source $e, received $a."
     case DigestMismatch(s, k, e, a) =>
       s"Density scale=$s key=$k expected SHA-256 ${e.hex}, recomputed ${a.hex}."
-    case Decode(s, k, e) => s"Density scale=$s key=$k: ${e.message}"
-    case Geometry(e)     => e.message
-    case Materialize(e)  => e.message
+    case Decode(s, k, e)            => s"Density scale=$s key=$k: ${e.message}"
+    case Geometry(e)                => e.message
+    case Materialize(e)             => e.message
+    case UnknownRow(s, r, n)        => s"Density scale=$s row=$r is outside $n input rows."
+    case RowKeyMismatch(s, r, e, a) => s"Density scale=$s row=$r expected key=$e, found key=$a."
 
 /** An immutable archive document. Storage and key metadata are parsed at
   * opening; it is not a validated StudyResult until materialize succeeds.
   * No provider is called while opening or creating a reader.
+  * Recomputation callbacks receive (scale, input row index, full key).
   */
 final class StudyResultArchive[K, U <: Unit2D, P, S, D] private[codec] (
     private[codec] val owner: DensityArchiveCodec[K, U, P, S, D],
@@ -139,14 +144,14 @@ final class StudyResultArchive[K, U <: Unit2D, P, S, D] private[codec] (
 )(using UnitLabel[U]):
   def densityReader(
       payloads: PayloadRef => Option[VerifiedPayload] = _ => None,
-      recompute: Option[(Int, K) => Either[DensityError[K], Mass[U]]] = None
+      recompute: Option[(Int, Int, K) => Either[DensityError[K], Mass[U]]] = None
   ): DensityReader[K, U] =
     new DensityReader(rows, identities, description, owner.result.keys, payloads, recompute)
 
   /** Reconstruct all maps and then run the existing completed-result gates. */
   def materialize(
       payloads: PayloadRef => Option[VerifiedPayload] = _ => None,
-      recompute: Option[(Int, K) => Either[DensityError[K], Mass[U]]] = None
+      recompute: Option[(Int, Int, K) => Either[DensityError[K], Mass[U]]] = None
   ): Either[DensityError[K], StudyResult[K, U, S, D]] =
     val reader = densityReader(payloads, recompute)
     rows.zipWithIndex
@@ -174,7 +179,7 @@ final class DensityReader[K, U <: Unit2D] private[codec] (
     description: Vector[(String, Vector[Provenance.Param])],
     keys: VersionedCodec[K],
     payloads: PayloadRef => Option[VerifiedPayload],
-    recompute: Option[(Int, K) => Either[DensityError[K], Mass[U]]]
+    recompute: Option[(Int, Int, K) => Either[DensityError[K], Mass[U]]]
 )(using UnitLabel[U]):
   def density(scale: Int, key: K): Either[DensityError[K], DensityView[U]] =
     for
@@ -270,7 +275,7 @@ final class DensityReader[K, U <: Unit2D] private[codec] (
         case "recomputable" =>
           recompute
             .toRight(DensityError.RecomputeUnavailable(scale, key))
-            .flatMap(_(scale, key))
+            .flatMap(_(scale, index, key))
         case other =>
           decoded(Left(CodecError.Field("storage.kind", outcome, s"unknown $other")))
       _ <- decoded(
@@ -440,12 +445,13 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
 
   /** A recomputer tied to this result codec's method, a saved plan and input.
     * Each call estimates one trial only, through the ordinary estimator seam.
+    * The row index is retained even when multiple input rows share a full key.
     */
   def recomputer(
       plan: StudyPlan[K, U, P, S, D],
       input: StudyInput[K, U],
       archive: StudyResultArchive[K, U, P, S, D]
-  ): (Int, K) => Either[DensityError[K], Mass[U]] = (scale, key) =>
+  ): (Int, Int, K) => Either[DensityError[K], Mass[U]] = (scale, row, key) =>
     for
       _ <- Either.cond(
         plan.description == archive.description,
@@ -465,11 +471,14 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
       estimate <- plan.estimates
         .lift(scale)
         .toRight(DensityError.UnknownScale(scale, plan.estimates.size))
-      matches = input.trials.rows.filter(_.key == key)
-      trial <- matches match
-        case Vector(t) => Right(t)
-        case Vector()  => Left(DensityError.UnknownKey(scale, key))
-        case many      => Left(DensityError.AmbiguousKey(scale, key, many.size))
+      trial <- input.trials.rows
+        .lift(row)
+        .toRight(DensityError.UnknownRow(scale, row, input.trials.rows.size))
+      _ <- Either.cond(
+        trial.key == key,
+        (),
+        DensityError.RowKeyMismatch(scale, row, key, trial.key)
+      )
       mass <- StudyDensity
         .estimate(plan, estimate, key, trial.value)
         .left

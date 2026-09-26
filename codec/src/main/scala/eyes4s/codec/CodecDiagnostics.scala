@@ -141,7 +141,9 @@ object CodecDiagnosticCatalog:
     "DigestMismatch",
     "Decode",
     "Geometry",
-    "Materialize"
+    "Materialize",
+    "UnknownRow",
+    "RowKeyMismatch"
   )
 
   val families: Vector[DiagnosticFamily] =
@@ -563,6 +565,19 @@ private[codec] object CodecProjections:
       case Materialize(underlying) =>
         val inner = codec(underlying)
         diagnostic(C.density, e, e.message, inner.subject)(cause(inner))
+      case UnknownRow(scale, row, count) =>
+        diagnostic(C.density, e, e.message, Vector(Locus.Scale(scale), Locus.InputTrial(row)))(
+          int(scale),
+          int(row),
+          int(count)
+        )
+      case RowKeyMismatch(scale, row, expected, actual) =>
+        diagnostic(C.density, e, e.message, at(scale, expected) :+ Locus.InputTrial(row))(
+          int(scale),
+          int(row),
+          Operand.Key(expected),
+          Operand.Key(actual)
+        )
 
 /** The codec's [[Diagnose]] instances. Import `CodecDiagnostics.given` for
   * `Diagnostic.of` over the codec's families. A decoded study's key type is

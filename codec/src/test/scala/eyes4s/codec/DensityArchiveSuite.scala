@@ -100,18 +100,23 @@ class DensityArchiveSuite extends munit.FunSuite:
     val document = get(archiveCodec.codec.encode(bundle.archive))
     assertEquals(get(document.hcursor.downField("schema").get[Int]("version")), 2)
     val opened    = get(archiveCodec.codec.decode(document))
-    var calls     = Vector.empty[(Int, StudyKey)]
+    var calls     = Vector.empty[(Int, Int, StudyKey)]
     val recompute = archiveCodec.recomputer(plan, input, opened)
     val reader    = opened.densityReader(
       _ => fail("unexpected payload request"),
-      Some((s, k) => {
-        calls :+= s -> k
-        recompute(s, k)
+      Some((s, row, k) => {
+        calls :+= ((s, row, k))
+        recompute(s, row, k)
       })
     )
     assertEquals(calls, Vector.empty)
-    assertEquals(get(reader.density(0, key)).cells.toVector, mass.values.toVector)
-    assertEquals(calls, Vector(0 -> key))
+    val index                       = result.scales.head.estimation.size - 1
+    val (selectedKey, selectedMass) = result.scales.head.estimation(index)
+    assertEquals(
+      get(reader.density(0, selectedKey)).cells.toVector,
+      get(selectedMass).values.toVector
+    )
+    assertEquals(calls, Vector((0, index, selectedKey)))
   }
 
   test("packed calls its provider once for one selected row") {
@@ -251,12 +256,51 @@ class DensityArchiveSuite extends munit.FunSuite:
     )
   }
 
+  test("default recomputable materialization preserves distinct repeated-key occurrences") {
+    val source     = StudyResultFixtures.mixed
+    val configured = StudyResultFixtures.cosinePlan(source, FailurePolicy.RequireAll)
+    val expected   = get(configured.run(source))
+    val repeated   = StudyKey("p2", "a", "recall")
+    val maps       = expected.scales.head.estimation.collect { case (`repeated`, Right(m)) =>
+      m.values.toVector
+    }
+    assertEquals(maps.size, 2)
+    assertNotEquals(maps(0), maps(1))
+    val bundle = get(archiveCodec.encode(expected))
+    val opened = get(archiveCodec.codec.decode(get(archiveCodec.codec.encode(bundle.archive))))
+    val restored = get(
+      opened.materialize(recompute = Some(archiveCodec.recomputer(configured, source, opened)))
+    )
+    assertEquals(get(results.codec.encode(restored)), get(results.codec.encode(expected)))
+    assertEquals(
+      opened.densityReader().density(0, repeated),
+      Left(DensityError.AmbiguousKey(0, repeated, 2))
+    )
+  }
+
+  test("recomputation checks input row bounds and its full key") {
+    val (bundle, _) = doc(DensityStorage.Recomputable)
+    val recompute   = archiveCodec.recomputer(plan, input, bundle.archive)
+    assertEquals(
+      recompute(0, -1, key),
+      Left(DensityError.UnknownRow(0, -1, input.trials.rows.size))
+    )
+    assertEquals(
+      recompute(0, input.trials.rows.size, key),
+      Left(DensityError.UnknownRow(0, input.trials.rows.size, input.trials.rows.size))
+    )
+    val wrong = StudyKey("wrong", "row", "recall")
+    assertEquals(recompute(0, 0, wrong), Left(DensityError.RowKeyMismatch(0, 0, wrong, key)))
+  }
+
   test("recomputed cells must match the pinned per-map digest") {
     val (bundle, _) = doc(DensityStorage.Recomputable)
     val changed     =
       get(Surface.mass(mass.grid, IArray.from(mass.values.toVector.reverse), mass.provenance))
     val read =
-      bundle.archive.densityReader(recompute = Some((_, _) => Right(changed))).density(0, key)
+      bundle.archive
+        .densityReader(recompute = Some((_, _, _) => Right(changed)))
+        .density(0, key)
     assert(read.left.exists {
       case DensityError.DigestMismatch(0, `key`, _, _) => true; case _ => false
     })
@@ -270,7 +314,9 @@ class DensityArchiveSuite extends munit.FunSuite:
       )
     )
     val opened = get(archiveCodec.codec.decode(forged))
-    assert(opened.densityReader(recompute = Some((_, _) => Right(mass))).density(0, key).isLeft)
+    assert(
+      opened.densityReader(recompute = Some((_, _, _) => Right(mass))).density(0, key).isLeft
+    )
   }
 
   test("inconsistent geometry cannot be hidden by a correct recomputed map") {
@@ -291,14 +337,16 @@ class DensityArchiveSuite extends munit.FunSuite:
       )
     )
     val opened = get(archiveCodec.codec.decode(forged))
-    assert(opened.densityReader(recompute = Some((_, _) => Right(mass))).density(0, key).isLeft)
+    assert(
+      opened.densityReader(recompute = Some((_, _, _) => Right(mass))).density(0, key).isLeft
+    )
   }
 
   test("source plan mismatch is refused before recomputation") {
     val (bundle, _) = doc(DensityStorage.Recomputable)
     val other       =
       StudyResultFixtures.cosinePlan(StudyResultFixtures.clean, FailurePolicy.RequireAll)
-    assert(archiveCodec.recomputer(other, input, bundle.archive)(0, key).left.exists {
+    assert(archiveCodec.recomputer(other, input, bundle.archive)(0, 0, key).left.exists {
       case DensityError.SourceMismatch(0, `key`, _, _) => true
       case _                                           => false
     })

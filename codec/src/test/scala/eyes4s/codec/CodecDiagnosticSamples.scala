@@ -230,6 +230,8 @@ object CodecDiagnosticSamples:
         InspectionError
           .Geometry(ResultRef.Estimation(11, k1), GeometryError.NonFiniteSigma(1.5))
       ),
-      DensityError.Materialize(CodecError.Field("archive", Json.Null, "invalid"))
+      DensityError.Materialize(CodecError.Field("archive", Json.Null, "invalid")),
+      DensityError.UnknownRow(12, 7, 4),
+      DensityError.RowKeyMismatch(13, 6, k1, k2)
     )
   )

@@ -68,3 +68,5 @@ Marching squares and drawing remain the renderer's responsibility.
 This archive API covers the fixation-study family. Temporal result storage and
 manifest integration are sequenced separately; direct archive construction
 accepts an explicitly supplied payload provider.
+
+Recomputation callbacks receive `(scale, inputRowIndex, key)`. Materialization preserves every row occurrence, including distinct maps sharing a full key. The built-in recomputer checks the saved input identity, row bounds and row key before estimating that one map. `density(scale, key)` still reports `AmbiguousKey` for repeated full keys.

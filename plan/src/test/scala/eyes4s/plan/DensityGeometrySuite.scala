@@ -87,6 +87,11 @@ class DensityGeometrySuite extends munit.FunSuite:
         ref
       )
     )
+    val direct = get(DensityView.of(mass))
+    assertEquals(direct, whole)
+    assertEquals(direct.geometry.admissionFrame, grid.frame)
+    assertEquals(direct.geometry.cellDegrees, None)
+    assertEquals(direct.cells.toVector, mass.values.toVector)
     assertNotEquals(view, whole)
     assertEquals(view.hashCode, get(DensityView.of(mass, description(), ref)).hashCode)
   }

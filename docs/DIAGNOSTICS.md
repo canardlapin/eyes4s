@@ -1515,6 +1515,8 @@ fails after rewriting, so review the change and run it again.
 | `density.decode` | `Decode` | `scale`, `key`, `underlying` |
 | `density.geometry` | `Geometry` | `underlying` |
 | `density.materialize` | `Materialize` | `underlying` |
+| `density.unknown-row` | `UnknownRow` | `scale`, `row`, `count` |
+| `density.row-key-mismatch` | `RowKeyMismatch` | `scale`, `row`, `expected`, `actual` |
 
 ### `detector-validation` — `DetectorValidationError`
 
