@@ -23,7 +23,7 @@ import eyes4s.studio.app.text.{MessageId, Messages}
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.ProjectName
 import eyes4s.studio.core.fixture.StoryMoment
-import eyes4s.studio.desktop.dock.{LayoutRestoreError, PerspectiveHost}
+import eyes4s.studio.desktop.dock.{DockGesture, PerspectiveHost}
 import eyes4s.studio.desktop.runtime.{
   DesktopEffects,
   PlatformDialogs,
@@ -35,14 +35,14 @@ import javafx.application.Platform
 import javafx.scene.control.{Alert, TextInputDialog}
 import scaladock.fx.DockTheme
 
-/** Why a studio window could not open. */
+/** Why a studio window could not open. Unreadable saved layouts never
+  * stop it: they show their defaults, with a notice.
+  */
 enum WindowError:
   case Styles(missing: MissingStylesheet)
-  case Layouts(error: LayoutRestoreError)
 
   def message: String = this match
-    case Styles(m)  => m.message
-    case Layouts(e) => e.message
+    case Styles(m) => m.message
 
 /** One studio window's parts (tickets S1.4, S1.5a): the services, the Elm
   * runtime, the perspective host and the shell that renders it.
@@ -80,6 +80,26 @@ object StudioWindow:
       .toRight(MissingStylesheet(dockThemeResource))
       .map(url => DockTheme.Custom(url.toExternalForm))
 
+  /** The answer to Rename…: the typed name, or why it was refused. */
+  def renameAnswer(text: String): Intent =
+    ProjectName.of(text).fold(Intent.RenameRefused(_), Intent.RenameProject(_))
+
+  /** The model's intent for a gesture the dock made itself, if the model does
+    * not already agree. A gesture is judged when it is delivered, against
+    * whether the dock is maximized *then*: a restore that a later maximize
+    * has overtaken is not replayed.
+    */
+  def follow(model: AppModel, gesture: DockGesture, dockMaximized: Boolean): Option[Intent] =
+    gesture match
+      case DockGesture.Focused(p) =>
+        Option.when(model.focusedPane != p)(Intent.FocusPane(p))
+      case DockGesture.Maximized(p) =>
+        Option.when(dockMaximized && (!model.isMaximized || model.focusedPane != p))(
+          Intent.SetMaximized(Some(p))
+        )
+      case DockGesture.Restored =>
+        Option.when(!dockMaximized && model.isMaximized)(Intent.SetMaximized(None))
+
   /** Platform dialogs as JavaFX dialogs (non-blocking). */
   def fxDialogs(model: () => AppModel, messages: Messages): PlatformDialogs =
     (dialog: PlatformDialog, dispatch: Intent => Unit) =>
@@ -88,11 +108,7 @@ object StudioWindow:
           val d = TextInputDialog(model().project.fold("")(_.value))
           d.setTitle(messages(MessageId.CommandRenameProject))
           d.setHeaderText(eyes4s.studio.app.vm.Menus.windowTitle(model(), messages))
-          d.setOnHidden(_ =>
-            Option(d.getResult)
-              .flatMap(ProjectName.of(_).toOption)
-              .foreach(n => dispatch(Intent.RenameProject(n)))
-          )
+          d.setOnHidden(_ => Option(d.getResult).foreach(t => dispatch(renameAnswer(t))))
           d.show()
         case PlatformDialog.ProjectInfo =>
           val a = Alert(Alert.AlertType.INFORMATION)
@@ -135,16 +151,18 @@ object StudioWindow:
     def later(i: Intent): Unit         = Platform.runLater(() => dispatch(i))
 
     val session = StudioSession.start(moment, e => later(Intent.Execution(e)))
-    val host    = PerspectiveHost(
+    // A gesture is reported after the dock's own update has finished, and
+    // judged against the model and the dock it then meets.
+    var dockOf: () => Boolean = () => false
+    val host                  = PerspectiveHost(
       StudioLayouts.spec,
       dockTheme,
-      pane =>
+      gesture =>
         Platform.runLater { () =>
-          runtime
-            .filter(_.model.focusedPane != pane)
-            .foreach(_.dispatch(Intent.FocusPane(pane)))
+          runtime.foreach(r => follow(r.model, gesture, dockOf()).foreach(r.dispatch))
         }
     )
+    dockOf = () => host.dock.state.maximized.isDefined
     val effects = DesktopEffects(
       session,
       dialogs.getOrElse(fxDialogs(() => runtime.fold(initial)(_.model), messages)),
@@ -152,6 +170,7 @@ object StudioWindow:
         host.reset(p)
         runtime.foreach(r => host.sync(r.model))
       ,
+      host.perform,
       f => Platform.runLater(() => f())
     )
     val adopted = session.adopt(initial.document)
@@ -159,15 +178,14 @@ object StudioWindow:
     val booted = AppModel.update(initial, Intent.JobsChanged(session.jobs))._1
     val r      = StudioRuntime(booted, effects)
     runtime = Some(r)
-    val shell = AppShell(host, dispatch, messages)
-    host
-      .restore(booted.document.presentation.layouts, booted)
-      .left
-      .map { e =>
-        session.close()
-        WindowError.Layouts(e)
-      }
-      .map { _ =>
-        r.listen(shell.render)
-        StudioWindow(session, r, host, shell, effects)
-      }
+    val shell      = AppShell(host, dispatch, messages)
+    val unreadable = host.restore(booted.document.presentation.layouts, booted)
+    if unreadable.nonEmpty then
+      r.dispatch(
+        Intent.LayoutsUnreadable(
+          unreadable.map(_.perspective),
+          unreadable.map(_.reason).distinct.mkString("; ")
+        )
+      )
+    r.listen(shell.render)
+    Right(StudioWindow(session, r, host, shell, effects))

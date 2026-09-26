@@ -62,7 +62,8 @@ final class AppBar(dispatch: Intent => Unit):
       p -> t
     }.toMap
 
-  private val perspectives = HBox(Perspective.values.toVector.map(switcher)*)
+  /** The switcher pill. */
+  val perspectives: HBox = HBox(Perspective.values.toVector.map(switcher)*)
   perspectives.getStyleClass.add("perspectives")
 
   val jobs: JobsChip = JobsChip(dispatch)

@@ -39,7 +39,21 @@ object ShellKeys:
     case KeyCode.ENTER                    => Some(Key.Enter)
     case KeyCode.ESCAPE                   => Some(Key.Escape)
     case KeyCode.F6                       => Some(Key.F6)
+    case KeyCode.TAB                      => Some(Key.Tab)
     case _                                => None
+
+  /** The chords a key event may stand for, most specific first. Where
+    * Control is the shortcut key (Linux, Windows) Ctrl+Tab reads as ⌘⇥ and
+    * as ⌃⇥; the first the keymap binds wins.
+    */
+  def chords(e: KeyEvent): Vector[KeyChord] =
+    chord(e).toVector.flatMap { c =>
+      val asControl =
+        Option.when(e.isControlDown && c.modifiers.contains(Modifier.Command))(
+          c.copy(modifiers = c.modifiers - Modifier.Command + Modifier.Control)
+        )
+      c +: asControl.toVector
+    }
 
   def chord(e: KeyEvent): Option[KeyChord] =
     key(e.getCode).map { k =>

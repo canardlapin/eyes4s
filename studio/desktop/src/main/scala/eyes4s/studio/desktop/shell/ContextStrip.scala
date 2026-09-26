@@ -18,7 +18,15 @@ package eyes4s.studio.desktop.shell
 
 import eyes4s.studio.app.Intent
 import eyes4s.studio.app.icons.Icon
-import eyes4s.studio.app.vm.{ContextStripVM, DraftBannerVM, FreshnessTone, FreshnessVM}
+import eyes4s.studio.app.text.{MessageId, Messages}
+import eyes4s.studio.app.vm.{
+  ActionVM,
+  ContextStripVM,
+  DraftBannerVM,
+  FreshnessTone,
+  FreshnessVM,
+  NoticeVM
+}
 import javafx.css.PseudoClass
 import javafx.scene.control.{Button, Label}
 import javafx.scene.layout.{HBox, Region}
@@ -107,3 +115,29 @@ final class DraftBanner(dispatch: Intent => Unit):
 
 object DraftBanner:
   val HeightPx: Double = 30
+
+/** The model's notice (a refused command, a layout that could not be read),
+  * with Dismiss. S1.9 may move it; the words are the view-model's.
+  */
+final class NoticeBar(dispatch: Intent => Unit, messages: Messages):
+
+  val text: Label = Fx.label("", "notice-text")
+
+  val node: HBox = HBox()
+  node.getStyleClass.add("notice-bar")
+  Fx.fixHeight(node, DraftBanner.HeightPx)
+  node.setVisible(false)
+  node.setManaged(false)
+
+  def render(vm: Option[NoticeVM]): Unit =
+    node.setVisible(vm.isDefined)
+    node.setManaged(vm.isDefined)
+    vm.foreach { n =>
+      text.setText(n.text)
+      val dismiss = ActionVM(messages(MessageId.Dismiss), true, n.dismiss)
+      node.getChildren.setAll(
+        text,
+        Fx.spacer(),
+        Fx.button(dismiss, dispatch, "bar-button")
+      ): Unit
+    }

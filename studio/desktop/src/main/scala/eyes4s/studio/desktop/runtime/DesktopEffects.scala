@@ -16,7 +16,7 @@
 
 package eyes4s.studio.desktop.runtime
 
-import eyes4s.studio.app.{AppEffect, Intent, PlatformDialog}
+import eyes4s.studio.app.{AppEffect, DockCommand, Intent, PlatformDialog}
 import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.core.execution.{ExecutionEffect, ExecutionError}
 
@@ -48,13 +48,14 @@ enum EffectProblem derives CanEqual:
   *
   * Execution effects go to the session's execution service, whose events
   * come back as [[Intent.Execution]]; dialogs go to the platform; a layout
-  * reset goes to the perspective host. Effects whose service does not exist
+  * reset and tab cycling go to the perspective host. Effects whose service does not exist
   * yet are recorded in [[problems]]. `ui` runs a callback on the UI thread.
   */
 final class DesktopEffects(
     session: StudioSession,
     dialogs: PlatformDialogs,
     resetLayouts: Perspective => Unit,
+    dock: DockCommand => Unit,
     ui: (() => Unit) => Unit
 ) extends EffectPerformer:
 
@@ -82,6 +83,7 @@ final class DesktopEffects(
       }
     case AppEffect.OpenDialog(d)       => dialogs.open(d, dispatch)
     case AppEffect.ResetLayouts(p)     => resetLayouts(p)
+    case AppEffect.Dock(command)       => dock(command)
     case e @ AppEffect.RevealProject   => report(EffectProblem.NotWired(e, "S2.9"))
     case e @ AppEffect.Persist         => report(EffectProblem.NotWired(e, "S2.4a"))
     case e: AppEffect.Journal          => report(EffectProblem.NotWired(e, "S2.4b"))

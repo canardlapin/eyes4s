@@ -77,7 +77,8 @@ enum MessageId derives CanEqual:
   case CommandResetPerspective, MenuView, WindowEdited
 
   // --- Notices ---------------------------------------------------------------------
-  case NoticeUnavailable, NoticeBlocked
+  case NoticeUnavailable, NoticeBlocked, NoticeLayoutsReset, Dismiss
+  case CommandPreviousPane, CommandNextTab, CommandPreviousTab
 
 /** A message catalogue: one template per id. */
 trait Catalogue:
@@ -249,8 +250,14 @@ object Catalogue:
       case MenuView                => "View"
       case WindowEdited            => "{0} — Edited"
 
-      case NoticeUnavailable => "{0} is not available now."
-      case NoticeBlocked     => "{0}: {1}"
+      case NoticeUnavailable  => "{0} is not available now."
+      case NoticeBlocked      => "{0}: {1}"
+      case NoticeLayoutsReset =>
+        "The saved layout of {0} could not be read ({1}); it shows the default layout."
+      case Dismiss             => "Dismiss"
+      case CommandPreviousPane => "Previous pane"
+      case CommandNextTab      => "Next tab"
+      case CommandPreviousTab  => "Previous tab"
 
 /** Renders catalogue templates. Total: an argument a template does not name
   * is ignored, and a placeholder with no argument is left as written, so a

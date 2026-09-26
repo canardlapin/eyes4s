@@ -17,7 +17,11 @@
 package eyes4s.studio.desktop.shell
 
 import cats.effect.unsafe.implicits.global
-import eyes4s.studio.app.{AppModel, Intent, PlatformDialog, ProjectName, StoryModels}
+import eyes4s.studio.app.{AppModel, Intent, Notice, PlatformDialog, StoryModels}
+import eyes4s.studio.app.tokens.Theme
+import eyes4s.studio.core.command.Command
+import eyes4s.studio.core.document.LayoutBlob
+import eyes4s.studio.desktop.StudioStyles
 import eyes4s.studio.app.layout.{PaneId as StudioPaneId, StudioLayouts}
 import eyes4s.studio.app.text.Format
 import eyes4s.studio.app.vm.{Menus, Shell, ShellText}
@@ -58,23 +62,24 @@ class AppShellFxSuite extends StudioFxSuite:
     opened.clear()
     super.afterEach(context)
 
-  /** Records every dialog asked for; answers Rename… with `rename`. */
-  private final class Dialogs(rename: Option[ProjectName]) extends PlatformDialogs:
+  /** Records every dialog asked for; types `rename` into Rename…. */
+  private final class Dialogs(rename: Option[String]) extends PlatformDialogs:
     val asked = scala.collection.mutable.ArrayBuffer.empty[PlatformDialog]
     def open(dialog: PlatformDialog, dispatch: Intent => Unit): Unit =
       asked += dialog
       if dialog == PlatformDialog.RenameProject then
-        rename.foreach(n => dispatch(Intent.RenameProject(n)))
+        rename.foreach(t => dispatch(StudioWindow.renameAnswer(t)))
 
   private def boot(
       fx: FxStage,
       model: AppModel,
       moment: StoryMoment = StoryMoment.T2,
-      dialogs: PlatformDialogs = Dialogs(None)
+      dialogs: PlatformDialogs = Dialogs(None),
+      theme: Theme = Theme.Light
   ): StudioWindow =
     val w = runOnFx(
       StudioWindow
-        .open(model, moment, dialogs = Some(dialogs))
+        .open(model, moment, theme, dialogs = Some(dialogs))
         .fold(e => fail(e.message), identity)
     )
     opened += w
@@ -180,24 +185,27 @@ class AppShellFxSuite extends StudioFxSuite:
 
   private def at(m: AppModel, i: Intent): AppModel = AppModel.update(m, i)._1
 
-  private val boards: Vector[(String, () => AppModel, String)] = Vector(
+  /** Board, model, layout, and whether a dark snapshot is taken too. */
+  private val boards: Vector[(String, () => AppModel, String, Boolean)] = Vector(
     (
       "Data",
       () => at(StoryModels.t2Compare, Intent.SwitchPerspective(Perspective.Data)),
-      "data.verify"
+      "data.verify",
+      true
     ),
-    ("Explore", () => StoryModels.t2Explore, "explore"),
-    ("Analysis", () => StoryModels.t2Analysis, "analysis"),
+    ("Explore", () => StoryModels.t2Explore, "explore", false),
+    ("Analysis", () => StoryModels.t2Analysis, "analysis", false),
     (
       "Compare summary",
       () => at(StoryModels.t2Compare, Intent.OpenCrumb(0)),
-      "compare.summary"
+      "compare.summary",
+      false
     ),
-    ("Compare query", () => StoryModels.t2Compare, "compare.query"),
-    ("Figures", () => StoryModels.t2Figures, "figures")
+    ("Compare query", () => StoryModels.t2Compare, "compare.query", true),
+    ("Figures", () => StoryModels.t2Figures, "figures", false)
   )
 
-  boards.foreach { (board, model, layout) =>
+  boards.foreach { (board, model, layout, dark) =>
     fxStage.test(s"t2 · $board: the shell renders the S1.0 view-models; snapshot") { fx =>
       val w = boot(fx, model())
       assertEquals(runOnFx(w.host.active), Some(layout))
@@ -205,6 +213,17 @@ class AppShellFxSuite extends StudioFxSuite:
       assertEquals(runOnFx(fx.stage.getTitle), runOnFx(Menus.windowTitle(w.runtime.model)))
       val files = fx.snapshot(StudioTheme.Light)
       assertEquals(files.map(_.getFileName.toString), List("light-1x.png", "light-2x.png"))
+      if dark then
+        val sheets =
+          StudioStyles.stylesheets(Theme.Dark).fold(e => fail(e.message), identity)
+        runOnFx(w.root.getStylesheets.setAll(sheets*))
+        val darkFiles = fx.snapshot(StudioTheme.Dark)
+        assertEquals(
+          darkFiles.map(_.getFileName.toString),
+          List("dark-1x.png", "dark-2x.png")
+        )
+        // The texts do not depend on the theme.
+        assertNoDiff(texts(w).mkString("\n"), expected(w).mkString("\n"))
     }
   }
 
@@ -257,6 +276,18 @@ class AppShellFxSuite extends StudioFxSuite:
     // The rows fill the 900 px window: nothing else takes height.
     val dock = height(w.shell.dockArea)
     assertEqualsDouble(44 + 32 + 30 + dock + 24, 900, 1)
+    // The switcher pill: 32 px, radius 7, centred in the bar, clear of its
+    // bottom hairline (Main.dc.html).
+    val pill                  = w.shell.appBar.perspectives
+    val (top, bottom, radius) = runOnFx {
+      val b = w.shell.appBar.node.sceneToLocal(pill.localToScene(pill.getLayoutBounds))
+      val r = pill.getBackground.getFills.get(0).getRadii.getTopLeftHorizontalRadius
+      (b.getMinY, b.getMaxY, r)
+    }
+    assertEqualsDouble(bottom - top, 32, 1)
+    assertEqualsDouble(top, (44 - 32) / 2.0, 1)
+    assert(bottom <= 43, s"the pill reaches $bottom, over the hairline at 43")
+    assertEqualsDouble(radius, 7, 0)
   }
 
   // --- Perspectives: ⌘1–5, retained panes, Compare by trail depth ------------
@@ -450,8 +481,7 @@ class AppShellFxSuite extends StudioFxSuite:
   // --- The project chip and the window title ---------------------------------
 
   fxStage.test("project chip menu: Rename… renames and marks the window edited") { fx =>
-    val name    = ProjectName.of("recall-study").fold(e => fail(e.message), identity)
-    val dialogs = Dialogs(Some(name))
+    val dialogs = Dialogs(Some("recall-study"))
     val w       = boot(fx, StoryModels.t2Compare, dialogs = dialogs)
     val items   = runOnFx(w.shell.appBar.project.getItems.asScala.toVector)
     assertEquals(
@@ -465,4 +495,128 @@ class AppShellFxSuite extends StudioFxSuite:
     assertEquals(runOnFx(fx.stage.getTitle), "recall-study.eyes — Edited")
     runOnFx(items(2).fire())
     assertEquals(dialogs.asked.last, PlatformDialog.ProjectInfo)
+  }
+
+  fxStage.test("Rename… with a blank name shows the refusal and keeps the name") { fx =>
+    val w = boot(fx, StoryModels.t2Compare, dialogs = Dialogs(Some("   ")))
+    runOnFx(w.shell.appBar.project.getItems.get(0).fire())
+    fx.awaitLayout()
+    assertEquals(runOnFx(w.shell.appBar.project.getText), "memory-study")
+    assert(runOnFx(w.shell.notice.node.isVisible))
+    assertEquals(runOnFx(drawn(w.shell.notice.text)), "A project name is blank.")
+    assertEquals(runOnFx(fx.stage.getTitle), "memory-study.eyes")
+    // Dismiss puts it away.
+    val dismiss = runOnFx(w.shell.notice.node.getChildren.asScala.collectFirst {
+      case b: Button => b
+    }.get)
+    fx.robot.click(dismiss)
+    assert(runOnFx(!w.shell.notice.node.isVisible))
+    assertEquals(runOnFx(w.runtime.model.notice), None)
+  }
+
+  // --- Maximize and keys the dock would otherwise own ------------------------
+
+  /** The maximize button in the header of the group showing `pane`. */
+  private def maximizeButton(w: StudioWindow, pane: String): javafx.scene.Node = runOnFx {
+    val node  = w.host.node(StudioPaneId.of(pane).fold(e => fail(e.message), identity)).get
+    val group = Iterator
+      .iterate(node)(_.getParent)
+      .takeWhile(_ != null)
+      .find(_.getStyleClass.contains("dock-group"))
+      .getOrElse(fail(s"$pane is in no group"))
+    group.lookup(".dock-header-button.maximize")
+  }
+
+  fxStage.test("the header's maximize reaches the model; ⌘⇧↩ then restores both") { fx =>
+    val w      = boot(fx, StoryModels.t2Compare)
+    val model  = () => runOnFx(w.runtime.model)
+    val docked = () => runOnFx(w.host.dock.state.maximized)
+    // Another group than the focused one (a wide one: a narrow header folds
+    // its maximize into the tab menu): the model follows focus too.
+    fx.robot.click(maximizeButton(w, "compare.contrast"))
+    assert(model().isMaximized)
+    assertEquals(model().focusedPane.value, "compare.contrast")
+    assert(docked().isDefined)
+    fx.robot.press(KeyCode.ENTER, shortcut.copy(shift = true))
+    assert(!model().isMaximized)
+    assertEquals(docked(), None)
+    // And the other way round: the key maximizes, the header restores.
+    fx.robot.press(KeyCode.ENTER, shortcut.copy(shift = true))
+    assert(model().isMaximized && docked().isDefined)
+    fx.robot.click(maximizeButton(w, "compare.contrast"))
+    assert(!model().isMaximized)
+    assertEquals(docked(), None)
+  }
+
+  fxStage.test("F6 and ⇧F6 cycle groups; ⌃⇥ and ⌃⇧⇥ cycle tabs through the dock") { fx =>
+    val w       = boot(fx, StoryModels.t2Compare)
+    def focused = runOnFx(w.runtime.model.focusedPane.value)
+    def docked  = runOnFx(w.host.dock.state.focused.map(_.value))
+    assertEquals(focused, "compare.query-trial")
+    fx.robot.press(KeyCode.F6)
+    assertEquals(focused, "compare.reference-trial")
+    fx.robot.press(KeyCode.F6, Modifiers(shift = true))
+    assertEquals(focused, "compare.query-trial")
+    fx.robot.press(KeyCode.TAB, Modifiers(control = true))
+    fx.awaitLayout()
+    assertEquals(focused, "compare.query-trial.table")
+    assertEquals(docked, Some("compare.query-trial.table"))
+    fx.robot.press(KeyCode.TAB, Modifiers(control = true, shift = true))
+    fx.awaitLayout()
+    assertEquals(focused, "compare.query-trial")
+    assertEquals(docked, Some("compare.query-trial"))
+  }
+
+  // --- Saved layouts: no spurious saves; unreadable ones never block ----------
+
+  fxStage.test("touring every perspective, focusing and maximizing saves no layout") { fx =>
+    val w = boot(fx, StoryModels.t2Compare)
+    Vector(1, 2, 3, 4, 5).foreach { d =>
+      fx.robot.press(KeyCode.valueOf(s"DIGIT$d"), shortcut)
+      fx.robot.press(KeyCode.F6)
+    }
+    fx.robot.press(KeyCode.DIGIT4, shortcut)
+    dispatch(fx, w, Intent.OpenCrumb(0))
+    fx.robot.press(KeyCode.ENTER, shortcut.copy(shift = true))
+    assert(runOnFx(w.host.dock.state.maximized).isDefined)
+    val captured = runOnFx(w.host.capture())
+    assertEquals(captured.map(_._1), Perspective.values.toVector)
+    assertEquals(captured.collect { case (p, Some(_)) => p }, Vector.empty)
+    runOnFx(w.captureLayouts())
+    assertEquals(runOnFx(w.runtime.model.document.presentation.layouts), Vector.empty)
+  }
+
+  private val corrupt: Vector[(String, String)] = Vector(
+    "{not json"                   -> "not JSON",
+    "{\"compare.query\": 5}"      -> "not a layout",
+    "{\"compare.elsewhere\": {}}" -> "an unknown layout"
+  )
+
+  corrupt.foreach { (text, what) =>
+    fxStage.test(s"a saved layout that is $what: defaults, a notice, and the window opens") {
+      fx =>
+        val broken = at(
+          StoryModels.t2Compare,
+          Intent.Dispatch(Command.SaveLayout(Perspective.Compare, Some(LayoutBlob(text))))
+        )
+        assertEquals(AppModel.savedLayout(broken, Perspective.Compare), Some(LayoutBlob(text)))
+        val w = boot(fx, broken)
+        assertEquals(runOnFx(w.host.active), Some("compare.query"))
+        val pairs =
+          w.host.dockId(StudioPaneId.of("compare.pairs").fold(e => fail(e.message), identity))
+        assertEquals(
+          runOnFx(w.host.dock.state.groupOf(pairs).map(_.active.value)),
+          Some("compare.contrast")
+        )
+        assert(runOnFx(w.shell.notice.node.isVisible))
+        val notice = runOnFx(drawn(w.shell.notice.text))
+        assert(notice.startsWith("The saved layout of Compare could not be read ("), notice)
+        assert(notice.endsWith("); it shows the default layout."), notice)
+        runOnFx(w.runtime.model.notice) match
+          case Some(Notice.LayoutsReset(ps, _)) => assertEquals(ps, Vector(Perspective.Compare))
+          case other                            => fail(s"expected LayoutsReset, got $other")
+        // The next capture replaces the unreadable layout with the default.
+        runOnFx(w.captureLayouts())
+        assertEquals(runOnFx(w.runtime.model.document.presentation.layouts), Vector.empty)
+    }
   }

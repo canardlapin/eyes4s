@@ -19,7 +19,7 @@ package eyes4s.studio.desktop.shell
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.app.keys.CommandRegistry
 import eyes4s.studio.app.text.Messages
-import eyes4s.studio.app.vm.{Menus, Shell}
+import eyes4s.studio.app.vm.{MenuVM, Menus, Shell}
 import eyes4s.studio.desktop.dock.PerspectiveHost
 import javafx.scene.control.{Menu, MenuBar, MenuItem}
 import javafx.scene.input.KeyEvent
@@ -37,6 +37,7 @@ final class AppShell(host: PerspectiveHost, dispatch: Intent => Unit, messages: 
   val contextStrip: ContextStrip = ContextStrip(dispatch)
   val banner: DraftBanner        = DraftBanner(dispatch)
   val statusBar: StatusBar       = StatusBar(dispatch)
+  val notice: NoticeBar          = NoticeBar(dispatch, messages)
 
   /** The dock area: grows to fill the window. */
   val dockArea: StackPane = StackPane(host.dock.view)
@@ -53,13 +54,21 @@ final class AppShell(host: PerspectiveHost, dispatch: Intent => Unit, messages: 
     menuBar.setVisible(false)
 
   val root: VBox =
-    VBox(menuBar, appBar.node, contextStrip.node, banner.node, dockArea, statusBar.node)
+    VBox(
+      menuBar,
+      appBar.node,
+      contextStrip.node,
+      notice.node,
+      banner.node,
+      dockArea,
+      statusBar.node
+    )
   root.getStyleClass.add("studio-shell")
 
   root.addEventHandler(
     KeyEvent.KEY_PRESSED,
     (e: KeyEvent) =>
-      ShellKeys.chord(e).filter(CommandRegistry.keymap.contains).foreach { c =>
+      ShellKeys.chords(e).find(CommandRegistry.keymap.contains).foreach { c =>
         dispatch(Intent.KeyPressed(c))
         e.consume()
       }
@@ -71,17 +80,28 @@ final class AppShell(host: PerspectiveHost, dispatch: Intent => Unit, messages: 
     contextStrip.render(vm.context)
     banner.render(vm.banner)
     statusBar.render(vm.status)
-    val view = Menus.view(model, messages)
-    val menu = Menu(view.title)
-    menu.getItems.setAll(view.items.map { a =>
-      val item = MenuItem(a.label)
-      item.setMnemonicParsing(false)
-      item.setDisable(!a.enabled)
-      item.setOnAction(_ => dispatch(a.intent))
-      item
-    }*)
-    menuBar.getMenus.setAll(menu)
+    notice.render(vm.notice)
+    renderMenu(Menus.view(model, messages))
     host.sync(model)
+
+  private var shownMenu: Option[MenuVM] = None
+
+  /** Rebuilt only when its view-model changes, so an open menu is not
+    * replaced under the pointer on every update.
+    */
+  private def renderMenu(view: MenuVM): Unit =
+    if !shownMenu.contains(view) then
+      shownMenu = Some(view)
+      val menu = Menu(view.title)
+      menu.setMnemonicParsing(false)
+      menu.getItems.setAll(view.items.map { a =>
+        val item = MenuItem(a.label)
+        item.setMnemonicParsing(false)
+        item.setDisable(!a.enabled)
+        item.setOnAction(_ => dispatch(a.intent))
+        item
+      }*)
+      menuBar.getMenus.setAll(menu): Unit
 
 object AppShell:
   /** Whether JavaFX draws the menu bar in the platform's own place. */

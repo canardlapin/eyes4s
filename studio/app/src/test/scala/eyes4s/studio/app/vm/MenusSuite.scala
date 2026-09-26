@@ -126,3 +126,57 @@ class MenusSuite extends munit.FunSuite:
     assertEquals(restored.focusedPane, t2.focusedPane)
     assert(!restored.isMaximized)
   }
+
+  test("a refused rename is a notice naming the error; nothing changes") {
+    val (m, effects) =
+      run(t2, Intent.RenameRefused(eyes4s.studio.app.AppError.BlankProjectName))
+    assertEquals(effects, Vector.empty)
+    assertEquals(m.project, t2.project)
+    assertEquals(Shell.project(m).notice.map(_.text), Some("A project name is blank."))
+  }
+
+  test("unreadable saved layouts are a notice; the document is untouched") {
+    val (m, effects) =
+      run(t2, Intent.LayoutsUnreadable(Vector(Perspective.Compare), "not JSON"))
+    assertEquals(effects, Vector.empty)
+    assertEquals(m.document, t2.document)
+    assertEquals(
+      Shell.project(m).notice.map(_.text),
+      Some(
+        "The saved layout of Compare could not be read (not JSON); it shows the default layout."
+      )
+    )
+  }
+
+  test("the dock's own maximize is reported and idempotent; F6 and ⇧F6 cycle groups") {
+    val contrast   = ok(eyes4s.studio.app.layout.PaneId.of("compare.contrast"))
+    val (on, none) = run(t2, Intent.SetMaximized(Some(contrast)))
+    assert(on.isMaximized)
+    assertEquals(on.focusedPane, contrast)
+    assertEquals(none, Vector.empty)
+    assertEquals(run(on, Intent.SetMaximized(Some(contrast)))._1, on)
+    assert(!run(on, Intent.SetMaximized(None))._1.isMaximized)
+    // A pane the layout does not show changes nothing.
+    val elsewhere = ok(eyes4s.studio.app.layout.PaneId.of("figures.page"))
+    assertEquals(run(t2, Intent.SetMaximized(Some(elsewhere)))._1, t2)
+    val back = run(on, Intent.FocusPane(t2.focusedPane))._1
+    val next = run(back, Intent.FocusNextPane)._1
+    assert(!next.isMaximized)
+    assertNotEquals(next.focusedPane, t2.focusedPane)
+    assertEquals(run(next, Intent.FocusPreviousPane)._1.focusedPane, t2.focusedPane)
+    val chord = eyes4s.studio.app.keys.KeyChord.shift(eyes4s.studio.app.keys.Key.F6)
+    assertEquals(run(next, Intent.KeyPressed(chord))._1.focusedPane, t2.focusedPane)
+  }
+
+  test("⌃⇥ and ⌃⇧⇥ are the dock's tab cycling, as effects") {
+    import eyes4s.studio.app.keys.{Key, KeyChord}
+    import eyes4s.studio.app.DockCommand
+    assertEquals(
+      run(t2, Intent.KeyPressed(KeyChord.control(Key.Tab))),
+      (t2, Vector(AppEffect.Dock(DockCommand.NextTab)))
+    )
+    assertEquals(
+      run(t2, Intent.KeyPressed(KeyChord.controlShift(Key.Tab))),
+      (t2, Vector(AppEffect.Dock(DockCommand.PreviousTab)))
+    )
+  }

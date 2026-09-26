@@ -20,6 +20,9 @@ import eyes4s.studio.app.{AppEffect, AppModel, Intent}
 
 import scala.collection.mutable
 
+/** A listener threw while rendering the model after `intent`. */
+final case class ListenerFailure(intent: Intent, error: Throwable)
+
 /** Performs the effects [[AppModel.update]] returns (DESIGN_SPEC section 13):
   * services, platform dialogs, the dock. Results come back as intents
   * through `dispatch`, never as a direct model change.
@@ -49,6 +52,21 @@ final class StudioRuntime(initial: AppModel, performer: EffectPerformer):
     listeners += f
     f(current)
 
+  /** A listener that throws is reported and skipped: the other listeners
+    * and the intent's effects still run.
+    */
+  private def notify(f: AppModel => Unit, model: AppModel, intent: Intent): Unit =
+    try f(model)
+    catch
+      case scala.util.control.NonFatal(e) =>
+        failures += ListenerFailure(intent, e)
+        System.err.println(s"A view failed to render after $intent: $e")
+
+  private val failures = mutable.ArrayBuffer.empty[ListenerFailure]
+
+  /** Every listener failure so far, in order. */
+  def listenerFailures: Vector[ListenerFailure] = failures.toVector
+
   def dispatch(intent: Intent): Unit =
     queued.enqueue(intent)
     if !running then
@@ -58,6 +76,6 @@ final class StudioRuntime(initial: AppModel, performer: EffectPerformer):
           val next             = queued.dequeue()
           val (model, effects) = AppModel.update(current, next)
           current = model
-          listeners.foreach(_(model))
+          listeners.foreach(notify(_, model, next))
           effects.foreach(performer.perform(_, dispatch))
       finally running = false

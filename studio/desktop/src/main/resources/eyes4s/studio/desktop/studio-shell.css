@@ -112,11 +112,20 @@
   -fx-text-fill: -es-ink;
 }
 
+.project-chip > .label {
+  -fx-text-fill: -es-ink-2;
+}
+
 .project-chip > .arrow-button > .arrow {
   -fx-background-color: -es-ink-2;
 }
 
+/* The switcher pill: 32 px (28 px buttons in a 2 px inset), centred in the
+ * bar and clear of its hairline, as on the boards. */
 .perspectives {
+  -fx-min-height: 32px;
+  -fx-pref-height: 32px;
+  -fx-max-height: 32px;
   -fx-spacing: 2;
   -fx-padding: 2;
   -fx-background-color: -es-surface-3;
@@ -167,6 +176,12 @@
 
 .jobs-count {
   -fx-font-family: "IBM Plex Mono";
+}
+
+/* Idle is the board's plain chip: regular weight in ink-2. */
+.jobs:idle .jobs-title {
+  -fx-font-family: "IBM Plex Sans";
+  -fx-text-fill: -es-ink-2;
 }
 
 .jobs:failed .jobs-chip {
@@ -271,6 +286,20 @@
 
 .draft-chip:blocked {
   -fx-border-color: -es-fail;
+}
+
+/* ---- notices ------------------------------------------------------------ */
+
+.notice-bar {
+  -fx-alignment: center-left;
+  -fx-spacing: 10;
+  -fx-padding: 0 12 0 12;
+  -fx-background-color: -es-hairline, -es-warn-soft;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.notice-text {
+  -fx-text-fill: -es-warn-text;
 }
 
 /* ---- 4 · draft banner, 30 px -------------------------------------------- */

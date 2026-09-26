@@ -132,6 +132,27 @@ object CommandRegistry:
     m => Option.when(m.layout.groups.size > 1)(Intent.FocusNextPane)
   )
 
+  val previousPane: AppCommand = AppCommand(
+    CommandId.declared("pane.previous"),
+    MessageId.CommandPreviousPane,
+    Some(KeyChord.shift(Key.F6)),
+    m => Option.when(m.layout.groups.size > 1)(Intent.FocusPreviousPane)
+  )
+
+  val nextTab: AppCommand = AppCommand(
+    CommandId.declared("tab.next"),
+    MessageId.CommandNextTab,
+    Some(KeyChord.control(Key.Tab)),
+    always(Intent.NextTab)
+  )
+
+  val previousTab: AppCommand = AppCommand(
+    CommandId.declared("tab.previous"),
+    MessageId.CommandPreviousTab,
+    Some(KeyChord.controlShift(Key.Tab)),
+    always(Intent.PreviousTab)
+  )
+
   val maximize: AppCommand = AppCommand(
     CommandId.declared("pane.maximize"),
     MessageId.CommandMaximize,
@@ -227,6 +248,9 @@ object CommandRegistry:
     undoView,
     redoView,
     nextPane,
+    previousPane,
+    nextTab,
+    previousTab,
     maximize,
     cancelRun,
     showRun,
