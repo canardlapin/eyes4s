@@ -1,0 +1,89 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/* Generated from eyes4s.studio.app.tokens.Tokens (ticket S1.1). Do not edit:
+ * change Tokens.scala and run `sbt studioTokens`. */
+
+/* Eyes Studio tokens, dark theme: JavaFX looked-up colours. */
+.root {
+  -es-ground: #121315;
+  -es-surface: #1B1C1F;
+  -es-surface-2: #222327;
+  -es-surface-3: #2A2C31;
+  -es-hairline: #34363C;
+  -es-ink: #ECEAE5;
+  -es-ink-2: #BDBAB3;
+  -es-ink-3: #9C9990;
+  -es-accent: #43B5AA;
+  -es-accent-soft: #183A37;
+  -es-on-accent: #0B1413;
+  -es-query: #D6CBFF;
+  -es-query-soft: #2B2544;
+  -es-match: #5C95E0;
+  -es-match-soft: #1D2A3D;
+  -es-match-text: #7FB0EE;
+  -es-control: #E8A23C;
+  -es-control-fill: #E8A23C;
+  -es-control-text: #EBB066;
+  -es-control-soft: #3A2A14;
+  -es-fail: #F08A7E;
+  -es-fail-soft: #3A1E1B;
+  -es-warn-text: #E7C274;
+  -es-warn-soft: #33290F;
+  -es-neutral-mark: rgba(236,234,229,0.35);
+  -es-sel-ring-inner: #000000;
+  -es-tl-bg: #2B2B2B;
+  -es-tl-text: #B0B0B0;
+  -es-stage: #1A1A1A;
+  -es-on-stage: #D9D6CF;
+  -es-halo: #FFFFFF;
+  -es-ramp-0: #F9D9EA;
+  -es-ramp-1: #E58FB9;
+  -es-ramp-2: #B83F86;
+  -es-ramp-3: #6B0F4F;
+  -es-div-neg: #2E5A9C;
+  -es-div-mid: #F3F1EC;
+  -es-div-pos: #B4442F;
+  -es-screen: #9A9A96;
+  -es-isoline-ink: rgba(28,30,33,0.8);
+  -es-isoline-case: rgba(255,255,255,0.7);
+  -es-paper: #FFFFFF;
+  -es-paper-ink: #1C1E21;
+  -es-paper-ink-2: #464B52;
+  -es-paper-rule: #C9C5BC;
+  -es-fig-query: #3A2E6E;
+  -es-fig-match: #2F6DB5;
+  -es-fig-control: #B86E0E;
+  -es-fig-control-fill: #D98A1C;
+}
+
+/* Stage variants: set one of these style classes on the stage node. */
+.stage-dark {
+  -es-stage: #1A1A1A;
+  -es-on-stage: #D9D6CF;
+  -es-halo: #FFFFFF;
+}
+
+.stage-mid {
+  -es-stage: #767676;
+  -es-on-stage: #FFFFFF;
+  -es-halo: #FFFFFF;
+}
+
+.stage-light {
+  -es-stage: #F2F2F2;
+  -es-on-stage: #1C1E21;
+  -es-halo: #1C1E21;
+}
