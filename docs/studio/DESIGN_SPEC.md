@@ -64,8 +64,8 @@ Boards must use var(--…) — no literal hex outside the token block. Light:
 --sel-ring: 0 0 0 2px #FFFFFF, 0 0 0 4px var(--ink)
 Dark ("es dark"): --ground #121315 · --surface #1B1C1F · --surface-2 #222327 ·
 --surface-3 #2A2C31 · --hairline #34363C · --ink #ECEAE5 · --ink-2 #BDBAB3 · --ink-3 #9C9990 ·
---accent #43B5AA · --accent-soft #183A37 · --on-accent #0B1413 · --query #B7A6F0 ·
---query-soft #2B2544 · --match #7FB0EE · --match-soft #1D2A3D · --control #E8A23C ·
+--accent #43B5AA · --accent-soft #183A37 · --on-accent #0B1413 · --query #D6CBFF ·
+--query-soft #2B2544 · --match #5C95E0 · --match-text #7FB0EE · --match-soft #1D2A3D · --control #E8A23C ·
 --control-text #EBB066 · --control-soft #3A2A14 · --fail #F08A7E · --fail-soft #3A1E1B ·
 --warn-text #E7C274 · --warn-soft #33290F · --sel-ring: 0 0 0 2px #000000, 0 0 0 4px var(--ink)
 Accent (teal) has exactly three jobs: keyboard focus / focused group rule, primary action,
@@ -218,3 +218,19 @@ policy. Non-finite or unparseable coordinates still quarantine as before.
 **Control pool with repeated references.** The occurrence selection used for the matched
 reference also applies to the control pool, so each other item contributes one reference per
 participant. "All occurrences as controls" is a named option that is never the default.
+
+## 14. Token amendments from implementation (S1.1, 2026-09-26)
+
+The contrast suite found four places where the board values break this spec's own rules (text
+≥ 4.5:1, marks ≥ 3:1). The generated tokens take precedence over the boards:
+
+- **Mid stage.** It is `#767676` with a white `--on-stage` (4.54:1, L* ≈ 50). White on the board's `#808080` was 3.95:1.
+- **Halo.** `--halo` is a stage token. It is white on the dark and mid stages and ink on the light
+  stage. A white halo on the light stage was 1.12:1, and dark-theme query marks were 1.35:1.
+- **Control fill.** Light `--control-fill` (`#D98A1C`) is drawn only inside a `--control` outline,
+  never as a bare mark on chrome surfaces, where it reached only 2.3–2.7:1.
+- **Focus ring on the stage.** It is cased with the halo, the same way as the isolines.
+
+Paper tokens for figures (`--paper`, `--paper-ink`, `--paper-ink-2`, `--paper-rule`) and isoline casing tokens (`--isoline-case`, `--isoline-ink`) come from the same source.
+Open: the figure palette's control colour (`#D98A1C` on white paper, 2.76:1) is resolved in S9.2b,
+and the colour lint does not yet catch named CSS colours or `Color.*` constants.
