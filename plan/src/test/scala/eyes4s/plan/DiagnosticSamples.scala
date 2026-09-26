@@ -365,6 +365,7 @@ object DiagnosticSamples:
       CompareError.ZeroNorm("cosine", 0, 1),
       CompareError.RelativeEntropySupport("kl", 3, 0.1, 0),
       CompareError.CostMatrixLimitExceeded("emd", 100, 10),
+      CompareError.WorkLimitExceeded("distance correlation", 100, 4950L, 10L),
       CompareError.InvalidSubstitutionCost("dtw", 1, 2, Inf),
       CompareError.InvalidScore("cosine", ComparisonValueError.NonFiniteSimilarity(Inf)),
       CompareError.TooShort("path", 1, 2)

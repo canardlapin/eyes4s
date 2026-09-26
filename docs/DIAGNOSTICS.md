@@ -530,6 +530,7 @@ fails after rewriting, so review the change and run it again.
 | `compare.zero-norm` | `ZeroNorm` | `measure`, `leftNorm`, `rightNorm` |
 | `compare.relative-entropy-support` | `RelativeEntropySupport` | `measure`, `cellIndex`, `leftMass`, `rightMass` |
 | `compare.cost-matrix-limit-exceeded` | `CostMatrixLimitExceeded` | `measure`, `cells`, `limit` |
+| `compare.work-limit-exceeded` | `WorkLimitExceeded` | `measure`, `cells`, `pairs`, `limit` |
 | `compare.invalid-substitution-cost` | `InvalidSubstitutionCost` | `measure`, `leftIndex`, `rightIndex`, `value` |
 | `compare.invalid-score` | `InvalidScore` | `measure`, `underlying` |
 | `compare.too-short` | `TooShort` | `what`, `got`, `needed` |

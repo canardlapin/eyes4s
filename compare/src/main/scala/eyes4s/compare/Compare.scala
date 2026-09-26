@@ -98,6 +98,11 @@ enum CompareError derives CanEqual:
       rightMass: Double
   )
   case CostMatrixLimitExceeded(measure: String, cells: Int, limit: Int)
+
+  /** A quadratic measure over `cells` grid cells would visit `pairs` unordered
+    * cell pairs, more than the caller's `limit`. Nothing was computed.
+    */
+  case WorkLimitExceeded(measure: String, cells: Int, pairs: Long, limit: Long)
   case InvalidSubstitutionCost(
       measure: String,
       leftIndex: Int,
@@ -123,6 +128,9 @@ enum CompareError derives CanEqual:
     case CostMatrixLimitExceeded(measure, cells, limit) =>
       s"$measure would form a ${cells}x$cells cost matrix, above the " +
         s"$limit-cell limit. Use sliced Wasserstein, which is linear in the grid."
+    case WorkLimitExceeded(measure, cells, pairs, limit) =>
+      s"$measure over cells=$cells would visit pairs=$pairs cell pairs, exceeding " +
+        s"work limit=$limit pairs. Coarsen the grid or raise the limit explicitly."
     case InvalidSubstitutionCost(measure, leftIndex, rightIndex, value) =>
       s"$measure needs finite non-negative substitution costs; " +
         s"left[$leftIndex] versus right[$rightIndex] produced $value."
