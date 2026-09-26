@@ -1,0 +1,12 @@
+S4.2 pending macOS hand checks (fold into docs/studio/SHORTCUTS.md's pending
+hand checks when that file lands on main)
+
+- [ ] VoiceOver: Tab to a trial view; it is announced as one "fixation plot"
+      with the keyboard help text. Arrow, Home/End and Page Up/Down move the
+      roving cursor; VoiceOver speaks "Fixation N of P17 · ret_07" on each move
+      (notifyAccessibleAttributeChanged(TEXT)), and ", selected" after Enter.
+      Escape clears the selection and keeps focus in the view; Tab leaves it.
+- [ ] The 2 px accent focus ring, cased by the halo, shows only while the
+      window and the view have keyboard focus (headless tests drive the focus
+      input directly; one test checks the real focused property when the OS
+      gives the test window focus).

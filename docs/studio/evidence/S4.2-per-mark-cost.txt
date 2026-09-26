@@ -6,9 +6,9 @@ workaround=one GraphicsName per fixation mark (Intaglio NamedPicking treats a na
 marks=11520 surface=2200x1400 device px (2x)
 statistic=median of 5 after 2 warm-ups
 metric batch_ms per_mark_ms ratio
-lower_ms 0.85 3.95 4.6x
-javafx_compile_ms 0.79 7.79 9.9x
-named_picking_ms 28.13 27.59 1.0x
-draw_snapshot_ms 110.07 55.98 0.5x
-200_hits_ms 1618.23 1.53 0.0x
-trial_frame_compile_ms (PlotFrame: program, device scene, picking) 50.6
+lower_ms 0.56 2.35 4.2x
+javafx_compile_ms 0.51 3.56 7.0x
+named_picking_ms 15.36 44.28 2.9x
+draw_snapshot_ms 42.50 45.90 1.1x
+200_hits_ms 1202.45 2.12 0.0x
+trial_frame_compile_ms (PlotFrame: program, device scene, picking) 48.2

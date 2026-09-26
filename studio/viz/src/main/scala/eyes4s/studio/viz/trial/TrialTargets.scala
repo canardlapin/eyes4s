@@ -90,9 +90,16 @@ final class TrialTargets private (
   /** The target of fixation `ref`, if this trial draws it. */
   def target(ref: StudioRef): Option[MarkTarget] = byRef.get(ref)
 
-  /** The mark under `point` (device pixels), within `toleranceDevicePx` of its
-    * painted geometry: the nearest one, and of equally near ones the one drawn
-    * last.
+  /** The mark under `point` (device pixels): the nearest mark whose painted
+    * geometry lies within `toleranceDevicePx`, of equally near ones the one
+    * drawn last; failing that, the last-drawn mark whose centre lies within its
+    * painted reach of `point`.
+    *
+    * The fallback makes the inside of a hollow mark (a control ring, a dashed
+    * outside-window mark) pickable: Intaglio picks an unfilled outline on its
+    * annulus only, which leaves a dead centre in marks larger than the
+    * tolerance. It can go once Intaglio has an interior pick policy (intaglio
+    * bd-01M3FQQHVHHCEC349JV46VM4FB).
     */
   def pick(
       point: DevicePoint,
@@ -105,7 +112,13 @@ final class TrialTargets private (
         .hits(point, toleranceDevicePx)
         .left
         .map(TrialTargetError.Picking(sceneId, point, _))
-        .map(_.iterator.flatMap(h => byName.get(h.name)).nextOption())
+        .map(_.iterator.flatMap(h => byName.get(h.name)).nextOption().orElse(inside(point)))
+
+  // The last-drawn mark whose painted reach covers `point` (see `pick`).
+  private def inside(point: DevicePoint): Option[MarkTarget] =
+    targets.reverseIterator.find { t =>
+      math.hypot(t.anchor.x - point.x, t.anchor.y - point.y) <= t.mark.reachPx * deviceScale
+    }
 
   /** The screen position (data coordinates) drawn at `point`: the inverse of
     * the panel frame the marks were drawn through.

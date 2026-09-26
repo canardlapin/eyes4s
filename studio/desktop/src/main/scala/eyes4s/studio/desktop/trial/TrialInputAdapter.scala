@@ -23,6 +23,7 @@ import eyes4s.studio.desktop.plot.{PlotFrame, PlotHostStatus, PlotOverlay}
 import eyes4s.studio.viz.plot.CanvasPoint
 import eyes4s.studio.viz.trial.{
   OverlayPalette,
+  OverlayRing,
   OverlayRings,
   RovingKey,
   RovingMove,
@@ -38,7 +39,7 @@ import intaglio.{DevicePoint, IntaglioError, RenderPlan}
 import javafx.application.Platform
 import javafx.beans.value.ChangeListener
 import javafx.event.EventHandler
-import javafx.scene.AccessibleRole
+import javafx.scene.{AccessibleAttribute, AccessibleRole}
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.input.{KeyCode, KeyEvent, MouseButton, MouseEvent}
 
@@ -86,7 +87,14 @@ final class TrialInputAdapter private (
   private val mouseHandler: EventHandler[MouseEvent]           = e => onMouse(e)
   private val keyHandler: EventHandler[KeyEvent]               = e => onKey(e)
   private val focusListener: ChangeListener[java.lang.Boolean] =
-    (_, _, now) => commit(current.focusChanged(now.booleanValue))
+    (_, _, now) => focusChanged(now.booleanValue)
+
+  // What attach changed on the host, restored by dispose.
+  private val priorRole                                     = host.getAccessibleRole
+  private val priorRoleDescription                          = host.getAccessibleRoleDescription
+  private val priorText                                     = host.getAccessibleText
+  private val priorTraversable                              = host.isFocusTraversable
+  private var spoken: Option[String]                        = None
   private val frameListener: ChangeListener[PlotHostStatus] = (_, _, status) =>
     status match
       case PlotHostStatus.Drawn(_) => targets.foreach(t => commit(current.retarget(t)))
@@ -133,8 +141,15 @@ final class TrialInputAdapter private (
       val step = current.project(selection)
       current = step.state
       if step.redraw then
-        host.repaintOverlay()
+        host.repaintOverlay(under = true)
         describe()
+
+  /** The view gained or lost keyboard focus (the host's `focused` property,
+    * which is true only while its window has focus): the focus ring shows
+    * only while it has it.
+    */
+  private[trial] def focusChanged(now: Boolean): Unit =
+    if !disposed then commit(current.focusChanged(now))
 
   /** Removes the adapter's handlers, listeners and overlay. Idempotent. */
   def dispose(): Unit =
@@ -146,19 +161,34 @@ final class TrialInputAdapter private (
       host.focusedProperty.removeListener(focusListener)
       host.status.removeListener(frameListener)
       host.setOverlay(None)
-      host.setFocusTraversable(false)
-      host.setAccessibleText(null)
-      host.setAccessibleRoleDescription(null)
+      host.setFocusTraversable(priorTraversable)
+      host.setAccessibleRole(priorRole)
+      host.setAccessibleRoleDescription(priorRoleDescription)
+      host.setAccessibleText(priorText)
       cached = None
 
   // --- PlotOverlay ---------------------------------------------------------------
 
+  /** Hover and focus: redrawn on every pointer move and key. */
   def paint(gc: GraphicsContext, frame: PlotFrame): Unit =
+    draw(gc, frame, current.pointerRings)
+
+  /** The selection: redrawn only when the bus projects a new one, or with the
+    * scene.
+    */
+  override def paintUnder(gc: GraphicsContext, frame: PlotFrame): Unit =
+    draw(gc, frame, current.selectionRings)
+
+  private def draw(
+      gc: GraphicsContext,
+      frame: PlotFrame,
+      ringsOf: TrialTargets => Vector[OverlayRing]
+  ): Unit =
     for
       t     <- targets
       input <- view.input
     do
-      val rings = current.overlay(t)
+      val rings = ringsOf(t)
       if rings.nonEmpty then
         val drawn = for
           scene <- OverlayRings.scene(
@@ -241,7 +271,11 @@ final class TrialInputAdapter private (
         input <- view.input
         t     <- targets
       yield current.accessibleText(input.display.trial, t)
-      host.setAccessibleText(text.orNull)
+      if text != spoken then
+        spoken = text
+        host.setAccessibleText(text.orNull)
+        // Screen readers re-read the text only when told it changed.
+        host.notifyAccessibleAttributeChanged(AccessibleAttribute.TEXT)
 
   private def onFxThread(operation: String): Unit =
     if !Platform.isFxApplicationThread then

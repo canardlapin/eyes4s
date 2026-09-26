@@ -275,36 +275,47 @@ final case class TrialInputState private (
       if keptHover == hover then Vector.empty else Vector(Intent.HoverOver(view, None))
     TrialInputStep(next, intents, true)
 
-  /** The feedback rings to draw, in order: hover, selection, then the focus
-    * ring last, and only while the view has keyboard focus. A ring's radius is
-    * where its innermost band starts; a focus ring on a selected mark starts
-    * outside the selection ring, so both stay visible.
+  /** The feedback rings to draw, in order: the selection, the hover ring,
+    * then the focus ring last, and only while the view has keyboard focus. A
+    * ring's radius is where its innermost band starts; a focus ring on a
+    * selected mark starts outside the selection ring, so both stay visible.
     */
   def overlay(targets: TrialTargets): Vector[OverlayRing] =
-    def ring(kind: RingKind, ref: StudioRef.Fixation) =
-      val outside =
-        if kind == RingKind.Focus && selected.contains(ref) then
-          2.0 * OverlayRings.SelectedBandPx
-        else 0.0
-      targets
-        .target(ref)
-        .map(t =>
-          OverlayRing(
-            kind,
-            ref,
-            t.anchor,
-            (t.mark.reachPx + OverlayRings.GapPx + outside) * targets.deviceScale
-          )
-        )
-    val hovered = hover.flatMap(ring(RingKind.Hover, _)).toVector
-    val chosen  = selected
+    selectionRings(targets) ++ pointerRings(targets)
+
+  /** The selection layer: it changes only when the bus projects a new
+    * selection, so a host can keep it drawn across pointer moves.
+    */
+  def selectionRings(targets: TrialTargets): Vector[OverlayRing] =
+    selected
       .collect { case f: StudioRef.Fixation => f }
-      .flatMap(
-        ring(RingKind.Selected, _)
-      )
+      .flatMap(ring(targets, RingKind.Selected, _))
+
+  /** The pointer and cursor layer: hover, then focus. */
+  def pointerRings(targets: TrialTargets): Vector[OverlayRing] =
+    val hovered   = hover.flatMap(ring(targets, RingKind.Hover, _)).toVector
     val focusRing =
-      if focused then focus.flatMap(ring(RingKind.Focus, _)).toVector else Vector.empty
-    hovered ++ chosen ++ focusRing
+      if focused then focus.flatMap(ring(targets, RingKind.Focus, _)).toVector else Vector.empty
+    hovered ++ focusRing
+
+  private def ring(
+      targets: TrialTargets,
+      kind: RingKind,
+      ref: StudioRef.Fixation
+  ): Option[OverlayRing] =
+    val outside =
+      if kind == RingKind.Focus && selected.contains(ref) then 2.0 * OverlayRings.SelectedBandPx
+      else 0.0
+    targets
+      .target(ref)
+      .map(t =>
+        OverlayRing(
+          kind,
+          ref,
+          t.anchor,
+          (t.mark.reachPx + OverlayRings.GapPx + outside) * targets.deviceScale
+        )
+      )
 
   /** The view's accessible text: the focused mark, from its semantic id, or
     * how to use the view when no mark is focused.

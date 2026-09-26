@@ -319,6 +319,9 @@ class InputAdapterFxSuite extends StudioFxSuite:
     val (f, t) = showAndDraw(w, input(ret07, ret07Fix), 2.0)
     runOnFx(w.host.requestFocus())
     fx.robot.press(KeyCode.HOME)
+    // The host's focused property needs OS window focus, which a test run
+    // cannot rely on: drive the adapter's focus input directly.
+    runOnFx(w.adapter.focusChanged(true))
     val ring = runOnFx(w.adapter.state.overlay(t)) match
       case Vector(r) if r.kind == RingKind.Focus => r
       case other                                 => fail(s"unexpected overlay $other")
@@ -337,6 +340,26 @@ class InputAdapterFxSuite extends StudioFxSuite:
     runOnFx(w.view.dispose())
   }
 
+  fxStage.test("with OS window focus, the host's focused property shows the focus ring") { fx =>
+    val w      = Wired(viewIn(fx))
+    val (_, t) = showAndDraw(w, input(ret07, ret07Fix), 1.0)
+    runOnFx {
+      fx.stage.toFront()
+      fx.stage.requestFocus()
+      w.host.requestFocus()
+    }
+    fx.awaitLayout()
+    assume(runOnFx(fx.stage.isFocused), "the test window did not receive OS focus")
+    fx.robot.press(KeyCode.HOME)
+    assert(runOnFx(w.host.isFocused))
+    assertEquals(
+      runOnFx(w.adapter.state.overlay(t)).map(r => (r.kind, r.ref)),
+      Vector((RingKind.Focus, t.targets.head.ref))
+    )
+    runOnFx(w.adapter.dispose())
+    runOnFx(w.view.dispose())
+  }
+
   // --- Projection -----------------------------------------------------------------
 
   fxStage.test("a selection projected from the bus draws the ring without emitting") { fx =>
@@ -348,7 +371,10 @@ class InputAdapterFxSuite extends StudioFxSuite:
     assertEquals(w.selected, Vector(target.ref))
     assertEquals(w.emitted.toVector, Vector.empty, "the view echoed a projected selection")
     val after = runOnFx(w.host.profile)
-    assertEquals(after, before.copy(overlayDraws = before.overlayDraws + 1))
+    assertEquals(
+      after,
+      before.copy(overlayDraws = before.overlayDraws + 1, underDraws = before.underDraws + 1)
+    )
     val ring = runOnFx(w.adapter.state.overlay(t)) match
       case Vector(r) if r.kind == RingKind.Selected => r
       case other                                    => fail(s"unexpected overlay $other")
@@ -368,7 +394,17 @@ class InputAdapterFxSuite extends StudioFxSuite:
   fxStage.test("1,000 attach/dispose cycles leave no handler, listener or overlay behind") {
     fx =>
       val view = viewIn(fx)
-      val w    = Wired(view)
+      // What the host was before any adapter: dispose must restore it.
+      val prior = runOnFx {
+        val h = view.plotHost
+        (
+          h.getAccessibleRole,
+          h.getAccessibleRoleDescription,
+          h.getAccessibleText,
+          h.isFocusTraversable
+        )
+      }
+      val w = Wired(view)
       showAndDraw(w, input(enc03, enc03Fix), 1.0)
       runOnFx(w.adapter.dispose())
       val profile = runOnFx(w.host.profile)
@@ -393,8 +429,16 @@ class InputAdapterFxSuite extends StudioFxSuite:
         live = refs.count(_.get != null)
       assertEquals(live, 0, "disposed adapters are still reachable from the view")
       runOnFx {
-        assert(!w.host.isFocusTraversable)
-        assertEquals(w.host.getAccessibleText, null)
+        val h = w.host
+        assertEquals(
+          (
+            h.getAccessibleRole,
+            h.getAccessibleRoleDescription,
+            h.getAccessibleText,
+            h.isFocusTraversable
+          ),
+          prior
+        )
       }
       // Input never touched the scene, and a fresh adapter still works.
       assertEquals(runOnFx(w.host.profile).compiles, profile.compiles)
@@ -503,6 +547,73 @@ class InputAdapterFxSuite extends StudioFxSuite:
     assert(percentile(ss, 0.5) < 100.0, s"selection feedback median ${percentile(ss, 0.5)} ms")
     runOnFx(w.adapter.dispose())
     runOnFx(w.view.dispose())
+  }
+
+  fxStage.test("hover over 11,520 selected marks redraws only the pointer layer (recorded)") {
+    fx =>
+      val w      = Wired(viewIn(fx))
+      val (f, t) = showAndDraw(w, input(ret07, dense), 2.0)
+      // Another view selects every mark: one projection draws the selection layer.
+      val all                    = t.targets.map(_.ref)
+      val (projectMs, projected) = runOnFx {
+        val before = w.host.profile
+        val t0     = System.nanoTime
+        w.runtime.dispatch(
+          Intent.Select(
+            SelectionInput(
+              InputStamp(w.runtime.model.selection.context, otherView, 0L, InputCause.Pointer),
+              SelectionMode.Replace,
+              all
+            )
+          )
+        )
+        ((System.nanoTime - t0) / 1e6, w.host.profile.underDraws - before.underDraws)
+      }
+      assertEquals(projected, 1L)
+      assertEquals(w.selected.size, 11520)
+      assertEquals(runOnFx(w.adapter.lastOverlayError), None)
+      val random = scala.util.Random(11L)
+      val moves  = ArrayBuffer.empty[Double]
+      val before = runOnFx(w.host.profile)
+      (0 until 120).foreach { i =>
+        val target = t.targets(random.nextInt(t.targets.size))
+        val ms     = runOnFx {
+          val t0 = System.nanoTime
+          mouse(w, MouseEvent.MOUSE_MOVED, local(f, target.anchor))
+          (System.nanoTime - t0) / 1e6
+        }
+        assertEquals(runOnFx(w.adapter.state.hover), Some(target.ref))
+        if i >= 20 then moves += ms
+      }
+      val after = runOnFx(w.host.profile)
+      // Hover never redraws the selection layer or the scene.
+      assertEquals(
+        (after.underDraws, after.compiles, after.baseDraws),
+        (before.underDraws, before.compiles, before.baseDraws)
+      )
+      assert(after.overlayDraws > before.overlayDraws)
+      assertEquals(w.emitted.collect { case i: Intent.Select => i }.toVector, Vector.empty)
+      val ms = moves.toVector.sorted
+      evidence(
+        "S4.2-large-selection.txt",
+        machine ++ Seq(
+          "measurement=11,520 marks all selected from another view; then synthetic " +
+            "MOUSE_MOVED on the host, each onto a new mark, to the pointer layer redrawn; " +
+            "FX thread; not OS-pointer-to-display",
+          s"marks=${t.targets.size} selected=${all.size}",
+          s"device_scale=${f.surface.deviceScale}",
+          s"surface_logical=${f.surface.logicalWidth}x${f.surface.logicalHeight}",
+          s"project_all_ms=${"%.1f".format(projectMs)} (bus update + selection layer drawn once)",
+          "warmup_events=20",
+          s"samples=${ms.size}",
+          s"hover_move_median_ms=${"%.3f".format(percentile(ms, 0.5))}",
+          s"hover_move_p95_ms=${"%.3f".format(percentile(ms, 0.95))}",
+          s"selection_layer_draws_during_hover=${after.underDraws - before.underDraws}",
+          s"scene_draws_during_hover=${after.baseDraws - before.baseDraws}"
+        )
+      )
+      runOnFx(w.adapter.dispose())
+      runOnFx(w.view.dispose())
   }
 
   // --- The cost of one name per mark -------------------------------------------------

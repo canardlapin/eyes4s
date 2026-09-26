@@ -125,22 +125,31 @@ class RovingCursorSuite extends ScalaCheckSuite:
       scale <- List(1.0, 2.0)
       style <- MarkStyle.Neutral +: TrialRole.values.toList.map(MarkStyle.Role(_))
     do
-      val t = targets(marks = style, scale = scale)
-      // Marks drawn later than `target` whose painted reach covers `p`.
-      def covering(target: MarkTarget, p: DevicePoint) = t.targets.filter { o =>
-        o.mark.order > target.mark.order &&
+      val t                         = targets(marks = style, scale = scale)
+      def hollowMark(m: MarkTarget) =
+        m.mark.window == WindowSide.Outside || style == MarkStyle.Role(TrialRole.Control)
+      def reaches(o: MarkTarget, p: DevicePoint) =
         math.hypot(o.anchor.x - p.x, o.anchor.y - p.y) <= (o.mark.reachPx + 0.5) * scale
+      // The marks that may take `p` from `target`: any mark drawn later whose
+      // reach covers `p`, and, inside a hollow mark (where nothing of it is
+      // painted), any other mark whose reach covers `p`.
+      def covering(target: MarkTarget, p: DevicePoint) = t.targets.filter { o =>
+        val interior = hollowMark(target) &&
+          math.hypot(target.anchor.x - p.x, target.anchor.y - p.y) < 0.9 * target.radiusDevicePx
+        o.mark.order != target.mark.order && (o.mark.order > target.mark.order || interior) &&
+        reaches(o, p)
       }
       t.targets.foreach { target =>
-        // A hollow mark is its outline; a filled one its whole area. Probe the
-        // centre (filled) or the outline (hollow) in eight directions.
-        val hollow =
-          target.mark.window == WindowSide.Outside || style == MarkStyle.Role(TrialRole.Control)
-        val r      = if hollow then target.radiusDevicePx else 0.5 * target.radiusDevicePx
-        val probes = (target.anchor +: (0 until 8).map { i =>
+        // A filled mark is its whole area: probe its centre and half radius. A
+        // hollow mark is picked on its outline and, through the centre
+        // fallback, inside it: probe the centre, half radius and outline.
+        val hollow          = hollowMark(target)
+        def ring(r: Double) = (0 until 8).map { i =>
           val a = math.Pi * i / 4.0
           DevicePoint(target.anchor.x + r * math.cos(a), target.anchor.y + r * math.sin(a))
-        }).filterNot(p => hollow && p == target.anchor)
+        }
+        val probes = target.anchor +: (ring(0.5 * target.radiusDevicePx) ++
+          (if hollow then ring(target.radiusDevicePx) else Vector.empty))
         val hits = probes.map(p => p -> right(t.pick(p, 0.5 * scale)).map(_.ref))
         // Each probe is this mark, or a mark drawn over it there.
         hits.foreach { (p, hit) =>
