@@ -54,7 +54,8 @@ enum Command derives CanEqual, Codec.AsObject:
     * sources; a re-import names its `parent` and inherits its admission
     * choices. `attributes` are the fixation columns without a role, declared
     * so they pass through admission (UI-H); a journal line written before
-    * S5.2 has none.
+    * S5.2 has none. `inventory` maps the trials source (S5.4); a journal
+    * line written before S5.4 has none.
     */
   case ImportSources(
       parent: Option[DatasetRevision],
@@ -62,19 +63,21 @@ enum Command derives CanEqual, Codec.AsObject:
       mapping: ColumnMapping,
       units: DeclaredUnits,
       geometry: Geometry,
-      attributes: DeclaredAttributes
+      attributes: DeclaredAttributes,
+      inventory: Option[InventoryMapping] = None
   )
 
-  /** Revise a pending revision's column mapping, declared units, geometry
-    * and attributes in one step (the import wizard's commit, S5.2): one
-    * undo restores all four.
+  /** Revise a pending revision's column mapping, declared units, geometry,
+    * attributes and inventory mapping in one step (the import wizard's
+    * commit, S5.2, S5.4): one undo restores them all.
     */
   case ReviseDataset(
       dataset: DatasetRevision,
       mapping: ColumnMapping,
       units: DeclaredUnits,
       geometry: Geometry,
-      attributes: DeclaredAttributes
+      attributes: DeclaredAttributes,
+      inventory: Option[InventoryMapping] = None
   )
 
   /** Put a discarded pending dataset revision back. */

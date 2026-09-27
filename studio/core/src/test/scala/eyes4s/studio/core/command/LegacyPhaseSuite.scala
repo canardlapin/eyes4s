@@ -18,6 +18,7 @@ package eyes4s.studio.core.command
 
 import eyes4s.studio.core.backend.DatasetRevision
 import eyes4s.studio.core.document.*
+import eyes4s.studio.core.fixture.StoryMoments
 import io.circe.parser.decode
 import io.circe.syntax.*
 
@@ -157,7 +158,16 @@ class LegacyPhaseSuite extends munit.FunSuite:
         r3.mapping.bindings :+ ColumnBinding(ColumnRole.Phase, ok(ColumnName.of("phase")))
       )
     )
-    val revise = Command.ReviseDataset(r3.id, withPhase, r3.units, r3.geometry, r3.attributes)
+    // An S5.2 project recorded no inventory mapping either; the re-map adds both.
+    val inventory = ok(StoryMoments.inventory(occurrence = true))
+    val revise    = Command.ReviseDataset(
+      r3.id,
+      withPhase,
+      r3.units,
+      r3.geometry,
+      r3.attributes,
+      Some(inventory)
+    )
     val (remapped, _) = ok(Reducer.step(loaded, revise))
     assertEquals(remapped.dataset(r3.id).map(_.mapping), Some(withPhase))
     // The inverse the reducer records restores the stored mapping.

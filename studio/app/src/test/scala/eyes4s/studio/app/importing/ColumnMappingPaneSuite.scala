@@ -63,11 +63,18 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
   /** Open the pane on `m`'s selection and deliver its sources as the project
     * would.
     */
+  /** The first record of the golden trials.csv: the story revisions map its
+    * columns as their inventory (S5.4).
+    */
+  val trials: String =
+    "participant,phase,trial,occurrence,item,display_kind,image_file,response\n" +
+      "P01,Encoding,enc_01,1,beach-007,image,beach-007.png,\n"
+
   def opened(m: AppModel): (DatasetRevisionSpec, ImportWizard) =
     val spec          = ColumnMappingPane.selected(m).getOrElse(fail("nothing selected"))
     val (w0, sources) = ok(ColumnMappingPane.open(m.document, spec, ImportPresets.empty))
     val read          = sources.foldLeft(w0) { (w, s) =>
-      val text = if s.role == SourceRole.Fixations then golden else "participant,phase,trial\n"
+      val text = if s.role == SourceRole.Fixations then golden else trials
       ImportWizard.update(w, WizardIntent.SourceRead(stored(s, text)), m.document)._1
     }
     (spec, read)
@@ -142,7 +149,7 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
     assertEquals(after.problem, None)
     val commands = fx.collect { case WizardEffect.Dispatch(c) => c }
     commands match
-      case Vector(Command.ReviseDataset(id, mapping, units, geometry, attributes)) =>
+      case Vector(Command.ReviseDataset(id, mapping, units, geometry, attributes, _)) =>
         assertEquals(id, r3)
         assertEquals(mapping.column(ColumnRole.Occurrence), None)
         assertEquals(attributes.columns, Vector(occurrence))
@@ -174,7 +181,7 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
       m.document
     )
     fx.collect { case WizardEffect.Dispatch(c) => c } match
-      case Vector(Command.ImportSources(Some(parent), sources, _, units, _, _)) =>
+      case Vector(Command.ImportSources(Some(parent), sources, _, units, _, _, _)) =>
         assertEquals(parent, r2)
         assertEquals(sources, m.document.dataset(r2).get.sources)
         assertEquals(units.time, Some(TimeUnit.Milliseconds))
@@ -208,11 +215,27 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
     assertEquals(ColumnMappingPane.follow(m.document, m), None)
   }
 
-  test("a re-map shows the mapping page only; edits and notices are named") {
+  test("a re-map shows the mapping page and its trial metadata; edits and notices are named") {
     val m      = StoryModels.t1Data
     val (_, w) = opened(m)
     val vm     = ImportWizardVM.of(w, m.document)
-    assertEquals((vm.showTabs, vm.tab), (false, WizardTab.FixationMapping))
+    assertEquals((vm.showTabs, vm.tab), (true, WizardTab.FixationMapping))
+    // The revision has a trials file: its inventory mapping is re-mapped here
+    // too (S5.4); geometry and the issues belong to the sibling panes.
+    assertEquals(
+      vm.tabs.map(_.tab),
+      Vector(WizardTab.FixationMapping, WizardTab.TrialMetadata)
+    )
+    val trialPage = ImportWizardVM.of(
+      ImportWizard.update(w, WizardIntent.ChooseTab(WizardTab.TrialMetadata), m.document)._1,
+      m.document
+    )
+    assertEquals(trialPage.tab, WizardTab.TrialMetadata)
+    val geometryPage = ImportWizardVM.of(
+      ImportWizard.update(w, WizardIntent.ChooseTab(WizardTab.Geometry), m.document)._1,
+      m.document
+    )
+    assertEquals(geometryPage.tab, WizardTab.FixationMapping)
     // A blocked commit stays on the mapping page and says why there.
     val blocked = run(
       w,
@@ -286,10 +309,17 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
     val (_, w) = opened(m)
     val vm     = ImportWizardVM.of(w, m.document)
     val stops  = ColumnMappingPane.focusStops(vm)
-    // No tab strip in a re-map: the time unit comes first.
-    assertEquals(stops.head, FocusStop(A11yRole.ComboBox, "Time unit (declared)"))
+    // A re-map of a revision with a trials file shows its two pages: the
+    // selected tab, then the time unit.
     assertEquals(
-      stops.slice(1, 1 + vm.fixations.rows.size).map(_.name),
+      stops.take(2),
+      Vector(
+        FocusStop(A11yRole.ToggleButton, "Column mapping"),
+        FocusStop(A11yRole.ComboBox, "Time unit (declared)")
+      )
+    )
+    assertEquals(
+      stops.slice(2, 2 + vm.fixations.rows.size).map(_.name),
       vm.fixations.rows.map(r => s"Role for ${r.column.value}")
     )
     assertEquals(

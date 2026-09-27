@@ -51,6 +51,17 @@ enum DocumentError derives CanEqual:
   case RepeatedAttribute(column: String)
   case AttributeIsMapped(dataset: DatasetRevision, column: String, role: ColumnRole)
 
+  // A trial inventory's mapping (S5.4).
+  case MissingInventoryRoles(missing: Vector[ColumnRole])
+  case InventoryRoleNotRead(column: String, role: ColumnRole)
+  case InventoryAttributeIsMapped(column: String, role: ColumnRole)
+
+  /** `dataset` maps a trial inventory but has no trials source. */
+  case InventoryWithoutTrials(dataset: DatasetRevision)
+
+  /** `dataset` has a trials source whose columns are not mapped. */
+  case InventoryUnmapped(dataset: DatasetRevision, path: String)
+
   // A draft against its base revision.
   case NoChanges(draft: AnalysisRevision, base: AnalysisRevision)
   case RepeatedField(draft: AnalysisRevision, field: RecipeField)
@@ -122,6 +133,16 @@ enum DocumentError derives CanEqual:
     case RepeatedAttribute(column) => s"Attribute column $column is declared more than once."
     case AttributeIsMapped(dataset, column, role) =>
       s"Dataset ${dataset.label}: column $column is both an attribute and the ${role.label} column."
+    case MissingInventoryRoles(missing) =>
+      s"The trial inventory mapping has no ${missing.map(_.label).mkString(", ")} column."
+    case InventoryRoleNotRead(column, role) =>
+      s"Trial inventory column $column: the ${role.label} role is not read from a trial inventory."
+    case InventoryAttributeIsMapped(column, role) =>
+      s"Trial inventory column $column is both an attribute and the ${role.label} column."
+    case InventoryWithoutTrials(dataset) =>
+      s"Dataset ${dataset.label} maps a trial inventory but has no trial inventory source."
+    case InventoryUnmapped(dataset, path) =>
+      s"Dataset ${dataset.label}: the columns of trial inventory $path are not mapped."
     case BadSchemaId(name, version) =>
       s"Studio schema identity $name@$version is not a valid definition identity."
     case RebaseToSame(draft, dataset) =>

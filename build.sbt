@@ -1083,6 +1083,16 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
     }.taskValue
   )
   .jvmConfigure(_.dependsOn(io.jvm % Test))
+  // S5.4: the golden tables' text, for the JVM suite that admits them with
+  // eyes4s-io under the story's recorded mappings.
+  .jvmSettings(
+    Test / sourceGenerators += Def.task {
+      StudioFixture.goldenCsv(
+        (ThisBuild / baseDirectory).value,
+        (Test / sourceManaged).value / "eyes4s" / "studio" / "GoldenCsv.scala"
+      )
+    }.taskValue
+  )
 
 /** UI-neutral presentation: app model, intents, pure update, view-models. */
 lazy val studioApp = crossProject(JVMPlatform, JSPlatform)

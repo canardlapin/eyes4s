@@ -199,7 +199,9 @@ class GoldenJourneyHeadlessSuite extends munit.FunSuite:
           r2Spec.mapping,
           r2Spec.units,
           r2Spec.geometry,
-          DeclaredAttributes.empty
+          DeclaredAttributes.empty,
+          // trials.csv mapped as r3 maps it: Block → occurrence (S5.4).
+          t1r3.inventory
         )
       ),
       Step.intent[Future](
@@ -229,10 +231,10 @@ class GoldenJourneyHeadlessSuite extends munit.FunSuite:
           case None    => fail("admission", "a summary", d.records)
           case Some(a) =>
             for
-              _ <- expect("inventory trials", 960, a.inventoryTrials)
+              _ <- expect("inventory trials", Some(960), a.inventoryTrials)
               _ <- expect("admitted", 937, a.admitted)
               _ <- expect("quarantined", 17, a.quarantinedTrials + a.noFixations)
-              _ <- expect("absent", 6, a.absent)
+              _ <- expect("absent", Some(6), a.absent)
               _ <- expect("fixation records", 11520, a.fixationRecords)
               _ <- expect("source records", Some(11520), a.window.sourceRecords)
               _ <- expect("images missing", 2, a.missingImages.size)

@@ -181,8 +181,12 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
         b.setText(t.label)
         b.setAccessibleText(t.label)
         b.setSelected(t.selected)
-        b.setVisible(vm.showTabs)
-        b.setManaged(vm.showTabs)
+      }
+      // A re-map offers some of the pages only (S5.4).
+      WizardTab.values.foreach { t =>
+        val shown = vm.showTabs && vm.tabs.exists(_.tab == t)
+        tabs(t).setVisible(shown)
+        tabs(t).setManaged(shown)
       }
       kind.setText(vm.kind)
       WizardTab.values.foreach { t =>

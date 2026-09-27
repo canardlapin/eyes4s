@@ -64,10 +64,11 @@ object Reducer:
       rule: MappingRule = MappingRule.Commit
   ): Either[CommandError, Outcome] = c match
     // --- Dataset · re-admit --------------------------------------------------
-    case ImportSources(parent, sources, mapping, units, geometry, attributes) =>
+    case ImportSources(parent, sources, mapping, units, geometry, attributes, inventory) =>
       val id = DatasetRevision(d.datasets.lastOption.fold(1)(_.id.number + 1))
       for
         _    <- admissible(rule, d, c, mapping)
+        _    <- inventoryMapped(rule, d, c, id, sources, inventory)
         from <- parent.traverse(p => d.dataset(p).toRight(UnknownDataset(p)))
         spec = DatasetRevisionSpec(
           id,
@@ -78,7 +79,8 @@ object Reducer:
           geometry,
           from.fold(AdmissionChoice.default)(_.admission),
           AdmissionDecision.Pending,
-          attributes
+          attributes,
+          inventory
         )
         next <- rebuild(d, c)(datasets = d.datasets :+ spec)
       yield reversible(next, DiscardDataset(id))
@@ -96,21 +98,30 @@ object Reducer:
         next <- rebuild(d, c)(datasets = d.datasets.filterNot(_.id == id))
       yield reversible(next, RestoreDataset(spec))
 
-    case ReviseDataset(id, mapping, units, geometry, attributes) =>
+    case ReviseDataset(id, mapping, units, geometry, attributes, inventory) =>
       for
         spec <- editable(d, id)
         _    <- revisable(rule, d, c, spec.mapping, mapping)
+        _    <- inventoryRevisable(rule, d, c, spec, inventory)
         revised = spec.copy(
           mapping = mapping,
           units = units,
           geometry = geometry,
-          attributes = attributes
+          attributes = attributes,
+          inventory = inventory
         )
         _    <- Either.cond(revised != spec, (), NoChange(c.name, targetOf(d, c)))
         next <- replaceDataset(d, c)(revised)
       yield reversible(
         next,
-        ReviseDataset(id, spec.mapping, spec.units, spec.geometry, spec.attributes)
+        ReviseDataset(
+          id,
+          spec.mapping,
+          spec.units,
+          spec.geometry,
+          spec.attributes,
+          spec.inventory
+        )
       )
 
     case SetMapping(id, mapping) =>
@@ -169,6 +180,7 @@ object Reducer:
       for
         spec    <- editable(d, id)
         _       <- admissible(rule, d, c, spec.mapping)
+        _       <- inventoryMapped(rule, d, c, id, spec.sources, spec.inventory)
         content <- contentOf(spec)
         next <- replaceDataset(d, c)(spec.copy(decision = AdmissionDecision.Verifying(content)))
       yield Outcome(
@@ -479,6 +491,41 @@ object Reducer:
         .map(Refused(c.name, targetOf(d, c), _))
         .map(_ => ())
 
+  /** The inventory rule (S5.4): under `Commit`, a trials source must have
+    * its columns mapped. A replayed journal line from before S5.4 has none;
+    * such a revision is refused at VerifyDataset until it is re-mapped.
+    */
+  private def inventoryMapped(
+      rule: MappingRule,
+      d: StudioDocument,
+      c: Command,
+      id: DatasetRevision,
+      sources: Sources,
+      inventory: Option[InventoryMapping]
+  ): Either[CommandError, Unit] = rule match
+    case MappingRule.Replay => Right(())
+    case MappingRule.Commit =>
+      DatasetRevisionSpec
+        .inventoryMapped(id, sources, inventory)
+        .left
+        .map(Refused(c.name, targetOf(d, c), _))
+
+  /** A revision's inventory mapping replaced by `next` (ReviseDataset), as
+    * [[revisable]] does for the phase: a revision stored before S5.4 with an
+    * unmapped trials source is only edited into one with a mapping; over a
+    * mapped one nothing is refused, so undoing a re-map restores it.
+    */
+  private def inventoryRevisable(
+      rule: MappingRule,
+      d: StudioDocument,
+      c: Command,
+      spec: DatasetRevisionSpec,
+      next: Option[InventoryMapping]
+  ): Either[CommandError, Unit] =
+    DatasetRevisionSpec.inventoryMapped(spec.id, spec.sources, spec.inventory) match
+      case Right(_) => Right(())
+      case Left(_)  => inventoryMapped(rule, d, c, spec.id, spec.sources, next)
+
   /** A revision's mapping replaced by `next` (ReviseDataset, SetMapping).
     * A revision stored before S5.3 may lack the phase: `next` must then be
     * admissible, so an old revision is only edited into one that can be
@@ -496,22 +543,22 @@ object Reducer:
     if current.missingForImport.isEmpty then Right(()) else admissible(rule, d, c, next)
 
   def targetOf(d: StudioDocument, c: Command): Target = c match
-    case ImportSources(_, _, _, _, _, _) =>
+    case _: ImportSources =>
       Target.OnDataset(DatasetRevision(d.datasets.lastOption.fold(1)(_.id.number + 1)))
-    case RestoreDataset(spec)          => Target.OnDataset(spec.id)
-    case DiscardDataset(id)            => Target.OnDataset(id)
-    case ReviseDataset(id, _, _, _, _) => Target.OnDataset(id)
-    case SetMapping(id, _)             => Target.OnDataset(id)
-    case SetUnits(id, _)               => Target.OnDataset(id)
-    case SetGeometry(id, _)            => Target.OnDataset(id)
-    case SetOffScreenPolicy(id, _)     => Target.OnDataset(id)
-    case AddCorrection(id, _, _)       => Target.OnDataset(id)
-    case RemoveCorrection(id, _)       => Target.OnDataset(id)
-    case VerifyDataset(id)             => Target.OnDataset(id)
-    case WithdrawVerification(id)      => Target.OnDataset(id)
-    case ResumeVerification(id, _)     => Target.OnDataset(id)
-    case Admit(id, _, _, _)            => Target.OnDataset(id)
-    case RestoreDraft(draft)           => Target.OnDraft(Some(draft.id))
+    case RestoreDataset(spec)      => Target.OnDataset(spec.id)
+    case DiscardDataset(id)        => Target.OnDataset(id)
+    case r: ReviseDataset          => Target.OnDataset(r.dataset)
+    case SetMapping(id, _)         => Target.OnDataset(id)
+    case SetUnits(id, _)           => Target.OnDataset(id)
+    case SetGeometry(id, _)        => Target.OnDataset(id)
+    case SetOffScreenPolicy(id, _) => Target.OnDataset(id)
+    case AddCorrection(id, _, _)   => Target.OnDataset(id)
+    case RemoveCorrection(id, _)   => Target.OnDataset(id)
+    case VerifyDataset(id)         => Target.OnDataset(id)
+    case WithdrawVerification(id)  => Target.OnDataset(id)
+    case ResumeVerification(id, _) => Target.OnDataset(id)
+    case Admit(id, _, _, _)        => Target.OnDataset(id)
+    case RestoreDraft(draft)       => Target.OnDraft(Some(draft.id))
     case _: (StartDraft | ChangeRecipe | RebaseDraft | SaveAndRun) | DiscardDraft =>
       Target.OnDraft(
         d.draft.map(_.id).orElse(d.latestAnalysis.map(a => AnalysisRevision(a.id.number + 1)))

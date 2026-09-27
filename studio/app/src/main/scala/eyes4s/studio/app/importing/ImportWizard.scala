@@ -17,6 +17,7 @@
 package eyes4s.studio.app.importing
 
 import cats.data.NonEmptyVector
+import cats.syntax.all.*
 import eyes4s.codec.ByteDigest
 import eyes4s.studio.app.Intent
 import eyes4s.studio.core.backend.DatasetRevision
@@ -29,6 +30,7 @@ import eyes4s.studio.core.document.{
   DatasetRevisionSpec,
   DocumentError,
   Geometry,
+  InventoryMapping,
   SourcePath,
   Sources,
   SourceRole,
@@ -72,7 +74,7 @@ enum WizardProblem derives CanEqual:
   case UnknownDataset(dataset: DatasetRevision)
   case NoChange(dataset: DatasetRevision)
 
-  /** A re-map read a file other than `dataset`'s own fixation source. */
+  /** A re-map read a file other than `dataset`'s own source of that role. */
   case NotDatasetSource(dataset: DatasetRevision, path: String)
 
   /** The platform could not store a preset or an imported file. */
@@ -186,14 +188,15 @@ final case class ImportWizard private (
     keys: KeyChecks = KeyChecks.none
 ) derives CanEqual:
 
-  /** Every issue that blocks the commit: the fixation mapping's. */
-  def issues: Vector[MappingError] = fixations.fold(Vector.empty)(_._2.issues)
-
-  /** The trial inventory's mapping issues. They do not block the commit:
-    * the document does not record the trial mapping yet (S5.4 joins and
-    * records it), so they are shown as warnings.
+  /** Every issue that blocks the commit: the fixation mapping's, then the
+    * trial inventory's (S5.4: the document records the inventory mapping,
+    * and eyes4s joins fixation records to the trials it declares).
     */
-  def warnings: Vector[MappingError] = trials.fold(Vector.empty)(_._2.issues)
+  def issues: Vector[MappingError] =
+    fixations.fold(Vector.empty)(_._2.issues) ++ trialIssues
+
+  /** The trial inventory's mapping issues. */
+  def trialIssues: Vector[MappingError] = trials.fold(Vector.empty)(_._2.issues)
 
   /** The same wizard offering `saved` as its presets; nothing else changes
     * (the problem it shows included).
@@ -285,12 +288,9 @@ object ImportWizard:
               case Left(p)      => refuse(p)
               case Right(draft) => (cleared.copy(fixations = Some((source, draft))), none)
           case SourceRole.Trials =>
-            (
-              cleared.copy(trials =
-                Some((source, TrialMetadataDraft.proposed(source.preview)))
-              ),
-              none
-            )
+            trialDraft(w, source, document) match
+              case Left(p)      => refuse(p)
+              case Right(draft) => (cleared.copy(trials = Some((source, draft))), none)
       case WizardIntent.ReadFailed(path, error) => refuse(WizardProblem.ReadFailed(path, error))
       case WizardIntent.ChooseTab(tab)          => (cleared.copy(tab = tab), none)
       case WizardIntent.RequestFile(role) => (cleared, Vector(WizardEffect.OpenFile(role)))
@@ -430,6 +430,31 @@ object ImportWizard:
                 .left
                 .map(WizardProblem.DatasetMapping(id, _))
 
+  /** A trials file's first draft: a re-mapped dataset's own inventory
+    * mapping, else the suggested roles (a revision saved before S5.4 has
+    * none, and is mapped afresh).
+    */
+  private def trialDraft(
+      w: ImportWizard,
+      source: SniffedSource,
+      document: StudioDocument
+  ): Either[WizardProblem, TrialMetadataDraft] =
+    w.target match
+      case WizardTarget.NewImport => Right(TrialMetadataDraft.proposed(source.preview))
+      case WizardTarget.Remap(id) =>
+        document.dataset(id) match
+          case None       => Left(WizardProblem.UnknownDataset(id))
+          case Some(spec) =>
+            if !spec.sources.trials.exists(_.bytes == source.bytes) then
+              Left(WizardProblem.NotDatasetSource(id, source.path.value))
+            else
+              spec.inventory.fold(Right(TrialMetadataDraft.proposed(source.preview)))(m =>
+                TrialMetadataDraft
+                  .ofDataset(source.preview, id, m)
+                  .left
+                  .map(WizardProblem.DatasetMapping(id, _))
+              )
+
   /** The document commands that apply the wizard, every one a "Dataset ·
     * re-admit" change, or why there are none. On success the wizard closes.
     */
@@ -440,10 +465,14 @@ object ImportWizard:
     for
       (src, draft) <- w.fixations.toRight(WizardProblem.NoFixations)
       blocking = w.issues
-      _        <- NonEmptyVector.fromVector(blocking).map(WizardProblem.Blocked(_)).toLeft(())
-      _        <- TrialKeyVM.keyBlocks(w).headOption.map(WizardProblem.TrialKey(_)).toLeft(())
-      resolved <- draft.resolve.left.map(WizardProblem.Blocked(_))
-      _        <- ColumnMapping
+      _         <- NonEmptyVector.fromVector(blocking).map(WizardProblem.Blocked(_)).toLeft(())
+      _         <- TrialKeyVM.keyBlocks(w).headOption.map(WizardProblem.TrialKey(_)).toLeft(())
+      resolved  <- draft.resolve.left.map(WizardProblem.Blocked(_))
+      inventory <- w.trials
+        .traverse(_._2.resolve)
+        .left
+        .map(WizardProblem.Blocked(_))
+      _ <- ColumnMapping
         .admissible(resolved.mapping)
         .left
         .map(e => WizardProblem.Mapping(MappingError.Refused(draft.file, e)))
@@ -465,25 +494,29 @@ object ImportWizard:
                   resolved.mapping,
                   resolved.units,
                   geometry,
-                  resolved.attributes
+                  resolved.attributes,
+                  inventory
                 )
               )
             )
         case WizardTarget.Remap(id) =>
           document.dataset(id).toRight(WizardProblem.UnknownDataset(id)).flatMap { spec =>
-            remapCommands(spec, resolved, geometry)
+            // A re-map that did not read the trials file keeps its mapping.
+            remapCommands(spec, resolved, geometry, inventory.orElse(spec.inventory))
           }
     yield commands
 
   private def remapCommands(
       spec: DatasetRevisionSpec,
       resolved: ResolvedMapping,
-      geometry: Geometry
+      geometry: Geometry,
+      inventory: Option[InventoryMapping]
   ): Either[WizardProblem, Vector[Command]] =
     val id      = spec.id
     val changed =
       spec.mapping != resolved.mapping || spec.units != resolved.units ||
-        spec.geometry != geometry || spec.attributes != resolved.attributes
+        spec.geometry != geometry || spec.attributes != resolved.attributes ||
+        spec.inventory != inventory
     if !changed then Left(WizardProblem.NoChange(id))
     else
       spec.decision match
@@ -496,7 +529,8 @@ object ImportWizard:
                 resolved.mapping,
                 resolved.units,
                 geometry,
-                resolved.attributes
+                resolved.attributes,
+                inventory
               )
             )
           )
@@ -509,7 +543,8 @@ object ImportWizard:
                 resolved.mapping,
                 resolved.units,
                 geometry,
-                resolved.attributes
+                resolved.attributes,
+                inventory
               )
             )
           )

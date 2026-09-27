@@ -50,6 +50,11 @@ enum BackendError derives CanEqual, Codec.AsObject:
     */
   case DuplicateSubscription(request: RequestId)
 
+  /** eyes4s refused `dataset`'s trial inventory, so it cannot be admitted
+    * (S5.4): each issue names its records, trial and columns.
+    */
+  case InventoryRefused(dataset: DatasetRevision, issues: Vector[InventoryIssue])
+
   def code: String = this match
     case UnknownDataset(_, _)     => "studio-backend.unknown-dataset"
     case UnknownRevision(_, _)    => "studio-backend.unknown-revision"
@@ -62,6 +67,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case UnsupportedVersion(_, _) => "studio-backend.unsupported-version"
     case Malformed(_, _)          => "studio-backend.malformed-request"
     case DuplicateSubscription(_) => "studio-backend.duplicate-subscription"
+    case InventoryRefused(_, _)   => "studio-backend.inventory-refused"
 
   def message: String = this match
     case UnknownDataset(d, known) =>
@@ -82,6 +88,8 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case Malformed(excerpt, reason)     => s"Not a request ($reason): $excerpt"
     case DuplicateSubscription(request) =>
       s"Request ${request.value} is already a live subscription on this connection."
+    case InventoryRefused(d, issues) =>
+      s"The trial inventory of ${d.label} is refused: ${issues.map(_.message).mkString(" ")}"
 
   def diagnostic: StudioDiagnostic =
     val subject = this match
@@ -96,6 +104,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
       case UnsupportedVersion(_, _) => Vector.empty
       case Malformed(_, _)          => Vector.empty
       case DuplicateSubscription(_) => Vector.empty
+      case InventoryRefused(d, is)  => DiagnosticLocus.Dataset(d) +: is.flatMap(_.loci)
     StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
 
 /** Everything Eyes Studio asks of eyes4s (DESIGN_SPEC section 13, S3.0): the
@@ -221,10 +230,12 @@ final case class ProtocolVersion(major: Int, minor: Int) derives CanEqual, Codec
 
 object ProtocolVersion:
   /** 1.1 added `Unsubscribe`, `Unsubscribed`, `Malformed` and
-    * `DuplicateSubscription` (S0.9). 1.2 adds `ProgressTotal.Counting`; deploy
-    * client and backend together.
+    * `DuplicateSubscription` (S0.9). 1.2 adds `ProgressTotal.Counting`. 1.3
+    * replaces the admission summary's inventory counts with
+    * [[InventoryJoin]] and adds `InventoryRefused` (S5.4). Deploy client and
+    * backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 2)
+  val Current: ProtocolVersion = ProtocolVersion(1, 3)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual

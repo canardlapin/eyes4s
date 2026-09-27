@@ -197,6 +197,7 @@ object StudioDocument:
         DocumentError.UnorderedIds("reporting spec", reportingId.map(_.value))
       )
       _ <- datasets.traverse_(DatasetRevisionSpec.checkAttributes)
+      _ <- datasets.traverse_(DatasetRevisionSpec.checkInventory)
       _ <- datasets.traverse_ { d =>
         d.parent.traverse_ { p =>
           if p.number >= d.id.number then Left(DocumentError.ParentNotEarlier(d.id, p))

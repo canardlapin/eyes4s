@@ -23,9 +23,9 @@ package eyes4s.studio.core.bundle
   */
 object BundlePins:
   val t2Parts: Vector[String] = Vector(
-    "datasets/r2.d6dd2f9e4604774f.json",
+    "datasets/r2.b8c6870aa46960f0.json",
     "mappings/r2.5d9b410cd0b48432.json",
-    "datasets/r3.d57039d646bfa035.json",
+    "datasets/r3.fb4d5a7f8ca711b9.json",
     "mappings/r3.8e0b0f8f226a2cbb.json",
     "analyses/rev3.29b70541a44c0723.json",
     "analyses/rev4.cdb907e8a8200e54.json",
@@ -39,7 +39,7 @@ object BundlePins:
   )
 
   val t2ManifestSha256: String =
-    "8d8824b0820061078294bd85290ba25aa567b99d01de90f9d5d2c55c12267521"
+    "0c227cb3e2832cc57dbe2e68dcbea35a1fb60d5c388838618ed8ca1fa0d36acc"
 
   /** The t2 bundle's manifest as the pre-release version 1 wrote it: no
     * sharing options (everything travelled) and no science digest. Written
@@ -68,9 +68,9 @@ object BundlePins:
       |      "datasets": [
       |        {
       |          "dataset": {
-      |            "path": "datasets/r2.d6dd2f9e4604774f.json",
-      |            "sha256": "d6dd2f9e4604774fec82085eee748f570ef72cdcc82f5016f6ac27d73d0bbfae",
-      |            "length": 614
+      |            "path": "datasets/r2.b8c6870aa46960f0.json",
+      |            "sha256": "b8c6870aa46960f0766d22ea62f5cf9a9fd49c28f03bbdf52c088b06dba7aaa8",
+      |            "length": 998
       |          },
       |          "mapping": {
       |            "path": "mappings/r2.5d9b410cd0b48432.json",
@@ -80,9 +80,9 @@ object BundlePins:
       |        },
       |        {
       |          "dataset": {
-      |            "path": "datasets/r3.d57039d646bfa035.json",
-      |            "sha256": "d57039d646bfa03551bdee382b3a186beeeb5da21ef14f4025d15b4656975937",
-      |            "length": 626
+      |            "path": "datasets/r3.fb4d5a7f8ca711b9.json",
+      |            "sha256": "fb4d5a7f8ca711b96c0cb2ac870ccbad1730383d7dab62c5373ad44e522c0938",
+      |            "length": 1016
       |          },
       |          "mapping": {
       |            "path": "mappings/r3.8e0b0f8f226a2cbb.json",

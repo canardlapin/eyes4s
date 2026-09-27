@@ -58,7 +58,7 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
   test("admission reports the FIXTURE.md inventory and window totals") {
     subject.flatMap(s => ok(s.backend.admission(s.dataset))).map { a =>
       assertEquals(a.state, DatasetState.Admitted)
-      assertEquals((a.inventoryTrials, a.admitted, a.absent), (960, 937, 6))
+      assertEquals((a.inventoryTrials, a.admitted, a.absent), (Some(960), 937, Some(6)))
       // FIXTURE.md counts no-fixations among its 17 quarantined trials.
       assertEquals(a.quarantinedTrials + a.noFixations, 17)
       assertEquals(
@@ -87,11 +87,11 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
       summary <- ok(s.backend.admission(s.dataset))
       entries <- all(97)(p => ok(s.backend.ledger(s.dataset, p)).map(l => (l.page, l.entries)))
     yield
-      assertEquals(entries.size, summary.inventoryTrials)
+      assertEquals(Some(entries.size), summary.inventoryTrials)
       assertEquals(entries.map(_.trial).distinct.size, entries.size)
       def count(p: TrialDisposition => Boolean) = entries.count(e => p(e.disposition))
       assertEquals(count(_ == TrialDisposition.Admitted), summary.admitted)
-      assertEquals(count(_ == TrialDisposition.Absent), summary.absent)
+      assertEquals(Some(count(_ == TrialDisposition.Absent)), summary.absent)
       assertEquals(count(_ == TrialDisposition.NoFixations), summary.noFixations)
       val byCode = entries
         .collect { case LedgerEntry(_, _, _, TrialDisposition.Quarantined(c), _) => c.code }

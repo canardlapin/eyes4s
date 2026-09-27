@@ -97,7 +97,9 @@ object KeyText:
       case UnresolvedIssue =>
         "Warning (trial key): {0}: {1}; eyes4s rejects them on admission. First: {2}."
       case InventoryIssue =>
-        "Warning (trial key, mapped in S5.4): {0}: {1} on more than one record. First: {2}."
+        "Warning (trial key): {0}: {1} on more than one record. eyes4s reads records with " +
+          "equal values as one trial and refuses the inventory if their values differ. " +
+          "First: {2}."
       case NeedsRemap =>
         "{0} was saved without a {1} column, which import now requires: map one to " +
           "re-admit it."
