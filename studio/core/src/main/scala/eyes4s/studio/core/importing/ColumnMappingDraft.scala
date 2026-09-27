@@ -20,10 +20,13 @@ import cats.data.NonEmptyVector
 import eyes4s.plan.{AttributeColumn, AttributeKind}
 import eyes4s.studio.core.backend.DatasetRevision
 import eyes4s.studio.core.document.{
+  AttributeBinding,
+  AttributeKindChoice,
   ColumnBinding,
   ColumnMapping,
   ColumnName,
   ColumnRole,
+  DeclaredAttributes,
   DeclaredUnits,
   DocumentError,
   TimeUnit
@@ -124,6 +127,9 @@ enum MappingError derives CanEqual:
   /** `role` is not read from this kind of file (a position in trials.csv). */
   case RoleNotRead(file: String, column: ColumnName, role: ColumnRole)
 
+  /** The file has a header and no records: there is nothing to import. */
+  case NoRecords(file: String)
+
   /** The document refused the mapping (a defect in the checks above). */
   case Refused(file: String, error: DocumentError)
 
@@ -148,16 +154,17 @@ enum MappingError derives CanEqual:
     case RoleNotRead(file, column, role) =>
       s"$file column ${column.value}: ${role.label} is not read from this file."
     case Refused(file, error) => s"$file: ${error.message}"
+    case NoRecords(file) => s"$file has a header but no records; there is nothing to import."
 
   /** The column the error points at, when it names one. */
   def pointsAt: Option[ColumnName] = this match
-    case ValueMismatch(_, c, _, _, _, _)      => Some(c)
-    case TimeUnitUndeclared(_, onset, _)      => Some(onset)
-    case ColumnAbsent(_, _, c, _)             => Some(c)
-    case UnknownColumn(_, c)                  => Some(c)
-    case RoleNotRead(_, c, _)                 => Some(c)
-    case RepeatedRole(_, _, cs)               => cs.headOption
-    case MissingRole(_, _, _) | Refused(_, _) => None
+    case ValueMismatch(_, c, _, _, _, _)                     => Some(c)
+    case TimeUnitUndeclared(_, onset, _)                     => Some(onset)
+    case ColumnAbsent(_, _, c, _)                            => Some(c)
+    case UnknownColumn(_, c)                                 => Some(c)
+    case RoleNotRead(_, c, _)                                => Some(c)
+    case RepeatedRole(_, _, cs)                              => cs.headOption
+    case MissingRole(_, _, _) | Refused(_, _) | NoRecords(_) => None
 
 /** A mapping ready to import: the document's column mapping and declared
   * units, and the eyes4s attribute declarations of every other column
@@ -167,7 +174,7 @@ enum MappingError derives CanEqual:
 final case class ResolvedMapping(
     mapping: ColumnMapping,
     units: DeclaredUnits,
-    attributes: Vector[AttributeColumn]
+    attributes: DeclaredAttributes
 ) derives CanEqual
 
 /** Suggested roles from header names (ticket S5.2). A suggestion only: the
@@ -209,12 +216,15 @@ object RoleProposals:
       ._1
 
 /** A fixation file's column mapping while it is edited: the file's preview,
-  * each column's choice in header order, and the declared time unit.
+  * each column's choice in header order, the declared time unit, and the
+  * declared kind of attribute columns that are not text (from a re-mapped
+  * revision; a new attribute is text, kept as written).
   */
 final case class MappingDraft private (
     preview: CsvPreview,
     choices: Vector[ColumnChoice],
-    time: Option[TimeUnit]
+    time: Option[TimeUnit],
+    kinds: Map[ColumnName, AttributeKindChoice] = Map.empty
 ) derives CanEqual:
 
   def file: String = preview.file
@@ -239,8 +249,8 @@ final case class MappingDraft private (
   def declare(unit: Option[TimeUnit]): MappingDraft = copy(time = unit)
 
   /** Every reason the mapping cannot be imported yet, in a stable order:
-    * missing and repeated roles in role order, then the time unit, then
-    * sampled values in header order.
+    * a file with no records, missing and repeated roles in role order, then
+    * the time unit, then sampled values in header order.
     */
   def issues: Vector[MappingError] =
     val undeclared =
@@ -253,7 +263,8 @@ final case class MappingDraft private (
         case _ => Vector.empty
     val (roles, values) =
       RoleChecks.issues(file, columns, ColumnRole.required, ColumnRole.values.toVector)
-    roles ++ undeclared ++ values
+    val empty = Option.when(preview.records == 0)(MappingError.NoRecords(file)).toVector
+    empty ++ roles ++ undeclared ++ values
 
   /** The mapping, its declared units and the attribute declarations, or every
     * issue.
@@ -266,14 +277,15 @@ final case class MappingDraft private (
           ColumnBinding(r, c.name)
         }
         val attributes = columns.collect { case (c, ColumnChoice.Attribute) =>
-          AttributeColumn(c.name.value, AttributeKind.Text)
+          AttributeBinding(c.name, kinds.getOrElse(c.name, AttributeKindChoice.Text))
         }
-        // The checks above are ColumnMapping.of's; a refusal here would be a
-        // defect in them, reported as the document's own error.
-        ColumnMapping
-          .of(bindings)
-          .map(ResolvedMapping(_, DeclaredUnits(time), attributes))
-          .left
+        // The checks above are ColumnMapping.of's and DeclaredAttributes.of's
+        // (header names are distinct); a refusal here would be a defect in
+        // them, reported as the document's own error.
+        (for
+          mapping  <- ColumnMapping.of(bindings)
+          declared <- DeclaredAttributes.of(attributes)
+        yield ResolvedMapping(mapping, DeclaredUnits(time), declared)).left
           .map(e => NonEmptyVector.one(MappingError.Refused(file, e)))
 
   /** Bind this draft's roles and time unit as a preset named `name`. */
@@ -317,9 +329,11 @@ object MappingDraft:
       preview: CsvPreview,
       revision: DatasetRevision,
       mapping: ColumnMapping,
-      units: DeclaredUnits
+      units: DeclaredUnits,
+      attributes: DeclaredAttributes
   ): Either[NonEmptyVector[MappingError], MappingDraft] =
     reapply(preview, MappingOrigin.Dataset(revision), mapping.bindings, units.time)
+      .map(_.copy(kinds = attributes.bindings.map(a => a.column -> a.kind).toMap))
 
 /** The role checks fixation and trial mappings share. */
 private[importing] object RoleChecks:

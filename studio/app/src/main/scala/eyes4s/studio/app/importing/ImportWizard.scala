@@ -68,6 +68,9 @@ enum WizardProblem derives CanEqual:
   case UnknownDataset(dataset: DatasetRevision)
   case NoChange(dataset: DatasetRevision)
 
+  /** A re-map read a file other than `dataset`'s own fixation source. */
+  case NotDatasetSource(dataset: DatasetRevision, path: String)
+
   /** The platform could not store a preset or an imported file. */
   case StoreFailed(reason: String)
 
@@ -135,9 +138,14 @@ final case class ImportWizard private (
     note: Option[WizardNote]
 ) derives CanEqual:
 
-  /** Every issue that blocks the commit, fixation mapping first. */
-  def issues: Vector[MappingError] =
-    fixations.fold(Vector.empty)(_._2.issues) ++ trials.fold(Vector.empty)(_._2.issues)
+  /** Every issue that blocks the commit: the fixation mapping's. */
+  def issues: Vector[MappingError] = fixations.fold(Vector.empty)(_._2.issues)
+
+  /** The trial inventory's mapping issues. They do not block the commit:
+    * the document does not record the trial mapping yet (S5.4 joins and
+    * records it), so they are shown as warnings.
+    */
+  def warnings: Vector[MappingError] = trials.fold(Vector.empty)(_._2.issues)
 
 object ImportWizard:
 
@@ -302,10 +310,14 @@ object ImportWizard:
         document.dataset(id) match
           case None       => Left(WizardProblem.UnknownDataset(id))
           case Some(spec) =>
-            MappingDraft
-              .ofDataset(source.preview, id, spec.mapping, spec.units)
-              .left
-              .map(WizardProblem.DatasetMapping(id, _))
+            // A re-map reads the revision's own file, byte for byte.
+            if !spec.sources.fixations.exists(_.bytes == source.bytes) then
+              Left(WizardProblem.NotDatasetSource(id, source.path.value))
+            else
+              MappingDraft
+                .ofDataset(source.preview, id, spec.mapping, spec.units, spec.attributes)
+                .left
+                .map(WizardProblem.DatasetMapping(id, _))
 
   /** The document commands that apply the wizard, every one a "Dataset ·
     * re-admit" change, or why there are none. On success the wizard closes.
@@ -331,8 +343,14 @@ object ImportWizard:
             .map(WizardProblem.BadSources(_))
             .map(sources =>
               Vector(
-                Command
-                  .ImportSources(parent, sources, resolved.mapping, resolved.units, geometry)
+                Command.ImportSources(
+                  parent,
+                  sources,
+                  resolved.mapping,
+                  resolved.units,
+                  geometry,
+                  resolved.attributes
+                )
               )
             )
         case WizardTarget.Remap(id) =>
@@ -348,17 +366,23 @@ object ImportWizard:
   ): Either[WizardProblem, Vector[Command]] =
     val id      = spec.id
     val changed =
-      spec.mapping != resolved.mapping || spec.units != resolved.units || spec.geometry != geometry
+      spec.mapping != resolved.mapping || spec.units != resolved.units ||
+        spec.geometry != geometry || spec.attributes != resolved.attributes
     if !changed then Left(WizardProblem.NoChange(id))
     else
       spec.decision match
+        // One command, so one undo restores the revision as it was.
         case AdmissionDecision.Pending =>
           Right(
-            Option
-              .when(spec.mapping != resolved.mapping)(Command.SetMapping(id, resolved.mapping))
-              .toVector ++
-              Option.when(spec.units != resolved.units)(Command.SetUnits(id, resolved.units)) ++
-              Option.when(spec.geometry != geometry)(Command.SetGeometry(id, geometry))
+            Vector(
+              Command.ReviseDataset(
+                id,
+                resolved.mapping,
+                resolved.units,
+                geometry,
+                resolved.attributes
+              )
+            )
           )
         case AdmissionDecision.Verifying(_) | AdmissionDecision.Admitted(_, _) =>
           Right(
@@ -368,7 +392,8 @@ object ImportWizard:
                 spec.sources,
                 resolved.mapping,
                 resolved.units,
-                geometry
+                geometry,
+                resolved.attributes
               )
             )
           )

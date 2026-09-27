@@ -42,14 +42,11 @@ trait ImportPlatform:
   /** Persist a newly saved preset; the error names what failed. */
   def storePreset(preset: ImportPreset): Either[String, Unit]
 
-  /** Copy a read file's bytes into the project before the command that
-    * names it is applied. `done` is called once, on the JavaFX thread.
+  /** Copy the file at `path` into the project before the command that
+    * names `source` is applied. The file is read again and must still have
+    * `source`'s bytes. `done` is called once, on the JavaFX thread.
     */
-  def importInput(
-      source: Source,
-      bytes: IArray[Byte],
-      done: Either[String, Unit] => Unit
-  ): Unit
+  def importInput(source: Source, path: Path, done: Either[String, Unit] => Unit): Unit
 
 /** Runs the wizard's Elm loop on the desktop (ticket S5.2): each intent goes
   * through [[ImportWizard.update]], the view renders the new view-model, and
@@ -66,8 +63,10 @@ final class ImportWizardHost(
 ):
   private var state: ImportWizard = initial
 
-  /** The bytes of every file read, by digest, to store on commit. */
-  private var readBytes: Map[ByteDigest, IArray[Byte]] = Map.empty
+  /** Where each file read came from, by digest: the bytes themselves are
+    * not kept for the wizard's lifetime, only read again on commit.
+    */
+  private var readFrom: Map[ByteDigest, Path] = Map.empty
 
   val view: ImportWizardView = ImportWizardView(dispatch)
   render()
@@ -97,7 +96,7 @@ final class ImportWizardHost(
             val bytes = IArray.unsafeFromArray(Files.readAllBytes(path))
             SniffedSource
               .read(role, importName, bytes)
-              .map(s => (WizardIntent.SourceRead(s), Some(s.bytes -> bytes)))
+              .map(s => (WizardIntent.SourceRead(s), Some(s.bytes -> path)))
               .left
               .map(e => WizardIntent.ReadFailed(importName, e))
           catch
@@ -115,7 +114,7 @@ final class ImportWizardHost(
           try
             result match
               case Right((intent, bytes)) =>
-                bytes.foreach(readBytes += _)
+                bytes.foreach(readFrom += _)
                 dispatch(intent)
               case Left(intent) => dispatch(intent)
             done.complete(()): Unit
@@ -135,17 +134,17 @@ final class ImportWizardHost(
     */
   private def perform(effects: Vector[WizardEffect]): Unit =
     val inputs = effects.collect {
-      case WizardEffect.Dispatch(Command.ImportSources(_, sources, _, _, _)) =>
-        sources.entries.flatMap(s => readBytes.get(s.bytes).map(s -> _))
+      case WizardEffect.Dispatch(Command.ImportSources(_, sources, _, _, _, _)) =>
+        sources.entries.flatMap(s => readFrom.get(s.bytes).map(s -> _))
     }.flatten
     if inputs.isEmpty then effects.foreach(performOne)
     else
       var remaining = inputs.size
       var failed    = false
-      inputs.foreach((source, bytes) =>
+      inputs.foreach((source, path) =>
         platform.importInput(
           source,
-          bytes,
+          path,
           result =>
             if !failed then
               result match
@@ -193,19 +192,37 @@ object ImportWizardHost:
       def storePreset(preset: ImportPreset): Either[String, Unit] = store.save(preset)
       def importInput(
           source: Source,
-          bytes: IArray[Byte],
+          path: Path,
           done: Either[String, Unit] => Unit
       ): Unit =
         val name = source.path.value.split('/').last
-        project.fold(done(Left(s"$name: no project is open to store it")))(
-          // The port answers on its own fibre; the host lives on the FX thread.
-          _.importInput(
-            InputKind.Source(source.role),
-            name,
-            bytes,
-            r => Platform.runLater(() => done(r))
-          )
-        )
+        // Answers arrive off the FX thread; the host lives on it.
+        def answer(r: Either[String, Unit]): Unit = Platform.runLater(() => done(r))
+        project match
+          case None       => done(Left(s"$name: no project is open to store it"))
+          case Some(port) =>
+            val worker = Thread(
+              () =>
+                val read =
+                  try Right(IArray.unsafeFromArray(Files.readAllBytes(path)))
+                  catch
+                    case NonFatal(e) =>
+                      Left(s"$path: ${Option(e.getMessage).getOrElse(e.toString)}")
+                read.flatMap(bytes =>
+                  Either.cond(
+                    ByteDigest.sha256(bytes) == source.bytes,
+                    bytes,
+                    s"$path changed after it was read; read it again"
+                  )
+                ) match
+                  case Left(reason) => answer(Left(reason))
+                  case Right(bytes) =>
+                    port.importInput(InputKind.Source(source.role), name, bytes, answer)
+              ,
+              s"eyes4s-import-store-$name"
+            )
+            worker.setDaemon(true)
+            worker.start()
 
   /** Open the wizard for a new import in its own window, over `document`,
     * with the presets of `store`. Its commands go to `app`.

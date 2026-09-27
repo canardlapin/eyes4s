@@ -48,6 +48,7 @@ enum ImportTextId derives CanEqual:
   case NoIssues, IssuesSummaryOne, IssuesSummaryMany, RaggedIssue
   case CommitImport, CommitImportAs, CommitApply, CommitReadmit, Cancel
   case NoChange, NeedFixations, ReadFailed, AttributesNote, StoreFailed, TrialsNote
+  case NotDatasetSource, RaggedMore, TrialWarning
 
   // --- Platform dialogs ------------------------------------------------------------
   case DialogFixations, DialogTrials, DialogFilter
@@ -138,7 +139,12 @@ object ImportText:
       case DialogFilter    => "Delimited text"
       case StoreFailed     => "Not saved: {0}"
       case TrialsNote      =>
-        "The trial inventory's roles are checked here; they are applied when trials are joined."
+        "Trial metadata is mapped in S5.4: these roles are checked here but not yet applied, " +
+          "and their issues are warnings that do not block the import."
+      case NotDatasetSource =>
+        "{0} is not {1}'s fixation file; a re-map reads the revision's own file."
+      case RaggedMore     => "{0}: {1} more records have a width other than the header's."
+      case TrialWarning   => "Warning (trial metadata, mapped in S5.4): {0}"
       case AttributesNote =>
         "Columns without a role pass through as attributes, kept as written."
 

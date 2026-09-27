@@ -223,6 +223,7 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
       if !last.map(_.issues).contains(vm.issues) then
         issueList.getChildren.setAll(vm.issues.map { i =>
           val l = label("import-issue", "t12")
+          if !i.blocking then l.getStyleClass.add("warning"): Unit
           l.setText(i.text)
           l.setWrapText(true)
           l.setMaxWidth(Double.MaxValue)

@@ -51,7 +51,7 @@ object Reducer:
 
   def run(d: StudioDocument, c: Command): Either[CommandError, Outcome] = c match
     // --- Dataset · re-admit --------------------------------------------------
-    case ImportSources(parent, sources, mapping, units, geometry) =>
+    case ImportSources(parent, sources, mapping, units, geometry, attributes) =>
       val id = DatasetRevision(d.datasets.lastOption.fold(1)(_.id.number + 1))
       for
         from <- parent.traverse(p => d.dataset(p).toRight(UnknownDataset(p)))
@@ -63,7 +63,8 @@ object Reducer:
           units,
           geometry,
           from.fold(AdmissionChoice.default)(_.admission),
-          AdmissionDecision.Pending
+          AdmissionDecision.Pending,
+          attributes
         )
         next <- rebuild(d, c)(datasets = d.datasets :+ spec)
       yield reversible(next, DiscardDataset(id))
@@ -80,6 +81,22 @@ object Reducer:
         spec <- pending(d, id)
         next <- rebuild(d, c)(datasets = d.datasets.filterNot(_.id == id))
       yield reversible(next, RestoreDataset(spec))
+
+    case ReviseDataset(id, mapping, units, geometry, attributes) =>
+      for
+        spec <- editable(d, id)
+        revised = spec.copy(
+          mapping = mapping,
+          units = units,
+          geometry = geometry,
+          attributes = attributes
+        )
+        _    <- Either.cond(revised != spec, (), NoChange(c.name, targetOf(d, c)))
+        next <- replaceDataset(d, c)(revised)
+      yield reversible(
+        next,
+        ReviseDataset(id, spec.mapping, spec.units, spec.geometry, spec.attributes)
+      )
 
     case SetMapping(id, mapping) =>
       editDataset(d, c, id)(_.mapping, (s, v) => s.copy(mapping = v), mapping)(
@@ -424,21 +441,22 @@ object Reducer:
 
   /** The document value `c` acts on in `d`. */
   def targetOf(d: StudioDocument, c: Command): Target = c match
-    case ImportSources(_, _, _, _, _) =>
+    case ImportSources(_, _, _, _, _, _) =>
       Target.OnDataset(DatasetRevision(d.datasets.lastOption.fold(1)(_.id.number + 1)))
-    case RestoreDataset(spec)      => Target.OnDataset(spec.id)
-    case DiscardDataset(id)        => Target.OnDataset(id)
-    case SetMapping(id, _)         => Target.OnDataset(id)
-    case SetUnits(id, _)           => Target.OnDataset(id)
-    case SetGeometry(id, _)        => Target.OnDataset(id)
-    case SetOffScreenPolicy(id, _) => Target.OnDataset(id)
-    case AddCorrection(id, _, _)   => Target.OnDataset(id)
-    case RemoveCorrection(id, _)   => Target.OnDataset(id)
-    case VerifyDataset(id)         => Target.OnDataset(id)
-    case WithdrawVerification(id)  => Target.OnDataset(id)
-    case ResumeVerification(id, _) => Target.OnDataset(id)
-    case Admit(id, _, _, _)        => Target.OnDataset(id)
-    case RestoreDraft(draft)       => Target.OnDraft(Some(draft.id))
+    case RestoreDataset(spec)          => Target.OnDataset(spec.id)
+    case DiscardDataset(id)            => Target.OnDataset(id)
+    case ReviseDataset(id, _, _, _, _) => Target.OnDataset(id)
+    case SetMapping(id, _)             => Target.OnDataset(id)
+    case SetUnits(id, _)               => Target.OnDataset(id)
+    case SetGeometry(id, _)            => Target.OnDataset(id)
+    case SetOffScreenPolicy(id, _)     => Target.OnDataset(id)
+    case AddCorrection(id, _, _)       => Target.OnDataset(id)
+    case RemoveCorrection(id, _)       => Target.OnDataset(id)
+    case VerifyDataset(id)             => Target.OnDataset(id)
+    case WithdrawVerification(id)      => Target.OnDataset(id)
+    case ResumeVerification(id, _)     => Target.OnDataset(id)
+    case Admit(id, _, _, _)            => Target.OnDataset(id)
+    case RestoreDraft(draft)           => Target.OnDraft(Some(draft.id))
     case _: (StartDraft | ChangeRecipe | RebaseDraft | SaveAndRun) | DiscardDraft =>
       Target.OnDraft(
         d.draft.map(_.id).orElse(d.latestAnalysis.map(a => AnalysisRevision(a.id.number + 1)))

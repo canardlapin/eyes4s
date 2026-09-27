@@ -77,8 +77,11 @@ final case class MappingTableVM(
     choices: Vector[ChoiceVM]
 ) derives CanEqual
 
-/** The Data issues tab: each issue's words and the column it names. */
-final case class IssueVM(text: String, column: Option[String]) derives CanEqual
+/** The Data issues tab: each issue's words, the column it names, and
+  * whether it blocks the import (a warning does not).
+  */
+final case class IssueVM(text: String, column: Option[String], blocking: Boolean)
+    derives CanEqual
 
 final case class PresetsVM(
     label: String,
@@ -175,19 +178,21 @@ object ImportWizardVM:
     case ColumnChoice.Role(_)                      => (t(ImportTextId.UnitNone), false)
 
   def problemText(p: WizardProblem): String = p match
-    case WizardProblem.ReadFailed(path, e)   => t(ImportTextId.ReadFailed, path, e.message)
-    case WizardProblem.Preset(e)             => e.message
-    case WizardProblem.PresetMapping(_, es)  => es.toVector.map(_.message).mkString(" ")
-    case WizardProblem.DatasetMapping(_, es) => es.toVector.map(_.message).mkString(" ")
-    case WizardProblem.Mapping(e)            => e.message
-    case WizardProblem.Blocked(es)           => issuesSummary(es.length)
-    case WizardProblem.BadGeometry(e)        => e.message
-    case WizardProblem.BadSources(e)         => e.message
-    case WizardProblem.NoFixations           => t(ImportTextId.NeedFixations)
-    case WizardProblem.NoTrials              => t(ImportTextId.NoTrialsFile)
-    case WizardProblem.UnknownDataset(d)     => s"Dataset ${d.label} is not in the project."
-    case WizardProblem.NoChange(d)           => t(ImportTextId.NoChange, d.label)
-    case WizardProblem.StoreFailed(reason)   => t(ImportTextId.StoreFailed, reason)
+    case WizardProblem.ReadFailed(path, e)       => t(ImportTextId.ReadFailed, path, e.message)
+    case WizardProblem.Preset(e)                 => e.message
+    case WizardProblem.PresetMapping(_, es)      => es.toVector.map(_.message).mkString(" ")
+    case WizardProblem.DatasetMapping(_, es)     => es.toVector.map(_.message).mkString(" ")
+    case WizardProblem.Mapping(e)                => e.message
+    case WizardProblem.Blocked(es)               => issuesSummary(es.length)
+    case WizardProblem.BadGeometry(e)            => e.message
+    case WizardProblem.BadSources(e)             => e.message
+    case WizardProblem.NoFixations               => t(ImportTextId.NeedFixations)
+    case WizardProblem.NoTrials                  => t(ImportTextId.NoTrialsFile)
+    case WizardProblem.UnknownDataset(d)         => s"Dataset ${d.label} is not in the project."
+    case WizardProblem.NoChange(d)               => t(ImportTextId.NoChange, d.label)
+    case WizardProblem.StoreFailed(reason)       => t(ImportTextId.StoreFailed, reason)
+    case WizardProblem.NotDatasetSource(d, path) =>
+      t(ImportTextId.NotDatasetSource, path, d.label)
 
   def noteText(n: WizardNote): String = n match
     case WizardNote.PresetSaved(name)         => t(ImportTextId.PresetSaved, name.value)
@@ -205,8 +210,8 @@ object ImportWizardVM:
       Format.count(preview.columns.size.toLong),
       preview.delimiter.label
     )
-    if preview.ragged.isEmpty then t(ImportTextId.FileSummary, args*)
-    else t(ImportTextId.FileSummaryRagged, (args :+ Format.count(preview.ragged.size.toLong))*)
+    if preview.raggedTotal == 0 then t(ImportTextId.FileSummary, args*)
+    else t(ImportTextId.FileSummaryRagged, (args :+ Format.count(preview.raggedTotal.toLong))*)
 
   private def rows(
       role: SourceRole,
@@ -267,9 +272,25 @@ object ImportWizardVM:
             r.actual.toString,
             r.expected.toString
           ),
-          None
+          None,
+          false
         )
-      )
+      ) ++ Option
+        .when(s.preview.raggedTotal > s.preview.ragged.size)(
+          IssueVM(
+            t(
+              ImportTextId.RaggedMore,
+              s.preview.file,
+              Format.count((s.preview.raggedTotal - s.preview.ragged.size).toLong)
+            ),
+            None,
+            false
+          )
+        )
+        .toVector
+    )
+    val warnings = w.warnings.map(e =>
+      IssueVM(t(ImportTextId.TrialWarning, e.message), e.pointsAt.map(_.value), false)
     )
     val time = w.fixations.flatMap(_._2.time)
     val tabs = WizardTab.values.toVector.map { tab =>
@@ -335,7 +356,8 @@ object ImportWizardVM:
         GeometryFieldVM(f, geometryLabel(f), w.geometry.field(f))
       ),
       issuesSummary = issuesSummary(all.size),
-      issues = all.map(e => IssueVM(e.message, e.pointsAt.map(_.value))) ++ ragged,
+      issues = all.map(e => IssueVM(e.message, e.pointsAt.map(_.value), true)) ++
+        warnings ++ ragged,
       presets = PresetsVM(
         t(ImportTextId.PresetLabel),
         w.presets.names.map(_.value),

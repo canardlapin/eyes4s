@@ -89,6 +89,7 @@ class ColumnMappingSuite extends munit.FunSuite:
     val p = preview("f.csv", "a,b,c\n1,2,3\n4,5,6\n7,8,9\n10,11,12\n13,14\n")
     assertEquals(p.records, 5)
     assertEquals(p.ragged, Vector(RaggedRecord(5, 3, 2)))
+    assertEquals(p.raggedTotal, 1)
   }
 
   test("a ragged first record is data: the file still previews, samples stay aligned") {
@@ -241,12 +242,12 @@ class ColumnMappingSuite extends munit.FunSuite:
       .declare(Some(TimeUnit.Milliseconds))
       .resolve
       .fold(es => fail(es.toVector.map(_.message).mkString("; ")), identity)
-    assertEquals(resolved.attributes, Vector(AttributeColumn("Pupil", AttributeKind.Text)))
+    assertEquals(resolved.attributes.core, Vector(AttributeColumn("Pupil", AttributeKind.Text)))
     assertEquals(resolved.mapping.column(Ordinal), Some(name("FixNum")))
     assertEquals(resolved.mapping.column(Item), Some(name("Image")))
     // Every header column is either bound or declared: nothing is dropped.
     assertEquals(
-      resolved.mapping.bindings.size + resolved.attributes.size,
+      resolved.mapping.bindings.size + resolved.attributes.bindings.size,
       preview("fixations.csv", board).header.size
     )
   }
@@ -278,7 +279,7 @@ class ColumnMappingSuite extends munit.FunSuite:
     assertEquals(resolved.mapping.column(Occurrence), None)
     assertEquals(resolved.units, original.units)
     assertEquals(
-      resolved.attributes.map(_.name),
+      resolved.attributes.columns.map(_.value),
       Vector("Block", "Pupil", "Notes")
     )
     // Without the preset the second file gets suggestions and no time unit.
@@ -363,7 +364,13 @@ class ColumnMappingSuite extends munit.FunSuite:
       .declare(Some(TimeUnit.Milliseconds))
     val resolved = d.resolve.fold(es => fail(es.head.message), identity)
     val again    = MappingDraft
-      .ofDataset(d.preview, DatasetRevision(3), resolved.mapping, resolved.units)
+      .ofDataset(
+        d.preview,
+        DatasetRevision(3),
+        resolved.mapping,
+        resolved.units,
+        resolved.attributes
+      )
       .fold(es => fail(es.head.message), identity)
     assertEquals(again, d)
   }
@@ -416,4 +423,104 @@ class ColumnMappingSuite extends munit.FunSuite:
     assertEquals(read.map(_.preview.file), Right("fixations.csv"))
     assertEquals(read.map(_.bytes), Right(eyes4s.codec.ByteDigest.sha256(bytes)))
     assert(SniffedSource.read(SourceRole.Fixations, "/abs.csv", bytes).isLeft)
+  }
+
+  // --- encoding, blank lines, empty files ------------------------------------------
+
+  private def bytes(text: String): IArray[Byte] =
+    IArray.from(text.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+
+  test("bytes that are not UTF-8 are refused with the offset of the first bad byte") {
+    val good = bytes("a,b\n1,")
+    val bad  = IArray.from(good.toSeq ++ Seq(0xc3.toByte, 0x28.toByte) ++ bytes("\n").toSeq)
+    assertEquals(
+      SniffedSource.read(SourceRole.Fixations, "f.csv", bad),
+      Left(SourceReadError.Unpreviewable(SniffError.NotUtf8("f.csv", good.length.toLong)))
+    )
+    // Valid multi-byte text is fine.
+    assert(SniffedSource.read(SourceRole.Fixations, "f.csv", bytes("a,b\n1,µs\n")).isRight)
+  }
+
+  test("a UTF-16 file is refused, whichever byte order") {
+    val le =
+      IArray.from(Seq(0xff.toByte, 0xfe.toByte) ++ "a,b".flatMap(c => Seq(c.toByte, 0.toByte)))
+    val be =
+      IArray.from(Seq(0xfe.toByte, 0xff.toByte) ++ "a,b".flatMap(c => Seq(0.toByte, c.toByte)))
+    Vector(le, be).foreach { b =>
+      assertEquals(
+        SniffedSource.read(SourceRole.Fixations, "f.csv", b),
+        Left(SourceReadError.Unpreviewable(SniffError.Utf16("f.csv")))
+      )
+    }
+  }
+
+  test("blank lines before the header are skipped") {
+    val p = preview("f.csv", "\n\r\n\na,b\n1,2\n\n3,4\n")
+    assertEquals(p.header.map(_.value), Vector("a", "b"))
+    assertEquals(p.records, 2)
+    assertEquals(p.column(name("b")).map(_.samples), Some(Vector("2", "4")))
+  }
+
+  test("a header-only file previews, but cannot be imported: the issue names the file") {
+    val p = preview("fixations.csv", golden.linesIterator.next() + "\n")
+    assertEquals(p.records, 0)
+    val d = MappingDraft.proposed(p).declare(Some(TimeUnit.Milliseconds))
+    assertEquals(d.issues.headOption, Some(MappingError.NoRecords("fixations.csv")))
+    assert(d.issues.head.message.contains("fixations.csv has a header but no records"))
+    assert(d.resolve.isLeft)
+  }
+
+  test("the separator that matches the records wins over the one that splits the header most") {
+    // Semicolons split the header into 3 columns, commas into 2; the records
+    // are comma records (one semicolon record is ragged under commas).
+    val p = preview("f.csv", "x,y;z;w\n1,2\n3,4\n5;6;7\n")
+    assertEquals(p.delimiter, Delimiter.Comma)
+    assertEquals(p.header.map(_.value), Vector("x", "y;z;w"))
+    assertEquals(p.raggedTotal, 1)
+  }
+
+  // --- memory: 200k records --------------------------------------------------------
+
+  /** A synthetic fixation file of `n` records, generated on demand, that
+    * records the furthest character anything read.
+    */
+  final class Synthetic(n: Int, raggedEvery: Int) extends CharSequence:
+    private val header = "participant,phase,trial,ordinal,x,y,onset,duration,samples\n"
+    private def line(i: Int): String =
+      if raggedEvery > 0 && i % raggedEvery == 0 then s"P01,enc,t$i,$i\n"
+      else s"P01,enc,t$i,$i,${i % 1920}.5,${i % 1080}.5,${i * 3},200,100\n"
+    // Records are fixed-width enough to index by building a prefix table.
+    private val lines            = Iterator.range(1, n + 1).map(line).toArray
+    private val offsets          = lines.scanLeft(header.length.toLong)(_ + _.length)
+    var furthest: Int            = -1
+    def length: Int              = offsets.last.toInt
+    def charAt(index: Int): Char =
+      if index > furthest then furthest = index
+      if index < header.length then header.charAt(index)
+      else
+        val k = java.util.Arrays.binarySearch(offsets, index.toLong) match
+          case found if found >= 0 => found
+          case insert              => -insert - 2
+        lines(k).charAt(index - offsets(k).toInt)
+    def subSequence(start: Int, end: Int): CharSequence =
+      (start until end).map(charAt).mkString
+    def headEnd(records: Int): Int = offsets(records).toInt
+
+  test("200k records: the separator is chosen from the head; one pass counts the rest") {
+    val text   = Synthetic(200000, raggedEvery = 1000)
+    val chosen = CsvSniffer.chooseDelimiter("big.csv", text)
+    assertEquals(chosen.map(_._1), Right(Delimiter.Comma))
+    // Choosing reads the header and the head's records, nothing further.
+    assert(
+      text.furthest < text.headEnd(CsvSniffer.HeadRecords + 1),
+      s"read to ${text.furthest} of ${text.length}"
+    )
+    assertEquals(chosen.map(_._2.size), Right(CsvSniffer.HeadRecords + 1))
+    val p = CsvSniffer.sniff("big.csv", text).fold(e => fail(e.message), identity)
+    assertEquals(p.records, 200000)
+    // 200 ragged records: all counted, a bounded number kept.
+    assertEquals(p.raggedTotal, 200)
+    assertEquals(p.ragged.size, CsvSniffer.RaggedKept)
+    assertEquals(p.ragged.head, RaggedRecord(1000, 9, 4))
+    assertEquals(p.columns.map(_.samples.size).distinct, Vector(CsvSniffer.SampleRecords))
   }

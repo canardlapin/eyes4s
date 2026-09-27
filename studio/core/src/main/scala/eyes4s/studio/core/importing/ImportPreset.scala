@@ -30,7 +30,8 @@ import eyes4s.studio.core.document.{
 import io.circe.syntax.*
 import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 
-import java.nio.charset.StandardCharsets
+import java.nio.charset.{CodingErrorAction, StandardCharsets}
+import java.nio.{ByteBuffer, CharBuffer}
 
 /** Why a preset value was refused; each case names its operand. */
 enum PresetError derives CanEqual:
@@ -185,7 +186,10 @@ enum SourceReadError derives CanEqual:
 
 object SniffedSource:
 
-  /** Digest and preview `bytes` imported as `path`; text is UTF-8. */
+  /** Digest and preview `bytes` imported as `path`. The text must be UTF-8:
+    * malformed bytes are refused with their offset, never replaced, and a
+    * UTF-16 byte-order mark is refused.
+    */
   def read(
       role: SourceRole,
       path: String,
@@ -193,12 +197,32 @@ object SniffedSource:
   ): Either[SourceReadError, SniffedSource] =
     for
       p <- SourcePath.of(path).left.map(SourceReadError.BadPath(_))
-      text = String(IArray.genericWrapArray(bytes).toArray, StandardCharsets.UTF_8)
-      preview <- CsvSniffer
-        .sniff(p.value.split('/').last, text)
-        .left
-        .map(SourceReadError.Unpreviewable(_))
+      file = p.value.split('/').last
+      text    <- decodeUtf8(file, bytes).left.map(SourceReadError.Unpreviewable(_))
+      preview <- CsvSniffer.sniff(file, text).left.map(SourceReadError.Unpreviewable(_))
     yield SniffedSource(role, p, ByteDigest.sha256(bytes), preview)
+
+  /** `bytes` as UTF-8 text, or where they stop being UTF-8. */
+  def decodeUtf8(file: String, bytes: IArray[Byte]): Either[SniffError, CharSequence] =
+    val raw        = IArray.genericWrapArray(bytes).toArray
+    def at(i: Int) = if raw.length > i then raw(i) & 0xff else -1
+    if (at(0) == 0xfe && at(1) == 0xff) || (at(0) == 0xff && at(1) == 0xfe) then
+      Left(SniffError.Utf16(file))
+    else
+      val decoder = StandardCharsets.UTF_8
+        .newDecoder()
+        .onMalformedInput(CodingErrorAction.REPORT)
+        .onUnmappableCharacter(CodingErrorAction.REPORT)
+      val in     = ByteBuffer.wrap(raw)
+      val out    = CharBuffer.allocate(raw.length + 1)
+      val result = decoder.decode(in, out, true)
+      if result.isError then Left(SniffError.NotUtf8(file, in.position().toLong))
+      else
+        val flushed = decoder.flush(out)
+        if flushed.isError then Left(SniffError.NotUtf8(file, in.position().toLong))
+        else
+          out.flip()
+          Right(out)
 
 /** A declared display geometry as typed into the wizard's Geometry tab:
   * seven fields, parsed together. A field that is not a number names itself.

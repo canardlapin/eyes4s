@@ -82,7 +82,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
     val imported = mutable.ArrayBuffer.empty[String]
     def importInput(
         source: Source,
-        bytes: IArray[Byte],
+        path: Path,
         done: Either[String, Unit] => Unit
     ): Unit =
       refuseInputs.fold {
@@ -219,6 +219,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
 
   fxStage.test("removing a required role blocks the commit with an issue naming the column") {
     fx =>
+      assumeFullStage(fx)
       val m = mount(fx, ImportWizard.newImport(t2, ImportPresets.empty), t2)
       readIn(fx, m, SourceRole.Fixations, fixations)
       declareMs(fx, m)
@@ -242,6 +243,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
 
   fxStage.test("a commit sends one Dataset · re-admit ImportSources to the app and closes") {
     fx =>
+      assumeFullStage(fx)
       val m = mount(fx, ImportWizard.newImport(t2, ImportPresets.empty), t2)
       readIn(fx, m, SourceRole.Fixations, fixations)
       readIn(fx, m, SourceRole.Trials, trials)
@@ -249,7 +251,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
       assertEquals(drawn(m.view.commit), "Import as r4")
       fx.robot.click(m.view.commit)
       dispatched(m) match
-        case Vector(c @ Command.ImportSources(parent, sources, mapping, units, _)) =>
+        case Vector(c @ Command.ImportSources(parent, sources, mapping, units, _, _)) =>
           assertEquals(c.kind, ChangeKind.DatasetReadmit)
           assertEquals(parent, Some(DatasetRevision(3)))
           // The same bytes as the story moment's sources: the golden files.
@@ -267,6 +269,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
   }
 
   fxStage.test("a preset saved to disk re-applies to a second file") { fx =>
+    assumeFullStage(fx)
     val dir = Files.createTempDirectory("eyes4s-presets")
     try
       val store = FilePresetStore(dir)
@@ -316,7 +319,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
       assertEquals(drawn(next.view.status), "Applied preset Golden export to session2.csv.")
       fx.robot.click(next.view.commit)
       dispatched(next) match
-        case Vector(Command.ImportSources(_, _, mapping, units, _)) =>
+        case Vector(Command.ImportSources(_, _, mapping, units, _, _)) =>
           assertEquals(mapping.column(ColumnRole.Occurrence), None)
           assertEquals(
             mapping.bindings,
@@ -332,8 +335,9 @@ class ImportWizardFxSuite extends StudioFxSuite:
   }
 
   fxStage.test(
-    "re-mapping pending r3 applies SetUnits in place; unchanged rows keep their nodes"
+    "re-mapping pending r3 is one ReviseDataset; unchanged rows keep their nodes"
   ) { fx =>
+    assumeFullStage(fx)
     val m = mount(fx, ok(ImportWizard.remap(t1, DatasetRevision(3), ImportPresets.empty)), t1)
     readIn(fx, m, SourceRole.Fixations, fixations, Some("inputs/fixations.csv"))
     assertEquals(drawn(m.view.commit), "Apply to r3")
@@ -357,13 +361,22 @@ class ImportWizardFxSuite extends StudioFxSuite:
     fx.robot.click(m.view.commit)
     assertEquals(
       dispatched(m),
-      Vector(Command.SetUnits(DatasetRevision(3), DeclaredUnits(Some(TimeUnit.Microseconds))))
+      Vector(
+        Command.ReviseDataset(
+          DatasetRevision(3),
+          t1.dataset(DatasetRevision(3)).get.mapping,
+          DeclaredUnits(Some(TimeUnit.Microseconds)),
+          t1.dataset(DatasetRevision(3)).get.geometry,
+          DeclaredAttributes.empty
+        )
+      )
     )
   }
 
   fxStage.test(
     "a first import declares geometry on the Geometry tab; typed fields reach the model"
   ) { fx =>
+    assumeFullStage(fx)
     val m = mount(fx, ImportWizard.newImport(empty, ImportPresets.empty), empty)
     readIn(fx, m, SourceRole.Fixations, fixations)
     declareMs(fx, m)
@@ -383,6 +396,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
   }
 
   fxStage.test("tabs switch pages by click; snapshots in both themes") { fx =>
+    assumeFullStage(fx)
     val m = mount(fx, ImportWizard.newImport(t2, ImportPresets.empty), t2, theme = Theme.Dark)
     readIn(fx, m, SourceRole.Fixations, fixations)
     readIn(fx, m, SourceRole.Trials, trials)
@@ -448,6 +462,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
 
   fxStage.test("a new import's files are stored in the project, so the next save succeeds") {
     fx =>
+      assumeFullStage(fx)
       import cats.effect.IO
       import cats.effect.unsafe.implicits.global
       import eyes4s.studio.core.bundle.{BundleSamples, LockOwner, SharingOptions}
@@ -504,6 +519,40 @@ class ImportWizardFxSuite extends StudioFxSuite:
         )
         assertEquals(runOnFx(host.model.problem), None)
         assertEquals(session.saved.unsafeRunSync().datasets.last.id, DatasetRevision(4))
+        // A file that changes between reading and committing is not stored,
+        // and nothing is applied: the bytes on commit must be those read.
+        val third = dir.resolve("session3.csv")
+        Files.writeString(
+          third,
+          Files.readAllLines(fixations, UTF_8).asScala.take(30).mkString("\n"),
+          UTF_8
+        )
+        val app3  = mutable.ArrayBuffer.empty[Intent]
+        val host3 = runOnFx(
+          ImportWizardHost(
+            ImportWizard.newImport(t2, ImportPresets.empty),
+            () => t2,
+            app3 += _,
+            platform,
+            () => ()
+          )
+        )
+        runOnFx(host3.read(SourceRole.Fixations, third))
+          .get(30, java.util.concurrent.TimeUnit.SECONDS)
+        Files.writeString(third, "changed", UTF_8)
+        runOnFx(host3.dispatch(WizardIntent.DeclareTime(Some(TimeUnit.Milliseconds))))
+        runOnFx(host3.dispatch(WizardIntent.Commit))
+        val until = System.nanoTime + 30_000_000_000L
+        while runOnFx(host3.model.problem).isEmpty && System.nanoTime < until do
+          Thread.sleep(20)
+        assert(
+          runOnFx(host3.model.problem).exists {
+            case WizardProblem.StoreFailed(r) => r.contains("changed after it was read")
+            case _                            => false
+          },
+          runOnFx(host3.model.problem).toString
+        )
+        assertEquals(runOnFx(app3.toVector), Vector.empty)
         port.close()
         session.close.unsafeRunSync(): Unit
       finally TempDirs.remove(dir)
@@ -511,6 +560,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
 
   fxStage.test("a file the project cannot store applies nothing and keeps the wizard open") {
     fx =>
+      assumeFullStage(fx)
       val m = mount(
         fx,
         ImportWizard.newImport(t2, ImportPresets.empty),
@@ -526,6 +576,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
   }
 
   fxStage.test("a preset the store cannot write says so") { fx =>
+    assumeFullStage(fx)
     val m = mount(
       fx,
       ImportWizard.newImport(t2, ImportPresets.empty),

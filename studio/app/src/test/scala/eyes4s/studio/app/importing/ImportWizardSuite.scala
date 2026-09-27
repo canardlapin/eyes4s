@@ -57,6 +57,13 @@ class ImportWizardSuite extends munit.FunSuite:
 
   def col(s: String): ColumnName = ok(ColumnName.of(s))
 
+  /** `text` previewed as `dataset`'s own fixation file (a re-map reads that
+    * file; the first records stand for it here).
+    */
+  def own(document: StudioDocument, dataset: DatasetRevision, text: String): SniffedSource =
+    source(SourceRole.Fixations, "inputs/fixations.csv", text)
+      .copy(bytes = document.dataset(dataset).flatMap(_.sources.fixations).get.bytes)
+
   def run(
       w: ImportWizard,
       document: StudioDocument,
@@ -178,7 +185,9 @@ class ImportWizardSuite extends munit.FunSuite:
     assertEquals(w.problem, None)
     assertEquals(effects.last, WizardEffect.Close)
     commands(effects) match
-      case Vector(c @ Command.ImportSources(parent, sources, mapping, units, geometry)) =>
+      case Vector(
+            c @ Command.ImportSources(parent, sources, mapping, units, geometry, attrs)
+          ) =>
         assertEquals(c.kind, ChangeKind.DatasetReadmit)
         assertEquals(parent, Some(DatasetRevision(3)))
         assertEquals(sources.fixations.map(_.path.value), Some("session2/fixations.csv"))
@@ -186,6 +195,7 @@ class ImportWizardSuite extends munit.FunSuite:
         assertEquals(mapping.column(ColumnRole.Onset), Some(col("onset_ms")))
         assertEquals(units, DeclaredUnits(Some(TimeUnit.Milliseconds)))
         assertEquals(geometry, t2.datasets.last.geometry)
+        assertEquals(attrs, DeclaredAttributes.empty)
       case other => fail(s"expected one ImportSources, got $other")
     // The app applies it: a new pending dataset r4.
     val app        = AppModel.open(t2, None)
@@ -217,18 +227,18 @@ class ImportWizardSuite extends munit.FunSuite:
     val (done, fx) = run(w, empty, (geometry :+ WizardIntent.Commit)*)
     assertEquals(done.problem, None)
     commands(fx) match
-      case Vector(Command.ImportSources(None, _, _, _, g)) =>
+      case Vector(Command.ImportSources(None, _, _, _, g, _)) =>
         assertEquals(g.image.render, "1024×768 px at (448, 156)")
       case other => fail(s"expected one ImportSources, got $other")
   }
 
-  test("re-mapping a pending revision edits it in place, only what changed") {
+  test("re-mapping a pending revision is one ReviseDataset; one undo restores it exactly") {
     // t1: r3 is the pending re-import, units declared ms.
     val w0     = ok(ImportWizard.remap(t1, DatasetRevision(3), ImportPresets.empty))
     val (w, _) = run(
       w0,
       t1,
-      WizardIntent.SourceRead(source(SourceRole.Fixations, "inputs/fixations.csv", golden))
+      WizardIntent.SourceRead(own(t1, DatasetRevision(3), golden))
     )
     // Its own mapping comes back as the draft.
     assertEquals(
@@ -245,15 +255,29 @@ class ImportWizardSuite extends munit.FunSuite:
       WizardIntent.DeclareTime(Some(TimeUnit.Microseconds)),
       WizardIntent.Commit
     )
+    val r3 = t1.dataset(DatasetRevision(3)).get
     assertEquals(
       commands(fx),
-      Vector(Command.SetUnits(DatasetRevision(3), DeclaredUnits(Some(TimeUnit.Microseconds))))
+      Vector(
+        Command.ReviseDataset(
+          DatasetRevision(3),
+          r3.mapping,
+          DeclaredUnits(Some(TimeUnit.Microseconds)),
+          r3.geometry,
+          r3.attributes
+        )
+      )
     )
     val applied = AppModel.run(AppModel.open(t1, None), WizardEffect.appIntents(fx))._1
     assertEquals(
       applied.document.dataset(DatasetRevision(3)).map(_.units.time),
       Some(Some(TimeUnit.Microseconds))
     )
+    // One Undo of the science stack restores r3 exactly.
+    val undone =
+      AppModel.update(applied, Intent.Undo(eyes4s.studio.core.command.HistoryStack.Science))._1
+    assertEquals(undone.document.dataset(DatasetRevision(3)), Some(r3))
+    assertEquals(undone.document, t1)
   }
 
   test("re-mapping an admitted revision re-imports it as a new pending revision") {
@@ -261,17 +285,19 @@ class ImportWizardSuite extends munit.FunSuite:
     val (w, fx) = run(
       w0,
       t2,
-      WizardIntent.SourceRead(source(SourceRole.Fixations, "inputs/fixations.csv", golden)),
+      WizardIntent.SourceRead(own(t2, DatasetRevision(3), golden)),
       WizardIntent.Choose(SourceRole.Fixations, col("occurrence"), ColumnChoice.Attribute),
       WizardIntent.Commit
     )
     assertEquals(w.problem, None)
     val r3 = t2.dataset(DatasetRevision(3)).get
     commands(fx) match
-      case Vector(Command.ImportSources(Some(parent), sources, mapping, _, _)) =>
+      case Vector(Command.ImportSources(Some(parent), sources, mapping, _, _, attrs)) =>
         assertEquals(parent, DatasetRevision(3))
         assertEquals(sources, r3.sources)
         assertEquals(mapping.column(ColumnRole.Occurrence), None)
+        // The column that lost its role passes through as an attribute.
+        assertEquals(attrs.columns, Vector(col("occurrence")))
       case other => fail(s"expected a re-import, got $other")
     assertEquals(ImportWizardVM.of(w0, t2).commit, "Re-admit as r4")
   }
@@ -303,7 +329,7 @@ class ImportWizardSuite extends munit.FunSuite:
     )
     assertEquals(w.problem, None)
     commands(fx) match
-      case Vector(Command.ImportSources(_, _, mapping, units, _)) =>
+      case Vector(Command.ImportSources(_, _, mapping, units, _, _)) =>
         assertEquals(mapping.column(ColumnRole.Ordinal), Some(col("FixNum")))
         assertEquals(mapping.column(ColumnRole.Participant), Some(col("Subject")))
         assertEquals(units.time, Some(TimeUnit.Milliseconds))
@@ -389,7 +415,8 @@ class ImportWizardSuite extends munit.FunSuite:
               r3.sources,
               r3.mapping,
               DeclaredUnits(Some(TimeUnit.Seconds)),
-              r3.geometry
+              r3.geometry,
+              DeclaredAttributes.empty
             )
           )
         )
@@ -405,7 +432,7 @@ class ImportWizardSuite extends munit.FunSuite:
       WizardIntent.Commit
     )
     commands(fx) match
-      case Vector(Command.ImportSources(parent, _, _, _, _)) =>
+      case Vector(Command.ImportSources(parent, _, _, _, _, _)) =>
         assertEquals(parent, Some(DatasetRevision(4)))
       case other => fail(s"expected one ImportSources, got $other")
   }
@@ -418,4 +445,79 @@ class ImportWizardSuite extends munit.FunSuite:
     )
     assertEquals(fx, Vector.empty)
     assertEquals(ImportWizardVM.of(w, t2).problem, Some("Not saved: presets/x.json: disk full"))
+  }
+
+  test("a re-map refuses a file that is not the revision's own") {
+    val w0     = ok(ImportWizard.remap(t1, DatasetRevision(3), ImportPresets.empty))
+    val (w, _) = run(
+      w0,
+      t1,
+      WizardIntent.SourceRead(source(SourceRole.Fixations, "session2.csv", golden))
+    )
+    assertEquals(w.fixations, None)
+    assertEquals(
+      w.problem,
+      Some(WizardProblem.NotDatasetSource(DatasetRevision(3), "session2.csv"))
+    )
+    assert(ImportWizardVM.of(w, t1).problem.exists(_.contains("session2.csv is not r3's")))
+  }
+
+  test("unknown columns reach the command as declared attributes") {
+    val withPupil =
+      board.linesIterator.zipWithIndex
+        .map((l, i) => l + (if i == 0 then ",Pupil,Notes" else ",3.1,ok"))
+        .mkString("\n")
+    val (_, fx) = run(
+      ImportWizard.newImport(t2, ImportPresets.empty),
+      t2,
+      WizardIntent.SourceRead(source(SourceRole.Fixations, "fixations.csv", withPupil)),
+      WizardIntent.DeclareTime(Some(TimeUnit.Milliseconds)),
+      WizardIntent.Commit
+    )
+    commands(fx) match
+      case Vector(Command.ImportSources(_, _, _, _, _, attrs)) =>
+        assertEquals(attrs.columns.map(_.value), Vector("Pupil", "Notes"))
+      case other => fail(s"expected one ImportSources, got $other")
+    val next = AppModel.run(AppModel.open(t2, None), WizardEffect.appIntents(fx))._1
+    assertEquals(
+      next.document.datasets.last.attributes.columns.map(_.value),
+      Vector("Pupil", "Notes")
+    )
+  }
+
+  test("trial metadata issues are warnings: shown in Data issues, never blocking") {
+    val noPhase = trials.replace("participant,phase,", "participant,stage_x,")
+    val (w, fx) = run(
+      ImportWizard.newImport(t2, ImportPresets.empty),
+      t2,
+      WizardIntent.SourceRead(source(SourceRole.Fixations, "fixations.csv", golden)),
+      WizardIntent.SourceRead(source(SourceRole.Trials, "trials.csv", noPhase)),
+      WizardIntent.DeclareTime(Some(TimeUnit.Milliseconds))
+    )
+    assertEquals(w.issues, Vector.empty)
+    assertEquals(w.warnings.size, 1)
+    val vm      = ImportWizardVM.of(w, t2)
+    val warning = vm.issues.find(!_.blocking).get
+    assert(warning.text.startsWith("Warning (trial metadata, mapped in S5.4)"), warning.text)
+    assert(warning.text.contains("phase role"), warning.text)
+    assert(vm.trialsNote.contains("mapped in S5.4"), vm.trialsNote)
+    assertEquals(commands(run(w, t2, WizardIntent.Commit)._2).size, 1)
+  }
+
+  test("a header-only file is refused on commit, naming the file") {
+    val headerOnly = golden.linesIterator.next()
+    val (w, fx)    = run(
+      ImportWizard.newImport(t2, ImportPresets.empty),
+      t2,
+      WizardIntent.SourceRead(source(SourceRole.Fixations, "fixations.csv", headerOnly)),
+      WizardIntent.DeclareTime(Some(TimeUnit.Milliseconds)),
+      WizardIntent.Commit
+    )
+    assertEquals(commands(fx), Vector.empty)
+    assert(
+      ImportWizardVM
+        .of(w, t2)
+        .issues
+        .exists(_.text.contains("fixations.csv has a header but no records"))
+    )
   }

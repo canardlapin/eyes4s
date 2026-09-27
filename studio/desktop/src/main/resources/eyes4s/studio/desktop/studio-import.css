@@ -203,6 +203,11 @@
   -fx-background-insets: 0, 0 0 1 0;
 }
 
+/* A warning does not block the import. */
+.import-issue.warning {
+  -fx-text-fill: -es-warn-text;
+}
+
 .import-footer {
   -fx-min-height: 40px;
   -fx-pref-height: 40px;

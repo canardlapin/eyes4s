@@ -43,9 +43,17 @@ enum SniffError derives CanEqual:
   case UnterminatedQuote(file: String, record: Int)
 
   /** No candidate separator splits the header into more than one column and
-    * any sampled record into as many fields; `header` is the first line.
+    * any head record into as many fields; `header` is the header line.
     */
   case NoDelimiter(file: String, header: String)
+
+  /** The bytes are not UTF-8: the first malformed sequence starts at byte
+    * `offset` (0-based).
+    */
+  case NotUtf8(file: String, offset: Long)
+
+  /** The file starts with a UTF-16 byte-order mark; import reads UTF-8. */
+  case Utf16(file: String)
 
   /** The header's column `position` (1-based) is blank. */
   case BlankColumn(file: String, position: Int)
@@ -59,15 +67,19 @@ enum SniffError derives CanEqual:
       s"$file: a quoted field in record $record is never closed."
     case NoDelimiter(file, header) =>
       s"$file: no comma, tab or semicolon splits the header '$header' into columns " +
-        "that every sampled record matches."
+        "that a first record matches."
+    case NotUtf8(file, offset) =>
+      s"$file is not UTF-8 text: the bytes at offset $offset are not a UTF-8 character."
+    case Utf16(file) =>
+      s"$file is UTF-16 text (it starts with a UTF-16 byte-order mark); save it as UTF-8."
     case BlankColumn(file, position) => s"$file: header column $position has no name."
     case RepeatedColumn(file, column, positions) =>
       s"$file: the header names column $column more than once (positions " +
         s"${positions.mkString(", ")})."
 
 /** A record whose width differs from the header's: returned as data, never
-  * dropped silently. Record numbers are 1-based in file order, excluding the
-  * header (fixtures/studio-golden README).
+  * dropped silently. Records are numbered from 1 in file order after the
+  * header, counting non-blank records (fixtures/studio-golden README).
   */
 final case class RaggedRecord(record: Int, expected: Int, actual: Int) derives CanEqual
 
@@ -77,14 +89,17 @@ final case class RaggedRecord(record: Int, expected: Int, actual: Int) derives C
 final case class PreviewColumn(name: ColumnName, samples: Vector[String]) derives CanEqual
 
 /** What sniffing found in a delimited file: its separator, its columns with
-  * the first records' values, how many records follow the header, and every
-  * record whose width is not the header's.
+  * the first records' values, how many records follow the header, how many
+  * have a width other than the header's, and the first of those
+  * ([[CsvSniffer.RaggedKept]] at most, so a preview does not grow with the
+  * file).
   */
 final case class CsvPreview(
     file: String,
     delimiter: Delimiter,
     columns: Vector[PreviewColumn],
     records: Int,
+    raggedTotal: Int,
     ragged: Vector[RaggedRecord]
 ) derives CanEqual:
   def header: Vector[ColumnName] = columns.map(_.name)
@@ -92,62 +107,83 @@ final case class CsvPreview(
   def column(name: ColumnName): Option[PreviewColumn] = columns.find(_.name == name)
 
 /** CSV sniffing (ticket S5.2): the separator, the header and the first
-  * records of a delimited text file. Quoted fields follow RFC 4180 (a doubled
-  * quote inside quotes is one quote; separators and line breaks inside quotes
-  * are data). A leading byte-order mark is dropped. Nothing about units is
+  * records of a delimited text file, then one streaming pass that counts the
+  * records and finds the ragged ones. Quoted fields follow RFC 4180 (a
+  * doubled quote inside quotes is one quote; separators and line breaks
+  * inside quotes are data). Blank records, before the header included, are
+  * skipped; a leading byte-order mark is dropped. Nothing about units is
   * sniffed: time units are declared, never inferred (DESIGN_SPEC section 9).
+  *
+  * Only the head (the header and [[HeadRecords]] records) is parsed for each
+  * candidate separator. The rest of the file is read once, a record at a
+  * time, keeping only counts and the first [[RaggedKept]] ragged records.
   */
 object CsvSniffer:
 
   /** How many records a preview keeps per column ("First records"). */
   val SampleRecords: Int = 4
 
+  /** How many records after the header decide the separator. */
+  val HeadRecords: Int = 200
+
+  /** How many ragged records a preview lists; all are counted. */
+  val RaggedKept: Int = 100
+
   /** Candidate separators, in preference order when several fit equally. */
   val candidates: Vector[Delimiter] = Delimiter.values.toVector
 
+  private type Head = (Delimiter, Vector[Vector[String]])
+
+  /** The separator the head of `text` shows, and the head's records under it
+    * (header first). A separator fits when it splits the header into more
+    * than one column and at least one head record (if any) into as many
+    * fields; a record of another width is ragged data, reported by the scan.
+    * The best fit matches the most head records, then splits the header
+    * most. Reads nothing past the head.
+    */
+  def chooseDelimiter(file: String, text: CharSequence): Either[SniffError, Head] =
+    val parsed                               = candidates.map(d => d -> head(file, text, d))
+    def matching(rs: Vector[Vector[String]]) = rs.drop(1).count(_.size == rs.head.size)
+    val fitting                              = parsed.collect {
+      case (d, Right(rs))
+          if rs.headOption.exists(_.size > 1) && (rs.size == 1 || matching(rs) > 0) =>
+        (d, rs)
+    }
+    fitting.sortBy((d, rs) => (-matching(rs), -rs.head.size, d.ordinal)).headOption match
+      case Some(found) => Right(found)
+      case None        =>
+        // A quote error explains the failure better than "no separator".
+        val quote = parsed.collectFirst { case (_, Left(e)) => e }
+        val first = parsed.collectFirst { case (_, Right(rs)) if rs.nonEmpty => rs.head }
+        (quote, first) match
+          case (Some(e), _)      => Left(e)
+          case (None, Some(hdr)) => Left(SniffError.NoDelimiter(file, hdr.mkString))
+          case (None, None)      => Left(SniffError.Empty(file))
+
   def sniff(
       file: String,
-      text: String,
+      text: CharSequence,
       samples: Int = SampleRecords
   ): Either[SniffError, CsvPreview] =
-    val body  = text.stripPrefix("﻿")
-    val lines = body.linesIterator.toVector
-    lines.headOption.filter(_.trim.nonEmpty) match
-      case None             => Left(SniffError.Empty(file))
-      case Some(headerLine) =>
-        val parsed = candidates.map(d => d -> records(file, body, d))
-        // A separator fits when it splits the header into more than one
-        // column and at least one sampled record (if any) into as many
-        // fields; a record of another width is ragged data, reported. The
-        // best fit matches the most sampled records, then splits the header
-        // most.
-        def matching(rs: Vector[Vector[String]]) =
-          rs.slice(1, 1 + samples).count(_.size == rs.head.size)
-        val fitting = parsed.collect {
-          case (d, Right(rs))
-              if rs.headOption.exists(_.size > 1) &&
-                (rs.size == 1 || matching(rs) > 0) =>
-            (d, rs)
-        }
-        fitting.sortBy((d, rs) => (-matching(rs), -rs.head.size, d.ordinal)).headOption match
-          case Some((d, rs)) => preview(file, d, rs, samples)
-          case None          =>
-            // A quote error under the separator that splits the header most
-            // explains the failure better than "no separator".
-            parsed
-              .collectFirst { case (_, Left(e: SniffError.UnterminatedQuote)) => e }
-              .fold[Either[SniffError, CsvPreview]](
-                Left(SniffError.NoDelimiter(file, headerLine))
-              )(Left(_))
+    for
+      chosen <- chooseDelimiter(file, text)
+      (delimiter, headRecords) = chosen
+      header                   = headRecords.head
+      names <- columnNames(file, header)
+      scan  <- scan(file, text, delimiter, header.size)
+    yield
+      val sampled = headRecords.slice(1, 1 + samples)
+      // A short record shows a blank cell, so every sample stays aligned
+      // with its record number.
+      val columns = names.zipWithIndex.map((name, i) =>
+        PreviewColumn(name, sampled.map(_.lift(i).getOrElse("")))
+      )
+      CsvPreview(file, delimiter, columns, scan.records, scan.raggedTotal, scan.ragged)
 
-  private def preview(
+  private def columnNames(
       file: String,
-      delimiter: Delimiter,
-      rows: Vector[Vector[String]],
-      samples: Int
-  ): Either[SniffError, CsvPreview] =
-    val header = rows.head
-    val data   = rows.tail
+      header: Vector[String]
+  ): Either[SniffError, Vector[ColumnName]] =
     for
       names <- header.zipWithIndex
         .foldLeft[Either[SniffError, Vector[ColumnName]]](Right(Vector.empty)) {
@@ -160,78 +196,143 @@ object CsvSniffer:
                 .map(done :+ _)
             )
         }
-      _ <- names.zipWithIndex
-        .groupBy(_._1)
-        .toVector
-        .sortBy(_._2.head._2)
+      _ <- names.distinct
         .collectFirst {
-          case (name, at) if at.size > 1 =>
-            SniffError.RepeatedColumn(file, name.value, at.map(_._2 + 1))
+          case name if names.count(_ == name) > 1 =>
+            SniffError.RepeatedColumn(
+              file,
+              name.value,
+              names.zipWithIndex.collect { case (n, i) if n == name => i + 1 }
+            )
         }
         .toLeft(())
-    yield
-      val sampled = data.take(samples)
-      val columns =
-        // A short record shows a blank cell, so every sample stays aligned
-        // with its record number.
-        names.zipWithIndex.map((name, i) =>
-          PreviewColumn(name, sampled.map(_.lift(i).getOrElse("")))
-        )
-      val ragged = data.zipWithIndex.collect {
-        case (r, i) if r.size != header.size => RaggedRecord(i + 1, header.size, r.size)
-      }
-      CsvPreview(file, delimiter, columns, data.size, ragged)
+    yield names
 
-  /** Every non-blank record of `text` split by `delimiter`; the header is the
-    * first. A record is numbered from 1 after the header.
+  private final case class Scan(records: Int, raggedTotal: Int, ragged: Vector[RaggedRecord])
+
+  /** One pass over every record after the header: the count and the ragged. */
+  private def scan(
+      file: String,
+      text: CharSequence,
+      delimiter: Delimiter,
+      width: Int
+  ): Either[SniffError, Scan] =
+    val reader = RecordReader(file, text, delimiter)
+    val ragged = Vector.newBuilder[RaggedRecord]
+    var kept   = 0
+    var total  = 0
+    var count  = 0
+    reader.next(): Unit // the header
+    reader
+      .fold(Right(())) { fields =>
+        count += 1
+        if fields.size != width then
+          total += 1
+          if kept < RaggedKept then
+            ragged += RaggedRecord(count, width, fields.size)
+            kept += 1
+        true
+      }
+      .map(_ => Scan(count, total, ragged.result()))
+
+  /** The header and up to [[HeadRecords]] records under `delimiter`. */
+  private def head(
+      file: String,
+      text: CharSequence,
+      delimiter: Delimiter
+  ): Either[SniffError, Vector[Vector[String]]] =
+    val out = Vector.newBuilder[Vector[String]]
+    var n   = 0
+    RecordReader(file, text, delimiter)
+      .fold(Right(())) { fields =>
+        out += fields
+        n += 1
+        n <= HeadRecords
+      }
+      .map(_ => out.result())
+
+  /** Every non-blank record of `text` split by `delimiter`, the header
+    * first. It parses the whole text: for small inputs.
     */
   def records(
       file: String,
-      text: String,
+      text: CharSequence,
       delimiter: Delimiter
   ): Either[SniffError, Vector[Vector[String]]] =
-    val out               = Vector.newBuilder[Vector[String]]
-    val fields            = mutable.ArrayBuffer.empty[String]
-    val field             = new StringBuilder
-    var quoted            = false
-    var opened            = 0     // the record a quote was opened in (0 = header)
-    var record            = 0
-    var i                 = 0
-    var touched           = false // the current record has any character
-    val sep               = delimiter.char
-    def endRecord(): Unit =
-      fields += field.toString
-      field.clear()
-      if touched || fields.exists(_.nonEmpty) then out += fields.toVector
-      fields.clear()
-      touched = false
-      record += 1
-    while i < text.length do
-      val c = text.charAt(i)
+    val out = Vector.newBuilder[Vector[String]]
+    RecordReader(file, text, delimiter)
+      .fold(Right(()))(fields =>
+        out += fields
+        true
+      )
+      .map(_ => out.result())
+
+/** Reads `text` one record at a time, skipping blank records and a leading
+  * byte-order mark. The header is record 0.
+  */
+private[importing] final class RecordReader(
+    file: String,
+    text: CharSequence,
+    delimiter: Delimiter
+):
+  private var at     = if text.length > 0 && text.charAt(0) == '﻿' then 1 else 0
+  private var record = 0
+  private val sep    = delimiter.char
+
+  /** Feed records to `f` until it returns false or the text ends; the first
+    * parse error stops the fold.
+    */
+  def fold(ok: Either[SniffError, Unit])(
+      f: Vector[String] => Boolean
+  ): Either[SniffError, Unit] =
+    var result = ok
+    var more   = true
+    while more && result.isRight do
+      next() match
+        case None            => more = false
+        case Some(Left(e))   => result = Left(e)
+        case Some(Right(fs)) => more = f(fs)
+    result
+
+  /** The next non-blank record, or `None` at the end of the text. */
+  def next(): Option[Either[SniffError, Vector[String]]] =
+    var found = Option.empty[Either[SniffError, Vector[String]]]
+    while found.isEmpty && at < text.length do
+      one() match
+        case Right(fields) if fields == Vector("") => ()
+        case other                                 => found = Some(other)
+    found.foreach {
+      case Right(_) => record += 1
+      case Left(_)  => at = text.length
+    }
+    found
+
+  /** One physical record from `at`, which moves past its end. */
+  private def one(): Either[SniffError, Vector[String]] =
+    val fields = mutable.ArrayBuffer.empty[String]
+    val field  = new StringBuilder
+    var quoted = false
+    var done   = false
+    while !done && at < text.length do
+      val c = text.charAt(at)
       if quoted then
         if c == '"' then
-          if i + 1 < text.length && text.charAt(i + 1) == '"' then
+          if at + 1 < text.length && text.charAt(at + 1) == '"' then
             field += '"'
-            i += 1
+            at += 1
           else quoted = false
         else field += c
-      else if c == '"' then
-        quoted = true
-        opened = record
-        touched = true
+      else if c == '"' then quoted = true
       else if c == sep then
         fields += field.toString
         field.clear()
-        touched = true
-      else if c == '\n' then endRecord()
+      else if c == '\n' then done = true
       else if c == '\r' then
-        if i + 1 < text.length && text.charAt(i + 1) == '\n' then i += 1
-        endRecord()
-      else
-        field += c
-        touched = true
-      i += 1
-    if quoted then Left(SniffError.UnterminatedQuote(file, opened))
+        if at + 1 < text.length && text.charAt(at + 1) == '\n' then at += 1
+        done = true
+      else field += c
+      at += 1
+    if quoted then Left(SniffError.UnterminatedQuote(file, record))
     else
-      if touched || field.nonEmpty then endRecord()
-      Right(out.result())
+      fields += field.toString
+      Right(fields.toVector)
