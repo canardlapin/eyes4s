@@ -98,9 +98,9 @@ object DocumentGen:
       kinds <- Gen.listOfN(n, Gen.oneOf(AttributeKindChoice.values.toSeq))
     yield right(
       DeclaredAttributes.of(
-        kinds.zipWithIndex.toVector.map((k, i) =>
-          AttributeBinding(right(ColumnName.of(s"attr_$i")), k)
-        )
+        kinds.zipWithIndex.toVector
+          .map((k, i) => AttributeBinding(right(ColumnName.of(s"attr_$i")), k))
+          .filterNot(a => m.bindings.exists(_.column == a.column))
       )
     )
 
