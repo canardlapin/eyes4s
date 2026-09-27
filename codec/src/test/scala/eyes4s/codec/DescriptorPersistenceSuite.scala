@@ -130,8 +130,15 @@ class DescriptorPersistenceSuite extends munit.FunSuite:
     )
     val children = get(study.inspect).fields.find(_.info.id == "estimate.1").get.children
     assertEquals(children.map(_.info.id), Vector("sigma", "edges"))
-    assertEquals(children.head.info.units, ParameterUnits.Spatial("px"))
-    assertEquals(children.head.info.allowed, ParameterDomain.PositiveFinite)
+    assertEquals(children.head.info.quantity, Quantity.Planar(PlanarUnit.Px))
+    assertEquals(
+      children.head.info.kind,
+      FieldKind.Numeric(
+        Quantity.Planar(PlanarUnit.Px),
+        NumberShape.Real,
+        NumericBounds.positive
+      )
+    )
     assertEquals(children.head.values, Vector(Provenance.Param.Num(10)))
     val s = Json.fromString
     val n = Json.fromInt

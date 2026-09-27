@@ -429,7 +429,17 @@ object DiagnosticCatalog:
     "MissingMethod",
     "MethodIdentity",
     "ExecutionMismatch",
-    "UnexplainedFields"
+    "UnexplainedFields",
+    // appended by CR6a
+    "InvalidFieldId",
+    "InvalidBounds",
+    "BoundsForShape",
+    "UnknownRulePart",
+    "InvalidRepetition",
+    "DefaultRefused",
+    "UntranslatableLegacy",
+    "FormViewMismatch",
+    "RulePartKind"
   )
 
   /** Finding severity is the finding's own blocker/warning classification. */
@@ -884,6 +894,24 @@ object DiagnosticCatalog:
     "PageStart"
   )
 
+  // ---------------------------------------------------------------- appended by CR6a
+  /** A raw form value refused by its field: shape, declared bounds, a rule
+    * across the field's parts, or the domain constructor.
+    */
+  val formField: DiagnosticFamily = error("form-field")(
+    "Missing",
+    "Malformed",
+    "OutOfBounds",
+    "NotAChoice",
+    "UnknownPart",
+    "Unordered",
+    "Duplicate",
+    "ItemCount",
+    "Refused",
+    "UnknownField",
+    "RepeatedPart"
+  )
+
   /** Steps of the provenance chain from a query contrast to a source record. */
   val navigation: DiagnosticFamily = error("navigation")(
     "NegativeOffset",
@@ -1000,6 +1028,7 @@ object DiagnosticCatalog:
     analysisFinding,
     recordIdentity,
     coordinateProvenance,
+    formField,
     navigation
   )
 

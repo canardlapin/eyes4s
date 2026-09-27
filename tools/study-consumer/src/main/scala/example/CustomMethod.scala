@@ -65,15 +65,16 @@ object SubjectItemKey:
 object CustomMethod:
   def parameterDescriptor
       : Either[DescriptorError, ParameterDescriptor[Double, Multiplier, String]] =
-    ParameterInfo
-      .of(
-        "multiplier",
+    for
+      id    <- FieldId.of("multiplier")
+      field <- NumericField.of[String, Double, Multiplier](
+        id,
         2,
         "Positive dimensionless factor applied to cosine similarity",
-        ParameterUnits.Dimensionless,
-        ParameterDomain.PositiveFinite
-      )
-      .map(info => new ParameterDescriptor(info, Multiplier.of, identity))
+        Quantity.Dimensionless,
+        NumericBounds.positive
+      )(Multiplier.of, _.value, identity)
+    yield ParameterDescriptor.numeric(field)
 
   def describedMethod(
       id: DefinitionId
@@ -94,7 +95,7 @@ object CustomMethod:
             .of[ScaledScore, SignedDifference](
               "value",
               "Scaled cosine; matched minus control difference",
-              ParameterUnits.Dimensionless,
+              Quantity.Dimensionless,
               MeasureScale.Bounded(0, p.value),
               ScoreDirection.HigherIsCloser
             )(_.value, _.value)

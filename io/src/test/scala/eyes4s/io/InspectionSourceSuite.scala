@@ -66,7 +66,7 @@ object OverlapSpreadScore:
   def method(id: DefinitionId): StudyMethod[Unit, Px, OverlapSpreadScore, OverlapSpreadScore] =
     def component(
         name: String,
-        units: ParameterUnits,
+        units: Quantity,
         range: MeasureScale,
         direction: ScoreDirection
     )(read: OverlapSpreadScore => Double) =
@@ -91,13 +91,13 @@ object OverlapSpreadScore:
             for
               overlap <- component(
                 "overlap",
-                ParameterUnits.Dimensionless,
+                Quantity.Dimensionless,
                 MeasureScale.Bounded(0, 1),
                 ScoreDirection.HigherIsCloser
               )(_.overlap)
               spread <- component(
                 "spread",
-                ParameterUnits.Cells,
+                Quantity.Count(Counted.Cells),
                 MeasureScale.DistanceLike,
                 ScoreDirection.LowerIsCloser
               )(_.spread)

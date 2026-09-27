@@ -118,12 +118,27 @@ class MethodDescriptorSuite extends munit.FunSuite:
   }
 
   test("closed choices, units and defaults make scientific conventions explicit") {
-    assertEquals(RecipeParameters.sigma[Px].info.units, ParameterUnits.Spatial("px"))
-    assertEquals(RecipeParameters.sigma[Deg].info.units, ParameterUnits.Spatial("deg"))
-    assertEquals(RecipeParameters.ivtThreshold.info.units, ParameterUnits.PerSecond("deg"))
+    assertEquals(RecipeParameters.sigma[Px].info.quantity, Quantity.Planar(PlanarUnit.Px))
+    assertEquals(RecipeParameters.sigma[Deg].info.quantity, Quantity.Planar(PlanarUnit.Deg))
+    assertEquals(RecipeParameters.ivtThreshold.info.quantity, Quantity.Rate(PlanarUnit.Deg))
     assertEquals(
-      RecipeParameters.edges.info.allowed,
-      ParameterDomain.Alternatives(Vector("Truncate", "Renormalise"))
+      RecipeParameters.sigma[Px].info.kind,
+      FieldKind.Numeric(
+        Quantity.Planar(PlanarUnit.Px),
+        NumberShape.Real,
+        NumericBounds.positive
+      )
+    )
+    assertEquals(
+      RecipeParameters.edges.info.kind,
+      FieldKind.Choice(
+        ChoiceSource.Fixed(
+          Vector(
+            ChoiceOption("Truncate", "Truncate"),
+            ChoiceOption("Renormalise", "Renormalise")
+          )
+        )
+      )
     )
     assertEquals(
       get(RecipeParameters.edges.construct(EdgePolicy.Renormalise)),
@@ -134,12 +149,12 @@ class MethodDescriptorSuite extends munit.FunSuite:
     assert(NamedParameterDefault.of("guess", 1.0, "").isLeft)
     assert(
       ParameterInfo
-        .of("", 1, "meaning", ParameterUnits.Cells, ParameterDomain.PositiveGridDimensions)
+        .of("", 1, "meaning", FieldKind.Reference)
         .isLeft
     )
     assert(
       ParameterInfo
-        .of("id", 0, "meaning", ParameterUnits.Cells, ParameterDomain.PositiveGridDimensions)
+        .of("id", 0, "meaning", FieldKind.Reference)
         .isLeft
     )
     assert(
@@ -148,8 +163,9 @@ class MethodDescriptorSuite extends munit.FunSuite:
           "id",
           1,
           "meaning",
-          ParameterUnits.Cells,
-          ParameterDomain.Alternatives(Vector("a", "a"))
+          FieldKind.Choice(
+            ChoiceSource.Fixed(Vector(ChoiceOption("a", "a"), ChoiceOption("a", "a")))
+          )
         )
         .isLeft
     )
@@ -210,7 +226,7 @@ class MethodDescriptorSuite extends munit.FunSuite:
       ScoreComponent.of[Score, Delta](
         "agreement",
         "Agreement and matched-minus-control agreement",
-        ParameterUnits.Dimensionless,
+        Quantity.Dimensionless,
         MeasureScale.Bounded(0, 1),
         ScoreDirection.HigherIsCloser
       )(_.agreement, _.agreement)
@@ -219,7 +235,7 @@ class MethodDescriptorSuite extends munit.FunSuite:
       ScoreComponent.of[Score, Delta](
         "delay",
         "Delay and matched-minus-control delay",
-        ParameterUnits.Microseconds,
+        Quantity.Duration,
         MeasureScale.DistanceLike,
         ScoreDirection.LowerIsCloser
       )(_.delay, _.delay)
@@ -239,8 +255,8 @@ class MethodDescriptorSuite extends munit.FunSuite:
     assert(descriptor.verify((), Vector.empty, Vector("agreement", "delay")).isRight)
     val components = get(descriptor.components(()))
     assertEquals(
-      components.map(_.units),
-      Vector(ParameterUnits.Dimensionless, ParameterUnits.Microseconds)
+      components.map(_.quantity),
+      Vector(Quantity.Dimensionless, Quantity.Duration)
     )
     assertEquals(components.map(_.score(Score(0.75, 100))), Vector(0.75, 100.0))
     assertEquals(components.map(_.difference(Delta(0.25, -50))), Vector(0.25, -50.0))
