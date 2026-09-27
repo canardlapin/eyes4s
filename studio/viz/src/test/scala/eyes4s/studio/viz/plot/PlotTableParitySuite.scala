@@ -20,7 +20,6 @@ import eyes4s.studio.app.Intent
 import eyes4s.studio.app.plot.*
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.core.selection.{SelectionState, StudioRef, ViewId}
-import intaglio.RenderPlan
 import intaglio.interaction.NamedPicking
 import munit.ScalaCheckSuite
 import org.scalacheck.{Gen, Prop}
