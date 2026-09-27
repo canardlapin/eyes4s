@@ -50,8 +50,8 @@ fails only on a defect of the host.
 | Member | Interface | What the host provides | Desktop | Portable reference |
 |---|---|---|---|---|
 | `capabilities` | `HostCapabilities` | native menu bar, several windows, local files, clipboard reads | `DesktopPlatform.capabilities` | all on |
-| `files` | `FileSystem` | read, write, list and `child` for host paths; `project` opens a bundle as a `ProjectStore` | `JvmFileSystem` | `InMemoryPlatform` |
-| `dialogs` | `Dialogs` | open and save choosers; `None` means the user cancelled | `JavaFxDialogs` | scripted answers |
+| `files` | `FileSystem` | `read`, `readStream` (chunks, for large ASC sources), `write`, `list` and `child` for host paths; `project` opens a bundle as a `ProjectStore` | `JvmFileSystem` | `InMemoryPlatform` |
+| `dialogs` | `Dialogs` | open, save and directory choosers (`chooseDirectory` picks a project bundle, which is a directory); `None` means the user cancelled | `JavaFxDialogs` (`FileChooser`, `DirectoryChooser`) | scripted answers |
 | `clipboard` | `Clipboard` | plain text in and out. A host that may not read returns `Unsupported` and clears `clipboardRead` | `JavaFxClipboard` | in memory |
 | `fonts` | `Fonts` | registration of the bundled faces before the first frame; any other resource is refused | `JavaFxFonts` | recorded |
 | `scheduler` | `Scheduler` | wall clock with the UTC offset (`ClockReading`) and one-shot delayed tasks | `Scheduler.temporal` with `JvmZone` | virtual clock |
@@ -59,7 +59,28 @@ fails only on a defect of the host.
 | `preferences` | `Preferences` | per-user key/value strings that outlive a project | `JvmPreferences` (`java.util.prefs`) | in memory |
 
 `HostPath` is opaque. On the desktop it is a file-system path; in a browser it can be the id of a
-File System Access handle. Only the host's `FileSystem` interprets it.
+File System Access handle. Only the host's `FileSystem` interprets it. `HostPath.of` refuses blank
+text and control characters (NUL included), and `child` refuses a name that is blank, `.`, `..`, or
+holds a separator or a control character. A path the host cannot represent (a Windows-reserved
+character, say) is `InvalidPath`. No `FileSystem` operation throws: every failure is a
+`PlatformError` naming the path.
+
+`PlatformConformance` fixes the refusals every host gives:
+
+- A directory, the root included, is `Unwritable` to `write` and `Unreadable` to `read` and
+  `readStream`.
+- A file is `Unreadable` to `list`, and a path that does not exist is `Missing`.
+
+`readStream(path, chunkSize)` checks the path when it opens and refuses it as a value. A failure
+after that raises a `PlatformFailure` in the stream. The JVM reads the file incrementally, and the
+in-memory host chunks its bytes.
+
+A host without a local file system sets `HostCapabilities.localFiles` to false. Its
+`files.project` answers `Unsupported("files", "projects")`; it does not fake a bundle.
+
+`FontRequest.resource` is a JVM classpath resource: studio-desktop bundles the faces under
+`eyes4s/studio/desktop/fonts/`. A web host maps each resource to the URL it serves that file at
+(an `@font-face` source) and registers the same family names.
 
 A browser host gets its UTC offset from `-new Date(ms).getTimezoneOffset()` and passes it to
 `Scheduler.temporal`.
@@ -76,29 +97,44 @@ backend through a `BackendTransport`:
 - **IPC sidecar.** A JVM process runs `SidecarServer.serve(backend)` over its stdin and stdout or a
   WebSocket, and the shell speaks the wire format below. A Scala.js shell can use
   `RemoteStudyBackend` over its own transport. A shell in another language implements the same
-  client.
+  client. On stdio, **stdout carries protocol lines only**. The sidecar writes every log line,
+  warning and stack trace to stderr, so a stray `println` never corrupts the stream.
 
 The wire format is `WireFormat`:
 
-1. Each message is one JSON envelope, `{"version":{"major":1,"minor":0},"id":<long>,"body":…}`,
+1. Each message is one JSON envelope, `{"version":{"major":1,"minor":1},"id":<long>,"body":…}`,
    encoded as UTF-8 and terminated by `\n` (NDJSON). JSON escapes newlines inside strings, so one
    line always holds one envelope. Over a WebSocket, each text message is one line without its
-   terminator.
+   terminator. A line may be at most `WireFormat.MaxLineLength` characters (16 MiB). Neither side
+   buffers past that limit.
 2. The client sends `Envelope[BackendRequest]` with an id that is unique on the connection.
 3. The server answers every request with frames (`Envelope[ServerFrame]`) that carry the request's
    id:
    - one `Response` frame for every request except `Subscribe`;
    - for `Subscribe`, `Event` frames ending in exactly one `Finished`, or a single
-     `Response(Refused)` if the job is unknown.
-4. The server serves requests concurrently. Frames of different requests interleave on the
+     `Response(Refused)` if the job is unknown. A subscription that is ended early by `Unsubscribe`
+     ends without `Finished`.
+4. **Unsubscribe and close.** `Unsubscribe(subscription)`, protocol 1.1, ends the subscription
+   that request `subscription` opened on this connection. It is answered by
+   `Unsubscribed(subscription, active)`. That response is sent after the subscription's last frame,
+   so no frame of the subscription follows it. `active` is false when the subscription had already
+   ended or never existed. Unsubscribing does not cancel the job; `Cancel` does. Closing the
+   connection ends all of its subscriptions. In process, a subscription is ended by dropping its
+   stream, and `Unsubscribe` answers `Unsubscribed(_, false)`.
+5. The server serves requests concurrently. Frames of different requests interleave on the
    connection, so the client demultiplexes them by id. A live subscription never holds up a later
    request.
-5. Versions: the server refuses a request of another major version with
+6. Versions: the server refuses a request of another major version with
    `Refused(UnsupportedVersion)`. The client treats a frame of another major version as a transport
    defect (`TransportError.Incompatible`). Minor versions only add.
-6. Refusals are values (`BackendError`). A malformed line, a frame for the wrong id, or a missing or
-   mismatched response is a `TransportError`, raised as a `TransportFailure`. The server ends a
-   connection that sends a malformed line.
+7. Refusals are values (`BackendError`). A frame for the wrong id, or a missing, duplicated or
+   mismatched response, is a `TransportError`, raised as a `TransportFailure`.
+8. **Malformed lines.** When a request line does not decode but its `id` can be read, the server
+   answers under that id with `Refused(Malformed(excerpt, reason))` and the connection goes on. A
+   line whose id cannot be read cannot be answered: the server ends the connection with
+   `TransportError.Unidentifiable`, whose message says so. A line longer than the limit ends the
+   connection with `TransportError.LineTooLong`. An error quotes at most
+   `WireFormat.ExcerptLength` characters (200) of a bad line, never the whole line.
 
 `RemoteStudyBackend.subscribe` first asks for the job with `Job`, so that an unknown job is refused
 before a stream is returned. The subscription itself starts when the stream runs.
@@ -133,8 +169,8 @@ A port is accepted when all of the following hold. None of them may be weakened 
 ## Known gaps
 
 - The desktop does not yet construct `DesktopPlatform` in `StudioApplication`. Fonts still load
-  through `StudioFonts.loadAll`, and `AppEffect.RevealProject` is not performed until S2.9. The
-  services exist and pass conformance; S2.9 wires them in.
+  through `StudioFonts.loadAll`, and `AppEffect.RevealProject` is not performed. The services
+  exist and pass conformance. The wiring is tracked on S2.9.
 - `RemoteStudyBackend` opens one exchange per request. A shell that holds one long-lived
-  connection demultiplexes frames by id itself (rule 4 above). No such client ships yet.
+  connection demultiplexes frames by id itself (rule 5 above). No such client ships yet.
 - There is no Scala.js shell yet. Porting a shell's own code is not part of S0.9.

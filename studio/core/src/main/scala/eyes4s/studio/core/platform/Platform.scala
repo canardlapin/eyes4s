@@ -17,6 +17,7 @@
 package eyes4s.studio.core.platform
 
 import eyes4s.studio.core.bundle.ProjectStore
+import fs2.Stream
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -28,7 +29,18 @@ final case class HostPath private (value: String) derives CanEqual
 
 object HostPath:
   def of(value: String): Either[PlatformError, HostPath] =
-    if value.trim.isEmpty then Left(PlatformError.BlankPath) else Right(new HostPath(value))
+    if value.trim.isEmpty then Left(PlatformError.BlankPath)
+    else
+      value.indexWhere(c => c < ' ' || c == '\u007f') match
+        case -1    => Right(new HostPath(value))
+        case index => Left(PlatformError.ControlCharacter(value.length, index))
+
+  /** Whether `name` names a direct child: not blank, `.` or `..`, and free of
+    * separators and control characters. Every [[FileSystem.child]] applies it.
+    */
+  def validName(name: String): Boolean =
+    name.nonEmpty && name != "." && name != ".." &&
+      !name.exists(c => c == '/' || c == '\\' || c < ' ' || c == '\u007f')
 
 /** One kind of file a dialog offers, such as "EyeLink fixation CSV" with the
   * extensions `csv` and `tsv`. Extensions are given without a leading dot.
@@ -97,8 +109,9 @@ object PreferenceKey:
     else Left(PlatformError.InvalidPreferenceKey(value))
 
 /** A bundled font face the host must register before the first frame:
-  * `resource` is its path among studio's bundled resources and `family` the
-  * family name stylesheets use for it.
+  * `resource` is its JVM classpath resource (studio-desktop bundles the faces
+  * under `eyes4s/studio/desktop/fonts/`; a web host maps it to the URL it serves the
+  * file at) and `family` the family name stylesheets use for it.
   */
 final case class FontRequest private (family: String, resource: String) derives CanEqual
 
@@ -138,6 +151,14 @@ object ClockReading:
 /** Why a platform service refused. Every case names its operands. */
 enum PlatformError derives CanEqual:
   case BlankPath
+
+  /** A control character (such as NUL) at `index` of a path `length` long. */
+  case ControlCharacter(length: Int, index: Int)
+
+  /** A path the host's file system cannot represent (a Windows-reserved
+    * character, say).
+    */
+  case InvalidPath(path: HostPath, reason: String)
   case InvalidFileKind(description: String, extensions: Vector[String])
   case InvalidUrl(text: String)
   case InvalidPreferenceKey(text: String)
@@ -159,7 +180,10 @@ enum PlatformError derives CanEqual:
   case PreferenceFailed(key: PreferenceKey, reason: String)
 
   def message: String = this match
-    case BlankPath                      => "A host path may not be blank."
+    case BlankPath                       => "A host path may not be blank."
+    case ControlCharacter(length, index) =>
+      s"A host path may not hold a control character (index $index of $length)."
+    case InvalidPath(path, reason)      => s"${path.value} is not a path on this host: $reason."
     case InvalidFileKind(d, extensions) =>
       s"File kind '$d' with extensions [${extensions.mkString(", ")}] needs a description " +
         "and at least one extension without '.', '*' or '/'."
@@ -188,16 +212,30 @@ trait FileSystem[F[_]]:
   /** The location of `name` inside `directory`; pure, touches nothing. */
   def child(directory: HostPath, name: String): Either[PlatformError, HostPath]
 
+  /** The whole file. A directory is [[PlatformError.Unreadable]]. */
   def read(path: HostPath): F[Either[PlatformError, IArray[Byte]]]
 
-  /** Replace the file's bytes, creating it if needed. */
+  /** The file as a stream of chunks of at most `chunkSize` bytes, for sources
+    * too large to hold whole (EyeLink ASC files). Opening is checked first and
+    * refused as a value; a read failing mid-stream raises a [[PlatformFailure]].
+    */
+  def readStream(path: HostPath, chunkSize: Int): F[Either[PlatformError, Stream[F, Byte]]]
+
+  /** Replace the file's bytes, creating it and its parent directories if
+    * needed. A directory, the root included, is [[PlatformError.Unwritable]].
+    */
   def write(path: HostPath, bytes: IArray[Byte]): F[Either[PlatformError, Unit]]
 
-  /** The directory's direct children, in the order of their `value`. */
+  /** The directory's direct children, in the order of their `value`. A file
+    * is [[PlatformError.Unreadable]]; a path that does not exist is
+    * [[PlatformError.Missing]].
+    */
   def list(directory: HostPath): F[Either[PlatformError, Vector[HostPath]]]
 
   /** The bundle at `path` as a [[ProjectStore]]; two calls on one path are
-    * two views of the same bundle.
+    * two views of the same bundle. A host without local files
+    * (`HostCapabilities.localFiles` false) answers
+    * [[PlatformError.Unsupported]].
     */
   def project(path: HostPath): F[Either[PlatformError, ProjectStore[F]]]
 
@@ -205,6 +243,14 @@ trait FileSystem[F[_]]:
 trait Dialogs[F[_]]:
   def chooseOpen(request: FileRequest): F[Option[HostPath]]
   def chooseSave(request: FileRequest): F[Option[HostPath]]
+
+  /** A directory, such as an `.eyes` project bundle, under `title`. */
+  def chooseDirectory(title: String): F[Option[HostPath]]
+
+/** A platform error raised in a stream that has no other way to report it
+  * ([[FileSystem.readStream]] after opening).
+  */
+final case class PlatformFailure(error: PlatformError) extends RuntimeException(error.message)
 
 /** The system clipboard, as plain text. */
 trait Clipboard[F[_]]:

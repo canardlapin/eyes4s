@@ -19,6 +19,7 @@ package eyes4s.studio.core.platform
 import cats.effect.{Ref, Sync}
 import cats.syntax.all.*
 import eyes4s.studio.core.bundle.{InMemoryProjectStore, ProjectStore}
+import fs2.{Chunk, Stream}
 
 import scala.concurrent.duration.*
 
@@ -42,8 +43,14 @@ final class InMemoryPlatform[F[_]: Sync] private (state: Ref[F, InMemoryPlatform
   def answer(choice: Option[HostPath]): F[Unit] =
     state.update(s => s.copy(answers = s.answers :+ choice))
 
-  /** Every dialog request, in order, `true` for a save dialog. */
-  def requests: F[Vector[(FileRequest, Boolean)]] = state.get.map(_.requests)
+  /** Every dialog request, in order. */
+  def requests: F[Vector[DialogRequest]] = state.get.map(_.requests)
+
+  /** Make `directory` and its parents exist, as a user would outside studio. */
+  def makeDirectory(directory: HostPath): F[Unit] =
+    state.update(s =>
+      s.copy(directories = s.directories ++ parents(key(directory)) + key(directory))
+    )
 
   /** Every target handed to [[ExternalOpen]], in order. */
   def opened: F[Vector[ExternalTarget]] = state.get.map(_.opened)
@@ -70,22 +77,32 @@ final class InMemoryPlatform[F[_]: Sync] private (state: Ref[F, InMemoryPlatform
 
   private val files: FileSystem[F] = new FileSystem[F]:
     def child(directory: HostPath, name: String): Either[PlatformError, HostPath] =
-      if name.isEmpty || name == "." || name == ".." || name.exists(c => c == '/' || c == '\\')
-      then Left(PlatformError.InvalidName(directory, name))
-      else HostPath.of(s"${directory.value.stripSuffix("/")}/$name")
+      if !HostPath.validName(name) then Left(PlatformError.InvalidName(directory, name))
+      else HostPath.of(s"${key(directory)}/$name")
 
     def read(path: HostPath): F[Either[PlatformError, IArray[Byte]]] =
-      state.get.map(_.files.get(path.value).toRight(PlatformError.Missing(path)))
+      state.get.map { s =>
+        if s.directories(key(path)) then Left(PlatformError.Unreadable(path, "a directory"))
+        else s.files.get(key(path)).toRight(PlatformError.Missing(path))
+      }
+
+    def readStream(path: HostPath, chunkSize: Int): F[Either[PlatformError, Stream[F, Byte]]] =
+      read(path).map(_.map { bytes =>
+        Stream
+          .chunk(Chunk.array(IArray.genericWrapArray(bytes).toArray))
+          .chunkLimit(chunkSize.max(1))
+          .unchunks
+      })
 
     def write(path: HostPath, bytes: IArray[Byte]): F[Either[PlatformError, Unit]] =
       state.modify { s =>
-        if s.directories(path.value) then
+        if s.directories(key(path)) then
           (s, Left(PlatformError.Unwritable(path, "a directory")))
         else
           (
             s.copy(
-              files = s.files.updated(path.value, bytes),
-              directories = s.directories ++ parents(path.value)
+              files = s.files.updated(key(path), bytes),
+              directories = s.directories ++ parents(key(path))
             ),
             Right(())
           )
@@ -93,8 +110,10 @@ final class InMemoryPlatform[F[_]: Sync] private (state: Ref[F, InMemoryPlatform
 
     def list(directory: HostPath): F[Either[PlatformError, Vector[HostPath]]] =
       state.get.map { s =>
-        val dir = directory.value.stripSuffix("/")
-        if !s.directories(dir) then Left(PlatformError.Missing(directory))
+        val dir = key(directory)
+        if s.files.contains(dir) then
+          Left(PlatformError.Unreadable(directory, "not a directory"))
+        else if !s.directories(dir) then Left(PlatformError.Missing(directory))
         else
           val names = (s.files.keySet ++ s.directories).toVector
             .filter(p => parents(p).lastOption.contains(dir))
@@ -103,18 +122,18 @@ final class InMemoryPlatform[F[_]: Sync] private (state: Ref[F, InMemoryPlatform
       }
 
     def project(path: HostPath): F[Either[PlatformError, ProjectStore[F]]] =
-      state.get.map(_.bundles.get(path.value)).flatMap {
+      state.get.map(_.bundles.get(key(path))).flatMap {
         case Some(store) => Sync[F].pure(Right(store))
         case None        =>
           InMemoryProjectStore.create[F].flatMap { fresh =>
             state.modify { s =>
-              s.bundles.get(path.value) match
+              s.bundles.get(key(path)) match
                 case Some(store) => (s, Right(store))
                 case None        =>
                   (
                     s.copy(
-                      bundles = s.bundles.updated(path.value, fresh),
-                      directories = s.directories ++ parents(path.value) + path.value
+                      bundles = s.bundles.updated(key(path), fresh),
+                      directories = s.directories ++ parents(key(path)) + key(path)
                     ),
                     Right(fresh)
                   )
@@ -123,13 +142,15 @@ final class InMemoryPlatform[F[_]: Sync] private (state: Ref[F, InMemoryPlatform
       }
 
   private val dialogs: Dialogs[F] = new Dialogs[F]:
-    private def ask(request: FileRequest, save: Boolean): F[Option[HostPath]] =
+    private def ask(request: DialogRequest): F[Option[HostPath]] =
       state.modify { s =>
-        val next = s.copy(answers = s.answers.drop(1), requests = s.requests :+ (request, save))
+        val next = s.copy(answers = s.answers.drop(1), requests = s.requests :+ request)
         (next, s.answers.headOption.flatten)
       }
-    def chooseOpen(request: FileRequest): F[Option[HostPath]] = ask(request, save = false)
-    def chooseSave(request: FileRequest): F[Option[HostPath]] = ask(request, save = true)
+    def chooseOpen(request: FileRequest): F[Option[HostPath]] = ask(DialogRequest.Open(request))
+    def chooseSave(request: FileRequest): F[Option[HostPath]] = ask(DialogRequest.Save(request))
+    def chooseDirectory(title: String): F[Option[HostPath]]   =
+      ask(DialogRequest.Directory(title))
 
   private val clipboard: Clipboard[F] = new Clipboard[F]:
     def readText: F[Either[PlatformError, Option[String]]] = state.get.map(s => Right(s.clip))
@@ -186,6 +207,12 @@ final class InMemoryPlatform[F[_]: Sync] private (state: Ref[F, InMemoryPlatform
     preferences
   )
 
+/** A dialog [[InMemoryPlatform]] was asked to show. */
+enum DialogRequest derives CanEqual:
+  case Open(request: FileRequest)
+  case Save(request: FileRequest)
+  case Directory(title: String)
+
 object InMemoryPlatform:
 
   private final case class Task[F[_]](id: Long, due: Long, run: F[Unit])
@@ -195,7 +222,7 @@ object InMemoryPlatform:
       directories: Set[String],
       bundles: Map[String, ProjectStore[F]],
       answers: Vector[Option[HostPath]],
-      requests: Vector[(FileRequest, Boolean)],
+      requests: Vector[DialogRequest],
       clip: Option[String],
       fonts: Vector[FontRequest],
       clock: Long,
@@ -204,6 +231,9 @@ object InMemoryPlatform:
       opened: Vector[ExternalTarget],
       prefs: Map[PreferenceKey, String]
   )
+
+  /** A path's key: its value without a trailing `/`, so the root `/` is `""`. */
+  private def key(path: HostPath): String = path.value.stripSuffix("/")
 
   /** Every proper ancestor of a `/`-separated path, outermost first; the
     * root is `""`.

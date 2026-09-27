@@ -70,16 +70,66 @@ abstract class PlatformConformance extends CatsEffectSuite:
     }
   }
 
-  test("files: a child name may not be blank, a separator, '.' or '..'") {
+  test(
+    "files: a child name may not be blank, a separator, '.', '..' or hold a control character"
+  ) {
     subject.use { s =>
       IO {
-        Vector("", ".", "..", "a/b").foreach { bad =>
+        Vector("", ".", "..", "a/b", "a\\b", "a\u0000b", "tab\there").foreach { bad =>
           assertEquals(
             s.platform.files.child(s.directory, bad),
             Left(PlatformError.InvalidName(s.directory, bad))
           )
         }
       }
+    }
+  }
+
+  test("files: a directory or the root is not a file, and a file is not a directory") {
+    subject.use { s =>
+      val fs   = s.platform.files
+      val file = right(fs.child(s.directory, "a.csv"))
+      val gone = right(fs.child(s.directory, "gone"))
+      def refusal(e: Either[PlatformError, Any]): (String, HostPath) = e match
+        case Left(PlatformError.Unwritable(p, _)) => ("unwritable", p)
+        case Left(PlatformError.Unreadable(p, _)) => ("unreadable", p)
+        case Left(PlatformError.Missing(p))       => ("missing", p)
+        case other                                => fail(s"not a refusal: $other")
+      for
+        _         <- ok(fs.write(file, bytes("x")))
+        intoDir   <- fs.write(s.directory, bytes("x"))
+        intoRoot  <- fs.write(s.root, bytes("x"))
+        readDir   <- fs.read(s.directory)
+        listFile  <- fs.list(file)
+        listGone  <- fs.list(gone)
+        streamDir <- fs.readStream(s.directory, 8)
+        still     <- ok(fs.read(file))
+      yield
+        assertEquals(refusal(intoDir), ("unwritable", s.directory))
+        assertEquals(refusal(intoRoot), ("unwritable", s.root))
+        assertEquals(refusal(readDir), ("unreadable", s.directory))
+        assertEquals(refusal(listFile), ("unreadable", file))
+        assertEquals(refusal(listGone), ("missing", gone))
+        assertEquals(refusal(streamDir), ("unreadable", s.directory))
+        assertEquals(text(still), "x")
+    }
+  }
+
+  test("files: a streamed read yields the file's bytes in chunks of at most the size asked") {
+    subject.use { s =>
+      val fs   = s.platform.files
+      val file = right(fs.child(s.directory, "large.asc"))
+      val data = IArray.tabulate[Byte](1000)(i => (i % 251).toByte)
+      val gone = right(fs.child(s.directory, "gone.asc"))
+      for
+        _       <- ok(fs.write(file, data))
+        stream  <- ok(fs.readStream(file, 7))
+        chunks  <- stream.chunks.compile.toVector
+        missing <- fs.readStream(gone, 7)
+      yield
+        assertEquals(chunks.flatMap(_.toVector), data.toVector)
+        assert(chunks.forall(c => c.size >= 1 && c.size <= 7), chunks.map(_.size))
+        assertEquals(missing.map(_ => ()), Left(PlatformError.Missing(gone)))
     }
   }
 
@@ -155,16 +205,16 @@ abstract class PlatformConformance extends CatsEffectSuite:
       for
         ran    <- Ref.of[IO, Int](0)
         before <- scheduler.now
-        _      <- scheduler.after(10.millis)(ran.update(_ + 1))
+        _      <- scheduler.after(200.millis)(ran.update(_ + 1))
         early  <- ran.get
-        _      <- s.elapse(400.millis)
+        _      <- s.elapse(700.millis)
         late   <- ran.get
-        _      <- s.elapse(400.millis)
+        _      <- s.elapse(700.millis)
         after  <- scheduler.now
         once   <- ran.get
       yield
         assertEquals((early, late, once), (0, 1, 1))
-        assert(after.epochMillis >= before.epochMillis + 800, (before, after))
+        assert(after.epochMillis >= before.epochMillis + 1400, (before, after))
     }
   }
 
@@ -172,9 +222,9 @@ abstract class PlatformConformance extends CatsEffectSuite:
     subject.use { s =>
       for
         ran       <- Ref.of[IO, Boolean](false)
-        scheduled <- s.platform.scheduler.after(200.millis)(ran.set(true))
+        scheduled <- s.platform.scheduler.after(300.millis)(ran.set(true))
         _         <- scheduled.cancel
-        _         <- s.elapse(400.millis)
+        _         <- s.elapse(600.millis)
         _         <- scheduled.cancel
         result    <- ran.get
       yield assert(!result)
@@ -186,6 +236,7 @@ object PlatformConformance:
   /** A platform under test.
     *
     * @param directory an existing, empty, writable directory
+    * @param root the file system's root, which is never written to
     * @param fonts faces the host bundles
     * @param shown what the host handed to its browser or file browser, in order
     * @param rendered what the host hands over for a target
@@ -195,6 +246,7 @@ object PlatformConformance:
   final case class Subject(
       platform: Platform[IO],
       directory: HostPath,
+      root: HostPath,
       fonts: Vector[FontRequest],
       shown: IO[Vector[String]],
       rendered: ExternalTarget => String,

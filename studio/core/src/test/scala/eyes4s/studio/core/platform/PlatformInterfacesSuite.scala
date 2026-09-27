@@ -32,12 +32,17 @@ class PlatformInterfacesSuite extends PlatformConformance:
   )
 
   private val platform: Resource[IO, InMemoryPlatform[IO]] =
-    Resource.eval(InMemoryPlatform.create[IO](start = 1_790_000_000_000L))
+    Resource.eval(
+      InMemoryPlatform
+        .create[IO](start = 1_790_000_000_000L)
+        .flatTap(_.makeDirectory(right(HostPath.of("/data"))))
+    )
 
   def subject: Resource[IO, PlatformConformance.Subject] =
     platform.map { p =>
       PlatformConformance.Subject(
         p.platform,
+        right(HostPath.of("/data")),
         right(HostPath.of("/")),
         faces,
         p.opened.map(_.map(_.render)),
@@ -50,6 +55,8 @@ class PlatformInterfacesSuite extends PlatformConformance:
 
   test("host paths, file kinds, URLs, preference keys and fonts are parsed, not validated") {
     assertEquals(HostPath.of("  "), Left(PlatformError.BlankPath))
+    assertEquals(HostPath.of("/tmp/a\u0000b"), Left(PlatformError.ControlCharacter(8, 6)))
+    assertEquals(HostPath.of("/tmp/a\u007f"), Left(PlatformError.ControlCharacter(7, 6)))
     assertEquals(
       FileKind.of("CSV", Vector("csv", "tsv")).map(_.extensions),
       Right(Vector("csv", "tsv"))
@@ -123,11 +130,21 @@ class PlatformInterfacesSuite extends PlatformConformance:
       _      <- p.answer(Some(path("/data/a.csv")))
       first  <- p.platform.dialogs.chooseOpen(request)
       second <- p.platform.dialogs.chooseSave(save)
+      _      <- p.answer(Some(path("/data/study.eyes")))
+      third  <- p.platform.dialogs.chooseDirectory("Open project")
       asked  <- p.requests
     yield
       assertEquals(first, Some(path("/data/a.csv")))
       assertEquals(second, None)
-      assertEquals(asked, Vector(request -> false, save -> true))
+      assertEquals(third, Some(path("/data/study.eyes")))
+      assertEquals(
+        asked,
+        Vector(
+          DialogRequest.Open(request),
+          DialogRequest.Save(save),
+          DialogRequest.Directory("Open project")
+        )
+      )
   }
 
   test(

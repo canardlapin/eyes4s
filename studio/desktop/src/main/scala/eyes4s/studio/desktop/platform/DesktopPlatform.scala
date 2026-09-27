@@ -16,7 +16,7 @@
 
 package eyes4s.studio.desktop.platform
 
-import cats.effect.IO
+import cats.effect.{IO, Resource}
 import cats.syntax.all.*
 import eyes4s.studio.app.tokens.FontFace
 import eyes4s.studio.core.bundle.ProjectStore
@@ -24,10 +24,10 @@ import eyes4s.studio.core.platform.*
 import eyes4s.studio.desktop.typography.StudioFonts
 import javafx.application.Platform as FxPlatform
 import javafx.scene.input.{Clipboard as FxClipboard, ClipboardContent}
-import javafx.stage.{FileChooser, Window}
+import fs2.{Chunk, Stream}
+import javafx.stage.{DirectoryChooser, FileChooser, Window}
 
-import java.io.IOException
-import java.nio.file.{Files, NoSuchFileException, NotDirectoryException, Path, Paths}
+import java.nio.file.{Files, InvalidPathException, NoSuchFileException, Path, Paths}
 import java.util.prefs.{BackingStoreException, Preferences as JPreferences}
 import scala.jdk.CollectionConverters.*
 import scala.util.control.NonFatal
@@ -69,16 +69,24 @@ object DesktopPlatform:
     clipboardRead = true
   )
 
-  /** Run `body` on the FX application thread. */
+  /** Run `body` on the FX application thread. Where the IO runs is checked
+    * when it runs, in the same step as `body`, never when it is built: an IO
+    * built on the FX thread may run on any pool.
+    */
   private[platform] def onFx[A](body: => A): IO[A] =
-    if FxPlatform.isFxApplicationThread then IO(body)
-    else
-      IO.async_[A] { done =>
-        FxPlatform.runLater(() =>
-          done(try Right(body)
-          catch case NonFatal(e) => Left(e))
-        )
-      }
+    IO.delay(
+      if FxPlatform.isFxApplicationThread then Some(Right(body))
+      else None
+    ).flatMap {
+      case Some(result) => IO.fromEither(result)
+      case None         =>
+        IO.async_[A] { done =>
+          FxPlatform.runLater(() =>
+            done(try Right(body)
+            catch case NonFatal(e) => Left(e))
+          )
+        }
+    }
 
 /** The JVM's UTC offset, in minutes, at an epoch millisecond. */
 object JvmZone:
@@ -89,62 +97,118 @@ object JvmZone:
       .getOffset(java.time.Instant.ofEpochMilli(epochMillis))
       .getTotalSeconds / 60
 
-/** Host paths are the JVM's file-system paths; bundles are [[FileProjectStore]]s. */
+/** Host paths are the JVM's file-system paths; bundles are [[FileProjectStore]]s.
+  * Every conversion from a host path is checked, and every failure of the
+  * file system is a [[PlatformError]] naming the path.
+  */
 object JvmFileSystem extends FileSystem[IO]:
 
-  private def local(path: HostPath): Path = Paths.get(path.value)
+  private def local(path: HostPath): Either[PlatformError, Path] =
+    try Right(Paths.get(path.value).toAbsolutePath)
+    catch case e: InvalidPathException => Left(PlatformError.InvalidPath(path, e.getReason))
 
   private def host(path: Path): Either[PlatformError, HostPath] = HostPath.of(path.toString)
 
+  /** `body` on the blocking pool with the path converted; file-system
+    * failures become `failed(reason)`, or `Missing` for a missing path.
+    */
+  private def at[A](path: HostPath)(failed: String => PlatformError)(
+      body: Path => Either[PlatformError, A]
+  ): IO[Either[PlatformError, A]] =
+    local(path).fold(
+      e => IO.pure(Left(e)),
+      p =>
+        IO.blocking(body(p)).recover {
+          case _: NoSuchFileException => Left(PlatformError.Missing(path))
+          case NonFatal(e)            => Left(failed(e.toString))
+        }
+    )
+
   def child(directory: HostPath, name: String): Either[PlatformError, HostPath] =
-    if name.isEmpty || name == "." || name == ".." || name.exists(c => c == '/' || c == '\\')
-    then Left(PlatformError.InvalidName(directory, name))
-    else host(local(directory).resolve(name))
+    if !HostPath.validName(name) then Left(PlatformError.InvalidName(directory, name))
+    else
+      local(directory).flatMap { dir =>
+        try host(dir.resolve(name))
+        catch case e: InvalidPathException => Left(PlatformError.InvalidName(directory, name))
+      }
 
   def read(path: HostPath): IO[Either[PlatformError, IArray[Byte]]] =
-    IO.blocking(IArray.unsafeFromArray(Files.readAllBytes(local(path))))
-      .map(_.asRight[PlatformError])
-      .recover {
-        case _: NoSuchFileException => Left(PlatformError.Missing(path))
-        case e: IOException         => Left(PlatformError.Unreadable(path, e.toString))
-      }
+    at(path)(PlatformError.Unreadable(path, _)) { p =>
+      if Files.isDirectory(p) then Left(PlatformError.Unreadable(path, "a directory"))
+      else Right(IArray.unsafeFromArray(Files.readAllBytes(p)))
+    }
+
+  def readStream(path: HostPath, chunkSize: Int): IO[Either[PlatformError, Stream[IO, Byte]]] =
+    at(path)(PlatformError.Unreadable(path, _)) { p =>
+      if Files.isDirectory(p) then Left(PlatformError.Unreadable(path, "a directory"))
+      else if !Files.isReadable(p) then
+        if Files.exists(p) then Left(PlatformError.Unreadable(path, "not readable"))
+        else Left(PlatformError.Missing(path))
+      else
+        val size = chunkSize.max(1)
+        Right(
+          Stream
+            .resource(Resource.fromAutoCloseable(IO.blocking(Files.newInputStream(p))))
+            .flatMap { in =>
+              Stream
+                .repeatEval(IO.blocking {
+                  val buffer = new Array[Byte](size)
+                  val n      = in.read(buffer)
+                  if n < 0 then None else Some(Chunk.array(buffer, 0, n))
+                })
+                .unNoneTerminate
+                .unchunks
+            }
+            .adaptError { case NonFatal(e) =>
+              PlatformFailure(PlatformError.Unreadable(path, e.toString))
+            }
+        )
+    }
 
   /** Written beside the target and moved into place, so a reader never sees
     * a partial file.
     */
   def write(path: HostPath, bytes: IArray[Byte]): IO[Either[PlatformError, Unit]] =
-    IO.blocking {
-      val target = local(path).toAbsolutePath
-      Files.createDirectories(target.getParent)
-      val staged = Files.createTempFile(target.getParent, ".eyes4s-", ".tmp")
-      try
-        Files.write(staged, IArray.genericWrapArray(bytes).toArray)
-        Files.move(
-          staged,
-          target,
-          java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-          java.nio.file.StandardCopyOption.ATOMIC_MOVE
-        )
-      finally Files.deleteIfExists(staged): Unit
-      ()
-    }.map(_.asRight[PlatformError])
-      .recover { case e: IOException => Left(PlatformError.Unwritable(path, e.toString)) }
+    at(path)(PlatformError.Unwritable(path, _)) { target =>
+      Option(target.getParent) match
+        case _ if Files.isDirectory(target) =>
+          Left(PlatformError.Unwritable(path, "a directory"))
+        case None =>
+          Left(PlatformError.Unwritable(path, "a root has no parent directory"))
+        case Some(parent) =>
+          Files.createDirectories(parent)
+          val staged = Files.createTempFile(parent, ".eyes4s-", ".tmp")
+          try
+            Files.write(staged, IArray.genericWrapArray(bytes).toArray)
+            Files.move(
+              staged,
+              target,
+              java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+              java.nio.file.StandardCopyOption.ATOMIC_MOVE
+            )
+          finally Files.deleteIfExists(staged): Unit
+          Right(())
+    }
 
   def list(directory: HostPath): IO[Either[PlatformError, Vector[HostPath]]] =
-    IO.blocking {
-      val stream = Files.list(local(directory))
-      try stream.iterator().asScala.toVector.sortBy(_.toString)
-      finally stream.close()
-    }.map(_.traverse(host))
-      .recover {
-        case _: NoSuchFileException   => Left(PlatformError.Missing(directory))
-        case _: NotDirectoryException =>
-          Left(PlatformError.Unreadable(directory, "not a directory"))
-        case e: IOException => Left(PlatformError.Unreadable(directory, e.toString))
-      }
+    at(directory)(PlatformError.Unreadable(directory, _)) { dir =>
+      if Files.exists(dir) && !Files.isDirectory(dir) then
+        Left(PlatformError.Unreadable(directory, "not a directory"))
+      else
+        val stream = Files.list(dir)
+        try stream.iterator().asScala.toVector.sortBy(_.toString).traverse(host)
+        finally stream.close()
+    }
 
   def project(path: HostPath): IO[Either[PlatformError, ProjectStore[IO]]] =
-    FileProjectStore.at[IO](local(path)).map(_.asRight[PlatformError])
+    local(path).fold(
+      e => IO.pure(Left(e)),
+      p =>
+        FileProjectStore
+          .at[IO](p)
+          .map(_.asRight[PlatformError])
+          .recover { case NonFatal(e) => Left(PlatformError.Unreadable(path, e.toString)) }
+    )
 
 /** JavaFX file choosers, modal to `owner`. */
 final class JavaFxDialogs(owner: () => Option[Window]) extends Dialogs[IO]:
@@ -161,7 +225,21 @@ final class JavaFxDialogs(owner: () => Option[Window]) extends Dialogs[IO]:
   def chooseOpen(request: FileRequest): IO[Option[HostPath]] = choose(request, save = false)
   def chooseSave(request: FileRequest): IO[Option[HostPath]] = choose(request, save = true)
 
+  /** A `DirectoryChooser`: a project bundle is a directory, which a
+    * `FileChooser` cannot pick.
+    */
+  def chooseDirectory(title: String): IO[Option[HostPath]] =
+    DesktopPlatform
+      .onFx(Option(JavaFxDialogs.directoryChooser(title).showDialog(owner().orNull)))
+      .map(_.flatMap(f => HostPath.of(f.getPath).toOption))
+
 object JavaFxDialogs:
+  /** The chooser a directory request is shown in. */
+  def directoryChooser(title: String): DirectoryChooser =
+    val chooser = DirectoryChooser()
+    chooser.setTitle(title)
+    chooser
+
   /** The chooser a request is shown in: its title, one filter per kind, and
     * the suggested name.
     */

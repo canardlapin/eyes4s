@@ -17,7 +17,7 @@
 package eyes4s.studio.core.backend
 
 import cats.Functor
-import cats.effect.{Concurrent, Ref}
+import cats.effect.{Concurrent, Deferred, Ref}
 import cats.syntax.all.*
 import fs2.{Pipe, RaiseThrowable, Stream, text}
 import io.circe.syntax.*
@@ -50,15 +50,27 @@ object BackendTransport:
         .emit(request)
         .through(WireFormat.encode[F, BackendRequest])
         .through(server)
-        .through(WireFormat.decode[F, ServerFrame])
+        .through(WireFormat.decode[F, ServerFrame]())
 
 /** Why a transport could not carry an exchange: a defect of the transport or
   * of the peer, never a refusal (which is a [[BackendError]]). Every case
   * names its operands.
   */
 enum TransportError derives CanEqual:
-  /** A line that is not an envelope of the expected kind. */
-  case Malformed(line: String, reason: String)
+  /** A line that is not an envelope of the expected kind; `excerpt` is its
+    * start, at most [[WireFormat.ExcerptLength]] characters.
+    */
+  case Malformed(excerpt: String, reason: String)
+
+  /** A request line from which not even the request id can be read. The
+    * server cannot answer it, so it ends the connection.
+    */
+  case Unidentifiable(excerpt: String, reason: String)
+
+  /** A line longer than `limit` characters; it is not buffered further and
+    * the connection ends.
+    */
+  case LineTooLong(limit: Int)
 
   /** A frame answering another request than the one sent. */
   case WrongRequest(expected: RequestId, found: RequestId)
@@ -76,9 +88,13 @@ enum TransportError derives CanEqual:
   case Refusal(request: BackendRequest, error: BackendError)
 
   def message: String = this match
-    case Malformed(line, reason) => s"Not a protocol frame ($reason): ${line.take(200)}"
-    case WrongRequest(e, f)      => s"Expected a frame for request ${e.value}, got ${f.value}."
-    case Incompatible(f, s)      =>
+    case Malformed(excerpt, reason)      => s"Not a protocol frame ($reason): $excerpt"
+    case Unidentifiable(excerpt, reason) =>
+      s"A request line without a readable id ($reason), so the connection ends: $excerpt"
+    case LineTooLong(limit) =>
+      s"A line is longer than $limit characters, so the connection ends."
+    case WrongRequest(e, f) => s"Expected a frame for request ${e.value}, got ${f.value}."
+    case Incompatible(f, s) =>
       s"The peer speaks protocol ${f.render}; this client speaks ${s.render}."
     case Unanswered(request)    => s"No response to $request."
     case Unexpected(request, f) => s"$f does not answer $request."
@@ -94,21 +110,57 @@ final case class TransportFailure(error: TransportError) extends RuntimeExceptio
   */
 object WireFormat:
 
+  /** The longest line either side accepts, in characters (16 MiB). */
+  val MaxLineLength: Int = 16 * 1024 * 1024
+
+  /** How much of a bad line an error quotes. */
+  val ExcerptLength: Int = 200
+
+  def excerpt(line: String): String =
+    if line.length <= ExcerptLength then line else line.take(ExcerptLength) + "…"
+
   def line[A: Encoder](envelope: Envelope[A]): String = envelope.asJson.noSpaces + "\n"
 
   def parse[A: Decoder](line: String): Either[TransportError, Envelope[A]] =
     io.circe.parser
       .decode[Envelope[A]](line)
-      .leftMap(e => TransportError.Malformed(line, e.getMessage))
+      .leftMap(e => TransportError.Malformed(excerpt(line), e.getMessage))
+
+  /** The request id of a line that is JSON with an `id`, whatever its body. */
+  def requestId(line: String): Option[RequestId] =
+    io.circe.parser
+      .parse(line)
+      .toOption
+      .flatMap(_.hcursor.downField("id").as[RequestId].toOption)
 
   def encode[F[_], A: Encoder]: Pipe[F, Envelope[A], Byte] =
     _.map(line(_)).through(text.utf8.encode)
 
-  /** Bytes in any chunking to envelopes; a malformed line fails the stream. */
-  def decode[F[_]: RaiseThrowable, A: Decoder]: Pipe[F, Byte, Envelope[A]] =
+  /** Bytes in any chunking to non-empty lines; a line longer than `limit`
+    * fails the stream with [[TransportError.LineTooLong]].
+    */
+  def lines[F[_]: RaiseThrowable](limit: Int): Pipe[F, Byte, String] =
     _.through(text.utf8.decode)
-      .through(text.lines)
+      .through(text.linesLimited(limit))
+      .handleErrorWith {
+        case e: text.LineTooLongException =>
+          Stream.raiseError(TransportFailure(TransportError.LineTooLong(e.max)))
+        case e => Stream.raiseError(e)
+      }
       .filter(_.nonEmpty)
+      // linesLimited bounds only an unterminated tail; a terminated line
+      // longer than the limit is refused here.
+      .flatMap(l =>
+        if l.length > limit then
+          Stream.raiseError(TransportFailure(TransportError.LineTooLong(limit)))
+        else Stream.emit(l)
+      )
+
+  /** Bytes to envelopes; a malformed or overlong line fails the stream. */
+  def decode[F[_]: RaiseThrowable, A: Decoder](
+      limit: Int = MaxLineLength
+  ): Pipe[F, Byte, Envelope[A]] =
+    _.through(lines(limit))
       .flatMap(l => parse[A](l).fold(e => Stream.raiseError(TransportFailure(e)), Stream.emit))
 
 /** The server end of the IPC sidecar: a JVM process serving a backend to a
@@ -116,16 +168,77 @@ object WireFormat:
   */
 object SidecarServer:
 
-  /** Requests in, frames out, in the [[WireFormat]]. Requests are served
-    * concurrently, so a subscription does not hold up the requests after it;
-    * frames of different requests interleave, and each carries its request's
-    * id. A malformed line ends the connection with a [[TransportFailure]].
+  private final case class Live[F[_]](stop: Deferred[F, Unit], done: Deferred[F, Unit])
+
+  /** Requests in, frames out, in the [[WireFormat]], on one connection.
+    *
+    *  - Requests are served concurrently, so a subscription does not hold up
+    *    the requests after it; frames of different requests interleave, and
+    *    each carries its request's id.
+    *  - `Unsubscribe(id)` ends subscription `id`; its `Unsubscribed` response
+    *    follows the subscription's last frame.
+    *  - A malformed line whose id can be read is refused under that id with
+    *    [[BackendError.Malformed]]; one without a readable id, or longer than
+    *    `limit`, ends the connection with a [[TransportFailure]].
     */
-  def serve[F[_]: Concurrent](backend: StudyBackend[F]): Pipe[F, Byte, Byte] =
-    _.through(WireFormat.decode[F, BackendRequest])
-      .map(StudyBackend.handle(backend))
-      .parJoinUnbounded
-      .through(WireFormat.encode[F, ServerFrame])
+  def serve[F[_]: Concurrent](
+      backend: StudyBackend[F],
+      limit: Int = WireFormat.MaxLineLength
+  ): Pipe[F, Byte, Byte] = in =>
+    Stream.eval(Ref.of[F, Map[RequestId, Live[F]]](Map.empty)).flatMap { live =>
+      def frame(id: RequestId, response: BackendResponse): Envelope[ServerFrame] =
+        Envelope(id, ServerFrame.Response(response))
+
+      def subscription(request: Envelope[BackendRequest]): F[Stream[F, Envelope[ServerFrame]]] =
+        (Deferred[F, Unit], Deferred[F, Unit]).tupled.flatMap { (stop, done) =>
+          live
+            .update(_.updated(request.id, Live(stop, done)))
+            .as(
+              StudyBackend
+                .handle(backend)(request)
+                .interruptWhen(stop.get.map(_.asRight[Throwable]))
+                .onFinalize(live.update(_ - request.id) >> done.complete(()).void)
+            )
+        }
+
+      def unsubscribe(id: RequestId, target: RequestId): Stream[F, Envelope[ServerFrame]] =
+        Stream.eval(live.get.map(_.get(target))).flatMap {
+          case Some(l) =>
+            Stream
+              .eval(l.stop.complete(()) >> l.done.get)
+              .as(frame(id, BackendResponse.Unsubscribed(target, true)))
+          case None => Stream.emit(frame(id, BackendResponse.Unsubscribed(target, false)))
+        }
+
+      def route(line: String): F[Stream[F, Envelope[ServerFrame]]] =
+        WireFormat.parse[BackendRequest](line) match
+          case Right(request) if request.version.major != ProtocolVersion.Current.major =>
+            Concurrent[F].pure(StudyBackend.handle(backend)(request))
+          case Right(request @ Envelope(_, _, BackendRequest.Subscribe(_))) =>
+            subscription(request)
+          case Right(Envelope(_, id, BackendRequest.Unsubscribe(target))) =>
+            Concurrent[F].pure(unsubscribe(id, target))
+          case Right(request) =>
+            Concurrent[F].pure(StudyBackend.handle(backend)(request))
+          case Left(TransportError.Malformed(excerpt, why)) =>
+            WireFormat.requestId(line) match
+              case Some(id) =>
+                Concurrent[F].pure(
+                  Stream.emit(
+                    frame(id, BackendResponse.Refused(BackendError.Malformed(excerpt, why)))
+                  )
+                )
+              case None =>
+                Concurrent[F].raiseError(
+                  TransportFailure(TransportError.Unidentifiable(excerpt, why))
+                )
+          case Left(other) => Concurrent[F].raiseError(TransportFailure(other))
+
+      in.through(WireFormat.lines(limit))
+        .evalMap(route)
+        .parJoinUnbounded
+        .through(WireFormat.encode[F, ServerFrame])
+    }
 
 /** A [[StudyBackend]] reached through a [[BackendTransport]]: the client side
   * of the protocol. Refusals come back as values, as in process; a transport

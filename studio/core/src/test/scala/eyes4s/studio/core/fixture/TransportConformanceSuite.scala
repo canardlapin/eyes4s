@@ -61,7 +61,8 @@ abstract class TransportConformanceSuite extends BackendConformanceSuite:
         BackendRequest.Inspect(RunId(7), address),
         BackendRequest.ProvenanceOf(RunId(7), address),
         BackendRequest.Result(RunId(9999)),
-        BackendRequest.Subscribe(JobId(9999))
+        BackendRequest.Subscribe(JobId(9999)),
+        BackendRequest.Unsubscribe(RequestId(12345))
       ).zipWithIndex.map((r, i) => Envelope(RequestId(i.toLong), r))
     }
 
@@ -122,6 +123,23 @@ class InProcessTransportSuite extends TransportConformanceSuite:
       remote <- RemoteStudyBackend[IO](rewriting(fake)(_.copy(id = RequestId(41))))
       error  <- failure(remote.runs)
     yield assertEquals(error, TransportError.WrongRequest(RequestId(0), RequestId(41)))
+  }
+
+  test("a second response to one request is a transport defect, named") {
+    val twice: BackendTransport[IO] => BackendTransport[IO] =
+      t => request => t.exchange(request).flatMap(f => Stream(f, f))
+    for
+      fake   <- fresh
+      remote <- RemoteStudyBackend[IO](twice(BackendTransport.inProcess(fake)))
+      runs   <- fake.runs
+      error  <- failure(remote.runs)
+    yield assertEquals(
+      error,
+      TransportError.Unexpected(
+        BackendRequest.Runs,
+        ServerFrame.Response(BackendResponse.Runs(runs))
+      )
+    )
   }
 
   test("a frame of another major version is a transport defect, named") {
@@ -191,7 +209,7 @@ class LoopbackTransportSuite extends TransportConformanceSuite:
         .through(SidecarServer.serve(fake))
         .chunkLimit(3)
         .unchunks
-        .through(WireFormat.decode[IO, ServerFrame])
+        .through(WireFormat.decode[IO, ServerFrame]())
         .compile
         .toVector
     yield
@@ -211,7 +229,7 @@ class LoopbackTransportSuite extends TransportConformanceSuite:
           .emits(sent)
           .through(WireFormat.encode[IO, BackendRequest])
           .through(SidecarServer.serve(s.backend))
-          .through(WireFormat.decode[IO, ServerFrame])
+          .through(WireFormat.decode[IO, ServerFrame]())
           // The job finishes only once Runs is answered, so a server that
           // served requests one after another would never end.
           .evalTap(f => if f.id == RequestId(2) then s.finish(status.job) else IO.unit)
@@ -240,19 +258,109 @@ class LoopbackTransportSuite extends TransportConformanceSuite:
       )
   }
 
-  test("a malformed line ends the connection with a named Malformed error") {
+  /** The frames `lines` get from one connection to a fresh fake, or its failure. */
+  private def serveLines(
+      lines: Vector[String],
+      limit: Int = WireFormat.MaxLineLength
+  ): IO[Either[Throwable, Vector[Envelope[ServerFrame]]]] =
     fresh.flatMap { fake =>
       Stream
-        .emit("{\"not\":\"an envelope\"}\n")
+        .emits(lines)
         .through(fs2.text.utf8.encode)
-        .through(SidecarServer.serve(fake))
+        .through(SidecarServer.serve(fake, limit))
+        .through(WireFormat.decode[IO, ServerFrame]())
         .compile
-        .drain
+        .toVector
         .attempt
-        .map {
-          case Left(TransportFailure(TransportError.Malformed(line, _))) =>
-            assertEquals(line, "{\"not\":\"an envelope\"}")
-          case other => fail(s"expected Malformed, got $other")
-        }
+    }
+
+  test("a malformed line with a readable id is refused under that id; the connection goes on") {
+    val bad  = "{\"version\":{\"major\":1,\"minor\":1},\"id\":5,\"body\":{\"Runz\":{}}}\n"
+    val runs = WireFormat.line(Envelope(RequestId(6), BackendRequest.Runs: BackendRequest))
+    serveLines(Vector(bad, runs)).map {
+      case Right(frames) =>
+        assertEquals(frames.map(_.id).sortBy(_.value), Vector(RequestId(5), RequestId(6)))
+        frames.find(_.id == RequestId(5)).map(_.body) match
+          case Some(
+                ServerFrame.Response(
+                  BackendResponse.Refused(BackendError.Malformed(excerpt, _))
+                )
+              ) =>
+            assertEquals(excerpt, bad.stripSuffix("\n"))
+          case other => fail(s"expected a Malformed refusal, got $other")
+      case Left(e) => fail(s"the connection failed: $e")
+    }
+  }
+
+  test(
+    "a line without a readable id ends the connection, saying so, and quotes only its start"
+  ) {
+    val long = "{\"not\":\"" + ("x" * 1000) + "\"}"
+    serveLines(Vector(long + "\n")).map {
+      case Left(TransportFailure(e @ TransportError.Unidentifiable(excerpt, _))) =>
+        assertEquals(excerpt, long.take(WireFormat.ExcerptLength) + "…")
+        assert(e.message.contains("connection ends"), e.message)
+      case other => fail(s"expected Unidentifiable, got $other")
+    }
+  }
+
+  test("a line longer than the limit ends the connection with LineTooLong") {
+    val runs = WireFormat.line(Envelope(RequestId(1), BackendRequest.Runs: BackendRequest))
+    serveLines(Vector(runs, "x" * 200 + "\n"), limit = 64).map {
+      case Left(TransportFailure(TransportError.LineTooLong(limit))) => assertEquals(limit, 64)
+      case other => fail(s"expected LineTooLong, got $other")
+    }
+  }
+
+  test(
+    "Unsubscribe ends a live subscription; its response follows the subscription's last frame"
+  ) {
+    FakeBackendConformanceSuite.subject(IO.pure).flatMap { s =>
+      for
+        status <- s.backend.submit(s.draft).map(_.toOption.get)
+        sent = Vector(
+          Envelope(RequestId(1), BackendRequest.Subscribe(status.job)),
+          Envelope(RequestId(2), BackendRequest.Unsubscribe(RequestId(1))),
+          Envelope(RequestId(3), BackendRequest.Unsubscribe(RequestId(1))),
+          Envelope(RequestId(4), BackendRequest.Unsubscribe(RequestId(77)))
+        )
+        // The job never finishes: only the Unsubscribe can end request 1.
+        frames <- Stream
+          .emits(sent.take(2))
+          .through(WireFormat.encode[IO, BackendRequest])
+          .through(SidecarServer.serve(s.backend))
+          .through(WireFormat.decode[IO, ServerFrame]())
+          .compile
+          .toVector
+          .timeout(30.seconds)
+        later <- Stream
+          .emits(sent.drop(2))
+          .through(WireFormat.encode[IO, BackendRequest])
+          .through(SidecarServer.serve(s.backend))
+          .through(WireFormat.decode[IO, ServerFrame]())
+          .compile
+          .toVector
+        outcome <- s.backend.outcome(status.job)
+      yield
+        assertEquals(
+          frames.last,
+          Envelope(
+            RequestId(2),
+            ServerFrame.Response(BackendResponse.Unsubscribed(RequestId(1), true)): ServerFrame
+          )
+        )
+        assert(
+          frames.init
+            .forall(f => f.id == RequestId(1) && f.body.isInstanceOf[ServerFrame.Event]),
+          frames
+        )
+        assertEquals(outcome, Right(None))
+        assertEquals(
+          later.map(_.body).toSet,
+          Set[ServerFrame](
+            ServerFrame.Response(BackendResponse.Unsubscribed(RequestId(1), false)),
+            ServerFrame.Response(BackendResponse.Unsubscribed(RequestId(77), false))
+          )
+        )
     }
   }
