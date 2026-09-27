@@ -911,5 +911,7 @@ object DiagnosticSamples:
       ),
       FieldError.UnknownField(FieldId.literal("thresholdDegPerSecond")),
       FieldError.RepeatedPart(FieldId.literal("window"), FieldId.literal("xMin"))
-    )
+    ),
+    generated[StudyRecipeError]("StudyRecipeError"),
+    generated[StudyAdvisory]("StudyAdvisory")
   )

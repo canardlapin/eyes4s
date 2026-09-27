@@ -797,7 +797,13 @@ object DiagnosticCatalog:
     "Temporal",
     "Reduction",
     "Synchronization",
-    "Recording"
+    "Recording",
+    // appended by CR6b
+    "Plan",
+    "InitialFixation",
+    "MissingPart",
+    "UnknownToken",
+    "UndeclaredWindowFrame"
   )
   val repetitionPlan: DiagnosticFamily = error("repetition-plan")(
     "ProjectionIds",
@@ -912,6 +918,22 @@ object DiagnosticCatalog:
     "RepeatedPart"
   )
 
+  // ---------------------------------------------------------------- appended by CR6b
+  /** A whole-recipe refusal of a study form, keyed by its study field. */
+  val studyRecipe: DiagnosticFamily = error("study-recipe")(
+    "WindowWithoutPolicy",
+    "PolicyWithoutWindow",
+    "Grid",
+    "Plan"
+  )
+
+  /** A valid study recipe that is likely unintended; a warning. */
+  val studyAdvisory: DiagnosticFamily =
+    DiagnosticFamily.of("study-advisory", DiagnosticSeverity.Warning)(
+      "SigmaBelowCells",
+      "SigmaNearUniform"
+    )
+
   /** Families whose error type no longer exists. Their codes stay issued, in
     * their original place in [[issuedFamilies]], so a retired code is never
     * reused with another meaning; no live error projects to one.
@@ -1015,7 +1037,9 @@ object DiagnosticCatalog:
     analysisFinding,
     recordIdentity,
     coordinateProvenance,
-    formField
+    formField,
+    studyRecipe,
+    studyAdvisory
   )
 
   /** Every live family, grouped as documented. */

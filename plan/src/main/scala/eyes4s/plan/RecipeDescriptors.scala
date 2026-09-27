@@ -32,14 +32,43 @@ enum RecipeParameterError derives CanEqual:
   case Reduction(error: ReductionPolicyError)
   case Synchronization(error: SyncEvidenceError)
   case Recording(error: RecordingPlanError)
+
+  /** A plan-level constructor refused a form field's value, such as an
+    * occurrence number.
+    */
+  case Plan(error: PlanError)
+
+  /** The initial-fixation policy's own constructor refused the value. */
+  case InitialFixation(error: InitialFixationError)
+
+  /** A raw value lacked the part `part` its view guarantees; the view's
+    * checks and the field's reader disagree.
+    */
+  case MissingPart(field: String, part: String)
+
+  /** A token names no alternative of the field; `options` are the ones it has. */
+  case UnknownToken(field: String, token: String, options: Vector[String])
+
+  /** A window was entered but the form's context declares no window frame
+    * for the admission frame `admission`.
+    */
+  case UndeclaredWindowFrame(admission: FrameId)
   def message: String = this match
-    case Geometry(e)        => e.message
-    case Time(e)            => e.message
-    case Configuration(e)   => e.message
-    case Temporal(e)        => e.message
-    case Reduction(e)       => e.message
-    case Synchronization(e) => e.message
-    case Recording(e)       => e.message
+    case Geometry(e)          => e.message
+    case Time(e)              => e.message
+    case Configuration(e)     => e.message
+    case Temporal(e)          => e.message
+    case Reduction(e)         => e.message
+    case Synchronization(e)   => e.message
+    case Recording(e)         => e.message
+    case Plan(e)              => e.message
+    case InitialFixation(e)   => e.message
+    case MissingPart(f, part) =>
+      s"Form field '$f' has no part '$part', though its view requires one."
+    case UnknownToken(f, t, options) =>
+      s"Form field '$f' has no alternative '$t'; its alternatives are ${options.mkString(", ")}."
+    case UndeclaredWindowFrame(a) =>
+      s"A window of admission frame '${a.name}' needs a declared window frame identity."
 
 /** Concrete typed construction routes. No universal scientific defaults are imposed.
   *

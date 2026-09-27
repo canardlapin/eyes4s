@@ -212,3 +212,130 @@ object FormLaws extends Laws:
         }
       }
     )
+
+  /** Laws for a whole-form: every field's projected raw value parses on its
+    * own, parsing and re-writing a field restores its raw value, and every
+    * view is well formed.
+    */
+  private def fieldsRestore[A](
+      of: A => (Vector[FormField[?, ?]], FormValues)
+  ): A => Vector[String] = a =>
+    val (fields, values) = of(a)
+    fields.flatMap { f =>
+      val raw = values.get(f.view.id)
+      f.restore(raw) match
+        case Left(e)      => Vector(s"${f.view.id}: ${e.message}")
+        case Right(again) =>
+          Option.when(again != raw)(s"${f.view.id}: $raw re-written as $again").toVector
+    }
+
+  def form[A](name: String, plans: Gen[A])(
+      of: A => (Vector[FormField[?, ?]], FormValues)
+  ): RuleSet =
+    new SimpleRuleSet(
+      name,
+      "each field parses its own raw value and re-writes it unchanged" -> forAll(plans) { a =>
+        val problems = fieldsRestore(of)(a)
+        Prop(problems.isEmpty) :| problems.mkString("; ")
+      },
+      "every field's view is well formed" -> forAll(plans) { a =>
+        val bad = of(a)._1
+          .map(_.view)
+          .flatMap(parts)
+          .filter(v => FieldView.of(v.id, v.version, v.meaning, v.kind, v.default) != Right(v))
+        Prop(bad.isEmpty) :| bad.map(_.id).mkString(", ")
+      }
+    )
+
+  /** A study form rebuilds the plan it was filled from: the plan's values
+    * parse, and the recipe builds a plan with the same description.
+    */
+  def studyForm[K, U <: eyes4s.kernel.Unit2D: eyes4s.kernel.UnitLabel, P, S, D](
+      plans: Gen[StudyPlan[K, U, P, S, D]]
+  ): RuleSet =
+    def form(plan: StudyPlan[K, U, P, S, D]) = new StudyForm(StudyFormContext.of(plan))
+    new SimpleRuleSet(
+      "studyForm",
+      "a plan's form values rebuild a plan with the same description" -> forAll(plans) { plan =>
+        val f       = form(plan)
+        val rebuilt = f
+          .parse(f.values(plan))
+          .left
+          .map(_.map(_.message).toVector.mkString("; "))
+          .flatMap(
+            _.plan(plan.input, plan.layout, plan.method, plan.parameters).left.map(_.message)
+          )
+          .map(_.description)
+        Prop(rebuilt == Right(plan.description)) :| rebuilt.toString
+      },
+      "every study field is edited by the form field its refusals point to" -> forAll(plans) {
+        plan =>
+          val f     = form(plan)
+          val ids   = f.views.map(_.id).toSet
+          val wrong = StudyField.values.toVector.filter { field =>
+            StudyForm.formField(field) match
+              case Some(id) =>
+                !ids.contains(id) ||
+                !f.studyField(id).exists(g => StudyForm.formField(g).contains(id))
+              case None =>
+                !Set(StudyField.Input, StudyField.Layout, StudyField.Method).contains(field)
+          }
+          Prop(wrong.isEmpty) :| wrong.mkString(", ")
+      },
+      "every value in the recipe sentence and the methods text points into the form" -> forAll(
+        plans
+      ) { plan =>
+        val ids   = form(plan).views.map(_.id.value).toSet + StudyForm.ids.method.value
+        val stray =
+          (StudyText.sentence(plan).tokens ++ StudyText.methods(plan).tokens).collect {
+            case Token.Value(field, _, _) if !ids.contains(field.value.takeWhile(_ != '.')) =>
+              field
+          }
+        Prop(stray.isEmpty) :| stray.mkString(", ")
+      },
+      "the methods text names both phases and every clause says something" -> forAll(plans) {
+        plan =>
+          val text = StudyText.methods(plan)
+          Prop(text.clauses.forall(_.text.trim.nonEmpty)) :| text.text &&
+          Prop(
+            text.text.contains(plan.focalPhase) && text.text.contains(plan.referencePhase)
+          ) :|
+            text.text
+      }
+    )
+
+  /** A recording form rebuilds the plan it was filled from, in that plan's
+    * context.
+    */
+  def recordingForm[P](plans: Gen[RecordingPlan[P]]): RuleSet =
+    new SimpleRuleSet(
+      "recordingForm",
+      "a plan's form values rebuild a plan with the same description" -> forAll(plans) { plan =>
+        val f       = new RecordingForm
+        val rebuilt = f
+          .parse(f.values(plan))
+          .left
+          .map(_.map(_.message).toVector.mkString("; "))
+          .flatMap(_.plan(plan).left.map(_.message))
+          .map(_.description)
+        Prop(rebuilt == Right(plan.description)) :| rebuilt.toString
+      }
+    )
+
+  /** A temporal form rebuilds the plan it was filled from over its base. */
+  def temporalForm[K, U <: eyes4s.kernel.Unit2D: eyes4s.kernel.UnitLabel, P, S, D](
+      plans: Gen[TemporalStudyPlan[K, U, P, S, D]]
+  ): RuleSet =
+    new SimpleRuleSet(
+      "temporalForm",
+      "a plan's form values rebuild a plan with the same description" -> forAll(plans) { plan =>
+        val f       = new TemporalForm
+        val rebuilt = f
+          .parse(f.values(plan))
+          .left
+          .map(_.map(_.message).toVector.mkString("; "))
+          .flatMap(_.plan(plan.base, plan.input).left.map(_.message))
+          .map(_.description)
+        Prop(rebuilt == Right(plan.description)) :| rebuilt.toString
+      }
+    )

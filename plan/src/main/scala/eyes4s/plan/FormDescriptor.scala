@@ -579,6 +579,9 @@ trait FormField[+E, A]:
   def parse(raw: RawValue): Either[FieldError[E], A]
   def raw(value: A): RawValue
 
+  /** The raw value this field writes for what `raw` parses to. */
+  final def restore(raw: RawValue): Either[FieldError[E], RawValue] = parse(raw).map(this.raw)
+
 /** A numeric [[FormField]]: `domain` is the domain constructor alone, fed a
   * number of shape `N`; `number` reads a typed value back.
   */
