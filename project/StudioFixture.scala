@@ -436,20 +436,23 @@ object StudioFixture {
     Seq(out)
   }
 
-  /** `GoldenFixations` (test scope): the exact text of
-    * fixtures/studio-golden/fixations.csv, so a studio-core test can hold the
-    * geometry panel's placement against eyes4s's own admission without
-    * reading a file (S5.5). Written only when its text changes.
+  /** `GoldenCsv` (test scope, S5.4): the exact text of fixtures/studio-golden's
+    * trials.csv and fixations.csv, so a JVM test can admit them with eyes4s
+    * under the story's recorded mappings without reading files. Written only
+    * when its text changes.
     */
-  def goldenFixations(root: File, out: File): Seq[File] = {
-    val source = root / "fixtures" / "studio-golden" / "fixations.csv"
+  def goldenCsv(root: File, out: File): Seq[File] = {
+    val golden = root / "fixtures" / "studio-golden"
     val text   =
       s"""|${header}package eyes4s.studio.core.fixture
           |
-          |/** The exact text of fixtures/studio-golden/fixations.csv. */
-          |object GoldenFixations:
-          |  val csv: String = Vector(
-          |    ${chunked(IO.read(source, IO.utf8))}
+          |/** The exact text of fixtures/studio-golden/{trials,fixations}.csv. */
+          |object GoldenCsv:
+          |  val trials: String = Vector(
+          |    ${chunked(IO.read(golden / "trials.csv", IO.utf8))}
+          |  ).mkString
+          |  val fixations: String = Vector(
+          |    ${chunked(IO.read(golden / "fixations.csv", IO.utf8))}
           |  ).mkString
           |""".stripMargin
     if (!out.exists || IO.read(out, IO.utf8) != text) IO.write(out, text, IO.utf8)

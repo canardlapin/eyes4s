@@ -1080,17 +1080,19 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
       StudioFixture.plantedScanpaths(
         (Test / sourceManaged).value / "eyes4s" / "studio" / "PlantedScanpaths.scala"
       )
-    }.taskValue,
-    // The golden fixation source, which a JVM test places as the geometry panel
-    // does and holds against eyes4s-io's admission (S5.5).
-    Test / sourceGenerators += Def.task {
-      StudioFixture.goldenFixations(
-        (ThisBuild / baseDirectory).value,
-        (Test / sourceManaged).value / "eyes4s" / "studio" / "GoldenFixations.scala"
-      )
     }.taskValue
   )
   .jvmConfigure(_.dependsOn(io.jvm % Test))
+  // S5.4: the golden tables' text, for the JVM suite that admits them with
+  // eyes4s-io under the story's recorded mappings.
+  .jvmSettings(
+    Test / sourceGenerators += Def.task {
+      StudioFixture.goldenCsv(
+        (ThisBuild / baseDirectory).value,
+        (Test / sourceManaged).value / "eyes4s" / "studio" / "GoldenCsv.scala"
+      )
+    }.taskValue
+  )
 
 /** UI-neutral presentation: app model, intents, pure update, view-models. */
 lazy val studioApp = crossProject(JVMPlatform, JSPlatform)

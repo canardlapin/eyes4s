@@ -20,7 +20,7 @@ import eyes4s.io.*
 import eyes4s.kernel.ClockId
 import eyes4s.plan.{AdmissionPolicy, WindowTally}
 import eyes4s.studio.core.backend.{Phase, TrialKey}
-import eyes4s.studio.core.fixture.{GoldenFixations, MockStudy, StoryMoments}
+import eyes4s.studio.core.fixture.{GoldenCsv, MockStudy, StoryMoments}
 
 import java.nio.charset.StandardCharsets.UTF_8
 
@@ -37,7 +37,7 @@ class GoldenPlacementJvmSuite extends munit.FunSuite:
   private def get[E, A](e: Either[E, A]): A = e.fold(x => fail(x.toString), identity)
 
   // The file's exact text, generated into test scope (studio-core reads no files).
-  private val bytes: Array[Byte] = GoldenFixations.csv.getBytes(UTF_8)
+  private val bytes: Array[Byte] = GoldenCsv.fixations.getBytes(UTF_8)
 
   private val r3 = get(
     StoryMoments.t1.flatMap(_.dataset(StoryMoments.r3).toRight("the story has no r3"))
@@ -76,7 +76,7 @@ class GoldenPlacementJvmSuite extends munit.FunSuite:
     )
     val imported = get(
       FixationCsv.admit(
-        GoldenFixations.csv,
+        GoldenCsv.fixations,
         columns,
         keys,
         ledger.frames.screen,
