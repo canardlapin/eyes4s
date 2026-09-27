@@ -32,7 +32,8 @@ enum InventoryAnswer derives CanEqual:
   * in the ledger (ticket S5.4; Data.dc.html "trials.csv · Inventory · 960
   * trials" and "Absent — in trials.csv, no fixation records at all · 6").
   *
-  *  - `source`: the trials file's line, or that there is none.
+  *  - `file`, `role` and `detail`: the trials file's line ("trials.csv ·
+  *    Inventory · 960 trials"); with no file, `detail` says there is none.
   *  - `absent`: the absent count when an inventory was joined; otherwise why
   *    it cannot be counted (`absentCount` is then `None`, never 0).
   *  - `issues`: eyes4s's refusal of the inventory, each naming its records,
@@ -41,8 +42,9 @@ enum InventoryAnswer derives CanEqual:
   * Every count is the backend's ([[InventoryJoin]]); nothing is counted here.
   */
 final case class InventorySourceVM(
+    file: Option[String],
     role: String,
-    source: String,
+    detail: String,
     absentLabel: String,
     absentDefinition: String,
     absentCount: Option[String],
@@ -57,10 +59,11 @@ object InventorySource:
   /** The inventory of `spec` after `answer`. */
   def vm(spec: DatasetRevisionSpec, answer: InventoryAnswer): InventorySourceVM =
     val file = spec.sources.trials.map(_.path.value.split('/').last)
-    def uncounted(note: String, source: String, issues: Vector[IssueVM] = Vector.empty) =
+    def uncounted(note: String, detail: String, issues: Vector[IssueVM] = Vector.empty) =
       InventorySourceVM(
+        file,
         t(InventoryTextId.Role),
-        source,
+        detail,
         t(InventoryTextId.AbsentLabel),
         t(InventoryTextId.AbsentDefinition),
         None,
@@ -71,20 +74,21 @@ object InventorySource:
       case (None, _) =>
         uncounted(t(InventoryTextId.AbsentUncounted), t(InventoryTextId.NoFile))
       case (Some(f), None) =>
-        uncounted(t(InventoryTextId.AbsentUnmapped, f), t(InventoryTextId.Unmapped, f))
-      case (Some(f), Some(_)) =>
+        uncounted(t(InventoryTextId.AbsentUnmapped, f), t(InventoryTextId.Unmapped))
+      case (Some(_), Some(_)) =>
         answer match
           case InventoryAnswer.NotAsked =>
             uncounted(
               t(InventoryTextId.AbsentPending, spec.id.label),
-              t(InventoryTextId.Pending, f)
+              t(InventoryTextId.Pending)
             )
           case InventoryAnswer.Summary(summary) =>
             summary.inventory match
               case InventoryJoin.Joined(trials, absent) =>
                 InventorySourceVM(
+                  file,
                   t(InventoryTextId.Role),
-                  t(InventoryTextId.Joined, f, Format.count(trials.toLong)),
+                  t(InventoryTextId.Joined, Format.count(trials.toLong)),
                   t(InventoryTextId.AbsentLabel),
                   t(InventoryTextId.AbsentDefinition),
                   Some(t(InventoryTextId.AbsentCount, Format.count(absent.toLong))),
@@ -93,15 +97,15 @@ object InventorySource:
                 )
               // The backend joined no inventory: it cannot count absent trials.
               case InventoryJoin.Undeclared =>
-                uncounted(t(InventoryTextId.AbsentUncounted), t(InventoryTextId.NotJoined, f))
+                uncounted(t(InventoryTextId.AbsentUncounted), t(InventoryTextId.NotJoined))
           case InventoryAnswer.Refused(BackendError.InventoryRefused(_, issues)) =>
             uncounted(
               t(InventoryTextId.AbsentUncounted),
-              t(InventoryTextId.Refused, f),
+              t(InventoryTextId.Refused),
               issues.map(i => IssueVM(i.message, i.pointsAt, true))
             )
           case InventoryAnswer.Refused(other) =>
             uncounted(
               t(InventoryTextId.AbsentPending, spec.id.label),
-              t(InventoryTextId.Unavailable, f, other.message)
+              t(InventoryTextId.Unavailable, other.message)
             )

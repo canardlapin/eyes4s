@@ -34,12 +34,12 @@ object InventoryText:
     id match
       case Role             => "Inventory"
       case NoFile           => "No trials.csv"
-      case Unmapped         => "{0} · columns not mapped"
-      case Pending          => "{0} · counted on admission"
-      case Joined           => "{0} · {1} trials · inventory"
-      case NotJoined        => "{0} · not joined"
-      case Refused          => "{0} · refused by eyes4s"
-      case Unavailable      => "{0} · {1}"
+      case Unmapped         => "columns not mapped"
+      case Pending          => "counted on admission"
+      case Joined           => "{0} trials"
+      case NotJoined        => "not joined"
+      case Refused          => "refused by eyes4s"
+      case Unavailable      => "{0}"
       case AbsentLabel      => "Absent"
       case AbsentDefinition =>
         "in trials.csv, no fixation records at all"

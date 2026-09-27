@@ -34,13 +34,16 @@ class InventorySourceSuite extends CatsEffectSuite:
   private val r3   = DatasetRevision(3)
   private val spec = ok(StoryMoments.t2).dataset(r3).get
 
-  test("fixture: trials.csv · 960 trials · inventory; Absent · 6") {
+  test("fixture: trials.csv · Inventory · 960 trials; Absent · 6") {
     for
       fake    <- FakeStudyBackend.create[IO](StoryMoment.T2)
       summary <- fake.admission(r3).map(ok)
     yield
       val vm = InventorySource.vm(spec, InventoryAnswer.Summary(summary))
-      assertEquals(vm.source, "trials.csv · 960 trials · inventory")
+      assertEquals(
+        (vm.file, vm.role, vm.detail),
+        (Some("trials.csv"), "Inventory", "960 trials")
+      )
       assertEquals(
         (vm.absentLabel, vm.absentDefinition, vm.absentCount),
         ("Absent", "in trials.csv, no fixation records at all", Some("6"))
@@ -54,7 +57,7 @@ class InventorySourceSuite extends CatsEffectSuite:
       inventory = None
     )
     val vm = InventorySource.vm(fixationsOnly, InventoryAnswer.NotAsked)
-    assertEquals(vm.source, "No trials.csv")
+    assertEquals((vm.file, vm.detail), (None, "No trials.csv"))
     assertEquals(vm.absentCount, None)
     assertEquals(
       vm.absentNote,
@@ -80,13 +83,13 @@ class InventorySourceSuite extends CatsEffectSuite:
         )
       )
     )
-    assertEquals((undeclared.source, undeclared.absentCount), ("trials.csv · not joined", None))
+    assertEquals((undeclared.detail, undeclared.absentCount), ("not joined", None))
     assertEquals(undeclared.absentNote, vm.absentNote)
   }
 
   test("an unmapped trials.csv, or one not yet admitted, is not counted either") {
     val unmapped = InventorySource.vm(spec.copy(inventory = None), InventoryAnswer.NotAsked)
-    assertEquals(unmapped.source, "trials.csv · columns not mapped")
+    assertEquals(unmapped.detail, "columns not mapped")
     assertEquals(
       unmapped.absentNote,
       Some("Absent trials cannot be counted until the columns of trials.csv are mapped.")
@@ -95,7 +98,7 @@ class InventorySourceSuite extends CatsEffectSuite:
       spec.copy(decision = AdmissionDecision.Pending),
       InventoryAnswer.NotAsked
     )
-    assertEquals(pending.source, "trials.csv · counted on admission")
+    assertEquals(pending.detail, "counted on admission")
     assertEquals(pending.absentCount, None)
   }
 
@@ -111,7 +114,7 @@ class InventorySourceSuite extends CatsEffectSuite:
       )
     )
     val vm = InventorySource.vm(spec, InventoryAnswer.Refused(refusal))
-    assertEquals(vm.source, "trials.csv · refused by eyes4s")
+    assertEquals(vm.detail, "refused by eyes4s")
     assertEquals(vm.absentCount, None)
     assertEquals(
       vm.issues,
