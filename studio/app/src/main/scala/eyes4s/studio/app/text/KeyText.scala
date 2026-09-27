@@ -34,6 +34,7 @@ enum KeyTextId derives CanEqual:
   case TrialOccurrence, TrialItem, TrialRecords, TrialRecordsSpread, TrialRecord
   case TrialsMore, RepeatedMore, RepeatedAccessible, RepeatedInFile, TrialSeparator
   case ConflictIssue, ItemIssue, UnresolvedIssue, InventoryIssue, NoOccurrenceColumn
+  case NeedsRemap
 
 /** The key builder's strings in the boards' wording. */
 object KeyText:
@@ -97,6 +98,9 @@ object KeyText:
         "Warning (trial key): {0}: {1}; eyes4s rejects them on admission. First: {2}."
       case InventoryIssue =>
         "Warning (trial key, mapped in S5.4): {0}: {1} on more than one record. First: {2}."
+      case NeedsRemap =>
+        "{0} was saved without a {1} column, which import now requires: map one to " +
+          "re-admit it."
       case NoOccurrenceColumn =>
         "{0} has no column that can hold the occurrence (occurrence, block, repeat or " +
           "repetition)."

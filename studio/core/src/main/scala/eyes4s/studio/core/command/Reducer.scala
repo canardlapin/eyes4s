@@ -54,6 +54,7 @@ object Reducer:
     case ImportSources(parent, sources, mapping, units, geometry, attributes) =>
       val id = DatasetRevision(d.datasets.lastOption.fold(1)(_.id.number + 1))
       for
+        _    <- admissible(d, c, mapping)
         from <- parent.traverse(p => d.dataset(p).toRight(UnknownDataset(p)))
         spec = DatasetRevisionSpec(
           id,
@@ -85,6 +86,14 @@ object Reducer:
     case ReviseDataset(id, mapping, units, geometry, attributes) =>
       for
         spec <- editable(d, id)
+        // A revision stored before S5.3 may lack the phase. Undoing its
+        // re-map restores that mapping over an admissible one, so replacing
+        // an admissible mapping is not refused here; VerifyDataset refuses
+        // to send an inadmissible one for admission, and the wizard never
+        // commits one.
+        _ <-
+          if spec.mapping.missingForImport.isEmpty then Right(())
+          else admissible(d, c, mapping)
         revised = spec.copy(
           mapping = mapping,
           units = units,
@@ -149,6 +158,7 @@ object Reducer:
     case VerifyDataset(id) =>
       for
         spec    <- editable(d, id)
+        _       <- admissible(d, c, spec.mapping)
         content <- contentOf(spec)
         next <- replaceDataset(d, c)(spec.copy(decision = AdmissionDecision.Verifying(content)))
       yield Outcome(
@@ -440,6 +450,14 @@ object Reducer:
     Refused(c.name, targetOf(d, c), error)
 
   /** The document value `c` acts on in `d`. */
+  /** The S5.3 commit check: `mapping` has every role import requires. */
+  private def admissible(
+      d: StudioDocument,
+      c: Command,
+      mapping: ColumnMapping
+  ): Either[CommandError, Unit] =
+    ColumnMapping.admissible(mapping).left.map(Refused(c.name, targetOf(d, c), _)).map(_ => ())
+
   def targetOf(d: StudioDocument, c: Command): Target = c match
     case ImportSources(_, _, _, _, _, _) =>
       Target.OnDataset(DatasetRevision(d.datasets.lastOption.fold(1)(_.id.number + 1)))

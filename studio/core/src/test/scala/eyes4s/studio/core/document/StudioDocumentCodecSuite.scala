@@ -261,8 +261,8 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
     assertEquals(
       ColumnMapping.of(Vector.empty).left.map(_.message),
       Left(
-        "The column mapping has no participant, phase, trial, ordinal, sample count, x, y, " +
-          "onset, duration column."
+        "The column mapping has no participant, trial, ordinal, sample count, x, y, onset, " +
+          "duration column."
       )
     )
     val screen = right(ScreenSize.of(1920, 1080))

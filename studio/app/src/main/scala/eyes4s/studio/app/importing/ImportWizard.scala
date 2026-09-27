@@ -23,6 +23,7 @@ import eyes4s.studio.core.backend.DatasetRevision
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.{
   AdmissionDecision,
+  ColumnMapping,
   ColumnName,
   ColumnRole,
   DatasetRevisionSpec,
@@ -79,6 +80,12 @@ enum WizardProblem derives CanEqual:
 
   /** The trial key fails a Studio check (S5.3). */
   case TrialKey(block: KeyBlock)
+
+  /** `dataset` was stored without columns for `missing`, roles import now
+    * requires (a mapping saved before S5.3 has no phase): it loads, and needs
+    * a re-map before it is committed or admitted.
+    */
+  case NeedsRemap(dataset: DatasetRevision, missing: Vector[ColumnRole])
 
   /** No column of `file` can hold the occurrence the key was asked to add. */
   case NoOccurrenceColumn(file: String)
@@ -229,7 +236,12 @@ object ImportWizard:
           presets,
           "",
           WizardTab.FixationMapping,
-          None,
+          // A revision stored before S5.3 may lack a role import now
+          // requires (the phase): it needs a re-map to be committed.
+          Option
+            .when(spec.mapping.missingForImport.nonEmpty)(
+              WizardProblem.NeedsRemap(dataset, spec.mapping.missingForImport)
+            ),
           None
         )
       )
@@ -419,6 +431,10 @@ object ImportWizard:
       _        <- NonEmptyVector.fromVector(blocking).map(WizardProblem.Blocked(_)).toLeft(())
       _        <- TrialKeyVM.keyBlocks(w).headOption.map(WizardProblem.TrialKey(_)).toLeft(())
       resolved <- draft.resolve.left.map(WizardProblem.Blocked(_))
+      _        <- ColumnMapping
+        .admissible(resolved.mapping)
+        .left
+        .map(e => WizardProblem.Mapping(MappingError.Refused(draft.file, e)))
       geometry <- w.geometry.parse.left.map(WizardProblem.BadGeometry(_))
       commands <- w.target match
         case WizardTarget.NewImport =>

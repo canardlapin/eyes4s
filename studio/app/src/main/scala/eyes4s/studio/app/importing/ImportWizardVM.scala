@@ -194,7 +194,9 @@ object ImportWizardVM:
     case WizardProblem.StoreFailed(reason)       => t(ImportTextId.StoreFailed, reason)
     case WizardProblem.NotDatasetSource(d, path) =>
       t(ImportTextId.NotDatasetSource, path, d.label)
-    case WizardProblem.TrialKey(block)          => block.message
+    case WizardProblem.TrialKey(block)        => block.message
+    case WizardProblem.NeedsRemap(d, missing) =>
+      KeyText(KeyTextId.NeedsRemap, d.label, missing.map(_.label).mkString(", "))
     case WizardProblem.NoOccurrenceColumn(file) =>
       KeyText(KeyTextId.NoOccurrenceColumn, file)
 

@@ -375,6 +375,53 @@ class TrialKeyBuilderSuite extends munit.FunSuite:
     })
   }
 
+  // --- a project saved before the phase was required -------------------------------------
+
+  test(
+    "a revision saved without a phase needs a re-map; committing it without one is refused"
+  ) {
+    val legacy = ok(LegacyMappings.legacy(t2))
+    val golden =
+      """|participant,phase,trial,occurrence,ordinal,x,y,onset_ms,duration_ms,sample_count
+         |P01,Encoding,enc_01,1,1,570.4,609.3,70,80,40
+         |""".stripMargin
+    val own = source(SourceRole.Fixations, "inputs/fixations.csv", golden)
+      .copy(bytes = legacy.dataset(DatasetRevision(3)).flatMap(_.sources.fixations).get.bytes)
+    val w0 = ok(ImportWizard.remap(legacy, DatasetRevision(3), ImportPresets.empty))
+    assertEquals(
+      w0.problem,
+      Some(WizardProblem.NeedsRemap(DatasetRevision(3), Vector(ColumnRole.Phase)))
+    )
+    assertEquals(
+      ImportWizardVM.of(w0, legacy).problem,
+      Some(
+        "r3 was saved without a phase column, which import now requires: map one to re-admit it."
+      )
+    )
+    val (w, fx) = run(w0, legacy, WizardIntent.SourceRead(own), WizardIntent.Commit)
+    assertEquals(commands(fx), Vector.empty)
+    w.problem match
+      case Some(WizardProblem.Blocked(errors)) =>
+        assertEquals(
+          errors.toVector.collect { case MappingError.MissingRole(_, role, _) => role },
+          Vector(ColumnRole.Phase)
+        )
+      case other => fail(s"expected the missing phase, got $other")
+    // Mapping the phase column commits the re-map.
+    val (fixed, more) = run(
+      w,
+      legacy,
+      WizardIntent
+        .Choose(SourceRole.Fixations, col("phase"), ColumnChoice.Role(ColumnRole.Phase)),
+      WizardIntent.Commit
+    )
+    assertEquals(fixed.problem, None)
+    commands(more) match
+      case Vector(Command.ImportSources(Some(_), _, mapping, _, _, _)) =>
+        assertEquals(mapping.column(ColumnRole.Phase), Some(col("phase")))
+      case other => fail(s"expected a re-import, got $other")
+  }
+
   // --- state ----------------------------------------------------------------------------------
 
   test("a key check is recomputed only when its file or its key columns change") {
