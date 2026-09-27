@@ -17,6 +17,7 @@
 package eyes4s.studio.app.importing
 
 import cats.data.NonEmptyVector
+import eyes4s.codec.ByteDigest
 import eyes4s.studio.app.Intent
 import eyes4s.studio.core.backend.DatasetRevision
 import eyes4s.studio.core.command.Command
@@ -27,6 +28,7 @@ import eyes4s.studio.core.document.{
   DatasetRevisionSpec,
   DocumentError,
   Geometry,
+  SourcePath,
   Sources,
   SourceRole,
   StudioDocument,
@@ -102,6 +104,17 @@ enum WizardIntent derives CanEqual:
     * occurrence column's role in each file's mapping.
     */
   case IncludeOccurrence(include: Boolean)
+
+  /** The platform's streaming check of a key (answering
+    * [[WizardEffect.CheckKey]]); ignored unless the inputs are still current.
+    */
+  case KeyChecked(
+      role: SourceRole,
+      source: ByteDigest,
+      columns: KeyColumns,
+      unit: TrialUnit,
+      result: Either[KeyGap, KeyReport]
+  )
   case EditGeometry(field: GeometryField, value: String)
   case TypePresetName(text: String)
   case SavePreset
@@ -125,6 +138,21 @@ enum WizardEffect derives CanEqual:
 
   /** Show the platform's file dialog for a file of `role`. */
   case OpenFile(role: SourceRole)
+
+  /** Check a trial key in one streaming pass over the file read as `path`
+    * (whose bytes digest to `source`), off the UI thread, and dispatch
+    * [[WizardIntent.KeyChecked]]: the key reads a column the sniffer did not
+    * keep (S5.3; [[KeyChecks.run]] runs it).
+    */
+  case CheckKey(
+      role: SourceRole,
+      path: SourcePath,
+      source: ByteDigest,
+      file: String,
+      delimiter: Delimiter,
+      columns: KeyColumns,
+      unit: TrialUnit
+  )
   case Close
 
 object WizardEffect:
@@ -215,7 +243,8 @@ object ImportWizard:
       document: StudioDocument
   ): (ImportWizard, Vector[WizardEffect]) =
     val (next, effects) = step(w, intent, document)
-    (next.copy(keys = KeyChecks.refresh(next)), effects)
+    val (keys, checks)  = KeyChecks.refresh(next)
+    (next.copy(keys = keys), effects ++ checks)
 
   private def step(
       w: ImportWizard,
@@ -289,6 +318,9 @@ object ImportWizard:
                     e => refuse(WizardProblem.Mapping(e)),
                     d => (cleared.copy(fixations = Some((src, d)), trials = trials), none)
                   )
+
+      case WizardIntent.KeyChecked(role, source, columns, unit, result) =>
+        (w.copy(keys = KeyChecks.answer(w.keys, role, source, columns, unit, result)), none)
 
       case WizardIntent.EditGeometry(field, value) =>
         (cleared.copy(geometry = w.geometry.set(field, value)), none)
@@ -385,7 +417,7 @@ object ImportWizard:
       (src, draft) <- w.fixations.toRight(WizardProblem.NoFixations)
       blocking = w.issues
       _        <- NonEmptyVector.fromVector(blocking).map(WizardProblem.Blocked(_)).toLeft(())
-      _        <- w.keys.blocks.headOption.map(WizardProblem.TrialKey(_)).toLeft(())
+      _        <- TrialKeyVM.keyBlocks(w).headOption.map(WizardProblem.TrialKey(_)).toLeft(())
       resolved <- draft.resolve.left.map(WizardProblem.Blocked(_))
       geometry <- w.geometry.parse.left.map(WizardProblem.BadGeometry(_))
       commands <- w.target match

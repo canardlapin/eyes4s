@@ -20,22 +20,26 @@ import eyes4s.studio.core.document.ColumnName
 
 import scala.collection.mutable
 
-/** One column of a [[KeyTable]]: its distinct values in first-seen order and,
-  * for each record, the index of the record's value among them.
+/** One low-cardinality column of a [[KeyTable]]: its distinct values in
+  * first-seen order (at most [[KeyTable.Cap]]) and, for each record, the
+  * index of the record's value among them, in two bytes.
   */
 final class KeyColumn private[importing] (
     val name: ColumnName,
     val values: Vector[String],
-    codes: IArray[Int]
+    codes: IArray[Short]
 ):
   /** How many records the column holds. */
   def size: Int = codes.length
 
   /** The index of record `index`'s value (0-based record index) in [[values]]. */
-  def code(index: Int): Int = codes(index)
+  def code(index: Int): Int = codes(index).toInt
 
   /** Record `index`'s value (0-based record index). */
-  def value(index: Int): String = values(codes(index))
+  def value(index: Int): String = values(code(index))
+
+  /** The bytes the column keeps: two a record, and its distinct values. */
+  def footprint: Long = 2L * size + values.iterator.map(v => 40L + 2L * v.length).sum
 
   override def equals(other: Any): Boolean = other match
     case c: KeyColumn =>
@@ -51,67 +55,77 @@ final class KeyColumn private[importing] (
 object KeyColumn:
   given CanEqual[KeyColumn, KeyColumn] = CanEqual.derived
 
-/** Every record of a delimited file as a column store (ticket S5.3): the
-  * trial key is checked against the whole file, live, as its columns are
-  * mapped, so the file's cells are kept, each column's values once and one
-  * index per cell. A record shorter than the header has blank trailing
-  * cells; the cells of a longer one past the header are not kept (the
-  * preview counts ragged records, and eyes4s rejects them on admission).
-  * Records are numbered as the preview numbers them: from 1, after the
-  * header, counting non-blank records.
+/** The low-cardinality columns of a delimited file, dictionary-encoded in the
+  * sniffer's one scan (ticket S5.3). Trial key roles (participant, phase,
+  * trial, occurrence, item) take few distinct values, so the key can be
+  * checked against every record without keeping the file: a column is kept
+  * only while it has at most [[KeyTable.Cap]] distinct values, two bytes a
+  * record; a column that exceeds the cap is dropped (`dropped`), and a key on
+  * it is checked by one streaming pass over the file instead
+  * ([[TrialKeyCheck.stream]]). A record shorter than the header has blank
+  * trailing cells. Records are numbered as the preview numbers them.
   */
-final class KeyTable private (val records: Int, val columns: Vector[KeyColumn]):
-  def header: Vector[ColumnName] = columns.map(_.name)
-
+final class KeyTable private[importing] (
+    val records: Int,
+    val columns: Vector[KeyColumn],
+    val dropped: Vector[ColumnName]
+):
   def column(name: ColumnName): Option[KeyColumn] = columns.find(_.name == name)
 
+  /** The bytes the table keeps. */
+  def footprint: Long = columns.iterator.map(_.footprint).sum
+
   override def equals(other: Any): Boolean = other match
-    case t: KeyTable => t.records == records && t.columns == columns
+    case t: KeyTable => t.records == records && t.columns == columns && t.dropped == dropped
     case _           => false
 
-  override def hashCode: Int = (records, columns).##
+  override def hashCode: Int = (records, columns, dropped).##
 
   override def toString: String =
-    s"KeyTable($records records, ${header.map(_.value).mkString(", ")})"
+    s"KeyTable($records records, kept ${columns.map(_.name.value).mkString(", ")}; " +
+      s"dropped ${dropped.map(_.value).mkString(", ")})"
 
 object KeyTable:
   given CanEqual[KeyTable, KeyTable] = CanEqual.derived
 
-  /** Read every record of `text` under `delimiter`, keeping the columns of
-    * `header` (the preview's header, which is the text's first record).
-    */
-  def read(
-      file: String,
-      text: CharSequence,
-      delimiter: Delimiter,
-      header: Vector[ColumnName]
-  ): Either[SniffError, KeyTable] =
-    val width   = header.size
-    val interns = Vector.fill(width)(mutable.HashMap.empty[String, Int])
-    val values  = Vector.fill(width)(mutable.ArrayBuffer.empty[String])
-    val codes   = Vector.fill(width)(mutable.ArrayBuilder.make[Int])
-    var count   = 0
-    val reader  = RecordReader(file, text, delimiter)
-    reader.next(): Unit // the header
-    reader
-      .fold(Right(())) { fields =>
-        var i = 0
-        while i < width do
-          val cell = if i < fields.size then fields(i) else ""
-          val code = interns(i).getOrElseUpdate(
-            cell, {
-              values(i) += cell
-              values(i).size - 1
-            }
-          )
-          codes(i) += code
-          i += 1
-        count += 1
-        true
-      }
-      .map { _ =>
-        val columns = header.indices.toVector.map(i =>
-          KeyColumn(header(i), values(i).toVector, IArray.unsafeFromArray(codes(i).result()))
+  /** The most distinct values a kept column may have. */
+  val Cap: Int = 4096
+
+  val empty: KeyTable = new KeyTable(0, Vector.empty, Vector.empty)
+
+/** Builds a [[KeyTable]] one record at a time, inside the sniffer's scan. */
+private[importing] final class KeyTableBuilder(header: Vector[ColumnName], cap: Int):
+  private val width   = header.size
+  private val interns = Array.fill(width)(mutable.HashMap.empty[String, Int])
+  private val values  = Array.fill(width)(mutable.ArrayBuffer.empty[String])
+  private val codes   = Array.fill(width)(mutable.ArrayBuilder.make[Short])
+  private val live    = Array.fill(width)(true)
+  private var count   = 0
+
+  def add(fields: Vector[String]): Unit =
+    var i = 0
+    while i < width do
+      if live(i) then
+        val cell = if i < fields.size then fields(i) else ""
+        val code = interns(i).getOrElseUpdate(
+          cell, {
+            values(i) += cell
+            values(i).size - 1
+          }
         )
-        new KeyTable(count, columns)
-      }
+        if code >= cap then
+          // Too many distinct values for a key role: stop keeping the column.
+          live(i) = false
+          interns(i) = mutable.HashMap.empty
+          values(i) = mutable.ArrayBuffer.empty
+          codes(i) = mutable.ArrayBuilder.make[Short]
+        else codes(i) += code.toShort
+      i += 1
+    count += 1
+
+  def result(): KeyTable =
+    val kept = header.indices.toVector.collect {
+      case i if live(i) =>
+        KeyColumn(header(i), values(i).toVector, IArray.unsafeFromArray(codes(i).result()))
+    }
+    new KeyTable(count, kept, header.indices.toVector.filterNot(live(_)).map(header))

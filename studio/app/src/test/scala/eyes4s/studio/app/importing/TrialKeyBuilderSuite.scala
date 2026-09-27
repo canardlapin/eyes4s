@@ -154,7 +154,8 @@ class TrialKeyBuilderSuite extends munit.FunSuite:
     val eyes4sKey = TrialKey("P01", Phase.Encoding, "enc_01", 1)
     assertEquals(
       p01.trials.flatMap(_.refs),
-      Vector(1, 2, 3, 55, 56, 57).map(n =>
+      // Each trial's first and last record.
+      Vector(1, 3, 55, 57).map(n =>
         StudioRef.SourceRecord(eyes4sKey, None, SourceRole.Fixations, ok(RecordNumber.of(n)))
       )
     )
@@ -171,12 +172,15 @@ class TrialKeyBuilderSuite extends munit.FunSuite:
     assertEquals(w.tab, WizardTab.FixationMapping)
     w.problem match
       case Some(
-            WizardProblem.TrialKey(KeyBlock.RepeatWithoutOccurrence(file, column, repeated))
+            WizardProblem.TrialKey(KeyBlock.RepeatWithoutOccurrence(file, column, count, first))
           ) =>
         assertEquals(file, "fixations.csv")
         assertEquals(column, col("Block"))
-        assertEquals(repeated.map(_.key), KeyStudies.repeatedKeys.sorted)
-        assert(repeated.forall(_.trials.size == 2))
+        assertEquals(count, 38)
+        assertEquals(first, KeyStudies.repeatedKeys.sorted.headOption)
+        val listed = w.keys.fixationReport.get.repeated
+        assertEquals(listed.map(_.key), KeyStudies.repeatedKeys.sorted)
+        assert(listed.forall(_.trials.size == 2))
       case other => fail(s"expected the trial key's Studio check, got $other")
     val vm = ImportWizardVM.of(w, t2)
     assert(vm.problem.exists(_.startsWith("Studio check · fixations.csv: 38 keys repeat")))
@@ -240,7 +244,7 @@ class TrialKeyBuilderSuite extends munit.FunSuite:
 
   // --- the key's parts ------------------------------------------------------------------------
 
-  test("a key without Phase blocks the import: eyes4s reads a trial key from phase too") {
+  test("Phase is a required role: eyes4s reads a trial key from phase too") {
     val text    = KeyStudies.fixations(false).replace("Subject,Phase,", "Subject,Stage_x,")
     val (w, fx) = run(
       ImportWizard.newImport(t2, ImportPresets.empty),
@@ -250,14 +254,15 @@ class TrialKeyBuilderSuite extends munit.FunSuite:
       WizardIntent.Commit
     )
     assertEquals(commands(fx), Vector.empty)
-    assertEquals(
-      w.problem,
-      Some(
-        WizardProblem.TrialKey(
-          KeyBlock.Incomplete(KeyGap.Missing("fixations.csv", Vector(KeyPart.Phase)))
+    w.problem match
+      case Some(WizardProblem.Blocked(errors)) =>
+        assertEquals(
+          errors.toVector.collect { case MappingError.MissingRole(_, role, _) => role },
+          Vector(ColumnRole.Phase)
         )
-      )
-    )
+      case other => fail(s"expected the missing Phase role, got $other")
+    // The key builder shows the gap; it adds no block of its own.
+    assertEquals(TrialKeyVM.keyBlocks(w), Vector.empty)
     val vm = key(w)
     assertEquals(vm.blocks(1).accessible, "Phase: no column")
     assert(!vm.blocks(1).included)
@@ -317,6 +322,57 @@ class TrialKeyBuilderSuite extends munit.FunSuite:
       ),
       vm.issues.toString
     )
+  }
+
+  // --- a key on a column the sniffer did not keep ----------------------------------------
+
+  test("a key on a many-valued column is checked by one streaming pass; until then it blocks") {
+    // 5,000 distinct trial labels: past the sniffer's cap, so the column is not kept.
+    val rows = (1 to 5000).flatMap(i =>
+      Vector(s"P01,Enc,t$i,1,1,960,540,300,200,100", s"P01,Enc,t$i,1,2,960,540,600,200,100")
+    ) ++ Vector("P01,Enc,t1,2,3,960,540,900,200,100")
+    val text =
+      ("Subject,Phase,TrialID,Block,FixNum,FixX,FixY,FixStart,FixDur,NSamples" +: rows)
+        .mkString("", "\n", "\n")
+    val read          = source(SourceRole.Fixations, "big.csv", text)
+    val (w, requests) = run(
+      ImportWizard.newImport(t2, ImportPresets.empty),
+      t2,
+      WizardIntent.SourceRead(read),
+      WizardIntent.DeclareTime(Some(TimeUnit.Milliseconds)),
+      WizardIntent.IncludeOccurrence(false)
+    )
+    val checks = requests.collect { case c: WizardEffect.CheckKey => c }
+    // One request per key composition: with Occurrence, then without it.
+    assertEquals(checks.map(_.columns.occurrence), Vector(Some(col("Block")), None))
+    assertEquals(checks.map(_.path.value).distinct, Vector("big.csv"))
+    assertEquals(w.keys.fixations.map(_.result), Some(KeyResult.Pending))
+    assertEquals(key(w).lines.map(_.detail), Vector("checking every record…"))
+    val (blocked, none) = run(w, t2, WizardIntent.Commit)
+    assertEquals(commands(none), Vector.empty)
+    assertEquals(
+      blocked.problem,
+      Some(WizardProblem.TrialKey(KeyBlock.Checking("big.csv")))
+    )
+    // A stale answer (for the key with Occurrence) changes nothing.
+    val (stale, _) = run(w, t2, KeyChecks.run(checks.head, text))
+    assertEquals(stale.keys, w.keys)
+    // The current answer fills the line and the Studio check.
+    val (done, _) = run(w, t2, KeyChecks.run(checks.last, text))
+    val line      = key(done).lines.head
+    assertEquals(line.count, "5,000 keys")
+    assertEquals(
+      line.detail,
+      "· 1 key repeats without Occurrence · Occurrence left out: 1 for every trial"
+    )
+    assertEquals(
+      line.repeated.map(_.summary),
+      Vector("occurrence 1 · records 1–2  |  occurrence 2 · record 10,001")
+    )
+    assert(TrialKeyVM.keyBlocks(done).exists {
+      case KeyBlock.RepeatWithoutOccurrence("big.csv", _, 1, _) => true
+      case _                                                    => false
+    })
   }
 
   // --- state ----------------------------------------------------------------------------------

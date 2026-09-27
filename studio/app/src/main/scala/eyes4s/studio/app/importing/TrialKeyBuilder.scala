@@ -18,13 +18,20 @@ package eyes4s.studio.app.importing
 
 import eyes4s.codec.ByteDigest
 import eyes4s.studio.app.text.{Format, KeyText, KeyTextId}
-import eyes4s.studio.core.document.{ColumnName, ColumnRole, SourceRole}
+import eyes4s.studio.core.document.{ColumnName, SourceRole}
 import eyes4s.studio.core.importing.*
 import eyes4s.studio.core.selection.{RecordNumber, StudioRef}
 
 // ---------------------------------------------------------------------------
 // State: each file's key check, recomputed only when its inputs change
 // ---------------------------------------------------------------------------
+
+/** A file's key check: done, or waiting for the platform's streaming pass
+  * over the file (a key on a column the sniffer did not keep).
+  */
+enum KeyResult derives CanEqual:
+  case Checked(result: Either[KeyGap, KeyReport])
+  case Pending
 
 /** One file's trial key check and what it was computed from: the file's
   * bytes, the key's columns and the trial unit.
@@ -33,36 +40,49 @@ final case class KeyCheckOf(
     source: ByteDigest,
     columns: KeyColumns,
     unit: TrialUnit,
-    result: Either[KeyGap, KeyReport]
-) derives CanEqual
+    result: KeyResult
+) derives CanEqual:
+  def report: Option[KeyReport] = result match
+    case KeyResult.Checked(Right(r)) => Some(r)
+    case _                           => None
 
 /** The trial key checks of the wizard's files (ticket S5.3). The key is
-  * composed by the column mapping (the participant, phase, trial and
-  * occurrence roles), so the checks follow the drafts: each is recomputed
-  * when its file or its key columns change, and only then.
+  * composed by the column mapping (the participant, phase, trial,
+  * occurrence and item roles), so the checks follow the drafts: each is
+  * recomputed when its file or its key columns change, and only then.
   */
 final case class KeyChecks(fixations: Option[KeyCheckOf], trials: Option[KeyCheckOf])
     derives CanEqual:
 
-  def fixationReport: Option[KeyReport] = fixations.flatMap(_.result.toOption)
-  def trialReport: Option[KeyReport]    = trials.flatMap(_.result.toOption)
+  def fixationReport: Option[KeyReport] = fixations.flatMap(_.report)
+  def trialReport: Option[KeyReport]    = trials.flatMap(_.report)
 
-  /** The Studio checks that block the import: the fixation key (the one the
-    * document records) lacks the phase, or leaves the occurrence out while
-    * records of more than one occurrence share a key. A missing participant
-    * or trial is already the mapping's required-role issue.
+  def of(role: SourceRole): Option[KeyCheckOf] = role match
+    case SourceRole.Fixations => fixations
+    case SourceRole.Trials    => trials
+
+  /** The Studio checks that block the import, on the fixation key (the one
+    * the document records): it is still being checked, it cannot be checked,
+    * or it leaves the occurrence out while records of one item and more than
+    * one occurrence share a key. A missing key role is the mapping's own
+    * required-role issue.
     */
-  def blocks: Vector[KeyBlock] = fixations.map(_.result).toVector.flatMap {
-    case Left(KeyGap.Missing(file, parts)) =>
-      val uncovered = parts.filterNot(p => ColumnRole.required.contains(p.role))
-      Option.when(uncovered.nonEmpty)(KeyBlock.Incomplete(KeyGap.Missing(file, uncovered)))
-    case Left(gap)                              => Some(KeyBlock.Incomplete(gap))
-    case Right(r) if r.repeatsWithoutOccurrence =>
-      r.unit match
-        case TrialUnit.Occurrence(column) =>
-          Some(KeyBlock.RepeatWithoutOccurrence(r.file, column, r.repeated))
-        case _ => None
-    case Right(_) => None
+  def blocks(file: String): Vector[KeyBlock] = fixations.map(_.result).toVector.flatMap {
+    case KeyResult.Pending                             => Some(KeyBlock.Checking(file))
+    case KeyResult.Checked(Left(KeyGap.Missing(_, _))) => None
+    case KeyResult.Checked(Left(gap))                  => Some(KeyBlock.Incomplete(gap))
+    case KeyResult.Checked(Right(r))                   =>
+      r.occurrenceLeftOut.filter(_ => r.repeatsWithoutOccurrence).map { column =>
+        KeyBlock.RepeatWithoutOccurrence(
+          r.file,
+          column,
+          r.occurrenceConflicts,
+          r.repeated.collectFirst {
+            case RepeatedKey(key, KeyConflict.Occurrences(_), _, _, _, _, _) =>
+              key
+          }
+        )
+      }
   }
 
 object KeyChecks:
@@ -71,49 +91,105 @@ object KeyChecks:
   private def named(columns: Vector[(PreviewColumn, ColumnChoice)]) =
     columns.map((c, choice) => c.name -> choice)
 
-  /** A fixation file's key and trial unit: records of one occurrence are one
-    * trial, read from the key's occurrence column or, when the key leaves it
-    * out, from the column that can hold it; with neither, a key's records
-    * are one trial.
+  /** A fixation file's key and trial unit: records of one presentation (one
+    * occurrence and item) are one trial, the occurrence read from the key's
+    * column or, when the key leaves it out, from the column that can hold it.
     */
   def fixationKey(columns: Vector[(ColumnName, ColumnChoice)]): (KeyColumns, TrialUnit) =
-    val key  = KeyColumns.of(columns)
-    val unit = key.occurrence
-      .orElse(KeyColumns.occurrenceCandidate(columns))
-      .fold(TrialUnit.Key)(TrialUnit.Occurrence(_))
-    (key, unit)
+    val key = KeyColumns.of(columns)
+    (
+      key,
+      TrialUnit.Presentation(key.occurrence.orElse(KeyColumns.occurrenceCandidate(columns)))
+    )
 
   private def recheck(
       previous: Option[KeyCheckOf],
       source: SniffedSource,
       role: SourceRole,
       key: (KeyColumns, TrialUnit)
-  ): KeyCheckOf =
+  ): (KeyCheckOf, Option[WizardEffect]) =
     val (columns, unit) = key
-    previous
-      .filter(p => p.source == source.bytes && p.columns == columns && p.unit == unit)
-      .getOrElse(
-        KeyCheckOf(
-          source.bytes,
-          columns,
-          unit,
-          TrialKeyCheck.check(source.preview.file, role, source.table, columns, unit)
-        )
-      )
+    previous.filter(p =>
+      p.source == source.bytes && p.columns == columns && p.unit == unit
+    ) match
+      case Some(same) => (same, None)
+      case None       =>
+        val table = source.preview.keys
+        if columns.missing.isEmpty && TrialKeyCheck.unencoded(table, columns, unit).nonEmpty
+        then
+          (
+            KeyCheckOf(source.bytes, columns, unit, KeyResult.Pending),
+            Some(
+              WizardEffect.CheckKey(
+                role,
+                source.path,
+                source.bytes,
+                source.preview.file,
+                source.preview.delimiter,
+                columns,
+                unit
+              )
+            )
+          )
+        else
+          val result = TrialKeyCheck.check(source.preview.file, role, table, columns, unit)
+          (KeyCheckOf(source.bytes, columns, unit, KeyResult.Checked(result)), None)
 
-  /** The checks of `w`'s files, reusing `w`'s own where nothing changed. */
-  def refresh(w: ImportWizard): KeyChecks =
-    KeyChecks(
-      w.fixations.map((src, draft) =>
-        recheck(w.keys.fixations, src, SourceRole.Fixations, fixationKey(named(draft.columns)))
-      ),
-      w.trials.map((src, draft) =>
-        recheck(
-          w.keys.trials,
-          src,
-          SourceRole.Trials,
-          (KeyColumns.of(named(draft.columns)), TrialUnit.Record)
-        )
+  /** The checks of `w`'s files, reusing `w`'s own where nothing changed, and
+    * the streaming checks the platform must run for the others.
+    */
+  def refresh(w: ImportWizard): (KeyChecks, Vector[WizardEffect]) =
+    val fixations = w.fixations.map((src, draft) =>
+      recheck(w.keys.fixations, src, SourceRole.Fixations, fixationKey(named(draft.columns)))
+    )
+    val trials = w.trials.map((src, draft) =>
+      recheck(
+        w.keys.trials,
+        src,
+        SourceRole.Trials,
+        (KeyColumns.of(named(draft.columns)), TrialUnit.Record)
+      )
+    )
+    (
+      KeyChecks(fixations.map(_._1), trials.map(_._1)),
+      (fixations.flatMap(_._2) ++ trials.flatMap(_._2)).toVector
+    )
+
+  /** Record the platform's streaming check, if it is for the current inputs. */
+  def answer(
+      checks: KeyChecks,
+      role: SourceRole,
+      source: ByteDigest,
+      columns: KeyColumns,
+      unit: TrialUnit,
+      result: Either[KeyGap, KeyReport]
+  ): KeyChecks =
+    def fill(c: Option[KeyCheckOf]) = c.map(k =>
+      if k.source == source && k.columns == columns && k.unit == unit &&
+        k.result == KeyResult.Pending
+      then k.copy(result = KeyResult.Checked(result))
+      else k
+    )
+    role match
+      case SourceRole.Fixations => checks.copy(fixations = fill(checks.fixations))
+      case SourceRole.Trials    => checks.copy(trials = fill(checks.trials))
+
+  /** Run a [[WizardEffect.CheckKey]] over the file's `text`, as the
+    * platform does off the UI thread: one streaming pass.
+    */
+  def run(effect: WizardEffect.CheckKey, text: CharSequence): WizardIntent.KeyChecked =
+    WizardIntent.KeyChecked(
+      effect.role,
+      effect.source,
+      effect.columns,
+      effect.unit,
+      TrialKeyCheck.stream(
+        effect.file,
+        effect.role,
+        text,
+        effect.delimiter,
+        effect.columns,
+        effect.unit
       )
     )
 
@@ -145,11 +221,13 @@ final case class KeyBlockVM(
 enum KeyTone derives CanEqual:
   case Unique, Warning, Blocking
 
-/** One trial of a repeated key: its words and a ref per record. */
+/** One trial of a repeated key: its words and refs to its first and last
+  * record.
+  */
 final case class KeyTrialVM(text: String, refs: Vector[StudioRef]) derives CanEqual
 
-/** A repeated key with every trial it resolves to: `label` names the key
-  * (and its file, off the first line), `summary` lists its trials.
+/** A repeated key with its trials: `label` names the key (and its file, off
+  * the first line), `summary` lists its trials.
   */
 final case class RepeatedKeyVM(
     key: String,
@@ -161,6 +239,8 @@ final case class RepeatedKeyVM(
 
 /** One file's key line (board: "960 unique keys · 0 duplicates · Occurrence
   * is 1 for every trial"). The first line names no file; later lines do.
+  * `repeated` lists the report's first repeated keys; `more` says how many
+  * it does not list.
   */
 final case class KeyLineVM(
     source: SourceRole,
@@ -169,6 +249,7 @@ final case class KeyLineVM(
     detail: String,
     tone: KeyTone,
     repeated: Vector[RepeatedKeyVM],
+    more: Option[String],
     accessible: String
 ) derives CanEqual
 
@@ -190,34 +271,30 @@ object TrialKeyVM:
 
   private def t(id: KeyTextId, args: String*): String = KeyText(id, args*)
 
+  private def n(value: Int): String = Format.count(value.toLong)
+
   def partLabel(part: KeyPart): String = t(part match
     case KeyPart.Participant => KeyTextId.PartParticipant
     case KeyPart.Phase       => KeyTextId.PartPhase
     case KeyPart.Trial       => KeyTextId.PartTrial
     case KeyPart.Occurrence  => KeyTextId.PartOccurrence)
 
-  /** "1–12, 15, 481–492": ascending records as runs. */
-  def records(numbers: Vector[Int]): String =
-    val runs = numbers.foldLeft(Vector.empty[(Int, Int)]) {
-      case (acc :+ ((from, to)), n) if n == to + 1 => acc :+ (from -> n)
-      case (acc, n)                                => acc :+ (n    -> n)
-    }
-    runs
-      .map((from, to) =>
-        if from == to then Format.count(from.toLong)
-        else s"${Format.count(from.toLong)}–${Format.count(to.toLong)}"
-      )
-      .mkString(", ")
+  /** "record 7", "records 1–3" or "12 records, 55–90". */
+  def records(first: Int, last: Int, count: Int): String =
+    if count == 1 then t(KeyTextId.TrialRecord, n(first))
+    else if last - first + 1 == count then t(KeyTextId.TrialRecords, n(first), n(last))
+    else t(KeyTextId.TrialRecordsSpread, n(first), n(last), n(count))
 
   private def trialVM(report: KeyReport, key: RepeatedKey, trial: KeyTrial): KeyTrialVM =
-    val rs =
-      if trial.records.size == 1 then t(KeyTextId.TrialRecord, records(trial.records))
-      else t(KeyTextId.TrialRecords, records(trial.records))
-    val text      = trial.occurrence.fold(rs)(o => t(KeyTextId.TrialOccurrence, o, rs))
+    val item = key.conflict match
+      case KeyConflict.Items(_) => trial.item.map(t(KeyTextId.TrialItem, _))
+      case _                    => None
+    val text = (trial.occurrence.map(t(KeyTextId.TrialOccurrence, _)).toVector ++ item :+
+      records(trial.first, trial.last, trial.records)).mkString(" · ")
     val studioKey = key.trialKey(trial, report.keyHasOccurrence)
     KeyTrialVM(
       text,
-      trial.records.flatMap(r =>
+      Vector(trial.first, trial.last).distinct.flatMap(r =>
         RecordNumber
           .of(r)
           .toOption
@@ -227,40 +304,52 @@ object TrialKeyVM:
 
   private def repeatedVM(report: KeyReport, key: RepeatedKey, first: Boolean): RepeatedKeyVM =
     val trials = key.trials.map(trialVM(report, key, _))
+    val more   = Option.when(key.trialCount > key.trials.size)(
+      t(KeyTextId.TrialsMore, n(key.trialCount - key.trials.size))
+    )
+    val summary = (trials.map(_.text) ++ more).mkString(t(KeyTextId.TrialSeparator))
     RepeatedKeyVM(
       key.key.render,
       if first then key.key.render
       else t(KeyTextId.RepeatedInFile, report.file, key.key.render),
       trials,
-      trials.map(_.text).mkString(t(KeyTextId.TrialSeparator)),
-      t(
-        KeyTextId.RepeatedAccessible,
-        key.key.render,
-        key.trials.size.toString,
-        trials.map(_.text).mkString("; ")
-      )
+      summary,
+      t(KeyTextId.RepeatedAccessible, key.key.render, n(key.trialCount), summary)
     )
 
-  /** "38 keys repeat without Occurrence", or its kin for the report's unit. */
+  private def counted(count: Int, one: KeyTextId, many: KeyTextId): String =
+    if count == 1 then t(one) else t(many, n(count))
+
+  /** "38 keys repeat without Occurrence", or its kin for the report's causes. */
   def repeats(report: KeyReport): String =
-    val n = report.repeated.size
-    if n == 0 then t(KeyTextId.NoDuplicates)
+    if report.repeatedCount == 0 then t(KeyTextId.NoDuplicates)
     else
-      val (one, many) =
-        if report.repeatsWithoutOccurrence then
-          (KeyTextId.RepeatOneWithout, KeyTextId.RepeatManyWithout)
-        else
-          report.unit match
-            case TrialUnit.Record =>
-              (KeyTextId.RepeatOneRecords, KeyTextId.RepeatManyRecords)
-            case _ => (KeyTextId.RepeatOneOccurrences, KeyTextId.RepeatManyOccurrences)
-      if n == 1 then t(one) else t(many, Format.count(n.toLong))
+      report.unit match
+        case TrialUnit.Record =>
+          counted(report.repeatedCount, KeyTextId.RepeatOneRecords, KeyTextId.RepeatManyRecords)
+        case TrialUnit.Presentation(_) =>
+          val occurrences = Option.when(report.occurrenceConflicts > 0)(
+            if report.repeatsWithoutOccurrence then
+              counted(
+                report.occurrenceConflicts,
+                KeyTextId.RepeatOneWithout,
+                KeyTextId.RepeatManyWithout
+              )
+            else
+              counted(
+                report.occurrenceConflicts,
+                KeyTextId.RepeatOneOccurrences,
+                KeyTextId.RepeatManyOccurrences
+              )
+          )
+          val items = Option.when(report.itemConflicts > 0)(
+            counted(report.itemConflicts, KeyTextId.RepeatOneItems, KeyTextId.RepeatManyItems)
+          )
+          (occurrences.toVector ++ items).mkString(" · ")
 
   private def unresolved(report: KeyReport): Option[String] =
-    val n = report.unresolved.map(_.record).distinct.size
-    Option.when(n > 0)(
-      if n == 1 then t(KeyTextId.UnresolvedOne)
-      else t(KeyTextId.UnresolvedMany, Format.count(n.toLong))
+    Option.when(report.unresolvedCount > 0)(
+      counted(report.unresolvedCount, KeyTextId.UnresolvedOne, KeyTextId.UnresolvedMany)
     )
 
   private def occurrence(report: KeyReport): Option[String] =
@@ -275,16 +364,16 @@ object TrialKeyVM:
               KeyTextId.OccurrenceRange,
               os.head.toString,
               os.last.toString,
-              Format.count(report.laterPresentations.toLong)
+              n(report.laterPresentations)
             )
           )
 
   private def count(report: KeyReport): String =
     (report.unique, report.keys) match
       case (true, 1)  => t(KeyTextId.UniqueKey)
-      case (true, n)  => t(KeyTextId.UniqueKeys, Format.count(n.toLong))
+      case (true, k)  => t(KeyTextId.UniqueKeys, n(k))
       case (false, 1) => t(KeyTextId.OneKey)
-      case (false, n) => t(KeyTextId.Keys, Format.count(n.toLong))
+      case (false, k) => t(KeyTextId.Keys, n(k))
 
   private def line(report: KeyReport, first: Boolean, blocking: Boolean): KeyLineVM =
     val count  = this.count(report)
@@ -303,7 +392,24 @@ object TrialKeyVM:
       detail,
       tone,
       report.repeated.map(repeatedVM(report, _, first)),
+      Option.when(report.repeatedCount > report.repeated.size)(
+        t(KeyTextId.RepeatedMore, n(report.repeatedCount - report.repeated.size))
+      ),
       t(KeyTextId.FileLine, report.file, count, detail)
+    )
+
+  /** A file still being checked: its line says so. */
+  private def checking(source: SourceRole, file: String, first: Boolean): KeyLineVM =
+    val text = t(KeyTextId.Checking)
+    KeyLineVM(
+      source,
+      Option.when(!first)(file),
+      "",
+      text,
+      if source == SourceRole.Fixations then KeyTone.Blocking else KeyTone.Warning,
+      Vector.empty,
+      None,
+      t(KeyTextId.FileLine, file, "", text)
     )
 
   private def blocks(w: ImportWizard): Vector[KeyBlockVM] =
@@ -330,60 +436,93 @@ object TrialKeyVM:
           KeyBlockVM(part, label, column, column.isDefined, None, accessible)
     }
 
+  /** The fixation file's key blocks (a Studio check). */
+  def keyBlocks(w: ImportWizard): Vector[KeyBlock] =
+    w.keys.blocks(w.fixations.fold("")(_._1.preview.file))
+
   def of(w: ImportWizard): TrialKeyVM =
-    val blocked                = w.keys.blocks
+    val blocked                = keyBlocks(w)
     def blocking(r: KeyReport) = blocked.exists {
-      case KeyBlock.RepeatWithoutOccurrence(file, _, _) => file == r.file
-      case KeyBlock.Incomplete(_)                       => false
+      case KeyBlock.RepeatWithoutOccurrence(file, _, _, _) => file == r.file
+      case _                                               => false
     }
     // The inventory's line first: it is the board's count (every inventory
     // entry), then the fixation records'.
-    val reports = w.keys.trialReport.toVector ++ w.keys.fixationReport.toVector
+    val files = Vector(
+      (SourceRole.Trials, w.trials.map(_._1.preview.file), w.keys.trials),
+      (SourceRole.Fixations, w.fixations.map(_._1.preview.file), w.keys.fixations)
+    ).collect { case (role, Some(file), Some(check)) => (role, file, check.result) }
+    val lines = files
+      .collect {
+        case (role, file, KeyResult.Pending)          => Left((role, file))
+        case (_, _, KeyResult.Checked(Right(report))) => Right(report)
+      }
+      .zipWithIndex
+      .map {
+        case (Right(r), i)           => line(r, i == 0, blocking(r))
+        case (Left((role, file)), i) => checking(role, file, i == 0)
+      }
     TrialKeyVM(
       title = t(KeyTextId.Title),
       rule = t(KeyTextId.Rule),
       plus = t(KeyTextId.Plus),
       equals = t(KeyTextId.Equals),
       blocks = blocks(w),
-      lines = reports.zipWithIndex.map((r, i) => line(r, i == 0, blocking(r))),
+      lines = lines,
       check = Option.when(blocked.nonEmpty)(blocked.map(_.message).mkString(" ")),
       empty = Option.when(w.fixations.isEmpty)(t(KeyTextId.NoFile))
     )
 
   /** The key's entries in the Data issues tab: its Studio checks block;
-    * occurrence conflicts, unresolved records and repeated inventory entries
-    * are warnings (eyes4s reports them on admission; the inventory is mapped
-    * in S5.4).
+    * occurrence and item conflicts, unresolved records and repeated inventory
+    * entries are warnings (eyes4s reports them on admission; the inventory is
+    * mapped in S5.4).
     */
   def issues(w: ImportWizard): Vector[IssueVM] =
-    val blocking = w.keys.blocks.map {
-      case b @ KeyBlock.RepeatWithoutOccurrence(_, column, _) =>
+    val blocking = keyBlocks(w).map {
+      case b @ KeyBlock.RepeatWithoutOccurrence(_, column, _, _) =>
         IssueVM(b.message, Some(column.value), true)
-      case b @ KeyBlock.Incomplete(_) => IssueVM(t(KeyTextId.GapIssue, b.message), None, true)
+      case b => IssueVM(b.message, None, true)
     }
     val warnings = (w.keys.fixationReport.toVector ++ w.keys.trialReport.toVector).flatMap {
       r =>
-        val repeat = r.repeated.headOption.flatMap { first =>
-          if r.repeatsWithoutOccurrence then None
-          else
-            r.unit match
-              case TrialUnit.Record =>
-                Some(
-                  IssueVM(
-                    t(KeyTextId.InventoryIssue, r.file, repeats(r), first.key.render),
-                    None,
-                    false
-                  )
+        val firstKey = r.repeated.headOption.map(_.key.render).getOrElse("")
+        val repeat   = r.unit match
+          case TrialUnit.Record =>
+            Option
+              .when(r.repeatedCount > 0)(
+                IssueVM(t(KeyTextId.InventoryIssue, r.file, repeats(r), firstKey), None, false)
+              )
+              .toVector
+          case TrialUnit.Presentation(_) =>
+            val occurrences =
+              Option.when(r.occurrenceConflicts > 0 && !r.repeatsWithoutOccurrence)(
+                IssueVM(
+                  t(
+                    KeyTextId.ConflictIssue,
+                    r.file,
+                    counted(
+                      r.occurrenceConflicts,
+                      KeyTextId.RepeatOneOccurrences,
+                      KeyTextId.RepeatManyOccurrences
+                    )
+                  ),
+                  r.columns.occurrence.map(_.value),
+                  false
                 )
-              case _ =>
-                Some(
-                  IssueVM(
-                    t(KeyTextId.ConflictIssue, r.file, repeats(r)),
-                    r.columns.occurrence.map(_.value),
-                    false
-                  )
-                )
-        }
+              )
+            val items = Option.when(r.itemConflicts > 0)(
+              IssueVM(
+                t(
+                  KeyTextId.ItemIssue,
+                  r.file,
+                  counted(r.itemConflicts, KeyTextId.RepeatOneItems, KeyTextId.RepeatManyItems)
+                ),
+                r.columns.item.map(_.value),
+                false
+              )
+            )
+            occurrences.toVector ++ items
         val missing = r.unresolved.headOption.map(first =>
           IssueVM(
             t(KeyTextId.UnresolvedIssue, r.file, unresolved(r).getOrElse(""), first.message),
@@ -391,6 +530,6 @@ object TrialKeyVM:
             false
           )
         )
-        repeat.toVector ++ missing
+        repeat ++ missing
     }
     blocking ++ warnings

@@ -160,16 +160,14 @@ object ImportPresets:
     )
 
 /** A source file read for import: where it was imported from, the SHA-256
-  * of its exact bytes, its preview and its records as a [[KeyTable]] (the
-  * trial key is checked against every record, S5.3). The bytes are read by
-  * the platform; this is where they become a document [[Source]].
+  * of its exact bytes and its preview. The bytes are read by the platform;
+  * this is where they become a document [[Source]].
   */
 final case class SniffedSource(
     role: SourceRole,
     path: SourcePath,
     bytes: ByteDigest,
-    preview: CsvPreview,
-    table: KeyTable
+    preview: CsvPreview
 ) derives CanEqual:
   def source: Source = Source(role, path, bytes, None)
 
@@ -202,11 +200,7 @@ object SniffedSource:
       file = p.value.split('/').last
       text    <- decodeUtf8(file, bytes).left.map(SourceReadError.Unpreviewable(_))
       preview <- CsvSniffer.sniff(file, text).left.map(SourceReadError.Unpreviewable(_))
-      table   <- KeyTable
-        .read(file, text, preview.delimiter, preview.header)
-        .left
-        .map(SourceReadError.Unpreviewable(_))
-    yield SniffedSource(role, p, ByteDigest.sha256(bytes), preview, table)
+    yield SniffedSource(role, p, ByteDigest.sha256(bytes), preview)
 
   /** `bytes` as UTF-8 text, or where they stop being UTF-8. */
   def decodeUtf8(file: String, bytes: IArray[Byte]): Either[SniffError, CharSequence] =

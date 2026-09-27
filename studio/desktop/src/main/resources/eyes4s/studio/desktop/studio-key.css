@@ -110,6 +110,6 @@
   -fx-min-width: 180px;
 }
 
-.key-repeat-trials {
+.key-repeat-trials, .key-repeat-more {
   -fx-text-fill: -es-ink-2;
 }

@@ -24,7 +24,7 @@ import eyes4s.studio.core.bundle.InputKind
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.{Source, SourceRole, StudioDocument}
 import eyes4s.studio.desktop.runtime.ProjectPort
-import eyes4s.studio.core.importing.{ImportPreset, SniffedSource, SourceReadError}
+import eyes4s.studio.core.importing.{ImportPreset, KeyGap, SniffedSource, SourceReadError}
 import eyes4s.studio.desktop.platform.FilePresetStore
 import javafx.application.Platform
 import javafx.scene.Scene
@@ -161,8 +161,57 @@ final class ImportWizardHost(
     case WizardEffect.Dispatch(command) => app(Intent.Dispatch(command))
     case WizardEffect.StorePreset(p)    =>
       platform.storePreset(p).left.foreach(reason => dispatch(WizardIntent.StoreFailed(reason)))
-    case WizardEffect.OpenFile(role) => platform.chooseFile(role).foreach(read(role, _): Unit)
-    case WizardEffect.Close          => close()
+    case WizardEffect.OpenFile(role)  => platform.chooseFile(role).foreach(read(role, _): Unit)
+    case check: WizardEffect.CheckKey => checkKey(check)
+    case WizardEffect.Close           => close()
+
+  /** The last streaming key check started; completes once it is dispatched. */
+  @volatile private var lastCheck: CompletableFuture[Unit] =
+    CompletableFuture.completedFuture(())
+
+  /** Completes when the latest streaming key check has been dispatched. */
+  def keyChecked: CompletableFuture[Unit] = lastCheck
+
+  /** Check a trial key in one streaming pass over its file, off the JavaFX
+    * thread (S5.3): the file is read again from where it was read, and only
+    * the key's grouping is kept.
+    */
+  private def checkKey(check: WizardEffect.CheckKey): Unit =
+    def refused(reason: String) = WizardIntent.KeyChecked(
+      check.role,
+      check.source,
+      check.columns,
+      check.unit,
+      Left(KeyGap.Unreadable(check.file, reason))
+    )
+    val done = CompletableFuture[Unit]()
+    lastCheck = done
+    readFrom.get(check.source) match
+      case None =>
+        dispatch(refused("it was not read in this session"))
+        done.complete(()): Unit
+      case Some(path) =>
+        val worker = Thread(
+          () =>
+            val answer =
+              try
+                val bytes = IArray.unsafeFromArray(Files.readAllBytes(path))
+                if ByteDigest.sha256(bytes) != check.source then
+                  refused(s"$path changed after it was read; read it again")
+                else
+                  SniffedSource
+                    .decodeUtf8(check.file, bytes)
+                    .fold(e => refused(e.message), KeyChecks.run(check, _))
+              catch case NonFatal(e) => refused(Option(e.getMessage).getOrElse(e.toString))
+            Platform.runLater { () =>
+              try dispatch(answer)
+              finally done.complete(()): Unit
+            }
+          ,
+          s"eyes4s-key-check-${check.file}"
+        )
+        worker.setDaemon(true)
+        worker.start()
 
 object ImportWizardHost:
 

@@ -230,6 +230,46 @@ class TrialKeyFxSuite extends StudioFxSuite:
     finally TempDirs.remove(dir)
   }
 
+  fxStage.test("a key on a many-valued column: the host checks it in one streaming pass") {
+    fx =>
+      val dir = Files.createTempDirectory("s53-stream")
+      try
+        // 5,000 distinct trial labels: past the sniffer's cap, so not kept.
+        val rows = (1 to 5000).map(i => s"P01,Encoding,t$i,1,1,960,540,300,200,100") :+
+          "P01,Encoding,t7,2,2,960,540,600,200,100"
+        val file = dir.resolve("fixations.csv")
+        Files.writeString(
+          file,
+          ("participant,phase,trial,block,ordinal,x,y,onset_ms,duration_ms,sample_count" +: rows)
+            .mkString("", "\n", "\n"),
+          UTF_8
+        )
+        val m = mount(fx)
+        readIn(fx, m, SourceRole.Fixations, file)
+        runOnFx(m.host.keyChecked).get(30, java.util.concurrent.TimeUnit.SECONDS)
+        fx.awaitLayout()
+        assertEquals(drawn(m.key.count), "5,000 keys")
+        assertEquals(
+          drawn(m.key.detail),
+          "· 1 key names more than one occurrence · Occurrence 1–2 · 1 later presentations"
+        )
+        // Leaving Occurrence out runs a second pass; the Studio check follows it.
+        // The pass runs off the FX thread: until it answers, the line says so.
+        val during = runOnFx {
+          m.key.occurrence.fire()
+          m.key.detail.getText
+        }
+        assertEquals(during, "checking every record…")
+        runOnFx(m.host.keyChecked).get(30, java.util.concurrent.TimeUnit.SECONDS)
+        fx.awaitLayout()
+        assertEquals(
+          drawn(m.key.detail),
+          "· 1 key repeats without Occurrence · Occurrence left out: 1 for every trial"
+        )
+        assert(drawn(m.key.check).startsWith("Studio check · fixations.csv: 1 key repeats"))
+      finally TempDirs.remove(dir)
+  }
+
   fxStage.test("dark theme: the key builder renders with the dark tokens") { fx =>
     val m = mount(fx, Theme.Dark)
     readIn(fx, m, SourceRole.Fixations, fixations)

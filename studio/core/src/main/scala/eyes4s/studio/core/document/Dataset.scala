@@ -202,9 +202,12 @@ enum ColumnRole derives CanEqual, Codec.AsObject:
     case other       => other.productPrefix.toLowerCase
 
 object ColumnRole:
-  /** Import requires these (DESIGN_SPEC section 9: ordinal and sample count). */
+  /** Import requires these (DESIGN_SPEC section 9): the trial key eyes4s
+    * reads (participant, phase and trial, `FixationKeyReader.trial`), the
+    * ordinal and sample count, the position and the times.
+    */
   val required: Vector[ColumnRole] =
-    Vector(Participant, Trial, Ordinal, SampleCount, X, Y, Onset, Duration)
+    Vector(Participant, Phase, Trial, Ordinal, SampleCount, X, Y, Onset, Duration)
 
 /** A column name as it appears in the source header. */
 final case class ColumnName private (value: String) derives CanEqual

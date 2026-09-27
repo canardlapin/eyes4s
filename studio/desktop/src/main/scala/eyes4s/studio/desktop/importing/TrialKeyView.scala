@@ -173,6 +173,10 @@ final class TrialKeyView(dispatch: WizardIntent => Unit):
           entry.setAccessibleText(r.accessible)
           entry.setFocusTraversable(false)
           entry: javafx.scene.Node
+        } ++ l.more.map { text =>
+          val more = label("key-repeat-more", "t11")
+          more.setText(text)
+          more: javafx.scene.Node
         }
       }.asJava): Unit
     show(lines, vm.lines.size > 1)
