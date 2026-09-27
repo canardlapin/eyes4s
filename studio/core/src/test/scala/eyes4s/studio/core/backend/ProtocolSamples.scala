@@ -144,7 +144,9 @@ object ProtocolSamples:
     BackendError.NoResult(RunId(5), RunState.Stale),
     BackendError.UnknownReference(RunId(7), address),
     BackendError.AlreadyRunning(AnalysisRevision(5), job),
-    BackendError.UnsupportedVersion(ProtocolVersion(2, 0), ProtocolVersion(1, 0))
+    BackendError.UnsupportedVersion(ProtocolVersion(2, 0), ProtocolVersion(1, 0)),
+    BackendError.Malformed("{\"id\":3,\"body\":{\"Runz\":{}}}", "no such request"),
+    BackendError.DuplicateSubscription(RequestId(41))
   )
 
   val runStates: Vector[RunState] = Vector(
@@ -230,7 +232,8 @@ object ProtocolSamples:
     BackendRequest.Result(run),
     BackendRequest.Queries(run, page),
     BackendRequest.Inspect(run, address),
-    BackendRequest.ProvenanceOf(run, address)
+    BackendRequest.ProvenanceOf(run, address),
+    BackendRequest.Unsubscribe(RequestId(41))
   )
 
   val responses: Vector[BackendResponse] = Vector(
@@ -326,7 +329,8 @@ object ProtocolSamples:
           ProvenanceStep.Trial(query, "beach-042")
         )
       )
-    )
+    ),
+    BackendResponse.Unsubscribed(RequestId(41), true)
   )
 
   val events: Vector[JobEvent] =

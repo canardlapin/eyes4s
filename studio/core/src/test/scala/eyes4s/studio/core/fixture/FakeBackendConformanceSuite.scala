@@ -21,22 +21,33 @@ import eyes4s.studio.core.backend.*
 
 /** BackendConformanceSuite (fake): the contract on [[FakeStudyBackend]]. */
 class FakeBackendConformanceSuite extends BackendConformanceSuite:
+  def subject: IO[BackendConformanceSuite.Subject] =
+    FakeBackendConformanceSuite.subject(IO.pure)
+
+object FakeBackendConformanceSuite:
 
   private def orFail[E, A](result: IO[Either[E, A]]): IO[Unit] =
     result.flatMap(e => IO.fromEither(e.left.map(err => new AssertionError(err.toString))).void)
 
-  def subject: IO[BackendConformanceSuite.Subject] =
-    FakeStudyBackend.create[IO](StoryMoment.T2).map { fake =>
-      BackendConformanceSuite.Subject(
-        fake,
-        DatasetRevision(3),
-        RunId(7),
-        AnalysisRevision(5),
-        job =>
-          orFail(fake.advanceTo(job, Segment.Estimating(0), 937)) >>
-            orFail(fake.advanceToPairs(job, 100)) >>
-            orFail(fake.advanceToPairs(job, StoryMoment.RunningPairs)) >>
-            orFail(fake.advanceTo(job, Segment.Contrasting(4), 457)) >>
-            orFail(fake.complete(job))
-      )
+  /** A fresh fake at story moment t2, reached through `reach` (the fake
+    * itself, or a client of it over a transport); `finish` steps the fake.
+    */
+  def subject(
+      reach: FakeStudyBackend[IO] => IO[StudyBackend[IO]]
+  ): IO[BackendConformanceSuite.Subject] =
+    FakeStudyBackend.create[IO](StoryMoment.T2).flatMap { fake =>
+      reach(fake).map { backend =>
+        BackendConformanceSuite.Subject(
+          backend,
+          DatasetRevision(3),
+          RunId(7),
+          AnalysisRevision(5),
+          job =>
+            orFail(fake.advanceTo(job, Segment.Estimating(0), 937)) >>
+              orFail(fake.advanceToPairs(job, 100)) >>
+              orFail(fake.advanceToPairs(job, StoryMoment.RunningPairs)) >>
+              orFail(fake.advanceTo(job, Segment.Contrasting(4), 457)) >>
+              orFail(fake.complete(job))
+        )
+      }
     }
