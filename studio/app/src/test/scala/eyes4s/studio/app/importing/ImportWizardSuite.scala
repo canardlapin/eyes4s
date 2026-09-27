@@ -303,6 +303,48 @@ class ImportWizardSuite extends munit.FunSuite:
     assertEquals(ImportWizardVM.of(w0, t2).commit, "Re-admit as r4")
   }
 
+  test("a re-map restores the revision's own inventory mapping and re-maps it (S5.4)") {
+    // r2 keeps trials.csv's occurrence as an attribute, which the suggested
+    // roles would not: the draft is the revision's mapping, not a proposal.
+    val r2        = t2.dataset(DatasetRevision(2)).get
+    val ownTrials =
+      source(SourceRole.Trials, "inputs/trials.csv", trials)
+        .copy(bytes = r2.sources.trials.get.bytes)
+    val w0     = ok(ImportWizard.remap(t2, r2.id, ImportPresets.empty))
+    val (w, _) = run(
+      w0,
+      t2,
+      WizardIntent.SourceRead(own(t2, r2.id, golden)),
+      WizardIntent.SourceRead(ownTrials)
+    )
+    assertEquals(w.problem, None)
+    assertEquals(w.trials.map(_._2.resolve), Some(Right(r2.inventory.get)))
+    // Mapping the occurrence changes the inventory mapping the re-import records
+    // (r2's onsets were undeclared; the re-map declares them).
+    val (after, fx) = run(
+      w,
+      t2,
+      WizardIntent.DeclareTime(Some(TimeUnit.Milliseconds)),
+      WizardIntent
+        .Choose(SourceRole.Trials, col("occurrence"), ColumnChoice.Role(ColumnRole.Occurrence)),
+      WizardIntent.Commit
+    )
+    commands(fx) match
+      case Vector(Command.ImportSources(Some(parent), _, _, _, _, _, Some(inventory))) =>
+        assertEquals(parent, r2.id)
+        assertEquals(inventory.column(ColumnRole.Occurrence), Some(col("occurrence")))
+        assertEquals(
+          inventory.attributes.columns,
+          Vector(col("display_kind"), col("image_file"))
+        )
+      case other =>
+        fail(s"expected a re-import with an inventory, got $other (${after.problem})")
+    // Another file than the revision's own trials file is refused.
+    val (refused, _) =
+      run(w0, t2, WizardIntent.SourceRead(source(SourceRole.Trials, "other.csv", trials)))
+    assertEquals(refused.problem, Some(WizardProblem.NotDatasetSource(r2.id, "other.csv")))
+  }
+
   test("a preset saved from one file re-applies to a second file") {
     val first = run(
       ImportWizard.newImport(t2, ImportPresets.empty),
