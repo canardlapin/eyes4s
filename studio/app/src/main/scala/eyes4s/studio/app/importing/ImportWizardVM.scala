@@ -16,7 +16,7 @@
 
 package eyes4s.studio.app.importing
 
-import eyes4s.studio.app.text.{Format, ImportText, ImportTextId}
+import eyes4s.studio.app.text.{Format, ImportText, ImportTextId, KeyText, KeyTextId}
 import eyes4s.studio.core.backend.DatasetRevision
 import eyes4s.studio.core.command.ChangeKind
 import eyes4s.studio.core.document.{
@@ -117,7 +117,8 @@ final case class ImportWizardVM(
     canCommit: Boolean,
     cancel: String,
     status: Option[String],
-    problem: Option[String]
+    problem: Option[String],
+    key: TrialKeyVM
 ) derives CanEqual
 
 object ImportWizardVM:
@@ -193,6 +194,9 @@ object ImportWizardVM:
     case WizardProblem.StoreFailed(reason)       => t(ImportTextId.StoreFailed, reason)
     case WizardProblem.NotDatasetSource(d, path) =>
       t(ImportTextId.NotDatasetSource, path, d.label)
+    case WizardProblem.TrialKey(block)          => block.message
+    case WizardProblem.NoOccurrenceColumn(file) =>
+      KeyText(KeyTextId.NoOccurrenceColumn, file)
 
   def noteText(n: WizardNote): String = n match
     case WizardNote.PresetSaved(name)         => t(ImportTextId.PresetSaved, name.value)
@@ -262,7 +266,10 @@ object ImportWizardVM:
     val fixationIssues = w.fixations.fold(Vector.empty)(_._2.issues)
     val trialIssues    = w.trials.fold(Vector.empty)(_._2.issues)
     val all            = w.issues
-    val ragged         = (w.fixations.map(_._1) ++ w.trials.map(_._1)).toVector.flatMap(s =>
+    // The trial key's Studio checks block too (S5.3); its other findings warn.
+    val keyIssues   = TrialKeyVM.issues(w)
+    val keyBlocking = keyIssues.count(_.blocking)
+    val ragged      = (w.fixations.map(_._1) ++ w.trials.map(_._1)).toVector.flatMap(s =>
       s.preview.ragged.map(r =>
         IssueVM(
           t(
@@ -295,10 +302,10 @@ object ImportWizardVM:
     val time = w.fixations.flatMap(_._2.time)
     val tabs = WizardTab.values.toVector.map { tab =>
       val count = tab match
-        case WizardTab.FixationMapping => fixationIssues.size
+        case WizardTab.FixationMapping => fixationIssues.size + keyBlocking
         case WizardTab.TrialMetadata   => trialIssues.size
         case WizardTab.Geometry        => w.geometry.parse.fold(_ => 1, _ => 0)
-        case WizardTab.DataIssues      => all.size
+        case WizardTab.DataIssues      => all.size + keyBlocking
       val label =
         if count == 0 then tabLabel(tab)
         else t(ImportTextId.TabIssues, tabLabel(tab), Format.count(count.toLong))
@@ -355,9 +362,9 @@ object ImportWizardVM:
       geometry = GeometryField.values.toVector.map(f =>
         GeometryFieldVM(f, geometryLabel(f), w.geometry.field(f))
       ),
-      issuesSummary = issuesSummary(all.size),
+      issuesSummary = issuesSummary(all.size + keyBlocking),
       issues = all.map(e => IssueVM(e.message, e.pointsAt.map(_.value), true)) ++
-        warnings ++ ragged,
+        keyIssues.filter(_.blocking) ++ warnings ++ keyIssues.filterNot(_.blocking) ++ ragged,
       presets = PresetsVM(
         t(ImportTextId.PresetLabel),
         w.presets.names.map(_.value),
@@ -374,5 +381,6 @@ object ImportWizardVM:
       canCommit = w.fixations.isDefined,
       cancel = t(ImportTextId.Cancel),
       status = w.note.map(noteText),
-      problem = w.problem.map(problemText)
+      problem = w.problem.map(problemText),
+      key = TrialKeyVM.of(w)
     )

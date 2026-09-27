@@ -23,6 +23,7 @@ import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.{
   AdmissionDecision,
   ColumnName,
+  ColumnRole,
   DatasetRevisionSpec,
   DocumentError,
   Geometry,
@@ -74,6 +75,12 @@ enum WizardProblem derives CanEqual:
   /** The platform could not store a preset or an imported file. */
   case StoreFailed(reason: String)
 
+  /** The trial key fails a Studio check (S5.3). */
+  case TrialKey(block: KeyBlock)
+
+  /** No column of `file` can hold the occurrence the key was asked to add. */
+  case NoOccurrenceColumn(file: String)
+
 /** A fact that is not a document command: a note the wizard shows once. */
 enum WizardNote derives CanEqual:
   case PresetSaved(name: PresetName)
@@ -90,6 +97,11 @@ enum WizardIntent derives CanEqual:
   case RequestFile(role: SourceRole)
   case Choose(role: SourceRole, column: ColumnName, choice: ColumnChoice)
   case DeclareTime(unit: Option[TimeUnit])
+
+  /** Add the occurrence to the trial key, or leave it out (S5.3): the
+    * occurrence column's role in each file's mapping.
+    */
+  case IncludeOccurrence(include: Boolean)
   case EditGeometry(field: GeometryField, value: String)
   case TypePresetName(text: String)
   case SavePreset
@@ -135,7 +147,8 @@ final case class ImportWizard private (
     presetName: String,
     tab: WizardTab,
     problem: Option[WizardProblem],
-    note: Option[WizardNote]
+    note: Option[WizardNote],
+    keys: KeyChecks = KeyChecks.none
 ) derives CanEqual:
 
   /** Every issue that blocks the commit: the fixation mapping's. */
@@ -193,8 +206,18 @@ object ImportWizard:
         )
       )
 
-  /** The pure update. A refused action changes nothing but the problem. */
+  /** The pure update. A refused action changes nothing but the problem.
+    * The trial key checks follow the files and their mappings (S5.3).
+    */
   def update(
+      w: ImportWizard,
+      intent: WizardIntent,
+      document: StudioDocument
+  ): (ImportWizard, Vector[WizardEffect]) =
+    val (next, effects) = step(w, intent, document)
+    (next.copy(keys = KeyChecks.refresh(next)), effects)
+
+  private def step(
       w: ImportWizard,
       intent: WizardIntent,
       document: StudioDocument
@@ -246,6 +269,27 @@ object ImportWizard:
           case Some((src, draft)) =>
             (cleared.copy(fixations = Some((src, draft.declare(unit)))), none)
 
+      case WizardIntent.IncludeOccurrence(include) =>
+        w.fixations match
+          case None               => refuse(WizardProblem.NoFixations)
+          case Some((src, draft)) =>
+            occurrenceChoice(draft.columns.map((c, ch) => c.name -> ch), include) match
+              case None if include => refuse(WizardProblem.NoOccurrenceColumn(draft.file))
+              case None            => (cleared, none)
+              case Some((column, choice)) =>
+                // The inventory's key follows when it has a column to follow with.
+                val trials = w.trials.map((tsrc, tdraft) =>
+                  occurrenceChoice(tdraft.columns.map((c, ch) => c.name -> ch), include)
+                    .flatMap((c, ch) => tdraft.choose(c, ch).toOption)
+                    .fold((tsrc, tdraft))(d => (tsrc, d))
+                )
+                draft
+                  .choose(column, choice)
+                  .fold(
+                    e => refuse(WizardProblem.Mapping(e)),
+                    d => (cleared.copy(fixations = Some((src, d)), trials = trials), none)
+                  )
+
       case WizardIntent.EditGeometry(field, value) =>
         (cleared.copy(geometry = w.geometry.set(field, value)), none)
 
@@ -296,6 +340,17 @@ object ImportWizard:
       case WizardIntent.Cancel                 => (cleared, Vector(WizardEffect.Close))
       case WizardIntent.Commit                 => commit(cleared, document)
 
+  /** The column whose role adds the occurrence to a key (`include`) or
+    * leaves it out, and its new choice; None when there is nothing to change.
+    */
+  private def occurrenceChoice(
+      columns: Vector[(ColumnName, ColumnChoice)],
+      include: Boolean
+  ): Option[(ColumnName, ColumnChoice)] =
+    if include then
+      KeyColumns.occurrenceCandidate(columns).map(_ -> ColumnChoice.Role(ColumnRole.Occurrence))
+    else KeyColumns.of(columns).occurrence.map(_ -> ColumnChoice.Attribute)
+
   /** A fixation file's first draft: a re-mapped dataset's own mapping, else
     * the suggested roles.
     */
@@ -330,6 +385,7 @@ object ImportWizard:
       (src, draft) <- w.fixations.toRight(WizardProblem.NoFixations)
       blocking = w.issues
       _        <- NonEmptyVector.fromVector(blocking).map(WizardProblem.Blocked(_)).toLeft(())
+      _        <- w.keys.blocks.headOption.map(WizardProblem.TrialKey(_)).toLeft(())
       resolved <- draft.resolve.left.map(WizardProblem.Blocked(_))
       geometry <- w.geometry.parse.left.map(WizardProblem.BadGeometry(_))
       commands <- w.target match
@@ -408,5 +464,6 @@ object ImportWizard:
         val tab = p match
           case WizardProblem.BadGeometry(_) => WizardTab.Geometry
           case WizardProblem.Blocked(_)     => WizardTab.DataIssues
+          case WizardProblem.TrialKey(_)    => WizardTab.FixationMapping
           case _                            => w.tab
         (w.copy(problem = Some(p), tab = tab), none)

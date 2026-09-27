@@ -109,6 +109,10 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
   )
   fixations.page.getChildren.add(presets)
 
+  // --- trial key (S5.3): under the column mapping, as the board draws it ----------
+  val key: TrialKeyView = TrialKeyView(fire)
+  fixations.page.getChildren.add(key.node)
+
   // --- geometry ----------------------------------------------------------------------
   val geometryFields: Map[GeometryField, TextField] =
     GeometryField.values.toVector.map { f =>
@@ -186,6 +190,7 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
       }
       fixations.render(vm.fixations)
       trials.render(vm.trials)
+      key.render(vm.key)
       fixations.setNote(vm.attributesNote)
       trials.setNote(s"${vm.trialsNote} ${vm.attributesNote}")
 
