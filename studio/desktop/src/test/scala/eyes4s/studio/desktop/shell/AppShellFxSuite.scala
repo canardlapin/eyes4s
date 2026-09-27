@@ -16,25 +16,22 @@
 
 package eyes4s.studio.desktop.shell
 
-import cats.effect.unsafe.implicits.global
 import eyes4s.studio.app.{AppModel, Intent, Notice, PlatformDialog, StoryModels}
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.LayoutBlob
 import eyes4s.studio.desktop.StudioStyles
 import eyes4s.studio.app.layout.{PaneId as StudioPaneId, StudioLayouts}
-import eyes4s.studio.app.text.Format
-import eyes4s.studio.app.vm.{Menus, Shell, ShellText}
+import eyes4s.studio.app.vm.Menus
 import eyes4s.studio.core.backend.{DiagnosticLevel, DiagnosticOrigin, StudioDiagnostic}
 import eyes4s.studio.core.document.{Perspective, PresentationState}
 import eyes4s.studio.core.execution.JobPhase
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
 import eyes4s.studio.desktop.StudioWindow
-import eyes4s.studio.desktop.harness.{FxStage, Modifiers, StudioFxSuite, StudioTheme}
-import eyes4s.studio.desktop.runtime.{EffectProblem, PlatformDialogs}
+import eyes4s.studio.desktop.harness.{Modifiers, StudioTheme}
+import eyes4s.studio.desktop.runtime.EffectProblem
 import io.circe.syntax.*
-import javafx.scene.control.{Button, Label, Labeled, MenuItem}
-import javafx.scene.text.Text
+import javafx.scene.control.{Button, Label, MenuItem}
 import javafx.scene.input.KeyCode
 import javafx.scene.layout.Region
 
@@ -47,143 +44,9 @@ import scala.jdk.CollectionConverters.*
   * Snapshots go to `target/studio-snapshots/AppShellFxSuite/<test>/` for a
   * human to compare with docs/studio/design/.
   */
-class AppShellFxSuite extends StudioFxSuite:
-
-  // --- Opening windows -------------------------------------------------------
-
-  override def beforeAll(): Unit =
-    super.beforeAll()
-    eyes4s.studio.desktop.typography.StudioFonts.loadAll().foreach(p => fail(p.message))
-
-  private val opened = scala.collection.mutable.ArrayBuffer.empty[StudioWindow]
-
-  override def afterEach(context: AfterEach): Unit =
-    opened.foreach(w => runOnFx(w.close()))
-    opened.clear()
-    super.afterEach(context)
-
-  /** Records every dialog asked for; types `rename` into Rename…. */
-  private final class Dialogs(rename: Option[String]) extends PlatformDialogs:
-    val asked = scala.collection.mutable.ArrayBuffer.empty[PlatformDialog]
-    def open(dialog: PlatformDialog, dispatch: Intent => Unit): Unit =
-      asked += dialog
-      if dialog == PlatformDialog.RenameProject then
-        rename.foreach(t => dispatch(StudioWindow.renameAnswer(t)))
-
-  private def boot(
-      fx: FxStage,
-      model: AppModel,
-      moment: StoryMoment = StoryMoment.T2,
-      dialogs: PlatformDialogs = Dialogs(None),
-      theme: Theme = Theme.Light
-  ): StudioWindow =
-    val w = runOnFx(
-      StudioWindow
-        .open(model, moment, theme, dialogs = Some(dialogs))
-        .fold(e => fail(e.message), identity)
-    )
-    opened += w
-    fx.show(w.root)
-    runOnFx(w.bind(fx.stage))
-    w
-
-  private def dispatch(fx: FxStage, w: StudioWindow, intent: Intent): Unit =
-    runOnFx(w.runtime.dispatch(intent))
-    fx.awaitLayout()
-
-  /** Wait (up to 20 s) until `cond` holds on the FX thread. */
-  private def eventually(fx: FxStage, what: String)(cond: => Boolean): Unit =
-    val deadline = System.nanoTime + 20_000_000_000L
-    while !runOnFx(cond) do
-      if System.nanoTime > deadline then fail(s"timed out waiting for $what")
-      Thread.sleep(25)
-      fx.awaitLayout()
-
-  private val isMac = sys.props.get("os.name").exists(_.toLowerCase.contains("mac"))
-
-  /** ⌘ as the robot presses it: Command on macOS, Control elsewhere. */
-  private val shortcut = if isMac then Modifiers(meta = true) else Modifiers(control = true)
-
-  // --- Reading the shell back as the S1.0 text rendering ------------------------
-
-  private def action(b: Button, label: String): String =
-    if b.isDisabled then s"[$label]" else label
-
-  /** The text a labeled control actually draws: after mnemonic parsing and
-    * any truncation, so "ret_07" drawn as "ret07" or "Summary…" fails.
-    */
-  private def drawn(l: Labeled): String =
-    l.getChildrenUnmodifiable.asScala
-      .collectFirst { case t: Text => t.getText }
-      .getOrElse(l.getText)
-
-  private def texts(w: StudioWindow): Vector[String] = runOnFx {
-    val bar          = w.shell.appBar
-    val jobs         = bar.jobs
-    val perspectives = Perspective.values.toVector.map { p =>
-      val t        = bar.switcher(p)
-      val shortcut = t.getGraphic.asInstanceOf[Label].getText
-      s"${drawn(t)} $shortcut${if t.isSelected then " (current)" else ""}"
-    }
-    val app = Vector(
-      s"app.name: ${drawn(bar.wordmark)}",
-      s"app.project: ${drawn(bar.project)}",
-      s"app.perspectives: ${perspectives.mkString(" | ")}",
-      s"app.jobs: ${(Vector(jobs.drawnParts.mkString(" · ")) ++ Option
-          .when(jobs.cancel.isVisible)(action(jobs.cancel, jobs.cancel.getText))).mkString(" | ")}"
-    ) ++ Option.when(jobs.progress.isVisible)(
-      s"app.jobs.progress: ${Format.percent(jobs.progress.getProgress)}"
-    )
-    val strip = w.shell.contextStrip.node.getChildren.asScala.toVector
-    val nav   = strip.take(2).collect { case b: Button => action(b, b.getAccessibleText) }
-    val trail = w.shell.contextStrip.crumbs.map { b =>
-      if b.getPseudoClassStates.contains(Fx.Current) then s"*${drawn(b)}*" else drawn(b)
-    }
-    val chips = strip.drop(4)
-    val fresh = chips.collect {
-      case l: Label if l.getStyleClass.contains("freshness") => drawn(l)
-    }
-    val notes = chips.collect {
-      case l: Label if l.getStyleClass.contains("context-note") => drawn(l)
-    }
-    val draft   = chips.collect { case b: Button => drawn(b) }
-    val context = Vector(
-      s"context.nav: ${nav.mkString(" | ")}",
-      s"context.trail: ${trail.mkString(" › ")}",
-      s"context.freshness: ${fresh.head}"
-    ) ++ fresh.drop(1).map(n => s"context.newer: $n") ++ notes.map(n => s"context.note: $n") ++
-      draft.map(d => s"context.draft: $d")
-    val bannerNode = w.shell.banner.node
-    val banner     =
-      if !bannerNode.isVisible then Vector.empty
-      else
-        val kids    = bannerNode.getChildren.asScala.toVector
-        val labels  = kids.collect { case l: Label => l }
-        val buttons = kids.collect { case b: Button => action(b, drawn(b)) }
-        Vector(s"banner.lead: ${drawn(labels.head)}") ++
-          labels.drop(1).map(l => s"banner.detail: ${drawn(l)}") ++
-          Option.when(buttons.nonEmpty)(s"banner.actions: ${buttons.mkString(" | ")}")
-    val status                               = w.shell.statusBar
-    def words(box: javafx.scene.layout.HBox) =
-      box.getChildren.asScala.toVector
-        .collect {
-          case l: Label  => drawn(l)
-          case b: Button => action(b, drawn(b))
-        }
-        .mkString(" ")
-    val line =
-      s"status: ${words(status.selected)} | ${drawn(status.hint)} | ${words(status.job)} | ${drawn(status.saved)}"
-    app ++ context ++ banner ++ Vector(line)
-  }
-
-  /** The S1.0 text rendering of the same model, minus the window line. */
-  private def expected(w: StudioWindow): Vector[String] = runOnFx {
-    ShellText.render(Shell.project(w.runtime.model)).split("\n").toVector.drop(1)
-  }
+class AppShellFxSuite extends ShellFxSuite:
 
   // --- Story moment t2: every perspective, drawn from its board's model --------
-
-  private def at(m: AppModel, i: Intent): AppModel = AppModel.update(m, i)._1
 
   /** Board, model, layout, and whether a dark snapshot is taken too. */
   private val boards: Vector[(String, () => AppModel, String, Boolean)] = Vector(
@@ -207,6 +70,7 @@ class AppShellFxSuite extends StudioFxSuite:
 
   boards.foreach { (board, model, layout, dark) =>
     fxStage.test(s"t2 · $board: the shell renders the S1.0 view-models; snapshot") { fx =>
+      assumeFullStage(fx)
       val w = boot(fx, model())
       assertEquals(runOnFx(w.host.active), Some(layout))
       assertNoDiff(texts(w).mkString("\n"), expected(w).mkString("\n"))
@@ -229,6 +93,7 @@ class AppShellFxSuite extends StudioFxSuite:
 
   fxStage.test("t2 · Main board: app bar, context strip and status bar read as the board") {
     fx =>
+      assumeFullStage(fx)
       val w = boot(fx, StoryModels.t2Compare)
       assertEquals(runOnFx(fx.stage.getTitle), "memory-study.eyes")
       val lines = texts(w)
@@ -257,6 +122,7 @@ class AppShellFxSuite extends StudioFxSuite:
   fxStage.test(
     "shell metrics: app bar 44, context strip 32, banner 30, tab headers 28, status bar 24"
   ) { fx =>
+    assumeFullStage(fx)
     val w                 = boot(fx, StoryModels.t2Compare)
     def height(r: Region) = runOnFx(r.getLayoutBounds.getHeight)
     assertEqualsDouble(height(w.shell.appBar.node), 44, 1)
@@ -392,6 +258,7 @@ class AppShellFxSuite extends StudioFxSuite:
   fxStage.test(
     "jobs chip running at t3: run 8 adopted from the fake backend; Cancel reaches it"
   ) { fx =>
+    assumeFullStage(fx)
     val w    = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
     val jobs = w.shell.appBar.jobs
     assertEquals(
@@ -470,7 +337,12 @@ class AppShellFxSuite extends StudioFxSuite:
     assertEquals(activeOf(b), Some(pairs))
 
     // View › Reset perspective: the default arrangement, nothing saved.
-    val reset: MenuItem = runOnFx(b.shell.menuBar.getMenus.get(0).getItems.get(0))
+    val reset: MenuItem = runOnFx(
+      b.shell.menus
+        .find(_.getText == "View")
+        .flatMap(_.getItems.asScala.find(_.getId == "view.reset-perspective"))
+        .getOrElse(fail("View has no Reset perspective"))
+    )
     assertEquals(runOnFx(reset.getText), "Reset perspective")
     runOnFx(reset.fire())
     fx.awaitLayout()

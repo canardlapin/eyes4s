@@ -1,0 +1,11 @@
+menu-button: Project memory-study
+toggle-button: Analysis (⌘3)
+button: Back (⌘[)
+button: Analyses
+button: Reinstatement · Enc→Ret
+button: Draft rev 5, current location
+button: Draft rev 5 · 1 change · ready; review in Analysis
+list: Analyses
+region: Recipe
+plot: Resolved design
+region: Preflight

@@ -16,7 +16,7 @@
 
 package eyes4s.studio.desktop.runtime
 
-import eyes4s.studio.app.{AppEffect, DockCommand, Intent, PlatformDialog}
+import eyes4s.studio.app.{AppEffect, ClockTime, DockCommand, Intent, PlatformDialog}
 import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.core.execution.{ExecutionEffect, ExecutionError}
 
@@ -48,7 +48,10 @@ enum EffectProblem derives CanEqual:
   *
   * Execution effects go to the session's execution service, whose events
   * come back as [[Intent.Execution]]; dialogs go to the platform; a layout
-  * reset and tab cycling go to the perspective host. Effects whose service does not exist
+  * reset and tab cycling go to the perspective host. The journal and saves
+  * go to the window's [[ProjectPort]], when it has one (S1.8): a finished
+  * save comes back as [[Intent.Saved]] at the platform clock's time, a
+  * failed one as [[Intent.SaveFailed]]. Effects whose service does not exist
   * yet are recorded in [[problems]]. `ui` runs a callback on the UI thread.
   */
 final class DesktopEffects(
@@ -56,7 +59,9 @@ final class DesktopEffects(
     dialogs: PlatformDialogs,
     resetLayouts: Perspective => Unit,
     dock: DockCommand => Unit,
-    ui: (() => Unit) => Unit
+    ui: (() => Unit) => Unit,
+    project: Option[ProjectPort] = None,
+    clock: () => Option[ClockTime] = DesktopEffects.wallClock
 ) extends EffectPerformer:
 
   private val found = mutable.ArrayBuffer.empty[EffectProblem]
@@ -81,10 +86,26 @@ final class DesktopEffects(
         case Left(defect)       =>
           ui(() => report(EffectProblem.Failed(e, String.valueOf(defect.getMessage))))
       }
-    case AppEffect.OpenDialog(d)       => dialogs.open(d, dispatch)
-    case AppEffect.ResetLayouts(p)     => resetLayouts(p)
-    case AppEffect.Dock(command)       => dock(command)
-    case e @ AppEffect.RevealProject   => report(EffectProblem.NotWired(e, "S2.9"))
-    case e @ AppEffect.Persist         => report(EffectProblem.NotWired(e, "S2.4a"))
-    case e: AppEffect.Journal          => report(EffectProblem.NotWired(e, "S2.4b"))
+    case AppEffect.OpenDialog(d)     => dialogs.open(d, dispatch)
+    case AppEffect.ResetLayouts(p)   => resetLayouts(p)
+    case AppEffect.Dock(command)     => dock(command)
+    case e @ AppEffect.RevealProject => report(EffectProblem.NotWired(e, "S2.9"))
+    case e @ AppEffect.Persist(mark) =>
+      project.fold(report(EffectProblem.NotWired(e, "S2.9"))) {
+        _.save { outcome =>
+          ui { () =>
+            outcome match
+              case Left(reason) => dispatch(Intent.SaveFailed(reason))
+              case Right(_)     => clock().foreach(t => dispatch(Intent.Saved(t, mark)))
+          }
+        }
+      }
+    case e: AppEffect.Journal =>
+      project.fold(report(EffectProblem.NotWired(e, "S2.9")))(_.journal(e.entry))
     case e: AppEffect.RequestAdmission => report(EffectProblem.NotWired(e, "S5.6"))
+
+object DesktopEffects:
+  /** The local wall-clock time now, as the status bar shows it. */
+  val wallClock: () => Option[ClockTime] = () =>
+    val now = java.time.LocalTime.now()
+    ClockTime.of(now.getHour, now.getMinute).toOption

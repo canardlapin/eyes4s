@@ -134,7 +134,10 @@ class StudioDriverSuite extends munit.ScalaCheckSuite:
           },
           performed
         )
-        assert(performed.contains(AppEffect.Persist), performed)
+        assert(
+          performed.exists { case AppEffect.Persist(_) => true; case _ => false },
+          performed
+        )
         assert(performed.exists(_.isInstanceOf[AppEffect.Journal]), performed)
         assertEquals(settled.queued, Vector.empty)
         val fed = settled.feed(events.getOrElse(Vector.empty))

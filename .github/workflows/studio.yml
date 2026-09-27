@@ -142,6 +142,8 @@ jobs:
         run: bash studio/publish-pins.sh
 
       - name: Run functional JavaFX tests (no goldens)
+        env:
+          EYES4S_STUDIO_SMALL_DISPLAY: skip
         run: sbt -J-Xmx4g -Djavafx.platform=mac-aarch64 studioDesktop/test
 
   studio-clean-clone:

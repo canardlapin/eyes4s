@@ -68,7 +68,7 @@ class RunOutcomeSuite extends munit.FunSuite:
         Some(AppEffect.Journal(JournalEntry.Apply(recorded))),
         phase
       )
-      assert(effects.contains(AppEffect.Persist), phase)
+      assert(effects.exists { case AppEffect.Persist(_) => true; case _ => false }, phase)
       assertEquals(m.notice, None, phase)
       // The job board saw the event too.
       assertEquals(m.jobs.job(StoryMoments.run8Job).map(_.phase), Some(phase), phase)

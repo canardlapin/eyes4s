@@ -1,0 +1,9 @@
+menu-button: Project memory-study
+toggle-button: Data (⌘1)
+button: Back (⌘[)
+button: Dataset r3 (draft)
+button: Admission, current location
+list: Sources
+region: Column mapping
+region: Admission
+region: Geometry

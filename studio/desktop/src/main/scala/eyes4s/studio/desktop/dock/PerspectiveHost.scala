@@ -26,6 +26,22 @@ import scaladock.fx.{Dock, DockAction, DockTheme, Perspectives}
 final case class UnreadableLayout(perspective: Perspective, reason: String) derives CanEqual:
   def message: String = s"The saved layout of ${perspective.label} could not be read: $reason"
 
+object PerspectiveHost:
+
+  /** Put keyboard focus on `pane`'s first focus stop (its own node when it is
+    * one), if it is shown in a scene.
+    */
+  def focusInside(pane: javafx.scene.Node): Unit =
+    def first(n: javafx.scene.Node): Option[javafx.scene.Node] =
+      if n.isFocusTraversable && !n.isDisabled && n.isVisible then Some(n)
+      else
+        n match
+          case p: javafx.scene.Parent =>
+            import scala.jdk.CollectionConverters.*
+            p.getChildrenUnmodifiable.asScala.iterator.flatMap(first).nextOption()
+          case _ => None
+    if pane.getScene != null then first(pane).getOrElse(pane).requestFocus()
+
 /** What the user did in the dock itself, which the model must follow. */
 enum DockGesture derives CanEqual:
   case Focused(pane: StudioPaneId)
@@ -90,6 +106,8 @@ final class PerspectiveHost(spec: LayoutSpec, theme: DockTheme, report: DockGest
   /** The layout name the dock shows. */
   def active: Option[String] = perspectives.active
 
+  private var focusRequested: Option[PaneId] = None
+
   /** Show the model's layout, its focused pane, and its maximize state. */
   def sync(model: AppModel): Unit =
     val layout = model.layout
@@ -97,6 +115,13 @@ final class PerspectiveHost(spec: LayoutSpec, theme: DockTheme, report: DockGest
     val focused = DockLayouts.paneId(model.focusedPane)
     if !dock.state.focused.contains(focused) && dock.state.findPane(focused).isDefined then
       dock.focus(focused)
+      // The model moved focus (F6, ⌘1–5, a tab menu's Show table): keyboard
+      // focus follows it into the pane, which is one focus stop (S1.11) —
+      // once per move, so a render never steals focus back.
+      if !focusRequested.contains(focused) then
+        focusRequested = Some(focused)
+        node(model.focusedPane).foreach(PerspectiveHost.focusInside)
+    else focusRequested = dock.state.focused
     if model.isMaximized != dock.state.maximized.isDefined then dock.toggleMaximizeFocused()
 
   /** Run a dock command (⌃⇥, ⌃⇧⇥); the dock reports the focus it moves. */
@@ -189,3 +214,6 @@ final class PerspectiveHost(spec: LayoutSpec, theme: DockTheme, report: DockGest
 
   /** The scaladock id of a studio pane. */
   def dockId(pane: StudioPaneId): PaneId = DockLayouts.paneId(pane)
+
+  /** The studio pane a scaladock pane id names, if it is one. */
+  def studioPane(pane: PaneId): Option[StudioPaneId] = paneIds.get(pane)

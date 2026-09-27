@@ -108,10 +108,13 @@ object StudioFixture {
 
   private def finite(d: Double): Boolean = !d.isNaN && !d.isInfinite
 
-  private def rows(file: File): (Vector[String], Vector[Vector[String]]) = {
-    val lines = IO.readLines(file, IO.utf8).filter(_.nonEmpty).toVector
+  private def rows(file: File): (Vector[String], Vector[Vector[String]]) =
+    table(IO.readLines(file, IO.utf8))
+
+  private def table(lines: Seq[String]): (Vector[String], Vector[Vector[String]]) = {
+    val nonEmpty = lines.filter(_.nonEmpty).toVector
     // The golden CSVs quote nothing; a comma never occurs inside a field.
-    (lines.head.split(",", -1).toVector, lines.tail.map(_.split(",", -1).toVector))
+    (nonEmpty.head.split(",", -1).toVector, nonEmpty.tail.map(_.split(",", -1).toVector))
   }
 
   private final case class Rec(
@@ -132,6 +135,10 @@ object StudioFixture {
     def valid: Boolean =
       ordinal.exists(_ >= 0) && samples.exists(_ > 0) && finite(x) && finite(y) && duration > 0
 
+    // The raw x/y, while eyes4s classifies the corrected centre
+    // (io FixationCsv.parseRows applies the trial's correction rule before
+    // `frame.contains`). They agree only while the fixture's admission has no
+    // correction rules; a correction would need to be applied here first.
     def offScreen: Boolean       = !inside(screen, x, y)
     def offWindow: Boolean       = !offScreen && !inside(window, x, y)
     def micros(ms: Double): Long = math.round(ms * 1000.0)
@@ -201,30 +208,34 @@ object StudioFixture {
       .map(b => f"${b & 0xff}%02x")
       .mkString
 
-  /** `GoldenInventory`: every golden trial with its disposition, and the
-    * window totals of the admitted trials.
+  private type Key = (String, String, String, String)
+
+  private def col(h: Vector[String], name: String): Int = {
+    val i = h.indexOf(name)
+    require(i >= 0, s"studio-golden: no column $name in ${h.mkString(",")}")
+    i
+  }
+
+  private def key(h: Vector[String], r: Vector[String]): Key =
+    (
+      r(col(h, "participant")),
+      r(col(h, "phase")),
+      r(col(h, "trial")),
+      r(col(h, "occurrence"))
+    )
+
+  private def render(k: Key): String = s"${k._1}/${k._2}/${k._3}#${k._4}"
+
+  /** fixations.csv's records by trial, in file order, numbered from 1 in file
+    * order (header excluded).
     */
-  def goldenInventory(dir: File, out: File): File = {
-    val (th, trials)                              = rows(dir / "trials.csv")
-    val (fh, fixes)                               = rows(dir / "fixations.csv")
-    def col(h: Vector[String], name: String): Int = {
-      val i = h.indexOf(name)
-      require(i >= 0, s"studio-golden: no column $name in ${h.mkString(",")}")
-      i
-    }
-    type Key = (String, String, String, String)
-    def key(h: Vector[String], r: Vector[String]): Key =
-      (
-        r(col(h, "participant")),
-        r(col(h, "phase")),
-        r(col(h, "trial")),
-        r(col(h, "occurrence"))
-      )
-    def render(k: Key)    = s"${k._1}/${k._2}/${k._3}#${k._4}"
+  private def recordsByTrial(
+      fh: Vector[String],
+      fixes: Vector[Vector[String]]
+  ): mutable.LinkedHashMap[Key, Vector[Rec]] = {
     def int(s: String)    = scala.util.Try(s.trim.toInt).toOption
     def double(s: String) = scala.util.Try(s.trim.toDouble).getOrElse(Double.NaN)
-
-    val byTrial = mutable.LinkedHashMap.empty[Key, Vector[Rec]]
+    val byTrial           = mutable.LinkedHashMap.empty[Key, Vector[Rec]]
     fixes.zipWithIndex.foreach { case (r, i) =>
       val k = key(fh, r)
       byTrial(k) = byTrial.getOrElse(k, Vector.empty) :+ Rec(
@@ -237,7 +248,34 @@ object StudioFixture {
         int(r(col(fh, "sample_count")))
       )
     }
-    val statuses = trials.map { r =>
+    byTrial
+  }
+
+  /** The marker of a scanpath record whose position is off the screen. */
+  val OutsideScreenMark: String = ":outside-screen"
+
+  /** S3.4: one admitted trial's scanpath line: participant, phase, trial,
+    * occurrence, then every record of the trial in ordinal order (so a
+    * record's index is its eyes4s `ScanpathPosition`), `,`-separated. Under
+    * `ExcludeRecord` eyes4s admits an off-screen record into the scanpath and
+    * places it `OutsideScreen`; it keeps its position and is written with
+    * [[OutsideScreenMark]]. An admitted trial has only valid records.
+    */
+  private def scanpathLine(k: Key, records: Vector[Rec]): String =
+    (Seq(k._1, k._2, k._3, k._4) :+
+      records
+        .sortBy(_.ordinal.getOrElse(0))
+        .map(r => if (r.offScreen) s"${r.number}$OutsideScreenMark" else r.number.toString)
+        .mkString(",")).mkString("\t")
+
+  /** `GoldenInventory`: every golden trial with its disposition, and the
+    * window totals of the admitted trials.
+    */
+  def goldenInventory(dir: File, out: File): File = {
+    val (th, trials) = rows(dir / "trials.csv")
+    val (fh, fixes)  = rows(dir / "fixations.csv")
+    val byTrial      = recordsByTrial(fh, fixes)
+    val statuses     = trials.map { r =>
       val k = key(th, r)
       k -> byTrial.get(k).fold(Seq("absent"))(status(render(k), _))
     }
@@ -261,12 +299,9 @@ object StudioFixture {
         .mkString("\t")
     }
     // S3.4: each admitted trial's scanpath as data record numbers (header
-    // excluded), in ordinal order. Off-screen records are admitted but kept out
-    // of the scanpath under ExcludeRecord, so they have no fixation position.
+    // excluded), in ordinal order, off-screen records included and marked.
     val scanpaths = statuses.collect { case (k, Seq("admitted")) =>
-      val records = byTrial(k).filter(rec => rec.valid && !rec.offScreen)
-      (Seq(k._1, k._2, k._3, k._4) :+
-        records.sortBy(_.ordinal.getOrElse(0)).map(_.number).mkString(",")).mkString("\t")
+      scanpathLine(k, byTrial(k))
     }
 
     // S2.10: each trial's display as trials.csv states it (participant, phase,
@@ -323,7 +358,9 @@ object StudioFixture {
           |  /** One tab-separated line per admitted trial, in inventory order:
           |    * participant, phase, trial, occurrence, then its scanpath's
           |    * fixations.csv data records (1-based, header excluded), in ordinal
-          |    * order and `,`-separated. Off-screen records are not in a scanpath.
+          |    * order and `,`-separated: a record's index is its eyes4s
+          |    * `ScanpathPosition`. An off-screen record stays in the scanpath
+          |    * (eyes4s places it `OutsideScreen`) and is written `n$OutsideScreenMark`.
           |    */
           |  val scanpaths: String = Vector(
           |    ${chunked(scanpaths.mkString("\n"))}
@@ -347,5 +384,55 @@ object StudioFixture {
       IO.utf8
     )
     out
+  }
+
+  // ---------------------------------------------------------------------------
+  // Planted scanpaths (test scope)
+  // ---------------------------------------------------------------------------
+
+  /** Records the golden fixture lacks, in its fixations.csv layout: in P90
+    * enc_01 two off-screen records sit between on-screen ones (record 3,
+    * ordinal 2, left of the screen; record 4, ordinal 4, past its corner) and
+    * one record (2) is out of ordinal order in the file; in P90 enc_02 record
+    * 7 lies on the screen's excluded right edge (x = 1920, half-open).
+    */
+  val plantedFixations: String =
+    Seq(
+      "participant,phase,trial,occurrence,ordinal,x,y,onset_ms,duration_ms,sample_count",
+      "P90,Encoding,enc_01,1,1,900.0,500.0,0,100,50",
+      "P90,Encoding,enc_01,1,3,1000.0,600.0,400,100,50",
+      "P90,Encoding,enc_01,1,2,-5.0,100.0,200,100,50",
+      "P90,Encoding,enc_01,1,4,1950.5,1100.0,600,100,50",
+      "P90,Encoding,enc_01,1,5,1471.9,923.9,800,100,50",
+      "P90,Encoding,enc_02,1,1,300.0,500.0,0,100,50",
+      "P90,Encoding,enc_02,1,2,1920.0,500.0,200,100,50",
+      "P90,Encoding,enc_02,1,3,700.0,400.0,400,100,50"
+    ).mkString("", "\n", "\n")
+
+  /** `PlantedScanpaths` (test scope): [[plantedFixations]] and the scanpath
+    * lines this generator writes for them, through the code that writes
+    * `GoldenInventory.scanpaths`, so a test can hold them against eyes4s's
+    * own admission. Written only when its text changes.
+    */
+  def plantedScanpaths(out: File): Seq[File] = {
+    val (fh, fixes) = table(plantedFixations.split("\n").toSeq)
+    val byTrial     = recordsByTrial(fh, fixes)
+    val lines       = byTrial.toVector.map { case (k, recs) =>
+      val s = status(render(k), recs)
+      require(s == Seq("admitted"), s"planted trial ${render(k)} is not admitted: $s")
+      scanpathLine(k, recs)
+    }
+    val text =
+      s"""|${header}package eyes4s.studio.core.fixture
+          |
+          |/** project/StudioFixture.scala's planted records and the scanpath
+          |  * lines it writes for them, in the format of `GoldenInventory.scanpaths`.
+          |  */
+          |object PlantedScanpaths:
+          |  val fixationsCsv: String = ${literal(plantedFixations)}
+          |  val scanpaths: String = ${literal(lines.mkString("\n"))}
+          |""".stripMargin
+    if (!out.exists || IO.read(out, IO.utf8) != text) IO.write(out, text, IO.utf8)
+    Seq(out)
   }
 }

@@ -17,7 +17,7 @@
 package eyes4s.studio.desktop.shell
 
 import eyes4s.studio.app.keys.{Key, KeyChord, Modifier}
-import javafx.scene.input.{KeyCode, KeyEvent}
+import javafx.scene.input.{KeyCode, KeyCodeCombination, KeyCombination, KeyEvent}
 
 /** JavaFX key events as the studio's [[KeyChord]]s. The keymap itself is
   * studio-app's (`CommandRegistry.keymap`); this only names keys.
@@ -41,6 +41,33 @@ object ShellKeys:
     case KeyCode.F6                       => Some(Key.F6)
     case KeyCode.TAB                      => Some(Key.Tab)
     case _                                => None
+
+  /** The key code a menu accelerator uses for `key`. */
+  def code(key: Key): KeyCode = key match
+    case Key.Digit1       => KeyCode.DIGIT1
+    case Key.Digit2       => KeyCode.DIGIT2
+    case Key.Digit3       => KeyCode.DIGIT3
+    case Key.Digit4       => KeyCode.DIGIT4
+    case Key.Digit5       => KeyCode.DIGIT5
+    case Key.Z            => KeyCode.Z
+    case Key.BracketLeft  => KeyCode.OPEN_BRACKET
+    case Key.BracketRight => KeyCode.CLOSE_BRACKET
+    case Key.Enter        => KeyCode.ENTER
+    case Key.Escape       => KeyCode.ESCAPE
+    case Key.F6           => KeyCode.F6
+    case Key.Tab          => KeyCode.TAB
+
+  /** A chord as a menu accelerator, so the system menu shows it (S1.9). ⌘
+    * is the platform's shortcut key, as in [[chord]].
+    */
+  def combination(chord: KeyChord): KeyCombination =
+    val mods = Modifier.values.toVector.filter(chord.modifiers.contains).map {
+      case Modifier.Command => KeyCombination.SHORTCUT_DOWN
+      case Modifier.Control => KeyCombination.CONTROL_DOWN
+      case Modifier.Option  => KeyCombination.ALT_DOWN
+      case Modifier.Shift   => KeyCombination.SHIFT_DOWN
+    }
+    KeyCodeCombination(code(chord.key), mods*)
 
   /** The chords a key event may stand for, most specific first. Where
     * Control is the shortcut key (Linux, Windows) Ctrl+Tab reads as ⌘⇥ and

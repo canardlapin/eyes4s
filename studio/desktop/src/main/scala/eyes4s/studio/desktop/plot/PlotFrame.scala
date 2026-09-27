@@ -17,8 +17,9 @@
 package eyes4s.studio.desktop.plot
 
 import eyes4s.studio.viz.plot.{PlotScene, PlotSceneError, PlotSurface, PlotTransform, SceneId}
-import intaglio.RenderPlan
+import intaglio.interaction.{NamedPicking, NamedPickingPlan}
 import intaglio.javafx.{JavaFxProgram, JavaFxRenderError, JavaFxRenderer}
+import intaglio.{DeviceScene, IntaglioError, RenderPlan}
 
 /** Why a canvas host could not show a scene. Every case names the scene or the
   * surface values it refused.
@@ -39,6 +40,9 @@ enum CanvasPlotError derives CanEqual:
   /** Intaglio's JavaFX backend refused to compile the scene on its surface. */
   case Compile(sceneId: SceneId, surface: PlotSurface, error: JavaFxRenderError)
 
+  /** Intaglio could not compile the named picking plan of the scene on its surface. */
+  case Picking(sceneId: SceneId, surface: PlotSurface, error: IntaglioError)
+
   /** Compilation threw, which Intaglio's contract does not allow; a defect upstream. */
   case Unexpected(sceneId: SceneId, surface: PlotSurface, description: String)
 
@@ -51,6 +55,9 @@ enum CanvasPlotError derives CanEqual:
     case Compile(id, surface, e) =>
       s"scene ${id.value} on a ${surface.deviceWidth}x${surface.deviceHeight} surface: " +
         s"Intaglio JavaFX compile failed: ${e.message}"
+    case Picking(id, surface, e) =>
+      s"scene ${id.value} on a ${surface.deviceWidth}x${surface.deviceHeight} surface: " +
+        s"Intaglio picking plan failed: ${e.message}"
     case Unexpected(id, surface, d) =>
       s"scene ${id.value} on a ${surface.deviceWidth}x${surface.deviceHeight} surface: " +
         s"compilation threw $d"
@@ -59,16 +66,20 @@ enum CanvasPlotError derives CanEqual:
   *
   * `plan` is the scene bound to the render context it was compiled against,
   * `program` the JavaFX drawing operations in device pixels, and `transform`
-  * the data, device and canvas mapping for the same context. An input adapter
-  * (S4.2) compiles its picking plan from `plan`, so picking, marks and the
-  * transform share one layout.
+  * the data, device and canvas mapping for the same context. `device` is the
+  * plan lowered to device pixels, with the resolved frame (and inverse) of
+  * every named viewport, and `picking` Intaglio's named picking plan of the
+  * same scene and context (S4.2): input resolves against exactly what is
+  * drawn. Both are built off the FX thread with the program.
   */
 final case class PlotFrame private (
     sceneId: SceneId,
     surface: PlotSurface,
     transform: PlotTransform,
     plan: RenderPlan,
-    program: JavaFxProgram
+    program: JavaFxProgram,
+    device: DeviceScene,
+    picking: NamedPickingPlan
 )
 
 object PlotFrame:
@@ -82,4 +93,11 @@ object PlotFrame:
         .compile(plan)
         .left
         .map(CanvasPlotError.Compile(scene.id, surface, _))
-    yield PlotFrame(scene.id, surface, transform, plan, program)
+      device <- plan.deviceScene.left.map(e =>
+        CanvasPlotError.Scene(PlotSceneError.Graphics(scene.id.value, "lowering the scene", e))
+      )
+      picking <- NamedPicking
+        .compile(scene.scene, plan.context)
+        .left
+        .map(CanvasPlotError.Picking(scene.id, surface, _))
+    yield PlotFrame(scene.id, surface, transform, plan, program, device, picking)
