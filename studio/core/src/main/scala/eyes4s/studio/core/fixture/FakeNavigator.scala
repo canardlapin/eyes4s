@@ -18,6 +18,7 @@ package eyes4s.studio.core.fixture
 
 import cats.Monad
 import cats.data.EitherT
+import cats.syntax.all.*
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.{ReportingId, SourceRole}
 import eyes4s.studio.core.navigation.*
@@ -27,7 +28,9 @@ import eyes4s.studio.core.selection.{FixationIndex, RecordNumber, ScaleIndex, St
   * as `FakeStudyBackend` serves them: summary cells and participant means
   * from fixture.json, pairs from its queries, and each admitted golden
   * trial's scanpath as fixations.csv data records (generated at build time
-  * from fixtures/studio-golden; `GoldenInventory.scanpaths`).
+  * from fixtures/studio-golden; `GoldenInventory.scanpaths`). As in eyes4s,
+  * a scanpath keeps every admitted record, off-screen ones included, so a
+  * fixation's index is its eyes4s `ScanpathPosition` plus one.
   *
   * The fake computes no science. It knows one grouping, by retrieval
   * response, and serves it for every reporting spec. A query's control
@@ -193,6 +196,7 @@ final class FakeNavigator[F[_]] private[fixture] (
   ): Either[NavigationError, Vector[Int]] =
     Scanpaths
       .get(key)
+      .map(_.map(_.record))
       .toRight(
         NavigationError.Source(
           subject,
@@ -285,14 +289,60 @@ object FakeNavigator:
     case QueryStatus.Contributing(_, _, _) => true
     case _                                 => false
 
-  /** Each admitted golden trial's scanpath as data record numbers. */
-  private[fixture] lazy val Scanpaths: Map[TrialKey, Vector[Int]] =
-    GoldenInventory.scanpaths.linesIterator.flatMap { line =>
-      line.split("\t", -1).toList match
-        case List(p, phase, trial, occurrence, records) =>
-          occurrence.toIntOption.map { occ =>
-            TrialKey(p, Phase(phase), trial, occ) ->
-              records.split(',').toVector.filter(_.nonEmpty).flatMap(_.toIntOption)
-          }
-        case _ => None
-    }.toMap
+  /** Each admitted golden trial's scanpath. The generated text is checked
+    * by `ScanpathRecordsSuite`, which requires it to parse.
+    */
+  private[fixture] lazy val Scanpaths: Map[TrialKey, Vector[ScanpathRecord]] =
+    parseScanpaths(GoldenInventory.scanpaths).getOrElse(Map.empty)
+
+  /** The marker project/StudioFixture.scala writes after an off-screen record. */
+  private val OutsideScreenMark = ":outside-screen"
+
+  /** Scanpath lines in the format of `GoldenInventory.scanpaths`: participant,
+    * phase, trial and occurrence, then the records in scanpath order,
+    * `,`-separated, an off-screen one written `n:outside-screen`. Refuses a
+    * line or record it cannot read, naming it, rather than dropping it.
+    */
+  private[fixture] def parseScanpaths(
+      text: String
+  ): Either[String, Map[TrialKey, Vector[ScanpathRecord]]] =
+    def record(line: String, token: String): Either[String, ScanpathRecord] =
+      val (number, placement) =
+        if token.endsWith(OutsideScreenMark) then
+          (token.stripSuffix(OutsideScreenMark), ScreenPlacement.OutsideScreen)
+        else (token, ScreenPlacement.OnScreen)
+      number.toIntOption
+        .filter(_ > 0)
+        .map(ScanpathRecord(_, placement))
+        .toRight(s"scanpath line '$line': bad record '$token'")
+    text.linesIterator
+      .filter(_.nonEmpty)
+      .toVector
+      .traverse { line =>
+        line.split("\t", -1).toList match
+          case List(p, phase, trial, occurrence, records) if records.nonEmpty =>
+            for
+              occ <- occurrence.toIntOption.toRight(s"scanpath line '$line': bad occurrence")
+              rs  <- records.split(',').toVector.traverse(record(line, _))
+            yield TrialKey(p, Phase(phase), trial, occ) -> rs
+          case _ => Left(s"scanpath line '$line' is not five fields with records")
+      }
+      .flatMap { entries =>
+        val keys = entries.map(_._1)
+        keys.diff(keys.distinct).headOption match
+          case Some(k) => Left(s"scanpath of ${k.label} is listed more than once")
+          case None    => Right(entries.toMap)
+      }
+
+/** Where a scanpath record's position falls against the admission frame (the
+  * screen). Under `ExcludeRecord` eyes4s admits an off-screen record into its
+  * trial's scanpath and places it `OutsideScreen` (out of every map, reported
+  * as outside the screen); it keeps its scanpath position.
+  */
+enum ScreenPlacement derives CanEqual:
+  case OnScreen, OutsideScreen
+
+/** One record of a fixture scanpath: its fixations.csv data record (from 1,
+  * header excluded) and where it falls against the screen.
+  */
+final case class ScanpathRecord(record: Int, placement: ScreenPlacement) derives CanEqual

@@ -490,3 +490,51 @@ class TrialSceneSuite extends ScalaCheckSuite:
     assertEquals(scene.marks, Vector.empty)
     assert(!primitives(device.elements).exists(isMark))
   }
+
+  test("an off-screen fixation mid-trial is drawn where it is, dashed, never clamped") {
+    // eyes4s keeps an off-screen fixation in its scanpath (OutsideScreen); it
+    // is outside the analysis window too, so the trial view draws it dashed.
+    val rows = Vector(
+      (900.0, 500.0, 200, WindowSide.Inside),
+      (-60.0, 1150.0, 180, WindowSide.Outside),
+      (2000.0, -30.0, 160, WindowSide.Outside),
+      (1000.0, 600.0, 220, WindowSide.Inside)
+    )
+    val fs = rows.zipWithIndex.map { case ((x, y, d, w), i) =>
+      right(TrialFixation.of(ret07, right(FixationIndex.of(i + 1)), x, y, d, w))
+    }
+    val extents = List(
+      TrialExtent.Screen,
+      TrialExtent.Gaze,
+      TrialExtent.Covering(right(ScreenRect.of(448, 156, 1472, 924)))
+    )
+    for
+      extent <- extents
+      style  <- List(MarkStyle.Neutral, MarkStyle.Role(TrialRole.Query))
+    do
+      val options = TrialSceneOptions(extent = extent)
+      val scene   =
+        right(TrialScene(input(Display.BlankWithFixationCross, fs, style, options = options)))
+      val (transform, device) = lower(scene, right(PlotSurface(800, 600, 1.0)))
+      val drawn               = markPrimitives(primitives(device.elements))
+      assertEquals(scene.marks.map(_.order), Vector(0, 1, 2, 3), s"$extent")
+      assertEquals(drawn.size, fs.size, s"$extent")
+      scene.marks.zip(fs).foreach { (mark, f) =>
+        assertEquals(mark.at, DataPoint(f.screenX, f.screenY), s"$extent: $mark")
+        assert(
+          near(right(transform.dataToDevice(mark.at)), centre(drawn(mark.name.value))),
+          s"$extent: $mark is not drawn at its own position"
+        )
+      }
+      val gps = drawn.collect { case (n, DevicePrimitive.PointBatch(_, _, _, gps, _)) =>
+        n -> gps.valueAt(0)
+      }
+      scene.marks.filter(_.window == WindowSide.Outside).foreach { m =>
+        assertEquals(gps(m.name.value).fill, None)
+        assert(gps(m.name.value).lineType.dash.isDefined, s"$extent: ${m.order} is not dashed")
+      }
+    val gaze = TrialScene.extentOf(
+      input(Display.Blank, fs, options = TrialSceneOptions(extent = TrialExtent.Gaze))
+    )
+    assert(gaze.left < -60.0 && gaze.top < -30.0 && gaze.right > 2000.0 && gaze.bottom > 1150.0)
+  }

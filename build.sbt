@@ -1073,8 +1073,16 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
         (Compile / sourceManaged).value / "eyes4s" / "studio",
         streams.value.cacheDirectory / "studio-fixture"
       )
+    }.taskValue,
+    // The generator's planted off-screen scanpaths, which a JVM test holds
+    // against eyes4s-io's own admission (fixture off-screen fix).
+    Test / sourceGenerators += Def.task {
+      StudioFixture.plantedScanpaths(
+        (Test / sourceManaged).value / "eyes4s" / "studio" / "PlantedScanpaths.scala"
+      )
     }.taskValue
   )
+  .jvmConfigure(_.dependsOn(io.jvm % Test))
 
 /** UI-neutral presentation: app model, intents, pure update, view-models. */
 lazy val studioApp = crossProject(JVMPlatform, JSPlatform)
