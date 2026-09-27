@@ -68,10 +68,39 @@ final class SessionPort private (
 
   private val closed = java.util.concurrent.atomic.AtomicBoolean(false)
 
-  /** Queue `op`; after [[close]] it is refused and reported, never lost silently. */
-  private def enqueue(op: IO[Unit], what: String): Unit =
-    if closed.get then report(s"$what after the project port closed")
-    else queue.offer(op).unsafeRunSync()
+  /** Guards [[closed]] and the queue together: an operation is either queued
+    * before [[close]]'s drain marker, so it runs, or refused.
+    */
+  private val gate = new Object
+
+  /** Queue `op`; after [[close]] it is refused, never lost silently: a read,
+    * an import or a save answers its caller through `refused` (its `done`,
+    * with the refusal); a journal entry, which has no caller, is reported.
+    */
+  private def enqueue(
+      op: IO[Unit],
+      what: String,
+      refused: Option[String => Unit] = None
+  ): Unit =
+    val queued = gate.synchronized {
+      if closed.get then false
+      else
+        queue.offer(op).unsafeRunSync()
+        true
+    }
+    if !queued then
+      refused.fold(report(s"$what after the project port closed"))(_("the project is closed"))
+
+  /** `op`'s result for `done`; a raised error answers too, as its message, so
+    * a caller waiting on `done` is never left waiting.
+    */
+  private def answering[A](
+      op: IO[Either[String, A]],
+      done: Either[String, A] => Unit
+  ): IO[Unit] =
+    op.attempt.flatMap(r =>
+      IO(done(r.left.map(e => Option(e.getMessage).getOrElse(e.toString)).flatten))
+    )
 
   /** A refused journal entry (an undo the session's history does not hold)
     * is reported, not fatal: the next save writes the document as the
@@ -91,33 +120,43 @@ final class SessionPort private (
       bytes: IArray[Byte],
       done: Either[String, Unit] => Unit
   ): Unit =
-    if closed.get then done(Left("the project is closed"))
-    else
-      enqueue(
-        session
-          .importInput(kind, name, bytes)
-          .flatMap(r => IO(done(r.left.map(_.message).map(_ => ())))),
-        s"import $name"
-      )
+    enqueue(
+      answering(
+        session.importInput(kind, name, bytes).map(_.left.map(_.message).map(_ => ())),
+        done
+      ),
+      s"import $name",
+      Some(reason => done(Left(reason)))
+    )
 
   /** Queued after the imports before it, so a file just imported reads back. */
   override def readInput(source: Source, done: Either[String, IArray[Byte]] => Unit): Unit =
-    if closed.get then done(Left("the project is closed"))
-    else
-      enqueue(
-        session.readInput(source).flatMap(r => IO(done(r.left.map(_.message)))),
-        s"read ${source.path.value}"
-      )
+    enqueue(
+      answering(session.readInput(source).map(_.left.map(_.message)), done),
+      s"read ${source.path.value}",
+      Some(reason => done(Left(reason)))
+    )
 
   def save(done: Either[String, SaveReceipt] => Unit): Unit =
-    if closed.get then done(Left("the project is closed"))
-    else enqueue(session.save.flatMap(r => IO(done(r.left.map(_.message)))), "save")
+    enqueue(
+      answering(session.save.map(_.left.map(_.message)), done),
+      "save",
+      Some(reason => done(Left(reason)))
+    )
 
   /** Finish the queued operations, then stop. The session stays open. */
-  def close(): Unit = if closed.compareAndSet(false, true) then
-    val drained = IO.deferred[Unit].flatMap(d => queue.offer(d.complete(()).void) *> d.get)
-    drained.unsafeRunSync()
-    release.unsafeRunSync()
+  def close(): Unit =
+    val drained = gate.synchronized {
+      if !closed.compareAndSet(false, true) then None
+      else
+        val d = IO.deferred[Unit].unsafeRunSync()
+        queue.offer(d.complete(()).void).unsafeRunSync()
+        Some(d)
+    }
+    drained.foreach { d =>
+      d.get.unsafeRunSync()
+      release.unsafeRunSync()
+    }
 
 object SessionPort:
 

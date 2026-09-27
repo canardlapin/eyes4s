@@ -38,6 +38,15 @@ final case class Outcome(
   * edit alone, and a backend fact recorded in between (a run completing) is
   * not undone with it.
   */
+/** Which mapping rule the reducer applies (S5.3). `Commit`: a mapping must
+  * have every role import requires ([[ColumnMapping.admissible]]). `Replay`:
+  * a journal replay reconstructs history, including commands S5.2 accepted
+  * without a phase, so it checks only the stored roles; admission of such a
+  * revision is still refused afterwards, at VerifyDataset.
+  */
+enum MappingRule derives CanEqual:
+  case Commit, Replay
+
 object Reducer:
   import Command.*
   import CommandError.*
@@ -49,12 +58,16 @@ object Reducer:
   ): Either[CommandError, (StudioDocument, Vector[Effect])] =
     run(document, command).map(o => (o.document, o.effects))
 
-  def run(d: StudioDocument, c: Command): Either[CommandError, Outcome] = c match
+  def run(
+      d: StudioDocument,
+      c: Command,
+      rule: MappingRule = MappingRule.Commit
+  ): Either[CommandError, Outcome] = c match
     // --- Dataset · re-admit --------------------------------------------------
     case ImportSources(parent, sources, mapping, units, geometry, attributes) =>
       val id = DatasetRevision(d.datasets.lastOption.fold(1)(_.id.number + 1))
       for
-        _    <- admissible(d, c, mapping)
+        _    <- admissible(rule, d, c, mapping)
         from <- parent.traverse(p => d.dataset(p).toRight(UnknownDataset(p)))
         spec = DatasetRevisionSpec(
           id,
@@ -86,14 +99,7 @@ object Reducer:
     case ReviseDataset(id, mapping, units, geometry, attributes) =>
       for
         spec <- editable(d, id)
-        // A revision stored before S5.3 may lack the phase. Undoing its
-        // re-map restores that mapping over an admissible one, so replacing
-        // an admissible mapping is not refused here; VerifyDataset refuses
-        // to send an inadmissible one for admission, and the wizard never
-        // commits one.
-        _ <-
-          if spec.mapping.missingForImport.isEmpty then Right(())
-          else admissible(d, c, mapping)
+        _    <- revisable(rule, d, c, spec.mapping, mapping)
         revised = spec.copy(
           mapping = mapping,
           units = units,
@@ -108,9 +114,13 @@ object Reducer:
       )
 
     case SetMapping(id, mapping) =>
-      editDataset(d, c, id)(_.mapping, (s, v) => s.copy(mapping = v), mapping)(
-        SetMapping(id, _)
-      )
+      for
+        spec <- editable(d, id)
+        _    <- revisable(rule, d, c, spec.mapping, mapping)
+        out  <- editDataset(d, c, id)(_.mapping, (s, v) => s.copy(mapping = v), mapping)(
+          SetMapping(id, _)
+        )
+      yield out
 
     case SetUnits(id, units) =>
       editDataset(d, c, id)(_.units, (s, v) => s.copy(units = v), units)(SetUnits(id, _))
@@ -158,7 +168,7 @@ object Reducer:
     case VerifyDataset(id) =>
       for
         spec    <- editable(d, id)
-        _       <- admissible(d, c, spec.mapping)
+        _       <- admissible(rule, d, c, spec.mapping)
         content <- contentOf(spec)
         next <- replaceDataset(d, c)(spec.copy(decision = AdmissionDecision.Verifying(content)))
       yield Outcome(
@@ -189,6 +199,8 @@ object Reducer:
           case AdmissionDecision.Verifying(content) => Right(content)
           case _                                    => Left(NotVerified(id))
         _ <- Either.cond(verified == recorded, (), VerificationMismatch(id, recorded, verified))
+        // A backstop: VerifyDataset already refuses an inadmissible mapping.
+        _       <- admissible(rule, d, c, spec.mapping)
         current <- contentOf(spec)
         _       <- Either.cond(
           current == recorded,
@@ -450,13 +462,38 @@ object Reducer:
     Refused(c.name, targetOf(d, c), error)
 
   /** The document value `c` acts on in `d`. */
-  /** The S5.3 commit check: `mapping` has every role import requires. */
+  /** The S5.3 commit check: `mapping` has every role import requires.
+    * Replay reconstructs history and checks only the stored roles.
+    */
   private def admissible(
+      rule: MappingRule,
       d: StudioDocument,
       c: Command,
       mapping: ColumnMapping
+  ): Either[CommandError, Unit] = rule match
+    case MappingRule.Replay => Right(())
+    case MappingRule.Commit =>
+      ColumnMapping
+        .admissible(mapping)
+        .left
+        .map(Refused(c.name, targetOf(d, c), _))
+        .map(_ => ())
+
+  /** A revision's mapping replaced by `next` (ReviseDataset, SetMapping).
+    * A revision stored before S5.3 may lack the phase: `next` must then be
+    * admissible, so an old revision is only edited into one that can be
+    * committed. Over an admissible mapping nothing is refused, so undoing a
+    * re-map restores the stored mapping; VerifyDataset and Admit keep an
+    * inadmissible one from admission, and the wizard never commits one.
+    */
+  private def revisable(
+      rule: MappingRule,
+      d: StudioDocument,
+      c: Command,
+      current: ColumnMapping,
+      next: ColumnMapping
   ): Either[CommandError, Unit] =
-    ColumnMapping.admissible(mapping).left.map(Refused(c.name, targetOf(d, c), _)).map(_ => ())
+    if current.missingForImport.isEmpty then Right(()) else admissible(rule, d, c, next)
 
   def targetOf(d: StudioDocument, c: Command): Target = c match
     case ImportSources(_, _, _, _, _, _) =>

@@ -73,7 +73,7 @@ class LegacyPhaseSuite extends munit.FunSuite:
     assertEquals(ok(StudioDocument.decode(ok(StudioDocument.encode(loaded)))), loaded)
   }
 
-  test("a journaled ImportSources without a phase decodes; applying it is refused") {
+  test("a journaled ImportSources without a phase replays; VerifyDataset then refuses") {
     val command = Command.ImportSources(
       Some(r3.id),
       r3.sources,
@@ -84,8 +84,60 @@ class LegacyPhaseSuite extends munit.FunSuite:
     )
     val line: JournalLine = JournalLine.Entry(4, JournalEntry.Apply(command))
     assertEquals(decode[JournalLine](line.asJson.noSpaces), Right(line))
+    // A new commit of it is refused...
     refusedForPhase(Reducer.step(loaded, command))
     refusedForPhase(Reducer.step(DocumentSamples.t1, command))
+    // ...but an S5.2 recovery journal holding it replays: replay rebuilds
+    // history under the stored-role rule, so no unsaved work is lost.
+    val journal = Vector(
+      ok(CommandJournal.start(loaded)),
+      ok(CommandJournal.entry(1, JournalEntry.Apply(command)))
+    ).mkString("", "\n", "\n")
+    val replay   = ok(CommandJournal.replay(loaded, journal))
+    val restored = replay.history.document
+    val r4       = restored.datasets.last
+    assertEquals(r4.id, DatasetRevision(4))
+    assertEquals(r4.mapping, legacyMapping)
+    // The rebuilt history commits under the import rule again: the revision
+    // is not sent for admission, and the undo it recorded still works.
+    assertEquals(replay.history.rule, MappingRule.Commit)
+    refusedForPhase(replay.history.apply(Command.VerifyDataset(r4.id)))
+    assert(replay.history.undo.isRight)
+  }
+
+  test("Admit refuses a verifying revision without a phase (a backstop to VerifyDataset)") {
+    // S5.2 could send one for admission; replay rebuilds that state.
+    val (verifying, _) = ok(
+      Reducer
+        .run(loaded, Command.VerifyDataset(r3.id), MappingRule.Replay)
+        .map(o => (o.document, o.effects))
+    )
+    val content = verifying.dataset(r3.id).map(_.decision) match
+      case Some(AdmissionDecision.Verifying(c)) => c
+      case other                                => fail(s"expected Verifying, got $other")
+    refusedForPhase(
+      Reducer.step(
+        verifying,
+        Command.Admit(r3.id, content, CoreBinding.unbound, CoreBinding.unbound)
+      )
+    )
+  }
+
+  test("SetMapping follows ReviseDataset's rule: an old revision only into an admissible one") {
+    val noPhase =
+      ok(ColumnMapping.of(r3.mapping.bindings.filterNot(_.column.value == "occurrence")))
+    refusedForPhase(Reducer.step(loaded, Command.SetMapping(r3.id, noPhase)))
+    val withPhase = ok(
+      ColumnMapping.of(
+        r3.mapping.bindings :+ ColumnBinding(ColumnRole.Phase, ok(ColumnName.of("phase")))
+      )
+    )
+    val history = History.start(loaded)
+    val step    = ok(history.apply(Command.SetMapping(r3.id, withPhase)))
+    assertEquals(step.history.document.dataset(r3.id).map(_.mapping), Some(withPhase))
+    // Undo restores the stored mapping over the admissible one.
+    val undone = ok(step.history.undo)
+    assertEquals(undone.history.document.dataset(r3.id), Some(r3))
   }
 
   test("a loaded revision without a phase is not sent for admission") {
