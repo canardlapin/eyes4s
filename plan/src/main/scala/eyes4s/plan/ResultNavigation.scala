@@ -50,8 +50,8 @@ enum NavigationError[+K] derives CanEqual:
   /** The provenance refused the trial or fixation. */
   case Provenance(underlying: ProvenanceError[K])
 
-  /** No admission ledger names the record of this fixation. */
-  case NoRecord(key: K, position: ScanpathPosition)
+  /** No record of this fixation is known; `reason` says why. */
+  case NoRecord(key: K, position: ScanpathPosition, reason: MissingSource[K])
 
   /** The ledger lists no such record. */
   case UnknownRecord(record: DataRecord)
@@ -67,9 +67,9 @@ enum NavigationError[+K] derives CanEqual:
       s"$contrast has no stored ${design.toString.toLowerCase} reduction."
     case InputMismatch(inspection, provenance) =>
       s"The inspection describes input $inspection; the provenance describes $provenance."
-    case Provenance(underlying)  => underlying.message
-    case NoRecord(key, position) =>
-      s"No admission ledger names the record of fixation ${position.number.value} of $key."
+    case Provenance(underlying)          => underlying.message
+    case NoRecord(key, position, reason) =>
+      s"No record of fixation ${position.number.value} of $key is known: $reason."
     case UnknownRecord(record) => s"The ledger lists no data record ${record.value}."
     case NotAdmitted(record)   =>
       s"Data record ${record.value} was rejected, so it supplied no fixation."
@@ -79,6 +79,33 @@ object NavigationError:
   private[eyes4s] given resultRefOperand[K]: DiagnosticOperand[ResultRef[K], K] =
     new DiagnosticOperand[ResultRef[K], K]:
       def apply(value: ResultRef[K]): Operand[K] = Projections.resultRef(value)
+
+  /** Why no source is known, as an operand: its case, then its fields. */
+  private[eyes4s] given missingOperand[K]: DiagnosticOperand[MissingSource[K], K] =
+    new DiagnosticOperand[MissingSource[K], K]:
+      def apply(value: MissingSource[K]): Operand[K] =
+        import MissingSource.*
+        def kind(fields: (String, Operand[K])*): Operand[K] =
+          Operand.Fields(("kind" -> Operand.Token(value.productPrefix)) +: fields.toVector)
+        def int(n: Int): Operand[K] = Operand.Integer(BigInt(n))
+        value match
+          case NoLedger                          => Operand.Token(value.productPrefix)
+          case UnknownTrial(key)                 => kind("key" -> Operand.Key(key))
+          case FixationOutOfRange(key, index, n) =>
+            kind("key" -> Operand.Key(key), "index" -> int(index), "fixations" -> int(n))
+          case NotSourceSupported(key) => kind("key" -> Operand.Key(key))
+          case AmbiguousTrial(key, n)  =>
+            kind("key" -> Operand.Key(key), "occurrences" -> int(n))
+          case UnknownDigest(digest)         => kind("digest" -> Operand.Text(digest))
+          case CollidingDigest(digest, keys) =>
+            kind("digest" -> Operand.Text(digest), "keys" -> Operand.Keys(keys))
+          case UnknownInputTrial(index, trials) =>
+            kind("index" -> int(index), "trials" -> int(trials))
+          case MissingSource.NotAdmitted(key, records) =>
+            kind(
+              "key"     -> Operand.Key(key),
+              "records" -> Operand.Integers(records.map(BigInt(_)))
+            )
 
   given diagnose[K]: Diagnose[NavigationError[K], K] =
     given DiagnosticOperand[K, K] = DiagnosticOperand.key[K]
@@ -90,7 +117,7 @@ object NavigationError:
   private def subject[K](error: NavigationError[K]): Vector[Locus[K]] = error match
     case WrongLevel(ref, _)    => ref.loci
     case NoReduction(ref, _)   => ref.loci
-    case NoRecord(key, p)      => Vector(Locus.Trial(key), Locus.Fixation(p.value))
+    case NoRecord(key, p, _)   => Vector(Locus.Trial(key), Locus.Fixation(p.value))
     case UnknownRecord(record) => Vector(Locus.Record(record.csv.value))
     case NotAdmitted(record)   => Vector(Locus.Record(record.csv.value))
     case _                     => Vector.empty
@@ -116,6 +143,10 @@ object ResultNavigation:
     case ResultRef.Estimation(scale, key) => Some(scale -> key)
     case ResultRef.InCell(_, _, inner)    => mapOf(inner)
     case _                                => None
+
+  /** A reference a listing holds, checked without building its entry. */
+  private def listed[K](found: Boolean, ref: ResultRef[K]): Either[NavigationError[K], Unit] =
+    Either.cond(found, (), NavigationError.Inspection(InspectionError.UnknownReference(ref)))
 
   /** The same cell wrapping as `like`, around `ref`. */
   private def within[K](like: ResultRef[K], ref: ResultRef[K]): ResultRef[K] = like match
@@ -145,15 +176,8 @@ object ResultNavigation:
       ).toRight(NavigationError.NoReduction(contrast, design))
       found <- inspection.scale(scale).left.map(NavigationError.Inspection.apply)
     yield
-      val refs  = found.pairsOfQuery(design, key)
-      val start = math.min(offset.value, refs.size)
-      val end   = math.min(refs.size, start + size.value)
-      OffsetPage(
-        refs.slice(start, end),
-        offset,
-        refs.size,
-        Option.when(end < refs.size)(new ListingOffset(end))
-      )
+      val refs = found.pairsOfQuery(design, key)
+      OffsetPage.of(refs.size, offset, size)(refs)
 
   /** The two maps a pair compares: its query's, then its reference's. */
   def maps[K, U <: Unit2D, S, D](
@@ -161,14 +185,15 @@ object ResultNavigation:
       pair: ResultRef[K]
   ): Either[NavigationError[K], (ResultRef[K], ResultRef[K])] =
     for
-      (scale, _, focal, reference) <- pairOf(pair).toRight(
+      (scale, design, focal, reference) <- pairOf(pair).toRight(
         NavigationError.WrongLevel(pair, NavigationLevel.Pair)
       )
-      _ <- inspection.pair(pair).left.map(NavigationError.Inspection.apply)
+      found <- inspection.scale(scale).left.map(NavigationError.Inspection.apply)
+      _     <- listed(found.pairs(design).contains(pair), pair)
       query = within(pair, ResultRef.Estimation(scale, focal))
       other = within(pair, ResultRef.Estimation(scale, reference))
-      _ <- inspection.estimation(query).left.map(NavigationError.Inspection.apply)
-      _ <- inspection.estimation(other).left.map(NavigationError.Inspection.apply)
+      _ <- listed(found.estimation.contains(query), query)
+      _ <- listed(found.estimation.contains(other), other)
     yield query -> other
 
   /** The fixations of a map's trial, in scanpath order. */
@@ -201,7 +226,7 @@ object ResultNavigation:
       .left
       .map(NavigationError.Provenance.apply)
       .flatMap(
-        _.record.left.map(_ => NavigationError.NoRecord(fixation.key, fixation.position))
+        _.record.left.map(NavigationError.NoRecord(fixation.key, fixation.position, _))
       )
 
   // ------------------------------------------------------------ up

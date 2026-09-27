@@ -107,7 +107,7 @@ class CoordinateProvenanceSuite extends munit.FunSuite:
     assertEquals(focus.trail.correction, None)
     assertEquals(focus.trail.admitted, FramedPosition(FrameId("screen"), Pt[Px](1148, 456)))
     assertEquals(focus.trail.window, Some(FramedPosition(FrameId("image"), Pt[Px](700, 300))))
-    assertEquals(focus.trail.placement, MapPlacement.InMap)
+    assertEquals(focus.trail.placement, MapPlacement.InWindow)
     val degrees = get(focus.trail.angular.toRight("no degrees"))
     assertEqualsDouble(degrees.position.x, (700.0 - 512.0) / 35.0, 1e-12)
     assertEqualsDouble(degrees.position.y, (384.0 - 300.0) / 35.0, 1e-12)
@@ -135,7 +135,7 @@ class CoordinateProvenanceSuite extends munit.FunSuite:
         MapPlacement.DroppedInitial,
         MapPlacement.OutsideScreen,
         MapPlacement.OutsideWindow(OffWindowPolicy.Exclude),
-        MapPlacement.InMap
+        MapPlacement.InWindow
       )
     )
     // Positions outside the image still have image coordinates and degrees.
@@ -179,8 +179,8 @@ class CoordinateProvenanceSuite extends munit.FunSuite:
     )
     val focus = get(whole.fixation(retrieval, at(3))).trail
     assertEquals(focus.window, None)
-    assertEquals(focus.placement, MapPlacement.InMap)
-    assertEquals(get(whole.fixation(retrieval, at(2))).trail.placement, MapPlacement.InMap)
+    assertEquals(focus.placement, MapPlacement.InWindow)
+    assertEquals(get(whole.fixation(retrieval, at(2))).trail.placement, MapPlacement.InWindow)
     val reference = get(whole.angular.toRight("no degrees"))
     assertEquals((reference.measured, reference.origin), (FrameId("screen"), Pt[Px](960, 540)))
     assertEqualsDouble(get(focus.angular.toRight("none")).position.x, 188.0 / 35.0, 1e-12)

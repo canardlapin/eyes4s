@@ -118,6 +118,40 @@ class ReportNavigationSuite extends munit.FunSuite:
     )
   }
 
+  test("a layout the report was not evaluated with is refused, not read as no queries") {
+    // Participants read in lower case: P17's queries are "p17"'s to this layout.
+    val other = new StudyLayout[StudyKey](
+      layout.id,
+      eyes4s.design.Projection("participant", _.participant.toLowerCase),
+      layout.stimulus,
+      layout.phase
+    )(using layout.digest, layout.ordering)
+    val p17 = get(ReportRef.participant(cell, "P17"))
+    assertEquals(
+      ReportNavigation.queries(report, p17, other),
+      Left(ReportNavigationError.QueryCount("P17", 3, 0, cell.group, Role.Difference, "value"))
+    )
+    val query = ResultRef.ContrastRow(0, k("P17", "a"))
+    assertEquals(
+      ReportNavigation.participantOf(report, cell, query, other),
+      Left(
+        ReportNavigationError
+          .UnlistedParticipant(k("P17", "a"), "p17", cell.group, Role.Difference, "value")
+      )
+    )
+    val count = ReportNavigationError.QueryCount("P17", 3, 0, cell.group, Role.Difference, "v")
+    assert(count.message.contains("lists 3 queries of P17; the layout finds 0"), count.message)
+    val unlisted =
+      ReportNavigationError.UnlistedParticipant(
+        k("P17", "a"),
+        "p17",
+        cell.group,
+        Role.Matched,
+        "v"
+      )
+    assert(unlisted.message.contains("names participant p17"), unlisted.message)
+  }
+
   test("refusals name their operands, and project to coded diagnostics") {
     val elsewhere =
       get(ReportRef.cell(0, GroupKey(Vector("participant" -> "P99")), Role.Difference, "value"))

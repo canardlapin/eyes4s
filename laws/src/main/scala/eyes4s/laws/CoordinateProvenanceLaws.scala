@@ -105,7 +105,8 @@ object CoordinateProvenanceLaws extends Laws:
             case MapPlacement.OutsideWindow(_) => true
             case _                             => false
           } == window.outsideWindow &&
-          placements.count(_ == MapPlacement.InMap) == (if fails then 0 else window.inside) &&
+          placements.count(_ == MapPlacement.InWindow) == (if fails then 0
+                                                           else window.inside) &&
           placements.count(_ == MapPlacement.TrialFailed(window)) ==
             (if fails then window.inside else 0) &&
             placements.take(initial.dropped).forall(_ == MapPlacement.DroppedInitial)
@@ -124,8 +125,8 @@ object CoordinateProvenanceLaws extends Laws:
                   case HalfOpenPlacement.Outside(_)    => get(w.enter(centre).toRight("enter"))
                 trail.window == Some(FramedPosition(w.frame.id, expected)) &&
                 (trail.placement match
-                  case MapPlacement.InMap | MapPlacement.TrialFailed(_) => true
-                  case _                                                => false
+                  case MapPlacement.InWindow | MapPlacement.TrialFailed(_) => true
+                  case _                                                   => false
                 ) ==
                   (i >= get(c.plan.initialFixationTallies(c.input).toMap.apply(key)).dropped &&
                     w.locate(centre).isInside)

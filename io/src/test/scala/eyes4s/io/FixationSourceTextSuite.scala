@@ -156,7 +156,7 @@ class FixationSourceTextSuite extends munit.FunSuite:
     )
     assertEquals(trail.admitted, FramedPosition(screen.id, Pt[Px](1148, 456)))
     assertEquals(trail.window, Some(FramedPosition(FrameId("image"), Pt[Px](700, 300))))
-    assertEquals(trail.placement, MapPlacement.InMap)
+    assertEquals(trail.placement, MapPlacement.InWindow)
     val degrees = get(trail.angular.toRight("no degrees")).position
     assertEquals(f"${degrees.x}%+.1f, ${degrees.y}%+.1f", "+5.4, +2.4")
   }
@@ -169,7 +169,7 @@ class FixationSourceTextSuite extends munit.FunSuite:
         Some(MapPlacement.DroppedInitial),
         Some(MapPlacement.OutsideScreen),
         Some(MapPlacement.OutsideWindow(OffWindowPolicy.Exclude)),
-        Some(MapPlacement.InMap),
+        Some(MapPlacement.InWindow),
         Some(MapPlacement.DroppedInitial),
         Some(MapPlacement.DroppedInitial),
         None, // the quarantined trial's record

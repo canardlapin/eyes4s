@@ -1411,7 +1411,7 @@ fails after rewriting, so review the change and run it again.
 | `navigation.no-reduction` | `NoReduction` | `contrast`, `design` |
 | `navigation.input-mismatch` | `InputMismatch` | `inspection`, `provenance` |
 | `navigation.provenance` | `Provenance` | `underlying` |
-| `navigation.no-record` | `NoRecord` | `key`, `position` |
+| `navigation.no-record` | `NoRecord` | `key`, `position`, `reason` |
 | `navigation.unknown-record` | `UnknownRecord` | `record` |
 | `navigation.not-admitted` | `NotAdmitted` | `record` |
 
@@ -1638,6 +1638,8 @@ fails after rewriting, so review the change and run it again.
 | `report-navigation.not-in-cell` | `NotInCell` | `participant`, `group`, `role`, `component` |
 | `report-navigation.wrong-level` | `WrongLevel` | `ref`, `expected` |
 | `report-navigation.not-a-member` | `NotAMember` | `key`, `group`, `role`, `component` |
+| `report-navigation.query-count` | `QueryCount` | `participant`, `listed`, `found`, `group`, `role`, `component` |
+| `report-navigation.unlisted-participant` | `UnlistedParticipant` | `key`, `participant`, `group`, `role`, `component` |
 
 ### `detector-validation` — `DetectorValidationError`
 

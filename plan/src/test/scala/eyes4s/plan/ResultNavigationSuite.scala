@@ -205,6 +205,71 @@ class ResultNavigationSuite extends munit.FunSuite:
     assertEquals(byRef.next, Some(listing.references(9)))
   }
 
+  test("a map's fixations are refused from the provenance of another input") {
+    val moved = StudyInput(
+      Trials(input.trials.rows.map(t => Trial(t.key, (), trial(t.key, (0.5, 1.5)).value)))
+    )
+    val elsewhere = get(
+      CoordinateProvenance.of(
+        get(
+          StudyPlan.cosine(
+            moved.reference,
+            grid,
+            "recall",
+            "encode",
+            Weight.Duration,
+            Vector(StudyEstimate.Binned()),
+            FailurePolicy.RequireAll
+          )
+        ),
+        moved,
+        None
+      )
+    )
+    val map = ResultRef.Estimation(0, k("P17", "a", "encode"))
+    assertEquals(
+      ResultNavigation.fixations(inspection, elsewhere, map),
+      Left(NavigationError.InputMismatch(input.reference.digest, moved.reference.digest))
+    )
+  }
+
+  test("an inspection refuses a reduction its stored pairs do not support") {
+    // The matched reductions swapped for the control ones: each claims two
+    // selected pairs where the stored matched rows have one.
+    val stored  = result.scales.head
+    val swapped = new StudyAnalyses(
+      stored.analyses.matchedSource,
+      stored.analyses.control,
+      stored.analyses.controlSource,
+      stored.analyses.matched
+    )
+    val tampered = new StudyResult(
+      result.input,
+      result.description,
+      Vector(
+        new StudyScaleResult(
+          stored.estimate,
+          stored.estimation,
+          stored.excludedPhases,
+          swapped,
+          stored.contrast
+        )
+      )
+    )
+    assertEquals(
+      ResultInspection.study(plan, tampered, input, Some(ledger)).map(_ => ()),
+      Left(
+        InspectionError.ReductionMembership(
+          ResultRef.Reduction(0, StudyDesign.Matched, k("P17", "a", "recall")),
+          2,
+          1,
+          2,
+          1
+        )
+      )
+    )
+  }
+
   test("refusals name their operands") {
     val map    = ResultRef.Estimation(0, k("P17", "a", "recall"))
     val absent = ResultRef.ContrastRow(0, k("P99", "a", "recall"))
@@ -225,7 +290,14 @@ class ResultNavigationSuite extends munit.FunSuite:
     assertEquals(
       ResultNavigation
         .record(other, FixationRef(k("P17", "a", "recall"), get(ScanpathPosition.of(0)))),
-      Left(NavigationError.NoRecord(k("P17", "a", "recall"), get(ScanpathPosition.of(0))))
+      Left(
+        NavigationError
+          .NoRecord(
+            k("P17", "a", "recall"),
+            get(ScanpathPosition.of(0)),
+            MissingSource.NoLedger
+          )
+      )
     )
     assertEquals(
       ResultNavigation.fixationOf(provenance, get(DataRecord.of(99))),
@@ -241,9 +313,10 @@ class ResultNavigationSuite extends munit.FunSuite:
       NavigationError.InputMismatch("aa", "bb") -> "input aa; the provenance describes bb",
       NavigationError.Provenance(ProvenanceError.UnknownTrial(k("P9", "a", "recall"))) ->
         "no trial",
-      NavigationError.NoRecord(k("P17", "a", "recall"), position) -> "fixation 3 of",
-      NavigationError.UnknownRecord(get(DataRecord.of(99)))       -> "no data record 99",
-      NavigationError.NotAdmitted(get(DataRecord.of(5))) -> "Data record 5 was rejected"
+      NavigationError.NoRecord(k("P17", "a", "recall"), position, MissingSource.NoLedger) ->
+        "fixation 3 of StudyKey(P17,a,recall) is known: NoLedger",
+      NavigationError.UnknownRecord(get(DataRecord.of(99))) -> "no data record 99",
+      NavigationError.NotAdmitted(get(DataRecord.of(5)))    -> "Data record 5 was rejected"
     )
     messages.foreach((error, text) => assert(error.message.contains(text), error.message))
     assertEquals(NavigationLevel.values.length, 7)

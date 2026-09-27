@@ -78,6 +78,30 @@ enum ReportNavigationError[+K] derives CanEqual:
   /** The query trial is not among the cell's members. */
   case NotAMember(key: K, group: GroupKey, role: Role, component: String)
 
+  /** The layout finds another number of the participant's queries among the
+    * cell's members than the cell lists for it: it is not the layout the
+    * report was evaluated with.
+    */
+  case QueryCount(
+      participant: String,
+      listed: Int,
+      found: Int,
+      group: GroupKey,
+      role: Role,
+      component: String
+  )
+
+  /** The layout names a participant for the query that the cell does not
+    * list: it is not the layout the report was evaluated with.
+    */
+  case UnlistedParticipant(
+      key: K,
+      participant: String,
+      group: GroupKey,
+      role: Role,
+      component: String
+  )
+
   def message: String = this match
     case NegativeScale(scale)          => s"A report cell's scale is 0 or more, not $scale."
     case BlankComponent(component)     => s"A report cell names a component, not '$component'."
@@ -91,6 +115,12 @@ enum ReportNavigationError[+K] derives CanEqual:
     case WrongLevel(ref, expected) => s"$ref is not a ${expected.toString} reference."
     case NotAMember(key, group, role, component) =>
       s"Query trial $key is not a member of the cell ${group.render}, $role, $component."
+    case QueryCount(participant, listed, found, group, role, component) =>
+      s"The cell ${group.render}, $role, $component lists $listed queries of $participant; " +
+        s"the layout finds $found."
+    case UnlistedParticipant(key, participant, group, role, component) =>
+      s"The layout names participant $participant for $key, whom the cell " +
+        s"${group.render}, $role, $component does not list."
 
 /** The top of the provenance chain: a report's summary cells, a cell's
   * participants, and a participant's query contrasts; and back up. Below the
@@ -131,7 +161,9 @@ object ReportNavigation:
 
   /** A participant's query contrasts in the cell: the contrast row of each
     * of the cell's member queries that belongs to the participant, in member
-    * order, once each.
+    * order, once each. The layout must be the one the report was evaluated
+    * with: the queries it finds must number what the cell lists for the
+    * participant, so another layout is refused rather than read as none.
     */
   def queries[K](
       report: Report[K],
@@ -140,21 +172,18 @@ object ReportNavigation:
   ): Either[ReportNavigationError[K], Vector[ResultRef[K]]] =
     val ref = participant.cell
     cellOf(report, ref).flatMap { cell =>
-      val keys = cell.members
-        .flatMap(keyOf)
-        .distinct
-        .filter(k => layout.participant(k) == participant.participant)
-      val listed = cell.perParticipant.exists(_.participant == participant.participant)
-      Either.cond(
-        keys.nonEmpty || listed,
-        keys.map(ResultRef.ContrastRow(report.spec.scale, _)),
-        ReportNavigationError.NotInCell(
-          participant.participant,
-          ref.group,
-          ref.role,
-          ref.component
-        )
-      )
+      val name = participant.participant
+      val keys = cell.members.flatMap(keyOf).distinct.filter(k => layout.participant(k) == name)
+      val where = (ref.group, ref.role, ref.component)
+      cell.perParticipant.find(_.participant == name) match
+        case None =>
+          Left(ReportNavigationError.NotInCell(name, where._1, where._2, where._3))
+        case Some(listed) if listed.queries != keys.size =>
+          Left(
+            ReportNavigationError
+              .QueryCount(name, listed.queries, keys.size, where._1, where._2, where._3)
+          )
+        case Some(_) => Right(keys.map(ResultRef.ContrastRow(report.spec.scale, _)))
     }
 
   /** The participant of a cell that a query contrast belongs to. */
@@ -178,6 +207,13 @@ object ReportNavigation:
             (),
             ReportNavigationError.NotAMember(key, cell.group, cell.role, cell.component)
           )
-        yield new ReportRef.Participant(cell, layout.participant(key))
+          name = layout.participant(key)
+          _ <- Either.cond(
+            found.perParticipant.exists(_.participant == name),
+            (),
+            ReportNavigationError
+              .UnlistedParticipant(key, name, cell.group, cell.role, cell.component)
+          )
+        yield new ReportRef.Participant(cell, name)
       case other =>
         Left(ReportNavigationError.WrongLevel(other, NavigationLevel.QueryContrast))

@@ -132,6 +132,20 @@ final case class OffsetPage[A](
     next: Option[ListingOffset]
 )
 
+object OffsetPage:
+  /** The page at `offset` of `total` entries, building only its own. */
+  private[plan] def of[A](total: Int, offset: ListingOffset, size: PageSize)(
+      entry: Int => A
+  ): OffsetPage[A] =
+    val start = math.min(offset.value, total)
+    val end   = math.min(total, start + size.value)
+    OffsetPage(
+      (start until end).toVector.map(entry),
+      offset,
+      total,
+      Option.when(end < total)(new ListingOffset(end))
+    )
+
 /** An immutable, keyed view in the result's own order. Entries are reached by
   * typed reference, and pages start at a reference or an offset.
   *
@@ -164,14 +178,7 @@ final class Listing[K, A] private (
 
   /** The page that starts at `offset`. */
   def page(offset: ListingOffset, size: PageSize): OffsetPage[A] =
-    val start = math.min(offset.value, refs.size)
-    val end   = math.min(refs.size, start + size.value)
-    OffsetPage(
-      (start until end).toVector.map(entry),
-      offset,
-      refs.size,
-      Option.when(end < refs.size)(new ListingOffset(end))
-    )
+    OffsetPage.of(refs.size, offset, size)(entry)
 
   private def at(start: Int, size: PageSize): Page[K, A] =
     val end = math.min(refs.size, start + size.value)

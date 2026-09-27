@@ -115,7 +115,7 @@ known), and a `CoordinateTrail`:
 | `correction` | the admission policy's rule that moved the trial's positions (its index and the `Correction`), if any |
 | `admitted` | the position the study input holds, in the admission frame (the screen) |
 | `window` | the same position in the analysis window's frame (image units), for a windowed plan; positions outside the window keep their window coordinates |
-| `placement` | `DroppedInitial`, `OutsideScreen`, `OutsideWindow(policy)`, `TrialFailed(tally)` or `InMap`, decided in that order, as the plan's tallies count them; `TrialFailed` is a fixation in the window of a trial the study fails as a whole (under `OffWindowPolicy.FailTrial`, one of its fixations lies outside the window), so no map is built from it. `CentrePlacement` is the one screen and window classification that both the tallies and the trail use |
+| `placement` | `DroppedInitial`, `OutsideScreen`, `OutsideWindow(policy)`, `TrialFailed(tally)` or `InWindow`, decided in that order, as the plan's tallies count them; `TrialFailed` is a fixation in the window of a trial the study fails as a whole (under `OffWindowPolicy.FailTrial`, one of its fixations lies outside the window), so no map is built from it. `InWindow` is a geometric fact, not a promise of a map: a trial whose estimation fails shows that at the map level, in the result's estimation outcome. `CentrePlacement` is the one screen and window classification that the tallies, the trail and the map's own restriction all use |
 | `angular` | degrees under the plan's `AngularReference`: from the centre (`origin`) of the `measured` frame (the window, or the screen for a whole-frame plan), at the declared `unitsPerDegree`, into the `degrees` frame named `<measured>/degrees`, whose `x` runs right and `y` up |
 
 `provenance.records` lists the ledger's source records in record order. Its `total` is the
@@ -141,11 +141,11 @@ typed error naming its operands, never guessed.
 | Step | Down | Up |
 |---|---|---|
 | summary > participant | `ReportNavigation.cells(report)`, `participants(report, cell)` (`eyes4s-results`) | `participant.cell` |
-| participant > query contrast | `ReportNavigation.queries(report, participant, layout)` | `ReportNavigation.participantOf(report, cell, contrast, layout)` |
+| participant > query contrast | `ReportNavigation.queries(report, participant, layout)`, refused (`QueryCount`) unless the layout finds the participant's queries the cell lists | `ReportNavigation.participantOf(report, cell, contrast, layout)`, refused (`UnlistedParticipant`) for a participant the cell does not list |
 | query contrast > pair | `ResultNavigation.pairs(inspection, contrast, design, offset, size)`: an `OffsetPage` whose `total` is known before any pair is built | `ResultNavigation.queryOf(pair)` |
 | pair > map | `ResultNavigation.maps(inspection, pair)`: the query's and the reference's `Estimation` | the pair the path came from |
 | map > fixation | `ResultNavigation.fixations(inspection, provenance, map)`: `FixationRef`s, each a `ScanpathPosition` (from 0) with its display `number` (from 1) | the map of the fixation's trial |
-| fixation > record | `ResultNavigation.record(provenance, fixation)`: a `DataRecord` | `ResultNavigation.fixationOf(provenance, record)` |
+| fixation > record | `ResultNavigation.record(provenance, fixation)`: a `DataRecord`, or `NoRecord` with the `MissingSource` that says why | `ResultNavigation.fixationOf(provenance, record)` |
 
 Report references are `ReportRef.Cell` (a scale, group, role and component) and
 `ReportRef.Participant` (a cell and a participant name), built through `ReportRef.cell` and

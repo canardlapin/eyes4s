@@ -353,19 +353,21 @@ private[plan] object StudyWindowing:
         }
     geometry match
       case StudyGeometry.WholeFrame(grid) =>
-        if occupancy.positions.forall(grid.frame.contains) &&
+        def inside(p: Pt[U]) = CentrePlacement.of(grid.frame, None, p) == CentrePlacement.Inside
+        if occupancy.positions.forall(inside) &&
           Agreement.frames(grid.frame, occupancy.frame).isRight
         then Right(occupancy)
-        else keep(grid.frame, p => Option.when(grid.frame.contains(p))(p))
+        else keep(grid.frame, p => Option.when(inside(p))(p))
       case StudyGeometry.Windowed(window, _, _) =>
         keep(
           window.frame,
           p =>
-            if !window.parent.contains(p) then None
-            else
-              window.locate(p) match
-                case HalfOpenPlacement.Inside(local) => Some(local)
-                case HalfOpenPlacement.Outside(_)    => None
+            CentrePlacement.of(window.parent, Some(window), p) match
+              case CentrePlacement.Inside =>
+                window.locate(p) match
+                  case HalfOpenPlacement.Inside(local) => Some(local)
+                  case HalfOpenPlacement.Outside(_)    => None
+              case CentrePlacement.OutsideScreen | CentrePlacement.OutsideWindow => None
         )
 
   /** Description fields of a geometry; none for the whole frame. */

@@ -31,7 +31,8 @@ import org.typelevel.discipline.Laws
 /** Laws for the provenance chain: summary > participant > query contrast >
   * pair > map > fixation > record, and back up.
   *
-  * `chain` states that every step down from a report's cells reaches items
+  * `chain` states that a cell's participants' queries are exactly the cell's
+  * members, that every step down from a report's cells reaches items
   * the inspection resolves, and that every step up returns where the step
   * down started: a query's participant, a pair's query contrast, and a
   * record's fixation. It also states that a query contrast's pairs are the
@@ -88,6 +89,21 @@ object NavigationLaws extends Laws:
             }
           }
         })
+      },
+      "a cell's participants' queries are exactly the cell's members, each once" -> forAll(
+        cases
+      ) { c =>
+        val layout = c.plan.layout
+        Prop(ReportNavigation.cells(c.report).forall { ref =>
+          val cell    = get(c.report.cell(ref.group, ref.role, ref.component).toRight("cell"))
+          val members = cell.members.map {
+            case ResultRef.Reduction(scale, _, key) => ResultRef.ContrastRow(scale, key)
+            case other                              => other
+          }
+          val queries = get(ReportNavigation.participants(c.report, ref))
+            .flatMap(p => get(ReportNavigation.queries(c.report, p, layout)))
+          queries.size == members.size && queries.toSet == members.toSet
+        }) :| "the participants' queries are not the cell's members"
       },
       "a query's pairs are its reductions' stored pairs, and each comes back to it" -> forAll(
         cases,

@@ -97,7 +97,9 @@ object ResultsDiagnosticCatalog:
     "UnknownCell",
     "NotInCell",
     "WrongLevel",
-    "NotAMember"
+    "NotAMember",
+    "QueryCount",
+    "UnlistedParticipant"
   )
 
   /** Every family, in the order documented. */
@@ -163,6 +165,10 @@ object ResultsDiagnostics:
     error match
       case ReportNavigationError.UnknownCell(g, _, _)  => Vector(group(g))
       case ReportNavigationError.NotInCell(p, g, _, _) => Vector(group(g), Locus.Participant(p))
+      case ReportNavigationError.QueryCount(p, _, _, g, _, _) =>
+        Vector(group(g), Locus.Participant(p))
+      case ReportNavigationError.UnlistedParticipant(key, _, g, _, _) =>
+        Vector(group(g), Locus.Trial(key))
       case ReportNavigationError.NotAMember(key, g, _, _) => Vector(group(g), Locus.Trial(key))
       case ReportNavigationError.ScaleMismatch(ref, _)    => Vector(Locus.Scale(ref))
       case ReportNavigationError.WrongLevel(ref, _)       => ref.loci
