@@ -89,11 +89,11 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     * the pane synced after each.
     */
   final class Rig(start: AppModel, moment: StoryMoment):
-    var model: AppModel = start
-    val inputs          = Inputs(moment)
-    val intents         = scala.collection.mutable.ArrayBuffer.empty[Intent]
+    var model: AppModel             = start
+    val inputs                      = Inputs(moment)
+    val intents                     = scala.collection.mutable.ArrayBuffer.empty[Intent]
     lazy val host: GeometryPaneHost = GeometryPaneHost(() => model, dispatch, inputs)
-    def dispatch(i: Intent): Unit =
+    def dispatch(i: Intent): Unit   =
       intents += i
       model = AppModel.update(model, i)._1
       host.sync(model)
@@ -157,7 +157,9 @@ class GeometryPanelFxSuite extends StudioFxSuite:
 
   // ---------------------------------------------------------------------------
 
-  test("the golden source: 11,520 records, 543 outside the image frame in 409 trials, none off screen") {
+  test(
+    "the golden source: 11,520 records, 543 outside the image frame in 409 trials, none off screen"
+  ) {
     val spec      = StoryModels.t1.dataset(r3).get
     val positions = SourcePositions.read(spec, goldenBytes).fold(p => fail(p.message), identity)
     assertEquals((positions.records, positions.unplaced.size), (11520, 0))
@@ -170,53 +172,60 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     assertEquals(positions.position(7214).map(p => (p.x, p.y)), Some((1148.0, 456.0)))
   }
 
-  fxStage.test("t1: the board's geometry, the worked example of record 7,214 and the counts") { fx =>
-    assumeFullStage(fx)
-    val rig = mount(fx, t1, StoryMoment.T1)
-    loaded(fx, rig)
-    redraw(fx, rig, 0)
-    val v = rig.host.view
-    assertEquals(drawn(v.title), "Geometry")
-    assertEquals(drawn(v.kind), "Dataset · re-admit")
-    val shown = texts(fx)
-    Vector(
-      "Gaze coordinates",
-      "Screen px · origin top-left · y down",
-      "1920 × 1080 px",
-      "1024 × 768 at (448, 156)",
-      "Image frame",
-      "35",
-      "· declared, not calibrated",
-      "Record 7,214 raw",
-      "screen (1148, 456) px",
-      "→ image frame",
-      "(700, 300) px · (+5.4°, +2.4°)",
-      "from image centre · x right · y up",
-      "Check placement",
-      "All trials overlaid",
-      "Outside image frame",
-      "Outside screen"
-    ).foreach(s => assert(shown.contains(s), s"'$s' is not shown: $shown"))
-    assertEquals(drawn(v.outsideWindow.value), "543 of 11,520 records · 409 trials")
-    assertEquals(drawn(v.outsideScreen.value), "0 of 11,520 records · 0 trials")
-    assert(drawn(v.densityCaption).startsWith("11,520 records, screen coordinates."))
-    assertEquals(runOnFx(v.physical.map(_.getPromptText)), Vector("not recorded", "not recorded"))
-    // Every picture is on its canvas.
-    val hosts = v.thumbnails.map(_.host) :+ v.density
-    runOnFx(hosts.map(_.status.get)).foreach {
-      case PlotHostStatus.Drawn(_) => ()
-      case other                   => fail(s"a picture is not drawn: $other")
-    }
-    assertEquals(runOnFx(v.thumbnails.map(t => drawn(t.caption))).count(_.nonEmpty), 4)
-    // P05's three failed queries lie wholly outside: the worst is shown.
-    assert(
-      runOnFx(v.thumbnails.map(t => drawn(t.caption))).contains("P05 · ret_04 · 11 of 11 outside"),
-      runOnFx(v.thumbnails.map(t => drawn(t.caption)))
-    )
-    fx.snapshot(StudioTheme.Light)
+  fxStage.test("t1: the board's geometry, the worked example of record 7,214 and the counts") {
+    fx =>
+      assumeFullStage(fx)
+      val rig = mount(fx, t1, StoryMoment.T1)
+      loaded(fx, rig)
+      redraw(fx, rig, 0)
+      val v = rig.host.view
+      assertEquals(drawn(v.title), "Geometry")
+      assertEquals(drawn(v.kind), "Dataset · re-admit")
+      val shown = texts(fx)
+      Vector(
+        "Gaze coordinates",
+        "Screen px · origin top-left · y down",
+        "1920 × 1080 px",
+        "1024 × 768 at (448, 156)",
+        "Image frame",
+        "35",
+        "· declared, not calibrated",
+        "Record 7,214 raw",
+        "screen (1148, 456) px",
+        "→ image frame",
+        "(700, 300) px · (+5.4°, +2.4°)",
+        "from image centre · x right · y up",
+        "Check placement",
+        "All trials overlaid",
+        "Outside image frame",
+        "Outside screen"
+      ).foreach(s => assert(shown.contains(s), s"'$s' is not shown: $shown"))
+      assertEquals(drawn(v.outsideWindow.value), "543 of 11,520 records · 409 trials")
+      assertEquals(drawn(v.outsideScreen.value), "0 of 11,520 records · 0 trials")
+      assert(drawn(v.densityCaption).startsWith("11,520 records, screen coordinates."))
+      assertEquals(
+        runOnFx(v.physical.map(_.getPromptText)),
+        Vector("not recorded", "not recorded")
+      )
+      // Every picture is on its canvas.
+      val hosts = v.thumbnails.map(_.host) :+ v.density
+      runOnFx(hosts.map(_.status.get)).foreach {
+        case PlotHostStatus.Drawn(_) => ()
+        case other                   => fail(s"a picture is not drawn: $other")
+      }
+      assertEquals(runOnFx(v.thumbnails.map(t => drawn(t.caption))).count(_.nonEmpty), 4)
+      // P05's three failed queries lie wholly outside: the worst is shown.
+      assert(
+        runOnFx(v.thumbnails.map(t => drawn(t.caption)))
+          .contains("P05 · ret_04 · 11 of 11 outside"),
+        runOnFx(v.thumbnails.map(t => drawn(t.caption)))
+      )
+      fx.snapshot(StudioTheme.Light)
   }
 
-  fxStage.test("every change redraws the pictures within the bound and creates a dataset draft") { fx =>
+  fxStage.test(
+    "every change redraws the pictures within the bound and creates a dataset draft"
+  ) { fx =>
     assumeFullStage(fx)
     val rig = mount(fx, t2, StoryMoment.T2)
     loaded(fx, rig)
@@ -248,12 +257,17 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     }
     val second = redraw(fx, rig, 2)
     assertEquals(rig.model.document.datasets.map(_.id), Vector(r2, r3, r4))
-    assertEquals(rig.model.document.dataset(r4).map(_.geometry.pixelsPerDegree.value), Some(36.0))
+    assertEquals(
+      rig.model.document.dataset(r4).map(_.geometry.pixelsPerDegree.value),
+      Some(36.0)
+    )
     assertEquals(second.key.geometry.pixelsPerDegree.value, 36.0)
     assert(second.millis <= RedrawBound, s"redraw took ${second.millis} ms")
   }
 
-  fxStage.test("switching the off-screen policy creates a draft; outside screen and outside window apart") { fx =>
+  fxStage.test(
+    "switching the off-screen policy creates a draft; outside screen and outside window apart"
+  ) { fx =>
     assumeFullStage(fx)
     val rig = mount(fx, t2, StoryMoment.T2)
     loaded(fx, rig)
@@ -283,7 +297,9 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     )
   }
 
-  fxStage.test("a marked wrong orientation is a recorded rule; the source coordinates never change") { fx =>
+  fxStage.test(
+    "a marked wrong orientation is a recorded rule; the source coordinates never change"
+  ) { fx =>
     assumeFullStage(fx)
     val rig = mount(fx, t1, StoryMoment.T1)
     loaded(fx, rig)
@@ -291,7 +307,7 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     val v      = rig.host.view
     val before = runOnFx(rig.host.state.positions.toOption.get)
     val p05    = TrialKey("P05", Phase.Retrieval, "ret_04", 1)
-    val at     = runOnFx(v.thumbnails.indexWhere(t => drawn(t.caption).startsWith("P05 · ret_04")))
+    val at = runOnFx(v.thumbnails.indexWhere(t => drawn(t.caption).startsWith("P05 · ret_04")))
     assert(at >= 0)
     assertEquals(runOnFx(v.mark.isDisabled), true)
     runOnFx {

@@ -23,7 +23,14 @@ import eyes4s.studio.app.geometry.{
   MarkPlace,
   ThumbnailPicture
 }
-import eyes4s.studio.app.tokens.{PaletteToken, StageToken, StageVariant, Theme, ThemedToken, Tokens}
+import eyes4s.studio.app.tokens.{
+  PaletteToken,
+  StageToken,
+  StageVariant,
+  Theme,
+  ThemedToken,
+  Tokens
+}
 import eyes4s.studio.viz.plot.{DataPanel, IntaglioColours, PlotScene, PlotSceneError, SceneId}
 import intaglio.{
   BatchColumn,
@@ -59,7 +66,7 @@ import intaglio.{
   */
 object GeometryScene:
 
-  private val PointsPerPixel = 72.0 / 96.0
+  private val PointsPerPixel            = 72.0 / 96.0
   private def px(value: Double): Double = value * PointsPerPixel
 
   /** The map opacity every density is drawn at (DESIGN_SPEC section 12). */
@@ -105,26 +112,26 @@ object GeometryScene:
     val w = frame.screenWidth.toDouble
     val h = frame.screenHeight.toDouble
     for
-      xs     <- Interval(0.0, w)
-      ys     <- Interval(0.0, h)
-      origin <- Point.npc(0.0, 0.0)
-      whole  <- Size.npc(1.0, 1.0)
-      vp     <- Viewport.checked(origin, whole, xs, ys, Clip.On, yDirection = YDirection.Down)
+      xs      <- Interval(0.0, w)
+      ys      <- Interval(0.0, h)
+      origin  <- Point.npc(0.0, 0.0)
+      whole   <- Size.npc(1.0, 1.0)
+      vp      <- Viewport.checked(origin, whole, xs, ys, Clip.On, yDirection = YDirection.Down)
       stageGp <- GraphicParams.checked(
         stroke = None,
         fill = Some(IntaglioColours.staged(stage, StageToken.Stage))
       )
-      centre     <- Point.npc(0.5, 0.5)
-      screen     <- Grob.rect(centre, whole, gp = stageGp)
-      imageAt    <- Point.native(frame.left + frame.width / 2.0, frame.top + frame.height / 2.0)
-      imageSize  <- sizeOf(frame.width.toDouble, frame.height.toDouble)
-      fieldGp    <- GraphicParams.checked(
+      centre    <- Point.npc(0.5, 0.5)
+      screen    <- Grob.rect(centre, whole, gp = stageGp)
+      imageAt   <- Point.native(frame.left + frame.width / 2.0, frame.top + frame.height / 2.0)
+      imageSize <- sizeOf(frame.width.toDouble, frame.height.toDouble)
+      fieldGp   <- GraphicParams.checked(
         stroke = None,
         fill = Some(IntaglioColours.toIntaglio(Tokens.palette(PaletteToken.Screen)))
       )
-      fieldName  <- name("image-frame")
-      field      <- Grob.rect(imageAt, imageSize, gp = fieldGp, name = Some(fieldName))
-      outlineGp  <- GraphicParams.checked(
+      fieldName <- name("image-frame")
+      field     <- Grob.rect(imageAt, imageSize, gp = fieldGp, name = Some(fieldName))
+      outlineGp <- GraphicParams.checked(
         stroke = Some(IntaglioColours.staged(stage, StageToken.OnStage)),
         fill = None,
         lineWidth = px(1.0),
@@ -132,10 +139,12 @@ object GeometryScene:
         lineWidthUnit = StrokeUnit.Point
       )
       outlineName <- name("window-outline")
-      outline <- Grob.rect(imageAt, imageSize, gp = outlineGp, name = Some(outlineName))
-      drawn   <- content()
+      outline     <- Grob.rect(imageAt, imageSize, gp = outlineGp, name = Some(outlineName))
+      drawn       <- content()
     yield (
-      Vector(Grob.group(Vector(screen, field) ++ drawn ++ Vector(outline), viewport = Some(vp))),
+      Vector(
+        Grob.group(Vector(screen, field) ++ drawn ++ Vector(outline), viewport = Some(vp))
+      ),
       vp
     )
 
@@ -181,9 +190,10 @@ object GeometryScene:
       frame: FramePicture,
       picture: DensityPicture
   ): Either[GraphicsError, Vector[Grob]] =
-    val cw    = frame.screenWidth.toDouble / picture.columns
-    val ch    = frame.screenHeight.toDouble / picture.rows
-    val ramp  = Vector(PaletteToken.Ramp0, PaletteToken.Ramp1, PaletteToken.Ramp2, PaletteToken.Ramp3)
+    val cw   = frame.screenWidth.toDouble / picture.columns
+    val ch   = frame.screenHeight.toDouble / picture.rows
+    val ramp =
+      Vector(PaletteToken.Ramp0, PaletteToken.Ramp1, PaletteToken.Ramp2, PaletteToken.Ramp3)
     def colour(level: Int): Rgba =
       IntaglioColours.toIntaglio(Tokens.palette(ramp((level - 1).max(0).min(ramp.size - 1))))
     val filled = picture.levels.zipWithIndex.filter(_._1 > 0)

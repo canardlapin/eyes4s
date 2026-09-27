@@ -178,7 +178,8 @@ object PlacementDensity:
       frames: DisplayFrames,
       placed: Vector[PlacedPosition]
   ): Either[GeometryProblem, PlacementDensity] =
-    val rows = math.max(1, math.round(Columns * frames.screen.height / frames.screen.width).toInt)
+    val rows =
+      math.max(1, math.round(Columns * frames.screen.height / frames.screen.width).toInt)
     for
       grid <- Grid
         .over(frames.screen, Columns, rows)

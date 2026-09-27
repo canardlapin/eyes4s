@@ -70,7 +70,8 @@ class CorrectionLedgerSuite extends munit.FunSuite:
   private val p05enc01 = TrialKey("P05", Phase.Encoding, "enc_01", 1)
   private val p17enc03 = TrialKey("P17", Phase.Encoding, "enc_03", 1)
 
-  private def rule(target: CorrectionTarget, c: CoordinateCorrection) = CorrectionRule(target, c)
+  private def rule(target: CorrectionTarget, c: CoordinateCorrection) =
+    CorrectionRule(target, c)
   private val flipTrial = rule(CorrectionTarget.Trial(p05ret04), CoordinateCorrection.FlipX)
 
   private def withRules(rules: CorrectionRule*): DatasetRevisionSpec =
@@ -91,7 +92,10 @@ class CorrectionLedgerSuite extends munit.FunSuite:
     val other = IArray.from((csv + "P01,Encoding,enc_01,1,1,1,1,0,2,1\n").getBytes(UTF_8))
     SourcePositions.read(spec, other) match
       case Left(GeometryProblem.NotTheSource(d, path, expected, _)) =>
-        assertEquals((d, path, expected), (r3, "inputs/fixations.csv", spec.sources.fixations.get.bytes.hex))
+        assertEquals(
+          (d, path, expected),
+          (r3, "inputs/fixations.csv", spec.sources.fixations.get.bytes.hex)
+        )
       case other => fail(s"expected NotTheSource, got $other")
   }
 
@@ -131,7 +135,10 @@ class CorrectionLedgerSuite extends munit.FunSuite:
     val other = get(ledger.place(positions.position(4).get))
     assertEquals((other.rule, other.corrected), (None, Pt[Unit2D.Px](700.0, 420.0)))
     // Re-reading the source under the corrected revision gives the same positions.
-    assertEquals(get(SourcePositions.read(withRules(flipTrial), bytes)).positions, positions.positions)
+    assertEquals(
+      get(SourcePositions.read(withRules(flipTrial), bytes)).positions,
+      positions.positions
+    )
   }
 
   test("a participant rule covers every trial of the participant; a translation adds") {
@@ -139,7 +146,9 @@ class CorrectionLedgerSuite extends munit.FunSuite:
     val offset = right(Offset.of(12.5, -20.0))
     val ledger = get(
       CorrectionLedger.of(
-        withRules(rule(CorrectionTarget.Participant(p05), CoordinateCorrection.Translate(offset)))
+        withRules(
+          rule(CorrectionTarget.Participant(p05), CoordinateCorrection.Translate(offset))
+        )
       )
     )
     val placed = get(ledger.placeAll(positions.positions))
@@ -154,7 +163,15 @@ class CorrectionLedgerSuite extends munit.FunSuite:
     val ledger = get(CorrectionLedger.of(withRules(flipTrial, all)))
     val raw    = positions.position(1).get
     assertEquals(ledger.place(raw), Left(GeometryProblem.CorrectionConflict(p05ret04, 0, 1)))
-    assert(ledger.place(raw).left.toOption.get.message.contains("rules 1 and 2 both cover P05 · ret_04"))
+    assert(
+      ledger
+        .place(raw)
+        .left
+        .toOption
+        .get
+        .message
+        .contains("rules 1 and 2 both cover P05 · ret_04")
+    )
     // A trial only the second rule covers is placed.
     assertEquals(get(ledger.place(positions.position(3).get)).rule, Some(1))
   }

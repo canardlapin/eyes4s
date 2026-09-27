@@ -50,11 +50,22 @@ class GeometrySceneSuite extends munit.FunSuite:
         MarkPicture(2000.0, 420.0, MarkPlace.OutsideScreen, corrected = false)
       )
     )
-    val scene = get(GeometryScene.thumbnail("geometry.thumb.0", Theme.Light, StageVariant.Dark, frame, picture))
+    val scene = get(
+      GeometryScene.thumbnail(
+        "geometry.thumb.0",
+        Theme.Light,
+        StageVariant.Dark,
+        frame,
+        picture
+      )
+    )
     assertEquals(scene.panel.xDomain.upper, 1920.0)
     assertEquals(scene.panel.yDomain.upper, 1080.0)
     assertEquals(scene.panel.yDirection, YDirection.Down)
-    assertEquals(scene.scene.grobs.flatMap(names), Vector("image-frame", "records", "window-outline"))
+    assertEquals(
+      scene.scene.grobs.flatMap(names),
+      Vector("image-frame", "records", "window-outline")
+    )
     val batch = scene.scene.grobs.flatMap {
       case Grob.Group(children, _, _) => children.collect { case b: Grob.PointBatch => b }
       case _                          => Vector.empty
@@ -71,17 +82,23 @@ class GeometrySceneSuite extends munit.FunSuite:
       1,
       Vector(MarkPicture(-50.0, 20.0, MarkPlace.OutsideScreen, corrected = false))
     )
-    val scene = get(GeometryScene.thumbnail("geometry.thumb.1", Theme.Dark, StageVariant.Mid, frame, picture))
+    val scene = get(
+      GeometryScene.thumbnail("geometry.thumb.1", Theme.Dark, StageVariant.Mid, frame, picture)
+    )
     assertEquals(scene.scene.grobs.flatMap(names), Vector("image-frame", "window-outline"))
   }
 
   test("the density draws one rect per non-empty cell, at the map opacity") {
-    val levels  = Vector.tabulate(64 * 36)(i => if i == 15 * 64 + 38 then 4 else if i == 0 then 1 else 0)
+    val levels =
+      Vector.tabulate(64 * 36)(i => if i == 15 * 64 + 38 then 4 else if i == 0 then 1 else 0)
     val picture = DensityPicture(64, 36, levels, 2)
-    val scene   = get(GeometryScene.density("geometry.density.0", StageVariant.Dark, frame, picture))
+    val scene   =
+      get(GeometryScene.density("geometry.density.0", StageVariant.Dark, frame, picture))
     val cells = scene.scene.grobs.flatMap {
       case Grob.Group(children, _, _) =>
-        children.collect { case Grob.Group(rects, _, Some(n)) if n.value == "density" => rects }.flatten
+        children.collect {
+          case Grob.Group(rects, _, Some(n)) if n.value == "density" => rects
+        }.flatten
       case _ => Vector.empty
     }
     assertEquals(cells.size, 2)

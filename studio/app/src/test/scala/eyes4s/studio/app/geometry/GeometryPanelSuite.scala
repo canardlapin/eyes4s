@@ -103,16 +103,20 @@ class GeometryPanelSuite extends munit.FunSuite:
     )
     assertEquals(effects.last, GeometryEffect.RequestCounts(r3))
     // r2 shares r3's source file but not its mapping: its records are read again.
-    val onR2           = play(t1, _ => Intent.Navigate(Location(Perspective.Data, Vector(Place.Dataset(r2)))))
+    val onR2 =
+      play(t1, _ => Intent.Navigate(Location(Perspective.Data, Vector(Place.Dataset(r2)))))
     val (moved, again) = GeometryPanel.sync(panel, onR2)
     assertEquals(moved.shown.map(_.id), Some(r2))
     assertEquals(again.map(_.productPrefix), Vector("ReadPositions", "RequestCounts"))
   }
 
-  test("outside window and outside screen are counted apart: 543 of 11,520 records · 409 trials") {
+  test(
+    "outside window and outside screen are counted apart: 543 of 11,520 records · 409 trials"
+  ) {
     val (panel, _) = synced(t1)
-    val loaded     = GeometryPanel.update(panel, t1, GeometryIntent.CountsRead(r3, Right(summary)))._1
-    val vm         = GeometryPanelVM.of(loaded, t1, None)
+    val loaded     =
+      GeometryPanel.update(panel, t1, GeometryIntent.CountsRead(r3, Right(summary)))._1
+    val vm = GeometryPanelVM.of(loaded, t1, None)
     assertEquals(vm.outsideWindow.title, "Outside image frame")
     assertEquals(vm.outsideWindow.value, Some("543 of 11,520 records · 409 trials"))
     assertEquals(vm.outsideScreen.title, "Outside screen")
@@ -123,10 +127,17 @@ class GeometryPanelSuite extends munit.FunSuite:
   }
 
   test("switching the off-screen policy edits the pending draft r3 in one undoable step") {
-    val (panel, _) = synced(t1)
+    val (panel, _)       = synced(t1)
     val (after, effects) =
-      GeometryPanel.update(panel, t1, GeometryIntent.ChooseOffScreen(OffScreenChoice.QuarantineTrial))
-    assertEquals(commandsOf(effects), Vector(Command.SetOffScreenPolicy(r3, OffScreenChoice.QuarantineTrial)))
+      GeometryPanel.update(
+        panel,
+        t1,
+        GeometryIntent.ChooseOffScreen(OffScreenChoice.QuarantineTrial)
+      )
+    assertEquals(
+      commandsOf(effects),
+      Vector(Command.SetOffScreenPolicy(r3, OffScreenChoice.QuarantineTrial))
+    )
     assertEquals(after.problem, None)
     val model = perform(t1, effects)
     val spec  = model.document.dataset(r3).get
@@ -136,21 +147,30 @@ class GeometryPanelSuite extends munit.FunSuite:
     // The policy note and the outside-screen note follow the policy.
     val (shown, _) = GeometryPanel.sync(after, model)
     val vm         = GeometryPanelVM.of(shown, model, None)
-    assertEquals(vm.policies.filter(_.selected).map(_.value), Vector(OffScreenChoice.QuarantineTrial))
+    assertEquals(
+      vm.policies.filter(_.selected).map(_.value),
+      Vector(OffScreenChoice.QuarantineTrial)
+    )
     assert(vm.outsideScreen.note.contains("quarantined"), vm.outsideScreen.note)
     val undone = AppModel.update(model, Intent.Undo(HistoryStack.Science))._1
     assertEquals(undone.document, t1.document)
     // Choosing the policy the revision has is not a change.
     assertEquals(
-      GeometryPanel.update(panel, t1, GeometryIntent.ChooseOffScreen(OffScreenChoice.ExcludeRecord))._2,
+      GeometryPanel
+        .update(panel, t1, GeometryIntent.ChooseOffScreen(OffScreenChoice.ExcludeRecord))
+        ._2,
       Vector.empty
     )
   }
 
   test("switching the policy of admitted r3 creates draft r4, and the selection follows it") {
-    val (panel, _) = synced(t2)
+    val (panel, _)   = synced(t2)
     val (_, effects) =
-      GeometryPanel.update(panel, t2, GeometryIntent.ChooseOffScreen(OffScreenChoice.QuarantineTrial))
+      GeometryPanel.update(
+        panel,
+        t2,
+        GeometryIntent.ChooseOffScreen(OffScreenChoice.QuarantineTrial)
+      )
     val r3spec = t2.document.dataset(r3).get
     assertEquals(
       commandsOf(effects),
@@ -173,17 +193,23 @@ class GeometryPanelSuite extends munit.FunSuite:
     assertEquals(draft.admission.offScreen, OffScreenChoice.QuarantineTrial)
     assertEquals(model.document.dataset(r3), Some(r3spec))
     val follow = GeometryPanel.follow(t2.document, model.document)
-    assertEquals(follow, Some(Intent.Navigate(Location(Perspective.Data, Vector(Place.Dataset(r4))))))
+    assertEquals(
+      follow,
+      Some(Intent.Navigate(Location(Perspective.Data, Vector(Place.Dataset(r4)))))
+    )
     val followed = AppModel.update(model, follow.get)._1
     assertEquals(GeometryPanel.selected(followed).map(_.id), Some(r4))
     // The new draft shares r3's records; only its counts are asked for.
     val (onR4, asks) = GeometryPanel.sync(panel, followed)
     assertEquals(asks, Vector(GeometryEffect.RequestCounts(r4)))
     // The fake backend has no r4: the panel falls back to its parent's counts, labelled.
-    val refused = GeometryPanel.update(onR4, followed, GeometryIntent.CountsRead(r4, Left("No dataset r4")))
+    val refused =
+      GeometryPanel.update(onR4, followed, GeometryIntent.CountsRead(r4, Left("No dataset r4")))
     assertEquals(refused._2, Vector(GeometryEffect.RequestCounts(r3)))
-    val parent = GeometryPanel.update(refused._1, followed, GeometryIntent.CountsRead(r3, Right(summary)))._1
-    val vm     = GeometryPanelVM.of(parent, followed, None)
+    val parent = GeometryPanel
+      .update(refused._1, followed, GeometryIntent.CountsRead(r3, Right(summary)))
+      ._1
+    val vm = GeometryPanelVM.of(parent, followed, None)
     assertEquals(vm.outsideWindow.value, Some("543 of 11,520 records · 409 trials"))
     assertEquals(
       vm.countsSource,
@@ -193,23 +219,33 @@ class GeometryPanelSuite extends munit.FunSuite:
 
   test("a geometry edit of pending r3 is S5.2's one ReviseDataset; one undo restores it") {
     val (panel, _) = synced(t1)
-    val edited     = GeometryPanel.update(panel, t1, GeometryIntent.EditField(GeometryField.ImageTop, "150"))._1
+    val edited     = GeometryPanel
+      .update(panel, t1, GeometryIntent.EditField(GeometryField.ImageTop, "150"))
+      ._1
     val (_, effects) = GeometryPanel.update(edited, t1, GeometryIntent.CommitFields)
     val r3spec       = t1.document.dataset(r3).get
     val moved        = ok(ImagePlacement.of(448, 150, 1024, 768))
-    val geometry     = ok(Geometry.of(r3spec.geometry.screen, moved, r3spec.geometry.pixelsPerDegree))
+    val geometry     =
+      ok(Geometry.of(r3spec.geometry.screen, moved, r3spec.geometry.pixelsPerDegree))
     assertEquals(
       commandsOf(effects),
-      Vector(Command.ReviseDataset(r3, r3spec.mapping, r3spec.units, geometry, r3spec.attributes))
+      Vector(
+        Command.ReviseDataset(r3, r3spec.mapping, r3spec.units, geometry, r3spec.attributes)
+      )
     )
     val model = perform(t1, effects)
     assertEquals(model.document.dataset(r3).map(_.geometry), Some(geometry))
-    assertEquals(AppModel.update(model, Intent.Undo(HistoryStack.Science))._1.document, t1.document)
+    assertEquals(
+      AppModel.update(model, Intent.Undo(HistoryStack.Science))._1.document,
+      t1.document
+    )
   }
 
   test("a geometry edit of admitted r3 re-imports it as r4 with the new geometry") {
     val (panel, _) = synced(t2)
-    val edited     = GeometryPanel.update(panel, t2, GeometryIntent.EditField(GeometryField.PixelsPerDegree, "36"))._1
+    val edited     = GeometryPanel
+      .update(panel, t2, GeometryIntent.EditField(GeometryField.PixelsPerDegree, "36"))
+      ._1
     val (_, effects) = GeometryPanel.update(edited, t2, GeometryIntent.CommitFields)
     val model        = perform(t2, effects)
     assertEquals(commandsOf(effects).map(_.name), Vector("ImportSources"))
@@ -219,10 +255,15 @@ class GeometryPanelSuite extends munit.FunSuite:
 
   test("a mistyped field names itself and changes nothing") {
     val (panel, _) = synced(t1)
-    val edited     = GeometryPanel.update(panel, t1, GeometryIntent.EditField(GeometryField.ScreenWidth, "wide"))._1
+    val edited     = GeometryPanel
+      .update(panel, t1, GeometryIntent.EditField(GeometryField.ScreenWidth, "wide"))
+      ._1
     val (after, effects) = GeometryPanel.update(edited, t1, GeometryIntent.CommitFields)
     assertEquals(effects, Vector.empty)
-    assertEquals(after.problem, Some("The screen width 'wide' is not a whole number of pixels."))
+    assertEquals(
+      after.problem,
+      Some("The screen width 'wide' is not a whole number of pixels.")
+    )
     // Unchanged fields commit nothing.
     assertEquals(GeometryPanel.update(panel, t1, GeometryIntent.CommitFields)._2, Vector.empty)
   }
@@ -238,9 +279,10 @@ class GeometryPanelSuite extends munit.FunSuite:
     val vm = GeometryPanelVM.of(opened, t1, None).orientation.get
     assertEquals(vm.title, "Mark P05 · ret_04 as wrong orientation")
     assertEquals(vm.scopes.map(_.label), Vector("This trial", "Every trial of P05"))
-    val fixed          = GeometryPanel.update(opened, t1, GeometryIntent.ChooseFix(OrientationFix.FlipY))._1
+    val fixed =
+      GeometryPanel.update(opened, t1, GeometryIntent.ChooseFix(OrientationFix.FlipY))._1
     val (done, effects) = GeometryPanel.update(fixed, t1, GeometryIntent.RecordOrientation)
-    val rule           = CorrectionRule(CorrectionTarget.Trial(p05ret04), CoordinateCorrection.FlipY)
+    val rule = CorrectionRule(CorrectionTarget.Trial(p05ret04), CoordinateCorrection.FlipY)
     assertEquals(commandsOf(effects), Vector(Command.AddCorrection(r3, 0, rule)))
     assertEquals(done.orientation, None)
     val model = perform(t1, effects)
@@ -259,14 +301,19 @@ class GeometryPanelSuite extends munit.FunSuite:
 
   test("a rule that would overlap a recorded one is refused, naming the trial and the rule") {
     val all   = CorrectionRule(CorrectionTarget.AllTrials, CoordinateCorrection.FlipX)
-    val model = perform(t1, Vector(GeometryEffect.App(Intent.Dispatch(Command.AddCorrection(r3, 0, all)))))
+    val model = perform(
+      t1,
+      Vector(GeometryEffect.App(Intent.Dispatch(Command.AddCorrection(r3, 0, all))))
+    )
     val (panel, _) = synced(model)
-    val opened = model
-    val form = GeometryPanel.update(
-      GeometryPanel.update(panel, opened, GeometryIntent.MarkTrial(p05ret04))._1,
-      opened,
-      GeometryIntent.OpenOrientation
-    )._1
+    val opened     = model
+    val form       = GeometryPanel
+      .update(
+        GeometryPanel.update(panel, opened, GeometryIntent.MarkTrial(p05ret04))._1,
+        opened,
+        GeometryIntent.OpenOrientation
+      )
+      ._1
     val (after, effects) = GeometryPanel.update(form, opened, GeometryIntent.RecordOrientation)
     assertEquals(effects, Vector.empty)
     assertEquals(
@@ -294,9 +341,14 @@ class GeometryPanelSuite extends munit.FunSuite:
   /** t1 with r3 reading the records above. */
   private lazy val small: AppModel =
     val r3spec = t1.document.dataset(r3).get
-    val source = Source(SourceRole.Fixations, ok(SourcePath.of("inputs/fixations.csv")), ByteDigest.sha256(bytes), None)
-    val spec   = r3spec.copy(sources = ok(Sources.of(Vector(source))))
-    val doc    = ok(
+    val source = Source(
+      SourceRole.Fixations,
+      ok(SourcePath.of("inputs/fixations.csv")),
+      ByteDigest.sha256(bytes),
+      None
+    )
+    val spec = r3spec.copy(sources = ok(Sources.of(Vector(source))))
+    val doc  = ok(
       StudioDocument.of(
         Vector(t1.document.dataset(r2).get, spec),
         t1.document.analyses,
@@ -312,9 +364,9 @@ class GeometryPanelSuite extends munit.FunSuite:
 
   private def loaded(model: AppModel): GeometryPanel =
     val (panel, effects) = synced(model)
-    val key              = effects.collectFirst { case GeometryEffect.ReadPositions(k, _) => k }.get
-    val spec             = panel.shown.get
-    val read             = SourcePositions.read(spec, bytes).left.map(_.message)
+    val key  = effects.collectFirst { case GeometryEffect.ReadPositions(k, _) => k }.get
+    val spec = panel.shown.get
+    val read = SourcePositions.read(spec, bytes).left.map(_.message)
     GeometryPanel.update(panel, model, GeometryIntent.PositionsRead(key, read))._1
 
   private def picture(panel: GeometryPanel, model: AppModel): GeometryPictures =
@@ -336,7 +388,10 @@ class GeometryPanelSuite extends munit.FunSuite:
         "P17 · enc_03 · 1 records inside"
       )
     )
-    assertEquals(vm.thumbnails.map(_.ref).head, StudioRef.Trial(TrialKey("P01", Phase.Encoding, "enc_01", 1)))
+    assertEquals(
+      vm.thumbnails.map(_.ref).head,
+      StudioRef.Trial(TrialKey("P01", Phase.Encoding, "enc_01", 1))
+    )
     assertEquals(vm.densityCaption.take(9), "6 records")
     assertEquals(pics.density.records, 6)
     // The off-screen record falls in no cell: five cells are drawn.
@@ -366,9 +421,9 @@ class GeometryPanelSuite extends munit.FunSuite:
     assertEquals(
       vm.example.map(r => r.label -> r.value),
       Vector(
-        "Record 5 raw"   -> "screen (1148, 456) px",
+        "Record 5 raw"  -> "screen (1148, 456) px",
         "→ image frame" -> "(700, 300) px · (+5.4°, +2.4°)",
-        "Degrees"        -> "from image centre · x right · y up"
+        "Degrees"       -> "from image centre · x right · y up"
       )
     )
     assertEquals(vm.exampleRef, Some(record))
@@ -376,18 +431,28 @@ class GeometryPanelSuite extends munit.FunSuite:
 
   test("a recorded flip moves the drawn marks and the example, never the raw record") {
     val flip  = CorrectionRule(CorrectionTarget.Trial(p05ret04), CoordinateCorrection.FlipX)
-    val model = perform(small, Vector(GeometryEffect.App(Intent.Dispatch(Command.AddCorrection(r3, 0, flip)))))
-    val panel = GeometryPanel.update(loaded(model), model, GeometryIntent.MarkTrial(p05ret04))._1
+    val model = perform(
+      small,
+      Vector(GeometryEffect.App(Intent.Dispatch(Command.AddCorrection(r3, 0, flip))))
+    )
+    val panel =
+      GeometryPanel.update(loaded(model), model, GeometryIntent.MarkTrial(p05ret04))._1
     val pics  = picture(panel, model)
     val thumb = pics.thumbnails.find(_.trial == p05ret04).get
-    assertEquals(thumb.marks.map(m => (m.x, m.y, m.corrected)), Vector((1660.0, 120.0, true), (300.0, 980.0, true)))
+    assertEquals(
+      thumb.marks.map(m => (m.x, m.y, m.corrected)),
+      Vector((1660.0, 120.0, true), (300.0, 980.0, true))
+    )
     val vm = GeometryPanelVM.of(panel, model, Some(pics))
     assertEquals(
       vm.example.take(2).map(r => r.label -> r.value),
       Vector(
-        "Record 3 raw"             -> "screen (260, 120) px",
+        "Record 3 raw"         -> "screen (260, 120) px",
         "→ corrected (rule 1)" -> "screen (1660, 120) px · flip horizontally"
       )
     )
-    assertEquals(panel.positions.toOption.get.position(3).map(p => (p.x, p.y)), Some((260.0, 120.0)))
+    assertEquals(
+      panel.positions.toOption.get.position(3).map(p => (p.x, p.y)),
+      Some((260.0, 120.0))
+    )
   }

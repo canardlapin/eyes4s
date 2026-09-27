@@ -17,7 +17,12 @@
 package eyes4s.studio.app.geometry
 
 import eyes4s.studio.core.backend.{DatasetRevision, TrialKey}
-import eyes4s.studio.core.document.{AdmissionChoice, CorrectionRule, DatasetRevisionSpec, Geometry}
+import eyes4s.studio.core.document.{
+  AdmissionChoice,
+  CorrectionRule,
+  DatasetRevisionSpec,
+  Geometry
+}
 import eyes4s.studio.core.geometry.*
 
 /** Where a drawn record falls, as eyes4s placed it. */
@@ -166,11 +171,11 @@ object GeometryPictures:
       density <- PlacementDensity.of(ledger.frames, placed)
       example <- exampleOf(key, positions, ledger)
     yield
-      val byTrial  = placed.groupBy(_.source.trial)
-      val trials   = positions.trials
-      val outside  = trials.map(t => t -> byTrial(t).count(!_.placement.isInside))
-      val worst    = outside.filter(_._2 > 0).sortBy((_, n) => -n).map(_._1)
-      val ruled    = spec.admission.corrections.collect {
+      val byTrial = placed.groupBy(_.source.trial)
+      val trials  = positions.trials
+      val outside = trials.map(t => t -> byTrial(t).count(!_.placement.isInside))
+      val worst   = outside.filter(_._2 > 0).sortBy((_, n) => -n).map(_._1)
+      val ruled   = spec.admission.corrections.collect {
         case CorrectionRule(eyes4s.studio.core.document.CorrectionTarget.Trial(k), _) => k
       }
       val chosen = (trials.take(1) ++ key.focusTrial ++ key.marked ++ ruled ++ worst ++ trials)
@@ -193,9 +198,9 @@ object GeometryPictures:
       placed.size,
       places.count(_ == MarkPlace.OutsideWindow),
       places.count(_ == MarkPlace.OutsideScreen),
-      placed.zip(places).map((p, place) =>
-        MarkPicture(p.corrected.x, p.corrected.y, place, p.rule.isDefined)
-      )
+      placed
+        .zip(places)
+        .map((p, place) => MarkPicture(p.corrected.x, p.corrected.y, place, p.rule.isDefined))
     )
 
   /** The selected record, else the marked trial's first, else the first. */

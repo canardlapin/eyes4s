@@ -78,7 +78,7 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
   fieldGrid.getStyleClass.add("geometry-fields")
   GeometryField.values.toVector.zipWithIndex.foreach { (f, i) =>
     fieldGrid.add(fieldLabels(f), (i % 2) * 2, i / 2)
-    fieldGrid.add(fields(f), (i % 2) * 2 + 1, i / 2)
+    fieldGrid.add(fields(f), (i      % 2) * 2 + 1, i / 2)
   }
 
   /** Viewing distance and physical screen width: not recorded anywhere. */
@@ -128,9 +128,9 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
   val densityTitle: Label   = label("geometry-strong", "t11")
   val densityCaption: Label = label("geometry-note", "t11")
   densityCaption.setWrapText(true)
-  val mark: Button    = button("geometry-button", "t12")
+  val mark: Button = button("geometry-button", "t12")
   mark.setOnAction(_ => fire(GeometryIntent.OpenOrientation))
-  val markNote: Label = label("geometry-note", "t11")
+  val markNote: Label     = label("geometry-note", "t11")
   private val densityText = VBox(densityTitle, densityCaption)
   densityText.getStyleClass.add("geometry-stack")
   HBox.setHgrow(densityText, Priority.ALWAYS)
@@ -138,8 +138,8 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
   densityRow.getStyleClass.add("geometry-row")
 
   // --- the marking form ---------------------------------------------------------------------
-  val orientationTitle: Label = label("geometry-strong", "t12")
-  private val fixGroup        = ToggleGroup()
+  val orientationTitle: Label                 = label("geometry-strong", "t12")
+  private val fixGroup                        = ToggleGroup()
   val fixes: Map[OrientationFix, RadioButton] = OrientationFix.values.toVector.map { f =>
     val r = RadioButton()
     r.getStyleClass.add("t12")
@@ -147,7 +147,7 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
     r.setOnAction(_ => fire(GeometryIntent.ChooseFix(f)))
     f -> r
   }.toMap
-  private val scopeGroup = ToggleGroup()
+  private val scopeGroup                         = ToggleGroup()
   val scopes: Map[OrientationScope, RadioButton] = OrientationScope.values.toVector.map { s =>
     val r = RadioButton()
     r.getStyleClass.add("t12")
@@ -167,19 +167,21 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
     HBox(record, cancel)
   )
   orientation.getStyleClass.addAll("geometry-form", "geometry-stack")
-  orientation.getChildren.asScala.collect { case h: HBox => h.getStyleClass.add("geometry-row") }
+  orientation.getChildren.asScala.collect { case h: HBox =>
+    h.getStyleClass.add("geometry-row")
+  }
 
   // --- recorded corrections -----------------------------------------------------------------
   val rulesTitle: Label = label("geometry-strong", "t12")
   val rulesNote: Label  = label("geometry-note", "t11")
   rulesNote.setWrapText(true)
-  val rules: VBox       = VBox()
+  val rules: VBox = VBox()
   rules.getStyleClass.add("geometry-stack")
   val rulesEmpty: Label = label("geometry-note", "t11")
 
   // --- off-screen policy -----------------------------------------------------------------------
-  val policyTitle: Label = label("geometry-strong", "t12")
-  private val policyGroup = ToggleGroup()
+  val policyTitle: Label                          = label("geometry-strong", "t12")
+  private val policyGroup                         = ToggleGroup()
   val policies: Map[OffScreenChoice, RadioButton] = OffScreenChoice.values.toVector.map { c =>
     val r = RadioButton()
     r.getStyleClass.add("t12")
@@ -220,8 +222,8 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
     markNote,
     orientation
   )
-  private val ledger  = section(rulesTitle, rulesNote, rules, rulesEmpty)
-  private val policy  = section(
+  private val ledger = section(rulesTitle, rulesNote, rules, rulesEmpty)
+  private val policy = section(
     policyTitle,
     policies(OffScreenChoice.ExcludeRecord),
     policies(OffScreenChoice.QuarantineTrial),
@@ -256,7 +258,7 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
 
       facts.getChildren.clear()
       vm.facts.zipWithIndex.foreach { (f, row) =>
-        val key   = label("geometry-label", "t11")
+        val key = label("geometry-label", "t11")
         key.setText(f.label)
         key.setMinWidth(Region.USE_PREF_SIZE)
         val value = label("geometry-value", if f.mono then "mono" else "t12")
@@ -287,7 +289,7 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
 
       example.getChildren.clear()
       vm.example.zipWithIndex.foreach { (r, row) =>
-        val key   = label("geometry-label", "t11")
+        val key = label("geometry-label", "t11")
         key.setText(r.label)
         key.setMinWidth(Region.USE_PREF_SIZE)
         val value = label("geometry-value", "mono")
@@ -329,7 +331,7 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
       rulesTitle.setText(vm.rulesTitle)
       rulesNote.setText(vm.rulesNote)
       rules.getChildren.setAll(vm.rules.map { r =>
-        val text   = label("geometry-value", "mono")
+        val text = label("geometry-value", "mono")
         text.getStyleClass.add("t11")
         text.setText(r.text)
         val remove = button("geometry-button", "t11")
@@ -362,7 +364,7 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
     val hosts  = thumbnails.map(_.host).take(thumbs.size) :+ density
     val scenes = thumbs :+ all
     thumbnails.drop(thumbs.size).foreach(_.host.clear())
-    var done = false
+    var done          = false
     def check(): Unit =
       val ready = hosts.zip(scenes).forall { (h, s) =>
         h.status.get match
@@ -445,9 +447,9 @@ object GeometryPanelView:
     * for correction (click, Enter or Space), and its label.
     */
   final class Thumbnail(fire: GeometryIntent => Unit):
-    val host: CanvasPlotHost      = plotHost()
-    val picture: StackPane        = sized(host)
-    val caption: Label            = label("geometry-caption", "mono", "t11")
+    val host: CanvasPlotHost = plotHost()
+    val picture: StackPane   = sized(host)
+    val caption: Label       = label("geometry-caption", "mono", "t11")
     caption.setWrapText(true)
     caption.setMaxWidth(ThumbWidth)
     private var trial: Option[eyes4s.studio.core.backend.TrialKey] = None
@@ -475,10 +477,10 @@ object GeometryPanelView:
 
   /** A count of records outside a frame, with what it means. */
   final class CountView:
-    val title: Label  = label("geometry-strong", "t12")
-    val value: Label  = label("geometry-count", "mono", "t12")
+    val title: Label = label("geometry-strong", "t12")
+    val value: Label = label("geometry-count", "mono", "t12")
     value.setMinWidth(Region.USE_PREF_SIZE)
-    val note: Label   = label("geometry-note", "t11")
+    val note: Label = label("geometry-note", "t11")
     note.setWrapText(true)
     private val head = HBox(title, spacer(), value)
     head.setAlignment(Pos.CENTER_LEFT)

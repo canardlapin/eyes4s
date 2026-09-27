@@ -92,7 +92,10 @@ object SourcePositions:
       }
       text <- SniffedSource.decodeUtf8(file, bytes).left.map(GeometryProblem.Unreadable(id, _))
       head <- CsvSniffer.chooseDelimiter(file, text).left.map(GeometryProblem.Unreadable(id, _))
-      rows <- CsvSniffer.records(file, text, head._1).left.map(GeometryProblem.Unreadable(id, _))
+      rows <- CsvSniffer
+        .records(file, text, head._1)
+        .left
+        .map(GeometryProblem.Unreadable(id, _))
       header = rows.headOption.getOrElse(Vector.empty)
       participant <- required(header, ColumnRole.Participant)
       trial       <- required(header, ColumnRole.Trial)

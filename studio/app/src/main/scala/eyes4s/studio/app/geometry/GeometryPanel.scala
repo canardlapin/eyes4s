@@ -83,8 +83,8 @@ enum GeometryRefusal derives CanEqual:
   case Invalid(error: DocumentError)
 
   def message: String = this match
-    case NoChange(d)          => s"The change leaves ${d.label} as it is."
-    case NoRule(d, i, n)      => s"${d.label} has $n correction rules; there is no rule ${i + 1}."
+    case NoChange(d)     => s"The change leaves ${d.label} as it is."
+    case NoRule(d, i, n) => s"${d.label} has $n correction rules; there is no rule ${i + 1}."
     case Overlaps(trial, rule) =>
       s"the new rule and rule ${rule + 1} would both cover ${trial.label}; eyes4s " +
         "refuses overlapping rules."
@@ -94,8 +94,11 @@ enum GeometryRefusal derives CanEqual:
   * source's bytes read under a mapping. A revision that changes neither
   * keeps the positions already read.
   */
-final case class PositionsKey(dataset: DatasetRevision, source: ByteDigest, mapping: ColumnMapping)
-    derives CanEqual
+final case class PositionsKey(
+    dataset: DatasetRevision,
+    source: ByteDigest,
+    mapping: ColumnMapping
+) derives CanEqual
 
 object PositionsKey:
   def of(spec: DatasetRevisionSpec): Option[PositionsKey] =
@@ -176,7 +179,16 @@ final case class GeometryPanel(
 object GeometryPanel:
 
   val empty: GeometryPanel =
-    GeometryPanel(None, GeometryFields.blank, None, Loading.Idle, Loading.Idle, None, None, None)
+    GeometryPanel(
+      None,
+      GeometryFields.blank,
+      None,
+      Loading.Idle,
+      Loading.Idle,
+      None,
+      None,
+      None
+    )
 
   private val none: Vector[GeometryEffect] = Vector.empty
 
@@ -275,7 +287,8 @@ object GeometryPanel:
             val form = OrientationForm(trial, OrientationFix.FlipX, OrientationScope.ThisTrial)
             (panel.copy(orientation = Some(form), problem = None), none)
           case None => (panel, none)
-      case ChooseFix(fix)     => (panel.copy(orientation = panel.orientation.map(_.copy(fix = fix))), none)
+      case ChooseFix(fix) =>
+        (panel.copy(orientation = panel.orientation.map(_.copy(fix = fix))), none)
       case ChooseScope(scope) =>
         (panel.copy(orientation = panel.orientation.map(_.copy(scope = scope))), none)
       case CancelOrientation => (panel.copy(orientation = None), none)
@@ -293,7 +306,7 @@ object GeometryPanel:
                 )
                 if effects.isEmpty then (next, effects)
                 else (next.copy(orientation = None), effects)
-      case RemoveRule(index) => change(panel, model, GeometryChange.RemoveRule(index))
+      case RemoveRule(index)          => change(panel, model, GeometryChange.RemoveRule(index))
       case PositionsRead(key, result) =>
         if !panel.positionsKey.contains(key) then (panel, none)
         else
@@ -306,7 +319,8 @@ object GeometryPanel:
               case Right(summary) => (panel.copy(counts = Loading.Ready(summary)), none)
               // A draft the backend has not admitted: its parent's counts,
               // labelled as the parent's.
-              case Left(_) if dataset == spec.id && spec.parent.isDefined && !spec.decision.isAdmitted =>
+              case Left(_)
+                  if dataset == spec.id && spec.parent.isDefined && !spec.decision.isAdmitted =>
                 (panel, spec.parent.map(GeometryEffect.RequestCounts(_)).toVector)
               case Left(reason) => (panel.copy(counts = Loading.Failed(reason)), none)
           case _ => (panel, none)
@@ -330,8 +344,11 @@ object GeometryPanel:
             val text = GeometryText(GeometryTextId.RuleOverlaps, refusal.message)
             (panel.copy(problem = Some(text)), none)
           case Left(refusal) => (panel.copy(problem = Some(refusal.message)), none)
-          case Right(cs) =>
-            (panel.copy(problem = None), cs.map(cmd => GeometryEffect.App(Intent.Dispatch(cmd))))
+          case Right(cs)     =>
+            (
+              panel.copy(problem = None),
+              cs.map(cmd => GeometryEffect.App(Intent.Dispatch(cmd)))
+            )
 
   /** A rule overlapping an existing one on some trial of the source, as
     * eyes4s's own `correctionFor` finds it: eyes4s would refuse the
@@ -346,9 +363,10 @@ object GeometryPanel:
     CorrectionLedger.policy(spec.id, choice) match
       case Left(_)       => None
       case Right(policy) =>
-        val trials = positions.toOption.fold(Vector.empty[TrialKey])(_.trials) ++ (rule.target match
-          case CorrectionTarget.Trial(k) => Vector(k)
-          case _                         => Vector.empty)
+        val trials =
+          positions.toOption.fold(Vector.empty[TrialKey])(_.trials) ++ (rule.target match
+            case CorrectionTarget.Trial(k) => Vector(k)
+            case _                         => Vector.empty)
         trials.iterator
           .map(t => t -> policy.correctionFor(t, _.participant))
           .collectFirst { case (t, Left((a, _))) => GeometryRefusal.Overlaps(t, a) }
@@ -363,8 +381,8 @@ object GeometryPanel:
       spec: DatasetRevisionSpec,
       c: GeometryChange
   ): Either[GeometryRefusal, Vector[Command]] =
-    val id    = spec.id
-    val rules = spec.admission.corrections
+    val id        = spec.id
+    val rules     = spec.admission.corrections
     val unchanged = c match
       case GeometryChange.SetGeometry(g)  => g == spec.geometry
       case GeometryChange.SetOffScreen(p) => p == spec.admission.offScreen
@@ -377,8 +395,8 @@ object GeometryPanel:
     def on(target: DatasetRevision): Vector[Command] = c match
       case GeometryChange.SetGeometry(_)  => Vector.empty
       case GeometryChange.SetOffScreen(p) => Vector(Command.SetOffScreenPolicy(target, p))
-      case GeometryChange.AddRule(r)      => Vector(Command.AddCorrection(target, rules.size, r))
-      case GeometryChange.RemoveRule(i)   => Vector(Command.RemoveCorrection(target, i))
+      case GeometryChange.AddRule(r)    => Vector(Command.AddCorrection(target, rules.size, r))
+      case GeometryChange.RemoveRule(i) => Vector(Command.RemoveCorrection(target, i))
     for
       _ <- Either.cond(!unchanged, (), GeometryRefusal.NoChange(id))
       _ <- index

@@ -63,7 +63,7 @@ object GeometryText:
     case NoDataset    => "No dataset revision yet: import fixations.csv first."
     case EditsPending => "Changes edit {0}, which is not admitted yet."
     case ReadmitsAs   => "{0} is admitted: a change creates dataset {1}, pending admission."
-    case Verifying    => "{0} is being verified: a change creates dataset {1}, pending admission."
+    case Verifying => "{0} is being verified: a change creates dataset {1}, pending admission."
 
     case GazeCoordinates      => "Gaze coordinates"
     case GazeCoordinatesValue => "Screen px · origin top-left · y down"
@@ -107,9 +107,9 @@ object GeometryText:
     case ThumbOffScreen     => "{0} · {1} of {2} off screen"
     case ThumbAccessible    =>
       "{0}: {1} records, {2} outside the image frame, {3} outside the screen"
-    case ThumbMarked        => "{0}, chosen for marking"
-    case AllTrials          => "All trials overlaid"
-    case AllTrialsCaption   =>
+    case ThumbMarked      => "{0}, chosen for marking"
+    case AllTrials        => "All trials overlaid"
+    case AllTrialsCaption =>
       "{0} records, screen coordinates. A flipped or shifted participant shows up as mass " +
         "away from the image frame."
     case AllTrialsCorrected =>
@@ -121,17 +121,17 @@ object GeometryText:
     case PositionsFailed   => "Fixation positions are not available: {0}"
     case PositionsUnplaced => "{0} records have no finite position and are not drawn."
 
-    case MarkOrientation   => "Mark trial as wrong orientation…"
-    case MarkNeedsTrial    => "Choose a trial above to mark."
-    case OrientationTitle  => "Mark {0} as wrong orientation"
-    case FixX              => "Flip horizontally (x)"
-    case FixY              => "Flip vertically (y)"
-    case ScopeTrial        => "This trial"
-    case ScopeParticipant  => "Every trial of {0}"
-    case RecordCorrection  => "Record correction"
-    case Cancel            => "Cancel"
-    case RulesTitle        => "Recorded corrections"
-    case RulesNote         =>
+    case MarkOrientation  => "Mark trial as wrong orientation…"
+    case MarkNeedsTrial   => "Choose a trial above to mark."
+    case OrientationTitle => "Mark {0} as wrong orientation"
+    case FixX             => "Flip horizontally (x)"
+    case FixY             => "Flip vertically (y)"
+    case ScopeTrial       => "This trial"
+    case ScopeParticipant => "Every trial of {0}"
+    case RecordCorrection => "Record correction"
+    case Cancel           => "Cancel"
+    case RulesTitle       => "Recorded corrections"
+    case RulesNote        =>
       "Recorded in the admission ledger and applied by eyes4s at admission; source " +
         "coordinates are never rewritten."
     case RulesEmpty          => "No corrections recorded."
@@ -145,17 +145,17 @@ object GeometryText:
     case CorrectionTranslate => "shift by ({0}, {1}) px"
     case RuleOverlaps        => "Not recorded: {0}"
 
-    case PolicyTitle          => "Records outside the screen"
-    case PolicyExclude        => "Exclude the record (default)"
-    case PolicyQuarantine     => "Quarantine its trial"
-    case PolicyExcludeNote    =>
+    case PolicyTitle       => "Records outside the screen"
+    case PolicyExclude     => "Exclude the record (default)"
+    case PolicyQuarantine  => "Quarantine its trial"
+    case PolicyExcludeNote =>
       "A finite record outside the screen is kept, left out of every map and reported."
     case PolicyQuarantineNote =>
       "A finite record outside the screen quarantines its whole trial."
-    case OutsideWindowTitle    => "Outside image frame"
-    case OutsideScreenTitle    => "Outside screen"
-    case CountValue            => "{0} of {1} records · {2} trials"
-    case OutsideWindowNote     =>
+    case OutsideWindowTitle => "Outside image frame"
+    case OutsideScreenTitle => "Outside screen"
+    case CountValue         => "{0} of {1} records · {2} trials"
+    case OutsideWindowNote  =>
       "Reported, not dropped from the data. Excluded from maps because the analysis window " +
         "is the image frame; each trial lists its own count."
     case OutsideScreenExcluded =>

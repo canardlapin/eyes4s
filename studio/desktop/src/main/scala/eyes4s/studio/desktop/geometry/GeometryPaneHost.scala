@@ -236,14 +236,15 @@ object GeometryPaneHost:
       for
         drawn  <- GeometryPictures.of(key, spec, positions).left.map(_.message)
         thumbs <- drawn.thumbnails.zipWithIndex
-          .foldLeft[Either[String, Vector[PlotScene]]](Right(Vector.empty)) { case (acc, (t, i)) =>
-            acc.flatMap(done =>
-              GeometryScene
-                .thumbnail(s"geometry.thumb.$generation.$i", theme, stage, drawn.frame, t)
-                .left
-                .map(_.message)
-                .map(done :+ _)
-            )
+          .foldLeft[Either[String, Vector[PlotScene]]](Right(Vector.empty)) {
+            case (acc, (t, i)) =>
+              acc.flatMap(done =>
+                GeometryScene
+                  .thumbnail(s"geometry.thumb.$generation.$i", theme, stage, drawn.frame, t)
+                  .left
+                  .map(_.message)
+                  .map(done :+ _)
+              )
           }
         all <- GeometryScene
           .density(s"geometry.density.$generation", stage, drawn.frame, drawn.density)

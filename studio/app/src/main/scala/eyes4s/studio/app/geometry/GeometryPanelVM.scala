@@ -152,8 +152,8 @@ object GeometryPanelVM:
     val next   = GeometryPanel.nextRevision(model.document).label
     val target = spec.map { s =>
       s.decision match
-        case AdmissionDecision.Pending      => t(EditsPending, s.id.label)
-        case AdmissionDecision.Verifying(_) => t(Verifying, s.id.label, next)
+        case AdmissionDecision.Pending        => t(EditsPending, s.id.label)
+        case AdmissionDecision.Verifying(_)   => t(Verifying, s.id.label, next)
         case AdmissionDecision.Admitted(_, _) => t(ReadmitsAs, s.id.label, next)
     }
     val facts = g.toVector.flatMap { g =>
@@ -187,10 +187,12 @@ object GeometryPanelVM:
     // The pictures on the canvases, until their redraw replaces them: the
     // labels always describe what is drawn. None before the records are read.
     val shownPictures = pictures.filter(p =>
-      panel.positions.toOption.isDefined && panel.positionsKey.exists(PositionsKey.same(_, p.key.positions))
+      panel.positions.toOption.isDefined && panel.positionsKey.exists(
+        PositionsKey.same(_, p.key.positions)
+      )
     )
-    val example       = shownPictures.flatMap(_.example)
-    val exampleRows   = example.toVector.flatMap { e =>
+    val example     = shownPictures.flatMap(_.example)
+    val exampleRows = example.toVector.flatMap { e =>
       val raw = ExampleRowVM(
         t(ExampleRaw, Format.count(e.record.toLong)),
         t(ExampleRawValue, px(e.rawX), px(e.rawY))
@@ -198,7 +200,12 @@ object GeometryPanelVM:
       val corrected = e.rule.map((i, r) =>
         ExampleRowVM(
           t(ExampleCorrected, (i + 1).toString),
-          t(ExampleCorrectedValue, px(e.correctedX), px(e.correctedY), correctionText(r.correction))
+          t(
+            ExampleCorrectedValue,
+            px(e.correctedX),
+            px(e.correctedY),
+            correctionText(r.correction)
+          )
         )
       )
       val image = ExampleRowVM(
@@ -209,7 +216,10 @@ object GeometryPanelVM:
           case (MarkPlace.Inside, None) => t(ExampleNoDegrees, px(e.imageX), px(e.imageY))
           case _                        => t(ExampleImageOutside, px(e.imageX), px(e.imageY))
       )
-      Vector(raw) ++ corrected ++ Vector(image, ExampleRowVM(t(ExampleDegrees), t(ExampleDegreesValue)))
+      Vector(raw) ++ corrected ++ Vector(
+        image,
+        ExampleRowVM(t(ExampleDegrees), t(ExampleDegreesValue))
+      )
     }
     val exampleRef = example.flatMap(e =>
       RecordNumber
@@ -220,7 +230,8 @@ object GeometryPanelVM:
     val thumbnails = shownPictures.toVector.flatMap(_.thumbnails).map { p =>
       val name  = trialLabel(p.trial)
       val label =
-        if p.outsideScreen > 0 then t(ThumbOffScreen, name, p.outsideScreen.toString, p.records.toString)
+        if p.outsideScreen > 0 then
+          t(ThumbOffScreen, name, p.outsideScreen.toString, p.records.toString)
         else if p.outsideWindow > 0 then
           t(ThumbOutside, name, p.outsideWindow.toString, p.records.toString)
         else t(ThumbInside, name, p.records.toString)
@@ -242,17 +253,18 @@ object GeometryPanelVM:
     }
     val source        = spec.flatMap(_.sources.fixations).map(_.path.value).getOrElse("")
     val positionsNote = panel.positions match
-      case Loading.Waiting      => Some(t(PositionsWaiting, source))
-      case Loading.Failed(why)  => Some(t(PositionsFailed, why))
+      case Loading.Waiting                           => Some(t(PositionsWaiting, source))
+      case Loading.Failed(why)                       => Some(t(PositionsFailed, why))
       case Loading.Ready(ps) if ps.unplaced.nonEmpty =>
         Some(t(PositionsUnplaced, Format.count(ps.unplaced.size.toLong)))
       case _ => None
-    val records    = panel.positions.toOption.map(p => Format.count(p.positions.size.toLong))
-    val rules      = spec.toVector.flatMap(_.admission.corrections)
-    val caption    = records.fold(t(AllTrialsCaption, "—"))(n =>
-      if rules.isEmpty then t(AllTrialsCaption, n) else t(AllTrialsCorrected, n, rules.size.toString)
+    val records = panel.positions.toOption.map(p => Format.count(p.positions.size.toLong))
+    val rules   = spec.toVector.flatMap(_.admission.corrections)
+    val caption = records.fold(t(AllTrialsCaption, "—"))(n =>
+      if rules.isEmpty then t(AllTrialsCaption, n)
+      else t(AllTrialsCorrected, n, rules.size.toString)
     )
-    val policy = spec.map(_.admission.offScreen).getOrElse(OffScreenChoice.ExcludeRecord)
+    val policy      = spec.map(_.admission.offScreen).getOrElse(OffScreenChoice.ExcludeRecord)
     val orientation = panel.orientation.map { f =>
       OrientationVM(
         t(OrientationTitle, trialLabel(f.trial)),
@@ -261,7 +273,11 @@ object GeometryPanelVM:
           ChoiceVM(OrientationFix.FlipY, t(FixY), f.fix == OrientationFix.FlipY)
         ),
         Vector(
-          ChoiceVM(OrientationScope.ThisTrial, t(ScopeTrial), f.scope == OrientationScope.ThisTrial),
+          ChoiceVM(
+            OrientationScope.ThisTrial,
+            t(ScopeTrial),
+            f.scope == OrientationScope.ThisTrial
+          ),
           ChoiceVM(
             OrientationScope.ThisParticipant,
             t(ScopeParticipant, f.trial.participant),
@@ -280,7 +296,8 @@ object GeometryPanelVM:
       target = target,
       facts = facts,
       fields = fields,
-      physical = Vector(t(ViewingDistance) -> t(NotRecorded), t(PhysicalWidth) -> t(NotRecorded)),
+      physical =
+        Vector(t(ViewingDistance) -> t(NotRecorded), t(PhysicalWidth) -> t(NotRecorded)),
       physicalNote = t(PhysicalNote),
       example = exampleRows,
       exampleRef = exampleRef,
@@ -303,7 +320,11 @@ object GeometryPanelVM:
       rulesEmpty = Option.when(rules.isEmpty)(t(RulesEmpty)),
       policyTitle = t(PolicyTitle),
       policies = Vector(
-        ChoiceVM(OffScreenChoice.ExcludeRecord, t(PolicyExclude), policy == OffScreenChoice.ExcludeRecord),
+        ChoiceVM(
+          OffScreenChoice.ExcludeRecord,
+          t(PolicyExclude),
+          policy == OffScreenChoice.ExcludeRecord
+        ),
         ChoiceVM(
           OffScreenChoice.QuarantineTrial,
           t(PolicyQuarantine),
@@ -328,24 +349,37 @@ object GeometryPanelVM:
       panel: GeometryPanel,
       spec: Option[DatasetRevisionSpec]
   ): (CountVM, CountVM, String) =
-    val policy = spec.map(_.admission.offScreen).getOrElse(OffScreenChoice.ExcludeRecord)
+    val policy     = spec.map(_.admission.offScreen).getOrElse(OffScreenChoice.ExcludeRecord)
     val screenNote = policy match
       case OffScreenChoice.ExcludeRecord   => t(OutsideScreenExcluded)
       case OffScreenChoice.QuarantineTrial => t(OutsideScreenQuarantined)
     def value(n: Int, of: Int, trials: Int) =
-      t(CountValue, Format.count(n.toLong), Format.count(of.toLong), Format.count(trials.toLong))
+      t(
+        CountValue,
+        Format.count(n.toLong),
+        Format.count(of.toLong),
+        Format.count(trials.toLong)
+      )
     val summary: Option[AdmissionSummary] = panel.counts.toOption
-    val window = CountVM(
+    val window                            = CountVM(
       t(OutsideWindowTitle),
       summary.map { s =>
-        value(s.window.outsideWindow, s.window.sourceRecords.getOrElse(s.window.total), s.window.trialsOutsideWindow)
+        value(
+          s.window.outsideWindow,
+          s.window.sourceRecords.getOrElse(s.window.total),
+          s.window.trialsOutsideWindow
+        )
       },
       t(OutsideWindowNote)
     )
     val screen = CountVM(
       t(OutsideScreenTitle),
       summary.map { s =>
-        value(s.window.outsideScreen, s.window.sourceRecords.getOrElse(s.window.total), s.window.trialsOutsideScreen)
+        value(
+          s.window.outsideScreen,
+          s.window.sourceRecords.getOrElse(s.window.total),
+          s.window.trialsOutsideScreen
+        )
       },
       screenNote
     )
