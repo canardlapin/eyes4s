@@ -185,6 +185,31 @@ class DelimitedSuite extends munit.FunSuite:
     )
   }
 
+  test("physical column order and extra fields preserve samples, markers, and native rows") {
+    val source =
+      "unused-a,LPV,marker,BPOGY,unused-b,timestamp,LPD,BPOGX\n" +
+        "alpha,1,begin,20,zeta,1,3,10\n" +
+        "beta,0,,,middle,2,0,"
+    val imported = Delimited
+      .parse("reordered.csv", source, schema)
+      .validate(frame, clock, Rate.Irregular, Eye.Left)
+
+    assertEquals(imported.acceptedCount, 2)
+    assertEquals(imported.rejectedCount, 0)
+    assert(imported.isLosslessPartition)
+    assertEquals(
+      imported.acceptedRows.head.sample.gaze,
+      Gaze.Tracked(Pt[Unit2D.Px](10, 20), Some(3))
+    )
+    assertEquals(imported.acceptedRows.head.markers, Vector("marker" -> Some("begin")))
+    assertEquals(imported.acceptedRows(1).sample.gaze, Gaze.Lost[Unit2D.Px]())
+    assertEquals(imported.acceptedRows(1).markers, Vector("marker" -> None))
+    assertEquals(
+      imported.acceptedRows(1).nativeFields,
+      Vector("beta", "0", "", "", "middle", "2", "0", "")
+    )
+  }
+
   test("supplied TSV headers and decimal seconds use the declared unit and rounding") {
     val tsvSchema = DelimitedSchema
       .of(

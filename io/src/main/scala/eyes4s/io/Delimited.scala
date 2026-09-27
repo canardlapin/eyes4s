@@ -313,6 +313,15 @@ final class DelimitedImport[U <: Unit2D] private[io] (
 /** Delimited parsing and validation without effects or thrown parse failures. */
 object Delimited:
 
+  private final case class ResolvedColumns(
+      time: Int,
+      x: Int,
+      y: Int,
+      validity: Int,
+      pupil: Option[(PupilColumn, Int)],
+      markers: Vector[(String, Int)]
+  )
+
   def parse[U <: Unit2D](
       source: String,
       contents: String,
@@ -391,10 +400,18 @@ object Delimited:
     if raw.headerDiagnostics.nonEmpty then
       raw.rows.foreach(row => rejected += RejectedDelimitedRow(row, raw.headerDiagnostics))
     else
+      val columns = ResolvedColumns(
+        raw.header.indexOf(raw.schema.time.name),
+        raw.header.indexOf(raw.schema.position.x),
+        raw.header.indexOf(raw.schema.position.y),
+        raw.header.indexOf(raw.schema.validity.name),
+        raw.schema.pupil.map(column => column -> raw.header.indexOf(column.name)),
+        raw.schema.markers.map(column => column -> raw.header.indexOf(column))
+      )
       raw.rows.foreach { row =>
         if row.diagnostics.nonEmpty then rejected += RejectedDelimitedRow(row, row.diagnostics)
         else
-          parseSample(raw, row, frame) match
+          parseSample(raw, row, frame, columns) match
             case Left(errors)    => rejected += RejectedDelimitedRow(row, errors)
             case Right(imported) =>
               previous match
@@ -526,14 +543,15 @@ object Delimited:
   private def parseSample[U <: Unit2D](
       raw: RawRecording[U],
       row: RawDelimitedRow,
-      frame: Frame[U]
+      frame: Frame[U],
+      columns: ResolvedColumns
   ): Either[Vector[DelimitedDiagnostic], ImportedRow[U]] =
     val errors = ArrayBuffer.empty[DelimitedDiagnostic]
 
-    def value(column: String): String = row.fields(raw.header.indexOf(column))
+    def value(index: Int): String = row.fields(index)
 
-    def number(column: String, unit: String): Option[Double] =
-      val native = value(column)
+    def number(column: String, index: Int, unit: String): Option[Double] =
+      val native = value(index)
       if raw.schema.isMissing(column, native) then
         errors += DelimitedDiagnostic.MissingValue(raw.source, row.sourceLine, column)
         None
@@ -550,22 +568,23 @@ object Delimited:
             )
             None
 
-    val timeValue = number(raw.schema.time.name, raw.schema.time.unit.label).flatMap { parsed =>
-      val micros = parsed * raw.schema.time.unit.microsPerUnit
-      if !micros.isFinite || micros < Long.MinValue.toDouble || micros > Long.MaxValue.toDouble
-      then
-        errors += DelimitedDiagnostic.TimestampOutsideRange(
-          raw.source,
-          row.sourceLine,
-          raw.schema.time.name,
-          value(raw.schema.time.name),
-          raw.schema.time.unit
-        )
-        None
-      else Some(Instant.micros(math.round(micros)))
-    }
+    val timeValue =
+      number(raw.schema.time.name, columns.time, raw.schema.time.unit.label).flatMap { parsed =>
+        val micros = parsed * raw.schema.time.unit.microsPerUnit
+        if !micros.isFinite || micros < Long.MinValue.toDouble || micros > Long.MaxValue.toDouble
+        then
+          errors += DelimitedDiagnostic.TimestampOutsideRange(
+            raw.source,
+            row.sourceLine,
+            raw.schema.time.name,
+            value(columns.time),
+            raw.schema.time.unit
+          )
+          None
+        else Some(Instant.micros(math.round(micros)))
+      }
 
-    val validityNative = value(raw.schema.validity.name)
+    val validityNative = value(columns.validity)
     val validity       =
       if raw.schema.isMissing(raw.schema.validity.name, validityNative) then
         Some(NativeValidity.Lost)
@@ -583,15 +602,15 @@ object Delimited:
 
     val position = validity match
       case Some(NativeValidity.Tracked | NativeValidity.OffScreen) =>
-        val x = number(raw.schema.position.x, raw.schema.position.unit.label)
-        val y = number(raw.schema.position.y, raw.schema.position.unit.label)
+        val x = number(raw.schema.position.x, columns.x, raw.schema.position.unit.label)
+        val y = number(raw.schema.position.y, columns.y, raw.schema.position.unit.label)
         (x, y) match
           case (Some(xValue), Some(yValue)) => Some(Pt[U](xValue, yValue))
           case _                            => None
       case _ => None
 
-    val pupil = raw.schema.pupil.flatMap { column =>
-      val native = value(column.name)
+    val pupil = columns.pupil.flatMap { case (column, index) =>
+      val native = value(index)
       if raw.schema.isMissing(column.name, native) then None
       else
         native.trim.toDoubleOption match
@@ -621,8 +640,8 @@ object Delimited:
     else
       (timeValue, gaze) match
         case (Some(time), Some(state)) =>
-          val markerValues = raw.schema.markers.map { column =>
-            val native = value(column)
+          val markerValues = columns.markers.map { case (column, index) =>
+            val native = value(index)
             column -> Option.when(!raw.schema.isMissing(column, native))(native)
           }
           Right(
