@@ -290,7 +290,11 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     assertEquals(runOnFx(v.policies(OffScreenChoice.QuarantineTrial).isSelected), true)
     assertEquals(drawn(v.outsideWindow.value), "543 of 11,520 records · 409 trials")
     assertEquals(drawn(v.outsideScreen.value), "0 of 11,520 records · 0 trials")
-    assert(drawn(v.outsideScreen.note).contains("quarantined"), drawn(v.outsideScreen.note))
+    // The counts are r3's, admitted under ExcludeRecord: the note says so.
+    assert(
+      drawn(v.outsideScreen.note).contains("not a quarantine"),
+      drawn(v.outsideScreen.note)
+    )
     assertEquals(
       drawn(v.countsSource),
       "Counts: eyes4s admission of r3. r4 is pending; its own counts follow its verification."

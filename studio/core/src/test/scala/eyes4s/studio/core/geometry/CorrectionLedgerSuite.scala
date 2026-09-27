@@ -158,6 +158,39 @@ class CorrectionLedgerSuite extends munit.FunSuite:
     assertEquals(placed(3).source.trial, p05enc01)
   }
 
+  test("placement is of the corrected position: a correction moves a record across frames") {
+    val intoWindow = right(Offset.of(400.0, 100.0))
+    val offScreen  = right(Offset.of(1300.0, 0.0))
+    val ledger     = get(
+      CorrectionLedger.of(
+        withRules(
+          rule(CorrectionTarget.Trial(p05ret04), CoordinateCorrection.Translate(intoWindow)),
+          rule(CorrectionTarget.Trial(p05enc01), CoordinateCorrection.Translate(offScreen))
+        )
+      )
+    )
+    // Record 1 (260, 120) is on the screen, outside the image frame; corrected to
+    // (660, 220) it is inside, at (212, 64) in the frame.
+    val in = get(ledger.place(positions.position(1).get))
+    assertEquals(in.corrected, Pt[Unit2D.Px](660.0, 220.0))
+    assertEquals(in.placement, Placement.Inside(Pt[Unit2D.Px](212.0, 64.0)))
+    // Record 4 (700, 420) is inside; corrected to (2000, 420) it is off the screen.
+    val out = get(ledger.place(positions.position(4).get))
+    assertEquals(out.corrected, Pt[Unit2D.Px](2000.0, 420.0))
+    assertEquals(out.placement, Placement.OutsideScreen)
+    // The worked example follows the corrected position too.
+    val example = get(WorkedExample.of(ledger, positions.position(1).get))
+    assertEquals(example.image, Pt[Unit2D.Px](212.0, 64.0))
+    // Uncorrected, both records sit where the source puts them.
+    val plain = get(CorrectionLedger.of(spec))
+    assertEquals(
+      Vector(1, 4).map(r =>
+        get(plain.place(positions.position(r).get)).placement.productPrefix
+      ),
+      Vector("OutsideWindow", "Inside")
+    )
+  }
+
   test("two rules covering one trial: eyes4s's conflict, naming the trial and both rules") {
     val all    = rule(CorrectionTarget.AllTrials, CoordinateCorrection.FlipY)
     val ledger = get(CorrectionLedger.of(withRules(flipTrial, all)))

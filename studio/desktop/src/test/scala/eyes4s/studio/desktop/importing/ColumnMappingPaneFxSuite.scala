@@ -474,7 +474,8 @@ class ColumnMappingPaneFxSuite extends ShellFxSuite:
           r3spec.mapping,
           r3spec.units,
           r3spec.geometry,
-          r3spec.attributes
+          r3spec.attributes,
+          None
         )
         val model = AppModel.update(start, Intent.Dispatch(command))._1
         assert(model.document.dataset(r4).isDefined, "r4 was not created")

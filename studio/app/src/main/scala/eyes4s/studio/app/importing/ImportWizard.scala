@@ -465,7 +465,9 @@ object ImportWizard:
                   resolved.mapping,
                   resolved.units,
                   geometry,
-                  resolved.attributes
+                  resolved.attributes,
+                  // The parent's admission choice, or the default for a first import.
+                  None
                 )
               )
             )
@@ -509,7 +511,9 @@ object ImportWizard:
                 resolved.mapping,
                 resolved.units,
                 geometry,
-                resolved.attributes
+                resolved.attributes,
+                // The re-mapped revision keeps its admission choice.
+                None
               )
             )
           )

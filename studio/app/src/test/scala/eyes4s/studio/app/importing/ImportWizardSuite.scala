@@ -416,7 +416,8 @@ class ImportWizardSuite extends munit.FunSuite:
               r3.mapping,
               DeclaredUnits(Some(TimeUnit.Seconds)),
               r3.geometry,
-              DeclaredAttributes.empty
+              DeclaredAttributes.empty,
+              None
             )
           )
         )

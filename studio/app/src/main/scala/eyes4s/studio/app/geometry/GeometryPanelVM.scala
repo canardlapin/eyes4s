@@ -293,7 +293,7 @@ object GeometryPanelVM:
         t(Cancel)
       )
     }
-    val (window, screen, from) = counts(panel, spec)
+    val (window, screen, from) = counts(panel, model, spec)
     GeometryPanelVM(
       title = t(Title),
       kind = ChangeKind.DatasetReadmit.label,
@@ -352,9 +352,14 @@ object GeometryPanelVM:
     */
   private def counts(
       panel: GeometryPanel,
+      model: AppModel,
       spec: Option[DatasetRevisionSpec]
   ): (CountVM, CountVM, String) =
-    val policy     = spec.map(_.admission.offScreen).getOrElse(OffScreenChoice.ExcludeRecord)
+    val summary: Option[AdmissionSummary] = panel.counts.toOption
+    // The note describes the counts shown, so it takes the policy of the
+    // revision they were admitted under (a draft's parent, until the draft's own).
+    val counted    = summary.flatMap(s => model.document.dataset(s.dataset)).orElse(spec)
+    val policy     = counted.map(_.admission.offScreen).getOrElse(OffScreenChoice.ExcludeRecord)
     val screenNote = policy match
       case OffScreenChoice.ExcludeRecord   => t(OutsideScreenExcluded)
       case OffScreenChoice.QuarantineTrial => t(OutsideScreenQuarantined)
@@ -365,8 +370,7 @@ object GeometryPanelVM:
         Format.count(of.toLong),
         Format.count(trials.toLong)
       )
-    val summary: Option[AdmissionSummary] = panel.counts.toOption
-    val window                            = CountVM(
+    val window = CountVM(
       t(OutsideWindowTitle),
       summary.map { s =>
         value(

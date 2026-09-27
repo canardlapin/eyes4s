@@ -58,7 +58,8 @@ object CommandSamples:
       pending.mapping,
       pending.units,
       pending.geometry,
-      DeclaredAttributes.empty
+      DeclaredAttributes.empty,
+      None
     ),
     "ImportSources.attributes" -> ImportSources(
       Some(r2),
@@ -66,7 +67,8 @@ object CommandSamples:
       pending.mapping,
       pending.units,
       pending.geometry,
-      pupil
+      pupil,
+      None
     ),
     "ImportSources.admission" -> ImportSources(
       Some(r3),

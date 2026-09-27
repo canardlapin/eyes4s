@@ -66,7 +66,7 @@ enum Command derives CanEqual, Codec.AsObject:
       units: DeclaredUnits,
       geometry: Geometry,
       attributes: DeclaredAttributes,
-      admission: Option[AdmissionChoice] = None
+      admission: Option[AdmissionChoice]
   )
 
   /** Revise a pending revision's column mapping, declared units, geometry

@@ -80,7 +80,8 @@ class LegacyPhaseSuite extends munit.FunSuite:
       legacyMapping,
       r3.units,
       r3.geometry,
-      r3.attributes
+      r3.attributes,
+      None
     )
     val line: JournalLine = JournalLine.Entry(4, JournalEntry.Apply(command))
     assertEquals(decode[JournalLine](line.asJson.noSpaces), Right(line))

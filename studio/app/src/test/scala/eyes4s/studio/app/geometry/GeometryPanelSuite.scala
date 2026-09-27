@@ -229,6 +229,10 @@ class GeometryPanelSuite extends munit.FunSuite:
       vm.countsSource,
       "Counts: eyes4s admission of r3. r4 is pending; its own counts follow its verification."
     )
+    // The outside-screen note describes r3's counts, admitted under ExcludeRecord,
+    // not the draft's QuarantineTrial.
+    assert(vm.outsideScreen.note.contains("not a quarantine"), vm.outsideScreen.note)
+    assert(vm.policyNote.contains("quarantin"), vm.policyNote)
     // The parent's counts trace to the parent, not to the draft.
     assertEquals(
       vm.outsideWindow.ref,

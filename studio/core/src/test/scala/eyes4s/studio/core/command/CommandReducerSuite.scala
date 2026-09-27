@@ -276,7 +276,8 @@ class CommandReducerSuite extends munit.FunSuite:
           parent.mapping,
           parent.units,
           parent.geometry,
-          DeclaredAttributes.empty
+          DeclaredAttributes.empty,
+          None
         )
       )
       .toOption
