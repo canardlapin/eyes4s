@@ -138,3 +138,77 @@ class InventoryRowDecisionSuite extends munit.FunSuite:
       )
     )
   }
+
+  test(
+    "each shared conflict field compares parsed values, including numeric spelling and blankness"
+  ) {
+    import TrialInventory.ConflictField.*
+    val base   = Vector("p", "f", "t", "1", "item", "", "1", "0.0")
+    val first  = get(TrialInventory.parseRow(header, base, 2, columns))
+    val fields =
+      Vector(Occurrence, Item, Attribute("text"), Attribute("count"), Attribute("value"))
+    val changes = Vector(3 -> "2", 4 -> "other", 5 -> "text", 6 -> "2", 7 -> "1")
+    changes.zipWithIndex.foreach { case ((column, value), changed) =>
+      val other = get(TrialInventory.parseRow(header, base.updated(column, value), 3, columns))
+      fields.zipWithIndex.foreach { (field, index) =>
+        assertEquals(TrialInventory.conflicts(first, other, field), index == changed)
+        assertEquals(TrialInventory.conflicts(other, first, field), index == changed)
+      }
+    }
+    val equivalent = get(
+      TrialInventory.parseRow(
+        header,
+        base.updated(3, "01").updated(6, "+01").updated(7, "-0.0"),
+        3,
+        columns
+      )
+    )
+    fields.foreach(field => assert(!TrialInventory.conflicts(first, equivalent, field)))
+    val blank =
+      get(TrialInventory.parseRow(header, base.updated(6, "").updated(7, ""), 3, columns))
+    assert(TrialInventory.conflicts(first, blank, Attribute("count")))
+    assert(TrialInventory.conflicts(first, blank, Attribute("value")))
+  }
+
+  test(
+    "field decisions preserve the previous distinct-value group rule and declaration order"
+  ) {
+    val base         = Vector("p", "f", "t", "1", "item", "", "1", "0.0")
+    val alternatives = Vector(
+      base,
+      base.updated(3, "01").updated(6, "+1").updated(7, "-0.0"),
+      base.updated(3, "2"),
+      base.updated(4, "other"),
+      base.updated(5, "text"),
+      base.updated(6, "2"),
+      base.updated(7, "1"),
+      base.updated(6, "").updated(7, "")
+    )
+    for a <- alternatives; b <- alternatives; c <- alternatives do
+      val raws = Vector(a, b, c)
+      val rows = raws.zipWithIndex.map((raw, i) =>
+        get(TrialInventory.parseRow(header, raw, i + 2, columns))
+      )
+      // This is the pre-extraction algorithm: compare distinct parsed values
+      // across the group, independently of the shared pairwise predicate.
+      val expected = columns.trial.occurrence.filter(_ =>
+        rows.map(_.identity.occurrence.value).distinct.size > 1
+      ) ++
+        columns.item.filter(_ => rows.map(_.item).distinct.size > 1) ++
+        columns.attributes
+          .map(_.name)
+          .filter(name => rows.map(_.attributes.get(name)).distinct.size > 1)
+      val actual = TrialInventory.read(text(raws), columns)
+      if expected.isEmpty then assertEquals(get(actual).trials.head.records, Vector(2, 3, 4))
+      else
+        assertEquals(
+          actual,
+          Left(
+            FixationImportError.Inventory(
+              NonEmptyVector.one(
+                InventoryError.Conflict("p", "f", "t", Vector(2, 3, 4), expected.toVector)
+              )
+            )
+          )
+        )
+  }
