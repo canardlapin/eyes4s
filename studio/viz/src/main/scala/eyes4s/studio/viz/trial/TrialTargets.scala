@@ -16,8 +16,9 @@
 
 package eyes4s.studio.viz.trial
 
+import eyes4s.studio.app.plot.RovingMove
 import eyes4s.studio.core.selection.StudioRef
-import eyes4s.studio.viz.plot.{DataPoint, SceneId}
+import eyes4s.studio.viz.plot.{DataPoint, RovingCursor, RovingTarget, RovingTargets, SceneId}
 import intaglio.interaction.NamedPickingPlan
 import intaglio.{DevicePoint, DeviceScene, GraphicsName, IntaglioError, ResolvedViewportFrame}
 
@@ -53,19 +54,10 @@ enum TrialTargetError derives CanEqual:
   * (device pixels) and its radius in device pixels.
   */
 final case class MarkTarget(mark: TrialMark, anchor: DevicePoint, radiusDevicePx: Double)
-    derives CanEqual:
+    extends RovingTarget[StudioRef.Fixation] derives CanEqual:
   def ref: StudioRef.Fixation = mark.ref
-
-/** How the roving cursor moves (DESIGN_SPEC section 10). */
-enum RovingMove derives CanEqual:
-  /** To the nearest mark strictly on that side (device axes, y down). */
-  case Left, Right, Up, Down
-
-  /** To the first or last mark in fixation order. */
-  case First, Last
-
-  /** To the next or previous mark in fixation order: every mark is reachable. */
-  case Next, Previous
+  def reachPx: Double         = mark.reachPx
+  def order: Int              = mark.order
 
 /** The interaction targets of one trial scene on one surface (ticket S4.2).
   *
@@ -83,7 +75,7 @@ final class TrialTargets private (
     picking: NamedPickingPlan,
     val targets: Vector[MarkTarget],
     val deviceScale: Double
-):
+) extends RovingTargets[StudioRef.Fixation, TrialTargetError]:
   private val byName: Map[GraphicsName, MarkTarget] = targets.map(t => t.mark.name -> t).toMap
   private val byRef: Map[StudioRef, MarkTarget]     = targets.map(t => t.ref -> t).toMap
 
@@ -116,9 +108,7 @@ final class TrialTargets private (
 
   // The last-drawn mark whose painted reach covers `point` (see `pick`).
   private def inside(point: DevicePoint): Option[MarkTarget] =
-    targets.reverseIterator.find { t =>
-      math.hypot(t.anchor.x - point.x, t.anchor.y - point.y) <= t.mark.reachPx * deviceScale
-    }
+    RovingCursor.inside(targets, point, deviceScale)
 
   /** The screen position (data coordinates) drawn at `point`: the inverse of
     * the panel frame the marks were drawn through.
@@ -140,49 +130,12 @@ final class TrialTargets private (
     * visit every mark in fixation order.
     */
   def step(from: Option[StudioRef], move: RovingMove): Option[MarkTarget] =
-    from.flatMap(byRef.get) match
-      case None =>
-        move match
-          case RovingMove.Last => targets.lastOption
-          case _               => targets.headOption
-      case Some(current) =>
-        val i = current.mark.order
-        move match
-          case RovingMove.First    => targets.headOption.filter(_.mark.order != i)
-          case RovingMove.Last     => targets.lastOption.filter(_.mark.order != i)
-          case RovingMove.Next     => targets.lift(i + 1)
-          case RovingMove.Previous => if i > 0 then targets.lift(i - 1) else None
-          case direction           => directional(current, direction)
-
-  private def directional(current: MarkTarget, move: RovingMove): Option[MarkTarget] =
-    val a                         = current.anchor
-    val i                         = current.mark.order
-    val forward                   = move == RovingMove.Right || move == RovingMove.Down
-    def coincident(t: MarkTarget) =
-      math.abs(t.anchor.x - a.x) <= TrialTargets.Epsilon &&
-        math.abs(t.anchor.y - a.y) <= TrialTargets.Epsilon
-    val stacked = targets.filter(t => t.mark.order != i && coincident(t))
-    val inStack =
-      if forward then stacked.find(_.mark.order > i)
-      else stacked.reverseIterator.find(_.mark.order < i)
-    inStack.orElse {
-      def onSide(t: MarkTarget): Boolean =
-        val dx = t.anchor.x - a.x
-        val dy = t.anchor.y - a.y
-        move match
-          case RovingMove.Right => dx > TrialTargets.Epsilon
-          case RovingMove.Left  => dx < -TrialTargets.Epsilon
-          case RovingMove.Down  => dy > TrialTargets.Epsilon
-          case _                => dy < -TrialTargets.Epsilon
-      targets.iterator
-        .filter(onSide)
-        .minByOption(t => (math.hypot(t.anchor.x - a.x, t.anchor.y - a.y), t.mark.order))
-    }
+    RovingCursor.step(targets, from.flatMap(byRef.get), move)
 
 object TrialTargets:
 
   /** Device positions this close (in device pixels) are one position. */
-  val Epsilon: Double = 1e-6
+  val Epsilon: Double = RovingCursor.Epsilon
 
   /** The targets of `scene`, drawn as `device` at `deviceScale`, with the
     * named picking plan compiled from the same scene and render context.
