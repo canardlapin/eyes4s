@@ -64,7 +64,16 @@ object Reducer:
       rule: MappingRule = MappingRule.Commit
   ): Either[CommandError, Outcome] = c match
     // --- Dataset · re-admit --------------------------------------------------
-    case ImportSources(parent, sources, mapping, units, geometry, attributes, admission, inventory) =>
+    case ImportSources(
+          parent,
+          sources,
+          mapping,
+          units,
+          geometry,
+          attributes,
+          admission,
+          inventory
+        ) =>
       val id = DatasetRevision(d.datasets.lastOption.fold(1)(_.id.number + 1))
       for
         _    <- admissible(rule, d, c, mapping)

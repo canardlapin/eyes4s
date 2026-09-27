@@ -296,13 +296,15 @@ class GeometryPanelSuite extends munit.FunSuite:
     assertEquals(edited.document.dataset(r3).map(_.geometry.image.top), Some(150))
     assertEquals(edited.document.dataset(r3).flatMap(_.inventory), pending.inventory)
     // Admitted r3: the policy change re-admits as r4, which keeps r3's mapping.
-    val admitted  = t2.document.dataset(r3).get
-    val (p2, _)   = synced(t2)
-    val readmit   = GeometryPanel.update(
-      p2,
-      t2,
-      GeometryIntent.ChooseOffScreen(OffScreenChoice.QuarantineTrial)
-    )._2
+    val admitted = t2.document.dataset(r3).get
+    val (p2, _)  = synced(t2)
+    val readmit  = GeometryPanel
+      .update(
+        p2,
+        t2,
+        GeometryIntent.ChooseOffScreen(OffScreenChoice.QuarantineTrial)
+      )
+      ._2
     val readmitted = perform(t2, readmit)
     val r4spec     = readmitted.document.dataset(r4).get
     assertEquals(r4spec.admission.offScreen, OffScreenChoice.QuarantineTrial)

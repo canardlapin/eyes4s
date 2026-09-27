@@ -401,7 +401,14 @@ object GeometryPanel:
           // S5.2's one command for the four import fields: one undo.
           case GeometryChange.SetGeometry(g) =>
             Vector(
-              Command.ReviseDataset(id, spec.mapping, spec.units, g, spec.attributes, spec.inventory)
+              Command.ReviseDataset(
+                id,
+                spec.mapping,
+                spec.units,
+                g,
+                spec.attributes,
+                spec.inventory
+              )
             )
           case GeometryChange.SetOffScreen(p) => Vector(Command.SetOffScreenPolicy(id, p))
           case GeometryChange.AddRule(r)    => Vector(Command.AddCorrection(id, rules.size, r))
