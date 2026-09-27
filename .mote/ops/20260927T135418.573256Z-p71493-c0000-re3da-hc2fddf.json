@@ -1,0 +1,1 @@
+{"actor":"codex-ready-batch","entity":"bd-01M3FMSXGEGG0BMXPWRT1168MA","kind":"reserve_open","mode":"exclusive","op":"20260927T135418.573256Z-p71493-c0000-re3da-hc2fddf","paths":["studio/core/src/main/scala/eyes4s/studio/core/execution/ExecutionJob.scala"],"reservation_id":"rv-01M3HJAAAD5971CVB813NRCQRW","ts":"2026-09-27T13:54:18.573256Z","ttl_s":3600,"v":2}

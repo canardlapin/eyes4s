@@ -943,5 +943,7 @@ object DiagnosticSamples:
           .BeyondTotal(StageKind.Comparing, CountUnit.Pairs, 4L, SegmentTotal.Exact(3L))
       ),
       StudyRunError.UnexpectedCompletion(StudyDesign.Control, 42L)
-    )
+    ),
+    generated[StudyRecipeError]("StudyRecipeError"),
+    generated[StudyAdvisory]("StudyAdvisory")
   )

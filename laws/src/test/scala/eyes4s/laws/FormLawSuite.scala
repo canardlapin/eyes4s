@@ -56,6 +56,28 @@ import org.scalacheck.{Gen, Test}
   * | legacy projection reads Closed(0) duration as positive | LegacyDescriptorSuite pins                   |
   * | UnitLabel[Deg] reports Px                              | PlanarUnitSuite, MethodDescriptorSuite       |
   * }}}
+  *
+  * CR6b's form and text mutants (the study, temporal and recording forms,
+  * advisories, methods text and labels), each applied and reverted:
+  *
+  * {{{
+  * | source mutant                                     | killed by                                   |
+  * |---------------------------------------------------|---------------------------------------------|
+  * | sigma-in-cells threshold 2 -> 1                   | StudyFormSuite advisories                   |
+  * | near-uniform advisory never raised                | StudyFormSuite advisories                   |
+  * | MissingAngularScale keyed to Scales               | StudyFormSuite whole-recipe checks          |
+  * | off-window policy without a window accepted       | StudyFormSuite whole-recipe checks          |
+  * | control token tagged Match in the sentence        | StudyFormSuite sentence roles               |
+  * | recording area writes its label as its id         | recording form rebuild, EventRecording form |
+  * | temporal window writes its start as its end       | temporal form fields, TemporalStudy form    |
+  * | study values drop the units per degree            | StudyFormSuite fixture round trip           |
+  * | study window writes yMin as xMin                  | study form fields and rebuild               |
+  * | Weight label is its token                         | StudyFormSuite labels                       |
+  * | host projection drops the recipe-parameter cause  | StudyFormSuite erased error                 |
+  * | unmatched-focal refusals point to no form field   | study form: refusal keys point into it      |
+  * | a window without a declared frame gets invented   | StudyFormKeysSuite undeclared window frame  |
+  * | FormValues keeps Absent entries                   | StudyFormSuite fixture round trip           |
+  * }}}
   */
 class FormLawSuite extends munit.DisciplineSuite:
   import PlanCodecLawSuite.*
@@ -114,6 +136,44 @@ class FormLawSuite extends munit.DisciplineSuite:
         recordingPlans(ek.method, ekParameters).map(_.inspect)
       )
     )
+  )
+
+  checkAll(
+    "study form",
+    FormLaws.studyForm(Gen.oneOf(cosinePlans, configuredPlans, initialFixationPlans))
+  )
+  checkAll("trial-keyed study form", FormLaws.studyForm(trialPlans))
+  checkAll(
+    "study form fields",
+    FormLaws.form(
+      "studyFormFields",
+      Gen.oneOf(cosinePlans, configuredPlans, initialFixationPlans)
+    ) { plan =>
+      val f = new StudyForm(StudyFormContext.of(plan))
+      (f.fields.map(_._2), f.values(plan))
+    }
+  )
+  checkAll("temporal form", FormLaws.temporalForm(temporalPlans))
+  checkAll(
+    "recording form",
+    FormLaws.recordingForm(recordingPlans(ivt.method, ivtParameters))
+  )
+  checkAll(
+    "temporal form fields",
+    FormLaws.form("temporalFormFields", temporalPlans) { plan =>
+      val f = new TemporalForm
+      (f.fields, f.values(plan))
+    }
+  )
+  checkAll(
+    "recording form fields",
+    FormLaws.form(
+      "recordingFormFields",
+      Gen.oneOf(
+        recordingPlans(ivt.method, ivtParameters).map(p => new RecordingForm().values(p)),
+        recordingPlans(ek.method, ekParameters).map(p => new RecordingForm().values(p))
+      )
+    )(values => (new RecordingForm().fields, values))
   )
 
   /** Mutant checks run from a fixed seed, so every kill is reproducible. */

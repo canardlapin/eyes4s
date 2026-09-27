@@ -38,6 +38,9 @@ import scala.deriving.Mirror
   * one witness per family:
   *
   *   - inspect explains every field of the plan's description;
+  *   - its form is complete: every form field parses the fixture's raw value
+  *     and writes it back unchanged, every view is well formed, and the
+  *     form's values rebuild the fixture plan's description;
   *   - preflight reports the family's own `RecipeFamily`, is ready on the
   *     fixture and blocked without its input, and every diagnostic it projects
   *     (causes included) carries a catalogued code;
@@ -161,6 +164,10 @@ class FamilyConformanceSuite extends munit.FunSuite:
       w.inspect()
     }
 
+    test(s"$name: its form is complete") {
+      w.formComplete()
+    }
+
     test(s"$name: preflight names its family and projects catalogued diagnostics") {
       w.preflight()
     }
@@ -240,6 +247,9 @@ abstract class FamilyWitness[F](val family: F & RecipeFamily):
   /** The result's tables, each with the row count and differences the result implies. */
   def tables(result: Result): Either[Gap, Either[ResultExportError, Vector[Tabulated]]]
 
+  /** The family's form on the fixture plan. */
+  def form: FormEvidence
+
   final def gaps: Vector[Gap] =
     run.toOption.toVector.flatMap(r => tables(r).left.toOption)
 
@@ -252,6 +262,42 @@ abstract class FamilyWitness[F](val family: F & RecipeFamily):
     val inspected = get(inspection)
     check(inspected.description == description, inspected.description)
     check(inspected.fields.forall(_.info.meaning.nonEmpty), "a field has no meaning")
+
+  /** Every field of the family's form parses the fixture's raw value on its
+    * own and writes it back unchanged, every view (parts included) is well
+    * formed, the fixture has no value the form lacks a field for, and a form
+    * that builds a whole plan rebuilds the fixture's description.
+    */
+  final def formComplete(): Unit =
+    val FormEvidence(fields, values, rebuilt, covers, context) = form
+    check(fields.nonEmpty, "the form has no fields")
+    fields.foreach { f =>
+      val raw = values.get(f.view.id)
+      check(f.restore(raw) == Right(raw), s"${f.view.id}: ${f.restore(raw)}")
+    }
+    def parts(v: FieldView): Vector[FieldView] = v +: (v.kind match
+      case FieldKind.Group(ps, _)       => ps.flatMap(parts)
+      case FieldKind.Variant(cases)     => cases.flatMap(_.parts).flatMap(parts)
+      case FieldKind.Optional(of, _)    => parts(of)
+      case FieldKind.Repeated(of, _, _) => parts(of)
+      case _                            => Vector.empty)
+    fields.flatMap(f => parts(f.view)).foreach { v =>
+      check(FieldView.of(v.id, v.version, v.meaning, v.kind, v.default) == Right(v), v.id)
+    }
+    val ids = fields.map(_.view.id).toSet
+    check(ids.size == fields.size, s"repeated form field ids ${fields.map(_.view.id)}")
+    check(values.values.keySet.subsetOf(ids), values.values.keySet -- ids)
+    rebuilt.foreach(r => check(r == Right(description), r))
+    // Every described field is edited by a form field or taken from the
+    // context, so a description field without a form field fails here.
+    val uncovered = description
+      .map(d => generalised(d._1))
+      .filterNot(k => covers.contains(k) || context.contains(k))
+    check(uncovered.isEmpty, s"described fields no form field edits: $uncovered")
+    check(
+      covers.values.forall(ids.map(_.value).contains),
+      covers.values.toSet -- ids.map(_.value)
+    )
 
   final def preflight(): Unit =
     Vector(ready, unavailable).foreach(r => check(r.family == family, r.family))
@@ -346,7 +392,26 @@ abstract class FamilyWitness[F](val family: F & RecipeFamily):
 object FamilyWitness:
   /** An obligation of the definition of done. */
   enum Obligation derives CanEqual:
-    case Inspect, Preflight, Stepwise, Execution, Archive, Table
+    case Inspect, Preflight, Stepwise, Execution, Archive, Table, Form
+
+  /** A family's form on the fixture plan: its fields, the raw values the plan
+    * projects to, and, for a family whose form builds a whole plan, the
+    * description those values rebuild.
+    */
+  final case class FormEvidence(
+      fields: Vector[FormField[?, ?]],
+      values: FormValues,
+      rebuilt: Option[Either[String, Vector[(String, Vector[Provenance.Param])]]],
+      covers: Map[String, String],
+      context: Set[String]
+  )
+
+  /** A description key with its index or a method parameter's name
+    * generalised: `scale.3` is `scale.i`, `method.sigma` is `method.*`.
+    */
+  def generalised(key: String): String =
+    val indexed = key.replaceAll("\\.[0-9]+$", ".i")
+    Vector("method.", "detector.").find(indexed.startsWith).fold(indexed)(_ + "*")
 
   /** A projected table with what the result says it must hold: its row
     * count and, for a contrast table, the finite differences of the
@@ -547,6 +612,27 @@ object FamilyWitnesses:
 
   // ------------------------------------------------------------------ witnesses
 
+  /** Study description keys and the form field that edits each. */
+  private val studyCovers: Map[String, String] = Map(
+    "phases"           -> "phases",
+    "weight"           -> "weight",
+    "failurePolicy"    -> "failurePolicy",
+    "grid"             -> "grid",
+    "window"           -> "window",
+    "offWindow"        -> "offWindow",
+    "angularScale"     -> "angularScale",
+    "scale.i"          -> "scales",
+    "estimate.i"       -> "scales",
+    "pairing"          -> "pairing",
+    "initialFixations" -> "initialFixations"
+  )
+
+  /** Study description keys the form takes from its context: the input,
+    * layout, method (and its parameters) and the admission frame.
+    */
+  private val studyContext: Set[String] =
+    Set("input", "layout", "method", "method.*", "frame", "admission")
+
   given study: FamilyWitness[RecipeFamily.FixationStudy.type] =
     new FamilyWitness[RecipeFamily.FixationStudy.type](RecipeFamily.FixationStudy):
       type Id      = eyes4s.fs2.StudyRunId
@@ -586,6 +672,30 @@ object FamilyWitnesses:
               val (rows, differences) = contrastRows(result)
               Vector(Tabulated(table, rows, Some(differences)))
             }
+        )
+      def form =
+        val f      = new StudyForm(StudyFormContext.of(studyPlan))
+        val values = f.values(studyPlan)
+        FormEvidence(
+          f.fields.map(_._2),
+          values,
+          Some(
+            f.parse(values)
+              .left
+              .map(_.toVector.map(_.message).mkString("; "))
+              .flatMap(
+                _.plan(
+                  studyPlan.input,
+                  studyPlan.layout,
+                  studyPlan.method,
+                  studyPlan.parameters
+                ).left
+                  .map(_.message)
+              )
+              .map(_.description)
+          ),
+          studyCovers,
+          studyContext
         )
 
   given recording: FamilyWitness[RecipeFamily.EventRecording.type] =
@@ -627,6 +737,33 @@ object FamilyWitnesses:
             "a recording analysis has no ResultTable projection: ResultExports tabulates " +
               "study and temporal contrasts only, and eyes4s-results has no event table family"
           )
+        )
+      def form =
+        val f        = new RecordingForm
+        val detector = recordingPlan.method.descriptor.toVector.flatMap(_.parameters.fields)
+        FormEvidence(
+          f.fields ++ detector.flatMap(_.descriptor.form),
+          FormValues.from(
+            f.values(recordingPlan).values ++ recordingPlan.method.descriptor
+              .fold(FormValues.empty)(_.parameters.formValues(recordingPlan.parameters))
+              .values
+          ),
+          Some(
+            f.parse(f.values(recordingPlan))
+              .left
+              .map(_.toVector.map(_.message).mkString("; "))
+              .flatMap(_.plan(recordingPlan).left.map(_.message))
+              .map(_.description)
+          ),
+          Map(
+            "viewing"                -> "viewing",
+            "syncModel"              -> "syncModel",
+            "residualLimitMicros"    -> "residualLimitMicros",
+            "interpolationGapMicros" -> "interpolationGapMicros",
+            "sync.i"                 -> "marks",
+            "area.i"                 -> "areas"
+          ) ++ detector.headOption.map(f => "detector.*" -> f.view.id.value),
+          Set("input", "source", "frame", "clocks", "angularFrame", "detector")
         )
 
   given temporal: FamilyWitness[RecipeFamily.TemporalStudy.type] =
@@ -673,4 +810,27 @@ object FamilyWitnesses:
                 case t => Tabulated(t, coverage, None)
               }
           }
+        )
+      def form =
+        val base = new StudyForm(StudyFormContext.of(temporalPlan.base))
+        val own  = new TemporalForm
+        FormEvidence(
+          base.fields.map(_._2) ++ own.fields,
+          FormValues.from(
+            base.values(temporalPlan.base).values ++ own.values(temporalPlan).values
+          ),
+          Some(
+            own
+              .parse(own.values(temporalPlan))
+              .left
+              .map(_.toVector.map(_.message).mkString("; "))
+              .flatMap(_.plan(temporalPlan.base, temporalPlan.input).left.map(_.message))
+              .map(_.description)
+          ),
+          studyCovers ++ Map(
+            "temporal.boundary" -> "temporal.boundary",
+            "window.i"          -> "windows",
+            "repetition.i"      -> "repetitions"
+          ),
+          studyContext ++ Set("temporal.input", "temporal.scope")
         )

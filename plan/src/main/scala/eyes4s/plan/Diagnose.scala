@@ -162,6 +162,31 @@ object Diagnose:
   given formField[E, K](using underlying: Diagnose[E, K]): Diagnose[FieldError[E], K] =
     instance(C.formField)(e => CauseDiagnostics.formField(e)(underlying(_)))
 
+  /** A form field's refusal as a host holds it from `ParameterSet.validate`,
+    * with its domain error type erased. Not a `given`, so it never competes
+    * with [[formField]] for a statically typed error.
+    */
+  val reportedFormField: Diagnose[FieldError[Any], Nothing] =
+    instance(C.formField)(CauseDiagnostics.formFieldReported)
+
+  given studyRecipe: Diagnose[StudyRecipeError, Nothing] =
+    derived(
+      C.studyRecipe,
+      (e: StudyRecipeError) =>
+        Vector(Locus.Field(StudyForm.formField(e.field).fold(e.field.toString)(_.value)))
+    )(_.message)
+  given studyAdvisory: Diagnose[StudyAdvisory, Nothing] =
+    derived(
+      C.studyAdvisory,
+      (a: StudyAdvisory) =>
+        Vector(
+          Locus.Field(StudyForm.ids.scales.value),
+          Locus.Scale(a match
+            case StudyAdvisory.SigmaBelowCells(i, _, _)  => i
+            case StudyAdvisory.SigmaNearUniform(i, _, _) => i)
+        )
+    )(_.message)
+
   // ---------------------------------------------------------------- derived families
 
   given timeline: Diagnose[TimelineError, Nothing]         = derived(C.timeline)(_.message)
