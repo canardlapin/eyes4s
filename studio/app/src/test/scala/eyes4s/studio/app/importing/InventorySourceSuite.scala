@@ -18,7 +18,7 @@ package eyes4s.studio.app.importing
 
 import cats.effect.IO
 import eyes4s.studio.core.backend.*
-import eyes4s.studio.core.document.{AdmissionDecision, DatasetRevisionSpec, Sources}
+import eyes4s.studio.core.document.{AdmissionDecision, Sources}
 import eyes4s.studio.core.fixture.{FakeStudyBackend, StoryMoment, StoryMoments}
 import munit.CatsEffectSuite
 
