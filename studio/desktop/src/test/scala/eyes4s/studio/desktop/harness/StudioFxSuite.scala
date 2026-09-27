@@ -19,13 +19,17 @@ package eyes4s.studio.desktop.harness
 import java.awt.image.BufferedImage
 import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.{CompletableFuture, CountDownLatch, ExecutionException, TimeUnit}
+import javafx.animation.AnimationTimer
 import javafx.application.Platform
 import javafx.scene.image.{PixelFormat, WritableImage}
 import javafx.scene.layout.StackPane
+import javafx.scene.shape.Rectangle
 import javafx.scene.transform.Transform
 import javafx.scene.{Parent, Scene, SnapshotParameters}
 import javafx.stage.Stage
 import javax.imageio.ImageIO
+import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 /** The size of a test stage's scene, in logical pixels. */
 final case class StageSize(width: Int, height: Int)
@@ -55,6 +59,16 @@ enum SnapshotScale(val factor: Int):
   * CI runs these tests on Linux under `xvfb-run` with the software pipeline, and
   * on macOS as functional tests only: golden comparisons, when added, are
   * Linux-only.
+  *
+  * '''Render failures fail the test.''' JavaFX catches a failure during a pulse
+  * or a render job and only prints it, so a test could pass while its scene
+  * failed to draw. Every test here ends by letting the toolkit finish two
+  * pulses and the render jobs they queued, and fails, with each stack trace, if
+  * [[RenderFailures]] recorded anything on a JavaFX thread during the test. A
+  * failure recorded before the test began fails it too: none may pass
+  * unnoticed. A test that provokes a render failure on purpose carries the
+  * [[StudioFxSuite.RenderFailureExpected]] tag and asserts on
+  * [[takeRenderFailures]] itself.
   */
 abstract class StudioFxSuite extends munit.FunSuite:
 
@@ -74,6 +88,40 @@ abstract class StudioFxSuite extends munit.FunSuite:
 
   /** Runs `body` on the FX application thread and returns its result. */
   protected def runOnFx[A](body: => A): A = StudioFxSuite.runOnFx(body)
+
+  /** Lets queued pulses and render jobs finish, then removes and returns what
+    * JavaFX reported on its threads. For tests tagged
+    * [[StudioFxSuite.RenderFailureExpected]].
+    */
+  protected def takeRenderFailures(): Vector[RenderFailure] =
+    StudioFxSuite.settle()
+    RenderFailures.drain()
+
+  override def munitTestTransforms: List[TestTransform] =
+    super.munitTestTransforms :+ TestTransform(
+      "render failures",
+      test =>
+        val expected = test.tags.contains(StudioFxSuite.RenderFailureExpected)
+        test.withBody { () =>
+          val before = RenderFailures.drain()
+          if before.nonEmpty && !expected then
+            Future.failed(StudioFxSuite.renderFailed(test, before, "before this test began"))
+          else
+            test
+              .body()
+              .transformWith { outcome =>
+                val during = takeRenderFailures()
+                if expected || during.isEmpty then Future.fromTry(outcome)
+                else
+                  val failed = StudioFxSuite.renderFailed(test, during, "during this test")
+                  outcome match
+                    case Success(_) => Future.failed(failed)
+                    case Failure(e) =>
+                      e.addSuppressed(failed)
+                      Future.failed(e)
+              }(using munitExecutionContext)
+        }
+    )
 
   /** Requires the scene to have its full [[stageSize]].
     *
@@ -181,6 +229,46 @@ object FxStage:
 object StudioFxSuite:
   private[harness] val TimeoutSeconds = 30L
 
+  /** Marks a test that provokes a render failure on purpose; it asserts on
+    * `takeRenderFailures()` instead of failing on the capture.
+    */
+  val RenderFailureExpected: munit.Tag = munit.Tag("RenderFailureExpected")
+
+  /** The failure of `test` for render failures recorded `when`. */
+  def renderFailed(
+      test: munit.Test,
+      failures: Vector[RenderFailure],
+      when: String
+  ): munit.FailException =
+    val traces = failures.zipWithIndex
+      .map((f, i) => s"[${i + 1}/${failures.size}] ${f.describe}")
+      .mkString("\n")
+    munit.FailException(
+      s"JavaFX reported ${failures.size} render failure(s) $when; " +
+        s"tag the test RenderFailureExpected if that is intended:\n$traces",
+      failures.head.error,
+      test.location
+    )
+
+  /** Waits for two more pulses, so the first one's paint is queued, then
+    * renders a node synchronously. The render thread runs one job at a time,
+    * so that render finishes after every paint queued before it.
+    */
+  private[harness] def settle(): Unit =
+    val pulses = CountDownLatch(2)
+    val timer  = runOnFx {
+      val timer = new AnimationTimer:
+        def handle(now: Long): Unit = pulses.countDown()
+      timer.start()
+      Platform.requestNextPulse()
+      timer
+    }
+    try
+      if !pulses.await(TimeoutSeconds, TimeUnit.SECONDS) then
+        throw AssertionError(s"no two pulses within $TimeoutSeconds s")
+    finally runOnFx(timer.stop())
+    runOnFx(Rectangle(1.0, 1.0).snapshot(null, null)): Unit
+
   /** Set to `skip` where the display cannot hold a board-size stage. */
   val SmallDisplayVariable = "EYES4S_STUDIO_SMALL_DISPLAY"
 
@@ -189,9 +277,19 @@ object StudioFxSuite:
     Paths.get(sys.props.getOrElse("eyes4s.studio.snapshots", "target/studio-snapshots"))
 
   private lazy val started: Unit =
+    RenderFailures.installStream()
     val ready = CountDownLatch(1)
-    try Platform.startup(() => ready.countDown())
-    catch case _: IllegalStateException => ready.countDown() // already running
+    try
+      Platform.startup { () =>
+        RenderFailures.installOnFxThread()
+        ready.countDown()
+      }
+    catch
+      case _: IllegalStateException => // already running
+        Platform.runLater { () =>
+          RenderFailures.installOnFxThread()
+          ready.countDown()
+        }
     Platform.setImplicitExit(false)
     if !ready.await(TimeoutSeconds, TimeUnit.SECONDS) then
       throw AssertionError(s"JavaFX toolkit did not start within $TimeoutSeconds s")

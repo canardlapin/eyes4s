@@ -187,6 +187,11 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
               (frame.surface.deviceWidth, frame.surface.deviceHeight),
               (math.ceil(size._1 * k).toInt, math.ceil(size._2 * k).toInt)
             )
+            // One texture pixel per device pixel, whatever the screen's scale.
+            assertEquals(
+              runOnFx(host.canvasTexture),
+              (frame.surface.deviceWidth, frame.surface.deviceHeight)
+            )
             val file  = fx.snapshot(studioTheme, List(scale)).head
             val image = ImageIO.read(file.toFile)
             ReferenceScene.marks.filter(_.role != ReferenceRole.Control).foreach { mark =>

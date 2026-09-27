@@ -25,9 +25,10 @@ import javafx.scene.canvas.{Canvas, GraphicsContext}
 import javafx.scene.layout.Region
 import javafx.scene.shape.Rectangle
 import javafx.scene.transform.Scale
-import javafx.stage.Window
+import javafx.stage.{Screen, Window}
 
 import java.util.concurrent.{Executor, ExecutorService, Executors, RejectedExecutionException}
+import scala.jdk.CollectionConverters.*
 import scala.util.control.NonFatal
 
 /** What a [[CanvasPlotHost]] is showing. */
@@ -87,9 +88,16 @@ final case class PlotHostProfile(
   * `compiler`, off the FX thread, and draws the compiled program on a canvas on
   * the FX thread.
   *
-  * '''HiDPI.''' The canvas has one pixel per device pixel: its raster is the
-  * surface's device size, and a `1/scale` transform brings it back to layout
-  * size, so a 2x display gets a 2x raster rather than an upscaled 1x one.
+  * '''HiDPI.''' The canvas texture has one pixel per device pixel: its raster
+  * is the surface's device size, so a 2x display gets a 2x raster rather than
+  * an upscaled 1x one. JavaFX already backs every canvas with a texture
+  * [[CanvasPlotHost.canvasPixelScale]] times its size (the highest output scale
+  * of any screen, rounded up), so the canvas is the device size divided by that
+  * scale, draws the device-pixel program through a matching `1/k` graphics
+  * transform, and a node transform brings it back to layout size. Sizing the
+  * canvas to device pixels instead made the texture k times too large on each
+  * edge on a HiDPI screen, and a 2x screen then exhausted Prism's texture pool
+  * (JavaFX dereferences the null texture: bd-01M3DPFKG2MXDGW7SS92FWXJSW).
   * Device pixels are assumed square: a window whose horizontal and vertical
   * output scales differ is refused with [[CanvasPlotError.AnisotropicScale]].
   * [[setOutputScaleOverride]] replaces the window's scale, for snapshots and
@@ -172,6 +180,8 @@ final class CanvasPlotHost private[plot] (
   private var baseDraws: Long                                       = 0L
   private var overlayDraws: Long                                    = 0L
   private var underDraws: Long                                      = 0L
+  // The texture scale the canvases were last sized for; overlays draw with it.
+  private var pixelScale: Double = 1.0
 
   // The output scale of the window this host is in. The chain observes the
   // current scene's window property and that window's scale only while the
@@ -247,9 +257,7 @@ final class CanvasPlotHost private[plot] (
           frame <- shown
           paint <- painter
         do
-          ugc.save()
-          try paint.paintUnder(ugc, frame)
-          finally ugc.restore()
+          inDevicePixels(ugc)(paint.paintUnder(ugc, frame))
           underDraws += 1
       val gc = overlay.getGraphicsContext2D
       gc.clearRect(0.0, 0.0, overlay.getWidth, overlay.getHeight)
@@ -257,10 +265,15 @@ final class CanvasPlotHost private[plot] (
         frame <- shown
         paint <- painter
       do
-        gc.save()
-        try paint.paint(gc, frame)
-        finally gc.restore()
+        inDevicePixels(gc)(paint.paint(gc, frame))
         overlayDraws += 1
+
+  /** The texture JavaFX backs each of the host's canvases with, in pixels:
+    * the canvas size times [[CanvasPlotHost.canvasPixelScale]].
+    */
+  private[plot] def canvasTexture: (Int, Int) =
+    val k = CanvasPlotHost.canvasPixelScale
+    (math.ceil(canvas.getWidth * k).toInt, math.ceil(canvas.getHeight * k).toInt)
 
   /** How often this host compiled, drew the scene and drew the overlay. */
   def profile: PlotHostProfile = PlotHostProfile(compiles, baseDraws, overlayDraws, underDraws)
@@ -404,28 +417,34 @@ final class CanvasPlotHost private[plot] (
           case _                                  => ()
 
   private def draw(frame: PlotFrame): Unit =
-    val width  = frame.surface.deviceWidth.toDouble
-    val height = frame.surface.deviceHeight.toDouble
-    if canvas.getWidth != width then canvas.setWidth(width)
-    if canvas.getHeight != height then canvas.setHeight(height)
-    toLayout.setX(1.0 / frame.surface.deviceScale)
-    toLayout.setY(1.0 / frame.surface.deviceScale)
-    if overlay.getWidth != width then overlay.setWidth(width)
-    if overlay.getHeight != height then overlay.setHeight(height)
-    overlayToLayout.setX(1.0 / frame.surface.deviceScale)
-    overlayToLayout.setY(1.0 / frame.surface.deviceScale)
-    if under.getWidth != width then under.setWidth(width)
-    if under.getHeight != height then under.setHeight(height)
-    underToLayout.setX(1.0 / frame.surface.deviceScale)
-    underToLayout.setY(1.0 / frame.surface.deviceScale)
+    val k      = CanvasPlotHost.canvasPixelScale
+    val width  = frame.surface.deviceWidth.toDouble / k
+    val height = frame.surface.deviceHeight.toDouble / k
+    val back   = k / frame.surface.deviceScale
+    pixelScale = k
+    List((canvas, toLayout), (overlay, overlayToLayout), (under, underToLayout)).foreach {
+      (c, t) =>
+        if c.getWidth != width then c.setWidth(width)
+        if c.getHeight != height then c.setHeight(height)
+        t.setX(back)
+        t.setY(back)
+    }
     val gc = canvas.getGraphicsContext2D
     // With no transform or clip, clearing the whole canvas also discards its
     // queued commands, so redraws do not accumulate.
     gc.clearRect(0.0, 0.0, width, height)
     val context = drawing.getOrElse(renderer(gc))
     drawing = Some(context)
-    JavaFxRenderer.draw(frame.program, context)
+    inDevicePixels(gc)(JavaFxRenderer.draw(frame.program, context))
     baseDraws += 1
+
+  // Runs `f` with `gc` drawing in device pixels, whatever the texture scale.
+  private def inDevicePixels(gc: GraphicsContext)(f: => Unit): Unit =
+    gc.save()
+    try
+      gc.scale(1.0 / pixelScale, 1.0 / pixelScale)
+      f
+    finally gc.restore()
 
   private def blank(): Unit =
     shown = None
@@ -434,6 +453,18 @@ final class CanvasPlotHost private[plot] (
     under.getGraphicsContext2D.clearRect(0.0, 0.0, under.getWidth, under.getHeight)
 
 object CanvasPlotHost:
+
+  /** How many texture pixels JavaFX gives each unit of a canvas: the highest
+    * recommended output scale of any screen, rounded up, which is how Prism's
+    * `NGCanvas` sizes its textures. It is read when a frame is drawn; a canvas
+    * created before a screen change keeps the scale it was created with, which
+    * then only resamples the frame and does not move its geometry.
+    */
+  def canvasPixelScale: Double =
+    Screen.getScreens.asScala
+      .flatMap(s => List(s.getOutputScaleX, s.getOutputScaleY))
+      .foldLeft(1.0)(math.max)
+      .ceil
 
   /** One daemon thread that compiles scenes for every host, in submission order. */
   lazy val sharedCompiler: ExecutorService =
