@@ -291,6 +291,7 @@ object StudioFxSuite:
     Paths.get(sys.props.getOrElse("eyes4s.studio.snapshots", "target/studio-snapshots"))
 
   private lazy val started: Unit =
+    FxRunLock.hold()
     RenderFailures.installStream()
     val ready = CountDownLatch(1)
     try
