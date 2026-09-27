@@ -193,7 +193,8 @@ class InventoryJoinSuite extends CatsEffectSuite:
             spec.mapping,
             spec.units,
             spec.geometry,
-            spec.attributes
+            spec.attributes,
+            None
           )
         )
         .isRight

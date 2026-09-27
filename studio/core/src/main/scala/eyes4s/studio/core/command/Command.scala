@@ -64,7 +64,7 @@ enum Command derives CanEqual, Codec.AsObject:
       units: DeclaredUnits,
       geometry: Geometry,
       attributes: DeclaredAttributes,
-      inventory: Option[InventoryMapping] = None
+      inventory: Option[InventoryMapping]
   )
 
   /** Revise a pending revision's column mapping, declared units, geometry,
@@ -77,7 +77,7 @@ enum Command derives CanEqual, Codec.AsObject:
       units: DeclaredUnits,
       geometry: Geometry,
       attributes: DeclaredAttributes,
-      inventory: Option[InventoryMapping] = None
+      inventory: Option[InventoryMapping]
   )
 
   /** Put a discarded pending dataset revision back. */

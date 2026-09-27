@@ -81,7 +81,8 @@ class LegacyPhaseSuite extends munit.FunSuite:
       legacyMapping,
       r3.units,
       r3.geometry,
-      r3.attributes
+      r3.attributes,
+      r3.inventory
     )
     val line: JournalLine = JournalLine.Entry(4, JournalEntry.Apply(command))
     assertEquals(decode[JournalLine](line.asJson.noSpaces), Right(line))
@@ -150,7 +151,14 @@ class LegacyPhaseSuite extends munit.FunSuite:
     refusedForPhase(
       Reducer.step(
         loaded,
-        Command.ReviseDataset(r3.id, r3.mapping, otherUnits, r3.geometry, r3.attributes)
+        Command.ReviseDataset(
+          r3.id,
+          r3.mapping,
+          otherUnits,
+          r3.geometry,
+          r3.attributes,
+          r3.inventory
+        )
       )
     )
     val withPhase = ok(
@@ -171,7 +179,15 @@ class LegacyPhaseSuite extends munit.FunSuite:
     val (remapped, _) = ok(Reducer.step(loaded, revise))
     assertEquals(remapped.dataset(r3.id).map(_.mapping), Some(withPhase))
     // The inverse the reducer records restores the stored mapping.
-    val inverse = Command.ReviseDataset(r3.id, r3.mapping, r3.units, r3.geometry, r3.attributes)
+    val inverse =
+      Command.ReviseDataset(
+        r3.id,
+        r3.mapping,
+        r3.units,
+        r3.geometry,
+        r3.attributes,
+        r3.inventory
+      )
     val (undone, _) = ok(Reducer.step(remapped, inverse))
     assertEquals(undone.dataset(r3.id), Some(r3))
   }

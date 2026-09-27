@@ -58,7 +58,8 @@ object CommandSamples:
       pending.mapping,
       pending.units,
       pending.geometry,
-      DeclaredAttributes.empty
+      DeclaredAttributes.empty,
+      None
     ),
     "ImportSources.attributes" -> ImportSources(
       Some(r2),
@@ -66,14 +67,16 @@ object CommandSamples:
       pending.mapping,
       pending.units,
       pending.geometry,
-      pupil
+      pupil,
+      None
     ),
     "ReviseDataset" -> ReviseDataset(
       r3,
       pending.mapping,
       DeclaredUnits(Some(TimeUnit.Seconds)),
       pending.geometry,
-      pupil
+      pupil,
+      None
     ),
     "RestoreDataset"       -> RestoreDataset(pending),
     "DiscardDataset"       -> DiscardDataset(r3),

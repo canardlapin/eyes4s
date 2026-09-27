@@ -74,7 +74,14 @@ class ReviseDatasetSuite extends munit.FunSuite:
     val redone = undone.history.redo.fold(e => fail(e.message), identity)
     assertEquals(redone.history.document.dataset(r3), Some(revised))
     assertEquals(
-      ReviseDataset(r3, remapped, seconds, pending.geometry, attributes).kind,
+      ReviseDataset(
+        r3,
+        remapped,
+        seconds,
+        pending.geometry,
+        attributes,
+        pending.inventory
+      ).kind,
       ChangeKind.DatasetReadmit
     )
   }
@@ -98,7 +105,9 @@ class ReviseDatasetSuite extends munit.FunSuite:
     assert(
       History
         .start(t2)
-        .apply(ReviseDataset(r3, remapped, seconds, r3spec.geometry, attributes))
+        .apply(
+          ReviseDataset(r3, remapped, seconds, r3spec.geometry, attributes, r3spec.inventory)
+        )
         .isLeft
     )
     val reimport = ok(
