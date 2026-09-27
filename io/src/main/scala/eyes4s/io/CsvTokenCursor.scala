@@ -126,6 +126,7 @@ private[io] final case class CsvTokenCursor private (
     failure.toLeft(
       CsvTokenStep(
         units,
+        kept,
         row,
         Option.unless(done)(
           new CsvTokenCursor(
@@ -173,6 +174,7 @@ private[io] object CsvTokenCursor:
 
 private[io] final case class CsvTokenStep(
     workUnits: Int,
+    retainedUnits: Long,
     row: Option[Vector[String]],
     next: Option[CsvTokenCursor]
 )
