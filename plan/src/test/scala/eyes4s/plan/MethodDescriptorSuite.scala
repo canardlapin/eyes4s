@@ -134,8 +134,8 @@ class MethodDescriptorSuite extends munit.FunSuite:
       FieldKind.Choice(
         ChoiceSource.Fixed(
           Vector(
-            ChoiceOption("Truncate", "Truncate"),
-            ChoiceOption("Renormalise", "Renormalise")
+            ChoiceOption("Truncate", "Truncate at the grid edge"),
+            ChoiceOption("Renormalise", "Renormalise each fixation's mass")
           )
         )
       )

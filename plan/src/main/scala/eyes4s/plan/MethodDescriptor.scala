@@ -190,9 +190,19 @@ trait ParameterField[P]:
   /** A raw form value checked on its own; see [[ParameterDescriptor.validate]]. */
   final def validate(raw: RawValue): Either[FieldError[Any], Unit] = descriptor.validate(raw)
 
+  /** The raw form value of this field in `parameters`, when the field has a
+    * form.
+    */
+  final def raw(parameters: P): Option[RawValue] =
+    descriptor.form.map(_.raw(value(parameters)))
+
 final class ParameterSet[P] private (val fields: Vector[ParameterField[P]]):
   /** The host views of the fields, in order. */
   def views: Vector[FieldView] = fields.map(_.view)
+
+  /** The raw form values of the fields that have a form, in `parameters`. */
+  def formValues(parameters: P): FormValues =
+    FormValues.from(fields.flatMap(f => f.raw(parameters).map(f.view.id -> _)).toMap)
 
   /** One raw value checked by the field it names, without the other fields. */
   def validate(id: FieldId, raw: RawValue): Either[FieldError[Any], Unit] =

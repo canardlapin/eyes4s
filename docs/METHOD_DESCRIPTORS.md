@@ -123,6 +123,47 @@ endpoint must accept the shape's extreme number. `FormLaws.inspection` checks
 that every inspected field has a well-formed view. `FieldError` projects to the
 `form-field` diagnostic family.
 
+## Recipe forms, advisories and methods text
+
+`StudyForm`, `TemporalForm` and `RecordingForm` present the editable fields of
+the three plans. A study form takes a `StudyFormContext` (the admission frame and
+the identities of the window frame and the grid) and has one typed field per
+recipe field: phases, weight, failure policy, grid, window, off-window policy,
+scales, units per degree, pairing and initial fixations. Every field is a
+`FormField` (`StructuredField` for composite values): it parses its own raw value
+through the view's shape, bounds and rules and then the domain constructors, so a
+host validates one field without a whole valid recipe (`validate`). `parse`
+checks every field and reports all refusals together; `values(plan)` gives the
+raw values of an existing plan. Choices show English labels (`Labelled`), keyed
+by stable tokens. The only defaults are the library's: `StudyPairing.default`
+and keeping every fixation.
+
+`StudyRecipe.plan(input, layout, method, parameters)` runs the whole-recipe
+checks on demand and refuses with a `StudyRecipeError` whose `field` is the
+`StudyField` it concerns (a window without its off-window policy, a degree scale
+without units per degree, duplicate scales, an initial-fixation cross off the
+frame). `TemporalRecipe.plan` and `RecordingRecipe.plan` rebuild those plans and
+return their own typed refusals.
+
+`StudyAdvice.facts(plan)` derives the grid cell in frame units and degrees and
+each bandwidth in frame units, degrees, cells and as a fraction of the mapped
+region. `StudyAdvice.advisories(plan)` warns, keyed by `StudyField.Scales`, when a
+bandwidth spans fewer than `MinimumSigmaCells` (2) grid cells or at least
+`NearUniformFraction` (0.25) of the mapped region. The first is the Studio
+design's rule; the second is chosen so that the design's example (8 degrees,
+0.36 of the image) warns and 4 degrees (0.18) does not. On the Studio fixture,
+sigma 0.5 and 8 degrees warn, 1, 2 and 4 do not. Advisories project to the
+`study-advisory` diagnostic family with warning severity.
+
+`StudyText.sentence(plan)` and `StudyText.methods(plan)` give the recipe sentence
+and the methods text as `Phrase`s of `Token`s: fixed words, or values with the
+form field they come from and a `TokenRole` (query, reference, match, control,
+scale, metric, policy), so a host styles and localises them without parsing
+English. Run counts are not part of a plan and are not in the text.
+
+A host holding an erased `FieldError[Any]` from `ParameterSet.validate` projects
+it with `Diagnose.reportedFormField`.
+
 `ParameterUnits` and `ParameterDomain` are deprecated. `ParameterInfo.units` and
 `allowed` remain as projections of `quantity` and `kind`, and the deprecated
 `ParameterInfo.of(id, version, meaning, units, allowed)` translates what it can

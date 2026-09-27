@@ -28,12 +28,12 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Every issued code, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 700
-  private val PinnedDigest = "70795a59f1fbfeb7"
+  private val PinnedCount  = 711
+  private val PinnedDigest = "5427a5788206a052"
 
   /** The issued table before CR5: codes are only ever issued, never changed
     * or reused, and a retired code keeps its place, so taking away the codes
-    * CR5, CR2, CR4, SourceRef, UI-E, UI-G, UI-D and CR6a added leaves exactly this table.
+    * CR5, CR2, CR4, SourceRef, UI-E, UI-G, UI-D, CR6a and CR6b added leaves exactly this table.
     */
   private val StableCount  = 445
   private val StableDigest = "fb7ffbd3d3db7f63"
@@ -84,6 +84,14 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val Cr6Codes: Set[String] =
     DiagnosticCatalog.formField.codes.map(_.render).toSet ++
       DiagnosticCatalog.descriptor.codes.drop(11).map(_.render)
+
+  /** The codes CR6b added: study-recipe and study-advisory, and the
+    * recipe-parameter cases for plan, initial-fixation and missing-part
+    * refusals.
+    */
+  private val Cr6bCodes: Set[String] =
+    (DiagnosticCatalog.studyRecipe.codes ++ DiagnosticCatalog.studyAdvisory.codes ++
+      DiagnosticCatalog.recipeParameter.codes.drop(7)).map(_.render).toSet
 
   test(
     "every cataloged family is sampled, in catalog order, through its own Diagnose instance"
@@ -186,7 +194,7 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
       rendered.filterNot(code =>
         Cr5Codes(code) || Cr2Codes(code) || Cr4Codes(code) || SourceCodes(code) || UiECodes(
           code
-        ) || UiGCodes(code) || UiDCodes(code) || Cr6Codes(code)
+        ) || UiGCodes(code) || UiDCodes(code) || Cr6Codes(code) || Cr6bCodes(code)
       )
     assertEquals(stable.size, StableCount)
     assertEquals(ContentHash.ofString(stable.mkString("\n")).render, StableDigest)
