@@ -30,11 +30,11 @@ class ProtocolCodecSuite extends munit.FunSuite:
 
   test("every message kind and case is sampled") {
     assertEquals(requests.map(_.ordinal), requests.indices.toVector)
-    assertEquals(requests.size, 15)
+    assertEquals(requests.size, 16)
     assertEquals(responses.map(_.ordinal), responses.indices.toVector)
-    assertEquals(responses.size, 13)
+    assertEquals(responses.size, 14)
     assertEquals(errors.map(_.ordinal), errors.indices.toVector)
-    assertEquals(errors.size, 9)
+    assertEquals(errors.size, 11)
     assertEquals(causes.map(_.ordinal), causes.indices.toVector)
     assertEquals(causes.size, 14)
     assertEquals(loci.map(_.ordinal), loci.indices.toVector)
@@ -190,4 +190,40 @@ class ProtocolCodecSuite extends munit.FunSuite:
       )
     )
     assert(invalid.as[StageMeter].isLeft)
+  }
+
+  // Frozen protocol 1.0 and 1.1 total cases. This is the legacy decoder reached inside
+  // an event body, not the current ProgressTotal decoder under another version.
+  private enum Protocol11Total derives CanEqual, io.circe.Decoder:
+    case Exact(units: Long)
+    case AtMost(units: Long)
+    case Unknown
+
+  private def legacyMeterTotal(wire: Json): io.circe.Decoder.Result[Protocol11Total] =
+    wire.hcursor
+      .downField("body")
+      .downField("Event")
+      .downField("event")
+      .downField("Advanced")
+      .downField("progress")
+      .downField("meter")
+      .downField("total")
+      .as[Protocol11Total]
+
+  test("protocol 1.2 Counting requires coordinated peers, not a relabelled 1.1 frame") {
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 2))
+    val previous = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(progress)))
+    assertEquals(legacyMeterTotal(previous.asJson), Right(Protocol11Total.Exact(8512L)))
+    val counting = progress.asJson
+      .deepMerge(
+        Json.obj("meter" -> Json.obj("total" -> (ProgressTotal.Counting: ProgressTotal).asJson))
+      )
+      .as[JobProgress]
+      .fold(e => fail(e.message), identity)
+    val envelope = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(counting)))
+    val wire     = envelope.asJson
+    assertEquals(WireFormat.parse[ServerFrame](wire.noSpaces), Right(envelope))
+    assert(legacyMeterTotal(wire).isLeft)
+    val relabelled = wire.deepMerge(Json.obj("version" -> ProtocolVersion(1, 1).asJson))
+    assert(legacyMeterTotal(relabelled).isLeft)
   }

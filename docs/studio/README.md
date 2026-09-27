@@ -10,6 +10,7 @@ This folder is the reference that the implementation has to reach.
 | `DESIGN_SPEC.md` | The design contract. §12 lists the round-3 amendments and overrides anything earlier in the file. |
 | `design/*.dc.html` | The approved boards, one file per screen and moment (see below). |
 | `fixture/make_fixture.py`, `fixture/FIXTURE.md`, `fixture/fixture.json` | The deterministic mock study behind every number on the boards. The fake backend serves `fixture.json`. The real CSV acceptance fixture is generated separately, into `fixtures/studio-golden/` (S0.7a). |
+| `PORTING.md` | The port contract: the seams a new shell (Electron, Tauri, a browser) implements, the sidecar wire protocol, and the acceptance a port must pass (S0.9). |
 | `PARITY_CHECKLIST.md` | The per-board items a screen must match. The S10.4-* tickets sign it off. |
 | `plan/studio_plan.py` | The single source for `IMPLEMENTATION_PLAN.md` and for the Mote beads tagged `studio`. |
 | `IMPLEMENTATION_PLAN.md` | Generated. Contains the gates G0–G5, the epics S0–S10, and every ticket with its acceptance criteria and tests. |
@@ -55,3 +56,17 @@ python3 docs/studio/plan/studio_plan.py mote
 
 To change the plan, edit `studio_plan.py`, rerun `render`, and update the matching bead with
 `mote set`. Beads that already exist are never recreated.
+
+## Backend protocol versions
+
+Protocol 1.2 adds `ProgressTotal.Counting` to progress events. Deploy the Studio
+client and backend together. The transport checks major versions only and decodes
+the typed envelope body before checking the version; it does not negotiate minor
+version capabilities. A protocol 1.0 or 1.1 decoder cannot read the new `Counting` case,
+even if the envelope is labelled 1.1. Mixed-minor deployments are unsupported.
+
+`ProtocolCodecSuite` pins the 1.2 envelopes, verifies a current Counting event,
+and exercises the frozen 1.0/1.1 total decoder at the event's meter boundary. It
+retains a readable legacy `Exact` control and rejects `Counting` under either
+version label. This records the coordinated-upgrade requirement; it does not
+claim old-client decoding compatibility or negotiated refusal.
