@@ -68,11 +68,11 @@ class GeometryPanelSuite extends munit.FunSuite:
     AdmissionSummary(
       r3,
       DatasetState.Draft,
-      s.inventoryTrials,
+      // The geometry panel reads only the window totals.
+      InventoryJoin.Undeclared,
       s.admitted,
       Vector.empty,
       0,
-      s.absent,
       s.fixationRecords,
       WindowTotals(
         outsideWindow = s.outsideWindowRecords,
@@ -191,7 +191,8 @@ class GeometryPanelSuite extends munit.FunSuite:
           r3spec.units,
           r3spec.geometry,
           r3spec.attributes,
-          Some(r3spec.admission.copy(offScreen = OffScreenChoice.QuarantineTrial))
+          Some(r3spec.admission.copy(offScreen = OffScreenChoice.QuarantineTrial)),
+          r3spec.inventory
         )
       )
     )
@@ -253,7 +254,14 @@ class GeometryPanelSuite extends munit.FunSuite:
     assertEquals(
       commandsOf(effects),
       Vector(
-        Command.ReviseDataset(r3, r3spec.mapping, r3spec.units, geometry, r3spec.attributes)
+        Command.ReviseDataset(
+          r3,
+          r3spec.mapping,
+          r3spec.units,
+          geometry,
+          r3spec.attributes,
+          r3spec.inventory
+        )
       )
     )
     val model = perform(t1, effects)
@@ -274,6 +282,32 @@ class GeometryPanelSuite extends munit.FunSuite:
     assertEquals(commandsOf(effects).map(_.name), Vector("ImportSources"))
     assertEquals(model.document.dataset(r4).map(_.geometry.pixelsPerDegree.value), Some(36.0))
     assertEquals(model.document.dataset(r4).map(_.decision), Some(AdmissionDecision.Pending))
+  }
+
+  test("a geometry edit and a policy re-admit both keep the trials.csv inventory mapping") {
+    // Pending r3: the geometry edit revises r3 in place.
+    val pending = t1.document.dataset(r3).get
+    assert(pending.inventory.isDefined, "the story's r3 maps no inventory")
+    val (p1, _) = synced(t1)
+    val typed   = GeometryPanel
+      .update(p1, t1, GeometryIntent.EditField(GeometryField.ImageTop, "150"))
+      ._1
+    val edited = perform(t1, GeometryPanel.update(typed, t1, GeometryIntent.CommitFields)._2)
+    assertEquals(edited.document.dataset(r3).map(_.geometry.image.top), Some(150))
+    assertEquals(edited.document.dataset(r3).flatMap(_.inventory), pending.inventory)
+    // Admitted r3: the policy change re-admits as r4, which keeps r3's mapping.
+    val admitted  = t2.document.dataset(r3).get
+    val (p2, _)   = synced(t2)
+    val readmit   = GeometryPanel.update(
+      p2,
+      t2,
+      GeometryIntent.ChooseOffScreen(OffScreenChoice.QuarantineTrial)
+    )._2
+    val readmitted = perform(t2, readmit)
+    val r4spec     = readmitted.document.dataset(r4).get
+    assertEquals(r4spec.admission.offScreen, OffScreenChoice.QuarantineTrial)
+    assert(admitted.inventory.isDefined, "the story's admitted r3 maps no inventory")
+    assertEquals(r4spec.inventory, admitted.inventory)
   }
 
   test("a mistyped field names itself and changes nothing") {
@@ -370,7 +404,8 @@ class GeometryPanelSuite extends munit.FunSuite:
       ByteDigest.sha256(bytes),
       None
     )
-    val spec = r3spec.copy(sources = ok(Sources.of(Vector(source))))
+    // Fixations only, so there is no trials.csv to map.
+    val spec = r3spec.copy(sources = ok(Sources.of(Vector(source))), inventory = None)
     val doc  = ok(
       StudioDocument.of(
         Vector(t1.document.dataset(r2).get, spec),

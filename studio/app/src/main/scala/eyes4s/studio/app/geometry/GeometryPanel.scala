@@ -400,7 +400,9 @@ object GeometryPanel:
         c match
           // S5.2's one command for the four import fields: one undo.
           case GeometryChange.SetGeometry(g) =>
-            Vector(Command.ReviseDataset(id, spec.mapping, spec.units, g, spec.attributes))
+            Vector(
+              Command.ReviseDataset(id, spec.mapping, spec.units, g, spec.attributes, spec.inventory)
+            )
           case GeometryChange.SetOffScreen(p) => Vector(Command.SetOffScreenPolicy(id, p))
           case GeometryChange.AddRule(r)    => Vector(Command.AddCorrection(id, rules.size, r))
           case GeometryChange.RemoveRule(i) => Vector(Command.RemoveCorrection(id, i))
@@ -421,7 +423,8 @@ object GeometryPanel:
             spec.units,
             geometry,
             spec.attributes,
-            Some(admission)
+            Some(admission),
+            spec.inventory
           )
         )
 

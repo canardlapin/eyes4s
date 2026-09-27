@@ -226,17 +226,17 @@ final case class WindowTotals(
       Codec.AsObject
 
 /** What admission of one dataset revision decided, in counts. `quarantined`
-  * counts `Quarantined(cause)` trials by cause code; `noFixations` and
-  * `absent` are dispositions of their own.
+  * counts `Quarantined(cause)` trials by cause code; `noFixations` is a
+  * disposition of its own, and so is absent, which only an inventory can
+  * count ([[InventoryJoin]], S5.4).
   */
 final case class AdmissionSummary(
     dataset: DatasetRevision,
     state: DatasetState,
-    inventoryTrials: Int,
+    inventory: InventoryJoin,
     admitted: Int,
     quarantined: Vector[QuarantineCount],
     noFixations: Int,
-    absent: Int,
     fixationRecords: Int,
     window: WindowTotals,
     items: Int,
@@ -246,6 +246,12 @@ final case class AdmissionSummary(
 ) derives CanEqual,
       Codec.AsObject:
   def quarantinedTrials: Int = quarantined.map(_.trials).sum
+
+  /** The inventory's trials, when the dataset declares one. */
+  def inventoryTrials: Option[Int] = inventory.trialCount
+
+  /** Inventory trials without fixation records, when there is an inventory. */
+  def absent: Option[Int] = inventory.absentCount
 
 final case class LedgerEntry(
     trial: TrialKey,

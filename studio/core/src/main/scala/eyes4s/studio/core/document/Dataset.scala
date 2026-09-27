@@ -556,11 +556,15 @@ object AdmissionDecision:
 /** One dataset revision (DESIGN_SPEC section 8, "Dataset · re-admit"): the
   * sources, their column mapping and declared units, the display geometry,
   * the admission choices, the admission decision, and the fixation source's
-  * attribute columns (S5.2). `parent` is the revision it re-imports, if any.
-  * Its id is the protocol's [[DatasetRevision]].
+  * attribute columns (S5.2), and the trial inventory's mapping (S5.4).
+  * `parent` is the revision it re-imports, if any. Its id is the protocol's
+  * [[DatasetRevision]].
   *
-  * `attributes` is written only when there are some, so a revision without
-  * attributes keeps the version-1 wire form (and its pins and digests).
+  * `attributes` is written only when there are some, and `inventory` only
+  * when the revision maps one, so a revision without them keeps the
+  * version-1 wire form (and its pins and digests). A revision stored before
+  * S5.4 with a trials source and no inventory mapping loads; it needs a
+  * re-map before it is committed ([[DatasetRevisionSpec.inventoryMapped]]).
   */
 final case class DatasetRevisionSpec(
     id: DatasetRevision,
@@ -571,7 +575,8 @@ final case class DatasetRevisionSpec(
     geometry: Geometry,
     admission: AdmissionChoice,
     decision: AdmissionDecision,
-    attributes: DeclaredAttributes = DeclaredAttributes.empty
+    attributes: DeclaredAttributes = DeclaredAttributes.empty,
+    inventory: Option[InventoryMapping] = None
 ) derives CanEqual
 
 object DatasetRevisionSpec:
@@ -587,9 +592,31 @@ object DatasetRevisionSpec:
     ),
     Encoder.AsObject.instance(s =>
       val o = derived.encodeObject(s)
-      if s.attributes.isEmpty then o.remove("attributes") else o
+      val a = if s.attributes.isEmpty then o.remove("attributes") else o
+      if s.inventory.isEmpty then a.remove("inventory") else a
     )
   )
+
+  /** An inventory mapping needs a trials source to map (S5.4). */
+  def checkInventory(spec: DatasetRevisionSpec): Either[DocumentError, Unit] =
+    Either.cond(
+      spec.inventory.isEmpty || spec.sources.trials.isDefined,
+      (),
+      DocumentError.InventoryWithoutTrials(spec.id)
+    )
+
+  /** The commit check (S5.4): a trials source has its columns mapped, so
+    * that eyes4s can join it. Import, re-map and verification call it.
+    */
+  def inventoryMapped(
+      id: DatasetRevision,
+      sources: Sources,
+      inventory: Option[InventoryMapping]
+  ): Either[DocumentError, Unit] =
+    sources.trials match
+      case Some(trials) if inventory.isEmpty =>
+        Left(DocumentError.InventoryUnmapped(id, trials.path.value))
+      case _ => Right(())
 
   /** An attribute column is not also a role's column. */
   def checkAttributes(spec: DatasetRevisionSpec): Either[DocumentError, Unit] =

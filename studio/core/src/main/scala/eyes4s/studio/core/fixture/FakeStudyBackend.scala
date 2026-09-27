@@ -185,13 +185,12 @@ final class FakeStudyBackend[F[_]] private (
       AdmissionSummary(
         d,
         st,
-        summary.inventoryTrials,
+        InventoryJoin.Joined(summary.inventoryTrials, summary.absent),
         summary.admitted,
         summary.quarantineBySlug.collect {
           case (slug, n) if slug != NoFixationsSlug => QuarantineCount(s"quarantine.$slug", n)
         },
         bySlug.getOrElse(NoFixationsSlug, 0),
-        summary.absent,
         summary.fixationRecords,
         WindowTotals(
           outsideWindow = GoldenInventory.outsideWindow,

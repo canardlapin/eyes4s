@@ -225,7 +225,7 @@ class TrialKeyBuilderSuite extends munit.FunSuite:
     val (done, fx) = run(w, t2, WizardIntent.Commit)
     assertEquals(done.problem, None)
     commands(fx) match
-      case Vector(Command.ImportSources(_, _, mapping, _, _, _, _)) =>
+      case Vector(Command.ImportSources(_, _, mapping, _, _, _, _, _)) =>
         assertEquals(mapping.column(ColumnRole.Occurrence), Some(col("Block")))
       case other => fail(s"expected one ImportSources, got $other")
   }
@@ -417,7 +417,7 @@ class TrialKeyBuilderSuite extends munit.FunSuite:
     )
     assertEquals(fixed.problem, None)
     commands(more) match
-      case Vector(Command.ImportSources(Some(_), _, mapping, _, _, _, _)) =>
+      case Vector(Command.ImportSources(Some(_), _, mapping, _, _, _, _, _)) =>
         assertEquals(mapping.column(ColumnRole.Phase), Some(col("phase")))
       case other => fail(s"expected a re-import, got $other")
   }
@@ -463,7 +463,7 @@ class TrialKeyBuilderSuite extends munit.FunSuite:
     assertEquals(w.problem, None)
     val r3 = t2.dataset(DatasetRevision(3)).get
     commands(fx) match
-      case Vector(Command.ImportSources(Some(parent), sources, mapping, _, _, attrs, _)) =>
+      case Vector(Command.ImportSources(Some(parent), sources, mapping, _, _, attrs, _, _)) =>
         assertEquals(parent, DatasetRevision(3))
         assertEquals(sources, r3.sources)
         assertEquals(mapping.column(ColumnRole.Occurrence), None)
@@ -491,7 +491,7 @@ class TrialKeyBuilderSuite extends munit.FunSuite:
       WizardIntent.Commit
     )
     commands(fx) match
-      case Vector(Command.ReviseDataset(id, mapping, _, _, attrs)) =>
+      case Vector(Command.ReviseDataset(id, mapping, _, _, attrs, _)) =>
         assertEquals(id, DatasetRevision(3))
         assertEquals(mapping.column(ColumnRole.Occurrence), None)
         assertEquals(attrs.columns, Vector(col("occurrence")))

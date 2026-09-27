@@ -16,9 +16,11 @@
 
 package eyes4s.studio.core.backend
 
-/** The pinned wire form of every [[ProtocolSamples]] sample, protocol 1.2. */
+/** The pinned wire form of every [[ProtocolSamples]] sample, protocol 1.3. */
 object ProtocolPins:
   val pins: Map[String, String] = Map(
+    "error.InventoryRefused" ->
+      """{"InventoryRefused":{"dataset":4,"issues":[{"Conflict":{"trial":{"participant":"P01","phase":"Encoding","trial":"enc_01"},"records":[2,9],"columns":["response"]}},{"Width":{"record":5,"expected":8,"actual":7}},{"Field":{"record":6,"column":"occurrence","value":"x","requirement":"a positive integer occurrence"}},{"Other":{"kind":"DuplicateAttribute","text":"Attribute names [a] are declared more than once."}}]}}""",
     "error.DuplicateSubscription" ->
       """{"DuplicateSubscription":{"request":41}}""",
     "error.Malformed" ->
@@ -62,9 +64,9 @@ object ProtocolPins:
     "disposition.NoFixations" ->
       """{"NoFixations":{}}""",
     "envelope.frame" ->
-      """{"version":{"major":1,"minor":2},"id":41,"body":{"Event":{"event":{"Finished":{"outcome":{"Completed":{"job":1,"run":8,"last":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}}}}""",
+      """{"version":{"major":1,"minor":3},"id":41,"body":{"Event":{"event":{"Finished":{"outcome":{"Completed":{"job":1,"run":8,"last":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}}}}""",
     "envelope.request" ->
-      """{"version":{"major":1,"minor":2},"id":41,"body":{"Subscribe":{"id":1}}}""",
+      """{"version":{"major":1,"minor":3},"id":41,"body":{"Subscribe":{"id":1}}}""",
     "error.AlreadyRunning" ->
       """{"AlreadyRunning":{"revision":5,"job":1}}""",
     "error.NoResult" ->
@@ -204,7 +206,7 @@ object ProtocolPins:
     "request.Subscribe" ->
       """{"Subscribe":{"id":1}}""",
     "response.Admission" ->
-      """{"Admission":{"summary":{"dataset":3,"state":{"Admitted":{}},"inventoryTrials":960,"admitted":937,"quarantined":[{"code":"quarantine.overlap","trials":6}],"noFixations":5,"absent":6,"fixationRecords":11520,"window":{"outsideWindow":543,"outsideScreen":0,"total":11311,"trialsOutsideWindow":409,"trialsOutsideScreen":0,"trials":937,"untallied":0,"sourceRecords":11520,"outsideWindowMicros":159142000,"outsideScreenMicros":0,"totalMicros":3282108000},"items":259,"imagesFound":257,"missingImages":[{"item":"forest-044","participants":["P01","P24"],"encodingTrials":2}],"history":"onset declared ms"}}}""",
+      """{"Admission":{"summary":{"dataset":3,"state":{"Admitted":{}},"inventory":{"Joined":{"trials":960,"absent":6}},"admitted":937,"quarantined":[{"code":"quarantine.overlap","trials":6}],"noFixations":5,"fixationRecords":11520,"window":{"outsideWindow":543,"outsideScreen":0,"total":11311,"trialsOutsideWindow":409,"trialsOutsideScreen":0,"trials":937,"untallied":0,"sourceRecords":11520,"outsideWindowMicros":159142000,"outsideScreenMicros":0,"totalMicros":3282108000},"items":259,"imagesFound":257,"missingImages":[{"item":"forest-044","participants":["P01","P24"],"encodingTrials":2}],"history":"onset declared ms"}}}""",
     "response.Inspected" ->
       """{"Inspected":{"inspection":{"Contrast":{"address":{"ContrastRow":{"scale":2,"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}},"m":0.73,"b":0.35,"d":0.38}}}}""",
     "response.Job" ->

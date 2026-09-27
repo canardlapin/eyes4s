@@ -173,7 +173,7 @@ final class ImportWizardHost(
     */
   private def perform(effects: Vector[WizardEffect]): Unit =
     val inputs = effects.collect {
-      case WizardEffect.Dispatch(Command.ImportSources(_, sources, _, _, _, _, _)) =>
+      case WizardEffect.Dispatch(Command.ImportSources(_, sources, _, _, _, _, _, _)) =>
         // Only files from disk are stored; the project's own inputs are there.
         sources.entries.flatMap(s =>
           readFrom.get(s.bytes).collect { case ByteSource.File(path) => s -> path }

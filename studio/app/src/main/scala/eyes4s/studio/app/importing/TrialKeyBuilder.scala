@@ -475,8 +475,9 @@ object TrialKeyVM:
 
   /** The key's entries in the Data issues tab: its Studio checks block;
     * occurrence and item conflicts, unresolved records and repeated inventory
-    * entries are warnings (eyes4s reports them on admission; the inventory is
-    * mapped in S5.4).
+    * entries are warnings (eyes4s reports them on admission: equal repeated
+    * inventory entries declare one trial, differing ones refuse the
+    * inventory, S5.4).
     */
   def issues(w: ImportWizard): Vector[IssueVM] =
     val blocking = keyBlocks(w).map {

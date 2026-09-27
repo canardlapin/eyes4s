@@ -17,10 +17,11 @@
 package eyes4s.studio.core.importing
 
 import cats.data.NonEmptyVector
-import eyes4s.plan.{AttributeColumn, AttributeKind}
+import eyes4s.plan.AttributeColumn
 import eyes4s.studio.core.backend.DatasetRevision
 import eyes4s.studio.core.document.{
   AttributeBinding,
+  InventoryMapping,
   AttributeKindChoice,
   ColumnBinding,
   ColumnMapping,
@@ -376,14 +377,15 @@ private[importing] object RoleChecks:
 /** A trials.csv inventory's column mapping while it is edited ("Trial
   * metadata" tab): the trial identity (participant, phase, trial and,
   * optionally, occurrence, as eyes4s `TrialColumns` requires), an optional
-  * item and response, and every other column as an attribute.
-  *
-  * The studio document (schema version 1) records the fixation mapping
-  * only; the inventory join that reads this mapping is S5.4's.
+  * item and response, and every other column as an attribute, text kept as
+  * written unless a re-mapped revision declared its kind. It resolves to the
+  * document's [[InventoryMapping]] (S5.4), which eyes4s joins fixation
+  * records to.
   */
 final case class TrialMetadataDraft private (
     preview: CsvPreview,
-    choices: Vector[ColumnChoice]
+    choices: Vector[ColumnChoice],
+    kinds: Map[ColumnName, AttributeKindChoice] = Map.empty
 ) derives CanEqual:
 
   def file: String = preview.file
@@ -409,15 +411,61 @@ final case class TrialMetadataDraft private (
   /** The columns passed through as trial attributes (UI-H). */
   def attributes: Vector[AttributeColumn] =
     columns.collect { case (c, ColumnChoice.Attribute) =>
-      AttributeColumn(c.name.value, AttributeKind.Text)
+      AttributeColumn(c.name.value, kinds.getOrElse(c.name, AttributeKindChoice.Text).core)
     }
 
-object TrialMetadataDraft:
-  val required: Vector[ColumnRole] =
-    Vector(ColumnRole.Participant, ColumnRole.Phase, ColumnRole.Trial)
+  /** The inventory mapping, or every issue. */
+  def resolve: Either[NonEmptyVector[MappingError], InventoryMapping] =
+    NonEmptyVector.fromVector(issues) match
+      case Some(errors) => Left(errors)
+      case None         =>
+        val bindings = columns.collect { case (c, ColumnChoice.Role(r)) =>
+          ColumnBinding(r, c.name)
+        }
+        val declared = columns.collect { case (c, ColumnChoice.Attribute) =>
+          AttributeBinding(c.name, kinds.getOrElse(c.name, AttributeKindChoice.Text))
+        }
+        // The checks above are InventoryMapping.of's; a refusal here would be
+        // a defect in them, reported as the document's own error.
+        DeclaredAttributes
+          .of(declared)
+          .flatMap(InventoryMapping.of(bindings, _))
+          .left
+          .map(e => NonEmptyVector.one(MappingError.Refused(file, e)))
 
-  val offered: Vector[ColumnRole] =
-    required ++ Vector(ColumnRole.Occurrence, ColumnRole.Item, ColumnRole.Response)
+object TrialMetadataDraft:
+  val required: Vector[ColumnRole] = InventoryMapping.required
+
+  val offered: Vector[ColumnRole] = InventoryMapping.offered
+
+  /** A dataset revision's inventory mapping re-applied to its trials file by
+    * column name: every bound column must be in the header; every other
+    * column is an attribute, of the kind the revision declared.
+    */
+  def ofDataset(
+      preview: CsvPreview,
+      revision: DatasetRevision,
+      mapping: InventoryMapping
+  ): Either[NonEmptyVector[MappingError], TrialMetadataDraft] =
+    val origin = MappingOrigin.Dataset(revision)
+    val absent = mapping.bindings.filterNot(b => preview.header.contains(b.column))
+    NonEmptyVector.fromVector(
+      absent.map(b => MappingError.ColumnAbsent(preview.file, origin, b.column, b.role))
+    ) match
+      case Some(errors) => Left(errors)
+      case None         =>
+        val choices = preview.header.map(name =>
+          mapping.bindings
+            .find(_.column == name)
+            .fold(ColumnChoice.Attribute)(b => ColumnChoice.Role(b.role))
+        )
+        Right(
+          TrialMetadataDraft(
+            preview,
+            choices,
+            mapping.attributes.bindings.map(a => a.column -> a.kind).toMap
+          )
+        )
 
   /** Suggested roles, restricted to those a trials table offers. */
   def proposed(preview: CsvPreview): TrialMetadataDraft =

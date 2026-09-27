@@ -39,12 +39,17 @@ object LegacyMappings:
       o.contains("column") && o("role").flatMap(_.asObject).exists(_.contains("Phase"))
     )
 
-  /** `json` with every phase binding of every mapping removed. */
+  /** `json` with every phase binding of every mapping removed, and every
+    * inventory mapping (S5.2 recorded none).
+    */
   def withoutPhase(json: Json): Json =
     json.arrayOrObject(
       json,
       items => Json.fromValues(items.filterNot(isPhaseBinding).map(withoutPhase)),
-      obj => Json.fromJsonObject(obj.mapValues(withoutPhase))
+      obj =>
+        // A dataset revision's inventory mapping, not an admission's binding.
+        val spec = if obj.contains("sources") then obj.remove("inventory") else obj
+        Json.fromJsonObject(spec.mapValues(withoutPhase))
     )
 
   /** `document` as S5.2 would have saved it: re-encoded without phases. */

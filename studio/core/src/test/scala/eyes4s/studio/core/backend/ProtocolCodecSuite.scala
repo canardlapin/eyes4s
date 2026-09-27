@@ -34,7 +34,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
     assertEquals(responses.map(_.ordinal), responses.indices.toVector)
     assertEquals(responses.size, 14)
     assertEquals(errors.map(_.ordinal), errors.indices.toVector)
-    assertEquals(errors.size, 11)
+    assertEquals(errors.size, 12)
     assertEquals(causes.map(_.ordinal), causes.indices.toVector)
     assertEquals(causes.size, 14)
     assertEquals(loci.map(_.ordinal), loci.indices.toVector)
@@ -211,7 +211,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
       .as[Protocol11Total]
 
   test("protocol 1.2 Counting requires coordinated peers, not a relabelled 1.1 frame") {
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 2))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 3))
     val previous = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(progress)))
     assertEquals(legacyMeterTotal(previous.asJson), Right(Protocol11Total.Exact(8512L)))
     val counting = progress.asJson
@@ -226,4 +226,20 @@ class ProtocolCodecSuite extends munit.FunSuite:
     assert(legacyMeterTotal(wire).isLeft)
     val relabelled = wire.deepMerge(Json.obj("version" -> ProtocolVersion(1, 1).asJson))
     assert(legacyMeterTotal(relabelled).isLeft)
+  }
+
+  test("protocol 1.3: an admission summary without an inventory says absent is not counted") {
+    val summary = ProtocolSamples.admission.copy(inventory = InventoryJoin.Undeclared)
+    val wire    = (summary: AdmissionSummary).asJson
+    assertEquals(
+      wire.hcursor.downField("inventory").focus,
+      Some(Json.obj("Undeclared" -> Json.obj()))
+    )
+    assertEquals(wire.as[AdmissionSummary], Right(summary))
+    assertEquals((summary.inventoryTrials, summary.absent), (None, None))
+    // A 1.2 summary (inventoryTrials and absent as numbers) is not read as 1.3.
+    val legacy = wire.mapObject(
+      _.remove("inventory").add("inventoryTrials", 960.asJson).add("absent", 6.asJson)
+    )
+    assert(legacy.as[AdmissionSummary].isLeft)
   }

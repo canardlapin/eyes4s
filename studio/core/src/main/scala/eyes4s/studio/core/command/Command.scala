@@ -58,6 +58,8 @@ enum Command derives CanEqual, Codec.AsObject:
     * a first import takes the default. A re-admit that changes the policy or
     * the corrections of an admitted revision is therefore one command, and
     * one undo (S5.5). A journal line written before S5.5 has none.
+    * `inventory` maps the trials source (S5.4); a journal line written before
+    * S5.4 has none.
     */
   case ImportSources(
       parent: Option[DatasetRevision],
@@ -66,19 +68,21 @@ enum Command derives CanEqual, Codec.AsObject:
       units: DeclaredUnits,
       geometry: Geometry,
       attributes: DeclaredAttributes,
-      admission: Option[AdmissionChoice]
+      admission: Option[AdmissionChoice],
+      inventory: Option[InventoryMapping]
   )
 
-  /** Revise a pending revision's column mapping, declared units, geometry
-    * and attributes in one step (the import wizard's commit, S5.2): one
-    * undo restores all four.
+  /** Revise a pending revision's column mapping, declared units, geometry,
+    * attributes and inventory mapping in one step (the import wizard's
+    * commit, S5.2, S5.4): one undo restores them all.
     */
   case ReviseDataset(
       dataset: DatasetRevision,
       mapping: ColumnMapping,
       units: DeclaredUnits,
       geometry: Geometry,
-      attributes: DeclaredAttributes
+      attributes: DeclaredAttributes,
+      inventory: Option[InventoryMapping]
   )
 
   /** Put a discarded pending dataset revision back. */

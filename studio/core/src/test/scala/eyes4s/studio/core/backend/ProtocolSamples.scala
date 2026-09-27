@@ -146,7 +146,23 @@ object ProtocolSamples:
     BackendError.AlreadyRunning(AnalysisRevision(5), job),
     BackendError.UnsupportedVersion(ProtocolVersion(2, 0), ProtocolVersion(1, 0)),
     BackendError.Malformed("{\"id\":3,\"body\":{\"Runz\":{}}}", "no such request"),
-    BackendError.DuplicateSubscription(RequestId(41))
+    BackendError.DuplicateSubscription(RequestId(41)),
+    BackendError.InventoryRefused(
+      DatasetRevision(4),
+      Vector(
+        InventoryIssue.Conflict(
+          TrialLabel("P01", "Encoding", "enc_01"),
+          Vector(2, 9),
+          Vector("response")
+        ),
+        InventoryIssue.Width(5, 8, 7),
+        InventoryIssue.Field(6, "occurrence", "x", "a positive integer occurrence"),
+        InventoryIssue.Other(
+          "DuplicateAttribute",
+          "Attribute names [a] are declared more than once."
+        )
+      )
+    )
   )
 
   val runStates: Vector[RunState] = Vector(
@@ -168,11 +184,10 @@ object ProtocolSamples:
   val admission: AdmissionSummary = AdmissionSummary(
     DatasetRevision(3),
     DatasetState.Admitted,
-    960,
+    InventoryJoin.Joined(960, 6),
     937,
     Vector(QuarantineCount("quarantine.overlap", 6)),
     5,
-    6,
     11520,
     WindowTotals(543, 0, 11311, 409, 0, 937, 0, Some(11520), 159142000L, 0L, 3282108000L),
     259,

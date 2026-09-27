@@ -271,7 +271,7 @@ object ImportWizardVM:
 
   def of(w: ImportWizard, document: StudioDocument): ImportWizardVM =
     val fixationIssues = w.fixations.fold(Vector.empty)(_._2.issues)
-    val trialIssues    = w.trials.fold(Vector.empty)(_._2.issues)
+    val trialIssues    = w.trialIssues
     val all            = w.issues
     // The trial key's Studio checks block too (S5.3); its other findings warn.
     val keyIssues   = TrialKeyVM.issues(w)
@@ -303,12 +303,15 @@ object ImportWizardVM:
         )
         .toVector
     )
-    val warnings = w.warnings.map(e =>
-      IssueVM(t(ImportTextId.TrialWarning, e.message), e.pointsAt.map(_.value), false)
-    )
     val time      = w.fixations.flatMap(_._2.time)
     val newImport = w.target == WizardTarget.NewImport
-    val tabs      = WizardTab.values.toVector.map { tab =>
+    // A re-map is hosted in the column-mapping pane: it shows the mapping
+    // page and, when the revision has a trials file, its trial metadata
+    // (S5.4); geometry and the issues belong to the sibling panes.
+    val offered =
+      if newImport then WizardTab.values.toVector
+      else WizardTab.FixationMapping +: w.trials.map(_ => WizardTab.TrialMetadata).toVector
+    val tabs = offered.map { tab =>
       val count = tab match
         case WizardTab.FixationMapping => fixationIssues.size + keyBlocking
         case WizardTab.TrialMetadata   => trialIssues.size
@@ -325,9 +328,9 @@ object ImportWizardVM:
       // A re-map is hosted in the column-mapping pane, whose dock tab already
       // names it: it shows the mapping page only, with no tab strip (the
       // other pages belong to the sibling panes).
-      showTabs = newImport,
+      showTabs = offered.size > 1,
       tabs = tabs,
-      tab = if newImport then w.tab else WizardTab.FixationMapping,
+      tab = if offered.contains(w.tab) then w.tab else WizardTab.FixationMapping,
       fixations = MappingTableVM(
         SourceRole.Fixations,
         Vector(
@@ -379,7 +382,7 @@ object ImportWizardVM:
       ),
       issuesSummary = issuesSummary(all.size + keyBlocking),
       issues = all.map(e => IssueVM(e.message, e.pointsAt.map(_.value), true)) ++
-        keyIssues.filter(_.blocking) ++ warnings ++ keyIssues.filterNot(_.blocking) ++ ragged,
+        keyIssues.filter(_.blocking) ++ keyIssues.filterNot(_.blocking) ++ ragged,
       presets = PresetsVM(
         t(ImportTextId.PresetLabel),
         w.presets.names.map(_.value),

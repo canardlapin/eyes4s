@@ -59,6 +59,12 @@ To change the plan, edit `studio_plan.py`, rerun `render`, and update the matchi
 
 ## Backend protocol versions
 
+Protocol 1.3 (S5.4) replaces the admission summary's `inventoryTrials` and `absent`
+numbers with `inventory: InventoryJoin` (`Joined(trials, absent)`, or `Undeclared`
+when the dataset declares no trial inventory, so absent trials are not counted) and
+adds `BackendError.InventoryRefused`, whose issues name the inventory records, trial
+and columns eyes4s refused. A 1.2 summary does not decode as 1.3.
+
 Protocol 1.2 adds `ProgressTotal.Counting` to progress events. Deploy the Studio
 client and backend together. The transport checks major versions only and decodes
 the typed envelope body before checking the version; it does not negotiate minor

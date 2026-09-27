@@ -59,6 +59,7 @@ object CommandSamples:
       pending.units,
       pending.geometry,
       DeclaredAttributes.empty,
+      None,
       None
     ),
     "ImportSources.attributes" -> ImportSources(
@@ -68,6 +69,7 @@ object CommandSamples:
       pending.units,
       pending.geometry,
       pupil,
+      None,
       None
     ),
     "ImportSources.admission" -> ImportSources(
@@ -77,14 +79,16 @@ object CommandSamples:
       pending.units,
       pending.geometry,
       DeclaredAttributes.empty,
-      Some(AdmissionChoice(OffScreenChoice.QuarantineTrial, Vector(rule)))
+      Some(AdmissionChoice(OffScreenChoice.QuarantineTrial, Vector(rule))),
+      None
     ),
     "ReviseDataset" -> ReviseDataset(
       r3,
       pending.mapping,
       DeclaredUnits(Some(TimeUnit.Seconds)),
       pending.geometry,
-      pupil
+      pupil,
+      None
     ),
     "RestoreDataset"       -> RestoreDataset(pending),
     "DiscardDataset"       -> DiscardDataset(r3),

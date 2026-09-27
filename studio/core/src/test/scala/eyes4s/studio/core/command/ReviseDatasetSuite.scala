@@ -59,7 +59,9 @@ class ReviseDatasetSuite extends munit.FunSuite:
     val step = ok(
       History
         .start(t1)
-        .apply(ReviseDataset(r3, remapped, seconds, pending.geometry, attributes))
+        .apply(
+          ReviseDataset(r3, remapped, seconds, pending.geometry, attributes, pending.inventory)
+        )
     )
     val revised = step.history.document.dataset(r3).get
     assertEquals(revised.mapping, remapped)
@@ -72,14 +74,28 @@ class ReviseDatasetSuite extends munit.FunSuite:
     val redone = undone.history.redo.fold(e => fail(e.message), identity)
     assertEquals(redone.history.document.dataset(r3), Some(revised))
     assertEquals(
-      ReviseDataset(r3, remapped, seconds, pending.geometry, attributes).kind,
+      ReviseDataset(
+        r3,
+        remapped,
+        seconds,
+        pending.geometry,
+        attributes,
+        pending.inventory
+      ).kind,
       ChangeKind.DatasetReadmit
     )
   }
 
   test("a revision that changes nothing is refused, naming the command") {
     val same =
-      ReviseDataset(r3, pending.mapping, pending.units, pending.geometry, pending.attributes)
+      ReviseDataset(
+        r3,
+        pending.mapping,
+        pending.units,
+        pending.geometry,
+        pending.attributes,
+        pending.inventory
+      )
     assert(History.start(t1).apply(same).left.exists(_.message.contains("ReviseDataset")))
   }
 
@@ -89,7 +105,9 @@ class ReviseDatasetSuite extends munit.FunSuite:
     assert(
       History
         .start(t2)
-        .apply(ReviseDataset(r3, remapped, seconds, r3spec.geometry, attributes))
+        .apply(
+          ReviseDataset(r3, remapped, seconds, r3spec.geometry, attributes, r3spec.inventory)
+        )
         .isLeft
     )
     val reimport = ok(
@@ -103,7 +121,8 @@ class ReviseDatasetSuite extends munit.FunSuite:
             seconds,
             r3spec.geometry,
             attributes,
-            None
+            None,
+            r3spec.inventory
           )
         )
     )
@@ -123,7 +142,16 @@ class ReviseDatasetSuite extends munit.FunSuite:
     )
     val refused = History
       .start(t1)
-      .apply(ReviseDataset(r3, pending.mapping, pending.units, pending.geometry, clash))
+      .apply(
+        ReviseDataset(
+          r3,
+          pending.mapping,
+          pending.units,
+          pending.geometry,
+          clash,
+          pending.inventory
+        )
+      )
     assert(
       refused.left.exists(_.message.contains("column x is both an attribute and the x column")),
       refused.toString
@@ -142,7 +170,7 @@ class ReviseDatasetSuite extends munit.FunSuite:
   test("an ImportSources journal line written before S5.2 still reads, with no attributes") {
     val legacy = decode[Command](CommandPins.importSourcesV1)
     legacy match
-      case Right(ImportSources(parent, _, _, _, _, attrs, admission)) =>
+      case Right(ImportSources(parent, _, _, _, _, attrs, admission, _)) =>
         assertEquals(parent, Some(r2))
         assertEquals(attrs, DeclaredAttributes.empty)
         // Nor, before S5.5, an admission choice: the parent's is inherited.
@@ -153,7 +181,7 @@ class ReviseDatasetSuite extends munit.FunSuite:
   test(
     "a revision without attributes keeps the version-1 wire form; with some, they round-trip"
   ) {
-    assert(!pending.asJson.noSpaces.contains("attributes"))
+    assert(!pending.copy(inventory = None).asJson.noSpaces.contains("attributes"))
     val withAttrs = pending.copy(attributes = pupil)
     assertEquals(decode[DatasetRevisionSpec](withAttrs.asJson.noSpaces), Right(withAttrs))
     // The attributes are part of what admission verifies.
@@ -175,7 +203,8 @@ class ReviseDatasetSuite extends munit.FunSuite:
       r3spec.units,
       r3spec.geometry,
       r3spec.attributes,
-      admission
+      admission,
+      r3spec.inventory
     )
     val chosen = ok(History.start(t2).apply(reimport(Some(choice))))
     val r4     = chosen.history.document.datasets.last
