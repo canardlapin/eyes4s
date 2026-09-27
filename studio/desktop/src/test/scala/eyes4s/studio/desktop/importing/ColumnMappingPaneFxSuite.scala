@@ -24,7 +24,8 @@ import eyes4s.studio.app.importing.{
   ColumnMappingPane,
   PaneNotice,
   WizardIntent,
-  WizardProblem
+  WizardProblem,
+  WizardTab
 }
 import eyes4s.studio.app.layout.StudioLayouts
 import eyes4s.studio.app.nav.{Location, Place}
@@ -388,8 +389,14 @@ class ColumnMappingPaneFxSuite extends ShellFxSuite:
       )
       // A re-map reads the project's files: no file to choose.
       assert(!runOnFx(view.fixations.choose.isVisible))
-      // The dock tab names the pane: the wizard shows no tab strip of its own.
-      assert(runOnFx(view.tabs.values.forall(t => !t.isVisible && !t.isManaged)))
+      // r3 has a trials file: the re-map shows its mapping and its trial
+      // metadata (S5.4); geometry and the issues belong to the sibling panes.
+      assertEquals(
+        runOnFx(
+          view.tabs.toVector.filter((_, t) => t.isVisible && t.isManaged).map(_._1).toSet
+        ),
+        Set(WizardTab.FixationMapping, WizardTab.TrialMetadata)
+      )
       assertEquals(runOnFx(drawn(view.cancel)), "Revert")
       val onset = runOnFx(view.fixations.rowNode("onset_ms")).getOrElse(fail("no onset_ms row"))
       assertEquals(
@@ -412,12 +419,12 @@ class ColumnMappingPaneFxSuite extends ShellFxSuite:
         val w = boot(fx, StoryModels.t1Data, StoryMoment.T1, project = Some(port))
         loaded(fx, w, r3)
         val derived = runOnFx(w.paneStops(StudioLayouts.columnMapping))
-        // The time unit, one role menu per column, the preset name, the
-        // trial key's occurrence toggle (S5.3), Revert and the commit.
-        // No tab strip in a re-map.
-        assertEquals(derived.size, 1 + 10 + 1 + 1 + 2)
+        // The selected page's tab (the re-map of r3 shows its trial metadata
+        // too, S5.4), the time unit, one role menu per column, the preset
+        // name, the trial key's occurrence toggle (S5.3), Revert and the commit.
+        assertEquals(derived.size, 1 + 1 + 10 + 1 + 1 + 2)
         assertEquals(
-          derived(12),
+          derived(13),
           FocusStop(A11yRole.ToggleButton, "Occurrence: column occurrence")
         )
         val pane = runOnFx(w.host.node(StudioLayouts.columnMapping)).get

@@ -367,7 +367,8 @@ class ImportWizardFxSuite extends StudioFxSuite:
           t1.dataset(DatasetRevision(3)).get.mapping,
           DeclaredUnits(Some(TimeUnit.Microseconds)),
           t1.dataset(DatasetRevision(3)).get.geometry,
-          DeclaredAttributes.empty
+          DeclaredAttributes.empty,
+          t1.dataset(DatasetRevision(3)).get.inventory
         )
       )
     )
