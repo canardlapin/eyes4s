@@ -25,9 +25,12 @@ import eyes4s.studio.core.backend.{Phase, TrialKey}
   * generator's planted records ([[PlantedScanpaths]]), read by
   * `FixationCsv.admit` under the default `ExcludeRecord` policy against the
   * 1920×1080 screen, give every trial the same scanpath, record for record
-  * and position for position, and the records eyes4s finds off the screen
-  * (`!frame.contains(centre)`, the test eyes4s's `MapPlacement.OutsideScreen`
-  * applies) are the ones the fixture marks `OutsideScreen`.
+  * and position for position, and the records eyes4s lists outside the frame
+  * (`FixationImport.outsideFrame`) are the ones the fixture marks
+  * `OutsideScreen`. The suite does not classify positions itself (one
+  * identity check, AGENTS.md rule 5); after the next merge of main it can
+  * compare with eyes4s's `MapPlacement` (`StudyPlanGeometry.placement`),
+  * which also places `DroppedInitial` fixations first.
   */
 class ScanpathAgreementJvmSuite extends munit.FunSuite:
 
@@ -89,15 +92,7 @@ class ScanpathAgreementJvmSuite extends munit.FunSuite:
     }
   }
 
-  test("the fixture marks OutsideScreen exactly where eyes4s's centre is off the screen") {
-    imported.accepted.rows.foreach { trial =>
-      val key    = trialKey(trial.key)
-      val eyes4s = trial.value.fixations.toVector.map { f =>
-        if screen.contains(f.centre) then ScreenPlacement.OnScreen
-        else ScreenPlacement.OutsideScreen
-      }
-      assertEquals(fixture(key).map(_.placement), eyes4s, key.label)
-    }
+  test("the fixture marks OutsideScreen exactly the records eyes4s lists outside the frame") {
     val marked = fixture.values.flatten.collect {
       case r if r.placement == ScreenPlacement.OutsideScreen => r.record
     }

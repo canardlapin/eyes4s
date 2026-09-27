@@ -194,7 +194,7 @@ final class FakeNavigator[F[_]] private[fixture] (
       subject: StudioRef,
       key: TrialKey
   ): Either[NavigationError, Vector[Int]] =
-    Scanpaths
+    study.scanpaths
       .get(key)
       .map(_.map(_.record))
       .toRight(
@@ -289,12 +289,6 @@ object FakeNavigator:
     case QueryStatus.Contributing(_, _, _) => true
     case _                                 => false
 
-  /** Each admitted golden trial's scanpath. The generated text is checked
-    * by `ScanpathRecordsSuite`, which requires it to parse.
-    */
-  private[fixture] lazy val Scanpaths: Map[TrialKey, Vector[ScanpathRecord]] =
-    parseScanpaths(GoldenInventory.scanpaths).getOrElse(Map.empty)
-
   /** The marker project/StudioFixture.scala writes after an off-screen record. */
   private val OutsideScreenMark = ":outside-screen"
 
@@ -338,6 +332,11 @@ object FakeNavigator:
   * screen). Under `ExcludeRecord` eyes4s admits an off-screen record into its
   * trial's scanpath and places it `OutsideScreen` (out of every map, reported
   * as outside the screen); it keeps its scanpath position.
+  *
+  * This is not eyes4s's `MapPlacement`: there `DroppedInitial` takes
+  * precedence over `OutsideScreen`, so the two agree only for fixations after
+  * those the initial-fixation policy drops, and `OnScreen` does not tell
+  * `OutsideWindow` from `InMap`.
   */
 enum ScreenPlacement derives CanEqual:
   case OnScreen, OutsideScreen

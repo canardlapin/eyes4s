@@ -135,6 +135,10 @@ object StudioFixture {
     def valid: Boolean =
       ordinal.exists(_ >= 0) && samples.exists(_ > 0) && finite(x) && finite(y) && duration > 0
 
+    // The raw x/y, while eyes4s classifies the corrected centre
+    // (io FixationCsv.parseRows applies the trial's correction rule before
+    // `frame.contains`). They agree only while the fixture's admission has no
+    // correction rules; a correction would need to be applied here first.
     def offScreen: Boolean       = !inside(screen, x, y)
     def offWindow: Boolean       = !offScreen && !inside(window, x, y)
     def micros(ms: Double): Long = math.round(ms * 1000.0)

@@ -40,7 +40,23 @@ class ScanpathRecordsSuite extends munit.FunSuite:
 
   test("the golden scanpaths parse, one per admitted trial") {
     assertEquals(golden.keySet, admitted.map(_.trial).toSet)
-    assertEquals(FakeNavigator.Scanpaths, golden)
+    assertEquals(study.scanpaths, golden)
+  }
+
+  test("an unreadable scanpath line fails the load, naming the line") {
+    val bad   = "P17\tEncoding\tenc_03\t1\t7209,seven"
+    val lines = GoldenInventory.scanpaths.linesIterator.toVector
+    val text  = (lines.head +: bad +: lines.tail).mkString("\n")
+    assertEquals(
+      MockStudy.assemble(MockStudy.fixtureText, GoldenInventory.trials, text),
+      Left(s"scanpath line '$bad': bad record 'seven'")
+    )
+    // The same inputs with the golden scanpaths load.
+    assert(
+      MockStudy
+        .assemble(MockStudy.fixtureText, GoldenInventory.trials, GoldenInventory.scanpaths)
+        .isRight
+    )
   }
 
   test("every tallied record is a fixation of its trial's scanpath") {
