@@ -1,0 +1,105 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* The plot host and its TableTwin (ticket S4.5a; docs/studio/design/
+ * Results.dc.html, participant table; Main.dc.html and Explore.dc.html,
+ * the Table tabs). Colours are token names only; sizes come from
+ * studio-type.css classes; weights are face families (DESIGN_SPEC 14). */
+
+.plot-pane {
+  -fx-background-color: -es-surface;
+  -fx-border-color: transparent;
+  -fx-border-width: 2;
+}
+
+/* A plot is one focus stop: the ring is drawn inside the pane's edge, which
+ * keeps its 2 px whether or not the plot has focus. */
+.plot-pane:focus-within {
+  -fx-border-color: -es-accent;
+}
+
+.plot-refusal {
+  -fx-text-fill: -es-fail;
+  -fx-padding: 12;
+  -fx-wrap-text: true;
+}
+
+/* ---- the table: one focus stop with a row cursor ------------------------------- */
+
+.table-twin {
+  -fx-background-color: -es-surface;
+  -fx-border-color: transparent;
+  -fx-border-width: 2;
+}
+
+.table-twin:focused {
+  -fx-border-color: -es-accent;
+}
+
+.table-twin .scroll-pane,
+.table-twin .scroll-pane > .viewport {
+  -fx-background-color: -es-surface;
+  -fx-background-insets: 0;
+  -fx-padding: 0;
+}
+
+/* The 26 px header: sticky above the rows. */
+.table-twin-head {
+  -fx-min-height: 26px;
+  -fx-pref-height: 26px;
+  -fx-max-height: 26px;
+  -fx-alignment: center-left;
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.table-twin-head .label {
+  -fx-text-fill: -es-ink-3;
+  -fx-font-family: "IBM Plex Sans SmBld";
+  -fx-padding: 0 10 0 10;
+}
+
+/* 24 px rows with a surface-3 rule below. */
+.table-twin-row {
+  -fx-min-height: 24px;
+  -fx-pref-height: 24px;
+  -fx-max-height: 24px;
+  -fx-alignment: center-left;
+  -fx-background-color: -es-surface-3, -es-surface;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.table-twin-cell {
+  -fx-text-fill: -es-ink;
+  -fx-padding: 0 10 0 10;
+}
+
+.table-twin-head .numeric,
+.table-twin-cell.numeric {
+  -fx-alignment: center-right;
+}
+
+/* The selected row: surface-2 between 2 px ink rules (the board's tr.sel). */
+.table-twin-row:selected {
+  -fx-background-color: -es-ink, -es-surface-2;
+  -fx-background-insets: 0, 2 0 2 0;
+}
+
+/* The row cursor, while the table has focus: a 2 px accent rule on the left. */
+.table-twin:focused .table-twin-row:cursor {
+  -fx-border-color: -es-accent;
+  -fx-border-width: 0 0 0 2;
+}
