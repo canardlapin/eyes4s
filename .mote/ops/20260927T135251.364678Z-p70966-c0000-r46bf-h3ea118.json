@@ -1,0 +1,1 @@
+{"actor":"codex-ready-conflicts","entity":"bd-01M3HFWC66KQKV2YAA1XPN34KP","kind":"reserve_open","mode":"exclusive","op":"20260927T135251.364678Z-p70966-c0000-r46bf-h3ea118","paths":["io/src/test/scala/eyes4s/io/AdmissionPolicySuite.scala"],"reservation_id":"rv-01M3HJ7N54Y9B412CMGWM23VGD","ts":"2026-09-27T13:52:51.364678Z","ttl_s":3600,"v":2}
