@@ -46,9 +46,9 @@ object FreshnessText:
   private def stage(kind: StageKind): String = kind.productPrefix
 
   private def total(t: ProgressTotal): String = t match
-    case ProgressTotal.Exact(n)  => count(n)
-    case ProgressTotal.AtMost(n) => s"≤ ${count(n)}"
-    case ProgressTotal.Unknown   => "counting…"
+    case ProgressTotal.Exact(n)                         => count(n)
+    case ProgressTotal.AtMost(n)                        => s"≤ ${count(n)}"
+    case ProgressTotal.Unknown | ProgressTotal.Counting => "counting…"
 
   /** "Analysis rev 4 · run 7 · data r3 · current"; while a newer run runs,
     * the shown run alone, "Showing analysis rev 4 · run 7 · data r3" (with

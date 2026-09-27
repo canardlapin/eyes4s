@@ -56,3 +56,17 @@ python3 docs/studio/plan/studio_plan.py mote
 
 To change the plan, edit `studio_plan.py`, rerun `render`, and update the matching bead with
 `mote set`. Beads that already exist are never recreated.
+
+## Backend protocol versions
+
+Protocol 1.2 adds `ProgressTotal.Counting` to progress events. Deploy the Studio
+client and backend together. The transport checks major versions only and decodes
+the typed envelope body before checking the version; it does not negotiate minor
+version capabilities. A protocol 1.0 or 1.1 decoder cannot read the new `Counting` case,
+even if the envelope is labelled 1.1. Mixed-minor deployments are unsupported.
+
+`ProtocolCodecSuite` pins the 1.2 envelopes, verifies a current Counting event,
+and exercises the frozen 1.0/1.1 total decoder at the event's meter boundary. It
+retains a readable legacy `Exact` control and rejects `Counting` under either
+version label. This records the coordinated-upgrade requirement; it does not
+claim old-client decoding compatibility or negotiated refusal.

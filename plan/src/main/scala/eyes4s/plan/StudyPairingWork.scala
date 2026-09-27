@@ -135,6 +135,7 @@ private[plan] object StudyPairingWork:
           loop(next, acc ++ pairs.map(p => p.left -> p.right))
     loop(schedule.start, Vector.empty)
 
+  /** Matched-only callers do not depend on the control schedule or its budget. */
   def cardinality[K](
       layout: StudyLayout[K],
       pairing: StudyPairing,
@@ -143,31 +144,183 @@ private[plan] object StudyPairingWork:
       matched: DirectedPairSchedule[K, K]
   ): Either[PlanError, MatchedCardinality[K]] =
     matchedPairs(matched).left.map(PlanError.Schedule.apply).map { (pairs, report) =>
-      val byFocal  = pairs.groupBy(_._1)
-      val multiple = pairs
-        .map(_._1)
-        .distinct
-        .collect { case k if byFocal(k).size > 1 => k -> byFocal(k).map(_._2) }
-      val chosen   = chosenReferences(layout, pairing, references)
-      val grouping = (pairing.matched, layout.occurrence) match
-        case (MatchedReferences.SameOccurrence, Some(o)) =>
-          (k: K) => (layout.participant(k), layout.stimulus(k), Some(o(k).value))
-        case _ => (k: K) => (layout.participant(k), layout.stimulus(k), None)
-      val order     = chosen.zipWithIndex.toMap
-      val ambiguous =
-        if pairing.matched == MatchedReferences.MeanOfAll then Vector.empty
-        else
-          chosen
-            .groupBy(grouping)
-            .values
-            .collect { case group if group.size > 1 => group }
-            .toVector
-            .sortBy(g => order(g.head))
-      new MatchedCardinality(
-        pairing,
-        multiple,
-        ambiguous,
-        report.unmatchedLeft,
-        itemConflicts(layout, keys)
-      )
+      cardinalityFromPairs(layout, pairing, keys, references, pairs, report)
     }
+
+  private[plan] def cardinalityFromPairs[K](
+      layout: StudyLayout[K],
+      pairing: StudyPairing,
+      keys: Vector[K],
+      references: Vector[K],
+      pairs: Vector[(K, K)],
+      report: PairingReport[K, K]
+  ): MatchedCardinality[K] =
+    val byFocal  = pairs.groupBy(_._1)
+    val multiple = pairs
+      .map(_._1)
+      .distinct
+      .collect { case k if byFocal(k).size > 1 => k -> byFocal(k).map(_._2) }
+    cardinalityBuilder(layout, pairing, keys, references, Vector.empty)(multiple, report)
+
+  /** Source-only indexing belongs to preparation, never to the last count page. */
+  def cardinalityBuilder[K](
+      layout: StudyLayout[K],
+      pairing: StudyPairing,
+      keys: Vector[K],
+      references: Vector[K],
+      focal: Vector[K]
+  ): CountCardinalityIndex[K] =
+    val chosen   = chosenReferences(layout, pairing, references)
+    val grouping = (pairing.matched, layout.occurrence) match
+      case (MatchedReferences.SameOccurrence, Some(o)) =>
+        (k: K) => (layout.participant(k), layout.stimulus(k), Some(o(k).value))
+      case _ => (k: K) => (layout.participant(k), layout.stimulus(k), None)
+    val order     = chosen.zipWithIndex.toMap
+    val ambiguous =
+      if pairing.matched == MatchedReferences.MeanOfAll then Vector.empty
+      else
+        chosen
+          .groupBy(grouping)
+          .values
+          .collect { case group if group.size > 1 => group }
+          .toVector
+          .sortBy(g => order(g.head))
+    val conflicts                              = itemConflicts(layout, keys)
+    given Ordering[K]                          = layout.ordering
+    def names(keys: Vector[K]): Vector[String] =
+      keys.sorted.map(k => layout.digest.digest(k).render)
+    def namedGroups(groups: Vector[Vector[K]]): Vector[Vector[String]] =
+      groups.map(_.sorted).sortBy(_.head).map(names)
+    val blocked =
+      if pairing.matched != MatchedReferences.MeanOfAll &&
+        pairing.controls == ControlReferences.SameSelection
+      then namedGroups(ambiguous)
+      else Vector.empty
+    val conflict =
+      Option.when(conflicts.nonEmpty)(PlanError.MatchItemConflict(namedGroups(conflicts)))
+    new CountCardinalityIndex(
+      pairing,
+      ambiguous,
+      conflicts,
+      focal.distinct.sorted.map(k => k -> layout.digest.digest(k).render),
+      blocked,
+      conflict
+    )
+
+/** Canonical ordering and digest rendering are preparation costs, including sorting.
+  * No ordering, digest or source-projection callback runs during refusal assembly.
+  */
+private[plan] final class CountCardinalityIndex[K](
+    val pairing: StudyPairing,
+    private val ambiguous: Vector[Vector[K]],
+    private val conflicts: Vector[Vector[K]],
+    val orderedFocal: Vector[(K, String)],
+    val blockedNames: Vector[Vector[String]],
+    val conflict: Option[PlanError]
+):
+  def apply(
+      multiple: Vector[(K, Vector[K])],
+      report: PairingReport[K, K]
+  ): MatchedCardinality[K] =
+    new MatchedCardinality(pairing, multiple, ambiguous, report.unmatchedLeft, conflicts)
+
+  def refusal(cardinality: MatchedCardinality[K]): CountRefusalCursor[K] =
+    new CountRefusalCursor(
+      this,
+      cardinality,
+      0,
+      0,
+      Set.empty,
+      Set.empty,
+      Vector.empty,
+      Vector.empty
+    )
+
+/** Three bounded passes: index multiple keys, index unmatched keys, emit canonical names.
+  * Immutable vectors/sets retain completed work; there is no final bulk conversion.
+  */
+private[plan] final class CountRefusalCursor[K](
+    private val index: CountCardinalityIndex[K],
+    private val cardinality: MatchedCardinality[K],
+    private val phase: Int,
+    private val position: Int,
+    private val multiple: Set[K],
+    private val unmatched: Set[K],
+    private val multipleNames: Vector[String],
+    private val unmatchedNames: Vector[String]
+):
+  def advance(quantum: PairQuantum): (Int, Either[Option[PlanError], CountRefusalCursor[K]]) =
+    val needsMultiple  = index.pairing.matched != MatchedReferences.MeanOfAll
+    val needsUnmatched = index.pairing.unmatched == UnmatchedFocalPolicy.Refuse
+    if index.conflict.nonEmpty then (0, Left(index.conflict))
+    else if (
+        (!needsMultiple || cardinality.multiple.isEmpty) && (!needsUnmatched || cardinality.unmatched.isEmpty)
+      )
+    then
+      val refusal = Option.when(index.blockedNames.nonEmpty)(
+        PlanError.MatchedCardinality(index.pairing.matched, Vector.empty, index.blockedNames)
+      )
+      (0, Left(refusal))
+    else
+      var part           = phase
+      var at             = position
+      var work           = 0
+      var multiples      = multiple
+      var unmatchedKeys  = unmatched
+      var namedMultiple  = multipleNames
+      var namedUnmatched = unmatchedNames
+      // Only three empty transitions are possible; each nonempty iteration spends one unit.
+      while part < 3 && work < quantum.value do
+        part match
+          case 0 =>
+            if !needsMultiple || at == cardinality.multiple.size then
+              part = 1
+              at = 0
+            else
+              multiples += cardinality.multiple(at)._1
+              at += 1
+              work += 1
+          case 1 =>
+            if !needsUnmatched || at == cardinality.unmatched.size then
+              part = 2
+              at = 0
+            else
+              unmatchedKeys += cardinality.unmatched(at)
+              at += 1
+              work += 1
+          case _ =>
+            if at == index.orderedFocal.size then part = 3
+            else
+              val (key, name) = index.orderedFocal(at)
+              if multiples.contains(key) then namedMultiple :+= name
+              if unmatchedKeys.contains(key) then namedUnmatched :+= name
+              at += 1
+              work += 1
+      if part == 3 then
+        val refusal =
+          if namedMultiple.nonEmpty || index.blockedNames.nonEmpty then
+            Some(
+              PlanError
+                .MatchedCardinality(index.pairing.matched, namedMultiple, index.blockedNames)
+            )
+          else
+            Option.when(namedUnmatched.nonEmpty)(
+              PlanError.UnmatchedFocalRefused(namedUnmatched)
+            )
+        (work, Left(refusal))
+      else
+        (
+          work,
+          Right(
+            new CountRefusalCursor(
+              index,
+              cardinality,
+              part,
+              at,
+              multiples,
+              unmatchedKeys,
+              namedMultiple,
+              namedUnmatched
+            )
+          )
+        )

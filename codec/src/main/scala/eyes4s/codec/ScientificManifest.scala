@@ -79,6 +79,18 @@ enum ArtifactRole(val wire: String, val media: MediaKind, val identityBearing: B
   case ReportSpec extends ArtifactRole("report-spec", MediaKind.JsonText, false)
   case Report     extends ArtifactRole("report", MediaKind.JsonText, false)
 
+  /** Raw source bytes; schema names the parser definition, not a JSON envelope. */
+  case SourceFile extends ArtifactRole("source-file", MediaKind.Binary, false)
+  case ImportSpec extends ArtifactRole("import-spec", MediaKind.JsonText, false)
+
+  /** A packed density chunk referenced by a study-result archive. */
+  case ResultPayload extends ArtifactRole("result-payload", MediaKind.Binary, false)
+
+/** Which independently interpreted source a ledger relation supplies. */
+enum LedgerSourceRole(val wire: String) derives CanEqual:
+  case Primary        extends LedgerSourceRole("primary")
+  case TrialInventory extends LedgerSourceRole("trial-inventory")
+
 /** One stored artifact: its role, the schema of its content, its media kind,
   * the exact byte length and SHA-256 of its bytes, the semantic identity for
   * identity-bearing roles and the layout of a payload.
@@ -113,7 +125,7 @@ object ManifestEntry:
       identity: Option[ContentHash],
       layout: Option[PayloadLayout]
   ): Either[ManifestError, ManifestEntry] =
-    val payload = role == ArtifactRole.Payload
+    val payload = role == ArtifactRole.Payload || role == ArtifactRole.ResultPayload
     for
       _ <- Either.cond(media == role.media, (), ManifestError.MediaMismatch(name, role, media))
       _ <- Either.cond(length >= 0L, (), ManifestError.NegativeLength(name, length))
@@ -202,7 +214,23 @@ enum ManifestRelation derives CanEqual:
       covariates: Option[ArtifactName]
   )
 
+  /** Byte-verified source and its replay description. Pure resolution checks
+    * declared bindings; only io replay can grant VerifiedAdmission.
+    */
+  case LedgerSource(
+      ledger: ArtifactName,
+      sourceFile: ArtifactName,
+      importSpec: ArtifactName,
+      role: LedgerSourceRole
+  )
+
+  /** A study-result@2 archive references this packed density chunk.
+    * Every result payload has at least one such owner.
+    */
+  case ResultPayloadOf(result: ArtifactName, payload: ArtifactName)
+
   def kind: String = this match
+    case LedgerSource(_, _, _, _)   => "ledger-source"
     case PlanInput(_, _)            => "plan-input"
     case ResultOf(_, _, _)          => "result-of"
     case LedgerOf(_, _)             => "ledger-of"
@@ -214,11 +242,23 @@ enum ManifestRelation derives CanEqual:
     case TemporalPlanInput(_, _)    => "temporal-plan-input"
     case TemporalResultOf(_, _, _)  => "temporal-result-of"
     case ReportOf(_, _, _, _, _)    => "report-of"
+    case ResultPayloadOf(_, _)      => "result-payload-of"
 
   /** Every endpoint as its wire field, entry name and required role; the
     * relation's source entry first.
     */
   def endpoints: Vector[(String, ArtifactName, ArtifactRole)] = this match
+    case LedgerSource(ledger, sourceFile, importSpec, _) =>
+      Vector(
+        ("ledger", ledger, ArtifactRole.AdmissionLedger),
+        ("sourceFile", sourceFile, ArtifactRole.SourceFile),
+        ("importSpec", importSpec, ArtifactRole.ImportSpec)
+      )
+    case ResultPayloadOf(result, payload) =>
+      Vector(
+        ("result", result, ArtifactRole.StudyResult),
+        ("payload", payload, ArtifactRole.ResultPayload)
+      )
     case PlanInput(plan, input) =>
       Vector(("plan", plan, ArtifactRole.StudyPlan), ("input", input, ArtifactRole.StudyInput))
     case ResultOf(result, plan, input) =>
@@ -278,6 +318,8 @@ enum ManifestRelation derives CanEqual:
       ) ++ covariates.map(("covariates", _, ArtifactRole.AdmissionLedger))
 
   def source: ArtifactName = this match
+    case LedgerSource(ledger, _, _, _)   => ledger
+    case ResultPayloadOf(result, _)      => result
     case PlanInput(plan, _)              => plan
     case ResultOf(result, _, _)          => result
     case LedgerOf(ledger, _)             => ledger
@@ -291,8 +333,10 @@ enum ManifestRelation derives CanEqual:
     case ReportOf(report, _, _, _, _)    => report
 
   def render: String =
-    endpoints
-      .map { case (field, name, _) => s"$field=${name.value}" }
+    val role = this match
+      case LedgerSource(_, _, _, value) => Vector(s"role=${value.wire}")
+      case _                            => Vector.empty
+    (endpoints.map { case (field, name, _) => s"$field=${name.value}" } ++ role)
       .mkString(s"$kind(", ", ", ")")
 
 /** Why a manifest, entry or artifact name is malformed; every case names
@@ -338,7 +382,7 @@ enum ManifestError derives CanEqual:
     case PayloadDeclaration(name, role, schema, layout) =>
       s"Entry '${name.value}' (${role.wire}, schema ${schema.name}@${schema.version}, " +
         s"layout ${layout.fold("none")(l => l.element.wire + l.shape.mkString("[", ",", "]"))}): " +
-        s"exactly the payload role carries a layout and the " +
+        s"exactly the payload roles carry a layout and the " +
         s"${DefinitionId.packedArray.name}@${DefinitionId.packedArray.version} schema."
     case LayoutLength(name, declared, layout) =>
       s"Entry '${name.value}' declares $declared bytes but its layout needs $layout."
@@ -348,7 +392,10 @@ enum ManifestError derives CanEqual:
       s"Relation ${relation.render} needs '${name.value}' to be a ${expected.wire}, " +
         s"but it is a ${found.wire}."
     case PayloadOwner(relation, schema) =>
-      s"Relation ${relation.render} needs a ${DefinitionId.packedRecording.name} owner, " +
+      val required = relation match
+        case ManifestRelation.ResultPayloadOf(_, _) => DensityArchiveDefinitions.studyResultV2
+        case _                                      => DefinitionId.packedRecording
+      s"Relation ${relation.render} needs a ${required.name} owner, " +
         s"not ${schema.name}@${schema.version}."
     case DuplicateRelation(relation) => s"Relation ${relation.render} is declared twice."
     case RelationCount(name, kind, count, expected) =>
@@ -373,7 +420,8 @@ object ScientificManifest:
 
   /** Structural checks only; semantic relations are checked on resolution.
     * Names are unique; relations name existing entries of the required roles;
-    * a payload owner is a packed recording; no relation repeats; every plan
+    * recording payload owners use packed recordings and result payload owners
+    * use study-result@2 archives; no relation repeats; every plan
     * and result (study, recording or temporal) has exactly one relation of
     * its kind, every ledger, temporal input and recording input at most one,
     * and every payload at least one owner.
@@ -387,6 +435,8 @@ object ScientificManifest:
     /** Relations of `kind` whose source is `name`, or whose payload is `name`. */
     def count(name: ArtifactName, kind: String): Int =
       relations.count {
+        case ManifestRelation.ResultPayloadOf(_, payload) =>
+          kind == "result-payload-of" && payload == name
         case ManifestRelation.PayloadOf(_, payload) => kind == "payload-of" && payload == name
         case r                                      => r.kind == kind && r.source == name
       }
@@ -415,6 +465,11 @@ object ScientificManifest:
             ManifestError.RoleMismatch(relation, name, role, e.role)
         }
         .orElse(relation match
+          case ManifestRelation.ResultPayloadOf(owner, _) =>
+            byName
+              .get(owner)
+              .filter(_.schema != DensityArchiveDefinitions.studyResultV2)
+              .map(e => ManifestError.PayloadOwner(relation, e.schema))
           case ManifestRelation.PayloadOf(owner, _) =>
             byName
               .get(owner)
@@ -445,10 +500,34 @@ object ScientificManifest:
         multiplicity(ArtifactRole.TemporalResult, "temporal-result-of", _ == 1, "exactly one")
       )
       .orElse(multiplicity(ArtifactRole.Report, "report-of", _ == 1, "exactly one"))
+      .orElse(
+        multiplicity(ArtifactRole.ResultPayload, "result-payload-of", _ >= 1, "at least one")
+      )
+    val sourceCounts = entries
+      .filter(_.role == ArtifactRole.AdmissionLedger)
+      .flatMap { e =>
+        val sources = relations.collect {
+          case r @ ManifestRelation.LedgerSource(ledger, _, _, _) if ledger == e.name => r
+        }
+        LedgerSourceRole.values.toVector.flatMap { role =>
+          val n        = sources.count(_.role == role)
+          val expected = if role == LedgerSourceRole.Primary && sources.nonEmpty then 1 else 0
+          Option.when(n > 1 || n < expected)(
+            ManifestError.RelationCount(
+              e.name,
+              s"ledger-source:${role.wire}",
+              n,
+              if expected == 1 then "exactly one" else "at most one"
+            )
+          )
+        }
+      }
+      .headOption
     duplicateName
       .orElse(endpointErrors)
       .orElse(duplicateRelation)
       .orElse(counts)
+      .orElse(sourceCounts)
       .toLeft(new ScientificManifest(entries, relations))
 
   val codec: VersionedCodec[ScientificManifest] =
@@ -478,6 +557,8 @@ object ScientificManifest:
     "relations" -> Json.arr(manifest.relations.map { r =>
       // A report without covariates writes its absent ledger as null.
       val absent = r match
+        case ManifestRelation.LedgerSource(_, _, _, role) =>
+          Vector("role" -> Json.fromString(role.wire))
         case ManifestRelation.ReportOf(_, _, _, _, None) => Vector("covariates" -> Json.Null)
         case _                                           => Vector.empty
       Json.fromFields(
@@ -532,6 +613,16 @@ object ScientificManifest:
 
   private def readRelation(json: Json): Either[CodecError, ManifestRelation] =
     Wire.field[String](json, "kind").flatMap {
+      case "ledger-source" =>
+        for
+          ledger   <- name(json, "ledger")
+          source   <- name(json, "sourceFile")
+          spec     <- name(json, "importSpec")
+          roleName <- Wire.field[String](json, "role")
+          role     <- LedgerSourceRole.values
+            .find(_.wire == roleName)
+            .toRight(CodecError.Field("role", json, s"unknown ledger source role '$roleName'"))
+        yield ManifestRelation.LedgerSource(ledger, source, spec, role)
       case "plan-input" =>
         (name(json, "plan"), name(json, "input")).mapN(ManifestRelation.PlanInput.apply)
       case "result-of" =>
@@ -543,6 +634,10 @@ object ScientificManifest:
         (name(json, "temporal"), name(json, "base")).mapN(ManifestRelation.TemporalBase.apply)
       case "recording-of" =>
         (name(json, "input"), name(json, "recording")).mapN(ManifestRelation.RecordingOf.apply)
+      case "result-payload-of" =>
+        (name(json, "result"), name(json, "payload")).mapN(
+          ManifestRelation.ResultPayloadOf.apply
+        )
       case "payload-of" =>
         (name(json, "owner"), name(json, "payload")).mapN(ManifestRelation.PayloadOf.apply)
       case "recording-plan-input" =>
@@ -601,6 +696,50 @@ final case class PackedArtifacts(
 )
 
 object StoredArtifact:
+  /** Preserve raw source bytes exactly; parser/schema and semantic evidence
+    * are checked against the ledger's declaration when related and resolved.
+    */
+  def sourceFile(
+      name: String,
+      format: SourceFormat,
+      bytes: IArray[Byte]
+  ): Either[CodecError, StoredArtifact] =
+    val owned  = Bytes.copy(bytes)
+    val parser = format match
+      case SourceFormat.FixationCsv       => SourceImportDefinitions.fixationParser
+      case SourceFormat.TrialInventoryCsv => SourceImportDefinitions.inventoryParser
+    for
+      artifact <- ArtifactName.of(name).left.map(CodecError.Manifest.apply)
+      entry    <- ManifestEntry
+        .of(
+          artifact,
+          ArtifactRole.SourceFile,
+          parser,
+          MediaKind.Binary,
+          owned.length.toLong,
+          ByteDigest.sha256(owned),
+          None,
+          None
+        )
+        .left
+        .map(CodecError.Manifest.apply)
+    yield new StoredArtifact(entry, owned)
+
+  def importSpec[K, U <: Unit2D](
+      name: String,
+      persistence: VersionedCodec[ImportSpec[K, U]],
+      value: ImportSpec[K, U]
+  ): Either[CodecError, StoredArtifact] =
+    persistence.encode(value).flatMap(document(name, ArtifactRole.ImportSpec, _, None))
+
+  def inventoryImportSpec(
+      name: String,
+      value: InventoryImportSpec
+  ): Either[CodecError, StoredArtifact] =
+    ImportSpecCodec.inventory
+      .encode(value)
+      .flatMap(document(name, ArtifactRole.ImportSpec, _, None))
+
   /** Store a JSON document as the UTF-8 of its pretty-printed form. */
   def document(
       name: String,
@@ -647,12 +786,26 @@ object StoredArtifact:
 
   /** Store a verified payload under its own digest and layout. */
   def payload(name: String, payload: VerifiedPayload): Either[CodecError, StoredArtifact] =
+    storePayload(name, ArtifactRole.Payload, payload)
+
+  /** Store a density chunk for a ResultPayloadOf relation. */
+  def resultPayload(
+      name: String,
+      payload: VerifiedPayload
+  ): Either[CodecError, StoredArtifact] =
+    storePayload(name, ArtifactRole.ResultPayload, payload)
+
+  private def storePayload(
+      name: String,
+      role: ArtifactRole,
+      payload: VerifiedPayload
+  ): Either[CodecError, StoredArtifact] =
     for
       artifact <- ArtifactName.of(name).left.map(CodecError.Manifest.apply)
       entry    <- ManifestEntry
         .of(
           artifact,
-          ArtifactRole.Payload,
+          role,
           DefinitionId.packedArray,
           MediaKind.Binary,
           payload.bytes.length.toLong,

@@ -1,0 +1,22 @@
+{
+  "schema": {
+    "name": "eyes4s.source-ref",
+    "version": 1
+  },
+  "value": {
+    "label": "fixations.csv",
+    "records": "e5740769eab149c6",
+    "interpretation": {
+      "kind": "declared",
+      "format": "FixationCsv",
+      "parser": {
+        "name": "eyes4s.fixation-csv-parser",
+        "version": 1
+      },
+      "optionsSchema": "FixationCsvV1",
+      "options": "36995201760330b5",
+      "identityVersion": "eyes4s.source-identity/1",
+      "identity": "068718ec24fd232f"
+    }
+  }
+}

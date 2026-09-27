@@ -270,7 +270,14 @@ class CommandReducerSuite extends munit.FunSuite:
     val (next, _) = Reducer
       .step(
         t1,
-        ImportSources(Some(r3), parent.sources, parent.mapping, parent.units, parent.geometry)
+        ImportSources(
+          Some(r3),
+          parent.sources,
+          parent.mapping,
+          parent.units,
+          parent.geometry,
+          DeclaredAttributes.empty
+        )
       )
       .toOption
       .get

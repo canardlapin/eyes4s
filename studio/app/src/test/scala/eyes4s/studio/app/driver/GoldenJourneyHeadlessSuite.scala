@@ -198,7 +198,8 @@ class GoldenJourneyHeadlessSuite extends munit.FunSuite:
           r2Spec.sources,
           r2Spec.mapping,
           r2Spec.units,
-          r2Spec.geometry
+          r2Spec.geometry,
+          DeclaredAttributes.empty
         )
       ),
       Step.intent[Future](

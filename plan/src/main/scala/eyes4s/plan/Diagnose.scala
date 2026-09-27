@@ -231,6 +231,8 @@ object Diagnose:
   given session: Diagnose[SessionError, Nothing]                 = derived(C.session)(_.message)
   given reductionPolicy: Diagnose[ReductionPolicyError, Nothing] =
     derived(C.reductionPolicy)(_.message)
+  given stageMeter: Diagnose[StageMeterError, Nothing] = derived(C.stageMeter)(_.message)
+  given studyRun: Diagnose[StudyRunError, Nothing]     = derived(C.studyRun)(_.message)
   given workQuanta: Diagnose[WorkQuantaError, Nothing] = derived(C.workQuanta)(_.message)
   given evaluationWork: Diagnose[EvaluationWorkError, Nothing] =
     derived(C.evaluationWork)(_.message)
@@ -248,8 +250,15 @@ object Diagnose:
     derived(C.repetitionPlan)(_.message)
   given diagnosticCode: Diagnose[DiagnosticCodeError, Nothing] =
     derived(C.diagnosticCode)(_.message)
+  given massLevel: Diagnose[MassLevelError, Nothing] = derived(C.massLevel)(_.message)
+
   given fixationEntropy: Diagnose[FixationEntropyError, Nothing] =
     derived(C.fixationEntropy)(_.message)
+
+  given sourceIdentity: Diagnose[SourceIdentityError, Nothing] =
+    derived(SourceDiagnostics.identity)(_.message)
+  given importSpec: Diagnose[ImportSpecError, Nothing] =
+    derived(SourceDiagnostics.importDescription)(_.message)
 
   /** An epoch error names its trial by key; the mark kind of its selector is
     * the application's own value and is carried as text.
@@ -404,7 +413,18 @@ private[eyes4s] object DiagnosticOperand extends DiagnosticOperandCauses:
     of(value => Operand.Micros(value.toMicros))
   given nonNegativeLong: DiagnosticOperand[NonNegativeLong, Nothing] =
     of(value => DiagnosticSupport.long(value.toLong))
-  given contentHash: DiagnosticOperand[ContentHash, Nothing]   = of(h => artifact(h.render))
+  given contentHash: DiagnosticOperand[ContentHash, Nothing] = of(h => artifact(h.render))
+  given sourceInterpretation: DiagnosticOperand[SourceInterpretation, Nothing] = of {
+    case SourceInterpretation.LegacyUnspecified  => token("LegacyUnspecified")
+    case declared: SourceInterpretation.Declared =>
+      fields(
+        "kind"          -> token("Declared"),
+        "format"        -> token(declared.format.toString),
+        "parser"        -> definition(declared.parser),
+        "optionsSchema" -> token(declared.optionsSchema.toString),
+        "options"       -> artifact(declared.options.render)
+      )
+  }
   given frameId: DiagnosticOperand[FrameId, Nothing]           = of(frame)
   given clockId: DiagnosticOperand[ClockId, Nothing]           = of(clock)
   given gridId: DiagnosticOperand[GridId, Nothing]             = of(grid)

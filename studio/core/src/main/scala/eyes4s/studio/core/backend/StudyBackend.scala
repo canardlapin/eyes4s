@@ -212,17 +212,19 @@ enum ServerFrame derives CanEqual, Codec.AsObject:
   case Response(response: BackendResponse)
   case Event(event: JobEvent)
 
-/** The protocol's version. A backend answers any request whose major version
-  * it speaks; minor versions only add.
+/** The protocol's version. The transport checks the major version only.
+  * Client and backend must be upgraded together when a minor version adds a
+  * wire variant: an older body decoder cannot read that new variant.
   */
 final case class ProtocolVersion(major: Int, minor: Int) derives CanEqual, Codec.AsObject:
   def render: String = s"$major.$minor"
 
 object ProtocolVersion:
   /** 1.1 added `Unsubscribe`, `Unsubscribed`, `Malformed` and
-    * `DuplicateSubscription` (S0.9).
+    * `DuplicateSubscription` (S0.9). 1.2 adds `ProgressTotal.Counting`; deploy
+    * client and backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 1)
+  val Current: ProtocolVersion = ProtocolVersion(1, 2)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual

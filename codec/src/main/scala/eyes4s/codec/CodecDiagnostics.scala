@@ -111,7 +111,10 @@ object CodecDiagnosticCatalog:
     "ReportMembers",
     "ReportCell",
     "ReportRecomputed",
-    "ReportComponents"
+    "ReportComponents",
+    "SourceBinding",
+    "RunPlan",
+    "RunInput"
   )
   val manifest: DiagnosticFamily = error("manifest")(
     "InvalidName",
@@ -139,9 +142,38 @@ object CodecDiagnosticCatalog:
   )
   val byteDigest: DiagnosticFamily =
     error("byte-digest")("WrongLength", "InvalidCharacter")
+  val density: DiagnosticFamily = error("density")(
+    "UnknownScale",
+    "UnknownKey",
+    "AmbiguousKey",
+    "Failed",
+    "MissingPayload",
+    "Payload",
+    "PayloadReference",
+    "RecomputeUnavailable",
+    "SourceMismatch",
+    "DigestMismatch",
+    "Decode",
+    "Geometry",
+    "Materialize",
+    "UnknownRow",
+    "RowKeyMismatch"
+  )
+
+  val runStamp: DiagnosticFamily = error("run-stamp")("ChangedPlan", "ChangedInput")
 
   val families: Vector[DiagnosticFamily] =
-    Vector(codec, resolve, sourceFailure, relation, manifest, payload, byteDigest)
+    Vector(
+      codec,
+      resolve,
+      sourceFailure,
+      relation,
+      manifest,
+      payload,
+      byteDigest,
+      density,
+      runStamp
+    )
 
   val codes: Vector[DiagnosticCode] = families.flatMap(_.codes)
 
@@ -390,7 +422,15 @@ private[codec] object CodecProjections:
           artifact(found)
         )
       case Description(values) => diagnostic[Any](C.relation, e, e.message)(changes(values))
-      case Admission(error)    =>
+      case RunPlan(reported, current, values) =>
+        diagnostic[Any](C.relation, e, e.message)(
+          digest(reported),
+          digest(current),
+          changes(values)
+        )
+      case RunInput(reported, current) =>
+        diagnostic[Any](C.relation, e, e.message)(digest(reported), digest(current))
+      case Admission(error) =>
         val inner = Projections.admission(error)
         diagnostic(C.relation, e, e.message, inner.subject)(cause(inner))
       case RefusedAdmission           => diagnostic[Any](C.relation, e, e.message)()
@@ -420,6 +460,8 @@ private[codec] object CodecProjections:
         )
       case ReportSpec(report, stored) =>
         diagnostic[Any](C.relation, e, e.message)(name(report), name(stored))
+      case SourceBinding(field, expected, found) =>
+        diagnostic[Any](C.relation, e, e.message)(token(field), text(expected), text(found))
       case ReportBinding(field, bound, stored) =>
         diagnostic[Any](C.relation, e, e.message)(token(field), text(bound), text(stored))
       case ReportInput(input, computed) =>
@@ -525,6 +567,91 @@ private[codec] object CodecProjections:
       case InvalidCharacter(value, index, character) =>
         d(text(value), int(index), text(character.toString))
 
+  def density[K](e: DensityError[K]): Diagnostic[Any] =
+    import DensityError.*
+    def at(scale: Int, key: K): Vector[Locus[Any]] =
+      Vector(Locus.Scale(scale), Locus.Trial(key))
+    e match
+      case UnknownScale(scale, count) =>
+        diagnostic(C.density, e, e.message, Vector(Locus.Scale(scale)))(int(scale), int(count))
+      case UnknownKey(scale, key) =>
+        diagnostic(C.density, e, e.message, at(scale, key))(int(scale), Operand.Key(key))
+      case AmbiguousKey(scale, key, count) =>
+        diagnostic(C.density, e, e.message, at(scale, key))(
+          int(scale),
+          Operand.Key(key),
+          int(count)
+        )
+      case Failed(scale, key, failure) =>
+        val inner = Projections.failure(failure)
+        diagnostic(C.density, e, e.message, at(scale, key))(
+          int(scale),
+          Operand.Key(key),
+          cause(inner)
+        )
+      case MissingPayload(scale, key, reference) =>
+        diagnostic(C.density, e, e.message, at(scale, key))(
+          int(scale),
+          Operand.Key(key),
+          payloadRef(reference)
+        )
+      case Payload(scale, key, underlying) =>
+        val inner = payload(underlying)
+        diagnostic(C.density, e, e.message, at(scale, key))(
+          int(scale),
+          Operand.Key(key),
+          cause(inner)
+        )
+      case PayloadReference(scale, key, expected, actual) =>
+        diagnostic(C.density, e, e.message, at(scale, key))(
+          int(scale),
+          Operand.Key(key),
+          payloadRef(expected),
+          payloadRef(actual)
+        )
+      case RecomputeUnavailable(scale, key) =>
+        diagnostic(C.density, e, e.message, at(scale, key))(int(scale), Operand.Key(key))
+      case SourceMismatch(scale, key, expected, actual) =>
+        diagnostic(C.density, e, e.message, at(scale, key))(
+          int(scale),
+          Operand.Key(key),
+          text(expected),
+          text(actual)
+        )
+      case DigestMismatch(scale, key, expected, actual) =>
+        diagnostic(C.density, e, e.message, at(scale, key))(
+          int(scale),
+          Operand.Key(key),
+          digest(expected),
+          digest(actual)
+        )
+      case Decode(scale, key, underlying) =>
+        val inner = codec(underlying)
+        diagnostic(C.density, e, e.message, merged(at(scale, key), inner))(
+          int(scale),
+          Operand.Key(key),
+          cause(inner)
+        )
+      case Geometry(underlying) =>
+        val inner = Projections.inspection(underlying)
+        diagnostic(C.density, e, e.message, inner.subject)(cause(inner))
+      case Materialize(underlying) =>
+        val inner = codec(underlying)
+        diagnostic(C.density, e, e.message, inner.subject)(cause(inner))
+      case UnknownRow(scale, row, count) =>
+        diagnostic(C.density, e, e.message, Vector(Locus.Scale(scale), Locus.InputTrial(row)))(
+          int(scale),
+          int(row),
+          int(count)
+        )
+      case RowKeyMismatch(scale, row, expected, actual) =>
+        diagnostic(C.density, e, e.message, at(scale, expected) :+ Locus.InputTrial(row))(
+          int(scale),
+          int(row),
+          Operand.Key(expected),
+          Operand.Key(actual)
+        )
+
 /** The codec's [[Diagnose]] instances. Import `CodecDiagnostics.given` for
   * `Diagnostic.of` over the codec's families. A decoded study's key type is
   * not known statically where the codec reports, so trial keys inside a
@@ -549,3 +676,23 @@ object CodecDiagnostics:
   given payloadError: Diagnose[PayloadError, Nothing] = Diagnose.instance(C.payload)(payload)
   given byteDigestError: Diagnose[ByteDigestError, Nothing] =
     Diagnose.instance(C.byteDigest)(byteDigest)
+  given densityError[K]: Diagnose[DensityError[K], ErasedKey] =
+    erased(C.density)(density[K])
+
+  given runStampError[P, I]: Diagnose[RunStampError[P, I], Nothing] =
+    Diagnose.instance(C.runStamp) { error =>
+      import DiagnosticSupport.diagnostic
+      import CodecDiagnosticSupport.{digest, changes}
+      error match
+        case RunStampError.ChangedPlan(reported, current, values) =>
+          diagnostic[Nothing](C.runStamp, error, error.message)(
+            digest(reported.sha256),
+            digest(current.sha256),
+            changes(values)
+          )
+        case RunStampError.ChangedInput(reported, current) =>
+          diagnostic[Nothing](C.runStamp, error, error.message)(
+            digest(reported.sha256),
+            digest(current.sha256)
+          )
+    }

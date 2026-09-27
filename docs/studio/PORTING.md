@@ -102,7 +102,7 @@ backend through a `BackendTransport`:
 
 The wire format is `WireFormat`:
 
-1. Each message is one JSON envelope, `{"version":{"major":1,"minor":1},"id":<long>,"body":…}`,
+1. Each message is one JSON envelope, `{"version":{"major":1,"minor":2},"id":<long>,"body":…}`,
    encoded as UTF-8 and terminated by `\n` (NDJSON). JSON escapes newlines inside strings, so one
    line always holds one envelope. Over a WebSocket, each text message is one line without its
    terminator. A line may be at most `WireFormat.MaxLineLength` characters (16 MiB). Neither side
@@ -126,7 +126,12 @@ The wire format is `WireFormat`:
    request.
 6. Versions: the server refuses a request of another major version with
    `Refused(UnsupportedVersion)`. The client treats a frame of another major version as a transport
-   defect (`TransportError.Incompatible`). Minor versions only add.
+   defect (`TransportError.Incompatible`). Protocol 1.1 added the S0.9 request and refusal
+   variants; 1.2 adds `ProgressTotal.Counting`. Client and backend must be upgraded together:
+   mixed-minor deployments are unsupported. The transport decodes a typed body before checking
+   the major version and does not negotiate minor capabilities. An older decoder cannot read a
+   new variant; changing the envelope's version label does not change that. See the
+   [protocol regression](README.md#backend-protocol-versions) for the legacy-total decoder probe.
 7. Refusals are values (`BackendError`). A frame for the wrong id, or a missing, duplicated or
    mismatched response, is a `TransportError`, raised as a `TransportFailure`.
 8. **Malformed lines.** When a request line does not decode but its `id` can be read, the server

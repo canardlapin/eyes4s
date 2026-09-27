@@ -44,6 +44,10 @@ final case class FamilySamples(
   * so a new case appears in `labels` before anyone writes a code for it.
   */
 object DiagnosticSamples:
+  given DiagnosticExample[SourceKeyColumns[?]] = DiagnosticExample.of(seed =>
+    SourceKeyColumns.Study(s"participant-$seed", s"item-$seed", s"phase-$seed")
+  )
+
   inline def labelsOf[E](using m: Mirror.SumOf[E]): Vector[String] =
     constValueTuple[m.MirroredElemLabels].toList.map(_.toString).toVector
 
@@ -827,7 +831,16 @@ object DiagnosticSamples:
         4
       ),
       InspectionError.Orientation(1, StudyDesign.Matched, ReductionOrientation.EdgesOnce),
-      InspectionError.NoContrast(2)
+      InspectionError.NoContrast(2),
+      InspectionError.Geometry(
+        ResultRef.Estimation(0, k1),
+        GeometryError.FrameMismatch(fid, deg)
+      ),
+      InspectionError.GeometryDescription(
+        ResultRef.Estimation(0, k1),
+        "window",
+        Vector(Provenance.Param.Text("image"))
+      )
     ),
     generated[TimelineError]("TimelineError"),
     generated[MovingError]("MovingError"),
@@ -911,6 +924,25 @@ object DiagnosticSamples:
       ),
       FieldError.UnknownField(FieldId.literal("thresholdDegPerSecond")),
       FieldError.RepeatedPart(FieldId.literal("window"), FieldId.literal("xMin"))
+    ),
+    generated[SourceIdentityError]("SourceIdentityError"),
+    generated[ImportSpecError]("ImportSpecError"),
+    generated[MassLevelError]("MassLevelError"),
+    family[StageMeterError]("StageMeterError")(
+      StageMeterError.NegativeDone(StageKind.Comparing, CountUnit.Pairs, -1L),
+      StageMeterError
+        .NegativeTotal(StageKind.Estimating, CountUnit.Maps, SegmentTotal.Exact(-1L)),
+      StageMeterError
+        .BeyondTotal(StageKind.Reducing, CountUnit.Keys, 3L, SegmentTotal.AtMost(2L)),
+      StageMeterError.Regressed(StageKind.Contrasting, CountUnit.Rows, 4L, 3L)
+    ),
+    family[StudyRunError]("StudyRunError")(
+      StudyRunError.Plan(PlanError.ArtifactMismatch("reported", "current")),
+      StudyRunError.Meter(
+        StageMeterError
+          .BeyondTotal(StageKind.Comparing, CountUnit.Pairs, 4L, SegmentTotal.Exact(3L))
+      ),
+      StudyRunError.UnexpectedCompletion(StudyDesign.Control, 42L)
     ),
     generated[StudyRecipeError]("StudyRecipeError"),
     generated[StudyAdvisory]("StudyAdvisory")

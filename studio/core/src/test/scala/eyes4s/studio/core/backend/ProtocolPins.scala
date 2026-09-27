@@ -16,7 +16,7 @@
 
 package eyes4s.studio.core.backend
 
-/** The pinned wire form of every [[ProtocolSamples]] sample, protocol 1.0. */
+/** The pinned wire form of every [[ProtocolSamples]] sample, protocol 1.2. */
 object ProtocolPins:
   val pins: Map[String, String] = Map(
     "error.DuplicateSubscription" ->
@@ -62,9 +62,9 @@ object ProtocolPins:
     "disposition.NoFixations" ->
       """{"NoFixations":{}}""",
     "envelope.frame" ->
-      """{"version":{"major":1,"minor":1},"id":41,"body":{"Event":{"event":{"Finished":{"outcome":{"Completed":{"job":1,"run":8,"last":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}}}}""",
+      """{"version":{"major":1,"minor":2},"id":41,"body":{"Event":{"event":{"Finished":{"outcome":{"Completed":{"job":1,"run":8,"last":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}}}}""",
     "envelope.request" ->
-      """{"version":{"major":1,"minor":1},"id":41,"body":{"Subscribe":{"id":1}}}""",
+      """{"version":{"major":1,"minor":2},"id":41,"body":{"Subscribe":{"id":1}}}""",
     "error.AlreadyRunning" ->
       """{"AlreadyRunning":{"revision":5,"job":1}}""",
     "error.NoResult" ->
@@ -257,6 +257,8 @@ object ProtocolPins:
       """{"Running":{"progress":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}""",
     "total.AtMost" ->
       """{"AtMost":{"units":2}}""",
+    "total.Counting" ->
+      """{"Counting":{}}""",
     "total.Exact" ->
       """{"Exact":{"units":1}}""",
     "total.Unknown" ->

@@ -1,0 +1,48 @@
+{
+  "schema": {
+    "name": "eyes4s.import-spec",
+    "version": 1
+  },
+  "value": {
+    "keySchema": {
+      "name": "eyes4s.study-key",
+      "version": 1
+    },
+    "keys": {
+      "kind": "study",
+      "participant": "participant",
+      "stimulus": "item",
+      "phase": "phase"
+    },
+    "columns": {
+      "ordinal": "n",
+      "x": "x",
+      "y": "y",
+      "onset": "onset",
+      "duration": "duration",
+      "samples": {
+        "kind": "positiveColumn",
+        "column": "samples"
+      },
+      "attributes": []
+    },
+    "frame": {
+      "id": "source-frame",
+      "unit": "px",
+      "xMin": 0.0,
+      "yMin": 0.0,
+      "xMax": 100.0,
+      "yMax": 100.0,
+      "yAxis": "Down"
+    },
+    "timeUnit": "Milliseconds",
+    "rounding": "NearestMicrosecond",
+    "policy": {
+      "offScreen": "ExcludeRecord",
+      "corrections": []
+    },
+    "decision": "ReviewExclusions",
+    "inventory": null,
+    "digest": "36995201760330b5"
+  }
+}
