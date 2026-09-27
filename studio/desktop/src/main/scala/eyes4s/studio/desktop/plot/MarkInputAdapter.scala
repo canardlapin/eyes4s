@@ -75,6 +75,11 @@ trait MarkLayer[R <: StudioRef, E, T <: RovingTargets[R, E]]:
   /** The view's accessible text under `state`, if it is showing something. */
   def spoken(state: MarkInputState[R], targets: T): Option[String]
 
+  /** The view's accessible text while no marks are drawn (such as why its
+    * scene was refused), if any.
+    */
+  def idle: Option[String] = None
+
   /** The accessible role description of the view's focus stop ("plot"). */
   def roleDescription: String
 
@@ -290,7 +295,7 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
 
   private def describe(): Unit =
     if !disposed then
-      val text = targets.flatMap(layer.spoken(current, _))
+      val text = targets.flatMap(layer.spoken(current, _)).orElse(layer.idle)
       if text != spoken then
         spoken = text
         host.setAccessibleText(text.orNull)

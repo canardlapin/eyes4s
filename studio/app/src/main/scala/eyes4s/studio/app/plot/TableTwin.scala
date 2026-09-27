@@ -121,22 +121,19 @@ final case class TableTwinState private (
   /** The view-model of `source` under this state. */
   def vm(source: PlotSource): TableTwinVM =
     val headers = source.columns.map(c => TableHeaderVM(c.header, c.format.numeric))
-    val rows    = source.rows.indices.map { i =>
-      val ref      = source.rows(i).ref
-      val selected = selection.isSelected(ref)
+    val rows    = source.rows.map { row =>
+      val selected = selection.isSelected(row.ref)
       TableRowVM(
-        ref,
-        source.columns.indices
-          .map(c => TableCellVM(source.text(i, c), source.columns(c).format.numeric))
-          .toVector,
+        row.ref,
+        source.cellsOf(row).zip(source.columns).map((t, c) => TableCellVM(t, c.format.numeric)),
         selected,
-        cursor.contains(ref),
-        PlotText.selected(source.rowText(i), selected)
+        cursor.contains(row.ref),
+        PlotText.selected(source.rowTextOf(row), selected)
       )
-    }.toVector
+    }
     val cursorRow = cursor.flatMap(source.rowOf)
-    val spoken    = cursorRow match
-      case Some(i) => rows(i).accessibleText
+    val spoken    = cursorRow.flatMap(rows.lift) match
+      case Some(r) => r.accessibleText
       case None    =>
         if rows.isEmpty then PlotText(PlotTextId.TableEmpty, source.caption)
         else PlotText(PlotTextId.TableKeys, source.caption)

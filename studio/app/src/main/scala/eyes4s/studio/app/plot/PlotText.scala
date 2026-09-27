@@ -41,6 +41,9 @@ enum PlotTextId derives CanEqual:
   /** Rows the plot could not draw, and why. */
   case Unplotted, MissingValue
 
+  /** A plot whose builder refused its source, and why. */
+  case Refused
+
 /** A plot's strings in the boards' wording. */
 object PlotText:
 
@@ -62,6 +65,7 @@ object PlotText:
       case TableTab     => "Table"
       case Unplotted    => "{0} not drawn: {1}"
       case MissingValue => "no {0}"
+      case Refused      => "{0}: plot not drawn. {1}"
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: PlotTextId, args: String*): String =

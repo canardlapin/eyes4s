@@ -18,6 +18,7 @@ package eyes4s.studio.viz.plot
 
 import eyes4s.studio.app.plot.{ColumnId, PlotSource, PlotText, PlotTextId, PlotValue}
 import eyes4s.studio.app.tokens.{FontFace, Theme, ThemedToken, TypeSize}
+import eyes4s.studio.core.selection.StudioRef
 import intaglio.{
   Anchor,
   BatchColumn,
@@ -61,8 +62,9 @@ final case class DotPlot(x: ColumnId, y: ColumnId, title: String) extends PlotBu
       split = source.rows.indices.toVector.map { i =>
         val row = source.rows(i)
         (row.values(xi), row.values(yi)) match
-          case (PlotValue.Number(vx), PlotValue.Number(vy)) => Right((i, DataPoint(vx, vy)))
-          case (PlotValue.Number(_), _)                     =>
+          case (PlotValue.Number(vx), PlotValue.Number(vy)) =>
+            Right((i, row.ref, DataPoint(vx, vy)))
+          case (PlotValue.Number(_), _) =>
             Left(Unplotted(row.ref, i, UnplottedReason.MissingValue(y)))
           case _ => Left(Unplotted(row.ref, i, UnplottedReason.MissingValue(x)))
       }
@@ -132,19 +134,19 @@ object DotPlot:
   private def scene(
       theme: Theme,
       source: PlotSource,
-      drawn: Vector[(Int, DataPoint)],
+      drawn: Vector[(Int, StudioRef, DataPoint)],
       x: ColumnId,
       y: ColumnId
   ): Either[GraphicsError, (Vector[Grob], Viewport, Vector[PlotMark])] =
     def colour(token: ThemedToken): Rgba = IntaglioColours.themed(theme, token)
     def header(id: ColumnId): String     =
-      source.indexOf(id).fold(id.value)(source.columns(_).header)
+      source.indexOf(id).flatMap(source.columns.lift).fold(id.value)(_.header)
     def traverse[A, B](as: Vector[A])(f: A => Either[GraphicsError, B]) =
       as.foldLeft[Either[GraphicsError, Vector[B]]](Right(Vector.empty)) { (acc, a) =>
         acc.flatMap(bs => f(a).map(bs :+ _))
       }
-    val (x0, x1) = domain(drawn.map(_._2.x))
-    val (y0, y1) = domain(drawn.map(_._2.y))
+    val (x0, x1) = domain(drawn.map(_._3.x))
+    val (y0, y1) = domain(drawn.map(_._3.y))
     for
       xScale   <- Interval(x0, x1)
       yScale   <- Interval(y0, y1)
@@ -171,7 +173,7 @@ object DotPlot:
         lineWidthUnit = StrokeUnit.Point
       )
       dotSize <- ExtentExpr.points(px(RadiusPx))
-      marked  <- traverse(drawn.zipWithIndex) { case ((row, at), order) =>
+      marked  <- traverse(drawn.zipWithIndex) { case ((row, ref, at), order) =>
         for
           n    <- GraphicsName(s"$MarkPrefix$row", "dot plot mark")
           p    <- Point.native(at.x, at.y)
@@ -182,7 +184,7 @@ object DotPlot:
             graphicParams = BatchColumn.Constant(dotGp),
             name = Some(n)
           )
-        yield (grob, PlotMark(source.rows(row).ref, row, at, RadiusPx + EdgePx / 2.0, order, n))
+        yield (grob, PlotMark(ref, row, at, RadiusPx + EdgePx / 2.0, order, n))
       }
       labelSize <- Length.points(px(TypeSize.T11.px.toDouble))
       labelGp   <- GraphicParams.checked(

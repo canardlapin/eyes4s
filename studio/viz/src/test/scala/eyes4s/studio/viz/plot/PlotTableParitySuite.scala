@@ -19,7 +19,13 @@ package eyes4s.studio.viz.plot
 import eyes4s.studio.app.Intent
 import eyes4s.studio.app.plot.*
 import eyes4s.studio.app.tokens.Theme
-import eyes4s.studio.core.selection.{SelectionState, StudioRef, ViewId}
+import eyes4s.studio.core.selection.{
+  InputCause,
+  SelectionMode,
+  SelectionState,
+  StudioRef,
+  ViewId
+}
 import intaglio.interaction.NamedPicking
 import munit.ScalaCheckSuite
 import org.scalacheck.{Gen, Prop}
@@ -124,7 +130,7 @@ class PlotTableParitySuite extends ScalaCheckSuite:
         )
         assertEquals(Some(m.at.x), source.number(m.row, source.columns(xi).id))
         assertEquals(Some(m.at.y), source.number(m.row, source.columns(yi).id))
-        assertEquals(plot.readout(m), row.accessibleText)
+        assertEquals(plot.readout(m), Some(row.accessibleText))
       }
       plot.unplotted.foreach { u =>
         val cells = table.rows(u.row).cells
@@ -204,6 +210,35 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       val cursorRow = onRow.project(byPlot).state.vm(source)
       assertEquals(t.accessibleText(onMark.project(byPlot).state), cursorRow.accessibleText)
       assertEquals(t.accessibleText(onMark), onRow.vm(source).accessibleText)
+    }
+  }
+
+  property("a selection of several marks rings every one, and the table marks every row") {
+    val cases = for
+      source <- genSource
+      plot = right(dots(source).build(source, Theme.Light))
+      if plot.marks.size >= 2
+      two  <- Gen.pick(2, plot.marks)
+      more <- Gen.someOf(plot.marks)
+    yield (source, plot, (two.toVector ++ more).distinct)
+    Prop.forAll(cases) { (source, plot, picked) =>
+      val t           = targetsOn(plot, 1.0)
+      val refs        = picked.map(_.ref)
+      val (_, intent) = ViewSelection
+        .initial(tableView, SelectionState.empty)
+        .submit(SelectionMode.Replace, refs, InputCause.Pointer)
+      val selected = bus(SelectionState.empty, Vector(intent))
+      val rings    = MarkInputState
+        .initial[StudioRef](plotView, SelectionState.empty)
+        .project(selected)
+        .state
+        .selectionRings(t)
+      assertEquals(rings.map(r => (r.kind, r.ref)), refs.map((RingKind.Selected, _)))
+      assertEquals(rings.map(_.centre), refs.map(r => t.target(r).get.anchor))
+      assertEquals(
+        TableTwinState.initial(tableView, selected).vm(source).rows.map(_.selected),
+        source.rows.map(r => refs.contains(r.ref))
+      )
     }
   }
 
@@ -322,7 +357,7 @@ class PlotTableParitySuite extends ScalaCheckSuite:
     )
     assertEquals(
       plot.unplottedText(plot.unplotted.head),
-      "PARTICIPANT P1, X 0.0, Y — not drawn: no Y"
+      Some("PARTICIPANT P1, X 0.0, Y — not drawn: no Y")
     )
     // Missing is not zero: P1 has no mark at y = 0, where P2 is drawn.
     assertEquals(plot.markOf(StudioRef.Participant("P1")), None)

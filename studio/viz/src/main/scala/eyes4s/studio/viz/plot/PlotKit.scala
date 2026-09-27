@@ -114,16 +114,20 @@ final case class BuiltPlot private (
   /** The mark drawn as grob `name`. */
   def markNamed(name: GraphicsName): Option[PlotMark] = byName.get(name)
 
-  /** What a focused mark says: exactly the words of its table row. */
-  def readout(mark: PlotMark): String = source.rowText(mark.row)
+  /** What a focused mark says: exactly the words of its table row, if the
+    * mark's row is one of this plot's (every mark [[BuiltPlot.apply]] accepts).
+    */
+  def readout(mark: PlotMark): Option[String] = source.rowText(mark.row)
 
-  /** The words for a row the plot does not draw. */
-  def unplottedText(u: Unplotted): String =
+  /** The words for a row the plot does not draw, if it is one of this
+    * plot's rows.
+    */
+  def unplottedText(u: Unplotted): Option[String] =
     val reason = u.reason match
       case UnplottedReason.MissingValue(c) =>
-        val header = source.indexOf(c).fold(c.value)(source.columns(_).header)
+        val header = source.indexOf(c).flatMap(source.columns.lift).fold(c.value)(_.header)
         PlotText(PlotTextId.MissingValue, header)
-    PlotText(PlotTextId.Unplotted, source.rowText(u.row), reason)
+    source.rowText(u.row).map(PlotText(PlotTextId.Unplotted, _, reason))
 
 object BuiltPlot:
 
@@ -260,7 +264,9 @@ final class PlotTargets private (
     state.spoken(
       this,
       (ref, selected) =>
-        PlotText.selected(target(ref).fold("")(t => plot.readout(t.mark)), selected),
+        target(ref)
+          .flatMap(t => plot.readout(t.mark))
+          .fold(plot.description)(PlotText.selected(_, selected)),
       plot.description
     )
 

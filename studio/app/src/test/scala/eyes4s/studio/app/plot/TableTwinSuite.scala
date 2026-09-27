@@ -118,7 +118,10 @@ class TableTwinSuite extends munit.FunSuite:
     assert(step.changed)
     val vm = step.state.vm(source)
     assertEquals(vm.rows.map(_.selected), Vector(false, false, false, true))
-    assertEquals(vm.rows(3).accessibleText, PlotText.selected(source.rowText(3), true))
+    assertEquals(
+      vm.rows(3).accessibleText,
+      PlotText.selected(source.rowTextOf(source.rows(3)), true)
+    )
     // Projection keeps the view's sequence past what the bus applied.
     val again = step.state.click(ref(0), toggle = false, source)
     again.intents match
@@ -134,10 +137,10 @@ class TableTwinSuite extends munit.FunSuite:
     )
     assertEquals(
       vm.rows.map(_.cells.map(_.text)),
-      source.rows.indices.map(source.cells).toVector
+      source.rows.map(source.cellsOf)
     )
     assertEquals(vm.cursorRow, Some(0))
-    assertEquals(vm.accessibleText, source.rowText(0))
+    assertEquals(vm.accessibleText, source.rowTextOf(source.rows(0)))
     assertEquals(
       initial.vm(source).accessibleText,
       PlotText(PlotTextId.TableKeys, "Participant D")

@@ -33,6 +33,7 @@ enum PlotSourceError derives CanEqual:
   case NumberInLabelColumn(ref: StudioRef, column: String, value: Double)
   case NegativeDecimals(column: String, decimals: Int)
   case NotWhole(ref: StudioRef, column: String, value: Double)
+  case CountOutOfRange(ref: StudioRef, column: String, value: Double)
 
   def message: String = this match
     case BlankColumnId(v)             => s"column id '$v' is blank"
@@ -45,8 +46,10 @@ enum PlotSourceError derives CanEqual:
       s"row $r, column '$c': text '$t' in a numeric column"
     case NumberInLabelColumn(r, c, v) =>
       s"row $r, column '$c': number $v in a label column"
-    case NegativeDecimals(c, d) => s"column '$c' shows $d decimal places"
-    case NotWhole(r, c, v)      => s"row $r, column '$c': $v is not a whole count"
+    case NegativeDecimals(c, d)   => s"column '$c' shows $d decimal places"
+    case NotWhole(r, c, v)        => s"row $r, column '$c': $v is not a whole count"
+    case CountOutOfRange(r, c, v) =>
+      s"row $r, column '$c': count $v is beyond ±${PlotSource.MaxCount}, where counts stay exact"
 
 /** A column's identity within its source, such as "d" or "participant". */
 final case class ColumnId private (value: String) derives CanEqual
@@ -134,19 +137,32 @@ final case class PlotSource private (
   def number(row: Int, id: ColumnId): Option[Double] =
     value(row, id).collect { case PlotValue.Number(v) => v }
 
-  /** Row `row`'s value in column `column` as the table writes it. */
-  def text(row: Int, column: Int): String =
-    PlotSource.write(rows(row).values(column), columns(column).format)
+  /** The value at `row` and `column` as the table writes it, if both exist. */
+  def text(row: Int, column: Int): Option[String] =
+    for
+      r <- rows.lift(row)
+      c <- columns.lift(column)
+      v <- r.values.lift(column)
+    yield PlotSource.write(v, c.format)
 
-  /** Every cell of row `row`, as the table writes them. */
-  def cells(row: Int): Vector[String] = columns.indices.map(text(row, _)).toVector
+  /** Every cell of the row at `row`, as the table writes them, if it exists. */
+  def cells(row: Int): Option[Vector[String]] = rows.lift(row).map(cellsOf)
 
-  /** The words of row `row`: each header with its value. The table row and
-    * the plot mark of this row both say exactly this.
+  /** The words of the row at `row`, if it exists ([[rowTextOf]]). */
+  def rowText(row: Int): Option[String] = rows.lift(row).map(rowTextOf)
+
+  /** Every cell of `row`, as the table writes them: each value in its
+    * column's format, column by column.
     */
-  def rowText(row: Int): String =
+  def cellsOf(row: PlotRow): Vector[String] =
+    columns.zip(row.values).map((c, v) => PlotSource.write(v, c.format))
+
+  /** The words of `row`: each header with its value. The table row and the
+    * plot mark of a row both say exactly this.
+    */
+  def rowTextOf(row: PlotRow): String =
     columns
-      .zip(cells(row))
+      .zip(cellsOf(row))
       .map((c, v) => PlotText(PlotTextId.Cell, c.header, v))
       .mkString(PlotText(PlotTextId.CellSeparator))
 
@@ -154,6 +170,11 @@ object PlotSource:
 
   /** What the table writes for a missing value. */
   val MissingText: String = "—"
+
+  /** The largest count accepted, 2^53: every whole number up to it is an
+    * exact Double, so the count the table writes is the value the plot places.
+    */
+  val MaxCount: Double = 9007199254740992.0
 
   /** A value in `format`: the one formatter of plot values. */
   def write(value: PlotValue, format: ColumnFormat): String = (value, format) match
@@ -180,6 +201,8 @@ object PlotSource:
           Left(PlotSourceError.NumberInLabelColumn(ref, name, x))
         case (PlotValue.Number(x), ColumnFormat.Count) if x != math.rint(x) =>
           Left(PlotSourceError.NotWhole(ref, name, x))
+        case (PlotValue.Number(x), ColumnFormat.Count) if math.abs(x) > MaxCount =>
+          Left(PlotSourceError.CountOutOfRange(ref, name, x))
         case (PlotValue.Text(t), f) if f.numeric =>
           Left(PlotSourceError.TextInNumericColumn(ref, name, t))
         case _ => Right(())

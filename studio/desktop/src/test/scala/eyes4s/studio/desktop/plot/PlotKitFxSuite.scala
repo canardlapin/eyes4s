@@ -36,7 +36,7 @@ import intaglio.DevicePoint
 import javafx.event.{Event, EventType}
 import javafx.geometry.Point2D
 import javafx.scene.SnapshotParameters
-import javafx.scene.control.Label
+import javafx.scene.control.{Label, ScrollPane}
 import javafx.scene.image.WritableImage
 import javafx.scene.input.{KeyCode, MouseButton, MouseEvent, PickResult}
 import javafx.scene.layout.{HBox, Priority}
@@ -162,10 +162,15 @@ class PlotKitFxSuite extends StudioFxSuite:
     isolateFromOsPointer(fx)
 
   /** Shows the source at output scale `k` and waits until it is drawn and targeted. */
-  private def showAndDraw(w: Wired, k: Double, theme: Theme = Theme.Light): PlotTargets =
+  private def showAndDraw(
+      w: Wired,
+      k: Double,
+      theme: Theme = Theme.Light,
+      shown: PlotSource = source
+  ): PlotTargets =
     runOnFx {
       w.host.setOutputScaleOverride(Some(k))
-      w.twin.show(source, theme)
+      w.twin.show(shown, theme)
     }
     val deadline                     = System.currentTimeMillis + TimeoutMillis
     def settled: Option[PlotTargets] = runOnFx {
@@ -296,7 +301,7 @@ class PlotKitFxSuite extends StudioFxSuite:
       List(1.0, 2.0).foreach { k =>
         val t = showAndDraw(w, k)
         // The table lists every row, P09 included, written by the source.
-        assertEquals(rowTexts(w), source.rows.indices.map(source.cells).toVector)
+        assertEquals(rowTexts(w), source.rows.map(source.cellsOf))
         assertEquals(runOnFx(w.table.vm).map(_.rows.map(_.ref)), Some(source.rows.map(_.ref)))
         // The plot draws every row with an M and a D, where its values are.
         val plot = runOnFx(w.twin.plot).getOrElse(fail("no plot"))
@@ -311,11 +316,11 @@ class PlotKitFxSuite extends StudioFxSuite:
           val row  = rowOf(target.ref)
           val back = t.transform.deviceToData(target.anchor)
           assertEquals(
-            source.text(row, 2),
+            source.text(row, 2).get,
             PlotSource.write(PlotValue.Number(back.x), m.format)
           )
           assertEquals(
-            source.text(row, 4),
+            source.text(row, 4).get,
             PlotSource.write(PlotValue.Number(back.y), d.format)
           )
           assert(near(image, target.anchor, dot, 40), s"${k}x: no dot drawn at ${target.ref}")
@@ -421,7 +426,7 @@ class PlotKitFxSuite extends StudioFxSuite:
       )
       assertEquals(
         runOnFx(w.table.getAccessibleText),
-        PlotText.selected(source.rowText(2), selected = true)
+        PlotText.selected(source.rowTextOf(source.rows(2)), selected = true)
       )
       fx.robot.press(KeyCode.DOWN)
       fx.robot.press(KeyCode.ENTER, eyes4s.studio.desktop.harness.Modifiers(shift = true))
@@ -432,7 +437,83 @@ class PlotKitFxSuite extends StudioFxSuite:
       dispose(w)
   }
 
-  fxStage.test("with OS window focus, moving between plot and table carries the cursor") { fx =>
+  fxStage.test("focus carries the cursor only when keyboard traversal brings it") { fx =>
+    val w     = Wired(fx)
+    val t     = showAndDraw(w, 1.0)
+    val last  = t.targets.last.ref
+    val first = source.rows.head.ref
+    runOnFx(w.twin.input.moveFocus(Some(last)))
+    // A pointer press or a program focusing the table carries nothing.
+    runOnFx(w.twin.focusArrived(PlotTwinView.Table, byKeyboard = false))
+    assertEquals(runOnFx(w.table.state.cursor), None)
+    // Keyboard traversal into the table brings the plot's focused mark.
+    runOnFx(w.twin.focusArrived(PlotTwinView.Table, byKeyboard = true))
+    assertEquals(runOnFx(w.table.state.cursor), Some(last))
+    // And back: the table's cursor row becomes the plot's focused mark.
+    runOnFx(w.table.moveCursor(Some(first)))
+    runOnFx(w.twin.focusArrived(PlotTwinView.Plot, byKeyboard = false))
+    assertEquals(runOnFx(w.twin.input.state.focus), Some(last))
+    runOnFx(w.twin.focusArrived(PlotTwinView.Plot, byKeyboard = true))
+    assertEquals(runOnFx(w.twin.input.state.focus), Some(first))
+    assertEquals(w.selected, Vector.empty, "carrying the cursor selects nothing")
+    assertEquals(w.emitted.toVector, Vector.empty)
+    dispose(w)
+  }
+
+  /** Sixty rows, so the table scrolls: the fixture's rows five times over. */
+  private lazy val long: PlotSource = right(
+    PlotSource(
+      source.caption,
+      source.columns,
+      (0 until 5).toVector.flatMap(k =>
+        source.rows.map { r =>
+          val StudioRef.Participant(id) = r.ref: @unchecked
+          val renamed                   = s"$id-$k"
+          PlotRow(StudioRef.Participant(renamed), PlotValue.Text(renamed) +: r.values.tail)
+        }
+      )
+    )
+  )
+
+  fxStage.test("a click on a row or a mark carries nothing, and the table does not scroll") {
+    fx =>
+      val w = Wired(fx)
+      val t = showAndDraw(w, 1.0, shown = long)
+      runOnFx(w.table.applyCss())
+      runOnFx(w.table.layout())
+      val scroll = runOnFx(w.table.getChildren.asScala.collectFirst { case s: ScrollPane =>
+        s
+      }.get)
+      assert(
+        runOnFx(
+          scroll.getContent.getBoundsInLocal.getHeight > scroll.getViewportBounds.getHeight
+        ),
+        "the long table does not scroll"
+      )
+      val last = t.targets.last
+      runOnFx(w.host.requestFocus())
+      fx.robot.press(KeyCode.END)
+      assertEquals(runOnFx(w.twin.input.state.focus), Some(last.ref))
+      // Clicking the first row focuses the table by pointer: the cursor goes
+      // to the clicked row, not to the plot's last mark, and nothing scrolls.
+      assertEquals(runOnFx(scroll.getVvalue), 0.0)
+      clickRow(fx, w, 0)
+      assertEquals(runOnFx(w.table.state.cursor), Some(long.rows.head.ref))
+      assertEquals(runOnFx(scroll.getVvalue), 0.0)
+      assertEquals(w.selected, Vector(long.rows.head.ref))
+      assertEquals(runOnFx(w.twin.input.state.focus), Some(last.ref))
+      // Clicking a mark focuses the plot by pointer: the mark, not the cursor
+      // row. The long source repeats its values, so take a copy drawn on top.
+      val mark = t.targets(t.targets.size - 2)
+      clickMark(w, t, mark)
+      assertEquals(runOnFx(w.twin.input.state.focus), Some(mark.ref))
+      assertEquals(runOnFx(w.table.state.cursor), Some(long.rows.head.ref))
+      dispose(w)
+  }
+
+  fxStage.test(
+    "with OS window focus, Tab and Shift+Tab between plot and table carry the cursor"
+  ) { fx =>
     val w = Wired(fx)
     val t = showAndDraw(w, 1.0)
     runOnFx {
@@ -445,13 +526,13 @@ class PlotKitFxSuite extends StudioFxSuite:
     fx.robot.press(KeyCode.END)
     val last = t.targets.last.ref
     assertEquals(runOnFx(w.twin.input.state.focus), Some(last))
-    runOnFx(w.table.requestFocus())
-    fx.awaitLayout()
+    fx.robot.press(KeyCode.TAB)
+    assert(runOnFx(w.table.isFocused), "Tab did not reach the table")
     assertEquals(runOnFx(w.table.state.cursor), Some(last))
     fx.robot.press(KeyCode.UP)
     val above = source.rows(rowOf(last) - 1).ref
-    runOnFx(w.host.requestFocus())
-    fx.awaitLayout()
+    fx.robot.press(KeyCode.TAB, eyes4s.studio.desktop.harness.Modifiers(shift = true))
+    assert(runOnFx(w.host.isFocused), "Shift+Tab did not return to the plot")
     assertEquals(runOnFx(w.twin.input.state.focus), Some(above))
     assertEquals(w.selected, Vector.empty, "carrying the cursor selects nothing")
     dispose(w)
@@ -484,6 +565,15 @@ class PlotKitFxSuite extends StudioFxSuite:
       assertEquals(refusal.getText, "plot dot-plot: column 'participant' is not numeric")
       assertEquals(bad.table.vm.map(_.rows.size), Some(source.rows.size))
       assertEquals(bad.input.targets, None)
+      // Its one focus stop says why it is not drawn.
+      assertEquals(
+        bad.plotHost.getAccessibleText,
+        PlotText(
+          PlotTextId.Refused,
+          source.caption,
+          "plot dot-plot: column 'participant' is not numeric"
+        )
+      )
       bad.dispose()
     }
     dispose(w)

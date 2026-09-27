@@ -49,6 +49,10 @@ enum PlotTwinStatus derives CanEqual:
 
   case Disposed
 
+/** The two views of a [[PlotTwin]]. */
+enum PlotTwinView derives CanEqual:
+  case Plot, Table
+
 /** Why a plot host could not be attached. */
 enum PlotTwinError derives CanEqual:
   /** A pointer tolerance must be finite and not negative. */
@@ -72,7 +76,8 @@ enum PlotTwinError derives CanEqual:
   * picks); the table is a [[TableTwinView]]. They are two views of the
   * selection bus with their own ids, and both show only what the bus
   * [[project]]s: selecting a row selects its mark, and selecting a mark its
-  * row. Moving keyboard focus from one to the other carries the cursor.
+  * row. Moving keyboard focus from one to the other by traversal carries
+  * the cursor ([[focusArrived]]).
   *
   * [[plotNode]] and [[tableNode]] are the two panes' contents; the dock puts
   * them in one group as the plot's tab and its sibling Table tab
@@ -118,7 +123,12 @@ final class PlotTwin private (
     def palette: Option[OverlayPalette] = shownPlot.map(_ => OverlayPalette.onSurface(theme))
     def spoken(state: MarkInputState[StudioRef], targets: PlotTargets): Option[String] =
       Some(targets.accessibleText(state))
-    def roleDescription: String = PlotText(PlotTextId.PlotRole)
+    def roleDescription: String       = PlotText(PlotTextId.PlotRole)
+    override def idle: Option[String] = statusWrapper.get match
+      case PlotTwinStatus.Refused(source, error) =>
+        Some(PlotText(PlotTextId.Refused, source.caption, error.message))
+      case PlotTwinStatus.Shown(plot) => Some(plot.description)
+      case _                          => None
 
   /** The plot's input: its roving cursor, hover and projected selection. */
   val input: MarkInputAdapter[StudioRef, PlotTargetError, PlotTargets] =
@@ -130,13 +140,27 @@ final class PlotTwin private (
       toleranceLogicalPx
     )
 
-  // Keyboard focus moving between the plot and its table carries the cursor.
+  // A node's focus-visible flag is set with its focus, before either is
+  // notified: it is true only when keyboard traversal brought the focus.
   private val plotFocus: ChangeListener[java.lang.Boolean] = (_, _, now) =>
-    if now.booleanValue then input.moveFocus(table.state.cursor)
+    if now.booleanValue then focusArrived(PlotTwinView.Plot, plotHost.isFocusVisible)
   private val tableFocus: ChangeListener[java.lang.Boolean] = (_, _, now) =>
-    if now.booleanValue then table.moveCursor(input.state.focus)
+    if now.booleanValue then focusArrived(PlotTwinView.Table, table.isFocusVisible)
   plotHost.focusedProperty.addListener(plotFocus)
   table.focusedProperty.addListener(tableFocus)
+
+  /** Keyboard focus arrived at `view`. When keyboard traversal brought it
+    * (`byKeyboard`), the other view's cursor comes along: the plot focuses
+    * the table's cursor row, the table puts its cursor on the plot's focused
+    * mark. Focus from a pointer press or a program carries nothing, so a
+    * click lands where it was aimed and the table does not scroll away.
+    */
+  def focusArrived(view: PlotTwinView, byKeyboard: Boolean): Unit =
+    onFxThread("focusArrived")
+    if !disposed && byKeyboard then
+      view match
+        case PlotTwinView.Plot  => input.moveFocus(table.state.cursor)
+        case PlotTwinView.Table => table.moveCursor(input.state.focus)
 
   /** What the host shows. */
   def status: ReadOnlyObjectProperty[PlotTwinStatus] = statusWrapper.getReadOnlyProperty
