@@ -16,18 +16,21 @@
 
 package eyes4s.studio.app.importing
 
-import cats.effect.IO
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.{AdmissionDecision, Sources}
-import eyes4s.studio.core.fixture.{FakeStudyBackend, StoryMoment, StoryMoments}
-import munit.CatsEffectSuite
+import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
+import eyes4s.studio.core.headless.HeadlessSession
+
+import scala.concurrent.ExecutionContext
 
 /** The inventory's line in the Data sources and its absent count (ticket
   * S5.4; Data.dc.html): the fixture's 960 trials and 6 absent as the fake
   * backend serves them, and, without a joined inventory, the reason absent
   * trials cannot be counted instead of a count.
   */
-class InventorySourceSuite extends CatsEffectSuite:
+class InventorySourceSuite extends munit.FunSuite:
+
+  private given ExecutionContext = ExecutionContext.global
 
   private def ok[E, A](e: Either[E, A]): A = e.fold(x => fail(x.toString), identity)
 
@@ -36,10 +39,12 @@ class InventorySourceSuite extends CatsEffectSuite:
 
   test("fixture: trials.csv · Inventory · 960 trials; Absent · 6") {
     for
-      fake    <- FakeStudyBackend.create[IO](StoryMoment.T2)
-      summary <- fake.admission(r3).map(ok)
+      session <- HeadlessSession.open(StoryMoment.T2)
+      answer  <- session.admission(r3)
+      _       <- session.close
     yield
-      val vm = InventorySource.vm(spec, InventoryAnswer.Summary(summary))
+      val summary = ok(answer)
+      val vm      = InventorySource.vm(spec, InventoryAnswer.Summary(summary))
       assertEquals(
         (vm.file, vm.role, vm.detail),
         (Some("trials.csv"), "Inventory", "960 trials")
