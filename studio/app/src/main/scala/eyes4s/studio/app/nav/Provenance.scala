@@ -143,7 +143,9 @@ object Provenance:
             .orElse(Some(Place.At(StudioRef.Trial(trial))))
         case StudioRef.SourceRecord(_, _, _, _) | StudioRef.Trial(_) =>
           ref.parent.map(Place.At(_))
-        case StudioRef.Participant(_) | StudioRef.FigurePanel(_, _) => None
+        case StudioRef.Participant(_) | StudioRef.FigurePanel(_, _) |
+            StudioRef.WindowTally(_, _) =>
+          None
     case _ => None
 
   /** The trail that lands on `target` from `trail`: the longest prefix of

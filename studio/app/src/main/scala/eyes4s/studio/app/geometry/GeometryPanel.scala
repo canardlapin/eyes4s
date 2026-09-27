@@ -155,8 +155,9 @@ enum GeometryEffect derives CanEqual:
   * Every change is one "Dataset · re-admit" edit: a pending revision is
   * edited in place (a geometry edit is S5.2's single `ReviseDataset`, so one
   * undo restores it); a verifying or admitted revision is re-imported as a
-  * new pending revision first ([[commands]]), since admitted data never
-  * changes under a run, and the Data selection follows it ([[follow]]).
+  * new pending revision carrying the change, in one command ([[commands]]),
+  * since admitted data never changes under a run, and the Data selection
+  * follows it ([[follow]]).
   * Corrections are rules in the revision's admission choice: applying them
   * is eyes4s's, to a derived view, and never rewrites a source coordinate.
   */
@@ -338,7 +339,7 @@ object GeometryPanel:
         val checked = c match
           case GeometryChange.AddRule(rule) => overlap(spec, rule, panel.positions).toLeft(())
           case _                            => Right(())
-        checked.flatMap(_ => commands(model.document, spec, c)) match
+        checked.flatMap(_ => commands(spec, c)) match
           case Left(GeometryRefusal.NoChange(_)) => (panel.copy(problem = None), none)
           case Left(refusal @ GeometryRefusal.Overlaps(_, _)) =>
             val text = GeometryText(GeometryTextId.RuleOverlaps, refusal.message)
@@ -371,13 +372,12 @@ object GeometryPanel:
           .map(t => t -> policy.correctionFor(t, _.participant))
           .collectFirst { case (t, Left((a, _))) => GeometryRefusal.Overlaps(t, a) }
 
-  /** The document commands that make `c` to `spec`, a revision of
-    * `document`: one command edits a pending revision; a verifying or
-    * admitted one is re-imported as the next revision, which inherits its
-    * admission choices, and the change is then made to that new revision.
+  /** The document command that makes `c` to `spec`: a pending revision is
+    * edited in place; a verifying or admitted one is re-imported as the next
+    * revision carrying the changed geometry or admission choice. Every
+    * change is one command, so one undo.
     */
   def commands(
-      document: StudioDocument,
       spec: DatasetRevisionSpec,
       c: GeometryChange
   ): Either[GeometryRefusal, Vector[Command]] =
@@ -392,11 +392,6 @@ object GeometryPanel:
       case GeometryChange.RemoveRule(i) if !rules.indices.contains(i) =>
         Left(GeometryRefusal.NoRule(id, i, rules.size))
       case _ => Right(())
-    def on(target: DatasetRevision): Vector[Command] = c match
-      case GeometryChange.SetGeometry(_)  => Vector.empty
-      case GeometryChange.SetOffScreen(p) => Vector(Command.SetOffScreenPolicy(target, p))
-      case GeometryChange.AddRule(r)    => Vector(Command.AddCorrection(target, rules.size, r))
-      case GeometryChange.RemoveRule(i) => Vector(Command.RemoveCorrection(target, i))
     for
       _ <- Either.cond(!unchanged, (), GeometryRefusal.NoChange(id))
       _ <- index
@@ -406,20 +401,28 @@ object GeometryPanel:
           // S5.2's one command for the four import fields: one undo.
           case GeometryChange.SetGeometry(g) =>
             Vector(Command.ReviseDataset(id, spec.mapping, spec.units, g, spec.attributes))
-          case _ => on(id)
+          case GeometryChange.SetOffScreen(p) => Vector(Command.SetOffScreenPolicy(id, p))
+          case GeometryChange.AddRule(r) => Vector(Command.AddCorrection(id, rules.size, r))
+          case GeometryChange.RemoveRule(i) => Vector(Command.RemoveCorrection(id, i))
       case AdmissionDecision.Verifying(_) | AdmissionDecision.Admitted(_, _) =>
-        val next     = nextRevision(document)
-        val geometry = c match
-          case GeometryChange.SetGeometry(g) => g
-          case _                             => spec.geometry
-        Command.ImportSources(
-          Some(id),
-          spec.sources,
-          spec.mapping,
-          spec.units,
-          geometry,
-          spec.attributes
-        ) +: on(next)
+        val (geometry, admission) = c match
+          case GeometryChange.SetGeometry(g)  => (g, spec.admission)
+          case GeometryChange.SetOffScreen(p) => (spec.geometry, spec.admission.copy(offScreen = p))
+          case GeometryChange.AddRule(r)      =>
+            (spec.geometry, spec.admission.copy(corrections = rules :+ r))
+          case GeometryChange.RemoveRule(i) =>
+            (spec.geometry, spec.admission.copy(corrections = rules.patch(i, Nil, 1)))
+        Vector(
+          Command.ImportSources(
+            Some(id),
+            spec.sources,
+            spec.mapping,
+            spec.units,
+            geometry,
+            spec.attributes,
+            Some(admission)
+          )
+        )
 
   /** The id the next dataset revision gets (the reducer's rule). */
   def nextRevision(document: StudioDocument): DatasetRevision =

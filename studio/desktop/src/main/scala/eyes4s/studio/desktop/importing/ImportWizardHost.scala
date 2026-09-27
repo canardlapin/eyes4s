@@ -134,7 +134,7 @@ final class ImportWizardHost(
     */
   private def perform(effects: Vector[WizardEffect]): Unit =
     val inputs = effects.collect {
-      case WizardEffect.Dispatch(Command.ImportSources(_, sources, _, _, _, _)) =>
+      case WizardEffect.Dispatch(Command.ImportSources(_, sources, _, _, _, _, _)) =>
         sources.entries.flatMap(s => readFrom.get(s.bytes).map(s -> _))
     }.flatten
     if inputs.isEmpty then effects.foreach(performOne)

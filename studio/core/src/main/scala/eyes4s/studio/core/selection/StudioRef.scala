@@ -16,7 +16,14 @@
 
 package eyes4s.studio.core.selection
 
-import eyes4s.studio.core.backend.{PairDesign, ResultAddress, Response, RunId, TrialKey}
+import eyes4s.studio.core.backend.{
+  DatasetRevision,
+  PairDesign,
+  ResultAddress,
+  Response,
+  RunId,
+  TrialKey
+}
 import eyes4s.studio.core.document.{FigureId, PanelLetter, ReportingId, SourceRole}
 import io.circe.{Codec, Decoder, Encoder}
 
@@ -142,6 +149,11 @@ enum StudioRef derives CanEqual, Codec.AsObject:
 
   case FigurePanel(figure: FigureId, panel: PanelLetter)
 
+  /** A dataset revision's count of fixation records in admitted trials that
+    * fall outside a frame (eyes4s `WindowSummary`; ticket S5.5).
+    */
+  case WindowTally(dataset: DatasetRevision, region: TallyRegion)
+
   def kind: RefKind = this match
     case Participant(_)                                       => RefKind.Entity
     case Trial(_) | Fixation(_, _) | SourceRecord(_, _, _, _) => RefKind.Observation
@@ -151,7 +163,8 @@ enum StudioRef derives CanEqual, Codec.AsObject:
           RefKind.Observation
         case ResultAddress.Reduction(_, _, _) | ResultAddress.ContrastRow(_, _) =>
           RefKind.Aggregate
-    case ParticipantSummary(_, _, _, _, _) | GroupCell(_, _, _, _) | FigurePanel(_, _) =>
+    case ParticipantSummary(_, _, _, _, _) | GroupCell(_, _, _, _) | FigurePanel(_, _) |
+        WindowTally(_, _) =>
       RefKind.Aggregate
 
   def isAggregate: Boolean = kind == RefKind.Aggregate
@@ -189,6 +202,13 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     case ParticipantSummary(_, _, _, None, _) => None
     case GroupCell(_, _, _, _)                => None
     case FigurePanel(_, _)                    => None
+    case WindowTally(_, _)                    => None
+
+/** Which frame a [[StudioRef.WindowTally]] counts records outside of: the
+  * analysis window (the image frame, on the screen) or the screen itself.
+  */
+enum TallyRegion derives CanEqual, Codec.AsObject:
+  case OutsideWindow, OutsideScreen
 
 object StudioRef:
   /** A run result from a backend address, refusing a negative scale. */

@@ -17,7 +17,15 @@
 package eyes4s.studio.core.selection
 
 import cats.effect.IO
-import eyes4s.studio.core.backend.{PairDesign, Phase, Response, ResultAddress, RunId, TrialKey}
+import eyes4s.studio.core.backend.{
+  DatasetRevision,
+  PairDesign,
+  Phase,
+  Response,
+  ResultAddress,
+  RunId,
+  TrialKey
+}
 import eyes4s.studio.core.document.{FigureId, PanelLetter, ReportingId, SourceRole}
 import io.circe.syntax.*
 import munit.CatsEffectSuite
@@ -65,7 +73,10 @@ object SelectionGen:
     Gen.zip(run, scale, group).map((r, s, g) => StudioRef.GroupCell(r, spec, s, g)),
     Gen
       .zip(Gen.choose(1, 2), Gen.oneOf("A", "B"))
-      .map((f, l) => StudioRef.FigurePanel(right(FigureId.of(f)), right(PanelLetter.of(l))))
+      .map((f, l) => StudioRef.FigurePanel(right(FigureId.of(f)), right(PanelLetter.of(l)))),
+    Gen
+      .zip(Gen.choose(2, 3), Gen.oneOf(TallyRegion.values.toSeq))
+      .map((d, r) => StudioRef.WindowTally(DatasetRevision(d), r))
   )
 
   val ref: Gen[StudioRef] =

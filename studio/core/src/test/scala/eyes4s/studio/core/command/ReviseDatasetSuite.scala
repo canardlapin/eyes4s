@@ -141,9 +141,11 @@ class ReviseDatasetSuite extends munit.FunSuite:
   test("an ImportSources journal line written before S5.2 still reads, with no attributes") {
     val legacy = decode[Command](CommandPins.importSourcesV1)
     legacy match
-      case Right(ImportSources(parent, _, _, _, _, attrs)) =>
+      case Right(ImportSources(parent, _, _, _, _, attrs, admission)) =>
         assertEquals(parent, Some(r2))
         assertEquals(attrs, DeclaredAttributes.empty)
+        // Nor, before S5.5, an admission choice: the parent's is inherited.
+        assertEquals(admission, None)
       case other => fail(s"expected ImportSources, got $other")
   }
 
@@ -158,4 +160,27 @@ class ReviseDatasetSuite extends munit.FunSuite:
       DatasetRevisionSpec.contentDigest(withAttrs),
       DatasetRevisionSpec.contentDigest(pending)
     )
+  }
+
+  test("a re-import with an admission choice takes it; without one it inherits the parent's") {
+    val t2     = DocumentSamples.t2
+    val r3spec = t2.dataset(r3).get
+    val rule   = CorrectionRule(CorrectionTarget.AllTrials, CoordinateCorrection.FlipX)
+    val choice = AdmissionChoice(OffScreenChoice.QuarantineTrial, Vector(rule))
+    def reimport(admission: Option[AdmissionChoice]) = ImportSources(
+      Some(r3),
+      r3spec.sources,
+      r3spec.mapping,
+      r3spec.units,
+      r3spec.geometry,
+      r3spec.attributes,
+      admission
+    )
+    val chosen = ok(History.start(t2).apply(reimport(Some(choice))))
+    val r4     = chosen.history.document.datasets.last
+    assertEquals((r4.parent, r4.admission), (Some(r3), choice))
+    // One undo removes the whole re-admit.
+    assertEquals(ok(chosen.history.undo).history.document, t2)
+    val inherited = ok(History.start(t2).apply(reimport(None))).history.document.datasets.last
+    assertEquals(inherited.admission, r3spec.admission)
   }

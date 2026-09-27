@@ -22,7 +22,7 @@ import eyes4s.studio.core.backend.{AdmissionSummary, TrialKey}
 import eyes4s.studio.core.command.ChangeKind
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.importing.GeometryField
-import eyes4s.studio.core.selection.{RecordNumber, StudioRef}
+import eyes4s.studio.core.selection.{RecordNumber, StudioRef, TallyRegion}
 
 /** One fact of the declared geometry ("Screen", "1920 × 1080 px"). */
 final case class FactVM(label: String, value: String, mono: Boolean, note: Option[String])
@@ -60,10 +60,15 @@ final case class OrientationVM(
     cancel: String
 ) derives CanEqual
 
-/** A count of records outside a frame: its title, its value (a button that
-  * opens the records), and what the count means.
+/** A count of records outside a frame: its title, its value, what the count
+  * means, and `ref`, the eyes4s tally the value is (none before it loads).
   */
-final case class CountVM(title: String, value: Option[String], note: String) derives CanEqual
+final case class CountVM(
+    title: String,
+    value: Option[String],
+    note: String,
+    ref: Option[StudioRef]
+) derives CanEqual
 
 /** Everything the geometry panel shows, in the board's order. */
 final case class GeometryPanelVM(
@@ -370,7 +375,8 @@ object GeometryPanelVM:
           s.window.trialsOutsideWindow
         )
       },
-      t(OutsideWindowNote)
+      t(OutsideWindowNote),
+      summary.map(s => StudioRef.WindowTally(s.dataset, TallyRegion.OutsideWindow))
     )
     val screen = CountVM(
       t(OutsideScreenTitle),
@@ -381,7 +387,8 @@ object GeometryPanelVM:
           s.window.trialsOutsideScreen
         )
       },
-      screenNote
+      screenNote,
+      summary.map(s => StudioRef.WindowTally(s.dataset, TallyRegion.OutsideScreen))
     )
     val label = spec.fold("")(_.id.label)
     val from  = panel.counts match

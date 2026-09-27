@@ -51,7 +51,7 @@ object Reducer:
 
   def run(d: StudioDocument, c: Command): Either[CommandError, Outcome] = c match
     // --- Dataset · re-admit --------------------------------------------------
-    case ImportSources(parent, sources, mapping, units, geometry, attributes) =>
+    case ImportSources(parent, sources, mapping, units, geometry, attributes, admission) =>
       val id = DatasetRevision(d.datasets.lastOption.fold(1)(_.id.number + 1))
       for
         from <- parent.traverse(p => d.dataset(p).toRight(UnknownDataset(p)))
@@ -62,7 +62,7 @@ object Reducer:
           mapping,
           units,
           geometry,
-          from.fold(AdmissionChoice.default)(_.admission),
+          admission.orElse(from.map(_.admission)).getOrElse(AdmissionChoice.default),
           AdmissionDecision.Pending,
           attributes
         )
@@ -441,7 +441,7 @@ object Reducer:
 
   /** The document value `c` acts on in `d`. */
   def targetOf(d: StudioDocument, c: Command): Target = c match
-    case ImportSources(_, _, _, _, _, _) =>
+    case ImportSources(_, _, _, _, _, _, _) =>
       Target.OnDataset(DatasetRevision(d.datasets.lastOption.fold(1)(_.id.number + 1)))
     case RestoreDataset(spec)          => Target.OnDataset(spec.id)
     case DiscardDataset(id)            => Target.OnDataset(id)

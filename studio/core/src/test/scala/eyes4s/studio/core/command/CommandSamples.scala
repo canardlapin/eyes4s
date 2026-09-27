@@ -68,6 +68,15 @@ object CommandSamples:
       pending.geometry,
       pupil
     ),
+    "ImportSources.admission" -> ImportSources(
+      Some(r3),
+      pending.sources,
+      pending.mapping,
+      pending.units,
+      pending.geometry,
+      DeclaredAttributes.empty,
+      Some(AdmissionChoice(OffScreenChoice.QuarantineTrial, Vector(rule)))
+    ),
     "ReviseDataset" -> ReviseDataset(
       r3,
       pending.mapping,

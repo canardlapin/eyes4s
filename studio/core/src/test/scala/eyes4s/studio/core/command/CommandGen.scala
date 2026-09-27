@@ -63,7 +63,8 @@ object CommandGen:
       u      <- units
       g      <- geometry
       a      <- attributesFor(m)
-    yield Command.ImportSources(parent, s, m, u, g, a)
+      c      <- Gen.option(admission)
+    yield Command.ImportSources(parent, s, m, u, g, a, c)
     val edits = pick(editable).toVector.flatMap { specs =>
       Vector(
         specs.flatMap(s => mapping.map(Command.SetMapping(s.id, _))),

@@ -186,7 +186,7 @@ class ImportWizardSuite extends munit.FunSuite:
     assertEquals(effects.last, WizardEffect.Close)
     commands(effects) match
       case Vector(
-            c @ Command.ImportSources(parent, sources, mapping, units, geometry, attrs)
+            c @ Command.ImportSources(parent, sources, mapping, units, geometry, attrs, _)
           ) =>
         assertEquals(c.kind, ChangeKind.DatasetReadmit)
         assertEquals(parent, Some(DatasetRevision(3)))
@@ -227,7 +227,7 @@ class ImportWizardSuite extends munit.FunSuite:
     val (done, fx) = run(w, empty, (geometry :+ WizardIntent.Commit)*)
     assertEquals(done.problem, None)
     commands(fx) match
-      case Vector(Command.ImportSources(None, _, _, _, g, _)) =>
+      case Vector(Command.ImportSources(None, _, _, _, g, _, _)) =>
         assertEquals(g.image.render, "1024×768 px at (448, 156)")
       case other => fail(s"expected one ImportSources, got $other")
   }
@@ -292,7 +292,7 @@ class ImportWizardSuite extends munit.FunSuite:
     assertEquals(w.problem, None)
     val r3 = t2.dataset(DatasetRevision(3)).get
     commands(fx) match
-      case Vector(Command.ImportSources(Some(parent), sources, mapping, _, _, attrs)) =>
+      case Vector(Command.ImportSources(Some(parent), sources, mapping, _, _, attrs, _)) =>
         assertEquals(parent, DatasetRevision(3))
         assertEquals(sources, r3.sources)
         assertEquals(mapping.column(ColumnRole.Occurrence), None)
@@ -329,7 +329,7 @@ class ImportWizardSuite extends munit.FunSuite:
     )
     assertEquals(w.problem, None)
     commands(fx) match
-      case Vector(Command.ImportSources(_, _, mapping, units, _, _)) =>
+      case Vector(Command.ImportSources(_, _, mapping, units, _, _, _)) =>
         assertEquals(mapping.column(ColumnRole.Ordinal), Some(col("FixNum")))
         assertEquals(mapping.column(ColumnRole.Participant), Some(col("Subject")))
         assertEquals(units.time, Some(TimeUnit.Milliseconds))
@@ -432,7 +432,7 @@ class ImportWizardSuite extends munit.FunSuite:
       WizardIntent.Commit
     )
     commands(fx) match
-      case Vector(Command.ImportSources(parent, _, _, _, _, _)) =>
+      case Vector(Command.ImportSources(parent, _, _, _, _, _, _)) =>
         assertEquals(parent, Some(DatasetRevision(4)))
       case other => fail(s"expected one ImportSources, got $other")
   }
@@ -475,7 +475,7 @@ class ImportWizardSuite extends munit.FunSuite:
       WizardIntent.Commit
     )
     commands(fx) match
-      case Vector(Command.ImportSources(_, _, _, _, _, attrs)) =>
+      case Vector(Command.ImportSources(_, _, _, _, _, attrs, _)) =>
         assertEquals(attrs.columns.map(_.value), Vector("Pupil", "Notes"))
       case other => fail(s"expected one ImportSources, got $other")
     val next = AppModel.run(AppModel.open(t2, None), WizardEffect.appIntents(fx))._1

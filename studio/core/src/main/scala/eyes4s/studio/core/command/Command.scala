@@ -51,10 +51,13 @@ enum Command derives CanEqual, Codec.AsObject:
   // --- Dataset · re-admit --------------------------------------------------
 
   /** A new pending dataset revision with the next id, from freshly imported
-    * sources; a re-import names its `parent` and inherits its admission
-    * choices. `attributes` are the fixation columns without a role, declared
+    * sources. `attributes` are the fixation columns without a role, declared
     * so they pass through admission (UI-H); a journal line written before
-    * S5.2 has none.
+    * S5.2 has none. `admission` is the new revision's off-screen policy and
+    * correction rules; without one, a re-import inherits its `parent`'s and
+    * a first import takes the default. A re-admit that changes the policy or
+    * the corrections of an admitted revision is therefore one command, and
+    * one undo (S5.5). A journal line written before S5.5 has none.
     */
   case ImportSources(
       parent: Option[DatasetRevision],
@@ -62,7 +65,8 @@ enum Command derives CanEqual, Codec.AsObject:
       mapping: ColumnMapping,
       units: DeclaredUnits,
       geometry: Geometry,
-      attributes: DeclaredAttributes
+      attributes: DeclaredAttributes,
+      admission: Option[AdmissionChoice] = None
   )
 
   /** Revise a pending revision's column mapping, declared units, geometry

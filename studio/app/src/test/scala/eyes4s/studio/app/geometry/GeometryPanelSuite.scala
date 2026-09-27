@@ -25,7 +25,7 @@ import eyes4s.studio.core.document.*
 import eyes4s.studio.core.fixture.{MockStudy, StoryMoments}
 import eyes4s.studio.core.geometry.SourcePositions
 import eyes4s.studio.core.importing.GeometryField
-import eyes4s.studio.core.selection.{RecordNumber, StudioRef}
+import eyes4s.studio.core.selection.{RecordNumber, StudioRef, TallyRegion}
 
 import java.nio.charset.StandardCharsets.UTF_8
 
@@ -124,6 +124,15 @@ class GeometryPanelSuite extends munit.FunSuite:
     assert(vm.outsideScreen.note.contains("not a quarantine"), vm.outsideScreen.note)
     assertEquals(vm.countsSource, "Counts: eyes4s admission of r3.")
     assertEquals(vm.kind, "Dataset · re-admit")
+    // Each count traces to the eyes4s tally it shows.
+    assertEquals(
+      (vm.outsideWindow.ref, vm.outsideScreen.ref),
+      (
+        Some(StudioRef.WindowTally(r3, TallyRegion.OutsideWindow)),
+        Some(StudioRef.WindowTally(r3, TallyRegion.OutsideScreen))
+      )
+    )
+    assertEquals(GeometryPanelVM.of(panel, t1, None).outsideWindow.ref, None)
   }
 
   test("switching the off-screen policy edits the pending draft r3 in one undoable step") {
@@ -181,12 +190,14 @@ class GeometryPanelSuite extends munit.FunSuite:
           r3spec.mapping,
           r3spec.units,
           r3spec.geometry,
-          r3spec.attributes
-        ),
-        Command.SetOffScreenPolicy(r4, OffScreenChoice.QuarantineTrial)
+          r3spec.attributes,
+          Some(r3spec.admission.copy(offScreen = OffScreenChoice.QuarantineTrial))
+        )
       )
     )
     val model = perform(t2, effects)
+    // One command, so one undo removes the draft.
+    assertEquals(AppModel.update(model, Intent.Undo(HistoryStack.Science))._1.document, t2.document)
     val draft = model.document.dataset(r4).get
     assertEquals(draft.decision, AdmissionDecision.Pending)
     assertEquals(draft.parent, Some(r3))
@@ -215,6 +226,8 @@ class GeometryPanelSuite extends munit.FunSuite:
       vm.countsSource,
       "Counts: eyes4s admission of r3. r4 is pending; its own counts follow its verification."
     )
+    // The parent's counts trace to the parent, not to the draft.
+    assertEquals(vm.outsideWindow.ref, Some(StudioRef.WindowTally(r3, TallyRegion.OutsideWindow)))
   }
 
   test("a geometry edit of pending r3 is S5.2's one ReviseDataset; one undo restores it") {
