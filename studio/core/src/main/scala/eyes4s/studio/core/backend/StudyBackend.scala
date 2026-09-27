@@ -40,6 +40,16 @@ enum BackendError derives CanEqual, Codec.AsObject:
   case AlreadyRunning(revision: AnalysisRevision, job: JobId)
   case UnsupportedVersion(requested: ProtocolVersion, supported: ProtocolVersion)
 
+  /** A request line that names its id but is not a request (protocol 1.1);
+    * `excerpt` is its start, at most `WireFormat.ExcerptLength` characters.
+    */
+  case Malformed(excerpt: String, reason: String)
+
+  /** A `Subscribe` reusing the id of a subscription still live on its
+    * connection (protocol 1.1).
+    */
+  case DuplicateSubscription(request: RequestId)
+
   def code: String = this match
     case UnknownDataset(_, _)     => "studio-backend.unknown-dataset"
     case UnknownRevision(_, _)    => "studio-backend.unknown-revision"
@@ -50,6 +60,8 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case UnknownReference(_, _)   => "studio-backend.unknown-reference"
     case AlreadyRunning(_, _)     => "studio-backend.already-running"
     case UnsupportedVersion(_, _) => "studio-backend.unsupported-version"
+    case Malformed(_, _)          => "studio-backend.malformed-request"
+    case DuplicateSubscription(_) => "studio-backend.duplicate-subscription"
 
   def message: String = this match
     case UnknownDataset(d, known) =>
@@ -67,6 +79,9 @@ enum BackendError derives CanEqual, Codec.AsObject:
       s"Cannot submit ${r.label}: job ${j.number} is still running."
     case UnsupportedVersion(requested, supported) =>
       s"Protocol ${requested.render} is not supported; this backend speaks ${supported.render}."
+    case Malformed(excerpt, reason)     => s"Not a request ($reason): $excerpt"
+    case DuplicateSubscription(request) =>
+      s"Request ${request.value} is already a live subscription on this connection."
 
   def diagnostic: StudioDiagnostic =
     val subject = this match
@@ -79,6 +94,8 @@ enum BackendError derives CanEqual, Codec.AsObject:
       case UnknownReference(r, a) => Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Address(a))
       case AlreadyRunning(r, j)   => Vector(DiagnosticLocus.Revision(r), DiagnosticLocus.Job(j))
       case UnsupportedVersion(_, _) => Vector.empty
+      case Malformed(_, _)          => Vector.empty
+      case DuplicateSubscription(_) => Vector.empty
     StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
 
 /** Everything Eyes Studio asks of eyes4s (DESIGN_SPEC section 13, S3.0): the
@@ -161,6 +178,12 @@ enum BackendRequest derives CanEqual, Codec.AsObject:
   case Inspect(run: RunId, address: ResultAddress)
   case ProvenanceOf(run: RunId, address: ResultAddress)
 
+  /** End the subscription opened by request `subscription` on this
+    * connection (protocol 1.1). Answered by [[BackendResponse.Unsubscribed]]
+    * after the subscription's last frame.
+    */
+  case Unsubscribe(subscription: RequestId)
+
 /** A response of the [[StudyBackend]] protocol. */
 enum BackendResponse derives CanEqual, Codec.AsObject:
   case Refused(error: BackendError)
@@ -177,6 +200,11 @@ enum BackendResponse derives CanEqual, Codec.AsObject:
   case Inspected(inspection: Inspection)
   case ProvenanceOf(provenance: Provenance)
 
+  /** No frame of `subscription` follows; `active` says whether it was still
+    * running when the request arrived.
+    */
+  case Unsubscribed(subscription: RequestId, active: Boolean)
+
 /** A frame from backend to client: the one response to a request, or one
   * event of a subscription.
   */
@@ -191,7 +219,10 @@ final case class ProtocolVersion(major: Int, minor: Int) derives CanEqual, Codec
   def render: String = s"$major.$minor"
 
 object ProtocolVersion:
-  val Current: ProtocolVersion = ProtocolVersion(1, 0)
+  /** 1.1 added `Unsubscribe`, `Unsubscribed`, `Malformed` and
+    * `DuplicateSubscription` (S0.9).
+    */
+  val Current: ProtocolVersion = ProtocolVersion(1, 1)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual
@@ -256,7 +287,10 @@ object StudyBackend:
       case Q.Queries(r, p)      => answer(backend.queries(r, p))(A.Queries(_))
       case Q.Inspect(r, a)      => answer(backend.inspect(r, a))(A.Inspected(_))
       case Q.ProvenanceOf(r, a) => answer(backend.provenance(r, a))(A.ProvenanceOf(_))
-      case Q.Subscribe(j)       =>
+      // In process a subscription is ended by dropping its stream; only a
+      // connection (SidecarServer) holds subscriptions to end.
+      case Q.Unsubscribe(id) => Stream.emit(ServerFrame.Response(A.Unsubscribed(id, false)))
+      case Q.Subscribe(j)    =>
         Stream.eval(backend.subscribe(j)).flatMap {
           case Left(e)       => Stream.emit(ServerFrame.Response(A.Refused(e)))
           case Right(events) => events.map(ServerFrame.Event(_))
