@@ -41,13 +41,12 @@ object FxRunLock:
   /** The lock file, shared by every run of the same user. */
   val file: Path = Paths.get(sys.props("java.io.tmpdir"), "eyes4s-studio-fx.lock")
 
-  // Held for the JVM's lifetime; the reference keeps the channel open.
-  @volatile private var held: Option[FileLock] = None
-
   // The outcome is computed once: a lazy val whose initialiser throws would
   // run again on the next access, and every later suite would wait again.
-  private lazy val acquired: Either[Throwable, Unit] =
-    if sys.env.get(DisableVariable).contains("off") then Right(())
+  // A held lock stays referenced here for the JVM's lifetime, which keeps its
+  // channel open.
+  private lazy val acquired: Either[Throwable, Option[FileLock]] =
+    if sys.env.get(DisableVariable).contains("off") then Right(None)
     else
       scala.util
         .Try(FileChannel.open(file, StandardOpenOption.CREATE, StandardOpenOption.WRITE))
@@ -68,10 +67,8 @@ object FxRunLock:
             )
             .toEither
           lock match
-            case Right(Some(l)) =>
-              held = Some(l)
-              Right(())
-            case Right(None) =>
+            case Right(Some(l)) => Right(Some(l))
+            case Right(None)    =>
               channel.close()
               Left(
                 AssertionError(
@@ -86,7 +83,7 @@ object FxRunLock:
   /** Takes the lock once per JVM, waiting for any other run to finish; after a
     * failure, every later call fails at once with the same error.
     */
-  def hold(): Unit = acquired.fold(e => throw e, identity)
+  def hold(): Unit = acquired.fold(e => throw e, _ => ())
 
   /** One try at the lock on `channel`; a lock this JVM already holds is `None`. */
   private[harness] def attempt(channel: FileChannel): Option[FileLock] =
