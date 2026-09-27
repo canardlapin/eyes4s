@@ -44,32 +44,54 @@ object FxRunLock:
   // Held for the JVM's lifetime; the reference keeps the channel open.
   @volatile private var held: Option[FileLock] = None
 
-  private lazy val acquired: Unit =
-    if !sys.env.get(DisableVariable).contains("off") then
-      val channel = FileChannel.open(file, StandardOpenOption.CREATE, StandardOpenOption.WRITE)
-      def attempt(): Option[FileLock] =
-        try Option(channel.tryLock())
-        catch case _: OverlappingFileLockException => None
-      val lock = await(
-        attempt,
-        waitNanos = WaitMinutes * 60L * 1000000000L,
-        pauseMillis = 2000L,
-        onWait = () =>
-          System.err.println(
-            s"[studio-fx] another JavaFX test run holds $file; waiting up to $WaitMinutes min " +
-              s"(set $DisableVariable=off to skip the lock)"
-          )
-      )
-      lock match
-        case Some(l) => held = Some(l)
-        case None    =>
-          channel.close()
-          throw AssertionError(
-            s"another JavaFX test run held $file for more than $WaitMinutes min"
-          )
+  // The outcome is computed once: a lazy val whose initialiser throws would
+  // run again on the next access, and every later suite would wait again.
+  private lazy val acquired: Either[Throwable, Unit] =
+    if sys.env.get(DisableVariable).contains("off") then Right(())
+    else
+      scala.util
+        .Try(FileChannel.open(file, StandardOpenOption.CREATE, StandardOpenOption.WRITE))
+        .toEither
+        .flatMap { channel =>
+          val lock = scala.util
+            .Try(
+              await(
+                () => attempt(channel),
+                waitNanos = WaitMinutes * 60L * 1000000000L,
+                pauseMillis = 2000L,
+                onWait = () =>
+                  System.err.println(
+                    s"[studio-fx] another JavaFX test run holds $file; waiting up to $WaitMinutes min " +
+                      s"(set $DisableVariable=off to skip the lock)"
+                  )
+              )
+            )
+            .toEither
+          lock match
+            case Right(Some(l)) =>
+              held = Some(l)
+              Right(())
+            case Right(None) =>
+              channel.close()
+              Left(
+                AssertionError(
+                  s"another JavaFX test run held $file for more than $WaitMinutes min"
+                )
+              )
+            case Left(e) =>
+              channel.close()
+              Left(e)
+        }
 
-  /** Takes the lock once per JVM, waiting for any other run to finish. */
-  def hold(): Unit = acquired
+  /** Takes the lock once per JVM, waiting for any other run to finish; after a
+    * failure, every later call fails at once with the same error.
+    */
+  def hold(): Unit = acquired.fold(e => throw e, identity)
+
+  /** One try at the lock on `channel`; a lock this JVM already holds is `None`. */
+  private[harness] def attempt(channel: FileChannel): Option[FileLock] =
+    try Option(channel.tryLock())
+    catch case _: OverlappingFileLockException => None
 
   /** Calls `attempt` until it yields a value or `waitNanos` pass, pausing
     * `pauseMillis` between tries; `onWait` runs once, before the first pause.

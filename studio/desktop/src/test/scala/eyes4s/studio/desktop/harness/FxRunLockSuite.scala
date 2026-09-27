@@ -52,6 +52,27 @@ class FxRunLockSuite extends munit.FunSuite:
     assertEquals((got, waited, tries), (Some(4), 1, 4))
   }
 
+  test("a file lock already held is None for a second channel, and free once released") {
+    import java.nio.channels.FileChannel
+    import java.nio.file.{Files, StandardOpenOption}
+    val path  = Files.createTempFile("eyes4s-fx-lock-", ".lock")
+    val open  = () => FileChannel.open(path, StandardOpenOption.WRITE)
+    val first = open()
+    val other = open()
+    try
+      val lock = FxRunLock.attempt(first)
+      assert(lock.isDefined)
+      assertEquals(FxRunLock.attempt(other), None)
+      lock.foreach(_.release())
+      val again = FxRunLock.attempt(other)
+      assert(again.isDefined)
+      again.foreach(_.release())
+    finally
+      first.close()
+      other.close()
+      Files.deleteIfExists(path): Unit
+  }
+
   test("a lock held past the wait gives up with None") {
     val clock = Clock()
     var tries = 0
