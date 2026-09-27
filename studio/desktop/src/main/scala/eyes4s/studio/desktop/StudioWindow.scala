@@ -31,6 +31,8 @@ import eyes4s.studio.desktop.runtime.{
   StudioRuntime,
   StudioSession
 }
+import eyes4s.studio.desktop.importing.ImportWizardHost
+import eyes4s.studio.desktop.platform.FilePresetStore
 import eyes4s.studio.desktop.shell.AppShell
 import javafx.application.Platform
 import javafx.scene.control.{Alert, TextInputDialog}
@@ -105,7 +107,11 @@ object StudioWindow:
         Option.when(!dockMaximized && model.isMaximized)(Intent.SetMaximized(None))
 
   /** Platform dialogs as JavaFX dialogs (non-blocking). */
-  def fxDialogs(model: () => AppModel, messages: Messages): PlatformDialogs =
+  def fxDialogs(
+      model: () => AppModel,
+      messages: Messages,
+      project: Option[ProjectPort] = None
+  ): PlatformDialogs =
     (dialog: PlatformDialog, dispatch: Intent => Unit) =>
       dialog match
         case PlatformDialog.RenameProject =>
@@ -119,8 +125,21 @@ object StudioWindow:
           a.setTitle(messages(MessageId.CommandProjectInfo))
           a.setHeaderText(eyes4s.studio.app.vm.Menus.windowTitle(model(), messages))
           a.show()
-        case PlatformDialog.ImportSources | PlatformDialog.OpenProject =>
-          System.err.println(s"$dialog is not available until S5.2 and S2.9.")
+        case PlatformDialog.ImportSources =>
+          // The import wizard (S5.2): its commands come back as intents.
+          val theme = model().document.presentation.theme match
+            case eyes4s.studio.core.document.Theme.Light => Theme.Light
+            case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
+          val sheets = StudioStyles.stylesheets(theme).getOrElse(Nil)
+          ImportWizardHost.openWindow(
+            () => model().document,
+            dispatch,
+            FilePresetStore.userDefault,
+            sheets,
+            project
+          ): Unit
+        case PlatformDialog.OpenProject =>
+          System.err.println(s"$dialog is not available until S2.9.")
 
   /** Open a window on `initial`, served by the fake backend at `moment`.
     * On the JavaFX thread. Each execution-service event reaches the model as
@@ -175,7 +194,7 @@ object StudioWindow:
     dockOf = () => host.dock.state.maximized.isDefined
     val effects = DesktopEffects(
       session,
-      dialogs.getOrElse(fxDialogs(() => runtime.fold(initial)(_.model), messages)),
+      dialogs.getOrElse(fxDialogs(() => runtime.fold(initial)(_.model), messages, project)),
       p =>
         host.reset(p)
         runtime.foreach(r => host.sync(r.model))

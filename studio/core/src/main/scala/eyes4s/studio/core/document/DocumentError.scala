@@ -48,6 +48,8 @@ enum DocumentError derives CanEqual:
   case BadDefinition(name: String, version: Int)
   case EmptyWindow(xMin: Double, yMin: Double, xMax: Double, yMax: Double)
   case BadSchemaId(name: String, version: Int)
+  case RepeatedAttribute(column: String)
+  case AttributeIsMapped(dataset: DatasetRevision, column: String, role: ColumnRole)
 
   // A draft against its base revision.
   case NoChanges(draft: AnalysisRevision, base: AnalysisRevision)
@@ -117,6 +119,9 @@ enum DocumentError derives CanEqual:
       s"Definition $name@$version is not a valid eyes4s definition identity."
     case EmptyWindow(x0, y0, x1, y1) =>
       s"Analysis window [$x0, $x1) × [$y0, $y1) is empty."
+    case RepeatedAttribute(column) => s"Attribute column $column is declared more than once."
+    case AttributeIsMapped(dataset, column, role) =>
+      s"Dataset ${dataset.label}: column $column is both an attribute and the ${role.label} column."
     case BadSchemaId(name, version) =>
       s"Studio schema identity $name@$version is not a valid definition identity."
     case RebaseToSame(draft, dataset) =>

@@ -19,7 +19,14 @@ package eyes4s.studio.core.document
 import cats.syntax.all.*
 import eyes4s.codec.{ByteDigest, CanonicalDigest, CodecError, VersionedCodec}
 import eyes4s.kernel.Correction
-import eyes4s.plan.{AdmissionPolicy, ArtifactRef, CorrectionScope, OffScreenPolicy}
+import eyes4s.plan.{
+  AdmissionPolicy,
+  ArtifactRef,
+  AttributeColumn,
+  AttributeKind,
+  CorrectionScope,
+  OffScreenPolicy
+}
 import eyes4s.studio.core.backend.{DatasetRevision, TrialKey}
 import io.circe.syntax.*
 import io.circe.{Codec, Decoder, DecodingFailure, Encoder, Json}
@@ -233,6 +240,60 @@ object ColumnMapping:
     yield new ColumnMapping(bindings.sortBy(_.role.ordinal))
 
   given Codec[ColumnMapping] = DocumentCodecs.validated(of, _.bindings)
+
+/** The declared type of an attribute column (eyes4s `AttributeKind`). */
+enum AttributeKindChoice derives CanEqual, Codec.AsObject:
+  /** Any text, kept as written. */
+  case Text
+
+  /** A signed decimal integer. */
+  case Integer
+
+  /** A finite decimal number. */
+  case Number
+
+  def core: AttributeKind = this match
+    case Text    => AttributeKind.Text
+    case Integer => AttributeKind.Integer
+    case Number  => AttributeKind.Number
+
+/** A source column without a role, declared as an attribute: UI-H reads
+  * only declared columns, so a column that is to pass through is declared.
+  */
+final case class AttributeBinding(column: ColumnName, kind: AttributeKindChoice)
+    derives CanEqual,
+      Codec.AsObject:
+  def core: AttributeColumn = AttributeColumn(column.value, kind.core)
+
+/** The attribute columns of a source, in header order, each named once. */
+final case class DeclaredAttributes private (bindings: Vector[AttributeBinding])
+    derives CanEqual:
+  def isEmpty: Boolean              = bindings.isEmpty
+  def columns: Vector[ColumnName]   = bindings.map(_.column)
+  def core: Vector[AttributeColumn] = bindings.map(_.core)
+
+object DeclaredAttributes:
+  val empty: DeclaredAttributes = new DeclaredAttributes(Vector.empty)
+
+  def of(bindings: Vector[AttributeBinding]): Either[DocumentError, DeclaredAttributes] =
+    bindings
+      .map(_.column)
+      .distinct
+      .collectFirst {
+        case c if bindings.count(_.column == c) > 1 => DocumentError.RepeatedAttribute(c.value)
+      }
+      .toLeft(new DeclaredAttributes(bindings))
+
+  given Encoder[DeclaredAttributes] = Encoder[Vector[AttributeBinding]].contramap(_.bindings)
+
+  /** A missing field reads as no attributes: documents and journals written
+    * before attributes were recorded (S5.2) had none.
+    */
+  given Decoder[DeclaredAttributes] = new Decoder[DeclaredAttributes]:
+    private val values = Decoder[Vector[AttributeBinding]].emap(of(_).left.map(_.message))
+    def apply(c: io.circe.HCursor): Decoder.Result[DeclaredAttributes]              = values(c)
+    override def tryDecode(c: io.circe.ACursor): Decoder.Result[DeclaredAttributes] =
+      if c.failed then Right(empty) else values.tryDecode(c)
 
 enum TimeUnit derives CanEqual, Codec.AsObject:
   case Milliseconds, Microseconds, Seconds
@@ -466,8 +527,12 @@ object AdmissionDecision:
 
 /** One dataset revision (DESIGN_SPEC section 8, "Dataset · re-admit"): the
   * sources, their column mapping and declared units, the display geometry,
-  * the admission choices and the admission decision. `parent` is the
-  * revision it re-imports, if any. Its id is the protocol's [[DatasetRevision]].
+  * the admission choices, the admission decision, and the fixation source's
+  * attribute columns (S5.2). `parent` is the revision it re-imports, if any.
+  * Its id is the protocol's [[DatasetRevision]].
+  *
+  * `attributes` is written only when there are some, so a revision without
+  * attributes keeps the version-1 wire form (and its pins and digests).
   */
 final case class DatasetRevisionSpec(
     id: DatasetRevision,
@@ -477,11 +542,39 @@ final case class DatasetRevisionSpec(
     units: DeclaredUnits,
     geometry: Geometry,
     admission: AdmissionChoice,
-    decision: AdmissionDecision
-) derives CanEqual,
-      Codec.AsObject
+    decision: AdmissionDecision,
+    attributes: DeclaredAttributes = DeclaredAttributes.empty
+) derives CanEqual
 
 object DatasetRevisionSpec:
+  private val derived: Codec.AsObject[DatasetRevisionSpec] = Codec.AsObject.derived
+
+  given Codec.AsObject[DatasetRevisionSpec] = Codec.AsObject.from(
+    Decoder.instance(c =>
+      derived.decodeJson(
+        c.value.mapObject(o =>
+          if o.contains("attributes") then o else o.add("attributes", Json.arr())
+        )
+      )
+    ),
+    Encoder.AsObject.instance(s =>
+      val o = derived.encodeObject(s)
+      if s.attributes.isEmpty then o.remove("attributes") else o
+    )
+  )
+
+  /** An attribute column is not also a role's column. */
+  def checkAttributes(spec: DatasetRevisionSpec): Either[DocumentError, Unit] =
+    spec.attributes.bindings
+      .collectFirst(
+        Function.unlift(a =>
+          spec.mapping.bindings
+            .find(_.column == a.column)
+            .map(b => DocumentError.AttributeIsMapped(spec.id, a.column.value, b.role))
+        )
+      )
+      .toLeft(())
+
   /** The CR3 digest of what a revision asks eyes4s to admit: the whole spec
     * with its decision set to `Pending`, so verifying it does not change it.
     */
