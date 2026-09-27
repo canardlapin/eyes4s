@@ -73,13 +73,15 @@ final case class MockSummary(
 ) derives CanEqual
 
 /** docs/studio/fixture/fixture.json, decoded, and fixtures/studio-golden's
-  * inventory. Both are embedded at build time (project/StudioFixture.scala),
-  * so they load without file I/O on every platform.
+  * inventory and admitted scanpaths. All are embedded at build time
+  * (project/StudioFixture.scala), so they load without file I/O on every
+  * platform.
   */
 final case class MockStudy(
     queries: Vector[MockQuery],
     summary: MockSummary,
-    inventory: Vector[LedgerEntry]
+    inventory: Vector[LedgerEntry],
+    scanpaths: Map[TrialKey, Vector[ScanpathRecord]]
 ) derives CanEqual
 
 object MockStudy:
@@ -101,10 +103,22 @@ object MockStudy:
   def fixtureText: String = FixtureJson.text
 
   lazy val load: Either[String, MockStudy] =
+    assemble(FixtureJson.text, GoldenInventory.trials, GoldenInventory.scanpaths)
+
+  /** The study from fixture.json's text, the generated inventory lines and
+    * the generated scanpath lines; refuses the first part it cannot read,
+    * naming it.
+    */
+  private[fixture] def assemble(
+      fixture: String,
+      inventoryLines: String,
+      scanpathLines: String
+  ): Either[String, MockStudy] =
     for
-      json      <- io.circe.parser.parse(FixtureJson.text).leftMap(_.message)
+      json      <- io.circe.parser.parse(fixture).leftMap(_.message)
       queries   <- decodeQueries(json)
-      inventory <- parseInventory(GoldenInventory.trials)
+      inventory <- parseInventory(inventoryLines)
+      scanpaths <- FakeNavigator.parseScanpaths(scanpathLines)
       labels = inventory.flatMap(_.response).distinct
       summary <- decodeSummary(json.hcursor.downField("summary"), labels).leftMap(_.getMessage)
       _       <- queries.traverse_ { q =>
@@ -116,7 +130,7 @@ object MockStudy:
             s"not ${summary.scales.size}"
         )
       }
-    yield MockStudy(queries, summary, inventory)
+    yield MockStudy(queries, summary, inventory, scanpaths)
 
   // -------------------------------------------------------------------------
 

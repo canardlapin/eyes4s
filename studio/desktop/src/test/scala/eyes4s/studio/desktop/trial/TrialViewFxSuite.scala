@@ -326,7 +326,7 @@ class TrialViewFxSuite extends StudioFxSuite:
       assert(frame.plan.context eq frame.transform.renderContext)
       val marks = frame.program.commands.collect {
         case JavaFxCommand.PointBatch(points, _, _, _, Some(n))
-            if n.value == TrialScene.MarksName =>
+            if n.value.startsWith(TrialScene.MarkPrefix) =>
           points
       }.flatten
       assertEquals(marks.size, 13)

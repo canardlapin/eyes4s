@@ -192,7 +192,8 @@ object TrialDisposition:
 
 /** eyes4s `OutsideFrame`: an admitted record whose finite position lies off
   * the admission frame (the screen). Under `ExcludeRecord` it is kept out of
-  * every map and reported as "outside screen".
+  * every map and reported as "outside screen", but stays a fixation of its
+  * trial's scanpath, so later fixations keep their `ScanpathPosition`.
   */
 final case class OutsideFrame(record: Int, x: Double, y: Double, frame: String)
     derives CanEqual,

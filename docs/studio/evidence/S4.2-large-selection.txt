@@ -1,0 +1,15 @@
+os=Mac OS X aarch64 14.3
+java=25.0.1
+processors=14
+prism=default
+measurement=11,520 marks all selected from another view; then synthetic MOUSE_MOVED on the host, each onto a new mark, to the pointer layer redrawn; FX thread; not OS-pointer-to-display
+marks=11520 selected=11520
+device_scale=2.0
+surface_logical=798.0x700.0
+project_all_ms=302.9 (bus update + selection layer drawn once)
+warmup_events=20
+samples=100
+hover_move_median_ms=6.283
+hover_move_p95_ms=14.409
+selection_layer_draws_during_hover=0
+scene_draws_during_hover=0
