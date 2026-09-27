@@ -21,7 +21,28 @@ import eyes4s.studio.app.{AppEffect, AppModel, Intent}
 import scala.collection.mutable
 
 /** A listener threw while rendering the model after `intent`. */
-final case class ListenerFailure(intent: Intent, error: Throwable)
+final case class ListenerFailure(intent: Intent, error: Throwable):
+  def message: String = s"A view failed to render after $intent: $error"
+
+/** A [[ListenerFailure]] as a throwable, with the listener's error as its cause,
+  * for a thread's uncaught-exception handler.
+  */
+final class ListenerFailureException(val failure: ListenerFailure)
+    extends RuntimeException(failure.message, failure.error)
+
+object StudioRuntime:
+
+  /** Hands the failure, as a [[ListenerFailureException]], to the current
+    * thread's uncaught-exception handler without ending the thread: the default
+    * handler prints it with both stack traces, and the FX test harness records
+    * it against the running test.
+    */
+  val reportToThread: ListenerFailure => Unit = failure =>
+    val thread = Thread.currentThread
+    thread.getUncaughtExceptionHandler.uncaughtException(
+      thread,
+      ListenerFailureException(failure)
+    )
 
 /** Performs the effects [[AppModel.update]] returns (DESIGN_SPEC section 13):
   * services, platform dialogs, the dock. Results come back as intents
@@ -38,7 +59,11 @@ trait EffectPerformer:
   * another is being applied (by a listener or a performer) is queued and
   * applied next, so listeners always see models in update order.
   */
-final class StudioRuntime(initial: AppModel, performer: EffectPerformer):
+final class StudioRuntime(
+    initial: AppModel,
+    performer: EffectPerformer,
+    report: ListenerFailure => Unit = StudioRuntime.reportToThread
+):
 
   private var current   = initial
   private var running   = false
@@ -52,15 +77,16 @@ final class StudioRuntime(initial: AppModel, performer: EffectPerformer):
     listeners += f
     f(current)
 
-  /** A listener that throws is reported and skipped: the other listeners
-    * and the intent's effects still run.
+  /** A listener that throws is recorded, passed to `report` and skipped: the
+    * other listeners and the intent's effects still run.
     */
   private def notify(f: AppModel => Unit, model: AppModel, intent: Intent): Unit =
     try f(model)
     catch
       case scala.util.control.NonFatal(e) =>
-        failures += ListenerFailure(intent, e)
-        System.err.println(s"A view failed to render after $intent: $e")
+        val failure = ListenerFailure(intent, e)
+        failures += failure
+        report(failure)
 
   private val failures = mutable.ArrayBuffer.empty[ListenerFailure]
 
