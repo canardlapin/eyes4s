@@ -6,11 +6,12 @@ SHA-256 identity for each successful map. `Inline` retains the version-1 wire
 representation. `Packed` stores float64 little-endian arrays in one verified
 chunk per participant, across every scale. It never uses float32.
 
-```scala
-val archived = new DensityArchiveCodec(StudyResultCodecs.cosine[Px])
-val bundle = archived.encode(completedResult) // Recomputable by default
-val document = bundle.flatMap(b => archived.codec.encode(b.archive))
-```
+Construct `DensityArchiveCodec` with the result codec, such as
+`StudyResultCodecs.cosine[Px]`. Its `encode(completedResult)` returns an `Either`;
+a successful value contains the bundle. Encode `bundle.archive` with the archive
+codec to obtain the saved document.
+The [executed archive examples](../codec/src/test/scala/eyes4s/codec/DensityArchiveSuite.scala)
+include complete fixtures for encoding, opening and reading each storage mode.
 
 Opening a document returns `StudyResultArchive`, a parsed archive candidate.
 Opening and constructing its `DensityReader` call no payload provider and do
@@ -18,17 +19,13 @@ not estimate any maps. A candidate is not a validated `StudyResult`: call
 `materialize` to read every map and apply the completed-result reconstruction
 checks, including the pair rows, reductions and contrasts.
 
-```scala
-val opened = archived.codec.decode(savedJson)
-val selected = opened.left.map(_.message).flatMap { archive =>
-  val recompute = archived.recomputer(savedPlan, savedInput, archive)
-  archive.densityReader(recompute = Some(recompute)).density(scaleIndex, trialKey)
-    .left.map(error => error.message)
-}
-```
-
-The example renders refusals as messages. Applications can retain `CodecError`
-and `DensityError` in their own typed error sum.
+Decode the saved document with the archive codec. For a recomputable archive,
+construct its provider with `recomputer(savedPlan, savedInput, archive)`, pass it
+as `Some(recompute)` to `archive.densityReader`, then request
+`density(scaleIndex, trialKey)`. The linked examples check the selected map's
+cells against the completed result and verify that opening the archive invokes
+no provider. Applications can retain `CodecError` and `DensityError` in their
+own typed error sum, or render their `message` values.
 
 A read addresses one scale and full trial key. Repeated full keys produce
 `AmbiguousKey`; a stored failed estimate produces `Failed`. Neither silently

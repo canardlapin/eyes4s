@@ -37,3 +37,7 @@ recomputation API remains `DensityArchiveCodec.recomputer`; the manifest resolve
 introduced here does not execute that computation automatically. A recomputable
 archive supplied to this resolver is refused with a density decode error rather
 than treated as a completed result.
+
+The [executed manifest examples](../codec/src/test/scala/eyes4s/codec/ResultPayloadManifestSuite.scala)
+construct the complete artifact graph, resolve its packed result, and check
+missing or changed chunks and the explicit refusal of recomputable archives.
