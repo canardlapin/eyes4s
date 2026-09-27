@@ -25,6 +25,7 @@ import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, Modifiers, StudioFxSuite}
+import eyes4s.studio.desktop.platform.FilePresetStore
 import eyes4s.studio.desktop.runtime.{DesktopEffects, PlatformDialogs, ProjectPort}
 import javafx.scene.control.{Button, Label, Labeled}
 import javafx.scene.text.Text
@@ -45,9 +46,19 @@ abstract class ShellFxSuite extends StudioFxSuite:
 
   protected val opened = scala.collection.mutable.ArrayBuffer.empty[StudioWindow]
 
+  private val presetDirs = scala.collection.mutable.ArrayBuffer.empty[java.nio.file.Path]
+
+  /** An empty preset store of this test's own, removed after it. */
+  protected def noPresets(): FilePresetStore =
+    val dir = java.nio.file.Files.createTempDirectory("eyes4s-shell-presets")
+    presetDirs += dir
+    FilePresetStore(dir)
+
   override def afterEach(context: AfterEach): Unit =
     opened.foreach(w => runOnFx(w.close()))
     opened.clear()
+    presetDirs.foreach(eyes4s.studio.desktop.platform.TempDirs.remove)
+    presetDirs.clear()
     super.afterEach(context)
 
   /** Records every dialog asked for; types `rename` into Rename…. */
@@ -69,7 +80,9 @@ abstract class ShellFxSuite extends StudioFxSuite:
       // Synthetic key events never reach a native menu, so the shell suites
       // exercise the window's own key path, as it runs on Linux; KeymapFxSuite
       // checks the native split separately.
-      nativeMenu: Boolean = false
+      nativeMenu: Boolean = false,
+      // No saved import presets unless a suite brings its own.
+      presets: FilePresetStore = noPresets()
   ): StudioWindow =
     val w = runOnFx(
       StudioWindow
@@ -80,7 +93,8 @@ abstract class ShellFxSuite extends StudioFxSuite:
           dialogs = Some(dialogs),
           project = project,
           clock = clock,
-          nativeMenu = nativeMenu
+          nativeMenu = nativeMenu,
+          presets = presets
         )
         .fold(e => fail(e.message), identity)
     )

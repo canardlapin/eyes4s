@@ -85,6 +85,8 @@ class A11yTreeSuite extends ShellFxSuite:
     case AccessibleRole.TABLE_VIEW    => A11yRole.Table.id
     case AccessibleRole.LIST_VIEW     => A11yRole.List.id
     case AccessibleRole.PARENT        => A11yRole.Region.id
+    case AccessibleRole.COMBO_BOX     => A11yRole.ComboBox.id
+    case AccessibleRole.TEXT_FIELD    => A11yRole.TextField.id
     case other                        => other.toString.toLowerCase
 
   private def stop(n: Node): String = runOnFx(s"${role(n)}: ${n.getAccessibleText}")
@@ -128,9 +130,11 @@ class A11yTreeSuite extends ShellFxSuite:
   perspectives.foreach { (name, model, moment) =>
     fxStage.test(s"$name: Tab visits the derived stops; docs/studio/a11y/tab-order-$name.txt") {
       fx =>
-        val w       = boot(fx, model(), moment)
-        val derived = A11y.render(A11y.tabOrder(runOnFx(w.runtime.model)))
-        val walked  = walk(fx, w)
+        val w = boot(fx, model(), moment)
+        // A form pane's controls follow its stop (the column-mapping pane).
+        val derived =
+          A11y.render(runOnFx(A11y.tabOrder(w.runtime.model, inside = w.paneStops)))
+        val walked = walk(fx, w)
         assertNoDiff(walked.mkString("", "\n", "\n"), derived)
         val file = buildRoot.resolve(s"docs/studio/a11y/tab-order-$name.txt")
         if sys.env.contains("EYES4S_UPDATE_GOLDENS") then

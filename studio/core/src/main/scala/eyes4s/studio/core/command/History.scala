@@ -63,7 +63,8 @@ final case class Step(history: History, effects: Vector[Effect]) derives CanEqua
 final case class History private (
     document: StudioDocument,
     science: UndoStack,
-    presentation: UndoStack
+    presentation: UndoStack,
+    rule: MappingRule = MappingRule.Commit
 ) derives CanEqual:
   import CommandError.*
 
@@ -77,7 +78,7 @@ final case class History private (
 
   /** Apply `command` and record it on the stack its kind belongs to. */
   def apply(command: Command): Either[CommandError, Step] =
-    Reducer.run(document, command).map { o =>
+    Reducer.run(document, command, rule).map { o =>
       val next     = copy(document = o.document)
       val recorded = o.recording match
         case Recording.Reversible(inverse) =>
@@ -100,7 +101,7 @@ final case class History private (
         Left(s.barrier.fold(NothingToUndo(which))(UndoBlocked(_)))
       case entry :: rest =>
         Reducer
-          .run(document, entry.inverse)
+          .run(document, entry.inverse, rule)
           .left
           .map(HistoryRefused(which, entry.inverse.name, _))
           .map { o =>
@@ -118,7 +119,7 @@ final case class History private (
       case Nil           => Left(NothingToRedo(which))
       case entry :: rest =>
         Reducer
-          .run(document, entry.command)
+          .run(document, entry.command, rule)
           .left
           .map(HistoryRefused(which, entry.command.name, _))
           .map { o =>
@@ -131,6 +132,11 @@ final case class History private (
               o.effects
             )
           }
+
+  /** This history under `next`: a replay runs under
+    * [[MappingRule.Replay]], and the history it rebuilds commits again.
+    */
+  def under(next: MappingRule): History = copy(rule = next)
 
   /** Perform one journal entry. */
   def perform(entry: JournalEntry): Either[CommandError, Step] = entry match
