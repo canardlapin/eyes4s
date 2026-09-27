@@ -1,0 +1,2084 @@
+{
+  "schema_version": 1,
+  "epic": "bd-01M3HYEG72WCCNE6P84PWKBGCV",
+  "snapshot_date": "2026-09-27",
+  "eyes4s_commit": "fa6fa0ec48c236b6e70e49bfc6809c7bcc802102",
+  "protocol": "docs/plans/PYMOVEMENTS_COMPARISON.md",
+  "comparator": {
+    "package": "pymovements",
+    "version": "0.28.0",
+    "source_commit": "fe333f3afa862ae3fc7056047a1a929798cfe18b",
+    "source_url": "https://github.com/pymovements/pymovements/tree/fe333f3afa862ae3fc7056047a1a929798cfe18b",
+    "wheel_url": "https://files.pythonhosted.org/packages/78/98/261a493fa402579715da8c8ca57c913b68fb9d852a100e68331c66edbfb4/pymovements-0.28.0-py3-none-any.whl",
+    "wheel_filename": "pymovements-0.28.0-py3-none-any.whl",
+    "wheel_sha256": "4600f990173faeb9cccfdfc4da627ac81981eca6f1d4c511056294a5b96054ff",
+    "published": "2026-09-08T10:32:22.707117Z",
+    "requires_python": ">=3.10"
+  },
+  "targets": {
+    "PM1": {
+      "title": "Research workflow completeness",
+      "issue": "bd-01M3HYF41AZGMBR922GN3H6VY4"
+    },
+    "PM2": {
+      "title": "API design and researcher usability",
+      "issue": "bd-01M3HYF4985X5GWWEQEQ4F53VB"
+    },
+    "PM3": {
+      "title": "Speed, memory and responsiveness",
+      "issue": "bd-01M3HYF4J5965YW2DK08YV2A80"
+    },
+    "PM4": {
+      "title": "Scientific visualization",
+      "issue": "bd-01M3HYF4TV51MQA36X1QFYG9WA"
+    },
+    "PM5": {
+      "title": "Independent empirical qualification",
+      "issue": "bd-01M3HYF532P99Q7SYX12HJJQM0"
+    }
+  },
+  "sources": {
+    "frame": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "kernel/src/main/scala/eyes4s/kernel/Frame.scala",
+      "sha256": "d7e14774af6ea42b3303a800e5698fda87d26ebde93a84a4e0320122f71cfe96",
+      "anchors": [
+        "object Frame:"
+      ]
+    },
+    "agreement": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "kernel/src/main/scala/eyes4s/kernel/Agreement.scala",
+      "sha256": "e3be3764d0bf58b030febcd6f4f17139becf220dd58e1097b443cf457af68f03",
+      "anchors": [
+        "object Agreement:"
+      ]
+    },
+    "machine": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "kernel/src/main/scala/eyes4s/kernel/Machine.scala",
+      "sha256": "5df680515c806bbb70461a172ee71d407a11dc21bf97ec0328a3e40bed477930",
+      "anchors": [
+        "sealed abstract class Machine"
+      ]
+    },
+    "gaze": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "core/src/main/scala/eyes4s/core/Gaze.scala",
+      "sha256": "d8f7ce7823a6c7f97ab9ceb62ef3d81477a5904bcdcb37cc3de31ad13b50b581",
+      "anchors": [
+        "enum Gaze"
+      ]
+    },
+    "delimited": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "io/src/main/scala/eyes4s/io/Delimited.scala",
+      "sha256": "59519265fa11aa5dc152fad34df97cd11ef7b40fa929fda9b83c3590302108b2",
+      "anchors": [
+        "object Delimited:",
+        "object DelimitedSchema:",
+        "def parse"
+      ]
+    },
+    "asc": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "io/src/main/scala/eyes4s/io/EyeLinkAscImport.scala",
+      "sha256": "8ffbe7163483c76e8c3191d4bf97f45fb10bf29e1418d698074212dc025b1dad",
+      "anchors": [
+        "object EyeLinkAscImport:"
+      ]
+    },
+    "workflow": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "io/src/main/scala/eyes4s/io/PsychologyWorkflow.scala",
+      "sha256": "52e0be6ec3905e8ec39431635b35db6b1a8b2166de619bdeaace652e67d54cf7",
+      "anchors": [
+        "object PsychologyWorkflow:",
+        "def run("
+      ]
+    },
+    "export": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "io/src/main/scala/eyes4s/io/BaselineExports.scala",
+      "sha256": "db748fad2b8f7ee96178d42b1237158574b2b4e1d5eb980540fd08c23054040e",
+      "anchors": [
+        "object ResultExports:"
+      ]
+    },
+    "detectors": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "detect/src/main/scala/eyes4s/detect/Detectors.scala",
+      "sha256": "5e8e8992182f6019635e98d9bbe36fd1dc5424a777d89634835bde5c910946a6",
+      "anchors": [
+        "def ivt(",
+        "def idt["
+      ]
+    },
+    "micro": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "detect/src/main/scala/eyes4s/detect/Microsaccades.scala",
+      "sha256": "3959a6ca2566cf3977935ba8e825b76fb551ab8df07eac6cbf4b7b55ca18b2d8",
+      "anchors": [
+        "def engbertKliegl(",
+        "object Kinematics:"
+      ]
+    },
+    "filters": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "detect/src/main/scala/eyes4s/detect/Filters.scala",
+      "sha256": "e67e7e00dfef0b8c7081b7b7d3d9e9dd00eba25fc31d76b318bdf9b74bc4ef34",
+      "anchors": [
+        "object Filter:",
+        "def interpolateGaps",
+        "def savitzkyGolay"
+      ]
+    },
+    "aoi": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "aoi/src/main/scala/eyes4s/aoi/Aoi.scala",
+      "sha256": "b93c2070884fce8aa511191d5616b68737f2b63ba1e443493077fea6a7f73f42",
+      "anchors": [
+        "object AoiSet:",
+        "def assign("
+      ]
+    },
+    "plan": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "plan/src/main/scala/eyes4s/plan/StudyPlan.scala",
+      "sha256": "267a8f05a7e7ad0dc0a70b6fa6f1fd97fa9d61e70dfcee35a888b6248083e202",
+      "anchors": [
+        "object StudyPlan:"
+      ]
+    },
+    "recording-plan": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "plan/src/main/scala/eyes4s/plan/RecordingPlan.scala",
+      "sha256": "1f099e0781745594cae8edd81f93288f7cadac4576224fbd0bbe8cdd3b93feb0",
+      "anchors": [
+        "object RecordingPlan:"
+      ]
+    },
+    "smooth": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "surface/src/main/scala/eyes4s/surface/Smoother.scala",
+      "sha256": "7fed4e4ba1b31c33925f3085535326bac5598147b873016b6c0d12d32fb832c7",
+      "anchors": [
+        "object Smoother:"
+      ]
+    },
+    "compare": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "compare/src/main/scala/eyes4s/compare/Compare.scala",
+      "sha256": "0322d3aa04ea41ce7762f976df75b1f1c4fac4fd9c53eafcd04f4c7e15eec4ec",
+      "anchors": [
+        "object Similarity:",
+        "object MeasureDistance:"
+      ]
+    },
+    "multimatch": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "compare/src/main/scala/eyes4s/compare/MultiMatch.scala",
+      "sha256": "36e10bea4102112dd8ff7a22b540a92c751b0ff11d28459564172eea9acd27e5",
+      "anchors": [
+        "object MultiMatch:"
+      ]
+    },
+    "codec": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "codec/src/main/scala/eyes4s/codec/StudyCodec.scala",
+      "sha256": "fc422dea25b8634b54e83d3cf94eb69ffe6c26412054be9dc6f5c5395d80f48f",
+      "anchors": [
+        "final class StudyCodec["
+      ]
+    },
+    "execution": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "fs2/src/main/scala/eyes4s/fs2/Execution.scala",
+      "sha256": "a0cadb04e628963cb3a96aa5cc227f1626dc13e4b22b1641c922e47dfaf91383",
+      "anchors": [
+        "object Execution:"
+      ]
+    },
+    "csv-test": {
+      "repository": "eyes4s",
+      "kind": "test",
+      "path": "io/src/test/scala/eyes4s/io/DelimitedSuite.scala",
+      "sha256": "4151c386053ad984e56593c934650ea30c02d63633016a674abcb677829cd5a7",
+      "anchors": [
+        "class DelimitedSuite"
+      ]
+    },
+    "workflow-test": {
+      "repository": "eyes4s",
+      "kind": "test",
+      "path": "io/src/test/scala/eyes4s/io/PsychologyWorkflowSuite.scala",
+      "sha256": "1e8f5874fa252ff8b82db1bc443690a1cc994bea9b689bc84c16bc5324a4abce",
+      "anchors": [
+        "class PsychologyWorkflowSuite"
+      ]
+    },
+    "guide-test": {
+      "repository": "eyes4s",
+      "kind": "test",
+      "path": "io/src/test/scala/eyes4s/io/StudyGuideOracleSuite.scala",
+      "sha256": "b703af50dc9ad316d377654b4a1600e9b5b2cd04422e7439d2176dddb1724b83",
+      "anchors": [
+        "class StudyGuideOracleSuite"
+      ]
+    },
+    "detector-test": {
+      "repository": "eyes4s",
+      "kind": "test",
+      "path": "detect/src/test/scala/eyes4s/detect/DetectorConformanceSuite.scala",
+      "sha256": "f679f6a7ff298aa5a1f4f3a94b2ec340804fc79a683442b91e6aed1d7db3a7a8",
+      "anchors": [
+        "class DetectorConformanceSuite"
+      ]
+    },
+    "micro-test": {
+      "repository": "eyes4s",
+      "kind": "test",
+      "path": "detect/src/test/scala/eyes4s/detect/EngbertKlieglConformanceSuite.scala",
+      "sha256": "e2d27e73e2384922b3dde262b54455f60682277fc7a062b922f0c22cbb1d6057",
+      "anchors": [
+        "class EngbertKlieglConformanceSuite"
+      ]
+    },
+    "aoi-test": {
+      "repository": "eyes4s",
+      "kind": "test",
+      "path": "aoi/src/test/scala/eyes4s/aoi/AoiSuite.scala",
+      "sha256": "cde1f575968fc020cd5fef871c85df2b2c9c09a15d9939a9c083651373784c55",
+      "anchors": [
+        "class AoiSuite"
+      ]
+    },
+    "codec-test": {
+      "repository": "eyes4s",
+      "kind": "test",
+      "path": "codec/src/test/scala/eyes4s/codec/StudyCodecSuite.scala",
+      "sha256": "1d89b217b3047951d7ab473e7a2f1165d691d1a2f6005c5b4c6d137fd311d2cc",
+      "anchors": [
+        "class StudyCodecSuite"
+      ]
+    },
+    "kde-test": {
+      "repository": "eyes4s",
+      "kind": "test",
+      "path": "surface/src/test/scala/eyes4s/surface/KdeReferenceSuite.scala",
+      "sha256": "33c9a1953b3fa96ce40dcaadf99bdd6255b2faf4c6163190931e6eb3298a2f64",
+      "anchors": [
+        "class KdeReferenceSuite"
+      ]
+    },
+    "execution-test": {
+      "repository": "eyes4s",
+      "kind": "test",
+      "path": "fs2/src/test/scala/eyes4s/fs2/ExecutionConformanceSuite.scala",
+      "sha256": "e4f5b9b3cc9779ac02ce49db363018a58e3866798cdc6890ed9bee4411c65c8e",
+      "anchors": [
+        "class ExecutionConformanceSuite"
+      ]
+    },
+    "export-test": {
+      "repository": "eyes4s",
+      "kind": "test",
+      "path": "io/src/test/scala/eyes4s/io/BaselineExportsSuite.scala",
+      "sha256": "9b741f3d6ca42a957b5347287dbe68afb2a65129124939af728f58fb453d5d36",
+      "anchors": [
+        "class BaselineExportsSuite"
+      ]
+    },
+    "trial": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "studio/viz/src/main/scala/eyes4s/studio/viz/trial/TrialScene.scala",
+      "sha256": "feda617c9cd245dc70d3e894f7c0572e81ebb8c4ec9fcff283ddde0a316b2444",
+      "anchors": [
+        "object TrialScene:"
+      ]
+    },
+    "trial-test": {
+      "repository": "eyes4s",
+      "kind": "test",
+      "path": "studio/viz/src/test/scala/eyes4s/studio/viz/trial/TrialSceneSuite.scala",
+      "sha256": "25b3d4fd2f5b460d7af05e6778740fd573262563fc06822bcb68c0a5e1593fae",
+      "anchors": [
+        "class TrialSceneSuite"
+      ]
+    },
+    "session": {
+      "repository": "eyes4s",
+      "kind": "api",
+      "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/runtime/StudioSession.scala",
+      "sha256": "7859295ea307aa0b91867f413d6d4779c2713deecf22d3968a1f3bf0cf8169a1",
+      "anchors": [
+        "FakeStudyBackend.create"
+      ]
+    },
+    "old-oracle": {
+      "repository": "eyes4s",
+      "kind": "historical",
+      "path": "tools/detector-conformance/README.md",
+      "sha256": "99e47ceaddbbf3f3ea70dfd267162b0571384ccb46f3d71b25b1addb70fef78f",
+      "anchors": [
+        "pymovements 0.26.2",
+        "ViolatingSampleStartsNextCandidate"
+      ]
+    },
+    "corpus": {
+      "repository": "eyes4s",
+      "kind": "historical",
+      "path": "tools/detector-benchmark/README.md",
+      "sha256": "38e54a8e402281f09c6e789918f8702bb19061924e55016a215bf4e4606b69cd",
+      "anchors": [
+        "Human-annotation corpus admission",
+        "not a passing detector score"
+      ]
+    },
+    "old-performance": {
+      "repository": "eyes4s",
+      "kind": "historical",
+      "path": "io/src/main/resources/META-INF/eyes4s/eyelink/performance-baseline.tsv",
+      "sha256": "614d2fae7c7cfe91040104fa9421bd54a1a9e2f5bd52a001f580f4531300af41",
+      "anchors": [
+        "throughput"
+      ]
+    },
+    "consumer": {
+      "repository": "eyes4s",
+      "kind": "test",
+      "path": "tools/study-consumer/verify.py",
+      "sha256": "e0d6ac3ab0e665a2f8bcffb973d3f333767ba158090f8de8e29eeaad4576eeae",
+      "anchors": [
+        "def main("
+      ]
+    },
+    "baseline": {
+      "repository": "eyes4s",
+      "kind": "historical",
+      "path": "docs/EYESIM_CAPABILITIES.md",
+      "sha256": "6de89b0ff7b584421771286ee3c1fd680ab24d5c5e577af664b66489cd42b4b3",
+      "anchors": [
+        "eyesim"
+      ]
+    },
+    "pm-screen": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/gaze/screen.py",
+      "sha256": "0e0ea77ef18f15207d3960b1d238f71ba99efdbf62eda41d1d84d6f7a314bbb5",
+      "anchors": [
+        "class Screen"
+      ]
+    },
+    "pm-experiment": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/gaze/experiment.py",
+      "sha256": "d18716ddf90048aabf040cae7b2df2713f14f6579cf4b56b3d1a7d82a23640bf",
+      "anchors": [
+        "class Experiment"
+      ]
+    },
+    "pm-gaze": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/gaze/gaze.py",
+      "sha256": "1d0bd99cc0b527f1add9e3c587c39ad82064d604541ddfdea2149e63a5ad0d3b",
+      "anchors": [
+        "class Gaze"
+      ]
+    },
+    "pm-io": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/gaze/io.py",
+      "sha256": "8f7599d914e25861c78c303943ff880a26828a09910642b971ad6dd43ecf2301",
+      "anchors": [
+        "def from_csv("
+      ]
+    },
+    "pm-ipc": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/gaze/io.py",
+      "sha256": "8f7599d914e25861c78c303943ff880a26828a09910642b971ad6dd43ecf2301",
+      "anchors": [
+        "def from_ipc("
+      ]
+    },
+    "pm-asc": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/gaze/io.py",
+      "sha256": "8f7599d914e25861c78c303943ff880a26828a09910642b971ad6dd43ecf2301",
+      "anchors": [
+        "def from_asc("
+      ]
+    },
+    "pm-dataset": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/dataset/dataset.py",
+      "sha256": "a3425f286bd4f140cfbd3aff398d4a9b08f7bd0e0e913254517e85d8ee3d15c4",
+      "anchors": [
+        "def download("
+      ]
+    },
+    "pm-qc": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/gaze/quality.py",
+      "sha256": "19de50b9d7162000ef91a695cb3c5fdfd5e414603ce693dbd902b4433d68d404",
+      "anchors": [
+        "class DataQualityReport"
+      ]
+    },
+    "pm-reading": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/measure/reading/measures.py",
+      "sha256": "ec3130aa2a0c15b301f696a41dde9ec2b5df56923f0a2d8f85f06aade02ba74c",
+      "anchors": [
+        "def first_pass_reading_time("
+      ]
+    },
+    "pm-ivt": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/events/detection/ivt.py",
+      "sha256": "531f345f29aa05619107dd20588fcd9d775dea2cddc1a0d51594c3de310e92a4",
+      "anchors": [
+        "def ivt("
+      ]
+    },
+    "pm-idt": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/events/detection/idt.py",
+      "sha256": "e75df3191ca8ac83514513b88550d52bbdc8d9a0b7d22b53808d6df00abc4683",
+      "anchors": [
+        "def idt("
+      ]
+    },
+    "pm-micro": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/events/detection/microsaccades.py",
+      "sha256": "dbdeb069b5526bc410e4ea1ae8cfc31ecb50b4c4f86c9b24b4727a46adb057c2",
+      "anchors": [
+        "def microsaccades("
+      ]
+    },
+    "pm-blink": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/events/detection/blink.py",
+      "sha256": "c5aec61d47594ba118a6181c74ebc7aa2c585eac9a25c849e73469e54dd08dd6",
+      "anchors": [
+        "def blink("
+      ]
+    },
+    "pm-ihmm": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/events/detection/ihmm.py",
+      "sha256": "5b9dbc18abb4b268b52a20d3550cd61d48cfdd3289bb6685daa3b19834d02ca7",
+      "anchors": [
+        "def ihmm("
+      ]
+    },
+    "pm-resample": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/transforms/resample.py",
+      "sha256": "1d903fe73ec8a768c59aaeb35c10349d947af0cad86cdb9540b83ba655394242",
+      "anchors": [
+        "def resample("
+      ]
+    },
+    "pm-velocity": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/transforms/pos2vel.py",
+      "sha256": "c9fffd0959214a677dbfad500d65e4f8d81325fb3b67a34f8b51891caeda29d1",
+      "anchors": [
+        "def pos2vel("
+      ]
+    },
+    "pm-angle": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/transforms/pix2deg.py",
+      "sha256": "906b6cbfde995d03013de55c2ed0c10127c3f9e9399a534e67219dfd7f8c3c2a",
+      "anchors": [
+        "def pix2deg("
+      ]
+    },
+    "pm-smooth": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/transforms/savitzky_golay.py",
+      "sha256": "eaae69d8decbfdb4529a6cf9ecb3017534f840e3e2157c1cc8f637ab3db0e5ab",
+      "anchors": [
+        "def savitzky_golay("
+      ]
+    },
+    "pm-scanpath": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/plotting/scanpathplot.py",
+      "sha256": "a71b5146241d6987cff3895dc5764f2cdfc7b44f7a44c874e75c21e4ea164e2c",
+      "anchors": [
+        "def scanpathplot("
+      ]
+    },
+    "pm-heatmap": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/plotting/heatmap.py",
+      "sha256": "fffa92f4720669ccc934ded0d7fc42e0825c2e0f2af19d456104be13b92315bd",
+      "anchors": [
+        "def heatmap("
+      ]
+    },
+    "pm-trace": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/plotting/traceplot.py",
+      "sha256": "46f3572c801780be9f7e9c29d9e7da847411243f37719576fcc824b4ec4d4802",
+      "anchors": [
+        "def traceplot("
+      ]
+    },
+    "pm-time": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/plotting/tsplot.py",
+      "sha256": "1f0ef4584ed4e97afa56965d731b4999f053d6341f0884f5b9088f4e9f585d45",
+      "anchors": [
+        "def tsplot("
+      ]
+    },
+    "pm-main-sequence": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/plotting/main_sequence_plot.py",
+      "sha256": "18ebcb76e5314f173f9ffb30a8c8231718490082dcd271cac3cf24851d32c3c3",
+      "anchors": [
+        "def main_sequence_plot("
+      ]
+    },
+    "pm-loss-plot": {
+      "repository": "pymovements",
+      "kind": "api",
+      "path": "pymovements/plotting/data_loss_histogram.py",
+      "sha256": "f305aa4e705538273e9370c15821728c0702a0e0c76961e452d7a0f8ccc0b705",
+      "anchors": [
+        "def data_loss_histogram("
+      ]
+    }
+  },
+  "capabilities": [
+    {
+      "id": "geometry",
+      "title": "Typed geometry, units and identities",
+      "targets": [
+        "PM2",
+        "PM5"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-screen",
+          "pm-experiment",
+          "pm-angle"
+        ],
+        "note": "Screen and Experiment carry display geometry; pix2deg converts using it."
+      },
+      "implementation": {
+        "status": "present",
+        "apis": [
+          "frame",
+          "agreement"
+        ],
+        "note": "Static units and nominal frame/clock agreement are concrete design strengths."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Record geometry, y direction, coordinate origin, visual-angle formula, clock and calibration; metadata presence and compile-time rejection are different guarantees.",
+      "fixtures": {
+        "existing": [
+          "workflow-test"
+        ],
+        "planned": "Public misuse examples and equal physical-coordinate fixtures."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Demonstrate the simpler safe public journey and comparative task success; types alone do not prove usability.",
+      "owners": [
+        "bd-01M3HYF5KM139C8NXG35NXRYEP"
+      ]
+    },
+    {
+      "id": "datasets",
+      "title": "Public dataset access",
+      "targets": [
+        "PM1",
+        "PM2"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-dataset"
+        ],
+        "note": "Dataset.download/load and registered definitions provide a discoverable dataset workflow."
+      },
+      "implementation": {
+        "status": "partial",
+        "apis": [
+          "delimited",
+          "asc"
+        ],
+        "note": "Import primitives exist; corpus-specific admission tooling is not a reusable public dataset catalog."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "License, archive/member identity, geometry and subject/trial selection are explicit.",
+      "fixtures": {
+        "existing": [
+          "corpus"
+        ],
+        "planned": "One licensed common dataset descriptor, corruption cases and offline cache."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Reusable descriptor/fetch/admission example and a continuation list for the dataset catalog.",
+      "owners": [
+        "bd-01M3J2FA8E3CPC5GW6JFHKTCS2"
+      ]
+    },
+    {
+      "id": "csv-asc",
+      "title": "CSV and ASC admission to event results",
+      "targets": [
+        "PM1",
+        "PM2"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-io",
+          "pm-asc"
+        ],
+        "note": "from_csv has configurable columns; from_asc parses EyeLink recordings."
+      },
+      "implementation": {
+        "status": "present",
+        "apis": [
+          "delimited",
+          "asc",
+          "workflow",
+          "export"
+        ],
+        "note": "Generic typed DelimitedSchema exists; PsychologyWorkflow is an AdSERP-specific public journey."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Units, rounding, validity, eye, malformed-row accounting, clock and trial boundaries must agree.",
+      "fixtures": {
+        "existing": [
+          "csv-test",
+          "workflow-test",
+          "export-test"
+        ],
+        "planned": "Same small/typical/large raw data with bad rows and exact exported event support."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Qualify generic and format-specific consumer journeys and paired CSV-to-I-VT pipeline.",
+      "owners": [
+        "bd-01M3HYF5KM139C8NXG35NXRYEP",
+        "bd-01M3HYF63RDKD2VSQ9PFAXEKAN"
+      ]
+    },
+    {
+      "id": "ipc-bids",
+      "title": "IPC/Feather and BIDS interchange",
+      "targets": [
+        "PM1"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-ipc",
+          "pm-qc"
+        ],
+        "note": "from_ipc reads IPC/Feather; DataQualityReport exports a BIDS-style QC report. This is not evidence of full BIDS ingestion."
+      },
+      "implementation": {
+        "status": "absent",
+        "apis": [],
+        "note": "No qualified IPC/Feather path or complete BIDS ingest established in this review."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Schema/nullability and unit/clock metadata survive round trip; BIDS version and required sidecars are explicit.",
+      "fixtures": {
+        "existing": [],
+        "planned": "Pinned IPC fixture and a BIDS 1.11 fixture with missing-sidecar failures."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Implement/decide IPC support and complete existing BIDS ingest work.",
+      "owners": [
+        "bd-01M3J2FHKPFGQR40D4V6H5XBR7",
+        "bd-01M004XM43TEWJENBNBX29GWK1"
+      ]
+    },
+    {
+      "id": "preprocessing",
+      "title": "Velocity, interpolation and smoothing",
+      "targets": [
+        "PM1",
+        "PM5"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-velocity",
+          "pm-smooth"
+        ],
+        "note": "Position-to-velocity and Savitzky-Golay transforms are public."
+      },
+      "implementation": {
+        "status": "present",
+        "apis": [
+          "micro",
+          "filters"
+        ],
+        "note": "Kinematics velocities, missing padding, bounded interpolation, median and Savitzky-Golay filtering exist."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Stencil, rate assumptions, endpoint behavior, gap policy, pupil/eye channels and filter order must be named.",
+      "fixtures": {
+        "existing": [
+          "micro-test"
+        ],
+        "planned": "Analytic trajectories, irregular-time and dropout fixtures across supported platforms."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Qualify preprocessing choices within the paired detector pipeline and measure robustness.",
+      "owners": [
+        "bd-01M3HYF6VRDVEJ9C7H1PRYAJ3E",
+        "bd-01M3HYF5KM139C8NXG35NXRYEP"
+      ]
+    },
+    {
+      "id": "resampling",
+      "title": "Regular-grid resampling",
+      "targets": [
+        "PM1"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-resample"
+        ],
+        "note": "Public resample transform and Gaze/Dataset wrappers."
+      },
+      "implementation": {
+        "status": "absent",
+        "apis": [],
+        "note": "Gap interpolation is not a general resampling API."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Grid origin, endpoints, up/downsample policy, antialiasing, maximum gap and no extrapolation.",
+      "fixtures": {
+        "existing": [],
+        "planned": "Analytic ramp and gap-containing irregular input onto an explicit grid."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Deliver the first typed resampling path and queue unsupported modes explicitly.",
+      "owners": [
+        "bd-01M3J2FF59TXXH53NXY1FZNVMG"
+      ]
+    },
+    {
+      "id": "ivt",
+      "title": "I-VT detection",
+      "targets": [
+        "PM1",
+        "PM5"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-ivt"
+        ],
+        "note": "Public velocity-threshold detector."
+      },
+      "implementation": {
+        "status": "present",
+        "apis": [
+          "detectors"
+        ],
+        "note": "Detectors.ivt is a pure event detector."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Velocity convention, threshold units, minimum duration, invalid support and inclusive offsets versus half-open support are named.",
+      "fixtures": {
+        "existing": [
+          "detector-test",
+          "old-oracle"
+        ],
+        "planned": "0.28.0 oracle refresh plus common human-annotated held-out data."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Refresh comparator conformance and run identical frozen scoring; 0.26.2 evidence is historical.",
+      "owners": [
+        "bd-01M3HYF6VRDVEJ9C7H1PRYAJ3E"
+      ]
+    },
+    {
+      "id": "idt",
+      "title": "I-DT detection and scaling",
+      "targets": [
+        "PM1",
+        "PM3",
+        "PM5"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-idt"
+        ],
+        "note": "Public dispersion-threshold detector; reviewed code expands extrema windows."
+      },
+      "implementation": {
+        "status": "present",
+        "apis": [
+          "detectors"
+        ],
+        "note": "Detectors.idt maintains window extrema; no measured speed advantage asserted."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Reference dispersion sums x/y ranges; eyes4s uses per-axis extents. Violating-sample inclusion and event endpoints differ. Equal numeric thresholds are not an equivalence contract.",
+      "fixtures": {
+        "existing": [
+          "detector-test",
+          "old-oracle"
+        ],
+        "planned": "Explicit violating-sample and diagonal cases; long stationary/threshold-churning scales."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Add a named non-equivalence adapter and fair scientific/scaling comparisons.",
+      "owners": [
+        "bd-01M3HYF6VRDVEJ9C7H1PRYAJ3E",
+        "bd-01M3HYF5VMV818PJMJDKMJBK8P"
+      ]
+    },
+    {
+      "id": "microsaccades",
+      "title": "Engbert-Kliegl microsaccades",
+      "targets": [
+        "PM1",
+        "PM5"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-micro"
+        ],
+        "note": "Public microsaccades detector."
+      },
+      "implementation": {
+        "status": "present",
+        "apis": [
+          "micro"
+        ],
+        "note": "Kinematics, EkThresholds and Detectors.engbertKliegl exist."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Velocity stencil, robust threshold estimator, minimum samples, binocular overlap and event support are separate choices.",
+      "fixtures": {
+        "existing": [
+          "micro-test"
+        ],
+        "planned": "Pinned reference outputs and matched human-data/controlled-noise cases."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Add a current comparator adapter and qualify required microsaccade strata.",
+      "owners": [
+        "bd-01M3HYF6VRDVEJ9C7H1PRYAJ3E"
+      ]
+    },
+    {
+      "id": "blink",
+      "title": "Pupil-based blink detection",
+      "targets": [
+        "PM1",
+        "PM5"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-blink"
+        ],
+        "note": "Detects pupil-based blink candidates, merges them and applies duration policies."
+      },
+      "implementation": {
+        "status": "absent",
+        "apis": [],
+        "note": "Gaze.Blink and missing padding do not implement pupil-signal blink detection."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Zero/NaN pupil handling, difference threshold, automatic calibration, padding, merge gap and minimum duration must be explicit.",
+      "fixtures": {
+        "existing": [],
+        "planned": "Known pupil ramps, zeros, tracking loss and boundary candidates."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Implement fixed-threshold candidates, then automatic calibration and empirical qualification.",
+      "owners": [
+        "bd-01M3J2FDY7D9BQ09NYJCPM3FVT"
+      ]
+    },
+    {
+      "id": "ihmm",
+      "title": "I-HMM detection",
+      "targets": [
+        "PM1",
+        "PM5"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-ihmm"
+        ],
+        "note": "Two-state Gaussian-velocity HMM supports Viterbi decoding and optional parameter re-estimation."
+      },
+      "implementation": {
+        "status": "absent",
+        "apis": [],
+        "note": "No public I-HMM implementation found in inspected detector entry points."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Emission units/distribution, priors, transitions, missingness, ties and optional Baum-Welch are named.",
+      "fixtures": {
+        "existing": [],
+        "planned": "Exhaustive tiny-state paths and pinned fixed-parameter examples."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Implement fixed-parameter decoder before a separate re-estimation slice.",
+      "owners": [
+        "bd-01M3J2FGC4DWFJ7K7TZFEJ5TZ6"
+      ]
+    },
+    {
+      "id": "qc",
+      "title": "Sample quality reports",
+      "targets": [
+        "PM1",
+        "PM5"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-qc",
+          "pm-gaze"
+        ],
+        "note": "DataQualityReport, report_data_quality and measure_samples expose QC workflows."
+      },
+      "implementation": {
+        "status": "partial",
+        "apis": [
+          "delimited",
+          "gaze"
+        ],
+        "note": "Admission diagnostics and explicit gaze status exist; these are not a complete quality report."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Loss denominator, per-eye validity, blink/interpolation accounting, precision estimand, units and thresholds are declared.",
+      "fixtures": {
+        "existing": [
+          "csv-test"
+        ],
+        "planned": "Hand-counted sample loss plus independent precision/accuracy fixtures."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Implement sample-loss report first; retain precision/accuracy and complete report as follow-on requirements.",
+      "owners": [
+        "bd-01M3J2FBFQJHEVV5SQBM2EQF28"
+      ]
+    },
+    {
+      "id": "reading",
+      "title": "Word-level reading measures",
+      "targets": [
+        "PM1",
+        "PM5"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-reading",
+          "pm-gaze"
+        ],
+        "note": "AOI mapping and first-pass, rereading, regression-path and landing-position measures."
+      },
+      "implementation": {
+        "status": "partial",
+        "apis": [
+          "aoi"
+        ],
+        "note": "AOI dwell/transitions are foundations, not reading-specific estimands."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Word order, skips/regressions, first-pass termination, overlapping AOIs and interruption semantics are explicit.",
+      "fixtures": {
+        "existing": [
+          "aoi-test"
+        ],
+        "planned": "Short annotated sequences with skips, regressions and missing intervals."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Implement ordered word AOIs and first pass, then the remaining named reading measures.",
+      "owners": [
+        "bd-01M3J2FCPZX828NSHW4Q8TZVV2"
+      ]
+    },
+    {
+      "id": "aoi",
+      "title": "AOI assignment, dwell and transitions",
+      "targets": [
+        "PM1",
+        "PM5"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-gaze"
+        ],
+        "note": "Gaze.map_to_aois associates samples/events with AOIs."
+      },
+      "implementation": {
+        "status": "present",
+        "apis": [
+          "aoi"
+        ],
+        "note": "Typed AoiSet assignment and measure accounting exist."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Tie/unassigned policy, static versus moving coordinates, fixation-support accounting and interruption rules.",
+      "fixtures": {
+        "existing": [
+          "aoi-test"
+        ],
+        "planned": "Public static and dynamic AOI examples and hand-counted transitions."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Qualify full workflow; complete existing dynamic-AOI seam without duplicating it.",
+      "owners": [
+        "bd-01M02N4DQ4M2PGVY2Y6DK48JT3",
+        "bd-01M3HYF5KM139C8NXG35NXRYEP"
+      ]
+    },
+    {
+      "id": "study",
+      "title": "Typed analyses, contrasts and provenance",
+      "targets": [
+        "PM2",
+        "PM5"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-dataset",
+          "pm-gaze"
+        ],
+        "note": "Dataframe-oriented dataset operations; no equivalent typed study-plan contract established here."
+      },
+      "implementation": {
+        "status": "present",
+        "apis": [
+          "plan",
+          "recording-plan"
+        ],
+        "note": "Typed executable descriptions and method registry are existing architectural strengths."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Estimand, participant/trial identity, weighting, stochastic seed and result provenance are inspectable.",
+      "fixtures": {
+        "existing": [
+          "guide-test"
+        ],
+        "planned": "Clean consumer study and deliberately incompatible identities/estimands."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Measure task completion and API burden in the existing guide and independent usability work.",
+      "owners": [
+        "bd-01M3HYF5KM139C8NXG35NXRYEP"
+      ]
+    },
+    {
+      "id": "distributions",
+      "title": "Density, bandwidth and multiscale measures",
+      "targets": [
+        "PM1",
+        "PM3",
+        "PM5"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-heatmap"
+        ],
+        "note": "heatmap is a plotting comparator; do not equate its raster with every eyes4s density estimand."
+      },
+      "implementation": {
+        "status": "present",
+        "apis": [
+          "smooth"
+        ],
+        "note": "Explicit smoothers and bandwidth choices extend beyond a single heatmap."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Mass normalization, domain/grid, bandwidth units, boundaries and sampling support are fixed.",
+      "fixtures": {
+        "existing": [
+          "kde-test",
+          "baseline"
+        ],
+        "planned": "Analytic densities and meaningful same-estimand paired subset; absolute budgets for unmatched methods."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Qualify consumer density workflow and independent science/performance evidence.",
+      "owners": [
+        "bd-01M214CX2CTADNR6Q9D032Y1FB",
+        "bd-01M3HYF5VMV818PJMJDKMJBK8P"
+      ]
+    },
+    {
+      "id": "comparison",
+      "title": "Scanpath and distribution comparison",
+      "targets": [
+        "PM1",
+        "PM3",
+        "PM5"
+      ],
+      "comparator": {
+        "apis": [],
+        "note": "No direct equivalent for every typed comparison method is asserted by this inventory."
+      },
+      "implementation": {
+        "status": "present",
+        "apis": [
+          "compare",
+          "multimatch"
+        ],
+        "note": "MeasureDistance, Similarity and MultiMatch expose distinct contracts."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Do not promote a distance-shaped function to Metric; fix alignment, empty support, normalization and tolerances.",
+      "fixtures": {
+        "existing": [
+          "baseline"
+        ],
+        "planned": "Independent hand/reference cases and declared eyes4s-only performance workloads."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Complete existing baseline comparison qualification and absolute performance budgets.",
+      "owners": [
+        "bd-01M214CX2CTADNR6Q9D032Y1FB",
+        "bd-01M3HYF5VMV818PJMJDKMJBK8P"
+      ]
+    },
+    {
+      "id": "first-analysis",
+      "title": "Install-to-first-result research journey",
+      "targets": [
+        "PM2"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-dataset",
+          "pm-gaze"
+        ],
+        "note": "Dataset loading, transforms, detection, measurement and plotting form the comparison journey."
+      },
+      "implementation": {
+        "status": "partial",
+        "apis": [
+          "workflow"
+        ],
+        "note": "Task-first facade exists; fresh installation and researcher task success are separate gates."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Same source data, task, output and researcher starting knowledge; count manual recovery and errors.",
+      "fixtures": {
+        "existing": [
+          "workflow-test",
+          "consumer"
+        ],
+        "planned": "Clean external installation, exact snippets, malformed input and fixed usability tasks."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Execute the first consumer journey and freeze independent usability thresholds.",
+      "owners": [
+        "bd-01M3HYF5KM139C8NXG35NXRYEP"
+      ]
+    },
+    {
+      "id": "persistence",
+      "title": "Saved analysis and replay",
+      "targets": [
+        "PM2",
+        "PM1"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-gaze",
+          "pm-dataset"
+        ],
+        "note": "Gaze/Dataset save samples/events/preprocessed data; not assumed equivalent to a saved typed study."
+      },
+      "implementation": {
+        "status": "present",
+        "apis": [
+          "codec",
+          "recording-plan"
+        ],
+        "note": "Versioned study encoding and replay machinery exist."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Persist source/config identities, results, rejected inputs and version migration; reject stale or absent data.",
+      "fixtures": {
+        "existing": [
+          "codec-test",
+          "consumer"
+        ],
+        "planned": "Fresh-process save/reopen/recompute equality and migration/failure cases."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Qualify released library replay and real Studio reopen against real inputs.",
+      "owners": [
+        "bd-01M3HYF5KM139C8NXG35NXRYEP",
+        "bd-01M3DPFHY9YW5BPSJQ8VBBXHVN"
+      ]
+    },
+    {
+      "id": "studio",
+      "title": "Real Studio analysis and persistence",
+      "targets": [
+        "PM1",
+        "PM2"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-gaze"
+        ],
+        "note": "Python library is the task baseline; no comparable desktop application is assumed."
+      },
+      "implementation": {
+        "status": "partial",
+        "apis": [
+          "session"
+        ],
+        "note": "Desktop session still starts FakeStudyBackend at this source snapshot."
+      },
+      "platforms": [
+        "desktop-JVM"
+      ],
+      "conventions": "Real admitted data and persisted studies must execute without fixtures substituting for production results.",
+      "fixtures": {
+        "existing": [
+          "trial-test"
+        ],
+        "planned": "Real source import, analysis, save, quit, reopen and export, including failure recovery."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Land real backend and pass the existing real-data gate.",
+      "owners": [
+        "bd-01M3DPFHY9YW5BPSJQ8VBBXHVN",
+        "bd-01M3DPG3KTRQNN6HKWRHYQTT0C"
+      ]
+    },
+    {
+      "id": "scanpath-heatmap",
+      "title": "Scanpath and heatmap figures",
+      "targets": [
+        "PM4"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-scanpath",
+          "pm-heatmap"
+        ],
+        "note": "Public standalone Matplotlib plotting functions."
+      },
+      "implementation": {
+        "status": "partial",
+        "apis": [
+          "trial",
+          "smooth"
+        ],
+        "note": "Trial scene supports fixation/order marks; density analysis is not a complete standalone plotting journey."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Fixation area versus duration, order connections versus measured saccades, axes/origin, common scales and off-screen handling.",
+      "fixtures": {
+        "existing": [
+          "trial-test"
+        ],
+        "planned": "Same-data publication specimens, overplotting and missing/off-screen cases."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Generate actual paired renders and complete standalone/export integration; score independently.",
+      "owners": [
+        "bd-01M3HYF6KTBTJDGSG8R300DVJC",
+        "bd-01M3DPFX34V6NESFCA1EXX2EQ4"
+      ]
+    },
+    {
+      "id": "trace-events",
+      "title": "Trace and event-overlay figures",
+      "targets": [
+        "PM4"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-trace",
+          "pm-time"
+        ],
+        "note": "traceplot and tsplot render gaze/time information."
+      },
+      "implementation": {
+        "status": "absent",
+        "apis": [],
+        "note": "No qualified reusable trace-to-export entry point established."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Time and velocity units, channel labels, gaps, event support and clipping remain visible.",
+      "fixtures": {
+        "existing": [],
+        "planned": "Pinned noisy/irregular-time trace and event overlay specimens."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Implement one reusable standalone trace scene and exported consumer example.",
+      "owners": [
+        "bd-01M3J2FJTQFV6RF1ZVJZVW34DM"
+      ]
+    },
+    {
+      "id": "reading-qc-main-sequence",
+      "title": "Reading, QC and main-sequence figures",
+      "targets": [
+        "PM4"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-reading",
+          "pm-loss-plot",
+          "pm-main-sequence"
+        ],
+        "note": "Reading measurements, data-loss histogram and main-sequence plots provide comparison material."
+      },
+      "implementation": {
+        "status": "absent",
+        "apis": [],
+        "note": "Complete figure families remain gaps; measure availability does not supply a rendered figure."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Named reading/QC estimands; saccade amplitude and peak velocity units; uncertainty and cohort denominator.",
+      "fixtures": {
+        "existing": [],
+        "planned": "Same verified results for reading, quality and main-sequence edge cases."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Freeze specimens and split missing figure families after trace/export seam.",
+      "owners": [
+        "bd-01M3HYF6KTBTJDGSG8R300DVJC",
+        "bd-01M3J2FJTQFV6RF1ZVJZVW34DM"
+      ]
+    },
+    {
+      "id": "publication",
+      "title": "Publication export and interactive task quality",
+      "targets": [
+        "PM4",
+        "PM2"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-scanpath",
+          "pm-time"
+        ],
+        "note": "Standalone Matplotlib figures support conventional publication workflows."
+      },
+      "implementation": {
+        "status": "partial",
+        "apis": [
+          "trial"
+        ],
+        "note": "Scene generation exists; complete SVG/PDF/PNG and independent task review remain open."
+      },
+      "platforms": [
+        "desktop-JVM"
+      ],
+      "conventions": "Physical size, text/font embedding, scales, color accessibility, light/dark/HiDPI and provenance.",
+      "fixtures": {
+        "existing": [
+          "trial-test"
+        ],
+        "planned": "Actual exports at fixed sizes, searchable/selectable content where supported, and interaction tasks."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Complete existing export owner and frozen independent review rubric.",
+      "owners": [
+        "bd-01M3DPFX34V6NESFCA1EXX2EQ4",
+        "bd-01M3HYF6KTBTJDGSG8R300DVJC"
+      ]
+    },
+    {
+      "id": "performance",
+      "title": "Paired CPU and memory performance",
+      "targets": [
+        "PM3"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-dataset",
+          "pm-idt"
+        ],
+        "note": "Python/Polars/NumPy pipelines are workload-specific baselines, not presumed slow."
+      },
+      "implementation": {
+        "status": "partial",
+        "apis": [
+          "detectors",
+          "asc",
+          "execution"
+        ],
+        "note": "Streaming/extrema designs are promising; historical ASC receipts do not establish current comparative wins."
+      },
+      "platforms": [
+        "JVM"
+      ],
+      "conventions": "Cold versus warm, thread/cache policy, materialization, equivalent outputs, wall time, peak RSS and allocation/GC are separate.",
+      "fixtures": {
+        "existing": [
+          "old-performance"
+        ],
+        "planned": "Frozen CSV-to-I-VT first workload, plus import, I-DT scaling, density, comparison and export at multiple sizes."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Freeze numeric budgets before optimization, run paired baseline, then optimize measured bottlenecks.",
+      "owners": [
+        "bd-01M3HYF5VMV818PJMJDKMJBK8P",
+        "bd-01M3HYF63RDKD2VSQ9PFAXEKAN"
+      ]
+    },
+    {
+      "id": "responsiveness",
+      "title": "Studio latency and bounded memory",
+      "targets": [
+        "PM3",
+        "PM4"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-gaze"
+        ],
+        "note": "Use comparable analysis tasks; desktop-specific budgets are absolute when no counterpart exists."
+      },
+      "implementation": {
+        "status": "partial",
+        "apis": [
+          "session",
+          "trial"
+        ],
+        "note": "Synthetic handler/render measurements do not establish real-data input-to-display latency."
+      },
+      "platforms": [
+        "desktop-JVM"
+      ],
+      "conventions": "Measure p95 actual selection/trial/perspective response, cached/uncached work, frame delivery and retained memory separately.",
+      "fixtures": {
+        "existing": [
+          "trial-test"
+        ],
+        "planned": "Existing S10.6 named fixture and 10x workload, real backend, large selection and cancellation."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Run existing Studio performance court and reconcile its budgets with PM3 before evaluation.",
+      "owners": [
+        "bd-01M3DPG25V0DGFR2BPANBDWMQF",
+        "bd-01M3HYF5VMV818PJMJDKMJBK8P"
+      ]
+    },
+    {
+      "id": "empirical",
+      "title": "Independent scientific qualification",
+      "targets": [
+        "PM5"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-ivt",
+          "pm-idt",
+          "pm-micro"
+        ],
+        "note": "Reference implementations are comparators, not ground truth."
+      },
+      "implementation": {
+        "status": "partial",
+        "apis": [
+          "detectors",
+          "micro"
+        ],
+        "note": "Pinned conformance suites and admitted human corpus exist; full held-out scoring remains open."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Freeze timing/label adapter, matching, splits, tuning and uncertainty by independent participant/recording, including reading.",
+      "fixtures": {
+        "existing": [
+          "corpus",
+          "old-oracle",
+          "detector-test"
+        ],
+        "planned": "Human-annotated stimuli/reading, corrupt timing fixtures and controlled noise/dropout/rate degradation."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Reuse the common scorer and add pinned adapters; do not turn corpus admission into a detector score.",
+      "owners": [
+        "bd-01M3HYF6VRDVEJ9C7H1PRYAJ3E",
+        "bd-01M02N4CCS9425KPD4S0A0S9HX"
+      ]
+    },
+    {
+      "id": "streaming",
+      "title": "Batch/stream equivalence and bounded execution",
+      "targets": [
+        "PM3",
+        "PM2"
+      ],
+      "comparator": {
+        "apis": [
+          "pm-dataset"
+        ],
+        "note": "Dataset operations are the batch comparison path; no identical online contract is asserted."
+      },
+      "implementation": {
+        "status": "present",
+        "apis": [
+          "machine",
+          "execution"
+        ],
+        "note": "One pure machine supports batch and FS2 execution; cancellation belongs in effectful adapters."
+      },
+      "platforms": [
+        "JVM",
+        "JS"
+      ],
+      "conventions": "Chunk invariance, flush semantics, error/missingness accounting, cancellation and memory growth.",
+      "fixtures": {
+        "existing": [
+          "execution-test"
+        ],
+        "planned": "Chunk partitions, bounded-memory long input and cancellation probes."
+      },
+      "workflow": {
+        "status": "pending",
+        "note": "Listed test sources are inventory evidence; no current paired workflow receipt is asserted.",
+        "receipt": null
+      },
+      "empirical": {
+        "status": "pending",
+        "note": "No empirical comparative qualification receipt for this capability.",
+        "receipt": null
+      },
+      "release": {
+        "status": "pending",
+        "note": "Source availability is not proof of an installable released consumer path.",
+        "receipt": null
+      },
+      "gate": "open",
+      "gap": "Qualify public streaming journey and absolute throughput/memory budgets without assuming JVM/JS equality.",
+      "owners": [
+        "bd-01M3HYF5KM139C8NXG35NXRYEP",
+        "bd-01M3HYF5VMV818PJMJDKMJBK8P"
+      ]
+    }
+  ]
+}

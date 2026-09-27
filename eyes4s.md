@@ -75,12 +75,16 @@ forbids — you can still ask for the wrong join, but you can no longer ask for 
 | Tool | Language | What it is |
 |---|---|---|
 | `eyesim`, `eyetrackingR`, `gazeR`, `saccades`, `eyelinker`, `popEye` | R | data-frame pipelines; each owns a slice (similarity, growth curves, detection, IO) |
-| `pymovements`, `PyGaze`, `REMoDNaV`, `I2MC`, `multimatch-gaze`, `pysaliency` | Python | NumPy arrays + pandas; the strongest detection and benchmarking implementations live here |
+| `pymovements`, `PyGaze`, `REMoDNaV`, `I2MC`, `multimatch-gaze`, `pysaliency` | Python | array/dataframe analysis and acquisition libraries; pymovements uses Polars and provides detection, datasets, measures and plotting |
 | Titta, iohub/PsychoPy, Tobii/EyeLink SDKs | Python/MATLAB | acquisition, not analysis |
 
-Every one of them represents a fixation as a row of floats. None carries the screen, the viewing
-distance, the y-axis direction, or the clock domain in the value. The result is a literature-wide
-tax paid in silent unit errors, y-flips, and comparisons between incommensurable maps.
+These libraries differ in how they represent geometry and metadata. In particular, pymovements
+has `Screen`, `Experiment` and `Gaze` objects carrying display and experiment information.
+Eyes4s makes a more specific design commitment: static coordinate units, named axis conventions,
+nominal frame/clock identities and a single checked `Agreement` seam for compatibility. Whether
+that design produces a better research workflow needs comparative evidence; the
+[pymovements comparison contract](docs/plans/PYMOVEMENTS_COMPARISON.md) records the current scope
+and open qualification work.
 
 ### The substrate
 
