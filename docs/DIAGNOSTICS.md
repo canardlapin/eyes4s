@@ -1427,6 +1427,7 @@ fails after rewriting, so review the change and run it again.
 | `form-field.refused` | `Refused` | `field`, `raw`, `underlying`, `reason` |
 | `form-field.unknown-field` | `UnknownField` | `field` |
 | `form-field.repeated-part` | `RepeatedPart` | `field`, `part` |
+
 ### `source-identity` — `SourceIdentityError`
 
 | Code | Case | Operands |
