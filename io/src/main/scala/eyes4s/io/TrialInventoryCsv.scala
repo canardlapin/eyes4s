@@ -187,12 +187,60 @@ object TrialInventory:
   private[io] def label(id: TrialIdentity): (String, String, String) =
     (id.participant, id.phase, id.trial)
 
-  private final case class Row(
+  private[io] final case class Row(
       number: Int,
       identity: TrialIdentity,
       item: Option[String],
       attributes: Attributes
   )
+
+  /** Interpret one record under an already validated header. The absolute
+    * record number is supplied by the caller; width is checked before field
+    * interpretation, then all identity, item and attribute errors are retained
+    * in that order. This shares semantics only: bounded execution must first
+    * check its field, column, attribute and numeric resource envelope.
+    */
+  private[io] def parseRow(
+      header: Vector[String],
+      raw: Vector[String],
+      number: Int,
+      columns: TrialInventoryColumns
+  ): Either[Vector[InventoryError], Row] =
+    val fields = header.zip(raw).toMap
+    if raw.size != header.size then
+      Left(Vector(InventoryError.Width(number, header.size, raw.size)))
+    else
+      def field(column: String, value: String, requirement: String) =
+        InventoryError.Field(number, column, value, requirement)
+      val identity = columns.trial.identity(fields).left.map(_.map(field.tupled))
+      val item     = columns.item.fold[Either[Vector[InventoryError], Option[String]]](
+        Right(None)
+      ) { column =>
+        val value = fields(column)
+        Either.cond(
+          value.trim.nonEmpty,
+          Some(value),
+          Vector(field(column, value, "a non-blank item"))
+        )
+      }
+      val values = columns.attributes.map(column =>
+        column
+          .parse(fields(column.name))
+          .left
+          .map(field(column.name, fields(column.name), _))
+      )
+      val errors = identity.left.toSeq.flatten ++ item.left.toSeq.flatten ++
+        values.collect { case Left(e) => e }
+      if errors.nonEmpty then Left(errors.toVector)
+      else
+        for
+          id         <- identity
+          declared   <- item
+          attributes <- Attributes
+            .of(columns.attributes.map(_.name).zip(values.collect { case Right(v) => v }))
+            .left
+            .map(Vector(_))
+        yield Row(number, id, declared, attributes)
 
   /** Read a trials table. The inventory is a declaration, so any defective
     * record refuses it, and the refusal lists every defect, each naming its
@@ -208,42 +256,7 @@ object TrialInventory:
   ): Either[FixationImportError, TrialInventory] =
     FixationCsv.table(contents, columns.names).flatMap { (header, rows) =>
       val parsed = rows.zipWithIndex.map { (raw, index) =>
-        val number = index + 2
-        val fields = header.zip(raw).toMap
-        if raw.size != header.size then
-          Left(Vector(InventoryError.Width(number, header.size, raw.size)))
-        else
-          def field(column: String, value: String, requirement: String) =
-            InventoryError.Field(number, column, value, requirement)
-          val identity = columns.trial.identity(fields).left.map(_.map(field.tupled))
-          val item     = columns.item.fold[Either[Vector[InventoryError], Option[String]]](
-            Right(None)
-          ) { column =>
-            val value = fields(column)
-            Either.cond(
-              value.trim.nonEmpty,
-              Some(value),
-              Vector(field(column, value, "a non-blank item"))
-            )
-          }
-          val values = columns.attributes.map(column =>
-            column
-              .parse(fields(column.name))
-              .left
-              .map(field(column.name, fields(column.name), _))
-          )
-          val errors = identity.left.toSeq.flatten ++ item.left.toSeq.flatten ++
-            values.collect { case Left(e) => e }
-          if errors.nonEmpty then Left(errors.toVector)
-          else
-            for
-              id         <- identity
-              declared   <- item
-              attributes <- Attributes
-                .of(columns.attributes.map(_.name).zip(values.collect { case Right(v) => v }))
-                .left
-                .map(Vector(_))
-            yield Row(number, id, declared, attributes)
+        parseRow(header, raw, index + 2, columns)
       }
       val rowErrors = parsed.collect { case Left(errors) => errors }.flatten
       val valid     = parsed.collect { case Right(row) => row }
