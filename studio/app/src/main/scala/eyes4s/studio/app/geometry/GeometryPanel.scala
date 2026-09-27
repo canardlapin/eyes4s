@@ -402,13 +402,14 @@ object GeometryPanel:
           case GeometryChange.SetGeometry(g) =>
             Vector(Command.ReviseDataset(id, spec.mapping, spec.units, g, spec.attributes))
           case GeometryChange.SetOffScreen(p) => Vector(Command.SetOffScreenPolicy(id, p))
-          case GeometryChange.AddRule(r) => Vector(Command.AddCorrection(id, rules.size, r))
+          case GeometryChange.AddRule(r)    => Vector(Command.AddCorrection(id, rules.size, r))
           case GeometryChange.RemoveRule(i) => Vector(Command.RemoveCorrection(id, i))
       case AdmissionDecision.Verifying(_) | AdmissionDecision.Admitted(_, _) =>
         val (geometry, admission) = c match
           case GeometryChange.SetGeometry(g)  => (g, spec.admission)
-          case GeometryChange.SetOffScreen(p) => (spec.geometry, spec.admission.copy(offScreen = p))
-          case GeometryChange.AddRule(r)      =>
+          case GeometryChange.SetOffScreen(p) =>
+            (spec.geometry, spec.admission.copy(offScreen = p))
+          case GeometryChange.AddRule(r) =>
             (spec.geometry, spec.admission.copy(corrections = rules :+ r))
           case GeometryChange.RemoveRule(i) =>
             (spec.geometry, spec.admission.copy(corrections = rules.patch(i, Nil, 1)))

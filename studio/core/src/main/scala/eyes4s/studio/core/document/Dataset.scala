@@ -202,8 +202,20 @@ enum ColumnRole derives CanEqual, Codec.AsObject:
     case other       => other.productPrefix.toLowerCase
 
 object ColumnRole:
-  /** Import requires these (DESIGN_SPEC section 9: ordinal and sample count). */
+  /** Import and admission require these (DESIGN_SPEC section 9): the trial
+    * key eyes4s reads (participant, phase and trial,
+    * `FixationKeyReader.trial`), the ordinal and sample count, the position
+    * and the times. [[ColumnMapping.admissible]] checks them.
+    */
   val required: Vector[ColumnRole] =
+    Vector(Participant, Phase, Trial, Ordinal, SampleCount, X, Y, Onset, Duration)
+
+  /** Every stored mapping has these: the roles S5.2 required, before the
+    * phase was (S5.3). [[ColumnMapping.of]], and so decoding, checks only
+    * these, so a project saved without a phase column still loads; it needs
+    * a re-map before it is committed or admitted.
+    */
+  val stored: Vector[ColumnRole] =
     Vector(Participant, Trial, Ordinal, SampleCount, X, Y, Onset, Duration)
 
 /** A column name as it appears in the source header. */
@@ -219,11 +231,19 @@ final case class ColumnBinding(role: ColumnRole, column: ColumnName)
     derives CanEqual,
       Codec.AsObject
 
-/** Which column plays each role: every required role once, no column in two
-  * roles, in role order.
+/** Which column plays each role: every stored role once, no column in two
+  * roles, in role order. A mapping lacking a role import requires
+  * ([[ColumnRole.required]]) loads, but only [[ColumnMapping.admissible]]
+  * mappings are committed or admitted.
   */
 final case class ColumnMapping private (bindings: Vector[ColumnBinding]) derives CanEqual:
   def column(role: ColumnRole): Option[ColumnName] = bindings.find(_.role == role).map(_.column)
+
+  /** The roles import requires that no column plays (a mapping stored
+    * before S5.3 may lack the phase); empty when it can be committed.
+    */
+  def missingForImport: Vector[ColumnRole] =
+    ColumnRole.required.filterNot(r => bindings.exists(_.role == r))
 
 object ColumnMapping:
   def of(bindings: Vector[ColumnBinding]): Either[DocumentError, ColumnMapping] =
@@ -235,9 +255,17 @@ object ColumnMapping:
       _ <- bindings.groupBy(_.column).toVector.sortBy(_._1.value).traverse_ { (column, bs) =>
         Either.cond(bs.size <= 1, (), DocumentError.SharedColumn(column.value, bs.map(_.role)))
       }
-      missing = ColumnRole.required.filterNot(r => bindings.exists(_.role == r))
+      missing = ColumnRole.stored.filterNot(r => bindings.exists(_.role == r))
       _ <- Either.cond(missing.isEmpty, (), DocumentError.MissingColumnRoles(missing))
     yield new ColumnMapping(bindings.sortBy(_.role.ordinal))
+
+  /** The commit and admission check (S5.3): every role import requires has a
+    * column, or the error names the missing ones. The import wizard's commit,
+    * `ImportSources`, `ReviseDataset` and `VerifyDataset` call it.
+    */
+  def admissible(mapping: ColumnMapping): Either[DocumentError, ColumnMapping] =
+    val missing = mapping.missingForImport
+    Either.cond(missing.isEmpty, mapping, DocumentError.MissingColumnRoles(missing))
 
   given Codec[ColumnMapping] = DocumentCodecs.validated(of, _.bindings)
 

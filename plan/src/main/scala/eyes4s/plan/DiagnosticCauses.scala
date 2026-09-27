@@ -770,6 +770,40 @@ private[plan] object CauseDiagnostics:
       case FormViewMismatch(f, form)              => d(fieldId(f), fieldId(form))
       case RulePartKind(f, part)                  => d(fieldId(f), fieldId(part))
 
+  /** A form field's refusal whose domain error type is not known statically,
+    * as a host holds one from `ParameterSet.validate`. A shipped descriptor's
+    * `RecipeParameterError` keeps its own diagnostic as the cause; any other
+    * domain error (an extension's own type, which has no catalog family) is
+    * carried as its `reason` text.
+    */
+  def formFieldReported(e: FieldError[Any]): Diagnostic[Nothing] =
+    import FieldError.*
+    e match
+      case Refused(f, raw, r: RecipeParameterError, reason) =>
+        formField[RecipeParameterError, Nothing](Refused(f, raw, r, reason))(
+          Diagnose.recipeParameter(_)
+        )
+      case Refused(f, raw, _, reason) =>
+        diagnostic[Nothing](C.formField, e, e.message, Vector(Locus.Field(f.value)))(
+          fieldId(f),
+          rawValue(raw),
+          text(reason),
+          text(reason)
+        )
+      case Missing(f)           => formField[Nothing, Nothing](Missing(f))(identity)
+      case Malformed(f, raw, x) => formField[Nothing, Nothing](Malformed(f, raw, x))(identity)
+      case OutOfBounds(f, t, v, s, b, q) =>
+        formField[Nothing, Nothing](OutOfBounds(f, t, v, s, b, q))(identity)
+      case NotAChoice(f, t, o) => formField[Nothing, Nothing](NotAChoice(f, t, o))(identity)
+      case UnknownPart(f, p)   => formField[Nothing, Nothing](UnknownPart(f, p))(identity)
+      case Unordered(f, l, h, lv, hv) =>
+        formField[Nothing, Nothing](Unordered(f, l, h, lv, hv))(identity)
+      case Duplicate(f, p, t)      => formField[Nothing, Nothing](Duplicate(f, p, t))(identity)
+      case ItemCount(f, n, mn, mx) =>
+        formField[Nothing, Nothing](ItemCount(f, n, mn, mx))(identity)
+      case UnknownField(f)    => formField[Nothing, Nothing](UnknownField(f))(identity)
+      case RepeatedPart(f, p) => formField[Nothing, Nothing](RepeatedPart(f, p))(identity)
+
   /** A form field's refusal, located at the field; a domain refusal keeps its
     * own diagnostic as the cause.
     */

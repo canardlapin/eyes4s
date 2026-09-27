@@ -1307,6 +1307,11 @@ fails after rewriting, so review the change and run it again.
 | `recipe-parameter.reduction` | `Reduction` | `error` |
 | `recipe-parameter.synchronization` | `Synchronization` | `error` |
 | `recipe-parameter.recording` | `Recording` | `error` |
+| `recipe-parameter.plan` | `Plan` | `error` |
+| `recipe-parameter.initial-fixation` | `InitialFixation` | `error` |
+| `recipe-parameter.missing-part` | `MissingPart` | `field`, `part` |
+| `recipe-parameter.unknown-token` | `UnknownToken` | `field`, `token`, `options` |
+| `recipe-parameter.undeclared-window-frame` | `UndeclaredWindowFrame` | `admission` |
 
 ### `repetition-plan` — `RepetitionPlanError`
 
@@ -1468,6 +1473,22 @@ fails after rewriting, so review the change and run it again.
 | `study-run.plan` | `Plan` | `underlying` |
 | `study-run.meter` | `Meter` | `underlying` |
 | `study-run.unexpected-completion` | `UnexpectedCompletion` | `design`, `visited` |
+
+### `study-recipe` — `StudyRecipeError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `study-recipe.window-without-policy` | `WindowWithoutPolicy` |  |
+| `study-recipe.policy-without-window` | `PolicyWithoutWindow` | `policy` |
+| `study-recipe.grid` | `Grid` | `underlying` |
+| `study-recipe.plan` | `Plan` | `underlying` |
+
+### `study-advisory` — `StudyAdvisory`
+
+| Code | Case | Operands |
+|---|---|---|
+| `study-advisory.sigma-below-cells` | `SigmaBelowCells` | `scale`, `cells`, `minimumCells` |
+| `study-advisory.sigma-near-uniform` | `SigmaNearUniform` | `scale`, `fraction`, `limit` |
 
 ### `codec` — `CodecError`
 

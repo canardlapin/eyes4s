@@ -197,7 +197,10 @@ class GeometryPanelSuite extends munit.FunSuite:
     )
     val model = perform(t2, effects)
     // One command, so one undo removes the draft.
-    assertEquals(AppModel.update(model, Intent.Undo(HistoryStack.Science))._1.document, t2.document)
+    assertEquals(
+      AppModel.update(model, Intent.Undo(HistoryStack.Science))._1.document,
+      t2.document
+    )
     val draft = model.document.dataset(r4).get
     assertEquals(draft.decision, AdmissionDecision.Pending)
     assertEquals(draft.parent, Some(r3))
@@ -227,7 +230,10 @@ class GeometryPanelSuite extends munit.FunSuite:
       "Counts: eyes4s admission of r3. r4 is pending; its own counts follow its verification."
     )
     // The parent's counts trace to the parent, not to the draft.
-    assertEquals(vm.outsideWindow.ref, Some(StudioRef.WindowTally(r3, TallyRegion.OutsideWindow)))
+    assertEquals(
+      vm.outsideWindow.ref,
+      Some(StudioRef.WindowTally(r3, TallyRegion.OutsideWindow))
+    )
   }
 
   test("a geometry edit of pending r3 is S5.2's one ReviseDataset; one undo restores it") {

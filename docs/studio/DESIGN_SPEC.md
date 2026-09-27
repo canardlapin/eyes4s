@@ -125,7 +125,8 @@ stale) · "Analysis · rerun" (draft → Save & run) · "Reporting · no rerun" 
 - Identity: show "input digest sha256:9f2c…e41 · plan rev 5", never an invented fingerprint.
 - Reporting: participant means, equal weight; per-group n; paired n; the unit is the query trial.
 - Say "record" (fixations.csv record 7,214), not "row". Show raw and transformed coordinates.
-- Import requires Ordinal and Sample-count roles; time units are DECLARED (ms), never inferred.
+- Import requires the Participant, Phase and Trial roles (the trial key eyes4s reads), the Ordinal
+  and Sample-count roles, x, y, Onset and Duration; time units are DECLARED (ms), never inferred.
 
 ## 10. Keyboard and accessibility
 Each plot/trial view is ONE focusable node with a roving cursor (arrow = nearest mark in that

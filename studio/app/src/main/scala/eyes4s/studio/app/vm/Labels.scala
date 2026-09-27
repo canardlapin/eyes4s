@@ -214,9 +214,9 @@ final class Labels(model: AppModel, messages: Messages):
         )
       case StudioRef.GroupCell(run, reporting, scale, group) =>
         messages(PathGroupCell, group.label, this.reporting(reporting), sigma(run, scale))
-      case StudioRef.FigurePanel(figure, letter) => panel(figure, letter)
+      case StudioRef.FigurePanel(figure, letter)  => panel(figure, letter)
       case StudioRef.WindowTally(dataset, region) => tally(dataset, region)
-      case StudioRef.Result(run, address)        =>
+      case StudioRef.Result(run, address)         =>
         val s = sigma(run, address.scale)
         address.value match
           case ResultAddress.PairRow(_, d, focal, reference) =>

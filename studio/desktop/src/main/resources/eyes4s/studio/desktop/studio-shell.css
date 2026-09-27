@@ -396,6 +396,11 @@
   -fx-text-fill: -es-ink-3;
 }
 
+/* A pane whose ticket has landed: its content fills it, edge to edge. */
+.pane-placeholder.pane-hosted {
+  -fx-padding: 0;
+}
+
 /* ---- 6 · status bar, 24 px ---------------------------------------------- */
 
 .status-bar {

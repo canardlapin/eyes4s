@@ -5,5 +5,7 @@ button: Dataset r3 (draft)
 button: Admission, current location
 list: Sources
 region: Column mapping
+text-field: Preset name
+button: Revert
 region: Admission
 region: Geometry

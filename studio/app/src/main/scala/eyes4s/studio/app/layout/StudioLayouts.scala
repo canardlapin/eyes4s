@@ -60,6 +60,9 @@ object StudioLayouts:
 
   private val sources = pane("data.sources", "Sources", Navigator)
 
+  /** The pane that hosts the import wizard on the selected dataset revision. */
+  val columnMapping: PaneId = new PaneId("data.column-mapping")
+
   /** DataEmpty.dc.html: no dataset yet. */
   val dataFirstRun: PerspectiveLayout = layout(
     "data.first-run",
@@ -81,7 +84,7 @@ object StudioLayouts:
       split(
         Axis.Vertical,
         group(
-          pane("data.column-mapping", "Column mapping", Form),
+          PaneDecl(columnMapping, PaneTitle.Fixed("Column mapping"), Form),
           pane("data.trial-metadata", "Trial metadata", Table)
         ) -> 0.55,
         group(
