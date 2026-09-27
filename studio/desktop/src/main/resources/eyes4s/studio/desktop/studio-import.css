@@ -1,0 +1,222 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* The import wizard (ticket S5.2; docs/studio/design/Data.dc.html, column
+ * mapping). Colours are token names only; sizes come from studio-type.css
+ * classes; weights are face families (DESIGN_SPEC 14). */
+
+.import-wizard {
+  -fx-background-color: -es-surface;
+  -fx-focus-color: -es-accent;
+  -fx-faint-focus-color: transparent;
+}
+
+/* ---- the 28 px tab header ------------------------------------------------ */
+
+.import-header {
+  -fx-min-height: 28px;
+  -fx-pref-height: 28px;
+  -fx-max-height: 28px;
+  -fx-alignment: center-left;
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.import-tab {
+  -fx-min-height: 28px;
+  -fx-pref-height: 28px;
+  -fx-max-height: 28px;
+  -fx-padding: 0 12 0 12;
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-background-insets: 0, 0 1 0 0;
+  -fx-background-radius: 0;
+  -fx-text-fill: -es-ink-2;
+}
+
+/* The selected tab of the focused group: a 2 px accent top rule. */
+.import-tab:selected {
+  -fx-background-color: -es-hairline, -es-accent, -es-surface;
+  -fx-background-insets: 0, 0 1 0 0, 2 1 0 0;
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.import-tab:focused {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+}
+
+.import-kind {
+  -fx-padding: 1 6 1 6;
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 3, 2;
+  -fx-text-fill: -es-ink-2;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+/* ---- the mapping table ----------------------------------------------------- */
+
+.import-wizard .scroll-pane,
+.import-wizard .scroll-pane > .viewport {
+  -fx-background-color: -es-surface;
+  -fx-background-insets: 0;
+  -fx-padding: 0;
+}
+
+.import-toolbar {
+  -fx-min-height: 30px;
+  -fx-pref-height: 30px;
+  -fx-alignment: center-left;
+  -fx-spacing: 8;
+  -fx-padding: 0 14 0 14;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.map-head {
+  -fx-padding: 6 14 5 14;
+  -fx-hgap: 10;
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.map-head .label {
+  -fx-text-fill: -es-ink-3;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.map-row {
+  -fx-min-height: 28px;
+  -fx-pref-height: 28px;
+  -fx-max-height: 28px;
+  -fx-padding: 0 14 0 14;
+  -fx-hgap: 10;
+  -fx-alignment: center-left;
+  -fx-background-color: -es-surface-3, -es-surface;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.map-column {
+  -fx-text-fill: -es-ink;
+}
+
+.map-row.has-issue .map-column {
+  -fx-text-fill: -es-fail;
+}
+
+.map-samples {
+  -fx-text-fill: -es-ink-2;
+}
+
+.map-units {
+  -fx-text-fill: -es-ink;
+}
+
+.map-units.undeclared {
+  -fx-text-fill: -es-ink-3;
+}
+
+.role-select, .time-select, .preset-select {
+  -fx-min-height: 22px;
+  -fx-pref-height: 22px;
+  -fx-max-height: 22px;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+}
+
+.role-select:focused, .time-select:focused, .preset-select:focused,
+.import-field:focused, .import-button:focused {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+}
+
+.role-select .list-cell, .time-select .list-cell, .preset-select .list-cell {
+  -fx-text-fill: -es-ink;
+  -fx-padding: 0 4 0 4;
+}
+
+.import-note, .import-empty, .import-summary {
+  -fx-text-fill: -es-ink-2;
+}
+
+.import-label {
+  -fx-text-fill: -es-ink-3;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.import-field {
+  -fx-min-height: 22px;
+  -fx-pref-height: 22px;
+  -fx-max-height: 22px;
+  -fx-padding: 0 6 0 6;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-text-fill: -es-ink;
+}
+
+.import-button {
+  -fx-min-height: 26px;
+  -fx-pref-height: 26px;
+  -fx-max-height: 26px;
+  -fx-padding: 0 10 0 10;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans Medm";
+}
+
+/* Accent's second job: the primary action. */
+.import-button.primary {
+  -fx-background-color: -es-accent;
+  -fx-background-insets: 0;
+  -fx-text-fill: -es-on-accent;
+}
+
+.import-button.primary:focused {
+  -fx-background-color: -es-ink, -es-accent;
+  -fx-background-insets: 0, 2;
+}
+
+/* ---- data issues and the footer ----------------------------------------------- */
+
+.import-issue {
+  -fx-padding: 4 14 4 14;
+  -fx-text-fill: -es-ink;
+  -fx-background-color: -es-surface-3, -es-surface;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.import-footer {
+  -fx-min-height: 40px;
+  -fx-pref-height: 40px;
+  -fx-alignment: center-left;
+  -fx-spacing: 8;
+  -fx-padding: 0 14 0 14;
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-background-insets: 0, 1 0 0 0;
+}
+
+.import-problem {
+  -fx-text-fill: -es-fail;
+}
+
+.import-status {
+  -fx-text-fill: -es-ink-2;
+}
