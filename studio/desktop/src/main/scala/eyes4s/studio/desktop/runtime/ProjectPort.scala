@@ -19,8 +19,11 @@ package eyes4s.studio.desktop.runtime
 import cats.effect.IO
 import cats.effect.std.Queue
 import cats.effect.unsafe.IORuntime
+import eyes4s.studio.core.bundle.InputKind
 import eyes4s.studio.core.command.JournalEntry
 import eyes4s.studio.core.session.{ProjectSession, SaveReceipt}
+
+import scala.annotation.unused
 
 /** The project a window saves into (tickets S1.8 and S2.4a/b): the app's
   * `Journal` and `Persist` effects, performed in the order the model emits
@@ -30,6 +33,17 @@ trait ProjectPort:
   def journal(entry: JournalEntry): Unit
   def save(done: Either[String, SaveReceipt] => Unit): Unit
   def close(): Unit
+
+  /** Copy an imported file's bytes into the project, listed at the next save
+    * (S5.2): queued before the journal entry of the command that names it.
+    * A port that cannot store inputs refuses, naming the file.
+    */
+  def importInput(
+      @unused kind: InputKind,
+      name: String,
+      @unused bytes: IArray[Byte],
+      done: Either[String, Unit] => Unit
+  ): Unit = done(Left(s"$name: this project cannot store imported files"))
 
 /** A [[ProjectPort]] on a studio-core [[ProjectSession]]: every operation
   * joins one queue, which a single fibre drains, so a journal entry is
@@ -62,6 +76,21 @@ final class SessionPort private (
         .flatMap(_.fold(e => IO(report(s"journal $entry: ${e.message}")), _ => IO.unit)),
       s"journal $entry"
     )
+
+  override def importInput(
+      kind: InputKind,
+      name: String,
+      bytes: IArray[Byte],
+      done: Either[String, Unit] => Unit
+  ): Unit =
+    if closed.get then done(Left("the project is closed"))
+    else
+      enqueue(
+        session
+          .importInput(kind, name, bytes)
+          .flatMap(r => IO(done(r.left.map(_.message).map(_ => ())))),
+        s"import $name"
+      )
 
   def save(done: Either[String, SaveReceipt] => Unit): Unit =
     if closed.get then done(Left("the project is closed"))

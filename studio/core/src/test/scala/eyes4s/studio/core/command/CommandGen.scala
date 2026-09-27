@@ -62,12 +62,20 @@ object CommandGen:
       m      <- mapping
       u      <- units
       g      <- geometry
-    yield Command.ImportSources(parent, s, m, u, g)
+      a      <- attributesFor(m)
+    yield Command.ImportSources(parent, s, m, u, g, a)
     val edits = pick(editable).toVector.flatMap { specs =>
       Vector(
         specs.flatMap(s => mapping.map(Command.SetMapping(s.id, _))),
         specs.flatMap(s => units.map(Command.SetUnits(s.id, _))),
         specs.flatMap(s => geometry.map(Command.SetGeometry(s.id, _))),
+        for
+          s <- specs
+          m <- mapping
+          u <- units
+          g <- geometry
+          a <- attributesFor(m)
+        yield Command.ReviseDataset(s.id, m, u, g, a),
         specs.flatMap(s =>
           Gen.oneOf(OffScreenChoice.values.toSeq).map(Command.SetOffScreenPolicy(s.id, _))
         ),

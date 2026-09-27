@@ -91,6 +91,19 @@ object DocumentGen:
       )
     )
 
+  /** Attribute columns beside `m`'s columns (none of them mapped). */
+  def attributesFor(m: ColumnMapping): Gen[DeclaredAttributes] =
+    for
+      n     <- Gen.choose(0, 3)
+      kinds <- Gen.listOfN(n, Gen.oneOf(AttributeKindChoice.values.toSeq))
+    yield right(
+      DeclaredAttributes.of(
+        kinds.zipWithIndex.toVector
+          .map((k, i) => AttributeBinding(right(ColumnName.of(s"attr_$i")), k))
+          .filterNot(a => m.bindings.exists(_.column == a.column))
+      )
+    )
+
   val units: Gen[DeclaredUnits] =
     Gen.option(Gen.oneOf(TimeUnit.values.toSeq)).map(DeclaredUnits(_))
 
@@ -145,6 +158,7 @@ object DocumentGen:
       g      <- geometry
       a      <- admission
       d      <- decision
+      at     <- attributesFor(m)
     yield DatasetRevisionSpec(
       DatasetRevision(id),
       parent.map(DatasetRevision(_)),
@@ -153,7 +167,8 @@ object DocumentGen:
       u,
       g,
       a,
-      d
+      d,
+      at
     )
 
   // --- Analyses -------------------------------------------------------------
