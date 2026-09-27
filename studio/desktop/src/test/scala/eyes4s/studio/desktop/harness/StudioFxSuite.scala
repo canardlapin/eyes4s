@@ -18,6 +18,7 @@ package eyes4s.studio.desktop.harness
 
 import java.awt.image.BufferedImage
 import java.nio.file.{Files, Path, Paths}
+import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{CompletableFuture, CountDownLatch, ExecutionException, TimeUnit}
 import javafx.animation.AnimationTimer
 import javafx.application.Platform
@@ -29,7 +30,7 @@ import javafx.scene.{Parent, Scene, SnapshotParameters}
 import javafx.stage.Stage
 import javax.imageio.ImageIO
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 /** The size of a test stage's scene, in logical pixels. */
 final case class StageSize(width: Int, height: Int)
@@ -65,10 +66,12 @@ enum SnapshotScale(val factor: Int):
   * failed to draw. Every test here ends by letting the toolkit finish two
   * pulses and the render jobs they queued, and fails, with each stack trace, if
   * [[RenderFailures]] recorded anything on a JavaFX thread during the test. A
-  * failure recorded before the test began fails it too: none may pass
-  * unnoticed. A test that provokes a render failure on purpose carries the
-  * [[StudioFxSuite.RenderFailureExpected]] tag and asserts on
-  * [[takeRenderFailures]] itself.
+  * failure recorded after a test settled fails the next test, which names the
+  * test it followed: none may pass unnoticed. A test that provokes a render
+  * failure on purpose carries the [[StudioFxSuite.RenderFailureExpected]] tag
+  * and asserts on [[takeRenderFailures]] itself. What JavaFX reports through
+  * `PlatformLogger` or `System.Logger` instead of a stack trace (CSS parse and
+  * lookup warnings, image loading errors) is not captured.
   */
 abstract class StudioFxSuite extends munit.FunSuite:
 
@@ -103,22 +106,30 @@ abstract class StudioFxSuite extends munit.FunSuite:
       test =>
         val expected = test.tags.contains(StudioFxSuite.RenderFailureExpected)
         test.withBody { () =>
-          val before = RenderFailures.drain()
-          if before.nonEmpty && !expected then
-            Future.failed(StudioFxSuite.renderFailed(test, before, "before this test began"))
+          // Recorded after the previous test settled: its failures, whatever
+          // this test's tag, reported here because that test has finished.
+          val before   = RenderFailures.drain()
+          val previous =
+            StudioFxSuite.previousTest.getAndSet(s"${getClass.getName}.${test.name}")
+          if before.nonEmpty then
+            val owner = Option(previous).fold("before the first test")(p => s"after $p ended")
+            Future.failed(StudioFxSuite.renderFailed(test, before, owner))
           else
             test
               .body()
               .transformWith { outcome =>
-                val during = takeRenderFailures()
-                if expected || during.isEmpty then Future.fromTry(outcome)
-                else
-                  val failed = StudioFxSuite.renderFailed(test, during, "during this test")
-                  outcome match
-                    case Success(_) => Future.failed(failed)
-                    case Failure(e) =>
-                      e.addSuppressed(failed)
-                      Future.failed(e)
+                // A settle that times out joins the test's own failure, never replaces it.
+                val verdict: Option[Throwable] = Try(takeRenderFailures()) match
+                  case Failure(settleFailed)                         => Some(settleFailed)
+                  case Success(during) if expected || during.isEmpty => None
+                  case Success(during)                               =>
+                    Some(StudioFxSuite.renderFailed(test, during, "during this test"))
+                (outcome, verdict) match
+                  case (_, None)                => Future.fromTry(outcome)
+                  case (Success(_), Some(fail)) => Future.failed(fail)
+                  case (Failure(e), Some(fail)) =>
+                    e.addSuppressed(fail)
+                    Future.failed(e)
               }(using munitExecutionContext)
         }
     )
@@ -228,6 +239,9 @@ object FxStage:
 
 object StudioFxSuite:
   private[harness] val TimeoutSeconds = 30L
+
+  // The last test that began, as `suite.test`, or null before the first.
+  private[harness] val previousTest = AtomicReference[String](null)
 
   /** Marks a test that provokes a render failure on purpose; it asserts on
     * `takeRenderFailures()` instead of failing on the capture.

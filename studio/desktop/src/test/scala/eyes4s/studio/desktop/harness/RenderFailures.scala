@@ -62,6 +62,10 @@ final case class RenderFailure(thread: String, route: RenderFailureRoute, error:
   *     other thread, including test threads, are not recorded.
   *   - The FX application thread gets an uncaught-exception handler that
   *     records the throwable and prints it to the original stream.
+  *
+  * Not captured: what JavaFX routes through `PlatformLogger` or
+  * `System.Logger` rather than `printStackTrace`, such as CSS parse and lookup
+  * warnings and image loading errors, and throwables printed only as text.
   */
 object RenderFailures:
 

@@ -33,9 +33,10 @@ import intaglio.{
   Viewport,
   value
 }
-import intaglio.javafx.{JavaFxCommand, JavaFxRenderer}
+import intaglio.javafx.{JavaFxCanvasContext, JavaFxCommand, JavaFxRenderer}
 import javafx.application.Platform
 import javafx.geometry.Point2D
+import javafx.scene.canvas.Canvas
 import javafx.scene.layout.{Region, StackPane}
 
 import java.lang.ref.WeakReference
@@ -230,6 +231,66 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
     assertEquals(runOnFx(host.outputScale), Some(window))
     assertEquals(frame.surface.deviceScale, window)
     runOnFx(host.dispose())
+  }
+
+  fxStage.test("a texture-scale change replaces the canvases and redraws without compiling") {
+    fx =>
+      var k    = 1.0 // read and written on the FX thread only
+      val host = runOnFx(
+        CanvasPlotHost(CanvasPlotHost.sharedCompiler, gc => JavaFxCanvasContext(gc), () => k)
+      )
+      fx.show(runOnFx(StackPane(host)))
+      runOnFx {
+        host.setOutputScaleOverride(Some(2.0))
+        host.show(reference(Theme.Light))
+      }
+      val frame  = awaitFrame(host, 2.0)
+      val device = (frame.surface.deviceWidth, frame.surface.deviceHeight)
+      def state  = runOnFx(
+        (
+          host.getChildrenUnmodifiable.asScala.toList,
+          host.profile,
+          host.canvasTexture,
+          host.texturePixelScale
+        )
+      )
+      val (canvasesBefore, profileBefore, textureBefore, scaleBefore) = state
+      assertEquals((textureBefore, scaleBefore), (device, 1.0))
+
+      // The same scale again changes nothing.
+      runOnFx(host.refreshPixelScale())
+      assertEquals(state, (canvasesBefore, profileBefore, textureBefore, scaleBefore))
+
+      runOnFx {
+        k = 2.0
+        host.refreshPixelScale()
+      }
+      val (canvasesAfter, profileAfter, textureAfter, scaleAfter) = state
+      assertEquals((textureAfter, scaleAfter), (device, 2.0))
+      assertEquals(canvasesAfter.size, 3)
+      assert(canvasesAfter.forall(c => !canvasesBefore.exists(_ eq c)), "canvases not replaced")
+      // The old canvases are released: zero size frees their textures.
+      assert(
+        runOnFx(canvasesBefore.collect { case c: Canvas => (c.getWidth, c.getHeight) })
+          .forall(_ == (0.0, 0.0))
+      )
+      assertEquals(
+        profileAfter,
+        profileBefore.copy(baseDraws = profileBefore.baseDraws + 1)
+      )
+      assertEquals(runOnFx(host.status.get), PlotHostStatus.Drawn(frame))
+
+      // The redrawn frame is where its transform says.
+      val image =
+        ImageIO.read(fx.snapshot(StudioTheme.Light, List(SnapshotScale.X2)).head.toFile)
+      ReferenceScene.marks.filter(_.role == ReferenceRole.Query).foreach { mark =>
+        val (px, py) = pixelUnder(host, frame, mark, 2)
+        assert(
+          near(image, px, py, Tokens.themed(Theme.Light, ThemedToken.Query)),
+          f"$mark: pixel ($px, $py) is ${image.getRGB(px, py) & 0xffffff}%06X"
+        )
+      }
+      runOnFx(host.dispose())
   }
 
   // ---------------------------------------------------------------------------
