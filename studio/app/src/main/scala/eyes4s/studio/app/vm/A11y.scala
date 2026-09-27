@@ -17,7 +17,7 @@
 package eyes4s.studio.app.vm
 
 import eyes4s.studio.app.AppModel
-import eyes4s.studio.app.layout.{PaneDecl, PaneKind}
+import eyes4s.studio.app.layout.{PaneDecl, PaneId, PaneKind}
 import eyes4s.studio.app.text.{MessageId, Messages}
 
 /** What a focus stop is to assistive technology (S1.11). A shell maps each
@@ -40,6 +40,9 @@ enum A11yRole derives CanEqual:
   /** Any other pane: a form, an inspector, a text or a start page. */
   case Region
 
+  /** A form's controls, which are stops of their own inside a form pane. */
+  case ComboBox, TextField
+
   /** The role as the committed tab-order files spell it. */
   def id: String = this match
     case Button       => "button"
@@ -49,6 +52,8 @@ enum A11yRole derives CanEqual:
     case Table        => "table"
     case List         => "list"
     case Region       => "region"
+    case ComboBox     => "combo-box"
+    case TextField    => "text-field"
 
 /** One stop of the Tab order: its role and its accessible name. */
 final case class FocusStop(role: A11yRole, name: String) derives CanEqual:
@@ -80,9 +85,15 @@ object A11y:
     * selected perspective, the jobs chip when it opens something, Cancel),
     * context strip, notice,
     * confirmation, banner, one stop per visible dock group (the pane it
-    * shows), and the status bar's action. A disabled button is no stop.
+    * shows) followed by that pane's own controls (`inside`: a form pane's
+    * controls, derived from its view-model; by default a pane has none),
+    * and the status bar's action. A disabled button is no stop.
     */
-  def tabOrder(model: AppModel, messages: Messages = Messages.english): Vector[FocusStop] =
+  def tabOrder(
+      model: AppModel,
+      messages: Messages = Messages.english,
+      inside: PaneId => Vector[FocusStop] = _ => Vector.empty
+  ): Vector[FocusStop] =
     val vm     = Shell.project(model, messages)
     val bar    = vm.appBar
     val jobs   = bar.jobs
@@ -104,8 +115,9 @@ object A11y:
     val focused = model.focusedPane
     val groups  =
       if model.isMaximized then layout.groupOf(focused).toVector else layout.groups
-    val dock = groups.map { g =>
-      pane(g.panes.find(_.id == focused).getOrElse(layout.selectedPane(g)))
+    val dock = groups.flatMap { g =>
+      val shown = g.panes.find(_.id == focused).getOrElse(layout.selectedPane(g))
+      pane(shown) +: inside(shown.id)
     }
     val status = vm.status.job.action.flatMap(button)
     appBar ++ context ++ notice ++ confirm ++ banner ++ dock ++ status

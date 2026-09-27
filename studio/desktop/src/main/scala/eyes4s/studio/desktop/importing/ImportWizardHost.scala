@@ -75,6 +75,15 @@ final class ImportWizardHost(
 
   def render(): Unit = view.render(ImportWizardVM.of(state, document()))
 
+  /** Start over on `wizard` (the column-mapping pane, when its dataset
+    * revision changes or its edits are reverted): the files read so far are
+    * forgotten.
+    */
+  def reset(wizard: ImportWizard): Unit =
+    state = wizard
+    readFrom = Map.empty
+    render()
+
   def dispatch(intent: WizardIntent): Unit =
     val (next, effects) = ImportWizard.update(state, intent, document())
     state = next

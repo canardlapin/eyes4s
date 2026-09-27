@@ -65,7 +65,8 @@ final case class GeometryFieldVM(field: GeometryField, label: String, value: Str
     derives CanEqual
 
 /** One mapping table (fixations or trials): its header row, file summary
-  * and rows, or the empty-state text and the choose button.
+  * and rows, or the empty-state text and the choose button. A re-map reads
+  * the revision's own files, so it offers no choose button (`canChoose`).
   */
 final case class MappingTableVM(
     role: SourceRole,
@@ -73,6 +74,7 @@ final case class MappingTableVM(
     summary: Option[String],
     empty: Option[String],
     choose: String,
+    canChoose: Boolean,
     rows: Vector[MappingRowVM],
     choices: Vector[ChoiceVM]
 ) derives CanEqual
@@ -101,6 +103,7 @@ final case class PresetsVM(
 final case class ImportWizardVM(
     title: String,
     kind: String,
+    showTabs: Boolean,
     tabs: Vector[WizardTabVM],
     tab: WizardTab,
     fixations: MappingTableVM,
@@ -179,6 +182,8 @@ object ImportWizardVM:
     case ColumnChoice.Role(_)                      => (t(ImportTextId.UnitNone), false)
 
   def problemText(p: WizardProblem): String = p match
+    // An unreadable file's error already says which file could not be read.
+    case WizardProblem.ReadFailed(_, e: SourceReadError.Unreadable) => e.message
     case WizardProblem.ReadFailed(path, e)       => t(ImportTextId.ReadFailed, path, e.message)
     case WizardProblem.Preset(e)                 => e.message
     case WizardProblem.PresetMapping(_, es)      => es.toVector.map(_.message).mkString(" ")
@@ -301,8 +306,9 @@ object ImportWizardVM:
     val warnings = w.warnings.map(e =>
       IssueVM(t(ImportTextId.TrialWarning, e.message), e.pointsAt.map(_.value), false)
     )
-    val time = w.fixations.flatMap(_._2.time)
-    val tabs = WizardTab.values.toVector.map { tab =>
+    val time      = w.fixations.flatMap(_._2.time)
+    val newImport = w.target == WizardTarget.NewImport
+    val tabs      = WizardTab.values.toVector.map { tab =>
       val count = tab match
         case WizardTab.FixationMapping => fixationIssues.size + keyBlocking
         case WizardTab.TrialMetadata   => trialIssues.size
@@ -316,8 +322,12 @@ object ImportWizardVM:
     ImportWizardVM(
       title = t(ImportTextId.Title),
       kind = ChangeKind.DatasetReadmit.label,
+      // A re-map is hosted in the column-mapping pane, whose dock tab already
+      // names it: it shows the mapping page only, with no tab strip (the
+      // other pages belong to the sibling panes).
+      showTabs = newImport,
       tabs = tabs,
-      tab = w.tab,
+      tab = if newImport then w.tab else WizardTab.FixationMapping,
       fixations = MappingTableVM(
         SourceRole.Fixations,
         Vector(
@@ -327,8 +337,10 @@ object ImportWizardVM:
           t(ImportTextId.HeaderUnits)
         ),
         w.fixations.map(f => summaryOf(f._1.preview)),
-        Option.when(w.fixations.isEmpty)(t(ImportTextId.NoFixationFile)),
+        // A re-map has no file to choose: the pane says what it is reading.
+        Option.when(w.fixations.isEmpty && newImport)(t(ImportTextId.NoFixationFile)),
         t(ImportTextId.ChooseFile),
+        newImport,
         w.fixations.fold(Vector.empty)((_, d) =>
           rows(SourceRole.Fixations, d.columns, d.time, fixationIssues)
         ),
@@ -345,6 +357,7 @@ object ImportWizardVM:
         w.trials.map(f => summaryOf(f._1.preview)),
         Option.when(w.trials.isEmpty)(t(ImportTextId.NoTrialsFile)),
         t(ImportTextId.ChooseTrials),
+        newImport,
         w.trials.fold(Vector.empty)((_, d) =>
           rows(SourceRole.Trials, d.columns, None, trialIssues)
         ),
@@ -381,7 +394,8 @@ object ImportWizardVM:
       // Enabled once there is a file: a refused commit says why and opens
       // the tab that holds the issue.
       canCommit = w.fixations.isDefined,
-      cancel = t(ImportTextId.Cancel),
+      // A re-map is hosted in its pane, where cancelling reverts the edits.
+      cancel = t(if newImport then ImportTextId.Cancel else ImportTextId.Revert),
       status = w.note.map(noteText),
       problem = w.problem.map(problemText),
       key = TrialKeyVM.of(w)

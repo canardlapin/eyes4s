@@ -21,6 +21,7 @@ import cats.effect.std.Queue
 import cats.effect.unsafe.IORuntime
 import eyes4s.studio.core.bundle.InputKind
 import eyes4s.studio.core.command.JournalEntry
+import eyes4s.studio.core.document.Source
 import eyes4s.studio.core.session.{ProjectSession, SaveReceipt}
 
 import scala.annotation.unused
@@ -44,6 +45,13 @@ trait ProjectPort:
       @unused bytes: IArray[Byte],
       done: Either[String, Unit] => Unit
   ): Unit = done(Left(s"$name: this project cannot store imported files"))
+
+  /** Read a dataset source's stored bytes back from the project (the
+    * column-mapping pane's re-map). `done` is called once, on any thread; a
+    * port that cannot read inputs refuses, naming the file.
+    */
+  def readInput(source: Source, done: Either[String, IArray[Byte]] => Unit): Unit =
+    done(Left(s"${source.path.value}: this project cannot read its inputs"))
 
 /** A [[ProjectPort]] on a studio-core [[ProjectSession]]: every operation
   * joins one queue, which a single fibre drains, so a journal entry is
@@ -90,6 +98,15 @@ final class SessionPort private (
           .importInput(kind, name, bytes)
           .flatMap(r => IO(done(r.left.map(_.message).map(_ => ())))),
         s"import $name"
+      )
+
+  /** Queued after the imports before it, so a file just imported reads back. */
+  override def readInput(source: Source, done: Either[String, IArray[Byte]] => Unit): Unit =
+    if closed.get then done(Left("the project is closed"))
+    else
+      enqueue(
+        session.readInput(source).flatMap(r => IO(done(r.left.map(_.message)))),
+        s"read ${source.path.value}"
       )
 
   def save(done: Either[String, SaveReceipt] => Unit): Unit =
