@@ -323,9 +323,9 @@ final case class TrialInputState private (
     * how to use the view when no mark is focused.
     */
   def accessibleText(trial: TrialKey, targets: TrialTargets): String =
-    focus.filter(targets.target(_).isDefined) match
-      case Some(ref) => TrialText.mark(ref, selected.contains(ref))
-      case None      => TrialText(TrialTextId.PlotKeys, trial.label)
+    focus.flatMap(ref => targets.target(ref).map(ref -> _.mark.placement)) match
+      case Some((ref, placement)) => TrialText.mark(ref, placement, selected.contains(ref))
+      case None                   => TrialText(TrialTextId.PlotKeys, trial.label)
 
   private def unchanged: TrialInputStep = TrialInputStep(this, Vector.empty, false)
 

@@ -19,6 +19,7 @@ package eyes4s.studio.desktop.trial
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import eyes4s.codec.ByteDigest
+import eyes4s.plan.MapPlacement
 import eyes4s.studio.app.tokens.{
   Colour,
   PaletteToken,
@@ -399,7 +400,7 @@ class TrialViewFxSuite extends StudioFxSuite:
     val scene = shots.head._1
     assertEquals(scene.frameArt, FrameArt.ScreenWithCross)
     assertEquals(scene.marks.size, 12)
-    assertEquals(scene.marks.count(_.window == WindowSide.Outside), 1)
+    assertEquals(scene.marks.count(_.placement != MapPlacement.InMap), 1)
     assert(scene.caption.startsWith("Displayed: blank + fixation cross"), scene.caption)
     shots.foreach((_, f) => println(s"snapshot: $f"))
   }
@@ -410,7 +411,7 @@ class TrialViewFxSuite extends StudioFxSuite:
     val scene = shots.head._1
     assertEquals(scene.frameArt, FrameArt.Picture(beach))
     assertEquals(scene.marks.size, 13)
-    assertEquals(scene.marks.count(_.window == WindowSide.Outside), 1)
+    assertEquals(scene.marks.count(_.placement != MapPlacement.InMap), 1)
     shots.foreach((_, f) => println(s"snapshot: $f"))
   }
 
