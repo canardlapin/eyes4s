@@ -45,6 +45,11 @@ enum BackendError derives CanEqual, Codec.AsObject:
     */
   case Malformed(excerpt: String, reason: String)
 
+  /** A `Subscribe` reusing the id of a subscription still live on its
+    * connection (protocol 1.1).
+    */
+  case DuplicateSubscription(request: RequestId)
+
   def code: String = this match
     case UnknownDataset(_, _)     => "studio-backend.unknown-dataset"
     case UnknownRevision(_, _)    => "studio-backend.unknown-revision"
@@ -56,6 +61,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case AlreadyRunning(_, _)     => "studio-backend.already-running"
     case UnsupportedVersion(_, _) => "studio-backend.unsupported-version"
     case Malformed(_, _)          => "studio-backend.malformed-request"
+    case DuplicateSubscription(_) => "studio-backend.duplicate-subscription"
 
   def message: String = this match
     case UnknownDataset(d, known) =>
@@ -73,7 +79,9 @@ enum BackendError derives CanEqual, Codec.AsObject:
       s"Cannot submit ${r.label}: job ${j.number} is still running."
     case UnsupportedVersion(requested, supported) =>
       s"Protocol ${requested.render} is not supported; this backend speaks ${supported.render}."
-    case Malformed(excerpt, reason) => s"Not a request ($reason): $excerpt"
+    case Malformed(excerpt, reason)     => s"Not a request ($reason): $excerpt"
+    case DuplicateSubscription(request) =>
+      s"Request ${request.value} is already a live subscription on this connection."
 
   def diagnostic: StudioDiagnostic =
     val subject = this match
@@ -87,6 +95,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
       case AlreadyRunning(r, j)   => Vector(DiagnosticLocus.Revision(r), DiagnosticLocus.Job(j))
       case UnsupportedVersion(_, _) => Vector.empty
       case Malformed(_, _)          => Vector.empty
+      case DuplicateSubscription(_) => Vector.empty
     StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
 
 /** Everything Eyes Studio asks of eyes4s (DESIGN_SPEC section 13, S3.0): the
@@ -210,7 +219,9 @@ final case class ProtocolVersion(major: Int, minor: Int) derives CanEqual, Codec
   def render: String = s"$major.$minor"
 
 object ProtocolVersion:
-  /** 1.1 added `Unsubscribe`, `Unsubscribed` and `Malformed` (S0.9). */
+  /** 1.1 added `Unsubscribe`, `Unsubscribed`, `Malformed` and
+    * `DuplicateSubscription` (S0.9).
+    */
   val Current: ProtocolVersion = ProtocolVersion(1, 1)
 
 /** A client's correlation id; every frame answering a request carries it. */

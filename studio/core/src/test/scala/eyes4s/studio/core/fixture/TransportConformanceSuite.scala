@@ -313,6 +313,40 @@ class LoopbackTransportSuite extends TransportConformanceSuite:
   }
 
   test(
+    "a Subscribe reusing a live subscription's id is refused by name; the live one goes on"
+  ) {
+    FakeBackendConformanceSuite.subject(IO.pure).flatMap { s =>
+      for
+        status <- s.backend.submit(s.draft).map(_.toOption.get)
+        sent = Vector(
+          Envelope(RequestId(1), BackendRequest.Subscribe(status.job)),
+          Envelope(RequestId(1), BackendRequest.Subscribe(status.job)),
+          Envelope(RequestId(2), BackendRequest.Unsubscribe(RequestId(1)))
+        )
+        frames <- Stream
+          .emits(sent)
+          .through(WireFormat.encode[IO, BackendRequest])
+          .through(SidecarServer.serve(s.backend))
+          .through(WireFormat.decode[IO, ServerFrame]())
+          .compile
+          .toVector
+          .timeout(30.seconds)
+      yield
+        val refused = BackendError.DuplicateSubscription(RequestId(1))
+        assertEquals(
+          frames.filter(_.body.isInstanceOf[ServerFrame.Response]).map(_.body).toSet,
+          Set[ServerFrame](
+            ServerFrame.Response(BackendResponse.Refused(refused)),
+            // The first subscription kept its entry, so the Unsubscribe found
+            // and ended it (and the connection could end at all).
+            ServerFrame.Response(BackendResponse.Unsubscribed(RequestId(1), true))
+          )
+        )
+        assert(refused.message.contains("Request 1"), refused.message)
+    }
+  }
+
+  test(
     "Unsubscribe ends a live subscription; its response follows the subscription's last frame"
   ) {
     FakeBackendConformanceSuite.subject(IO.pure).flatMap { s =>

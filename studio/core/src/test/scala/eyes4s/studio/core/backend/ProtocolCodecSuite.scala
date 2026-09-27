@@ -34,7 +34,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
     assertEquals(responses.map(_.ordinal), responses.indices.toVector)
     assertEquals(responses.size, 14)
     assertEquals(errors.map(_.ordinal), errors.indices.toVector)
-    assertEquals(errors.size, 10)
+    assertEquals(errors.size, 11)
     assertEquals(causes.map(_.ordinal), causes.indices.toVector)
     assertEquals(causes.size, 14)
     assertEquals(loci.map(_.ordinal), loci.indices.toVector)

@@ -19,6 +19,8 @@ package eyes4s.studio.core.backend
 /** The pinned wire form of every [[ProtocolSamples]] sample, protocol 1.0. */
 object ProtocolPins:
   val pins: Map[String, String] = Map(
+    "error.DuplicateSubscription" ->
+      """{"DuplicateSubscription":{"request":41}}""",
     "error.Malformed" ->
       """{"Malformed":{"excerpt":"{\"id\":3,\"body\":{\"Runz\":{}}}","reason":"no such request"}}""",
     "request.Unsubscribe" ->

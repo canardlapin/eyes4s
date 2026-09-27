@@ -103,6 +103,10 @@ object JvmZone:
   */
 object JvmFileSystem extends FileSystem[IO]:
 
+  /** The JVM path of a host path, made absolute against the working
+    * directory. Every operation works on the absolute path, so `child` of a
+    * relative directory returns an absolute path.
+    */
   private def local(path: HostPath): Either[PlatformError, Path] =
     try Right(Paths.get(path.value).toAbsolutePath)
     catch case e: InvalidPathException => Left(PlatformError.InvalidPath(path, e.getReason))

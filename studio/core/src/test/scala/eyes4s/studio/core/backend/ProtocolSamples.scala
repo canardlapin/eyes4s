@@ -145,7 +145,8 @@ object ProtocolSamples:
     BackendError.UnknownReference(RunId(7), address),
     BackendError.AlreadyRunning(AnalysisRevision(5), job),
     BackendError.UnsupportedVersion(ProtocolVersion(2, 0), ProtocolVersion(1, 0)),
-    BackendError.Malformed("{\"id\":3,\"body\":{\"Runz\":{}}}", "no such request")
+    BackendError.Malformed("{\"id\":3,\"body\":{\"Runz\":{}}}", "no such request"),
+    BackendError.DuplicateSubscription(RequestId(41))
   )
 
   val runStates: Vector[RunState] = Vector(

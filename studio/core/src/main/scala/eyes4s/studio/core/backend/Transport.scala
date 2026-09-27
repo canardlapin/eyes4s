@@ -177,6 +177,9 @@ object SidecarServer:
     *    each carries its request's id.
     *  - `Unsubscribe(id)` ends subscription `id`; its `Unsubscribed` response
     *    follows the subscription's last frame.
+    *  - A `Subscribe` whose id is already a live subscription on this
+    *    connection is refused with [[BackendError.DuplicateSubscription]];
+    *    the live one goes on.
     *  - A malformed line whose id can be read is refused under that id with
     *    [[BackendError.Malformed]]; one without a readable id, or longer than
     *    `limit`, ends the connection with a [[TransportFailure]].
@@ -191,14 +194,32 @@ object SidecarServer:
 
       def subscription(request: Envelope[BackendRequest]): F[Stream[F, Envelope[ServerFrame]]] =
         (Deferred[F, Unit], Deferred[F, Unit]).tupled.flatMap { (stop, done) =>
+          val mine = Live(stop, done)
           live
-            .update(_.updated(request.id, Live(stop, done)))
-            .as(
-              StudyBackend
-                .handle(backend)(request)
-                .interruptWhen(stop.get.map(_.asRight[Throwable]))
-                .onFinalize(live.update(_ - request.id) >> done.complete(()).void)
-            )
+            .modify { current =>
+              if current.contains(request.id) then (current, false)
+              else (current.updated(request.id, mine), true)
+            }
+            .map {
+              case false =>
+                Stream.emit(
+                  frame(
+                    request.id,
+                    BackendResponse.Refused(BackendError.DuplicateSubscription(request.id))
+                  )
+                )
+              case true =>
+                StudyBackend
+                  .handle(backend)(request)
+                  .interruptWhen(stop.get.map(_.asRight[Throwable]))
+                  // Remove only this subscription's own entry.
+                  .onFinalize(
+                    live.update(m =>
+                      if m.get(request.id).contains(mine) then m - request.id else m
+                    ) >>
+                      done.complete(()).void
+                  )
+            }
         }
 
       def unsubscribe(id: RequestId, target: RequestId): Stream[F, Envelope[ServerFrame]] =
