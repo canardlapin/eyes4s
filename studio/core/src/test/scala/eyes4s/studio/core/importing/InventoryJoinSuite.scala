@@ -217,6 +217,26 @@ class InventoryJoinSuite extends CatsEffectSuite:
       case Left(CommandError.Refused(_, _, error)) =>
         assertEquals(error, DocumentError.InventoryUnmapped(r3, "inputs/trials.csv"))
       case other => fail(s"expected an inventory refusal, got $other")
+    // A re-map of it that still leaves trials.csv unmapped is refused, even
+    // when it changes the fixation mapping: a legacy revision is only
+    // revised into one with an inventory mapping.
+    val withoutOccurrence =
+      ok(ColumnMapping.of(stored.mapping.bindings.filterNot(_.role == ColumnRole.Occurrence)))
+    assertNotEquals(withoutOccurrence, stored.mapping)
+    Reducer.step(
+      unmapped,
+      Command.ReviseDataset(
+        r3,
+        withoutOccurrence,
+        stored.units,
+        stored.geometry,
+        stored.attributes,
+        None
+      )
+    ) match
+      case Left(CommandError.Refused(_, _, error)) =>
+        assertEquals(error, DocumentError.InventoryUnmapped(r3, "inputs/trials.csv"))
+      case other => fail(s"expected an inventory refusal, got $other")
     // A re-map adds the mapping; undoing it restores the stored revision.
     val revise = Command.ReviseDataset(
       r3,

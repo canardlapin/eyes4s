@@ -127,7 +127,7 @@ object CommandPins:
     "entry.UndoView" ->
       """{"UndoView":{}}""",
     "journal.0" ->
-      """{"schema":{"name":"studio.journal","version":1},"value":{"Start":{"base":"e58ccaebbb868eea3c6c2c242ca78f4ead15b3f0ee8a15ac2ea5d36f0d6d0b33"}}}""",
+      """{"schema":{"name":"studio.journal","version":1},"value":{"Start":{"base":"7d1bc8a4b80b2216913cd7ea26d1a88e73a8822b5d102fe568b1e4c2e7afad49"}}}""",
     "journal.1" ->
       """{"schema":{"name":"studio.journal","version":1},"value":{"Entry":{"entry":{"Apply":{"command":{"SetPanelSelection":{"figure":1,"panel":"A","selection":{"AllQueries":{}}}}}},"seq":1}}}""",
     "journal.2" ->

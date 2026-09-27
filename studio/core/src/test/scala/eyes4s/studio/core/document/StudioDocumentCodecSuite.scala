@@ -16,8 +16,7 @@
 
 package eyes4s.studio.core.document
 
-import eyes4s.codec.SchemaLadder
-import eyes4s.plan.DefinitionId
+import eyes4s.codec.{CodecError, SchemaLadder}
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId}
 import io.circe.syntax.*
 import io.circe.{Decoder, Encoder, Json}
@@ -128,7 +127,8 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
             Decoder.forProduct2("name", "version")((n: String, v: Int) => (n, v))
           )
       ),
-      Right(Right(("studio.document", 1)))
+      // t2's revisions map their trial inventory: version 2 (S5.4).
+      Right(Right(("studio.document", 2)))
     )
     val future = json.map(
       _.deepMerge(
@@ -143,14 +143,14 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
     assert(future.flatMap(StudioDocument.decode).isLeft, future)
   }
 
-  test("a pinned version-1 document upcasts through a later CR3 ladder version") {
-    // A hypothetical version 2 that adds a `notes` member. Version 1 expresses
-    // every value, so the codec still writes version 1; `lift` rewrites a
-    // stored version-1 document as version 2 with the same meaning.
-    val v1                               = StudioDocument.ladder.toOption.get
-    val ids                              = StudioSchemaIds.ids.toOption.get
-    val v2: SchemaLadder[StudioDocument] =
-      v1.next(
+  test("a pinned document upcasts through a later CR3 ladder version") {
+    // A hypothetical version 3 that adds a `notes` member. Version 2 expresses
+    // every value, so the codec still writes version 2 for t1 (it maps its
+    // trial inventory, S5.4); `lift` rewrites it as version 3 with the same
+    // meaning.
+    val v2                               = StudioDocument.ladder.toOption.get
+    val v3: SchemaLadder[StudioDocument] =
+      v2.next(
         _ => true,
         json => json.deepMerge(Json.obj("notes" -> Json.arr()))
       )(d =>
@@ -159,24 +159,89 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
           .map(
             _.hcursor.downField("value").focus.get.deepMerge(Json.obj("notes" -> Json.arr()))
           )
-      )(json =>
-        v1.readAt(
-          ids.document,
-          json.mapObject(_.remove("notes"))
-        )
-      )
+      )(json => v2.readAt(v2.latest, json.mapObject(_.remove("notes"))))
     val pinned = io.circe.parser.parse(DocumentPins.pins("document.t1")).toOption.get
-    val lifted = v2.lift(pinned)
+    val lifted = v3.lift(pinned)
     assertEquals(
       lifted.map(_.hcursor.downField("schema").downField("version").as[Int]),
-      Right(Right(2))
+      Right(Right(3))
     )
-    assertEquals(lifted.flatMap(v2.codec.decode), Right(DocumentSamples.t1))
-    assertEquals(v2.codec.encode(DocumentSamples.t1), Right(pinned))
+    assertEquals(lifted.flatMap(v3.codec.decode), Right(DocumentSamples.t1))
+    assertEquals(v3.codec.encode(DocumentSamples.t1), Right(pinned))
     assertEquals(
-      v2.versions,
-      Vector(ids.document) ++ DefinitionId.of("studio.document", 2).toOption
+      v3.versions.map(v => (v.name, v.version)),
+      Vector(("studio.document", 1), ("studio.document", 2), ("studio.document", 3))
     )
+  }
+
+  // --- Version 2: the trial inventory mapping (S5.4) --------------------------
+
+  private val ladder = StudioDocument.ladder.toOption.get
+  private val ids    = StudioSchemaIds.ids.toOption.get
+
+  /** t1 as a pre-S5.4 build held it: no dataset maps its inventory. */
+  private val t1WithoutInventory =
+    val t1 = DocumentSamples.t1
+    StudioDocument
+      .of(
+        t1.datasets.map(_.copy(inventory = None)),
+        t1.analyses,
+        t1.draft,
+        t1.runs,
+        t1.reporting,
+        t1.figures,
+        t1.presentation,
+        t1.jobs
+      )
+      .toOption
+      .get
+
+  private def version(json: Either[?, Json]) =
+    json.map(_.hcursor.downField("schema").downField("version").as[Int])
+
+  test("a version-1 document from before S5.4 loads, and lifts to version 2 unchanged") {
+    assertEquals(
+      ladder.versions.map(v => (v.name, v.version)),
+      Vector(("studio.document", 1), ("studio.document", 2))
+    )
+    assertEquals(ladder.versions.head, ids.document)
+    val v1 = io.circe.parser.parse(DocumentPins.t1BeforeInventory).toOption.get
+    assertEquals(StudioDocument.decode(v1), Right(t1WithoutInventory))
+    // It re-encodes to its own version-1 bytes: nothing in it needs version 2.
+    assertEquals(StudioDocument.encode(t1WithoutInventory), Right(v1))
+    // The upcast is the identity on the payload; only the schema moves.
+    val lifted = ladder.lift(v1)
+    assertEquals(version(lifted), Right(Right(2)))
+    assertEquals(
+      lifted.map(_.hcursor.downField("value").focus),
+      Right(v1.hcursor.downField("value").focus)
+    )
+    assertEquals(lifted.flatMap(StudioDocument.decode), Right(t1WithoutInventory))
+  }
+
+  test("a document with an inventory mapping is version 2 and round-trips") {
+    val t1      = DocumentSamples.t1
+    val encoded = StudioDocument.encode(t1)
+    assertEquals(version(encoded), Right(Right(2)))
+    assertEquals(encoded.flatMap(StudioDocument.decode), Right(t1))
+    assert(encoded.exists(_.noSpaces.contains("\"inventory\"")))
+    assertEquals(ladder.earliest(t1).version, 2)
+    assertEquals(ladder.earliest(t1WithoutInventory).version, 1)
+  }
+
+  test("a version-1 reader refuses a version-2 document, never dropping the mapping") {
+    val older   = ladder.upTo(ids.document).toOption.get
+    val encoded = StudioDocument.encode(DocumentSamples.t1).toOption.get
+    assertEquals(
+      older.codec.decode(encoded),
+      Left(CodecError.UnsupportedSchema("studio document", ladder.latest, Vector(ids.document)))
+    )
+    // Its own writer cannot hold the mapping: the version-1 payload drops it.
+    val v1Datasets = older
+      .writeAt(ids.document, DocumentSamples.t1)
+      .map(_.hcursor.downField("datasets").focus.flatMap(_.asArray).getOrElse(Vector.empty))
+    assertEquals(v1Datasets.map(_.size), Right(2))
+    assert(v1Datasets.exists(_.forall(_.asObject.exists(!_.contains("inventory")))))
   }
 
   test("decoding re-validates every value and every cross-reference") {

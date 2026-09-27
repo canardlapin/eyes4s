@@ -311,17 +311,43 @@ object StudioDocument:
       )(of)
       .emap(_.left.map(_.message))
 
+  /** Whether a version-1 document can hold `document`: version 1 records no
+    * trial inventory mapping (S5.4).
+    */
+  private def expressedByV1(document: StudioDocument): Boolean =
+    document.datasets.forall(_.inventory.isEmpty)
+
+  /** `payload` without any dataset revision's inventory mapping: what a
+    * version-1 reader saw, since it did not know the member.
+    */
+  private def withoutInventory(payload: Json): Json =
+    payload.hcursor
+      .downField("datasets")
+      .withFocus(_.mapArray(_.map(_.mapObject(_.remove("inventory")))))
+      .top
+      .getOrElse(payload)
+
+  private def read(json: Json): Either[CodecError, StudioDocument] =
+    json.as[StudioDocument].left.map(f => CodecError.Field("document", json, f.getMessage))
+
   /** Every version of the document schema; a later version is added with
     * `SchemaLadder.next` and its upcast, and `ladder.lift` rewrites a stored
     * document as the latest version (CR3).
+    *
+    * Version 2 (S5.4) adds a dataset revision's trial inventory mapping
+    * (`inventory`, written only when a revision has one). A document with no
+    * mapping is still written as version 1, byte for byte; one with a
+    * mapping is version 2, which a version-1 reader refuses
+    * (`CodecError.UnsupportedSchema`) instead of dropping the mapping. The
+    * upcast is the identity: a version-1 document has no mapping.
     */
   val ladder: Either[CodecError, SchemaLadder[StudioDocument]] =
     StudioSchemaIds.forCodec.map { ids =>
-      SchemaLadder.of[StudioDocument]("studio document", ids.document)(d =>
-        Right(CanonicalJson(d.asJson))
-      )(json =>
-        json.as[StudioDocument].left.map(f => CodecError.Field("document", json, f.getMessage))
-      )
+      SchemaLadder
+        .of[StudioDocument]("studio document", ids.document)(d =>
+          Right(CanonicalJson(withoutInventory(d.asJson)))
+        )(json => read(withoutInventory(json)))
+        .next(expressedByV1, identity)(d => Right(CanonicalJson(d.asJson)))(read)
     }
 
   /** The versioned, canonical document codec. */

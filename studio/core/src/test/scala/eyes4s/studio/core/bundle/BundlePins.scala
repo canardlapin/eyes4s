@@ -39,7 +39,7 @@ object BundlePins:
   )
 
   val t2ManifestSha256: String =
-    "0c227cb3e2832cc57dbe2e68dcbea35a1fb60d5c388838618ed8ca1fa0d36acc"
+    "65fff08112f91051f793f74d97d8b446e962d6ab86040d22bc278fb779a116d3"
 
   /** The t2 bundle's manifest as the pre-release version 1 wrote it: no
     * sharing options (everything travelled) and no science digest. Written
@@ -49,7 +49,7 @@ object BundlePins:
     """{
       |  "schema": { "name": "studio.project", "version": 1 },
       |  "value": {
-      |    "document": { "name": "studio.document", "version": 1 },
+      |    "document": { "name": "studio.document", "version": 2 },
       |    "inputs": [
       |      {
       |        "kind": { "Source": { "role": { "Fixations": {} } } },
