@@ -25,6 +25,7 @@ import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, Modifiers, StudioFxSuite}
+import eyes4s.studio.desktop.platform.FilePresetStore
 import eyes4s.studio.desktop.runtime.{DesktopEffects, PlatformDialogs, ProjectPort}
 import javafx.scene.control.{Button, Label, Labeled}
 import javafx.scene.text.Text
@@ -69,7 +70,9 @@ abstract class ShellFxSuite extends StudioFxSuite:
       // Synthetic key events never reach a native menu, so the shell suites
       // exercise the window's own key path, as it runs on Linux; KeymapFxSuite
       // checks the native split separately.
-      nativeMenu: Boolean = false
+      nativeMenu: Boolean = false,
+      // No saved import presets unless a suite brings its own.
+      presets: FilePresetStore = ShellFxSuite.noPresets
   ): StudioWindow =
     val w = runOnFx(
       StudioWindow
@@ -80,7 +83,8 @@ abstract class ShellFxSuite extends StudioFxSuite:
           dialogs = Some(dialogs),
           project = project,
           clock = clock,
-          nativeMenu = nativeMenu
+          nativeMenu = nativeMenu,
+          presets = presets
         )
         .fold(e => fail(e.message), identity)
     )
@@ -194,3 +198,9 @@ abstract class ShellFxSuite extends StudioFxSuite:
   }
 
   protected def at(m: AppModel, i: Intent): AppModel = AppModel.update(m, i)._1
+
+object ShellFxSuite:
+  /** A preset store at a directory that is never created: no presets. */
+  val noPresets: FilePresetStore = FilePresetStore(
+    java.nio.file.Paths.get(System.getProperty("java.io.tmpdir"), "eyes4s-shell-no-presets")
+  )

@@ -18,7 +18,8 @@ package eyes4s.studio.desktop
 
 import cats.effect.unsafe.IORuntime
 import eyes4s.studio.app.{AppModel, Intent, PlatformDialog}
-import eyes4s.studio.app.layout.StudioLayouts
+import eyes4s.studio.app.layout.{PaneId, StudioLayouts}
+import eyes4s.studio.app.vm.FocusStop
 import eyes4s.studio.app.text.{MessageId, Messages}
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{ClockTime, ProjectName}
@@ -31,8 +32,9 @@ import eyes4s.studio.desktop.runtime.{
   StudioRuntime,
   StudioSession
 }
-import eyes4s.studio.desktop.importing.ImportWizardHost
+import eyes4s.studio.desktop.importing.{ColumnMappingPaneHost, ImportWizardHost}
 import eyes4s.studio.desktop.platform.FilePresetStore
+import eyes4s.studio.core.importing.ImportPresets
 import eyes4s.studio.desktop.shell.AppShell
 import javafx.application.Platform
 import javafx.scene.control.{Alert, TextInputDialog}
@@ -56,13 +58,18 @@ final class StudioWindow private (
     val host: PerspectiveHost,
     val shell: AppShell,
     val effects: DesktopEffects,
-    val project: Option[ProjectPort]
+    val project: Option[ProjectPort],
+    val columnMapping: ColumnMappingPaneHost
 ):
   /** The window content, with the studio stylesheets. */
   def root: javafx.scene.Parent = shell.root
 
   /** The title the native window shows now. */
   def title: String = eyes4s.studio.app.vm.Menus.windowTitle(runtime.model)
+
+  /** The controls a pane shows inside its own focus stop, in Tab order. */
+  def paneStops(pane: PaneId): Vector[FocusStop] =
+    if pane == StudioLayouts.columnMapping then columnMapping.focusStops else Vector.empty
 
   /** Store each perspective's arrangement in the document (view-only). */
   def captureLayouts(): Unit = runtime.dispatch(Intent.LayoutsCaptured(host.capture()))
@@ -154,12 +161,23 @@ object StudioWindow:
       messages: Messages = Messages.english,
       project: Option[ProjectPort] = None,
       clock: () => Option[ClockTime] = DesktopEffects.wallClock,
-      nativeMenu: Boolean = AppShell.systemMenuBar
+      nativeMenu: Boolean = AppShell.systemMenuBar,
+      presets: FilePresetStore = FilePresetStore.userDefault
   )(using IORuntime): Either[WindowError, StudioWindow] =
     for
       sheets <- StudioStyles.stylesheets(theme).left.map(WindowError.Styles(_))
       dock   <- dockTheme.left.map(WindowError.Styles(_))
-      window <- build(initial, moment, dock, dialogs, messages, project, clock, nativeMenu)
+      window <- build(
+        initial,
+        moment,
+        dock,
+        dialogs,
+        messages,
+        project,
+        clock,
+        nativeMenu,
+        presets
+      )
     yield
       window.root.getStylesheets.setAll(sheets*)
       window
@@ -172,7 +190,8 @@ object StudioWindow:
       messages: Messages,
       project: Option[ProjectPort],
       clock: () => Option[ClockTime],
-      nativeMenu: Boolean
+      nativeMenu: Boolean,
+      presets: FilePresetStore
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None
@@ -219,4 +238,24 @@ object StudioWindow:
         )
       )
     r.listen(shell.render)
-    Right(StudioWindow(session, r, host, shell, effects, project))
+    // The column-mapping pane (Data): the import wizard on the selected
+    // revision. Presets are read from disk each time it loads a revision, so
+    // one saved from File › Import is offered.
+    def saved(): ImportPresets =
+      val (read, errors) = presets.load
+      errors.foreach(System.err.println)
+      read
+    val mapping = ColumnMappingPaneHost(
+      () => r.model,
+      dispatch,
+      ImportWizardHost.fxPlatform(
+        () => Option(shell.root.getScene).map(_.getWindow).orNull,
+        presets,
+        project
+      ),
+      () => saved(),
+      project
+    )
+    host.host(StudioLayouts.columnMapping, mapping.node)
+    r.listen(mapping.sync)
+    Right(StudioWindow(session, r, host, shell, effects, project, mapping))

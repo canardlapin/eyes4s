@@ -205,10 +205,12 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
       presetSelect.setDisable(vm.presets.names.isEmpty || vm.fixations.rows.isEmpty)
       presetSelect.setAccessibleText(vm.presets.label)
       presetApply.setText(vm.presets.apply)
+      presetApply.setAccessibleText(vm.presets.apply)
       presetApply.setDisable(presetSelect.isDisabled)
       if presetName.getText != vm.presets.name then presetName.setText(vm.presets.name)
       presetName.setAccessibleText(vm.presets.nameLabel)
       presetSave.setText(vm.presets.save)
+      presetSave.setAccessibleText(vm.presets.save)
       presetSave.setDisable(!vm.presets.canSave)
 
       geometryNote.setText(vm.geometryNote)
@@ -233,7 +235,9 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
       problem.setText(vm.problem.getOrElse(""))
       status.setText(vm.status.getOrElse(""))
       cancel.setText(vm.cancel)
+      cancel.setAccessibleText(vm.cancel)
       commit.setText(vm.commit)
+      commit.setAccessibleText(vm.commit)
       commit.setDisable(!vm.canCommit)
       last = Some(vm)
     finally rendering = false
@@ -306,6 +310,8 @@ final class MappingTable(role: SourceRole, fire: WizardIntent => Unit):
   scroll.setFitToWidth(true)
   scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER)
   scroll.getStyleClass.add("edge-to-edge")
+  // Its rows' role menus are the stops, not the viewport.
+  scroll.setFocusTraversable(false)
   VBox.setVgrow(scroll, Priority.ALWAYS)
 
   val page: VBox = VBox()
@@ -343,6 +349,8 @@ final class MappingTable(role: SourceRole, fire: WizardIntent => Unit):
     summary.setText(vm.summary.getOrElse(""))
     choose.setText(vm.choose)
     choose.setAccessibleText(vm.choose)
+    choose.setVisible(vm.canChoose)
+    choose.setManaged(vm.canChoose)
     headers.zip(vm.headers).foreach((l, h) => l.setText(h))
     empty.setText(vm.empty.getOrElse(""))
     empty.setVisible(vm.empty.isDefined)
