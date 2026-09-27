@@ -50,7 +50,9 @@ input identity. The full benchmark uses the three all-valid frozen inputs.
 [`run_csv_ivt.py`](../../tools/pymovements/run_csv_ivt.py) launches fresh
 child processes through macOS `/usr/bin/time -l`, alternates side order by
 round, records child stdout/stderr, canonical and native CSV, peak process
-RSS, cold startup/total wall, and warm iteration times. Separate JVM
+RSS, cold startup/total wall, and warm iteration times. `throughput.jsonl`
+binds rows/s and bytes/s to each process and the exact wall-time basis.
+Separate JVM
 diagnostic processes report ThreadMXBean allocation, retained heap after a
 post-measurement settling GC, and collector count/pause. Python native
 allocation/heap counters are explicitly unavailable. Every child is bound
@@ -83,7 +85,8 @@ one-round run uses `--rounds 1`; it writes `exploratory.json` and cannot
 qualify. A full run requires the operator to establish thermal settling and
 passes `--thermal-settled`; the collector also checks AC power, normal power
 mode and the current competing process snapshot before creating a complete
-receipt. It writes raw logs and `samples.jsonl` as it goes. Output directories
+receipt, then repeats the competing-process check before each full-run pair.
+It writes raw logs and `samples.jsonl` as it goes. Output directories
 must be new so previous evidence cannot be overwritten.
 
 ```sh

@@ -44,6 +44,16 @@ class PairedResultSuite(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "failed process"):
             run_csv_ivt.require_pair(pair, "large", "warm", 7)
 
+    def test_throughput_uses_process_wall_or_median_warm_iteration(self):
+        item = {"status": "ok", "process_instance": "p0", "input_identity_sha256": "a" * 64,
+                "mode": "warm", "wall_ns": [1_000_000_000, 2_000_000_000, 9_000_000_000]}
+        result = run_csv_ivt.throughput(item, {"rows": 100, "bytes": 300})
+        self.assertEqual(result["rows_per_second"], 50)
+        self.assertEqual(result["bytes_per_second"], 150)
+        item["status"] = "error"
+        with self.assertRaisesRegex(ValueError, "no throughput"):
+            run_csv_ivt.throughput(item, {"rows": 100, "bytes": 300})
+
 
 if __name__ == "__main__":
     unittest.main()
