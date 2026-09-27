@@ -33,13 +33,11 @@ object InventoryDefinitions:
   * are decimal strings, so every signed 64-bit value survives JavaScript.
   */
 private[codec] object InventoryWire:
-  def write(value: InventoryLedger): Either[CodecError, Json] =
+  def write(value: InventoryLedger, declared: Boolean = false): Either[CodecError, Json] =
     Right(
       Json.obj(
-        "source" -> Json.obj(
-          "label"   -> Json.fromString(value.source.label),
-          "records" -> Json.fromString(value.source.records.digest)
-        ),
+        "source" -> (if declared then SourceIdentityCodec.write(value.source)
+                     else SourceIdentityCodec.ledgerSource(value.source)),
         "header"           -> Json.arr(value.header.map(Json.fromString)*),
         "attributeColumns" -> columns(value.attributeColumns),
         "trials"           -> Json.arr(value.trials.map { t =>
@@ -89,7 +87,7 @@ private[codec] object InventoryWire:
   /** Every part is rebuilt through its smart constructor, so a saved
     * inventory meets the same invariants as the importer's.
     */
-  def read(json: Json): Either[CodecError, InventoryLedger] =
+  def read(json: Json, allowDeclared: Boolean = false): Either[CodecError, InventoryLedger] =
     for
       source <- Wire.field[Json](json, "source")
       label  <- Wire.field[String](source, "label")
@@ -98,6 +96,8 @@ private[codec] object InventoryWire:
         .parse[Vector[Vector[String]]](digest)
         .left
         .map(CodecError.Definition.apply)
+      sourceRef <-
+        if allowDeclared then SourceIdentityCodec.read(source) else Right(SourceRef(label, ref))
       header   <- Wire.field[Vector[String]](json, "header")
       declared <- Wire.field[Json](json, "attributeColumns").flatMap(readColumns)
       entries  <- Wire.field[Vector[Json]](json, "trials")
@@ -137,7 +137,7 @@ private[codec] object InventoryWire:
       counts <- Wire.field[Json](json, "sampleCounts").flatMap(readSampleCounts)
       ledger <- InventoryLedger
         .of(
-          SourceRef(label, ref),
+          sourceRef,
           header,
           declared,
           trials,

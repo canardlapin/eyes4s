@@ -289,6 +289,17 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
     assertEquals(FreshnessText.newer(f.badge), Some("Rev 5 · run 8 running"))
   }
 
+  test("an explicit Counting total renders counting without an invented percentage") {
+    val base   = progress(run8Job, 1, 21400L)
+    val totals =
+      ok(RunTotals.of(4685L, ProgressTotal.Exact(4685L), 21400L, ProgressTotal.Counting))
+    val report =
+      ok(JobProgress.of(base.job, base.run, base.step, base.segment, base.meter, totals))
+    val f = Freshness.of(t3, SessionFacts.empty.copy(progress = Vector(report)))
+    assertEquals(FreshnessText.jobs(f.activity), "Run 8 · Comparing · 21,400 / counting… pairs")
+    assertEquals(FreshnessText.newer(f.badge), Some("Rev 5 · run 8 running"))
+  }
+
   test("the latest report (highest step) of the run's job is the one shown") {
     val reports = Vector(progress(run8Job, 3, 30000L), progress(run8Job, 1, 21400L))
     val f       = Freshness.of(t3, SessionFacts.empty.copy(progress = reports))

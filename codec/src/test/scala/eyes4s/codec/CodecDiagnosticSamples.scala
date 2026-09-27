@@ -188,7 +188,14 @@ object CodecDiagnosticSamples:
       RelationMismatch.ReportMembers(2, Vector("p9/a")),
       RelationMismatch.ReportCell("item=a", "Difference", "value", "0.25", "1000.25"),
       RelationMismatch.ReportRecomputed("accounting", "kept=4", "kept=3"),
-      RelationMismatch.ReportComponents(Vector("first", "second"), Vector("value"))
+      RelationMismatch.ReportComponents(Vector("first", "second"), Vector("value")),
+      RelationMismatch.SourceBinding("parser", "fixation-parser@1", "inventory-parser@1"),
+      RelationMismatch.RunPlan(
+        a,
+        b,
+        Vector(PlanChange("choice", Vector.empty, Vector(Provenance.Param.Text("changed"))))
+      ),
+      RelationMismatch.RunInput(a, b)
     ),
     family[ManifestError]("ManifestError")(
       ManifestError.InvalidName(" padded"),
@@ -224,5 +231,42 @@ object CodecDiagnosticSamples:
     family[ByteDigestError]("ByteDigestError")(
       ByteDigestError.WrongLength("abc", 3),
       ByteDigestError.InvalidCharacter("0g", 1, 'g')
+    ),
+    family[DensityError[StudyKey]]("DensityError")(
+      DensityError.UnknownScale(3, 1),
+      DensityError.UnknownKey(1, k1),
+      DensityError.AmbiguousKey(2, k1, 3),
+      DensityError.Failed(3, k1, StudyFailure.Frame(k1, GeometryError.NonFiniteSigma(1.5))),
+      DensityError.MissingPayload(4, k1, ref),
+      DensityError.Payload(5, k1, PayloadError.NotANumber(6)),
+      DensityError.PayloadReference(6, k1, ref, PayloadRef(b, layout)),
+      DensityError.RecomputeUnavailable(7, k1),
+      DensityError.SourceMismatch(8, k1, digest, digest2),
+      DensityError.DigestMismatch(9, k1, a, b),
+      DensityError.Decode(10, k1, CodecError.Field("density", Json.Null, "invalid")),
+      DensityError.Geometry(
+        InspectionError
+          .Geometry(ResultRef.Estimation(11, k1), GeometryError.NonFiniteSigma(1.5))
+      ),
+      DensityError.Materialize(CodecError.Field("archive", Json.Null, "invalid")),
+      DensityError.UnknownRow(12, 7, 4),
+      DensityError.RowKeyMismatch(13, 6, k1, k2)
+    ),
+    family[RunStampError[String, Int]]("RunStampError")(
+      RunStampError.ChangedPlan(
+        get(CanonicalDigest.parse[String](a.hex)),
+        get(CanonicalDigest.parse[String](b.hex)),
+        Vector(
+          PlanChange(
+            "method",
+            Vector(Provenance.Param.Text("before")),
+            Vector(Provenance.Param.Text("after"))
+          )
+        )
+      ),
+      RunStampError.ChangedInput(
+        get(CanonicalDigest.parse[Int](a.hex)),
+        get(CanonicalDigest.parse[Int](b.hex))
+      )
     )
   )

@@ -353,6 +353,21 @@ object FixationCsv:
       timeUnit,
       Vector.empty
     )
+    decodeDeclared(contents, spec, keys, frame, policy, participant, rounding)
+
+  private[io] def decodeDeclared[K, U <: Unit2D](
+      contents: String,
+      spec: RowSpec,
+      keys: FixationKeyReader[K],
+      frame: Frame[U],
+      policy: AdmissionPolicy[K],
+      participant: Option[K => String],
+      rounding: TimestampRounding
+  )(using
+      KeyDigest[K],
+      Ordering[K],
+      UnitLabel[U]
+  ): Either[FixationImportError, FixationImport[K, U]] =
     table(contents, spec.names ++ keys.columns).map { (header, rows) =>
       val parsed =
         parseRows(

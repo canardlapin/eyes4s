@@ -57,7 +57,9 @@
     "docs/evidence/api-audit-2026-09-19.md": "internal decision or historical evidence",
     "docs/REDUCING_RESULTS.md": "public guide",
     "site-docs/summaries.md": "executed mdoc site",
-    "docs/plans/CR4_PLAN.md": "internal decision or historical evidence"
+    "docs/plans/CR4_PLAN.md": "internal decision or historical evidence",
+    "docs/DENSITY_ARCHIVES.md": "public guide",
+    "docs/RESULT_PAYLOAD_MANIFEST.md": "public guide"
   },
   "fences": {
     "README.md": {
@@ -368,6 +370,45 @@
       "runner": "isolated consumer",
       "suite": "example.TemporalJourneySuite",
       "reason": "Packaged-artifact journeys invoke this exact extension route; verify.py checks copied source hashes and JVM/JS outcomes."
+    },
+    "codec/src/test/scala/eyes4s/codec/DensityArchiveSuite.scala": {
+      "module": "codec",
+      "suite": "eyes4s.codec.DensityArchiveSuite",
+      "tests": [
+        "inline, packed and recomputable archives materialize through the completed-result gates",
+        "recomputable is the default and opening or constructing a reader calls no providers",
+        "packed calls its provider once for one selected row"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
+    },
+    "codec/src/test/scala/eyes4s/codec/ResultPayloadManifestSuite.scala": {
+      "module": "codec",
+      "suite": "eyes4s.codec.ResultPayloadManifestSuite",
+      "tests": [
+        "packed densities resolve through additive manifest@1 to the exact completed result",
+        "a missing owned chunk refuses materialization even with a valid remaining graph",
+        "changed bytes fail before any scientific decoder runs",
+        "recomputable archives are explicitly refused rather than silently executed"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
+    },
+    "io/src/test/scala/eyes4s/io/StampedStudyExecutionSuite.scala": {
+      "module": "io",
+      "suite": "eyes4s.io.StampedStudyExecutionSuite",
+      "tests": [
+        "canonical stamp and execution quanta define portable submission identity",
+        "one effectful composite completion retains canonical binding and terminal telemetry"
+      ],
+      "platforms": [
+        "jvm",
+        "js"
+      ]
     }
   }
 }

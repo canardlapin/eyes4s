@@ -273,7 +273,7 @@ object ExecutionLaws extends Laws:
                 (units == n) :| s"$segment charged $units of Exact($n)"
               case SegmentTotal.AtMost(n) =>
                 (units <= n) :| s"$segment charged $units over AtMost($n)"
-              case SegmentTotal.Unknown => Prop.passed
+              case SegmentTotal.Unknown | SegmentTotal.Counting => Prop.passed
           }*)
         },
       "the work each segment charges is a property of the cursor, not of its cuts" ->

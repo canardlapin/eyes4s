@@ -42,6 +42,13 @@ object CommandSamples:
   val verified: CanonicalDigest[DatasetRevisionSpec] =
     DatasetRevisionSpec.contentDigest(pending).toOption.get
 
+  /** A lab column passed through as a number attribute. */
+  val pupil: DeclaredAttributes = right(
+    DeclaredAttributes.of(
+      Vector(AttributeBinding(right(ColumnName.of("Pupil")), AttributeKindChoice.Number))
+    )
+  )
+
   private val rule = CorrectionRule(CorrectionTarget.AllTrials, CoordinateCorrection.FlipY)
 
   val commands: Vector[(String, Command)] = Vector(
@@ -50,7 +57,23 @@ object CommandSamples:
       pending.sources,
       pending.mapping,
       pending.units,
-      pending.geometry
+      pending.geometry,
+      DeclaredAttributes.empty
+    ),
+    "ImportSources.attributes" -> ImportSources(
+      Some(r2),
+      pending.sources,
+      pending.mapping,
+      pending.units,
+      pending.geometry,
+      pupil
+    ),
+    "ReviseDataset" -> ReviseDataset(
+      r3,
+      pending.mapping,
+      DeclaredUnits(Some(TimeUnit.Seconds)),
+      pending.geometry,
+      pupil
     ),
     "RestoreDataset"       -> RestoreDataset(pending),
     "DiscardDataset"       -> DiscardDataset(r3),

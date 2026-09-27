@@ -21,13 +21,15 @@ import intaglio.javafx.{JavaFxCanvasContext, JavaFxGraphicsContext, JavaFxRender
 import javafx.application.Platform
 import javafx.beans.property.{ReadOnlyObjectProperty, ReadOnlyObjectWrapper}
 import javafx.beans.value.{ChangeListener, ObservableValue}
+import javafx.collections.{ListChangeListener, WeakListChangeListener}
 import javafx.scene.canvas.{Canvas, GraphicsContext}
 import javafx.scene.layout.Region
 import javafx.scene.shape.Rectangle
 import javafx.scene.transform.Scale
-import javafx.stage.Window
+import javafx.stage.{Screen, Window}
 
 import java.util.concurrent.{Executor, ExecutorService, Executors, RejectedExecutionException}
+import scala.jdk.CollectionConverters.*
 import scala.util.control.NonFatal
 
 /** What a [[CanvasPlotHost]] is showing. */
@@ -53,6 +55,33 @@ enum PlotHostStatus derives CanEqual:
   /** The host was disposed and shows nothing. */
   case Disposed
 
+/** Draws feedback over a [[CanvasPlotHost]]'s frame without touching the
+  * scene (S4.2): hover, selection and focus rings.
+  */
+trait PlotOverlay:
+  /** Paints the fast-changing layer (hover, focus) on the host's top overlay
+    * canvas, whose raster is `frame`'s device raster (device pixels, cleared
+    * before each call). FX thread only.
+    */
+  def paint(gc: GraphicsContext, frame: PlotFrame): Unit
+
+  /** Paints the slow-changing layer (the selection) on a canvas between the
+    * scene and the top layer. It is redrawn only with the scene or on
+    * `repaintOverlay(under = true)`, so a large selection is not redrawn on
+    * every pointer move.
+    */
+  def paintUnder(gc: GraphicsContext, frame: PlotFrame): Unit = ()
+
+/** How often a host compiled a scene, drew its base canvas, its top overlay
+  * and its under-overlay (selection) layer.
+  */
+final case class PlotHostProfile(
+    compiles: Long,
+    baseDraws: Long,
+    overlayDraws: Long,
+    underDraws: Long = 0L
+) derives CanEqual
+
 /** An Intaglio scene on a JavaFX canvas (S4.1).
   *
   * The host lays a [[PlotScene]] out for its current size and the output scale
@@ -60,9 +89,19 @@ enum PlotHostStatus derives CanEqual:
   * `compiler`, off the FX thread, and draws the compiled program on a canvas on
   * the FX thread.
   *
-  * '''HiDPI.''' The canvas has one pixel per device pixel: its raster is the
-  * surface's device size, and a `1/scale` transform brings it back to layout
-  * size, so a 2x display gets a 2x raster rather than an upscaled 1x one.
+  * '''HiDPI.''' The canvas texture has one pixel per device pixel: its raster
+  * is the surface's device size, so a 2x display gets a 2x raster rather than
+  * an upscaled 1x one. JavaFX already backs every canvas with a texture
+  * [[CanvasPlotHost.canvasPixelScale]] times its size (the highest output scale
+  * of any screen, rounded up), so the canvas is the device size divided by that
+  * scale, draws the device-pixel program through a matching `1/k` graphics
+  * transform, and a node transform brings it back to layout size. Sizing the
+  * canvas to device pixels instead made the texture k times too large on each
+  * edge on a HiDPI screen, and a 2x screen then exhausted Prism's texture pool
+  * (JavaFX dereferences the null texture: bd-01M3DPFKG2MXDGW7SS92FWXJSW).
+  * A canvas's peer fixes its texture scale when it is created, so the host
+  * records the scale with its canvases and, when its window's output scale or
+  * the screens change it, replaces them and redraws the frame on the new ones.
   * Device pixels are assumed square: a window whose horizontal and vertical
   * output scales differ is refused with [[CanvasPlotError.AnisotropicScale]].
   * [[setOutputScaleOverride]] replaces the window's scale, for snapshots and
@@ -75,14 +114,19 @@ enum PlotHostStatus derives CanEqual:
   * discarded, not drawn, and at most one compile per host is in flight.
   *
   * '''Hooks for input (S4.2).''' [[frame]] exposes the drawn [[PlotFrame]]: its
-  * scene identity, its transform, and the render plan a picking plan must be
-  * compiled from. The host itself handles no input. An input adapter listens
-  * on the host `Region`, not on the canvas: the canvas is an unmanaged child
-  * whose local coordinates are device pixels, while the host's local
-  * coordinates are the logical canvas coordinates of
-  * [[eyes4s.studio.viz.plot.CanvasPoint]].
+  * scene identity, its transform, its device scene with resolved viewport
+  * frames and its named picking plan. The host itself handles no input. An
+  * input adapter listens on the host `Region`, not on the canvases, which are
+  * mouse-transparent unmanaged children, replaced when the texture scale
+  * changes, whose local units are device pixels divided by that scale; the
+  * host's local coordinates are the logical canvas coordinates of
+  * [[eyes4s.studio.viz.plot.CanvasPoint]]. Feedback is drawn by a
+  * [[PlotOverlay]] on two canvases above the scene, a slow selection layer
+  * and a fast hover/focus layer: [[repaintOverlay]] redraws the top one (and
+  * the selection layer only when asked), never compiling or redrawing the
+  * scene ([[profile]] counts each).
   *
-  * '''Disposal.''' [[dispose]] stops listening to the scene and window,
+  * '''Disposal.''' [[dispose]] stops listening to the scene, window and screens,
   * releases the canvas raster and the renderer's image and pattern caches, and
   * ignores compiles still in flight. The renderer's caches are also dropped
   * whenever a different scene value is shown, even under the same
@@ -91,8 +135,15 @@ enum PlotHostStatus derives CanEqual:
   */
 final class CanvasPlotHost private[plot] (
     compiler: Executor,
-    renderer: GraphicsContext => JavaFxGraphicsContext
+    renderer: GraphicsContext => JavaFxGraphicsContext,
+    pixelScaleOf: () => Double
 ) extends Region:
+
+  /** A host compiling on `compiler`, drawing through `renderer`. */
+  private[plot] def this(
+      compiler: Executor,
+      renderer: GraphicsContext => JavaFxGraphicsContext
+  ) = this(compiler, renderer, () => CanvasPlotHost.canvasPixelScale)
 
   /** A host compiling on `compiler`. */
   def this(compiler: Executor) = this(compiler, gc => JavaFxCanvasContext(gc))
@@ -100,11 +151,12 @@ final class CanvasPlotHost private[plot] (
   /** A host compiling on the shared studio plot compiler. */
   def this() = this(CanvasPlotHost.sharedCompiler)
 
-  private val canvas   = Canvas(0.0, 0.0)
-  private val toLayout = Scale(1.0, 1.0, 0.0, 0.0)
-  canvas.setManaged(false)
-  canvas.getTransforms.add(toLayout)
-  getChildren.add(canvas)
+  // The canvases, created for the texture scale their peers will be given.
+  private var layers  = CanvasLayers(pixelScaleOf())
+  private def canvas  = layers.scene.canvas
+  private def overlay = layers.overlay.canvas
+  private def under   = layers.under.canvas
+  getChildren.addAll(layers.nodes*)
   getStyleClass.add("plot-host")
 
   // The device raster rounds up to whole pixels; keep it inside the host.
@@ -125,6 +177,11 @@ final class CanvasPlotHost private[plot] (
   private var requested: Long                                       = 0L
   private var inFlight: Boolean                                     = false
   private var disposed: Boolean                                     = false
+  private var painter: Option[PlotOverlay]                          = None
+  private var compiles: Long                                        = 0L
+  private var baseDraws: Long                                       = 0L
+  private var overlayDraws: Long                                    = 0L
+  private var underDraws: Long                                      = 0L
 
   // The output scale of the window this host is in. The chain observes the
   // current scene's window property and that window's scale only while the
@@ -136,10 +193,19 @@ final class CanvasPlotHost private[plot] (
     window.flatMap[Number](_.outputScaleYProperty)
 
   private val relayout: ChangeListener[Any] = (_, _, _) => updateSurface()
-  windowScaleX.addListener(relayout)
-  windowScaleY.addListener(relayout)
+  // A window moving between screens, or screens changing, can change the
+  // texture scale new canvas peers get; check it before laying out again.
+  private val rescale: ChangeListener[Any] = (_, _, _) =>
+    refreshPixelScale()
+    updateSurface()
+  private val screensChanged: ListChangeListener[Screen] = _ => refreshPixelScale()
+  // Weak, so a host that is never disposed does not stay reachable from the screens.
+  private val screensWeak = WeakListChangeListener(screensChanged)
+  windowScaleX.addListener(rescale)
+  windowScaleY.addListener(rescale)
   widthProperty.addListener(relayout)
   heightProperty.addListener(relayout)
+  Screen.getScreens.addListener(screensWeak)
 
   /** What the host is showing. */
   def status: ReadOnlyObjectProperty[PlotHostStatus] = statusWrapper.getReadOnlyProperty
@@ -180,6 +246,76 @@ final class CanvasPlotHost private[plot] (
       plotScene = Some(scene)
       schedule()
 
+  /** Draws `next` over the scene from now on; `None` removes the overlay. */
+  def setOverlay(next: Option[PlotOverlay]): Unit =
+    onFxThread("setOverlay")
+    if !disposed then
+      painter = next
+      repaintOverlay(under = true)
+
+  /** Redraws the top overlay layer, and with `under` the selection layer, over
+    * the frame on the canvas; the scene is untouched.
+    */
+  def repaintOverlay(under: Boolean = false): Unit =
+    onFxThread("repaintOverlay")
+    if !disposed then
+      if under then
+        val ugc = this.under.getGraphicsContext2D
+        ugc.clearRect(0.0, 0.0, this.under.getWidth, this.under.getHeight)
+        for
+          frame <- shown
+          paint <- painter
+        do
+          inDevicePixels(ugc)(paint.paintUnder(ugc, frame))
+          underDraws += 1
+      val gc = overlay.getGraphicsContext2D
+      gc.clearRect(0.0, 0.0, overlay.getWidth, overlay.getHeight)
+      for
+        frame <- shown
+        paint <- painter
+      do
+        inDevicePixels(gc)(paint.paint(gc, frame))
+        overlayDraws += 1
+
+  /** The texture JavaFX backs each of the host's canvases with, in pixels: the
+    * canvas size times the texture scale the canvases were created for.
+    */
+  private[plot] def canvasTexture: (Int, Int) =
+    val k = layers.pixelScale
+    (math.ceil(canvas.getWidth * k).toInt, math.ceil(canvas.getHeight * k).toInt)
+
+  /** The texture scale the current canvases were created for. */
+  private[plot] def texturePixelScale: Double = layers.pixelScale
+
+  /** Recreates the canvases if the texture scale new canvas peers would get has
+    * changed, and redraws the frame on them from its compiled program. A
+    * canvas's peer fixes its texture scale when it is created, so a canvas made
+    * for another scale would draw at too low a resolution or with too large a
+    * texture. The host calls this when its window's output scale or the
+    * screens change.
+    */
+  private[plot] def refreshPixelScale(): Unit =
+    if replaceStaleLayers() then
+      shown match
+        case Some(frame) =>
+          draw(frame)
+          repaintOverlay(under = true)
+        case None => ()
+
+  // Replaces the canvases if their texture scale is stale; true if it did.
+  private def replaceStaleLayers(): Boolean =
+    val k     = pixelScaleOf()
+    val stale = !disposed && k != layers.pixelScale
+    if stale then
+      layers.release()
+      layers = CanvasLayers(k)
+      getChildren.setAll(layers.nodes*)
+      drawing = None // the renderer's context wrapped the old canvas
+    stale
+
+  /** How often this host compiled, drew the scene and drew the overlay. */
+  def profile: PlotHostProfile = PlotHostProfile(compiles, baseDraws, overlayDraws, underDraws)
+
   /** Removes the scene and blanks the canvas. */
   def clear(): Unit =
     onFxThread("clear")
@@ -199,18 +335,19 @@ final class CanvasPlotHost private[plot] (
     onFxThread("dispose")
     if !disposed then
       disposed = true
-      windowScaleX.removeListener(relayout)
-      windowScaleY.removeListener(relayout)
+      windowScaleX.removeListener(rescale)
+      windowScaleY.removeListener(rescale)
       widthProperty.removeListener(relayout)
       heightProperty.removeListener(relayout)
+      Screen.getScreens.removeListener(screensWeak)
       bounds.widthProperty.unbind()
       bounds.heightProperty.unbind()
       plotScene = None
       surface = Right(None)
       drawing = None
+      painter = None
       blank()
-      canvas.setWidth(0.0)
-      canvas.setHeight(0.0)
+      layers.release()
       getChildren.clear()
       statusWrapper.set(PlotHostStatus.Disposed)
 
@@ -287,9 +424,11 @@ final class CanvasPlotHost private[plot] (
       if token == requested then
         result match
           case Right(frame) =>
+            compiles += 1
             try
               draw(frame)
               shown = Some(frame)
+              repaintOverlay(under = true)
               statusWrapper.set(PlotHostStatus.Drawn(frame))
             catch
               case NonFatal(e) =>
@@ -312,25 +451,82 @@ final class CanvasPlotHost private[plot] (
           case _                                  => ()
 
   private def draw(frame: PlotFrame): Unit =
-    val width  = frame.surface.deviceWidth.toDouble
-    val height = frame.surface.deviceHeight.toDouble
-    if canvas.getWidth != width then canvas.setWidth(width)
-    if canvas.getHeight != height then canvas.setHeight(height)
-    toLayout.setX(1.0 / frame.surface.deviceScale)
-    toLayout.setY(1.0 / frame.surface.deviceScale)
+    replaceStaleLayers(): Unit
+    val k      = layers.pixelScale
+    val width  = frame.surface.deviceWidth.toDouble / k
+    val height = frame.surface.deviceHeight.toDouble / k
+    val back   = k / frame.surface.deviceScale
+    layers.all.foreach { layer =>
+      val c = layer.canvas
+      if c.getWidth != width then c.setWidth(width)
+      if c.getHeight != height then c.setHeight(height)
+      layer.toLayout.setX(back)
+      layer.toLayout.setY(back)
+    }
     val gc = canvas.getGraphicsContext2D
     // With no transform or clip, clearing the whole canvas also discards its
     // queued commands, so redraws do not accumulate.
     gc.clearRect(0.0, 0.0, width, height)
     val context = drawing.getOrElse(renderer(gc))
     drawing = Some(context)
-    JavaFxRenderer.draw(frame.program, context)
+    inDevicePixels(gc)(JavaFxRenderer.draw(frame.program, context))
+    baseDraws += 1
+
+  // Runs `f` with `gc` drawing in device pixels, whatever the texture scale.
+  private def inDevicePixels(gc: GraphicsContext)(f: => Unit): Unit =
+    val k = layers.pixelScale
+    gc.save()
+    try
+      gc.scale(1.0 / k, 1.0 / k)
+      f
+    finally gc.restore()
 
   private def blank(): Unit =
     shown = None
-    canvas.getGraphicsContext2D.clearRect(0.0, 0.0, canvas.getWidth, canvas.getHeight)
+    layers.all.foreach { layer =>
+      val c = layer.canvas
+      c.getGraphicsContext2D.clearRect(0.0, 0.0, c.getWidth, c.getHeight)
+    }
+
+/** One of a host's canvases and the transform from its units to layout units. */
+private final class CanvasLayer:
+  val canvas: Canvas  = Canvas(0.0, 0.0)
+  val toLayout: Scale = Scale(1.0, 1.0, 0.0, 0.0)
+  canvas.setManaged(false)
+  canvas.setMouseTransparent(true)
+  canvas.getTransforms.add(toLayout)
+
+/** A host's scene, selection and hover canvases, created together for the
+  * texture scale `pixelScale` that their peers are expected to get.
+  */
+private final class CanvasLayers(val pixelScale: Double):
+  val scene: CanvasLayer   = CanvasLayer()
+  val under: CanvasLayer   = CanvasLayer()
+  val overlay: CanvasLayer = CanvasLayer()
+
+  /** Bottom to top. */
+  val all: List[CanvasLayer] = List(scene, under, overlay)
+  def nodes: List[Canvas]    = all.map(_.canvas)
+
+  /** Zero-size canvases free their textures at their next render. */
+  def release(): Unit = nodes.foreach { c =>
+    c.setWidth(0.0)
+    c.setHeight(0.0)
+  }
 
 object CanvasPlotHost:
+
+  /** How many texture pixels JavaFX gives each unit of a canvas created now:
+    * the highest recommended output scale of any screen, rounded up, which is
+    * how Prism's `NGCanvas` sizes its textures when its peer is created. A host
+    * records it when it creates its canvases and recreates them when it
+    * changes.
+    */
+  def canvasPixelScale: Double =
+    Screen.getScreens.asScala
+      .flatMap(s => List(s.getOutputScaleX, s.getOutputScaleY))
+      .foldLeft(1.0)(math.max)
+      .ceil
 
   /** One daemon thread that compiles scenes for every host, in submission order. */
   lazy val sharedCompiler: ExecutorService =

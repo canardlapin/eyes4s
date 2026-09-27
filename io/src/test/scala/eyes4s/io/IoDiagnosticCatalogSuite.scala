@@ -32,24 +32,28 @@ class IoDiagnosticCatalogSuite extends munit.FunSuite:
 
   private val all = IoDiagnosticSamples.all
 
-  private val IoCount    = 179
-  private val IoDigest   = "bb6a4c7b4cbf5e1e"
+  private val IoCount    = 192
+  private val IoDigest   = "2803f0e7f6a92a55"
   private val LawsCount  = 21
   private val LawsDigest = "cec5dc887ffa1c46"
 
   private val alignment = DiagnosticAlignment(
     all,
     eyes4s.results.ResultsDiagnosticSamples.structured.orElse {
-      case v: ByteDigest       => CodecDiagnosticSupport.digest(v)
-      case v: ArtifactName     => CodecDiagnosticSupport.entry(v)
-      case v: ArtifactRole     => CodecDiagnosticSupport.role(v)
-      case v: MediaKind        => CodecDiagnosticSupport.media(v)
-      case v: ElementKind      => CodecDiagnosticSupport.element(v)
-      case v: PayloadLayout    => CodecDiagnosticSupport.layout(v)
-      case v: PayloadRef       => CodecDiagnosticSupport.payloadRef(v)
-      case v: ManifestRelation => CodecDiagnosticSupport.relation(v)
-      case v: Json             => CodecDiagnosticSupport.json(v)
-      case v: Sha256           => Operand.Artifact(v.hex)
+      case v: ByteDigest         => CodecDiagnosticSupport.digest(v)
+      case v: CanonicalDigest[?] => CodecDiagnosticSupport.digest(v.sha256)
+      case v: ArtifactName       => CodecDiagnosticSupport.entry(v)
+      case v: ArtifactRole       => CodecDiagnosticSupport.role(v)
+      case v: MediaKind          => CodecDiagnosticSupport.media(v)
+      case v: ElementKind        => CodecDiagnosticSupport.element(v)
+      case v: PayloadLayout      => CodecDiagnosticSupport.layout(v)
+      case v: PayloadRef         => CodecDiagnosticSupport.payloadRef(v)
+      case v: ManifestRelation   => CodecDiagnosticSupport.relation(v)
+      case v: Json               => CodecDiagnosticSupport.json(v)
+      case v: Sha256             => Operand.Artifact(v.hex)
+      case v: SourceIdentity     => Operand.Artifact(v.digest)
+      case v: IdentityChanges    =>
+        Operand.Items(v.values.toVector.sortBy(_.ordinal).map(x => Operand.Token(x.toString)))
     },
     { case (v: StudyKey, Operand.Key(x: ErasedKey)) => x.value == v }
   )
@@ -152,6 +156,19 @@ class IoDiagnosticCatalogSuite extends munit.FunSuite:
     )
     val corpus = Diagnostic.of(EyeLinkCorpusError.WrongFieldCount("corpus.tsv", 3, 5, 4))
     assertEquals(corpus.subject, Vector(Locus.Line("corpus.tsv", 3L)))
+  }
+
+  test("CSV layout diagnostics retain their typed cause and its record subject") {
+    val csv       = TidyCsvError.WrongColumnCount(7, 9, 8)
+    val malformed = Diagnostic.of(CsvLayoutError.Csv(csv))
+    assertEquals(malformed.code.render, "csv-layout.csv")
+    assertEquals(malformed.causes, Vector(Diagnostic.of(csv)))
+    assertEquals(malformed.subject, Vector(Locus.Record(7)))
+    val identity = RecordIdentityError.HeaderRecord(CsvRecord.header)
+    val layout   = Diagnostic.of(CsvLayoutError.Layout(identity))
+    assertEquals(layout.code.render, "csv-layout.layout")
+    assertEquals(layout.causes, Vector(Diagnostic.of(identity)))
+    assertEquals(layout.subject, Vector(Locus.Record(1)))
   }
 
   test("every sampled case that names a source and a line has that line as its subject") {

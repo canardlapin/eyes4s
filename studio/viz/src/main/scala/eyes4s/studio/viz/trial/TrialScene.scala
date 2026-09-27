@@ -42,6 +42,7 @@ import eyes4s.studio.viz.plot.{
 import intaglio.{
   Anchor,
   BatchColumn,
+  CasingWidth,
   Clip,
   DashPattern,
   ExtentExpr,
@@ -64,7 +65,9 @@ import intaglio.{
   Rgba,
   Scene,
   Size,
+  StrokeCasing,
   StrokeUnit,
+  StrokeWidth,
   VJust,
   Viewport,
   YDirection
@@ -250,15 +253,23 @@ final case class TrialSceneInput(
 // ---------------------------------------------------------------------------
 
 /** One drawn fixation mark: the fixation it shows, where (in screen pixels,
-  * the panel's data coordinates), its radius in logical pixels, and its
-  * position in the [[TrialScene.MarksName]] point batch.
+  * the panel's data coordinates), its radius in logical pixels, how far its
+  * painted outline reaches from its centre (`reachPx`: a diamond's half
+  * diagonal, halo and casing included), its position in the trial's fixation
+  * order (`order`, from 0) and the name of its grob.
+  *
+  * Every mark is its own named grob ([[TrialScene.markName]]), so a named
+  * picking plan resolves a hit to one mark (S4.2; Intaglio's named picking
+  * treats a named point batch as a single target).
   */
 final case class TrialMark(
-    ref: StudioRef,
+    ref: StudioRef.Fixation,
     at: DataPoint,
     radiusPx: Double,
+    reachPx: Double,
     window: WindowSide,
-    batchIndex: Int
+    order: Int,
+    name: GraphicsName
 ) derives CanEqual
 
 /** What the image frame shows, after the asset registry and the rasters. */
@@ -287,8 +298,13 @@ final case class TrialScene private (
     caption: String,
     marks: Vector[TrialMark]
 ):
-  /** The fixation a mark of the [[TrialScene.MarksName]] batch shows (S4.2). */
-  def refAt(batchIndex: Int): Option[StudioRef] = marks.lift(batchIndex).map(_.ref)
+  private lazy val byName: Map[GraphicsName, TrialMark] = marks.map(m => m.name -> m).toMap
+
+  /** The mark whose grob is named `name`, if it is a fixation mark (S4.2). */
+  def markNamed(name: GraphicsName): Option[TrialMark] = byName.get(name)
+
+  /** The fixation the grob named `name` shows, if it is a fixation mark. */
+  def refOf(name: GraphicsName): Option[StudioRef.Fixation] = markNamed(name).map(_.ref)
 
   /** Width over height of the canvas this scene is laid out for; a host
     * keeps it so the image is not distorted ([[TrialScene.fit]]).
@@ -303,9 +319,20 @@ object TrialScene:
   val StimulusName: String = "trial-stimulus"
   val WindowName: String   = "trial-window"
   val OrderName: String    = "trial-order"
-  val CasingName: String   = "trial-fixation-casing"
   val MarksName: String    = "trial-fixations"
   val CaptionName: String  = "trial-caption"
+
+  /** The data panel's viewport group: Intaglio resolves its frame by this name. */
+  val PanelName: String = "trial-panel"
+
+  /** The prefix of every fixation mark's grob name. */
+  val MarkPrefix: String = "trial-fixation-"
+
+  /** The name of the grob that draws fixation `index`: one name per mark. */
+  def markName(index: FixationIndex): String = s"$MarkPrefix${index.value}"
+
+  /** Straight segments of the ring that draws a cased (hollow control) mark. */
+  val RingSegments: Int = 48
 
   /** The share of the canvas height below the panel, where the caption goes. */
   val CaptionFraction: Double = 0.12
@@ -323,7 +350,9 @@ object TrialScene:
     */
   val HaloPx: Double = 2.0
 
-  /** The casing under a hollow control mark: 1 px of halo either side. */
+  /** The halo casing of a hollow control mark (Intaglio `StrokeCasing`): 1 px
+    * of halo either side of its 2 px outline.
+    */
   val CasingPx: Double = 4.0
 
   /** Order lines and the analysis-window outline. */
@@ -685,59 +714,93 @@ object TrialScene:
     private def sizeOf(f: TrialFixation): Either[GraphicsError, ExtentExpr] =
       ExtentExpr.points(pt(radiusPx(f.durationMs)))
 
+    // A hollow control mark inside the analysis window is cased by the halo.
+    private def cased(f: TrialFixation): Boolean =
+      f.window == WindowSide.Inside && input.marks == MarkStyle.Role(TrialRole.Control)
+
+    // A cased mark is a closed ring with an Intaglio StrokeCasing: Intaglio
+    // paints casings on linear outlines only, not on point marks. The casing
+    // is paint of the ring, not a second grob, so picking sees one target.
+    private def ring(f: TrialFixation, n: GraphicsName): Either[GraphicsError, Grob] =
+      val r = pt(radiusPx(f.durationMs))
+      def offset(base: LengthExpr, d: Double): Either[GraphicsError, LengthExpr] =
+        ExtentExpr.points(math.abs(d)).map(e => if d >= 0.0 then base + e else base - e)
+      val empty: Either[GraphicsError, Vector[Point]] = Right(Vector.empty)
+      for
+        x0       <- LengthExpr.native(f.screenX)
+        y0       <- LengthExpr.native(f.screenY)
+        vertices <- (0 until RingSegments).foldLeft(empty) { (acc, k) =>
+          val a = 2.0 * math.Pi * k / RingSegments
+          for
+            ps <- acc
+            x  <- offset(x0, r * math.cos(a))
+            y  <- offset(y0, r * math.sin(a))
+          yield ps :+ Point(x, y)
+        }
+        gp     <- markParams(f)
+        width  <- StrokeWidth.points(pt(CasingPx))
+        casing <- StrokeCasing.checked(staged(StageToken.Halo), CasingWidth.Absolute(width))
+        grob   <- Grob.polygon(vertices, gp = gp.withCasing(casing), name = Some(n))
+      yield grob
+
+    private def mark(f: TrialFixation, shape: PointShape, n: GraphicsName) =
+      if cased(f) then ring(f, n)
+      else
+        for
+          at   <- Point.native(f.screenX, f.screenY)
+          size <- sizeOf(f)
+          gp   <- markParams(f)
+          grob <- Grob.pointBatch(
+            Vector(at),
+            sizes = BatchColumn.Constant(size),
+            shapes = BatchColumn.Constant(shape),
+            graphicParams = BatchColumn.Constant(gp),
+            name = Some(n)
+          )
+        yield grob
+
+    private def reach(f: TrialFixation, shape: PointShape): Double =
+      val r       = radiusPx(f.durationMs)
+      val outline = shape match
+        case PointShape.Diamond => PointShape.diamondHalfDiagonal(r)
+        case _                  => r
+      outline + (if cased(f) then CasingPx else HaloPx) / 2.0
+
+    // One named grob per mark, in fixation order, inside the named marks group.
     private def marks: R[(Vector[Grob], Vector[TrialMark])] =
       val fs = input.fixations
       if !input.options.points || fs.isEmpty then Right((Vector.empty, Vector.empty))
       else
         val shape = shapeOf(input.marks)
+        val trial = input.display.trial
         for
-          at    <- traverse(fs)(f => part("fixation mark")(Point.native(f.screenX, f.screenY)))
-          sizes <- traverse(fs)(f => part("fixation mark size")(sizeOf(f)))
-          gps   <- traverse(fs)(f => part("fixation mark paint")(markParams(f)))
-          title = TrialText(TrialTextId.MarksTitle, input.display.trial.label)
-          batch <- part("fixation marks")(
-            name(MarksName).flatMap(n =>
-              Grob.pointBatch(
-                at,
-                sizes = BatchColumn.compact(sizes),
-                shapes = BatchColumn.Constant(shape),
-                graphicParams = BatchColumn.compact(gps),
-                name = Some(n)
+          drawn <- traverse(fs.zipWithIndex) { (f, i) =>
+            part("fixation mark")(
+              for
+                n <- name(markName(f.index))
+                g <- mark(f, shape, n)
+              yield (
+                g,
+                TrialMark(
+                  StudioRef.Fixation(trial, f.index),
+                  DataPoint(f.screenX, f.screenY),
+                  radiusPx(f.durationMs),
+                  reach(f, shape),
+                  f.window,
+                  i,
+                  n
+                )
               )
-            )
-          )
-          cased = fs.indices.filter { i =>
-            fs(i).window == WindowSide.Inside && input.marks == MarkStyle.Role(
-              TrialRole.Control
-            )
-          }.toVector
-          casing <-
-            if cased.isEmpty then Right(Vector.empty)
-            else
-              part("control-mark casing")(
-                for
-                  gp <- stroke(staged(StageToken.Halo), CasingPx)
-                  n  <- name(CasingName)
-                  g  <- Grob.pointBatch(
-                    cased.map(at),
-                    sizes = BatchColumn.compact(cased.map(sizes)),
-                    shapes = BatchColumn.Constant(shape),
-                    graphicParams = BatchColumn.Constant(gp),
-                    name = Some(n)
-                  )
-                yield Vector(g)
-              )
-        yield (
-          casing :+ Grob.annotated(batch, GrobMeta.title(title)),
-          fs.zipWithIndex.map { (f, i) =>
-            TrialMark(
-              StudioRef.Fixation(input.display.trial, f.index),
-              DataPoint(f.screenX, f.screenY),
-              radiusPx(f.durationMs),
-              f.window,
-              i
             )
           }
+          group <- part("fixation marks")(name(MarksName))
+          title = TrialText(TrialTextId.MarksTitle, trial.label)
+        yield (
+          Vector(
+            Grob
+              .annotated(Grob.group(drawn.map(_._1), name = Some(group)), GrobMeta.title(title))
+          ),
+          drawn.map(_._2)
         )
 
     private def order: R[Vector[Grob]] =
@@ -829,6 +892,7 @@ object TrialScene:
             rect   <- Grob.rect(centre, whole, gp = gp, name = Some(n))
           yield rect
         )
+        panel       <- part("data panel")(name(PanelName))
         artGrobs    <- frameArt(art)
         windowGrobs <- window(art)
         orderGrobs  <- order
@@ -840,7 +904,8 @@ object TrialScene:
           stage,
           Grob.group(
             artGrobs ++ windowGrobs ++ orderGrobs ++ markGrobs,
-            viewport = Some(viewport)
+            viewport = Some(viewport),
+            name = Some(panel)
           )
         ) ++ captionGrobs,
         viewport,

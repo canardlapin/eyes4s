@@ -71,6 +71,12 @@ enum InspectionError[+K] derives CanEqual:
   )
   case Orientation(scale: Int, design: StudyDesign, found: ReductionOrientation)
   case NoContrast(scale: Int)
+  case Geometry(reference: ResultRef[K], underlying: GeometryError)
+  case GeometryDescription(
+      reference: ResultRef[K],
+      field: String,
+      found: Vector[Provenance.Param]
+  )
 
   def message: String = this match
     case UnknownScale(index, scales) => s"Result has $scales scales; there is no scale $index."
@@ -93,6 +99,10 @@ enum InspectionError[+K] derives CanEqual:
     case Orientation(scale, design, found) =>
       s"Scale $scale $design reduction is $found; study results reduce by the focal key."
     case NoContrast(scale) => s"Scale $scale has no contrast rows; its contrast was refused."
+    case Geometry(reference, underlying) =>
+      s"Density at $reference has invalid geometry: ${underlying.message}"
+    case GeometryDescription(reference, field, found) =>
+      s"Density at $reference has invalid '$field' geometry metadata: $found."
 
 /** A bounded page length. */
 final case class PageSize private (value: Int) derives CanEqual
@@ -287,7 +297,10 @@ object ScoreSchema:
 /** An estimated density on its grid. `cells` returns a fresh copy of the cell
   * masses in grid order, so nothing a consumer does to it reaches the result.
   */
-final class DensityView[U <: Unit2D] private[plan] (mass: Mass[U]):
+final class DensityView[U <: Unit2D] private[plan] (
+    mass: Mass[U],
+    val geometry: GridGeometry[U]
+):
   def frame: FrameId         = mass.grid.frame.id
   def frameSpec: FrameSpec   = mass.grid.frame.spec
   def grid: GridId           = mass.grid.id
@@ -295,15 +308,32 @@ final class DensityView[U <: Unit2D] private[plan] (mass: Mass[U]):
   def ny: Int                = mass.grid.ny
   def provenance: Provenance = mass.provenance
   def cells: IArray[Double]  = IArray.from(mass.values)
+  def levels(coverages: Vector[Double]): Either[MassLevelError, Vector[MassLevel]] =
+    MassLevels.of(mass, coverages)
 
   override def equals(other: Any): Boolean = other match
     case that: DensityView[?] =>
       frame == that.frame && frameSpec == that.frameSpec && grid == that.grid &&
-      nx == that.nx && ny == that.ny && provenance == that.provenance &&
+      nx == that.nx && ny == that.ny && provenance == that.provenance && geometry == that.geometry &&
       cells.map(ExactDouble(_)).sameElements(that.cells.map(ExactDouble(_)))
     case _ => false
-  override def hashCode: Int    = (frame, grid, nx, ny, provenance).hashCode
+  override def hashCode: Int    = (frame, grid, nx, ny, provenance, geometry).hashCode
   override def toString: String = s"DensityView($grid, ${nx}x$ny)"
+
+object DensityView:
+  /** A density whose rendering geometry is the whole grid frame. */
+  def of[U <: Unit2D](mass: Mass[U]): Either[GeometryError, DensityView[U]] =
+    GridGeometry.of(mass.grid).map(new DensityView(mass, _))
+
+  /** A density decoded from a result description. Its frame, grid and any
+    * window or angular scale must agree with the mass before it is exposed.
+    */
+  def of[K, U <: Unit2D](
+      mass: Mass[U],
+      description: Vector[(String, Vector[Provenance.Param])],
+      reference: ResultRef[K]
+  )(using UnitLabel[U]): Either[InspectionError[K], DensityView[U]] =
+    DensityGeometry.of(mass.grid, description, reference).map(new DensityView(mass, _))
 
 enum EstimationOutcome[+K, U <: Unit2D]:
   case Estimated(density: DensityView[U])
@@ -654,7 +684,7 @@ object ResultInspection:
       result: StudyResult[K, U, S, D],
       sources: StudySources[K],
       schema: ScoreSchema[S, D]
-  ): Either[InspectionError[K], StudyInspection[K, U, S, D]] =
+  )(using UnitLabel[U]): Either[InspectionError[K], StudyInspection[K, U, S, D]] =
     inspectStudy(result, sources, schema, None)
 
   /** Inspect a study result with the plan's described components and the
@@ -666,7 +696,7 @@ object ResultInspection:
       result: StudyResult[K, U, S, D],
       input: StudyInput[K, U],
       ledger: Option[AdmissionLedger[K]]
-  ): Either[InspectionError[K], StudyInspection[K, U, S, D]] =
+  )(using UnitLabel[U]): Either[InspectionError[K], StudyInspection[K, U, S, D]] =
     given KeyDigest[K] = plan.layout.digest
     for
       _ <- Either.cond(
@@ -696,7 +726,7 @@ object ResultInspection:
       result: TemporalStudyResult[K, U, P, S, D],
       sources: StudySources[K],
       schema: ScoreSchema[S, D]
-  ): Either[InspectionError[K], TemporalInspection[K, U, S, D]] =
+  )(using UnitLabel[U]): Either[InspectionError[K], TemporalInspection[K, U, S, D]] =
     result.cells
       .traverse { cell =>
         val rep    = cell.repetition.name
@@ -774,7 +804,7 @@ object ResultInspection:
       sources: StudySources[K],
       schema: ScoreSchema[S, D],
       cell: Option[(String, String)]
-  ): Either[InspectionError[K], StudyInspection[K, U, S, D]] =
+  )(using UnitLabel[U]): Either[InspectionError[K], StudyInspection[K, U, S, D]] =
     for
       _ <- Either.cond(
         sources.input.digest == result.input.digest,
@@ -782,38 +812,23 @@ object ResultInspection:
         InspectionError.InputMismatch(result.input, sources.input)
       )
       scales <- result.scales.zipWithIndex.traverse { case (scale, index) =>
-        inspectScale(scale, index, sources, schema, cell)
+        inspectScale(scale, index, result.description, sources, schema, cell)
       }
     yield new StudyInspection(result.input, result.description, sources, scales, cell)
 
   private def inspectScale[K, U <: Unit2D, S, D](
       scale: StudyScaleResult[K, U, S, D],
       index: Int,
+      resultDescription: Vector[(String, Vector[Provenance.Param])],
       sources: StudySources[K],
       schema: ScoreSchema[S, D],
       cell: Option[(String, String)]
-  ): Either[InspectionError[K], ScaleInspection[K, U, S, D]] =
+  )(using UnitLabel[U]): Either[InspectionError[K], ScaleInspection[K, U, S, D]] =
     def address(ref: ResultRef[K]): ResultRef[K] =
       cell.fold(ref)((repetition, window) => ResultRef.InCell(repetition, window, ref))
     def place(ref: ResultRef[K], diagnostic: Diagnostic[K]) =
       located(address(ref).loci, diagnostic, sources)
     val outcomes = scale.estimation.groupMap(_._1)(_._2)
-    def estimation: Either[InspectionError[K], Listing[K, EstimationEntry[K, U]]] =
-      Listing.projected(scale.estimation.map(_._1).distinct)(key =>
-        address(ResultRef.Estimation(index, key))
-      ) { key =>
-        val ref = ResultRef.Estimation(index, key)
-        EstimationEntry(
-          address(ref),
-          key,
-          outcomes(key).map(
-            _.fold(
-              f => EstimationOutcome.Failed(place(ref, Projections.failure(f))),
-              mass => EstimationOutcome.Estimated(new DensityView(mass))
-            )
-          )
-        )
-      }
     def checked(design: StudyDesign): Either[InspectionError[K], Unit] =
       val orientation = scale.analyses.reduced(design).diagnostics.orientation
       val stored      =
@@ -921,9 +936,26 @@ object ResultInspection:
           }
           .map(ScaleContrast.Rows(_))
     for
-      _                 <- checked(StudyDesign.Matched)
-      _                 <- checked(StudyDesign.Control)
-      estimationListing <- estimation
+      _ <- checked(StudyDesign.Matched)
+      _ <- checked(StudyDesign.Control)
+      // Estimation entries are built now: each density's geometry is checked
+      // against the result's description (DensityView.of) when the
+      // inspection opens. There is one per trial, not per pair.
+      estimation <- scale.estimation.map(_._1).distinct.traverse { key =>
+        val ref = ResultRef.Estimation(index, key)
+        outcomes(key)
+          .traverse(
+            _.fold(
+              f => Right(EstimationOutcome.Failed(place(ref, Projections.failure(f)))),
+              mass =>
+                DensityView
+                  .of(mass, resultDescription, address(ref))
+                  .map(EstimationOutcome.Estimated(_))
+            )
+          )
+          .map(values => EstimationEntry(address(ref), key, values))
+      }
+      estimationListing <- Listing.of(estimation)(_.ref)
       matchedListing    <- pairs(StudyDesign.Matched)
       controlListing    <- pairs(StudyDesign.Control)
       matchedReduced    <- reductions(StudyDesign.Matched)

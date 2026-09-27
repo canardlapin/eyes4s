@@ -33,13 +33,11 @@ enum MeterTotal derives CanEqual, Codec.AsObject:
   case Counting
 
 object MeterTotal:
-  /** UI-D states an unknown total as `Counting`; the S3.0 protocol still
-    * names it `Unknown`.
-    */
+  /** Unresolved totals retain the existing counting presentation. */
   def of(total: ProgressTotal): MeterTotal = total match
-    case ProgressTotal.Exact(units)  => Exact(units)
-    case ProgressTotal.AtMost(units) => AtMost(units)
-    case ProgressTotal.Unknown       => Counting
+    case ProgressTotal.Exact(units)                     => Exact(units)
+    case ProgressTotal.AtMost(units)                    => AtMost(units)
+    case ProgressTotal.Unknown | ProgressTotal.Counting => Counting
 
 /** A count and its total in one unit. */
 final case class Meter(unit: CountUnit, done: Long, total: MeterTotal)

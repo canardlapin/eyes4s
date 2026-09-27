@@ -60,16 +60,15 @@ private[plan] object RecipeViews:
 
   private val one = NumericBounds.atLeastOne
 
-  def options[A](values: Vector[A], token: A => String): ChoiceSource =
-    ChoiceSource.Fixed(values.map(a => ChoiceOption(token(a), token(a))))
+  def options[A](values: Vector[A])(using l: Labelled[A]): ChoiceSource =
+    ChoiceSource.Fixed(values.map(a => ChoiceOption(l.token(a), l.label(a))))
 
-  def choice[A](
+  def choice[A: Labelled](
       id: String,
       meaning: String,
       values: Vector[A],
-      token: A => String = (a: A) => a.toString,
       default: Option[DefaultValue] = None
-  ): FieldView = view(id, meaning, Choice(options(values, token)), default)
+  ): FieldView = view(id, meaning, Choice(options(values)), default)
 
   def phase(id: String, meaning: String): FieldView =
     view(id, meaning, Choice(ChoiceSource.FromInput(InputDomain.Phases)))
@@ -232,14 +231,12 @@ private[plan] object RecipeViews:
             "controls",
             "Which references of other items are controls",
             ControlReferences.values.toVector,
-            _.name,
             library(RawValue.Choice(ControlReferences.SameSelection.name), defaultReason)
           ),
           choice(
             "unmatched",
             "Focal trials without a matched reference",
             UnmatchedFocalPolicy.values.toVector,
-            _.name,
             library(RawValue.Choice(UnmatchedFocalPolicy.ReportNoMatch.name), defaultReason)
           )
         ),
@@ -253,7 +250,7 @@ private[plan] object RecipeViews:
       "Initial fixations left out of every trial, focal and reference alike, before the " +
         "window is considered: the first fixation, or the leading run whose centres lie in the " +
         "closed disc of the given radius in degrees around the fixation cross (x, y in " +
-        "admission-frame units); absent when every fixation is kept",
+        "admission-frame units); a plan's description omits it when every fixation is kept",
       Variant(
         Vector(
           VariantCase("keepAll", "Keep every fixation", Vector.empty),

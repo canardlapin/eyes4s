@@ -179,6 +179,33 @@ object StudyExecution:
       total(work, _, _)
     )
 
+  /** Automatic counting followed by scientific execution under a caller's typed
+    * identity. Counting completion is a transition in this one submission, never
+    * a completed run. Every running stage carries its committed object meter.
+    * The original submission remains the compatibility path for unit-only progress.
+    */
+  def submissionWithId[Id, K, U <: Unit2D, P, S, D](
+      id: Id,
+      work: PreparedStudy[K, U, P, S, D],
+      budget: ComparisonBudget = ComparisonBudget.default,
+      quanta: WorkQuanta = WorkQuanta.default
+  ): Submission[
+    Id,
+    CountedStudyCursor[K, U, P, S, D],
+    StudyRunStage,
+    StudyRunSegment,
+    StudyRunError,
+    StudyResult[K, U, S, D]
+  ] =
+    new Submission(
+      id,
+      quanta,
+      () => CountedStudyCursor.of(work, budget),
+      StudyRunSegment.of,
+      (segment, cursor) => cursor.total(segment),
+      Some((cursor, step) => cursor.completedStage(step))
+    )
+
   /** The total stated as a segment begins; see [[eyes4s.plan.StudySegment.total]]. */
   def total[K, U <: Unit2D, S, D](
       work: PreparedStudy[K, U, ?, S, D],

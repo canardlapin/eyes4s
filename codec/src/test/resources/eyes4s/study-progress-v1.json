@@ -1,0 +1,33 @@
+{
+  "schema": {
+    "name": "eyes4s.study-progress",
+    "version": 1
+  },
+  "value": {
+    "stamp": {
+      "plan": "0000000000000000000000000000000000000000000000000000000000000000",
+      "input": "1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    "pairQuantum": 1,
+    "comparisonQuantum": 1,
+    "step": "9007199254740993",
+    "stage": {
+      "kind": "contrasting",
+      "scale": 0,
+      "meter": {
+        "unit": "rows",
+        "done": "9223372036854775807",
+        "total": {
+          "kind": "at-most",
+          "value": "9223372036854775807"
+        }
+      }
+    },
+    "stepUnits": 1,
+    "segmentUnits": "9007199254740993",
+    "segmentTotal": {
+      "kind": "unknown"
+    },
+    "totalUnits": "9223372036854775807"
+  }
+}

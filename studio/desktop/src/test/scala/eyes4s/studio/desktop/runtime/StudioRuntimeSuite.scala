@@ -28,10 +28,11 @@ class StudioRuntimeSuite extends munit.FunSuite:
     def perform(effect: AppEffect, dispatch: Intent => Unit): Unit = performed += effect
 
   test("a listener that throws is reported; the others and the intent's effects still run") {
-    val effects = Recording()
-    val runtime = StudioRuntime(StoryModels.t2Compare, effects)
-    val seen    = mutable.ArrayBuffer.empty[AppModel]
-    var armed   = false
+    val effects  = Recording()
+    val reported = mutable.ArrayBuffer.empty[ListenerFailure]
+    val runtime  = StudioRuntime(StoryModels.t2Compare, effects, reported += _)
+    val seen     = mutable.ArrayBuffer.empty[AppModel]
+    var armed    = false
     runtime.listen(_ => if armed then throw IllegalStateException("render failed"))
     runtime.listen(seen += _)
     armed = true
@@ -52,6 +53,31 @@ class StudioRuntimeSuite extends munit.FunSuite:
         Intent.ShowProjectInfo -> "render failed"
       )
     )
+    assertEquals(reported.toVector, runtime.listenerFailures)
+    assert(
+      reported.head.message.startsWith("A view failed to render after RequestImport"),
+      reported.head.message
+    )
+  }
+
+  test("by default a listener failure goes to the thread's uncaught-exception handler") {
+    val thread   = Thread.currentThread
+    val previous = thread.getUncaughtExceptionHandler
+    val handled  = mutable.ArrayBuffer.empty[Throwable]
+    thread.setUncaughtExceptionHandler((_, e) => handled += e)
+    try
+      val runtime = StudioRuntime(StoryModels.t2Compare, (_, _) => ())
+      val boom    = IllegalStateException("render failed")
+      var armed   = false
+      runtime.listen(_ => if armed then throw boom)
+      armed = true
+      runtime.dispatch(Intent.RequestImport)
+      handled.toList match
+        case List(e: ListenerFailureException) =>
+          assertEquals(e.failure.intent, Intent.RequestImport)
+          assert(e.getCause eq boom)
+        case other => fail(s"unexpected $other")
+    finally thread.setUncaughtExceptionHandler(previous)
   }
 
   test("an intent dispatched while one is applied is applied next, in order") {

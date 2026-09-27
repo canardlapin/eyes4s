@@ -1018,6 +1018,8 @@ fails after rewriting, so review the change and run it again.
 | `inspection.reduction-membership` | `ReductionMembership` | `reference`, `selected`, `members`, `contributing`, `contributors` |
 | `inspection.orientation` | `Orientation` | `scale`, `design`, `found` |
 | `inspection.no-contrast` | `NoContrast` | `scale` |
+| `inspection.geometry` | `Geometry` | `reference`, `underlying` |
+| `inspection.geometry-description` | `GeometryDescription` | `reference`, `field`, `found` |
 
 ### `timeline` — `TimelineError`
 
@@ -1305,6 +1307,11 @@ fails after rewriting, so review the change and run it again.
 | `recipe-parameter.reduction` | `Reduction` | `error` |
 | `recipe-parameter.synchronization` | `Synchronization` | `error` |
 | `recipe-parameter.recording` | `Recording` | `error` |
+| `recipe-parameter.plan` | `Plan` | `error` |
+| `recipe-parameter.initial-fixation` | `InitialFixation` | `error` |
+| `recipe-parameter.missing-part` | `MissingPart` | `field`, `part` |
+| `recipe-parameter.unknown-token` | `UnknownToken` | `field`, `token`, `options` |
+| `recipe-parameter.undeclared-window-frame` | `UndeclaredWindowFrame` | `admission` |
 
 ### `repetition-plan` — `RepetitionPlanError`
 
@@ -1426,6 +1433,63 @@ fails after rewriting, so review the change and run it again.
 | `form-field.unknown-field` | `UnknownField` | `field` |
 | `form-field.repeated-part` | `RepeatedPart` | `field`, `part` |
 
+### `source-identity` — `SourceIdentityError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `source-identity.invalid-digest` | `InvalidDigest` | `value` |
+| `source-identity.parser` | `Parser` | `format`, `expected`, `actual` |
+| `source-identity.options-schema` | `OptionsSchema` | `format`, `expected`, `actual` |
+
+### `import-spec` — `ImportSpecError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `import-spec.columns` | `Columns` | `names` |
+| `import-spec.blank-frame` | `BlankFrame` | `frame` |
+| `import-spec.inventory-keys` | `InventoryKeys` | `keys` |
+| `import-spec.missing-item` | `MissingItem` | `keys` |
+
+### `mass-level` — `MassLevelError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `mass-level.invalid-coverage` | `InvalidCoverage` | `index`, `coverage` |
+| `mass-level.insufficient-total` | `InsufficientTotal` | `index`, `coverage`, `total` |
+
+### `stage-meter` — `StageMeterError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `stage-meter.negative-done` | `NegativeDone` | `kind`, `unit`, `done` |
+| `stage-meter.negative-total` | `NegativeTotal` | `kind`, `unit`, `total` |
+| `stage-meter.beyond-total` | `BeyondTotal` | `kind`, `unit`, `done`, `total` |
+| `stage-meter.regressed` | `Regressed` | `kind`, `unit`, `previous`, `next` |
+
+### `study-run` — `StudyRunError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `study-run.plan` | `Plan` | `underlying` |
+| `study-run.meter` | `Meter` | `underlying` |
+| `study-run.unexpected-completion` | `UnexpectedCompletion` | `design`, `visited` |
+
+### `study-recipe` — `StudyRecipeError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `study-recipe.window-without-policy` | `WindowWithoutPolicy` |  |
+| `study-recipe.policy-without-window` | `PolicyWithoutWindow` | `policy` |
+| `study-recipe.grid` | `Grid` | `underlying` |
+| `study-recipe.plan` | `Plan` | `underlying` |
+
+### `study-advisory` — `StudyAdvisory`
+
+| Code | Case | Operands |
+|---|---|---|
+| `study-advisory.sigma-below-cells` | `SigmaBelowCells` | `scale`, `cells`, `minimumCells` |
+| `study-advisory.sigma-near-uniform` | `SigmaNearUniform` | `scale`, `fraction`, `limit` |
+
 ### `navigation` — `NavigationError`
 
 | Code | Case | Operands |
@@ -1538,6 +1602,9 @@ fails after rewriting, so review the change and run it again.
 | `relation.report-cell` | `ReportCell` | `group`, `role`, `component`, `stored`, `recomputed` |
 | `relation.report-recomputed` | `ReportRecomputed` | `part`, `stored`, `recomputed` |
 | `relation.report-components` | `ReportComponents` | `planned`, `result` |
+| `relation.source-binding` | `SourceBinding` | `field`, `expected`, `found` |
+| `relation.run-plan` | `RunPlan` | `reported`, `current`, `changes` |
+| `relation.run-input` | `RunInput` | `reported`, `current` |
 
 ### `manifest` — `ManifestError`
 
@@ -1575,6 +1642,33 @@ fails after rewriting, so review the change and run it again.
 |---|---|---|
 | `byte-digest.wrong-length` | `WrongLength` | `value`, `length` |
 | `byte-digest.invalid-character` | `InvalidCharacter` | `value`, `index`, `character` |
+
+### `density` — `DensityError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `density.unknown-scale` | `UnknownScale` | `scale`, `count` |
+| `density.unknown-key` | `UnknownKey` | `scale`, `key` |
+| `density.ambiguous-key` | `AmbiguousKey` | `scale`, `key`, `count` |
+| `density.failed` | `Failed` | `scale`, `key`, `failure` |
+| `density.missing-payload` | `MissingPayload` | `scale`, `key`, `reference` |
+| `density.payload` | `Payload` | `scale`, `key`, `underlying` |
+| `density.payload-reference` | `PayloadReference` | `scale`, `key`, `expected`, `actual` |
+| `density.recompute-unavailable` | `RecomputeUnavailable` | `scale`, `key` |
+| `density.source-mismatch` | `SourceMismatch` | `scale`, `key`, `expected`, `actual` |
+| `density.digest-mismatch` | `DigestMismatch` | `scale`, `key`, `expected`, `actual` |
+| `density.decode` | `Decode` | `scale`, `key`, `underlying` |
+| `density.geometry` | `Geometry` | `underlying` |
+| `density.materialize` | `Materialize` | `underlying` |
+| `density.unknown-row` | `UnknownRow` | `scale`, `row`, `count` |
+| `density.row-key-mismatch` | `RowKeyMismatch` | `scale`, `row`, `expected`, `actual` |
+
+### `run-stamp` — `RunStampError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `run-stamp.changed-plan` | `ChangedPlan` | `reported`, `current`, `changes` |
+| `run-stamp.changed-input` | `ChangedInput` | `reported`, `current` |
 
 ### `report` — `ReportFinding`
 
@@ -1990,6 +2084,29 @@ fails after rewriting, so review the change and run it again.
 | `source-text.field` | `Field` | `record`, `column`, `text` |
 | `source-text.recorded-mismatch` | `RecordedMismatch` | `record`, `recordedX`, `recordedY`, `correctedX`, `correctedY`, `admittedX`, `admittedY` |
 | `source-text.provenance` | `Provenance` | `underlying` |
+
+### `source-admission` — `SourceAdmissionError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `source-admission.import` | `Import` | `source`, `underlying` |
+| `source-admission.ledger` | `Ledger` | `source`, `underlying` |
+| `source-admission.unsupported-replay` | `UnsupportedReplay` | `source`, `reader`, `clock` |
+| `source-admission.missing-inventory` | `MissingInventory` | `source`, `expected` |
+| `source-admission.inventory-identity` | `InventoryIdentity` | `source`, `expected`, `actual` |
+| `source-admission.missing-item` | `MissingItem` | `source` |
+
+### `ledger-verification` — `LedgerVerificationError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `ledger-verification.legacy-unverified` | `LegacyUnverified` | `source` |
+| `ledger-verification.import` | `Import` | `underlying` |
+| `ledger-verification.source-changed` | `SourceChanged` | `expected`, `actual`, `causes` |
+| `ledger-verification.ledger-mismatch` | `LedgerMismatch` | `source`, `component`, `expected`, `actual` |
+| `ledger-verification.input-mismatch` | `InputMismatch` | `source`, `expected`, `actual` |
+| `ledger-verification.input-evidence-mismatch` | `InputEvidenceMismatch` | `source`, `component`, `trial`, `fixation`, `expected`, `actual` |
+| `ledger-verification.manifest-binding` | `ManifestBinding` | `ledger`, `kind`, `count` |
 
 ### `arrow-export` — `ArrowExportError`
 

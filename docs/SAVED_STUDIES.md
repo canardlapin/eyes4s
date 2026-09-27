@@ -132,6 +132,49 @@ the limit. `ComparisonBudget.default` is effectively unbounded.
 
 ## Run a study under Cats Effect
 
+For canonical plan/input identity and completed-object progress, prepare with
+`StampedStudy.prepare(plan, input, plans, inputs)`, build
+`StampedStudyExecution.submission(study, budget, quanta)` in `eyes4s-io`, and
+pass that submission to `Execution[IO].events` or `Execution[IO].start`.
+[StampedStudyExecutionSuite](../io/src/test/scala/eyes4s/io/StampedStudyExecutionSuite.scala)
+executes this route, including its saved result and progress round trips.
+The identity contains separate typed SHA-256 digests of the complete canonical
+plan and input documents, plus pair and comparison quanta. A changed encoded
+parameter or input evidence fails the stamp check even when the legacy hash or
+human-readable plan description is unchanged.
+
+The submission has one counting prephase followed by the scientific cursor.
+`StudyRunStage.Counting(design, visited)` reports schedule work visited; bounded
+refusal-operand assembly spends work units without increasing that visited count.
+`SegmentTotal.Counting` is distinct from `Unknown`. Counting completion transitions
+to execution in the same run. Its checked startup uses the completed counts from
+that exact preparation, without recounting pairs. Preparation itself includes
+source indexing, sorting and digest rendering and is outside the bounded-step
+contract; custom projection, ordering and digest callbacks must be pure and stable.
+Each counting or diagnostic page is limited by the pair quantum. Cancellation
+between those pages produces no scientific result and starts no estimation.
+
+Every `StudyRunStage.Running` contains a required `StageMeter`: completed maps,
+pair rows, reduced keys or contrast rows, accumulated over scales. Failed attempts
+remain counted in their corresponding objects. Pair-comparison microsteps spend
+work units without claiming another completed pair. The meter describes the
+committed step, including terminal completion; stages with no operations may be
+skipped. Map estimation still takes one whole trial per step.
+`StudyExecution.submissionWithId` exposes the same composite path with a caller's
+typed identity when the codec binding is not needed.
+
+A `StampedStudyResult` is constructed only when its captured cursor completes.
+`checkAgainst` checks it against the current stamped preparation. To persist it,
+use `DensityArchiveCodec.encodeStamped` or `ResultManifest.stamped`; a decoded
+stamp is a claim until checked against the actual canonical plan and input.
+`StampedStudyExecution.snapshot(progress)` produces the codec-owned
+`StudyProgressSnapshot`; `StudyProgressCodec.codec` writes its versioned document
+with exact decimal-string counters on JVM and Scala.js. The explicit io adapter
+keeps codec and fs2 independent.
+
+The original `StudyExecution` entry points below retain their unit-progress and
+legacy in-memory identity contract for existing consumers.
+
 `eyes4s-fs2` interprets the same cursor with cooperative yields. Fix the effect
 type once, `StudyExecution[IO]`, then either pull the deterministic sequence or
 start a run handle:
@@ -351,7 +394,8 @@ Scanpaths and fixation summaries backed by source samples are refused with `Code
 rather than silently detached; their support belongs to the recording payload.
 
 `ledger` encodes an `AdmissionLedger[K]` (`eyes4s.admission-ledger@1`, `@2` when it records an
-admission policy other than the version-1 one, or `@3` when it records a trial inventory; each
+admission policy other than the version-1 one, `@3` when it records a trial inventory, or `@4`
+when it records a declared source interpretation; each
 ledger is written under the earliest version that expresses it): the source reference (a label
 and the portable digest of the decoded header and records), the header, the recorded outcome and one
 entry per source record in record order. An admitted record links its logical record number to the
@@ -388,6 +432,43 @@ cannot carry one (`InventoryError.NoTrialProjection`). A version-3 ledger is pin
 schema and refuses missing or duplicate registrations. `VersionedCodec.trials` is the generic
 row-array codec these payloads use.
 
+### Declared source identity
+
+Declared interpretations have a private constructor. The checked
+`SourceInterpretation.declared` constructor accepts only the supported format,
+parser and `SourceOptionsSchema` combination; typed import descriptions supply
+that evidence through `.source`. The wire records `optionsSchema` and refuses an
+incompatible parser or schema at that field. A declared digest is still a claim
+about the options and records; source replay is the stronger consistency check.
+
+`ImportSpec[K, U]` is the pure, JVM/Scala.js description of fixation admission: typed key
+columns, fixation columns, frame, timestamp units and rounding, sample-count rule, attributes,
+correction policy and admission decision. Build it with `ImportSpec.of` and checked
+`SourceFixationColumns.of`; `SourceKeyColumns.Study` and `.Trial` determine the key type of its
+policy. `InventoryImportSpec.of` describes a separate trials file; `SourceInventory` binds that
+description to the inventory's semantic identity. `ImportSpecCodec.study[U]`, `.trial[U]` and
+`.inventory` persist these descriptions. Custom reader/clock identities can round-trip, but
+the Phase 1 `SourceAdmission.read` interpreter refuses them with `UnsupportedReplay`.
+
+`SourceAdmission.read(label, contents, spec, inventory)` interprets the description in `io`.
+The optional inventory is its display label and text. The result carries a declared ledger and
+all accepted trial groups; `admitted` is absent when the decision refuses the import. Rejected
+records remain in the ledger. `SourceAdmission.source` and `.inventorySource` derive the reference
+from decoded records without admitting trials, for inexpensive asset repair.
+
+`SourceRef.records` remains the digest of the decoded header and every record, including rejected
+records. `SourceRef.identity` is present only for a declared interpretation. The versioned
+`eyes4s.source-identity/1` digest combines format, parser definition/version, decoded records and
+admission options. It excludes display labels, paths and the separate byte SHA-256. Earlier ledgers
+and the original `SourceRef.of` constructor carry `LegacyUnspecified`; loading them does not invent
+parser or option evidence. The v4 ladder preserves v1–v3 meanings and their earliest encoding.
+
+`SourceComparison.of(sameBytes, expectedRef, actualRef)` compares the identity components first.
+`ChangedIdentity` reports a non-empty set of `Format`, `Parser`, `Options`, `Records` or `Undeclared`
+causes, even if the byte checksums match. Only equal declared components produce `SameBytes`
+(equal checksums) or `SameIdentity` (different checksums). A declared source is evidence of an
+interpretation, not proof that its saved ledger has been replay-verified.
+
 What a decoded ledger does **not** prove is that its exclusions are the source's. The source digest
 is carried, not recomputed: admitted records keep no raw fields, so the ledger alone cannot
 reproduce the digest of the header and records it names. Nothing binds a rejected row to the
@@ -396,10 +477,52 @@ the invariants above. `LedgerForgerySuite` pins this. Dropping the time rejectio
 scope names is refused (`AdmissionError.QuarantineScope(3, Vector(2, 3, 4, 5))`), but dropping it
 and rewriting the scope decodes cleanly, and so does dropping one of two standalone rejections from
 a reviewed ledger that has a `LedgerOf` relation to its input. Exclusions can be verified only by
-re-importing the source file and comparing the ledger the importer produces. That is an io-level
-check that the pure resolver cannot perform, so it is deferred as a ledger-to-source relation
-checked by re-running the importer (`bd-01M2SC6N15J2N7PHD4DXBE43VD`); the G1 consumer records it
-as a limit.
+re-importing the source file and comparing the ledger the importer produces.
+
+`LedgerReverification.verify(label, contents, spec, ledger, input, inventory)` performs that
+check in `io`. It compares fresh admission with the saved source interpretation, header, every
+record disposition, policy, outcome, outside-frame evidence, complete inventory evidence and
+input digest. Hash equality alone is insufficient: it also compares the complete ordered
+trial keys, frame and clock agreement, fixation values (including dispersion status, value,
+method and evidence), and retained source identity, sample ranges and recording data.
+`InputEvidenceMismatch` identifies the differing component and trial/fixation index.
+It returns privately constructed `VerifiedAdmission` only after all comparisons pass. Its
+`admitted` input is absent for a refused admission. `LedgerVerificationError` names
+the source and differing component or input identities, and `IoDiagnostics.given` projects every
+case through `Diagnose`.
+
+This entry point is synchronous; it does not promise cooperative cancellation. Legacy sources
+with unspecified interpretation remain unverified, and custom readers without a supported
+interpreter are refused. The pure resolver retains its structural guarantee and existing forgery
+fixtures; it cannot perform this source check. Replay proves consistency of the supplied archive,
+not who created it: replacing the source, options, ledger and input together is not an authenticity
+check.
+
+Source replay is wired additively into `eyes4s.manifest@1`; earlier manifests retain their exact
+encoding. Store a CSV's original bytes with `StoredArtifact.sourceFile(name, format, bytes)`.
+Its `SourceFile` entry has binary media, exact length and SHA-256, and the existing parser definition
+as its schema; it has no packed-array layout or semantic identity. Store the primary description
+with `StoredArtifact.importSpec` and, when present, the inventory description with
+`StoredArtifact.inventoryImportSpec`. Both have the `ImportSpec` artifact role and their existing
+versioned JSON schemas.
+
+`LedgerSource(ledger, sourceFile, importSpec, LedgerSourceRole.Primary)` binds the primary file;
+an inventory admission also requires a `TrialInventory` source relation and its independent
+inventory specification. Each role occurs at most once per ledger. A source-linked ledger must
+have a primary relation. The resolver checks the declared parser/options and inventory identity
+and description against the ledger, decodes source bytes as strict UTF-8, and exposes the source
+text and descriptions on `ResolvedManifest`. Unknown artifact or source roles are typed codec
+refusals. This checks declarations and byte integrity; it does not replay the import.
+
+Register primary descriptions through `ArtifactDecoders.withImportSpecs`; the built-in
+`ArtifactDecoders.study` includes the study-key registration. Trial-key manifests register
+`ImportSpecCodec.trial` explicitly. `ArtifactDecoders.Delegating` forwards the registration.
+After resolution, call `ManifestReverification.verify(resolved, ledgerName)` in `io` to follow
+both source relations and the existing `LedgerOf` input relation and obtain `VerifiedAdmission`.
+Missing source/input bindings are `LedgerVerificationError.ManifestBinding`; source-less older
+manifests remain readable but cannot gain verification. `ArtifactFiles.directory` retains its
+root-relative, no-escape storage checks for source entries, including symbolic links. Replay
+remains synchronous; bounded execution is a separate slice.
 
 Both payloads are artifacts of their own; plan JSON references the input by digest only. The pinned
 [study-input-v1.json](../codec/src/test/resources/eyes4s/study-input-v1.json) and

@@ -568,7 +568,9 @@ object DiagnosticCatalog:
     "PlanMismatch",
     "ReductionMembership",
     "Orientation",
-    "NoContrast"
+    "NoContrast",
+    "Geometry",
+    "GeometryDescription"
   )
 
   // ---------------------------------------------------------------- appended by CR5
@@ -797,7 +799,13 @@ object DiagnosticCatalog:
     "Temporal",
     "Reduction",
     "Synchronization",
-    "Recording"
+    "Recording",
+    // appended by CR6b
+    "Plan",
+    "InitialFixation",
+    "MissingPart",
+    "UnknownToken",
+    "UndeclaredWindowFrame"
   )
   val repetitionPlan: DiagnosticFamily = error("repetition-plan")(
     "ProjectionIds",
@@ -811,6 +819,10 @@ object DiagnosticCatalog:
   val diagnosticCode: DiagnosticFamily = error("diagnostic-code")(
     "InvalidFamily",
     "InvalidName"
+  )
+  val massLevel: DiagnosticFamily = error("mass-level")(
+    "InvalidCoverage",
+    "InsufficientTotal"
   )
   val fixationEntropy: DiagnosticFamily = error("fixation-entropy")(
     "FrameMismatch",
@@ -912,6 +924,23 @@ object DiagnosticCatalog:
     "RepeatedPart"
   )
 
+  // ---------------------------------------------------------------- appended by CR6b
+  /** A whole-recipe refusal of a study form, keyed by its study field. */
+  val studyRecipe: DiagnosticFamily = error("study-recipe")(
+    "WindowWithoutPolicy",
+    "PolicyWithoutWindow",
+    "Grid",
+    "Plan"
+  )
+
+  /** A valid study recipe that is likely unintended; a warning. */
+  val studyAdvisory: DiagnosticFamily =
+    DiagnosticFamily.of("study-advisory", DiagnosticSeverity.Warning)(
+      "SigmaBelowCells",
+      "SigmaNearUniform"
+    )
+
+  // ---------------------------------------------------------------- appended by UI-G G3
   /** Steps of the provenance chain from a query contrast to a source record. */
   val navigation: DiagnosticFamily = error("navigation")(
     "NegativeOffset",
@@ -931,6 +960,15 @@ object DiagnosticCatalog:
     */
   val retired: Vector[DiagnosticFamily] =
     Vector(scanpathComponent, learnedTemplate, templateFit)
+
+  val stageMeter: DiagnosticFamily = error("stage-meter")(
+    "NegativeDone",
+    "NegativeTotal",
+    "BeyondTotal",
+    "Regressed"
+  )
+
+  val studyRun: DiagnosticFamily = error("study-run")("Plan", "Meter", "UnexpectedCompletion")
 
   /** Every family ever issued, in issue order: families are only appended,
     * and a retired family keeps its place.
@@ -1029,6 +1067,13 @@ object DiagnosticCatalog:
     recordIdentity,
     coordinateProvenance,
     formField,
+    SourceDiagnostics.identity,
+    SourceDiagnostics.importDescription,
+    massLevel,
+    stageMeter,
+    studyRun,
+    studyRecipe,
+    studyAdvisory,
     navigation
   )
 

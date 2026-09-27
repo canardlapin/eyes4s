@@ -618,32 +618,44 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
     new StudyResultRegistration[K, U]:
       val id                                                         = method.id
       def decode(json: Json): Either[CodecError, LoadedResult[K, U]] =
-        codec.decode(json).map { value =>
-          new LoadedResult[K, U]:
-            type Score      = S
-            type Difference = D
-            def result                                     = value
-            def encode                                     = codec.encode(value)
-            override def scoreSchema(planParameters: Json) =
-              parameters match
-                case None =>
-                  super.scoreSchema(planParameters)
-                case Some(read) =>
-                  read
-                    .decode(planParameters)
-                    .flatMap(p =>
-                      ScoreSchema
-                        .method(method, p)
-                        .left
-                        .map(e =>
-                          CodecError.Field(
-                            "parameters",
-                            planParameters,
-                            e.message
-                          )
-                        )
-                    )
+        codec.decode(json).map(value => loaded(value, None))
+      def decodeWithPayloads(
+          json: Json,
+          payloads: PayloadRef => Option[VerifiedPayload]
+      ): Either[CodecError, LoadedResult[K, U]] =
+        val archives = new DensityArchiveCodec(StudyResultCodec.this)
+        archives.codec.decode(json).flatMap { archive =>
+          archive
+            .materialize(payloads)
+            .left
+            .map(error => CodecError.Field("density", json, error.message))
+            .map(value => loaded(value, Some(archive)))
         }
+      private def loaded(
+          value: StudyResult[K, U, S, D],
+          archive: Option[StudyResultArchive[K, U, P, S, D]]
+      ): LoadedResult[K, U] =
+        new LoadedResult[K, U]:
+          type Score      = S
+          type Difference = D
+          def result              = value
+          override def stampClaim = archive.flatMap(_.stampClaim)
+          def encode              = archive.filter(_.stampClaim.nonEmpty) match
+            case None        => codec.encode(value)
+            case Some(saved) =>
+              new DensityArchiveCodec(StudyResultCodec.this).codec.encode(saved)
+          override def scoreSchema(planParameters: Json) =
+            parameters match
+              case None       => super.scoreSchema(planParameters)
+              case Some(read) =>
+                read
+                  .decode(planParameters)
+                  .flatMap(p =>
+                    ScoreSchema
+                      .method(method, p)
+                      .left
+                      .map(e => CodecError.Field("parameters", planParameters, e.message))
+                  )
 
 /** A decoded result whose score and difference types stay abstract but typed. */
 trait LoadedResult[K, U <: Unit2D]:
@@ -651,6 +663,9 @@ trait LoadedResult[K, U <: Unit2D]:
   type Difference
   def result: StudyResult[K, U, Score, Difference]
   def encode: Either[CodecError, Json]
+
+  /** None is a legacy result; a saved claim still requires actual plan/input verification. */
+  def stampClaim: Option[RunStamp[?, StudyInput[K, U]]] = None
 
   /** The components of the result's own method, under the method
     * parameters of the plan document `planParameters` (a plan's
@@ -670,6 +685,10 @@ trait LoadedResult[K, U <: Unit2D]:
 sealed trait StudyResultRegistration[K, U <: Unit2D]:
   def id: DefinitionId
   def decode(json: Json): Either[CodecError, LoadedResult[K, U]]
+  def decodeWithPayloads(
+      json: Json,
+      payloads: PayloadRef => Option[VerifiedPayload]
+  ): Either[CodecError, LoadedResult[K, U]]
 
 /** Result codecs registered by method identity; lookup reads the payload's
   * `method` and refuses missing or duplicate registrations.
@@ -688,6 +707,17 @@ final class StudyResultRegistry[K, U <: Unit2D] private (
     method     <- Wire.definition(payload, "method")
     registered <- entries.find(_.id == method).toRight(CodecError.MissingResultCodec(method))
     result     <- registered.decode(json)
+  yield result
+
+  /** Materialize packed result archives using only the supplied verified chunks. */
+  def decodeWithPayloads(
+      json: Json,
+      payloads: PayloadRef => Option[VerifiedPayload]
+  ): Either[CodecError, LoadedResult[K, U]] = for
+    payload    <- Wire.field[Json](json, "value")
+    method     <- Wire.definition(payload, "method")
+    registered <- entries.find(_.id == method).toRight(CodecError.MissingResultCodec(method))
+    result     <- registered.decodeWithPayloads(json, payloads)
   yield result
 
 object StudyResultRegistry:

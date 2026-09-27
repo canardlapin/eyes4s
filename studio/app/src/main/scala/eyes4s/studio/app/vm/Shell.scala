@@ -16,12 +16,12 @@
 
 package eyes4s.studio.app.vm
 
-import eyes4s.studio.app.{AppModel, Intent}
+import eyes4s.studio.app.{AppModel, Confirmation, Intent}
 import eyes4s.studio.app.jobs.JobHeadline
 import eyes4s.studio.core.backend.{ProgressTotal, RunId}
 import eyes4s.studio.core.execution.{ExecutionJob, JobPhase, Meter, MeterTotal}
 import eyes4s.studio.app.keys.CommandRegistry
-import eyes4s.studio.app.nav.Place
+import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.text.{Format, MessageId, Messages}
 import eyes4s.studio.core.document.{
   AdmissionDecision,
@@ -52,7 +52,8 @@ object Shell:
       p.context,
       p.banner,
       p.status,
-      model.notice.map(n => NoticeVM(n.message(messages), Intent.Dismiss))
+      model.notice.map(n => NoticeVM(n.message(messages), Intent.Dismiss)),
+      p.confirmation
     )
 
   def appBar(model: AppModel, messages: Messages = Messages.english): AppBarVM =
@@ -67,6 +68,22 @@ object Shell:
   def status(model: AppModel, messages: Messages = Messages.english): StatusBarVM =
     Projection(model, messages).status
 
+  def confirmation(
+      model: AppModel,
+      messages: Messages = Messages.english
+  ): Option[ConfirmationVM] =
+    Projection(model, messages).confirmation
+
+  /** Where a crumb of the current trail lands: the perspective its prefix
+    * belongs to, with that prefix (the same rule as [[Intent.OpenCrumb]]).
+    */
+  def crumbTarget(model: AppModel, index: Int): Option[Location] =
+    val trail = model.location.trail
+    Option.when(index >= 0 && index < trail.size) {
+      val prefix = trail.take(index + 1)
+      Location(Place.home(prefix).getOrElse(model.perspective), prefix)
+    }
+
   private final case class Projection(m: AppModel, messages: Messages):
     private val labels = Labels(m, messages)
     private def doc    = m.document
@@ -80,16 +97,20 @@ object Shell:
       )
 
     def appBar: AppBarVM =
+      val project = m.project.fold(messages(UntitledProject))(_.value)
       AppBarVM(
         messages(AppName),
-        m.project.fold(messages(UntitledProject))(_.value),
+        project,
+        messages(ProjectAccessible, project),
         Perspective.values.toVector.map { p =>
+          val shortcut = CommandRegistry.shortcutText(CommandRegistry.forPerspective(p))
           PerspectiveButtonVM(
             p,
             labels.perspective(p),
-            CommandRegistry.shortcutText(CommandRegistry.forPerspective(p)),
+            shortcut,
             m.perspective == p,
-            Intent.SwitchPerspective(p)
+            Intent.SwitchPerspective(p),
+            messages(PerspectiveAccessible, labels.perspective(p), shortcut)
           )
         },
         jobsChip
@@ -241,14 +262,17 @@ object Shell:
           Vector(messages(ToneNoRun)) ++ data.map(d => messages(BadgeDataPart, d.label))
         FreshnessVM(parts.mkString(messages(BadgePartSeparator)), FreshnessTone.NoRun)
       case Badge.Shown(run, standing, newer) =>
-        val word  = badgeState(standing)
+        val word = badgeState(standing)
+        val hue  = (standing, newer) match
+          case (RunStanding.Current, Some(_)) => FreshnessTone.Showing
+          case _                              => tone(b.tone)
         val parts = (run.analysis.label, run.id.label, run.dataset.label)
         val text  = (standing, newer) match
           case (_, None) => messages(BadgeShown, parts._1, parts._2, parts._3, word)
           case (RunStanding.Current, Some(_)) =>
             messages(BadgeShowing, parts._1, parts._2, parts._3)
           case (_, Some(_)) => messages(BadgeShowingState, parts._1, parts._2, parts._3, word)
-        FreshnessVM(text, tone(b.tone))
+        FreshnessVM(text, hue)
 
     /** The chip beside the badge while a newer run runs (Results board):
       * "Rev 5 · run 8 running · 48%". The percentage is the pairs meter's
@@ -275,6 +299,16 @@ object Shell:
           )
         Some(FreshnessVM(text, FreshnessTone.Running))
       case _ => None
+
+    /** A newer run that failed or was cancelled while an older one is shown
+      * (S2.7: the badge stays current): "Run 8 failed · 2 diagnostics".
+      */
+    def ended: Option[FreshnessVM] = m.freshness.banner.collect {
+      case Banner.NewerEnded(_, a @ RunActivity.Failed(_, _, _)) =>
+        FreshnessVM(activity(a), FreshnessTone.Failed)
+      case Banner.NewerEnded(_, a @ RunActivity.Cancelled(_, _, _)) =>
+        FreshnessVM(activity(a), FreshnessTone.Cancelled)
+    }
 
     private def pendingBadge(d: DatasetRevisionSpec): (FreshnessVM, Vector[String]) =
       val state = d.decision match
@@ -305,16 +339,13 @@ object Shell:
         case DraftReadiness.Ready       => (messages(DraftReady), false)
         case DraftReadiness.Blocked(bs) =>
           (labels.plural(bs.length, BlockersOne, BlockersMany), true)
-      DraftChipVM(
-        messages(
-          DraftChip,
-          chip.draft.id.label,
-          labels.plural(chip.changes, ChangesOne, ChangesMany),
-          readiness
-        ),
-        blocked,
-        Intent.ReviewDraft
+      val text = messages(
+        DraftChip,
+        chip.draft.id.label,
+        labels.plural(chip.changes, ChangesOne, ChangesMany),
+        readiness
       )
+      DraftChipVM(text, blocked, Intent.ReviewDraft, messages(DraftChipAccessible, text))
     }
 
     def context: ContextStripVM =
@@ -336,11 +367,19 @@ object Shell:
           Intent.Forward
         ),
         trail.zipWithIndex.map { (place, i) =>
-          CrumbVM(labels.place(place, current = i == last), i == last, Intent.OpenCrumb(i))
+          val label      = labels.place(place, current = i == last)
+          val opens      = Shell.crumbTarget(m, i).map(_.perspective).filter(_ != m.perspective)
+          val accessible =
+            if i == last then messages(CrumbCurrentAccessible, label)
+            else
+              opens.fold(label)(p =>
+                messages(CrumbOpensAccessible, label, labels.perspective(p))
+              )
+          CrumbVM(label, i == last, Intent.OpenCrumb(i), opens, accessible)
         },
         freshness,
         if pendingDataset.exists(_ => m.perspective == Perspective.Data) then None
-        else newer(m.freshness.badge),
+        else newer(m.freshness.badge).orElse(ended),
         notes,
         // Explore is view-only: the boards show no draft chip there.
         draftChip.filter(_ => m.perspective != Perspective.Explore)
@@ -469,6 +508,25 @@ object Shell:
           ),
           detail,
           Vector.empty
+        )
+    }
+
+    // --- Confirmation ------------------------------------------------------------
+
+    /** Discard draft's question, while it is pending: "Discard draft rev 5
+      * and its 1 change? Runs are not affected."
+      */
+    def confirmation: Option[ConfirmationVM] = m.pending.map {
+      case Confirmation.DiscardDraft(draft) =>
+        val changes = m.freshness.draft.filter(_.draft.id == draft).fold(0)(_.changes)
+        ConfirmationVM(
+          messages(
+            ConfirmDiscardDraft,
+            draft.label,
+            labels.plural(changes, ChangesOne, ChangesMany)
+          ),
+          ActionVM(messages(DiscardDraft), true, Intent.Confirm),
+          ActionVM(messages(KeepDraft), true, Intent.Dismiss)
         )
     }
 

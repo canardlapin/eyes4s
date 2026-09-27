@@ -52,14 +52,29 @@ enum Command derives CanEqual, Codec.AsObject:
 
   /** A new pending dataset revision with the next id, from freshly imported
     * sources; a re-import names its `parent` and inherits its admission
-    * choices.
+    * choices. `attributes` are the fixation columns without a role, declared
+    * so they pass through admission (UI-H); a journal line written before
+    * S5.2 has none.
     */
   case ImportSources(
       parent: Option[DatasetRevision],
       sources: Sources,
       mapping: ColumnMapping,
       units: DeclaredUnits,
-      geometry: Geometry
+      geometry: Geometry,
+      attributes: DeclaredAttributes
+  )
+
+  /** Revise a pending revision's column mapping, declared units, geometry
+    * and attributes in one step (the import wizard's commit, S5.2): one
+    * undo restores all four.
+    */
+  case ReviseDataset(
+      dataset: DatasetRevision,
+      mapping: ColumnMapping,
+      units: DeclaredUnits,
+      geometry: Geometry,
+      attributes: DeclaredAttributes
   )
 
   /** Put a discarded pending dataset revision back. */
@@ -216,9 +231,9 @@ enum Command derives CanEqual, Codec.AsObject:
   def name: String = productPrefix
 
   def kind: ChangeKind = this match
-    case _: (ImportSources | RestoreDataset | DiscardDataset | SetMapping | SetUnits |
-          SetGeometry | SetOffScreenPolicy | AddCorrection | RemoveCorrection | VerifyDataset |
-          WithdrawVerification | ResumeVerification | Admit) =>
+    case _: (ImportSources | ReviseDataset | RestoreDataset | DiscardDataset | SetMapping |
+          SetUnits | SetGeometry | SetOffScreenPolicy | AddCorrection | RemoveCorrection |
+          VerifyDataset | WithdrawVerification | ResumeVerification | Admit) =>
       ChangeKind.DatasetReadmit
     case _: (StartDraft | RestoreDraft | ChangeRecipe | RebaseDraft | SaveAndRun |
           RecordRunOutcome | CancelRun | BindPlan) =>

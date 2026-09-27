@@ -21,8 +21,6 @@ import eyes4s.core.*
 import eyes4s.detect.*
 import eyes4s.kernel.*
 
-import scala.collection.mutable.ArrayBuffer
-
 /** Participant, trial, and condition identity for one psychology result. */
 final class StudyTrial private (
     val participant: String,
@@ -1486,61 +1484,18 @@ private[io] object Rfc4180:
     rows.map(_.map(quote).mkString(",")).mkString("\r\n") + "\r\n"
 
   def decode(contents: String): Either[TidyCsvError, Vector[Vector[String]]] =
-    val rows                          = ArrayBuffer.empty[Vector[String]]
-    val fields                        = ArrayBuffer.empty[String]
-    val field                         = new java.lang.StringBuilder
-    var quoted                        = false
-    var closed                        = false
-    var index                         = 0
-    var failure: Option[TidyCsvError] = None
-
-    def finishField(): Unit =
-      fields += field.toString
-      field.setLength(0)
-      closed = false
-
-    def finishRow(): Unit =
-      finishField()
-      rows += fields.toVector
-      fields.clear()
-
-    while index < contents.length && failure.isEmpty do
-      val character = contents.charAt(index)
-      if quoted then
-        if character == '"' then
-          if index + 1 < contents.length && contents.charAt(index + 1) == '"' then
-            field.append('"')
-            index += 1
-          else
-            quoted = false
-            closed = true
-        else field.append(character)
-      else if closed then
-        character match
-          case ',' => finishField()
-          case '\r' if index + 1 < contents.length && contents.charAt(index + 1) == '\n' =>
-            finishRow()
-            index += 1
-          case '\n'  => finishRow()
-          case other => failure = Some(TidyCsvError.MalformedCsv(index, other))
-      else
-        character match
-          case ','                      => finishField()
-          case '"' if field.length == 0 => quoted = true
-          case '"' => failure = Some(TidyCsvError.MalformedCsv(index, character))
-          case '\r' if index + 1 < contents.length && contents.charAt(index + 1) == '\n' =>
-            finishRow()
-            index += 1
-          case '\n'  => finishRow()
-          case other => field.append(other)
-      index += 1
-
-    failure match
-      case Some(error)    => Left(error)
-      case None if quoted => Left(TidyCsvError.UnterminatedQuotedField(index))
-      case None           =>
-        if field.length > 0 || fields.nonEmpty then finishRow()
-        Right(rows.toVector)
+    @annotation.tailrec
+    def loop(
+        cursor: CsvCursor,
+        rows: Vector[Vector[String]]
+    ): Either[TidyCsvError, Vector[Vector[String]]] =
+      cursor.advance(1024) match
+        case Left(error) => Left(error)
+        case Right(page) =>
+          page.next match
+            case Some(next) => loop(next, rows ++ page.rows)
+            case None       => Right(rows ++ page.rows)
+    loop(CsvCursor.start(contents), Vector.empty)
 
   private def quote(value: String): String =
     if value.exists(character =>

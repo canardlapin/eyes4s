@@ -67,5 +67,7 @@ object ShellText:
   def render(vm: ShellVM): String =
     (Vector(s"window: ${vm.window.title}${if vm.window.edited then " (edited)" else ""}") ++
       appBar(vm.appBar) ++ context(vm.context) ++ banner(vm.banner) ++ status(vm.status) ++
-      vm.notice.map(n => s"notice: ${n.text}"))
+      vm.notice.map(n => s"notice: ${n.text}") ++ vm.confirmation.map(c =>
+        s"confirm: ${c.text} | ${action(c.confirm)} | ${action(c.cancel)}"
+      ))
       .mkString("\n")

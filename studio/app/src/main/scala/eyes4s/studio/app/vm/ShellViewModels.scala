@@ -34,7 +34,9 @@ final case class PerspectiveButtonVM(
     label: String,
     shortcut: String,
     selected: Boolean,
-    intent: Intent
+    intent: Intent,
+    /** The name assistive technology reads: "Compare (⌘4)". */
+    accessible: String
 ) derives CanEqual
 
 /** The jobs chip's states (S1.4). */
@@ -61,22 +63,40 @@ final case class JobsChipVM(
 final case class AppBarVM(
     appName: String,
     project: String,
+    /** The project chip's accessible name: "Project memory-study". */
+    projectAccessible: String,
     perspectives: Vector[PerspectiveButtonVM],
     jobs: JobsChipVM
 ) derives CanEqual
 
-/** One trail crumb; the current one is drawn in ink 600. */
-final case class CrumbVM(label: String, current: Boolean, intent: Intent) derives CanEqual
+/** One trail crumb; the current one is drawn in ink 600. Every crumb is a
+  * live button (S1.6). `opens` is the perspective it lands in, when that is
+  * not the current one (a fixation crumb opens Explore); `accessible` says
+  * so, or that the crumb is the current location.
+  */
+final case class CrumbVM(
+    label: String,
+    current: Boolean,
+    intent: Intent,
+    opens: Option[Perspective],
+    accessible: String
+) derives CanEqual
 
 /** The freshness dot and weight. */
 enum FreshnessTone derives CanEqual:
   case Current, Stale, Running, Failed, Cancelled, NoRun, PendingData
 
+  /** The badge of the two-chip form (Results board, t3): the shown run is
+    * current, but a newer one is running beside it, so the dot is hollow.
+    */
+  case Showing
+
 /** The freshness badge ("Analysis rev 4 · run 7 · data r3 · current"). */
 final case class FreshnessVM(text: String, tone: FreshnessTone) derives CanEqual
 
 /** The dashed draft chip ("Draft rev 5 · 1 change · ready"); opens Analysis. */
-final case class DraftChipVM(text: String, blocked: Boolean, intent: Intent) derives CanEqual
+final case class DraftChipVM(text: String, blocked: Boolean, intent: Intent, accessible: String)
+    derives CanEqual
 
 final case class ContextStripVM(
     back: ActionVM,
@@ -111,6 +131,12 @@ final case class StatusBarVM(
     saved: String
 ) derives CanEqual
 
+/** A destructive intent awaiting confirmation (Discard draft): the
+  * question, then the confirming and the cancelling button.
+  */
+final case class ConfirmationVM(text: String, confirm: ActionVM, cancel: ActionVM)
+    derives CanEqual
+
 /** A notice to show once (a refused command, undo at a barrier). */
 final case class NoticeVM(text: String, dismiss: Intent) derives CanEqual
 
@@ -121,5 +147,6 @@ final case class ShellVM(
     context: ContextStripVM,
     banner: Option[DraftBannerVM],
     status: StatusBarVM,
-    notice: Option[NoticeVM]
+    notice: Option[NoticeVM],
+    confirmation: Option[ConfirmationVM]
 ) derives CanEqual

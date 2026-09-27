@@ -23,8 +23,9 @@ import eyes4s.kernel.*
 
 /** Prepared work binds the exact input, plan description, layout and method
   * identity to two reusable schedules. Preparation does no density estimation
-  * or comparisons. Source indexing/identity checks are O(source rows), bounded
-  * by the supplied budget; arbitrary custom projections must be pure/stable.
+  * or comparisons. Preparation includes source indexing, identity checks, canonical
+  * sorting and digest rendering. It is outside the bounded cursor-step guarantee;
+  * arbitrary custom projections, ordering and digest callbacks must be pure/stable.
   *
   * Pair order follows the original input: focal-major, reference-minor. Keys
   * remain typed values; their display strings and digests never decide equality.
@@ -46,8 +47,12 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
     val matched: DirectedPairSchedule[K, K],
     val controls: DirectedPairSchedule[K, K],
     val candidateVisitsAcrossScales: Long,
-    val budget: PairScheduleBudget
+    val budget: PairScheduleBudget,
+    private[plan] val countCardinality: CountCardinalityIndex[K],
+    private[plan] val keysPerDesign: Long
 ):
+  private[plan] val countIdentity = new StudyCountIdentity
+
   val inputReference: ArtifactRef[StudyInput[K, U]] = input.reference
   val layoutId: DefinitionId                        = plan.layout.id
   val methodId: DefinitionId                        = plan.method.id
@@ -93,6 +98,16 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
       matched
     )
 
+  /** Begin the exact-count traversal without performing any pair visits. */
+  def countWork: Either[PlanError, CountCursor[K]] = CountCursor.of(plan, this)
+
+  /** Synchronous convenience; effectful consumers execute [[countWork]] through
+    * the shared runner for cancellation between pages. Its result includes matched
+    * cardinality; matched-only callers do not traverse controls.
+    */
+  lazy val counts: Either[PlanError, StudyCounts[K]] =
+    countWork.flatMap(cursor => Stepwise.complete(cursor, WorkQuanta.default))
+
   /** The refusal the pairing implies for this input, if any. A version-1
     * pairing on a layout without trial identity never refuses, so its matched
     * schedule is not traversed before execution.
@@ -102,7 +117,19 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
     else matchedCardinality.fold(Some(_), _.refusal(plan.layout))
 
   /** Inspect the exact schedules and reduction choices without numerical work. */
-  def preview: Either[PlanError, StudyPreview[K, U]] =
+  def preview: Either[PlanError, StudyPreview[K, U]] = previewWith(None)
+
+  /** Attach completed counts only to the prepared input and choices that produced them. */
+  def preview(counts: StudyCounts[K]): Either[PlanError, StudyPreview[K, U]] =
+    if counts.input != inputReference then
+      Left(PlanError.ArtifactMismatch(counts.input.digest, inputReference.digest))
+    else if counts.description != description then
+      Left(PlanError.ChangedPreparedPlan(methodId, layoutId))
+    else previewWith(Some(counts))
+
+  private def previewWith(
+      counts: Option[StudyCounts[K]]
+  ): Either[PlanError, StudyPreview[K, U]] =
     checkUnchanged.map { _ =>
       new StudyPreview(
         inputReference,
@@ -117,8 +144,9 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
         plan.policy,
         windowTallies,
         plan.pairing,
-        matchedCardinality,
-        initialFixationTallies
+        () => counts.fold(matchedCardinality)(c => Right(c.cardinality)),
+        initialFixationTallies,
+        counts
       )
     }
 
@@ -148,6 +176,24 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
       budget: ComparisonBudget = ComparisonBudget.default
   ): Either[PlanError, StudyCursor[K, U, S, D]] =
     work(budget, occupancy, Vector.empty)
+
+  /** Start from counts produced by this exact prepared object, without revisiting pairs.
+    * Equivalent-looking descriptions or legacy input hashes are not ownership evidence.
+    */
+  def countedWork(
+      counts: StudyCounts[K],
+      budget: ComparisonBudget = ComparisonBudget.default
+  ): Either[PlanError, StudyCursor[K, U, S, D]] =
+    checkUnchanged
+      .flatMap(_ =>
+        Either.cond(
+          counts.owner eq countIdentity,
+          (),
+          PlanError.ChangedPreparedPlan(methodId, layoutId)
+        )
+      )
+      .flatMap(_ => counts.pairingRefusal.toLeft(()))
+      .flatMap(_ => StudyWork.begin(plan, this, budget, occupancy, Vector.empty))
 
   /** Resumable execution that refuses a method without bounded comparison
     * support, so an unsupported synchronous extension is diagnosed before any
@@ -245,7 +291,16 @@ object PreparedStudy:
       matched,
       controls,
       candidateVisits.toLong,
-      budget
+      budget,
+      StudyPairingWork
+        .cardinalityBuilder(
+          plan.layout,
+          plan.pairing,
+          input.trials.rows.map(_.key),
+          right,
+          left
+        ),
+      left.distinct.size.toLong
     )
 
 /** Which within-participant design a step worked on. */
@@ -356,6 +411,48 @@ final class StudyCursor[K, U <: Unit2D, S, D] private[plan] (
     case Contrasting(_, _)         => StudyStage.Contrasting(scale)
 
   def capability: ExecutionCapability = engine.capability
+
+  /** Attempted maps over all scales, including failed estimations. */
+  def completedMaps: Long = completed.iterator.map(_.estimation.size.toLong).sum + masses.size
+
+  /** Decided pair rows over all scales, including failed comparisons. */
+  def completedPairs: Long =
+    val previous = completed.iterator.map { result =>
+      result.analyses.matchedSource.rows.size.toLong + result.analyses.controlSource.rows.size
+    }.sum
+    val current = phase match
+      case Estimate(_)                       => 0L
+      case CompareMatched(cursor)            => cursor.completedPairs.toLong
+      case ReduceMatched(source, _)          => source.rows.size.toLong
+      case CompareControl(source, _, cursor) => source.rows.size.toLong + cursor.completedPairs
+      case ReduceControl(matched, _, control, _) => matched.rows.size.toLong + control.rows.size
+      case Contrasting(analyses, _)              =>
+        analyses.matchedSource.rows.size.toLong + analyses.controlSource.rows.size
+    previous + current
+
+  /** Recorded reduction keys over every scientific scale and both designs. */
+  def completedReductionKeys: Long =
+    val previous = completed.iterator
+      .map(result =>
+        result.analyses.matched.entries.size.toLong + result.analyses.control.entries.size
+      )
+      .sum
+    val current = phase match
+      case Estimate(_) | CompareMatched(_)      => 0L
+      case ReduceMatched(_, cursor)             => cursor.reducedKeys.toLong
+      case CompareControl(_, matched, _)        => matched.entries.size.toLong
+      case ReduceControl(_, matched, _, cursor) =>
+        matched.entries.size.toLong + cursor.reducedKeys
+      case Contrasting(analyses, _) =>
+        analyses.matched.entries.size.toLong + analyses.control.entries.size
+    previous + current
+
+  /** Recorded contrast rows; a refused contrast contributes no invented rows. */
+  def completedContrastRows: Long =
+    completed.iterator.map(_.contrast.toOption.fold(0L)(_.rows.size.toLong)).sum +
+      (phase match
+        case Contrasting(_, cursor) => cursor.contrastedKeys.toLong
+        case _                      => 0L)
 
   /** The exact units of the reduction the next `advance` works on, known
     * once its scores are realised; `None` outside a reducing stage.

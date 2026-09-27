@@ -21,15 +21,18 @@ import eyes4s.studio.app.{AppModel, Intent, PlatformDialog}
 import eyes4s.studio.app.layout.StudioLayouts
 import eyes4s.studio.app.text.{MessageId, Messages}
 import eyes4s.studio.app.tokens.Theme
-import eyes4s.studio.app.ProjectName
+import eyes4s.studio.app.{ClockTime, ProjectName}
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.dock.{DockGesture, PerspectiveHost}
 import eyes4s.studio.desktop.runtime.{
   DesktopEffects,
   PlatformDialogs,
+  ProjectPort,
   StudioRuntime,
   StudioSession
 }
+import eyes4s.studio.desktop.importing.ImportWizardHost
+import eyes4s.studio.desktop.platform.FilePresetStore
 import eyes4s.studio.desktop.shell.AppShell
 import javafx.application.Platform
 import javafx.scene.control.{Alert, TextInputDialog}
@@ -52,7 +55,8 @@ final class StudioWindow private (
     val runtime: StudioRuntime,
     val host: PerspectiveHost,
     val shell: AppShell,
-    val effects: DesktopEffects
+    val effects: DesktopEffects,
+    val project: Option[ProjectPort]
 ):
   /** The window content, with the studio stylesheets. */
   def root: javafx.scene.Parent = shell.root
@@ -66,7 +70,9 @@ final class StudioWindow private (
   /** Keep `stage`'s title on the model's window title (S1.4). */
   def bind(stage: javafx.stage.Stage): Unit = runtime.listen(_ => stage.setTitle(title))
 
-  def close(): Unit = session.close()
+  def close(): Unit =
+    project.foreach(_.close())
+    session.close()
 
 object StudioWindow:
 
@@ -101,7 +107,11 @@ object StudioWindow:
         Option.when(!dockMaximized && model.isMaximized)(Intent.SetMaximized(None))
 
   /** Platform dialogs as JavaFX dialogs (non-blocking). */
-  def fxDialogs(model: () => AppModel, messages: Messages): PlatformDialogs =
+  def fxDialogs(
+      model: () => AppModel,
+      messages: Messages,
+      project: Option[ProjectPort] = None
+  ): PlatformDialogs =
     (dialog: PlatformDialog, dispatch: Intent => Unit) =>
       dialog match
         case PlatformDialog.RenameProject =>
@@ -115,8 +125,21 @@ object StudioWindow:
           a.setTitle(messages(MessageId.CommandProjectInfo))
           a.setHeaderText(eyes4s.studio.app.vm.Menus.windowTitle(model(), messages))
           a.show()
-        case PlatformDialog.ImportSources | PlatformDialog.OpenProject =>
-          System.err.println(s"$dialog is not available until S5.2 and S2.9.")
+        case PlatformDialog.ImportSources =>
+          // The import wizard (S5.2): its commands come back as intents.
+          val theme = model().document.presentation.theme match
+            case eyes4s.studio.core.document.Theme.Light => Theme.Light
+            case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
+          val sheets = StudioStyles.stylesheets(theme).getOrElse(Nil)
+          ImportWizardHost.openWindow(
+            () => model().document,
+            dispatch,
+            FilePresetStore.userDefault,
+            sheets,
+            project
+          ): Unit
+        case PlatformDialog.OpenProject =>
+          System.err.println(s"$dialog is not available until S2.9.")
 
   /** Open a window on `initial`, served by the fake backend at `moment`.
     * On the JavaFX thread. Each execution-service event reaches the model as
@@ -128,12 +151,15 @@ object StudioWindow:
       moment: StoryMoment,
       theme: Theme = Theme.Light,
       dialogs: Option[PlatformDialogs] = None,
-      messages: Messages = Messages.english
+      messages: Messages = Messages.english,
+      project: Option[ProjectPort] = None,
+      clock: () => Option[ClockTime] = DesktopEffects.wallClock,
+      nativeMenu: Boolean = AppShell.systemMenuBar
   )(using IORuntime): Either[WindowError, StudioWindow] =
     for
       sheets <- StudioStyles.stylesheets(theme).left.map(WindowError.Styles(_))
       dock   <- dockTheme.left.map(WindowError.Styles(_))
-      window <- build(initial, moment, dock, dialogs, messages)
+      window <- build(initial, moment, dock, dialogs, messages, project, clock, nativeMenu)
     yield
       window.root.getStylesheets.setAll(sheets*)
       window
@@ -143,7 +169,10 @@ object StudioWindow:
       moment: StoryMoment,
       dockTheme: DockTheme,
       dialogs: Option[PlatformDialogs],
-      messages: Messages
+      messages: Messages,
+      project: Option[ProjectPort],
+      clock: () => Option[ClockTime],
+      nativeMenu: Boolean
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None
@@ -165,20 +194,22 @@ object StudioWindow:
     dockOf = () => host.dock.state.maximized.isDefined
     val effects = DesktopEffects(
       session,
-      dialogs.getOrElse(fxDialogs(() => runtime.fold(initial)(_.model), messages)),
+      dialogs.getOrElse(fxDialogs(() => runtime.fold(initial)(_.model), messages, project)),
       p =>
         host.reset(p)
         runtime.foreach(r => host.sync(r.model))
       ,
       host.perform,
-      f => Platform.runLater(() => f())
+      f => Platform.runLater(() => f()),
+      project,
+      clock
     )
     val adopted = session.adopt(initial.document)
     adopted.collect { case Left(e) => e }.foreach(e => System.err.println(e.message))
     val booted = AppModel.update(initial, Intent.JobsChanged(session.jobs))._1
     val r      = StudioRuntime(booted, effects)
     runtime = Some(r)
-    val shell      = AppShell(host, dispatch, messages)
+    val shell      = AppShell(host, dispatch, messages, () => r.model, nativeMenu)
     val unreadable = host.restore(booted.document.presentation.layouts, booted)
     if unreadable.nonEmpty then
       r.dispatch(
@@ -188,4 +219,4 @@ object StudioWindow:
         )
       )
     r.listen(shell.render)
-    Right(StudioWindow(session, r, host, shell, effects))
+    Right(StudioWindow(session, r, host, shell, effects, project))

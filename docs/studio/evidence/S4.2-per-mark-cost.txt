@@ -1,0 +1,14 @@
+os=Mac OS X aarch64 14.3
+java=25.0.1
+processors=14
+prism=default
+workaround=one GraphicsName per fixation mark (Intaglio NamedPicking treats a named point batch as one target; upstream bd-01M3FJKMB1CKWYCY58AS6A2Y16)
+marks=11520 surface=2200x1400 device px (2x)
+statistic=median of 5 after 2 warm-ups
+metric batch_ms per_mark_ms ratio
+lower_ms 0.56 2.35 4.2x
+javafx_compile_ms 0.51 3.56 7.0x
+named_picking_ms 15.36 44.28 2.9x
+draw_snapshot_ms 42.50 45.90 1.1x
+200_hits_ms 1202.45 2.12 0.0x
+trial_frame_compile_ms (PlotFrame: program, device scene, picking) 48.2

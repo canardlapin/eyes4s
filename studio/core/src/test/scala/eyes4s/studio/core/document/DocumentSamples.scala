@@ -101,6 +101,23 @@ object DocumentSamples:
     ),
     Sample("decision.Admitted", r3.decision),
     Sample("dataset.r3", r3),
+    Sample(
+      "dataset.attributes",
+      r3.copy(attributes =
+        DeclaredAttributes
+          .of(
+            Vector(
+              AttributeBinding(
+                ColumnName.of("Pupil").toOption.get,
+                AttributeKindChoice.Number
+              ),
+              AttributeBinding(ColumnName.of("Notes").toOption.get, AttributeKindChoice.Text)
+            )
+          )
+          .toOption
+          .get
+      )
+    ),
     Sample("sigma", s2),
     Sample("scales", rev4.recipe.scales),
     Sample("grid", rev4.recipe.grid),
