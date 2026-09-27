@@ -1,0 +1,256 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eyes4s.studio.desktop.platform
+
+import cats.effect.IO
+import cats.syntax.all.*
+import eyes4s.studio.app.tokens.FontFace
+import eyes4s.studio.core.bundle.ProjectStore
+import eyes4s.studio.core.platform.*
+import eyes4s.studio.desktop.typography.StudioFonts
+import javafx.application.Platform as FxPlatform
+import javafx.scene.input.{Clipboard as FxClipboard, ClipboardContent}
+import javafx.stage.{FileChooser, Window}
+
+import java.io.IOException
+import java.nio.file.{Files, NoSuchFileException, NotDirectoryException, Path, Paths}
+import java.util.prefs.{BackingStoreException, Preferences as JPreferences}
+import scala.jdk.CollectionConverters.*
+import scala.util.control.NonFatal
+
+/** The JVM platform services (ticket S0.9, DESIGN_SPEC section 13): the
+  * desktop's implementations of studio-core's platform interfaces. Each passes
+  * `PlatformConformance`; docs/studio/PORTING.md lists what another host
+  * implements instead.
+  */
+object DesktopPlatform:
+
+  /** The services of this JVM.
+    *
+    * @param show the application's `HostServices.showDocument`
+    * @param owner the window dialogs are modal to, when there is one
+    * @param preferences the node per-user preferences are kept under
+    */
+  def create(
+      show: String => Unit,
+      owner: () => Option[Window],
+      preferences: JPreferences = JPreferences.userRoot.node("eyes4s/studio")
+  ): Platform[IO] =
+    Platform(
+      capabilities,
+      JvmFileSystem,
+      JavaFxDialogs(owner),
+      JavaFxClipboard,
+      JavaFxFonts,
+      Scheduler.temporal[IO](JvmZone.offsetMinutes),
+      DesktopExternalOpen(show),
+      JvmPreferences(preferences)
+    )
+
+  /** macOS has the one native menu bar; elsewhere the menu is in the window. */
+  val capabilities: HostCapabilities = HostCapabilities(
+    nativeMenuBar = sys.props.getOrElse("os.name", "").toLowerCase.contains("mac"),
+    multipleWindows = true,
+    localFiles = true,
+    clipboardRead = true
+  )
+
+  /** Run `body` on the FX application thread. */
+  private[platform] def onFx[A](body: => A): IO[A] =
+    if FxPlatform.isFxApplicationThread then IO(body)
+    else
+      IO.async_[A] { done =>
+        FxPlatform.runLater(() =>
+          done(try Right(body)
+          catch case NonFatal(e) => Left(e))
+        )
+      }
+
+/** The JVM's UTC offset, in minutes, at an epoch millisecond. */
+object JvmZone:
+  def offsetMinutes(epochMillis: Long): Int =
+    java.time.ZoneId
+      .systemDefault()
+      .getRules
+      .getOffset(java.time.Instant.ofEpochMilli(epochMillis))
+      .getTotalSeconds / 60
+
+/** Host paths are the JVM's file-system paths; bundles are [[FileProjectStore]]s. */
+object JvmFileSystem extends FileSystem[IO]:
+
+  private def local(path: HostPath): Path = Paths.get(path.value)
+
+  private def host(path: Path): Either[PlatformError, HostPath] = HostPath.of(path.toString)
+
+  def child(directory: HostPath, name: String): Either[PlatformError, HostPath] =
+    if name.isEmpty || name == "." || name == ".." || name.exists(c => c == '/' || c == '\\')
+    then Left(PlatformError.InvalidName(directory, name))
+    else host(local(directory).resolve(name))
+
+  def read(path: HostPath): IO[Either[PlatformError, IArray[Byte]]] =
+    IO.blocking(IArray.unsafeFromArray(Files.readAllBytes(local(path))))
+      .map(_.asRight[PlatformError])
+      .recover {
+        case _: NoSuchFileException => Left(PlatformError.Missing(path))
+        case e: IOException         => Left(PlatformError.Unreadable(path, e.toString))
+      }
+
+  /** Written beside the target and moved into place, so a reader never sees
+    * a partial file.
+    */
+  def write(path: HostPath, bytes: IArray[Byte]): IO[Either[PlatformError, Unit]] =
+    IO.blocking {
+      val target = local(path).toAbsolutePath
+      Files.createDirectories(target.getParent)
+      val staged = Files.createTempFile(target.getParent, ".eyes4s-", ".tmp")
+      try
+        Files.write(staged, IArray.genericWrapArray(bytes).toArray)
+        Files.move(
+          staged,
+          target,
+          java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+          java.nio.file.StandardCopyOption.ATOMIC_MOVE
+        )
+      finally Files.deleteIfExists(staged): Unit
+      ()
+    }.map(_.asRight[PlatformError])
+      .recover { case e: IOException => Left(PlatformError.Unwritable(path, e.toString)) }
+
+  def list(directory: HostPath): IO[Either[PlatformError, Vector[HostPath]]] =
+    IO.blocking {
+      val stream = Files.list(local(directory))
+      try stream.iterator().asScala.toVector.sortBy(_.toString)
+      finally stream.close()
+    }.map(_.traverse(host))
+      .recover {
+        case _: NoSuchFileException   => Left(PlatformError.Missing(directory))
+        case _: NotDirectoryException =>
+          Left(PlatformError.Unreadable(directory, "not a directory"))
+        case e: IOException => Left(PlatformError.Unreadable(directory, e.toString))
+      }
+
+  def project(path: HostPath): IO[Either[PlatformError, ProjectStore[IO]]] =
+    FileProjectStore.at[IO](local(path)).map(_.asRight[PlatformError])
+
+/** JavaFX file choosers, modal to `owner`. */
+final class JavaFxDialogs(owner: () => Option[Window]) extends Dialogs[IO]:
+
+  private def choose(request: FileRequest, save: Boolean): IO[Option[HostPath]] =
+    DesktopPlatform
+      .onFx {
+        val chooser = JavaFxDialogs.chooser(request)
+        val window  = owner().orNull
+        Option(if save then chooser.showSaveDialog(window) else chooser.showOpenDialog(window))
+      }
+      .map(_.flatMap(f => HostPath.of(f.getPath).toOption))
+
+  def chooseOpen(request: FileRequest): IO[Option[HostPath]] = choose(request, save = false)
+  def chooseSave(request: FileRequest): IO[Option[HostPath]] = choose(request, save = true)
+
+object JavaFxDialogs:
+  /** The chooser a request is shown in: its title, one filter per kind, and
+    * the suggested name.
+    */
+  def chooser(request: FileRequest): FileChooser =
+    val chooser = FileChooser()
+    chooser.setTitle(request.title)
+    request.kinds.foreach { k =>
+      chooser.getExtensionFilters.add(
+        FileChooser.ExtensionFilter(k.description, k.extensions.map(e => s"*.$e").asJava)
+      )
+    }
+    request.suggestedName.foreach(chooser.setInitialFileName)
+    chooser
+
+/** The system clipboard's text, read and written on the FX thread. */
+object JavaFxClipboard extends Clipboard[IO]:
+  def readText: IO[Either[PlatformError, Option[String]]] =
+    DesktopPlatform.onFx {
+      val clipboard = FxClipboard.getSystemClipboard
+      Right(if clipboard.hasString then Option(clipboard.getString) else None)
+    }
+
+  def writeText(text: String): IO[Either[PlatformError, Unit]] =
+    DesktopPlatform.onFx {
+      val content = ClipboardContent()
+      content.putString(text)
+      if FxClipboard.getSystemClipboard.setContent(content) then Right(())
+      else Left(PlatformError.Unsupported("clipboard", "writing"))
+    }
+
+/** Registers studio's bundled faces through [[StudioFonts]]; any other
+  * resource is refused.
+  */
+object JavaFxFonts extends Fonts[IO]:
+
+  /** Every bundled face, as the platform interface names it. */
+  val bundled: Vector[FontRequest] =
+    FontFace.values.toVector.flatMap(f =>
+      FontRequest.of(f.javaFxFamily, StudioFonts.resource(f)).toOption
+    )
+
+  def register(font: FontRequest): IO[Either[PlatformError, Unit]] =
+    FontFace.values.find(StudioFonts.resource(_) == font.resource) match
+      case None =>
+        IO.pure(Left(PlatformError.FontRejected(font, "not a bundled face")))
+      case Some(face) if face.javaFxFamily != font.family =>
+        IO.pure(
+          Left(PlatformError.FontRejected(font, s"the bundled face is ${face.javaFxFamily}"))
+        )
+      case Some(face) =>
+        IO.blocking(StudioFonts.load(face))
+          .map(
+            _.left.map(p => PlatformError.FontRejected(font, p.message)).map(_ => ())
+          )
+
+/** Opens URLs through `show` (the application's `HostServices.showDocument`)
+  * and reveals a path by showing the directory that holds it.
+  */
+final class DesktopExternalOpen(show: String => Unit) extends ExternalOpen[IO]:
+  def open(target: ExternalTarget): IO[Either[PlatformError, Unit]] =
+    IO.blocking {
+      target match
+        case ExternalTarget.Url(url)     => show(url.value)
+        case ExternalTarget.Reveal(path) => show(DesktopExternalOpen.revealed(path))
+    }.attempt
+      .map(_.left.map(e => PlatformError.OpenFailed(target, e.toString)))
+
+object DesktopExternalOpen:
+  /** The `file:` URI shown for a reveal: a directory itself, a file's parent. */
+  def revealed(path: HostPath): String =
+    val p      = Paths.get(path.value).toAbsolutePath
+    val parent = Option(p.getParent)
+    (if Files.isDirectory(p) then p else parent.getOrElse(p)).toUri.toString
+
+/** Preferences under one `java.util.prefs` node, flushed on every change. */
+final class JvmPreferences(node: JPreferences) extends Preferences[IO]:
+
+  private def guarded[A](key: PreferenceKey)(body: => A): IO[Either[PlatformError, A]] =
+    IO.blocking(body).map(_.asRight[PlatformError]).recover {
+      case e @ (_: BackingStoreException | _: IllegalArgumentException |
+          _: IllegalStateException) =>
+        Left(PlatformError.PreferenceFailed(key, e.toString))
+    }
+
+  def get(key: PreferenceKey): IO[Either[PlatformError, Option[String]]] =
+    guarded(key)(Option(node.get(key.value, null)))
+
+  def put(key: PreferenceKey, value: String): IO[Either[PlatformError, Unit]] =
+    guarded(key) { node.put(key.value, value); node.flush() }
+
+  def remove(key: PreferenceKey): IO[Either[PlatformError, Unit]] =
+    guarded(key) { node.remove(key.value); node.flush() }
