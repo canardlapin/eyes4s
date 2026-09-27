@@ -20,9 +20,9 @@ import eyes4s.io.*
 import eyes4s.kernel.ClockId
 import eyes4s.plan.{AdmissionPolicy, WindowTally}
 import eyes4s.studio.core.backend.{Phase, TrialKey}
-import eyes4s.studio.core.fixture.{MockStudy, StoryMoments}
+import eyes4s.studio.core.fixture.{GoldenFixations, MockStudy, StoryMoments}
 
-import java.nio.file.{Files, Paths}
+import java.nio.charset.StandardCharsets.UTF_8
 
 /** The geometry panel's placement of the golden fixation source agrees with
   * the fixture and with eyes4s's own admission (ticket S5.5). r3 reads
@@ -36,8 +36,8 @@ class GoldenPlacementJvmSuite extends munit.FunSuite:
 
   private def get[E, A](e: Either[E, A]): A = e.fold(x => fail(x.toString), identity)
 
-  private val bytes: Array[Byte] =
-    Files.readAllBytes(Paths.get("fixtures/studio-golden/fixations.csv").toAbsolutePath)
+  // The file's exact text, generated into test scope (studio-core reads no files).
+  private val bytes: Array[Byte] = GoldenFixations.csv.getBytes(UTF_8)
 
   private val r3 = get(
     StoryMoments.t1.flatMap(_.dataset(StoryMoments.r3).toRight("the story has no r3"))
@@ -76,7 +76,7 @@ class GoldenPlacementJvmSuite extends munit.FunSuite:
     )
     val imported = get(
       FixationCsv.admit(
-        new String(bytes, "UTF-8"),
+        GoldenFixations.csv,
         columns,
         keys,
         ledger.frames.screen,
