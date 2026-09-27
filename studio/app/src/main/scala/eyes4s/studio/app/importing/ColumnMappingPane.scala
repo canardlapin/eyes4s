@@ -22,7 +22,7 @@ import eyes4s.studio.core.backend.DatasetRevision
 import eyes4s.studio.app.text.{ImportText, ImportTextId}
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective, Source, StudioDocument}
-import eyes4s.studio.core.importing.{ImportPresets, SourceReadError}
+import eyes4s.studio.core.importing.{ImportPresets, KeyPart, SourceReadError}
 
 /** What the column-mapping pane shows around its wizard: why it is empty,
   * which revision's files it is reading from the project, and a notice
@@ -157,7 +157,13 @@ object ColumnMappingPane:
             .toVector
             .flatten ++
           Vector(FocusStop(A11yRole.TextField, presets.nameLabel)) ++
-          Option.when(presets.canSave)(FocusStop(A11yRole.Button, presets.save))
+          Option.when(presets.canSave)(FocusStop(A11yRole.Button, presets.save)) ++
+          // The trial key builder (S5.3) under the mapping: its occurrence
+          // block is a toggle when a column can hold the occurrence.
+          vm.key.blocks.collect {
+            case b if b.part == KeyPart.Occurrence && b.toggle.isDefined =>
+              FocusStop(A11yRole.ToggleButton, b.accessible)
+          }
       case WizardTab.TrialMetadata => table(vm.trials, Vector.empty)
       case WizardTab.Geometry   => vm.geometry.map(g => FocusStop(A11yRole.TextField, g.label))
       case WizardTab.DataIssues => Vector.empty

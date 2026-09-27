@@ -412,10 +412,14 @@ class ColumnMappingPaneFxSuite extends ShellFxSuite:
         val w = boot(fx, StoryModels.t1Data, StoryMoment.T1, project = Some(port))
         loaded(fx, w, r3)
         val derived = runOnFx(w.paneStops(StudioLayouts.columnMapping))
-        // The time unit, one role menu per column, the
-        // preset name, Revert and the commit.
+        // The time unit, one role menu per column, the preset name, the
+        // trial key's occurrence toggle (S5.3), Revert and the commit.
         // No tab strip in a re-map.
-        assertEquals(derived.size, 1 + 10 + 1 + 2)
+        assertEquals(derived.size, 1 + 10 + 1 + 1 + 2)
+        assertEquals(
+          derived(12),
+          FocusStop(A11yRole.ToggleButton, "Occurrence: column occurrence")
+        )
         val pane = runOnFx(w.host.node(StudioLayouts.columnMapping)).get
         runOnFx(pane.requestFocus())
         fx.awaitLayout()
@@ -437,6 +441,55 @@ class ColumnMappingPaneFxSuite extends ShellFxSuite:
         assertEquals(walked, derived)
         fx.robot.press(KeyCode.TAB)
         assertEquals(stop(), FocusStop(A11yRole.Region, "Admission"))
+      }
+  }
+
+  fxStage.test("a re-map whose key is on a many-valued column completes its streaming check") {
+    fx =>
+      withProject { (session, port) =>
+        // A revision whose fixation file has 5,000 trial labels, past the
+        // sniffer's cap: the key is checked in one pass over the project's
+        // stored input, which the pane registers as the file's reader.
+        val header =
+          "participant,phase,trial,occurrence,ordinal,x,y,onset_ms,duration_ms,sample_count"
+        val rows = (1 to 5000).map(i => s"P01,Encoding,t$i,1,1,960.0,540.0,0,200,100") :+
+          "P01,Encoding,t7,2,2,960.0,540.0,300,200,100"
+        val text = (header +: rows).mkString("", "\n", "\n")
+        val big = IArray.unsafeFromArray(text.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+        session
+          .importInput(InputKind.Source(SourceRole.Fixations), "big-fixations.csv", big)
+          .unsafeRunSync()
+          .fold(e => fail(e.message), _ => ())
+        val start  = StoryModels.t1Data
+        val r3spec = start.document.dataset(r3).getOrElse(fail("no r3"))
+        val source = Source(
+          SourceRole.Fixations,
+          SourcePath.of("big-fixations.csv").fold(e => fail(e.message), identity),
+          eyes4s.codec.ByteDigest.sha256(big),
+          None
+        )
+        val command = eyes4s.studio.core.command.Command.ImportSources(
+          Some(r3),
+          Sources.of(Vector(source)).fold(e => fail(e.message), identity),
+          r3spec.mapping,
+          r3spec.units,
+          r3spec.geometry,
+          r3spec.attributes
+        )
+        val model = AppModel.update(start, Intent.Dispatch(command))._1
+        assert(model.document.dataset(r4).isDefined, "r4 was not created")
+        val w = boot(fx, model, StoryMoment.T1, project = Some(port))
+        selectData(fx, w, r4)
+        loaded(fx, w, r4)
+        runOnFx(w.columnMapping.wizard.keyChecked)
+          .get(60, java.util.concurrent.TimeUnit.SECONDS)
+        fx.awaitLayout()
+        val key = w.columnMapping.wizard.view.key
+        assertEquals(runOnFx(key.count.getText), "5,000 keys")
+        assertEquals(
+          runOnFx(key.detail.getText),
+          "· 1 key names more than one occurrence · Occurrence 1–2 · 1 later presentations"
+        )
       }
   }
 

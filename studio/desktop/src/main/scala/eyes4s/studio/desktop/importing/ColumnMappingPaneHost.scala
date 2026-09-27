@@ -168,7 +168,11 @@ final class ColumnMappingPaneHost(
   private def read(source: Source, current: Long): Unit =
     project match
       case None =>
-        deliver(current, ColumnMappingPane.unreadable(source, ColumnMappingPane.noProject))
+        deliver(
+          current,
+          ColumnMappingPane.unreadable(source, ColumnMappingPane.noProject),
+          None
+        )
       case Some(port) =>
         port.readInput(
           source,
@@ -194,7 +198,7 @@ final class ColumnMappingPaneHost(
                         source,
                         Option(e.getMessage).getOrElse(e.toString)
                       )
-                Platform.runLater(() => deliver(current, intent))
+                Platform.runLater(() => deliver(current, intent, Some(port -> source)))
               ,
               s"eyes4s-remap-read-${source.path.value}"
             )
@@ -202,9 +206,19 @@ final class ColumnMappingPaneHost(
             worker.start()
         )
 
-  private def deliver(current: Long, intent: WizardIntent): Unit =
+  private def deliver(
+      current: Long,
+      intent: WizardIntent,
+      from: Option[(ProjectPort, Source)]
+  ): Unit =
     answered += 1
     if current == generation then
+      // The file can be read again from the project (a streaming key check,
+      // S5.3); registered before the read reaches the wizard.
+      (intent, from) match
+        case (WizardIntent.SourceRead(read), Some((p, stored))) =>
+          wizard.remember(read.bytes, ByteSource.project(p, stored))
+        case _ => ()
       wizard.dispatch(intent)
       remaining -= 1
       if remaining <= 0 then

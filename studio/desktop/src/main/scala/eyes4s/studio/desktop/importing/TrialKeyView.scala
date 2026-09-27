@@ -101,6 +101,8 @@ final class TrialKeyView(dispatch: WizardIntent => Unit):
   val repeatedScroll: ScrollPane = ScrollPane(repeated)
   repeatedScroll.setFitToWidth(true)
   repeatedScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER)
+  // The list is read, not operated: the occurrence toggle is the view's one stop.
+  repeatedScroll.setFocusTraversable(false)
   repeatedScroll.getStyleClass.addAll("edge-to-edge", "key-repeats-scroll")
 
   node.getChildren.setAll(heading, empty, row, lines, check, repeatedScroll)

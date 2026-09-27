@@ -293,9 +293,11 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
       vm.fixations.rows.map(r => s"Role for ${r.column.value}")
     )
     assertEquals(
-      stops.takeRight(3),
+      stops.takeRight(4),
       Vector(
         FocusStop(A11yRole.TextField, "Preset name"),
+        // The trial key builder's occurrence toggle (S5.3).
+        FocusStop(A11yRole.ToggleButton, "Occurrence: column occurrence"),
         FocusStop(A11yRole.Button, "Revert"),
         FocusStop(A11yRole.Button, "Apply to r3")
       )
