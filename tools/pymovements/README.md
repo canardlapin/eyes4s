@@ -60,3 +60,41 @@ sound or that a URL remains installable. Keep raw measurements and independently
 review their commands, inputs and frozen criteria. The initial inventory has no
 positive qualification receipts; existing Scala suites are pointers, not new
 test-run claims. This slice adds a standalone check, not a generated CI workflow.
+
+## Performance protocol (PM3.1)
+
+[`PYMOVEMENTS_PERFORMANCE.md`](../../docs/plans/PYMOVEMENTS_PERFORMANCE.md) and
+`performance.json` freeze the workload matrix, input identities, machine/runtime
+pins and numeric budgets before measurement. `receipt.schema.json` describes raw
+receipts; `performance.py` checks both that schema and cross-record comparability.
+It uses `jsonschema==4.26.0` (also pinned in the performance dependency lock).
+
+```sh
+python3 tools/pymovements/performance.py --check-inputs --mote-store /path/to/eyes4s/.mote
+python3 -m unittest discover -s tools/pymovements -p 'test_*.py' -v
+python3 tools/pymovements/fixtures.py --write steps-small-csv --output /tmp/steps-small.csv
+python3 tools/pymovements/performance.py --receipt /path/to/raw-receipt.json
+python3 tools/pymovements/performance.py --receipt /path/to/raw-receipt.json --require-complete
+```
+
+The first command regenerates hashes without storing large inputs. Fixture writes
+create a new file and refuse to overwrite an existing one. Receipt checking does
+not execute benchmarks or award a speed/memory win; a subset receipt may cover the
+first pipeline but cannot satisfy `--require-complete`.
+
+Use an isolated CPython 3.14.7 environment for the benchmark. Install the resolved
+lock with hashes, then record the actual package graph and interpreter in receipts:
+
+```sh
+uv venv --python 3.14.7 /tmp/eyes4s-pm-perf-env
+uv pip sync --python /tmp/eyes4s-pm-perf-env/bin/python --require-hashes tools/pymovements/performance-requirements.txt
+```
+
+This prepares dependencies, not a passing benchmark. The lock was resolved with
+`uv pip compile ... --python-version 3.14 --python-platform aarch64-apple-darwin
+--generate-hashes`. Do not refresh it mid-experiment. To update the readable
+workload table after a reviewed protocol change, use
+`python3 tools/pymovements/performance.py --write-table`, refresh the reviewed
+`bindings.protocol_doc.sha256`, and rerun validation. If the prose changed first,
+refresh that binding before regeneration as well. The document binding deliberately
+detects changes to scientific or statistical rules beyond the numeric JSON fields.

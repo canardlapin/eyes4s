@@ -1,0 +1,1312 @@
+{
+  "schema_version": 1,
+  "protocol_id": "eyes4s-pymovements-performance-v1",
+  "issue": "bd-01M3HYF5VMV818PJMJDKMJBK8P",
+  "epic": "bd-01M3HYF4J5965YW2DK08YV2A80",
+  "inventory_commit": "827d01c30675ba7decf87d8cb13a940fdc4430de",
+  "comparator": {
+    "package": "pymovements",
+    "version": "0.28.0",
+    "source_commit": "fe333f3afa862ae3fc7056047a1a929798cfe18b",
+    "source_url": "https://github.com/pymovements/pymovements/tree/fe333f3afa862ae3fc7056047a1a929798cfe18b",
+    "wheel_url": "https://files.pythonhosted.org/packages/78/98/261a493fa402579715da8c8ca57c913b68fb9d852a100e68331c66edbfb4/pymovements-0.28.0-py3-none-any.whl",
+    "wheel_filename": "pymovements-0.28.0-py3-none-any.whl",
+    "wheel_sha256": "4600f990173faeb9cccfdfc4da627ac81981eca6f1d4c511056294a5b96054ff",
+    "published": "2026-09-08T10:32:22.707117Z",
+    "requires_python": ">=3.10"
+  },
+  "machine": {
+    "id": "m3-max-36g-macos14.3-v1",
+    "cpu": "Apple M3 Max",
+    "ram_bytes": 38654705664,
+    "os": "macOS",
+    "os_version": "14.3",
+    "os_build": "23D56",
+    "arch": "arm64",
+    "power": "AC; low-power mode off; thermally settled; no competing compute jobs"
+  },
+  "runtime": {
+    "python": "3.14.7",
+    "java": "25.0.1",
+    "java_vendor": "Homebrew",
+    "scala": "3.7.4",
+    "sbt": "1.11.7",
+    "jvm_flags": [
+      "-Xms256m",
+      "-Xmx8g",
+      "-XX:+UseG1GC",
+      "-XX:ActiveProcessorCount=1"
+    ],
+    "threads": 1,
+    "environment": {
+      "POLARS_MAX_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1"
+    },
+    "python_packages": {
+      "attrs": "26.1.0",
+      "cffi": "2.1.1",
+      "cloudpickle": "3.1.2",
+      "contourpy": "1.4.0",
+      "cryptography": "50.0.1",
+      "cycler": "0.12.1",
+      "deprecated": "3.0.0",
+      "fastexcel": "0.21.0",
+      "fonttools": "4.66.0",
+      "joblib": "1.6.0",
+      "jsonschema": "4.26.0",
+      "jsonschema-specifications": "2025.9.1",
+      "kiwisolver": "1.5.1",
+      "matplotlib": "3.11.2",
+      "narwhals": "2.26.0",
+      "numpy": "2.4.3",
+      "packaging": "26.3",
+      "pandas": "3.0.6",
+      "pillow": "12.3.0",
+      "polars": "1.44.2",
+      "polars-runtime-32": "1.44.2",
+      "pyarrow": "25.0.1",
+      "pycparser": "3.0",
+      "pymovements": "0.28.0",
+      "pyopenssl": "26.4.0",
+      "pyparsing": "3.3.3",
+      "pyreadr": "0.5.6",
+      "python-dateutil": "2.9.0.post0",
+      "pyyaml": "6.0.3",
+      "referencing": "0.37.0",
+      "rpds-py": "2026.6.3",
+      "scikit-learn": "1.9.1",
+      "scipy": "1.17.1",
+      "six": "1.17.0",
+      "threadpoolctl": "3.7.0",
+      "tqdm": "4.70.1",
+      "typing-extensions": "4.16.0",
+      "wrapt": "2.5.0"
+    }
+  },
+  "bindings": {
+    "generator": {
+      "path": "tools/pymovements/fixtures.py",
+      "sha256": "6ce41fbb50713d56d60914a4744bb36be0f6df1fb12dcf8b0c85550217f5c7c3"
+    },
+    "dependency_input": {
+      "path": "tools/pymovements/performance-requirements.in",
+      "sha256": "e08234c1c7fd97f42d61e0af937369926d37df53dba3a1a9f97904fd9d72036a"
+    },
+    "dependency_lock": {
+      "path": "tools/pymovements/performance-requirements.txt",
+      "sha256": "be4a37abcad5e941c7972f2579ca282a748c9e255c749c28fd89be5eb2341601"
+    },
+    "studio_fixture_generator": {
+      "path": "tools/studio-fixture/generate.py",
+      "sha256": "5fc28a6132446ded8eb2ca4d624eaebeeaf79dac1309406fd66245c8448bf155"
+    },
+    "corpus_manifest": {
+      "path": "tools/detector-benchmark/corpus.json",
+      "sha256": "4723932925041e43f4b7427cb7e2c7bd68aec5635b05b87fc71453638323cb3b"
+    },
+    "receipt_schema": {
+      "path": "tools/pymovements/receipt.schema.json",
+      "sha256": "f993cad852a48491b50dd90a19099ca6350b71b9e56da422e7873c8dac07a408"
+    },
+    "protocol_doc": {
+      "path": "docs/plans/PYMOVEMENTS_PERFORMANCE.md",
+      "sha256": "132cc4bc4c5bb09ee20ac456ff679d5f1f41cd36cb9fa5d26fff48477e0b7c78"
+    }
+  },
+  "measurement": {
+    "rounds": 20,
+    "warmups": 5,
+    "warm_samples_per_process": 3,
+    "cold_samples_per_process": 1,
+    "display_samples_per_process": 100,
+    "order": "eyes4s-first-even-rounds;pymovements-first-odd-rounds",
+    "timer_unit": "ns",
+    "rss_unit": "bytes",
+    "cache": "OS file cache primed once outside cold and warm clocks; no privileged cache purge; cold means fresh process, not cold disk",
+    "materialization": "all required outputs traversed and canonical bytes flushed inside end-to-end timing; kernel output buffers fully traversed; correctness hashes outside timer only after full consumption",
+    "gc": "no forced GC in timed intervals; retained heap/allocation/GC separate diagnostic runs after primary measurements",
+    "rss_instrument": "fresh child process /usr/bin/time -l maximum resident set size; macOS bytes; process lifetime high-water includes warmup/runtime baseline",
+    "timeout_seconds": 300,
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20260927,
+    "confidence": 0.95,
+    "uncertainty": "paired process-round bootstrap; resample whole round vectors across cells; median warm iterations per process, then median paired log ratios; percentile one-sided bounds; no within-process pseudoreplication",
+    "noise": "20 pairs once; if ratio interval relative width >0.20, inconclusive. One whole-suite repeat allowed for documented external interference; retain both, no best-of selection"
+  },
+  "budgets": {
+    "max_warm_time_ratio": 1.1,
+    "max_peak_rss_ratio": 1.1,
+    "aggregate_max_warm_time_ratio": 0.8,
+    "aggregate_large_max_rss_ratio": 0.8,
+    "max_cold_extra_ms": 1500,
+    "max_cold_startup_ms": 5000,
+    "scale_weights": {
+      "small": 0.2,
+      "typical": 0.3,
+      "large": 0.5
+    },
+    "aggregation": "equal weights across paired workload groups; equal weights within group; scales0.2/0.3/0.5; weighted geometric mean of eyes4s/pymovements median ratios; memory uses large only; upper95% bound must pass; every common cell also passes nonregression; descriptive/absolute excluded",
+    "ui_rule": "pooled nearest-rank p95 over20 process blocks of100 observations; resample whole process blocks; bootstrap upper95%; point and upper bound must both be strictly below budget; retain per-process p95"
+  },
+  "canonical_output": {
+    "float_round_decimal_places": 6,
+    "nonfinite": "explicit null/status; NaN/Infinity forbidden",
+    "rows": "stable scientific identity sort, preserve original and normalized support plus admission/drop diagnostics",
+    "hash": "SHA256 of UTF-8 LF-delimited canonical output; compared outputs have identical schema, units, row counts and canonical hash; bin-boundary differences stay blocked rather than widening tolerance"
+  },
+  "datasets": [
+    {
+      "id": "steps-small-csv",
+      "kind": "synthetic",
+      "family": "steps",
+      "format": "csv",
+      "scale": "small",
+      "rows": 10000,
+      "sha256": "c92d834252851402a0e73faefb4fa1bd4eb9439a474e1c21360952183f6aef6b",
+      "bytes": 307021
+    },
+    {
+      "id": "steps-typical-csv",
+      "kind": "synthetic",
+      "family": "steps",
+      "format": "csv",
+      "scale": "typical",
+      "rows": 100000,
+      "sha256": "7cb706526cb209b12a00a31c4075ea7df94dd32c1428f17b4ceea55b5d04ff1e",
+      "bytes": 3169521
+    },
+    {
+      "id": "steps-large-csv",
+      "kind": "synthetic",
+      "family": "steps",
+      "format": "csv",
+      "scale": "large",
+      "rows": 1000000,
+      "sha256": "d9362c5fb0e8cdbb3a927449dd803d93f9920a7be6fe6138a8a8979114148046",
+      "bytes": 32694521
+    },
+    {
+      "id": "steps-small-asc",
+      "kind": "synthetic",
+      "family": "steps",
+      "format": "asc",
+      "scale": "small",
+      "rows": 10000,
+      "sha256": "d4fe075211bd0b1fddab2624c1b5c931e9cefe19a01947a8c7f332265a96f37a",
+      "bytes": 247115
+    },
+    {
+      "id": "steps-typical-asc",
+      "kind": "synthetic",
+      "family": "steps",
+      "format": "asc",
+      "scale": "typical",
+      "rows": 100000,
+      "sha256": "ccd4a967096eb0e6dd5d7d30ee7679f858203b573641d53a985f7d0d9d6faa3c",
+      "bytes": 2569616
+    },
+    {
+      "id": "steps-large-asc",
+      "kind": "synthetic",
+      "family": "steps",
+      "format": "asc",
+      "scale": "large",
+      "rows": 1000000,
+      "sha256": "b4d3a5a14fa09fdf7c2eac4982a38f7fe62cf327438e1de5e00ef39892826c7d",
+      "bytes": 26694617
+    },
+    {
+      "id": "gaps-binocular-small-csv",
+      "kind": "synthetic",
+      "family": "gaps-binocular",
+      "format": "csv",
+      "scale": "small",
+      "rows": 10000,
+      "sha256": "307f8c3bbc9567f5965481fa27bf801cae0145a762ca9c62fd7d1482f862cdb1",
+      "bytes": 464966
+    },
+    {
+      "id": "gaps-binocular-typical-csv",
+      "kind": "synthetic",
+      "family": "gaps-binocular",
+      "format": "csv",
+      "scale": "typical",
+      "rows": 100000,
+      "sha256": "d75d67bb34552833421f85ae89ebee0062498dd90d790d7724c164b286811e46",
+      "bytes": 4748966
+    },
+    {
+      "id": "gaps-binocular-large-csv",
+      "kind": "synthetic",
+      "family": "gaps-binocular",
+      "format": "csv",
+      "scale": "large",
+      "rows": 1000000,
+      "sha256": "789c320c5bf087aefafb3455e60cc2b0901fd8112d8607c55a84bcc7dcd94a60",
+      "bytes": 48488966
+    },
+    {
+      "id": "gaps-binocular-small-asc",
+      "kind": "synthetic",
+      "family": "gaps-binocular",
+      "format": "asc",
+      "scale": "small",
+      "rows": 10000,
+      "sha256": "84a9736ace956df2af068968ce7904cf1cec47ab2e4c2bc82923c7e946cba712",
+      "bytes": 426272
+    },
+    {
+      "id": "gaps-binocular-typical-asc",
+      "kind": "synthetic",
+      "family": "gaps-binocular",
+      "format": "asc",
+      "scale": "typical",
+      "rows": 100000,
+      "sha256": "5e6f9d50b409cc3412a1067ebdf4500e1c00250fb169f574425e714d9de4c06c",
+      "bytes": 4361073
+    },
+    {
+      "id": "gaps-binocular-large-asc",
+      "kind": "synthetic",
+      "family": "gaps-binocular",
+      "format": "asc",
+      "scale": "large",
+      "rows": 1000000,
+      "sha256": "4d5d002079bde7490d8adea09649d0b3128b1e85adf8620e1e9a12f898f3d601",
+      "bytes": 44609074
+    },
+    {
+      "id": "stationary-small-csv",
+      "kind": "synthetic",
+      "family": "stationary",
+      "format": "csv",
+      "scale": "small",
+      "rows": 10000,
+      "sha256": "adf352b4fa5e713f90322e9e2e6e2d56202b186cbe76dac87dfbcd96df66314f",
+      "bytes": 304521
+    },
+    {
+      "id": "stationary-typical-csv",
+      "kind": "synthetic",
+      "family": "stationary",
+      "format": "csv",
+      "scale": "typical",
+      "rows": 100000,
+      "sha256": "01f022153e263bc429b389bf12a923d87bedd403c832b8cc1940be4795c847dc",
+      "bytes": 3144521
+    },
+    {
+      "id": "stationary-large-csv",
+      "kind": "synthetic",
+      "family": "stationary",
+      "format": "csv",
+      "scale": "large",
+      "rows": 1000000,
+      "sha256": "2f781939b9cab82a2e9ea81b623eaa503651919d0037825b25f54035b4c23629",
+      "bytes": 32444521
+    },
+    {
+      "id": "dispersion-churn-small-csv",
+      "kind": "synthetic",
+      "family": "dispersion-churn",
+      "format": "csv",
+      "scale": "small",
+      "rows": 10000,
+      "sha256": "ca69cf248a324fe484e89801ecd51fd8ae4abaadce51f772cb4d71f103cbb58d",
+      "bytes": 308521
+    },
+    {
+      "id": "dispersion-churn-typical-csv",
+      "kind": "synthetic",
+      "family": "dispersion-churn",
+      "format": "csv",
+      "scale": "typical",
+      "rows": 100000,
+      "sha256": "da793742e2d7d2513229ee7e5a8372bce81018aad4a5d832564de459caf4ccfb",
+      "bytes": 3184521
+    },
+    {
+      "id": "dispersion-churn-large-csv",
+      "kind": "synthetic",
+      "family": "dispersion-churn",
+      "format": "csv",
+      "scale": "large",
+      "rows": 1000000,
+      "sha256": "3a71832f0be1c797caa11b47231705e6af9cb85f7cccd9ef4195011f294bd6fc",
+      "bytes": 32844521
+    },
+    {
+      "id": "reading-events-small-csv",
+      "kind": "synthetic",
+      "family": "reading-events",
+      "format": "csv",
+      "scale": "small",
+      "rows": 1000,
+      "sha256": "6a02205d31e87b134a4722ced41c73781d84be02f92e41f55940a1f88a9f945f",
+      "bytes": 36202
+    },
+    {
+      "id": "reading-events-typical-csv",
+      "kind": "synthetic",
+      "family": "reading-events",
+      "format": "csv",
+      "scale": "typical",
+      "rows": 10000,
+      "sha256": "2658f5ae4612407ce415c953fd16f1d6fe6f6b5ca779fe1d39ac007da5c421ae",
+      "bytes": 391611
+    },
+    {
+      "id": "reading-events-large-csv",
+      "kind": "synthetic",
+      "family": "reading-events",
+      "format": "csv",
+      "scale": "large",
+      "rows": 100000,
+      "sha256": "aaa2bec60bcb551e04c4bad00636c4b12a4628fe43aee8589472663a9e157d56",
+      "bytes": 4215702
+    },
+    {
+      "id": "study-small",
+      "kind": "recipe",
+      "family": "studio-study",
+      "format": "bundle",
+      "scale": "small",
+      "rows": 11520,
+      "replicas": 1,
+      "sources": [
+        {
+          "path": "fixtures/studio-golden/fixations.csv",
+          "sha256": "19342ecedb6e089a190b4784a248907b27fedbef03ca3e6d4bc251702fbbc2f2"
+        },
+        {
+          "path": "fixtures/studio-golden/trials.csv",
+          "sha256": "0668bccf6c672b706c0a138268f632fb5a768170578a01c58ee752176f0f8b99"
+        }
+      ],
+      "transform": "replicate-participants-v1: prefix every participant with r00/..rNN/; preserve trial/item identities within participant; recompute all scores; do not replicate cached results",
+      "sha256": "236ddaae3286c51b847cf303b9abb251fcef63a57abd24b16e6b9b2c7a3f61ce"
+    },
+    {
+      "id": "study-typical",
+      "kind": "recipe",
+      "family": "studio-study",
+      "format": "bundle",
+      "scale": "typical",
+      "rows": 57600,
+      "replicas": 5,
+      "sources": [
+        {
+          "path": "fixtures/studio-golden/fixations.csv",
+          "sha256": "19342ecedb6e089a190b4784a248907b27fedbef03ca3e6d4bc251702fbbc2f2"
+        },
+        {
+          "path": "fixtures/studio-golden/trials.csv",
+          "sha256": "0668bccf6c672b706c0a138268f632fb5a768170578a01c58ee752176f0f8b99"
+        }
+      ],
+      "transform": "replicate-participants-v1: prefix every participant with r00/..rNN/; preserve trial/item identities within participant; recompute all scores; do not replicate cached results",
+      "sha256": "673b9a7eb59e3c27eae7322d7da7a8f3964a3e8ca7d1626fd7928311b4bdfaa4"
+    },
+    {
+      "id": "study-large",
+      "kind": "recipe",
+      "family": "studio-study",
+      "format": "bundle",
+      "scale": "large",
+      "rows": 115200,
+      "replicas": 10,
+      "sources": [
+        {
+          "path": "fixtures/studio-golden/fixations.csv",
+          "sha256": "19342ecedb6e089a190b4784a248907b27fedbef03ca3e6d4bc251702fbbc2f2"
+        },
+        {
+          "path": "fixtures/studio-golden/trials.csv",
+          "sha256": "0668bccf6c672b706c0a138268f632fb5a768170578a01c58ee752176f0f8b99"
+        }
+      ],
+      "transform": "replicate-participants-v1: prefix every participant with r00/..rNN/; preserve trial/item identities within participant; recompute all scores; do not replicate cached results",
+      "sha256": "9f34c404e0808bb15d5f21e489478051bbf6c94c8d05ba0de065b4ff424f21de"
+    }
+  ],
+  "workloads": [
+    {
+      "id": "ingest-csv",
+      "title": "CSV materialized admission",
+      "group": "ingest",
+      "comparison": "paired",
+      "owner": "bd-01M3HYF63RDKD2VSQ9PFAXEKAN",
+      "datasets": {
+        "small": "gaps-binocular-small-csv",
+        "typical": "gaps-binocular-typical-csv",
+        "large": "gaps-binocular-large-csv"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "time_us",
+        "eye",
+        "x_px",
+        "y_px",
+        "pupil",
+        "status"
+      ],
+      "output_units": {
+        "time": "us",
+        "position": "px",
+        "pupil": "native"
+      },
+      "contract": "all rows, both eyes, explicit nulls/validity and rejection ledger; parse entire file",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "ingest-asc",
+      "title": "ASC materialized admission",
+      "group": "ingest",
+      "comparison": "paired",
+      "owner": "bd-01M3J4M6S3A366YNTWWVYB0MBD",
+      "datasets": {
+        "small": "gaps-binocular-small-asc",
+        "typical": "gaps-binocular-typical-asc",
+        "large": "gaps-binocular-large-asc"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "time_us",
+        "eye",
+        "x_px",
+        "y_px",
+        "pupil",
+        "status"
+      ],
+      "output_units": {
+        "time": "us",
+        "position": "px",
+        "pupil": "native"
+      },
+      "contract": "same sample fields and message/eye metadata admitted; do not compare line scanning with parsed materialization",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "pix2deg",
+      "title": "Pixel-to-angle conversion",
+      "group": "preprocess",
+      "comparison": "paired",
+      "owner": "bd-01M3J4M81MPP7DWB2AJHTEDGFN",
+      "datasets": {
+        "small": "steps-small-csv",
+        "typical": "steps-typical-csv",
+        "large": "steps-large-csv"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "time_us",
+        "x_deg",
+        "y_deg"
+      ],
+      "output_units": {
+        "time": "us",
+        "position": "deg"
+      },
+      "contract": "530x298 mm screen,1920x1080 px,600 mm distance; centred x-right/y-up; component arctangent: atan(offset_mm/distance)*180/pi; if native conversion differs, keep pair blocked",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "velocity",
+      "title": "Central-neighbor velocity",
+      "group": "preprocess",
+      "comparison": "paired",
+      "owner": "bd-01M3J4M81MPP7DWB2AJHTEDGFN",
+      "datasets": {
+        "small": "steps-small-csv",
+        "typical": "steps-typical-csv",
+        "large": "steps-large-csv"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "time_us",
+        "vx",
+        "vy",
+        "valid"
+      ],
+      "output_units": {
+        "time": "us",
+        "velocity": "deg/s"
+      },
+      "contract": "central difference (p[i+1]-p[i-1])/(t[i+1]-t[i-1]); same tracked segments; copy nearest interior class at valid segment endpoints for I-VT; velocity-only output marks unsupported endpoints explicitly",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "median",
+      "title": "Median smoothing",
+      "group": "preprocess",
+      "comparison": "absolute",
+      "owner": "bd-01M3J4M99V1VWR17R10G4P27AK",
+      "datasets": {
+        "small": "gaps-binocular-small-csv",
+        "typical": "gaps-binocular-typical-csv",
+        "large": "gaps-binocular-large-csv"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "time_us",
+        "x_deg",
+        "y_deg",
+        "valid"
+      ],
+      "output_units": {
+        "time": "us",
+        "position": "deg"
+      },
+      "contract": "per-eye five-sample median; preserve boundary/gap accounting; pymovements smooth does not offer median, so use absolute/scaling budgets",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "savitzky-golay",
+      "title": "Savitzky-Golay smoothing",
+      "group": "preprocess",
+      "comparison": "paired",
+      "owner": "bd-01M3J4M99V1VWR17R10G4P27AK",
+      "datasets": {
+        "small": "steps-small-csv",
+        "typical": "steps-typical-csv",
+        "large": "steps-large-csv"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "time_us",
+        "x_deg",
+        "y_deg",
+        "valid"
+      ],
+      "output_units": {
+        "time": "us",
+        "position": "deg"
+      },
+      "contract": "window5 degree2 derivative0; same interior support; report boundary policy separately, retain boundary row accounting",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "interpolate",
+      "title": "Bounded gap interpolation",
+      "group": "preprocess",
+      "comparison": "absolute",
+      "owner": "bd-01M3J4M99V1VWR17R10G4P27AK",
+      "datasets": {
+        "small": "gaps-binocular-small-csv",
+        "typical": "gaps-binocular-typical-csv",
+        "large": "gaps-binocular-large-csv"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "time_us",
+        "x_deg",
+        "y_deg",
+        "status"
+      ],
+      "output_units": {
+        "time": "us",
+        "position": "deg"
+      },
+      "contract": "linear positions only, max gap40ms, no endpoint extrapolation, preserve generated/original status; no established identical pymovements method claimed",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "ivt",
+      "title": "I-VT fixation outputs",
+      "group": "detect",
+      "comparison": "paired",
+      "owner": "bd-01M3HYF63RDKD2VSQ9PFAXEKAN",
+      "datasets": {
+        "small": "steps-small-csv",
+        "typical": "steps-typical-csv",
+        "large": "steps-large-csv"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "onset_us",
+        "stop_us",
+        "samples",
+        "centre_x",
+        "centre_y",
+        "rms"
+      ],
+      "output_units": {
+        "time": "us",
+        "position": "deg",
+        "dispersion": "deg"
+      },
+      "contract": "30deg/s threshold; fixation speed strictly below30; >=50samples at500Hz: eyes4s minimum100ms, reference98ms inclusive span. Reference neighbors velocity and endpoint inheritance adapter. Complete fixation summaries; eyes4s saccade computation stays timed.",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "idt-stationary",
+      "title": "I-DT long stationary candidate",
+      "group": "detect",
+      "comparison": "paired",
+      "owner": "bd-01M3J4MAJ232NXG490KAZXW69H",
+      "datasets": {
+        "small": "stationary-small-csv",
+        "typical": "stationary-typical-csv",
+        "large": "stationary-large-csv"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "onset_us",
+        "stop_us",
+        "samples",
+        "centre_x",
+        "centre_y",
+        "rms"
+      ],
+      "output_units": {
+        "time": "us",
+        "position": "deg",
+        "dispersion": "deg"
+      },
+      "contract": "dispersion1deg,minimum50samples; all-stationary subset has identical membership despite sum-range/per-axis conventions; inclusive stop +2ms normalizes to half-open; timeout is failed cell",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "idt-churn",
+      "title": "I-DT threshold-churn diagnostic",
+      "group": "detect",
+      "comparison": "descriptive",
+      "owner": "bd-01M3J4MAJ232NXG490KAZXW69H",
+      "datasets": {
+        "small": "dispersion-churn-small-csv",
+        "typical": "dispersion-churn-typical-csv",
+        "large": "dispersion-churn-large-csv"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "onset_us",
+        "stop_us",
+        "samples",
+        "centre_x",
+        "centre_y",
+        "rms"
+      ],
+      "output_units": {
+        "time": "us",
+        "position": "deg",
+        "dispersion": "deg"
+      },
+      "contract": "native sum-axis-range vs per-axis extent and violating-sample inclusion remain distinct; preserve both outputs; never aggregate a speed ratio for this cell",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "microsaccades",
+      "title": "Fixed-threshold microsaccades",
+      "group": "detect",
+      "comparison": "paired",
+      "owner": "bd-01M3J4MBTQCE63ZWQF9YJP345J",
+      "datasets": {
+        "small": "gaps-binocular-small-csv",
+        "typical": "gaps-binocular-typical-csv",
+        "large": "gaps-binocular-large-csv"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "eye",
+        "onset_us",
+        "stop_us",
+        "start_x",
+        "start_y",
+        "stop_x",
+        "stop_y"
+      ],
+      "output_units": {
+        "time": "us",
+        "position": "deg"
+      },
+      "contract": "five-point velocity, fixed etaX=etaY=6deg/s,min6samples, each eye separately; compare common fully tracked interior, retain unsupported edge/gap accounting; no adaptive threshold estimation in this cell",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "qc-loss",
+      "title": "Per-eye sample-loss report",
+      "group": "measures",
+      "comparison": "paired",
+      "owner": "bd-01M3J4MD325MXQF2SPW1BAGKSD",
+      "datasets": {
+        "small": "gaps-binocular-small-csv",
+        "typical": "gaps-binocular-typical-csv",
+        "large": "gaps-binocular-large-csv"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "eye",
+        "total",
+        "missing",
+        "observed",
+        "loss_fraction"
+      ],
+      "output_units": {
+        "counts": "samples",
+        "loss_fraction": "fraction"
+      },
+      "contract": "missing coordinates or invalid status contribute loss; zeros in pupil alone do not; denominator all samples per eye, no silent row deletion",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "aoi-dwell",
+      "title": "Ordered AOI dwell",
+      "group": "measures",
+      "comparison": "paired",
+      "owner": "bd-01M3J4MEN7PQMTPY89JWDRCNDT",
+      "datasets": {
+        "small": "reading-events-small-csv",
+        "typical": "reading-events-typical-csv",
+        "large": "reading-events-large-csv"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "word_index",
+        "count",
+        "duration_us",
+        "unassigned",
+        "invalid"
+      ],
+      "output_units": {
+        "duration": "us",
+        "counts": "events"
+      },
+      "contract": "72 nonoverlapping word rectangles: centre=(300+110*col,270+80*row),size100x60px; word row-major; invalid events retained as invalid; full event duration assigned once",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "reading-first-pass",
+      "title": "First-pass reading time",
+      "group": "measures",
+      "comparison": "paired",
+      "owner": "bd-01M3J4MEN7PQMTPY89JWDRCNDT",
+      "datasets": {
+        "small": "reading-events-small-csv",
+        "typical": "reading-events-typical-csv",
+        "large": "reading-events-large-csv"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "word_index",
+        "first_pass_us",
+        "skipped",
+        "invalid"
+      ],
+      "output_units": {
+        "duration": "us",
+        "skipped": "boolean"
+      },
+      "contract": "same ordered word AOIs; first visit until leaving word, later returns excluded; zero for skipped words plus explicit skipped flag; invalid event interrupts visit, never implicitly joins across a gap",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "pipeline-csv-ivt",
+      "title": "CSV to materialized fixation export",
+      "group": "pipeline",
+      "comparison": "paired",
+      "owner": "bd-01M3HYF63RDKD2VSQ9PFAXEKAN",
+      "datasets": {
+        "small": "steps-small-csv",
+        "typical": "steps-typical-csv",
+        "large": "steps-large-csv"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "onset_us",
+        "stop_us",
+        "samples",
+        "centre_x",
+        "centre_y",
+        "rms"
+      ],
+      "output_units": {
+        "time": "us",
+        "position": "deg",
+        "dispersion": "deg"
+      },
+      "contract": "CSV admission -> explicit geometry -> same central velocity/classification -> I-VT -> all fixation summaries -> canonical CSV bytes written/flushed; no preparsed inputs or lazy outputs in timed interval",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "pipeline-asc-reading",
+      "title": "ASC to QC and reading export",
+      "group": "pipeline",
+      "comparison": "paired",
+      "owner": "bd-01M3J4MG7X41XQBSEVHMZYE61S",
+      "datasets": {
+        "small": "steps-small-asc",
+        "typical": "steps-typical-asc",
+        "large": "steps-large-asc"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "table",
+        "row_key",
+        "value",
+        "status"
+      ],
+      "output_units": {
+        "time": "us",
+        "position": "deg",
+        "counts": "events",
+        "loss": "fraction"
+      },
+      "contract": "ASC admission -> geometry -> velocity/I-VT -> sample loss -> word AOI dwell/first pass -> complete multi-table CSV bundle; no skipped stages because an adapter is missing",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "density",
+      "title": "Density grid materialization",
+      "group": "density",
+      "comparison": "absolute",
+      "owner": "bd-01M3J4MJ4HATT8SN34TG59EYQQ",
+      "datasets": {
+        "small": "reading-events-small-csv",
+        "typical": "reading-events-typical-csv",
+        "large": "reading-events-large-csv"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "cell_x",
+        "cell_y",
+        "mass"
+      ],
+      "output_units": {
+        "position": "px",
+        "mass": "probability"
+      },
+      "contract": "valid fixation positions,duration weights,1920x1080px domain,sigma35px; grids64x48/128x96/256x192; normalize mass, consume all cells; no plotting-heatmap surrogate",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 48.0
+    },
+    {
+      "id": "multimatch",
+      "title": "All MultiMatch components",
+      "group": "comparison",
+      "comparison": "absolute",
+      "owner": "bd-01M3J4MKCXZDQCKYWZ0Q9P52KE",
+      "datasets": {
+        "small": "reading-events-small-csv",
+        "typical": "reading-events-typical-csv",
+        "large": "reading-events-large-csv"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "position",
+        "duration",
+        "length",
+        "direction",
+        "shape"
+      ],
+      "output_units": {
+        "scores": "unitless"
+      },
+      "contract": "first100/1000/10000 valid events; second path x shifted1px; no simplification; all five components, named zero-vector convention; mismatch or unsupported path keeps gate open",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 2048,
+        "large": 8192
+      },
+      "max_growth_per_10x": 120.0
+    },
+    {
+      "id": "study",
+      "title": "Complete study results/export",
+      "group": "study",
+      "comparison": "absolute",
+      "owner": "bd-01M3J4MMMGD2HZV8XBMWMH3X4C",
+      "datasets": {
+        "small": "study-small",
+        "typical": "study-typical",
+        "large": "study-large"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "table",
+        "row_key",
+        "value",
+        "status"
+      ],
+      "output_units": {
+        "scores": "unitless"
+      },
+      "contract": "recompute existing golden-study 4-scale real core results at1/5/10 participant replicas; all results,failed/quarantined rows and CSV export included; no fixture mock scores",
+      "absolute_wall_ms": {
+        "small": 2000,
+        "typical": 15000,
+        "large": 40000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 1024,
+        "typical": 4096,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "streaming-asc",
+      "title": "Streaming ASC consumption",
+      "group": "streaming",
+      "comparison": "absolute",
+      "owner": "bd-01M3J4M6S3A366YNTWWVYB0MBD",
+      "datasets": {
+        "small": "gaps-binocular-small-asc",
+        "typical": "gaps-binocular-typical-asc",
+        "large": "gaps-binocular-large-asc"
+      },
+      "modes": [
+        "cold",
+        "warm"
+      ],
+      "output_columns": [
+        "samples",
+        "messages",
+        "diagnostics",
+        "checksum"
+      ],
+      "output_units": {
+        "counts": "rows"
+      },
+      "contract": "consume all admitted output incrementally into checksum/counts; no retained result collection; fixed64KiB line and chunk bounds; same source as materialized ASC",
+      "absolute_wall_ms": {
+        "small": 1000,
+        "typical": 10000,
+        "large": 120000
+      },
+      "absolute_peak_rss_mib": {
+        "small": 512,
+        "typical": 512,
+        "large": 512
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "ui-selection",
+      "title": "Selection input-to-display",
+      "group": "ui",
+      "comparison": "absolute",
+      "owner": "bd-01M3DPG25V0DGFR2BPANBDWMQF",
+      "datasets": {
+        "small": "study-small",
+        "large": "study-large"
+      },
+      "modes": [
+        "display"
+      ],
+      "output_columns": [
+        "displayed_ref",
+        "frame_id"
+      ],
+      "output_units": {
+        "latency": "ms"
+      },
+      "contract": "actual event dispatch through real backend to presented frame; handler-to-snapshot is a different metric; named 1x and10x golden workload; continuous alternating r00/P17/Encoding/enc_03/occurrence1/ordinal6 and ordinal7 (base records7214/7215) across warmups and timed observations; verify requested/presented refs match and reject no-ops",
+      "absolute_wall_ms": {
+        "small": 100,
+        "large": 100
+      },
+      "absolute_peak_rss_mib": {
+        "small": 3072,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "ui-trial",
+      "title": "Cached trial switch input-to-display",
+      "group": "ui",
+      "comparison": "absolute",
+      "owner": "bd-01M3DPG25V0DGFR2BPANBDWMQF",
+      "datasets": {
+        "small": "study-small",
+        "large": "study-large"
+      },
+      "modes": [
+        "display"
+      ],
+      "output_columns": [
+        "displayed_ref",
+        "frame_id"
+      ],
+      "output_units": {
+        "latency": "ms"
+      },
+      "contract": "actual event dispatch through real backend to presented frame; handler-to-snapshot is a different metric; named 1x and10x golden workload; continuous alternating r00/P17/Encoding/enc_03 and enc_04, both primed across warmups and timed observations; verify requested/presented refs match and reject no-ops",
+      "absolute_wall_ms": {
+        "small": 250,
+        "large": 250
+      },
+      "absolute_peak_rss_mib": {
+        "small": 3072,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    },
+    {
+      "id": "ui-perspective",
+      "title": "Perspective switch input-to-display",
+      "group": "ui",
+      "comparison": "absolute",
+      "owner": "bd-01M3DPG25V0DGFR2BPANBDWMQF",
+      "datasets": {
+        "small": "study-small",
+        "large": "study-large"
+      },
+      "modes": [
+        "display"
+      ],
+      "output_columns": [
+        "displayed_ref",
+        "frame_id"
+      ],
+      "output_units": {
+        "latency": "ms"
+      },
+      "contract": "actual event dispatch through real backend to presented frame; handler-to-snapshot is a different metric; named 1x and10x golden workload; continuous Explore -> Analysis -> Compare cycle across warmups and timed observations; verify requested/presented refs match and reject no-ops",
+      "absolute_wall_ms": {
+        "small": 150,
+        "large": 150
+      },
+      "absolute_peak_rss_mib": {
+        "small": 3072,
+        "large": 8192
+      },
+      "max_growth_per_10x": 12.0
+    }
+  ]
+}

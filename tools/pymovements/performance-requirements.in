@@ -1,0 +1,6 @@
+# Benchmark environment: CPython 3.14.7, macOS arm64.
+# Compile to performance-requirements.txt before collecting measurements.
+pymovements==0.28.0
+numpy==2.4.3
+scipy==1.17.1
+jsonschema==4.26.0
