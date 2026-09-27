@@ -86,8 +86,8 @@ object A11y:
     * context strip, notice,
     * confirmation, banner, one stop per visible dock group (the pane it
     * shows) followed by that pane's own controls (`inside`: a form pane's
-    * controls, derived from its view-model), and the status bar's action. A
-    * disabled button is no stop.
+    * controls, derived from its view-model; by default a pane has none),
+    * and the status bar's action. A disabled button is no stop.
     */
   def tabOrder(
       model: AppModel,

@@ -57,6 +57,9 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
     ok(SniffedSource.read(source.role, source.path.value, IArray.from(text.getBytes(UTF_8))))
       .copy(bytes = source.bytes)
 
+  def run(w: ImportWizard, document: StudioDocument, intents: WizardIntent*): ImportWizard =
+    intents.foldLeft(w)((x, i) => ImportWizard.update(x, i, document)._1)
+
   /** Open the pane on `m`'s selection and deliver its sources as the project
     * would.
     */
@@ -176,6 +179,76 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
         assertEquals(sources, m.document.dataset(r2).get.sources)
         assertEquals(units.time, Some(TimeUnit.Milliseconds))
       case other => fail(s"expected one re-import, got $other")
+    // The model applies it: a new pending r4 under r2.
+    val applied = AppModel.run(m, WizardEffect.appIntents(fx))._1
+    val r4      = applied.document.dataset(DatasetRevision(4)).getOrElse(fail("no r4"))
+    assertEquals((r4.parent, r4.decision), (Some(r2), AdmissionDecision.Pending))
+    assertEquals(r4.units.time, Some(TimeUnit.Milliseconds))
+    // The Data selection follows the new revision, so the pane reloads onto
+    // r4 and holds no edit already applied to r2.
+    val follow = ColumnMappingPane.follow(m.document, applied)
+    assertEquals(
+      follow,
+      Some(
+        Intent.Navigate(Location(Perspective.Data, Vector(Place.Dataset(DatasetRevision(4)))))
+      )
+    )
+    val moved = AppModel.run(applied, follow.toVector)._1
+    assertEquals(ColumnMappingPane.selected(moved), Some(r4))
+    assert(ColumnMappingPane.mustReload(ColumnMappingPane.selected(m), moved))
+    // Re-mapping r4 as it now is changes nothing: no second revision.
+    val (_, again)      = opened(moved)
+    val (refused, none) = ImportWizard.update(again, WizardIntent.Commit, moved.document)
+    assertEquals(none, Vector.empty)
+    assertEquals(refused.problem, Some(WizardProblem.NoChange(DatasetRevision(4))))
+    // One undo restores the document.
+    val undone = AppModel.update(moved, Intent.Undo(HistoryStack.Science))._1
+    assertEquals(undone.document, m.document)
+    // An edit in place moves nothing.
+    assertEquals(ColumnMappingPane.follow(m.document, m), None)
+  }
+
+  test("a re-map shows the mapping page only; edits and notices are named") {
+    val m      = StoryModels.t1Data
+    val (_, w) = opened(m)
+    val vm     = ImportWizardVM.of(w, m.document)
+    assertEquals((vm.showTabs, vm.tab), (false, WizardTab.FixationMapping))
+    // A blocked commit stays on the mapping page and says why there.
+    val blocked = run(
+      w,
+      m.document,
+      WizardIntent.Choose(SourceRole.Fixations, ok(ColumnName.of("x")), ColumnChoice.Attribute),
+      WizardIntent.Commit
+    )
+    assert(blocked.problem.exists {
+      case WizardProblem.Blocked(_) => true
+      case _                        => false
+    })
+    assertEquals(ImportWizardVM.of(blocked, m.document).tab, WizardTab.FixationMapping)
+    assert(ImportWizardVM.of(blocked, m.document).problem.nonEmpty)
+    assert(ImportWizardVM.of(ImportWizard.newImport(t1, ImportPresets.empty), t1).showTabs)
+    // Edits are the mapping, units, trial roles and geometry; presets are not.
+    assert(!w.editedSince(w))
+    assert(blocked.editedSince(w))
+    assert(!w.withPresets(ImportPresets.empty).editedSince(w))
+    assertEquals(
+      PaneNotice.EditsDropped(r3).message,
+      "r3 changed, so the edits not yet applied to it were dropped."
+    )
+    assertEquals(
+      ColumnMappingPane
+        .vm(
+          Some(ColumnMappingPane.selected(m).get),
+          false,
+          Some(PaneNotice.PresetsUnreadable(Vector("a.json: bad")))
+        )
+        .notice,
+      Some("Some saved import presets could not be read: a.json: bad")
+    )
+    assertEquals(
+      PaneNotice.CannotOpen(WizardProblem.UnknownDataset(DatasetRevision(9))).message,
+      "Dataset r9 is not in the project."
+    )
   }
 
   test("a file that is not the revision's own is refused; an unreadable one names its path") {
@@ -213,11 +286,10 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
     val (_, w) = opened(m)
     val vm     = ImportWizardVM.of(w, m.document)
     val stops  = ColumnMappingPane.focusStops(vm)
-    // The tabs are one toggle group: one stop, the selected tab.
-    assertEquals(stops.head, FocusStop(A11yRole.ToggleButton, "Column mapping"))
-    assertEquals(stops(1), FocusStop(A11yRole.ComboBox, "Time unit (declared)"))
+    // No tab strip in a re-map: the time unit comes first.
+    assertEquals(stops.head, FocusStop(A11yRole.ComboBox, "Time unit (declared)"))
     assertEquals(
-      stops.slice(2, 2 + vm.fixations.rows.size).map(_.name),
+      stops.slice(1, 1 + vm.fixations.rows.size).map(_.name),
       vm.fixations.rows.map(r => s"Role for ${r.column.value}")
     )
     assertEquals(
@@ -228,10 +300,16 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
         FocusStop(A11yRole.Button, "Apply to r3")
       )
     )
+    // A new import's wizard shows its tabs: one stop, the selected tab.
+    val fresh = ImportWizard.newImport(t1, ImportPresets.empty)
+    assertEquals(
+      ColumnMappingPane.focusStops(ImportWizardVM.of(fresh, t1)).head,
+      FocusStop(A11yRole.ToggleButton, "Column mapping")
+    )
     val geometry = ColumnMappingPane.focusStops(
       ImportWizardVM.of(
-        ImportWizard.update(w, WizardIntent.ChooseTab(WizardTab.Geometry), m.document)._1,
-        m.document
+        ImportWizard.update(fresh, WizardIntent.ChooseTab(WizardTab.Geometry), t1)._1,
+        t1
       )
     )
     assertEquals(geometry.count(_.role == A11yRole.TextField), GeometryField.values.length)

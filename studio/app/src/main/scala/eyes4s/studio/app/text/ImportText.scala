@@ -54,7 +54,8 @@ enum ImportTextId derives CanEqual:
   case DialogFixations, DialogTrials, DialogFilter
 
   // --- The column-mapping pane (re-map of the selected revision) ------------------
-  case Revert, PaneNoDataset, PaneReading, PaneNoProject
+  case Revert, PaneNoDataset, PaneReading, PaneNoProject, PaneEditsDropped
+  case PanePresetsUnreadable
 
 /** The wizard's strings in the boards' wording. */
 object ImportText:
@@ -150,10 +151,13 @@ object ImportText:
       case TrialWarning   => "Warning (trial metadata, mapped in S5.4): {0}"
       case AttributesNote =>
         "Columns without a role pass through as attributes, kept as written."
-      case Revert        => "Revert"
-      case PaneNoDataset => "No dataset revision yet. Import sources to map their columns."
-      case PaneReading   => "Reading {0}’s files from the project…"
-      case PaneNoProject => "no project is open to read it from"
+      case Revert           => "Revert"
+      case PaneNoDataset    => "No dataset revision yet. Import sources to map their columns."
+      case PaneReading      => "Reading {0}’s files from the project…"
+      case PaneNoProject    => "no project is open to read it from"
+      case PaneEditsDropped =>
+        "{0} changed, so the edits not yet applied to it were dropped."
+      case PanePresetsUnreadable => "Some saved import presets could not be read: {0}"
 
   /** `id`'s English template with its arguments filled. */
   def apply(id: ImportTextId, args: String*): String =

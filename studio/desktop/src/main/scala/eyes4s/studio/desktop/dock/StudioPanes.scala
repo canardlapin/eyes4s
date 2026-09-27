@@ -77,7 +77,8 @@ final class StudioPanes(spec: LayoutSpec):
         def snapshot(): ujson.Value  = view.state
         override def dispose(): Unit =
           gone += id
-          views.remove(id)
+          // A pane rebuilt under the same id keeps its new view.
+          if views.get(id).exists(_ eq view) then views.remove(id): Unit
           live.remove(id): Unit
     }
 

@@ -34,7 +34,6 @@ import eyes4s.studio.desktop.runtime.{
 }
 import eyes4s.studio.desktop.importing.{ColumnMappingPaneHost, ImportWizardHost}
 import eyes4s.studio.desktop.platform.FilePresetStore
-import eyes4s.studio.core.importing.ImportPresets
 import eyes4s.studio.desktop.shell.AppShell
 import javafx.application.Platform
 import javafx.scene.control.{Alert, TextInputDialog}
@@ -117,7 +116,8 @@ object StudioWindow:
   def fxDialogs(
       model: () => AppModel,
       messages: Messages,
-      project: Option[ProjectPort] = None
+      project: Option[ProjectPort] = None,
+      presets: FilePresetStore = FilePresetStore.userDefault
   ): PlatformDialogs =
     (dialog: PlatformDialog, dispatch: Intent => Unit) =>
       dialog match
@@ -141,7 +141,7 @@ object StudioWindow:
           ImportWizardHost.openWindow(
             () => model().document,
             dispatch,
-            FilePresetStore.userDefault,
+            presets,
             sheets,
             project
           ): Unit
@@ -213,7 +213,9 @@ object StudioWindow:
     dockOf = () => host.dock.state.maximized.isDefined
     val effects = DesktopEffects(
       session,
-      dialogs.getOrElse(fxDialogs(() => runtime.fold(initial)(_.model), messages, project)),
+      dialogs.getOrElse(
+        fxDialogs(() => runtime.fold(initial)(_.model), messages, project, presets)
+      ),
       p =>
         host.reset(p)
         runtime.foreach(r => host.sync(r.model))
@@ -239,12 +241,7 @@ object StudioWindow:
       )
     r.listen(shell.render)
     // The column-mapping pane (Data): the import wizard on the selected
-    // revision. Presets are read from disk each time it loads a revision, so
-    // one saved from File › Import is offered.
-    def saved(): ImportPresets =
-      val (read, errors) = presets.load
-      errors.foreach(System.err.println)
-      read
+    // revision. Saved presets are read once, off the JavaFX thread.
     val mapping = ColumnMappingPaneHost(
       () => r.model,
       dispatch,
@@ -253,9 +250,17 @@ object StudioWindow:
         presets,
         project
       ),
-      () => saved(),
       project
     )
+    val presetReader = Thread(
+      () =>
+        val (saved, errors) = presets.load
+        Platform.runLater(() => mapping.presetsLoaded(saved, errors))
+      ,
+      "eyes4s-presets-read"
+    )
+    presetReader.setDaemon(true)
+    presetReader.start()
     host.host(StudioLayouts.columnMapping, mapping.node)
     r.listen(mapping.sync)
     Right(StudioWindow(session, r, host, shell, effects, project, mapping))

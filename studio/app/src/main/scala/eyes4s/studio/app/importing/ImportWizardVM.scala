@@ -103,6 +103,7 @@ final case class PresetsVM(
 final case class ImportWizardVM(
     title: String,
     kind: String,
+    showTabs: Boolean,
     tabs: Vector[WizardTabVM],
     tab: WizardTab,
     fixations: MappingTableVM,
@@ -312,8 +313,12 @@ object ImportWizardVM:
     ImportWizardVM(
       title = t(ImportTextId.Title),
       kind = ChangeKind.DatasetReadmit.label,
+      // A re-map is hosted in the column-mapping pane, whose dock tab already
+      // names it: it shows the mapping page only, with no tab strip (the
+      // other pages belong to the sibling panes).
+      showTabs = newImport,
       tabs = tabs,
-      tab = w.tab,
+      tab = if newImport then w.tab else WizardTab.FixationMapping,
       fixations = MappingTableVM(
         SourceRole.Fixations,
         Vector(

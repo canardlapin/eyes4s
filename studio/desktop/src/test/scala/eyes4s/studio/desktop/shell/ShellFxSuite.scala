@@ -46,9 +46,19 @@ abstract class ShellFxSuite extends StudioFxSuite:
 
   protected val opened = scala.collection.mutable.ArrayBuffer.empty[StudioWindow]
 
+  private val presetDirs = scala.collection.mutable.ArrayBuffer.empty[java.nio.file.Path]
+
+  /** An empty preset store of this test's own, removed after it. */
+  protected def noPresets(): FilePresetStore =
+    val dir = java.nio.file.Files.createTempDirectory("eyes4s-shell-presets")
+    presetDirs += dir
+    FilePresetStore(dir)
+
   override def afterEach(context: AfterEach): Unit =
     opened.foreach(w => runOnFx(w.close()))
     opened.clear()
+    presetDirs.foreach(eyes4s.studio.desktop.platform.TempDirs.remove)
+    presetDirs.clear()
     super.afterEach(context)
 
   /** Records every dialog asked for; types `rename` into Rename…. */
@@ -72,7 +82,7 @@ abstract class ShellFxSuite extends StudioFxSuite:
       // checks the native split separately.
       nativeMenu: Boolean = false,
       // No saved import presets unless a suite brings its own.
-      presets: FilePresetStore = ShellFxSuite.noPresets
+      presets: FilePresetStore = noPresets()
   ): StudioWindow =
     val w = runOnFx(
       StudioWindow
@@ -198,9 +208,3 @@ abstract class ShellFxSuite extends StudioFxSuite:
   }
 
   protected def at(m: AppModel, i: Intent): AppModel = AppModel.update(m, i)._1
-
-object ShellFxSuite:
-  /** A preset store at a directory that is never created: no presets. */
-  val noPresets: FilePresetStore = FilePresetStore(
-    java.nio.file.Paths.get(System.getProperty("java.io.tmpdir"), "eyes4s-shell-no-presets")
-  )

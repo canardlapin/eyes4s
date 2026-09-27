@@ -147,6 +147,18 @@ final case class ImportWizard private (
     */
   def warnings: Vector[MappingError] = trials.fold(Vector.empty)(_._2.issues)
 
+  /** The same wizard offering `saved` as its presets; nothing else changes
+    * (the problem it shows included).
+    */
+  def withPresets(saved: ImportPresets): ImportWizard = copy(presets = saved)
+
+  /** Whether the user has changed the mapping, units, trial roles or
+    * geometry since `baseline`.
+    */
+  def editedSince(baseline: ImportWizard): Boolean =
+    fixations != baseline.fixations || trials != baseline.trials ||
+      geometry != baseline.geometry
+
 object ImportWizard:
 
   private val none: Vector[WizardEffect] = Vector.empty

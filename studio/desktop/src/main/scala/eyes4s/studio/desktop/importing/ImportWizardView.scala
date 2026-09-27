@@ -177,6 +177,8 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
         b.setText(t.label)
         b.setAccessibleText(t.label)
         b.setSelected(t.selected)
+        b.setVisible(vm.showTabs)
+        b.setManaged(vm.showTabs)
       }
       kind.setText(vm.kind)
       WizardTab.values.foreach { t =>
