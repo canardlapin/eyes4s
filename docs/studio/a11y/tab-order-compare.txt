@@ -1,0 +1,16 @@
+menu-button: Project memory-study
+toggle-button: Compare (⌘4)
+button: Back (⌘[)
+button: Summary · by retrieval response
+button: Remembered
+button: P17
+button: ret_07 · beach-042
+button: pair ret_07 × enc_03 · matched, current location
+button: Draft rev 5 · 1 change · ready; review in Analysis
+button: Review in Analysis
+button: Discard draft
+list: Queries
+plot: Query trial
+plot: Reference trial
+plot: Contrast
+region: Inspector

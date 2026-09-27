@@ -86,6 +86,20 @@ class TrialSceneSuite extends ScalaCheckSuite:
     case DevicePrimitive.TextRun(_, _, _, _, _, _, _, _, _, n) => n.map(_.value)
     case DevicePrimitive.Image(_, _, _, _, _, _, _, n)         => n.map(_.value)
 
+  private def isMark(p: DevicePrimitive): Boolean =
+    named(p).exists(_.startsWith(TrialScene.MarkPrefix))
+
+  // Where a mark primitive is centred: a point batch's point, a ring's centroid.
+  private def centre(p: DevicePrimitive): DevicePoint = p match
+    case DevicePrimitive.PointBatch(points, _, _, _, _) => points.head
+    case DevicePrimitive.Polyline(points, true, _, _)   =>
+      DevicePoint(points.map(_.x).sum / points.size, points.map(_.y).sum / points.size)
+    case other => fail(s"a fixation mark is drawn as $other")
+
+  // Each mark's primitive by its grob name.
+  private def markPrimitives(prims: Vector[DevicePrimitive]): Map[String, DevicePrimitive] =
+    prims.filter(isMark).flatMap(p => named(p).map(_ -> p)).toMap
+
   private def near(a: DevicePoint, b: DevicePoint): Boolean =
     math.abs(a.x - b.x) <= Tolerance && math.abs(a.y - b.y) <= Tolerance
 
@@ -136,27 +150,24 @@ class TrialSceneSuite extends ScalaCheckSuite:
       val (transform, device) = lower(scene, surface)
       val prims               = primitives(device.elements)
 
-      // The marks are drawn where the transform puts their fixations.
-      val drawn = prims.collect {
-        case DevicePrimitive.PointBatch(points, _, _, _, Some(n))
-            if n.value == TrialScene.MarksName =>
-          points
-      }.flatten
+      // Every mark is its own named grob, drawn where the transform puts its
+      // fixation.
+      val drawn = markPrimitives(prims)
+      assertEquals(prims.count(isMark), fs.size)
       assertEquals(drawn.size, fs.size)
-      scene.marks.zip(drawn).foreach { (mark, at) =>
+      scene.marks.foreach { mark =>
+        val at = centre(drawn(mark.name.value))
         assert(near(right(transform.dataToDevice(mark.at)), at), s"$mark drawn at $at")
-        assertEquals(
-          mark.at,
-          DataPoint(fs(mark.batchIndex).screenX, fs(mark.batchIndex).screenY)
-        )
+        assertEquals(mark.at, DataPoint(fs(mark.order).screenX, fs(mark.order).screenY))
         // A canvas position maps back to the fixation (the picking direction).
         val back = transform.canvasToData(transform.deviceToCanvas(at))
         assertEqualsDouble(back.x, mark.at.x, 1e-6)
         assertEqualsDouble(back.y, mark.at.y, 1e-6)
-        assertEquals(
-          scene.refAt(mark.batchIndex),
-          Some(StudioRef.Fixation(ret07, fs(mark.batchIndex).index))
+        assertEquals[Option[StudioRef], Option[StudioRef]](
+          scene.refOf(mark.name),
+          Some(StudioRef.Fixation(ret07, fs(mark.order).index))
         )
+        assertEquals(mark.name.value, TrialScene.markName(fs(mark.order).index))
       }
 
       // The image fills the image frame the same transform places.
@@ -235,7 +246,7 @@ class TrialSceneSuite extends ScalaCheckSuite:
       val (_, device) = lower(scene, right(PlotSurface(640, 480, 2.0)))
       val prims       = primitives(device.elements)
       assert(prims.exists(p => named(p).contains(TrialScene.StageName)))
-      assert(prims.exists(p => named(p).contains(TrialScene.MarksName)))
+      assertEquals(prims.count(isMark), ret07Fixations.size)
       val foreign = prims.flatMap(paints).flatMap(colours).filterNot(tokenColours)
       assert(foreign.isEmpty, s"colours that are not tokens: ${foreign.distinct}")
     }
@@ -339,54 +350,77 @@ class TrialSceneSuite extends ScalaCheckSuite:
     List(MarkStyle.Neutral, MarkStyle.Role(TrialRole.Query)).foreach { style =>
       val scene       = right(TrialScene(input(Display.BlankWithFixationCross, marks = style)))
       val (_, device) = lower(scene, right(PlotSurface(800, 600, 1.0)))
-      val gps         = primitives(device.elements).collect {
-        case DevicePrimitive.PointBatch(points, _, _, gps, Some(n))
-            if n.value == TrialScene.MarksName =>
-          points.indices.map(gps.valueAt)
-      }.flatten
-      val outside = scene.marks.filter(_.window == WindowSide.Outside).map(_.batchIndex)
-      assertEquals(outside, Vector(8))
-      outside.foreach { i =>
-        assertEquals(gps(i).fill, None)
-        assert(gps(i).lineType.dash.isDefined, s"$style: outside mark is not dashed")
+      val gps         = markPrimitives(primitives(device.elements)).collect {
+        case (n, DevicePrimitive.PointBatch(_, _, _, gps, _)) => n -> gps.valueAt(0)
+      }
+      val outside = scene.marks.filter(_.window == WindowSide.Outside)
+      assertEquals(outside.map(_.order), Vector(8))
+      outside.foreach { m =>
+        assertEquals(gps(m.name.value).fill, None)
+        assert(gps(m.name.value).lineType.dash.isDefined, s"$style: outside mark is not dashed")
       }
       scene.marks.filter(_.window == WindowSide.Inside).foreach { m =>
-        assert(gps(m.batchIndex).fill.isDefined)
-        assertEquals(gps(m.batchIndex).lineType.dash, None)
+        assert(gps(m.name.value).fill.isDefined)
+        assertEquals(gps(m.name.value).lineType.dash, None)
       }
     }
   }
 
   test("role marks: query filled circle, matched diamond, control hollow and cased") {
-    import intaglio.PointShape
-    def batch(style: MarkStyle) =
+    import eyes4s.studio.app.tokens.{StageToken, ThemedToken}
+    import intaglio.{CasingWidth, PointShape, StrokeWidth}
+    def marks(style: MarkStyle, scale: Double = 1.0) =
       val scene       = right(TrialScene(input(Display.BlankWithFixationCross, marks = style)))
-      val (_, device) = lower(scene, right(PlotSurface(800, 600, 1.0)))
-      primitives(device.elements).collect {
-        case DevicePrimitive.PointBatch(_, _, shapes, gps, Some(n)) => (n.value, shapes, gps)
+      val (_, device) = lower(scene, right(PlotSurface(800, 600, scale)))
+      (scene, primitives(device.elements).filter(isMark))
+    val (_, query) = marks(MarkStyle.Role(TrialRole.Query))
+    assertEquals(query.size, ret07Fixations.size)
+    val shapes = query.collect { case DevicePrimitive.PointBatch(_, _, s, gps, _) =>
+      (s.valueAt(0), gps.valueAt(0))
+    }
+    assertEquals(shapes.size, query.size)
+    assertEquals(shapes.head._1, PointShape.Circle)
+    assertEquals(
+      shapes.head._2.fill,
+      Some(IntaglioColours.themed(Theme.Light, ThemedToken.Query))
+    )
+    val (_, matched) = marks(MarkStyle.Role(TrialRole.Matched))
+    val diamonds     = matched.collect { case DevicePrimitive.PointBatch(_, _, s, _, _) =>
+      s.valueAt(0)
+    }
+    assertEquals(diamonds, Vector.fill(matched.size)(PointShape.Diamond))
+    // A control mark in the window is one ring whose casing is Intaglio
+    // StrokeCasing paint (the halo, 4 px on screen): no second casing grob.
+    for scale <- List(1.0, 2.0) do
+      val (scene, control) = marks(MarkStyle.Role(TrialRole.Control), scale)
+      assertEquals(control.size, ret07Fixations.size)
+      val rings = control.collect { case DevicePrimitive.Polyline(points, true, gp, _) =>
+        (points, gp)
       }
-    val query   = batch(MarkStyle.Role(TrialRole.Query))
-    val matched = batch(MarkStyle.Role(TrialRole.Matched))
-    val control = batch(MarkStyle.Role(TrialRole.Control))
-    assertEquals(query.map(_._1), Vector(TrialScene.MarksName))
-    assertEquals(query.head._2.valueAt(0), PointShape.Circle)
-    assertEquals(
-      query.head._3.valueAt(0).fill,
-      Some(IntaglioColours.themed(Theme.Light, eyes4s.studio.app.tokens.ThemedToken.Query))
-    )
-    assertEquals(matched.head._2.valueAt(0), PointShape.Diamond)
-    assertEquals(control.map(_._1), Vector(TrialScene.CasingName, TrialScene.MarksName))
-    val mark = control.last._3.valueAt(0)
-    assertEquals(mark.fill, None)
-    assertEquals(
-      mark.stroke,
-      Some(IntaglioColours.themed(Theme.Light, eyes4s.studio.app.tokens.ThemedToken.Control))
-    )
+      assertEquals(rings.size, scene.marks.count(_.window == WindowSide.Inside))
+      rings.foreach { (points, gp) =>
+        assertEquals(points.size, TrialScene.RingSegments)
+        assertEquals(gp.fill, None)
+        assertEquals(gp.stroke, Some(IntaglioColours.themed(Theme.Light, ThemedToken.Control)))
+        val casing = gp.casing.getOrElse(fail("a control ring has no casing"))
+        assertEquals(casing.color, IntaglioColours.staged(StageVariant.Dark, StageToken.Halo))
+        assertEquals(
+          casing.width,
+          CasingWidth.Absolute(StrokeWidth.devicePixelsUnsafe(TrialScene.CasingPx * scale))
+        )
+      }
+      // The ring is the mark's size: its vertices lie at the mark's radius.
+      scene.marks.filter(_.window == WindowSide.Inside).zip(rings).foreach { (m, ring) =>
+        val c = centre(DevicePrimitive.Polyline(ring._1, true, ring._2, None))
+        ring._1.foreach { v =>
+          assertEqualsDouble(math.hypot(v.x - c.x, v.y - c.y), m.radiusPx * scale, 1e-6)
+        }
+      }
   }
 
   test("mark area is proportional to duration") {
     val scene = right(TrialScene(input(Display.Blank)))
-    val pairs = scene.marks.map(m => (m.radiusPx, ret07Fixations(m.batchIndex).durationMs))
+    val pairs = scene.marks.map(m => (m.radiusPx, ret07Fixations(m.order).durationMs))
     val ratio = pairs.map((r, d) => r * r / d)
     ratio.foreach(q => assertEqualsDouble(q, ratio.head, 1e-9))
   }
@@ -454,5 +488,53 @@ class TrialSceneSuite extends ScalaCheckSuite:
       right(TrialScene(input(Display.BlankWithFixationCross, fixations = Vector.empty)))
     val (_, device) = lower(scene, right(PlotSurface(640, 480, 1.0)))
     assertEquals(scene.marks, Vector.empty)
-    assert(!primitives(device.elements).exists(p => named(p).contains(TrialScene.MarksName)))
+    assert(!primitives(device.elements).exists(isMark))
+  }
+
+  test("an off-screen fixation mid-trial is drawn where it is, dashed, never clamped") {
+    // eyes4s keeps an off-screen fixation in its scanpath (OutsideScreen); it
+    // is outside the analysis window too, so the trial view draws it dashed.
+    val rows = Vector(
+      (900.0, 500.0, 200, WindowSide.Inside),
+      (-60.0, 1150.0, 180, WindowSide.Outside),
+      (2000.0, -30.0, 160, WindowSide.Outside),
+      (1000.0, 600.0, 220, WindowSide.Inside)
+    )
+    val fs = rows.zipWithIndex.map { case ((x, y, d, w), i) =>
+      right(TrialFixation.of(ret07, right(FixationIndex.of(i + 1)), x, y, d, w))
+    }
+    val extents = List(
+      TrialExtent.Screen,
+      TrialExtent.Gaze,
+      TrialExtent.Covering(right(ScreenRect.of(448, 156, 1472, 924)))
+    )
+    for
+      extent <- extents
+      style  <- List(MarkStyle.Neutral, MarkStyle.Role(TrialRole.Query))
+    do
+      val options = TrialSceneOptions(extent = extent)
+      val scene   =
+        right(TrialScene(input(Display.BlankWithFixationCross, fs, style, options = options)))
+      val (transform, device) = lower(scene, right(PlotSurface(800, 600, 1.0)))
+      val drawn               = markPrimitives(primitives(device.elements))
+      assertEquals(scene.marks.map(_.order), Vector(0, 1, 2, 3), s"$extent")
+      assertEquals(drawn.size, fs.size, s"$extent")
+      scene.marks.zip(fs).foreach { (mark, f) =>
+        assertEquals(mark.at, DataPoint(f.screenX, f.screenY), s"$extent: $mark")
+        assert(
+          near(right(transform.dataToDevice(mark.at)), centre(drawn(mark.name.value))),
+          s"$extent: $mark is not drawn at its own position"
+        )
+      }
+      val gps = drawn.collect { case (n, DevicePrimitive.PointBatch(_, _, _, gps, _)) =>
+        n -> gps.valueAt(0)
+      }
+      scene.marks.filter(_.window == WindowSide.Outside).foreach { m =>
+        assertEquals(gps(m.name.value).fill, None)
+        assert(gps(m.name.value).lineType.dash.isDefined, s"$extent: ${m.order} is not dashed")
+      }
+    val gaze = TrialScene.extentOf(
+      input(Display.Blank, fs, options = TrialSceneOptions(extent = TrialExtent.Gaze))
+    )
+    assert(gaze.left < -60.0 && gaze.top < -30.0 && gaze.right > 2000.0 && gaze.bottom > 1150.0)
   }

@@ -87,8 +87,7 @@ class PublicPlanSuite extends munit.FunSuite:
         "name-X",
         1,
         "Selected name",
-        ParameterUnits.Dimensionless,
-        ParameterDomain.DomainValue("nonempty string")
+        FieldKind.Text
       )
     )
     val descriptor = new ParameterDescriptor[String, String, String](

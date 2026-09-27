@@ -158,6 +158,10 @@ object Diagnose:
   given descriptor: Diagnose[DescriptorError, Nothing] =
     instance(C.descriptor)(CauseDiagnostics.descriptor)
 
+  /** A form field's refusal; `Refused` keeps the domain error's diagnostic. */
+  given formField[E, K](using underlying: Diagnose[E, K]): Diagnose[FieldError[E], K] =
+    instance(C.formField)(e => CauseDiagnostics.formField(e)(underlying(_)))
+
   // ---------------------------------------------------------------- derived families
 
   given timeline: Diagnose[TimelineError, Nothing]         = derived(C.timeline)(_.message)

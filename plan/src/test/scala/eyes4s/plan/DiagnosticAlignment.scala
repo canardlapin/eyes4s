@@ -110,6 +110,10 @@ final class DiagnosticAlignment(
         case v: eyes4s.detect.GapPolicy     => Some(gapPolicy(v))
         case v: LedgerRefusal[?]            => Some(Operand.Cause(Projections.ledgerRefusal(v)))
         case v: WindowTally                 => Some(windowTally(v))
+        case v: FieldId                     => Some(fieldId(v))
+        case v: Endpoint                    => Some(endpoint(v))
+        case v: NumericBounds               => Some(numericBounds(v))
+        case v: RawValue                    => Some(rawValue(v))
         case _                              => None)
 
   def matches(value: Any, operand: Operand[Any]): Boolean =

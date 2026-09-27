@@ -57,17 +57,23 @@ trait UnitLabel[U <: Unit2D]:
   def symbol: String
   def name: String
 
+  /** The unit as a value, for descriptors and codecs that name it without a
+    * string.
+    */
+  def planar: PlanarUnit
+
 object UnitLabel:
   def apply[U <: Unit2D](using u: UnitLabel[U]): UnitLabel[U] = u
 
-  private def of[U <: Unit2D](sym: String, nm: String): UnitLabel[U] =
+  private def of[U <: Unit2D](unit: PlanarUnit): UnitLabel[U] =
     new UnitLabel[U]:
-      val symbol = sym
-      val name   = nm
+      val symbol = unit.symbol
+      val name   = unit.name
+      val planar = unit
 
-  given UnitLabel[Unit2D.Px]   = of("px", "pixels")
-  given UnitLabel[Unit2D.Deg]  = of("deg", "degrees of visual angle")
-  given UnitLabel[Unit2D.Norm] = of("norm", "normalised stimulus coordinates")
-  given UnitLabel[Unit2D.Mm]   = of("mm", "millimetres")
+  given UnitLabel[Unit2D.Px]   = of(PlanarUnit.Px)
+  given UnitLabel[Unit2D.Deg]  = of(PlanarUnit.Deg)
+  given UnitLabel[Unit2D.Norm] = of(PlanarUnit.Norm)
+  given UnitLabel[Unit2D.Mm]   = of(PlanarUnit.Mm)
 
 end UnitLabel

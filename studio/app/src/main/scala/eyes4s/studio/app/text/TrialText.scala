@@ -16,6 +16,8 @@
 
 package eyes4s.studio.app.text
 
+import eyes4s.studio.core.selection.StudioRef
+
 /** The strings a trial view draws on its stage (ticket S4.3a; DESIGN_SPEC
   * sections 5 and 9). They are kept apart from [[MessageId]] so that the
   * trial view adds its own ids without editing the shell's catalogue.
@@ -44,6 +46,9 @@ enum TrialTextId derives CanEqual:
   /** The accessible name of a trial's fixation marks. */
   case MarksTitle
 
+  /** The accessible text of the trial view and of its focused mark (S4.2). */
+  case PlotRole, PlotKeys, MarkFocus, MarkSelected
+
 /** The trial view's strings in the boards' wording. */
 object TrialText:
 
@@ -70,7 +75,18 @@ object TrialText:
       case LoadingLabel    => "Loading {0}…"
       case UnknownGlyph    => "?"
       case MarksTitle      => "Fixations of {0}"
+      case PlotRole        => "fixation plot"
+      case PlotKeys        =>
+        "Fixations of {0}. Arrow keys move to the nearest fixation, Page Up and Page Down " +
+          "step in order, Enter selects, Escape clears the selection."
+      case MarkFocus    => "Fixation {0} of {1}"
+      case MarkSelected => "{0}, selected"
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: TrialTextId, args: String*): String =
     Messages.fill(english(id), args.toVector)
+
+  /** The accessible text of a focused fixation mark, from its semantic id. */
+  def mark(ref: StudioRef.Fixation, selected: Boolean): String =
+    val focus = apply(TrialTextId.MarkFocus, ref.index.value.toString, ref.trial.label)
+    if selected then apply(TrialTextId.MarkSelected, focus) else focus

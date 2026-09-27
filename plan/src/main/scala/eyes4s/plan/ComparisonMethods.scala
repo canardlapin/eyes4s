@@ -51,7 +51,7 @@ final class ComparisonMethod private[plan] (
     ScoreComponent.literal(
       "value",
       s"$name; difference is matched minus control",
-      ParameterUnits.Dimensionless,
+      Quantity.Dimensionless,
       method.info.scale,
       ScoreDirection.HigherIsCloser
     )

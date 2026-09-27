@@ -85,6 +85,16 @@ private[eyes4s] object DiagnosticSupport:
   def optional[K](value: Option[Operand[K]]): Operand[K]   = value.getOrElse(Operand.Absent)
   def fields[K](values: (String, Operand[K])*): Operand[K] = Operand.Fields(values.toVector)
 
+  def fieldId(id: FieldId): Operand[Nothing]  = name(id.value)
+  def endpoint(e: Endpoint): Operand[Nothing] =
+    fields("closed" -> token(e.isClosed.toString), "value" -> real(e.value))
+  def numericBounds(b: NumericBounds): Operand[Nothing] =
+    fields(
+      "lower" -> optional(b.lower.map(endpoint)),
+      "upper" -> optional(b.upper.map(endpoint))
+    )
+  def rawValue(raw: RawValue): Operand[Nothing] =
+    fields("case" -> token(raw.productPrefix), "value" -> text(FieldChecks.show(raw)))
   def frame(id: FrameId): Operand[Nothing]              = name(id.name)
   def clock(id: ClockId): Operand[Nothing]              = name(id.name)
   def grid(id: GridId): Operand[Nothing]                = name(id.name)
@@ -744,3 +754,60 @@ private[plan] object CauseDiagnostics:
       case ExecutionMismatch(declared, actual)    =>
         d(token(declared.toString), token(actual.toString))
       case UnexplainedFields(ids) => d(names(ids))
+      case InvalidFieldId(value)  => d(text(value))
+      case InvalidBounds(lo, hi)  => d(optional(lo.map(endpoint)), optional(hi.map(endpoint)))
+      case BoundsForShape(f, shape, b) =>
+        d(fieldId(f), token(shape.toString), numericBounds(b))
+      case UnknownRulePart(f, part)       => d(fieldId(f), fieldId(part))
+      case InvalidRepetition(f, min, max) => d(fieldId(f), int(min), optional(max.map(int)))
+      case DefaultRefused(f, error)       =>
+        val inner = formField[Nothing, Nothing](error)(identity)
+        diagnostic[Nothing](C.descriptor, e, e.message, Locus.Field(f.value) +: inner.subject)(
+          fieldId(f),
+          cause(inner)
+        )
+      case UntranslatableLegacy(f, units, domain) => d(name(f), token(units), token(domain))
+      case FormViewMismatch(f, form)              => d(fieldId(f), fieldId(form))
+      case RulePartKind(f, part)                  => d(fieldId(f), fieldId(part))
+
+  /** A form field's refusal, located at the field; a domain refusal keeps its
+    * own diagnostic as the cause.
+    */
+  def formField[E, K](e: FieldError[E])(underlying: E => Diagnostic[K]): Diagnostic[K] =
+    import FieldError.*
+    val here = Vector(Locus.Field(e.field.value))
+    val d    = diagnostic[K](C.formField, e, e.message, here)
+    e match
+      case Missing(f)                  => d(fieldId(f))
+      case Malformed(f, raw, expected) =>
+        d(fieldId(f), rawValue(raw), token(expected.toString))
+      case OutOfBounds(f, t, v, side, bound, q) =>
+        d(
+          fieldId(f),
+          text(t),
+          real(v),
+          token(side.toString),
+          endpoint(bound),
+          token(q.toString)
+        )
+      case NotAChoice(f, t, options)    => d(fieldId(f), token(t), names(options))
+      case UnknownPart(f, part)         => d(fieldId(f), fieldId(part))
+      case Unordered(f, lo, hi, lv, hv) =>
+        d(fieldId(f), fieldId(lo), fieldId(hi), real(lv), real(hv))
+      case Duplicate(f, part, t)      => d(fieldId(f), fieldId(part), token(t))
+      case ItemCount(f, n, min, max)  => d(fieldId(f), int(n), int(min), optional(max.map(int)))
+      case UnknownField(f)            => d(fieldId(f))
+      case RepeatedPart(f, part)      => d(fieldId(f), fieldId(part))
+      case Refused(f, raw, u, reason) =>
+        val inner = underlying(u)
+        diagnostic[K](
+          C.formField,
+          e,
+          e.message,
+          here ++ inner.subject.filterNot(here.contains)
+        )(
+          fieldId(f),
+          rawValue(raw),
+          cause(inner),
+          text(reason)
+        )

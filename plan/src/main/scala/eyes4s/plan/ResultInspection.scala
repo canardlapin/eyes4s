@@ -167,17 +167,21 @@ object Listing:
   */
 final case class ComponentValue(
     id: String,
-    units: ParameterUnits,
+    quantity: Quantity,
     range: MeasureScale,
     direction: ScoreDirection,
     value: Double
 ) derives CanEqual:
+  /** The legacy projection of [[quantity]]. */
+  @deprecated("Use quantity", "0.1.0")
+  def units: ParameterUnits = LegacyDescriptors.units(quantity)
+
   override def equals(other: Any): Boolean = other match
     case that: ComponentValue =>
-      id == that.id && units == that.units && range == that.range &&
+      id == that.id && quantity == that.quantity && range == that.range &&
       direction == that.direction && ExactDouble(value) == ExactDouble(that.value)
     case _ => false
-  override def hashCode: Int = (id, units, range, direction, ExactDouble(value)).hashCode
+  override def hashCode: Int = (id, quantity, range, direction, ExactDouble(value)).hashCode
 
 /** A typed score (or difference) with its named components. Empty components
   * mean the method is undescribed, never that a component is zero.
@@ -192,12 +196,12 @@ final class ScoreSchema[S, D] private (val components: Vector[ScoreComponent[S, 
   def ids: Vector[String]           = components.map(_.id)
   def score(value: S): ScoreView[S] = ScoreView(
     value,
-    components.map(c => ComponentValue(c.id, c.units, c.range, c.direction, c.score(value)))
+    components.map(c => ComponentValue(c.id, c.quantity, c.range, c.direction, c.score(value)))
   )
   def difference(value: D): ScoreView[D] = ScoreView(
     value,
     components.map(c =>
-      ComponentValue(c.id, c.units, c.range, c.direction, c.difference(value))
+      ComponentValue(c.id, c.quantity, c.range, c.direction, c.difference(value))
     )
   )
 

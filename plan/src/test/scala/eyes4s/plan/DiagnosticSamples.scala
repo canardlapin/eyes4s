@@ -641,7 +641,23 @@ object DiagnosticSamples:
         ExecutionCapability.BoundedComparison,
         ExecutionCapability.SynchronousWholeOperation
       ),
-      DescriptorError.UnexplainedFields(Vector("x"))
+      DescriptorError.UnexplainedFields(Vector("x")),
+      DescriptorError.InvalidFieldId("bad id"),
+      DescriptorError.InvalidBounds(Some(Endpoint.Closed(2)), Some(Endpoint.Open(1))),
+      DescriptorError.BoundsForShape(
+        FieldId.literal("n"),
+        NumberShape.Int32,
+        NumericBounds.positive
+      ),
+      DescriptorError.UnknownRulePart(FieldId.literal("frame"), FieldId.literal("zMin")),
+      DescriptorError.InvalidRepetition(FieldId.literal("scales"), 3, Some(1)),
+      DescriptorError.DefaultRefused(
+        FieldId.literal("grid"),
+        FieldError.Missing(FieldId.literal("nx"))
+      ),
+      DescriptorError.UntranslatableLegacy("frame", "Mixed", "DomainValue(Frame.of)"),
+      DescriptorError.FormViewMismatch(FieldId.literal("sigma"), FieldId.literal("threshold")),
+      DescriptorError.RulePartKind(FieldId.literal("window"), FieldId.literal("name"))
     ),
     family[StudyFinding[StudyKey, Px]]("StudyFinding")(
       StudyFinding.UndescribedMethod(DefinitionId.cosine),
@@ -873,6 +889,42 @@ object DiagnosticSamples:
     ),
     generated[RecordIdentityError]("RecordIdentityError"),
     generated[ProvenanceError[StudyKey]]("ProvenanceError"),
+    family[FieldError[RecipeParameterError]]("FieldError")(
+      FieldError.Missing(FieldId.literal("sigma")),
+      FieldError.Malformed(
+        FieldId.literal("sigma"),
+        RawValue.Number("1,5"),
+        Expected.Number(NumberShape.Real)
+      ),
+      FieldError.OutOfBounds(
+        FieldId.literal("sigma"),
+        "-1",
+        -1.0,
+        Side.Lower,
+        Endpoint.Open(0),
+        Quantity.Planar(PlanarUnit.Deg)
+      ),
+      FieldError
+        .NotAChoice(FieldId.literal("edges"), "Wrap", Vector("Truncate", "Renormalise")),
+      FieldError.UnknownPart(FieldId.literal("frame"), FieldId.literal("zMin")),
+      FieldError.Unordered(
+        FieldId.literal("frame"),
+        FieldId.literal("xMin"),
+        FieldId.literal("xMax"),
+        3.0,
+        2.0
+      ),
+      FieldError.Duplicate(FieldId.literal("phases"), FieldId.literal("reference"), "Encoding"),
+      FieldError.ItemCount(FieldId.literal("scales"), 0, 1, Some(8)),
+      FieldError.Refused(
+        FieldId.literal("thresholdDegPerSecond"),
+        RawValue.Number("0"),
+        RecipeParameterError.Configuration(ConfigurationError.NonPositiveIvtThreshold(0.0)),
+        "threshold must be positive"
+      ),
+      FieldError.UnknownField(FieldId.literal("thresholdDegPerSecond")),
+      FieldError.RepeatedPart(FieldId.literal("window"), FieldId.literal("xMin"))
+    ),
     generated[SourceIdentityError]("SourceIdentityError"),
     generated[ImportSpecError]("ImportSpecError"),
     generated[MassLevelError]("MassLevelError"),
