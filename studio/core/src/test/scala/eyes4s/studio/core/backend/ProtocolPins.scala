@@ -16,9 +16,33 @@
 
 package eyes4s.studio.core.backend
 
-/** The pinned wire form of every [[ProtocolSamples]] sample, protocol 1.2. */
+/** The pinned wire form of every [[ProtocolSamples]] sample, protocol 1.3. */
 object ProtocolPins:
   val pins: Map[String, String] = Map(
+    "response.PreviewAccepted" ->
+      """{"PreviewAccepted":{}}""",
+    "error.UnknownPreview" ->
+      """{"UnknownPreview":{"preview":9,"known":[1]}}""",
+    "error.PreviewNotReady" ->
+      """{"PreviewNotReady":{"preview":1,"completedParticipants":3,"totalParticipants":24}}""",
+    "error.StalePreview" ->
+      """{"StalePreview":{"preview":1,"captured":{"revision":5,"dataset":3,"plan":{"Unbound":{}},"input":{"Unbound":{}}},"current":{"revision":5,"dataset":4,"plan":{"Unbound":{}},"input":{"Unbound":{}}}}}""",
+    "error.TamperedPreview" ->
+      """{"TamperedPreview":{"supplied":{"id":1,"stamp":{"revision":5,"dataset":3,"plan":{"Unbound":{}},"input":{"Unbound":{}}},"candidates":{"focalTrials":480,"referenceTrials":480,"participants":24,"candidatePairsPerScale":230400},"counts":{"eligiblePairsPerScale":8969,"eligiblePairs":44845,"unmatchedQueries":9,"ambiguousMatches":1},"diagnostics":[{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map"}]},"retained":{"id":1,"stamp":{"revision":5,"dataset":3,"plan":{"Unbound":{}},"input":{"Unbound":{}}},"candidates":{"focalTrials":480,"referenceTrials":480,"participants":24,"candidatePairsPerScale":230400},"counts":{"eligiblePairsPerScale":8969,"eligiblePairs":44845,"unmatchedQueries":9,"ambiguousMatches":0},"diagnostics":[{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map"}]}}}""",
+    "request.PreviewCounting" ->
+      """{"PreviewCounting":{"revision":5,"budget":24}}""",
+    "request.ContinuePreview" ->
+      """{"ContinuePreview":{"preview":1,"budget":24}}""",
+    "request.SubmitPreview" ->
+      """{"SubmitPreview":{"ready":{"id":1,"stamp":{"revision":5,"dataset":3,"plan":{"Unbound":{}},"input":{"Unbound":{}}},"candidates":{"focalTrials":480,"referenceTrials":480,"participants":24,"candidatePairsPerScale":230400},"counts":{"eligiblePairsPerScale":8969,"eligiblePairs":44845,"unmatchedQueries":9,"ambiguousMatches":0},"diagnostics":[{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map"}]}}}""",
+    "preview-event.Initial" ->
+      """{"Initial":{"id":1,"stamp":{"revision":5,"dataset":3,"plan":{"Unbound":{}},"input":{"Unbound":{}}},"candidates":{"focalTrials":480,"referenceTrials":480,"participants":24,"candidatePairsPerScale":230400}}}""",
+    "preview-event.Counting" ->
+      """{"Counting":{"id":1,"progress":{"completedParticipants":1,"totalParticipants":24}}}""",
+    "preview-event.Ready" ->
+      """{"Ready":{"ready":{"id":1,"stamp":{"revision":5,"dataset":3,"plan":{"Unbound":{}},"input":{"Unbound":{}}},"candidates":{"focalTrials":480,"referenceTrials":480,"participants":24,"candidatePairsPerScale":230400},"counts":{"eligiblePairsPerScale":8969,"eligiblePairs":44845,"unmatchedQueries":9,"ambiguousMatches":0},"diagnostics":[{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map"}]}}}""",
+    "frame.Preview" ->
+      """{"Preview":{"event":{"Ready":{"ready":{"id":1,"stamp":{"revision":5,"dataset":3,"plan":{"Unbound":{}},"input":{"Unbound":{}}},"candidates":{"focalTrials":480,"referenceTrials":480,"participants":24,"candidatePairsPerScale":230400},"counts":{"eligiblePairsPerScale":8969,"eligiblePairs":44845,"unmatchedQueries":9,"ambiguousMatches":0},"diagnostics":[{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map"}]}}}}}""",
     "error.DuplicateSubscription" ->
       """{"DuplicateSubscription":{"request":41}}""",
     "error.Malformed" ->
@@ -62,9 +86,9 @@ object ProtocolPins:
     "disposition.NoFixations" ->
       """{"NoFixations":{}}""",
     "envelope.frame" ->
-      """{"version":{"major":1,"minor":2},"id":41,"body":{"Event":{"event":{"Finished":{"outcome":{"Completed":{"job":1,"run":8,"last":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}}}}""",
+      """{"version":{"major":1,"minor":3},"id":41,"body":{"Event":{"event":{"Finished":{"outcome":{"Completed":{"job":1,"run":8,"last":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}}}}""",
     "envelope.request" ->
-      """{"version":{"major":1,"minor":2},"id":41,"body":{"Subscribe":{"id":1}}}""",
+      """{"version":{"major":1,"minor":3},"id":41,"body":{"Subscribe":{"id":1}}}""",
     "error.AlreadyRunning" ->
       """{"AlreadyRunning":{"revision":5,"job":1}}""",
     "error.NoResult" ->

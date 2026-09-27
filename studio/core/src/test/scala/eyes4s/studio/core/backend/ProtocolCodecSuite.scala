@@ -17,6 +17,7 @@
 package eyes4s.studio.core.backend
 
 import eyes4s.plan.{SegmentTotal, StudyDesign, StudySegment}
+import eyes4s.studio.core.preview.PreviewId
 import io.circe.Json
 import io.circe.syntax.*
 
@@ -30,11 +31,11 @@ class ProtocolCodecSuite extends munit.FunSuite:
 
   test("every message kind and case is sampled") {
     assertEquals(requests.map(_.ordinal), requests.indices.toVector)
-    assertEquals(requests.size, 16)
+    assertEquals(requests.size, 19)
     assertEquals(responses.map(_.ordinal), responses.indices.toVector)
-    assertEquals(responses.size, 14)
+    assertEquals(responses.size, 15)
     assertEquals(errors.map(_.ordinal), errors.indices.toVector)
-    assertEquals(errors.size, 11)
+    assertEquals(errors.size, 15)
     assertEquals(causes.map(_.ordinal), causes.indices.toVector)
     assertEquals(causes.size, 14)
     assertEquals(loci.map(_.ordinal), loci.indices.toVector)
@@ -58,6 +59,12 @@ class ProtocolCodecSuite extends munit.FunSuite:
     drift.foreach((n, j) => println(s"PIN\t$n\t$j"))
     assertEquals(drift.map(_._1), Vector.empty)
     assertEquals(ProtocolPins.pins.keySet, actual.keySet)
+  }
+
+  test("preview handles keep unsafe Long values as decimal text") {
+    val id = PreviewId(9007199254740992L)
+    assertEquals(id.asJson.noSpaces, "\"9007199254740992\"")
+    assertEquals(id.asJson.as[PreviewId], Right(id))
   }
 
   test("an unknown quarantine code decodes as Other and re-encodes unchanged") {
@@ -108,13 +115,22 @@ class ProtocolCodecSuite extends munit.FunSuite:
   test("refusals have distinct stable codes, typed subjects and rendered messages") {
     assertEquals(errors.map(_.code).distinct.size, errors.size)
     errors.foreach(e => assert(e.code.startsWith("studio-backend."), e.code))
-    assert(errors(2).message.contains("run 9") && errors(2).message.contains("run 7"))
+    val unknownRun = errors
+      .collectFirst { case e: BackendError.UnknownRun => e }
+      .getOrElse(fail("unknown run sample missing"))
+    val unavailable = errors
+      .collectFirst { case e: BackendError.Unavailable => e }
+      .getOrElse(fail("unavailable sample missing"))
+    val unknownReference = errors
+      .collectFirst { case e: BackendError.UnknownReference => e }
+      .getOrElse(fail("unknown reference sample missing"))
+    assert(unknownRun.message.contains("run 9") && unknownRun.message.contains("run 7"))
     assertEquals(
-      errors(4).diagnostic.subject,
+      unavailable.diagnostic.subject,
       Vector(DiagnosticLocus.Dataset(DatasetRevision(2)))
     )
-    assertEquals(errors(4).message, "The backend holds no data for dataset r2.")
-    assert(!errors(6).message.contains("PairRow"), errors(6).message)
+    assertEquals(unavailable.message, "The backend holds no data for dataset r2.")
+    assert(!unknownReference.message.contains("PairRow"), unknownReference.message)
   }
 
   test("protocol values are shaped like the eyes4s values they wrap") {
@@ -211,7 +227,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
       .as[Protocol11Total]
 
   test("protocol 1.2 Counting requires coordinated peers, not a relabelled 1.1 frame") {
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 2))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 3))
     val previous = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(progress)))
     assertEquals(legacyMeterTotal(previous.asJson), Right(Protocol11Total.Exact(8512L)))
     val counting = progress.asJson

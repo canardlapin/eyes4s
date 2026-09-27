@@ -442,12 +442,15 @@ private final class Silent(fake: FakeStudyBackend[IO]) extends StudyBackend[IO]:
     ledger,
     outcome,
     preview,
+    previewCounting,
     previewRows,
     provenance,
     queries,
     result,
     runs,
-    submit
+    submit,
+    submitPreview,
+    continuePreview
   }
 
   def subscribe(id: JobId): IO[Either[BackendError, Stream[IO, JobEvent]]] =
@@ -470,12 +473,15 @@ private final class Gated(
     ledger,
     outcome,
     preview,
+    previewCounting,
     previewRows,
     provenance,
     queries,
     result,
     runs,
-    subscribe
+    subscribe,
+    submitPreview,
+    continuePreview
   }
 
   def submit(revision: AnalysisRevision): IO[Either[BackendError, JobStatus]] =
