@@ -185,6 +185,54 @@ class StudyFormSuite extends munit.FunSuite:
     )
   }
 
+  test("the methods text follows the pairing, failure and edge policies") {
+    val averaged = get(
+      plan(
+        fixture
+          .updated(
+            id("pairing"),
+            Group(
+              Vector(
+                id("matched")   -> Variant("meanOfAll", Vector.empty),
+                id("controls")  -> Choice("sameSelection"),
+                id("unmatched") -> Choice("reportNoMatch")
+              )
+            )
+          )
+          .updated(id("failurePolicy"), Number("3"))
+          .updated(
+            id("scales"),
+            Items(
+              Vector(
+                Variant(
+                  "degrees.gaussian",
+                  Vector(id("sigma") -> Number("1"), id("edges") -> Choice("Truncate"))
+                ),
+                Variant(
+                  "degrees.gaussian",
+                  Vector(id("sigma") -> Number("2"), id("edges") -> Choice("Renormalise"))
+                )
+              )
+            )
+          )
+      )
+    )
+    val text = StudyText.methods(averaged).text
+    assert(
+      text.contains(
+        "compared with the Encoding trials of every presentation of the same item, averaged"
+      ),
+      text
+    )
+    assert(text.contains("requiring at least 3 successful scores."), text)
+    assert(
+      text.contains(
+        "at σ 1° (truncated at the grid edge), σ 2° (renormalised at the grid edge);"
+      ),
+      text
+    )
+  }
+
   test("each field parses on its own; refusals name the field's path and accumulate") {
     assertEquals(
       form
@@ -412,6 +460,30 @@ class StudyFormKeysSuite extends munit.FunSuite:
       Diagnostic.of(StudyRecipeError.WindowWithoutPolicy).subject,
       Vector(Locus.Field("offWindow"))
     )
+  }
+
+class RecipeFormAccessorsSuite extends munit.FunSuite:
+  import RawValue.*
+  private def id(s: String): FieldId = FieldId.literal(s)
+
+  test("temporal and recording fields validate on their own; labels and empty forms") {
+    val temporal = new TemporalForm
+    assertEquals(temporal.validate(id("temporal.boundary"), Choice("ClipDuration")), Right(()))
+    assert(temporal.validate(id("windows"), Items(Vector.empty)).isLeft)
+    assertEquals(
+      temporal.validate(id("nope"), Absent),
+      Left(FieldError.UnknownField(id("nope")))
+    )
+    val recording = new RecordingForm
+    assertEquals(recording.validate(id("syncModel"), Choice("Affine")), Right(()))
+    assert(recording.validate(id("interpolationGapMicros"), Number("-1")).isLeft)
+    assertEquals(FormValues.empty.get(id("anything")), Absent)
+    assertEquals(FormValues.empty.updated(id("x"), Absent), FormValues.empty)
+    assertEquals(
+      Labelled[eyes4s.core.Weight].label(eyes4s.core.Weight.Uniform),
+      "Every fixation counts once"
+    )
+    assertEquals(StudyAdvisory.SigmaBelowCells(0, 1, 2).field, StudyField.Scales)
   }
 
 private object FormViewParts:
