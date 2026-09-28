@@ -1,9 +1,12 @@
 """Fail-closed checks for the PM3.2 paired collector."""
 
 import copy
+import json
 from pathlib import Path
 import sys
+import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import run_csv_ivt  # noqa: E402
@@ -53,6 +56,27 @@ class PairedResultSuite(unittest.TestCase):
         item["status"] = "error"
         with self.assertRaisesRegex(ValueError, "no throughput"):
             run_csv_ivt.throughput(item, {"rows": 100, "bytes": 300})
+
+    def test_unlisted_high_cpu_process_blocks_and_retains_stage_evidence(self):
+        idle = "123 1.2 /usr/bin/python3\n456 0.0 /Applications/Blender.app/Blender\n"
+        busy = "123 1.2 /usr/bin/python3\n456 190.5 /Applications/Blender.app/Blender\n"
+        with tempfile.TemporaryDirectory() as temporary:
+            output_dir = Path(temporary)
+            with patch.object(run_csv_ivt.subprocess, "check_output",
+                              side_effect=[idle, busy]) as observed:
+                run_csv_ivt.check_interference(output_dir, "large", "warm", 7,
+                                               "before-pair")
+                with self.assertRaisesRegex(RuntimeError, "after-eyes4s"):
+                    run_csv_ivt.check_interference(output_dir, "large", "warm", 7,
+                                                   "after-eyes4s")
+            self.assertEqual(observed.call_count, 2)
+            rows = [json.loads(line) for line in
+                    (output_dir / "interference.jsonl").read_text().splitlines()]
+            self.assertEqual([row["stage"] for row in rows],
+                             ["before-pair", "after-eyes4s"])
+            self.assertEqual(rows[0]["busy"], [])
+            self.assertEqual(rows[1]["busy"],
+                             [["456", "190.5", "/Applications/Blender.app/Blender"]])
 
 
 if __name__ == "__main__":

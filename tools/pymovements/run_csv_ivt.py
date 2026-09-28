@@ -103,17 +103,31 @@ def conditions(output_dir: Path, thermal_settled: bool) -> dict:
 
 def busy_processes(processes: str) -> list[tuple[str, str, str]]:
     busy = []
-    compute = {"R", "Rscript", "Python", "python", "python3", "clang", "clang++",
-               "java", "sbt", "rustc", "cargo", "cc1", "g++"}
     for line in processes.splitlines():
         fields = line.strip().split(None, 2)
-        if len(fields) == 3 and Path(fields[2]).name in compute:
+        if len(fields) == 3:
             try:
                 if float(fields[1]) >= 50:
                     busy.append((fields[0], fields[1], fields[2]))
             except ValueError:
                 pass
     return busy
+
+
+def check_interference(output_dir: Path, scale: str, mode: str,
+                       round_id: int, stage: str) -> None:
+    processes = subprocess.check_output(
+        ["ps", "-Ao", "pid=,pcpu=,comm="], text=True,
+    )
+    busy = busy_processes(processes)
+    with (output_dir / "interference.jsonl").open("a") as stream:
+        stream.write(json.dumps({"scale": scale, "mode": mode,
+                                 "round": round_id, "stage": stage,
+                                 "busy": busy}) + "\n")
+    if busy:
+        raise RuntimeError(
+            f"competing compute at {scale}/{mode}/{round_id}/{stage}; raw evidence retained"
+        )
 
 
 def run_child(command: list[str], output_dir: Path, label: str,
@@ -348,15 +362,7 @@ def main() -> None:
                 diag[side] = diagnostics(side, values, digest)
             for round_id in range(args.rounds):
                 if args.rounds == config["measurement"]["rounds"]:
-                    processes = subprocess.check_output(
-                        ["ps", "-Ao", "pid=,pcpu=,comm="], text=True,
-                    )
-                    busy = busy_processes(processes)
-                    with (output_dir / "interference.jsonl").open("a") as stream:
-                        stream.write(json.dumps({"scale": scale, "mode": mode,
-                                                 "round": round_id, "busy": busy}) + "\n")
-                    if busy:
-                        raise RuntimeError("competing compute appeared during full run; raw evidence retained")
+                    check_interference(output_dir, scale, mode, round_id, "before-pair")
                 order = SIDES if round_id % 2 == 0 else SIDES[::-1]
                 pair = []
                 for position, side in enumerate(order):
@@ -371,6 +377,9 @@ def main() -> None:
                         raise RuntimeError(f"failed child: {scale}/{mode}/{round_id}/{side}: {item['failure']}")
                     with (output_dir / "throughput.jsonl").open("a") as stream:
                         stream.write(json.dumps(throughput(item, dataset), sort_keys=True) + "\n")
+                    if args.rounds == config["measurement"]["rounds"]:
+                        check_interference(output_dir, scale, mode, round_id,
+                                           f"after-{side}")
                 require_pair(pair, scale, mode, round_id)
                 print(f"{scale} {mode} round {round_id + 1}/{args.rounds}: matched", flush=True)
     if args.rounds == config["measurement"]["rounds"]:
