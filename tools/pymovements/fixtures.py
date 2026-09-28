@@ -49,11 +49,17 @@ def chunks(spec):
     if form == "csv":
         yield b"time_ms,x_px,y_px,pupil,valid,right_x_px,right_y_px,right_pupil,right_valid\n"
     else:
-        eyes = "LEFT RIGHT" if binocular else "LEFT"
+        eyes = "LEFT\tRIGHT" if binocular else "LEFT"
+        recording_eyes = "LR" if binocular else "L"
+        start_eyes = "LEFT RIGHT" if binocular else "LEFT"
         rate = 1000 if binocular else 500
-        yield (f"** Synthetic eyes4s performance fixture v1\n"
+        yield (f"** Synthetic eyes4s performance fixture v2\n"
+               f"START 0 {start_eyes} SAMPLES\n"
+               f"PUPIL AREA\n"
                f"SAMPLES GAZE {eyes} RATE {rate}.00\n"
-               f"START 0 {eyes} SAMPLES\nMSG 0 DISPLAY_COORDS 0 0 1919 1079\n").encode()
+               f"MSG 0 RECCFG CR {rate} 2 2 2 2 {recording_eyes}\n"
+               f"MSG 0 GAZE_COORDS 0 0 1919 1079\n"
+               f"MSG 0 DISPLAY_COORDS 0 0 1919 1079\n").encode()
     for i in range(SIZES[scale]):
         t, x, y, pupil, valid = sample(i, family)
         if form == "csv":
@@ -63,7 +69,8 @@ def chunks(spec):
                 right = ",,0,0"
             yield f"{t},{left},{pupil},{valid},{right}\n".encode()
         else:
-            gaze = f"{x}\t{y}\t{pupil}" if valid else ".\t.\t0"
+            # The pinned EyeLink parser requires a decimal pupil token.
+            gaze = f"{x}\t{y}\t{pupil}.00" if valid else ".\t.\t0.00"
             yield (f"{t}\t{gaze}" + (f"\t{gaze}" if binocular else "") + "\n").encode()
     if form == "asc":
         last_t = (SIZES[scale] - 1) * (1 if binocular else 2)

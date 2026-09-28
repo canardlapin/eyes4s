@@ -79,7 +79,7 @@ def validate_protocol(config, root=ROOT, verify_inputs=False, issues=None):
     check.fields(config, "schema_version protocol_id issue epic inventory_commit comparator machine "
                  "runtime bindings measurement budgets canonical_output datasets workloads", "performance protocol")
     require(type(config["schema_version"]) is int and config["schema_version"] == 1
-            and config["protocol_id"] == "eyes4s-pymovements-performance-v1",
+            and config["protocol_id"] == "eyes4s-pymovements-performance-v2",
             "unsupported protocol version")
     check.digest(config["inventory_commit"], 40)
     for key in ("issue", "epic"):

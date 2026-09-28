@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "protocol_id": "eyes4s-pymovements-performance-v1",
+  "protocol_id": "eyes4s-pymovements-performance-v2",
   "issue": "bd-01M3HYF5VMV818PJMJDKMJBK8P",
   "epic": "bd-01M3HYF4J5965YW2DK08YV2A80",
   "inventory_commit": "827d01c30675ba7decf87d8cb13a940fdc4430de",
@@ -90,7 +90,7 @@
   "bindings": {
     "generator": {
       "path": "tools/pymovements/fixtures.py",
-      "sha256": "6ce41fbb50713d56d60914a4744bb36be0f6df1fb12dcf8b0c85550217f5c7c3"
+      "sha256": "81ef3ab6dbd8ce4760eb504a256116ba7f9e4a04a5bda9b79f7ab39dde7cec78"
     },
     "dependency_input": {
       "path": "tools/pymovements/performance-requirements.in",
@@ -114,7 +114,7 @@
     },
     "protocol_doc": {
       "path": "docs/plans/PYMOVEMENTS_PERFORMANCE.md",
-      "sha256": "132cc4bc4c5bb09ee20ac456ff679d5f1f41cd36cb9fa5d26fff48477e0b7c78"
+      "sha256": "eaf3cb3e5c81910371953f477f46f87ad258734187b7895cf1bedf3410ba9258"
     }
   },
   "measurement": {
@@ -196,8 +196,8 @@
       "format": "asc",
       "scale": "small",
       "rows": 10000,
-      "sha256": "d4fe075211bd0b1fddab2624c1b5c931e9cefe19a01947a8c7f332265a96f37a",
-      "bytes": 247115
+      "sha256": "f24917120b7a943ccb21aec17ff59a2e040b2cee1cd6b8f73257c78a26581158",
+      "bytes": 277188
     },
     {
       "id": "steps-typical-asc",
@@ -206,8 +206,8 @@
       "format": "asc",
       "scale": "typical",
       "rows": 100000,
-      "sha256": "ccd4a967096eb0e6dd5d7d30ee7679f858203b573641d53a985f7d0d9d6faa3c",
-      "bytes": 2569616
+      "sha256": "f5d3fc75a7b48bdbc50ff3bb2f8f41abd36d3071f655952b260cfff10b3886ee",
+      "bytes": 2869689
     },
     {
       "id": "steps-large-asc",
@@ -216,8 +216,8 @@
       "format": "asc",
       "scale": "large",
       "rows": 1000000,
-      "sha256": "b4d3a5a14fa09fdf7c2eac4982a38f7fe62cf327438e1de5e00ef39892826c7d",
-      "bytes": 26694617
+      "sha256": "b032981fb719067aad7f8d23a03f95710102da8d6ef515f6c7cd856b52884b78",
+      "bytes": 29694690
     },
     {
       "id": "gaps-binocular-small-csv",
@@ -256,8 +256,8 @@
       "format": "asc",
       "scale": "small",
       "rows": 10000,
-      "sha256": "84a9736ace956df2af068968ce7904cf1cec47ab2e4c2bc82923c7e946cba712",
-      "bytes": 426272
+      "sha256": "72c55fe4b841061f0e01e34fd9b3ad7c51a833b51c77065a3498aa38abdd2e1b",
+      "bytes": 486347
     },
     {
       "id": "gaps-binocular-typical-asc",
@@ -266,8 +266,8 @@
       "format": "asc",
       "scale": "typical",
       "rows": 100000,
-      "sha256": "5e6f9d50b409cc3412a1067ebdf4500e1c00250fb169f574425e714d9de4c06c",
-      "bytes": 4361073
+      "sha256": "6862056b5157f2d93343b58b7b53edf79ac86276a8e5b35bf6db8e60a36d72ff",
+      "bytes": 4961148
     },
     {
       "id": "gaps-binocular-large-asc",
@@ -276,8 +276,8 @@
       "format": "asc",
       "scale": "large",
       "rows": 1000000,
-      "sha256": "4d5d002079bde7490d8adea09649d0b3128b1e85adf8620e1e9a12f898f3d601",
-      "bytes": 44609074
+      "sha256": "0ba299685aeec26bd08186cc4d16ff2251d83d759e7619611a3b62c94209b32a",
+      "bytes": 50609149
     },
     {
       "id": "stationary-small-csv",

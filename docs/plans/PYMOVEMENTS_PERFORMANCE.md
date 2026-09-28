@@ -1,13 +1,22 @@
 # Frozen performance protocol: eyes4s / pymovements
 
-Protocol: `eyes4s-pymovements-performance-v1`, fixed before timing on 2026-09-27.
+Protocol: `eyes4s-pymovements-performance-v2`, amended before qualified timing on 2026-09-27.
 Owner: PM3.1 `bd-01M3HYF5VMV818PJMJDKMJBK8P`; gate:
 `bd-01M3HYF4J5965YW2DK08YV2A80`.
 
 This is the performance protocol under the
 [five-area comparison contract](PYMOVEMENTS_COMPARISON.md). It specifies the
-experiment and its acceptance criteria. No comparative timings have been collected
-by this slice, and no performance claim follows from a protocol check passing.
+experiment and its acceptance criteria. No qualified comparative timings have
+been collected, and no performance claim follows from a protocol check passing.
+
+V2 corrects the synthetic ASC inputs before qualified timing. In V1, bare
+integer pupil tokens caused the pinned pymovements 0.28.0 `from_asc` parser
+to fail, and its space-separated binocular `SAMPLES` declaration left tracked
+eye metadata unset. V2 uses decimal pupil tokens, tab-separated binocular
+eye names, and explicit pupil, recording, and display geometry declarations.
+The numerical sample values, loss pattern, rate, row counts, and every budget
+remain unchanged. ASC byte identities and the protocol digest change; V1
+exploratory timings cannot be mixed with V2 receipts. CSV inputs are unchanged.
 
 The machine-readable authority is
 [`performance.json`](../../tools/pymovements/performance.json). It fixes workloads,
