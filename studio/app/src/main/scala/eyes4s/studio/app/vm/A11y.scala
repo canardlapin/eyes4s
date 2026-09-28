@@ -43,6 +43,9 @@ enum A11yRole derives CanEqual:
   /** A form's controls, which are stops of their own inside a form pane. */
   case ComboBox, TextField
 
+  /** One choice of a group; Tab visits the group's selected choice only. */
+  case RadioButton
+
   /** The role as the committed tab-order files spell it. */
   def id: String = this match
     case Button       => "button"
@@ -54,6 +57,7 @@ enum A11yRole derives CanEqual:
     case Region       => "region"
     case ComboBox     => "combo-box"
     case TextField    => "text-field"
+    case RadioButton  => "radio-button"
 
 /** One stop of the Tab order: its role and its accessible name. */
 final case class FocusStop(role: A11yRole, name: String) derives CanEqual:

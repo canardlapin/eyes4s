@@ -105,6 +105,7 @@ object StudioPanes:
     case A11yRole.Region       => AccessibleRole.PARENT
     case A11yRole.ComboBox     => AccessibleRole.COMBO_BOX
     case A11yRole.TextField    => AccessibleRole.TEXT_FIELD
+    case A11yRole.RadioButton  => AccessibleRole.RADIO_BUTTON
 
   /** A titled, empty panel: one focus stop (DESIGN_SPEC section 10), named
     * by its title, with its kind's role.

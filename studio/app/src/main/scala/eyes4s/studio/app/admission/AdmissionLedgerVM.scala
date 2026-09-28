@@ -20,6 +20,7 @@ import eyes4s.studio.app.AppModel
 import eyes4s.studio.app.geometry.Loading
 import eyes4s.studio.app.importing.{InventorySource, InventorySourceVM}
 import eyes4s.studio.app.text.{Format, LedgerText, LedgerTextId}
+import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.core.backend.{
   AdmissionSummary,
   DatasetRevision,
@@ -166,6 +167,30 @@ object AdmissionLedgerVM:
       why,
       t(TrialAccessible, label, entry.item, why)
     )
+
+  /** The ledger's focus stops inside its pane, in Tab order: each count
+    * that has a number, the open count's Close and its trials, the
+    * selected decision (Tab visits one choice of a group), and Admit while
+    * it can act.
+    */
+  def focusStops(vm: AdmissionLedgerVM): Vector[FocusStop] =
+    val counts = vm.rows.filter(_.counted).map(r => FocusStop(A11yRole.Button, r.accessible))
+    val opened = vm.opened.toVector.flatMap(o =>
+      FocusStop(A11yRole.Button, o.close) +:
+        Option.when(o.rows.nonEmpty)(FocusStop(A11yRole.List, o.title)).toVector
+    )
+    val decision =
+      if !vm.canDecide then Vector.empty
+      else
+        vm.decisions
+          .find(_.selected)
+          .orElse(vm.decisions.headOption)
+          .map(d => FocusStop(A11yRole.RadioButton, s"${d.label}: ${d.note}"))
+          .toVector
+    val admit = Option.when(vm.status.isEmpty && vm.canAdmit)(
+      FocusStop(A11yRole.Button, vm.admit)
+    )
+    if vm.empty.isDefined then Vector.empty else counts ++ opened ++ decision ++ admit
 
   /** The ledger's view-model. */
   def of(ledger: AdmissionLedger, model: AppModel): AdmissionLedgerVM =

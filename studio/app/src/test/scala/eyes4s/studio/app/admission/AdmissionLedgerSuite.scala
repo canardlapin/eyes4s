@@ -519,6 +519,37 @@ class AdmissionLedgerSuite extends munit.FunSuite:
     }
   }
 
+  test("the ledger's focus stops: counts, the open count's trials, one decision, Admit") {
+    served(StoryMoment.T1).map { answers =>
+      val ledger = AdmissionLedger
+        .update(
+          loaded(t1, answers),
+          t1,
+          LedgerIntent.ChooseDecision(LedgerDecision.ReviewExclusions)
+        )
+        ._1
+      val absent = StudioRef.InventoryCount(r3, InventoryKind.Absent)
+      val model  =
+        perform(t1, AdmissionLedger.update(ledger, t1, LedgerIntent.Open(absent))._2)._1
+      val stops =
+        AdmissionLedgerVM.focusStops(AdmissionLedgerVM.of(ledger, model)).map(_.render)
+      assertEquals(
+        stops.take(2),
+        Vector("button: Inventory: 960 trials", "button: Admitted: 937 trials")
+      )
+      assertEquals(
+        stops.drop(9),
+        Vector(
+          "button: Close",
+          "list: Absent · 6 trials",
+          "radio-button: Review exclusions: Admits 937 trials; 17 quarantined and 6 absent are " +
+            "recorded with their causes in r3.",
+          "button: Admit as r3"
+        )
+      )
+    }
+  }
+
   test("a count names itself in the trail and the status bar") {
     val cause = StudioRef.InventoryCount(r3, InventoryKind.Cause("quarantine.overlap"))
     assertEquals(AdmissionLedgerVM.countTitle(cause), "Quarantined · overlap")

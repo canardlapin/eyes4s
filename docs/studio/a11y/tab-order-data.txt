@@ -8,4 +8,14 @@ region: Column mapping
 text-field: Preset name
 button: Revert
 region: Admission
+button: Inventory: 960 trials
+button: Admitted: 937 trials
+button: Quarantined: 17 trials
+button: 4 trials quarantined for duplicate-ordinals
+button: 5 trials quarantined for no-fixations
+button: 6 trials quarantined for overlap
+button: 2 trials quarantined for rejected-records
+button: Absent: 6 trials
+button: Outside screen: 0 trials
+radio-button: Require complete: Refuses r3 while 17 trials are quarantined (eyes4s admission). The 6 absent trials are counted by the inventory join.
 region: Geometry

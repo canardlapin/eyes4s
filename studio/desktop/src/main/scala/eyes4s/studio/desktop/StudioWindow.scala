@@ -70,7 +70,9 @@ final class StudioWindow private (
 
   /** The controls a pane shows inside its own focus stop, in Tab order. */
   def paneStops(pane: PaneId): Vector[FocusStop] =
-    if pane == StudioLayouts.columnMapping then columnMapping.focusStops else Vector.empty
+    if pane == StudioLayouts.columnMapping then columnMapping.focusStops
+    else if pane == StudioLayouts.admission then admission.focusStops
+    else Vector.empty
 
   /** Store each perspective's arrangement in the document (view-only). */
   def captureLayouts(): Unit = runtime.dispatch(Intent.LayoutsCaptured(host.capture()))

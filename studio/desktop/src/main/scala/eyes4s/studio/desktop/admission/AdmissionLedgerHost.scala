@@ -84,6 +84,10 @@ final class AdmissionLedgerHost(
   /** The ledger's state now. */
   def state: AdmissionLedger = ledger
 
+  /** The ledger's focus stops inside the pane (none until it has started). */
+  def focusStops: Vector[eyes4s.studio.app.vm.FocusStop] =
+    if !started then Vector.empty else AdmissionLedgerVM.focusStops(vm)
+
   /** The view-model now shown. */
   def vm: AdmissionLedgerVM = AdmissionLedgerVM.of(ledger, model())
 

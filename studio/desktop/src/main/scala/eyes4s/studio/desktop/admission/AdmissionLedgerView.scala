@@ -206,6 +206,7 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
           visible(opened, true)
           openedTitle.setText(o.title)
           close.setText(o.close)
+          close.setAccessibleText(o.close)
           show(openedNote, o.note)
           if trials.getItems.size != o.rows.size ||
             !trials.getItems.toArray.sameElements(o.rows)
@@ -225,6 +226,7 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
       show(changes, vm.changes)
       show(consequence, vm.consequence)
       admit.setText(vm.admit)
+      admit.setAccessibleText(vm.admit)
       admit.setDisable(!vm.canAdmit)
       visible(admit, vm.status.isEmpty)
       show(admitNote, vm.admitNote)
