@@ -57,14 +57,14 @@ object LedgerCounts:
   /** Whether an entry with `disposition` belongs to `kind`. */
   def holds(kind: InventoryKind, disposition: TrialDisposition): Boolean =
     (kind, disposition) match
-      case (InventoryKind.Inventory, _)                                        => true
-      case (InventoryKind.Admitted, TrialDisposition.Admitted)                 => true
-      case (InventoryKind.Quarantined, TrialDisposition.Quarantined(_))        => true
-      case (InventoryKind.Quarantined, TrialDisposition.NoFixations)           => true
-      case (InventoryKind.Cause(code), TrialDisposition.Quarantined(c))        => c.code == code
-      case (InventoryKind.NoFixations, TrialDisposition.NoFixations)           => true
-      case (InventoryKind.Absent, TrialDisposition.Absent)                     => true
-      case _                                                                   => false
+      case (InventoryKind.Inventory, _)                                 => true
+      case (InventoryKind.Admitted, TrialDisposition.Admitted)          => true
+      case (InventoryKind.Quarantined, TrialDisposition.Quarantined(_)) => true
+      case (InventoryKind.Quarantined, TrialDisposition.NoFixations)    => true
+      case (InventoryKind.Cause(code), TrialDisposition.Quarantined(c)) => c.code == code
+      case (InventoryKind.NoFixations, TrialDisposition.NoFixations)    => true
+      case (InventoryKind.Absent, TrialDisposition.Absent)              => true
+      case _                                                            => false
 
   /** The entries of `dataset`'s ledger that `ref` opens, in ledger order;
     * `None` when `ref` is not a count of that ledger.

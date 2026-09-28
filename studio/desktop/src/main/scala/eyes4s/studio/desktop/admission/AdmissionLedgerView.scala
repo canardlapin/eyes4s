@@ -47,7 +47,7 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
   private val head        = HBox(header, spacer(), trialsHeader)
   head.getStyleClass.add("ledger-head")
 
-  private val rowBox = VBox()
+  private val rowBox                    = VBox()
   private var rowViews: Vector[RowView] = Vector.empty
 
   /** The count rows now shown, in order. */
@@ -69,7 +69,7 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
   close.setOnAction(_ => fire(LedgerIntent.Close))
   private val openedHead = HBox(openedTitle, spacer(), close)
   openedHead.setAlignment(Pos.CENTER_LEFT)
-  val openedNote: Label   = label("ledger-note", "t11")
+  val openedNote: Label            = label("ledger-note", "t11")
   val trials: ListView[TrialRowVM] = ListView()
   trials.getStyleClass.add("ledger-trials")
   trials.setPrefHeight(180)
@@ -92,7 +92,8 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
   )
   trials.addEventHandler(
     MouseEvent.MOUSE_CLICKED,
-    (e: MouseEvent) => if e.getButton == MouseButton.PRIMARY && e.getClickCount == 2 then openSelected()
+    (e: MouseEvent) =>
+      if e.getButton == MouseButton.PRIMARY && e.getClickCount == 2 then openSelected()
   )
   private def openSelected(): Unit =
     Option(trials.getSelectionModel.getSelectedItem).foreach(r =>
@@ -109,8 +110,8 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
   HBox.setHgrow(scroll, Priority.ALWAYS)
 
   // --- the decision --------------------------------------------------------------------------
-  val decisionTitle: Label = label("ledger-decision-title", "t13")
-  private val group        = ToggleGroup()
+  val decisionTitle: Label                      = label("ledger-decision-title", "t13")
+  private val group                             = ToggleGroup()
   val choices: Map[LedgerDecision, RadioButton] = LedgerDecision.values.toVector.map { d =>
     val r = RadioButton()
     r.setMnemonicParsing(false)
@@ -120,23 +121,20 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
     d -> r
   }.toMap
   val choiceNotes: Map[LedgerDecision, Label] = LedgerDecision.values.toVector.map { d =>
-    val l = label("ledger-choice-note", "t11")
-    l.setWrapText(true)
-    d -> l
+    d -> wrapping("ledger-choice-note", "t11")
   }.toMap
   private val choiceBox = VBox(
     LedgerDecision.values.toVector.flatMap(d => Vector(choices(d), choiceNotes(d)))*
   )
   choiceBox.setSpacing(4)
-  val changes: Label     = label("ledger-note", "t11")
-  val consequence: Label = label("ledger-note", "t11")
+  val changes: Label     = wrapping("ledger-note", "t11")
+  val consequence: Label = wrapping("ledger-note", "t11")
   val admit: Button      = button("ledger-button", "primary")
   admit.setOnAction(_ => fire(LedgerIntent.Admit))
-  val admitNote: Label    = label("ledger-warn", "t11")
-  val status: Label       = label("ledger-note", "t12")
-  val countsSource: Label = label("ledger-note", "t11")
-  Vector(changes, consequence, admitNote, status, countsSource).foreach(_.setWrapText(true))
-  private val decision = VBox(
+  val admitNote: Label    = wrapping("ledger-warn", "t11")
+  val status: Label       = wrapping("ledger-note", "t12")
+  val countsSource: Label = wrapping("ledger-note", "t11")
+  private val decision    = VBox(
     decisionTitle,
     choiceBox,
     changes,
@@ -147,8 +145,14 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
     countsSource
   )
   decision.getStyleClass.add("ledger-decision")
+  // The column keeps its width and scrolls when the pane is short.
+  private val decisionScroll = ScrollPane(decision)
+  decisionScroll.setFitToWidth(true)
+  decisionScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER)
+  decisionScroll.getStyleClass.add("edge-to-edge")
+  decisionScroll.setMinWidth(Region.USE_PREF_SIZE)
 
-  private val body = HBox(scroll, decision)
+  private val body = HBox(scroll, decisionScroll)
   VBox.setVgrow(body, Priority.ALWAYS)
 
   val node: VBox = VBox(empty, problem, body)
@@ -245,6 +249,13 @@ object AdmissionLedgerView:
     b.getStyleClass.addAll(classes*)
     b
 
+  /** A label that wraps to as many lines as its text needs. */
+  def wrapping(classes: String*): Label =
+    val l = label(classes*)
+    l.setWrapText(true)
+    l.setMinHeight(Region.USE_PREF_SIZE)
+    l
+
   def spacer(): Region =
     val r = Region()
     HBox.setHgrow(r, Priority.ALWAYS)
@@ -262,12 +273,12 @@ object AdmissionLedgerView:
     * button that opens its trials.
     */
   final class RowView(val ref: StudioRef, fire: LedgerIntent => Unit):
-    val label: Label = AdmissionLedgerView.label("ledger-label", "t12")
-    label.setWrapText(true)
+    val label: Label  = wrapping("ledger-label", "t12")
     val detail: Label = AdmissionLedgerView.label("ledger-detail", "t11")
     val count: Button = button("ledger-count", "mono", "t12")
     count.setOnAction(_ => fire(LedgerIntent.Open(ref)))
     private val text = VBox(label, detail)
+    text.setAlignment(Pos.CENTER_LEFT)
     HBox.setHgrow(text, Priority.ALWAYS)
     val node: HBox = HBox(text, count)
     node.getStyleClass.add("ledger-row")

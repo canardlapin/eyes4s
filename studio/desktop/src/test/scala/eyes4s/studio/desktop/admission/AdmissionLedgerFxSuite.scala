@@ -29,7 +29,7 @@ import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
 import eyes4s.studio.core.freshness.{RunStanding, StaleReason}
 import eyes4s.studio.core.selection.{InventoryKind, StudioRef}
 import eyes4s.studio.desktop.StudioWindow
-import eyes4s.studio.desktop.harness.FxStage
+import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
 import eyes4s.studio.desktop.runtime.EffectProblem
 import eyes4s.studio.desktop.shell.ShellFxSuite
 import javafx.scene.input.{KeyCode, KeyEvent}
@@ -122,6 +122,8 @@ class AdmissionLedgerFxSuite extends ShellFxSuite:
         "937 trials."
     )
     assertEquals(runOnFx(v.countsSource.getText), "Counts: eyes4s admission of r3.")
+    // Board-parity evidence: the Data perspective with the ledger.
+    fx.snapshot(StudioTheme.Light)
   }
 
   fxStage.test("every count opens exactly its trials, and opens them again closed") { fx =>
@@ -179,7 +181,9 @@ class AdmissionLedgerFxSuite extends ShellFxSuite:
   fxStage.test("a trial of an open count opens in Explore on Enter") { fx =>
     val w      = ready(fx)
     val absent = runOnFx(
-      w.admission.view.rows.find(_.ref == StudioRef.InventoryCount(r3, InventoryKind.Absent)).get
+      w.admission.view.rows
+        .find(_.ref == StudioRef.InventoryCount(r3, InventoryKind.Absent))
+        .get
     )
     fire(fx, absent.count)
     val list  = w.admission.view.trials

@@ -114,7 +114,7 @@ final class AdmissionLedgerHost(
 
   private def perform(effects: Vector[LedgerEffect]): Unit =
     effects.foreach {
-      case LedgerEffect.App(i) => app(i)
+      case LedgerEffect.App(i)           => app(i)
       case LedgerEffect.RequestCounts(d) =>
         inputs.admission(
           d,

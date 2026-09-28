@@ -228,7 +228,7 @@ final class Labels(model: AppModel, messages: Messages):
       case StudioRef.WindowTally(dataset, region) => tally(dataset, region)
       case StudioRef.InventoryCount(dataset, _)   =>
         LedgerText(LedgerTextId.PathCount, dataset.label, AdmissionLedgerVM.countTitle(ref))
-      case StudioRef.Result(run, address)         =>
+      case StudioRef.Result(run, address) =>
         val s = sigma(run, address.scale)
         address.value match
           case ResultAddress.PairRow(_, d, focal, reference) =>

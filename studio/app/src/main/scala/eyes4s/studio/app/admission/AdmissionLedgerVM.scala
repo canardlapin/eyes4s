@@ -79,8 +79,12 @@ final case class OpenedVM(
 ) derives CanEqual
 
 /** One admission decision, with what it would do to these counts. */
-final case class DecisionVM(value: LedgerDecision, label: String, note: String, selected: Boolean)
-    derives CanEqual
+final case class DecisionVM(
+    value: LedgerDecision,
+    label: String,
+    note: String,
+    selected: Boolean
+) derives CanEqual
 
 /** Everything the admission ledger shows, in the board's order. */
 final case class AdmissionLedgerVM(
@@ -169,11 +173,11 @@ object AdmissionLedgerVM:
     val summary = ledger.counts.toOption.filter(s => spec.exists(_.id == s.dataset))
     val id      = spec.map(_.id)
     val label   = id.fold("")(_.label)
-    val source  = spec.flatMap(_.sources.fixations).fold("fixations.csv")(f => file(f.path.value))
-    val inv     = spec.map(InventorySource.vm(_, ledger.inventory))
-    val header  = inv.flatMap(_.file).fold(t(CountedFromRecords, source))(f =>
-      t(CountedFromInventory, f)
-    )
+    val source  =
+      spec.flatMap(_.sources.fixations).fold("fixations.csv")(f => file(f.path.value))
+    val inv    = spec.map(InventorySource.vm(_, ledger.inventory))
+    val header =
+      inv.flatMap(_.file).fold(t(CountedFromRecords, source))(f => t(CountedFromInventory, f))
     val open = id.flatMap(AdmissionLedger.opened(model, _))
     val rows = (id, summary) match
       case (Some(d), Some(s)) => countRows(d, s, inv, policyOf(model, s, spec), open)
@@ -324,10 +328,10 @@ object AdmissionLedgerVM:
     val title   = t(OpenedTitle, countTitle(ref), shown)
     val entries = ledger.entries.toOption.flatMap(LedgerCounts.trials(ref, dataset, _))
     val note    = ledger.entries match
-      case Loading.Failed(why)           => Some(t(LedgerFailed, dataset.label, why))
-      case Loading.Waiting               => Some(t(LedgerWaiting, dataset.label))
+      case Loading.Failed(why)            => Some(t(LedgerFailed, dataset.label, why))
+      case Loading.Waiting                => Some(t(LedgerWaiting, dataset.label))
       case _ if entries.exists(_.isEmpty) => Some(t(NoTrials))
-      case _                             => None
+      case _                              => None
     OpenedVM(ref, title, entries.toVector.flatten.map(trialRow), note, t(Close))
 
   private def decisions(

@@ -82,7 +82,7 @@ object Place:
             if fromSummary then Perspective.Compare else Perspective.Explore
           case StudioRef.FigurePanel(_, _) => Perspective.Figures
           case StudioRef.WindowTally(_, _) | StudioRef.InventoryCount(_, _) => Perspective.Data
-          case _                           => Perspective.Compare
+          case _ => Perspective.Compare
     }
 
 /** Where the user is: a perspective and its trail. */

@@ -165,7 +165,10 @@ class LedgerCountsSuite extends CatsEffectSuite:
       all  <- LedgerPages.all(paged(250, 7))
       none <- LedgerPages.all(paged(0, 7))
     yield
-      assertEquals(all.map(_.map(_.trial.participant)), Right((0 until 250).map(i => s"P$i").toVector))
+      assertEquals(
+        all.map(_.map(_.trial.participant)),
+        Right((0 until 250).map(i => s"P$i").toVector)
+      )
       assertEquals(none, Right(Vector.empty))
   }
 

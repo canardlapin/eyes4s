@@ -156,7 +156,8 @@ object AdmissionLedger:
   def opened(model: AppModel, dataset: DatasetRevision): Option[StudioRef] =
     model.navigation.trail(Perspective.Data).lastOption.collect {
       case Place.At(ref @ StudioRef.InventoryCount(d, _)) if d == dataset => ref
-      case Place.At(ref @ StudioRef.WindowTally(d, TallyRegion.OutsideScreen)) if d == dataset =>
+      case Place.At(ref @ StudioRef.WindowTally(d, TallyRegion.OutsideScreen))
+          if d == dataset =>
         ref
     }
 
@@ -246,7 +247,8 @@ object AdmissionLedger:
       case AdmissionAnswer.Answered(s) => ledger.copy(counts = Loading.Ready(s), refusal = None)
       case AdmissionAnswer.Refused(e)  =>
         ledger.copy(counts = Loading.Failed(e.message), refusal = Some(e))
-      case AdmissionAnswer.Failed(why) => ledger.copy(counts = Loading.Failed(why), refusal = None)
+      case AdmissionAnswer.Failed(why) =>
+        ledger.copy(counts = Loading.Failed(why), refusal = None)
 
   private def refusedText(dataset: DatasetRevision, s: AdmissionSummary): String =
     t(
@@ -269,7 +271,8 @@ object AdmissionLedger:
   /** Why "Admit as rN" does nothing now, if it does nothing. */
   def blocked(ledger: AdmissionLedger, spec: DatasetRevisionSpec): Option[String] =
     spec.decision match
-      case AdmissionDecision.Admitted(_, _) => Some(t(LedgerTextId.AdmittedStatus, spec.id.label))
+      case AdmissionDecision.Admitted(_, _) =>
+        Some(t(LedgerTextId.AdmittedStatus, spec.id.label))
       case _ if ledger.admitting.contains(spec.id) =>
         Some(t(LedgerTextId.AdmitVerifying, spec.id.label))
       case _ =>

@@ -174,7 +174,7 @@ class AdmissionLedgerSuite extends munit.FunSuite:
         assertEquals(AdmissionLedgerVM.of(ledger, perform(model, again)._1).opened, None)
         row.ref -> open.rows.map(_.trial).toSet
       }.toMap
-      def trials(kind: InventoryKind) = opened(StudioRef.InventoryCount(r3, kind))
+      def trials(kind: InventoryKind)           = opened(StudioRef.InventoryCount(r3, kind))
       def where(p: TrialDisposition => Boolean) =
         entries.filter(e => p(e.disposition)).map(_.trial).toSet
       // Each count's trials are the ledger's with its disposition, and no others.
@@ -211,7 +211,8 @@ class AdmissionLedgerSuite extends munit.FunSuite:
     served(StoryMoment.T1).map { answers =>
       val ledger  = loaded(t1, answers)
       val overlap = StudioRef.InventoryCount(r3, InventoryKind.Cause("quarantine.overlap"))
-      val model   = perform(t1, AdmissionLedger.update(ledger, t1, LedgerIntent.Open(overlap))._2)._1
+      val model   =
+        perform(t1, AdmissionLedger.update(ledger, t1, LedgerIntent.Open(overlap))._2)._1
       assertEquals(
         Shell.context(model).trail.map(_.label),
         Vector("Dataset r3 (draft)", "Admission", "Quarantined", "overlap")
@@ -221,8 +222,9 @@ class AdmissionLedgerSuite extends munit.FunSuite:
       assert(open.rows.forall(_.detail.startsWith("overlap: fixation")), open.rows)
       val first = open.rows.head
       assertEquals(first.ref, StudioRef.Trial(first.trial))
-      val (_, explain) = AdmissionLedger.update(ledger, model, LedgerIntent.OpenTrial(first.trial))
-      val explored     = perform(model, explain)._1
+      val (_, explain) =
+        AdmissionLedger.update(ledger, model, LedgerIntent.OpenTrial(first.trial))
+      val explored = perform(model, explain)._1
       assertEquals(explored.perspective, Perspective.Explore)
       assertEquals(explored.location.trail.last, eyes4s.studio.app.nav.Place.At(first.ref))
       // Back returns to the open count; Close returns to the ledger.
@@ -231,7 +233,7 @@ class AdmissionLedgerSuite extends munit.FunSuite:
       val closed = perform(back, AdmissionLedger.update(ledger, back, LedgerIntent.Close)._2)._1
       assertEquals(AdmissionLedger.opened(closed, r3), None)
       // Absent trials are the inventory's, with no records.
-      val absent = StudioRef.InventoryCount(r3, InventoryKind.Absent)
+      val absent   = StudioRef.InventoryCount(r3, InventoryKind.Absent)
       val onAbsent =
         perform(t1, AdmissionLedger.update(ledger, t1, LedgerIntent.Open(absent))._2)._1
       val absentRows = AdmissionLedgerVM.of(ledger, onAbsent).opened.get.rows
@@ -280,7 +282,11 @@ class AdmissionLedgerSuite extends munit.FunSuite:
   test("admitting r3 creates the admitted revision and marks run 5 (r2) stale") {
     served(StoryMoment.T1).map { answers =>
       val review = AdmissionLedger
-        .update(loaded(t1, answers), t1, LedgerIntent.ChooseDecision(LedgerDecision.ReviewExclusions))
+        .update(
+          loaded(t1, answers),
+          t1,
+          LedgerIntent.ChooseDecision(LedgerDecision.ReviewExclusions)
+        )
         ._1
       val before = AdmissionLedgerVM.of(review, t1)
       assertEquals(before.decisionTitle, "Admit dataset r3")
@@ -301,7 +307,8 @@ class AdmissionLedgerSuite extends munit.FunSuite:
       assertEquals(verify, Vector(LedgerEffect.App(Intent.Dispatch(Command.VerifyDataset(r3)))))
       assertEquals(asked.admitting, Some(r3))
       val (verifying, appEffects) = perform(t1, verify)
-      val content = appEffects.collectFirst { case AppEffect.RequestAdmission(`r3`, c) => c }
+      val content                 = appEffects
+        .collectFirst { case AppEffect.RequestAdmission(`r3`, c) => c }
         .getOrElse(fail(s"no admission request in $appEffects"))
       assertEquals(
         verifying.document.dataset(r3).map(_.decision),
@@ -316,7 +323,11 @@ class AdmissionLedgerSuite extends munit.FunSuite:
       )
       // eyes4s's answer for exactly the verified content admits it.
       val (answered, admit) =
-        AdmissionLedger.update(synced, verifying, LedgerIntent.Verified(r3, content, answers._1))
+        AdmissionLedger.update(
+          synced,
+          verifying,
+          LedgerIntent.Verified(r3, content, answers._1)
+        )
       assertEquals(
         admit,
         Vector(
@@ -349,9 +360,13 @@ class AdmissionLedgerSuite extends munit.FunSuite:
   test("an answer that no longer applies admits nothing") {
     served(StoryMoment.T1).map { answers =>
       val review = AdmissionLedger
-        .update(loaded(t1, answers), t1, LedgerIntent.ChooseDecision(LedgerDecision.ReviewExclusions))
+        .update(
+          loaded(t1, answers),
+          t1,
+          LedgerIntent.ChooseDecision(LedgerDecision.ReviewExclusions)
+        )
         ._1
-      val (asked, verify)       = AdmissionLedger.update(review, t1, LedgerIntent.Admit)
+      val (asked, verify)         = AdmissionLedger.update(review, t1, LedgerIntent.Admit)
       val (verifying, appEffects) = perform(t1, verify)
       val content = appEffects.collectFirst { case AppEffect.RequestAdmission(_, c) => c }.get
       // Require complete chosen while eyes4s verifies: refused on the answer.
@@ -359,26 +374,39 @@ class AdmissionLedgerSuite extends munit.FunSuite:
         .update(asked, verifying, LedgerIntent.ChooseDecision(LedgerDecision.RequireComplete))
         ._1
       val (refused, none) =
-        AdmissionLedger.update(strict, verifying, LedgerIntent.Verified(r3, content, answers._1))
+        AdmissionLedger.update(
+          strict,
+          verifying,
+          LedgerIntent.Verified(r3, content, answers._1)
+        )
       assertEquals(none, Vector.empty)
-      assert(refused.problem.exists(_.startsWith("Require complete refuses r3")), refused.problem)
+      assert(
+        refused.problem.exists(_.startsWith("Require complete refuses r3")),
+        refused.problem
+      )
       assertEquals(refused.admitting, None)
       // An answer for other content (the revision was edited since) admits nothing.
       val other = ok(DatasetRevisionSpec.contentDigest(StoryModels.t1.dataset(r2).get))
       assertEquals(
-        AdmissionLedger.update(asked, verifying, LedgerIntent.Verified(r3, other, answers._1))._2,
+        AdmissionLedger
+          .update(asked, verifying, LedgerIntent.Verified(r3, other, answers._1))
+          ._2,
         Vector.empty
       )
       // A backend refusal is told, and nothing is admitted.
-      val gone = BackendError.UnknownDataset(r3, Vector(r2))
+      val gone            = BackendError.UnknownDataset(r3, Vector(r2))
       val (told, nothing) = AdmissionLedger.update(
         asked,
         verifying,
         LedgerIntent.Verified(r3, content, AdmissionAnswer.Refused(gone))
       )
-      assertEquals((nothing, told.problem, told.admitting), (Vector.empty, Some(gone.message), None))
+      assertEquals(
+        (nothing, told.problem, told.admitting),
+        (Vector.empty, Some(gone.message), None)
+      )
       // Withdrawing the verification stops waiting for it.
-      val withdrawn = AppModel.update(verifying, Intent.Dispatch(Command.WithdrawVerification(r3)))._1
+      val withdrawn =
+        AppModel.update(verifying, Intent.Dispatch(Command.WithdrawVerification(r3)))._1
       assertEquals(AdmissionLedger.sync(asked, withdrawn)._1.admitting, None)
     }
   }
@@ -426,28 +454,37 @@ class AdmissionLedgerSuite extends munit.FunSuite:
         case other                       => fail(other.toString)
       val all = entries.fold(fail(_), identity)
       // A backend that reports two records of one admitted trial off screen.
-      val at      = all.indexWhere(_.disposition == TrialDisposition.Admitted)
-      val offs    = Vector(OutsideFrame(7, -3.0, 5.0, "screen"), OutsideFrame(9, 2000.0, 5.0, "screen"))
+      val at   = all.indexWhere(_.disposition == TrialDisposition.Admitted)
+      val offs =
+        Vector(OutsideFrame(7, -3.0, 5.0, "screen"), OutsideFrame(9, 2000.0, 5.0, "screen"))
       val ledgerE = all.updated(at, all(at).copy(outsideFrame = offs))
-      val counted = summary.copy(window =
-        summary.window.copy(outsideScreen = 2, trialsOutsideScreen = 1)
-      )
+      val counted =
+        summary.copy(window = summary.window.copy(outsideScreen = 2, trialsOutsideScreen = 1))
       val ledger = loaded(t1, (AdmissionAnswer.Answered(counted), Right(ledgerE)))
       val vm     = AdmissionLedgerVM.of(ledger, t1)
       val tally  = StudioRef.WindowTally(r3, TallyRegion.OutsideScreen)
       val row    = vm.rows.find(_.ref == tally).get
-      assertEquals((row.value, row.detail, row.style), ("1", Some("2 records"), CountStyle.Reported))
+      assertEquals(
+        (row.value, row.detail, row.style),
+        ("1", Some("2 records"), CountStyle.Reported)
+      )
       // The quarantined count and its causes are unchanged.
       assertEquals(vm.rows(2).value, "17")
-      val model = perform(t1, AdmissionLedger.update(ledger, t1, LedgerIntent.Open(tally))._2)._1
-      val open  = AdmissionLedgerVM.of(ledger, model).opened.get
-      assertEquals(open.rows.map(r => (r.trial, r.detail)), Vector(all(at).trial -> "2 outside screen: records 7, 9"))
+      val model =
+        perform(t1, AdmissionLedger.update(ledger, t1, LedgerIntent.Open(tally))._2)._1
+      val open = AdmissionLedgerVM.of(ledger, model).opened.get
+      assertEquals(
+        open.rows.map(r => (r.trial, r.detail)),
+        Vector(all(at).trial -> "2 outside screen: records 7, 9")
+      )
       // Under QuarantineTrial there is no reported count: the trials are quarantined.
       val strict = t1.document.dataset(r3).get
-      val policy = AppModel.update(
-        t1,
-        Intent.Dispatch(Command.SetOffScreenPolicy(r3, OffScreenChoice.QuarantineTrial))
-      )._1
+      val policy = AppModel
+        .update(
+          t1,
+          Intent.Dispatch(Command.SetOffScreenPolicy(r3, OffScreenChoice.QuarantineTrial))
+        )
+        ._1
       assert(strict.admission.offScreen == OffScreenChoice.ExcludeRecord)
       assertEquals(
         AdmissionLedgerVM.of(ledger, policy).rows.exists(_.ref == tally),
@@ -459,20 +496,25 @@ class AdmissionLedgerSuite extends munit.FunSuite:
   test("counts and entries for another revision are ignored; a new revision resets") {
     served(StoryMoment.T1).map { answers =>
       val ledger = loaded(t1, answers)
-      val stale  = AdmissionLedger.update(ledger, t1, LedgerIntent.CountsRead(r2, answers._1))._1
+      val stale = AdmissionLedger.update(ledger, t1, LedgerIntent.CountsRead(r2, answers._1))._1
       assertEquals(stale, ledger)
-      val onR2 = AppModel.update(
-        t1,
-        Intent.Navigate(
-          eyes4s.studio.app.nav.Location(
-            Perspective.Data,
-            Vector(eyes4s.studio.app.nav.Place.Dataset(r2))
+      val onR2 = AppModel
+        .update(
+          t1,
+          Intent.Navigate(
+            eyes4s.studio.app.nav.Location(
+              Perspective.Data,
+              Vector(eyes4s.studio.app.nav.Place.Dataset(r2))
+            )
           )
         )
-      )._1
+        ._1
       val (moved, effects) = AdmissionLedger.sync(ledger, onR2)
       assertEquals(moved.shown.map(_.id), Some(r2))
-      assertEquals(effects, Vector(LedgerEffect.RequestCounts(r2), LedgerEffect.RequestLedger(r2)))
+      assertEquals(
+        effects,
+        Vector(LedgerEffect.RequestCounts(r2), LedgerEffect.RequestLedger(r2))
+      )
       assertEquals(moved.counts, Loading.Waiting)
     }
   }
