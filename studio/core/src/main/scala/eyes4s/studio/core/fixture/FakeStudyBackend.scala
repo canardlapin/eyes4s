@@ -83,6 +83,14 @@ enum FakeControlError derives CanEqual:
     case RevisionConflict(revision, declared, requested) =>
       s"${revision.label} stands on data ${declared.label}, not ${requested.label}."
 
+/** How the fake answers for a dataset's trial inventory (S5.4, S5.6): the
+  * fixture's joined inventory, none declared, or eyes4s's refusal of it.
+  */
+enum InventoryScenario derives CanEqual:
+  case Joined
+  case Undeclared
+  case Refused(issues: Vector[InventoryIssue])
+
 /** One segment of a fake job's script with its stated total. */
 final case class ScriptedSegment(segment: Segment, total: ProgressTotal) derives CanEqual
 
@@ -179,13 +187,30 @@ final class FakeStudyBackend[F[_]] private (
         case Some(st) => Right(st)
     }
 
+  /** The dataset's state, or the refusal its inventory scenario makes. */
+  private def inventoried(
+      d: DatasetRevision
+  ): F[Either[BackendError, (DatasetState, InventoryScenario)]] =
+    (dataset(d), state.get).mapN { (known, s) =>
+      val scenario = s.inventories.getOrElse(d, InventoryScenario.Joined)
+      known.flatMap { st =>
+        scenario match
+          case InventoryScenario.Refused(issues) =>
+            Left(BackendError.InventoryRefused(d, issues))
+          case _ => Right((st, scenario))
+      }
+    }
+
   def admission(d: DatasetRevision): F[Either[BackendError, AdmissionSummary]] =
-    dataset(d).map(_.map { st =>
+    inventoried(d).map(_.map { (st, scenario) =>
       val bySlug = summary.quarantineBySlug.toMap
       AdmissionSummary(
         d,
         st,
-        InventoryJoin.Joined(summary.inventoryTrials, summary.absent),
+        scenario match
+          case InventoryScenario.Undeclared => InventoryJoin.Undeclared
+          case _ => InventoryJoin.Joined(summary.inventoryTrials, summary.absent)
+        ,
         summary.admitted,
         summary.quarantineBySlug.collect {
           case (slug, n) if slug != NoFixationsSlug => QuarantineCount(s"quarantine.$slug", n)
@@ -212,10 +237,15 @@ final class FakeStudyBackend[F[_]] private (
       )
     })
 
+  /** Without an inventory, nothing lists the absent trials. */
   def ledger(d: DatasetRevision, page: PageRequest): F[Either[BackendError, LedgerPage]] =
-    dataset(d).map(_.map { _ =>
-      val entries = slice(study.inventory, page)
-      LedgerPage(d, PageInfo.of(page, study.inventory.size, entries.size), entries)
+    inventoried(d).map(_.map { (_, scenario) =>
+      val all = scenario match
+        case InventoryScenario.Undeclared =>
+          study.inventory.filterNot(_.disposition == TrialDisposition.Absent)
+        case _ => study.inventory
+      val entries = slice(all, page)
+      LedgerPage(d, PageInfo.of(page, all.size, entries.size), entries)
     })
 
   // -------------------------------------------------------------------------
@@ -489,6 +519,13 @@ final class FakeStudyBackend[F[_]] private (
         case _ => (s.copy(revisions = s.revisions.updated(revision, dataset)), Right(()))
     }
 
+  /** Answer admission and the ledger of `dataset` under `scenario` from now
+    * on: a dataset whose trials.csv declares no inventory, or one eyes4s
+    * refuses (S5.4). The fixture's inventory is joined otherwise.
+    */
+  def serveInventory(dataset: DatasetRevision, scenario: InventoryScenario): F[Unit] =
+    state.update(s => s.copy(inventories = s.inventories.updated(dataset, scenario)))
+
   /** Finish a job with diagnostics; its run becomes `Failed`. */
   def fail(
       id: JobId,
@@ -669,7 +706,8 @@ object FakeStudyBackend:
       datasets: Map[DatasetRevision, DatasetState],
       revisions: Map[AnalysisRevision, DatasetRevision],
       runs: Vector[RunSummary],
-      jobs: Vector[JobStatus]
+      jobs: Vector[JobStatus],
+      inventories: Map[DatasetRevision, InventoryScenario] = Map.empty
   ):
     def job(id: JobId): Option[JobStatus] = jobs.find(_.job == id)
 

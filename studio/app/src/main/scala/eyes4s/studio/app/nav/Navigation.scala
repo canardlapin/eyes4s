@@ -81,7 +81,7 @@ object Place:
           case StudioRef.Participant(_) =>
             if fromSummary then Perspective.Compare else Perspective.Explore
           case StudioRef.FigurePanel(_, _) => Perspective.Figures
-          case StudioRef.WindowTally(_, _) => Perspective.Data
+          case StudioRef.WindowTally(_, _) | StudioRef.InventoryCount(_, _) => Perspective.Data
           case _                           => Perspective.Compare
     }
 

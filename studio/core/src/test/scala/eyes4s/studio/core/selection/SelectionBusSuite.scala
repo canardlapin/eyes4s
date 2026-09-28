@@ -76,7 +76,20 @@ object SelectionGen:
       .map((f, l) => StudioRef.FigurePanel(right(FigureId.of(f)), right(PanelLetter.of(l)))),
     Gen
       .zip(Gen.choose(2, 3), Gen.oneOf(TallyRegion.values.toSeq))
-      .map((d, r) => StudioRef.WindowTally(DatasetRevision(d), r))
+      .map((d, r) => StudioRef.WindowTally(DatasetRevision(d), r)),
+    Gen
+      .zip(
+        Gen.choose(2, 3),
+        Gen.oneOf(
+          InventoryKind.Inventory,
+          InventoryKind.Admitted,
+          InventoryKind.Quarantined,
+          InventoryKind.Cause("quarantine.overlap"),
+          InventoryKind.NoFixations,
+          InventoryKind.Absent
+        )
+      )
+      .map((d, k) => StudioRef.InventoryCount(DatasetRevision(d), k))
   )
 
   val ref: Gen[StudioRef] =

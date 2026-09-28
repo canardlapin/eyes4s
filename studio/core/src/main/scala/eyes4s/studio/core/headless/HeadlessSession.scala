@@ -28,7 +28,12 @@ import eyes4s.studio.core.execution.{
   ExecutionEvent,
   ExecutionService
 }
-import eyes4s.studio.core.fixture.{FakeControlError, FakeStudyBackend, StoryMoment}
+import eyes4s.studio.core.fixture.{
+  FakeControlError,
+  FakeStudyBackend,
+  InventoryScenario,
+  StoryMoment
+}
 import eyes4s.studio.core.navigation.StudyNavigator
 
 import scala.concurrent.Future
@@ -134,6 +139,14 @@ final class HeadlessSession private (
       page: PageRequest
   ): Future[Either[BackendError, LedgerPage]] =
     run(fake.ledger(dataset, page))
+
+  /** Every entry of `dataset`'s ledger, in inventory order. */
+  def wholeLedger(dataset: DatasetRevision): Future[Either[BackendError, Vector[LedgerEntry]]] =
+    run(LedgerPages.all(fake.ledger(dataset, _)))
+
+  /** Answer for `dataset`'s trial inventory under `scenario` from now on. */
+  def serveInventory(dataset: DatasetRevision, scenario: InventoryScenario): Future[Unit] =
+    run(fake.serveInventory(dataset, scenario))
 
   def runs: Future[Vector[RunSummary]] = run(fake.runs)
 
