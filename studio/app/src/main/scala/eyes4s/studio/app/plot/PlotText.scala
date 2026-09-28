@@ -26,8 +26,8 @@ enum PlotTextId derives CanEqual:
   /** One cell spoken as "header value", and the separator between cells. */
   case Cell, CellSeparator
 
-  /** A row or mark that is selected. */
-  case Selected
+  /** A row or mark that is selected, and a mark only some of whose rows are. */
+  case Selected, PartlySelected
 
   /** The accessible role and usage of a plot's single focus stop. */
   case PlotRole, PlotKeys
@@ -54,11 +54,12 @@ object PlotText:
   def english(id: PlotTextId): String =
     import PlotTextId.*
     id match
-      case Cell          => "{0} {1}"
-      case CellSeparator => ", "
-      case Selected      => "{0}, selected"
-      case PlotRole      => "plot"
-      case PlotKeys      =>
+      case Cell           => "{0} {1}"
+      case CellSeparator  => ", "
+      case Selected       => "{0}, selected"
+      case PartlySelected => "{0}, {1} of {2} selected"
+      case PlotRole       => "plot"
+      case PlotKeys       =>
         "{0}. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down " +
           "step in order, Enter selects, Escape clears the selection."
       case TableKeys =>

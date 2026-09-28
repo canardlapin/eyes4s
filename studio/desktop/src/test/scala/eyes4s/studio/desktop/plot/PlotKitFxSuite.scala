@@ -433,14 +433,32 @@ class PlotKitFxSuite extends StudioFxSuite:
       assertEquals(w.selected, Vector(p18))
       assertEquals(
         runOnFx(w.twin.input.state.selectionRings(t)).map(r => (r.kind, r.ref, r.centre)),
-        Vector((RingKind.Selected, p17, both.anchor))
+        Vector((RingKind.PartlySelected, p17, both.anchor))
       )
       assertEquals(rowSelected(w), twins.rows.map(_.ref == p18))
+      // Table -> plot -> table by keyboard: the plot focuses the merged mark,
+      // and the table's cursor stays on P18, one of its rows.
+      runOnFx(w.twin.focusArrived(PlotTwinView.Plot, byKeyboard = true))
+      assertEquals(runOnFx(w.twin.input.state.focus), Some(p17))
+      assertEquals(
+        runOnFx(w.host.getAccessibleText),
+        PlotText(
+          PlotTextId.PartlySelected,
+          runOnFx(w.twin.plot).get.readout(both.mark).get,
+          "1",
+          "2"
+        )
+      )
+      runOnFx(w.twin.focusArrived(PlotTwinView.Table, byKeyboard = true))
+      assertEquals(runOnFx(w.table.state.cursor), Some(p18))
       // Aggregate mark -> rows: a click on it selects both rows.
       clickMark(w, t, both)
       assertEquals(w.selected, Vector(p17, p18))
       assertEquals(rowSelected(w), twins.rows.map(r => r.ref == p17 || r.ref == p18))
-      assertEquals(runOnFx(w.twin.input.state.selectionRings(t)).map(_.ref), Vector(p17))
+      assertEquals(
+        runOnFx(w.twin.input.state.selectionRings(t)).map(r => (r.kind, r.ref)),
+        Vector((RingKind.Selected, p17))
+      )
       // A modifier click on the wholly selected mark clears both.
       clickMark(w, t, both, toggle = true)
       assertEquals(w.selected, Vector.empty)

@@ -29,7 +29,7 @@ import eyes4s.studio.core.selection.{
   StudioRef,
   ViewId
 }
-import intaglio.GraphicsName
+import intaglio.{DevicePoint, GraphicsName, Grob, LineType}
 import intaglio.interaction.NamedPicking
 import munit.ScalaCheckSuite
 import org.scalacheck.rng.Seed
@@ -128,7 +128,11 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       Gen.const(DotPlot(x(source), y(source), "Generated")),
       for
         missing    <- Gen.oneOf(DotPlot.MissingY.values.toSeq)
-        coincident <- Gen.oneOf(DotPlot.Coincident.values.toSeq)
+        coincident <- Gen.oneOf(
+          DotPlot.Coincident.Stack,
+          DotPlot.Coincident.Merge,
+          DotPlot.Coincident.Nudge(7.0)
+        )
       yield DotPlot(x(source), y(source), "Generated", missing, coincident),
       Gen.oneOf(0.5, 1.0, 100.0).map(TallyTestPlot(x(source), y(source), _)),
       genEncoding(source).map(EncodedTestPlot(_))
@@ -287,7 +291,14 @@ class PlotTableParitySuite extends ScalaCheckSuite:
         t.targets.foreach { target =>
           assertEquals(target.refs, target.mark.refs)
           target.refs.foreach(r => assertEquals(t.target(r), Some(target)))
-          val back = t.transform.deviceToData(target.anchor)
+          // The anchor less the mark's nudge is its data point.
+          val nudge = target.mark.nudgePx
+          val back  = t.transform.deviceToData(
+            DevicePoint(
+              target.anchor.x - nudge.dxPx * scale,
+              target.anchor.y - nudge.dyPx * scale
+            )
+          )
           assertEqualsDouble(back.x, target.mark.at.x, RoundTripTolerance)
           assertEqualsDouble(back.y, target.mark.at.y, RoundTripTolerance)
           // The mark itself, or one drawn over it that covers its centre.
@@ -326,9 +337,13 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       assertEquals(byTable.selected, Vector(row.ref))
       val plotSees = initialPlot.project(byTable)
       assertEquals(plotSees.intents, Vector.empty)
+      // A mark of several rows is only partly selected by one.
+      val partial = mark.rows.size > 1
       assertEquals(
-        plotSees.state.selectionRings(t).map(r => (r.ref, r.centre)),
-        Vector((mark.ref, anchor))
+        plotSees.state.selectionRings(t).map(r => (r.kind, r.ref, r.centre)),
+        Vector(
+          (if partial then RingKind.PartlySelected else RingKind.Selected, mark.ref, anchor)
+        )
       )
       assertEquals(
         onRow.project(byTable).state.vm(source).rows.map(_.selected),
@@ -350,7 +365,10 @@ class PlotTableParitySuite extends ScalaCheckSuite:
         tableSees.state.vm(source).rows.map(_.selected),
         source.rows.map(r => mark.refs.contains(r.ref))
       )
-      assertEquals(onMark.project(byPlot).state.selectionRings(t).map(_.ref), Vector(mark.ref))
+      assertEquals(
+        onMark.project(byPlot).state.selectionRings(t).map(r => (r.kind, r.ref)),
+        Vector((RingKind.Selected, mark.ref))
+      )
 
       // The focused mark says what its rows say, selected or not; a mark of
       // one row says exactly what its cursor row says.
@@ -358,6 +376,12 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       assertEquals(t.accessibleText(onMark), readout)
       assertEquals(
         t.accessibleText(onMark.project(byTable).state),
+        if partial then
+          PlotText(PlotTextId.PartlySelected, readout, "1", mark.rows.size.toString)
+        else PlotText.selected(readout, true)
+      )
+      assertEquals(
+        t.accessibleText(onMark.project(byPlot).state),
         PlotText.selected(readout, true)
       )
       if mark.rows.size == 1 then
@@ -388,8 +412,10 @@ class PlotTableParitySuite extends ScalaCheckSuite:
         .project(selected)
         .state
         .selectionRings(t)
-      val marks = refs.flatMap(plot.markOf).distinct
-      assertEquals(rings.map(r => (r.kind, r.ref)), marks.map(m => (RingKind.Selected, m.ref)))
+      val marks             = refs.flatMap(plot.markOf).distinct
+      def kind(m: PlotMark) =
+        if m.refs.forall(refs.contains) then RingKind.Selected else RingKind.PartlySelected
+      assertEquals(rings.map(r => (r.kind, r.ref)), marks.map(m => (kind(m), m.ref)))
       assertEquals(rings.map(_.centre), marks.map(m => t.target(m.ref).get.anchor))
       assertEquals(
         TableTwinState.initial(tableView, selected).vm(source).rows.map(_.selected),
@@ -599,7 +625,7 @@ class PlotTableParitySuite extends ScalaCheckSuite:
     assertEquals(t.step(Some(p1), RovingMove.Next).map(_.ref), Some(p2))
   }
 
-  test("merged coincident rows are one mark; a toggle adds a partly selected mark's rows") {
+  test("a merged mark is partly selected by one row; a toggle adds or subtracts its rows") {
     val plot = right(
       DotPlot(xId, yId, "Three", coincident = DotPlot.Coincident.Merge)
         .build(three, Theme.Light)
@@ -625,14 +651,96 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       .state
       .project(partly)
       .state
-    val toggle = RovingKey.Activate(true)
-    val whole  = bus(partly, right(focused.handle(MarkInputEvent.Key(toggle), t, 0.0)).intents)
-    assertEquals(whole.selected.toSet, Set(p0, p1))
-    // Wholly selected, a toggle removes every row.
-    val again = focused.project(whole).state
+    val target = t.target(p0).get
+    assertEquals(focused.share(target), SelectionShare.Partly(1, 2))
+    assertEquals(focused.selectionRings(t).map(_.kind), Vector(RingKind.PartlySelected))
     assertEquals(
-      bus(whole, right(again.handle(MarkInputEvent.Key(toggle), t, 0.0)).intents).selected,
-      Vector.empty
+      t.accessibleText(focused),
+      PlotText(PlotTextId.PartlySelected, plot.readout(merged).get, "1", "2")
+    )
+    // A toggle adds the rest of a partly selected mark.
+    val toggle                                  = MarkInputEvent.Key(RovingKey.Activate(true))
+    def modes(state: MarkInputState[StudioRef]) =
+      right(state.handle(toggle, t, 0.0)).intents.collect { case Intent.Select(i) =>
+        (i.mode, i.refs)
+      }
+    assertEquals(modes(focused), Vector((SelectionMode.Add, Vector(p0, p1))))
+    val whole = bus(partly, right(focused.handle(toggle, t, 0.0)).intents)
+    assertEquals(whole.selected.toSet, Set(p0, p1))
+    // Wholly selected, a toggle subtracts every row.
+    val again = focused.project(whole).state
+    assertEquals(again.share(target), SelectionShare.All)
+    assertEquals(modes(again), Vector((SelectionMode.Subtract, Vector(p0, p1))))
+    assertEquals(bus(whole, right(again.handle(toggle, t, 0.0)).intents).selected, Vector.empty)
+    // Unselected, a toggle adds every row.
+    val none = focused.project(SelectionState.empty).state
+    assertEquals(none.share(target), SelectionShare.Unselected)
+    assertEquals(modes(none), Vector((SelectionMode.Add, Vector(p0, p1))))
+  }
+
+  test("a partly selected ring has the selection ring's token bands, dashed") {
+    def lines(kind: RingKind) =
+      val ring  = OverlayRing(kind, p0, DevicePoint(50.0, 50.0), 8.0)
+      val scene = right(
+        OverlayRings.scene(Vector(ring), OverlayPalette.onSurface(Theme.Light), 100, 100, 1.0)
+      )
+      scene.grobs.flatMap(_.children).collect { case p: Grob.Polygon =>
+        (p.gp.stroke, p.gp.lineType)
+      }
+    val solid  = lines(RingKind.Selected)
+    val dashed = lines(RingKind.PartlySelected)
+    assertEquals(solid.map(_._2), Vector(LineType.Solid, LineType.Solid))
+    assertEquals(dashed, solid.map((stroke, _) => (stroke, LineType.Dashed)))
+  }
+
+  test("nudged marks at one data point are apart for the cursor and the pointer") {
+    val plot = right(
+      DotPlot(xId, yId, "Three", coincident = DotPlot.Coincident.Nudge(7.0))
+        .build(three, Theme.Light)
+    )
+    assertEquals(plot.marks.map(m => (m.ref, m.nudgePx.dxPx)), Vector(p0 -> -0.0, p1 -> 7.0))
+    List(1.0, 2.0).foreach { scale =>
+      val t            = targetsOn(plot, scale)
+      val Vector(a, b) = t.targets: @unchecked
+      assertEqualsDouble(b.anchor.x - a.anchor.x, 7.0 * scale, RoundTripTolerance)
+      assertEqualsDouble(b.anchor.y, a.anchor.y, RoundTripTolerance)
+      assertEquals(t.step(Some(p0), RovingMove.Right).map(_.ref), Some(p1))
+      assertEquals(t.step(Some(p1), RovingMove.Left).map(_.ref), Some(p0))
+      assertEquals(t.step(Some(p1), RovingMove.Right), None)
+      assertEquals(right(t.pick(a.anchor, 0.5 * scale)).map(_.ref), Some(p0))
+      assertEquals(right(t.pick(b.anchor, 0.5 * scale)).map(_.ref), Some(p1))
+    }
+    plot.marks.head.nudged("dot-plot", Double.NaN, 0.0) match
+      case Left(e @ PlotBuildError.Nudge("dot-plot", "dot-0", dx, 0.0)) if dx.isNaN =>
+        assert(e.message.contains("'dot-0'"), e.message)
+      case other => fail(s"unexpected $other")
+  }
+
+  test("retargeting moves a focus or hover to the key of the mark that now holds its row") {
+    val stacked = targetsOn(right(DotPlot(xId, yId, "Three").build(three, Theme.Light)), 1.0)
+    val merged  = targetsOn(
+      right(
+        DotPlot(xId, yId, "Three", coincident = DotPlot.Coincident.Merge)
+          .build(three, Theme.Light)
+      ),
+      1.0
+    )
+    val onP1 = right(
+      MarkInputState
+        .initial[StudioRef](plotView, SelectionState.empty)
+        .moveFocus(Some(p1), stacked)
+        .state
+        .handle(MarkInputEvent.PointerMoved(stacked.target(p1).get.anchor), stacked, 0.5)
+    ).state
+    assertEquals((onP1.focus, onP1.hover), (Some(p1), Some(p1)))
+    val moved = onP1.retarget(merged)
+    assertEquals((moved.state.focus, moved.state.hover), (Some(p0), Some(p0)))
+    assertEquals(moved.intents, Vector(Intent.HoverOver(plotView, Some(p0))))
+    // And back: P0's mark exists on both, so nothing moves.
+    val back = moved.state.retarget(stacked)
+    assertEquals(
+      (back.state.focus, back.state.hover, back.intents),
+      (Some(p0), Some(p0), Vector.empty)
     )
   }
 

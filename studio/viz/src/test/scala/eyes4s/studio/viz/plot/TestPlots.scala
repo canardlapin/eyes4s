@@ -71,6 +71,9 @@ final case class EncodedTestPlot(encoding: PositionEncoding) extends PlotBuilder
 /** The scene of the test-only builders: one filled square per mark. */
 object TestPlots:
 
+  /** A square's half-side is 3 pt, 4 logical px; its corner reaches √2 times that. */
+  val ReachPx: Double = 4.0 * math.sqrt(2.0)
+
   /** A built plot of one mark per entry of `marks`, drawn at its point. */
   def assemble(
       kind: String,
@@ -90,7 +93,7 @@ object TestPlots:
         .zipWithIndex
         .foldLeft[Either[PlotBuildError, Vector[PlotMark]]](Right(Vector.empty)) {
           case (acc, (((at, rs), n), order)) =>
-            acc.flatMap(ms => PlotMark.of(kind, rs, at, 4.0, order, n).map(ms :+ _))
+            acc.flatMap(ms => PlotMark.of(kind, rs, at, ReachPx, order, n).map(ms :+ _))
         }
       panel     <- DataPanel(id, viewport).left.map(PlotBuildError.Scene(kind, _))
       plotScene <- PlotScene(id, Scene(grobs), panel).left.map(PlotBuildError.Scene(kind, _))

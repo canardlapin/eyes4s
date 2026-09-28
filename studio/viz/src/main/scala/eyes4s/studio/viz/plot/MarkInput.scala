@@ -35,6 +35,7 @@ import intaglio.{
   GraphicsError,
   Grob,
   Interval,
+  LineType,
   Point,
   Rgba,
   Scene,
@@ -184,6 +185,19 @@ final case class MarkInputStep[R <: StudioRef](
 enum RingKind derives CanEqual:
   case Hover, Selected, Focus
 
+  /** A mark some but not all of whose refs are selected: the selection
+    * ring's bands, dashed.
+    */
+  case PartlySelected
+
+/** How much of a mark the selection holds: none of its refs, some of them
+  * (`selected` of `of`), or all.
+  */
+enum SelectionShare derives CanEqual:
+  case Unselected
+  case Partly(selected: Int, of: Int)
+  case All
+
 /** One feedback ring around a mark: its centre and radius in device pixels. */
 final case class OverlayRing(
     kind: RingKind,
@@ -262,10 +276,15 @@ object OverlayRings:
       height: Double,
       deviceScale: Double
   ): Either[GraphicsError, Scene] =
-    val k                         = deviceScale
-    def ink(c: Colour): Rgba      = IntaglioColours.toIntaglio(c)
-    def gp(c: Colour, px: Double) =
-      GraphicParams.checked(stroke = Some(ink(c)), fill = None, lineWidth = px * k)
+    val k                    = deviceScale
+    def ink(c: Colour): Rgba = IntaglioColours.toIntaglio(c)
+    def gp(c: Colour, px: Double, line: LineType = LineType.Solid) =
+      GraphicParams.checked(
+        stroke = Some(ink(c)),
+        fill = None,
+        lineWidth = px * k,
+        lineType = line
+      )
     def circle(r: OverlayRing, at: Double, style: GraphicParams) =
       val points = (0 until Segments).foldLeft[Either[GraphicsError, Vector[Point]]](
         Right(Vector.empty)
@@ -284,10 +303,11 @@ object OverlayRings:
           .map(
             Vector(_)
           )
-      case RingKind.Selected =>
+      case RingKind.Selected | RingKind.PartlySelected =>
+        val line = if r.kind == RingKind.Selected then LineType.Solid else LineType.Dashed
         for
-          inner <- gp(palette.selectedInner, SelectedBandPx)
-          outer <- gp(palette.selectedOuter, SelectedBandPx)
+          inner <- gp(palette.selectedInner, SelectedBandPx, line)
+          outer <- gp(palette.selectedOuter, SelectedBandPx, line)
           a     <- circle(r, r.radius + SelectedBandPx / 2.0 * k, inner)
           b     <- circle(r, r.radius + 1.5 * SelectedBandPx * k, outer)
         yield Vector(a, b)
@@ -386,13 +406,15 @@ final case class MarkInputState[R <: StudioRef] private (
     MarkInputStep(copy(selection = next), Vector.empty, changed)
 
   /** The same state on new targets (another layout or another scene): a focus
-    * or hover on a mark the targets lack is dropped.
+    * or hover moves to the key of the mark that now accounts for its ref, and
+    * is dropped when no mark does.
     */
   def retarget(targets: RovingTargets[R, ?]): MarkInputStep[R] =
-    val keptHover = hover.filter(targets.target(_).isDefined)
-    val next      = copy(focus = focus.filter(targets.target(_).isDefined), hover = keptHover)
-    val intents   =
-      if keptHover == hover then Vector.empty else Vector(Intent.HoverOver(view, None))
+    def keyed(ref: Option[R]): Option[R] = ref.flatMap(targets.target).map(_.ref)
+    val keptHover                        = keyed(hover)
+    val next                             = copy(focus = keyed(focus), hover = keptHover)
+    val intents                          =
+      if keptHover == hover then Vector.empty else Vector(Intent.HoverOver(view, keptHover))
     MarkInputStep(next, intents, true)
 
   /** The feedback rings to draw, in order: the selection, the hover ring,
@@ -405,12 +427,16 @@ final case class MarkInputState[R <: StudioRef] private (
     selectionRings(targets) ++ pointerRings(targets)
 
   /** The selection layer: one ring per mark that accounts for a selected
-    * ref, in the order of the first such ref. It changes only when the bus
-    * projects a new selection, so a host can keep it drawn across pointer
-    * moves.
+    * ref, in the order of the first such ref, dashed when only some of its
+    * refs are selected. It changes only when the bus projects a new
+    * selection, so a host can keep it drawn across pointer moves.
     */
   def selectionRings(targets: RovingTargets[R, ?]): Vector[OverlayRing] =
-    selected.flatMap(targets.target).distinctBy(_.ref).map(ring(targets, RingKind.Selected, _))
+    selected.flatMap(targets.target).distinctBy(_.ref).map { t =>
+      val kind =
+        if share(t) == SelectionShare.All then RingKind.Selected else RingKind.PartlySelected
+      ring(targets, kind, t)
+    }
 
   /** The pointer and cursor layer: hover, then focus. */
   def pointerRings(targets: RovingTargets[R, ?]): Vector[OverlayRing] =
@@ -418,8 +444,16 @@ final case class MarkInputState[R <: StudioRef] private (
       ref.flatMap(targets.target).map(ring(targets, kind, _)).toVector
     at(hover, RingKind.Hover) ++ (if focused then at(focus, RingKind.Focus) else Vector.empty)
 
-  /** Whether the mark of `target` is selected: whether any ref it selects is. */
-  def isSelected(target: RovingTarget[?]): Boolean = target.refs.exists(selected.contains)
+  /** How much of the mark of `target` is selected. */
+  def share(target: RovingTarget[?]): SelectionShare =
+    val refs = target.refs
+    refs.count(selected.contains) match
+      case 0                   => SelectionShare.Unselected
+      case n if n == refs.size => SelectionShare.All
+      case n                   => SelectionShare.Partly(n, refs.size)
+
+  /** Whether any ref of the mark of `target` is selected. */
+  def isSelected(target: RovingTarget[?]): Boolean = share(target) != SelectionShare.Unselected
 
   private def ring(
       targets: RovingTargets[R, ?],
@@ -427,7 +461,8 @@ final case class MarkInputState[R <: StudioRef] private (
       t: RovingTarget[?]
   ): OverlayRing =
     val outside =
-      if kind != RingKind.Selected && isSelected(t) then 2.0 * OverlayRings.SelectedBandPx
+      if (kind == RingKind.Hover || kind == RingKind.Focus) && isSelected(t) then
+        2.0 * OverlayRings.SelectedBandPx
       else 0.0
     OverlayRing(
       kind,
@@ -436,16 +471,17 @@ final case class MarkInputState[R <: StudioRef] private (
       (t.reachPx + OverlayRings.GapPx + outside) * targets.deviceScale
     )
 
-  /** The view's accessible text: `mark` of the focused mark (and whether it
-    * is selected) when the targets draw it, else `idle`, how to use the view.
+  /** The view's accessible text: `mark` of the focused mark (and how much of
+    * it is selected) when the targets draw it, else `idle`, how to use the
+    * view.
     */
   def spoken(
       targets: RovingTargets[R, ?],
-      mark: (R, Boolean) => String,
+      mark: (R, SelectionShare) => String,
       idle: => String
   ): String =
     focus.flatMap(f => targets.target(f).map(t => (f, t))) match
-      case Some((ref, t)) => mark(ref, isSelected(t))
+      case Some((ref, t)) => mark(ref, share(t))
       case None           => idle
 
   private def unchanged: MarkInputStep[R] = MarkInputStep(this, Vector.empty, false)
@@ -454,16 +490,14 @@ final case class MarkInputState[R <: StudioRef] private (
     if next == hover then unchanged
     else MarkInputStep(copy(hover = next), Vector(Intent.HoverOver(view, next)), true)
 
-  // Selects every ref of `target`. A toggle removes a wholly selected mark's
-  // refs and adds the rest of a partly selected one's.
+  // Selects every ref of `target`. A toggle subtracts a wholly selected
+  // mark's refs and adds those of any other.
   private def choose(target: RovingTarget[?], toggle: Boolean, cause: InputCause) =
-    val refs    = target.refs
-    val partial = refs.exists(selected.contains) && !refs.forall(selected.contains)
-    val mode    =
+    val mode =
       if !toggle then SelectionMode.Replace
-      else if partial then SelectionMode.Add
-      else SelectionMode.Toggle
-    submit(mode, refs, cause, true)
+      else if share(target) == SelectionShare.All then SelectionMode.Subtract
+      else SelectionMode.Add
+    submit(mode, target.refs, cause, true)
 
   // A stamped selection input; the overlay changes only when the bus projects
   // the result back.

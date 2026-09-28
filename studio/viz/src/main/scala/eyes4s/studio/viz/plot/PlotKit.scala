@@ -75,6 +75,9 @@ enum PlotBuildError derives CanEqual:
     */
   case Position(plot: String, ref: StudioRef, column: ColumnId, placed: Double)
 
+  /** Mark `name` is nudged by a non-finite offset. */
+  case Nudge(plot: String, name: String, dxPx: Double, dyPx: Double)
+
   /** A category axis of `column` lists `level` more than once. */
   case DuplicateLevel(plot: String, column: ColumnId, level: String)
 
@@ -98,6 +101,7 @@ enum PlotBuildError derives CanEqual:
     case Position(p, ref, c, v) =>
       s"plot $p: row $ref is placed at $v on the '${c.value}' axis, which is not where its cell is"
     case DuplicateLevel(p, c, l) => s"plot $p: the '${c.value}' axis lists '$l' twice"
+    case Nudge(p, n, dx, dy)     => s"plot $p: mark '$n' is nudged by ($dx, $dy) px"
 
 /** Why a row of the source has no position in a plot. The row is then drawn
   * as a positionless mark ([[RowMarking.Positionless]]) or set aside
@@ -205,11 +209,23 @@ enum RowMarking derives CanEqual:
   */
 final case class MarkedRow(ref: StudioRef, row: Int, marking: RowMarking) derives CanEqual
 
+/** A finite offset in logical pixels on the device axes (y down). */
+final case class PixelOffset private (dxPx: Double, dyPx: Double) derives CanEqual
+
+object PixelOffset:
+  val Zero: PixelOffset = PixelOffset(0.0, 0.0)
+
+  /** The offset, if both parts are finite. */
+  def of(dxPx: Double, dyPx: Double): Option[PixelOffset] =
+    Option.when(dxPx.isFinite && dyPx.isFinite)(PixelOffset(dxPx, dyPx))
+
 /** One drawn mark of a plot: the rows it accounts for (at least one), its
-  * anchor `at` in the panel's data coordinates (where the roving cursor and
-  * the feedback rings centre on it), how far its painted outline reaches
-  * from the anchor in logical pixels, its position in the plot's roving
-  * order (from 0) and the name of its grob.
+  * anchor `at` in the panel's data coordinates, the pixel nudge `nudgePx`
+  * its grob is drawn with away from the anchor (a beeswarm's spread, S4.5b;
+  * zero unless [[nudged]]), how far its painted outline reaches from its
+  * drawn centre in logical pixels, its position in the plot's roving order
+  * (from 0) and the name of its grob. The roving cursor and the feedback
+  * rings centre on the drawn centre, the anchor moved by the nudge.
   *
   * A mark is keyed by the ref of its first row ([[ref]]): the roving
   * cursor's focus and a feedback ring name that ref. Selecting the mark
@@ -225,7 +241,8 @@ final case class PlotMark private (
     at: DataPoint,
     reachPx: Double,
     order: Int,
-    name: GraphicsName
+    name: GraphicsName,
+    nudgePx: PixelOffset
 ) derives CanEqual:
 
   /** Every row the mark accounts for, first row first. */
@@ -243,6 +260,15 @@ final case class PlotMark private (
   /** The same mark drawn as grob `name`. */
   def withName(name: GraphicsName): PlotMark = copy(name = name)
 
+  /** The same mark drawn `dxPx` right and `dyPx` down of its anchor, refusing
+    * a non-finite nudge.
+    */
+  def nudged(kind: String, dxPx: Double, dyPx: Double): Either[PlotBuildError, PlotMark] =
+    PixelOffset
+      .of(dxPx, dyPx)
+      .toRight(PlotBuildError.Nudge(kind, name.value, dxPx, dyPx))
+      .map(n => copy(nudgePx = n))
+
 object PlotMark:
 
   /** A mark of one row, placed at the row's values `at`. */
@@ -254,7 +280,15 @@ object PlotMark:
       order: Int,
       name: GraphicsName
   ): PlotMark =
-    PlotMark(MarkedRow(ref, row, RowMarking.Placed(at)), Vector.empty, at, reachPx, order, name)
+    PlotMark(
+      MarkedRow(ref, row, RowMarking.Placed(at)),
+      Vector.empty,
+      at,
+      reachPx,
+      order,
+      name,
+      PixelOffset.Zero
+    )
 
   /** A mark of one row whose values give it no position, drawn at `at`. */
   def positionless(
@@ -272,7 +306,8 @@ object PlotMark:
       at,
       reachPx,
       order,
-      name
+      name,
+      PixelOffset.Zero
     )
 
   /** A mark for several rows (an aggregate), refusing one for none. */
@@ -285,8 +320,9 @@ object PlotMark:
       name: GraphicsName
   ): Either[PlotBuildError, PlotMark] =
     rows match
-      case first +: rest => Right(PlotMark(first, rest, at, reachPx, order, name))
-      case _             => Left(PlotBuildError.EmptyMark(kind, name.value))
+      case first +: rest =>
+        Right(PlotMark(first, rest, at, reachPx, order, name, PixelOffset.Zero))
+      case _ => Left(PlotBuildError.EmptyMark(kind, name.value))
 
 /** A row the plot neither draws nor represents, returned as data rather
   * than dropped: the table still lists it.
@@ -388,8 +424,8 @@ object BuiltPlot:
       unplotted: Vector[Unplotted]
   ): Either[PlotBuildError, BuiltPlot] =
     def rowOk(ref: StudioRef, row: Int) = source.rows.lift(row).exists(_.ref == ref)
-    val axes    = Vector(encoding.x, encoding.y)
-    val marked  = marks.flatMap(_.rows)
+    val axes                            = Vector(encoding.x, encoding.y)
+    val marked                          = marks.flatMap(_.rows)
     val claims  = marked.map(r => (r.ref, r.row)) ++ unplotted.map(u => (u.ref, u.row))
     val counts  = claims.groupMapReduce(_._1)(_ => 1)(_ + _)
     val reasons = marked.collect { case MarkedRow(ref, row, RowMarking.Positionless(why)) =>
@@ -413,7 +449,11 @@ object BuiltPlot:
       _ <- axes
         .collectFirst {
           case Axis.Category(c, levels) if levels.distinct.size != levels.size =>
-            PlotBuildError.DuplicateLevel(kind, c, levels.diff(levels.distinct).take(1).mkString)
+            PlotBuildError.DuplicateLevel(
+              kind,
+              c,
+              levels.diff(levels.distinct).take(1).mkString
+            )
         }
         .toLeft(())
       _ <- source.rows
@@ -529,9 +569,11 @@ final case class PlotTarget(mark: PlotMark, anchor: DevicePoint) extends RovingT
 /** The interaction targets of a built plot on one surface (ticket S4.5a).
   *
   * Marks are placed through the plot's [[PlotTransform]], the one mapping the
-  * scene was drawn with, and pointer hits come from the named picking plan of
-  * the same scene and render context: since every mark is its own named
-  * grob, a hit resolves to one row.
+  * scene was drawn with, then moved by their [[PlotMark.nudgePx]] at the
+  * surface's device scale, so nudged marks at one data point are apart for
+  * the roving cursor as on screen. Pointer hits come from the named picking
+  * plan of the same scene and render context: since every mark is its own
+  * named grob, a hit resolves to one mark.
   */
 final class PlotTargets private (
     val plot: BuiltPlot,
@@ -576,16 +618,23 @@ final class PlotTargets private (
     RovingCursor.step(targets, from.flatMap(byRef.get), move)
 
   /** The plot's accessible text under `state`: the focused mark says exactly
-    * what its table rows say ([[BuiltPlot.readout]]), marked when any of them
-    * is selected; with no mark focused, the plot's description.
+    * what its table rows say ([[BuiltPlot.readout]]), marked as selected when
+    * all its rows are and with how many when some are; with no mark focused,
+    * the plot's description.
     */
   def accessibleText(state: MarkInputState[StudioRef]): String =
     state.spoken(
       this,
-      (ref, selected) =>
+      (ref, share) =>
         target(ref)
           .flatMap(t => plot.readout(t.mark))
-          .fold(plot.description)(PlotText.selected(_, selected)),
+          .fold(plot.description) { said =>
+            share match
+              case SelectionShare.Unselected   => said
+              case SelectionShare.All          => PlotText.selected(said, true)
+              case SelectionShare.Partly(k, n) =>
+                PlotText(PlotTextId.PartlySelected, said, k.toString, n.toString)
+          },
       plot.description
     )
 
@@ -610,8 +659,12 @@ object PlotTargets:
         Right(Vector.empty)
       ) { (acc, m) =>
         for
-          ts     <- acc
-          anchor <- transform.dataToDevice(m.at).left.map(PlotTargetError.Frame(id, _))
-        yield ts :+ PlotTarget(m, anchor)
+          ts <- acc
+          at <- transform.dataToDevice(m.at).left.map(PlotTargetError.Frame(id, _))
+          k = transform.surface.deviceScale
+        yield ts :+ PlotTarget(
+          m,
+          DevicePoint(at.x + m.nudgePx.dxPx * k, at.y + m.nudgePx.dyPx * k)
+        )
       }
     yield new PlotTargets(plot, transform, picking, targets)

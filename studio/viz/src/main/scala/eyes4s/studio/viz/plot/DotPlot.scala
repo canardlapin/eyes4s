@@ -31,6 +31,7 @@ import intaglio.{
   HJust,
   Interval,
   Length,
+  LengthExpr,
   LineType,
   Point,
   PointShape,
@@ -129,6 +130,12 @@ object DotPlot:
     /** Draws one mark for all of them, placed at their shared values. */
     case Merge
 
+    /** Draws a dot for each, the k-th after the first nudged `stepPx`
+      * logical pixels right, left, twice right and so on, as a beeswarm
+      * spreads its controls (S4.5b).
+      */
+    case Nudge(stepPx: Double)
+
   // A row to draw: at (x, y), or at x on the placeholder band when y is None.
   private final case class Dot(row: Int, ref: StudioRef, x: Double, y: Option[Double])
 
@@ -197,8 +204,8 @@ object DotPlot:
     val y0   = if placeholders then band - (y1 - ys0) * Margin else ys0
     // Each mark's first row and its others, in order of first rows.
     val groups: Vector[(Dot, Vector[Dot])] = coincident match
-      case Coincident.Stack => drawn.map((_, Vector.empty))
-      case Coincident.Merge =>
+      case Coincident.Stack | Coincident.Nudge(_) => drawn.map((_, Vector.empty))
+      case Coincident.Merge                       =>
         drawn.foldLeft(Vector.empty[(Dot, Vector[Dot])]) { (gs, d) =>
           gs.indexWhere((f, _) => d.y.isDefined && f.x == d.x && f.y == d.y) match
             case -1 => gs :+ (d, Vector.empty)
@@ -229,9 +236,10 @@ object DotPlot:
         lineWidth = px(EdgePx),
         lineWidthUnit = StrokeUnit.Point
       )
+      // Filled with the surface, so it reads as empty yet its inside picks it.
       emptyGp <- GraphicParams.checked(
         stroke = Some(colour(ThemedToken.Ink3)),
-        fill = None,
+        fill = Some(colour(ThemedToken.Surface)),
         lineWidth = px(EdgePx),
         lineType = LineType.Dashed,
         lineWidthUnit = StrokeUnit.Point
@@ -240,9 +248,20 @@ object DotPlot:
       reach = RadiusPx + EdgePx / 2.0
       marked <- traverse(groups.zipWithIndex) { case ((first, others), order) =>
         val at = DataPoint(first.x, first.y.getOrElse(band))
+        // Earlier dots drawn at this one's values.
+        val before =
+          if first.y.isEmpty then 0
+          else drawn.count(d => d.row < first.row && d.x == first.x && d.y == first.y)
+        val dx = coincident match
+          case Coincident.Nudge(step) =>
+            if before % 2 == 1 then step * ((before + 1) / 2) else -step * (before / 2)
+          case _ => 0.0
         for
-          n    <- GraphicsName(s"$MarkPrefix${first.row}", "dot plot mark")
-          p    <- Point.native(at.x, at.y)
+          n  <- GraphicsName(s"$MarkPrefix${first.row}", "dot plot mark")
+          nx <- LengthExpr.native(at.x)
+          ny <- LengthExpr.native(at.y)
+          by <- Length.points(px(dx))
+          p = Point(nx + LengthExpr(by), ny)
           grob <- Grob.pointBatch(
             Vector(p),
             sizes = BatchColumn.Constant(dotSize),
@@ -260,7 +279,7 @@ object DotPlot:
               )
             )
           )
-          (grob, PlotMark.of(kind, rows, at, reach, order, n))
+          (grob, PlotMark.of(kind, rows, at, reach, order, n).flatMap(_.nudged(kind, dx, 0.0)))
       }
       labelSize <- Length.points(px(TypeSize.T11.px.toDouble))
       labelGp   <- GraphicParams.checked(
