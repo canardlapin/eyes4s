@@ -31,6 +31,7 @@ import intaglio.{
   HJust,
   Interval,
   Length,
+  LineType,
   Point,
   PointShape,
   Rgba,
@@ -41,17 +42,27 @@ import intaglio.{
   Viewport
 }
 
-/** The plot host's demonstration plot (ticket S4.5a): one neutral dot per row
-  * at its `x` and `y` values, in a framed panel titled by the two columns'
-  * headers.
+/** The plot host's demonstration plot (tickets S4.5a and S4.5x): one
+  * neutral dot per row at its `x` and `y` values, in a framed panel titled by
+  * the two columns' headers.
   *
   * It is the smallest [[PlotBuilder]]: the host, TableTwin and parity tests
   * run on it before the real plots (S4.5b–e) exist. It draws no axis
-  * numbers, so every number it shows is a row's, and a row with a missing
-  * `x` or `y` is returned as [[Unplotted]]. The data domain spans the drawn
-  * values with a margin, so no dot is clipped.
+  * numbers, so every number it shows is a row's. A row with no `x` is
+  * [[Unplotted]]; a row with an `x` but no `y` is too, unless
+  * `missing` is [[DotPlot.MissingY.Placeholder]], when it is drawn as a
+  * positionless dashed empty ring on a band below the panel's data. Rows at
+  * one position are stacked dots, or one mark for all of them when
+  * `coincident` is [[DotPlot.Coincident.Merge]]. The data domain spans the
+  * drawn values with a margin, so no dot is clipped.
   */
-final case class DotPlot(x: ColumnId, y: ColumnId, title: String) extends PlotBuilder:
+final case class DotPlot(
+    x: ColumnId,
+    y: ColumnId,
+    title: String,
+    missing: DotPlot.MissingY = DotPlot.MissingY.SetAside,
+    coincident: DotPlot.Coincident = DotPlot.Coincident.Stack
+) extends PlotBuilder:
 
   def kind: String = "dot-plot"
 
@@ -63,20 +74,23 @@ final case class DotPlot(x: ColumnId, y: ColumnId, title: String) extends PlotBu
         val row = source.rows(i)
         (row.values(xi), row.values(yi)) match
           case (PlotValue.Number(vx), PlotValue.Number(vy)) =>
-            Right((i, row.ref, DataPoint(vx, vy)))
+            Right(DotPlot.Dot(i, row.ref, vx, Some(vy)))
+          case (PlotValue.Number(vx), _) if missing == DotPlot.MissingY.Placeholder =>
+            Right(DotPlot.Dot(i, row.ref, vx, None))
           case (PlotValue.Number(_), _) =>
-            Left(Unplotted(row.ref, i, UnplottedReason.MissingValue(y)))
-          case _ => Left(Unplotted(row.ref, i, UnplottedReason.MissingValue(x)))
+            Left(Unplotted(row.ref, i, NoPosition.MissingValue(y)))
+          case _ => Left(Unplotted(row.ref, i, NoPosition.MissingValue(x)))
       }
       drawn     = split.collect { case Right(d) => d }
       unplotted = split.collect { case Left(u) => u }
       id <- SceneId(s"studio.plot.$kind.${theme.toString.toLowerCase}").left
         .map(PlotBuildError.Scene(kind, _))
       built <- DotPlot
-        .scene(theme, source, drawn, x, y)
+        .scene(kind, theme, source, drawn, x, y, coincident)
         .left
         .map(PlotBuildError.Graphics(kind, "the dot plot", _))
       (grobs, viewport, marks) = built
+      checked   <- marks
       panel     <- DataPanel(id, viewport).left.map(PlotBuildError.Scene(kind, _))
       plotScene <- PlotScene(id, Scene(grobs), panel).left.map(PlotBuildError.Scene(kind, _))
       plot      <- BuiltPlot(
@@ -85,12 +99,33 @@ final case class DotPlot(x: ColumnId, y: ColumnId, title: String) extends PlotBu
         plotScene,
         title,
         PlotText(PlotTextId.PlotKeys, title),
-        marks,
+        checked,
         unplotted
       )
     yield plot
 
 object DotPlot:
+
+  /** What a dot plot does with a row that has an `x` but no `y`. */
+  enum MissingY derives CanEqual:
+    /** Returns it as [[Unplotted]]. */
+    case SetAside
+
+    /** Draws it as a positionless dashed empty ring at its `x`, on a band
+      * below the data: missing is drawn differently from any value.
+      */
+    case Placeholder
+
+  /** What a dot plot does with rows whose values are equal. */
+  enum Coincident derives CanEqual:
+    /** Draws a dot for each, stacked in row order. */
+    case Stack
+
+    /** Draws one mark for all of them, placed at their shared values. */
+    case Merge
+
+  // A row to draw: at (x, y), or at x on the placeholder band when y is None.
+  private final case class Dot(row: Int, ref: StudioRef, x: Double, y: Option[Double])
 
   /** A dot's radius and the width of its surface-coloured edge, in logical pixels. */
   val RadiusPx: Double = 4.5
@@ -99,7 +134,7 @@ object DotPlot:
   /** The fraction of each data range added on either side of it. */
   val Margin: Double = 0.08
 
-  /** The prefix of each dot's grob name; the suffix is its row. */
+  /** The prefix of each dot's grob name; the suffix is its (first) row. */
   val MarkPrefix: String = "dot-"
 
   private val PointsPerPixel = 72.0 / 96.0
@@ -131,13 +166,17 @@ object DotPlot:
         (lo - pad, hi + pad)
       else (lo - 1.0, hi + 1.0)
 
+  // The scene's grobs, its data viewport and its marks, which are checked
+  // only once every grob is drawn.
   private def scene(
+      kind: String,
       theme: Theme,
       source: PlotSource,
-      drawn: Vector[(Int, StudioRef, DataPoint)],
+      drawn: Vector[Dot],
       x: ColumnId,
-      y: ColumnId
-  ): Either[GraphicsError, (Vector[Grob], Viewport, Vector[PlotMark])] =
+      y: ColumnId,
+      coincident: Coincident
+  ): Either[GraphicsError, (Vector[Grob], Viewport, Either[PlotBuildError, Vector[PlotMark]])] =
     def colour(token: ThemedToken): Rgba = IntaglioColours.themed(theme, token)
     def header(id: ColumnId): String     =
       source.indexOf(id).flatMap(source.columns.lift).fold(id.value)(_.header)
@@ -145,8 +184,21 @@ object DotPlot:
       as.foldLeft[Either[GraphicsError, Vector[B]]](Right(Vector.empty)) { (acc, a) =>
         acc.flatMap(bs => f(a).map(bs :+ _))
       }
-    val (x0, x1) = domain(drawn.map(_._3.x))
-    val (y0, y1) = domain(drawn.map(_._3.y))
+    val (x0, x1)     = domain(drawn.map(_.x))
+    val (ys0, y1)    = domain(drawn.flatMap(_.y))
+    val placeholders = drawn.exists(_.y.isEmpty)
+    // The placeholder band sits one margin below the drawn values.
+    val band = ys0 - (if placeholders then (y1 - ys0) * Margin else 0.0)
+    val y0   = if placeholders then band - (y1 - ys0) * Margin else ys0
+    // Each mark's first row and its others, in order of first rows.
+    val groups: Vector[(Dot, Vector[Dot])] = coincident match
+      case Coincident.Stack => drawn.map((_, Vector.empty))
+      case Coincident.Merge =>
+        drawn.foldLeft(Vector.empty[(Dot, Vector[Dot])]) { (gs, d) =>
+          gs.indexWhere((f, _) => d.y.isDefined && f.x == d.x && f.y == d.y) match
+            case -1 => gs :+ (d, Vector.empty)
+            case i  => gs.updated(i, (gs(i)._1, gs(i)._2 :+ d))
+        }
     for
       xScale   <- Interval(x0, x1)
       yScale   <- Interval(y0, y1)
@@ -172,19 +224,38 @@ object DotPlot:
         lineWidth = px(EdgePx),
         lineWidthUnit = StrokeUnit.Point
       )
+      emptyGp <- GraphicParams.checked(
+        stroke = Some(colour(ThemedToken.Ink3)),
+        fill = None,
+        lineWidth = px(EdgePx),
+        lineType = LineType.Dashed,
+        lineWidthUnit = StrokeUnit.Point
+      )
       dotSize <- ExtentExpr.points(px(RadiusPx))
-      marked  <- traverse(drawn.zipWithIndex) { case ((row, ref, at), order) =>
+      reach = RadiusPx + EdgePx / 2.0
+      marked <- traverse(groups.zipWithIndex) { case ((first, others), order) =>
+        val at = DataPoint(first.x, first.y.getOrElse(band))
         for
-          n    <- GraphicsName(s"$MarkPrefix$row", "dot plot mark")
+          n    <- GraphicsName(s"$MarkPrefix${first.row}", "dot plot mark")
           p    <- Point.native(at.x, at.y)
           grob <- Grob.pointBatch(
             Vector(p),
             sizes = BatchColumn.Constant(dotSize),
             shapes = BatchColumn.Constant(PointShape.Circle),
-            graphicParams = BatchColumn.Constant(dotGp),
+            graphicParams = BatchColumn.Constant(if first.y.isDefined then dotGp else emptyGp),
             name = Some(n)
           )
-        yield (grob, PlotMark(ref, row, at, RadiusPx + EdgePx / 2.0, order, n))
+        yield
+          val rows = (first +: others).map(d =>
+            MarkedRow(
+              d.ref,
+              d.row,
+              d.y.fold(RowMarking.Positionless(NoPosition.MissingValue(y)))(vy =>
+                RowMarking.Placed(DataPoint(d.x, vy))
+              )
+            )
+          )
+          (grob, PlotMark.of(kind, rows, at, reach, order, n))
       }
       labelSize <- Length.points(px(TypeSize.T11.px.toDouble))
       labelGp   <- GraphicParams.checked(
@@ -206,5 +277,7 @@ object DotPlot:
         xLabel
       ),
       viewport,
-      marked.map(_._2)
+      marked.foldLeft[Either[PlotBuildError, Vector[PlotMark]]](Right(Vector.empty)) {
+        case (acc, (_, mark)) => acc.flatMap(ms => mark.map(ms :+ _))
+      }
     )

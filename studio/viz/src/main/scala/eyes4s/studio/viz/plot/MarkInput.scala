@@ -52,6 +52,11 @@ import intaglio.{
   */
 trait RovingTarget[+R <: StudioRef]:
   def ref: R
+
+  /** What selecting the mark selects: its own ref, or every row an
+    * aggregate plot mark accounts for (S4.5x).
+    */
+  def refs: Vector[StudioRef] = Vector(ref)
   def anchor: DevicePoint
   def reachPx: Double
   def order: Int
@@ -65,7 +70,7 @@ trait RovingTargets[R <: StudioRef, +E]:
   /** The device scale the marks were laid out at. */
   def deviceScale: Double
 
-  /** The target of `ref`, if this scene draws it. */
+  /** The target of the mark that draws or stands for `ref`, if any. */
   def target(ref: StudioRef): Option[RovingTarget[R]]
 
   /** The mark under `point` (device pixels), within `toleranceDevicePx`. */
@@ -341,7 +346,7 @@ final case class MarkInputState[R <: StudioRef] private (
       case MarkInputEvent.PointerClicked(at, toggle) =>
         targets.pick(at, toleranceDevicePx).map {
           case Some(hit) =>
-            copy(focus = Some(hit.ref)).choose(hit.ref, toggle, InputCause.Pointer)
+            copy(focus = Some(hit.ref)).choose(hit, toggle, InputCause.Pointer)
           case None => unchanged
         }
       case MarkInputEvent.Key(RovingKey.Move(move)) =>
@@ -351,8 +356,8 @@ final case class MarkInputState[R <: StudioRef] private (
             .fold(unchanged)(t => MarkInputStep(copy(focus = Some(t.ref)), Vector.empty, true))
         )
       case MarkInputEvent.Key(RovingKey.Activate(toggle)) =>
-        Right(focus.filter(f => targets.target(f).isDefined).fold(unchanged) { ref =>
-          choose(ref, toggle, InputCause.Keyboard)
+        Right(focus.flatMap(targets.target).fold(unchanged) { t =>
+          choose(t, toggle, InputCause.Keyboard)
         })
       case MarkInputEvent.Key(RovingKey.Clear) =>
         Right(submit(SelectionMode.Clear, Vector.empty, InputCause.Keyboard, redraw = false))
@@ -399,38 +404,37 @@ final case class MarkInputState[R <: StudioRef] private (
   def overlay(targets: RovingTargets[R, ?]): Vector[OverlayRing] =
     selectionRings(targets) ++ pointerRings(targets)
 
-  /** The selection layer: it changes only when the bus projects a new
-    * selection, so a host can keep it drawn across pointer moves.
+  /** The selection layer: one ring per mark that accounts for a selected
+    * ref, in the order of the first such ref. It changes only when the bus
+    * projects a new selection, so a host can keep it drawn across pointer
+    * moves.
     */
   def selectionRings(targets: RovingTargets[R, ?]): Vector[OverlayRing] =
-    selected.flatMap(ring(targets, RingKind.Selected, _))
+    selected.flatMap(targets.target).distinctBy(_.ref).map(ring(targets, RingKind.Selected, _))
 
   /** The pointer and cursor layer: hover, then focus. */
   def pointerRings(targets: RovingTargets[R, ?]): Vector[OverlayRing] =
-    val hovered   = hover.flatMap(ring(targets, RingKind.Hover, _)).toVector
-    val focusRing =
-      if focused then focus.flatMap(ring(targets, RingKind.Focus, _)).toVector else Vector.empty
-    hovered ++ focusRing
+    def at(ref: Option[R], kind: RingKind) =
+      ref.flatMap(targets.target).map(ring(targets, kind, _)).toVector
+    at(hover, RingKind.Hover) ++ (if focused then at(focus, RingKind.Focus) else Vector.empty)
+
+  /** Whether the mark of `target` is selected: whether any ref it selects is. */
+  def isSelected(target: RovingTarget[?]): Boolean = target.refs.exists(selected.contains)
 
   private def ring(
       targets: RovingTargets[R, ?],
       kind: RingKind,
-      ref: StudioRef
-  ): Option[OverlayRing] =
+      t: RovingTarget[?]
+  ): OverlayRing =
     val outside =
-      if kind != RingKind.Selected && selected.contains(ref) then
-        2.0 * OverlayRings.SelectedBandPx
+      if kind != RingKind.Selected && isSelected(t) then 2.0 * OverlayRings.SelectedBandPx
       else 0.0
-    targets
-      .target(ref)
-      .map(t =>
-        OverlayRing(
-          kind,
-          t.ref,
-          t.anchor,
-          (t.reachPx + OverlayRings.GapPx + outside) * targets.deviceScale
-        )
-      )
+    OverlayRing(
+      kind,
+      t.ref,
+      t.anchor,
+      (t.reachPx + OverlayRings.GapPx + outside) * targets.deviceScale
+    )
 
   /** The view's accessible text: `mark` of the focused mark (and whether it
     * is selected) when the targets draw it, else `idle`, how to use the view.
@@ -440,9 +444,9 @@ final case class MarkInputState[R <: StudioRef] private (
       mark: (R, Boolean) => String,
       idle: => String
   ): String =
-    focus.filter(targets.target(_).isDefined) match
-      case Some(ref) => mark(ref, selected.contains(ref))
-      case None      => idle
+    focus.flatMap(f => targets.target(f).map(t => (f, t))) match
+      case Some((ref, t)) => mark(ref, isSelected(t))
+      case None           => idle
 
   private def unchanged: MarkInputStep[R] = MarkInputStep(this, Vector.empty, false)
 
@@ -450,13 +454,16 @@ final case class MarkInputState[R <: StudioRef] private (
     if next == hover then unchanged
     else MarkInputStep(copy(hover = next), Vector(Intent.HoverOver(view, next)), true)
 
-  private def choose(ref: R, toggle: Boolean, cause: InputCause): MarkInputStep[R] =
-    submit(
-      if toggle then SelectionMode.Toggle else SelectionMode.Replace,
-      Vector(ref),
-      cause,
-      true
-    )
+  // Selects every ref of `target`. A toggle removes a wholly selected mark's
+  // refs and adds the rest of a partly selected one's.
+  private def choose(target: RovingTarget[?], toggle: Boolean, cause: InputCause) =
+    val refs    = target.refs
+    val partial = refs.exists(selected.contains) && !refs.forall(selected.contains)
+    val mode    =
+      if !toggle then SelectionMode.Replace
+      else if partial then SelectionMode.Add
+      else SelectionMode.Toggle
+    submit(mode, refs, cause, true)
 
   // A stamped selection input; the overlay changes only when the bus projects
   // the result back.

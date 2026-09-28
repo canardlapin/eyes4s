@@ -38,8 +38,11 @@ enum PlotTextId derives CanEqual:
   /** The Table tab's title (StudioLayouts' sibling Table pane). */
   case TableTab
 
-  /** Rows the plot could not draw, and why. */
-  case Unplotted, MissingValue
+  /** A mark that accounts for several rows, and the separator between their words. */
+  case MarkRows, RowSeparator
+
+  /** Rows the plot could not place or draw, and why. */
+  case Unplotted, MissingValue, OffScale
 
   /** A plot whose builder refused its source, and why. */
   case Refused
@@ -65,6 +68,9 @@ object PlotText:
       case TableTab     => "Table"
       case Unplotted    => "{0} not drawn: {1}"
       case MissingValue => "no {0}"
+      case OffScale     => "{0} {1} is off the scale"
+      case MarkRows     => "{0} rows: {1}"
+      case RowSeparator => "; "
       case Refused      => "{0}: plot not drawn. {1}"
 
   /** `id`'s English template with `args` filled in. */
