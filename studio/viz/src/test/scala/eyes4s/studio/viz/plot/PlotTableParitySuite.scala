@@ -130,15 +130,33 @@ class PlotTableParitySuite extends ScalaCheckSuite:
         missing    <- Gen.oneOf(DotPlot.MissingY.values.toSeq)
         coincident <- Gen.oneOf(DotPlot.Coincident.values.toSeq)
       yield DotPlot(x(source), y(source), "Generated", missing, coincident),
-      Gen.oneOf(0.5, 1.0, 100.0).map(TallyTestPlot(x(source), y(source), _))
+      Gen.oneOf(0.5, 1.0, 100.0).map(TallyTestPlot(x(source), y(source), _)),
+      genEncoding(source).map(EncodedTestPlot(_))
     )
 
-  private val genPlot: Gen[(PlotSource, BuiltPlot)] =
+  /** Linear, log and category axes over the source's columns; a category
+    * axis lists every participant's label, in a generated order.
+    */
+  private def genEncoding(source: PlotSource): Gen[PositionEncoding] =
+    val labels = source.rows.indices.toVector.flatMap(source.text(_, 0))
+    val scales = Gen.oneOf(AxisScale.values.toSeq)
+    for
+      order <- Gen.pick(labels.size, labels).map(_.toVector)
+      xAxis <- Gen.oneOf(
+        scales.map(Axis.Numeric(x(source), _)),
+        Gen.const(Axis.Category(source.columns(0).id, order))
+      )
+      yAxis <- scales.map(Axis.Numeric(y(source), _))
+    yield PositionEncoding(xAxis, yAxis)
+
+  private val genBuilt: Gen[(PlotSource, PlotBuilder, BuiltPlot)] =
     for
       source  <- genSource
       builder <- genBuilder(source)
       theme   <- Gen.oneOf(Theme.values.toSeq)
-    yield (source, right(builder.build(source, theme)))
+    yield (source, builder, right(builder.build(source, theme)))
+
+  private val genPlot: Gen[(PlotSource, BuiltPlot)] = genBuilt.map((s, _, p) => (s, p))
 
   private def targetsOn(plot: BuiltPlot, scale: Double): PlotTargets =
     val surface   = right(PlotSurface(640, 400, scale))
@@ -181,15 +199,38 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       ),
       "a value off the scale" -> plots.exists(
         _.unplotted.exists(_.reason.isInstanceOf[NoPosition.OffScale])
+      ),
+      "a row placed on a log axis" -> plots.exists(p =>
+        p.encoding.x == Axis.Numeric(p.source.columns(1).id, AxisScale.Log10) &&
+          p.marks.nonEmpty
+      ),
+      "a row placed on a category axis" -> plots.exists(p =>
+        p.encoding.x.isInstanceOf[Axis.Category] && p.marks.nonEmpty
       )
     )
     assertEquals(seen.filterNot(_._2).keySet, Set.empty[String])
   }
 
+  // A placed coordinate `v` on `axis` is the table's cell of `row`.
+  private def placedShown(source: PlotSource, axis: Axis, row: Int, v: Double): Unit =
+    val column = Axis.columnOf(axis)
+    val i      = right(source.indexOf(column).toRight(s"no column $column"))
+    val cell   = right(source.text(row, i).toRight(s"no cell $row"))
+    axis match
+      case Axis.Numeric(_, AxisScale.Linear) =>
+        assertEquals(PlotSource.write(PlotValue.Number(v), source.columns(i).format), cell)
+        assertEquals(source.number(row, column), Some(v))
+      case Axis.Numeric(_, AxisScale.Log10) =>
+        val n = right(source.number(row, column).toRight(s"no number at $row"))
+        assert(n > 0.0, s"$n is placed on a log axis")
+        assertEqualsDouble(math.pow(10.0, v), n, 1e-9 * math.max(1.0, math.abs(n)))
+      case Axis.Category(_, levels) =>
+        assertEquals(v, math.rint(v))
+        assertEquals(levels.lift(v.toInt), Some(cell))
+
   property("every row is accounted for once, and placed rows sit at the table's values") {
-    Prop.forAll(genPlot) { (source, plot) =>
-      val table    = TableTwinState.initial(tableView, SelectionState.empty).vm(source)
-      val (xi, yi) = (1, 2)
+    Prop.forAll(genBuilt) { (source, builder, plot) =>
+      val table = TableTwinState.initial(tableView, SelectionState.empty).vm(source)
       assertEquals(table.rows.map(_.ref), source.rows.map(_.ref))
       assertEquals(
         (plot.marks.flatMap(_.refs) ++ plot.unplotted.map(_.ref)).sortBy(r => source.rowOf(r)),
@@ -203,17 +244,12 @@ class PlotTableParitySuite extends ScalaCheckSuite:
           assertEquals(plot.markOf(r.ref), Some(m))
           r.marking match
             case RowMarking.Placed(at) =>
-              assertEquals(
-                PlotSource.write(PlotValue.Number(at.x), source.columns(xi).format),
-                row.cells(xi).text
-              )
-              assertEquals(
-                PlotSource.write(PlotValue.Number(at.y), source.columns(yi).format),
-                row.cells(yi).text
-              )
-              assertEquals(Some(at.x), source.number(r.row, x(source)))
-              assertEquals(Some(at.y), source.number(r.row, y(source)))
+              placedShown(source, plot.encoding.x, r.row, at.x)
+              placedShown(source, plot.encoding.y, r.row, at.y)
               if m.rows.size == 1 then assertEquals(m.at, at)
+              // A dot plot draws every placed row of a mark at the mark.
+              if builder.isInstanceOf[DotPlot] then
+                assertEquals(at, m.at, s"${r.ref} in ${m.name}")
             case RowMarking.Positionless(why) => reasonShown(source, r.row, why)
             case RowMarking.Represented       => ()
         }
@@ -410,7 +446,16 @@ class PlotTableParitySuite extends ScalaCheckSuite:
   test("a built plot refuses marks that misstate their rows, twice-drawn rows and misorder") {
     val good = right(DotPlot(xId, yId, "Three").build(three, Theme.Light))
     def rebuilt(marks: Vector[PlotMark], unplotted: Vector[Unplotted] = good.unplotted) =
-      BuiltPlot("dot-plot", three, good.plot, good.title, good.description, marks, unplotted)
+      BuiltPlot(
+        "dot-plot",
+        three,
+        good.plot,
+        good.title,
+        good.description,
+        good.encoding,
+        marks,
+        unplotted
+      )
     val Vector(a, b) = good.marks: @unchecked
     assert(rebuilt(good.marks).isRight)
     assertEquals(
@@ -443,7 +488,16 @@ class PlotTableParitySuite extends ScalaCheckSuite:
   test("the accounting refuses a row in two marks, twice in one, or in none, naming it") {
     val good = right(DotPlot(xId, yId, "Three").build(three, Theme.Light))
     def rebuilt(marks: Vector[PlotMark], unplotted: Vector[Unplotted] = good.unplotted) =
-      BuiltPlot("dot-plot", three, good.plot, good.title, good.description, marks, unplotted)
+      BuiltPlot(
+        "dot-plot",
+        three,
+        good.plot,
+        good.title,
+        good.description,
+        good.encoding,
+        marks,
+        unplotted
+      )
     def mark(rows: Vector[MarkedRow], order: Int, n: String) =
       right(PlotMark.of("dot-plot", rows, DataPoint(0.0, 1.0), 4.0, order, name(n)))
     val both = mark(Vector(placed(p0, 0), placed(p1, 1)), 0, "both")
@@ -579,6 +633,192 @@ class PlotTableParitySuite extends ScalaCheckSuite:
     assertEquals(
       bus(whole, right(again.handle(MarkInputEvent.Key(toggle), t, 0.0)).intents).selected,
       Vector.empty
+    )
+  }
+
+  test("merging joins rows only at equal x and y") {
+    val stacked = right(
+      PlotSource(
+        "Stacked",
+        three.columns,
+        Vector(("P0", 1.0), ("P1", 2.0)).map((p, vy) =>
+          PlotRow(
+            StudioRef.Participant(p),
+            Vector(PlotValue.Text(p), PlotValue.Number(0.0), PlotValue.Number(vy))
+          )
+        )
+      )
+    )
+    val plot = right(
+      DotPlot(xId, yId, "Stacked", coincident = DotPlot.Coincident.Merge)
+        .build(stacked, Theme.Light)
+    )
+    assertEquals(plot.marks.map(_.refs), Vector(Vector(p0), Vector(p1)))
+    assertEquals(plot.marks.map(_.at), Vector(DataPoint(0.0, 1.0), DataPoint(0.0, 2.0)))
+  }
+
+  test("a placed row must sit where the encoding puts its cells, and a reason must hold") {
+    val good = right(DotPlot(xId, yId, "Three").build(three, Theme.Light))
+    def rebuilt(marks: Vector[PlotMark], unplotted: Vector[Unplotted] = good.unplotted) =
+      BuiltPlot(
+        "dot-plot",
+        three,
+        good.plot,
+        good.title,
+        good.description,
+        good.encoding,
+        marks,
+        unplotted
+      )
+    val Vector(a, b)             = good.marks: @unchecked
+    def at(x: Double, y: Double) = PlotMark.placed(p0, 0, DataPoint(x, y), 4.0, 0, a.name)
+    assertEquals(
+      rebuilt(Vector(at(0.0, 2.0), b)),
+      Left(PlotBuildError.Position("dot-plot", p0, yId, 2.0))
+    )
+    assertEquals(
+      rebuilt(Vector(at(0.5, 1.0), b)),
+      Left(PlotBuildError.Position("dot-plot", p0, xId, 0.5))
+    )
+    // P2 has an x of 2.0 and no y.
+    assertEquals(
+      rebuilt(good.marks, Vector(Unplotted(p2, 2, NoPosition.MissingValue(xId)))),
+      Left(PlotBuildError.ReasonValue("dot-plot", p2, xId))
+    )
+    assertEquals(
+      rebuilt(good.marks, Vector(Unplotted(p2, 2, NoPosition.OffScale(yId, -1.0)))),
+      Left(PlotBuildError.ReasonValue("dot-plot", p2, yId))
+    )
+    assertEquals(
+      rebuilt(good.marks, Vector(Unplotted(p2, 2, NoPosition.OffScale(xId, 3.0)))),
+      Left(PlotBuildError.ReasonValue("dot-plot", p2, xId))
+    )
+    assert(rebuilt(good.marks, Vector(Unplotted(p2, 2, NoPosition.OffScale(xId, 2.0)))).isRight)
+    val positionless =
+      PlotMark.positionless(
+        p2,
+        2,
+        NoPosition.MissingValue(xId),
+        DataPoint(2.0, 0.0),
+        4.0,
+        2,
+        name("p2")
+      )
+    assertEquals(
+      rebuilt(good.marks :+ positionless, Vector.empty),
+      Left(PlotBuildError.ReasonValue("dot-plot", p2, xId))
+    )
+    val nope = right(ColumnId.of("nope"))
+    assertEquals(
+      BuiltPlot(
+        "dot-plot",
+        three,
+        good.plot,
+        good.title,
+        good.description,
+        PositionEncoding(Axis.Numeric(nope, AxisScale.Linear), good.encoding.y),
+        good.marks,
+        good.unplotted
+      ),
+      Left(PlotBuildError.MissingColumn("dot-plot", nope))
+    )
+    List(
+      PlotBuildError.Position("dot-plot", p0, yId, 2.0).message -> "'y'",
+      PlotBuildError.ReasonValue("dot-plot", p2, xId).message   -> "'x'"
+    ).foreach((m, operand) => assert(m.contains(operand) && m.contains("Participant"), m))
+  }
+
+  /** σ per participant: P2's σ of zero has no place on a log axis. */
+  private val sigmas = right(
+    PlotSource(
+      "Sigma",
+      Vector(
+        column("participant", ColumnFormat.Label),
+        column("sigma", ColumnFormat.Decimal(2)),
+        column("y", ColumnFormat.Decimal(1))
+      ),
+      Vector(("P0", 0.5), ("P1", 20.0), ("P2", 0.0)).map((p, sigma) =>
+        PlotRow(
+          StudioRef.Participant(p),
+          Vector(PlotValue.Text(p), PlotValue.Number(sigma), PlotValue.Number(1.0))
+        )
+      )
+    )
+  )
+  private val sigmaId = right(ColumnId.of("sigma"))
+
+  test("a log axis places a row at the log of its value, and zero is off the scale") {
+    val encoding =
+      PositionEncoding(
+        Axis.Numeric(sigmaId, AxisScale.Log10),
+        Axis.Numeric(yId, AxisScale.Linear)
+      )
+    val plot = right(EncodedTestPlot(encoding).build(sigmas, Theme.Light))
+    assertEquals(
+      plot.marks.flatMap(_.rows).map(r => (r.ref, r.marking)),
+      Vector(
+        p0 -> RowMarking.Placed(DataPoint(math.log10(0.5), 1.0)),
+        p1 -> RowMarking.Placed(DataPoint(math.log10(20.0), 1.0))
+      )
+    )
+    assertEquals(plot.unplotted, Vector(Unplotted(p2, 2, NoPosition.OffScale(sigmaId, 0.0))))
+    assertEquals(plot.reasonText(plot.unplotted.head.reason), "SIGMA 0.00 is off the scale")
+    // Placed at the value itself, not its log: refused.
+    val m = plot.marks.head
+    assertEquals(
+      BuiltPlot(
+        "encoded-test",
+        sigmas,
+        plot.plot,
+        plot.title,
+        plot.description,
+        encoding,
+        PlotMark.placed(p0, 0, DataPoint(0.5, 1.0), m.reachPx, 0, m.name) +: plot.marks.tail,
+        plot.unplotted
+      ),
+      Left(PlotBuildError.Position("encoded-test", p0, sigmaId, 0.5))
+    )
+  }
+
+  test("a category axis places a row at its level's index, and refuses a repeated level") {
+    val participant               = right(ColumnId.of("participant"))
+    def encoding(levels: String*) =
+      PositionEncoding(
+        Axis.Category(participant, levels.toVector),
+        Axis.Numeric(yId, AxisScale.Linear)
+      )
+    val plot = right(EncodedTestPlot(encoding("P2", "P0", "P1")).build(sigmas, Theme.Light))
+    assertEquals(
+      plot.marks.map(_.at),
+      Vector(DataPoint(1.0, 1.0), DataPoint(2.0, 1.0), DataPoint(0.0, 1.0))
+    )
+    val m                                                     = plot.marks.head
+    def rebuilt(e: PositionEncoding, marks: Vector[PlotMark]) =
+      BuiltPlot(
+        "encoded-test",
+        sigmas,
+        plot.plot,
+        plot.title,
+        plot.description,
+        e,
+        marks,
+        Vector.empty
+      )
+    assertEquals(
+      rebuilt(
+        encoding("P2", "P0", "P1"),
+        PlotMark.placed(p0, 0, DataPoint(0.0, 1.0), m.reachPx, 0, m.name) +: plot.marks.tail
+      ),
+      Left(PlotBuildError.Position("encoded-test", p0, participant, 0.0))
+    )
+    assertEquals(
+      rebuilt(encoding("P2", "P0", "P1", "P0"), plot.marks),
+      Left(PlotBuildError.DuplicateLevel("encoded-test", participant, "P0"))
+    )
+    // A row whose level is not listed cannot be placed there.
+    assertEquals(
+      rebuilt(encoding("P2", "P1"), plot.marks),
+      Left(PlotBuildError.Position("encoded-test", p0, participant, 1.0))
     )
   }
 

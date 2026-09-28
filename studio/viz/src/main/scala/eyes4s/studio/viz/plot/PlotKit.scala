@@ -64,6 +64,20 @@ enum PlotBuildError derives CanEqual:
   /** Row `ref` has no position because of column `column`, which the source lacks. */
   case ReasonColumn(plot: String, ref: StudioRef, column: ColumnId)
 
+  /** Row `ref`'s reason for having no position misstates its cell in `column`:
+    * a missing value that is present, or an off-scale value that is not the
+    * cell's.
+    */
+  case ReasonValue(plot: String, ref: StudioRef, column: ColumnId)
+
+  /** Row `ref` is placed at `placed` on the axis of `column`, which is not
+    * where the axis puts its cell.
+    */
+  case Position(plot: String, ref: StudioRef, column: ColumnId, placed: Double)
+
+  /** A category axis of `column` lists `level` more than once. */
+  case DuplicateLevel(plot: String, column: ColumnId, level: String)
+
   def message: String = this match
     case MissingColumn(p, c)  => s"plot $p: the source has no column '${c.value}'"
     case NotNumeric(p, c)     => s"plot $p: column '${c.value}' is not numeric"
@@ -79,6 +93,11 @@ enum PlotBuildError derives CanEqual:
     case EmptyMark(p, n)         => s"plot $p: mark '$n' stands for no row"
     case ReasonColumn(p, ref, c) =>
       s"plot $p: row $ref has no position for column '${c.value}', which the source lacks"
+    case ReasonValue(p, ref, c) =>
+      s"plot $p: row $ref's reason for having no position misstates its '${c.value}' cell"
+    case Position(p, ref, c, v) =>
+      s"plot $p: row $ref is placed at $v on the '${c.value}' axis, which is not where its cell is"
+    case DuplicateLevel(p, c, l) => s"plot $p: the '${c.value}' axis lists '$l' twice"
 
 /** Why a row of the source has no position in a plot. The row is then drawn
   * as a positionless mark ([[RowMarking.Positionless]]) or set aside
@@ -104,12 +123,70 @@ object NoPosition:
     case MissingValue(c) => c
     case OffScale(c, _)  => c
 
+/** How an axis turns a number into a data coordinate. */
+enum AxisScale derives CanEqual:
+
+  /** The number itself. */
+  case Linear
+
+  /** The base-10 logarithm of a positive number, as the scale profile's σ
+    * axis (S4.5d); a number at or below zero is off the scale.
+    */
+  case Log10
+
+/** How one axis of a plot places a row: the column it reads and how its
+  * cell becomes a data coordinate.
+  */
+enum Axis derives CanEqual:
+
+  /** The cell's number, on `scale`. */
+  case Numeric(column: ColumnId, scale: AxisScale)
+
+  /** The index in `levels` of the cell as the table writes it, as
+    * Remembered and Forgotten on the participant plot (S4.5c).
+    */
+  case Category(column: ColumnId, levels: Vector[String])
+
+object Axis:
+
+  /** The column `axis` reads. */
+  def columnOf(axis: Axis): ColumnId = axis match
+    case Numeric(c, _)  => c
+    case Category(c, _) => c
+
+  /** The data coordinate `axis` gives the row at `row`, if its cell has one. */
+  def position(axis: Axis, source: PlotSource, row: Int): Option[Double] =
+    axis match
+      case Numeric(c, AxisScale.Linear) => source.number(row, c)
+      case Numeric(c, AxisScale.Log10)  =>
+        source.number(row, c).filter(_ > 0.0).map(math.log10)
+      case Category(c, levels) =>
+        source
+          .indexOf(c)
+          .flatMap(source.text(row, _))
+          .map(levels.indexOf(_))
+          .filter(_ >= 0)
+          .map(_.toDouble)
+
+/** Where a plot places a row: its x and y axes. A [[RowMarking.Placed]] row
+  * sits exactly where both put its cells, and [[BuiltPlot.apply]] refuses
+  * one that does not.
+  */
+final case class PositionEncoding(x: Axis, y: Axis) derives CanEqual:
+
+  /** Where the encoding puts the row at `row`, if both its cells place it. */
+  def place(source: PlotSource, row: Int): Option[DataPoint] =
+    for
+      px <- Axis.position(x, source, row)
+      py <- Axis.position(y, source, row)
+    yield DataPoint(px, py)
+
 /** How a mark shows one row of its source. */
 enum RowMarking derives CanEqual:
 
-  /** The mark shows the row at `at`, the row's own values in the panel's
-    * data coordinates. Only these rows are held to position parity: writing
-    * `at` in the columns' formats gives the table's cells.
+  /** The mark shows the row at `at`, the data point the plot's
+    * [[PositionEncoding]] gives the row's cells. Only these rows are held to
+    * position parity, and [[BuiltPlot.apply]] checks every one.
     */
   case Placed(at: DataPoint)
 
@@ -238,6 +315,7 @@ final case class BuiltPlot private (
     plot: PlotScene,
     title: String,
     description: String,
+    encoding: PositionEncoding,
     marks: Vector[PlotMark],
     unplotted: Vector[Unplotted]
 ):
@@ -293,9 +371,11 @@ final case class BuiltPlot private (
 
 object BuiltPlot:
 
-  /** A built plot, refusing marks that misstate their rows, a row accounted
-    * for other than once, a reason naming a column the source lacks, shared
-    * grob names and marks out of order.
+  /** A built plot, refusing marks that misstate their rows, an axis column
+    * the source lacks or a category listed twice, a row accounted for other
+    * than once, a reason naming a column the source lacks or misstating its
+    * cell, a placed row away from where `encoding` puts it, shared grob names
+    * and marks out of order.
     */
   def apply(
       kind: String,
@@ -303,27 +383,60 @@ object BuiltPlot:
       plot: PlotScene,
       title: String,
       description: String,
+      encoding: PositionEncoding,
       marks: Vector[PlotMark],
       unplotted: Vector[Unplotted]
   ): Either[PlotBuildError, BuiltPlot] =
     def rowOk(ref: StudioRef, row: Int) = source.rows.lift(row).exists(_.ref == ref)
-    val marked                          = marks.flatMap(_.rows)
+    val axes    = Vector(encoding.x, encoding.y)
+    val marked  = marks.flatMap(_.rows)
     val claims  = marked.map(r => (r.ref, r.row)) ++ unplotted.map(u => (u.ref, u.row))
     val counts  = claims.groupMapReduce(_._1)(_ => 1)(_ + _)
-    val reasons = marked.collect { case MarkedRow(ref, _, RowMarking.Positionless(why)) =>
-      (ref, why)
-    } ++ unplotted.map(u => (u.ref, u.reason))
+    val reasons = marked.collect { case MarkedRow(ref, row, RowMarking.Positionless(why)) =>
+      (ref, row, why)
+    } ++ unplotted.map(u => (u.ref, u.row, u.reason))
+    def reasonHolds(row: Int, why: NoPosition) = why match
+      case NoPosition.MissingValue(c) => source.value(row, c).contains(PlotValue.Missing)
+      case NoPosition.OffScale(c, v)  => source.number(row, c).contains(v)
+    // The first axis whose coordinate for a placed row is not the row's.
+    def misplaced(r: MarkedRow, at: DataPoint) =
+      Vector((encoding.x, at.x), (encoding.y, at.y))
+        .find((axis, v) => !Axis.position(axis, source, r.row).contains(v))
+        .map((axis, v) => PlotBuildError.Position(kind, r.ref, Axis.columnOf(axis), v))
     for
       _ <- claims.find(!rowOk.tupled(_)).map(PlotBuildError.MarkRow(kind, _, _)).toLeft(())
+      _ <- axes
+        .map(Axis.columnOf)
+        .find(source.indexOf(_).isEmpty)
+        .map(PlotBuildError.MissingColumn(kind, _))
+        .toLeft(())
+      _ <- axes
+        .collectFirst {
+          case Axis.Category(c, levels) if levels.distinct.size != levels.size =>
+            PlotBuildError.DuplicateLevel(kind, c, levels.diff(levels.distinct).take(1).mkString)
+        }
+        .toLeft(())
       _ <- source.rows
         .map(r => r.ref -> counts.getOrElse(r.ref, 0))
         .find(_._2 != 1)
         .map(PlotBuildError.RowAccounting(kind, _, _))
         .toLeft(())
       _ <- reasons
-        .map((ref, why) => (ref, NoPosition.columnOf(why)))
+        .map((ref, _, why) => (ref, NoPosition.columnOf(why)))
         .find((_, c) => source.indexOf(c).isEmpty)
         .map(PlotBuildError.ReasonColumn(kind, _, _))
+        .toLeft(())
+      _ <- reasons
+        .find((_, row, why) => !reasonHolds(row, why))
+        .map((ref, _, why) => PlotBuildError.ReasonValue(kind, ref, NoPosition.columnOf(why)))
+        .toLeft(())
+      _ <- marked.iterator
+        .flatMap(r =>
+          r.marking match
+            case RowMarking.Placed(at) => misplaced(r, at)
+            case _                     => None
+        )
+        .nextOption()
         .toLeft(())
       _ <- marks
         .map(_.name)
@@ -336,7 +449,7 @@ object BuiltPlot:
         .find((m, i) => m.order != i)
         .map((m, i) => PlotBuildError.MarkOrder(kind, i, m.order))
         .toLeft(())
-    yield new BuiltPlot(source, plot, title, description, marks, unplotted)
+    yield new BuiltPlot(source, plot, title, description, encoding, marks, unplotted)
 
 /** A kind of plot: builds its scene from a value source (tickets S4.5a and
   * S4.5x).
@@ -346,11 +459,16 @@ object BuiltPlot:
   * roving cursor and the shared selection. A builder computes no science: it
   * places the source's values and draws them in token colours.
   *
-  * A builder accounts for every row of the source exactly once
-  * ([[BuiltPlot]]):
+  * A builder declares where it places rows, as a [[PositionEncoding]] of
+  * two axes ([[Axis.Numeric]] on a linear or log scale, or
+  * [[Axis.Category]]), and passes it to [[BuiltPlot.apply]], which keeps it
+  * as [[BuiltPlot.encoding]]. It accounts for every row of the source exactly
+  * once, and the built plot checks all of it:
   *
   *  - a row drawn at its own values is a [[RowMarking.Placed]] row of a
-  *    mark: a dot is a mark of one placed row ([[PlotMark.placed]]); a line
+  *    mark, at exactly the data point the encoding gives its cells
+  *    ([[PositionEncoding.place]]): a dot is a mark of one placed row
+  *    ([[PlotMark.placed]]); a line
   *    through one participant's scales is one mark of several placed rows
   *    ([[PlotMark.of]]);
   *  - a row drawn without a position, as a dashed empty marker for a
@@ -360,6 +478,9 @@ object BuiltPlot:
   *  - rows one mark stands for, as a histogram bar for the controls in its
   *    bin, are [[RowMarking.Represented]] rows of one aggregate mark;
   *  - a row with no mark at all is [[Unplotted]], with its reason.
+  *
+  * A reason must hold of its row: [[NoPosition.MissingValue]] names a
+  * missing cell and [[NoPosition.OffScale]] the cell's own number.
   *
   * Values the plot shows that are not per-row, such as group means or
   * grand-mean ticks, come as rows of the source with their own refs and are

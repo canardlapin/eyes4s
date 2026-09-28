@@ -66,6 +66,10 @@ final case class DotPlot(
 
   def kind: String = "dot-plot"
 
+  /** Both axes linear: a dot sits at its row's `x` and `y`. */
+  def encoding: PositionEncoding =
+    PositionEncoding(Axis.Numeric(x, AxisScale.Linear), Axis.Numeric(y, AxisScale.Linear))
+
   def build(source: PlotSource, theme: Theme): Either[PlotBuildError, BuiltPlot] =
     for
       xi <- DotPlot.numericColumn(kind, source, x)
@@ -99,6 +103,7 @@ final case class DotPlot(
         plotScene,
         title,
         PlotText(PlotTextId.PlotKeys, title),
+        encoding,
         checked,
         unplotted
       )
