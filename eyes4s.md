@@ -1311,8 +1311,8 @@ Householder QR. Intercept-free NNLS (`Template.decomposeNonNegative`, an `Intens
 simplex mixtures (`Template.decomposeMixture`, a `Mass` fit with an optional uniform background
 component) are active-set solvers over the same QR. `PartialAssociation.of` is the separate partial
 Pearson/Spearman result. All return keyed values and descriptive diagnostics; see
-[surface decomposition](docs/SURFACE_DECOMPOSITION.md). Pinned eyesim fixtures for its `nnls` and
-`rank` methods remain to be recorded.
+[surface decomposition](docs/SURFACE_DECOMPOSITION.md). NNLS and partial Spearman agree with pinned
+eyesim `nnls` and `rank` calls; eyesim's labelling of partial correlations as betas is a recorded divergence.
 
 The convenient surface keeps distinct scientific verbs: matched similarity, repetition similarity,
 surface decomposition, and temporal reinstatement. They are thin functions over the algebra above,

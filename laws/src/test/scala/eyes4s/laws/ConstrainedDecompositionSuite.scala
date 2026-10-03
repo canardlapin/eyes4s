@@ -31,6 +31,9 @@ class ConstrainedDecompositionSuite extends munit.ScalaCheckSuite:
   /** Solver rounding on small, well-separated designs; inputs are exact. */
   private val oracleTolerance = Tolerance(absolute = 1e-12, relative = 1e-9)
 
+  /** Pinned eyesim values, written by R with fifteen significant digits. */
+  private val eyesimTolerance = Tolerance(absolute = 1e-12, relative = 0.0)
+
   /** A simplex sum, which elimination preserves to a few units in the last place. */
   private val sumTolerance = Tolerance(absolute = 1e-14, relative = 0.0)
 
@@ -595,4 +598,38 @@ class ConstrainedDecompositionSuite extends munit.ScalaCheckSuite:
       Exact.ranks(exact(x)),
       Vector(10, 4, 10, 6, 2, 10).map(v => Q.int(v) / Q.int(2))
     )
+  }
+
+  // ---------------------------------------------------------------- pinned eyesim
+
+  ConstrainedDecompositionReference.nnls.foreach { c =>
+    test(s"${c.name}: NNLS agrees with pinned eyesim template_multireg(method = nnls)") {
+      val keys = c.predictors.map((name, _) => get(PredictorId.of(name)))
+      val set  = get(PredictorSet.of(keys.zip(c.predictors.map((_, w) => mass(w)))))
+      val fit  = get(Template.decomposeNonNegative(mass(c.response), set))
+      assertEquals(fit.coefficients.map(_._1), keys)
+      fit.coefficients.map(_._2).zip(c.coefficients).foreach { (actual, expected) =>
+        assert(eyesimTolerance.approxEquals(actual, expected), s"$actual != $expected")
+      }
+      assertEquals(fit.diagnostics.active, c.coefficients.count(_ > 0.0))
+    }
+  }
+
+  ConstrainedDecompositionReference.rank.foreach { c =>
+    test(
+      s"${c.name}: partial Spearman agrees with pinned eyesim template_regression(method = rank)"
+    ) {
+      val (source, baseline, reference) = (mass(c.source), mass(c.baseline), mass(c.reference))
+      def covariates(m: Mass[Deg])      = get(PredictorSet.of(Vector(ids(0) -> m)))
+      def association(other: Mass[Deg], covariate: Mass[Deg], method: AssociationMethod) =
+        get(PartialAssociation.of(source, other, covariates(covariate), method)).estimate.get
+      Vector(
+        association(baseline, reference, AssociationMethod.Spearman) -> c.betaBaseline,
+        association(reference, baseline, AssociationMethod.Spearman) -> c.betaSource,
+        association(baseline, reference, AssociationMethod.Pearson)  -> c.pearsonBaseline,
+        association(reference, baseline, AssociationMethod.Pearson)  -> c.pearsonSource
+      ).foreach { (actual, expected) =>
+        assert(eyesimTolerance.approxEquals(actual, expected), s"$actual != $expected")
+      }
+    }
   }

@@ -152,10 +152,26 @@ drops a recoverable predictor that must then be readmitted, and an unclamped rou
 costs one more degenerate step. Both therefore show only in the iteration count, which the
 hand-computed step-back example pins.
 
+### Pinned eyesim references
+
 eyesim's `template_multireg(method = "nnls")` fits the same intercept-free NNLS on normalized
-maps; it ignores its `intercept` argument. `template_regression(method = "rank")` returns `ppcor`
-partial Spearman correlations of the source map with each of the baseline and reference maps
-given the other, labelled as beta weights. In eyes4s these are
+maps through `nnls::nnls`; it ignores its `intercept` argument, and the fixture records both
+calls to show it. `template_regression(method = "rank")` returns `ppcor` partial Spearman
+correlations of the source map with each of the baseline and reference maps given the other,
+labelled `beta_baseline` and `beta_source`. In eyes4s these are
 `PartialAssociation.of(source, baseline, given reference, Spearman)` and the symmetric call.
-Pinned eyesim fixtures for these two methods are not yet recorded: `nnls` and `ppcor` are not in
-`tools/r-parity/r-lock.json`. The equivalence is a stated convention, not measured parity.
+They are associations, not regression weights; that labelling is the recorded divergence.
+
+The per-ticket inputs (`tools/r-parity/fixtures/cases/bd-01M420XJ0Y2H6R3M4B3WXMHA1A.json`)
+cover an interior NNLS solution, a boundary solution with a zero coefficient, an exact mixture,
+and tied and untied partial associations. The generator calls the pinned eyesim, plus `ppcor`'s
+Pearson route on the same layout. It asserts every value against the exact oracles above within
+`1e-12`, then writes `fixtures/decomposition-constrained.json` and the Scala
+`ConstrainedDecompositionReference`, which `ConstrainedDecompositionSuite` checks within
+`1e-12` on the JVM and Scala.js. Regenerate the reference offline with:
+
+```sh
+python3 tools/r-parity/generate_decomposition_constrained.py --eyesim /path/to/eyesim --check
+```
+
+No R is needed by the public API or the Scala tests.
