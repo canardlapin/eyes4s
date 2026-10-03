@@ -107,14 +107,19 @@ object LadderSamples:
       b        <- genCosine
       d        <- Gen.choose(-1.0, 1.0)
       n        <- Gen.frequency(4 -> Gen.choose(0, 25), 1 -> Gen.choose(48, 70))
-      controls <- Gen.listOfN(n, Gen.frequency(9 -> genCosine.map(Some(_)), 1 -> Gen.const(None)))
+      controls <- Gen.listOfN(
+        n,
+        Gen.frequency(9 -> genCosine.map(Some(_)), 1 -> Gen.const(None))
+      )
     yield Spec(label, m, b, d, controls.toVector)
 
   /** One to four scales of generated M, B, D and up to 70 controls. */
   val genLadder: Gen[ScaleLadder] =
     for
       n     <- Gen.choose(1, 4)
-      specs <- Gen.sequence[Vector[Spec], Spec](Vector("0.5°", "1°", "2°", "4°").take(n).map(genSpec))
+      specs <- Gen.sequence[Vector[Spec], Spec](
+        Vector("0.5°", "1°", "2°", "4°").take(n).map(genSpec)
+      )
     yield ladder(specs*)
 
   /** A ladder builder, focused on one of the ladder's scales or on none. */

@@ -112,19 +112,38 @@ final case class ScaleLadderPlot(columns: LadderColumns, focus: Option[String] =
     val scaleColumn = columns.scale
     val cosine      = columns.cosine
     for
-      _ <- source.indexOf(scaleColumn).toRight(PlotBuildError.MissingColumn(kind, scaleColumn))
+      _  <- source.indexOf(scaleColumn).toRight(PlotBuildError.MissingColumn(kind, scaleColumn))
       ci <- source.indexOf(cosine).toRight(PlotBuildError.MissingColumn(kind, cosine))
-      _ <- Either.cond(
+      _  <- Either.cond(
         source.columns(ci).format.numeric,
         (),
         PlotBuildError.NotNumeric(kind, cosine)
+      )
+      di <- source.indexOf(columns.d).toRight(PlotBuildError.MissingColumn(kind, columns.d))
+      _  <- Either.cond(
+        source.columns(di).format.numeric,
+        (),
+        PlotBuildError.NotNumeric(kind, columns.d)
       )
       levels   = scaleLevels(source, scaleColumn)
       encoding = PositionEncoding(
         Axis.Numeric(cosine, AxisScale.Linear),
         Axis.Category(scaleColumn, levels)
       )
-      roles <- source.rows.traverseRows(r => roleOf(r.ref).toRight(PlotBuildError.UnexpectedRow(kind, r.ref)))
+      roles <- source.rows.traverseRows(r =>
+        roleOf(r.ref).toRight(PlotBuildError.UnexpectedRow(kind, r.ref))
+      )
+      _ <- levels.traverseRows { label =>
+        val identities = source.rows.indices.toVector
+          .filter(i => source.value(i, scaleColumn).contains(PlotValue.Text(label)))
+          .flatMap(i => queryIdentity(source.rows(i).ref))
+          .distinct
+        Either.cond(
+          identities.size <= 1,
+          (),
+          PlotBuildError.AmbiguousLevel(kind, scaleColumn, label, identities)
+        )
+      }
       planned <- plan(source, encoding, levels, roles)
       (drawn, unplotted) = planned
       id <- SceneId(s"studio.plot.$kind.${theme.toString.toLowerCase}").left
@@ -132,16 +151,19 @@ final case class ScaleLadderPlot(columns: LadderColumns, focus: Option[String] =
       built <- scene(theme, levels, drawn).left
         .map(PlotBuildError.Graphics(kind, "the scale ladder", _))
       (grobs, viewport, names) = built
-      marks <- drawn.zip(names).zipWithIndex.foldLeft[Either[PlotBuildError, Vector[PlotMark]]](
-        Right(Vector.empty)
-      ) { case (acc, ((d, name), order)) =>
-        for
-          ms     <- acc
-          mark   <- PlotMark.of(kind, d.rows, d.at, d.reachPx, order, name)
-          nudged <- mark.nudged(kind, 0.0, d.dyPx)
-          said   <- d.summary.fold(Right(nudged))(nudged.summarised(kind, _))
-        yield ms :+ said
-      }
+      marks <- drawn
+        .zip(names)
+        .zipWithIndex
+        .foldLeft[Either[PlotBuildError, Vector[PlotMark]]](
+          Right(Vector.empty)
+        ) { case (acc, ((d, name), order)) =>
+          for
+            ms     <- acc
+            mark   <- PlotMark.of(kind, d.rows, d.at, d.reachPx, order, name)
+            nudged <- mark.nudged(kind, 0.0, d.dyPx)
+            said   <- d.summary.fold(Right(nudged))(nudged.summarised(kind, _))
+          yield ms :+ said
+        }
       panel     <- DataPanel(id, viewport).left.map(PlotBuildError.Scene(kind, _))
       plotScene <- PlotScene(id, Scene(grobs), panel).left.map(PlotBuildError.Scene(kind, _))
       title = LadderText(LadderTextId.Title)
@@ -168,22 +190,23 @@ final case class ScaleLadderPlot(columns: LadderColumns, focus: Option[String] =
       roles: Vector[ScaleLadderPlot.Role]
   ): Either[PlotBuildError, (Vector[ScaleLadderPlot.Drawn], Vector[Unplotted])] =
     import ScaleLadderPlot.*
-    val cosine = columns.cosine
-    val rows   = source.rows.indices.toVector
-    def refOf(i: Int) = source.rows(i).ref
-    def missing(i: Int, column: ColumnId) = Unplotted(refOf(i), i, NoPosition.MissingValue(column))
+    val cosine                            = columns.cosine
+    val rows                              = source.rows.indices.toVector
+    def refOf(i: Int)                     = source.rows(i).ref
+    def missing(i: Int, column: ColumnId) =
+      Unplotted(refOf(i), i, NoPosition.MissingValue(column))
     // Each row's scale row, if its scale cell names one.
     val levelOf: Vector[Option[Int]] =
       rows.map(i => Axis.position(encoding.y, source, i).map(_.toInt))
     def placedAt(i: Int): Option[DataPoint] = encoding.place(source, i)
-    val noLevel = rows.filter(levelOf(_).isEmpty).map(missing(_, columns.scale))
-    val xs      = rows.flatMap(i => placedAt(i).map(_.x))
+    val noLevel  = rows.filter(levelOf(_).isEmpty).map(missing(_, columns.scale))
+    val xs       = rows.flatMap(i => placedAt(i).map(_.x))
     val (x0, x1) = domain(xs)
-    val dodge   = (x1 - x0) * DodgeFraction
+    val dodge    = (x1 - x0) * DodgeFraction
     val perLevel = levels.indices.toVector.map { level =>
-      val here = rows.filter(levelOf(_).contains(level))
+      val here                 = rows.filter(levelOf(_).contains(level))
       def withRole(role: Role) = here.filter(roles(_) == role)
-      val step =
+      val step                 =
         if focus.forall(_ == levels(level)) then FocusStepPx else StepPx
       val means    = withRole(Role.Mean)
       val matched  = withRole(Role.Matched)
@@ -192,7 +215,7 @@ final case class ScaleLadderPlot(columns: LadderColumns, focus: Option[String] =
       val meanAt   = means.flatMap(i => placedAt(i).map(i -> _))
       val matchAt  = matched.flatMap(i => placedAt(i).map(i -> _))
       val shown    = controls.flatMap(i => placedAt(i).map(i -> _))
-      val unshown =
+      val unshown  =
         (means ++ matched ++ controls).filter(placedAt(_).isEmpty).map(missing(_, cosine))
       // D is drawn between the row's first B and first M, when both are placed.
       val span = for
@@ -206,6 +229,8 @@ final case class ScaleLadderPlot(columns: LadderColumns, focus: Option[String] =
           acc.flatMap { (ds, us) =>
             if source.number(i, cosine).isDefined then
               Left(PlotBuildError.UnexpectedRow(kind, refOf(i)))
+            else if source.number(i, columns.d).isEmpty then
+              Right((ds, us :+ missing(i, columns.d)))
             else
               span match
                 case Some((b, m)) =>
@@ -292,15 +317,15 @@ final case class ScaleLadderPlot(columns: LadderColumns, focus: Option[String] =
     val tallest = bins.map(_._2.size).maxOption.getOrElse(1)
     bins.map { (k, members) =>
       val heightPx = BarMaxPx * members.size / tallest
-      val rows     = members.map((i, _) => MarkedRow(source.rows(i).ref, i, RowMarking.Represented))
+      val rows = members.map((i, _) => MarkedRow(source.rows(i).ref, i, RowMarking.Represented))
       Drawn(
         rows,
         DataPoint((LadderBins.lower(k) + LadderBins.upper(k)) / 2.0, level.toDouble),
         -(BinLiftPx + heightPx / 2.0),
         math.max(heightPx / 2.0, BinReachPx),
-        Option.when(rows.size > 1)(
+        Some(
           LadderText(
-            LadderTextId.Bin,
+            if rows.size == 1 then LadderTextId.SingleBin else LadderTextId.Bin,
             label,
             Format.decimal(LadderBins.lower(k), 2),
             Format.decimal(LadderBins.upper(k), 2)
@@ -353,8 +378,8 @@ final case class ScaleLadderPlot(columns: LadderColumns, focus: Option[String] =
       centre   <- Point.npc(0.5, 0.5)
       surface  <- GraphicParams.checked(stroke = None, fill = Some(colour(ThemedToken.Surface)))
       background <- Grob.rect(centre, whole, gp = surface)
-      bandGp     <- GraphicParams.checked(stroke = None, fill = Some(colour(ThemedToken.Surface2)))
-      lineGp     <- GraphicParams.checked(
+      bandGp <- GraphicParams.checked(stroke = None, fill = Some(colour(ThemedToken.Surface2)))
+      lineGp <- GraphicParams.checked(
         stroke = Some(colour(ThemedToken.Hairline)),
         fill = None,
         lineWidth = px(1.0),
@@ -368,10 +393,12 @@ final case class ScaleLadderPlot(columns: LadderColumns, focus: Option[String] =
       )
       left  <- LengthExpr.npc(0.0)
       right <- LengthExpr.npc(1.0)
-      band <- focus.flatMap(f => Option(levels.indexOf(f)).filter(_ >= 0)) match
+      band  <- focus.flatMap(f => Option(levels.indexOf(f)).filter(_ >= 0)) match
         case Some(level) =>
           for
-            c    <- LengthExpr.npc(0.5).flatMap(x => LengthExpr.native(level.toDouble).map(Point(x, _)))
+            c <- LengthExpr
+              .npc(0.5)
+              .flatMap(x => LengthExpr.native(level.toDouble).map(Point(x, _)))
             w    <- ExtentExpr.npc(1.0)
             h    <- ExtentExpr.native(1.0)
             grob <- Grob.rect(c, Size.fromExtents(w, h), gp = bandGp)
@@ -379,15 +406,15 @@ final case class ScaleLadderPlot(columns: LadderColumns, focus: Option[String] =
         case None => Right(Vector.empty)
       rules <- traverse(levels.indices.toVector) { level =>
         for
-          y     <- LengthExpr.native(level.toDouble)
-          below <- LengthExpr.native(level + 0.5)
+          y          <- LengthExpr.native(level.toDouble)
+          below      <- LengthExpr.native(level + 0.5)
           centreLine <- Grob.segments(Vector((Point(left, y), Point(right, y))), gp = lineGp)
-          rule       <- Grob.segments(Vector((Point(left, below), Point(right, below))), gp = ruleGp)
+          rule <- Grob.segments(Vector((Point(left, below), Point(right, below))), gp = ruleGp)
         yield Vector(rule, centreLine)
       }
-      inkGp <- GraphicParams.checked(stroke = None, fill = Some(colour(ThemedToken.Ink)))
+      inkGp  <- GraphicParams.checked(stroke = None, fill = Some(colour(ThemedToken.Ink)))
       tickGp <- GraphicParams.checked(stroke = None, fill = Some(colour(ThemedToken.Control)))
-      dotGp <- GraphicParams.checked(
+      dotGp  <- GraphicParams.checked(
         stroke = Some(colour(ThemedToken.Control)),
         fill = Some(colour(ThemedToken.Surface)),
         lineWidth = px(DotEdgePx),
@@ -407,18 +434,21 @@ final case class ScaleLadderPlot(columns: LadderColumns, focus: Option[String] =
       )
       dotSize     <- ExtentExpr.points(px(DotRadiusPx))
       diamondSize <- ExtentExpr.points(px(DiamondRadiusPx))
-      marked <- traverse(drawn) { d =>
+      marked      <- traverse(drawn) { d =>
         val y = d.at.y
         for
           name <- GraphicsName(s"$MarkPrefix${d.rows.head.row}", "scale ladder mark")
           grob <- d.shape match
             case Shape.Bar(b, m) =>
-              box(b, m, y, -BarHalfPx, BarHalfPx).flatMap(Grob.polygon(_, gp = inkGp, name = Some(name)))
+              box(b, m, y, -BarHalfPx, BarHalfPx).flatMap(
+                Grob.polygon(_, gp = inkGp, name = Some(name))
+              )
             case Shape.Tick =>
               box(d.at.x, d.at.x, y, -TickHalfPx, TickHalfPx, TickHalfWidthPx)
                 .flatMap(Grob.polygon(_, gp = tickGp, name = Some(name)))
             case Shape.Bin(lo, hi, h) =>
-              box(lo, hi, y, -(BinLiftPx + h), -BinLiftPx).flatMap(Grob.polygon(_, gp = binGp, name = Some(name)))
+              box(lo, hi, y, -(BinLiftPx + h), -BinLiftPx)
+                .flatMap(Grob.polygon(_, gp = binGp, name = Some(name)))
             case Shape.Dot | Shape.Diamond =>
               val (shape, size, gp) =
                 if d.shape == Shape.Dot then (PointShape.Circle, dotSize, dotGp)
@@ -447,11 +477,13 @@ final case class ScaleLadderPlot(columns: LadderColumns, focus: Option[String] =
         fontFamily = Some(FontFace.MonoRegular.javaFxFamily),
         fontSize = labelSize
       )
-      gutter <- LengthExpr.npc(-0.02)
+      gutter      <- LengthExpr.npc(-0.02)
       scaleLabels <- traverse(levels.zipWithIndex) { (label, level) =>
-        LengthExpr.native(level.toDouble).flatMap(y =>
-          Grob.text(label, Point(gutter, y), Anchor(HJust.Right, VJust.Center), gp = scaleGp)
-        )
+        LengthExpr
+          .native(level.toDouble)
+          .flatMap(y =>
+            Grob.text(label, Point(gutter, y), Anchor(HJust.Right, VJust.Center), gp = scaleGp)
+          )
       }
       axisAt    <- Point.npc(0.97, 0.99)
       axisTitle <- Grob.text(
@@ -519,10 +551,11 @@ object ScaleLadderPlot:
 
   private val DotReachPx: Double     = DotRadiusPx + DotEdgePx / 2.0
   private val DiamondReachPx: Double =
-    PointShape.diamondHalfDiagonal(DiamondRadiusPx) + DiamondEdgePx / 2.0
+    // The square's 90-degree miter extends half the stroke by sqrt(2) at each tip.
+    PointShape.diamondHalfDiagonal(DiamondRadiusPx) + DiamondEdgePx / math.sqrt(2.0)
   private val BarReachPx: Double  = 2.0 * BarHalfPx
   private val TickReachPx: Double = math.hypot(TickHalfPx, TickHalfWidthPx)
-  private val BinReachPx: Double = 6.0
+  private val BinReachPx: Double  = 6.0
 
   private val PointsPerPixel = 72.0 / 96.0
 
@@ -544,6 +577,17 @@ object ScaleLadderPlot:
       other.resultAddress.collect { case ResultAddress.Reduction(_, PairDesign.Control, _) =>
         Role.Mean
       }
+
+  private def queryIdentity(ref: StudioRef): Option[StudioRef] = ref match
+    case StudioRef.Pair(run, scale, _, query, _) =>
+      Some(StudioRef.QueryContrast(run, scale, query))
+    case StudioRef.QueryContrast(_, _, _) => Some(ref)
+    case StudioRef.Result(run, address)   =>
+      address.value match
+        case ResultAddress.Reduction(_, _, query) =>
+          Some(StudioRef.QueryContrast(run, address.scale, query))
+        case _ => None
+    case _ => None
 
   /** The scale labels of `source`'s rows, each once, in row order: the
     * ladder's rows, top to bottom.
@@ -595,4 +639,6 @@ object ScaleLadderPlot:
 
   extension [A](as: Vector[A])
     private def traverseRows[E, B](f: A => Either[E, B]): Either[E, Vector[B]] =
-      as.foldLeft[Either[E, Vector[B]]](Right(Vector.empty))((acc, a) => acc.flatMap(bs => f(a).map(bs :+ _)))
+      as.foldLeft[Either[E, Vector[B]]](Right(Vector.empty))((acc, a) =>
+        acc.flatMap(bs => f(a).map(bs :+ _))
+      )

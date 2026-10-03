@@ -26,7 +26,7 @@ import eyes4s.studio.core.backend.{PairDesign, Phase, ResultAddress, RunId, Tria
 import eyes4s.studio.core.fixture.{FakeStudyBackend, MockStudy, StoryMoment}
 import eyes4s.studio.core.selection.{ScaleIndex, StudioRef, ViewId}
 import eyes4s.studio.desktop.StudioStyles
-import eyes4s.studio.desktop.harness.{FxStage, StageSize, StudioFxSuite}
+import eyes4s.studio.desktop.harness.{FxStage, StageSize, StudioFxSuite, StudioTheme}
 import eyes4s.studio.desktop.runtime.{EffectPerformer, StudioRuntime}
 import eyes4s.studio.desktop.typography.StudioFonts
 import eyes4s.studio.viz.plot.{LadderBins, PlotTargets, RingKind, RowMarking, ScaleLadderPlot}
@@ -121,7 +121,9 @@ class S45bPlotFxSuite extends StudioFxSuite:
       twin.plotNode.setPrefWidth(640)
       twin.tableNode.setPrefWidth(540)
       box.getStyleClass.add("es")
-      box.getStylesheets.setAll(right(StudioStyles.stylesheets(Theme.Light).left.map(_.message))*)
+      box.getStylesheets.setAll(
+        right(StudioStyles.stylesheets(Theme.Light).left.map(_.message))*
+      )
       box
     }
     fx.show(root)
@@ -229,11 +231,12 @@ class S45bPlotFxSuite extends StudioFxSuite:
       val at2    = ladder.scales.find(_.label == "2°").getOrElse(fail("no 2° scale"))
       val scale2 = FakeStudyBackend.FocusScale
       assertEquals(at2.label, scale2)
-      val i2     = ladder.scales.indexOf(at2)
+      val i2                     = ladder.scales.indexOf(at2)
       def fixture(field: String) =
         right(fixtureFocus.hcursor.get[Vector[Double]](field))(i2)
-      val scores = right(fixtureFocus.hcursor.get[Vector[Json]]("control_scores_2deg")).map { c =>
-        (right(c.hcursor.get[String]("trial")), right(c.hcursor.get[Double]("cos")))
+      val scores = right(fixtureFocus.hcursor.get[Vector[Json]]("control_scores_2deg")).map {
+        c =>
+          (right(c.hcursor.get[String]("trial")), right(c.hcursor.get[Double]("cos")))
       }
       assertEquals(scores.size, 19)
 
@@ -254,7 +257,9 @@ class S45bPlotFxSuite extends StudioFxSuite:
       def placedX(ref: StudioRef): Double =
         val target = right(t.target(ref).toRight(s"no mark for $ref"))
         val nudge  = target.mark.nudgePx
-        val back   = t.transform.deviceToData(DevicePoint(target.anchor.x - nudge.dxPx, target.anchor.y - nudge.dyPx))
+        val back   = t.transform.deviceToData(
+          DevicePoint(target.anchor.x - nudge.dxPx, target.anchor.y - nudge.dyPx)
+        )
         assertEqualsDouble(back.y, level, 1e-6)
         back.x
       assertEqualsDouble(placedX(at2.matched), fixture("M"), 1e-6)
@@ -264,7 +269,8 @@ class S45bPlotFxSuite extends StudioFxSuite:
         scores.sortBy(_._1).map(_._1)
       )
       at2.controls.foreach { c =>
-        val served = scores.find(_._1 == c.reference.trial).map(_._2).getOrElse(fail(c.toString))
+        val served =
+          scores.find(_._1 == c.reference.trial).map(_._2).getOrElse(fail(c.toString))
         assertEqualsDouble(placedX(c.ref), served, 1e-6)
       }
       // Beeswarm: close controls are nudged at most 7 px off the row.
@@ -278,7 +284,11 @@ class S45bPlotFxSuite extends StudioFxSuite:
       val dMark = right(plot.markOf(at2.contrast).toRight("no D mark"))
       assertEquals(
         dMark.rows.map(_.marking),
-        Vector(RowMarking.Positionless(eyes4s.studio.viz.plot.NoPosition.MissingValue(columns.cosine)))
+        Vector(
+          RowMarking.Positionless(
+            eyes4s.studio.viz.plot.NoPosition.MissingValue(columns.cosine)
+          )
+        )
       )
       runOnFx(w.twin.input.moveFocus(Some(at2.contrast)))
       assertEquals(
@@ -289,12 +299,22 @@ class S45bPlotFxSuite extends StudioFxSuite:
       // M's diamond and B's tick are painted in their tokens.
       val image = snapshot(w)
       assert(
-        near(image, right(t.target(at2.matched).toRight("M")).anchor, Tokens.themed(Theme.Light, ThemedToken.Match), 40),
+        near(
+          image,
+          right(t.target(at2.matched).toRight("M")).anchor,
+          Tokens.themed(Theme.Light, ThemedToken.Match),
+          40
+        ),
         "no M diamond"
       )
       val tick = right(t.target(at2.mean).toRight("B")).anchor
       assert(
-        near(image, DevicePoint(tick.x, tick.y - 10.0), Tokens.themed(Theme.Light, ThemedToken.Control), 40),
+        near(
+          image,
+          DevicePoint(tick.x, tick.y - 10.0),
+          Tokens.themed(Theme.Light, ThemedToken.Control),
+          40
+        ),
         "no B tick"
       )
 
@@ -302,6 +322,7 @@ class S45bPlotFxSuite extends StudioFxSuite:
       click(w, t, right(t.target(at2.matched).toRight("M")).anchor)
       assertEquals(w.selected, Vector(at2.matched))
       assertEquals(rowSelected(w), source.rows.map(_.ref == at2.matched))
+      fx.snapshot(StudioTheme.Light)
       runOnFx(w.twin.dispose())
   }
 
@@ -309,8 +330,8 @@ class S45bPlotFxSuite extends StudioFxSuite:
 
   /** A query with 60 controls at one scale: test values, not results. */
   private lazy val sixty: ScaleLadder =
-    val scale = right(ScaleIndex.of(0))
-    val query = TrialKey("P01", Phase.Retrieval, "ret_01", 1)
+    val scale    = right(ScaleIndex.of(0))
+    val query    = TrialKey("P01", Phase.Retrieval, "ret_01", 1)
     val controls = Vector.tabulate(60) { k =>
       val trial = TrialKey("P01", Phase.Encoding, f"enc_$k%02d", 1)
       LadderControl(
@@ -332,7 +353,9 @@ class S45bPlotFxSuite extends StudioFxSuite:
           matched,
           "beach-001",
           0.81,
-          right(StudioRef.fromAddress(run, ResultAddress.Reduction(0, PairDesign.Control, query))),
+          right(
+            StudioRef.fromAddress(run, ResultAddress.Reduction(0, PairDesign.Control, query))
+          ),
           0.49,
           60,
           StudioRef.QueryContrast(run, scale, query),
@@ -342,44 +365,52 @@ class S45bPlotFxSuite extends StudioFxSuite:
       )
     )
 
-  fxStage.test("60 controls fall back to a histogram; a bar selects its controls and names its bin") {
-    fx =>
-      val source = right(ScaleLadder.source(sixty, columns))
-      val w      = Wired(fx, Some("2°"))
-      val t      = showAndDraw(w, source)
-      val plot   = runOnFx(w.twin.plot).getOrElse(fail("no plot"))
-      val bars   = t.targets.filter(_.mark.rows.forall(_.marking == RowMarking.Represented))
-      assert(bars.size > 1, bars.size)
-      // Every control is represented by exactly one bar; none is drawn as a dot.
-      assertEquals(bars.flatMap(_.refs).sortBy(r => source.rowOf(r)), sixty.scales.head.controls.map(_.ref))
-      assertEquals(t.targets.size, bars.size + 3)
-      // The table still lists all 63 rows.
-      assertEquals(rowTexts(w), source.rows.map(source.cellsOf))
+  fxStage.test(
+    "60 controls fall back to a histogram; a bar selects its controls and names its bin"
+  ) { fx =>
+    val source = right(ScaleLadder.source(sixty, columns))
+    val w      = Wired(fx, Some("2°"))
+    val t      = showAndDraw(w, source)
+    val plot   = runOnFx(w.twin.plot).getOrElse(fail("no plot"))
+    val bars   = t.targets.filter(_.mark.rows.forall(_.marking == RowMarking.Represented))
+    assert(bars.size > 1, bars.size)
+    // Every control is represented by exactly one bar; none is drawn as a dot.
+    assertEquals(
+      bars.flatMap(_.refs).sortBy(r => source.rowOf(r)),
+      sixty.scales.head.controls.map(_.ref)
+    )
+    assertEquals(t.targets.size, bars.size + 3)
+    // The table still lists all 63 rows.
+    assertEquals(rowTexts(w), source.rows.map(source.cellsOf))
 
-      val bar = bars.maxBy(_.refs.size)
-      val k   = LadderBins.of(bar.mark.at.x)
-      val summary = LadderText(
-        LadderTextId.Bin,
-        "2°",
-        Format.decimal(LadderBins.lower(k), 2),
-        Format.decimal(LadderBins.upper(k), 2)
-      )
-      runOnFx(w.twin.input.moveFocus(Some(bar.ref)))
-      assertEquals(
-        runOnFx(t.accessibleText(w.twin.input.state)),
-        PlotText(PlotTextId.MarkRows, bar.refs.size.toString, summary)
-      )
-      // The bar is painted in the control tokens, and a click selects its controls.
-      val image = snapshot(w)
-      assert(near(image, bar.anchor, Tokens.themed(Theme.Light, ThemedToken.ControlSoft), 40), "no bar")
-      click(w, t, bar.anchor)
-      assertEquals(w.selected, bar.refs)
-      assertEquals(rowSelected(w), source.rows.map(r => bar.refs.contains(r.ref)))
-      assertEquals(
-        runOnFx(w.twin.input.state.selectionRings(t)).map(r => (r.kind, r.ref)),
-        Vector((RingKind.Selected, bar.ref))
-      )
-      // Each of its controls is accounted for by that bar.
-      bar.refs.foreach(r => assertEquals(plot.markOf(r).map(_.ref), Some(bar.ref)))
-      runOnFx(w.twin.dispose())
+    val bar     = bars.maxBy(_.refs.size)
+    val k       = LadderBins.of(bar.mark.at.x)
+    val summary = LadderText(
+      LadderTextId.Bin,
+      "2°",
+      Format.decimal(LadderBins.lower(k), 2),
+      Format.decimal(LadderBins.upper(k), 2)
+    )
+    runOnFx(w.twin.input.moveFocus(Some(bar.ref)))
+    assertEquals(
+      runOnFx(t.accessibleText(w.twin.input.state)),
+      PlotText(PlotTextId.MarkRows, bar.refs.size.toString, summary)
+    )
+    // The bar is painted in the control tokens, and a click selects its controls.
+    val image = snapshot(w)
+    assert(
+      near(image, bar.anchor, Tokens.themed(Theme.Light, ThemedToken.ControlSoft), 40),
+      "no bar"
+    )
+    click(w, t, bar.anchor)
+    assertEquals(w.selected, bar.refs)
+    assertEquals(rowSelected(w), source.rows.map(r => bar.refs.contains(r.ref)))
+    assertEquals(
+      runOnFx(w.twin.input.state.selectionRings(t)).map(r => (r.kind, r.ref)),
+      Vector((RingKind.Selected, bar.ref))
+    )
+    // Each of its controls is accounted for by that bar.
+    bar.refs.foreach(r => assertEquals(plot.markOf(r).map(_.ref), Some(bar.ref)))
+    fx.snapshot(StudioTheme.Light)
+    runOnFx(w.twin.dispose())
   }

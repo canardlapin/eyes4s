@@ -17,9 +17,12 @@
 package eyes4s.studio.app.plot
 
 import cats.instances.future.*
+import cats.Id
 import eyes4s.studio.app.text.{LadderText, LadderTextId}
 import eyes4s.studio.core.backend.{
   BackendError,
+  Inspection,
+  PageRequest,
   PairDesign,
   QueryStatus,
   ResultAddress,
@@ -28,7 +31,9 @@ import eyes4s.studio.core.backend.{
 }
 import eyes4s.studio.core.fixture.{MockStudy, StoryMoment}
 import eyes4s.studio.core.headless.HeadlessSession
-import eyes4s.studio.core.selection.StudioRef
+import eyes4s.studio.core.document.ReportingId
+import eyes4s.studio.core.navigation.{Page, ReportRef, StudyNavigator, UsedByRole}
+import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
 import io.circe.Json
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -50,7 +55,9 @@ class ScaleLadderSuite extends munit.FunSuite:
     either.fold(e => fail(s"unexpected Left: $e"), identity)
 
   private def withSession[A](body: HeadlessSession => Future[A]): Future[A] =
-    HeadlessSession.open(StoryMoment.T2).flatMap(s => body(s).transformWith(r => s.close.transform(_ => r)))
+    HeadlessSession
+      .open(StoryMoment.T2)
+      .flatMap(s => body(s).transformWith(r => s.close.transform(_ => r)))
 
   private def load(session: HeadlessSession, query: TrialKey, at: RunId = run) =
     session.result(run).flatMap { summary =>
@@ -78,6 +85,103 @@ class ScaleLadderSuite extends munit.FunSuite:
   private def numbers(field: String): Vector[Double] =
     right(fixtureFocus.hcursor.get[Vector[Double]](field))
 
+  private val scale   = right(ScaleIndex.of(0))
+  private val matched =
+    StudioRef.Pair(run, scale, PairDesign.Matched, focus, MockStudy.key("P17", "enc_03"))
+  private val controls = Vector.tabulate(300)(i =>
+    StudioRef.Pair(
+      run,
+      scale,
+      PairDesign.Control,
+      focus,
+      MockStudy.key("P17", s"enc_control_$i")
+    )
+  )
+
+  private def inspectPure(at: RunId, address: ResultAddress): Either[BackendError, Inspection] =
+    assertEquals(at, run)
+    Right(address match
+      case ResultAddress.ContrastRow(_, _)  => Inspection.Contrast(address, 0.7, 0.2, 0.5)
+      case ResultAddress.Reduction(_, _, _) => Inspection.Reduction(address, 0.2, controls.size)
+      case ResultAddress.PairRow(_, _, _, _) => Inspection.Pair(address, "item", 0.7)
+      case _                                 => fail(s"unexpected address: $address"))
+
+  private def navigator(
+      matchRef: StudioRef = matched,
+      controlRefs: Vector[StudioRef] = controls,
+      pageChange: Page[StudioRef] => Page[StudioRef] = identity
+  ): StudyNavigator[Id] = new StudyNavigator[Id]:
+    def pairs(contrast: StudioRef, design: PairDesign, request: PageRequest) =
+      assertEquals(contrast, StudioRef.QueryContrast(run, scale, focus))
+      val all = if design == PairDesign.Matched then Vector(matchRef) else controlRefs
+      Right(pageChange(Page.of(all, request)))
+    def cells(run: RunId, reporting: ReportingId, scale: ScaleIndex, page: PageRequest) = fail(
+      "unused"
+    )
+    def participants(cell: ReportRef.Cell, page: PageRequest)          = fail("unused")
+    def queries(participant: ReportRef.Participant, page: PageRequest) = fail("unused")
+    def maps(pair: StudioRef)                                          = fail("unused")
+    def fixations(map: StudioRef, page: PageRequest)                   = fail("unused")
+    def record(fixation: StudioRef)                                    = fail("unused")
+    def usedByCounts(map: StudioRef)                                   = fail("unused")
+    def usedBy(map: StudioRef, role: UsedByRole, page: PageRequest)    = fail("unused")
+
+  test("the loader preserves all controls across page boundaries") {
+    val result = right(ScaleLadder.load[Id](inspectPure, navigator())(run, focus, Vector("2°")))
+    assertEquals(result.scales.head.controls.map(_.ref), controls)
+  }
+
+  test("pair refs must belong to the requested run, scale, query and design") {
+    val reference = MockStudy.key("P17", "enc_03")
+    val wrong     = Vector(
+      StudioRef.Pair(RunId(99), scale, PairDesign.Matched, focus, reference),
+      StudioRef.Pair(run, right(ScaleIndex.of(1)), PairDesign.Matched, focus, reference),
+      StudioRef.Pair(run, scale, PairDesign.Matched, MockStudy.key("P17", "ret_08"), reference),
+      StudioRef.Pair(run, scale, PairDesign.Control, focus, reference)
+    )
+    wrong.foreach { ref =>
+      val result =
+        ScaleLadder.load[Id](inspectPure, navigator(matchRef = ref))(run, focus, Vector("2°"))
+      assert(result.isLeft, s"accepted unrelated matched pair: $ref")
+    }
+    assert(
+      ScaleLadder
+        .load[Id](inspectPure, navigator(controlRefs = Vector(matched)))(
+          run,
+          focus,
+          Vector("2°")
+        )
+        .isLeft
+    )
+  }
+
+  test("inspection addresses must match the requested value's address") {
+    val other = ResultAddress.ContrastRow(1, focus)
+    Vector("contrast", "matched", "reduction", "control").foreach { target =>
+      def changed(at: RunId, address: ResultAddress) = inspectPure(at, address).map {
+        case Inspection.Contrast(_, m, b, d) if target == "contrast" =>
+          Inspection.Contrast(other, m, b, d)
+        case Inspection.Reduction(_, v, n) if target == "reduction" =>
+          Inspection.Reduction(other, v, n)
+        case Inspection.Pair(ResultAddress.PairRow(_, design, _, _), item, score)
+            if (design == PairDesign.Matched && target == "matched") ||
+              (design == PairDesign.Control && target == "control") =>
+          Inspection.Pair(other, item, score)
+        case inspection => inspection
+      }
+      val result = ScaleLadder.load[Id](changed, navigator())(run, focus, Vector("2°"))
+      assert(result.isLeft, s"accepted wrong $target address")
+    }
+  }
+
+  test("a malformed continuation page fails instead of silently truncating controls") {
+    val broken: Page[StudioRef] => Page[StudioRef] =
+      p => if p.total > 1 then p.copy(next = Some(p.offset)) else p
+    val result = ScaleLadder
+      .load[Id](inspectPure, navigator(pageChange = broken))(run, focus, Vector("2°"))
+    assert(result.isLeft, "a nonadvancing page must not become a partial successful ladder")
+  }
+
   test("the focus query's ladder is fixture.json's M, B, D and 2° control scores") {
     withSession(s => load(s, focus)).map { loaded =>
       val ladder = right(loaded)
@@ -88,13 +192,20 @@ class ScaleLadderSuite extends munit.FunSuite:
       assertEquals(ladder.scales.map(_.matchedTrial.trial).distinct, Vector("enc_03"))
       assertEquals(ladder.scales.map(_.matchedItem).distinct, Vector("beach-042"))
       assertEquals(ladder.scales.map(_.members).distinct, Vector(19))
-      val scores = right(fixtureFocus.hcursor.get[Vector[Json]]("control_scores_2deg")).map { c =>
-        val h = c.hcursor
-        (right(h.get[String]("trial")), right(h.get[String]("item")), right(h.get[Double]("cos")))
+      val scores = right(fixtureFocus.hcursor.get[Vector[Json]]("control_scores_2deg")).map {
+        c =>
+          val h = c.hcursor
+          (
+            right(h.get[String]("trial")),
+            right(h.get[String]("item")),
+            right(h.get[Double]("cos"))
+          )
       }
       val at2 = ladder.scales(2)
       assertEquals(
-        at2.controls.flatMap(c => c.item.zip(c.cosine).map((i, v) => (c.reference.trial, i, v))).sortBy(_._1),
+        at2.controls
+          .flatMap(c => c.item.zip(c.cosine).map((i, v) => (c.reference.trial, i, v)))
+          .sortBy(_._1),
         scores.sortBy(_._1)
       )
       // The fixture scores controls at 2° only: elsewhere each is listed without a cosine.
@@ -108,21 +219,26 @@ class ScaleLadderSuite extends munit.FunSuite:
         at2.mean.resultAddress,
         Some(ResultAddress.Reduction(2, PairDesign.Control, focus))
       )
-      assert(at2.controls.forall(c =>
-        c.ref == StudioRef.Pair(run, at2.scale, PairDesign.Control, focus, c.reference)
-      ))
+      assert(
+        at2.controls.forall(c =>
+          c.ref == StudioRef.Pair(run, at2.scale, PairDesign.Control, focus, c.reference)
+        )
+      )
     }
   }
 
   test("the focus row of the source is written as the board writes it") {
     withSession(s => load(s, focus)).map { loaded =>
-      val columns = right(LadderColumns.standard)
-      val ladder  = right(loaded)
-      val source  = right(ScaleLadder.source(ladder, columns))
-      val at2     = ladder.scales(2)
+      val columns               = right(LadderColumns.standard)
+      val ladder                = right(loaded)
+      val source                = right(ScaleLadder.source(ladder, columns))
+      val at2                   = ladder.scales(2)
       def cells(ref: StudioRef) = right(source.rowOf(ref).flatMap(source.cells).toRight(ref))
       assertEquals(source.caption, LadderText(LadderTextId.Caption, "P17 · ret_07"))
-      assertEquals(cells(at2.matched), Vector("2°", "M matched", "enc_03", "beach-042", "0.73", "—"))
+      assertEquals(
+        cells(at2.matched),
+        Vector("2°", "M matched", "enc_03", "beach-042", "0.73", "—")
+      )
       assertEquals(
         cells(at2.mean),
         Vector("2°", "B control mean", "mean of 19 controls", "—", "0.35", "—")
@@ -156,7 +272,13 @@ class ScaleLadderSuite extends munit.FunSuite:
           assertEquals(q, absent)
         case other => fail(s"expected the absent query unscored, got $other")
       unknown match
-        case Left(e @ LadderError.Backend(q, ResultAddress.ContrastRow(0, _), BackendError.UnknownRun(r, _))) =>
+        case Left(
+              e @ LadderError.Backend(
+                q,
+                ResultAddress.ContrastRow(0, _),
+                BackendError.UnknownRun(r, _)
+              )
+            ) =>
           assertEquals((q, r), (focus, RunId(99)))
           assert(e.message.contains("P17 · ret_07"), e.message)
         case other => fail(s"expected an unknown run, got $other")

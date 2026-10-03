@@ -31,7 +31,7 @@ import eyes4s.studio.core.backend.{
   RunId,
   TrialKey
 }
-import eyes4s.studio.core.navigation.{NavigationError, StudyNavigator}
+import eyes4s.studio.core.navigation.{NavigationError, Page, StudyNavigator}
 import eyes4s.studio.core.selection.{RefError, ScaleIndex, StudioRef}
 
 /** Why a query's scale ladder could not be read. Every case names the query
@@ -54,7 +54,19 @@ enum LadderError derives CanEqual:
   /** The navigator listed `ref` among the pairs of `contrast`, which is not
     * one of its pairs.
     */
-  case NotAPair(query: TrialKey, contrast: StudioRef, ref: StudioRef)
+  case NotAPair(query: TrialKey, contrast: StudioRef, design: PairDesign, ref: StudioRef)
+
+  /** The backend answered a different address from the one requested. */
+  case Address(query: TrialKey, requested: ResultAddress, found: ResultAddress)
+
+  /** Pair pagination must be contiguous, complete and have a stable total. */
+  case InvalidPage(
+      query: TrialKey,
+      contrast: StudioRef,
+      requested: Int,
+      page: Page[StudioRef],
+      expectedTotal: Option[Int]
+  )
 
   /** The query has `count` matched pairs at `scale`; M is one pair's score. */
   case MatchedCount(query: TrialKey, scale: String, count: Int)
@@ -71,11 +83,17 @@ enum LadderError derives CanEqual:
       s"Scale ladder of ${q.label}: no score at $s (${st.productPrefix})."
     case Unexpected(q, a, i) =>
       s"Scale ladder of ${q.label}: the ${a.render} inspected as ${i.productPrefix}."
-    case NotAPair(q, c, r) => s"Scale ladder of ${q.label}: $r is listed as a pair of $c."
+    case NotAPair(q, c, d, r) =>
+      s"Scale ladder of ${q.label}: $r is not a ${d.productPrefix} pair of $c."
+    case Address(q, requested, found) =>
+      s"Scale ladder of ${q.label}: requested ${requested.render}, received ${found.render}."
+    case InvalidPage(q, c, requested, page, expected) =>
+      s"Scale ladder of ${q.label}: pairs of $c requested offset $requested, received " +
+        s"offset ${page.offset}, ${page.entries.size} entries, total ${page.total}, next ${page.next}; previous total $expected."
     case MatchedCount(q, s, n) =>
       s"Scale ladder of ${q.label}: $n matched pairs at $s; M needs exactly one."
-    case Scale(q, s, e)     => s"Scale ladder of ${q.label}: scale $s: ${e.message}"
-    case Paging(q, c, e)    => s"Scale ladder of ${q.label}: pairs of $c: ${e.message}"
+    case Scale(q, s, e)  => s"Scale ladder of ${q.label}: scale $s: ${e.message}"
+    case Paging(q, c, e) => s"Scale ladder of ${q.label}: pairs of $c: ${e.message}"
 
 /** One control pair of a query at one scale: the control's trial and, when
   * the backend serves its score, the control's item and cosine.
@@ -154,8 +172,21 @@ object ScaleLadder:
 
     def lift[A](either: Either[LadderError, A]): Step[A] = EitherT.fromEither[F](either)
 
+    def coherent(
+        address: ResultAddress,
+        inspection: Inspection
+    ): Either[LadderError, Inspection] =
+      val found = inspection match
+        case Inspection.Contrast(a, _, _, _) => a
+        case Inspection.Reduction(a, _, _)   => a
+        case Inspection.Pair(a, _, _)        => a
+        case Inspection.Unscored(a, _)       => a
+      Either.cond(found == address, inspection, LadderError.Address(query, address, found))
+
     def inspected(address: ResultAddress): Step[Inspection] =
-      EitherT(inspect(run, address)).leftMap(LadderError.Backend(query, address, _))
+      EitherT(inspect(run, address))
+        .leftMap(LadderError.Backend(query, address, _))
+        .subflatMap(coherent(address, _))
 
     def scored[A](label: String, address: ResultAddress)(
         read: PartialFunction[Inspection, A]
@@ -163,41 +194,59 @@ object ScaleLadder:
       inspected(address).subflatMap {
         case i if read.isDefinedAt(i)       => Right(read(i))
         case Inspection.Unscored(_, status) => Left(LadderError.Unscored(query, label, status))
-        case other                          => Left(LadderError.Unexpected(query, address, other))
+        case other => Left(LadderError.Unexpected(query, address, other))
       }
 
     def pairs(contrast: StudioRef, design: PairDesign): Step[Vector[StudioRef]] =
-      EitherT(Monad[F].tailRecM((Vector.empty[StudioRef], 0)) { (got, offset) =>
-        PageRequest.of(offset, PageSize) match
-          case Left(e)        => Monad[F].pure(Right(Left(LadderError.Paging(query, contrast, e))))
-          case Right(request) =>
-            navigator.pairs(contrast, design, request).map {
-              case Left(e) => Right(Left(LadderError.Navigation(query, contrast, e)))
-              case Right(page) =>
-                page.next match
-                  case Some(next) if next > offset => Left((got ++ page.entries, next))
-                  case _                           => Right(Right(got ++ page.entries))
-            }
+      EitherT(Monad[F].tailRecM((Vector.empty[StudioRef], 0, Option.empty[Int])) {
+        (got, offset, total) =>
+          PageRequest.of(offset, PageSize) match
+            case Left(e) => Monad[F].pure(Right(Left(LadderError.Paging(query, contrast, e))))
+            case Right(request) =>
+              navigator.pairs(contrast, design, request).map {
+                case Left(e)     => Right(Left(LadderError.Navigation(query, contrast, e)))
+                case Right(page) =>
+                  val end          = offset.toLong + page.entries.size
+                  val expectedNext = Option.when(end < page.total)(end.toInt)
+                  if page.offset != offset || page.entries.size > request.size || end > page.total ||
+                    total.exists(_ != page.total) || page.next != expectedNext ||
+                    (expectedNext.nonEmpty && page.entries.isEmpty)
+                  then
+                    Right(Left(LadderError.InvalidPage(query, contrast, offset, page, total)))
+                  else
+                    page.next match
+                      case Some(next) => Left((got ++ page.entries, next, Some(page.total)))
+                      case None       => Right(Right(got ++ page.entries))
+              }
       })
 
-    def pairAt(contrast: StudioRef, ref: StudioRef): Step[(TrialKey, ResultAddress)] =
+    def pairAt(
+        contrast: StudioRef,
+        design: PairDesign,
+        ref: StudioRef
+    ): Step[(TrialKey, ResultAddress)] =
       lift(
         (ref, ref.resultAddress) match
-          case (StudioRef.Pair(_, _, _, _, reference), Some(address)) =>
+          case (StudioRef.Pair(r, s, d, q, reference), Some(address))
+              if d == design && StudioRef.QueryContrast(r, s, q) == contrast =>
             Right((reference, address))
-          case _ => Left(LadderError.NotAPair(query, contrast, ref))
+          case _ => Left(LadderError.NotAPair(query, contrast, design, ref))
       )
 
     def control(label: String, contrast: StudioRef, ref: StudioRef): Step[LadderControl] =
-      pairAt(contrast, ref).flatMap { (reference, address) =>
+      pairAt(contrast, PairDesign.Control, ref).flatMap { (reference, address) =>
         EitherT(inspect(run, address)).transform {
-          case Right(Inspection.Pair(_, item, score)) =>
-            Right(LadderControl(ref, reference, Some(item), Some(score)))
-          case Right(Inspection.Unscored(_, status)) =>
-            Left(LadderError.Unscored(query, label, status))
-          case Right(other)                        => Left(LadderError.Unexpected(query, address, other))
-          case Left(BackendError.Unavailable(_)) => Right(LadderControl(ref, reference, None, None))
-          case Left(e)                           => Left(LadderError.Backend(query, address, e))
+          case Right(inspection) =>
+            coherent(address, inspection).flatMap {
+              case Inspection.Pair(_, item, score) =>
+                Right(LadderControl(ref, reference, Some(item), Some(score)))
+              case Inspection.Unscored(_, status) =>
+                Left(LadderError.Unscored(query, label, status))
+              case other => Left(LadderError.Unexpected(query, address, other))
+            }
+          case Left(BackendError.Unavailable(_)) =>
+            Right(LadderControl(ref, reference, None, None))
+          case Left(e) => Left(LadderError.Backend(query, address, e))
         }
       }
 
@@ -212,9 +261,9 @@ object ScaleLadder:
         matched     <- lift(matchedRefs match
           case Vector(one) => Right(one)
           case other       => Left(LadderError.MatchedCount(query, label, other.size)))
-        (matchedTrial, matchedAddress) <- pairAt(contrast, matched)
-        scoredMatch                    <- scored(label, matchedAddress) {
-          case Inspection.Pair(_, item, score) => (item, score)
+        (matchedTrial, matchedAddress) <- pairAt(contrast, PairDesign.Matched, matched)
+        scoredMatch <- scored(label, matchedAddress) { case Inspection.Pair(_, item, score) =>
+          (item, score)
         }
         meanAddress = ResultAddress.Reduction(index, PairDesign.Control, query)
         meanRef <- lift(
@@ -252,11 +301,11 @@ object ScaleLadder:
     * D has a D.
     */
   def source(ladder: ScaleLadder, columns: LadderColumns): Either[PlotSourceError, PlotSource] =
-    def text(s: String)          = PlotValue.Text(s)
-    def number(v: Double)        = PlotValue.Number(v)
+    def text(s: String)                              = PlotValue.Text(s)
+    def number(v: Double)                            = PlotValue.Number(v)
     def optional[A](o: Option[A])(f: A => PlotValue) = o.fold(PlotValue.Missing)(f)
-    val none                     = PlotValue.Missing
-    val rows                     = ladder.scales.flatMap { s =>
+    val none                                         = PlotValue.Missing
+    val rows                                         = ladder.scales.flatMap { s =>
       val scale = text(s.label)
       Vector(
         PlotRow(
@@ -317,7 +366,11 @@ object ScaleLadder:
           ColumnFormat.Label
         ),
         PlotColumn(columns.item, LadderText(LadderTextId.ItemHeader), ColumnFormat.Label),
-        PlotColumn(columns.cosine, LadderText(LadderTextId.CosineHeader), ColumnFormat.Decimal(2)),
+        PlotColumn(
+          columns.cosine,
+          LadderText(LadderTextId.CosineHeader),
+          ColumnFormat.Decimal(2)
+        ),
         PlotColumn(columns.d, LadderText(LadderTextId.DHeader), ColumnFormat.Signed(2))
       ),
       rows

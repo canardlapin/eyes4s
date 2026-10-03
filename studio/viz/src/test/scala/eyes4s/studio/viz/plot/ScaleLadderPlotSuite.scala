@@ -79,12 +79,18 @@ class ScaleLadderPlotSuite extends FunSuite:
   }
 
   test("the focus row's B, M and controls sit at their cosines, and D spans B to M") {
-    val plot  = built(board)
-    val row   = onRow(plot, "2°")
-    val focus = board.scales(2)
+    val plot         = built(board)
+    val row          = onRow(plot, "2°")
+    val focus        = board.scales(2)
     def one(r: Role) = row.filter(role(_) == r)
-    assertEquals(one(Role.Mean).map(_.rows.head.marking), Vector(RowMarking.Placed(DataPoint(0.35, 2.0))))
-    assertEquals(one(Role.Matched).map(_.rows.head.marking), Vector(RowMarking.Placed(DataPoint(0.73, 2.0))))
+    assertEquals(
+      one(Role.Mean).map(_.rows.head.marking),
+      Vector(RowMarking.Placed(DataPoint(0.35, 2.0)))
+    )
+    assertEquals(
+      one(Role.Matched).map(_.rows.head.marking),
+      Vector(RowMarking.Placed(DataPoint(0.73, 2.0)))
+    )
     assertEquals(one(Role.Mean).map(_.ref), Vector(focus.mean))
     assertEquals(one(Role.Matched).map(_.ref), Vector(focus.matched))
     assertEquals(
@@ -123,7 +129,9 @@ class ScaleLadderPlotSuite extends FunSuite:
     assertEquals(nudges(built(ladder, None), "1°"), Vector(0.0, 7.0, -7.0, 0.0, 0.0))
     // Nudged marks are apart for the cursor, as on screen.
     val t       = targetsOn(focused)
-    val anchors = onRow(focused, "2°").filter(role(_) == Role.Control).take(3)
+    val anchors = onRow(focused, "2°")
+      .filter(role(_) == Role.Control)
+      .take(3)
       .flatMap(m => t.target(m.ref).map(_.anchor))
     assertEquals(anchors.distinct.size, 3)
   }
@@ -151,10 +159,87 @@ class ScaleLadderPlotSuite extends FunSuite:
       Spec("2°", 0.73, 0.35, 0.38, Vector.tabulate(n)(k => Some(0.1 + 0.8 * k / n)))
     )
 
+  test("a diamond's declared reach includes its painted miter tips at both device scales") {
+    // Reduced from the failing ScalaCheck seed 12aWvi8qm9anv4wwFtwgS-Y50BsYJFl7BRgn9_tzVsK=.
+    val plot = built(
+      LadderSamples.ladder(
+        Spec("2°", 0.675, 0.35, 0.325, Vector(Some(0.6915602832960005)))
+      )
+    )
+    List(1.0, 2.0).foreach { scale =>
+      val surface   = right(PlotSurface(640, 400, scale))
+      val transform = right(PlotTransform.resolve(plot.plot, surface))
+      val picking   = right(NamedPicking.compile(plot.plot.scene, transform.renderContext))
+      val targets   = right(PlotTargets.resolve(plot, transform, picking))
+      val control   = targets.targets.find(t => role(t.mark) == Role.Control).get
+      val hit       = right(targets.pick(control.anchor, 0.0)).get
+      assertEquals(role(hit.mark), Role.Matched)
+      val distance =
+        math.hypot(hit.anchor.x - control.anchor.x, hit.anchor.y - control.anchor.y)
+      assert(
+        distance <= hit.reachPx * scale,
+        s"painted tip $distance exceeds reach ${hit.reachPx * scale}"
+      )
+    }
+  }
+
+  test("a singleton histogram bin retains its row and discloses its count and edges") {
+    val ladder = LadderSamples.ladder(
+      Spec("2°", 0.73, 0.35, 0.38, Vector.fill(50)(Some(0.20)) :+ Some(0.80))
+    )
+    val plot      = built(ladder)
+    val singleton = plot.markOf(ladder.scales.head.controls.last.ref).get
+    assertEquals(singleton.rows.size, 1)
+    assertEquals(singleton.rows.head.marking, RowMarking.Represented)
+    val readout = plot.readout(singleton).get
+    assert(readout.contains(plot.source.rowText(singleton.rows.head.row).get), readout)
+    assert(readout.contains("0.80 to below 0.85"), readout)
+    assert(readout.contains("1 control"), readout)
+    assertEquals(singleton.refs, Vector(ladder.scales.head.controls.last.ref))
+  }
+
+  test("a missing D stays unplotted even with finite B and M; its column must be numeric") {
+    val source  = LadderSamples.source(board)
+    val di      = source.indexOf(columns.d).get
+    val dRow    = source.rowOf(board.scales(2).contrast).get
+    val missing = right(
+      PlotSource(
+        source.caption,
+        source.columns,
+        source.rows.updated(
+          dRow,
+          source
+            .rows(dRow)
+            .copy(values = source.rows(dRow).values.updated(di, PlotValue.Missing))
+        )
+      )
+    )
+    val plot = right(ScaleLadderPlot(columns).build(missing, Theme.Light))
+    assertEquals(plot.markOf(board.scales(2).contrast), None)
+    assert(
+      plot.unplotted.contains(
+        Unplotted(board.scales(2).contrast, dRow, NoPosition.MissingValue(columns.d))
+      )
+    )
+    val noColumn = columns.copy(d = right(ColumnId.of("absent-d")))
+    assert(ScaleLadderPlot(noColumn).build(source, Theme.Light).isLeft)
+    val textColumn = columns.copy(d = columns.role)
+    assert(ScaleLadderPlot(textColumn).build(source, Theme.Light).isLeft)
+  }
+
+  test("one display label cannot collapse distinct nominal scales") {
+    val ladder = LadderSamples.ladder(
+      Spec("2°", 0.7, 0.2, 0.5, Vector.empty),
+      Spec("2°", 0.8, 0.4, 0.4, Vector.empty)
+    )
+    val result = ScaleLadderPlot(columns).build(source(ladder), Theme.Light)
+    assert(result.isLeft, "different scale identities must not share a plotted row")
+  }
+
   test("above 50 controls a scale's controls become a histogram of declared bins") {
-    val plot    = built(sixty(60))
-    val bars    = plot.marks.filter(m => m.rows.forall(_.marking == RowMarking.Represented))
-    val drawn   = plot.marks.filter(role(_) == Role.Control)
+    val plot  = built(sixty(60))
+    val bars  = plot.marks.filter(m => m.rows.forall(_.marking == RowMarking.Represented))
+    val drawn = plot.marks.filter(role(_) == Role.Control)
     assertEquals(drawn, bars)
     assertEquals(bars.flatMap(_.refs).toSet, sixty(60).scales.head.controls.map(_.ref).toSet)
     assertEquals(bars.map(_.rows.size).sum, 60)
@@ -163,7 +248,10 @@ class ScaleLadderPlotSuite extends FunSuite:
       assertEqualsDouble(bar.at.x, (LadderBins.lower(k) + LadderBins.upper(k)) / 2.0, 1e-12)
       bar.rows.foreach { r =>
         val cosine = right(plot.source.number(r.row, columns.cosine).toRight(r.ref))
-        assert(LadderBins.lower(k) <= cosine && cosine < LadderBins.upper(k), s"$cosine in bin $k")
+        assert(
+          LadderBins.lower(k) <= cosine && cosine < LadderBins.upper(k),
+          s"$cosine in bin $k"
+        )
       }
       // The bar's summary names its scale and its edges; the table lists its rows.
       assertEquals(
@@ -189,7 +277,10 @@ class ScaleLadderPlotSuite extends FunSuite:
       -(ScaleLadderPlot.BinLiftPx + ScaleLadderPlot.BarMaxPx / 2.0)
     )
     // B, D and M are drawn as on any ladder.
-    assertEquals(plot.marks.map(role).filterNot(_ == Role.Control), Vector(Role.Contrast, Role.Mean, Role.Matched))
+    assertEquals(
+      plot.marks.map(role).filterNot(_ == Role.Control),
+      Vector(Role.Contrast, Role.Mean, Role.Matched)
+    )
   }
 
   test("the histogram starts above 50 shown controls") {
@@ -218,15 +309,25 @@ class ScaleLadderPlotSuite extends FunSuite:
         source.columns,
         source.rows.updated(
           bRow,
-          source.rows(bRow).copy(values = source.rows(bRow).values.updated(ci, PlotValue.Missing))
+          source
+            .rows(bRow)
+            .copy(values = source.rows(bRow).values.updated(ci, PlotValue.Missing))
         )
       )
     )
     val plot = right(ScaleLadderPlot(columns, Some("2°")).build(noB, Theme.Light))
     val dRow = right(noB.rowOf(board.scales(2).contrast).toRight("no D"))
     assertEquals(plot.markOf(board.scales(2).contrast), None)
-    assert(plot.unplotted.contains(Unplotted(board.scales(2).contrast, dRow, NoPosition.MissingValue(columns.cosine))))
-    assert(plot.unplotted.contains(Unplotted(board.scales(2).mean, bRow, NoPosition.MissingValue(columns.cosine))))
+    assert(
+      plot.unplotted.contains(
+        Unplotted(board.scales(2).contrast, dRow, NoPosition.MissingValue(columns.cosine))
+      )
+    )
+    assert(
+      plot.unplotted.contains(
+        Unplotted(board.scales(2).mean, bRow, NoPosition.MissingValue(columns.cosine))
+      )
+    )
   }
 
   test("a row the ladder does not draw, or a D with a cosine, is refused by name") {
@@ -242,15 +343,17 @@ class ScaleLadderPlotSuite extends FunSuite:
       ScaleLadderPlot(columns).build(stray, Theme.Light).left.toOption,
       Some(PlotBuildError.UnexpectedRow("scale-ladder", StudioRef.Participant("P17")))
     )
-    val dRow = right(source.rowOf(board.scales(0).contrast).toRight("no D"))
-    val ci   = right(source.indexOf(columns.cosine).toRight("no cosine"))
+    val dRow        = right(source.rowOf(board.scales(0).contrast).toRight("no D"))
+    val ci          = right(source.indexOf(columns.cosine).toRight("no cosine"))
     val dWithCosine = right(
       PlotSource(
         source.caption,
         source.columns,
         source.rows.updated(
           dRow,
-          source.rows(dRow).copy(values = source.rows(dRow).values.updated(ci, PlotValue.Number(0.2)))
+          source
+            .rows(dRow)
+            .copy(values = source.rows(dRow).values.updated(ci, PlotValue.Number(0.2)))
         )
       )
     )
@@ -266,11 +369,20 @@ class ScaleLadderPlotSuite extends FunSuite:
   }
 
   test("a summary is refused for a mark of one row or with no words, and else read out") {
-    val name  = right(GraphicsName("m", "test mark"))
-    val refs  = Vector(StudioRef.Participant("P1"), StudioRef.Participant("P2"))
-    val rows  = refs.zipWithIndex.map((r, i) => MarkedRow(r, i, RowMarking.Represented))
-    val one   = right(PlotMark.of("k", rows.take(1), DataPoint(0, 0), 1.0, 0, name))
-    val two   = right(PlotMark.of("k", rows, DataPoint(0, 0), 1.0, 0, name))
+    val name = right(GraphicsName("m", "test mark"))
+    val refs = Vector(StudioRef.Participant("P1"), StudioRef.Participant("P2"))
+    val rows = refs.zipWithIndex.map((r, i) => MarkedRow(r, i, RowMarking.Represented))
+    val one  = right(
+      PlotMark.of(
+        "k",
+        rows.take(1).map(_.copy(marking = RowMarking.Placed(DataPoint(0, 0)))),
+        DataPoint(0, 0),
+        1.0,
+        0,
+        name
+      )
+    )
+    val two = right(PlotMark.of("k", rows, DataPoint(0, 0), 1.0, 0, name))
     assertEquals(one.summarised("k", "bin"), Left(PlotBuildError.SummaryOfOne("k", "m")))
     assertEquals(two.summarised("k", "  "), Left(PlotBuildError.BlankSummary("k", "m")))
     val said = right(two.summarised("k", "bin 3"))

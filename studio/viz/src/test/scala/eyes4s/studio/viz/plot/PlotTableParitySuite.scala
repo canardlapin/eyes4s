@@ -213,7 +213,7 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       "a scale ladder's histogram"  -> plots.exists(p =>
         p.plot.id.value.contains("scale-ladder") && p.marks.exists(_.summary.isDefined)
       ),
-      "a missing value"      -> plots.exists(
+      "a missing value" -> plots.exists(
         _.unplotted.exists(_.reason.isInstanceOf[NoPosition.MissingValue])
       ),
       "a value off the scale" -> plots.exists(
@@ -274,8 +274,12 @@ class PlotTableParitySuite extends ScalaCheckSuite:
         }
         val texts = m.rows.map(r => table.rows(r.row).accessibleText)
         plot.readout(m) match
-          case Some(said) if m.rows.size == 1 => assertEquals(said, texts.head)
-          case Some(said)                     =>
+          case Some(said) if m.rows.size == 1 =>
+            val expected = m.summary.fold(texts.head)(summary =>
+              texts.head + PlotText(PlotTextId.RowSeparator) + summary
+            )
+            assertEquals(said, expected)
+          case Some(said) =>
             assert(said.startsWith(s"${m.rows.size} rows: "), said)
             // A summarised aggregate says its summary; the table lists its rows.
             m.summary match

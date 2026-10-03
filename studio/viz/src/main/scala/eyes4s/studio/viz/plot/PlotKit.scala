@@ -81,8 +81,15 @@ enum PlotBuildError derives CanEqual:
   /** A category axis of `column` lists `level` more than once. */
   case DuplicateLevel(plot: String, column: ColumnId, level: String)
 
-  /** Mark `name` is given a summary but accounts for one row, which it says
-    * in its row's own words.
+  /** One displayed level names distinct nominal result groups. */
+  case AmbiguousLevel(
+      plot: String,
+      column: ColumnId,
+      level: String,
+      identities: Vector[StudioRef]
+  )
+
+  /** A singleton mark placed at its row's value cannot replace its row's words.
     */
   case SummaryOfOne(plot: String, name: String)
 
@@ -111,10 +118,12 @@ enum PlotBuildError derives CanEqual:
       s"plot $p: row $ref's reason for having no position misstates its '${c.value}' cell"
     case Position(p, ref, c, v) =>
       s"plot $p: row $ref is placed at $v on the '${c.value}' axis, which is not where its cell is"
-    case DuplicateLevel(p, c, l) => s"plot $p: the '${c.value}' axis lists '$l' twice"
-    case Nudge(p, n, dx, dy)     => s"plot $p: mark '$n' is nudged by ($dx, $dy) px"
-    case SummaryOfOne(p, n)      =>
-      s"plot $p: mark '$n' accounts for one row, so its readout is that row, not a summary"
+    case DuplicateLevel(p, c, l)      => s"plot $p: the '${c.value}' axis lists '$l' twice"
+    case AmbiguousLevel(p, c, l, ids) =>
+      s"plot $p: '${c.value}' level '$l' names distinct result groups: ${ids.mkString(", ")}"
+    case Nudge(p, n, dx, dy) => s"plot $p: mark '$n' is nudged by ($dx, $dy) px"
+    case SummaryOfOne(p, n)  =>
+      s"plot $p: mark '$n' places one row, so its readout is that row, not a summary"
     case BlankSummary(p, n)    => s"plot $p: mark '$n' is given a blank summary"
     case UnexpectedRow(p, ref) => s"plot $p: row $ref is not a kind of row this plot draws"
 
@@ -289,11 +298,13 @@ final case class PlotMark private (
   /** The same mark, whose readout names how many rows it stands for and
     * then says `text` rather than every row's words, as a histogram bar says
     * which bin it is instead of listing sixty controls (S4.5b). The table
-    * still lists every row. Refuses a mark of one row, which always says its
-    * row's words, and a blank summary.
+    * still lists every row. For a represented singleton (a bin with one
+    * member), appends the summary to its row's words. Refuses other singleton
+    * summaries and a blank summary.
     */
   def summarised(kind: String, text: String): Either[PlotBuildError, PlotMark] =
-    if rest.isEmpty then Left(PlotBuildError.SummaryOfOne(kind, name.value))
+    if rest.isEmpty && first.marking != RowMarking.Represented then
+      Left(PlotBuildError.SummaryOfOne(kind, name.value))
     else if text.trim.isEmpty then Left(PlotBuildError.BlankSummary(kind, name.value))
     else Right(copy(summary = Some(text)))
 
@@ -397,13 +408,17 @@ final case class BuiltPlot private (
 
   /** What a focused mark says, if its rows are this plot's (every mark
     * [[BuiltPlot.apply]] accepts): a mark of one row says exactly the words
-    * of its table row; a mark of several says how many and then its
+    * of its table row, followed by any represented singleton's summary;
+    * a mark of several says how many and then its
     * [[PlotMark.summary]], or each row's words when it has none.
     */
   def readout(mark: PlotMark): Option[String] =
     mark.rows match
-      case Vector(one) => source.rowText(one.row)
-      case rows        =>
+      case Vector(one) =>
+        source.rowText(one.row).map { text =>
+          mark.summary.fold(text)(summary => text + PlotText(PlotTextId.RowSeparator) + summary)
+        }
+      case rows =>
         rows
           .foldLeft[Option[Vector[String]]](Some(Vector.empty)) { (acc, r) =>
             acc.flatMap(ts => source.rowText(r.row).map(ts :+ _))

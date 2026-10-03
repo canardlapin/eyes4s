@@ -35,7 +35,7 @@ enum LadderTextId derives CanEqual:
   case MeanOf, Difference
 
   /** The words of a histogram bar: its scale and its bin's edges. */
-  case Bin
+  case Bin, SingleBin
 
   /** The cosine axis's title. */
   case CosineAxis
@@ -47,9 +47,9 @@ object LadderText:
   def english(id: LadderTextId): String =
     import LadderTextId.*
     id match
-      case Caption         => "{0} contrast"
-      case Title           => "Contrast"
-      case Summary         =>
+      case Caption => "{0} contrast"
+      case Title   => "Contrast"
+      case Summary =>
         "Scale ladder of {0}: matched, controls, control mean and D at {1} scales"
       case ScaleHeader     => "Scale σ"
       case RoleHeader      => "Role"
@@ -64,6 +64,7 @@ object LadderText:
       case MeanOf          => "mean of {0} controls"
       case Difference      => "M − B"
       case Bin             => "controls at {0} with cosine from {1} to below {2}"
+      case SingleBin       => "1 control at {0} with cosine from {1} to below {2}"
       case CosineAxis      => "Cosine with each reference"
 
   /** `id`'s English template with `args` filled in. */
