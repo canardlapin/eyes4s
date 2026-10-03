@@ -36,7 +36,7 @@ class ConstrainedDecompositionSuite extends munit.ScalaCheckSuite:
 
   private def get[E, A](e: Either[E, A]): A = e.fold(x => fail(s"$x"), identity)
   private val frame                         = get(Frame.angular("constrained", 20, 20))
-  private val grids = (4 to 12).map(n => n -> get(Grid.over(frame, n, 1))).toMap
+  private val grids = (3 to 12).map(n => n -> get(Grid.over(frame, n, 1))).toMap
   private val ids   = Vector("a", "b", "c", "d").map(s => get(PredictorId.of(s)))
 
   private def mass(weights: Vector[Int]): Mass[Deg] =
@@ -179,6 +179,25 @@ class ConstrainedDecompositionSuite extends munit.ScalaCheckSuite:
     near(bg.weights(0)._2, Q.int(1) / Q.int(2))
     near(bg.weights(1)._2, Q.zero)
     assertEquals(bg.diagnostics.active, 2)
+  }
+
+  test("simplex gradients are compared with the equality multiplier, not with zero") {
+    // At the closest vertex a, the residual r = (-0.6, 0, 0.6) gives a multiplier
+    // a.r = -0.12 and b.r = 0: b still lowers the residual, though its raw
+    // gradient is not positive.
+    val a   = mass(Vector(6, 0, 4))
+    val b   = mass(Vector(3, 4, 3))
+    val y   = mass(Vector(0, 0, 1))
+    val fit = get(
+      Template.decomposeMixture(
+        y,
+        get(PredictorSet.of(Vector(ids(0) -> a, ids(1) -> b))),
+        Intercept.Exclude
+      )
+    )
+    val oracle = Exact.simplex(Vector(exact(a), exact(b)), exact(y))
+    assert(oracle(1).signum > 0)
+    fit.weights.map(_._2).zip(oracle).foreach((x, q) => near(x, q))
   }
 
   test("NNLS zeroes a predictor whose unconstrained coefficient is negative") {

@@ -127,8 +127,9 @@ vectors as **normalized maps**. It fits across cells separately for each source 
 training trials, and returns `(0.4,0.6)` because its two predictor sums are 4 and 3 and its response
 sum is 10. These coefficients are correct for that different basis. This historical fixture alone is not parity with `template_similarity_cv` or
 `template_regression`. The [CV bridge and learned recipe](TEMPLATE_CV.md) and
-[surface OLS evidence](SURFACE_DECOMPOSITION.md) qualify those separate bounded routes. Robust regression, NNLS, simplex surface fitting and partial association remain
-unimplemented in this route; binomial regression on continuous mass is excluded.
+[surface decomposition evidence](SURFACE_DECOMPOSITION.md) qualify those separate bounded routes. Cellwise NNLS, simplex
+mixtures and partial association are surface decompositions, not this trial-level route. Robust regression remains
+unimplemented; binomial regression on continuous mass is excluded.
 
 ```sh
 python3 tools/r-parity/generate_template.py --eyesim /path/to/eyesim --check
