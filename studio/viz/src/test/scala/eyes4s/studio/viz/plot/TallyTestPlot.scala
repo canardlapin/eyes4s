@@ -24,12 +24,19 @@ import eyes4s.studio.app.tokens.Theme
   * `x` into bins `width` wide, and one mark per bin stands for its rows
   * ([[RowMarking.Represented]]) at the bin's centre and height. Rows with
   * aggregate refs (a group's mean) are drawn by their own mark at their `x`
-  * and `y`. As on a log axis, an `x` below zero is off the scale.
+  * and `y`. As on a log axis, an `x` below zero is off the scale. When
+  * `summarise`, a bar of several rows says which bin it is rather than every
+  * row's words.
   *
   * Its counts are computed here, which a studio builder must not do; it
   * exists to exercise the accounting, not as a plot.
   */
-final case class TallyTestPlot(x: ColumnId, y: ColumnId, width: Double) extends PlotBuilder:
+final case class TallyTestPlot(
+    x: ColumnId,
+    y: ColumnId,
+    width: Double,
+    summarise: Boolean = false
+) extends PlotBuilder:
 
   def kind: String = "tally-test"
 
@@ -73,5 +80,9 @@ final case class TallyTestPlot(x: ColumnId, y: ColumnId, width: Double) extends 
       theme,
       PositionEncoding(Axis.Numeric(x, AxisScale.Linear), Axis.Numeric(y, AxisScale.Linear)),
       bins ++ means,
-      unplotted
+      unplotted,
+      i =>
+        bins.lift(i).collect {
+          case (at, rows) if summarise && rows.size > 1 => s"bin at ${at.x}"
+        }
     )

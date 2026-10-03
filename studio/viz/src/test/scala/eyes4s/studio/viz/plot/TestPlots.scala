@@ -74,14 +74,17 @@ object TestPlots:
   /** A square's half-side is 3 pt, 4 logical px; its corner reaches √2 times that. */
   val ReachPx: Double = 4.0 * math.sqrt(2.0)
 
-  /** A built plot of one mark per entry of `marks`, drawn at its point. */
+  /** A built plot of one mark per entry of `marks`, drawn at its point, the
+    * mark at index `i` summarised by `summary(i)` when it has one.
+    */
   def assemble(
       kind: String,
       source: PlotSource,
       theme: Theme,
       encoding: PositionEncoding,
       marks: Vector[(DataPoint, Vector[MarkedRow])],
-      unplotted: Vector[Unplotted]
+      unplotted: Vector[Unplotted],
+      summary: Int => Option[String] = _ => None
   ): Either[PlotBuildError, BuiltPlot] =
     for
       id    <- SceneId(s"studio.plot.$kind").left.map(PlotBuildError.Scene(kind, _))
@@ -93,7 +96,11 @@ object TestPlots:
         .zipWithIndex
         .foldLeft[Either[PlotBuildError, Vector[PlotMark]]](Right(Vector.empty)) {
           case (acc, (((at, rs), n), order)) =>
-            acc.flatMap(ms => PlotMark.of(kind, rs, at, ReachPx, order, n).map(ms :+ _))
+            for
+              ms   <- acc
+              mark <- PlotMark.of(kind, rs, at, ReachPx, order, n)
+              said <- summary(order).fold(Right(mark))(mark.summarised(kind, _))
+            yield ms :+ said
         }
       panel     <- DataPanel(id, viewport).left.map(PlotBuildError.Scene(kind, _))
       plotScene <- PlotScene(id, Scene(grobs), panel).left.map(PlotBuildError.Scene(kind, _))

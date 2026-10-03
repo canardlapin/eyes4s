@@ -134,7 +134,10 @@ class PlotTableParitySuite extends ScalaCheckSuite:
           DotPlot.Coincident.Nudge(7.0)
         )
       yield DotPlot(x(source), y(source), "Generated", missing, coincident),
-      Gen.oneOf(0.5, 1.0, 100.0).map(TallyTestPlot(x(source), y(source), _)),
+      for
+        width     <- Gen.oneOf(0.5, 1.0, 100.0)
+        summarise <- Gen.oneOf(false, true)
+      yield TallyTestPlot(x(source), y(source), width, summarise),
       genEncoding(source).map(EncodedTestPlot(_))
     )
 
@@ -154,10 +157,18 @@ class PlotTableParitySuite extends ScalaCheckSuite:
     yield PositionEncoding(xAxis, yAxis)
 
   private val genBuilt: Gen[(PlotSource, PlotBuilder, BuiltPlot)] =
-    for
+    val generic = for
       source  <- genSource
       builder <- genBuilder(source)
-      theme   <- Gen.oneOf(Theme.values.toSeq)
+    yield (source, builder)
+    // The scale ladder (S4.5b) on its own sources.
+    val ladder = for
+      ladder  <- LadderSamples.genLadder
+      builder <- LadderSamples.genBuilder(ladder)
+    yield (LadderSamples.source(ladder), builder)
+    for
+      (source, builder) <- Gen.frequency(4 -> generic, 1 -> ladder)
+      theme             <- Gen.oneOf(Theme.values.toSeq)
     yield (source, builder, right(builder.build(source, theme)))
 
   private val genPlot: Gen[(PlotSource, BuiltPlot)] = genBuilt.map((s, _, p) => (s, p))
@@ -198,6 +209,10 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       ),
       "a positionless mark"  -> rows.exists(_.marking.isInstanceOf[RowMarking.Positionless]),
       "a derived row's mark" -> rows.exists(_.ref.isInstanceOf[StudioRef.GroupCell]),
+      "an aggregate with a summary" -> plots.exists(_.marks.exists(_.summary.isDefined)),
+      "a scale ladder's histogram"  -> plots.exists(p =>
+        p.plot.id.value.contains("scale-ladder") && p.marks.exists(_.summary.isDefined)
+      ),
       "a missing value"      -> plots.exists(
         _.unplotted.exists(_.reason.isInstanceOf[NoPosition.MissingValue])
       ),
@@ -262,7 +277,12 @@ class PlotTableParitySuite extends ScalaCheckSuite:
           case Some(said) if m.rows.size == 1 => assertEquals(said, texts.head)
           case Some(said)                     =>
             assert(said.startsWith(s"${m.rows.size} rows: "), said)
-            texts.foreach(t => assert(said.contains(t), s"'$said' omits '$t'"))
+            // A summarised aggregate says its summary; the table lists its rows.
+            m.summary match
+              case Some(summary) =>
+                assertEquals(said, PlotText(PlotTextId.MarkRows, m.rows.size.toString, summary))
+              case None =>
+                texts.foreach(t => assert(said.contains(t), s"'$said' omits '$t'"))
           case None => fail(s"no readout for ${m.ref}")
       }
       plot.unplotted.foreach { u =>

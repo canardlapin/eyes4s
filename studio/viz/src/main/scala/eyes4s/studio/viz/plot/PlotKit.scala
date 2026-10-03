@@ -81,6 +81,17 @@ enum PlotBuildError derives CanEqual:
   /** A category axis of `column` lists `level` more than once. */
   case DuplicateLevel(plot: String, column: ColumnId, level: String)
 
+  /** Mark `name` is given a summary but accounts for one row, which it says
+    * in its row's own words.
+    */
+  case SummaryOfOne(plot: String, name: String)
+
+  /** Mark `name` is given a summary with no words. */
+  case BlankSummary(plot: String, name: String)
+
+  /** The source has row `ref`, which is not a kind of row the plot draws. */
+  case UnexpectedRow(plot: String, ref: StudioRef)
+
   def message: String = this match
     case MissingColumn(p, c)  => s"plot $p: the source has no column '${c.value}'"
     case NotNumeric(p, c)     => s"plot $p: column '${c.value}' is not numeric"
@@ -102,6 +113,10 @@ enum PlotBuildError derives CanEqual:
       s"plot $p: row $ref is placed at $v on the '${c.value}' axis, which is not where its cell is"
     case DuplicateLevel(p, c, l) => s"plot $p: the '${c.value}' axis lists '$l' twice"
     case Nudge(p, n, dx, dy)     => s"plot $p: mark '$n' is nudged by ($dx, $dy) px"
+    case SummaryOfOne(p, n)      =>
+      s"plot $p: mark '$n' accounts for one row, so its readout is that row, not a summary"
+    case BlankSummary(p, n)    => s"plot $p: mark '$n' is given a blank summary"
+    case UnexpectedRow(p, ref) => s"plot $p: row $ref is not a kind of row this plot draws"
 
 /** Why a row of the source has no position in a plot. The row is then drawn
   * as a positionless mark ([[RowMarking.Positionless]]) or set aside
@@ -224,8 +239,9 @@ object PixelOffset:
   * its grob is drawn with away from the anchor (a beeswarm's spread, S4.5b;
   * zero unless [[nudged]]), how far its painted outline reaches from its
   * drawn centre in logical pixels, its position in the plot's roving order
-  * (from 0) and the name of its grob. The roving cursor and the feedback
-  * rings centre on the drawn centre, the anchor moved by the nudge.
+  * (from 0), the name of its grob, and an optional `summary`
+  * ([[summarised]]). The roving cursor and the feedback rings centre on the
+  * drawn centre, the anchor moved by the nudge.
   *
   * A mark is keyed by the ref of its first row ([[ref]]): the roving
   * cursor's focus and a feedback ring name that ref. Selecting the mark
@@ -242,7 +258,8 @@ final case class PlotMark private (
     reachPx: Double,
     order: Int,
     name: GraphicsName,
-    nudgePx: PixelOffset
+    nudgePx: PixelOffset,
+    summary: Option[String] = None
 ) derives CanEqual:
 
   /** Every row the mark accounts for, first row first. */
@@ -268,6 +285,17 @@ final case class PlotMark private (
       .of(dxPx, dyPx)
       .toRight(PlotBuildError.Nudge(kind, name.value, dxPx, dyPx))
       .map(n => copy(nudgePx = n))
+
+  /** The same mark, whose readout names how many rows it stands for and
+    * then says `text` rather than every row's words, as a histogram bar says
+    * which bin it is instead of listing sixty controls (S4.5b). The table
+    * still lists every row. Refuses a mark of one row, which always says its
+    * row's words, and a blank summary.
+    */
+  def summarised(kind: String, text: String): Either[PlotBuildError, PlotMark] =
+    if rest.isEmpty then Left(PlotBuildError.SummaryOfOne(kind, name.value))
+    else if text.trim.isEmpty then Left(PlotBuildError.BlankSummary(kind, name.value))
+    else Right(copy(summary = Some(text)))
 
 object PlotMark:
 
@@ -369,7 +397,8 @@ final case class BuiltPlot private (
 
   /** What a focused mark says, if its rows are this plot's (every mark
     * [[BuiltPlot.apply]] accepts): a mark of one row says exactly the words
-    * of its table row; a mark of several says how many and each row's words.
+    * of its table row; a mark of several says how many and then its
+    * [[PlotMark.summary]], or each row's words when it has none.
     */
   def readout(mark: PlotMark): Option[String] =
     mark.rows match
@@ -383,7 +412,7 @@ final case class BuiltPlot private (
             PlotText(
               PlotTextId.MarkRows,
               ts.size.toString,
-              ts.mkString(PlotText(PlotTextId.RowSeparator))
+              mark.summary.getOrElse(ts.mkString(PlotText(PlotTextId.RowSeparator)))
             )
           )
 
