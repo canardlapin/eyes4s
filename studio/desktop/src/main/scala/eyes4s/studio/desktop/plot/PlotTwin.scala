@@ -32,6 +32,7 @@ import eyes4s.studio.viz.plot.{
 import javafx.application.Platform
 import javafx.beans.property.{ReadOnlyObjectProperty, ReadOnlyObjectWrapper}
 import javafx.beans.value.ChangeListener
+import javafx.geometry.Pos
 import javafx.scene.control.Label
 import javafx.scene.layout.StackPane
 
@@ -100,8 +101,16 @@ final class PlotTwin private (
   refusal.setVisible(false)
   refusal.setMouseTransparent(true)
 
+  // What the hovered mark, or else the selection's mark, says: its rows'
+  // words, as the table writes them (a group's n, for one).
+  private val readout = Label()
+  readout.getStyleClass.addAll("plot-readout", "t11")
+  readout.setVisible(false)
+  readout.setMouseTransparent(true)
+  StackPane.setAlignment(readout, Pos.TOP_RIGHT)
+
   /** The plot pane's content. */
-  val plotNode: StackPane = StackPane(plotHost, refusal)
+  val plotNode: StackPane = StackPane(plotHost, refusal, readout)
   plotNode.getStyleClass.add("plot-pane")
   Option(getClass.getClassLoader.getResource(TableTwinView.stylesheetResource))
     .foreach(url => plotNode.getStylesheets.add(url.toExternalForm))
@@ -112,8 +121,10 @@ final class PlotTwin private (
 
   private val statusWrapper =
     ReadOnlyObjectWrapper[PlotTwinStatus](this, "status", PlotTwinStatus.Empty)
-  private var theme: Theme      = Theme.Light
-  private var disposed: Boolean = false
+  private var theme: Theme                = Theme.Light
+  private var disposed: Boolean           = false
+  private var hovered: Option[StudioRef]  = None
+  private var selected: Vector[StudioRef] = selection.selected
 
   private object Layer extends MarkLayer[StudioRef, PlotTargetError, PlotTargets]:
     def resolve(frame: PlotFrame): Option[Either[PlotTargetError, PlotTargets]] =
@@ -136,9 +147,18 @@ final class PlotTwin private (
       plotHost,
       Layer,
       MarkInputState.initial(plotView, selection),
-      dispatch,
+      plotIntent,
       toleranceLogicalPx
     )
+
+  // The plot's intents go to the app; its own hover also to the readout.
+  private def plotIntent(intent: Intent): Unit =
+    dispatch(intent)
+    intent match
+      case Intent.HoverOver(view, target) if view == plotView =>
+        hovered = target
+        describeMark()
+      case _ => ()
 
   // A node's focus-visible flag is set with its focus, before either is
   // notified: it is true only when keyboard traversal brought the focus.
@@ -172,6 +192,24 @@ final class PlotTwin private (
   /** What the host shows. */
   def status: ReadOnlyObjectProperty[PlotTwinStatus] = statusWrapper.getReadOnlyProperty
 
+  /** What the plot's readout line says: the words of the hovered mark or,
+    * with none hovered, of the mark of the first selected row the plot
+    * draws ([[BuiltPlot.readout]]). The host looks the mark up by the key
+    * the hover intent carries, so a mark of several rows says them all.
+    */
+  def readoutText: Option[String] = Option(readout.getText).filter(_.nonEmpty)
+
+  private def describeMark(): Unit =
+    if !disposed then
+      val said = shownPlot.flatMap { plot =>
+        hovered
+          .orElse(selected.find(plot.markOf(_).isDefined))
+          .flatMap(plot.markOf)
+          .flatMap(plot.readout)
+      }
+      readout.setText(said.getOrElse(""))
+      readout.setVisible(said.isDefined)
+
   /** The plot on the canvas host, if the builder accepted the source. */
   def plot: Option[BuiltPlot] = shownPlot
 
@@ -197,6 +235,7 @@ final class PlotTwin private (
           refusal.setVisible(true)
           statusWrapper.set(PlotTwinStatus.Refused(source, error))
       input.refresh()
+      describeMark()
 
   /** Shows nothing. */
   def clear(): Unit =
@@ -207,6 +246,7 @@ final class PlotTwin private (
       refusal.setVisible(false)
       statusWrapper.set(PlotTwinStatus.Empty)
       input.refresh()
+      describeMark()
 
   /** The selection as the bus now holds it, for the plot and the table. */
   def project(selection: SelectionState): Unit =
@@ -214,6 +254,8 @@ final class PlotTwin private (
     if !disposed then
       input.project(selection)
       table.project(selection)
+      selected = selection.selected
+      describeMark()
 
   /** Disposes the input, the canvas host and the table. Idempotent. */
   def dispose(): Unit =

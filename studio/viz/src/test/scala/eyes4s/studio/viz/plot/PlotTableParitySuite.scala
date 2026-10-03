@@ -166,8 +166,12 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       ladder  <- LadderSamples.genLadder
       builder <- LadderSamples.genBuilder(ladder)
     yield (LadderSamples.source(ladder), builder)
+    // The participant plot (S4.5c) on its own sources.
+    val participants = ParticipantSamples.genMeans.map(m =>
+      (ParticipantSamples.source(m), ParticipantPlot(ParticipantSamples.columns))
+    )
     for
-      (source, builder) <- Gen.frequency(4 -> generic, 1 -> ladder)
+      (source, builder) <- Gen.frequency(4 -> generic, 1 -> ladder, 1 -> participants)
       theme             <- Gen.oneOf(Theme.values.toSeq)
     yield (source, builder, right(builder.build(source, theme)))
 
@@ -212,6 +216,10 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       "an aggregate with a summary" -> plots.exists(_.marks.exists(_.summary.isDefined)),
       "a scale ladder's histogram"  -> plots.exists(p =>
         p.plot.id.value.contains("scale-ladder") && p.marks.exists(_.summary.isDefined)
+      ),
+      "a participant plot's missing mean" -> plots.exists(p =>
+        p.plot.id.value.contains("participant-plot") &&
+          p.marks.exists(_.rows.exists(_.marking.isInstanceOf[RowMarking.Positionless]))
       ),
       "a missing value" -> plots.exists(
         _.unplotted.exists(_.reason.isInstanceOf[NoPosition.MissingValue])
