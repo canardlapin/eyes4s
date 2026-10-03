@@ -169,19 +169,41 @@ class ParticipantPlotSuite extends FunSuite:
     val tick = right(plot.readout(mark(plot, grand(board, "Forgotten").ref)).toRight("tick"))
     assertEquals(
       tick,
-      "Group Forgotten, Mean of all participants, D +0.15, n 24"
+      "Group Forgotten, Mean of all participants, D +0.15, n 24 participants"
     )
     val p17 =
       right(plot.readout(mark(plot, cell(board, "P17", "Forgotten").ref)).toRight("P17"))
-    assertEquals(p17, "Group Forgotten, Mean of P17, D +0.32, n 2")
+    assertEquals(p17, "Group Forgotten, Mean of P17, D +0.32, n 2 queries")
     // Each column writes its group's n under it.
     val written = grobs(plot).collect { case t: Grob.Text => t.label }
     assertEquals(
-      written.count(_ == ParticipantText(ParticipantTextId.GroupN, "24")),
+      written.count(_ == ParticipantText(ParticipantTextId.GroupN, "24 participants")),
       2
     )
     // And each grand mean beside its tick, as the table writes it.
     assert(written.contains("+0.30") && written.contains("+0.15"), written)
+  }
+
+  test("each grand mean says its own group's n, not another group's") {
+    val means           = zeroAndMissing
+    val plot            = built(means)
+    def said(g: String) =
+      right(plot.readout(mark(plot, grand(means, g).ref)).toRight(g))
+    assertEquals(
+      said("Remembered"),
+      "Group Remembered, Mean of all participants, D +0.10, n 3 participants"
+    )
+    assertEquals(
+      said("Forgotten"),
+      "Group Forgotten, Mean of all participants, D +0.05, n 2 participants"
+    )
+    val one =
+      right(plot.readout(mark(plot, cell(means, "P03", "Remembered").ref)).toRight("P03"))
+    assert(one.endsWith("n 6 queries"), one)
+    val written = grobs(plot).collect { case t: Grob.Text => t.label }
+    Vector("3 participants", "2 participants").foreach(n =>
+      assertEquals(written.count(_ == ParticipantText(ParticipantTextId.GroupN, n)), 1, n)
+    )
   }
 
   test(
@@ -249,7 +271,7 @@ class ParticipantPlotSuite extends FunSuite:
       Some(PlotBuildError.MissingColumn(kind, renamed))
     )
     assertEquals(
-      ParticipantPlot(columns.copy(n = columns.meanOf)).build(base, Theme.Light).left.toOption,
+      ParticipantPlot(columns.copy(d = columns.meanOf)).build(base, Theme.Light).left.toOption,
       Some(PlotBuildError.NotNumeric(kind, columns.meanOf))
     )
   }

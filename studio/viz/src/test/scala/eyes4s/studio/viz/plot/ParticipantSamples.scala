@@ -119,7 +119,7 @@ object ParticipantSamples:
 
   /** Two participants with a zero mean and a missing one in the first group. */
   val zeroAndMissing: ParticipantMeans = means(
-    Vector(("Remembered", 0.10, 2), ("Forgotten", 0.05, 2)),
+    Vector(("Remembered", 0.10, 3), ("Forgotten", 0.05, 2)),
     Vector(
       "P01" -> Vector(Some((0.0, 5)), Some((0.10, 3))),
       "P02" -> Vector(None, Some((0.0, 4))),

@@ -115,15 +115,15 @@ class ParticipantMeansSuite extends munit.FunSuite:
       assertEquals(
         p17.map(c => cells(c.ref)),
         Vector(
-          Vector("Remembered", "P17", "+0.38", "17"),
-          Vector("Forgotten", "P17", "+0.32", "2")
+          Vector("Remembered", "P17", "+0.38", "17 queries"),
+          Vector("Forgotten", "P17", "+0.32", "2 queries")
         )
       )
       assertEquals(
         means.groups.map(g => cells(g.ref)),
         Vector(
-          Vector("Remembered", "all participants", "+0.30", "24"),
-          Vector("Forgotten", "all participants", "+0.15", "24")
+          Vector("Remembered", "all participants", "+0.30", "24 participants"),
+          Vector("Forgotten", "all participants", "+0.15", "24 participants")
         )
       )
       // P05's Forgotten mean is negative, written with U+2212.

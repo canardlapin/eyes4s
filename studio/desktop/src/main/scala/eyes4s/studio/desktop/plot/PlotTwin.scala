@@ -26,6 +26,7 @@ import eyes4s.studio.viz.plot.{
   OverlayPalette,
   PlotBuildError,
   PlotBuilder,
+  PlotReadout,
   PlotTargetError,
   PlotTargets
 }
@@ -192,21 +193,14 @@ final class PlotTwin private (
   /** What the host shows. */
   def status: ReadOnlyObjectProperty[PlotTwinStatus] = statusWrapper.getReadOnlyProperty
 
-  /** What the plot's readout line says: the words of the hovered mark or,
-    * with none hovered, of the mark of the first selected row the plot
-    * draws ([[BuiltPlot.readout]]). The host looks the mark up by the key
-    * the hover intent carries, so a mark of several rows says them all.
+  /** What the plot's readout line says ([[PlotReadout.of]] of the hover
+    * intent's key and the projected selection).
     */
   def readoutText: Option[String] = Option(readout.getText).filter(_.nonEmpty)
 
   private def describeMark(): Unit =
     if !disposed then
-      val said = shownPlot.flatMap { plot =>
-        hovered
-          .orElse(selected.find(plot.markOf(_).isDefined))
-          .flatMap(plot.markOf)
-          .flatMap(plot.readout)
-      }
+      val said = shownPlot.flatMap(PlotReadout.of(_, hovered, selected))
       readout.setText(said.getOrElse(""))
       readout.setVisible(said.isDefined)
 

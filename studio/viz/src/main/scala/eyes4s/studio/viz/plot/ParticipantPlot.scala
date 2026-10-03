@@ -100,7 +100,7 @@ final case class ParticipantPlot(columns: ParticipantColumns) extends PlotBuilde
         .indexOf(columns.group)
         .toRight(PlotBuildError.MissingColumn(kind, columns.group))
       di <- numeric(columns.d)
-      ni <- numeric(columns.n)
+      ni <- source.indexOf(columns.n).toRight(PlotBuildError.MissingColumn(kind, columns.n))
       levels   = groupLevels(source, columns.group)
       encoding = PositionEncoding(
         Axis.Category(columns.group, levels),

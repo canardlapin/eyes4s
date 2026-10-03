@@ -37,6 +37,11 @@ enum ParticipantTextId derives CanEqual:
     */
   case DAxis, NoValue, GroupN
 
+  /** The n cell: a participant's mean is over queries, a grand mean over
+    * participants.
+    */
+  case Queries, OneQuery, Participants, OneParticipant
+
 /** The participant plot's strings in the boards' wording. */
 object ParticipantText:
 
@@ -57,6 +62,20 @@ object ParticipantText:
       case DAxis           => "D (Δ cosine), participant mean"
       case NoValue         => "no value"
       case GroupN          => "n = {0}"
+      case Queries         => "{0} queries"
+      case OneQuery        => "1 query"
+      case Participants    => "{0} participants"
+      case OneParticipant  => "1 participant"
+
+  /** "2 queries": the n of a participant's mean in a group. */
+  def queries(n: Int): String =
+    if n == 1 then apply(ParticipantTextId.OneQuery)
+    else apply(ParticipantTextId.Queries, Format.count(n.toLong))
+
+  /** "24 participants": the n of a group's grand mean. */
+  def participants(n: Int): String =
+    if n == 1 then apply(ParticipantTextId.OneParticipant)
+    else apply(ParticipantTextId.Participants, Format.count(n.toLong))
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: ParticipantTextId, args: String*): String =

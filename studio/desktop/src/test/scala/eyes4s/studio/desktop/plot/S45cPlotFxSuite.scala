@@ -312,7 +312,7 @@ class S45cPlotFxSuite extends StudioFxSuite:
       val n = right(fixtureSummary.hcursor.get[Int]("n_Forgotten"))
       assertEquals(
         w.readout,
-        Some(s"Group Forgotten, Mean of all participants, D +0.15, n $n")
+        Some(s"Group Forgotten, Mean of all participants, D +0.15, n $n participants")
       )
       assert(runOnFx(w.twin.plotNode.lookup(".plot-readout").isVisible))
 
@@ -322,14 +322,14 @@ class S45cPlotFxSuite extends StudioFxSuite:
         .getOrElse(fail("no P17"))
       hoverAt(w, t, anchor(t, p17.ref))
       assertEquals(w.hover, Some(HoverAt(plotView, p17.ref)))
-      assertEquals(w.readout, Some("Group Forgotten, Mean of P17, D +0.32, n 2"))
+      assertEquals(w.readout, Some("Group Forgotten, Mean of P17, D +0.32, n 2 queries"))
 
       // Selected and no longer hovered, the mark still says its n.
       click(w, t, anchor(t, p17.ref))
       assertEquals(w.selected, Vector(p17.ref))
       fire(w, t, DevicePoint(1.0, 1.0), MouseEvent.MOUSE_EXITED)
       assertEquals(w.hover, None)
-      assertEquals(w.readout, Some("Group Forgotten, Mean of P17, D +0.32, n 2"))
+      assertEquals(w.readout, Some("Group Forgotten, Mean of P17, D +0.32, n 2 queries"))
       fx.snapshot(StudioTheme.Light)
       runOnFx(w.twin.dispose())
   }
@@ -421,7 +421,7 @@ class S45cPlotFxSuite extends StudioFxSuite:
     assertEquals(w.hover, Some(HoverAt(plotView, missing)))
     assertEquals(
       w.readout,
-      Some(s"Group Remembered, Mean of P02, D ${PlotSource.MissingText}, n 0")
+      Some(s"Group Remembered, Mean of P02, D ${PlotSource.MissingText}, n 0 queries")
     )
     fx.snapshot(StudioTheme.Light)
     runOnFx(w.twin.dispose())

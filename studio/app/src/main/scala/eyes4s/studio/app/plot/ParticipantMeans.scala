@@ -108,10 +108,19 @@ object ParticipantColumns:
 object ParticipantMeans:
 
   /** The participant means of `summary` under `reporting`, at `scale`, the
-    * scale the summary's means are at: the summary's grand mean of every
-    * group must be its grand mean at that scale. Groups are in the
-    * summary's order and so are participants; every participant has a cell
-    * in every group. Nothing is computed here.
+    * scale the summary's means are at. Groups are in the summary's order and
+    * so are participants; every participant has a cell in every group.
+    * Nothing is computed here.
+    *
+    * `ResultSummary` does not yet declare which scale its participant and
+    * group means are at (a participant's group means have no by-scale
+    * values). Until it does, the scale is checked by a temporary heuristic:
+    * every group's served grand mean must be exactly its served grand mean
+    * at `scale`, the same number served twice, so no tolerance applies
+    * ([[ParticipantMeansError.OtherScale]]). The check cannot tell apart two
+    * scales at which a group's means are equal, and refuses the right scale
+    * if a backend serves the two numbers from different summations; it is
+    * to be replaced by the summary's declared means scale.
     */
   def of(
       summary: ResultSummary,
@@ -175,7 +184,8 @@ object ParticipantMeans:
   /** The means as a value source: for each group, in order, every
     * participant's mean and then the group's grand mean, each a row with its
     * own ref. A mean the summary does not hold is missing, never zero; the
-    * grand mean's n counts participants, a participant's n queries.
+    * n cell names its unit: "24 participants" for a grand mean, "2 queries"
+    * for a participant's mean.
     */
   def source(
       means: ParticipantMeans,
@@ -193,7 +203,7 @@ object ParticipantMeans:
               text(c.group.label),
               text(c.participant),
               c.d.fold(PlotValue.Missing)(number),
-              c.n.fold(PlotValue.Missing)(n => number(n.toDouble))
+              c.n.fold(PlotValue.Missing)(n => text(ParticipantText.queries(n)))
             )
           )
         ) :+ PlotRow(
@@ -202,7 +212,7 @@ object ParticipantMeans:
           text(g.group.label),
           text(ParticipantText(ParticipantTextId.AllParticipants)),
           number(g.d),
-          number(g.n.toDouble)
+          text(ParticipantText.participants(g.n))
         )
       )
     }
@@ -224,7 +234,7 @@ object ParticipantMeans:
           ParticipantText(ParticipantTextId.DHeader),
           ColumnFormat.Signed(2)
         ),
-        PlotColumn(columns.n, ParticipantText(ParticipantTextId.NHeader), ColumnFormat.Count)
+        PlotColumn(columns.n, ParticipantText(ParticipantTextId.NHeader), ColumnFormat.Label)
       ),
       rows
     )
