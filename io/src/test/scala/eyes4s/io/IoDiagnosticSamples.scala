@@ -106,6 +106,17 @@ object IoDiagnosticSamples:
     generated[LedgerVerificationError]("LedgerVerificationError")
   )
 
+  /** The families of io's test-scope EyeLink evidence apparatus (CR9): their
+    * codes stay in [[IoDiagnosticCatalog]], which only appends, but their enums
+    * are not part of the published eyes4s-io artifact.
+    */
+  val evidence: Set[String] = Set(
+    "AscPerformanceValidationError",
+    "EyeLinkOracleError",
+    "EyeLinkConformanceError",
+    "EyeLinkCorpusError"
+  )
+
   val laws: Vector[FamilySamples] = Vector(
     generated[DetectorValidationError]("DetectorValidationError"),
     generated[SyntheticGenerationError]("SyntheticGenerationError"),

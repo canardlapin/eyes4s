@@ -40,7 +40,10 @@ object ArrowDiagnosticSamples:
   * `Diagnostic[Any]`.
   */
 class DiagnosticCoverageJvmSuite extends munit.FunSuite:
-  private val all = IoDiagnosticSamples.all ++ ArrowDiagnosticSamples.all
+  // The evidence apparatus is test code: its enums are sampled by the catalog
+  // suite but are not public API of a shipped module.
+  private val all = (IoDiagnosticSamples.all ++ ArrowDiagnosticSamples.all)
+    .filterNot(f => IoDiagnosticSamples.evidence(f.enumName))
 
   private val inventory: Map[String, Vector[String]] =
     val relative   = Paths.get("tools/api-audit/inventory.json")
@@ -68,6 +71,7 @@ class DiagnosticCoverageJvmSuite extends munit.FunSuite:
           key.stripPrefix("class ")
       }
       .filter(name => name.endsWith("Error") || name.endsWith("Failure"))
+      .filterNot(name => IoDiagnosticSamples.evidence(name.stripPrefix("eyes4s.io.")))
       .sorted
 
   /** The enum each sampled family belongs to, from its runtime class. */

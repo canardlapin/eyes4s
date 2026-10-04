@@ -371,24 +371,8 @@ object IoDiagnostics:
       C.ascNativeTimeline,
       timelineLine
     )(_.message)
-  given ascPerformanceValidation: Diagnose[AscPerformanceValidationError, Nothing] =
-    Diagnose.derived[AscPerformanceValidationError, Nothing](C.ascPerformanceValidation)(
-      _.message
-    )
   given eyeLinkSessionConfig: Diagnose[EyeLinkAscSessionConfigError, Nothing] =
     Diagnose.derived[EyeLinkAscSessionConfigError, Nothing](C.eyeLinkSessionConfig)(_.message)
-  given eyeLinkOracle: Diagnose[EyeLinkOracleError, Nothing] =
-    Diagnose.derived[EyeLinkOracleError, Nothing](
-      C.eyeLinkOracle,
-      oracleLine
-    )(_.message)
-  given eyeLinkConformance: Diagnose[EyeLinkConformanceError, Nothing] =
-    Diagnose.derived[EyeLinkConformanceError, Nothing](C.eyeLinkConformance)(_.message)
-  given eyeLinkCorpus: Diagnose[EyeLinkCorpusError, Nothing] =
-    Diagnose.derived[EyeLinkCorpusError, Nothing](
-      C.eyeLinkCorpus,
-      corpusLine
-    )(_.message)
 
   private def line(source: String, number: Long): Vector[Locus[Nothing]] =
     Vector(Locus.Line(source, number))
@@ -409,36 +393,6 @@ object IoDiagnostics:
       case FractionalMicrosecond(source, number, _, _)   => line(source, number)
       case InstantOutsideLongRange(source, number, _, _) => line(source, number)
       case InvalidTimeline(_, _)                         => Vector.empty
-
-  private def oracleLine(error: EyeLinkOracleError): Vector[Locus[Nothing]] =
-    import EyeLinkOracleError.*
-    error match
-      case InvalidHeader(source, number, _, _)    => line(source, number)
-      case WrongFieldCount(source, number, _, _)  => line(source, number)
-      case InvalidEscape(source, number, _, _, _) => line(source, number)
-      case InvalidValue(source, number, _, _, _)  => line(source, number)
-      case InvalidDigest(source, number, _, _)    => line(source, number)
-      case InvalidPreamble(_, _) | InvalidDescriptor(_, _, _, _) | InvalidFact(_, _, _, _, _) |
-          EmptyManifest(_) | NonContiguousRecords(_, _, _) | NonContiguousFields(_, _, _, _) |
-          InconsistentRecordMetadata(_, _, _, _) | DuplicateFieldPath(_, _, _) |
-          OrderingConflict(_, _, _) | MissingOrderingDisclosure(_, _) =>
-        Vector.empty
-
-  private def corpusLine(error: EyeLinkCorpusError): Vector[Locus[Nothing]] =
-    import EyeLinkCorpusError.*
-    error match
-      case InvalidHeader(source, number, _, _)         => line(source, number)
-      case WrongFieldCount(source, number, _, _)       => line(source, number)
-      case InvalidEscape(source, number, _, _, _)      => line(source, number)
-      case InvalidValue(source, number, _, _, _)       => line(source, number)
-      case InvalidDigest(source, number, _, _)         => line(source, number)
-      case PartialConverterEvidence(source, number)    => line(source, number)
-      case InvalidConverterEvidence(source, number, _) => line(source, number)
-      case InvalidFixture(source, number, _, _)        => line(source, number)
-      case UnsafeLocalPath(source, number, _, _)       => line(source, number)
-      case DuplicateFixtureId(source, _, numbers)      => numbers.flatMap(line(source, _))
-      case InvalidPreamble(_, _) | DuplicateLocalPath(_, _, _) | EmptyManifest(_) =>
-        Vector.empty
 
   /** The logical CSV record (the header is record 1) a tidy CSV error names. */
   private def csvRecord(error: TidyCsvError): Vector[Locus[Nothing]] =
