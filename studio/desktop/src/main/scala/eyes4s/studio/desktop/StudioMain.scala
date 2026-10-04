@@ -22,7 +22,7 @@ import eyes4s.studio.core.fixture.{MockStudy, StoryMoment, StoryMoments}
 import javafx.application.{Application, Platform}
 import javafx.scene.Scene
 import javafx.scene.control.Label
-import eyes4s.studio.desktop.explore.NavigatorDisplays
+import eyes4s.studio.desktop.explore.{NavigatorDisplays, SessionBackend}
 import javafx.stage.Stage
 
 /** The JavaFX application: renders view-models and dispatches intents
@@ -63,10 +63,13 @@ final class StudioApplication extends Application:
 /** Entry point for the desktop shell. Tests never launch it. */
 object StudioMain:
 
-  /** The application's trial displays: none is served before S5.7, so the
-    * trials navigator never shows fixture display kinds for a project.
+  /** The application's session: the story at t2 on the fake backend. */
+  val backend: SessionBackend = SessionBackend.Story
+
+  /** The application's trial displays: the golden registry of the story
+    * session, which answers only for the golden trials.csv.
     */
-  val displays: NavigatorDisplays = NavigatorDisplays.notServed
+  val displays: NavigatorDisplays = NavigatorDisplays.of(backend)
 
   /** The window title before a project is shown. */
   val title: String = "Eyes Studio"

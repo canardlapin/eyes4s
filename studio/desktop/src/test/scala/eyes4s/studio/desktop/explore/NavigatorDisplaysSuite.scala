@@ -23,10 +23,10 @@ import eyes4s.studio.core.document.{SourceRole, Sources}
 import eyes4s.studio.core.fixture.StoryMoments
 import eyes4s.studio.desktop.StudioMain
 
-/** Where the trials navigator's display kinds come from (ticket S6.1): the
-  * application serves none before S5.7, so a project never shows the
-  * fixture's; the story sessions' golden registry is served only for the
-  * golden trial inventory, byte for byte. Headless.
+/** Where the trials navigator's display kinds come from (ticket S6.1): a
+  * story session (the application's, on the fake backend) serves the golden
+  * registry, and only for the golden trial inventory, byte for byte; a
+  * real-backend session serves none before S5.7. Headless.
   */
 class NavigatorDisplaysSuite extends munit.FunSuite:
 
@@ -45,10 +45,23 @@ class NavigatorDisplaysSuite extends munit.FunSuite:
         .get
     )
 
-  test("the application serves no display kinds, even for the story's golden r3") {
-    assertEquals(StudioMain.displays, NavigatorDisplays.notServed)
-    assertEquals(StudioMain.displays.displays(r3), Right(DisplaySource.NotServed))
+  test("the application's story session serves the golden registry, and only for it") {
+    assertEquals(StudioMain.backend, SessionBackend.Story)
+    assertEquals(StudioMain.displays, NavigatorDisplays.golden)
+    assert(
+      StudioMain.displays.displays(r3).exists {
+        case DisplaySource.Served(_) => true
+        case DisplaySource.NotServed => false
+      }
+    )
     assertEquals(StudioMain.displays.displays(otherTrials), Right(DisplaySource.NotServed))
+  }
+
+  test("a real-backend session serves no display kinds before S5.7, not even golden r3's") {
+    val real = NavigatorDisplays.of(SessionBackend.Real)
+    assertEquals(real, NavigatorDisplays.notServed)
+    assertEquals(real.displays(r3), Right(DisplaySource.NotServed))
+    assertEquals(real.displays(otherTrials), Right(DisplaySource.NotServed))
   }
 
   test("the golden registry is served only for the golden trial inventory") {

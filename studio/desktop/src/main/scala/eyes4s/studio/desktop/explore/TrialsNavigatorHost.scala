@@ -38,7 +38,22 @@ trait NavigatorInputs:
 trait NavigatorDisplays:
   def displays(dataset: DatasetRevisionSpec): Either[String, DisplaySource]
 
+/** Which backend a window's session runs on. */
+enum SessionBackend derives CanEqual:
+  /** FakeStudyBackend at a story moment, over fixtures/studio-golden. */
+  case Story
+
+  /** The eyes4s backend (S3.7). */
+  case Real
+
 object NavigatorDisplays:
+  /** The display source of a session on `backend`: the golden registry for a
+    * story session, none for a real one until S5.7.
+    */
+  def of(backend: SessionBackend): NavigatorDisplays = backend match
+    case SessionBackend.Story => golden
+    case SessionBackend.Real  => notServed
+
   /** Production until S5.7 serves a project's stored registry: no display
     * kinds, so the trials are listed without them and nothing is invented.
     */
