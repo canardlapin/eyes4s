@@ -657,7 +657,8 @@ object DiagnosticSamples:
       ),
       DescriptorError.UntranslatableLegacy("frame", "Mixed", "DomainValue(Frame.of)"),
       DescriptorError.FormViewMismatch(FieldId.literal("sigma"), FieldId.literal("threshold")),
-      DescriptorError.RulePartKind(FieldId.literal("window"), FieldId.literal("name"))
+      DescriptorError.RulePartKind(FieldId.literal("window"), FieldId.literal("name")),
+      DescriptorError.NonNumericQuantity(FieldId.literal("sigma"), "nominal")
     ),
     family[StudyFinding[StudyKey, Px]]("StudyFinding")(
       StudyFinding.UndescribedMethod(DefinitionId.cosine),
