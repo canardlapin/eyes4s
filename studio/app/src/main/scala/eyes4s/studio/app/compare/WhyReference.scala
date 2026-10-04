@@ -24,6 +24,7 @@ import eyes4s.studio.app.text.{Format, WhyText, WhyTextId}
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.core.backend.{
   DatasetRevision,
+  DiagnosticLocus,
   LedgerEntry,
   PairDesign,
   QueryRow,
@@ -327,25 +328,6 @@ object WhyReference:
         ),
         queryOutside
       )
-    // The trials of the query's item the ledger lists for its participant
-    // and the reference phase: what would have matched, and why not.
-    def wouldBe: InspectorFact =
-      val candidates = entries.map(
-        _.filter(e =>
-          e.trial.participant == p && e.trial.phase == refPhase && e.item == row.item
-        )
-      )
-      InspectorFact(
-        WhyText(WouldBe),
-        candidates match
-          case None                   => WhyText(ExcludedReading)
-          case Some(cs) if cs.isEmpty => WhyText(WouldBeNone, refPhase.label, row.item)
-          case Some(cs)               =>
-            cs.map(e => WhyText(ExcludedTrial, e.trial.trial, disposition(e.disposition)))
-              .mkString(", ")
-        ,
-        candidates.flatMap(_.headOption).map(e => StudioRef.Trial(e.trial)).orElse(group)
-      )
     val controlsServed = (n: Int) => WhyText(ControlsValue, n.toString)
     row.status match
       case QueryStatus.NotAdmitted(d) =>
@@ -353,12 +335,23 @@ object WhyReference:
           WhyText(QueryNotAdmitted, disposition(d)),
           Vector(participant, notAdmitted, queryOutside)
         )
-      case QueryStatus.NoMatch(_) =>
+      case QueryStatus.NoMatch(diagnostic) =>
+        // The served reason, never studio's own pairing: which reference
+        // trial would have matched depends on the layout and the occurrence
+        // rule, which only eyes4s applies (until ReferenceNotAdmitted is
+        // served, bd-01M3DPFRZDVYGNYMV6890SDN20).
+        val why      = reason(diagnostic)
         val sentence = recipe.unmatched match
-          case UnmatchedChoice.ReportNoMatch =>
-            WhyText(NoMatchReport, refPhase.label, p, row.item)
-          case UnmatchedChoice.Refuse => WhyText(NoMatchRefuse, refPhase.label, p, row.item)
-        WhyVM(sentence, Vector(participant, wouldBe, notAdmitted, queryOutside))
+          case UnmatchedChoice.ReportNoMatch => WhyText(NoMatchReport, why)
+          case UnmatchedChoice.Refuse        => WhyText(NoMatchRefuse, why)
+        val served = InspectorFact(
+          WhyText(Reason),
+          s"${diagnostic.code}: $why",
+          diagnostic.subject.collectFirst { case DiagnosticLocus.Trial(t) =>
+            StudioRef.Trial(t)
+          }
+        )
+        WhyVM(sentence, Vector(participant, served, notAdmitted, queryOutside))
       case QueryStatus.Failed(diagnostic) =>
         WhyVM(
           WhyText(QueryFailed, diagnostic.message),
@@ -396,6 +389,10 @@ object WhyReference:
           sentence,
           referenceFacts(row.controls.fold(WhyText(ControlsUnknown))(controlsServed))
         )
+
+  /** A served diagnostic's message, or that it has none. */
+  private def reason(d: eyes4s.studio.core.backend.StudioDiagnostic): String =
+    if d.message.trim.isEmpty then WhyText(NoReason) else d.message
 
   /** How many trials of `item` the ledger lists for the reference's
     * participant and phase, admitted or not.

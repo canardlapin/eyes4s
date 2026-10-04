@@ -375,20 +375,18 @@ class WhyReferenceSuite extends munit.FunSuite:
             )
             .why
             .map(_.explanation)
-        val who = (row.query.participant, row.item)
+        // The backend's served reason, not studio's own pairing.
+        val why = row.status match
+          case QueryStatus.NoMatch(d) => d.message
+          case other                  => fail(s"not a no-match: $other")
+        assert(why.nonEmpty, row.toString)
         assertEquals(
           text(t2Compare.document),
-          Some(
-            s"No matched reference: no admitted Encoding trial of ${who._1} has match item " +
-              s"${who._2}. The query is reported as no match."
-          )
+          Some(s"No matched reference: $why. The query is reported as no match.")
         )
         assertEquals(
           text(withRecipe(t2Compare)(_.copy(unmatched = UnmatchedChoice.Refuse))),
-          Some(
-            s"No matched reference: no admitted Encoding trial of ${who._1} has match item " +
-              s"${who._2}. The recipe refuses a study with such a query."
-          )
+          Some(s"No matched reference: $why. The recipe refuses a study with such a query.")
         )
       }
     )
@@ -409,7 +407,7 @@ class WhyReferenceSuite extends munit.FunSuite:
       )
     )
 
-  test("a no-match query shows no reference facts, only its would-be match and why") {
+  test("a no-match query shows no reference facts, only the served reason") {
     withSession(s =>
       read(s).map { r =>
         val row = r.shown.rows
@@ -420,24 +418,42 @@ class WhyReferenceSuite extends munit.FunSuite:
         val labels = vm.why.toVector.flatMap(_.facts.map(_.label))
         assertEquals(
           labels,
-          Vector(
-            "Participant",
-            "Would-be match",
-            "Not admitted (P03 · Encoding)",
-            "Query outside"
-          )
+          Vector("Participant", "Reason", "Not admitted (P03 · Encoding)", "Query outside")
         )
-        val would = vm.why.toVector.flatMap(_.facts).find(_.label == "Would-be match").get
-        val entry = r.ledger
-          .find(e =>
-            e.trial.participant == "P03" && e.trial.phase == row.matched.phase && e.item == row.item
-          )
-          .getOrElse(fail(s"the ledger lists P03's ${row.item}"))
-        assert(would.value.startsWith(s"${entry.trial.trial} ("), would.value)
-        assert(entry.disposition != TrialDisposition.Admitted, entry.toString)
-        assertEquals(would.ref, Some(StudioRef.Trial(entry.trial)))
+        val reason = vm.why.toVector.flatMap(_.facts).find(_.label == "Reason").get
+        val served = row.status match
+          case QueryStatus.NoMatch(d) => d
+          case other                  => fail(s"not a no-match: $other")
+        assertEquals(reason.value, s"${served.code}: ${served.message}")
+        assertEquals(
+          reason.value,
+          "study-finding.unmatched-focal: matched Encoding trial not admitted"
+        )
+        // Traced to the diagnostic's subject: the query trial.
+        assertEquals(reason.ref, Some(StudioRef.Trial(row.query)))
+        // No trial is named as the one the design would have matched: only
+        // eyes4s knows it. (The participant's not-admitted tally may list it
+        // among the participant's trials; that is the ledger, not a pairing.)
+        val named =
+          vm.why.toVector.flatMap(_.facts).filterNot(_.label.startsWith("Not admitted"))
+        assert(!named.exists(_.value.contains(row.matched.trial)), named.toString)
+        assert(!vm.why.exists(_.explanation.contains(row.matched.trial)), vm.toString)
       }
     )
+  }
+
+  // Not yet served: eyes4s's ReferenceNotAdmitted(refs, disposition)
+  // (bd-01M3DPFRZDVYGNYMV6890SDN20). When it is, each ref becomes a Trial fact
+  // with its disposition, traced to that trial, beside the served reason; the
+  // test then asserts that mapping on the fixture's 9 no-match queries.
+  test(
+    munit
+      .TestOptions(
+        "a no-match query names its non-admitted references from ReferenceNotAdmitted"
+      )
+      .pending("not yet served by eyes4s")
+  ) {
+    ()
   }
 
   test("a query that was not admitted shows no reference facts") {
