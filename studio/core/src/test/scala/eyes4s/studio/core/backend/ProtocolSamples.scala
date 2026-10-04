@@ -201,7 +201,8 @@ object ProtocolSamples:
         )
       )
     ),
-    BackendError.UnknownTrial(DatasetRevision(3), TrialKey("P99", Phase.Encoding, "enc_01", 1))
+    BackendError.UnknownTrial(DatasetRevision(3), TrialKey("P99", Phase.Encoding, "enc_01", 1)),
+    BackendError.TrialViewRefused(TrialViewError.TrialFails(query, Vector(4, 5)))
   )
 
   val runStates: Vector[RunState] = Vector(
@@ -325,6 +326,7 @@ object ProtocolSamples:
       AnalysisRevision(4),
       query,
       2.5,
+      ScreenRegion.of(query, 448.5, 156.5, 1472.5, 924.5).toOption.get,
       3,
       2,
       RowOrder.TopFirst,

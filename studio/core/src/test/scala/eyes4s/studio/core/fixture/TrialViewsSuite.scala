@@ -90,6 +90,11 @@ class TrialViewsSuite extends CatsEffectSuite:
         (preview.trial, preview.sigmaDegrees, preview.columns, preview.rows, preview.order),
         (enc03, 2.0, 64, 48, RowOrder.TopFirst)
       )
+      // The grid covers rev 4's analysis window, in screen pixels.
+      assertEquals(
+        (preview.region.left, preview.region.top, preview.region.right, preview.region.bottom),
+        (448.0, 156.0, 1472.0, 924.0)
+      )
       val cells = preview.cells.map(_.getOrElse(fail("a cell without a value")))
       assert(cells.forall(_ >= 0.0))
       assertEqualsDouble(cells.sum, 1.0, MassTolerance)
@@ -133,7 +138,37 @@ class TrialViewsSuite extends CatsEffectSuite:
       )
   }
 
+  test("the study is the fake's own moment's: rev 5 is a saved recipe at t3, a draft at t2") {
+    val rev5 = AnalysisRevision(5)
+    for
+      atT2 <- fake.flatMap(_.trialFixations(rev5, enc03))
+      t3   <- FakeStudyBackend.create[IO](StoryMoment.T3)
+      atT3 <- t3.trialFixations(rev5, enc03)
+      t1   <- FakeStudyBackend.create[IO](StoryMoment.T1)
+      atT1 <- t1.trialFixations(rev4, enc03)
+    yield
+      assertEquals(atT2, Left(BackendError.Unavailable(DiagnosticLocus.Revision(rev5))))
+      assertEquals(atT3.map(_.fixations.size), Right(13))
+      assert(
+        atT1 match
+          case Left(BackendError.UnknownRevision(r, _)) => r == rev4
+          case _                                        => false
+        ,
+        atT1
+      )
+  }
+
   test("the views refuse invalid fixations and grids, naming what failed") {
+    val fails = TrialViewError.TrialFails(enc03, Vector(10))
+    assertEquals(
+      BackendError.TrialViewRefused(fails).message,
+      "The study fails P17 · enc_03: fixation 10 lies outside the analysis window, so it " +
+        "has no map."
+    )
+    assertEquals(
+      BackendError.TrialViewRefused(fails).diagnostic.subject,
+      Vector(DiagnosticLocus.Trial(enc03))
+    )
     def ref(i: Int, trial: TrialKey = enc03): StudioRef.Fixation =
       StudioRef.Fixation(trial, FixationIndex.of(i).toOption.get)
     def fix(i: Int, record: Int = 1, x: Double = 1.0, onset: Double = 0.0, d: Double = 10.0) =
@@ -159,8 +194,13 @@ class TrialViewsSuite extends CatsEffectSuite:
       TrialFixations.of(rev4, r3, enc03, Vector(other)),
       Left(TrialViewError.OtherTrial(enc03, ret09))
     )
+    val region = ScreenRegion.of(enc03, 448.0, 156.0, 1472.0, 924.0).toOption.get
+    assertEquals(
+      ScreenRegion.of(enc03, 10.0, 0.0, 10.0, 5.0),
+      Left(TrialViewError.RegionEmpty(enc03, 10.0, 0.0, 10.0, 5.0))
+    )
     def grid(cells: Vector[Option[Double]], levels: Vector[Double] = Vector.empty) =
-      TrialPreview.of(rev4, enc03, 2.0, 2, 1, RowOrder.TopFirst, cells, levels)
+      TrialPreview.of(rev4, enc03, 2.0, region, 2, 1, RowOrder.TopFirst, cells, levels)
     assertEquals(grid(Vector(Some(0.5))), Left(TrialViewError.CellCount(enc03, 2, 1, 1)))
     assertEquals(
       grid(Vector(Some(0.5), Some(-0.1))),
@@ -171,7 +211,8 @@ class TrialViewsSuite extends CatsEffectSuite:
       Left(TrialViewError.LevelNotFinite(enc03, 0, Double.PositiveInfinity))
     )
     assertEquals(
-      TrialPreview.of(rev4, enc03, 0.0, 1, 1, RowOrder.TopFirst, Vector(None), Vector.empty),
+      TrialPreview
+        .of(rev4, enc03, 0.0, region, 1, 1, RowOrder.TopFirst, Vector(None), Vector.empty),
       Left(TrialViewError.SigmaNotPositive(enc03, 0.0))
     )
     // Decoding validates again.

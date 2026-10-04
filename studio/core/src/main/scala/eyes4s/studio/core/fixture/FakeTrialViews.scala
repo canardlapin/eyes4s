@@ -75,18 +75,19 @@ object GoldenFixations:
 
 /** The fake backend's trial views (protocol 1.6, S6.2) over fixtures/studio-golden:
   * a trial's admitted fixations and its σ 2° preview, under a revision of the
-  * story (`StoryMoments`), whose recipe and the dataset's geometry state the
+  * fake's story moment, whose saved recipe and dataset geometry state the
   * study.
   *
-  * Every classification and estimate is eyes4s's own: placement goes through
-  * the kernel's screen frame and half-open window ([[Subframe.locate]]), and
-  * the preview through eyes4s-surface's Gaussian smoother ([[Smoother]]) over
-  * the recipe's grid on the window, with highest-density isoline levels from
-  * [[MassLevels]]. The fake writes no density arithmetic.
-  *
-  * Supported studies: every initial fixation kept (the story's recipes), any
-  * off-window policy and weighting. Another initial-fixation choice is
-  * `Unavailable` here; the real backend (S3.7) applies eyes4s's rule.
+  * Placement is decided by the kernel's screen frame and half-open window
+  * ([[Subframe.locate]]) in eyes4s's order (outside the screen, outside the
+  * window, in the map); the fixture has no correction rules, so the admitted
+  * centre is the recorded one, and only `KeepAll` initial fixations are
+  * served, so none is dropped. `TrialViewsJvmSuite` holds every placement to
+  * eyes4s's own `CoordinateProvenance` on the fixture. The preview is
+  * eyes4s-surface's Gaussian smoother ([[Smoother]]) over the recipe's grid
+  * on the window, with highest-density isoline levels from [[MassLevels]];
+  * the fake writes no density arithmetic. A study the fake cannot state is
+  * `Unavailable`; every other refusal is a typed [[TrialViewError]].
   */
 object FakeTrialViews:
 
@@ -96,11 +97,16 @@ object FakeTrialViews:
   /** The highest-density coverages the preview's isolines enclose. */
   val PreviewCoverages: Vector[Double] = Vector(0.5, 0.8)
 
-  /** The recipe of `revision` in the story, and the dataset's geometry. */
-  private def study(revision: AnalysisRevision): Either[BackendError, (Recipe, Geometry)] =
+  private def refused(e: TrialViewError): BackendError = BackendError.TrialViewRefused(e)
+
+  /** The saved recipe of `revision` at `moment`, and its dataset's geometry. */
+  private def study(
+      moment: StoryMoment,
+      revision: AnalysisRevision
+  ): Either[BackendError, (Recipe, Geometry)] =
     val unavailable = BackendError.Unavailable(DiagnosticLocus.Revision(revision))
     for
-      doc  <- StoryMoments.t3.leftMap(_ => unavailable)
+      doc  <- StorySeed.document(moment).leftMap(_ => unavailable)
       spec <- doc.analysis(revision).toRight(unavailable)
       data <- doc.dataset(spec.dataset).toRight(unavailable)
       _    <- Either.cond(
@@ -110,6 +116,9 @@ object FakeTrialViews:
       )
     yield (spec.recipe, data.geometry)
 
+  /** The recipe's off-window choice as eyes4s's policy; a recipe without a
+    * window has no off-window fixation, and eyes4s's default is `Exclude`.
+    */
   private def policy(recipe: Recipe): OffWindowPolicy = recipe.offWindow match
     case Some(OffWindowChoice.FailTrial) => OffWindowPolicy.FailTrial
     case _                               => OffWindowPolicy.Exclude
@@ -118,21 +127,24 @@ object FakeTrialViews:
     * recipe states none).
     */
   private def frames(
+      trial: TrialKey,
       recipe: Recipe,
       geometry: Geometry
-  ): Either[GeometryError, (Frame[Unit2D.Px], Subframe[Unit2D.Px])] =
-    for
+  ): Either[BackendError, (Frame[Unit2D.Px], Subframe[Unit2D.Px])] =
+    (for
       screen <- Frame.screen("screen", geometry.screen.width, geometry.screen.height)
       region <- recipe.window.fold(Right(screen.bounds))(w =>
         Bounds.of[Unit2D.Px](w.xMin, w.yMin, w.xMax, w.yMax)
       )
       window <- Subframe.of(screen, FrameId("window"), region)
-    yield (screen, window)
+    yield (screen, window)).leftMap(e =>
+      refused(TrialViewError.Study(trial, "window", e.message))
+    )
 
-  /** Where the study places a fixation centred at `(x, y)`: eyes4s's order,
-    * with no initial fixation dropped.
+  /** Where the study places a fixation centred at `(x, y)`, in eyes4s's
+    * order, with no initial fixation dropped.
     */
-  private def placement(
+  private[fixture] def placement(
       screen: Frame[Unit2D.Px],
       window: Subframe[Unit2D.Px],
       offWindow: OffWindowPolicy,
@@ -144,26 +156,29 @@ object FakeTrialViews:
     else if !window.locate(centre).isInside then MapPlacement.OutsideWindow(offWindow)
     else MapPlacement.InMap
 
+  /** The trial's fixations in the fixture; an inventory trial without an
+    * admitted scanpath has none to serve.
+    */
   private def golden(trial: TrialKey): Either[BackendError, Vector[GoldenFixation]] =
     GoldenFixations.byTrial
-      .leftMap(_ => BackendError.Unavailable(DiagnosticLocus.Trial(trial)))
+      .leftMap(e => refused(TrialViewError.Study(trial, "fixation source", e)))
       .flatMap(_.get(trial).toRight(BackendError.Unavailable(DiagnosticLocus.Trial(trial))))
 
   /** `trial`'s admitted fixations under `revision`, on `dataset`. */
   def fixations(
+      moment: StoryMoment,
       revision: AnalysisRevision,
       dataset: DatasetRevision,
       trial: TrialKey
   ): Either[BackendError, TrialFixations] =
-    val defect = BackendError.Unavailable(DiagnosticLocus.Trial(trial))
     for
-      (recipe, geometry) <- study(revision)
-      (screen, window)   <- frames(recipe, geometry).leftMap(_ => defect)
+      (recipe, geometry) <- study(moment, revision)
+      (screen, window)   <- frames(trial, recipe, geometry)
       records            <- golden(trial)
       fixations          <- records.zipWithIndex.traverse { (g, i) =>
         FixationIndex
           .of(i + 1)
-          .leftMap(_ => defect)
+          .leftMap(e => refused(TrialViewError.Study(trial, "fixation position", e.message)))
           .flatMap(index =>
             AdmittedFixation
               .of(
@@ -175,27 +190,34 @@ object FakeTrialViews:
                 g.durationMs,
                 placement(screen, window, policy(recipe), g.x, g.y)
               )
-              .leftMap(_ => defect)
+              .leftMap(refused)
           )
       }
-      view <- TrialFixations.of(revision, dataset, trial, fixations).leftMap(_ => defect)
+      view <- TrialFixations.of(revision, dataset, trial, fixations).leftMap(refused)
     yield view
 
   /** eyes4s's σ 2° density of `trial`'s in-map fixations under `revision`,
-    * over the recipe's grid on the window, with its isoline levels.
+    * over the recipe's grid on the window it covers, with its isoline levels.
+    * A trial the study fails has none.
     */
   def preview(
+      moment: StoryMoment,
       revision: AnalysisRevision,
       dataset: DatasetRevision,
       trial: TrialKey
   ): Either[BackendError, TrialPreview] =
-    val unavailable = BackendError.Unavailable(DiagnosticLocus.Trial(trial))
+    def study(step: String)(reason: String) = refused(TrialViewError.Study(trial, step, reason))
     for
-      (recipe, geometry) <- study(revision)
-      view               <- fixations(revision, dataset, trial)
+      (recipe, geometry) <- FakeTrialViews.study(moment, revision)
+      view               <- fixations(moment, revision, dataset, trial)
+      failing = view.fixations.collect {
+        case f if f.placement == MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial) =>
+          f.ref.index.value
+      }
+      _ <- Either.cond(failing.isEmpty, (), refused(TrialViewError.TrialFails(trial, failing)))
       inMap = view.fixations.filter(_.placement == MapPlacement.InMap)
-      _                <- Either.cond(inMap.nonEmpty, (), unavailable)
-      (screen, window) <- frames(recipe, geometry).leftMap(_ => unavailable)
+      _ <- Either.cond(inMap.nonEmpty, (), study("preview")("no fixation lies in the map"))
+      (screen, window) <- frames(trial, recipe, geometry)
       perDegree = recipe.angularScale.getOrElse(geometry.pixelsPerDegree).value
       // Each in-map fixation in the window's own frame, with its weight.
       located = inMap.flatMap(f =>
@@ -207,27 +229,31 @@ object FakeTrialViews:
             Some(local -> weight)
           case HalfOpenPlacement.Outside(_) => None
       )
-      mass <- (for
-        grid  <- Grid.of(GridId("preview"), window.frame, recipe.grid.columns, recipe.grid.rows)
-        scale <- LinearAngularScale.of(screen, perDegree)
-        sigma <- Sigma.deg(PreviewSigmaDegrees).flatMap(scale.sigma)
-      yield (grid, sigma)).leftMap(_ => unavailable).flatMap { (grid, sigma) =>
-        PointMeasure
-          .of(window.frame, IArray.from(located.map(_._1)), IArray.from(located.map(_._2)))
-          .leftMap(_ => unavailable)
-          .flatMap(m =>
-            Smoother
-              .gaussian(sigma, EdgePolicy.Truncate)
-              .density(m, grid)
-              .leftMap(_ => unavailable)
-          )
-      }
-      levels  <- MassLevels.of(mass, PreviewCoverages).leftMap(_ => unavailable)
+      grid <- Grid
+        .of(GridId("preview"), window.frame, recipe.grid.columns, recipe.grid.rows)
+        .leftMap(e => study("grid")(e.message))
+      sigma <- LinearAngularScale
+        .of(screen, perDegree)
+        .flatMap(scale => Sigma.deg(PreviewSigmaDegrees).flatMap(scale.sigma))
+        .leftMap(e => study("bandwidth")(e.message))
+      measure <- PointMeasure
+        .of(window.frame, IArray.from(located.map(_._1)), IArray.from(located.map(_._2)))
+        .leftMap(e => study("fixation measure")(e.message))
+      mass <- Smoother
+        .gaussian(sigma, EdgePolicy.Truncate)
+        .density(measure, grid)
+        .leftMap(e => study("density")(e.message))
+      levels <- MassLevels.of(mass, PreviewCoverages).leftMap(e => study("isolines")(e.message))
+      covered = window.region
+      region <- ScreenRegion
+        .of(trial, covered.xMin, covered.yMin, covered.xMax, covered.yMax)
+        .leftMap(refused)
       preview <- TrialPreview
         .of(
           revision,
           trial,
           PreviewSigmaDegrees,
+          region,
           recipe.grid.columns,
           recipe.grid.rows,
           // The window's frame runs y down from its top edge, so row 0 is the top.
@@ -235,5 +261,5 @@ object FakeTrialViews:
           mass.values.toVector.map(Some(_)),
           levels.map(_.threshold)
         )
-        .leftMap(_ => unavailable)
+        .leftMap(refused)
     yield preview

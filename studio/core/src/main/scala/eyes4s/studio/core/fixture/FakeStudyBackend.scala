@@ -118,6 +118,7 @@ final case class ScriptedSegment(segment: Segment, total: ProgressTotal) derives
   */
 final class FakeStudyBackend[F[_]] private[fixture] (
     val study: MockStudy,
+    val moment: StoryMoment,
     state: SignallingRef[F, FakeStudyBackend.State]
 )(using F: Concurrent[F])
     extends StudyBackend[F]:
@@ -278,7 +279,7 @@ final class FakeStudyBackend[F[_]] private[fixture] (
       trial: TrialKey
   ): F[Either[BackendError, TrialFixations]] =
     revision(r).map(
-      _.flatMap(d => known(d, trial).flatMap(FakeTrialViews.fixations(r, _, trial)))
+      _.flatMap(d => known(d, trial).flatMap(FakeTrialViews.fixations(moment, r, _, trial)))
     )
 
   def trialPreview(
@@ -286,7 +287,7 @@ final class FakeStudyBackend[F[_]] private[fixture] (
       trial: TrialKey
   ): F[Either[BackendError, TrialPreview]] =
     revision(r).map(
-      _.flatMap(d => known(d, trial).flatMap(FakeTrialViews.preview(r, _, trial)))
+      _.flatMap(d => known(d, trial).flatMap(FakeTrialViews.preview(moment, r, _, trial)))
     )
 
   /** `d` when `trial` is in its inventory; a trial outside it is refused. */
@@ -1021,7 +1022,7 @@ object FakeStudyBackend:
     for
       study <- MockStudy.load.fold(defect, F.pure)
       state <- SignallingRef.of[F, State](initial(moment))
-      backend = new FakeStudyBackend[F](study, state)
+      backend = new FakeStudyBackend[F](study, moment, state)
       _ <- backend.previewFacts.fold(e => defect(e.message), _ => F.unit)
       _ <- moment match
         case StoryMoment.T3 =>

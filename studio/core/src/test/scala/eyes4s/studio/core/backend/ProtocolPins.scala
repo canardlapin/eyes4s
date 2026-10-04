@@ -23,6 +23,8 @@ object ProtocolPins:
       """{"InventoryRefused":{"dataset":4,"issues":[{"Conflict":{"trial":{"participant":"P01","phase":"Encoding","trial":"enc_01"},"records":[2,9],"columns":["response"]}},{"Width":{"record":5,"expected":8,"actual":7}},{"Field":{"record":6,"column":"occurrence","value":"x","requirement":"a positive integer occurrence"}},{"Other":{"kind":"DuplicateAttribute","text":"Attribute names [a] are declared more than once."}}]}}""",
     "error.UnknownTrial" ->
       """{"UnknownTrial":{"dataset":3,"trial":{"participant":"P99","phase":"Encoding","trial":"enc_01","occurrence":1}}}""",
+    "error.TrialViewRefused" ->
+      """{"TrialViewRefused":{"error":{"TrialFails":{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"positions":[4,5]}}}}""",
     "response.PreviewAccepted" ->
       """{"PreviewAccepted":{}}""",
     "error.UnknownPreview" ->
@@ -62,7 +64,7 @@ object ProtocolPins:
     "response.TrialFixationsOf" ->
       """{"TrialFixationsOf":{"fixations":{"revision":4,"dataset":3,"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"fixations":[{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":1,"record":7209,"x":960.5,"y":540.25,"onsetMs":0.5,"durationMs":212.5,"placement":{"InMap":{}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":2,"record":7210,"x":1500.5,"y":540.75,"onsetMs":230.5,"durationMs":180.25,"placement":{"OutsideWindow":{"policy":{"Exclude":{}}}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":3,"record":7211,"x":-4.5,"y":20.25,"onsetMs":420.5,"durationMs":96.5,"placement":{"OutsideScreen":{}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":4,"record":7212,"x":600.5,"y":400.5,"onsetMs":530.5,"durationMs":140.5,"placement":{"DroppedInitial":{}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":5,"record":7213,"x":610.5,"y":410.5,"onsetMs":680.5,"durationMs":160.5,"placement":{"OutsideWindow":{"policy":{"FailTrial":{}}}}}]}}}""",
     "response.TrialPreviewOf" ->
-      """{"TrialPreviewOf":{"preview":{"revision":4,"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"sigmaDegrees":2.5,"columns":3,"rows":2,"order":{"TopFirst":{}},"cells":[0.1,0.25,null,0.3,0.2,0.15],"levels":[0.2,0.12]}}}""",
+      """{"TrialPreviewOf":{"preview":{"revision":4,"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"sigmaDegrees":2.5,"region":{"left":448.5,"top":156.5,"right":1472.5,"bottom":924.5},"columns":3,"rows":2,"order":{"TopFirst":{}},"cells":[0.1,0.25,null,0.3,0.2,0.15],"levels":[0.2,0.12]}}}""",
     "cause.CorrectionConflict" ->
       """{"code":"quarantine.correction-conflict","message":"correction rules 0 and 1 both apply to the trial","first":0,"second":1}""",
     "cause.DuplicateOrdinals" ->

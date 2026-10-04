@@ -70,6 +70,12 @@ enum BackendError derives CanEqual, Codec.AsObject:
   /** `trial` is not a trial of `dataset`'s inventory (protocol 1.6, S6.2). */
   case UnknownTrial(dataset: DatasetRevision, trial: TrialKey)
 
+  /** A trial view the backend cannot give (protocol 1.6, S6.2): a value
+    * that would not be valid, a trial its study fails, or a step eyes4s
+    * refused. `error` names the trial and what failed.
+    */
+  case TrialViewRefused(error: TrialViewError)
+
   def code: String = this match
     case UnknownDataset(_, _)     => "studio-backend.unknown-dataset"
     case UnknownRevision(_, _)    => "studio-backend.unknown-revision"
@@ -77,6 +83,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case UnknownJob(_, _)         => "studio-backend.unknown-job"
     case UnknownPreview(_, _)     => "studio-backend.unknown-preview"
     case UnknownTrial(_, _)       => "studio-backend.unknown-trial"
+    case TrialViewRefused(_)      => "studio-backend.trial-view-refused"
     case PreviewNotReady(_, _, _) => "studio-backend.preview-not-ready"
     case StalePreview(_, _, _)    => "studio-backend.stale-preview"
     case TamperedPreview(_, _)    => "studio-backend.tampered-preview"
@@ -118,7 +125,8 @@ enum BackendError derives CanEqual, Codec.AsObject:
       s"Request ${request.value} is already a live subscription on this connection."
     case InventoryRefused(d, issues) =>
       s"The trial inventory of ${d.label} is refused: ${issues.map(_.message).mkString(" ")}"
-    case UnknownTrial(d, t) => s"${t.label} is not a trial of dataset ${d.label}."
+    case UnknownTrial(d, t)  => s"${t.label} is not a trial of dataset ${d.label}."
+    case TrialViewRefused(e) => e.message
 
   def diagnostic: StudioDiagnostic =
     val subject = this match
@@ -138,7 +146,8 @@ enum BackendError derives CanEqual, Codec.AsObject:
       case Malformed(_, _)          => Vector.empty
       case DuplicateSubscription(_) => Vector.empty
       case InventoryRefused(d, is)  => DiagnosticLocus.Dataset(d) +: is.flatMap(_.loci)
-      case UnknownTrial(d, t) => Vector(DiagnosticLocus.Dataset(d), DiagnosticLocus.Trial(t))
+      case UnknownTrial(d, t)  => Vector(DiagnosticLocus.Dataset(d), DiagnosticLocus.Trial(t))
+      case TrialViewRefused(e) => Vector(DiagnosticLocus.Trial(e.trial))
     StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
 
 /** Everything Eyes Studio asks of eyes4s (DESIGN_SPEC section 13, S3.0): the

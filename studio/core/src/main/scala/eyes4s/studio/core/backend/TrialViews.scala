@@ -25,7 +25,7 @@ import io.circe.{Codec, Decoder, DecodingFailure, Encoder, HCursor, Json, JsonOb
 /** Why a trial view (protocol 1.6, S6.2) is refused. Every case names the
   * trial and what it was applied to.
   */
-enum TrialViewError derives CanEqual:
+enum TrialViewError derives CanEqual, Codec.AsObject:
   case RecordNotPositive(trial: TrialKey, position: Int, record: Int)
   case PositionNotFinite(trial: TrialKey, record: Int, x: Double, y: Double)
   case OnsetNegative(trial: TrialKey, record: Int, onsetMs: Double)
@@ -39,6 +39,17 @@ enum TrialViewError derives CanEqual:
   case CellCount(trial: TrialKey, columns: Int, rows: Int, cells: Int)
   case CellNotDensity(trial: TrialKey, index: Int, value: Double)
   case LevelNotFinite(trial: TrialKey, index: Int, level: Double)
+
+  /** The preview's covered region has no area or is not finite. */
+  case RegionEmpty(trial: TrialKey, left: Double, top: Double, right: Double, bottom: Double)
+
+  /** The study fails the trial (its off-window policy is `FailTrial` and
+    * the fixations at `positions` lie outside the window): it has no map.
+    */
+  case TrialFails(trial: TrialKey, positions: Vector[Int])
+
+  /** eyes4s refused a step of the view (`step`), saying `reason`. */
+  case Study(trial: TrialKey, step: String, reason: String)
 
   def message: String = this match
     case RecordNotPositive(t, p, r) =>
@@ -59,6 +70,18 @@ enum TrialViewError derives CanEqual:
       s"Cell $i of the preview of ${t.label} holds $v, not a finite non-negative density."
     case LevelNotFinite(t, i, l) =>
       s"Isoline level $i of the preview of ${t.label} is $l, which is not finite."
+    case RegionEmpty(t, l, tp, r, b) =>
+      s"The preview of ${t.label} covers [$l, $r) × [$tp, $b) px, which has no area."
+    case TrialFails(t, ps) =>
+      s"The study fails ${t.label}: fixation${if ps.size == 1 then "" else "s"} " +
+        s"${ps.mkString(", ")} ${
+            if ps.size == 1 then "lies" else "lie"
+          } outside the analysis " +
+        "window, so it has no map."
+    case Study(t, step, reason) => s"eyes4s refused the $step of ${t.label}: $reason"
+
+  /** The trial the refusal is about. */
+  def trial: TrialKey
 
 /** Which stored row of a grid is at the top of the map: the convention is
   * part of the grid, never assumed by its readers.
@@ -180,16 +203,47 @@ object TrialFixations:
     )
   }
 
+/** The half-open region `[left, right) × [top, bottom)` of the screen, in
+  * screen pixels (origin top-left, y down), that a grid covers.
+  */
+final case class ScreenRegion private (left: Double, top: Double, right: Double, bottom: Double)
+    derives CanEqual:
+  def width: Double  = right - left
+  def height: Double = bottom - top
+
+object ScreenRegion:
+  def of(
+      trial: TrialKey,
+      left: Double,
+      top: Double,
+      right: Double,
+      bottom: Double
+  ): Either[TrialViewError, ScreenRegion] =
+    Either.cond(
+      List(left, top, right, bottom).forall(_.isFinite) && right > left && bottom > top,
+      ScreenRegion(left, top, right, bottom),
+      TrialViewError.RegionEmpty(trial, left, top, right, bottom)
+    )
+
+  given Encoder.AsObject[ScreenRegion] =
+    Encoder.forProduct4("left", "top", "right", "bottom")(r =>
+      (r.left, r.top, r.right, r.bottom)
+    )
+
 /** A trial's preview map under an analysis revision (protocol 1.6, S6.2):
   * eyes4s's density of the trial's in-map fixations at `sigmaDegrees` over
-  * the revision's grid, not a result of any run. `cells` are in row-major
-  * order with `order` stating which row is the top; a cell is `None` where
-  * the backend holds no value. `levels` are the backend's isoline levels.
+  * the revision's grid, not a result of any run. The grid covers `region` of
+  * the screen (the analysis window, or the screen when the study has none),
+  * which a renderer must draw it over: it is not the image frame unless the
+  * window is. `cells` are in row-major order with `order` stating which row
+  * is the top; a cell is `None` where the backend holds no value. `levels`
+  * are the backend's isoline levels.
   */
 final case class TrialPreview private (
     revision: AnalysisRevision,
     trial: TrialKey,
     sigmaDegrees: Double,
+    region: ScreenRegion,
     columns: Int,
     rows: Int,
     order: RowOrder,
@@ -202,6 +256,7 @@ object TrialPreview:
       revision: AnalysisRevision,
       trial: TrialKey,
       sigmaDegrees: Double,
+      region: ScreenRegion,
       columns: Int,
       rows: Int,
       order: RowOrder,
@@ -223,33 +278,65 @@ object TrialPreview:
           case (l, i) if !l.isFinite => TrialViewError.LevelNotFinite(trial, i, l)
         })
         .toLeft(
-          TrialPreview(revision, trial, sigmaDegrees, columns, rows, order, cells, levels)
+          TrialPreview(
+            revision,
+            trial,
+            sigmaDegrees,
+            region,
+            columns,
+            rows,
+            order,
+            cells,
+            levels
+          )
         )
 
-  given Encoder.AsObject[TrialPreview] = Encoder.forProduct8(
+  given Encoder.AsObject[TrialPreview] = Encoder.forProduct9(
     "revision",
     "trial",
     "sigmaDegrees",
+    "region",
     "columns",
     "rows",
     "order",
     "cells",
     "levels"
-  )(p => (p.revision, p.trial, p.sigmaDegrees, p.columns, p.rows, p.order, p.cells, p.levels))
+  )(p =>
+    (
+      p.revision,
+      p.trial,
+      p.sigmaDegrees,
+      p.region,
+      p.columns,
+      p.rows,
+      p.order,
+      p.cells,
+      p.levels
+    )
+  )
 
   given Decoder[TrialPreview] = Decoder.instance { c =>
     (
       c.get[AnalysisRevision]("revision"),
       c.get[TrialKey]("trial"),
       c.get[Double]("sigmaDegrees"),
+      c.downField("region")
+        .as[(Double, Double, Double, Double)](using
+          Decoder.forProduct4("left", "top", "right", "bottom")(
+            (l: Double, t: Double, r: Double, b: Double) => (l, t, r, b)
+          )
+        ),
       c.get[Int]("columns"),
       c.get[Int]("rows"),
       c.get[RowOrder]("order"),
       c.get[Vector[Option[Double]]]("cells"),
       c.get[Vector[Double]]("levels")
-    ).flatMapN((r, t, s, w, h, o, cs, ls) =>
-      of(r, t, s, w, h, o, cs, ls).leftMap(e => DecodingFailure(e.message, c.history))
-    )
+    ).flatMapN { case (r, t, s, (l, tp, rt, b), w, h, o, cs, ls) =>
+      ScreenRegion
+        .of(t, l, tp, rt, b)
+        .flatMap(of(r, t, s, _, w, h, o, cs, ls))
+        .leftMap(e => DecodingFailure(e.message, c.history))
+    }
   }
 
 /** eyes4s `MapPlacement` and `OffWindowPolicy` on the wire, as the studio

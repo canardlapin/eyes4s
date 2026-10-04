@@ -65,15 +65,21 @@ fixations in scanpath order, each with its `StudioRef.Fixation`, fixations.csv
 record, screen-pixel centre, onset and duration in milliseconds, and the eyes4s
 `MapPlacement` the revision's study gives it; `trialPreview(revision, trial)`
 answers `TrialPreview`, eyes4s's σ 2° density of the trial's in-map fixations over
-the recipe's grid, with its `RowOrder` stated and the backend's isoline levels.
+the recipe's grid, with the screen region the grid covers (the analysis
+window, not the image unless they coincide), its `RowOrder` stated and the
+backend's isoline levels.
 Both are keyed by the analysis revision because placement and the grid belong to
 the study, not the dataset. Every value is validated (finite positions, a
 non-negative onset, a positive duration, positions 1, 2, … in order, finite
 non-negative cells); a trial outside the revision's dataset is refused with
-`BackendError.UnknownTrial(dataset, trial)`, and one in it without an admitted
-scanpath is `Unavailable`. The
-fake serves both over fixtures/studio-golden: placement through the kernel's
-screen frame and half-open window, the preview through eyes4s-surface's Gaussian
+`BackendError.UnknownTrial(dataset, trial)`, one in it without an admitted
+scanpath is `Unavailable`, and every other refusal is
+`BackendError.TrialViewRefused(TrialViewError)`, which names the trial and what
+failed (an invalid value, a trial the study fails under `FailTrial`, or an
+eyes4s step). The
+fake serves both over fixtures/studio-golden under the recipe its story moment
+saved: placement through the kernel's screen frame and half-open window (held
+to eyes4s's `CoordinateProvenance` by `FakePlacementJvmSuite`), the preview through eyes4s-surface's Gaussian
 smoother and `MassLevels` (coverages 0.5 and 0.8). The other 1.5 pins are
 unchanged; the envelope version is now 1.6.
 
