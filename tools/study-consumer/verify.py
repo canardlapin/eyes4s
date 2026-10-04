@@ -221,6 +221,7 @@ def main():
     temporal = check_temporal_journey(log)
     fresh_routes = check_fresh_routes(log)
     facade = check_facade_journey(log)
+    report = check_report_journey(log)
     envelope = check_envelope(log)
     receipt = {
         "artifact_version": VERSION,
@@ -267,6 +268,7 @@ def main():
                 "temporal journey against temporal.json targets and ledgers",
                 "fresh-process reload and bit-for-bit rerun of every route",
                 "facade journey: PsychologyWorkflow equals the explicit composition",
+                "report journey: Report.evaluate equals the explicit reduction; exports",
                 "JVM and Scala.js agree exactly on portable evidence",
             ],
         },
@@ -314,6 +316,10 @@ def main():
             "exact_across_runtimes": ["source", "plan", "csv_sha256", "rows", "events"],
             "pinned": {"source_sha256": FACADE_SOURCE_SHA256, "csv_sha256": FACADE_CSV_SHA256},
             "runtime_evidence": facade,
+        },
+        "report_journey": {
+            "exact_across_runtimes": ["report", "cells_sha256", "study_sha256", "contrast_bits"],
+            "runtime_evidence": report,
         },
         "response_envelope": envelope,
         "consumer_directory": str(candidate),
@@ -596,6 +602,13 @@ def check_facade_journey(log):
         raise RuntimeError("The facade journey's input or tidy export differs from the pinned digests")
     if (run["rows"], run["events"], run["projected"], run["interpolated"]) != (10, 9, 72, 18):
         raise RuntimeError("The facade journey's report counts differ from the library suite's")
+    return [pair["jvm"], pair["js"]]
+
+
+def check_report_journey(log):
+    """Report.evaluate and the exports on both runtimes, exactly."""
+    pair = runtime_pair(log, "EYES4S_REPORT_JOURNEY=", "report journey")
+    same_except_runtime(pair, "report journey")
     return [pair["jvm"], pair["js"]]
 
 
