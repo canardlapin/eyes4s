@@ -20,6 +20,12 @@ import eyes4s.kernel.ContentHash
 import eyes4s.plan.*
 import io.circe.Json
 
+/** Schema identities introduced with declared source identity: revision 4 of the
+  * admission ledger, whose sources always state their interpretation, with a legacy
+  * source marked `legacyUnspecified` (only earlier revisions use the bare
+  * label-and-records form), and the source reference, import specification and
+  * inventory import specification documents.
+  */
 object SourceCodecDefinitions:
   val admissionLedgerV4: DefinitionId = DefinitionId.builtIn("eyes4s.admission-ledger", 4)
   val sourceRef: DefinitionId         = DefinitionId.builtIn("eyes4s.source-ref", 1)

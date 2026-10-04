@@ -92,6 +92,9 @@ jobs:
       - name: Build and test studio (xvfb, software pipeline)
         run: xvfb-run -a -s '-screen 0 1920x1200x24' sbt -J-Xmx8g -Djavafx.platform=linux studioAll studioStyleCheck
 
+      - name: Check studio resolved-graph boundaries
+        run: sbt -J-Xmx4g -Djavafx.platform=linux studioBoundaries
+
       - name: Upload studio snapshots
         if: always()
         uses: actions/upload-artifact@v4

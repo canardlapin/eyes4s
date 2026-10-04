@@ -17,6 +17,7 @@
 package eyes4s.studio.core.document
 
 import eyes4s.codec.{ByteDigest, CanonicalDigest}
+import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.core.backend.{AnalysisRevision, JobId, RunId}
 import org.scalacheck.Prop.forAll
 
@@ -174,7 +175,22 @@ class DocumentHashSuite extends munit.ScalaCheckSuite:
       r3(_.copy(decision = AdmissionDecision.Pending))
     ),
     "ledger binding" -> rebuild(datasets =
-      r3(_.copy(decision = AdmissionDecision.Admitted(bound, CoreBinding.unbound)))
+      r3(d =>
+        d.copy(decision =
+          AdmissionDecision.Admitted(d.decision.admittedUnder, bound, CoreBinding.unbound)
+        )
+      )
+    ),
+    "admission policy" -> rebuild(datasets =
+      r3(
+        _.copy(decision =
+          AdmissionDecision.Admitted(
+            Some(CoreAdmissionDecision.RequireComplete),
+            CoreBinding.unbound,
+            CoreBinding.unbound
+          )
+        )
+      )
     ),
     "dataset parent" -> rebuild(datasets = r3(_.copy(parent = None))),
     "plan binding"   -> rebuild(analyses = rev4(_.copy(plan = bound))),

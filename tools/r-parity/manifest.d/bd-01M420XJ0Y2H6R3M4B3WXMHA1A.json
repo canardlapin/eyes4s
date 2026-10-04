@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "ticket": "bd-01M420XJ0Y2H6R3M4B3WXMHA1A",
+  "fixtures": {
+    "decomposition-constrained-input": {
+      "path": "tools/r-parity/fixtures/cases/bd-01M420XJ0Y2H6R3M4B3WXMHA1A.json",
+      "sha256": "32aa588c95d8bfa3a524bf7dc5a646727dfbdfdd36368524a08780b58ee8b6e9",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Small full-rank NNLS and tied/untied partial-association inputs"
+    },
+    "decomposition-constrained-reference": {
+      "path": "tools/r-parity/fixtures/decomposition-constrained.json",
+      "sha256": "2c680ccf9ad838869e17be3501d68be6e9a1425a41a99bf67080a1a8fcd7b89c",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Pinned public eyesim nnls/rank outputs, ppcor Pearson backend and exact rational oracles"
+    },
+    "decomposition-constrained-scala": {
+      "path": "laws/src/test/scala/eyes4s/laws/ConstrainedDecompositionReference.scala",
+      "sha256": "31e467a3e4094cc7d853c0458a74de099b1685b7e736e706eea31dabe06c60a9",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Portable pinned eyesim NNLS and partial-correlation expectations"
+    }
+  },
+  "regeneration": {
+    "decomposition-constrained": {
+      "command": "python3 tools/r-parity/generate_decomposition_constrained.py --eyesim {eyesim} --check",
+      "requires_eyesim": true,
+      "outputs": [
+        "decomposition-constrained-reference",
+        "decomposition-constrained-scala"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "surface-decomposition-nnls",
+      "row": "template-models",
+      "status": "verified-equivalent",
+      "estimand": "Cellwise intercept-free non-negative least squares of a normalized response map on normalized predictor maps; keyed non-negative coefficients that are not mixture weights",
+      "eyesim_entry_points": [
+        "template_multireg"
+      ],
+      "methods": [
+        "nnls (intercept argument ignored)"
+      ],
+      "conventions": [
+        "Mass predictors/response on one nominal grid",
+        "intercept-free: eyesim ignores intercept = TRUE for nnls",
+        "full column rank required; no dropped predictors",
+        "Intensity fit and Signed residual"
+      ],
+      "backend_dependencies": [
+        "nnls::nnls",
+        "native Lawson-Hanson active set over Householder QR"
+      ],
+      "eyes4s_public_api": [
+        "PredictorSet.of",
+        "Template.decomposeNonNegative",
+        "ConstrainedLeastSquares.nonNegative"
+      ],
+      "fixture_inputs": [
+        "decomposition-constrained-input",
+        "decomposition-constrained-reference",
+        "decomposition-constrained-scala"
+      ],
+      "independent_case": "Exact rational enumeration of every active set's normal equations, keeping the unique KKT solution: interior (708/1399, 9264/18187), boundary (1070/1131, 50/377, 0) and an exact equal mixture (1/2, 1/2).",
+      "evidence": [
+        "laws/src/test/scala/eyes4s/laws/ConstrainedDecompositionSuite.scala",
+        "tools/r-parity/fixtures/decomposition-constrained.json",
+        "docs/SURFACE_DECOMPOSITION.md"
+      ],
+      "regeneration_ids": [
+        "decomposition-constrained"
+      ]
+    },
+    {
+      "id": "surface-partial-spearman",
+      "row": "template-models",
+      "status": "verified-intentional-divergence",
+      "estimand": "Partial Spearman correlation of the source map with the baseline map given the reference map, and with the reference given the baseline, over cells",
+      "eyesim_entry_points": [
+        "template_regression"
+      ],
+      "methods": [
+        "rank"
+      ],
+      "conventions": [
+        "average ranks for ties",
+        "intercept in the covariate fit",
+        "no p-values: cells are not independent replicates",
+        "undefined when a map is constant or explained by the covariates"
+      ],
+      "backend_dependencies": [
+        "ppcor::pcor",
+        "native residual partial correlation over Householder QR"
+      ],
+      "eyes4s_public_api": [
+        "PartialAssociation.of",
+        "AssociationMethod.Spearman",
+        "AssociationMethod.Pearson"
+      ],
+      "fixture_inputs": [
+        "decomposition-constrained-input",
+        "decomposition-constrained-reference",
+        "decomposition-constrained-scala"
+      ],
+      "independent_case": "Exact rational average ranks and inverse covariance matrix, with the square root taken last, for tied and untied maps; the same oracle checks ppcor's Pearson route.",
+      "divergence": "Values agree with eyesim, but eyesim returns these partial correlations as beta_baseline and beta_source regression weights. eyes4s returns a separate PartialAssociation result that is never labelled a coefficient, and reports an undefined association as None.",
+      "evidence": [
+        "laws/src/test/scala/eyes4s/laws/ConstrainedDecompositionSuite.scala",
+        "tools/r-parity/fixtures/decomposition-constrained.json",
+        "docs/SURFACE_DECOMPOSITION.md"
+      ],
+      "regeneration_ids": [
+        "decomposition-constrained"
+      ]
+    }
+  ]
+}

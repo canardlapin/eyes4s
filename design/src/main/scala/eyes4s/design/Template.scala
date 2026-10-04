@@ -645,3 +645,28 @@ object Template:
       rankTolerance: RelativeRankTolerance = RelativeRankTolerance.default
   ): Either[DecompositionError, SurfaceOlsFit[U]] =
     SurfaceDecomposition.ols(response, predictors, intercept, rankTolerance)
+
+  /** Cellwise intercept-free non-negative least squares of one response map on
+    * predictor maps; see [[SurfaceNnlsFit]]. The coefficients are not mixture
+    * weights; use [[decomposeMixture]] for those.
+    */
+  def decomposeNonNegative[U <: Unit2D](
+      response: Mass[U],
+      predictors: PredictorSet[U],
+      rankTolerance: RelativeRankTolerance = RelativeRankTolerance.default,
+      dualTolerance: RelativeDualTolerance = RelativeDualTolerance.default
+  ): Either[DecompositionError, SurfaceNnlsFit[U]] =
+    SurfaceDecomposition.nonNegative(response, predictors, rankTolerance, dualTolerance)
+
+  /** Cellwise least squares of one response map over the simplex of mixtures
+    * of the predictor maps; see [[SurfaceMixtureFit]]. [[Intercept.Include]]
+    * adds a uniform background component to the mixture.
+    */
+  def decomposeMixture[U <: Unit2D](
+      response: Mass[U],
+      predictors: PredictorSet[U],
+      intercept: Intercept,
+      rankTolerance: RelativeRankTolerance = RelativeRankTolerance.default,
+      dualTolerance: RelativeDualTolerance = RelativeDualTolerance.default
+  ): Either[DecompositionError, SurfaceMixtureFit[U]] =
+    SurfaceDecomposition.mixture(response, predictors, intercept, rankTolerance, dualTolerance)

@@ -184,7 +184,8 @@ class InputAdapterFxSuite extends StudioFxSuite:
       w: Wired,
       kind: EventType[MouseEvent],
       at: Point2D,
-      toggle: Boolean = false
+      toggle: Boolean = false,
+      still: Boolean = true
   ): Unit =
     val host     = w.host
     val inScene  = host.localToScene(at)
@@ -210,7 +211,7 @@ class InputAdapterFxSuite extends StudioFxSuite:
           false,
           true,
           false,
-          true,
+          still,
           PickResult(host, inScene.getX, inScene.getY)
         )
       )
@@ -293,6 +294,22 @@ class InputAdapterFxSuite extends StudioFxSuite:
       case Intent.HoverOver(v, _) => v == viewId
       case _                      => false
     })
+    runOnFx(w.adapter.dispose())
+    runOnFx(w.view.dispose())
+  }
+
+  fxStage.test("a click whose press drifted still picks: a trial view has no brush") { fx =>
+    val w                = Wired(viewIn(fx))
+    val (frame, targets) = showAndDraw(w, input(enc03, enc03Fix), 1.0)
+    val t                = targets.targets(5)
+    val at               = local(frame, t.anchor)
+    val moved            = Point2D(at.getX + 1.0, at.getY)
+    runOnFx {
+      mouse(w, MouseEvent.MOUSE_PRESSED, at)
+      mouse(w, MouseEvent.MOUSE_RELEASED, moved, still = false)
+      mouse(w, MouseEvent.MOUSE_CLICKED, moved, still = false)
+    }
+    assertEquals(w.selected, Vector(t.ref))
     runOnFx(w.adapter.dispose())
     runOnFx(w.view.dispose())
   }

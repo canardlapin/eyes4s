@@ -37,9 +37,14 @@ enum RecordingStage derives CanEqual:
 
 private[plan] sealed trait RecordingPhase
 private[plan] object RecordingPhase:
+  /** Before synchronization; nothing computed yet. */
   case object Synchronizing extends RecordingPhase
+
+  /** Synchronized onto the target clock, awaiting the angular warp. */
   final case class Warping(synchronization: SyncEvidence, synchronized: Recording[Px])
       extends RecordingPhase
+
+  /** Warped to degrees, with the gap-interpolation machine part-way through. */
   final case class Interpolating(
       synchronization: SyncEvidence,
       warp: Warp[Px, Deg],
@@ -47,6 +52,8 @@ private[plan] object RecordingPhase:
       angular: Recording[Deg],
       filter: MachineCursor[Sample[Deg], Sample[Deg]]
   ) extends RecordingPhase
+
+  /** Interpolated, with the detection cursor part-way through. */
   final case class Detecting(
       synchronization: SyncEvidence,
       warp: Warp[Px, Deg],
@@ -55,6 +62,8 @@ private[plan] object RecordingPhase:
       prepared: Recording[Deg],
       detection: DetectionCursor[Deg]
   ) extends RecordingPhase
+
+  /** Detected, awaiting area assignment. */
   final case class Assigning(
       synchronization: SyncEvidence,
       warp: Warp[Px, Deg],
@@ -275,6 +284,9 @@ final class RecordingCursor[P] private[plan] (
   ): WorkStep[RecordingStage, RecordingCursor[P], RecordingAnalysis[P]] =
     WorkStep.More(stage, units, new RecordingCursor(plan, recording, next))
 
+/** Stepwise execution of a recording plan over bounded work quanta; see
+  * `RecordingCursor` for the stage order.
+  */
 object RecordingWork:
 
   /** Drive a recording cursor to completion with fixed quanta. */

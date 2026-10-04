@@ -157,9 +157,9 @@ object GeometryPanelVM:
     val next   = GeometryPanel.nextRevision(model.document).label
     val target = spec.map { s =>
       s.decision match
-        case AdmissionDecision.Pending        => t(EditsPending, s.id.label)
-        case AdmissionDecision.Verifying(_)   => t(Verifying, s.id.label, next)
-        case AdmissionDecision.Admitted(_, _) => t(ReadmitsAs, s.id.label, next)
+        case AdmissionDecision.Pending           => t(EditsPending, s.id.label)
+        case AdmissionDecision.Verifying(_)      => t(Verifying, s.id.label, next)
+        case AdmissionDecision.Admitted(_, _, _) => t(ReadmitsAs, s.id.label, next)
     }
     val facts = g.toVector.flatMap { g =>
       Vector(

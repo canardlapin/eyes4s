@@ -659,7 +659,10 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
 
 /** A decoded result whose score and difference types stay abstract but typed. */
 trait LoadedResult[K, U <: Unit2D]:
+  /** The pair score type the result's method produces. */
   type Score
+
+  /** The type of a difference between two scores of that method. */
   type Difference
   def result: StudyResult[K, U, Score, Difference]
   def encode: Either[CodecError, Json]
@@ -682,6 +685,10 @@ trait LoadedResult[K, U <: Unit2D]:
       )
     )
 
+/** One study result codec as a registry sees it, keyed by method identity, with decoders
+  * for inline archives and for archives whose densities are verified payloads. Sealed:
+  * only the result codec's `registration` builds one.
+  */
 sealed trait StudyResultRegistration[K, U <: Unit2D]:
   def id: DefinitionId
   def decode(json: Json): Either[CodecError, LoadedResult[K, U]]

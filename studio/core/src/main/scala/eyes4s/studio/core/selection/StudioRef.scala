@@ -160,6 +160,12 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     */
   case DesignTally(revision: AnalysisRevision, tally: DesignCount)
 
+  /** A dataset revision's count of inventory trials with one admission
+    * disposition (eyes4s `TrialDisposition`; ticket S5.6): the trials the
+    * admission ledger lists under it.
+    */
+  case InventoryCount(dataset: DatasetRevision, count: InventoryKind)
+
   def kind: RefKind = this match
     case Participant(_)                                       => RefKind.Entity
     case Trial(_) | Fixation(_, _) | SourceRecord(_, _, _, _) => RefKind.Observation
@@ -170,7 +176,7 @@ enum StudioRef derives CanEqual, Codec.AsObject:
         case ResultAddress.Reduction(_, _, _) | ResultAddress.ContrastRow(_, _) =>
           RefKind.Aggregate
     case ParticipantSummary(_, _, _, _, _) | GroupCell(_, _, _, _) | FigurePanel(_, _) |
-        WindowTally(_, _) | DesignTally(_, _) =>
+        WindowTally(_, _) | DesignTally(_, _) | InventoryCount(_, _) =>
       RefKind.Aggregate
 
   def isAggregate: Boolean = kind == RefKind.Aggregate
@@ -185,7 +191,9 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     *  - participant ⊃ trial ⊃ fixation ⊃ fixation record, and trial ⊃
     *    inventory record;
     *  - query contrast ⊃ its reductions ⊃ their pairs (same run and scale).
-    *  - group cell ⊃ participant summary (same run, spec and scale).
+    *  - group cell ⊃ participant summary (same run, spec and scale);
+    *  - quarantined trials ⊃ the trials of each quarantine cause and the
+    *    no-fixations trials (same dataset).
     *
     * Which group a query belongs to depends on the data; a view that knows it
     * supplies it through [[Lineage]].
@@ -210,6 +218,11 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     case FigurePanel(_, _)                    => None
     case WindowTally(_, _)                    => None
     case DesignTally(_, _)                    => None
+    case InventoryCount(dataset, count)       =>
+      count match
+        case InventoryKind.Cause(_) | InventoryKind.NoFixations =>
+          Some(InventoryCount(dataset, InventoryKind.Quarantined))
+        case _ => None
 
 /** Which frame a [[StudioRef.WindowTally]] counts records outside of: the
   * analysis window (the image frame, on the screen) or the screen itself.
@@ -224,6 +237,25 @@ enum TallyRegion derives CanEqual, Codec.AsObject:
 enum DesignCount derives CanEqual, Codec.AsObject:
   case RequestedQueries, EligibleQueries, UnmatchedQueries, QueriesNotAdmitted, ByDesignQueries
   case FocalTrials, ReferenceTrials, CandidatePairsPerScale, EligiblePairsPerScale
+
+/** Which inventory trials a [[StudioRef.InventoryCount]] counts, by their
+  * admission disposition. `Quarantined` holds every trial admission held
+  * back: those quarantined with a cause and the no-fixations trials, whose
+  * records exist but none is admissible. `Absent` trials are in the
+  * inventory with no records at all; only an inventory can count them.
+  */
+enum InventoryKind derives CanEqual, Codec.AsObject:
+  /** Every trial of the inventory. */
+  case Inventory
+  case Admitted
+  case Quarantined
+
+  /** The trials quarantined with the eyes4s cause `code`
+    * ("quarantine.overlap").
+    */
+  case Cause(code: String)
+  case NoFixations
+  case Absent
 
 object StudioRef:
   /** A run result from a backend address, refusing a negative scale. */

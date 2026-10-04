@@ -34,6 +34,7 @@ enum StudyEmbedding derives CanEqual:
     */
   case ByReference
 
+/** Built-in temporal input codecs and the default lookup for by-reference payloads. */
 object TemporalInputCodecs:
   val input: DefinitionId = DefinitionId.temporalStudyInput
 

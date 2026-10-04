@@ -1263,6 +1263,9 @@ fails after rewriting, so review the change and run it again.
 | `least-squares.rank-deficient` | `RankDeficient` | `column`, `pivot`, `threshold` |
 | `least-squares.column-arithmetic` | `ColumnArithmetic` | `operation`, `column` |
 | `least-squares.row-arithmetic` | `RowArithmetic` | `operation`, `row` |
+| `least-squares.dual-tolerance` | `DualTolerance` | `value` |
+| `least-squares.not-converged` | `NotConverged` | `iterations`, `limit`, `violation` |
+| `least-squares.stalled` | `Stalled` | `column`, `violation`, `tolerance` |
 
 ### `rng` — `RngError`
 

@@ -31,7 +31,7 @@ object CommandPins:
     "AddPanel" ->
       """{"AddPanel":{"figure":1,"index":5,"panel":{"letter":"F","title":"Participant D by response","scale":{"At":{"sigma":2.0}},"selection":{"AllQueries":{}}}}}""",
     "Admit" ->
-      """{"Admit":{"dataset":3,"verified":"e0904bd6169b75691383b1ee7236ed8da0e01d12def025e95c68ce77834ce789","ledger":{"Unbound":{}},"inventory":{"Unbound":{}}}}""",
+      """{"Admit":{"dataset":3,"verified":"e0904bd6169b75691383b1ee7236ed8da0e01d12def025e95c68ce77834ce789","policy":{"ReviewExclusions":{}},"ledger":{"Unbound":{}},"inventory":{"Unbound":{}}}}""",
     "BindFigure" ->
       """{"BindFigure":{"figure":1,"run":5,"reporting":"by-retrieval-response"}}""",
     "BindPlan" ->
@@ -129,7 +129,7 @@ object CommandPins:
     "entry.UndoView" ->
       """{"UndoView":{}}""",
     "journal.0" ->
-      """{"schema":{"name":"studio.journal","version":1},"value":{"Start":{"base":"7d1bc8a4b80b2216913cd7ea26d1a88e73a8822b5d102fe568b1e4c2e7afad49"}}}""",
+      """{"schema":{"name":"studio.journal","version":1},"value":{"Start":{"base":"84178194f4a3544788625dfe98d2e4e1845cdd53b40170be9e8ac812d65294b5"}}}""",
     "journal.1" ->
       """{"schema":{"name":"studio.journal","version":1},"value":{"Entry":{"entry":{"Apply":{"command":{"SetPanelSelection":{"figure":1,"panel":"A","selection":{"AllQueries":{}}}}}},"seq":1}}}""",
     "journal.2" ->
@@ -139,7 +139,7 @@ object CommandPins:
     "journal.4" ->
       """{"schema":{"name":"studio.journal","version":1},"value":{"Entry":{"entry":{"Redo":{}},"seq":4}}}""",
     "journal.5" ->
-      """{"schema":{"name":"studio.journal","version":1},"value":{"Checkpoint":{"science":"114678cb0450a22aa5e578670ea1dea8334c0b996fae4dd23c2a45c49be43881","seq":4}}}""",
+      """{"schema":{"name":"studio.journal","version":1},"value":{"Checkpoint":{"science":"65e69efc9048266ab90851e3925bfb01bcd5bf2600e512933f892d9165c40267","seq":4}}}""",
     "journal.6" ->
       """{"schema":{"name":"studio.journal","version":1},"value":{"Entry":{"entry":{"UndoView":{}},"seq":5}}}""",
     "journal.7" ->

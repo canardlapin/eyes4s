@@ -21,6 +21,7 @@ import eyes4s.design.PairQuantum
 import eyes4s.plan.*
 import io.circe.Json
 
+/** Schema identity of a committed study progress snapshot. */
 object StudyProgressDefinitions:
   val progress: DefinitionId = DefinitionId.builtIn("eyes4s.study-progress", 1)
 
@@ -129,6 +130,10 @@ object StudyProgressSnapshot:
       totalUnits
     )
 
+/** Versioned codec for `StudyProgressSnapshot`. Long counters are canonical decimal
+  * strings, refused unless they round-trip exactly; decoding rebuilds the snapshot
+  * through `StudyProgressSnapshot.of`, so its consistency checks are the codec's refusals.
+  */
 object StudyProgressCodec:
   def codec[P, I]: VersionedCodec[StudyProgressSnapshot[P, I]] =
     VersionedCodec.of[StudyProgressSnapshot[P, I]](StudyProgressDefinitions.progress)(value =>

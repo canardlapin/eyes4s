@@ -245,7 +245,15 @@ class GoldenJourneyHeadlessSuite extends munit.FunSuite:
       sync("admit r3")(d =>
         d.model.document.dataset(r3).map(_.decision) match
           case Some(AdmissionDecision.Verifying(content)) =>
-            d.command(Command.Admit(r3, content, CoreBinding.unbound, CoreBinding.unbound))
+            d.command(
+              Command.Admit(
+                r3,
+                content,
+                Some(eyes4s.plan.AdmissionDecision.ReviewExclusions),
+                CoreBinding.unbound,
+                CoreBinding.unbound
+              )
+            )
           case other => fail("admit", "r3 verifying", other)
       ),
       check("run 5 is stale once r3 is admitted")(d =>

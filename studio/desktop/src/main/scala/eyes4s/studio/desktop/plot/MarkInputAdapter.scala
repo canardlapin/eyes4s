@@ -113,6 +113,7 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
   private var cached: Option[(PlotFrame, T)]                   = None
   private var failure: Option[E]                               = None
   private var disposed: Boolean                                = false
+  private var brushing: Boolean                                = false
   private var overlayFailure: Option[IntaglioError]            = None
   private val mouseHandler: EventHandler[MouseEvent]           = e => onMouse(e)
   private val keyHandler: EventHandler[KeyEvent]               = e => onKey(e)
@@ -177,6 +178,16 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
       if step.redraw then
         host.repaintOverlay(under = true)
         describe()
+
+  /** Whether a brush owns the view's drags ([[PlotBrushAdapter]]): while
+    * it does, a click that ends a moved press is not a pick.
+    */
+  private[desktop] def brushOwnsDrags(on: Boolean): Unit = brushing = on
+
+  /** Selects exactly `refs`, as a brush across the view does. */
+  def brush(refs: Vector[StudioRef]): Unit =
+    onFxThread("brush")
+    commit(current.brushed(refs))
 
   /** Puts the cursor on `ref` without selecting it, if the scene draws it. */
   def moveFocus(ref: Option[StudioRef]): Unit =
@@ -261,7 +272,11 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
     else if kind == MouseEvent.MOUSE_EXITED then handle(MarkInputEvent.PointerExited)
     else if kind == MouseEvent.MOUSE_PRESSED && e.getButton == MouseButton.PRIMARY then
       host.requestFocus()
-    else if kind == MouseEvent.MOUSE_CLICKED && e.getButton == MouseButton.PRIMARY then
+    // On a view with a brush, a click must end a press that did not move: a
+    // drag is the brush's, not a pick. Other views pick on any click.
+    else if kind == MouseEvent.MOUSE_CLICKED && e.getButton == MouseButton.PRIMARY &&
+      (!brushing || e.isStillSincePress)
+    then
       val toggle = e.isShiftDown || e.isShortcutDown
       atPointer(e).foreach(p => handle(MarkInputEvent.PointerClicked(p, toggle)))
 

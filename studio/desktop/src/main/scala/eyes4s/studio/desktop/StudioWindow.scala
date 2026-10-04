@@ -24,6 +24,7 @@ import eyes4s.studio.app.text.{MessageId, Messages}
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{ClockTime, ProjectName}
 import eyes4s.studio.core.fixture.StoryMoment
+import eyes4s.studio.desktop.admission.{AdmissionLedgerHost, LedgerInputs}
 import eyes4s.studio.desktop.dock.{DockGesture, PerspectiveHost}
 import eyes4s.studio.desktop.runtime.{
   DesktopEffects,
@@ -60,6 +61,7 @@ final class StudioWindow private (
     val effects: DesktopEffects,
     val project: Option[ProjectPort],
     val columnMapping: ColumnMappingPaneHost,
+    val admission: AdmissionLedgerHost,
     val resolvedDesign: ResolvedDesignHost
 ):
   /** The window content, with the studio stylesheets. */
@@ -71,6 +73,7 @@ final class StudioWindow private (
   /** The controls a pane shows inside its own focus stop, in Tab order. */
   def paneStops(pane: PaneId): Vector[FocusStop] =
     if pane == StudioLayouts.columnMapping then columnMapping.focusStops
+    else if pane == StudioLayouts.admission then admission.focusStops
     else if pane == StudioLayouts.resolvedDesign then resolvedDesign.focusStops
     else Vector.empty
 
@@ -215,7 +218,9 @@ object StudioWindow:
         }
     )
     dockOf = () => host.dock.state.maximized.isDefined
-    val effects = DesktopEffects(
+    // Late-bound too: a verification's answer goes to the admission ledger.
+    var ledger: Option[AdmissionLedgerHost] = None
+    val effects                             = DesktopEffects(
       session,
       dialogs.getOrElse(
         fxDialogs(() => runtime.fold(initial)(_.model), messages, project, presets)
@@ -227,7 +232,8 @@ object StudioWindow:
       host.perform,
       f => Platform.runLater(() => f()),
       project,
-      clock
+      clock,
+      (dataset, content, answer) => ledger.foreach(_.verified(dataset, content, answer))
     )
     val adopted = session.adopt(initial.document)
     adopted.collect { case Left(e) => e }.foreach(e => System.err.println(e.message))
@@ -267,10 +273,15 @@ object StudioWindow:
     presetReader.start()
     host.host(StudioLayouts.columnMapping, mapping.node)
     r.listen(mapping.sync)
+    // The admission ledger (Data): the selected revision's counts, and Admit.
+    val admission = AdmissionLedgerHost(() => r.model, dispatch, LedgerInputs.of(session))
+    ledger = Some(admission)
+    host.host(StudioLayouts.admission, admission.node)
+    r.listen(admission.sync)
     // The resolved-design table (Analysis): the backend's preview of the
     // target revision, prepared once the perspective is shown.
     val design = ResolvedDesignHost(dispatch, DesignInputs.of(session))
     host.host(StudioLayouts.resolvedDesign, design.node)
     r.listen(design.sync)
     design.sync(r.model)
-    Right(StudioWindow(session, r, host, shell, effects, project, mapping, design))
+    Right(StudioWindow(session, r, host, shell, effects, project, mapping, admission, design))
