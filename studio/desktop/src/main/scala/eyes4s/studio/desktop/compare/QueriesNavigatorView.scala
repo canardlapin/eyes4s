@@ -47,10 +47,19 @@ final class QueriesNavigatorView(
     app: Intent => Unit
 ):
   private val byItem = kind == NavigatorKind.Items
-  private val filter = TextField()
+
+  // Writing the shared filter into this field must not echo back as input.
+  private var rendering = false
+
+  /** The filter field: both navigators show the one filter. */
+  val filter: TextField = TextField()
   filter.setPromptText(SummaryText(SummaryTextId.Filter))
   filter.setAccessibleText(SummaryText(SummaryTextId.Filter))
-  filter.textProperty.addListener((_, _, now) => filtered(now))
+  private val typed: javafx.beans.value.ChangeListener[String] =
+    (_, _, now) => if !rendering then filtered(now)
+  filter.textProperty.addListener(typed)
+  // Enter in the field filters; it must not reach the row cursor's keys.
+  filter.setOnAction(_.consume())
 
   private val empty  = Label()
   private val dHead  = Label()
@@ -65,7 +74,7 @@ final class QueriesNavigatorView(
   empty.getStyleClass.addAll("queries-empty", "t12")
   dHead.getStyleClass.add("t11")
 
-  private val head = HBox(6.0, label("Query", "t11"), spacer(), dHead)
+  private val head = HBox(6.0, label(SummaryText(SummaryTextId.Query), "t11"), spacer(), dHead)
   head.getStyleClass.add("queries-head")
 
   /** The pane's content. */
@@ -125,14 +134,37 @@ final class QueriesNavigatorView(
       case KeyCode.RIGHT | KeyCode.KP_RIGHT => Some(NavigatorKey.Expand)
       case KeyCode.LEFT | KeyCode.KP_LEFT   => Some(NavigatorKey.Collapse)
       case _                                => None
-    k.foreach { key =>
-      keyed(key)
-      e.consume()
+    // Keys typed in the filter are the field's (Enter is consumed by it).
+    if e.getTarget ne filter then
+      k.foreach { key =>
+        keyed(key)
+        e.consume()
+      }
+
+  // The stop's own name, kept to announce the row cursor after it.
+  private var stopName: Option[String]                                         = None
+  private val parented: javafx.beans.value.ChangeListener[javafx.scene.Parent] =
+    (_, was, now) =>
+      Option(was).foreach { p =>
+        p.removeEventHandler(KeyEvent.KEY_PRESSED, keys)
+        p.setAccessibleText(stopName.orNull)
+      }
+      stopName = Option(now).flatMap(p => Option(p.getAccessibleText))
+      Option(now).foreach(_.addEventHandler(KeyEvent.KEY_PRESSED, keys))
+  node.parentProperty.addListener(parented)
+
+  /** The stop's accessible text: its name, then the row under the cursor. */
+  def stopText: Option[String] =
+    Option(node.getParent).flatMap(p => Option(p.getAccessibleText))
+
+  /** Removes the listeners and the stop's key handler. */
+  def dispose(): Unit =
+    filter.textProperty.removeListener(typed)
+    node.parentProperty.removeListener(parented)
+    Option(node.getParent).foreach { p =>
+      p.removeEventHandler(KeyEvent.KEY_PRESSED, keys)
+      p.setAccessibleText(stopName.orNull)
     }
-  node.parentProperty.addListener { (_, was, now) =>
-    Option(was).foreach(_.removeEventHandler(KeyEvent.KEY_PRESSED, keys))
-    Option(now).foreach(_.addEventHandler(KeyEvent.KEY_PRESSED, keys))
-  }
 
   /** The empty-state text, if shown. */
   def emptyText: Option[String] = Option.when(empty.isVisible)(empty.getText)
@@ -156,6 +188,16 @@ final class QueriesNavigatorView(
       .foreach(_.getOnMouseClicked.handle(null))
 
   def render(vm: QueriesNavigatorVM): Unit =
+    rendering = true
+    try if filter.getText != vm.filter then filter.setText(vm.filter)
+    finally rendering = false
+    // The row cursor is announced on the stop that holds it.
+    Option(node.getParent).foreach { p =>
+      val text = (stopName.toVector ++ vm.cursorText(kind)).mkString(", ")
+      if Option(p.getAccessibleText) != Option(text).filter(_.nonEmpty) then
+        p.setAccessibleText(Option(text).filter(_.nonEmpty).orNull)
+        p.notifyAccessibleAttributeChanged(javafx.scene.AccessibleAttribute.TEXT)
+    }
     empty.setText(vm.empty.getOrElse(""))
     empty.setVisible(vm.empty.isDefined)
     empty.setManaged(vm.empty.isDefined)
@@ -180,7 +222,10 @@ final class QueriesNavigatorView(
   private def groupNodes(g: QueryGroup): Vector[javafx.scene.Node] =
     val header = Button(s"${g.label}  ${g.summary}")
     header.getStyleClass.add("queries-group")
-    header.setAccessibleText(s"${header.getText}, ${if g.open then "open" else "closed"}")
+    val openness = SummaryText(
+      if g.open then SummaryTextId.GroupOpen else SummaryTextId.GroupClosed
+    )
+    header.setAccessibleText(s"${header.getText}, $openness")
     header.setMaxWidth(Double.MaxValue)
     header.setFocusTraversable(false)
     if g.cursor then header.getStyleClass.add("queries-cursor"): Unit
@@ -202,7 +247,7 @@ final class QueriesNavigatorView(
     if e.selected then row.getStyleClass.add("queries-selected"): Unit
     row.setUserData(e.ref)
     if e.cursor then row.getStyleClass.add("queries-cursor"): Unit
-    row.setAccessibleText(s"${e.trial}, ${e.item}, D ${e.said}")
+    row.setAccessibleText(e.spoken)
     row.setOnMouseClicked(_ => app(e.open))
     row
 

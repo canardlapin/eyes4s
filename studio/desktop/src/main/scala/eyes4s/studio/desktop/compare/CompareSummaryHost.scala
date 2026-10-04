@@ -289,7 +289,7 @@ final class CompareSummaryHost(
       case _ => ()
 
   /** The contrast readout beside the ladder. */
-  val readout: ContrastReadoutView = ContrastReadoutView(app)
+  val readout: ContrastReadoutView = ContrastReadoutView(app, () => retryLadder())
 
   /** The contrast pane: the ladder and its readout. */
   val contrastNode: HBox =
@@ -323,25 +323,35 @@ final class CompareSummaryHost(
       ladderColumns
     )
 
+  /** Read the focused query's ladder again after a failed read. */
+  private def retryLadder(): Unit =
+    val (c, loads) = ContrastPane.retry(contrast)
+    contrast = c
+    loadLadders(loads)
+    render(model())
+
+  private def loadLadders(loads: Vector[ContrastEffect]): Unit =
+    loads.foreach { case ContrastEffect.LoadLadder(run, query) =>
+      inputs.ladder(
+        run,
+        query,
+        scaleLabels,
+        a =>
+          Platform.runLater { () =>
+            if !disposed then
+              contrast = ContrastPane.read(contrast, run, query, a)
+              render(model())
+          }
+      )
+    }
+
   private def syncPanels(m: AppModel): Unit =
     val (next, effects) = TrialPanels.sync(panelState, m, shownRun)
     panelState = next
     if scaleLabels.nonEmpty then
       val (c, loads) = ContrastPane.sync(contrast, next.focus)
       contrast = c
-      loads.foreach { case ContrastEffect.LoadLadder(run, query) =>
-        inputs.ladder(
-          run,
-          query,
-          scaleLabels,
-          a =>
-            Platform.runLater { () =>
-              if !disposed then
-                contrast = ContrastPane.read(contrast, run, query, a)
-                render(model())
-            }
-        )
-      }
+      loadLadders(loads)
     effects.foreach {
       case PanelsEffect.InspectPair(run, address, pair) =>
         inputs.inspect(
@@ -507,6 +517,8 @@ final class CompareSummaryHost(
       participantTable.dispose()
       queryTable.dispose()
       ladder.dispose()
+      queries.dispose()
+      items.dispose()
       queryTrialTable.dispose()
       referenceTrialTable.dispose()
       panels.dispose()

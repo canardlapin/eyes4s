@@ -17,6 +17,7 @@
 package eyes4s.studio.desktop.compare
 
 import eyes4s.studio.app.StoryModels
+import eyes4s.studio.app.compare.NavigatorKind
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.core.backend.{Phase, TrialKey}
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
@@ -24,7 +25,6 @@ import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
 import eyes4s.studio.desktop.shell.ShellFxSuite
-import javafx.scene.control.TextField
 import javafx.scene.input.KeyCode
 
 import scala.concurrent.duration.Duration
@@ -115,10 +115,19 @@ class QueriesNavigatorFxSuite extends ShellFxSuite:
     val stop = runOnFx(w.summary.queries.node.getParent)
     runOnFx(stop.requestFocus())
     fx.awaitLayout()
-    Vector(KeyCode.DOWN, KeyCode.RIGHT, KeyCode.DOWN, KeyCode.ENTER).foreach { k =>
+    val name = runOnFx(w.summary.queries.stopText)
+    Vector(KeyCode.DOWN, KeyCode.RIGHT, KeyCode.DOWN).foreach { k =>
       fx.robot.press(k)
       fx.awaitLayout()
     }
+    // The stop announces the row under the cursor after its own name.
+    val first = runOnFx(w.summary.navigatorVM.groups.head.entries.head)
+    assertEquals(
+      runOnFx(w.summary.queries.stopText),
+      Some((name.toVector :+ s"P01: ${first.spoken}").mkString(", "))
+    )
+    fx.robot.press(KeyCode.ENTER)
+    fx.awaitLayout()
     val trail = runOnFx(w.runtime.model.location.trail)
     trail.last match
       case Place.At(StudioRef.QueryContrast(_, _, key)) =>
@@ -129,10 +138,10 @@ class QueriesNavigatorFxSuite extends ShellFxSuite:
   fxStage.test("the filter narrows queries and items; a project with no run says so") { fx =>
     val w = boot(fx, StoryModels.t2Compare, StoryMoment.T2)
     loaded(fx, w)
-    runOnFx(
-      w.summary.queries.node.getChildren.get(0).asInstanceOf[TextField].setText("beach-042")
-    )
+    runOnFx(w.summary.queries.filter.setText("beach-042"))
     fx.awaitLayout()
+    // One filter: the Items field shows the text that filters it.
+    assertEquals(runOnFx(w.summary.items.filter.getText), "beach-042")
     val shown = runOnFx(w.summary.queries.rows).filter(_.size > 1)
     assert(shown.nonEmpty && shown.forall(_(1) == "beach-042"), shown)
     val items = runOnFx(w.summary.items.rows).filter(_.size == 1)
@@ -142,6 +151,25 @@ class QueriesNavigatorFxSuite extends ShellFxSuite:
       runOnFx(w.summary.queries.stripLines).head,
       ("Query contrasts requested", "480")
     )
+    // Enter in the field filters; it does not reach the row cursor, here on
+    // a query that Enter on the stop would open.
+    runOnFx(w.summary.queries.node.getParent.requestFocus())
+    fx.awaitLayout()
+    Vector(KeyCode.DOWN, KeyCode.RIGHT, KeyCode.DOWN).foreach(k => fx.robot.press(k))
+    assert(
+      runOnFx(w.summary.navigatorVM.cursorText(NavigatorKind.Queries))
+        .exists(_.contains("beach-042"))
+    )
+    val trail = runOnFx(w.runtime.model.location.trail)
+    runOnFx(w.summary.queries.filter.requestFocus())
+    fx.awaitLayout()
+    fx.robot.press(KeyCode.ENTER)
+    fx.awaitLayout()
+    assertEquals(runOnFx(w.runtime.model.location.trail), trail)
+    // Clearing it in Items clears it for Queries.
+    runOnFx(w.summary.items.filter.setText(""))
+    fx.awaitLayout()
+    assertEquals(runOnFx(w.summary.queries.filter.getText), "")
     // No run yet.
     val empty = boot(fx, StoryModels.firstRun, StoryMoment.T2)
     assertEquals(

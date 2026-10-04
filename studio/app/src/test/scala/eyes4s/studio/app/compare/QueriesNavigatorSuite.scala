@@ -22,7 +22,7 @@ import eyes4s.studio.app.{AppModel, StoryModels}
 import eyes4s.studio.core.backend.{PageRequest, QueryRow, ResultSummary}
 import eyes4s.studio.core.fixture.{MockStudy, StoryMoment, StoryMoments}
 import eyes4s.studio.core.headless.HeadlessSession
-import eyes4s.studio.core.selection.StudioRef
+import eyes4s.studio.core.selection.{QueryCount, ScaleIndex, StudioRef}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -89,9 +89,9 @@ class QueriesNavigatorSuite extends munit.FunSuite:
       assertEquals(vm.dColumn, "D · 2°")
       assertEquals(vm.groups.size, 24)
       assertEquals(vm.groups.map(_.entries.size).sum, 480)
-      val p17 = vm.groups.find(_.key == "P17").getOrElse(fail("no P17"))
+      val p17 = vm.groups.find(_.key == "participant:P17").getOrElse(fail("no P17"))
       assertEquals(p17.summary, "19 of 20 · +0.38")
-      val p05 = vm.groups.find(_.key == "P05").get
+      val p05 = vm.groups.find(_.key == "participant:P05").get
       assertEquals(ascii(p05.summary), "17 of 20 · -0.08")
       def entry(trial: String) = p17.entries.find(_.trial == trial).getOrElse(fail(trial))
       val ret07                = entry("ret_07")
@@ -119,17 +119,25 @@ class QueriesNavigatorSuite extends munit.FunSuite:
       val shut = QueriesNavigator.vm(QueriesNavigator.initial, s, Vector.empty)
       assert(shut.groups.forall(!_.open))
       val sel = QueriesNavigator.vm(QueriesNavigator.initial, s, Vector(query))
-      assertEquals(sel.groups.filter(_.open).map(_.key), Vector("P17"))
-      assert(sel.groups.find(_.key == "P17").get.entries.find(_.trial == "ret_07").get.selected)
-      val opened = QueriesNavigator.toggle(QueriesNavigator.initial, "P02", false)
+      assertEquals(sel.groups.filter(_.open).map(_.key), Vector("participant:P17"))
+      assert(
+        sel.groups
+          .find(_.key == "participant:P17")
+          .get
+          .entries
+          .find(_.trial == "ret_07")
+          .get
+          .selected
+      )
+      val opened = QueriesNavigator.toggle(QueriesNavigator.initial, "participant:P02", false)
       assertEquals(
         QueriesNavigator.vm(opened, s, Vector.empty).groups.filter(_.open).map(_.key),
-        Vector("P02")
+        Vector("participant:P02")
       )
-      val reclosed = QueriesNavigator.toggle(opened, "P02", true)
+      val reclosed = QueriesNavigator.toggle(opened, "participant:P02", true)
       assert(QueriesNavigator.vm(reclosed, s, Vector.empty).groups.forall(!_.open))
       // The selection's group closes when the user closes it.
-      val p17shut = QueriesNavigator.toggle(QueriesNavigator.initial, "P17", true)
+      val p17shut = QueriesNavigator.toggle(QueriesNavigator.initial, "participant:P17", true)
       assert(QueriesNavigator.vm(p17shut, s, Vector(query)).groups.forall(!_.open))
       // Filter by item.
       val beach = QueriesNavigator.vm(
@@ -146,7 +154,7 @@ class QueriesNavigatorSuite extends munit.FunSuite:
         s,
         Vector.empty
       )
-      assertEquals(p17.groups.map(_.key), Vector("P17"))
+      assertEquals(p17.groups.map(_.key), Vector("participant:P17"))
       assertEquals(p17.groups.head.entries.size, 20)
       // Items, sorted, each with its queries.
       val all = QueriesNavigator.vm(QueriesNavigator.initial, s, Vector.empty)
@@ -164,7 +172,8 @@ class QueriesNavigatorSuite extends munit.FunSuite:
   test("opening a query walks the trail to it, keeping the spec and the query's group") {
     loaded(t2Compare).map { s =>
       val vm    = QueriesNavigator.vm(QueriesNavigator.initial, s, Vector.empty)
-      val ret07 = vm.groups.find(_.key == "P17").get.entries.find(_.trial == "ret_07").get
+      val ret07 =
+        vm.groups.find(_.key == "participant:P17").get.entries.find(_.trial == "ret_07").get
       val m     = AppModel.run(t2Compare, Vector(ret07.open))._1
       val trail = m.location.trail
       assertEquals(trail.last, Place.At(query))
@@ -197,14 +206,20 @@ class QueriesNavigatorSuite extends munit.FunSuite:
       val start                           = QueriesNavigator.initial
       // No cursor: Down starts at the first header; Up stops there.
       val (first, none) = press(start, Down)
-      assertEquals((cursorOf(first), none), (Some(NavigatorRow.Header("P01")), None))
-      assertEquals(cursorOf(press(first, Up)._1), Some(NavigatorRow.Header("P01")))
+      assertEquals(
+        (cursorOf(first), none),
+        (Some(NavigatorRow.Header("participant:P01")), None)
+      )
+      assertEquals(cursorOf(press(first, Up)._1), Some(NavigatorRow.Header("participant:P01")))
       // Rows: 24 headers and P17's 20 open queries; End goes to the last.
       assertEquals(vmOf(first).rows(Q).size, 44)
-      assertEquals(cursorOf(press(first, Last)._1), Some(NavigatorRow.Header("P24")))
+      assertEquals(
+        cursorOf(press(first, Last)._1),
+        Some(NavigatorRow.Header("participant:P24"))
+      )
       assertEquals(
         cursorOf(press(press(first, Last)._1, Down)._1),
-        Some(NavigatorRow.Header("P24"))
+        Some(NavigatorRow.Header("participant:P24"))
       )
       // Right opens P01; Down then enters its first query; Enter opens it.
       val (p01open, _) = press(first, Expand)
@@ -220,7 +235,7 @@ class QueriesNavigatorSuite extends munit.FunSuite:
       )
       // Left on a query goes to its header; Left there closes it; Enter reopens.
       val (back, _) = press(onQuery, Collapse)
-      assertEquals(cursorOf(back), Some(NavigatorRow.Header("P01")))
+      assertEquals(cursorOf(back), Some(NavigatorRow.Header("participant:P01")))
       val (shut, _) = press(back, Collapse)
       assert(!vmOf(shut).groups.head.open)
       val (reopened, sent) = press(shut, Activate)
@@ -254,5 +269,95 @@ class QueriesNavigatorSuite extends munit.FunSuite:
         ),
         Vector.empty
       )
+    }
+  }
+
+  test("every number of the strip and the participant headers names its ref") {
+    loaded(t2Compare).map { s =>
+      val vm = QueriesNavigator.vm(QueriesNavigator.initial, s, Vector.empty)
+      def tally(c: QueryCount): StudioRef = StudioRef.QueryTally(run7, c)
+      assertEquals(
+        vm.strip.map(_.refs),
+        Vector(
+          Vector(tally(QueryCount.Requested)),
+          Vector(tally(QueryCount.Contributing)),
+          Vector(tally(QueryCount.Failed)),
+          Vector(tally(QueryCount.NoMatch), tally(QueryCount.QueryNotAdmitted)),
+          // "n/a" is no number.
+          Vector.empty
+        )
+      )
+      // One ref per number shown: "9 · 14" is two.
+      assertEquals(vm.strip.map(_.refs.size), Vector(1, 1, 1, 2, 0))
+      val p17 = vm.groups.find(_.key == "participant:P17").get
+      assertEquals(
+        p17.summaryRef,
+        Some(StudioRef.ParticipantSummary(run7, reporting, sigma2, None, "P17"))
+      )
+      assert(vm.groups.forall(_.summaryRef.isDefined))
+      // A tally reads as a path, and lies under the requested queries.
+      assertEquals(
+        eyes4s.studio.app.text.SummaryText.tally(run7, QueryCount.Contributing),
+        "Contributing · run 7"
+      )
+      assertEquals(tally(QueryCount.Failed).parent, Some(tally(QueryCount.Requested)))
+      assertEquals(tally(QueryCount.Requested).parent, None)
+      assert(tally(QueryCount.Failed).isAggregate)
+    }
+  }
+
+  test("one filter: the view-model carries it for both navigators") {
+    loaded(t2Compare).map { s =>
+      val nav = QueriesNavigator.filter(QueriesNavigator.initial, "P17")
+      val vm  = QueriesNavigator.vm(nav, s, Vector.empty)
+      assertEquals(vm.filter, "P17")
+      // The Items navigator shows the same filtered queries and the same text.
+      assertEquals(
+        vm.items.flatMap(_.entries).map(_.ref).toSet,
+        vm.groups.flatMap(_.entries).map(_.ref).toSet
+      )
+      assertEquals(QueriesNavigator.vm(QueriesNavigator.initial, s, Vector.empty).filter, "")
+    }
+  }
+
+  test("a query picked at another σ is still selected, and opens its group") {
+    loaded(t2Compare).map { s =>
+      val at4 = StudioRef.QueryContrast(run7, right(ScaleIndex.of(3)), p17ret07)
+      val vm  = QueriesNavigator.vm(QueriesNavigator.initial, s, Vector(at4))
+      val p17 = vm.groups.find(_.key == "participant:P17").get
+      assert(p17.open)
+      assertEquals(p17.entries.filter(_.selected).map(_.trial), Vector("ret_07"))
+      // Another run's contrast of the same query is not this query.
+      val other = StudioRef.QueryContrast(eyes4s.studio.core.backend.RunId(5), sigma2, p17ret07)
+      assert(
+        !QueriesNavigator.vm(QueriesNavigator.initial, s, Vector(other)).groups.exists(_.open)
+      )
+    }
+  }
+
+  test("the row cursor is announced: a header with its summary, or a query with its D") {
+    loaded(t2Compare).map { s =>
+      import NavigatorKey.*
+      val vm0 = QueriesNavigator.vm(QueriesNavigator.initial, s, Vector.empty)
+      assertEquals(vm0.cursorText(NavigatorKind.Queries), None)
+      val (onP01, _) =
+        QueriesNavigator.key(QueriesNavigator.initial, vm0, NavigatorKind.Queries, Down)
+      val vm1 = QueriesNavigator.vm(onP01, s, Vector.empty)
+      val p01 = vm1.groups.head
+      assertEquals(
+        vm1.cursorText(NavigatorKind.Queries),
+        Some(s"P01: ${p01.summary}, closed")
+      )
+      val (opened, _)  = QueriesNavigator.key(onP01, vm1, NavigatorKind.Queries, Activate)
+      val vm2          = QueriesNavigator.vm(opened, s, Vector.empty)
+      val (onQuery, _) = QueriesNavigator.key(opened, vm2, NavigatorKind.Queries, Down)
+      val vm3          = QueriesNavigator.vm(onQuery, s, Vector.empty)
+      val first        = vm3.groups.head.entries.head
+      assertEquals(
+        vm3.cursorText(NavigatorKind.Queries),
+        Some(s"P01: ${first.trial}, ${first.item}, D ${first.said}")
+      )
+      // The other navigator's cursor is its own.
+      assertEquals(vm3.cursorText(NavigatorKind.Items), None)
     }
   }

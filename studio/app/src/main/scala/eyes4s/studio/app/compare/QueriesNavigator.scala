@@ -21,7 +21,7 @@ import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.app.text.{Format, SummaryText, SummaryTextId}
 import eyes4s.studio.core.backend.{QueryContrasts, QueryRow, QueryStatus, RunId, TrialKey}
-import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
+import eyes4s.studio.core.selection.{QueryCount, ScaleIndex, StudioRef}
 
 /** One query of the navigator: its trial, item, its D at the shown σ or its
   * status when it has none, and its D bar (S8.1; Main.dc.html, left).
@@ -36,7 +36,10 @@ final case class QueryEntry(
     selected: Boolean,
     cursor: Boolean,
     open: Intent
-) derives CanEqual
+) derives CanEqual:
+
+  /** The row as read aloud: "ret_07, beach-042, D +0.38". */
+  def spoken: String = SummaryText(SummaryTextId.QueryRowSpoken, trial, item, said)
 
 /** A zero-centred ink bar, drawn from the zero line to `fromZeroTo`, a
   * fraction of the bar's half-width (−1 to 1): the run's largest |D| at the
@@ -51,6 +54,7 @@ final case class QueryGroup(
     key: String,
     label: String,
     summary: String,
+    summaryRef: Option[StudioRef],
     open: Boolean,
     cursor: Boolean,
     entries: Vector[QueryEntry]
@@ -74,11 +78,19 @@ enum NavigatorRow derives CanEqual:
 enum NavigatorKey derives CanEqual:
   case Up, Down, First, Last, Activate, Expand, Collapse
 
-/** One line of the count strip: what is counted and how many. */
-final case class StripLine(label: String, count: String, failure: Boolean) derives CanEqual
+/** One line of the count strip: what is counted, how many, and the tally
+  * each number shown names, in the order they are shown ("n/a" names none).
+  */
+final case class StripLine(
+    label: String,
+    count: String,
+    failure: Boolean,
+    refs: Vector[StudioRef]
+) derives CanEqual
 
 /** What the Queries and Items navigators show (ticket S8.1). */
 final case class QueriesNavigatorVM(
+    filter: String,
     empty: Option[String],
     dColumn: String,
     groups: Vector[QueryGroup],
@@ -99,6 +111,27 @@ final case class QueriesNavigatorVM(
       NavigatorRow.Header(g.key) +:
         (if g.open then g.entries.map(e => NavigatorRow.Query(e.ref)) else Vector.empty)
     )
+
+  /** The row under navigator `kind`'s cursor as assistive technology
+    * announces it, if the cursor is on a shown row: a header with its
+    * summary and whether it is open, or a query with its item and D.
+    */
+  def cursorText(kind: NavigatorKind): Option[String] =
+    groupsOf(kind).iterator
+      .flatMap { g =>
+        val header = Option.when(g.cursor)(
+          SummaryText(
+            SummaryTextId.CursorHeader,
+            g.label,
+            g.summary,
+            SummaryText(if g.open then SummaryTextId.GroupOpen else SummaryTextId.GroupClosed)
+          )
+        )
+        header.iterator ++ g.entries.iterator
+          .filter(_.cursor)
+          .map(e => SummaryText(SummaryTextId.CursorQuery, g.label, e.spoken))
+      }
+      .nextOption()
 
 /** The navigators' own state: the filter text, the groups the user opened
   * or closed (a group holding the selection is open unless closed), and each
@@ -129,6 +162,7 @@ object QueriesNavigator:
     (s.run, s.answered, s.queries, s.shown) match
       case (None, _, _, _) =>
         QueriesNavigatorVM(
+          nav.filter,
           Some(SummaryText(SummaryTextId.NoRun)),
           "",
           Vector.empty,
@@ -154,7 +188,8 @@ object QueriesNavigator:
                 Format.signed(ps.all.d, 2)
               )
             )
-          group(nav, NavigatorKind.Queries, p, p, summary, es)
+          val ref = s.reporting.map(StudioRef.ParticipantSummary(run, _, scale, None, p))
+          group(nav, NavigatorKind.Queries, s"participant:$p", p, summary, ref, es)
         }
         val byItem = shown.zip(entries).groupBy(_._1.item)
         val items  = shown.map(_.item).distinct.sorted.map { item =>
@@ -165,15 +200,17 @@ object QueriesNavigator:
             s"item:$item",
             item,
             SummaryText(SummaryTextId.ItemHeader, item, es.size.toString),
+            None,
             es
           )
         }
         QueriesNavigatorVM(
+          nav.filter,
           None,
           SummaryText(SummaryTextId.DColumn, label),
           participants,
           items,
-          strip(r.contrasts)
+          strip(run, r.contrasts)
         )
       case (Some(run), _, _, _) =>
         val n      = run.number.toString
@@ -186,23 +223,40 @@ object QueriesNavigator:
             SummaryText(SummaryTextId.Unreadable, n, why)
           case _ => SummaryText(SummaryTextId.Reading, n)
         QueriesNavigatorVM(
+          nav.filter,
           Some(status),
           "",
           Vector.empty,
           Vector.empty,
-          s.answered.fold(Vector.empty)(r => strip(r.contrasts))
+          s.answered.fold(Vector.empty)(r => strip(run, r.contrasts))
         )
 
   /** The count strip (Main.dc.html): requested, contributing, failed, no
     * match and query not admitted, and by design, which this summary does
     * not count (n/a).
     */
-  def strip(c: QueryContrasts): Vector[StripLine] =
+  def strip(run: RunId, c: QueryContrasts): Vector[StripLine] =
     import SummaryTextId.*
+    def tally(count: QueryCount) = Vector(StudioRef.QueryTally(run, count))
     Vector(
-      StripLine(SummaryText(StripRequested), Format.count(c.requested.toLong), false),
-      StripLine(SummaryText(StripContributing), Format.count(c.contributing.toLong), false),
-      StripLine(SummaryText(StripFailed), Format.count(c.failed.toLong), c.failed > 0),
+      StripLine(
+        SummaryText(StripRequested),
+        Format.count(c.requested.toLong),
+        false,
+        tally(QueryCount.Requested)
+      ),
+      StripLine(
+        SummaryText(StripContributing),
+        Format.count(c.contributing.toLong),
+        false,
+        tally(QueryCount.Contributing)
+      ),
+      StripLine(
+        SummaryText(StripFailed),
+        Format.count(c.failed.toLong),
+        c.failed > 0,
+        tally(QueryCount.Failed)
+      ),
       StripLine(
         SummaryText(StripNoMatchNotAdmitted),
         SummaryText(
@@ -210,9 +264,10 @@ object QueriesNavigator:
           Format.count(c.noMatch.toLong),
           Format.count(c.queryNotAdmitted.toLong)
         ),
-        false
+        false,
+        tally(QueryCount.NoMatch) ++ tally(QueryCount.QueryNotAdmitted)
       ),
-      StripLine(SummaryText(StripByDesign), SummaryText(NotApplicable), false)
+      StripLine(SummaryText(StripByDesign), SummaryText(NotApplicable), false, Vector.empty)
     )
 
   /** The controls inside a navigator's own focus stop: its filter, unless
@@ -276,6 +331,7 @@ object QueriesNavigator:
       key: String,
       label: String,
       summary: String,
+      summaryRef: Option[StudioRef],
       entries: Vector[QueryEntry]
   ): QueryGroup =
     val cursor = nav.cursors.get(kind)
@@ -283,6 +339,7 @@ object QueriesNavigator:
       key,
       label,
       summary,
+      summaryRef,
       !nav.closed(key) && (nav.opened(key) || entries.exists(_.selected)),
       cursor.contains(NavigatorRow.Header(key)),
       entries.map(e => e.copy(cursor = cursor.contains(NavigatorRow.Query(e.ref))))
@@ -317,7 +374,7 @@ object QueriesNavigator:
           d.fold(statusWord(q.status))(Format.signed(_, 2)),
           d.isDefined,
           d.map(v => DBar(v / extent)),
-          selected.contains(ref),
+          selected.exists(sameQuery(run, q.query)),
           false,
           Intent.Explain(Place.At(ref))
         )
@@ -325,6 +382,14 @@ object QueriesNavigator:
     }
 
   private final case class Keyed(key: TrialKey, entry: QueryEntry)
+
+  /** Whether `ref` is the query contrast of `query` in `run`, at any σ: the
+    * navigator shows one σ, and a query picked at another (a ladder rung)
+    * is still this query.
+    */
+  private def sameQuery(run: RunId, query: TrialKey)(ref: StudioRef): Boolean = ref match
+    case StudioRef.QueryContrast(r, _, q) => r == run && q == query
+    case _                                => false
 
   private def statusWord(status: QueryStatus): String = status match
     case QueryStatus.Contributing(_, _, _) => SummaryText(SummaryTextId.NotApplicable)

@@ -29,14 +29,17 @@ import javafx.scene.layout.{GridPane, HBox, Priority, Region, VBox}
   * pair with Prev and Next. It only binds [[ContrastVM]]; Prev and Next send
   * their intents. Use on the JavaFX thread.
   */
-final class ContrastReadoutView(app: Intent => Unit):
+final class ContrastReadoutView(app: Intent => Unit, retried: () => Unit):
 
   private def label(style: String*): Label =
     val l = Label()
     l.getStyleClass.addAll(style*)
     l
 
-  private val status   = label("t12", "contrast-status")
+  private val status = label("t12", "contrast-status")
+  private val retry  = Button(ContrastText(ContrastTextId.Retry))
+  retry.getStyleClass.add("btn")
+  retry.setOnAction(_ => retried())
   private val caption  = label("lbl")
   private val hero     = label("t28", "mono")
   private val heroUnit = label("contrast-unit")
@@ -74,7 +77,7 @@ final class ContrastReadoutView(app: Intent => Unit):
   inspected.getStyleClass.add("contrast-inspected")
 
   /** The readout's content. */
-  val node: VBox = VBox(6.0, status, caption, heroRow, values, confound, inspected)
+  val node: VBox = VBox(6.0, status, retry, caption, heroRow, values, confound, inspected)
   node.getStyleClass.add("contrast-readout")
   node.setPrefWidth(250.0)
   node.setMinWidth(250.0)
@@ -111,10 +114,17 @@ final class ContrastReadoutView(app: Intent => Unit):
   def pressNext(): Unit         = next.fire()
   def steps: (Boolean, Boolean) = (!prev.isDisabled, !next.isDisabled)
 
+  /** Presses Retry, as the user does; whether it is shown. */
+  def pressRetry(): Unit  = retry.fire()
+  def retryShown: Boolean = retry.isVisible
+
   def render(vm: ContrastVM): Unit =
     status.setText(vm.status.getOrElse(""))
     status.setVisible(vm.status.isDefined)
     status.setManaged(vm.status.isDefined)
+    vm.retry.foreach(retry.setText)
+    retry.setVisible(vm.retry.isDefined)
+    retry.setManaged(vm.retry.isDefined)
     caption.setText(vm.caption)
     hero.setText(vm.hero.fold("")(_.value))
     heroUnit.setText(vm.hero.fold("")(_.label))

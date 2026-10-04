@@ -54,6 +54,7 @@ final case class InspectedVM(
   */
 final case class ContrastVM(
     status: Option[String],
+    retry: Option[String],
     ladder: Option[PlotSource],
     focusScale: Option[String],
     caption: String,
@@ -88,6 +89,13 @@ object ContrastPane:
         key.toVector.map((run, query) => ContrastEffect.LoadLadder(run, query))
       )
 
+  /** Read the focused query's ladder again after a failed read. */
+  def retry(s: ContrastPane): (ContrastPane, Vector[ContrastEffect]) =
+    (s.key, s.ladder) match
+      case (Some((run, query)), Some(LadderAnswer.Failed(_))) =>
+        (s.copy(ladder = None), Vector(ContrastEffect.LoadLadder(run, query)))
+      case _ => (s, Vector.empty)
+
   /** A ladder read for `run` and `query`; kept only if still focused. */
   def read(s: ContrastPane, run: RunId, query: TrialKey, answer: LadderAnswer): ContrastPane =
     if s.key.contains((run, query)) then s.copy(ladder = Some(answer)) else s
@@ -120,20 +128,25 @@ object ContrastPane:
   ): ContrastVM =
     val confound                              = ContrastText(ContrastTextId.Confound)
     def bare(status: String, caption: String) =
-      ContrastVM(Some(status), None, None, caption, None, None, None, confound, None)
+      ContrastVM(Some(status), None, None, None, caption, None, None, None, confound, None)
     (focus, s.ladder) match
       case (None, _)       => bare(ContrastText(ContrastTextId.NoQuery), "")
       case (Some(f), None) =>
         bare(ContrastText(ContrastTextId.Reading, f.query.trial), "")
       case (Some(f), Some(LadderAnswer.Failed(why))) =>
         bare(ContrastText(ContrastTextId.Unreadable, f.query.trial, why), "")
+          .copy(retry = Some(ContrastText(ContrastTextId.Retry)))
       case (Some(f), Some(LadderAnswer.Answered(ladder))) =>
         val at      = ladder.scales.find(_.scale == f.scale)
         val label   = at.fold(f.scale.value.toString)(_.label)
         val caption = ContrastText(ContrastTextId.Caption, f.query.trial, label)
         val source  = ScaleLadder.source(ladder, columns)
+        // A scale the ladder lacks says so; the ladder is still drawn.
+        val missing =
+          Option.when(at.isEmpty)(ContrastText(ContrastTextId.NoScale, f.query.trial, label))
         ContrastVM(
-          source.left.toOption.map(_.message),
+          source.left.toOption.map(_.message).orElse(missing),
+          None,
           source.toOption,
           at.map(_.label),
           caption,
@@ -164,28 +177,44 @@ object ContrastPane:
     order.indexOf(shown) match
       case -1 => None
       case i  =>
-        val walk     = (j: Int) => order.lift(j).map(r => Intent.Explain(Place.At(r)))
-        val controls = at.controls.size.toString
+        val walk = (j: Int) => order.lift(j).map(r => Intent.Explain(Place.At(r)))
+        // One count of controls throughout: B's members, as the backend
+        // served them; the controls listed without a cosine are said apart.
+        val members                      = at.members.toString
+        val unscored                     = at.controls.count(_.cosine.isEmpty)
+        val ranked                       = (at.controls.size - unscored).toString
         val (heading, score, note, rank) =
           if shown == at.matched then
             (
               ContrastText(ContrastTextId.RoleItem, PanelRole.Matched.label, at.matchedItem),
               Format.decimal(at.m, 2),
               ContrastText(ContrastTextId.MatchedNote),
-              ContrastText(ContrastTextId.MatchedRank, controls)
+              if unscored == 0 then ContrastText(ContrastTextId.MatchedRank, members)
+              else ContrastText(ContrastTextId.MatchedRankUnscored, members, unscored.toString)
             )
           else
-            val c = at.controls.find(_.ref == shown)
-            (
-              ContrastText(
-                ContrastTextId.RoleItem,
-                PanelRole.Control.label,
-                c.flatMap(_.item).getOrElse(c.fold("")(_.reference.trial))
-              ),
-              c.flatMap(_.cosine).fold("")(Format.decimal(_, 2)),
-              ContrastText(ContrastTextId.ControlNote, controls),
-              ContrastText(ContrastTextId.ControlRank, i.toString, controls)
+            val c      = at.controls.find(_.ref == shown)
+            val cosine = c.flatMap(_.cosine)
+            val role   = ContrastText(
+              ContrastTextId.RoleItem,
+              PanelRole.Control.label,
+              c.flatMap(_.item).getOrElse(c.fold("")(_.reference.trial))
             )
+            cosine match
+              case Some(v) =>
+                (
+                  role,
+                  Format.decimal(v, 2),
+                  ContrastText(ContrastTextId.ControlNote, members),
+                  ContrastText(ContrastTextId.ControlRank, i.toString, ranked)
+                )
+              case None =>
+                (
+                  role,
+                  ContrastText(ContrastTextId.NotServed),
+                  ContrastText(ContrastTextId.UnscoredNote, members),
+                  ContrastText(ContrastTextId.UnscoredRank, ranked)
+                )
         Some(
           InspectedVM(
             heading,

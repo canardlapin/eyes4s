@@ -205,3 +205,78 @@ class ContrastPaneSuite extends munit.FunSuite:
       Some("Choose a query in the Queries navigator")
     )
   }
+
+  /** `p` with the 2° control `trial` served without a cosine, as the
+    * backend's `Unavailable` leaves it, and B over the other 18.
+    */
+  private def unscored(p: ContrastPane, trial: String): ContrastPane =
+    val ladder = p.ladder.collect { case LadderAnswer.Answered(l) => l }.get
+    val scales = ladder.scales.map { s =>
+      if s.label != "2°" then s
+      else
+        s.copy(
+          controls = s.controls.map(c =>
+            if c.reference.trial == trial then c.copy(item = None, cosine = None) else c
+          ),
+          members = s.members - 1
+        )
+    }
+    p.copy(ladder = Some(LadderAnswer.Answered(ladder.copy(scales = scales))))
+
+  test("a control served without a cosine is said so, ranked last, with one count of B") {
+    loaded(t2Compare).map { p0 =>
+      // enc_01 (street-112) has the highest cosine; served without one, it goes last.
+      val p  = unscored(p0, "enc_01")
+      val vm = vmAt(p, t2Compare)
+      assertEquals(vm.b.map(_.label), Some("B mean of 18 controls"))
+      val i = vm.inspected.get
+      assertEquals(i.rank, "matched · then 18 controls, 1 without a served cosine")
+      val walked = Iterator
+        .iterate((t2Compare, Option(i))) { (m, vm) =>
+          vm.flatMap(_.next).fold((m, None)) { n =>
+            val m2 = AppModel.run(m, Vector(n))._1
+            (m2, vmAt(p, m2).inspected)
+          }
+        }
+        .drop(1)
+        .takeWhile(_._2.isDefined)
+        .map(_._2.get)
+        .toVector
+      assertEquals(walked.size, 19)
+      // The scored controls first, by descending cosine; the unscored one last.
+      val scored = walked.init.map(_.score.value.toDouble)
+      assertEquals(scored, scored.sortBy(-_))
+      assertEquals(walked.head.note, "One of 18 controls. It enters B; it is not M.")
+      assertEquals(walked.head.rank, "control 1 of 18 by cosine")
+      val last = walked.last
+      assertEquals(last.heading, "Control · enc_01")
+      assertEquals(last.score.value, "not served")
+      assertEquals(
+        last.note,
+        "No cosine is served for this control here. B is the backend's mean of 18 controls."
+      )
+      assertEquals(last.rank, "no cosine · after the 18 controls ranked by cosine")
+      assertEquals(last.next, None)
+    }
+  }
+
+  test("a scale the ladder lacks has a status; a failed read offers Retry") {
+    loaded(t2Compare).map { p =>
+      val ladder = p.ladder.collect { case LadderAnswer.Answered(l) => l }.get
+      val short  = p.copy(ladder =
+        Some(LadderAnswer.Answered(ladder.copy(scales = ladder.scales.take(2))))
+      )
+      val vm = vmAt(short, t2Compare)
+      assertEquals(vm.status, Some("The ladder of ret_07 has no scale 2."))
+      assertEquals((vm.hero, vm.inspected), (None, None))
+      assertEquals(vm.retry, None)
+      val failed = ContrastPane.read(p, run7, p17ret07, LadderAnswer.Failed("no pairs"))
+      assertEquals(vmAt(failed, t2Compare).retry, Some("Retry"))
+      val (again, effects) = ContrastPane.retry(failed)
+      assertEquals(effects, Vector(ContrastEffect.LoadLadder(run7, p17ret07)))
+      assertEquals(again.ladder, None)
+      assertEquals(vmAt(again, t2Compare).status, Some("Reading the contrast of ret_07…"))
+      // Nothing failed: nothing to retry.
+      assertEquals(ContrastPane.retry(p), (p, Vector.empty))
+    }
+  }

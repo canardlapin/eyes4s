@@ -16,6 +16,8 @@
 
 package eyes4s.studio.app.text
 
+import eyes4s.studio.core.selection.QueryCount
+
 /** The strings of Compare's summary layout (ticket S8.6; the Results
   * board). They are kept apart from [[MessageId]] so the layout adds its own
   * ids without editing the shell's catalogue. Templates name their
@@ -56,6 +58,12 @@ enum SummaryTextId derives CanEqual:
   case ParticipantHeader, DColumn, Filter
   case StripRequested, StripContributing, StripFailed, StripNoMatchNotAdmitted, StripByDesign
   case StripPair, NotApplicable, ItemHeader
+
+  /** A run's query tally (StudioRef.QueryTally) as a path, the outcomes'
+    * own names, and the row cursor as announced.
+    */
+  case TallyOf, TallyNoMatch, TallyNotAdmitted, CursorHeader, CursorQuery
+  case GroupOpen, GroupClosed, QueryRowSpoken
 
 /** Compare's summary strings in the boards' wording. */
 object SummaryText:
@@ -110,6 +118,25 @@ object SummaryText:
       case StripPair               => "{0} · {1}"
       case NotApplicable           => "n/a"
       case ItemHeader              => "{0} · {1} queries"
+      case TallyOf                 => "{0} · run {1}"
+      case TallyNoMatch            => "No match"
+      case TallyNotAdmitted        => "Query not admitted"
+      case CursorHeader            => "{0}: {1}, {2}"
+      case CursorQuery             => "{0}: {1}"
+      case GroupOpen               => "open"
+      case GroupClosed             => "closed"
+      case QueryRowSpoken          => "{0}, {1}, D {2}"
+
+  /** A run's query tally as a path ("Contributing · run 7"). */
+  def tally(run: eyes4s.studio.core.backend.RunId, count: QueryCount): String =
+    import SummaryTextId.*
+    val what = count match
+      case QueryCount.Requested        => StripRequested
+      case QueryCount.Contributing     => StripContributing
+      case QueryCount.Failed           => StripFailed
+      case QueryCount.NoMatch          => TallyNoMatch
+      case QueryCount.QueryNotAdmitted => TallyNotAdmitted
+    apply(TallyOf, apply(what), run.number.toString)
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: SummaryTextId, args: String*): String =
