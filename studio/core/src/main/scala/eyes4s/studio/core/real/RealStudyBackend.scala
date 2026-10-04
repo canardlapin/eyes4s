@@ -21,7 +21,7 @@ import cats.syntax.all.*
 import eyes4s.codec.ByteDigest
 import eyes4s.studio.core.assets.AssetRegistry
 import eyes4s.studio.core.backend.*
-import eyes4s.studio.core.document.{DatasetRevisionSpec, Source, StudioDocument}
+import eyes4s.studio.core.document.{DatasetRevisionSpec, Recipe, Source, StudioDocument}
 import eyes4s.studio.core.preview.*
 import fs2.Stream
 import java.nio.charset.StandardCharsets
@@ -52,9 +52,10 @@ trait DatasetSources[F[_]]:
   */
 final class RealStudyBackend[F[_]] private (
     datasets: Map[DatasetRevision, DatasetRevisionSpec],
-    revisions: Map[AnalysisRevision, DatasetRevision],
+    revisions: Map[AnalysisRevision, (DatasetRevision, Recipe)],
     sources: DatasetSources[F],
-    admitted: Ref[F, Map[DatasetRevision, Either[BackendError, AdmittedDataset]]]
+    admitted: Ref[F, Map[DatasetRevision, Either[BackendError, AdmittedDataset]]],
+    prepared: Ref[F, Map[AnalysisRevision, Either[BackendError, RealPrepared]]]
 )(using F: Concurrent[F])
     extends StudyBackend[F]:
 
@@ -123,8 +124,24 @@ final class RealStudyBackend[F[_]] private (
   private def noJob[A](job: JobId): F[Either[BackendError, A]] =
     F.pure(Left(BackendError.UnknownJob(job, Vector.empty)))
 
+  // ------------------------------------------------------------------ the prepared study
+
+  /** The revision's study, configured from its recipe over its dataset's
+    * admitted input and prepared once; a revision is immutable.
+    */
+  private def prepare(r: AnalysisRevision): F[Either[BackendError, RealPrepared]] =
+    revisions.get(r) match
+      case None              => F.pure(Left(BackendError.UnknownRevision(r, knownRevisions)))
+      case Some((d, recipe)) =>
+        prepared.get.flatMap(_.get(r) match
+          case Some(done) => F.pure(done)
+          case None       =>
+            admission0(d)
+              .map(_.flatMap(RealPrepared.of(r, d, recipe, _)))
+              .flatTap(result => prepared.update(_.updated(r, result))))
+
   def preview(revision: AnalysisRevision): F[Either[BackendError, PreviewSummary]] =
-    notYet(revision)
+    prepare(revision).map(_.map(_.summary))
 
   def previewRows(
       revision: AnalysisRevision,
@@ -197,18 +214,22 @@ object RealStudyBackend:
       document: StudioDocument,
       sources: DatasetSources[F]
   ): F[RealStudyBackend[F]] =
-    Ref
-      .of[F, Map[DatasetRevision, Either[BackendError, AdmittedDataset]]](Map.empty)
-      .map { admitted =>
-        val revisions =
-          document.analyses.map(a => a.id -> a.dataset) ++
-            document.draft.flatMap(d =>
-              d.dataset.orElse(document.analysis(d.base).map(_.dataset)).map(d.id -> _)
-            )
-        new RealStudyBackend(
-          document.datasets.map(d => d.id -> d).toMap,
-          revisions.toMap,
-          sources,
-          admitted
-        )
-      }
+    (
+      Ref.of[F, Map[DatasetRevision, Either[BackendError, AdmittedDataset]]](Map.empty),
+      Ref.of[F, Map[AnalysisRevision, Either[BackendError, RealPrepared]]](Map.empty)
+    ).mapN { (admitted, prepared) =>
+      val saved = document.analyses.map(a => a.id -> (a.dataset, a.recipe))
+      // A draft's recipe is its changes applied to its base's recipe.
+      val draft = document.draft.flatMap(d =>
+        document
+          .analysis(d.base)
+          .map(base => d.id -> (d.dataset.getOrElse(base.dataset), d.recipe(base.recipe)))
+      )
+      new RealStudyBackend(
+        document.datasets.map(d => d.id -> d).toMap,
+        (saved ++ draft).toMap,
+        sources,
+        admitted,
+        prepared
+      )
+    }

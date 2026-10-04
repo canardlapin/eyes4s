@@ -39,7 +39,12 @@ import eyes4s.studio.core.document.{ColumnRole, DatasetRevisionSpec, InventoryMa
   * the admission summary and every inventory trial's ledger entry, in
   * inventory order. Built once per dataset revision.
   */
-final case class AdmittedDataset(summary: AdmissionSummary, ledger: Vector[LedgerEntry])
+final case class AdmittedDataset(
+    summary: AdmissionSummary,
+    ledger: Vector[LedgerEntry],
+    screen: Frame[Unit2D.Px],
+    input: eyes4s.plan.StudyInput[CoreKey, Unit2D.Px]
+)
 
 /** The admission of a [[DatasetRevisionSpec]] through eyes4s-io (S3.7 slice 1).
   *
@@ -84,7 +89,14 @@ object RealAdmission:
       val trialsOf = imported.trials
       val outside  = outsideFrameByTrial(imported)
       val ledger   = trialsOf.map(entry(_, response, outside))
-      AdmittedDataset(summary(spec, imported, window, assets), ledger)
+      // The admitted trials; an admission that requires a complete input
+      // refused before reaching here (eyes4s ReviewExclusions semantics).
+      AdmittedDataset(
+        summary(spec, imported, window, assets),
+        ledger,
+        screen,
+        eyes4s.plan.StudyInput(imported.fixations.accepted)
+      )
 
   // ------------------------------------------------------------------ eyes4s inputs
 

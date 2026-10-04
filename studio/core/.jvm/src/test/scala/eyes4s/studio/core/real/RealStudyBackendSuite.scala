@@ -183,3 +183,48 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       assertEquals((runs, jobs), (Vector.empty, Vector.empty))
       assertEquals(events.map(_.left.map(_.code)), Vector(Left("studio-backend.unavailable")))
   }
+
+  /** t2 with the trial-inventory layout, the one an inventory dataset's
+    * TrialKeys fit (the story preset declares the participant-stimulus-phase
+    * layout; see docs/studio/plan/S3.7-slices.md).
+    */
+  private val trialLayout: StudioDocument =
+    val layout = eyes4s.studio.core.document.DefinitionRef
+      .fromCore(eyes4s.plan.TrialKeyDefinitions.trialLayout)
+    get(
+      StudioDocument.of(
+        t2.datasets,
+        t2.analyses.map(a => a.copy(recipe = a.recipe.copy(layout = layout))),
+        t2.draft,
+        t2.runs,
+        t2.reporting,
+        t2.figures,
+        t2.presentation,
+        t2.jobs
+      )
+    )
+
+  test("the preview counts are eyes4s's prepared study over the admitted trials") {
+    for
+      real  <- RealStudyBackend.create[IO](trialLayout, RealBackendConformanceSuite.golden)
+      rev4  <- real.preview(StoryMoments.rev4).map(get)
+      rev5  <- real.preview(StoryMoments.rev5).map(get)
+      story <- backend().flatMap(_.preview(StoryMoments.rev4))
+    yield
+      assertEquals((rev4.revision, rev4.dataset), (StoryMoments.rev4, StoryMoments.r3))
+      assertEquals(rev4.scales, Vector("0.5°", "1°", "2°", "4°"))
+      assertEquals(rev5.scales, rev4.scales :+ "8°")
+      // Candidates are counted over admitted trials (lead, 2026-10-04): 466 x 471.
+      assertEquals((rev4.focalTrials, rev4.referenceTrials), (466, 471))
+      assertEquals(rev4.candidatePairsPerScale, 219486L)
+      assertEquals(rev4.requestedQueries, 480)
+      assert(rev4.eligibleQueries > 0 && rev4.eligibleQueries <= rev4.focalTrials, rev4)
+      assertEquals(rev4.pairRows, rev4.pairRowsPerScale * 4)
+      assertEquals(rev5.pairRowsPerScale, rev4.pairRowsPerScale)
+      assertEquals(rev5.pairRows, rev5.pairRowsPerScale * 5)
+      // The story's own layout does not fit an inventory dataset's keys.
+      assertEquals(
+        story,
+        Left(BackendError.Unavailable(DiagnosticLocus.Revision(StoryMoments.rev4)))
+      )
+  }
