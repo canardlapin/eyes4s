@@ -159,7 +159,27 @@ sigma 0.5 and 8 degrees warn, 1, 2 and 4 do not. Advisories project to the
 and the methods text as `Phrase`s of `Token`s: fixed words, or values with the
 form field they come from and a `TokenRole` (query, reference, match, control,
 scale, metric, policy), so a host styles and localises them without parsing
-English. Run counts are not part of a plan and are not in the text.
+English.
+
+`StudyText.methods(plan, facts)` also states the facts a methods text cites
+beyond the plan (CR6d): the admission (dataset revision, fixation records,
+admitted, quarantined by cause, absent, records outside the window and the
+screen), the design (requested, eligible, unmatched and not-admitted queries,
+controls per query) and the reporting (the reporting specification, group size
+range, paired n, participant-group cells below the minimum). Each is a
+`Token.Fact` with its `FactSlot` and a typed `FactSource` (a ledger count, a
+design count, report cells or a contrast key, the reporting specification, a
+plan field or a host fact), so a host links every number to what it counts. A
+`Fact` takes the kind of `FactValue` its slot states (`Fact.of` refuses
+another, a negative count, an empty range or a blank label, with the
+`methods-fact` diagnostics), and `MethodsFacts` holds one fact per slot. A fact
+not given is not stated; `methods(plan)` states the plan alone. Causes carry
+the boards' labels (`AdmissionCause`: overlap, no-fixations,
+duplicate-ordinals, rejected-records, absent (no fixation records)). The text
+also states the method-determined words: what M, B and D are, that D measures
+spatial correspondence rather than sequential replay, and, under the
+require-all failure policy, that a query's contrast needed all its pairs. The
+confound sentence is the host's.
 
 A host holding an erased `FieldError[Any]` from `ParameterSet.validate` projects
 it with `Diagnose.reportedFormField`.

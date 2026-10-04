@@ -943,6 +943,17 @@ object DiagnosticCatalog:
       "SigmaNearUniform"
     )
 
+  // ---------------------------------------------------------------- appended by CR6d
+  /** A methods-text fact refused for its value or a duplicate slot. */
+  val methodsFact: DiagnosticFamily = error("methods-fact")(
+    "WrongValue",
+    "NegativeCount",
+    "EmptyRange",
+    "BlankLabel",
+    "NotFewer",
+    "Duplicate"
+  )
+
   /** Families whose error type no longer exists. Their codes stay issued, in
     * their original place in [[issuedFamilies]], so a retired code is never
     * reused with another meaning; no live error projects to one.
@@ -1062,7 +1073,8 @@ object DiagnosticCatalog:
     stageMeter,
     studyRun,
     studyRecipe,
-    studyAdvisory
+    studyAdvisory,
+    methodsFact
   )
 
   /** Every live family, grouped as documented. */

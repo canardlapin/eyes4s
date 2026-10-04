@@ -157,7 +157,9 @@ class StudyFormSuite extends munit.FunSuite:
         "Each map summed duration-weighted fixations at σ 0.5°, σ 1°, σ 2°, σ 4°, truncated " +
           "at the grid edge; each scale was analysed on its own.",
         "Maps were compared by Cosine similarity.",
-        "Every selected pair had to be scored."
+        "For each query, M was its matched score and B the mean of its control scores, and " +
+          "D = M − B. D measures spatial correspondence, not sequential replay.",
+        "Every selected pair had to be scored, so a query's contrast needed all its pairs."
       )
     )
     val dropping = get(
@@ -391,6 +393,226 @@ class StudyFormSuite extends munit.FunSuite:
     val projected = Diagnose.reportedFormField(extension)
     assertEquals(projected.code.render, "form-field.refused")
     assertEquals(projected.causes, Vector.empty)
+  }
+
+  // --- CR6d: methods-text fact slots ----------------------------------------------
+
+  private def fact(slot: FactSlot, source: FactSource, value: FactValue): Fact =
+    get(Fact.of(slot, source, value))
+  private def count(n: Long) = FactValue.Count(n)
+  private val ledger         = FactSource.Ledger.apply
+  private val design         = FactSource.Design.apply
+  private val cells          = Vector(
+    CellKey(Vector("response" -> "Remembered"), "contrast", "D"),
+    CellKey(Vector("response" -> "Forgotten"), "contrast", "D")
+  )
+  private val contrastKey =
+    ContrastKey(Vector.empty, "response", "Remembered", "Forgotten")
+
+  /** The facts of the Studio fixture (FIXTURE.md), as a host fills them. */
+  private val fixtureFacts = get(
+    MethodsFacts.of(
+      Vector(
+        fact(FactSlot.DatasetRevision, FactSource.Host("dataset"), FactValue.Label("r3")),
+        fact(FactSlot.FixationRecords, ledger(LedgerCount.FixationRecords), count(11520)),
+        fact(FactSlot.InventoryTrials, ledger(LedgerCount.InventoryTrials), count(960)),
+        fact(FactSlot.Admitted, ledger(LedgerCount.Admitted), count(937)),
+        fact(FactSlot.Quarantined, ledger(LedgerCount.Quarantined), count(17)),
+        fact(
+          FactSlot.QuarantineCause(AdmissionCause.Overlap),
+          ledger(LedgerCount.Cause(AdmissionCause.Overlap)),
+          count(6)
+        ),
+        fact(
+          FactSlot.QuarantineCause(AdmissionCause.NoFixations),
+          ledger(LedgerCount.Cause(AdmissionCause.NoFixations)),
+          count(5)
+        ),
+        fact(
+          FactSlot.QuarantineCause(AdmissionCause.DuplicateOrdinals),
+          ledger(LedgerCount.Cause(AdmissionCause.DuplicateOrdinals)),
+          count(4)
+        ),
+        fact(
+          FactSlot.QuarantineCause(AdmissionCause.RejectedRecords),
+          ledger(LedgerCount.Cause(AdmissionCause.RejectedRecords)),
+          count(2)
+        ),
+        fact(FactSlot.Absent, ledger(LedgerCount.Cause(AdmissionCause.Absent)), count(6)),
+        fact(
+          FactSlot.RecordsOutsideWindow,
+          ledger(LedgerCount.RecordsOutsideWindow),
+          count(543)
+        ),
+        fact(FactSlot.TrialsOutsideWindow, ledger(LedgerCount.TrialsOutsideWindow), count(409)),
+        fact(FactSlot.RequestedQueries, design(DesignCount.RequestedQueries), count(480)),
+        fact(FactSlot.EligibleQueries, design(DesignCount.EligibleQueries), count(457)),
+        fact(FactSlot.UnmatchedQueries, design(DesignCount.UnmatchedQueries), count(9)),
+        fact(FactSlot.NotAdmittedQueries, design(DesignCount.NotAdmittedQueries), count(14)),
+        fact(
+          FactSlot.ControlsPerQuery,
+          design(DesignCount.ControlsPerQuery),
+          FactValue.Controls(
+            FactValue.Range(18, 19),
+            Vector(FewerControls(171, 18, AdmissionCause.Overlap))
+          )
+        ),
+        fact(
+          FactSlot.ReportingSpec,
+          FactSource.ReportSpec("by-response"),
+          FactValue.Label("retrieval response")
+        ),
+        fact(FactSlot.GroupSizeRange, FactSource.ReportCells(cells), FactValue.Range(2, 17)),
+        fact(FactSlot.PairedN, FactSource.ReportContrast(contrastKey), count(24)),
+        fact(
+          FactSlot.BelowMinimumQueries,
+          FactSource.ReportCells(cells),
+          FactValue.Breakdown(Vector(BelowMinimum("P05", "Forgotten", 1)))
+        )
+      )
+    )
+  )
+
+  test("CR6d: the methods text states the facts it is given, each with its slot and source") {
+    val text    = StudyText.methods(fixturePlan, fixtureFacts)
+    val byTopic = text.clauses.groupBy(_.topic).view.mapValues(_.map(_.text)).toMap
+    assertEquals(
+      byTopic(ClauseTopic.Admission),
+      Vector(
+        "Fixations (11,520 records) from dataset r3 were admitted by trial: 937 of 960 " +
+          "inventory trials were admitted, 17 quarantined (overlap 6, no-fixations 5, " +
+          "duplicate-ordinals 4, rejected-records 2) and 6 absent (no fixation records)."
+      )
+    )
+    assertEquals(
+      byTopic(ClauseTopic.Design),
+      Vector(
+        "Of 480 requested queries, 457 were eligible; 9 had no matched reference and 14 were " +
+          "not admitted.",
+        "Each eligible query had 18–19 controls (171 queries had 18: overlap)."
+      )
+    )
+    assertEquals(
+      byTopic(ClauseTopic.Reporting),
+      Vector(
+        "Results were reported by retrieval response; groups held 2–17 participants and the " +
+          "paired contrast 24.",
+        "1 participant-group cells had fewer queries than the minimum (P05 · Forgotten · 1)."
+      )
+    )
+    assert(
+      text.text.contains(
+        "fixations on the screen outside it were left out of the map. 543 records in 409 " +
+          "trials fell outside it."
+      ),
+      text.text
+    )
+    // Every number is a fact or a recipe value, with its source.
+    val sources = text.tokens.collect { case Token.Fact(slot, source, shown) =>
+      (slot, source, shown)
+    }
+    assert(
+      sources.contains((FactSlot.EligibleQueries, design(DesignCount.EligibleQueries), "457"))
+    )
+    assert(
+      sources.contains(
+        (FactSlot.PairedN, FactSource.ReportContrast(contrastKey), "24")
+      )
+    )
+    assert(
+      sources.contains(
+        (
+          FactSlot.QuarantineCause(AdmissionCause.Overlap),
+          ledger(LedgerCount.Cause(AdmissionCause.Overlap)),
+          "overlap 6"
+        )
+      )
+    )
+    val digits = text.tokens.collect { case Token.Words(w) if w.exists(_.isDigit) => w }
+    assertEquals(digits, Vector.empty, "fixed wording states no number")
+  }
+
+  test("CR6d: facts not given are not stated; no facts states the plan alone") {
+    val plain = StudyText.methods(fixturePlan)
+    assertEquals(StudyText.methods(fixturePlan, MethodsFacts.empty), plain)
+    assert(plain.tokens.forall {
+      case Token.Fact(_, _, _) => false
+      case _                   => true
+    })
+    val eligibleOnly = get(
+      MethodsFacts.of(
+        Vector(fact(FactSlot.EligibleQueries, design(DesignCount.EligibleQueries), count(457)))
+      )
+    )
+    val clauses = StudyText.methods(fixturePlan, eligibleOnly).clauses
+    assertEquals(
+      clauses.filter(_.topic == ClauseTopic.Design).map(_.text),
+      Vector("457 queries were eligible.")
+    )
+    assertEquals(clauses.count(_.topic == ClauseTopic.Admission), 0)
+    assertEquals(clauses.count(_.topic == ClauseTopic.Reporting), 0)
+  }
+
+  test("CR6d: a fact must have the value its slot takes; a slot is given once") {
+    val src = FactSource.Host("x")
+    assertEquals(
+      Fact.of(FactSlot.EligibleQueries, src, FactValue.Label("457")),
+      Left(FactError.WrongValue("eligibleQueries", "Label(457)", "a count"))
+    )
+    assertEquals(
+      Fact.of(FactSlot.FixationRecords, src, count(-1)),
+      Left(FactError.NegativeCount("fixationRecords", -1))
+    )
+    assertEquals(
+      Fact.of(FactSlot.GroupSizeRange, src, FactValue.Range(17, 2)),
+      Left(FactError.EmptyRange("groupSizeRange", 17, 2))
+    )
+    assertEquals(
+      Fact.of(FactSlot.ReportingSpec, src, FactValue.Label(" ")),
+      Left(FactError.BlankLabel("reportingSpec"))
+    )
+    assertEquals(
+      Fact.of(
+        FactSlot.ControlsPerQuery,
+        src,
+        FactValue.Controls(
+          FactValue.Range(18, 19),
+          Vector(FewerControls(3, 19, AdmissionCause.Absent))
+        )
+      ),
+      Left(FactError.NotFewer("controlsPerQuery", 19, 19))
+    )
+    val one = fact(FactSlot.PairedN, src, count(24))
+    assertEquals(MethodsFacts.of(Vector(one, one)), Left(FactError.Duplicate("pairedN")))
+    assertEquals(
+      FactSlot.QuarantineCause(AdmissionCause.DuplicateOrdinals).name,
+      "quarantineCause.duplicate-ordinals"
+    )
+    assertEquals(
+      Diagnostic.of(FactError.Duplicate("pairedN")).code.render,
+      "methods-fact.duplicate"
+    )
+  }
+
+  test("CR6d: admission causes carry the boards' labels") {
+    assertEquals(
+      Vector(
+        QuarantineCause.Overlap(2, "a", "b"),
+        QuarantineCause.NoFixations,
+        QuarantineCause.DuplicateOrdinals,
+        QuarantineCause.RejectedRecords,
+        QuarantineCause.WrongClock(1, "c", "d")
+      ).map(c => AdmissionCause.of(c).label),
+      Vector("overlap", "no-fixations", "duplicate-ordinals", "rejected-records", "wrong-clock")
+    )
+    assertEquals(
+      Vector(
+        TrialDisposition.Admitted,
+        TrialDisposition.NoFixations,
+        TrialDisposition.Absent
+      ).map(AdmissionCause.of(_).map(_.label)),
+      Vector(None, Some("no-fixations"), Some("absent (no fixation records)"))
+    )
   }
 
 class StudyFormKeysSuite extends munit.FunSuite:

@@ -1498,6 +1498,17 @@ fails after rewriting, so review the change and run it again.
 | `study-advisory.sigma-below-cells` | `SigmaBelowCells` | `scale`, `cells`, `minimumCells` |
 | `study-advisory.sigma-near-uniform` | `SigmaNearUniform` | `scale`, `fraction`, `limit` |
 
+### `methods-fact` — `FactError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `methods-fact.wrong-value` | `WrongValue` | `slot`, `value`, `expected` |
+| `methods-fact.negative-count` | `NegativeCount` | `slot`, `value` |
+| `methods-fact.empty-range` | `EmptyRange` | `slot`, `min`, `max` |
+| `methods-fact.blank-label` | `BlankLabel` | `slot` |
+| `methods-fact.not-fewer` | `NotFewer` | `slot`, `controls`, `maximum` |
+| `methods-fact.duplicate` | `Duplicate` | `slot` |
+
 ### `codec` — `CodecError`
 
 | Code | Case | Operands |
