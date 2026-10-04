@@ -59,8 +59,13 @@ sbt testAll checkBoundaries
 What runs where (all generated from `build.sbt`):
 
 - `checks.yml`, every push and PR: format/header/workflow checks, compile and test per
-  matrix project (`rootJVM`, `rootJS`), MiMa, docs, boundaries, the site build, and
-  `python3 tools/check-docs.py --platform jvm|js --skip-consumer` in the matching project.
+  matrix project (`rootJVM`, `rootJS`), MiMa, docs, `checkLibraryBoundaries`, the site build,
+  and `python3 tools/check-docs.py --platform jvm|js --skip-consumer` in the matching project.
+  `checkLibraryBoundaries` is `checkBoundaries` without the studio projects' resolved-graph
+  rules, which need the scaladock and Intaglio pins.
+- `studio.yml`, on pushes and PRs touching studio, the build or the modules it uses: publishes
+  the pins, then runs `studioAll studioStyleCheck` and `studioBoundaries` (those resolved-graph
+  rules). Locally, `checkBoundaries` runs both halves.
   sbt-typelevel compiles with `-Werror` there; reproduce locally with
   `GITHUB_ACTIONS=true sbt 'project rootJVM' Test/compile 'project rootJS' Test/compile`.
 - `evidence.yml`, weekly and on `workflow_dispatch`: the public API audit
