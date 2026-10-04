@@ -171,29 +171,16 @@ final class RepetitionResultCodec[K, U <: Unit2D: UnitLabel](
       .map(CodecError.RepetitionResult(_))
   yield RepetitionRun(plan, result)
 
-  /** The plan as a stored analysis plan; it embeds its maps, whose identity
-    * is its input hash.
+  /** The plan and run archives, for an [[AnalysisRegistry]]. The plan embeds
+    * its maps, whose identity is its input hash, so the run's relation is
+    * `AnalysisInputs.EmbeddedInPlan` and the run cites that hash. A host
+    * recovers the typed values with `LoadedAnalysisPlan.typed(plans)` and
+    * `LoadedAnalysisResult.typed(codec)`.
     */
-  final class LoadedPlan(val plan: RepetitionPlan[K, U]) extends LoadedAnalysisPlan:
-    val schema: DefinitionId    = plans.schema
-    def description             = plan.description
-    def encode                  = plans.encode(plan)
-    override def embeddedInputs = Vector(plan.inputHash)
-
-  /** The run as a stored analysis result, computed on its plan's maps. */
-  final class LoadedRun(val run: RepetitionRun[K, U]) extends LoadedAnalysisResult:
-    val schema: DefinitionId = RepetitionResultCodec.this.schema
-    def description          = run.plan.description
-    def inputs               = Vector(run.plan.inputHash)
-    def encode               = codec.encode(run)
-
-  /** The plan and run archives, for an [[AnalysisRegistry]]: the plan embeds
-    * its input, so the run's relation is `AnalysisInputs.EmbeddedInPlan`.
-    */
-  def registration: AnalysisRegistration = AnalysisRegistration(
-    plans.schema,
-    schema,
-    json => plans.decode(json).map(LoadedPlan(_)),
-    json => codec.decode(json).map(LoadedRun(_)),
-    embedsInput = true
-  )
+  def registration: AnalysisRegistration =
+    AnalysisRegistration.of(plans, codec)(
+      _.description,
+      _.plan.description,
+      run => Vector(run.plan.inputHash),
+      embedded = Some(plan => Vector(plan.inputHash))
+    )

@@ -74,14 +74,21 @@ class AnalysisSuite extends munit.FunSuite:
       assertEquals(start.totalPairs, 4)
       assertEquals(PairedEvaluation.complete(start, quantum), expected, n)
       // Each step evaluates at most the quantum, and the last step finishes.
+      // and the evaluation counts what it has completed.
       @annotation.tailrec
-      def units(e: PairedEvaluation[Key, Key, String, Double], seen: Vector[Int]): Vector[Int] =
+      def units(
+          e: PairedEvaluation[Key, Key, String, Double],
+          seen: Vector[(Int, Int)]
+      ): Vector[(Int, Int)] =
         e.advance(quantum) match
-          case PairedPage.More(u, next) => units(next, seen :+ u)
-          case PairedPage.Done(u, _)    => seen :+ u
+          case PairedPage.More(u, next) => units(next, seen :+ (u -> next.completedPairs))
+          case PairedPage.Done(u, _)    => seen :+ (u -> e.totalPairs)
+      assertEquals(start.completedPairs, 0)
       val steps = units(start, Vector.empty)
-      assertEquals(steps.sum, 4, n)
-      assert(steps.forall(u => u >= 1 && u <= n), steps)
+      assertEquals(steps.map(_._1).sum, 4, n)
+      assert(steps.forall((u, _) => u >= 1 && u <= n), steps)
+      // After each step, the completed count is the units taken so far.
+      assertEquals(steps.map(_._2), steps.map(_._1).scanLeft(0)(_ + _).tail, n)
     }
     val none = pair(
       Trials(Vector.empty[Trial[Key, Meta, Double]]),
