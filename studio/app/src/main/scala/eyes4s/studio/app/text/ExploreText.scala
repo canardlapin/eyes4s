@@ -35,6 +35,7 @@ enum ExploreTextId derives CanEqual:
 
   // --- The legend ------------------------------------------------------------------------
   case LegendTitle, Fixation, OutsideWindowExcluded, OutsideWindowFails, OutsideScreen
+  case InsideWindowTrialFails
   case DroppedInitial, OrderLines, PreviewMap, MissingAsset
 
 /** Explore's trial view strings in the board's wording. */
@@ -79,15 +80,16 @@ object ExploreText:
     case BrushDisclaimer => "Brushing highlights; it does not crop the analysis"
     case TimelineNotRead => "The timeline of {0} cannot be drawn: {1}"
 
-    case LegendTitle           => "Legend"
-    case Fixation              => "Fixation · marker area ∝ duration"
-    case OutsideWindowExcluded => "Outside the analysis window · excluded from the map"
-    case OutsideWindowFails    => "Outside the analysis window · the trial fails"
-    case OutsideScreen         => "Outside the screen"
-    case DroppedInitial        => "Dropped by the initial-fixation policy"
-    case OrderLines            => "Order between fixation centres, not measured saccades"
-    case PreviewMap            => "Preview density · σ {0}° · not a result"
-    case MissingAsset          => "Missing asset"
+    case LegendTitle            => "Legend"
+    case Fixation               => "Fixation · marker area ∝ duration"
+    case OutsideWindowExcluded  => "Outside the analysis window · excluded from the map"
+    case OutsideWindowFails     => "Outside the analysis window · the trial fails"
+    case InsideWindowTrialFails => "Inside the analysis window · the trial fails"
+    case OutsideScreen          => "Outside the screen"
+    case DroppedInitial         => "Dropped by the initial-fixation policy"
+    case OrderLines             => "Order between fixation centres, not measured saccades"
+    case PreviewMap             => "Preview density · σ {0}° · not a result"
+    case MissingAsset           => "Missing asset"
 
   /** `id`'s English template with its arguments filled. */
   def apply(id: ExploreTextId, args: String*): String =

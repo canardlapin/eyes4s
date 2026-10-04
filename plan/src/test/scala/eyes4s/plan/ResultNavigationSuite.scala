@@ -314,10 +314,24 @@ class ResultNavigationSuite extends munit.FunSuite:
       NavigationError.Provenance(ProvenanceError.UnknownTrial(k("P9", "a", "recall"))) ->
         "no trial",
       NavigationError.NoRecord(k("P17", "a", "recall"), position, MissingSource.NoLedger) ->
-        "fixation 3 of StudyKey(P17,a,recall) is known: NoLedger",
+        "fixation 3 of StudyKey(P17,a,recall) is known: the input is linked to no admission ledger",
       NavigationError.UnknownRecord(get(DataRecord.of(99))) -> "no data record 99",
       NavigationError.NotAdmitted(get(DataRecord.of(5)))    -> "Data record 5 was rejected"
     )
     messages.foreach((error, text) => assert(error.message.contains(text), error.message))
+    // A missing source's reason names its operands, never its case name.
+    val key = k("P17", "a", "recall")
+    Vector(
+      MissingSource.UnknownTrial(key)                  -> Vector(key.toString),
+      MissingSource.FixationOutOfRange(key, 7, 3)      -> Vector(key.toString, "7", "3"),
+      MissingSource.NotSourceSupported(key)            -> Vector(key.toString),
+      MissingSource.AmbiguousTrial(key, 2)             -> Vector(key.toString, "2"),
+      MissingSource.UnknownDigest("d1")                -> Vector("d1"),
+      MissingSource.CollidingDigest("d2", Vector(key)) -> Vector("d2", key.toString),
+      MissingSource.UnknownInputTrial(9, 4)            -> Vector("9", "4"),
+      MissingSource.NotAdmitted(key, Vector(11, 12))   -> Vector(key.toString, "11, 12")
+    ).foreach((reason, operands) =>
+      operands.foreach(o => assert(reason.message.contains(o), reason.message))
+    )
     assertEquals(NavigationLevel.values.length, 7)
   }

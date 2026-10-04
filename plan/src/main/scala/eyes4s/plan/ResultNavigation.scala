@@ -69,7 +69,7 @@ enum NavigationError[+K] derives CanEqual:
       s"The inspection describes input $inspection; the provenance describes $provenance."
     case Provenance(underlying)          => underlying.message
     case NoRecord(key, position, reason) =>
-      s"No record of fixation ${position.number.value} of $key is known: $reason."
+      s"No record of fixation ${position.number.value} of $key is known: ${reason.message}."
     case UnknownRecord(record) => s"The ledger lists no data record ${record.value}."
     case NotAdmitted(record)   =>
       s"Data record ${record.value} was rejected, so it supplied no fixation."

@@ -135,7 +135,7 @@ class ExploreTrialViewSuite extends munit.FunSuite:
     served(enc03).map { answers =>
       val shown =
         ExploreTrialViewVM.of(loaded(model, answers, displays(model)), model).shown.get
-      val out = shown.marks.filterNot(_.placement == MapPlacement.InMap)
+      val out = shown.marks.filterNot(_.placement == MapPlacement.InWindow)
       assertEquals(
         out.map(f => (f.index.value, f.placement)),
         Vector((10, MapPlacement.OutsideWindow(OffWindowPolicy.Exclude)))

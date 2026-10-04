@@ -54,7 +54,7 @@ class ExploreTrialViewHostSuite extends munit.FunSuite:
     enc03,
     display,
     GoldenTrials.screen,
-    Vector(MarkVM(right(FixationIndex.of(1)), 600.5, 323.5, 330, MapPlacement.InMap)),
+    Vector(MarkVM(right(FixationIndex.of(1)), 600.5, 323.5, 330, MapPlacement.InWindow)),
     true,
     false,
     map,

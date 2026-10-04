@@ -144,7 +144,7 @@ final case class TrialFixation private (
     placement: MapPlacement
 ) derives CanEqual:
   /** Whether core includes this fixation in the trial map. */
-  def contributesToMap: Boolean = placement == MapPlacement.InMap
+  def contributesToMap: Boolean = placement == MapPlacement.InWindow
 
 object TrialFixation:
   def of(
@@ -909,16 +909,19 @@ object TrialScene:
           stroke(halo, HaloPx, LineType.Custom(OutsideScreenDash))
         case MapPlacement.OutsideWindow(OffWindowPolicy.Exclude) =>
           stroke(halo, HaloPx, LineType.Custom(OutsideExcludeDash))
-        case MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial) =>
+        // A failing trial's in-window fixations are drawn as its outside ones are:
+        // the trial contributes no map. Its text and announcement say why.
+        case MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial) |
+            MapPlacement.TrialFailed(_) =>
           stroke(halo, HaloPx, LineType.Custom(OutsideFailTrialDash))
-        case MapPlacement.InMap => included(LineType.Solid)
+        case MapPlacement.InWindow => included(LineType.Solid)
 
     private def sizeOf(f: TrialFixation): Either[GraphicsError, ExtentExpr] =
       ExtentExpr.points(pt(radiusPx(f.durationMs)))
 
     // A hollow control mark in the map is cased by the halo.
     private def cased(f: TrialFixation): Boolean =
-      f.placement == MapPlacement.InMap && input.marks == MarkStyle.Role(TrialRole.Control)
+      f.placement == MapPlacement.InWindow && input.marks == MarkStyle.Role(TrialRole.Control)
 
     // A cased mark is a closed ring with an Intaglio StrokeCasing: Intaglio
     // paints casings on linear outlines only, not on point marks. The casing

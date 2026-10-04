@@ -362,9 +362,12 @@ object ProtocolVersion:
     * adds a trial's admitted fixations and its preview map (S6.2). 1.7 adds
     * a revision's fixation-file records as pages (`sourceRecords`, S6.4).
     * 1.8 adds a diagnostic's affected trials, finding class and remedy
-    * (S3.5). Deploy client and backend together.
+    * (S3.5). 1.9 adds the `TrialFailed` map placement, with its window tally:
+    * a fixation in the window of a trial the study fails (eyes4s UI-G G3);
+    * `InWindow` keeps its wire name `InMap`. Deploy client and backend
+    * together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 8)
+  val Current: ProtocolVersion = ProtocolVersion(1, 9)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual

@@ -304,7 +304,7 @@ object ProtocolSamples:
       DatasetRevision(3),
       query,
       Vector(
-        fixation(1, 7209, 960.5, 540.25, 0.5, 212.5, MapPlacement.InMap),
+        fixation(1, 7209, 960.5, 540.25, 0.5, 212.5, MapPlacement.InWindow),
         fixation(
           2,
           7210,
@@ -324,6 +324,28 @@ object ProtocolSamples:
           680.5,
           160.5,
           MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial)
+        ),
+        // Protocol 1.9: in the window of a trial the study fails, with its tally.
+        fixation(
+          6,
+          7214,
+          900.5,
+          500.5,
+          860.5,
+          120.5,
+          MapPlacement.TrialFailed(
+            eyes4s.plan.WindowTally
+              .of(
+                1,
+                2,
+                6,
+                eyes4s.kernel.Span.micros(96500L),
+                eyes4s.kernel.Span.micros(341000L),
+                eyes4s.kernel.Span.micros(9007199254740993L)
+              )
+              .toOption
+              .get
+          )
         )
       )
     )
@@ -383,7 +405,7 @@ object ProtocolSamples:
               Some(point(7214, "screen", 1148.5, 456.5)),
               Some(ImagePosition(point(7214, "image", 700.5, 300.5), true)),
               Some(point(7214, "degrees", 5.375, 2.385)),
-              Some(MapPlacement.InMap),
+              Some(MapPlacement.InWindow),
               "P17,Retrieval,ret_07,1,6,1148.5,456.5,2160.5,412.5,206"
             )
             .toOption

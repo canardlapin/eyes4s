@@ -86,7 +86,14 @@ class RovingCursorSuite extends ScalaCheckSuite:
   private def fixationsAt(points: Seq[(Double, Double)]): Vector[TrialFixation] =
     points.zipWithIndex.map { case ((x, y), i) =>
       right(
-        TrialFixation.of(ret07, right(FixationIndex.of(i + 1)), x, y, 200, MapPlacement.InMap)
+        TrialFixation.of(
+          ret07,
+          right(FixationIndex.of(i + 1)),
+          x,
+          y,
+          200,
+          MapPlacement.InWindow
+        )
       )
     }.toVector
 
@@ -129,7 +136,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
     do
       val t                         = targets(marks = style, scale = scale)
       def hollowMark(m: MarkTarget) =
-        m.mark.placement != MapPlacement.InMap || style == MarkStyle.Role(TrialRole.Control)
+        m.mark.placement != MapPlacement.InWindow || style == MarkStyle.Role(TrialRole.Control)
       def reaches(o: MarkTarget, p: DevicePoint) =
         math.hypot(o.anchor.x - p.x, o.anchor.y - p.y) <= (o.mark.reachPx + 0.5) * scale
       // The marks that may take `p` from `target`: any mark drawn later whose
@@ -173,7 +180,14 @@ class RovingCursorSuite extends ScalaCheckSuite:
     // centre is inside both rings and on neither outline.
     val fs = Vector((900.0, 500.0), (905.0, 500.0)).zipWithIndex.map { case ((x, y), i) =>
       right(
-        TrialFixation.of(ret07, right(FixationIndex.of(i + 1)), x, y, 900, MapPlacement.InMap)
+        TrialFixation.of(
+          ret07,
+          right(FixationIndex.of(i + 1)),
+          x,
+          y,
+          900,
+          MapPlacement.InWindow
+        )
       )
     }
     for scale <- List(1.0, 2.0) do
@@ -194,7 +208,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
   test("a hit on a control mark's casing resolves to that mark, not to a casing target") {
     for scale <- List(1.0, 2.0) do
       val t = targets(marks = MarkStyle.Role(TrialRole.Control), scale = scale)
-      t.targets.filter(_.mark.placement == MapPlacement.InMap).foreach { target =>
+      t.targets.filter(_.mark.placement == MapPlacement.InWindow).foreach { target =>
         // 1.5 px outside the ring's centre line: on the halo casing, beyond the
         // 2 px outline itself.
         val onCasing = DevicePoint(
@@ -565,7 +579,8 @@ class RovingCursorSuite extends ScalaCheckSuite:
 
   test("the focused mark's accessible text states its core placement") {
     val t       = targets()
-    val outside = t.targets.find(_.mark.placement != MapPlacement.InMap).getOrElse(fail("none"))
+    val outside =
+      t.targets.find(_.mark.placement != MapPlacement.InWindow).getOrElse(fail("none"))
     assertEquals(outside.ref.index.value, 9)
     val moves = key(RovingKey.Move(RovingMove.First)) +:
       Vector.fill(outside.ref.index.value - 1)(key(RovingKey.Move(RovingMove.Next)))
@@ -580,7 +595,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
   test("focused-mark text names each core placement") {
     val ref: StudioRef.Fixation = StudioRef.Fixation(ret07, right(FixationIndex.of(1)))
     assertEquals(
-      TrialText.mark(ref, MapPlacement.InMap, false),
+      TrialText.mark(ref, MapPlacement.InWindow, false),
       "Fixation 1 of P17 · ret_07 · in map"
     )
     assertEquals(
@@ -598,6 +613,20 @@ class RovingCursorSuite extends ScalaCheckSuite:
     assertEquals(
       TrialText.mark(ref, MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial), false),
       "Fixation 1 of P17 · ret_07 · outside window, trial fails"
+    )
+    val tally = right(
+      eyes4s.plan.WindowTally.of(
+        1,
+        2,
+        9,
+        eyes4s.kernel.Span.micros(100L),
+        eyes4s.kernel.Span.micros(300L),
+        eyes4s.kernel.Span.micros(2000L)
+      )
+    )
+    assertEquals(
+      TrialText.mark(ref, MapPlacement.TrialFailed(tally), false),
+      "Fixation 1 of P17 · ret_07 · in window, trial fails: 2 of 9 fixations outside window"
     )
   }
 

@@ -197,6 +197,8 @@ object ExploreTrialViewVM:
                  LegendEntryVM(LegendSwatch.OutsideScreen, t(OutsideScreen))
                case MapPlacement.DroppedInitial =>
                  LegendEntryVM(LegendSwatch.DroppedInitial, t(DroppedInitial))
+               case MapPlacement.TrialFailed(_) =>
+                 LegendEntryVM(LegendSwatch.OutsideWindow, t(InsideWindowTrialFails))
              })
       val order = Option.when(s.order && s.marks.size > 1)(
         LegendEntryVM(LegendSwatch.OrderLine, t(OrderLines))

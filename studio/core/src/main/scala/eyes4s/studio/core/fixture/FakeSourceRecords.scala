@@ -18,6 +18,7 @@ package eyes4s.studio.core.fixture
 
 import cats.syntax.all.*
 import eyes4s.kernel.*
+import eyes4s.plan.MapPlacement
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.{Geometry, Recipe, Source, SourceRole}
 import eyes4s.studio.core.geometry.DisplayFrames
@@ -156,7 +157,23 @@ object FakeSourceRecords:
         .flatMap(Subframe.of(screen, FrameId("window"), _))
         .leftMap(e => study("window")(e.message))
       fixations <- fixationOf.leftMap(study("fixation source"))
+      byTrial   <- GoldenFixations.byTrial.leftMap(study("fixation source"))
       policy = FakeTrialViews.policy(recipe)
+      // A failing trial's in-window fixations are TrialFailed, as in its trial view.
+      failed = (trial: TrialKey, index: FixationIndex) =>
+        byTrial
+          .get(trial)
+          .flatMap(fs =>
+            FakeTrialViews
+              .trialPlacements(
+                fs.map(g =>
+                  FakeTrialViews.placement(screen, window, policy, g.x, g.y) -> g.durationMs
+                )
+              )
+              .toOption
+          )
+          .flatMap(_.lift(index.value - 1))
+          .collect { case f @ MapPlacement.TrialFailed(_) => f }
       rows <- (from until math.min(total + 1, from + count)).toVector.traverse { n =>
         val cells                = lines(n).split(",", -1).toVector
         def cell(name: String)   = columns.get(name).flatMap(cells.lift).map(_.trim)
@@ -184,8 +201,13 @@ object FakeSourceRecords:
               screenAt,
               placedAt.map(_._1),
               placedAt.map(_._2),
-              placed.flatMap(_ =>
-                screenAt.map(c => FakeTrialViews.placement(screen, window, policy, c.x, c.y))
+              placed.flatMap((owner, index) =>
+                screenAt.map(c =>
+                  FakeTrialViews.placement(screen, window, policy, c.x, c.y) match
+                    case MapPlacement.InWindow =>
+                      failed(owner, index).getOrElse(MapPlacement.InWindow)
+                    case other => other
+                )
               ),
               lines(n)
             )

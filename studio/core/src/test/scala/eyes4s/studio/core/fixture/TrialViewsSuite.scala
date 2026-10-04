@@ -48,6 +48,43 @@ class TrialViewsSuite extends CatsEffectSuite:
   private def insideWindow(x: Double, y: Double): Boolean =
     x >= 448 && x < 1472 && y >= 156 && y < 924
 
+  test("a trial the study fails marks its in-window fixations TrialFailed, with its tally") {
+    val failing = Vector(
+      MapPlacement.InWindow                                 -> 200.0,
+      MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial) -> 100.0,
+      MapPlacement.OutsideScreen                            -> 50.0,
+      MapPlacement.InWindow                                 -> 25.5
+    )
+    val tally = eyes4s.plan.WindowTally
+      .of(
+        1,
+        1,
+        4,
+        eyes4s.kernel.Span.micros(50000L),
+        eyes4s.kernel.Span.micros(100000L),
+        eyes4s.kernel.Span.micros(375500L)
+      )
+      .fold(e => fail(e.message), identity)
+    assertEquals(
+      FakeTrialViews.trialPlacements(failing),
+      Right(
+        Vector(
+          MapPlacement.TrialFailed(tally),
+          MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial),
+          MapPlacement.OutsideScreen,
+          MapPlacement.TrialFailed(tally)
+        )
+      )
+    )
+    // A trial the window policy keeps is placed as it was.
+    val kept = failing.map((p, d) =>
+      (if p == MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial) then
+         MapPlacement.OutsideWindow(OffWindowPolicy.Exclude)
+       else p) -> d
+    )
+    assertEquals(FakeTrialViews.trialPlacements(kept), Right(kept.map(_._1)))
+  }
+
   test("P17 enc_03: 13 fixations in scanpath order; fixation 6 is record 7,214") {
     fake.flatMap(_.trialFixations(rev4, enc03)).map { result =>
       val view = result.fold(e => fail(e.message), identity)
@@ -70,12 +107,12 @@ class TrialViewsSuite extends CatsEffectSuite:
       assertEquals(
         view.fixations.map(_.placement),
         view.fixations.map(f =>
-          if insideWindow(f.screenX, f.screenY) then MapPlacement.InMap
+          if insideWindow(f.screenX, f.screenY) then MapPlacement.InWindow
           else MapPlacement.OutsideWindow(OffWindowPolicy.Exclude)
         )
       )
       assertEquals(
-        view.fixations.filterNot(_.placement == MapPlacement.InMap).map(_.ref.index.value),
+        view.fixations.filterNot(_.placement == MapPlacement.InWindow).map(_.ref.index.value),
         Vector(10)
       )
       // The view crosses the wire unchanged.
@@ -172,7 +209,7 @@ class TrialViewsSuite extends CatsEffectSuite:
     def ref(i: Int, trial: TrialKey = enc03): StudioRef.Fixation =
       StudioRef.Fixation(trial, FixationIndex.of(i).toOption.get)
     def fix(i: Int, record: Int = 1, x: Double = 1.0, onset: Double = 0.0, d: Double = 10.0) =
-      AdmittedFixation.of(ref(i), record, x, 2.0, onset, d, MapPlacement.InMap)
+      AdmittedFixation.of(ref(i), record, x, 2.0, onset, d, MapPlacement.InWindow)
     assertEquals(fix(1, record = 0), Left(TrialViewError.RecordNotPositive(enc03, 1, 0)))
     assertEquals(
       fix(1, x = Double.NaN).left.map(_.productPrefix),
@@ -187,7 +224,7 @@ class TrialViewsSuite extends CatsEffectSuite:
       Left(TrialViewError.PositionOutOfOrder(enc03, 0, 2))
     )
     val other = AdmittedFixation
-      .of(ref(1, ret09), 1, 1.0, 2.0, 0.0, 10.0, MapPlacement.InMap)
+      .of(ref(1, ret09), 1, 1.0, 2.0, 0.0, 10.0, MapPlacement.InWindow)
       .toOption
       .get
     assertEquals(

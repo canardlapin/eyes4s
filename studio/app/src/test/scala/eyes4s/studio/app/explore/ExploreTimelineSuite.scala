@@ -181,7 +181,7 @@ class ExploreTimelineSuite extends munit.FunSuite:
           540.5,
           onset,
           duration,
-          MapPlacement.InMap
+          MapPlacement.InWindow
         )
       )
     // A 2 kHz recording: fixation 1 ends at 103.0 ms, where fixation 2 starts.
