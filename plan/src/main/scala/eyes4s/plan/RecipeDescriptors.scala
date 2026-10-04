@@ -652,6 +652,32 @@ object RecipeDescriptors:
       )
     yield result
 
+  def repetition[K, U <: Unit2D](
+      plan: RepetitionPlan[K, U]
+  ): Either[DescriptorError, RecipeInspection] =
+    inspect(
+      plan.description,
+      Vector(
+        reference("repetition.input", "Content hash of the supplied maps, their keys and grid"),
+        reference("layout", "Versioned layout and participant/stimulus/occasion projections"),
+        reference("grid", "Nominal grid the supplied maps lie on: its ID, columns and rows"),
+        info(RepetitionViews.method),
+        info(RepetitionViews.matched),
+        info(RepetitionViews.controls),
+        info(RepetitionViews.controlSelection),
+        RecipeParameters.failurePolicy.info,
+        reference(
+          "pairing",
+          "Directed pairs within the trials, excluding each trial with itself"
+        )
+      ),
+      Vector(
+        "Maps are supplied, not estimated: every map lies on the declared grid",
+        "Matched pairs are exhaustive; controls are every eligible pair or a keyed bottom-k sample",
+        "Per-focal means of matched and control scores follow the failure policy before D = M - B"
+      )
+    )
+
   def temporal[K, U <: Unit2D: UnitLabel, P, S, D](
       plan: TemporalStudyPlan[K, U, P, S, D]
   ): Either[DescriptorError, RecipeInspection] =

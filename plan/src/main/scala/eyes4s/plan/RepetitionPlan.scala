@@ -196,6 +196,33 @@ final class RepetitionPlan[K, U <: Unit2D] private (
     val planHash: ContentHash,
     val specification: EvaluationSpec
 ):
+  /** The plan as data: its input and layout identities, grid, method,
+    * relations, control selection, failure policy and pair orientation.
+    */
+  def description: Vector[(String, Vector[Provenance.Param])] =
+    import Provenance.Param.*
+    def rules(r: Vector[RepetitionRule]) = r.map(rule => Text(rule.toString))
+    Vector(
+      "repetition.input" -> Vector(Text(inputHash.render)),
+      "layout" -> Vector(layout.id, layout.participantId, layout.stimulusId, layout.occasionId)
+        .map(id => Text(s"${id.name}@${id.version}")),
+      "grid"     -> Vector(Text(grid.id.name), Num(grid.nx.toDouble), Num(grid.ny.toDouble)),
+      "method"   -> Vector(Text(method.token)),
+      "matched"  -> rules(relations.matched),
+      "controls" -> rules(relations.controls),
+      "controlSelection" -> RepetitionViews.selection(controls),
+      "failurePolicy"    -> Vector(policy match
+        case FailurePolicy.RequireAll        => Text("RequireAll")
+        case FailurePolicy.SuccessfulOnly(m) => Num(m.value.toDouble)),
+      "pairing" -> Vector(Text("directed-exclude-self"))
+    )
+
+  def diff(other: RepetitionPlan[K, U]): Vector[PlanChange] =
+    PlanChange.between(description, other.description)
+
+  /** Every described field with its meaning and view; see [[RecipeInspection]]. */
+  def inspect: Either[DescriptorError, RecipeInspection] = RecipeDescriptors.repetition(this)
+
   def run: RepetitionPlanResult[K] =
     given KeyDigest[K] = layout.digest
     given Ordering[K]  = layout.ordering

@@ -310,6 +310,43 @@ class RepetitionPlanSuite extends munit.FunSuite:
     assert(codec.parse(SavedStudyFixtures.versionOne).isLeft)
   }
 
+  test("a repetition plan describes and explains every field, and diffs by field") {
+    val p = plan()
+    assertEquals(
+      p.description.map(_._1),
+      Vector(
+        "repetition.input",
+        "layout",
+        "grid",
+        "method",
+        "matched",
+        "controls",
+        "controlSelection",
+        "failurePolicy",
+        "pairing"
+      )
+    )
+    val inspected = get(p.inspect)
+    assertEquals(inspected.description, p.description)
+    assert(inspected.fields.forall(_.info.meaning.nonEmpty))
+    assertEquals(
+      p.description.find(_._1 == "controlSelection").map(_._2),
+      Some(
+        Vector(
+          Provenance.Param.Text("bottomK"),
+          Provenance.Param.Num(2.0),
+          Provenance.Param.Text((Long.MinValue + 7).toString),
+          Provenance.Param.Text("finite-controls")
+        )
+      )
+    )
+    assertEquals(
+      p.diff(plan(sel = Selection.All, method = MapSimilarityMethod.Pearson)).map(_.field),
+      Vector("controlSelection", "method")
+    )
+    assertEquals(p.diff(p), Vector.empty)
+  }
+
   test("the repetition cursor equals run at every quanta, matched pairs first, then controls") {
     def quanta(pairs: Int) = WorkQuanta(get(PairQuantum.of(pairs)), ComparisonQuantum.default)
     Vector(plan(), plan(sel = Selection.All)).foreach { p =>
