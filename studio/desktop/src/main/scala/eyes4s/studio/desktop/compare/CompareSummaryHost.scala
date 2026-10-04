@@ -117,7 +117,8 @@ object SummaryInputs:
 final class CompareSummaryHost(
     model: () => AppModel,
     app: Intent => Unit,
-    inputs: SummaryInputs
+    inputs: SummaryInputs,
+    sources: PanelSources = PanelSources.notServed
 ):
   private var state: CompareSummary                           = CompareSummary.empty
   private var shown: Map[String, (Option[PlotSource], Theme)] = Map.empty
@@ -225,7 +226,13 @@ final class CompareSummaryHost(
 
   /** Compare's query and reference trial panels (S8.2), on the run's rows. */
   val panels: TrialPanelsView =
-    TrialPanelsView(app, on => panelIntent(PanelsIntent.Underlay(on)))
+    TrialPanelsView(app, on => panelIntent(PanelsIntent.Underlay(on)), sources.stimuli)
+
+  /** The trial panels' Table tabs: each shown trial's fixations. */
+  val queryTrialTable: TableTwinView =
+    TableTwinView.attach(view("compare.query-trial.table"), selection, app)
+  val referenceTrialTable: TableTwinView =
+    TableTwinView.attach(view("compare.reference-trial.table"), selection, app)
 
   private def rows: Vector[QueryRow] = state.queries match
     case Some(QueriesAnswer.Answered(rs)) => rs
@@ -303,7 +310,8 @@ final class CompareSummaryHost(
     )
 
   private def syncPanels(m: AppModel): Unit =
-    val (next, effects) = TrialPanels.sync(panelState, m, rows)
+    val (next, effects) =
+      TrialPanels.sync(panelState, m, rows, state.answered.map(_.revision))
     panelState = next
     if scaleLabels.nonEmpty then
       val (c, loads) = ContrastPane.sync(contrast, next.focus)
@@ -321,12 +329,19 @@ final class CompareSummaryHost(
             }
         )
       }
-    effects.foreach { case PanelsEffect.InspectPair(run, address, pair) =>
-      inputs.inspect(
-        run,
-        address,
-        a => Platform.runLater(() => panelIntent(PanelsIntent.PairRead(pair, a)))
-      )
+    effects.foreach {
+      case PanelsEffect.InspectPair(run, address, pair) =>
+        inputs.inspect(
+          run,
+          address,
+          a => Platform.runLater(() => panelIntent(PanelsIntent.PairRead(pair, a)))
+        )
+      case PanelsEffect.ReadContent(revision, trial) =>
+        sources.content.content(
+          revision,
+          trial,
+          a => Platform.runLater(() => panelIntent(PanelsIntent.ContentRead(trial, a)))
+        )
     }
 
   /** The panels' view-model now. */
@@ -359,6 +374,8 @@ final class CompareSummaryHost(
     ladder.project(m.selection)
     participantTable.project(m.selection)
     queryTable.project(m.selection)
+    queryTrialTable.project(m.selection)
+    referenceTrialTable.project(m.selection)
     render(m)
 
   /** A backend answer or a user action. */
@@ -389,7 +406,6 @@ final class CompareSummaryHost(
 
   private def render(m: AppModel): Unit =
     if !disposed then
-      panels.render(panelsVM)
       queries.render(navigatorVMOf(m))
       items.render(navigatorVMOf(m))
       val v     = CompareSummaryVM.of(state, m)
@@ -443,6 +459,19 @@ final class CompareSummaryHost(
         ladderFocus = cv.focusScale
         ladder.rebuild(ScaleLadderPlot(ladderColumns, cv.focusScale))
       show("ladder", cv.ladder.map(Right(_)), theme)(ladder.show(_, theme), ladder.clear())
+      val pv = panelsVM
+      panels.render(pv, theme)
+      def table(p: Option[TrialPanelVM]) = p.map(_.content).collect {
+        case PanelContent.Shown(c) => TrialPanels.fixationTable(c).left.map(_.message)
+      }
+      show("query-trial-table", table(pv.query), theme)(
+        queryTrialTable.show,
+        queryTrialTable.clear()
+      )
+      show("reference-trial-table", table(pv.reference), theme)(
+        referenceTrialTable.show,
+        referenceTrialTable.clear()
+      )
 
   // Draws a part when its source or the theme changes. A part with no source
   // (the run is still being read) or one that could not be built is cleared,
@@ -465,3 +494,6 @@ final class CompareSummaryHost(
       participantTable.dispose()
       queryTable.dispose()
       ladder.dispose()
+      queryTrialTable.dispose()
+      referenceTrialTable.dispose()
+      panels.dispose()

@@ -67,8 +67,8 @@ object StudioLayouts:
   val admission: PaneId = new PaneId("data.admission")
 
   /** The panes that host Compare's Queries and Items navigators (S8.1). */
-  val queries: PaneId = new PaneId("compare.queries")
-  val items: PaneId   = new PaneId("compare.items")
+  val compareQueries: PaneId = new PaneId("compare.queries")
+  val compareItems: PaneId   = new PaneId("compare.items")
 
   /** The panes that host Compare's query and reference trial panels (S8.2). */
   val queryTrial: PaneId     = new PaneId("compare.query-trial")
@@ -113,14 +113,18 @@ object StudioLayouts:
 
   // --- Explore ------------------------------------------------------------------
 
+  /** The panes that host the trials navigator (S6.1): its tree, and its items. */
+  val trials: PaneId = new PaneId("explore.trials")
+  val items: PaneId  = new PaneId("explore.items")
+
   /** Explore.dc.html. */
   val explore: PerspectiveLayout = layout(
     "explore",
     Perspective.Explore,
     columns(
       navigator(
-        pane("explore.trials", "Trials", Navigator),
-        pane("explore.items", "Items", Navigator)
+        PaneDecl(trials, PaneTitle.Fixed("Trials"), Navigator),
+        PaneDecl(items, PaneTitle.Fixed("Items"), Navigator)
       ),
       split(
         Axis.Vertical,
@@ -145,6 +149,9 @@ object StudioLayouts:
   /** Where the failed jobs chip leads (S1.4). */
   val diagnostics: PaneId = new PaneId("analysis.diagnostics")
 
+  /** The resolved-design table (S7.5). */
+  val resolvedDesign: PaneId = new PaneId("analysis.resolved-design")
+
   /** Analysis.dc.html. */
   val analysis: PerspectiveLayout = layout(
     "analysis",
@@ -159,7 +166,8 @@ object StudioLayouts:
           pane("analysis.description", "Description", Text)
         ) -> 0.6,
         group(
-          pane("analysis.resolved-design", "Resolved design", Plot),
+          // A region (the board's section) holding the table's own focus stop.
+          PaneDecl(resolvedDesign, PaneTitle.Fixed("Resolved design"), Form),
           table("analysis.resolved-design")
         ) -> 0.4
       ),

@@ -24,6 +24,7 @@ import eyes4s.studio.app.vm.{Shell, ShellText}
 import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.StudioWindow
+import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.harness.{FxStage, Modifiers, StudioFxSuite}
 import eyes4s.studio.desktop.platform.FilePresetStore
 import eyes4s.studio.desktop.runtime.{DesktopEffects, PlatformDialogs, ProjectPort}
@@ -82,19 +83,26 @@ abstract class ShellFxSuite extends StudioFxSuite:
       // checks the native split separately.
       nativeMenu: Boolean = false,
       // No saved import presets unless a suite brings its own.
-      presets: FilePresetStore = noPresets()
+      presets: FilePresetStore = noPresets(),
+      // The story sessions' display kinds (fixtures/studio-golden).
+      displays: NavigatorDisplays = NavigatorDisplays.golden,
+      // Compare's trial panels: none unless a suite brings its own.
+      panels: eyes4s.studio.desktop.compare.PanelSources =
+        eyes4s.studio.desktop.compare.PanelSources.notServed
   ): StudioWindow =
     val w = runOnFx(
       StudioWindow
         .open(
           model,
           moment,
+          displays,
           theme,
           dialogs = Some(dialogs),
           project = project,
           clock = clock,
           nativeMenu = nativeMenu,
-          presets = presets
+          presets = presets,
+          panels = panels
         )
         .fold(e => fail(e.message), identity)
     )

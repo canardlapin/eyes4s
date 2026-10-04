@@ -41,6 +41,16 @@ enum PanelTextId derives CanEqual:
   /** Nothing to show yet. */
   case NoQuery
 
+  /** A panel's fixation count. */
+  case Fixations
+
+  /** A stage while its trial is read. */
+  case ReadingTrial
+
+  /** A trial's fixation table: caption, headers, and each placement. */
+  case TableCaption, FixationHeader, XHeader, YHeader, OnsetHeader, DurationHeader
+  case PlacementHeader, InMap, DroppedInitial, OutsideScreen, OutsideExcluded, OutsideFails
+
 object PanelText:
 
   /** The reference English template of `id`. */
@@ -60,6 +70,20 @@ object PanelText:
       case MatchedIs       => "Matched reference: {0}"
       case Underlay        => "Underlay remembered image"
       case NoQuery         => "Choose a query in the Queries navigator"
+      case Fixations       => "{0} fix"
+      case ReadingTrial    => "Reading the trial…"
+      case TableCaption    => "Fixations of {0}"
+      case FixationHeader  => "Fixation"
+      case XHeader         => "x (px)"
+      case YHeader         => "y (px)"
+      case OnsetHeader     => "Onset (ms)"
+      case DurationHeader  => "Duration (ms)"
+      case PlacementHeader => "Map placement"
+      case InMap           => "in map"
+      case DroppedInitial  => "dropped by initial-fixation policy"
+      case OutsideScreen   => "outside screen"
+      case OutsideExcluded => "outside window, excluded from map"
+      case OutsideFails    => "outside window, trial fails"
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: PanelTextId, args: String*): String =

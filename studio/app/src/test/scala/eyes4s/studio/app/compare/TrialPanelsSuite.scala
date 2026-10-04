@@ -18,10 +18,18 @@ package eyes4s.studio.app.compare
 
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
-import eyes4s.studio.core.backend.{PageRequest, PairDesign, QueryRow, ResultAddress}
-import eyes4s.studio.core.fixture.{MockStudy, StoryMoment, StoryMoments}
+import eyes4s.plan.MapPlacement
+import eyes4s.studio.core.backend.{
+  AnalysisRevision,
+  PageRequest,
+  PairDesign,
+  QueryRow,
+  ResultAddress,
+  TrialKey
+}
+import eyes4s.studio.core.fixture.{GoldenAssets, MockStudy, StoryMoment, StoryMoments}
 import eyes4s.studio.core.headless.HeadlessSession
-import eyes4s.studio.core.selection.StudioRef
+import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -46,6 +54,35 @@ class TrialPanelsSuite extends munit.FunSuite:
   private def right[E, A](e: Either[E, A]): A =
     e.fold(x => fail(s"unexpected Left: $x"), identity)
 
+  // The golden registry's displays (embedded at build time) and three made-up
+  // fixations per trial: what a content source answers, behind the port.
+  private lazy val registry =
+    right(GoldenAssets.registry(right(StoryMoments.t2).datasets.last))
+  private val rev4 = AnalysisRevision(4)
+  private def contentOf(
+      rev: AnalysisRevision,
+      trial: TrialKey
+  ): Either[ContentError, TrialContent] =
+    if rev != rev4 then Left(ContentError.Unreadable(trial, s"no revision ${rev.number}"))
+    else
+      registry.display(trial).toRight(ContentError.NotServed(trial)).map { d =>
+        TrialContent(
+          d,
+          registry.screen,
+          Vector.tabulate(3)(i =>
+            ContentFixation(
+              trial,
+              right(FixationIndex.of(i + 1)),
+              900.0 + 10 * i,
+              500.0,
+              100 * i,
+              200,
+              MapPlacement.InMap
+            )
+          )
+        )
+      }
+
   private def withSession[A](f: HeadlessSession => Future[A]): Future[A] =
     HeadlessSession
       .open(StoryMoment.T2)
@@ -59,9 +96,10 @@ class TrialPanelsSuite extends munit.FunSuite:
       s: HeadlessSession,
       panels: TrialPanels,
       m: AppModel,
-      rows: Vector[QueryRow]
+      rows: Vector[QueryRow],
+      revision: Option[AnalysisRevision] = None
   ): Future[(TrialPanels, Vector[PanelsEffect])] =
-    val (synced, effects) = TrialPanels.sync(panels, m, rows)
+    val (synced, effects) = TrialPanels.sync(panels, m, rows, revision)
     effects
       .foldLeft(Future.successful(synced)) {
         case (acc, PanelsEffect.InspectPair(run, address, pair)) =>
@@ -73,6 +111,10 @@ class TrialPanelsSuite extends munit.FunSuite:
                   .PairRead(pair, a.fold(PairAnswer.Refused(_), PairAnswer.Answered(_)))
               )
             }
+          )
+        case (acc, PanelsEffect.ReadContent(rev, trial)) =>
+          acc.map(p =>
+            TrialPanels.update(p, PanelsIntent.ContentRead(trial, contentOf(rev, trial)))
           )
       }
       .map(p => (p, effects))
@@ -107,7 +149,7 @@ class TrialPanelsSuite extends munit.FunSuite:
             Some(ReferenceExtras(None, "Matched reference: P17 · enc_03 · beach-042"))
           )
           // Synced again on the same model, nothing more is asked.
-          assertEquals(TrialPanels.sync(panels, t2Compare, rows)._2, Vector.empty)
+          assertEquals(TrialPanels.sync(panels, t2Compare, rows, None)._2, Vector.empty)
         }
       }
     }
@@ -136,7 +178,7 @@ class TrialPanelsSuite extends munit.FunSuite:
           assertEquals(label, "Back to matched reference")
           assertEquals(back, Intent.Explain(Place.At(pair)))
           val (returned, _) = AppModel.run(onControl, Vector(back))
-          val again         = TrialPanels.sync(switched, returned, rows)._1
+          val again         = TrialPanels.sync(switched, returned, rows, None)._1
           assertEquals(
             TrialPanels.focusOf(returned).flatMap(_.reference),
             Some((PairDesign.Matched, p17enc03))
@@ -195,7 +237,7 @@ class TrialPanelsSuite extends munit.FunSuite:
     withSession { s =>
       rowsOf(s).map { rows =>
         val atQuery = AppModel.run(t2Compare, Vector(Intent.Explain(Place.At(query))))._1
-        val (p, e)  = TrialPanels.sync(TrialPanels.empty, atQuery, rows)
+        val (p, e)  = TrialPanels.sync(TrialPanels.empty, atQuery, rows, None)
         assertEquals(TrialPanels.focusOf(atQuery).map(_.reference), Some(None))
         assertEquals(e.size, 1)
         assertEquals(
@@ -222,4 +264,100 @@ class TrialPanelsSuite extends munit.FunSuite:
         assertEquals(TrialPanels.update(p, PanelsIntent.Underlay(true)).underlay, true)
       }
     }
+  }
+
+  test("the panels read the query's, the reference's and the matched trial's content once") {
+    withSession { s =>
+      rowsOf(s).flatMap { rows =>
+        val (onControl, _) = AppModel.run(t2Compare, Vector(Intent.Explain(Place.At(control))))
+        for
+          (matched, e1)  <- settle(s, TrialPanels.empty, t2Compare, rows, Some(rev4))
+          (switched, e2) <- settle(s, matched, onControl, rows, Some(rev4))
+        yield
+          // ret_07, and enc_03 once although it is both reference and matched.
+          assertEquals(
+            e1.collect { case PanelsEffect.ReadContent(_, k) => k },
+            Vector(p17ret07, p17enc03)
+          )
+          val vm = TrialPanels.vm(matched, rows, scales)
+          vm.query.get.content match
+            case PanelContent.Shown(c) => assertEquals(c.display.trial, p17ret07)
+            case other                 => fail(s"query content: $other")
+          assertEquals(vm.query.get.count, "3 fix")
+          // The remembered image is the matched reference's stored image.
+          val enc03 = registry.display(p17enc03).get.display
+          val asset = enc03 match
+            case eyes4s.studio.core.assets.Display.Image(
+                  eyes4s.studio.core.assets.AssetLink.Present(a)
+                ) =>
+              a
+            case other => fail(s"enc_03 shows $other")
+          assertEquals(vm.remembered, Some(Remembered(asset, false)))
+          val on = TrialPanels.update(matched, PanelsIntent.Underlay(true))
+          assertEquals(
+            TrialPanels.vm(on, rows, scales).remembered,
+            Some(Remembered(asset, true))
+          )
+          // A control: only its trial is new; the query and matched trial stay.
+          assertEquals(
+            e2.collect { case PanelsEffect.ReadContent(_, k) => k },
+            Vector(p17enc08)
+          )
+          TrialPanels.vm(switched, rows, scales).reference.get.content match
+            case PanelContent.Shown(c) => assertEquals(c.display.trial, p17enc08)
+            case other                 => fail(s"reference content: $other")
+          assertEquals(switched.contents.keySet, Set(p17ret07, p17enc03, p17enc08))
+          // Back on the matched reference, the control's content is let go.
+          val (back, e3) = TrialPanels.sync(switched, t2Compare, rows, Some(rev4))
+          assertEquals(e3.collect { case PanelsEffect.ReadContent(_, k) => k }, Vector.empty)
+          assertEquals(back.contents.keySet, Set(p17ret07, p17enc03))
+      }
+    }
+  }
+
+  test(
+    "content is read only with a revision; stale content is dropped; a refusal names the trial"
+  ) {
+    withSession { s =>
+      rowsOf(s).map { rows =>
+        assertEquals(
+          TrialPanels
+            .sync(TrialPanels.empty, t2Compare, rows, None)
+            ._2
+            .collect { case e @ PanelsEffect.ReadContent(_, _) => e },
+          Vector.empty
+        )
+        val (p, _) = TrialPanels.sync(TrialPanels.empty, t2Compare, rows, Some(rev4))
+        assertEquals(TrialPanels.vm(p, rows, scales).query.get.content, PanelContent.Reading)
+        val other = MockStudy.key("P02", "ret_01")
+        assertEquals(
+          TrialPanels.update(p, PanelsIntent.ContentRead(other, contentOf(rev4, other))),
+          p
+        )
+        val refused = TrialPanels.update(
+          p,
+          PanelsIntent.ContentRead(p17ret07, Left(ContentError.NotServed(p17ret07)))
+        )
+        assertEquals(
+          TrialPanels.vm(refused, rows, scales).query.get.content,
+          PanelContent.Unavailable("The content of P17 · ret_07 is not served.")
+        )
+        assertEquals(TrialPanels.vm(refused, rows, scales).query.get.count, "")
+      }
+    }
+  }
+
+  test("a trial's Table tab lists its fixations with their refs, as served") {
+    val c      = right(contentOf(rev4, p17ret07))
+    val source = right(TrialPanels.fixationTable(c))
+    assertEquals(source.caption, "Fixations of P17 · ret_07")
+    assertEquals(
+      source.columns.map(_.header),
+      Vector("Fixation", "x (px)", "y (px)", "Onset (ms)", "Duration (ms)", "Map placement")
+    )
+    assertEquals(source.rows.map(_.ref), c.fixations.map(_.ref))
+    assertEquals(
+      source.cells(1).getOrElse(fail("no row")),
+      Vector("2", "910.0", "500.0", "100", "200", "in map")
+    )
   }

@@ -55,6 +55,12 @@ object GoldenAssets:
         case _ => Left(s"stimulus line '$line' does not have 3 fields")
     }
 
+  /** Whether `dataset`'s trial inventory is fixtures/studio-golden's
+    * trials.csv, byte for byte: the only revision [[registry]] describes.
+    */
+  def describes(dataset: DatasetRevisionSpec): Boolean =
+    dataset.sources.trials.exists(_.bytes.hex == GoldenInventory.trialsSha256)
+
   /** The registry of a dataset revision imported from fixtures/studio-golden,
     * with every stimulus present stored: 257 of 259 images present,
     * forest-044.png and kitchen-081.png missing.

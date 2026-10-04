@@ -38,7 +38,8 @@ enum LedgerTextId derives CanEqual:
   // --- The decision ------------------------------------------------------------------
   case DecisionTitle, DecisionLegend, RequireComplete, RequireCompleteRefuses
   case RequireCompleteAdmits, AbsentJoined, ReviewExclusions, ReviewExclusionsNote
-  case ReviewExclusionsNoInventory, Changes, Creates, WouldStale, Admit, AdmitWaiting
+  case ReviewExclusionsNoInventory, Changes, ChangesFailed, Creates, WouldStale, Admit
+  case AdmitWaiting
   case AdmitRefused, AdmitVerifying, AdmittedStatus, AdmittedUnder, NowStale, AdmittedNote
 
   // --- Where the counts come from ----------------------------------------------------------
@@ -104,11 +105,12 @@ object LedgerText:
       "Admits {0} trials; {1} quarantined and {2} absent are recorded with their causes in {3}."
     case ReviewExclusionsNoInventory =>
       "Admits {0} trials; {1} quarantined are recorded with their causes in {2}."
-    case Changes      => "Changes from {0}: {1}."
-    case Creates      => "Admitting creates dataset {0}."
-    case WouldStale   => "{0} stays on {1} and is marked stale."
-    case Admit        => "Admit as {0}"
-    case AdmitWaiting =>
+    case Changes       => "Changes from {0}: {1}."
+    case ChangesFailed => "Changes from {0} cannot be shown: {1}"
+    case Creates       => "Admitting creates dataset {0}."
+    case WouldStale    => "{0} stays on {1} and is marked stale."
+    case Admit         => "Admit as {0}"
+    case AdmitWaiting  =>
       "Admission waits for eyes4s's counts of {0}."
     case AdmitRefused =>
       "Require complete refuses {0}: {1} trials are quarantined. Review exclusions admits " +

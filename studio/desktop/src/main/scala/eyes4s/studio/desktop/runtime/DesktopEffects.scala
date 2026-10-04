@@ -90,8 +90,16 @@ final class DesktopEffects(
     case AppEffect.Execution(e) =>
       session.run(ExecutionEffect.perform(session.service)(e)) {
         case Right(Right(()))   => ()
-        case Right(Left(error)) => ui(() => report(EffectProblem.Refused(e, error)))
-        case Left(defect)       =>
+        case Right(Left(error)) =>
+          ui { () =>
+            report(EffectProblem.Refused(e, error))
+            // A refused prepared design falls back to a plain submission.
+            e match
+              case ExecutionEffect.SubmitPreview(ready) =>
+                dispatch(Intent.PreparedRefused(ready, error))
+              case _ => ()
+          }
+        case Left(defect) =>
           ui(() => report(EffectProblem.Failed(e, String.valueOf(defect.getMessage))))
       }
     case AppEffect.OpenDialog(d)     => dialogs.open(d, dispatch)

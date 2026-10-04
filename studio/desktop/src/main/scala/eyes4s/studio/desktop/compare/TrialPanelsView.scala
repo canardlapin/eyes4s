@@ -19,7 +19,17 @@ package eyes4s.studio.desktop.compare
 import eyes4s.studio.app.Intent
 import eyes4s.studio.app.compare.{PanelRole, TrialPanelVM, TrialPanelsVM}
 import eyes4s.studio.app.text.{PanelText, PanelTextId}
+import eyes4s.studio.app.compare.{ContentFixation, PanelContent}
+import eyes4s.studio.app.tokens.{StageVariant, Theme}
 import eyes4s.studio.desktop.plot.TableTwinView
+import eyes4s.studio.desktop.trial.{StimulusSource, TrialView}
+import eyes4s.studio.viz.trial.{
+  MarkStyle,
+  RememberedImage,
+  TrialFixation,
+  TrialRole,
+  TrialSceneInput
+}
 import javafx.geometry.Pos
 import javafx.scene.control.{Button, Label, ToggleButton}
 import javafx.scene.layout.{HBox, Priority, Region, StackPane, VBox}
@@ -31,12 +41,20 @@ import javafx.scene.layout.{HBox, Priority, Region, StackPane, VBox}
   * matched reference, the matched reference's identity and the inspected
   * pair's score. It only binds [[TrialPanelsVM]]. Use on the JavaFX thread.
   */
-final class TrialPanelsView(app: Intent => Unit, underlay: Boolean => Unit):
+final class TrialPanelsView(
+    app: Intent => Unit,
+    underlay: Boolean => Unit,
+    stimuli: StimulusSource
+):
 
   private final class Panel(styleClass: String):
+    val view    = TrialView(stimuli)
+    val said    = Label()
+    var drawn   = Option.empty[TrialSceneInput]
     val pill    = Label()
     val title   = Label()
     val readout = Label()
+    val count   = Label()
     val note    = Label()
     val tools   = HBox(4.0)
     val stage   = StackPane()
@@ -45,18 +63,39 @@ final class TrialPanelsView(app: Intent => Unit, underlay: Boolean => Unit):
     readout.getStyleClass.addAll("panel-readout", "mono", "t11")
     note.getStyleClass.addAll("panel-note", "t11")
     stage.getStyleClass.add("stage")
+    said.getStyleClass.addAll("panel-note", "t11")
+    said.setWrapText(true)
+    stage.getChildren.addAll(view, said)
     VBox.setVgrow(stage, Priority.ALWAYS)
     private val spacer = Region()
     HBox.setHgrow(spacer, Priority.ALWAYS)
     private val head = HBox(6.0, pill, title)
     head.setAlignment(Pos.CENTER_LEFT)
-    private val bar = HBox(8.0, tools, spacer, readout)
+    count.getStyleClass.addAll("lbl", "mono")
+    private val bar = HBox(8.0, tools, spacer, count)
     bar.setAlignment(Pos.CENTER_LEFT)
     bar.getStyleClass.add("panel-toolbar")
-    val node: VBox = VBox(4.0, head, bar, note, stage)
+    readout.getStyleClass.add("panel-toolbar")
+    val node: VBox = VBox(4.0, head, bar, readout, note, stage)
     node.getStyleClass.addAll("trial-panel", styleClass)
     Option(getClass.getClassLoader.getResource(TableTwinView.stylesheetResource))
       .foreach(url => node.getStylesheets.add(url.toExternalForm))
+
+    // Draws `input` unless it is already drawn; nothing clears the view
+    // while it is drawn but a reason.
+    def draw(input: Either[String, TrialSceneInput]): Unit =
+      input match
+        case Right(in) =>
+          if !drawn.contains(in) then
+            drawn = Some(in)
+            view.show(in)
+          said.setText("")
+        case Left(why) =>
+          if drawn.nonEmpty then
+            drawn = None
+            view.clear()
+          said.setText(why)
+      said.setVisible(said.getText.nonEmpty)
 
     def show(vm: Option[TrialPanelVM], empty: Option[String]): Unit =
       vm match
@@ -64,6 +103,7 @@ final class TrialPanelsView(app: Intent => Unit, underlay: Boolean => Unit):
           pill.setText(p.role.label)
           pill.getStyleClass.setAll("panel-pill", pillClass(p.role))
           title.setText(p.title)
+          count.setText(p.count)
           readout.setText(p.readout.text)
           readout.setAccessibleText(p.readout.text)
           node.setAccessibleText(s"${p.role.label}: ${p.title}")
@@ -102,6 +142,24 @@ final class TrialPanelsView(app: Intent => Unit, underlay: Boolean => Unit):
   def queryStage: StackPane     = query.stage
   def referenceStage: StackPane = reference.stage
 
+  /** The trial views on the query's and the reference's stages. */
+  def queryView: TrialView     = query.view
+  def referenceView: TrialView = reference.view
+
+  /** Each panel's fixation count, as shown. */
+  def counts: (String, String) = (query.count.getText, reference.count.getText)
+
+  /** Toggles the underlay, as the user clicks it. */
+  def toggleUnderlay(): Unit = underlayToggle.fire()
+
+  /** Why a panel's stage draws nothing, if it says so. */
+  def stageNotes: (String, String) = (query.said.getText, reference.said.getText)
+
+  /** Disposes both trial views. */
+  def dispose(): Unit =
+    query.view.dispose()
+    reference.view.dispose()
+
   /** What each panel shows: role pill, title and readout. */
   def shown: Vector[(String, String, String)] =
     Vector(query, reference).map(p => (p.pill.getText, p.title.getText, p.readout.getText))
@@ -115,9 +173,17 @@ final class TrialPanelsView(app: Intent => Unit, underlay: Boolean => Unit):
   /** Clicks the way back, as the user does. */
   def pressBack(): Unit = back.fire()
 
-  def render(vm: TrialPanelsVM): Unit =
+  def render(vm: TrialPanelsVM, theme: Theme): Unit =
     query.show(vm.query, vm.empty)
     reference.show(vm.reference, None)
+    val remembered = vm.remembered.fold(RememberedImage.Absent)(r =>
+      if r.shown then RememberedImage.Shown(r.asset) else RememberedImage.Hidden(r.asset)
+    )
+    vm.query.foreach(p => query.draw(TrialPanelsView.input(p, theme, remembered)))
+    vm.reference.foreach(p =>
+      reference.draw(TrialPanelsView.input(p, theme, RememberedImage.Absent))
+    )
+    if vm.query.isEmpty then query.draw(Left(vm.empty.getOrElse("")))
     underlayToggle.setSelected(vm.underlay)
     underlayToggle.setVisible(vm.query.isDefined)
     underlayToggle.setManaged(vm.query.isDefined)
@@ -133,3 +199,44 @@ final class TrialPanelsView(app: Intent => Unit, underlay: Boolean => Unit):
       case None =>
         back.setVisible(false)
         back.setManaged(false)
+
+object TrialPanelsView:
+
+  /** The trial role a panel's marks are drawn in (DESIGN_SPEC section 5). */
+  def roleOf(role: PanelRole): TrialRole = role match
+    case PanelRole.Query   => TrialRole.Query
+    case PanelRole.Matched => TrialRole.Matched
+    case PanelRole.Control => TrialRole.Control
+
+  /** The scene input of panel `p`, or why its stage draws nothing. */
+  def input(
+      p: TrialPanelVM,
+      theme: Theme,
+      remembered: RememberedImage
+  ): Either[String, TrialSceneInput] =
+    p.content match
+      case PanelContent.Reading          => Left(PanelText(PanelTextId.ReadingTrial))
+      case PanelContent.Unavailable(why) => Left(why)
+      case PanelContent.Shown(c)         =>
+        fixations(c.fixations).map(fs =>
+          TrialSceneInput(
+            c.display,
+            c.screen,
+            fs,
+            MarkStyle.Role(roleOf(p.role)),
+            theme,
+            StageVariant.Dark,
+            remembered = remembered
+          )
+        )
+
+  private def fixations(all: Vector[ContentFixation]): Either[String, Vector[TrialFixation]] =
+    all.foldLeft[Either[String, Vector[TrialFixation]]](Right(Vector.empty)) { (acc, f) =>
+      acc.flatMap(got =>
+        TrialFixation
+          .of(f.trial, f.index, f.screenX, f.screenY, f.durationMs, f.placement)
+          .map(got :+ _)
+          .left
+          .map(_.message)
+      )
+    }

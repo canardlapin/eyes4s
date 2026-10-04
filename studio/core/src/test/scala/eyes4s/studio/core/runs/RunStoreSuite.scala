@@ -24,6 +24,7 @@ import eyes4s.studio.core.bundle.*
 import eyes4s.studio.core.command.{Command, History}
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.DocumentSamples.{t1, t3}
+import eyes4s.studio.core.figures.FigureError
 import eyes4s.studio.core.fixture.StoryMoments
 import io.circe.syntax.*
 import munit.CatsEffectSuite
@@ -204,7 +205,11 @@ class RunStoreSuite extends CatsEffectSuite:
       assertEquals(two.run, StoryMoments.run5)
       assertEquals(
         missing,
-        Left(RunStoreError.UnknownFigure(right(FigureId.of(3)), Vector(figure1, figure2)))
+        Left(
+          RunStoreError.Unbound(
+            FigureError.UnknownFigure(right(FigureId.of(3)), Vector(figure1, figure2))
+          )
+        )
       )
   }
 
