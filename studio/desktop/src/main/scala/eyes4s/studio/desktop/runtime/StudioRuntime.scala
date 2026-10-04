@@ -77,6 +77,10 @@ final class StudioRuntime(
     listeners += f
     f(current)
 
+  /** Stop calling `f` (the very function given to [[listen]]). */
+  def unlisten(f: AppModel => Unit): Unit =
+    listeners -= f: Unit
+
   /** A listener that throws is recorded, passed to `report` and skipped: the
     * other listeners and the intent's effects still run.
     */
