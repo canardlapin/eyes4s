@@ -17,6 +17,7 @@
 package eyes4s.studio.core.selection
 
 import eyes4s.studio.core.backend.{
+  AnalysisRevision,
   DatasetRevision,
   PairDesign,
   Phase,
@@ -155,6 +156,11 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     */
   case WindowTally(dataset: DatasetRevision, region: TallyRegion)
 
+  /** One count of an analysis revision's resolved design, as the backend's
+    * preview reports it (ticket S7.5).
+    */
+  case DesignTally(revision: AnalysisRevision, tally: DesignCount)
+
   /** A dataset revision's count of inventory trials with one admission
     * disposition (eyes4s `TrialDisposition`; ticket S5.6): the trials the
     * admission ledger lists under it.
@@ -177,7 +183,7 @@ enum StudioRef derives CanEqual, Codec.AsObject:
         case ResultAddress.Reduction(_, _, _) | ResultAddress.ContrastRow(_, _) =>
           RefKind.Aggregate
     case ParticipantSummary(_, _, _, _, _) | GroupCell(_, _, _, _) | FigurePanel(_, _) |
-        WindowTally(_, _) | InventoryCount(_, _) | TrialGroup(_, _) =>
+        WindowTally(_, _) | DesignTally(_, _) | InventoryCount(_, _) | TrialGroup(_, _) =>
       RefKind.Aggregate
 
   def isAggregate: Boolean = kind == RefKind.Aggregate
@@ -219,6 +225,7 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     case GroupCell(_, _, _, _)                => None
     case FigurePanel(_, _)                    => None
     case WindowTally(_, _)                    => None
+    case DesignTally(_, _)                    => None
     case InventoryCount(dataset, count)       =>
       count match
         case InventoryKind.Cause(_) | InventoryKind.NoFixations =>
@@ -241,6 +248,17 @@ enum TrialGrouping derives CanEqual, Codec.AsObject:
   */
 enum TallyRegion derives CanEqual, Codec.AsObject:
   case OutsideWindow, OutsideScreen
+
+/** Which count of a resolved design a [[StudioRef.DesignTally]] names: the
+  * focal trials by status, the trials the candidate pairs cross, or the pairs
+  * per scale before and after paging.
+  */
+enum DesignCount derives CanEqual, Codec.AsObject:
+  case RequestedQueries, EligibleQueries, UnmatchedQueries, QueriesNotAdmitted, ByDesignQueries
+  case FocalTrials, ReferenceTrials, CandidatePairsPerScale, EligiblePairsPerScale
+
+  /** The participants the preview counts, one page of pairs each. */
+  case Participants
 
 /** Which inventory trials a [[StudioRef.InventoryCount]] counts, by their
   * admission disposition. `Quarantined` holds every trial admission held

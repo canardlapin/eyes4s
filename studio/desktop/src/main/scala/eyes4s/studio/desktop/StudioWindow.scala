@@ -35,6 +35,7 @@ import eyes4s.studio.desktop.runtime.{
   StudioRuntime,
   StudioSession
 }
+import eyes4s.studio.desktop.analysis.{DesignInputs, ResolvedDesignHost}
 import eyes4s.studio.desktop.importing.{ColumnMappingPaneHost, ImportWizardHost}
 import eyes4s.studio.desktop.platform.FilePresetStore
 import eyes4s.studio.desktop.shell.AppShell
@@ -66,7 +67,9 @@ final class StudioWindow private (
     val summary: CompareSummaryHost,
     summaryListener: AppModel => Unit,
     val navigator: TrialsNavigatorHost,
-    navigatorListener: AppModel => Unit
+    navigatorListener: AppModel => Unit,
+    val resolvedDesign: ResolvedDesignHost,
+    designListener: AppModel => Unit
 ):
   /** The window content, with the studio stylesheets. */
   def root: javafx.scene.Parent = shell.root
@@ -80,6 +83,7 @@ final class StudioWindow private (
     else if pane == StudioLayouts.admission then admission.focusStops
     else if pane == StudioLayouts.trials then navigator.trialsStops
     else if pane == StudioLayouts.items then navigator.itemsStops
+    else if pane == StudioLayouts.resolvedDesign then resolvedDesign.focusStops
     else Vector.empty
 
   /** Store each perspective's arrangement in the document (view-only). */
@@ -91,6 +95,7 @@ final class StudioWindow private (
   def close(): Unit =
     runtime.unlisten(summaryListener)
     runtime.unlisten(navigatorListener)
+    runtime.unlisten(designListener)
     summary.dispose()
     project.foreach(_.close())
     session.close()
@@ -308,6 +313,13 @@ object StudioWindow:
     host.host(StudioLayouts.items, navigator.items.node)
     val navigatorListener: AppModel => Unit = navigator.sync
     r.listen(navigatorListener)
+    // The resolved-design table (Analysis): the backend's preview of the
+    // target revision, prepared once the perspective is shown.
+    val design = ResolvedDesignHost(dispatch, DesignInputs.of(session))
+    host.host(StudioLayouts.resolvedDesign, design.node)
+    val designListener: AppModel => Unit = design.sync
+    r.listen(designListener)
+    design.sync(r.model)
     Right(
       StudioWindow(
         session,
@@ -321,6 +333,8 @@ object StudioWindow:
         summary,
         summaryListener,
         navigator,
-        navigatorListener
+        navigatorListener,
+        design,
+        designListener
       )
     )

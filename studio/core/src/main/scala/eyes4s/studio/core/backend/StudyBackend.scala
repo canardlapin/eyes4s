@@ -286,10 +286,11 @@ object ProtocolVersion:
     * `DuplicateSubscription` (S0.9). 1.2 added `ProgressTotal.Counting`. 1.3
     * replaced the admission summary's inventory counts with [[InventoryJoin]]
     * and added `InventoryRefused` (S5.4). 1.4 uses decimal strings for Long
-    * values outside the safe JSON integer range. Deploy client and backend
-    * together.
+    * values outside the safe JSON integer range. 1.5 adds the resolved
+    * design's query counts to preview candidates and counts (S7.5). Deploy
+    * client and backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 4)
+  val Current: ProtocolVersion = ProtocolVersion(1, 5)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual

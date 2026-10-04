@@ -59,6 +59,12 @@ To change the plan, edit `studio_plan.py`, rerun `render`, and update the matchi
 
 ## Backend protocol versions
 
+Protocol 1.5 (S7.5) adds the resolved-design counts: `PreviewCandidates` carries
+`requestedQueries`, `queriesNotAdmitted` and `byDesignQueries` (absent when the
+recipe has no by-design category: not applicable, not zero), and `PreviewCounts`
+carries `eligibleQueries`, each a non-negative `QueryCount`. A 1.4 preview does not
+decode as 1.5. `StudioRef.DesignTally` names each of these counts.
+
 Protocol 1.4 preserves every `Long` in backend messages across JVM and Scala.js
 JSON text transport. Values in the inclusive range −9,007,199,254,740,991 to
 9,007,199,254,740,991 remain JSON numbers; larger magnitudes use canonical decimal
@@ -84,7 +90,8 @@ Deploy the Studio client and backend together. The transport checks major versio
 only and decodes the typed envelope body before checking the version; it does not
 negotiate minor capabilities. Mixed-minor deployments are unsupported. Protocol
 1.2 added `ProgressTotal.Counting`, which a 1.0/1.1 decoder cannot read; 1.3 adds
-the inventory join; 1.4 adds the exact large-count policy. `ProtocolCodecSuite`
+the inventory join; 1.4 adds the exact large-count policy; 1.5 adds the
+resolved-design counts. `ProtocolCodecSuite`
 retains the frozen legacy-total probe, while `ProtocolLongSuite` verifies that
 safe-number 1.2 envelopes remain readable. This does not establish mixed-version peer compatibility.
 
@@ -109,4 +116,29 @@ Its participant pages are fixture steps. They do not qualify a real
 `CountCursor` budget, an input digest, or scientific pair counts. S3.7 must retain
 the actual `PreparedStudy` and its owned counts, check current input and plan
 identity, and execute that prepared study; S0.7b qualifies fixture counts through
-real eyes4s. S7.5 owns the resolved-design table that presents these events.
+real eyes4s.
+
+`PreviewCandidates` also carries the query counts known before paging (requested,
+not admitted, and the recipe's by-design category, or none), and `PreviewCounts`
+the eligible queries after it; a `PreviewReady` refuses counts that do not partition
+the requested queries (protocol 1.5). The fake serves the `FIXTURE.md`
+counts; the real backend (S3.7) must source them from eyes4s's own preview of the
+prepared study (`StudyPreview`/`PreparedStudy`), not compute them in Studio.
+
+## Resolved design table
+
+S7.5's table (`eyes4s.studio.app.analysis.ResolvedDesign`) presents these events
+for the Analysis trail's revision, else the draft. Its chip counts and pair counts
+are the backend's, each traced by a `StudioRef.DesignTally`; rows come from
+`previewRows`; every row opens its trial. A counted receipt goes to the app with
+the recipe it was prepared from (`Intent.DesignPrepared`). A Save & run of the same
+stamp and recipe emits `ExecutionEffect.SubmitPreview`, so execution consumes that
+prepared design (E2E-05); any other run submits its stamp. The receipt is
+submitted once, withdrawn when the pane retargets, and a refused receipt (an evicted
+or stale preview) falls back to submitting the run's stamp, so the recorded run is not
+orphaned. The recipe comparison is the client's own check: S3.7 must make the backend
+refuse a receipt whose recipe or plan identity changed (bead
+bd-01M3DPFHY9YW5BPSJQ8VBBXHVN). The board's split of the
+457 eligible queries into 454 contributing and 3 failing in the window, and the
+per-row reasons ("1 control fewer", "0 of 11 fixations inside window"), need fields
+`PreviewRow` does not carry yet.

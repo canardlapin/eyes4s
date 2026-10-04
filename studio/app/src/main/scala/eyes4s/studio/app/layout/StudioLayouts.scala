@@ -138,6 +138,9 @@ object StudioLayouts:
   /** Where the failed jobs chip leads (S1.4). */
   val diagnostics: PaneId = new PaneId("analysis.diagnostics")
 
+  /** The resolved-design table (S7.5). */
+  val resolvedDesign: PaneId = new PaneId("analysis.resolved-design")
+
   /** Analysis.dc.html. */
   val analysis: PerspectiveLayout = layout(
     "analysis",
@@ -152,7 +155,8 @@ object StudioLayouts:
           pane("analysis.description", "Description", Text)
         ) -> 0.6,
         group(
-          pane("analysis.resolved-design", "Resolved design", Plot),
+          // A region (the board's section) holding the table's own focus stop.
+          PaneDecl(resolvedDesign, PaneTitle.Fixed("Resolved design"), Form),
           table("analysis.resolved-design")
         ) -> 0.4
       ),
