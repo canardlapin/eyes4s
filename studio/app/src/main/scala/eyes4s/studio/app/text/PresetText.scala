@@ -22,7 +22,7 @@ package eyes4s.studio.app.text
 enum PresetTextId derives CanEqual:
   case Heading, Title
   case DetailEncodingRetrieval, DetailPerceptionImagery, DetailRecognition
-  case ByDesign, CustomNote, NoAnalysis, Unchanged, Changes, OptionAccessible
+  case CustomNote, NoAnalysis, Unchanged, Changes, OptionAccessible
 
 object PresetText:
 
@@ -34,7 +34,6 @@ object PresetText:
       case DetailEncodingRetrieval => "Query: {0} · Reference: {1} · match on item"
       case DetailPerceptionImagery => "Query: {0} on blank · Reference: {1}"
       case DetailRecognition       => "Old probes only. Lures and novel: {0}"
-      case ByDesign                => "No corresponding study trial (by design)"
       case CustomNote              => "Custom: the recipe holds no preset's phases"
       case NoAnalysis              => "No analysis revision to apply a preset to yet."
       case Unchanged               => "no change"

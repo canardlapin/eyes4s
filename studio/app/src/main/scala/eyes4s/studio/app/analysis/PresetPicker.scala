@@ -17,7 +17,8 @@
 package eyes4s.studio.app.analysis
 
 import eyes4s.studio.app.Intent
-import eyes4s.studio.app.text.{PresetText, PresetTextId}
+import eyes4s.plan.UnmatchedKind
+import eyes4s.studio.app.text.{PresetText, PresetTextId, UnmatchedText}
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.{AnalysisRevisionSpec, Preset, Recipe, StudioDocument}
 import eyes4s.studio.core.freshness.FreshnessText
@@ -48,8 +49,7 @@ final case class PresetPickerVM(
 
 /** The preset picker over the document (ticket S7.1). The edited recipe is
   * the draft's, else the latest revision's. Choosing a preset sets only its
-  * declared fields ([[RecipePreset.changes]]): a draft of the latest revision
-  * when there is none, else one recipe change per field on the draft, so the
+  * declared fields ([[RecipePreset.changes]]), in one undoable command, so the
   * draft's plan.diff is exactly those fields. Save & run records the preset
   * the saved recipe holds. Pure.
   */
@@ -72,18 +72,21 @@ object PresetPicker:
   def selected(document: StudioDocument): Option[Preset] =
     edited(document).map((base, recipe) => RecipePresets.resolve(base.studio.preset, recipe))
 
-  /** The document commands that choose `preset`: none when the recipe
-    * already holds it, or there is no revision, or it is `Custom` (a recipe
-    * becomes custom by editing its fields, not by a choice).
+  /** The one document command that chooses `preset`, an edit undone in one
+    * step: a draft of the latest revision with the preset's changes when
+    * there is no draft, else those changes to the draft together. None when
+    * the recipe already holds it, or there is no revision, or it is `Custom`
+    * (a recipe becomes custom by editing its fields, not by a choice).
     */
-  def commands(document: StudioDocument, preset: Preset): Vector[Command] =
+  def command(document: StudioDocument, preset: Preset): Option[Command] =
     (edited(document), RecipePresets.of(preset)) match
       case (Some((base, recipe)), Some(p)) =>
         val changes = p.changes(recipe)
-        if changes.isEmpty then Vector.empty
-        else if document.draft.isEmpty then Vector(Command.StartDraft(base.id, None, changes))
-        else changes.map(Command.ChangeRecipe(_))
-      case _ => Vector.empty
+        Option.when(changes.nonEmpty)(
+          if document.draft.isEmpty then Command.StartDraft(base.id, None, changes)
+          else Command.ChangeRecipes(changes)
+        )
+      case _ => None
 
   def vm(document: StudioDocument): PresetPickerVM =
     import PresetTextId.*
@@ -92,7 +95,8 @@ object PresetPicker:
     val options = offered.map { (p, line) =>
       val title  = PresetText(Title, p.phases.reference.label, p.phases.focal.label)
       val detail = line match
-        case DetailRecognition => PresetText(line, PresetText(ByDesign))
+        case DetailRecognition =>
+          PresetText(line, UnmatchedText(UnmatchedKind.NoReferenceInDesign))
         case _ => PresetText(line, p.phases.focal.label, p.phases.reference.label)
       val changes = target.map((_, recipe) => p.changes(recipe))
       val diff    = changes.fold(PresetText(NoAnalysis)) { cs =>

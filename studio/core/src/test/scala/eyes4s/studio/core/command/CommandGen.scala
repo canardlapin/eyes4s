@@ -156,6 +156,13 @@ object CommandGen:
         .flatMap(cs => Gen.oneOf(cs))
         .map(Command.ChangeRecipe(_))
     }
+    // A composite edit: every field a generated recipe changes, at once.
+    val composites = current.toVector.map { now =>
+      recipe
+        .map(RecipeChange.between(now, _))
+        .suchThat(_.nonEmpty)
+        .map(Command.ChangeRecipes(_))
+    }
     val reverts = d.draft.flatMap(dr => pick(dr.changes)).toVector.map { g =>
       g.map(c => Command.ChangeRecipe(c.inverse))
     }
@@ -175,7 +182,7 @@ object CommandGen:
       }
     }
     val rebases = pick(d.datasets.map(_.id)).toVector.map(_.map(Command.RebaseDraft(_)))
-    changes ++ reverts ++ starts ++ restores ++ rebases ++ Vector(
+    changes ++ composites ++ reverts ++ starts ++ restores ++ rebases ++ Vector(
       Gen.const(Command.DiscardDraft),
       Gen.option(studio).map(Command.SaveAndRun(_))
     )

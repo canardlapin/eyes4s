@@ -597,15 +597,9 @@ object AppModel:
     case Intent.Dispatch(command) =>
       applyHistory(m, JournalEntry.Apply(command), m.history.apply(command))
     case Intent.ChoosePreset(preset) =>
-      // One command per declared field; a refusal stops the rest.
-      PresetPicker.commands(m.document, preset).foldLeft((m, none, true)) {
-        case ((current, effects, true), command) =>
-          val accepted     = current.history.apply(command).isRight
-          val (next, more) = update(current, Intent.Dispatch(command))
-          (next, effects ++ more, accepted)
-        case (stopped, _) => stopped
-      } match
-        case (next, effects, _) => (next, effects)
+      PresetPicker
+        .command(m.document, preset)
+        .fold((m, none))(c => update(m, Intent.Dispatch(c)))
     case Intent.Undo(stack) => applyHistory(m, undoEntry(stack), m.history.undoOn(stack))
     case Intent.Redo(stack) => applyHistory(m, redoEntry(stack), m.history.redoOn(stack))
 

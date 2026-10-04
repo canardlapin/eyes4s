@@ -32,22 +32,19 @@ import eyes4s.plan.{
   StudyPlan,
   StudyScale,
   TrialKeyDefinitions,
+  TrialDisposition as CoreDisposition,
+  TrialIdentity,
   TrialOccurrence,
   TrialKey as CoreKey,
-  UnmatchedFocalPolicy
+  UnmatchedFocalPolicy,
+  UnmatchedKind,
+  DeclaredReference,
+  QuarantineCause
 }
-import eyes4s.studio.app.{AppModel, Intent, StoryModels}
-import eyes4s.studio.core.assets.DisplayKind
-import eyes4s.studio.core.backend.{
-  DiagnosticLevel,
-  DiagnosticOrigin,
-  Eligibility,
-  Phase,
-  StudioDiagnostic,
-  TrialDisposition,
-  TrialKey
-}
-import eyes4s.studio.core.command.{Command, HistoryStack}
+import eyes4s.studio.app.text.UnmatchedText
+import eyes4s.studio.app.{AppModel, Intent, Notice, StoryModels}
+import eyes4s.studio.core.backend.Phase
+import eyes4s.studio.core.command.{Command, CommandError, HistoryStack}
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.preset.*
 import org.scalacheck.Gen
@@ -56,11 +53,12 @@ import org.scalacheck.Prop.forAll
 import scala.annotation.tailrec
 
 /** Recipe presets (ticket S7.1; Analysis.dc.html, recipe): three presets fill
-  * the one eyes4s fixation-study recipe; choosing one changes only the fields
-  * it declares, as the draft's plan.diff shows; Save & run records the preset
-  * the recipe holds; and a lure or novel probe never receives a match: eyes4s
-  * leaves it unmatched under the Recognition preset, and the preset reads it
-  * as by design, refusing any match the inventory does not declare.
+  * the one eyes4s fixation-study recipe (layout, phases and, for Recognition,
+  * the unmatched policy); choosing one changes only those fields, as one
+  * undoable edit whose plan.diff shows them; Save & run records the preset the
+  * recipe holds; and a lure or novel probe never receives a match: eyes4s
+  * leaves it unmatched, decides why against the inventory, and the studio only
+  * words eyes4s's kind.
   */
 class PresetSuite extends munit.ScalaCheckSuite:
   import StoryModels.ok
@@ -98,22 +96,24 @@ class PresetSuite extends munit.ScalaCheckSuite:
       Vector(("Retrieval", "Encoding"), ("Imagery", "Perception"), ("Recognition", "Study"))
     )
     assertEquals(RecipePresets.of(Preset.Custom), None)
-    assertEquals(
-      presets.map(p => (p.queryDisplay, p.referenceDisplay)),
-      Vector(
-        (DisplayKind.BlankWithFixationCross, DisplayKind.Image),
-        (DisplayKind.Blank, DisplayKind.Image),
-        (DisplayKind.Image, DisplayKind.Image)
-      )
+    // The match layout is eyes4s's trial-keyed layout: participant and item.
+    presets.foreach(p =>
+      assertEquals(p.layout, DefinitionRef.fromCore(TrialKeyDefinitions.trialLayout))
     )
     // Lures are unmatched by design: the Recognition preset must report them.
     assertEquals(RecipePresets.recognition.unmatched, Some(UnmatchedFocalPolicy.ReportNoMatch))
     assertEquals(
       presets.map(_.declared),
       Vector(
-        Vector(RecipeField.Phases),
-        Vector(RecipeField.Phases),
-        Vector(RecipeField.Phases, RecipeField.UnmatchedFocal)
+        Vector(RecipeField.Layout, RecipeField.Phases),
+        Vector(RecipeField.Layout, RecipeField.Phases),
+        Vector(RecipeField.Layout, RecipeField.Phases, RecipeField.UnmatchedFocal)
+      )
+    )
+    // The story's recipe is held by its preset, layout included.
+    assert(
+      RecipePresets.encodingRetrieval.holds(
+        ok(StoryModels.t2.latestAnalysis.toRight("none")).recipe
       )
     )
   }
@@ -232,9 +232,11 @@ class PresetSuite extends munit.ScalaCheckSuite:
       RecipeChange.between(latest.recipe, held).map(_.field),
       Vector(RecipeField.Phases)
     )
-    // One undo step per declared field changed on the draft.
+    // One preset choice is one undoable edit, however many fields it sets.
     def done(model: AppModel) = model.history.stack(HistoryStack.Science).done.size
-    assertEquals(done(r2) - done(r), 2)
+    assertEquals(done(r2) - done(r), 1)
+    val (undone, _) = AppModel.update(r2, Intent.Undo(HistoryStack.Science))
+    assertEquals(undone.document.draft, r.document.draft)
   }
 
   test("Save & run records the preset the saved recipe holds, keeping name and description") {
@@ -247,6 +249,58 @@ class PresetSuite extends munit.ScalaCheckSuite:
     // Unchanged phases keep the base's preset.
     val (k, _) = AppModel.update(t2, Intent.Dispatch(Command.SaveAndRun(None)))
     assertEquals(ok(k.document.latestAnalysis.toRight("none")).studio, base.studio)
+  }
+
+  test("a preset edit that is refused changes nothing, and says why") {
+    val t2     = AppModel.open(StoryModels.t2, Some(StoryModels.project))
+    val recipe = ok(t2.document.draftRecipe.toRight("no draft"))
+    // The second change starts from a value the draft does not hold.
+    val stale = Command.ChangeRecipes(
+      Vector(
+        RecipeChange.Phases(recipe.phases, RecipePresets.recognition.phases),
+        RecipeChange.Unmatched(UnmatchedChoice.Refuse, UnmatchedChoice.ReportNoMatch)
+      )
+    )
+    val (m, effects) = AppModel.update(t2, Intent.Dispatch(stale))
+    assertEquals(m.document, t2.document)
+    assertEquals(effects, Vector.empty)
+    assert(
+      m.notice.exists {
+        case Notice.Refused(_, CommandError.StaleChange(RecipeField.UnmatchedFocal, _, _)) =>
+          true
+        case _ => false
+      },
+      m.notice
+    )
+  }
+
+  test("Save & run refuses a preset the recipe does not hold, and keeps an unedited one") {
+    val t2     = AppModel.open(StoryModels.t2, Some(StoryModels.project))
+    val base   = ok(t2.document.latestAnalysis.toRight("no base"))
+    val held   = base.studio.copy(preset = Preset.Recognition)
+    val (r, _) = AppModel.update(t2, Intent.Dispatch(Command.SaveAndRun(Some(held))))
+    assertEquals(r.document, t2.document)
+    assert(
+      r.notice.exists {
+        case Notice.Refused(_, CommandError.PresetNotHeld(Preset.Recognition, _)) => true
+        case _                                                                    => false
+      },
+      r.notice
+    )
+    // A revision saved as Custom whose next draft only adds a scale stays Custom:
+    // the preset is resolved again only when a draft changes a declared field.
+    val custom = base.studio.copy(preset = Preset.Custom)
+    val (c, _) = AppModel.update(t2, Intent.Dispatch(Command.SaveAndRun(Some(custom))))
+    val saved  = ok(c.document.latestAnalysis.toRight("nothing saved"))
+    assertEquals(saved.studio.preset, Preset.Custom)
+    val grid = Command.StartDraft(
+      saved.id,
+      None,
+      Vector(RecipeChange.Grid(saved.recipe.grid, ok(GridSize.of(32, 24))))
+    )
+    val (g, _) = AppModel.update(c, Intent.Dispatch(grid))
+    val (s, _) = AppModel.update(g, Intent.Dispatch(Command.SaveAndRun(None)))
+    assertEquals(ok(s.document.latestAnalysis.toRight("none")).studio.preset, Preset.Custom)
   }
 
   // --- Lures and novel probes never receive invented matches ----------------------------
@@ -315,7 +369,7 @@ class PresetSuite extends munit.ScalaCheckSuite:
     )
     val report = plan.preflight(Some(input))
     assertEquals(report.blockers, Vector.empty)
-    val unmatched = report.warnings.collect { case StudyFinding.UnmatchedFocal(k) => k }
+    val unmatched = report.warnings.collect { case StudyFinding.UnmatchedFocal(k, _) => k }
     assertEquals(unmatched.toSet, Set(lure, novel))
     val work = get(plan.prepare(input))
     @tailrec
@@ -333,80 +387,29 @@ class PresetSuite extends munit.ScalaCheckSuite:
     )
   }
 
-  private val diagnostic = StudioDiagnostic(
-    "study-finding.unmatched-focal",
-    DiagnosticLevel.Warning,
-    DiagnosticOrigin.EyesCore,
-    Vector.empty,
-    ""
-  )
-  private val probe      = TrialKey("P01", Phase("Recognition"), "r3", 1)
-  private val studyTrial = TrialKey("P01", Phase("Study"), "s1", 1)
-
-  test("Recognition reads an unmatched probe without a declared study trial as by design") {
-    val r = RecipePresets.recognition
-    def at(e: Eligibility, m: Option[TrialKey], ref: InventoryReference) =
-      r.categorize(probe, e, m, ref)
+  test("the studio words eyes4s's unmatched kinds and decides none of them") {
+    def trial(phase: String, label: String) =
+      get(TrialIdentity.of("P03", phase, label, TrialOccurrence.first))
     assertEquals(
-      at(Eligibility.NoMatch(diagnostic), None, InventoryReference.Undeclared),
-      Right(QueryCategory.ByDesign)
-    )
-    // A declared study trial that admission dropped is a finding, not design.
-    assertEquals(
-      at(Eligibility.NoMatch(diagnostic), None, InventoryReference.Declared),
-      Right(QueryCategory.NoMatch(diagnostic))
-    )
-    val notAdmitted = Eligibility.QueryNotAdmitted(TrialDisposition.Absent)
-    assertEquals(
-      at(notAdmitted, None, InventoryReference.Undeclared),
-      Right(QueryCategory.NotAdmitted(TrialDisposition.Absent))
+      UnmatchedText(UnmatchedKind.NoReferenceInDesign),
+      "No corresponding study trial (by design)"
     )
     assertEquals(
-      at(Eligibility.Eligible, Some(studyTrial), InventoryReference.Declared),
-      Right(QueryCategory.Eligible(studyTrial))
-    )
-    // Encoding → retrieval has no by-design category: every one is a finding.
-    assertEquals(
-      RecipePresets.encodingRetrieval.categorize(
-        probe,
-        Eligibility.NoMatch(diagnostic),
-        None,
-        InventoryReference.Undeclared
+      UnmatchedText(
+        UnmatchedKind.ReferenceNotAdmitted(
+          Vector(
+            DeclaredReference(
+              trial("Encoding", "enc_11"),
+              CoreDisposition.Quarantined(QuarantineCause.Overlap(3, "[0,10)", "[5,15)"))
+            )
+          )
+        )
       ),
-      Right(QueryCategory.NoMatch(diagnostic))
-    )
-  }
-
-  property("no preset ever shows a match the inventory does not declare") {
-    val eligibility = Gen.oneOf(
-      Eligibility.Eligible,
-      Eligibility.NoMatch(diagnostic),
-      Eligibility.QueryNotAdmitted(TrialDisposition.NoFixations)
-    )
-    forAll(Gen.oneOf(presets), eligibility, Gen.option(Gen.const(studyTrial))) { (p, e, m) =>
-      p.categorize(probe, e, m, InventoryReference.Undeclared) match
-        case Right(QueryCategory.Eligible(_)) =>
-          fail(s"${p.preset} matched an undeclared probe")
-        case Left(error) =>
-          assertEquals(e, Eligibility.Eligible)
-          assert(error.message.contains(probe.label), error.message)
-        case Right(_) => ()
-    }
-  }
-
-  test("an undeclared match is refused, naming the query and the reference") {
-    assertEquals(
-      RecipePresets.recognition.categorize(
-        probe,
-        Eligibility.Eligible,
-        Some(studyTrial),
-        InventoryReference.Undeclared
-      ),
-      Left(PresetError.UndeclaredMatch(Preset.Recognition, probe, studyTrial))
+      "No match · enc_11 quarantined (Overlap)"
     )
     assertEquals(
-      PresetError.UndeclaredMatch(Preset.Recognition, probe, studyTrial).message,
-      "Query P01 · r3 (Recognition) is matched to P01 · s1 (Study) under the Recognition " +
-        "preset, but the trial inventory declares no Study trial of its item for that participant."
+      UnmatchedText(UnmatchedKind.ReferenceNotPairable(Vector(trial("Encoding", "enc_02")))),
+      "No match · enc_02 cannot be paired"
     )
+    assertEquals(UnmatchedText(UnmatchedKind.Undetermined), "No match")
   }

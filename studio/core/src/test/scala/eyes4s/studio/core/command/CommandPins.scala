@@ -40,6 +40,8 @@ object CommandPins:
       """{"CancelRun":{"run":8}}""",
     "ChangeRecipe" ->
       """{"ChangeRecipe":{"change":{"Grid":{"before":{"columns":64,"rows":48},"after":{"columns":32,"rows":24}}}}}""",
+    "ChangeRecipes" ->
+      """{"ChangeRecipes":{"changes":[{"Grid":{"before":{"columns":64,"rows":48},"after":{"columns":32,"rows":24}}},{"Weighting":{"before":{"Duration":{}},"after":{"Uniform":{}}}}]}}""",
     "CreateFigure" ->
       """{"CreateFigure":{"run":7,"reporting":"by-retrieval-response","panels":[{"letter":"A","title":"Encoding gaze","scale":{"Unscaled":{}},"selection":{"Trial":{"key":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}}}}]}}""",
     "DeleteFigure" ->
@@ -129,7 +131,7 @@ object CommandPins:
     "entry.UndoView" ->
       """{"UndoView":{}}""",
     "journal.0" ->
-      """{"schema":{"name":"studio.journal","version":1},"value":{"Start":{"base":"84178194f4a3544788625dfe98d2e4e1845cdd53b40170be9e8ac812d65294b5"}}}""",
+      """{"schema":{"name":"studio.journal","version":1},"value":{"Start":{"base":"bdc86c34ae4af5a2862be64ee7bcbacf8178e3cf605f051d8d3ddc39a78b9a09"}}}""",
     "journal.1" ->
       """{"schema":{"name":"studio.journal","version":1},"value":{"Entry":{"entry":{"Apply":{"command":{"SetPanelSelection":{"figure":1,"panel":"A","selection":{"AllQueries":{}}}}}},"seq":1}}}""",
     "journal.2" ->
@@ -139,7 +141,7 @@ object CommandPins:
     "journal.4" ->
       """{"schema":{"name":"studio.journal","version":1},"value":{"Entry":{"entry":{"Redo":{}},"seq":4}}}""",
     "journal.5" ->
-      """{"schema":{"name":"studio.journal","version":1},"value":{"Checkpoint":{"science":"65e69efc9048266ab90851e3925bfb01bcd5bf2600e512933f892d9165c40267","seq":4}}}""",
+      """{"schema":{"name":"studio.journal","version":1},"value":{"Checkpoint":{"science":"e4e6bc3bfde395e2a1ed95122caa50886e8bbd545f30c7f60874ca2569b26148","seq":4}}}""",
     "journal.6" ->
       """{"schema":{"name":"studio.journal","version":1},"value":{"Entry":{"entry":{"UndoView":{}},"seq":5}}}""",
     "journal.7" ->
