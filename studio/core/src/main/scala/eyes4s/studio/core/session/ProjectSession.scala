@@ -18,6 +18,7 @@ package eyes4s.studio.core.session
 
 import cats.data.EitherT
 import cats.effect.std.Mutex
+import cats.effect.syntax.all.*
 import cats.effect.{Concurrent, Ref}
 import cats.syntax.all.*
 import eyes4s.codec.ByteDigest
@@ -151,6 +152,27 @@ final class ProjectSession[F[_]: Concurrent] private (
   /** Save the edited document atomically (see the class comment). */
   def save: F[Either[SessionError, SaveReceipt]] =
     exclusive(s => EitherT.fromEither[F](writable(s)).flatMap(saveFrom(s, _)).value)
+
+  /** Copy the project as last saved into the empty bundle `to` with
+    * `sharing` (an export bundle's project snapshot, S9.5): the same science,
+    * and the inputs `sharing` includes. Unsaved edits are not in the copy;
+    * the answer is the copy's science digest.
+    */
+  def share(
+      to: ProjectStore[F],
+      sharing: SharingOptions
+  ): F[Either[SessionError, ByteDigest]] =
+    mutex.lock.surround(
+      to.acquire(owner).flatMap {
+        case Left(e)     => Concurrent[F].pure(Left(SessionError.Store("lock the copy", e)))
+        case Right(lock) =>
+          // The copy's lock is released whatever the copy does, raised errors included.
+          ProjectBundle
+            .share(store, to, lock, sharing)
+            .map(_.left.map(SessionError.Bundle("copy the project", _)))
+            .guarantee(to.release(lock).void)
+      }
+    )
 
   /** Copy an input's bytes into the bundle and list it at the next save. */
   def importInput(

@@ -106,6 +106,7 @@ object StudioPanes:
     case A11yRole.Region       => AccessibleRole.PARENT
     case A11yRole.ComboBox     => AccessibleRole.COMBO_BOX
     case A11yRole.TextField    => AccessibleRole.TEXT_FIELD
+    case A11yRole.TextArea     => AccessibleRole.TEXT_AREA
     case A11yRole.RadioButton  => AccessibleRole.RADIO_BUTTON
     case A11yRole.Link         => AccessibleRole.HYPERLINK
 

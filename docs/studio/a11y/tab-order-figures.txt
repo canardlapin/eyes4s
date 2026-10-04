@@ -14,6 +14,7 @@ button: Figure 2, Stale, run 5 · rev 3 · data r2
 plot: Figure
 button: 89 mm · one-column
 button: 183 mm · two-column, selected
+button: Greyscale check, off
 button: Zoom out (−)
 button: Zoom in (+)
 button: Panel A, Encoding gaze
@@ -24,6 +25,9 @@ region: Participant plot of Participant D at 2°: each participant's mean D in 2
 button: Panel E, Scale profile by response
 region: Scale profile of Scale profile of run 7: each group's grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.
 region: methods.md
+button: Show diff
+button: Regenerate
+text-area: Methods text
 region: Panel
 button: Open in Compare
 button: Rebind figure…
@@ -34,4 +38,14 @@ button: Participant lines Show, selected
 button: Participant lines Hide
 button: Narrower − (panel width 89 mm)
 button: Wider + (panel width 89 mm)
+button: Figure format SVG, selected
+button: Figure format PDF
+button: Figure format PNG
 button: project snapshot includes images, on
+button: Export figure…
+button: figure-1.svg, in the bundle
+button: results.csv · 480 queries × 4 σ, in the bundle
+button: participants.csv · 24 × 2 groups, in the bundle
+button: methods.md, in the bundle
+button: project snapshot · includes images, not in the bundle
+button: Export bundle…

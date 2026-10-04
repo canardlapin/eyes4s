@@ -369,7 +369,12 @@ object StudioLint {
     organization == "org.openjfx" ||
       name.startsWith("javafx") ||
       name.contains("-javafx") ||
-      name.startsWith("scaladock-fx")
+      name.startsWith("scaladock-fx") ||
+      // The export back ends (S9.3): PDF through PDFBox and rasters through
+      // Java2D are desktop-only.
+      organization == "org.apache.pdfbox" ||
+      name.startsWith("intaglio-pdf") ||
+      name.startsWith("intaglio-java2d")
 
   /** Every library-to-studio dependency path in a project graph.
     *
@@ -552,6 +557,18 @@ object StudioLint {
       !forbiddenInPortableStudio("io.example", "scaladock-core_3"),
       "scaladock-core rejected"
     )
+    // The export back ends are desktop-only (S9.3).
+    expect(forbiddenInPortableStudio("org.apache.pdfbox", "pdfbox"), "pdfbox not rejected")
+    expect(forbiddenInPortableStudio("org.apache.pdfbox", "fontbox"), "fontbox not rejected")
+    expect(
+      forbiddenInPortableStudio("io.example", "intaglio-pdf_3"),
+      "intaglio-pdf not rejected"
+    )
+    expect(
+      forbiddenInPortableStudio("io.example", "intaglio-java2d_3"),
+      "intaglio-java2d not rejected"
+    )
+    expect(!forbiddenInPortableStudio("io.example", "intaglio-svg_3"), "intaglio-svg rejected")
 
     // Rule 1: library-to-studio edges, direct and transitive.
     val isStudio: String => Boolean = _.startsWith("studio")

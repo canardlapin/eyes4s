@@ -1206,11 +1206,13 @@ lazy val studioDesktop = project
   .in(file("studio/desktop"))
   .enablePlugins(NoPublishPlugin)
   .dependsOn(studioViz.jvm)
+  // S9.5: export bundles write result tables through eyes4s-io's CSV transport.
+  .dependsOn(io.jvm)
   // S2.3: the file-system ProjectStore runs studio-core's conformance suite.
   .dependsOn(studioCore.jvm % "test->test")
   // S1.4: the shell FX suites boot at the S1.0 story models (StoryModels).
   .dependsOn(studioApp.jvm % "test->test")
-  .dependsOn(studioLocalRefs(intaglioLocal, "javafxJVM"): _*)
+  .dependsOn(studioLocalRefs(intaglioLocal, "javafxJVM", "pdfJVM", "java2dJVM"): _*)
   .dependsOn(studioLocalRefs(scaladockLocal, "core", "fx"): _*)
   .settings(commonSettings)
   .settings(
@@ -1223,7 +1225,8 @@ lazy val studioDesktop = project
     // JavaFX `provided`, so no second OpenJFX reaches the guard below.
     libraryDependencies += "org.testfx" % "openjfx-monocle" % monocleV % Test,
     libraryDependencies ++=
-      (if (intaglioLocal.isDefined) Nil else Seq(intaglioPinned("javafx"))) ++
+      (if (intaglioLocal.isDefined) Nil
+       else Seq("javafx", "pdf", "java2d").map(intaglioPinned)) ++
         (if (scaladockLocal.isDefined) Nil
          else Seq(scaladockPinned("core"), scaladockPinned("fx"))),
     // One JavaFX for the shell and both providers. Intaglio and scaladock

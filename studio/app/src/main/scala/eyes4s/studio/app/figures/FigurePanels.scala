@@ -30,8 +30,9 @@ import eyes4s.studio.app.plot.{
   ScaleProfile
 }
 import eyes4s.studio.app.text.Format
-import eyes4s.studio.core.assets.{AssetRegistry, DisplayKind}
-import eyes4s.studio.core.backend.{Phase, ResultSummary, RunId, TrialKey}
+import eyes4s.studio.app.explore.{ExploreTrialViewVM, MarkVM}
+import eyes4s.studio.core.assets.{AssetRegistry, DisplayKind, TrialDisplay}
+import eyes4s.studio.core.backend.{Phase, ResultSummary, RunId, TrialFixations, TrialKey}
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.figures.{PairScore, ReferenceScores}
 import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
@@ -118,8 +119,33 @@ final case class PlotPanelVM(
     lines: ParticipantLines = ParticipantLines.Shown
 ) derives CanEqual
 
-/** Panels A and B: the trial, what its screen displayed, and the gaze. */
-final case class GazePanelVM(heading: String, displayed: String, gaze: String) derives CanEqual
+/** Which side of the comparison a gaze panel's trial is: the query, or its
+  * matched reference (DESIGN_SPEC section 5 marks them by role).
+  */
+enum GazeRole derives CanEqual:
+  case Query, Matched
+
+/** A gaze panel's drawing: the trial, what its screen displayed, the screen,
+  * and its fixations as eyes4s admitted them (S6.2 trialFixations), marked
+  * by `role`.
+  */
+final case class GazeTrialVM(
+    trial: TrialKey,
+    display: TrialDisplay,
+    screen: ScreenSize,
+    marks: Vector[MarkVM],
+    role: GazeRole
+) derives CanEqual
+
+/** Panels A and B: the trial, what its screen displayed, and the gaze; drawn
+  * when the display and the fixations are both known.
+  */
+final case class GazePanelVM(
+    heading: String,
+    displayed: String,
+    gaze: String,
+    drawn: Option[GazeTrialVM] = None
+) derives CanEqual
 
 /** What a panel's body shows. */
 enum PanelBody derives CanEqual:
@@ -143,8 +169,14 @@ object FigurePanels:
       "The tiles show their scores."
 
   /** Panels A and B's gaze until the trial-fixations view is served (S6.2). */
-  val GazePending: String =
-    "No gaze yet: fixations are drawn when the backend serves the trial-fixations view (S6.2)."
+  def gazeReading(trial: TrialKey): String = s"Reading the fixations of ${trial.label}…"
+  def gazeUnread(why: String): String      = s"The fixations could not be read: $why"
+
+  /** "12 fixations in scanpath order; marker area shows duration." */
+  def gazeDrawn(n: Int, left: Vector[String]): String =
+    val counted = if n == 1 then "1 fixation" else s"$n fixations"
+    s"$counted in scanpath order; marker area shows duration." +
+      (if left.isEmpty then "" else s" Left out: ${left.mkString("; ")}")
 
   private def two(v: Double) = Format.decimal(v, 2)
 
@@ -295,7 +327,13 @@ object FigurePanels:
   /** Panels A and B: the heading ("Retrieval · ret_07"), and what the screen
     * displayed, from the revision's asset registry when it is served.
     */
-  def gaze(trial: TrialKey, registry: Either[String, Option[AssetRegistry]]): GazePanelVM =
+  def gaze(
+      trial: TrialKey,
+      registry: Either[String, Option[AssetRegistry]],
+      fixations: Option[Either[String, TrialFixations]],
+      screen: ScreenSize,
+      role: GazeRole
+  ): GazePanelVM =
     val display = registry.toOption.flatten.flatMap(_.display(trial))
     val shown   = display.map(_.kind) match
       case Some(DisplayKind.Image)                  => "Displayed: image."
@@ -319,9 +357,15 @@ object FigurePanels:
         .filter(_.kind == DisplayKind.Image)
         .flatMap(_.item)
         .fold("")(i => s" · ${i.value}")
+    val (gazeText, drawn) = fixations match
+      case None            => (gazeReading(trial), None)
+      case Some(Left(why)) => (gazeUnread(why), None)
+      case Some(Right(f))  =>
+        val (marks, left) = ExploreTrialViewVM.marks(f.fixations)
+        (gazeDrawn(marks.size, left), display.map(GazeTrialVM(trial, _, screen, marks, role)))
     GazePanelVM(
       s"${trial.phase.label} · ${trial.trial}$item",
       shown + remembered,
-      // Follow-up bd-01M42K7ZNCC5J9R9RPR7H6ZHNT: the gaze from trialFixations.
-      FigurePanels.GazePending
+      gazeText,
+      drawn
     )

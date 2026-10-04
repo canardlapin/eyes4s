@@ -405,16 +405,25 @@ class DatasetDiffSuite extends munit.ScalaCheckSuite:
       ),
       (
         "image",
+        // Another valid placement: narrower, else wider, else moved, else
+        // shorter or taller (a 1-pixel image filling its screen's width).
         a.copy(geometry =
-          right(
-            Geometry.of(
-              g.screen,
-              right(
-                ImagePlacement.of(g.image.left, g.image.top, g.image.width - 1, g.image.height)
-              ),
-              g.pixelsPerDegree
+          Vector(
+            (g.image.left, g.image.top, g.image.width - 1, g.image.height),
+            (g.image.left, g.image.top, g.image.width + 1, g.image.height),
+            (g.image.left - 1, g.image.top, g.image.width, g.image.height),
+            (g.image.left, g.image.top, g.image.width, g.image.height - 1),
+            (g.image.left, g.image.top, g.image.width, g.image.height + 1),
+            (g.image.left, g.image.top - 1, g.image.width, g.image.height)
+          ).iterator
+            .map((l, t, w, h) =>
+              ImagePlacement
+                .of(l, t, w, h)
+                .toOption
+                .flatMap(i => Geometry.of(g.screen, i, g.pixelsPerDegree).toOption)
             )
-          )
+            .collectFirst { case Some(changed) => changed }
+            .getOrElse(fail(s"no other placement of ${g.image} fits ${g.screen}"))
         ),
         _.isInstanceOf[Image]
       ),

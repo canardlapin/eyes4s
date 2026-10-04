@@ -18,11 +18,18 @@ package eyes4s.studio.app.figures
 
 import eyes4s.studio.app.compare.SummaryAnswer
 import eyes4s.studio.app.explore.DisplaySource
+import eyes4s.studio.app.layout.StudioLayouts
 import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.plot.{ParticipantLines, PlotSource}
 import eyes4s.studio.app.text.Format
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.backend.{DatasetRevision, RunId, TrialKey}
+import eyes4s.studio.core.backend.{
+  AnalysisRevision,
+  DatasetRevision,
+  RunId,
+  TrialFixations,
+  TrialKey
+}
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.figures.{FigureSource, RebindProposal, ReferenceScores}
@@ -92,6 +99,16 @@ enum ComposerIntent derives CanEqual:
   /** Set a panel's width, within [[FigureAppearance.MinPanelMm]] and the page. */
   case SetPanelWidth(panel: PanelLetter, mm: Int)
   case IncludeImages(include: Boolean)
+
+  /** "Greyscale check": show the page as it prints in greyscale (S9.3). */
+  case SetGreyscale(on: Boolean)
+
+  /** Export (S9.3): the format, then "Export figure…"; the platform answers
+    * with where the file went, or why it did not.
+    */
+  case ChooseFormat(format: ExportFormat)
+  case Export
+  case Exported(answer: Either[String, String])
   case SummaryRead(run: RunId, answer: SummaryAnswer)
   case ReferencesRead(
       run: RunId,
@@ -100,6 +117,21 @@ enum ComposerIntent derives CanEqual:
       answer: Either[String, ReferenceScores]
   )
   case DisplaysRead(dataset: DatasetRevision, answer: Either[String, DisplaySource])
+
+  /** A gaze panel's fixations (S6.2 trialFixations). */
+  case FixationsRead(
+      revision: AnalysisRevision,
+      trial: TrialKey,
+      answer: Either[String, TrialFixations]
+  )
+
+  /** The methods.md pane (S9.4). */
+  case Methods(intent: MethodsIntent)
+
+  /** The export bundle (S9.5): choose its files, export it, its answer. */
+  case ToggleBundle(item: BundleItem)
+  case ExportBundle
+  case BundleExported(answer: Either[String, String])
 
 /** What the composer asks of the app and the platform. */
 enum ComposerEffect derives CanEqual:
@@ -117,11 +149,25 @@ enum ComposerEffect derives CanEqual:
   /** What each trial of the revision displayed (panels A and B). */
   case RequestDisplays(dataset: DatasetRevisionSpec)
 
+  /** Read a gaze panel's fixations under the bound analysis revision. */
+  case RequestFixations(revision: AnalysisRevision, trial: TrialKey)
+
+  /** Export `page` as `format` under the suggested file name `name`. */
+  case ExportFigure(format: ExportFormat, page: PageVM, name: String)
+
+  /** Read the admission and query facts the methods text cites (S9.4). */
+  case RequestMethods(run: RunId, dataset: DatasetRevision)
+
+  /** Write the export bundle (S9.5). */
+  case WriteBundle(request: BundleRequest)
+
 /** One read the composer asked for, so it is asked once. */
 enum ComposerRead derives CanEqual:
   case Summary(run: RunId)
   case References(run: RunId, scale: ScaleIndex, query: TrialKey)
   case Displays(dataset: DatasetRevision)
+  case Fixations(revision: AnalysisRevision, trial: TrialKey)
+  case Methods(run: RunId)
 
 /** One panel on the page. */
 final case class PanelVM(
@@ -141,6 +187,19 @@ final case class AppearanceVM(
     includeImages: (String, Boolean)
 ) derives CanEqual
 
+/** The figure formats export writes (Figures board: "Figure format SVG PDF PNG"). */
+enum ExportFormat(val label: String, val extension: String) derives CanEqual:
+  case Svg extends ExportFormat("SVG", "svg")
+  case Pdf extends ExportFormat("PDF", "pdf")
+  case Png extends ExportFormat("PNG", "png")
+
+/** The inspector's Export section (S9.3). */
+final case class ExportVM(
+    formats: Vector[(ExportFormat, String, Boolean)],
+    action: String,
+    status: Option[String]
+) derives CanEqual
+
 /** The page of the shown figure. */
 final case class PageVM(
     figure: FigureId,
@@ -156,7 +215,9 @@ final case class PageVM(
     caption: String,
     stamp: String,
     textPt: Int,
-    appearance: AppearanceVM
+    appearance: AppearanceVM,
+    greyscale: Boolean,
+    exporting: ExportVM
 ) derives CanEqual
 
 /** Everything the Figures perspective shows. */
@@ -165,6 +226,8 @@ final case class ComposerVM(
     newFigure: String,
     widths: Vector[(PageWidth, String, Boolean)],
     page: Option[PageVM],
+    methods: Option[MethodsVM],
+    bundle: Option[BundleVM],
     problem: Option[String]
 ) derives CanEqual
 
@@ -186,7 +249,14 @@ final case class FigureComposer private (
     displays: Map[DatasetRevision, Either[String, DisplaySource]],
     asked: Set[ComposerRead],
     problem: Option[String],
-    appearance: Map[FigureId, FigureAppearance]
+    appearance: Map[FigureId, FigureAppearance],
+    greyscale: Boolean,
+    format: ExportFormat,
+    exported: Option[String],
+    methods: FigureMethods,
+    bundle: Set[BundleItem],
+    bundled: Option[String],
+    fixations: Map[(AnalysisRevision, TrialKey), Either[String, TrialFixations]]
 ) derives CanEqual:
   def appearanceOf(figure: FigureId): FigureAppearance =
     appearance.getOrElse(figure, FigureAppearance.default)
@@ -205,6 +275,13 @@ object FigureComposer:
     Map.empty,
     Map.empty,
     Set.empty,
+    None,
+    Map.empty,
+    false,
+    ExportFormat.Svg,
+    None,
+    FigureMethods.empty,
+    BundleItem.Default,
     None,
     Map.empty
   )
@@ -248,7 +325,10 @@ object FigureComposer:
       .flatMap { s =>
         val run    = s.run.id
         val scales = s.bound.analysis.recipe.scales
-        Vector(ComposerRead.Summary(run) -> ComposerEffect.RequestSummary(run)) ++
+        Vector(
+          ComposerRead.Summary(run) -> ComposerEffect.RequestSummary(run),
+          ComposerRead.Methods(run) -> ComposerEffect.RequestMethods(run, s.bound.dataset.id)
+        ) ++
           s.figure.panels.flatMap { p =>
             PanelTemplate.of(p) match
               case PanelTemplate.DensityMaps(sigma, query) =>
@@ -259,10 +339,13 @@ object FigureComposer:
                       ComposerEffect.RequestReferences(run, i, query)
                   )
                   .toVector
-              case PanelTemplate.Gaze(_) =>
+              case PanelTemplate.Gaze(trial) =>
+                val revision = s.bound.analysis.id
                 Vector(
                   ComposerRead.Displays(s.bound.dataset.id) ->
-                    ComposerEffect.RequestDisplays(s.bound.dataset)
+                    ComposerEffect.RequestDisplays(s.bound.dataset),
+                  ComposerRead.Fixations(revision, trial) ->
+                    ComposerEffect.RequestFixations(revision, trial)
                 )
               case _ => Vector.empty
           }
@@ -340,14 +423,80 @@ object FigureComposer:
             .retrying(ComposerRead.References(r, s, q), a.isLeft),
           none
         )
+      case FixationsRead(r, t, a) =>
+        (
+          c.copy(fixations = c.fixations.updated((r, t), a))
+            .retrying(ComposerRead.Fixations(r, t), a.isLeft),
+          none
+        )
       case DisplaysRead(d, a) =>
         (
           c.copy(displays = c.displays.updated(d, a))
             .retrying(ComposerRead.Displays(d), a.isLeft),
           none
         )
+      case Methods(i) =>
+        val source = shownFigure(model).flatMap(FigureSource.of(model.document, _).toOption)
+        val (methods, show) = FigureMethods.update(
+          c.methods,
+          source,
+          source.flatMap(s => c.summaries.get(s.run.id)),
+          i
+        )
+        val next = i match
+          case MethodsIntent.FactsRead(r, a) =>
+            c.retrying(ComposerRead.Methods(r), a.isLeft)
+          case _ => c
+        val focus = show.toVector.map {
+          case FigureMethods.Show.Text => Intent.FocusPane(StudioLayouts.methods)
+          case FigureMethods.Show.Diff => Intent.FocusPane(StudioLayouts.methodsDiff)
+        }
+        (next.copy(methods = methods), focus.map(ComposerEffect.App(_)))
       case SetTextSize(size)          => (restyle(c, model)(_.copy(text = size)), none)
       case SetParticipantLines(lines) => (restyle(c, model)(_.copy(lines = lines)), none)
+      case SetGreyscale(on)           => (c.copy(greyscale = on), none)
+      case ChooseFormat(f)            => (c.copy(format = f, exported = None), none)
+      case Exported(answer)           =>
+        (
+          c.copy(exported =
+            Some(answer.fold(ComposerText.exportFailed, ComposerText.exportedTo))
+          ),
+          none
+        )
+      case ToggleBundle(item) =>
+        val next = if c.bundle.contains(item) then c.bundle - item else c.bundle + item
+        (c.copy(bundle = next, bundled = None), none)
+      case BundleExported(answer) =>
+        (c.copy(bundled = Some(FigureBundle.exported(answer))), none)
+      case ExportBundle =>
+        val v = view(c, model)
+        (for
+          s      <- shownFigure(model).flatMap(FigureSource.of(model.document, _).toOption)
+          page   <- v.page
+          bundle <- v.bundle
+          written = bundle.written
+          if written.nonEmpty
+        yield ComposerEffect.WriteBundle(
+          BundleRequest(
+            s,
+            page,
+            c.format,
+            v.methods.flatMap(_.text.toOption),
+            written,
+            c.appearanceOf(s.figure.id).includeImages,
+            FigureBundle.folder(page),
+            bundle.rows.collect {
+              case r if r.chosen && r.unavailable.isDefined => r.file -> r.unavailable.get
+            }
+          )
+        )).fold((c, none))(e => (c.copy(bundled = None), Vector(e)))
+      case Export =>
+        view(c, model).page.fold((c, none)) { p =>
+          (
+            c.copy(exported = None),
+            Vector(ComposerEffect.ExportFigure(c.format, p, ComposerText.fileName(p, c.format)))
+          )
+        }
       case IncludeImages(include) => (restyle(c, model)(_.copy(includeImages = include)), none)
       case SetPanelWidth(panel, mm) =>
         val bounded = mm.max(FigureAppearance.MinPanelMm).min(c.width.mm)
@@ -439,15 +588,34 @@ object FigureComposer:
   // -------------------------------------------------------------------------
 
   def view(c: FigureComposer, model: AppModel): ComposerVM =
-    val page = shownFigure(model).map(f => FigureSource.of(model.document, f)).map {
+    val source = shownFigure(model).map(f => FigureSource.of(model.document, f))
+    val page   = source.map {
       case Left(e)  => Left(e.message)
       case Right(s) => Right(pageOf(c, model, s))
     }
+    val methods = source
+      .flatMap(_.toOption)
+      .map(s => FigureMethods.view(c.methods, s, c.summaries.get(s.run.id)))
+    val bundle = for
+      s <- source.flatMap(_.toOption)
+      p <- page.flatMap(_.toOption)
+    yield FigureBundle.view(
+      c.bundle,
+      s,
+      p,
+      c.format,
+      c.summaries.get(s.run.id),
+      methods,
+      c.appearanceOf(s.figure.id).includeImages,
+      c.bundled
+    )
     ComposerVM(
       FigureBinding.view(c.binding, model),
       "New figure",
       PageWidth.values.toVector.map(w => (w, w.label, w == c.width)),
       page.flatMap(_.toOption),
+      methods,
+      bundle,
       c.problem.orElse(page.flatMap(_.left.toOption))
     )
 
@@ -486,7 +654,13 @@ object FigureComposer:
       FigureCaption.figure(s),
       FigureCaption.stamp(s),
       look.text.pt,
-      appearance
+      appearance,
+      c.greyscale,
+      ExportVM(
+        ExportFormat.values.toVector.map(f => (f, f.label, f == c.format)),
+        "Export figure…",
+        c.exported
+      )
     )
 
   private def summaryOf(c: FigureComposer, run: RunId) =
@@ -537,7 +711,18 @@ object FigureComposer:
               case DisplaySource.Served(r) => Some(r)
               case DisplaySource.NotServed => None
             }
-            PanelBody.Gaze(FigurePanels.gaze(trial, registry))
+            val role =
+              if trial.phase == s.bound.analysis.recipe.phases.focal then GazeRole.Query
+              else GazeRole.Matched
+            PanelBody.Gaze(
+              FigurePanels.gaze(
+                trial,
+                registry,
+                c.fixations.get((s.bound.analysis.id, trial)),
+                s.bound.dataset.geometry.screen,
+                role
+              )
+            )
       case PanelTemplate.NoTemplate(scale, selection) =>
         PanelBody.Unavailable(ComposerText.noTemplate(scale, selection))
 
@@ -565,6 +750,13 @@ object FigureComposer:
 
 /** The composer's English text. */
 object ComposerText:
+  /** "figure-1.svg". */
+  def fileName(page: PageVM, format: ExportFormat): String =
+    s"figure-${page.figure.number}.${format.extension}"
+
+  def exportedTo(where: String): String = s"Exported to $where."
+  def exportFailed(why: String): String = s"The figure was not exported: $why"
+
   val NoRun: String       = "A new figure needs a completed, current run; there is none."
   val NoReporting: String = "A new figure needs a reporting spec; the project has none."
 

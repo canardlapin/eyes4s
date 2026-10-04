@@ -23,15 +23,24 @@ import eyes4s.studio.app.figures.*
 import eyes4s.studio.app.plot.{ParticipantColumns, PlotSource, ProfileColumns}
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.backend.{DatasetRevision, LedgerPages, RunId, TrialKey}
+import eyes4s.studio.core.backend.{
+  AnalysisRevision,
+  DatasetRevision,
+  LedgerPages,
+  RunId,
+  TrialFixations,
+  TrialKey
+}
 import eyes4s.studio.core.diff.{LedgerUnavailable, StatusChanges, StatusDiff}
 import eyes4s.studio.core.document.{DatasetRevisionSpec, FigureId, PanelLetter}
-import eyes4s.studio.core.figures.{ReferenceReads, ReferenceScores}
+import eyes4s.studio.core.figures.{MethodsFacts, MethodsReads, ReferenceReads, ReferenceScores}
 import eyes4s.studio.core.selection.{ScaleIndex, ViewId}
 import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.plot.{PlotTwin, TableTwinView}
-import eyes4s.studio.desktop.runtime.StudioSession
+import eyes4s.studio.desktop.runtime.{ProjectPort, StudioSession}
 import eyes4s.studio.desktop.tokens.TokenFiles
+import eyes4s.studio.viz.figure.{FigureGaze, PlotGeometry}
+import eyes4s.studio.desktop.trial.{StimulusError, StimulusSource, TrialView}
 import eyes4s.studio.viz.plot.{ParticipantPlot, PlotBuilder, ScaleProfilePlot}
 import javafx.application.Platform
 import javafx.geometry.Pos
@@ -41,8 +50,14 @@ import javafx.scene.AccessibleRole
 import eyes4s.studio.app.plot.ParticipantLines
 import eyes4s.studio.app.tokens.FontFace
 import javafx.beans.property.ReadOnlyObjectWrapper
-import javafx.scene.control.{Button, Label, ScrollPane}
+import javafx.scene.control.{Button, Label, ScrollPane, TextArea}
+import javafx.scene.effect.ColorAdjust
+import javafx.scene.input.{KeyCode, KeyEvent}
 import javafx.scene.text.Font
+import javafx.stage.{DirectoryChooser, FileChooser, Window}
+
+import java.nio.file.Files
+import scala.util.control.NonFatal
 
 import scala.jdk.CollectionConverters.*
 import javafx.scene.layout.{FlowPane, HBox, Priority, Region, VBox}
@@ -51,6 +66,16 @@ import javafx.scene.layout.{FlowPane, HBox, Priority, Region, VBox}
   * called on any thread.
   */
 trait FigureInputs:
+  /** Where the gaze panels' stimulus images are read. */
+  def stimuli: StimulusSource
+
+  /** A gaze panel's fixations under `revision` (S6.2 trialFixations). */
+  def fixations(
+      revision: AnalysisRevision,
+      trial: TrialKey,
+      done: Either[String, TrialFixations] => Unit
+  ): Unit
+
   def summary(run: RunId, done: SummaryAnswer => Unit): Unit
   def references(
       run: RunId,
@@ -63,11 +88,53 @@ trait FigureInputs:
   /** The trial statuses of `from` and `to`, compared (S5.8). */
   def status(from: DatasetRevision, to: DatasetRevision, done: StatusDiff => Unit): Unit
 
+  /** The admission and query facts the methods text of `run` cites (S9.4). */
+  def methods(
+      run: RunId,
+      dataset: DatasetRevision,
+      done: Either[String, MethodsFacts] => Unit
+  ): Unit
+
+  /** Write an export bundle into a folder the author chooses (S9.5); the
+    * answer is where it went, or why it was not written.
+    */
+  def bundle(request: BundleRequest, done: Either[String, String] => Unit): Unit
+
+  /** Save an exported figure, suggesting `name`; the answer is where it went,
+    * or why it was not saved (S9.3).
+    */
+  def save(
+      name: String,
+      format: ExportFormat,
+      bytes: IArray[Byte],
+      done: Either[String, String] => Unit
+  ): Unit
+
 object FigureInputs:
 
+  /** A window with no stimulus store: every image is "not stored". */
+  val NoStimuli: StimulusSource =
+    asset => Left(StimulusError.NotStored(asset.file, "this window"))
+
   /** The window's backend and navigator, and `displays` for what trials showed. */
-  def of(session: StudioSession, source: NavigatorDisplays): FigureInputs =
+  def of(
+      session: StudioSession,
+      source: NavigatorDisplays,
+      owner: () => Option[Window],
+      project: Option[ProjectPort] = None,
+      images: StimulusSource = FigureInputs.NoStimuli
+  ): FigureInputs =
     new FigureInputs:
+      def stimuli: StimulusSource = images
+      def fixations(
+          revision: AnalysisRevision,
+          trial: TrialKey,
+          done: Either[String, TrialFixations] => Unit
+      ): Unit =
+        session.run(session.backend.trialFixations(revision, trial)) {
+          case Left(e)  => done(Left(reason(e)))
+          case Right(a) => done(a.left.map(_.message))
+        }
       def summary(run: RunId, done: SummaryAnswer => Unit): Unit =
         session.run(session.backend.result(run)) {
           case Left(e)          => done(SummaryAnswer.Failed(reason(e)))
@@ -96,6 +163,18 @@ object FigureInputs:
           dataset: DatasetRevisionSpec,
           done: Either[String, DisplaySource] => Unit
       ): Unit = done(source.displays(dataset))
+      def methods(
+          run: RunId,
+          dataset: DatasetRevision,
+          done: Either[String, MethodsFacts] => Unit
+      ): Unit =
+        session.run(
+          MethodsReads
+            .read[IO](session.backend.admission, session.backend.queries, run, dataset)
+        ) {
+          case Left(e)  => done(Left(reason(e)))
+          case Right(a) => done(a.left.map(_.message))
+        }
       def status(from: DatasetRevision, to: DatasetRevision, done: StatusDiff => Unit): Unit =
         def whole(d: DatasetRevision) =
           LedgerPages
@@ -116,6 +195,59 @@ object FigureInputs:
                 )
             )
         }
+      def save(
+          name: String,
+          format: ExportFormat,
+          bytes: IArray[Byte],
+          done: Either[String, String] => Unit
+      ): Unit =
+        val chooser = FileChooser()
+        chooser.setInitialFileName(name)
+        chooser.getExtensionFilters.add(
+          FileChooser.ExtensionFilter(s"${format.label} figure", s"*.${format.extension}")
+        )
+        Option(chooser.showSaveDialog(owner().orNull)) match
+          case None       => done(Left("no file was chosen"))
+          case Some(file) =>
+            try
+              Files.write(file.toPath, Array.from(bytes)): Unit
+              done(Right(file.toString))
+            catch case NonFatal(e) => done(Left(reason(e)))
+
+      def bundle(request: BundleRequest, done: Either[String, String] => Unit): Unit =
+        val chooser = DirectoryChooser()
+        chooser.setTitle(s"Export ${request.folder}")
+        Option(chooser.showDialog(owner().orNull)) match
+          case None         => done(Left("no folder was chosen"))
+          case Some(parent) =>
+            val target = parent.toPath.resolve(request.folder)
+            val run    = request.source.run.id
+            val read   = for
+              summary <- session.backend.result(run)
+              rows    <- MethodsReads.queryRows(session.backend.queries, run)
+            yield (summary.left.map(_.message), rows.left.map(_.message))
+            session.run(read) {
+              case Left(e)                              => done(Left(reason(e)))
+              case Right((Left(why), _))                => done(Left(why))
+              case Right((_, Left(why)))                => done(Left(why))
+              case Right((Right(summary), Right(rows))) =>
+                BundleFiles.assemble(
+                  request,
+                  summary,
+                  rows,
+                  FigureExport.rasters(request.page, images)
+                ) match
+                  case Left(why)   => done(Left(why))
+                  case Right(file) =>
+                    val snapshot = Option.when(request.items.contains(BundleItem.Snapshot))(
+                      project.fold[BundleWriter.Snapshot]((_, answer) =>
+                        answer(Left("this project is not saved in a bundle"))
+                      )(port =>
+                        (to, answer) => port.snapshot(to, request.includeImages, answer)
+                      )
+                    )
+                    BundleWriter.write(target, file, snapshot, done)
+            }
 
   private def reason(e: Throwable): String = Option(e.getMessage).getOrElse(e.toString)
 
@@ -179,7 +311,13 @@ final class FiguresHost(
   // --- the page --------------------------------------------------------------------
   private val title = Label()
   title.getStyleClass.addAll("figures-title", "t13")
-  private val widths  = HBox(4.0)
+  private val widths = HBox(4.0)
+
+  /** "Greyscale check": the paper shown without colour, as it prints in greyscale. */
+  private val greyscale = Button("Greyscale check")
+  private val grey      = ColorAdjust()
+  grey.setSaturation(-1.0)
+
   private val zoomOut = Button("−")
   private val zoomIn  = Button("+")
   private val zoom    = Label()
@@ -197,7 +335,7 @@ final class FiguresHost(
 
   /** The page pane: the toolbar, then the paper. */
   val pageNode: VBox =
-    val bar = HBox(8.0, title, width, widths, spacer(), zoomOut, zoom, zoomIn)
+    val bar = HBox(8.0, title, width, widths, spacer(), greyscale, zoomOut, zoom, zoomIn)
     bar.setAlignment(Pos.CENTER_LEFT)
     bar.getStyleClass.add("figures-toolbar")
     val scroll = ScrollPane(paper)
@@ -231,6 +369,79 @@ final class FiguresHost(
     binding.getStyleClass.add("figures-binding")
     sheet(binding)
     binding
+
+  // --- methods.md and its diff (S9.4) ---------------------------------------------------
+  private val methodsHeading = Label()
+  methodsHeading.getStyleClass.addAll("figures-note", "t11")
+  methodsHeading.setWrapText(true)
+  private val showDiff   = Button()
+  private val regenerate = Button()
+  showDiff.setOnAction(_ => dispatch(ComposerIntent.Methods(MethodsIntent.ShowDiff)))
+  regenerate.setOnAction(_ => dispatch(ComposerIntent.Methods(MethodsIntent.Regenerate)))
+  private val methodsStatus = Label()
+  methodsStatus.getStyleClass.addAll("figures-note", "t11")
+  methodsStatus.setWrapText(true)
+
+  /** The methods text, editable; each edit goes to the composer as it is typed. */
+  val methodsEditor: TextArea = TextArea()
+  methodsEditor.getStyleClass.addAll("figures-methods", "serif", "t12")
+  methodsEditor.setWrapText(true)
+  methodsEditor.setAccessibleText(FiguresHost.MethodsText)
+  // Tab and Shift+Tab leave the text, as from any other stop, rather than
+  // typing a tab: the TextArea moves focus on Ctrl+Tab, so a plain Tab is
+  // passed on as one.
+  methodsEditor.addEventFilter(
+    KeyEvent.KEY_PRESSED,
+    (e: KeyEvent) =>
+      if e.getCode == KeyCode.TAB && !e.isControlDown && !e.isAltDown && !e.isMetaDown then
+        e.consume()
+        methodsEditor.fireEvent(
+          KeyEvent(
+            KeyEvent.KEY_PRESSED,
+            "",
+            "",
+            KeyCode.TAB,
+            e.isShiftDown,
+            true,
+            false,
+            false
+          )
+        )
+  )
+  // True while render writes the text, so the write is not taken for an edit.
+  private var writing = false
+  methodsEditor.textProperty.addListener((_, _, text) =>
+    if !writing then dispatch(ComposerIntent.Methods(MethodsIntent.Edit(text)))
+  )
+
+  /** The methods.md pane: where the text comes from, Show diff and Regenerate, the text. */
+  val methodsNode: VBox =
+    VBox.setVgrow(methodsEditor, Priority.ALWAYS)
+    val bar = HBox(6.0, methodsHeading, spacer(), showDiff, regenerate)
+    bar.setAlignment(Pos.CENTER_LEFT)
+    val box = VBox(4.0, bar, methodsStatus, methodsEditor)
+    box.getStyleClass.add("figures-methods-pane")
+    sheet(box)
+    box
+
+  private val diffCaption = Label()
+  diffCaption.getStyleClass.addAll("figures-note", "t11")
+  private val diffChoice = HBox(6.0)
+
+  /** The diff, a line per sentence. */
+  val diffLines: VBox = VBox(2.0)
+
+  /** The "Diff vs generated" pane: sentence by sentence, and the choice a
+    * regeneration over edits waits on.
+    */
+  val methodsDiffNode: VBox =
+    val scroll = ScrollPane(diffLines)
+    scroll.setFitToWidth(true)
+    VBox.setVgrow(scroll, Priority.ALWAYS)
+    val box = VBox(4.0, diffCaption, diffChoice, scroll)
+    box.getStyleClass.add("figures-methods-pane")
+    sheet(box)
+    box
 
   /** The state now. */
   def composer: FigureComposer = state
@@ -271,6 +482,20 @@ final class FiguresHost(
           query,
           a => later(ComposerIntent.ReferencesRead(run, scale, query, a))
         )
+      case ComposerEffect.WriteBundle(request) =>
+        inputs.bundle(request, a => later(ComposerIntent.BundleExported(a)))
+      case ComposerEffect.RequestMethods(run, dataset) =>
+        inputs.methods(
+          run,
+          dataset,
+          a => later(ComposerIntent.Methods(MethodsIntent.FactsRead(run, a)))
+        )
+      case ComposerEffect.RequestFixations(revision, trial) =>
+        inputs.fixations(
+          revision,
+          trial,
+          a => later(ComposerIntent.FixationsRead(revision, trial, a))
+        )
       case ComposerEffect.RequestDisplays(dataset) =>
         inputs.displays(dataset, a => later(ComposerIntent.DisplaysRead(dataset.id, a)))
       case ComposerEffect.Binding(FigureEffect.RequestStatus(from, to)) =>
@@ -279,7 +504,12 @@ final class FiguresHost(
           to,
           s => later(ComposerIntent.Binding(FigureIntent.StatusRead(from, to, s)))
         )
-      case ComposerEffect.Binding(FigureEffect.App(i)) => app(i)
+      case ComposerEffect.Binding(FigureEffect.App(i))     => app(i)
+      case ComposerEffect.ExportFigure(format, page, name) =>
+        FigureExport.render(format, page, FigureExport.rasters(page, inputs.stimuli)) match
+          case Left(why)   => dispatch(ComposerIntent.Exported(Left(why)))
+          case Right(file) =>
+            inputs.save(name, format, file, a => later(ComposerIntent.Exported(a)))
     }
 
   private def render(m: AppModel): Unit = if !disposed then
@@ -290,10 +520,11 @@ final class FiguresHost(
       renderNavigator(v)
       renderPage(v)
       renderInspector(v)
+      renderMethods(v)
     }
 
   private def keepingFocus(rebuild: => Unit): Unit =
-    val panes           = Vector(navigatorNode, pageNode, inspectorNode)
+    val panes           = Vector(navigatorNode, pageNode, inspectorNode, methodsDiffNode)
     val owner           = Option(navigatorNode.getScene).flatMap(sc => Option(sc.getFocusOwner))
     def within(n: Node) =
       Iterator.iterate(n)(_.getParent).takeWhile(_ != null).exists(a => panes.exists(_ eq a))
@@ -377,6 +608,12 @@ final class FiguresHost(
         tableNote.setText("")
         table.clear()
       case Some(p) =>
+        greyscale.setAccessibleText(FiguresHost.greyscaleName(p.greyscale))
+        greyscale.setOnAction(_ => dispatch(ComposerIntent.SetGreyscale(!p.greyscale)))
+        if p.greyscale then greyscale.getStyleClass.add("figures-chosen"): Unit
+        else greyscale.getStyleClass.remove("figures-chosen"): Unit
+        // A check of the paper only: the export keeps its colours.
+        paper.setEffect(if p.greyscale then grey else null)
         title.setText(p.title)
         width.setText(p.widthLabel)
         zoom.setText(p.zoom)
@@ -419,7 +656,7 @@ final class FiguresHost(
     val body: Node = p.body match
       case PanelBody.Plot(plot) =>
         val twin = twinFor(figure, p, plot.kind, plot.source, plot.lines)
-        twin.plotNode.setPrefSize(w, w * FiguresHost.PlotAspect)
+        twin.plotNode.setPrefSize(w, w * PlotGeometry.Aspect)
         val notes = plot.notes.map(paperLabel(_, text))
         VBox(2.0, (twin.plotNode +: notes)*)
       case PanelBody.Maps(maps) =>
@@ -442,7 +679,12 @@ final class FiguresHost(
         val heading = paperLabel(g.heading, text)
         val shown   = paperLabel(g.displayed, text)
         val gaze    = paperLabel(g.gaze, text); gaze.getStyleClass.add("figures-note")
-        VBox(2.0, heading, shown, gaze)
+        val drawing = g.drawn.toVector.map { d =>
+          val view = gazeFor(figure, p, d)
+          view.setPrefSize(w, w * FigureGaze.heightRatio(d))
+          view
+        }
+        VBox(2.0, (drawing ++ Vector(heading, shown, gaze))*)
       case PanelBody.Waiting(why) =>
         val l = paperLabel(why, text); l.getStyleClass.add("figures-note"); l
       case PanelBody.Unavailable(why) =>
@@ -500,10 +742,36 @@ final class FiguresHost(
     drawn.twin
 
   /** Disposes the plots of panels no longer shown. */
+  /** Panels A and B: one trial view per panel, kept while the panel is
+    * shown; it reads the display's image itself.
+    */
+  private var gazes: Map[(FigureId, PanelLetter), TrialView] = Map.empty
+
+  private def gazeFor(figure: FigureId, p: PanelVM, d: GazeTrialVM): TrialView =
+    val key  = (figure, p.letter)
+    val view = gazes.getOrElse(
+      key, {
+        val made = TrialView(inputs.stimuli)
+        gazes = gazes.updated(key, made)
+        made
+      }
+    )
+    view.setAccessibleText(FiguresHost.gazeName(p, d))
+    val input = FigureGaze.input(d, Map.empty)
+    if !view.input.exists(_.copy(rasters = Map.empty) == input) then view.show(input)
+    view
+
+  /** The trial view of panel `letter` of `figure`, while it is shown. */
+  def gaze(figure: FigureId, letter: PanelLetter): Option[TrialView] =
+    gazes.get((figure, letter))
+
   private def retire(keep: Set[(FigureId, PanelLetter)]): Unit =
     val (kept, gone) = twins.partition((k, _) => keep.contains(k))
     gone.values.foreach(_.twin.dispose())
     twins = kept
+    val (keptGaze, goneGaze) = gazes.partition((k, _) => keep.contains(k))
+    goneGaze.values.foreach(_.dispose())
+    gazes = keptGaze
 
   private def renderInspector(v: ComposerVM): Unit =
     binding.getChildren.setAll(v.figures.binding.toVector.flatMap { b =>
@@ -530,11 +798,33 @@ final class FiguresHost(
         row("Unit", b.unit),
         HBox(6.0, open, rebind),
         note
-      ) ++ v.page.toVector.flatMap(p => appearance(p.appearance))
+      ) ++ v.page.toVector.flatMap(p => appearance(p.appearance, p.exporting)) ++
+        v.bundle.toVector.flatMap(bundleSection)
     }*): Unit
 
+  /** The inspector's Bundle section (S9.5): a toggle per file, then Export bundle…. */
+  private def bundleSection(b: BundleVM): Vector[Node] =
+    val head = Label("Bundle"); head.getStyleClass.add("t12")
+    val rows = b.rows.map { r =>
+      val t = button(FiguresHost.bundleText(r))
+      t.setAccessibleText(FiguresHost.bundleName(r))
+      if r.chosen && r.unavailable.isEmpty then t.getStyleClass.add("figures-chosen"): Unit
+      t.setDisable(r.unavailable.isDefined)
+      t.setOnAction(_ => dispatch(ComposerIntent.ToggleBundle(r.item)))
+      val why = r.unavailable.toVector.map { w =>
+        val l = Label(w); l.setWrapText(true); l.getStyleClass.addAll("figures-note", "t11"); l
+      }
+      VBox(2.0, (t +: why)*)
+    }
+    val write = button(b.action)
+    write.setDisable(b.written.isEmpty)
+    write.setOnAction(_ => dispatch(ComposerIntent.ExportBundle))
+    (head +: rows) ++ Vector(write) ++ b.status.toVector.map { s =>
+      val l = Label(s); l.setWrapText(true); l.getStyleClass.add("t11"); l
+    }
+
   /** The inspector's Appearance (view only) and Export sections. */
-  private def appearance(a: AppearanceVM): Vector[Node] =
+  private def appearance(a: AppearanceVM, e: ExportVM): Vector[Node] =
     def chooser[A](label: String, options: Vector[(A, String, Boolean)])(
         set: A => ComposerIntent
     ) =
@@ -568,7 +858,19 @@ final class FiguresHost(
       HBox(6.0, head, only),
       chooser("Text size", a.textSizes)(ComposerIntent.SetTextSize(_)),
       chooser("Participant lines", a.lines)(ComposerIntent.SetParticipantLines(_))
-    ) ++ width ++ Vector(exporting, images)
+    ) ++ width ++ Vector(
+      exporting,
+      chooser("Figure format", e.formats)(ComposerIntent.ChooseFormat(_)),
+      images,
+      exportButton(e)
+    ) ++ e.status.toVector.map { s =>
+      val l = Label(s); l.setWrapText(true); l.getStyleClass.add("t11"); l
+    }
+
+  private def exportButton(e: ExportVM): Button =
+    val b = button(e.action)
+    b.setOnAction(_ => dispatch(ComposerIntent.Export))
+    b
 
   /** A label on the paper, in the figure's body face at `px`. */
   private def paperLabel(text: String, px: Double): Label =
@@ -588,6 +890,43 @@ final class FiguresHost(
       disposed = true
       retire(Set.empty)
       table.dispose()
+
+  private def renderMethods(v: ComposerVM): Unit =
+    val m = v.methods
+    methodsHeading.setText(m.fold(MethodsCopy.NoFigure)(_.heading))
+    for (b, label) <- Vector(showDiff -> m.map(_.showDiff), regenerate -> m.map(_.regenerate))
+    do
+      b.setText(label.getOrElse(""))
+      b.setAccessibleText(label.getOrElse(""))
+      b.setDisable(label.isEmpty)
+    val status = m.flatMap(_.status)
+    methodsStatus.setText(status.getOrElse(""))
+    methodsStatus.setVisible(status.isDefined)
+    methodsStatus.setManaged(status.isDefined)
+    val (text, why) = m.map(_.text) match
+      case Some(Right(t))  => (t, None)
+      case Some(Left(why)) => ("", Some(why))
+      case None            => ("", Some(MethodsCopy.NoFigure))
+    methodsEditor.setDisable(why.isDefined)
+    methodsEditor.setPromptText(why.getOrElse(""))
+    if methodsEditor.getText != text then
+      writing = true
+      try methodsEditor.setText(text)
+      finally writing = false
+    diffCaption.setText(m.fold("")(_.diffCaption))
+    diffChoice.getChildren.setAll(m.flatMap(_.choice).toVector.flatMap { (keep, use) =>
+      val k = button(keep)
+      k.setOnAction(_ => dispatch(ComposerIntent.Methods(MethodsIntent.KeepEdits)))
+      val u = button(use)
+      u.setOnAction(_ => dispatch(ComposerIntent.Methods(MethodsIntent.UseGenerated)))
+      Vector(k, u)
+    }*): Unit
+    diffLines.getChildren.setAll(m.toVector.flatMap(_.diff).map { line =>
+      val l = Label(FiguresHost.diffLine(line))
+      l.setWrapText(true)
+      l.getStyleClass.addAll("serif", "t12", FiguresHost.diffStyle(line))
+      l
+    }*): Unit
 
   private def button(text: String): Button =
     val b = Button(text)
@@ -619,6 +958,7 @@ final class FiguresHost(
         FocusStop(A11yRole.Button, FiguresHost.widthName(label, chosen))
       ) ++
         Vector(
+          FocusStop(A11yRole.Button, FiguresHost.greyscaleName(p.greyscale)),
           FocusStop(A11yRole.Button, "Zoom out (−)"),
           FocusStop(A11yRole.Button, "Zoom in (+)")
         ) ++
@@ -640,6 +980,23 @@ final class FiguresHost(
   /** The inspector's controls: Open in Compare, Rebind figure…, then the
     * appearance and export controls.
     */
+  /** The methods.md pane: Show diff, Regenerate, then the text. */
+  def methodsStops: Vector[FocusStop] =
+    vm.methods.toVector.flatMap(m =>
+      Vector(
+        FocusStop(A11yRole.Button, m.showDiff),
+        FocusStop(A11yRole.Button, m.regenerate)
+      ) ++ m.text.toOption.map(_ => FocusStop(A11yRole.TextArea, FiguresHost.MethodsText))
+    )
+
+  /** The diff pane: the choice a regeneration over edits waits on. */
+  def methodsDiffStops: Vector[FocusStop] =
+    vm.methods.toVector
+      .flatMap(_.choice)
+      .flatMap((keep, use) =>
+        Vector(FocusStop(A11yRole.Button, keep), FocusStop(A11yRole.Button, use))
+      )
+
   def inspectorStops: Vector[FocusStop] =
     val v               = vm
     def b(name: String) = FocusStop(A11yRole.Button, name)
@@ -651,17 +1008,58 @@ final class FiguresHost(
             a.lines.map((_, t, c) => b(FiguresHost.chosenName("Participant lines", t, c))) ++
             a.panelWidthMm.toVector.flatMap((_, _, t) =>
               Vector(b(FiguresHost.narrower(t)), b(FiguresHost.wider(t)))
-            ) :+
-            b(FiguresHost.includeName(a.includeImages._1, a.includeImages._2))
-        }
+            ) ++
+            // Export: the format, the images option, then Export figure….
+            p.exporting.formats.map((_, t, c) =>
+              b(FiguresHost.chosenName("Figure format", t, c))
+            ) ++
+            Vector(
+              b(FiguresHost.includeName(a.includeImages._1, a.includeImages._2)),
+              b(p.exporting.action)
+            )
+        } ++
+        // Bundle: each file that can be written, then Export bundle….
+        v.bundle.toVector.flatMap(bundle =>
+          bundle.rows.filter(_.unavailable.isEmpty).map(r => b(FiguresHost.bundleName(r))) ++
+            Option.when(bundle.written.nonEmpty)(b(bundle.action))
+        )
     )
 
   private def spacer(): Region =
     val r = Region(); HBox.setHgrow(r, Priority.ALWAYS); r
 
 object FiguresHost:
-  /** A plotted panel's height as a fraction of its width (the board's panels). */
-  val PlotAspect: Double = 0.62
+  /** A gaze panel drawing's accessible name. */
+  def gazeName(p: PanelVM, d: GazeTrialVM): String =
+    s"Panel ${p.letter.value} trial ${d.trial.label}: ${d.marks.size} fixations"
+
+  /** A bundle row as drawn: "results.csv · 480 queries × 4 σ". */
+  def bundleText(r: BundleRowVM): String =
+    if r.detail.isEmpty then r.file else s"${r.file} · ${r.detail}"
+
+  /** A bundle row's accessible name, with whether it is in the bundle. */
+  def bundleName(r: BundleRowVM): String =
+    s"${bundleText(r)}, ${if r.chosen then "in the bundle" else "not in the bundle"}"
+
+  /** The methods editor's accessible name. */
+  val MethodsText: String = "Methods text"
+
+  /** A diff line as shown: removed and added sentences are marked by sign,
+    * not by colour alone.
+    */
+  def diffLine(line: DiffLine): String = line match
+    case DiffLine.Same(t)    => s"  $t"
+    case DiffLine.Removed(t) => s"− $t"
+    case DiffLine.Added(t)   => s"+ $t"
+
+  def diffStyle(line: DiffLine): String = line match
+    case DiffLine.Same(_)    => "figures-diff-same"
+    case DiffLine.Removed(_) => "figures-diff-removed"
+    case DiffLine.Added(_)   => "figures-diff-added"
+
+  /** The greyscale check's accessible name, with its state. */
+  def greyscaleName(on: Boolean): String =
+    s"Greyscale check, ${if on then "on" else "off"}"
 
   /** An appearance option's accessible name: "Text size 7 pt, selected". */
   def chosenName(control: String, option: String, chosen: Boolean): String =

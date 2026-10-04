@@ -19,10 +19,11 @@ package eyes4s.studio.desktop.runtime
 import cats.effect.IO
 import cats.effect.std.Queue
 import cats.effect.unsafe.IORuntime
-import eyes4s.studio.core.bundle.InputKind
+import eyes4s.studio.core.bundle.{Inclusion, InputKind, SharingOptions}
 import eyes4s.studio.core.command.JournalEntry
 import eyes4s.studio.core.document.Source
 import eyes4s.studio.core.session.{ProjectSession, SaveReceipt}
+import eyes4s.studio.desktop.platform.FileProjectStore
 
 import scala.annotation.unused
 
@@ -52,6 +53,15 @@ trait ProjectPort:
     */
   def readInput(source: Source, done: Either[String, IArray[Byte]] => Unit): Unit =
     done(Left(s"${source.path.value}: this project cannot read its inputs"))
+
+  /** Copy the project as last saved into the empty directory `to` (an export
+    * bundle's snapshot, S9.5), with the stimulus images when `images`.
+    */
+  def snapshot(
+      @unused to: java.nio.file.Path,
+      @unused images: Boolean,
+      done: Either[String, Unit] => Unit
+  ): Unit = done(Left("this project is not saved in a bundle, so it has no snapshot"))
 
 /** A [[ProjectPort]] on a studio-core [[ProjectSession]]: every operation
   * joins one queue, which a single fibre drains, so a journal entry is
@@ -134,6 +144,27 @@ final class SessionPort private (
     enqueue(
       answering(session.readInput(source).map(_.left.map(_.message)), done),
       s"read ${source.path.value}",
+      Some(reason => done(Left(reason)))
+    )
+
+  override def snapshot(
+      to: java.nio.file.Path,
+      images: Boolean,
+      done: Either[String, Unit] => Unit
+  ): Unit =
+    val sharing = SharingOptions(
+      Inclusion.Included,
+      if images then Inclusion.Included else Inclusion.Withheld
+    )
+    enqueue(
+      answering(
+        FileProjectStore
+          .at[IO](to)
+          .flatMap(session.share(_, sharing))
+          .map(_.left.map(_.message).map(_ => ())),
+        done
+      ),
+      s"snapshot to $to",
       Some(reason => done(Left(reason)))
     )
 
