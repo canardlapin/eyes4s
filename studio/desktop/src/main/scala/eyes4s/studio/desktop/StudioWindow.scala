@@ -27,6 +27,7 @@ import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.admission.{AdmissionLedgerHost, LedgerInputs}
 import eyes4s.studio.desktop.compare.{CompareSummaryHost, SummaryInputs}
 import eyes4s.studio.desktop.explore.{
+  ExploreTimelineHost,
   ExploreTrialViewHost,
   NavigatorDisplays,
   NavigatorInputs,
@@ -77,6 +78,8 @@ final class StudioWindow private (
     navigatorListener: AppModel => Unit,
     val explore: ExploreTrialViewHost,
     exploreListener: AppModel => Unit,
+    val timeline: ExploreTimelineHost,
+    timelineListener: AppModel => Unit,
     val resolvedDesign: ResolvedDesignHost,
     designListener: AppModel => Unit
 ):
@@ -93,6 +96,7 @@ final class StudioWindow private (
     else if pane == StudioLayouts.trials then navigator.trialsStops
     else if pane == StudioLayouts.items then navigator.itemsStops
     else if pane == StudioLayouts.trialView then explore.focusStops
+    else if pane == StudioLayouts.timeline then timeline.focusStops
     else if pane == StudioLayouts.resolvedDesign then resolvedDesign.focusStops
     else Vector.empty
 
@@ -106,7 +110,9 @@ final class StudioWindow private (
     runtime.unlisten(summaryListener)
     runtime.unlisten(navigatorListener)
     runtime.unlisten(exploreListener)
+    runtime.unlisten(timelineListener)
     explore.dispose()
+    timeline.dispose()
     runtime.unlisten(designListener)
     summary.dispose()
     project.foreach(_.close())
@@ -334,6 +340,13 @@ object StudioWindow:
     host.host(StudioLayouts.trialView, explore.node)
     val exploreListener: AppModel => Unit = explore.sync
     r.listen(exploreListener)
+    // Explore's timeline: the trial view's fixations, the playhead and the brush.
+    val timeline = ExploreTimelineHost(() => r.model, dispatch, () => explore.state)
+    host.host(StudioLayouts.timeline, timeline.node)
+    host.host(StudioLayouts.timelineTable, timeline.tableNode)
+    explore.onChange(() => timeline.refresh())
+    val timelineListener: AppModel => Unit = timeline.sync
+    r.listen(timelineListener)
     // The resolved-design table (Analysis): the backend's preview of the
     // target revision, prepared once the perspective is shown.
     val design = ResolvedDesignHost(dispatch, DesignInputs.of(session))
@@ -357,6 +370,8 @@ object StudioWindow:
         navigatorListener,
         explore,
         exploreListener,
+        timeline,
+        timelineListener,
         design,
         designListener
       )

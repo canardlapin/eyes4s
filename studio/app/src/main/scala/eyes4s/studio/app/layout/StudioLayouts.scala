@@ -109,6 +109,10 @@ object StudioLayouts:
   /** The pane that hosts Explore's trial view (S6.2). */
   val trialView: PaneId = new PaneId("explore.trial-view")
 
+  /** The panes that host Explore's timeline and its table (S6.3). */
+  val timeline: PaneId      = new PaneId("explore.timeline")
+  val timelineTable: PaneId = new PaneId("explore.timeline.table")
+
   /** Explore.dc.html. */
   val explore: PerspectiveLayout = layout(
     "explore",
@@ -124,8 +128,11 @@ object StudioLayouts:
           PaneDecl(trialView, PaneTitle.Dynamic("Trial view"), Plot),
           table("explore.trial-view"),
           pane("explore.small-multiples", "Small multiples", Plot)
-        )                                                                            -> 0.55,
-        group(pane("explore.timeline", "Timeline", Plot), table("explore.timeline")) -> 0.2,
+        ) -> 0.55,
+        group(
+          PaneDecl(timeline, PaneTitle.Fixed("Timeline"), Plot),
+          PaneDecl(timelineTable, PaneTitle.Fixed("Table"), Table)
+        ) -> 0.2,
         group(
           pane("explore.source-records", "Source records", Table),
           dynamic("explore.trial-inventory", "Trial inventory", Table)
