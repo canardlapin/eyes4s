@@ -27,7 +27,15 @@ import eyes4s.studio.app.plot.{
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.core.selection.StudioRef
 import intaglio.interaction.NamedPickingPlan
-import intaglio.{DevicePoint, GraphicsError, GraphicsName, IntaglioError, value}
+import intaglio.{
+  DevicePoint,
+  GraphicsError,
+  GraphicsName,
+  IntaglioError,
+  PlotSemantics,
+  SceneSemantics,
+  value
+}
 
 /** Why a plot could not be built from its source. Every case names the plot
   * kind and the column, row or mark it refused.
@@ -437,6 +445,37 @@ final case class BuiltPlot private (
   def unplottedText(u: Unplotted): Option[String] =
     source.rowText(u.row).map(PlotText(PlotTextId.Unplotted, _, reasonText(u.reason)))
 
+  /** What every mark of the plot accounts for (S4.6): how many marks for
+    * how many rows, and every row it does not draw, with why.
+    */
+  def textSummary: String =
+    val drawn = PlotText(
+      PlotTextId.SummaryMarks,
+      title,
+      marks.size.toString,
+      (source.rows.size - unplotted.size).toString
+    )
+    val left =
+      if unplotted.isEmpty then PlotText(PlotTextId.SummaryAllDrawn)
+      else
+        PlotText(
+          PlotTextId.SummaryNotDrawn,
+          unplotted.size.toString,
+          unplotted.flatMap(unplottedText).mkString(PlotText(PlotTextId.RowSeparator))
+        )
+    s"$drawn $left"
+
+  /** The plot's semantics (S4.6): its title, its description as alt text,
+    * and [[textSummary]]; the scene carries them.
+    */
+  def semantics: PlotSemantics =
+    SceneSummaries.semantics(plot.id, title, description, textSummary)
+
+  /** The mark drawn as grob `name`, and the rows it shows: the scientific
+    * identity a pick of that grob returns (S4.6).
+    */
+  def refsNamed(name: GraphicsName): Option[Vector[StudioRef]] = markNamed(name).map(_.refs)
+
   /** Why a row has no position, in the source's headers and formats. */
   def reasonText(reason: NoPosition): String =
     val id     = NoPosition.columnOf(reason)
@@ -533,7 +572,18 @@ object BuiltPlot:
         .find((m, i) => m.order != i)
         .map((m, i) => PlotBuildError.MarkOrder(kind, i, m.order))
         .toLeft(())
-    yield new BuiltPlot(source, plot, title, description, encoding, marks, unplotted)
+    yield
+      val built = new BuiltPlot(source, plot, title, description, encoding, marks, unplotted)
+      // The scene carries the plot's semantics (S4.6).
+      new BuiltPlot(
+        source,
+        plot.withSemantics(SceneSemantics.single(built.semantics)),
+        title,
+        description,
+        encoding,
+        marks,
+        unplotted
+      )
 
 /** A kind of plot: builds its scene from a value source (tickets S4.5a and
   * S4.5x).
