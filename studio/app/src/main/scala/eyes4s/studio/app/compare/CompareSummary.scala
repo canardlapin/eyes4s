@@ -113,8 +113,11 @@ object CompareSummary:
       r
     }
 
-    /** The scales the summary's participant means are at (the heuristic
-      * check of [[ParticipantMeans.of]], until the summary declares it).
+    /** The scales the summary's participant means are at: the heuristic
+      * grand-mean check of [[ParticipantMeans.of]], until ResultSummary
+      * declares its means scale (bead bd-01M420VXE7NFGZHSM71SGY7KW6, the
+      * means-scale identity). The σ selector, and with it the query table's
+      * σ, is gated by it.
       */
     def available: Vector[ScaleIndex] =
       for

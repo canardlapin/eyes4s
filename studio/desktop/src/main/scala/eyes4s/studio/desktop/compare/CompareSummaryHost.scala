@@ -28,7 +28,7 @@ import eyes4s.studio.desktop.runtime.StudioSession
 import eyes4s.studio.viz.plot.{ParticipantPlot, ScaleProfilePlot}
 import javafx.application.Platform
 import javafx.geometry.Pos
-import javafx.scene.control.{Button, Label, ToggleButton, ToggleGroup}
+import javafx.scene.control.{Button, Label, ToggleButton, ToggleGroup, Tooltip}
 import javafx.scene.layout.{HBox, Priority, Region, VBox}
 
 /** Where the summary layout asks for a run's summary and queries. `done`
@@ -82,8 +82,9 @@ final class CompareSummaryHost(
     app: Intent => Unit,
     inputs: SummaryInputs
 ):
-  private var state: CompareSummary                  = CompareSummary.empty
-  private var shown: Map[String, Option[PlotSource]] = Map.empty
+  private var state: CompareSummary                           = CompareSummary.empty
+  private var shown: Map[String, (Option[PlotSource], Theme)] = Map.empty
+  private var disposed: Boolean                               = false
 
   private def view(id: String): ViewId =
     ViewId.of(id).fold(e => throw IllegalStateException(e.message), identity)
@@ -157,7 +158,7 @@ final class CompareSummaryHost(
   def vm: CompareSummaryVM = CompareSummaryVM.of(state, model())
 
   /** Follows the model: a newly shown run is read; the views show the bus's selection. */
-  def sync(m: AppModel): Unit =
+  def sync(m: AppModel): Unit = if !disposed then
     val (next, effects) = CompareSummary.sync(state, m)
     state = next
     perform(effects)
@@ -168,7 +169,7 @@ final class CompareSummaryHost(
     render(m)
 
   /** A backend answer or a user action. */
-  def dispatch(intent: SummaryIntent): Unit =
+  def dispatch(intent: SummaryIntent): Unit = if !disposed then
     val (next, effects) = CompareSummary.update(state, intent)
     state = next
     perform(effects)
@@ -193,47 +194,70 @@ final class CompareSummaryHost(
     }
 
   private def render(m: AppModel): Unit =
-    val v = CompareSummaryVM.of(state, m)
-    status.setText(v.status.getOrElse(""))
-    status.setVisible(v.status.isDefined)
-    status.setManaged(v.status.isDefined)
-    freshness.setText(v.freshness.getOrElse(""))
-    notes.getChildren.setAll(v.notes.map { n =>
-      val l = Label(n); l.getStyleClass.add("t11"); l
-    }*)
-    val group = ToggleGroup()
-    scales.getChildren.setAll(v.scales.map { c =>
-      val b = ToggleButton(c.label)
-      b.setAccessibleText(c.label)
-      b.setToggleGroup(group)
-      b.setSelected(c.chosen)
-      b.setDisable(!c.available)
-      b.setOnAction(_ => dispatch(SummaryIntent.ChooseScale(c.scale)))
-      b
-    }*)
-    v.explain match
-      case Some(e) =>
-        explain.setText(e.label); keeps.setText(e.keeps)
-        explain.setAccessibleText(s"${e.label} ${e.keeps}")
-        explain.setVisible(true); keeps.setVisible(true)
-      case None =>
-        explain.setVisible(false); keeps.setVisible(false)
-    show("participant-plot", v.participantPlot)(participantPlot.show(_, Theme.Light))
-    show("scale-profile", v.profile)(scaleProfile.show(_, Theme.Light))
-    show("participant-table", v.participants)(participantTable.show)
-    show("query-table", v.queries)(queryTable.show)
+    if !disposed then
+      val v     = CompareSummaryVM.of(state, m)
+      val theme = m.document.presentation.theme match
+        case eyes4s.studio.core.document.Theme.Light => Theme.Light
+        case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
+      // The run's status, then why any part could not be drawn.
+      val parts = Vector(v.participantPlot, v.profile, v.participants, v.queries)
+        .flatMap(_.flatMap(_.left.toOption))
+      val said = v.status.toVector ++ parts
+      status.setText(said.mkString("\n"))
+      status.setVisible(said.nonEmpty)
+      status.setManaged(said.nonEmpty)
+      freshness.setText(v.freshness.getOrElse(""))
+      notes.getChildren.setAll(v.notes.map { n =>
+        val l = Label(n); l.getStyleClass.add("t11"); l
+      }*)
+      val group = ToggleGroup()
+      scales.getChildren.setAll(v.scales.map { c =>
+        val b = ToggleButton(c.label)
+        // A σ that cannot be chosen says why, to the pointer and to a reader.
+        val why = c.unavailable.fold(c.label)(r => s"${c.label}: $r")
+        b.setAccessibleText(why)
+        c.unavailable.foreach(r => b.setTooltip(Tooltip(r)))
+        b.setToggleGroup(group)
+        b.setSelected(c.chosen)
+        b.setDisable(!c.available)
+        b.setOnAction(_ => dispatch(SummaryIntent.ChooseScale(c.scale)))
+        b
+      }*)
+      v.explain match
+        case Some(e) =>
+          explain.setText(e.label); keeps.setText(e.keeps)
+          explain.setAccessibleText(s"${e.label} ${e.keeps}")
+          explain.setVisible(true); keeps.setVisible(true)
+        case None =>
+          explain.setVisible(false); keeps.setVisible(false)
+      show("participant-plot", v.participantPlot, theme)(
+        participantPlot.show(_, theme),
+        participantPlot.clear()
+      )
+      show("scale-profile", v.profile, theme)(scaleProfile.show(_, theme), scaleProfile.clear())
+      show("participant-table", v.participants, theme)(
+        participantTable.show,
+        participantTable.clear()
+      )
+      show("query-table", v.queries, theme)(queryTable.show, queryTable.clear())
 
-  // Shows a source when it changes; a part that could not be built shows nothing.
-  private def show(part: String, source: Option[Either[String, PlotSource]])(
-      into: PlotSource => Unit
+  // Draws a part when its source or the theme changes. A part with no source
+  // (the run is still being read) or one that could not be built is cleared,
+  // so no earlier run's values stay under the new run's status.
+  private def show(part: String, source: Option[Either[String, PlotSource]], theme: Theme)(
+      into: PlotSource => Unit,
+      clear: => Unit
   ): Unit =
     val now = source.flatMap(_.toOption)
-    if shown.get(part) != Some(now) then
-      shown = shown.updated(part, now)
-      now.foreach(into)
+    if shown.get(part) != Some((now, theme)) then
+      shown = shown.updated(part, (now, theme))
+      now.fold(clear)(into)
 
+  /** Disposes the views; the host ignores the model from then on. Idempotent. */
   def dispose(): Unit =
-    participantPlot.dispose()
-    scaleProfile.dispose()
-    participantTable.dispose()
-    queryTable.dispose()
+    if !disposed then
+      disposed = true
+      participantPlot.dispose()
+      scaleProfile.dispose()
+      participantTable.dispose()
+      queryTable.dispose()

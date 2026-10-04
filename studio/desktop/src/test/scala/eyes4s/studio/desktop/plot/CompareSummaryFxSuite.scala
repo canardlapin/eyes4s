@@ -26,7 +26,22 @@ import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
 import eyes4s.studio.desktop.shell.ShellFxSuite
+import eyes4s.studio.app.compare.{QueriesAnswer, SummaryAnswer}
+import eyes4s.studio.app.tokens.Theme
+import eyes4s.studio.app.{AppEffect, Intent}
+import eyes4s.studio.core.backend.{BackendError, PageRequest, RunId}
+import eyes4s.studio.core.command.Command
+import eyes4s.studio.core.headless.HeadlessSession
+import eyes4s.studio.desktop.StudioStyles
+import eyes4s.studio.desktop.compare.{CompareSummaryHost, SummaryInputs}
+import eyes4s.studio.desktop.runtime.{EffectPerformer, StudioRuntime}
+import eyes4s.studio.viz.plot.{DataPoint, RowMarking}
 import javafx.scene.control.{Label, ToggleButton}
+import javafx.scene.layout.HBox
+
+import scala.collection.mutable
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext}
 
 import scala.jdk.CollectionConverters.*
 
@@ -38,6 +53,8 @@ import scala.jdk.CollectionConverters.*
   * spec and the group into the query layout.
   */
 class CompareSummaryFxSuite extends ShellFxSuite:
+
+  override val munitTimeout: Duration = Duration(180, "s")
 
   /** FIXTURE.md, participant table (σ 2°), as written there. */
   private val fixtureTable: Vector[Vector[String]] = Vector(
@@ -135,21 +152,6 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     fx.snapshot(StudioTheme.Light)
   }
 
-  fxStage.test(
-    "P05's failed queries show no value, never zero; the plot has no zero for them"
-  ) { fx =>
-    val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
-    loaded(fx, w)
-    val failed = rows(w.summary.queryTable).filter(_.lift(3).contains("failed"))
-    assertEquals(failed.size, 3)
-    failed.foreach { r =>
-      assert(r.head.startsWith("P05"), r)
-      assertEquals(r.drop(4), Vector.fill(3)("—"))
-    }
-    // In the participant table P05's three failed queries are counted, not scored.
-    assertEquals(rows(w.summary.participantTable)(4).take(4), Vector("P05", "20", "17", "3"))
-  }
-
   fxStage.test("Explain P17 carries the spec and the group into the query layout") { fx =>
     val w          = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
     val remembered = Response.Remembered
@@ -181,4 +183,134 @@ class CompareSummaryFxSuite extends ShellFxSuite:
       )
     )
     assertEquals(StudioLayouts.compareLayout(trail), CompareLayout.Query)
+  }
+
+  fxStage.test("P05's failed queries show no value; its means are drawn at their values") {
+    fx =>
+      val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
+      loaded(fx, w)
+      val failed = rows(w.summary.queryTable).filter(_.lift(3).contains("failed"))
+      assertEquals(failed.size, 3)
+      failed.foreach { r =>
+        assert(r.head.startsWith("P05"), r)
+        assertEquals(r.drop(4), Vector.fill(3)("—"))
+      }
+      // In the participant table P05's three failed queries are counted, not scored.
+      assertEquals(rows(w.summary.participantTable)(4).take(4), Vector("P05", "20", "17", "3"))
+      // In the plot P05's two means are placed at their values, never at zero,
+      // and no participant mean is missing in the fixture.
+      val plot            = runOnFx(w.summary.participantPlot.plot).getOrElse(fail("no plot"))
+      def at(g: Response) =
+        plot
+          .markOf(
+            StudioRef.ParticipantSummary(
+              StoryMoments.run7,
+              StoryModels.reporting,
+              StoryModels.sigma2,
+              Some(g),
+              "P05"
+            )
+          )
+          .map(_.rows.map(_.marking))
+      assertEquals(
+        at(Response.Remembered),
+        Some(Vector(RowMarking.Placed(DataPoint(0.0, -0.03))))
+      )
+      assertEquals(
+        at(Response.Forgotten),
+        Some(Vector(RowMarking.Placed(DataPoint(1.0, -0.23))))
+      )
+      assert(!plot.marks.exists(_.rows.exists(_.marking.isInstanceOf[RowMarking.Positionless])))
+  }
+
+  // --- Another run ------------------------------------------------------------------
+
+  fxStage.test(
+    "showing another run clears every pane until it is read, and says why it is not"
+  ) { fx =>
+    // Answers wait until the test gives them.
+    val asked   = mutable.Map.empty[RunId, SummaryAnswer => Unit]
+    val queried = mutable.Map.empty[RunId, QueriesAnswer => Unit]
+    val inputs  = new SummaryInputs:
+      def summary(run: RunId, done: SummaryAnswer => Unit): Unit = asked.update(run, done)
+      def queries(run: RunId, done: QueriesAnswer => Unit): Unit = queried.update(run, done)
+    val none = new EffectPerformer:
+      def perform(effect: AppEffect, dispatch: Intent => Unit): Unit = ()
+    val runtime = StudioRuntime(StoryModels.t3Summary, none)
+    val host    =
+      runOnFx(CompareSummaryHost(() => runtime.model, i => runtime.dispatch(i), inputs))
+    val box = runOnFx {
+      val b = HBox(
+        host.participantPlot.plotNode,
+        host.scaleProfile.plotNode,
+        host.participantNode,
+        host.queryTable
+      )
+      b.getStyleClass.add("es")
+      b.getStylesheets.setAll(StudioStyles.stylesheets(Theme.Light).toOption.get*)
+      b
+    }
+    fx.show(box)
+    runOnFx(runtime.listen(host.sync))
+    // Run 7, answered with the fake backend's own summary and queries.
+    given ExecutionContext = ExecutionContext.global
+    val page               = PageRequest.first(PageRequest.MaximumSize).toOption.get
+    val (r7, q7)           = Await.result(
+      HeadlessSession.open(StoryMoment.T3).flatMap { s =>
+        s.result(StoryMoments.run7)
+          .zip(s.queries(StoryMoments.run7, page))
+          .transformWith(x => s.close.transform(_ => x))
+      },
+      Duration(60, "s")
+    )
+    runOnFx {
+      asked(StoryMoments.run7)(SummaryAnswer.Answered(r7.toOption.get))
+      queried(StoryMoments.run7)(QueriesAnswer.Answered(q7.toOption.get.rows))
+    }
+    eventually(fx, "run 7 is drawn") {
+      host.participantPlot.status.get.isInstanceOf[PlotTwinStatus.Shown] &&
+      host.participantTable.rowNodes.size == 24 && host.queryTable.rowNodes.nonEmpty
+    }
+    // A theme change redraws the plots in the new theme, from the same sources.
+    def sceneOf(t: PlotTwin) = runOnFx(t.plot.map(_.plot.id.value))
+    assert(
+      sceneOf(host.participantPlot).exists(_.endsWith(".light")),
+      sceneOf(host.participantPlot)
+    )
+    runOnFx(
+      runtime.dispatch(
+        Intent.Dispatch(Command.SetTheme(eyes4s.studio.core.document.Theme.Dark))
+      )
+    )
+    assert(
+      sceneOf(host.participantPlot).exists(_.endsWith(".dark")),
+      sceneOf(host.participantPlot)
+    )
+    assert(sceneOf(host.scaleProfile).exists(_.endsWith(".dark")), sceneOf(host.scaleProfile))
+    // Run 5 is shown: while it is read, no pane keeps run 7's values.
+    runOnFx(runtime.dispatch(Intent.Dispatch(Command.ShowRun(Some(StoryMoments.run5)))))
+    def cleared(): Unit = runOnFx {
+      assertEquals(host.participantPlot.status.get, PlotTwinStatus.Empty)
+      assertEquals(host.scaleProfile.status.get, PlotTwinStatus.Empty)
+      assertEquals(host.participantTable.rowNodes.size, 0)
+      assertEquals(host.queryTable.rowNodes.size, 0)
+    }
+    cleared()
+    assertEquals(runOnFx(host.vm.status), Some("Reading run 5…"))
+    // Run 5 is refused: still nothing of run 7, and the status says why.
+    runOnFx(
+      asked(StoryMoments.run5)(
+        SummaryAnswer.Refused(
+          BackendError.UnknownRun(StoryMoments.run5, Vector(StoryMoments.run7))
+        )
+      )
+    )
+    cleared()
+    val said = runOnFx(
+      host.participantNode.lookupAll(".label").asScala.toVector.collect { case l: Label =>
+        l.getText
+      }
+    )
+    assert(said.exists(_.startsWith("Run 5 could not be read")), said)
+    runOnFx(host.dispose())
   }

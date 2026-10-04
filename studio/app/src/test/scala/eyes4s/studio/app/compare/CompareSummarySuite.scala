@@ -228,14 +228,123 @@ class CompareSummarySuite extends munit.FunSuite:
     }
   }
 
+  test("the scale profile's group rows and participant dots are FIXTURE.md's") {
+    loaded(t3Summary).map { s =>
+      val vm      = CompareSummaryVM.of(s, t3Summary)
+      val profile = right(vm.profile.getOrElse(fail("no profile")))
+      // FIXTURE.md: grand D by scale (0.5/1/2/4°) by group.
+      def byScale(group: String) =
+        profile.rows.indices
+          .filter(i =>
+            profile.rows(i).ref.isInstanceOf[StudioRef.GroupCell] && profile
+              .text(i, 0)
+              .contains(group)
+          )
+          .map(i => ascii(profile.text(i, 3).get))
+          .toVector
+      assertEquals(byScale("Remembered"), Vector("+0.15", "+0.24", "+0.30", "+0.19"))
+      assertEquals(byScale("Forgotten"), Vector("+0.07", "+0.12", "+0.15", "+0.09"))
+      // Participant dots at their FIXTURE.md means.
+      val plot                        = right(vm.participantPlot.get)
+      val cols                        = right(ParticipantColumns.standard)
+      def dot(p: String, g: Response) =
+        val ref = StudioRef.ParticipantSummary(run7, reporting, sigma2, Some(g), p)
+        plot.rowOf(ref).flatMap(i => plot.text(i, plot.indexOf(cols.d).get)).map(ascii)
+      assertEquals(dot("P17", remembered), Some("+0.38"))
+      assertEquals(dot("P05", Response.Forgotten), Some("-0.23"))
+      assertEquals(dot("P15", Response.Forgotten), Some("-0.08"))
+      // The query table: P17 ret_07 at 2° is the focus query, M 0.73, B 0.35, D +0.38.
+      val queries = right(vm.queries.get)
+      val ret07   = queries.rows.indexWhere(_.ref == query)
+      assertEquals(
+        queries.cells(ret07).map(_.drop(3).map(ascii)),
+        Some(Vector("contributing", "0.73", "0.35", "+0.38"))
+      )
+      // A σ that cannot be chosen says why.
+      assertEquals(
+        vm.scales.head.unavailable,
+        Some("Participant means are served at σ 2° only")
+      )
+      assertEquals(vm.scales(2).unavailable, None)
+    }
+  }
+
+  test("Explain a Forgotten mean keeps its group; a table row, with no group, keeps the spec") {
+    val p21 =
+      StudioRef.ParticipantSummary(run7, reporting, sigma2, Some(Response.Forgotten), "P21")
+    val m21 =
+      AppModel.run(t3Summary, Vector(select(t3Summary, "compare.participant-plot", p21)))._1
+    // t3's own selection is P17's table row: a participant summary with no group.
+    loaded(t3Summary).flatMap { s0 =>
+      val row =
+        CompareSummaryVM.of(s0, t3Summary).explain.getOrElse(fail("no Explain for the row"))
+      assertEquals(row.keeps, "keeps: by retrieval response › P17")
+      val (afterRow, _) = AppModel.run(t3Summary, row.intents)
+      val rowTrail      = afterRow.location.trail
+      assertEquals(rowTrail.head, Place.Summary(reporting))
+      assertEquals(rowTrail.last, Place.At(p17Summary))
+      assert(!rowTrail.exists(_.isInstanceOf[Place.Group]), rowTrail)
+      assertEquals(StudioLayouts.compareLayout(rowTrail), CompareLayout.Query)
+      loaded(m21).map { s =>
+        val explain = CompareSummaryVM.of(s, m21).explain.getOrElse(fail("no Explain"))
+        assertEquals(explain.keeps, "keeps: by retrieval response › Forgotten › P21")
+        val trail = AppModel.run(m21, explain.intents)._1.location.trail
+        assertEquals(
+          trail.takeRight(3),
+          Vector(
+            Place.Summary(reporting),
+            Place.Group(reporting, Response.Forgotten),
+            Place.At(p21)
+          )
+        )
+      }
+    }
+  }
+
   test("an answer for a run no longer shown is dropped; another run is read afresh") {
-    read.map { (r, _) =>
+    read.map { (r, q) =>
       val (s0, _) = CompareSummary.sync(CompareSummary.empty, t3Summary)
       val stale   = CompareSummary
-        .update(s0, SummaryIntent.SummaryRead(StoryMoments.run8, SummaryAnswer.Answered(r)))
+        .update(
+          s0,
+          SummaryIntent.SummaryRead(StoryMoments.run8, SummaryAnswer.Answered(r))
+        )
         ._1
       assertEquals(stale.summary, None)
       assertEquals(CompareSummaryVM.of(stale, t3Summary).status, Some("Reading run 7…"))
-      assertEquals(CompareSummaryVM.of(CompareSummary.empty, t3Summary).status.isDefined, true)
+      // Run 7 read, then run 5 shown: run 5 is asked for and nothing of run 7 remains.
+      val s7 = CompareSummary
+        .update(
+          CompareSummary
+            .update(s0, SummaryIntent.SummaryRead(run7, SummaryAnswer.Answered(r)))
+            ._1,
+          SummaryIntent.QueriesRead(run7, QueriesAnswer.Answered(q))
+        )
+        ._1
+      val m5 = AppModel
+        .update(
+          t3Summary,
+          eyes4s.studio.app.Intent.Dispatch(
+            eyes4s.studio.core.command.Command.ShowRun(Some(StoryMoments.run5))
+          )
+        )
+        ._1
+      assertEquals(CompareSummary.shownRun(m5), Some(StoryMoments.run5))
+      val (s5, asks) = CompareSummary.sync(s7, m5)
+      assertEquals(
+        asks,
+        Vector(
+          SummaryEffect.RequestSummary(StoryMoments.run5),
+          SummaryEffect.RequestQueries(StoryMoments.run5)
+        )
+      )
+      assertEquals((s5.run, s5.summary, s5.queries), (Some(StoryMoments.run5), None, None))
+      val vm = CompareSummaryVM.of(s5, m5)
+      assertEquals(vm.status, Some("Reading run 5…"))
+      assertEquals((vm.participantPlot, vm.participants, vm.queries), (None, None, None))
+      // Run 7's late answer is dropped.
+      val late =
+        CompareSummary.update(s5, SummaryIntent.SummaryRead(run7, SummaryAnswer.Answered(r)))._1
+      assertEquals(late.summary, None)
     }
   }

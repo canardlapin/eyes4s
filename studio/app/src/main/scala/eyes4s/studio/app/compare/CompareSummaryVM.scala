@@ -43,7 +43,9 @@ final case class ScaleChoice(
     scale: ScaleIndex,
     label: String,
     available: Boolean,
-    chosen: Boolean
+    chosen: Boolean,
+    /** Why the σ cannot be chosen, when it cannot. */
+    unavailable: Option[String]
 ) derives CanEqual
 
 /** The Explain action for the selected participant: its label, what the
@@ -123,7 +125,13 @@ object CompareSummaryVM:
             scale,
             SummaryText(SummaryTextId.Scale, label),
             available.contains(scale),
-            shown.contains(scale)
+            shown.contains(scale),
+            Option.unless(available.contains(scale))(
+              SummaryText(
+                SummaryTextId.ScaleUnavailable,
+                available.flatMap(a => r.scales.lift(a.value)).mkString(", ")
+              )
+            )
           )
         )
     }

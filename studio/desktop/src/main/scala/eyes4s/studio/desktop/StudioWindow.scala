@@ -62,7 +62,8 @@ final class StudioWindow private (
     val project: Option[ProjectPort],
     val columnMapping: ColumnMappingPaneHost,
     val admission: AdmissionLedgerHost,
-    val summary: CompareSummaryHost
+    val summary: CompareSummaryHost,
+    summaryListener: AppModel => Unit
 ):
   /** The window content, with the studio stylesheets. */
   def root: javafx.scene.Parent = shell.root
@@ -83,6 +84,7 @@ final class StudioWindow private (
   def bind(stage: javafx.stage.Stage): Unit = runtime.listen(_ => stage.setTitle(title))
 
   def close(): Unit =
+    runtime.unlisten(summaryListener)
     summary.dispose()
     project.foreach(_.close())
     session.close()
@@ -288,5 +290,19 @@ object StudioWindow:
       "compare.participant-table"      -> summary.participantNode,
       "compare.query-table"            -> summary.queryTable
     ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
-    r.listen(summary.sync)
-    Right(StudioWindow(session, r, host, shell, effects, project, mapping, admission, summary))
+    val summaryListener: AppModel => Unit = summary.sync
+    r.listen(summaryListener)
+    Right(
+      StudioWindow(
+        session,
+        r,
+        host,
+        shell,
+        effects,
+        project,
+        mapping,
+        admission,
+        summary,
+        summaryListener
+      )
+    )
