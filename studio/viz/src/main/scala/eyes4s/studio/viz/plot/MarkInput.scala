@@ -484,6 +484,14 @@ final case class MarkInputState[R <: StudioRef] private (
       case Some((ref, t)) => mark(ref, share(t))
       case None           => idle
 
+  /** Selects exactly `refs`, as a brush across the view does (S4.5e): a
+    * replacing pointer selection, or clearing it when the brush holds no
+    * row. Needs no targets.
+    */
+  def brushed(refs: Vector[StudioRef]): MarkInputStep[R] =
+    if refs.isEmpty then submit(SelectionMode.Clear, Vector.empty, InputCause.Pointer, false)
+    else submit(SelectionMode.Replace, refs, InputCause.Pointer, true)
+
   private def unchanged: MarkInputStep[R] = MarkInputStep(this, Vector.empty, false)
 
   private def hovering(next: Option[R]): MarkInputStep[R] =

@@ -26,12 +26,14 @@ import eyes4s.studio.viz.plot.{
   OverlayPalette,
   PlotBuildError,
   PlotBuilder,
+  PlotReadout,
   PlotTargetError,
   PlotTargets
 }
 import javafx.application.Platform
 import javafx.beans.property.{ReadOnlyObjectProperty, ReadOnlyObjectWrapper}
 import javafx.beans.value.ChangeListener
+import javafx.geometry.Pos
 import javafx.scene.control.Label
 import javafx.scene.layout.StackPane
 
@@ -84,13 +86,15 @@ enum PlotTwinError derives CanEqual:
   * ([[eyes4s.studio.app.layout.StudioLayouts]]). FX thread only.
   */
 final class PlotTwin private (
-    builder: PlotBuilder,
+    initialBuilder: PlotBuilder,
     plotView: ViewId,
     tableView: ViewId,
     selection: SelectionState,
     dispatch: Intent => Unit,
     toleranceLogicalPx: Double
 ):
+
+  private var builder: PlotBuilder = initialBuilder
 
   /** The plot's canvas host. */
   val plotHost: CanvasPlotHost = CanvasPlotHost()
@@ -100,8 +104,16 @@ final class PlotTwin private (
   refusal.setVisible(false)
   refusal.setMouseTransparent(true)
 
+  // What the hovered mark, or else the selection's mark, says: its rows'
+  // words, as the table writes them (a group's n, for one).
+  private val readout = Label()
+  readout.getStyleClass.addAll("plot-readout", "t11")
+  readout.setVisible(false)
+  readout.setMouseTransparent(true)
+  StackPane.setAlignment(readout, Pos.TOP_RIGHT)
+
   /** The plot pane's content. */
-  val plotNode: StackPane = StackPane(plotHost, refusal)
+  val plotNode: StackPane = StackPane(plotHost, refusal, readout)
   plotNode.getStyleClass.add("plot-pane")
   Option(getClass.getClassLoader.getResource(TableTwinView.stylesheetResource))
     .foreach(url => plotNode.getStylesheets.add(url.toExternalForm))
@@ -112,8 +124,10 @@ final class PlotTwin private (
 
   private val statusWrapper =
     ReadOnlyObjectWrapper[PlotTwinStatus](this, "status", PlotTwinStatus.Empty)
-  private var theme: Theme      = Theme.Light
-  private var disposed: Boolean = false
+  private var theme: Theme                = Theme.Light
+  private var disposed: Boolean           = false
+  private var hovered: Option[StudioRef]  = None
+  private var selected: Vector[StudioRef] = selection.selected
 
   private object Layer extends MarkLayer[StudioRef, PlotTargetError, PlotTargets]:
     def resolve(frame: PlotFrame): Option[Either[PlotTargetError, PlotTargets]] =
@@ -136,9 +150,18 @@ final class PlotTwin private (
       plotHost,
       Layer,
       MarkInputState.initial(plotView, selection),
-      dispatch,
+      plotIntent,
       toleranceLogicalPx
     )
+
+  // The plot's intents go to the app; its own hover also to the readout.
+  private def plotIntent(intent: Intent): Unit =
+    dispatch(intent)
+    intent match
+      case Intent.HoverOver(view, target) if view == plotView =>
+        hovered = target
+        describeMark()
+      case _ => ()
 
   // A node's focus-visible flag is set with its focus, before either is
   // notified: it is true only when keyboard traversal brought the focus.
@@ -172,6 +195,17 @@ final class PlotTwin private (
   /** What the host shows. */
   def status: ReadOnlyObjectProperty[PlotTwinStatus] = statusWrapper.getReadOnlyProperty
 
+  /** What the plot's readout line says ([[PlotReadout.of]] of the hover
+    * intent's key and the projected selection).
+    */
+  def readoutText: Option[String] = Option(readout.getText).filter(_.nonEmpty)
+
+  private def describeMark(): Unit =
+    if !disposed then
+      val said = shownPlot.flatMap(PlotReadout.of(_, hovered, selected))
+      readout.setText(said.getOrElse(""))
+      readout.setVisible(said.isDefined)
+
   /** The plot on the canvas host, if the builder accepted the source. */
   def plot: Option[BuiltPlot] = shownPlot
 
@@ -197,6 +231,20 @@ final class PlotTwin private (
           refusal.setVisible(true)
           statusWrapper.set(PlotTwinStatus.Refused(source, error))
       input.refresh()
+      describeMark()
+
+  /** Draws the shown source again with `next`, as a brush's span changes
+    * the timeline's builder (S4.5e); the table, which reads the same source,
+    * is unchanged. With nothing shown, `next` draws the next source.
+    */
+  def rebuild(next: PlotBuilder): Unit =
+    onFxThread("rebuild")
+    if !disposed then
+      builder = next
+      statusWrapper.get match
+        case PlotTwinStatus.Shown(plot)                     => show(plot.source, theme)
+        case PlotTwinStatus.Refused(source, _)              => show(source, theme)
+        case PlotTwinStatus.Empty | PlotTwinStatus.Disposed => ()
 
   /** Shows nothing. */
   def clear(): Unit =
@@ -207,6 +255,7 @@ final class PlotTwin private (
       refusal.setVisible(false)
       statusWrapper.set(PlotTwinStatus.Empty)
       input.refresh()
+      describeMark()
 
   /** The selection as the bus now holds it, for the plot and the table. */
   def project(selection: SelectionState): Unit =
@@ -214,6 +263,8 @@ final class PlotTwin private (
     if !disposed then
       input.project(selection)
       table.project(selection)
+      selected = selection.selected
+      describeMark()
 
   /** Disposes the input, the canvas host and the table. Idempotent. */
   def dispose(): Unit =
