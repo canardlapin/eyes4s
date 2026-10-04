@@ -536,7 +536,7 @@ object ImportWizard:
               )
             )
           )
-        case AdmissionDecision.Verifying(_) | AdmissionDecision.Admitted(_, _) =>
+        case AdmissionDecision.Verifying(_) | AdmissionDecision.Admitted(_, _, _) =>
           Right(
             Vector(
               Command.ImportSources(

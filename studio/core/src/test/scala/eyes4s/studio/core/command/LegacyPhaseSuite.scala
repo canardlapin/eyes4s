@@ -16,6 +16,7 @@
 
 package eyes4s.studio.core.command
 
+import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.core.backend.DatasetRevision
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.fixture.StoryMoments
@@ -121,7 +122,13 @@ class LegacyPhaseSuite extends munit.FunSuite:
     refusedForPhase(
       Reducer.step(
         verifying,
-        Command.Admit(r3.id, content, CoreBinding.unbound, CoreBinding.unbound)
+        Command.Admit(
+          r3.id,
+          content,
+          Some(CoreAdmissionDecision.RequireComplete),
+          CoreBinding.unbound,
+          CoreBinding.unbound
+        )
       )
     )
   }

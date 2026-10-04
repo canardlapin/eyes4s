@@ -39,10 +39,10 @@ enum LedgerTextId derives CanEqual:
   case DecisionTitle, DecisionLegend, RequireComplete, RequireCompleteRefuses
   case RequireCompleteAdmits, AbsentJoined, ReviewExclusions, ReviewExclusionsNote
   case ReviewExclusionsNoInventory, Changes, Creates, WouldStale, Admit, AdmitWaiting
-  case AdmitRefused, AdmitVerifying, AdmittedStatus, NowStale, AdmittedNote
+  case AdmitRefused, AdmitVerifying, AdmittedStatus, AdmittedUnder, NowStale, AdmittedNote
 
   // --- Where the counts come from ----------------------------------------------------------
-  case CountsFrom, CountsWaiting, CountsFailed
+  case CountsFrom, CountsWaiting, CountsFailed, Retry
 
   // --- Crumbs and paths ---------------------------------------------------------------------
   case CrumbCause, PathCount
@@ -115,6 +115,7 @@ object LedgerText:
         "{2} trials."
     case AdmitVerifying => "Verifying {0} with eyes4s…"
     case AdmittedStatus => "{0} is admitted."
+    case AdmittedUnder  => "{0} is admitted under {1}."
     case NowStale       => "{0} ({1}) used {2} and is now stale."
     case AdmittedNote   =>
       "A change to its mapping or geometry creates a new dataset revision."
@@ -122,6 +123,7 @@ object LedgerText:
     case CountsFrom    => "Counts: eyes4s admission of {0}."
     case CountsWaiting => "Counts: waiting for eyes4s admission."
     case CountsFailed  => "Counts of {0} are not available: {1}"
+    case Retry         => "Retry"
 
     case CrumbCause => "{0} · {1}"
     case PathCount  => "{0} · {1}"

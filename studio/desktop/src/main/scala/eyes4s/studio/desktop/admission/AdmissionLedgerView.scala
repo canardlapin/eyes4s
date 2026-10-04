@@ -16,6 +16,7 @@
 
 package eyes4s.studio.desktop.admission
 
+import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.app.admission.*
 import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.desktop.tokens.TokenFiles
@@ -110,9 +111,10 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
   HBox.setHgrow(scroll, Priority.ALWAYS)
 
   // --- the decision --------------------------------------------------------------------------
-  val decisionTitle: Label                      = label("ledger-decision-title", "t13")
-  private val group                             = ToggleGroup()
-  val choices: Map[LedgerDecision, RadioButton] = LedgerDecision.values.toVector.map { d =>
+  private val decisionValues                           = CoreAdmissionDecision.values.toVector
+  val decisionTitle: Label                             = label("ledger-decision-title", "t13")
+  private val group                                    = ToggleGroup()
+  val choices: Map[CoreAdmissionDecision, RadioButton] = decisionValues.map { d =>
     val r = RadioButton()
     r.setMnemonicParsing(false)
     r.getStyleClass.addAll("ledger-choice", "t12")
@@ -120,11 +122,11 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
     r.setOnAction(_ => fire(LedgerIntent.ChooseDecision(d)))
     d -> r
   }.toMap
-  val choiceNotes: Map[LedgerDecision, Label] = LedgerDecision.values.toVector.map { d =>
+  val choiceNotes: Map[CoreAdmissionDecision, Label] = decisionValues.map { d =>
     d -> wrapping("ledger-choice-note", "t11")
   }.toMap
   private val choiceBox = VBox(
-    LedgerDecision.values.toVector.flatMap(d => Vector(choices(d), choiceNotes(d)))*
+    decisionValues.flatMap(d => Vector(choices(d), choiceNotes(d)))*
   )
   choiceBox.setSpacing(4)
   val changes: Label     = wrapping("ledger-note", "t11")
@@ -134,7 +136,9 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
   val admitNote: Label    = wrapping("ledger-warn", "t11")
   val status: Label       = wrapping("ledger-note", "t12")
   val countsSource: Label = wrapping("ledger-note", "t11")
-  private val decision    = VBox(
+  val retry: Button       = button("ledger-button")
+  retry.setOnAction(_ => fire(LedgerIntent.Retry))
+  private val decision = VBox(
     decisionTitle,
     choiceBox,
     changes,
@@ -142,7 +146,8 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
     admit,
     admitNote,
     status,
-    countsSource
+    countsSource,
+    retry
   )
   decision.getStyleClass.add("ledger-decision")
   // The column keeps its width and scrolls when the pane is short.
@@ -232,6 +237,11 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
       show(admitNote, vm.admitNote)
       show(status, vm.status)
       countsSource.setText(vm.countsSource)
+      vm.retry.foreach { r =>
+        retry.setText(r)
+        retry.setAccessibleText(r)
+      }
+      visible(retry, vm.retry.isDefined)
     finally rendering = false
 
   def dispose(): Unit = ()

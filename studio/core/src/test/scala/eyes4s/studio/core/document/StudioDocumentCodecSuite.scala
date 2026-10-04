@@ -127,8 +127,8 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
             Decoder.forProduct2("name", "version")((n: String, v: Int) => (n, v))
           )
       ),
-      // t2's revisions map their trial inventory: version 2 (S5.4).
-      Right(Right(("studio.document", 2)))
+      // t2's admitted revisions record their admission policy: version 3 (S5.6).
+      Right(Right(("studio.document", 3)))
     )
     val future = json.map(
       _.deepMerge(
@@ -144,13 +144,13 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
   }
 
   test("a pinned document upcasts through a later CR3 ladder version") {
-    // A hypothetical version 3 that adds a `notes` member. Version 2 expresses
-    // every value, so the codec still writes version 2 for t1 (it maps its
-    // trial inventory, S5.4); `lift` rewrites it as version 3 with the same
+    // A hypothetical version 4 that adds a `notes` member. Version 3 expresses
+    // every value, so the codec still writes version 3 for t1 (it records an
+    // admission policy, S5.6); `lift` rewrites it as version 4 with the same
     // meaning.
-    val v2                               = StudioDocument.ladder.toOption.get
-    val v3: SchemaLadder[StudioDocument] =
-      v2.next(
+    val v3                               = StudioDocument.ladder.toOption.get
+    val v4: SchemaLadder[StudioDocument] =
+      v3.next(
         _ => true,
         json => json.deepMerge(Json.obj("notes" -> Json.arr()))
       )(d =>
@@ -159,18 +159,18 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
           .map(
             _.hcursor.downField("value").focus.get.deepMerge(Json.obj("notes" -> Json.arr()))
           )
-      )(json => v2.readAt(v2.latest, json.mapObject(_.remove("notes"))))
+      )(json => v3.readAt(v3.latest, json.mapObject(_.remove("notes"))))
     val pinned = io.circe.parser.parse(DocumentPins.pins("document.t1")).toOption.get
-    val lifted = v3.lift(pinned)
+    val lifted = v4.lift(pinned)
     assertEquals(
       lifted.map(_.hcursor.downField("schema").downField("version").as[Int]),
-      Right(Right(3))
+      Right(Right(4))
     )
-    assertEquals(lifted.flatMap(v3.codec.decode), Right(DocumentSamples.t1))
-    assertEquals(v3.codec.encode(DocumentSamples.t1), Right(pinned))
+    assertEquals(lifted.flatMap(v4.codec.decode), Right(DocumentSamples.t1))
+    assertEquals(v4.codec.encode(DocumentSamples.t1), Right(pinned))
     assertEquals(
-      v3.versions.map(v => (v.name, v.version)),
-      Vector(("studio.document", 1), ("studio.document", 2), ("studio.document", 3))
+      v4.versions.map(v => (v.name, v.version)),
+      (1 to 4).toVector.map(("studio.document", _))
     )
   }
 
@@ -179,9 +179,33 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
   private val ladder = StudioDocument.ladder.toOption.get
   private val ids    = StudioSchemaIds.ids.toOption.get
 
+  /** `decision` with no recorded admission policy, as before S5.6. */
+  private def unrecorded(decision: AdmissionDecision): AdmissionDecision = decision match
+    case AdmissionDecision.Admitted(_, l, i) => AdmissionDecision.Admitted(None, l, i)
+    case other                               => other
+
+  private def withDatasets(f: DatasetRevisionSpec => DatasetRevisionSpec) =
+    val t1 = DocumentSamples.t1
+    StudioDocument
+      .of(
+        t1.datasets.map(f),
+        t1.analyses,
+        t1.draft,
+        t1.runs,
+        t1.reporting,
+        t1.figures,
+        t1.presentation,
+        t1.jobs
+      )
+      .toOption
+      .get
+
+  /** t1 as a pre-S5.6 build held it: no admission policy recorded. */
+  private val t1WithoutPolicy = withDatasets(d => d.copy(decision = unrecorded(d.decision)))
+
   /** t1 as a pre-S5.4 build held it: no dataset maps its inventory. */
   private val t1WithoutInventory =
-    val t1 = DocumentSamples.t1
+    val t1 = t1WithoutPolicy
     StudioDocument
       .of(
         t1.datasets.map(_.copy(inventory = None)),
@@ -199,10 +223,10 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
   private def version(json: Either[?, Json]) =
     json.map(_.hcursor.downField("schema").downField("version").as[Int])
 
-  test("a version-1 document from before S5.4 loads, and lifts to version 2 unchanged") {
+  test("a version-1 document from before S5.4 loads, and lifts to version 3 unchanged") {
     assertEquals(
       ladder.versions.map(v => (v.name, v.version)),
-      Vector(("studio.document", 1), ("studio.document", 2))
+      Vector(("studio.document", 1), ("studio.document", 2), ("studio.document", 3))
     )
     assertEquals(ladder.versions.head, ids.document)
     val v1 = io.circe.parser.parse(DocumentPins.t1BeforeInventory).toOption.get
@@ -211,7 +235,7 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
     assertEquals(StudioDocument.encode(t1WithoutInventory), Right(v1))
     // The upcast is the identity on the payload; only the schema moves.
     val lifted = ladder.lift(v1)
-    assertEquals(version(lifted), Right(Right(2)))
+    assertEquals(version(lifted), Right(Right(3)))
     assertEquals(
       lifted.map(_.hcursor.downField("value").focus),
       Right(v1.hcursor.downField("value").focus)
@@ -220,21 +244,26 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
   }
 
   test("a document with an inventory mapping is version 2 and round-trips") {
-    val t1      = DocumentSamples.t1
-    val encoded = StudioDocument.encode(t1)
+    val encoded = StudioDocument.encode(t1WithoutPolicy)
     assertEquals(version(encoded), Right(Right(2)))
-    assertEquals(encoded.flatMap(StudioDocument.decode), Right(t1))
+    assertEquals(encoded.flatMap(StudioDocument.decode), Right(t1WithoutPolicy))
     assert(encoded.exists(_.noSpaces.contains("\"inventory\"")))
-    assertEquals(ladder.earliest(t1).version, 2)
+    assertEquals(ladder.earliest(t1WithoutPolicy).version, 2)
     assertEquals(ladder.earliest(t1WithoutInventory).version, 1)
   }
 
   test("a version-1 reader refuses a version-2 document, never dropping the mapping") {
     val older   = ladder.upTo(ids.document).toOption.get
-    val encoded = StudioDocument.encode(DocumentSamples.t1).toOption.get
+    val encoded = StudioDocument.encode(t1WithoutPolicy).toOption.get
     assertEquals(
       older.codec.decode(encoded),
-      Left(CodecError.UnsupportedSchema("studio document", ladder.latest, Vector(ids.document)))
+      Left(
+        CodecError.UnsupportedSchema(
+          "studio document",
+          ladder.versions(1),
+          Vector(ids.document)
+        )
+      )
     )
     // Its own writer cannot hold the mapping: the version-1 payload drops it.
     val v1Datasets = older
@@ -242,6 +271,75 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
       .map(_.hcursor.downField("datasets").focus.flatMap(_.asArray).getOrElse(Vector.empty))
     assertEquals(v1Datasets.map(_.size), Right(2))
     assert(v1Datasets.exists(_.forall(_.asObject.exists(!_.contains("inventory")))))
+  }
+
+  // --- Version 3: the admission policy (S5.6) ---------------------------------------
+
+  private def policies(json: Json): Vector[Option[Json]] =
+    json.hcursor
+      .downField("value")
+      .downField("datasets")
+      .focus
+      .flatMap(_.asArray)
+      .getOrElse(Vector.empty)
+      .map(_.hcursor.downField("decision").downField("Admitted").downField("policy").focus)
+
+  test("a version-2 document from before S5.6 loads, and lifts to version 3 unchanged") {
+    val v2 = io.circe.parser.parse(DocumentPins.t1BeforePolicy).toOption.get
+    assertEquals(version(Right(v2)), Right(Right(2)))
+    assertEquals(StudioDocument.decode(v2), Right(t1WithoutPolicy))
+    assertEquals(
+      t1WithoutPolicy.datasets.map(_.decision.admittedUnder),
+      Vector(None, None)
+    )
+    // It re-encodes to its own version-2 bytes: nothing in it needs version 3.
+    assertEquals(StudioDocument.encode(t1WithoutPolicy), Right(v2))
+    val lifted = ladder.lift(v2)
+    assertEquals(version(lifted), Right(Right(3)))
+    assertEquals(
+      lifted.map(_.hcursor.downField("value").focus),
+      Right(v2.hcursor.downField("value").focus)
+    )
+    assertEquals(lifted.flatMap(StudioDocument.decode), Right(t1WithoutPolicy))
+  }
+
+  test("a document that records an admission policy is version 3 and round-trips") {
+    val t1      = DocumentSamples.t1
+    val encoded = StudioDocument.encode(t1)
+    assertEquals(version(encoded), Right(Right(3)))
+    assertEquals(encoded.flatMap(StudioDocument.decode), Right(t1))
+    assertEquals(
+      encoded.map(policies),
+      Right(Vector(Some(Json.obj("ReviewExclusions" -> Json.obj())), None))
+    )
+    assertEquals(ladder.earliest(t1).version, 3)
+  }
+
+  test("a version-2 reader refuses a version-3 document, never dropping the policy") {
+    val older   = ladder.upTo(ladder.versions(1)).toOption.get
+    val encoded = StudioDocument.encode(DocumentSamples.t1).toOption.get
+    assertEquals(
+      older.codec.decode(encoded),
+      Left(
+        CodecError.UnsupportedSchema(
+          "studio document",
+          ladder.latest,
+          ladder.versions.take(2)
+        )
+      )
+    )
+    // Its own writer cannot hold the policy: the version-2 payload drops it,
+    // and the version-1 payload drops it too.
+    val v2Payload = older.writeAt(ladder.versions(1), DocumentSamples.t1)
+    assertEquals(
+      v2Payload.map(p => policies(Json.obj("value" -> p))),
+      Right(Vector(None, None))
+    )
+    val v1Payload = older.writeAt(ids.document, DocumentSamples.t1)
+    assertEquals(
+      v1Payload.map(p => policies(Json.obj("value" -> p))),
+      Right(Vector(None, None))
+    )
   }
 
   test("decoding re-validates every value and every cross-reference") {

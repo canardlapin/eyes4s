@@ -16,6 +16,7 @@
 
 package eyes4s.studio.app.admission
 
+import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.app.AppModel
 import eyes4s.studio.app.geometry.Loading
 import eyes4s.studio.app.importing.{InventorySource, InventorySourceVM}
@@ -30,7 +31,7 @@ import eyes4s.studio.core.backend.{
   TrialKey
 }
 import eyes4s.studio.core.document.{DatasetRevisionSpec, OffScreenChoice}
-import eyes4s.studio.core.freshness.{RunStanding, StaleReason}
+import eyes4s.studio.core.freshness.{RunFreshness, RunStanding, StaleReason}
 import eyes4s.studio.core.selection.{InventoryKind, LedgerCounts, StudioRef, TallyRegion}
 
 /** How a count row is set: the inventory total, a disposition, the
@@ -79,9 +80,11 @@ final case class OpenedVM(
     close: String
 ) derives CanEqual
 
-/** One admission decision, with what it would do to these counts. */
+/** One admission decision, with what it would do to these counts. An
+  * admitted revision's selected decision is the one it recorded.
+  */
 final case class DecisionVM(
-    value: LedgerDecision,
+    value: CoreAdmissionDecision,
     label: String,
     note: String,
     selected: Boolean
@@ -110,6 +113,7 @@ final case class AdmissionLedgerVM(
     admitNote: Option[String],
     status: Option[String],
     countsSource: String,
+    retry: Option[String],
     problem: Option[String]
 ) derives CanEqual
 
@@ -170,8 +174,8 @@ object AdmissionLedgerVM:
 
   /** The ledger's focus stops inside its pane, in Tab order: each count
     * that has a number, the open count's Close and its trials, the
-    * selected decision (Tab visits one choice of a group), and Admit while
-    * it can act.
+    * selected decision (Tab visits one choice of a group), Admit while it
+    * can act, and Retry after a failed read.
     */
   def focusStops(vm: AdmissionLedgerVM): Vector[FocusStop] =
     val counts = vm.rows.filter(_.counted).map(r => FocusStop(A11yRole.Button, r.accessible))
@@ -190,7 +194,9 @@ object AdmissionLedgerVM:
     val admit = Option.when(vm.status.isEmpty && vm.canAdmit)(
       FocusStop(A11yRole.Button, vm.admit)
     )
-    if vm.empty.isDefined then Vector.empty else counts ++ opened ++ decision ++ admit
+    val retry = vm.retry.map(FocusStop(A11yRole.Button, _))
+    if vm.empty.isDefined then Vector.empty
+    else counts ++ opened ++ decision ++ admit ++ retry
 
   /** The ledger's view-model. */
   def of(ledger: AdmissionLedger, model: AppModel): AdmissionLedgerVM =
@@ -224,7 +230,7 @@ object AdmissionLedgerVM:
       opened = for d <- id; ref <- open yield openedVM(ledger, d, ref, summary),
       decisionTitle = t(DecisionTitle, label),
       decisionLegend = t(DecisionLegend),
-      decisions = decisions(ledger, label, summary),
+      decisions = decisions(ledger, spec, label, summary),
       canDecide = spec.exists(s => !s.decision.isAdmitted) && ledger.admitting.isEmpty,
       changes = for
         s      <- summary
@@ -237,16 +243,28 @@ object AdmissionLedgerVM:
       admitNote = spec.flatMap(s =>
         if s.decision.isAdmitted then None else AdmissionLedger.blocked(ledger, s)
       ),
-      status = spec.filter(_.decision.isAdmitted).map(s => admittedStatus(model, s.id)),
+      status = spec.filter(_.decision.isAdmitted).map(admittedStatus(model, _)),
       countsSource = ledger.counts match
         case Loading.Ready(s)    => t(CountsFrom, s.dataset.label)
         case Loading.Failed(why) => t(CountsFailed, waiting, why)
         case _                   => t(CountsWaiting)
       ,
+      retry = Option.when(spec.isDefined && (failed(ledger.counts) || failed(ledger.entries)))(
+        t(Retry)
+      ),
       problem = ledger.problem
     )
 
   private def file(path: String): String = path.split('/').last
+
+  private def failed(read: Loading[?]): Boolean = read match
+    case Loading.Failed(_) => true
+    case _                 => false
+
+  /** "Require complete": a decision's name. */
+  def decisionName(decision: CoreAdmissionDecision): String = decision match
+    case CoreAdmissionDecision.RequireComplete  => t(RequireComplete)
+    case CoreAdmissionDecision.ReviewExclusions => t(ReviewExclusions)
 
   /** The off-screen policy of the revision the counts were admitted under. */
   private def policyOf(
@@ -361,6 +379,7 @@ object AdmissionLedgerVM:
 
   private def decisions(
       ledger: AdmissionLedger,
+      spec: Option[DatasetRevisionSpec],
       label: String,
       summary: Option[AdmissionSummary]
   ): Vector[DecisionVM] =
@@ -376,18 +395,24 @@ object AdmissionLedgerVM:
     val review = absent match
       case Some(a) => t(ReviewExclusionsNote, admitted, held.fold(dash)(n), n(a), label)
       case None    => t(ReviewExclusionsNoInventory, admitted, held.fold(dash)(n), label)
+    // An admitted revision shows the decision it recorded (none, when it
+    // was admitted before S5.6 recorded one); a pending one, the choice.
+    def selected(d: CoreAdmissionDecision): Boolean =
+      spec.map(_.decision) match
+        case Some(admitted) if admitted.isAdmitted => admitted.admittedUnder.contains(d)
+        case _                                     => ledger.decision == d
     Vector(
       DecisionVM(
-        LedgerDecision.RequireComplete,
-        t(RequireComplete),
+        CoreAdmissionDecision.RequireComplete,
+        decisionName(CoreAdmissionDecision.RequireComplete),
         require,
-        ledger.decision == LedgerDecision.RequireComplete
+        selected(CoreAdmissionDecision.RequireComplete)
       ),
       DecisionVM(
-        LedgerDecision.ReviewExclusions,
-        t(ReviewExclusions),
+        CoreAdmissionDecision.ReviewExclusions,
+        decisionName(CoreAdmissionDecision.ReviewExclusions),
         review,
-        ledger.decision == LedgerDecision.ReviewExclusions
+        selected(CoreAdmissionDecision.ReviewExclusions)
       )
     )
 
@@ -404,16 +429,24 @@ object AdmissionLedgerVM:
       .map(r => t(WouldStale, runName(r.id), r.dataset.label))
     (t(Creates, dataset.label) +: stale).mkString(" ")
 
-  /** "r3 is admitted. Run 5 (rev 3) used r2 and is now stale." */
-  private def admittedStatus(model: AppModel, dataset: DatasetRevision): String =
+  /** "r3 is admitted under Review exclusions. Run 5 (rev 3) used r2 and is
+    * now stale." The runs named are those this admission made stale: they
+    * were current on the admitted revision before it, and moving to this
+    * one is their only staleness. A run that was already stale is not news.
+    */
+  private def admittedStatus(model: AppModel, spec: DatasetRevisionSpec): String =
+    val dataset  = spec.id
+    val previous = model.document.datasets
+      .filter(d => d.decision.isAdmitted && d.id.number < dataset.number)
+      .maxByOption(_.id.number)
+      .map(_.id)
     val stale = model.freshness.runs.collect {
-      case f if f.run.dataset != dataset && (f.standing match
-            case RunStanding.Stale(reasons) =>
-              reasons.exists {
-                case StaleReason.DatasetMoved(_, latest) => latest == dataset
-                case _                                   => false
-              }
-            case _ => false) =>
-        t(NowStale, runName(f.run.id), f.run.analysis.label, f.run.dataset.label)
+      case RunFreshness(run, RunStanding.Stale(reasons))
+          if previous.contains(run.dataset) &&
+            reasons.forall(_ == StaleReason.DatasetMoved(run.dataset, dataset)) =>
+        t(NowStale, runName(run.id), run.analysis.label, run.dataset.label)
     }
-    (t(AdmittedStatus, dataset.label) +: stale :+ t(AdmittedNote)).mkString(" ")
+    val admitted = spec.decision.admittedUnder.fold(t(AdmittedStatus, dataset.label))(d =>
+      t(AdmittedUnder, dataset.label, decisionName(d))
+    )
+    (admitted +: stale :+ t(AdmittedNote)).mkString(" ")

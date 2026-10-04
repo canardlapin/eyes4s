@@ -16,6 +16,7 @@
 
 package eyes4s.studio.core.command
 
+import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.DocumentGen.*
@@ -107,13 +108,17 @@ object CommandGen:
           canonical[DatasetRevisionSpec].map(Command.ResumeVerification(s.id, _))
         ),
         for
-          s <- specs
+          // Mostly a revision sent for verification, which an admission can
+          // apply to: the coverage law needs some admission to apply.
+          s <- pick(pending.filter(verifying(_).isDefined))
+            .fold(specs)(v => Gen.frequency(3 -> v, 1 -> specs))
           v <- verifying(s).fold(canonical[DatasetRevisionSpec])(c =>
             Gen.frequency(4 -> Gen.const(c), 1 -> canonical[DatasetRevisionSpec])
           )
           l <- binding[AdmissionLedgerArtifact]
           t <- binding[TrialInventoryArtifact]
-        yield Command.Admit(s.id, v, l, t),
+          p <- Gen.option(Gen.oneOf(CoreAdmissionDecision.values.toVector))
+        yield Command.Admit(s.id, v, p, l, t),
         specs.map(s => Command.DiscardDataset(s.id)),
         specs.map(s => Command.RestoreDataset(s.copy(id = DatasetRevision(next))))
       )

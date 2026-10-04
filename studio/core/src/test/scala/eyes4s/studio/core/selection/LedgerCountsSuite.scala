@@ -172,21 +172,36 @@ class LedgerCountsSuite extends CatsEffectSuite:
       assertEquals(none, Right(Vector.empty))
   }
 
-  test("a refused page is the answer; a page that does not advance ends the read") {
+  test("a refused page is the answer, never the entries read before it") {
     val refused = BackendError.UnknownDataset(r3, Vector.empty)
-    var asked   = 0
-    val stuck   = (p: PageRequest) =>
+    for left <- LedgerPages.all(p =>
+        if p.offset == 0 then paged(20, 5)(p) else IO.pure(Left(refused))
+      )
+    yield assertEquals(left, Left(LedgerReadError.Refused(refused)))
+  }
+
+  test("a next page that does not advance is an error naming the page, not a partial ledger") {
+    var asked = 0
+    // The first page advances to 5; the second names itself (or an earlier
+    // page) as next.
+    def stuck(back: Int)(p: PageRequest) =
       asked += 1
+      val next = if p.offset == 0 then 5 else p.offset - back
       IO.pure(
-        Right(LedgerPage(r3, PageInfo(p.offset, 10, Some(p.offset)), Vector(entry(0))))
+        Right(LedgerPage(r3, PageInfo(p.offset, 10, Some(next)), Vector(entry(p.offset))))
           .withLeft[BackendError]
       )
     for
-      left <- LedgerPages.all(p =>
-        if p.offset == 0 then paged(20, 5)(p) else IO.pure(Left(refused))
-      )
-      once <- LedgerPages.all(stuck)
+      same <- LedgerPages.all(stuck(0))
+      sameAsked = asked
+      back <- LedgerPages.all(stuck(3))
     yield
-      assertEquals(left, Left(refused))
-      assertEquals((once.map(_.size), asked), (Right(1), 1))
+      assertEquals(same, Left(LedgerReadError.Stalled(r3, 5, 5)))
+      assertEquals(sameAsked, 2)
+      assertEquals(back, Left(LedgerReadError.Stalled(r3, 5, 2)))
+      assertEquals(
+        LedgerReadError.Stalled(r3, 5, 2).message,
+        "The ledger of r3 does not advance: the page at offset 5 names the next page at " +
+          "offset 2."
+      )
   }

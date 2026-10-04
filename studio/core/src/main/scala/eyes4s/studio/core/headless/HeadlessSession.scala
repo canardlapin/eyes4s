@@ -141,7 +141,9 @@ final class HeadlessSession private (
     run(fake.ledger(dataset, page))
 
   /** Every entry of `dataset`'s ledger, in inventory order. */
-  def wholeLedger(dataset: DatasetRevision): Future[Either[BackendError, Vector[LedgerEntry]]] =
+  def wholeLedger(
+      dataset: DatasetRevision
+  ): Future[Either[LedgerReadError, Vector[LedgerEntry]]] =
     run(LedgerPages.all(fake.ledger(dataset, _)))
 
   /** Answer for `dataset`'s trial inventory under `scenario` from now on. */

@@ -87,7 +87,15 @@ class ImportAdmissionSuite extends munit.FunSuite:
             case Some(AdmissionDecision.Verifying(c)) => c
             case other                                => fail(s"r3 is not verifying: $other")
           val admitted = settled
-            .command(Command.Admit(r3, content, CoreBinding.unbound, CoreBinding.unbound))
+            .command(
+              Command.Admit(
+                r3,
+                content,
+                Some(eyes4s.plan.AdmissionDecision.ReviewExclusions),
+                CoreBinding.unbound,
+                CoreBinding.unbound
+              )
+            )
             .fold(e => fail(e.message), identity)
           val spec = admitted.model.document.dataset(r3).get
           assert(spec.decision.isAdmitted)

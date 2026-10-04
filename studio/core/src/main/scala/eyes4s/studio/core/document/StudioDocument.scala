@@ -21,7 +21,7 @@ import eyes4s.codec.{CanonicalDigest, CodecError, SchemaLadder, VersionedCodec}
 import eyes4s.plan.DefinitionId
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId}
 import io.circe.syntax.*
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.{Decoder, Encoder, Json, JsonObject}
 
 /** Studio's schema identities, in its own `studio.` namespace, built with
   * the public `DefinitionId.of` (they are not eyes4s built-ins and not in the
@@ -311,21 +311,40 @@ object StudioDocument:
       )(of)
       .emap(_.left.map(_.message))
 
-  /** Whether a version-1 document can hold `document`: version 1 records no
-    * trial inventory mapping (S5.4).
+  /** Whether a version-2 document can hold `document`: version 2 records no
+    * admission policy (S5.6).
+    */
+  private def expressedByV2(document: StudioDocument): Boolean =
+    document.datasets.forall(_.decision.admittedUnder.isEmpty)
+
+  /** Whether a version-1 document can hold `document`: version 1 records
+    * neither a trial inventory mapping (S5.4) nor an admission policy.
     */
   private def expressedByV1(document: StudioDocument): Boolean =
-    document.datasets.forall(_.inventory.isEmpty)
+    expressedByV2(document) && document.datasets.forall(_.inventory.isEmpty)
 
-  /** `payload` without any dataset revision's inventory mapping: what a
-    * version-1 reader saw, since it did not know the member.
-    */
-  private def withoutInventory(payload: Json): Json =
+  private def mapDatasets(payload: Json)(f: JsonObject => JsonObject): Json =
     payload.hcursor
       .downField("datasets")
-      .withFocus(_.mapArray(_.map(_.mapObject(_.remove("inventory")))))
+      .withFocus(_.mapArray(_.map(_.mapObject(f))))
       .top
       .getOrElse(payload)
+
+  /** `payload` without any admitted revision's policy: what a version-2
+    * reader saw, since it did not know the member.
+    */
+  private def withoutPolicy(payload: Json): Json =
+    mapDatasets(payload)(d =>
+      d("decision").fold(d)(decision =>
+        d.add("decision", decision.mapObject(_.mapValues(_.mapObject(_.remove("policy")))))
+      )
+    )
+
+  /** `payload` without any dataset revision's inventory mapping or policy:
+    * what a version-1 reader saw, since it did not know the members.
+    */
+  private def withoutInventory(payload: Json): Json =
+    mapDatasets(withoutPolicy(payload))(_.remove("inventory"))
 
   private def read(json: Json): Either[CodecError, StudioDocument] =
     json.as[StudioDocument].left.map(f => CodecError.Field("document", json, f.getMessage))
@@ -340,6 +359,12 @@ object StudioDocument:
     * mapping is version 2, which a version-1 reader refuses
     * (`CodecError.UnsupportedSchema`) instead of dropping the mapping. The
     * upcast is the identity: a version-1 document has no mapping.
+    *
+    * Version 3 (S5.6) adds the eyes4s `AdmissionDecision` an admitted
+    * revision was admitted under (`decision.Admitted.policy`, written only
+    * when recorded), in the same way: a document that records no policy is
+    * still written as version 1 or 2, and the upcast is the identity, since
+    * an earlier document records none.
     */
   val ladder: Either[CodecError, SchemaLadder[StudioDocument]] =
     StudioSchemaIds.forCodec.map { ids =>
@@ -347,7 +372,10 @@ object StudioDocument:
         .of[StudioDocument]("studio document", ids.document)(d =>
           Right(CanonicalJson(withoutInventory(d.asJson)))
         )(json => read(withoutInventory(json)))
-        .next(expressedByV1, identity)(d => Right(CanonicalJson(d.asJson)))(read)
+        .next(expressedByV1, identity)(d => Right(CanonicalJson(withoutPolicy(d.asJson))))(
+          json => read(withoutPolicy(json))
+        )
+        .next(expressedByV2, identity)(d => Right(CanonicalJson(d.asJson)))(read)
     }
 
   /** The versioned, canonical document codec. */

@@ -19,6 +19,27 @@ package eyes4s.studio.core.backend
 import cats.Monad
 import cats.syntax.all.*
 
+/** Why a dataset's whole admission ledger could not be read. */
+enum LedgerReadError derives CanEqual:
+  /** The backend refused a page. */
+  case Refused(error: BackendError)
+
+  /** The page at `offset` cannot be asked for. */
+  case Unpageable(offset: Int, error: PageError)
+
+  /** The page of `dataset`'s ledger at `offset` names a next page at `next`,
+    * which does not advance: reading on would never end.
+    */
+  case Stalled(dataset: DatasetRevision, offset: Int, next: Int)
+
+  def message: String = this match
+    case Refused(error)            => error.message
+    case Unpageable(offset, error) =>
+      s"The ledger page at offset $offset cannot be asked for: ${error.message}"
+    case Stalled(dataset, offset, next) =>
+      s"The ledger of ${dataset.label} does not advance: the page at offset $offset names " +
+        s"the next page at offset $next."
+
 /** A dataset's whole admission ledger, read page by page (ticket S5.6): the
   * admission ledger lists the trials behind each of its counts.
   */
@@ -26,22 +47,24 @@ object LedgerPages:
 
   /** Every entry of the ledger `read` pages through, in inventory order: the
     * largest pages eyes4s serves, until a page has no next. The first
-    * refusal is the answer.
+    * refusal is the answer, and so is a page that cannot be asked for or a
+    * next page that does not advance: a partial ledger is never the answer.
     */
   def all[F[_]: Monad](
       read: PageRequest => F[Either[BackendError, LedgerPage]]
-  ): F[Either[BackendError, Vector[LedgerEntry]]] =
+  ): F[Either[LedgerReadError, Vector[LedgerEntry]]] =
     Monad[F].tailRecM((0, Vector.empty[LedgerEntry])) { (offset, acc) =>
       PageRequest.of(offset, PageRequest.MaximumSize) match
-        // An offset past Int is not a page eyes4s could serve; it ends the read.
-        case Left(_)     => Monad[F].pure(Right(Right(acc)))
+        case Left(e)     => Monad[F].pure(Right(Left(LedgerReadError.Unpageable(offset, e))))
         case Right(page) =>
           read(page).map {
-            case Left(e)  => Right(Left(e))
+            case Left(e)  => Right(Left(LedgerReadError.Refused(e)))
             case Right(p) =>
               val entries = acc ++ p.entries
-              p.page.next.filter(_ > offset) match
-                case Some(next) => Left((next, entries))
-                case None       => Right(Right(entries))
+              p.page.next match
+                case Some(next) if next > offset => Left((next, entries))
+                case Some(next)                  =>
+                  Right(Left(LedgerReadError.Stalled(p.dataset, offset, next)))
+                case None => Right(Right(entries))
           }
     }

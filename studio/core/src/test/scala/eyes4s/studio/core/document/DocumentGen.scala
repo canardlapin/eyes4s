@@ -17,6 +17,7 @@
 package eyes4s.studio.core.document
 
 import eyes4s.codec.{ByteDigest, CanonicalDigest}
+import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.core.backend.*
 import org.scalacheck.Gen
 
@@ -195,7 +196,11 @@ object DocumentGen:
     Gen.const(AdmissionDecision.Pending),
     canonical[DatasetRevisionSpec].map(AdmissionDecision.Verifying(_)),
     Gen
-      .zip(binding[AdmissionLedgerArtifact], binding[TrialInventoryArtifact])
+      .zip(
+        Gen.option(Gen.oneOf(CoreAdmissionDecision.values.toSeq)),
+        binding[AdmissionLedgerArtifact],
+        binding[TrialInventoryArtifact]
+      )
       .map(AdmissionDecision.Admitted.apply)
   )
 

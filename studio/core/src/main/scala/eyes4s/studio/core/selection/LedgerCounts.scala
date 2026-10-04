@@ -30,10 +30,10 @@ import eyes4s.studio.core.backend.{
   * summary and ledger do.
   *
   * The counts are [[StudioRef.InventoryCount]] and, for the records an
-  * `ExcludeRecord` policy keeps out of every map, the trials of
-  * [[StudioRef.WindowTally]] outside the screen: a reported count, never a
-  * quarantine cause. The ledger does not list records outside the analysis
-  * window, so that tally opens no trials here.
+  * `ExcludeRecord` policy keeps out of every map, the trials with records
+  * outside the screen ([[StudioRef.WindowTally]] with
+  * [[TallyRegion.OutsideScreen]]): a reported count, never a quarantine
+  * cause. No other tally is a count of the ledger.
   */
 object LedgerCounts:
 

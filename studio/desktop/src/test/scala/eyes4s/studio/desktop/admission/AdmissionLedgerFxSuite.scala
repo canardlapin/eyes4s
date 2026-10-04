@@ -17,7 +17,8 @@
 package eyes4s.studio.desktop.admission
 
 import cats.data.NonEmptyVector
-import eyes4s.studio.app.admission.{AdmissionLedger, LedgerDecision}
+import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
+import eyes4s.studio.app.admission.AdmissionLedger
 import eyes4s.studio.app.geometry.Loading
 import eyes4s.studio.app.layout.StudioLayouts
 import eyes4s.studio.app.nav.Place
@@ -101,11 +102,11 @@ class AdmissionLedgerFxSuite extends ShellFxSuite:
     )
     assertEquals(runOnFx(v.decisionTitle.getText), "Admit dataset r3")
     assertEquals(
-      runOnFx(LedgerDecision.values.toVector.map(d => v.choices(d).getText)),
+      runOnFx(CoreAdmissionDecision.values.toVector.map(d => v.choices(d).getText)),
       Vector("Require complete", "Review exclusions")
     )
     assertEquals(
-      runOnFx(v.choiceNotes(LedgerDecision.ReviewExclusions).getText),
+      runOnFx(v.choiceNotes(CoreAdmissionDecision.ReviewExclusions).getText),
       "Admits 937 trials; 17 quarantined and 6 absent are recorded with their causes in r3."
     )
     assertEquals(
@@ -113,7 +114,7 @@ class AdmissionLedgerFxSuite extends ShellFxSuite:
       "Admitting creates dataset r3. Run 5 stays on r2 and is marked stale."
     )
     // Require complete, the default, refuses r3 while trials are quarantined.
-    assertEquals(runOnFx(v.choices(LedgerDecision.RequireComplete).isSelected), true)
+    assertEquals(runOnFx(v.choices(CoreAdmissionDecision.RequireComplete).isSelected), true)
     assertEquals(runOnFx(v.admit.getText), "Admit as r3")
     assertEquals(runOnFx(v.admit.isDisabled), true)
     assertEquals(
@@ -208,8 +209,8 @@ class AdmissionLedgerFxSuite extends ShellFxSuite:
       val w = ready(fx)
       val v = w.admission.view
       assertEquals(runOnFx(w.runtime.model.freshness.standing(run5)), Some(RunStanding.Current))
-      fire(fx, v.choices(LedgerDecision.ReviewExclusions))
-      assertEquals(runOnFx(w.admission.state.decision), LedgerDecision.ReviewExclusions)
+      fire(fx, v.choices(CoreAdmissionDecision.ReviewExclusions))
+      assertEquals(runOnFx(w.admission.state.decision), CoreAdmissionDecision.ReviewExclusions)
       assertEquals(runOnFx(v.admit.isDisabled), false)
       fire(fx, v.admit)
       // The window verifies r3 with the backend, then admits exactly that content.
@@ -224,12 +225,22 @@ class AdmissionLedgerFxSuite extends ShellFxSuite:
       eventually(fx, "the admitted status")(v.status.isVisible)
       assertEquals(
         runOnFx(v.status.getText),
-        "r3 is admitted. Run 5 (rev 3) used r2 and is now stale. A change to its mapping " +
-          "or geometry creates a new dataset revision."
+        "r3 is admitted under Review exclusions. Run 5 (rev 3) used r2 and is now stale. A " +
+          "change to its mapping or geometry creates a new dataset revision."
+      )
+      // The revision records the decision it was admitted under, and the view shows it.
+      assertEquals(
+        m.document.dataset(r3).flatMap(_.decision.admittedUnder),
+        Some(CoreAdmissionDecision.ReviewExclusions)
+      )
+      assertEquals(
+        runOnFx(CoreAdmissionDecision.values.toVector.map(d => v.choices(d).isSelected)),
+        Vector(false, true)
       )
       assertEquals(runOnFx((v.admit.isVisible, v.consequence.isVisible)), (false, false))
+      assertEquals(runOnFx(v.retry.isVisible), false)
       assert(
-        runOnFx(LedgerDecision.values.forall(d => v.choices(d).isDisabled)),
+        runOnFx(CoreAdmissionDecision.values.forall(d => v.choices(d).isDisabled)),
         "the decision of an admitted revision is fixed"
       )
       assertEquals(trail(w).head, "Dataset r3")

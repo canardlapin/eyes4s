@@ -17,6 +17,7 @@
 package eyes4s.studio.app.admission
 
 import cats.data.NonEmptyVector
+import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.app.geometry.Loading
 import eyes4s.studio.app.vm.Shell
 import eyes4s.studio.app.{AppEffect, AppModel, Intent, StoryModels}
@@ -70,11 +71,21 @@ class AdmissionLedgerSuite extends munit.FunSuite:
     val (synced, effects) = AdmissionLedger.sync(AdmissionLedger.empty, model)
     assertEquals(
       effects,
-      Vector(LedgerEffect.RequestCounts(r3), LedgerEffect.RequestLedger(r3))
+      Vector(LedgerEffect.RequestCounts(r3, 1), LedgerEffect.RequestLedger(r3, 1))
     )
+    read(synced, model, answers)
+
+  /** The ledger with `answers` to its last ask read. */
+  private def read(
+      ledger: AdmissionLedger,
+      model: AppModel,
+      answers: (AdmissionAnswer, Either[String, Vector[LedgerEntry]])
+  ): AdmissionLedger =
     val (counts, entries) = answers
-    Vector(LedgerIntent.CountsRead(r3, counts), LedgerIntent.LedgerRead(r3, entries))
-      .foldLeft(synced)((l, i) => AdmissionLedger.update(l, model, i)._1)
+    Vector(
+      LedgerIntent.CountsRead(r3, ledger.ask, counts),
+      LedgerIntent.LedgerRead(r3, ledger.ask, entries)
+    ).foldLeft(ledger)((l, i) => AdmissionLedger.update(l, model, i)._1)
 
   /** Apply the ledger's app intents, as the host does; the app's effects. */
   private def perform(
@@ -247,7 +258,7 @@ class AdmissionLedgerSuite extends munit.FunSuite:
     served(StoryMoment.T1).map { answers =>
       val ledger = loaded(t1, answers)
       val vm     = AdmissionLedgerVM.of(ledger, t1)
-      assertEquals(ledger.decision, LedgerDecision.RequireComplete)
+      assertEquals(ledger.decision, CoreAdmissionDecision.RequireComplete)
       assertEquals(
         vm.decisions.map(d => (d.label, d.note, d.selected)),
         Vector(
@@ -273,7 +284,7 @@ class AdmissionLedgerSuite extends munit.FunSuite:
       assertEquals(effects, Vector.empty)
       assertEquals(after.problem, Some(refusal))
       val review = AdmissionLedger
-        .update(ledger, t1, LedgerIntent.ChooseDecision(LedgerDecision.ReviewExclusions))
+        .update(ledger, t1, LedgerIntent.ChooseDecision(CoreAdmissionDecision.ReviewExclusions))
         ._1
       assert(AdmissionLedgerVM.of(review, t1).canAdmit)
     }
@@ -285,7 +296,7 @@ class AdmissionLedgerSuite extends munit.FunSuite:
         .update(
           loaded(t1, answers),
           t1,
-          LedgerIntent.ChooseDecision(LedgerDecision.ReviewExclusions)
+          LedgerIntent.ChooseDecision(CoreAdmissionDecision.ReviewExclusions)
         )
         ._1
       val before = AdmissionLedgerVM.of(review, t1)
@@ -314,7 +325,10 @@ class AdmissionLedgerSuite extends munit.FunSuite:
         verifying.document.dataset(r3).map(_.decision),
         Some(AdmissionDecision.Verifying(content))
       )
-      val synced = AdmissionLedger.sync(asked, verifying)._1
+      val (synced, reread) = AdmissionLedger.sync(asked, verifying)
+      // Sending r3 for verification changes its decision, not its content:
+      // the counts stand and nothing is asked again.
+      assertEquals((reread, synced.counts), (Vector.empty, review.counts))
       assertEquals(synced.admitting, Some(r3))
       assertEquals(AdmissionLedgerVM.of(synced, verifying).canAdmit, false)
       assertEquals(
@@ -333,13 +347,24 @@ class AdmissionLedgerSuite extends munit.FunSuite:
         Vector(
           LedgerEffect.App(
             Intent.Dispatch(
-              Command.Admit(r3, content, CoreBinding.unbound, CoreBinding.unbound)
+              Command.Admit(
+                r3,
+                content,
+                Some(CoreAdmissionDecision.ReviewExclusions),
+                CoreBinding.unbound,
+                CoreBinding.unbound
+              )
             )
           )
         )
       )
       val admitted = perform(verifying, admit)._1
       assert(admitted.document.dataset(r3).exists(_.decision.isAdmitted))
+      // The revision records the decision it was admitted under.
+      assertEquals(
+        admitted.document.dataset(r3).flatMap(_.decision.admittedUnder),
+        Some(CoreAdmissionDecision.ReviewExclusions)
+      )
       assertEquals(
         admitted.freshness.standing(run5),
         Some(RunStanding.Stale(NonEmptyVector.one(StaleReason.DatasetMoved(r2, r3))))
@@ -348,8 +373,8 @@ class AdmissionLedgerSuite extends munit.FunSuite:
       assertEquals(
         after.status,
         Some(
-          "r3 is admitted. Run 5 (rev 3) used r2 and is now stale. A change to its mapping " +
-            "or geometry creates a new dataset revision."
+          "r3 is admitted under Review exclusions. Run 5 (rev 3) used r2 and is now stale. A " +
+            "change to its mapping or geometry creates a new dataset revision."
         )
       )
       assertEquals((after.canAdmit, after.canDecide, after.consequence), (false, false, None))
@@ -363,7 +388,7 @@ class AdmissionLedgerSuite extends munit.FunSuite:
         .update(
           loaded(t1, answers),
           t1,
-          LedgerIntent.ChooseDecision(LedgerDecision.ReviewExclusions)
+          LedgerIntent.ChooseDecision(CoreAdmissionDecision.ReviewExclusions)
         )
         ._1
       val (asked, verify)         = AdmissionLedger.update(review, t1, LedgerIntent.Admit)
@@ -371,7 +396,11 @@ class AdmissionLedgerSuite extends munit.FunSuite:
       val content = appEffects.collectFirst { case AppEffect.RequestAdmission(_, c) => c }.get
       // Require complete chosen while eyes4s verifies: refused on the answer.
       val strict = AdmissionLedger
-        .update(asked, verifying, LedgerIntent.ChooseDecision(LedgerDecision.RequireComplete))
+        .update(
+          asked,
+          verifying,
+          LedgerIntent.ChooseDecision(CoreAdmissionDecision.RequireComplete)
+        )
         ._1
       val (refused, none) =
         AdmissionLedger.update(
@@ -496,8 +525,11 @@ class AdmissionLedgerSuite extends munit.FunSuite:
   test("counts and entries for another revision are ignored; a new revision resets") {
     served(StoryMoment.T1).map { answers =>
       val ledger = loaded(t1, answers)
-      val stale = AdmissionLedger.update(ledger, t1, LedgerIntent.CountsRead(r2, answers._1))._1
-      assertEquals(stale, ledger)
+      val other  =
+        AdmissionLedger
+          .update(ledger, t1, LedgerIntent.CountsRead(r2, ledger.ask, answers._1))
+          ._1
+      assertEquals(other, ledger)
       val onR2 = AppModel
         .update(
           t1,
@@ -513,7 +545,7 @@ class AdmissionLedgerSuite extends munit.FunSuite:
       assertEquals(moved.shown.map(_.id), Some(r2))
       assertEquals(
         effects,
-        Vector(LedgerEffect.RequestCounts(r2), LedgerEffect.RequestLedger(r2))
+        Vector(LedgerEffect.RequestCounts(r2, 2), LedgerEffect.RequestLedger(r2, 2))
       )
       assertEquals(moved.counts, Loading.Waiting)
     }
@@ -525,7 +557,7 @@ class AdmissionLedgerSuite extends munit.FunSuite:
         .update(
           loaded(t1, answers),
           t1,
-          LedgerIntent.ChooseDecision(LedgerDecision.ReviewExclusions)
+          LedgerIntent.ChooseDecision(CoreAdmissionDecision.ReviewExclusions)
         )
         ._1
       val absent = StudioRef.InventoryCount(r3, InventoryKind.Absent)
@@ -558,6 +590,282 @@ class AdmissionLedgerSuite extends munit.FunSuite:
     assertEquals(
       labels.selected(StudioRef.InventoryCount(r3, InventoryKind.Absent)),
       "r3 · Absent"
+    )
+  }
+
+  // --- The recorded decision (review F1) ----------------------------------------------
+
+  private def dataView(model: AppModel, dataset: DatasetRevision = r3): AppModel =
+    AppModel
+      .update(
+        model,
+        Intent.Navigate(
+          eyes4s.studio.app.nav.Location(
+            Perspective.Data,
+            Vector(
+              eyes4s.studio.app.nav.Place.Dataset(dataset),
+              eyes4s.studio.app.nav.Place.DataView(eyes4s.studio.app.nav.DataSection.Admission)
+            )
+          )
+        )
+      )
+      ._1
+
+  /** `model` with `dataset` verified and admitted under `policy`, by commands. */
+  private def admit(
+      model: AppModel,
+      dataset: DatasetRevision,
+      policy: Option[CoreAdmissionDecision]
+  ): AppModel =
+    val (verifying, effects) =
+      AppModel.update(model, Intent.Dispatch(Command.VerifyDataset(dataset)))
+    val content = effects
+      .collectFirst { case AppEffect.RequestAdmission(`dataset`, c) => c }
+      .getOrElse(fail(s"no admission request in $effects"))
+    val command =
+      Command.Admit(dataset, content, policy, CoreBinding.unbound, CoreBinding.unbound)
+    val admitted = AppModel.update(verifying, Intent.Dispatch(command))._1
+    assert(admitted.document.dataset(dataset).exists(_.decision.isAdmitted), admitted.document)
+    admitted
+
+  private def admitR3(model: AppModel, policy: Option[CoreAdmissionDecision]): AppModel =
+    admit(model, r3, policy)
+
+  /** `doc` with its runs and analyses replaced and no draft. */
+  private def withRuns(
+      doc: StudioDocument,
+      analyses: Vector[AnalysisRevisionSpec],
+      runs: Vector[RunRef]
+  ): StudioDocument =
+    ok(
+      StudioDocument.of(
+        doc.datasets,
+        analyses,
+        None,
+        runs,
+        doc.reporting,
+        doc.figures,
+        doc.presentation,
+        doc.jobs
+      )
+    )
+
+  private def answered(answer: AdmissionAnswer): AdmissionSummary = answer match
+    case AdmissionAnswer.Answered(s) => s
+    case other                       => fail(other.toString)
+
+  test("a complete revision is admitted under Require complete, which it records") {
+    served(StoryMoment.T1).map { answers =>
+      val complete = AdmissionAnswer.Answered(
+        answered(answers._1).copy(quarantined = Vector.empty, noFixations = 0)
+      )
+      val ledger = loaded(t1, (complete, answers._2))
+      assertEquals(ledger.decision, CoreAdmissionDecision.RequireComplete)
+      val (asked, verify)         = AdmissionLedger.update(ledger, t1, LedgerIntent.Admit)
+      val (verifying, appEffects) = perform(t1, verify)
+      val content = appEffects.collectFirst { case AppEffect.RequestAdmission(_, c) => c }.get
+      val synced  = AdmissionLedger.sync(asked, verifying)._1
+      val (after, admit) =
+        AdmissionLedger.update(synced, verifying, LedgerIntent.Verified(r3, content, complete))
+      assertEquals(
+        admit,
+        Vector(
+          LedgerEffect.App(
+            Intent.Dispatch(
+              Command.Admit(
+                r3,
+                content,
+                Some(CoreAdmissionDecision.RequireComplete),
+                CoreBinding.unbound,
+                CoreBinding.unbound
+              )
+            )
+          )
+        )
+      )
+      val admitted = perform(verifying, admit)._1
+      assertEquals(
+        admitted.document.dataset(r3).flatMap(_.decision.admittedUnder),
+        Some(CoreAdmissionDecision.RequireComplete)
+      )
+      val vm = AdmissionLedgerVM.of(AdmissionLedger.sync(after, admitted)._1, admitted)
+      assert(
+        vm.status.exists(_.startsWith("r3 is admitted under Require complete. ")),
+        vm.status
+      )
+    }
+  }
+
+  test("an admitted revision shows the decision it recorded, whatever the ledger's choice") {
+    val admitted = admitR3(t1, Some(CoreAdmissionDecision.ReviewExclusions))
+    // A ledger newly synced to the admitted r3 starts from Require complete.
+    val ledger = AdmissionLedger.sync(AdmissionLedger.empty, admitted)._1
+    assertEquals(ledger.decision, CoreAdmissionDecision.RequireComplete)
+    val vm = AdmissionLedgerVM.of(ledger, admitted)
+    assertEquals(
+      vm.decisions.map(d => (d.value, d.selected)),
+      Vector(
+        CoreAdmissionDecision.RequireComplete  -> false,
+        CoreAdmissionDecision.ReviewExclusions -> true
+      )
+    )
+    assert(
+      vm.status.exists(_.startsWith("r3 is admitted under Review exclusions. ")),
+      vm.status
+    )
+    // A revision admitted before S5.6 recorded no decision: none is shown.
+    val legacy   = admitR3(t1, None)
+    val legacyVM =
+      AdmissionLedgerVM.of(AdmissionLedger.sync(AdmissionLedger.empty, legacy)._1, legacy)
+    assertEquals(legacyVM.decisions.map(_.selected), Vector(false, false))
+    assert(legacyVM.status.exists(_.startsWith("r3 is admitted. Run 5 ")), legacyVM.status)
+  }
+
+  // --- Reading the counts again (review F3) ------------------------------------------------
+
+  test(
+    "an edit to the pending revision asks for its counts again; earlier answers are ignored"
+  ) {
+    served(StoryMoment.T1).map { answers =>
+      val ledger = loaded(t1, answers)
+      val edited = AppModel
+        .update(
+          t1,
+          Intent.Dispatch(Command.SetUnits(r3, DeclaredUnits(Some(TimeUnit.Seconds))))
+        )
+        ._1
+      assertNotEquals(edited.document.dataset(r3), t1.document.dataset(r3))
+      val (synced, effects) = AdmissionLedger.sync(ledger, edited)
+      assertEquals(
+        effects,
+        Vector(LedgerEffect.RequestCounts(r3, 2), LedgerEffect.RequestLedger(r3, 2))
+      )
+      assertEquals((synced.counts, synced.entries), (Loading.Waiting, Loading.Waiting))
+      assertEquals(AdmissionLedgerVM.of(synced, edited).canAdmit, false)
+      // The answers to the read before the edit are stale.
+      val late = Vector(
+        LedgerIntent.CountsRead(r3, 1, answers._1),
+        LedgerIntent.LedgerRead(r3, 1, answers._2)
+      ).foldLeft(synced)((l, i) => AdmissionLedger.update(l, edited, i)._1)
+      assertEquals(late, synced)
+      val fresh = read(synced, edited, answers)
+      assertEquals(fresh.counts, Loading.Ready(answered(answers._1)))
+      assertEquals(fresh.entries.toOption.map(_.size), Some(954 + 6))
+      // Syncing the same content again asks nothing.
+      assertEquals(AdmissionLedger.sync(fresh, edited), (fresh, Vector.empty))
+    }
+  }
+
+  test("a failed read can be retried, and admission waits for the retry") {
+    served(StoryMoment.T1).map { answers =>
+      val synced = AdmissionLedger.sync(AdmissionLedger.empty, t1)._1
+      val failed = Vector(
+        LedgerIntent.CountsRead(r3, 1, AdmissionAnswer.Failed("the backend timed out")),
+        LedgerIntent.LedgerRead(r3, 1, answers._2),
+        LedgerIntent.ChooseDecision(CoreAdmissionDecision.ReviewExclusions)
+      ).foldLeft(synced)((l, i) => AdmissionLedger.update(l, t1, i)._1)
+      val vm = AdmissionLedgerVM.of(failed, t1)
+      assertEquals(vm.canAdmit, false)
+      assertEquals(vm.admitNote, Some("Counts of r3 are not available: the backend timed out"))
+      assertEquals(vm.retry, Some("Retry"))
+      assertEquals(AdmissionLedgerVM.focusStops(vm).map(_.render).last, "button: Retry")
+      assertEquals(AdmissionLedger.update(failed, t1, LedgerIntent.Admit)._2, Vector.empty)
+      val (retried, effects) = AdmissionLedger.update(failed, t1, LedgerIntent.Retry)
+      assertEquals(
+        effects,
+        Vector(LedgerEffect.RequestCounts(r3, 2), LedgerEffect.RequestLedger(r3, 2))
+      )
+      assertEquals(retried.decision, CoreAdmissionDecision.ReviewExclusions)
+      val after = AdmissionLedgerVM.of(read(retried, t1, answers), t1)
+      assertEquals((after.canAdmit, after.retry), (true, None))
+    }
+  }
+
+  // --- The runs an admission made stale (review F5) ----------------------------------------
+
+  test("the admitted status names only the runs this admission made stale") {
+    // t1 with rev 4 on r2 and its completed run 6: run 5 (rev 3) is already
+    // stale, superseded by run 6, before r3 is admitted.
+    val doc  = StoryModels.t1
+    val rev4 = StoryModels.t2.analysis(StoryMoments.rev4).get.copy(dataset = r2)
+    val run6 =
+      RunRef(StoryMoments.run6, rev4.id, r2, RunLifecycle.Completed, CoreBinding.unbound)
+    val withRun6 = withRuns(doc, doc.analyses :+ rev4, doc.runs :+ run6)
+    val before   = dataView(AppModel.open(withRun6, Some(StoryModels.project)))
+    assertEquals(
+      before.freshness.standing(run5),
+      Some(
+        RunStanding.Stale(
+          NonEmptyVector.one(StaleReason.Superseded(StoryMoments.run6, rev4.id))
+        )
+      )
+    )
+    assertEquals(before.freshness.standing(StoryMoments.run6), Some(RunStanding.Current))
+    val admitted = admitR3(before, Some(CoreAdmissionDecision.ReviewExclusions))
+    assert(
+      admitted.freshness.standing(run5).exists {
+        case RunStanding.Stale(reasons) => reasons.length == 2
+        case _                          => false
+      },
+      admitted.freshness.standing(run5)
+    )
+    val vm =
+      AdmissionLedgerVM.of(AdmissionLedger.sync(AdmissionLedger.empty, admitted)._1, admitted)
+    assertEquals(
+      vm.status,
+      Some(
+        "r3 is admitted under Review exclusions. Run 6 (rev 4) used r2 and is now stale. A " +
+          "change to its mapping or geometry creates a new dataset revision."
+      )
+    )
+  }
+
+  test("a run on older data that was stale only by its dataset is not news either") {
+    // r3 admitted, with run 6 (rev 3) on it; run 5 (rev 3, r2) is already
+    // stale, its dataset moved to r3, and is superseded by nothing. r4, a
+    // re-import of r3, is then admitted.
+    val r4   = DatasetRevision(4)
+    val onR3 = admitR3(t1, Some(CoreAdmissionDecision.ReviewExclusions))
+    val run6 = RunRef(
+      StoryMoments.run6,
+      StoryMoments.rev3,
+      r3,
+      RunLifecycle.Completed,
+      CoreBinding.unbound
+    )
+    val doc    = onR3.document
+    val opened =
+      AppModel.open(withRuns(doc, doc.analyses, doc.runs :+ run6), Some(StoryModels.project))
+    val spec     = doc.dataset(r3).get
+    val reimport = Command.ImportSources(
+      Some(r3),
+      spec.sources,
+      spec.mapping,
+      DeclaredUnits(Some(TimeUnit.Seconds)),
+      spec.geometry,
+      spec.attributes,
+      None,
+      spec.inventory
+    )
+    val pending = AppModel.update(opened, Intent.Dispatch(reimport))._1
+    assertEquals(pending.document.datasets.map(_.id), Vector(r2, r3, r4))
+    assertEquals(
+      pending.freshness.standing(run5),
+      Some(RunStanding.Stale(NonEmptyVector.one(StaleReason.DatasetMoved(r2, r3))))
+    )
+    val admitted = admit(dataView(pending, r4), r4, Some(CoreAdmissionDecision.RequireComplete))
+    assertEquals(
+      admitted.freshness.standing(run5),
+      Some(RunStanding.Stale(NonEmptyVector.one(StaleReason.DatasetMoved(r2, r4))))
+    )
+    val vm =
+      AdmissionLedgerVM.of(AdmissionLedger.sync(AdmissionLedger.empty, admitted)._1, admitted)
+    assertEquals(
+      vm.status,
+      Some(
+        "r4 is admitted under Require complete. Run 6 (rev 3) used r3 and is now stale. A " +
+          "change to its mapping or geometry creates a new dataset revision."
+      )
     )
   }
 

@@ -17,6 +17,7 @@
 package eyes4s.studio.app.admission
 
 import eyes4s.codec.CanonicalDigest
+import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.app.geometry.{GeometryPanel, Loading}
 import eyes4s.studio.app.importing.InventoryAnswer
 import eyes4s.studio.app.nav.{DataSection, Location, Place}
@@ -50,15 +51,13 @@ enum AdmissionAnswer derives CanEqual:
   /** The backend itself failed; `reason` names what failed. */
   case Failed(reason: String)
 
-/** eyes4s `AdmissionDecision`: whether admission requires every trial, or
-  * admits the admissible ones and records the exclusions with their causes.
-  */
-enum LedgerDecision derives CanEqual:
-  case RequireComplete, ReviewExclusions
-
 /** A user action or platform fact the ledger's view dispatches. */
 enum LedgerIntent derives CanEqual:
-  case ChooseDecision(decision: LedgerDecision)
+  /** Choose eyes4s's `AdmissionDecision` for the admission: whether it
+    * requires every trial, or admits the admissible ones and records the
+    * exclusions with their causes.
+    */
+  case ChooseDecision(decision: CoreAdmissionDecision)
 
   /** A count was activated: open its trials, or close them if they are open. */
   case Open(ref: StudioRef)
@@ -70,11 +69,22 @@ enum LedgerIntent derives CanEqual:
   /** "Admit as rN". */
   case Admit
 
-  /** The backend's admission summary asked for `dataset`. */
-  case CountsRead(dataset: DatasetRevision, answer: AdmissionAnswer)
+  /** Ask again for the shown revision's counts and ledger, after a read
+    * failed.
+    */
+  case Retry
 
-  /** The backend's whole ledger of `dataset`, or why it could not be read. */
-  case LedgerRead(dataset: DatasetRevision, result: Either[String, Vector[LedgerEntry]])
+  /** The backend's admission summary asked for `dataset` by ask `ask`. */
+  case CountsRead(dataset: DatasetRevision, ask: Int, answer: AdmissionAnswer)
+
+  /** The backend's whole ledger of `dataset` asked for by ask `ask`, or why
+    * it could not be read.
+    */
+  case LedgerRead(
+      dataset: DatasetRevision,
+      ask: Int,
+      result: Either[String, Vector[LedgerEntry]]
+  )
 
   /** The backend answered the verification of `dataset`'s `content`
     * (the app's `RequestAdmission`).
@@ -91,12 +101,14 @@ enum LedgerEffect derives CanEqual:
   case App(intent: Intent)
 
   /** Ask the backend for `dataset`'s admission summary; the answer is
-    * [[LedgerIntent.CountsRead]].
+    * [[LedgerIntent.CountsRead]], carrying `ask`.
     */
-  case RequestCounts(dataset: DatasetRevision)
+  case RequestCounts(dataset: DatasetRevision, ask: Int)
 
-  /** Read `dataset`'s whole ledger; the answer is [[LedgerIntent.LedgerRead]]. */
-  case RequestLedger(dataset: DatasetRevision)
+  /** Read `dataset`'s whole ledger; the answer is [[LedgerIntent.LedgerRead]],
+    * carrying `ask`.
+    */
+  case RequestLedger(dataset: DatasetRevision, ask: Int)
 
 /** The Data perspective's admission ledger (ticket S5.6; Data.dc.html,
   * admission). It shows eyes4s's admission of the selected dataset revision
@@ -113,16 +125,21 @@ enum LedgerEffect derives CanEqual:
   * complete refuses while any trial is quarantined. A pending revision is
   * first sent for verification ([[Command.VerifyDataset]]); when eyes4s's
   * answer for exactly the verified content arrives ([[LedgerIntent.Verified]])
-  * the revision is admitted ([[Command.Admit]]). Admission is a history
-  * barrier, and the runs on older data become stale by the freshness
-  * derivation (S2.7).
+  * the revision is admitted ([[Command.Admit]]), which records the decision
+  * in the revision. Admission is a history barrier, and the runs on older
+  * data become stale by the freshness derivation (S2.7).
+  *
+  * `ask` numbers the ledger's reads of the shown revision: an edit to its
+  * content, or [[LedgerIntent.Retry]], asks again, and an answer to an
+  * earlier ask is ignored.
   */
 final case class AdmissionLedger(
     shown: Option[DatasetRevisionSpec],
     counts: Loading[AdmissionSummary],
     refusal: Option[BackendError],
     entries: Loading[Vector[LedgerEntry]],
-    decision: LedgerDecision,
+    ask: Int,
+    decision: CoreAdmissionDecision,
     admitting: Option[DatasetRevision],
     problem: Option[String]
 ) derives CanEqual:
@@ -141,7 +158,8 @@ object AdmissionLedger:
       Loading.Idle,
       None,
       Loading.Idle,
-      LedgerDecision.RequireComplete,
+      0,
+      CoreAdmissionDecision.RequireComplete,
       None,
       None
     )
@@ -172,28 +190,50 @@ object AdmissionLedger:
   def heldBack(summary: AdmissionSummary): Int = summary.quarantinedTrials + summary.noFixations
 
   /** Whether `decision` admits a revision with these counts. */
-  def permits(decision: LedgerDecision, summary: AdmissionSummary): Boolean =
-    decision == LedgerDecision.ReviewExclusions || heldBack(summary) == 0
+  def permits(decision: CoreAdmissionDecision, summary: AdmissionSummary): Boolean =
+    decision == CoreAdmissionDecision.ReviewExclusions || heldBack(summary) == 0
+
+  /** What a revision asks eyes4s to admit: everything but its decision. */
+  private def content(spec: DatasetRevisionSpec): DatasetRevisionSpec =
+    spec.copy(decision = AdmissionDecision.Pending)
+
+  /** Ask again for the counts and the ledger of `spec`; a problem with the
+    * earlier answers no longer stands.
+    */
+  private def askFor(ledger: AdmissionLedger, spec: DatasetRevisionSpec) =
+    val next = ledger.ask + 1
+    (
+      ledger.copy(
+        shown = Some(spec),
+        counts = Loading.Waiting,
+        refusal = None,
+        entries = Loading.Waiting,
+        ask = next,
+        problem = None
+      ),
+      Vector(
+        LedgerEffect.RequestCounts(spec.id, next),
+        LedgerEffect.RequestLedger(spec.id, next)
+      )
+    )
 
   /** Follow the model's selected dataset revision: a newly selected one
     * resets the ledger and asks for its counts and its ledger; the same one
-    * keeps them and follows its admission decision. A revision that is
+    * keeps them and follows its admission decision, and asks again when its
+    * content changed (an edit to a pending revision). A revision that is
     * pending again (its verification refused or withdrawn) is no longer
     * waiting to be admitted.
     */
   def sync(ledger: AdmissionLedger, model: AppModel): (AdmissionLedger, Vector[LedgerEffect]) =
     val now = GeometryPanel.selected(model)
-    if now.map(_.id) == ledger.shown.map(_.id) then
-      val pending = now.exists(_.decision == AdmissionDecision.Pending)
-      (ledger.copy(shown = now, admitting = ledger.admitting.filterNot(_ => pending)), none)
-    else
-      now match
-        case None       => (empty, none)
-        case Some(spec) =>
-          (
-            empty.copy(shown = Some(spec), counts = Loading.Waiting, entries = Loading.Waiting),
-            Vector(LedgerEffect.RequestCounts(spec.id), LedgerEffect.RequestLedger(spec.id))
-          )
+    (ledger.shown, now) match
+      case (Some(was), Some(spec)) if was.id == spec.id =>
+        val pending = spec.decision == AdmissionDecision.Pending
+        val kept    = ledger.copy(admitting = ledger.admitting.filterNot(_ => pending))
+        if content(was) == content(spec) then (kept.copy(shown = now), none)
+        else askFor(kept, spec)
+      case (_, None)       => (empty, none)
+      case (_, Some(spec)) => askFor(empty.copy(ask = ledger.ask), spec)
 
   /** The Elm-style update: pure; effects are data. */
   def update(
@@ -214,12 +254,14 @@ object AdmissionLedger:
         live.fold((ledger, none))(spec => (ledger, Vector(navigate(spec.id, None))))
       case OpenTrial(key) =>
         (ledger, Vector(LedgerEffect.App(Intent.Explain(Place.At(StudioRef.Trial(key))))))
-      case Admit                    => admit(ledger, live)
-      case CountsRead(dataset, ans) =>
-        if !ledger.shown.exists(_.id == dataset) then (ledger, none)
+      case Admit => admit(ledger, live)
+      case Retry =>
+        live.fold((ledger, none))(askFor(ledger, _))
+      case CountsRead(dataset, n, ans) =>
+        if !answers(ledger, dataset, n) then (ledger, none)
         else (answered(ledger, ans), none)
-      case LedgerRead(dataset, result) =>
-        if !ledger.shown.exists(_.id == dataset) then (ledger, none)
+      case LedgerRead(dataset, n, result) =>
+        if !answers(ledger, dataset, n) then (ledger, none)
         else (ledger.copy(entries = result.fold(Loading.Failed(_), Loading.Ready(_))), none)
       case Verified(dataset, content, ans) =>
         if !ledger.shown.exists(_.id == dataset) then
@@ -231,13 +273,18 @@ object AdmissionLedger:
           (ans, live.map(_.decision)) match
             case (AdmissionAnswer.Answered(s), Some(AdmissionDecision.Verifying(c)))
                 if waiting && c == content =>
-              if permits(ledger.decision, s) then (cleared, Vector(admitCommand(dataset, c)))
+              if permits(ledger.decision, s) then
+                (cleared, Vector(admitCommand(dataset, c, ledger.decision)))
               else (cleared.copy(problem = Some(refusedText(dataset, s))), none)
             case (AdmissionAnswer.Answered(_), _) => (cleared, none)
             case (AdmissionAnswer.Refused(e), _)  =>
               (cleared.copy(problem = Option.when(waiting)(e.message)), none)
             case (AdmissionAnswer.Failed(why), _) =>
               (cleared.copy(problem = Option.when(waiting)(why)), none)
+
+  /** Whether a read of `dataset` by ask `n` answers the ledger's last ask. */
+  private def answers(ledger: AdmissionLedger, dataset: DatasetRevision, n: Int): Boolean =
+    ledger.shown.exists(_.id == dataset) && ledger.ask == n
 
   private def navigate(dataset: DatasetRevision, ref: Option[StudioRef]): LedgerEffect =
     LedgerEffect.App(Intent.Navigate(Location(Perspective.Data, trail(dataset, ref))))
@@ -258,20 +305,32 @@ object AdmissionLedger:
       s.admitted.toString
     )
 
+  /** Admit `dataset`'s verified `content` under `decision`, which the
+    * revision records.
+    */
   private def admitCommand(
       dataset: DatasetRevision,
-      content: CanonicalDigest[DatasetRevisionSpec]
+      content: CanonicalDigest[DatasetRevisionSpec],
+      decision: CoreAdmissionDecision
   ): LedgerEffect =
     // The backend binds the eyes4s ledger and inventory artifacts (S3.7); the
     // fake has none to bind.
     LedgerEffect.App(
-      Intent.Dispatch(Command.Admit(dataset, content, CoreBinding.unbound, CoreBinding.unbound))
+      Intent.Dispatch(
+        Command.Admit(
+          dataset,
+          content,
+          Some(decision),
+          CoreBinding.unbound,
+          CoreBinding.unbound
+        )
+      )
     )
 
   /** Why "Admit as rN" does nothing now, if it does nothing. */
   def blocked(ledger: AdmissionLedger, spec: DatasetRevisionSpec): Option[String] =
     spec.decision match
-      case AdmissionDecision.Admitted(_, _) =>
+      case AdmissionDecision.Admitted(_, _, _) =>
         Some(t(LedgerTextId.AdmittedStatus, spec.id.label))
       case _ if ledger.admitting.contains(spec.id) =>
         Some(t(LedgerTextId.AdmitVerifying, spec.id.label))
@@ -299,5 +358,8 @@ object AdmissionLedger:
                   Vector(LedgerEffect.App(Intent.Dispatch(Command.VerifyDataset(spec.id))))
                 )
               case AdmissionDecision.Verifying(content) =>
-                (ledger.copy(problem = None), Vector(admitCommand(spec.id, content)))
-              case AdmissionDecision.Admitted(_, _) => (ledger, none)
+                (
+                  ledger.copy(problem = None),
+                  Vector(admitCommand(spec.id, content, ledger.decision))
+                )
+              case AdmissionDecision.Admitted(_, _, _) => (ledger, none)

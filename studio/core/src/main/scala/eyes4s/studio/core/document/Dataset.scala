@@ -20,6 +20,7 @@ import cats.syntax.all.*
 import eyes4s.codec.{ByteDigest, CanonicalDigest, CodecError, VersionedCodec}
 import eyes4s.kernel.Correction
 import eyes4s.plan.{
+  AdmissionDecision as CoreAdmissionDecision,
   AdmissionPolicy,
   ArtifactRef,
   AttributeColumn,
@@ -531,23 +532,63 @@ object AdmissionChoice:
   * (story moment t1) and records the content digest
   * ([[DatasetRevisionSpec.contentDigest]]) of exactly what was sent; an
   * admission is accepted only for that content. `Admitted` binds the eyes4s
-  * admission ledger and trial inventory it produced.
+  * admission ledger and trial inventory it produced, and records the eyes4s
+  * `AdmissionDecision` it was admitted under (S5.6): `RequireComplete`, or
+  * `ReviewExclusions`, which admits the admissible trials and records the
+  * exclusions with their causes in the ledger. `policy` is `None` only for a
+  * revision admitted before S5.6 recorded it (`studio.document` version 2 or
+  * earlier, or a journal line written before S5.6).
   */
 enum AdmissionDecision derives CanEqual:
   case Pending
   case Verifying(content: CanonicalDigest[DatasetRevisionSpec])
   case Admitted(
+      policy: Option[CoreAdmissionDecision],
       ledger: CoreBinding[AdmissionLedgerArtifact],
       inventory: CoreBinding[TrialInventoryArtifact]
   )
 
   def isAdmitted: Boolean = this match
     case Pending | Verifying(_) => false
-    case Admitted(_, _)         => true
+    case Admitted(_, _, _)      => true
+
+  /** The policy an admitted revision recorded, if it recorded one. */
+  def admittedUnder: Option[CoreAdmissionDecision] = this match
+    case Admitted(p, _, _)      => p
+    case Pending | Verifying(_) => None
 
 object AdmissionDecision:
   import DigestJson.given
-  given Codec.AsObject[AdmissionDecision] = Codec.AsObject.derived
+
+  /** eyes4s's `AdmissionDecision` as the studio writes its enums:
+    * `{"RequireComplete":{}}` or `{"ReviewExclusions":{}}`.
+    */
+  given coreDecision: Codec[CoreAdmissionDecision] = Codec.from(
+    Decoder.instance { c =>
+      c.value.asObject.map(_.keys.toVector) match
+        case Some(Vector(name)) =>
+          CoreAdmissionDecision.values
+            .find(_.toString == name)
+            .toRight(DecodingFailure(s"unknown admission decision $name", c.history))
+        case other =>
+          Left(DecodingFailure(s"expected one admission decision, got $other", c.history))
+    },
+    Encoder.instance(d => Json.obj(d.toString -> Json.obj()))
+  )
+
+  private val derived: Codec.AsObject[AdmissionDecision] = Codec.AsObject.derived
+
+  /** An admission without a recorded policy is written without the member,
+    * so a revision admitted before S5.6 keeps its version-2 wire form.
+    */
+  given Codec.AsObject[AdmissionDecision] = Codec.AsObject.from(
+    derived,
+    Encoder.AsObject.instance(d =>
+      derived
+        .encodeObject(d)
+        .mapValues(v => if d.admittedUnder.isEmpty then v.mapObject(_.remove("policy")) else v)
+    )
+  )
 
 // ---------------------------------------------------------------------------
 // Dataset revision

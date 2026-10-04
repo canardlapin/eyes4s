@@ -118,16 +118,16 @@ final class AdmissionLedgerHost(
 
   private def perform(effects: Vector[LedgerEffect]): Unit =
     effects.foreach {
-      case LedgerEffect.App(i)           => app(i)
-      case LedgerEffect.RequestCounts(d) =>
+      case LedgerEffect.App(i)                => app(i)
+      case LedgerEffect.RequestCounts(d, ask) =>
         inputs.admission(
           d,
-          a => Platform.runLater(() => dispatch(LedgerIntent.CountsRead(d, a)))
+          a => Platform.runLater(() => dispatch(LedgerIntent.CountsRead(d, ask, a)))
         )
-      case LedgerEffect.RequestLedger(d) =>
+      case LedgerEffect.RequestLedger(d, ask) =>
         inputs.ledger(
           d,
-          r => Platform.runLater(() => dispatch(LedgerIntent.LedgerRead(d, r)))
+          r => Platform.runLater(() => dispatch(LedgerIntent.LedgerRead(d, ask, r)))
         )
     }
 
