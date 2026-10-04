@@ -241,8 +241,7 @@ enum ManifestRelation derives CanEqual:
     * the result's plan description is the plan's, and the inputs it was
     * computed on are the inputs' semantic identities, in order. The inputs
     * are distinct identity-bearing entries (study, recording, recording or
-    * temporal inputs); none when the plan carries its own input, as a
-    * supplied-map plan does. Exactly one per analysis result.
+    * temporal inputs), at least one. Exactly one per analysis result.
     */
   case AnalysisResultOf(result: ArtifactName, plan: ArtifactName, inputs: Vector[ArtifactName])
 
@@ -511,13 +510,13 @@ object ScientificManifest:
         })
         .orElse(relation match
           case ManifestRelation.AnalysisResultOf(result, _, inputs)
-              if inputs.distinct.size != inputs.size =>
+              if inputs.isEmpty || inputs.distinct.size != inputs.size =>
             Some(
               ManifestError.RelationCount(
                 result,
                 "analysis-input",
                 inputs.size,
-                "each distinct"
+                "at least one, each distinct"
               )
             )
           case ManifestRelation.ResultPayloadOf(owner, _) =>
