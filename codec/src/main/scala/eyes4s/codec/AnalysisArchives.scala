@@ -35,7 +35,7 @@ trait LoadedAnalysisPlan:
     * related to this plan with `AnalysisInputs.EmbeddedInPlan` is checked
     * against them.
     */
-  def embeddedInputs: Vector[ContentHash] = Vector.empty
+  def embeddedInputs: Vector[ContentHash]
 
 object LoadedAnalysisPlan:
   /** A plan `codec` decoded: the family's typed plan with what the resolver
@@ -50,7 +50,7 @@ object LoadedAnalysisPlan:
     val schema: DefinitionId                                    = codec.schema
     def description: Vector[(String, Vector[Provenance.Param])] = describe(plan)
     def encode: Either[CodecError, Json]                        = codec.encode(plan)
-    override def embeddedInputs: Vector[ContentHash]            = embedded(plan)
+    def embeddedInputs: Vector[ContentHash]                     = embedded(plan)
 
   /** The typed plan of `loaded`, when `codec` (this very codec) decoded it. */
   def typed[P](codec: VersionedCodec[P])(loaded: LoadedAnalysisPlan): Option[P] =
