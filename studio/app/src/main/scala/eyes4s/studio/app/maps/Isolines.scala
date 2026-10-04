@@ -17,8 +17,8 @@
 package eyes4s.studio.app.maps
 
 /** A point of a map grid, in cells: `x` from 0 at the grid's left edge to
-  * its columns at the right, `y` from 0 at the top edge to its rows at the
-  * bottom. A cell's value stands at its centre, `(i + 0.5, j + 0.5)`.
+  * its columns at the right, `y` from 0 at the map's top edge to its rows
+  * at the bottom, whatever the grid's stored [[RowOrder]]. A cell's value stands at its centre, `(i + 0.5, j + 0.5)`.
   */
 final case class GridPoint(x: Double, y: Double) derives CanEqual
 
@@ -52,10 +52,10 @@ object Isolines:
       i <- 0 until grid.columns - 1
     do
       for
-        a <- grid.at(i, j)         // top left
-        b <- grid.at(i + 1, j)     // top right
-        c <- grid.at(i + 1, j + 1) // bottom right
-        d <- grid.at(i, j + 1)     // bottom left
+        a <- grid.atTop(i, j)         // top left
+        b <- grid.atTop(i + 1, j)     // top right
+        c <- grid.atTop(i + 1, j + 1) // bottom right
+        d <- grid.atTop(i, j + 1)     // bottom left
       do out ++= square(i, j, a, b, c, d, level)
     out.result()
 

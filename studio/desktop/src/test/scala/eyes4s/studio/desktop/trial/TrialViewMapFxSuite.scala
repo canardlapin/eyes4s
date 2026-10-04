@@ -75,6 +75,25 @@ class TrialViewMapFxSuite extends StudioFxSuite:
   private val Rows    = 48
 
   /** Test values, not results: run 7's map of P17 ret_07 at scale 2, mass
+    * rising to the right and downward (so a flip would show), stored bottom
+    * row first.
+    */
+  private lazy val sloped: MapGrid =
+    val topFirst = Vector.tabulate(Columns * Rows)(i =>
+      Some(0.6 * (i % Columns) / 63.0 + 0.4 * (i / Columns) / 47.0)
+    )
+    right(
+      MapGrid.of(
+        MapId(RunId(7), ret07.trial, right(ScaleIndex.of(2))),
+        Columns,
+        Rows,
+        RowOrder.BottomFirst,
+        topFirst.grouped(Columns).toVector.reverse.flatten,
+        Vector(0.5)
+      )
+    )
+
+  /** Test values, not results: run 7's map of P17 ret_07 at scale 2, mass
     * rising to the right across columns, contoured at 0.5.
     */
   private lazy val grid: MapGrid =
@@ -83,12 +102,15 @@ class TrialViewMapFxSuite extends StudioFxSuite:
         MapId(RunId(7), ret07.trial, right(ScaleIndex.of(2))),
         Columns,
         Rows,
+        RowOrder.TopFirst,
         Vector.tabulate(Columns * Rows)(i => Some((i % Columns) / 63.0)),
         Vector(0.5)
       )
     )
 
-  private lazy val style: MapStyle = ColourLimits.spanning(MapPalette.Mass, Vector(grid))
+  private lazy val style: MapStyle       = ColourLimits.spanning(MapPalette.Mass, Vector(grid))
+  private lazy val slopedStyle: MapStyle =
+    ColourLimits.spanning(MapPalette.Mass, Vector(sloped))
 
   private def input(d: TrialDisplay, remembered: RememberedImage = RememberedImage.Absent) =
     TrialSceneInput(
@@ -101,8 +123,8 @@ class TrialViewMapFxSuite extends StudioFxSuite:
       remembered = remembered
     )
 
-  private final class Wired(fx: FxStage):
-    val store = MapRasterStore()
+  private final class Wired(fx: FxStage, made: => MapRasterStore = MapRasterStore()):
+    val store = made
     val view  = runOnFx(TrialView(golden, TrialView.sharedLoader, store))
     fx.show(runOnFx(StackPane(view)))
     def dispose(): Unit =
@@ -166,19 +188,22 @@ class TrialViewMapFxSuite extends StudioFxSuite:
     "the map is the run's grid from the raster cache, drawn at 0.6, values unchanged"
   ) { fx =>
     val w    = Wired(fx)
-    val hash = grid.contentHash
+    val hash = sloped.contentHash
     runOnFx {
       w.view.plotHost.setOutputScaleOverride(Some(1.0))
       w.view.show(input(blank))
-      w.view.showMap(Some(MapRequest(grid, style)))
+      w.view.showMap(Some(MapRequest(sloped, slopedStyle)))
     }
-    val (scene, frame) = drawn(w, 1.0)(_.map.contains(grid.map))
+    val (scene, frame) = drawn(w, 1.0)(_.map.contains(sloped.map))
     // The cache holds the raster of exactly this grid, rendered off the FX thread.
-    val key    = RasterKey(grid.map, style)
+    val key    = RasterKey(sloped.map, slopedStyle)
     val cached = w.store.snapshot
     assert(cached.contains(key))
     val (held, _) = cached.get(key)
-    assertEquals(held.map(_.argb.toVector), Some(MapRaster.render(grid, style).argb.toVector))
+    assertEquals(
+      held.map(_.argb.toVector),
+      Some(MapRaster.render(sloped, slopedStyle).argb.toVector)
+    )
     // The scene's map is that raster at the global opacity, cell for cell.
     val image = scene.plot.scene.grobs
       .flatMap(g => g +: g.children)
@@ -189,12 +214,12 @@ class TrialViewMapFxSuite extends StudioFxSuite:
     val expected = held.get.drawn(MapOpacity.Default)
     assertEquals(image.width * image.height, expected.length)
     // The grid's values are as the backend served them.
-    assertEquals(grid.contentHash, hash)
+    assertEquals(sloped.contentHash, hash)
     // On screen: a cell far from the isoline is its ramp colour at 0.6 over
     // the blank screen.
     val img    = snapshot(fx, SnapshotScale.X1)
     val px     = pixelAt(w, frame, frameLeft + 5.5 * cell, frameTop + 5.5 * cell, 1)
-    val argb   = MapColours.argb(style, grid.at(5, 5))
+    val argb   = MapColours.argb(slopedStyle, sloped.atTop(5, 5))
     val screen = Tokens.palette(PaletteToken.Screen)
     def mix(c: Int, s: Int) = math.round(c * 0.6 + s * 0.4).toInt
     val want                = (
@@ -273,4 +298,79 @@ class TrialViewMapFxSuite extends StudioFxSuite:
     val (off, _) = drawn(w, 1.0)(s => !underlaid(s))
     assertEquals(off.disclosure, Some(TrialText(TrialTextId.RememberedHidden)))
     w.dispose()
+  }
+
+  // --- Another trial ---------------------------------------------------------------
+
+  private lazy val enc03: TrialDisplay = GoldenTrials.display("P17", "enc_03")
+
+  private def settledOn(w: Wired, d: TrialDisplay): TrialScene =
+    drawn(w, 1.0)(s =>
+      !s.frameArt.isInstanceOf[FrameArt.Loading] && s.marks.isEmpty &&
+        runOnFx(w.view.input).exists(_.display == d)
+    )._1
+
+  fxStage.test("showing another trial drops the map: the new trial is drawn, not refused") {
+    fx =>
+      val w = Wired(fx)
+      runOnFx {
+        w.view.plotHost.setOutputScaleOverride(Some(1.0))
+        w.view.show(input(blank))
+        w.view.showMap(Some(MapRequest(grid, style)))
+      }
+      drawn(w, 1.0)(_.map.contains(grid.map))
+      runOnFx(w.view.show(input(enc03)))
+      val b = settledOn(w, enc03)
+      assertEquals(b.map, None)
+      assert(runOnFx(w.view.status.get).isInstanceOf[TrialViewStatus.Shown])
+      assertEquals(runOnFx(w.view.mapRefused), None)
+      w.dispose()
+  }
+
+  fxStage.test("a map arriving after another trial is shown is not installed") { fx =>
+    // Renders wait until released, so the raster arrives late.
+    val held = java.util.concurrent.LinkedBlockingQueue[Runnable]()
+    val w    = Wired(
+      fx,
+      MapRasterStore.on(
+        RasterBudget.Default,
+        r => held.put(r),
+        r => javafx.application.Platform.runLater(r)
+      )
+    )
+    runOnFx {
+      w.view.plotHost.setOutputScaleOverride(Some(1.0))
+      w.view.show(input(blank))
+      w.view.showMap(Some(MapRequest(grid, style)))
+      w.view.show(input(enc03))
+    }
+    settledOn(w, enc03)
+    // Now ret_07's raster is rendered; its delivery runs on the FX thread.
+    assertEquals(held.size, 1)
+    while !held.isEmpty do held.take().run()
+    runOnFx(())
+    runOnFx(())
+    val b = settledOn(w, enc03)
+    assertEquals(b.map, None)
+    assert(runOnFx(w.view.status.get).isInstanceOf[TrialViewStatus.Shown])
+    w.dispose()
+  }
+
+  fxStage.test("a refused map is observable and cleared by dispose") { fx =>
+    val w = Wired(fx)
+    w.store.close()
+    var seen = Vector.empty[Option[eyes4s.studio.desktop.maps.RasterRefusal]]
+    runOnFx {
+      w.view.mapRefusedProperty.addListener((_, _, now) => seen = seen :+ now)
+      w.view.show(input(blank))
+      w.view.showMap(Some(MapRequest(grid, style)))
+    }
+    assertEquals(
+      runOnFx(w.view.mapRefused),
+      Some(eyes4s.studio.desktop.maps.RasterRefusal.Closed(RasterKey(grid.map, style)))
+    )
+    assertEquals(seen.lastOption.flatten.map(_.productPrefix), Some("Closed"))
+    runOnFx(w.view.dispose())
+    assertEquals(runOnFx(w.view.mapRefused), None)
+    assertEquals(seen.lastOption, Some(None))
   }

@@ -52,6 +52,7 @@ class MapRasterStoreSuite extends munit.FunSuite:
         map,
         Columns,
         Rows,
+        RowOrder.TopFirst,
         Vector.tabulate(Columns * Rows)(i => Some(scale * i / 3072.0)),
         Vector.empty
       )

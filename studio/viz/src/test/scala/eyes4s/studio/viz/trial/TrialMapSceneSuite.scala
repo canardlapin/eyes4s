@@ -41,14 +41,25 @@ class TrialMapSceneSuite extends munit.FunSuite:
 
   private def mapId(trial: TrialKey = ret07) = MapId(RunId(7), trial, right(ScaleIndex.of(2)))
 
-  // Test values, not results: mass rising to the right, missing at one cell.
+  // Test values, not results: an off-centre bump (near column 20, row 12
+  // from the top), missing at one cell.
   private def cells(missing: Int = 100): Vector[Option[Double]] =
-    Vector.tabulate(Columns * Rows)(i =>
-      if i == missing then None else Some((i % Columns) / 63.0)
-    )
+    Vector.tabulate(Columns * Rows) { i =>
+      val (x, y) = (i % Columns, i / Columns)
+      if i == missing then None
+      else
+        Some(math.exp(-(math.pow((x - 20.0) / 8.0, 2) + math.pow((y - 12.0) / 6.0, 2)) / 2.0))
+    }
 
-  private def grid(map: MapId = mapId(), levels: Vector[Double] = Vector(0.5)): MapGrid =
-    right(MapGrid.of(map, Columns, Rows, cells(), levels))
+  private def grid(
+      map: MapId = mapId(),
+      levels: Vector[Double] = Vector(0.5),
+      order: RowOrder = RowOrder.TopFirst
+  ): MapGrid =
+    val stored = order match
+      case RowOrder.TopFirst    => cells()
+      case RowOrder.BottomFirst => cells().grouped(Columns).toVector.reverse.flatten
+    right(MapGrid.of(map, Columns, Rows, order, stored, levels))
 
   private val style = ColourLimits.spanning(MapPalette.Mass, Vector(grid()))
 
@@ -90,13 +101,13 @@ class TrialMapSceneSuite extends munit.FunSuite:
       case Some(i: Grob.Image) => i.image
       case other               => fail(s"no map image: $other")
     assertEquals((image.width, image.height), (Columns, Rows))
-    val drawn = raster.drawn(MapOpacity.Default)
     for
       y <- 0 until Rows
       x <- 0 until Columns
     do
       val p = image.pixelUnsafe(x, y)
-      val d = drawn(y * Columns + x)
+      // The cell's own value, counted from the top, coloured and drawn at 0.6.
+      val d = MapOpacity.Default.over(MapColours.argb(style, g.atTop(x, y)))
       assertEquals(
         (p.red, p.green, p.blue, p.alpha),
         ((d >> 16) & 0xff, (d >> 8) & 0xff, d & 0xff, (d >>> 24) & 0xff),
@@ -108,6 +119,24 @@ class TrialMapSceneSuite extends munit.FunSuite:
     // Drawing changed no stored value.
     assertEquals(g.contentHash, hash)
     assertEquals(raster.argb.toVector, MapRaster.render(g, style).argb.toVector)
+  }
+
+  test("a bottom-first grid draws the same picture: map and isolines") {
+    def scene(order: RowOrder) =
+      val g = grid(order = order)
+      right(TrialScene(withMap(Some(TrialMap(g, MapRaster.render(g, style))))))
+    def image(s: TrialScene) = named(s, TrialScene.MapName) match
+      case Some(i: Grob.Image) => i.image
+      case other               => fail(s"$other")
+    def lines(s: TrialScene) = named(s, TrialScene.IsolinesName) match
+      case Some(l: Grob.Segments) => l.segments
+      case other                  => fail(s"$other")
+    val (top, bottom) = (scene(RowOrder.TopFirst), scene(RowOrder.BottomFirst))
+    assertEquals(image(bottom), image(top))
+    assertEquals(lines(bottom), lines(top))
+    // The bump is drawn in the top half of the frame.
+    assert(image(top).pixelUnsafe(20, 12).alpha > 0)
+    assertNotEquals(image(top).pixelUnsafe(20, 12), image(top).pixelUnsafe(20, Rows - 1 - 12))
   }
 
   test("a raster of another map, or another trial's map, is refused") {
@@ -207,36 +236,39 @@ class TrialMapSceneSuite extends munit.FunSuite:
       top._3 * alphaTop + under._3 * (1 - alphaTop)
     )
 
-  test("isolines are legible over sky, sand and the blank screen, map included") {
+  test("isolines are legible over sky, sand and the blank screen, over every map colour") {
     // Sky and sand stand in for photographs; the blank screen is the token.
-    val screenTok   = Tokens.palette(PaletteToken.Screen)
     val backgrounds = Vector(
       "sky"          -> (135.0, 190.0, 235.0),
       "sand"         -> (225.0, 198.0, 153.0),
-      "blank screen" -> rgb(screenTok)
+      "blank screen" -> rgb(Tokens.palette(PaletteToken.Screen))
     )
     val ink    = Tokens.palette(PaletteToken.IsolineInk)
     val casing = Tokens.palette(PaletteToken.IsolineCase)
-    // The map at an isoline is drawn at its level's colour, at the global opacity.
-    val levelColour = MapColours.argb(style, Some(0.5))
-    val mapColour   =
-      (
-        ((levelColour >> 16) & 0xff).toDouble,
-        ((levelColour >> 8) & 0xff).toDouble,
-        (levelColour & 0xff).toDouble
-      )
-    backgrounds.foreach { (where, bg) =>
-      Vector(false, true).foreach { mapped =>
-        val ground = if mapped then over(mapColour, MapOpacity.Default.value, bg) else bg
-        val cased  = over(rgb(casing), casing.alphaPercent / 100.0, ground)
-        val line   = over(rgb(ink), ink.alphaPercent / 100.0, cased)
-        val c      = contrast(line, cased)
-        assert(c >= 4.5, f"$where (map $mapped): ink on its casing $c%.2f")
-        // Without a map the cased line also stands off the bare ground at
-        // 3:1 (the ink on a light ground, the casing on a dark one).
-        if !mapped then
-          val off = math.max(contrast(line, ground), contrast(cased, ground))
-          assert(off >= 3.0, f"$where: cased line on ground $off%.2f")
+    // Every mass colour from the ramp's lightest to its darkest, at 0.6, and no map.
+    val unit = right(ColourLimits.sequential(0.0, 1.0).flatMap(MapStyle.of(MapPalette.Mass, _)))
+    val grounds = for
+      (where, bg) <- backgrounds
+      t           <- (0 to 100).map(k => Some(k / 100.0)) :+ None
+    yield
+      val ground = t.fold(bg) { v =>
+        val c = MapColours.argb(unit, Some(v))
+        over(
+          (((c >> 16) & 0xff).toDouble, ((c >> 8) & 0xff).toDouble, (c & 0xff).toDouble),
+          MapOpacity.Default.value,
+          bg
+        )
       }
-    }
+      (s"$where, ${t.fold("no map")(v => f"map at $v%.2f")}", ground)
+    val worst = grounds
+      .map { (where, ground) =>
+        val cased = over(rgb(casing), casing.alphaPercent / 100.0, ground)
+        val line  = over(rgb(ink), ink.alphaPercent / 100.0, cased)
+        assert(contrast(line, cased) >= 4.5, s"$where: ink on its casing")
+        // The cased line stands off the ground around it: the ink does on a
+        // light ground, the white casing on a dark one.
+        (math.max(contrast(line, ground), contrast(cased, ground)), where)
+      }
+      .minBy(_._1)
+    assert(worst._1 >= 3.0, f"worst: ${worst._2} at ${worst._1}%.2f")
   }

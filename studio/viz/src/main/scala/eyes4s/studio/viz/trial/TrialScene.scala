@@ -363,8 +363,8 @@ object TrialScene:
   val IsolinesName: String = "trial-isolines"
   val RememberName: String = "trial-remembered"
 
-  /** A map isoline: its ink, and the halo casing under it (DESIGN_SPEC
-    * section 6: 2 units of ink over 4 of casing).
+  /** A map isoline: its ink, and the halo casing under it, 2 units of ink
+    * over 4 of casing (bead S4.3b, bd-01M3DPFM4ZG9GV0RTYWWA1M2P9).
     */
   val IsolinePx: Double       = 2.0
   val IsolineCasingPx: Double = 4.0

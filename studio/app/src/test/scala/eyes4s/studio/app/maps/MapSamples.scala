@@ -33,9 +33,14 @@ object MapSamples:
       ScaleIndex.of(scale).fold(e => throw new AssertionError(e.message), identity)
     )
 
-  def grid(map: MapId, cells: Vector[Option[Double]], levels: Vector[Double] = Vector.empty) =
+  def grid(
+      map: MapId,
+      cells: Vector[Option[Double]],
+      levels: Vector[Double] = Vector.empty,
+      order: RowOrder = RowOrder.TopFirst
+  ) =
     MapGrid
-      .of(map, Columns, Rows, cells, levels)
+      .of(map, Columns, Rows, order, cells, levels)
       .fold(e => throw new AssertionError(e.message), identity)
 
   def right[E, A](e: Either[E, A]): A =

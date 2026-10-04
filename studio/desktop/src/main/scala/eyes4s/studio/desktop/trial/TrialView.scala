@@ -102,7 +102,8 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
   private var disposed: Boolean                      = false
   private var mapRequest: Option[MapRequest]         = None
   private var mapLayer: Option[TrialMap]             = None
-  private var mapRefusal: Option[RasterRefusal]      = None
+  private val refusalWrapper                         =
+    ReadOnlyObjectWrapper[Option[RasterRefusal]](this, "mapRefused", None)
 
   /** What the view shows. */
   def status: ReadOnlyObjectProperty[TrialViewStatus] = statusWrapper.getReadOnlyProperty
@@ -117,6 +118,12 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
   def show(input: TrialSceneInput): Unit =
     onFxThread("show")
     if !disposed then
+      // A map belongs to its trial: another trial starts without one, and a
+      // raster still on its way for the old trial is not installed.
+      if !current.exists(_.display.trial == input.display.trial) then
+        mapRequest = None
+        mapLayer = None
+        refusalWrapper.set(None)
       current = Some(input)
       setStyle(
         s"-fx-background-color: ${Tokens.staged(input.stage, StageToken.Stage).javaFxCss};"
@@ -138,28 +145,37 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
     if !disposed && map != mapRequest then
       mapRequest = map
       mapLayer = None
-      mapRefusal = None
+      refusalWrapper.set(None)
       map match
         case None    => render()
         case Some(m) =>
           maps.request(m.grid, m.style)(answer => mapArrived(m, answer)) match
-            case Left(refusal) => mapRefusal = Some(refusal)
+            case Left(refusal) => refusalWrapper.set(Some(refusal))
             case Right(())     => ()
           render()
 
   /** Why the map asked for could not be drawn, if it could not. */
-  def mapRefused: Option[RasterRefusal] = mapRefusal
+  def mapRefused: Option[RasterRefusal] = refusalWrapper.get
+
+  /** Why the map asked for could not be drawn, observable: set when the
+    * store refuses the request at once or when its delivery is a refusal,
+    * cleared by a new map, another trial and dispose.
+    */
+  def mapRefusedProperty: ReadOnlyObjectProperty[Option[RasterRefusal]] =
+    refusalWrapper.getReadOnlyProperty
 
   private def mapArrived(
       m: MapRequest,
       answer: Either[RasterRefusal, eyes4s.studio.app.maps.MapRaster]
   ): Unit =
-    if !disposed && mapRequest.contains(m) then
+    if !disposed && mapRequest.contains(m) &&
+      current.exists(_.display.trial == m.grid.map.trial)
+    then
       answer match
         case Right(raster) =>
           mapLayer = Some(TrialMap(m.grid, raster, m.opacity))
           render()
-        case Left(refusal) => mapRefusal = Some(refusal)
+        case Left(refusal) => refusalWrapper.set(Some(refusal))
 
   /** Removes the trial. */
   def clear(): Unit =
@@ -179,6 +195,7 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
       rasters = Map.empty
       mapRequest = None
       mapLayer = None
+      refusalWrapper.set(None)
       host.dispose()
       getChildren.clear()
       statusWrapper.set(TrialViewStatus.Disposed)
