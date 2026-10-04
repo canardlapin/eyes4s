@@ -104,6 +104,14 @@ final case class TableTwinState private (
     if next.isEmpty || next == cursor then unchanged
     else TableTwinStep(copy(cursor = next), Vector.empty, true)
 
+  /** Carries the plot's focused mark to the table: the cursor stays when it
+    * is already on one of the mark's rows `refs`, and otherwise goes to the
+    * first of them.
+    */
+  def carry(refs: Vector[StudioRef], source: PlotSource): TableTwinStep =
+    if cursor.exists(refs.contains) && cursor.flatMap(source.rowOf).isDefined then unchanged
+    else moveCursor(refs.headOption, source)
+
   /** The table gained or lost keyboard focus. */
   def focusChanged(now: Boolean): TableTwinStep =
     TableTwinStep(copy(focused = now), Vector.empty, now != focused)

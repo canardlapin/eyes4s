@@ -1,0 +1,1 @@
+{"actor":"codex-s45b-salvage","entity":"bd-01M3DPFMR3VVRQBN5T4V619QBT","kind":"reserve_open","mode":"exclusive","op":"20261003T030058.528730Z-p93923-c0000-r0da4-h874c67","paths":["tools/api-audit/inventory.json","tools/api-audit/evidence.json"],"reservation_id":"rv-01M3ZVAB10SGT7C6BTG1QGW9KH","ts":"2026-10-03T03:00:58.528730Z","ttl_s":14400,"v":2}

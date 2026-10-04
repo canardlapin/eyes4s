@@ -47,13 +47,13 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters.*
 
-/** The common plot host and its TableTwin (S4.5a), on real JavaFX with
-  * synthetic events: the plot draws each mark at its table row's values,
-  * the table writes every row of the same source, selecting a row selects
-  * its mark and selecting a mark its row through a real app loop, each is
-  * one keyboard focus stop whose Enter and Escape select and clear, a
-  * refused plot still lists its rows, and 200 attach/dispose cycles leak
-  * nothing.
+/** The common plot host and its TableTwin (S4.5a, S4.5x), on real JavaFX
+  * with synthetic events: the plot draws each mark at its table row's
+  * values, the table writes every row of the same source, selecting a row
+  * selects its mark and selecting a mark its rows (an aggregate mark's too)
+  * through a real app loop, each is one keyboard focus stop whose Enter
+  * and Escape select and clear, a refused plot still lists its rows, and
+  * 200 attach/dispose cycles leak nothing.
   */
 class PlotKitFxSuite extends StudioFxSuite:
 
@@ -128,7 +128,7 @@ class PlotKitFxSuite extends StudioFxSuite:
   /** A plot host wired to a real app loop: intents go through
     * `AppModel.update`, and every model's selection is projected back.
     */
-  private final class Wired(fx: FxStage, theme: Theme = Theme.Light):
+  private final class Wired(fx: FxStage, theme: Theme = Theme.Light, builder: DotPlot = dots):
     val emitted      = ArrayBuffer.empty[Intent]
     private val none = new EffectPerformer:
       def perform(effect: AppEffect, dispatch: Intent => Unit): Unit = ()
@@ -136,7 +136,7 @@ class PlotKitFxSuite extends StudioFxSuite:
     val twin    = runOnFx(
       right(
         PlotTwin.attach(
-          dots,
+          builder,
           plotView,
           tableView,
           runtime.model.selection,
@@ -390,6 +390,83 @@ class PlotKitFxSuite extends StudioFxSuite:
     assertEquals(rowSelected(w), source.rows.map(_.ref == target.ref))
     assertEquals(runOnFx(w.twin.input.state.selectionRings(t)).map(_.ref), Vector(target.ref))
     dispose(w)
+  }
+
+  /** The fixture with P18 at P17's values: merged, the two are one mark. */
+  private lazy val twins: PlotSource = right(
+    PlotSource(
+      source.caption,
+      source.columns,
+      source.rows :+ PlotRow(
+        StudioRef.Participant("P18"),
+        PlotValue.Text("P18") +: source.rows.last.values.tail
+      )
+    )
+  )
+
+  fxStage.test("a row rings the aggregate mark that draws it; the mark selects all its rows") {
+    fx =>
+      val merged = DotPlot(
+        m.id,
+        d.id,
+        "Participants · D by M",
+        DotPlot.MissingY.Placeholder,
+        DotPlot.Coincident.Merge
+      )
+      val w               = Wired(fx, builder = merged)
+      val t               = showAndDraw(w, 1.0, shown = twins)
+      val (p17, p18, p09) =
+        (
+          StudioRef.Participant("P17"),
+          StudioRef.Participant("P18"),
+          StudioRef.Participant("P09")
+        )
+      val both = t.target(p18).getOrElse(fail("P18 has no mark"))
+      assertEquals(both.refs, Vector(p17, p18))
+      assertEquals(t.target(p17), Some(both))
+      // P09 has no D: drawn as a positionless mark, not set aside.
+      assertEquals(runOnFx(w.twin.plot).map(_.unplotted), Some(Vector.empty))
+      assert(t.target(p09).isDefined, "P09 has no placeholder")
+      // Row -> aggregate mark: the row alone is selected, its mark ringed.
+      val row18 = twins.rowOf(p18).get
+      clickRow(fx, w, row18)
+      assertEquals(w.selected, Vector(p18))
+      assertEquals(
+        runOnFx(w.twin.input.state.selectionRings(t)).map(r => (r.kind, r.ref, r.centre)),
+        Vector((RingKind.PartlySelected, p17, both.anchor))
+      )
+      assertEquals(rowSelected(w), twins.rows.map(_.ref == p18))
+      // Table -> plot -> table by keyboard: the plot focuses the merged mark,
+      // and the table's cursor stays on P18, one of its rows.
+      runOnFx(w.twin.focusArrived(PlotTwinView.Plot, byKeyboard = true))
+      assertEquals(runOnFx(w.twin.input.state.focus), Some(p17))
+      assertEquals(
+        runOnFx(w.host.getAccessibleText),
+        PlotText(
+          PlotTextId.PartlySelected,
+          runOnFx(w.twin.plot).get.readout(both.mark).get,
+          "1",
+          "2"
+        )
+      )
+      runOnFx(w.twin.focusArrived(PlotTwinView.Table, byKeyboard = true))
+      assertEquals(runOnFx(w.table.state.cursor), Some(p18))
+      // Aggregate mark -> rows: a click on it selects both rows.
+      clickMark(w, t, both)
+      assertEquals(w.selected, Vector(p17, p18))
+      assertEquals(rowSelected(w), twins.rows.map(r => r.ref == p17 || r.ref == p18))
+      assertEquals(
+        runOnFx(w.twin.input.state.selectionRings(t)).map(r => (r.kind, r.ref)),
+        Vector((RingKind.Selected, p17))
+      )
+      // A modifier click on the wholly selected mark clears both.
+      clickMark(w, t, both, toggle = true)
+      assertEquals(w.selected, Vector.empty)
+      // The positionless mark is selectable like any other.
+      clickMark(w, t, t.target(p09).get)
+      assertEquals(w.selected, Vector(p09))
+      assertEquals(rowSelected(w), twins.rows.map(_.ref == p09))
+      dispose(w)
   }
 
   // --- Keyboard -----------------------------------------------------------------------

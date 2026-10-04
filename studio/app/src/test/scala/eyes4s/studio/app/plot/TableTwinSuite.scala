@@ -147,6 +147,20 @@ class TableTwinSuite extends munit.FunSuite:
     )
   }
 
+  test("carrying a mark keeps a cursor already on one of its rows, else goes to the first") {
+    val mark   = Vector(ref(1), ref(2))
+    val onRow2 = initial.moveCursor(Some(ref(2)), source).state
+    val kept   = onRow2.carry(mark, source)
+    assertEquals(
+      (kept.state.cursor, kept.changed, kept.intents),
+      (Some(ref(2)), false, Vector.empty)
+    )
+    assertEquals(initial.carry(mark, source).state.cursor, Some(ref(1)))
+    val elsewhere = initial.moveCursor(Some(ref(3)), source).state.carry(mark, source)
+    assertEquals((elsewhere.state.cursor, elsewhere.changed), (Some(ref(1)), true))
+    assertEquals(onRow2.carry(Vector.empty, source).state.cursor, Some(ref(2)))
+  }
+
   test("moveCursor and retarget keep the cursor on listed rows only") {
     val carried = initial.moveCursor(Some(ref(2)), source)
     assertEquals((carried.state.cursor, carried.intents), (Some(ref(2)), Vector.empty))

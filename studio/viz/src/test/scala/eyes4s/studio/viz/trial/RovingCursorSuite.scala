@@ -374,7 +374,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
         Intent.Select(
           SelectionInput(
             InputStamp(ContextRevision(0), view, 1L, InputCause.Keyboard),
-            SelectionMode.Toggle,
+            SelectionMode.Add,
             Vector(first)
           )
         ),
@@ -414,7 +414,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
     }
   }
 
-  test("a click picks, focuses and selects; a modifier click toggles; hover is local") {
+  test("a click picks, focuses and selects; a modifier click adds; hover is local") {
     val t       = targets()
     val target  = t.targets(3)
     val initial = TrialInputState.initial(view, SelectionState.empty)
@@ -428,7 +428,8 @@ class RovingCursorSuite extends ScalaCheckSuite:
       right(moved.state.handle(TrialInputEvent.PointerClicked(target.anchor, true), t, 1.0))
     assertEquals(clicked.state.focus, Some(target.ref))
     clicked.intents match
-      case Vector(Intent.Select(SelectionInput(stamp, SelectionMode.Toggle, Vector(ref)))) =>
+      // Nothing is projected yet, so the modifier click adds the mark.
+      case Vector(Intent.Select(SelectionInput(stamp, SelectionMode.Add, Vector(ref)))) =>
         assertEquals(ref, target.ref)
         assertEquals(stamp.cause, InputCause.Pointer)
       case other => fail(s"unexpected $other")

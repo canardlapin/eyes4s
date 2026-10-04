@@ -444,11 +444,15 @@ class InputAdapterFxSuite extends StudioFxSuite:
     val w      = Wired(viewIn(fx))
     val (_, t) = showAndDraw(w, input(ret07, ret07Fix), 2.0)
     val target = t.targets(4)
-    val before = runOnFx(w.host.profile)
-    selectByOther(w, target.ref, 0L)
+    // Measure one projection in one FX turn: an OS focus event may redraw
+    // the overlay between separate runOnFx calls, independently of selection.
+    val (before, after) = runOnFx {
+      val before = w.host.profile
+      selectByOther(w, target.ref, 0L)
+      (before, w.host.profile)
+    }
     assertEquals(w.selected, Vector(target.ref))
     assertEquals(w.emitted.toVector, Vector.empty, "the view echoed a projected selection")
-    val after = runOnFx(w.host.profile)
     assertEquals(
       after,
       before.copy(overlayDraws = before.overlayDraws + 1, underDraws = before.underDraws + 1)

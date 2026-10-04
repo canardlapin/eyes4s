@@ -124,6 +124,11 @@ final class TableTwinView private (initial: TableTwinState, dispatch: Intent => 
     onFxThread("moveCursor")
     shown.foreach(s => commit(current.moveCursor(ref, s)))
 
+  /** Carries the plot's focused mark, whose rows are `refs`, to the cursor. */
+  def carry(refs: Vector[StudioRef]): Unit =
+    onFxThread("carry")
+    shown.foreach(s => commit(current.carry(refs, s)))
+
   def isDisposed: Boolean = disposed
 
   /** Removes the table's handlers and rows. Idempotent. */

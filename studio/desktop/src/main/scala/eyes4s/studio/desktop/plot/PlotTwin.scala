@@ -152,15 +152,22 @@ final class PlotTwin private (
   /** Keyboard focus arrived at `view`. When keyboard traversal brought it
     * (`byKeyboard`), the other view's cursor comes along: the plot focuses
     * the table's cursor row, the table puts its cursor on the plot's focused
-    * mark. Focus from a pointer press or a program carries nothing, so a
-    * click lands where it was aimed and the table does not scroll away.
+    * mark (or keeps it where it is when it is on one of that mark's rows).
+    * Focus from a pointer press or a program carries nothing, so a click
+    * lands where it was aimed and the table does not scroll away.
     */
   def focusArrived(view: PlotTwinView, byKeyboard: Boolean): Unit =
     onFxThread("focusArrived")
     if !disposed && byKeyboard then
       view match
         case PlotTwinView.Plot  => input.moveFocus(table.state.cursor)
-        case PlotTwinView.Table => table.moveCursor(input.state.focus)
+        case PlotTwinView.Table =>
+          val focus = input.state.focus
+          table.carry(
+            focus
+              .flatMap(f => input.targets.flatMap(_.target(f)))
+              .fold(focus.toVector)(_.refs)
+          )
 
   /** What the host shows. */
   def status: ReadOnlyObjectProperty[PlotTwinStatus] = statusWrapper.getReadOnlyProperty

@@ -19,7 +19,7 @@ package eyes4s.studio.viz.trial
 import eyes4s.studio.app.text.{TrialText, TrialTextId}
 import eyes4s.studio.core.backend.TrialKey
 import eyes4s.studio.core.selection.{SelectionState, StudioRef, ViewId}
-import eyes4s.studio.viz.plot.{MarkInputState, MarkInputStep}
+import eyes4s.studio.viz.plot.{MarkInputState, MarkInputStep, SelectionShare}
 
 // A trial view's input (ticket S4.2) is the input of any view with marks
 // (eyes4s.studio.viz.plot.MarkInputState, S4.5a) over fixation refs; these
@@ -50,4 +50,8 @@ extension (state: TrialInputState)
     * how to use the view when no mark is focused.
     */
   def accessibleText(trial: TrialKey, targets: TrialTargets): String =
-    state.spoken(targets, TrialText.mark, TrialText(TrialTextId.PlotKeys, trial.label))
+    state.spoken(
+      targets,
+      (ref, share) => TrialText.mark(ref, share != SelectionShare.Unselected),
+      TrialText(TrialTextId.PlotKeys, trial.label)
+    )
