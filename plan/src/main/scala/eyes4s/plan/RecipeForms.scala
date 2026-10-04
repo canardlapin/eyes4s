@@ -65,6 +65,7 @@ object StructuredField:
 
 /** Parses every field of a form on its own and accumulates the refusals. */
 private[plan] object FormParse:
+  /** Every refused field of a form, at least one. */
   type Refusals = NonEmptyVector[FieldError[RecipeParameterError]]
 
   def errors(results: Either[FieldError[RecipeParameterError], ?]*): Option[Refusals] =
@@ -75,6 +76,7 @@ private[plan] object FormParse:
   * throw.
   */
 private[plan] object RawParts:
+  /** A typed part, or why it could not be read. */
   type R[A] = Either[RecipeParameterError, A]
 
   def missing(field: String, part: String): RecipeParameterError =

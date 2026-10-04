@@ -146,10 +146,20 @@ enum AdmissionReason derives CanEqual:
   */
 sealed trait Disposition[K] derives CanEqual
 object Disposition:
+  /** The record supplied the fixation of trial `key` with this source ordinal. Ledger
+    * validation requires it non-negative and unique within the trial
+    * (`AdmissionError.NegativeOrdinal`, `DuplicateOrdinal`); construction does not.
+    */
   final case class Admitted[K](key: K, ordinal: Int) extends Disposition[K]
+
+  /** The record's raw fields, its key when one could be read, and why it was rejected. */
   final case class Rejected[K](raw: Vector[String], key: Option[K], reason: AdmissionReason)
       extends Disposition[K]
 
+/** One source record, by its logical record number, and what admission did with it. Ledger
+  * validation requires positive record numbers (`AdmissionError.NonPositiveRecord`) in strictly
+  * increasing order (`AdmissionError.RecordOrder`); construction does not.
+  */
 final case class SourceRecord[K](record: Int, disposition: Disposition[K]) derives CanEqual:
   def isAdmitted: Boolean = disposition match
     case Disposition.Admitted(_, _)    => true
@@ -168,6 +178,10 @@ enum AdmissionOutcome derives CanEqual:
   case Refused
   case ReviewedExclusions
 
+/** Why an admission ledger is inconsistent with itself or with the input it claims to
+  * describe. Every case names the record numbers, trial indices, ordinals or policy involved,
+  * so an application can point at the offending row rather than a summary.
+  */
 enum AdmissionError derives CanEqual:
   case NonPositiveRecord(record: Int)
   case RecordOrder(index: Int, previous: Int, record: Int)

@@ -344,6 +344,7 @@ private[plan] final class StudyEngine[K, U <: Unit2D, S, D](
     ) => Either[ContrastError[K], ContrastCursor[K, S, D]],
     val finish: Vector[StudyScaleResult[K, U, S, D]] => StudyResult[K, U, S, D]
 ):
+  /** A typed directed pair analysis whose failures are study failures. */
   type Source = DirectedPairwiseAnalysis[K, K, StudyFailure[K], S]
 
 /** One scale's comparison instance and specification, created once per scale. */
@@ -360,24 +361,37 @@ private[plan] final class StudyScaleWork[K, U <: Unit2D, S, D](
   */
 private[plan] sealed trait StudyPhase[K, S, D]
 private[plan] object StudyPhase:
+  /** A typed directed pair analysis whose failures are study failures. */
   type Source[K, S] = DirectedPairwiseAnalysis[K, K, StudyFailure[K], S]
+
+  /** Estimating the density of input trial `trial`, by index in input order. */
   final case class Estimate[K, S, D](trial: Int) extends StudyPhase[K, S, D]
+
+  /** Evaluating the matched pair schedule. */
   final case class CompareMatched[K, S, D](
       cursor: EvaluationCursor[K, K, StudyFailure[K], S]
   ) extends StudyPhase[K, S, D]
+
+  /** Reducing the evaluated matched pairs by focal key. */
   final case class ReduceMatched[K, S, D](source: Source[K, S], cursor: ReductionCursor[K, S])
       extends StudyPhase[K, S, D]
+
+  /** Evaluating the control schedule, carrying the matched analysis forward. */
   final case class CompareControl[K, S, D](
       matchedSource: Source[K, S],
       matched: Analysis[K, S],
       cursor: EvaluationCursor[K, K, StudyFailure[K], S]
   ) extends StudyPhase[K, S, D]
+
+  /** Reducing the evaluated control pairs by focal key. */
   final case class ReduceControl[K, S, D](
       matchedSource: Source[K, S],
       matched: Analysis[K, S],
       controlSource: Source[K, S],
       cursor: ReductionCursor[K, S]
   ) extends StudyPhase[K, S, D]
+
+  /** Forming the keyed matched-minus-control contrast from both analyses. */
   final case class Contrasting[K, S, D](
       analyses: StudyAnalyses[K, S],
       cursor: ContrastCursor[K, S, D]
@@ -569,6 +583,9 @@ final class StudyCursor[K, U <: Unit2D, S, D] private[plan] (
   ): StudyCursor[K, U, S, D] =
     new StudyCursor(engine, scale, current, masses, phase, completed)
 
+/** Drives a study cursor to a completed result in bounded steps. Each step's quanta bound its
+  * work, so a long study can be interleaved with other work or resumed from an immutable cursor.
+  */
 object StudyWork:
 
   /** Drive a study cursor to completion with fixed quanta. */

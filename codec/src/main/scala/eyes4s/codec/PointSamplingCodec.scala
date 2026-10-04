@@ -33,6 +33,12 @@ object PointSamplingArchive:
   def run[K, U <: Unit2D](plan: PointSamplingPlan[K, U]): PointSamplingArchive[K, U] =
     new PointSamplingArchive(plan, plan.run)
 
+/** Versioned codecs for a point-sampling plan and its archive. The plan form records its
+  * input and plan hashes, and decoding rebuilds the plan and refuses a mismatch. The
+  * archive form decodes the plan, reruns it and refuses (`CodecError.Derived`) a saved
+  * result that differs from the replay, so a stored result is never trusted on its own.
+  * Query and sample times are integer microseconds.
+  */
 final class PointSamplingCodec[K, U <: Unit2D: UnitLabel](
     val schema: DefinitionId,
     val resultSchema: DefinitionId,

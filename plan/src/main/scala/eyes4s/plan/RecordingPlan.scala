@@ -22,6 +22,9 @@ import eyes4s.detect.*
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.{Px, Deg}
 
+/** I-VT detector parameters: a velocity threshold in degrees per second and a
+  * minimum event duration, each already checked by its own type.
+  */
 final case class IvtParameters(threshold: IvtThreshold, minimumDuration: MinimumEventDuration)
 
 /** Per-axis angular extent, not a radial dispersion threshold. */
@@ -75,6 +78,10 @@ object RecordingMethod:
     Some(RecordingMethodDescriptor.ivt(id))
   )
 
+/** A rectangular area of interest declared in display pixels; a run warps it to
+  * an angular AOI. `RecordingArea.of` requires a non-blank id and label, else
+  * `RecordingPlanError.InvalidArea`.
+  */
 final class RecordingArea private (val id: String, val label: String, val bounds: Bounds[Px])
 object RecordingArea:
   /** The attributes a run records on the area's angular AOI: the native
@@ -483,6 +490,11 @@ object RecordingPlan:
         )
       )
 
+/** Why a recording plan could not be built or run, naming the stage, source,
+  * clocks, area or method concerned. Lower-level errors are kept whole; a
+  * preprocessing step that changes the sample count is refused as `Cardinality`
+  * rather than accepted silently.
+  */
 enum RecordingPlanError derives CanEqual:
   case Input(underlying: PlanError)
   case Geometry(underlying: GeometryError)

@@ -141,8 +141,13 @@ final class TemporalStudyCodec[K, U <: Unit2D: UnitLabel, P, S, D](
   * abstract but typed.
   */
 trait LoadedTemporal[K, U <: Unit2D]:
+  /** The base study's method parameter type. */
   type Parameters
+
+  /** The pair score type the base study's method produces. */
   type Score
+
+  /** The type of a difference between two scores of that method. */
   type Difference
   def plan: TemporalStudyPlan[K, U, Parameters, Score, Difference]
   def encode: Either[CodecError, Json]
@@ -154,6 +159,9 @@ trait LoadedTemporal[K, U <: Unit2D]:
   ): Either[TemporalStudyError, TemporalStudyResult[K, U, Parameters, Score, Difference]] =
     plan.run(input)
 
+/** One temporal plan codec as a registry sees it, keyed by its base study's method.
+  * Sealed: only a temporal plan codec's `registration` builds one.
+  */
 sealed trait TemporalRegistration[K, U <: Unit2D]:
   def id: DefinitionId
   def schema: DefinitionId
