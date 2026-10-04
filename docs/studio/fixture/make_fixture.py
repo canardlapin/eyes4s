@@ -327,7 +327,14 @@ S["runs"] = {"run 5": "analysis rev 3 · data r2 · stale", "run 6": "rev 4 · d
     "run 7": "rev 4 · data r3 · current", "run 8": "rev 5 · data r3 · running (moment t3)"}
 S["pair_rows_rev5"] = S["pair_rows_per_scale"] * 5
 S["eligible_queries"] = qc["contributing"] + qc["failed"]
-S["candidate_pairs_cartesian_per_scale"] = 480 * 480
+# eyes4s counts candidates over admitted trials (S0.7b, owner/lead decision
+# 2026-10-04): admitted retrieval x admitted encoding.
+not_admitted = list(quarantine) + list(absent)
+S["candidate_focal_admitted"] = 480 - sum(t.startswith("ret") for (_, t) in not_admitted)
+S["candidate_reference_admitted"] = 480 - sum(t.startswith("enc") for (_, t) in not_admitted)
+S["candidate_pairs_cartesian_per_scale"] = (
+    S["candidate_focal_admitted"] * S["candidate_reference_admitted"]
+)
 S["paired_group_n_range"] = [min(min(r["Remembered"]["n"], r["Forgotten"]["n"]) for r in rows),
                             max(max(r["Remembered"]["n"], r["Forgotten"]["n"]) for r in rows)]
 S["P17_queries_as_control_for_enc_03"] = 18
@@ -355,7 +362,7 @@ with open("FIXTURE.md", "a") as f:
     f.write(f"- Dataset history: r2 = {S['dataset_history']['r2']}; r3 = {S['dataset_history']['r3']}.\n")
     f.write(f"- Runs: " + "; ".join(f"{k}: {v}" for k, v in S['runs'].items()) + ".\n")
     f.write(f"- Rev 5 (5 scales incl. 8°) pair rows: {S['pair_rows_rev5']:,}. Rev 4: {S['pair_rows_all_scales']:,}.\n")
-    f.write(f"- Eligible (computed) queries: {S['eligible_queries']} (454 contributing + 3 failed). Cartesian candidate pairs before paging, per scale: {S['candidate_pairs_cartesian_per_scale']:,} (480 retrieval × 480 encoding; eyes4s candidatePairCount).\n")
+    f.write(f"- Eligible (computed) queries: {S['eligible_queries']} (454 contributing + 3 failed). Cartesian candidate pairs before paging, per scale: {S['candidate_pairs_cartesian_per_scale']:,} ({S['candidate_focal_admitted']} admitted retrieval × {S['candidate_reference_admitted']} admitted encoding; eyes4s candidatePairCount).\n")
     f.write(f"- Per-group n range across participants (Remembered/Forgotten): {S['paired_group_n_range']}.\n")
     f.write("- enc_03 (beach-042) is used by ret_07 as the matched reference and by the 18 other admitted P17 queries as a control.\n")
     f.write("- Matched cardinality: every eligible query has exactly 1 matched reference (0 duplicates, checked). The 9 no-match queries are reported under the persisted policy 'Queries without a matched reference: report as no match'.\n")

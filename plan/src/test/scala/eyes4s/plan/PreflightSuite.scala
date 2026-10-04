@@ -344,8 +344,9 @@ class PreflightSuite extends munit.FunSuite:
         PairScheduleBudget.default,
         Vector(
           StudyFinding.DuplicateTrial(a, PairingSide.Focal, Vector(0, 1)),
-          StudyFinding.UnmatchedFocal(lone),
-          StudyFinding.UncontrolledFocal(lone)
+          // Without a match, lone is left out of the control design (bead
+          // S0.7b), so it is not also reported as uncontrolled.
+          StudyFinding.UnmatchedFocal(lone, UnmatchedKind.Undetermined)
         )
       )
     )
@@ -405,7 +406,7 @@ class PreflightSuite extends munit.FunSuite:
         Remedy.ResolveDuplicateTrials
       ),
       (
-        StudyFinding.UnmatchedFocal(lone),
+        StudyFinding.UnmatchedFocal(lone, UnmatchedKind.Undetermined),
         Severity.Warning,
         FindingClass.DataDependent,
         Remedy.SupplyMatchedReference
@@ -717,10 +718,15 @@ class PreflightSuite extends munit.FunSuite:
           ),
           Some(temporalInput),
           Vector(
-            TemporalFinding.Repetition("reversed", StudyFinding.UnmatchedFocal(ar)),
-            TemporalFinding.Repetition("reversed", StudyFinding.UnmatchedFocal(br)),
-            TemporalFinding.Repetition("reversed", StudyFinding.UncontrolledFocal(ar)),
-            TemporalFinding.Repetition("reversed", StudyFinding.UncontrolledFocal(br))
+            TemporalFinding.Repetition(
+              "reversed",
+              StudyFinding.UnmatchedFocal(ar, UnmatchedKind.Undetermined)
+            ),
+            // Unmatched focal trials are left out of the control design (S0.7b).
+            TemporalFinding.Repetition(
+              "reversed",
+              StudyFinding.UnmatchedFocal(br, UnmatchedKind.Undetermined)
+            )
           )
         )
       )
@@ -996,9 +1002,10 @@ class PreflightSuite extends munit.FunSuite:
       StudyFinding.UndescribedMethod(DefinitionId.cosine),
       StudyFinding.FrameMismatch(b, GeometryError.FrameMismatch(frame.id, other.id)),
       StudyFinding.DuplicateTrial(a, PairingSide.Focal, Vector(2, 3)),
-      StudyFinding.UnmatchedFocal(lone),
-      StudyFinding.UnmatchedFocal(b),
-      StudyFinding.UncontrolledFocal(lone)
+      StudyFinding.UnmatchedFocal(lone, UnmatchedKind.Undetermined),
+      // A focal trial without a match is left out of the control design
+      // (bead S0.7b), so it is not also reported as uncontrolled.
+      StudyFinding.UnmatchedFocal(b, UnmatchedKind.Undetermined)
     )
     val first  = p.preflight(Some(mixed))
     val second = p.preflight(Some(mixed))

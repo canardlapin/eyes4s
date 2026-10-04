@@ -54,7 +54,7 @@ Focus query: P17 · ret_07 · beach-042 (Remembered). Matched reference: P17 · 
 - Dataset history: r2 = onset units undeclared; Block not mapped to occurrence; r3 = onset declared ms; Block → occurrence; 4 trials change status vs r2 (overlap → admitted 3, admitted → no-fixations 1).
 - Runs: run 5: analysis rev 3 · data r2 · stale; run 6: rev 4 · data r3 · cancelled at Comparing; run 7: rev 4 · data r3 · current; run 8: rev 5 · data r3 · running (moment t3).
 - Rev 5 (5 scales incl. 8°) pair rows: 44,845. Rev 4: 35,876.
-- Eligible (computed) queries: 457 (454 contributing + 3 failed). Cartesian candidate pairs before paging, per scale: 230,400 (480 retrieval × 480 encoding; eyes4s candidatePairCount).
+- Eligible (computed) queries: 457 (454 contributing + 3 failed). Cartesian candidate pairs before paging, per scale: 219,486 (466 admitted retrieval × 471 admitted encoding; eyes4s candidatePairCount).
 - Per-group n range across participants (Remembered/Forgotten): [2, 17].
 - enc_03 (beach-042) is used by ret_07 as the matched reference and by the 18 other admitted P17 queries as a control.
 - Matched cardinality: every eligible query has exactly 1 matched reference (0 duplicates, checked). The 9 no-match queries are reported under the persisted policy 'Queries without a matched reference: report as no match'.

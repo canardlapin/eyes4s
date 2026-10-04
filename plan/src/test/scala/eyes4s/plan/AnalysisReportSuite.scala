@@ -37,7 +37,7 @@ class AnalysisReportSuite extends munit.FunSuite:
     Vector("scales" -> Vector[Provenance.Param](Provenance.Param.Num(1)))
   private val refusal: Diagnostic[StudyKey] = Diagnostic.of(PlanError.EmptyScales(0))
   private val cause: Diagnostic[StudyKey]   =
-    Diagnostic.of(StudyFinding.UnmatchedFocal[StudyKey, Px](k2))
+    Diagnostic.of(StudyFinding.UnmatchedFocal[StudyKey, Px](k2, UnmatchedKind.Undetermined))
 
   private def report(
       available: Option[ArtifactRef[Input]],
@@ -237,7 +237,8 @@ class AnalysisReportSuite extends munit.FunSuite:
       Remedy.ReviseDetectorParameters
     )
     assertEquals(
-      summon[Remedial[StudyFinding[StudyKey, Px]]].remedy(StudyFinding.UnmatchedFocal(k1)),
+      summon[Remedial[StudyFinding[StudyKey, Px]]]
+        .remedy(StudyFinding.UnmatchedFocal(k1, UnmatchedKind.Undetermined)),
       Remedy.SupplyMatchedReference
     )
     assertEquals(

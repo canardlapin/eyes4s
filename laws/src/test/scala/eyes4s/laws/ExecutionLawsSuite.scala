@@ -71,7 +71,7 @@ import scala.concurrent.duration.*
   * | premature-done     | the first step returns Done with a decoy study's result  | completion, cut-invariance, totals           |
   * | finest-swapped     | at pair quantum 1 the result is a decoy study's          | completion, cut-invariance                   |
   * | looping            | Done is reported as More back to the same cursor         | terminal, completion, cut-invariance, totals, accounting |
-  * | cut-charged        | one extra unit per comparing step at one specific cut    | accounting                                   |
+  * | cut-charged        | one extra unit per comparing step at one specific cut    | accounting, totals                           |
   * | segment-revisited  | odd trials' estimation counts toward the contrast        | contiguity, totals                           |
   * | exact-overclaimed  | estimation claims Exact(trials + 1)                      | totals                                       |
   * | atmost-understated | comparison claims AtMost(0)                              | totals                                       |
@@ -859,7 +859,9 @@ class ExecutionLawsSuite extends munit.DisciplineSuite:
         studyFamily(binned, stepwise = looping),
         Set(terminal, completion, cutInvariance, totals, accounting)
       ),
-      ("cut-charged", studyFamily(binned, stepwise = cutCharged), Set(accounting)),
+      // The fixture's unmatched focal trial has no control candidates (bead
+      // S0.7b), so the comparing AtMost bound is tight enough to fail too.
+      ("cut-charged", studyFamily(binned, stepwise = cutCharged), Set(accounting, totals)),
       (
         "segment-revisited",
         studyFamily(binned, segment = segmentRevisited),

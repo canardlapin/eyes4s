@@ -310,8 +310,8 @@ final class FakeStudyBackend[F[_]] private[fixture] (
         r,
         d,
         scalesOf(r),
-        focalTrials = study.queries.size,
-        referenceTrials = study.inventory.count(_.trial.phase == Phase.Encoding),
+        focalTrials = summary.focalTrials,
+        referenceTrials = summary.referenceTrials,
         requestedQueries = summary.contrasts.requested,
         eligibleQueries = summary.eligibleQueries,
         candidatePairsPerScale = summary.candidatePairsPerScale,
@@ -375,8 +375,8 @@ final class FakeStudyBackend[F[_]] private[fixture] (
       )
     for
       candidates <- PreviewCandidates.of(
-        study.queries.size,
-        study.inventory.count(_.trial.phase == Phase.Encoding),
+        summary.focalTrials,
+        summary.referenceTrials,
         study.queries.map(_.key.participant).distinct.size,
         summary.candidatePairsPerScale,
         summary.contrasts.requested,

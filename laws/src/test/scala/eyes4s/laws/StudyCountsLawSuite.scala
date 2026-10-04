@@ -62,12 +62,14 @@ class StudyCountsLawSuite extends munit.DisciplineSuite:
         ()
       )
     )
+    // Recalls 0..n-1, encodings 0..m-1: min(n, m) recalls have a match, and
+    // only those have controls, the m - 1 other encodings (bead S0.7b).
     val matched = math.min(n, m).toLong
     StudyCountsLaws.Case(
       get(CountCursor.of(plan, get(plan.prepare(input)))),
       matched,
-      n.toLong * m - matched,
-      n.toLong,
+      matched * (m - 1),
+      matched,
       n.toLong + m,
       scales
     )

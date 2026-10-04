@@ -108,7 +108,7 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
     yield
       assertEquals(preview.requestedQueries, 480)
       assertEquals(preview.eligibleQueries, 457)
-      assertEquals(preview.candidatePairsPerScale, 230400L)
+      assertEquals(preview.candidatePairsPerScale, 219486L)
       assertEquals(rows.size, preview.requestedQueries)
       assertEquals(rows.count(_.eligibility == Eligibility.Eligible), preview.eligibleQueries)
       assertEquals(preview.pairRows, preview.pairRowsPerScale * preview.scales.size)

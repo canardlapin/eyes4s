@@ -36,7 +36,8 @@ import scala.annotation.tailrec
   * items one to three times in the reference phase, sometimes twice under
   * one occurrence, and recalls some of them (sometimes an item never shown).
   * So every rule meets focal trials with zero, one and several candidate
-  * references, which is what decides whether a rule is implemented.
+  * references, which is what decides whether a rule is implemented. A focal
+  * trial with no matched reference has no controls (bead S0.7b).
   */
 trait PairingLaws extends Laws:
   import PairingLaws.*
@@ -54,7 +55,7 @@ trait PairingLaws extends Laws:
               val counts = pairs(work.matched).groupBy(_._1).values.map(_.size)
               Prop(counts.forall(_ == 1)) :| s"matched pairs per focal: $counts"
         },
-      "a study that runs under a one-reference rule draws exactly one control from every other item" -> forAll(
+      "a study that runs under a one-reference rule draws one control from every other item, and none without a match" -> forAll(
         genCase
       ) { generated =>
         // The generated pairing and the default one, so the one-reference
@@ -69,7 +70,10 @@ trait PairingLaws extends Laws:
               val focal    = unique(c.input).filter(_.phase == Focal)
               Prop.all(focal.map { f =>
                 val drawn = controls.collect { case (`f`, r) => r.item }
-                val items = eligible(c, f).filter(_.item != f.item).map(_.item).distinct
+                val items =
+                  if matchable(c, f) then
+                    eligible(c, f).filter(_.item != f.item).map(_.item).distinct
+                  else Vector.empty
                 Prop(drawn.sorted == items.sorted) :| s"$f draws $drawn, expected $items"
               }*)
             case _ => Prop(true)
@@ -167,7 +171,9 @@ trait PairingLaws extends Laws:
           c.copy(pairing = c.pairing.copy(controls = ControlReferences.AllOccurrences))
         )
         val v1 = PairingLaws.version1(c.input).prepare(c.input).toOption.get
-        Prop(pairs(all.controls) == pairs(v1.controls))
+        // Every occurrence of every other item, for the focal trials the
+        // case's own rule matches.
+        Prop(pairs(all.controls) == pairs(v1.controls).filter((f, _) => matchable(c, f)))
       }
     )
 
@@ -203,12 +209,18 @@ object PairingLaws extends PairingLaws:
       case MatchedReferences.Select(choice) => references.filter(chosen(_, choice))
       case _                                => references
 
+  /** Whether a focal trial has a matched reference under the case's rule. A
+    * focal trial without one has no controls either (bead S0.7b).
+    */
+  def matchable(c: Case, focal: TrialKey): Boolean =
+    eligible(c, focal).exists(_.item == focal.item)
+
   /** Every expected matched or control pair of a case whose controls follow
-    * the matched rule.
+    * the matched rule: controls only for focal trials with a match.
     */
   def expected(c: Case, matched: Boolean): Set[(TrialKey, TrialKey)] =
     unique(c.input)
-      .filter(_.phase == Focal)
+      .filter(f => f.phase == Focal && (matched || matchable(c, f)))
       .flatMap(f => eligible(c, f).filter(r => (r.item == f.item) == matched).map(f -> _))
       .toSet
 
