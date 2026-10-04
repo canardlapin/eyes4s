@@ -38,8 +38,11 @@ final case class RepetitionRun[K, U <: Unit2D](
   * plan's own: decoding rebuilds both analyses through
   * `DirectedPairwiseAnalysis.reconstruct` and the result through
   * `RepetitionPlanResult.reconstruct`, which refuses analyses another plan
-  * or input computed. Stored under the generic `analysis-result` role, the
-  * run's relation names no input entry ([[registration]]).
+  * or input computed. The archive carries a `RunStamp` whose plan and input
+  * digests are both the plan's canonical digest (the plan carries its maps);
+  * decoding refuses a stamp other than the embedded plan's. Stored under the
+  * generic `analysis-result` role, the run's relation is
+  * `AnalysisInputs.EmbeddedInPlan` ([[registration]]).
   */
 final class RepetitionResultCodec[K, U <: Unit2D: UnitLabel](
     val schema: DefinitionId,
@@ -120,14 +123,38 @@ final class RepetitionResultCodec[K, U <: Unit2D: UnitLabel](
       .map(e => CodecError.Reconstruction(e))
   yield analysis
 
+  /** The run's stamp: the plan's canonical digest, which is also its input's,
+    * since the plan carries its maps.
+    */
+  def stamp(
+      plan: RepetitionPlan[K, U]
+  ): Either[CodecError, RunStamp[RepetitionPlan[K, U], RepetitionPlan[K, U]]] =
+    RunStamp.of(plan, plan, plans, plans)
+
   private def write(run: RepetitionRun[K, U]): Either[CodecError, Json] = for
+    stamped  <- stamp(run.plan)
     plan     <- plans.encode(run.plan)
     matched  <- analysis(run.result.matched).left.map(Wire.at("matched"))
     controls <- analysis(run.result.controls).left.map(Wire.at("controls"))
-  yield Json.obj("plan" -> plan, "matched" -> matched, "controls" -> controls)
+  yield Json.obj(
+    "runStamp" -> RunStampWire.write(stamped),
+    "plan"     -> plan,
+    "matched"  -> matched,
+    "controls" -> controls
+  )
 
   private def read(json: Json): Either[CodecError, RepetitionRun[K, U]] = for
+    claim <- Wire
+      .field[Json](json, "runStamp")
+      .flatMap(RunStampWire.read[RepetitionPlan[K, U], RepetitionPlan[K, U]])
+      .left
+      .map(Wire.at("runStamp"))
     plan    <- Wire.field[Json](json, "plan").flatMap(plans.decode).left.map(Wire.at("plan"))
+    current <- stamp(plan)
+    _       <- claim
+      .check(current, Vector.empty)
+      .left
+      .map(e => CodecError.Field("runStamp", json, e.message))
     matched <- Wire
       .field[Json](json, "matched")
       .flatMap(readAnalysis)
@@ -144,23 +171,29 @@ final class RepetitionResultCodec[K, U <: Unit2D: UnitLabel](
       .map(e => CodecError.Field("repetition", json, e.message))
   yield RepetitionRun(plan, result)
 
-  /** The plan as a stored analysis plan. */
+  /** The plan as a stored analysis plan; it embeds its maps, whose identity
+    * is its input hash.
+    */
   final class LoadedPlan(val plan: RepetitionPlan[K, U]) extends LoadedAnalysisPlan:
-    val schema: DefinitionId = plans.schema
-    def description          = plan.description
-    def encode               = plans.encode(plan)
+    val schema: DefinitionId    = plans.schema
+    def description             = plan.description
+    def encode                  = plans.encode(plan)
+    override def embeddedInputs = Vector(plan.inputHash)
 
-  /** The run as a stored analysis result; it names no input entry. */
+  /** The run as a stored analysis result, computed on its plan's maps. */
   final class LoadedRun(val run: RepetitionRun[K, U]) extends LoadedAnalysisResult:
     val schema: DefinitionId = RepetitionResultCodec.this.schema
     def description          = run.plan.description
-    def inputs               = Vector.empty
+    def inputs               = Vector(run.plan.inputHash)
     def encode               = codec.encode(run)
 
-  /** The plan and run archives, for an [[AnalysisRegistry]]. */
+  /** The plan and run archives, for an [[AnalysisRegistry]]: the plan embeds
+    * its input, so the run's relation is `AnalysisInputs.EmbeddedInPlan`.
+    */
   def registration: AnalysisRegistration = AnalysisRegistration(
     plans.schema,
     schema,
     json => plans.decode(json).map(LoadedPlan(_)),
-    json => codec.decode(json).map(LoadedRun(_))
+    json => codec.decode(json).map(LoadedRun(_)),
+    embedsInput = true
   )

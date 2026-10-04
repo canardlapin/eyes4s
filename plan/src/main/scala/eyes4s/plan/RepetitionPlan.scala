@@ -419,6 +419,10 @@ private[plan] enum RepetitionPhase[K]:
 /** An immutable position inside a [[RepetitionPlan]] run
   * ([[RepetitionPlan.work]]): each `advance` evaluates at most `quanta.pairs`
   * pairs of the current stage. It never fails.
+  *
+  * Only the comparisons are bounded. Both pairings are made when the cursor
+  * is created, because a bottom-k control selection has no exhaustive pair
+  * schedule to page through; bounding the pairing as well is left to CR8.
   */
 final class RepetitionCursor[K] private[plan] (
     private val phase: RepetitionPhase[K],

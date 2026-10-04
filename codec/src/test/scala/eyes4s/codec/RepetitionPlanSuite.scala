@@ -406,7 +406,26 @@ class RepetitionPlanSuite extends munit.FunSuite:
       assertEquals(decoded.result.controls, run.result.controls)
       assertEquals(decoded.plan.description, p.description)
       assertEquals(get(results.codec.encode(decoded)), document)
+      // The stamp names the plan's canonical digest as plan and as input.
+      val digest = get(codec.digest(p)).sha256.hex
+      val claim  = document.hcursor.downField("value").downField("runStamp")
+      assertEquals(claim.get[String]("plan").toOption, Some(digest))
+      assertEquals(claim.get[String]("input").toOption, Some(digest))
     }
+    // A stamp of another plan is refused.
+    val p        = plan()
+    val document = get(results.codec.encode(RepetitionRun(p, p.run)))
+    val forged   = document.hcursor
+      .downField("value")
+      .downField("runStamp")
+      .downField("input")
+      .withFocus(_ => Json.fromString(get(codec.digest(plan(sel = Selection.All))).sha256.hex))
+      .top
+      .getOrElse(fail("json"))
+    assert(
+      results.codec.decode(forged).left.exists(_.message.contains("Run input")),
+      results.codec.decode(forged)
+    )
     // Another plan's analyses under this plan: refused by the result's reconstruction.
     val other   = plan(sel = Selection.All)
     val swapped = get(results.codec.encode(RepetitionRun(other, plan().run)))
@@ -434,7 +453,13 @@ class RepetitionPlanSuite extends munit.FunSuite:
           .analysisResult("repetition", results.codec, RepetitionRun(p, p.run))
         saved <- SavedManifest.of(
           Vector(stored, run),
-          Vector(ManifestRelation.AnalysisResultOf(run.name, stored.name, Vector.empty))
+          Vector(
+            ManifestRelation.AnalysisResultOf(
+              run.name,
+              stored.name,
+              AnalysisInputs.EmbeddedInPlan
+            )
+          )
         )
       yield saved
     )

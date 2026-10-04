@@ -137,12 +137,14 @@ case runs the complete save, fresh-registration reopen and rerun workflow on bot
    selection and the failure policy; `RepetitionRecipe.plan(template)` rebuilds a plan over the
    template's layout, grid and maps, and checks the matched and control rules together.
 6. Save a completed run with `RepetitionResultCodec(schema, plans, keys)`: its `RepetitionRun`
-   archive holds the plan document and both analyses (pair rows, pairing report, provenance and
-   evaluation), re-encodes byte for byte, and refuses analyses another plan or input computed
-   (`RepetitionPlanResult.reconstruct`, `RepetitionPlanError.ResultMismatch`). In a manifest the
-   plan and run are an `analysis-plan` and an `analysis-result` related by
-   `AnalysisResultOf(run, plan, Vector.empty)`: the plan carries its own maps, so the relation
-   names no input entry. Register `results.registration` with the resolver's `AnalysisRegistry`.
+   archive holds a `RunStamp` (plan and input digests both the plan's canonical digest, since the
+   plan carries its maps), the plan document and both analyses (pair rows, pairing report,
+   provenance and evaluation), re-encodes byte for byte, and refuses another plan's stamp or
+   analyses another plan or input computed (`RepetitionPlanResult.reconstruct`,
+   `RepetitionPlanError.ResultMismatch`). In a manifest the plan and run are an `analysis-plan`
+   and an `analysis-result` related by `AnalysisResultOf(run, plan,
+   AnalysisInputs.EmbeddedInPlan)`: the registration declares that the plan embeds its input, and
+   the run's input is checked against the plan's input hash. Register `results.registration` with the resolver's `AnalysisRegistry`.
 7. Repetition is a recipe family (`RecipeFamily.Repetition`): `plan.preflight(Some(plan.inputRef))`
    is an `AnalysisReport`, blocked without the plan's maps or with others, leaving the comparisons
    and their reduction to execution; `RepetitionExecution` runs `plan.work` through the shared
