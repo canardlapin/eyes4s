@@ -130,6 +130,8 @@ object FigureBundle:
       s"${s.run.id.label} · analysis ${s.bound.analysis.id.label} · data " +
         s"${s.bound.dataset.id.label} · reporting “${s.reporting.name}” · studio build eyes4s " +
         StudioBuild.eyes4sBaseVersion,
+      s"reporting spec ${s.reporting.id.value} " +
+        FigureCaption.specDigest(s.reporting, short = false),
       "",
       "Files:"
     ) ++ files ++ (if left.isEmpty then Vector.empty else Vector("", "Not included:") ++ left))

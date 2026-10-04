@@ -53,4 +53,4 @@ n = 24 each · paired n = 24
 Each scale computed separately.
 Figure 1. Matched-minus-control spatial similarity of retrieval gaze (dataset r3, analysis rev 4, run 7). Spatial correspondence, not
 sequential replay.
-Analysis rev 4 · run 7 (archive unbound) · data r3 · reporting “By retrieval response” (by-retrieval-response) · studio build eyes4s 0.1
+Analysis rev 4 · run 7 (archive unbound) · data r3 · reporting “By retrieval response” (sha256:3a0e…5dd) · studio build eyes4s 0.1

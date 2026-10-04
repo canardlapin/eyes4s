@@ -1,0 +1,5 @@
+radio-button: Group by: response
+check-box: Exclude queries with >25% of fixation duration outside the analysis window
+check-box: Minimum queries per group: 3
+radio-button: Summary unit and weighting: Equal weight per participant
+button: Save as…

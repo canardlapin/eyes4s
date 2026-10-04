@@ -67,7 +67,10 @@ object CompareSummary:
   /** The run Compare shows. */
   def shownRun(m: AppModel): Option[RunId] = m.document.presentation.shownRun
 
-  /** The reporting spec Compare's trail is in, else the document's first. */
+  /** The reporting spec Compare's trail is in, else the document's first.
+    * A trail naming a spec the document no longer holds (Save as… undone)
+    * falls back too, so Compare never shows a missing spec.
+    */
   def reporting(m: AppModel): Option[ReportingId] =
     m.navigation
       .trail(Perspective.Compare)
@@ -75,6 +78,7 @@ object CompareSummary:
         case Place.Summary(r)  => r
         case Place.Group(r, _) => r
       }
+      .filter(r => m.document.reporting.exists(_.id == r))
       .orElse(m.document.reporting.headOption.map(_.id))
 
   /** Follows the model: a newly shown run is read afresh. */

@@ -100,7 +100,7 @@ class FigureAppearanceFxSuite extends ShellFxSuite:
         "Figure 1. Matched-minus-control spatial similarity of retrieval gaze (dataset r3, " +
           "analysis rev 4, run 7). Spatial correspondence, not sequential replay.",
         "Analysis rev 4 · run 7 (archive unbound) · data r3 · reporting “By retrieval " +
-          "response” (by-retrieval-response) · studio build eyes4s " +
+          "response” (sha256:3a0e…5dd) · studio build eyes4s " +
           StudioBuild.eyes4sBaseVersion,
         "Each pair of dots is one participant; per participant, 2–17 queries per group. " +
           "Descriptive only: no intervals or tests."

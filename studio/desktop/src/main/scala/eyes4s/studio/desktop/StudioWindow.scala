@@ -25,7 +25,14 @@ import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{ClockTime, ProjectName}
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.admission.{AdmissionLedgerHost, LedgerInputs}
-import eyes4s.studio.desktop.compare.{CompareSummaryHost, PanelSources, SummaryInputs}
+import eyes4s.studio.desktop.compare.{
+  CompareInspectorHost,
+  CompareSummaryHost,
+  LedgerSource,
+  PanelSources,
+  ReportingEditorHost,
+  SummaryInputs
+}
 import eyes4s.studio.desktop.data.{AssetFiles, SourcesPaneHost}
 import eyes4s.studio.desktop.explore.{
   ExploreTimelineHost,
@@ -80,6 +87,8 @@ final class StudioWindow private (
     val admission: AdmissionLedgerHost,
     val summary: CompareSummaryHost,
     summaryListener: AppModel => Unit,
+    val compareInspector: CompareInspectorHost,
+    val reporting: ReportingEditorHost,
     val navigator: TrialsNavigatorHost,
     navigatorListener: AppModel => Unit,
     val sources: SourcesPaneHost,
@@ -119,6 +128,8 @@ final class StudioWindow private (
     else if pane == StudioLayouts.referenceTrial then
       eyes4s.studio.app.compare.TrialPanels.referenceStops(summary.panelsVM)
     else if pane == StudioLayouts.contrast then summary.contrastStops
+    else if pane == StudioLayouts.compareInspector then compareInspector.focusStops
+    else if pane == StudioLayouts.compareReporting then reporting.focusStops
     else if pane == StudioLayouts.trials then navigator.trialsStops
     else if pane == StudioLayouts.items then navigator.itemsStops
     else if pane == StudioLayouts.trialView then explore.focusStops
@@ -160,6 +171,8 @@ final class StudioWindow private (
     runtime.unlisten(preflightListener)
     runtime.unlisten(figuresListener)
     summary.dispose()
+    compareInspector.dispose()
+    reporting.dispose()
     figures.dispose()
     runtime.unlisten(themeListener)
     themes.dispose()
@@ -421,7 +434,23 @@ object StudioWindow:
       "compare.reference-trial.table"  -> summary.referenceTrialTable,
       "compare.items"                  -> summary.items.node
     ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
-    val summaryListener: AppModel => Unit = summary.sync
+    // Compare's inspector (S8.4): why this reference, beside the panels.
+    val compareInspector = CompareInspectorHost(
+      () => r.model,
+      dispatch,
+      LedgerSource.of(session),
+      () => summary.inspectorInputs
+    )
+    host.host(StudioLayouts.compareInspector, compareInspector.node)
+    summary.onRendered(() => compareInspector.refresh())
+    // Compare's reporting editor (S8.7), beside the summary.
+    val reporting = ReportingEditorHost(() => r.model, dispatch, () => summary.summary)
+    host.host(StudioLayouts.compareReporting, reporting.node)
+    summary.onRendered(() => reporting.render())
+    val summaryListener: AppModel => Unit = m =>
+      summary.sync(m)
+      compareInspector.sync(m)
+      reporting.render()
     r.listen(summaryListener)
     // The trials navigator (Explore): the latest admitted revision's trials.
     val navigator =
@@ -531,6 +560,8 @@ object StudioWindow:
         admission,
         summary,
         summaryListener,
+        compareInspector,
+        reporting,
         navigator,
         navigatorListener,
         sources,

@@ -24,6 +24,8 @@ import eyes4s.studio.core.backend.{
   StageKind,
   TrialKey
 }
+import eyes4s.codec.{CanonicalDigest, CodecError, VersionedCodec}
+import io.circe.syntax.*
 import io.circe.{Codec, Decoder, Encoder}
 
 // ---------------------------------------------------------------------------
@@ -223,6 +225,24 @@ object ReportingSpec:
     Decoder
       .forProduct6("id", "name", "groupBy", "filters", "minimumPerGroup", "weighting")(of)
       .emap(_.left.map(_.message))
+
+  /** The CR3 digest of `spec`: its identity in an export's provenance. A
+    * spec has no revision and is edited in place, so the digest, not the
+    * id, says which version of it a figure was exported with.
+    */
+  def digest(spec: ReportingSpec): Either[CodecError, CanonicalDigest[ReportingSpec]] =
+    specCodec.flatMap(_.digest(spec))
+
+  private val specCodec: Either[CodecError, VersionedCodec[ReportingSpec]] =
+    StudioSchemaIds.forCodec.map { ids =>
+      VersionedCodec.checked[ReportingSpec](ids.reporting)(s => Right(CanonicalJson(s.asJson)))(
+        json =>
+          json
+            .as[ReportingSpec]
+            .left
+            .map(f => CodecError.Field("reporting", json, f.getMessage))
+      )
+    }
 
 // ---------------------------------------------------------------------------
 // Figures
