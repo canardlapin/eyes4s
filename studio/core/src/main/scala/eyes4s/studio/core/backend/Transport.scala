@@ -335,6 +335,18 @@ object RemoteStudyBackend:
     def preview(revision: AnalysisRevision): F[Either[BackendError, PreviewSummary]] =
       ask(Q.Preview(revision)) { case A.Preview(s) => s }
 
+    def trialFixations(
+        revision: AnalysisRevision,
+        trial: TrialKey
+    ): F[Either[BackendError, TrialFixations]] =
+      ask(Q.TrialFixationsOf(revision, trial)) { case A.TrialFixationsOf(f) => f }
+
+    def trialPreview(
+        revision: AnalysisRevision,
+        trial: TrialKey
+    ): F[Either[BackendError, TrialPreview]] =
+      ask(Q.TrialPreviewOf(revision, trial)) { case A.TrialPreviewOf(p) => p }
+
     def previewRows(
         revision: AnalysisRevision,
         page: PageRequest

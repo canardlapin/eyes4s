@@ -22,6 +22,7 @@ import eyes4s.studio.core.assets.{AssetLink, AssetRef}
 import eyes4s.studio.desktop.maps.{MapRasterStore, RasterRefusal}
 import eyes4s.studio.desktop.plot.CanvasPlotHost
 import eyes4s.studio.viz.trial.{
+  MapCoverage,
   RememberedImage,
   StimulusRaster,
   TrialMap,
@@ -47,13 +48,15 @@ enum TrialViewStatus derives CanEqual:
 
   case Disposed
 
-/** A result map to draw over a trial (ticket S4.3b): the run's grid, the
-  * style it is coloured in and the global opacity.
+/** A map to draw over a trial (ticket S4.3b): the run's grid, the style it
+  * is coloured in, the global opacity, and the screen region it covers (a
+  * run's map covers the image frame; a backend preview its window, S6.2).
   */
 final case class MapRequest(
     grid: MapGrid,
     style: MapStyle,
-    opacity: MapOpacity = MapOpacity.Default
+    opacity: MapOpacity = MapOpacity.Default,
+    covers: MapCoverage = MapCoverage.ImageFrame
 ) derives CanEqual:
   def key: RasterKey = RasterKey(grid.map, style)
 
@@ -173,7 +176,7 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
     then
       answer match
         case Right(raster) =>
-          mapLayer = Some(TrialMap(m.grid, raster, m.opacity))
+          mapLayer = Some(TrialMap(m.grid, raster, m.opacity, m.covers))
           render()
         case Left(refusal) => refusalWrapper.set(Some(refusal))
 

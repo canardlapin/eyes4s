@@ -268,6 +268,16 @@ object StudioFixture {
         .map(r => if (r.offScreen) s"${r.number}$OutsideScreenMark" else r.number.toString)
         .mkString(",")).mkString("\t")
 
+  /** S6.2: one admitted trial's fixations, in ordinal order, each
+    * `record@x@y@onset@duration`.
+    */
+  private def fixationLine(k: Key, records: Vector[Rec]): String =
+    (Seq(k._1, k._2, k._3, k._4) :+
+      records
+        .sortBy(_.ordinal.getOrElse(0))
+        .map(r => s"${r.number}@${r.x}@${r.y}@${r.onset}@${r.duration}")
+        .mkString(",")).mkString("\t")
+
   /** `GoldenInventory`: every golden trial with its disposition, and the
     * window totals of the admitted trials.
     */
@@ -302,6 +312,11 @@ object StudioFixture {
     // excluded), in ordinal order, off-screen records included and marked.
     val scanpaths = statuses.collect { case (k, Seq("admitted")) =>
       scanpathLine(k, byTrial(k))
+    }
+    // S6.2: each admitted trial's fixations in scanpath (ordinal) order, as
+    // fixations.csv states them: record, x, y, onset and duration.
+    val fixationLines = statuses.collect { case (k, Seq("admitted")) =>
+      fixationLine(k, byTrial(k))
     }
 
     // S2.10: each trial's display as trials.csv states it (participant, phase,
@@ -364,6 +379,16 @@ object StudioFixture {
           |    */
           |  val scanpaths: String = Vector(
           |    ${chunked(scanpaths.mkString("\n"))}
+          |  ).mkString
+          |
+          |  /** One tab-separated line per admitted trial, in inventory order:
+          |    * participant, phase, trial, occurrence, then its fixations in
+          |    * scanpath (ordinal) order, `,`-separated, each
+          |    * `record@x@y@onset_ms@duration_ms` as fixations.csv states them
+          |    * (S6.2). A fixation's index in the line is its scanpath position.
+          |    */
+          |  val fixations: String = Vector(
+          |    ${chunked(fixationLines.mkString("\n"))}
           |  ).mkString
           |
           |  /** One tab-separated line per trial, in inventory order: participant,

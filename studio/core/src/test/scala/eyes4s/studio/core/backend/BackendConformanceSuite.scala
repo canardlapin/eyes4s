@@ -273,6 +273,7 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
     for
       s   <- subject
       row <- ok(s.backend.queries(s.current, page(0, 1))).map(_.rows.head)
+      rev <- s.backend.runs.map(_.find(_.run == s.current).map(_.revision).get)
       requests = Vector(
         BackendRequest.Admission(s.dataset),
         BackendRequest.Ledger(s.dataset, page(900, 100)),
@@ -285,7 +286,9 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
         BackendRequest.Inspect(s.current, ResultAddress.ContrastRow(1, row.query)),
         BackendRequest.ProvenanceOf(s.current, ResultAddress.ContrastRow(1, row.query)),
         BackendRequest.Result(RunId(9999)),
-        BackendRequest.Subscribe(JobId(9999))
+        BackendRequest.Subscribe(JobId(9999)),
+        BackendRequest.TrialFixationsOf(rev, row.query),
+        BackendRequest.TrialPreviewOf(rev, row.query)
       ).zipWithIndex.map((r, i) => Envelope(RequestId(i.toLong), r))
       direct <- requests.traverse(r =>
         subject.flatMap(t => StudyBackend.handle(t.backend)(r).compile.toVector)
@@ -296,6 +299,18 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
       assertEquals(wired, direct)
       assert(direct.forall(_.size == 1), direct)
       assertEquals(direct.map(_.head.id), requests.map(_.id))
+      // Protocol 1.6: the run's query trial has fixations and a preview.
+      assert(
+        direct.takeRight(2).map(_.head.body) match
+          case Vector(
+                ServerFrame.Response(BackendResponse.TrialFixationsOf(f)),
+                ServerFrame.Response(BackendResponse.TrialPreviewOf(p))
+              ) =>
+            f.trial == row.query && p.trial == row.query && f.fixations.nonEmpty
+          case _ => false
+        ,
+        direct.takeRight(2)
+      )
       assertEquals(
         direct.flatten.count {
           case Envelope(_, _, ServerFrame.Response(BackendResponse.Refused(_))) => true

@@ -110,6 +110,9 @@ object StudioLayouts:
   val trials: PaneId = new PaneId("explore.trials")
   val items: PaneId  = new PaneId("explore.items")
 
+  /** The pane that hosts Explore's trial view (S6.2). */
+  val trialView: PaneId = new PaneId("explore.trial-view")
+
   /** Explore.dc.html. */
   val explore: PerspectiveLayout = layout(
     "explore",
@@ -122,7 +125,7 @@ object StudioLayouts:
       split(
         Axis.Vertical,
         group(
-          dynamic("explore.trial-view", "Trial view", Plot),
+          PaneDecl(trialView, PaneTitle.Dynamic("Trial view"), Plot),
           table("explore.trial-view"),
           pane("explore.small-multiples", "Small multiples", Plot)
         )                                                                            -> 0.55,

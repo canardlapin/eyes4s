@@ -25,6 +25,7 @@ import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.explore.NavigatorDisplays
+import eyes4s.studio.desktop.trial.StimulusSource
 import eyes4s.studio.desktop.harness.{FxStage, Modifiers, StudioFxSuite}
 import eyes4s.studio.desktop.platform.FilePresetStore
 import eyes4s.studio.desktop.runtime.{DesktopEffects, PlatformDialogs, ProjectPort}
@@ -85,7 +86,10 @@ abstract class ShellFxSuite extends StudioFxSuite:
       // No saved import presets unless a suite brings its own.
       presets: FilePresetStore = noPresets(),
       // The story sessions' display kinds (fixtures/studio-golden).
-      displays: NavigatorDisplays = NavigatorDisplays.golden
+      displays: NavigatorDisplays = NavigatorDisplays.golden,
+      // The golden fixture's stimuli.
+      stimuli: StimulusSource =
+        StimulusSource.directory(eyes4s.studio.desktop.trial.GoldenTrials.stimuli)
   ): StudioWindow =
     val w = runOnFx(
       StudioWindow
@@ -93,6 +97,7 @@ abstract class ShellFxSuite extends StudioFxSuite:
           model,
           moment,
           displays,
+          stimuli,
           theme,
           dialogs = Some(dialogs),
           project = project,

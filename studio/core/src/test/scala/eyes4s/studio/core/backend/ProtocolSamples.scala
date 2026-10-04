@@ -20,6 +20,8 @@ import io.circe.syntax.*
 import io.circe.{Decoder, Encoder, Json}
 import eyes4s.studio.core.execution.RunStamp
 import eyes4s.studio.core.preview.*
+import eyes4s.plan.{MapPlacement, OffWindowPolicy}
+import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
 
 /** One named protocol value: its JSON is pinned in [[ProtocolPins]]. */
 final case class Sample[A](name: String, value: A)(using
@@ -198,7 +200,9 @@ object ProtocolSamples:
           "Attribute names [a] are declared more than once."
         )
       )
-    )
+    ),
+    BackendError.UnknownTrial(DatasetRevision(3), TrialKey("P99", Phase.Encoding, "enc_01", 1)),
+    BackendError.TrialViewRefused(TrialViewError.TrialFails(query, Vector(4, 5)))
   )
 
   val runStates: Vector[RunState] = Vector(
@@ -268,6 +272,70 @@ object ProtocolSamples:
     Inspection.Unscored(ResultAddress.Estimation(0, query), queryStatuses(3))
   )
 
+  private def fixation(
+      position: Int,
+      record: Int,
+      x: Double,
+      y: Double,
+      onset: Double,
+      duration: Double,
+      placement: MapPlacement
+  ): AdmittedFixation =
+    val index = FixationIndex.of(position).toOption.get
+    AdmittedFixation
+      .of(StudioRef.Fixation(query, index), record, x, y, onset, duration, placement)
+      .toOption
+      .get
+
+  /** Protocol 1.6: one fixation of each placement. */
+  val trialFixations: TrialFixations = TrialFixations
+    .of(
+      AnalysisRevision(4),
+      DatasetRevision(3),
+      query,
+      Vector(
+        fixation(1, 7209, 960.5, 540.25, 0.5, 212.5, MapPlacement.InMap),
+        fixation(
+          2,
+          7210,
+          1500.5,
+          540.75,
+          230.5,
+          180.25,
+          MapPlacement.OutsideWindow(OffWindowPolicy.Exclude)
+        ),
+        fixation(3, 7211, -4.5, 20.25, 420.5, 96.5, MapPlacement.OutsideScreen),
+        fixation(4, 7212, 600.5, 400.5, 530.5, 140.5, MapPlacement.DroppedInitial),
+        fixation(
+          5,
+          7213,
+          610.5,
+          410.5,
+          680.5,
+          160.5,
+          MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial)
+        )
+      )
+    )
+    .toOption
+    .get
+
+  /** Protocol 1.6: a 3 × 2 preview, top row first, one cell without a value. */
+  val trialPreview: TrialPreview = TrialPreview
+    .of(
+      AnalysisRevision(4),
+      query,
+      2.5,
+      ScreenRegion.of(query, 448.5, 156.5, 1472.5, 924.5).toOption.get,
+      3,
+      2,
+      RowOrder.TopFirst,
+      Vector(Some(0.1), Some(0.25), None, Some(0.3), Some(0.2), Some(0.15)),
+      Vector(0.2, 0.12)
+    )
+    .toOption
+    .get
+
   val requests: Vector[BackendRequest] = Vector(
     BackendRequest.Admission(DatasetRevision(3)),
     BackendRequest.Ledger(DatasetRevision(3), page),
@@ -287,7 +355,9 @@ object ProtocolSamples:
     BackendRequest.Queries(run, page),
     BackendRequest.Inspect(run, address),
     BackendRequest.ProvenanceOf(run, address),
-    BackendRequest.Unsubscribe(RequestId(41))
+    BackendRequest.Unsubscribe(RequestId(41)),
+    BackendRequest.TrialFixationsOf(AnalysisRevision(4), query),
+    BackendRequest.TrialPreviewOf(AnalysisRevision(4), query)
   )
 
   val responses: Vector[BackendResponse] = Vector(
@@ -385,7 +455,9 @@ object ProtocolSamples:
         )
       )
     ),
-    BackendResponse.Unsubscribed(RequestId(41), true)
+    BackendResponse.Unsubscribed(RequestId(41), true),
+    BackendResponse.TrialFixationsOf(trialFixations),
+    BackendResponse.TrialPreviewOf(trialPreview)
   )
 
   val events: Vector[JobEvent] =

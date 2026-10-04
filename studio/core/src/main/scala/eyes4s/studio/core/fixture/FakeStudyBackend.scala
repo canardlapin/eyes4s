@@ -118,6 +118,7 @@ final case class ScriptedSegment(segment: Segment, total: ProgressTotal) derives
   */
 final class FakeStudyBackend[F[_]] private[fixture] (
     val study: MockStudy,
+    val moment: StoryMoment,
     state: SignallingRef[F, FakeStudyBackend.State]
 )(using F: Concurrent[F])
     extends StudyBackend[F]:
@@ -268,6 +269,33 @@ final class FakeStudyBackend[F[_]] private[fixture] (
           Left(BackendError.Unavailable(DiagnosticLocus.Revision(r)))
         case Some(d) => Right(d)
     }
+
+  // -------------------------------------------------------------------------
+  // Trial views (protocol 1.6, S6.2)
+  // -------------------------------------------------------------------------
+
+  def trialFixations(
+      r: AnalysisRevision,
+      trial: TrialKey
+  ): F[Either[BackendError, TrialFixations]] =
+    revision(r).map(
+      _.flatMap(d => known(d, trial).flatMap(FakeTrialViews.fixations(moment, r, _, trial)))
+    )
+
+  def trialPreview(
+      r: AnalysisRevision,
+      trial: TrialKey
+  ): F[Either[BackendError, TrialPreview]] =
+    revision(r).map(
+      _.flatMap(d => known(d, trial).flatMap(FakeTrialViews.preview(moment, r, _, trial)))
+    )
+
+  /** `d` when `trial` is in its inventory; a trial outside it is refused. */
+  private def known(
+      d: DatasetRevision,
+      trial: TrialKey
+  ): Either[BackendError, DatasetRevision] =
+    Either.cond(ledgerOf.contains(trial), d, BackendError.UnknownTrial(d, trial))
 
   def preview(r: AnalysisRevision): F[Either[BackendError, PreviewSummary]] =
     revision(r).map(_.map { d =>
@@ -994,7 +1022,7 @@ object FakeStudyBackend:
     for
       study <- MockStudy.load.fold(defect, F.pure)
       state <- SignallingRef.of[F, State](initial(moment))
-      backend = new FakeStudyBackend[F](study, state)
+      backend = new FakeStudyBackend[F](study, moment, state)
       _ <- backend.previewFacts.fold(e => defect(e.message), _ => F.unit)
       _ <- moment match
         case StoryMoment.T3 =>

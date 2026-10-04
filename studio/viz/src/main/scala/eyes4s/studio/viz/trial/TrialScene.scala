@@ -252,8 +252,18 @@ final case class TrialSceneOptions(
 final case class TrialMap(
     grid: MapGrid,
     raster: MapRaster,
-    opacity: MapOpacity = MapOpacity.Default
+    opacity: MapOpacity = MapOpacity.Default,
+    covers: MapCoverage = MapCoverage.ImageFrame
 ) derives CanEqual
+
+/** Which region of the screen a map's grid covers: the image frame (a run's
+  * map over the analysis window that is the image), or a stated region of
+  * the screen in screen pixels (a backend preview over its study's window,
+  * S6.2), which is drawn there and never stretched over the image.
+  */
+enum MapCoverage derives CanEqual:
+  case ImageFrame
+  case Region(region: ScreenRect)
 
 /** The image a retrieval trial's participant was remembering, which the
   * trial did not display: absent when there is none, hidden by default, or
@@ -683,27 +693,53 @@ object TrialScene:
             case _ => Right(Vector.empty)
         case _ => Right(Vector.empty)
 
-    // The map's raster at the global opacity, cell for cell over the frame,
-    // and its isolines, cased.
+    // The screen region a map covers: (left, top, width, height).
+    private def coverage(m: TrialMap): (Double, Double, Double, Double) = m.covers match
+      case MapCoverage.ImageFrame => (frameLeft, frameTop, frameW, frameH)
+      case MapCoverage.Region(r)  => (r.left, r.top, r.width, r.height)
+
+    // The map's raster at the global opacity, cell for cell over the region
+    // it covers, and its isolines, cased.
     private def mapLayer: R[Vector[Grob]] =
       input.map.fold[R[Vector[Grob]]](Right(Vector.empty)) { m =>
-        val raster = m.raster
-        val drawn  = raster.drawn(m.opacity)
+        val raster            = m.raster
+        val drawn             = raster.drawn(m.opacity)
+        val (left, top, w, h) = coverage(m)
         for
           dims <- part("map raster")(RasterDimensions(raster.width, raster.height))
           image = RasterImage.tabulate(dims) { (x, y) =>
             val p = drawn(y * raster.width + x)
             Rgba32.unsafe((p >> 16) & 0xff, (p >> 8) & 0xff, p & 0xff, (p >>> 24) & 0xff)
           }
-          layer <- part("map raster")(frameImage(image, MapName, false))
-          lines <- isolines(m.grid)
+          layer <- part("map raster")(
+            for
+              centre <- Point.native(left + w / 2.0, top + h / 2.0)
+              we     <- ExtentExpr.native(w)
+              he     <- ExtentExpr.native(h)
+              n      <- name(MapName)
+              img    <- Grob.image(
+                image,
+                centre,
+                Size.fromExtents(we, he),
+                interpolation = RasterInterpolation.Nearest,
+                name = Some(n)
+              )
+            yield img
+          )
+          lines <- isolines(m.grid, left, top, w, h)
         yield layer +: lines
       }
 
-    private def isolines(grid: MapGrid): R[Vector[Grob]] =
-      val cellW            = frameW / grid.columns
-      val cellH            = frameH / grid.rows
-      def at(p: GridPoint) = Point.native(frameLeft + p.x * cellW, frameTop + p.y * cellH)
+    private def isolines(
+        grid: MapGrid,
+        left: Double,
+        top: Double,
+        w: Double,
+        h: Double
+    ): R[Vector[Grob]] =
+      val cellW            = w / grid.columns
+      val cellH            = h / grid.rows
+      def at(p: GridPoint) = Point.native(left + p.x * cellW, top + p.y * cellH)
       val segments         = Isolines.of(grid).flatMap(_.segments)
       if segments.isEmpty then Right(Vector.empty)
       else
