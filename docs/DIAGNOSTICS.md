@@ -1914,6 +1914,7 @@ fails after rewriting, so review the change and run it again.
 | `psychology-workflow.tidy-result-failed` | `TidyResultFailed` | `source`, `underlying` |
 | `psychology-workflow.export-failed` | `ExportFailed` | `source`, `underlying` |
 | `psychology-workflow.export-round-trip-mismatch` | `ExportRoundTripMismatch` | `source` |
+| `psychology-workflow.analysis-input-mismatch` | `AnalysisInputMismatch` | `source`, `analysisInput`, `importedRecording` |
 
 ### `sha256` — `Sha256Error`
 

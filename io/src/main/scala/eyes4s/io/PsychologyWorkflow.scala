@@ -452,14 +452,32 @@ object PsychologyWorkflow:
     * the same rows and the same provenance, including the import, synchronization,
     * visual-angle and interpolation steps that the analysis alone does not record.
     * `TidyAoiResult.from` without those steps keeps the measures but drops that
-    * provenance.
+    * provenance. The analysis must have run on the imported recording: its
+    * plan's input must be that recording's content hash, or the provenance
+    * would describe a different source
+    * ([[PsychologyWorkflowError.AnalysisInputMismatch]]).
     */
   def tidy[P](
       study: StudyTrial,
       imported: DelimitedImport[Px],
       analysis: RecordingAnalysis[P]
-  ): Either[PsychologyWorkflowError, TidyAoiResult] =
-    TidyAoiResult
+  ): Either[PsychologyWorkflowError, TidyAoiResult] = for
+    native <- imported.recording.toRight(
+      PsychologyWorkflowError.ImportFailed(
+        imported.raw.source,
+        imported.diagnostics.map(_.message)
+      )
+    )
+    _ <- Either.cond(
+      analysis.input == ArtifactRef.of[Recording[Px]](native.contentHash),
+      (),
+      PsychologyWorkflowError.AnalysisInputMismatch(
+        imported.raw.source,
+        analysis.input.digest,
+        native.contentHash.render
+      )
+    )
+    tidy <- TidyAoiResult
       .from(
         study,
         imported,
@@ -475,6 +493,7 @@ object PsychologyWorkflow:
       )
       .left
       .map(PsychologyWorkflowError.TidyResultFailed(imported.raw.source, _))
+  yield tidy
 
   private def schemaFor(
       source: String
@@ -600,6 +619,9 @@ enum PsychologyWorkflowError derives CanEqual:
   case ExportFailed(source: String, underlying: TidyCsvError)
   case ExportRoundTripMismatch(source: String)
 
+  /** A completed analysis whose plan input is not the imported recording. */
+  case AnalysisInputMismatch(source: String, analysisInput: String, importedRecording: String)
+
   def message: String = this match
     case AnalysisFailed(source, underlying) =>
       s"Source '$source' analysis failed: ${underlying.message}"
@@ -675,3 +697,6 @@ enum PsychologyWorkflowError derives CanEqual:
       s"Source '$source' tidy CSV failed validation: ${underlying.message}"
     case ExportRoundTripMismatch(source) =>
       s"Source '$source' tidy CSV did not survive deterministic decode and re-encode."
+    case AnalysisInputMismatch(source, analysisInput, importedRecording) =>
+      s"Source '$source' analysis ran on input $analysisInput, not the imported recording " +
+        s"$importedRecording; its tidy provenance would describe another source."
