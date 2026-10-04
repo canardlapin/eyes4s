@@ -102,6 +102,13 @@ final class ExploreTrialViewHost(
   private var drawn: Option[TrialSceneInput] = None
   private var mapped: Option[MapRequest]     = None
 
+  private var changed: Vector[() => Unit] = Vector.empty
+
+  /** Call `f` after each change of the view (its trial or its reads), as the
+    * timeline follows the trial view.
+    */
+  def onChange(f: () => Unit): Unit = changed = changed :+ f
+
   /** The view's state now. */
   def state: ExploreTrialView = view
 
@@ -138,6 +145,7 @@ final class ExploreTrialViewHost(
         (Some(i), r)
       )
     pane.render(vm, refused)
+    changed.foreach(_())
     if input != drawn then
       drawn = input
       input.fold(trialView.clear())(trialView.show)

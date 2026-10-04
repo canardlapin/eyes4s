@@ -29,6 +29,10 @@ enum ExploreTextId derives CanEqual:
   case NoTrial, NoRevision, Reading, ReadFailed, DisplaysFailed, DisplaysNotServed, Retry
   case SkippedMark, PreviewUndrawable
 
+  // --- The timeline (S6.3) ------------------------------------------------------------
+  case Play, Pause, StepBack, StepForward, SpeedHalf, SpeedOne, SpeedTwo, PlayheadStatus
+  case BrushStatus, BrushDisclaimer, TimelineNotRead
+
   // --- The legend ------------------------------------------------------------------------
   case LegendTitle, Fixation, OutsideWindowExcluded, OutsideWindowFails, OutsideScreen
   case DroppedInitial, OrderLines, PreviewMap, MissingAsset
@@ -62,6 +66,18 @@ object ExploreText:
     case Retry             => "Retry"
     case SkippedMark       => "Fixation {0} lasts {1} ms, too short to draw; it is not shown."
     case PreviewUndrawable => "The preview of {0} cannot be drawn: {1}"
+
+    case Play            => "Play"
+    case Pause           => "Pause"
+    case StepBack        => "Step back"
+    case StepForward     => "Step forward"
+    case SpeedHalf       => "0.5×"
+    case SpeedOne        => "1×"
+    case SpeedTwo        => "2×"
+    case PlayheadStatus  => "playhead {0} s"
+    case BrushStatus     => "brush {0}–{1} s"
+    case BrushDisclaimer => "Brushing highlights; it does not crop the analysis"
+    case TimelineNotRead => "The timeline of {0} cannot be drawn: {1}"
 
     case LegendTitle           => "Legend"
     case Fixation              => "Fixation · marker area ∝ duration"
