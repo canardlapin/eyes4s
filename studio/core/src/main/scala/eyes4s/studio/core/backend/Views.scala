@@ -16,6 +16,8 @@
 
 package eyes4s.studio.core.backend
 
+import ProtocolCodecs.portableLong
+
 import eyes4s.plan.{QuarantineCause as CoreCause, TrialDisposition as CoreDisposition}
 import io.circe.syntax.*
 import io.circe.{Codec, Decoder, Encoder, HCursor, JsonObject}

@@ -13136,6 +13136,11 @@
       "instance": "eyes4s/plan/TokenRole$$anon$1",
       "suite": "planJVM/eyes4s.plan.StudyFormSuite"
     },
+    "class eyes4s.plan.TrialConflictClassification": {
+      "classification": "data-sum",
+      "instance": "eyes4s/plan/TrialConflictClassification$$anon$1",
+      "suite": "planJVM/eyes4s.plan.TrialConflictGroupingSuite"
+    },
     "class eyes4s.plan.TrialDisposition": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/TrialDisposition$$anon$6",
@@ -15876,7 +15881,7 @@
     "method eyes4s.plan.StudyMethod.<init>(4,eyes4s.plan.DefinitionId,java.lang.String,scala.Function1,eyes4s.plan.MethodExecution,scala.Option,eyes4s.design.ScoreMean,eyes4s.design.Contrastable):eyes4s.plan.StudyMethod": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.plan.StudyMethod.<init>(4,eyes4s.plan.DefinitionId,java.lang.String,scala.Function1,scala.Function1,scala.Option,eyes4s.design.ScoreMean,eyes4s.design.Contrastable):eyes4s.plan.StudyMethod": "planJVM/eyes4s.plan.StudyWorkSuite",
     "method eyes4s.plan.StudyMethod.capability():": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.plan.StudyPairing$package$.TrialOccurrence$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.OccurrencePairingSuite",
+    "method eyes4s.plan.StudyPairing$package$.TrialOccurrence$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
     "method eyes4s.plan.StudyPairing$package$.TrialOccurrence$.value(scala.Int):scala.Int": "planJVM/eyes4s.plan.CountedStudyCursorSuite",
     "method eyes4s.plan.StudyPairing.canRefuse():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyPairing.description():": "planJVM/eyes4s.plan.CountedStudyCursorSuite",
@@ -15986,12 +15991,18 @@
     "method eyes4s.plan.TemporalStudyResult.input():": "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
     "method eyes4s.plan.TemporalWork$.complete(5,eyes4s.plan.TemporalCursor,eyes4s.design.WorkQuanta):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.Token.text():": "planJVM/eyes4s.plan.StudyFormSuite",
+    "method eyes4s.plan.TrialConflictGrouping$.group(scala.collection.IterableOnce):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
+    "method eyes4s.plan.TrialConflictGrouping.add(eyes4s.plan.TrialConflictRow):eyes4s.plan.TrialConflictGrouping": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
+    "method eyes4s.plan.TrialConflictGrouping.groups():": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
+    "method eyes4s.plan.TrialConflictRow$.from(eyes4s.plan.TrialKey,eyes4s.plan.CsvRecord):eyes4s.plan.TrialConflictRow": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
+    "method eyes4s.plan.TrialConflictRow$.of(eyes4s.plan.TrialIdentity,java.lang.String,eyes4s.plan.CsvRecord):scala.util.Either": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
+    "method eyes4s.plan.TrialConflictRow.identity():": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
     "method eyes4s.plan.TrialDisposition.label():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
-    "method eyes4s.plan.TrialIdentity$.of(eyes4s.plan.TrialKey):eyes4s.plan.TrialIdentity": "planJVM/eyes4s.plan.InventoryLedgerSuite",
-    "method eyes4s.plan.TrialIdentity$.of(java.lang.String,java.lang.String,java.lang.String,scala.Int):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "method eyes4s.plan.TrialIdentity$.of(eyes4s.plan.TrialKey):eyes4s.plan.TrialIdentity": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
+    "method eyes4s.plan.TrialIdentity$.of(java.lang.String,java.lang.String,java.lang.String,scala.Int):scala.util.Either": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
     "method eyes4s.plan.TrialIdentity$.projection(1,eyes4s.plan.StudyLayout):scala.Option": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.plan.TrialIdentity.render():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
-    "method eyes4s.plan.TrialIdentity.withItem(java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "method eyes4s.plan.TrialIdentity.withItem(java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
     "method eyes4s.plan.TrialKey$.layout(eyes4s.plan.DefinitionId):eyes4s.plan.StudyLayout": "planJVM/eyes4s.plan.CountedStudyCursorSuite",
     "method eyes4s.plan.TrialKey$.of(java.lang.String,java.lang.String,java.lang.String,scala.Int,java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.CountedStudyCursorSuite",
     "method eyes4s.plan.TrialSources.records():": "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -16914,6 +16925,7 @@
     "value eyes4s.plan.TemporalForm.repetitions": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
     "value eyes4s.plan.TemporalForm.windows": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
     "value eyes4s.plan.TemporalReport.family": "planJVM/eyes4s.plan.PreflightSuite",
+    "value eyes4s.plan.TrialConflictGrouping$.empty": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
     "value eyes4s.plan.TrialIdentity$.given_KeyDigest_TrialIdentity": "ioJVM/eyes4s.io.SourceAdmissionSuite",
     "value eyes4s.plan.TrialIdentity$.given_Ordering_TrialIdentity": "ioJVM/eyes4s.io.SourceAdmissionSuite",
     "value eyes4s.plan.TrialKey$.given_KeyDigest_TrialKey": "planJVM/eyes4s.plan.CountedStudyCursorSuite",
@@ -18116,14 +18128,15 @@
     ],
     "ioJS/eyes4s.io.AdmissionPolicySuite": [
       "a flip keeps a record on the half-open screen on it, edges included",
+      "a parsed key on an otherwise invalid row still joins its occurrence conflict",
       "a participant-scoped rule needs a key reader that names the participant",
       "a trial two rules cover is quarantined, naming both rules",
       "a v1-policy ledger that names a v2-only cause is written as version 2",
       "by default an off-screen record is admitted, listed and reported, not quarantined",
       "corrections apply to the parsed position before containment; raw fields are kept",
+      "item conflict takes precedence when a trial label also disagrees on occurrence",
       "non-finite and unparseable coordinates still quarantine under ExcludeRecord",
       "records of one trial naming two items quarantine it once, naming both items",
-      "records of one trial naming two occurrences quarantine it, naming both",
       "the ledger records the policy on the wire; a version-1 ledger keeps version 1",
       "the version-1 read and QuarantineTrial reject the record and quarantine its trial"
     ],
@@ -20206,6 +20219,16 @@
       "the cursor at every quantum is plan.run over straddlers, empty windows, missing epochs and overflow",
       "the step sequence is every cell's preparation then its study cursor's steps, stamped"
     ],
+    "planJS/eyes4s.plan.TrialConflictGroupingSuite": [
+      "a blank item is refused at the typed input boundary",
+      "an empty fold has no groups",
+      "an item conflict takes precedence when occurrences also disagree",
+      "equal parsed trial keys are ok even across multiple records",
+      "one parsed trial key is an ok singleton",
+      "participants, phases and labels remain separate in an immutable fold",
+      "permuted and chunked input produces the same canonical groups",
+      "the incremental fold preserves record order and chooses the canonical representative"
+    ],
     "planJS/eyes4s.pointconsumer.PointSamplingSuite": [
       "checked plan components cannot be fabricated by an external consumer",
       "clock and frame disagreements are operand-bearing failures, including no containing cell",
@@ -21605,14 +21628,15 @@
     ],
     "ioJVM/eyes4s.io.AdmissionPolicySuite": [
       "a flip keeps a record on the half-open screen on it, edges included",
+      "a parsed key on an otherwise invalid row still joins its occurrence conflict",
       "a participant-scoped rule needs a key reader that names the participant",
       "a trial two rules cover is quarantined, naming both rules",
       "a v1-policy ledger that names a v2-only cause is written as version 2",
       "by default an off-screen record is admitted, listed and reported, not quarantined",
       "corrections apply to the parsed position before containment; raw fields are kept",
+      "item conflict takes precedence when a trial label also disagrees on occurrence",
       "non-finite and unparseable coordinates still quarantine under ExcludeRecord",
       "records of one trial naming two items quarantine it once, naming both items",
-      "records of one trial naming two occurrences quarantine it, naming both",
       "the ledger records the policy on the wire; a version-1 ledger keeps version 1",
       "the version-1 read and QuarantineTrial reject the record and quarantine its trial"
     ],
@@ -23807,6 +23831,16 @@
       "preparation refuses a wrong or missing input before any step; a budget refusal follows the first cell's preparation",
       "the cursor at every quantum is plan.run over straddlers, empty windows, missing epochs and overflow",
       "the step sequence is every cell's preparation then its study cursor's steps, stamped"
+    ],
+    "planJVM/eyes4s.plan.TrialConflictGroupingSuite": [
+      "a blank item is refused at the typed input boundary",
+      "an empty fold has no groups",
+      "an item conflict takes precedence when occurrences also disagree",
+      "equal parsed trial keys are ok even across multiple records",
+      "one parsed trial key is an ok singleton",
+      "participants, phases and labels remain separate in an immutable fold",
+      "permuted and chunked input produces the same canonical groups",
+      "the incremental fold preserves record order and chooses the canonical representative"
     ],
     "planJVM/eyes4s.pointconsumer.PointSamplingSuite": [
       "checked plan components cannot be fabricated by an external consumer",

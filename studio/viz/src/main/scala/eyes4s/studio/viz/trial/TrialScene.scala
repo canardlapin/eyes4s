@@ -31,6 +31,7 @@ import eyes4s.studio.core.assets.{AssetFile, AssetRef, DisplayKind, DisplayState
 import eyes4s.studio.core.backend.TrialKey
 import eyes4s.studio.core.document.ScreenSize
 import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
+import eyes4s.plan.{MapPlacement, OffWindowPolicy}
 import eyes4s.studio.viz.plot.{
   DataPanel,
   DataPoint,
@@ -115,23 +116,22 @@ enum TrialSceneError derives CanEqual:
 // Inputs
 // ---------------------------------------------------------------------------
 
-/** Whether a fixation lies in the analysis window (the image frame). The
-  * data source says so; the trial view never decides it.
-  */
-enum WindowSide derives CanEqual:
-  case Inside, Outside
-
 /** One fixation as the trial view draws it: its index in the trial, its
   * position in screen pixels (origin top-left, y down), its duration and
-  * whether it lies in the analysis window.
+  * its already-decided core map placement. The trial view never derives this
+  * classification from screen coordinates: `DroppedInitial` takes precedence
+  * over `OutsideScreen`, and an outside-window fixation retains the plan's
+  * Exclude or FailTrial policy.
   */
 final case class TrialFixation private (
     index: FixationIndex,
     screenX: Double,
     screenY: Double,
     durationMs: Int,
-    window: WindowSide
-) derives CanEqual
+    placement: MapPlacement
+) derives CanEqual:
+  /** Whether core includes this fixation in the trial map. */
+  def contributesToMap: Boolean = placement == MapPlacement.InMap
 
 object TrialFixation:
   def of(
@@ -140,13 +140,13 @@ object TrialFixation:
       screenX: Double,
       screenY: Double,
       durationMs: Int,
-      window: WindowSide
+      placement: MapPlacement
   ): Either[TrialSceneError, TrialFixation] =
     if !screenX.isFinite || !screenY.isFinite then
       Left(TrialSceneError.NonFinitePosition(trial, index.value, screenX, screenY))
     else if durationMs <= 0 then
       Left(TrialSceneError.DurationNotPositive(trial, index.value, durationMs))
-    else Right(new TrialFixation(index, screenX, screenY, durationMs, window))
+    else Right(new TrialFixation(index, screenX, screenY, durationMs, placement))
 
 /** The role a trial plays in a comparison (DESIGN_SPEC section 5). */
 enum TrialRole derives CanEqual:
@@ -267,7 +267,7 @@ final case class TrialMark(
     at: DataPoint,
     radiusPx: Double,
     reachPx: Double,
-    window: WindowSide,
+    placement: MapPlacement,
     order: Int,
     name: GraphicsName
 ) derives CanEqual
@@ -367,9 +367,12 @@ object TrialScene:
   private def pt(px: Double): Double = px * PointsPerPixel
 
   // Dash rhythms (device pixels; see the report on Intaglio's dash units).
-  private val OrderDash   = DashPattern.unsafe(6.0, 5.0)
-  private val OutsideDash = DashPattern.unsafe(3.0, 2.5)
-  private val WindowDash  = DashPattern.unsafe(8.0, 6.0)
+  private val OrderDash            = DashPattern.unsafe(6.0, 5.0)
+  private val DroppedInitialDash   = DashPattern.unsafe(1.5, 3.0)
+  private val OutsideScreenDash    = DashPattern.unsafe(7.0, 2.0)
+  private val OutsideExcludeDash   = DashPattern.unsafe(3.0, 2.5)
+  private val OutsideFailTrialDash = DashPattern.unsafe(5.0, 1.5)
+  private val WindowDash           = DashPattern.unsafe(8.0, 6.0)
 
   /** The radius of a mark for a fixation of `durationMs`, in logical pixels. */
   def radiusPx(durationMs: Int): Double = RadiusPerRootMs * math.sqrt(durationMs.toDouble)
@@ -696,27 +699,35 @@ object TrialScene:
       case MarkStyle.Role(TrialRole.Matched) => PointShape.Diamond
       case _                                 => PointShape.Circle
 
-    // A mark's paint (DESIGN_SPEC sections 5, 12, 14): filled marks carry a
-    // halo stroke; a control is a hollow outline, cased by the halo; a mark
-    // outside the analysis window is a dashed halo outline, unfilled.
+    // A mark's paint (DESIGN_SPEC sections 5, 9, 12, 14): each core placement
+    // has its own visible treatment. Only InMap is filled; the two window
+    // policies remain visible even though neither adds an out-of-window point.
     private def markParams(f: TrialFixation): Either[GraphicsError, GraphicParams] =
       val halo = staged(StageToken.Halo)
-      (f.window, input.marks) match
-        case (WindowSide.Outside, _) =>
-          stroke(halo, HaloPx, LineType.Custom(OutsideDash))
-        case (WindowSide.Inside, MarkStyle.Role(TrialRole.Control)) =>
-          stroke(markColour(TrialRole.Control), HaloPx)
-        case (WindowSide.Inside, MarkStyle.Role(role)) =>
-          stroke(halo, HaloPx).map(_.withSolidFill(Some(markColour(role))))
-        case (WindowSide.Inside, MarkStyle.Neutral) =>
-          stroke(halo, HaloPx).map(_.withSolidFill(Some(themed(ThemedToken.NeutralMark))))
+      def included(line: LineType): Either[GraphicsError, GraphicParams] = input.marks match
+        case MarkStyle.Role(TrialRole.Control) =>
+          stroke(markColour(TrialRole.Control), HaloPx, line)
+        case MarkStyle.Role(role) =>
+          stroke(halo, HaloPx, line).map(_.withSolidFill(Some(markColour(role))))
+        case MarkStyle.Neutral =>
+          stroke(halo, HaloPx, line).map(_.withSolidFill(Some(themed(ThemedToken.NeutralMark))))
+      f.placement match
+        case MapPlacement.DroppedInitial =>
+          stroke(halo, HaloPx, LineType.Custom(DroppedInitialDash))
+        case MapPlacement.OutsideScreen =>
+          stroke(halo, HaloPx, LineType.Custom(OutsideScreenDash))
+        case MapPlacement.OutsideWindow(OffWindowPolicy.Exclude) =>
+          stroke(halo, HaloPx, LineType.Custom(OutsideExcludeDash))
+        case MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial) =>
+          stroke(halo, HaloPx, LineType.Custom(OutsideFailTrialDash))
+        case MapPlacement.InMap => included(LineType.Solid)
 
     private def sizeOf(f: TrialFixation): Either[GraphicsError, ExtentExpr] =
       ExtentExpr.points(pt(radiusPx(f.durationMs)))
 
-    // A hollow control mark inside the analysis window is cased by the halo.
+    // A hollow control mark in the map is cased by the halo.
     private def cased(f: TrialFixation): Boolean =
-      f.window == WindowSide.Inside && input.marks == MarkStyle.Role(TrialRole.Control)
+      f.placement == MapPlacement.InMap && input.marks == MarkStyle.Role(TrialRole.Control)
 
     // A cased mark is a closed ring with an Intaglio StrokeCasing: Intaglio
     // paints casings on linear outlines only, not on point marks. The casing
@@ -786,7 +797,7 @@ object TrialScene:
                   DataPoint(f.screenX, f.screenY),
                   radiusPx(f.durationMs),
                   reach(f, shape),
-                  f.window,
+                  f.placement,
                   i,
                   n
                 )

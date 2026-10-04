@@ -47,11 +47,11 @@ object TrialInputState:
 
 extension (state: TrialInputState)
   /** The view's accessible text: the focused mark, from its semantic id, or
-    * how to use the view when no mark is focused.
+    * how to use the view when no mark is focused. The mark's text states its
+    * map placement.
     */
   def accessibleText(trial: TrialKey, targets: TrialTargets): String =
-    state.spoken(
-      targets,
-      (ref, share) => TrialText.mark(ref, share != SelectionShare.Unselected),
-      TrialText(TrialTextId.PlotKeys, trial.label)
-    )
+    state.focus.flatMap(ref => targets.target(ref).map(ref -> _)) match
+      case Some((ref, t)) =>
+        TrialText.mark(ref, t.mark.placement, state.share(t) != SelectionShare.Unselected)
+      case None => TrialText(TrialTextId.PlotKeys, trial.label)

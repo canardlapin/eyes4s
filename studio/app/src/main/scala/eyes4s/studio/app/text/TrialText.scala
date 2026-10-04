@@ -17,6 +17,7 @@
 package eyes4s.studio.app.text
 
 import eyes4s.studio.core.selection.StudioRef
+import eyes4s.plan.{MapPlacement, OffWindowPolicy}
 
 /** The strings a trial view draws on its stage (ticket S4.3a; DESIGN_SPEC
   * sections 5 and 9). They are kept apart from [[MessageId]] so that the
@@ -49,6 +50,10 @@ enum TrialTextId derives CanEqual:
   /** The accessible text of the trial view and of its focused mark (S4.2). */
   case PlotRole, PlotKeys, MarkFocus, MarkSelected
 
+  /** The core placement state announced for a focused fixation. */
+  case MarkInMap, MarkDroppedInitial, MarkOutsideScreen, MarkOutsideWindowExcluded,
+    MarkOutsideWindowFailsTrial
+
 /** The trial view's strings in the boards' wording. */
 object TrialText:
 
@@ -79,14 +84,27 @@ object TrialText:
       case PlotKeys        =>
         "Fixations of {0}. Arrow keys move to the nearest fixation, Page Up and Page Down " +
           "step in order, Enter selects, Escape clears the selection."
-      case MarkFocus    => "Fixation {0} of {1}"
-      case MarkSelected => "{0}, selected"
+      case MarkFocus                   => "Fixation {0} of {1}"
+      case MarkSelected                => "{0}, selected"
+      case MarkInMap                   => "{0} · in map"
+      case MarkDroppedInitial          => "{0} · dropped by initial-fixation policy"
+      case MarkOutsideScreen           => "{0} · outside screen"
+      case MarkOutsideWindowExcluded   => "{0} · outside window, excluded from map"
+      case MarkOutsideWindowFailsTrial => "{0} · outside window, trial fails"
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: TrialTextId, args: String*): String =
     Messages.fill(english(id), args.toVector)
 
   /** The accessible text of a focused fixation mark, from its semantic id. */
-  def mark(ref: StudioRef.Fixation, selected: Boolean): String =
-    val focus = apply(TrialTextId.MarkFocus, ref.index.value.toString, ref.trial.label)
-    if selected then apply(TrialTextId.MarkSelected, focus) else focus
+  def mark(ref: StudioRef.Fixation, placement: MapPlacement, selected: Boolean): String =
+    val focus  = apply(TrialTextId.MarkFocus, ref.index.value.toString, ref.trial.label)
+    val placed = placement match
+      case MapPlacement.InMap          => apply(TrialTextId.MarkInMap, focus)
+      case MapPlacement.DroppedInitial => apply(TrialTextId.MarkDroppedInitial, focus)
+      case MapPlacement.OutsideScreen  => apply(TrialTextId.MarkOutsideScreen, focus)
+      case MapPlacement.OutsideWindow(OffWindowPolicy.Exclude) =>
+        apply(TrialTextId.MarkOutsideWindowExcluded, focus)
+      case MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial) =>
+        apply(TrialTextId.MarkOutsideWindowFailsTrial, focus)
+    if selected then apply(TrialTextId.MarkSelected, placed) else placed

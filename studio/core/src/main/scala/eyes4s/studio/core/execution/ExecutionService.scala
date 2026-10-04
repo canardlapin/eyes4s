@@ -20,6 +20,7 @@ import cats.effect.std.{Mutex, Queue, Supervisor}
 import cats.effect.{Concurrent, Ref, Resource}
 import cats.syntax.all.*
 import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.preview.PreviewReady
 import fs2.Stream
 import fs2.concurrent.Topic
 
@@ -53,6 +54,9 @@ trait ExecutionService[F[_]]:
     * before the backend is asked.
     */
   def submit(stamp: RunStamp): F[Either[ExecutionError, ExecutionJob]]
+
+  /** Submit the exact prepared study named by a ready backend preview. */
+  def submitPreview(ready: PreviewReady): F[Either[ExecutionError, ExecutionJob]]
 
   /** Track a job the backend already runs (a reopened project's
     * `JobHandle`); `stamp` becomes the requested stamp.
@@ -140,6 +144,14 @@ object ExecutionService:
         backend.submit(stamp.revision).flatMap {
           case Left(e)       => F.pure(Left(ExecutionError.Backend(e)))
           case Right(status) => start(status, stamp, generation)
+        }
+      }
+
+    def submitPreview(ready: PreviewReady): F[Either[ExecutionError, ExecutionJob]] =
+      intend(ready.stamp).flatMap { generation =>
+        backend.submitPreview(ready).flatMap {
+          case Left(e)       => F.pure(Left(ExecutionError.Backend(e)))
+          case Right(status) => start(status, ready.stamp, generation)
         }
       }
 
