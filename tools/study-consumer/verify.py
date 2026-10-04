@@ -224,6 +224,7 @@ def main():
     facade = check_facade_journey(log)
     report = check_report_journey(log)
     repetition = check_repetition_journey(log)
+    templates = check_template_journey(log)
     envelope = check_envelope(log)
     receipt = {
         "artifact_version": VERSION,
@@ -273,6 +274,7 @@ def main():
                 "report journey: Report.evaluate equals the explicit reduction; exports",
                 "repetition journey: RepetitionPlan and PointSamplingPlan against "
                 "explicit compositions and point-sampling.json",
+                "template journey: fits and decompositions equal the explicit kernels",
                 "JVM and Scala.js agree exactly on portable evidence",
             ],
         },
@@ -330,6 +332,10 @@ def main():
             "absolute_tolerance": ORACLE_TOLERANCE,
             "oracle": "tools/r-parity/fixtures/point-sampling.json",
             "runtime_evidence": repetition,
+        },
+        "template_journey": {
+            "absolute_tolerance": ORACLE_TOLERANCE,
+            "runtime_evidence": templates,
         },
         "response_envelope": envelope,
         "consumer_directory": str(candidate),
@@ -643,6 +649,26 @@ def check_repetition_journey(log):
         raise RuntimeError("JVM/Scala.js repetition contrasts disagree")
     same_except_runtime(points, "point-sampling journey")
     return {"repetition": [left, right], "points": [points["jvm"], points["js"]]}
+
+
+def check_template_journey(log):
+    """Template decompositions and partial associations agree across runtimes.
+
+    Least squares uses hypot, whose last bit may differ between the JVM and
+    Scala.js, so values agree within the oracle tolerance rather than bit for bit.
+    """
+    pair = runtime_pair(log, "EYES4S_TEMPLATE_JOURNEY=", "template journey")
+    left, right = pair["jvm"], pair["js"]
+    values = lambda run: [v for fit in run["decompositions"] for v in fit] + [
+        run["pearson"],
+        run["spearman"],
+    ]
+    a, b = values(left), values(right)
+    if len(a) != len(b) or not all(
+        math.isclose(x, y, abs_tol=ORACLE_TOLERANCE, rel_tol=0) for x, y in zip(a, b)
+    ):
+        raise RuntimeError("JVM/Scala.js template journey disagreement")
+    return [left, right]
 
 
 def check_envelope(log):
