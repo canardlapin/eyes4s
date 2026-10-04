@@ -172,6 +172,21 @@ object ManifestLaws extends ManifestLaws:
     override def recordingResult(document: Json) = tick(super.recordingResult(document))
     override def temporalPlan(document: Json)    = tick(super.temporalPlan(document))
     override def temporalResult(document: Json)  = tick(super.temporalResult(document))
+    override def report(document: Json)          = tick(super.report(document))
+    override def importSpec(document: Json)      = tick(super.importSpec(document))
+
+    /** The analysis registrations, each decoder counted. */
+    override def analyses =
+      AnalysisRegistry
+        .of(
+          super.analyses.entries.map(r =>
+            r.copy(
+              decodePlan = json => tick(r.decodePlan(json)),
+              decodeResult = json => tick(r.decodeResult(json))
+            )
+          )
+        )
+        .getOrElse(super.analyses)
 
   def counting[K, U <: Unit2D](decoders: ArtifactDecoders[K, U]): Counting[K, U] =
     new Counting(decoders)

@@ -32,7 +32,9 @@ final case class MenuItemVM(
     label: String,
     shortcut: Option[KeyChord],
     enabled: Boolean,
-    intent: Intent
+    intent: Intent,
+    submenu: Option[String] = None,
+    checked: Option[Boolean] = None
 ) derives CanEqual
 
 /** One menu of the system menu bar. */
@@ -73,7 +75,15 @@ object Menus:
         messages(section.title),
         commands.map { c =>
           val a = item(c, model, messages)
-          MenuItemVM(c.id, a.label, c.shortcut, a.enabled, a.intent)
+          MenuItemVM(
+            c.id,
+            a.label,
+            c.shortcut,
+            a.enabled,
+            a.intent,
+            c.submenu.map(messages(_)),
+            c.checked(model)
+          )
         }
       )
     }

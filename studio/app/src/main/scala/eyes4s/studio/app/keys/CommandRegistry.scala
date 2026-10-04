@@ -16,6 +16,7 @@
 
 package eyes4s.studio.app.keys
 
+import eyes4s.studio.app.appearance.Appearance
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.execution.JobPhase
 import eyes4s.studio.app.text.{MessageId, Messages}
@@ -56,8 +57,13 @@ final class AppCommand private[keys] (
     val section: MenuSection,
     val shortcut: Option[KeyChord],
     resolve: AppModel => Option[Intent],
-    why: AppModel => Option[CommandError] = (_: AppModel) => None
+    why: AppModel => Option[CommandError] = (_: AppModel) => None,
+    val submenu: Option[MessageId] = None,
+    selected: AppModel => Option[Boolean] = (_: AppModel) => None
 ):
+  /** For one of a submenu's choices: whether it is the current one. */
+  def checked(model: AppModel): Option[Boolean] = selected(model)
+
   /** The intent this command dispatches now; never another Invoke or key. */
   def intent(model: AppModel): Option[Intent] = resolve(model)
 
@@ -270,6 +276,24 @@ object CommandRegistry:
     always(Intent.ResetPerspective)
   )
 
+  // View › Appearance (S1.10): one choice each, the current one checked.
+  private def appearance(a: Appearance, key: String, label: MessageId) =
+    AppCommand(
+      CommandId.declared(s"view.appearance-$key"),
+      label,
+      MenuSection.View,
+      None,
+      always(Intent.SetAppearance(a)),
+      submenu = Some(MessageId.MenuAppearance),
+      selected = m => Some(m.appearance.shown(m.document.presentation.theme) == a)
+    )
+
+  val appearanceLight: AppCommand =
+    appearance(Appearance.Light, "light", MessageId.AppearanceLight)
+  val appearanceDark: AppCommand = appearance(Appearance.Dark, "dark", MessageId.AppearanceDark)
+  val appearanceSystem: AppCommand =
+    appearance(Appearance.System, "system", MessageId.AppearanceSystem)
+
   /** Every command, in menu order. */
   val all: Vector[AppCommand] = Vector(
     data,
@@ -296,7 +320,10 @@ object CommandRegistry:
     renameProject,
     revealProject,
     projectInfo,
-    resetPerspective
+    resetPerspective,
+    appearanceLight,
+    appearanceDark,
+    appearanceSystem
   )
 
   def find(id: CommandId): Option[AppCommand] = all.find(_.id == id)
@@ -344,7 +371,10 @@ object CommandRegistry:
     val rows            = menus.flatMap { (section, commands) =>
       commands.map { c =>
         val keys = c.shortcut.fold("—")(k => s"`${cell(k.render)}`")
-        s"| ${messages(section.title)} | ${cell(messages(c.label))} | $keys | `${c.id.value}` |"
+        // A submenu's item is named with its submenu: "Appearance › Dark".
+        val label =
+          c.submenu.fold(messages(c.label))(sub => s"${messages(sub)} › ${messages(c.label)}")
+        s"| ${messages(section.title)} | ${cell(label)} | $keys | `${c.id.value}` |"
       }
     }
     (Vector(

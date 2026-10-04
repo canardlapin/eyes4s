@@ -19,7 +19,6 @@ package eyes4s.studio.desktop.shell
 import cats.effect.unsafe.implicits.global
 import eyes4s.studio.app.{AppModel, ClockTime, Intent, PlatformDialog}
 import eyes4s.studio.app.text.Format
-import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.vm.{Shell, ShellText}
 import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.core.fixture.StoryMoment
@@ -76,7 +75,6 @@ abstract class ShellFxSuite extends StudioFxSuite:
       model: AppModel,
       moment: StoryMoment = StoryMoment.T2,
       dialogs: PlatformDialogs = Dialogs(None),
-      theme: Theme = Theme.Light,
       project: Option[ProjectPort] = None,
       clock: () => Option[ClockTime] = DesktopEffects.wallClock,
       // Synthetic key events never reach a native menu, so the shell suites
@@ -93,6 +91,8 @@ abstract class ShellFxSuite extends StudioFxSuite:
       // Explore's source records: the window's backend's unless a suite
       // brings its own.
       records: Option[eyes4s.studio.app.explore.SourceRecordsSource] = None,
+      // Repair… opens no chooser in a test unless a suite brings its files.
+      assetFiles: eyes4s.studio.desktop.data.AssetFiles = (_, done) => done(Right(None)),
       // Compare's trial panels: none unless a suite brings its own.
       panels: eyes4s.studio.desktop.compare.PanelSources =
         eyes4s.studio.desktop.compare.PanelSources.notServed
@@ -104,13 +104,13 @@ abstract class ShellFxSuite extends StudioFxSuite:
           moment,
           displays,
           stimuli,
-          theme,
           dialogs = Some(dialogs),
           project = project,
           clock = clock,
           nativeMenu = nativeMenu,
           presets = presets,
           records = records,
+          assetFiles = Some(assetFiles),
           panels = panels
         )
         .fold(e => fail(e.message), identity)

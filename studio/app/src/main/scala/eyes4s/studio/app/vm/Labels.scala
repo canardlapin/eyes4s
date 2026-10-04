@@ -29,6 +29,7 @@ import eyes4s.studio.app.text.{
   LedgerTextId,
   MessageId,
   Messages,
+  SourcesText,
   SummaryText
 }
 import eyes4s.studio.core.backend.{
@@ -169,6 +170,7 @@ final class Labels(model: AppModel, messages: Messages):
     case StudioRef.FigurePanel(_, letter)            => messages(CrumbPanel, letter.value)
     case StudioRef.WindowTally(dataset, region)      => tally(dataset, region)
     case StudioRef.DesignTally(revision, count)      => DesignText.tally(revision, count)
+    case StudioRef.DisplayTally(dataset, count)      => SourcesText.tally(dataset, count)
     case StudioRef.QueryTally(run, count)            => SummaryText.tally(run, count)
     case StudioRef.InventoryCount(_, _)              => AdmissionLedgerVM.countLabel(ref)
     case StudioRef.TrialGroup(_, group)              => TrialsNavigatorVM.groupLabel(group)
@@ -233,6 +235,7 @@ final class Labels(model: AppModel, messages: Messages):
       case StudioRef.FigurePanel(figure, letter)  => panel(figure, letter)
       case StudioRef.WindowTally(dataset, region) => tally(dataset, region)
       case StudioRef.DesignTally(revision, count) => DesignText.tally(revision, count)
+      case StudioRef.DisplayTally(dataset, count) => SourcesText.tally(dataset, count)
       case StudioRef.QueryTally(run, count)       => SummaryText.tally(run, count)
       case StudioRef.InventoryCount(dataset, _)   =>
         LedgerText(LedgerTextId.PathCount, dataset.label, AdmissionLedgerVM.countTitle(ref))

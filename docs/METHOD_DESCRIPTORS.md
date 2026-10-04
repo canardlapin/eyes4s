@@ -186,7 +186,79 @@ sigma 0.5 and 8 degrees warn, 1, 2 and 4 do not. Advisories project to the
 and the methods text as `Phrase`s of `Token`s: fixed words, or values with the
 form field they come from and a `TokenRole` (query, reference, match, control,
 scale, metric, policy), so a host styles and localises them without parsing
-English. Run counts are not part of a plan and are not in the text.
+English.
+
+`StudyText.methods(plan, facts)` also states the facts a methods text cites
+beyond the plan (CR6d):
+
+- the admission: dataset revision, source and tallied fixation records,
+  inventory, admitted, quarantined by cause (the ledger's quarantine codes),
+  no-fixation and absent trials, records and trials outside the window with the
+  outside-window share of fixation duration, records and trials outside the
+  screen, and the off-screen policy;
+- the design: requested, eligible, contributing, failed (by failure code),
+  unmatched and not-admitted queries, and the controls of the compared queries
+  (a query count for every control count, with an optional `TrialLoss`);
+- the reporting: the reporting specification, n per group, paired n, the
+  range of queries per participant and group, the minimum queries per group,
+  and the participant-group cells below the minimum or with the fewest
+  queries.
+
+Every number and name is its own `Token.Fact` with its `FactSlot`, the
+`FactPart` it shows (the value, the slot's name, a control or query count, a
+loss, a cell's participant or group), its one `FactSource` (a ledger count, a
+prepared design's or a run's query total, report cells with their scale and
+participant, a contrast key, the reporting specification, a plan field or a
+host fact) and its typed `FactValue`; `shown` is the default English, so a
+host can localise numbers without parsing them. Each breakdown cell carries
+its own source. A slot's `slotId` (`eligibleQueries`,
+`quarantineCause.overlap`, `groupN.Remembered`) is its stable identity for
+linking and diffing, and `FactSlot.fromSlotId` reads one back.
+
+`Fact.of` refuses a value of another kind, a negative count, an empty range, a
+share outside [0, 1], a blank label or level, and a controls fact with no
+counts, a repeated control count or a loss at the most controls.
+`MethodsFacts.of` refuses the first slot given twice, in input order, and
+totals that disagree with their parts: when all are given, the inventory with
+the admitted, quarantined, no-fixation and absent trials, the eligible queries
+with the contributing and failed ones, and the requested queries with the
+eligible, unmatched and not-admitted ones; and, when any cause is given, the
+quarantined trials with their causes and the failed queries with their failure
+codes (the causes given must account for every one).
+These are the `methods-fact` diagnostics. Every fact given is stated, even
+without its companions; a fact not given, such as an undefined share, is not
+stated, and `methods(plan)` states the plan alone. The text also states the
+method-determined words: what M, B and D are (M is the mean of the matched
+scores under `MeanOfAll`), that D measures spatial correspondence rather than
+sequential replay, and, under the require-all failure policy, that a query's
+contrast needed all its pairs. The confound sentence is the host's.
+
+`eyes4s.results.ReportFacts.of(report, name)` reads the reporting facts from a
+`Report`, for its first selected role and component unless others are named:
+the specification (with the host's display name), a participant-means minimum
+above one, n per group, the paired n of a one-stratum level contrast, the range
+of queries per participant and group, and either the cells the minimum left
+out or, with no minimum, the cells with the fewest queries. Each source names
+the report cells (with the scale and, for a breakdown cell, the participant),
+the contrast or the specification.
+
+`eyes4s.results.AdmissionFacts.of(ledger, tallies)` reads the admission facts
+from an `AdmissionLedger` and the plan's window tallies
+(`StudyPlan.windowTallies`): the source records; with a trial inventory, every
+inventory trial's disposition (without one, the trials the records name, and no
+absent count); the tallied records, the records and trials outside the window
+and the screen, and the outside-window share of fixation duration when it is
+defined; and the off-screen policy. `eyes4s.results.RunFacts.of(table,
+unmatched)` reads a run's query totals from one scale's `QueryTable`: a query
+the matched pairing left unmatched (or with no stored contrast row) is
+unmatched even when its control reduction gave it a contrast row; any other is
+contributing or failed by failure code, and those are the eligible queries.
+`RunFacts.study(result, table)` takes the unmatched queries from the run's
+matched pairing and adds the controls of the compared queries from its control
+reductions. The requested and not-admitted queries are
+counted against the trial inventory and are the host's to state. A host joins
+these with its own facts (the dataset revision) in `MethodsFacts.of`, which
+checks that the totals agree.
 
 A host holding an erased `FieldError[Any]` from `ParameterSet.validate` projects
 it with `Diagnose.reportedFormField`.

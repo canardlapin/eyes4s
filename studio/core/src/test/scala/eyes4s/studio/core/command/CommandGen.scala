@@ -17,6 +17,8 @@
 package eyes4s.studio.core.command
 
 import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
+import eyes4s.codec.ByteDigest
+import eyes4s.studio.core.assets.{AssetFile, AssetRef}
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.DocumentGen.*
@@ -120,7 +122,22 @@ object CommandGen:
           p <- Gen.option(Gen.oneOf(CoreAdmissionDecision.values.toVector))
         yield Command.Admit(s.id, v, p, l, t),
         specs.map(s => Command.DiscardDataset(s.id)),
-        specs.map(s => Command.RestoreDataset(s.copy(id = DatasetRevision(next))))
+        specs.map(s => Command.RestoreDataset(s.copy(id = DatasetRevision(next)))),
+        specs.map(s =>
+          Command.RestoreRepairedDataset(
+            s.copy(id = DatasetRevision(next)),
+            Vector(
+              AssetRelink(
+                DatasetRevision(next),
+                AssetFile.of("forest-044.png").toOption.get,
+                AssetRef(
+                  AssetFile.of("repaired-ab.png").toOption.get,
+                  ByteDigest.parse("ab" * 32).toOption.get
+                )
+              )
+            )
+          )
+        )
       )
     }
     importing +: (edits ++ lifecycle)
@@ -254,16 +271,46 @@ object CommandGen:
       yield Command.SaveLayout(p, l)
     )
 
+  /** Repairs (S5.7): a file of a dataset revision (or an unknown one)
+    * relinked to a stored asset, or unlinked.
+    */
+  def assets(d: StudioDocument): Vector[Gen[Command]] =
+    val files =
+      Vector("forest-044.png", "kitchen-081.png").map(f => AssetFile.of(f).toOption.get)
+    val stored = Gen
+      .oneOf("ab", "cd")
+      .map(h =>
+        AssetRef(
+          AssetFile.of(s"repaired-$h.png").toOption.get,
+          ByteDigest.parse(h * 32).toOption.get
+        )
+      )
+    Vector(
+      for
+        // Mostly a held revision and a new link: an unknown revision, or an
+        // unlink of nothing, is refused, and refusals are rarer than edits.
+        id <-
+          if d.datasets.isEmpty then Gen.const(DatasetRevision(99))
+          else
+            Gen.frequency(
+              9 -> Gen.oneOf(d.datasets.map(_.id)),
+              1 -> Gen.const(DatasetRevision(99))
+            )
+        file  <- Gen.oneOf(files)
+        asset <- Gen.frequency(4 -> stored.map(Some(_)), 1 -> Gen.const(None))
+      yield Command.RelinkAsset(id, file, asset)
+    )
+
   private def among(groups: Vector[Gen[Command]]*): Gen[Command] =
     Gen.oneOf(groups.filter(_.nonEmpty)).flatMap(gs => Gen.oneOf(gs)).flatMap(identity)
 
   /** A command for `d`, from any group. */
   def command(d: StudioDocument): Gen[Command] =
-    among(dataset(d), analysis(d), backend(d), reportingAndFigures(d), view(d))
+    among(dataset(d), analysis(d), backend(d), reportingAndFigures(d), view(d), assets(d))
 
   /** A science edit: not view-only and not a backend fact. */
   def edit(d: StudioDocument): Gen[Command] =
-    among(dataset(d), analysis(d), reportingAndFigures(d))
+    among(dataset(d), analysis(d), reportingAndFigures(d), assets(d))
 
   /** What may happen between an edit and its undo without undoing it: a
     * backend fact or request, or (when the edit is science) a view edit.

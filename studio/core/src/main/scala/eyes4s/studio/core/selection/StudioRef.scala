@@ -26,6 +26,7 @@ import eyes4s.studio.core.backend.{
   RunId,
   TrialKey
 }
+import eyes4s.studio.core.assets.DisplayKind
 import eyes4s.studio.core.document.{FigureId, PanelLetter, ReportingId, SourceRole}
 import io.circe.{Codec, Decoder, Encoder}
 
@@ -176,6 +177,11 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     */
   case TrialGroup(dataset: DatasetRevision, group: TrialGrouping)
 
+  /** A dataset revision's count of trial displays or asset files, as its
+    * asset registry states them (ticket S5.7).
+    */
+  case DisplayTally(dataset: DatasetRevision, tally: DisplayCount)
+
   /** One count of a run's query contrasts (eyes4s `QueryContrasts`; ticket
     * S8.1): the queries the run requested, or those with one outcome.
     */
@@ -192,7 +198,7 @@ enum StudioRef derives CanEqual, Codec.AsObject:
           RefKind.Aggregate
     case ParticipantSummary(_, _, _, _, _) | GroupCell(_, _, _, _) | FigurePanel(_, _) |
         WindowTally(_, _) | DesignTally(_, _) | InventoryCount(_, _) | TrialGroup(_, _) |
-        QueryTally(_, _) =>
+        DisplayTally(_, _) | QueryTally(_, _) =>
       RefKind.Aggregate
 
   def isAggregate: Boolean = kind == RefKind.Aggregate
@@ -246,6 +252,24 @@ enum StudioRef derives CanEqual, Codec.AsObject:
       group match
         case TrialGrouping.PhaseOf(participant, _) => Some(Participant(participant))
         case TrialGrouping.MatchedOn(_)            => None
+    case DisplayTally(dataset, tally) =>
+      tally match
+        case DisplayCount.ImagesFound   => Some(DisplayTally(dataset, DisplayCount.ImagesNamed))
+        case DisplayCount.MissingTrials =>
+          Some(DisplayTally(dataset, DisplayCount.MissingFiles))
+        case _ => None
+
+/** Which count of a dataset revision's displays a [[StudioRef.DisplayTally]]
+  * names: the trials showing one kind in one phase (a missing asset is not
+  * shown, so it is not counted there), the distinct image files named and
+  * those found, and the files missing with the trials naming them.
+  */
+enum DisplayCount derives CanEqual, Codec.AsObject:
+  case Shown(kind: DisplayKind, phase: Phase)
+  case ImagesNamed, ImagesFound, MissingFiles, MissingTrials
+
+  /** The trials the registry lists, each with its display. */
+  case Trials
 
 /** Which count of a run's query contrasts a [[StudioRef.QueryTally]] names:
   * every requested query, or those with one outcome (each is within the

@@ -15,6 +15,9 @@ plot: Trial view
 toggle-button: Points, on
 toggle-button: Order, on
 toggle-button: Map, on
+button: Previous fixation
+button: Next fixation
+region: Fixations of P17 · enc_03. Arrow keys move to the nearest fixation, Page Up and Page Down step in order, Enter selects, Escape clears the selection.
 plot: Timeline
 button: Play
 button: Step back

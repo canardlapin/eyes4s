@@ -176,11 +176,34 @@ enum RelationMismatch derives CanEqual:
   case RunPlan(reported: ByteDigest, current: ByteDigest, changes: Vector[PlanChange])
   case RunInput(reported: ByteDigest, current: ByteDigest)
 
+  /** The analysis result's family pairs it with plans of schema `expected`,
+    * but the related plan is of schema `plan`.
+    */
+  case AnalysisFamily(result: DefinitionId, plan: DefinitionId, expected: DefinitionId)
+
+  /** The relation says the plan embeds its input, but the family of plan
+    * schema `plan` does not declare that it does.
+    */
+  case UndeclaredEmbedding(plan: DefinitionId)
+
+  /** The family of plan schema `plan` declares that its plan embeds its
+    * input, but the related plan exposes no embedded input identity, so
+    * nothing could be checked.
+    */
+  case EmptyEmbedding(plan: DefinitionId)
+
   def message: String = this match
     case RunPlan(reported, current, changes) =>
       s"Run plan ${reported.hex} differs from current ${current.hex}; changes ${changes.map(_.field).mkString(", ")}."
     case RunInput(reported, current) =>
       s"Run input ${reported.hex} differs from current ${current.hex}."
+    case AnalysisFamily(result, plan, expected) =>
+      s"The ${result.name}@${result.version} result belongs with ${expected.name}@${expected.version} " +
+        s"plans, not ${plan.name}@${plan.version}."
+    case UndeclaredEmbedding(plan) =>
+      s"The ${plan.name}@${plan.version} family does not declare that its plan embeds its input."
+    case EmptyEmbedding(plan) =>
+      s"The ${plan.name}@${plan.version} plan declares an embedded input but exposes no identity for it."
     case SourceBinding(field, expected, found) =>
       s"Source binding $field declares $found; expected $expected."
     case Prerequisites(errors)        => errors.map(_.message).mkString(" ")
@@ -436,6 +459,18 @@ trait ArtifactDecoders[K, U <: Unit2D]:
   def report(document: Json): Either[CodecError, eyes4s.results.Report[K]] =
     ArtifactDecoders.unregistered("report", document)
 
+  /** The analysis families decoded under the generic `analysis-plan` and
+    * `analysis-result` roles; none unless [[withAnalyses]] adds them.
+    */
+  def analyses: AnalysisRegistry = AnalysisRegistry.empty
+
+  /** These decoders, with analysis plans and results decoded through
+    * `registry`.
+    */
+  final def withAnalyses(registry: AnalysisRegistry): ArtifactDecoders[K, U] =
+    new ArtifactDecoders.Delegating[K, U](this):
+      override def analyses = registry
+
   /** These decoders, with reports decoded through `reports` (usually
     * `ReportCodecs.report(keys)` over the study key codec).
     */
@@ -517,6 +552,7 @@ object ArtifactDecoders:
     override def temporalResult(document: Json)  = base.temporalResult(document)
     override def report(document: Json)          = base.report(document)
     override def importSpec(document: Json)      = base.importSpec(document)
+    override def analyses                        = base.analyses
 
   /** Nothing is registered for the role: refuse the document's schema. */
   private def unregistered[A](role: String, document: Json): Either[CodecError, A] =
@@ -675,7 +711,9 @@ final class ResolvedManifest[K, U <: Unit2D] private[codec] (
     val reports: Vector[(ArtifactName, eyes4s.results.Report[K])] = Vector.empty,
     val sourceFiles: Vector[(ArtifactName, String)] = Vector.empty,
     val importSpecs: Vector[(ArtifactName, ImportSpec[K, U])] = Vector.empty,
-    val inventorySpecs: Vector[(ArtifactName, InventoryImportSpec)] = Vector.empty
+    val inventorySpecs: Vector[(ArtifactName, InventoryImportSpec)] = Vector.empty,
+    val analysisPlans: Vector[(ArtifactName, LoadedAnalysisPlan)] = Vector.empty,
+    val analysisResults: Vector[(ArtifactName, LoadedAnalysisResult)] = Vector.empty
 ):
   def plan(name: ArtifactName): Option[LoadedStudy[K, U]]    = plans.collectFirst(at(name))
   def input(name: ArtifactName): Option[StudyInput[K, U]]    = inputs.collectFirst(at(name))
@@ -706,6 +744,10 @@ final class ResolvedManifest[K, U <: Unit2D] private[codec] (
     importSpecs.collectFirst(at(name))
   def inventorySpec(name: ArtifactName): Option[InventoryImportSpec] =
     inventorySpecs.collectFirst(at(name))
+  def analysisPlan(name: ArtifactName): Option[LoadedAnalysisPlan] =
+    analysisPlans.collectFirst(at(name))
+  def analysisResult(name: ArtifactName): Option[LoadedAnalysisResult] =
+    analysisResults.collectFirst(at(name))
 
   private def at[A](name: ArtifactName): PartialFunction[(ArtifactName, A), A] = {
     case (n, value) if n == name => value
@@ -833,6 +875,8 @@ object ArtifactResolver:
     case SourceText(value: String)
     case Import(value: ImportSpec[K, U])
     case InventoryImport(value: InventoryImportSpec)
+    case AnalysisPlan(value: LoadedAnalysisPlan)
+    case AnalysisResult(value: LoadedAnalysisResult)
 
   private def decode[K, U <: Unit2D](
       manifest: ScientificManifest,
@@ -998,6 +1042,11 @@ object ArtifactResolver:
       case ArtifactRole.ReportSpec =>
         attempt(entry, ReportCodecs.reportSpec.decode(json)).map(Decoded.Spec(_))
       case ArtifactRole.Report => attempt(entry, decoders.report(json)).map(Decoded.Reported(_))
+      case ArtifactRole.AnalysisPlan =>
+        attempt(entry, decoders.analyses.plan(entry.schema, json)).map(Decoded.AnalysisPlan(_))
+      case ArtifactRole.AnalysisResult =>
+        attempt(entry, decoders.analyses.result(entry.schema, json))
+          .map(Decoded.AnalysisResult(_))
 
   private def relations[K, U <: Unit2D](
       manifest: ScientificManifest,
@@ -1229,6 +1278,44 @@ object ArtifactResolver:
               )
             )
           else None
+        case (
+              ManifestRelation.AnalysisResultOf(_, _, inputs),
+              Vector(Some(Decoded.AnalysisResult(result)), Some(Decoded.AnalysisPlan(plan)))
+            ) =>
+          // Decoding found both families; the result's registration names its plan's.
+          val family = decoders.analyses.forResult(result.schema)
+          val placed = inputs match
+            case AnalysisInputs.Entries(names) =>
+              // Each input's semantic identity is its entry's, checked on decoding.
+              Right(
+                names.toVector.map(n =>
+                  manifest.entry(n).flatMap(_.identity).fold("")(_.render)
+                )
+              )
+            case AnalysisInputs.EmbeddedInPlan =>
+              if !family.exists(_.embedsInput) then
+                Left(RelationMismatch.UndeclaredEmbedding(plan.schema))
+              else if plan.embeddedInputs.isEmpty then
+                Left(RelationMismatch.EmptyEmbedding(plan.schema))
+              else Right(plan.embeddedInputs.map(_.render))
+          val found = result.inputs.map(_.render)
+          family.filter(_.plan != plan.schema) match
+            case Some(f) =>
+              fail(RelationMismatch.AnalysisFamily(result.schema, plan.schema, f.plan))
+            case None =>
+              placed match
+                case Left(mismatch)                       => fail(mismatch)
+                case Right(expected) if found != expected =>
+                  fail(
+                    RelationMismatch.ResultInput(expected.mkString(","), found.mkString(","))
+                  )
+                case Right(_) if result.description != plan.description =>
+                  fail(
+                    RelationMismatch.Description(
+                      PlanChange.between(plan.description, result.description)
+                    )
+                  )
+                case Right(_) => None
         case (ManifestRelation.ReportOf(report, spec, result, input, ledger), _) =>
           (
             decoded.get(report),
@@ -1434,5 +1521,7 @@ object ArtifactResolver:
       ordered.collect { case (n, Decoded.Reported(v)) => n -> v },
       ordered.collect { case (n, Decoded.SourceText(v)) => n -> v },
       ordered.collect { case (n, Decoded.Import(v)) => n -> v },
-      ordered.collect { case (n, Decoded.InventoryImport(v)) => n -> v }
+      ordered.collect { case (n, Decoded.InventoryImport(v)) => n -> v },
+      ordered.collect { case (n, Decoded.AnalysisPlan(v)) => n -> v },
+      ordered.collect { case (n, Decoded.AnalysisResult(v)) => n -> v }
     )

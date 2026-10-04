@@ -62,6 +62,18 @@ enum DocumentError derives CanEqual:
   /** `dataset` has a trials source whose columns are not mapped. */
   case InventoryUnmapped(dataset: DatasetRevision, path: String)
 
+  /** An inventory's display column is also a role's or an attribute's. */
+  case DisplayColumnMapped(column: String, mappedAs: String)
+
+  /** The display kind and image file are read from one column. */
+  case DisplayColumnsShared(column: String)
+
+  /** A repaired asset of a dataset revision the document does not hold. */
+  case RelinkUnknownDataset(dataset: DatasetRevision, file: String)
+
+  /** One inventory file of one dataset revision repaired twice. */
+  case DuplicateRelink(dataset: DatasetRevision, file: String)
+
   // A draft against its base revision.
   case NoChanges(draft: AnalysisRevision, base: AnalysisRevision)
   case RepeatedField(draft: AnalysisRevision, field: RecipeField)
@@ -175,6 +187,14 @@ enum DocumentError derives CanEqual:
       s"$referrer names reporting spec ${reporting.value}, which is not in the document."
     case ParentNotEarlier(dataset, parent) =>
       s"Dataset ${dataset.label} names ${parent.label} as its parent, which is not earlier."
+    case DisplayColumnMapped(column, role) =>
+      s"Inventory column '$column' is a display column and also the $role."
+    case DisplayColumnsShared(column) =>
+      s"Inventory column '$column' is both the display kind and the image file."
+    case RelinkUnknownDataset(dataset, file) =>
+      s"Asset $file is repaired for dataset ${dataset.label}, which the document does not hold."
+    case DuplicateRelink(dataset, file) =>
+      s"Asset $file of dataset ${dataset.label} is repaired more than once."
     case PanelScaleNotInRun(figure, panel, scale, run, scales) =>
       s"${figure.label} panel ${panel.value} shows ${scale.render}, but ${run.label} has " +
         s"${scales.map(_.render).mkString(", ")}."

@@ -30,9 +30,10 @@ object ArrowDiagnosticSamples:
 
 /** Every public error enum of the shipped modules has a `Diagnose` instance.
   *
-  * The enums are read from the reviewed API inventory
-  * (tools/api-audit/inventory.json), which the API audit keeps equal to the
-  * compiled public surface: every public enum whose name ends in `Error` or
+  * The enums are read from a fingerprint-checked compiler inventory. Audit runs
+  * require their exact active candidate; ordinary tests use an explicitly prepared
+  * local candidate or a committed inventory with valid provenance. Preparation is
+  * not full audit qualification. The inventory covers the compiled public surface: every public enum whose name ends in `Error` or
   * `Failure`. The covered enums are the runtime classes of the sampled
   * families, each sampled through the instance `Diagnostic.of` finds, so an
   * enum without an instance, or an instance left out of the samples, fails
@@ -46,13 +47,21 @@ class DiagnosticCoverageJvmSuite extends munit.FunSuite:
     .filterNot(f => IoDiagnosticSamples.evidence(f.enumName))
 
   private val inventory: Map[String, Vector[String]] =
-    val relative   = Paths.get("tools/api-audit/inventory.json")
-    val path: Path = Iterator
+    val relative       = Paths.get("tools/api-audit/candidate.py")
+    val selector: Path = Iterator
       .iterate(Paths.get(sys.props("user.dir")).toAbsolutePath.normalize)(_.getParent)
       .takeWhile(_ != null)
       .map(_.resolve(relative))
       .find(Files.isRegularFile(_))
       .getOrElse(fail(s"$relative not found from ${sys.props("user.dir")}"))
+    val process = new ProcessBuilder("python3", selector.toString)
+      .redirectErrorStream(true)
+      .start()
+    val output =
+      try new String(process.getInputStream.readAllBytes(), StandardCharsets.UTF_8).trim
+      finally process.getInputStream.close()
+    assertEquals(process.waitFor(), 0, output)
+    val path = Paths.get(output)
     val json = parser
       .parse(Files.readString(path, StandardCharsets.UTF_8))
       .fold(e => fail(s"inventory: $e"), identity)

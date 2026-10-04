@@ -1,0 +1,125 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* The Data perspective's Sources pane (ticket S5.7; docs/studio/design/Data.dc.html,
+ * left). Colours are token names only; sizes come from studio-type.css
+ * classes; weights are face families (DESIGN_SPEC 14). */
+
+.sources-panel {
+  -fx-background-color: -es-surface;
+  -fx-spacing: 6;
+  -fx-padding: 0 0 10 0;
+}
+
+.sources-card {
+  -fx-padding: 8 12 8 12;
+  -fx-spacing: 2;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.sources-name,
+.sources-count {
+  -fx-text-fill: -es-ink;
+}
+
+.sources-count {
+  -fx-text-fill: -es-ink-2;
+}
+
+.sources-stored,
+.sources-kind,
+.sources-dim {
+  -fx-text-fill: -es-ink-3;
+}
+
+.sources-title {
+  -fx-padding: 6 12 0 12;
+  -fx-text-fill: -es-ink-2;
+}
+
+.sources-kinds {
+  -fx-padding: 0 12 0 12;
+}
+
+.sources-kind-label,
+.sources-kind-count {
+  -fx-text-fill: -es-ink;
+}
+
+.sources-kind-label.sources-dim,
+.sources-kind-count.sources-dim {
+  -fx-text-fill: -es-ink-3;
+}
+
+.sources-glyph-image {
+  -fx-background-color: -es-ink-2, -es-surface-3;
+  -fx-background-insets: 0, 1.5;
+}
+
+.sources-glyph-cross {
+  -fx-background-color: -es-ink-2, -es-neutral-mark;
+  -fx-background-insets: 0, 1.5;
+}
+
+.sources-glyph-blank {
+  -fx-border-color: -es-ink-3;
+  -fx-border-width: 1.5;
+  -fx-border-style: segments(2, 2);
+}
+
+.sources-glyph-missing {
+  -fx-background-color: -es-warn-text, -es-warn-soft;
+  -fx-background-insets: 0, 1.5;
+}
+
+.sources-missing {
+  -fx-padding: 10;
+  -fx-background-color: -es-warn-text, -es-warn-soft;
+  -fx-background-insets: 0 12 0 12, 1 13 1 13;
+  -fx-background-radius: 6, 5;
+  -fx-border-insets: 0 12 0 12;
+}
+
+.sources-missing-title {
+  -fx-text-fill: -es-warn-text;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.sources-missing-body,
+.sources-status,
+.sources-note,
+.sources-empty {
+  -fx-text-fill: -es-ink;
+  -fx-padding: 0 12 0 12;
+}
+
+.sources-missing-body {
+  -fx-padding: 0;
+}
+
+.sources-button {
+  -fx-pref-height: 22px;
+  -fx-padding: 0 8 0 8;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-text-fill: -es-ink;
+}
+
+.sources-button:focused {
+  -fx-background-color: -es-accent, -es-surface;
+}

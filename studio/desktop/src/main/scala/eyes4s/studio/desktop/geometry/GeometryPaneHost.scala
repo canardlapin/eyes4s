@@ -168,7 +168,7 @@ final class GeometryPaneHost(
   private def draw(current: Long, key: PicturesKey, m: AppModel): Unit =
     val spec      = m.document.dataset(key.dataset)
     val positions = panel.positions.toOption
-    val theme     = m.document.presentation.theme match
+    val theme     = m.theme match
       case eyes4s.studio.core.document.Theme.Light => Theme.Light
       case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
     val stage = m.document.presentation.stage match
