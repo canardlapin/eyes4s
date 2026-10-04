@@ -130,7 +130,12 @@ case runs the complete save, fresh-registration reopen and rerun workflow on bot
    same run as a `RepetitionCursor`: it makes both pairings, then compares the matched pairs
    and the control pairs at most `quanta.pairs` per step (`RepetitionStage.Matched`, then
    `Control`), and `Stepwise.complete(plan.work, quanta)` equals `run` at any quanta. The
-   pairing itself is not bounded; only the comparisons are.
+   pairing itself is not bounded; only the comparisons are. `description` states the plan as
+   data (input and layout identities, grid, method, matched and control rules, control
+   selection, failure policy, pair orientation), `diff` compares two plans by field, and
+   `inspect` explains every field. `RepetitionForm` edits the method, the rules, the control
+   selection and the failure policy; `RepetitionRecipe.plan(template)` rebuilds a plan over the
+   template's layout, grid and maps, and checks the matched and control rules together.
 5. Create `RepetitionPlanCodec.of` with a distinct recipe schema, typed key codec and
    `RepetitionRegistry`. Save its versioned JSON. A fresh registry with the declared layout
    reconstructs the same keys, eligible/selected directed endpoints, seed, cap, input and plan

@@ -347,6 +347,51 @@ class RepetitionPlanSuite extends munit.FunSuite:
     assertEquals(p.diff(p), Vector.empty)
   }
 
+  test("the repetition form restores every field and rebuilds the plan's description") {
+    val form = new RepetitionForm
+    Vector(plan(), plan(sel = Selection.All, method = MapSimilarityMethod.Spearman)).foreach {
+      p =>
+        val values = form.values(p)
+        form.fields.foreach { f =>
+          val raw = values.get(f.view.id)
+          assertEquals(f.restore(raw), Right(raw), f.view.id)
+          assertEquals(
+            FieldView
+              .of(f.view.id, f.view.version, f.view.meaning, f.view.kind, f.view.default),
+            Right(f.view)
+          )
+        }
+        val rebuilt = get(get(form.parse(values).left.map(_.toVector)).plan(p))
+        assertEquals(rebuilt.description, p.description)
+        assertEquals(rebuilt.planHash, p.planHash)
+    }
+    // The rules are checked together, by the plan: overlapping relations are refused.
+    val overlapping = form
+      .values(plan())
+      .updated(
+        form.controls.view.id,
+        RawValue.Items(Vector(RawValue.Choice("SameParticipant")))
+      )
+    assert(
+      get(form.parse(overlapping).left.map(_.toVector)).plan(plan()).left.exists {
+        case RepetitionPlanError.OverlappingRelations(_, _) => true
+        case _                                              => false
+      }
+    )
+    // A field that cannot be read is refused on its own, naming the field.
+    val unknown = form.values(plan()).updated(form.method.view.id, RawValue.Choice("Cubic"))
+    assert(
+      form
+        .parse(unknown)
+        .left
+        .exists(_.head match
+          case FieldError.NotAChoice(f, "Cubic", _) => f == form.method.view.id
+          case FieldError.Refused(f, _, _, _)       => f == form.method.view.id
+          case _                                    => false),
+      form.parse(unknown)
+    )
+  }
+
   test("the repetition cursor equals run at every quanta, matched pairs first, then controls") {
     def quanta(pairs: Int) = WorkQuanta(get(PairQuantum.of(pairs)), ComparisonQuantum.default)
     Vector(plan(), plan(sel = Selection.All)).foreach { p =>
