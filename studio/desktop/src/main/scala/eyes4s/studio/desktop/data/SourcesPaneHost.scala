@@ -95,7 +95,8 @@ object AssetFiles:
             Left(s"${f.getName} has ${f.length} bytes; at most $limit are read.")
           else Right(IArray.unsafeFromArray(Files.readAllBytes(f.toPath)))
         catch
-          case e: java.io.IOException =>
+          // Any non-fatal failure answers `done`: the reader thread never dies silently.
+          case scala.util.control.NonFatal(e) =>
             Left(s"${f.getName} cannot be read: ${Option(e.getMessage).getOrElse(e.toString)}")
       done(read)
     )
