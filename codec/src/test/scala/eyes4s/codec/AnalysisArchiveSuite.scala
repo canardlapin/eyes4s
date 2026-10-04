@@ -164,7 +164,7 @@ class AnalysisArchiveSuite extends munit.FunSuite:
     )
   }
 
-  test("an analysis result needs exactly one relation, to distinct input entries") {
+  test("an analysis result needs exactly one relation, to distinct input entries, or none") {
     def refused(relations: ArtifactName => Vector[ManifestRelation]) = for
       in <- StoredArtifact.input("input", inputs, study)
       p  <- StoredArtifact.analysisPlan("count-plan", plans, plan)
@@ -180,21 +180,15 @@ class AnalysisArchiveSuite extends munit.FunSuite:
         )
       )
     )
-    assertEquals(
-      refused(_ => Vector(ManifestRelation.AnalysisResultOf(r, p, Vector.empty))).left.toOption,
-      Some(
-        CodecError.Manifest(
-          ManifestError.RelationCount(r, "analysis-input", 0, "at least one, each distinct")
-        )
-      )
-    )
+    // No input: the plan carries its own; the manifest accepts it.
+    assert(refused(_ => Vector(ManifestRelation.AnalysisResultOf(r, p, Vector.empty))).isRight)
     assertEquals(
       refused(in =>
         Vector(ManifestRelation.AnalysisResultOf(r, p, Vector(in, in)))
       ).left.toOption,
       Some(
         CodecError.Manifest(
-          ManifestError.RelationCount(r, "analysis-input", 2, "at least one, each distinct")
+          ManifestError.RelationCount(r, "analysis-input", 2, "each distinct")
         )
       )
     )
@@ -249,6 +243,29 @@ class AnalysisArchiveSuite extends munit.FunSuite:
     assertEquals(
       graph.manifest.entries.map(_.role.wire).filter(_.startsWith("analysis")),
       Vector("analysis-plan", "analysis-result")
+    )
+  }
+
+  test("a result that cites an input its relation does not name is refused") {
+    val graph = get(
+      for
+        in <- StoredArtifact.input("input", inputs, study)
+        p  <- StoredArtifact.analysisPlan("count-plan", plans, plan)
+        r  <- StoredArtifact.analysisResult("count", results, result)
+        g  <- SavedManifest.of(
+          Vector(in, p, r),
+          Vector(ManifestRelation.AnalysisResultOf(r.name, p.name, Vector.empty))
+        )
+      yield g
+    )
+    val relation = get(graph.manifest.relations.headOption.toRight("relation"))
+    assertEquals(
+      resolve(graph, decoders.withAnalyses(registry)),
+      Left(
+        NonEmptyVector.one(
+          ResolveError.Relation(relation, RelationMismatch.ResultInput("", study.hash.render))
+        )
+      )
     )
   }
 
