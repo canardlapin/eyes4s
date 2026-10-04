@@ -36,12 +36,14 @@ import org.typelevel.discipline.Laws
   * | Kernel             | kernel (symmetry, self-similarity, PSD Gram matrices)    |
   * | MetricDerived      | metric on the distance, similarity = upper - distance    |
   * | Symmetric          | symmetry                                                 |
-  * | every method       | scores within the declared scale, self-description       |
+  * | every method       | higher-is-closer scale, scores within it, self-description |
   * }}}
   */
 trait ComparisonMethodLaws extends Laws:
 
   /** The laws of the interface `method` declares, on maps drawn from `gen`.
+    * Map similarities must use a higher-is-closer scale: `DistanceLike` belongs
+    * to the underlying distance, not the similarity produced from it.
     * `distinct` is a pair of maps a metric must separate.
     */
   def interface[U <: Unit2D](
@@ -51,6 +53,11 @@ trait ComparisonMethodLaws extends Laws:
       tol: Tolerance = Tolerance.exactish
   ): Vector[Laws#RuleSet] =
     val common = Vector[Laws#RuleSet](
+      new SimpleRuleSet(
+        s"similarityScale.${method.token}",
+        "the scale is higher-is-closer" ->
+          (Prop(method.info.scale != MeasureScale.DistanceLike) :| s"${method.info.scale}")
+      ),
       MeasureLaws.withinScale[Mass[U], Similarity](method.similarity[U], gen, _.value, tol),
       MeasureLaws.described(method.similarity[U])
     )
