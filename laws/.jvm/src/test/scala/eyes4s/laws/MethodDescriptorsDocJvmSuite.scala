@@ -16,6 +16,7 @@
 
 package eyes4s.laws
 
+import eyes4s.kernel.UnitLabel
 import eyes4s.kernel.Unit2D.{Deg, Px}
 import eyes4s.plan.*
 
@@ -43,22 +44,44 @@ class MethodDescriptorsDocJvmSuite extends munit.FunSuite:
 
   private val F = RecipeParameters.forms
 
-  /** Every shipped one-number field; sigma is shown in two units. */
-  private val fields: Vector[FieldView] = Vector(
-    F.sigma[Px].view,
-    F.sigma[Deg].view,
-    F.sigmaX[Px].view,
-    F.sigmaY[Px].view,
-    F.residualLimit.view,
-    F.ivtThreshold.view,
-    F.minimumDuration.view,
-    F.idtWidth.view,
-    F.idtHeight.view,
-    F.ekEtaX.view,
-    F.ekEtaY.view,
-    F.ekMinimumSamples.view,
-    F.interpolationGap.view
-  )
+  /** Every shipped one-number field, found by reflection over
+    * `RecipeParameters.forms` so a new field cannot be left out: each public
+    * accessor returning a [[NumericField]], and each unit-generic one in both
+    * pixels and degrees. Sorted by id, then unit.
+    */
+  private val fields: Vector[FieldView] =
+    val units  = Vector[UnitLabel[?]](summon[UnitLabel[Px]], summon[UnitLabel[Deg]])
+    val fields = F.getClass.getMethods.toVector
+      .filter(m => classOf[NumericField[?, ?, ?]].isAssignableFrom(m.getReturnType))
+      .flatMap { m =>
+        m.getParameterTypes.toVector match
+          case Vector()                                => Vector(m.invoke(F))
+          case Vector(t) if t == classOf[UnitLabel[?]] => units.map(m.invoke(F, _))
+          case other => fail(s"forms.${m.getName} takes $other; extend this suite")
+      }
+      .map(_.asInstanceOf[NumericField[?, ?, ?]].view)
+    fields.sortBy(v => (v.id.value, v.kind.toString))
+
+  test("the table covers every shipped numeric field") {
+    val ids = fields.map(_.id.value).toSet
+    // The accessors added before CR6c; reflection must find at least these.
+    val known = Set(
+      "sigma",
+      "sigmaX",
+      "sigmaY",
+      "residualLimitMicros",
+      "thresholdDegPerSecond",
+      "minimumDurationMicros",
+      "extentWidthDeg",
+      "extentHeightDeg",
+      "etaXDegPerSecond",
+      "etaYDegPerSecond",
+      "minimumSamples",
+      "interpolationGapMicros"
+    )
+    assert(known.subsetOf(ids), known -- ids)
+    assertEquals(fields.count(_.id.value == "sigma"), 2)
+  }
 
   private def row(view: FieldView): String = view.kind match
     case FieldKind.Numeric(q, shape, bounds) =>

@@ -139,6 +139,11 @@ class FormCodecSuite extends munit.FunSuite:
       Json.obj("kind" -> "number".asJson, "text" -> "0".asJson)
     )
     assert(refusal(Vector(badDefault)).contains("sigma"), refusal(Vector(badDefault)))
+    // A numeric field must measure a number: a nominal or composite quantity is refused.
+    Vector("nominal", "composite").foreach { q =>
+      val named = set(sigma, List("kind", "quantity"), Json.obj("kind" -> q.asJson))
+      assert(refusal(Vector(named)).contains(s"measures $q"), refusal(Vector(named)))
+    }
     // A non-positive version, an unknown unit and an unknown kind.
     assert(refusal(Vector(sigma.mapObject(_.add("version", 0.asJson)))).contains("version 0"))
     val unit = set(sigma, List("kind", "quantity", "unit"), "furlong".asJson)

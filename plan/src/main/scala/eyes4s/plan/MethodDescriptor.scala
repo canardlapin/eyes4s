@@ -487,6 +487,11 @@ enum DescriptorError derives CanEqual:
   case UntranslatableLegacy(field: String, units: String, domain: String)
   case FormViewMismatch(field: FieldId, form: FieldId)
   case RulePartKind(field: FieldId, part: FieldId)
+
+  /** A numeric field names a quantity that is not a number (`nominal`,
+    * `composite`).
+    */
+  case NonNumericQuantity(field: FieldId, quantity: String)
   def message: String = this match
     case InvalidField(id, v, meaning) =>
       s"Invalid descriptor '$id' version $v with meaning '$meaning'."
@@ -521,5 +526,7 @@ enum DescriptorError derives CanEqual:
       s"Field '$f' carries a form field '$form' whose view differs from its own."
     case RulePartKind(f, part) =>
       s"Field '$f' has a rule over part '$part', which is not of a kind the rule compares."
+    case NonNumericQuantity(f, quantity) =>
+      s"Numeric field '$f' measures $quantity, which is not a number."
     case UntranslatableLegacy(f, units, domain) =>
       s"Field '$f' uses legacy units $units and domain $domain, which have no FieldKind translation."

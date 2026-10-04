@@ -825,9 +825,13 @@ private[plan] object FieldChecks:
         )
         .flatMap(_ => ps.traverse_(wellFormed))
     view.kind match
-      case FieldKind.Numeric(_, shape, bounds) =>
+      case FieldKind.Numeric(quantity, shape, bounds) =>
         val numeral = Numeral.forShape(shape)
         Either.cond(
+          quantity.isNumeric,
+          (),
+          DescriptorError.NonNumericQuantity(view.id, quantity.toString.toLowerCase)
+        ) *> Either.cond(
           bounds.endpoints.forall((_, e) => numeral.exactly(e.value).isDefined),
           (),
           DescriptorError.BoundsForShape(view.id, shape, bounds)

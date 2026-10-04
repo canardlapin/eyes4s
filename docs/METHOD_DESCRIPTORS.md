@@ -117,26 +117,29 @@ estimates) parse through the recipe forms below.
 
 Every shipped one-number field states its bounds explicitly. Intervals are
 open `(`, `)` or closed `[`, `]`; `∞` is a side with no endpoint, bounded only by
-the shape. Sigma is shown in pixels and degrees; it takes the same bounds in
-every unit.
+the shape. The table is generated from `RecipeParameters.forms`; the
+unit-generic sigma fields are shown in pixels and degrees and take the same
+bounds in every unit.
 
 <!-- BEGIN GENERATED FIELD BOUNDS -->
 
 | Field | Unit | Shape | Bounds |
 |---|---|---|---|
-| `sigma` | `px` | `Real` | `(0, ∞)` |
-| `sigma` | `deg` | `Real` | `(0, ∞)` |
-| `sigmaX` | `px` | `Real` | `(0, ∞)` |
-| `sigmaY` | `px` | `Real` | `(0, ∞)` |
-| `residualLimitMicros` | `µs` | `Int64` | `[0, ∞)` |
-| `thresholdDegPerSecond` | `deg/s` | `Real` | `(0, ∞)` |
-| `minimumDurationMicros` | `µs` | `Int64` | `(0, ∞)` |
-| `extentWidthDeg` | `deg` | `Real` | `(0, ∞)` |
-| `extentHeightDeg` | `deg` | `Real` | `(0, ∞)` |
 | `etaXDegPerSecond` | `deg/s` | `Real` | `(0, ∞)` |
 | `etaYDegPerSecond` | `deg/s` | `Real` | `(0, ∞)` |
-| `minimumSamples` | `samples` | `Int32` | `[1, ∞)` |
+| `extentHeightDeg` | `deg` | `Real` | `(0, ∞)` |
+| `extentWidthDeg` | `deg` | `Real` | `(0, ∞)` |
 | `interpolationGapMicros` | `µs` | `Int64` | `[0, ∞)` |
+| `minimumDurationMicros` | `µs` | `Int64` | `(0, ∞)` |
+| `minimumSamples` | `samples` | `Int32` | `[1, ∞)` |
+| `residualLimitMicros` | `µs` | `Int64` | `[0, ∞)` |
+| `sigma` | `deg` | `Real` | `(0, ∞)` |
+| `sigma` | `px` | `Real` | `(0, ∞)` |
+| `sigmaX` | `deg` | `Real` | `(0, ∞)` |
+| `sigmaX` | `px` | `Real` | `(0, ∞)` |
+| `sigmaY` | `deg` | `Real` | `(0, ∞)` |
+| `sigmaY` | `px` | `Real` | `(0, ∞)` |
+| `thresholdDegPerSecond` | `deg/s` | `Real` | `(0, ∞)` |
 
 <!-- END GENERATED FIELD BOUNDS -->
 
@@ -198,6 +201,8 @@ A host stores a form's fields and the values a user typed with two codecs in
   shape, bounds, choices, parts, rules and default. Decoding rebuilds each field
   through `FieldView.of`, `NumericBounds.of` and `DefaultValue.of`, so a stored
   view cannot hold a field the plan would refuse, and field ids are distinct.
+  A numeric field must measure a number: `FieldView.of` refuses the `nominal`
+  and `composite` quantities there (`NonNumericQuantity`).
 - `FormCodecs.values` (`eyes4s.form-values@1`) writes `FormValues` in ascending
   field order. A number stays the text the user typed (an empty entry, a
   malformed entry and a 64-bit integer survive exactly); an absent value is left

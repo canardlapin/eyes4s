@@ -158,6 +158,132 @@
         "default" : null
       },
       {
+        "id" : "patch",
+        "version" : 1,
+        "meaning" : "the patch",
+        "kind" : {
+          "kind" : "numeric",
+          "quantity" : {
+            "kind" : "planar",
+            "unit" : "mm"
+          },
+          "shape" : "real",
+          "bounds" : {
+            "lower" : {
+              "kind" : "open",
+              "value" : 0.0
+            },
+            "upper" : null
+          }
+        },
+        "default" : null
+      },
+      {
+        "id" : "normed",
+        "version" : 1,
+        "meaning" : "the normed",
+        "kind" : {
+          "kind" : "numeric",
+          "quantity" : {
+            "kind" : "planar",
+            "unit" : "norm"
+          },
+          "shape" : "real",
+          "bounds" : {
+            "lower" : {
+              "kind" : "open",
+              "value" : 0.0
+            },
+            "upper" : null
+          }
+        },
+        "default" : null
+      },
+      {
+        "id" : "screen",
+        "version" : 1,
+        "meaning" : "the screen",
+        "kind" : {
+          "kind" : "numeric",
+          "quantity" : {
+            "kind" : "length",
+            "unit" : "cm"
+          },
+          "shape" : "real",
+          "bounds" : {
+            "lower" : {
+              "kind" : "open",
+              "value" : 0.0
+            },
+            "upper" : null
+          }
+        },
+        "default" : null
+      },
+      {
+        "id" : "eye",
+        "version" : 1,
+        "meaning" : "the eye",
+        "kind" : {
+          "kind" : "numeric",
+          "quantity" : {
+            "kind" : "length",
+            "unit" : "m"
+          },
+          "shape" : "real",
+          "bounds" : {
+            "lower" : {
+              "kind" : "open",
+              "value" : 0.0
+            },
+            "upper" : null
+          }
+        },
+        "default" : null
+      },
+      {
+        "id" : "samples",
+        "version" : 1,
+        "meaning" : "the samples",
+        "kind" : {
+          "kind" : "numeric",
+          "quantity" : {
+            "kind" : "count",
+            "of" : "samples"
+          },
+          "shape" : "int64",
+          "bounds" : {
+            "lower" : {
+              "kind" : "closed",
+              "value" : 0.0
+            },
+            "upper" : null
+          }
+        },
+        "default" : null
+      },
+      {
+        "id" : "scores",
+        "version" : 1,
+        "meaning" : "the scores",
+        "kind" : {
+          "kind" : "numeric",
+          "quantity" : {
+            "kind" : "count",
+            "of" : "scores"
+          },
+          "shape" : "int32",
+          "bounds" : {
+            "lower" : {
+              "kind" : "closed",
+              "value" : 1.0
+            },
+            "upper" : null
+          }
+        },
+        "default" : null
+      },
+      {
         "id" : "weight",
         "version" : 1,
         "meaning" : "how fixations are weighted",

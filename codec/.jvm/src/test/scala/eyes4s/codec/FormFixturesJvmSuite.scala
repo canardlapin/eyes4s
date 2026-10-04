@@ -47,8 +47,15 @@ class FormFixturesJvmSuite extends munit.FunSuite:
           .orElse(sys.props.get("EYES4S_WRITE_FORM_FIXTURES"))
           .contains("1")
       then
+        val resources = Paths.get("codec/src/test/resources/eyes4s")
+        val directory = Iterator
+          .iterate(Paths.get(sys.props("user.dir")).toAbsolutePath.normalize)(_.getParent)
+          .takeWhile(_ != null)
+          .map(_.resolve(resources))
+          .find(Files.isDirectory(_))
+          .getOrElse(fail(s"$resources not found from ${sys.props("user.dir")}"))
         Files.write(
-          Paths.get("codec/src/test/resources/eyes4s").resolve(file),
+          directory.resolve(file),
           json.spaces2.getBytes(StandardCharsets.UTF_8)
         )
         fail(s"rewrote $file; review it and run again")

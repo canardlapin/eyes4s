@@ -861,6 +861,7 @@ fails after rewriting, so review the change and run it again.
 | `descriptor.untranslatable-legacy` | `UntranslatableLegacy` | `field`, `units`, `domain` |
 | `descriptor.form-view-mismatch` | `FormViewMismatch` | `field`, `form` |
 | `descriptor.rule-part-kind` | `RulePartKind` | `field`, `part` |
+| `descriptor.non-numeric-quantity` | `NonNumericQuantity` | `field`, `quantity` |
 
 ### `study-finding` — `StudyFinding`
 

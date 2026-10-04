@@ -83,6 +83,42 @@ object FormFixtures:
         NumericBounds.atLeastOne
       ),
       numeric("ratio", Quantity.Dimensionless, NumberShape.Real, NumericBounds.unbounded),
+      numeric(
+        "patch",
+        Quantity.Planar(PlanarUnit.Mm),
+        NumberShape.Real,
+        NumericBounds.positive
+      ),
+      numeric(
+        "normed",
+        Quantity.Planar(PlanarUnit.Norm),
+        NumberShape.Real,
+        NumericBounds.positive
+      ),
+      numeric(
+        "screen",
+        Quantity.Length(LengthUnit.Centimetres),
+        NumberShape.Real,
+        NumericBounds.positive
+      ),
+      numeric(
+        "eye",
+        Quantity.Length(LengthUnit.Metres),
+        NumberShape.Real,
+        NumericBounds.positive
+      ),
+      numeric(
+        "samples",
+        Quantity.Count(Counted.Samples),
+        NumberShape.Int64,
+        NumericBounds.nonNegative
+      ),
+      numeric(
+        "scores",
+        Quantity.Count(Counted.Scores),
+        NumberShape.Int32,
+        NumericBounds.atLeastOne
+      ),
       view(
         "weight",
         "how fixations are weighted",
