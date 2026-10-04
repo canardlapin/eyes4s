@@ -200,7 +200,8 @@ object ProtocolSamples:
           "Attribute names [a] are declared more than once."
         )
       )
-    )
+    ),
+    BackendError.UnknownTrial(DatasetRevision(3), TrialKey("P99", Phase.Encoding, "enc_01", 1))
   )
 
   val runStates: Vector[RunState] = Vector(

@@ -277,13 +277,24 @@ final class FakeStudyBackend[F[_]] private[fixture] (
       r: AnalysisRevision,
       trial: TrialKey
   ): F[Either[BackendError, TrialFixations]] =
-    revision(r).map(_.flatMap(d => FakeTrialViews.fixations(r, d, trial)))
+    revision(r).map(
+      _.flatMap(d => known(d, trial).flatMap(FakeTrialViews.fixations(r, _, trial)))
+    )
 
   def trialPreview(
       r: AnalysisRevision,
       trial: TrialKey
   ): F[Either[BackendError, TrialPreview]] =
-    revision(r).map(_.flatMap(d => FakeTrialViews.preview(r, d, trial)))
+    revision(r).map(
+      _.flatMap(d => known(d, trial).flatMap(FakeTrialViews.preview(r, _, trial)))
+    )
+
+  /** `d` when `trial` is in its inventory; a trial outside it is refused. */
+  private def known(
+      d: DatasetRevision,
+      trial: TrialKey
+  ): Either[BackendError, DatasetRevision] =
+    Either.cond(ledgerOf.contains(trial), d, BackendError.UnknownTrial(d, trial))
 
   def preview(r: AnalysisRevision): F[Either[BackendError, PreviewSummary]] =
     revision(r).map(_.map { d =>

@@ -69,7 +69,9 @@ the recipe's grid, with its `RowOrder` stated and the backend's isoline levels.
 Both are keyed by the analysis revision because placement and the grid belong to
 the study, not the dataset. Every value is validated (finite positions, a
 non-negative onset, a positive duration, positions 1, 2, … in order, finite
-non-negative cells); a trial without an admitted scanpath is `Unavailable`. The
+non-negative cells); a trial outside the revision's dataset is refused with
+`BackendError.UnknownTrial(dataset, trial)`, and one in it without an admitted
+scanpath is `Unavailable`. The
 fake serves both over fixtures/studio-golden: placement through the kernel's
 screen frame and half-open window, the preview through eyes4s-surface's Gaussian
 smoother and `MassLevels` (coverages 0.5 and 0.8). The other 1.5 pins are

@@ -21,6 +21,8 @@ object ProtocolPins:
   val pins: Map[String, String] = Map(
     "error.InventoryRefused" ->
       """{"InventoryRefused":{"dataset":4,"issues":[{"Conflict":{"trial":{"participant":"P01","phase":"Encoding","trial":"enc_01"},"records":[2,9],"columns":["response"]}},{"Width":{"record":5,"expected":8,"actual":7}},{"Field":{"record":6,"column":"occurrence","value":"x","requirement":"a positive integer occurrence"}},{"Other":{"kind":"DuplicateAttribute","text":"Attribute names [a] are declared more than once."}}]}}""",
+    "error.UnknownTrial" ->
+      """{"UnknownTrial":{"dataset":3,"trial":{"participant":"P99","phase":"Encoding","trial":"enc_01","occurrence":1}}}""",
     "response.PreviewAccepted" ->
       """{"PreviewAccepted":{}}""",
     "error.UnknownPreview" ->

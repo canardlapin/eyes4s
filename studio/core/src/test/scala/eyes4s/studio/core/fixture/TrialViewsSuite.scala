@@ -106,12 +106,18 @@ class TrialViewsSuite extends CatsEffectSuite:
 
   test("refusals: a trial without fixations, a revision on other data, an unknown revision") {
     for
-      backend <- fake
-      absent  <- backend.trialFixations(rev4, ret09)
-      noMap   <- backend.trialPreview(rev4, ret09)
-      onR2    <- backend.trialFixations(AnalysisRevision(3), enc03)
-      unknown <- backend.trialPreview(AnalysisRevision(99), enc03)
+      backend     <- fake
+      absent      <- backend.trialFixations(rev4, ret09)
+      noMap       <- backend.trialPreview(rev4, ret09)
+      onR2        <- backend.trialFixations(AnalysisRevision(3), enc03)
+      unknown     <- backend.trialPreview(AnalysisRevision(99), enc03)
+      stranger    <- backend.trialFixations(rev4, MockStudy.key("P99", "enc_01"))
+      strangerMap <- backend.trialPreview(rev4, MockStudy.key("P99", "enc_01"))
     yield
+      // A trial outside r3's inventory is refused by name, not as no data.
+      val p99 = MockStudy.key("P99", "enc_01")
+      assertEquals(stranger, Left(BackendError.UnknownTrial(r3, p99)))
+      assertEquals(strangerMap, Left(BackendError.UnknownTrial(r3, p99)))
       assertEquals(absent, Left(BackendError.Unavailable(DiagnosticLocus.Trial(ret09))))
       assertEquals(noMap, Left(BackendError.Unavailable(DiagnosticLocus.Trial(ret09))))
       assertEquals(
