@@ -16,7 +16,9 @@
 
 package eyes4s.studio.app.compare
 
-import eyes4s.studio.app.Intent
+import eyes4s.studio.app.{AppModel, Intent}
+import eyes4s.studio.app.plot.ParticipantMeans
+import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.app.text.{Format, SummaryText, SummaryTextId}
@@ -138,6 +140,7 @@ final case class QueriesNavigatorVM(
   * navigator's row cursor.
   */
 final case class QueriesNavigator(
+    run: Option[RunId],
     filter: String,
     opened: Set[String],
     closed: Set[String],
@@ -146,7 +149,22 @@ final case class QueriesNavigator(
 
 object QueriesNavigator:
 
-  val initial: QueriesNavigator = QueriesNavigator("", Set.empty, Set.empty, Map.empty)
+  val initial: QueriesNavigator = QueriesNavigator(None, "", Set.empty, Set.empty, Map.empty)
+
+  /** Follow the shown run: another run's groups start as the selection
+    * opens them, with no cursor; the filter stays.
+    */
+  def follow(nav: QueriesNavigator, run: Option[RunId]): QueriesNavigator =
+    if run == nav.run then nav else initial.copy(run = run, filter = nav.filter)
+
+  /** What the navigators show as selected: the bus's selection and the refs
+    * Compare's trail is at (a query is selected when the trail ends at it).
+    */
+  def selection(m: AppModel): Vector[StudioRef] =
+    m.selection.selected ++ m.navigation.trail(Perspective.Compare).collect {
+      case Place.At(ref) =>
+        ref
+    }
 
   /** The view-model of `nav` over the summary layout's state `s`, with
     * `selected` the bus's selection: participants in the backend's order,
@@ -169,6 +187,29 @@ object QueriesNavigator:
           Vector.empty,
           Vector.empty
         )
+      case (Some(run), Some(r), Some(QueriesAnswer.Answered(_)), None) =>
+        // Both answers are in, but no σ has served participant means: say why.
+        val n   = run.number.toString
+        val why = s.reporting match
+          case None      => SummaryText(SummaryTextId.NoReportingSpec, n)
+          case Some(rep) =>
+            val reason = ScaleIndex
+              .of(0)
+              .left
+              .map(_.message)
+              .flatMap(ParticipantMeans.of(r, rep, _).left.map(_.message))
+              .left
+              .toOption
+              .getOrElse(SummaryText(SummaryTextId.NoScales))
+            SummaryText(SummaryTextId.NoMeansScale, n, reason)
+        QueriesNavigatorVM(
+          nav.filter,
+          Some(why),
+          "",
+          Vector.empty,
+          Vector.empty,
+          strip(run, r.contrasts)
+        )
       case (Some(run), Some(r), Some(QueriesAnswer.Answered(rows)), Some(scale)) =>
         val label   = r.scales.lift(scale.value).getOrElse(scale.value.toString)
         val shown   = rows.filter(matches(nav.filter))
@@ -185,7 +226,9 @@ object QueriesNavigator:
                 SummaryTextId.ParticipantHeader,
                 ps.contributing.toString,
                 ps.requested.toString,
-                Format.signed(ps.all.d, 2)
+                ps.all.dByScale
+                  .lift(scale.value)
+                  .fold(SummaryText(SummaryTextId.NotApplicable))(Format.signed(_, 2))
               )
             )
           val ref = s.reporting.map(StudioRef.ParticipantSummary(run, _, scale, None, p))
@@ -199,7 +242,7 @@ object QueriesNavigator:
             NavigatorKind.Items,
             s"item:$item",
             item,
-            SummaryText(SummaryTextId.ItemHeader, item, es.size.toString),
+            SummaryText(SummaryTextId.ItemHeader, es.size.toString),
             None,
             es
           )

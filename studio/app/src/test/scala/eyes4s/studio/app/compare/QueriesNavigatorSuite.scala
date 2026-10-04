@@ -361,3 +361,60 @@ class QueriesNavigatorSuite extends munit.FunSuite:
       assertEquals(vm3.cursorText(NavigatorKind.Items), None)
     }
   }
+
+  test("answered without a σ of participant means: the navigator says why, not 'Reading'") {
+    loaded(t2Compare).map { s =>
+      val noSpec =
+        QueriesNavigator.vm(QueriesNavigator.initial, s.copy(reporting = None), Vector.empty)
+      assertEquals(
+        noSpec.empty,
+        Some(
+          "Run 7's queries are read, but the document has no reporting spec to show them under."
+        )
+      )
+      // The strip is still the run's.
+      assertEquals(noSpec.strip.map(_.count).head, "480")
+      // A participant listed twice: eyes4s's means check refuses every σ.
+      val r      = s.answered.get
+      val twice  = r.copy(participants = r.participants :+ r.participants.head)
+      val broken = s.copy(summary = Some(SummaryAnswer.Answered(twice)))
+      assertEquals(broken.shown, None)
+      val refused = QueriesNavigator.vm(QueriesNavigator.initial, broken, Vector.empty)
+      assert(
+        refused.empty.exists(
+          _.startsWith("Run 7's queries are read, but no σ has its participant means: ")
+        ),
+        refused.empty
+      )
+      assert(!refused.empty.exists(_.contains("Reading")))
+    }
+  }
+
+  test("a participant header's mean D is at the shown σ") {
+    loaded(t2Compare).map { s =>
+      val at1 = s.copy(scale = Some(right(ScaleIndex.of(1))))
+      val vm  = QueriesNavigator.vm(QueriesNavigator.initial, at1, Vector.empty)
+      val p17 = vm.groups.find(_.key == "participant:P17").get
+      val ps  = s.answered.get.participants.find(_.participant == "P17").get
+      val d1  = Format.signed(ps.all.dByScale(1), 2)
+      assert(p17.summary.endsWith(d1), (p17.summary, d1))
+      assertNotEquals(d1, Format.signed(ps.all.d, 2))
+    }
+  }
+
+  test("the selection includes the Compare trail; a new run resets open, closed and cursors") {
+    val sel = QueriesNavigator.selection(t2Compare)
+    assert(sel.contains(query), sel)
+    assert(t2Compare.selection.selected.forall(sel.contains))
+    val used = QueriesNavigator
+      .toggle(QueriesNavigator.filter(QueriesNavigator.initial, "P17"), "participant:P17", true)
+      .copy(cursors = Map(NavigatorKind.Queries -> NavigatorRow.Header("participant:P17")))
+    val on7 = QueriesNavigator.follow(used, Some(run7))
+    assertEquals(QueriesNavigator.follow(on7, Some(run7)), on7)
+    val on8 = QueriesNavigator.follow(on7, Some(eyes4s.studio.core.backend.RunId(8)))
+    assertEquals(
+      on8,
+      QueriesNavigator.initial
+        .copy(run = Some(eyes4s.studio.core.backend.RunId(8)), filter = "P17")
+    )
+  }
