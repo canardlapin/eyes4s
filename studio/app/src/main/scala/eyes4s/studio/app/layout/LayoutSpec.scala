@@ -85,7 +85,17 @@ enum PaneTitle derives CanEqual:
     case Fixed(t)   => t
     case Dynamic(g) => g
 
-final case class PaneDecl(id: PaneId, title: PaneTitle, kind: PaneKind) derives CanEqual
+final case class PaneDecl(
+    id: PaneId,
+    title: PaneTitle,
+    kind: PaneKind,
+    described: Option[String] = None
+) derives CanEqual:
+
+  /** The accessible name of the pane's focus stop: its description when it
+    * has one (a board's aria-label), else its title.
+    */
+  def accessibleName: String = described.getOrElse(title.text)
 
 enum Axis derives CanEqual:
   /** Children side by side. */

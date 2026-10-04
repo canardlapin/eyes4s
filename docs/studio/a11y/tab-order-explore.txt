@@ -16,7 +16,7 @@ toggle-button: Points, on
 toggle-button: Order, on
 toggle-button: Map, on
 plot: Timeline
-table: Source records
+table: Source records from fixations.csv. One focus stop; arrow keys move the row cursor.
 toggle-button: Show raw record
 region: Inspector
 toggle-button: Show raw record

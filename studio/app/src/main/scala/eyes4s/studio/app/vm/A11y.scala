@@ -84,7 +84,7 @@ object A11y:
       A11yRole.Region
 
   /** A pane's stop: its tab title names it. */
-  def pane(decl: PaneDecl): FocusStop = FocusStop(role(decl.kind), decl.title.text)
+  def pane(decl: PaneDecl): FocusStop = FocusStop(role(decl.kind), decl.accessibleName)
 
   private def button(a: ActionVM): Option[FocusStop] =
     Option.when(a.enabled)(FocusStop(A11yRole.Button, a.label))

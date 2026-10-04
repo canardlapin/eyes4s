@@ -148,16 +148,19 @@ final class SourceRecordsHost(
     .foreach(url => node.getStylesheets.add(url.toExternalForm))
 
   // The pane's own stop (the node hosting this one) takes the cursor's keys.
+  // A key on the toggle is the toggle's, not the cursor's.
   private val keys: javafx.event.EventHandler[KeyEvent] = e =>
-    val move = e.getCode match
-      case KeyCode.UP | KeyCode.KP_UP     => Some(SourceRecordsIntent.Move(RecordMove.Up))
-      case KeyCode.DOWN | KeyCode.KP_DOWN => Some(SourceRecordsIntent.Move(RecordMove.Down))
-      case KeyCode.PAGE_UP                => Some(SourceRecordsIntent.Move(RecordMove.PageUp))
-      case KeyCode.PAGE_DOWN              => Some(SourceRecordsIntent.Move(RecordMove.PageDown))
-      case KeyCode.HOME                   => Some(SourceRecordsIntent.Move(RecordMove.First))
-      case KeyCode.END                    => Some(SourceRecordsIntent.Move(RecordMove.Last))
-      case KeyCode.ENTER | KeyCode.SPACE  => Some(SourceRecordsIntent.Activate)
-      case _                              => None
+    val move = if e.getTarget eq showRaw then None
+    else
+      e.getCode match
+        case KeyCode.UP | KeyCode.KP_UP     => Some(SourceRecordsIntent.Move(RecordMove.Up))
+        case KeyCode.DOWN | KeyCode.KP_DOWN => Some(SourceRecordsIntent.Move(RecordMove.Down))
+        case KeyCode.PAGE_UP                => Some(SourceRecordsIntent.Move(RecordMove.PageUp))
+        case KeyCode.PAGE_DOWN => Some(SourceRecordsIntent.Move(RecordMove.PageDown))
+        case KeyCode.HOME      => Some(SourceRecordsIntent.Move(RecordMove.First))
+        case KeyCode.END       => Some(SourceRecordsIntent.Move(RecordMove.Last))
+        case KeyCode.ENTER | KeyCode.SPACE => Some(SourceRecordsIntent.Activate)
+        case _                             => None
     move.foreach { m =>
       dispatch(m)
       e.consume()
@@ -279,16 +282,30 @@ final class SourceRecordsHost(
     reveal.foreach { i =>
       flow match
         case Some(f) if f.getHeight > 0 =>
-          if !visible(i) then f.scrollTo(i)
-          if visible(i) then reveal = None
+          // A row above the view goes to the top, one below it to the bottom
+          // (scrolling the row before it to the top would leave it cut off).
+          shownRange.foreach { (first, last) =>
+            if i < first then list.scrollTo(i)
+            else if i > last then list.scrollTo(math.max(0, i - (last - first) + 1))
+          }
+          reveal = None
         case _ => list.scrollTo(i)
     }
+
+  /** The first and last rows the flow shows. */
+  def shownRange: Option[(Int, Int)] =
+    flow.flatMap(f =>
+      for
+        a <- Option(f.getFirstVisibleCell)
+        b <- Option(f.getLastVisibleCell)
+      yield (a.getIndex, b.getIndex)
+    )
 
   /** Whether row `i` is wholly in view. */
   def visible(i: Int): Boolean =
     flow.exists { f =>
       (Option(f.getFirstVisibleCell), Option(f.getLastVisibleCell)) match
-        case (Some(a), Some(b)) => a.getIndex < i && i < b.getIndex
+        case (Some(a), Some(b)) => a.getIndex <= i && i <= b.getIndex
         case _                  => false
     }
 
