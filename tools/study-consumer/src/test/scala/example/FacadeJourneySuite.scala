@@ -164,8 +164,9 @@ class FacadeJourneySuite extends munit.FunSuite:
     assertEquals(analysis.detection.eventSeries.events, facade.detection.eventSeries.events)
     assertEquals(analysis.detection.eventSeries.support, facade.detection.eventSeries.support)
     assertEquals(analysis.assignment.report, facade.assignment.report)
-    // From the explicit stages, the generic tidy constructor keeps every measure but
-    // not the upstream provenance; the facade's tidy stage restores it exactly.
+    // The independent check: from the explicit stages, the generic tidy constructor
+    // yields the same report and values. It does not carry the facade's upstream
+    // provenance steps.
     val generic = get(
       TidyAoiResult.from(
         explicit.study,
@@ -177,10 +178,27 @@ class FacadeJourneySuite extends munit.FunSuite:
     )
     assertEquals(generic.report, facade.tidy.report)
     assertEquals(generic.rows.map(_.value), facade.tidy.rows.map(_.value))
+    // Byte equality of the export, provenance included, goes through the facade's own
+    // tidy stage and entry point, so it shows the explicit plan and stages are accepted
+    // there; it is not independent of the facade's provenance code.
     val tidy = get(PsychologyWorkflow.tidy(explicit.study, explicit.imported, analysis))
     assertEquals(TidyCsv.encode(tidy), facade.csv)
     assertEquals(tidy.evidence.provenance, facade.provenance)
-    // And the facade's own entry point for an explicit plan reproduces it byte for byte.
+    // The tidy stage refuses an analysis of another recording.
+    val moved = Delimited
+      .parse(
+        source,
+        FacadeFixtures.csv.replace("1678716023627,286,37", "1678716023627,287,37"),
+        explicit.imported.raw.schema,
+        metadata
+      )
+      .validate(explicit.imported.frame, explicit.imported.clock, Rate.Irregular, Eye.Left)
+    assert(
+      PsychologyWorkflow
+        .tidy(explicit.study, moved, analysis)
+        .left
+        .exists(_.isInstanceOf[PsychologyWorkflowError.AnalysisInputMismatch])
+    )
     val rerun =
       get(PsychologyWorkflow.runAnalysis(explicit.study, explicit.imported, explicit.plan))
     assertEquals(rerun.csv, facade.csv)

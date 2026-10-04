@@ -165,7 +165,8 @@ object IoDiagnosticCatalog:
     "AssignmentFailed",
     "TidyResultFailed",
     "ExportFailed",
-    "ExportRoundTripMismatch"
+    "ExportRoundTripMismatch",
+    "AnalysisInputMismatch"
   )
   val sha256: DiagnosticFamily = error("sha256")(
     "WrongLength",

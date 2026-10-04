@@ -307,6 +307,35 @@ class PsychologyWorkflowSuite extends munit.FunSuite:
     assertEquals(rerun.imported.diagnostics, direct.imported.diagnostics)
   }
 
+  test("the tidy stage refuses an analysis that ran on another recording, naming both") {
+    val prepared = checked(PsychologyWorkflow.prepare(plan, publicTrial))
+    val native   = prepared.imported.recording.getOrElse(fail("recording"))
+    val analysis = checked(prepared.analysis.run(native))
+    assertEquals(
+      checked(PsychologyWorkflow.tidy(prepared.study, prepared.imported, analysis)).rows.size,
+      10
+    )
+    // The same trial with one gaze sample moved by a pixel is another recording.
+    val other = checked(
+      PsychologyWorkflow.prepare(
+        plan,
+        publicTrial.replace("1678716023627,286,37", "1678716023627,287,37")
+      )
+    )
+    val otherHash = other.imported.recording.getOrElse(fail("recording")).contentHash
+    assertNotEquals(otherHash, native.contentHash)
+    assertEquals(
+      PsychologyWorkflow.tidy(other.study, other.imported, analysis),
+      Left(
+        PsychologyWorkflowError.AnalysisInputMismatch(
+          plan.sourceName,
+          native.contentHash.render,
+          otherHash.render
+        )
+      )
+    )
+  }
+
   test("recording prerequisites retain missing geometry and synchronization before execution") {
     val prepared = checked(PsychologyWorkflow.prepare(plan, publicTrial))
     val json     = checked(persistence.codec.encode(prepared.analysis))

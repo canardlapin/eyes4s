@@ -328,7 +328,14 @@ def main():
             "runtime_evidence": report,
         },
         "repetition_journey": {
-            "exact_across_runtimes": ["plan", "matched", "controls", "point plan", "point values"],
+            "exact_across_runtimes": [
+                "plan",
+                "edges",
+                "matched",
+                "controls",
+                "point plan",
+                "point values",
+            ],
             "absolute_tolerance": ORACLE_TOLERANCE,
             "oracle": "tools/r-parity/fixtures/point-sampling.json",
             "runtime_evidence": repetition,
@@ -639,7 +646,7 @@ def check_repetition_journey(log):
     repetition = runtime_pair(log, "EYES4S_REPETITION_JOURNEY=", "repetition journey")
     points = runtime_pair(log, "EYES4S_POINT_JOURNEY=", "point-sampling journey")
     left, right = repetition["jvm"], repetition["js"]
-    for exact in ("plan", "matched", "controls"):
+    for exact in ("plan", "edges", "matched", "controls"):
         if left[exact] != right[exact]:
             raise RuntimeError(f"JVM/Scala.js repetition disagreement in {exact}")
     if len(left["differences"]) != len(right["differences"]) or not all(
