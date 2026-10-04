@@ -450,6 +450,14 @@ object Reducer:
       view(d, c)(p => (p.underlay, rebuildView(p)(underlay = shown)))(SetUnderlay(_))
     case ShowRun(run) =>
       view(d, c)(p => (p.shownRun, rebuildView(p)(shownRun = run)))(ShowRun(_))
+    case RelinkAsset(id, file, asset) =>
+      for
+        _ <- d.dataset(id).toRight(UnknownDataset(id))
+        old = d.relinks.find(id, file).map(_.asset)
+        _   <- Either.cond(old != asset, (), NoChange(c.name, targetOf(d, c)))
+        doc <- d.withRelinks(d.relinks.set(id, file, asset)).left.map(refused(d, c))
+      yield reversible(doc, RelinkAsset(id, file, old))
+
     case SaveLayout(perspective, layout) =>
       view(d, c) { p =>
         val kept = p.layouts.filterNot(_.perspective == perspective)
@@ -476,6 +484,8 @@ object Reducer:
   ): Either[CommandError, StudioDocument] =
     StudioDocument
       .of(datasets, analyses, draft, runs, reporting, figures, d.presentation, jobs)
+      // The repaired assets go with the science they repair.
+      .flatMap(_.withRelinks(d.relinks))
       .left
       .map(refused(d, c))
 
@@ -559,6 +569,7 @@ object Reducer:
     case r: ReviseDataset          => Target.OnDataset(r.dataset)
     case SetMapping(id, _)         => Target.OnDataset(id)
     case SetUnits(id, _)           => Target.OnDataset(id)
+    case RelinkAsset(id, _, _)     => Target.OnDataset(id)
     case SetGeometry(id, _)        => Target.OnDataset(id)
     case SetOffScreenPolicy(id, _) => Target.OnDataset(id)
     case AddCorrection(id, _, _)   => Target.OnDataset(id)

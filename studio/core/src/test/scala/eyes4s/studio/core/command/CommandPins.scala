@@ -106,6 +106,8 @@ object CommandPins:
       """{"SetTheme":{"theme":{"Dark":{}}}}""",
     "SetUnderlay" ->
       """{"SetUnderlay":{"shown":true}}""",
+    "RelinkAsset" ->
+      """{"RelinkAsset":{"dataset":3,"file":"forest-044.png","asset":{"file":"forest_044.png","sha256":"abababababababababababababababababababababababababababababababab"}}}""",
     "SetUnits" ->
       """{"SetUnits":{"dataset":3,"units":{"time":{"Seconds":{}}}}}""",
     "ShowRun" ->

@@ -227,13 +227,21 @@ object ProjectBundle:
       runJson      <- array(value, "runs")
       reportJson   <- array(value, "reporting")
       figureJson   <- array(value, "figures")
+      relinkJson   <- value("relinks").fold(Right(Vector.empty))(_ => array(value, "relinks"))
       datasets     <- document.datasets.zip(datasetJson).traverse { (d, json) =>
         val obj = json.asObject.getOrElse(JsonObject.empty)
+        // A revision's repaired assets are stored with it (S5.7), only when it has some.
+        val relinks = document.relinks.entries
+          .zip(relinkJson)
+          .collect { case (r, j) if r.dataset == d.id => j }
+        val stored =
+          if relinks.isEmpty then obj.remove("mapping")
+          else obj.remove("mapping").add("relinks", Json.fromValues(relinks))
         for
           dataset <- part(
             BundleArea.Datasets,
             s"r${d.id.number}",
-            Json.fromJsonObject(obj.remove("mapping"))
+            Json.fromJsonObject(stored)
           )
           mapping <- part(
             BundleArea.Mappings,
@@ -330,30 +338,48 @@ object ProjectBundle:
       yield json
     val parts = manifest.parts
     for
-      datasets <- parts.datasets.traverse { d =>
+      read <- parts.datasets.traverse { d =>
         (load(d.dataset), load(d.mapping)).tupled.flatMap((dataset, mapping) =>
           dataset.asObject
             .toRight(
               BundleError.MalformedPart(d.dataset.path, "a dataset part is a JSON object")
             )
-            .map(obj => Json.fromJsonObject(obj.add("mapping", mapping)))
+            .flatMap { obj =>
+              obj("relinks")
+                .fold(Right(Vector.empty[Json]))(r =>
+                  r.asArray.toRight(
+                    BundleError
+                      .MalformedPart(d.dataset.path, "a dataset's relinks are an array")
+                  )
+                )
+                .map(relinks =>
+                  (Json.fromJsonObject(obj.remove("relinks").add("mapping", mapping)), relinks)
+                )
+            }
         )
       }
+      datasets = read.map(_._1)
+      relinks  = read.flatMap(_._2)
       analyses  <- parts.analyses.traverse(load)
       draft     <- parts.draft.traverse(load)
       runs      <- parts.runs.traverse(load)
       reporting <- parts.reporting.traverse(load)
       figures   <- parts.figures.traverse(load)
-      value = Json.obj(
-        "datasets"     -> Json.fromValues(datasets),
-        "analyses"     -> Json.fromValues(analyses),
-        "draft"        -> draft.getOrElse(Json.Null),
-        "runs"         -> Json.fromValues(runs),
-        "reporting"    -> Json.fromValues(reporting),
-        "figures"      -> Json.fromValues(figures),
-        "presentation" -> manifest.presentation,
-        "jobs"         -> Json.arr()
-      )
+      value = Json
+        .obj(
+          "datasets"     -> Json.fromValues(datasets),
+          "analyses"     -> Json.fromValues(analyses),
+          "draft"        -> draft.getOrElse(Json.Null),
+          "runs"         -> Json.fromValues(runs),
+          "reporting"    -> Json.fromValues(reporting),
+          "figures"      -> Json.fromValues(figures),
+          "presentation" -> manifest.presentation,
+          "jobs"         -> Json.arr()
+        )
+        .deepMerge(
+          if relinks.isEmpty then Json.obj()
+          else Json.obj("relinks" -> Json.fromValues(relinks))
+        )
       document <- StudioDocument.ladder
         .flatMap(_.readAt(manifest.document, value))
         .left

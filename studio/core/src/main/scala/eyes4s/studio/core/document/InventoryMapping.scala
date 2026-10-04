@@ -18,6 +18,7 @@ package eyes4s.studio.core.document
 
 import cats.syntax.all.*
 import eyes4s.plan.AttributeColumn
+import io.circe.syntax.*
 import io.circe.{Decoder, Encoder}
 
 /** A trial inventory's column mapping (ticket S5.4; the "Trial metadata"
@@ -33,7 +34,8 @@ import io.circe.{Decoder, Encoder}
   */
 final case class InventoryMapping private (
     bindings: Vector[ColumnBinding],
-    attributes: DeclaredAttributes
+    attributes: DeclaredAttributes,
+    displays: Option[DisplayColumns]
 ) derives CanEqual:
   def column(role: ColumnRole): Option[ColumnName] = bindings.find(_.role == role).map(_.column)
 
@@ -77,17 +79,59 @@ object InventoryMapping:
           )
         )
         .toLeft(())
-    yield new InventoryMapping(bindings.sortBy(_.role.ordinal), attributes)
+    yield new InventoryMapping(bindings.sortBy(_.role.ordinal), attributes, None)
 
-  given Encoder.AsObject[InventoryMapping] =
-    Encoder.forProduct2("bindings", "attributes")(m => (m.bindings, m.attributes))
+  /** `mapping` reading each trial's display from `displays` (S5.7), or no
+    * display (`None`): its columns are no role's (a column declared as an
+    * attribute may also be read as a display), and the kind and the file
+    * are two columns.
+    */
+  def withDisplays(
+      mapping: InventoryMapping,
+      displays: Option[DisplayColumns]
+  ): Either[DocumentError, InventoryMapping] =
+    displays
+      .traverse_ { d =>
+        for
+          _ <- d.file
+            .filter(_ == d.kind)
+            .map(c => DocumentError.DisplayColumnsShared(c.value))
+            .toLeft(())
+          _ <- d.columns.traverse_ { c =>
+            mapping.bindings
+              .find(_.column == c)
+              .map(b => DocumentError.DisplayColumnMapped(c.value, b.role.label))
+              .toLeft(())
+          }
+        yield ()
+      }
+      .as(mapping.copy(displays = displays))
 
-  given Decoder[InventoryMapping] =
-    Decoder
-      .forProduct2[Either[DocumentError, InventoryMapping], Vector[
-        ColumnBinding
-      ], DeclaredAttributes](
-        "bindings",
-        "attributes"
-      )(of)
-      .emap(_.left.map(_.message))
+  /** `displays` is written only when the mapping reads them, so a mapping
+    * without them is written as before S5.7, byte for byte.
+    */
+  given Encoder.AsObject[InventoryMapping] = Encoder.AsObject.instance { m =>
+    val o =
+      io.circe.JsonObject("bindings" -> m.bindings.asJson, "attributes" -> m.attributes.asJson)
+    m.displays.fold(o)(d => o.add("displays", d.asJson))
+  }
+
+  given Decoder[InventoryMapping] = Decoder.instance { c =>
+    for
+      bindings   <- c.get[Vector[ColumnBinding]]("bindings")
+      attributes <- c.get[DeclaredAttributes]("attributes")
+      displays   <- c.get[Option[DisplayColumns]]("displays")
+      mapping    <- of(bindings, attributes)
+        .flatMap(withDisplays(_, displays))
+        .left
+        .map(e => io.circe.DecodingFailure(e.message, c.history))
+    yield mapping
+  }
+
+/** The trial inventory's display columns (S5.7): the column naming each
+  * trial's display kind, and the one naming its asset file, if any.
+  */
+final case class DisplayColumns(kind: ColumnName, file: Option[ColumnName])
+    derives CanEqual,
+      io.circe.Codec.AsObject:
+  def columns: Vector[ColumnName] = kind +: file.toVector

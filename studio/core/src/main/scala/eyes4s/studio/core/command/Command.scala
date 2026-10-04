@@ -18,6 +18,7 @@ package eyes4s.studio.core.command
 
 import eyes4s.codec.CanonicalDigest
 import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
+import eyes4s.studio.core.assets.{AssetFile, AssetRef}
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId}
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.AdmissionDecision.coreDecision
@@ -30,11 +31,15 @@ import io.circe.Codec
 enum ChangeKind derives CanEqual, Codec.AsObject:
   case DatasetReadmit, AnalysisRerun, ReportingNoRerun, ViewOnly
 
+  /** A repaired display asset (S5.7): what a display shows, never science. */
+  case AssetsNoRerun
+
   def label: String = this match
     case DatasetReadmit   => "Dataset · re-admit"
     case AnalysisRerun    => "Analysis · rerun"
     case ReportingNoRerun => "Reporting · no rerun"
     case ViewOnly         => "View only"
+    case AssetsNoRerun    => "Assets · no rerun"
 
 /** A document edit (ticket S2.2): data, serialised in the autosave journal
   * ([[CommandJournal]]) and by scripting (S3.6). Commands name their targets
@@ -86,6 +91,12 @@ enum Command derives CanEqual, Codec.AsObject:
       attributes: DeclaredAttributes,
       inventory: Option[InventoryMapping]
   )
+
+  /** Repair (S2.5, S5.7): every display of `dataset` naming the inventory
+    * file `file` shows the stored input `asset`; `None` undoes a repair.
+    * Any dataset revision, admitted or not: a repair is not science.
+    */
+  case RelinkAsset(dataset: DatasetRevision, file: AssetFile, asset: Option[AssetRef])
 
   /** Put a discarded pending dataset revision back. */
   case RestoreDataset(dataset: DatasetRevisionSpec)
@@ -259,6 +270,7 @@ enum Command derives CanEqual, Codec.AsObject:
     case _: (SetPerspective | SetTheme | SetStage | SetMapOpacity | SetUnderlay | ShowRun |
           SaveLayout) =>
       ChangeKind.ViewOnly
+    case RelinkAsset(_, _, _) => ChangeKind.AssetsNoRerun
 
 /** What the application must do after a command: data, performed by the
   * shell or a service, never by the reducer (DESIGN_SPEC section 13).
