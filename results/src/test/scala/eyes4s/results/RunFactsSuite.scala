@@ -193,3 +193,45 @@ class RunFactsSuite extends munit.FunSuite:
       )
     )
   }
+
+  test("run and report facts of one study make one methods text") {
+    val source = get(ReportSource.study(plan, input, result, None, binding))
+    val report = get(
+      Report.evaluate(
+        get(
+          ReportSpec.of(
+            get(ReportId.of("all")),
+            0,
+            get(ReportSelection.of(Vector(Role.Difference), Vector("value")))
+          )
+        ),
+        source
+      )
+    )
+    val facts = get(
+      MethodsFacts.of(
+        get(RunFacts.study(result, get(source.queries(0)))) ++
+          get(ReportFacts.of(report, "all queries"))
+      )
+    )
+    val text   = StudyText.methods(plan, facts)
+    val design = text.clauses.filter(_.topic == ClauseTopic.Design).map(_.text)
+    assertEquals(
+      design,
+      Vector(
+        "5 queries were eligible; 5 contributed, 0 failed and 0 had no admitted matched trial.",
+        "Of the compared queries, 3 had 2 controls and 2 had 1 control."
+      )
+    )
+    val reporting = text.clauses.filter(_.topic == ClauseTopic.Reporting).map(_.text)
+    assertEquals(
+      reporting,
+      Vector(
+        "Results were reported by all queries.",
+        "Per participant, groups held 2–3 queries.",
+        "1 participant-group cell had the fewest queries (p2 · all · 2 queries)."
+      )
+    )
+    val stated = text.tokens.collect { case t: Token.Fact => t.slot }.toSet
+    assertEquals(stated, facts.facts.map(_.slot).toSet)
+  }
