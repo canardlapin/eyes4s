@@ -130,6 +130,15 @@ enum PanelBody derives CanEqual:
   */
 object FigurePanels:
 
+  /** Panel C's maps until the density grids are served (UI-E). */
+  val MapsPending: String =
+    "No density maps yet: they are drawn when the backend serves density grids (UI-E). " +
+      "The tiles show their scores."
+
+  /** Panels A and B's gaze until the trial-fixations view is served (S6.2). */
+  val GazePending: String =
+    "No gaze yet: fixations are drawn when the backend serves the trial-fixations view (S6.2)."
+
   private def two(v: Double) = Format.decimal(v, 2)
 
   /** The scale index of `sigma` in the bound run's scale set. */
@@ -174,7 +183,8 @@ object FigurePanels:
       tiles,
       s"Matched ${two(scores.matched.score)} · $control · control mean B ${two(scores.b)} · " +
         s"D ${Format.signed(scores.d, 2)}",
-      "Density maps are not served yet (UI-E); the tiles show their scores only."
+      // Follow-up bd-01M42K7ZYDRR90JXZYNDD2HVXP: the maps from the served grids.
+      FigurePanels.MapsPending
     )
 
   /** Panel C's table: the contrast, the matched pair, every control pair. */
@@ -300,5 +310,6 @@ object FigurePanels:
     GazePanelVM(
       s"${trial.phase.label} · ${trial.trial}$item",
       shown + remembered,
-      "Fixations are not served to figures yet (S6.2); the panel draws no gaze."
+      // Follow-up bd-01M42K7ZNCC5J9R9RPR7H6ZHNT: the gaze from trialFixations.
+      FigurePanels.GazePending
     )

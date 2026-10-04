@@ -296,7 +296,31 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
           "Displayed: blank + fixation cross. The remembered image was not shown."
         )
       )
-      assert(gaze("A").gaze.contains("not served"))
+      // Each empty drawing area names the follow-up that fills it.
+      assertEquals(
+        gaze("A").gaze,
+        "No gaze yet: fixations are drawn when the backend serves the trial-fixations view (S6.2)."
+      )
+      panel(vm, "C").body match
+        case PanelBody.Maps(maps) =>
+          assertEquals(
+            maps.maps,
+            "No density maps yet: they are drawn when the backend serves density grids (UI-E). " +
+              "The tiles show their scores."
+          )
+        case other => fail(other.toString)
+      assertEquals(
+        FigureComposer
+          .view(loaded(at(t2, figure1, Some("A")), answers), at(t2, figure1, Some("A")))
+          .page
+          .flatMap(_.table),
+        Some(
+          Left(
+            "Panel A has no table yet: its fixations are listed when the backend serves the " +
+              "trial-fixations view (S6.2)."
+          )
+        )
+      )
     }
   }
 

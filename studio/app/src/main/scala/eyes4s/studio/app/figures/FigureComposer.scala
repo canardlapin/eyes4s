@@ -552,7 +552,8 @@ object ComposerText:
     s"${run.label} does not compute ${sigma.render}."
 
   def noTable(letter: PanelLetter): String =
-    s"Panel ${letter.value} has no table: its fixations are not served to figures yet."
+    s"Panel ${letter.value} has no table yet: its fixations are listed when the backend " +
+      "serves the trial-fixations view (S6.2)."
 
   def noTemplate(scale: PanelScale, selection: PanelSelection): String =
     val at = scale match
