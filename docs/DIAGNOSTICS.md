@@ -1616,6 +1616,9 @@ fails after rewriting, so review the change and run it again.
 | `relation.source-binding` | `SourceBinding` | `field`, `expected`, `found` |
 | `relation.run-plan` | `RunPlan` | `reported`, `current`, `changes` |
 | `relation.run-input` | `RunInput` | `reported`, `current` |
+| `relation.analysis-family` | `AnalysisFamily` | `result`, `plan`, `expected` |
+| `relation.undeclared-embedding` | `UndeclaredEmbedding` | `plan` |
+| `relation.empty-embedding` | `EmptyEmbedding` | `plan` |
 
 ### `manifest` — `ManifestError`
 
@@ -1633,6 +1636,7 @@ fails after rewriting, so review the change and run it again.
 | `manifest.payload-owner` | `PayloadOwner` | `relation`, `schema` |
 | `manifest.duplicate-relation` | `DuplicateRelation` | `relation` |
 | `manifest.relation-count` | `RelationCount` | `name`, `kind`, `count`, `expected` |
+| `manifest.analysis-input` | `AnalysisInput` | `relation`, `name`, `role` |
 
 ### `payload` — `PayloadError`
 
