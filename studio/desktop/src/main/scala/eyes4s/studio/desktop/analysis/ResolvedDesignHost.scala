@@ -108,6 +108,12 @@ final class ResolvedDesignHost(app: Intent => Unit, inputs: DesignInputs):
   /** The pane's state now. */
   def state: ResolvedDesign = panel
 
+  // Who follows the pane's state (the preflight pane, S7.6).
+  private var followers = Vector.empty[ResolvedDesign => Unit]
+
+  /** Calls `f` with the state after every change. */
+  def follow(f: ResolvedDesign => Unit): Unit = followers :+= f
+
   /** The pane's focus stops after its own: the choosable chips, then the table. */
   def focusStops: Vector[FocusStop] = ResolvedDesignVM.of(panel).focusStops
 
@@ -117,6 +123,7 @@ final class ResolvedDesignHost(app: Intent => Unit, inputs: DesignInputs):
     panel = next
     perform(effects)
     view.render(ResolvedDesignVM.of(panel))
+    followers.foreach(_(panel))
 
   /** A user action or a backend answer. */
   def dispatch(intent: DesignIntent): Unit =
@@ -124,6 +131,7 @@ final class ResolvedDesignHost(app: Intent => Unit, inputs: DesignInputs):
     panel = next
     perform(effects)
     view.render(ResolvedDesignVM.of(panel))
+    followers.foreach(_(panel))
 
   private def later(intent: DesignIntent): Unit = Platform.runLater(() => dispatch(intent))
 

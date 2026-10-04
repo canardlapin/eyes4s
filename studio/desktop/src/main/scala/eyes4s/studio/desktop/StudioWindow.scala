@@ -35,7 +35,7 @@ import eyes4s.studio.desktop.runtime.{
   StudioRuntime,
   StudioSession
 }
-import eyes4s.studio.desktop.analysis.{DesignInputs, ResolvedDesignHost}
+import eyes4s.studio.desktop.analysis.{PreflightHost, DesignInputs, ResolvedDesignHost}
 import eyes4s.studio.desktop.importing.{ColumnMappingPaneHost, ImportWizardHost}
 import eyes4s.studio.desktop.platform.FilePresetStore
 import eyes4s.studio.desktop.shell.AppShell
@@ -69,7 +69,9 @@ final class StudioWindow private (
     val navigator: TrialsNavigatorHost,
     navigatorListener: AppModel => Unit,
     val resolvedDesign: ResolvedDesignHost,
-    designListener: AppModel => Unit
+    designListener: AppModel => Unit,
+    val preflight: PreflightHost,
+    preflightListener: AppModel => Unit
 ):
   /** The window content, with the studio stylesheets. */
   def root: javafx.scene.Parent = shell.root
@@ -84,6 +86,7 @@ final class StudioWindow private (
     else if pane == StudioLayouts.trials then navigator.trialsStops
     else if pane == StudioLayouts.items then navigator.itemsStops
     else if pane == StudioLayouts.resolvedDesign then resolvedDesign.focusStops
+    else if pane == StudioLayouts.preflight then preflight.focusStops
     else Vector.empty
 
   /** Store each perspective's arrangement in the document (view-only). */
@@ -96,6 +99,7 @@ final class StudioWindow private (
     runtime.unlisten(summaryListener)
     runtime.unlisten(navigatorListener)
     runtime.unlisten(designListener)
+    runtime.unlisten(preflightListener)
     summary.dispose()
     project.foreach(_.close())
     session.close()
@@ -320,6 +324,13 @@ object StudioWindow:
     val designListener: AppModel => Unit = design.sync
     r.listen(designListener)
     design.sync(r.model)
+    // The preflight pane and run card (Analysis): the design's findings.
+    val preflight = PreflightHost(() => r.model, dispatch)
+    host.host(StudioLayouts.preflight, preflight.node)
+    design.follow(preflight.follow)
+    val preflightListener: AppModel => Unit = preflight.sync
+    r.listen(preflightListener)
+    preflight.follow(design.state)
     Right(
       StudioWindow(
         session,
@@ -335,6 +346,8 @@ object StudioWindow:
         navigator,
         navigatorListener,
         design,
-        designListener
+        designListener,
+        preflight,
+        preflightListener
       )
     )

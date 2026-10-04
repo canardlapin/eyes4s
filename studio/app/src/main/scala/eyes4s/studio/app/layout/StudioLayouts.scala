@@ -141,6 +141,9 @@ object StudioLayouts:
   /** The resolved-design table (S7.5). */
   val resolvedDesign: PaneId = new PaneId("analysis.resolved-design")
 
+  /** The pane that hosts the preflight findings and the run card (S7.6). */
+  val preflight: PaneId = new PaneId("analysis.preflight")
+
   /** Analysis.dc.html. */
   val analysis: PerspectiveLayout = layout(
     "analysis",

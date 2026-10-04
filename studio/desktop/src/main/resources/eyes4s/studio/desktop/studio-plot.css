@@ -114,3 +114,51 @@
   -fx-border-color: -es-accent;
   -fx-border-width: 0 0 0 2;
 }
+
+/* ---- The preflight pane and run card (S7.6; Analysis.dc.html, preflight) --------- */
+
+.preflight .find {
+  -fx-border-color: -es-hairline;
+  -fx-border-radius: 6;
+  -fx-padding: 8;
+}
+
+.preflight-note {
+  -fx-text-fill: -es-ink-2;
+}
+
+.preflight-key {
+  -fx-text-fill: -es-ink-3;
+}
+
+.preflight-title {
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.pill-warning {
+  -fx-background-color: -es-warn-soft;
+  -fx-text-fill: -es-warn-text;
+  -fx-padding: 1 6 1 6;
+  -fx-background-radius: 4;
+}
+
+.pill-blocker {
+  -fx-background-color: -es-fail-soft;
+  -fx-text-fill: -es-fail;
+  -fx-padding: 1 6 1 6;
+  -fx-background-radius: 4;
+}
+
+/* Save & run is the pane's primary action. */
+.preflight-run {
+  -fx-background-color: -es-accent;
+  -fx-background-insets: 0;
+  -fx-background-radius: 4;
+  -fx-text-fill: -es-on-accent;
+  -fx-font-family: "IBM Plex Sans Medm";
+}
+
+.preflight-run:focused {
+  -fx-background-color: -es-ink, -es-accent;
+  -fx-background-insets: 0, 2;
+}

@@ -14,3 +14,5 @@ toggle-button: No match
 toggle-button: Query not admitted
 table: Resolved design, rev 5; arrow keys move the row cursor
 region: Preflight
+button: Open the affected trials
+button: Save & run rev 5 · 44,845 pairs

@@ -257,6 +257,11 @@ enum DesignCount derives CanEqual, Codec.AsObject:
   case RequestedQueries, EligibleQueries, UnmatchedQueries, QueriesNotAdmitted, ByDesignQueries
   case FocalTrials, ReferenceTrials, CandidatePairsPerScale, EligiblePairsPerScale
 
+  /** The pairs a run of the revision compares, over every scale (S7.6's run
+    * card).
+    */
+  case EligiblePairs
+
   /** The participants the preview counts, one page of pairs each. */
   case Participants
 

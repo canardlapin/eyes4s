@@ -44,6 +44,7 @@ enum DesignTextId derives CanEqual:
   // --- Tallies (StudioRef.DesignTally) -------------------------------------------------------
   case TallyRequested, TallyEligible, TallyUnmatched, TallyNotAdmitted, TallyByDesign
   case TallyFocalTrials, TallyReferenceTrials, TallyCandidatePairs, TallyEligiblePairs, TallyOf
+  case TallyEligiblePairsAll
   case TallyParticipants
 
 /** The resolved-design pane's strings in the board's wording. */
@@ -101,17 +102,18 @@ object DesignText:
     case RowsFailed    => "The resolved design could not be read: {0}"
     case PreviewFailed => "The backend did not prepare the design: {0}"
 
-    case TallyRequested       => "Requested queries"
-    case TallyEligible        => "Eligible queries"
-    case TallyUnmatched       => "Queries with no match"
-    case TallyNotAdmitted     => "Queries not admitted"
-    case TallyByDesign        => "Queries without a study trial, by design"
-    case TallyParticipants    => "Participants"
-    case TallyFocalTrials     => "Focal trials"
-    case TallyReferenceTrials => "Reference trials"
-    case TallyCandidatePairs  => "Candidate pairs per scale"
-    case TallyEligiblePairs   => "Eligible pairs per scale"
-    case TallyOf              => "{0} · {1}"
+    case TallyRequested        => "Requested queries"
+    case TallyEligible         => "Eligible queries"
+    case TallyUnmatched        => "Queries with no match"
+    case TallyNotAdmitted      => "Queries not admitted"
+    case TallyByDesign         => "Queries without a study trial, by design"
+    case TallyParticipants     => "Participants"
+    case TallyFocalTrials      => "Focal trials"
+    case TallyReferenceTrials  => "Reference trials"
+    case TallyCandidatePairs   => "Candidate pairs per scale"
+    case TallyEligiblePairs    => "Eligible pairs per scale"
+    case TallyEligiblePairsAll => "Eligible pairs over every scale"
+    case TallyOf               => "{0} · {1}"
 
   def apply(id: DesignTextId, args: String*): String =
     Messages.fill(english(id), args.toVector)
@@ -129,4 +131,5 @@ object DesignText:
       case DesignCount.ReferenceTrials        => TallyReferenceTrials
       case DesignCount.CandidatePairsPerScale => TallyCandidatePairs
       case DesignCount.EligiblePairsPerScale  => TallyEligiblePairs
+      case DesignCount.EligiblePairs          => TallyEligiblePairsAll
     apply(TallyOf, revision.label, english(what))

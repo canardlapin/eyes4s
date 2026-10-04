@@ -96,6 +96,38 @@ object DiagnosticsPresenter:
       else DiagnosticText(DiagnosticTextId.Blocked)
     )
 
+  /** The findings with one entry per finding kind, as a preflight lists them
+    * (Analysis.dc.html, preflight): findings of one code, severity and remedy
+    * become one, naming every trial its members name, in first-seen order. A
+    * kind with one member is shown as it is. The blocker and warning counts
+    * are of the entries; the verdict is unchanged.
+    */
+  def grouped(vm: DiagnosticsVM): DiagnosticsVM =
+    def merge(findings: Vector[FindingVM]): Vector[FindingVM] =
+      val keyOf = (f: FindingVM) => (f.code, f.severity, f.remedy.map(_.label))
+      val keys  = findings.map(keyOf).distinct
+      keys.map { k =>
+        findings.filter(f => keyOf(f) == k) match
+          case Vector(one) => one
+          case many        =>
+            val trials = many.flatMap(_.affected).distinct
+            val people = trials.map(_.participant).distinct.mkString(", ")
+            val detail =
+              if trials.isEmpty then DiagnosticText(DiagnosticTextId.TrialsAffected, "0")
+              else
+                DiagnosticText(DiagnosticTextId.TrialsAffectedIn, trials.size.toString, people)
+            many.head.copy(
+              detail = detail,
+              affected = trials,
+              remedy = many.head.remedy.map(_.copy(trials = trials))
+            )
+      }
+    val eyes   = merge(vm.eyes4s)
+    val studio = merge(vm.studio)
+    val all    = eyes ++ studio
+    val block  = all.count(_.severity == FindingSeverity.Blocker)
+    vm.copy(eyes4s = eyes, studio = studio, blockers = block, warnings = all.size - block)
+
   /** Whether a diagnostic is the studio's own check rather than eyes4s's. */
   def isStudioCheck(d: StudioDiagnostic): Boolean =
     d.origin == DiagnosticOrigin.Host || d.code.startsWith(StudioFamily + ".")
