@@ -143,6 +143,12 @@ case runs the complete save, fresh-registration reopen and rerun workflow on bot
    plan and run are an `analysis-plan` and an `analysis-result` related by
    `AnalysisResultOf(run, plan, Vector.empty)`: the plan carries its own maps, so the relation
    names no input entry. Register `results.registration` with the resolver's `AnalysisRegistry`.
+7. Repetition is a recipe family (`RecipeFamily.Repetition`): `plan.preflight(Some(plan.inputRef))`
+   is an `AnalysisReport`, blocked without the plan's maps or with others, leaving the comparisons
+   and their reduction to execution; `RepetitionExecution` runs `plan.work` through the shared
+   runner; and `ResultExports.repetition(plan, result, codec, keys)` tabulates a completed run's
+   matched and control edges. The family conformance suite holds it to every obligation the other
+   families meet.
 5. Create `RepetitionPlanCodec.of` with a distinct recipe schema, typed key codec and
    `RepetitionRegistry`. Save its versioned JSON. A fresh registry with the declared layout
    reconstructs the same keys, eligible/selected directed endpoints, seed, cap, input and plan

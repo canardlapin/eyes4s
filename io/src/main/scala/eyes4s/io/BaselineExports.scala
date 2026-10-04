@@ -238,9 +238,17 @@ object ResultExports:
       plan: RepetitionPlan[K, U],
       codec: VersionedCodec[RepetitionPlan[K, U]],
       keys: VersionedCodec[K]
+  ): Either[ResultExportError, Vector[ResultTable]] =
+    repetition(plan, plan.run, codec, keys)
+
+  /** The two edge tables of a completed run of `plan`, as [[repetition]] writes them. */
+  def repetition[K, U <: Unit2D: UnitLabel](
+      plan: RepetitionPlan[K, U],
+      result: RepetitionPlanResult[K],
+      codec: VersionedCodec[RepetitionPlan[K, U]],
+      keys: VersionedCodec[K]
   ): Either[ResultExportError, Vector[ResultTable]] = for
-    saved <- encoded(codec.encode(plan))
-    result = plan.run
+    saved   <- encoded(codec.encode(plan))
     matched <- pairs[K, U, Similarity, SignedDifference](
       result.matched,
       keys,

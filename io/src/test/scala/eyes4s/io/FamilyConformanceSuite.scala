@@ -24,7 +24,7 @@ import eyes4s.core.*
 import eyes4s.design.*
 import eyes4s.detect.*
 import eyes4s.fs2.{Execution, RecordingExecution, RunOutcome, StudyExecution, Submission}
-import eyes4s.fs2.TemporalExecution
+import eyes4s.fs2.{RepetitionExecution, TemporalExecution}
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.{Deg, Px}
 import eyes4s.plan.*
@@ -86,7 +86,13 @@ import scala.deriving.Mirror
   * | TemporalContrastCsv drops a trial's coverage row        | TemporalStudy table                 |
   * | the runner numbers the first step 2                     | every family's execution checks     |
   * | the runner's between-step hook is uncancelable          | every family's cancellation check   |
+  * | the repetition Stepwise instance ignores its quanta     | Repetition stepwise                 |
+  * | repetition preflight reports TemporalStudy              | Repetition preflight                |
   * }}}
+  *
+  * A repetition archive that writes the matched analysis as the controls is
+  * self-consistent here (the run and the stepped result archive alike), so
+  * `RepetitionPlanSuite`, which compares a decoded run with the run, kills it.
   *
   * The table obligation compares each table with what the result implies: the
   * contrast table's row count (one row per failed scale, else one per contrast
@@ -121,6 +127,14 @@ class FamilyConformanceSuite extends munit.FunSuite:
     """)
     assert(missing.nonEmpty, "a missing witness compiled")
     assert(missing.exists(_.message.contains("TemporalStudy")), missing.map(_.message))
+    val withoutRepetition = typeCheckErrors("""
+      import FamilyWitnesses.{study, recording, temporal}
+      FamilyWitnesses.all
+    """)
+    assert(
+      withoutRepetition.exists(_.message.contains("Repetition")),
+      withoutRepetition.map(_.message)
+    )
   }
 
   test("every analysis kind maps to its family, and the unmapped kinds are the allowlist") {
@@ -131,7 +145,6 @@ class FamilyConformanceSuite extends munit.FunSuite:
     assertEquals(
       AnalysisKind.withoutFamily.toSet,
       Set(
-        AnalysisKind.Repetition,
         AnalysisKind.PointSampling,
         AnalysisKind.TemplateFit,
         AnalysisKind.Decomposition,
@@ -833,4 +846,123 @@ object FamilyWitnesses:
             "repetition.i"      -> "repetitions"
           ),
           studyContext ++ Set("temporal.input", "temporal.scope")
+        )
+
+  // --------------------------------------------------------------- repetition
+
+  private val repetitionGrid = get(
+    Grid.over(get(Frame.screen("conformance-repetition", 5, 3)), 5, 3)
+  )
+  private val repetitionLayout = get(
+    RepetitionLayout.of[StudyKey, String, String, String](
+      definition("conformance.repetition-layout"),
+      definition("conformance.participant"),
+      Projection.named("participant")(_.participant),
+      definition("conformance.stimulus"),
+      Projection.named("stimulus")(_.stimulus),
+      definition("conformance.occasion"),
+      Projection.named("occasion")(_.phase)
+    )
+  )
+  private val repetitionMaps =
+    for
+      p      <- Vector("p1", "p2"); s <- Vector("a", "b");
+      (o, i) <- Vector("r1", "r2", "r3").zipWithIndex
+    yield
+      val values = IArray.tabulate(15)(c =>
+        if c == (i + (if s == "a" then 0 else 5) + (if p == "p1" then 0 else 2)) % 15 then 2.0
+        else 1.0
+      )
+      Trial(
+        StudyKey(p, s, o),
+        (),
+        get(
+          Surface
+            .intensity(repetitionGrid, values, Provenance.raw(ContentHash.of(values)))
+            .flatMap(_.normalised)
+        )
+      )
+  private val repetitionPlan = get(
+    RepetitionPlan.of(
+      repetitionLayout,
+      RepetitionRelations.withinParticipant,
+      MapSimilarityMethod.Cosine,
+      Selection.BottomK(get(PairLimit.of(2)), Seed(3L), SampleId("conformance-controls")),
+      FailurePolicy.RequireAll,
+      repetitionGrid,
+      Trials(repetitionMaps)
+    )
+  )
+  private val repetitionKeys  = StudyCodecs.key(definition("conformance.repetition-key"))
+  private val repetitionPlans = RepetitionPlanCodec.of[StudyKey, Px](
+    definition("conformance.repetition-plan"),
+    get(RepetitionRegistry.empty[StudyKey].register(repetitionLayout)),
+    repetitionKeys
+  )
+
+  given repetition: FamilyWitness[RecipeFamily.Repetition.type] =
+    new FamilyWitness[RecipeFamily.Repetition.type](RecipeFamily.Repetition):
+      type Id      = eyes4s.fs2.RepetitionRunId
+      type Cursor  = RepetitionCursor[StudyKey]
+      type Stage   = RepetitionStage
+      type Segment = RepetitionStage
+      type Error   = Nothing
+      type Result  = RepetitionPlanResult[StudyKey]
+
+      private val results = new RepetitionResultCodec[StudyKey, Px](
+        definition("conformance.repetition-result"),
+        repetitionPlans,
+        repetitionKeys
+      )
+
+      def description = repetitionPlan.description
+      def inspection  = repetitionPlan.inspect
+      def ready       =
+        val report = repetitionPlan.preflight(Some(repetitionPlan.inputRef))
+        Preflighted.of(report, report.diagnostics)
+      def unavailable =
+        val report = repetitionPlan.preflight(None)
+        Preflighted.of(report, report.diagnostics)
+      def run                            = Right(repetitionPlan.run)
+      def cursor                         = Right(repetitionPlan.work)
+      def submission(quanta: WorkQuanta) =
+        RepetitionExecution.submission(repetitionPlan, quanta)
+      given stepping: Stepwise[Cursor, Stage, Error, Result] = RepetitionCursor.stepwise
+      def archived(result: Result) = results.codec.encode(RepetitionRun(repetitionPlan, result))
+      def rearchived(document: Json) =
+        results.codec.decode(document).flatMap(results.codec.encode)
+      def savedPlan                    = repetitionPlans.encode(repetitionPlan)
+      def reloadedPlan(document: Json) =
+        repetitionPlans
+          .decode(document)
+          .flatMap(p => repetitionPlans.encode(p).map(p.description -> _))
+      def tables(result: Result) =
+        Right(
+          ResultExports
+            .repetition(repetitionPlan, result, repetitionPlans, repetitionKeys)
+            .map(
+              _.zip(Vector(result.matched.rows.size, result.controls.rows.size))
+                .map((t, rows) => Tabulated(t, rows, None))
+            )
+        )
+      def form =
+        val f = new RepetitionForm
+        FormEvidence(
+          f.fields,
+          f.values(repetitionPlan),
+          Some(
+            f.parse(f.values(repetitionPlan))
+              .left
+              .map(_.toVector.map(_.message).mkString("; "))
+              .flatMap(_.plan(repetitionPlan).left.map(_.message))
+              .map(_.description)
+          ),
+          Map(
+            "method"           -> "method",
+            "matched"          -> "matched",
+            "controls"         -> "controls",
+            "controlSelection" -> "controlSelection",
+            "failurePolicy"    -> "failurePolicy"
+          ),
+          Set("repetition.input", "layout", "grid", "pairing")
         )

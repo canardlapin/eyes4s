@@ -224,6 +224,24 @@ final class RepetitionPlan[K, U <: Unit2D] private (
       "pairing" -> Vector(Text("directed-exclude-self"))
     )
 
+  /** The plan's input: its supplied maps, by the content hash they carry. */
+  def inputRef: ArtifactRef[Trials[K, Unit, Mass[U]]] = ArtifactRef.of(inputHash)
+
+  /** Typed availability: blocked without the plan's maps or with others; the
+    * comparisons and their reduction are left to execution.
+    */
+  def preflight(
+      available: Option[ArtifactRef[Trials[K, Unit, Mass[U]]]]
+  ): AnalysisReport[K, Trials[K, Unit, Mass[U]]] =
+    AnalysisReport.of(
+      RecipeFamily.Repetition,
+      description,
+      inputRef,
+      available,
+      Vector.empty,
+      Vector(UncheckedAspect.PairComparison, UncheckedAspect.FailurePolicyReduction)
+    )
+
   def diff(other: RepetitionPlan[K, U]): Vector[PlanChange] =
     PlanChange.between(description, other.description)
 
