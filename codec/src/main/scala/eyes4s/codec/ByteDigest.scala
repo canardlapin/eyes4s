@@ -57,6 +57,10 @@ object ByteDigest:
     eyes4s.results.Sha256Core.digest(input)
   )
 
+  /** The digest of everything `hasher` was given. */
+  private[codec] def finished(hasher: eyes4s.results.Sha256Core.Hasher): ByteDigest =
+    new ByteDigest(hasher.finish())
+
   /** Parse the canonical rendering: exactly 64 lowercase hexadecimal digits.
     * Upper-case digits are refused so that one digest has one spelling.
     */
