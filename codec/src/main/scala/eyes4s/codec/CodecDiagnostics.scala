@@ -65,7 +65,10 @@ object CodecDiagnosticCatalog:
     "NonCanonical",
     "Report",
     "ReportSpec",
-    "Covariates"
+    "Covariates",
+    // appended by CR4 S3: repetition result archives
+    "Stamp",
+    "RepetitionResult"
   )
   val resolve: DiagnosticFamily = error("resolve")(
     "MissingManifest",
@@ -343,6 +346,9 @@ private[codec] object CodecProjections:
         wrap(eyes4s.results.ResultsDiagnostics.reportSpec(underlying))
       case Covariates(underlying) =>
         wrap(eyes4s.results.ResultsDiagnostics.covariate[Any](underlying))
+      case Stamp(underlying) =>
+        wrap(CodecDiagnostics.runStampError(underlying))
+      case RepetitionResult(underlying) => wrap(Diagnose.repetitionPlan(underlying))
 
   def resolve(e: ResolveError): Diagnostic[Any] =
     import ResolveError.*

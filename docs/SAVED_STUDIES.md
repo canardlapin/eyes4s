@@ -230,8 +230,10 @@ The three shipped plan families share one execution contract. In `eyes4s-plan`,
 `Stepwise[C, Stage, E, R]` is the step shape a runner interprets: a pure,
 immutable cursor that names the stage its next `advance(quanta)` works on and
 returns `WorkStep.More(stage, units, next)`, `WorkStep.Done(units, result)` or a
-typed error. `StudyCursor` satisfies it as it is; `RecordingCursor` and
-`TemporalCursor` are written to it, and `Stepwise.complete` drives any of them.
+typed error. `StudyCursor` satisfies it as it is; `RecordingCursor`,
+`TemporalCursor` and `RepetitionCursor` are written to it, and `Stepwise.complete`
+drives any of them. `eyes4s-design`'s `PairedEvaluation` evaluates the pairs of a
+completed pairing a page at a time, finishing exactly as `evaluatePairs` does.
 The counted vocabulary is also pure: `SegmentTotal`, `StudySegment`,
 `RecordingSegment` and `TemporalSegment` live in `eyes4s-plan` with the totals
 each family states (`StudySegment.total` and so on), and `eyes4s-fs2` keeps the
@@ -242,8 +244,11 @@ In `eyes4s-fs2`, `Execution[F]` is the one runner: it interprets a `Submission`
 each segment given the cursor about to start it, plus the `Stepwise` evidence)
 into `RunEvent`, `RunOutcome`, `RunProgress` and `Run`. A hand-built
 `Submission` passes `total` as `(segment, cursor) => SegmentTotal`; a total
-that needs no cursor ignores it. `StudyExecution`, `RecordingExecution` and
-`TemporalExecution` are thin wrappers that build the submission; the study
+that needs no cursor ignores it. `StudyExecution`, `RecordingExecution`,
+`TemporalExecution` and `RepetitionExecution` are thin wrappers that build the
+submission (a repetition run's segments are its two stages, each with the exact
+pair total its pairing fixed, and its id is `RepetitionRunId`: the plan's input and
+plan hashes and the pair quantum); the study
 names (`StudyProgress`, `StudyOutcome`, `StudyEvent`, `StudyRun`) are aliases of
 the shared types, so `StudyOutcome.Completed(_, last, result)` and
 `StudyEvent.Advanced(progress)` construct and match as before. Two things a

@@ -810,7 +810,9 @@ object DiagnosticCatalog:
     "InitialFixation",
     "MissingPart",
     "UnknownToken",
-    "UndeclaredWindowFrame"
+    "UndeclaredWindowFrame",
+    // appended by CR4 S3: a pair design refusal (a repetition control cap)
+    "Pairing"
   )
   val repetitionPlan: DiagnosticFamily = error("repetition-plan")(
     "ProjectionIds",
@@ -819,7 +821,11 @@ object DiagnosticCatalog:
     "Rules",
     "OverlappingRelations",
     "Grid",
-    "Specification"
+    "Specification",
+    // appended by CR4 S3: a stored result another plan computed
+    "ResultInput",
+    "ResultEvaluation",
+    "ResultPairs"
   )
   val diagnosticCode: DiagnosticFamily = error("diagnostic-code")(
     "InvalidFamily",

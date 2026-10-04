@@ -28,8 +28,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Every issued code, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 726
-  private val PinnedDigest = "601023f9698f136f"
+  private val PinnedCount  = 730
+  private val PinnedDigest = "9593283fad0a4dc9"
 
   /** The issued table before CR5: codes are only ever issued, never changed
     * or reused, and a retired code keeps its place, so taking away the codes

@@ -1321,6 +1321,7 @@ fails after rewriting, so review the change and run it again.
 | `recipe-parameter.missing-part` | `MissingPart` | `field`, `part` |
 | `recipe-parameter.unknown-token` | `UnknownToken` | `field`, `token`, `options` |
 | `recipe-parameter.undeclared-window-frame` | `UndeclaredWindowFrame` | `admission` |
+| `recipe-parameter.pairing` | `Pairing` | `error` |
 
 ### `repetition-plan` — `RepetitionPlanError`
 
@@ -1333,6 +1334,9 @@ fails after rewriting, so review the change and run it again.
 | `repetition-plan.overlapping-relations` | `OverlappingRelations` | `matched`, `controls` |
 | `repetition-plan.grid` | `Grid` | `row`, `underlying` |
 | `repetition-plan.specification` | `Specification` | `underlying` |
+| `repetition-plan.result-input` | `ResultInput` | `role`, `expected`, `found` |
+| `repetition-plan.result-evaluation` | `ResultEvaluation` | `role`, `expected`, `found` |
+| `repetition-plan.result-pairs` | `ResultPairs` | `role`, `expected`, `found`, `firstDifference` |
 
 ### `diagnostic-code` — `DiagnosticCodeError`
 
@@ -1558,6 +1562,8 @@ fails after rewriting, so review the change and run it again.
 | `codec.report` | `Report` | `underlying` |
 | `codec.report-spec` | `ReportSpec` | `underlying` |
 | `codec.covariates` | `Covariates` | `underlying` |
+| `codec.stamp` | `Stamp` | `underlying` |
+| `codec.repetition-result` | `RepetitionResult` | `underlying` |
 
 ### `resolve` — `ResolveError`
 
