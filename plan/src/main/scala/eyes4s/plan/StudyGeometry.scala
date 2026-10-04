@@ -190,7 +190,9 @@ object WindowTally:
   * of each, the trials tallied, and the trials not tallied because they are
   * in another frame. `sourceRecords`, when the admission ledger is supplied,
   * is the importer's count of source records, so an application can say
-  * "543 of 11,520 records".
+  * "543 of 11,520 records". The durations total the tallied fixations'
+  * durations outside the window, outside the screen and in all, so a share
+  * of fixation time is the library's, not each application's sum.
   */
 final case class WindowSummary(
     outsideWindow: Int,
@@ -200,7 +202,10 @@ final case class WindowSummary(
     trialsOutsideScreen: Int,
     trials: Int,
     untallied: Int,
-    sourceRecords: Option[Int]
+    sourceRecords: Option[Int],
+    outsideWindowDuration: Span,
+    outsideScreenDuration: Span,
+    totalDuration: Span
 ) derives CanEqual
 
 object WindowSummary:
@@ -214,7 +219,10 @@ object WindowSummary:
       counted.count(_.outsideScreen > 0),
       counted.size,
       tallies.size - counted.size,
-      None
+      None,
+      counted.foldLeft(Span.zero)(_ + _.outsideWindowDuration),
+      counted.foldLeft(Span.zero)(_ + _.outsideScreenDuration),
+      counted.foldLeft(Span.zero)(_ + _.totalDuration)
     )
 
   /** The summary beside the count of source records the ledger admitted or rejected. */

@@ -90,10 +90,83 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       assertEquals((page.page.offset, page.entries.size, page.page.next), (950, 10, None))
   }
 
-  test("a revision without declared time units is not admitted: Unavailable names it") {
+  test("a revision without declared time units is not admitted: Unavailable names the field") {
     backend().flatMap(_.admission(StoryMoments.r2)).map { r =>
-      assertEquals(r, Left(BackendError.Unavailable(DiagnosticLocus.Dataset(StoryMoments.r2))))
+      assertEquals(r, Left(BackendError.Unavailable(DiagnosticLocus.Field("time units"))))
     }
+  }
+
+  test("admission equals the fake's summary of the fixture, window durations included") {
+    for
+      real  <- backend().flatMap(_.admission(StoryMoments.r3)).map(get)
+      fake  <- FakeStudyBackend.create[IO](StoryMoment.T2)
+      yours <- fake.admission(StoryMoments.r3).map(get)
+    yield assertEquals(real, yours.copy(history = ""))
+  }
+
+  private def admitSynthetic(trials: Vector[String], fixations: Vector[String]) =
+    val header = "participant,phase,trial,occurrence,item,display_kind,image_file,response"
+    val fixes  =
+      "participant,phase,trial,occurrence,ordinal,x,y,onset_ms,duration_ms,sample_count"
+    val r3 = get(t2.dataset(StoryMoments.r3).toRight("no r3"))
+    RealAdmission.admit(
+      r3,
+      (fixes +: fixations).mkString("", "\n", "\n"),
+      (header +: trials).mkString("", "\n", "\n"),
+      get(eyes4s.studio.core.fixture.GoldenAssets.registry(r3))
+    )
+
+  test("each trial keeps its own outside-screen records, keyed by the full trial key") {
+    val admitted = get(
+      admitSynthetic(
+        Vector(
+          "P01,Encoding,enc_01,1,beach-007,image,beach-007.png,",
+          "P01,Encoding,enc_02,2,beach-007,image,beach-007.png,"
+        ),
+        Vector(
+          "P01,Encoding,enc_01,1,1,500,500,0,100,50",
+          "P01,Encoding,enc_01,1,2,2000,500,200,100,50",
+          "P01,Encoding,enc_02,2,1,-10,300,0,100,50",
+          "P01,Encoding,enc_02,2,2,600,600,200,100,50"
+        )
+      )
+    )
+    val outside =
+      admitted.ledger.map(e => (e.trial.trial, e.trial.occurrence) -> e.outsideFrame.map(_.x))
+    assertEquals(
+      outside,
+      Vector(("enc_01", 1) -> Vector(2000.0), ("enc_02", 2) -> Vector(-10.0))
+    )
+    assertEquals(admitted.summary.window.outsideScreen, 2)
+    assertEquals(admitted.summary.window.trialsOutsideScreen, 2)
+  }
+
+  test("eyes4s refuses one trial label declared with two occurrences: nothing can merge") {
+    val refused = admitSynthetic(
+      Vector(
+        "P01,Encoding,enc_01,1,beach-007,image,beach-007.png,",
+        "P01,Encoding,enc_01,2,beach-007,image,beach-007.png,"
+      ),
+      Vector(
+        "P01,Encoding,enc_01,1,1,2000,500,0,100,50",
+        "P01,Encoding,enc_01,2,1,-10,300,0,100,50"
+      )
+    )
+    assertEquals(
+      refused,
+      Left(
+        BackendError.InventoryRefused(
+          StoryMoments.r3,
+          Vector(
+            InventoryIssue.Conflict(
+              TrialLabel("P01", "Encoding", "enc_01"),
+              Vector(2, 3),
+              Vector("occurrence")
+            )
+          )
+        )
+      )
+    )
   }
 
   test("bytes the revision did not record are refused, never admitted") {
@@ -103,8 +176,34 @@ class RealStudyBackendSuite extends CatsEffectSuite:
           .bytes(d, s)
           .map(_.map(b => b.updated(b.length - 2, '9'.toByte)))
       def assets(d: DatasetRevisionSpec) = RealBackendConformanceSuite.golden.assets(d)
+    val recorded = get(t2.dataset(StoryMoments.r3).toRight("no r3")).sources.fixations.get
     backend(tampered).flatMap(_.admission(StoryMoments.r3)).map { r =>
       assertEquals(r.left.map(_.code), Left("studio-backend.unavailable"))
+      // Until protocol 1.11: the reason names the file and both digests.
+      val message = r.left.map(_.message).swap.getOrElse(fail("admitted"))
+      assert(message.contains(recorded.path.value), message)
+      assert(message.contains(s"recorded sha256 ${recorded.bytes.hex}"), message)
+      assert(message.matches(".*read sha256 [0-9a-f]{64}.*"), message)
+    }
+  }
+
+  // Pending protocol 1.11 (docs/studio/plan/S3.7-slices.md): not served yet,
+  // listed so the typed forms are not forgotten.
+  test("PENDING 1.11: a digest mismatch is the typed SourceDigestMismatch".ignore) {
+    val tampered = new DatasetSources[IO]:
+      def bytes(d: DatasetRevisionSpec, s: Source) =
+        RealBackendConformanceSuite.golden
+          .bytes(d, s)
+          .map(_.map(b => b.updated(b.length - 2, '9'.toByte)))
+      def assets(d: DatasetRevisionSpec) = RealBackendConformanceSuite.golden.assets(d)
+    backend(tampered).flatMap(_.admission(StoryMoments.r3)).map { r =>
+      assertEquals(r.left.map(_.code), Left("studio-backend.source-digest-mismatch"))
+    }
+  }
+
+  test("PENDING 1.11: a non-inventory refusal is the typed AdmissionRefused".ignore) {
+    backend().flatMap(_.admission(StoryMoments.r2)).map { r =>
+      assertEquals(r.left.map(_.code), Left("studio-backend.admission-refused"))
     }
   }
 

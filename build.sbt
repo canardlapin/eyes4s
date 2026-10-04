@@ -1100,10 +1100,23 @@ ThisBuild / checkStudioBoundaries := {
          )} take no source binding.""".stripMargin
     )
 
+  val ioObjects = StudioLint.scanIoObjectTree(buildRoot)
+  if (ioObjects.nonEmpty)
+    sys.error(
+      s"""|Studio boundary violation: portable studio sources name a file-backed eyes4s-io object.
+          |
+          |${ioObjects.map("  - " + _.render).mkString("\n")}
+          |
+          |${StudioLint.forbiddenIoObjects.mkString(", ")} read or write files. The real
+          |backend gets bytes through its host port (DatasetSources); only studio-desktop
+          |touches files (DESIGN_SPEC section 13).""".stripMargin
+    )
+
   log.info(
     s"studio boundaries OK (lint self-test passed; ${graph.size} project(s) have no " +
       "library-to-studio edge; no JVM-only package in portable studio sources; " +
-      "no effect library in studio-app or studio-viz sources; no unbound report constructor)"
+      "no effect library in studio-app or studio-viz sources; no unbound report constructor; " +
+      "no file-backed eyes4s-io object in portable studio sources)"
   )
 }
 

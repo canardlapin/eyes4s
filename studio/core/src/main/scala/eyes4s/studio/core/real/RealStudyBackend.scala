@@ -54,8 +54,8 @@ final class RealStudyBackend[F[_]] private (
     datasets: Map[DatasetRevision, DatasetRevisionSpec],
     revisions: Map[AnalysisRevision, (DatasetRevision, Recipe)],
     sources: DatasetSources[F],
-    admitted: Ref[F, Map[DatasetRevision, Either[BackendError, AdmittedDataset]]],
-    prepared: Ref[F, Map[AnalysisRevision, Either[BackendError, RealPrepared]]]
+    admitted: Ref[F, Map[DatasetRevision, AdmittedDataset]],
+    prepared: Ref[F, Map[AnalysisRevision, RealPrepared]]
 )(using F: Concurrent[F])
     extends StudyBackend[F]:
 
@@ -63,34 +63,58 @@ final class RealStudyBackend[F[_]] private (
 
   private def knownDatasets: Vector[DatasetRevision] = datasets.keys.toVector.sortBy(_.number)
 
+  /** Only a successful admission is kept: a refusal (for example, bytes the
+    * host does not hold yet) is answered again on the next request.
+    */
   private def admission0(d: DatasetRevision): F[Either[BackendError, AdmittedDataset]] =
     datasets.get(d) match
       case None       => F.pure(Left(BackendError.UnknownDataset(d, knownDatasets)))
       case Some(spec) =>
         admitted.get.flatMap(_.get(d) match
-          case Some(done) => F.pure(done)
+          case Some(done) => F.pure(Right(done))
           case None       =>
-            admit(spec).flatTap(result => admitted.update(_.updated(d, result))))
+            admit(spec).flatTap {
+              case Right(done) => admitted.update(_.updated(d, done))
+              case Left(_)     => F.unit
+            })
 
+  /** Until protocol 1.11 adds the typed `SourceDigestMismatch`, a source the
+    * host cannot give, or whose bytes are not the ones the revision
+    * recorded, is `Unavailable` naming the file and both digests.
+    */
   private def admit(spec: DatasetRevisionSpec): F[Either[BackendError, AdmittedDataset]] =
-    val unavailable = BackendError.Unavailable(DiagnosticLocus.Dataset(spec.id))
-    def text(source: Option[Source]): F[Either[BackendError, String]] = source match
-      case None    => F.pure(Left(unavailable))
-      case Some(s) =>
-        sources.bytes(spec, s).map {
-          // The host must hand over exactly the bytes the revision recorded.
-          case Some(b) if ByteDigest.sha256(b) == s.bytes =>
-            Right(new String(IArray.genericWrapArray(b).toArray, StandardCharsets.UTF_8))
-          case _ => Left(unavailable)
-        }
-    (text(spec.sources.fixations), text(spec.sources.trials), sources.assets(spec)).mapN {
-      (fixations, trials, assets) =>
-        for
-          f      <- fixations
-          t      <- trials
-          a      <- assets.toRight(unavailable)
-          result <- RealAdmission.admit(spec, f, t, a)
-        yield result
+    def unavailable(what: String) = BackendError.Unavailable(DiagnosticLocus.Artifact(what))
+    def text(role: String, source: Option[Source]): F[Either[BackendError, String]] =
+      source match
+        case None =>
+          F.pure(Left(BackendError.Unavailable(DiagnosticLocus.Field(s"$role source"))))
+        case Some(s) =>
+          sources.bytes(spec, s).map {
+            case None    => Left(unavailable(s"${s.path.value}: the host holds no bytes"))
+            case Some(b) =>
+              val read = ByteDigest.sha256(b)
+              if read == s.bytes then
+                Right(new String(IArray.genericWrapArray(b).toArray, StandardCharsets.UTF_8))
+              else
+                Left(
+                  unavailable(
+                    s"${s.path.value}: recorded sha256 ${s.bytes.hex}, read sha256 ${read.hex}"
+                  )
+                )
+          }
+    (
+      text("fixations", spec.sources.fixations),
+      text("trials", spec.sources.trials),
+      sources.assets(spec)
+    ).mapN { (fixations, trials, assets) =>
+      for
+        f <- fixations
+        t <- trials
+        a <- assets.toRight(
+          BackendError.Unavailable(DiagnosticLocus.Field("stimulus registry"))
+        )
+        result <- RealAdmission.admit(spec, f, t, a)
+      yield result
     }
 
   def admission(dataset: DatasetRevision): F[Either[BackendError, AdmissionSummary]] =
@@ -134,11 +158,14 @@ final class RealStudyBackend[F[_]] private (
       case None              => F.pure(Left(BackendError.UnknownRevision(r, knownRevisions)))
       case Some((d, recipe)) =>
         prepared.get.flatMap(_.get(r) match
-          case Some(done) => F.pure(done)
+          case Some(done) => F.pure(Right(done))
           case None       =>
             admission0(d)
               .map(_.flatMap(RealPrepared.of(r, d, recipe, _)))
-              .flatTap(result => prepared.update(_.updated(r, result))))
+              .flatTap {
+                case Right(done) => prepared.update(_.updated(r, done))
+                case Left(_)     => F.unit
+              })
 
   def preview(revision: AnalysisRevision): F[Either[BackendError, PreviewSummary]] =
     prepare(revision).map(_.map(_.summary))
@@ -215,8 +242,8 @@ object RealStudyBackend:
       sources: DatasetSources[F]
   ): F[RealStudyBackend[F]] =
     (
-      Ref.of[F, Map[DatasetRevision, Either[BackendError, AdmittedDataset]]](Map.empty),
-      Ref.of[F, Map[AnalysisRevision, Either[BackendError, RealPrepared]]](Map.empty)
+      Ref.of[F, Map[DatasetRevision, AdmittedDataset]](Map.empty),
+      Ref.of[F, Map[AnalysisRevision, RealPrepared]](Map.empty)
     ).mapN { (admitted, prepared) =>
       val saved = document.analyses.map(a => a.id -> (a.dataset, a.recipe))
       // A draft's recipe is its changes applied to its base's recipe.

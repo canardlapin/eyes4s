@@ -109,7 +109,26 @@ class StudyWindowSuite extends munit.FunSuite:
     val preview = get(work.preview)
     assertEquals(preview.windowTallies, work.windowTallies)
     assertEquals(work.windowSummary, preview.windowSummary)
-    assertEquals(preview.windowSummary, WindowSummary(3, 1, 10, 2, 1, 4, 0, None))
+    val summary = preview.windowSummary
+    assertEquals(
+      summary.copy(
+        outsideWindowDuration = Span.zero,
+        outsideScreenDuration = Span.zero,
+        totalDuration = Span.zero
+      ),
+      WindowSummary(3, 1, 10, 2, 1, 4, 0, None, Span.zero, Span.zero, Span.zero)
+    )
+    // The durations total the tallied trials' own, starting with trial a's.
+    val tallied = preview.windowTallies.collect { case (_, Right(t)) => t }
+    assertEquals(
+      (summary.outsideWindowDuration, summary.outsideScreenDuration, summary.totalDuration),
+      (
+        tallied.foldLeft(Span.zero)(_ + _.outsideWindowDuration),
+        tallied.foldLeft(Span.zero)(_ + _.outsideScreenDuration),
+        tallied.foldLeft(Span.zero)(_ + _.totalDuration)
+      )
+    )
+    assert(summary.outsideWindowDuration.toMicros >= a.outsideWindowDuration.toMicros)
   }
 
   test(

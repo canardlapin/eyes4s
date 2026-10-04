@@ -18,7 +18,7 @@ import sbt._
 
 /** Studio boundary rules (DESIGN_SPEC section 13, ticket S0.2).
   *
-  * Four rules keep Eyes Studio portable by construction:
+  * These rules keep Eyes Studio portable by construction:
   *
   *   1. No eyes4s library module depends on a studio project, directly or
   *      transitively ([[libraryToStudioEdges]]).
@@ -361,6 +361,45 @@ object StudioLint {
     }
 
   // ---------------------------------------------------------------------------
+  // Rule 6: file-backed eyes4s-io entry points
+  // ---------------------------------------------------------------------------
+
+  /** eyes4s-io objects that read or write files (`java.nio.file` or
+    * `fs2.io.file`). studio-core depends on eyes4s-io at compile scope for its
+    * pure importers (S3.7), so these are on the portable classpath; the real
+    * backend gets bytes only through its host port, and only studio-desktop
+    * touches files.
+    */
+  val forbiddenIoObjects: Seq[String] =
+    Seq("ArtifactFiles", "ArrowResultExport", "EyeLinkAscStreaming", "EyeLinkAscImport")
+
+  private val ioObjectPattern =
+    forbiddenIoObjects.mkString("(?<![\\w$])(", "|", ")(?![\\w$])").r
+
+  /** Every reference to a file-backed eyes4s-io object in one source (code only). */
+  def scanIoObjects(fileName: String, source: String): Seq[Violation] = {
+    val code                = codeOnly(source)
+    def lineOf(offset: Int) = code.take(offset).count(_ == '\n') + 1
+    ioObjectPattern
+      .findAllMatchIn(code)
+      .map(m => Violation(fileName, lineOf(m.start), m.matched))
+      .toList
+  }
+
+  /** Every file-backed eyes4s-io reference under the portable source roots. */
+  def scanIoObjectTree(buildRoot: File): Seq[Violation] =
+    portableSourceRoots.flatMap { root =>
+      val dir     = buildRoot / root
+      val sources =
+        if (dir.exists) (dir ** "*.scala").get.filterNot(_.getPath.contains("/target/"))
+        else Nil
+      sources.sortBy(_.getPath).flatMap { f =>
+        val relative = IO.relativize(buildRoot, f).getOrElse(f.getPath)
+        scanIoObjects(relative, IO.read(f))
+      }
+    }
+
+  // ---------------------------------------------------------------------------
   // Resolved artifacts and the project graph
   // ---------------------------------------------------------------------------
 
@@ -616,6 +655,29 @@ object StudioLint {
     ).foreach { source =>
       val found = scanMembers("clean.scala", source)
       expect(found.isEmpty, s"member lint flagged clean source: $source ($found)")
+    }
+    // Rule 6: file-backed eyes4s-io entry points in portable sources.
+    Seq(
+      "import eyes4s.io.ArtifactFiles"                    -> "ArtifactFiles",
+      "import eyes4s.io.*\nval a = ArtifactFiles.read(p)" -> "ArtifactFiles",
+      "val s = eyes4s.io.EyeLinkAscStreaming.stream(x)"   -> "EyeLinkAscStreaming",
+      "import eyes4s.io.{EyeLinkAscImport as A}"          -> "EyeLinkAscImport",
+      "val w = ArrowResultExport.write(t, p)"             -> "ArrowResultExport"
+    ).foreach { case (source, name) =>
+      val found = scanIoObjects("planted.scala", source)
+      expect(
+        found.exists(_.reference == name),
+        s"io lint missed '$name' in: ${show(source)} ($found)"
+      )
+    }
+    Seq(
+      "import eyes4s.io.{FixationCsv, TrialInventory}",
+      "val t = MyArtifactFilesView(x)",
+      "// ArtifactFiles reads files",
+      "val t = \"EyeLinkAscStreaming\""
+    ).foreach { source =>
+      val found = scanIoObjects("clean.scala", source)
+      expect(found.isEmpty, s"io lint flagged clean source: $source ($found)")
     }
     failures.result()
   }
