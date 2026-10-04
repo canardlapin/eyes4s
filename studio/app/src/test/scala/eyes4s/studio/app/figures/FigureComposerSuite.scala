@@ -122,13 +122,15 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
   }
 
   test(
-    "the composer reads the bound run once: its summary, panel C's references, the displays"
+    "the composer reads the bound run once: its summary, its methods facts, panel C's " +
+      "references, the displays"
   ) {
     val (synced, effects) = FigureComposer.sync(FigureComposer.empty, t2)
     assertEquals(
       effects,
       Vector(
         ComposerEffect.RequestSummary(run7),
+        ComposerEffect.RequestMethods(run7, r3),
         ComposerEffect.RequestDisplays(t2.document.dataset(r3).get),
         ComposerEffect.RequestReferences(run7, scale2, p17ret07)
       )
@@ -139,6 +141,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
     assertEquals(two.document.presentation.shownRun, Some(run7))
     val (_, second) = FigureComposer.sync(synced, two)
     assert(second.contains(ComposerEffect.RequestSummary(run5)), second)
+    assert(second.contains(ComposerEffect.RequestMethods(run5, StoryMoments.r2)), second)
     assert(!second.contains(ComposerEffect.RequestSummary(run7)), second)
     // The binding follows the shown figure: stale Figure 2 asks for r2 → r3.
     assert(

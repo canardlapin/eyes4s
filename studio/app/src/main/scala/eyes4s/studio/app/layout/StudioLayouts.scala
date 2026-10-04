@@ -66,6 +66,10 @@ object StudioLayouts:
   /** The pane that hosts the admission ledger of the selected revision. */
   val admission: PaneId = new PaneId("data.admission")
 
+  /** The Figures perspective's methods.md text and its diff (S9.4). */
+  val methods: PaneId     = new PaneId("figures.methods")
+  val methodsDiff: PaneId = new PaneId("figures.methods-diff")
+
   /** DataEmpty.dc.html: no dataset yet. */
   val dataFirstRun: PerspectiveLayout = layout(
     "data.first-run",
@@ -244,8 +248,8 @@ object StudioLayouts:
         Axis.Vertical,
         group(dynamic("figures.page", "Figure", Plot), table("figures.page")) -> 0.7,
         group(
-          pane("figures.methods", "methods.md", Text),
-          pane("figures.methods-diff", "Diff vs generated", Text)
+          pane(methods.value, "methods.md", Text),
+          pane(methodsDiff.value, "Diff vs generated", Text)
         ) -> 0.3
       ),
       group(dynamic("figures.panel", "Panel", Inspector))

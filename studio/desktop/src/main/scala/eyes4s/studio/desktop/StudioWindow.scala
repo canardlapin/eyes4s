@@ -89,11 +89,13 @@ final class StudioWindow private (
     else if pane == StudioLayouts.resolvedDesign then resolvedDesign.focusStops
     else
       pane.value match
-        case "figures.figures"    => figures.navigatorStops
-        case "figures.page"       => figures.pageStops
-        case "figures.page.table" => figures.tableStops
-        case "figures.panel"      => figures.inspectorStops
-        case _                    => Vector.empty
+        case "figures.figures"      => figures.navigatorStops
+        case "figures.page"         => figures.pageStops
+        case "figures.page.table"   => figures.tableStops
+        case "figures.panel"        => figures.inspectorStops
+        case "figures.methods"      => figures.methodsStops
+        case "figures.methods-diff" => figures.methodsDiffStops
+        case _                      => Vector.empty
 
   /** Store each perspective's arrangement in the document (view-only). */
   def captureLayouts(): Unit = runtime.dispatch(Intent.LayoutsCaptured(host.capture()))
@@ -338,10 +340,12 @@ object StudioWindow:
       FigureInputs.of(session, displays, () => Option(shell.root.getScene).map(_.getWindow))
     )
     Vector(
-      "figures.figures"    -> figures.navigatorNode,
-      "figures.page"       -> figures.pageNode,
-      "figures.page.table" -> figures.tableNode,
-      "figures.panel"      -> figures.inspectorNode
+      "figures.figures"      -> figures.navigatorNode,
+      "figures.page"         -> figures.pageNode,
+      "figures.page.table"   -> figures.tableNode,
+      "figures.panel"        -> figures.inspectorNode,
+      "figures.methods"      -> figures.methodsNode,
+      "figures.methods-diff" -> figures.methodsDiffNode
     ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
     val figuresListener: AppModel => Unit = figures.sync
     r.listen(figuresListener)

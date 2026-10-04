@@ -26,7 +26,7 @@ import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.backend.{DatasetRevision, LedgerPages, RunId, TrialKey}
 import eyes4s.studio.core.diff.{LedgerUnavailable, StatusChanges, StatusDiff}
 import eyes4s.studio.core.document.{DatasetRevisionSpec, FigureId, PanelLetter}
-import eyes4s.studio.core.figures.{ReferenceReads, ReferenceScores}
+import eyes4s.studio.core.figures.{MethodsFacts, MethodsReads, ReferenceReads, ReferenceScores}
 import eyes4s.studio.core.selection.{ScaleIndex, ViewId}
 import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.plot.{PlotTwin, TableTwinView}
@@ -42,8 +42,9 @@ import javafx.scene.AccessibleRole
 import eyes4s.studio.app.plot.ParticipantLines
 import eyes4s.studio.app.tokens.FontFace
 import javafx.beans.property.ReadOnlyObjectWrapper
-import javafx.scene.control.{Button, Label, ScrollPane}
+import javafx.scene.control.{Button, Label, ScrollPane, TextArea}
 import javafx.scene.effect.ColorAdjust
+import javafx.scene.input.{KeyCode, KeyEvent}
 import javafx.scene.text.Font
 import javafx.stage.{FileChooser, Window}
 
@@ -68,6 +69,13 @@ trait FigureInputs:
 
   /** The trial statuses of `from` and `to`, compared (S5.8). */
   def status(from: DatasetRevision, to: DatasetRevision, done: StatusDiff => Unit): Unit
+
+  /** The admission and query facts the methods text of `run` cites (S9.4). */
+  def methods(
+      run: RunId,
+      dataset: DatasetRevision,
+      done: Either[String, MethodsFacts] => Unit
+  ): Unit
 
   /** Save an exported figure, suggesting `name`; the answer is where it went,
     * or why it was not saved (S9.3).
@@ -116,6 +124,18 @@ object FigureInputs:
           dataset: DatasetRevisionSpec,
           done: Either[String, DisplaySource] => Unit
       ): Unit = done(source.displays(dataset))
+      def methods(
+          run: RunId,
+          dataset: DatasetRevision,
+          done: Either[String, MethodsFacts] => Unit
+      ): Unit =
+        session.run(
+          MethodsReads
+            .read[IO](session.backend.admission, session.backend.queries, run, dataset)
+        ) {
+          case Left(e)  => done(Left(reason(e)))
+          case Right(a) => done(a.left.map(_.message))
+        }
       def status(from: DatasetRevision, to: DatasetRevision, done: StatusDiff => Unit): Unit =
         def whole(d: DatasetRevision) =
           LedgerPages
@@ -276,6 +296,79 @@ final class FiguresHost(
     sheet(binding)
     binding
 
+  // --- methods.md and its diff (S9.4) ---------------------------------------------------
+  private val methodsHeading = Label()
+  methodsHeading.getStyleClass.addAll("figures-note", "t11")
+  methodsHeading.setWrapText(true)
+  private val showDiff   = Button()
+  private val regenerate = Button()
+  showDiff.setOnAction(_ => dispatch(ComposerIntent.Methods(MethodsIntent.ShowDiff)))
+  regenerate.setOnAction(_ => dispatch(ComposerIntent.Methods(MethodsIntent.Regenerate)))
+  private val methodsStatus = Label()
+  methodsStatus.getStyleClass.addAll("figures-note", "t11")
+  methodsStatus.setWrapText(true)
+
+  /** The methods text, editable; each edit goes to the composer as it is typed. */
+  val methodsEditor: TextArea = TextArea()
+  methodsEditor.getStyleClass.addAll("figures-methods", "serif", "t12")
+  methodsEditor.setWrapText(true)
+  methodsEditor.setAccessibleText(FiguresHost.MethodsText)
+  // Tab and Shift+Tab leave the text, as from any other stop, rather than
+  // typing a tab: the TextArea moves focus on Ctrl+Tab, so a plain Tab is
+  // passed on as one.
+  methodsEditor.addEventFilter(
+    KeyEvent.KEY_PRESSED,
+    (e: KeyEvent) =>
+      if e.getCode == KeyCode.TAB && !e.isControlDown && !e.isAltDown && !e.isMetaDown then
+        e.consume()
+        methodsEditor.fireEvent(
+          KeyEvent(
+            KeyEvent.KEY_PRESSED,
+            "",
+            "",
+            KeyCode.TAB,
+            e.isShiftDown,
+            true,
+            false,
+            false
+          )
+        )
+  )
+  // True while render writes the text, so the write is not taken for an edit.
+  private var writing = false
+  methodsEditor.textProperty.addListener((_, _, text) =>
+    if !writing then dispatch(ComposerIntent.Methods(MethodsIntent.Edit(text)))
+  )
+
+  /** The methods.md pane: where the text comes from, Show diff and Regenerate, the text. */
+  val methodsNode: VBox =
+    VBox.setVgrow(methodsEditor, Priority.ALWAYS)
+    val bar = HBox(6.0, methodsHeading, spacer(), showDiff, regenerate)
+    bar.setAlignment(Pos.CENTER_LEFT)
+    val box = VBox(4.0, bar, methodsStatus, methodsEditor)
+    box.getStyleClass.add("figures-methods-pane")
+    sheet(box)
+    box
+
+  private val diffCaption = Label()
+  diffCaption.getStyleClass.addAll("figures-note", "t11")
+  private val diffChoice = HBox(6.0)
+
+  /** The diff, a line per sentence. */
+  val diffLines: VBox = VBox(2.0)
+
+  /** The "Diff vs generated" pane: sentence by sentence, and the choice a
+    * regeneration over edits waits on.
+    */
+  val methodsDiffNode: VBox =
+    val scroll = ScrollPane(diffLines)
+    scroll.setFitToWidth(true)
+    VBox.setVgrow(scroll, Priority.ALWAYS)
+    val box = VBox(4.0, diffCaption, diffChoice, scroll)
+    box.getStyleClass.add("figures-methods-pane")
+    sheet(box)
+    box
+
   /** The state now. */
   def composer: FigureComposer = state
 
@@ -315,6 +408,12 @@ final class FiguresHost(
           query,
           a => later(ComposerIntent.ReferencesRead(run, scale, query, a))
         )
+      case ComposerEffect.RequestMethods(run, dataset) =>
+        inputs.methods(
+          run,
+          dataset,
+          a => later(ComposerIntent.Methods(MethodsIntent.FactsRead(run, a)))
+        )
       case ComposerEffect.RequestDisplays(dataset) =>
         inputs.displays(dataset, a => later(ComposerIntent.DisplaysRead(dataset.id, a)))
       case ComposerEffect.Binding(FigureEffect.RequestStatus(from, to)) =>
@@ -339,10 +438,11 @@ final class FiguresHost(
       renderNavigator(v)
       renderPage(v)
       renderInspector(v)
+      renderMethods(v)
     }
 
   private def keepingFocus(rebuild: => Unit): Unit =
-    val panes           = Vector(navigatorNode, pageNode, inspectorNode)
+    val panes           = Vector(navigatorNode, pageNode, inspectorNode, methodsDiffNode)
     val owner           = Option(navigatorNode.getScene).flatMap(sc => Option(sc.getFocusOwner))
     def within(n: Node) =
       Iterator.iterate(n)(_.getParent).takeWhile(_ != null).exists(a => panes.exists(_ eq a))
@@ -656,6 +756,43 @@ final class FiguresHost(
       retire(Set.empty)
       table.dispose()
 
+  private def renderMethods(v: ComposerVM): Unit =
+    val m = v.methods
+    methodsHeading.setText(m.fold(MethodsCopy.NoFigure)(_.heading))
+    for (b, label) <- Vector(showDiff -> m.map(_.showDiff), regenerate -> m.map(_.regenerate))
+    do
+      b.setText(label.getOrElse(""))
+      b.setAccessibleText(label.getOrElse(""))
+      b.setDisable(label.isEmpty)
+    val status = m.flatMap(_.status)
+    methodsStatus.setText(status.getOrElse(""))
+    methodsStatus.setVisible(status.isDefined)
+    methodsStatus.setManaged(status.isDefined)
+    val (text, why) = m.map(_.text) match
+      case Some(Right(t))  => (t, None)
+      case Some(Left(why)) => ("", Some(why))
+      case None            => ("", Some(MethodsCopy.NoFigure))
+    methodsEditor.setDisable(why.isDefined)
+    methodsEditor.setPromptText(why.getOrElse(""))
+    if methodsEditor.getText != text then
+      writing = true
+      try methodsEditor.setText(text)
+      finally writing = false
+    diffCaption.setText(m.fold("")(_.diffCaption))
+    diffChoice.getChildren.setAll(m.flatMap(_.choice).toVector.flatMap { (keep, use) =>
+      val k = button(keep)
+      k.setOnAction(_ => dispatch(ComposerIntent.Methods(MethodsIntent.KeepEdits)))
+      val u = button(use)
+      u.setOnAction(_ => dispatch(ComposerIntent.Methods(MethodsIntent.UseGenerated)))
+      Vector(k, u)
+    }*): Unit
+    diffLines.getChildren.setAll(m.toVector.flatMap(_.diff).map { line =>
+      val l = Label(FiguresHost.diffLine(line))
+      l.setWrapText(true)
+      l.getStyleClass.addAll("serif", "t12", FiguresHost.diffStyle(line))
+      l
+    }*): Unit
+
   private def button(text: String): Button =
     val b = Button(text)
     b.setAccessibleText(text)
@@ -708,6 +845,23 @@ final class FiguresHost(
   /** The inspector's controls: Open in Compare, Rebind figure…, then the
     * appearance and export controls.
     */
+  /** The methods.md pane: Show diff, Regenerate, then the text. */
+  def methodsStops: Vector[FocusStop] =
+    vm.methods.toVector.flatMap(m =>
+      Vector(
+        FocusStop(A11yRole.Button, m.showDiff),
+        FocusStop(A11yRole.Button, m.regenerate)
+      ) ++ m.text.toOption.map(_ => FocusStop(A11yRole.TextArea, FiguresHost.MethodsText))
+    )
+
+  /** The diff pane: the choice a regeneration over edits waits on. */
+  def methodsDiffStops: Vector[FocusStop] =
+    vm.methods.toVector
+      .flatMap(_.choice)
+      .flatMap((keep, use) =>
+        Vector(FocusStop(A11yRole.Button, keep), FocusStop(A11yRole.Button, use))
+      )
+
   def inspectorStops: Vector[FocusStop] =
     val v               = vm
     def b(name: String) = FocusStop(A11yRole.Button, name)
@@ -735,6 +889,22 @@ final class FiguresHost(
     val r = Region(); HBox.setHgrow(r, Priority.ALWAYS); r
 
 object FiguresHost:
+  /** The methods editor's accessible name. */
+  val MethodsText: String = "Methods text"
+
+  /** A diff line as shown: removed and added sentences are marked by sign,
+    * not by colour alone.
+    */
+  def diffLine(line: DiffLine): String = line match
+    case DiffLine.Same(t)    => s"  $t"
+    case DiffLine.Removed(t) => s"− $t"
+    case DiffLine.Added(t)   => s"+ $t"
+
+  def diffStyle(line: DiffLine): String = line match
+    case DiffLine.Same(_)    => "figures-diff-same"
+    case DiffLine.Removed(_) => "figures-diff-removed"
+    case DiffLine.Added(_)   => "figures-diff-added"
+
   /** The greyscale check's accessible name, with its state. */
   def greyscaleName(on: Boolean): String =
     s"Greyscale check, ${if on then "on" else "off"}"

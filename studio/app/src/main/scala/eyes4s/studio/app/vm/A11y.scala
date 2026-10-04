@@ -43,6 +43,9 @@ enum A11yRole derives CanEqual:
   /** A form's controls, which are stops of their own inside a form pane. */
   case ComboBox, TextField
 
+  /** A multi-line text: Tab leaves it, Ctrl+Tab too (the methods text). */
+  case TextArea
+
   /** One choice of a group; Tab visits the group's selected choice only. */
   case RadioButton
 
@@ -57,6 +60,7 @@ enum A11yRole derives CanEqual:
     case Region       => "region"
     case ComboBox     => "combo-box"
     case TextField    => "text-field"
+    case TextArea     => "text-area"
     case RadioButton  => "radio-button"
 
 /** One stop of the Tab order: its role and its accessible name. */

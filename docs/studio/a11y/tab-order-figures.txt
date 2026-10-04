@@ -25,6 +25,9 @@ region: Participant plot of Participant D at 2°: each participant's mean D in 2
 button: Panel E, Scale profile by response
 region: Scale profile of Scale profile of run 7: each group's grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.
 region: methods.md
+button: Show diff
+button: Regenerate
+text-area: Methods text
 region: Panel
 button: Open in Compare
 button: Rebind figure…

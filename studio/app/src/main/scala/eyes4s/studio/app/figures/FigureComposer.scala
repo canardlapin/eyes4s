@@ -18,6 +18,7 @@ package eyes4s.studio.app.figures
 
 import eyes4s.studio.app.compare.SummaryAnswer
 import eyes4s.studio.app.explore.DisplaySource
+import eyes4s.studio.app.layout.StudioLayouts
 import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.plot.{ParticipantLines, PlotSource}
 import eyes4s.studio.app.text.Format
@@ -111,6 +112,9 @@ enum ComposerIntent derives CanEqual:
   )
   case DisplaysRead(dataset: DatasetRevision, answer: Either[String, DisplaySource])
 
+  /** The methods.md pane (S9.4). */
+  case Methods(intent: MethodsIntent)
+
 /** What the composer asks of the app and the platform. */
 enum ComposerEffect derives CanEqual:
   case App(intent: Intent)
@@ -130,11 +134,15 @@ enum ComposerEffect derives CanEqual:
   /** Export `page` as `format` under the suggested file name `name`. */
   case ExportFigure(format: ExportFormat, page: PageVM, name: String)
 
+  /** Read the admission and query facts the methods text cites (S9.4). */
+  case RequestMethods(run: RunId, dataset: DatasetRevision)
+
 /** One read the composer asked for, so it is asked once. */
 enum ComposerRead derives CanEqual:
   case Summary(run: RunId)
   case References(run: RunId, scale: ScaleIndex, query: TrialKey)
   case Displays(dataset: DatasetRevision)
+  case Methods(run: RunId)
 
 /** One panel on the page. */
 final case class PanelVM(
@@ -193,6 +201,7 @@ final case class ComposerVM(
     newFigure: String,
     widths: Vector[(PageWidth, String, Boolean)],
     page: Option[PageVM],
+    methods: Option[MethodsVM],
     problem: Option[String]
 ) derives CanEqual
 
@@ -217,7 +226,8 @@ final case class FigureComposer private (
     appearance: Map[FigureId, FigureAppearance],
     greyscale: Boolean,
     format: ExportFormat,
-    exported: Option[String]
+    exported: Option[String],
+    methods: FigureMethods
 ) derives CanEqual:
   def appearanceOf(figure: FigureId): FigureAppearance =
     appearance.getOrElse(figure, FigureAppearance.default)
@@ -240,7 +250,8 @@ object FigureComposer:
     Map.empty,
     false,
     ExportFormat.Svg,
-    None
+    None,
+    FigureMethods.empty
   )
 
   private val none: Vector[ComposerEffect] = Vector.empty
@@ -282,7 +293,10 @@ object FigureComposer:
       .flatMap { s =>
         val run    = s.run.id
         val scales = s.bound.analysis.recipe.scales
-        Vector(ComposerRead.Summary(run) -> ComposerEffect.RequestSummary(run)) ++
+        Vector(
+          ComposerRead.Summary(run) -> ComposerEffect.RequestSummary(run),
+          ComposerRead.Methods(run) -> ComposerEffect.RequestMethods(run, s.bound.dataset.id)
+        ) ++
           s.figure.panels.flatMap { p =>
             PanelTemplate.of(p) match
               case PanelTemplate.DensityMaps(sigma, query) =>
@@ -380,6 +394,23 @@ object FigureComposer:
             .retrying(ComposerRead.Displays(d), a.isLeft),
           none
         )
+      case Methods(i) =>
+        val source = shownFigure(model).flatMap(FigureSource.of(model.document, _).toOption)
+        val (methods, show) = FigureMethods.update(
+          c.methods,
+          source,
+          source.flatMap(s => c.summaries.get(s.run.id)),
+          i
+        )
+        val next = i match
+          case MethodsIntent.FactsRead(r, a) =>
+            c.retrying(ComposerRead.Methods(r), a.isLeft)
+          case _ => c
+        val focus = show.toVector.map {
+          case FigureMethods.Show.Text => Intent.FocusPane(StudioLayouts.methods)
+          case FigureMethods.Show.Diff => Intent.FocusPane(StudioLayouts.methodsDiff)
+        }
+        (next.copy(methods = methods), focus.map(ComposerEffect.App(_)))
       case SetTextSize(size)          => (restyle(c, model)(_.copy(text = size)), none)
       case SetParticipantLines(lines) => (restyle(c, model)(_.copy(lines = lines)), none)
       case SetGreyscale(on)           => (c.copy(greyscale = on), none)
@@ -489,15 +520,20 @@ object FigureComposer:
   // -------------------------------------------------------------------------
 
   def view(c: FigureComposer, model: AppModel): ComposerVM =
-    val page = shownFigure(model).map(f => FigureSource.of(model.document, f)).map {
+    val source = shownFigure(model).map(f => FigureSource.of(model.document, f))
+    val page   = source.map {
       case Left(e)  => Left(e.message)
       case Right(s) => Right(pageOf(c, model, s))
     }
+    val methods = source
+      .flatMap(_.toOption)
+      .map(s => FigureMethods.view(c.methods, s, c.summaries.get(s.run.id)))
     ComposerVM(
       FigureBinding.view(c.binding, model),
       "New figure",
       PageWidth.values.toVector.map(w => (w, w.label, w == c.width)),
       page.flatMap(_.toOption),
+      methods,
       c.problem.orElse(page.flatMap(_.left.toOption))
     )
 
