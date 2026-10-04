@@ -21,7 +21,7 @@ import eyes4s.studio.app.compare.*
 import eyes4s.studio.app.plot.{ParticipantColumns, PlotSource, ProfileColumns}
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.backend.{PageRequest, QueryRow, RunId}
+import eyes4s.studio.core.backend.{PageRequest, QueryRow, ResultAddress, RunId}
 import eyes4s.studio.core.selection.ViewId
 import eyes4s.studio.desktop.plot.{PlotTwin, TableTwinView}
 import eyes4s.studio.desktop.runtime.StudioSession
@@ -38,6 +38,9 @@ trait SummaryInputs:
   def summary(run: RunId, done: SummaryAnswer => Unit): Unit
   def queries(run: RunId, done: QueriesAnswer => Unit): Unit
 
+  /** Inspects one result item: the trial panels' pair (S8.2). */
+  def inspect(run: RunId, address: ResultAddress, done: PairAnswer => Unit): Unit
+
 object SummaryInputs:
 
   /** The window's backend: the summary, and every page of the queries. */
@@ -48,6 +51,12 @@ object SummaryInputs:
           case Left(e)          => done(SummaryAnswer.Failed(reason(e)))
           case Right(Left(err)) => done(SummaryAnswer.Refused(err))
           case Right(Right(s))  => done(SummaryAnswer.Answered(s))
+        }
+      def inspect(run: RunId, address: ResultAddress, done: PairAnswer => Unit): Unit =
+        session.run(session.backend.inspect(run, address)) {
+          case Left(e)          => done(PairAnswer.Failed(reason(e)))
+          case Right(Left(err)) => done(PairAnswer.Refused(err))
+          case Right(Right(i))  => done(PairAnswer.Answered(i))
         }
       def queries(run: RunId, done: QueriesAnswer => Unit): Unit =
         def from(offset: Int, got: Vector[QueryRow]): IO[Either[String, Vector[QueryRow]]] =
@@ -89,8 +98,9 @@ final class CompareSummaryHost(
   private def view(id: String): ViewId =
     ViewId.of(id).fold(e => throw IllegalStateException(e.message), identity)
 
-  private val selection = model().selection
-  private var navigator = QueriesNavigator.initial
+  private val selection  = model().selection
+  private var navigator  = QueriesNavigator.initial
+  private var panelState = TrialPanels.empty
 
   /** The participant plot and its table. */
   val participantPlot: PlotTwin = PlotTwin
@@ -184,6 +194,34 @@ final class CompareSummaryHost(
     navigator = QueriesNavigator.filter(navigator, text)
     render(model())
 
+  /** Compare's query and reference trial panels (S8.2), on the run's rows. */
+  val panels: TrialPanelsView =
+    TrialPanelsView(app, on => panelIntent(PanelsIntent.Underlay(on)))
+
+  private def rows: Vector[QueryRow] = state.queries match
+    case Some(QueriesAnswer.Answered(rs)) => rs
+    case _                                => Vector.empty
+
+  private def scaleLabels: Vector[String] = state.answered.fold(Vector.empty)(_.scales)
+
+  private def panelIntent(intent: PanelsIntent): Unit = if !disposed then
+    panelState = TrialPanels.update(panelState, intent)
+    render(model())
+
+  private def syncPanels(m: AppModel): Unit =
+    val (next, effects) = TrialPanels.sync(panelState, m, rows)
+    panelState = next
+    effects.foreach { case PanelsEffect.InspectPair(run, address, pair) =>
+      inputs.inspect(
+        run,
+        address,
+        a => Platform.runLater(() => panelIntent(PanelsIntent.PairRead(pair, a)))
+      )
+    }
+
+  /** The panels' view-model now. */
+  def panelsVM: TrialPanelsVM = TrialPanels.vm(panelState, rows, scaleLabels)
+
   /** The navigators' view-model now. */
   def navigatorVM: QueriesNavigatorVM = navigatorVMOf(model())
 
@@ -205,6 +243,7 @@ final class CompareSummaryHost(
     val (next, effects) = CompareSummary.sync(state, m)
     state = next
     perform(effects)
+    syncPanels(m)
     participantPlot.project(m.selection)
     scaleProfile.project(m.selection)
     participantTable.project(m.selection)
@@ -216,6 +255,7 @@ final class CompareSummaryHost(
     val (next, effects) = CompareSummary.update(state, intent)
     state = next
     perform(effects)
+    syncPanels(model())
     render(model())
 
   /** What Explain does now: the view-model's intents, in order. */
@@ -238,6 +278,7 @@ final class CompareSummaryHost(
 
   private def render(m: AppModel): Unit =
     if !disposed then
+      panels.render(panelsVM)
       queries.render(navigatorVMOf(m))
       items.render(navigatorVMOf(m))
       val v     = CompareSummaryVM.of(state, m)

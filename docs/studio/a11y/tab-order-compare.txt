@@ -12,6 +12,7 @@ button: Discard draft
 list: Queries
 text-field: Filter participant or item
 plot: Query trial
+toggle-button: Underlay remembered image
 plot: Reference trial
 plot: Contrast
 region: Inspector

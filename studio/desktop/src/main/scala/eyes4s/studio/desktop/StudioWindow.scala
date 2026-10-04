@@ -77,6 +77,10 @@ final class StudioWindow private (
     else if pane == StudioLayouts.admission then admission.focusStops
     else if pane == StudioLayouts.queries || pane == StudioLayouts.items then
       eyes4s.studio.app.compare.QueriesNavigator.focusStops(summary.navigatorVM)
+    else if pane == StudioLayouts.queryTrial then
+      eyes4s.studio.app.compare.TrialPanels.queryStops(summary.panelsVM)
+    else if pane == StudioLayouts.referenceTrial then
+      eyes4s.studio.app.compare.TrialPanels.referenceStops(summary.panelsVM)
     else Vector.empty
 
   /** Store each perspective's arrangement in the document (view-only). */
@@ -292,6 +296,8 @@ object StudioWindow:
       "compare.participant-table"      -> summary.participantNode,
       "compare.query-table"            -> summary.queryTable,
       "compare.queries"                -> summary.queries.node,
+      "compare.query-trial"            -> summary.panels.queryNode,
+      "compare.reference-trial"        -> summary.panels.referenceNode,
       "compare.items"                  -> summary.items.node
     ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
     val summaryListener: AppModel => Unit = summary.sync

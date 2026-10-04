@@ -152,3 +152,40 @@
   -fx-border-color: -es-accent;
   -fx-border-width: 2;
 }
+
+/* ---- Compare's query and reference trial panels (S8.2; Main.dc.html, panels) ---- */
+
+.panel-pill {
+  -fx-padding: 1 6 1 6;
+  -fx-background-radius: 4;
+  -fx-font-size: 11px;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.pill-query {
+  -fx-background-color: -es-query-soft;
+  -fx-text-fill: -es-query;
+}
+
+.pill-matched {
+  -fx-background-color: -es-match-soft;
+  -fx-text-fill: -es-match-text;
+}
+
+.pill-control {
+  -fx-background-color: -es-control-soft;
+  -fx-text-fill: -es-control-text;
+}
+
+.panel-toolbar {
+  -fx-padding: 0 10 0 10;
+}
+
+.panel-readout {
+  -fx-text-fill: -es-ink-2;
+}
+
+.panel-note {
+  -fx-text-fill: -es-ink-3;
+  -fx-padding: 0 10 0 10;
+}

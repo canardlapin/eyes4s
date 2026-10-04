@@ -234,6 +234,11 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     val inputs  = new SummaryInputs:
       def summary(run: RunId, done: SummaryAnswer => Unit): Unit = asked.update(run, done)
       def queries(run: RunId, done: QueriesAnswer => Unit): Unit = queried.update(run, done)
+      def inspect(
+          run: RunId,
+          address: eyes4s.studio.core.backend.ResultAddress,
+          done: eyes4s.studio.app.compare.PairAnswer => Unit
+      ): Unit = ()
     val none = new EffectPerformer:
       def perform(effect: AppEffect, dispatch: Intent => Unit): Unit = ()
     val runtime = StudioRuntime(StoryModels.t3Summary, none)
