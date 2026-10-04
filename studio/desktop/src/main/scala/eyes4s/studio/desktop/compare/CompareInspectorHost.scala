@@ -135,7 +135,10 @@ final class CompareInspectorHost(
   opacity.valueProperty.addListener((_, _, _) => if !opacity.isValueChanging then commit())
 
   private def commit(): Unit =
-    if !binding && !disposed then WhyReference.opacityIntent(opacity.getValue).foreach(app)
+    if !binding && !disposed then
+      WhyReference
+        .opacityIntent(opacity.getValue, model().document.presentation.mapOpacity.value)
+        .foreach(app)
 
   private def row(name: Label, control: javafx.scene.Node*): HBox =
     val spacer = Region()

@@ -181,9 +181,15 @@ object WhyReference:
   /** The intent that sets the stage surround. */
   def stageIntent(stage: StageAppearance): Intent = Intent.Dispatch(Command.SetStage(stage))
 
-  /** The intent that sets the maps' opacity, if `value` is an opacity. */
-  def opacityIntent(value: Double): Option[Intent] =
-    MapOpacity.of(value).toOption.map(o => Intent.Dispatch(Command.SetMapOpacity(o)))
+  /** The intent that sets the maps' opacity to `value`, if it is an opacity
+    * and not the one `shown` (a slider released without moving changes
+    * nothing, so it dispatches nothing).
+    */
+  def opacityIntent(value: Double, shown: Double): Option[Intent] =
+    Option
+      .when(value != shown)(value)
+      .flatMap(v => MapOpacity.of(v).toOption)
+      .map(o => Intent.Dispatch(Command.SetMapOpacity(o)))
 
   /** The intent of Edit in Analysis. */
   val editIntent: Intent = Intent.SwitchPerspective(Perspective.Analysis)
@@ -258,7 +264,8 @@ object WhyReference:
     val p                   = f.query.participant
     val (design, reference) =
       TrialPanels.referenceOf(f, Vector(row)).getOrElse((PairDesign.Matched, row.matched))
-    val entries   = s.ledger.collect { case LedgerAnswer.Answered(es) => es }
+    val entries = s.ledger.collect { case LedgerAnswer.Answered(es) => es }
+    val group = s.dataset.map(d => StudioRef.TrialGroup(d, TrialGrouping.PhaseOf(p, refPhase)))
     val inspected = panels.inspected.collect {
       case (ref, Some(PairAnswer.Answered(eyes4s.studio.core.backend.Inspection.Pair(_, i, _))))
           if ref == f.pair(design, reference) =>
@@ -268,15 +275,101 @@ object WhyReference:
       case PairDesign.Matched => Some(row.item)
       case PairDesign.Control =>
         inspected.orElse(entries.flatMap(_.find(_.trial == reference)).map(_.item))
-    val sentence = row.status match
-      case QueryStatus.NotAdmitted(d) => WhyText(QueryNotAdmitted, disposition(d))
-      case QueryStatus.NoMatch(_)     =>
-        recipe.unmatched match
+    val participant = InspectorFact(
+      WhyText(Participant),
+      if reference.participant == p then WhyText(SameParticipant, reference.participant)
+      else WhyText(OtherParticipant, reference.participant),
+      Some(StudioRef.Participant(reference.participant))
+    )
+    // A participant × phase tally of the ledger, not a per-query count.
+    val notAdmitted = InspectorFact(
+      WhyText(NotAdmittedOf, p, refPhase.label),
+      notAdmittedTally(s, p, refPhase, entries),
+      group
+    )
+    val queryOutside = InspectorFact(
+      WhyText(OutsideQuery),
+      outside(panels, f.query),
+      Some(StudioRef.Trial(f.query))
+    )
+    // The reference trial's own facts: only for a query that has one.
+    def referenceFacts(controls: String): Vector[InspectorFact] =
+      val of = occurrences(reference, refItem, entries)
+      Vector(
+        participant,
+        InspectorFact(
+          WhyText(PhaseOccurrence),
+          of.fold(
+            WhyText(OccurrenceOnly, reference.phase.label, reference.occurrence.toString)
+          )(n =>
+            WhyText(
+              OccurrenceOf,
+              reference.phase.label,
+              reference.occurrence.toString,
+              n.toString
+            )
+          ),
+          // "of N" counts the ledger's trials of the item: the participant's
+          // phase group; the occurrence alone is the trial's.
+          of.fold(Some(StudioRef.Trial(reference)))(_ => group)
+        ),
+        InspectorFact(
+          WhyText(Item),
+          refItem.getOrElse(WhyText(ControlsUnknown)),
+          Some(StudioRef.Trial(reference))
+        ),
+        InspectorFact(WhyText(Controls), controls, Some(f.contrast)),
+        notAdmitted,
+        InspectorFact(
+          WhyText(OutsideReference),
+          outside(panels, reference),
+          Some(StudioRef.Trial(reference))
+        ),
+        queryOutside
+      )
+    // The trials of the query's item the ledger lists for its participant
+    // and the reference phase: what would have matched, and why not.
+    def wouldBe: InspectorFact =
+      val candidates = entries.map(
+        _.filter(e =>
+          e.trial.participant == p && e.trial.phase == refPhase && e.item == row.item
+        )
+      )
+      InspectorFact(
+        WhyText(WouldBe),
+        candidates match
+          case None                   => WhyText(ExcludedReading)
+          case Some(cs) if cs.isEmpty => WhyText(WouldBeNone, refPhase.label, row.item)
+          case Some(cs)               =>
+            cs.map(e => WhyText(ExcludedTrial, e.trial.trial, disposition(e.disposition)))
+              .mkString(", ")
+        ,
+        candidates.flatMap(_.headOption).map(e => StudioRef.Trial(e.trial)).orElse(group)
+      )
+    val controlsServed = (n: Int) => WhyText(ControlsValue, n.toString)
+    row.status match
+      case QueryStatus.NotAdmitted(d) =>
+        WhyVM(
+          WhyText(QueryNotAdmitted, disposition(d)),
+          Vector(participant, notAdmitted, queryOutside)
+        )
+      case QueryStatus.NoMatch(_) =>
+        val sentence = recipe.unmatched match
           case UnmatchedChoice.ReportNoMatch =>
             WhyText(NoMatchReport, refPhase.label, p, row.item)
           case UnmatchedChoice.Refuse => WhyText(NoMatchRefuse, refPhase.label, p, row.item)
-      case _ =>
-        design match
+        WhyVM(sentence, Vector(participant, wouldBe, notAdmitted, queryOutside))
+      case QueryStatus.Failed(diagnostic) =>
+        WhyVM(
+          WhyText(QueryFailed, diagnostic.message),
+          referenceFacts(
+            row.controls.fold(WhyText(ControlsUnknown))(n =>
+              WhyText(ControlsUnscored, n.toString)
+            )
+          )
+        )
+      case QueryStatus.Contributing(_, _, _) =>
+        val sentence = design match
           case PairDesign.Matched =>
             val args = Vector(refPhase.label, p, row.item, focal.label.toLowerCase)
             recipe.matched match
@@ -286,65 +379,33 @@ object WhyReference:
                 WhyText(MatchedSelect, (args :+ pick.render)*)
               case MatchedChoice.MeanOfAll => WhyText(MatchedMeanOfAll, args*)
           case PairDesign.Control =>
-            val pool = recipe.controls match
+            // SameSelection keeps one reference per other item, chosen as
+            // the matched one is; only AllOccurrences uses every such trial.
+            recipe.controls match
               case ControlChoice.SameSelection =>
-                WhyText(ControlSameSelection, refPhase.label, p)
+                WhyText(ControlSameSelection, refPhase.label, p) + " " +
+                  row.controls.fold(WhyText(SelectionUncounted))(n =>
+                    WhyText(SelectionCounted, n.toString)
+                  )
               case ControlChoice.AllOccurrences =>
-                WhyText(ControlAllOccurrences, refPhase.label, p)
-            val used = row.controls.fold(WhyText(ControlsUncounted))(n =>
-              WhyText(ControlsCounted, n.toString)
-            )
-            s"$pool $used"
-    val contrast = f.contrast
-    val facts    = Vector(
-      InspectorFact(
-        WhyText(Participant),
-        if reference.participant == p then WhyText(SameParticipant, reference.participant)
-        else WhyText(OtherParticipant, reference.participant),
-        Some(StudioRef.Participant(reference.participant))
-      ),
-      InspectorFact(
-        WhyText(PhaseOccurrence),
-        occurrence(reference, refItem, entries),
-        Some(StudioRef.Trial(reference))
-      ),
-      InspectorFact(
-        WhyText(Item),
-        refItem.getOrElse(WhyText(ControlsUnknown)),
-        Some(StudioRef.Trial(reference))
-      ),
-      InspectorFact(
-        WhyText(Controls),
-        row.controls.fold(WhyText(ControlsUnknown))(n => WhyText(ControlsValue, n.toString)),
-        Some(contrast)
-      ),
-      InspectorFact(
-        WhyText(Excluded),
-        excluded(s, p, refPhase, entries),
-        s.dataset.map(d => StudioRef.TrialGroup(d, TrialGrouping.PhaseOf(p, refPhase)))
-      ),
-      InspectorFact(
-        WhyText(OutsideReference),
-        outside(panels, reference),
-        Some(StudioRef.Trial(reference))
-      ),
-      InspectorFact(
-        WhyText(OutsideQuery),
-        outside(panels, f.query),
-        Some(StudioRef.Trial(f.query))
-      )
-    )
-    WhyVM(sentence, facts)
+                WhyText(ControlAllOccurrences, refPhase.label, p) + " " +
+                  row.controls.fold(WhyText(ControlsUncounted))(n =>
+                    WhyText(ControlsCounted, n.toString)
+                  )
+        WhyVM(
+          sentence,
+          referenceFacts(row.controls.fold(WhyText(ControlsUnknown))(controlsServed))
+        )
 
-  /** "Encoding · 1 of 1": the reference's occurrence, of the occurrences of
-    * its item the ledger lists for its participant and phase.
+  /** How many trials of `item` the ledger lists for the reference's
+    * participant and phase, admitted or not.
     */
-  private def occurrence(
+  private def occurrences(
       reference: TrialKey,
       item: Option[String],
       entries: Option[Vector[LedgerEntry]]
-  ): String =
-    val of = for
+  ): Option[Int] =
+    for
       i  <- item
       es <- entries
       n = es.count(e =>
@@ -353,14 +414,12 @@ object WhyReference:
       )
       if n > 0
     yield n
-    of.fold(WhyText(OccurrenceOnly, reference.phase.label, reference.occurrence.toString))(n =>
-      WhyText(OccurrenceOf, reference.phase.label, reference.occurrence.toString, n.toString)
-    )
 
-  /** The participant's reference-phase trials the ledger did not admit: the
-    * candidates no pair can use.
+  /** The participant's reference-phase trials the ledger did not admit, of
+    * all its trials of that phase: a tally of the participant and phase, the
+    * same for every query of the participant.
     */
-  private def excluded(
+  private def notAdmittedTally(
       s: WhyReference,
       participant: String,
       phase: eyes4s.studio.core.backend.Phase,
@@ -368,16 +427,14 @@ object WhyReference:
   ): String =
     (s.ledger, entries) match
       case (_, Some(es)) =>
-        val candidates =
-          es.filter(e => e.trial.participant == participant && e.trial.phase == phase)
-        val out = candidates.filter(_.disposition != TrialDisposition.Admitted)
-        if out.isEmpty then WhyText(ExcludedNone, candidates.size.toString, phase.label)
+        val all = es.filter(e => e.trial.participant == participant && e.trial.phase == phase)
+        val out = all.filter(_.disposition != TrialDisposition.Admitted)
+        if out.isEmpty then WhyText(ExcludedNone, all.size.toString)
         else
           WhyText(
             ExcludedSome,
             out.size.toString,
-            candidates.size.toString,
-            phase.label,
+            all.size.toString,
             out
               .map(e => WhyText(ExcludedTrial, e.trial.trial, disposition(e.disposition)))
               .mkString(", ")
