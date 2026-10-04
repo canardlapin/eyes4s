@@ -93,19 +93,89 @@ class ScaleProfilePlotSuite extends FunSuite:
     assert(plot.marks.drop(2).forall(_.rows.size == 1))
   }
 
+  // Every grob of the scene, depth first.
+  private def grobs(plot: BuiltPlot): Vector[Grob] =
+    def all(g: Grob): Vector[Grob] = g +: g.children.flatMap(all)
+    plot.plot.scene.grobs.flatMap(all)
+
+  // The bold group lines: every line that is not faint.
+  private def bold(plot: BuiltPlot): Vector[Grob.Lines] =
+    grobs(plot).collect { case l: Grob.Lines if l.gp.alpha != ScaleProfilePlot.LineAlpha => l }
+
+  // The pieces drawn under a mark's name.
+  private def pieces(plot: BuiltPlot, m: PlotMark): Vector[Grob] =
+    grobs(plot)
+      .collectFirst { case g: Grob.Group if g.name.contains(m.name) => g.children }
+      .getOrElse(fail(s"no group for ${m.ref}"))
+
   test("the first group is solid, the others dashed, and lines are faint") {
-    val plot   = built(board)
-    val groups =
-      plot.plot.scene.grobs.flatMap(g => g +: g.children).collect { case l: Grob.Lines => l }
-    val bold = groups.filter(_.name.isEmpty)
+    val plot = built(board)
     assertEquals(
-      bold.map(_.gp.lineType),
+      bold(plot).map(_.gp.lineType),
       Vector(LineType.Solid, LineType.Custom(DashPattern.unsafe(ScaleProfilePlot.MeanDash*)))
     )
-    val faint = groups.filter(_.name.isDefined)
-    assertEquals(faint.size, 2)
-    assert(faint.forall(_.gp.alpha == ScaleProfilePlot.LineAlpha))
-    assertEquals(bold.map(_.points.size), Vector(4, 4))
+    assertEquals(bold(plot).map(_.points.size), Vector(4, 4))
+    val faint = grobs(plot).collect {
+      case l: Grob.Lines if l.gp.alpha == ScaleProfilePlot.LineAlpha => l
+    }
+    assert(faint.nonEmpty && faint.forall(_.name.isEmpty), faint)
+    // The bold means are drawn after (on top of) every participant's line.
+    val order     = grobs(plot)
+    val lastFaint = order.lastIndexWhere(g => faint.exists(_ eq g))
+    assert(order.indexWhere(g => bold(plot).exists(_ eq g)) > lastFaint)
+  }
+
+  test("a missing mean breaks a participant's line and a group's line; it is never bridged") {
+    assertEquals(
+      ScaleProfilePlot.runs(
+        Vector(Some(DataPoint(0, 1)), None, Some(DataPoint(2, 3)), Some(DataPoint(3, 4)), None)
+      ),
+      Vector(Vector(DataPoint(0, 1)), Vector(DataPoint(2, 3), DataPoint(3, 4)))
+    )
+    val plot = built(board)
+    // P05 has no mean at 1°: a lone point at 0.5°, then a line from 2° to 4°.
+    val p05 = pieces(plot, mark(plot, series(board, "P05").points.head.ref))
+    assertEquals(
+      p05.map {
+        case l: Grob.Lines      => l.points.size
+        case b: Grob.PointBatch => -b.points.size
+        case other              => fail(s"$other")
+      },
+      Vector(-1, 2)
+    )
+    assert(p05.forall(_.name.isEmpty), p05)
+    // P17 is whole: one line through its four points.
+    assertEquals(
+      pieces(plot, mark(plot, series(board, "P17").points.head.ref)).collect {
+        case l: Grob.Lines =>
+          l.points.size
+      },
+      Vector(4)
+    )
+    // A group without a mean at 1°: its 0.5° dot stands alone, and its line
+    // runs from 2° to 4°.
+    val gappy = profile(
+      protocol,
+      Vector(
+        ("Remembered", 24, Vector(Some(0.15), None, Some(0.30), Some(0.19))),
+        ("Forgotten", 23, Vector(0.07, 0.12, 0.15, 0.09).map(Some(_)))
+      ),
+      Vector.empty
+    )
+    val g = built(gappy)
+    assertEquals(bold(g).map(_.points.size), Vector(2, 4))
+    assertEquals(g.marks.size, 7)
+  }
+
+  test("every declared σ is labelled, even where no value is drawn") {
+    val none = profile(
+      protocol,
+      Vector(("Remembered", 24, Vector(Some(0.15), Some(0.24), Some(0.30), None))),
+      Vector(("P01", 10, Vector(Some(0.1), Some(0.2), Some(0.2), None)))
+    )
+    val plot    = built(none)
+    val written = grobs(plot).collect { case t: Grob.Text => t.label }
+    Vector("0.5°", "1°", "2°", "4°").foreach(l => assert(written.contains(l), l))
   }
 
   test("readouts carry each series' n; each grand mean is written and each scale labelled") {

@@ -431,14 +431,22 @@ class PlotTableParitySuite extends ScalaCheckSuite:
         t.accessibleText(onMark.project(byPlot).state),
         PlotText.selected(readout, true)
       )
-      // A represented singleton (a one-control histogram bin, S4.5b) adds its
-      // summary to its row's words; the readout property above checks that.
-      if mark.rows.size == 1 && mark.summary.isEmpty then
-        assertEquals(
-          t.accessibleText(onMark.project(byPlot).state),
-          onRow.project(byPlot).state.vm(source).accessibleText
-        )
-        assertEquals(t.accessibleText(onMark), onRow.vm(source).accessibleText)
+      // A mark of one row says what its cursor row says; a represented
+      // singleton (a one-control histogram bin, S4.5b) adds its summary.
+      if mark.rows.size == 1 then
+        val sep                   = PlotText(PlotTextId.RowSeparator)
+        def said(rowText: String) = mark.summary.fold(rowText)(rowText + sep + _)
+        val selectedRow           = onRow.project(byPlot).state.vm(source).accessibleText
+        val unselectedRow         = onRow.vm(source).accessibleText
+        mark.summary match
+          case None =>
+            assertEquals(t.accessibleText(onMark.project(byPlot).state), selectedRow)
+          case Some(_) =>
+            assertEquals(
+              t.accessibleText(onMark.project(byPlot).state),
+              PlotText.selected(said(unselectedRow), true)
+            )
+        assertEquals(t.accessibleText(onMark), said(unselectedRow))
     }
   }
 

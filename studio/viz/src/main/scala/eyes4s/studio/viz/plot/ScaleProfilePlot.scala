@@ -105,10 +105,10 @@ final case class ScaleProfilePlot(columns: ProfileColumns) extends PlotBuilder:
       series <- traverseAll(source.rows)(r =>
         seriesOf(r.ref).toRight(PlotBuildError.UnexpectedRow(kind, r.ref))
       )
-      (drawn, unplotted) = plan(source, encoding, series)
+      (drawn, unplotted, meanRuns) = plan(source, encoding, series)
       id <- SceneId(s"studio.plot.$kind.${theme.toString.toLowerCase}").left
         .map(PlotBuildError.Scene(kind, _))
-      built <- scene(theme, source, drawn, di, scaleI).left
+      built <- scene(theme, source, drawn, meanRuns, di, scaleI).left
         .map(PlotBuildError.Graphics(kind, "the scale profile", _))
       (grobs, viewport, names) = built
       marks <- traverseAll(drawn.zip(names).zipWithIndex) { case ((d, name), order) =>
@@ -135,12 +135,17 @@ final case class ScaleProfilePlot(columns: ProfileColumns) extends PlotBuilder:
       )
     yield plot
 
-  // The marks to draw, in order, and the rows set aside.
+  // The marks to draw, in order, the rows set aside, and each group's bold
+  // line as its contiguous placed runs (solid for the first group).
   private def plan(
       source: PlotSource,
       encoding: PositionEncoding,
       series: Vector[ScaleProfilePlot.Series]
-  ): (Vector[ScaleProfilePlot.Drawn], Vector[Unplotted]) =
+  ): (
+      Vector[ScaleProfilePlot.Drawn],
+      Vector[Unplotted],
+      Vector[(Boolean, Vector[Vector[DataPoint]])]
+  ) =
     import ScaleProfilePlot.*
     val rows          = source.rows.indices.toVector
     def refOf(i: Int) = source.rows(i).ref
@@ -167,7 +172,8 @@ final case class ScaleProfilePlot(columns: ProfileColumns) extends PlotBuilder:
               placed.get(i).fold(RowMarking.Positionless(reason(i)))(RowMarking.Placed(_))
             )
           )
-          (Vector(Drawn(marked, first, Shape.Line, s)), Vector.empty)
+          val line = runs(members.map(placed.get))
+          (Vector(Drawn(marked, first, Shape.Line, s, line)), Vector.empty)
         case None => (Vector.empty, members.map(i => Unplotted(refOf(i), i, reason(i))))
     }
     val dots = groups.zipWithIndex.map { (s, k) =>
@@ -189,14 +195,18 @@ final case class ScaleProfilePlot(columns: ProfileColumns) extends PlotBuilder:
         members.filterNot(placed.contains).map(i => Unplotted(refOf(i), i, reason(i)))
       )
     }
+    val means = groups.zipWithIndex.map((s, k) =>
+      (k == 0, runs(rows.filter(series(_) == s).map(placed.get)))
+    )
     val all = lines ++ dots
-    (all.flatMap(_._1), all.flatMap(_._2).sortBy(_.row))
+    (all.flatMap(_._1), all.flatMap(_._2).sortBy(_.row), means)
 
   // The grobs, the data viewport and each drawn mark's grob name, in order.
   private def scene(
       theme: Theme,
       source: PlotSource,
       drawn: Vector[ScaleProfilePlot.Drawn],
+      meanRuns: Vector[(Boolean, Vector[Vector[DataPoint]])],
       dIndex: Int,
       scaleIndex: Int
   ): Either[GraphicsError, (Vector[Grob], Viewport, Vector[GraphicsName])] =
@@ -235,24 +245,19 @@ final case class ScaleProfilePlot(columns: ProfileColumns) extends PlotBuilder:
       )
     def placedOf(d: Drawn) =
       d.rows.collect { case MarkedRow(_, _, RowMarking.Placed(p)) => p }.sortBy(_.x)
-    val points   = drawn.flatMap(placedOf)
-    val frame    = ParticipantPlot.Frame.of(points.map(_.y), false)
-    val (x0, x1) = xDomain(points.map(_.x))
-    // Each σ drawn, once, with the row whose scale label names it.
-    val ticks = drawn
-      .flatMap(d => d.rows.collect { case MarkedRow(_, i, RowMarking.Placed(p)) => p.x -> i })
+    val points = drawn.flatMap(placedOf)
+    val frame  = ParticipantPlot.Frame.of(points.map(_.y), false)
+    // Every σ the source declares on the scale, once, with the first row
+    // whose scale label names it, whether or not any value is drawn there.
+    val ticks = source.rows.indices.toVector
+      .flatMap(i =>
+        source.number(i, columns.sigma).filter(_ > 0.0).map(v => math.log10(v) -> i)
+      )
       .groupMapReduce(_._1)(_._2)((a, _) => a)
       .toVector
       .sortBy(_._1)
-    // The bold line through each group's dots, solid for the first group.
-    val dots       = drawn.collect { case d @ Drawn(_, _, Shape.Dot(_), _) => d }
-    val groupLines = dots
-      .map(_.series)
-      .distinct
-      .map(s =>
-        val members = dots.filter(_.series == s)
-        (members.exists(_.shape == Shape.Dot(true)), members.map(_.at).sortBy(_.x))
-      )
+    val (x0, x1) = xDomain(points.map(_.x) ++ ticks.map(_._1))
+    val dots     = drawn.collect { case d @ Drawn(_, _, Shape.Dot(_), _, _) => d }
     for
       xScale   <- Interval(x0, x1)
       yScale   <- Interval(frame.y0, frame.y1)
@@ -290,7 +295,9 @@ final case class ScaleProfilePlot(columns: ProfileColumns) extends PlotBuilder:
       meanDash    <- DashPattern(MeanDash)
       solidMeanGp <- stroke(ThemedToken.Ink, MeanLinePx)
       dashMeanGp  <- stroke(ThemedToken.Ink3, MeanLinePx, LineType.Custom(meanDash))
-      means       <- traverseAll(groupLines.filter(_._2.size > 1)) { (solid, ps) =>
+      means       <- traverseAll(
+        meanRuns.flatMap((solid, rs) => rs.filter(_.size > 1).map(solid -> _))
+      ) { (solid, ps) =>
         traverseAll(ps)(at(_))
           .flatMap(Grob.lines(_, gp = if solid then solidMeanGp else dashMeanGp))
       }
@@ -304,25 +311,29 @@ final case class ScaleProfilePlot(columns: ProfileColumns) extends PlotBuilder:
       dotSize  <- ExtentExpr.points(px(DotRadiusPx))
       soloSize <- ExtentExpr.points(px(LinePx * 1.5))
       marked   <- traverseAll(drawn) { d =>
-        def batch(p: Point, size: ExtentExpr, gp: GraphicParams, name: GraphicsName) =
+        def batch(p: Point, size: ExtentExpr, gp: GraphicParams, name: Option[GraphicsName]) =
           Grob.pointBatch(
             Vector(p),
             sizes = BatchColumn.Constant(size),
             shapes = BatchColumn.Constant(PointShape.Circle),
             graphicParams = BatchColumn.Constant(gp),
-            name = Some(name)
+            name = name
           )
         for
           name <- GraphicsName(s"$MarkPrefix${d.rows.head.row}", "scale profile mark")
           grob <- d.shape match
             case Shape.Line =>
-              traverseAll(placedOf(d))(at(_)).flatMap {
-                case Vector(one) => batch(one, soloSize, soloGp, name)
-                case ps          => Grob.lines(ps, gp = lineGp, name = Some(name))
-              }
+              // One unnamed piece per contiguous run, under the mark's name:
+              // a missing mean breaks the line rather than being bridged.
+              traverseAll(d.runs)(run =>
+                traverseAll(run)(at(_)).flatMap {
+                  case Vector(one) => batch(one, soloSize, soloGp, None)
+                  case ps          => Grob.lines(ps, gp = lineGp)
+                }
+              ).map(pieces => Grob.group(pieces, name = Some(name)))
             case Shape.Dot(solid) =>
               at(d.at).flatMap(
-                batch(_, dotSize, if solid then solidDotGp else hollowDotGp, name)
+                batch(_, dotSize, if solid then solidDotGp else hollowDotGp, Some(name))
               )
         yield (grob, name)
       }
@@ -387,7 +398,14 @@ final case class ScaleProfilePlot(columns: ProfileColumns) extends PlotBuilder:
       Vector(
         background,
         Grob.group(gridLines :+ zeroRule, viewport = Some(frameVp)),
-        Grob.group(means ++ marked.map(_._1), viewport = Some(viewport)),
+        // Participants' faint lines first, then the bold means on top.
+        Grob.group(
+          drawn.zip(marked).collect {
+            case (d, (g, _)) if d.shape == Shape.Line => g
+          } ++ means ++
+            drawn.zip(marked).collect { case (d, (g, _)) if d.shape != Shape.Line => g },
+          viewport = Some(viewport)
+        ),
         Grob.group(values.flatten ++ labels.flatten :+ zeroLabel, viewport = Some(frameVp)),
         yTitle,
         xTitle
@@ -461,17 +479,31 @@ object ScaleProfilePlot:
         (lo - pad, hi + pad)
       else (lo - SingleHalf, hi + SingleHalf)
 
+  /** The contiguous runs of placed points of a series in scale order: a
+    * point without a position ends a run, so no line bridges a missing value.
+    */
+  def runs(points: Vector[Option[DataPoint]]): Vector[Vector[DataPoint]] =
+    points
+      .foldLeft(Vector(Vector.empty[DataPoint])) {
+        case (acc, Some(p)) => acc.init :+ (acc.last :+ p)
+        case (acc, None)    => if acc.last.isEmpty then acc else acc :+ Vector.empty
+      }
+      .filter(_.nonEmpty)
+
   /** How a mark is drawn: a participant's line or a group's dot. */
   private[plot] enum Shape derives CanEqual:
     case Line
     case Dot(solid: Boolean)
 
-  /** A mark to draw: its rows, anchor, shape and series. */
+  /** A mark to draw: its rows, anchor, shape and series, and for a line its
+    * contiguous placed runs.
+    */
   private[plot] final case class Drawn(
       rows: Vector[MarkedRow],
       at: DataPoint,
       shape: Shape,
-      series: Series
+      series: Series,
+      runs: Vector[Vector[DataPoint]] = Vector.empty
   ):
     def reachPx: Double = shape match
       case Shape.Line       => LinePx * 1.5 + 1.0
