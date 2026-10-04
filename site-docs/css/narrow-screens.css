@@ -1,0 +1,21 @@
+/* Keep the guide readable at phone width without sideways page scrolling.
+ * Helium keeps inline code on one line (white-space: nowrap), so a long signature,
+ * digest or shell command widened the page; in prose it now wraps, breaking a token
+ * only when it cannot fit a line. Code blocks keep Helium's pre-wrap. Tables keep
+ * identifiers whole and scroll inside their own box instead.
+ * Reviewed in docs/evidence/documentation-2026-10-04.md. */
+#container code {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+#container pre code {
+  white-space: pre-wrap;
+}
+#container table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+#container table code {
+  white-space: nowrap;
+}
