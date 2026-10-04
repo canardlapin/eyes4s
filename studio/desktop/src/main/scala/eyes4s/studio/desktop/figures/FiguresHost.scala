@@ -32,6 +32,7 @@ import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.plot.{PlotTwin, TableTwinView}
 import eyes4s.studio.desktop.runtime.StudioSession
 import eyes4s.studio.desktop.tokens.TokenFiles
+import eyes4s.studio.viz.figure.PlotGeometry
 import eyes4s.studio.viz.plot.{ParticipantPlot, PlotBuilder, ScaleProfilePlot}
 import javafx.application.Platform
 import javafx.geometry.Pos
@@ -42,7 +43,12 @@ import eyes4s.studio.app.plot.ParticipantLines
 import eyes4s.studio.app.tokens.FontFace
 import javafx.beans.property.ReadOnlyObjectWrapper
 import javafx.scene.control.{Button, Label, ScrollPane}
+import javafx.scene.effect.ColorAdjust
 import javafx.scene.text.Font
+import javafx.stage.{FileChooser, Window}
+
+import java.nio.file.Files
+import scala.util.control.NonFatal
 
 import scala.jdk.CollectionConverters.*
 import javafx.scene.layout.{FlowPane, HBox, Priority, Region, VBox}
@@ -63,10 +69,24 @@ trait FigureInputs:
   /** The trial statuses of `from` and `to`, compared (S5.8). */
   def status(from: DatasetRevision, to: DatasetRevision, done: StatusDiff => Unit): Unit
 
+  /** Save an exported figure, suggesting `name`; the answer is where it went,
+    * or why it was not saved (S9.3).
+    */
+  def save(
+      name: String,
+      format: ExportFormat,
+      bytes: IArray[Byte],
+      done: Either[String, String] => Unit
+  ): Unit
+
 object FigureInputs:
 
   /** The window's backend and navigator, and `displays` for what trials showed. */
-  def of(session: StudioSession, source: NavigatorDisplays): FigureInputs =
+  def of(
+      session: StudioSession,
+      source: NavigatorDisplays,
+      owner: () => Option[Window]
+  ): FigureInputs =
     new FigureInputs:
       def summary(run: RunId, done: SummaryAnswer => Unit): Unit =
         session.run(session.backend.result(run)) {
@@ -116,6 +136,24 @@ object FigureInputs:
                 )
             )
         }
+      def save(
+          name: String,
+          format: ExportFormat,
+          bytes: IArray[Byte],
+          done: Either[String, String] => Unit
+      ): Unit =
+        val chooser = FileChooser()
+        chooser.setInitialFileName(name)
+        chooser.getExtensionFilters.add(
+          FileChooser.ExtensionFilter(s"${format.label} figure", s"*.${format.extension}")
+        )
+        Option(chooser.showSaveDialog(owner().orNull)) match
+          case None       => done(Left("no file was chosen"))
+          case Some(file) =>
+            try
+              Files.write(file.toPath, Array.from(bytes)): Unit
+              done(Right(file.toString))
+            catch case NonFatal(e) => done(Left(reason(e)))
 
   private def reason(e: Throwable): String = Option(e.getMessage).getOrElse(e.toString)
 
@@ -179,7 +217,13 @@ final class FiguresHost(
   // --- the page --------------------------------------------------------------------
   private val title = Label()
   title.getStyleClass.addAll("figures-title", "t13")
-  private val widths  = HBox(4.0)
+  private val widths = HBox(4.0)
+
+  /** "Greyscale check": the paper shown without colour, as it prints in greyscale. */
+  private val greyscale = Button("Greyscale check")
+  private val grey      = ColorAdjust()
+  grey.setSaturation(-1.0)
+
   private val zoomOut = Button("−")
   private val zoomIn  = Button("+")
   private val zoom    = Label()
@@ -197,7 +241,7 @@ final class FiguresHost(
 
   /** The page pane: the toolbar, then the paper. */
   val pageNode: VBox =
-    val bar = HBox(8.0, title, width, widths, spacer(), zoomOut, zoom, zoomIn)
+    val bar = HBox(8.0, title, width, widths, spacer(), greyscale, zoomOut, zoom, zoomIn)
     bar.setAlignment(Pos.CENTER_LEFT)
     bar.getStyleClass.add("figures-toolbar")
     val scroll = ScrollPane(paper)
@@ -279,7 +323,12 @@ final class FiguresHost(
           to,
           s => later(ComposerIntent.Binding(FigureIntent.StatusRead(from, to, s)))
         )
-      case ComposerEffect.Binding(FigureEffect.App(i)) => app(i)
+      case ComposerEffect.Binding(FigureEffect.App(i))     => app(i)
+      case ComposerEffect.ExportFigure(format, page, name) =>
+        FigureExport.render(format, page) match
+          case Left(why)   => dispatch(ComposerIntent.Exported(Left(why)))
+          case Right(file) =>
+            inputs.save(name, format, file, a => later(ComposerIntent.Exported(a)))
     }
 
   private def render(m: AppModel): Unit = if !disposed then
@@ -377,6 +426,12 @@ final class FiguresHost(
         tableNote.setText("")
         table.clear()
       case Some(p) =>
+        greyscale.setAccessibleText(FiguresHost.greyscaleName(p.greyscale))
+        greyscale.setOnAction(_ => dispatch(ComposerIntent.SetGreyscale(!p.greyscale)))
+        if p.greyscale then greyscale.getStyleClass.add("figures-chosen"): Unit
+        else greyscale.getStyleClass.remove("figures-chosen"): Unit
+        // A check of the paper only: the export keeps its colours.
+        paper.setEffect(if p.greyscale then grey else null)
         title.setText(p.title)
         width.setText(p.widthLabel)
         zoom.setText(p.zoom)
@@ -419,7 +474,7 @@ final class FiguresHost(
     val body: Node = p.body match
       case PanelBody.Plot(plot) =>
         val twin = twinFor(figure, p, plot.kind, plot.source, plot.lines)
-        twin.plotNode.setPrefSize(w, w * FiguresHost.PlotAspect)
+        twin.plotNode.setPrefSize(w, w * PlotGeometry.Aspect)
         val notes = plot.notes.map(paperLabel(_, text))
         VBox(2.0, (twin.plotNode +: notes)*)
       case PanelBody.Maps(maps) =>
@@ -530,11 +585,11 @@ final class FiguresHost(
         row("Unit", b.unit),
         HBox(6.0, open, rebind),
         note
-      ) ++ v.page.toVector.flatMap(p => appearance(p.appearance))
+      ) ++ v.page.toVector.flatMap(p => appearance(p.appearance, p.exporting))
     }*): Unit
 
   /** The inspector's Appearance (view only) and Export sections. */
-  private def appearance(a: AppearanceVM): Vector[Node] =
+  private def appearance(a: AppearanceVM, e: ExportVM): Vector[Node] =
     def chooser[A](label: String, options: Vector[(A, String, Boolean)])(
         set: A => ComposerIntent
     ) =
@@ -568,7 +623,19 @@ final class FiguresHost(
       HBox(6.0, head, only),
       chooser("Text size", a.textSizes)(ComposerIntent.SetTextSize(_)),
       chooser("Participant lines", a.lines)(ComposerIntent.SetParticipantLines(_))
-    ) ++ width ++ Vector(exporting, images)
+    ) ++ width ++ Vector(
+      exporting,
+      chooser("Figure format", e.formats)(ComposerIntent.ChooseFormat(_)),
+      images,
+      exportButton(e)
+    ) ++ e.status.toVector.map { s =>
+      val l = Label(s); l.setWrapText(true); l.getStyleClass.add("t11"); l
+    }
+
+  private def exportButton(e: ExportVM): Button =
+    val b = button(e.action)
+    b.setOnAction(_ => dispatch(ComposerIntent.Export))
+    b
 
   /** A label on the paper, in the figure's body face at `px`. */
   private def paperLabel(text: String, px: Double): Label =
@@ -619,6 +686,7 @@ final class FiguresHost(
         FocusStop(A11yRole.Button, FiguresHost.widthName(label, chosen))
       ) ++
         Vector(
+          FocusStop(A11yRole.Button, FiguresHost.greyscaleName(p.greyscale)),
           FocusStop(A11yRole.Button, "Zoom out (−)"),
           FocusStop(A11yRole.Button, "Zoom in (+)")
         ) ++
@@ -651,8 +719,15 @@ final class FiguresHost(
             a.lines.map((_, t, c) => b(FiguresHost.chosenName("Participant lines", t, c))) ++
             a.panelWidthMm.toVector.flatMap((_, _, t) =>
               Vector(b(FiguresHost.narrower(t)), b(FiguresHost.wider(t)))
-            ) :+
-            b(FiguresHost.includeName(a.includeImages._1, a.includeImages._2))
+            ) ++
+            // Export: the format, the images option, then Export figure….
+            p.exporting.formats.map((_, t, c) =>
+              b(FiguresHost.chosenName("Figure format", t, c))
+            ) ++
+            Vector(
+              b(FiguresHost.includeName(a.includeImages._1, a.includeImages._2)),
+              b(p.exporting.action)
+            )
         }
     )
 
@@ -660,8 +735,9 @@ final class FiguresHost(
     val r = Region(); HBox.setHgrow(r, Priority.ALWAYS); r
 
 object FiguresHost:
-  /** A plotted panel's height as a fraction of its width (the board's panels). */
-  val PlotAspect: Double = 0.62
+  /** The greyscale check's accessible name, with its state. */
+  def greyscaleName(on: Boolean): String =
+    s"Greyscale check, ${if on then "on" else "off"}"
 
   /** An appearance option's accessible name: "Text size 7 pt, selected". */
   def chosenName(control: String, option: String, chosen: Boolean): String =

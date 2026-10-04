@@ -1,0 +1,275 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="692" height="678" viewBox="0 0 692 678"><defs><style/></defs>
+  <title>Figure 1</title>
+  <rect stroke="none" fill="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" x="0" y="0.8651" width="691.6535" height="677.1349" />
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans SmBld" font-size="10.6667" x="0" y="0.8651" text-anchor="start" dominant-baseline="text-before-edge">A</text>
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="21.3333" y="0.8651" text-anchor="start" dominant-baseline="text-before-edge">Encoding gaze</text>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="14.1984" text-anchor="start" dominant-baseline="text-before-edge">Encoding · enc_03 · beach-042</text>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="25.8651" text-anchor="start" dominant-baseline="text-before-edge">Displayed: image.</text>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="37.5318" text-anchor="start" dominant-baseline="text-before-edge">No gaze yet: fixations are drawn when the backend serves the</text>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="49.1984" text-anchor="start" dominant-baseline="text-before-edge">trial-fixations view (S6.2).</text>
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans SmBld" font-size="10.6667" x="355.2756" y="0.8651" text-anchor="start" dominant-baseline="text-before-edge">B</text>
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="376.6089" y="0.8651" text-anchor="start" dominant-baseline="text-before-edge">Retrieval gaze</text>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="355.2756" y="14.1984" text-anchor="start" dominant-baseline="text-before-edge">Retrieval · ret_07</text>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="355.2756" y="25.8651" text-anchor="start" dominant-baseline="text-before-edge">Displayed: blank + fixation cross. The remembered image was not</text>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="355.2756" y="37.5318" text-anchor="start" dominant-baseline="text-before-edge">shown.</text>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="355.2756" y="49.1984" text-anchor="start" dominant-baseline="text-before-edge">No gaze yet: fixations are drawn when the backend serves the</text>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="355.2756" y="60.8651" text-anchor="start" dominant-baseline="text-before-edge">trial-fixations view (S6.2).</text>
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans SmBld" font-size="10.6667" x="0" y="91.4294" text-anchor="start" dominant-baseline="text-before-edge">C</text>
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="21.3333" y="91.4294" text-anchor="start" dominant-baseline="text-before-edge">Density maps</text>
+  <rect stroke="#c9c5bc" fill="none" stroke-width="0.6667" stroke-linecap="butt" stroke-linejoin="miter" x="0" y="104.7627" width="109.6063" height="42.5591" />
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="3.7795" y="108.5423" text-anchor="start" dominant-baseline="text-before-edge">Query ret_07</text>
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="3.7795" y="120.2089" text-anchor="start" dominant-baseline="text-before-edge">P17 · σ 2°</text>
+  <rect stroke="#c9c5bc" fill="none" stroke-width="0.6667" stroke-linecap="butt" stroke-linejoin="miter" x="113.3858" y="104.7627" width="109.6063" height="42.5591" />
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="117.1654" y="108.5423" text-anchor="start" dominant-baseline="text-before-edge">Matched enc_03</text>
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="117.1654" y="120.2089" text-anchor="start" dominant-baseline="text-before-edge">0.73</text>
+  <rect stroke="#c9c5bc" fill="none" stroke-width="0.6667" stroke-linecap="butt" stroke-linejoin="miter" x="226.7717" y="104.7627" width="109.6063" height="42.5591" />
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="230.5512" y="108.5423" text-anchor="start" dominant-baseline="text-before-edge">Highest of 19</text>
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="230.5512" y="120.2089" text-anchor="start" dominant-baseline="text-before-edge">controls · street-112</text>
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="230.5512" y="131.8756" text-anchor="start" dominant-baseline="text-before-edge">0.61</text>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="147.3218" text-anchor="start" dominant-baseline="text-before-edge">Matched 0.73 · highest of 19 controls street-112 0.61 · control mean</text>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="158.9885" text-anchor="start" dominant-baseline="text-before-edge">B 0.35 · D +0.38</text>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="170.6551" text-anchor="start" dominant-baseline="text-before-edge">No density maps yet: they are drawn when the backend serves density</text>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="182.3218" text-anchor="start" dominant-baseline="text-before-edge">grids (UI-E). The tiles show their scores.</text>
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans SmBld" font-size="10.6667" x="355.2756" y="91.4294" text-anchor="start" dominant-baseline="text-before-edge">D</text>
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="376.6089" y="91.4294" text-anchor="start" dominant-baseline="text-before-edge">Participant D by response</text>
+  <g clip-path="url(#clip-0)">
+    <rect stroke="none" fill="#fbfaf7" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" x="355.2756" y="104.7627" width="336.378" height="208.5543" />
+    <g>
+      <polyline stroke="#e9e6df" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" points="388.9134,263.4353 678.1984,263.4353" />
+      <polyline stroke="#e9e6df" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" points="388.9134,243.8702 678.1984,243.8702" />
+      <polyline stroke="#e9e6df" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" points="388.9134,204.7398 678.1984,204.7398" />
+      <polyline stroke="#e9e6df" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" points="388.9134,185.1746 678.1984,185.1746" />
+      <polyline stroke="#e9e6df" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" points="388.9134,165.6094 678.1984,165.6094" />
+      <polyline stroke="#e9e6df" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" points="388.9134,146.0442 678.1984,146.0442" />
+      <polyline stroke="#e9e6df" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" points="388.9134,126.479 678.1984,126.479" />
+      <polyline stroke="#1c1e21" fill="none" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" points="388.9134,224.305 678.1984,224.305" />
+    </g>
+    <g clip-path="url(#clip-1)">
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="450.2346,173.4355 616.8772,212.5659" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="465.6346,171.479 608.0772,200.8267" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="456.8346,149.9573 599.2772,194.9572" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="472.2346,153.8703 614.6772,189.0876" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="463.4346,230.1745 605.8772,269.3049" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="454.6346,165.6094 597.0772,191.0442" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="470.0346,161.6964 612.4772,204.7398" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="461.2346,163.6529 603.6772,194.9572" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="452.4346,157.7833 594.8772,177.3485" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="467.8346,136.2616 610.2772,159.7399" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="459.0346,169.5224 601.4772,202.7833" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="450.2346,157.7833 616.8772,187.1311" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="465.6346,191.0442 608.0772,218.4354" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="456.8346,167.5659 599.2772,181.2616" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="472.2346,189.0876 614.6772,239.9571" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="463.4346,136.2616 605.8772,169.5224" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="454.6346,149.9573 597.0772,161.6964" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="470.0346,142.1312 612.4772,151.9138" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="461.2346,167.5659 603.6772,212.5659" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="452.4346,173.4355 594.8772,200.8267" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="467.8346,161.6964 610.2772,171.479" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="459.0346,171.479 601.4772,212.5659" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="450.2346,157.7833 616.8772,183.2181" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.45" points="465.6346,153.8703 608.0772,191.0442" />
+      <circle data-name="participant-0" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="450.2346" cy="173.4355" r="4" />
+      <circle data-name="participant-1" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="465.6346" cy="171.479" r="4" />
+      <circle data-name="participant-2" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="456.8346" cy="149.9573" r="4" />
+      <circle data-name="participant-3" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="472.2346" cy="153.8703" r="4" />
+      <circle data-name="participant-4" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="463.4346" cy="230.1745" r="4" />
+      <circle data-name="participant-5" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="454.6346" cy="165.6094" r="4" />
+      <circle data-name="participant-6" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="470.0346" cy="161.6964" r="4" />
+      <circle data-name="participant-7" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="461.2346" cy="163.6529" r="4" />
+      <circle data-name="participant-8" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="452.4346" cy="157.7833" r="4" />
+      <circle data-name="participant-9" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="467.8346" cy="136.2616" r="4" />
+      <circle data-name="participant-10" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="459.0346" cy="169.5224" r="4" />
+      <circle data-name="participant-11" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="450.2346" cy="157.7833" r="4" />
+      <circle data-name="participant-12" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="465.6346" cy="191.0442" r="4" />
+      <circle data-name="participant-13" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="456.8346" cy="167.5659" r="4" />
+      <circle data-name="participant-14" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="472.2346" cy="189.0876" r="4" />
+      <circle data-name="participant-15" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="463.4346" cy="136.2616" r="4" />
+      <circle data-name="participant-16" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="454.6346" cy="149.9573" r="4" />
+      <circle data-name="participant-17" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="470.0346" cy="142.1312" r="4" />
+      <circle data-name="participant-18" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="461.2346" cy="167.5659" r="4" />
+      <circle data-name="participant-19" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="452.4346" cy="173.4355" r="4" />
+      <circle data-name="participant-20" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="467.8346" cy="161.6964" r="4" />
+      <circle data-name="participant-21" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="459.0346" cy="171.479" r="4" />
+      <circle data-name="participant-22" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="450.2346" cy="157.7833" r="4" />
+      <circle data-name="participant-23" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="465.6346" cy="153.8703" r="4" />
+      <polyline data-name="participant-24" stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" points="435.2346,165.6094 487.2346,165.6094" />
+      <circle data-name="participant-25" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="616.8772" cy="212.5659" r="4" />
+      <circle data-name="participant-26" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="608.0772" cy="200.8267" r="4" />
+      <circle data-name="participant-27" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="599.2772" cy="194.9572" r="4" />
+      <circle data-name="participant-28" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="614.6772" cy="189.0876" r="4" />
+      <circle data-name="participant-29" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="605.8772" cy="269.3049" r="4" />
+      <circle data-name="participant-30" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="597.0772" cy="191.0442" r="4" />
+      <circle data-name="participant-31" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="612.4772" cy="204.7398" r="4" />
+      <circle data-name="participant-32" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="603.6772" cy="194.9572" r="4" />
+      <circle data-name="participant-33" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="594.8772" cy="177.3485" r="4" />
+      <circle data-name="participant-34" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="610.2772" cy="159.7399" r="4" />
+      <circle data-name="participant-35" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="601.4772" cy="202.7833" r="4" />
+      <circle data-name="participant-36" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="616.8772" cy="187.1311" r="4" />
+      <circle data-name="participant-37" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="608.0772" cy="218.4354" r="4" />
+      <circle data-name="participant-38" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="599.2772" cy="181.2616" r="4" />
+      <circle data-name="participant-39" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="614.6772" cy="239.9571" r="4" />
+      <circle data-name="participant-40" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="605.8772" cy="169.5224" r="4" />
+      <circle data-name="participant-41" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="597.0772" cy="161.6964" r="4" />
+      <circle data-name="participant-42" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="612.4772" cy="151.9138" r="4" />
+      <circle data-name="participant-43" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="603.6772" cy="212.5659" r="4" />
+      <circle data-name="participant-44" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="594.8772" cy="200.8267" r="4" />
+      <circle data-name="participant-45" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="610.2772" cy="171.479" r="4" />
+      <circle data-name="participant-46" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="601.4772" cy="212.5659" r="4" />
+      <circle data-name="participant-47" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="616.8772" cy="183.2181" r="4" />
+      <circle data-name="participant-48" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="608.0772" cy="191.0442" r="4" />
+      <polyline data-name="participant-49" stroke="#5e636a" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" stroke-dasharray="6 3" points="579.8772,194.9572 631.8772,194.9572" />
+    </g>
+    <g>
+      <text fill="#1c1e21" stroke="none" font-family="IBM Plex Mono Medm" font-size="11" x="429.2346" y="165.6094" text-anchor="end" dominant-baseline="middle">+0.30</text>
+      <text fill="#464b52" stroke="none" font-family="IBM Plex Mono Medm" font-size="11" x="637.8772" y="194.9572" text-anchor="start" dominant-baseline="middle">+0.15</text>
+      <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans SmBld" font-size="11" x="461.2346" y="298.468" text-anchor="middle" dominant-baseline="text-before-edge">Remembered</text>
+      <text fill="#5e636a" stroke="none" font-family="IBM Plex Mono" font-size="11" x="461.2346" y="286.1216" text-anchor="middle" dominant-baseline="text-before-edge">n = 24 participants</text>
+      <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans SmBld" font-size="11" x="605.8772" y="298.468" text-anchor="middle" dominant-baseline="text-before-edge">Forgotten</text>
+      <text fill="#5e636a" stroke="none" font-family="IBM Plex Mono" font-size="11" x="605.8772" y="286.1216" text-anchor="middle" dominant-baseline="text-before-edge">n = 24 participants</text>
+      <text fill="#1c1e21" stroke="none" font-family="IBM Plex Mono" font-size="11" x="384.5741" y="224.305" text-anchor="end" dominant-baseline="middle">0</text>
+    </g>
+    <text fill="#5e636a" stroke="none" font-family="IBM Plex Sans" font-size="11" x="388.9134" y="108.9338" text-anchor="start" dominant-baseline="text-before-edge">D (Δ cosine), participant mean</text>
+  </g>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="355.2756" y="313.3171" text-anchor="start" dominant-baseline="text-before-edge">n = 24 each · paired n = 24</text>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="355.2756" y="324.9837" text-anchor="start" dominant-baseline="text-before-edge">bars: grand mean of participant means, equal weight</text>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="355.2756" y="336.6504" text-anchor="start" dominant-baseline="text-before-edge">Each pair of dots is one participant; per participant, 2–17 queries</text>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="355.2756" y="348.3171" text-anchor="start" dominant-baseline="text-before-edge">per group. Descriptive only: no intervals or tests.</text>
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans SmBld" font-size="10.6667" x="0" y="378.8814" text-anchor="start" dominant-baseline="text-before-edge">E</text>
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="21.3333" y="378.8814" text-anchor="start" dominant-baseline="text-before-edge">Scale profile by response</text>
+  <g clip-path="url(#clip-2)">
+    <rect stroke="none" fill="#fbfaf7" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" x="0" y="392.2147" width="336.378" height="208.5543" />
+    <g>
+      <polyline stroke="#e9e6df" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" points="33.6378,561.9743 322.9228,561.9743" />
+      <polyline stroke="#e9e6df" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" points="33.6378,509.8004 322.9228,509.8004" />
+      <polyline stroke="#e9e6df" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" points="33.6378,483.7135 322.9228,483.7135" />
+      <polyline stroke="#e9e6df" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" points="33.6378,457.6266 322.9228,457.6266" />
+      <polyline stroke="#e9e6df" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" points="33.6378,431.5397 322.9228,431.5397" />
+      <polyline stroke="#e9e6df" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" points="61.6331,567.4003 61.6331,413.0701" />
+      <polyline stroke="#e9e6df" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" points="139.3979,567.4003 139.3979,413.0701" />
+      <polyline stroke="#e9e6df" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" points="217.1627,567.4003 217.1627,413.0701" />
+      <polyline stroke="#e9e6df" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" points="294.9275,567.4003 294.9275,413.0701" />
+      <polyline stroke="#1c1e21" fill="none" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" points="33.6378,535.8873 322.9228,535.8873" />
+    </g>
+    <g clip-path="url(#clip-3)">
+      <g data-name="profile-8">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,512.4091 139.3979,501.9743 217.1627,491.5396 294.9275,507.1917" />
+      </g>
+      <g data-name="profile-12">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,507.1917 139.3979,491.5396 217.1627,478.4961 294.9275,499.3657" />
+      </g>
+      <g data-name="profile-16">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,491.5396 139.3979,468.0614 217.1627,449.8005 294.9275,481.1048" />
+      </g>
+      <g data-name="profile-20">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,496.757 139.3979,475.8874 217.1627,460.2353 294.9275,488.9309" />
+      </g>
+      <g data-name="profile-24">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,546.3221 139.3979,551.5395 217.1627,556.7569 294.9275,548.9308" />
+      </g>
+      <g data-name="profile-28">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,504.583 139.3979,486.3222 217.1627,470.67 294.9275,496.757" />
+      </g>
+      <g data-name="profile-32">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,499.3657 139.3979,481.1048 217.1627,465.4527 294.9275,491.5396" />
+      </g>
+      <g data-name="profile-36">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,501.9743 139.3979,483.7135 217.1627,470.67 294.9275,494.1483" />
+      </g>
+      <g data-name="profile-40">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,494.1483 139.3979,470.67 217.1627,452.4092 294.9275,483.7135" />
+      </g>
+      <g data-name="profile-44">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,478.4961 139.3979,447.1918 217.1627,423.7136 294.9275,465.4527" />
+      </g>
+      <g data-name="profile-48">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,507.1917 139.3979,491.5396 217.1627,478.4961 294.9275,499.3657" />
+      </g>
+      <g data-name="profile-52">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,499.3657 139.3979,478.4961 217.1627,462.844 294.9275,488.9309" />
+      </g>
+      <g data-name="profile-56">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,522.8439 139.3979,512.4091 217.1627,507.1917 294.9275,517.6265" />
+      </g>
+      <g data-name="profile-60">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,499.3657 139.3979,481.1048 217.1627,465.4527 294.9275,491.5396" />
+      </g>
+      <g data-name="profile-64">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,522.8439 139.3979,515.0178 217.1627,509.8004 294.9275,520.2352" />
+      </g>
+      <g data-name="profile-68">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,486.3222 139.3979,457.6266 217.1627,436.7571 294.9275,473.2787" />
+      </g>
+      <g data-name="profile-72">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,486.3222 139.3979,460.2353 217.1627,436.7571 294.9275,475.8874" />
+      </g>
+      <g data-name="profile-76">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,481.1048 139.3979,452.4092 217.1627,428.931 294.9275,468.0614" />
+      </g>
+      <g data-name="profile-80">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,504.583 139.3979,486.3222 217.1627,473.2787 294.9275,496.757" />
+      </g>
+      <g data-name="profile-84">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,507.1917 139.3979,491.5396 217.1627,478.4961 294.9275,499.3657" />
+      </g>
+      <g data-name="profile-88">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,494.1483 139.3979,470.67 217.1627,455.0179 294.9275,486.3222" />
+      </g>
+      <g data-name="profile-92">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,509.8004 139.3979,496.757 217.1627,486.3222 294.9275,504.583" />
+      </g>
+      <g data-name="profile-96">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,496.757 139.3979,473.2787 217.1627,457.6266 294.9275,486.3222" />
+      </g>
+      <g data-name="profile-100">
+        <polyline stroke="#5e636a" fill="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.28" points="61.6331,496.757 139.3979,475.8874 217.1627,457.6266 294.9275,486.3222" />
+      </g>
+      <polyline stroke="#1c1e21" fill="none" stroke-width="3" stroke-linecap="butt" stroke-linejoin="miter" points="61.6331,496.757 139.3979,473.2787 217.1627,457.6266 294.9275,486.3222" />
+      <polyline stroke="#5e636a" fill="none" stroke-width="3" stroke-linecap="butt" stroke-linejoin="miter" stroke-dasharray="6 3" points="61.6331,517.6265 139.3979,504.583 217.1627,496.757 294.9275,512.4091" />
+      <circle data-name="profile-0" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="61.6331" cy="496.757" r="4.5" />
+      <circle data-name="profile-1" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="139.3979" cy="473.2787" r="4.5" />
+      <circle data-name="profile-2" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="217.1627" cy="457.6266" r="4.5" />
+      <circle data-name="profile-3" stroke="none" fill="#1c1e21" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" cx="294.9275" cy="486.3222" r="4.5" />
+      <circle data-name="profile-4" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="61.6331" cy="517.6265" r="4.5" />
+      <circle data-name="profile-5" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="139.3979" cy="504.583" r="4.5" />
+      <circle data-name="profile-6" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="217.1627" cy="496.757" r="4.5" />
+      <circle data-name="profile-7" stroke="#5e636a" fill="#fbfaf7" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" cx="294.9275" cy="512.4091" r="4.5" />
+    </g>
+    <g>
+      <text fill="#1c1e21" stroke="none" font-family="IBM Plex Mono Medm" font-size="11" x="61.6331" y="487.757" text-anchor="middle" dominant-baseline="text-after-edge">+0.15</text>
+      <text fill="#1c1e21" stroke="none" font-family="IBM Plex Mono Medm" font-size="11" x="139.3979" y="464.2787" text-anchor="middle" dominant-baseline="text-after-edge">+0.24</text>
+      <text fill="#1c1e21" stroke="none" font-family="IBM Plex Mono Medm" font-size="11" x="217.1627" y="448.6266" text-anchor="middle" dominant-baseline="text-after-edge">+0.30</text>
+      <text fill="#1c1e21" stroke="none" font-family="IBM Plex Mono Medm" font-size="11" x="294.9275" y="477.3222" text-anchor="middle" dominant-baseline="text-after-edge">+0.19</text>
+      <text fill="#464b52" stroke="none" font-family="IBM Plex Mono Medm" font-size="11" x="61.6331" y="526.6265" text-anchor="middle" dominant-baseline="text-before-edge">+0.07</text>
+      <text fill="#464b52" stroke="none" font-family="IBM Plex Mono Medm" font-size="11" x="139.3979" y="513.583" text-anchor="middle" dominant-baseline="text-before-edge">+0.12</text>
+      <text fill="#464b52" stroke="none" font-family="IBM Plex Mono Medm" font-size="11" x="217.1627" y="505.757" text-anchor="middle" dominant-baseline="text-before-edge">+0.15</text>
+      <text fill="#464b52" stroke="none" font-family="IBM Plex Mono Medm" font-size="11" x="294.9275" y="521.4091" text-anchor="middle" dominant-baseline="text-before-edge">+0.09</text>
+      <text fill="#464b52" stroke="none" font-family="IBM Plex Mono" font-size="11" x="61.6331" y="573.5735" text-anchor="middle" dominant-baseline="text-before-edge">0.5°</text>
+      <text fill="#464b52" stroke="none" font-family="IBM Plex Mono" font-size="11" x="139.3979" y="573.5735" text-anchor="middle" dominant-baseline="text-before-edge">1°</text>
+      <text fill="#464b52" stroke="none" font-family="IBM Plex Mono" font-size="11" x="217.1627" y="573.5735" text-anchor="middle" dominant-baseline="text-before-edge">2°</text>
+      <text fill="#464b52" stroke="none" font-family="IBM Plex Mono" font-size="11" x="294.9275" y="573.5735" text-anchor="middle" dominant-baseline="text-before-edge">4°</text>
+      <text fill="#1c1e21" stroke="none" font-family="IBM Plex Mono" font-size="11" x="29.2985" y="535.8873" text-anchor="end" dominant-baseline="middle">0</text>
+    </g>
+    <text fill="#5e636a" stroke="none" font-family="IBM Plex Sans" font-size="11" x="33.6378" y="396.3858" text-anchor="start" dominant-baseline="text-before-edge">D (Δ cosine)</text>
+    <text fill="#5e636a" stroke="none" font-family="IBM Plex Sans" font-size="11" x="178.2803" y="596.5979" text-anchor="middle" dominant-baseline="text-after-edge">Gaussian σ (log spacing)</text>
+  </g>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="600.769" text-anchor="start" dominant-baseline="text-before-edge">n = 24 each · paired n = 24</text>
+  <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="612.4357" text-anchor="start" dominant-baseline="text-before-edge">Each scale computed separately.</text>
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="643" text-anchor="start" dominant-baseline="text-before-edge">Figure 1. Matched-minus-control spatial similarity of retrieval gaze (dataset r3, analysis rev 4, run 7). Spatial correspondence, not</text>
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="654.6667" text-anchor="start" dominant-baseline="text-before-edge">sequential replay.</text>
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="666.3333" text-anchor="start" dominant-baseline="text-before-edge">Analysis rev 4 · run 7 (archive unbound) · data r3 · reporting “By retrieval response” (by-retrieval-response) · studio build eyes4s 0.1</text>
+  <defs>
+    <clipPath id="clip-0">
+      <rect x="355.2756" y="104.7627" width="336.378" height="208.5543" />
+    </clipPath>
+    <clipPath id="clip-1">
+      <rect x="388.9134" y="125.6182" width="289.285" height="154.3302" />
+    </clipPath>
+    <clipPath id="clip-2">
+      <rect x="0" y="392.2147" width="336.378" height="208.5543" />
+    </clipPath>
+    <clipPath id="clip-3">
+      <rect x="33.6378" y="413.0701" width="289.285" height="154.3302" />
+    </clipPath>
+  </defs>
+</svg>

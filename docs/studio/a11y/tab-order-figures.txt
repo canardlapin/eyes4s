@@ -14,6 +14,7 @@ button: Figure 2, Stale, run 5 · rev 3 · data r2
 plot: Figure
 button: 89 mm · one-column
 button: 183 mm · two-column, selected
+button: Greyscale check, off
 button: Zoom out (−)
 button: Zoom in (+)
 button: Panel A, Encoding gaze
@@ -34,4 +35,8 @@ button: Participant lines Show, selected
 button: Participant lines Hide
 button: Narrower − (panel width 89 mm)
 button: Wider + (panel width 89 mm)
+button: Figure format SVG, selected
+button: Figure format PDF
+button: Figure format PNG
 button: project snapshot includes images, on
+button: Export figure…

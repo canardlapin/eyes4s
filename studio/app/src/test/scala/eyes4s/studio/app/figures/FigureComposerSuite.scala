@@ -535,3 +535,41 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
   }
 
   private def onD: AppModel = at(t2, figure1, Some("D"))
+
+  // --- Export (S9.3) -------------------------------------------------------------------
+
+  test("export: choose a format, then Export asks for the page as a file") {
+    val c0    = FigureComposer.sync(FigureComposer.empty, t2)._1
+    val page0 = FigureComposer.view(c0, t2).page.get
+    assertEquals(
+      page0.exporting.formats.map((_, l, chosen) => (l, chosen)),
+      Vector(("SVG", true), ("PDF", false), ("PNG", false))
+    )
+    val c1 = FigureComposer.update(c0, t2, ComposerIntent.ChooseFormat(ExportFormat.Pdf))._1
+    val (c2, asked) = FigureComposer.update(c1, t2, ComposerIntent.Export)
+    val page        = FigureComposer.view(c1, t2).page.get
+    assertEquals(
+      asked,
+      Vector(ComposerEffect.ExportFigure(ExportFormat.Pdf, page, "figure-1.pdf"))
+    )
+    val done =
+      FigureComposer.update(c2, t2, ComposerIntent.Exported(Right("/tmp/figure-1.pdf")))._1
+    assertEquals(
+      FigureComposer.view(done, t2).page.get.exporting.status,
+      Some("Exported to /tmp/figure-1.pdf.")
+    )
+    val failed =
+      FigureComposer.update(c2, t2, ComposerIntent.Exported(Left("no file was chosen")))._1
+    assertEquals(
+      FigureComposer.view(failed, t2).page.get.exporting.status,
+      Some("The figure was not exported: no file was chosen")
+    )
+  }
+
+  test("the greyscale check is a view of the page; it changes nothing exported") {
+    val c0 = FigureComposer.sync(FigureComposer.empty, t2)._1
+    val on = FigureComposer.update(c0, t2, ComposerIntent.SetGreyscale(true))._1
+    assertEquals(FigureComposer.view(on, t2).page.map(_.greyscale), Some(true))
+    val page = FigureComposer.view(on, t2).page.get
+    assertEquals(page.copy(greyscale = false), FigureComposer.view(c0, t2).page.get)
+  }

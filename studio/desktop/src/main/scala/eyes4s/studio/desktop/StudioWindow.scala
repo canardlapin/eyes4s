@@ -332,7 +332,11 @@ object StudioWindow:
     r.listen(designListener)
     design.sync(r.model)
     // The Figures perspective: navigator, page, Table tab and binding.
-    val figures = FiguresHost(() => r.model, dispatch, FigureInputs.of(session, displays))
+    val figures = FiguresHost(
+      () => r.model,
+      dispatch,
+      FigureInputs.of(session, displays, () => Option(shell.root.getScene).map(_.getWindow))
+    )
     Vector(
       "figures.figures"    -> figures.navigatorNode,
       "figures.page"       -> figures.pageNode,

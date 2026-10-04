@@ -92,6 +92,16 @@ enum ComposerIntent derives CanEqual:
   /** Set a panel's width, within [[FigureAppearance.MinPanelMm]] and the page. */
   case SetPanelWidth(panel: PanelLetter, mm: Int)
   case IncludeImages(include: Boolean)
+
+  /** "Greyscale check": show the page as it prints in greyscale (S9.3). */
+  case SetGreyscale(on: Boolean)
+
+  /** Export (S9.3): the format, then "Export figure…"; the platform answers
+    * with where the file went, or why it did not.
+    */
+  case ChooseFormat(format: ExportFormat)
+  case Export
+  case Exported(answer: Either[String, String])
   case SummaryRead(run: RunId, answer: SummaryAnswer)
   case ReferencesRead(
       run: RunId,
@@ -117,6 +127,9 @@ enum ComposerEffect derives CanEqual:
   /** What each trial of the revision displayed (panels A and B). */
   case RequestDisplays(dataset: DatasetRevisionSpec)
 
+  /** Export `page` as `format` under the suggested file name `name`. */
+  case ExportFigure(format: ExportFormat, page: PageVM, name: String)
+
 /** One read the composer asked for, so it is asked once. */
 enum ComposerRead derives CanEqual:
   case Summary(run: RunId)
@@ -141,6 +154,19 @@ final case class AppearanceVM(
     includeImages: (String, Boolean)
 ) derives CanEqual
 
+/** The figure formats export writes (Figures board: "Figure format SVG PDF PNG"). */
+enum ExportFormat(val label: String, val extension: String) derives CanEqual:
+  case Svg extends ExportFormat("SVG", "svg")
+  case Pdf extends ExportFormat("PDF", "pdf")
+  case Png extends ExportFormat("PNG", "png")
+
+/** The inspector's Export section (S9.3). */
+final case class ExportVM(
+    formats: Vector[(ExportFormat, String, Boolean)],
+    action: String,
+    status: Option[String]
+) derives CanEqual
+
 /** The page of the shown figure. */
 final case class PageVM(
     figure: FigureId,
@@ -156,7 +182,9 @@ final case class PageVM(
     caption: String,
     stamp: String,
     textPt: Int,
-    appearance: AppearanceVM
+    appearance: AppearanceVM,
+    greyscale: Boolean,
+    exporting: ExportVM
 ) derives CanEqual
 
 /** Everything the Figures perspective shows. */
@@ -186,7 +214,10 @@ final case class FigureComposer private (
     displays: Map[DatasetRevision, Either[String, DisplaySource]],
     asked: Set[ComposerRead],
     problem: Option[String],
-    appearance: Map[FigureId, FigureAppearance]
+    appearance: Map[FigureId, FigureAppearance],
+    greyscale: Boolean,
+    format: ExportFormat,
+    exported: Option[String]
 ) derives CanEqual:
   def appearanceOf(figure: FigureId): FigureAppearance =
     appearance.getOrElse(figure, FigureAppearance.default)
@@ -206,7 +237,10 @@ object FigureComposer:
     Map.empty,
     Set.empty,
     None,
-    Map.empty
+    Map.empty,
+    false,
+    ExportFormat.Svg,
+    None
   )
 
   private val none: Vector[ComposerEffect] = Vector.empty
@@ -348,6 +382,22 @@ object FigureComposer:
         )
       case SetTextSize(size)          => (restyle(c, model)(_.copy(text = size)), none)
       case SetParticipantLines(lines) => (restyle(c, model)(_.copy(lines = lines)), none)
+      case SetGreyscale(on)           => (c.copy(greyscale = on), none)
+      case ChooseFormat(f)            => (c.copy(format = f, exported = None), none)
+      case Exported(answer)           =>
+        (
+          c.copy(exported =
+            Some(answer.fold(ComposerText.exportFailed, ComposerText.exportedTo))
+          ),
+          none
+        )
+      case Export =>
+        view(c, model).page.fold((c, none)) { p =>
+          (
+            c.copy(exported = None),
+            Vector(ComposerEffect.ExportFigure(c.format, p, ComposerText.fileName(p, c.format)))
+          )
+        }
       case IncludeImages(include) => (restyle(c, model)(_.copy(includeImages = include)), none)
       case SetPanelWidth(panel, mm) =>
         val bounded = mm.max(FigureAppearance.MinPanelMm).min(c.width.mm)
@@ -486,7 +536,13 @@ object FigureComposer:
       FigureCaption.figure(s),
       FigureCaption.stamp(s),
       look.text.pt,
-      appearance
+      appearance,
+      c.greyscale,
+      ExportVM(
+        ExportFormat.values.toVector.map(f => (f, f.label, f == c.format)),
+        "Export figure…",
+        c.exported
+      )
     )
 
   private def summaryOf(c: FigureComposer, run: RunId) =
@@ -565,6 +621,13 @@ object FigureComposer:
 
 /** The composer's English text. */
 object ComposerText:
+  /** "figure-1.svg". */
+  def fileName(page: PageVM, format: ExportFormat): String =
+    s"figure-${page.figure.number}.${format.extension}"
+
+  def exportedTo(where: String): String = s"Exported to $where."
+  def exportFailed(why: String): String = s"The figure was not exported: $why"
+
   val NoRun: String       = "A new figure needs a completed, current run; there is none."
   val NoReporting: String = "A new figure needs a reporting spec; the project has none."
 
