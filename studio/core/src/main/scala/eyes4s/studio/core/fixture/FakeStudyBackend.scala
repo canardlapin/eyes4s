@@ -212,19 +212,24 @@ final class FakeStudyBackend[F[_]] private[fixture] (
     }
 
   /** The admission of `d`, verified for `content`: refused when this backend
-    * holds other content for `d` ([[holdContent]]). The fake has no stored
-    * revisions, so it holds content only once told; the real backend reads
-    * its own (S3.7).
+    * holds other content for `d`. It holds each story revision's own content
+    * from the start, and what [[holdContent]] gives it since (a test standing
+    * for a project saved with a re-mapped revision); the real backend reads
+    * its own stored revisions (S3.7). Content it holds nothing for is refused
+    * too: nothing is verified by default.
     */
   def verify(
       d: DatasetRevision,
       content: CanonicalDigest[DatasetRevisionSpec]
   ): F[Either[BackendError, AdmissionSummary]] =
     state.get.flatMap(s =>
-      s.contents.get(d).filter(_ != content) match
-        case Some(held) =>
+      s.contents.get(d) match
+        // An unknown dataset is refused as admission refuses it.
+        case None if !s.datasets.contains(d) => admission(d)
+        case None => Concurrent[F].pure(Left(BackendError.ContentNotHeld(d, content)))
+        case Some(held) if held != content =>
           Concurrent[F].pure(Left(BackendError.ContentMismatch(d, content, held)))
-        case None => admission(d)
+        case Some(_) => admission(d)
     )
 
   def admission(d: DatasetRevision): F[Either[BackendError, AdmissionSummary]] =
@@ -782,6 +787,12 @@ final class FakeStudyBackend[F[_]] private[fixture] (
   ): F[Unit] =
     state.update(s => s.copy(contents = s.contents.updated(dataset, content)))
 
+  /** Hold no content for `dataset` from now on, as a backend whose stored
+    * revision is gone: [[verify]] then refuses with ContentNotHeld.
+    */
+  def forgetContent(dataset: DatasetRevision): F[Unit] =
+    state.update(s => s.copy(contents = s.contents - dataset))
+
   /** Finish a job with diagnostics; its run becomes `Failed`. */
   def fail(
       id: JobId,
@@ -1104,9 +1115,20 @@ object FakeStudyBackend:
   def create[F[_]](moment: StoryMoment)(using F: Concurrent[F]): F[FakeStudyBackend[F]] =
     def defect[A](message: String): F[A] =
       F.raiseError(new IllegalStateException(s"FakeStudyBackend at $moment: $message"))
+    // It holds each story revision's own content (S5.6): a verification of
+    // other content is refused, as a backend that stored the revisions would.
+    val held = StorySeed
+      .document(moment)
+      .flatMap(
+        _.datasets.traverse(s =>
+          DatasetRevisionSpec.contentDigest(s).left.map(_.message).map(s.id -> _)
+        )
+      )
+      .map(_.toMap)
     for
-      study <- MockStudy.load.fold(defect, F.pure)
-      state <- SignallingRef.of[F, State](initial(moment))
+      study    <- MockStudy.load.fold(defect, F.pure)
+      contents <- held.fold(defect, F.pure)
+      state    <- SignallingRef.of[F, State](initial(moment).copy(contents = contents))
       backend = new FakeStudyBackend[F](study, moment, state)
       _ <- backend.previewFacts.fold(e => defect(e.message), _ => F.unit)
       _ <- moment match

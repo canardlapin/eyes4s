@@ -59,14 +59,19 @@ To change the plan, edit `studio_plan.py`, rerun `render`, and update the matchi
 
 ## Backend protocol versions
 
-Protocol 1.11 (S5.6 follow-up) adds `Verify(dataset, content)`, additive on 1.10: the
+Protocol 1.11 (S5.6 follow-up) adds `Verify(dataset, content)`, `ContentMismatch` and
+`ContentNotHeld`, additive on 1.10: the
 admission request that carries the CR3 digest of what the revision asks eyes4s to admit
 (`DatasetRevisionSpec.contentDigest`). It is answered by the admission summary, or refused
 with `ContentMismatch(dataset, requested, held)` when the backend holds other content for
-the revision, so the app never admits on an answer for content eyes4s did not see.
-`admission(dataset)` stays the counts-only read of the ledger and geometry views. The fake
-holds content only when told (`holdContent`); the real backend reads its own (S3.7). The
-other 1.10 pins are unchanged; the envelope version is now 1.11.
+the revision, or with `ContentNotHeld(dataset, requested)` when it holds none: a backend
+refuses any content it does not hold, so nothing is verified by default and the app never
+admits on an answer for content eyes4s did not see. `admission(dataset)` stays the
+counts-only read of the ledger and geometry views. The fake holds each story revision's
+own content from the start, and what a test gives it (`holdContent`, `forgetContent`); the
+real backend reads its own stored revisions (S3.7). Renumbering this minor at landing
+changes only `ProtocolVersion.Current` and the two re-recorded envelope pins. The other 1.10
+pins are unchanged; the envelope version is now 1.11.
 
 Protocol 1.10 (UI-G G3) adds the `TrialFailed` map placement, additive on 1.9: a
 fixation in the window of a trial the study fails (its off-window policy is

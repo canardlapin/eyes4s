@@ -214,7 +214,8 @@ object ProtocolSamples:
       SourceRecordsError.RangeInvalid(0, 501, SourceRecordPage.Limit)
     ),
     BackendError.UnknownScale(run, 4, Vector("0.5°", "1°", "2°", "4°")),
-    BackendError.ContentMismatch(DatasetRevision(3), content("ab"), content("cd"))
+    BackendError.ContentMismatch(DatasetRevision(3), content("ab"), content("cd")),
+    BackendError.ContentNotHeld(DatasetRevision(9), content("ab"))
   )
 
   /** A dataset revision's content digest: `pair` repeated to 64 digits. */

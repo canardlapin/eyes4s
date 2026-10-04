@@ -31,6 +31,8 @@ object ProtocolPins:
       """{"ContentMismatch":{"dataset":3,"requested":"abababababababababababababababababababababababababababababababab","held":"cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"}}""",
     "request.Verify" ->
       """{"Verify":{"dataset":3,"content":"abababababababababababababababababababababababababababababababab"}}""",
+    "error.ContentNotHeld" ->
+      """{"ContentNotHeld":{"dataset":9,"requested":"abababababababababababababababababababababababababababababababab"}}""",
     "request.SourceRecordsOf" ->
       """{"SourceRecordsOf":{"revision":4,"from":7214,"count":60}}""",
     "response.SourceRecordsOf" ->

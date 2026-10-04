@@ -76,6 +76,12 @@ class ImportAdmissionSuite extends munit.FunSuite:
               .map(e => Exception(e.message))
               .toTry
           )
+          requested = verifying.model.document.dataset(r3).map(_.decision) match
+            case Some(AdmissionDecision.Verifying(c)) => c
+            case other                                => fail(s"r3 is not verifying: $other")
+          // The backend holds the re-mapped r3 as the saved project stores it
+          // (protocol 1.9: it verifies only content it holds).
+          _       <- session.holdContent(r3, requested)
           settled <- StudioDriver.settle(verifying, session)
         yield
           assertEquals(

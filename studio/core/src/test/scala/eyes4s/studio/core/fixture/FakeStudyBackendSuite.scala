@@ -521,28 +521,37 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
   }
 
   test(
-    "verify answers the admission for the content asked; held content refuses other content (S5.6)"
+    "verify answers only for content the fake holds: the story's own, or what it is told (S5.6)"
   ) {
     import eyes4s.studio.core.backend.ProtocolSamples.content
-    val r3 = DatasetRevision(3)
+    val r3    = DatasetRevision(3)
+    val story = StoryMoments.t2
+      .flatMap(_.dataset(r3).toRight("no r3"))
+      .flatMap(
+        eyes4s.studio.core.document.DatasetRevisionSpec.contentDigest(_).left.map(_.message)
+      )
+      .fold(e => fail(e), identity)
     for
       fake    <- FakeStudyBackend.create[IO](StoryMoment.T2)
       counts  <- ok(fake.admission(r3))
-      unheld  <- ok(fake.verify(r3, content("ab")))
-      _       <- fake.holdContent(r3, content("ab"))
-      same    <- ok(fake.verify(r3, content("ab")))
+      own     <- ok(fake.verify(r3, story))
       other   <- fake.verify(r3, content("cd"))
+      _       <- fake.holdContent(r3, content("cd"))
+      told    <- ok(fake.verify(r3, content("cd")))
+      _       <- fake.forgetContent(r3)
+      unheld  <- fake.verify(r3, story)
       unknown <- fake.verify(DatasetRevision(9999), content("ab"))
     yield
-      // With nothing held the fake cannot disagree; the counts are admission's.
-      assertEquals(unheld, counts)
-      assertEquals(same, counts)
-      assertEquals(other, Left(BackendError.ContentMismatch(r3, content("cd"), content("ab"))))
+      // The story revision's own content is held from the start.
+      assertEquals((own, told), (counts, counts))
+      assertEquals(other, Left(BackendError.ContentMismatch(r3, content("cd"), story)))
       assertEquals(
         other.left.map(_.message),
         Left(
-          s"Dataset r3 holds content ${content("ab").display}; the request verifies ${content("cd").display}."
+          s"Dataset r3 holds content ${story.display}; the request verifies ${content("cd").display}."
         )
       )
+      // Nothing is verified by default.
+      assertEquals(unheld, Left(BackendError.ContentNotHeld(r3, story)))
       assert(unknown.left.exists(_.isInstanceOf[BackendError.UnknownDataset]), unknown)
   }

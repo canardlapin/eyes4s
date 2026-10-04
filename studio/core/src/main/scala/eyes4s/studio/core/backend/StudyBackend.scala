@@ -96,6 +96,11 @@ enum BackendError derives CanEqual, Codec.AsObject:
       held: CanonicalDigest[DatasetRevisionSpec]
   )
 
+  /** The backend holds no content for `dataset` to verify `requested`
+    * against (protocol 1.11, S5.6): nothing is verified by default.
+    */
+  case ContentNotHeld(dataset: DatasetRevision, requested: CanonicalDigest[DatasetRevisionSpec])
+
   def code: String = this match
     case UnknownDataset(_, _)       => "studio-backend.unknown-dataset"
     case UnknownRevision(_, _)      => "studio-backend.unknown-revision"
@@ -118,8 +123,11 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case DuplicateSubscription(_)   => "studio-backend.duplicate-subscription"
     case InventoryRefused(_, _)     => "studio-backend.inventory-refused"
     case ContentMismatch(_, _, _)   => "studio-backend.content-mismatch"
+    case ContentNotHeld(_, _)       => "studio-backend.content-not-held"
 
   def message: String = this match
+    case ContentNotHeld(d, requested) =>
+      s"Dataset ${d.label} has no stored content to verify ${requested.display} against."
     case ContentMismatch(d, requested, held) =>
       s"Dataset ${d.label} holds content ${held.display}; the request verifies ${requested.display}."
     case UnknownDataset(d, known) =>
@@ -179,6 +187,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
       case SourceRecordsRefused(r, _) => Vector(DiagnosticLocus.Revision(r))
       case UnknownScale(r, i, _) => Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Scale(i))
       case ContentMismatch(d, _, _)   => Vector(DiagnosticLocus.Dataset(d))
+      case ContentNotHeld(d, _)       => Vector(DiagnosticLocus.Dataset(d))
     StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
 
 /** Everything Eyes Studio asks of eyes4s (DESIGN_SPEC section 13, S3.0): the
@@ -201,8 +210,9 @@ trait StudyBackend[F[_]]:
   /** `dataset`'s admission summary, verified for `content` (protocol 1.11,
     * S5.6): the CR3 digest of the revision the client asks eyes4s to admit
     * ([[eyes4s.studio.core.document.DatasetRevisionSpec.contentDigest]]). A
-    * backend that holds other content for `dataset` refuses with
-    * [[BackendError.ContentMismatch]], so an answer is never for content the
+    * backend refuses content it does not hold: other content for `dataset`
+    * with [[BackendError.ContentMismatch]], none with
+    * [[BackendError.ContentNotHeld]], so an answer is never for content the
     * client did not ask about. [[admission]] stays the counts-only read.
     */
   def verify(
