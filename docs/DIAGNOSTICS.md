@@ -1506,9 +1506,13 @@ fails after rewriting, so review the change and run it again.
 | `methods-fact.negative-count` | `NegativeCount` | `slot`, `value` |
 | `methods-fact.empty-range` | `EmptyRange` | `slot`, `min`, `max` |
 | `methods-fact.blank-label` | `BlankLabel` | `slot` |
-| `methods-fact.not-fewer` | `NotFewer` | `slot`, `controls`, `maximum` |
+| `methods-fact.invalid-share` | `InvalidShare` | `slot`, `fraction` |
+| `methods-fact.no-counts` | `NoCounts` | `slot` |
+| `methods-fact.repeated-controls` | `RepeatedControls` | `slot`, `controls` |
+| `methods-fact.not-fewer` | `NotFewer` | `slot`, `controls` |
 | `methods-fact.duplicate` | `Duplicate` | `slot` |
-| `methods-fact.other-cause` | `OtherCause` | `slot`, `slug` |
+| `methods-fact.invalid-code` | `InvalidCode` | `value` |
+| `methods-fact.inconsistent` | `Inconsistent` | `total`, `value`, `parts`, `sum` |
 
 ### `codec` — `CodecError`
 

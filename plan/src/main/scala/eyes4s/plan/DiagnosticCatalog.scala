@@ -950,9 +950,13 @@ object DiagnosticCatalog:
     "NegativeCount",
     "EmptyRange",
     "BlankLabel",
+    "InvalidShare",
+    "NoCounts",
+    "RepeatedControls",
     "NotFewer",
     "Duplicate",
-    "OtherCause"
+    "InvalidCode",
+    "Inconsistent"
   )
 
   /** Families whose error type no longer exists. Their codes stay issued, in

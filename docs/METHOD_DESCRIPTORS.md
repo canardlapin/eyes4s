@@ -162,29 +162,45 @@ scale, metric, policy), so a host styles and localises them without parsing
 English.
 
 `StudyText.methods(plan, facts)` also states the facts a methods text cites
-beyond the plan (CR6d): the admission (dataset revision, fixation records,
-admitted, quarantined by cause, absent, records outside the window and the
-screen), the design (requested, eligible, unmatched and not-admitted queries,
-controls per query) and the reporting (the reporting specification, group size
-range, paired n, participant-group cells below the minimum). Each is a
-`Token.Fact` carrying the `Fact` itself: its `FactSlot` and its one typed
-`FactSource` (a ledger count, a design count, report cells or a contrast key,
-the reporting specification, a plan field or a host fact), so a host links
-every number to what it counts. A slot's `slotId` (`eligibleQueries`,
-`quarantineCause.overlap`) is its stable identity for linking and diffing;
-`FactSlot.fromSlotId` reads one back. A `Fact` takes the kind of `FactValue`
-its slot states (`Fact.of` refuses another, a negative count, an empty range,
-a blank label or an other cause under a named cause's slug, with the
-`methods-fact` diagnostics), and `MethodsFacts` holds one fact per slot id.
-Every fact given is stated, even without its companions (an inventory count
-with no admitted count); a fact not given is not stated, and `methods(plan)`
-states the plan alone. Causes carry
-the boards' labels (`AdmissionCause`: overlap, no-fixations,
-duplicate-ordinals, rejected-records, absent (no fixation records)). The text
-also states the method-determined words: what M, B and D are, that D measures
-spatial correspondence rather than sequential replay, and, under the
-require-all failure policy, that a query's contrast needed all its pairs. The
-confound sentence is the host's.
+beyond the plan (CR6d):
+
+- the admission: dataset revision, source and tallied fixation records,
+  inventory, admitted, quarantined by cause (the ledger's quarantine codes),
+  no-fixation and absent trials, records and trials outside the window with the
+  outside-window share of fixation duration, records and trials outside the
+  screen, and the off-screen policy;
+- the design: requested, eligible, contributing, failed (by failure code),
+  unmatched and not-admitted queries, and the controls of the compared queries
+  (a query count for every control count, with an optional `TrialLoss`);
+- the reporting: the reporting specification, group size range, n per group,
+  paired n, and the participant-group cells below the minimum or with the
+  fewest queries.
+
+Every number and name is its own `Token.Fact` with its `FactSlot`, the
+`FactPart` it shows (the value, the slot's name, a control or query count, a
+loss, a cell's participant or group), its one `FactSource` (a ledger count, a
+prepared design's or a run's query total, report cells with their scale and
+participant, a contrast key, the reporting specification, a plan field or a
+host fact) and its typed `FactValue`; `shown` is the default English, so a
+host can localise numbers without parsing them. Each breakdown cell carries
+its own source. A slot's `slotId` (`eligibleQueries`,
+`quarantineCause.overlap`, `groupN.Remembered`) is its stable identity for
+linking and diffing, and `FactSlot.fromSlotId` reads one back.
+
+`Fact.of` refuses a value of another kind, a negative count, an empty range, a
+share outside [0, 1], a blank label or level, and a controls fact with no
+counts, a repeated control count or a loss at the most controls.
+`MethodsFacts.of` refuses the first slot given twice, in input order, and
+totals that disagree with their parts when all are given: the inventory with
+the admitted, quarantined, no-fixation and absent trials, the quarantined
+trials with their causes, and the failed queries with their failure codes.
+These are the `methods-fact` diagnostics. Every fact given is stated, even
+without its companions; a fact not given, such as an undefined share, is not
+stated, and `methods(plan)` states the plan alone. The text also states the
+method-determined words: what M, B and D are (M is the mean of the matched
+scores under `MeanOfAll`), that D measures spatial correspondence rather than
+sequential replay, and, under the require-all failure policy, that a query's
+contrast needed all its pairs. The confound sentence is the host's.
 
 A host holding an erased `FieldError[Any]` from `ParameterSet.validate` projects
 it with `Diagnose.reportedFormField`.
