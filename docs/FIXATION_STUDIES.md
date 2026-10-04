@@ -275,7 +275,18 @@ of occurrence n, and `Select(First | Last | At(n))` keeps one occurrence of each
 The control pool applies the same selection, so each other item contributes one reference per
 participant (`ControlReferences.SameSelection`); `ControlReferences.AllOccurrences` uses every
 occurrence as a control. A focal trial without a matched reference is reported as no match
-(`UnmatchedFocalPolicy.ReportNoMatch`) or refuses the study (`Refuse`).
+(`UnmatchedFocalPolicy.ReportNoMatch`) or refuses the study (`Refuse`). It is not eligible: it
+has no control pairs, so neither design scores it, and `StudyCounts.eligibleQueries` counts only
+focal trials with a match.
+
+Why a focal trial has no match is judged against the trial inventory, the design as declared
+before admission. `PreparedStudy.unmatchedReasons(inventory)`, and `StudyPlan.preflight` given
+`inventory = Some(ledger)`, give each unmatched focal trial an `UnmatchedKind`:
+`NoReferenceInDesign` when the inventory declares no reference-phase trial with its participant and
+item (and occurrence under `SameOccurrence`), as for a recognition lure or a novel probe;
+`ReferenceNotAdmitted` with the declared trials and their dispositions when admission dropped them;
+or `ReferenceNotPairable` when one was admitted but the pairing could not use it. Without an
+inventory the kind is `Undetermined`. `UnmatchedReasons.byDesign` is the by-design count.
 
 `PreparedStudy.matchedCardinality` is computed once from the prepared matched schedule: focal
 trials with several matched references and their references, reference groups the control pool

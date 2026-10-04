@@ -3,6 +3,7 @@
     "absentTrials" : 6,
     "admittedRecords" : 11311,
     "admittedTrials" : 937,
+    "byDesignQueries" : 0,
     "candidatePairsPerScale" : 219486,
     "contributingQueries" : 454,
     "controlPairsPerScale" : 8512,
@@ -19,6 +20,8 @@
     "matchedPairsPerScale" : 457,
     "multipleMatchQueries" : 0,
     "noMatchQueries" : 9,
+    "noMatchReferenceNotAdmitted" : 9,
+    "noMatchReferenceNotPairable" : 0,
     "pairRowsAllScales" : 35876,
     "pairRowsPerScale" : 8969,
     "quarantinedByCause" : {
@@ -133,6 +136,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -171,6 +175,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -209,6 +214,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -247,6 +253,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -285,6 +292,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -323,6 +331,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -361,6 +370,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -399,6 +409,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -437,6 +448,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -475,6 +487,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -513,6 +526,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -551,6 +565,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -589,6 +604,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -627,6 +643,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -665,6 +682,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -703,6 +721,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -741,6 +760,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -779,6 +799,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -817,6 +838,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -855,6 +877,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -893,6 +916,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -931,6 +955,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -969,6 +994,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -1007,6 +1033,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -1045,6 +1072,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -1083,6 +1111,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -1121,6 +1150,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -1159,6 +1189,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -1197,6 +1228,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -1235,6 +1267,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -1273,6 +1306,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -1311,6 +1345,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -1349,6 +1384,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -1387,6 +1423,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -1425,6 +1462,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -1463,6 +1501,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -1501,6 +1540,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -1539,6 +1579,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -1577,6 +1618,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -1615,6 +1657,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -1653,6 +1696,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -1691,6 +1735,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -1729,6 +1774,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -1767,6 +1813,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -1805,6 +1852,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -1843,6 +1891,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -1881,6 +1930,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -1919,6 +1969,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -1956,6 +2007,7 @@
       "item" : "dog-217",
       "matched" : [
       ],
+      "noMatchKind" : "reference-not-admitted",
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -1994,6 +2046,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -2032,6 +2085,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -2070,6 +2124,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -2108,6 +2163,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -2146,6 +2202,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -2184,6 +2241,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -2222,6 +2280,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -2260,6 +2319,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -2298,6 +2358,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -2336,6 +2397,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -2374,6 +2436,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -2412,6 +2475,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -2450,6 +2514,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -2488,6 +2553,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -2526,6 +2592,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -2564,6 +2631,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -2602,6 +2670,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -2640,6 +2709,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -2678,6 +2748,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -2716,6 +2787,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -2754,6 +2826,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -2792,6 +2865,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -2830,6 +2904,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -2868,6 +2943,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -2906,6 +2982,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -2944,6 +3021,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -2982,6 +3060,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -3020,6 +3099,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -3058,6 +3138,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -3096,6 +3177,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -3134,6 +3216,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -3172,6 +3255,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 11,
@@ -3210,6 +3294,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -3248,6 +3333,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -3286,6 +3372,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -3324,6 +3411,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -3362,6 +3450,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -3400,6 +3489,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -3438,6 +3528,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 11,
@@ -3476,6 +3567,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -3514,6 +3606,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -3552,6 +3645,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -3590,6 +3684,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -3628,6 +3723,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 11,
@@ -3666,6 +3762,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -3704,6 +3801,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -3742,6 +3840,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -3780,6 +3879,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -3818,6 +3918,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -3856,6 +3957,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -3894,6 +3996,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -3932,6 +4035,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -3970,6 +4074,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -4008,6 +4113,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -4046,6 +4152,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -4084,6 +4191,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -4122,6 +4230,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -4160,6 +4269,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -4198,6 +4308,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -4236,6 +4347,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -4274,6 +4386,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -4312,6 +4425,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -4350,6 +4464,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -4388,6 +4503,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -4426,6 +4542,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -4464,6 +4581,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -4502,6 +4620,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -4540,6 +4659,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -4578,6 +4698,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -4616,6 +4737,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -4654,6 +4776,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -4692,6 +4815,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -4730,6 +4854,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -4768,6 +4893,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -4806,6 +4932,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -4844,6 +4971,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -4882,6 +5010,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -4920,6 +5049,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -4958,6 +5088,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -4996,6 +5127,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -5034,6 +5166,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -5072,6 +5205,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -5110,6 +5244,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -5147,6 +5282,7 @@
       "item" : "garden-119",
       "matched" : [
       ],
+      "noMatchKind" : "reference-not-admitted",
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -5185,6 +5321,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -5223,6 +5360,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -5261,6 +5399,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -5299,6 +5438,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -5337,6 +5477,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -5375,6 +5516,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -5413,6 +5555,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -5451,6 +5594,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -5489,6 +5633,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -5527,6 +5672,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -5565,6 +5711,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -5603,6 +5750,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -5640,6 +5788,7 @@
       "item" : "bridge-230",
       "matched" : [
       ],
+      "noMatchKind" : "reference-not-admitted",
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -5678,6 +5827,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -5716,6 +5866,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -5754,6 +5905,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -5792,6 +5944,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -5830,6 +5983,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -5868,6 +6022,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -5906,6 +6061,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -5944,6 +6100,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -5982,6 +6139,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -6020,6 +6178,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -6058,6 +6217,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -6096,6 +6256,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -6134,6 +6295,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -6172,6 +6334,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -6210,6 +6373,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -6248,6 +6412,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -6286,6 +6451,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -6324,6 +6490,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -6362,6 +6529,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -6400,6 +6568,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -6438,6 +6607,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -6476,6 +6646,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -6514,6 +6685,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -6552,6 +6724,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -6590,6 +6763,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -6628,6 +6802,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -6666,6 +6841,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -6704,6 +6880,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -6742,6 +6919,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -6780,6 +6958,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -6818,6 +6997,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -6856,6 +7036,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -6894,6 +7075,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -6932,6 +7114,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -6970,6 +7153,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -7008,6 +7192,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -7046,6 +7231,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -7084,6 +7270,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -7122,6 +7309,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -7160,6 +7348,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -7197,6 +7386,7 @@
       "item" : "office-144",
       "matched" : [
       ],
+      "noMatchKind" : "reference-not-admitted",
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -7235,6 +7425,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -7273,6 +7464,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -7311,6 +7503,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -7349,6 +7542,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -7387,6 +7581,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -7425,6 +7620,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -7463,6 +7659,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -7501,6 +7698,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -7539,6 +7737,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -7577,6 +7776,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -7615,6 +7815,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -7653,6 +7854,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -7691,6 +7893,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -7728,6 +7931,7 @@
       "item" : "tower-292",
       "matched" : [
       ],
+      "noMatchKind" : "reference-not-admitted",
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -7766,6 +7970,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -7804,6 +8009,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -7842,6 +8048,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -7880,6 +8087,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -7918,6 +8126,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -7956,6 +8165,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -7994,6 +8204,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -8032,6 +8243,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -8070,6 +8282,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -8108,6 +8321,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -8146,6 +8360,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -8184,6 +8399,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -8222,6 +8438,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -8260,6 +8477,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -8298,6 +8516,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -8336,6 +8555,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -8374,6 +8594,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -8412,6 +8633,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -8450,6 +8672,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -8488,6 +8711,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -8526,6 +8750,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -8564,6 +8789,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -8602,6 +8828,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -8640,6 +8867,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -8678,6 +8906,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -8716,6 +8945,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -8754,6 +8984,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -8792,6 +9023,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -8830,6 +9062,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -8868,6 +9101,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -8906,6 +9140,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -8944,6 +9179,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -8982,6 +9218,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -9020,6 +9257,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -9058,6 +9296,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -9096,6 +9335,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -9134,6 +9374,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -9172,6 +9413,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -9210,6 +9452,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -9248,6 +9491,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -9286,6 +9530,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -9324,6 +9569,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -9362,6 +9608,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -9400,6 +9647,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -9438,6 +9686,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -9476,6 +9725,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -9514,6 +9764,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -9552,6 +9803,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -9590,6 +9842,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -9628,6 +9881,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -9666,6 +9920,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -9704,6 +9959,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -9742,6 +9998,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -9780,6 +10037,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -9818,6 +10076,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -9855,6 +10114,7 @@
       "item" : "church-428",
       "matched" : [
       ],
+      "noMatchKind" : "reference-not-admitted",
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -9893,6 +10153,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -9931,6 +10192,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -9969,6 +10231,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -10007,6 +10270,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -10045,6 +10309,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -10083,6 +10348,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -10121,6 +10387,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -10159,6 +10426,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -10197,6 +10465,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -10235,6 +10504,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -10273,6 +10543,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -10311,6 +10582,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -10349,6 +10621,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -10387,6 +10660,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -10425,6 +10699,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -10463,6 +10738,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -10501,6 +10777,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -10539,6 +10816,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -10577,6 +10855,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -10615,6 +10894,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -10653,6 +10933,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -10691,6 +10972,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -10729,6 +11011,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -10767,6 +11050,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -10805,6 +11089,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -10843,6 +11128,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -10881,6 +11167,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -10919,6 +11206,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -10956,6 +11244,7 @@
       "item" : "market-231",
       "matched" : [
       ],
+      "noMatchKind" : "reference-not-admitted",
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -10994,6 +11283,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -11032,6 +11322,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -11070,6 +11361,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -11108,6 +11400,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -11146,6 +11439,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -11184,6 +11478,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -11222,6 +11517,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -11260,6 +11556,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -11298,6 +11595,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -11336,6 +11634,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -11374,6 +11673,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -11412,6 +11712,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -11450,6 +11751,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -11488,6 +11790,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -11526,6 +11829,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -11564,6 +11868,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -11602,6 +11907,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -11640,6 +11946,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -11678,6 +11985,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -11716,6 +12024,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -11754,6 +12063,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -11792,6 +12102,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -11830,6 +12141,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -11868,6 +12180,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -11906,6 +12219,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -11944,6 +12258,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -11982,6 +12297,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12020,6 +12336,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -12058,6 +12375,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12096,6 +12414,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12134,6 +12453,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12172,6 +12492,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12210,6 +12531,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -12248,6 +12570,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12286,6 +12609,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12324,6 +12648,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12362,6 +12687,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12400,6 +12726,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12438,6 +12765,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12476,6 +12804,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -12514,6 +12843,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12552,6 +12882,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12590,6 +12921,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -12628,6 +12960,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12666,6 +12999,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -12704,6 +13038,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12742,6 +13077,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12780,6 +13116,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12818,6 +13155,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12856,6 +13194,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -12894,6 +13233,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -12932,6 +13272,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -12970,6 +13311,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13008,6 +13350,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13046,6 +13389,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13084,6 +13428,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13122,6 +13467,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13160,6 +13506,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13197,6 +13544,7 @@
       "item" : "field-478",
       "matched" : [
       ],
+      "noMatchKind" : "reference-not-admitted",
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -13235,6 +13583,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13273,6 +13622,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13311,6 +13661,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13349,6 +13700,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13387,6 +13739,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -13425,6 +13778,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13463,6 +13817,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13501,6 +13856,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -13539,6 +13895,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -13577,6 +13934,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -13615,6 +13973,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13653,6 +14012,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -13691,6 +14051,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13729,6 +14090,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13767,6 +14129,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13805,6 +14168,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13843,6 +14207,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13881,6 +14246,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13919,6 +14285,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13957,6 +14324,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -13995,6 +14363,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -14033,6 +14402,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -14071,6 +14441,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -14109,6 +14480,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -14147,6 +14519,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -14185,6 +14558,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -14223,6 +14597,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -14261,6 +14636,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -14299,6 +14675,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -14337,6 +14714,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -14375,6 +14753,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -14413,6 +14792,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -14451,6 +14831,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -14489,6 +14870,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -14527,6 +14909,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -14565,6 +14948,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -14603,6 +14987,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -14641,6 +15026,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -14679,6 +15065,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -14717,6 +15104,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -14755,6 +15143,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -14793,6 +15182,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -14831,6 +15221,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -14869,6 +15260,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -14907,6 +15299,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -14945,6 +15338,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -14983,6 +15377,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -15021,6 +15416,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -15058,6 +15454,7 @@
       "item" : "desert-355",
       "matched" : [
       ],
+      "noMatchKind" : "reference-not-admitted",
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -15096,6 +15493,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -15134,6 +15532,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -15172,6 +15571,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -15210,6 +15610,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -15248,6 +15649,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -15286,6 +15688,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -15324,6 +15727,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -15362,6 +15766,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -15400,6 +15805,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -15438,6 +15844,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -15476,6 +15883,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -15514,6 +15922,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -15552,6 +15961,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -15590,6 +16000,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -15628,6 +16039,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -15666,6 +16078,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -15704,6 +16117,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -15742,6 +16156,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -15780,6 +16195,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -15818,6 +16234,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -15856,6 +16273,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -15894,6 +16312,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -15932,6 +16351,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -15970,6 +16390,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -16008,6 +16429,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -16046,6 +16468,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -16084,6 +16507,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -16122,6 +16546,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -16160,6 +16585,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -16198,6 +16624,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -16236,6 +16663,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -16274,6 +16702,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -16312,6 +16741,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -16350,6 +16780,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -16388,6 +16819,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -16426,6 +16858,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -16464,6 +16897,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -16502,6 +16936,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -16540,6 +16975,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -16578,6 +17014,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -16616,6 +17053,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -16654,6 +17092,7 @@
       "matched" : [
         "enc_10"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -16692,6 +17131,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -16730,6 +17170,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -16768,6 +17209,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -16806,6 +17248,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -16844,6 +17287,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -16882,6 +17326,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -16920,6 +17365,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -16958,6 +17404,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -16996,6 +17443,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -17034,6 +17482,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -17072,6 +17521,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -17110,6 +17560,7 @@
       "matched" : [
         "enc_01"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -17148,6 +17599,7 @@
       "matched" : [
         "enc_08"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -17186,6 +17638,7 @@
       "matched" : [
         "enc_15"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 2,
@@ -17224,6 +17677,7 @@
       "matched" : [
         "enc_02"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -17262,6 +17716,7 @@
       "matched" : [
         "enc_09"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -17300,6 +17755,7 @@
       "matched" : [
         "enc_16"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -17338,6 +17794,7 @@
       "matched" : [
         "enc_03"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -17376,6 +17833,7 @@
       "matched" : [
         "enc_17"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -17414,6 +17872,7 @@
       "matched" : [
         "enc_04"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -17452,6 +17911,7 @@
       "matched" : [
         "enc_11"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -17490,6 +17950,7 @@
       "matched" : [
         "enc_18"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -17528,6 +17989,7 @@
       "matched" : [
         "enc_05"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -17566,6 +18028,7 @@
       "matched" : [
         "enc_12"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -17604,6 +18067,7 @@
       "matched" : [
         "enc_19"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -17642,6 +18106,7 @@
       "matched" : [
         "enc_06"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -17680,6 +18145,7 @@
       "matched" : [
         "enc_13"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -17718,6 +18184,7 @@
       "matched" : [
         "enc_20"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 1,
@@ -17756,6 +18223,7 @@
       "matched" : [
         "enc_07"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,
@@ -17794,6 +18262,7 @@
       "matched" : [
         "enc_14"
       ],
+      "noMatchKind" : null,
       "occurrence" : 1,
       "outsideWindow" : {
         "fixations" : 0,

@@ -104,6 +104,21 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
       matched
     )
 
+  /** Why each focal trial without a matched reference has none, judged
+    * against `inventory`, the trial inventory the input was admitted from
+    * (bead S0.7b): by design, its reference not admitted, or not pairable.
+    */
+  def unmatchedReasons(inventory: InventoryLedger): Either[PlanError, UnmatchedReasons[K]] =
+    matchedCardinality.map(c => unmatchedReasons(c.unmatched, Some(inventory)))
+
+  private[plan] def unmatchedReasons(
+      unmatched: Vector[K],
+      inventory: Option[InventoryLedger]
+  ): UnmatchedReasons[K] =
+    inventory.fold(UnmatchedReasons.undetermined(unmatched))(
+      UnmatchedReasons.of(plan.layout, plan.pairing, plan.referencePhase, unmatched, _)
+    )
+
   /** Begin the exact-count traversal without performing any pair visits. */
   def countWork: Either[PlanError, CountCursor[K]] = CountCursor.of(plan, this)
 

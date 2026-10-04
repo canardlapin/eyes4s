@@ -173,7 +173,7 @@ class StudyCountsSuite extends munit.FunSuite:
     }
     assertEquals(
       plan.preflight(Some(work.input)).findings,
-      Vector(StudyFinding.UnmatchedFocal[StudyKey, Px](ks(1)))
+      Vector(StudyFinding.UnmatchedFocal[StudyKey, Px](ks(1), UnmatchedKind.Undetermined))
     )
   }
 

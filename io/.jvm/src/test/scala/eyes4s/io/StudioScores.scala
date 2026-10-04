@@ -173,6 +173,9 @@ object StudioScores:
     val work        = get("prepare")(plan.prepare(input))
     val preview     = get("preview")(work.preview)
     val cardinality = get("cardinality")(work.matchedCardinality)
+    // Why each query without a match has none, judged by eyes4s against the
+    // trials table (the design before admission).
+    val unmatched   = get("unmatched reasons")(work.unmatchedReasons(inventory))
     val studyCounts = get("counts")(work.counts)
     val result      = get("run")(work.run)
 
@@ -277,7 +280,9 @@ object StudioScores:
 
     val retrieval = inv.trials.filter(_.identity.phase == "Retrieval")
     val focal     = preview.focalKeys
-    val noMatch   = cardinality.unmatched.toSet
+    // The status of each query is eyes4s's: no match from its unmatched
+    // reasons, contributing or failed from its stored contrast row.
+    val noMatch   = s.unmatched.reasons.map(_._1).toSet
     val tallies   = preview.windowTallies.collect { case (k, Right(t)) => k -> t }.toMap
     val summary   = preview.windowSummary
     val contrast0 = s.queries(0)
@@ -310,25 +315,28 @@ object StudioScores:
       "quarantinedByCause" -> Json.fromFields(
         quarantined.toVector.sorted.map((k, v) => k -> Json.fromInt(v))
       ),
-      "absentTrials"         -> Json.fromInt(inv.absent.size),
-      "records"              -> Json.fromInt(s.ledger.records.size),
-      "admittedRecords"      -> Json.fromInt(s.ledger.admitted.size),
-      "rejectedRecords"      -> Json.fromInt(s.ledger.rejected.size),
-      "recordsOutsideWindow" -> Json.fromInt(summary.outsideWindow),
-      "trialsOutsideWindow"  -> Json.fromInt(summary.trialsOutsideWindow),
-      "recordsOutsideScreen" -> Json.fromInt(summary.outsideScreen),
-      "items"                -> Json.fromInt(inv.trials.flatMap(_.item).distinct.size),
-      "requestedQueries"     -> Json.fromInt(retrieval.size),
-      "queriesNotAdmitted"   -> Json.fromInt(retrieval.size - focal.size),
-      "focalTrials"          -> Json.fromInt(focal.size),
-      "referenceTrials"      -> Json.fromInt(preview.referenceKeys.size),
-      "noMatchQueries"       -> Json.fromInt(noMatch.size),
-      "multipleMatchQueries" -> Json.fromInt(cardinality.multiple.size),
-      "failedQueries"        -> Json.fromInt(statusCounts.getOrElse("failed", 0)),
-      "contributingQueries"  -> Json.fromInt(statusCounts.getOrElse("contributing", 0)),
-      "eligibleQueries"      -> Json.fromLong(s.studyCounts.eligibleQueries),
-      "queriesWithAMatch"    -> Json.fromInt(s.matched.size),
-      "controlsPerQuery"     -> Json.fromFields(
+      "absentTrials"                -> Json.fromInt(inv.absent.size),
+      "records"                     -> Json.fromInt(s.ledger.records.size),
+      "admittedRecords"             -> Json.fromInt(s.ledger.admitted.size),
+      "rejectedRecords"             -> Json.fromInt(s.ledger.rejected.size),
+      "recordsOutsideWindow"        -> Json.fromInt(summary.outsideWindow),
+      "trialsOutsideWindow"         -> Json.fromInt(summary.trialsOutsideWindow),
+      "recordsOutsideScreen"        -> Json.fromInt(summary.outsideScreen),
+      "items"                       -> Json.fromInt(inv.trials.flatMap(_.item).distinct.size),
+      "requestedQueries"            -> Json.fromInt(retrieval.size),
+      "queriesNotAdmitted"          -> Json.fromInt(retrieval.size - focal.size),
+      "focalTrials"                 -> Json.fromInt(focal.size),
+      "referenceTrials"             -> Json.fromInt(preview.referenceKeys.size),
+      "noMatchQueries"              -> Json.fromInt(noMatch.size),
+      "byDesignQueries"             -> Json.fromInt(s.unmatched.byDesign),
+      "noMatchReferenceNotAdmitted" -> Json.fromInt(s.unmatched.notAdmitted),
+      "noMatchReferenceNotPairable" -> Json.fromInt(s.unmatched.notPairable),
+      "multipleMatchQueries"        -> Json.fromInt(cardinality.multiple.size),
+      "failedQueries"               -> Json.fromInt(statusCounts.getOrElse("failed", 0)),
+      "contributingQueries"         -> Json.fromInt(statusCounts.getOrElse("contributing", 0)),
+      "eligibleQueries"             -> Json.fromLong(s.studyCounts.eligibleQueries),
+      "queriesWithAMatch"           -> Json.fromInt(s.matched.size),
+      "controlsPerQuery"            -> Json.fromFields(
         controlCounts.toVector.sorted.map((k, v) => k.toString -> Json.fromInt(v))
       ),
       // eyes4s StudyCounts: every scheduled pair row, failed outcomes included.
@@ -360,6 +368,7 @@ object StudioScores:
           .get(k)
           .fold(Json.Null)(_ => Json.fromInt(s.controls.getOrElse(k, 0))),
         "status"        -> Json.fromString(status.getOrElse(k, "absent-from-table")),
+        "noMatchKind"   -> s.unmatched.reason(k).fold(Json.Null)(r => Json.fromString(r.code)),
         "outsideWindow" -> tallies
           .get(k)
           .fold(Json.Null)(t =>
