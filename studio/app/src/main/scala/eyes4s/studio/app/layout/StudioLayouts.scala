@@ -292,6 +292,33 @@ object StudioLayouts:
   )
 
   /** Every perspective, in switcher order, with its default layout first. */
+  /** Plots whose Table twin is not their `<id>.table` (S10.5): the scale
+    * ladder's table is the Pairs table, its pairs and scores by scale.
+    */
+  private val namedTwins: Map[String, String] = Map("compare.contrast" -> "compare.pairs")
+
+  /** The Table twin of plot `plot`, or the plot of table `table`, in
+    * `layout`: `<id>.table` by convention, else the named pairs above. Only
+    * a sibling in the same group is a twin.
+    */
+  def twin(layout: PerspectiveLayout, pane: PaneId): Option[PaneDecl] =
+    layout.pane(pane).flatMap { decl =>
+      val wanted: Option[String] = decl.kind match
+        case PaneKind.Plot  => Some(namedTwins.getOrElse(pane.value, s"${pane.value}.table"))
+        case PaneKind.Table =>
+          namedTwins
+            .collectFirst { case (plot, table) if table == pane.value => plot }
+            .orElse(
+              Option.when(pane.value.endsWith(".table"))(pane.value.stripSuffix(".table"))
+            )
+        case _ => None
+      for
+        id    <- wanted
+        group <- layout.groupOf(pane)
+        other <- group.panes.find(_.id.value == id)
+      yield other
+    }
+
   val spec: LayoutSpec = LayoutSpec(
     Vector(
       Perspective.Data     -> NonEmptyVector.of(dataVerify, dataFirstRun),

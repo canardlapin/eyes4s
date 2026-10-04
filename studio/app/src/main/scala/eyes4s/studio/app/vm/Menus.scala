@@ -18,7 +18,7 @@ package eyes4s.studio.app.vm
 
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.app.keys.{AppCommand, CommandId, CommandRegistry, KeyChord, MenuSection}
-import eyes4s.studio.app.layout.{PaneId, PaneKind}
+import eyes4s.studio.app.layout.{PaneId, PaneKind, StudioLayouts}
 import eyes4s.studio.app.text.{MessageId, Messages}
 
 /** A menu: its title and its items, in order. */
@@ -101,16 +101,11 @@ object Menus:
   ): Vector[ActionVM] =
     val layout = model.layout
     layout.pane(pane).toVector.flatMap { decl =>
-      val sibling = decl.kind match
-        case PaneKind.Plot =>
-          layout.panes
-            .find(p => p.kind == PaneKind.Table && p.id.value == s"${pane.value}.table")
-            .map(t => ActionVM(messages(MessageId.TabShowTable), true, Intent.FocusPane(t.id)))
-        case PaneKind.Table =>
-          layout.panes
-            .find(p => p.kind == PaneKind.Plot && s"${p.id.value}.table" == pane.value)
-            .map(p => ActionVM(messages(MessageId.TabShowPlot), true, Intent.FocusPane(p.id)))
-        case _ => None
+      val sibling = StudioLayouts.twin(layout, pane).map { t =>
+        val label =
+          if decl.kind == PaneKind.Plot then MessageId.TabShowTable else MessageId.TabShowPlot
+        ActionVM(messages(label), true, Intent.FocusPane(t.id))
+      }
       sibling.toVector :+ item(CommandRegistry.resetPerspective, model, messages)
     }
 
