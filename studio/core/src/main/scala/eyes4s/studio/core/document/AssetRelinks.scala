@@ -35,8 +35,19 @@ object AssetRelink:
     Decoder.forProduct3("dataset", "file", "asset")(AssetRelink.apply)
 
 /** A document's repaired display assets, in dataset and file order, one per
-  * dataset revision and inventory file. They are not science: a repair
-  * changes which bytes a display shows, never gaze, admission or a score.
+  * dataset revision and inventory file.
+  *
+  * They are not science today: a repair changes which bytes a display
+  * shows, never gaze, admission or a score, since no analysis reads stimulus
+  * content (placement comes from the declared geometry). Once an analysis
+  * consumes stimulus content (saliency, image-derived regions), a repair
+  * must become science, so runs go stale (S5.7 review decision). Each
+  * repair's digest is shown wherever the revision's displays are (the
+  * Sources pane), so it is never silent.
+  *
+  * A repair belongs to its revision: a revised revision (ReviseDataset makes
+  * a new one) does not carry its parent's repairs; a discarded revision's
+  * are dropped with it and put back by its undo.
   */
 final case class AssetRelinks private (entries: Vector[AssetRelink]) derives CanEqual:
   def isEmpty: Boolean = entries.isEmpty
@@ -47,6 +58,14 @@ final case class AssetRelinks private (entries: Vector[AssetRelink]) derives Can
   /** `dataset`'s repair of `file`, if any. */
   def find(dataset: DatasetRevision, file: AssetFile): Option[AssetRelink] =
     entries.find(r => r.dataset == dataset && r.file == file)
+
+  /** Without `dataset`'s repairs (a discarded revision's). */
+  def without(dataset: DatasetRevision): AssetRelinks =
+    AssetRelinks(entries.filterNot(_.dataset == dataset))
+
+  /** With `more` added; one already held for the same file is replaced. */
+  def plus(more: Vector[AssetRelink]): AssetRelinks =
+    more.foldLeft(this)((acc, r) => acc.set(r.dataset, r.file, Some(r.asset)))
 
   /** With `dataset`'s `file` relinked to `asset`, or unlinked (`None`). */
   def set(dataset: DatasetRevision, file: AssetFile, asset: Option[AssetRef]): AssetRelinks =

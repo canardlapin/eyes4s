@@ -98,6 +98,11 @@ enum Command derives CanEqual, Codec.AsObject:
     */
   case RelinkAsset(dataset: DatasetRevision, file: AssetFile, asset: Option[AssetRef])
 
+  /** Put a discarded pending dataset revision back with its repairs (the
+    * undo of discarding one that had any; S5.7).
+    */
+  case RestoreRepairedDataset(dataset: DatasetRevisionSpec, relinks: Vector[AssetRelink])
+
   /** Put a discarded pending dataset revision back. */
   case RestoreDataset(dataset: DatasetRevisionSpec)
 
@@ -255,9 +260,10 @@ enum Command derives CanEqual, Codec.AsObject:
   def name: String = productPrefix
 
   def kind: ChangeKind = this match
-    case _: (ImportSources | ReviseDataset | RestoreDataset | DiscardDataset | SetMapping |
-          SetUnits | SetGeometry | SetOffScreenPolicy | AddCorrection | RemoveCorrection |
-          VerifyDataset | WithdrawVerification | ResumeVerification | Admit) =>
+    case _: (ImportSources | ReviseDataset | RestoreDataset | RestoreRepairedDataset |
+          DiscardDataset | SetMapping | SetUnits | SetGeometry | SetOffScreenPolicy |
+          AddCorrection | RemoveCorrection | VerifyDataset | WithdrawVerification |
+          ResumeVerification | Admit) =>
       ChangeKind.DatasetReadmit
     case _: (StartDraft | RestoreDraft | ChangeRecipe | RebaseDraft | SaveAndRun |
           RecordRunOutcome | CancelRun | BindPlan) =>

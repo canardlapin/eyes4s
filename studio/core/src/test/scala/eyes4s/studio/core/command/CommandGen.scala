@@ -122,7 +122,22 @@ object CommandGen:
           p <- Gen.option(Gen.oneOf(CoreAdmissionDecision.values.toVector))
         yield Command.Admit(s.id, v, p, l, t),
         specs.map(s => Command.DiscardDataset(s.id)),
-        specs.map(s => Command.RestoreDataset(s.copy(id = DatasetRevision(next))))
+        specs.map(s => Command.RestoreDataset(s.copy(id = DatasetRevision(next)))),
+        specs.map(s =>
+          Command.RestoreRepairedDataset(
+            s.copy(id = DatasetRevision(next)),
+            Vector(
+              AssetRelink(
+                DatasetRevision(next),
+                AssetFile.of("forest-044.png").toOption.get,
+                AssetRef(
+                  AssetFile.of("repaired-ab.png").toOption.get,
+                  ByteDigest.parse("ab" * 32).toOption.get
+                )
+              )
+            )
+          )
+        )
       )
     }
     importing +: (edits ++ lifecycle)

@@ -101,11 +101,33 @@ object Reducer:
         next <- rebuild(d, c)(datasets = (d.datasets :+ spec).sortBy(_.id.number))
       yield reversible(next, DiscardDataset(spec.id))
 
+    case RestoreRepairedDataset(spec, relinks) =>
+      for
+        _ <- Either.cond(d.dataset(spec.id).isEmpty, (), DatasetExists(spec.id))
+        _ <- Either.cond(!spec.decision.isAdmitted, (), DatasetNotPending(spec.id))
+        _ <- relinks
+          .find(_.dataset != spec.id)
+          .map(r => refused(d, c)(DocumentError.RelinkUnknownDataset(r.dataset, r.file.value)))
+          .toLeft(())
+        next <- rebuild(d, c)(
+          datasets = (d.datasets :+ spec).sortBy(_.id.number),
+          relinks = d.relinks.plus(relinks)
+        )
+      yield reversible(next, DiscardDataset(spec.id))
+
     case DiscardDataset(id) =>
+      // Its repairs go with it, and come back with its undo.
       for
         spec <- pending(d, id)
-        next <- rebuild(d, c)(datasets = d.datasets.filterNot(_.id == id))
-      yield reversible(next, RestoreDataset(spec))
+        next <- rebuild(d, c)(
+          datasets = d.datasets.filterNot(_.id == id),
+          relinks = d.relinks.without(id)
+        )
+        dropped = d.relinks.of(id)
+      yield reversible(
+        next,
+        if dropped.isEmpty then RestoreDataset(spec) else RestoreRepairedDataset(spec, dropped)
+      )
 
     case ReviseDataset(id, mapping, units, geometry, attributes, inventory) =>
       for
@@ -477,12 +499,13 @@ object Reducer:
       runs: Vector[RunRef] = d.runs,
       reporting: Vector[ReportingSpec] = d.reporting,
       figures: Vector[FigureSpec] = d.figures,
-      jobs: Vector[JobHandle] = d.jobs
+      jobs: Vector[JobHandle] = d.jobs,
+      relinks: AssetRelinks = d.relinks
   ): Either[CommandError, StudioDocument] =
     StudioDocument
       .of(datasets, analyses, draft, runs, reporting, figures, d.presentation, jobs)
       // The repaired assets go with the science they repair.
-      .flatMap(_.withRelinks(d.relinks))
+      .flatMap(_.withRelinks(relinks))
       .left
       .map(refused(d, c))
 
@@ -561,21 +584,22 @@ object Reducer:
   def targetOf(d: StudioDocument, c: Command): Target = c match
     case _: ImportSources =>
       Target.OnDataset(DatasetRevision(d.datasets.lastOption.fold(1)(_.id.number + 1)))
-    case RestoreDataset(spec)      => Target.OnDataset(spec.id)
-    case DiscardDataset(id)        => Target.OnDataset(id)
-    case r: ReviseDataset          => Target.OnDataset(r.dataset)
-    case SetMapping(id, _)         => Target.OnDataset(id)
-    case SetUnits(id, _)           => Target.OnDataset(id)
-    case RelinkAsset(id, _, _)     => Target.OnDataset(id)
-    case SetGeometry(id, _)        => Target.OnDataset(id)
-    case SetOffScreenPolicy(id, _) => Target.OnDataset(id)
-    case AddCorrection(id, _, _)   => Target.OnDataset(id)
-    case RemoveCorrection(id, _)   => Target.OnDataset(id)
-    case VerifyDataset(id)         => Target.OnDataset(id)
-    case WithdrawVerification(id)  => Target.OnDataset(id)
-    case ResumeVerification(id, _) => Target.OnDataset(id)
-    case Admit(id, _, _, _, _)     => Target.OnDataset(id)
-    case RestoreDraft(draft)       => Target.OnDraft(Some(draft.id))
+    case RestoreDataset(spec)            => Target.OnDataset(spec.id)
+    case RestoreRepairedDataset(spec, _) => Target.OnDataset(spec.id)
+    case DiscardDataset(id)              => Target.OnDataset(id)
+    case r: ReviseDataset                => Target.OnDataset(r.dataset)
+    case SetMapping(id, _)               => Target.OnDataset(id)
+    case SetUnits(id, _)                 => Target.OnDataset(id)
+    case RelinkAsset(id, _, _)           => Target.OnDataset(id)
+    case SetGeometry(id, _)              => Target.OnDataset(id)
+    case SetOffScreenPolicy(id, _)       => Target.OnDataset(id)
+    case AddCorrection(id, _, _)         => Target.OnDataset(id)
+    case RemoveCorrection(id, _)         => Target.OnDataset(id)
+    case VerifyDataset(id)               => Target.OnDataset(id)
+    case WithdrawVerification(id)        => Target.OnDataset(id)
+    case ResumeVerification(id, _)       => Target.OnDataset(id)
+    case Admit(id, _, _, _, _)           => Target.OnDataset(id)
+    case RestoreDraft(draft)             => Target.OnDraft(Some(draft.id))
     case _: (StartDraft | ChangeRecipe | RebaseDraft | SaveAndRun) | DiscardDraft =>
       Target.OnDraft(
         d.draft.map(_.id).orElse(d.latestAnalysis.map(a => AnalysisRevision(a.id.number + 1)))

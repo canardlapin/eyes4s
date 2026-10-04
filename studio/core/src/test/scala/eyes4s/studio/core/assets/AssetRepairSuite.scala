@@ -179,3 +179,40 @@ class AssetRepairSuite extends munit.FunSuite:
     assertEquals(assembled.document, repaired)
     // t2 without repairs keeps its pinned bundle (ProjectBundleSuite).
   }
+
+  test("a pending revision with a repair can be discarded; its undo puts the repair back") {
+    val t1      = ok(StoryMoments.t1)
+    val pending =
+      t1.datasets.find(!_.decision.isAdmitted).getOrElse(fail("t1 has no pending revision"))
+    val repair   = Command.RelinkAsset(pending.id, forest, Some(restored))
+    val repaired = ok(Reducer.step(t1, repair))._1
+    val outcome  = ok(Reducer.run(repaired, Command.DiscardDataset(pending.id)))
+    assertEquals(outcome.document.dataset(pending.id), None)
+    assertEquals(outcome.document.relinks.of(pending.id), Vector.empty)
+    val undo = outcome.recording match
+      case eyes4s.studio.core.command.Recording.Reversible(inverse) => inverse
+      case other => fail(s"not reversible: $other")
+    assertEquals(
+      undo,
+      Command.RestoreRepairedDataset(pending, Vector(AssetRelink(pending.id, forest, restored)))
+    )
+    assertEquals(ok(Reducer.step(outcome.document, undo))._1, repaired)
+    // Without a repair, discarding is undone by RestoreDataset, as before.
+    val plain = ok(Reducer.run(t1, Command.DiscardDataset(pending.id)))
+    assert(
+      plain.recording == eyes4s.studio.core.command.Recording
+        .Reversible(Command.RestoreDataset(pending))
+    )
+    // A restore whose repairs name another revision is refused.
+    assert(
+      Reducer
+        .step(
+          outcome.document,
+          Command.RestoreRepairedDataset(
+            pending,
+            Vector(AssetRelink(DatasetRevision(9), forest, restored))
+          )
+        )
+        .isLeft
+    )
+  }

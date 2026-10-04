@@ -91,7 +91,20 @@ object CommandSamples:
       pupil,
       None
     ),
-    "RestoreDataset" -> RestoreDataset(pending),
+    "RestoreDataset"         -> RestoreDataset(pending),
+    "RestoreRepairedDataset" -> RestoreRepairedDataset(
+      pending,
+      Vector(
+        AssetRelink(
+          r3,
+          eyes4s.studio.core.assets.AssetFile.of("forest-044.png").toOption.get,
+          eyes4s.studio.core.assets.AssetRef(
+            eyes4s.studio.core.assets.AssetFile.of("forest_044.png").toOption.get,
+            eyes4s.codec.ByteDigest.parse("ab" * 32).toOption.get
+          )
+        )
+      )
+    ),
     "DiscardDataset" -> DiscardDataset(r3),
     "SetMapping"     -> SetMapping(r3, pending.mapping),
     "SetUnits"       -> SetUnits(r3, DeclaredUnits(Some(TimeUnit.Seconds))),

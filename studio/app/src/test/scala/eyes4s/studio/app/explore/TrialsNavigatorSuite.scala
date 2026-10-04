@@ -504,3 +504,18 @@ class TrialsNavigatorSuite extends munit.FunSuite:
       )
     }
   }
+
+  test("a repair that cannot be applied is said in the note, never swallowed") {
+    ledger.map { entries =>
+      val nowhere = ok(eyes4s.studio.core.assets.AssetFile.of("nowhere.png"))
+      val asset   = eyes4s.studio.core.assets.AssetRef(
+        nowhere,
+        eyes4s.codec.ByteDigest.sha256(IArray.from("png".getBytes("UTF-8")))
+      )
+      val command =
+        eyes4s.studio.core.command.Command.RelinkAsset(StoryMoments.r3, nowhere, Some(asset))
+      val repaired = AppModel.update(model, eyes4s.studio.app.Intent.Dispatch(command))._1
+      val vm       = TrialsNavigatorVM.trials(loaded(repaired, entries), repaired)
+      assert(vm.note.exists(_.contains("nowhere.png")), vm.note)
+    }
+  }

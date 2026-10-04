@@ -68,6 +68,9 @@ enum AssetError derives CanEqual:
 
   /** Repair named a file no trial is missing. */
   case NotMissing(file: AssetFile, missing: Vector[AssetFile])
+
+  /** A repair of `dataset` names a file no display of it names. */
+  case NotNamed(dataset: DatasetRevision, file: AssetFile)
   case NoTrialInventory(dataset: DatasetRevision)
   case WrongDataset(registry: DatasetRevision, dataset: DatasetRevision)
   case WrongInventory(dataset: DatasetRevision, registry: ByteDigest, source: ByteDigest)
@@ -111,7 +114,9 @@ enum AssetError derives CanEqual:
         digests.map(_.hex.take(12)).mkString(", ") + "."
     case PresentAndMissing(file, present, missing) =>
       s"Asset ${file.value} is present for ${present.label} and missing for ${missing.label}."
-    case DuplicateAsset(file)     => s"Stored asset ${file.value} is listed more than once."
+    case DuplicateAsset(file)    => s"Stored asset ${file.value} is listed more than once."
+    case NotNamed(dataset, file) =>
+      s"Dataset ${dataset.label}'s repair of ${file.value} names a file no trial displays."
     case NotMissing(file, absent) =>
       s"No trial is missing ${file.value}; missing: " +
         (if absent.isEmpty then "none" else absent.map(_.value).mkString(", ")) + "."
@@ -430,16 +435,37 @@ final case class AssetRegistry private (
 
   def count(kind: DisplayKind): Int = trials.count(_.kind == kind)
 
-  /** The registry with the document's repairs of its dataset revision: each
-    * relinked file that is missing here is present under its inventory name
-    * with the repaired bytes' digest (S5.7). A repair of a file not missing
-    * here is refused.
+  /** The registry with the document's repairs of its dataset revision (S5.7):
+    * every display naming a relinked file shows the repaired bytes, under
+    * the inventory's name, whether the file was missing here or is already
+    * stored (a repair with the original file under its own name is stored
+    * by that name, so a fresh read finds it present: applying the repair
+    * again changes nothing). A repair of a file no display names is refused.
     */
   def withRelinks(relinks: Vector[AssetRelink]): Either[AssetError, AssetRegistry] =
     relinks
       .filter(_.dataset == dataset)
       .foldLeft[Either[AssetError, AssetRegistry]](Right(this))((acc, r) =>
-        acc.flatMap(_.repair(r.file, AssetRef(r.file, r.asset.sha256)))
+        acc.flatMap(_.relinked(r.file, AssetRef(r.file, r.asset.sha256)))
+      )
+
+  /** Every display naming `file` shows `asset`, present or missing before. */
+  private def relinked(file: AssetFile, asset: AssetRef): Either[AssetError, AssetRegistry] =
+    if !trials.exists(_.asset.exists(_.fileName == file)) then
+      Left(AssetError.NotNamed(dataset, file))
+    else
+      def link(a: AssetLink) = if a.fileName == file then AssetLink.Present(asset) else a
+      AssetRegistry.of(
+        dataset,
+        inventory,
+        screen,
+        trials.map(d =>
+          d.copy(display = d.display match
+            case Display.Image(a)   => Display.Image(link(a))
+            case Display.Cue(a)     => Display.Cue(a.map(link))
+            case Display.Unknown(a) => Display.Unknown(a.map(link))
+            case other              => other)
+        )
       )
 
   /** Resolve every display missing `file` to the stored `asset` (Repair). */

@@ -177,17 +177,26 @@ object TrialsNavigatorVM:
     * document's repairs applied (S5.7); a repair that no longer applies
     * leaves the registry as served.
     */
-  private def registry(nav: TrialsNavigator, model: AppModel): Option[AssetRegistry] =
+  private def repaired(
+      nav: TrialsNavigator,
+      model: AppModel
+  ): Option[Either[String, AssetRegistry]] =
     nav.displays.toOption.collect { case DisplaySource.Served(r) =>
-      r.withRelinks(model.document.relinks.of(r.dataset)).getOrElse(r)
+      r.withRelinks(model.document.relinks.of(r.dataset)).left.map(_.message)
     }
+
+  /** The served registry with the document's repairs; a repair that cannot
+    * be applied is said in the panes' note, never swallowed.
+    */
+  private def registry(nav: TrialsNavigator, model: AppModel): Option[AssetRegistry] =
+    repaired(nav, model).flatMap(_.toOption)
 
   private def openness(open: Boolean): String = if open then t(Expanded) else t(Collapsed)
 
   /** The status of the panes, when they cannot list everything: still
     * reading, or a read that failed.
     */
-  private def notes(nav: TrialsNavigator): (Option[String], Option[String]) =
+  private def notes(nav: TrialsNavigator, model: AppModel): (Option[String], Option[String]) =
     val label = nav.dataset.fold("")(_.id.label)
     val read  = nav.entries match
       case Loading.Waiting | Loading.Idle if nav.dataset.isDefined => Some(t(Reading, label))
@@ -196,7 +205,7 @@ object TrialsNavigatorVM:
     val shown = nav.displays match
       case Loading.Failed(why)                    => Some(t(DisplaysFailed, label, why))
       case Loading.Ready(DisplaySource.NotServed) => Some(t(DisplaysNotServed, label))
-      case _                                      => None
+      case _ => repaired(nav, model).flatMap(_.left.toOption).map(t(DisplaysFailed, label, _))
     val failed = (nav.entries, nav.displays) match
       case (Loading.Failed(_), _) | (_, Loading.Failed(_)) => true
       case _                                               => false
@@ -280,7 +289,7 @@ object TrialsNavigatorVM:
     * the ledger entries hold no fixation count.
     */
   def trials(nav: TrialsNavigator, model: AppModel): NavigatorPaneVM =
-    val (note, retry)                    = notes(nav)
+    val (note, retry)                    = notes(nav, model)
     val entries                          = nav.entries.toOption.getOrElse(Vector.empty)
     val displays                         = registry(nav, model)
     val selected                         = TrialsNavigator.selected(model)
@@ -381,7 +390,7 @@ object TrialsNavigatorVM:
 
   /** The Items pane: each match item, opening to the trials matched on it. */
   def items(nav: TrialsNavigator, model: AppModel): NavigatorPaneVM =
-    val (note, retry)                    = notes(nav)
+    val (note, retry)                    = notes(nav, model)
     val entries                          = nav.entries.toOption.getOrElse(Vector.empty)
     val displays                         = registry(nav, model)
     val selected                         = TrialsNavigator.selected(model)

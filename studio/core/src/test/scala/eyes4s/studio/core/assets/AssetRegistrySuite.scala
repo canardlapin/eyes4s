@@ -580,6 +580,37 @@ class AssetRegistrySuite extends munit.ScalaCheckSuite:
     )
   }
 
+  test("a repair with the original file, stored under its own name, survives a fresh read") {
+    val spec     = storing(smallCsv, Some(displayColumns))
+    val original = ref("forest-044.png")
+    val relink   = AssetRelink(r3.id, file("forest-044.png"), original)
+    // The repair stored forest-044.png itself: a fresh read finds it present.
+    val read = ok(
+      AssetRegistry.fromInventory(
+        spec,
+        bytes(smallCsv),
+        Vector(ref("beach-042.png"), original),
+        Vector.empty
+      )
+    )
+    assertEquals(read.missing, Vector.empty)
+    // Applying the repair again changes nothing.
+    assertEquals(read.withRelinks(Vector(relink)), Right(read))
+    // A repair with other bytes under the same name shows the repaired bytes.
+    val other = AssetRef(file("forest-044.png"), digestOf("other bytes"))
+    assertEquals(
+      ok(read.withRelinks(Vector(AssetRelink(r3.id, file("forest-044.png"), other))))
+        .display(key("P01", "enc_02"))
+        .map(_.state),
+      Some(DisplayState.Image(other))
+    )
+    // A repair of a file no display names is refused, naming it.
+    assertEquals(
+      read.withRelinks(Vector(AssetRelink(r3.id, file("nowhere.png"), original))),
+      Left(AssetError.NotNamed(r3.id, file("nowhere.png")))
+    )
+  }
+
 object AssetRegistrySuite:
   val samplePin: String =
     """{"schema":{"name":"studio.asset-registry","version":1},"value":{"dataset":3,"inventory":"d8ebe88dc3b6f5230da160d2057681ff7f6d89a2a474c7b4b978a20c68f79189","screen":{"height":1080,"width":1920},"trials":[{"display":{"Image":{"asset":{"Present":{"file":"beach-007.png","sha256":"0781aa307cd21488b92534f6268d9b871e01917bd0324c1a20aa8860fb1d6b4a"}}}},"item":"beach-007","placement":{"height":768,"left":448,"top":156,"width":1024},"trial":{"occurrence":1,"participant":"P01","phase":"Encoding","trial":"enc_01"}},{"display":{"Image":{"asset":{"Missing":{"file":"forest-044.png"}}}},"item":"forest-044","placement":{"height":768,"left":448,"top":156,"width":1024},"trial":{"occurrence":1,"participant":"P01","phase":"Encoding","trial":"enc_08"}},{"display":{"BlankWithFixationCross":{}},"item":"forest-044","placement":{"height":768,"left":448,"top":156,"width":1024},"trial":{"occurrence":1,"participant":"P01","phase":"Retrieval","trial":"ret_02"}},{"display":{"Cue":{"asset":null}},"item":null,"placement":{"height":768,"left":448,"top":156,"width":1024},"trial":{"occurrence":1,"participant":"P01","phase":"Retrieval","trial":"ret_03"}}]}}"""
