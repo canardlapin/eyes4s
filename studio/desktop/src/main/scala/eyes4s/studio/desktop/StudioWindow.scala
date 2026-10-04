@@ -34,6 +34,7 @@ import eyes4s.studio.desktop.explore.{
   TrialsNavigatorHost
 }
 import eyes4s.studio.desktop.trial.StimulusSource
+import eyes4s.studio.desktop.figures.{FigureInputs, FiguresHost}
 import eyes4s.studio.desktop.dock.{DockGesture, PerspectiveHost}
 import eyes4s.studio.desktop.runtime.{
   DesktopEffects,
@@ -78,7 +79,9 @@ final class StudioWindow private (
     val explore: ExploreTrialViewHost,
     exploreListener: AppModel => Unit,
     val resolvedDesign: ResolvedDesignHost,
-    designListener: AppModel => Unit
+    designListener: AppModel => Unit,
+    val figures: FiguresHost,
+    figuresListener: AppModel => Unit
 ):
   /** The window content, with the studio stylesheets. */
   def root: javafx.scene.Parent = shell.root
@@ -94,7 +97,13 @@ final class StudioWindow private (
     else if pane == StudioLayouts.items then navigator.itemsStops
     else if pane == StudioLayouts.trialView then explore.focusStops
     else if pane == StudioLayouts.resolvedDesign then resolvedDesign.focusStops
-    else Vector.empty
+    else
+      pane.value match
+        case "figures.figures"    => figures.navigatorStops
+        case "figures.page"       => figures.pageStops
+        case "figures.page.table" => figures.tableStops
+        case "figures.panel"      => figures.inspectorStops
+        case _                    => Vector.empty
 
   /** Store each perspective's arrangement in the document (view-only). */
   def captureLayouts(): Unit = runtime.dispatch(Intent.LayoutsCaptured(host.capture()))
@@ -108,7 +117,9 @@ final class StudioWindow private (
     runtime.unlisten(exploreListener)
     explore.dispose()
     runtime.unlisten(designListener)
+    runtime.unlisten(figuresListener)
     summary.dispose()
+    figures.dispose()
     project.foreach(_.close())
     session.close()
 
@@ -341,6 +352,17 @@ object StudioWindow:
     val designListener: AppModel => Unit = design.sync
     r.listen(designListener)
     design.sync(r.model)
+    // The Figures perspective: navigator, page, Table tab and binding.
+    val figures = FiguresHost(() => r.model, dispatch, FigureInputs.of(session, displays))
+    Vector(
+      "figures.figures"    -> figures.navigatorNode,
+      "figures.page"       -> figures.pageNode,
+      "figures.page.table" -> figures.tableNode,
+      "figures.panel"      -> figures.inspectorNode
+    ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
+    val figuresListener: AppModel => Unit = figures.sync
+    r.listen(figuresListener)
+    figures.sync(r.model)
     Right(
       StudioWindow(
         session,
@@ -358,6 +380,8 @@ object StudioWindow:
         explore,
         exploreListener,
         design,
-        designListener
+        designListener,
+        figures,
+        figuresListener
       )
     )

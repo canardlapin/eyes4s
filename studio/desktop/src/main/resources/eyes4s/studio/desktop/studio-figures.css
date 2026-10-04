@@ -1,0 +1,104 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* The Figures perspective (tickets S9.1, S9.2a; docs/studio/design/Figures.dc.html).
+ * Colours are token names only; sizes come from studio-type.css classes. The
+ * page is paper whatever the theme. */
+
+.figures-navigator,
+.figures-binding {
+  -fx-background-color: -es-surface;
+  -fx-padding: 8 12 8 12;
+}
+
+.figures-row {
+  -fx-padding: 6 8 6 8;
+  -fx-background-color: -es-surface;
+  -fx-background-radius: 4;
+}
+
+.figures-row-selected {
+  -fx-background-color: -es-accent-soft;
+}
+
+.figures-chip {
+  -fx-text-fill: -es-ink-2;
+}
+
+.figures-stale {
+  -fx-text-fill: -es-warn-text;
+}
+
+.figures-notice,
+.figures-dialog {
+  -fx-padding: 8;
+  -fx-background-color: -es-warn-soft;
+  -fx-background-radius: 4;
+}
+
+.figures-dialog {
+  -fx-background-color: -es-surface-2;
+}
+
+.figures-problem {
+  -fx-text-fill: -es-fail;
+}
+
+.figures-note,
+.figures-binding-text,
+.figures-key {
+  -fx-text-fill: -es-ink-2;
+}
+
+.figures-toolbar {
+  -fx-padding: 6 12 6 12;
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.figures-page .scroll-pane,
+.figures-page .scroll-pane > .viewport {
+  -fx-background-color: -es-ground;
+}
+
+.figures-paper {
+  -fx-background-color: -es-paper;
+  -fx-padding: 12;
+}
+
+.figures-panel {
+  -fx-background-color: -es-paper;
+  -fx-border-color: transparent;
+  -fx-border-width: 1;
+}
+
+.figures-panel .label {
+  -fx-text-fill: -es-paper-ink;
+}
+
+.figures-panel .figures-note {
+  -fx-text-fill: -es-paper-ink-2;
+}
+
+.figures-panel-selected {
+  -fx-border-color: -es-accent;
+}
+
+.figures-tile {
+  -fx-padding: 4;
+  -fx-border-color: -es-paper-rule;
+  -fx-border-width: 1;
+}

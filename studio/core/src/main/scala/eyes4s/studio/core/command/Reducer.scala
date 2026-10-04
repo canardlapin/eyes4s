@@ -365,10 +365,7 @@ object Reducer:
 
     case CreateFigure(run, reporting, panels) =>
       for
-        id <- FigureId
-          .of(d.figures.lastOption.fold(1)(_.id.number + 1))
-          .left
-          .map(refused(d, c))
+        id   <- d.nextFigureId.left.map(refused(d, c))
         spec <- FigureSpec.of(id, run, reporting, panels).left.map(refused(d, c))
         next <- rebuild(d, c)(figures = d.figures :+ spec)
       yield reversible(next, DeleteFigure(id))
@@ -578,9 +575,7 @@ object Reducer:
     case PutReporting(spec)          => Target.OnReporting(spec.id)
     case RemoveReporting(id)         => Target.OnReporting(id)
     case CreateFigure(_, _, _)       =>
-      FigureId
-        .of(d.figures.lastOption.fold(1)(_.id.number + 1))
-        .fold(_ => Target.OnPresentation, Target.OnFigure(_))
+      d.nextFigureId.fold(_ => Target.OnPresentation, Target.OnFigure(_))
     case RestoreFigure(spec)              => Target.OnFigure(spec.id)
     case DeleteFigure(id)                 => Target.OnFigure(id)
     case BindFigure(id, _, _)             => Target.OnFigure(id)
