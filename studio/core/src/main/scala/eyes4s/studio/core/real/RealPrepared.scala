@@ -30,6 +30,7 @@ final class RealPrepared private (
     val revision: AnalysisRevision,
     val dataset: DatasetRevision,
     val plan: RealPlan.Plan,
+    val work: RealPlan.Work,
     val preview: StudyPreview[CoreKey, Unit2D.Px],
     val counts: StudyCounts[CoreKey],
     val summary: PreviewSummary
@@ -56,6 +57,7 @@ object RealPrepared:
         revision,
         dataset,
         plan,
+        work,
         preview,
         counts,
         PreviewSummary(

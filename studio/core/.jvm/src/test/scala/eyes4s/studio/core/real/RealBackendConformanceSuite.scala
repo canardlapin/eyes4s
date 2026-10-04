@@ -19,7 +19,13 @@ package eyes4s.studio.core.real
 import cats.effect.IO
 import eyes4s.studio.core.assets.AssetRegistry
 import eyes4s.studio.core.backend.*
-import eyes4s.studio.core.document.{DatasetRevisionSpec, Source, SourceRole}
+import eyes4s.studio.core.document.{
+  DatasetRevisionSpec,
+  DefinitionRef,
+  Source,
+  SourceRole,
+  StudioDocument
+}
 import eyes4s.studio.core.fixture.{GoldenAssets, GoldenCsv, StoryMoments}
 import java.nio.charset.StandardCharsets
 
@@ -45,13 +51,37 @@ class RealBackendConformanceSuite extends BackendConformanceSuite:
 object RealBackendConformanceSuite:
 
   /** The conformance tests the landed slices serve (slice 1: admission, the
-    * ledger and refusals).
+    * ledger and refusals; slice 4: subscription and cancellation).
     */
   val Served: Set[String] = Set(
     "admission reports the FIXTURE.md inventory and window totals",
     "the ledger pages through every inventory trial once and agrees with admission",
-    "refusals are values with stable codes and typed subjects"
+    "refusals are values with stable codes and typed subjects",
+    "a subscription reports run-monotone progress and ends with exactly one Finished",
+    "cancelling a job settles it Cancelled, once, and the current run stays current"
   )
+
+  /** t2 with the trial-inventory layout, the one an inventory dataset's
+    * TrialKeys fit (the story preset declares the participant-stimulus-phase
+    * layout; see docs/studio/plan/S3.7-slices.md, slice 2 answers).
+    */
+  val trialLayout: Either[String, StudioDocument] =
+    val layout = DefinitionRef.fromCore(eyes4s.plan.TrialKeyDefinitions.trialLayout)
+    StoryMoments.t2.flatMap(t2 =>
+      StudioDocument
+        .of(
+          t2.datasets,
+          t2.analyses.map(a => a.copy(recipe = a.recipe.copy(layout = layout))),
+          t2.draft,
+          t2.runs,
+          t2.reporting,
+          t2.figures,
+          t2.presentation,
+          t2.jobs
+        )
+        .left
+        .map(_.toString)
+    )
 
   /** fixtures/studio-golden as the host would hand it over. */
   val golden: DatasetSources[IO] = new DatasetSources[IO]:
@@ -65,15 +95,19 @@ object RealBackendConformanceSuite:
       IO.pure(GoldenAssets.registry(dataset).toOption)
 
   def subject: IO[BackendConformanceSuite.Subject] =
-    IO.fromEither(StoryMoments.t2.left.map(new AssertionError(_))).flatMap { document =>
+    IO.fromEither(trialLayout.left.map(new AssertionError(_))).flatMap { document =>
       RealStudyBackend.create[IO](document, golden).map { backend =>
         BackendConformanceSuite.Subject(
           backend,
           StoryMoments.r3,
           StoryMoments.run7,
           StoryMoments.rev5,
-          // No served test submits a job yet (execution is slice 4).
-          job => IO.raiseError(new AssertionError(s"slice 1 serves no job ${job.number}"))
+          // The real job finishes on its own: wait for its Finished.
+          job =>
+            backend.subscribe(job).flatMap {
+              case Right(events) => events.compile.drain
+              case Left(e)       => IO.raiseError(new AssertionError(e.message))
+            }
         )
       }
     }

@@ -30,6 +30,7 @@ import eyes4s.plan.{
   MatchedReferences,
   OccurrenceChoice,
   OffWindowPolicy,
+  PreparedStudy,
   StudyEstimate,
   StudyFormContext,
   StudyInput,
@@ -53,6 +54,7 @@ import eyes4s.surface.EdgePolicy
   */
 object RealPlan:
   type Plan = StudyPlan[CoreKey, Unit2D.Px, Unit, Similarity, SignedDifference]
+  type Work = PreparedStudy[CoreKey, Unit2D.Px, Unit, Similarity, SignedDifference]
 
   /** The identities the backend gives the frames and grid it builds. */
   val WindowFrame: FrameId = FrameId("window")

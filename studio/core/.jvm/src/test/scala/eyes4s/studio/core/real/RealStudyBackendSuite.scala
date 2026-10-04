@@ -265,6 +265,8 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       unknown <- real.submit(AnalysisRevision(99))
       runs    <- real.runs
       jobs    <- real.jobs
+      run7    <- real.result(StoryMoments.run7)
+      fake    <- FakeStudyBackend.create[IO](StoryMoment.T2).flatMap(_.runs)
       events  <- real
         .previewCounting(StoryMoments.rev4, get(PreviewBudget.of(1)))
         .compile
@@ -279,29 +281,14 @@ class RealStudyBackendSuite extends CatsEffectSuite:
         Left(BackendError.Unavailable(DiagnosticLocus.Revision(StoryMoments.rev5)))
       )
       assertEquals(unknown.left.map(_.code), Left("studio-backend.unknown-revision"))
-      assertEquals((runs, jobs), (Vector.empty, Vector.empty))
+      // The document's runs, in the states the fake reports at t2.
+      assertEquals(runs, fake)
+      assertEquals(jobs, Vector.empty)
+      assertEquals(run7, Left(BackendError.Unavailable(DiagnosticLocus.Run(StoryMoments.run7))))
       assertEquals(events.map(_.left.map(_.code)), Vector(Left("studio-backend.unavailable")))
   }
 
-  /** t2 with the trial-inventory layout, the one an inventory dataset's
-    * TrialKeys fit (the story preset declares the participant-stimulus-phase
-    * layout; see docs/studio/plan/S3.7-slices.md).
-    */
-  private val trialLayout: StudioDocument =
-    val layout = eyes4s.studio.core.document.DefinitionRef
-      .fromCore(eyes4s.plan.TrialKeyDefinitions.trialLayout)
-    get(
-      StudioDocument.of(
-        t2.datasets,
-        t2.analyses.map(a => a.copy(recipe = a.recipe.copy(layout = layout))),
-        t2.draft,
-        t2.runs,
-        t2.reporting,
-        t2.figures,
-        t2.presentation,
-        t2.jobs
-      )
-    )
+  private val trialLayout: StudioDocument = get(RealBackendConformanceSuite.trialLayout)
 
   test("the preview counts are eyes4s's prepared study over the admitted trials") {
     for
@@ -326,4 +313,78 @@ class RealStudyBackendSuite extends CatsEffectSuite:
         story,
         Left(BackendError.Unavailable(DiagnosticLocus.Revision(StoryMoments.rev4)))
       )
+  }
+
+  private def ok[A](fa: IO[Either[BackendError, A]]): IO[A] = fa.map(get)
+
+  test(
+    "a completed run did every map and pair its prepared study counted, by eyes4s's meters"
+  ) {
+    for
+      real    <- RealStudyBackend.create[IO](trialLayout, RealBackendConformanceSuite.golden)
+      preview <- ok(real.preview(StoryMoments.rev4))
+      status  <- ok(real.submit(StoryMoments.rev4))
+      again   <- real.submit(StoryMoments.rev5)
+      events  <- ok(real.subscribe(status.job)).flatMap(_.compile.toVector)
+      out     <- ok(real.outcome(status.job))
+      runs    <- real.runs
+    yield
+      assertEquals((status.job, status.run), (JobId(1), RunId(8)))
+      assertEquals(status.state, JobState.Queued)
+      assertEquals(again, Left(BackendError.AlreadyRunning(StoryMoments.rev5, status.job)))
+      val last = out match
+        case Some(JobOutcome.Completed(_, _, p)) => p
+        case other                               => fail(s"expected Completed, got $other")
+      assertEquals(last.totals.completedPairs, preview.pairRows)
+      assertEquals(last.totals.totalPairs, ProgressTotal.Exact(preview.pairRows))
+      assertEquals(last.totals.totalMaps, ProgressTotal.Exact(last.totals.completedMaps))
+      val advanced = events.collect { case JobEvent.Advanced(p) => p }
+      assert(advanced.nonEmpty, events)
+      // Every report's meter is eyes4s's, in the unit of its stage, and the
+      // run totals carry the latest map and pair meters.
+      advanced.foreach { p =>
+        p.meter.unit match
+          case CountUnit.Maps =>
+            assertEquals(p.totals.completedMaps, p.meter.done)
+            assertEquals(p.meter.total, last.totals.totalMaps)
+          case CountUnit.Pairs =>
+            assertEquals(p.totals.completedPairs, p.meter.done)
+            assertEquals(p.meter.total, ProgressTotal.Exact(preview.pairRows))
+          case _ => ()
+      }
+      assert(advanced.exists(_.meter.unit == CountUnit.Pairs), advanced.map(_.segment))
+      assertEquals(
+        runs.last,
+        RunSummary(RunId(8), StoryMoments.rev4, StoryMoments.r3, RunState.Completed)
+      )
+  }
+
+  test("a run whose end eyes4s cannot report settles Failed, naming the run, with no result") {
+    val r3       = get(trialLayout.dataset(StoryMoments.r3).toRight("no r3"))
+    val registry = get(eyes4s.studio.core.fixture.GoldenAssets.registry(r3))
+    val admitted = get(RealAdmission.admit(r3, GoldenCsv.fixations, GoldenCsv.trials, registry))
+    val recipe   = get(trialLayout.analysis(StoryMoments.rev4).toRight("no rev4")).recipe
+    val prepared = get(RealPrepared.of(StoryMoments.rev4, StoryMoments.r3, recipe, admitted))
+    val (out, state, result) = RealExecution.settle(
+      JobId(1),
+      RunId(8),
+      Left(RealExecution.Defect("eyes4s raised boom")),
+      RealExecution.Carried.none,
+      prepared.counts
+    )
+    val diagnostics = out match
+      case JobOutcome.Failed(JobId(1), RunId(8), ds, None) => ds
+      case other => fail(s"expected Failed, got $other")
+    assertEquals(
+      diagnostics.map(d => (d.code, d.subject, d.message)),
+      Vector(
+        (
+          "studio-backend.unavailable",
+          Vector(DiagnosticLocus.Run(RunId(8))),
+          "eyes4s raised boom"
+        )
+      )
+    )
+    assertEquals(state, RunState.Failed)
+    assertEquals(result, None)
   }
