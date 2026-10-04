@@ -25,7 +25,7 @@ import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{ClockTime, ProjectName}
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.admission.{AdmissionLedgerHost, LedgerInputs}
-import eyes4s.studio.desktop.compare.{CompareSummaryHost, SummaryInputs}
+import eyes4s.studio.desktop.compare.{CompareSummaryHost, PanelSources, SummaryInputs}
 import eyes4s.studio.desktop.explore.{
   ExploreTrialViewHost,
   NavigatorDisplays,
@@ -93,6 +93,13 @@ final class StudioWindow private (
   def paneStops(pane: PaneId): Vector[FocusStop] =
     if pane == StudioLayouts.columnMapping then columnMapping.focusStops
     else if pane == StudioLayouts.admission then admission.focusStops
+    else if pane == StudioLayouts.compareQueries || pane == StudioLayouts.compareItems then
+      eyes4s.studio.app.compare.QueriesNavigator.focusStops(summary.navigatorVM)
+    else if pane == StudioLayouts.queryTrial then
+      eyes4s.studio.app.compare.TrialPanels.queryStops(summary.panelsVM)
+    else if pane == StudioLayouts.referenceTrial then
+      eyes4s.studio.app.compare.TrialPanels.referenceStops(summary.panelsVM)
+    else if pane == StudioLayouts.contrast then summary.contrastStops
     else if pane == StudioLayouts.trials then navigator.trialsStops
     else if pane == StudioLayouts.items then navigator.itemsStops
     else if pane == StudioLayouts.trialView then explore.focusStops
@@ -207,7 +214,8 @@ object StudioWindow:
       project: Option[ProjectPort] = None,
       clock: () => Option[ClockTime] = DesktopEffects.wallClock,
       nativeMenu: Boolean = AppShell.systemMenuBar,
-      presets: FilePresetStore = FilePresetStore.userDefault
+      presets: FilePresetStore = FilePresetStore.userDefault,
+      panels: PanelSources = PanelSources.notServed
   )(using IORuntime): Either[WindowError, StudioWindow] =
     for
       sheets <- StudioStyles.stylesheets(theme).left.map(WindowError.Styles(_))
@@ -223,7 +231,8 @@ object StudioWindow:
         project,
         clock,
         nativeMenu,
-        presets
+        presets,
+        panels
       )
     yield
       window.root.getStylesheets.setAll(sheets*)
@@ -240,7 +249,8 @@ object StudioWindow:
       project: Option[ProjectPort],
       clock: () => Option[ClockTime],
       nativeMenu: Boolean,
-      presets: FilePresetStore
+      presets: FilePresetStore,
+      panels: PanelSources
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None
@@ -321,14 +331,22 @@ object StudioWindow:
     host.host(StudioLayouts.admission, admission.node)
     r.listen(admission.sync)
     // Compare's summary layout (Results board): the shown run's summary.
-    val summary = CompareSummaryHost(() => r.model, dispatch, SummaryInputs.of(session))
+    val summary =
+      CompareSummaryHost(() => r.model, dispatch, SummaryInputs.of(session), panels)
     Vector(
       "compare.participant-plot"       -> summary.participantPlot.plotNode,
       "compare.participant-plot.table" -> summary.participantPlot.tableNode,
       "compare.scale-profile"          -> summary.scaleProfile.plotNode,
       "compare.scale-profile.table"    -> summary.scaleProfile.tableNode,
       "compare.participant-table"      -> summary.participantNode,
-      "compare.query-table"            -> summary.queryTable
+      "compare.query-table"            -> summary.queryTable,
+      "compare.queries"                -> summary.queries.node,
+      "compare.query-trial"            -> summary.panels.queryNode,
+      "compare.reference-trial"        -> summary.panels.referenceNode,
+      "compare.contrast"               -> summary.contrastNode,
+      "compare.query-trial.table"      -> summary.queryTrialTable,
+      "compare.reference-trial.table"  -> summary.referenceTrialTable,
+      "compare.items"                  -> summary.items.node
     ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
     val summaryListener: AppModel => Unit = summary.sync
     r.listen(summaryListener)
