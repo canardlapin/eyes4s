@@ -38,6 +38,21 @@ enum DatasetChange derives CanEqual:
   /** The source of `role` was added, removed or replaced by other bytes. */
   case SourceBytes(role: SourceRole, from: Option[Source], to: Option[Source])
 
+  /** The same bytes of `role` imported under another name. A source's import
+    * name is part of the revision: it is what the analyst sees and what the
+    * bundle stores the copy under.
+    */
+  case SourceRenamed(role: SourceRole, from: SourcePath, to: SourcePath)
+
+  /** The same bytes and name of `role` with another eyes4s semantic
+    * identity (bound, unbound or rebound).
+    */
+  case SourceIdentified(
+      role: SourceRole,
+      from: Option[SemanticIdentity],
+      to: Option[SemanticIdentity]
+  )
+
   /** The column playing `role` changed; `None` is unmapped. */
   case Mapped(
       source: MappedSource,
@@ -263,7 +278,11 @@ object DatasetDiff:
     val sources = SourceRole.values.toVector.flatMap { role =>
       val (f, t) =
         (from.sources.entries.find(_.role == role), to.sources.entries.find(_.role == role))
-      when(f.map(_.bytes.hex), t.map(_.bytes.hex))(SourceBytes(role, f, t))
+      (f, t) match
+        case (Some(a), Some(b)) if a.bytes == b.bytes =>
+          when(a.path, b.path)(SourceRenamed(role, a.path, b.path)) ++
+            when(a.semantic, b.semantic)(SourceIdentified(role, a.semantic, b.semantic))
+        case _ => when(f.map(_.bytes.hex), t.map(_.bytes.hex))(SourceBytes(role, f, t))
     }
     def roles(source: MappedSource)(
         f: ColumnRole => Option[ColumnName],

@@ -62,7 +62,11 @@ object DatasetDiffText:
     case SourceBytes(role, None, Some(_)) => s"${role.label} source added"
     case SourceBytes(role, Some(_), None) => s"${role.label} source removed"
     case SourceBytes(role, _, _)          => s"${role.label} source replaced"
-    case Mapped(source, role, from, to)   =>
+    case SourceRenamed(role, from, to)    =>
+      s"${role.label} source renamed ${from.value} → ${to.value}"
+    case SourceIdentified(role, _, Some(_)) => s"${role.label} source identity bound"
+    case SourceIdentified(role, _, None)    => s"${role.label} source identity unbound"
+    case Mapped(source, role, from, to)     =>
       val phrase = (from, to) match
         case (None, Some(c))    => s"${c.value} → ${role.label}"
         case (Some(c), None)    => s"${role.label} unmapped (was ${c.value})"
@@ -126,11 +130,12 @@ object DatasetDiffText:
       case other => Some(change(other))
     }
     val status = diff.status match
-      case StatusDiff.Compared(c) if c.trials > 0 => Some(statusCount(c.trials))
-      case StatusDiff.Compared(_)                 => None
-      case StatusDiff.Unavailable(_, _)           =>
+      case StatusDiff.Compared(c) if c.trials > 0         => Some(statusCount(c.trials))
+      case StatusDiff.Compared(_)                         => None
+      case StatusDiff.Unavailable(d, _) if d == diff.from =>
         Some(s"trial status vs ${diff.from.label} unavailable")
-      case StatusDiff.NotRead => None
+      case StatusDiff.Unavailable(d, _) => Some(s"trial status of ${d.label} unavailable")
+      case StatusDiff.NotRead           => None
     (phrases ++ status).mkString("; ")
 
   /** Why a figure on `diff.from`'s data is stale (Figures.dc.html): "dataset
@@ -143,11 +148,11 @@ object DatasetDiffText:
         s"$to changed the admission status of ${if n == 1 then "1 trial" else s"$n trials"}"
       case None =>
         val parts = diff.changes.map {
-          case _: SourceBytes                                => "the sources"
-          case _: Mapped | _: Attribute | _: InventoryMapped => "the mapping"
-          case _: Units                                      => "the units"
-          case _: Screen | _: Image | _: PixelsPerDegree     => "the geometry"
-          case _: OffScreen                                  => "the off-screen policy"
+          case _: SourceBytes | _: SourceRenamed | _: SourceIdentified => "the sources"
+          case _: Mapped | _: Attribute | _: InventoryMapped           => "the mapping"
+          case _: Units                                                => "the units"
+          case _: Screen | _: Image | _: PixelsPerDegree               => "the geometry"
+          case _: OffScreen => "the off-screen policy"
           case _: CorrectionAdded | _: CorrectionRemoved | _: CorrectionsReordered =>
             "the corrections"
         }.distinct
