@@ -946,5 +946,6 @@ object DiagnosticSamples:
       StudyRunError.UnexpectedCompletion(StudyDesign.Control, 42L)
     ),
     generated[StudyRecipeError]("StudyRecipeError"),
-    generated[StudyAdvisory]("StudyAdvisory")
+    generated[StudyAdvisory]("StudyAdvisory"),
+    generated[FactError]("FactError")
   )
