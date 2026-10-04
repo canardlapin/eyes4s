@@ -208,10 +208,12 @@ object Reducer:
 
     case VerifyDataset(id) =>
       for
-        spec    <- editable(d, id)
-        _       <- admissible(rule, d, c, spec.mapping)
-        _       <- inventoryMapped(rule, d, c, id, spec.sources, spec.inventory)
-        _       <- keysAgree(rule, d, c, id, spec.sources, spec.mapping, spec.inventory)
+        spec <- editable(d, id)
+        _    <- admissible(rule, d, c, spec.mapping)
+        _    <- inventoryMapped(rule, d, c, id, spec.sources, spec.inventory)
+        _    <- keysAgree(rule, d, c, id, spec.sources, spec.mapping, spec.inventory)
+        // A revision stored with overlapping rules is not admitted either.
+        _       <- correctionsApart(d, c, id, spec.admission)
         content <- contentOf(spec)
         next <- replaceDataset(d, c)(spec.copy(decision = AdmissionDecision.Verifying(content)))
       yield Outcome(

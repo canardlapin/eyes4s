@@ -191,7 +191,12 @@ object DocumentGen:
     for
       o  <- Gen.oneOf(OffScreenChoice.values.toSeq)
       cs <- Gen.listOfN(2, Gen.zip(target, correction)).flatMap(Gen.someOf(_))
-    yield AdmissionChoice(o, cs.toVector.map(CorrectionRule.apply))
+      // Rules that overlap are never recorded (the reducer refuses them,
+      // S5.5): a generated revision keeps at most one rule per trial.
+      choice = AdmissionChoice(o, cs.toVector.map(CorrectionRule.apply))
+    yield
+      if AdmissionChoice.overlap(choice).isEmpty then choice
+      else choice.copy(corrections = choice.corrections.take(1))
   val decision: Gen[AdmissionDecision] = Gen.oneOf(
     Gen.const(AdmissionDecision.Pending),
     canonical[DatasetRevisionSpec].map(AdmissionDecision.Verifying(_)),
