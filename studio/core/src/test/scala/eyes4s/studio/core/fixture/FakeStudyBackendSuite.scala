@@ -493,3 +493,29 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       assertEquals(after.grandD, 0.26)
       assertEquals(after.pairRows, 35876L)
   }
+
+  test("the fake serves an undeclared or a refused inventory when a test asks (S5.4)") {
+    val r2    = DatasetRevision(2)
+    val r3    = DatasetRevision(3)
+    val issue = InventoryIssue.Field(4, "Trial", "", "a trial id")
+    for
+      fake       <- FakeStudyBackend.create[IO](StoryMoment.T2)
+      joined     <- ok(fake.admission(r3))
+      _          <- fake.serveInventory(r3, InventoryScenario.Undeclared)
+      undeclared <- ok(fake.admission(r3))
+      entries    <- ok(fake.ledger(r3, page(0, 4096)))
+      _          <- fake.serveInventory(r3, InventoryScenario.Refused(Vector(issue)))
+      refused    <- fake.admission(r3)
+      noLedger   <- fake.ledger(r3, page(0, 1))
+      other      <- fake.admission(r2)
+    yield
+      assertEquals(joined.inventory, InventoryJoin.Joined(960, 6))
+      assertEquals((undeclared.inventory, undeclared.absent), (InventoryJoin.Undeclared, None))
+      assertEquals(undeclared.copy(inventory = joined.inventory), joined)
+      assertEquals((entries.page.total, entries.entries.size), (954, 954))
+      assert(!entries.entries.exists(_.disposition == TrialDisposition.Absent))
+      assertEquals(refused, Left(BackendError.InventoryRefused(r3, Vector(issue))))
+      assertEquals(noLedger, Left(BackendError.InventoryRefused(r3, Vector(issue))))
+      // A scenario is per dataset; r2 is still answered as before.
+      assertEquals(other, Left(BackendError.Unavailable(DiagnosticLocus.Dataset(r2))))
+  }

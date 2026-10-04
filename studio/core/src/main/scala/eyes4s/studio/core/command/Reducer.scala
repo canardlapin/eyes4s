@@ -213,7 +213,7 @@ object Reducer:
         next <- replaceDataset(d, c)(spec.copy(decision = AdmissionDecision.Verifying(content)))
       yield reversible(next, WithdrawVerification(id))
 
-    case Admit(id, verified, ledger, inventory) =>
+    case Admit(id, verified, policy, ledger, inventory) =>
       for
         spec     <- pending(d, id)
         recorded <- spec.decision match
@@ -229,7 +229,7 @@ object Reducer:
           ChangedSinceVerification(id, recorded, current)
         )
         next <- replaceDataset(d, c)(
-          spec.copy(decision = AdmissionDecision.Admitted(ledger, inventory))
+          spec.copy(decision = AdmissionDecision.Admitted(policy, ledger, inventory))
         )
       yield Outcome(
         next,
@@ -566,7 +566,7 @@ object Reducer:
     case VerifyDataset(id)         => Target.OnDataset(id)
     case WithdrawVerification(id)  => Target.OnDataset(id)
     case ResumeVerification(id, _) => Target.OnDataset(id)
-    case Admit(id, _, _, _)        => Target.OnDataset(id)
+    case Admit(id, _, _, _, _)     => Target.OnDataset(id)
     case RestoreDraft(draft)       => Target.OnDraft(Some(draft.id))
     case _: (StartDraft | ChangeRecipe | RebaseDraft | SaveAndRun) | DiscardDraft =>
       Target.OnDraft(

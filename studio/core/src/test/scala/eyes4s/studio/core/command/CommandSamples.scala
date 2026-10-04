@@ -17,6 +17,7 @@
 package eyes4s.studio.core.command
 
 import eyes4s.codec.CanonicalDigest
+import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.DocumentGen.right
@@ -101,9 +102,15 @@ object CommandSamples:
     "VerifyDataset"        -> VerifyDataset(r3),
     "WithdrawVerification" -> WithdrawVerification(r3),
     "ResumeVerification"   -> ResumeVerification(r3, verified),
-    "Admit"                -> Admit(r3, verified, CoreBinding.unbound, CoreBinding.unbound),
-    "StartDraft"           -> StartDraft(rev4, None, draft.changes),
-    "RestoreDraft"         -> RestoreDraft(draft),
+    "Admit"                -> Admit(
+      r3,
+      verified,
+      Some(CoreAdmissionDecision.ReviewExclusions),
+      CoreBinding.unbound,
+      CoreBinding.unbound
+    ),
+    "StartDraft"   -> StartDraft(rev4, None, draft.changes),
+    "RestoreDraft" -> RestoreDraft(draft),
     "ChangeRecipe" -> ChangeRecipe(RecipeChange.Grid(rev4Rec.grid, right(GridSize.of(32, 24)))),
     "RebaseDraft"  -> RebaseDraft(r2),
     "DiscardDraft" -> DiscardDraft,

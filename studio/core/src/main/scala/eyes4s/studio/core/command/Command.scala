@@ -17,8 +17,10 @@
 package eyes4s.studio.core.command
 
 import eyes4s.codec.CanonicalDigest
+import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId}
 import eyes4s.studio.core.document.*
+import eyes4s.studio.core.document.AdmissionDecision.coreDecision
 import eyes4s.studio.core.document.DigestJson.given
 import io.circe.Codec
 
@@ -122,12 +124,15 @@ enum Command derives CanEqual, Codec.AsObject:
   /** Record the admission decision for the content that was verified: the
     * verifying revision becomes admitted, bound to the ledger and inventory
     * the backend produced. `verified` is the digest the backend was sent; it
-    * must be the recorded one and the revision's current content. A history
-    * barrier.
+    * must be the recorded one and the revision's current content. `policy`
+    * is the eyes4s `AdmissionDecision` the revision is admitted under,
+    * recorded in [[AdmissionDecision.Admitted]] (S5.6); a journal line
+    * written before S5.6 has none. A history barrier.
     */
   case Admit(
       dataset: DatasetRevision,
       verified: CanonicalDigest[DatasetRevisionSpec],
+      policy: Option[CoreAdmissionDecision],
       ledger: CoreBinding[AdmissionLedgerArtifact],
       inventory: CoreBinding[TrialInventoryArtifact]
   )

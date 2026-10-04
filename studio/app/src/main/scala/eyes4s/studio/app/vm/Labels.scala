@@ -17,8 +17,17 @@
 package eyes4s.studio.app.vm
 
 import eyes4s.studio.app.AppModel
+import eyes4s.studio.app.admission.AdmissionLedgerVM
 import eyes4s.studio.app.nav.{DataSection, Place}
-import eyes4s.studio.app.text.{Format, GeometryText, GeometryTextId, MessageId, Messages}
+import eyes4s.studio.app.text.{
+  Format,
+  GeometryText,
+  GeometryTextId,
+  LedgerText,
+  LedgerTextId,
+  MessageId,
+  Messages
+}
 import eyes4s.studio.core.backend.{
   DatasetRevision,
   PairDesign,
@@ -156,6 +165,7 @@ final class Labels(model: AppModel, messages: Messages):
     case StudioRef.GroupCell(_, _, _, group)         => group.label
     case StudioRef.FigurePanel(_, letter)            => messages(CrumbPanel, letter.value)
     case StudioRef.WindowTally(dataset, region)      => tally(dataset, region)
+    case StudioRef.InventoryCount(_, _)              => AdmissionLedgerVM.countLabel(ref)
     case StudioRef.Result(run, address)              =>
       val scale = address.scale
       address.value match
@@ -216,7 +226,9 @@ final class Labels(model: AppModel, messages: Messages):
         messages(PathGroupCell, group.label, this.reporting(reporting), sigma(run, scale))
       case StudioRef.FigurePanel(figure, letter)  => panel(figure, letter)
       case StudioRef.WindowTally(dataset, region) => tally(dataset, region)
-      case StudioRef.Result(run, address)         =>
+      case StudioRef.InventoryCount(dataset, _)   =>
+        LedgerText(LedgerTextId.PathCount, dataset.label, AdmissionLedgerVM.countTitle(ref))
+      case StudioRef.Result(run, address) =>
         val s = sigma(run, address.scale)
         address.value match
           case ResultAddress.PairRow(_, d, focal, reference) =>

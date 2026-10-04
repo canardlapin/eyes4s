@@ -1,0 +1,223 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* The admission ledger (ticket S5.6; docs/studio/design/Data.dc.html,
+ * admission). Colours are token names only; sizes come from studio-type.css
+ * classes; weights are face families (DESIGN_SPEC 14). */
+
+.ledger-panel {
+  -fx-background-color: -es-surface;
+  -fx-focus-color: -es-accent;
+  -fx-faint-focus-color: transparent;
+}
+
+.ledger-panel .scroll-pane,
+.ledger-panel .scroll-pane > .viewport {
+  -fx-background-color: -es-surface;
+  -fx-background-insets: 0;
+  -fx-padding: 0;
+}
+
+/* ---- the counts ------------------------------------------------------------ */
+
+.ledger-head {
+  -fx-padding: 6 14 5 14;
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.ledger-head .label {
+  -fx-text-fill: -es-ink-3;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+/* One count: its label, then its number as a button that opens its trials. */
+.ledger-row {
+  -fx-min-height: 26px;
+  -fx-padding: 0 14 0 14;
+  -fx-spacing: 8;
+  -fx-alignment: center-left;
+  -fx-background-color: -es-surface-3, -es-surface;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.ledger-row.group {
+  -fx-background-color: -es-surface-3, -es-surface-2;
+}
+
+.ledger-row.cause {
+  -fx-padding: 0 14 0 30;
+}
+
+.ledger-row.opened {
+  -fx-background-color: -es-surface-3, -es-accent-soft;
+}
+
+.ledger-label {
+  -fx-text-fill: -es-ink;
+}
+
+.ledger-row.total .ledger-label {
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.ledger-row.cause .ledger-label {
+  -fx-text-fill: -es-ink-2;
+}
+
+.ledger-detail, .ledger-note, .ledger-definitions, .ledger-hint {
+  -fx-text-fill: -es-ink-2;
+}
+
+.ledger-count {
+  -fx-min-height: 22px;
+  -fx-pref-height: 22px;
+  -fx-max-height: 22px;
+  -fx-min-width: 44px;
+  -fx-padding: 0 8 0 8;
+  -fx-alignment: center-right;
+  -fx-background-color: transparent;
+  -fx-background-radius: 3;
+  -fx-text-fill: -es-ink;
+  -fx-underline: true;
+}
+
+.ledger-row.total .ledger-count {
+  -fx-font-family: "IBM Plex Mono SmBld";
+}
+
+.ledger-count:hover {
+  -fx-background-color: -es-surface-3;
+}
+
+.ledger-count:focused {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+}
+
+.ledger-count:disabled {
+  -fx-opacity: 1;
+  -fx-text-fill: -es-ink-3;
+  -fx-underline: false;
+}
+
+.ledger-text {
+  -fx-padding: 7 14 7 14;
+  -fx-spacing: 4;
+}
+
+.ledger-term {
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.ledger-warn {
+  -fx-text-fill: -es-warn-text;
+}
+
+.ledger-problem {
+  -fx-padding: 6 14 6 14;
+  -fx-text-fill: -es-fail;
+}
+
+/* ---- an open count's trials ------------------------------------------------------ */
+
+.ledger-opened {
+  -fx-padding: 8 14 10 14;
+  -fx-spacing: 6;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1 0 0 0;
+}
+
+.ledger-opened-title {
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.ledger-trials {
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-padding: 1;
+}
+
+.ledger-trials .list-cell {
+  -fx-background-color: -es-surface;
+  -fx-text-fill: -es-ink;
+  -fx-padding: 3 8 3 8;
+}
+
+.ledger-trials .list-cell:selected {
+  -fx-background-color: -es-accent-soft;
+  -fx-text-fill: -es-ink;
+}
+
+/* ---- the decision column --------------------------------------------------------------- */
+
+.ledger-decision {
+  -fx-min-width: 300px;
+  -fx-pref-width: 300px;
+  -fx-max-width: 300px;
+  -fx-padding: 12 14 12 14;
+  -fx-spacing: 9;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 0 0 0 1;
+}
+
+.ledger-decision-title {
+  -fx-text-fill: -es-ink;
+}
+
+.ledger-choice {
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.ledger-choice-note {
+  -fx-padding: 0 0 0 24;
+  -fx-text-fill: -es-ink-2;
+}
+
+.ledger-button {
+  -fx-min-height: 24px;
+  -fx-pref-height: 24px;
+  -fx-max-height: 24px;
+  -fx-padding: 0 10 0 10;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans Medm";
+}
+
+.ledger-button.primary {
+  -fx-background-color: -es-accent;
+  -fx-background-insets: 0;
+  -fx-text-fill: -es-on-accent;
+}
+
+.ledger-button:focused {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+}
+
+.ledger-button.primary:focused {
+  -fx-background-color: -es-ink, -es-accent;
+  -fx-background-insets: 0, 2;
+}
+
+.ledger-button:disabled {
+  -fx-opacity: 0.45;
+}

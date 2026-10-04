@@ -413,7 +413,7 @@ object GeometryPanel:
           case GeometryChange.SetOffScreen(p) => Vector(Command.SetOffScreenPolicy(id, p))
           case GeometryChange.AddRule(r)    => Vector(Command.AddCorrection(id, rules.size, r))
           case GeometryChange.RemoveRule(i) => Vector(Command.RemoveCorrection(id, i))
-      case AdmissionDecision.Verifying(_) | AdmissionDecision.Admitted(_, _) =>
+      case AdmissionDecision.Verifying(_) | AdmissionDecision.Admitted(_, _, _) =>
         val (geometry, admission) = c match
           case GeometryChange.SetGeometry(g)  => (g, spec.admission)
           case GeometryChange.SetOffScreen(p) =>

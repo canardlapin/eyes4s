@@ -18,6 +18,7 @@ package eyes4s.studio.core.fixture
 
 import cats.syntax.all.*
 import eyes4s.codec.ByteDigest
+import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.core.backend.{
   AnalysisRevision,
   DatasetRevision,
@@ -130,8 +131,15 @@ object StoryMoments:
       g      <- Geometry.of(screen, image, ppd)
     yield g
 
+  /** An admitted revision was admitted reviewing its exclusions: the story's
+    * ledger quarantines trials, which `RequireComplete` refuses.
+    */
   private val admitted: AdmissionDecision =
-    AdmissionDecision.Admitted(CoreBinding.unbound, CoreBinding.unbound)
+    AdmissionDecision.Admitted(
+      Some(CoreAdmissionDecision.ReviewExclusions),
+      CoreBinding.unbound,
+      CoreBinding.unbound
+    )
 
   /** r2: onset units undeclared, occurrence unmapped. */
   private def datasetR2(sources: Sources): Either[DocumentError, DatasetRevisionSpec] =
