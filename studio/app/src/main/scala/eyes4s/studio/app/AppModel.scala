@@ -47,10 +47,12 @@ import eyes4s.studio.core.document.{
   LayoutBlob,
   Perspective,
   PresentationState,
+  Recipe,
   RunLifecycle,
   StudioDocument
 }
 import eyes4s.studio.core.freshness.{Freshness, SessionFacts}
+import eyes4s.studio.core.preview.PreviewReady
 import eyes4s.studio.core.selection.{
   SelectionError,
   SelectionInput,
@@ -259,12 +261,33 @@ object AppEffect:
   /** A command effect of studio-core as an app effect, against the document
     * the command produced.
     */
-  def of(effect: Effect, document: StudioDocument, edit: EditMark): AppEffect = effect match
+  def of(
+      effect: Effect,
+      document: StudioDocument,
+      edit: EditMark,
+      prepared: Option[PreparedDesign] = None
+  ): AppEffect = effect match
+    // A run of the design the resolved-design pane prepared submits that
+    // prepared design itself (E2E-05); any other run submits its stamp.
     case Effect.RequestRun(_, analysis, dataset) =>
-      Execution(ExecutionEffect.Submit(AppModel.stampOf(document, analysis, dataset)))
+      val stamp = AppModel.stampOf(document, analysis, dataset)
+      Execution(
+        prepared
+          .filter(_.prepares(document, stamp))
+          .fold(ExecutionEffect.Submit(stamp))(p => ExecutionEffect.SubmitPreview(p.ready))
+      )
     case Effect.RequestAdmission(dataset, content) => RequestAdmission(dataset, content)
     case Effect.CancelJob(_, job)                  => Execution(ExecutionEffect.Cancel(job))
     case Effect.Persist                            => Persist(edit)
+
+/** A backend preview counted to its ready receipt, with the recipe it was
+  * prepared from (S7.5). A draft edit keeps the draft's revision, and so its
+  * stamp, so the recipe is what tells a changed draft from the one previewed.
+  */
+final case class PreparedDesign(ready: PreviewReady, recipe: Recipe) derives CanEqual:
+  /** Whether a run of `stamp` in `document` runs this design. */
+  def prepares(document: StudioDocument, stamp: RunStamp): Boolean =
+    ready.stamp == stamp && document.analysis(stamp.revision).exists(_.recipe == recipe)
 
 /** A user action or a service fact the shell dispatches (DESIGN_SPEC
   * section 13). Hover and selection are intents, never document commands.
@@ -355,6 +378,11 @@ enum Intent derives CanEqual:
   case SessionChanged(facts: SessionFacts)
   case ItemsLoaded(items: TrialItems)
 
+  /** The resolved-design pane counted a backend preview to the end (S7.5): a
+    * run of its stamp and recipe submits this receipt.
+    */
+  case DesignPrepared(design: PreparedDesign)
+
   /** The project session finished an atomic save at `at` of every edit up
     * to `upTo` (the mark of the `Persist` it performed, S2.4a).
     */
@@ -408,7 +436,8 @@ final case class AppModel private (
     panes: PaneState,
     pending: Option[Confirmation],
     notice: Option[Notice],
-    save: SaveState
+    save: SaveState,
+    prepared: Option[PreparedDesign]
 ) derives CanEqual:
 
   def document: StudioDocument = history.document
@@ -493,7 +522,8 @@ object AppModel:
       PaneState.empty,
       None,
       None,
-      SaveState.never
+      SaveState.never,
+      None
     )
 
   /** The Analysis trail of the current draft, or of the latest revision. */
@@ -642,6 +672,7 @@ object AppModel:
     case Intent.JobsChanged(jobs)  => (m.copy(jobs = m.jobs.withJobs(jobs)), none)
     case Intent.SessionChanged(f)  => (m.copy(session = f), none)
     case Intent.ItemsLoaded(items) => (m.copy(items = items), none)
+    case Intent.DesignPrepared(r)  => (m.copy(prepared = Some(r)), none)
     case Intent.Saved(at, upTo)    => (m.copy(save = m.save.saved(at, upTo)), none)
     case Intent.SaveFailed(reason) => (m.copy(notice = Some(Notice.SaveFailed(reason))), none)
 
@@ -721,8 +752,12 @@ object AppModel:
       val edited  = step.effects.contains(Effect.Persist)
       val save    = if edited then m.save.edit else m.save
       val doc     = step.history.document
-      val effects = step.effects.map(AppEffect.of(_, doc, save.edits))
-      val submits = effects.collect { case AppEffect.Execution(ExecutionEffect.Submit(s)) => s }
+      val effects = step.effects.map(AppEffect.of(_, doc, save.edits, m.prepared))
+      val submits = effects
+        .collect { case AppEffect.Execution(e) => e }
+        .flatMap(
+          ExecutionEffect.submitted
+        )
       // A requirement that changed without a submission (a plan bound to the
       // running revision) is told to the service as Require.
       val required = requestedStamp(doc)

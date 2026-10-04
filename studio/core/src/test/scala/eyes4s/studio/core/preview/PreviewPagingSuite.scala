@@ -62,7 +62,7 @@ class PreviewPagingSuite extends CatsEffectSuite:
         .collectFirst { case PreviewEvent.Ready(value) => value }
         .getOrElse(fail("not ready"))
       assertEquals(ready.candidates.candidatePairsPerScale, 230400L)
-      assertEquals(ready.counts, right(PreviewCounts.of(8969L, 44845L, 9, 0)))
+      assertEquals(ready.counts, right(PreviewCounts.of(8969L, 44845L, 457, 9, 0)))
       assertEquals(
         rest.collect { case PreviewEvent.Counting(_, p) => p }.last,
         progress(24, 24)
@@ -87,6 +87,7 @@ class PreviewPagingSuite extends CatsEffectSuite:
             PreviewCounts.of(
               receipt.counts.eligiblePairsPerScale,
               receipt.counts.eligiblePairs,
+              receipt.counts.eligibleQueries,
               receipt.counts.unmatchedQueries,
               1
             )
@@ -110,6 +111,7 @@ class PreviewPagingSuite extends CatsEffectSuite:
           PreviewCounts.of(
             1L,
             ready.counts.eligiblePairs,
+            ready.counts.eligibleQueries,
             ready.counts.unmatchedQueries,
             ready.counts.ambiguousMatches
           )
@@ -273,20 +275,32 @@ class PreviewPagingSuite extends CatsEffectSuite:
       Left(PreviewError.Negative("totalParticipants", -1))
     )
     assertEquals(
-      PreviewCandidates.of(480, 480, 24, -1L),
+      PreviewCandidates.of(480, 480, 24, -1L, 480, 14, None),
       Left(PreviewError.Negative("candidatePairsPerScale", -1L))
     )
     assertEquals(
-      PreviewCandidates.of(480, -2, 24, 1L),
+      PreviewCandidates.of(480, -2, 24, 1L, 480, 14, None),
       Left(PreviewError.Negative("referenceTrials", -2L))
     )
     assertEquals(
-      PreviewCounts.of(8969L, 44845L, 9, -1),
+      PreviewCounts.of(8969L, 44845L, 457, 9, -1),
       Left(PreviewError.Negative("ambiguousMatches", -1L))
     )
     assertEquals(
-      PreviewCounts.of(-8969L, 44845L, 9, 0),
+      PreviewCounts.of(-8969L, 44845L, 457, 9, 0),
       Left(PreviewError.Negative("eligiblePairsPerScale", -8969L))
+    )
+    assertEquals(
+      PreviewCandidates.of(480, 480, 24, 1L, 480, 481, None),
+      Left(PreviewError.BeyondTotal("queriesNotAdmitted", 481, 480))
+    )
+    assertEquals(
+      PreviewCandidates.of(480, 480, 24, 1L, 480, 14, Some(-1)),
+      Left(PreviewError.Negative("byDesignQueries", -1L))
+    )
+    assertEquals(
+      PreviewCounts.of(8969L, 44845L, -457, 9, 0),
+      Left(PreviewError.Negative("eligibleQueries", -457L))
     )
     assertEquals(ParticipantCount.of(-3), Left(PreviewError.Negative("participant count", -3L)))
     assertEquals(
@@ -305,12 +319,14 @@ class PreviewPagingSuite extends CatsEffectSuite:
     )
     assert(
       decode[PreviewCandidates](
-        """{"focalTrials":-1,"referenceTrials":480,"participants":24,"candidatePairsPerScale":1}"""
+        """{"focalTrials":-1,"referenceTrials":480,"participants":24,"candidatePairsPerScale":1,""" +
+          """"requestedQueries":480,"queriesNotAdmitted":14,"byDesignQueries":null}"""
       ).isLeft
     )
     assert(
       decode[PreviewCounts](
-        """{"eligiblePairsPerScale":1,"eligiblePairs":1,"unmatchedQueries":-9,"ambiguousMatches":0}"""
+        """{"eligiblePairsPerScale":1,"eligiblePairs":1,"eligibleQueries":1,""" +
+          """"unmatchedQueries":-9,"ambiguousMatches":0}"""
       ).isLeft
     )
     assert(
@@ -325,7 +341,8 @@ class PreviewPagingSuite extends CatsEffectSuite:
   }
 
   test("progress advances one participant at a time and stops when complete") {
-    val start = PreviewProgress.start(right(PreviewCandidates.of(480, 480, 2, 1L)))
+    val start =
+      PreviewProgress.start(right(PreviewCandidates.of(480, 480, 2, 1L, 480, 14, None)))
     assertEquals(start, progress(0, 2))
     assertEquals(start.advance, Some(progress(1, 2)))
     assertEquals(start.advance.flatMap(_.advance), Some(progress(2, 2)))
@@ -333,5 +350,8 @@ class PreviewPagingSuite extends CatsEffectSuite:
     assertEquals(progress(2, 2).advance, None)
     assertEquals(progress(1, 2).completed, right(ParticipantCount.of(1)))
     assertEquals(progress(1, 2).total, right(ParticipantCount.of(2)))
-    assertEquals(PreviewProgress.start(right(PreviewCandidates.of(0, 0, 0, 0L))).advance, None)
+    assertEquals(
+      PreviewProgress.start(right(PreviewCandidates.of(0, 0, 0, 0L, 0, 0, None))).advance,
+      None
+    )
   }

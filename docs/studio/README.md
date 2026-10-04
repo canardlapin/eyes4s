@@ -109,4 +109,21 @@ Its participant pages are fixture steps. They do not qualify a real
 `CountCursor` budget, an input digest, or scientific pair counts. S3.7 must retain
 the actual `PreparedStudy` and its owned counts, check current input and plan
 identity, and execute that prepared study; S0.7b qualifies fixture counts through
-real eyes4s. S7.5 owns the resolved-design table that presents these events.
+real eyes4s.
+
+`PreviewCandidates` also carries the query counts known before paging (requested,
+not admitted, and the recipe's by-design category, or none), and `PreviewCounts`
+the eligible queries after it. These preview fields are part of protocol 1.4.
+
+## Resolved design table
+
+S7.5's table (`eyes4s.studio.app.analysis.ResolvedDesign`) presents these events
+for the Analysis trail's revision, else the draft. Its chip counts and pair counts
+are the backend's, each traced by a `StudioRef.DesignTally`; rows come from
+`previewRows`; every row opens its trial. A counted receipt goes to the app with
+the recipe it was prepared from (`Intent.DesignPrepared`). A Save & run of the same
+stamp and recipe emits `ExecutionEffect.SubmitPreview`, so execution consumes that
+prepared design (E2E-05); any other run submits its stamp. The board's split of the
+457 eligible queries into 454 contributing and 3 failing in the window, and the
+per-row reasons ("1 control fewer", "0 of 11 fixations inside window"), need fields
+`PreviewRow` does not carry yet.

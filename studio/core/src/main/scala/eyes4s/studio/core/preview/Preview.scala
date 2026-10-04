@@ -81,12 +81,21 @@ object ParticipantCount:
 
 /** The immutable candidate metadata known before eligibility has been counted.
   * No count is negative.
+  *
+  * The query counts come from the trial inventory and the recipe, before any
+  * pair is counted: `requestedQueries` focal trials the design asks for, of
+  * which `queriesNotAdmitted` the admission refused, and `byDesignQueries`
+  * focal trials the recipe states have no reference by design (a recognition
+  * lure), or `None` when the recipe has no such category.
   */
 final case class PreviewCandidates private (
     focalTrials: Int,
     referenceTrials: Int,
     participants: Int,
-    candidatePairsPerScale: Long
+    candidatePairsPerScale: Long,
+    requestedQueries: Int,
+    queriesNotAdmitted: Int,
+    byDesignQueries: Option[Int]
 ) derives CanEqual
 
 object PreviewCandidates:
@@ -94,34 +103,73 @@ object PreviewCandidates:
       focalTrials: Int,
       referenceTrials: Int,
       participants: Int,
-      candidatePairsPerScale: Long
+      candidatePairsPerScale: Long,
+      requestedQueries: Int,
+      queriesNotAdmitted: Int,
+      byDesignQueries: Option[Int]
   ): Either[PreviewError, PreviewCandidates] =
     for
       _ <- PreviewCount.nonNegative("focalTrials", focalTrials)
       _ <- PreviewCount.nonNegative("referenceTrials", referenceTrials)
       _ <- PreviewCount.nonNegative("participants", participants)
       _ <- PreviewCount.nonNegative("candidatePairsPerScale", candidatePairsPerScale)
+      _ <- PreviewCount.nonNegative("requestedQueries", requestedQueries)
+      _ <- PreviewCount.nonNegative("queriesNotAdmitted", queriesNotAdmitted)
+      _ <- Either.cond(
+        queriesNotAdmitted <= requestedQueries,
+        (),
+        PreviewError.BeyondTotal("queriesNotAdmitted", queriesNotAdmitted, requestedQueries)
+      )
+      _ <- byDesignQueries.fold(Right(()))(PreviewCount.nonNegative("byDesignQueries", _))
     yield new PreviewCandidates(
       focalTrials,
       referenceTrials,
       participants,
-      candidatePairsPerScale
+      candidatePairsPerScale,
+      requestedQueries,
+      queriesNotAdmitted,
+      byDesignQueries
     )
 
   given Encoder.AsObject[PreviewCandidates] =
-    Encoder.forProduct4(
+    Encoder.forProduct7(
       "focalTrials",
       "referenceTrials",
       "participants",
-      "candidatePairsPerScale"
-    )(c => (c.focalTrials, c.referenceTrials, c.participants, c.candidatePairsPerScale))
+      "candidatePairsPerScale",
+      "requestedQueries",
+      "queriesNotAdmitted",
+      "byDesignQueries"
+    )(c =>
+      (
+        c.focalTrials,
+        c.referenceTrials,
+        c.participants,
+        c.candidatePairsPerScale,
+        c.requestedQueries,
+        c.queriesNotAdmitted,
+        c.byDesignQueries
+      )
+    )
 
   given Decoder[PreviewCandidates] = PreviewCount.decoder(
-    Decoder.forProduct4[Either[PreviewError, PreviewCandidates], Int, Int, Int, Long](
+    Decoder.forProduct7[
+      Either[PreviewError, PreviewCandidates],
+      Int,
+      Int,
+      Int,
+      Long,
+      Int,
+      Int,
+      Option[Int]
+    ](
       "focalTrials",
       "referenceTrials",
       "participants",
-      "candidatePairsPerScale"
+      "candidatePairsPerScale",
+      "requestedQueries",
+      "queriesNotAdmitted",
+      "byDesignQueries"
     )(of)
   )
 
@@ -174,11 +222,13 @@ object PreviewProgress:
   )
 
 /** Exact result of a retained preview. These are counts, not a scientific
-  * result, and none is negative.
+  * result, and none is negative. `eligibleQueries` focal trials enter the
+  * comparisons; `unmatchedQueries` were admitted without a matched reference.
   */
 final case class PreviewCounts private (
     eligiblePairsPerScale: Long,
     eligiblePairs: Long,
+    eligibleQueries: Int,
     unmatchedQueries: Int,
     ambiguousMatches: Int
 ) derives CanEqual
@@ -187,33 +237,46 @@ object PreviewCounts:
   def of(
       eligiblePairsPerScale: Long,
       eligiblePairs: Long,
+      eligibleQueries: Int,
       unmatchedQueries: Int,
       ambiguousMatches: Int
   ): Either[PreviewError, PreviewCounts] =
     for
       _ <- PreviewCount.nonNegative("eligiblePairsPerScale", eligiblePairsPerScale)
       _ <- PreviewCount.nonNegative("eligiblePairs", eligiblePairs)
+      _ <- PreviewCount.nonNegative("eligibleQueries", eligibleQueries)
       _ <- PreviewCount.nonNegative("unmatchedQueries", unmatchedQueries)
       _ <- PreviewCount.nonNegative("ambiguousMatches", ambiguousMatches)
     yield new PreviewCounts(
       eligiblePairsPerScale,
       eligiblePairs,
+      eligibleQueries,
       unmatchedQueries,
       ambiguousMatches
     )
 
   given Encoder.AsObject[PreviewCounts] =
-    Encoder.forProduct4(
+    Encoder.forProduct5(
       "eligiblePairsPerScale",
       "eligiblePairs",
+      "eligibleQueries",
       "unmatchedQueries",
       "ambiguousMatches"
-    )(c => (c.eligiblePairsPerScale, c.eligiblePairs, c.unmatchedQueries, c.ambiguousMatches))
+    )(c =>
+      (
+        c.eligiblePairsPerScale,
+        c.eligiblePairs,
+        c.eligibleQueries,
+        c.unmatchedQueries,
+        c.ambiguousMatches
+      )
+    )
 
   given Decoder[PreviewCounts] = PreviewCount.decoder(
-    Decoder.forProduct4[Either[PreviewError, PreviewCounts], Long, Long, Int, Int](
+    Decoder.forProduct5[Either[PreviewError, PreviewCounts], Long, Long, Int, Int, Int](
       "eligiblePairsPerScale",
       "eligiblePairs",
+      "eligibleQueries",
       "unmatchedQueries",
       "ambiguousMatches"
     )(of)

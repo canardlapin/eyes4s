@@ -32,6 +32,7 @@ import eyes4s.studio.desktop.runtime.{
   StudioRuntime,
   StudioSession
 }
+import eyes4s.studio.desktop.analysis.{DesignInputs, ResolvedDesignHost}
 import eyes4s.studio.desktop.importing.{ColumnMappingPaneHost, ImportWizardHost}
 import eyes4s.studio.desktop.platform.FilePresetStore
 import eyes4s.studio.desktop.shell.AppShell
@@ -58,7 +59,8 @@ final class StudioWindow private (
     val shell: AppShell,
     val effects: DesktopEffects,
     val project: Option[ProjectPort],
-    val columnMapping: ColumnMappingPaneHost
+    val columnMapping: ColumnMappingPaneHost,
+    val resolvedDesign: ResolvedDesignHost
 ):
   /** The window content, with the studio stylesheets. */
   def root: javafx.scene.Parent = shell.root
@@ -68,7 +70,9 @@ final class StudioWindow private (
 
   /** The controls a pane shows inside its own focus stop, in Tab order. */
   def paneStops(pane: PaneId): Vector[FocusStop] =
-    if pane == StudioLayouts.columnMapping then columnMapping.focusStops else Vector.empty
+    if pane == StudioLayouts.columnMapping then columnMapping.focusStops
+    else if pane == StudioLayouts.resolvedDesign then resolvedDesign.focusStops
+    else Vector.empty
 
   /** Store each perspective's arrangement in the document (view-only). */
   def captureLayouts(): Unit = runtime.dispatch(Intent.LayoutsCaptured(host.capture()))
@@ -263,4 +267,10 @@ object StudioWindow:
     presetReader.start()
     host.host(StudioLayouts.columnMapping, mapping.node)
     r.listen(mapping.sync)
-    Right(StudioWindow(session, r, host, shell, effects, project, mapping))
+    // The resolved-design table (Analysis): the backend's preview of the
+    // target revision, prepared once the perspective is shown.
+    val design = ResolvedDesignHost(dispatch, DesignInputs.of(session))
+    host.host(StudioLayouts.resolvedDesign, design.node)
+    r.listen(design.sync)
+    design.sync(r.model)
+    Right(StudioWindow(session, r, host, shell, effects, project, mapping, design))

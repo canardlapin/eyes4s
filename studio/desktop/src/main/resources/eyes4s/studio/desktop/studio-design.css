@@ -1,0 +1,175 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* The resolved-design table (ticket S7.5; docs/studio/design/Analysis.dc.html,
+ * resolved design). Colours are token names only; sizes come from
+ * studio-type.css classes; weights are face families (DESIGN_SPEC 14). */
+
+.design-pane {
+  -fx-background-color: -es-surface;
+  -fx-focus-color: -es-accent;
+  -fx-faint-focus-color: transparent;
+}
+
+.design-pane .scroll-pane,
+.design-pane .scroll-pane > .viewport {
+  -fx-background-color: -es-surface;
+  -fx-background-insets: 0;
+  -fx-padding: 0;
+}
+
+/* ---- the chip bar ----------------------------------------------------------- */
+
+.design-bar {
+  -fx-spacing: 6;
+  -fx-alignment: center-left;
+  -fx-padding: 6 12 6 12;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.design-chip {
+  -fx-padding: 2 8 2 8;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 11, 10;
+  -fx-text-fill: -es-ink-2;
+  -fx-cursor: hand;
+}
+
+.design-chip:selected {
+  -fx-background-color: -es-accent, -es-accent-soft;
+  -fx-text-fill: -es-ink;
+}
+
+.design-chip:disabled {
+  -fx-opacity: 1;
+  -fx-text-fill: -es-ink-3;
+}
+
+.design-chip:focused {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: -1, 1;
+}
+
+.design-chip-count {
+  -fx-text-fill: inherit;
+}
+
+.design-mode {
+  -fx-spacing: 5;
+  -fx-alignment: center-left;
+}
+
+.design-mode-dot {
+  -fx-min-width: 7px;
+  -fx-min-height: 7px;
+  -fx-max-width: 7px;
+  -fx-max-height: 7px;
+  -fx-background-radius: 4;
+  -fx-background-color: -es-ink-3;
+}
+
+.design-mode:exact .design-mode-dot {
+  -fx-background-color: -es-accent;
+}
+
+.design-mode > .label {
+  -fx-text-fill: -es-ink-2;
+}
+
+.design-counting {
+  -fx-padding: 0 6 0 6;
+  -fx-border-color: -es-hairline;
+  -fx-border-style: segments(3, 2);
+  -fx-border-radius: 9;
+  -fx-text-fill: -es-ink-2;
+}
+
+/* ---- the table ---------------------------------------------------------------- */
+
+.design-head {
+  -fx-min-height: 22px;
+  -fx-pref-height: 22px;
+  -fx-alignment: center-left;
+  -fx-padding: 0 12 0 12;
+  -fx-spacing: 10;
+  -fx-background-color: -es-surface-2;
+}
+
+.design-head > .label {
+  -fx-text-fill: -es-ink-3;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.design-table {
+  -fx-background-color: -es-surface;
+}
+
+.design-table:focused {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 1;
+}
+
+.design-row {
+  -fx-min-height: 22px;
+  -fx-alignment: center-left;
+  -fx-padding: 0 12 0 12;
+  -fx-spacing: 10;
+  -fx-cursor: hand;
+}
+
+.design-row > .label {
+  -fx-text-fill: -es-ink;
+}
+
+.design-row .design-matched {
+  -fx-text-fill: -es-match-text;
+}
+
+.design-row .design-none {
+  -fx-text-fill: -es-ink-3;
+}
+
+.design-row .design-warn {
+  -fx-text-fill: -es-warn-text;
+}
+
+.design-row:cursor {
+  -fx-background-color: -es-accent-soft;
+}
+
+/* ---- notes under the table ---------------------------------------------------- */
+
+.design-notes {
+  -fx-spacing: 3;
+  -fx-padding: 6 12 6 12;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1 0 0 0;
+}
+
+.design-notes > .label {
+  -fx-text-fill: -es-ink-2;
+}
+
+.design-notes > .design-stamp {
+  -fx-text-fill: -es-ink-3;
+}
+
+.design-problem {
+  -fx-padding: 6 12 6 12;
+  -fx-text-fill: -es-warn-text;
+}

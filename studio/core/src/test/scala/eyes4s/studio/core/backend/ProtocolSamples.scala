@@ -73,8 +73,8 @@ object ProtocolSamples:
   val previewReady: PreviewReady   = PreviewReady(
     PreviewId(1L),
     PreviewStamp.fake(AnalysisRevision(5), DatasetRevision(3)),
-    right(PreviewCandidates.of(480, 480, 24, 230400L)),
-    right(PreviewCounts.of(8969L, 44845L, 9, 0)),
+    right(PreviewCandidates.of(480, 480, 24, 230400L, 480, 14, None)),
+    right(PreviewCounts.of(8969L, 44845L, 457, 9, 0)),
     Vector(diagnostic)
   )
 
@@ -162,7 +162,7 @@ object ProtocolSamples:
       previewReady.stamp.copy(dataset = DatasetRevision(4))
     ),
     BackendError.TamperedPreview(
-      previewReady.copy(counts = right(PreviewCounts.of(8969L, 44845L, 9, 1))),
+      previewReady.copy(counts = right(PreviewCounts.of(8969L, 44845L, 457, 9, 1))),
       previewReady
     ),
     BackendError.Unavailable(DiagnosticLocus.Dataset(DatasetRevision(2))),

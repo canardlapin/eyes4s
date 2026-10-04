@@ -18,6 +18,7 @@ package eyes4s.studio.core.fixture
 
 import cats.effect.IO
 import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.execution.{ExecutionEffect, ExecutionService}
 import eyes4s.studio.core.preview.*
 import fs2.Stream
 import fs2.concurrent.SignallingRef
@@ -71,6 +72,7 @@ class PreviewSnapshotSuite extends munit.CatsEffectSuite:
           PreviewCounts.of(
             7L,
             7L,
+            receipt.counts.eligibleQueries,
             receipt.counts.unmatchedQueries,
             receipt.counts.ambiguousMatches
           )
@@ -89,6 +91,36 @@ class PreviewSnapshotSuite extends munit.CatsEffectSuite:
       assert(after.jobSnapshots(submitted.job) eq captured)
       assertEquals(outcome.progress.map(_.totals.completedPairs), Some(7L))
       assertEquals(outcome.progress.map(_.totals.totalPairs), Some(ProgressTotal.Exact(7L)))
+  }
+
+  test("ExecutionEffect.SubmitPreview runs the retained snapshot, not a rebuilt one (E2E-05)") {
+    for
+      (fake, state) <- subject
+      counted       <- events(fake.previewCounting(revision, budget(24)))
+      receipt = ready(counted)
+      before <- state.get
+      retained = before.previews(receipt.id)
+      captured = retained.snapshot.copy(script =
+        Vector(
+          ScriptedSegment(Segment.Comparing(0, PairDesign.Matched), ProgressTotal.Exact(7))
+        )
+      )
+      _ <- state.update(s =>
+        s.copy(previews = s.previews.updated(receipt.id, retained.copy(snapshot = captured)))
+      )
+      outcome <- ExecutionService.resource[IO](fake).use { service =>
+        ExecutionEffect.perform(service)(ExecutionEffect.SubmitPreview(receipt))
+      }
+      after <- state.get
+    yield
+      assertEquals(outcome, Right(()))
+      assertEquals(
+        ExecutionEffect.submitted(ExecutionEffect.SubmitPreview(receipt)),
+        Some(receipt.stamp)
+      )
+      val jobs = after.jobSnapshots.values.toVector
+      assertEquals(jobs.size, 1)
+      assert(jobs.head eq captured)
   }
 
   for changedDuringCounting <- List(false, true) do

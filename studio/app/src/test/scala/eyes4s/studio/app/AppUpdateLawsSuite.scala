@@ -94,13 +94,14 @@ class AppUpdateLawsSuite extends munit.ScalaCheckSuite:
             assertEquals(t.after.history, step.history, t.intent)
             val doc = step.history.document
             // A persisting step is the model's next edit, and names it.
-            val mapped = step.effects.map(AppEffect.of(_, doc, t.after.save.edits))
+            val mapped =
+              step.effects.map(AppEffect.of(_, doc, t.after.save.edits, t.before.prepared))
             if step.effects.contains(eyes4s.studio.core.command.Effect.Persist) then
               assertEquals(t.after.save.edits, t.before.save.edits.next, t.intent)
             else assertEquals(t.after.save.edits, t.before.save.edits, t.intent)
-            val submits = mapped.collect {
-              case AppEffect.Execution(ExecutionEffect.Submit(s)) => s
-            }
+            val submits = mapped
+              .collect { case AppEffect.Execution(e) => e }
+              .flatMap(ExecutionEffect.submitted)
             // A requirement changed without a submission is announced once.
             val require = AppModel
               .requestedStamp(doc)

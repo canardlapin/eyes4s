@@ -304,6 +304,7 @@ final class FakeStudyBackend[F[_]] private[fixture] (
       PreviewCounts.of(
         summary.pairRowsPerScale,
         pairRowsOf(r),
+        summary.eligibleQueries,
         summary.contrasts.noMatch,
         ambiguousMatches = 0
       )
@@ -312,7 +313,11 @@ final class FakeStudyBackend[F[_]] private[fixture] (
         study.queries.size,
         study.inventory.count(_.trial.phase == Phase.Encoding),
         study.queries.map(_.key.participant).distinct.size,
-        summary.candidatePairsPerScale
+        summary.candidatePairsPerScale,
+        summary.contrasts.requested,
+        summary.contrasts.queryNotAdmitted,
+        // Enc→Ret has no reference-less category; a recognition recipe does.
+        byDesignQueries = None
       )
       allScales <- counts(scoredRevision)
       rev5      <- counts(AnalysisRevision(5))
