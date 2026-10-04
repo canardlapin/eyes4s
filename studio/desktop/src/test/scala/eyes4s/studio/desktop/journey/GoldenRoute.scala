@@ -63,7 +63,9 @@ object GoldenRoute:
     )
     val LibraryScores: (String, String) = (
       "direct-library scores",
-      "pending S0.7b (SCORES.json from eyes4s) and S3.7 (real backend)"
+      "pending S0.7b (SCORES.json from eyes4s) and S3.7 (real backend): M, B and D by " +
+        "query and scale, contributing 454 and failed 3 of the 457 eligible, the group " +
+        "n range [2, 17], and every participant and group mean; held to FIXTURE.md until then"
     )
 
   val doc     = FixtureDoc
@@ -160,6 +162,11 @@ object GoldenRoute:
               )
             ),
             expect(
+              "images",
+              (library.imagesFound, library.missingImages),
+              (a.imagesFound, a.missingImages.map(_.item).sorted)
+            ),
+            expect(
               "eyes4s: window",
               (a.window.outsideWindow, a.window.trialsOutsideWindow, a.window.outsideScreen),
               (
@@ -203,6 +210,34 @@ object GoldenRoute:
               "Pair rows: 8969 per scale, 35876 across 4 scales.",
               (8969L, 35876L, 4),
               (p.pairRowsPerScale, p.pairRows, p.scales.size)
+            ),
+            // eyes4s's own pairing of the admitted trials.
+            expect(
+              "eyes4s: design",
+              (
+                p.requestedQueries,
+                p.eligibleQueries,
+                p.candidatePairsPerScale,
+                p.pairRowsPerScale
+              ),
+              (
+                library.design.requested,
+                library.design.eligible,
+                library.design.candidatePairsPerScale,
+                library.design.pairsPerScale
+              )
+            ),
+            expect(
+              "eyes4s: pair rows",
+              p.pairRows,
+              library.design.pairsPerScale * p.scales.size
+            ),
+            stated(
+              "controls per query",
+              "Controls: same participant, Encoding, other items, all admitted → 19 per query " +
+                "(18 where one encoding trial was not admitted).",
+              Set(18, 19),
+              library.design.controlsPerQuery.keySet
             )
           ).as(d)
         })
@@ -270,46 +305,43 @@ object GoldenRoute:
                 ),
                 (row.record, served._1, served._2, served._3, served._4, served._5)
               ),
-              windowCheck("enc_03", e, 13, 1, 3, library.enc03),
-              windowCheck("ret_07", r, 12, 1, 4, library.ret07),
               stated(
                 "focus outside",
                 "Focus query outside window: ret_07 1 of 12 fixations · 4% of duration; " +
                   "enc_03 1 of 13 fixations · 3% of duration.",
-                true,
-                true
-              )
+                ((12, 1, 4), (13, 1, 3)),
+                (window(r), window(e))
+              ),
+              windowCheck("enc_03", e, library.enc03),
+              windowCheck("ret_07", r, library.ret07)
             )
           yield d
     )
 
-    /** A trial's served fixations against the window: how many, how many
-      * outside, and the outside share of fixation duration, as FIXTURE.md
-      * rounds it and as eyes4s tallies it.
-      */
-    private def windowCheck(
-        name: String,
-        t: TrialFixations,
-        count: Int,
-        outside: Int,
-        percent: Int,
-        tally: TrialWindow
-    ): Either[DriverError, Unit] =
+    // A trial's served fixations outside the window and their share of its
+    // fixation duration.
+    private def outside(t: TrialFixations) =
       val out = t.fixations.filter(_.placement match
         case MapPlacement.OutsideWindow(_) => true
         case _                             => false)
-      val share = out.map(_.durationMs).sum / t.fixations.map(_.durationMs).sum
-      all(
-        expect(
-          s"$name fixations",
-          (count, outside, percent),
-          (t.fixations.size, out.size, (share * 100).round.toInt)
-        ),
-        expect(
-          s"eyes4s: $name",
-          (tally.fixations, tally.outside, tally.outsideShare.map(round(_, 6))),
-          (t.fixations.size, out.size, Some(round(share, 6)))
-        )
+      (out, out.map(_.durationMs).sum / t.fixations.map(_.durationMs).sum)
+
+    /** How many fixations, how many outside, the outside percent of duration. */
+    private def window(t: TrialFixations): (Int, Int, Int) =
+      val (out, share) = outside(t)
+      (t.fixations.size, out.size, (share * 100).round.toInt)
+
+    /** The served fixations against eyes4s's own tally of the trial. */
+    private def windowCheck(
+        name: String,
+        t: TrialFixations,
+        tally: TrialWindow
+    ): Either[DriverError, Unit] =
+      val (out, share) = outside(t)
+      expect(
+        s"eyes4s: $name",
+        (tally.fixations, tally.outside, tally.outsideShare.map(round(_, 6))),
+        (t.fixations.size, out.size, Some(round(share, 6)))
       )
 
     // -------------------------------------------------------------------------
@@ -330,9 +362,9 @@ object GoldenRoute:
           }
           .map(_.sequence.flatMap { mbd =>
             all(
-              expect("M by scale", doc.list("M/B/D by scale: M"), mbd.map(_._1)),
-              expect("B by scale", doc.list("0.86] B"), mbd.map(_._2)),
-              expect("D by scale", doc.list("0.63] D"), mbd.map(_._3))
+              expect("M by scale", doc.named("M/B/D by scale:", "M"), mbd.map(_._1)),
+              expect("B by scale", doc.named("M/B/D by scale:", "B"), mbd.map(_._2)),
+              expect("D by scale", doc.named("M/B/D by scale:", "D"), mbd.map(_._3))
             ).as(d)
           })
     )
@@ -401,6 +433,7 @@ object GoldenRoute:
           def byScale(label: Response) =
             r.groups.find(_.label == label).map(_.dByScale.map(round(_)))
           all(
+            expect("participant rows", 24, doc.participants.size),
             expect("participant table", doc.participants, served),
             expect("grand D by scale", doc.list("By scale:"), r.grandDByScale.map(round(_))),
             expect(
@@ -424,6 +457,14 @@ object GoldenRoute:
               "\"no_match\": 9, \"failed\": 3, \"contributing\": 454}",
               QueryContrasts(480, 14, 9, 3, 454),
               r.contrasts
+            ),
+            // eyes4s's pairing says which queries are requested, not admitted
+            // and without a match; the contributing / failed split needs the
+            // run (pending: direct-library scores).
+            expect(
+              "eyes4s: queries",
+              (library.design.requested, library.design.notAdmitted, library.design.noMatch),
+              (r.contrasts.requested, r.contrasts.queryNotAdmitted, r.contrasts.noMatch)
             ),
             // P05's failed queries: every fixation outside the window, by eyes4s.
             stated(
@@ -472,6 +513,8 @@ object GoldenRoute:
                   "Rev 5 (5 scales incl. 8°) pair rows: 44,845. Rev 4: 35,876.",
                   (5, 44845L),
                   (p.scales.size, p.pairRows)
+                ).flatMap(_ =>
+                  expect("eyes4s: rev 5", p.pairRows, library.design.pairsPerScale * 5)
                 ).as(d)
               )
             )
@@ -563,6 +606,13 @@ object GoldenRoute:
           .leftMap(e => DriverError.Expectation("figure 1", "valid", e.message))
           .flatMap(f => d.command(Command.CreateFigure(run6, StoryModels.reporting, f.panels)))
       ),
+      check("the figure binds run 6 and the spec")(d =>
+        expect(
+          "figure",
+          Some((run6, StoryModels.reporting)),
+          d.model.document.figures.lastOption.map(f => (f.run, f.reporting))
+        )
+      ),
       Step(
         "compose and export the bundle",
         d =>
@@ -640,10 +690,17 @@ object GoldenRoute:
           Set("results.csv", "participants.csv", "methods.md", "README.txt"),
           files.keySet
         ),
-        // The methods text against FIXTURE.md and eyes4s's own tallies. The
-        // checklist's "543 of 11,520 records (4.7%)" counts every record; the
-        // generator counts the admitted trials' records and the share of their
-        // fixation duration (reported as a parity deviation).
+        // The methods text against FIXTURE.md, the parity checklist and eyes4s's
+        // own tallies: the admitted trials' records and the share of their
+        // fixation duration (the owner's decision on the S10.1 bead).
+        listed(
+          "methods: outside, as the checklist says",
+          "543 of the 11,311 fixation records of admitted trials (4.8% of their fixation duration).",
+          methods.contains(
+            "543 of the 11,311 fixation records of admitted trials (4.8% of their fixation duration)"
+          ),
+          methods
+        ),
         stated(
           "methods: eligible",
           "Eligible (computed) queries: 457",
@@ -692,25 +749,35 @@ object GoldenRoute:
         .map(p => root.relativize(p).toString -> Files.readAllBytes(p).toVector)
         .toMap
 
-    private def saveTo(root: Path, document: StudioDocument): IO[Either[String, Unit]] =
-      val sources = Vector(
-        SourceRole.Fixations -> "fixations.csv",
-        SourceRole.Trials    -> "trials.csv"
-      )
+    /** A source input's role, name and bytes. */
+    private type Input = (SourceRole, String, IArray[Byte])
+
+    /** The golden inputs, from fixtures/studio-golden. */
+    private def golden: Vector[Input] =
+      Vector(SourceRole.Fixations -> "fixations.csv", SourceRole.Trials -> "trials.csv").map {
+        (role, name) =>
+          (
+            role,
+            name,
+            IArray.unsafeFromArray(
+              Files.readAllBytes(doc.root.resolve(s"fixtures/studio-golden/$name"))
+            )
+          )
+      }
+
+    /** Save `document` as a new project at `root`, its `inputs` stored. */
+    private def saveTo(root: Path, document: StudioDocument, inputs: Vector[Input]) =
       for
         store <- FileProjectStore.at[IO](root)
         lock  <- store.acquire(ok(LockOwner.of("golden journey"))).map(_.leftMap(_.message))
         saved <- lock.flatTraverse { l =>
-          sources
-            .traverse { (role, name) =>
-              val bytes = IArray.unsafeFromArray(
-                Files.readAllBytes(doc.root.resolve(s"fixtures/studio-golden/$name"))
-              )
+          inputs
+            .traverse((role, name, bytes) =>
               ProjectBundle.importInput(store, l, InputKind.Source(role), name, bytes)
-            }
+            )
             .map(_.sequence.leftMap(_.message))
-            .flatMap(_.flatTraverse { inputs =>
-              ProjectBundle.encode(document, SharingOptions.complete, inputs) match
+            .flatMap(_.flatTraverse { entries =>
+              ProjectBundle.encode(document, SharingOptions.complete, entries) match
                 case Left(e)        => IO.pure(Left(e.message))
                 case Right(encoded) =>
                   ProjectBundle.save(store, l, None, encoded).map(_.bimap(_.message, _ => ()))
@@ -719,36 +786,66 @@ object GoldenRoute:
         }
       yield saved
 
+    /** The opened project's stored inputs, read back from its folder. */
+    private def storedInputs(store: ProjectStore[IO], o: OpenedProject) =
+      o.manifest.inputs
+        .traverse { entry =>
+          (entry.kind, entry.path) match
+            case (InputKind.Source(role), Some(path)) =>
+              store
+                .read(path)
+                .map(
+                  _.bimap(_.message, bytes => (role, entry.name.getOrElse(path.value), bytes))
+                )
+            case other => IO.pure(Left(s"input ${entry.name} is not a stored source: $other"))
+        }
+        .map(_.sequence)
+
     private val closeAndReopen: S = Step(
-      "save, close, reopen, save again: byte-identical",
+      "save, close, reopen from the folder, save again: byte-identical",
       d =>
         val base  = Files.createTempDirectory("golden-journey")
         val first = base.resolve("first.eyes")
         val again = base.resolve("again.eyes")
         (for
-          saved    <- saveTo(first, d.model.document)
-          store    <- FileProjectStore.at[IO](first)
-          opened   <- ProjectBundle.open(store)
-          reopened <- opened.traverse(o => saveTo(again, o.document).map(_.as(o)))
-          bytes    <- IO((folder(first), folder(again)))
-        yield (saved, opened, reopened, bytes))
+          saved  <- saveTo(first, d.model.document, golden)
+          store  <- FileProjectStore.at[IO](first)
+          opened <- ProjectBundle.open(store).map(_.leftMap(_.message))
+          // The second save takes its inputs from the opened folder.
+          reopened <- opened.flatTraverse(o =>
+            storedInputs(store, o).flatMap(
+              _.flatTraverse(in => saveTo(again, o.document, in)).map(_.as(o))
+            )
+          )
+          bytes <- IO((folder(first), folder(again)))
+        yield (saved, reopened, bytes))
           .guarantee(IO(remove(base)))
           .unsafeToFuture()
-          .map { (saved, opened, reopened, bytes) =>
+          .map { (saved, reopened, bytes) =>
             for
               _ <- saved.leftMap(why => DriverError.Expectation("save", "saved", why))
-              o <- opened.leftMap(DriverError.Bundle(_))
-              _ <- reopened
-                .leftMap(DriverError.Bundle(_))
-                .flatMap(_.leftMap(why => DriverError.Expectation("save again", "saved", why)))
+              o <- reopened
+                .leftMap(why => DriverError.Expectation("reopen and save again", "done", why))
               _ <- all(
                 expect("reopened document", d.model.document, o.document),
                 expect("files", true, bytes._1.keySet.exists(_.startsWith("inputs"))),
                 expect("bytes", bytes._1, bytes._2)
               )
               _ = { closed = Some(d.model.document); savedFolder = bytes._1 }
-              next <- d.reopen(BundleSamples.inputsFor(d.model.document))
-              _    <- expect("reopened model", d.model.document, next.model.document)
+              // The driver reopens the project from the folder's document.
+              next = d.openProject(
+                AppModel
+                  .update(
+                    AppModel.open(o.document, d.model.project),
+                    Intent.ItemsLoaded(d.model.items)
+                  )
+                  ._1
+              )
+              _ <- all(
+                expect("reopened model", d.model.document, next.model.document),
+                expect("badge", d.context.freshness, next.context.freshness),
+                expect("project", d.model.project, next.model.project)
+              )
             yield next
           }
     )
@@ -765,4 +862,4 @@ object GoldenRoute:
         g.summary ++ Scenario.of(summary) ++
         rev5 ++
         figureAndExport ++
-        Scenario.of(closeAndReopen, pending(Pending.LibraryScores))
+        Scenario.of(Step.settle[Future](s), closeAndReopen, pending(Pending.LibraryScores))

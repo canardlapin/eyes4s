@@ -46,6 +46,22 @@ final case class FocusFixation(
     durationMs: Double
 ) derives CanEqual
 
+/** The resolved design as eyes4s's pairing makes it: the retrieval queries
+  * requested, those not admitted, those with no admitted matched reference,
+  * the eligible ones; the Cartesian candidate pairs per scale (480 × 480,
+  * `candidatePairCount`); and the eligible pairs per scale, matched and
+  * control (same participant, encoding, other item, admitted).
+  */
+final case class LibraryDesign(
+    requested: Int,
+    notAdmitted: Int,
+    noMatch: Int,
+    eligible: Int,
+    candidatePairsPerScale: Long,
+    pairsPerScale: Long,
+    controlsPerQuery: Map[Int, Int]
+) derives CanEqual
+
 /** What eyes4s itself makes of fixtures/studio-golden (ticket S10.1's direct
   * library run): the inventory admission, record counts, the analysis
   * window's tallies, and the focus trials.
@@ -63,6 +79,9 @@ final case class LibraryFacts(
     admittedRecords: Int,
     outsideDurationShare: Double,
     items: Int,
+    imagesFound: Int,
+    missingImages: Vector[String],
+    design: LibraryDesign,
     allOutside: Vector[(String, String, Int)],
     ret07: TrialWindow,
     enc03: TrialWindow,
@@ -136,6 +155,63 @@ object GoldenLibrary:
     case QuarantineCause.Overlap(_, _, _)  => "overlap"
     case other                             => other.toString
 
+  private def designOf(trials: Vector[eyes4s.plan.InventoryTrial]): LibraryDesign =
+    import eyes4s.design.{
+      DirectedPairSchedule,
+      Pairing,
+      Projection,
+      Relation,
+      Trial,
+      Trials,
+      pair
+    }
+    def key(t: eyes4s.plan.InventoryTrial) =
+      s"${t.identity.participant}|${t.identity.phase}|${t.identity.trial}"
+    val byKey     = trials.map(t => key(t) -> t).toMap
+    val queries   = trials.filter(_.identity.phase == "Retrieval")
+    val encodings = trials.filter(_.identity.phase == "Encoding")
+    def admitted(ts: Vector[eyes4s.plan.InventoryTrial]) =
+      ts.filter(_.disposition == TrialDisposition.Admitted)
+    def collection(ts: Vector[eyes4s.plan.InventoryTrial]) =
+      Trials(ts.map(t => Trial(key(t), (), ())))
+    val participant =
+      Projection.named[String, String]("participant")(k => byKey(k).identity.participant)
+    val item    = Projection.named[String, Option[String]]("item")(k => byKey(k).inventoryItem)
+    val matched = pair(
+      collection(admitted(queries)),
+      collection(admitted(encodings)),
+      Pairing.between[String, String].sameOn(participant, participant).sameOn(item, item).all
+    )
+    val eligible = admitted(queries).filterNot(q => matched.unmatchedLeft.contains(key(q)))
+    val controls = pair(
+      collection(eligible),
+      collection(admitted(encodings)),
+      Pairing
+        .between[String, String]
+        .sameOn(participant, participant)
+        .differentOn(item, item)
+        .all
+    )
+    val candidates = get("candidates")(
+      DirectedPairSchedule.exhaustive(
+        queries.map(key),
+        encodings.map(key),
+        Relation.all[String, String]
+      )
+    )
+    LibraryDesign(
+      requested = queries.size,
+      notAdmitted = queries.size - admitted(queries).size,
+      noMatch = matched.unmatchedLeft.size,
+      eligible = eligible.size,
+      candidatePairsPerScale = candidates.candidatePairCount,
+      pairsPerScale = matched.eligiblePairCount + controls.eligiblePairCount,
+      controlsPerQuery = controls.pairs
+        .groupMapReduce(_._1.key)(_ => 1)(_ + _)
+        .values
+        .groupMapReduce(identity)(_ => 1)(_ + _)
+    )
+
   /** The facts, computed once. */
   lazy val facts: LibraryFacts =
     val joined = get("admission")(
@@ -169,6 +245,13 @@ object GoldenLibrary:
     val angle  = get("degrees")(degrees(image).toRight("no degrees"))
     val lines  = GoldenCsv.fixations.linesIterator.toVector.drop(1)
     val record = lines.indexWhere(_.startsWith("P17,Encoding,enc_03,1,6,")) + 1
+    // Each item's image in the fixture's stimuli folder, present or not.
+    val stimuli = FixtureDoc.root.resolve("fixtures/studio-golden/stimuli")
+    val images  = trials
+      .flatMap(_.inventoryItem)
+      .distinct
+      .sorted
+      .partition(i => java.nio.file.Files.isRegularFile(stimuli.resolve(s"$i.png")))
     LibraryFacts(
       inventoryTrials = trials.size,
       admitted = count(_ == TrialDisposition.Admitted),
@@ -183,6 +266,9 @@ object GoldenLibrary:
       outsideDurationShare = tallies.map(_._2.outsideWindowDuration.toMillis).sum /
         tallies.map(_._2.totalDuration.toMillis).sum,
       items = trials.flatMap(_.inventoryItem).distinct.size,
+      imagesFound = images._1.size,
+      missingImages = images._2,
+      design = designOf(trials),
       allOutside = tallies
         .collect { case (k, t) if t.allOutside => (k.participant, k.trial, t.total) }
         .sortBy(x => (x._1, x._2)),

@@ -101,6 +101,18 @@ object FixtureDoc:
     val close = text.indexOf(']', open)
     text.substring(open + 1, close).split(',').map(number).toVector
 
+  /** The list called `name` on FIXTURE.md's one line holding `line`:
+    * `named("M/B/D by scale:", "B")` reads "B [0.22, 0.29, 0.35, 0.63]".
+    */
+  def named(line: String, name: String): Vector[BigDecimal] =
+    val lines = text.linesIterator.filter(_.contains(line)).toVector
+    if lines.size != 1 then
+      throw IllegalStateException(s"FIXTURE.md has ${lines.size} lines with '$line'")
+    val list = s"(?:^|[\\s:])${java.util.regex.Pattern.quote(name)} \\[([^\\]]*)\\]".r
+    list.findFirstMatchIn(lines.head) match
+      case Some(m) => m.group(1).split(',').map(number).toVector
+      case None    => throw IllegalStateException(s"FIXTURE.md: no '$name [..]' after '$line'")
+
   /** `value` as FIXTURE.md writes it: to `places` decimals, half up. */
   def rounded(value: Double, places: Int = 2): BigDecimal =
     BigDecimal(value).setScale(places, BigDecimal.RoundingMode.HALF_UP)

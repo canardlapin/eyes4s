@@ -99,7 +99,7 @@ by token name, never by hex value.
 - [ ] Stale Figure 2 reads "r3 changed the admission status of 4 trials", with Rebind… / Keep.
 - [ ] methods.md states:
   - [ ] 457 eligible queries.
-  - [ ] 543 of 11,520 records outside the window (4.7%).
+  - [ ] 543 of the 11,311 fixation records of admitted trials (4.8% of their fixation duration).
   - [ ] The off-screen policy and the occurrence rule.
   - [ ] The confound sentence.
 - [ ] Export bundle list.
