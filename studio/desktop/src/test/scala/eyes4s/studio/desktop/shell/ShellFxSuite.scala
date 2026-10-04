@@ -19,7 +19,6 @@ package eyes4s.studio.desktop.shell
 import cats.effect.unsafe.implicits.global
 import eyes4s.studio.app.{AppModel, ClockTime, Intent, PlatformDialog}
 import eyes4s.studio.app.text.Format
-import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.vm.{Shell, ShellText}
 import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.core.fixture.StoryMoment
@@ -76,7 +75,6 @@ abstract class ShellFxSuite extends StudioFxSuite:
       model: AppModel,
       moment: StoryMoment = StoryMoment.T2,
       dialogs: PlatformDialogs = Dialogs(None),
-      theme: Theme = Theme.Light,
       project: Option[ProjectPort] = None,
       clock: () => Option[ClockTime] = DesktopEffects.wallClock,
       // Synthetic key events never reach a native menu, so the shell suites
@@ -101,7 +99,6 @@ abstract class ShellFxSuite extends StudioFxSuite:
           moment,
           displays,
           stimuli,
-          theme,
           dialogs = Some(dialogs),
           project = project,
           clock = clock,
