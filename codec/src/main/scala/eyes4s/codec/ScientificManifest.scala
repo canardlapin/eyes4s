@@ -86,6 +86,14 @@ enum ArtifactRole(val wire: String, val media: MediaKind, val identityBearing: B
   /** A packed density chunk referenced by a study-result archive. */
   case ResultPayload extends ArtifactRole("result-payload", MediaKind.Binary, false)
 
+  /** A plan and a completed result of an analysis family without a role of
+    * its own (CR4): the entry's schema names the family, and the resolver
+    * decodes it through an [[AnalysisRegistry]]. Neither carries a semantic
+    * identity; a result cites its plan and inputs.
+    */
+  case AnalysisPlan   extends ArtifactRole("analysis-plan", MediaKind.JsonText, false)
+  case AnalysisResult extends ArtifactRole("analysis-result", MediaKind.JsonText, false)
+
 /** Which independently interpreted source a ledger relation supplies. */
 enum LedgerSourceRole(val wire: String) derives CanEqual:
   case Primary        extends LedgerSourceRole("primary")
@@ -229,6 +237,14 @@ enum ManifestRelation derives CanEqual:
     */
   case ResultPayloadOf(result: ArtifactName, payload: ArtifactName)
 
+  /** The analysis result was produced by the analysis plan on the inputs:
+    * the result's plan description is the plan's, and the inputs it was
+    * computed on are the inputs' semantic identities, in order. The inputs
+    * are distinct identity-bearing entries (study, recording, recording or
+    * temporal inputs), at least one. Exactly one per analysis result.
+    */
+  case AnalysisResultOf(result: ArtifactName, plan: ArtifactName, inputs: Vector[ArtifactName])
+
   def kind: String = this match
     case LedgerSource(_, _, _, _)   => "ledger-source"
     case PlanInput(_, _)            => "plan-input"
@@ -243,11 +259,18 @@ enum ManifestRelation derives CanEqual:
     case TemporalResultOf(_, _, _)  => "temporal-result-of"
     case ReportOf(_, _, _, _, _)    => "report-of"
     case ResultPayloadOf(_, _)      => "result-payload-of"
+    case AnalysisResultOf(_, _, _)  => "analysis-result-of"
 
   /** Every endpoint as its wire field, entry name and required role; the
-    * relation's source entry first.
+    * relation's source entry first. An analysis result's inputs are not
+    * endpoints of one role ([[analysisInputs]]).
     */
   def endpoints: Vector[(String, ArtifactName, ArtifactRole)] = this match
+    case AnalysisResultOf(result, plan, _) =>
+      Vector(
+        ("result", result, ArtifactRole.AnalysisResult),
+        ("plan", plan, ArtifactRole.AnalysisPlan)
+      )
     case LedgerSource(ledger, sourceFile, importSpec, _) =>
       Vector(
         ("ledger", ledger, ArtifactRole.AdmissionLedger),
@@ -317,7 +340,13 @@ enum ManifestRelation derives CanEqual:
         ("input", input, ArtifactRole.StudyInput)
       ) ++ covariates.map(("covariates", _, ArtifactRole.AdmissionLedger))
 
+  /** The input entries of an analysis result, in order; none otherwise. */
+  def analysisInputs: Vector[ArtifactName] = this match
+    case AnalysisResultOf(_, _, inputs) => inputs
+    case _                              => Vector.empty
+
   def source: ArtifactName = this match
+    case AnalysisResultOf(result, _, _)  => result
     case LedgerSource(ledger, _, _, _)   => ledger
     case ResultPayloadOf(result, _)      => result
     case PlanInput(plan, _)              => plan
@@ -336,7 +365,11 @@ enum ManifestRelation derives CanEqual:
     val role = this match
       case LedgerSource(_, _, _, value) => Vector(s"role=${value.wire}")
       case _                            => Vector.empty
-    (endpoints.map { case (field, name, _) => s"$field=${name.value}" } ++ role)
+    val listed = this match
+      case AnalysisResultOf(_, _, inputs) =>
+        Vector(inputs.map(_.value).mkString("inputs=[", ", ", "]"))
+      case _ => Vector.empty
+    (endpoints.map { case (field, name, _) => s"$field=${name.value}" } ++ listed ++ role)
       .mkString(s"$kind(", ", ", ")")
 
 /** Why a manifest, entry or artifact name is malformed; every case names
@@ -365,6 +398,9 @@ enum ManifestError derives CanEqual:
   case PayloadOwner(relation: ManifestRelation, schema: DefinitionId)
   case DuplicateRelation(relation: ManifestRelation)
   case RelationCount(name: ArtifactName, kind: String, count: Int, expected: String)
+
+  /** An analysis result's input is not an identity-bearing input entry. */
+  case AnalysisInput(relation: ManifestRelation, name: ArtifactName, role: ArtifactRole)
 
   def message: String = this match
     case InvalidName(value) =>
@@ -400,6 +436,9 @@ enum ManifestError derives CanEqual:
     case DuplicateRelation(relation) => s"Relation ${relation.render} is declared twice."
     case RelationCount(name, kind, count, expected) =>
       s"Entry '${name.value}' has $count $kind relations; expected $expected."
+    case AnalysisInput(relation, name, role) =>
+      s"Relation ${relation.render} names input '${name.value}', which is a ${role.wire}, " +
+        "not an identity-bearing input."
 
 /** The bounded scientific object graph of a saved study: its entries in
   * write order and the typed relations between them (`eyes4s.manifest@1`).
@@ -464,7 +503,22 @@ object ScientificManifest:
           case (name, role, Some(e)) if e.role != role =>
             ManifestError.RoleMismatch(relation, name, role, e.role)
         }
+        .orElse(relation.analysisInputs.collectFirst {
+          case name if !byName.contains(name) => ManifestError.UnknownEntry(relation, name)
+          case name if !byName(name).role.identityBearing =>
+            ManifestError.AnalysisInput(relation, name, byName(name).role)
+        })
         .orElse(relation match
+          case ManifestRelation.AnalysisResultOf(result, _, inputs)
+              if inputs.isEmpty || inputs.distinct.size != inputs.size =>
+            Some(
+              ManifestError.RelationCount(
+                result,
+                "analysis-input",
+                inputs.size,
+                "at least one, each distinct"
+              )
+            )
           case ManifestRelation.ResultPayloadOf(owner, _) =>
             byName
               .get(owner)
@@ -502,6 +556,9 @@ object ScientificManifest:
       .orElse(multiplicity(ArtifactRole.Report, "report-of", _ == 1, "exactly one"))
       .orElse(
         multiplicity(ArtifactRole.ResultPayload, "result-payload-of", _ >= 1, "at least one")
+      )
+      .orElse(
+        multiplicity(ArtifactRole.AnalysisResult, "analysis-result-of", _ == 1, "exactly one")
       )
     val sourceCounts = entries
       .filter(_.role == ArtifactRole.AdmissionLedger)
@@ -560,7 +617,9 @@ object ScientificManifest:
         case ManifestRelation.LedgerSource(_, _, _, role) =>
           Vector("role" -> Json.fromString(role.wire))
         case ManifestRelation.ReportOf(_, _, _, _, None) => Vector("covariates" -> Json.Null)
-        case _                                           => Vector.empty
+        case ManifestRelation.AnalysisResultOf(_, _, inputs) =>
+          Vector("inputs" -> Json.arr(inputs.map(n => Json.fromString(n.value))*))
+        case _ => Vector.empty
       Json.fromFields(
         (("kind" -> Json.fromString(r.kind)) +:
           r.endpoints.map { case (field, name, _) => field -> Json.fromString(name.value) }) ++
@@ -662,6 +721,14 @@ object ScientificManifest:
             .field[Option[String]](json, "covariates")
             .flatMap(_.traverse(v => ArtifactName.of(v).left.map(CodecError.Manifest.apply)))
         ).mapN(ManifestRelation.ReportOf.apply)
+      case "analysis-result-of" =>
+        (
+          name(json, "result"),
+          name(json, "plan"),
+          Wire
+            .field[Vector[String]](json, "inputs")
+            .flatMap(_.traverse(v => ArtifactName.of(v).left.map(CodecError.Manifest.apply)))
+        ).mapN(ManifestRelation.AnalysisResultOf.apply)
       case other => Left(CodecError.Field("kind", json, s"unknown relation kind '$other'"))
     }
 
@@ -816,6 +883,26 @@ object StoredArtifact:
         .left
         .map(CodecError.Manifest.apply)
     yield new StoredArtifact(entry, payload.bytes)
+
+  /** Store a plan of an analysis family under the generic `analysis-plan`
+    * role, through the family's codec.
+    */
+  def analysisPlan[P](
+      name: String,
+      codec: VersionedCodec[P],
+      value: P
+  ): Either[CodecError, StoredArtifact] =
+    codec.encode(value).flatMap(document(name, ArtifactRole.AnalysisPlan, _, None))
+
+  /** Store a result of an analysis family under the generic
+    * `analysis-result` role, through the family's codec.
+    */
+  def analysisResult[R](
+      name: String,
+      codec: VersionedCodec[R],
+      value: R
+  ): Either[CodecError, StoredArtifact] =
+    codec.encode(value).flatMap(document(name, ArtifactRole.AnalysisResult, _, None))
 
   def plan[K, U <: Unit2D, P, S, D](
       name: String,

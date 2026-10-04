@@ -802,7 +802,8 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
     name := "eyes4s-laws",
     Test / unmanagedSources ++= Seq(
       file("codec/src/test/scala/eyes4s/codec/PointSamplingFixture.scala").getAbsoluteFile,
-      file("codec/src/test/scala/eyes4s/codec/RepetitionPlanFixture.scala").getAbsoluteFile
+      file("codec/src/test/scala/eyes4s/codec/RepetitionPlanFixture.scala").getAbsoluteFile,
+      file("codec/src/test/scala/eyes4s/codec/AnalysisFixtures.scala").getAbsoluteFile
     ),
     libraryDependencies ++= Seq(
       "org.scalameta"  %%% "munit"            % munitV,

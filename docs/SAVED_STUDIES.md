@@ -830,8 +830,9 @@ repair.
 
 Each `ManifestEntry` records a manifest-local `ArtifactName`, an `ArtifactRole` (`study-plan`,
 `study-input`, `admission-ledger`, `study-result`, `recording`, `recording-input`,
-`temporal-study-input`, `payload`, `recording-plan`, `recording-result`, `temporal-plan` or
-`temporal-result`), the schema identity of the artifact's envelope, its media kind
+`temporal-study-input`, `payload`, `recording-plan`, `recording-result`, `temporal-plan`,
+`temporal-result`, or the generic `analysis-plan` and `analysis-result` of an analysis family
+without a role of its own), the schema identity of the artifact's envelope, its media kind
 (`application/json` or `application/octet-stream`), its exact byte length as a decimal string and
 the SHA-256 of its exact bytes (`ByteDigest`, 64 lowercase hexadecimal digits). The identity-bearing
 roles (study input, recording, recording input, temporal input) also declare the semantic identity
@@ -855,6 +856,7 @@ Relations are typed edges, checked against decoded values rather than names:
 | `RecordingResultOf` | recording result, recording plan, recording input | exactly one per recording result | the result's input reference is the input's channels (`contentHash`), its description is the plan's, and the plan agrees with this input's evidence (`RecordingInput.disagreements`), since the channels do not cover the source, viewing geometry or marks |
 | `TemporalPlanInput` | temporal plan, temporal input | exactly one per temporal plan | `plan.prerequisites(input)` is empty |
 | `TemporalResultOf` | temporal result, temporal plan, temporal input | exactly one per temporal result | the result's input reference is the temporal input's, and its description is the plan's |
+| `AnalysisResultOf` | analysis result, analysis plan, inputs (a list) | exactly one per analysis result; one or more distinct identity-bearing inputs | the result's input identities are the inputs' declared identities, in order, and its plan description is the plan's |
 | `ReportOf` | report, report spec, result, input, ledger (or `null`) | exactly one per report | the report's specification is the spec entry's, and its binding names the canonical digests of the stored result, input, the result's plan (by its `ResultOf`) and ledger (`RelationMismatch.ReportBinding` names the field); reports decode through `ArtifactDecoders.withReports` (see [reducing study results](REDUCING_RESULTS.md)) |
 
 `ScientificManifest.of` checks structure only: unique names, relations naming existing entries of
@@ -866,7 +868,7 @@ only by resolution.
 
 **Writing.** `StoredArtifact.plan`, `input`, `ledger`, `result`, `recording`, `binocular`,
 `recordingInput`, `temporalInput`, `recordingPlan`, `recordingResult`, `temporalPlan`,
-`temporalResult`, `reportSpec`, `report` and `packedRecording` encode a typed value through its registered codec and store the UTF-8 of the pretty-printed document; `StoredArtifact.bytes` stores existing
+`temporalResult`, `reportSpec`, `report`, `analysisPlan`, `analysisResult` and `packedRecording` encode a typed value through its registered codec and store the UTF-8 of the pretty-printed document; `StoredArtifact.bytes` stores existing
 JSON bytes verbatim (strict UTF-8 with a schema envelope, as the pinned fixture below does), and
 `StoredArtifact.payload` stores a verified payload. Every artifact holds a private copy of its bytes.
 `SavedManifest.of(artifacts, relations)` builds the manifest, its canonical bytes
@@ -1008,6 +1010,18 @@ and re-packs to the same bytes, and that all twelve entries resolve end to end. 
 address on the JVM and Scala.js, that both platforms pack the pinned recording to the frozen payload
 digests (exact IEEE bits, no platform number formatting), the typed meaning of every new fixture,
 and that the same graph over the portable fixture strings resolves on both platforms.
+
+**Analysis families (CR4).** A family without a role of its own stores its plan and result under
+the generic `analysis-plan` and `analysis-result` roles, related by `AnalysisResultOf(result, plan,
+inputs)`; the entry's schema names the family. This is additive to `eyes4s.manifest@1`: earlier
+manifests keep their exact encoding, and a later family needs no new role or manifest version. The
+resolver decodes these entries through `ArtifactDecoders.withAnalyses(registry)`: an
+`AnalysisRegistry` of `AnalysisRegistration`s, each naming a plan and a result schema and decoding
+them to a `LoadedAnalysisPlan` or `LoadedAnalysisResult` (the family's own subclass, which holds the
+typed value). An entry of a schema no registration names is refused as
+`CodecError.UnsupportedSchema` naming the role, the schema and the schemas the registry supports;
+registering a schema twice is `CodecError.DuplicateResultCodec`. A resolved manifest lists them as
+`analysisPlans` and `analysisResults`.
 
 `eyes4s.laws.ManifestLaws.verifiedResolution(graphs, write, decoders, reproduces)` is the published
 conformance for an application's own graphs and registrations, over a writer producing a

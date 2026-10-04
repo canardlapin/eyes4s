@@ -215,7 +215,12 @@ object CodecDiagnosticSamples:
         .RoleMismatch(planOf, input, ArtifactRole.StudyInput, ArtifactRole.Recording),
       ManifestError.PayloadOwner(planOf, DefinitionId.study),
       ManifestError.DuplicateRelation(resultOf),
-      ManifestError.RelationCount(plan, "plan-input", 2, "exactly one")
+      ManifestError.RelationCount(plan, "plan-input", 2, "exactly one"),
+      ManifestError.AnalysisInput(
+        ManifestRelation.AnalysisResultOf(result, plan, Vector(input)),
+        input,
+        ArtifactRole.Report
+      )
     ),
     family[PayloadError]("PayloadError")(
       PayloadError.EmptyShape,

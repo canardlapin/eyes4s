@@ -128,7 +128,9 @@ object CodecDiagnosticCatalog:
     "RoleMismatch",
     "PayloadOwner",
     "DuplicateRelation",
-    "RelationCount"
+    "RelationCount",
+    // CR4 S2: an analysis result's input that is not an input entry.
+    "AnalysisInput"
   )
   val payload: DiagnosticFamily = error("payload")(
     "EmptyShape",
@@ -200,9 +202,12 @@ private[eyes4s] object CodecDiagnosticSupport:
     fields("sha256" -> digest(value.sha256), "layout" -> layout(value.layout))
   def relation(value: ManifestRelation): Operand[Nothing] =
     Operand.Fields(
-      ("kind" -> token(value.kind)) +: value.endpoints.map((field, name, _) =>
-        field -> entry(name)
-      )
+      (("kind" -> token(value.kind)) +: value.endpoints
+        .map((field, name, _) => field -> entry(name))) ++ Option
+        .when(value.analysisInputs.nonEmpty)(
+          "inputs" -> Operand.Items(value.analysisInputs.map(entry))
+        )
+        .toVector
     )
   def changes(values: Vector[PlanChange]): Operand[Nothing] =
     Operand.Items(
@@ -543,6 +548,12 @@ private[codec] object CodecProjections:
           token(kind),
           int(count),
           text(expected)
+        )
+      case AnalysisInput(value, name, found) =>
+        diagnostic(C.manifest, e, e.message, Vector(at(value), at(name)))(
+          relation(value),
+          entry(name),
+          role(found)
         )
 
   def payload(e: PayloadError): Diagnostic[Nothing] =

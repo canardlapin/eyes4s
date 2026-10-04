@@ -537,7 +537,8 @@ object ArtifactCodecLawSuite:
     * recording inputs with or without their optional relation; standalone
     * and packed recordings; payloads owned by one or more packed recordings;
     * recording and temporal plans with their input, and their results of a
-    * plan on an input.
+    * plan on an input; analysis plans, and analysis results of a plan on one
+    * or more identity-bearing inputs.
     */
   val manifests: Gen[ScientificManifest] = for
     inputs           <- Gen.choose(1, 3)
@@ -553,6 +554,8 @@ object ArtifactCodecLawSuite:
     recordingResults <- if recordingPlans == 0 then Gen.const(0) else Gen.choose(0, 2)
     temporalPlans    <- if temporals == 0 then Gen.const(0) else Gen.choose(0, 2)
     temporalResults  <- if temporalPlans == 0 then Gen.const(0) else Gen.choose(0, 2)
+    analysisPlans    <- Gen.choose(0, 2)
+    analysisResults  <- if analysisPlans == 0 then Gen.const(0) else Gen.choose(0, 2)
     roles = Vector.fill(inputs)(ArtifactRole.StudyInput) ++
       Vector.fill(plans)(ArtifactRole.StudyPlan) ++
       Vector.fill(results)(ArtifactRole.StudyResult) ++
@@ -564,7 +567,9 @@ object ArtifactCodecLawSuite:
       Vector.fill(recordingPlans)(ArtifactRole.RecordingPlan) ++
       Vector.fill(recordingResults)(ArtifactRole.RecordingResult) ++
       Vector.fill(temporalPlans)(ArtifactRole.TemporalPlan) ++
-      Vector.fill(temporalResults)(ArtifactRole.TemporalResult)
+      Vector.fill(temporalResults)(ArtifactRole.TemporalResult) ++
+      Vector.fill(analysisPlans)(ArtifactRole.AnalysisPlan) ++
+      Vector.fill(analysisResults)(ArtifactRole.AnalysisResult)
     named   <- names(roles.size)
     entries <- Gen.sequence[Vector[ManifestEntry], ManifestEntry](
       roles.zip(named).zipWithIndex.map { case ((role, name), index) =>
@@ -638,7 +643,19 @@ object ArtifactCodecLawSuite:
         yield ManifestRelation.TemporalResultOf(r, p, i)
       )
     )
-    relations = planInputs ++ resultOf ++ optional.flatten ++ owned.flatten ++ archives
+    // An analysis result cites one or more distinct identity-bearing inputs.
+    identified = entries.filter(_.role.identityBearing).map(_.name)
+    analyses <- Gen.sequence[Vector[ManifestRelation], ManifestRelation](
+      byRole(ArtifactRole.AnalysisResult).map(r =>
+        for
+          p  <- Gen.oneOf(byRole(ArtifactRole.AnalysisPlan))
+          n  <- Gen.choose(1, identified.size)
+          on <- Gen.pick(n, identified)
+        yield ManifestRelation.AnalysisResultOf(r, p, on.toVector)
+      )
+    )
+    relations =
+      planInputs ++ resultOf ++ optional.flatten ++ owned.flatten ++ archives ++ analyses
     entryOrder    <- Gen.listOfN(entries.size, Gen.long)
     relationOrder <- Gen.listOfN(relations.size, Gen.long)
   yield sure(

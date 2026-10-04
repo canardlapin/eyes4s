@@ -1616,6 +1616,7 @@ fails after rewriting, so review the change and run it again.
 | `manifest.payload-owner` | `PayloadOwner` | `relation`, `schema` |
 | `manifest.duplicate-relation` | `DuplicateRelation` | `relation` |
 | `manifest.relation-count` | `RelationCount` | `name`, `kind`, `count`, `expected` |
+| `manifest.analysis-input` | `AnalysisInput` | `relation`, `name`, `role` |
 
 ### `payload` — `PayloadError`
 
