@@ -162,6 +162,25 @@ class StudyFormSuite extends munit.FunSuite:
         "Every selected pair had to be scored, so a query's contrast needed all its pairs."
       )
     )
+    // Each sentence names the recipe field it states, so a host can link it to that field.
+    // The contrast sentence is about the study's contrast, not one field.
+    assertEquals(
+      methods.clauses.map(_.field.map(_.value)),
+      Vector(
+        "phases",
+        "pairing",
+        "window",
+        "angularScale",
+        "initialFixations",
+        "grid",
+        "scales",
+        "method"
+      ).map(Some(_)) ++ Vector(None, Some("failurePolicy"))
+    )
+    assertEquals(
+      methods.clauses.filter(_.field.isEmpty).map(_.topic),
+      Vector(ClauseTopic.Contrast)
+    )
     val dropping = get(
       plan(
         fixture.updated(
