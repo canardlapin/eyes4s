@@ -53,7 +53,7 @@ class CanonicalDocSuite extends munit.FunSuite:
           )
         )
     ),
-    "obj"  -> Obj(Vector.empty),
+    "obj"  -> Obj(scala.collection.immutable.ListMap.empty),
     "leaf" -> Leaf(Json.obj("k" -> Json.arr(Json.fromDoubleOrNull(-0.0))))
   )
 
@@ -107,6 +107,58 @@ class CanonicalDocSuite extends munit.FunSuite:
     val expected = Left(CodecError.Entry("outer", CodecError.Field("x", Json.Null, "bad")))
     assertEquals(failing.json, expected)
     assertEquals(CanonicalDigest.streamed[Json](failing), expected)
+  }
+
+  test("an object holds a key once, so its JSON and its rendering agree") {
+    val pairs = Vector("a" -> Json.True, "b" -> Json.Null, "a" -> Json.False)
+    val doc   = CanonicalDoc.obj(pairs.map((k, v) => k -> (Leaf(v): CanonicalDoc))*)
+    doc match
+      case Obj(members) => assertEquals(members.keys.toVector, Vector("a", "b"))
+      case other        => fail(s"$other")
+    // As a JSON object built from the same pairs: first position, last value.
+    assertEquals(doc.json, Right(Json.fromFields(pairs)))
+    assertEquals(doc.json, Right(Json.obj("a" -> Json.False, "b" -> Json.Null)))
+    assertEquals(streamed(doc), documented(doc))
+  }
+
+  test("mapError reaches a failure inside an object inside an array, once") {
+    val e   = CodecError.Field("x", Json.Null, "bad")
+    val doc = Arr(1, _ => Right(CanonicalDoc.obj("x" -> Arr(1, _ => Left(e)))))
+      .mapError(Wire.at("outer"))
+    // The outer item is made; the failure is the nested array's item, which
+    // the outer mapError reaches through the object and maps exactly once.
+    val expected = Left(Wire.at("outer")(e))
+    assertEquals(doc.json, expected)
+    assertEquals(CanonicalDigest.streamed[Json](doc), expected)
+    assertNotEquals[Either[CodecError, Json], Either[CodecError, Json]](doc.json, Left(e))
+  }
+
+  test("every fixture result and policy digests as its encoded archive") {
+    import StudyResultFixtures.*
+    val cosine = StudyResultCodecs.cosine[Px].codec
+    val runs   = for
+      input  <- Vector(mixed, clean)
+      policy <- Vector(requireAll, successfulOnly)
+      est    <- Vector(scales, scales.take(1))
+    yield cosinePlan(input, policy, est).run(input)
+    val two = for
+      input  <- Vector(mixed, clean)
+      policy <- Vector(requireAll, successfulOnly)
+    yield twoComponentPlan(input, policy).run(input)
+    assertEquals(runs.count(_.isRight) + two.count(_.isRight) >= 8, true)
+    runs.collect { case Right(r) => r }.foreach { r =>
+      assertEquals(
+        cosine.digest(r).map(_.sha256),
+        cosine.encode(r).flatMap(CanonicalDigest.document[Json]).map(_.sha256)
+      )
+    }
+    two.collect { case Right(r) => r }.foreach { r =>
+      val c = twoComponentCodec.codec
+      assertEquals(
+        c.digest(r).map(_.sha256),
+        c.encode(r).flatMap(CanonicalDigest.document[Json]).map(_.sha256)
+      )
+    }
   }
 
   test("each item is made once, in order, and a long array is streamed through") {

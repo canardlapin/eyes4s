@@ -82,9 +82,15 @@ class StreamingDigestJvmSuite extends munit.FunSuite:
     assertEquals(again.receipt, Some(receipt), again.output)
   }
 
-  test("encoding the same result whole does not fit in that heap") {
+  test("negative evidence: encoding the same result whole does not fit in that heap") {
     val whole = launch("whole")
     assertNotEquals(whole.status, 0, whole.output)
-    assert(whole.output.contains("OutOfMemoryError"), whole.output.take(2000))
+    // Negative evidence that the heap is tight enough to mean something: the
+    // whole-archive path, which the digest no longer takes, runs out of it.
+    assert(
+      whole.output.contains("OutOfMemoryError"),
+      s"negative evidence missing: the whole archive fit in $Heap, so the bound proves nothing:\n" +
+        whole.output.take(2000)
+    )
     assertEquals(whole.receipt, None)
   }

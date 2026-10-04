@@ -18,6 +18,8 @@ package eyes4s.codec
 
 import io.circe.Json
 
+import scala.collection.immutable.ListMap
+
 /** The collision-resistant identity of a value of type `A`: the SHA-256 of
   * its canonical document under its versioned codec, schema envelope
   * included (`VersionedCodec#digest`). This is the identity to persist or
@@ -72,6 +74,12 @@ object CanonicalDigest:
     * JSON, computed while the document is described: each array item is made,
     * rendered into the hash and dropped before the next, so no more than one
     * item of an array is held at a time.
+    *
+    * A refusal is the first failure in document order: a number no digest
+    * renders, at its path, or an array item that cannot be made, whichever
+    * the rendering reaches first. Making the JSON first (`json`, then
+    * `document`) reports any item failure before a refused number instead;
+    * a document with one failure is refused the same way by both.
     */
   private[codec] def streamed[A](doc: CanonicalDoc): Either[CodecError, CanonicalDigest[A]] =
     val hasher = new eyes4s.results.Sha256Core.Hasher
@@ -84,10 +92,13 @@ object CanonicalDigest:
   * digests it one item at a time. Both read the same description, so the
   * document a codec writes and the one it digests cannot differ. A failure
   * making an item is the failure of the whole document.
+  *
+  * An object's members are keyed: it cannot hold a key twice, so the JSON
+  * object it makes and the members it renders are the same members.
   */
 private[codec] enum CanonicalDoc:
   case Leaf(value: Json)
-  case Obj(members: Vector[(String, CanonicalDoc)])
+  case Obj(members: ListMap[String, CanonicalDoc])
   case Arr(size: Int, item: Int => Either[CodecError, CanonicalDoc])
 
   /** The whole document, every item made. */
@@ -109,8 +120,9 @@ private[codec] enum CanonicalDoc:
 
   /** The same document, every failure making an item passed through `f`. */
   def mapError(f: CodecError => CodecError): CanonicalDoc = this match
-    case leaf: Leaf      => leaf
-    case Obj(members)    => Obj(members.map((key, member) => key -> member.mapError(f)))
+    case leaf: Leaf   => leaf
+    case Obj(members) => Obj(members.map((key, member) => key -> member.mapError(f)))
+
     case Arr(size, item) => Arr(size, i => item(i).left.map(f).map(_.mapError(f)))
 
 object CanonicalDoc:
@@ -120,8 +132,11 @@ object CanonicalDoc:
   ): CanonicalDoc =
     CanonicalDoc.Arr(values.size, i => item(values(i), i))
 
+  /** An object of `members`, in order; a repeated key keeps its first
+    * position and its last value, as a JSON object built from them does.
+    */
   private[codec] def obj(members: (String, CanonicalDoc)*): CanonicalDoc =
-    CanonicalDoc.Obj(members.toVector)
+    CanonicalDoc.Obj(ListMap.from(members))
 
 /** A prefix-free binary rendering of a JSON value: a tag byte per node,
   * lengths before contents, strings as UTF-16 code units and object members
