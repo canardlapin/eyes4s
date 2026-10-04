@@ -20,10 +20,15 @@ import eyes4s.codec.ByteDigest
 import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.text.{GeometryText, GeometryTextId}
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.backend.{AdmissionSummary, DatasetRevision, TrialKey}
+import eyes4s.studio.core.backend.{
+  AdmissionSummary,
+  DatasetRevision,
+  PlacementPreview,
+  TrialKey
+}
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.*
-import eyes4s.studio.core.geometry.{CorrectionLedger, SourcePositions}
+import eyes4s.studio.core.geometry.CorrectionLedger
 import eyes4s.studio.core.importing.{GeometryField, GeometryFields}
 import eyes4s.studio.core.selection.StudioRef
 
@@ -90,23 +95,32 @@ enum GeometryRefusal derives CanEqual:
         "refuses overlapping rules."
     case Invalid(e) => e.message
 
-/** Which records' positions a [[SourcePositions]] holds: the fixation
-  * source's bytes read under a mapping. A revision that changes neither
-  * keeps the positions already read.
+/** What a revision's placement preview depends on: its fixation source's
+  * bytes and mapping (which records, of which trials) and its geometry and
+  * correction rules (where eyes4s places them; the off-screen policy decides
+  * admission, not placement). A change of any asks the backend again.
   */
-final case class PositionsKey(
+final case class PlacementKey(
     dataset: DatasetRevision,
     source: ByteDigest,
-    mapping: ColumnMapping
+    mapping: ColumnMapping,
+    geometry: Geometry,
+    corrections: Vector[CorrectionRule]
 ) derives CanEqual
 
-object PositionsKey:
-  def of(spec: DatasetRevisionSpec): Option[PositionsKey] =
-    spec.sources.fixations.map(s => PositionsKey(spec.id, s.bytes, spec.mapping))
+object PlacementKey:
+  def of(spec: DatasetRevisionSpec): Option[PlacementKey] =
+    spec.sources.fixations.map(s =>
+      PlacementKey(spec.id, s.bytes, spec.mapping, spec.geometry, spec.admission.corrections)
+    )
 
-  /** The same records: another revision may share them. */
-  def same(a: PositionsKey, b: PositionsKey): Boolean =
+  /** The same records and trials: another revision may share them. */
+  def sameRecords(a: PlacementKey, b: PlacementKey): Boolean =
     a.source == b.source && a.mapping == b.mapping
+
+  /** The same placement: the same records under the same geometry and rules. */
+  def same(a: PlacementKey, b: PlacementKey): Boolean =
+    sameRecords(a, b) && a.geometry == b.geometry && a.corrections == b.corrections
 
 /** A user action or platform fact the panel's view dispatches. */
 enum GeometryIntent derives CanEqual:
@@ -130,8 +144,8 @@ enum GeometryIntent derives CanEqual:
   case CancelOrientation
   case RemoveRule(index: Int)
 
-  /** The platform read and parsed the fixation source for `key`. */
-  case PositionsRead(key: PositionsKey, result: Either[String, SourcePositions])
+  /** The backend's placement preview asked for `key`. */
+  case PlacementRead(key: PlacementKey, result: Either[String, PlacementPreview])
 
   /** The backend's admission summary asked for `dataset`. */
   case CountsRead(dataset: DatasetRevision, result: Either[String, AdmissionSummary])
@@ -141,10 +155,11 @@ enum GeometryEffect derives CanEqual:
   /** Dispatch an app intent: a document command, in order. */
   case App(intent: Intent)
 
-  /** Read `spec`'s fixation source from the project and parse it under its
-    * mapping (off the UI thread); the answer is [[GeometryIntent.PositionsRead]].
+  /** Ask the backend to place `spec`'s records (a draft included); the
+    * answer is [[GeometryIntent.PlacementRead]]. No placement is computed in
+    * studio.
     */
-  case ReadPositions(key: PositionsKey, spec: DatasetRevisionSpec)
+  case RequestPlacement(key: PlacementKey, spec: DatasetRevisionSpec)
 
   /** Ask the backend for `dataset`'s admission summary; the answer is
     * [[GeometryIntent.CountsRead]].
@@ -169,8 +184,8 @@ enum GeometryEffect derives CanEqual:
 final case class GeometryPanel(
     shown: Option[DatasetRevisionSpec],
     fields: GeometryFields,
-    positionsKey: Option[PositionsKey],
-    positions: Loading[SourcePositions],
+    placementKey: Option[PlacementKey],
+    placement: Loading[PlacementPreview],
     counts: Loading[AdmissionSummary],
     marked: Option[TrialKey],
     orientation: Option[OrientationForm],
@@ -233,27 +248,28 @@ object GeometryPanel:
       now match
         case None       => (empty, none)
         case Some(spec) =>
-          val key        = PositionsKey.of(spec)
-          val keepRecord = (panel.positionsKey, key) match
-            case (Some(a), Some(b)) => PositionsKey.same(a, b)
-            case _                  => false
-          val (positions, read) =
-            if keepRecord then (panel.positions, none)
+          val key                                              = PlacementKey.of(spec)
+          def both(p: (PlacementKey, PlacementKey) => Boolean) =
+            (panel.placementKey, key) match
+              case (Some(a), Some(b)) => p(a, b)
+              case _                  => false
+          val (placement, read) =
+            if both(PlacementKey.same) then (panel.placement, none)
             else
-              key.fold[(Loading[SourcePositions], Vector[GeometryEffect])](
+              key.fold[(Loading[PlacementPreview], Vector[GeometryEffect])](
                 (Loading.Failed("the revision has no fixation source"), none)
-              )(k => (Loading.Waiting, Vector(GeometryEffect.ReadPositions(k, spec))))
+              )(k => (Loading.Waiting, Vector(GeometryEffect.RequestPlacement(k, spec))))
           val sameId          = panel.shown.exists(_.id == spec.id)
           val (counts, count) =
             if sameId then (panel.counts, none)
             else (Loading.Waiting, Vector(GeometryEffect.RequestCounts(spec.id)))
-          val sameTrials = keepRecord
+          val sameTrials = both(PlacementKey.sameRecords)
           (
             GeometryPanel(
               Some(spec),
               GeometryFields.of(spec.geometry),
               key,
-              positions,
+              placement,
               counts,
               panel.marked.filter(_ => sameTrials),
               panel.orientation.filter(_ => sameTrials),
@@ -315,11 +331,11 @@ object GeometryPanel:
                 if effects.isEmpty then (next, effects)
                 else (next.copy(orientation = None), effects)
       case RemoveRule(index)          => change(panel, model, GeometryChange.RemoveRule(index))
-      case PositionsRead(key, result) =>
-        if !panel.positionsKey.contains(key) then (panel, none)
+      case PlacementRead(key, result) =>
+        if !panel.placementKey.contains(key) then (panel, none)
         else
           val loaded = result.fold(Loading.Failed(_), Loading.Ready(_))
-          (panel.copy(positions = loaded), none)
+          (panel.copy(placement = loaded), none)
       case CountsRead(dataset, result) =>
         panel.shown match
           case Some(spec) if dataset == spec.id || spec.parent.contains(dataset) =>
@@ -344,7 +360,7 @@ object GeometryPanel:
       case None       => (panel, none)
       case Some(spec) =>
         val checked = c match
-          case GeometryChange.AddRule(rule) => overlap(spec, rule, panel.positions).toLeft(())
+          case GeometryChange.AddRule(rule) => overlap(spec, rule, panel.placement).toLeft(())
           case _                            => Right(())
         checked.flatMap(_ => commands(spec, c)) match
           case Left(GeometryRefusal.NoChange(_)) => (panel.copy(problem = None), none)
@@ -368,14 +384,16 @@ object GeometryPanel:
   private def overlap(
       spec: DatasetRevisionSpec,
       rule: CorrectionRule,
-      positions: Loading[SourcePositions]
+      placement: Loading[PlacementPreview]
   ): Option[GeometryRefusal] =
     val choice = spec.admission.copy(corrections = spec.admission.corrections :+ rule)
     CorrectionLedger.policy(spec.id, choice) match
       case Left(_)       => None
       case Right(policy) =>
         val trials =
-          positions.toOption.fold(Vector.empty[TrialKey])(_.trials) ++ (rule.target match
+          placement.toOption.fold(Vector.empty[TrialKey])(
+            _.trials.map(_.trial)
+          ) ++ (rule.target match
             case CorrectionTarget.Trial(k) => Vector(k)
             case _                         => Vector.empty)
         // A trial of the source both rules cover is named; without one (the

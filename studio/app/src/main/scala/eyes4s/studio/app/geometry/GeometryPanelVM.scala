@@ -189,12 +189,11 @@ object GeometryPanelVM:
     val fields = spec.toVector.flatMap(_ =>
       GeometryField.values.toVector.map(f => FieldVM(f, fieldLabel(f), panel.fields.field(f)))
     )
-    // The pictures on the canvases, until their redraw replaces them: the
-    // labels always describe what is drawn. None before the records are read.
+    // The pictures on the canvases, until their redraw replaces them (also
+    // while a changed revision's placement is asked again): the labels always
+    // describe what is drawn. None before the records are placed.
     val shownPictures = pictures.filter(p =>
-      panel.positions.toOption.isDefined && panel.positionsKey.exists(
-        PositionsKey.same(_, p.key.positions)
-      )
+      panel.placementKey.exists(PlacementKey.sameRecords(_, p.key.placement))
     )
     val example     = shownPictures.flatMap(_.example)
     val exampleRows = example.toVector.flatMap { e =>
@@ -232,38 +231,41 @@ object GeometryPanelVM:
         .toOption
         .map(n => StudioRef.SourceRecord(e.trial, None, SourceRole.Fixations, n))
     )
-    val thumbnails = shownPictures.toVector.flatMap(_.thumbnails).map { p =>
-      val name  = trialLabel(p.trial)
-      val label =
-        if p.outsideScreen > 0 then
-          t(ThumbOffScreen, name, p.outsideScreen.toString, p.records.toString)
-        else if p.outsideWindow > 0 then
-          t(ThumbOutside, name, p.outsideWindow.toString, p.records.toString)
-        else t(ThumbInside, name, p.records.toString)
-      val marked     = panel.marked.contains(p.trial)
-      val accessible = t(
-        ThumbAccessible,
-        name,
-        p.records.toString,
-        p.outsideWindow.toString,
-        p.outsideScreen.toString
-      )
-      ThumbnailVM(
-        p.trial,
-        StudioRef.Trial(p.trial),
-        label,
-        if marked then t(ThumbMarked, accessible) else accessible,
-        marked
-      )
-    }
+    val thumbnails =
+      shownPictures.toVector.flatMap(pic => pic.thumbnails.map(pic.key.dataset -> _)).map {
+        (dataset, p) =>
+          val name  = trialLabel(p.trial)
+          val label =
+            if p.outsideScreen > 0 then
+              t(ThumbOffScreen, name, p.outsideScreen.toString, p.records.toString)
+            else if p.outsideWindow > 0 then
+              t(ThumbOutside, name, p.outsideWindow.toString, p.records.toString)
+            else t(ThumbInside, name, p.records.toString)
+          val marked     = panel.marked.contains(p.trial)
+          val accessible = t(
+            ThumbAccessible,
+            name,
+            p.records.toString,
+            p.outsideWindow.toString,
+            p.outsideScreen.toString
+          )
+          ThumbnailVM(
+            p.trial,
+            // The thumbnail's counts are the backend's window tally of the trial.
+            StudioRef.TrialPlacementTally(dataset, p.trial),
+            label,
+            if marked then t(ThumbMarked, accessible) else accessible,
+            marked
+          )
+      }
     val source        = spec.flatMap(_.sources.fixations).map(_.path.value).getOrElse("")
-    val positionsNote = panel.positions match
+    val positionsNote = panel.placement match
       case Loading.Waiting                           => Some(t(PositionsWaiting, source))
       case Loading.Failed(why)                       => Some(t(PositionsFailed, why))
       case Loading.Ready(ps) if ps.unplaced.nonEmpty =>
         Some(t(PositionsUnplaced, Format.count(ps.unplaced.size.toLong)))
       case _ => None
-    val records = panel.positions.toOption.map(p => Format.count(p.positions.size.toLong))
+    val records = panel.placement.toOption.map(p => Format.count(p.records.size.toLong))
     val rules   = spec.toVector.flatMap(_.admission.corrections)
     val caption = records.fold(t(AllTrialsCaption, "—"))(n =>
       if rules.isEmpty then t(AllTrialsCaption, n)

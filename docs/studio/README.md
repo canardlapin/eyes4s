@@ -59,6 +59,13 @@ To change the plan, edit `studio_plan.py`, rerun `render`, and update the matchi
 
 ## Backend protocol versions
 
+Protocol 1.12 (S5.5 placement preview) adds `PlacementOf(spec)`, additive on 1.11: every record of the revision's
+fixation source placed by eyes4s under its geometry and recorded correction rules (the
+spec is sent whole, so an unsaved draft is previewed too), each trial's window tally in
+source order and the all-trials density, or `PlacementRefused(dataset, reason)`. The
+geometry panel draws from it and places nothing itself. The other 1.11 pins are
+unchanged; the envelope version is now 1.12.
+
 Protocol 1.11 (S5.6 follow-up) adds `Verify(dataset, content)`, `ContentMismatch` and
 `ContentNotHeld`, additive on 1.10: the
 admission request that carries the CR3 digest of what the revision asks eyes4s to admit
@@ -180,7 +187,7 @@ malformed, even when the other version's body would not decode
 (bd-01M3JH3492J21SKMYYNZM93118). Protocol
 1.2 added `ProgressTotal.Counting`, which a 1.0/1.1 decoder cannot read; 1.3 adds
 the inventory join; 1.4 adds the exact large-count policy; 1.5 adds the
-resolved-design counts; 1.6 adds the trial fixations and preview views; 1.7 adds the source records view; 1.8 adds the diagnostic's affected trials, class and remedy; 1.9 adds the pair rows view and the exact-version refusal; 1.10 adds the `TrialFailed` placement; 1.11 adds `Verify`. `ProtocolCodecSuite`
+resolved-design counts; 1.6 adds the trial fixations and preview views; 1.7 adds the source records view; 1.8 adds the diagnostic's affected trials, class and remedy; 1.9 adds the pair rows view and the exact-version refusal; 1.10 adds the `TrialFailed` placement; 1.11 adds `Verify`; 1.12 adds `PlacementOf`. `ProtocolCodecSuite`
 retains the frozen legacy-total probe, while `ProtocolLongSuite` verifies that
 safe-number 1.2 envelopes remain readable. This does not establish mixed-version peer compatibility.
 

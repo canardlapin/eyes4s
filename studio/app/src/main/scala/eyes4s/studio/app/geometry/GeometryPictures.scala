@@ -16,24 +16,30 @@
 
 package eyes4s.studio.app.geometry
 
-import eyes4s.studio.core.backend.{DatasetRevision, TrialKey}
+import eyes4s.studio.core.backend.{
+  DatasetRevision,
+  PlacedRecord,
+  PlacementDensityGrid,
+  PlacementPreview,
+  RecordPlacement,
+  TrialKey
+}
 import eyes4s.studio.core.document.{
   AdmissionChoice,
   CorrectionRule,
   DatasetRevisionSpec,
   Geometry
 }
-import eyes4s.studio.core.geometry.*
 
 /** Where a drawn record falls, as eyes4s placed it. */
 enum MarkPlace derives CanEqual:
   case Inside, OutsideWindow, OutsideScreen
 
 object MarkPlace:
-  def of(p: Placement): MarkPlace = p match
-    case Placement.Inside(_)     => Inside
-    case Placement.OutsideWindow => OutsideWindow
-    case Placement.OutsideScreen => OutsideScreen
+  def of(p: RecordPlacement): MarkPlace = p match
+    case RecordPlacement.Inside        => Inside
+    case RecordPlacement.OutsideWindow => OutsideWindow
+    case RecordPlacement.OutsideScreen => OutsideScreen
 
 /** One record drawn in a thumbnail, at its corrected screen position. */
 final case class MarkPicture(x: Double, y: Double, place: MarkPlace, corrected: Boolean)
@@ -88,7 +94,7 @@ object DensityPicture:
   /** The smallest share of the fullest cell that is drawn. */
   val Floor: Double = 0.05
 
-  def of(d: PlacementDensity): DensityPicture =
+  def of(d: PlacementDensityGrid): DensityPicture =
     val max    = d.counts.foldLeft(0.0)(_ max _)
     val levels = d.counts.toVector.map { c =>
       val share = if max <= 0.0 then 0.0 else c / max
@@ -130,7 +136,7 @@ final case class PicturesKey(
     dataset: DatasetRevision,
     geometry: Geometry,
     admission: AdmissionChoice,
-    positions: PositionsKey,
+    placement: PlacementKey,
     marked: Option[TrialKey],
     focusTrial: Option[TrialKey],
     focusRecord: Option[Int]
@@ -146,13 +152,14 @@ object GeometryPictures:
     val (trial, record) = GeometryPanel.focus(model)
     for
       spec <- panel.shown.flatMap(s => model.document.dataset(s.id))
-      key  <- panel.positionsKey
-      _    <- panel.positions.toOption
+      key  <- panel.placementKey
+      _    <- panel.placement.toOption
     yield PicturesKey(spec.id, spec.geometry, spec.admission, key, panel.marked, trial, record)
 
-  /** The pictures of `spec`'s records: every record placed by eyes4s under
-    * the revision's geometry and recorded corrections, the representative
-    * trials, the all-trials density and the worked example.
+  /** The pictures of `spec`'s records as the backend placed them (eyes4s,
+    * under the revision's geometry and recorded corrections): the
+    * representative trials, the all-trials density and the worked example.
+    * Nothing is placed here; the counts are the backend's trial tallies.
     *
     * The representative trials are, in order and without repeats: the
     * source's first trial; the selected trial; the marked trial; each trial
@@ -163,75 +170,65 @@ object GeometryPictures:
   def of(
       key: PicturesKey,
       spec: DatasetRevisionSpec,
-      positions: SourcePositions
-  ): Either[GeometryProblem, GeometryPictures] =
-    for
-      ledger  <- CorrectionLedger.of(spec)
-      placed  <- ledger.placeAll(positions.positions)
-      density <- PlacementDensity.of(ledger.frames, placed)
-      example <- exampleOf(key, positions, ledger)
-    yield
-      val byTrial = placed.groupBy(_.source.trial)
-      val trials  = positions.trials
-      val outside = trials.map(t => t -> byTrial(t).count(!_.placement.isInside))
-      val worst   = outside.filter(_._2 > 0).sortBy((_, n) => -n).map(_._1)
-      val ruled   = spec.admission.corrections.collect {
-        case CorrectionRule(eyes4s.studio.core.document.CorrectionTarget.Trial(k), _) => k
-      }
-      val chosen = (trials.take(1) ++ key.focusTrial ++ key.marked ++ ruled ++ worst ++ trials)
-        .filter(byTrial.contains)
-        .distinct
-        .take(Thumbnails)
-      GeometryPictures(
-        key,
-        FramePicture.of(spec.geometry),
-        chosen.map(t => thumbnail(t, byTrial(t))),
-        DensityPicture.of(density),
-        example,
-        positions.unplaced.size
-      )
+      preview: PlacementPreview
+  ): GeometryPictures =
+    val byTrial = preview.byTrial
+    val tallies = preview.trials
+    val trials  = tallies.map(_.trial)
+    val worst   = tallies
+      .filter(t => t.outsideWindow + t.outsideScreen > 0)
+      .sortBy(t => -(t.outsideWindow + t.outsideScreen))
+      .map(_.trial)
+    val ruled = spec.admission.corrections.collect {
+      case CorrectionRule(eyes4s.studio.core.document.CorrectionTarget.Trial(k), _) => k
+    }
+    val chosen = (trials.take(1) ++ key.focusTrial ++ key.marked ++ ruled ++ worst ++ trials)
+      .filter(byTrial.contains)
+      .distinct
+      .take(Thumbnails)
+    val tallyOf = tallies.map(t => t.trial -> t).toMap
+    GeometryPictures(
+      key,
+      FramePicture.of(spec.geometry),
+      chosen.map(t => thumbnail(tallyOf(t), byTrial(t))),
+      DensityPicture.of(preview.density),
+      exampleOf(key, preview),
+      preview.unplaced.size
+    )
 
-  private def thumbnail(trial: TrialKey, placed: Vector[PlacedPosition]): ThumbnailPicture =
-    val places = placed.map(p => MarkPlace.of(p.placement))
+  private def thumbnail(
+      tally: eyes4s.studio.core.backend.TrialPlacement,
+      placed: Vector[PlacedRecord]
+  ): ThumbnailPicture =
     ThumbnailPicture(
-      trial,
-      placed.size,
-      places.count(_ == MarkPlace.OutsideWindow),
-      places.count(_ == MarkPlace.OutsideScreen),
-      placed
-        .zip(places)
-        .map((p, place) => MarkPicture(p.corrected.x, p.corrected.y, place, p.rule.isDefined))
+      tally.trial,
+      tally.records,
+      tally.outsideWindow,
+      tally.outsideScreen,
+      placed.map(p =>
+        MarkPicture(p.correctedX, p.correctedY, MarkPlace.of(p.placement), p.rule.isDefined)
+      )
     )
 
   /** The selected record, else the marked trial's first, else the first. */
-  private def exampleOf(
-      key: PicturesKey,
-      positions: SourcePositions,
-      ledger: CorrectionLedger
-  ): Either[GeometryProblem, Option[ExamplePicture]] =
-    val chosen = key.focusRecord
-      .flatMap(positions.position)
-      .orElse(key.marked.flatMap(t => positions.byTrial.get(t).flatMap(_.headOption)))
-      .orElse(key.focusTrial.flatMap(t => positions.byTrial.get(t).flatMap(_.headOption)))
-      .orElse(positions.positions.headOption)
-    chosen match
-      case None    => Right(None)
-      case Some(p) =>
-        WorkedExample.of(ledger, p).map { w =>
-          val rule = w.placed.rule.flatMap(i => key.admission.corrections.lift(i).map(i -> _))
-          Some(
-            ExamplePicture(
-              p.record,
-              p.trial,
-              p.x,
-              p.y,
-              rule,
-              w.placed.corrected.x,
-              w.placed.corrected.y,
-              w.image.x,
-              w.image.y,
-              MarkPlace.of(w.placed.placement),
-              w.degrees.map(d => (d.x, d.y))
-            )
-          )
-        }
+  private def exampleOf(key: PicturesKey, preview: PlacementPreview): Option[ExamplePicture] =
+    key.focusRecord
+      .flatMap(preview.record)
+      .orElse(key.marked.flatMap(t => preview.byTrial.get(t).flatMap(_.headOption)))
+      .orElse(key.focusTrial.flatMap(t => preview.byTrial.get(t).flatMap(_.headOption)))
+      .orElse(preview.records.headOption)
+      .map { p =>
+        ExamplePicture(
+          p.record,
+          p.trial,
+          p.rawX,
+          p.rawY,
+          p.rule.flatMap(i => key.admission.corrections.lift(i).map(i -> _)),
+          p.correctedX,
+          p.correctedY,
+          p.imageX,
+          p.imageY,
+          MarkPlace.of(p.placement),
+          p.degrees
+        )
+      }

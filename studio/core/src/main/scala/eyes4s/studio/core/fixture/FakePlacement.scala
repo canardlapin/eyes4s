@@ -51,7 +51,20 @@ object FakePlacement:
             s"sha256:${digest.hex} only"
         )
       )
-      positions <- SourcePositions.read(spec, bytes).left.map(p => refused(p.message))
+      preview <- place(spec, bytes)
+    yield preview
+
+  /** `spec`'s records read from `source` (its fixation file's bytes) and
+    * placed with eyes4s: what a backend holding that file answers. Tests
+    * stand for a backend with another file through it.
+    */
+  def place(
+      spec: DatasetRevisionSpec,
+      source: IArray[Byte]
+  ): Either[BackendError, PlacementPreview] =
+    def refused(reason: String) = BackendError.PlacementRefused(spec.id, reason)
+    for
+      positions <- SourcePositions.read(spec, source).left.map(p => refused(p.message))
       ledger    <- CorrectionLedger.of(spec).left.map(p => refused(p.message))
       placed    <- ledger.placeAll(positions.positions).left.map(p => refused(p.message))
       density   <- PlacementDensity.of(ledger.frames, placed).left.map(p => refused(p.message))

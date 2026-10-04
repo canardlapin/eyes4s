@@ -45,7 +45,7 @@ enum GeometryTextId derives CanEqual:
   case MarkOrientation, MarkNeedsTrial, OrientationTitle, FixX, FixY, ScopeTrial
   case ScopeParticipant, RecordCorrection, Cancel, RulesTitle, RulesNote, RulesEmpty
   case RuleText, RuleRemove, TargetAll, TargetParticipant, TargetTrial, CorrectionFlipX
-  case CorrectionFlipY, CorrectionTranslate, RuleOverlaps
+  case CorrectionFlipY, CorrectionTranslate, RuleOverlaps, PlacementTally
 
   // --- Off-screen policy and counts ------------------------------------------------------------
   case PolicyTitle, PolicyExclude, PolicyQuarantine, PolicyExcludeNote, PolicyQuarantineNote
@@ -144,6 +144,7 @@ object GeometryText:
     case CorrectionFlipY     => "flip vertically"
     case CorrectionTranslate => "shift by ({0}, {1}) px"
     case RuleOverlaps        => "Not recorded: {0}"
+    case PlacementTally      => "placement"
 
     case PolicyTitle       => "Records outside the screen"
     case PolicyExclude     => "Exclude the record (default)"
