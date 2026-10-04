@@ -27,6 +27,7 @@ FIXTURES = (
     "tools/r-parity/fixtures/temporal.json",
     "tools/r-parity/fixtures/temporal-study.csv",
     "tools/detector-conformance/reference.json",
+    "tools/r-parity/fixtures/point-sampling.json",
 )
 # The facade journey's AdSERP excerpt and tidy export, as the library's own suite pins them.
 FACADE_SOURCE_SHA256 = "57dc3230c1e2a701017011a9652e215fcb09b7f1b63a16fe00ca0ed1ca9639d0"
@@ -222,6 +223,7 @@ def main():
     fresh_routes = check_fresh_routes(log)
     facade = check_facade_journey(log)
     report = check_report_journey(log)
+    repetition = check_repetition_journey(log)
     envelope = check_envelope(log)
     receipt = {
         "artifact_version": VERSION,
@@ -269,6 +271,8 @@ def main():
                 "fresh-process reload and bit-for-bit rerun of every route",
                 "facade journey: PsychologyWorkflow equals the explicit composition",
                 "report journey: Report.evaluate equals the explicit reduction; exports",
+                "repetition journey: RepetitionPlan and PointSamplingPlan against "
+                "explicit compositions and point-sampling.json",
                 "JVM and Scala.js agree exactly on portable evidence",
             ],
         },
@@ -320,6 +324,12 @@ def main():
         "report_journey": {
             "exact_across_runtimes": ["report", "cells_sha256", "study_sha256", "contrast_bits"],
             "runtime_evidence": report,
+        },
+        "repetition_journey": {
+            "exact_across_runtimes": ["plan", "matched", "controls", "point plan", "point values"],
+            "absolute_tolerance": ORACLE_TOLERANCE,
+            "oracle": "tools/r-parity/fixtures/point-sampling.json",
+            "runtime_evidence": repetition,
         },
         "response_envelope": envelope,
         "consumer_directory": str(candidate),
@@ -392,13 +402,19 @@ def check_consumer_fixtures():
     if hashlib.sha256(table).hexdigest() != temporal["input_sha256"]:
         raise RuntimeError("temporal.json was not generated from temporal-study.csv")
     # The generators pin every embedded window, coverage, target and ledger too.
-    # Transcribed verbatim from the library's own tests: the facade's AdSERP excerpt.
+    # Transcribed verbatim from the library's own tests: the facade's AdSERP excerpt
+    # and the generated point-sampling oracle.
     excerpt = (REPO / "io/src/test/scala/eyes4s/io/PsychologyWorkflowSuite.scala").read_text()
     excerpt = excerpt.split('private val publicTrial =', 1)[1].split('""".stripMargin', 1)[0]
     copy = (HERE / "src/test/scala/example/FacadeFixtures.scala").read_text()
     copy = copy.split("val csv: String =", 1)[1].split('""".stripMargin', 1)[0]
     if excerpt != copy:
         raise RuntimeError("FacadeFixtures.scala does not carry the library's AdSERP excerpt")
+    reference = (REPO / "plan/src/test/scala/eyes4s/plan/PointSamplingReference.scala").read_text()
+    oracle = (HERE / "src/test/scala/example/PointSamplingOracle.scala").read_text()
+    body = lambda text, name: text.split(f"object {name}:", 1)[1]
+    if body(reference, "PointSamplingReference") != body(oracle, "PointSamplingOracle"):
+        raise RuntimeError("PointSamplingOracle.scala is not the generated point-sampling reference")
     for generator in ("generate_multiscale.py", "generate_temporal.py"):
         subprocess.run(
             ["python3", str(REPO / "tools/r-parity" / generator), "--check"],
@@ -610,6 +626,23 @@ def check_report_journey(log):
     pair = runtime_pair(log, "EYES4S_REPORT_JOURNEY=", "report journey")
     same_except_runtime(pair, "report journey")
     return [pair["jvm"], pair["js"]]
+
+
+def check_repetition_journey(log):
+    """RepetitionPlan and PointSamplingPlan on both runtimes; point values against the oracle."""
+    repetition = runtime_pair(log, "EYES4S_REPETITION_JOURNEY=", "repetition journey")
+    points = runtime_pair(log, "EYES4S_POINT_JOURNEY=", "point-sampling journey")
+    left, right = repetition["jvm"], repetition["js"]
+    for exact in ("plan", "matched", "controls"):
+        if left[exact] != right[exact]:
+            raise RuntimeError(f"JVM/Scala.js repetition disagreement in {exact}")
+    if len(left["differences"]) != len(right["differences"]) or not all(
+        math.isclose(a, b, abs_tol=ORACLE_TOLERANCE, rel_tol=0)
+        for a, b in zip(left["differences"], right["differences"])
+    ):
+        raise RuntimeError("JVM/Scala.js repetition contrasts disagree")
+    same_except_runtime(points, "point-sampling journey")
+    return {"repetition": [left, right], "points": [points["jvm"], points["js"]]}
 
 
 def check_envelope(log):
