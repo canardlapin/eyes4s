@@ -37,6 +37,7 @@ import eyes4s.studio.core.document.{
   DatasetRevisionSpec,
   Perspective
 }
+import eyes4s.studio.core.diff.{DiffError, LedgerUnavailable, StatusChanges, StatusDiff}
 import eyes4s.studio.core.selection.{StudioRef, TallyRegion}
 
 /** What eyes4s answered when asked to admit a dataset revision. */
@@ -86,6 +87,16 @@ enum LedgerIntent derives CanEqual:
       result: Either[String, Vector[LedgerEntry]]
   )
 
+  /** The whole ledger of `parent`, the revision the shown one re-imports,
+    * asked for by ask `ask`, or why it is not there (S5.8: the trials whose
+    * status changed).
+    */
+  case ParentLedgerRead(
+      parent: DatasetRevision,
+      ask: Int,
+      result: Either[LedgerUnavailable, Vector[LedgerEntry]]
+  )
+
   /** The backend answered the verification of `dataset`'s `content`
     * (the app's `RequestAdmission`).
     */
@@ -109,6 +120,11 @@ enum LedgerEffect derives CanEqual:
     * carrying `ask`.
     */
   case RequestLedger(dataset: DatasetRevision, ask: Int)
+
+  /** Read the whole ledger of `parent`, the shown revision's parent; the
+    * answer is [[LedgerIntent.ParentLedgerRead]], carrying `ask`.
+    */
+  case RequestParentLedger(parent: DatasetRevision, ask: Int)
 
 /** The Data perspective's admission ledger (ticket S5.6; Data.dc.html,
   * admission). It shows eyes4s's admission of the selected dataset revision
@@ -141,8 +157,31 @@ final case class AdmissionLedger(
     ask: Int,
     decision: CoreAdmissionDecision,
     admitting: Option[DatasetRevision],
-    problem: Option[String]
+    problem: Option[String],
+    parentLedger: Option[Either[LedgerUnavailable, Vector[LedgerEntry]]]
 ) derives CanEqual:
+
+  /** Whether the shown revision's trial statuses were compared with its
+    * parent's (S5.8): both ledgers read, or the parent's unavailable.
+    */
+  def status: StatusDiff =
+    (shown.flatMap(s => s.parent.map(s.id -> _)), parentLedger, entries) match
+      case (Some((_, parent)), Some(Left(why)), _) => StatusDiff.Unavailable(parent, why)
+      case (Some((id, _)), Some(Right(_)), Loading.Failed(why)) =>
+        StatusDiff.Unavailable(id, LedgerUnavailable.Failed(why))
+      case (Some((id, parent)), Some(Right(before)), Loading.Ready(after)) =>
+        StatusChanges
+          .between(parent, before, id, after)
+          .fold(
+            e =>
+              val dataset = e match
+                case DiffError.RepeatedTrials(d, _) => d
+                case _                              => parent
+              StatusDiff.Unavailable(dataset, LedgerUnavailable.Failed(e.message))
+            ,
+            StatusDiff.Compared(_)
+          )
+      case _ => StatusDiff.NotRead
 
   /** What admission has said about the shown revision's inventory. */
   def inventory: InventoryAnswer = (counts, refusal) match
@@ -160,6 +199,7 @@ object AdmissionLedger:
       Loading.Idle,
       0,
       CoreAdmissionDecision.RequireComplete,
+      None,
       None,
       None
     )
@@ -209,12 +249,13 @@ object AdmissionLedger:
         refusal = None,
         entries = Loading.Waiting,
         ask = next,
-        problem = None
+        problem = None,
+        parentLedger = None
       ),
       Vector(
         LedgerEffect.RequestCounts(spec.id, next),
         LedgerEffect.RequestLedger(spec.id, next)
-      )
+      ) ++ spec.parent.map(LedgerEffect.RequestParentLedger(_, next))
     )
 
   /** Follow the model's selected dataset revision: a newly selected one
@@ -263,6 +304,10 @@ object AdmissionLedger:
       case LedgerRead(dataset, n, result) =>
         if !answers(ledger, dataset, n) then (ledger, none)
         else (ledger.copy(entries = result.fold(Loading.Failed(_), Loading.Ready(_))), none)
+      case ParentLedgerRead(parent, n, result) =>
+        if !(ledger.shown.exists(_.parent.contains(parent)) && ledger.ask == n) then
+          (ledger, none)
+        else (ledger.copy(parentLedger = Some(result)), none)
       case Verified(dataset, content, ans) =>
         if !ledger.shown.exists(_.id == dataset) then
           (ledger.copy(admitting = ledger.admitting.filterNot(_ == dataset)), none)

@@ -23,6 +23,7 @@ import eyes4s.studio.app.vm.Shell
 import eyes4s.studio.app.{AppEffect, AppModel, Intent, StoryModels}
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.command.Command
+import eyes4s.studio.core.diff.{LedgerUnavailable, StatusDiff}
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.fixture.{InventoryScenario, StoryMoment, StoryMoments}
 import eyes4s.studio.core.freshness.{RunStanding, StaleReason}
@@ -46,6 +47,16 @@ class AdmissionLedgerSuite extends munit.FunSuite:
 
   /** t1: r3 is a pending re-import of r2, the ledger open on it. */
   private def t1: AppModel = StoryModels.t1Data
+
+  /** What the fake answers for r3's parent r2's ledger: it serves no data
+    * for r2 (pinned against the fake by "the parent's ledger is asked for…").
+    */
+  private val r2Ledger: Either[LedgerUnavailable, Vector[LedgerEntry]] =
+    Left(
+      LedgerUnavailable.Refused(
+        LedgerReadError.Refused(BackendError.Unavailable(DiagnosticLocus.Dataset(r2)))
+      )
+    )
 
   /** The fake's answers for r3 at `moment`, after `prepare`. */
   private def served(
@@ -71,7 +82,11 @@ class AdmissionLedgerSuite extends munit.FunSuite:
     val (synced, effects) = AdmissionLedger.sync(AdmissionLedger.empty, model)
     assertEquals(
       effects,
-      Vector(LedgerEffect.RequestCounts(r3, 1), LedgerEffect.RequestLedger(r3, 1))
+      Vector(
+        LedgerEffect.RequestCounts(r3, 1),
+        LedgerEffect.RequestLedger(r3, 1),
+        LedgerEffect.RequestParentLedger(r2, 1)
+      )
     )
     read(synced, model, answers)
 
@@ -84,7 +99,8 @@ class AdmissionLedgerSuite extends munit.FunSuite:
     val (counts, entries) = answers
     Vector(
       LedgerIntent.CountsRead(r3, ledger.ask, counts),
-      LedgerIntent.LedgerRead(r3, ledger.ask, entries)
+      LedgerIntent.LedgerRead(r3, ledger.ask, entries),
+      LedgerIntent.ParentLedgerRead(r2, ledger.ask, r2Ledger)
     ).foldLeft(ledger)((l, i) => AdmissionLedger.update(l, model, i)._1)
 
   /** Apply the ledger's app intents, as the host does; the app's effects. */
@@ -308,8 +324,12 @@ class AdmissionLedgerSuite extends munit.FunSuite:
       assertEquals(
         before.changes,
         Some(
-          "Changes from r2: onset declared ms; Block → occurrence; 4 trials change status vs " +
-            "r2 (overlap → admitted 3, admitted → no-fixations 1)."
+          // The fixture's column is named occurrence; the fake serves no ledger
+          // for r2, so the status comparison is said to be unavailable. The
+          // board's "4 trials change status" needs r2's ledger (real backend,
+          // S3.7); DatasetDiffSuite carries that literal with two ledgers.
+          "Changes from r2: onset declared ms; occurrence → occurrence; trial status vs r2 " +
+            "unavailable."
         )
       )
       assertEquals(t1.freshness.standing(run5), Some(RunStanding.Current))
@@ -738,7 +758,11 @@ class AdmissionLedgerSuite extends munit.FunSuite:
       val (synced, effects) = AdmissionLedger.sync(ledger, edited)
       assertEquals(
         effects,
-        Vector(LedgerEffect.RequestCounts(r3, 2), LedgerEffect.RequestLedger(r3, 2))
+        Vector(
+          LedgerEffect.RequestCounts(r3, 2),
+          LedgerEffect.RequestLedger(r3, 2),
+          LedgerEffect.RequestParentLedger(r2, 2)
+        )
       )
       assertEquals((synced.counts, synced.entries), (Loading.Waiting, Loading.Waiting))
       assertEquals(AdmissionLedgerVM.of(synced, edited).canAdmit, false)
@@ -773,7 +797,11 @@ class AdmissionLedgerSuite extends munit.FunSuite:
       val (retried, effects) = AdmissionLedger.update(failed, t1, LedgerIntent.Retry)
       assertEquals(
         effects,
-        Vector(LedgerEffect.RequestCounts(r3, 2), LedgerEffect.RequestLedger(r3, 2))
+        Vector(
+          LedgerEffect.RequestCounts(r3, 2),
+          LedgerEffect.RequestLedger(r3, 2),
+          LedgerEffect.RequestParentLedger(r2, 2)
+        )
       )
       assertEquals(retried.decision, CoreAdmissionDecision.ReviewExclusions)
       val after = AdmissionLedgerVM.of(read(retried, t1, answers), t1)
@@ -865,6 +893,103 @@ class AdmissionLedgerSuite extends munit.FunSuite:
       Some(
         "r4 is admitted under Require complete. Run 6 (rev 3) used r3 and is now stale. A " +
           "change to its mapping or geometry creates a new dataset revision."
+      )
+    )
+  }
+
+  // --- The diff from the parent revision (S5.8) -------------------------------------------
+
+  test("the parent's ledger is asked for, and its answer of an older ask is ignored") {
+    for
+      session <- HeadlessSession.open(StoryMoment.T1)
+      fake    <- session.wholeLedger(r2)
+      _       <- session.close
+    yield
+      assertEquals(fake.left.map(LedgerUnavailable.Refused(_)), r2Ledger)
+      val synced = AdmissionLedger.sync(AdmissionLedger.empty, t1)._1
+      val late   =
+        AdmissionLedger.update(synced, t1, LedgerIntent.ParentLedgerRead(r2, 0, r2Ledger))._1
+      assertEquals(late, synced)
+      val other =
+        AdmissionLedger.update(synced, t1, LedgerIntent.ParentLedgerRead(r3, 1, r2Ledger))._1
+      assertEquals(other, synced)
+      val read =
+        AdmissionLedger.update(synced, t1, LedgerIntent.ParentLedgerRead(r2, 1, r2Ledger))._1
+      assertEquals(read.status, StatusDiff.Unavailable(r2, r2Ledger.left.toOption.get))
+  }
+
+  test("with both ledgers read, the changes count the trials whose status changed") {
+    served(StoryMoment.T1).map { answers =>
+      val entries = ok(answers._2)
+      // r2 as the board tells it, against the fake's r3: the first admitted
+      // trial was quarantined, the first no-fixations trial admitted.
+      val admitted = entries.indexWhere(_.disposition == TrialDisposition.Admitted)
+      val empty    = entries.indexWhere(_.disposition == TrialDisposition.NoFixations)
+      val before   = entries
+        .updated(
+          admitted,
+          entries(admitted).copy(disposition =
+            TrialDisposition.Quarantined(QuarantineCause.Overlap(2, "1200 ms", "1180 ms"))
+          )
+        )
+        .updated(empty, entries(empty).copy(disposition = TrialDisposition.Admitted))
+      val synced = AdmissionLedger.sync(AdmissionLedger.empty, t1)._1
+      val ledger = Vector(
+        LedgerIntent.CountsRead(r3, 1, answers._1),
+        LedgerIntent.LedgerRead(r3, 1, answers._2),
+        LedgerIntent.ParentLedgerRead(r2, 1, Right(before))
+      ).foldLeft(synced)((l, i) => AdmissionLedger.update(l, t1, i)._1)
+      assertEquals(
+        AdmissionLedgerVM.of(ledger, t1).changes,
+        Some(
+          "Changes from r2: onset declared ms; occurrence → occurrence; 2 trials change status."
+        )
+      )
+      assertEquals(
+        ledger.status match
+          case StatusDiff.Compared(c) => c.changes.map(_.trial)
+          case other                  => fail(other.toString)
+        ,
+        Vector(entries(admitted).trial, entries(empty).trial).sortBy(k =>
+          entries.indexWhere(_.trial == k)
+        )
+      )
+      // The line's count leads to exactly those trials (one per transition).
+      assertEquals(
+        AdmissionLedgerVM.of(ledger, t1).changeRefs.toSet,
+        Set(entries(admitted).trial, entries(empty).trial).map(StudioRef.Trial(_))
+      )
+      assertEquals(AdmissionLedgerVM.of(ledger, t1).changeRefs.size, 2)
+    }
+  }
+
+  test("a shown ledger that failed is said, not hidden, while the parent's was read") {
+    served(StoryMoment.T1).map { answers =>
+      val synced = AdmissionLedger.sync(AdmissionLedger.empty, t1)._1
+      val ledger = Vector(
+        LedgerIntent.CountsRead(r3, 1, answers._1),
+        LedgerIntent.LedgerRead(r3, 1, Left("the backend timed out")),
+        LedgerIntent.ParentLedgerRead(r2, 1, Right(ok(answers._2)))
+      ).foldLeft(synced)((l, i) => AdmissionLedger.update(l, t1, i)._1)
+      val vm = AdmissionLedgerVM.of(ledger, t1)
+      assertEquals(
+        vm.changes,
+        Some(
+          "Changes from r2: onset declared ms; occurrence → occurrence; trial status of r3 " +
+            "unavailable."
+        )
+      )
+      assertEquals(vm.changeRefs, Vector.empty)
+    }
+  }
+
+  test("a parent the document does not have is said, naming it") {
+    val spec = t1.document.dataset(r3).get.copy(parent = Some(DatasetRevision(9)))
+    assertEquals(
+      AdmissionLedgerVM.history(t1.document, spec, StatusDiff.NotRead),
+      Some(
+        "Changes from r9 cannot be shown: The document has no dataset r9 (it has r2, r3)." ->
+          Vector.empty
       )
     )
   }
