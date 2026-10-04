@@ -1112,7 +1112,8 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("studio/core"))
   .enablePlugins(NoPublishPlugin)
-  .dependsOn(plan, codec, fs2Module)
+  // S3.7: the real backend admits datasets through eyes4s-io (cross-built).
+  .dependsOn(plan, codec, fs2Module, io)
   .settings(commonSettings, portableStudioSettings)
   .settings(
     name := "eyes4s-studio-core",
@@ -1174,7 +1175,6 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
       )
     }.taskValue
   )
-  .jvmConfigure(_.dependsOn(io.jvm % Test))
   // S5.4: the golden tables' text, for the JVM suite that admits them with
   // eyes4s-io under the story's recorded mappings.
   .jvmSettings(
