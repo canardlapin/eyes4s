@@ -137,7 +137,7 @@ final case class PanelVM(
 final case class AppearanceVM(
     textSizes: Vector[(FigureTextSize, String, Boolean)],
     lines: Vector[(ParticipantLines, String, Boolean)],
-    panelWidth: Option[(PanelLetter, Int, String)],
+    panelWidthMm: Option[(PanelLetter, Int, String)],
     includeImages: (String, Boolean)
 ) derives CanEqual
 
@@ -190,6 +190,10 @@ final case class FigureComposer private (
 ) derives CanEqual:
   def appearanceOf(figure: FigureId): FigureAppearance =
     appearance.getOrElse(figure, FigureAppearance.default)
+
+  /** The same composer, asking `read` again at the next sync if it failed. */
+  private[figures] def retrying(read: ComposerRead, failed: Boolean): FigureComposer =
+    if failed then copy(asked = asked - read) else this
 
 object FigureComposer:
   val empty: FigureComposer = FigureComposer(
@@ -308,22 +312,46 @@ object FigureComposer:
           c.copy(problem = None),
           Vector(ComposerEffect.App(Intent.Navigate(figureTrail(f, Some(letter)))))
         )
-      case NewFigure                  => newFigure(c, model)
-      case SetWidth(w)                => (c.copy(width = w), none)
-      case ZoomIn                     => (c.copy(zoom = c.zoom.in), none)
-      case ZoomOut                    => (c.copy(zoom = c.zoom.out), none)
-      case ShowTab(tab)               => (c.copy(tab = tab), none)
-      case OpenInCompare              => openInCompare(c, model)
-      case SummaryRead(r, a)          => (c.copy(summaries = c.summaries.updated(r, a)), none)
+      case NewFigure   => newFigure(c, model)
+      case SetWidth(w) =>
+        // A narrower page holds no panel wider than itself.
+        val clamped = c.appearance.view
+          .mapValues(a => a.copy(widthsMm = a.widthsMm.view.mapValues(_.min(w.mm)).toMap))
+          .toMap
+        (c.copy(width = w, appearance = clamped), none)
+      case ZoomIn        => (c.copy(zoom = c.zoom.in), none)
+      case ZoomOut       => (c.copy(zoom = c.zoom.out), none)
+      case ShowTab(tab)  => (c.copy(tab = tab), none)
+      case OpenInCompare => openInCompare(c, model)
+      // A read that failed is asked again at the next sync; its failure
+      // shows until then.
+      case SummaryRead(r, a) =>
+        val failed = a match
+          case SummaryAnswer.Answered(_) => false
+          case _                         => true
+        (
+          c.copy(summaries = c.summaries.updated(r, a))
+            .retrying(ComposerRead.Summary(r), failed),
+          none
+        )
       case ReferencesRead(r, s, q, a) =>
-        (c.copy(references = c.references.updated((r, s, q), a)), none)
-      case DisplaysRead(d, a)         => (c.copy(displays = c.displays.updated(d, a)), none)
+        (
+          c.copy(references = c.references.updated((r, s, q), a))
+            .retrying(ComposerRead.References(r, s, q), a.isLeft),
+          none
+        )
+      case DisplaysRead(d, a) =>
+        (
+          c.copy(displays = c.displays.updated(d, a))
+            .retrying(ComposerRead.Displays(d), a.isLeft),
+          none
+        )
       case SetTextSize(size)          => (restyle(c, model)(_.copy(text = size)), none)
       case SetParticipantLines(lines) => (restyle(c, model)(_.copy(lines = lines)), none)
       case IncludeImages(include) => (restyle(c, model)(_.copy(includeImages = include)), none)
       case SetPanelWidth(panel, mm) =>
         val bounded = mm.max(FigureAppearance.MinPanelMm).min(c.width.mm)
-        (restyle(c, model)(a => a.copy(widths = a.widths.updated(panel, bounded))), none)
+        (restyle(c, model)(a => a.copy(widthsMm = a.widthsMm.updated(panel, bounded))), none)
 
   /** The shown figure's appearance, changed by `f`. */
   private def restyle(c: FigureComposer, model: AppModel)(
@@ -348,10 +376,7 @@ object FigureComposer:
       first <- scales.headOption.toRight(ComposerText.NoRun)
       a     <- PanelLetter.of("A").left.map(_.message)
       b     <- PanelLetter.of("B").left.map(_.message)
-      next  <- FigureId
-        .of(document.figures.lastOption.fold(1)(_.id.number + 1))
-        .left
-        .map(_.message)
+      next  <- document.nextFigureId.left.map(_.message)
     yield (
       next,
       Command.CreateFigure(
@@ -430,7 +455,7 @@ object FigureComposer:
     val selected                     = shownPanel(model)
     val look                         = c.appearanceOf(s.figure.id)
     def widthOf(letter: PanelLetter) =
-      look.widths.getOrElse(letter, PageLayout.panelMm(c.width))
+      look.widthsMm.getOrElse(letter, PageLayout.panelMm(c.width)).min(c.width.mm)
     val panels = s.figure.panels.map { p =>
       PanelVM(
         p.letter,
@@ -508,7 +533,10 @@ object FigureComposer:
         c.displays.get(s.bound.dataset.id) match
           case None         => PanelBody.Waiting(ComposerText.displays(s.bound.dataset.id))
           case Some(answer) =>
-            val registry = answer.toOption.collect { case DisplaySource.Served(r) => r }
+            val registry = answer.map {
+              case DisplaySource.Served(r) => Some(r)
+              case DisplaySource.NotServed => None
+            }
             PanelBody.Gaze(FigurePanels.gaze(trial, registry))
       case PanelTemplate.NoTemplate(scale, selection) =>
         PanelBody.Unavailable(ComposerText.noTemplate(scale, selection))
@@ -551,6 +579,7 @@ object ComposerText:
   def notComputed(run: RunId, sigma: Sigma): String =
     s"${run.label} does not compute ${sigma.render}."
 
+  // Follow-up bd-01M42K7ZNCC5J9R9RPR7H6ZHNT: the gaze panels' fixations.
   def noTable(letter: PanelLetter): String =
     s"Panel ${letter.value} has no table yet: its fixations are listed when the backend " +
       "serves the trial-fixations view (S6.2)."

@@ -19,7 +19,7 @@ package eyes4s.studio.desktop.figures
 import eyes4s.studio.app.StoryModels
 import eyes4s.studio.app.figures.{FigureType, PanelBody}
 import eyes4s.studio.core.document.{FigureId, PanelLetter}
-import eyes4s.studio.core.engine.Eyes4sVersion
+import eyes4s.studio.core.engine.StudioBuild
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.FxStage
@@ -99,8 +99,9 @@ class FigureAppearanceFxSuite extends ShellFxSuite:
       Vector(
         "Figure 1. Matched-minus-control spatial similarity of retrieval gaze (dataset r3, " +
           "analysis rev 4, run 7). Spatial correspondence, not sequential replay.",
-        s"Analysis rev 4 · run 7 · data r3 · reporting “By retrieval response” · eyes4s " +
-          Eyes4sVersion.value,
+        "Analysis rev 4 · run 7 (archive unbound) · data r3 · reporting “By retrieval " +
+          "response” (by-retrieval-response) · studio build eyes4s " +
+          StudioBuild.eyes4sBaseVersion,
         "Each pair of dots is one participant; per participant, 2–17 queries per group. " +
           "Descriptive only: no intervals or tests."
       ).foreach(t => assert(page.contains(t), s"'$t' not on the page: $page"))

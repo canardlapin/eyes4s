@@ -43,6 +43,8 @@ import eyes4s.studio.app.tokens.FontFace
 import javafx.beans.property.ReadOnlyObjectWrapper
 import javafx.scene.control.{Button, Label, ScrollPane}
 import javafx.scene.text.Font
+
+import scala.jdk.CollectionConverters.*
 import javafx.scene.layout.{FlowPane, HBox, Priority, Region, VBox}
 
 /** Where the Figures perspective reads what its panels show. `done` may be
@@ -133,10 +135,15 @@ final class FiguresHost(
   private var state: FigureComposer = FigureComposer.empty
   private var disposed: Boolean     = false
 
-  // The plot of each plotted panel, kept while its figure is shown.
-  private var twins
-      : Map[(FigureId, PanelLetter), (PlotTwin, Option[PlotSource], ParticipantLines)] =
-    Map.empty
+  // The plot of each plotted panel, kept while its figure is shown: the
+  // twin, the source it shows, and the plot kind and lines it draws them with.
+  private final case class Drawn(
+      twin: PlotTwin,
+      source: Option[PlotSource],
+      kind: PlotKind,
+      lines: ParticipantLines
+  )
+  private var twins: Map[(FigureId, PanelLetter), Drawn] = Map.empty
 
   private def view(id: String): ViewId =
     ViewId.of(id).fold(e => throw IllegalStateException(e.message), identity)
@@ -233,14 +240,14 @@ final class FiguresHost(
 
   /** The plot of panel `letter` of `figure`, while it is shown. */
   def plot(figure: FigureId, letter: PanelLetter): Option[PlotTwin] =
-    twins.get((figure, letter)).map(_._1)
+    twins.get((figure, letter)).map(_.twin)
 
   /** Follows the model. */
   def sync(m: AppModel): Unit = if !disposed then
     val (next, effects) = FigureComposer.sync(state, m)
     state = next
     perform(effects)
-    twins.values.foreach(_._1.project(m.selection))
+    twins.values.foreach(_.twin.project(m.selection))
     table.project(m.selection)
     render(m)
 
@@ -277,9 +284,31 @@ final class FiguresHost(
 
   private def render(m: AppModel): Unit = if !disposed then
     val v = FigureComposer.view(state, m)
-    renderNavigator(v)
-    renderPage(v)
-    renderInspector(v)
+    // The panes are rebuilt from the view-model; focus returns to the control
+    // of the same name, so a sync never drops the keyboard user's place.
+    keepingFocus {
+      renderNavigator(v)
+      renderPage(v)
+      renderInspector(v)
+    }
+
+  private def keepingFocus(rebuild: => Unit): Unit =
+    val panes           = Vector(navigatorNode, pageNode, inspectorNode)
+    val owner           = Option(navigatorNode.getScene).flatMap(sc => Option(sc.getFocusOwner))
+    def within(n: Node) =
+      Iterator.iterate(n)(_.getParent).takeWhile(_ != null).exists(a => panes.exists(_ eq a))
+    val name = owner.filter(within).flatMap(o => Option(o.getAccessibleText))
+    rebuild
+    name.foreach { text =>
+      def all(n: Node): Vector[Node] = n +: (n match
+        case p: javafx.scene.Parent => p.getChildrenUnmodifiable.asScala.toVector.flatMap(all)
+        case _                      => Vector.empty)
+      panes
+        .flatMap(all)
+        .find(n => n.isFocusTraversable && n.getAccessibleText == text)
+        .filterNot(n => owner.exists(_ eq n))
+        .foreach(_.requestFocus())
+    }
 
   private def renderNavigator(v: ComposerVM): Unit =
     newFigure.setText(v.newFigure)
@@ -390,7 +419,7 @@ final class FiguresHost(
     val body: Node = p.body match
       case PanelBody.Plot(plot) =>
         val twin = twinFor(figure, p, plot.kind, plot.source, plot.lines)
-        twin.plotNode.setPrefSize(w, w * 0.62)
+        twin.plotNode.setPrefSize(w, w * FiguresHost.PlotAspect)
         val notes = plot.notes.map(paperLabel(_, text))
         VBox(2.0, (twin.plotNode +: notes)*)
       case PanelBody.Maps(maps) =>
@@ -447,32 +476,33 @@ final class FiguresHost(
       source: PlotSource,
       lines: ParticipantLines
   ): PlotTwin =
-    val key  = (figure, p.letter)
-    val twin = twins.get(key).map(_._1).getOrElse {
-      val made = PlotTwin
-        .attach(
-          builderOf(kind, lines),
-          view(s"figures.panel.${figure.number}.${p.letter.value}"),
-          view(s"figures.panel.${figure.number}.${p.letter.value}.table"),
-          model().selection,
-          app
-        )
-        .fold(e => throw IllegalStateException(e.message), identity)
-      twins = twins.updated(key, (made, None, lines))
-      made
-    }
-    if !twins.get(key).exists(_._3 == lines) then
-      twin.rebuild(builderOf(kind, lines))
-      twins = twins.updated(key, (twin, twins.get(key).flatMap(_._2), lines))
-    if !twins.get(key).flatMap(_._2).contains(source) then
-      twin.show(source, Theme.Light)
-      twins = twins.updated(key, (twin, Some(source), lines))
-    twin
+    val key   = (figure, p.letter)
+    val drawn = twins.getOrElse(
+      key, {
+        val made = PlotTwin
+          .attach(
+            builderOf(kind, lines),
+            view(s"figures.panel.${figure.number}.${p.letter.value}"),
+            view(s"figures.panel.${figure.number}.${p.letter.value}.table"),
+            model().selection,
+            app
+          )
+          .fold(e => throw IllegalStateException(e.message), identity)
+        Drawn(made, None, kind, lines)
+      }
+    )
+    // A panel whose template changed (D's scale set to every scale) or whose
+    // lines changed is drawn by its new builder.
+    if drawn.kind != kind || drawn.lines != lines then
+      drawn.twin.rebuild(builderOf(kind, lines))
+    if !drawn.source.contains(source) then drawn.twin.show(source, Theme.Light)
+    twins = twins.updated(key, Drawn(drawn.twin, Some(source), kind, lines))
+    drawn.twin
 
   /** Disposes the plots of panels no longer shown. */
   private def retire(keep: Set[(FigureId, PanelLetter)]): Unit =
     val (kept, gone) = twins.partition((k, _) => keep.contains(k))
-    gone.values.foreach(_._1.dispose())
+    gone.values.foreach(_.twin.dispose())
     twins = kept
 
   private def renderInspector(v: ComposerVM): Unit =
@@ -519,7 +549,7 @@ final class FiguresHost(
       HBox(6.0, (key +: buttons)*)
     val head  = Label("Appearance"); head.getStyleClass.add("t12")
     val only  = Label("View only"); only.getStyleClass.add("t11")
-    val width = a.panelWidth.toVector.map { (letter, mm, text) =>
+    val width = a.panelWidthMm.toVector.map { (letter, mm, text) =>
       val key      = Label("Panel width"); key.getStyleClass.addAll("figures-key", "t11")
       val narrower = button("−"); narrower.setAccessibleText(FiguresHost.narrower(text))
       val wider    = button("+"); wider.setAccessibleText(FiguresHost.wider(text))
@@ -619,7 +649,7 @@ final class FiguresHost(
           val a = p.appearance
           a.textSizes.map((_, t, c) => b(FiguresHost.chosenName("Text size", t, c))) ++
             a.lines.map((_, t, c) => b(FiguresHost.chosenName("Participant lines", t, c))) ++
-            a.panelWidth.toVector.flatMap((_, _, t) =>
+            a.panelWidthMm.toVector.flatMap((_, _, t) =>
               Vector(b(FiguresHost.narrower(t)), b(FiguresHost.wider(t)))
             ) :+
             b(FiguresHost.includeName(a.includeImages._1, a.includeImages._2))
@@ -630,6 +660,9 @@ final class FiguresHost(
     val r = Region(); HBox.setHgrow(r, Priority.ALWAYS); r
 
 object FiguresHost:
+  /** A plotted panel's height as a fraction of its width (the board's panels). */
+  val PlotAspect: Double = 0.62
+
   /** An appearance option's accessible name: "Text size 7 pt, selected". */
   def chosenName(control: String, option: String, chosen: Boolean): String =
     s"$control $option" + (if chosen then ", selected" else "")

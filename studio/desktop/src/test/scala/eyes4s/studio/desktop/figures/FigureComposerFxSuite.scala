@@ -159,3 +159,39 @@ class FigureComposerFxSuite extends ShellFxSuite:
       eventually(fx, "Figure 3 is shown")(texts(w.figures.pageNode).contains("Figure 3"))
       assert(texts(w.figures.navigatorNode).contains("3 figures"))
   }
+
+  fxStage.test("a panel whose template changes is drawn by its new plot; focus stays put") {
+    fx =>
+      val w = boot(fx, StoryModels.t2Figures, StoryMoment.T2)
+      loaded(fx, w)
+      // Panel D's scale set to every scale: it becomes a scale profile.
+      runOnFx(
+        w.runtime.dispatch(
+          eyes4s.studio.app.Intent.Dispatch(
+            eyes4s.studio.core.command.Command.SetPanelScale(
+              figure1,
+              letter("D"),
+              eyes4s.studio.core.document.PanelScale.AllScales
+            )
+          )
+        )
+      )
+      eventually(fx, "panel D is redrawn as a scale profile") {
+        runOnFx(w.figures.plot(figure1, letter("D")).flatMap(_.plot).map(_.title))
+          .exists(_.startsWith("Scale profile"))
+      }
+      // A re-render rebuilds the panels; the keyboard focus stays on the same panel.
+      val name   = "Panel C, Density maps"
+      val button = runOnFx(
+        w.figures.paper.lookupAll(".button").asScala.collectFirst {
+          case b: javafx.scene.control.Button if b.getAccessibleText == name => b
+        }
+      ).getOrElse(fail(s"no '$name'"))
+      runOnFx(button.requestFocus())
+      fx.awaitLayout()
+      runOnFx(w.figures.dispatch(eyes4s.studio.app.figures.ComposerIntent.ZoomIn))
+      fx.awaitLayout()
+      val owner = runOnFx(Option(fx.scene.getFocusOwner))
+      assertEquals(runOnFx(owner.map(_.getAccessibleText)), Some(name))
+      assert(!owner.exists(_ eq button), "the focus is on the rebuilt button, not the old one")
+  }

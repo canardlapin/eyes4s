@@ -72,19 +72,26 @@ object PanelTemplate:
     case (PanelScale.AllScales, PanelSelection.AllQueries)             => ScaleProfile
     case (scale, selection) => NoTemplate(scale, selection)
 
-/** The highest-scoring of a query's `of` control pairs. It is only ever
-  * shown with its rank ("highest of 19 controls"), so a single control's
-  * score is never read as the control mean B.
+/** The highest-scoring of the `scored` control pairs eyes4s scored, of the
+  * `members` the control mean B is over. It is only ever shown with its rank
+  * ("highest of 19 controls", or "highest of 12 scored of 19 controls" when
+  * the backend scored fewer), so a single control's score is never read as
+  * the control mean B.
   */
-final case class HighestControl private (pair: PairScore, of: Int) derives CanEqual
+final case class HighestControl private (pair: PairScore, scored: Int, members: Int)
+    derives CanEqual:
+  /** "highest of 19 controls", "highest of 12 scored of 19 controls". */
+  def rank: String =
+    if scored == members then s"highest of $members controls"
+    else s"highest of $scored scored of $members controls"
 
 object HighestControl:
-  /** The highest of `controls`, when there is at least one. */
-  def of(controls: Vector[PairScore]): Option[HighestControl] =
+  /** The highest of `controls`, of `members` in all, when there is one. */
+  def of(controls: Vector[PairScore], members: Int): Option[HighestControl] =
     controls
       .sortBy(c => (-c.score, c.reference.trial))
       .headOption
-      .map(HighestControl(_, controls.size))
+      .map(HighestControl(_, controls.size, members))
 
 /** A drawn tile of panel C: its title and its score label. */
 final case class MapTileVM(title: String, label: String, ref: StudioRef) derives CanEqual
@@ -155,7 +162,7 @@ object FigurePanels:
       query: TrialKey,
       scores: ReferenceScores
   ): DensityMapsVM =
-    val highest = HighestControl.of(scores.controls)
+    val highest = HighestControl.of(scores.controls, scores.controlMembers)
     val pair    = (design: eyes4s.studio.core.backend.PairDesign, ref: TrialKey) =>
       StudioRef.Pair(run, scale, design, query, ref)
     val tiles = Vector(
@@ -171,14 +178,14 @@ object FigurePanels:
       )
     ) ++ highest.map(h =>
       MapTileVM(
-        s"Highest of ${h.of} controls · ${h.pair.item}",
+        s"${h.rank.capitalize} · ${h.pair.item}",
         two(h.pair.score),
         pair(eyes4s.studio.core.backend.PairDesign.Control, h.pair.reference)
       )
     )
     val control = highest.fold(
       s"no control pair score served of ${scores.controlMembers} controls"
-    )(h => s"highest of ${h.of} controls ${h.pair.item} ${two(h.pair.score)}")
+    )(h => s"${h.rank} ${h.pair.item} ${two(h.pair.score)}")
     DensityMapsVM(
       tiles,
       s"Matched ${two(scores.matched.score)} · $control · control mean B ${two(scores.b)} · " +
@@ -288,17 +295,22 @@ object FigurePanels:
   /** Panels A and B: the heading ("Retrieval · ret_07"), and what the screen
     * displayed, from the revision's asset registry when it is served.
     */
-  def gaze(trial: TrialKey, registry: Option[AssetRegistry]): GazePanelVM =
-    val display = registry.flatMap(_.display(trial))
+  def gaze(trial: TrialKey, registry: Either[String, Option[AssetRegistry]]): GazePanelVM =
+    val display = registry.toOption.flatten.flatMap(_.display(trial))
     val shown   = display.map(_.kind) match
       case Some(DisplayKind.Image)                  => "Displayed: image."
       case Some(DisplayKind.Blank)                  => "Displayed: blank."
       case Some(DisplayKind.BlankWithFixationCross) => "Displayed: blank + fixation cross."
       case Some(DisplayKind.Cue)                    => "Displayed: cue."
       case Some(DisplayKind.Unknown)                => "Displayed: unknown display."
-      case None => "What the screen displayed is not served."
+      case None                                     =>
+        registry.fold(
+          why => s"What the screen displayed could not be read: $why",
+          _ => "What the screen displayed is not served."
+        )
     val remembered =
-      if trial.phase == Phase.Retrieval && !display.exists(_.kind == DisplayKind.Image) then
+      // Said only when the display is known: an unread one claims nothing.
+      if trial.phase == Phase.Retrieval && display.exists(_.kind != DisplayKind.Image) then
         " The remembered image was not shown."
       else ""
     // The item names what was shown, so only an image display carries it.

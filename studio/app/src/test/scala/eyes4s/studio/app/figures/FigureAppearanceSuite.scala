@@ -23,7 +23,7 @@ import eyes4s.studio.app.{AppModel, Intent, StoryModels}
 import eyes4s.studio.core.backend.ResultSummary
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.*
-import eyes4s.studio.core.engine.Eyes4sVersion
+import eyes4s.studio.core.engine.StudioBuild
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
 import eyes4s.studio.core.headless.HeadlessSession
 
@@ -121,11 +121,15 @@ class FigureAppearanceSuite extends munit.FunSuite:
     val c = FigureComposer.sync(FigureComposer.empty, t2)._1
     assertEquals(
       page(c, t2).stamp,
-      s"Analysis rev 4 · run 7 · data r3 · reporting “By retrieval response” · eyes4s " +
-        Eyes4sVersion.value
+      "Analysis rev 4 · run 7 (archive unbound) · data r3 · reporting “By retrieval " +
+        s"response” (by-retrieval-response) · studio build eyes4s ${StudioBuild.eyes4sBaseVersion}"
     )
-    assert(Eyes4sVersion.value.startsWith("0.1"), Eyes4sVersion.value)
-    assert(page(c, at(t2, figure2)).stamp.startsWith("Analysis rev 3 · run 5 · data r2"))
+    // The release line only: no commit or timestamp to regenerate on every load.
+    assertEquals(StudioBuild.eyes4sBaseVersion, "0.1")
+    assert(
+      page(c, at(t2, figure2)).stamp
+        .startsWith("Analysis rev 3 · run 5 (archive unbound) · data r2")
+    )
   }
 
   // --- Appearance (view only) and export ---------------------------------------------
@@ -149,7 +153,7 @@ class FigureAppearanceSuite extends munit.FunSuite:
       assertEquals(p.textPt, 8)
       assertEquals(p.panels.find(_.letter == letter("D")).map(_.widthMm), Some(94))
       assertEquals(p.panels.find(_.letter == letter("C")).map(_.widthMm), Some(89))
-      assertEquals(p.appearance.panelWidth, Some((letter("D"), 94, "94 mm")))
+      assertEquals(p.appearance.panelWidthMm, Some((letter("D"), 94, "94 mm")))
       assertEquals(p.appearance.includeImages, ("project snapshot includes images", false))
       val d = panelD(c1, t2)
       assertEquals(d.lines, ParticipantLines.Hidden)
@@ -175,4 +179,11 @@ class FigureAppearanceSuite extends munit.FunSuite:
     // 7 pt is 2.47 mm, 8.64 px at 3.5 px/mm.
     assertEqualsDouble(FigureType.px(7, 3.5), 7 * 25.4 / 72 * 3.5, 1e-12)
     assertEqualsDouble(FigureType.px(FigureType.LetterPt, 3.5), 9.8778, 1e-4)
+  }
+
+  test("the caption names the run's comparison method, with a generic fallback") {
+    val cosine = t2.document.analyses.head.recipe.method
+    assertEquals(FigureCaption.measure(cosine), "spatial similarity")
+    val other = MethodSpec(ok(DefinitionRef.of("eyes4s.correlation", 1)), Vector.empty)
+    assertEquals(FigureCaption.measure(other), "similarity by eyes4s.correlation@1")
   }

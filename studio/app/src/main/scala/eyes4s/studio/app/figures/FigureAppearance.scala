@@ -19,8 +19,8 @@ package eyes4s.studio.app.figures
 import eyes4s.studio.app.plot.ParticipantLines
 import eyes4s.studio.app.tokens.FontFace
 import eyes4s.studio.core.backend.ResultSummary
-import eyes4s.studio.core.document.PanelLetter
-import eyes4s.studio.core.engine.Eyes4sVersion
+import eyes4s.studio.core.document.{MethodSpec, PanelLetter}
+import eyes4s.studio.core.engine.StudioBuild
 import eyes4s.studio.core.figures.FigureSource
 
 /** The figure's body text size (Figures board, Appearance: "6 pt 7 pt 8 pt"). */
@@ -53,7 +53,7 @@ object FigureType:
 final case class FigureAppearance(
     text: FigureTextSize,
     lines: ParticipantLines,
-    widths: Map[PanelLetter, Int],
+    widthsMm: Map[PanelLetter, Int],
     includeImages: Boolean
 ) derives CanEqual
 
@@ -74,13 +74,21 @@ object FigureAppearance:
   */
 object FigureCaption:
 
+  /** What the run's comparison method measures: cosine similarity of maps
+    * is their spatial similarity; any other method is named.
+    */
+  def measure(method: MethodSpec): String = method.definition.name match
+    case "eyes4s.cosine" => "spatial similarity"
+    case _               => s"similarity by ${method.render}"
+
   /** "Figure 1. Matched-minus-control spatial similarity of retrieval gaze
     * (dataset r3, analysis rev 4, run 7). Spatial correspondence, not
     * sequential replay."
     */
   def figure(s: FigureSource): String =
-    val phase = s.bound.analysis.recipe.phases.focal.label.toLowerCase
-    s"${s.figure.id.label}. Matched-minus-control spatial similarity of $phase gaze " +
+    val recipe = s.bound.analysis.recipe
+    val phase  = recipe.phases.focal.label.toLowerCase
+    s"${s.figure.id.label}. Matched-minus-control ${measure(recipe.method)} of $phase gaze " +
       s"(dataset ${s.bound.dataset.id.label}, analysis ${s.bound.analysis.id.label}, " +
       s"${s.run.id.label}). Spatial correspondence, not sequential replay."
 
@@ -94,10 +102,17 @@ object FigureCaption:
     s"$dots; per participant, ${summary.groupNMinimum}–${summary.groupNMaximum} queries per " +
       "group. Descriptive only: no intervals or tests."
 
-  /** The provenance stamp: "Analysis rev 4 · run 7 · data r3 · reporting
-    * “By retrieval response” · eyes4s 0.1".
+  /** The provenance stamp: "Analysis rev 4 · run 7 (archive unbound) · data r3
+    * · reporting “By retrieval response” (by-retrieval-response) · studio
+    * build eyes4s 0.1".
+    *
+    * A run records no producer version yet, so the version is the studio
+    * build's eyes4s release line, labelled as such; the run's archive binding
+    * identifies the result itself. A reporting spec has no revision: its id
+    * identifies it.
     */
   def stamp(s: FigureSource): String =
-    s"Analysis ${s.bound.analysis.id.label} · ${s.run.id.label} · data " +
-      s"${s.bound.dataset.id.label} · reporting “${s.reporting.name}” · eyes4s " +
-      Eyes4sVersion.value
+    s"Analysis ${s.bound.analysis.id.label} · ${s.run.id.label} (archive " +
+      s"${s.run.archive.render}) · data ${s.bound.dataset.id.label} · reporting " +
+      s"“${s.reporting.name}” (${s.reporting.id.value}) · studio build eyes4s " +
+      StudioBuild.eyes4sBaseVersion

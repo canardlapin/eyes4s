@@ -150,6 +150,10 @@ final case class StudioDocument private (
   def analysis(id: AnalysisRevision): Option[AnalysisRevisionSpec] = analyses.find(_.id == id)
   def run(id: RunId): Option[RunRef]                               = runs.find(_.id == id)
 
+  /** The number the next created figure gets: one after the last. */
+  def nextFigureId: Either[DocumentError, FigureId] =
+    FigureId.of(figures.lastOption.fold(1)(_.id.number + 1))
+
   /** The backend job of a running run, while this session knows it. */
   def job(run: RunId): Option[JobId] = jobs.find(_.run == run).map(_.job)
 

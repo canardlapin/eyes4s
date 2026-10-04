@@ -197,10 +197,11 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
         case StudioRef.Pair(_, _, PairDesign.Control, _, _) => true
         case _                                              => false)
       assert(control.size <= 1)
-      assert(
-        control.forall(_.title.startsWith(s"Highest of ${s.controls.size} controls")),
-        control
-      )
+      // The rank says how many were scored when the backend scored fewer than B is over.
+      val rank =
+        if s.controls.size == s.controlMembers then s"highest of ${s.controlMembers} controls"
+        else s"highest of ${s.controls.size} scored of ${s.controlMembers} controls"
+      assert(control.forall(_.title.startsWith(rank.capitalize)), control)
       // No tile is the control mean; B is in the caption, named.
       assert(vm.tiles.forall(t => !t.title.toLowerCase.contains("mean")), vm.tiles)
       assert(
@@ -210,7 +211,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
       highest.foreach(h =>
         assert(
           vm.caption.contains(
-            s"highest of ${s.controls.size} controls ${h.item} " +
+            s"$rank ${h.item} " +
               eyes4s.studio.app.text.Format.decimal(h.score, 2)
           ),
           vm.caption
@@ -475,3 +476,62 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
     )
     assert(rep.value.nonEmpty)
   }
+
+  // --- Review follow-ups -------------------------------------------------------------
+
+  test("a panel selected in a figure no longer shown is not the shown figure's panel") {
+    // Figure 2 is shown with its panel A selected; deleting it falls back to Figure 1.
+    val onTwo   = at(t2, figure2, Some("A"))
+    val deleted = AppModel.update(onTwo, Intent.Dispatch(Command.DeleteFigure(figure2)))._1
+    assertEquals(FigureComposer.shownFigure(deleted), Some(figure1))
+    assertEquals(FigureComposer.shownPanel(deleted), None)
+    val page = FigureComposer
+      .view(FigureComposer.sync(FigureComposer.empty, deleted)._1, deleted)
+      .page
+      .get
+    assertEquals(page.panels.filter(_.selected), Vector.empty)
+  }
+
+  test("a failed read is asked again at the next sync; a failed display read says why") {
+    val (synced, _) = FigureComposer.sync(FigureComposer.empty, t2)
+    val failed      = FigureComposer
+      .update(
+        synced,
+        t2,
+        ComposerIntent.SummaryRead(run7, SummaryAnswer.Failed("the backend timed out"))
+      )
+      ._1
+    assertEquals(
+      FigureComposer.view(failed, t2).page.get.panels.find(_.letter == letter("D")).map(_.body),
+      Some(PanelBody.Unavailable("the backend timed out"))
+    )
+    assert(FigureComposer.sync(failed, t2)._2.contains(ComposerEffect.RequestSummary(run7)))
+    val unread = FigureComposer
+      .update(synced, t2, ComposerIntent.DisplaysRead(r3, Left("disk unreadable")))
+      ._1
+    panel(FigureComposer.view(unread, t2), "B").body match
+      case PanelBody.Gaze(g) =>
+        assertEquals(
+          g.displayed,
+          "What the screen displayed could not be read: disk unreadable"
+        )
+      case other => fail(other.toString)
+  }
+
+  test("a narrower page clamps every panel width to itself") {
+    val c    = FigureComposer.sync(FigureComposer.empty, onD)._1
+    val wide = FigureComposer.update(c, onD, ComposerIntent.SetPanelWidth(letter("D"), 150))._1
+    assertEquals(
+      FigureComposer.view(wide, onD).page.get.appearance.panelWidthMm.map(_._2),
+      Some(150)
+    )
+    val single =
+      FigureComposer.update(wide, onD, ComposerIntent.SetWidth(PageWidth.SingleColumn))._1
+    assertEquals(
+      FigureComposer.view(single, onD).page.get.appearance.panelWidthMm.map(_._2),
+      Some(89)
+    )
+    assertEquals(single.appearanceOf(figure1).widthsMm.get(letter("D")), Some(89))
+  }
+
+  private def onD: AppModel = at(t2, figure1, Some("D"))

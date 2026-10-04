@@ -1099,16 +1099,19 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
         streams.value.cacheDirectory / "studio-fixture"
       )
     }.taskValue,
-    // S9.2b: the eyes4s build studio links, for a figure's provenance stamp.
-    // Generated, since studio-core reads no resources (it links for Scala.js).
+    // S9.2b: the eyes4s release line of the studio build, for a figure's
+    // stamp. The base version only (no commit or timestamp), so the source is
+    // written once, not on every load. Generated, since studio-core reads no
+    // resources (it links for Scala.js).
     Compile / sourceGenerators += Def.task {
-      val file = (Compile / sourceManaged).value / "eyes4s" / "studio" / "Eyes4sVersion.scala"
+      val file = (Compile / sourceManaged).value / "eyes4s" / "studio" / "StudioBuild.scala"
       val text =
         s"""package eyes4s.studio.core.engine
            |
-           |/** The eyes4s build studio links (generated from the sbt build). */
-           |object Eyes4sVersion:
-           |  val value: String = "${version.value}"
+           |/** The studio build (generated from the sbt build). */
+           |object StudioBuild:
+           |  /** The eyes4s release line studio is built from. */
+           |  val eyes4sBaseVersion: String = "${tlBaseVersion.value}"
            |""".stripMargin
       if (!file.exists || IO.read(file) != text) IO.write(file, text)
       Seq(file)
