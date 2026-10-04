@@ -87,7 +87,7 @@ class PreviewPagingSuite extends CatsEffectSuite:
             PreviewCounts.of(
               receipt.counts.eligiblePairsPerScale,
               receipt.counts.eligiblePairs,
-              receipt.counts.eligibleQueries,
+              receipt.counts.eligibleQueries.value,
               receipt.counts.unmatchedQueries,
               1
             )
@@ -111,7 +111,7 @@ class PreviewPagingSuite extends CatsEffectSuite:
           PreviewCounts.of(
             1L,
             ready.counts.eligiblePairs,
-            ready.counts.eligibleQueries,
+            ready.counts.eligibleQueries.value,
             ready.counts.unmatchedQueries,
             ready.counts.ambiguousMatches
           )

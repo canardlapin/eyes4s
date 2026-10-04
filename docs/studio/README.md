@@ -59,6 +59,12 @@ To change the plan, edit `studio_plan.py`, rerun `render`, and update the matchi
 
 ## Backend protocol versions
 
+Protocol 1.5 (S7.5) adds the resolved-design counts: `PreviewCandidates` carries
+`requestedQueries`, `queriesNotAdmitted` and `byDesignQueries` (absent when the
+recipe has no by-design category: not applicable, not zero), and `PreviewCounts`
+carries `eligibleQueries`, each a non-negative `QueryCount`. A 1.4 preview does not
+decode as 1.5. `StudioRef.DesignTally` names each of these counts.
+
 Protocol 1.4 preserves every `Long` in backend messages across JVM and Scala.js
 JSON text transport. Values in the inclusive range −9,007,199,254,740,991 to
 9,007,199,254,740,991 remain JSON numbers; larger magnitudes use canonical decimal
@@ -84,7 +90,8 @@ Deploy the Studio client and backend together. The transport checks major versio
 only and decodes the typed envelope body before checking the version; it does not
 negotiate minor capabilities. Mixed-minor deployments are unsupported. Protocol
 1.2 added `ProgressTotal.Counting`, which a 1.0/1.1 decoder cannot read; 1.3 adds
-the inventory join; 1.4 adds the exact large-count policy. `ProtocolCodecSuite`
+the inventory join; 1.4 adds the exact large-count policy; 1.5 adds the
+resolved-design counts. `ProtocolCodecSuite`
 retains the frozen legacy-total probe, while `ProtocolLongSuite` verifies that
 safe-number 1.2 envelopes remain readable. This does not establish mixed-version peer compatibility.
 
@@ -113,7 +120,9 @@ real eyes4s.
 
 `PreviewCandidates` also carries the query counts known before paging (requested,
 not admitted, and the recipe's by-design category, or none), and `PreviewCounts`
-the eligible queries after it. These preview fields are part of protocol 1.4.
+the eligible queries after it (protocol 1.5). The fake serves the `FIXTURE.md`
+counts; the real backend (S3.7) must source them from eyes4s's own preview of the
+prepared study (`StudyPreview`/`PreparedStudy`), not compute them in Studio.
 
 ## Resolved design table
 

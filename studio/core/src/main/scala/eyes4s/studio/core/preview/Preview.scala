@@ -79,6 +79,14 @@ object ParticipantCount:
   given Encoder[ParticipantCount] = Encoder.encodeInt.contramap(_.value)
   given Decoder[ParticipantCount] = PreviewCount.decoder(Decoder.decodeInt.map(of))
 
+/** A number of focal trials (queries), never negative. */
+final case class QueryCount private[preview] (value: Int) derives CanEqual
+object QueryCount:
+  def of(value: Int): Either[PreviewError, QueryCount] =
+    PreviewCount.nonNegative("query count", value).map(_ => new QueryCount(value))
+  given Encoder[QueryCount] = Encoder.encodeInt.contramap(_.value)
+  given Decoder[QueryCount] = PreviewCount.decoder(Decoder.decodeInt.map(of))
+
 /** The immutable candidate metadata known before eligibility has been counted.
   * No count is negative.
   *
@@ -93,9 +101,9 @@ final case class PreviewCandidates private (
     referenceTrials: Int,
     participants: Int,
     candidatePairsPerScale: Long,
-    requestedQueries: Int,
-    queriesNotAdmitted: Int,
-    byDesignQueries: Option[Int]
+    requestedQueries: QueryCount,
+    queriesNotAdmitted: QueryCount,
+    byDesignQueries: Option[QueryCount]
 ) derives CanEqual
 
 object PreviewCandidates:
@@ -126,9 +134,9 @@ object PreviewCandidates:
       referenceTrials,
       participants,
       candidatePairsPerScale,
-      requestedQueries,
-      queriesNotAdmitted,
-      byDesignQueries
+      new QueryCount(requestedQueries),
+      new QueryCount(queriesNotAdmitted),
+      byDesignQueries.map(new QueryCount(_))
     )
 
   given Encoder.AsObject[PreviewCandidates] =
@@ -146,9 +154,9 @@ object PreviewCandidates:
         c.referenceTrials,
         c.participants,
         c.candidatePairsPerScale,
-        c.requestedQueries,
-        c.queriesNotAdmitted,
-        c.byDesignQueries
+        c.requestedQueries.value,
+        c.queriesNotAdmitted.value,
+        c.byDesignQueries.map(_.value)
       )
     )
 
@@ -228,7 +236,7 @@ object PreviewProgress:
 final case class PreviewCounts private (
     eligiblePairsPerScale: Long,
     eligiblePairs: Long,
-    eligibleQueries: Int,
+    eligibleQueries: QueryCount,
     unmatchedQueries: Int,
     ambiguousMatches: Int
 ) derives CanEqual
@@ -250,7 +258,7 @@ object PreviewCounts:
     yield new PreviewCounts(
       eligiblePairsPerScale,
       eligiblePairs,
-      eligibleQueries,
+      new QueryCount(eligibleQueries),
       unmatchedQueries,
       ambiguousMatches
     )
@@ -266,7 +274,7 @@ object PreviewCounts:
       (
         c.eligiblePairsPerScale,
         c.eligiblePairs,
-        c.eligibleQueries,
+        c.eligibleQueries.value,
         c.unmatchedQueries,
         c.ambiguousMatches
       )

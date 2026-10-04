@@ -17,7 +17,13 @@
 package eyes4s.studio.core.backend
 
 import eyes4s.plan.{SegmentTotal, StudyDesign, StudySegment}
-import eyes4s.studio.core.preview.PreviewId
+import eyes4s.studio.core.preview.{
+  PreviewCandidates,
+  PreviewCounts,
+  PreviewError,
+  PreviewId,
+  QueryCount
+}
 import io.circe.Json
 import io.circe.syntax.*
 
@@ -227,7 +233,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
       .as[Protocol11Total]
 
   test("protocol 1.2 Counting requires coordinated peers, not a relabelled 1.1 frame") {
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 4))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 5))
     val previous = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(progress)))
     assertEquals(legacyMeterTotal(previous.asJson), Right(Protocol11Total.Exact(8512L)))
     val counting = progress.asJson
@@ -242,6 +248,32 @@ class ProtocolCodecSuite extends munit.FunSuite:
     assert(legacyMeterTotal(wire).isLeft)
     val relabelled = wire.deepMerge(Json.obj("version" -> ProtocolVersion(1, 1).asJson))
     assert(legacyMeterTotal(relabelled).isLeft)
+  }
+
+  test(
+    "protocol 1.5: preview query counts are required, non-negative, and by design is optional"
+  ) {
+    val candidates = ProtocolSamples.previewReady.candidates
+    val wire       = candidates.asJson
+    assertEquals(wire.as[PreviewCandidates], Right(candidates))
+    // A recipe without a by-design category says so: null, not zero.
+    assertEquals(wire.hcursor.downField("byDesignQueries").focus, Some(Json.Null))
+    // A 1.4 preview (no query counts) is not read as 1.5.
+    val legacy = wire.mapObject(
+      _.remove("requestedQueries").remove("queriesNotAdmitted").remove("byDesignQueries")
+    )
+    assert(legacy.as[PreviewCandidates].isLeft)
+    val counts = ProtocolSamples.previewReady.counts.asJson
+    assert(counts.mapObject(_.remove("eligibleQueries")).as[PreviewCounts].isLeft)
+    assert(counts.mapObject(_.add("eligibleQueries", (-1).asJson)).as[PreviewCounts].isLeft)
+    assert(
+      wire.mapObject(_.add("byDesignQueries", (-1).asJson)).as[PreviewCandidates].isLeft
+    )
+    assertEquals(
+      QueryCount.of(-1).map(_.value),
+      Left(PreviewError.Negative("query count", -1L))
+    )
+    assertEquals(QueryCount.of(14).map(_.asJson), Right(14.asJson))
   }
 
   test("protocol 1.3: an admission summary without an inventory says absent is not counted") {

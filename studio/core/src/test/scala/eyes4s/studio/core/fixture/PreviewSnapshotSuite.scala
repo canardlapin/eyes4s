@@ -72,7 +72,7 @@ class PreviewSnapshotSuite extends munit.CatsEffectSuite:
           PreviewCounts.of(
             7L,
             7L,
-            receipt.counts.eligibleQueries,
+            receipt.counts.eligibleQueries.value,
             receipt.counts.unmatchedQueries,
             receipt.counts.ambiguousMatches
           )

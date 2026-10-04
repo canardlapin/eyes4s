@@ -105,13 +105,19 @@ object ResolvedDesignVM:
         case DesignFilter.All =>
           (
             t(ChipAll),
-            known(candidates.map(_.requestedQueries.toLong), DesignCount.RequestedQueries),
+            known(
+              candidates.map(_.requestedQueries.value.toLong),
+              DesignCount.RequestedQueries
+            ),
             true
           )
         case DesignFilter.Eligible =>
           (
             t(ChipEligible),
-            known(ready.map(_.counts.eligibleQueries.toLong), DesignCount.EligibleQueries),
+            known(
+              ready.map(_.counts.eligibleQueries.value.toLong),
+              DesignCount.EligibleQueries
+            ),
             true
           )
         case DesignFilter.NoMatch =>
@@ -123,7 +129,10 @@ object ResolvedDesignVM:
         case DesignFilter.NotAdmitted =>
           (
             t(ChipNotAdmitted),
-            known(candidates.map(_.queriesNotAdmitted.toLong), DesignCount.QueriesNotAdmitted),
+            known(
+              candidates.map(_.queriesNotAdmitted.value.toLong),
+              DesignCount.QueriesNotAdmitted
+            ),
             true
           )
         case DesignFilter.ByDesign =>
@@ -131,7 +140,7 @@ object ResolvedDesignVM:
             // The recipe has no by-design category: not applicable, not zero.
             case Some(None)    => (t(ChipByDesign), (t(NotApplicable), None), false)
             case Some(Some(n)) =>
-              (t(ChipByDesign), known(Some(n.toLong), DesignCount.ByDesignQueries), true)
+              (t(ChipByDesign), known(Some(n.value.toLong), DesignCount.ByDesignQueries), true)
             case None => (t(ChipByDesign), (t(Pending), None), false)
       ChipVM(f, label, count, ref, enabled, panel.filter == f)
     }
