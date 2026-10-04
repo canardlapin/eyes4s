@@ -30,8 +30,8 @@ import eyes4s.studio.core.backend.{
   TrialDisposition,
   TrialKey
 }
-import eyes4s.studio.core.diff.{DatasetDiff, DatasetDiffText}
-import eyes4s.studio.core.document.{DatasetRevisionSpec, OffScreenChoice}
+import eyes4s.studio.core.diff.{DatasetDiff, DatasetDiffText, DiffError, StatusDiff}
+import eyes4s.studio.core.document.{DatasetRevisionSpec, OffScreenChoice, StudioDocument}
 import eyes4s.studio.core.freshness.{RunFreshness, RunStanding, StaleReason}
 import eyes4s.studio.core.selection.{InventoryKind, LedgerCounts, StudioRef, TallyRegion}
 
@@ -108,6 +108,7 @@ final case class AdmissionLedgerVM(
     decisions: Vector[DecisionVM],
     canDecide: Boolean,
     changes: Option[String],
+    changeRefs: Vector[StudioRef],
     consequence: Option[String],
     admit: String,
     canAdmit: Boolean,
@@ -199,9 +200,34 @@ object AdmissionLedgerVM:
     if vm.empty.isDefined then Vector.empty
     else counts ++ opened ++ decision ++ admit ++ retry
 
+  /** The Data history line of `spec` (S5.8): its changes from its parent
+    * revision, and the trials whose status changed, each a ref the line's
+    * count leads to. `None` when it re-imports nothing or nothing changed; a
+    * diff that cannot be made is said, with why.
+    */
+  def history(
+      document: StudioDocument,
+      spec: DatasetRevisionSpec,
+      status: StatusDiff
+  ): Option[(String, Vector[StudioRef])] =
+    spec.parent.flatMap { parent =>
+      document
+        .dataset(parent)
+        .toRight(DiffError.UnknownDataset(parent, document.datasets.map(_.id)))
+        .flatMap(DatasetDiff.of(_, spec, status)) match
+        case Left(e)     => Some(t(ChangesFailed, parent.label, e.message) -> Vector.empty)
+        case Right(diff) =>
+          val text = DatasetDiffText.summary(diff)
+          val refs = diff.status match
+            case StatusDiff.Compared(c) => c.transitions.flatMap(_.refs)
+            case _                      => Vector.empty
+          Option.when(text.nonEmpty)(t(Changes, parent.label, text) -> refs)
+    }
+
   /** The ledger's view-model. */
   def of(ledger: AdmissionLedger, model: AppModel): AdmissionLedgerVM =
     val spec    = ledger.shown.flatMap(s => model.document.dataset(s.id))
+    val history = spec.flatMap(this.history(model.document, _, ledger.status))
     val summary = ledger.counts.toOption.filter(s => spec.exists(_.id == s.dataset))
     val id      = spec.map(_.id)
     val label   = id.fold("")(_.label)
@@ -233,13 +259,8 @@ object AdmissionLedgerVM:
       decisionLegend = t(DecisionLegend),
       decisions = decisions(ledger, spec, label, summary),
       canDecide = spec.exists(s => !s.decision.isAdmitted) && ledger.admitting.isEmpty,
-      changes = for
-        to   <- spec
-        from <- to.parent.flatMap(model.document.dataset)
-        diff <- DatasetDiff.of(from, to, ledger.status).toOption
-        text = DatasetDiffText.summary(diff)
-        if text.nonEmpty
-      yield t(Changes, from.id.label, text),
+      changes = history.map(_._1),
+      changeRefs = history.toVector.flatMap(_._2),
       consequence = spec.filter(!_.decision.isAdmitted).map(s => consequence(model, s.id)),
       admit = t(Admit, label),
       canAdmit = spec.exists(s => AdmissionLedger.blocked(ledger, s).isEmpty),

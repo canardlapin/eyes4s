@@ -37,7 +37,7 @@ import eyes4s.studio.core.document.{
   DatasetRevisionSpec,
   Perspective
 }
-import eyes4s.studio.core.diff.{LedgerUnavailable, StatusChanges, StatusDiff}
+import eyes4s.studio.core.diff.{DiffError, LedgerUnavailable, StatusChanges, StatusDiff}
 import eyes4s.studio.core.selection.{StudioRef, TallyRegion}
 
 /** What eyes4s answered when asked to admit a dataset revision. */
@@ -158,7 +158,7 @@ final case class AdmissionLedger(
     decision: CoreAdmissionDecision,
     admitting: Option[DatasetRevision],
     problem: Option[String],
-    parentLedger: Option[Either[LedgerUnavailable, Vector[LedgerEntry]]] = None
+    parentLedger: Option[Either[LedgerUnavailable, Vector[LedgerEntry]]]
 ) derives CanEqual:
 
   /** Whether the shown revision's trial statuses were compared with its
@@ -167,11 +167,18 @@ final case class AdmissionLedger(
   def status: StatusDiff =
     (shown.flatMap(s => s.parent.map(s.id -> _)), parentLedger, entries) match
       case (Some((_, parent)), Some(Left(why)), _) => StatusDiff.Unavailable(parent, why)
+      case (Some((id, _)), Some(Right(_)), Loading.Failed(why)) =>
+        StatusDiff.Unavailable(id, LedgerUnavailable.Failed(why))
       case (Some((id, parent)), Some(Right(before)), Loading.Ready(after)) =>
         StatusChanges
           .between(parent, before, id, after)
           .fold(
-            e => StatusDiff.Unavailable(parent, LedgerUnavailable.Failed(e.message)),
+            e =>
+              val dataset = e match
+                case DiffError.RepeatedTrials(d, _) => d
+                case _                              => parent
+              StatusDiff.Unavailable(dataset, LedgerUnavailable.Failed(e.message))
+            ,
             StatusDiff.Compared(_)
           )
       case _ => StatusDiff.NotRead
@@ -192,6 +199,7 @@ object AdmissionLedger:
       Loading.Idle,
       0,
       CoreAdmissionDecision.RequireComplete,
+      None,
       None,
       None
     )

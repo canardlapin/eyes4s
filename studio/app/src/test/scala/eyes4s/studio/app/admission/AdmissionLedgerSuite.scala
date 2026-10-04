@@ -954,7 +954,44 @@ class AdmissionLedgerSuite extends munit.FunSuite:
           entries.indexWhere(_.trial == k)
         )
       )
+      // The line's count leads to exactly those trials (one per transition).
+      assertEquals(
+        AdmissionLedgerVM.of(ledger, t1).changeRefs.toSet,
+        Set(entries(admitted).trial, entries(empty).trial).map(StudioRef.Trial(_))
+      )
+      assertEquals(AdmissionLedgerVM.of(ledger, t1).changeRefs.size, 2)
     }
+  }
+
+  test("a shown ledger that failed is said, not hidden, while the parent's was read") {
+    served(StoryMoment.T1).map { answers =>
+      val synced = AdmissionLedger.sync(AdmissionLedger.empty, t1)._1
+      val ledger = Vector(
+        LedgerIntent.CountsRead(r3, 1, answers._1),
+        LedgerIntent.LedgerRead(r3, 1, Left("the backend timed out")),
+        LedgerIntent.ParentLedgerRead(r2, 1, Right(ok(answers._2)))
+      ).foldLeft(synced)((l, i) => AdmissionLedger.update(l, t1, i)._1)
+      val vm = AdmissionLedgerVM.of(ledger, t1)
+      assertEquals(
+        vm.changes,
+        Some(
+          "Changes from r2: onset declared ms; occurrence → occurrence; trial status of r3 " +
+            "unavailable."
+        )
+      )
+      assertEquals(vm.changeRefs, Vector.empty)
+    }
+  }
+
+  test("a parent the document does not have is said, naming it") {
+    val spec = t1.document.dataset(r3).get.copy(parent = Some(DatasetRevision(9)))
+    assertEquals(
+      AdmissionLedgerVM.history(t1.document, spec, StatusDiff.NotRead),
+      Some(
+        "Changes from r9 cannot be shown: The document has no dataset r9 (it has r2, r3)." ->
+          Vector.empty
+      )
+    )
   }
 
 /** Trial keys the ledger tests name. */

@@ -274,17 +274,221 @@ class DatasetDiffSuite extends munit.ScalaCheckSuite:
     assertEquals(DatasetDiffText.staleCause(diff), "dataset r4 is admitted")
   }
 
-  property("a diff is empty exactly when the revisions' content is equal") {
-    val pair = for
-      a    <- DocumentGen.dataset(1, Vector.empty)
-      b    <- DocumentGen.dataset(2, Vector(1))
-      same <- Gen.oneOf(true, false)
-    yield (a, if same then a.copy(id = b.id, parent = b.parent, decision = b.decision) else b)
-    forAll(pair) { (a, b) =>
-      def content(d: DatasetRevisionSpec) =
-        (d.sources, d.mapping, d.units, d.geometry, d.admission, d.attributes, d.inventory)
+  test("fixation attributes declared, dropped and re-kinded each read as one change") {
+    def attrs(bs: (String, AttributeKindChoice)*) =
+      right(DeclaredAttributes.of(bs.toVector.map((c, k) => AttributeBinding(column(c), k))))
+    val from = spec3.copy(
+      attributes =
+        attrs("block" -> AttributeKindChoice.Text, "rt" -> AttributeKindChoice.Integer)
+    )
+    val to = spec3.copy(
+      attributes = attrs("rt" -> AttributeKindChoice.Number, "cue" -> AttributeKindChoice.Text)
+    )
+    val diff = right(DatasetDiff.of(from, to, StatusDiff.NotRead))
+    assertEquals(
+      diff.changes,
+      Vector(
+        DatasetChange.Attribute(
+          MappedSource.Fixations,
+          column("block"),
+          Some(AttributeKindChoice.Text),
+          None
+        ),
+        DatasetChange.Attribute(
+          MappedSource.Fixations,
+          column("rt"),
+          Some(AttributeKindChoice.Integer),
+          Some(AttributeKindChoice.Number)
+        ),
+        DatasetChange.Attribute(
+          MappedSource.Fixations,
+          column("cue"),
+          None,
+          Some(AttributeKindChoice.Text)
+        )
+      )
+    )
+    assertEquals(
+      DatasetDiffText.summary(diff),
+      "block no longer declared; rt integer → number; cue declared text"
+    )
+    assertEquals(DatasetDiffText.staleCause(diff), "dataset r3 changed the mapping")
+  }
+
+  test("a source's import name and semantic identity are content") {
+    val fixations                = spec3.sources.fixations.get
+    def withFixations(f: Source) =
+      spec3.copy(sources = right(Sources.of(spec3.sources.entries.map {
+        case s if s.role == SourceRole.Fixations => f
+        case s                                   => s
+      })))
+    val renamed =
+      withFixations(fixations.copy(path = right(SourcePath.of("inputs/fixations-v2.csv"))))
+    val identity = right(SemanticIdentity.of("0123456789abcdef"))
+    val bound    = withFixations(fixations.copy(semantic = Some(identity)))
+    assertEquals(
+      DatasetDiffText.summary(right(DatasetDiff.of(spec3, renamed, StatusDiff.NotRead))),
+      "fixations source renamed inputs/fixations.csv → inputs/fixations-v2.csv"
+    )
+    assertEquals(
+      right(DatasetDiff.of(spec3, bound, StatusDiff.NotRead)).changes,
+      Vector(DatasetChange.SourceIdentified(SourceRole.Fixations, None, Some(identity)))
+    )
+    assertEquals(
+      DatasetDiffText.summary(right(DatasetDiff.of(bound, spec3, StatusDiff.NotRead))),
+      "fixations source identity unbound"
+    )
+  }
+
+  /** `a` with exactly one field of its content changed, and whether a
+    * change belongs to that field.
+    */
+  private def perturb(
+      a: DatasetRevisionSpec
+  ): Gen[(String, DatasetRevisionSpec, DatasetChange => Boolean)] =
+    import DatasetChange.*
+    val fixations                = a.sources.fixations.get
+    def withFixations(f: Source) =
+      a.copy(sources = right(Sources.of(a.sources.entries.map {
+        case s if s.role == SourceRole.Fixations => f
+        case s                                   => s
+      })))
+    val g     = a.geometry
+    val other = ByteDigest.sha256(IArray.unsafeFromArray(fixations.bytes.hex.getBytes("UTF-8")))
+    val flipY = CorrectionRule(CorrectionTarget.AllTrials, CoordinateCorrection.FlipY)
+    val identity = right(SemanticIdentity.of("0123456789abcdef"))
+    val remaps   = a.mapping.bindings.map { b =>
+      (
+        s"remap ${b.role.label}",
+        a.copy(mapping = right(ColumnMapping.of(a.mapping.bindings.map {
+          case `b` => ColumnBinding(b.role, column(s"${b.column.value}_re"))
+          case x   => x
+        }))),
+        (c: DatasetChange) =>
+          c match
+            case Mapped(MappedSource.Fixations, r, _, _) => r == b.role
+            case _                                       => false
+      )
+    }
+    val fixed = Vector[(String, DatasetRevisionSpec, DatasetChange => Boolean)](
+      ("bytes", withFixations(fixations.copy(bytes = other)), _.isInstanceOf[SourceBytes]),
+      (
+        "rename",
+        withFixations(fixations.copy(path = right(SourcePath.of(fixations.path.value + "-2")))),
+        _.isInstanceOf[SourceRenamed]
+      ),
+      (
+        "identity",
+        withFixations(fixations.copy(semantic = if fixations.semantic.isDefined then None
+        else Some(identity))),
+        _.isInstanceOf[SourceIdentified]
+      ),
+      (
+        "units",
+        a.copy(units = DeclaredUnits(a.units.time match
+          case Some(TimeUnit.Milliseconds) => Some(TimeUnit.Seconds)
+          case _                           => Some(TimeUnit.Milliseconds))),
+        _.isInstanceOf[Units]
+      ),
+      (
+        "screen",
+        a.copy(geometry =
+          right(
+            Geometry.of(
+              right(ScreenSize.of(g.screen.width + 10, g.screen.height + 10)),
+              g.image,
+              g.pixelsPerDegree
+            )
+          )
+        ),
+        _.isInstanceOf[Screen]
+      ),
+      (
+        "image",
+        a.copy(geometry =
+          right(
+            Geometry.of(
+              g.screen,
+              right(
+                ImagePlacement.of(g.image.left, g.image.top, g.image.width - 1, g.image.height)
+              ),
+              g.pixelsPerDegree
+            )
+          )
+        ),
+        _.isInstanceOf[Image]
+      ),
+      (
+        "pixels per degree",
+        a.copy(geometry =
+          right(
+            Geometry.of(
+              g.screen,
+              g.image,
+              right(DeclaredPixelsPerDegree.of(g.pixelsPerDegree.value + 1))
+            )
+          )
+        ),
+        _.isInstanceOf[PixelsPerDegree]
+      ),
+      (
+        "off-screen",
+        a.copy(admission = a.admission.copy(offScreen = a.admission.offScreen match
+          case OffScreenChoice.ExcludeRecord   => OffScreenChoice.QuarantineTrial
+          case OffScreenChoice.QuarantineTrial => OffScreenChoice.ExcludeRecord)),
+        _.isInstanceOf[OffScreen]
+      ),
+      (
+        "corrections",
+        a.copy(admission =
+          a.admission.copy(corrections =
+            if a.admission.corrections.contains(flipY) then
+              a.admission.corrections.filterNot(_ == flipY)
+            else a.admission.corrections :+ flipY
+          )
+        ),
+        c => c.isInstanceOf[CorrectionAdded] || c.isInstanceOf[CorrectionRemoved]
+      ),
+      (
+        "fixation attribute",
+        a.copy(attributes =
+          right(
+            DeclaredAttributes.of(
+              a.attributes.bindings :+ AttributeBinding(
+                column("zz_attr"),
+                AttributeKindChoice.Text
+              )
+            )
+          )
+        ),
+        {
+          case Attribute(MappedSource.Fixations, c, None, Some(_)) => c == column("zz_attr")
+          case _                                                   => false
+        }
+      ),
+      (
+        "inventory",
+        a.copy(inventory = if a.inventory.isDefined then None
+        else Some(DocumentGen.identityInventory)),
+        _.isInstanceOf[InventoryMapped]
+      )
+    )
+    Gen.oneOf(fixed ++ remaps)
+
+  property("a one-field change is exactly that field's change; no change is no change") {
+    val cases = for
+      a <- DocumentGen.dataset(1, Vector.empty)
+      p <- perturb(a)
+    yield (a, p)
+    forAll(cases) { case (a, (field, b, belongs)) =>
       val diff = right(DatasetDiff.of(a, b, StatusDiff.NotRead))
-      assertEquals(diff.changes.isEmpty, content(a) == content(b))
-      assertEquals(right(DatasetDiff.of(a, a, StatusDiff.NotRead)).changes, Vector.empty)
+      assert(diff.changes.nonEmpty, s"$field: no change")
+      assert(diff.changes.forall(belongs), s"$field: ${diff.changes}")
+      val same = a.copy(
+        id = DatasetRevision(2),
+        parent = Some(a.id),
+        decision = AdmissionDecision.Pending
+      )
+      assertEquals(right(DatasetDiff.of(a, same, StatusDiff.NotRead)).changes, Vector.empty)
     }
   }
