@@ -392,6 +392,63 @@ class RepetitionPlanSuite extends munit.FunSuite:
     )
   }
 
+  private val results =
+    new RepetitionResultCodec[Key, Px](id("example.repetition-result"), codec, keys)
+
+  test(
+    "a repetition run archive round-trips byte for byte and refuses another plan's analyses"
+  ) {
+    Vector(plan(), plan(sel = Selection.All)).foreach { p =>
+      val run      = RepetitionRun(p, p.run)
+      val document = get(results.codec.encode(run))
+      val decoded  = get(results.codec.decode(document))
+      assertEquals(decoded.result.matched, run.result.matched)
+      assertEquals(decoded.result.controls, run.result.controls)
+      assertEquals(decoded.plan.description, p.description)
+      assertEquals(get(results.codec.encode(decoded)), document)
+    }
+    // Another plan's analyses under this plan: refused by the result's reconstruction.
+    val other   = plan(sel = Selection.All)
+    val swapped = get(results.codec.encode(RepetitionRun(other, plan().run)))
+    assert(
+      results.codec.decode(swapped).left.exists(_.message.contains("its evaluation differs")),
+      results.codec.decode(swapped)
+    )
+    // Another input's analyses: the input hash is checked first.
+    val fewer = plan(trials = Trials(rows.init))
+    assertEquals(
+      RepetitionPlanResult
+        .reconstruct(fewer, plan().run.matched, plan().run.controls)
+        .left
+        .toOption,
+      Some(RepetitionPlanError.ResultMismatch("matched", "input"))
+    )
+  }
+
+  test("a repetition run resolves from a manifest under the generic analysis roles") {
+    val p     = plan()
+    val graph = get(
+      for
+        stored <- StoredArtifact.analysisPlan("repetition-plan", codec, p)
+        run    <- StoredArtifact
+          .analysisResult("repetition", results.codec, RepetitionRun(p, p.run))
+        saved <- SavedManifest.of(
+          Vector(stored, run),
+          Vector(ManifestRelation.AnalysisResultOf(run.name, stored.name, Vector.empty))
+        )
+      yield saved
+    )
+    val registry = get(AnalysisRegistry.empty.register(results.registration))
+    val decoders = get(ArtifactDecoders.study[Px]).withAnalyses(registry)
+    val resolved = get(
+      ArtifactResolver.resolve(graph.address, graph.source, decoders).left.map(_.toVector)
+    )
+    val loaded =
+      resolved.analysisResults.map(_._2).collect { case r: results.LoadedRun => r.run }
+    assertEquals(loaded.map(_.result.controls), Vector(p.run.controls))
+    assertEquals(resolved.analysisPlans.map(_._2.description), Vector(p.description))
+  }
+
   test("the repetition cursor equals run at every quanta, matched pairs first, then controls") {
     def quanta(pairs: Int) = WorkQuanta(get(PairQuantum.of(pairs)), ComparisonQuantum.default)
     Vector(plan(), plan(sel = Selection.All)).foreach { p =>

@@ -136,6 +136,13 @@ case runs the complete save, fresh-registration reopen and rerun workflow on bot
    `inspect` explains every field. `RepetitionForm` edits the method, the rules, the control
    selection and the failure policy; `RepetitionRecipe.plan(template)` rebuilds a plan over the
    template's layout, grid and maps, and checks the matched and control rules together.
+6. Save a completed run with `RepetitionResultCodec(schema, plans, keys)`: its `RepetitionRun`
+   archive holds the plan document and both analyses (pair rows, pairing report, provenance and
+   evaluation), re-encodes byte for byte, and refuses analyses another plan or input computed
+   (`RepetitionPlanResult.reconstruct`, `RepetitionPlanError.ResultMismatch`). In a manifest the
+   plan and run are an `analysis-plan` and an `analysis-result` related by
+   `AnalysisResultOf(run, plan, Vector.empty)`: the plan carries its own maps, so the relation
+   names no input entry. Register `results.registration` with the resolver's `AnalysisRegistry`.
 5. Create `RepetitionPlanCodec.of` with a distinct recipe schema, typed key codec and
    `RepetitionRegistry`. Save its versioned JSON. A fresh registry with the declared layout
    reconstructs the same keys, eligible/selected directed endpoints, seed, cap, input and plan

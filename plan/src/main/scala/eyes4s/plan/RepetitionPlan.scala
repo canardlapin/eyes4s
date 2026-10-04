@@ -42,6 +42,11 @@ enum RepetitionPlanError derives CanEqual:
   case OverlappingRelations(matched: Vector[RepetitionRule], controls: Vector[RepetitionRule])
   case Grid(row: Int, underlying: SurfaceError)
   case Specification(underlying: EvaluationSpecError)
+
+  /** A stored `role` analysis (`matched` or `controls`) was not computed by
+    * this plan: its `field` (its input hash or its evaluation) differs.
+    */
+  case ResultMismatch(role: String, field: String)
   def message: String = this match
     case ProjectionIds(v)    => s"Repetition projection identities must be distinct: $v."
     case DuplicateLayout(id) => s"Repetition layout $id is already registered."
@@ -50,8 +55,10 @@ enum RepetitionPlanError derives CanEqual:
       s"Repetition $role rules must be unique, nonempty and consistent: $v."
     case OverlappingRelations(a, b) =>
       s"Repetition matched=$a and controls=$b can overlap; name disjoint relations."
-    case Grid(i, e)       => s"Repetition row=$i: ${e.message}"
-    case Specification(e) => e.message
+    case Grid(i, e)                  => s"Repetition row=$i: ${e.message}"
+    case Specification(e)            => e.message
+    case ResultMismatch(role, field) =>
+      s"The stored $role analysis was not computed by this repetition plan: its $field differs."
 
 /** Which participants a named repetition relation may pair. Always explicit. */
 enum ParticipantScope derives CanEqual:
@@ -452,3 +459,27 @@ object RepetitionCursor:
   ] with
     def stage(cursor: RepetitionCursor[K]): RepetitionStage      = cursor.stage
     def advance(cursor: RepetitionCursor[K], quanta: WorkQuanta) = cursor.advance(quanta)
+
+object RepetitionPlanResult:
+  /** A stored result of `plan`, checked: each analysis was evaluated on the
+    * plan's input with the plan's evaluation (its method under the plan's
+    * specification), else `ResultMismatch` naming the role and field.
+    */
+  def reconstruct[K, U <: Unit2D](
+      plan: RepetitionPlan[K, U],
+      matched: DirectedPairwiseAnalysis[K, K, CompareError, Similarity],
+      controls: DirectedPairwiseAnalysis[K, K, CompareError, Similarity]
+  ): Either[RepetitionPlanError, RepetitionPlanResult[K]] =
+    val info = EvaluationInfo.comparison(plan.method.similarity[U], plan.specification)
+    Vector("matched" -> matched, "controls" -> controls)
+      .collectFirst {
+        case (role, a) if a.provenance.inputs != plan.inputHash =>
+          RepetitionPlanError.ResultMismatch(role, "input")
+        case (role, a) if a.evaluation != info =>
+          RepetitionPlanError.ResultMismatch(role, "evaluation")
+      }
+      .toLeft(
+        new RepetitionPlanResult(matched, controls, plan.policy, plan.planHash)(using
+          plan.layout.ordering
+        )
+      )

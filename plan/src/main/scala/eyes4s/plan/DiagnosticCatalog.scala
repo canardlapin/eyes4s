@@ -819,7 +819,9 @@ object DiagnosticCatalog:
     "Rules",
     "OverlappingRelations",
     "Grid",
-    "Specification"
+    "Specification",
+    // appended by CR4 S3: a stored result another plan computed
+    "ResultMismatch"
   )
   val diagnosticCode: DiagnosticFamily = error("diagnostic-code")(
     "InvalidFamily",

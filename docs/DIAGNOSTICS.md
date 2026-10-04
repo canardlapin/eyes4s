@@ -1333,6 +1333,7 @@ fails after rewriting, so review the change and run it again.
 | `repetition-plan.overlapping-relations` | `OverlappingRelations` | `matched`, `controls` |
 | `repetition-plan.grid` | `Grid` | `row`, `underlying` |
 | `repetition-plan.specification` | `Specification` | `underlying` |
+| `repetition-plan.result-mismatch` | `ResultMismatch` | `role`, `field` |
 
 ### `diagnostic-code` — `DiagnosticCodeError`
 
