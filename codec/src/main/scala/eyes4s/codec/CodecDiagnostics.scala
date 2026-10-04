@@ -117,7 +117,9 @@ object CodecDiagnosticCatalog:
     "RunInput",
     // CR4 S2: a generic analysis relation across families, or an undeclared embedded input.
     "AnalysisFamily",
-    "UndeclaredEmbedding"
+    "UndeclaredEmbedding",
+    // CR4 S2 review: a declared embedded input the plan does not expose.
+    "EmptyEmbedding"
   )
   val manifest: DiagnosticFamily = error("manifest")(
     "InvalidName",
@@ -445,6 +447,8 @@ private[codec] object CodecProjections:
           definition(expected)
         )
       case UndeclaredEmbedding(plan) =>
+        diagnostic[Any](C.relation, e, e.message)(definition(plan))
+      case EmptyEmbedding(plan) =>
         diagnostic[Any](C.relation, e, e.message)(definition(plan))
       case Admission(error) =>
         val inner = Projections.admission(error)

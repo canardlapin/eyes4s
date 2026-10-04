@@ -186,6 +186,12 @@ enum RelationMismatch derives CanEqual:
     */
   case UndeclaredEmbedding(plan: DefinitionId)
 
+  /** The family of plan schema `plan` declares that its plan embeds its
+    * input, but the related plan exposes no embedded input identity, so
+    * nothing could be checked.
+    */
+  case EmptyEmbedding(plan: DefinitionId)
+
   def message: String = this match
     case RunPlan(reported, current, changes) =>
       s"Run plan ${reported.hex} differs from current ${current.hex}; changes ${changes.map(_.field).mkString(", ")}."
@@ -196,6 +202,8 @@ enum RelationMismatch derives CanEqual:
         s"plans, not ${plan.name}@${plan.version}."
     case UndeclaredEmbedding(plan) =>
       s"The ${plan.name}@${plan.version} family does not declare that its plan embeds its input."
+    case EmptyEmbedding(plan) =>
+      s"The ${plan.name}@${plan.version} plan declares an embedded input but exposes no identity for it."
     case SourceBinding(field, expected, found) =>
       s"Source binding $field declares $found; expected $expected."
     case Prerequisites(errors)        => errors.map(_.message).mkString(" ")
@@ -1285,11 +1293,11 @@ object ArtifactResolver:
                 )
               )
             case AnalysisInputs.EmbeddedInPlan =>
-              Either.cond(
-                family.exists(_.embedsInput),
-                plan.embeddedInputs.map(_.render),
-                RelationMismatch.UndeclaredEmbedding(plan.schema)
-              )
+              if !family.exists(_.embedsInput) then
+                Left(RelationMismatch.UndeclaredEmbedding(plan.schema))
+              else if plan.embeddedInputs.isEmpty then
+                Left(RelationMismatch.EmptyEmbedding(plan.schema))
+              else Right(plan.embeddedInputs.map(_.render))
           val found = result.inputs.map(_.render)
           family.filter(_.plan != plan.schema) match
             case Some(f) =>

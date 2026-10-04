@@ -1603,6 +1603,7 @@ fails after rewriting, so review the change and run it again.
 | `relation.run-input` | `RunInput` | `reported`, `current` |
 | `relation.analysis-family` | `AnalysisFamily` | `result`, `plan`, `expected` |
 | `relation.undeclared-embedding` | `UndeclaredEmbedding` | `plan` |
+| `relation.empty-embedding` | `EmptyEmbedding` | `plan` |
 
 ### `manifest` — `ManifestError`
 

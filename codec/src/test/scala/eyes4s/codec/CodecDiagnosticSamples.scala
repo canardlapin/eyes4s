@@ -198,7 +198,8 @@ object CodecDiagnosticSamples:
       RelationMismatch.RunInput(a, b),
       RelationMismatch
         .AnalysisFamily(DefinitionId.study, DefinitionId.manifest, DefinitionId.similarity),
-      RelationMismatch.UndeclaredEmbedding(DefinitionId.temporalStudyInput)
+      RelationMismatch.UndeclaredEmbedding(DefinitionId.temporalStudyInput),
+      RelationMismatch.EmptyEmbedding(DefinitionId.studyLayout)
     ),
     family[ManifestError]("ManifestError")(
       ManifestError.InvalidName(" padded"),
