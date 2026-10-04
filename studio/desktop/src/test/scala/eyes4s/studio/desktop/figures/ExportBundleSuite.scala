@@ -209,6 +209,46 @@ class ExportBundleSuite extends munit.FunSuite:
     }
   }
 
+  /** results.csv's table digest for the fixture, recorded when its label
+    * domain was settled (S9.5): pair absences must not change it.
+    */
+  private val ResultsDigest = "3ff1a6787c1f1019f20d6b05390b89fa7aa54d69bc595a82ac0cff3192612545"
+
+  test("results.csv keeps its digest; comparisons.csv has its own absence labels") {
+    served.map { s =>
+      val r       = request(s.composer)
+      val results =
+        BundleTables.results(r.source, s.summary, s.rows).fold(e => fail(e.message), identity)
+      assertEquals(results.identity.hex, ResultsDigest)
+      val pairs = BundleTables
+        .comparisons(r.source, s.summary, s.pairs)
+        .fold(e => fail(e.message), identity)
+      assertEquals(
+        pairs.columns.find(_.name == "score_absence").map(_.labels),
+        Some(BundleTables.PairAbsences)
+      )
+      assertEquals(
+        results.columns.find(_.name == "d_absence").map(_.labels),
+        Some(BundleTables.Absences)
+      )
+      assert(!BundleTables.Absences.contains("not-served"))
+    }
+  }
+
+  test("comparisons rows of a scale the run does not compute are refused, not labelled") {
+    served.map { s =>
+      val r     = request(s.composer)
+      val wrong = s.pairs.take(1).map(_.copy(scale = s.summary.scales.size))
+      assertEquals(
+        BundleTables.comparisons(r.source, s.summary, wrong).left.map(_.message),
+        Left(
+          s"The comparisons table has rows of scale ${s.summary.scales.size}; the run computes " +
+            s.summary.scales.mkString(", ") + "."
+        )
+      )
+    }
+  }
+
   // --- comparisons.csv ---------------------------------------------------------------
 
   test("comparisons.csv: every pair of the run at every scale, as the backend serves them") {
