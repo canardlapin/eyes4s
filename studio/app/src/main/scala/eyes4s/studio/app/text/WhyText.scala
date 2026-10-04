@@ -32,14 +32,15 @@ enum WhyTextId derives CanEqual:
 
   /** One template per eyes4s `ControlReferences` choice, with and without a count. */
   case ControlSameSelection, ControlAllOccurrences, ControlsCounted, ControlsUncounted
+  case SelectionCounted, SelectionUncounted
 
   /** A query that has no reference, by its status and the recipe's policy. */
-  case NoMatchReport, NoMatchRefuse, QueryNotAdmitted
+  case NoMatchReport, NoMatchRefuse, QueryNotAdmitted, QueryFailed
 
   case Participant, SameParticipant, OtherParticipant
   case PhaseOccurrence, OccurrenceOf, OccurrenceOnly
-  case Item, Controls, ControlsValue, ControlsUnknown
-  case Excluded, ExcludedNone, ExcludedSome, ExcludedTrial, ExcludedReading,
+  case Item, Controls, ControlsValue, ControlsUnknown, ControlsUnscored, WouldBe, WouldBeNone
+  case NotAdmittedOf, ExcludedNone, ExcludedSome, ExcludedTrial, ExcludedReading,
     ExcludedUnreadable
   case OutsideReference, OutsideQuery, OutsideValue, OutsideReading, OutsideUnknown
 
@@ -88,19 +89,24 @@ object WhyText:
     // {0} reference phase, {1} participant
     case ControlSameSelection =>
       "Eligible control: an admitted {0} trial of the same participant ({1}) showing a " +
-        "different item."
+        "different item, one per item, chosen as the matched reference is."
     case ControlAllOccurrences =>
       "Eligible control: an admitted {0} trial of the same participant ({1}) showing a " +
         "different item, every occurrence of it counted."
-    case ControlsCounted   => "All {0} such trials are used; none are sampled."
-    case ControlsUncounted => "Every such trial is used; none are sampled."
-    case NoMatchReport     =>
+    case ControlsCounted    => "All {0} such trials are used; none are sampled."
+    case ControlsUncounted  => "Every such trial is used; none are sampled."
+    case SelectionCounted   => "{0} such references are used; none are sampled."
+    case SelectionUncounted => "Every such reference is used; none are sampled."
+    case NoMatchReport      =>
       "No matched reference: no admitted {0} trial of {1} has match item {2}. The query " +
         "is reported as no match."
     case NoMatchRefuse =>
       "No matched reference: no admitted {0} trial of {1} has match item {2}. The " +
         "recipe refuses a study with such a query."
     case QueryNotAdmitted => "The query was not admitted ({0}), so it has no reference."
+    case QueryFailed      =>
+      "The query failed ({0}), so it has no M, B or D. Its reference is shown as the " +
+        "design chose it."
 
     case Participant        => "Participant"
     case SameParticipant    => "{0}, same as query"
@@ -110,11 +116,14 @@ object WhyText:
     case OccurrenceOnly     => "{0} · {1}"
     case Item               => "Item"
     case Controls           => "Controls"
-    case ControlsValue      => "{0} · all used"
+    case ControlsValue      => "{0} used"
     case ControlsUnknown    => "—"
-    case Excluded           => "Excluded candidates"
-    case ExcludedNone       => "none of {0} {1} trials"
-    case ExcludedSome       => "{0} of {1} {2} trials: {3}"
+    case ControlsUnscored   => "{0} designed · none scored"
+    case WouldBe            => "Would-be match"
+    case WouldBeNone        => "no {0} trial of {1}"
+    case NotAdmittedOf      => "Not admitted ({0} · {1})"
+    case ExcludedNone       => "none of {0} trials"
+    case ExcludedSome       => "{0} of {1} trials: {2}"
     case ExcludedTrial      => "{0} ({1})"
     case ExcludedReading    => "reading the ledger…"
     case ExcludedUnreadable => "the ledger could not be read: {0}"

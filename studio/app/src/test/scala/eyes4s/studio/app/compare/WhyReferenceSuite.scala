@@ -26,6 +26,7 @@ import eyes4s.studio.core.backend.{
   LedgerEntry,
   PageRequest,
   PairDesign,
+  QueryRow,
   QueryStatus,
   ResultSummary,
   TrialDisposition
@@ -185,8 +186,9 @@ class WhyReferenceSuite extends munit.FunSuite:
         assertEquals(f("Participant"), "P17, same as query")
         assertEquals(f("Phase · occurrence"), "Encoding · 1 of 1")
         assertEquals(f("Item"), "beach-042")
-        assertEquals(f("Controls"), "19 · all used")
-        assertEquals(f("Excluded candidates"), "none of 20 Encoding trials")
+        assertEquals(f("Controls"), "19 used")
+        // A tally of the participant and phase, the same for every query of P17.
+        assertEquals(f("Not admitted (P17 · Encoding)"), "none of 20 trials")
         // FIXTURE.md: ret_07 1 of 12 fixations · 4% of duration; enc_03 1 of 13 · 3%.
         assertEquals(f("Outside window"), "1 of 13 fix · 3% dur")
         assertEquals(f("Query outside"), "1 of 12 fix · 4% dur")
@@ -201,7 +203,8 @@ class WhyReferenceSuite extends munit.FunSuite:
           vm.why.map(_.explanation),
           Some(
             "Eligible control: an admitted Encoding trial of the same participant (P17) " +
-              "showing a different item. All 19 such trials are used; none are sampled."
+              "showing a different item, one per item, chosen as the matched reference is. " +
+              "19 such references are used; none are sampled."
           )
         )
         val f = facts(vm)
@@ -338,14 +341,13 @@ class WhyReferenceSuite extends munit.FunSuite:
           )
         )
         val text = vm.why.fold(fail("no explanation"))(_.explanation)
-        assert(text.endsWith("All 18 such trials are used; none are sampled."), text)
-        val f = facts(vm)
-        assertEquals(f("Controls"), "18 · all used")
+        assert(text.endsWith("18 such references are used; none are sampled."), text)
+        val f     = facts(vm)
+        val tally = s"Not admitted ($p · Encoding)"
+        assertEquals(f("Controls"), "18 used")
         assert(
-          f("Excluded candidates").startsWith(
-            s"1 of 20 Encoding trials: ${excluded.head.trial.trial} ("
-          ),
-          f("Excluded candidates")
+          f(tally).startsWith(s"1 of 20 trials: ${excluded.head.trial.trial} ("),
+          f(tally)
         )
       }
     )
@@ -392,6 +394,120 @@ class WhyReferenceSuite extends munit.FunSuite:
     )
   }
 
+  // --- queries without a reference, and failed queries ---------------------------------------
+
+  /** The inspector's view of `row`'s query, its matched reference in focus. */
+  private def queryVM(r: Read, row: eyes4s.studio.core.backend.QueryRow): CompareInspectorVM =
+    WhyReference.vm(
+      inspector(r),
+      t2Compare.document,
+      InspectorInputs(
+        TrialPanels.empty.copy(focus = Some(PanelFocus(run7, sigma2, row.query, None))),
+        Some(r.shown),
+        Some(r.summary),
+        Some(reporting)
+      )
+    )
+
+  test("a no-match query shows no reference facts, only its would-be match and why") {
+    withSession(s =>
+      read(s).map { r =>
+        val row = r.shown.rows
+          .find(q => q.query == MockStudy.key("P03", "ret_11"))
+          .getOrElse(fail("P03 ret_11 is a no-match query of the fixture"))
+        assert(row.status.isInstanceOf[QueryStatus.NoMatch], row.status.toString)
+        val vm     = queryVM(r, row)
+        val labels = vm.why.toVector.flatMap(_.facts.map(_.label))
+        assertEquals(
+          labels,
+          Vector(
+            "Participant",
+            "Would-be match",
+            "Not admitted (P03 · Encoding)",
+            "Query outside"
+          )
+        )
+        val would = vm.why.toVector.flatMap(_.facts).find(_.label == "Would-be match").get
+        val entry = r.ledger
+          .find(e =>
+            e.trial.participant == "P03" && e.trial.phase == row.matched.phase && e.item == row.item
+          )
+          .getOrElse(fail(s"the ledger lists P03's ${row.item}"))
+        assert(would.value.startsWith(s"${entry.trial.trial} ("), would.value)
+        assert(entry.disposition != TrialDisposition.Admitted, entry.toString)
+        assertEquals(would.ref, Some(StudioRef.Trial(entry.trial)))
+      }
+    )
+  }
+
+  test("a query that was not admitted shows no reference facts") {
+    withSession(s =>
+      read(s).map { r =>
+        val row = r.shown.rows
+          .find(_.status.isInstanceOf[QueryStatus.NotAdmitted])
+          .getOrElse(fail("the fixture has not-admitted queries"))
+        val vm = queryVM(r, row)
+        assert(
+          vm.why.exists(_.explanation.endsWith("so it has no reference.")),
+          vm.why.toString
+        )
+        assertEquals(
+          vm.why.toVector.flatMap(_.facts.map(_.label)),
+          Vector(
+            "Participant",
+            s"Not admitted (${row.query.participant} · Encoding)",
+            "Query outside"
+          )
+        )
+      }
+    )
+  }
+
+  test("a failed query names its failure and is not counted as scored") {
+    withSession(s =>
+      read(s).map { r =>
+        val failed =
+          r.shown.rows.collect { case q @ QueryRow(_, _, _, _, _, QueryStatus.Failed(d)) =>
+            (q, d)
+          }
+        assertEquals(failed.size, 3)
+        failed.foreach { (row, diagnostic) =>
+          val vm   = queryVM(r, row)
+          val text = vm.why.fold(fail("no explanation"))(_.explanation)
+          assertEquals(
+            text,
+            s"The query failed (${diagnostic.message}), so it has no M, B or D. Its reference " +
+              "is shown as the design chose it."
+          )
+          assertEquals(
+            facts(vm)("Controls"),
+            row.controls.fold("—")(n => s"$n designed · none scored")
+          )
+        }
+      }
+    )
+  }
+
+  test("'1 of N' counts only the reference's participant: an item shared across participants") {
+    withSession(s =>
+      read(s).flatMap { r =>
+        val shared = r.ledger.find(_.trial == p17enc03).getOrElse(fail("no enc_03 entry"))
+        // P01 also saw beach-042 at encoding: not P17's occurrence.
+        val other = shared.copy(trial = MockStudy.key("P01", "enc_99"))
+        val wider = r.copy(ledger = r.ledger :+ other)
+        // A second occurrence of beach-042 for P17 is counted.
+        val twice =
+          r.copy(ledger = r.ledger :+ shared.copy(trial = MockStudy.key("P17", "enc_99")))
+        for
+          a <- vmAt(s, t2Compare, wider)
+          b <- vmAt(s, t2Compare, twice)
+        yield
+          assertEquals(facts(a)("Phase · occurrence"), "Encoding · 1 of 1")
+          assertEquals(facts(b)("Phase · occurrence"), "Encoding · 1 of 2")
+      }
+    )
+  }
+
   // --- traceability ----------------------------------------------------------------------------
 
   test("every number of the explanation traces to a StudioRef") {
@@ -403,15 +519,15 @@ class WhyReferenceSuite extends munit.FunSuite:
         assertEquals(refs("Query outside"), Some(StudioRef.Trial(p17ret07)))
         assertEquals(refs("Outside window"), Some(StudioRef.Trial(p17enc03)))
         assertEquals(refs("Controls"), Some(StudioRef.QueryContrast(run7, sigma2, p17ret07)))
-        assertEquals(
-          refs("Excluded candidates"),
-          Some(
-            StudioRef.TrialGroup(
-              r3,
-              TrialGrouping.PhaseOf("P17", MockStudy.key("P17", "enc_03").phase)
-            )
+        val group = Some(
+          StudioRef.TrialGroup(
+            r3,
+            TrialGrouping.PhaseOf("P17", MockStudy.key("P17", "enc_03").phase)
           )
         )
+        assertEquals(refs("Not admitted (P17 · Encoding)"), group)
+        // "of N" counts the ledger's trials of the item: the phase group.
+        assertEquals(refs("Phase · occurrence"), group)
       }
     )
   }
@@ -544,7 +660,7 @@ class WhyReferenceSuite extends munit.FunSuite:
       StudioDocument.scienceDigest(mid.document),
       StudioDocument.scienceDigest(t2Compare.document)
     )
-    val op    = WhyReference.opacityIntent(0.4).getOrElse(fail("0.4 is an opacity"))
+    val op    = WhyReference.opacityIntent(0.4, 0.6).getOrElse(fail("0.4 is an opacity"))
     val faded = AppModel.update(mid, op)._1
     val a1    = WhyReference
       .vm(
@@ -555,7 +671,9 @@ class WhyReferenceSuite extends munit.FunSuite:
       .appearance
     assertEquals(a1.stages.find(_.chosen).map(_.value), Some(StageAppearance.Mid))
     assertEquals((a1.opacity, a1.opacityText), (0.4, "0.40"))
-    assertEquals(WhyReference.opacityIntent(1.5), None)
+    assertEquals(WhyReference.opacityIntent(1.5, 0.6), None)
+    // A slider released without moving dispatches nothing.
+    assertEquals(WhyReference.opacityIntent(0.6, 0.6), None)
     // Colour limits are the inspector's own view state.
     val (per, effects) =
       WhyReference.update(WhyReference.empty, WhyIntent.ChooseLimits(LimitsScope.PerPanel))
