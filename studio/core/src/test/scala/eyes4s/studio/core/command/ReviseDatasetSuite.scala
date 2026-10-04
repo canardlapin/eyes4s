@@ -55,6 +55,16 @@ class ReviseDatasetSuite extends munit.FunSuite:
   )
   private val seconds = DeclaredUnits(Some(TimeUnit.Seconds))
 
+  /** r3's inventory without the occurrence, as its fixations now map none:
+    * both files name the trial by the same key (S5.4 follow-up).
+    */
+  private def withoutOccurrence(inv: Option[InventoryMapping]): Option[InventoryMapping] =
+    inv.map(i =>
+      right(
+        InventoryMapping.of(i.bindings.filterNot(_.role == ColumnRole.Occurrence), i.attributes)
+      )
+    )
+
   test("one ReviseDataset changes all four; one undo restores the prior spec exactly") {
     val step = ok(
       History
@@ -106,7 +116,14 @@ class ReviseDatasetSuite extends munit.FunSuite:
       History
         .start(t2)
         .apply(
-          ReviseDataset(r3, remapped, seconds, r3spec.geometry, attributes, r3spec.inventory)
+          ReviseDataset(
+            r3,
+            remapped,
+            seconds,
+            r3spec.geometry,
+            attributes,
+            r3spec.inventory
+          )
         )
         .isLeft
     )
@@ -213,4 +230,46 @@ class ReviseDatasetSuite extends munit.FunSuite:
     assertEquals(ok(chosen.history.undo).history.document, t2)
     val inherited = ok(History.start(t2).apply(reimport(None))).history.document.datasets.last
     assertEquals(inherited.admission, r3spec.admission)
+  }
+
+  test("the fixations and the inventory must name a trial by the same key (S5.4 follow-up)") {
+    // As with the phase (S5.3), a pending revision may be re-mapped into one
+    // whose keys disagree, so an undo always restores it; it is kept from
+    // admission: verifying it is refused, naming the role and both files.
+    val revised = History
+      .start(t1)
+      .apply(
+        ReviseDataset(r3, remapped, seconds, pending.geometry, attributes, pending.inventory)
+      )
+      .fold(e => fail(e.message), _.history.document)
+    assertEquals(
+      History.start(revised).apply(VerifyDataset(r3)).left.map(_.message),
+      Left(
+        "VerifyDataset on dataset r3 is refused: Dataset r3: occurrence is mapped in " +
+          "trials.csv but not in fixations.csv; both files must name the trial by the same key."
+      )
+    )
+    // A new revision may be imported with keys that disagree (one file is
+    // mapped before the other, as in the golden journey); it cannot be verified.
+    val t2        = DocumentSamples.t2
+    val r3spec    = t2.dataset(r3).get
+    val importOne = ImportSources(
+      Some(r3),
+      r3spec.sources,
+      r3spec.mapping,
+      r3spec.units,
+      r3spec.geometry,
+      r3spec.attributes,
+      None,
+      withoutOccurrence(r3spec.inventory)
+    )
+    val imported = ok(History.start(t2).apply(importOne)).history.document
+    val r4       = imported.datasets.last.id
+    assertEquals(
+      History.start(imported).apply(VerifyDataset(r4)).left.map(_.message),
+      Left(
+        "VerifyDataset on dataset r4 is refused: Dataset r4: occurrence is mapped in " +
+          "fixations.csv but not in trials.csv; both files must name the trial by the same key."
+      )
+    )
   }

@@ -23,7 +23,7 @@ import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, Run
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.AdmissionDecision.coreDecision
 import eyes4s.studio.core.document.DigestJson.given
-import io.circe.Codec
+import io.circe.{Codec, Encoder}
 
 /** The four kinds of change (DESIGN_SPEC section 8), tagged the same
   * everywhere. Only `ViewOnly` commands leave the science untouched.
@@ -53,7 +53,7 @@ enum ChangeKind derives CanEqual, Codec.AsObject:
   * captured value back at its id); a script may use them, and they are
   * validated like every other command.
   */
-enum Command derives CanEqual, Codec.AsObject:
+enum Command derives CanEqual:
 
   // --- Dataset · re-admit --------------------------------------------------
 
@@ -277,6 +277,29 @@ enum Command derives CanEqual, Codec.AsObject:
           SaveLayout) =>
       ChangeKind.ViewOnly
     case RelinkAsset(_, _, _) => ChangeKind.AssetsNoRerun
+
+object Command:
+  private val derived: Codec.AsObject[Command] = Codec.AsObject.derived
+
+  /** An absent inventory mapping is omitted, as the dataset revision itself
+    * stores it (S5.4 follow-up): a journal line never says `"inventory":null`.
+    * A line that does (written before) still reads, as `None`.
+    */
+  given Codec.AsObject[Command] = Codec.AsObject.from(
+    derived,
+    Encoder.AsObject.instance(c =>
+      derived
+        .encodeObject(c)
+        .mapValues(
+          _.mapObject(fields =>
+            c match
+              case _: (ImportSources | ReviseDataset) if fields("inventory").exists(_.isNull) =>
+                fields.remove("inventory")
+              case _ => fields
+          )
+        )
+    )
+  )
 
 /** What the application must do after a command: data, performed by the
   * shell or a service, never by the reducer (DESIGN_SPEC section 13).

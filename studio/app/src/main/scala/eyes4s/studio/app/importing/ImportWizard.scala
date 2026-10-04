@@ -92,6 +92,12 @@ enum WizardProblem derives CanEqual:
   /** No column of `file` can hold the occurrence the key was asked to add. */
   case NoOccurrenceColumn(file: String)
 
+  /** `dataset`'s trial inventory `file` keeps it from admission (`error`:
+    * unmapped, or its trial key disagrees with the fixations'; S5.4
+    * follow-up): it needs a re-map, or its removal from the revision.
+    */
+  case InventoryNeedsRemap(dataset: DatasetRevision, file: String, error: DocumentError)
+
 /** A fact that is not a document command: a note the wizard shows once. */
 enum WizardNote derives CanEqual:
   case PresetSaved(name: PresetName)
@@ -113,6 +119,11 @@ enum WizardIntent derives CanEqual:
     * occurrence column's role in each file's mapping.
     */
   case IncludeOccurrence(include: Boolean)
+
+  /** In a re-map: leave the revision's trial inventory out of the new
+    * revision (`true`), or keep it (S5.4 follow-up).
+    */
+  case DropTrials(drop: Boolean)
 
   /** The platform's streaming check of a key (answering
     * [[WizardEffect.CheckKey]]); ignored unless the inputs are still current.
@@ -185,7 +196,8 @@ final case class ImportWizard private (
     tab: WizardTab,
     problem: Option[WizardProblem],
     note: Option[WizardNote],
-    keys: KeyChecks = KeyChecks.none
+    keys: KeyChecks = KeyChecks.none,
+    dropTrials: Boolean = false
 ) derives CanEqual:
 
   /** Every issue that blocks the commit: the fixation mapping's, then the
@@ -252,14 +264,30 @@ object ImportWizard:
           "",
           WizardTab.FixationMapping,
           // A revision stored before S5.3 may lack a role import now
-          // requires (the phase): it needs a re-map to be committed.
+          // requires (the phase), and one stored before S5.4 may have a trial
+          // inventory that is unmapped or keyed otherwise: it needs a re-map
+          // (or the inventory's removal) to be committed.
           Option
             .when(spec.mapping.missingForImport.nonEmpty)(
               WizardProblem.NeedsRemap(dataset, spec.mapping.missingForImport)
-            ),
+            )
+            .orElse(inventoryProblem(spec)),
           None
         )
       )
+
+  /** Why `spec`'s trial inventory keeps it from admission, if it does. */
+  private def inventoryProblem(spec: DatasetRevisionSpec): Option[WizardProblem] =
+    spec.sources.trials.flatMap { trials =>
+      DatasetRevisionSpec
+        .inventoryMapped(spec.id, spec.sources, spec.inventory)
+        .flatMap(_ =>
+          DatasetRevisionSpec.keysAgree(spec.id, spec.sources, spec.mapping, spec.inventory)
+        )
+        .left
+        .toOption
+        .map(WizardProblem.InventoryNeedsRemap(spec.id, trials.path.value.split('/').last, _))
+    }
 
   /** The pure update. A refused action changes nothing but the problem.
     * The trial key checks follow the files and their mappings (S5.3).
@@ -287,12 +315,20 @@ object ImportWizard:
             fixationDraft(w, source, document) match
               case Left(p)      => refuse(p)
               case Right(draft) => (cleared.copy(fixations = Some((source, draft))), none)
-          case SourceRole.Trials =>
+          // A re-map that leaves the inventory out does not read it again.
+          case SourceRole.Trials if w.dropTrials => (w, none)
+          case SourceRole.Trials                 =>
             trialDraft(w, source, document) match
               case Left(p)      => refuse(p)
               case Right(draft) => (cleared.copy(trials = Some((source, draft))), none)
       case WizardIntent.ReadFailed(path, error) => refuse(WizardProblem.ReadFailed(path, error))
       case WizardIntent.ChooseTab(tab)          => (cleared.copy(tab = tab), none)
+      case WizardIntent.DropTrials(drop)        =>
+        w.target match
+          case WizardTarget.Remap(id)
+              if document.dataset(id).exists(_.sources.trials.isDefined) =>
+            (cleared.copy(dropTrials = drop, trials = if drop then None else w.trials), none)
+          case _ => refuse(WizardProblem.NoTrials)
       case WizardIntent.RequestFile(role) => (cleared, Vector(WizardEffect.OpenFile(role)))
 
       case WizardIntent.Choose(SourceRole.Fixations, column, choice) =>
@@ -503,10 +539,39 @@ object ImportWizard:
             )
         case WizardTarget.Remap(id) =>
           document.dataset(id).toRight(WizardProblem.UnknownDataset(id)).flatMap { spec =>
+            if w.dropTrials then withoutTrials(spec, resolved, geometry)
             // A re-map that did not read the trials file keeps its mapping.
-            remapCommands(spec, resolved, geometry, inventory.orElse(spec.inventory))
+            else remapCommands(spec, resolved, geometry, inventory.orElse(spec.inventory))
           }
     yield commands
+
+  /** A new pending revision of `spec` without its trial inventory: its
+    * sources but the trials file, no inventory mapping (S5.4 follow-up). The
+    * sources change, so it is a new revision even from a pending one.
+    */
+  private def withoutTrials(
+      spec: DatasetRevisionSpec,
+      resolved: ResolvedMapping,
+      geometry: Geometry
+  ): Either[WizardProblem, Vector[Command]] =
+    Sources
+      .of(spec.sources.entries.filterNot(_.role == SourceRole.Trials))
+      .left
+      .map(WizardProblem.BadSources(_))
+      .map(sources =>
+        Vector(
+          Command.ImportSources(
+            Some(spec.id),
+            sources,
+            resolved.mapping,
+            resolved.units,
+            geometry,
+            resolved.attributes,
+            None,
+            None
+          )
+        )
+      )
 
   private def remapCommands(
       spec: DatasetRevisionSpec,

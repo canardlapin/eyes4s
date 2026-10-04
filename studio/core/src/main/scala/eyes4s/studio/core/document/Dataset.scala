@@ -659,6 +659,35 @@ object DatasetRevisionSpec:
         Left(DocumentError.InventoryUnmapped(id, trials.path.value))
       case _ => Right(())
 
+  /** The admission check (S5.4 follow-up): the fixations and the trial
+    * inventory name a trial by the same key, so eyes4s joins them on it.
+    * Participant, phase and trial are required in both; the occurrence must
+    * be mapped in both or in neither. Like an inadmissible mapping (S5.3), a
+    * revision may be imported or re-mapped while its keys disagree (one file
+    * is mapped before the other); verifying it is refused.
+    */
+  def keysAgree(
+      id: DatasetRevision,
+      sources: Sources,
+      mapping: ColumnMapping,
+      inventory: Option[InventoryMapping]
+  ): Either[DocumentError, Unit] =
+    (sources.trials, inventory) match
+      case (Some(trials), Some(inv)) =>
+        val fixations = sources.fixations.fold("the fixations")(_.path.value.split('/').last)
+        val file      = trials.path.value.split('/').last
+        Vector(ColumnRole.Occurrence)
+          .collectFirst(Function.unlift { role =>
+            (mapping.column(role).isDefined, inv.column(role).isDefined) match
+              case (true, false) =>
+                Some(DocumentError.InventoryKeyDisagrees(id, role, fixations, file))
+              case (false, true) =>
+                Some(DocumentError.InventoryKeyDisagrees(id, role, file, fixations))
+              case _ => None
+          })
+          .toLeft(())
+      case _ => Right(())
+
   /** An attribute column is not also a role's column. */
   def checkAttributes(spec: DatasetRevisionSpec): Either[DocumentError, Unit] =
     spec.attributes.bindings

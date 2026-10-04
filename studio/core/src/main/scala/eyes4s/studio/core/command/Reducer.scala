@@ -212,6 +212,7 @@ object Reducer:
         spec    <- editable(d, id)
         _       <- admissible(rule, d, c, spec.mapping)
         _       <- inventoryMapped(rule, d, c, id, spec.sources, spec.inventory)
+        _       <- keysAgree(rule, d, c, id, spec.sources, spec.mapping, spec.inventory)
         content <- contentOf(spec)
         next <- replaceDataset(d, c)(spec.copy(decision = AdmissionDecision.Verifying(content)))
       yield Outcome(
@@ -546,6 +547,23 @@ object Reducer:
     case MappingRule.Commit =>
       DatasetRevisionSpec
         .inventoryMapped(id, sources, inventory)
+        .left
+        .map(Refused(c.name, targetOf(d, c), _))
+
+  /** The fixations and the inventory name a trial by the same key, at commit. */
+  private def keysAgree(
+      rule: MappingRule,
+      d: StudioDocument,
+      c: Command,
+      id: DatasetRevision,
+      sources: Sources,
+      mapping: ColumnMapping,
+      inventory: Option[InventoryMapping]
+  ): Either[CommandError, Unit] = rule match
+    case MappingRule.Replay => Right(())
+    case MappingRule.Commit =>
+      DatasetRevisionSpec
+        .keysAgree(id, sources, mapping, inventory)
         .left
         .map(Refused(c.name, targetOf(d, c), _))
 
