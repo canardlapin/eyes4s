@@ -73,8 +73,10 @@ enum RunStoreError derives CanEqual:
   /** Pruning the run's archive is refused: it is kept for `reasons`. */
   case KeptRun(run: RunId, reasons: Vector[KeepReason])
 
-  /** The run's stored archive is not the one the confirmed plan showed. */
-  case PlanOutdated(run: RunId)
+  /** The run's stored archive is not the one the confirmed plan showed:
+    * `found` is what the store holds now, `None` if nothing.
+    */
+  case PlanOutdated(planned: ArchiveRecord, found: Option[ArchiveRecord])
   case Bundle(error: BundleError)
   case Index(target: String, error: CodecError)
 
@@ -109,8 +111,10 @@ enum RunStoreError derives CanEqual:
       s"${run.label} has no stored archive to prune (stored: ${RunStoreError.listed(stored.map(_.label))})."
     case KeptRun(run, reasons) =>
       s"The archive of ${run.label} is kept: ${reasons.map(RunStoreError.describe).mkString("; ")}."
-    case PlanOutdated(run) =>
-      s"The archive of ${run.label} changed after pruning was confirmed; nothing was pruned."
+    case PlanOutdated(planned, found) =>
+      s"The archive of ${planned.run.label} changed after pruning was confirmed (it was " +
+        s"${RunStoreError.describe(planned)}; it is " +
+        s"${found.fold("no longer stored")(RunStoreError.describe)}); nothing was pruned."
     case Bundle(error)        => error.message
     case Index(target, error) => s"$target: ${error.message}"
 
@@ -124,17 +128,25 @@ object RunStoreError:
     case RunLifecycle.Cancelled(_) => "cancelled"
     case RunLifecycle.Failed       => "failed"
 
+  private def where(source: BindingSource): String = source match
+    case BindingSource.Current  => "the open document"
+    case BindingSource.Undo     => "a document undo or redo returns to"
+    case BindingSource.Saved    => "the saved document"
+    case BindingSource.Previous => "the previous saved document"
+
   private def describe(reason: KeepReason): String = reason match
-    case KeepReason.Figure(figure, source) =>
-      val where = source match
-        case BindingSource.Current  => "the open document"
-        case BindingSource.Undo     => "a document undo or redo returns to"
-        case BindingSource.Saved    => "the saved document"
-        case BindingSource.Previous => "the previous saved document"
-      s"${figure.label} binds it in $where"
-    case KeepReason.Shown   => "the document shows it"
-    case KeepReason.Running => "it is running"
-    case KeepReason.Ready   => "it is ready to show"
+    case KeepReason.Figure(figure, source) => s"${figure.label} binds it in ${where(source)}"
+    case KeepReason.Shown(source)          => s"${where(source)} shows it"
+    case KeepReason.Running                => "it is running"
+    case KeepReason.Ready                  => "it is ready to show"
+
+  private def describe(record: ArchiveRecord): String =
+    val files = s"${record.files.size} files"
+    record match
+      case ArchiveRecord.Stored(_, _, digest, _) =>
+        s"stored with index ${digest.hex.take(16)}, $files"
+      case ArchiveRecord.Incomplete(_, _)    => s"incomplete, $files"
+      case ArchiveRecord.Damaged(_, _, _, _) => s"damaged, $files"
 
 /** The run store (ticket S2.6): completed runs' result archives, kept in an
   * `.eyes` bundle under `runs/<id>/archive/` ([[ArchivePaths]]).
@@ -155,7 +167,13 @@ object RunStoreError:
   *  - '''Order.''' Writing stores the entries before the index, and pruning
   *    deletes the entries before the index, so an index names only stored
   *    bytes until a prune; an interrupted write or prune leaves an
-  *    [[ArchiveRecord.Incomplete]] or a still-prunable archive.
+  *    [[ArchiveRecord.Incomplete]] or a still-prunable archive; an index
+  *    that cannot be read lists as [[ArchiveRecord.Damaged]].
+  *  - '''Single writer.''' Writes and prunes take the bundle's
+  *    [[WriterLock]], and the session serialises its operations on it, so
+  *    no put or prune runs between a prune's re-check and its deletes. A
+  *    crash between them leaves one of the states above, reported as a
+  *    typed error or record, never a half-read archive taken as whole.
   */
 final class RunStore[F[_]: Monad](store: ProjectStore[F]):
   import RunStoreError.*
@@ -241,7 +259,9 @@ final class RunStore[F[_]: Monad](store: ProjectStore[F]):
       archive <- EitherT(load(run))
     yield archive).value
 
-  /** Every stored archive area, reading only indexes. */
+  /** Every stored archive area, reading only indexes. An index that cannot
+    * be read gives an [[ArchiveRecord.Damaged]] row, not a failed listing.
+    */
   def records: F[Either[RunStoreError, Vector[ArchiveRecord]]] =
     (for
       listed <- EitherT(store.list).leftMap(e => Bundle(BundleError.Store(e)))
@@ -255,16 +275,21 @@ final class RunStore[F[_]: Monad](store: ProjectStore[F]):
           case None =>
             EitherT.rightT[F, RunStoreError](ArchiveRecord.Incomplete(run, paths.sorted))
           case Some(path) =>
-            for
-              bytes <- EitherT(store.read(path)).leftMap(e => Bundle(BundleError.Store(e)))
-              index <- EitherT.fromEither[F](ArchiveText.read(path, bytes))
-              _ <- EitherT.cond[F](index.run == run, (), IndexOfOtherRun(path, run, index.run))
-            yield ArchiveRecord.Stored(
-              index,
-              bytes.length.toLong,
-              ByteDigest.sha256(bytes),
-              paths.sorted
-            ): ArchiveRecord
+            EitherT.liftF[F, RunStoreError, ArchiveRecord](
+              (for
+                bytes <- EitherT(store.read(path)).leftMap(e => Bundle(BundleError.Store(e)))
+                index <- EitherT.fromEither[F](ArchiveText.read(path, bytes))
+                _     <- EitherT
+                  .cond[F](index.run == run, (), IndexOfOtherRun(path, run, index.run))
+              yield ArchiveRecord.Stored(
+                index,
+                bytes.length.toLong,
+                ByteDigest.sha256(bytes),
+                paths.sorted
+              ): ArchiveRecord).value.map(
+                _.fold(ArchiveRecord.Damaged(run, path, _, paths.sorted), identity)
+              )
+            )
       }
     yield records).value
 
@@ -288,7 +313,7 @@ final class RunStore[F[_]: Monad](store: ProjectStore[F]):
         now.row(planned.run) match
           case Some(RunRetention.Kept(_, reasons)) => Left(KeptRun(planned.run, reasons))
           case Some(RunRetention.Prunable(record)) if record == planned => Right(())
-          case _ => Left(PlanOutdated(planned.run))
+          case other => Left(PlanOutdated(planned, other.map(_.record)))
       })
       deleted <- plan.records.flatTraverse { record =>
         val (indexes, contents) = record.files.partition(ArchivePaths.isIndex)

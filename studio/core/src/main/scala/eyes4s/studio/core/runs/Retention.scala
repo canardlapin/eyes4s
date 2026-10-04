@@ -47,8 +47,10 @@ enum KeepReason derives CanEqual:
     */
   case Figure(figure: FigureId, source: BindingSource)
 
-  /** The run the open document shows. */
-  case Shown
+  /** A document shows the run: the open one, one undo or redo (of a science
+    * or a view change) returns to, or a saved one.
+    */
+  case Shown(source: BindingSource)
 
   /** The run is still running: its archive may be partly written. */
   case Running
@@ -56,60 +58,60 @@ enum KeepReason derives CanEqual:
   /** The run is offered by the ready notice ("Run 8 ready — Show"). */
   case Ready
 
-/** Every run a stored archive must be kept for, with each reason (S2.6).
-  * Built from the open document, then widened with every other document
-  * the user can still reach: the documents undo and redo return to, the
-  * saved document and the previous manifest's. A run a figure binds in any
-  * of them is kept.
+/** Every run a stored archive must be kept for, with each reason (S2.6):
+  * the runs that the open document, every document the user can still
+  * reach, the saved document and the previous manifest's document bind by
+  * a figure or show, the open document's running runs and the ready
+  * notice's run.
+  *
+  * [[RetentionBasis.session]] is the only way to build one, and it takes
+  * every source explicitly, so a caller cannot prune under a partial basis
+  * by leaving one out.
   */
 final case class RetentionBasis private (keeps: Vector[(RunId, KeepReason)]) derives CanEqual:
   def reasons(run: RunId): Vector[KeepReason] = keeps.collect { case (`run`, r) => r }.distinct
   def kept(run: RunId): Boolean               = keeps.exists(_._1 == run)
   def runs: Vector[RunId]                     = keeps.map(_._1).distinct.sortBy(_.number)
 
-  private def adding(more: Vector[(RunId, KeepReason)]): RetentionBasis =
-    RetentionBasis((keeps ++ more).distinct)
-
-  /** Keep the runs `document`'s figures bind, as bindings from `source`. */
-  def withFigures(document: StudioDocument, source: BindingSource): RetentionBasis =
-    adding(document.figures.map(f => f.run -> KeepReason.Figure(f.id, source)))
-
-  /** Keep every run a figure binds in a document `history`'s undo or redo
-    * can return to, on its science stack.
-    */
-  def withUndo(history: History): RetentionBasis =
-    RetentionBasis
-      .reachable(history)
-      .foldLeft(this)((basis, document) => basis.withFigures(document, BindingSource.Undo))
-
-  def withSaved(document: StudioDocument): RetentionBasis =
-    withFigures(document, BindingSource.Saved)
-
-  def withPrevious(document: StudioDocument): RetentionBasis =
-    withFigures(document, BindingSource.Previous)
-
-  /** Keep the run of the ready notice. */
-  def withReady(run: RunId): RetentionBasis = adding(Vector(run -> KeepReason.Ready))
-
 object RetentionBasis:
-  /** What `document` keeps: the runs its figures bind, the run it shows and
-    * its running runs.
+  /** The basis of a writing session:
+    *
+    *  - `history`: the open document, its running runs, and every document
+    *    its undo and redo reach on both the science and the presentation
+    *    stack;
+    *  - `saved`: the document `project.json` holds, `None` for a project
+    *    never saved;
+    *  - `previous`: the retained previous manifest's document, `None` when
+    *    there is none or it does not open;
+    *  - `ready`: the run the ready notice offers, if any.
     */
-  def of(document: StudioDocument): RetentionBasis =
-    RetentionBasis(Vector.empty)
-      .withFigures(document, BindingSource.Current)
-      .adding(
-        document.presentation.shownRun.map(_ -> KeepReason.Shown).toVector ++
-          document.running.map(_.id -> KeepReason.Running)
-      )
+  def session(
+      history: History,
+      saved: Option[StudioDocument],
+      previous: Option[StudioDocument],
+      ready: Option[RunId]
+  ): RetentionBasis =
+    val current = history.document
+    RetentionBasis(
+      (binds(current, BindingSource.Current) ++
+        current.running.map(_.id -> KeepReason.Running) ++
+        reachable(history).flatMap(binds(_, BindingSource.Undo)) ++
+        saved.toVector.flatMap(binds(_, BindingSource.Saved)) ++
+        previous.toVector.flatMap(binds(_, BindingSource.Previous)) ++
+        ready.map(_ -> KeepReason.Ready)).distinct
+    )
 
-  /** What a history keeps: its document's runs and every figure binding its
-    * undo and redo can return to.
-    */
-  def of(history: History): RetentionBasis = of(history.document).withUndo(history)
+  /** The runs `document`'s figures bind and the run it shows. */
+  private def binds(
+      document: StudioDocument,
+      source: BindingSource
+  ): Vector[(RunId, KeepReason)] =
+    document.figures.map(f => f.run -> KeepReason.Figure(f.id, source)) ++
+      document.presentation.shownRun.map(_ -> KeepReason.Shown(source))
 
-  /** The documents `history`'s science undo and redo reach, excluding its
-    * own. An undo or redo the reducer refuses ends that direction.
+  /** The documents `history`'s undo and redo reach on either stack,
+    * excluding its own. An undo or redo the reducer refuses ends that
+    * direction.
     */
   private def reachable(history: History): Vector[StudioDocument] =
     @tailrec
@@ -121,11 +123,13 @@ object RetentionBasis:
       step(from) match
         case Some(next) => walk(next, step, acc :+ next.document)
         case None       => acc
-    def back(h: History) =
-      Option.when(h.stack(HistoryStack.Science).canUndo)(h.undo.toOption.map(_.history)).flatten
-    def forth(h: History) =
-      Option.when(h.stack(HistoryStack.Science).canRedo)(h.redo.toOption.map(_.history)).flatten
-    walk(history, back, Vector.empty) ++ walk(history, forth, Vector.empty)
+    HistoryStack.values.toVector.flatMap { which =>
+      def back(h: History) =
+        Option.when(h.stack(which).canUndo)(h.undoOn(which).toOption.map(_.history)).flatten
+      def forth(h: History) =
+        Option.when(h.stack(which).canRedo)(h.redoOn(which).toOption.map(_.history)).flatten
+      walk(history, back, Vector.empty) ++ walk(history, forth, Vector.empty)
+    }
 
 /** What the store holds for one run's archive. */
 enum ArchiveRecord derives CanEqual:
@@ -144,20 +148,29 @@ enum ArchiveRecord derives CanEqual:
     */
   case Incomplete(owner: RunId, paths: Vector[BundlePath])
 
+  /** A run's archive area whose index could not be read: `error` says why.
+    * It is listed, and classified like any other, rather than hiding every
+    * other run's archive. Its size is not read.
+    */
+  case Damaged(owner: RunId, index: BundlePath, error: RunStoreError, paths: Vector[BundlePath])
+
   def run: RunId = this match
     case Stored(index, _, _, _) => index.run
     case Incomplete(run, _)     => run
+    case Damaged(run, _, _, _)  => run
 
   def files: Vector[BundlePath] = this match
-    case Stored(_, _, _, paths) => paths
-    case Incomplete(_, paths)   => paths
+    case Stored(_, _, _, paths)  => paths
+    case Incomplete(_, paths)    => paths
+    case Damaged(_, _, _, paths) => paths
 
   /** The bytes the archive occupies: its index and its distinct entries;
-    * unknown for an incomplete one.
+    * unknown for an incomplete or damaged one.
     */
   def size: Option[Long] = this match
     case Stored(index, length, _, _) => Some(index.contentBytes + length)
     case Incomplete(_, _)            => None
+    case Damaged(_, _, _, _)         => None
 
 /** A stored archive and whether it may be pruned. */
 enum RunRetention derives CanEqual:

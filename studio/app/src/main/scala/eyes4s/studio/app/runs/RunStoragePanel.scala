@@ -179,21 +179,23 @@ object RunStorageText:
 
   def size(record: ArchiveRecord): String = record.size.fold("size unknown")(bytes)
 
+  private def from(source: BindingSource): String = source match
+    case BindingSource.Current  => ""
+    case BindingSource.Undo     => " (undo)"
+    case BindingSource.Saved    => " (saved)"
+    case BindingSource.Previous => " (previous save)"
+
   private def reason(r: KeepReason): String = r match
-    case KeepReason.Figure(figure, source) =>
-      source match
-        case BindingSource.Current  => figure.label
-        case BindingSource.Undo     => s"${figure.label} (undo)"
-        case BindingSource.Saved    => s"${figure.label} (saved)"
-        case BindingSource.Previous => s"${figure.label} (previous save)"
-    case KeepReason.Shown   => "shown"
-    case KeepReason.Running => "running"
-    case KeepReason.Ready   => "ready to show"
+    case KeepReason.Figure(figure, source) => figure.label + from(source)
+    case KeepReason.Shown(source)          => "shown" + from(source)
+    case KeepReason.Running                => "running"
+    case KeepReason.Ready                  => "ready to show"
 
   def status(row: RunRetention): String =
     val incomplete = row.record match
-      case ArchiveRecord.Incomplete(_, _) => "Incomplete · "
-      case _                              => ""
+      case ArchiveRecord.Incomplete(_, _)    => "Incomplete · "
+      case ArchiveRecord.Damaged(_, _, _, _) => "Damaged · "
+      case ArchiveRecord.Stored(_, _, _, _)  => ""
     row match
       case RunRetention.Kept(_, reasons) =>
         s"${incomplete}Kept · ${reasons.map(reason).mkString(", ")}"

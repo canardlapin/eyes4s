@@ -25,6 +25,7 @@ import eyes4s.studio.core.command.{Command, History}
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.DocumentSamples.{t1, t3}
 import eyes4s.studio.core.fixture.StoryMoments
+import io.circe.syntax.*
 import munit.CatsEffectSuite
 import org.scalacheck.Gen
 import org.scalacheck.rng.Seed
@@ -90,6 +91,10 @@ class RunStoreSuite extends CatsEffectSuite:
 
   private val figure1 = right(FigureId.of(1))
   private val figure2 = right(FigureId.of(2))
+
+  /** The basis of a session with nothing saved and no ready notice. */
+  private def basisOf(document: StudioDocument): RetentionBasis =
+    RetentionBasis.session(History.start(document), None, None, None)
 
   private def runRef(document: StudioDocument, run: RunId): RunRef = document.run(run).get
 
@@ -168,9 +173,9 @@ class RunStoreSuite extends CatsEffectSuite:
       // Runs 6, 7 and 8 follow; run 8 is the latest and run 7 is shown.
       _       <- putAll(runs, lock, afterRun8)
       after   <- ok(runs.figure(afterRun8, figure2))
-      storage <- ok(runs.storage(RetentionBasis.of(afterRun8)))
+      storage <- ok(runs.storage(basisOf(afterRun8)))
       plan = right(PrunePlan.everything(storage))
-      _      <- ok(runs.prune(lock, plan.confirm, RetentionBasis.of(afterRun8)))
+      _      <- ok(runs.prune(lock, plan.confirm, basisOf(afterRun8)))
       pruned <- ok(runs.figure(afterRun8, figure2))
       run8   <- runs.load(runRef(afterRun8, StoryMoments.run8))
     yield
@@ -209,7 +214,7 @@ class RunStoreSuite extends CatsEffectSuite:
     for
       (_, lock, runs) <- fresh
       _               <- putAll(runs, lock, afterRun8)
-      storage         <- ok(runs.storage(RetentionBasis.of(afterRun8)))
+      storage         <- ok(runs.storage(basisOf(afterRun8)))
     yield
       assertEquals(
         PrunePlan.of(storage, Vector(StoryMoments.run5)),
@@ -225,7 +230,10 @@ class RunStoreSuite extends CatsEffectSuite:
         Left(
           RunStoreError.KeptRun(
             StoryMoments.run7,
-            Vector(KeepReason.Figure(figure1, BindingSource.Current), KeepReason.Shown)
+            Vector(
+              KeepReason.Figure(figure1, BindingSource.Current),
+              KeepReason.Shown(BindingSource.Current)
+            )
           )
         )
       )
@@ -242,10 +250,10 @@ class RunStoreSuite extends CatsEffectSuite:
     for
       (store, lock, runs) <- fresh
       _                   <- putAll(runs, lock, afterRun8)
-      storage             <- ok(runs.storage(RetentionBasis.of(afterRun8)))
+      storage             <- ok(runs.storage(basisOf(afterRun8)))
       plan = right(PrunePlan.everything(storage))
       before  <- ok(store.list)
-      refused <- runs.prune(lock, plan.confirm, RetentionBasis.of(rebound.document))
+      refused <- runs.prune(lock, plan.confirm, basisOf(rebound.document))
       after   <- ok(store.list)
     yield
       assertEquals(plan.runs, Vector(StoryMoments.run8))
@@ -273,10 +281,10 @@ class RunStoreSuite extends CatsEffectSuite:
     for
       (_, lock, runs) <- fresh
       _               <- putAll(runs, lock, afterRun8)
-      current         <- ok(runs.storage(RetentionBasis.of(history.document)))
-      withUndo        <- ok(runs.storage(RetentionBasis.of(history)))
+      current         <- ok(runs.storage(basisOf(history.document)))
+      withUndo        <- ok(runs.storage(RetentionBasis.session(history, None, None, None)))
       // After the undo, run 8 is bound only in the document redo returns to.
-      withRedo <- ok(runs.storage(RetentionBasis.of(undone)))
+      withRedo <- ok(runs.storage(RetentionBasis.session(undone, None, None, None)))
     yield
       assertEquals(
         current.row(StoryMoments.run5).map(_.isInstanceOf[RunRetention.Prunable]),
@@ -304,9 +312,15 @@ class RunStoreSuite extends CatsEffectSuite:
     for
       (_, lock, runs) <- fresh
       _               <- putAll(runs, lock, afterRun8)
-      alone           <- ok(runs.storage(RetentionBasis.of(unbound)))
-      saved           <- ok(runs.storage(RetentionBasis.of(unbound).withSaved(afterRun8)))
-      previous        <- ok(runs.storage(RetentionBasis.of(unbound).withPrevious(t1)))
+      alone           <- ok(runs.storage(basisOf(unbound)))
+      saved           <- ok(
+        runs.storage(
+          RetentionBasis.session(History.start(unbound), Some(afterRun8), None, None)
+        )
+      )
+      previous <- ok(
+        runs.storage(RetentionBasis.session(History.start(unbound), None, Some(t1), None))
+      )
     yield
       assert(alone.row(StoryMoments.run5).exists(_.isInstanceOf[RunRetention.Prunable]))
       assertEquals(
@@ -315,13 +329,22 @@ class RunStoreSuite extends CatsEffectSuite:
       )
       assertEquals(
         previous.row(StoryMoments.run5).collect { case RunRetention.Kept(_, r) => r },
-        Some(Vector(KeepReason.Figure(figure2, BindingSource.Previous)))
+        // t1 also shows run 5.
+        Some(
+          Vector(
+            KeepReason.Figure(figure2, BindingSource.Previous),
+            KeepReason.Shown(BindingSource.Previous)
+          )
+        )
       )
   }
 
   test("the shown, running and ready runs are kept") {
-    val basis = RetentionBasis.of(t3).withReady(StoryMoments.run6)
-    assertEquals(basis.reasons(StoryMoments.run7).contains(KeepReason.Shown), true)
+    val basis = RetentionBasis.session(History.start(t3), None, None, Some(StoryMoments.run6))
+    assertEquals(
+      basis.reasons(StoryMoments.run7).contains(KeepReason.Shown(BindingSource.Current)),
+      true
+    )
     assertEquals(basis.reasons(StoryMoments.run8), Vector(KeepReason.Running))
     assertEquals(basis.reasons(StoryMoments.run6), Vector(KeepReason.Ready))
     assertEquals(basis.runs, Vector(5, 6, 7, 8).map(RunId(_)))
@@ -333,7 +356,7 @@ class RunStoreSuite extends CatsEffectSuite:
       for
         (_, lock, runs) <- fresh
         _               <- putAll(runs, lock, document)
-        basis = RetentionBasis.of(document)
+        basis = basisOf(document)
         storage <- ok(runs.storage(basis))
         _       <- PrunePlan
           .everything(storage)
@@ -405,7 +428,7 @@ class RunStoreSuite extends CatsEffectSuite:
     for
       (store, lock, runs) <- fresh
       _                   <- putAll(runs, lock, afterRun8)
-      storage             <- ok(runs.storage(RetentionBasis.of(afterRun8)))
+      storage             <- ok(runs.storage(basisOf(afterRun8)))
       run5Bytes           <- storage
         .row(StoryMoments.run5)
         .get
@@ -426,7 +449,7 @@ class RunStoreSuite extends CatsEffectSuite:
     for
       (store, lock, runs) <- fresh
       _                   <- putAll(runs, lock, afterRun8)
-      basis = RetentionBasis.of(afterRun8)
+      basis = basisOf(afterRun8)
       storage <- ok(runs.storage(basis))
       plan = right(PrunePlan.everything(storage))
       report <- ok(runs.prune(lock, plan.confirm, basis))
@@ -448,7 +471,7 @@ class RunStoreSuite extends CatsEffectSuite:
       left             <- Ref.of[IO, Int](1)
       runs = RunStore(FailingDeletes(store, left))
       _ <- putAll(runs, lock, afterRun8)
-      basis = RetentionBasis.of(afterRun8)
+      basis = basisOf(afterRun8)
       storage <- ok(runs.storage(basis))
       plan = right(PrunePlan.everything(storage))
       failed  <- runs.prune(lock, plan.confirm, basis)
@@ -463,7 +486,15 @@ class RunStoreSuite extends CatsEffectSuite:
       // The index survived the failure, so the archive is still listed, prunable.
       assert(halfway.row(StoryMoments.run8).exists(_.isInstanceOf[RunRetention.Prunable]))
       assert(halfway.row(StoryMoments.run8).exists(_.record.isInstanceOf[ArchiveRecord.Stored]))
-      assertEquals(stale, Left(RunStoreError.PlanOutdated(StoryMoments.run8)))
+      assertEquals(
+        stale,
+        Left(
+          RunStoreError.PlanOutdated(
+            plan.records.head,
+            halfway.row(StoryMoments.run8).map(_.record)
+          )
+        )
+      )
       assertEquals(done.map(_.run), Vector(StoryMoments.run5, StoryMoments.run7))
   }
 
@@ -476,9 +507,9 @@ class RunStoreSuite extends CatsEffectSuite:
       stray8 = right(ArchivePaths.content(run8.id, ByteDigest.sha256(bytes("partial"))))
       _       <- ok(store.write(lock, stray5, bytes("partial")))
       _       <- ok(store.write(lock, stray8, bytes("partial")))
-      storage <- ok(runs.storage(RetentionBasis.of(afterRun8)))
+      storage <- ok(runs.storage(basisOf(afterRun8)))
       plan = right(PrunePlan.everything(storage))
-      _    <- ok(runs.prune(lock, plan.confirm, RetentionBasis.of(afterRun8)))
+      _    <- ok(runs.prune(lock, plan.confirm, basisOf(afterRun8)))
       left <- ok(store.list)
     yield
       assertEquals(
@@ -587,7 +618,7 @@ class RunStoreSuite extends CatsEffectSuite:
     for
       (_, lock, runs) <- fresh
       _               <- putAll(runs, lock, afterRun8)
-      storage         <- ok(runs.storage(RetentionBasis.of(afterRun8)))
+      storage         <- ok(runs.storage(basisOf(afterRun8)))
     yield
       assertEquals(PrunePlan.of(storage, Vector.empty), Left(RunStoreError.NothingToPrune))
       assertEquals(
@@ -622,5 +653,122 @@ class RunStoreSuite extends CatsEffectSuite:
         .contains("Figure 2 binds it in the open document"),
       "kept"
     )
-    assert(RunStoreError.PlanOutdated(StoryMoments.run8).message.contains("run 8"))
+    val planned = ArchiveRecord.Incomplete(StoryMoments.run8, Vector.empty)
+    assertEquals(
+      RunStoreError.PlanOutdated(planned, None).message,
+      "The archive of run 8 changed after pruning was confirmed (it was incomplete, 0 files; " +
+        "it is no longer stored); nothing was pruned."
+    )
   }
+
+  // --- Review follow-ups ------------------------------------------------------------
+
+  test("a run bound only by the saved document survives pruning, so Revert still renders it") {
+    // The open history starts after Figure 2 was deleted and the edit fenced
+    // off (a reopened journal, say): only the saved document binds run 5.
+    val unbound = right(
+      History.start(afterRun8).apply(Command.DeleteFigure(figure2))
+    ).history.document
+    val session = RetentionBasis.session(History.start(unbound), Some(afterRun8), None, None)
+    val partial = basisOf(unbound)
+    for
+      (_, lock, runs) <- fresh
+      _               <- putAll(runs, lock, afterRun8)
+      storage         <- ok(runs.storage(session))
+      plan = right(PrunePlan.everything(storage))
+      _              <- ok(runs.prune(lock, plan.confirm, session))
+      reverted       <- runs.figure(afterRun8, figure2)
+      partialStorage <- ok(runs.storage(partial))
+    yield
+      assertEquals(plan.runs, Vector(StoryMoments.run8))
+      assert(reverted.exists(sameArchive(_, archiveOf(runRef(afterRun8, StoryMoments.run5)))))
+      // Without the saved document, run 5 would have been prunable.
+      assert(
+        partialStorage.row(StoryMoments.run5).exists(_.isInstanceOf[RunRetention.Prunable])
+      )
+  }
+
+  test("a run shown in a document view undo returns to is kept") {
+    // Show run 8, then run 7: undoView would show run 8 again.
+    val history = right(
+      right(History.start(afterRun8).apply(Command.ShowRun(Some(StoryMoments.run8)))).history
+        .apply(Command.ShowRun(Some(StoryMoments.run7)))
+    ).history
+    for
+      (_, lock, runs) <- fresh
+      _               <- putAll(runs, lock, afterRun8)
+      storage         <- ok(runs.storage(RetentionBasis.session(history, None, None, None)))
+      shown = right(history.undoView).history.document.presentation.shownRun
+    yield
+      assertEquals(shown, Some(StoryMoments.run8))
+      assertEquals(
+        storage.row(StoryMoments.run8).collect { case RunRetention.Kept(_, r) => r },
+        Some(Vector(KeepReason.Shown(BindingSource.Undo)))
+      )
+      assertEquals(storage.prunable, Vector.empty)
+  }
+
+  test("a damaged index lists as one damaged row; the others still list") {
+    for
+      (store, lock, runs) <- fresh
+      _                   <- putAll(runs, lock, afterRun8)
+      path5 = right(ArchivePaths.index(StoryMoments.run5))
+      path8 = right(ArchivePaths.index(StoryMoments.run8))
+      _       <- ok(store.delete(lock, path5))
+      _       <- ok(store.write(lock, path5, bytes("{not json")))
+      _       <- ok(store.delete(lock, path8))
+      _       <- ok(store.write(lock, path8, bytes("{not json")))
+      storage <- ok(runs.storage(basisOf(afterRun8)))
+      plan = right(PrunePlan.everything(storage))
+      _    <- ok(runs.prune(lock, plan.confirm, basisOf(afterRun8)))
+      left <- ok(runs.records)
+    yield
+      assertEquals(
+        storage.rows.map(r =>
+          (r.run, r.record.getClass.getSimpleName, r.isInstanceOf[RunRetention.Kept])
+        ),
+        Vector(
+          (StoryMoments.run5, "Damaged", true),
+          (StoryMoments.run7, "Stored", true),
+          (StoryMoments.run8, "Damaged", false)
+        )
+      )
+      assert(
+        storage
+          .row(StoryMoments.run8)
+          .exists(_.record match
+            case ArchiveRecord.Damaged(_, index, RunStoreError.Bundle(_), _) => index == path8
+            case _                                                           => false),
+        storage.row(StoryMoments.run8)
+      )
+      assertEquals(storage.row(StoryMoments.run8).flatMap(_.record.size), None)
+      assertEquals(plan.runs, Vector(StoryMoments.run8))
+      assertEquals(left.map(_.run), Vector(StoryMoments.run5, StoryMoments.run7))
+  }
+
+  test("the index.json wire form is pinned") {
+    val run5    = runRef(afterRun8, StoryMoments.run5)
+    val archive = right(RunArchive.of(run5, Vector(result -> bytes("result of run 5"))))
+    for
+      (store, lock, runs) <- fresh
+      _                   <- ok(runs.put(lock, archive))
+      text                <- ok(store.read(right(ArchivePaths.index(run5.id))))
+    yield assertEquals(String(Array.from(text), UTF_8), RunStoreSuite.indexPin)
+  }
+
+  test("an index of another schema name or version is refused") {
+    val good = io.circe.parser.parse(RunStoreSuite.indexPin).toOption.get
+    def withSchema(name: String, version: Int) =
+      good.hcursor
+        .downField("schema")
+        .set(io.circe.Json.obj("name" -> name.asJson, "version" -> version.asJson))
+        .top
+        .get
+    assert(ArchiveIndex.decode(good).isRight)
+    assert(ArchiveIndex.decode(withSchema("studio.run-archive", 2)).isLeft)
+    assert(ArchiveIndex.decode(withSchema("studio.asset-registry", 1)).isLeft)
+  }
+
+object RunStoreSuite:
+  val indexPin: String =
+    """{"schema":{"name":"studio.run-archive","version":1},"value":{"archive":{"Unbound":{}},"entries":[{"length":15,"name":"study-result.json","sha256":"7ccd0b13029bc2303330003a34856becdfbf7487fb8b7fa403db5cf32b3fe44b"}],"run":5}}"""

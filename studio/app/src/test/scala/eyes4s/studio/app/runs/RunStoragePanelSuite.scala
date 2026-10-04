@@ -17,6 +17,7 @@
 package eyes4s.studio.app.runs
 
 import eyes4s.codec.{ArtifactName, ByteDigest}
+import eyes4s.studio.core.command.History
 import eyes4s.studio.core.document.DocumentSamples.{t1, t3}
 import eyes4s.studio.core.document.{RunLifecycle, RunRef, StudioDocument}
 import eyes4s.studio.core.fixture.StoryMoments.{run5, run6, run7, run8}
@@ -67,7 +68,7 @@ class RunStoragePanelSuite extends munit.FunSuite:
         Vector(right(ArchivePaths.content(run6, ByteDigest.sha256(IArray.fill[Byte](1)(2)))))
       )
     ),
-    RetentionBasis.of(document)
+    RetentionBasis.session(History.start(document), None, None, None)
   )
 
   private def loaded: RunStoragePanel =
@@ -135,7 +136,7 @@ class RunStoragePanelSuite extends munit.FunSuite:
     val chosen = loaded.update(StorageIntent.Toggle(run8))._1
     val bound  = RunStorage.classify(
       storage.rows.map(_.record),
-      RetentionBasis.of(document).withReady(run8)
+      RetentionBasis.session(History.start(document), None, None, Some(run8))
     )
     val after = chosen.update(StorageIntent.Loaded(bound))._1
     assertEquals(after.view(document).rows.filter(_.chosen), Vector.empty)
