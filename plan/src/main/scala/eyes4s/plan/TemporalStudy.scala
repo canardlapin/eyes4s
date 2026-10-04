@@ -74,9 +74,9 @@ object RepetitionContrast:
       TemporalStudyError.InvalidRepetition(name, focalPhase, referencePhase)
     )
 
-/** A study input with one measured epoch per trial. `of` refuses repeated trial keys, epochs
-  * for unknown keys and repeated epochs, naming key digests. Its hash combines the study input's
-  * hash with every epoch's key, clock, anchor and coverage intervals, in key order.
+/** A study input with at most one measured epoch per trial. `of` refuses repeated trial keys,
+  * epochs for unknown keys and repeated epochs, naming key digests. Its hash combines the study
+  * input's hash with every epoch's key, clock, anchor and coverage intervals, in key order.
   */
 final class TemporalStudyInput[K, U <: Unit2D] private (
     val study: StudyInput[K, U],

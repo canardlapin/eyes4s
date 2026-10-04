@@ -24,7 +24,8 @@ enum SourceTimeUnit derives CanEqual:
   case Microseconds, Milliseconds, Seconds
 
 /** How a decimal source timestamp becomes integral microseconds. The one policy,
-  * `NearestMicrosecond`, rounds half up; it is named so a saved import states it.
+  * `NearestMicrosecond`, rounds halves toward positive infinity (floor of value plus one
+  * half, so -1.5 µs becomes -1); it is named so a saved import states it.
   */
 enum SourceRounding derives CanEqual:
   case NearestMicrosecond

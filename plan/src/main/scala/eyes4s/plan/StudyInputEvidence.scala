@@ -146,8 +146,9 @@ enum AdmissionReason derives CanEqual:
   */
 sealed trait Disposition[K] derives CanEqual
 object Disposition:
-  /** The record supplied the fixation of trial `key` with this source ordinal: a
-    * non-negative within-trial order, unique within the trial.
+  /** The record supplied the fixation of trial `key` with this source ordinal. Ledger
+    * validation requires it non-negative and unique within the trial
+    * (`AdmissionError.NegativeOrdinal`, `DuplicateOrdinal`); construction does not.
     */
   final case class Admitted[K](key: K, ordinal: Int) extends Disposition[K]
 
@@ -155,8 +156,9 @@ object Disposition:
   final case class Rejected[K](raw: Vector[String], key: Option[K], reason: AdmissionReason)
       extends Disposition[K]
 
-/** One source record, by its positive logical record number, and what admission did with it.
-  * A ledger lists records in strictly increasing record order (`AdmissionError.RecordOrder`).
+/** One source record, by its logical record number, and what admission did with it. Ledger
+  * validation requires positive record numbers (`AdmissionError.NonPositiveRecord`) in strictly
+  * increasing order (`AdmissionError.RecordOrder`); construction does not.
   */
 final case class SourceRecord[K](record: Int, disposition: Disposition[K]) derives CanEqual:
   def isAdmitted: Boolean = disposition match

@@ -448,7 +448,8 @@ sealed abstract class PreflightReport[F <: PreflightFinding[?]]:
 
 /** A fixation study's preflight: the plan description, the input it expects and
   * the input it saw, its findings and the aspects only execution decides.
-  * `prepare` refuses a plan or input that changed since preflight, or any blocker.
+  * `prepare` refuses a changed plan, an input other than the one preflight saw (when
+  * it saw one), or any blocker.
   */
 final class StudyReport[K, U <: Unit2D] private[plan] (
     val description: Vector[(String, Vector[Provenance.Param])],
@@ -489,7 +490,8 @@ final class StudyReport[K, U <: Unit2D] private[plan] (
 
 /** An event recording's preflight, as [[StudyReport]] for a single pixel
   * `Recording`; its findings name no trial. `confirm` refuses
-  * a changed plan or recording, or any blocker.
+  * a changed plan, a recording other than the one preflight saw (when it saw one), or
+  * any blocker.
   */
 final class RecordingReport private[plan] (
     val description: Vector[(String, Vector[Provenance.Param])],
@@ -517,7 +519,8 @@ final class RecordingReport private[plan] (
     )
 
 /** A temporal study's preflight, as [[StudyReport]] over a `TemporalStudyInput`.
-  * `confirm` refuses a changed plan or input, or any blocker.
+  * `confirm` refuses a changed plan, an input other than the one preflight saw (when it
+  * saw one), or any blocker.
   */
 final class TemporalReport[K, U <: Unit2D] private[plan] (
     val description: Vector[(String, Vector[Provenance.Param])],

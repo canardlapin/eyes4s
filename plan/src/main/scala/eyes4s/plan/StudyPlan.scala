@@ -81,10 +81,10 @@ object ArtifactRef:
       Right(new ArtifactRef(digest))
     else Left(PlanError.InvalidArtifact(digest))
 
-/** Why a study plan could not be built, restored or run. Cases name their operands: the
-  * definition name and version, the artifact digest (expected and actual where they differ),
-  * the phase names, the scale names or count, the work budget's trial and scale counts, or the
-  * wrapped specification or schedule error.
+/** Why a study plan could not be built, restored or run. Cases name their operands, for
+  * example the definition name and version, the artifact digest (expected and actual where they
+  * differ), the phase names, the scale names or count, the work budget's trial and scale
+  * counts, or the wrapped underlying error.
   */
 enum PlanError derives CanEqual:
   case InvalidDefinition(name: String, version: Int)

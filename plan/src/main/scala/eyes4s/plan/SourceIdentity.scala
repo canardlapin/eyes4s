@@ -32,7 +32,9 @@ enum SourceOptionsSchema derives CanEqual:
 sealed trait SourceInterpretation derives CanEqual
 
 object SourceInterpretation:
-  /** A ledger written before interpretations were recorded; it cannot be replayed. */
+  /** A source whose interpretation was not declared (every pre-v4 ledger, and `SourceRef`'s
+    * default); it has no `SourceIdentity` and cannot be replayed.
+    */
   case object LegacyUnspecified extends SourceInterpretation
 
   /** Construction checks the format, supported parser and options schema together. */

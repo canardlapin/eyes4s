@@ -398,7 +398,8 @@ final case class AoiMetric(
 /** How many times membership moved from `from` to a different area `to` between adjacent
   * represented samples. A background or excluded sample breaks the chain, so it is never
   * a transition; under `MembershipPolicy.Multiple` a changed membership set contributes
-  * each distinct (from, to) pair. `from != to` and `count > 0`.
+  * each distinct (from, to) pair. Transitions produced by `AoiAssignment.measure` have
+  * `from != to` and `count > 0`; construction does not check either.
   */
 final case class AoiTransition(from: AoiId, to: AoiId, count: Int) derives CanEqual
 
@@ -412,8 +413,8 @@ final case class AoiMeasurements(
     policy: MembershipPolicy
 ) derives CanEqual
 
-/** Failures constructing AOIs and sets or assigning samples. Every case names the id,
-  * index, frame or resolution it concerns.
+/** Failures constructing AOIs and sets or assigning samples. Every case except `EmptySet`
+  * names the id, index, frame or resolution it concerns.
   */
 enum AoiError derives CanEqual:
   case BlankId(value: String)

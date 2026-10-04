@@ -262,12 +262,13 @@ object ParameterSet:
   private[plan] def literal[P](fields: Vector[ParameterField[P]]): ParameterSet[P] =
     new ParameterSet(fields)
 
-/** Which way a score orders closeness: higher, lower, or not ordered at all. */
+/** Which way a score component orders closeness: higher, lower, or not ordered at all. */
 enum ScoreDirection derives CanEqual:
   case HigherIsCloser, LowerIsCloser, NoOrder
 
 /** A property a comparison method declares about its scores: symmetric in its
-  * operands, never negative, or bounded.
+  * operands, never negative, or bounded. A declaration, not checked against computed
+  * scores.
   */
 enum ComparisonProperty derives CanEqual:
   case Symmetric, NonNegative, Bounded
@@ -350,8 +351,8 @@ object ScoreComponent:
 /** The inspectable description of a comparison method: its versioned identity,
   * parameter fields, measure information and score components for given
   * parameters, declared properties and execution capability. `verify` checks a
-  * saved description against the method's actual parameters and components, so a
-  * description cannot drift from what the method computes.
+  * saved description's parameter values and component ids against the method's;
+  * properties, execution capability and component ranges are not verified.
   */
 final class MethodDescriptor[P, S, D] private (
     val id: DefinitionId,
