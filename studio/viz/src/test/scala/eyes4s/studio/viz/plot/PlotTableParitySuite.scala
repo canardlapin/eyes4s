@@ -170,9 +170,18 @@ class PlotTableParitySuite extends ScalaCheckSuite:
     val participants = ParticipantSamples.genMeans.map(m =>
       (ParticipantSamples.source(m), ParticipantPlot(ParticipantSamples.columns))
     )
+    // The scale profile (S4.5d) on its own sources.
+    val profiles = ProfileSamples.genProfile.map(p =>
+      (ProfileSamples.source(p), ScaleProfilePlot(ProfileSamples.columns))
+    )
     for
-      (source, builder) <- Gen.frequency(4 -> generic, 1 -> ladder, 1 -> participants)
-      theme             <- Gen.oneOf(Theme.values.toSeq)
+      (source, builder) <- Gen.frequency(
+        4 -> generic,
+        1 -> ladder,
+        1 -> participants,
+        1 -> profiles
+      )
+      theme <- Gen.oneOf(Theme.values.toSeq)
     yield (source, builder, right(builder.build(source, theme)))
 
   private val genPlot: Gen[(PlotSource, BuiltPlot)] = genBuilt.map((s, _, p) => (s, p))
@@ -220,6 +229,12 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       "a participant plot's missing mean" -> plots.exists(p =>
         p.plot.id.value.contains("participant-plot") &&
           p.marks.exists(_.rows.exists(_.marking.isInstanceOf[RowMarking.Positionless]))
+      ),
+      "a scale profile's broken line" -> plots.exists(p =>
+        p.plot.id.value.contains("scale-profile") &&
+          p.marks.exists(m =>
+            m.rows.size > 1 && m.rows.exists(_.marking.isInstanceOf[RowMarking.Positionless])
+          )
       ),
       "a missing value" -> plots.exists(
         _.unplotted.exists(_.reason.isInstanceOf[NoPosition.MissingValue])
@@ -416,7 +431,9 @@ class PlotTableParitySuite extends ScalaCheckSuite:
         t.accessibleText(onMark.project(byPlot).state),
         PlotText.selected(readout, true)
       )
-      if mark.rows.size == 1 then
+      // A represented singleton (a one-control histogram bin, S4.5b) adds its
+      // summary to its row's words; the readout property above checks that.
+      if mark.rows.size == 1 && mark.summary.isEmpty then
         assertEquals(
           t.accessibleText(onMark.project(byPlot).state),
           onRow.project(byPlot).state.vm(source).accessibleText
