@@ -58,29 +58,29 @@ class MethodsGeneratorSuite extends munit.FunSuite:
   /** The generated methods.md of Figure 1 at t2: the fixture's golden text. */
   private val Golden: String =
     "Fixations (fixations.csv, 11,520 records; dataset r3) were admitted per trial against " +
-      "the trials.csv inventory of 960 trials: 937 admitted, 17 quarantined (overlap 6, " +
-      "no-fixations 5, duplicate-ordinals 4, rejected-records 2) and 6 absent (no fixation " +
-      "records). Positions were analysed in the 1024 × 768 image frame placed in a 1920 × " +
-      "1080 screen; 543 of the 11,311 fixation records of admitted trials (4.8%), in 409 " +
-      "trials, fell outside the frame and were excluded from the maps; they are reported per " +
-      "trial. No fixation record lay outside the screen (off-screen policy: exclude the " +
-      "record). Degrees are measured from the image centre (x right, y up) using a declared, " +
-      "uncalibrated 35 px/° with linear conversion. The initial-fixation policy was Keep all: " +
-      "every fixation, including the first, was kept. Each trial was represented as a " +
-      "duration-weighted fixation density map on a 64 × 48 grid (cell 0.46°), smoothed with " +
-      "Gaussian kernels at σ = 0.5°, 1°, 2° and 4°, declared before the run. Of 480 retrieval " +
-      "queries, 457 were eligible; for each eligible query, cosine similarity was computed to " +
-      "the one matched encoding trial (M) and to every admitted encoding trial of another " +
-      "item from the same participant (19 per query; 18 for 171 queries); their mean is B, " +
-      "and D = M − B. A contrast required all of its pairs: 454 contributed, 3 failed " +
-      "(off-window), 9 had no admitted matched trial and 14 queries were not admitted. D was " +
-      "averaged within participant, then across participants with equal weight, separately " +
-      "by retrieval response (n = 24 each; paired n = 24). Per participant, groups held 2–17 " +
-      "queries; no minimum per group was applied in this reporting spec (P17 and P21 each " +
-      "have 2 Forgotten queries). D measures spatial correspondence, not sequential replay. D " +
-      "does not separate participant-specific reinstatement from item-driven salience common " +
-      "to all viewers of that image, and may retain residual centre bias. Analysis rev 4, run " +
-      "7; eyes4s 0.1."
+      "the trials.csv inventory of 960 trials: 937 admitted, 12 quarantined (overlap 6, " +
+      "duplicate-ordinals 4, rejected-records 2), 5 with no admitted fixations and 6 absent " +
+      "(no fixation records). Positions were analysed in the 1024 × 768 image frame placed " +
+      "in a 1920 × 1080 screen; 543 of the 11,311 fixation records of admitted trials (4.8% " +
+      "of their fixation duration), in 409 trials, fell outside the frame and were excluded " +
+      "from the maps; they are reported per trial. No fixation record lay outside the screen " +
+      "(off-screen policy: exclude the record). Degrees are measured from the image centre " +
+      "(x right, y up) using a declared, uncalibrated 35 px/° with linear conversion. The " +
+      "initial-fixation policy was Keep all: every fixation, including the first, was kept. " +
+      "Each trial was represented as a duration-weighted fixation density map on a 64 × 48 " +
+      "grid (cell 0.46°), smoothed with Gaussian kernels at σ = 0.5°, 1°, 2° and 4°, declared " +
+      "before the run. Of 480 retrieval queries, 457 were eligible; for each eligible query, " +
+      "cosine similarity was computed to the one matched encoding trial (M) and to every " +
+      "admitted encoding trial of another item from the same participant (19 per query; 18 " +
+      "for 171 queries); their mean is B, and D = M − B. A contrast required all of its " +
+      "pairs: 454 contributed, 3 failed (off-window), 9 had no admitted matched trial and 14 " +
+      "queries were not admitted. D was averaged within participant, then across " +
+      "participants with equal weight, separately by retrieval response (n = 24 each; paired " +
+      "n = 24). Per participant, groups held 2–17 queries; no minimum per group was applied " +
+      "in this reporting spec (P17 and P21 each have 2 Forgotten queries). D measures spatial " +
+      "correspondence, not sequential replay. D does not separate participant-specific " +
+      "reinstatement from item-driven salience common to all viewers of that image, and may " +
+      "retain residual centre bias. Analysis rev 4, run 7; eyes4s 0.1."
 
   // --- Every number generated ----------------------------------------------------------
 
@@ -142,6 +142,41 @@ class MethodsGeneratorSuite extends munit.FunSuite:
       )
       assert(after.contains("936 admitted"), after)
       assert(after.contains("453 contributed, 4 failed (off-window 3, empty-map 1)"), after)
+    }
+  }
+
+  test("the outside share is eyes4s's share of fixation duration, unsaid when undefined") {
+    read.map { (summary, facts) =>
+      def text(w: eyes4s.studio.core.backend.WindowTotals) =
+        ok(
+          MethodsText.generate(
+            source,
+            summary,
+            facts.copy(admission = facts.admission.copy(window = w))
+          )
+        ).text
+      val w = facts.admission.window
+      // A quarter of the duration outside, whatever the counts say.
+      val quarter =
+        w.copy(outsideWindowMicros = 250, outsideScreenMicros = 0, totalMicros = 1000)
+      assert(text(quarter).contains("(25.0% of their fixation duration)"), text(quarter))
+      // No duration at all: the share is undefined and not said; the counts stay.
+      val none = w.copy(outsideWindowMicros = 0, outsideScreenMicros = 0, totalMicros = 0)
+      assert(!text(none).contains("% of their fixation duration"), text(none))
+      assert(
+        text(none).contains("543 of the 11,311 fixation records of admitted trials, in 409")
+      )
+    }
+  }
+
+  test("no-fixations is its own disposition, never counted as quarantined") {
+    read.map { (summary, facts) =>
+      val g      = ok(MethodsText.generate(source, summary, facts))
+      val facts1 = g.tokens.collect { case MethodsToken.Fact(slot, shown) => slot -> shown }
+      assert(facts1.contains(MethodsSlot.Quarantined -> "12"), facts1)
+      assert(facts1.contains(MethodsSlot.NoFixations -> "5"), facts1)
+      assertEquals(facts.admission.quarantinedTrials, 12)
+      assertEquals(facts.admission.noFixations, 5)
     }
   }
 

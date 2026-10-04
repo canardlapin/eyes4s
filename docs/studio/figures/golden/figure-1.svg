@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="692" height="889" viewBox="0 0 692 889"><defs><style/></defs>
   <title>Figure 1</title>
-  <rect stroke="none" fill="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" x="0" y="0.9889" width="691.6535" height="888.0111" />
+  <rect stroke="none" fill="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" x="0" y="0" width="692" height="889" />
   <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans SmBld" font-size="10.6667" x="0" y="0.9889" text-anchor="start" dominant-baseline="text-before-edge">A</text>
   <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="21.3333" y="0.9889" text-anchor="start" dominant-baseline="text-before-edge">Encoding gaze</text>
   <g clip-path="url(#clip-0)">

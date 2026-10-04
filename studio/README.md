@@ -31,7 +31,7 @@ published artifacts. Each is pinned to one full Git SHA in
 
 | Provider | Revision | Modules used | Coordinates |
 |---|---|---|---|
-| Intaglio | `56506d282160becdce0f9a2d16dd1c05f25857a2` | core, interaction, svg (JVM+JS); javafx (JVM) | `io.github.canardlapin::intaglio-*` |
+| Intaglio | `edcdfd5ffaf010e8205da04a85a7f8b6b2fd0d92` | core, interaction, svg (JVM+JS); javafx, pdf, java2d (JVM) | `io.github.canardlapin::intaglio-*` |
 | scaladock | `628c46fce92c4d31b0b08459ac0f18777b5ba527` | core, fx (JVM) | `io.github.canardlapin::scaladock-*` |
 
 The build resolves each as the ordinary library version `0.0.0-<full SHA>`.

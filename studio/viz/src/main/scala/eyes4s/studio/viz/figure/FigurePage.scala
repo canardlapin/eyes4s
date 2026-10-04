@@ -392,14 +392,11 @@ object FigurePage:
       paperStyle <- g("the paper")(
         GraphicParams.checked(stroke = None, fill = Some(colour(PaletteToken.Paper)))
       )
-      paper <- g("the paper")(
-        Grob.rect(
-          at(0, 0),
-          Size.fromExtents(extent(widthMm), extent(heightMm)),
-          Anchor(HJust.Left, VJust.Top),
-          gp = paperStyle
-        )
-      )
+      // The whole canvas, which a target rounds up to whole pixels: no strip
+      // is left unpainted.
+      centre <- g("the paper")(Point.npc(0.5, 0.5))
+      whole  <- g("the paper")(Size.npc(1.0, 1.0))
+      paper  <- g("the paper")(Grob.rect(centre, whole, gp = paperStyle))
       panels <- placed.foldLeft[Either[FigurePageError, Vector[Grob]]](Right(Vector.empty))(
         (acc, p) => acc.flatMap(gs => panel(p).map(gs ++ _))
       )

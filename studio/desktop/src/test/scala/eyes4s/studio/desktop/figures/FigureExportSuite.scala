@@ -137,6 +137,15 @@ class FigureExportSuite extends munit.FunSuite:
       // 183 mm and 89 mm at 96 px per inch, in whole pixels.
       assertEquals(width(svgOf(two)), Some(math.ceil(183 / 25.4 * 96)))
       assertEquals(width(svgOf(one)), Some(math.ceil(89 / 25.4 * 96)))
+      // The paper fills the whole canvas, which is rounded up to whole pixels.
+      val svg    = svgOf(two)
+      val canvas = """<svg[^>]* width="([0-9.]+)" height="([0-9.]+)"""".r
+        .findFirstMatchIn(svg)
+        .map(m => (m.group(1), m.group(2)))
+      val paper = """<rect[^>]* x="0" y="0" width="([0-9.]+)" height="([0-9.]+)"""".r
+        .findFirstMatchIn(svg)
+        .map(m => (m.group(1), m.group(2)))
+      assertEquals(paper, canvas)
       // Every panel is drawn from its template, with its letter, not captured.
       val drawn = unescape(text(svgOf(two)))
       Vector("A", "B", "C", "D", "E").foreach(l => assert(drawn.contains(l)))
@@ -229,6 +238,17 @@ class FigureExportSuite extends munit.FunSuite:
     }
   }
 
+  test("the PDF page is the journal width to within one pixel at its density") {
+    page().map { p =>
+      val doc = Loader.loadPDF(bytesOf(ExportFormat.Pdf, p))
+      try
+        val widthMm = doc.getPage(0).getMediaBox.getWidth / 72.0 * 25.4
+        val pixelMm = 25.4 / FigurePdf.PixelsPerInch
+        assert(widthMm >= 183.0 - 1e-6 && widthMm <= 183.0 + pixelMm, widthMm)
+      finally doc.close()
+    }
+  }
+
   test("the PDF embeds every face it uses; none is left to the reader's system") {
     page().map { p =>
       val doc = Loader.loadPDF(bytesOf(ExportFormat.Pdf, p))
@@ -239,6 +259,15 @@ class FigureExportSuite extends munit.FunSuite:
         fonts.foreach(f => assert(f.isEmbedded, f.getName))
       finally doc.close()
     }
+  }
+
+  test("the PNG refuses a page naming a family Java2D does not have") {
+    assertEquals(FigurePng.unregistered(Vector("IBM Plex Sans"), Set("IBM Plex Sans")), None)
+    assertEquals(
+      FigurePng.unregistered(Vector("IBM Plex Sans", "Comic Plex"), Set("IBM Plex Sans")),
+      Some("The figure uses the font Comic Plex, which Java2D does not have.")
+    )
+    assertEquals(FigurePng.unregistered(Vector("IBM Plex Sans"), Set.empty).isDefined, true)
   }
 
   test("the exported PNG is the page at 300 dpi on white, with ink on it") {

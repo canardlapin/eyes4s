@@ -18,6 +18,7 @@ package eyes4s.studio.app.figures
 
 import eyes4s.studio.app.compare.SummaryAnswer
 import eyes4s.studio.app.text.Format
+import eyes4s.studio.core.engine.StudioBuild
 import eyes4s.studio.core.figures.FigureSource
 
 /** One file of a figure's export bundle (Figures board, Bundle). */
@@ -56,7 +57,8 @@ final case class BundleRequest(
     methods: Option[String],
     items: Vector[BundleItem],
     includeImages: Boolean,
-    folder: String
+    folder: String,
+    omitted: Vector[(String, String)] = Vector.empty
 ) derives CanEqual
 
 object FigureBundle:
@@ -115,6 +117,23 @@ object FigureBundle:
       Action,
       status
     )
+
+  /** The bundle's README.txt: what it holds, what it is bound to, and each
+    * chosen file it does not hold, with why.
+    */
+  def readme(request: BundleRequest): String =
+    val s     = request.source
+    val files = request.items.map(i => s"- ${file(i, request.page, request.format)}")
+    val left  = request.omitted.map((f, why) => s"- $f: $why")
+    (Vector(
+      s"${s.figure.id.label} export bundle",
+      s"${s.run.id.label} · analysis ${s.bound.analysis.id.label} · data " +
+        s"${s.bound.dataset.id.label} · reporting “${s.reporting.name}” · studio build eyes4s " +
+        StudioBuild.eyes4sBaseVersion,
+      "",
+      "Files:"
+    ) ++ files ++ (if left.isEmpty then Vector.empty else Vector("", "Not included:") ++ left))
+      .mkString("", "\n", "\n")
 
   def exported(where: Either[String, String]): String =
     where.fold(why => s"The bundle was not exported: $why", w => s"Bundle exported to $w.")

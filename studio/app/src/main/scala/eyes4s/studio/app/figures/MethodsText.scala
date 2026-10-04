@@ -20,6 +20,8 @@ import eyes4s.studio.app.admission.AdmissionLedgerVM
 import eyes4s.studio.app.text.Format
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.*
+import eyes4s.kernel.Span
+import eyes4s.plan.WindowTally
 import eyes4s.studio.core.engine.StudioBuild
 import eyes4s.studio.core.figures.{FigureSource, MethodsFacts}
 
@@ -29,7 +31,7 @@ import eyes4s.studio.core.figures.{FigureSource, MethodsFacts}
   */
 enum MethodsSlot derives CanEqual:
   case SourceFile(role: SourceRole)
-  case Dataset, FixationRecords, InventoryTrials, Admitted, Quarantined, Absent
+  case Dataset, FixationRecords, InventoryTrials, Admitted, Quarantined, NoFixations, Absent
   case QuarantineCause(code: String)
   case ImageFrame, Screen, AnalysisWindow
   case OutsideWindow, TalliedRecords, OutsideWindowShare, OutsideWindowTrials
@@ -179,8 +181,8 @@ object MethodsText:
 
   /** The causes a trial was quarantined for, by count, most first. */
   private def causes(a: AdmissionSummary): Vector[MethodsToken] =
-    (a.quarantined.map(q => (q.code, AdmissionLedgerVM.causeName(q.code), q.trials)) ++
-      Option.when(a.noFixations > 0)(("no-fixations", "no-fixations", a.noFixations)))
+    a.quarantined
+      .map(q => (q.code, AdmissionLedgerVM.causeName(q.code), q.trials))
       .filter(_._3 > 0)
       .sortBy((_, name, trials) => (-trials, name))
       .map((code, name, trials) =>
@@ -188,8 +190,11 @@ object MethodsText:
       )
 
   private def admission(dataset: DatasetRevisionSpec, a: AdmissionSummary): MethodsSentence =
-    val quarantined = a.quarantinedTrials + a.noFixations
-    val because     = causes(a) match
+    // No fixations is a disposition of its own (Views.AdmissionSummary), not
+    // a quarantine cause: said beside quarantine, never inside its count.
+    val quarantined = a.quarantinedTrials
+    val none    = Vector[Part](n(S.NoFixations, a.noFixations), " with no admitted fixations")
+    val because = causes(a) match
       case Vector() => Vector.empty
       case cs       => Vector[Part](" (") ++ cs.flatMap(c => Vector[Part](", ", c)).tail :+ ")"
     val files =
@@ -213,7 +218,7 @@ object MethodsText:
             " admitted, ",
             n(S.Quarantined, quarantined),
             " quarantined"
-          ) ++ because ++ Vector[Part](
+          ) ++ because ++ Vector[Part](", ") ++ none ++ Vector[Part](
             " and ",
             n(S.Absent, absent),
             " absent (no fixation records)."
@@ -224,10 +229,10 @@ object MethodsText:
           (opening ++ Vector[Part](
             ": ",
             n(S.Admitted, a.admitted),
-            " admitted and ",
+            " admitted, ",
             n(S.Quarantined, quarantined),
             " quarantined"
-          ) ++ because ++ Vector[Part](
+          ) ++ because ++ Vector[Part](" and ") ++ none ++ Vector[Part](
             "; no trial inventory was declared, so absent trials were not counted."
           ))*
         )
@@ -267,9 +272,28 @@ object MethodsText:
               screen,
               " screen; "
             )
-        val share =
-          if totals.total == 0 then "0%"
-          else s"${Format.decimal(100.0 * totals.outsideWindow / totals.total, 1)}%"
+        // eyes4s's own share of fixation duration outside the window
+        // (WindowTally.outsideWindowShare), rebuilt from the served totals;
+        // undefined when the fixations have no duration, and then not said.
+        val share = WindowTally
+          .of(
+            totals.outsideScreen,
+            totals.outsideWindow,
+            totals.total,
+            Span.micros(totals.outsideScreenMicros),
+            Span.micros(totals.outsideWindowMicros),
+            Span.micros(totals.totalMicros)
+          )
+          .toOption
+          .flatMap(_.outsideWindowShare)
+          .toVector
+          .flatMap(s =>
+            Vector[Part](
+              " (",
+              Fact(S.OutsideWindowShare, s"${Format.decimal(100.0 * s, 1)}%"),
+              " of their fixation duration)"
+            )
+          )
         val fate = source.bound.analysis.recipe.offWindow match
           case Some(OffWindowChoice.Exclude) =>
             Vector[Part](
@@ -286,9 +310,9 @@ object MethodsText:
               n(S.OutsideWindow, totals.outsideWindow),
               " of the ",
               n(S.TalliedRecords, totals.total),
-              " fixation records of admitted trials (",
-              Fact(S.OutsideWindowShare, share),
-              "), in ",
+              " fixation records of admitted trials"
+            ) ++ share ++ Vector[Part](
+              ", in ",
               n(S.OutsideWindowTrials, totals.trialsOutsideWindow),
               s" trials, fell outside the ${windowName(source)}"
             ) ++ fate)*
@@ -350,7 +374,10 @@ object MethodsText:
         " of the fixation cross before the first saccade."
       )
 
-  /** The width and height of one grid cell, in pixels. */
+  /** The width and height of one grid cell, in pixels: recipe arithmetic
+    * Studio does until CR6d's plan descriptors serve the cell size
+    * (bd-01M3DH0S5ZKFCN47MHDM0XWW10).
+    */
   private def cell(source: FigureSource): (Double, Double) =
     val recipe = source.bound.analysis.recipe
     val screen = source.bound.dataset.geometry.screen

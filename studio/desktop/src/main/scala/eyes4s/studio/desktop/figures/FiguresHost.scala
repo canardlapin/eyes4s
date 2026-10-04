@@ -231,42 +231,23 @@ object FigureInputs:
               case Right((Left(why), _))                => done(Left(why))
               case Right((_, Left(why)))                => done(Left(why))
               case Right((Right(summary), Right(rows))) =>
-                BundleFiles
-                  .assemble(request, summary, rows, FigureExport.rasters(request.page, images))
-                  .flatMap(write(target, _)) match
-                  case Left(why) => done(Left(why))
-                  case Right(()) =>
-                    if !request.items.contains(BundleItem.Snapshot) then
-                      done(Right(target.toString))
-                    else
-                      project match
-                        case None =>
-                          done(Left("project snapshot: this project is not saved in a bundle"))
-                        case Some(port) =>
-                          port.snapshot(
-                            target.resolve("project"),
-                            request.includeImages,
-                            r =>
-                              done(
-                                r.left
-                                  .map(w => s"project snapshot: $w")
-                                  .map(_ => target.toString)
-                              )
-                          )
+                BundleFiles.assemble(
+                  request,
+                  summary,
+                  rows,
+                  FigureExport.rasters(request.page, images)
+                ) match
+                  case Left(why)   => done(Left(why))
+                  case Right(file) =>
+                    val snapshot = Option.when(request.items.contains(BundleItem.Snapshot))(
+                      project.fold[BundleWriter.Snapshot]((_, answer) =>
+                        answer(Left("this project is not saved in a bundle"))
+                      )(port =>
+                        (to, answer) => port.snapshot(to, request.includeImages, answer)
+                      )
+                    )
+                    BundleWriter.write(target, file, snapshot, done)
             }
-
-  /** Write `files` into the new folder `target`, which must not exist. */
-  private def write(
-      target: java.nio.file.Path,
-      files: Vector[(String, IArray[Byte])]
-  ): Either[String, Unit] =
-    if Files.exists(target) then Left(s"$target already exists; choose another folder")
-    else
-      try
-        Files.createDirectories(target)
-        files.foreach((name, bytes) => Files.write(target.resolve(name), Array.from(bytes)))
-        Right(())
-      catch case NonFatal(e) => Left(reason(e))
 
   private def reason(e: Throwable): String = Option(e.getMessage).getOrElse(e.toString)
 
