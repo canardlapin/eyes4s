@@ -91,7 +91,8 @@ The full gate takes 60–90 minutes, so run it once per branch.
   and `python3 tools/study-consumer/verify.py`. Record the audit **first** and commit the
   inventory: `DiagnosticCoverageJvmSuite` reads the committed inventory, so a `testAll`
   that runs before the re-record passes against a stale inventory and the branch lands red.
-  Report the SHA and `HEAD^{tree}` that the gate covers.
+  Report the SHA and `HEAD^{tree}` that the gate covers. `python3 tools/landing-gate/gate.py`
+  runs these steps in this order on a committed tree (`--from STEP` resumes after a fix).
 - **Land by tree identity.** The merge into `main` must have the tree that was gated. When
   `main` has moved by a change that cannot affect the branch (another package's sources, the
   tracker, docs), the `-Werror` compile and `checkBoundaries` on the new merge suffice.
