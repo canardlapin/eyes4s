@@ -53,6 +53,9 @@ final class QueriesNavigatorView(
 
   /** The filter field: both navigators show the one filter. */
   val filter: TextField = TextField()
+  // Styled as Explore's filter, its prompt in ink-3 (S10.5: modena's prompt
+  // was 1.7:1 in light and 1.0:1 in dark).
+  filter.getStyleClass.addAll("nav-filter", "t12")
   filter.setPromptText(SummaryText(SummaryTextId.Filter))
   filter.setAccessibleText(SummaryText(SummaryTextId.Filter))
   private val typed: javafx.beans.value.ChangeListener[String] =
@@ -80,11 +83,10 @@ final class QueriesNavigatorView(
   /** The pane's content. */
   val node: VBox = VBox(4.0, filter, empty, head, scroll, strip)
   node.getStyleClass.add(if byItem then "items-navigator" else "queries-navigator")
-  Option(
-    getClass.getClassLoader.getResource(
-      eyes4s.studio.desktop.plot.TableTwinView.stylesheetResource
-    )
-  )
+  Vector(
+    eyes4s.studio.desktop.plot.TableTwinView.stylesheetResource,
+    eyes4s.studio.desktop.explore.TrialsNavigatorView.stylesheetResource
+  ).flatMap(r => Option(getClass.getClassLoader.getResource(r)))
     .foreach(url => node.getStylesheets.add(url.toExternalForm))
 
   /** The text of the count strip's lines, as shown: label and count. */

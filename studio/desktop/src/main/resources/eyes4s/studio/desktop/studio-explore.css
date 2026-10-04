@@ -76,6 +76,17 @@
   -fx-text-fill: -es-ink-2;
 }
 
+/* The trial view is one focus stop: the ring is drawn inside the stage's
+ * edge, which keeps its 2 px whether or not the plot has focus (S10.5). */
+.explore-stage {
+  -fx-border-color: transparent;
+  -fx-border-width: 2;
+}
+
+.explore-stage:focus-within {
+  -fx-border-color: -es-accent;
+}
+
 .explore-status {
   -fx-padding: 4 8 4 8;
   -fx-spacing: 8;
