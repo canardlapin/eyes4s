@@ -290,8 +290,8 @@ object CompareSummaryVM:
       )
 
   /** Explain from the selected participant mean: in a group, the trail
-    * keeps the spec and the group (Summary › group › participant); the
-    * query layout then shows its queries.
+    * keeps the spec and the group (Summary › group › participant), which the
+    * ref names; the query layout then shows its queries.
     */
   private def explain(
       m: AppModel,
@@ -307,8 +307,8 @@ object CompareSummaryVM:
         ExplainVM(
           SummaryText(SummaryTextId.Explain, p),
           SummaryText(SummaryTextId.Keeps, keeps),
-          group.map(g => Intent.Explain(Place.Group(rep, g))).toVector :+ Intent.Explain(
-            Place.At(ref)
-          )
+          // The trail fills in the spec and the group from the ref itself
+          // (Provenance.explain), so one step walks Summary › group › participant.
+          Vector(Intent.Explain(Place.At(ref)))
         )
     }
