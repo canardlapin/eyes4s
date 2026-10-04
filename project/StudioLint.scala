@@ -369,7 +369,12 @@ object StudioLint {
     organization == "org.openjfx" ||
       name.startsWith("javafx") ||
       name.contains("-javafx") ||
-      name.startsWith("scaladock-fx")
+      name.startsWith("scaladock-fx") ||
+      // The export back ends (S9.3): PDF through PDFBox and rasters through
+      // Java2D are desktop-only.
+      organization == "org.apache.pdfbox" ||
+      name.startsWith("intaglio-pdf") ||
+      name.startsWith("intaglio-java2d")
 
   /** Every library-to-studio dependency path in a project graph.
     *

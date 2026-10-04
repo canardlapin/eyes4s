@@ -62,6 +62,13 @@ object FigureSvg:
   def families(svg: String): Vector[String] =
     familyAttribute.findAllMatchIn(svg).map(_.group(1)).toVector.distinct
 
+  /** The families a built page's text names, whatever the target. */
+  def families(page: FigurePage): Either[FigureSvgError, Vector[String]] =
+    for
+      plan <- page.plan(PixelsPerInch).left.map(FigureSvgError.Page(_))
+      doc  <- SvgRenderer.render(plan, None).left.map(e => FigureSvgError.Render(e.message))
+    yield families(doc.value)
+
   def render(page: PageVM, fonts: Vector[EmbeddedFont]): Either[FigureSvgError, String] =
     for
       built <- FigurePage.build(page).left.map(FigureSvgError.Page(_))

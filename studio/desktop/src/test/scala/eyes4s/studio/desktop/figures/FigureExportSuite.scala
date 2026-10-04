@@ -27,7 +27,13 @@ import eyes4s.studio.core.headless.HeadlessSession
 import eyes4s.studio.core.selection.ScaleIndex
 import eyes4s.studio.viz.figure.FigureSvg
 
+import org.apache.pdfbox.Loader
+import org.apache.pdfbox.text.PDFTextStripper
+
+import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets.UTF_8
+import javax.imageio.ImageIO
+import scala.jdk.CollectionConverters.*
 import java.nio.file.{Files, Path, Paths}
 import java.util.Base64
 import scala.concurrent.{ExecutionContext, Future}
@@ -158,8 +164,70 @@ class FigureExportSuite extends munit.FunSuite:
     }
   }
 
-  test("a format whose backend is not yet pinned says so") {
+  // --- PDF and PNG ------------------------------------------------------------------
+
+  private def bytesOf(format: ExportFormat, p: PageVM): Array[Byte] =
+    val bytes: IArray[Byte] = ok(FigureExport.render(format, p))
+    Array.from(bytes)
+
+  /** A PDF as text: its page size in millimetres, its fonts without their
+    * subset tags, then its text.
+    */
+  private def pdfText(bytes: Array[Byte]): String =
+    val doc = Loader.loadPDF(bytes)
+    try
+      val page          = doc.getPage(0)
+      val box           = page.getMediaBox
+      def mm(pt: Float) = f"${pt / 72 * 25.4}%.2f"
+      val fonts         = page.getResources.getFontNames.asScala.toVector
+        .map(n => page.getResources.getFont(n).getName.replaceFirst("^[A-Z]{6}\\+", ""))
+        .sorted
+        .distinct
+      s"pages ${doc.getNumberOfPages}\npage ${mm(box.getWidth)} × ${mm(box.getHeight)} mm\n" +
+        s"fonts ${fonts.mkString(", ")}\n\n" + PDFTextStripper().getText(doc)
+    finally doc.close()
+
+  test("the exported PDF matches its golden: page size, embedded fonts and text") {
     page().map { p =>
-      assert(FigureExport.render(ExportFormat.Pdf, p).isLeft)
+      val text   = pdfText(bytesOf(ExportFormat.Pdf, p))
+      val golden = buildRoot.resolve("docs/studio/figures/golden/figure-1.pdf.txt")
+      if sys.env.contains("EYES4S_UPDATE_GOLDENS") then
+        Files.writeString(golden, text, UTF_8): Unit
+      assert(
+        Files.exists(golden),
+        s"missing $golden; run with EYES4S_UPDATE_GOLDENS=1 to write it"
+      )
+      assertNoDiff(text, Files.readString(golden, UTF_8))
+      assert(text.startsWith("pages 1\npage 183.0"), text)
+      // E2E-10: the disclosure survives the PDF too.
+      assert(text.replace("\n", " ").contains("The remembered image was not shown."), text)
+    }
+  }
+
+  test("the PDF embeds every face it uses; none is left to the reader's system") {
+    page().map { p =>
+      val doc = Loader.loadPDF(bytesOf(ExportFormat.Pdf, p))
+      try
+        val res   = doc.getPage(0).getResources
+        val fonts = res.getFontNames.asScala.toVector.map(res.getFont)
+        assert(fonts.nonEmpty)
+        fonts.foreach(f => assert(f.isEmbedded, f.getName))
+      finally doc.close()
+    }
+  }
+
+  test("the exported PNG is the page at 300 dpi on white, with ink on it") {
+    page().map { p =>
+      val image = ImageIO.read(
+        ByteArrayInputStream(bytesOf(ExportFormat.Png, p))
+      )
+      assertEquals(image.getWidth, math.ceil(183 / 25.4 * 300 - 1e-9).toInt)
+      assertEquals(image.getRGB(0, image.getHeight - 1), 0xffffffff, "white paper")
+      val dark = (for
+        x <- 0 until image.getWidth by 3
+        y <- 0 until image.getHeight by 3
+        if (image.getRGB(x, y) & 0xff) < 128
+      yield 1).size
+      assert(dark > 1000, s"only $dark dark samples")
     }
   }

@@ -19,9 +19,14 @@ package eyes4s.studio.desktop.figures
 import eyes4s.studio.app.figures.{ExportFormat, PageVM}
 import eyes4s.studio.app.tokens.FontFace
 import eyes4s.studio.desktop.typography.StudioFonts
-import eyes4s.studio.viz.figure.{EmbeddedFont, FigureSvg}
+import cats.syntax.all.*
+import eyes4s.studio.viz.figure.{EmbeddedFont, FigurePage, FigureSvg}
+import intaglio.Rgba
+import intaglio.java2d.{Java2DBackground, Java2DExportOptions, Java2DRenderer}
+import intaglio.pdf.{PdfFont, PdfFontCatalog, PdfOptions, PdfRenderer}
 
 import java.nio.charset.StandardCharsets.UTF_8
+import scala.util.control.NonFatal
 
 /** The bundled faces as export fonts, under the families the figure's text
   * names (`FontFace.javaFxFamily`), read from the classpath.
@@ -42,6 +47,73 @@ object FigureFonts:
         }
       }
 
+/** The figure page as PDF (ticket S9.3): vector shapes and text, every face
+  * embedded and subset by PDFBox (intaglio-pdf), the page its journal size.
+  */
+object FigurePdf:
+  /** Fine enough that the page's size in points is its size in millimetres
+    * to well under a hundredth of a millimetre.
+    */
+  val PixelsPerInch: Double = 720.0
+
+  def render(page: PageVM, fonts: Vector[EmbeddedFont]): Either[String, Array[Byte]] =
+    for
+      faces <- fonts
+        .traverse(f => PdfFont.fromBytes(f.family, Array.from(f.bytes)))
+        .left
+        .map(_.message)
+      catalog <- faces match
+        case first +: rest => PdfFontCatalog.from(first, rest*).left.map(_.message)
+        case _             => Left("A PDF needs at least one font to embed.")
+      built <- FigurePage.build(page).left.map(_.message)
+      plan  <- built.plan(PixelsPerInch).left.map(_.message)
+      doc   <- PdfRenderer
+        .render(plan, catalog, PdfOptions(title = Some(page.title)))
+        .left
+        .map(_.message)
+    yield doc.bytes
+
+/** The figure page as PNG (ticket S9.3): drawn by Java2D at print density on
+  * white paper, with the bundled faces registered so the text is set in them.
+  */
+object FigurePng:
+  val PixelsPerInch: Double = 300.0
+
+  /** Registers the faces with AWT once; the families each answers to. */
+  private lazy val registered: Either[String, Set[String]] =
+    // Java2D draws off screen; AWT stays off the display JavaFX owns.
+    if System.getProperty("java.awt.headless") == null then
+      System.setProperty("java.awt.headless", "true"): Unit
+    FigureFonts.bundled.flatMap(_.traverse { f =>
+      try
+        val font = java.awt.Font.createFont(
+          java.awt.Font.TRUETYPE_FONT,
+          java.io.ByteArrayInputStream(Array.from(f.bytes))
+        )
+        java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment.registerFont(font): Unit
+        Right(Set(font.getFamily, font.getFontName))
+      catch case NonFatal(e) => Left(s"The font ${f.family} could not be read: ${e.getMessage}")
+    }.map(_.flatten.toSet))
+
+  def render(page: PageVM): Either[String, Array[Byte]] =
+    for
+      names <- registered
+      built <- FigurePage.build(page).left.map(_.message)
+      plan  <- built.plan(PixelsPerInch).left.map(_.message)
+      // A family AWT does not know would be drawn in a fallback face, silently.
+      used <- FigureSvg.families(built).left.map(_.message)
+      _    <- used.find(f => !names.contains(f)) match
+        case Some(f) => Left(s"The figure uses the font $f, which Java2D does not have.")
+        case None    => Right(())
+      png <- Java2DRenderer
+        .renderPng(
+          plan,
+          Java2DExportOptions(background = Java2DBackground.Solid(Rgba.White))
+        )
+        .left
+        .map(_.message)
+    yield png
+
 /** A figure page written as a file of one format (ticket S9.3). */
 object FigureExport:
 
@@ -55,6 +127,6 @@ object FigureExport:
             .left
             .map(_.message)
             .map(s => IArray.unsafeFromArray(s.getBytes(UTF_8)))
-        case ExportFormat.Pdf | ExportFormat.Png =>
-          Left(s"${format.label} export needs the Intaglio PDF and Java2D modules at the pin.")
+        case ExportFormat.Pdf => FigurePdf.render(page, fonts).map(IArray.unsafeFromArray)
+        case ExportFormat.Png => FigurePng.render(page).map(IArray.unsafeFromArray)
     }

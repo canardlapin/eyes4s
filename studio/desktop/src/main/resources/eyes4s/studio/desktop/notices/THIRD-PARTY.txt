@@ -1,0 +1,21 @@
+Eyes Studio desktop: third-party libraries used by figure export (S9.3)
+
+Figure export writes PDF through Intaglio's PDF renderer, which uses Apache
+PDFBox, and PNG through Intaglio's Java2D renderer. These libraries are used
+by the desktop application only (studio-desktop); the portable studio modules
+do not depend on them (enforced by checkStudioBoundaries).
+
+Library                                   Version  Licence
+org.apache.pdfbox:pdfbox                  3.0.8    Apache License 2.0
+org.apache.pdfbox:pdfbox-io               3.0.8    Apache License 2.0
+org.apache.pdfbox:fontbox                 3.0.8    Apache License 2.0
+commons-logging:commons-logging           1.4.0    Apache License 2.0
+io.github.canardlapin:intaglio-pdf        pinned   Apache License 2.0
+io.github.canardlapin:intaglio-java2d     pinned   Apache License 2.0 (studio/pins.properties)
+
+Each library's LICENSE and NOTICE, as shipped in its jar's META-INF, is in
+this directory as <artifact>-<version>-LICENSE.txt and -NOTICE.txt. PDFBox's
+LICENSE also carries the licences of the third-party material it contains.
+
+The figure fonts embedded in exported files are under the SIL Open Font
+License 1.1 (../fonts/OFL-*.txt), which permits embedding them in documents.

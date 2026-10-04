@@ -1194,7 +1194,7 @@ lazy val studioDesktop = project
   .dependsOn(studioCore.jvm % "test->test")
   // S1.4: the shell FX suites boot at the S1.0 story models (StoryModels).
   .dependsOn(studioApp.jvm % "test->test")
-  .dependsOn(studioLocalRefs(intaglioLocal, "javafxJVM"): _*)
+  .dependsOn(studioLocalRefs(intaglioLocal, "javafxJVM", "pdfJVM", "java2dJVM"): _*)
   .dependsOn(studioLocalRefs(scaladockLocal, "core", "fx"): _*)
   .settings(commonSettings)
   .settings(
@@ -1204,7 +1204,8 @@ lazy val studioDesktop = project
       "org.openjfx" % _ % javaFxV classifier javaFxClassifier
     ),
     libraryDependencies ++=
-      (if (intaglioLocal.isDefined) Nil else Seq(intaglioPinned("javafx"))) ++
+      (if (intaglioLocal.isDefined) Nil
+       else Seq("javafx", "pdf", "java2d").map(intaglioPinned)) ++
         (if (scaladockLocal.isDefined) Nil
          else Seq(scaladockPinned("core"), scaladockPinned("fx"))),
     // One JavaFX for the shell and both providers. Intaglio and scaladock
