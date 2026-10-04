@@ -563,10 +563,13 @@ private final class FactText(facts: MethodsFacts):
     * naming the mapped region.
     */
   def outsideWindow: Vector[Token] =
-    val trials     = at(FactSlot.TrialsOutsideWindow).toVector
-    val inTrials   = noun(FactSlot.TrialsOutsideWindow, " trial", " trials")
-    val share      = at(FactSlot.OutsideWindowShare).toVector
-    val ofDuration = share.flatMap(s => Vector(w(" ("), s, w(" of their fixation duration)")))
+    val trials   = at(FactSlot.TrialsOutsideWindow).toVector
+    val inTrials = noun(FactSlot.TrialsOutsideWindow, " trial", " trials")
+    val share    = at(FactSlot.OutsideWindowShare).toVector
+    val basis    = facts.get(FactSlot.OutsideWindowShare).map(valueOf).collect {
+      case FactValue.Share(_, b) => b.label
+    }
+    val ofDuration = share.flatMap(s => Vector(w(" ("), s, w(s" of their ${basis.mkString})")))
     at(FactSlot.RecordsOutsideWindow) match
       case Some(r) =>
         val records = at(FactSlot.TalliedRecords) match
@@ -591,7 +594,7 @@ private final class FactText(facts: MethodsFacts):
           ofDuration :+ w(".")
       case None =>
         share.flatMap(s =>
-          Vector(w(" Fixations outside it took "), s, w(" of the fixation duration."))
+          Vector(w(" Fixations outside it took "), s, w(s" of the ${basis.mkString}."))
         )
 
   /** "120 records, in 40 trials, fell outside the screen; they were admitted
