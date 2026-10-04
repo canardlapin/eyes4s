@@ -16,6 +16,8 @@
 
 package eyes4s.io
 
+import eyes4s.plan.Diagnose
+
 /** A positive byte count used for parser and measurement budgets. */
 final class AscByteBudget private (val bytes: Long)
 
@@ -251,3 +253,11 @@ enum AscPerformanceValidationError derives CanEqual:
       s"EyeLink performance operand='$operand' cannot be measured: $reason."
 
 end AscPerformanceValidationError
+
+// Test-scope evidence apparatus (CR9): its codes stay in IoDiagnosticCatalog,
+// which only ever appends, and its Diagnose instance lives with the enum.
+object AscPerformanceValidationError:
+  given Diagnose[AscPerformanceValidationError, Nothing] =
+    Diagnose.derived[AscPerformanceValidationError, Nothing](
+      IoDiagnosticCatalog.ascPerformanceValidation
+    )(_.message)

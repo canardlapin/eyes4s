@@ -179,6 +179,11 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     */
   case DisplayTally(dataset: DatasetRevision, tally: DisplayCount)
 
+  /** One count of a run's query contrasts (eyes4s `QueryContrasts`; ticket
+    * S8.1): the queries the run requested, or those with one outcome.
+    */
+  case QueryTally(run: RunId, tally: QueryCount)
+
   def kind: RefKind = this match
     case Participant(_)                                       => RefKind.Entity
     case Trial(_) | Fixation(_, _) | SourceRecord(_, _, _, _) => RefKind.Observation
@@ -190,7 +195,7 @@ enum StudioRef derives CanEqual, Codec.AsObject:
           RefKind.Aggregate
     case ParticipantSummary(_, _, _, _, _) | GroupCell(_, _, _, _) | FigurePanel(_, _) |
         WindowTally(_, _) | DesignTally(_, _) | InventoryCount(_, _) | TrialGroup(_, _) |
-        DisplayTally(_, _) =>
+        DisplayTally(_, _) | QueryTally(_, _) =>
       RefKind.Aggregate
 
   def isAggregate: Boolean = kind == RefKind.Aggregate
@@ -233,7 +238,9 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     case FigurePanel(_, _)                    => None
     case WindowTally(_, _)                    => None
     case DesignTally(_, _)                    => None
-    case InventoryCount(dataset, count)       =>
+    case QueryTally(run, tally)               =>
+      Option.when(tally != QueryCount.Requested)(QueryTally(run, QueryCount.Requested))
+    case InventoryCount(dataset, count) =>
       count match
         case InventoryKind.Cause(_) | InventoryKind.NoFixations =>
           Some(InventoryCount(dataset, InventoryKind.Quarantined))
@@ -257,6 +264,13 @@ enum StudioRef derives CanEqual, Codec.AsObject:
 enum DisplayCount derives CanEqual, Codec.AsObject:
   case Shown(kind: DisplayKind, phase: Phase)
   case ImagesNamed, ImagesFound, MissingFiles, MissingTrials
+
+/** Which count of a run's query contrasts a [[StudioRef.QueryTally]] names:
+  * every requested query, or those with one outcome (each is within the
+  * requested).
+  */
+enum QueryCount derives CanEqual, Codec.AsObject:
+  case Requested, Contributing, Failed, NoMatch, QueryNotAdmitted
 
 /** Which trials a [[StudioRef.TrialGroup]] holds: one participant's trials
   * of one phase, or every trial matched on one item.

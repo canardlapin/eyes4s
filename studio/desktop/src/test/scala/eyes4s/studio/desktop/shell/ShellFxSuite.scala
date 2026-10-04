@@ -91,7 +91,10 @@ abstract class ShellFxSuite extends StudioFxSuite:
       stimuli: StimulusSource =
         StimulusSource.directory(eyes4s.studio.desktop.trial.GoldenTrials.stimuli),
       // Repair… opens no chooser in a test unless a suite brings its files.
-      assetFiles: eyes4s.studio.desktop.data.AssetFiles = (_, done) => done(Right(None))
+      assetFiles: eyes4s.studio.desktop.data.AssetFiles = (_, done) => done(Right(None)),
+      // Compare's trial panels: none unless a suite brings its own.
+      panels: eyes4s.studio.desktop.compare.PanelSources =
+        eyes4s.studio.desktop.compare.PanelSources.notServed
   ): StudioWindow =
     val w = runOnFx(
       StudioWindow
@@ -106,7 +109,8 @@ abstract class ShellFxSuite extends StudioFxSuite:
           clock = clock,
           nativeMenu = nativeMenu,
           presets = presets,
-          assetFiles = Some(assetFiles)
+          assetFiles = Some(assetFiles),
+          panels = panels
         )
         .fold(e => fail(e.message), identity)
     )

@@ -16,6 +16,8 @@
 
 package eyes4s.studio.app.text
 
+import eyes4s.studio.core.selection.QueryCount
+
 /** The strings of Compare's summary layout (ticket S8.6; the Results
   * board). They are kept apart from [[MessageId]] so the layout adds its own
   * ids without editing the shell's catalogue. Templates name their
@@ -50,6 +52,19 @@ enum SummaryTextId derives CanEqual:
   /** While the summary is read, or why it could not be. */
   case Reading, NoRun, Unreadable
 
+  /** The Queries navigator (S8.1): a participant's header, the D column's
+    * header, a query's status, and the count strip.
+    */
+  case ParticipantHeader, DColumn, Filter
+  case StripRequested, StripContributing, StripFailed, StripNoMatchNotAdmitted, StripByDesign
+  case StripPair, NotApplicable, ItemHeader
+
+  /** A run's query tally (StudioRef.QueryTally) as a path, the outcomes'
+    * own names, and the row cursor as announced.
+    */
+  case TallyOf, TallyNoMatch, TallyNotAdmitted, CursorHeader, CursorQuery
+  case GroupOpen, GroupClosed, QueryRowSpoken
+
 /** Compare's summary strings in the boards' wording. */
 object SummaryText:
 
@@ -57,41 +72,71 @@ object SummaryText:
   def english(id: SummaryTextId): String =
     import SummaryTextId.*
     id match
-      case ParticipantCaption => "Participant summary at σ {0}, run {1}"
-      case QueryCaption       => "Queries of run {0} at σ {1}"
-      case Participant        => "Participant"
-      case Requested          => "Requested"
-      case Contributing       => "Contributing"
-      case Failed             => "Failed"
-      case NoMatch            => "No match"
-      case NotAdmitted        => "Not admitted"
-      case MeanM              => "Mean M"
-      case MeanB              => "Mean B"
-      case MeanD              => "Mean D"
-      case GroupHeader        => "{0} D (n)"
-      case GroupCell          => "{0} ({1})"
-      case Query              => "Query"
-      case Item               => "Item"
-      case Response           => "Response"
-      case Status             => "Status"
-      case M                  => "M"
-      case B                  => "B"
-      case D                  => "D"
-      case StatusFailed       => "failed"
-      case StatusNoMatch      => "no match"
-      case StatusNotAdmitted  => "not admitted"
-      case StatusContributing => "contributing"
-      case PairedN            => "Paired n = {0} participants"
-      case Weighting          => "Means: equal participant weight"
-      case Unit               => "Unit below each dot: query trial"
-      case GroupRange         => "Per-group n: {0}–{1} queries per participant"
-      case Scale              => "σ {0}"
-      case ScaleUnavailable   => "Participant means are served at σ {0} only"
-      case Explain            => "Explain {0} →"
-      case Keeps              => "keeps: {0}"
-      case Reading            => "Reading run {0}…"
-      case NoRun              => "No run yet — Open Analysis ⌘3"
-      case Unreadable         => "Run {0} could not be read: {1}"
+      case ParticipantCaption      => "Participant summary at σ {0}, run {1}"
+      case QueryCaption            => "Queries of run {0} at σ {1}"
+      case Participant             => "Participant"
+      case Requested               => "Requested"
+      case Contributing            => "Contributing"
+      case Failed                  => "Failed"
+      case NoMatch                 => "No match"
+      case NotAdmitted             => "Not admitted"
+      case MeanM                   => "Mean M"
+      case MeanB                   => "Mean B"
+      case MeanD                   => "Mean D"
+      case GroupHeader             => "{0} D (n)"
+      case GroupCell               => "{0} ({1})"
+      case Query                   => "Query"
+      case Item                    => "Item"
+      case Response                => "Response"
+      case Status                  => "Status"
+      case M                       => "M"
+      case B                       => "B"
+      case D                       => "D"
+      case StatusFailed            => "failed"
+      case StatusNoMatch           => "no match"
+      case StatusNotAdmitted       => "not admitted"
+      case StatusContributing      => "contributing"
+      case PairedN                 => "Paired n = {0} participants"
+      case Weighting               => "Means: equal participant weight"
+      case Unit                    => "Unit below each dot: query trial"
+      case GroupRange              => "Per-group n: {0}–{1} queries per participant"
+      case Scale                   => "σ {0}"
+      case ScaleUnavailable        => "Participant means are served at σ {0} only"
+      case Explain                 => "Explain {0} →"
+      case Keeps                   => "keeps: {0}"
+      case Reading                 => "Reading run {0}…"
+      case NoRun                   => "No run yet — Open Analysis ⌘3"
+      case Unreadable              => "Run {0} could not be read: {1}"
+      case ParticipantHeader       => "{0} of {1} · {2}"
+      case DColumn                 => "D · {0}"
+      case Filter                  => "Filter participant or item"
+      case StripRequested          => "Query contrasts requested"
+      case StripContributing       => "Contributing"
+      case StripFailed             => "Failed (empty map)"
+      case StripNoMatchNotAdmitted => "No match · query not admitted"
+      case StripByDesign           => "By design (n/a for this preset)"
+      case StripPair               => "{0} · {1}"
+      case NotApplicable           => "n/a"
+      case ItemHeader              => "{0} · {1} queries"
+      case TallyOf                 => "{0} · run {1}"
+      case TallyNoMatch            => "No match"
+      case TallyNotAdmitted        => "Query not admitted"
+      case CursorHeader            => "{0}: {1}, {2}"
+      case CursorQuery             => "{0}: {1}"
+      case GroupOpen               => "open"
+      case GroupClosed             => "closed"
+      case QueryRowSpoken          => "{0}, {1}, D {2}"
+
+  /** A run's query tally as a path ("Contributing · run 7"). */
+  def tally(run: eyes4s.studio.core.backend.RunId, count: QueryCount): String =
+    import SummaryTextId.*
+    val what = count match
+      case QueryCount.Requested        => StripRequested
+      case QueryCount.Contributing     => StripContributing
+      case QueryCount.Failed           => StripFailed
+      case QueryCount.NoMatch          => TallyNoMatch
+      case QueryCount.QueryNotAdmitted => TallyNotAdmitted
+    apply(TallyOf, apply(what), run.number.toString)
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: SummaryTextId, args: String*): String =

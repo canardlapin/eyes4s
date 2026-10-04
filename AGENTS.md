@@ -74,6 +74,16 @@ What runs where (all generated from `build.sbt`):
   `target/study-consumer`).
 - `performance.yml`, weekly and on demand: the two-hour EyeLink performance court.
 
+Studio FX tests (`studioDesktop/test`, suites extending `StudioFxSuite`) run **headless by
+default**: Monocle's Headless glass (`org.testfx:openjfx-monocle`, test scope) on a virtual
+1920x1200 screen at output scale 1, with the software pipeline. They open no OS window and take no OS
+focus, and the harness refuses to start on any other glass while the build asks for headless.
+`sbt -Deyes4s.studio.fx.visible=true ...` (or `EYES4S_STUDIO_FX_VISIBLE=true`) uses the
+platform's own glass, for watching a run; it opens real windows, so do not use it on a machine
+someone is working at. The macOS CI job opts out to exercise the Mac glass. A run still takes the
+machine-wide FX lock (`FxRunLock`), so one FX test JVM runs at a time; while iterating, prefer
+`testOnly` on the suites you touched.
+
 Locally, `python3 tools/check-docs.py` (default `--platform all`) needs both platforms'
 test reports, a current `docs/tlSite`, and a consumer receipt from `--run-consumer`.
 
@@ -91,7 +101,8 @@ The full gate takes 60–90 minutes, so run it once per branch.
   and `python3 tools/study-consumer/verify.py`. Record the audit **first** and commit the
   inventory: `DiagnosticCoverageJvmSuite` reads the committed inventory, so a `testAll`
   that runs before the re-record passes against a stale inventory and the branch lands red.
-  Report the SHA and `HEAD^{tree}` that the gate covers.
+  Report the SHA and `HEAD^{tree}` that the gate covers. `python3 tools/landing-gate/gate.py`
+  runs these steps in this order on a committed tree (`--from STEP` resumes after a fix).
 - **Land by tree identity.** The merge into `main` must have the tree that was gated. When
   `main` has moved by a change that cannot affect the branch (another package's sources, the
   tracker, docs), the `-Werror` compile and `checkBoundaries` on the new merge suffice.

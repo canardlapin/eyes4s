@@ -16,6 +16,13 @@
 
 package eyes4s.studio.desktop.trial
 
+import eyes4s.studio.app.compare.{
+  ContentError,
+  ContentFixation,
+  TrialContent,
+  TrialContentSource
+}
+
 import eyes4s.studio.core.assets.{AssetRegistry, TrialDisplay}
 import eyes4s.studio.core.backend.{Phase, TrialKey}
 import eyes4s.studio.core.document.ScreenSize
@@ -74,6 +81,27 @@ object GoldenTrials:
       .toVector
       .drop(1)
       .map(_.split(",", -1))
+
+  /** The fixations of one trial as Compare's content port carries them,
+    * with their onsets, in record order.
+    */
+  def contentFixations(participant: String, trial: String): Vector[ContentFixation] =
+    val onsets = records.filter(r => r(0) == participant && r(2) == trial).map(_(7).toInt)
+    val k      = key(participant, trial)
+    fixations(participant, trial).zip(onsets).map { (f, onset) =>
+      ContentFixation(k, f.index, f.screenX, f.screenY, onset, f.durationMs, f.placement)
+    }
+
+  /** fixtures/studio-golden behind Compare's trial content port: the
+    * registry's display and the trial's fixations, for any analysis revision.
+    */
+  val contentSource: TrialContentSource = (_, key, done) =>
+    done(
+      registry
+        .display(key)
+        .toRight(ContentError.NotServed(key))
+        .map(d => TrialContent(d, screen, contentFixations(key.participant, key.trial)))
+    )
 
   /** The fixations of one trial, in record order. */
   def fixations(participant: String, trial: String): Vector[TrialFixation] =

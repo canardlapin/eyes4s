@@ -146,6 +146,8 @@ object Provenance:
         case StudioRef.DesignTally(revision, _) => Some(Place.Revision(revision))
         // A found or missing count lies under the count it is part of.
         case StudioRef.DisplayTally(_, _) => ref.parent.map(Place.At(_))
+        // An outcome's tally lies under the requested queries' tally.
+        case StudioRef.QueryTally(_, _) => ref.parent.map(Place.At(_))
         // A cause under the quarantined count that holds it.
         case StudioRef.InventoryCount(_, _) => ref.parent.map(Place.At(_))
         // A participant's phase lies under the participant.

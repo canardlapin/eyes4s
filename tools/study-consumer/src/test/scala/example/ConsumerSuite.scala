@@ -214,9 +214,10 @@ class ConsumerSuite extends munit.DisciplineSuite:
   test(
     "registry loads the external definition and exposes missing extensions without core edits"
   ) {
-    val registered = get(StudyRegistry.empty[SubjectItemKey, Px].register(persistence.registration))
-    val json       = get(persistence.codec.encode(plan(2.0)))
-    val loaded     = get(registered.decode(json))
+    val registered =
+      get(StudyRegistry.empty[SubjectItemKey, Px].register(persistence.registration))
+    val json   = get(persistence.codec.encode(plan(2.0)))
+    val loaded = get(registered.decode(json))
     assertEquals(loaded.description, plan(2.0).description)
     assertEquals(get(loaded.encode), json)
     assertEquals(get(loaded.run(input)).scales.size, 3)
@@ -248,8 +249,9 @@ class ConsumerSuite extends munit.DisciplineSuite:
       get(decoded.scales.head.contrast).rows.map(r => r.control.map(_.contributing)),
       Vector.fill(6)(Some(2))
     )
-    val registry = get(StudyResultRegistry.empty[SubjectItemKey, Px].register(archive.registration))
-    val loaded   = get(registry.decode(json))
+    val registry =
+      get(StudyResultRegistry.empty[SubjectItemKey, Px].register(archive.registration))
+    val loaded = get(registry.decode(json))
     assertEquals(get(loaded.encode), json)
     assertEquals(
       StudyResultRegistry.empty[SubjectItemKey, Px].decode(json).left.toOption,
