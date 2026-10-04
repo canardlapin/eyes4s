@@ -173,9 +173,14 @@ object TrialsNavigatorVM:
   private def imagesMissing(count: Int): String =
     if count == 1 then t(ImageMissing, n(count)) else t(ImagesMissing, n(count))
 
-  /** The served registry, if the displays were read and served. */
-  private def registry(nav: TrialsNavigator): Option[AssetRegistry] =
-    nav.displays.toOption.collect { case DisplaySource.Served(r) => r }
+  /** The served registry, if the displays were read and served, with the
+    * document's repairs applied (S5.7); a repair that no longer applies
+    * leaves the registry as served.
+    */
+  private def registry(nav: TrialsNavigator, model: AppModel): Option[AssetRegistry] =
+    nav.displays.toOption.collect { case DisplaySource.Served(r) =>
+      r.withRelinks(model.document.relinks.of(r.dataset)).getOrElse(r)
+    }
 
   private def openness(open: Boolean): String = if open then t(Expanded) else t(Collapsed)
 
@@ -277,7 +282,7 @@ object TrialsNavigatorVM:
   def trials(nav: TrialsNavigator, model: AppModel): NavigatorPaneVM =
     val (note, retry)                    = notes(nav)
     val entries                          = nav.entries.toOption.getOrElse(Vector.empty)
-    val displays                         = registry(nav)
+    val displays                         = registry(nav, model)
     val selected                         = TrialsNavigator.selected(model)
     val inventory                        = inventoryFile(nav)
     val filtering                        = nav.filter.trim.nonEmpty
@@ -378,7 +383,7 @@ object TrialsNavigatorVM:
   def items(nav: TrialsNavigator, model: AppModel): NavigatorPaneVM =
     val (note, retry)                    = notes(nav)
     val entries                          = nav.entries.toOption.getOrElse(Vector.empty)
-    val displays                         = registry(nav)
+    val displays                         = registry(nav, model)
     val selected                         = TrialsNavigator.selected(model)
     val inventory                        = inventoryFile(nav)
     val label                            = nav.dataset.fold("")(_.id.label)

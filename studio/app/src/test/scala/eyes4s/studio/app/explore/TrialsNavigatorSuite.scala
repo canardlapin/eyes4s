@@ -471,3 +471,36 @@ class TrialsNavigatorSuite extends munit.FunSuite:
     assertEquals(TrialsNavigatorVM.range(k("ret_01"), k("ret_20")), "ret_01–20")
     assertEquals(TrialsNavigatorVM.range(k("a1"), k("b2")), "a1–b2")
   }
+
+  test("a repaired image is no longer missing in the navigator (S5.7)") {
+    ledger.map { entries =>
+      val forest = ok(eyes4s.studio.core.assets.AssetFile.of("forest-044.png"))
+      val asset  = eyes4s.studio.core.assets.AssetRef(
+        ok(eyes4s.studio.core.assets.AssetFile.of("forest_044_found.png")),
+        eyes4s.codec.ByteDigest.sha256(IArray.from("png".getBytes("UTF-8")))
+      )
+      val command =
+        eyes4s.studio.core.command.Command.RelinkAsset(StoryMoments.r3, forest, Some(asset))
+      val repaired = AppModel.update(model, eyes4s.studio.app.Intent.Dispatch(command))._1
+      def missingIn(m: AppModel) =
+        val nav    = loaded(m, entries)
+        val groups =
+          entries.map(_.trial.participant).distinct.map(NavigatorGroup.Participant(_)) ++
+            entries
+              .map(e => NavigatorGroup.PhaseOf(e.trial.participant, e.trial.phase))
+              .distinct
+        TrialsNavigatorVM
+          .trials(nav.copy(toggled = groups.map(_ -> true).toMap), m)
+          .rows
+          .filter(r => r.kind == NavigatorRowKind.Trial && r.detail.contains("image missing"))
+          .flatMap(_.ref)
+      assertEquals(missingIn(model).size, 4)
+      // forest-044's two trials are shown; kitchen-081's two are still missing.
+      assertEquals(
+        missingIn(repaired),
+        Vector("enc_15", "enc_05")
+          .zip(Vector("P01", "P24"))
+          .map((t, p) => StudioRef.Trial(TrialKey(p, Phase.Encoding, t, 1)): StudioRef)
+      )
+    }
+  }

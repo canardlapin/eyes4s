@@ -80,7 +80,7 @@ object TrialViewInputs:
       def displays(
           dataset: DatasetRevisionSpec,
           done: Either[String, DisplaySource] => Unit
-      ): Unit = done(source.displays(dataset))
+      ): Unit = source.read(dataset, done)
 
 /** Explore's trial view on the desktop (Explore.dc.html, centre; see
   * [[ExploreTrialView]]): the toolbar, the trial on its stage (S4.3a's

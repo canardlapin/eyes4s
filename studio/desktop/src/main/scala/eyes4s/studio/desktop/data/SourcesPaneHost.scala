@@ -124,7 +124,7 @@ final class SourcesPaneHost(
   private def perform(effects: Vector[SourcesEffect]): Unit =
     effects.foreach {
       case SourcesEffect.ReadRegistry(spec, ask) =>
-        dispatch(SourcesIntent.RegistryRead(spec.id, ask, displays.displays(spec)))
+        displays.read(spec, r => later(SourcesIntent.RegistryRead(spec.id, ask, r)))
       case SourcesEffect.App(intent)           => app(intent)
       case SourcesEffect.Locate(dataset, file) =>
         project match

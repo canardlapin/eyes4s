@@ -162,9 +162,13 @@ object ExploreTrialViewVM:
     */
   private def displayOf(
       view: ExploreTrialView,
+      model: AppModel,
       trial: TrialKey
   ): Option[(TrialDisplay, ScreenSize)] =
-    view.displays.toOption.collect { case DisplaySource.Served(r) => r } match
+    // The document's repairs apply (S5.7); one that no longer applies leaves it as served.
+    view.displays.toOption.collect { case DisplaySource.Served(r) =>
+      r.withRelinks(model.document.relinks.of(r.dataset)).getOrElse(r)
+    } match
       case Some(registry) => registry.display(trial).map(_ -> registry.screen)
       case None           =>
         view.dataset.map(d =>
@@ -222,7 +226,7 @@ object ExploreTrialViewVM:
     val preview   = answered(view.preview)
     val fixations = answered(view.fixations)
     val title     = trial.fold("")(k =>
-      displayOf(view, k).flatMap(_._1.item) match
+      displayOf(view, model, k).flatMap(_._1.item) match
         case Some(item) => t(Title, k.participant, k.trial, item.value)
         case None       => t(TitleNoItem, k.participant, k.trial)
     )
@@ -233,7 +237,7 @@ object ExploreTrialViewVM:
     val shown = for
       k                 <- trial
       _                 <- fixations
-      (display, screen) <- displayOf(view, k)
+      (display, screen) <- displayOf(view, model, k)
     yield ShownTrialVM(
       k,
       display,
