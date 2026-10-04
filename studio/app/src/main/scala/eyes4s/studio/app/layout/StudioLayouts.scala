@@ -16,6 +16,7 @@
 
 package eyes4s.studio.app.layout
 
+import eyes4s.studio.app.text.{RecordText, RecordTextId}
 import cats.data.NonEmptyVector
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.text.MessageId
@@ -130,7 +131,8 @@ object StudioLayouts:
         )                                                                            -> 0.55,
         group(pane("explore.timeline", "Timeline", Plot), table("explore.timeline")) -> 0.2,
         group(
-          pane("explore.source-records", "Source records", Table),
+          pane("explore.source-records", "Source records", Table)
+            .copy(described = Some(RecordText(RecordTextId.TableName))),
           dynamic("explore.trial-inventory", "Trial inventory", Table)
         ) -> 0.25
       ),

@@ -30,11 +30,13 @@ enum RecordTextId derives CanEqual:
   /** Where the record falls. */
   case Inside, Outside, OffScreen, NotAdmitted
 
-  /** A row's accessible name, and the raw record toggle. */
-  case RowName, ShowRaw
+  /** A row's accessible name, the table's (Explore.dc.html's grid label),
+    * and the raw record toggle.
+    */
+  case RowName, TableName, ShowRaw
 
   /** The table's states. */
-  case NoRun, Reading, NotServed
+  case NoRun, Reading, NotServed, Empty, Misaligned
 
 object RecordText:
 
@@ -58,10 +60,14 @@ object RecordText:
       case OffScreen   => "off screen"
       case NotAdmitted => "not admitted"
       case RowName     => "Record {0}, {1}, fixation {2}"
-      case ShowRaw     => "Show raw record"
-      case NoRun       => "No run is shown; source records follow the shown run's dataset"
-      case Reading     => "Reading the source records…"
-      case NotServed   => "Source records are not served in this window"
+      case TableName   =>
+        "Source records from fixations.csv. One focus stop; arrow keys move the row cursor."
+      case ShowRaw    => "Show raw record"
+      case NoRun      => "No run is shown; source records follow the shown run's dataset"
+      case Reading    => "Reading the source records…"
+      case Empty      => "The fixation table has no records"
+      case Misaligned => "Page {0} of the source records starts at row {1}, not row {2}"
+      case NotServed  => "Source records are not served in this window"
 
   def apply(id: RecordTextId, args: String*): String =
     Messages.fill(english(id), args.toVector)

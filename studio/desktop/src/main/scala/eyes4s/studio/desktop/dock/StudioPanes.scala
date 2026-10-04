@@ -67,7 +67,8 @@ final class StudioPanes(spec: LayoutSpec):
       val decl  = declared.get(id.value)
       val title = decl.fold(id.value)(_.title.text)
       val role  = decl.fold(A11yRole.Region)(d => A11y.role(d.kind))
-      val view  = StudioPanes.Placeholder(id, title, role, state)
+      val name  = decl.fold(title)(_.accessibleName)
+      val view  = StudioPanes.Placeholder(id, title, name, role, state)
       hosted.get(id).foreach(view.show)
       created += id
       views.update(id, view)
@@ -113,6 +114,7 @@ object StudioPanes:
   private[dock] final class Placeholder(
       id: PaneId,
       title: String,
+      name: String,
       role: A11yRole,
       val state: ujson.Value
   ):
@@ -122,7 +124,7 @@ object StudioPanes:
       val box = VBox(heading)
       box.getStyleClass.add("pane-placeholder")
       box.setId(s"pane-${id.value}")
-      box.setAccessibleText(title)
+      box.setAccessibleText(name)
       box.setAccessibleRole(accessibleRole(role))
       box.setFocusTraversable(true)
       box

@@ -21,6 +21,7 @@ import eyes4s.studio.app.plot.ViewSelection
 import eyes4s.studio.app.text.{Format, RecordText, RecordTextId}
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.backend.{AnalysisRevision, TrialFixations, TrialKey}
+import eyes4s.studio.core.document.SourceRole
 import eyes4s.studio.core.selection.{
   FixationIndex,
   InputCause,
@@ -225,10 +226,11 @@ object SourceRecords:
     (filled, asks ++ reads)
 
   // The first fixation or fixation record the selection holds.
+  // A record of another source (the trial inventory) is not this table's.
   private def selectedRecordRef(selection: SelectionState): Option[StudioRef] =
     selection.selected.collectFirst {
-      case r @ StudioRef.SourceRecord(_, _, _, _) => r
-      case f @ StudioRef.Fixation(_, _)           => f
+      case r @ StudioRef.SourceRecord(_, _, SourceRole.Fixations, _) => r
+      case f @ StudioRef.Fixation(_, _)                              => f
     }
 
   private def follow(
@@ -256,8 +258,8 @@ object SourceRecords:
   // The data record of a selected ref: a record ref names it; a fixation's
   // comes from its trial's admitted fixations.
   private def recordOf(s: SourceRecords, ref: StudioRef): Option[Int] = ref match
-    case StudioRef.SourceRecord(_, _, _, record) => Some(record.value)
-    case StudioRef.Fixation(trial, index)        =>
+    case StudioRef.SourceRecord(_, _, SourceRole.Fixations, record) => Some(record.value)
+    case StudioRef.Fixation(trial, index)                           =>
       s.located
         .get(trial)
         .flatMap(_.toOption)
@@ -281,9 +283,21 @@ object SourceRecords:
         if !s.revision.contains(r) || ask != s.ask || !s.pages.contains(page) then
           (s, Vector.empty)
         else
+          // A page that does not start where it was asked is refused, by name.
           val loaded = result match
             case Left(why) => Loading.Failed(why)
-            case Right(a)  => Loading.Ready(a)
+            case Right(BackendAnswer.Answered(p)) if p.from != page * PageSize =>
+              Loading.Ready(
+                BackendAnswer.Refused(
+                  RecordText(
+                    RecordTextId.Misaligned,
+                    page.toString,
+                    p.from.toString,
+                    (page * PageSize).toString
+                  )
+                )
+              )
+            case Right(a) => Loading.Ready(a)
           val total = result.toOption.collect { case BackendAnswer.Answered(p) => p.total }
           fill(s.copy(pages = s.pages.updated(page, loaded), total = total.orElse(s.total)))
       case Located(r, trial, result) =>
@@ -295,9 +309,12 @@ object SourceRecords:
       case Move(move) =>
         s.total.filter(_ > 0).fold((s, Vector.empty)) { t =>
           val (first, count) = s.viewport
-          val at             = s.cursor.getOrElse(first)
-          val page           = math.max(1, count - 1)
-          val to             = move match
+          // With no cursor yet, the first Down lands on the first row shown.
+          val at = s.cursor.getOrElse(move match
+            case RecordMove.Down => first - 1
+            case _               => first)
+          val page = math.max(1, count - 1)
+          val to   = move match
             case RecordMove.Up       => at - 1
             case RecordMove.Down     => at + 1
             case RecordMove.First    => 0
@@ -306,22 +323,23 @@ object SourceRecords:
             case RecordMove.PageDown => at + page
           fill(s.copy(cursor = Some(to.max(0).min(t - 1))))
         }
-      case Activate => s.cursor.fold((s, Vector.empty))(select(s, _))
+      case Activate => s.cursor.fold((s, Vector.empty))(select(s, _, InputCause.Keyboard))
       case Click(i) =>
         val (moved, _) = fill(s.copy(cursor = Some(i)))
-        select(moved, i)
+        select(moved, i, InputCause.Pointer)
       case ShowRaw(on) => (s.copy(raw = on), Vector.empty)
 
   // Selects the row's fixation, or its record when it has none.
   private def select(
       s: SourceRecords,
-      index: Int
+      index: Int,
+      cause: InputCause
   ): (SourceRecords, Vector[SourceRecordsEffect]) =
     rowAt(s, index).fold((s, Vector.empty)) { row =>
       val (next, intent) = s.selection.submit(
         SelectionMode.Replace,
         Vector(row.fixationRef.getOrElse(row.ref)),
-        InputCause.Keyboard
+        cause
       )
       (
         s.copy(selection = next, followed = Some(row.fixationRef.getOrElse(row.ref))),
@@ -402,6 +420,7 @@ object SourceRecords:
   def status(s: SourceRecords): Option[String] =
     (s.revision, s.total) match
       case (None, _)          => Some(RecordText(RecordTextId.NoRun))
+      case (Some(_), Some(0)) => Some(RecordText(RecordTextId.Empty))
       case (Some(_), Some(_)) => None
       case (Some(_), None)    =>
         s.pages.get(0) match

@@ -223,7 +223,9 @@ class SourceRecordsSuite extends munit.FunSuite:
   test("Enter selects the row's fixation; 'Show raw record' gives the verbatim line") {
     val (s0, e0)   = start
     val s          = settle(s0, e0)
-    val (moved, _) = SourceRecords.update(s, SourceRecordsIntent.Move(RecordMove.Down), model)
+    val (first, _) = SourceRecords.update(s, SourceRecordsIntent.Move(RecordMove.Down), model)
+    val (moved, _) =
+      SourceRecords.update(first, SourceRecordsIntent.Move(RecordMove.Down), model)
     assertEquals(moved.cursor, Some(1))
     val (_, effects) = SourceRecords.update(moved, SourceRecordsIntent.Activate, model)
     effects match
@@ -299,5 +301,72 @@ class SourceRecordsSuite extends munit.FunSuite:
         SourceRecordsEffect.RequestPage(rev4, 7213 / 128, 7213 / 128 * 128, 128, 1)
       ),
       effects
+    )
+  }
+
+  test("a record of the trial inventory does not move the fixations cursor") {
+    val (s0, e0) = start
+    val s        = settle(s0, e0)
+    val trials   =
+      StudioRef.SourceRecord(enc03, None, SourceRole.Trials, right(RecordNumber.of(12)))
+    val (after, effects) = SourceRecords.sync(s, selecting(model, Vector(trials)))
+    assertEquals(after.cursor, s.cursor)
+    assertEquals(
+      effects.collect { case l @ SourceRecordsEffect.Locate(_, _) => l },
+      Vector.empty
+    )
+  }
+
+  test(
+    "a click is a pointer input; Enter a keyboard one; the first Down lands on the first row"
+  ) {
+    val (s0, e0)  = start
+    val s         = settle(s0, e0)
+    val (down, _) = SourceRecords.update(s, SourceRecordsIntent.Move(RecordMove.Down), model)
+    assertEquals(down.cursor, Some(0))
+    def cause(effects: Vector[SourceRecordsEffect]) = effects.collect {
+      case SourceRecordsEffect.App(Intent.Select(input)) => input.stamp.cause
+    }
+    assertEquals(
+      cause(SourceRecords.update(s, SourceRecordsIntent.Click(3), model)._2),
+      Vector(InputCause.Pointer)
+    )
+    assertEquals(
+      cause(SourceRecords.update(down, SourceRecordsIntent.Activate, model)._2),
+      Vector(InputCause.Keyboard)
+    )
+  }
+
+  test("an empty table says so; a misaligned page is refused by name") {
+    val (s0, e0) = start
+    val empty    = SourceRecords
+      .update(
+        s0,
+        SourceRecordsIntent.PageRead(
+          rev4,
+          0,
+          1,
+          Right(BackendAnswer.Answered(SourceRecordPage(0, 0, Vector.empty)))
+        ),
+        model
+      )
+      ._1
+    assertEquals(SourceRecords.status(empty), Some("The fixation table has no records"))
+    assertEquals(e0.size, 1)
+    val shifted = SourceRecords
+      .update(
+        s0,
+        SourceRecordsIntent.PageRead(
+          rev4,
+          0,
+          1,
+          Right(BackendAnswer.Answered(SourceRecordPage(5, total, Vector(row(6)))))
+        ),
+        model
+      )
+      ._1
+    assertEquals(
+      SourceRecords.rowVM(shifted, 0),
+      SourceRowVM.Failed("Page 0 of the source records starts at row 5, not row 0")
     )
   }
