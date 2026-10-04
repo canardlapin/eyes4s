@@ -145,7 +145,7 @@ class QueriesNavigatorFxSuite extends ShellFxSuite:
     val shown = runOnFx(w.summary.queries.rows).filter(_.size > 1)
     assert(shown.nonEmpty && shown.forall(_(1) == "beach-042"), shown)
     val items = runOnFx(w.summary.items.rows).filter(_.size == 1)
-    assertEquals(items, Vector(Vector("beach-042  beach-042 · " + shown.size + " queries")))
+    assertEquals(items, Vector(Vector("beach-042  " + shown.size + " queries")))
     // The strip stays the run's.
     assertEquals(
       runOnFx(w.summary.queries.stripLines).head,

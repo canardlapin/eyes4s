@@ -210,17 +210,17 @@ final class CompareSummaryHost(
       app
     )
 
-  private def toggle(key: String, open: Boolean): Unit =
+  private def toggle(key: String, open: Boolean): Unit = if !disposed then
     navigator = QueriesNavigator.toggle(navigator, key, open)
     render(model())
 
-  private def keyed(kind: NavigatorKind)(key: NavigatorKey): Unit =
+  private def keyed(kind: NavigatorKind)(key: NavigatorKey): Unit = if !disposed then
     val (next, intent) = QueriesNavigator.key(navigator, navigatorVM, kind, key)
     navigator = next
     render(model())
     intent.foreach(app)
 
-  private def filterQueries(text: String): Unit =
+  private def filterQueries(text: String): Unit = if !disposed then
     navigator = QueriesNavigator.filter(navigator, text)
     render(model())
 
@@ -373,12 +373,8 @@ final class CompareSummaryHost(
   /** The navigators' view-model now. */
   def navigatorVM: QueriesNavigatorVM = navigatorVMOf(model())
 
-  // A query is selected when the bus holds it or the Compare trail ends at it.
   private def navigatorVMOf(m: AppModel): QueriesNavigatorVM =
-    val trail = m.navigation.trail(eyes4s.studio.core.document.Perspective.Compare).collect {
-      case eyes4s.studio.app.nav.Place.At(ref) => ref
-    }
-    QueriesNavigator.vm(navigator, state, m.selection.selected ++ trail)
+    QueriesNavigator.vm(navigator, state, QueriesNavigator.selection(m))
 
   /** The state now. */
   def summary: CompareSummary = state
@@ -390,6 +386,7 @@ final class CompareSummaryHost(
   def sync(m: AppModel): Unit = if !disposed then
     val (next, effects) = CompareSummary.sync(state, m)
     state = next
+    navigator = QueriesNavigator.follow(navigator, next.run)
     perform(effects)
     syncPanels(m)
     participantPlot.project(m.selection)
@@ -429,8 +426,9 @@ final class CompareSummaryHost(
 
   private def render(m: AppModel): Unit =
     if !disposed then
-      queries.render(navigatorVMOf(m))
-      items.render(navigatorVMOf(m))
+      val navigators = navigatorVMOf(m)
+      queries.render(navigators)
+      items.render(navigators)
       val v     = CompareSummaryVM.of(state, m)
       val theme = m.document.presentation.theme match
         case eyes4s.studio.core.document.Theme.Light => Theme.Light

@@ -64,6 +64,7 @@ enum SummaryTextId derives CanEqual:
     */
   case TallyOf, TallyNoMatch, TallyNotAdmitted, CursorHeader, CursorQuery
   case GroupOpen, GroupClosed, QueryRowSpoken
+  case NoReportingSpec, NoMeansScale, NoScales
 
 /** Compare's summary strings in the boards' wording. */
 object SummaryText:
@@ -117,7 +118,7 @@ object SummaryText:
       case StripByDesign           => "By design (n/a for this preset)"
       case StripPair               => "{0} · {1}"
       case NotApplicable           => "n/a"
-      case ItemHeader              => "{0} · {1} queries"
+      case ItemHeader              => "{0} queries"
       case TallyOf                 => "{0} · run {1}"
       case TallyNoMatch            => "No match"
       case TallyNotAdmitted        => "Query not admitted"
@@ -126,6 +127,10 @@ object SummaryText:
       case GroupOpen               => "open"
       case GroupClosed             => "closed"
       case QueryRowSpoken          => "{0}, {1}, D {2}"
+      case NoReportingSpec         =>
+        "Run {0}'s queries are read, but the document has no reporting spec to show them under."
+      case NoMeansScale => "Run {0}'s queries are read, but no σ has its participant means: {1}"
+      case NoScales     => "the run has no scales"
 
   /** A run's query tally as a path ("Contributing · run 7"). */
   def tally(run: eyes4s.studio.core.backend.RunId, count: QueryCount): String =
