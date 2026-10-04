@@ -27,6 +27,7 @@ enum ExploreTextId derives CanEqual:
 
   // --- What the view cannot show ------------------------------------------------------
   case NoTrial, NoRevision, Reading, ReadFailed, DisplaysFailed, DisplaysNotServed, Retry
+  case SkippedMark, PreviewUndrawable
 
   // --- The legend ------------------------------------------------------------------------
   case LegendTitle, Fixation, OutsideWindowExcluded, OutsideWindowFails, OutsideScreen
@@ -58,7 +59,9 @@ object ExploreText:
     case DisplaysNotServed =>
       "Display kinds of {0} are not served for this project yet: the trial is drawn on its " +
         "screen without its display."
-    case Retry => "Retry"
+    case Retry             => "Retry"
+    case SkippedMark       => "Fixation {0} lasts {1} ms, too short to draw; it is not shown."
+    case PreviewUndrawable => "The preview of {0} cannot be drawn: {1}"
 
     case LegendTitle           => "Legend"
     case Fixation              => "Fixation · marker area ∝ duration"

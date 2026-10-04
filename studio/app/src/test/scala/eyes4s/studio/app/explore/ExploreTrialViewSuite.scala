@@ -47,13 +47,19 @@ class ExploreTrialViewSuite extends munit.FunSuite:
 
   private def served(
       trial: TrialKey
-  ): Future[(Either[String, TrialFixations], Either[String, TrialPreview])] =
+  ): Future[
+    (Either[String, BackendAnswer[TrialFixations]], Either[String, BackendAnswer[TrialPreview]])
+  ] =
     for
       session <- HeadlessSession.open(StoryMoment.T2)
       fs      <- session.trialFixations(rev4, trial)
       p       <- session.trialPreview(rev4, trial)
       _       <- session.close
-    yield (fs.left.map(_.message), p.left.map(_.message))
+    yield (answer(fs), answer(p))
+
+  /** The backend's answer as the host passes it: a refusal is an answer. */
+  private def answer[A](result: Either[BackendError, A]): Either[String, BackendAnswer[A]] =
+    Right(result.fold(e => BackendAnswer.Refused(e.message), BackendAnswer.Answered(_)))
 
   private def displays(m: AppModel): DisplaySource =
     DisplaySource.Served(ok(GoldenAssets.registry(m.document.dataset(r3).get)))
@@ -61,7 +67,10 @@ class ExploreTrialViewSuite extends munit.FunSuite:
   /** The view synced to `m` with the backend's answers read. */
   private def loaded(
       m: AppModel,
-      answers: (Either[String, TrialFixations], Either[String, TrialPreview]),
+      answers: (
+          Either[String, BackendAnswer[TrialFixations]],
+          Either[String, BackendAnswer[TrialPreview]]
+      ),
       display: DisplaySource
   ): ExploreTrialView =
     val (synced, effects) = ExploreTrialView.sync(ExploreTrialView.empty, m)
@@ -83,7 +92,7 @@ class ExploreTrialViewSuite extends munit.FunSuite:
   test("t2: P17 enc_03 under rev 4, neutral marks, the preview map labelled not a result") {
     served(enc03).map { answers =>
       val view = loaded(model, answers, displays(model))
-      val vm   = ExploreTrialViewVM.of(view)
+      val vm   = ExploreTrialViewVM.of(view, model)
       assertEquals(vm.title, "P17 · enc_03 · beach-042")
       assertEquals(
         vm.toggles.map(t => (t.label, t.on, t.enabled)),
@@ -93,9 +102,18 @@ class ExploreTrialViewSuite extends munit.FunSuite:
       assertEquals(vm.hint, "Canvas focused · arrows move · Enter selects · Esc clears")
       val shown = vm.shown.getOrElse(fail("nothing shown"))
       assertEquals((shown.trial, shown.display.kind), (enc03, DisplayKind.Image))
-      assertEquals(shown.fixations.size, 13)
+      assertEquals(shown.marks.size, 13)
+      // Durations are drawn to the millisecond; the document's stage is dark.
+      assertEquals(shown.marks(5).durationMs, 412)
+      assertEquals(shown.stage, eyes4s.studio.app.tokens.StageVariant.Dark)
       // The map is the preview, identified as one: never a run's result.
-      val grid = shown.map.getOrElse(fail("no preview map"))
+      val preview = shown.map.getOrElse(fail("no preview map"))
+      // The grid covers rev 4's window on the screen, not the image by assumption.
+      assertEquals(
+        (preview.region.left, preview.region.top, preview.region.right, preview.region.bottom),
+        (448.0, 156.0, 1472.0, 924.0)
+      )
+      val grid = preview.grid
       assertEquals(grid.map, MapId.Preview(rev4, enc03))
       assertEquals(grid.map.address, None)
       assertEquals((grid.columns, grid.rows), (64, 48))
@@ -116,10 +134,10 @@ class ExploreTrialViewSuite extends munit.FunSuite:
   test("the outside-window fixation is flagged by its placement, from the backend") {
     served(enc03).map { answers =>
       val shown =
-        ExploreTrialViewVM.of(loaded(model, answers, displays(model))).shown.get
-      val out = shown.fixations.filterNot(_.placement == MapPlacement.InMap)
+        ExploreTrialViewVM.of(loaded(model, answers, displays(model)), model).shown.get
+      val out = shown.marks.filterNot(_.placement == MapPlacement.InMap)
       assertEquals(
-        out.map(f => (f.ref.index.value, f.placement)),
+        out.map(f => (f.index.value, f.placement)),
         Vector((10, MapPlacement.OutsideWindow(OffWindowPolicy.Exclude)))
       )
     }
@@ -130,25 +148,25 @@ class ExploreTrialViewSuite extends munit.FunSuite:
       val view                    = loaded(model, answers, displays(model))
       def toggled(t: TrialToggle) =
         ExploreTrialView.update(view, TrialViewIntent.Switch(t))._1
-      val noPoints = ExploreTrialViewVM.of(toggled(TrialToggle.Points))
+      val noPoints = ExploreTrialViewVM.of(toggled(TrialToggle.Points), model)
       assertEquals(noPoints.shown.map(_.points), Some(false))
       assert(!noPoints.legend.exists(_.swatch == LegendSwatch.Fixation), noPoints.legend)
       assertEquals(noPoints.toggles.head.accessible, "Points, off")
-      val noOrder = ExploreTrialViewVM.of(toggled(TrialToggle.Order))
+      val noOrder = ExploreTrialViewVM.of(toggled(TrialToggle.Order), model)
       assertEquals(noOrder.shown.map(_.order), Some(false))
       assert(!noOrder.legend.exists(_.swatch == LegendSwatch.OrderLine))
-      val noMap = ExploreTrialViewVM.of(toggled(TrialToggle.Map))
+      val noMap = ExploreTrialViewVM.of(toggled(TrialToggle.Map), model)
       assertEquals((noMap.shown.flatMap(_.map), noMap.mapLabel), (None, None))
       assert(!noMap.legend.exists(_.swatch == LegendSwatch.PreviewMap))
       // Twice is back on.
       val back = ExploreTrialView
         .update(toggled(TrialToggle.Map), TrialViewIntent.Switch(TrialToggle.Map))
         ._1
-      assertEquals(ExploreTrialViewVM.of(back).mapLabel, vm(view).mapLabel)
+      assertEquals(ExploreTrialViewVM.of(back, model).mapLabel, vm(view).mapLabel)
     }
   }
 
-  private def vm(v: ExploreTrialView) = ExploreTrialViewVM.of(v)
+  private def vm(v: ExploreTrialView) = ExploreTrialViewVM.of(v, model)
 
   test("a preview the backend cannot give disables Map and says why; a retry asks again") {
     served(enc03).map { answers =>
@@ -197,18 +215,20 @@ class ExploreTrialViewSuite extends munit.FunSuite:
     }
   }
 
-  test("an absent trial has no fixations: the view says so and offers Retry") {
+  test("an absent trial has no fixations: the backend's refusal is said, not retried") {
     served(ret09).map { answers =>
       val explored =
         AppModel.update(model, Intent.Explain(Place.At(StudioRef.Trial(ret09))))._1
       val view = loaded(explored, answers, displays(explored))
-      val v    = ExploreTrialViewVM.of(view)
+      val v    = ExploreTrialViewVM.of(view, explored)
       assertEquals(v.shown, None)
       assert(
         v.note.exists(_.startsWith("The fixations of P17 · ret_09 are not available: ")),
         v.note
       )
-      assertEquals(v.retry, Some("Retry"))
+      // Asking again would only repeat the refusal.
+      assertEquals(v.retry, None)
+      assertEquals(ExploreTrialView.update(view, TrialViewIntent.Retry)._2, Vector.empty)
     }
   }
 
@@ -223,12 +243,73 @@ class ExploreTrialViewSuite extends munit.FunSuite:
     }
   }
 
+  test("a preview the study refuses is said why: Map is off, and nothing to retry") {
+    served(enc03).map { answers =>
+      val fails = TrialViewError.TrialFails(enc03, Vector(10))
+      val view  = loaded(
+        model,
+        (
+          answers._1,
+          Right(BackendAnswer.Refused(BackendError.TrialViewRefused(fails).message))
+        ),
+        displays(model)
+      )
+      val v = vm(view)
+      assertEquals(
+        v.mapNote,
+        Some(
+          "Map preview not available: The study fails P17 · enc_03: fixation 10 lies outside " +
+            "the analysis window, so it has no map."
+        )
+      )
+      assertEquals((v.toggles.last.enabled, v.mapLabel, v.retry), (false, None, None))
+      assertEquals(v.shown.flatMap(_.map), None)
+    }
+  }
+
+  test("the preview is drawn over the region it covers, as a preview") {
+    served(enc03).map { answers =>
+      val preview = answers._2 match
+        case Right(BackendAnswer.Answered(p)) => p
+        case other                            => fail(other.toString)
+      val map = ExploreTrialViewVM.previewMap(preview).fold(fail(_), identity)
+      assertEquals((map.grid.map, map.region), (MapId.Preview(rev4, enc03), preview.region))
+    }
+  }
+
+  test("a fixation too short to draw is left out and said, not the whole trial") {
+    served(enc03).map { answers =>
+      val fs = answers._1 match
+        case Right(BackendAnswer.Answered(f)) => f
+        case other                            => fail(other.toString)
+      val (marks, skipped) = ExploreTrialViewVM.marks(fs.fixations)
+      assertEquals((marks.size, skipped), (13, Vector.empty))
+      val short = ok(
+        AdmittedFixation.of(
+          fs.fixations(0).ref,
+          fs.fixations(0).record,
+          fs.fixations(0).screenX,
+          fs.fixations(0).screenY,
+          fs.fixations(0).onsetMs,
+          0.25,
+          fs.fixations(0).placement
+        )
+      )
+      val (kept, said) = ExploreTrialViewVM.marks(short +: fs.fixations.tail)
+      assertEquals(kept.map(_.index.value), (2 to 13).toVector)
+      assertEquals(
+        said,
+        Vector("Fixation 1 lasts 0.25 ms, too short to draw; it is not shown.")
+      )
+    }
+  }
+
   test("nothing to show: no trial on Explore's trail, or no run shown") {
     val first           = StoryModels.firstRun
     val (none, effects) = ExploreTrialView.sync(ExploreTrialView.empty, first)
     assertEquals(effects, Vector.empty)
     assertEquals(
-      ExploreTrialViewVM.of(none).note,
+      ExploreTrialViewVM.of(none, first).note,
       Some("Choose a trial in the Trials navigator to explore it.")
     )
     assertEquals(ExploreTrialView.shownRevision(model), Some(rev4))

@@ -18,12 +18,15 @@ package eyes4s.studio.app.explore
 
 import eyes4s.plan.{MapPlacement, OffWindowPolicy}
 import eyes4s.studio.app.geometry.Loading
+import eyes4s.studio.app.AppModel
 import eyes4s.studio.app.maps.{MapGrid, MapId}
 import eyes4s.studio.app.text.{ExploreText, ExploreTextId, Format}
+import eyes4s.studio.app.tokens.{StageVariant, Theme}
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.core.assets.{Display, DisplayKind, TrialDisplay}
-import eyes4s.studio.core.backend.{AdmittedFixation, TrialKey, TrialPreview}
-import eyes4s.studio.core.document.ScreenSize
+import eyes4s.studio.core.backend.{AdmittedFixation, ScreenRegion, TrialKey, TrialPreview}
+import eyes4s.studio.core.document.{ScreenSize, StageAppearance}
+import eyes4s.studio.core.selection.FixationIndex
 
 /** A toolbar toggle: its label, state and whether it can act. */
 final case class ToggleVM(
@@ -43,18 +46,35 @@ enum LegendSwatch derives CanEqual:
 /** One entry of the trial view's legend. */
 final case class LegendEntryVM(swatch: LegendSwatch, label: String) derives CanEqual
 
-/** The trial to draw: its display on its screen, its admitted fixations,
-  * the toggles' choices, and the preview map when Map is on and the backend
-  * served one.
+/** One fixation mark to draw: its scanpath position, its centre in screen
+  * pixels, its duration to the millisecond (its marker's area) and its
+  * placement in the study.
+  */
+final case class MarkVM(
+    index: FixationIndex,
+    screenX: Double,
+    screenY: Double,
+    durationMs: Int,
+    placement: MapPlacement
+) derives CanEqual
+
+/** The preview map and the region of the screen its grid covers. */
+final case class PreviewMapVM(grid: MapGrid, region: ScreenRegion) derives CanEqual
+
+/** The trial to draw: its display on its screen, its marks, the toggles'
+  * choices, the preview map when Map is on and the backend served one, and
+  * the document's theme and stage.
   */
 final case class ShownTrialVM(
     trial: TrialKey,
     display: TrialDisplay,
     screen: ScreenSize,
-    fixations: Vector[AdmittedFixation],
+    marks: Vector[MarkVM],
     points: Boolean,
     order: Boolean,
-    map: Option[MapGrid]
+    map: Option[PreviewMapVM],
+    theme: Theme,
+    stage: StageVariant
 ) derives CanEqual
 
 /** Everything Explore's trial view shows. */
@@ -83,8 +103,10 @@ object ExploreTrialViewVM:
   /** The preview label of `preview`: "Map: preview · σ 2° · not a result". */
   def previewLabel(preview: TrialPreview): String = t(MapPreview, degrees(preview.sigmaDegrees))
 
-  /** The preview as a map grid: identified as a preview, never a run's map. */
-  def previewGrid(preview: TrialPreview): Option[MapGrid] =
+  /** The preview as a map grid over the region it covers: identified as a
+    * preview, never a run's map; or why it cannot be drawn.
+    */
+  def previewMap(preview: TrialPreview): Either[String, PreviewMapVM] =
     MapGrid
       .of(
         MapId.Preview(preview.revision, preview.trial),
@@ -94,7 +116,38 @@ object ExploreTrialViewVM:
         preview.cells,
         preview.levels
       )
-      .toOption
+      .map(PreviewMapVM(_, preview.region))
+      .left
+      .map(_.message)
+
+  /** The document's theme and stage as the renderer's tokens. */
+  def appearance(model: AppModel): (Theme, StageVariant) =
+    val theme = model.document.presentation.theme match
+      case eyes4s.studio.core.document.Theme.Light => Theme.Light
+      case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
+    val stage = model.document.presentation.stage match
+      case StageAppearance.Dark  => StageVariant.Dark
+      case StageAppearance.Mid   => StageVariant.Mid
+      case StageAppearance.Light => StageVariant.Light
+    (theme, stage)
+
+  /** The marks of `fixations`, each duration rounded to the millisecond, and
+    * the notes of those too short to draw (under half a millisecond).
+    */
+  def marks(fixations: Vector[AdmittedFixation]): (Vector[MarkVM], Vector[String]) =
+    val (drawn, skipped) = fixations.partition(f => math.round(f.durationMs) >= 1)
+    (
+      drawn.map(f =>
+        MarkVM(
+          f.ref.index,
+          f.screenX,
+          f.screenY,
+          math.round(f.durationMs).toInt,
+          f.placement
+        )
+      ),
+      skipped.map(f => t(SkippedMark, f.ref.index.value.toString, f.durationMs.toString))
+    )
 
   private def kindName(kind: DisplayKind): String =
     TrialsNavigatorVM.glyphName(kind match
@@ -124,16 +177,14 @@ object ExploreTrialViewVM:
         )
 
   private def legend(
-      view: ExploreTrialView,
-      shown: Option[ShownTrialVM]
+      shown: Option[ShownTrialVM],
+      preview: Option[TrialPreview]
   ): Vector[LegendEntryVM] =
     shown.toVector.flatMap { s =>
-      val placements = s.fixations.map(_.placement).distinct
+      val placements = s.marks.map(_.placement).distinct
       val marks      =
         Option
-          .when(s.points && s.fixations.nonEmpty)(
-            LegendEntryVM(LegendSwatch.Fixation, t(Fixation))
-          )
+          .when(s.points && s.marks.nonEmpty)(LegendEntryVM(LegendSwatch.Fixation, t(Fixation)))
           .toVector ++
           (if !s.points then Vector.empty
            else
@@ -147,66 +198,80 @@ object ExploreTrialViewVM:
                case MapPlacement.DroppedInitial =>
                  LegendEntryVM(LegendSwatch.DroppedInitial, t(DroppedInitial))
              })
-      val order = Option.when(s.order && s.fixations.size > 1)(
+      val order = Option.when(s.order && s.marks.size > 1)(
         LegendEntryVM(LegendSwatch.OrderLine, t(OrderLines))
       )
       val display =
         if s.display.isMissing then LegendEntryVM(LegendSwatch.MissingAsset, t(MissingAsset))
         else LegendEntryVM(LegendSwatch.Display(s.display.kind), kindName(s.display.kind))
       val map = s.map
-        .zip(view.preview.toOption)
+        .zip(preview)
         .map((_, p) =>
           LegendEntryVM(LegendSwatch.PreviewMap, t(PreviewMap, degrees(p.sigmaDegrees)))
         )
       marks ++ order ++ Vector(display) ++ map
     }
 
+  private def answered[A](read: Loading[BackendAnswer[A]]): Option[A] =
+    read.toOption.collect { case BackendAnswer.Answered(a) => a }
+
   /** The view-model of `view` in `model`. */
-  def of(view: ExploreTrialView): ExploreTrialViewVM =
-    val trial   = view.trial
-    val preview = view.preview.toOption
-    val title   = trial.fold("")(k =>
+  def of(view: ExploreTrialView, model: AppModel): ExploreTrialViewVM =
+    val trial     = view.trial
+    val label     = trial.fold("")(_.label)
+    val preview   = answered(view.preview)
+    val fixations = answered(view.fixations)
+    val title     = trial.fold("")(k =>
       displayOf(view, k).flatMap(_._1.item) match
         case Some(item) => t(Title, k.participant, k.trial, item.value)
         case None       => t(TitleNoItem, k.participant, k.trial)
     )
+    val drawable              = preview.map(previewMap)
+    val (theme, stage)        = appearance(model)
+    val (drawnMarks, skipped) =
+      fixations.fold((Vector.empty[MarkVM], Vector.empty))(f => marks(f.fixations))
     val shown = for
       k                 <- trial
-      fixations         <- view.fixations.toOption
+      _                 <- fixations
       (display, screen) <- displayOf(view, k)
     yield ShownTrialVM(
       k,
       display,
       screen,
-      fixations.fixations,
+      drawnMarks,
       view.points,
       view.order,
-      if view.map then preview.flatMap(previewGrid) else None
+      if view.map then drawable.flatMap(_.toOption) else None,
+      theme,
+      stage
     )
-    val label = trial.fold("")(_.label)
-    val note  =
+    val note =
       if trial.isEmpty then Some(t(NoTrial))
       else if view.revision.isEmpty then Some(t(NoRevision))
       else
         val reading = view.fixations match
-          case Loading.Waiting     => Some(t(Reading, label))
-          case Loading.Failed(why) => Some(t(ReadFailed, label, why))
-          case _                   => None
+          case Loading.Waiting                              => Some(t(Reading, label))
+          case Loading.Failed(why)                          => Some(t(ReadFailed, label, why))
+          case Loading.Ready(BackendAnswer.Refused(reason)) =>
+            Some(t(ReadFailed, label, reason))
+          case _ => None
         val shownDisplay = view.displays match
           case Loading.Failed(why)                    => Some(t(DisplaysFailed, label, why))
           case Loading.Ready(DisplaySource.NotServed) =>
             Some(t(DisplaysNotServed, view.dataset.fold("")(_.id.label)))
           case _ => None
-        Option((reading.toVector ++ shownDisplay).mkString(" ")).filter(_.nonEmpty)
-    val failed = Vector(view.fixations, view.preview, view.displays).exists {
+        Option((reading.toVector ++ shownDisplay ++ skipped).mkString(" ")).filter(_.nonEmpty)
+    // A platform failure can be retried; a backend's refusal would be repeated.
+    val retryable = Vector(view.fixations, view.preview, view.displays).exists {
       case Loading.Failed(_) => true
       case _                 => false
     }
     val mapNote = view.preview match
-      case Loading.Failed(why) => Some(t(MapNotServed, why))
-      case _                   => None
-    // The toggles are view choices, always available but for Map when the
-    // backend could not give a preview.
+      case Loading.Failed(why)                          => Some(t(MapNotServed, why))
+      case Loading.Ready(BackendAnswer.Refused(reason)) => Some(t(MapNotServed, reason))
+      case _ => drawable.flatMap(_.left.toOption).map(t(PreviewUndrawable, label, _))
+    // The toggles are view choices, always available but for Map when there
+    // is no preview to draw.
     def toggle(tg: TrialToggle, id: ExploreTextId, enabled: Boolean) =
       val name = t(id)
       val on   = view.isOn(tg)
@@ -218,13 +283,13 @@ object ExploreTrialViewVM:
         toggle(TrialToggle.Order, Order, true),
         toggle(TrialToggle.Map, Map, mapNote.isEmpty)
       ),
-      Option.when(view.map)(preview.map(previewLabel)).flatten,
+      Option.when(view.map && mapNote.isEmpty)(preview.map(previewLabel)).flatten,
       mapNote,
       t(CanvasHint),
       t(LegendTitle),
-      legend(view, shown),
+      legend(shown, preview),
       note,
-      Option.when(failed)(t(Retry)),
+      Option.when(retryable)(t(Retry)),
       shown
     )
 

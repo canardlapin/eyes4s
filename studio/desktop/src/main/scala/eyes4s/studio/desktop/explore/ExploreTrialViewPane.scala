@@ -89,8 +89,10 @@ final class ExploreTrialViewPane(dispatch: TrialViewIntent => Unit, trialView: T
       .foreach(url => node.getStylesheets.add(url.toExternalForm))
   )
 
-  /** Bind `vm`: the toolbar, the status and the legend. */
-  def render(vm: ExploreTrialViewVM): Unit =
+  /** Bind `vm`: the toolbar, the status and the legend; `refused` are the
+    * marks the scene could not draw.
+    */
+  def render(vm: ExploreTrialViewVM, refused: Vector[String]): Unit =
     rendering = true
     try
       show(title, Option(vm.title).filter(_.nonEmpty))
@@ -105,13 +107,13 @@ final class ExploreTrialViewPane(dispatch: TrialViewIntent => Unit, trialView: T
       mapLabel.setAccessibleText(vm.mapLabel.orNull)
       show(mapNote, vm.mapNote)
       hint.setText(vm.hint)
-      show(note, vm.note)
+      show(note, Option((vm.note.toVector ++ refused).mkString(" ")).filter(_.nonEmpty))
       vm.retry.foreach { r =>
         retry.setText(r)
         retry.setAccessibleText(r)
       }
       visible(retry, vm.retry.isDefined)
-      visible(status, vm.note.isDefined || vm.retry.isDefined)
+      visible(status, vm.note.isDefined || refused.nonEmpty || vm.retry.isDefined)
       legendTitle.setText(vm.legendTitle)
       legend.getChildren.setAll(vm.legend.map { e =>
         val text = label("explore-legend-label", "t11")

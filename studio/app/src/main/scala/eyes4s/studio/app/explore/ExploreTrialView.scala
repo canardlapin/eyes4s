@@ -32,11 +32,21 @@ enum TrialToggle derives CanEqual:
   /** The backend's preview map. */
   case Map
 
+/** The backend's answer to a trial view request: the view, or the backend's
+  * refusal, which asking again would only repeat. A platform failure to
+  * reach the backend is the intent's `Left` instead, and can be retried.
+  */
+enum BackendAnswer[+A] derives CanEqual:
+  case Answered(value: A)
+  case Refused(reason: String)
+
 /** A user action or platform fact Explore's trial view dispatches. */
 enum TrialViewIntent derives CanEqual:
   case Switch(toggle: TrialToggle)
 
-  /** Read again what failed, and what is still outstanding. */
+  /** Read again what the platform failed to read, and what is still
+    * outstanding; a backend's refusal is not asked again.
+    */
   case Retry
 
   /** The backend's admitted fixations of `trial` under `revision`, asked for
@@ -46,7 +56,7 @@ enum TrialViewIntent derives CanEqual:
       revision: AnalysisRevision,
       trial: TrialKey,
       ask: Int,
-      result: Either[String, TrialFixations]
+      result: Either[String, BackendAnswer[TrialFixations]]
   )
 
   /** The backend's preview of `trial` under `revision`, asked for by `ask`. */
@@ -54,7 +64,7 @@ enum TrialViewIntent derives CanEqual:
       revision: AnalysisRevision,
       trial: TrialKey,
       ask: Int,
-      result: Either[String, TrialPreview]
+      result: Either[String, BackendAnswer[TrialPreview]]
   )
 
   /** The trial displays of the revision's dataset, asked for by `ask`. */
@@ -81,8 +91,8 @@ final case class ExploreTrialView(
     dataset: Option[DatasetRevisionSpec],
     trial: Option[TrialKey],
     ask: Int,
-    fixations: Loading[TrialFixations],
-    preview: Loading[TrialPreview],
+    fixations: Loading[BackendAnswer[TrialFixations]],
+    preview: Loading[BackendAnswer[TrialPreview]],
     displays: Loading[DisplaySource],
     points: Boolean,
     order: Boolean,

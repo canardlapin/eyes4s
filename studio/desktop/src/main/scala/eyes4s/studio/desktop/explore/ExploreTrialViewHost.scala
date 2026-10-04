@@ -16,11 +16,9 @@
 
 package eyes4s.studio.desktop.explore
 
-import cats.syntax.all.*
 import eyes4s.studio.app.AppModel
 import eyes4s.studio.app.explore.*
 import eyes4s.studio.app.maps.{ColourLimits, MapOpacity, MapPalette}
-import eyes4s.studio.app.tokens.{StageVariant, Theme}
 import eyes4s.studio.core.backend.{
   AnalysisRevision,
   BackendError,
@@ -28,10 +26,17 @@ import eyes4s.studio.core.backend.{
   TrialKey,
   TrialPreview
 }
-import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective, StageAppearance}
+import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective}
 import eyes4s.studio.desktop.runtime.StudioSession
 import eyes4s.studio.desktop.trial.{MapRequest, StimulusSource, TrialView}
-import eyes4s.studio.viz.trial.{MarkStyle, TrialFixation, TrialSceneInput, TrialSceneOptions}
+import eyes4s.studio.viz.trial.{
+  MapCoverage,
+  MarkStyle,
+  ScreenRect,
+  TrialFixation,
+  TrialSceneInput,
+  TrialSceneOptions
+}
 import javafx.application.Platform
 
 /** Where Explore's trial view reads a trial's fixations, its preview map and
@@ -41,12 +46,12 @@ trait TrialViewInputs:
   def fixations(
       revision: AnalysisRevision,
       trial: TrialKey,
-      done: Either[String, TrialFixations] => Unit
+      done: Either[String, BackendAnswer[TrialFixations]] => Unit
   ): Unit
   def preview(
       revision: AnalysisRevision,
       trial: TrialKey,
-      done: Either[String, TrialPreview] => Unit
+      done: Either[String, BackendAnswer[TrialPreview]] => Unit
   ): Unit
   def displays(dataset: DatasetRevisionSpec, done: Either[String, DisplaySource] => Unit): Unit
 
@@ -54,22 +59,23 @@ object TrialViewInputs:
   /** The window's backend (protocol 1.6), and `source` for the displays. */
   def of(session: StudioSession, source: NavigatorDisplays): TrialViewInputs =
     new TrialViewInputs:
+      // A transport failure can be retried; the backend's refusal is its answer.
       private def answer[A](
-          done: Either[String, A] => Unit
+          done: Either[String, BackendAnswer[A]] => Unit
       ): Either[Throwable, Either[BackendError, A]] => Unit = {
         case Left(e)          => done(Left(Option(e.getMessage).getOrElse(e.toString)))
-        case Right(Left(err)) => done(Left(err.message))
-        case Right(Right(a))  => done(Right(a))
+        case Right(Left(err)) => done(Right(BackendAnswer.Refused(err.message)))
+        case Right(Right(a))  => done(Right(BackendAnswer.Answered(a)))
       }
       def fixations(
           revision: AnalysisRevision,
           trial: TrialKey,
-          done: Either[String, TrialFixations] => Unit
+          done: Either[String, BackendAnswer[TrialFixations]] => Unit
       ): Unit = session.run(session.backend.trialFixations(revision, trial))(answer(done))
       def preview(
           revision: AnalysisRevision,
           trial: TrialKey,
-          done: Either[String, TrialPreview] => Unit
+          done: Either[String, BackendAnswer[TrialPreview]] => Unit
       ): Unit = session.run(session.backend.trialPreview(revision, trial))(answer(done))
       def displays(
           dataset: DatasetRevisionSpec,
@@ -104,7 +110,7 @@ final class ExploreTrialViewHost(
     if !started then Vector.empty else ExploreTrialViewVM.focusStops(vm)
 
   /** The view-model now shown. */
-  def vm: ExploreTrialViewVM = ExploreTrialViewVM.of(view)
+  def vm: ExploreTrialViewVM = ExploreTrialViewVM.of(view, model())
 
   /** Follow the model. Nothing is read until Explore has been shown. */
   def sync(m: AppModel): Unit =
@@ -125,17 +131,19 @@ final class ExploreTrialViewHost(
   def dispose(): Unit = trialView.dispose()
 
   private def render(m: AppModel): Unit =
-    val vm = ExploreTrialViewVM.of(view)
-    pane.render(vm)
-    val input = vm.shown.flatMap(ExploreTrialViewHost.sceneInput(_, m))
+    val vm               = ExploreTrialViewVM.of(view, m)
+    val (input, refused) =
+      vm.shown.fold((None, Vector.empty[String]))(s =>
+        val (i, r) = ExploreTrialViewHost.sceneInput(s)
+        (Some(i), r)
+      )
+    pane.render(vm, refused)
     if input != drawn then
       drawn = input
       input.fold(trialView.clear())(trialView.show)
-    val request = for
-      s       <- vm.shown
-      grid    <- s.map
-      opacity <- MapOpacity.of(m.document.presentation.mapOpacity.value)
-    yield MapRequest(grid, ColourLimits.spanning(MapPalette.Mass, Vector(grid)), opacity)
+    val request = vm.shown.flatMap(
+      ExploreTrialViewHost.mapRequest(_, m.document.presentation.mapOpacity.value)
+    )
     if request != mapped then
       mapped = request
       trialView.showMap(request)
@@ -163,39 +171,44 @@ final class ExploreTrialViewHost(
 
 object ExploreTrialViewHost:
 
+  /** The preview map of a shown trial as the trial view draws it: over the
+    * screen region its grid covers, at the document's opacity.
+    */
+  def mapRequest(shown: ShownTrialVM, opacity: Double): Option[MapRequest] =
+    for
+      map    <- shown.map
+      alpha  <- MapOpacity.of(opacity)
+      region <- ScreenRect
+        .of(map.region.left, map.region.top, map.region.right, map.region.bottom)
+        .toOption
+    yield MapRequest(
+      map.grid,
+      ColourLimits.spanning(MapPalette.Mass, Vector(map.grid)),
+      alpha,
+      MapCoverage.Region(region)
+    )
+
   /** The trial scene input of a shown trial: neutral marks (Explore never
     * shows roles), the toolbar's Points and Order, the window outline, and
-    * the document's theme and stage. A fixation's duration is drawn to the
-    * millisecond.
+    * the document's theme and stage; and the words of any mark the scene
+    * refused, which is left out rather than losing the trial.
     */
-  def sceneInput(shown: ShownTrialVM, m: AppModel): Option[TrialSceneInput] =
-    val theme = m.document.presentation.theme match
-      case eyes4s.studio.core.document.Theme.Light => Theme.Light
-      case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
-    val stage = m.document.presentation.stage match
-      case StageAppearance.Dark  => StageVariant.Dark
-      case StageAppearance.Mid   => StageVariant.Mid
-      case StageAppearance.Light => StageVariant.Light
-    shown.fixations
-      .traverse(f =>
-        TrialFixation.of(
-          shown.trial,
-          f.ref.index,
-          f.screenX,
-          f.screenY,
-          math.max(1L, math.round(f.durationMs)).toInt,
-          f.placement
-        )
-      )
-      .toOption
-      .map(fixations =>
-        TrialSceneInput(
-          shown.display,
-          shown.screen,
-          fixations,
-          MarkStyle.Neutral,
-          theme,
-          stage,
-          options = TrialSceneOptions(points = shown.points, order = shown.order)
-        )
-      )
+  def sceneInput(shown: ShownTrialVM): (TrialSceneInput, Vector[String]) =
+    val built = shown.marks.map(mk =>
+      TrialFixation
+        .of(shown.trial, mk.index, mk.screenX, mk.screenY, mk.durationMs, mk.placement)
+        .left
+        .map(_.message)
+    )
+    (
+      TrialSceneInput(
+        shown.display,
+        shown.screen,
+        built.collect { case Right(f) => f },
+        MarkStyle.Neutral,
+        shown.theme,
+        shown.stage,
+        options = TrialSceneOptions(points = shown.points, order = shown.order)
+      ),
+      built.collect { case Left(why) => why }
+    )
