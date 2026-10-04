@@ -172,6 +172,9 @@ enum Notice derives CanEqual:
   /** The platform's save of the project failed; the last save stands. */
   case SaveFailed(reason: String)
 
+  /** A Save & run was asked while another waits for its check (S2.5). */
+  case RunWaiting
+
   /** Save & run was refused: the sources of `dataset` are not known to be
     * held as recorded (S2.5), and why.
     */
@@ -194,10 +197,29 @@ enum Notice derives CanEqual:
     case Invalid(e)               => e.message
     case LayoutsReset(ps, reason) =>
       messages(MessageId.NoticeLayoutsReset, ps.map(_.label).mkString(", "), reason)
-    case SaveFailed(reason)                     => messages(MessageId.NoticeSaveFailed, reason)
-    case SourcesBlocked(dataset, block)         => SourcesText.blocked(dataset, block)
+    case SaveFailed(reason)             => messages(MessageId.NoticeSaveFailed, reason)
+    case SourcesBlocked(dataset, block) => SourcesText.blocked(dataset, block)
+    case RunWaiting => SourcesText(eyes4s.studio.app.text.SourcesTextId.RunWaiting)
     case Outdated(Confirmation.DiscardDraft(d)) =>
       s"Draft ${d.label} is no longer the draft; nothing was discarded."
+
+/** The checks of the project's stored inputs (S2.5): each asked check has
+  * a round, and its answer names it. `runAfter` is the Save & run waiting
+  * for round `n` (or a later one) to be answered.
+  */
+final case class InputChecks(
+    asked: Long,
+    answered: Long,
+    runAfter: Option[(Command.SaveAndRun, Long)]
+) derives CanEqual:
+  /** Whether a check newer than the last answer is outstanding. */
+  def outstanding: Boolean = asked > answered
+
+  /** Ask the next round. */
+  def ask: (InputChecks, Long) = (copy(asked = asked + 1), asked + 1)
+
+object InputChecks:
+  val none: InputChecks = InputChecks(0L, 0L, None)
 
 /** Which pane has focus in each layout, which layouts are maximized, and the
   * sub-selection each pane reports for the status bar ("Draft rev 5 ›
@@ -261,10 +283,11 @@ enum AppEffect derives CanEqual:
   /** Show the project bundle in the platform's file browser (S1.4). */
   case RevealProject
 
-  /** Check the project's stored inputs against their digests (S2.5); the
-    * answer is [[Intent.InputsChecked]] or [[Intent.InputsCheckFailed]].
+  /** Check the project's stored inputs against their digests (S2.5): check
+    * `round`; the answer is [[Intent.InputsChecked]] or
+    * [[Intent.InputsCheckFailed]] naming the same round.
     */
-  case CheckInputs
+  case CheckInputs(round: Long)
 
   /** Return every layout of `perspective` to its default arrangement
     * (View › Reset perspective, S1.5a); the document's saved layout is
@@ -406,11 +429,11 @@ enum Intent derives CanEqual:
     */
   case CheckInputs
 
-  /** The project's stored inputs were checked against their digests (S2.5). */
-  case InputsChecked(statuses: Vector[InputStatus])
+  /** Check `round` of the project's stored inputs found `statuses` (S2.5). */
+  case InputsChecked(round: Long, statuses: Vector[InputStatus])
 
-  /** The check of the project's stored inputs failed; runs stay blocked. */
-  case InputsCheckFailed(reason: String)
+  /** Check `round` of the project's stored inputs failed; runs stay blocked. */
+  case InputsCheckFailed(round: Long, reason: String)
   case ItemsLoaded(items: TrialItems)
 
   /** The resolved-design pane counted a backend preview to the end (S7.5): a
@@ -497,7 +520,7 @@ final case class AppModel private (
     prepared: Option[PreparedDesign],
     appearance: AppearanceState,
     inputs: InputCheck,
-    runAfterCheck: Option[Command.SaveAndRun]
+    checks: InputChecks
 ) derives CanEqual:
 
   def document: StudioDocument = history.document
@@ -510,7 +533,7 @@ final case class AppModel private (
   def location: Location       = navigation.at(perspective)
 
   /** The stored state of every dataset source, as last checked (S2.5). */
-  lazy val sources: SourceCheck = SourceCheck.of(document, inputs)
+  lazy val sources: SourceCheck = SourceCheck.of(document, inputs, checks.outstanding)
 
   /** The dataset revision Save & run would run, and why it may not: the
     * draft's dataset, else its base's (the reducer's rule).
@@ -605,7 +628,7 @@ object AppModel:
       None,
       AppearanceState.initial,
       InputCheck.NoProject,
-      None
+      InputChecks.none
     )
 
   /** The Analysis trail of the current draft, or of the latest revision. */
@@ -632,7 +655,24 @@ object AppModel:
     if m.document.presentation.theme == theme then (m, Vector.empty)
     else update(m, Intent.Dispatch(Command.SetTheme(theme)))
 
-  def update(m: AppModel, intent: Intent): (AppModel, Vector[AppEffect]) = intent match
+  def update(m: AppModel, intent: Intent): (AppModel, Vector[AppEffect]) =
+    val (next, effects) = step(m, intent)
+    // A change that adds sources (an import, a re-import, an undone discard)
+    // checks the stored inputs again: the new files are not in the last check.
+    val added  = sourcesOf(next.document) -- sourcesOf(m.document)
+    val asking = effects.exists {
+      case AppEffect.CheckInputs(_) => true
+      case _                        => false
+    }
+    if added.isEmpty || asking || next.inputs == InputCheck.NoProject then (next, effects)
+    else
+      val (checks, round) = next.checks.ask
+      (next.copy(checks = checks), effects :+ AppEffect.CheckInputs(round))
+
+  private def sourcesOf(d: StudioDocument): Set[eyes4s.codec.ByteDigest] =
+    d.datasets.flatMap(_.sources.entries.map(_.bytes)).toSet
+
+  private def step(m: AppModel, intent: Intent): (AppModel, Vector[AppEffect]) = intent match
     case Intent.SwitchPerspective(p) => navigate(m, m.navigation.at(p))
     case Intent.Navigate(to)         => navigate(m, to)
     case Intent.OpenCrumb(index)     =>
@@ -673,8 +713,14 @@ object AppModel:
     case Intent.Dispatch(run: Command.SaveAndRun) if m.inputs != InputCheck.NoProject =>
       // Every Save & run of a project checks its stored inputs first, then
       // runs only if they are present as recorded (S2.5; fail closed).
-      if m.runAfterCheck.isDefined then (m, none)
-      else (m.copy(runAfterCheck = Some(run)), Vector(AppEffect.CheckInputs))
+      // A second one while the first waits is told so, not dropped silently.
+      if m.checks.runAfter.isDefined then (m.copy(notice = Some(Notice.RunWaiting)), none)
+      else
+        val (checks, round) = m.checks.ask
+        (
+          m.copy(checks = checks.copy(runAfter = Some((run, round)))),
+          Vector(AppEffect.CheckInputs(round))
+        )
     case Intent.Dispatch(command) =>
       applyHistory(m, JournalEntry.Apply(command), m.history.apply(command))
     case Intent.Undo(stack) => applyHistory(m, undoEntry(stack), m.history.undoOn(stack))
@@ -770,11 +816,12 @@ object AppModel:
     case Intent.SessionChanged(f) => (m.copy(session = f), none)
     case Intent.CheckInputs       =>
       val asked = if m.inputs == InputCheck.NoProject then InputCheck.Unchecked else m.inputs
-      (m.copy(inputs = asked), Vector(AppEffect.CheckInputs))
-    case Intent.InputsChecked(statuses) =>
-      checkedThenRun(m.copy(inputs = InputCheck.Checked(statuses)))
-    case Intent.InputsCheckFailed(reason) =>
-      checkedThenRun(m.copy(inputs = InputCheck.CheckFailed(reason)))
+      val (checks, round) = m.checks.ask
+      (m.copy(inputs = asked, checks = checks), Vector(AppEffect.CheckInputs(round)))
+    case Intent.InputsChecked(round, statuses) =>
+      answered(m, round, InputCheck.Checked(statuses))
+    case Intent.InputsCheckFailed(round, reason) =>
+      answered(m, round, InputCheck.CheckFailed(reason))
     case Intent.ItemsLoaded(items)            => (m.copy(items = items), none)
     case Intent.DesignPrepared(r)             => (m.copy(prepared = Some(r)), none)
     case Intent.DesignWithdrawn               => (m.copy(prepared = None), none)
@@ -964,19 +1011,36 @@ object AppModel:
     case _                                             => None
 
   /** Record the move in the history, then arrive. */
-  /** After a check: the Save & run that asked for it runs, or is refused
-    * with why its sources block it.
+  /** The answer to check `round`: an answer older than one already taken is
+    * ignored. A Save & run waiting for a round runs once that round (or a
+    * later one) is answered, or is refused with why its sources block it;
+    * an earlier answer, from a check asked before the click, is not enough.
     */
-  private def checkedThenRun(m: AppModel): (AppModel, Vector[AppEffect]) =
-    m.runAfterCheck match
-      case None      => (m, Vector.empty)
-      case Some(run) =>
-        val next = m.copy(runAfterCheck = None)
-        next.runBlock match
-          case Some((dataset, block)) =>
-            (next.copy(notice = Some(Notice.SourcesBlocked(dataset, block))), Vector.empty)
-          case None =>
-            applyHistory(next, JournalEntry.Apply(run), next.history.apply(run))
+  private def answered(
+      m: AppModel,
+      round: Long,
+      found: InputCheck
+  ): (AppModel, Vector[AppEffect]) =
+    if round <= m.checks.answered then (m, Vector.empty)
+    else
+      val next = m.copy(inputs = found, checks = m.checks.copy(answered = round))
+      next.checks.runAfter match
+        case Some((run, asked)) if asked <= round =>
+          checkedThenRun(next.copy(checks = next.checks.copy(runAfter = None)), run)
+        case _ => (next, Vector.empty)
+
+  /** The Save & run `run`, after its own check: it runs, or is refused with
+    * why its sources block it.
+    */
+  private def checkedThenRun(
+      next: AppModel,
+      run: Command.SaveAndRun
+  ): (AppModel, Vector[AppEffect]) =
+    next.runBlock match
+      case Some((dataset, block)) =>
+        (next.copy(notice = Some(Notice.SourcesBlocked(dataset, block))), Vector.empty)
+      case None =>
+        applyHistory(next, JournalEntry.Apply(run), next.history.apply(run))
 
   private def navigate(m: AppModel, to: Location): (AppModel, Vector[AppEffect]) =
     arrive(m, m.copy(navigation = m.navigation.go(m.location, to)), to)

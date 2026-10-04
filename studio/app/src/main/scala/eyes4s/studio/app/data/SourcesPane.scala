@@ -28,7 +28,8 @@ import eyes4s.studio.core.assets.{
   AssetRef,
   AssetRegistry,
   DisplayKind,
-  SourceBlock
+  SourceBlock,
+  SourceState
 }
 import eyes4s.studio.core.backend.DatasetRevision
 import eyes4s.studio.core.command.Command
@@ -403,9 +404,11 @@ object SourcesVM:
           val name = s.path.value.split('/').last
           // A source the project no longer holds as recorded says so, with Repair… (S2.5).
           val finding = model.sources.find(id, s).filter(_.state.blocks)
-          val problem = finding.map(SourcesText.state)
-          val repair  =
-            finding.map(_ => (t(RepairSource, name), SourcesIntent.RepairSource(s.role)))
+          // A file imported since the last check is only waiting for the next.
+          val repairable = finding.filter(_.state != SourceState.Unchecked)
+          val problem    = finding.map(SourcesText.state)
+          val repair     =
+            repairable.map(_ => (t(RepairSource, name), SourcesIntent.RepairSource(s.role)))
           s.role match
             case SourceRole.Fixations =>
               SourceRowVM(

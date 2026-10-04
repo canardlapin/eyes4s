@@ -127,13 +127,16 @@ final class DesktopEffects(
     case AppEffect.Dock(command)   => dock(command)
     // Without a project there is nothing to check, and so nothing is known
     // to be as recorded: the check fails, and runs stay blocked (S2.5).
-    case AppEffect.CheckInputs =>
+    case AppEffect.CheckInputs(round) =>
       project match
-        case None => dispatch(Intent.InputsCheckFailed("this window has no project to check"))
+        case None =>
+          dispatch(Intent.InputsCheckFailed(round, "this window has no project to check"))
         case Some(port) =>
           port.checkInputs { answer =>
             ui { () =>
-              dispatch(answer.fold(Intent.InputsCheckFailed(_), Intent.InputsChecked(_)))
+              dispatch(
+                answer.fold(Intent.InputsCheckFailed(round, _), Intent.InputsChecked(round, _))
+              )
             }
           }
     case e @ AppEffect.RevealProject => report(EffectProblem.NotWired(e, "S2.9"))

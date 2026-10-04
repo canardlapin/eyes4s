@@ -32,6 +32,12 @@ enum SourceState derives CanEqual:
   case Withheld
   case Unreadable(reason: String)
 
+  /** Not listed by the last check, while a newer one is outstanding: a file
+    * imported since. It is not known to be present, so it blocks; it is not
+    * known to be missing either, so nothing offers to repair it.
+    */
+  case Unchecked
+
   def blocks: Boolean = this != Present
 
 /** One source of one dataset revision and what the store holds for it. */
@@ -114,24 +120,32 @@ final case class SourceCheck private (
 
 object SourceCheck:
 
-  def of(document: StudioDocument, check: InputCheck): SourceCheck = check match
-    case InputCheck.Checked(statuses) =>
-      val findings = for
-        spec   <- document.datasets
-        source <- spec.sources.entries
-      yield
-        val kind  = InputKind.Source(source.role)
-        val entry = statuses.find(s =>
-          s.entry.kind == kind && s.entry.sha256 == source.bytes &&
-            s.entry.name.forall(_ == source.path.value.split('/').last)
+  def of(document: StudioDocument, check: InputCheck): SourceCheck =
+    of(document, check, outstanding = false)
+
+  /** As [[of]]; with a newer check `outstanding`, a source the last check
+    * did not list is [[SourceState.Unchecked]], not missing.
+    */
+  def of(document: StudioDocument, check: InputCheck, outstanding: Boolean): SourceCheck =
+    check match
+      case InputCheck.Checked(statuses) =>
+        val findings = for
+          spec   <- document.datasets
+          source <- spec.sources.entries
+        yield
+          val kind  = InputKind.Source(source.role)
+          val entry = statuses.find(s =>
+            s.entry.kind == kind && s.entry.sha256 == source.bytes &&
+              s.entry.name.forall(_ == source.path.value.split('/').last)
+          )
+          val unlisted = if outstanding then SourceState.Unchecked else SourceState.Missing
+          SourceFinding(spec.id, source, entry.fold(unlisted)(stateOf))
+        SourceCheck(
+          check,
+          findings,
+          statuses.filter(s => s.entry.kind == InputKind.StimulusImage && unstored(s))
         )
-        SourceFinding(spec.id, source, entry.fold(SourceState.Missing)(stateOf))
-      SourceCheck(
-        check,
-        findings,
-        statuses.filter(s => s.entry.kind == InputKind.StimulusImage && unstored(s))
-      )
-    case other => SourceCheck(other, Vector.empty, Vector.empty)
+      case other => SourceCheck(other, Vector.empty, Vector.empty)
 
   private def unstored(s: InputStatus): Boolean = s match
     case InputStatus.Present(_) | InputStatus.Withheld(_) => false

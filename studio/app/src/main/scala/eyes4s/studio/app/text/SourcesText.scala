@@ -47,7 +47,7 @@ enum SourcesTextId derives CanEqual:
   // --- Source repair (S2.5) ------------------------------------------------------------------
   case SourceChanged, SourceMissing, SourceWithheld, SourceUnreadable, RepairSource
   case SourceProblem, RunBlocked, SourceRecopied, SourceReplaced, SourceRepairFailed
-  case BlockedUnchecked, BlockedCheckFailed
+  case BlockedUnchecked, BlockedCheckFailed, SourceUnchecked, RunWaiting
   case ImagesUnstored, RevisionChanged
 
 /** The Sources pane's strings in the board's wording. */
@@ -109,6 +109,10 @@ object SourcesText:
     case SourceProblem    => "{0} is {1}"
     case RunBlocked       =>
       "{0} is blocked: {1}. Repair it in Data · Sources, or admit a revision that replaces it."
+    case SourceUnchecked =>
+      "not checked yet (sha256:{0} recorded); the project's stored files are being checked"
+    case RunWaiting =>
+      "Save & run is already waiting for the project's stored files to be checked."
     case BlockedUnchecked =>
       "{0} is blocked until the project's stored files are checked against their digests."
     case BlockedCheckFailed =>
@@ -135,6 +139,7 @@ object SourcesText:
       case SourceState.Withheld        => apply(SourceWithheld, recorded)
       case SourceState.Unreadable(why) => apply(SourceUnreadable, recorded, why)
       case SourceState.Changed(found)  => apply(SourceChanged, recorded, found.hex)
+      case SourceState.Unchecked       => apply(SourceUnchecked, recorded)
 
   /** Why `dataset` may not be run or previewed, naming each file. */
   def blocked(dataset: DatasetRevision, block: SourceBlock): String = block match
