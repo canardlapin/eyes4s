@@ -16,6 +16,7 @@
 
 package eyes4s.studio.desktop.shell
 
+import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.app.{AppModel, StoryModels}
 import eyes4s.studio.app.tokens.{Theme, ThemedToken, Tokens}
 import eyes4s.studio.app.vm.{A11y, A11yRole}
@@ -88,6 +89,7 @@ class A11yTreeSuite extends ShellFxSuite:
     case AccessibleRole.COMBO_BOX     => A11yRole.ComboBox.id
     case AccessibleRole.TEXT_FIELD    => A11yRole.TextField.id
     case AccessibleRole.RADIO_BUTTON  => A11yRole.RadioButton.id
+    case AccessibleRole.HYPERLINK     => A11yRole.Link.id
     case other                        => other.toString.toLowerCase
 
   private def stop(n: Node): String = runOnFx(s"${role(n)}: ${n.getAccessibleText}")
@@ -132,6 +134,10 @@ class A11yTreeSuite extends ShellFxSuite:
     fxStage.test(s"$name: Tab visits the derived stops; docs/studio/a11y/tab-order-$name.txt") {
       fx =>
         val w = boot(fx, model(), moment)
+        // The preflight pane's controls follow the backend's check of the
+        // design, so the stops are derived once it has answered.
+        if runOnFx(w.runtime.model.perspective) == Perspective.Analysis then
+          eventually(fx, "the design's check")(w.resolvedDesign.state.preview.receipt.isDefined)
         // A form pane's controls follow its stop (the column-mapping pane).
         val derived =
           A11y.render(runOnFx(A11y.tabOrder(w.runtime.model, inside = w.paneStops)))

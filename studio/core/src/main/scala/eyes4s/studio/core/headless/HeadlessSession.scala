@@ -154,6 +154,16 @@ final class HeadlessSession private (
   ): Future[Either[BackendError, TrialPreview]] =
     run(fake.trialPreview(revision, trial))
 
+  /** Records `from` to `from + count - 1` of `revision`'s fixation file
+    * (protocol 1.7).
+    */
+  def sourceRecords(
+      revision: AnalysisRevision,
+      from: Int,
+      count: Int
+  ): Future[Either[BackendError, SourceRecordPage]] =
+    run(fake.sourceRecords(revision, from, count))
+
   /** Every entry of `dataset`'s ledger, in inventory order. */
   def wholeLedger(
       dataset: DatasetRevision

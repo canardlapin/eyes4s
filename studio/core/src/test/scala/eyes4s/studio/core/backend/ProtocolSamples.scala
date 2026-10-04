@@ -21,7 +21,9 @@ import io.circe.{Decoder, Encoder, Json}
 import eyes4s.studio.core.execution.RunStamp
 import eyes4s.studio.core.preview.*
 import eyes4s.plan.{MapPlacement, OffWindowPolicy}
-import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
+import eyes4s.codec.ByteDigest
+import eyes4s.studio.core.document.{Source, SourcePath, SourceRole}
+import eyes4s.studio.core.selection.{FixationIndex, RecordNumber, StudioRef}
 
 /** One named protocol value: its JSON is pinned in [[ProtocolPins]]. */
 final case class Sample[A](name: String, value: A)(using
@@ -69,7 +71,11 @@ object ProtocolSamples:
     DiagnosticLevel.Error,
     DiagnosticOrigin.EyesCore,
     Vector(DiagnosticLocus.Trial(query)),
-    "empty map"
+    "empty map",
+    // Protocol 1.8: the trials it names, its finding class and remedy.
+    Vector(query, TrialKey("P17", Phase.Encoding, "enc_03", 1)),
+    Some("DataDependent"),
+    Some("ReviewAnalysisWindow")
   )
 
   val previewBudget: PreviewBudget = right(PreviewBudget.of(24))
@@ -202,7 +208,11 @@ object ProtocolSamples:
       )
     ),
     BackendError.UnknownTrial(DatasetRevision(3), TrialKey("P99", Phase.Encoding, "enc_01", 1)),
-    BackendError.TrialViewRefused(TrialViewError.TrialFails(query, Vector(4, 5)))
+    BackendError.TrialViewRefused(TrialViewError.TrialFails(query, Vector(4, 5))),
+    BackendError.SourceRecordsRefused(
+      AnalysisRevision(4),
+      SourceRecordsError.RangeInvalid(0, 501, SourceRecordPage.Limit)
+    )
   )
 
   val runStates: Vector[RunState] = Vector(
@@ -336,6 +346,83 @@ object ProtocolSamples:
     .toOption
     .get
 
+  /** Protocol 1.7: a placed record of an admitted scanpath, a record outside
+    * the image no scanpath holds, and a record whose cells are not numbers.
+    */
+  val sourceRecordPage: SourceRecordPage =
+    def point(n: Int, f: String, x: Double, y: Double) = PlanePoint.of(n, f, x, y).toOption.get
+    def ref(n: Int, fixation: Option[Int]): StudioRef.SourceRecord = StudioRef.SourceRecord(
+      query,
+      fixation.map(FixationIndex.of(_).toOption.get),
+      SourceRole.Fixations,
+      RecordNumber.of(n).toOption.get
+    )
+    SourceRecordPage
+      .of(
+        AnalysisRevision(4),
+        DatasetRevision(3),
+        Source(
+          SourceRole.Fixations,
+          SourcePath.of("fixations.csv").toOption.get,
+          ByteDigest.parse("ab" * 32).toOption.get,
+          None
+        ),
+        35.5,
+        ScaleSource.Recipe,
+        11520,
+        7214,
+        3,
+        Vector(
+          SourceRecordRow
+            .of(
+              ref(7214, Some(6)),
+              Some(6),
+              Some(2160.5),
+              Some(412.5),
+              Some(206),
+              Some(point(7214, "screen", 1148.5, 456.5)),
+              Some(ImagePosition(point(7214, "image", 700.5, 300.5), true)),
+              Some(point(7214, "degrees", 5.375, 2.385)),
+              Some(MapPlacement.InMap),
+              "P17,Retrieval,ret_07,1,6,1148.5,456.5,2160.5,412.5,206"
+            )
+            .toOption
+            .get,
+          SourceRecordRow
+            .of(
+              ref(7215, None),
+              Some(7),
+              Some(2650.5),
+              Some(200.5),
+              Some(0),
+              Some(point(7215, "screen", 120.5, 80.5)),
+              Some(ImagePosition(point(7215, "image", -327.5, -75.5), false)),
+              Some(point(7215, "degrees", -24.25, 13.75)),
+              None,
+              "P17,Retrieval,ret_07,1,7,120.5,80.5,2650.5,200.5,0"
+            )
+            .toOption
+            .get,
+          SourceRecordRow
+            .of(
+              ref(7216, None),
+              None,
+              None,
+              None,
+              None,
+              None,
+              None,
+              None,
+              None,
+              "P17,Retrieval,ret_07,1,x,,,,,"
+            )
+            .toOption
+            .get
+        )
+      )
+      .toOption
+      .get
+
   val requests: Vector[BackendRequest] = Vector(
     BackendRequest.Admission(DatasetRevision(3)),
     BackendRequest.Ledger(DatasetRevision(3), page),
@@ -357,7 +444,8 @@ object ProtocolSamples:
     BackendRequest.ProvenanceOf(run, address),
     BackendRequest.Unsubscribe(RequestId(41)),
     BackendRequest.TrialFixationsOf(AnalysisRevision(4), query),
-    BackendRequest.TrialPreviewOf(AnalysisRevision(4), query)
+    BackendRequest.TrialPreviewOf(AnalysisRevision(4), query),
+    BackendRequest.SourceRecordsOf(AnalysisRevision(4), 7214, 60)
   )
 
   val responses: Vector[BackendResponse] = Vector(
@@ -457,7 +545,8 @@ object ProtocolSamples:
     ),
     BackendResponse.Unsubscribed(RequestId(41), true),
     BackendResponse.TrialFixationsOf(trialFixations),
-    BackendResponse.TrialPreviewOf(trialPreview)
+    BackendResponse.TrialPreviewOf(trialPreview),
+    BackendResponse.SourceRecordsOf(sourceRecordPage)
   )
 
   val events: Vector[JobEvent] =

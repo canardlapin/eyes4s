@@ -59,6 +59,35 @@ To change the plan, edit `studio_plan.py`, rerun `render`, and update the matchi
 
 ## Backend protocol versions
 
+Protocol 1.8 (S3.5) widens `StudioDiagnostic`, additive on 1.7: `affected` lists every
+trial the diagnostic names, eyes4s's `affectedTrials` (its subject, then its operands
+and causes, each once), so a remedy opens exactly those trials; `category` and
+`remedy` carry a preflight finding's eyes4s `FindingClass` and `Remedy` by case
+name. The studio words a diagnostic by its code (`DiagnosticsPresenter`), never by
+its message. On the wire the three fields are required, since client and backend
+speak the same minor; their empty defaults serve diagnostics built in-process (a
+studio check, a fake). The pins that hold a diagnostic were re-recorded; the other 1.7 pins are
+unchanged; the envelope version is now 1.8.
+
+Protocol 1.7 (S6.4) adds the source records view for Explore, additive on 1.6:
+`sourceRecords(revision, from, count)` answers `SourceRecordPage`, records `from`
+to `from + count - 1` (at most 500) of the fixation file of the revision's dataset,
+in file order and numbered from 1, with the source (its import name and SHA-256),
+its total, the count asked for, and the pixels per degree its degrees are at with
+where that comes from (`ScaleSource.Recipe`, the plan's declared units, else
+`Dataset`). A page holds every record asked for that the file has: only the last
+is short and none is empty; an empty file answers `PastEnd(from, 0)`. Each `SourceRecordRow` carries its `StudioRef.SourceRecord` (naming
+its fixation when an admitted scanpath holds it), its cells as numbers (`None`
+where a cell is not one), its position in image pixels and in degrees from the
+image's centre (y up, at the page's linear pixels per degree), the eyes4s
+`MapPlacement` the revision's study gives an admitted record, and its verbatim
+text (which may span several lines). Screen, image and degrees are all present
+or all absent. A range outside the file is `SourceRecordsRefused`. The fake serves
+fixtures/studio-golden's fixations.csv, embedded verbatim, with the image frame
+and degrees from `DisplayFrames` (eyes4s-kernel's `Subframe` and
+`LinearAngularScale`); its generator refuses a CR or a quote in the file. The other
+1.6 pins are unchanged; the envelope version is now 1.7.
+
 Protocol 1.6 (S6.2) adds two trial views for Explore, additive on 1.5:
 `trialFixations(revision, trial)` answers `TrialFixations`, the trial's admitted
 fixations in scanpath order, each with its `StudioRef.Fixation`, fixations.csv
@@ -115,7 +144,7 @@ only and decodes the typed envelope body before checking the version; it does no
 negotiate minor capabilities. Mixed-minor deployments are unsupported. Protocol
 1.2 added `ProgressTotal.Counting`, which a 1.0/1.1 decoder cannot read; 1.3 adds
 the inventory join; 1.4 adds the exact large-count policy; 1.5 adds the
-resolved-design counts; 1.6 adds the trial fixations and preview views. `ProtocolCodecSuite`
+resolved-design counts; 1.6 adds the trial fixations and preview views; 1.7 adds the source records view; 1.8 adds the diagnostic's affected trials, class and remedy. `ProtocolCodecSuite`
 retains the frozen legacy-total probe, while `ProtocolLongSuite` verifies that
 safe-number 1.2 envelopes remain readable. This does not establish mixed-version peer compatibility.
 

@@ -21,5 +21,9 @@ button: Step back
 button: Step forward
 toggle-button: 1×
 region: Timeline of P17 · enc_03 fixations: 13 fixation intervals, each bar as long and as tall as its duration. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.
-table: Source records
+table: Source records from fixations.csv. One focus stop; arrow keys move the row cursor.
+toggle-button: Show raw record
 region: Inspector
+toggle-button: Show raw record
+hyperlink: ret_07 contrast (matched reference)
+hyperlink: 18 pairs (as a control)

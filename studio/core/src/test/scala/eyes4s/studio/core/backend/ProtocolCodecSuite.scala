@@ -37,11 +37,11 @@ class ProtocolCodecSuite extends munit.FunSuite:
 
   test("every message kind and case is sampled") {
     assertEquals(requests.map(_.ordinal), requests.indices.toVector)
-    assertEquals(requests.size, 21)
+    assertEquals(requests.size, 22)
     assertEquals(responses.map(_.ordinal), responses.indices.toVector)
-    assertEquals(responses.size, 17)
+    assertEquals(responses.size, 18)
     assertEquals(errors.map(_.ordinal), errors.indices.toVector)
-    assertEquals(errors.size, 18)
+    assertEquals(errors.size, 19)
     assertEquals(causes.map(_.ordinal), causes.indices.toVector)
     assertEquals(causes.size, 14)
     assertEquals(loci.map(_.ordinal), loci.indices.toVector)
@@ -152,6 +152,17 @@ class ProtocolCodecSuite extends munit.FunSuite:
     )
   }
 
+  test(
+    "1.8: a diagnostic without its affected trials, class and remedy is refused on the wire"
+  ) {
+    val full  = ProtocolSamples.diagnostic.asJson
+    val older = full.mapObject(_.remove("affected").remove("category").remove("remedy"))
+    assert(full.as[StudioDiagnostic].isRight)
+    older.as[StudioDiagnostic] match
+      case Left(e)  => assert(e.history.toString.contains("affected"), e)
+      case Right(d) => fail(s"a pre-1.8 diagnostic decoded: $d")
+  }
+
   test("protocol values are shaped like the eyes4s values they wrap") {
     assertEquals(ProgressTotal.of(SegmentTotal.Exact(3L)), ProgressTotal.Exact(3L))
     assertEquals(ProgressTotal.of(SegmentTotal.AtMost(4L)), ProgressTotal.AtMost(4L))
@@ -181,6 +192,19 @@ class ProtocolCodecSuite extends munit.FunSuite:
       (DiagnosticLevel.Error, DiagnosticOrigin.EyesCore)
     )
     assertEquals(studio.message, planDiagnostic.message)
+    assertEquals((studio.affected, studio.category, studio.remedy), (Vector.empty, None, None))
+    // 1.8: a finding's affected trials, class and remedy are eyes4s's.
+    val p11  = TrialKey("P11", Phase.Retrieval, "ret_05", 1)
+    val refs = Vector(1, 2).map(o => TrialKey("P11", Phase.Encoding, "enc_04", o))
+    val cardinality: eyes4s.plan.StudyFinding[TrialKey, eyes4s.kernel.Unit2D.Px] =
+      eyes4s.plan.StudyFinding
+        .MatchedCardinality(p11, refs, eyes4s.plan.MatchedReferences.RequireOne)
+    val finding = eyes4s.plan.Diagnostic.of(cardinality)
+    val wired   = StudioDiagnostic.of(finding, identity[TrialKey])
+    assertEquals(wired.affected, p11 +: refs)
+    assertEquals(wired.remedy, Some("ChooseMatchedReference"))
+    assertEquals(wired.category, finding.category.map(_.toString))
+    assert(wired.category.isDefined, wired)
     assertEquals(
       DiagnosticLocus.of(eyes4s.plan.Locus.Pair("q", "r"), keys),
       DiagnosticLocus.Pair(query, matched)
@@ -246,7 +270,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
       .as[Protocol11Total]
 
   test("protocol 1.2 Counting requires coordinated peers, not a relabelled 1.1 frame") {
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 6))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 8))
     val previous = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(progress)))
     assertEquals(legacyMeterTotal(previous.asJson), Right(Protocol11Total.Exact(8512L)))
     val counting = progress.asJson

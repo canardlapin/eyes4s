@@ -16,6 +16,7 @@
 
 package eyes4s.studio.app.layout
 
+import eyes4s.studio.app.text.{RecordText, RecordTextId}
 import cats.data.NonEmptyVector
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.text.MessageId
@@ -120,6 +121,12 @@ object StudioLayouts:
   /** The pane that hosts Explore's trial view (S6.2). */
   val trialView: PaneId = new PaneId("explore.trial-view")
 
+  /** The pane that hosts Explore's source records table (S6.4). */
+  val sourceRecords: PaneId = new PaneId("explore.source-records")
+
+  /** The pane that hosts Explore's fixation inspector (S6.5). */
+  val exploreInspector: PaneId = new PaneId("explore.inspector")
+
   /** The panes that host Explore's timeline and its table (S6.3). */
   val timeline: PaneId      = new PaneId("explore.timeline")
   val timelineTable: PaneId = new PaneId("explore.timeline.table")
@@ -145,7 +152,8 @@ object StudioLayouts:
           PaneDecl(timelineTable, PaneTitle.Fixed("Table"), Table)
         ) -> 0.2,
         group(
-          pane("explore.source-records", "Source records", Table),
+          pane("explore.source-records", "Source records", Table)
+            .copy(described = Some(RecordText(RecordTextId.TableName))),
           dynamic("explore.trial-inventory", "Trial inventory", Table)
         ) -> 0.25
       ),
@@ -161,6 +169,9 @@ object StudioLayouts:
 
   /** The resolved-design table (S7.5). */
   val resolvedDesign: PaneId = new PaneId("analysis.resolved-design")
+
+  /** The pane that hosts the preflight findings and the run card (S7.6). */
+  val preflight: PaneId = new PaneId("analysis.preflight")
 
   /** Analysis.dc.html. */
   val analysis: PerspectiveLayout = layout(

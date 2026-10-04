@@ -32,7 +32,11 @@ import eyes4s.studio.desktop.explore.{
   NavigatorDisplays,
   NavigatorInputs,
   TrialViewInputs,
-  TrialsNavigatorHost
+  TrialsNavigatorHost,
+  FixationInspectorHost,
+  RecordSources,
+  SourceRecordsHost,
+  UsedByInputs
 }
 import eyes4s.studio.desktop.trial.StimulusSource
 import eyes4s.studio.desktop.figures.{FigureInputs, FiguresHost}
@@ -44,7 +48,7 @@ import eyes4s.studio.desktop.runtime.{
   StudioRuntime,
   StudioSession
 }
-import eyes4s.studio.desktop.analysis.{DesignInputs, ResolvedDesignHost}
+import eyes4s.studio.desktop.analysis.{PreflightHost, DesignInputs, ResolvedDesignHost}
 import eyes4s.studio.desktop.importing.{ColumnMappingPaneHost, ImportWizardHost}
 import eyes4s.studio.desktop.platform.FilePresetStore
 import eyes4s.studio.desktop.shell.AppShell
@@ -83,6 +87,12 @@ final class StudioWindow private (
     timelineListener: AppModel => Unit,
     val resolvedDesign: ResolvedDesignHost,
     designListener: AppModel => Unit,
+    val sourceRecords: SourceRecordsHost,
+    recordsListener: AppModel => Unit,
+    val inspector: FixationInspectorHost,
+    inspectorListener: AppModel => Unit,
+    val preflight: PreflightHost,
+    preflightListener: AppModel => Unit,
     val figures: FiguresHost,
     figuresListener: AppModel => Unit
 ):
@@ -108,6 +118,9 @@ final class StudioWindow private (
     else if pane == StudioLayouts.trialView then explore.focusStops
     else if pane == StudioLayouts.timeline then timeline.focusStops
     else if pane == StudioLayouts.resolvedDesign then resolvedDesign.focusStops
+    else if pane == StudioLayouts.sourceRecords then sourceRecords.focusStops
+    else if pane == StudioLayouts.exploreInspector then inspector.focusStops
+    else if pane == StudioLayouts.preflight then preflight.focusStops
     else
       pane.value match
         case "figures.figures"    => figures.navigatorStops
@@ -130,6 +143,11 @@ final class StudioWindow private (
     explore.dispose()
     timeline.dispose()
     runtime.unlisten(designListener)
+    runtime.unlisten(recordsListener)
+    sourceRecords.dispose()
+    runtime.unlisten(inspectorListener)
+    inspector.dispose()
+    runtime.unlisten(preflightListener)
     runtime.unlisten(figuresListener)
     summary.dispose()
     figures.dispose()
@@ -221,6 +239,8 @@ object StudioWindow:
       clock: () => Option[ClockTime] = DesktopEffects.wallClock,
       nativeMenu: Boolean = AppShell.systemMenuBar,
       presets: FilePresetStore = FilePresetStore.userDefault,
+      // The window's backend serves the source records unless one is given.
+      records: Option[eyes4s.studio.app.explore.SourceRecordsSource] = None,
       panels: PanelSources = PanelSources.notServed
   )(using IORuntime): Either[WindowError, StudioWindow] =
     for
@@ -238,6 +258,7 @@ object StudioWindow:
         clock,
         nativeMenu,
         presets,
+        records,
         panels
       )
     yield
@@ -256,6 +277,7 @@ object StudioWindow:
       clock: () => Option[ClockTime],
       nativeMenu: Boolean,
       presets: FilePresetStore,
+      records: Option[eyes4s.studio.app.explore.SourceRecordsSource],
       panels: PanelSources
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
@@ -383,6 +405,33 @@ object StudioWindow:
     val designListener: AppModel => Unit = design.sync
     r.listen(designListener)
     design.sync(r.model)
+    // Explore's source records: the shown revision's fixation table (S6.4).
+    val served        = records.getOrElse(RecordSources.of(session))
+    val sourceRecords =
+      SourceRecordsHost(() => r.model, dispatch, served, TrialViewInputs.of(session, displays))
+    host.host(StudioLayouts.sourceRecords, sourceRecords.node)
+    val recordsListener: AppModel => Unit = sourceRecords.sync
+    r.listen(recordsListener)
+    sourceRecords.sync(r.model)
+    // Explore's fixation inspector: the selected fixation (S6.5).
+    val inspector = FixationInspectorHost(
+      dispatch,
+      TrialViewInputs.of(session, displays),
+      served,
+      UsedByInputs.of(session)
+    )
+    host.host(StudioLayouts.exploreInspector, inspector.node)
+    val inspectorListener: AppModel => Unit = inspector.sync
+    r.listen(inspectorListener)
+    inspector.sync(r.model)
+
+    // The preflight pane and run card (Analysis): the design's findings.
+    val preflight = PreflightHost(() => r.model, dispatch)
+    host.host(StudioLayouts.preflight, preflight.node)
+    design.follow(preflight.follow)
+    val preflightListener: AppModel => Unit = preflight.sync
+    r.listen(preflightListener)
+    preflight.follow(design.state)
     // The Figures perspective: navigator, page, Table tab and binding.
     val figures = FiguresHost(() => r.model, dispatch, FigureInputs.of(session, displays))
     Vector(
@@ -414,6 +463,12 @@ object StudioWindow:
         timelineListener,
         design,
         designListener,
+        sourceRecords,
+        recordsListener,
+        inspector,
+        inspectorListener,
+        preflight,
+        preflightListener,
         figures,
         figuresListener
       )

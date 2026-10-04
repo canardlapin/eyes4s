@@ -90,6 +90,9 @@ abstract class ShellFxSuite extends StudioFxSuite:
       // The golden fixture's stimuli.
       stimuli: StimulusSource =
         StimulusSource.directory(eyes4s.studio.desktop.trial.GoldenTrials.stimuli),
+      // Explore's source records: the window's backend's unless a suite
+      // brings its own.
+      records: Option[eyes4s.studio.app.explore.SourceRecordsSource] = None,
       // Compare's trial panels: none unless a suite brings its own.
       panels: eyes4s.studio.desktop.compare.PanelSources =
         eyes4s.studio.desktop.compare.PanelSources.notServed
@@ -107,6 +110,7 @@ abstract class ShellFxSuite extends StudioFxSuite:
           clock = clock,
           nativeMenu = nativeMenu,
           presets = presets,
+          records = records,
           panels = panels
         )
         .fold(e => fail(e.message), identity)

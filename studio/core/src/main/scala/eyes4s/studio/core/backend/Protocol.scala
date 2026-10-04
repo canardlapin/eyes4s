@@ -436,15 +436,24 @@ object DiagnosticLocus:
 
 /** A renderer-neutral diagnostic: eyes4s `Diagnostic` with a typed subject.
   * `code` is the stable identity (`family.case`); `message` is a default
-  * English rendering, never an identity. Operands stay in eyes4s until S3.7
-  * needs them on the wire.
+  * English rendering, never an identity. Since protocol 1.8 (S3.5) it also
+  * carries what an application acts on: `affected`, every trial the
+  * diagnostic names (eyes4s `affectedTrials`: its subject, then its operands
+  * and causes, each once), and for a preflight finding its eyes4s
+  * `FindingClass` and `Remedy`, by case name. Other operands stay in eyes4s.
+  * The defaults serve diagnostics built in-process (a studio check, a fake);
+  * on the wire every field is required, since client and backend speak the
+  * same minor version.
   */
 final case class StudioDiagnostic(
     code: String,
     level: DiagnosticLevel,
     origin: DiagnosticOrigin,
     subject: Vector[DiagnosticLocus],
-    message: String
+    message: String,
+    affected: Vector[TrialKey] = Vector.empty,
+    category: Option[String] = None,
+    remedy: Option[String] = None
 ) derives CanEqual,
       Codec.AsObject
 
@@ -461,7 +470,10 @@ object StudioDiagnostic:
         case DiagnosticSource.Host     => DiagnosticOrigin.Host
       ,
       diagnostic.subject.map(DiagnosticLocus.of(_, key)),
-      diagnostic.message
+      diagnostic.message,
+      diagnostic.affectedTrials.map(key),
+      diagnostic.category.map(_.toString),
+      diagnostic.remedy.map(_.toString)
     )
 
 // ---------------------------------------------------------------------------

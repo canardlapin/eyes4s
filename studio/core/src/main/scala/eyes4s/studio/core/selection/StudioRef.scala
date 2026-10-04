@@ -54,6 +54,9 @@ object ScaleIndex:
 
   given Codec[ScaleIndex] = RefCodecs.validated(of, _.value)
 
+  /** The first declared scale; every scale set has one. */
+  val first: ScaleIndex = new ScaleIndex(0)
+
 /** A fixation's position within its trial, from 1 ("fixation 6"). */
 final case class FixationIndex private (value: Int) derives CanEqual
 
@@ -271,6 +274,16 @@ enum TallyRegion derives CanEqual, Codec.AsObject:
 enum DesignCount derives CanEqual, Codec.AsObject:
   case RequestedQueries, EligibleQueries, UnmatchedQueries, QueriesNotAdmitted, ByDesignQueries
   case FocalTrials, ReferenceTrials, CandidatePairsPerScale, EligiblePairsPerScale
+
+  /** The pairs a run of the revision compares, over every scale (S7.6's run
+    * card).
+    */
+  case EligiblePairs
+
+  /** The scales the revision's recipe declares: a run compares every pair
+    * at each (S7.6's run card).
+    */
+  case Scales
 
   /** The participants the preview counts, one page of pairs each. */
   case Participants
