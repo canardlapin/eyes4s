@@ -39,7 +39,7 @@ enum WhyTextId derives CanEqual:
 
   case Participant, SameParticipant, OtherParticipant
   case PhaseOccurrence, OccurrenceOf, OccurrenceOnly
-  case Item, Controls, ControlsValue, ControlsUnknown, ControlsUnscored, WouldBe, WouldBeNone
+  case Item, Controls, ControlsValue, ControlsUnknown, ControlsUnscored, Reason, NoReason
   case NotAdmittedOf, ExcludedNone, ExcludedSome, ExcludedTrial, ExcludedReading,
     ExcludedUnreadable
   case OutsideReference, OutsideQuery, OutsideValue, OutsideReading, OutsideUnknown
@@ -97,12 +97,10 @@ object WhyText:
     case ControlsUncounted  => "Every such trial is used; none are sampled."
     case SelectionCounted   => "{0} such references are used; none are sampled."
     case SelectionUncounted => "Every such reference is used; none are sampled."
-    case NoMatchReport      =>
-      "No matched reference: no admitted {0} trial of {1} has match item {2}. The query " +
-        "is reported as no match."
+    // {0} the backend's served reason
+    case NoMatchReport => "No matched reference: {0}. The query is reported as no match."
     case NoMatchRefuse =>
-      "No matched reference: no admitted {0} trial of {1} has match item {2}. The " +
-        "recipe refuses a study with such a query."
+      "No matched reference: {0}. The recipe refuses a study with such a query."
     case QueryNotAdmitted => "The query was not admitted ({0}), so it has no reference."
     case QueryFailed      =>
       "The query failed ({0}), so it has no M, B or D. Its reference is shown as the " +
@@ -119,8 +117,8 @@ object WhyText:
     case ControlsValue      => "{0} used"
     case ControlsUnknown    => "—"
     case ControlsUnscored   => "{0} designed · none scored"
-    case WouldBe            => "Would-be match"
-    case WouldBeNone        => "no {0} trial of {1}"
+    case Reason             => "Reason"
+    case NoReason           => "the backend served no reason"
     case NotAdmittedOf      => "Not admitted ({0} · {1})"
     case ExcludedNone       => "none of {0} trials"
     case ExcludedSome       => "{0} of {1} trials: {2}"
