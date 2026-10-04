@@ -34,7 +34,8 @@ class StudioSchemaIdsSuite extends munit.FunSuite:
           ("studio.dataset-content", 1),
           ("studio.project", 1),
           ("studio.asset-registry", 1),
-          ("studio.run-archive", 1)
+          ("studio.run-archive", 1),
+          ("studio.reporting-spec", 1)
         )
       )
     )

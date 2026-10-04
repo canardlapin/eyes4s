@@ -228,12 +228,15 @@ object ReportingEditor:
       case ReportingIntent.ConfirmSaveAs =>
         (spec(doc, reporting), s.saving) match
           case (Some(r), Some(name)) =>
-            val copy = for
-              id   <- freshId(doc, name)
-              next <- rebuilt(r, id = Some(id), name = Some(name))
-            yield next
+            val copy =
+              if name.trim.isEmpty then Left(ReportingText(BlankName))
+              else
+                (for
+                  id   <- freshId(doc, name)
+                  next <- rebuilt(r, id = Some(id), name = Some(name.trim))
+                yield next).left.map(_.message)
             copy match
-              case Left(e)     => (s.copy(error = Some(e.message)), Vector.empty)
+              case Left(why)   => (s.copy(error = Some(why)), Vector.empty)
               case Right(next) =>
                 (
                   ReportingEditor.empty,
@@ -245,12 +248,19 @@ object ReportingEditor:
   def show(id: ReportingId): Intent =
     Intent.Navigate(Location(Perspective.Compare, Vector(Place.Summary(id))))
 
-  /** An id for a new spec named `name`, distinct from the document's. */
+  /** An id for a new spec named `name`, distinct from the document's: its
+    * ASCII letters and digits, lower case, runs of anything else one `-`.
+    */
   private def freshId(
       doc: StudioDocument,
       name: String
   ): Either[eyes4s.studio.core.document.DocumentError, ReportingId] =
-    val base  = name.trim.toLowerCase.map(c => if c.isLetterOrDigit then c else '-')
+    val dashed = name.trim.toLowerCase
+      .map(c => if (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') then c else '-')
+      .replaceAll("-+", "-")
+      .stripPrefix("-")
+      .stripSuffix("-")
+    val base  = if dashed.isEmpty then "spec" else dashed
     val taken = doc.reporting.map(_.id.value).toSet
     val slug  = Iterator
       .from(1)
@@ -355,7 +365,15 @@ object ReportingEditor:
     val minimum   = ReportingToggle(
       ReportingText(Minimum, minimumN.toString),
       minimumOn,
-      dropped(result, reporting, groupBy, scale, minimumN, minimumOn)
+      dropped(
+        result,
+        reporting,
+        groupBy,
+        scale,
+        minimumN,
+        minimumOn,
+        r.exists(_.filters.nonEmpty)
+      )
     )
     val weighting = r.fold(ReportingWeight.ParticipantMeans)(_.weighting)
     val weights   = Vector(
@@ -420,6 +438,7 @@ object ReportingEditor:
 
   /** The served participant-group cells with fewer than `n` queries: what
     * the minimum would drop (or drops), each traced to its participant mean.
+    * Only for a spec without filters, whose cells are the served ones.
     */
   private def dropped(
       result: Option[ResultSummary],
@@ -427,14 +446,19 @@ object ReportingEditor:
       groupBy: Option[Covariate],
       scale: Option[ScaleIndex],
       n: Int,
-      on: Boolean
+      on: Boolean,
+      filtered: Boolean
   ): ReportingLine =
     val grouped = result.filter(sm =>
       groupBy.exists(g => sm.groups.headOption.exists(_.attribute == g.label))
     )
     grouped match
-      case None     => ReportingLine(ReportingText(MinimumUnknown), Vector.empty)
-      case Some(sm) =>
+      // eyes4s applies the minimum to the queries the filters keep, whose
+      // counts no served summary holds: studio does not estimate them
+      // (bd-01M43VP5YV6WB4VVQEW2CJTB9V, report(run, spec)).
+      case _ if filtered => ReportingLine(ReportingText(MinimumAfterEvaluation), Vector.empty)
+      case None          => ReportingLine(ReportingText(MinimumUnknown), Vector.empty)
+      case Some(sm)      =>
         val cells = for
           p <- sm.participants
           g <- p.groups

@@ -122,8 +122,27 @@ class FigureAppearanceSuite extends munit.FunSuite:
     assertEquals(
       page(c, t2).stamp,
       "Analysis rev 4 · run 7 (archive unbound) · data r3 · reporting “By retrieval " +
-        s"response” (by-retrieval-response) · studio build eyes4s ${StudioBuild.eyes4sBaseVersion}"
+        "response” (sha256:3a0e…5dd) · studio build eyes4s " +
+        StudioBuild.eyes4sBaseVersion
     )
+    // The spec is edited in place, so its digest says which version a figure
+    // was exported with (decision on bead S8.7): an edit changes it.
+    val spec   = t2.document.reporting.head
+    val pooled = eyes4s.studio.core.document.ReportingSpec
+      .of(
+        spec.id,
+        spec.name,
+        spec.groupBy,
+        spec.filters,
+        spec.minimumPerGroup,
+        eyes4s.studio.core.document.ReportingWeight.PooledQueries
+      )
+      .fold(e => fail(e.message), identity)
+    assertNotEquals(
+      FigureCaption.specDigest(pooled, short = false),
+      FigureCaption.specDigest(spec, short = false)
+    )
+    assert(FigureCaption.specDigest(spec, short = false).matches("sha256:[0-9a-f]{64}"))
     // The release line only: no commit or timestamp to regenerate on every load.
     assertEquals(StudioBuild.eyes4sBaseVersion, "0.1")
     assert(

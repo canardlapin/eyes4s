@@ -22,11 +22,14 @@ import eyes4s.studio.core.backend.{PageRequest, PairDesign, ResultSummary, Respo
 import eyes4s.studio.core.command.{ChangeKind, Command}
 import eyes4s.studio.core.document.{
   Covariate,
+  MinimumPerGroup,
   ReportingFilter,
   ReportingId,
   ReportingSpec,
   ReportingWeight,
-  StudioDocument
+  Share,
+  StudioDocument,
+  ValueSet
 }
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
 import eyes4s.studio.core.headless.HeadlessSession
@@ -175,6 +178,31 @@ class ReportingEditorSuite extends munit.FunSuite:
     ReportingIntent.Keep(right(Covariate.of("response")), Vector("Remembered"))
   )
 
+  /** The board's spec with `edit` applied and nothing else. */
+  private def expected(edit: ReportingIntent): ReportingSpec =
+    val b        = spec(t2Compare.document)
+    val response = right(Covariate.of("response"))
+    def with_(
+        groupBy: Option[Covariate] = b.groupBy,
+        filters: Vector[ReportingFilter] = b.filters,
+        minimum: Option[MinimumPerGroup] = b.minimumPerGroup,
+        weighting: ReportingWeight = b.weighting
+    ) = right(ReportingSpec.of(b.id, b.name, groupBy, filters, minimum, weighting))
+    edit match
+      case ReportingIntent.GroupBy(None)       => with_(groupBy = None)
+      case ReportingIntent.OutsideFilter(true) =>
+        with_(filters = b.filters :+ ReportingFilter.OutsideWindowAtMost(right(Share.of(0.25))))
+      case ReportingIntent.Minimum(true) => with_(minimum = Some(right(MinimumPerGroup.of(3))))
+      case ReportingIntent.Weight(w)     => with_(weighting = w)
+      case ReportingIntent.Keep(_, _)    =>
+        with_(filters =
+          b.filters :+ ReportingFilter.Keep(
+            response,
+            right(ValueSet.of(response, Vector("Remembered")))
+          )
+        )
+      case other => fail(s"no expected spec for $other")
+
   test("every edit is one PutReporting: no job, no run or analysis change, no score re-read") {
     edits.foreach { edit =>
       val m                            = t2Compare
@@ -182,7 +210,8 @@ class ReportingEditorSuite extends munit.FunSuite:
       intents match
         case Vector(Intent.Dispatch(c @ Command.PutReporting(next))) =>
           assertEquals(c.kind, ChangeKind.ReportingNoRerun, edit.toString)
-          assertEquals(next.id, reporting)
+          // Exactly the edited field changes; every other field stands.
+          assertEquals(next, expected(edit), edit.toString)
         case other => fail(s"$edit gave $other")
       assertEquals(
         effects.collect { case e @ AppEffect.Execution(_) => e },
@@ -214,6 +243,10 @@ class ReportingEditorSuite extends munit.FunSuite:
 
   // --- AC 2: hit-only filters never change the control pool (E2E-09) ---------------------------------
 
+  // On FakeStudyBackend the control pool cannot depend on the spec: the
+  // navigator receives none. What studio guarantees is that a reporting edit
+  // touches no analysis (asserted here) and starts no run (AC 1). The pool
+  // half of this test must be re-checked on the real backend in S3.7.
   test("a hit-only filter keeps the control pool: same controls, Forgotten items included") {
     withSession { s =>
       val hits = ReportingIntent.Keep(right(Covariate.of("response")), Vector("Remembered"))
@@ -264,6 +297,82 @@ class ReportingEditorSuite extends munit.FunSuite:
         assertEquals(spec(off.document).minimumPerGroup, None)
       }
     )
+  }
+
+  test("with a filter, the minimum's preview waits for evaluation instead of estimating") {
+    withSession(s =>
+      summaryOf(s).map { sum =>
+        val hits = ReportingIntent.Keep(right(Covariate.of("response")), Vector("Remembered"))
+        val (kept, _, _, _) = perform(t2Compare, hits)
+        val (on, _, _, _)   = perform(kept, ReportingIntent.Minimum(true))
+        val after           =
+          "Cells dropped by the minimum appear after evaluation (the filters change n)"
+        assertEquals(vmOf(on, Some(sum)).minimum.note, ReportingLine(after, Vector.empty))
+        assertEquals(vmOf(kept, Some(sum)).minimum.note, ReportingLine(after, Vector.empty))
+        val (outside, _, _, _) = perform(t2Compare, ReportingIntent.OutsideFilter(true))
+        assertEquals(vmOf(outside, Some(sum)).minimum.note.text, after)
+        // Without filters the served cells are the spec's cells: the preview stands.
+        assertEquals(
+          vmOf(t2Compare, Some(sum)).minimum.note.text,
+          "off · would drop 2 Forgotten cells (P17 n 2, P21 n 2)"
+        )
+      }
+    )
+  }
+
+  test("Save as… then Undo shows a spec that exists; Redo brings the copy back") {
+    val named            = ReportingEditor(Some("Hits only"), None)
+    val (saved, _, _, _) = perform(t2Compare, ReportingIntent.ConfirmSaveAs, named)
+    val hits             = right(ReportingId.of("hits-only"))
+    assertEquals(CompareSummary.reporting(saved), Some(hits))
+    val undone =
+      AppModel.update(saved, Intent.Undo(eyes4s.studio.core.command.HistoryStack.Science))._1
+    assertEquals(undone.document.reporting.map(_.id), Vector(reporting))
+    assertEquals(CompareSummary.reporting(undone), Some(reporting))
+    val vm = ReportingEditor.vm(
+      ReportingEditor.empty,
+      undone.document,
+      CompareSummary.reporting(undone),
+      Some(run7),
+      None,
+      Some(sigma2)
+    )
+    assertEquals((vm.status, vm.title), (None, "By retrieval response"))
+    val redone =
+      AppModel.update(undone, Intent.Redo(eyes4s.studio.core.command.HistoryStack.Science))._1
+    assertEquals(redone.document.reporting.map(_.id), Vector(reporting, hits))
+    assertEquals(CompareSummary.reporting(redone), Some(hits))
+  }
+
+  test("a blank Save as name names the name field; other names give ASCII ids") {
+    val (blank, intents) =
+      ReportingEditor.update(
+        ReportingEditor(Some("   "), None),
+        t2Compare.document,
+        Some(reporting),
+        ReportingIntent.ConfirmSaveAs
+      )
+    assertEquals(intents, Vector.empty)
+    assertEquals(blank.error, Some("Name of the new reporting spec: enter a name."))
+    val (_, accented) =
+      ReportingEditor.update(
+        ReportingEditor(Some("Évité ✓ 2"), None),
+        t2Compare.document,
+        Some(reporting),
+        ReportingIntent.ConfirmSaveAs
+      )
+    assertEquals(
+      accented.lastOption,
+      Some(ReportingEditor.show(right(ReportingId.of("vit-2"))))
+    )
+    val (_, symbols) =
+      ReportingEditor.update(
+        ReportingEditor(Some("✓✓"), None),
+        t2Compare.document,
+        Some(reporting),
+        ReportingIntent.ConfirmSaveAs
+      )
+    assertEquals(symbols.lastOption, Some(ReportingEditor.show(right(ReportingId.of("spec")))))
   }
 
   test("the outside-window filter adds and removes the board's 25% threshold") {

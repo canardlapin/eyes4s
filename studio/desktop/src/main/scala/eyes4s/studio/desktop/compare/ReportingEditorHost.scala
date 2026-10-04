@@ -84,6 +84,12 @@ final class ReportingEditorHost(
   private val cancel   = Button()
   private val saved    = VBox(4.0)
   private val error    = label("t11", "inspector-note")
+  // What the group-by choices and the saved specs were last built from.
+  private var groupOptions: Vector[(Option[Covariate], String)] = Vector.empty
+  private var groupButtons: Vector[RadioButton]                 = Vector.empty
+  private var savedListed
+      : Vector[(eyes4s.studio.core.document.ReportingId, String, String, Boolean)] =
+    Vector.empty
   Vector(outside, minimum, equal, pooled).foreach(_.getStyleClass.add("t12"))
   Vector(outside, minimum, equal, pooled).foreach(_.setWrapText(true))
   Vector(saveAs, save, cancel).foreach(_.getStyleClass.add("btn"))
@@ -174,6 +180,12 @@ final class ReportingEditorHost(
   def toggles: (Boolean, Boolean, Boolean) =
     (outside.isSelected, minimum.isSelected, pooled.isSelected)
 
+  /** The group-by choice nodes, as shown (the same nodes across renders). */
+  def groupNodes: Vector[RadioButton] = groupButtons
+
+  /** The minimum's accessible help: its note, as a reader announces it. */
+  def minimumHelp: String = minimum.getAccessibleHelp
+
   /** Clicks a toggle, as the user does. */
   def clickMinimum(): Unit = minimum.fire()
   def clickOutside(): Unit = outside.fire()
@@ -190,17 +202,23 @@ final class ReportingEditorHost(
       kind.setText(v.kind)
       reuses.setText(v.reuses.text)
       groupBy.setText(v.groupLabel)
-      val group = ToggleGroup()
-      groups.getChildren.setAll(v.groups.map { c =>
-        val b = RadioButton(c.label)
-        b.getStyleClass.add("t12")
-        b.setToggleGroup(group)
-        b.setSelected(c.chosen)
-        b.setAccessibleText(s"${v.groupLabel}: ${c.label}")
-        val choice: Option[Covariate] = c.value
-        b.setOnAction(_ => act(ReportingIntent.GroupBy(choice)))
-        b
-      }*)
+      // The choices are rebuilt only when they change, so a keyboard user
+      // who picks one keeps focus on it.
+      val options = v.groups.map(c => (c.value, c.label))
+      if options != groupOptions then
+        groupOptions = options
+        val group = ToggleGroup()
+        groupButtons = v.groups.map { c =>
+          val b = RadioButton(c.label)
+          b.getStyleClass.add("t12")
+          b.setToggleGroup(group)
+          b.setAccessibleText(s"${v.groupLabel}: ${c.label}")
+          val choice: Option[Covariate] = c.value
+          b.setOnAction(_ => act(ReportingIntent.GroupBy(choice)))
+          b
+        }
+        groups.getChildren.setAll(groupButtons*): Unit
+      groupButtons.zip(v.groups).foreach((b, c) => b.setSelected(c.chosen))
       values.setText(v.groupValues)
       values.setVisible(v.groupValues.nonEmpty); values.setManaged(v.groupValues.nonEmpty)
       filters.setText(v.filterTitle)
@@ -208,12 +226,14 @@ final class ReportingEditorHost(
       outside.setText(v.outside.label); outside.setAccessibleText(v.outside.label)
       outside.setSelected(v.outside.on)
       outNote.setText(v.outside.note.text)
+      outside.setAccessibleHelp(v.outside.note.text)
       keeps.getChildren.setAll(v.keeps.map { k =>
         val l = label("t12"); l.setText(k); l
       }*)
       minimum.setText(v.minimum.label); minimum.setAccessibleText(v.minimum.label)
       minimum.setSelected(v.minimum.on)
       minNote.setText(v.minimum.note.text)
+      minimum.setAccessibleHelp(v.minimum.note.text)
       weight.setText(v.weightTitle)
       unit.setText(v.weightUnit)
       Vector(equal, pooled).zip(v.weights).foreach { (b, c) =>
@@ -234,18 +254,21 @@ final class ReportingEditorHost(
           naming.setVisible(true); naming.setManaged(true)
         case None =>
           naming.setVisible(false); naming.setManaged(false)
-      saved.getChildren.setAll(v.saved.map { sp =>
-        if sp.current then
-          val l = label("t12")
-          l.setText(s"${sp.name}\n${sp.detail}")
-          l
-        else
-          val b = Button(s"${sp.name}\n${sp.detail}")
-          b.getStyleClass.add("btn")
-          b.setAccessibleText(s"${sp.name}, ${sp.detail}")
-          b.setOnAction(_ => act(ReportingIntent.Choose(sp.id)))
-          b
-      }*)
+      val listed = v.saved.map(sp => (sp.id, sp.name, sp.detail, sp.current))
+      if listed != savedListed then
+        savedListed = listed
+        saved.getChildren.setAll(v.saved.map { sp =>
+          if sp.current then
+            val l = label("t12")
+            l.setText(s"${sp.name}\n${sp.detail}")
+            l
+          else
+            val b = Button(s"${sp.name}\n${sp.detail}")
+            b.getStyleClass.add("btn")
+            b.setAccessibleText(s"${sp.name}, ${sp.detail}")
+            b.setOnAction(_ => act(ReportingIntent.Choose(sp.id)))
+            b
+        }*): Unit
       error.setText(v.error.getOrElse(""))
       error.setVisible(v.error.isDefined); error.setManaged(v.error.isDefined)
     finally binding = false

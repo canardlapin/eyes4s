@@ -304,7 +304,7 @@
   <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="823.4357" text-anchor="start" dominant-baseline="text-before-edge">Each scale computed separately.</text>
   <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="854" text-anchor="start" dominant-baseline="text-before-edge">Figure 1. Matched-minus-control spatial similarity of retrieval gaze (dataset r3, analysis rev 4, run 7). Spatial correspondence, not</text>
   <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="865.6667" text-anchor="start" dominant-baseline="text-before-edge">sequential replay.</text>
-  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="877.3333" text-anchor="start" dominant-baseline="text-before-edge">Analysis rev 4 · run 7 (archive unbound) · data r3 · reporting “By retrieval response” (by-retrieval-response) · studio build eyes4s 0.1</text>
+  <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="877.3333" text-anchor="start" dominant-baseline="text-before-edge">Analysis rev 4 · run 7 (archive unbound) · data r3 · reporting “By retrieval response” (sha256:3a0e…5dd) · studio build eyes4s 0.1</text>
   <defs>
     <clipPath id="clip-0">
       <rect x="0" y="14.3223" width="336.378" height="266.1471" />
