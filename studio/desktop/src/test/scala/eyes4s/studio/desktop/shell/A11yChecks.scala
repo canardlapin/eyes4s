@@ -89,6 +89,26 @@ object A11yChecks:
     }
     nameless ++ unread
 
+  /** One action shown twice by design, the same name for the same function
+    * (WCAG 3.2.4): the jobs chip's action, mirrored in the status bar.
+    */
+  private def mirrored(ns: Vector[Node]): Boolean =
+    ns.size == 2 && ns.exists(n => ancestors(n).exists(_.getStyleClass.contains("jobs"))) &&
+      ns.exists(n => ancestors(n).exists(_.getStyleClass.contains("status-job")))
+
+  /** Tab stops that share a role and an accessible name: a screen reader
+    * user cannot tell them apart. Each repeated name, with where it is.
+    */
+  def ambiguous(root: Parent): Vector[String] =
+    focusable(root)
+      .groupBy(n => (n.getAccessibleRole, Option(n.getAccessibleText).getOrElse("")))
+      .collect {
+        case ((role, name), ns) if ns.size > 1 && !mirrored(ns) =>
+          s"$role '$name' ×${ns.size}: ${ns.map(path).mkString("; ")}"
+      }
+      .toVector
+      .sorted
+
   // --- contrast ---------------------------------------------------------------
 
   type Rgb = (Double, Double, Double)
@@ -120,43 +140,50 @@ object A11yChecks:
       Some(g.getStops.asScala.toVector.map(_.getColor))
     case _ => None
 
-  /** What can be drawn behind `n`: its ancestors' fills, nearest first,
-    * composited down to the first opaque one (the scene's fill below all).
-    * A gradient contributes each of its stops, so every colour it reaches is
-    * checked; a fill that is neither (an image) is not resolved.
+  private def mix(a: Rgb, b: Rgb, alpha: Double): Rgb =
+    (
+      a._1 * alpha + b._1 * (1 - alpha),
+      a._2 * alpha + b._2 * (1 - alpha),
+      a._3 * alpha + b._3 * (1 - alpha)
+    )
+
+  /** The pixels of `t` as drawn: a pixel of its glyph and the pixel beside
+    * it, for each colour its backdrop can take. From the scene's fill down
+    * the chain from the root to `t`, each region paints its fills, and each
+    * node's opacity mixes everything it draws (fills, children, the glyph)
+    * over what was below it, as JavaFX composites a node. A gradient
+    * contributes each of its stops; a fill that is neither a colour nor a
+    * gradient (an image) is not resolved.
     */
-  def behind(n: Node, scene: Scene): Either[String, Vector[Rgb]] =
-    val layers = Vector.newBuilder[Vector[Color]]
-    var opaque = false
-    val it     = ancestors(n.getParent)
-    var bad    = Option.empty[String]
-    while !opaque && bad.isEmpty && it.hasNext do
-      it.next() match
+  def pixels(t: Text, fg: Color, scene: Scene): Either[String, Vector[(Rgb, Rgb)]] =
+    val chain = ancestors(t).toVector.reverse
+    def at(i: Int, below: Rgb): Either[String, Vector[(Rgb, Rgb)]] =
+      val n                                    = chain(i)
+      val painted: Either[String, Vector[Rgb]] = n match
         case r: Region if r.getBackground != null =>
-          r.getBackground.getFills.asScala.reverseIterator.takeWhile(_ => !opaque).foreach {
-            f =>
-              colours(f.getFill) match
-                case Some(cs) if cs.exists(_.getOpacity > 0) =>
-                  layers += cs
-                  if cs.forall(_.getOpacity >= 1) then opaque = true
-                case Some(_) => ()
-                case None    => bad = Some(s"fill ${f.getFill} in ${r.getStyleClass}")
-          }
-        case _ => ()
-    bad.toLeft {
-      val base: Rgb = scene.getFill match
-        case c: Color => rgb(c)
-        case _        => (1.0, 1.0, 1.0)
-      layers
-        .result()
-        .reverse
-        .foldLeft(Vector(base))((acc, cs) =>
-          for
-            below <- acc
-            c     <- cs
-          yield over(c, c.getOpacity, below)
-        )
-    }
+          r.getBackground.getFills.asScala
+            .foldLeft(Right(Vector(below)): Either[String, Vector[Rgb]]) { (acc, f) =>
+              acc.flatMap(cur =>
+                colours(f.getFill)
+                  .toRight(s"fill ${f.getFill} in ${r.getStyleClass}")
+                  .map(cs => cur.flatMap(c0 => cs.map(c => over(c, c.getOpacity, c0))))
+              )
+            }
+        case _ => Right(Vector(below))
+      val inner: Either[String, Vector[(Rgb, Rgb)]] =
+        if i == chain.size - 1 then painted.map(_.map(p => (over(fg, fg.getOpacity, p), p)))
+        else
+          painted.flatMap(ps =>
+            ps.foldLeft(Right(Vector.empty): Either[String, Vector[(Rgb, Rgb)]])((acc, p) =>
+              acc.flatMap(v => at(i + 1, p).map(v ++ _))
+            )
+          )
+      val o = n.getOpacity
+      inner.map(_.map((glyph, beside) => (mix(glyph, below, o), mix(beside, below, o))))
+    val base: Rgb = scene.getFill match
+      case c: Color => rgb(c)
+      case _        => (1.0, 1.0, 1.0)
+    at(0, base).map(_.distinct)
 
   /** Large text (WCAG): 24 px, or 18.66 px bold. */
   private def large(t: Text): Boolean =
@@ -171,18 +198,16 @@ object A11yChecks:
     */
   def lowContrast(root: Parent): Vector[String] =
     texts(root).flatMap { t =>
-      val alpha = ancestors(t).map(_.getOpacity).product
       t.getFill match
         case fg: Color =>
-          behind(t, root.getScene) match
+          pixels(t, fg, root.getScene) match
             case Left(why) => Vector(s"unresolved: '${t.getText.take(40)}' at ${path(t)}: $why")
-            case Right(bgs) =>
-              val (r, bg) =
-                bgs.map(bg => (ratio(over(fg, fg.getOpacity * alpha, bg), bg), bg)).minBy(_._1)
+            case Right(ps) =>
+              val (r, (glyph, beside)) = ps.map(p => (ratio(p._1, p._2), p)).minBy(_._1)
               val min = if large(t) then Wcag.LargeTextMinimum else Wcag.TextMinimum
               Option
                 .when(r < min - 1e-9)(
-                  f"${r}%.2f < $min: '${t.getText.take(40)}' at ${path(t)} (${fg} on ${bg})"
+                  f"${r}%.2f < $min: '${t.getText.take(40)}' at ${path(t)} ($glyph on $beside)"
                 )
                 .toVector
         case other => Vector(s"unresolved: '${t.getText.take(40)}' at ${path(t)}: fill $other")

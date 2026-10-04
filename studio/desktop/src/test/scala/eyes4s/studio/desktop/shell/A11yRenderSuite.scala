@@ -63,6 +63,14 @@ class A11yRenderSuite extends ShellFxSuite:
     }
     fx.awaitLayout()
 
+  /** The window as the boards show it: Analysis once the design is checked
+    * (its preflight follows the check, as in A11yTreeSuite).
+    */
+  private def settled(fx: FxStage, w: StudioWindow): StudioWindow =
+    if runOnFx(w.runtime.model.perspective) == eyes4s.studio.core.document.Perspective.Analysis
+    then eventually(fx, "the design's check")(w.resolvedDesign.state.preview.receipt.isDefined)
+    w
+
   private def fx(c: eyes4s.studio.app.tokens.Colour): Color =
     Color.rgb(c.red, c.green, c.blue, c.alphaPercent / 100.0)
 
@@ -81,13 +89,66 @@ class A11yRenderSuite extends ShellFxSuite:
     )
   }
 
+  fxStage.test(
+    "the compositor: a node's opacity fades its backdrop with its text; every stop"
+  ) { fx =>
+    import javafx.scene.layout.{Background, BackgroundFill, StackPane, VBox}
+    import javafx.scene.paint.{CycleMethod, LinearGradient, Stop}
+    def fill(p: javafx.scene.paint.Paint) = Background(BackgroundFill(p, null, null))
+    val (faded, graded)                   = runOnFx {
+      // Black text in a white box at half opacity, over black: the box is
+      // mid grey and the text stays black, 5.28:1 (not 21:1, nor the 4:1
+      // of fading the text alone over white).
+      val text = javafx.scene.text.Text("faded")
+      text.setFill(Color.BLACK)
+      val box = VBox(text)
+      box.setBackground(fill(Color.WHITE))
+      box.setOpacity(0.5)
+      // Mid-grey text on a black-to-white gradient: its worst stop.
+      val grey = javafx.scene.text.Text("graded")
+      grey.setFill(Color.gray(0.5))
+      val ramp = VBox(grey)
+      ramp.setBackground(
+        fill(
+          LinearGradient(
+            0,
+            0,
+            0,
+            1,
+            true,
+            CycleMethod.NO_CYCLE,
+            Stop(0, Color.BLACK),
+            Stop(1, Color.WHITE)
+          )
+        )
+      )
+      val root = StackPane(VBox(box, ramp))
+      root.setBackground(fill(Color.BLACK))
+      (text, grey, root)
+    } match
+      case (t, g, root) =>
+        fx.show(root)
+        def worst(x: javafx.scene.text.Text) = runOnFx(
+          A11yChecks
+            .pixels(x, x.getFill.asInstanceOf[Color], fx.scene)
+            .fold(fail(_), _.map((a, b) => A11yChecks.ratio(a, b)).min)
+        )
+        (worst(t), worst(g))
+    val mid         = A11yChecks.luminance((0.5, 0.5, 0.5))
+    val TwoDecimals = 0.005
+    assertEqualsDouble(faded, (mid + 0.05) / 0.05, TwoDecimals)
+    // Grey on white (3.98:1), the last stop, is the worse of the two (on
+    // black, the first, 5.28:1).
+    assertEqualsDouble(graded, 1.05 / (mid + 0.05), TwoDecimals)
+  }
+
   for
     (name, model, moment) <- perspectives
     theme                 <- Vector("light", "dark")
   do
     fxStage.test(s"$name, $theme: every shown text reaches its contrast minimum") { fx =>
       assumeFullStage(fx)
-      val w = boot(fx, model(), moment)
+      val w = settled(fx, boot(fx, model(), moment))
       if theme == "dark" then dark(fx, w)
       // The walk reads the window's texts, not an empty scene.
       val texts = runOnFx(A11yChecks.texts(w.root).size)
@@ -101,12 +162,19 @@ class A11yRenderSuite extends ShellFxSuite:
   do
     fxStage.test(s"$name, $theme: every Tab stop is drawn differently when focused") { fx =>
       assumeFullStage(fx)
-      val w = boot(fx, model(), moment)
+      val w = settled(fx, boot(fx, model(), moment))
       if theme == "dark" then dark(fx, w)
       val stops = runOnFx(A11yChecks.focusable(w.root))
       assert(stops.size >= 3, s"only ${stops.size} stops")
       assertEquals(runOnFx(A11yChecks.unmarked(w.root)), Vector.empty[String])
     }
+
+  perspectives.foreach { (name, model, moment) =>
+    fxStage.test(s"$name: no two Tab stops share a role and a name") { fx =>
+      val w = settled(fx, boot(fx, model(), moment))
+      assertEquals(runOnFx(A11yChecks.ambiguous(w.root)), Vector.empty[String])
+    }
+  }
 
   Vector("light", "dark").foreach { theme =>
     fxStage.test(s"a popped-out dock window, $theme: named, legible, its focus drawn") { fx =>
