@@ -100,8 +100,13 @@ class StudyPreviewSuite extends munit.ScalaCheckSuite:
   // Deliberately no Relation, Pairing or schedule calls in this small exhaustive oracle.
   private def expected(keys: Vector[Key], matched: Boolean): Vector[(Key, Key)] =
     val unique = keys.filter(k => keys.count(_ == k) == 1)
+    // A recall without a matched encoding has no controls either (bead S0.7b).
+    def matchable(l: Key) =
+      unique.exists(r =>
+        r.phase == "encode" && r.person == l.person && r.stimulus == l.stimulus
+      )
     for
-      l <- unique if l.phase == "recall"
+      l <- unique if l.phase == "recall" && (matched || matchable(l))
       r <- unique if r.phase == "encode"
       if l.person == r.person && ((l.stimulus == r.stimulus) == matched)
     yield l -> r
@@ -171,7 +176,8 @@ class StudyPreviewSuite extends munit.ScalaCheckSuite:
     val (controls, controlsReport) = collect(preview.controls, 2)
     assertEquals(controls, Vector(a1 -> bRef, a2 -> bRef, b -> aRef1, b -> aRef2))
     assertEquals(controlsReport.eligiblePairCount, 4L)
-    assertEquals(controlsReport.unmatchedLeft, Vector(other, missing))
+    // `missing` has no match, so the control design leaves it out (bead S0.7b).
+    assertEquals(controlsReport.unmatchedLeft, Vector(other))
     assertEquals(controlsReport.unmatchedRight, Vector(otherRef, missingRef))
   }
 
@@ -200,7 +206,11 @@ class StudyPreviewSuite extends munit.ScalaCheckSuite:
       val (pairs, report) = collect(preview.controls, 1)
       assertEquals(pairs, Vector.empty)
       assertEquals(report.eligiblePairCount, 0L)
-      assertEquals(report.unmatchedLeft, rows.filter(_.phase == "recall"))
+      // A recall is in the control design only with a matched encoding.
+      assertEquals(
+        report.unmatchedLeft,
+        rows.filter(r => r.phase == "recall" && rows.contains(r.copy(phase = "encode")))
+      )
       assertEquals(report.unmatchedRight, rows.filter(_.phase == "encode"))
     }
   }

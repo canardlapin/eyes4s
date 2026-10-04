@@ -344,8 +344,9 @@ class PreflightSuite extends munit.FunSuite:
         PairScheduleBudget.default,
         Vector(
           StudyFinding.DuplicateTrial(a, PairingSide.Focal, Vector(0, 1)),
-          StudyFinding.UnmatchedFocal(lone),
-          StudyFinding.UncontrolledFocal(lone)
+          // Without a match, lone is left out of the control design (bead
+          // S0.7b), so it is not also reported as uncontrolled.
+          StudyFinding.UnmatchedFocal(lone)
         )
       )
     )
@@ -718,9 +719,8 @@ class PreflightSuite extends munit.FunSuite:
           Some(temporalInput),
           Vector(
             TemporalFinding.Repetition("reversed", StudyFinding.UnmatchedFocal(ar)),
-            TemporalFinding.Repetition("reversed", StudyFinding.UnmatchedFocal(br)),
-            TemporalFinding.Repetition("reversed", StudyFinding.UncontrolledFocal(ar)),
-            TemporalFinding.Repetition("reversed", StudyFinding.UncontrolledFocal(br))
+            // Unmatched focal trials are left out of the control design (S0.7b).
+            TemporalFinding.Repetition("reversed", StudyFinding.UnmatchedFocal(br))
           )
         )
       )
@@ -997,8 +997,9 @@ class PreflightSuite extends munit.FunSuite:
       StudyFinding.FrameMismatch(b, GeometryError.FrameMismatch(frame.id, other.id)),
       StudyFinding.DuplicateTrial(a, PairingSide.Focal, Vector(2, 3)),
       StudyFinding.UnmatchedFocal(lone),
-      StudyFinding.UnmatchedFocal(b),
-      StudyFinding.UncontrolledFocal(lone)
+      // A focal trial without a match is left out of the control design
+      // (bead S0.7b), so it is not also reported as uncontrolled.
+      StudyFinding.UnmatchedFocal(b)
     )
     val first  = p.preflight(Some(mixed))
     val second = p.preflight(Some(mixed))

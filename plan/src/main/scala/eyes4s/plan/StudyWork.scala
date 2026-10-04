@@ -38,6 +38,11 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
     val description: Vector[(String, Vector[Provenance.Param])],
     val focalIndices: Vector[Int],
     val referenceIndices: Vector[Int],
+    /** The input positions of the control design's focal trials: those with a
+      * matched reference, in focal order (bead S0.7b). A control pair's left
+      * index addresses this vector, a matched pair's [[focalIndices]].
+      */
+    private[plan] val controlFocalIndices: Vector[Int],
     val excludedPhases: Vector[K],
     val frameChecks: Vector[Either[StudyFailure[K], Unit]],
     val windowChecks: Vector[Either[StudyFailure[K], Unit]],
@@ -49,7 +54,8 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
     val candidateVisitsAcrossScales: Long,
     val budget: PairScheduleBudget,
     private[plan] val countCardinality: CountCardinalityIndex[K],
-    private[plan] val keysPerDesign: Long
+    private[plan] val keysPerDesign: Long,
+    private[plan] val controlKeys: Long
 ):
   private[plan] val countIdentity = new StudyCountIdentity
 
@@ -262,13 +268,20 @@ object PreparedStudy:
       kept = frames.zip(input.trials.rows).map { case (frame, t) =>
         frame.flatMap(_ => plan.initialFixationRule.kept(t.key, t.value))
       }
-      relations = StudyPairingWork.relations(plan.layout, plan.pairing, right)
+      relations    = StudyPairingWork.relations(plan.layout, plan.pairing, right)
+      controlFocal = focal.filter(i => relations.matchable(input.trials.rows(i).key))
       matched <- DirectedPairSchedule
-        .exhaustive(left, right, relations._1, budget)
+        .exhaustive(left, right, relations.matched, budget)
         .left
         .map(PlanError.Schedule.apply)
       controls <- DirectedPairSchedule
-        .exhaustive(left, right, relations._2, budget)
+        // Controls only for queries with a match (bead S0.7b).
+        .exhaustive(
+          controlFocal.map(i => input.trials.rows(i).key),
+          right,
+          relations.controls,
+          budget
+        )
         .left
         .map(PlanError.Schedule.apply)
     yield new PreparedStudy(
@@ -277,6 +290,7 @@ object PreparedStudy:
       plan.description,
       focal,
       reference,
+      controlFocal,
       phases.indices
         .filter(i => phases(i) != plan.focalPhase && phases(i) != plan.referencePhase)
         .map(i => input.trials.rows(i).key)
@@ -300,7 +314,10 @@ object PreparedStudy:
           right,
           left
         ),
-      left.distinct.size.toLong
+      // Every focal key has a row in the matched reduction and the contrast;
+      // only those with a match are in the control design (bead S0.7b).
+      left.distinct.size.toLong,
+      controlFocal.map(i => input.trials.rows(i).key).distinct.size.toLong
     )
 
 /** Which within-participant design a step worked on. */
@@ -612,12 +629,20 @@ object StudyWork:
     given ScoreMean[S]       = plan.method.mean
     given Contrastable[S, D] = plan.method.difference
 
+    // A pair's left index addresses its own schedule's focal trials: the
+    // control design has only those with a match (bead S0.7b).
+    def focalOf(schedule: DirectedPairSchedule[K, K]): Vector[Int] =
+      if schedule eq work.controls then work.controlFocalIndices else work.focalIndices
+
     def operands(
+        schedule: DirectedPairSchedule[K, K],
         masses: Vector[(K, Either[StudyFailure[K], Mass[U]])]
-    )(pair: ScheduledPair[K, K]): Either[StudyFailure[K], (Mass[U], Mass[U])] =
-      masses(work.focalIndices(pair.leftIndex))._2.flatMap(left =>
-        masses(work.referenceIndices(pair.rightIndex))._2.map(right => (left, right))
-      )
+    ): ScheduledPair[K, K] => Either[StudyFailure[K], (Mass[U], Mass[U])] =
+      val focal = focalOf(schedule)
+      pair =>
+        masses(focal(pair.leftIndex))._2.flatMap(left =>
+          masses(work.referenceIndices(pair.rightIndex))._2.map(right => (left, right))
+        )
 
     def failure(pair: ScheduledPair[K, K], error: CompareError): StudyFailure[K] =
       StudyFailure.Comparison(pair.left, pair.right, error)
@@ -652,7 +677,8 @@ object StudyWork:
                       schedule,
                       work.input.hash,
                       info,
-                      PairEvaluation.Bounded(comparison, budget, operands(masses), failure)
+                      PairEvaluation
+                        .Bounded(comparison, budget, operands(schedule, masses), failure)
                     )
                 }
             case MethodExecution.Synchronous(factory) =>
@@ -670,7 +696,7 @@ object StudyWork:
                     work.input.hash,
                     info,
                     PairEvaluation.Whole[K, K, StudyFailure[K], S](pair =>
-                      operands(masses)(pair).flatMap { case (left, right) =>
+                      operands(schedule, masses)(pair).flatMap { case (left, right) =>
                         comparison.compare(left, right).left.map(failure(pair, _))
                       }
                     )
