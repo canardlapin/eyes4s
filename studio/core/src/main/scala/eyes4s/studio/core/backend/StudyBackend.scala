@@ -359,8 +359,9 @@ object ProtocolVersion:
     * and added `InventoryRefused` (S5.4). 1.4 uses decimal strings for Long
     * values outside the safe JSON integer range. 1.5 adds the resolved
     * design's query counts to preview candidates and counts (S7.5). 1.6
-    * adds a trial's admitted fixations and its preview map (S6.2). Deploy
-    * client and backend together.
+    * adds a trial's admitted fixations and its preview map (S6.2). 1.7 adds
+    * a revision's fixation-file records as pages (`sourceRecords`, S6.4).
+    * Deploy client and backend together.
     */
   val Current: ProtocolVersion = ProtocolVersion(1, 7)
 

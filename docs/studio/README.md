@@ -62,15 +62,20 @@ To change the plan, edit `studio_plan.py`, rerun `render`, and update the matchi
 Protocol 1.7 (S6.4) adds the source records view for Explore, additive on 1.6:
 `sourceRecords(revision, from, count)` answers `SourceRecordPage`, records `from`
 to `from + count - 1` (at most 500) of the fixation file of the revision's dataset,
-in file order and numbered from 1, with the source (its import name and SHA-256)
-and its total. Each `SourceRecordRow` carries its `StudioRef.SourceRecord` (naming
+in file order and numbered from 1, with the source (its import name and SHA-256),
+its total, the count asked for, and the pixels per degree its degrees are at with
+where that comes from (`ScaleSource.Recipe`, the plan's declared units, else
+`Dataset`). A page holds every record asked for that the file has: only the last
+is short and none is empty; an empty file answers `PastEnd(from, 0)`. Each `SourceRecordRow` carries its `StudioRef.SourceRecord` (naming
 its fixation when an admitted scanpath holds it), its cells as numbers (`None`
 where a cell is not one), its position in image pixels and in degrees from the
-image's centre (y up, by the declared linear pixels per degree), the eyes4s
+image's centre (y up, at the page's linear pixels per degree), the eyes4s
 `MapPlacement` the revision's study gives an admitted record, and its verbatim
-line. A range outside the file is `SourceRecordsRefused`. The fake serves
+text (which may span several lines). Screen, image and degrees are all present
+or all absent. A range outside the file is `SourceRecordsRefused`. The fake serves
 fixtures/studio-golden's fixations.csv, embedded verbatim, with the image frame
-and degrees from eyes4s-kernel's `Subframe` and `LinearAngularScale`. The other
+and degrees from `DisplayFrames` (eyes4s-kernel's `Subframe` and
+`LinearAngularScale`); its generator refuses a CR or a quote in the file. The other
 1.6 pins are unchanged; the envelope version is now 1.7.
 
 Protocol 1.6 (S6.2) adds two trial views for Explore, additive on 1.5:

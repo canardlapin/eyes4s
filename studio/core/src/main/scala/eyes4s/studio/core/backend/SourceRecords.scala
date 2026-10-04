@@ -43,9 +43,6 @@ enum SourceRecordsError derives CanEqual, Codec.AsObject:
   /** The record at row `at` of the page is `record`, not `expected`. */
   case OutOfOrder(at: Int, record: Int, expected: Int)
 
-  /** The page's rows run past the source's `total` records. */
-  case BeyondTotal(record: Int, total: Int)
-
   /** A record names its fixation without the placement the study gives it,
     * or a placement without a fixation.
     */
@@ -57,6 +54,20 @@ enum SourceRecordsError derives CanEqual, Codec.AsObject:
   /** eyes4s refused a step of the view (`step`), saying `reason`. */
   case Study(step: String, reason: String)
 
+  /** A page of `count` records from `from` of `total` holds `rows`: a page
+    * holds every record asked for that the file has, so only the last is
+    * short and none is empty.
+    */
+  case RowCount(from: Int, count: Int, total: Int, rows: Int)
+
+  /** The page's pixels per degree is `value`, not a positive finite number. */
+  case ScaleNotPositive(value: String)
+
+  /** A record has a screen position, an image position and degrees all or
+    * none; these say which it has.
+    */
+  case PositionsPartial(record: Int, screen: Boolean, image: Boolean, degrees: Boolean)
+
   def message: String = this match
     case RangeInvalid(f, c, l) =>
       s"A page of source records starts at record $f and holds $c; records count from 1 " +
@@ -66,12 +77,26 @@ enum SourceRecordsError derives CanEqual, Codec.AsObject:
       s"Source records are read from the fixation file, not the ${role.label}."
     case NotFinite(r, f, v)   => s"Record $r's $f is $v, which is not finite."
     case OutOfOrder(a, r, e)  => s"Row ${a + 1} of the page is record $r, not $e."
-    case BeyondTotal(r, t)    => s"Record $r is past the last of the source's $t records."
     case PlacementMismatch(r) =>
       s"Record $r names a fixation without its placement, or a placement without a fixation."
     case OtherSource(r, role) =>
       s"Record $r is a record of the ${role.label}, not the fixations."
-    case Study(step, reason) => s"eyes4s refused the $step of the source records: $reason"
+    case Study(step, reason)  => s"eyes4s refused the $step of the source records: $reason"
+    case RowCount(f, c, t, n) =>
+      val due = math.max(0, math.min(c, t - f + 1))
+      s"A page of $c records from record $f of $t holds $n; it must hold $due."
+    case ScaleNotPositive(v) => s"The page's pixels per degree is $v; it must be positive."
+    case PositionsPartial(r, sc, im, dg) =>
+      def has(b: Boolean) = if b then "has" else "lacks"
+      s"Record $r ${has(sc)} a screen position, ${has(im)} an image position and " +
+        s"${has(dg)} degrees; a record has all three or none."
+
+/** Where a page's pixels per degree comes from: the analysis revision's
+  * recipe (the plan's declared units), or the dataset's declared geometry
+  * when the recipe states none.
+  */
+enum ScaleSource derives CanEqual, Codec.AsObject:
+  case Recipe, Dataset
 
 /** A finite point in a plane, in the unit its holder states. */
 final case class PlanePoint private (x: Double, y: Double) derives CanEqual
@@ -105,13 +130,15 @@ final case class ImagePosition(at: PlanePoint, insideImage: Boolean) derives Can
   *   - `ordinal`, `onsetMs`, `durationMs`, `samples` and `screen`: the
   *     record's cells as numbers, `None` where a cell is not one.
   *   - `image`: the screen centre in the image frame; `degrees`: in degrees
-  *     of visual angle from the image's centre, x right and y up, by the
-  *     dataset's declared linear pixels per degree. Both are eyes4s's, and
-  *     `None` without a screen position.
+  *     of visual angle from the image's centre, x right and y up, at the
+  *     page's linear pixels per degree. Both are eyes4s's; a record has
+  *     `screen`, `image` and `degrees` all or none.
   *   - `placement`: where the study places the fixation against the map
   *     (eyes4s `MapPlacement`); `None` for a record no admitted scanpath
   *     holds.
-  *   - `line`: the record's verbatim text in the file, without its line end.
+  *   - `line`: the record's verbatim text in the file, without its final
+  *     line end. A record may span several physical lines (a quoted field
+  *     can hold a line end), so this is the record's text, not one line.
   */
 final case class SourceRecordRow private (
     ref: StudioRef.SourceRecord,
@@ -147,6 +174,15 @@ object SourceRecordRow:
       v.filterNot(_.isFinite).map(x => SourceRecordsError.NotFinite(record, field, x.toString))
     if ref.source != SourceRole.Fixations then
       Left(SourceRecordsError.OtherSource(record, ref.source))
+    else if !(screen.isDefined == image.isDefined && image.isDefined == degrees.isDefined) then
+      Left(
+        SourceRecordsError.PositionsPartial(
+          record,
+          screen.isDefined,
+          image.isDefined,
+          degrees.isDefined
+        )
+      )
     else if ref.fixation.isDefined != placement.isDefined then
       Left(SourceRecordsError.PlacementMismatch(record))
     else
@@ -247,16 +283,23 @@ object SourceRecordRow:
 
 /** A page of the dataset's fixation file under an analysis revision
   * (protocol 1.7, S6.4): the source (its import name and the SHA-256 of its
-  * bytes), its `total` records, and the rows of records `from`, `from + 1`,
-  * … in file order. Keyed by the revision because a record's placement
-  * belongs to the study. Built only through [[SourceRecordPage.of]].
+  * bytes), the pixels per degree its degrees are at and where that scale
+  * comes from, its `total` records, the `count` asked for, and the rows of
+  * records `from`, `from + 1`, … in file order: every record asked for that
+  * the file has, so a page is short only at the file's end and never empty.
+  * Keyed by the revision because a record's placement and its degrees
+  * belong to the study. An empty file has no page: every request is
+  * `PastEnd(from, 0)`. Built only through [[SourceRecordPage.of]].
   */
 final case class SourceRecordPage private (
     revision: AnalysisRevision,
     dataset: DatasetRevision,
     source: Source,
+    pixelsPerDegree: Double,
+    scaleSource: ScaleSource,
     total: Int,
     from: Int,
+    count: Int,
     rows: Vector[SourceRecordRow]
 ) derives CanEqual
 
@@ -269,27 +312,65 @@ object SourceRecordPage:
       revision: AnalysisRevision,
       dataset: DatasetRevision,
       source: Source,
+      pixelsPerDegree: Double,
+      scaleSource: ScaleSource,
       total: Int,
       from: Int,
+      count: Int,
       rows: Vector[SourceRecordRow]
   ): Either[SourceRecordsError, SourceRecordPage] =
     if source.role != SourceRole.Fixations then
       Left(SourceRecordsError.NotFixations(source.role))
-    else if from < 1 || rows.size > Limit then
-      Left(SourceRecordsError.RangeInvalid(from, rows.size, Limit))
+    else if !pixelsPerDegree.isFinite || pixelsPerDegree <= 0.0 then
+      Left(SourceRecordsError.ScaleNotPositive(pixelsPerDegree.toString))
+    else if from < 1 || count < 1 || count > Limit then
+      Left(SourceRecordsError.RangeInvalid(from, count, Limit))
     else if from > total then Left(SourceRecordsError.PastEnd(from, total))
+    else if rows.size != math.min(count, total - from + 1) then
+      Left(SourceRecordsError.RowCount(from, count, total, rows.size))
     else
       rows.zipWithIndex
         .collectFirst {
           case (r, i) if r.record != from + i =>
             SourceRecordsError.OutOfOrder(i, r.record, from + i)
-          case (r, _) if r.record > total => SourceRecordsError.BeyondTotal(r.record, total)
         }
-        .toLeft(SourceRecordPage(revision, dataset, source, total, from, rows))
+        .toLeft(
+          SourceRecordPage(
+            revision,
+            dataset,
+            source,
+            pixelsPerDegree,
+            scaleSource,
+            total,
+            from,
+            count,
+            rows
+          )
+        )
 
   given Encoder.AsObject[SourceRecordPage] =
-    Encoder.forProduct6("revision", "dataset", "source", "total", "from", "rows")(p =>
-      (p.revision, p.dataset, p.source, p.total, p.from, p.rows)
+    Encoder.forProduct9(
+      "revision",
+      "dataset",
+      "source",
+      "pixelsPerDegree",
+      "scaleSource",
+      "total",
+      "from",
+      "count",
+      "rows"
+    )(p =>
+      (
+        p.revision,
+        p.dataset,
+        p.source,
+        p.pixelsPerDegree,
+        p.scaleSource,
+        p.total,
+        p.from,
+        p.count,
+        p.rows
+      )
     )
 
   given Decoder[SourceRecordPage] = Decoder.instance { c =>
@@ -297,10 +378,13 @@ object SourceRecordPage:
       c.get[AnalysisRevision]("revision"),
       c.get[DatasetRevision]("dataset"),
       c.get[Source]("source"),
+      c.get[Double]("pixelsPerDegree"),
+      c.get[ScaleSource]("scaleSource"),
       c.get[Int]("total"),
       c.get[Int]("from"),
+      c.get[Int]("count"),
       c.get[Vector[SourceRecordRow]]("rows")
-    ).flatMapN((r, d, s, t, f, rs) =>
-      of(r, d, s, t, f, rs).leftMap(e => DecodingFailure(e.message, c.history))
+    ).flatMapN((r, d, s, ppd, ss, t, f, n, rs) =>
+      of(r, d, s, ppd, ss, t, f, n, rs).leftMap(e => DecodingFailure(e.message, c.history))
     )
   }

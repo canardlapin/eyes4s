@@ -101,6 +101,14 @@ object StudioFixture {
     * shows each record's verbatim line).
     */
   def embedFixationsCsv(source: File, out: File): File = {
+    // The fake reads one record per line and one cell per comma: a CR or a
+    // quote in the file would break both, so refuse it here.
+    val text = IO.read(source, IO.utf8)
+    if (text.contains('\r') || text.contains('"'))
+      sys.error(
+        s"StudioFixture: ${source.getName} holds a CR or a quote; the fake's source " +
+          "records read LF-ended lines of unquoted cells"
+      )
     IO.write(
       out,
       s"""|${header}package eyes4s.studio.core.fixture
@@ -108,7 +116,7 @@ object StudioFixture {
           |/** The exact text of fixtures/studio-golden/fixations.csv. */
           |private[core] object GoldenFixationsCsv:
           |  val text: String = Vector(
-          |    ${chunked(IO.read(source, IO.utf8))}
+          |    ${chunked(text)}
           |  ).mkString
           |""".stripMargin,
       IO.utf8

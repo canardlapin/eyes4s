@@ -19,7 +19,8 @@ package eyes4s.studio.core.fixture
 import cats.syntax.all.*
 import eyes4s.kernel.*
 import eyes4s.studio.core.backend.*
-import eyes4s.studio.core.document.{Geometry, SourceRole}
+import eyes4s.studio.core.document.{Geometry, Recipe, Source, SourceRole}
+import eyes4s.studio.core.geometry.DisplayFrames
 import eyes4s.studio.core.selection.{FixationIndex, RecordNumber, StudioRef}
 
 /** The fake's source records (protocol 1.7, S6.4): fixtures/studio-golden's
@@ -64,24 +65,43 @@ object FakeSourceRecords:
   private def refused(r: AnalysisRevision, e: SourceRecordsError): BackendError =
     BackendError.SourceRecordsRefused(r, e)
 
-  /** The image frame within the screen, and the warp from it into degrees. */
-  private def imageFrames(
+  /** The study's frames: the dataset's display geometry as eyes4s frames
+    * ([[DisplayFrames]]), at the plan's declared pixels per degree when the
+    * recipe states one, else the dataset's, and where that scale comes from.
+    */
+  private[fixture] def frames(
+      dataset: DatasetRevision,
+      recipe: Recipe,
       geometry: Geometry
-  ): Either[GeometryError, (Subframe[Unit2D.Px], Warp[Unit2D.Px, Unit2D.Deg])] =
-    val image = geometry.image
+  ): Either[String, (DisplayFrames, ScaleSource)] =
+    val (perDegree, source) = recipe.angularScale.fold(
+      (geometry.pixelsPerDegree, ScaleSource.Dataset)
+    )(s => (s, ScaleSource.Recipe))
     for
-      screen <- Frame.screen("screen", geometry.screen.width, geometry.screen.height)
-      region <- Bounds.of[Unit2D.Px](
-        image.left.toDouble,
-        image.top.toDouble,
-        image.left.toDouble + image.width,
-        image.top.toDouble + image.height
+      scaled <- Geometry.of(geometry.screen, geometry.image, perDegree).leftMap(_.message)
+      frames <- DisplayFrames.of(dataset, scaled).leftMap(_.message)
+    yield (frames, source)
+
+  /** A screen centre's image position (and whether the image's half-open
+    * frame holds it) and its degrees from the image centre, as eyes4s gives
+    * them.
+    */
+  private[fixture] def position(
+      frames: DisplayFrames,
+      record: Int,
+      x: Double,
+      y: Double
+  ): Either[SourceRecordsError, Option[(ImagePosition, PlanePoint)]] =
+    val centre = Pt[Unit2D.Px](x, y)
+    frames.image
+      .enter(centre)
+      .flatMap(local => frames.toDegrees(local).map(local -> _))
+      .traverse((local, d) =>
+        for
+          at  <- PlanePoint.of(record, "image", local.x, local.y)
+          deg <- PlanePoint.of(record, "degrees", d.x, d.y)
+        yield (ImagePosition(at, frames.image.locate(centre).isInside), deg)
       )
-      frame   <- Subframe.of(screen, FrameId("image"), region)
-      scale   <- LinearAngularScale.of(screen, geometry.pixelsPerDegree.value)
-      onImage <- scale.on(frame)
-      degrees <- onImage.angular(FrameId("degrees"))
-    yield (frame, degrees)
 
   /** Records `from` to `from + count - 1` of the revision's fixation file. */
   def page(
@@ -91,9 +111,31 @@ object FakeSourceRecords:
       from: Int,
       count: Int
   ): Either[BackendError, SourceRecordPage] =
+    val unavailable = BackendError.Unavailable(DiagnosticLocus.Revision(revision))
+    for
+      (recipe, geometry) <- FakeTrialViews.study(moment, revision)
+      doc                <- StorySeed.document(moment).leftMap(_ => unavailable)
+      source             <- doc
+        .dataset(dataset)
+        .flatMap(_.sources.fixations)
+        .toRight(unavailable)
+      page <- serve(revision, dataset, recipe, geometry, source, from, count)
+    yield page
+
+  /** The page under a stated study: `recipe` (its window, off-window policy
+    * and angular scale) on `geometry`, of the fixation file `source`.
+    */
+  private[fixture] def serve(
+      revision: AnalysisRevision,
+      dataset: DatasetRevision,
+      recipe: Recipe,
+      geometry: Geometry,
+      source: Source,
+      from: Int,
+      count: Int
+  ): Either[BackendError, SourceRecordPage] =
     def study(step: String)(reason: String) =
       refused(revision, SourceRecordsError.Study(step, reason))
-    val unavailable = BackendError.Unavailable(DiagnosticLocus.Revision(revision))
     for
       _ <- Either.cond(
         from >= 1 && count >= 1 && count <= SourceRecordPage.Limit,
@@ -105,21 +147,15 @@ object FakeSourceRecords:
         (),
         refused(revision, SourceRecordsError.PastEnd(from, total))
       )
-      (recipe, geometry) <- FakeTrialViews.study(moment, revision)
-      doc                <- StorySeed.document(moment).leftMap(_ => unavailable)
-      source             <- doc
-        .dataset(dataset)
-        .flatMap(_.sources.fixations)
-        .toRight(unavailable)
-      screen <- Frame
-        .screen("screen", geometry.screen.width, geometry.screen.height)
-        .leftMap(e => study("screen")(e.message))
+      (display, scaleSource) <- frames(dataset, recipe, geometry).leftMap(
+        study("display frames")
+      )
+      screen = display.screen
       window <- recipe.window
         .fold(Right(screen.bounds))(w => Bounds.of[Unit2D.Px](w.xMin, w.yMin, w.xMax, w.yMax))
         .flatMap(Subframe.of(screen, FrameId("window"), _))
         .leftMap(e => study("window")(e.message))
-      (image, degrees) <- imageFrames(geometry).leftMap(e => study("image frame")(e.message))
-      fixations        <- fixationOf.leftMap(study("fixation source"))
+      fixations <- fixationOf.leftMap(study("fixation source"))
       policy = FakeTrialViews.policy(recipe)
       rows <- (from until math.min(total + 1, from + count)).toVector.traverse { n =>
         val cells                = lines(n).split(",", -1).toVector
@@ -135,17 +171,9 @@ object FakeSourceRecords:
           screenAt <- (double("x"), double("y")).tupled.traverse((x, y) =>
             PlanePoint.of(n, "screen", x, y).leftMap(refused(revision, _))
           )
-          centre = screenAt.map(p => Pt[Unit2D.Px](p.x, p.y))
-          imageAt <- centre
-            .flatMap(c => image.enter(c).map(c -> _))
-            .traverse((c, local) =>
-              PlanePoint
-                .of(n, "image", local.x, local.y)
-                .bimap(refused(revision, _), ImagePosition(_, image.locate(c).isInside))
-            )
-          degreesAt <- centre
-            .flatMap(c => image.enter(c).flatMap(degrees(_)))
-            .traverse(d => PlanePoint.of(n, "degrees", d.x, d.y).leftMap(refused(revision, _)))
+          placedAt <- screenAt
+            .flatTraverse(p => position(display, n, p.x, p.y))
+            .leftMap(refused(revision, _))
           row <- SourceRecordRow
             .of(
               StudioRef.SourceRecord(trial, placed.map(_._2), SourceRole.Fixations, record),
@@ -154,10 +182,10 @@ object FakeSourceRecords:
               double("duration_ms"),
               int("sample_count"),
               screenAt,
-              imageAt,
-              degreesAt,
+              placedAt.map(_._1),
+              placedAt.map(_._2),
               placed.flatMap(_ =>
-                centre.map(c => FakeTrialViews.placement(screen, window, policy, c.x, c.y))
+                screenAt.map(c => FakeTrialViews.placement(screen, window, policy, c.x, c.y))
               ),
               lines(n)
             )
@@ -165,6 +193,16 @@ object FakeSourceRecords:
         yield row
       }
       page <- SourceRecordPage
-        .of(revision, dataset, source, total, from, rows)
+        .of(
+          revision,
+          dataset,
+          source,
+          display.pixelsPerDegree,
+          scaleSource,
+          total,
+          from,
+          count,
+          rows
+        )
         .leftMap(refused(revision, _))
     yield page

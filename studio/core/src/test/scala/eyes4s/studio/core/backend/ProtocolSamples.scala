@@ -363,8 +363,11 @@ object ProtocolSamples:
           ByteDigest.parse("ab" * 32).toOption.get,
           None
         ),
+        35.5,
+        ScaleSource.Recipe,
         11520,
         7214,
+        3,
         Vector(
           SourceRecordRow
             .of(
