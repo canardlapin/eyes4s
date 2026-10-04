@@ -616,11 +616,24 @@ ThisBuild / checkKernelPurity := {
     log.info(s"kernel purity OK (${sources.size} source(s) scanned, no ocular vocabulary)")
 }
 
+// A forked test JVM reaches sbt through ForkMain: sbt listens on a wildcard
+// socket (`new ServerSocket(0)`, dual stack) and the fork connects to
+// `InetAddress.getByName(null)`, which resolves to 127.0.0.1 by default. macOS
+// lets another process hold a 127.0.0.1-specific listener on the same port, so
+// the fork can connect to that process instead and wait forever in
+// `readStreamHeader` (bead bd-01M3HHR5QV9W9SS9AMM1RR1SM0). Preferring IPv6
+// makes the fork connect to ::1, which only sbt's wildcard socket serves.
+// Local builds only: CI runners (Linux refuses the colliding bind) keep their
+// existing options.
+lazy val forkHandshakeOptions: Seq[String] =
+  if (sys.env.contains("CI")) Nil else Seq("-Djava.net.preferIPv6Addresses=true")
+
 lazy val commonSettings = Seq(
   libraryDependencies ++= Seq(
     "org.scalameta" %%% "munit"            % munitV           % Test,
     "org.scalameta" %%% "munit-scalacheck" % munitScalacheckV % Test
-  )
+  ),
+  Test / javaOptions ++= forkHandshakeOptions
 )
 
 // ---------------------------------------------------------------------------
