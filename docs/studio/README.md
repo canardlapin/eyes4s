@@ -59,6 +59,22 @@ To change the plan, edit `studio_plan.py`, rerun `render`, and update the matchi
 
 ## Backend protocol versions
 
+Protocol 1.6 (S6.2) adds two trial views for Explore, additive on 1.5:
+`trialFixations(revision, trial)` answers `TrialFixations`, the trial's admitted
+fixations in scanpath order, each with its `StudioRef.Fixation`, fixations.csv
+record, screen-pixel centre, onset and duration in milliseconds, and the eyes4s
+`MapPlacement` the revision's study gives it; `trialPreview(revision, trial)`
+answers `TrialPreview`, eyes4s's σ 2° density of the trial's in-map fixations over
+the recipe's grid, with its `RowOrder` stated and the backend's isoline levels.
+Both are keyed by the analysis revision because placement and the grid belong to
+the study, not the dataset. Every value is validated (finite positions, a
+non-negative onset, a positive duration, positions 1, 2, … in order, finite
+non-negative cells); a trial without an admitted scanpath is `Unavailable`. The
+fake serves both over fixtures/studio-golden: placement through the kernel's
+screen frame and half-open window, the preview through eyes4s-surface's Gaussian
+smoother and `MassLevels` (coverages 0.5 and 0.8). The other 1.5 pins are
+unchanged; the envelope version is now 1.6.
+
 Protocol 1.5 (S7.5) adds the resolved-design counts: `PreviewCandidates` carries
 `requestedQueries`, `queriesNotAdmitted` and `byDesignQueries` (absent when the
 recipe has no by-design category: not applicable, not zero), and `PreviewCounts`
@@ -91,7 +107,7 @@ only and decodes the typed envelope body before checking the version; it does no
 negotiate minor capabilities. Mixed-minor deployments are unsupported. Protocol
 1.2 added `ProgressTotal.Counting`, which a 1.0/1.1 decoder cannot read; 1.3 adds
 the inventory join; 1.4 adds the exact large-count policy; 1.5 adds the
-resolved-design counts. `ProtocolCodecSuite`
+resolved-design counts; 1.6 adds the trial fixations and preview views. `ProtocolCodecSuite`
 retains the frozen legacy-total probe, while `ProtocolLongSuite` verifies that
 safe-number 1.2 envelopes remain readable. This does not establish mixed-version peer compatibility.
 

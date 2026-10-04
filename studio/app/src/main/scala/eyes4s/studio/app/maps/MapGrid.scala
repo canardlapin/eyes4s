@@ -50,18 +50,12 @@ final case class MapId(run: RunId, trial: TrialKey, scale: ScaleIndex) derives C
   /** The map's result address in its run. */
   def address: ResultAddress = ResultAddress.Estimation(scale.value, trial)
 
-/** Which stored row of a grid is at the top of the map: the convention is
-  * part of the grid, never assumed by its readers.
+/** Which stored row of a grid is at the top of the map: the protocol's
+  * [[eyes4s.studio.core.backend.RowOrder]], which a backend's preview grid
+  * states too (S6.2).
   */
-enum RowOrder derives CanEqual:
-
-  /** Row 0 is the top edge, rows run downward (screen y down). */
-  case TopFirst
-
-  /** Row 0 is the bottom edge, rows run upward, as an eyes4s kernel grid on
-    * a frame whose y axis points up.
-    */
-  case BottomFirst
+type RowOrder = eyes4s.studio.core.backend.RowOrder
+val RowOrder: eyes4s.studio.core.backend.RowOrder.type = eyes4s.studio.core.backend.RowOrder
 
 /** One map's values as the backend serves them (ticket S4.4; UI-E):
   * `columns × rows` cells, x fastest, rows in `order`, each a density value

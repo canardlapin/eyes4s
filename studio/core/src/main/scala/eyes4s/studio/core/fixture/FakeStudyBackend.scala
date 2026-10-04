@@ -269,6 +269,22 @@ final class FakeStudyBackend[F[_]] private[fixture] (
         case Some(d) => Right(d)
     }
 
+  // -------------------------------------------------------------------------
+  // Trial views (protocol 1.6, S6.2)
+  // -------------------------------------------------------------------------
+
+  def trialFixations(
+      r: AnalysisRevision,
+      trial: TrialKey
+  ): F[Either[BackendError, TrialFixations]] =
+    revision(r).map(_.flatMap(d => FakeTrialViews.fixations(r, d, trial)))
+
+  def trialPreview(
+      r: AnalysisRevision,
+      trial: TrialKey
+  ): F[Either[BackendError, TrialPreview]] =
+    revision(r).map(_.flatMap(d => FakeTrialViews.preview(r, d, trial)))
+
   def preview(r: AnalysisRevision): F[Either[BackendError, PreviewSummary]] =
     revision(r).map(_.map { d =>
       PreviewSummary(
