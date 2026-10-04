@@ -112,9 +112,33 @@ path (`window.xMin`, `scales.1`), and 64-bit integers are compared exactly.
 every one-number parameter, and each such `ParameterDescriptor` carries its
 field as `form`. `ParameterSet.validate(id, raw)` checks one method parameter,
 and `MethodDescriptor.formView` and `RecipeInspection.views` give the host its
-views. Recipe-level views (frames, windows, pairing, initial fixations,
-estimates) are data in this release; parsing them and the whole-recipe checks
-keyed by `StudyField` follow in CR6b.
+views. Recipe-level fields (frames, windows, pairing, initial fixations,
+estimates) parse through the recipe forms below.
+
+Every shipped one-number field states its bounds explicitly. Intervals are
+open `(`, `)` or closed `[`, `]`; `∞` is a side with no endpoint, bounded only by
+the shape. Sigma is shown in pixels and degrees; it takes the same bounds in
+every unit.
+
+<!-- BEGIN GENERATED FIELD BOUNDS -->
+
+| Field | Unit | Shape | Bounds |
+|---|---|---|---|
+| `sigma` | `px` | `Real` | `(0, ∞)` |
+| `sigma` | `deg` | `Real` | `(0, ∞)` |
+| `sigmaX` | `px` | `Real` | `(0, ∞)` |
+| `sigmaY` | `px` | `Real` | `(0, ∞)` |
+| `residualLimitMicros` | `µs` | `Int64` | `[0, ∞)` |
+| `thresholdDegPerSecond` | `deg/s` | `Real` | `(0, ∞)` |
+| `minimumDurationMicros` | `µs` | `Int64` | `(0, ∞)` |
+| `extentWidthDeg` | `deg` | `Real` | `(0, ∞)` |
+| `extentHeightDeg` | `deg` | `Real` | `(0, ∞)` |
+| `etaXDegPerSecond` | `deg/s` | `Real` | `(0, ∞)` |
+| `etaYDegPerSecond` | `deg/s` | `Real` | `(0, ∞)` |
+| `minimumSamples` | `samples` | `Int32` | `[1, ∞)` |
+| `interpolationGapMicros` | `µs` | `Int64` | `[0, ∞)` |
+
+<!-- END GENERATED FIELD BOUNDS -->
 
 The bounds restate the constructor, so `eyes4s.laws.FormLaws.numeric` holds them
 to it: at each endpoint, one representable step inside and one outside, the
@@ -163,6 +187,28 @@ English. Run counts are not part of a plan and are not in the text.
 
 A host holding an erased `FieldError[Any]` from `ParameterSet.validate` projects
 it with `Diagnose.reportedFormField`.
+
+## Stored forms
+
+A host stores a form's fields and the values a user typed with two codecs in
+`eyes4s-codec`, cross-built and pinned on the JVM and Scala.js:
+
+- `FormCodecs.view` (`eyes4s.form-view@1`) writes a `FormView`: its definition
+  and every `FieldView` with its kind, quantity (units are their symbols),
+  shape, bounds, choices, parts, rules and default. Decoding rebuilds each field
+  through `FieldView.of`, `NumericBounds.of` and `DefaultValue.of`, so a stored
+  view cannot hold a field the plan would refuse, and field ids are distinct.
+- `FormCodecs.values` (`eyes4s.form-values@1`) writes `FormValues` in ascending
+  field order. A number stays the text the user typed (an empty entry, a
+  malformed entry and a 64-bit integer survive exactly); an absent value is left
+  out, and a repeated field is refused.
+
+`eyes4s.laws.FormLaws.stored` holds a stored form to its original: the view and
+the values read back as written and re-encode to the same documents, and every
+field of the restored view checks each stored value, and each probe, as the
+original does. `FormLawSuite` runs it over the shipped study, temporal and
+recording forms and the pinned fixtures (`form-view-v1.json`,
+`form-values-v1.json`).
 
 `ParameterUnits` and `ParameterDomain` are deprecated. `ParameterInfo.units` and
 `allowed` remain as projections of `quantity` and `kind`, and the deprecated

@@ -200,6 +200,18 @@ object SchemaRegistry:
       codecLaw(inputs, "admission ledger with inventory")
     ),
     Entry(
+      FormCodecDefinitions.formView,
+      Kind.Document,
+      Vector("form-view-v1.json"),
+      codecLaw(() => new FormLawSuite, "form view")
+    ),
+    Entry(
+      FormCodecDefinitions.formValues,
+      Kind.Document,
+      Vector("form-values-v1.json"),
+      codecLaw(() => new FormLawSuite, "form values")
+    ),
+    Entry(
       SourceCodecDefinitions.sourceRef,
       Kind.Document,
       Vector("source-ref-v1.json", "source-inventory-ref-v1.json"),
@@ -1003,6 +1015,8 @@ private object Decoders:
         Some(StudyInputCodecs.study[Px].ledger)
       case InventoryDefinitions.admissionLedgerV3 =>
         Some(StudyInputCodecs.trial[Px].ledger)
+      case FormCodecDefinitions.formView            => Some(FormCodecs.view)
+      case FormCodecDefinitions.formValues          => Some(FormCodecs.values)
       case SourceCodecDefinitions.sourceRef         => Some(SourceIdentityCodec.source)
       case SourceCodecDefinitions.importSpec        => Some(ImportSpecCodec.study[Px])
       case SourceCodecDefinitions.inventorySpec     => Some(ImportSpecCodec.inventory)

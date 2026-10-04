@@ -176,6 +176,83 @@ class FormLawSuite extends munit.DisciplineSuite:
     )(values => (new RecordingForm().fields, values))
   )
 
+  // --- Stored forms (CR6c) ---------------------------------------------------
+
+  private val probes = Vector(
+    RawValue.Absent,
+    RawValue.Number(""),
+    RawValue.Number("x"),
+    RawValue.Number("0"),
+    RawValue.Number("-1"),
+    RawValue.Number("1e400"),
+    RawValue.Number("9223372036854775808"),
+    RawValue.Choice("none"),
+    RawValue.Flag(false),
+    RawValue.Text(" ")
+  )
+
+  private val ids =
+    Gen.oneOf("a", "b", "c", "window", "scales", "x.y", "é").map(id => get(FieldId.of(id)))
+  private val leaves: Gen[RawValue] = Gen.oneOf(
+    Gen.oneOf("", "0", "-0", "1.5", "2e0", "abc", "9007199254740993").map(RawValue.Number(_)),
+    Gen.alphaStr.map(RawValue.Choice(_)),
+    Gen.oneOf(true, false).map(RawValue.Flag(_)),
+    Gen.oneOf("", " ", "été · P17", "\"quoted\"").map(RawValue.Text(_)),
+    Gen.const(RawValue.Absent)
+  )
+  private def raws(depth: Int): Gen[RawValue] =
+    if depth == 0 then leaves
+    else
+      val parts = Gen.listOfN(2, Gen.zip(ids, raws(depth - 1))).map(_.toVector)
+      Gen.frequency(
+        3 -> leaves,
+        1 -> parts.map(RawValue.Group(_)),
+        1 -> Gen.zip(Gen.alphaStr, parts).map(RawValue.Variant(_, _)),
+        1 -> Gen.listOfN(3, raws(depth - 1)).map(v => RawValue.Items(v.toVector))
+      )
+  private val anyValues: Gen[FormValues] =
+    Gen.listOfN(4, Gen.zip(ids, raws(2))).map(xs => FormValues.from(xs.toMap))
+
+  private val shippedForms: Gen[(FormView, FormValues)] = Gen.oneOf(
+    Gen.oneOf(cosinePlans, configuredPlans, initialFixationPlans).map { plan =>
+      val f = new StudyForm(StudyFormContext.of(plan))
+      FormView(DefinitionId.study, f.views) -> f.values(plan)
+    },
+    temporalPlans.map { plan =>
+      val f = new TemporalForm
+      FormView(DefinitionId.study, f.views) -> f.values(plan)
+    },
+    Gen
+      .oneOf(
+        recordingPlans(ivt.method, ivtParameters),
+        recordingPlans(ek.method, ekParameters)
+      )
+      .map { plan =>
+        val f = new RecordingForm()
+        FormView(recordingSchema, f.views) -> f.values(plan)
+      },
+    Gen.zip(Gen.const(FormFixtures.view), anyValues),
+    Gen.const(FormFixtures.view -> FormFixtures.values)
+  )
+
+  checkAll("stored forms", FormLaws.stored(shippedForms, probes))
+  checkAll(
+    "form view",
+    CodecLaws.roundTrip(
+      FormCodecs.view,
+      shippedForms.map(_._1),
+      (a: FormView, b: FormView) => a == b
+    )
+  )
+  checkAll(
+    "form values",
+    CodecLaws.roundTrip(
+      FormCodecs.values,
+      Gen.oneOf(shippedForms.map(_._2), anyValues),
+      (a: FormValues, b: FormValues) => a == b
+    )
+  )
+
   /** Mutant checks run from a fixed seed, so every kill is reproducible. */
   private val parameters =
     Test.Parameters.default.withMinSuccessfulTests(100).withInitialSeed(0x464f524dL)
