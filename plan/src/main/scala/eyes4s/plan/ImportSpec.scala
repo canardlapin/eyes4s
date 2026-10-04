@@ -23,6 +23,9 @@ import eyes4s.kernel.*
 enum SourceTimeUnit derives CanEqual:
   case Microseconds, Milliseconds, Seconds
 
+/** How a decimal source timestamp becomes integral microseconds. The one policy,
+  * `NearestMicrosecond`, rounds half up; it is named so a saved import states it.
+  */
 enum SourceRounding derives CanEqual:
   case NearestMicrosecond
 
@@ -245,11 +248,19 @@ object ImportSpec:
       ImportSpecError.Columns(names)
     )
 
+/** The versioned identities of the built-in fixation and trial-inventory CSV
+  * parsers that a saved [[ImportSpec]] names.
+  */
 object SourceImportDefinitions:
   val fixationParser: DefinitionId  = DefinitionId.builtIn("eyes4s.fixation-csv-parser", 1)
   val inventoryParser: DefinitionId =
     DefinitionId.builtIn("eyes4s.trial-inventory-csv-parser", 1)
 
+/** Why an import declaration was refused, naming the columns, frame or key
+  * reader at fault: blank, empty or duplicate column names; a blank frame
+  * identity; inventory admission without trial key columns; or fixation-only
+  * admission whose key columns lack an item column.
+  */
 enum ImportSpecError derives CanEqual:
   case Columns(names: Vector[String])
   case BlankFrame(frame: FrameId)

@@ -24,6 +24,9 @@ import eyes4s.kernel.Unit2D.{Px, Deg}
 import eyes4s.plan.*
 import io.circe.Json
 
+/** Recording plan codecs for the built-in detectors. Each fixes the method identity and
+  * the parameter schema, so a saved plan names exactly which detector and units it uses.
+  */
 object RecordingCodecs:
   /** I-DT parameters are angular per-axis extents and exact microsecond duration. */
   def idt(
@@ -126,6 +129,12 @@ private[codec] object RecordingWire:
   def micros(json: Json, field: String): Either[CodecError, Long] =
     DomainWire.micros(json, field)
 
+/** Versioned codec for a `RecordingPlan` of one detector method. Encoding refuses a plan of
+  * another method (`CodecError.Schema`). Decoding checks the method, reads the parameters
+  * through their own versioned codec, and rebuilds the plan through `RecordingPlan.of`,
+  * so every plan invariant is the constructor's own refusal (`CodecError.Field`). Display
+  * areas are pixel bounds; times are integer microseconds.
+  */
 final class RecordingPlanCodec[P](
     val schema: DefinitionId,
     val method: RecordingMethod[P],
@@ -264,16 +273,25 @@ final class RecordingPlanCodec[P](
             def encode: Either[CodecError, Json] = registered.codec.encode(value)
         }
 
+/** A decoded recording plan whose detector parameter type stays abstract but fixed. */
 trait LoadedRecording:
+  /** The detector parameter type of the decoded method. */
   type Parameters
   val plan: RecordingPlan[Parameters]
   def encode: Either[CodecError, Json]
+
+/** One recording plan codec as a registry sees it: the method it decodes and a decoder. */
 trait RecordingRegistration:
   val methodId: DefinitionId
   def decode(json: Json): Either[CodecError, LoadedRecording]
 
   /** The envelope schema this registration decodes, when it declares one. */
   def schema: Option[DefinitionId] = None
+
+/** Recording plan codecs by method identity; lookup reads the payload's `method` and
+  * refuses a missing (`CodecError.MissingMethod`) or duplicate
+  * (`CodecError.DuplicateMethod`) registration.
+  */
 final class RecordingRegistry private (definitions: Vector[RecordingRegistration]):
   def register(definition: RecordingRegistration): Either[CodecError, RecordingRegistry] =
     if definitions.exists(_.methodId == definition.methodId) then

@@ -81,6 +81,11 @@ object ArtifactRef:
       Right(new ArtifactRef(digest))
     else Left(PlanError.InvalidArtifact(digest))
 
+/** Why a study plan could not be built, restored or run. Cases name their operands: the
+  * definition name and version, the artifact digest (expected and actual where they differ),
+  * the phase names, the scale names or count, the work budget's trial and scale counts, or the
+  * wrapped specification or schedule error.
+  */
 enum PlanError derives CanEqual:
   case InvalidDefinition(name: String, version: Int)
   case InvalidArtifact(digest: String)
@@ -314,6 +319,9 @@ enum StudyEstimate[U <: Unit2D] derives CanEqual:
           normalise
         )
 
+/** A per-trial or per-pair failure retained inside a study result rather than thrown. Every
+  * case names the trial key, or both keys of a failed comparison, and the underlying error.
+  */
 enum StudyFailure[K] derives CanEqual:
   case Frame(key: K, underlying: GeometryError)
   case Occupancy(key: K, underlying: SurfaceError)
@@ -478,6 +486,11 @@ final class StudyScaleResult[K, U <: Unit2D, S, D] private[plan] (
     val analyses: StudyAnalyses[K, S],
     val contrast: Either[ContrastError[K], Contrast[K, S, D]]
 )
+
+/** A completed study: the digest of the input it was computed on, the plan's description,
+  * and one result per declared scale, in declaration order. Built only by running a plan or
+  * by rebuilding from stored parts, which `StudyResultError` checks against the description.
+  */
 final class StudyResult[K, U <: Unit2D, S, D] private[plan] (
     val input: ArtifactRef[StudyInput[K, U]],
     val description: Vector[(String, Vector[Provenance.Param])],

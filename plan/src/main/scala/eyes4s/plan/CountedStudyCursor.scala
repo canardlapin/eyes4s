@@ -27,6 +27,10 @@ enum StudyRunStage:
   case Counting(design: StudyDesign, visited: Long)
   case Running(stage: StudyStage, meter: StageMeter)
 
+/** The stage of a run without its telemetry: `Counting`, or the scientific
+  * [[StudySegment]] a running stage belongs to. Two stages compare equal here
+  * when they are the same segment, whatever their meters say.
+  */
 enum StudyRunSegment derives CanEqual:
   case Counting
   case Running(segment: StudySegment)

@@ -24,6 +24,10 @@ import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.{Deg, Px}
 import eyes4s.surface.EdgePolicy
 
+/** Why a recipe form field's value was refused: the lower-level constructor's
+  * own typed error, wrapped whole rather than reduced to its message, or a form
+  * inconsistency naming the field, token or frame concerned.
+  */
 enum RecipeParameterError derives CanEqual:
   case Geometry(error: GeometryError)
   case Time(error: TimeError)
@@ -381,6 +385,12 @@ final class InspectedParameter private[plan] (
     val values: Vector[Provenance.Param],
     val children: Vector[InspectedParameter] = Vector.empty
 )
+
+/** A recipe's inspected description: one [[InspectedParameter]] per description
+  * field in description order, the conventions it follows, and its execution
+  * capability. Every description field has metadata, so the fields cover the
+  * description exactly.
+  */
 final class RecipeInspection private[plan] (
     val fields: Vector[InspectedParameter],
     val conventions: Vector[String],

@@ -21,9 +21,17 @@ import eyes4s.design.*
 import eyes4s.kernel.*
 import eyes4s.surface.*
 
+/** Whether the last boundary belongs to the last bin. Every bin is half-open
+  * `[from, until)`; `IncludeFinalEndpoint` additionally admits a query exactly at
+  * the final boundary, which `HalfOpen` leaves unbinned.
+  */
 enum PointBinEndpoint derives CanEqual:
   case HalfOpen, IncludeFinalEndpoint
 
+/** Why point sampling, or one value in it, failed, naming the boundaries, source
+  * rows, template keys, aggregation level or value index concerned. Failures are
+  * retained in result rows rather than dropped.
+  */
 enum PointSamplingError derives CanEqual:
   case Boundaries(values: Vector[Long])
   case Clock(error: TimeError)
@@ -79,6 +87,9 @@ object PointBins:
       Left(PointSamplingError.Boundaries(values))
     else Right(new PointBins(clock, boundaries, endpoint))
 
+/** Whether a study samples control templates: none, or the candidates chosen by
+  * a keyed `Selection`.
+  */
 enum PointControlSelection derives CanEqual:
   case Disabled
   case Candidates(selection: Selection)
@@ -129,6 +140,10 @@ object PointSamplingSpec:
         )
       )
 
+/** An arithmetic mean with its accounting: values requested, successful finite
+  * values, the failure policy applied, and the mean or the reason it is absent.
+  * `contributing` is zero when the mean failed. Built by `PointSamplingMean`.
+  */
 final class PointMean private[plan] (
     val requested: Int,
     val successful: Int,
@@ -137,6 +152,9 @@ final class PointMean private[plan] (
 ):
   def contributing: Int = if result.isRight then successful else 0
 
+/** The one aggregation of point sampling, applied at each level under an explicit
+  * `FailurePolicy`: a non-finite value is an error, never skipped.
+  */
 object PointSamplingMean:
   /** Used first across selected controls at each time, then across time means in each bin. */
   def apply(
@@ -169,6 +187,11 @@ final case class PointControl[K](
     template: K,
     values: Vector[Either[PointSamplingError, Double]]
 )
+
+/** One query time on a focal path: the point there (`None` when the path has no
+  * location at that time), the template value or its error, the control mean when controls are
+  * sampled, and the bin the time falls in.
+  */
 final case class PointObservation[U <: Unit2D](
     index: Int,
     time: Instant,
@@ -177,6 +200,11 @@ final case class PointObservation[U <: Unit2D](
     control: Option[PointMean],
     bin: Option[Int]
 )
+
+/** One bin `[from, until)` (closed at `until` when `includesFinalEndpoint`): its
+  * query indices, the mean observed value and, with controls, the control mean;
+  * `difference` is observed minus control, and fails if either mean failed.
+  */
 final case class PointBinResult(
     index: Int,
     from: Instant,
@@ -198,6 +226,10 @@ final case class PointBinResult(
       )
     yield result
   }
+
+/** One focal trial's sampling: its template (or why none was found), the number of
+  * eligible control templates and those used, and its per-query and per-bin results.
+  */
 final case class PointTrialResult[K, U <: Unit2D](
     index: Int,
     key: K,
@@ -207,6 +239,12 @@ final case class PointTrialResult[K, U <: Unit2D](
     points: Vector[PointObservation[U]],
     bins: Vector[PointBinResult]
 )
+
+/** A completed point-sampling run: one row per admitted source trial in order, the
+  * control pairing report when controls were sampled, the query indices outside
+  * every bin, and the input and plan hashes with provenance. Built only by running a
+  * `PointSamplingPlan`.
+  */
 final class PointSamplingResult[K, U <: Unit2D] private[plan] (
     val rows: Vector[PointTrialResult[K, U]],
     val controlPairing: Option[PairingReport[K, K]],

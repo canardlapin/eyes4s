@@ -109,6 +109,10 @@ object ParameterInfo:
 
   private[plan] def literal(view: FieldView): ParameterInfo = new ParameterInfo(view)
 
+/** A default value that states why it is the default. Both `name` and `reason`
+  * are non-blank: an unexplained default is refused as `DescriptorError.InvalidDefault`,
+  * because a default is a scientific choice the methods section must be able to cite.
+  */
 final class NamedParameterDefault[A] private (
     val name: String,
     val value: A,
@@ -126,6 +130,10 @@ object NamedParameterDefault:
       DescriptorError.InvalidDefault(name, reason)
     )
 
+/** A parameter's typed refusal: the field it concerns, the raw input, the domain
+  * error and a message prefixed with the field id. Built only by
+  * `ParameterDescriptor.parse`.
+  */
 final class ParameterFailure[R, E] private[plan] (
     val field: ParameterInfo,
     val input: R,
@@ -177,8 +185,13 @@ object ParameterDescriptor:
 
 /** An existential field retains its own types; it is never an Any-valued bag. */
 trait ParameterField[P]:
+  /** The raw input type the field parses. */
   type Raw
+
+  /** The constructed, checked parameter type. */
   type Value
+
+  /** The field's typed domain error. */
   type Error
   val descriptor: ParameterDescriptor[Raw, Value, Error]
   def value(parameters: P): Value
@@ -196,6 +209,11 @@ trait ParameterField[P]:
   final def raw(parameters: P): Option[RawValue] =
     descriptor.form.map(_.raw(value(parameters)))
 
+/** The ordered fields of a parameter type `P`. Field ids are unique and each
+  * field's form presents the same view as its metadata (checked by `ParameterSet.of`,
+  * refusing `DuplicateFields` or `FormViewMismatch`), so validation, inspection and
+  * provenance describe one set of fields.
+  */
 final class ParameterSet[P] private (val fields: Vector[ParameterField[P]]):
   /** The host views of the fields, in order. */
   def views: Vector[FieldView] = fields.map(_.view)
@@ -244,10 +262,17 @@ object ParameterSet:
   private[plan] def literal[P](fields: Vector[ParameterField[P]]): ParameterSet[P] =
     new ParameterSet(fields)
 
+/** Which way a score orders closeness: higher, lower, or not ordered at all. */
 enum ScoreDirection derives CanEqual:
   case HigherIsCloser, LowerIsCloser, NoOrder
+
+/** A property a comparison method declares about its scores: symmetric in its
+  * operands, never negative, or bounded.
+  */
 enum ComparisonProperty derives CanEqual:
   case Symmetric, NonNegative, Bounded
+
+/** How a method executes, as the bounded-work scheduler may rely on it. */
 enum ExecutionCapability derives CanEqual:
   /** Whole synchronous operations; no intra-operation cancellation guarantee. */
   case SynchronousWholeOperation
@@ -257,6 +282,11 @@ enum ExecutionCapability derives CanEqual:
     */
   case BoundedComparison
 
+/** One named numeric component of a score `S` and of its difference `D`, with its
+  * quantity, declared range and direction. `ScoreComponent.of` requires a non-blank
+  * id and meaning, a numeric quantity and, for a bounded range, finite endpoints
+  * with the lower not above the upper; otherwise `DescriptorError.InvalidComponent`.
+  */
 final class ScoreComponent[S, D] private (
     val id: String,
     val meaning: String,
@@ -317,6 +347,12 @@ object ScoreComponent:
   ): ScoreComponent[Similarity, SignedDifference] =
     new ScoreComponent(id, meaning, quantity, range, direction, _.value, _.value)
 
+/** The inspectable description of a comparison method: its versioned identity,
+  * parameter fields, measure information and score components for given
+  * parameters, declared properties and execution capability. `verify` checks a
+  * saved description against the method's actual parameters and components, so a
+  * description cannot drift from what the method computes.
+  */
 final class MethodDescriptor[P, S, D] private (
     val id: DefinitionId,
     val parameters: ParameterSet[P],
@@ -358,6 +394,10 @@ object MethodDescriptor:
   ): MethodDescriptor[P, S, D] =
     new MethodDescriptor(id, parameters, info, components, properties, execution)
 
+/** The inspectable description of an event detector: its versioned identity, its
+  * parameter fields and its `AlgorithmCard`. Detectors run as whole synchronous
+  * operations, so `execution` is fixed.
+  */
 final class RecordingMethodDescriptor[P](
     val id: DefinitionId,
     val parameters: ParameterSet[P],
@@ -419,6 +459,9 @@ object RecordingMethodDescriptor:
       AlgorithmCards.ivt
     )
 
+/** Why a descriptor, field, default, form or saved description was refused,
+  * naming the field ids, values, bounds or identities that disagree.
+  */
 enum DescriptorError derives CanEqual:
   case InvalidField(id: String, version: Int, meaning: String)
   case InvalidAlternatives(id: String, values: Vector[String])

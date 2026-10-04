@@ -73,6 +73,7 @@ object StudyChange:
   given ordering[K, U <: Unit2D, P, S, D]: Ordering[StudyChange[K, U, P, S, D]] =
     Ordering.by(_.field.ordinal)
 
+  /** The study input, compared by the content digest of its artifact reference. */
   final case class Input[K, U <: Unit2D, P, S, D](
       before: ArtifactRef[StudyInput[K, U]],
       after: ArtifactRef[StudyInput[K, U]]
@@ -113,6 +114,7 @@ object StudyChange:
         s"method parameters ${parameters(before.parameters(beforeParameters))} → " +
           parameters(after.parameters(afterParameters))
 
+  /** The focal and reference phase names; a change to either records both pairs. */
   final case class Phases[K, U <: Unit2D, P, S, D](
       beforeFocal: String,
       beforeReference: String,
@@ -126,6 +128,7 @@ object StudyChange:
     def render(using UnitLabel[U]): String =
       s"phases $beforeFocal vs $beforeReference → $afterFocal vs $afterReference"
 
+  /** How fixations weight a density, such as by duration. */
   final case class Weighting[K, U <: Unit2D, P, S, D](before: Weight, after: Weight)
       extends StudyChange[K, U, P, S, D]:
     def field: StudyField                  = StudyField.Weighting
@@ -133,6 +136,7 @@ object StudyChange:
     def inverse: Weighting[K, U, P, S, D]  = Weighting(after, before)
     def render(using UnitLabel[U]): String = s"weight $before → $after"
 
+  /** The failure policy the plan's reductions apply. */
   final case class Failures[K, U <: Unit2D, P, S, D](
       before: FailurePolicy,
       after: FailurePolicy
@@ -197,6 +201,7 @@ object StudyChange:
           after.map(scale(_)).mkString(", ")
       else s"scales ${parts.mkString(" ")}"
 
+  /** The plan's linear angular scale, in `U` units per degree; `None` when it declares none. */
   final case class AngularScale[K, U <: Unit2D, P, S, D](
       before: Option[LinearAngularScale[U]],
       after: Option[LinearAngularScale[U]]
@@ -210,6 +215,7 @@ object StudyChange:
         s.fold("none")(v => s"${num(v.unitsPerDegree)} ${u.symbol}/°")
       s"units per degree ${show(before)} → ${show(after)}"
 
+  /** The policy that chooses each focal trial's matched references. */
   final case class Matched[K, U <: Unit2D, P, S, D](
       before: MatchedReferences,
       after: MatchedReferences
@@ -220,6 +226,7 @@ object StudyChange:
     def render(using UnitLabel[U]): String =
       s"matched references policy ${matched(before)} → ${matched(after)}"
 
+  /** The policy that chooses each focal trial's control references. */
   final case class Controls[K, U <: Unit2D, P, S, D](
       before: ControlReferences,
       after: ControlReferences
@@ -229,6 +236,7 @@ object StudyChange:
     def inverse: Controls[K, U, P, S, D]   = Controls(after, before)
     def render(using UnitLabel[U]): String = s"control references $before → $after"
 
+  /** What the plan does with a focal trial that has no matched reference. */
   final case class Unmatched[K, U <: Unit2D, P, S, D](
       before: UnmatchedFocalPolicy,
       after: UnmatchedFocalPolicy
@@ -239,6 +247,9 @@ object StudyChange:
     def render(using UnitLabel[U]): String =
       s"queries without a matched reference $before → $after"
 
+  /** Which leading fixations of each trial are kept: all, all but the first, or those
+    * outside a disc around the fixation cross.
+    */
   final case class InitialFixations[K, U <: Unit2D, P, S, D](
       before: InitialFixationPolicy[U],
       after: InitialFixationPolicy[U]

@@ -32,6 +32,7 @@ enum SourceOptionsSchema derives CanEqual:
 sealed trait SourceInterpretation derives CanEqual
 
 object SourceInterpretation:
+  /** A ledger written before interpretations were recorded; it cannot be replayed. */
   case object LegacyUnspecified extends SourceInterpretation
 
   /** Construction checks the format, supported parser and options schema together. */
@@ -121,6 +122,9 @@ object SourceIdentity:
       .map(new SourceIdentity(_))
       .toRight(SourceIdentityError.InvalidDigest(value))
 
+/** Why a source identity or interpretation was refused: a digest that is not 16 lowercase
+  * hexadecimal digits, or a parser or options schema that does not belong to the declared format.
+  */
 enum SourceIdentityError derives CanEqual:
   case InvalidDigest(value: String)
   case Parser(format: SourceFormat, expected: DefinitionId, actual: DefinitionId)

@@ -488,6 +488,9 @@ private[eyes4s] trait DiagnosticOperandStructures:
         )
 
 private[eyes4s] object DiagnosticOperandStructures:
+  /** A sum's operand: a field-less case is its name as a token; a case with
+    * fields is those fields after a leading `kind` naming the case.
+    */
   final class Sum[A](
       ordinal: A => Int,
       cases: Vector[Vector[DiagnosticOperand[Any, Nothing]]]
@@ -498,6 +501,7 @@ private[eyes4s] object DiagnosticOperandStructures:
       if fields.isEmpty then Operand.Token(product.productPrefix)
       else Operand.Fields(("kind" -> Operand.Token(product.productPrefix)) +: fields)
 
+  /** A product's operand: its fields by name, in declaration order. */
   final class Product[A](fields: Vector[DiagnosticOperand[Any, Nothing]])
       extends DiagnosticOperand[A, Nothing]:
     def apply(value: A): Operand[Nothing] =

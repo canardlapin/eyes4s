@@ -24,6 +24,10 @@ import eyes4s.kernel.*
 /** Measured trial origin and observed support; never inferred from its first fixation. */
 final case class TrialEpoch(anchor: Instant, coverage: ObservedCoverage)
 
+/** A named window relative to each trial's measured anchor. `of` requires a non-blank name and
+  * a positive width representable in microseconds (`InvalidWindow`). `resolve` places the
+  * half-open window on the trial's clock, refusing an anchor whose sum overflows (`AnchorOverflow`).
+  */
 final class StudyWindow private (val name: String, val window: Window):
   def resolve(epoch: TrialEpoch): Either[TemporalStudyError, Interval] =
     val start = BigInt(epoch.anchor.toMicros) + window.from.toMicros
@@ -70,6 +74,10 @@ object RepetitionContrast:
       TemporalStudyError.InvalidRepetition(name, focalPhase, referencePhase)
     )
 
+/** A study input with one measured epoch per trial. `of` refuses repeated trial keys, epochs
+  * for unknown keys and repeated epochs, naming key digests. Its hash combines the study input's
+  * hash with every epoch's key, clock, anchor and coverage intervals, in key order.
+  */
 final class TemporalStudyInput[K, U <: Unit2D] private (
     val study: StudyInput[K, U],
     val epochs: Map[K, TrialEpoch],
@@ -122,6 +130,9 @@ object TemporalStudyInput:
         )
       )
 
+/** One repetition-by-window cell: the study the window derived, each trial's occupancy (or why
+  * it has none) and that study's result.
+  */
 final class TemporalCell[K, U <: Unit2D, P, S, D] private[plan] (
     val repetition: RepetitionContrast,
     val window: StudyWindow,
@@ -529,6 +540,10 @@ object TemporalStudyPlan:
     then Left(TemporalStudyError.RepetitionNames(repetitions.map(_.name)))
     else Right(new TemporalStudyPlan(base, input, windows, repetitions, boundary))
 
+/** Why a temporal study input, window, repetition or plan was refused, or a trial's occupancy
+  * failed. Windows are in microseconds relative to the anchor; trials are named by key digest so
+  * the error stays serializable whatever the key type.
+  */
 enum TemporalStudyError derives CanEqual:
   case Input(underlying: PlanError)
   case Time(underlying: TimeError)

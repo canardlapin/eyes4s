@@ -28,6 +28,9 @@ final case class ResultArtifacts(
     relations: Vector[ManifestRelation]
 )
 
+/** Builders of the manifest artifacts for a study result: the result document, its
+  * density payloads and the `ResultPayloadOf` relations joining them.
+  */
 object ResultManifest:
   /** Pack densities with the established participant-chunk policy. Names use
     * deterministic indices, so participant labels never become storage paths.

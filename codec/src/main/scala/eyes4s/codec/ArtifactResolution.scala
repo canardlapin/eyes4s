@@ -730,6 +730,7 @@ final class ResolvedManifest[K, U <: Unit2D] private[codec] (
   * after returning it cannot change what was verified or admitted.
   */
 object ArtifactResolver:
+  /** Every error of the failing phase, never only the first; non-empty by type. */
   type Resolution[A] = Either[NonEmptyVector[ResolveError], A]
 
   /** Read the manifest stored under `address`, check its digest and decode it. */
