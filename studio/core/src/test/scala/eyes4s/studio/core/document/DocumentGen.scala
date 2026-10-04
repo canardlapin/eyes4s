@@ -214,18 +214,28 @@ object DocumentGen:
       a      <- admission
       d      <- decision
       at     <- attributesFor(m)
-    yield DatasetRevisionSpec(
-      DatasetRevision(id),
-      parent.map(DatasetRevision(_)),
-      s,
-      m,
-      u,
-      g,
-      a,
-      d,
-      at,
-      storedInventory(s)
-    )
+    yield
+      val spec = DatasetRevisionSpec(
+        DatasetRevision(id),
+        parent.map(DatasetRevision(_)),
+        s,
+        m,
+        u,
+        g,
+        a,
+        d,
+        at,
+        storedInventory(s)
+      )
+      // Only a revision that passes VerifyDataset's checks is verifying (the
+      // app cannot make another, and ResumeVerification re-runs them).
+      val verifiable = ColumnMapping.admissible(m).isRight &&
+        DatasetRevisionSpec.inventoryMapped(spec.id, s, spec.inventory).isRight &&
+        DatasetRevisionSpec.keysAgree(spec.id, s, m, spec.inventory).isRight
+      d match
+        case AdmissionDecision.Verifying(_) if !verifiable =>
+          spec.copy(decision = AdmissionDecision.Pending)
+        case _ => spec
 
   // --- Analyses -------------------------------------------------------------
 
