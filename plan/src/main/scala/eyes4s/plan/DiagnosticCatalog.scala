@@ -756,7 +756,8 @@ object DiagnosticCatalog:
     "ColumnArithmetic",
     "RowArithmetic",
     "DualTolerance",
-    "NotConverged"
+    "NotConverged",
+    "Stalled"
   )
 
   /** Retired: `TemplateFitError` became part of `TemplateError` (see [[retired]]). */

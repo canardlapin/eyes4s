@@ -34,6 +34,11 @@ enum AssociationMethod derives CanEqual:
   * [[RelativeRankTolerance]] times that surface's centered norm, so that a
   * surface the covariates explain, or a constant surface, has no partial
   * association rather than a correlation of rounding noise.
+  *
+  * The covariates are a design, not an operand: a constant covariate, which is
+  * collinear with the intercept, or covariates collinear with one another fail
+  * as [[DecompositionError.Solve]] with [[LeastSquaresError.RankDeficient]].
+  * A constant `x` or `y` is a well-posed operand and returns `estimate = None`.
   */
 final class PartialAssociation[U <: Unit2D] private (
     val method: AssociationMethod,

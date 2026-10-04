@@ -52,6 +52,18 @@ class ConstrainedDecompositionSuite extends munit.ScalaCheckSuite:
       s"$actual != ${expected.toDouble} under $tolerance"
     )
 
+  /** The active count lies between the oracle's material and positive
+    * counts. The oracle solves the rounded inputs exactly, so it can carry a
+    * positive weight below the absolute tolerance whose gradient is below the
+    * dual tolerance; the solver rightly leaves that predictor inactive.
+    */
+  private def activeMatches(active: Int, oracle: Vector[Q]): Unit =
+    val material = oracle.count(q => q.toDouble > oracleTolerance.absolute)
+    assert(
+      material <= active && active <= oracle.count(_.signum > 0),
+      s"active=$active oracle=${oracle.map(_.toDouble)}"
+    )
+
   /** Integer cell weights; predictor k alone occupies cell k, so every design
     * has full column rank and moderate conditioning.
     */
@@ -73,14 +85,68 @@ class ConstrainedDecompositionSuite extends munit.ScalaCheckSuite:
       y.toVector.updated(lift, y(lift) + 1)
     )
 
+  /** Near-collinear predictors: a shared integer profile plus small private
+    * noise, with a small private cell each for full column rank. Their
+    * unconstrained coefficients are often negative, so constraints bind.
+    */
+  private val genCompeting: Gen[Design] =
+    for
+      p      <- Gen.choose(2, 4)
+      n      <- Gen.choose(p + 3, 12)
+      shared <- Gen.listOfN(n - p, Gen.choose(1, 9))
+      noise  <- Gen.listOfN(p, Gen.listOfN(n - p, Gen.choose(0, 2)))
+      own    <- Gen.listOfN(p, Gen.choose(1, 3))
+      y      <- Gen.listOfN(n, Gen.choose(0, 9))
+      lift   <- Gen.choose(0, n - 1)
+    yield Design(
+      Vector.tabulate(p) { k =>
+        Vector.tabulate(p)(i => if i == k then own(k) else 0) ++
+          shared.zip(noise(k)).map((s, e) => 3 * s + e)
+      },
+      y.toVector.updated(lift, y(lift) + 1)
+    )
+
+  /** A decoy close to the sum of two components that, with noise, make up the
+    * response, plus an unrelated fourth predictor; the order is shuffled. The
+    * decoy is the best single predictor, so it enters first and is often
+    * stepped out once both components are in: Lawson-Hanson interpolates.
+    */
+  private val genDecoy: Gen[Design] =
+    for
+      m     <- Gen.choose(4, 8)
+      b     <- Gen.listOfN(m, Gen.choose(0, 9))
+      c     <- Gen.listOfN(m, Gen.choose(0, 9))
+      off   <- Gen.listOfN(m, Gen.choose(0, 4))
+      other <- Gen.listOfN(m, Gen.choose(0, 9))
+      own   <- Gen.listOfN(4, Gen.choose(1, 2))
+      order <- Gen.listOfN(4, Gen.choose(0, 1000))
+      ownY  <- Gen.listOfN(4, Gen.choose(0, 2))
+      noise <- Gen.listOfN(m, Gen.choose(0, 2))
+      lift  <- Gen.choose(0, m + 3)
+    yield
+      val decoy  = b.lazyZip(c).lazyZip(off).map(_ + _ + _)
+      val shared = Vector(decoy, b, c, other).map(_.toVector)
+      val cols   = Vector.tabulate(4)(k =>
+        Vector.tabulate(4)(i => if i == k then own(k) else 0) ++ shared(k)
+      )
+      val y = ownY.toVector ++ b.lazyZip(c).lazyZip(noise).map(_ + _ + _)
+      Design(cols.indices.sortBy(order).map(cols).toVector, y.updated(lift, y(lift) + 1))
+
+  private val genAnyDesign: Gen[Design] =
+    Gen.frequency(1 -> genDesign, 1 -> genCompeting, 2 -> genDecoy)
+
   property("NNLS equals the exhaustive exact KKT solution and is an Intensity") {
-    forAll(genDesign) { d =>
+    forAll(genAnyDesign) { d =>
       val fit    = get(Template.decomposeNonNegative(d.y, d.set))
       val oracle = Exact.nonNegative(d.set.entries.map(e => exact(e._2)), exact(d.y))
       assertEquals(fit.coefficients.map(_._1), ids.take(d.predictors.size))
       fit.coefficients.map(_._2).zip(oracle).foreach((x, q) => near(x, q))
+      // Exactly zero where the oracle is zero: no rounding leak either side.
       assert(fit.coefficients.forall(_._2 >= 0.0))
-      assertEquals(fit.diagnostics.active, oracle.count(_.signum > 0))
+      fit.coefficients
+        .zip(oracle)
+        .foreach((c, q) => if q.signum == 0 then assertEquals(c._2, 0.0))
+      activeMatches(fit.diagnostics.active, oracle)
       assertEquals(fit.diagnostics.rank, d.predictors.size)
       assertEquals(fit.diagnostics.rSquaredReference, RSquaredReference.Uncentered)
       assert(fit.diagnostics.dualViolation <= RelativeDualTolerance.default.value)
@@ -97,7 +163,7 @@ class ConstrainedDecompositionSuite extends munit.ScalaCheckSuite:
   }
 
   property("simplex mixtures equal the exhaustive exact KKT solution and are a Mass") {
-    forAll(genDesign, Gen.oneOf(Intercept.Exclude, Intercept.Include)) { (d, intercept) =>
+    forAll(genAnyDesign, Gen.oneOf(Intercept.Exclude, Intercept.Include)) { (d, intercept) =>
       val fit     = get(Template.decomposeMixture(d.y, d.set, intercept))
       val uniform = Vector.fill(d.y.size)(Q.of(1.0 / d.y.size))
       val columns =
@@ -110,7 +176,7 @@ class ConstrainedDecompositionSuite extends munit.ScalaCheckSuite:
       assert(weights.forall(_ >= 0.0))
       assert(sumTolerance.approxEquals(weights.sum, 1.0), s"${weights.sum}")
       assert(sumTolerance.approxEquals(fit.fitted.sum, 1.0))
-      assertEquals(fit.diagnostics.active, oracle.count(_.signum > 0))
+      activeMatches(fit.diagnostics.active, oracle)
       assertEquals(fit.diagnostics.rSquaredReference, RSquaredReference.Centered)
       assert(fit.diagnostics.dualViolation <= RelativeDualTolerance.default.value)
       val fitted = columns.indices.foldLeft(Vector.fill(d.y.size)(Q.zero)) { (acc, k) =>
@@ -124,7 +190,7 @@ class ConstrainedDecompositionSuite extends munit.ScalaCheckSuite:
   }
 
   property("keyed results do not depend on predictor order") {
-    forAll(genDesign) { d =>
+    forAll(genAnyDesign) { d =>
       val reversed = get(PredictorSet.of(d.set.entries.reverse))
       val nnls     = get(Template.decomposeNonNegative(d.y, d.set)).coefficients.toMap
       val mixture  = get(Template.decomposeMixture(d.y, d.set, Intercept.Exclude)).weights.toMap
@@ -138,7 +204,7 @@ class ConstrainedDecompositionSuite extends munit.ScalaCheckSuite:
   }
 
   property("constraints never beat OLS, and the simplex never beats NNLS") {
-    forAll(genDesign) { d =>
+    forAll(genAnyDesign) { d =>
       val ols     = get(Template.decompose(d.y, d.set, Intercept.Exclude)).diagnostics
       val nnls    = get(Template.decomposeNonNegative(d.y, d.set)).diagnostics
       val mixture = get(Template.decomposeMixture(d.y, d.set, Intercept.Exclude)).diagnostics
@@ -213,6 +279,89 @@ class ConstrainedDecompositionSuite extends munit.ScalaCheckSuite:
     assertEquals(fit.diagnostics.active, 1)
   }
 
+  test("generated designs make constraints bind and take interpolation steps") {
+    // Without this floor the oracle properties can pass on designs whose
+    // unconstrained solution is already feasible, testing no active-set step.
+    val designs = Gen
+      .listOfN(400, genAnyDesign)
+      .apply(Gen.Parameters.default, org.scalacheck.rng.Seed(20261003L))
+      .getOrElse(fail("generator"))
+    val fits = designs.map(d => d -> get(Template.decomposeNonNegative(d.y, d.set)).diagnostics)
+    val binding = fits.count((d, f) => f.active < d.predictors.size)
+    // Each entry is one iteration; any more are interpolation steps.
+    val stepped = fits.count((_, f) => f.iterations > f.active)
+    assert(binding >= 400 / 5, s"binding=$binding of 400")
+    assert(stepped >= 400 / 40, s"stepped=$stepped of 400")
+  }
+
+  test("NNLS steps back to the first zero, keeping a coefficient that recovers") {
+    // a = (2,1,2,2), b = (1,3,2,0), c = (2,0,2,3), y = (4,4,4,0). b enters
+    // (x_b = 12/7), then c ((156, 40)/101), then a. The three-column solution
+    // (112, -12, -72)/17 makes b and c non-positive; c reaches zero first, at
+    // alpha = 85/994, leaving x = (40/71, 96/71, 0), so b stays active and the
+    // two-column solve gives (64, 132)/101 with c's gradient -72/101. That is
+    // three entries and one interpolation step. A full step to the solution
+    // would drop b as well and need a fifth iteration to readmit it.
+    val rows = Vector(
+      Vector(2.0, 1.0, 2.0),
+      Vector(1.0, 3.0, 0.0),
+      Vector(2.0, 2.0, 2.0),
+      Vector(2.0, 0.0, 3.0)
+    )
+    val y      = Vector(4.0, 4.0, 4.0, 0.0)
+    val fit    = get(ConstrainedLeastSquares.nonNegative(rows, y))
+    val oracle = Exact.nonNegative(
+      Vector.tabulate(3)(j => rows.map(r => Q.of(r(j)))),
+      y.map(Q.of)
+    )
+    assertEquals(oracle, Vector(Q.int(64) / Q.int(101), Q.int(132) / Q.int(101), Q.zero))
+    near(fit.coefficients(0), oracle(0))
+    near(fit.coefficients(1), oracle(1))
+    assertEquals(fit.coefficients(2), 0.0)
+    assertEquals(fit.active, 2)
+    assertEquals(fit.iterations, 4)
+    assertEquals(fit.dualViolation, 0.0)
+  }
+
+  test("a set-aside column left above the dual tolerance fails as Stalled") {
+    // Each response is an exact non-negative combination of the columns, so
+    // every excluded gradient is zero and its computed value is rounding.
+    // The smallest positive tolerance must honour that rounding, yet a column
+    // admitted on it gets a coefficient that is not positive: the fit is then
+    // a Stalled failure, never a Right outside the tolerance. Which designs
+    // stall depends on platform rounding; the contract and its reach do not.
+    val tiny    = get(RelativeDualTolerance.of(Double.MinPositiveValue))
+    val designs = Gen
+      .listOfN(
+        120,
+        for
+          p    <- Gen.choose(2, 3)
+          n    <- Gen.choose(p + 1, p + 2)
+          rows <- Gen.listOfN(n, Gen.listOfN(p, Gen.choose(0, 4)))
+          w    <- Gen.listOfN(p, Gen.choose(0, 2))
+        yield (rows.map(_.map(_.toDouble).toVector).toVector, w)
+      )
+      .apply(Gen.Parameters.default, org.scalacheck.rng.Seed(20261004L))
+      .getOrElse(fail("generator"))
+    val stalls = designs.flatMap { (rows, w) =>
+      val y = rows.map(r => r.zip(w).map(_ * _).sum)
+      ConstrainedLeastSquares.nonNegative(rows, y, dualTolerance = tiny) match
+        case Right(fit) =>
+          assert(fit.dualViolation <= tiny.value, s"${fit.dualViolation}")
+          None
+        case Left(LeastSquaresError.Stalled(column, violation, tolerance)) =>
+          assertEquals(tolerance, tiny.value)
+          assert(violation > tolerance && violation < 1e-12, s"$violation")
+          assert(column >= 0 && column < rows.head.size)
+          // The default tolerance is above the rounding and returns a fit.
+          assert(ConstrainedLeastSquares.nonNegative(rows, y).isRight)
+          Some(column)
+        case Left(_: LeastSquaresError.RankDeficient) => None
+        case Left(other)                              => fail(s"$other")
+    }
+    assert(stalls.nonEmpty, "no design reached Stalled")
+  }
+
   test("a zero NNLS response has zero coefficients and takes no step") {
     val rows = Vector(Vector(1.0, 0.0), Vector(0.0, 1.0), Vector(1.0, 1.0))
     val fit  = get(ConstrainedLeastSquares.nonNegative(rows, Vector(0.0, 0.0, 0.0)))
@@ -247,6 +396,19 @@ class ConstrainedDecompositionSuite extends munit.ScalaCheckSuite:
             ) =>
           true
         case _ => false
+    )
+    // The least-squares column indexes the whole design; the message names the predictor.
+    assert(
+      Template
+        .decomposeMixture(a, get(PredictorSet.of(Vector(ids(0) -> y))), Intercept.Include)
+        .left
+        .exists(_.message.endsWith(" Design column=1 is predictor=a."))
+    )
+    assert(
+      Template
+        .decomposeNonNegative(y, get(PredictorSet.of(Vector(ids(0) -> a, ids(1) -> a))))
+        .left
+        .exists(_.message.endsWith(" Design column=1 is predictor=b."))
     )
     assertEquals(RelativeDualTolerance.of(0.0), Left(LeastSquaresError.DualTolerance(0.0)))
     assert(RelativeDualTolerance.of(1.0).isLeft)
@@ -401,6 +563,22 @@ class ConstrainedDecompositionSuite extends munit.ScalaCheckSuite:
         )
       ).provenance.digest
     )
+  }
+
+  test(
+    "partial association is defined, and extreme, when y lies in the span of x and the covariates"
+  ) {
+    // y has x's ordering, so its ranks equal x's: the whole rank covariance is
+    // singular, yet the residuals of x and y on the covariate are identical.
+    val x          = mass(Vector(1, 4, 2, 8, 5, 7))
+    val y          = mass(Vector(2, 9, 3, 30, 10, 20))
+    val z          = mass(Vector(5, 1, 4, 1, 2, 6))
+    val set        = get(PredictorSet.of(Vector(ids(0) -> z)))
+    val exactRanks = Vector(x, y, z).map(s => Exact.ranks(exact(s)))
+    assertEquals(exactRanks(0), exactRanks(1))
+    assertEquals(Exact.partial(exactRanks), Some((1, Q.one)))
+    val r = get(PartialAssociation.of(x, y, set, AssociationMethod.Spearman)).estimate
+    assert(r.exists(v => oracleTolerance.approxEquals(v, 1.0)), s"$r")
   }
 
   test("Spearman ranks share the mean rank of a tie") {

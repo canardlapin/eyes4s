@@ -33,6 +33,7 @@ enum LeastSquaresError derives CanEqual:
   case RowArithmetic(operation: String, row: Int)
   case DualTolerance(value: Double)
   case NotConverged(iterations: Int, limit: Int, violation: Double)
+  case Stalled(column: Int, violation: Double, tolerance: Double)
   def message: String = this match
     case Shape(n, p, y, widths) =>
       s"Least squares rows=$n columns=$p responseLength=$y rowWidths=$widths require a nonempty rectangular matrix with rows >= columns."
@@ -47,6 +48,8 @@ enum LeastSquaresError derives CanEqual:
       s"Relative active-set dual tolerance=$v must be finite and strictly between zero and one."
     case NotConverged(n, limit, v) =>
       s"Active-set least squares stopped after iterations=$n at limit=$limit with relative dual violation=$v."
+    case Stalled(c, v, t) =>
+      s"Active-set least squares stalled: column=$c keeps relative dual violation=$v above tolerance=$t, but its own coefficient was not positive when it entered."
 
 final class LeastSquaresFit private[design] (
     val coefficients: Vector[Double],

@@ -1265,6 +1265,7 @@ fails after rewriting, so review the change and run it again.
 | `least-squares.row-arithmetic` | `RowArithmetic` | `operation`, `row` |
 | `least-squares.dual-tolerance` | `DualTolerance` | `value` |
 | `least-squares.not-converged` | `NotConverged` | `iterations`, `limit`, `violation` |
+| `least-squares.stalled` | `Stalled` | `column`, `violation`, `tolerance` |
 
 ### `rng` — `RngError`
 

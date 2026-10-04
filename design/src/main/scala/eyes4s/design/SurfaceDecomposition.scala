@@ -46,8 +46,29 @@ enum DecompositionError derives CanEqual:
     case PredictorName(v)  => s"Predictor ID '$v' must be nonblank."
     case PredictorKeys(ks) => s"Predictor set keys=$ks must be nonempty and unique."
     case Geometry(k, e)    => s"Surface decomposition operand=$k: ${e.message}"
-    case Solve(ks, i, e)   => s"Surface decomposition predictors=$ks intercept=$i: ${e.message}"
-    case Numerical(op, v)  => s"Surface decomposition $op produced nonfinite value=$v."
+    case Solve(ks, i, e)   =>
+      s"Surface decomposition predictors=$ks intercept=$i: ${e.message}${designColumn(ks, i, e)}"
+    case Numerical(op, v) => s"Surface decomposition $op produced nonfinite value=$v."
+
+  /** A least-squares column indexes the whole design, which with
+    * [[Intercept.Include]] has the intercept (or a mixture's uniform
+    * background) at column 0 and predictor k at column k + 1.
+    */
+  private def designColumn(
+      keys: Vector[PredictorId],
+      intercept: Intercept,
+      underlying: LeastSquaresError
+  ): String =
+    val column = underlying match
+      case LeastSquaresError.RankDeficient(c, _, _) => Some(c)
+      case LeastSquaresError.ColumnArithmetic(_, c) => Some(c)
+      case LeastSquaresError.Stalled(c, _, _)       => Some(c)
+      case _                                        => None
+    val offset = if intercept == Intercept.Include then 1 else 0
+    column.fold("") { c =>
+      if c < offset then s" Design column=$c is the intercept or uniform background."
+      else keys.lift(c - offset).fold("")(k => s" Design column=$c is predictor=$k.")
+    }
 
 final class PredictorSet[U <: Unit2D] private (
     val entries: Vector[(PredictorId, Mass[U])],

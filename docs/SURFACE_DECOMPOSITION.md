@@ -75,7 +75,10 @@ because it would break the sum-to-one and non-negativity guarantees that make th
 Hanson (1974, ch. 23). Every active subproblem is solved by the shared native
 `LeastSquares.fit` Householder QR. The whole design must first have full column rank under
 the `RelativeRankTolerance`, so the solution is unique; zero or dependent columns fail as
-`DecompositionError.Solve` with the `LeastSquaresError.RankDeficient` column. The simplex
+`DecompositionError.Solve` with the `LeastSquaresError.RankDeficient` column. That column
+indexes the whole design: with `Intercept.Include` column 0 is the intercept or uniform
+background and predictor `k` is column `k + 1`, so the `Solve` message also names the
+predictor key (or the intercept) the column belongs to. The simplex
 solver enforces the sum exactly by eliminating one active coefficient through a reference
 column, rather than appending a heavily weighted sum-to-one row to NNLS, whose result
 depends on the weight and satisfies the sum only approximately. It starts from the single
@@ -85,7 +88,12 @@ multiplier, not with zero.
 A predictor outside the active set enters only while its gradient exceeds
 `RelativeDualTolerance` (default `1e-10`) times its Euclidean norm times the response's.
 A predictor whose own coefficient is not positive on the step that admitted it is set aside
-until the active set next changes, which prevents cycling on rounding. The solver stops
+until the active set next changes, which prevents cycling on rounding. If a set-aside
+predictor still exceeds the tolerance when no other can enter, the fit fails as
+`LeastSquaresError.Stalled`, naming the column, its violation and the tolerance, so a
+returned fit always has `dualViolation` within the tolerance. In exact arithmetic a
+positive gradient always gives the entering coefficient a positive value, so a stall means
+the tolerance is below the rounding of the gradient. The solver stops
 after `ConstrainedLeastSquares.iterationLimit(p) = 30p` steps with
 `LeastSquaresError.NotConverged`; Lawson-Hanson terminates in finitely many steps, so this
 limit is a safety net.
@@ -116,19 +124,33 @@ records its method and covariate keys, and carries provenance over every input.
 the simplex, the oracle enumerates every active set and solves its first-order conditions by exact
 Gauss-Jordan elimination. It then returns the unique set satisfying every KKT condition. Generated
 full-rank designs with one to four predictors check coefficients, fitted maps, residuals,
-R-squared, active counts and the representation. The simplex is checked with and without a background.
+R-squared, active counts and the representation; a coefficient the oracle sets to zero must be
+exactly `0.0`. Three generators feed these properties: well-separated designs, near-collinear
+predictors whose unconstrained slopes are often negative, and a decoy close to the sum of two
+response components, which enters first and is later stepped out. A fixed-seed coverage test
+requires that at least a fifth of generated NNLS fits leave a predictor inactive and at least a
+fortieth take an interpolation step (`iterations > active`). The simplex is checked with and without a background.
 The partial-association oracle uses the inverse covariance matrix, the route `ppcor` takes, rather
-than residuals; ranks are exact average ranks. Further properties check invariance to predictor
+than residuals; ranks are exact average ranks. When that matrix is singular only because `y` lies in
+the span of `x` and the covariates, the partial correlation is still defined and is plus or minus
+one, so the oracle then takes it from exact residuals. Further properties check invariance to predictor
 order, the ordering `RSS(OLS) <= RSS(NNLS) <= RSS(simplex)`, and symmetry in `x` and `y`. Named
-examples cover exact mixture recovery, a zeroed negative OLS slope and a multiplier-sensitive
-simplex path. They also cover undefined associations, average tie ranks, rank, grid and tolerance
+examples cover exact mixture recovery, a zeroed negative OLS slope, a multiplier-sensitive
+simplex path, and a hand-computed Lawson-Hanson step back whose three-column solution makes two
+active coefficients negative: the interpolation stops at the first zero, the other recovers, and
+the fit takes exactly four iterations. A set-aside column above a minimal tolerance reaches
+`Stalled`, and a lowered iteration limit reaches `NotConverged`. They also cover undefined associations, average tie ranks, rank, grid and tolerance
 refusals, and `typeCheckErrors` proofs that an NNLS fit is not a `Mass` while a mixture fit is.
 
-The suite killed six source mutants: dropping the simplex multiplier, changing the sign of the
+The suite killed nine source mutants: dropping the simplex multiplier, changing the sign of the
 eliminated weight, coarsening the KKT threshold, dropping the association intercept,
-first-rank ties and treating a constant map as defined. A seventh mutant, a full step to the
-subproblem solution in place of the Lawson-Hanson interpolation, changes only the solver's
-path: the outer KKT loop readmits any predictor removed early, so its results are the same.
+first-rank ties, treating a constant map as defined, returning a fit with a set-aside column above
+the tolerance, a full step to the subproblem solution in place of the Lawson-Hanson
+interpolation, and leaving the interpolation's stopping coefficient unclamped. The last two change only the solver's path, never its result: a fit is returned only
+when every KKT condition holds, and a full-rank design has one such solution. The full step
+drops a recoverable predictor that must then be readmitted, and an unclamped rounding residue
+costs one more degenerate step. Both therefore show only in the iteration count, which the
+hand-computed step-back example pins.
 
 eyesim's `template_multireg(method = "nnls")` fits the same intercept-free NNLS on normalized
 maps; it ignores its `intercept` argument. `template_regression(method = "rank")` returns `ppcor`

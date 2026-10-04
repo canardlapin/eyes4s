@@ -138,9 +138,12 @@ object ExactDecompositionOracle:
     }
 
   /** Partial correlation of columns 0 and 1 given the rest, through the
-    * inverse covariance matrix (the route ppcor takes), not through residuals.
-    * Returns the exact sign and squared value, or `None` when the covariance is
-    * singular.
+    * inverse covariance matrix (the route ppcor takes). Returns the exact sign
+    * and squared value. When the whole covariance is singular but the
+    * covariates' is not, as when column 1 lies in the span of column 0 and the
+    * covariates, the partial correlation is still defined (it is then plus or
+    * minus one), and is taken from exact centered residuals. `None` when the
+    * covariates are singular or either residual is zero.
     */
   def partial(columns: Vector[Column]): Option[(Int, Q)] =
     val n        = columns.head.size
@@ -151,7 +154,21 @@ object ExactDecompositionOracle:
     val k   = columns.size
     val cov = centered.map(a => centered.map(b => dot(a, b)))
     // Columns 0 and 1 of the inverse: solve cov * e = unit vector.
-    for
-      e0 <- solve(cov, Vector.tabulate(k)(i => if i == 0 then Q.one else Q.zero))
-      e1 <- solve(cov, Vector.tabulate(k)(i => if i == 1 then Q.one else Q.zero))
-    yield (-e0(1).signum, e0(1) * e0(1) / (e0(0) * e1(1)))
+    val inverse =
+      for
+        e0 <- solve(cov, Vector.tabulate(k)(i => if i == 0 then Q.one else Q.zero))
+        e1 <- solve(cov, Vector.tabulate(k)(i => if i == 1 then Q.one else Q.zero))
+      yield (-e0(1).signum, e0(1) * e0(1) / (e0(0) * e1(1)))
+    inverse.orElse {
+      val covariates = centered.drop(2)
+      val gram       = covariates.map(a => covariates.map(b => dot(a, b)))
+      def residualOf(c: Column): Option[Column] =
+        solve(gram, covariates.map(dot(_, c))).map(w => residual(covariates, c, w))
+      for
+        r0 <- residualOf(centered(0))
+        r1 <- residualOf(centered(1))
+        if r0.exists(_.signum != 0) && r1.exists(_.signum != 0)
+      yield
+        val cross = dot(r0, r1)
+        (cross.signum, cross * cross / (dot(r0, r0) * dot(r1, r1)))
+    }

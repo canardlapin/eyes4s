@@ -38,7 +38,9 @@ final class ConstrainedFit private[design] (
     val active: Int,
     /** Columns entered plus interpolation steps taken. */
     val iterations: Int,
-    /** Largest relative KKT violation left outside the active set; zero when none. */
+    /** Largest relative KKT violation left outside the active set; zero when
+      * none, and never above the [[RelativeDualTolerance]].
+      */
     val dualViolation: Double,
     /** The whole design's scaled R diagonal ratio; not a condition number. */
     val scaledDiagonalRatio: Double
@@ -54,8 +56,11 @@ final class ConstrainedFit private[design] (
   *
   * A column whose own least-squares coefficient is not positive on the step
   * that entered it is set aside until the active set next changes: its
-  * gradient was rounding, and admitting it again would cycle. Termination is
-  * reported in [[ConstrainedFit.dualViolation]], never assumed.
+  * gradient was rounding, and admitting it again would cycle. If such a column
+  * still violates the [[RelativeDualTolerance]] when no other column can
+  * enter, the fit fails as [[LeastSquaresError.Stalled]] naming it; a fit is
+  * returned only when every excluded column meets the tolerance. Column
+  * indices in every error are those of the whole design.
   */
 object ConstrainedLeastSquares:
 
@@ -71,7 +76,7 @@ object ConstrainedLeastSquares:
       rankTolerance: RelativeRankTolerance = RelativeRankTolerance.default,
       dualTolerance: RelativeDualTolerance = RelativeDualTolerance.default
   ): Either[LeastSquaresError, ConstrainedFit] =
-    run(rows, response, rankTolerance, dualTolerance, sumToOne = false)
+    run(rows, response, rankTolerance, dualTolerance, sumToOne = false, None)
 
   /** Minimise the residual norm over the probability simplex: non-negative
     * coefficients summing to one. The sum is eliminated exactly through a
@@ -84,28 +89,40 @@ object ConstrainedLeastSquares:
       rankTolerance: RelativeRankTolerance = RelativeRankTolerance.default,
       dualTolerance: RelativeDualTolerance = RelativeDualTolerance.default
   ): Either[LeastSquaresError, ConstrainedFit] =
-    run(rows, response, rankTolerance, dualTolerance, sumToOne = true)
+    run(rows, response, rankTolerance, dualTolerance, sumToOne = true, None)
 
-  private def run(
+  /** `limitOverride` replaces [[iterationLimit]] so that tests can reach the cap. */
+  private[design] def run(
       rows: Vector[Vector[Double]],
       response: Vector[Double],
       rankTolerance: RelativeRankTolerance,
       dualTolerance: RelativeDualTolerance,
-      sumToOne: Boolean
+      sumToOne: Boolean,
+      limitOverride: Option[Int]
   ): Either[LeastSquaresError, ConstrainedFit] =
     LeastSquares.fit(rows, response, rankTolerance).flatMap { full =>
       val n     = rows.size
       val p     = rows.head.size
-      val limit = iterationLimit(p)
+      val limit = limitOverride.getOrElse(iterationLimit(p))
       val y     = response.toArray
       val cols  = Array.tabulate(p, n)((j, i) => rows(i)(j))
       val norms = cols.map(c => c.foldLeft(0.0)(math.hypot))
       val yNorm = y.foldLeft(0.0)(math.hypot)
 
+      // A subproblem's column c is the design column columns(c).
+      def inDesign(columns: Vector[Int])(e: LeastSquaresError): LeastSquaresError = e match
+        case LeastSquaresError.RankDeficient(c, pivot, threshold) =>
+          LeastSquaresError.RankDeficient(columns(c), pivot, threshold)
+        case LeastSquaresError.ColumnArithmetic(op, c) =>
+          LeastSquaresError.ColumnArithmetic(op, columns(c))
+        case other => other
+
       def solve(passive: Vector[Int]): Either[LeastSquaresError, Map[Int, Double]] =
         if !sumToOne then
           LeastSquares
             .fit(rows.map(r => passive.map(r)), response, rankTolerance)
+            .left
+            .map(inDesign(passive))
             .map(f => passive.zip(f.coefficients).toMap)
         else if passive.size == 1 then Right(Map(passive.head -> 1.0))
         else
@@ -117,6 +134,8 @@ object ConstrainedLeastSquares:
               response.indices.toVector.map(i => response(i) - rows(i)(r)),
               rankTolerance
             )
+            .left
+            .map(inDesign(passive.tail))
             .map { f =>
               val others = passive.tail.zip(f.coefficients)
               others.toMap.updated(r, 1.0 - others.foldLeft(0.0)(_ + _._2))
@@ -211,11 +230,14 @@ object ConstrainedLeastSquares:
           rows.map(row => row.indices.foldLeft(0.0)((s, j) => s + row(j) * coefficients(j)))
         val residuals = response.zip(fitted).map(_ - _)
         val v         = violations(x, passive)
-        val violation =
-          (0 until p).filterNot(passive.contains).map(v).maxOption.fold(0.0)(math.max(0.0, _))
+        val worst     = (0 until p).filterNot(passive.contains).maxByOption(v)
+        val violation = worst.map(v).fold(0.0)(math.max(0.0, _))
         fitted.indices.find(i => !fitted(i).isFinite || !residuals(i).isFinite) match
           case Some(i) => Left(LeastSquaresError.RowArithmetic("prediction/residual", i))
-          case None    =>
+          // Only a set-aside column can be left above the tolerance.
+          case None if violation > dualTolerance.value =>
+            Left(LeastSquaresError.Stalled(worst.get, violation, dualTolerance.value))
+          case None =>
             Right(
               new ConstrainedFit(
                 coefficients,
