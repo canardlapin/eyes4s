@@ -28,6 +28,9 @@ FIXTURES = (
     "tools/r-parity/fixtures/temporal-study.csv",
     "tools/detector-conformance/reference.json",
 )
+# The facade journey's AdSERP excerpt and tidy export, as the library's own suite pins them.
+FACADE_SOURCE_SHA256 = "57dc3230c1e2a701017011a9652e215fcb09b7f1b63a16fe00ca0ed1ca9639d0"
+FACADE_CSV_SHA256 = "c9a2ec351a09d94533305ef2bdb7743ee4773f41a6c1d2d21c068a13927b9f76"
 # Degrees: the recording route's angular warp is trigonometric.
 ANGULAR_TOLERANCE = 1e-9
 # The named tolerance of the Gaussian and temporal cosine oracles.
@@ -217,6 +220,7 @@ def main():
     recording = check_recording_journey(log)
     temporal = check_temporal_journey(log)
     fresh_routes = check_fresh_routes(log)
+    facade = check_facade_journey(log)
     envelope = check_envelope(log)
     receipt = {
         "artifact_version": VERSION,
@@ -262,6 +266,7 @@ def main():
                 "the fixture's fixations against the pymovements oracle events",
                 "temporal journey against temporal.json targets and ledgers",
                 "fresh-process reload and bit-for-bit rerun of every route",
+                "facade journey: PsychologyWorkflow equals the explicit composition",
                 "JVM and Scala.js agree exactly on portable evidence",
             ],
         },
@@ -305,6 +310,11 @@ def main():
             "runtime_evidence": temporal,
         },
         "fresh_process_routes": fresh_routes,
+        "facade_journey": {
+            "exact_across_runtimes": ["source", "plan", "csv_sha256", "rows", "events"],
+            "pinned": {"source_sha256": FACADE_SOURCE_SHA256, "csv_sha256": FACADE_CSV_SHA256},
+            "runtime_evidence": facade,
+        },
         "response_envelope": envelope,
         "consumer_directory": str(candidate),
         "tests": ["consumerJVM/test", "consumerJS/test"],
@@ -376,6 +386,13 @@ def check_consumer_fixtures():
     if hashlib.sha256(table).hexdigest() != temporal["input_sha256"]:
         raise RuntimeError("temporal.json was not generated from temporal-study.csv")
     # The generators pin every embedded window, coverage, target and ledger too.
+    # Transcribed verbatim from the library's own tests: the facade's AdSERP excerpt.
+    excerpt = (REPO / "io/src/test/scala/eyes4s/io/PsychologyWorkflowSuite.scala").read_text()
+    excerpt = excerpt.split('private val publicTrial =', 1)[1].split('""".stripMargin', 1)[0]
+    copy = (HERE / "src/test/scala/example/FacadeFixtures.scala").read_text()
+    copy = copy.split("val csv: String =", 1)[1].split('""".stripMargin', 1)[0]
+    if excerpt != copy:
+        raise RuntimeError("FacadeFixtures.scala does not carry the library's AdSERP excerpt")
     for generator in ("generate_multiscale.py", "generate_temporal.py"):
         subprocess.run(
             ["python3", str(REPO / "tools/r-parity" / generator), "--check"],
@@ -554,6 +571,32 @@ def check_fresh_routes(log):
         {**{key: r[key] for key in keys}, "steps": r["steps"], "total_units": r["total_units"]}
         for r in receipts
     ]
+
+
+def runtime_pair(log, marker, label):
+    """One run of a journey on each runtime."""
+    runs = evidence(log, marker)
+    if sorted(r["runtime"] for r in runs) != ["js", "jvm"]:
+        raise RuntimeError(f"Expected one JVM and one Scala.js {label}, found {len(runs)}")
+    return {r["runtime"]: r for r in runs}
+
+
+def same_except_runtime(pair, label):
+    left, right = ({k: v for k, v in pair[r].items() if k != "runtime"} for r in ("jvm", "js"))
+    if left != right:
+        raise RuntimeError(f"JVM/Scala.js {label} disagreement")
+
+
+def check_facade_journey(log):
+    """PsychologyWorkflow on both runtimes, against the library suite's pinned digests."""
+    pair = runtime_pair(log, "EYES4S_FACADE_JOURNEY=", "facade journey")
+    same_except_runtime(pair, "facade journey")
+    run = pair["jvm"]
+    if run["source"] != FACADE_SOURCE_SHA256 or run["csv_sha256"] != FACADE_CSV_SHA256:
+        raise RuntimeError("The facade journey's input or tidy export differs from the pinned digests")
+    if (run["rows"], run["events"], run["projected"], run["interpolated"]) != (10, 9, 72, 18):
+        raise RuntimeError("The facade journey's report counts differ from the library suite's")
+    return [pair["jvm"], pair["js"]]
 
 
 def check_envelope(log):

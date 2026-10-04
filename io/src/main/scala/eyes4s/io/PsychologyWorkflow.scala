@@ -426,23 +426,7 @@ object PsychologyWorkflow:
       .run(native)
       .left
       .map(PsychologyWorkflowError.AnalysisFailed(imported.raw.source, _))
-    operations = upstreamOperations(
-      plan,
-      imported,
-      result.synchronization,
-      result.angular.frame
-    )
-    tidy <- TidyAoiResult
-      .from(
-        study,
-        imported,
-        result.detection,
-        result.assignment,
-        Some(result.synchronization),
-        operations
-      )
-      .left
-      .map(PsychologyWorkflowError.TidyResultFailed(imported.raw.source, _))
+    tidy <- this.tidy(study, imported, result)
     csv = TidyCsv.encode(tidy)
     decoded <- TidyCsv
       .decode(csv)
@@ -463,6 +447,34 @@ object PsychologyWorkflow:
     tidy,
     csv
   )
+
+  /** The tidy stage of [[runAnalysis]] for an analysis the caller ran itself:
+    * the same rows and the same provenance, including the import, synchronization,
+    * visual-angle and interpolation steps that the analysis alone does not record.
+    * `TidyAoiResult.from` without those steps keeps the measures but drops that
+    * provenance.
+    */
+  def tidy[P](
+      study: StudyTrial,
+      imported: DelimitedImport[Px],
+      analysis: RecordingAnalysis[P]
+  ): Either[PsychologyWorkflowError, TidyAoiResult] =
+    TidyAoiResult
+      .from(
+        study,
+        imported,
+        analysis.detection,
+        analysis.assignment,
+        Some(analysis.synchronization),
+        upstreamOperations(
+          analysis.plan,
+          imported,
+          analysis.synchronization,
+          analysis.angular.frame
+        )
+      )
+      .left
+      .map(PsychologyWorkflowError.TidyResultFailed(imported.raw.source, _))
 
   private def schemaFor(
       source: String
