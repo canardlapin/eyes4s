@@ -20,7 +20,7 @@ import cats.effect.unsafe.implicits.global
 import eyes4s.studio.app.{AppModel, Intent, ProjectName, TrialItems}
 import eyes4s.studio.core.fixture.{MockStudy, StoryMoment, StoryMoments}
 import eyes4s.studio.core.preferences.UserPreferences
-import eyes4s.studio.desktop.platform.PreferencesLocation
+import eyes4s.studio.desktop.platform.{AppearancePreferenceHost, PreferencesLocation}
 import javafx.application.{Application, Platform}
 import javafx.scene.Scene
 import javafx.scene.control.Label
@@ -41,7 +41,9 @@ final class StudioApplication extends Application:
   /** The user's preferences (S2.8), read before the first window opens. */
   private var preferences: UserPreferences = UserPreferences.defaults
 
-  /** The preferences this run read (S1.10, S1.5b and S2.9 apply them). */
+  /** The preferences this run read; the appearance is applied and saved by
+    * [[AppearancePreferenceHost]], the rest by S1.5b and S2.9.
+    */
   def userPreferences: UserPreferences = preferences
 
   // S1.2: register the bundled faces before the first scene reads its CSS. A
@@ -68,6 +70,13 @@ final class StudioApplication extends Application:
       case Right(w) =>
         window = Some(w)
         w.bind(stage)
+        // S2.8: follow the platform's theme if the user chose to; save the
+        // appearance whenever the user changes it.
+        AppearancePreferenceHost(
+          PreferencesLocation.store.toOption,
+          preferences,
+          System.err.println
+        ).attach(w.runtime)
         stage.setScene(Scene(w.root, 1440, 900))
         stage.setOnCloseRequest(_ => w.captureLayouts())
     stage.show()
