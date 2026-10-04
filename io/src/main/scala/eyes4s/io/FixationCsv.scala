@@ -441,86 +441,101 @@ object FixationCsv:
       participant: Option[K => String],
       rounding: TimestampRounding
   ): Vector[Either[RejectedFixationRow[K], Parsed[K, U]]] =
-    // Without a participant projection no participant-scoped rule exists, so
-    // the projection is never consulted.
+    rows.zipWithIndex.map { case (raw, index) =>
+      parseRow(header, raw, index + 2, spec, read, clock, frame, policy, participant, rounding)
+    }
+
+  /** Interpret one record without renumbering a resumed source page.
+    * The synchronous importer and the replay cursor share this interpretation.
+    */
+  private[io] def parseRow[K, U <: Unit2D](
+      header: Vector[String],
+      raw: Vector[String],
+      number: Int,
+      spec: RowSpec,
+      read: Map[String, String] => Either[String, K],
+      clock: K => ClockId,
+      frame: Frame[U],
+      policy: AdmissionPolicy[K],
+      participant: Option[K => String],
+      rounding: TimestampRounding
+  ): Either[RejectedFixationRow[K], Parsed[K, U]] =
+    // Without a participant projection no participant-scoped rule exists.
     val owner: K => String = participant.getOrElse(_ => "")
     val timeUnit           = spec.unit
-    rows.zipWithIndex.map { case (raw, index) =>
-      val number = index + 2
-      val fields = header.zip(raw).toMap
-      val key    = read(fields).left.map(FixationRowError.Key.apply)
-      val result = for
-        k <- key
-        _ <- Either.cond(
-          raw.size == header.size,
-          (),
-          FixationRowError.Width(header.size, raw.size)
-        )
-        _ <- spec.nonBlank
-          .collectFirst {
-            case column if fields(column).trim.isEmpty =>
-              FixationRowError.Number(column, fields(column), "a non-blank item cell")
-          }
-          .toLeft(())
-        ordinal <- integer(fields, spec.ordinal, positive = false)
-        counted <- spec.samples match
-          case SampleCountRule.PositiveColumn(column) =>
-            integer(fields, column, positive = true).map(Left(_))
-          case SampleCountRule.DerivedFromDuration(rate) => Right(Right(rate))
-        x <- finite(fields, spec.x)
-        y <- finite(fields, spec.y)
-        rule = policy.correctionFor(k, owner)
-        centre <- rule match
-          case Right(Some((_, correction))) =>
-            correction
-              .correct(frame, Pt[U](x, y))
-              .toRight(FixationRowError.Position(x, y, frame.id))
-          case _ => Right(Pt[U](x, y))
-        _ <- Either.cond(
-          rule.isLeft || frame.contains(centre) ||
-            policy.offScreen == OffScreenPolicy.ExcludeRecord,
-          (),
-          FixationRowError.Position(centre.x, centre.y, frame.id)
-        )
-        onset    <- micros(fields(spec.onset), spec.onset, timeUnit, rounding)
-        duration <- micros(fields(spec.duration), spec.duration, timeUnit, rounding)
-        end = BigInt(onset) + BigInt(duration)
-        _ <- Either.cond(
-          duration > 0 && end.isValidLong,
-          (),
-          FixationRowError.Time(
-            fields(spec.onset),
-            fields(spec.duration),
-            timeUnit,
-            "duration must be positive and the interval must fit signed microseconds"
-          )
-        )
-        span <- Interval
-          .of(clock(k), Instant.micros(onset), Instant.micros(end.toLong))
-          .left
-          .map(e =>
-            FixationRowError
-              .Time(fields(spec.onset), fields(spec.duration), timeUnit, e.message)
-          )
-        fixation <- Event.Fixation
-          .withoutDispersion(span, centre, counted.fold(identity, derivedCount(_, duration)))
-          .left
-          .map(e => FixationRowError.Event(e.message))
-        attributes <- attributesOf(spec.attributes, fields)
-      yield Parsed(
-        number,
-        raw,
-        k,
-        ordinal,
-        fixation,
-        Option.when(!frame.contains(centre))(
-          OutsideFrame(number, centre.x, centre.y, frame.id)
-        ),
-        rule.left.toOption,
-        attributes
+    val fields             = header.zip(raw).toMap
+    val key                = read(fields).left.map(FixationRowError.Key.apply)
+    val result             = for
+      k <- key
+      _ <- Either.cond(
+        raw.size == header.size,
+        (),
+        FixationRowError.Width(header.size, raw.size)
       )
-      result.left.map(error => RejectedFixationRow(number, raw, key.toOption, error))
-    }
+      _ <- spec.nonBlank
+        .collectFirst {
+          case column if fields(column).trim.isEmpty =>
+            FixationRowError.Number(column, fields(column), "a non-blank item cell")
+        }
+        .toLeft(())
+      ordinal <- integer(fields, spec.ordinal, positive = false)
+      counted <- spec.samples match
+        case SampleCountRule.PositiveColumn(column) =>
+          integer(fields, column, positive = true).map(Left(_))
+        case SampleCountRule.DerivedFromDuration(rate) => Right(Right(rate))
+      x <- finite(fields, spec.x)
+      y <- finite(fields, spec.y)
+      rule = policy.correctionFor(k, owner)
+      centre <- rule match
+        case Right(Some((_, correction))) =>
+          correction
+            .correct(frame, Pt[U](x, y))
+            .toRight(FixationRowError.Position(x, y, frame.id))
+        case _ => Right(Pt[U](x, y))
+      _ <- Either.cond(
+        rule.isLeft || frame.contains(centre) ||
+          policy.offScreen == OffScreenPolicy.ExcludeRecord,
+        (),
+        FixationRowError.Position(centre.x, centre.y, frame.id)
+      )
+      onset    <- micros(fields(spec.onset), spec.onset, timeUnit, rounding)
+      duration <- micros(fields(spec.duration), spec.duration, timeUnit, rounding)
+      end = BigInt(onset) + BigInt(duration)
+      _ <- Either.cond(
+        duration > 0 && end.isValidLong,
+        (),
+        FixationRowError.Time(
+          fields(spec.onset),
+          fields(spec.duration),
+          timeUnit,
+          "duration must be positive and the interval must fit signed microseconds"
+        )
+      )
+      span <- Interval
+        .of(clock(k), Instant.micros(onset), Instant.micros(end.toLong))
+        .left
+        .map(e =>
+          FixationRowError
+            .Time(fields(spec.onset), fields(spec.duration), timeUnit, e.message)
+        )
+      fixation <- Event.Fixation
+        .withoutDispersion(span, centre, counted.fold(identity, derivedCount(_, duration)))
+        .left
+        .map(e => FixationRowError.Event(e.message))
+      attributes <- attributesOf(spec.attributes, fields)
+    yield Parsed(
+      number,
+      raw,
+      k,
+      ordinal,
+      fixation,
+      Option.when(!frame.contains(centre))(
+        OutsideFrame(number, centre.x, centre.y, frame.id)
+      ),
+      rule.left.toOption,
+      attributes
+    )
+    result.left.map(error => RejectedFixationRow(number, raw, key.toOption, error))
 
   /** Parse the declared attribute columns of one record. */
   private def attributesOf(
@@ -560,6 +575,31 @@ object FixationCsv:
       .setScale(0, BigDecimal.RoundingMode.CEILING)
     if samples > BigDecimal(Int.MaxValue) then Int.MaxValue else samples.toInt
 
+  /** The shared refusal precedence, after row grouping has collected its
+    * evidence. Duplicate detection remains lazy for synchronous admission;
+    * stepped replay can pass its incrementally accumulated result instead.
+    */
+  private[io] def trialRefusal(
+      rows: Vector[Int],
+      overrideCause: Option[(Vector[Int], QuarantineCause)],
+      hasRejected: Boolean,
+      conflict: Option[(Int, Int)],
+      duplicateOrdinals: => Boolean
+  ): Option[FixationRowError] =
+    overrideCause match
+      case Some((affected, cause)) => Some(FixationRowError.Trial(affected, cause))
+      case None if hasRejected     =>
+        Some(FixationRowError.Trial(rows, QuarantineCause.RejectedRecords))
+      case None =>
+        conflict match
+          case Some((first, second)) =>
+            Some(
+              FixationRowError.Trial(rows, QuarantineCause.CorrectionConflict(first, second))
+            )
+          case None if duplicateOrdinals =>
+            Some(FixationRowError.Trial(rows, QuarantineCause.DuplicateOrdinals))
+          case None => None
+
   /** Group parsed records into trials. A key in `overrides` is quarantined
     * with the given records and cause, under the given key; otherwise a trial
     * with a rejected record is quarantined as `RejectedRecords`, then
@@ -586,22 +626,16 @@ object FixationCsv:
         val affected = invalid.filter(_.key.contains(key)).map(_.rowNumber)
         val allRows  = (ordered.map(_.row) ++ affected).sorted
         val conflict = ordered.flatMap(_.conflict).headOption
-        val path     = (affected.nonEmpty, conflict) match
-          case _ if overrides.contains(key) =>
-            val (_, rows, cause) = overrides(key)
-            Left(FixationRowError.Trial(rows, cause))
-          case (true, _) =>
-            Left(FixationRowError.Trial(allRows, QuarantineCause.RejectedRecords))
-          case (false, Some((first, second))) =>
-            Left(
-              FixationRowError.Trial(
-                allRows,
-                QuarantineCause.CorrectionConflict(first, second)
-              )
-            )
-          case (false, None) if ordered.map(_.ordinal).distinct.size != ordered.size =>
-            Left(FixationRowError.Trial(allRows, QuarantineCause.DuplicateOrdinals))
-          case (false, None) =>
+        val refusal  = trialRefusal(
+          allRows,
+          overrides.get(key).map { case (_, rows, cause) => rows -> cause },
+          affected.nonEmpty,
+          conflict,
+          ordered.map(_.ordinal).distinct.size != ordered.size
+        )
+        val path = refusal match
+          case Some(error) => Left(error)
+          case None        =>
             Scanpath
               .of(frame, clock(key), IArray.from(ordered.map(_.fixation)))
               .left

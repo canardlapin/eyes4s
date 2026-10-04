@@ -77,11 +77,18 @@ object ContentHash:
       i += 1
     mixLong(h, values.length.toLong)
 
+  /** Extend a text digest by one UTF-16 code unit, encoded as eight
+    * little-endian bytes, exactly as [[ofString]]. No length mix or Unicode
+    * normalization is applied, including for unpaired surrogates.
+    */
+  private[eyes4s] def appendCodeUnit(hash: ContentHash, value: Char): ContentHash =
+    mixLong(hash, value.toLong)
+
   def ofString(s: String): ContentHash =
     var h = Offset
     var i = 0
     while i < s.length do
-      h = mixLong(h, s.charAt(i).toLong)
+      h = appendCodeUnit(h, s.charAt(i))
       i += 1
     h
 

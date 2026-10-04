@@ -187,12 +187,77 @@ object TrialInventory:
   private[io] def label(id: TrialIdentity): (String, String, String) =
     (id.participant, id.phase, id.trial)
 
-  private final case class Row(
+  private[io] final case class Row(
       number: Int,
       identity: TrialIdentity,
       item: Option[String],
       attributes: Attributes
   )
+
+  private[io] enum ConflictField derives CanEqual:
+    case Occurrence, Item
+    case Attribute(name: String)
+
+  /** One field decision shared by synchronous grouping and counted replay.
+    * Both rows must have been parsed under the same declaration. A bounded
+    * caller checks the field and attribute envelope before using this semantic
+    * predicate, and accounts for its own row and declaration traversal.
+    */
+  private[io] def conflicts(first: Row, other: Row, field: ConflictField): Boolean =
+    field match
+      case ConflictField.Occurrence =>
+        first.identity.occurrence.value != other.identity.occurrence.value
+      case ConflictField.Item            => first.item != other.item
+      case ConflictField.Attribute(name) =>
+        first.attributes.get(name) != other.attributes.get(name)
+
+  /** Interpret one record under an already validated header. The absolute
+    * record number is supplied by the caller; width is checked before field
+    * interpretation, then all identity, item and attribute errors are retained
+    * in that order. This shares semantics only: bounded execution must first
+    * check its field, column, attribute and numeric resource envelope.
+    */
+  private[io] def parseRow(
+      header: Vector[String],
+      raw: Vector[String],
+      number: Int,
+      columns: TrialInventoryColumns
+  ): Either[Vector[InventoryError], Row] =
+    val fields = header.zip(raw).toMap
+    if raw.size != header.size then
+      Left(Vector(InventoryError.Width(number, header.size, raw.size)))
+    else
+      def field(column: String, value: String, requirement: String) =
+        InventoryError.Field(number, column, value, requirement)
+      val identity = columns.trial.identity(fields).left.map(_.map(field.tupled))
+      val item     = columns.item.fold[Either[Vector[InventoryError], Option[String]]](
+        Right(None)
+      ) { column =>
+        val value = fields(column)
+        Either.cond(
+          value.trim.nonEmpty,
+          Some(value),
+          Vector(field(column, value, "a non-blank item"))
+        )
+      }
+      val values = columns.attributes.map(column =>
+        column
+          .parse(fields(column.name))
+          .left
+          .map(field(column.name, fields(column.name), _))
+      )
+      val errors = identity.left.toSeq.flatten ++ item.left.toSeq.flatten ++
+        values.collect { case Left(e) => e }
+      if errors.nonEmpty then Left(errors.toVector)
+      else
+        for
+          id         <- identity
+          declared   <- item
+          attributes <- Attributes
+            .of(columns.attributes.map(_.name).zip(values.collect { case Right(v) => v }))
+            .left
+            .map(Vector(_))
+        yield Row(number, id, declared, attributes)
 
   /** Read a trials table. The inventory is a declaration, so any defective
     * record refuses it, and the refusal lists every defect, each naming its
@@ -208,42 +273,7 @@ object TrialInventory:
   ): Either[FixationImportError, TrialInventory] =
     FixationCsv.table(contents, columns.names).flatMap { (header, rows) =>
       val parsed = rows.zipWithIndex.map { (raw, index) =>
-        val number = index + 2
-        val fields = header.zip(raw).toMap
-        if raw.size != header.size then
-          Left(Vector(InventoryError.Width(number, header.size, raw.size)))
-        else
-          def field(column: String, value: String, requirement: String) =
-            InventoryError.Field(number, column, value, requirement)
-          val identity = columns.trial.identity(fields).left.map(_.map(field.tupled))
-          val item     = columns.item.fold[Either[Vector[InventoryError], Option[String]]](
-            Right(None)
-          ) { column =>
-            val value = fields(column)
-            Either.cond(
-              value.trim.nonEmpty,
-              Some(value),
-              Vector(field(column, value, "a non-blank item"))
-            )
-          }
-          val values = columns.attributes.map(column =>
-            column
-              .parse(fields(column.name))
-              .left
-              .map(field(column.name, fields(column.name), _))
-          )
-          val errors = identity.left.toSeq.flatten ++ item.left.toSeq.flatten ++
-            values.collect { case Left(e) => e }
-          if errors.nonEmpty then Left(errors.toVector)
-          else
-            for
-              id         <- identity
-              declared   <- item
-              attributes <- Attributes
-                .of(columns.attributes.map(_.name).zip(values.collect { case Right(v) => v }))
-                .left
-                .map(Vector(_))
-            yield Row(number, id, declared, attributes)
+        parseRow(header, raw, index + 2, columns)
       }
       val rowErrors = parsed.collect { case Left(errors) => errors }.flatten
       val valid     = parsed.collect { case Right(row) => row }
@@ -252,11 +282,17 @@ object TrialInventory:
         val first     = group.head
         val differing =
           columns.trial.occurrence.filter(_ =>
-            group.map(_.identity.occurrence.value).distinct.size > 1
-          ) ++ columns.item.filter(_ => group.map(_.item).distinct.size > 1) ++
+            group.exists(row => TrialInventory.conflicts(first, row, ConflictField.Occurrence))
+          ) ++ columns.item.filter(_ =>
+            group.exists(row => TrialInventory.conflicts(first, row, ConflictField.Item))
+          ) ++
             columns.attributes
               .map(_.name)
-              .filter(name => group.map(_.attributes.get(name)).distinct.size > 1)
+              .filter(name =>
+                group.exists(row =>
+                  TrialInventory.conflicts(first, row, ConflictField.Attribute(name))
+                )
+              )
         Option.when(differing.nonEmpty)(
           InventoryError.Conflict(
             first.identity.participant,
