@@ -57,6 +57,31 @@ object ExploreLinked:
   def canStep(view: ExploreTrialView, m: AppModel, by: Int): Boolean =
     step(view, m, by).isDefined
 
+  /** The trial view's focus stops after its toggles (and Retry): Prev and
+    * Next while each can step, then the marks' one stop, named `marks`
+    * (the plot's accessible text), when it has one.
+    */
+  def focusStops(
+      view: ExploreTrialView,
+      m: AppModel,
+      marks: Option[String]
+  ): Vector[eyes4s.studio.app.vm.FocusStop] =
+    import eyes4s.studio.app.vm.{A11yRole, FocusStop}
+    import eyes4s.studio.app.text.{ExploreText, ExploreTextId}
+    val vm = ExploreTrialViewVM.of(view, m)
+    ExploreTrialViewVM.focusStops(vm) ++
+      Option
+        .when(canStep(view, m, -1))(
+          FocusStop(A11yRole.Button, ExploreText(ExploreTextId.PrevFixation))
+        )
+        .toVector ++
+      Option
+        .when(canStep(view, m, 1))(
+          FocusStop(A11yRole.Button, ExploreText(ExploreTextId.NextFixation))
+        )
+        .toVector ++
+      marks.map(FocusStop(A11yRole.Region, _)).toVector
+
   /** The trail's crumb for `f`: its source record, which names it, when the
     * trial view knows its record.
     */
@@ -78,7 +103,7 @@ object ExploreLinked:
       f      <- selected(view, m) if m.perspective == Perspective.Explore
       record <- crumb(view, f)
       if !m.location.trail.lastOption.contains(Place.At(record))
-    yield Intent.Explain(Place.At(record))
+    yield Intent.Follow(Place.At(record))
 
 /** When the trail follows the selection (S6.6): after the selection changes,
   * once, as soon as the trial view can name the selected fixation's record.
@@ -105,3 +130,13 @@ object TrailFollow:
       val settled = wanted.isDefined || ExploreLinked.selected(view, m).isEmpty ||
         view.fixations.toOption.isDefined
       (TrailFollow(m.selection.selected, !settled), wanted)
+
+  /** The follow to apply now, when the follow asked at `asked` is run later
+    * (after the update that asked it): derived again from the model `now`,
+    * and only while nothing has moved since. A crumb clicked, a perspective
+    * switched or a selection changed in between wins over the follow.
+    */
+  def deferred(asked: AppModel, view: ExploreTrialView, now: AppModel): Option[Intent] =
+    if now.location != asked.location || now.selection.selected != asked.selection.selected
+    then None
+    else ExploreLinked.follow(view, now)

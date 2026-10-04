@@ -116,10 +116,10 @@ final class ExploreTrialViewHost(
   // The trail follows a change of the selection (ExploreLinked's TrailFollow).
   private var trail = TrailFollow.initial(model())
 
-  /** Previous (-1) or Next (+1) fixation: selects it everywhere. */
-  def step(by: Int): Unit =
+  /** Previous (-1) or Next (+1) fixation, by `cause`: selects it everywhere. */
+  def step(by: Int, cause: InputCause): Unit =
     ExploreLinked.step(view, model(), by).foreach { f =>
-      val (next, intent) = stepping.submit(SelectionMode.Replace, Vector(f), InputCause.Pointer)
+      val (next, intent) = stepping.submit(SelectionMode.Replace, Vector(f), cause)
       stepping = next
       app(intent)
     }
@@ -139,23 +139,8 @@ final class ExploreTrialViewHost(
 
   /** The pane's focus stops after its own (none until it has started). */
   def focusStops: Vector[eyes4s.studio.app.vm.FocusStop] =
-    import eyes4s.studio.app.vm.{A11yRole, FocusStop}
     if !started then Vector.empty
-    else
-      // The toggles, Prev and Next while each can step, then the marks' one stop.
-      val m = model()
-      ExploreTrialViewVM.focusStops(vm) ++
-        Option
-          .when(ExploreLinked.canStep(view, m, -1))(
-            FocusStop(A11yRole.Button, pane.prev.getAccessibleText)
-          )
-          .toVector ++
-        Option
-          .when(ExploreLinked.canStep(view, m, 1))(
-            FocusStop(A11yRole.Button, pane.next.getAccessibleText)
-          )
-          .toVector ++
-        Option(trialView.plotHost.getAccessibleText).map(FocusStop(A11yRole.Region, _)).toVector
+    else ExploreLinked.focusStops(view, model(), Option(trialView.plotHost.getAccessibleText))
 
   /** The view-model now shown. */
   def vm: ExploreTrialViewVM = ExploreTrialViewVM.of(view, model())
@@ -211,7 +196,9 @@ final class ExploreTrialViewHost(
   private def follow(m: AppModel): Unit =
     val (next, wanted) = TrailFollow.step(trail, view, m)
     trail = next
-    wanted.foreach(i => Platform.runLater(() => app(i)))
+    // Derived again when it runs: a crumb or perspective chosen in between wins.
+    if wanted.isDefined then
+      Platform.runLater(() => TrailFollow.deferred(m, view, model()).foreach(app))
 
   private def perform(effects: Vector[TrialViewEffect]): Unit =
     effects.foreach {

@@ -116,6 +116,12 @@ final case class Navigation private (
     if from == to then this
     else Navigation((from :: back).take(Navigation.Depth), remember(to), Nil)
 
+  /** Stay where one is with the trail of `to`: no back step, the forward
+    * steps kept. A trail that follows the selection (S6.6) moves this way;
+    * deliberate navigation goes through [[go]].
+    */
+  def replace(to: Location): Navigation = Navigation(back, remember(to), forward)
+
   /** The location one step back, and the history after taking it. */
   def goBack(from: Location): Option[(Location, Navigation)] = back match
     case to :: rest =>

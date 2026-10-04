@@ -109,7 +109,7 @@ class ExploreLinkedSuite extends munit.FunSuite:
       // A timeline bar selects fixation 8: the trail moves to it and record 7,216.
       val m8     = selecting(m, "explore.timeline", fixation(8))
       val follow = ExploreLinked.follow(v, m8)
-      assertEquals(follow, Some(Intent.Explain(Place.At(record(8)))))
+      assertEquals(follow, Some(Intent.Follow(Place.At(record(8)))))
       val moved = AppModel.update(m8, follow.get)._1
       assertEquals(
         moved.location.trail.takeRight(2),
@@ -121,7 +121,7 @@ class ExploreLinkedSuite extends munit.FunSuite:
       assertEquals(ExploreLinked.follow(v, moved), None)
       // A record selects its fixation too.
       val r3m = selecting(m, "explore.source-records", record(3))
-      assertEquals(ExploreLinked.follow(v, r3m), Some(Intent.Explain(Place.At(record(3)))))
+      assertEquals(ExploreLinked.follow(v, r3m), Some(Intent.Follow(Place.At(record(3)))))
       // Outside Explore the trail is not moved.
       val compare = AppModel
         .update(m8, Intent.Navigate(Location(Perspective.Compare, StoryModels.queryTrail)))
@@ -142,7 +142,7 @@ class ExploreLinkedSuite extends munit.FunSuite:
       // A new selection is asked for once.
       val m8           = selecting(m, "explore.timeline", fixation(8))
       val (asked, ask) = TrailFollow.step(start, v, m8)
-      assertEquals(ask, Some(Intent.Explain(Place.At(record(8)))))
+      assertEquals(ask, Some(Intent.Follow(Place.At(record(8)))))
       assertEquals(TrailFollow.step(asked, v, m8), (asked, None))
       // Before the fixations are read it waits, then asks.
       val (unread, _)     = ExploreTrialView.sync(ExploreTrialView.empty, m8)
@@ -150,7 +150,90 @@ class ExploreLinkedSuite extends munit.FunSuite:
       assertEquals((none, waiting.pending), (None, true))
       assertEquals(
         TrailFollow.step(waiting, v, m8)._2,
-        Some(Intent.Explain(Place.At(record(8))))
+        Some(Intent.Follow(Place.At(record(8))))
+      )
+    }
+  }
+
+  test("a follow replaces the trail without a Back step; deliberate navigation still pushes") {
+    val m = StoryModels.t2Explore
+    view(m).map { v =>
+      val m8     = selecting(m, "explore.timeline", fixation(8))
+      val follow = ExploreLinked.follow(v, m8).getOrElse(fail("no follow"))
+      val moved  = AppModel.update(m8, follow)._1
+      assertEquals(moved.location.trail.last, Place.At(record(8)))
+      // No Back step: Back goes where it went before the follow.
+      assertEquals(moved.navigation.canGoBack, m8.navigation.canGoBack)
+      assertEquals(
+        AppModel.update(moved, Intent.Back)._1.location,
+        AppModel.update(m8, Intent.Back)._1.location
+      )
+      // Explaining the same record deliberately pushes one.
+      val explained = AppModel.update(m8, Intent.Explain(Place.At(record(8))))._1
+      assertEquals(explained.location, moved.location)
+      assertEquals(AppModel.update(explained, Intent.Back)._1.location, m8.location)
+      // A follow never switches perspective.
+      val compare = AppModel
+        .update(m8, Intent.Navigate(Location(Perspective.Compare, StoryModels.queryTrail)))
+        ._1
+      assertEquals(AppModel.update(compare, follow)._1, compare)
+    }
+  }
+
+  test("a deferred follow is derived again when it runs; a move in between wins") {
+    val m = StoryModels.t2Explore
+    view(m).map { v =>
+      val m8 = selecting(m, "explore.timeline", fixation(8))
+      // Nothing moved: the follow, derived from the model now.
+      assertEquals(TrailFollow.deferred(m8, v, m8), Some(Intent.Follow(Place.At(record(8)))))
+      // A crumb clicked before it runs is not undone.
+      val crumb = AppModel.update(m8, Intent.OpenCrumb(2))._1
+      assertNotEquals(crumb.location, m8.location)
+      assertEquals(TrailFollow.deferred(m8, v, crumb), None)
+      // Nor is a perspective switched (⌘3) before it runs.
+      val switched = AppModel.update(m8, Intent.SwitchPerspective(Perspective.Compare))._1
+      assertEquals(TrailFollow.deferred(m8, v, switched), None)
+      // A selection changed in between asks for its own follow, not this one.
+      val m9 = selecting(m8, "explore.timeline", fixation(9))
+      assertEquals(TrailFollow.deferred(m8, v, m9), None)
+    }
+  }
+
+  test("a selection change the trail already shows settles, so a crumb above it stays") {
+    val m = StoryModels.t2Explore
+    view(m).map { v =>
+      // The trail ends at record 7,214; t2 selects that record, and the timeline
+      // now selects its fixation 6: a change the trail already shows.
+      val start = TrailFollow.initial(m)
+      val r6    = selecting(m, "explore.timeline", fixation(6))
+      assertNotEquals(r6.selection.selected, m.selection.selected)
+      val (settled, none) = TrailFollow.step(start, v, r6)
+      assertEquals((none, settled.pending), (None, false))
+      // A crumb above the fixation is then not undone on the next render.
+      val up = AppModel.update(r6, Intent.OpenCrumb(2))._1
+      assertEquals(TrailFollow.step(settled, v, up)._2, None)
+    }
+  }
+
+  test("the focus stops: Prev and Next while each can step, then the marks") {
+    import eyes4s.studio.app.vm.{A11yRole, FocusStop}
+    val m = StoryModels.t2Explore
+    view(m).map { v =>
+      val toggles = ExploreTrialViewVM.focusStops(ExploreTrialViewVM.of(v, m))
+      val stops   = ExploreLinked.focusStops(v, m, Some("marks"))
+      assertEquals(stops.take(toggles.size), toggles)
+      assertEquals(
+        stops.drop(toggles.size),
+        Vector(
+          FocusStop(A11yRole.Button, "Previous fixation"),
+          FocusStop(A11yRole.Button, "Next fixation"),
+          FocusStop(A11yRole.Region, "marks")
+        )
+      )
+      val last = selecting(m, "explore.timeline", fixation(13))
+      assertEquals(
+        ExploreLinked.focusStops(v, last, None).drop(toggles.size),
+        Vector(FocusStop(A11yRole.Button, "Previous fixation"))
       )
     }
   }

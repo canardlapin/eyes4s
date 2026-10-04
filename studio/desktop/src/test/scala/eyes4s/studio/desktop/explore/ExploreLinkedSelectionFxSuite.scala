@@ -154,4 +154,56 @@ class ExploreLinkedSelectionFxSuite extends ShellFxSuite:
     // At the first fixation there is no Previous.
     eventually(fx, "Prev disabled")(w.explore.pane.prev.isDisabled)
     assert(!runOnFx(w.explore.pane.next.isDisabled))
+    // At the last there is no Next.
+    val last = runOnFx(w.timeline.twin.input.targets.flatMap(_.target(fixation(13))))
+      .getOrElse(fail("no bar 13"))
+    click(w.timeline.twin.plotHost, last.anchor)
+    everywhere(fx, w, 13)
+    eventually(fx, "Next disabled")(w.explore.pane.next.isDisabled)
+    assert(!runOnFx(w.explore.pane.prev.isDisabled))
+  }
+
+  fxStage.test("Prev and Next name what pressed them: a pointer, a key, or neither") { _ =>
+    import eyes4s.studio.core.selection.InputCause
+    import javafx.scene.control.Button
+    import javafx.scene.input.{KeyCode, KeyEvent}
+    var seen = Vector.empty[InputCause]
+    val b    = runOnFx {
+      val b = Button("›")
+      ExploreTrialViewPane.onPress(b)(c => seen = seen :+ c)
+      b
+    }
+    runOnFx {
+      Event.fireEvent(
+        b,
+        KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.SPACE, false, false, false, false)
+      )
+      b.fire()
+      Event.fireEvent(
+        b,
+        MouseEvent(
+          MouseEvent.MOUSE_PRESSED,
+          1,
+          1,
+          1,
+          1,
+          MouseButton.PRIMARY,
+          1,
+          false,
+          false,
+          false,
+          false,
+          true,
+          false,
+          false,
+          true,
+          false,
+          true,
+          null
+        )
+      )
+      b.fire()
+      b.fire()
+    }
+    assertEquals(seen, Vector(InputCause.Keyboard, InputCause.Pointer, InputCause.Programmatic))
   }
