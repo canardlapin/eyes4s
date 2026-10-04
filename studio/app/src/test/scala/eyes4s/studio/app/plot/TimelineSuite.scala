@@ -21,7 +21,7 @@ import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
 
 /** The timeline's values and its brush (ticket S4.5e): a trial's fixation
   * intervals as one value source, and a half-open span that selects exactly
-  * the fixations whose onset it holds.
+  * the fixations whose half-open intervals overlap it.
   */
 class TimelineSuite extends munit.FunSuite:
 
@@ -60,17 +60,50 @@ class TimelineSuite extends munit.FunSuite:
     assertEquals(source.columns.map(_.header), Vector("Fixation", "Onset ms", "Duration ms"))
   }
 
-  test("a brush selects exactly the fixations that begin in its half-open span") {
+  private val overlap = TimelineColumns.brushRule(columns)
+
+  test("a brush selects exactly the fixations whose intervals overlap its span") {
+    assertEquals(overlap, BrushRule.Overlaps(columns.onset, columns.duration))
     val source = right(Timeline.source(timeline, columns))
     val span   = right(HalfOpenSpan.between(2800.0, 1200.0).toRight("no span"))
     assertEquals((span.from, span.until), (1200.0, 2800.0))
-    // 4 begins at the span's start and is held; 6 begins at its end and is
-    // not; 3 overlaps it but began before it.
-    assertEquals(PlotBrush.rows(source, columns.onset, span), Vector(ref(4), ref(5)))
+    // 3 began before the span and runs into it; 4 begins at its start; 6
+    // begins at its end, which only touches it.
+    assertEquals(PlotBrush.rows(source, overlap, span), Vector(ref(3), ref(4), ref(5)))
     val all = right(HalfOpenSpan.between(0.0, 3300.5).toRight("no span"))
-    assertEquals(PlotBrush.rows(source, columns.onset, all), (1 to 7).toVector.map(ref))
-    val none = right(HalfOpenSpan.between(10.0, 300.0).toRight("no span"))
-    assertEquals(PlotBrush.rows(source, columns.onset, none), Vector.empty)
+    assertEquals(PlotBrush.rows(source, overlap, all), (1 to 7).toVector.map(ref))
+    // A span in the gap between 2 and 3 touches no bar.
+    val gap = right(HalfOpenSpan.between(656.0, 1000.0).toRight("no span"))
+    assertEquals(PlotBrush.rows(source, overlap, gap), Vector.empty)
+  }
+
+  test("overlap: touching at an endpoint is not overlap; containing the span is") {
+    val source = right(
+      Timeline.source(
+        right(Timeline.of(trial, Vector(fixation(1, 800, 400), fixation(2, 1200, 100)))),
+        columns
+      )
+    )
+    // 1 is [800, 1200): it ends where the span begins.
+    val after = right(HalfOpenSpan.between(1200.0, 1250.0).toRight("no span"))
+    assertEquals(PlotBrush.rows(source, overlap, after), Vector(ref(2)))
+    // 2 is [1200, 1300): it begins where the span ends.
+    val before = right(HalfOpenSpan.between(1100.0, 1200.0).toRight("no span"))
+    assertEquals(PlotBrush.rows(source, overlap, before), Vector(ref(1)))
+    // A span inside 1 picks 1, which contains it.
+    val inside = right(HalfOpenSpan.between(900.0, 950.0).toRight("no span"))
+    assertEquals(PlotBrush.rows(source, overlap, inside), Vector(ref(1)))
+    // A zero-length brush is no span, so it selects nothing.
+    assertEquals(HalfOpenSpan.between(1000.0, 1000.0), None)
+  }
+
+  test("the holds rule picks rows by one value: fixations that begin in the span") {
+    val source = right(Timeline.source(timeline, columns))
+    val span   = right(HalfOpenSpan.between(1200.0, 2800.0).toRight("no span"))
+    assertEquals(
+      PlotBrush.rows(source, BrushRule.Holds(columns.onset), span),
+      Vector(ref(4), ref(5))
+    )
   }
 
   test("a span needs two different finite ends") {

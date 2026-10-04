@@ -42,7 +42,8 @@ import scala.jdk.CollectionConverters.*
 
 /** The timeline in the plot host (ticket S4.5e), on real JavaFX: a bar per
   * fixation, and a drag across the plot that selects, in the plot and its
-  * table, exactly the fixations whose onset lies in the dragged span.
+  * table, exactly the fixations whose bars (half-open intervals) overlap
+  * the dragged span.
   */
 class S45ePlotFxSuite extends StudioFxSuite:
 
@@ -113,7 +114,7 @@ class S45ePlotFxSuite extends StudioFxSuite:
       )
     )
     runOnFx(runtime.listen(m => twin.project(m.selection)))
-    val brush                       = runOnFx(PlotBrushAdapter.attach(twin))
+    val brush = runOnFx(PlotBrushAdapter.attach(twin, TimelineColumns.brushRule(columns)))
     def host: CanvasPlotHost        = twin.plotHost
     def selected: Vector[StudioRef] = runOnFx(runtime.model.selection.selected)
     def hover: Option[HoverAt]      = runOnFx(runtime.model.hover)
@@ -265,63 +266,72 @@ class S45ePlotFxSuite extends StudioFxSuite:
     fire(w, t, device(t, (a + b) / 2.0), false, MouseEvent.MOUSE_DRAGGED)
     fire(w, t, device(t, b), false, MouseEvent.MOUSE_RELEASED, MouseEvent.MOUSE_CLICKED)
 
-  fxStage.test("a brush selects exactly the fixations that begin in it, in plot and table") {
-    fx =>
-      val source = right(Timeline.source(timeline, columns))
-      val w      = Wired(fx)
-      val t      = showAndDraw(w, source)
-      assertEquals(t.targets.map(_.ref), timeline.refs)
-      assertEquals(rowTexts(w), source.rows.map(source.cellsOf))
-      // Each bar sits at its onset by its duration, painted ink-3.
-      intervals.zipWithIndex.foreach { case ((on, du), k) =>
-        val at = placed(t, ref(k + 1))
-        assertEqualsDouble(at.x, on.toDouble, 1e-6)
-        assertEqualsDouble(at.y, du.toDouble, 1e-6)
-      }
-      val image = snapshot(w)
-      val mid   = right(t.transform.dataToDevice(DataPoint(2160.0 + 206.0, 100.0)))
-      assert(near(image, mid, Tokens.themed(Theme.Light, ThemedToken.Ink3), 40), "no bar")
-      // Hovering a bar says its fixation's onset and duration.
-      hoverAt(w, t, mid)
-      assertEquals(w.hover, Some(HoverAt(plotView, ref(6))))
-      assertEquals(w.readout, Some("Fixation 6, Onset ms 2,160, Duration ms 412"))
-      assert(anchor(t, ref(6)).x < mid.x)
+  fxStage.test(
+    "a brush selects exactly the fixations whose bars it overlaps, in plot and table"
+  ) { fx =>
+    val source = right(Timeline.source(timeline, columns))
+    val w      = Wired(fx)
+    val t      = showAndDraw(w, source)
+    assertEquals(t.targets.map(_.ref), timeline.refs)
+    assertEquals(rowTexts(w), source.rows.map(source.cellsOf))
+    // Each bar sits at its onset by its duration, painted ink-3.
+    intervals.zipWithIndex.foreach { case ((on, du), k) =>
+      val at = placed(t, ref(k + 1))
+      assertEqualsDouble(at.x, on.toDouble, 1e-6)
+      assertEqualsDouble(at.y, du.toDouble, 1e-6)
+    }
+    val image = snapshot(w)
+    val mid   = right(t.transform.dataToDevice(DataPoint(2160.0 + 206.0, 100.0)))
+    assert(near(image, mid, Tokens.themed(Theme.Light, ThemedToken.Ink3), 40), "no bar")
+    // Hovering a bar says its fixation's onset and duration.
+    hoverAt(w, t, mid)
+    assertEquals(w.hover, Some(HoverAt(plotView, ref(6))))
+    assertEquals(w.readout, Some("Fixation 6, Onset ms 2,160, Duration ms 412"))
+    assert(anchor(t, ref(6)).x < mid.x)
 
-      // The board's brush, 1.20 to 2.80 s: fixations 4 to 7 begin in it.
-      drag(w, t, 1200.0, 2800.0)
-      val brushed = runOnFx(w.brush.brushed).getOrElse(fail("no brush"))
-      // The span is where the pointer was, to within one device pixel.
-      val perPx = t.transform.deviceToData(DevicePoint(1.0, 0.0)).x -
-        t.transform.deviceToData(DevicePoint(0.0, 0.0)).x
-      assertEqualsDouble(brushed.span.from, 1200.0, perPx)
-      assertEqualsDouble(brushed.span.until, 2800.0, perPx)
-      // The selection is exactly the rows whose onset the span holds.
-      assertEquals(w.selected, PlotBrush.rows(source, columns.onset, brushed.span))
-      val expected = intervals.zipWithIndex.collect {
-        case ((on, _), k) if on >= 1200 && on < 2800 => ref(k + 1)
-      }
-      assertEquals(expected, Vector(ref(4), ref(5), ref(6), ref(7)))
-      assertEquals(w.selected, expected)
-      assertEquals(rowSelected(w), source.rows.map(r => expected.contains(r.ref)))
-      // Each selected bar is ringed.
-      assertEquals(
-        runOnFx(w.twin.input.state.selectionRings(t)).map(_.ref),
-        expected
-      )
-      fx.snapshot(StudioTheme.Light)
+    // The board's brush, 1.20 to 2.80 s: it touches the bars of 4 to 7.
+    drag(w, t, 1200.0, 2800.0)
+    val brushed = runOnFx(w.brush.brushed).getOrElse(fail("no brush"))
+    // The span is where the pointer was, to within one device pixel.
+    val perPx = t.transform.deviceToData(DevicePoint(1.0, 0.0)).x -
+      t.transform.deviceToData(DevicePoint(0.0, 0.0)).x
+    assertEqualsDouble(brushed.span.from, 1200.0, perPx)
+    assertEqualsDouble(brushed.span.until, 2800.0, perPx)
+    // The selection is exactly the rows whose intervals overlap the span.
+    assertEquals(
+      w.selected,
+      PlotBrush.rows(source, TimelineColumns.brushRule(columns), brushed.span)
+    )
+    val expected = intervals.zipWithIndex.collect {
+      case ((on, du), k) if on < 2800 && 1200 < on + du => ref(k + 1)
+    }
+    assertEquals(expected, Vector(ref(4), ref(5), ref(6), ref(7)))
+    assertEquals(w.selected, expected)
+    assertEquals(rowSelected(w), source.rows.map(r => expected.contains(r.ref)))
+    // Each selected bar is ringed.
+    assertEquals(
+      runOnFx(w.twin.input.state.selectionRings(t)).map(_.ref),
+      expected
+    )
+    fx.snapshot(StudioTheme.Light)
 
-      // Dragged backwards over 0.30 to 1.00 s: fixations 2 and 3.
-      drag(w, t, 1000.0, 300.0)
-      assertEquals(w.selected, Vector(ref(2), ref(3)))
+    // Dragged backwards over 0.30 to 1.00 s: fixations 2 and 3.
+    drag(w, t, 1000.0, 300.0)
+    assertEquals(w.selected, Vector(ref(2), ref(3)))
 
-      // A brush in which no fixation begins clears the selection, though
-      // fixation 8 runs through it.
-      drag(w, t, 3000.0, 3300.0)
-      assertEquals(w.selected, Vector.empty)
+    // A brush inside fixation 8's bar selects 8, though no fixation
+    // begins in it.
+    drag(w, t, 3000.0, 3200.0)
+    assertEquals(w.selected, Vector(ref(8)))
 
-      // A still click still picks one bar.
-      click(w, t, right(t.transform.dataToDevice(DataPoint(2160.0 + 206.0, 100.0))))
-      assertEquals(w.selected, Vector(ref(6)))
-      runOnFx(w.brush.dispose())
-      runOnFx(w.twin.dispose())
+    // A brush in the gap between 7 (to 2.852 s) and 8 (from 2.932 s)
+    // touches no bar and clears the selection.
+    drag(w, t, 2870.0, 2910.0)
+    assertEquals(w.selected, Vector.empty)
+
+    // A still click still picks one bar.
+    click(w, t, right(t.transform.dataToDevice(DataPoint(2160.0 + 206.0, 100.0))))
+    assertEquals(w.selected, Vector(ref(6)))
+    runOnFx(w.brush.dispose())
+    runOnFx(w.twin.dispose())
   }

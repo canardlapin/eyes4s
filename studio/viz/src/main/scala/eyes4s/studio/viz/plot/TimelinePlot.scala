@@ -55,8 +55,9 @@ import intaglio.{
   * mark of one placed row, at its onset by its duration ([[Axis.Numeric]]
   * of both, linear), and is drawn across to its onset plus its duration. A
   * row without both is [[Unplotted]]. The brush and the playhead are the
-  * view's state, not rows: `brush` is the span a drag selected
-  * ([[eyes4s.studio.app.plot.PlotBrush]]) and `playheadMs` the playback
+  * view's state, not rows: `brush` is the span a drag selected (picking
+  * the fixations whose intervals overlap it,
+  * [[eyes4s.studio.app.plot.TimelineColumns.brushRule]]) and `playheadMs` the playback
   * time. The plot writes no numbers; every number is a row's in the table.
   */
 final case class TimelinePlot(

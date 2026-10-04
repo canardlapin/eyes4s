@@ -130,6 +130,13 @@ final case class TimelineColumns(fixation: ColumnId, onset: ColumnId, duration: 
     derives CanEqual
 
 object TimelineColumns:
+
+  /** The timeline's brush: a fixation is picked iff its interval
+    * [onset, onset + duration) overlaps the brushed span.
+    */
+  def brushRule(columns: TimelineColumns): BrushRule =
+    BrushRule.Overlaps(columns.onset, columns.duration)
+
   val standard: Either[PlotSourceError, TimelineColumns] =
     for
       fixation <- ColumnId.of("fixation")
@@ -138,8 +145,9 @@ object TimelineColumns:
     yield TimelineColumns(fixation, onset, duration)
 
 /** A brushed span of a numeric column, half-open: it holds `from` and every
-  * value up to but not including `until`. Made from two ends in either
-  * order, as a drag gives them.
+  * value up to but not including `until`. Made from two different ends in
+  * either order, as a drag gives them; a zero-length drag is no span, so
+  * it selects nothing.
   */
 final case class HalfOpenSpan private (from: Double, until: Double) derives CanEqual:
 
@@ -156,14 +164,35 @@ object HalfOpenSpan:
       HalfOpenSpan(math.min(a, b), math.max(a, b))
     )
 
-/** What a brush selects (ticket S4.5e): the rows of a source whose value in
-  * `column` the span holds. On a timeline the column is the onset, so a
-  * brush selects exactly the fixations that begin in it, whatever their
-  * durations. Nothing is computed but the comparison.
+/** How a brush picks rows from its span (ticket S4.5e; bead decision on
+  * the timeline's brush).
+  */
+enum BrushRule derives CanEqual:
+
+  /** A row is the half-open interval [start, start + length) of its values
+    * in `start` and `length`; it is picked iff that interval and the span
+    * intersect: `start < until && from < start + length`. Touching at an
+    * endpoint is not overlap, and an interval that contains the whole span
+    * is picked. On a timeline, the bars a brush visibly touches are exactly
+    * the fixations it selects.
+    */
+  case Overlaps(start: ColumnId, length: ColumnId)
+
+  /** A row is its value in `column`; it is picked iff the span holds it. */
+  case Holds(column: ColumnId)
+
+/** What a brush selects: the rows of a source that `rule` picks from
+  * `span`, in row order. A row without the values the rule reads is not
+  * picked. Nothing is computed but the interval's end and the comparisons.
   */
 object PlotBrush:
 
-  def rows(source: PlotSource, column: ColumnId, span: HalfOpenSpan): Vector[StudioRef] =
-    source.rows.indices.toVector
-      .filter(i => source.number(i, column).exists(span.holds))
-      .map(source.rows(_).ref)
+  def rows(source: PlotSource, rule: BrushRule, span: HalfOpenSpan): Vector[StudioRef] =
+    def picked(i: Int): Boolean = rule match
+      case BrushRule.Overlaps(start, length) =>
+        (for
+          s <- source.number(i, start)
+          l <- source.number(i, length)
+        yield s < span.until && span.from < s + l).getOrElse(false)
+      case BrushRule.Holds(column) => source.number(i, column).exists(span.holds)
+    source.rows.indices.toVector.filter(picked).map(source.rows(_).ref)

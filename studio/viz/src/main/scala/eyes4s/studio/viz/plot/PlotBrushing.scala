@@ -16,13 +16,13 @@
 
 package eyes4s.studio.viz.plot
 
-import eyes4s.studio.app.plot.{HalfOpenSpan, PlotBrush}
+import eyes4s.studio.app.plot.{BrushRule, HalfOpenSpan, PlotBrush}
 import eyes4s.studio.core.selection.StudioRef
 import intaglio.DevicePoint
 
 /** A drag across a plot as a brush (ticket S4.5e): the span of the plot's
-  * numeric x column between the drag's two ends, and the rows the span
-  * holds ([[PlotBrush.rows]]). The span is read through the plot's one
+  * numeric x axis between the drag's two ends, and the rows a
+  * [[BrushRule]] picks from it ([[PlotBrush.rows]]). The span is read through the plot's one
   * transform, so a brush selects exactly the rows whose values lie under
   * it on screen.
   */
@@ -30,13 +30,19 @@ final case class Brushed(span: HalfOpenSpan, refs: Vector[StudioRef]) derives Ca
 
 object PlotBrushing:
 
-  /** The brush from device point `from` to `to` on `targets`, if the plot's
-    * x axis is numeric and the two ends are at different values of it.
+  /** The brush from device point `from` to `to` on `targets`, picking rows
+    * by `rule`, if the plot's x axis is numeric and the two ends are at
+    * different values of it.
     */
-  def brushed(targets: PlotTargets, from: DevicePoint, to: DevicePoint): Option[Brushed] =
+  def brushed(
+      targets: PlotTargets,
+      rule: BrushRule,
+      from: DevicePoint,
+      to: DevicePoint
+  ): Option[Brushed] =
     val plot = targets.plot
     plot.encoding.x match
-      case Axis.Numeric(column, scale) =>
+      case Axis.Numeric(_, scale) =>
         def value(d: DevicePoint) =
           val x = targets.transform.deviceToData(d).x
           scale match
@@ -44,5 +50,5 @@ object PlotBrushing:
             case AxisScale.Log10  => math.pow(10.0, x)
         HalfOpenSpan
           .between(value(from), value(to))
-          .map(span => Brushed(span, PlotBrush.rows(plot.source, column, span)))
+          .map(span => Brushed(span, PlotBrush.rows(plot.source, rule, span)))
       case Axis.Category(_, _) => None

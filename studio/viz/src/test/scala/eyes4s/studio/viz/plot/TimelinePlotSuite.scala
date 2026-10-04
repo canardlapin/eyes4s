@@ -38,6 +38,8 @@ import munit.FunSuite
 class TimelinePlotSuite extends FunSuite:
   import TimelineSamples.*
 
+  private val rule = TimelineColumns.brushRule(columns)
+
   private def right[E, A](either: Either[E, A]): A =
     either.fold(e => fail(s"unexpected Left: $e"), identity)
 
@@ -86,23 +88,31 @@ class TimelinePlotSuite extends FunSuite:
     assert(tall.y < short.y, s"$tall vs $short")
   }
 
-  test("a drag selects exactly the fixations that begin under it") {
+  test("a drag selects exactly the fixations whose bars it touches") {
     val t = targetsOn(built(board))
-    // The board's brush, 1.20 to 2.80 s: fixations 4 to 7.
+    // The board's brush, 1.20 to 2.80 s: fixations 4 to 7 (3 ends at 1.072 s,
+    // 8 begins at 2.932 s).
     val b =
-      right(PlotBrushing.brushed(t, device(t, 1200.0), device(t, 2800.0)).toRight("no brush"))
+      right(
+        PlotBrushing.brushed(t, rule, device(t, 1200.0), device(t, 2800.0)).toRight("no brush")
+      )
     assertEqualsDouble(b.span.from, 1200.0, 1e-6)
     assertEqualsDouble(b.span.until, 2800.0, 1e-6)
     assertEquals(b.refs, board.refs.slice(3, 7))
     // Dragged right to left, the same.
     assertEquals(
-      PlotBrushing.brushed(t, device(t, 2800.0), device(t, 1200.0)).map(_.refs),
+      PlotBrushing.brushed(t, rule, device(t, 2800.0), device(t, 1200.0)).map(_.refs),
       Some(b.refs)
     )
-    // The brush's rows are the source's rows whose onset the span holds.
-    assertEquals(b.refs, PlotBrush.rows(t.plot.source, columns.onset, b.span))
+    // The brush's rows are the source's rows whose intervals overlap the span.
+    assertEquals(b.refs, PlotBrush.rows(t.plot.source, rule, b.span))
     // No movement is no brush.
-    assertEquals(PlotBrushing.brushed(t, device(t, 1500.0), device(t, 1500.0)), None)
+    assertEquals(PlotBrushing.brushed(t, rule, device(t, 1500.0), device(t, 1500.0)), None)
+    // A brush inside fixation 4's bar, where no fixation begins, selects 4.
+    assertEquals(
+      PlotBrushing.brushed(t, rule, device(t, 1500.0), device(t, 1580.0)).map(_.refs),
+      Some(Vector(board.refs(3)))
+    )
   }
 
   test("a brush selection replaces the view's selection; an empty one clears it") {

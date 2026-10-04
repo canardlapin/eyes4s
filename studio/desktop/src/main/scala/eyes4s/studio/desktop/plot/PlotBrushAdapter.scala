@@ -16,6 +16,7 @@
 
 package eyes4s.studio.desktop.plot
 
+import eyes4s.studio.app.plot.BrushRule
 import eyes4s.studio.viz.plot.{Brushed, CanvasPoint, PlotBrushing}
 import intaglio.DevicePoint
 import javafx.application.Platform
@@ -23,15 +24,15 @@ import javafx.event.EventHandler
 import javafx.scene.input.{MouseButton, MouseEvent}
 
 /** A brush on a [[PlotTwin]]'s plot (ticket S4.5e): a primary-button drag
-  * across the canvas selects exactly the rows whose x value lies in the
-  * dragged span ([[PlotBrushing.brushed]]), through the plot's own input,
+  * across the canvas selects exactly the rows `rule` picks from the dragged
+  * span ([[PlotBrushing.brushed]]), through the plot's own input,
   * so the table and every other view see the same selection. The adapter
   * only binds pointer events; the span and the rows are computed by the
   * pure brushing. A press that does not move is a click, left to the plot.
   *
   * FX thread only. [[dispose]] removes its handler.
   */
-final class PlotBrushAdapter private (twin: PlotTwin):
+final class PlotBrushAdapter private (twin: PlotTwin, rule: BrushRule):
 
   private var start: Option[DevicePoint] = None
   private var last: Option[Brushed]      = None
@@ -49,7 +50,7 @@ final class PlotBrushAdapter private (twin: PlotTwin):
             a       <- from
             b       <- at(e)
             targets <- twin.input.targets
-            brushed <- PlotBrushing.brushed(targets, a, b)
+            brushed <- PlotBrushing.brushed(targets, rule, a, b)
           do
             last = Some(brushed)
             twin.input.brush(brushed.refs)
@@ -75,10 +76,12 @@ final class PlotBrushAdapter private (twin: PlotTwin):
 
 object PlotBrushAdapter:
 
-  /** A brush on `twin`'s plot. On the FX application thread. */
-  def attach(twin: PlotTwin): PlotBrushAdapter =
+  /** A brush on `twin`'s plot picking rows by `rule`. On the FX
+    * application thread.
+    */
+  def attach(twin: PlotTwin, rule: BrushRule): PlotBrushAdapter =
     if !Platform.isFxApplicationThread then
       throw IllegalStateException(
         s"PlotBrushAdapter.attach must run on the JavaFX application thread, not ${Thread.currentThread.getName}"
       )
-    PlotBrushAdapter(twin)
+    PlotBrushAdapter(twin, rule)
