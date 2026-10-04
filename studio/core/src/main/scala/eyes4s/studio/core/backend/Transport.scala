@@ -143,10 +143,14 @@ object WireFormat:
     * whether or not its body would decode.
     */
   def parseCurrent[A: Decoder](line: String): Either[TransportError, Envelope[A]] =
-    version(line) match
-      case Some(v) if !v.isCurrent =>
-        Left(TransportError.Incompatible(v, ProtocolVersion.Current))
-      case _ => parse[A](line)
+    // The line is parsed once: its version is read from the JSON, then its body.
+    def malformed(e: Throwable) = TransportError.Malformed(excerpt(line), e.getMessage)
+    parser.parse(line).leftMap(malformed).flatMap { json =>
+      json.hcursor.downField("version").as[ProtocolVersion].toOption match
+        case Some(v) if !v.isCurrent =>
+          Left(TransportError.Incompatible(v, ProtocolVersion.Current))
+        case _ => json.as[Envelope[A]].leftMap(malformed)
+    }
 
   /** The request id of a line that is JSON with an `id`, whatever its body. */
   def requestId(line: String): Option[RequestId] =

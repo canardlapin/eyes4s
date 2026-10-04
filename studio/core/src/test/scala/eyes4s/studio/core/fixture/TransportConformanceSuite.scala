@@ -261,6 +261,29 @@ class LoopbackTransportSuite extends TransportConformanceSuite:
     }
   }
 
+  test("a line of another version with no readable id ends the connection, named") {
+    val line = """{"version":{"major":1,"minor":2},"body":{"Runs":{}}}"""
+    served(line).attempt.map {
+      case Left(TransportFailure(TransportError.Unidentifiable(excerpt, reason))) =>
+        assertEquals(excerpt, line)
+        assert(reason.contains("1.2"), reason)
+      case other => fail(s"expected Unidentifiable, got $other")
+    }
+  }
+
+  test("a line with no version but a readable id is refused as malformed under that id") {
+    val line = """{"id":9,"body":{"Runs":{}}}"""
+    served(line).map(frames =>
+      frames.map(_.body) match
+        case Vector(
+              ServerFrame.Response(BackendResponse.Refused(BackendError.Malformed(e, _)))
+            ) =>
+          assertEquals(e, line)
+          assertEquals(frames.map(_.id), Vector(RequestId(9)))
+        case other => fail(s"expected Malformed, got $other")
+    )
+  }
+
   test("a newer minor is refused alike: versions are exact, not ordered") {
     val newer = ProtocolVersion.Current.copy(minor = ProtocolVersion.Current.minor + 1)
     val line  =
