@@ -413,6 +413,27 @@ class ImportWizardFxSuite extends StudioFxSuite:
     fx.snapshot(StudioTheme.Dark)
   }
 
+  // The accessibility audit (S10.5): each page of the wizard, in both themes,
+  // held to the window's checks.
+  Vector(Theme.Light, Theme.Dark).foreach { theme =>
+    fxStage.test(s"a11y, $theme: every page named, legible, its focus drawn") { fx =>
+      assumeFullStage(fx)
+      import eyes4s.studio.desktop.shell.A11yChecks
+      val m = mount(fx, ImportWizard.newImport(t2, ImportPresets.empty), t2, theme = theme)
+      readIn(fx, m, SourceRole.Fixations, fixations)
+      readIn(fx, m, SourceRole.Trials, trials)
+      WizardTab.values.toVector.foreach { tab =>
+        fx.robot.click(m.view.tabs(tab))
+        fx.awaitLayout()
+        val root = runOnFx(fx.scene.getRoot)
+        assert(runOnFx(A11yChecks.texts(root).size) >= 5, s"$tab shows too little text")
+        assertEquals(runOnFx(A11yChecks.unlabelled(root)), Vector.empty[String], s"$tab")
+        assertEquals(runOnFx(A11yChecks.lowContrast(root)), Vector.empty[String], s"$tab")
+        assertEquals(runOnFx(A11yChecks.unmarked(root)), Vector.empty[String], s"$tab")
+      }
+    }
+  }
+
   fxStage.test("pixels: token surfaces in both themes; the issue row's column in --fail") {
     fx =>
       assumeFullStage(fx)
