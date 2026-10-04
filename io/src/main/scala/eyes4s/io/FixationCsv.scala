@@ -384,8 +384,10 @@ object FixationCsv:
         keys.attribute.fold(Map.empty) { rule =>
           val keyed = valid.map(v => v.key -> v.row) ++
             invalid.flatMap(r => r.key.map(_ -> r.rowNumber))
+          // The fold groups the importer's own row numbers; it never
+          // manufactures a CsvRecord from them.
           val rows = keyed.map { case (key, record) =>
-            key -> TrialConflictRow.fromParsed(rule.trialKey(key), record)
+            key -> TrialConflictRow.from(rule.trialKey(key), record)
           }
           val sourceKeys = rows.map { case (key, row) => row.key -> key }.toMap
           val conflicts  = TrialConflictGrouping.group(rows.map(_._2)).flatMap { group =>
@@ -396,11 +398,13 @@ object FixationCsv:
                 Some(group -> QuarantineCause.OccurrenceConflict(occurrences.map(_.value)))
               case TrialConflictClassification.Ok => None
           }
+          // Every grouped key came from `rows`, so each has its source key.
           conflicts.flatMap { case (group, cause) =>
-            val representative = sourceKeys(group.representative)
-            group.keys.map(key =>
-              sourceKeys(key) -> (representative, group.records.map(_.value), cause)
-            )
+            sourceKeys.get(group.representative).toVector.flatMap { representative =>
+              group.keys
+                .flatMap(sourceKeys.get)
+                .map(key => key -> (representative, group.records, cause))
+            }
           }.toMap
         }
       assemble(header, rows, valid, invalid, frame, keys.clock, itemConflicts, policy)._1

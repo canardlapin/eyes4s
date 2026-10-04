@@ -563,6 +563,20 @@ class RovingCursorSuite extends ScalaCheckSuite:
     )
   }
 
+  test("the focused mark's accessible text states its core placement") {
+    val t       = targets()
+    val outside = t.targets.find(_.mark.placement != MapPlacement.InMap).getOrElse(fail("none"))
+    assertEquals(outside.ref.index.value, 9)
+    val moves = key(RovingKey.Move(RovingMove.First)) +:
+      Vector.fill(outside.ref.index.value - 1)(key(RovingKey.Move(RovingMove.Next)))
+    val (s, _) = run(TrialInputState.initial(view, SelectionState.empty), t, moves*)
+    assertEquals(s.focus, Some(outside.ref))
+    assertEquals(
+      s.accessibleText(ret07, t),
+      "Fixation 9 of P17 · ret_07 · outside window, excluded from map"
+    )
+  }
+
   test("focused-mark text names each core placement") {
     val ref: StudioRef.Fixation = StudioRef.Fixation(ret07, right(FixationIndex.of(1)))
     assertEquals(

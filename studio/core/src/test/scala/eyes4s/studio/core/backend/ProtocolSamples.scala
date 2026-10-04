@@ -73,8 +73,8 @@ object ProtocolSamples:
   val previewReady: PreviewReady   = PreviewReady(
     PreviewId(1L),
     PreviewStamp.fake(AnalysisRevision(5), DatasetRevision(3)),
-    PreviewCandidates(480, 480, 24, 230400L),
-    PreviewCounts(8969L, 44845L, 9, 0),
+    right(PreviewCandidates.of(480, 480, 24, 230400L)),
+    right(PreviewCounts.of(8969L, 44845L, 9, 0)),
     Vector(diagnostic)
   )
 
@@ -151,14 +151,18 @@ object ProtocolSamples:
     BackendError.UnknownRun(RunId(9), Vector(RunId(7))),
     BackendError.UnknownJob(JobId(9), Vector.empty),
     BackendError.UnknownPreview(PreviewId(9L), Vector(PreviewId(1L))),
-    BackendError.PreviewNotReady(PreviewId(1L), 3, 24),
+    BackendError.PreviewNotReady(
+      PreviewId(1L),
+      right(ParticipantCount.of(3)),
+      right(ParticipantCount.of(24))
+    ),
     BackendError.StalePreview(
       PreviewId(1L),
       previewReady.stamp,
       previewReady.stamp.copy(dataset = DatasetRevision(4))
     ),
     BackendError.TamperedPreview(
-      previewReady.copy(counts = previewReady.counts.copy(ambiguousMatches = 1)),
+      previewReady.copy(counts = right(PreviewCounts.of(8969L, 44845L, 9, 1))),
       previewReady
     ),
     BackendError.Unavailable(DiagnosticLocus.Dataset(DatasetRevision(2))),
@@ -403,7 +407,7 @@ object ProtocolSamples:
         "preview-event",
         Vector[PreviewEvent](
           PreviewEvent.Initial(previewReady.id, previewReady.stamp, previewReady.candidates),
-          PreviewEvent.Counting(previewReady.id, PreviewProgress(1, 24)),
+          PreviewEvent.Counting(previewReady.id, right(PreviewProgress.of(1, 24))),
           PreviewEvent.Ready(previewReady)
         )
       )(prefix) ++

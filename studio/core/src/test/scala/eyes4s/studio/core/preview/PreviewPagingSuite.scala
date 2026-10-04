@@ -28,6 +28,11 @@ class PreviewPagingSuite extends CatsEffectSuite:
   private def budget(n: Int): PreviewBudget =
     PreviewBudget.of(n).fold(e => fail(e.message), identity)
 
+  private def right[E, A](value: Either[E, A]): A = value.fold(e => fail(e.toString), identity)
+
+  private def progress(completed: Int, total: Int): PreviewProgress =
+    right(PreviewProgress.of(completed, total))
+
   private def ok[E, A](value: IO[Either[E, A]]): IO[A] =
     value.flatMap(_.fold(e => IO.raiseError(new AssertionError(e.toString)), IO.pure))
 
@@ -51,16 +56,16 @@ class PreviewPagingSuite extends CatsEffectSuite:
       assertEquals(first.size, 2)
       assertEquals(
         first.collect { case PreviewEvent.Counting(_, p) => p },
-        Vector(PreviewProgress(1, 24))
+        Vector(progress(1, 24))
       )
       val ready = rest
         .collectFirst { case PreviewEvent.Ready(value) => value }
         .getOrElse(fail("not ready"))
       assertEquals(ready.candidates.candidatePairsPerScale, 230400L)
-      assertEquals(ready.counts, PreviewCounts(8969L, 44845L, 9, 0))
+      assertEquals(ready.counts, right(PreviewCounts.of(8969L, 44845L, 9, 0)))
       assertEquals(
         rest.collect { case PreviewEvent.Counting(_, p) => p }.last,
-        PreviewProgress(24, 24)
+        progress(24, 24)
       )
   }
 
@@ -77,7 +82,16 @@ class PreviewPagingSuite extends CatsEffectSuite:
         .getOrElse(fail("no ready"))
       incomplete <- fake.submitPreview(receipt.copy(id = aId))
       tampered   <- fake.submitPreview(
-        receipt.copy(counts = receipt.counts.copy(ambiguousMatches = 1))
+        receipt.copy(counts =
+          right(
+            PreviewCounts.of(
+              receipt.counts.eligiblePairsPerScale,
+              receipt.counts.eligiblePairs,
+              receipt.counts.unmatchedQueries,
+              1
+            )
+          )
+        )
       )
     yield
       assertEquals(incomplete.left.map(_.code), Left("studio-backend.preview-not-ready"))
@@ -91,7 +105,16 @@ class PreviewPagingSuite extends CatsEffectSuite:
       ready = page
         .collectFirst { case PreviewEvent.Ready(value) => value }
         .getOrElse(fail("not ready"))
-      tampered = ready.copy(counts = ready.counts.copy(eligiblePairsPerScale = 1L))
+      tampered = ready.copy(counts =
+        right(
+          PreviewCounts.of(
+            1L,
+            ready.counts.eligiblePairs,
+            ready.counts.unmatchedQueries,
+            ready.counts.ambiguousMatches
+          )
+        )
+      )
       refused <- fake.submitPreview(tampered)
       status  <- ok(fake.submitPreview(ready))
     yield
@@ -110,7 +133,7 @@ class PreviewPagingSuite extends CatsEffectSuite:
     val frame = Envelope(
       RequestId(77L),
       ServerFrame.Preview(
-        PreviewEvent.Counting(PreviewId(4L), PreviewProgress(1, 24))
+        PreviewEvent.Counting(PreviewId(4L), progress(1, 24))
       )
     )
     assertEquals(WireFormat.parse[BackendRequest](WireFormat.line(request)), Right(request))
@@ -204,7 +227,7 @@ class PreviewPagingSuite extends CatsEffectSuite:
     Vector(
       Vector.empty,
       Vector(ServerFrame.Response(BackendResponse.PreviewAccepted)),
-      Vector(ServerFrame.Preview(PreviewEvent.Counting(PreviewId(1), PreviewProgress(1, 24))))
+      Vector(ServerFrame.Preview(PreviewEvent.Counting(PreviewId(1), progress(1, 24))))
     ).traverse_ { frames =>
       val transport: BackendTransport[IO] =
         request => Stream.emits(frames.map(Envelope(request.id, _)))
@@ -234,4 +257,81 @@ class PreviewPagingSuite extends CatsEffectSuite:
         Some(ProgressTotal.Exact(44845L))
       )
     }
+  }
+
+  test("preview counts refuse negatives and over-complete progress, naming the operand") {
+    assertEquals(
+      PreviewProgress.of(25, 24),
+      Left(PreviewError.BeyondTotal("completedParticipants", 25, 24))
+    )
+    assertEquals(
+      PreviewProgress.of(-1, 24),
+      Left(PreviewError.Negative("completedParticipants", -1))
+    )
+    assertEquals(
+      PreviewProgress.of(0, -1),
+      Left(PreviewError.Negative("totalParticipants", -1))
+    )
+    assertEquals(
+      PreviewCandidates.of(480, 480, 24, -1L),
+      Left(PreviewError.Negative("candidatePairsPerScale", -1L))
+    )
+    assertEquals(
+      PreviewCandidates.of(480, -2, 24, 1L),
+      Left(PreviewError.Negative("referenceTrials", -2L))
+    )
+    assertEquals(
+      PreviewCounts.of(8969L, 44845L, 9, -1),
+      Left(PreviewError.Negative("ambiguousMatches", -1L))
+    )
+    assertEquals(
+      PreviewCounts.of(-8969L, 44845L, 9, 0),
+      Left(PreviewError.Negative("eligiblePairsPerScale", -8969L))
+    )
+    assertEquals(ParticipantCount.of(-3), Left(PreviewError.Negative("participant count", -3L)))
+    assertEquals(
+      PreviewError.BeyondTotal("completedParticipants", 25, 24).message,
+      "Preview completedParticipants reports 25, beyond its total 24."
+    )
+  }
+
+  test("preview decoders refuse what the constructors refuse") {
+    import io.circe.parser.decode
+    assert(
+      decode[PreviewProgress]("""{"completedParticipants":25,"totalParticipants":24}""").isLeft
+    )
+    assert(
+      decode[PreviewProgress]("""{"completedParticipants":-1,"totalParticipants":24}""").isLeft
+    )
+    assert(
+      decode[PreviewCandidates](
+        """{"focalTrials":-1,"referenceTrials":480,"participants":24,"candidatePairsPerScale":1}"""
+      ).isLeft
+    )
+    assert(
+      decode[PreviewCounts](
+        """{"eligiblePairsPerScale":1,"eligiblePairs":1,"unmatchedQueries":-9,"ambiguousMatches":0}"""
+      ).isLeft
+    )
+    assert(
+      decode[BackendError](
+        """{"PreviewNotReady":{"preview":1,"completedParticipants":-3,"totalParticipants":24}}"""
+      ).isLeft
+    )
+    assertEquals(
+      decode[PreviewProgress]("""{"completedParticipants":3,"totalParticipants":24}"""),
+      Right(progress(3, 24))
+    )
+  }
+
+  test("progress advances one participant at a time and stops when complete") {
+    val start = PreviewProgress.start(right(PreviewCandidates.of(480, 480, 2, 1L)))
+    assertEquals(start, progress(0, 2))
+    assertEquals(start.advance, Some(progress(1, 2)))
+    assertEquals(start.advance.flatMap(_.advance), Some(progress(2, 2)))
+    assert(progress(2, 2).isComplete)
+    assertEquals(progress(2, 2).advance, None)
+    assertEquals(progress(1, 2).completed, right(ParticipantCount.of(1)))
+    assertEquals(progress(1, 2).total, right(ParticipantCount.of(2)))
+    assertEquals(PreviewProgress.start(right(PreviewCandidates.of(0, 0, 0, 0L))).advance, None)
   }

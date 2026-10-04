@@ -51,28 +51,173 @@ enum PreviewBudgetError derives CanEqual:
   def message: String = this match
     case OutOfRange(p, m) => s"Preview budget $p is outside 1 to $m participants."
 
-/** The immutable candidate metadata known before eligibility has been counted. */
-final case class PreviewCandidates(
+/** Why a preview count was refused. Every case names the field and the value
+  * it refused.
+  */
+enum PreviewError derives CanEqual:
+  case Negative(field: String, value: Long)
+  case BeyondTotal(field: String, done: Long, total: Long)
+
+  def message: String = this match
+    case Negative(field, value)          => s"Preview $field is negative: $value."
+    case BeyondTotal(field, done, total) =>
+      s"Preview $field reports $done, beyond its total $total."
+
+private object PreviewCount:
+  def nonNegative(field: String, value: Long): Either[PreviewError, Unit] =
+    Either.cond(value >= 0, (), PreviewError.Negative(field, value))
+
+  /** A decoder that refuses what a smart constructor refuses. */
+  def decoder[A](decode: Decoder[Either[PreviewError, A]]): Decoder[A] =
+    decode.emap(_.left.map(_.message))
+
+/** A number of participants, never negative. */
+final case class ParticipantCount private[preview] (value: Int) derives CanEqual
+object ParticipantCount:
+  def of(value: Int): Either[PreviewError, ParticipantCount] =
+    PreviewCount.nonNegative("participant count", value).map(_ => new ParticipantCount(value))
+  given Encoder[ParticipantCount] = Encoder.encodeInt.contramap(_.value)
+  given Decoder[ParticipantCount] = PreviewCount.decoder(Decoder.decodeInt.map(of))
+
+/** The immutable candidate metadata known before eligibility has been counted.
+  * No count is negative.
+  */
+final case class PreviewCandidates private (
     focalTrials: Int,
     referenceTrials: Int,
     participants: Int,
     candidatePairsPerScale: Long
-) derives CanEqual,
-      Codec.AsObject
+) derives CanEqual
 
-/** A count supplied only after the backend has completed a participant page. */
-final case class PreviewProgress(completedParticipants: Int, totalParticipants: Int)
-    derives CanEqual,
-      Codec.AsObject
+object PreviewCandidates:
+  def of(
+      focalTrials: Int,
+      referenceTrials: Int,
+      participants: Int,
+      candidatePairsPerScale: Long
+  ): Either[PreviewError, PreviewCandidates] =
+    for
+      _ <- PreviewCount.nonNegative("focalTrials", focalTrials)
+      _ <- PreviewCount.nonNegative("referenceTrials", referenceTrials)
+      _ <- PreviewCount.nonNegative("participants", participants)
+      _ <- PreviewCount.nonNegative("candidatePairsPerScale", candidatePairsPerScale)
+    yield new PreviewCandidates(
+      focalTrials,
+      referenceTrials,
+      participants,
+      candidatePairsPerScale
+    )
 
-/** Exact result of a retained preview. These are counts, not a scientific result. */
-final case class PreviewCounts(
+  given Encoder.AsObject[PreviewCandidates] =
+    Encoder.forProduct4(
+      "focalTrials",
+      "referenceTrials",
+      "participants",
+      "candidatePairsPerScale"
+    )(c => (c.focalTrials, c.referenceTrials, c.participants, c.candidatePairsPerScale))
+
+  given Decoder[PreviewCandidates] = PreviewCount.decoder(
+    Decoder.forProduct4[Either[PreviewError, PreviewCandidates], Int, Int, Int, Long](
+      "focalTrials",
+      "referenceTrials",
+      "participants",
+      "candidatePairsPerScale"
+    )(of)
+  )
+
+/** A count supplied only after the backend has completed a participant page:
+  * neither count is negative and no more participants are complete than exist.
+  */
+final case class PreviewProgress private (completedParticipants: Int, totalParticipants: Int)
+    derives CanEqual:
+
+  /** Every participant has been counted. */
+  def isComplete: Boolean = completedParticipants == totalParticipants
+
+  /** One more participant counted, or `None` when every one already is. */
+  def advance: Option[PreviewProgress] =
+    Option.unless(isComplete)(new PreviewProgress(completedParticipants + 1, totalParticipants))
+
+  def completed: ParticipantCount = new ParticipantCount(completedParticipants)
+  def total: ParticipantCount     = new ParticipantCount(totalParticipants)
+
+object PreviewProgress:
+  /** No participant of `candidates` counted yet. */
+  def start(candidates: PreviewCandidates): PreviewProgress =
+    new PreviewProgress(0, candidates.participants)
+
+  def of(
+      completedParticipants: Int,
+      totalParticipants: Int
+  ): Either[PreviewError, PreviewProgress] =
+    for
+      _ <- PreviewCount.nonNegative("completedParticipants", completedParticipants)
+      _ <- PreviewCount.nonNegative("totalParticipants", totalParticipants)
+      _ <- Either.cond(
+        completedParticipants <= totalParticipants,
+        (),
+        PreviewError
+          .BeyondTotal("completedParticipants", completedParticipants, totalParticipants)
+      )
+    yield new PreviewProgress(completedParticipants, totalParticipants)
+
+  given Encoder.AsObject[PreviewProgress] =
+    Encoder.forProduct2("completedParticipants", "totalParticipants")(p =>
+      (p.completedParticipants, p.totalParticipants)
+    )
+
+  given Decoder[PreviewProgress] = PreviewCount.decoder(
+    Decoder.forProduct2[Either[PreviewError, PreviewProgress], Int, Int](
+      "completedParticipants",
+      "totalParticipants"
+    )(of)
+  )
+
+/** Exact result of a retained preview. These are counts, not a scientific
+  * result, and none is negative.
+  */
+final case class PreviewCounts private (
     eligiblePairsPerScale: Long,
     eligiblePairs: Long,
     unmatchedQueries: Int,
     ambiguousMatches: Int
-) derives CanEqual,
-      Codec.AsObject
+) derives CanEqual
+
+object PreviewCounts:
+  def of(
+      eligiblePairsPerScale: Long,
+      eligiblePairs: Long,
+      unmatchedQueries: Int,
+      ambiguousMatches: Int
+  ): Either[PreviewError, PreviewCounts] =
+    for
+      _ <- PreviewCount.nonNegative("eligiblePairsPerScale", eligiblePairsPerScale)
+      _ <- PreviewCount.nonNegative("eligiblePairs", eligiblePairs)
+      _ <- PreviewCount.nonNegative("unmatchedQueries", unmatchedQueries)
+      _ <- PreviewCount.nonNegative("ambiguousMatches", ambiguousMatches)
+    yield new PreviewCounts(
+      eligiblePairsPerScale,
+      eligiblePairs,
+      unmatchedQueries,
+      ambiguousMatches
+    )
+
+  given Encoder.AsObject[PreviewCounts] =
+    Encoder.forProduct4(
+      "eligiblePairsPerScale",
+      "eligiblePairs",
+      "unmatchedQueries",
+      "ambiguousMatches"
+    )(c => (c.eligiblePairsPerScale, c.eligiblePairs, c.unmatchedQueries, c.ambiguousMatches))
+
+  given Decoder[PreviewCounts] = PreviewCount.decoder(
+    Decoder.forProduct4[Either[PreviewError, PreviewCounts], Long, Long, Int, Int](
+      "eligiblePairsPerScale",
+      "eligiblePairs",
+      "unmatchedQueries",
+      "ambiguousMatches"
+    )(of)
+  )
 
 /** Receipt of a ready backend-owned preview. A caller may carry this receipt,
   * but cannot manufacture a snapshot from it.

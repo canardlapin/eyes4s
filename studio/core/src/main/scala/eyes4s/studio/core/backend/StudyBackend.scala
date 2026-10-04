@@ -34,7 +34,11 @@ enum BackendError derives CanEqual, Codec.AsObject:
   case UnknownRun(run: RunId, known: Vector[RunId])
   case UnknownJob(job: JobId, known: Vector[JobId])
   case UnknownPreview(preview: PreviewId, known: Vector[PreviewId])
-  case PreviewNotReady(preview: PreviewId, completedParticipants: Int, totalParticipants: Int)
+  case PreviewNotReady(
+      preview: PreviewId,
+      completedParticipants: ParticipantCount,
+      totalParticipants: ParticipantCount
+  )
   case StalePreview(preview: PreviewId, captured: RunStamp, current: RunStamp)
   case TamperedPreview(supplied: PreviewReady, retained: PreviewReady)
 
@@ -93,7 +97,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case UnknownPreview(p, known) =>
       s"No preview ${p.value}; the backend has ${known.map(_.value).mkString(", ")}."
     case PreviewNotReady(p, done, total) =>
-      s"Preview ${p.value} has counted $done of $total participants."
+      s"Preview ${p.value} has counted ${done.value} of ${total.value} participants."
     case StalePreview(p, captured, current) =>
       s"Preview ${p.value} captured ${captured.label}, but the current input is ${current.label}."
     case TamperedPreview(supplied, retained) =>

@@ -296,21 +296,27 @@ final class FakeStudyBackend[F[_]] private[fixture] (
       PreviewPage(r, PageInfo.of(page, study.queries.size, rows.size), rows)
     })
 
-  private def candidates: PreviewCandidates =
-    PreviewCandidates(
-      study.queries.size,
-      study.inventory.count(_.trial.phase == Phase.Encoding),
-      study.queries.map(_.key.participant).distinct.size,
-      summary.candidatePairsPerScale
-    )
-
-  private def counts(r: AnalysisRevision): PreviewCounts =
-    PreviewCounts(
-      summary.pairRowsPerScale,
-      pairRowsOf(r),
-      summary.contrasts.noMatch,
-      ambiguousMatches = 0
-    )
+  /** The fixture's preview counts, refused if the fixture states a negative
+    * count. [[FakeStudyBackend.create]] refuses such a fixture as a defect.
+    */
+  private[fixture] val previewFacts: Either[PreviewError, FakePreviewFacts] =
+    def counts(r: AnalysisRevision) =
+      PreviewCounts.of(
+        summary.pairRowsPerScale,
+        pairRowsOf(r),
+        summary.contrasts.noMatch,
+        ambiguousMatches = 0
+      )
+    for
+      candidates <- PreviewCandidates.of(
+        study.queries.size,
+        study.inventory.count(_.trial.phase == Phase.Encoding),
+        study.queries.map(_.key.participant).distinct.size,
+        summary.candidatePairsPerScale
+      )
+      allScales <- counts(scoredRevision)
+      rev5      <- counts(AnalysisRevision(5))
+    yield FakePreviewFacts(candidates, allScales, rev5)
 
   private def previewDiagnostics: Vector[StudioDiagnostic] =
     study.queries.collect { case q if q.status == NoMatchStatus => unmatched(q) }
@@ -327,25 +333,38 @@ final class FakeStudyBackend[F[_]] private[fixture] (
       case Left(error) => Stream.emit(Left(error))
       case Right(d)    =>
         Stream
-          .eval(state.modify { s =>
-            val id       = PreviewId(s.previews.keys.map(_.value).maxOption.getOrElse(0L) + 1L)
-            val snapshot = prepared(r, d)
-            val retained = RetainedPreview(
-              snapshot,
-              PreviewReady(
-                id,
-                snapshot.stamp,
-                candidates,
-                counts(r),
-                previewDiagnostics
-              ),
-              completedParticipants = 0
+          // create refuses a fixture with invalid preview counts, so this
+          // fails only for a fake built around it, as a fixture defect.
+          .eval(
+            previewFacts.fold(
+              e =>
+                F.raiseError(
+                  new IllegalStateException(s"FakeStudyBackend preview: ${e.message}")
+                ),
+              F.pure
             )
-            (
-              s.copy(previews = s.previews.updated(id, retained)),
-              retained
-            )
-          })
+          )
+          .flatMap(facts =>
+            Stream.eval(state.modify { s =>
+              val id = PreviewId(s.previews.keys.map(_.value).maxOption.getOrElse(0L) + 1L)
+              val snapshot = prepared(r, d)
+              val retained = RetainedPreview(
+                snapshot,
+                PreviewReady(
+                  id,
+                  snapshot.stamp,
+                  facts.candidates,
+                  facts.counts(r),
+                  previewDiagnostics
+                ),
+                PreviewProgress.start(facts.candidates)
+              )
+              (
+                s.copy(previews = s.previews.updated(id, retained)),
+                retained
+              )
+            })
+          )
           .flatMap(retained => page(retained, budget, initial = true).map(Right(_)))
     }
 
@@ -359,8 +378,7 @@ final class FakeStudyBackend[F[_]] private[fixture] (
           Stream.emit(
             Left(BackendError.UnknownPreview(id, s.previews.keys.toVector.sortBy(_.value)))
           )
-        case Some(retained)
-            if retained.completedParticipants == retained.ready.candidates.participants =>
+        case Some(retained) if retained.progress.isComplete =>
           Stream.emit(Right(PreviewEvent.Ready(retained.ready)))
         case Some(retained) => page(retained, budget, initial = false).map(Right(_))
     }
@@ -381,23 +399,19 @@ final class FakeStudyBackend[F[_]] private[fixture] (
       .evalMap { _ =>
         state.modify { s =>
           s.previews.get(retained.ready.id) match
-            case Some(current)
-                if current.completedParticipants < current.ready.candidates.participants =>
-              val done     = current.completedParticipants + 1
-              val next     = current.copy(completedParticipants = done)
-              val counting = PreviewEvent.Counting(
-                current.ready.id,
-                PreviewProgress(done, current.ready.candidates.participants)
-              )
-              val ready = Option.when(done == current.ready.candidates.participants)(
-                PreviewEvent.Ready(current.ready)
-              )
-              (
-                s.copy(previews = s.previews.updated(current.ready.id, next)),
-                Vector(counting) ++ ready.toVector
-              )
-            case Some(current) => (s, Vector(PreviewEvent.Ready(current.ready)))
-            case None          => (s, Vector.empty)
+            case Some(current) =>
+              current.progress.advance match
+                case Some(done) =>
+                  val counting = PreviewEvent.Counting(current.ready.id, done)
+                  val ready    = Option.when(done.isComplete)(PreviewEvent.Ready(current.ready))
+                  (
+                    s.copy(previews =
+                      s.previews.updated(current.ready.id, current.copy(progress = done))
+                    ),
+                    Vector(counting) ++ ready.toVector
+                  )
+                case None => (s, Vector(PreviewEvent.Ready(current.ready)))
+            case None => (s, Vector.empty)
         }
       }
       .flatMap(Stream.emits)
@@ -416,15 +430,14 @@ final class FakeStudyBackend[F[_]] private[fixture] (
               BackendError.UnknownPreview(ready.id, s.previews.keys.toVector.sortBy(_.value))
             )
           )
-        case Some(retained)
-            if retained.completedParticipants < retained.ready.candidates.participants =>
+        case Some(retained) if !retained.progress.isComplete =>
           (
             s,
             Left(
               BackendError.PreviewNotReady(
                 ready.id,
-                retained.completedParticipants,
-                retained.ready.candidates.participants
+                retained.progress.completed,
+                retained.progress.total
               )
             )
           )
@@ -845,8 +858,18 @@ object FakeStudyBackend:
   private[fixture] final case class RetainedPreview(
       snapshot: FakePreparedSnapshot,
       ready: PreviewReady,
-      completedParticipants: Int
+      progress: PreviewProgress
   )
+
+  /** The fixture's validated preview counts: candidates and the counts of an
+    * analysis before and after rev 5 adds a scale.
+    */
+  private[fixture] final case class FakePreviewFacts(
+      candidates: PreviewCandidates,
+      allScales: PreviewCounts,
+      rev5: PreviewCounts
+  ):
+    def counts(r: AnalysisRevision): PreviewCounts = if r.number >= 5 then rev5 else allScales
 
   private[fixture] final case class State(
       datasets: Map[DatasetRevision, DatasetState],
@@ -921,6 +944,7 @@ object FakeStudyBackend:
       study <- MockStudy.load.fold(defect, F.pure)
       state <- SignallingRef.of[F, State](initial(moment))
       backend = new FakeStudyBackend[F](study, state)
+      _ <- backend.previewFacts.fold(e => defect(e.message), _ => F.unit)
       _ <- moment match
         case StoryMoment.T3 =>
           backend.submit(rev5).flatMap {

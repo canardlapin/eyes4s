@@ -29,7 +29,10 @@ class TrialConflictGroupingSuite extends munit.FunSuite:
     )
 
   test("an empty fold has no groups") {
-    assertEquals(TrialConflictGrouping.group(Vector.empty), Vector.empty)
+    assertEquals(
+      TrialConflictGrouping.group(Vector.empty[TrialConflictRow[CsvRecord]]),
+      Vector.empty
+    )
   }
 
   test("one parsed trial key is an ok singleton") {
@@ -41,7 +44,9 @@ class TrialConflictGroupingSuite extends munit.FunSuite:
   test("the incremental fold preserves record order and chooses the canonical representative") {
     val rows  = Vector(row(2, "beach", 7), row(1, "beach", 4), row(1, "beach", 2))
     val group =
-      rows.foldLeft(TrialConflictGrouping.empty)((state, next) => state.add(next)).groups
+      rows
+        .foldLeft(TrialConflictGrouping.empty[CsvRecord])((state, next) => state.add(next))
+        .groups
     val result = group.head
     assertEquals(result.representative.occurrence.value, 1)
     assertEquals(result.representative.item, "beach")
@@ -59,7 +64,7 @@ class TrialConflictGroupingSuite extends munit.FunSuite:
     val onePass = TrialConflictGrouping.group(rows.reverse)
     val chunked = rows
       .take(1)
-      .foldLeft(TrialConflictGrouping.empty)((state, next) => state.add(next))
+      .foldLeft(TrialConflictGrouping.empty[CsvRecord])((state, next) => state.add(next))
       .add(rows(1))
       .add(rows(2))
       .groups
@@ -112,10 +117,28 @@ class TrialConflictGroupingSuite extends munit.FunSuite:
       assertEquals(parsed.identity, identity)
       parsed
     }
-    val first    = TrialConflictGrouping.empty.add(original)
+    val first    = TrialConflictGrouping.empty[CsvRecord].add(original)
     val combined = others.foldLeft(first)((state, next) => state.add(next)).groups
     assertEquals(first.groups.map(_.records.map(_.value)), Vector(Vector(2)))
     assertEquals(combined.size, 4)
     assert(combined.forall(_.classification == TrialConflictClassification.Ok))
     assertEquals(combined.flatMap(_.records.map(_.value)).sorted, Vector(2, 3, 4, 5))
+  }
+
+  test("an importer's own row identity groups like a CSV record, in its own order") {
+    val key: Int => TrialKey = occurrence =>
+      get(
+        get(TrialIdentity.of("p1", "encoding", "t1", get(TrialOccurrence.of(occurrence))))
+          .withItem("beach")
+      )
+    val rows   = Vector(TrialConflictRow.from(key(2), 9), TrialConflictRow.from(key(1), 3))
+    val result = TrialConflictGrouping.group(rows).head
+    assertEquals(result.records, Vector(3, 9))
+    assertEquals(result.representative, key(1))
+    assertEquals(
+      result.classification,
+      TrialConflictClassification.OccurrenceConflict(
+        Vector(get(TrialOccurrence.of(1)), get(TrialOccurrence.of(2)))
+      )
+    )
   }

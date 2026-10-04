@@ -123,6 +123,8 @@ object CsvRecord:
   /** The header record. */
   val header: CsvRecord = new CsvRecord(1)
 
+  given Ordering[CsvRecord] = Ordering.by(_.value)
+
   private[eyes4s] given DiagnosticOperand[CsvRecord, Nothing] =
     DiagnosticOperand.of(r =>
       Operand.Fields(Vector("value" -> Operand.Integer(BigInt(r.value))))

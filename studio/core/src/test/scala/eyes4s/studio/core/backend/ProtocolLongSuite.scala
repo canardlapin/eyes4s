@@ -83,8 +83,8 @@ class ProtocolLongSuite extends munit.FunSuite:
       roundTrip(DiagnosticLocus.Line("fixture.asc", n): DiagnosticLocus)
       roundTrip(RequestId(n))
       roundTrip(PreviewId(n))
-      roundTrip(PreviewCandidates(1, 1, 1, n))
-      roundTrip(PreviewCounts(n, n, 0, 0))
+      roundTrip(right(PreviewCandidates.of(1, 1, 1, n)))
+      roundTrip(right(PreviewCounts.of(n, n, 0, 0)))
       roundTrip(Meter(CountUnit.Pairs, n, MeterTotal.Exact(n)))
       roundTrip(Meter(CountUnit.Pairs, n, MeterTotal.AtMost(n)))
     }

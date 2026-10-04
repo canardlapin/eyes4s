@@ -67,7 +67,14 @@ class PreviewSnapshotSuite extends munit.CatsEffectSuite:
         )
       )
       customReceipt = receipt.copy(counts =
-        receipt.counts.copy(eligiblePairsPerScale = 7, eligiblePairs = 7)
+        right(
+          PreviewCounts.of(
+            7L,
+            7L,
+            receipt.counts.unmatchedQueries,
+            receipt.counts.ambiguousMatches
+          )
+        )
       )
       _ <- state.update(s =>
         s.copy(previews =
@@ -117,5 +124,5 @@ class PreviewSnapshotSuite extends munit.CatsEffectSuite:
         .collectFirst { case PreviewEvent.Initial(value, _, _) => value }
         .getOrElse(fail("no preview id"))
       after <- state.get
-    yield assertEquals(after.previews(id).completedParticipants, 0)
+    yield assertEquals(after.previews(id).progress.completedParticipants, 0)
   }
