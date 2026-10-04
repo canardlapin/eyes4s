@@ -175,6 +175,7 @@ object Diagnose:
       (e: StudyRecipeError) =>
         Vector(Locus.Field(StudyForm.formField(e.field).fold(e.field.toString)(_.value)))
     )(_.message)
+  given methodsFact: Diagnose[FactError, Nothing]       = derived(C.methodsFact)(_.message)
   given studyAdvisory: Diagnose[StudyAdvisory, Nothing] =
     derived(
       C.studyAdvisory,
