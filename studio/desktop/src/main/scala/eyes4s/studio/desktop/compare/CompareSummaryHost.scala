@@ -233,6 +233,12 @@ final class CompareSummaryHost(
       sources.stimuli
     )
 
+  // Called after each render, so panes beside these views follow their answers.
+  private var rendered: Vector[() => Unit] = Vector.empty
+
+  /** Calls `f` after every render of these views. */
+  def onRendered(f: () => Unit): Unit = rendered = rendered :+ f
+
   /** The run Compare shows, with its revision and rows, once both are read. */
   private def shownRun: Option[ShownRun] =
     for
@@ -493,6 +499,7 @@ final class CompareSummaryHost(
         referenceTrialTable.show,
         referenceTrialTable.clear()
       )
+      rendered.foreach(_())
 
   // Draws a part when its source or the theme changes. A part with no source
   // (the run is still being read) or one that could not be built is cleared,

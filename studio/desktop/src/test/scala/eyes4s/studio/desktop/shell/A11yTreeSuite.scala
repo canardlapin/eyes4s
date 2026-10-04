@@ -91,6 +91,7 @@ class A11yTreeSuite extends ShellFxSuite:
     case AccessibleRole.TEXT_AREA     => A11yRole.TextArea.id
     case AccessibleRole.RADIO_BUTTON  => A11yRole.RadioButton.id
     case AccessibleRole.HYPERLINK     => A11yRole.Link.id
+    case AccessibleRole.CHECK_BOX     => A11yRole.CheckBox.id
     case other                        => other.toString.toLowerCase
 
   private def stop(n: Node): String = runOnFx(s"${role(n)}: ${n.getAccessibleText}")
