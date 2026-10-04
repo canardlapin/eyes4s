@@ -17,7 +17,13 @@
 package eyes4s.studio.app.analysis
 
 import eyes4s.studio.app.diagnostics.{DiagnosticsPresenter, DiagnosticsVM}
-import eyes4s.studio.app.text.{DiagnosticText, Format, PreflightText, PreflightTextId}
+import eyes4s.studio.app.text.{
+  DiagnosticText,
+  Format,
+  PreflightText,
+  PreflightTextId,
+  SourcesText
+}
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.RecipeChange
@@ -112,6 +118,9 @@ object Preflight:
     val reason   = (target, design.preview) match
       case (None, _)                => Some(PreflightText(NothingToCheck))
       case (Some(t), _) if !isDraft => Some(PreflightText(NoDraft, t.revision.label))
+      // A changed or missing source blocks the run until repaired or replaced (S2.5).
+      case (Some(_), _) if m.runBlockers.isDefined =>
+        m.runBlockers.map((dataset, findings) => SourcesText.blocked(dataset, findings))
       case (Some(_), DesignPreview.Refused(why)) => Some(PreflightText(Refused, label, why))
       case (Some(_), DesignPreview.Counting(_, _, _, Some(p))) =>
         Some(

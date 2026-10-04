@@ -196,6 +196,38 @@ final class ProjectSession[F[_]: Concurrent] private (
       )).value
     }
 
+  /** The state of every input this session lists (S2.5): each stored copy's
+    * bytes checked against its digest.
+    */
+  def checkInputs: F[Vector[InputStatus]] =
+    state.get.flatMap(s => ProjectBundle.checkEntries(store, s.inputs))
+
+  /** Put `source`'s exact bytes back in the bundle (S2.5): `bytes` must have
+    * the digest the source records, and the source must be a listed input.
+    */
+  def restoreInput(source: Source, bytes: IArray[Byte]): F[Either[SessionError, Unit]] =
+    val operation = s"restore ${source.path.value}"
+    exclusive { s =>
+      (for
+        lock <- EitherT.fromEither[F](writable(s))
+        path <- EitherT.fromEither[F](
+          ProjectBundle.inputPath(source).left.map(SessionError.Bundle(operation, _))
+        )
+        entry <- EitherT.fromEither[F](
+          s.inputs
+            .find(_.path.contains(path))
+            .toRight(
+              SessionError.Bundle(
+                operation,
+                BundleError.Store(StoreError.Missing(path))
+              )
+            )
+        )
+        _ <- EitherT(ProjectBundle.restoreInput(store, lock, entry, bytes))
+          .leftMap(SessionError.Bundle(operation, _))
+      yield (s, ())).value
+    }
+
   /** Read a dataset source's stored bytes back from the bundle, at its
     * [[ProjectBundle.inputPath]] (the column-mapping pane's re-map reads the
     * revision's own files this way). The bytes are returned as stored; a

@@ -19,7 +19,7 @@ package eyes4s.studio.desktop.runtime
 import cats.effect.IO
 import cats.effect.std.Queue
 import cats.effect.unsafe.IORuntime
-import eyes4s.studio.core.bundle.{Inclusion, InputEntry, InputKind, SharingOptions}
+import eyes4s.studio.core.bundle.{Inclusion, InputEntry, InputKind, InputStatus, SharingOptions}
 import eyes4s.studio.core.command.JournalEntry
 import eyes4s.studio.core.document.Source
 import eyes4s.studio.core.session.{ProjectSession, SaveReceipt}
@@ -68,6 +68,22 @@ trait ProjectPort:
     */
   def storedInputs(done: Either[String, Vector[InputEntry]] => Unit): Unit =
     done(Left("this project cannot list its stored files"))
+
+  /** Check every stored input's bytes against its digest (S2.5). A port that
+    * cannot check answers `None`: its inputs stay unchecked, so nothing is
+    * blocked on their account.
+    */
+  def checkInputs(done: Either[String, Option[Vector[InputStatus]]] => Unit): Unit =
+    done(Right(None))
+
+  /** Put `source`'s exact bytes back in the project (S2.5); a port that
+    * cannot store inputs refuses, naming the file.
+    */
+  def restoreInput(
+      source: Source,
+      @unused bytes: IArray[Byte],
+      done: Either[String, Unit] => Unit
+  ): Unit = done(Left(s"${source.path.value}: this project cannot store imported files"))
 
 /** A [[ProjectPort]] on a studio-core [[ProjectSession]]: every operation
   * joins one queue, which a single fibre drains, so a journal entry is
@@ -150,6 +166,25 @@ final class SessionPort private (
     enqueue(
       answering(session.inputs.map(Right(_)), done),
       "list stored inputs",
+      Some(reason => done(Left(reason)))
+    )
+
+  /** Queued after the imports and restores before it. */
+  override def checkInputs(done: Either[String, Option[Vector[InputStatus]]] => Unit): Unit =
+    enqueue(
+      answering(session.checkInputs.map(s => Right(Some(s))), done),
+      "check stored inputs",
+      Some(reason => done(Left(reason)))
+    )
+
+  override def restoreInput(
+      source: Source,
+      bytes: IArray[Byte],
+      done: Either[String, Unit] => Unit
+  ): Unit =
+    enqueue(
+      answering(session.restoreInput(source, bytes).map(_.left.map(_.message)), done),
+      s"restore ${source.path.value}",
       Some(reason => done(Left(reason)))
     )
 

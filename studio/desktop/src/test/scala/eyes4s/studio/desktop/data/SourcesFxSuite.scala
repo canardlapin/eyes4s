@@ -45,7 +45,7 @@ class SourcesFxSuite extends ShellFxSuite:
   override val munitTimeout: Duration = Duration(120, "s")
 
   /** A project that stores what it is given and records it. */
-  private final class Stores extends ProjectPort:
+  private class Stores extends ProjectPort:
     val stored = scala.collection.mutable.ArrayBuffer.empty[(InputKind, String, Int)]
     def journal(entry: JournalEntry): Unit                    = ()
     def save(done: Either[String, SaveReceipt] => Unit): Unit = done(
@@ -181,4 +181,79 @@ class SourcesFxSuite extends ShellFxSuite:
     )
     assertEquals(project.stored.toVector, Vector.empty)
     assertEquals(runOnFx(w.runtime.model.document.relinks.of(StoryMoments.r3)), Vector.empty)
+  }
+
+  fxStage.test(
+    "S2.5: a fixations file changed in the project is shown with Repair…; other bytes make a pending revision"
+  ) { fx =>
+    import eyes4s.codec.ByteDigest
+    import eyes4s.studio.core.bundle.{InputEntry, InputStatus}
+    import eyes4s.studio.core.document.{AdmissionDecision, Source, SourceRole}
+    val r3               = StoryMoments.r3
+    val sources          = StoryModels.t1Data.document.dataset(r3).get.sources.entries
+    val edited           = IArray.from("participant,phase,trial\nedited\n".getBytes(UTF_8))
+    val other            = IArray.from("participant,phase,trial\nanother\n".getBytes(UTF_8))
+    def entry(s: Source) =
+      InputEntry
+        .of(InputKind.Source(s.role), s.path.value.split('/').last, s.bytes, 1L)
+        .toOption
+        .get
+    // The project finds r3's fixations changed at their address.
+    val project = new Stores:
+      override def checkInputs(
+          done: Either[String, Option[Vector[InputStatus]]] => Unit
+      ): Unit =
+        done(
+          Right(
+            Some(
+              sources.map(s =>
+                if s.role == SourceRole.Fixations then
+                  InputStatus.Changed(entry(s), ByteDigest.sha256(edited))
+                else InputStatus.Present(entry(s))
+              )
+            )
+          )
+        )
+    val files = new AssetFiles:
+      def locate(
+          file: AssetFile,
+          done: Either[AssetFileRefusal, Option[(AssetFile, IArray[Byte])]] => Unit
+      ): Unit = done(Right(None))
+      override def locateSource(
+          source: Source,
+          done: Either[String, Option[IArray[Byte]]] => Unit
+      ): Unit =
+        done(Right(Some(other)))
+    val w = ready(fx, Some(project), files)
+    val v = w.sources.view
+    eventually(fx, "the changed source")(
+      v.sourceLines.headOption.exists(_.exists(_.startsWith("changed since it was stored")))
+    )
+    assertEquals(
+      runOnFx(w.runtime.model.sources.blocking(r3).map(_.name)),
+      Vector("fixations.csv")
+    )
+    val repair = runOnFx {
+      import scala.jdk.CollectionConverters.*
+      v.sources.lookupAll(".button").asScala.toVector.collect {
+        case b: javafx.scene.control.Button => b
+      }
+    }
+    assertEquals(runOnFx(repair.map(_.getAccessibleText)), Vector("Repair fixations.csv…"))
+    assert(runOnFx(w.sources.focusStops).map(_.name).contains("Repair fixations.csv…"))
+    val before = runOnFx(w.runtime.model.document.datasets.size)
+    runOnFx(repair.head.fire())
+    eventually(fx, "the pending revision")(w.runtime.model.document.datasets.size == before + 1)
+    val spec = runOnFx(w.runtime.model.document.datasets.last)
+    assertEquals(spec.parent, Some(r3))
+    assertEquals(spec.decision, AdmissionDecision.Pending)
+    assertEquals(spec.sources.fixations.map(_.bytes), Some(ByteDigest.sha256(other)))
+    assertEquals(
+      project.stored.toVector,
+      Vector((InputKind.Source(SourceRole.Fixations), "fixations.csv", other.length))
+    )
+    assert(
+      runOnFx(v.note.getText).contains("must be admitted before it is run"),
+      runOnFx(v.note.getText)
+    )
   }

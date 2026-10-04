@@ -23,6 +23,7 @@ import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.assets.{AssetFile, DisplayKind}
 import eyes4s.studio.core.bundle.InputKind
+import eyes4s.studio.core.document.Source
 import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.runtime.ProjectPort
 import eyes4s.studio.desktop.tokens.TokenFiles
@@ -57,6 +58,14 @@ trait AssetFiles:
       done: Either[AssetFileRefusal, Option[(AssetFile, IArray[Byte])]] => Unit
   ): Unit
 
+  /** The file to repair a dataset `source` with (S2.5): its bytes, or `None`
+    * when the user cancelled; refused, naming the file, if it cannot be read
+    * or is over [[AssetFiles.MaxSourceBytes]]. `done` may be called on any
+    * thread. Files that locate only images choose no source.
+    */
+  def locateSource(source: Source, done: Either[String, Option[IArray[Byte]]] => Unit): Unit =
+    done(Left(s"${source.path.value}: this window cannot choose source files"))
+
 object AssetFiles:
 
   /** The largest image Repair… stores (64 MiB). */
@@ -66,6 +75,33 @@ object AssetFiles:
   def decodes(bytes: Array[Byte]): Boolean =
     Option(javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(bytes)))
       .exists(i => i.getWidth > 0 && i.getHeight > 0)
+
+  /** The largest source file Repair… reads (1 GiB). */
+  val MaxSourceBytes: Long = 1024L * 1024 * 1024
+
+  /** `f`'s bytes, read off the JavaFX thread on a daemon thread named for
+    * `what`: refused before reading when over `limit`.
+    */
+  private def readOff(
+      f: java.io.File,
+      limit: Long,
+      what: String,
+      done: Either[String, IArray[Byte]] => Unit
+  ): Unit =
+    val reader = Thread(() =>
+      val read =
+        try
+          if f.length > limit then
+            Left(s"${f.getName} has ${f.length} bytes; at most $limit are read.")
+          else Right(IArray.unsafeFromArray(Files.readAllBytes(f.toPath)))
+        catch
+          case e: java.io.IOException =>
+            Left(s"${f.getName} cannot be read: ${Option(e.getMessage).getOrElse(e.toString)}")
+      done(read)
+    )
+    reader.setDaemon(true)
+    reader.setName(what)
+    reader.start()
 
   /** `bytes`, named `name`, as a display image: a single path segment, at
     * most [[MaxBytes]], and decodable as an image (`decode`, ImageIO). A
@@ -98,8 +134,22 @@ object AssetFiles:
     * chosen on the JavaFX thread and read off it, a too large file refused
     * before it is read; the host checks what was read ([[check]]).
     */
-  def chooser(owner: () => Window): AssetFiles =
-    (file, done) =>
+  def chooser(owner: () => Window): AssetFiles = new AssetFiles:
+    override def locateSource(
+        source: Source,
+        done: Either[String, Option[IArray[Byte]]] => Unit
+    ): Unit =
+      val chooser = FileChooser()
+      val name    = source.path.value.split('/').last
+      chooser.setTitle(s"Repair $name")
+      Option(chooser.showOpenDialog(owner())) match
+        case None    => done(Right(None))
+        case Some(f) => readOff(f, MaxSourceBytes, s"repair $name", r => done(r.map(Some(_))))
+
+    def locate(
+        file: AssetFile,
+        done: Either[AssetFileRefusal, Option[(AssetFile, IArray[Byte])]] => Unit
+    ): Unit =
       val chooser = FileChooser()
       chooser.setTitle(s"Locate ${file.value}")
       chooser.getExtensionFilters.add(
@@ -160,12 +210,18 @@ final class SourcesPaneHost(
   /** The view-model now shown. */
   def vm: SourcesVM = SourcesVM.of(pane, model())
 
-  /** The pane's controls after its own stop: Retry, Repair… and Show…. */
+  // The project's stored inputs are checked once the window has its project (S2.5).
+  perform(project.toVector.map(_ => SourcesEffect.CheckInputs))
+
+  /** The pane's controls after its own stop: each source's Repair…, Retry,
+    * Repair… and Show….
+    */
   def focusStops: Vector[FocusStop] =
     val v = vm
-    Option
-      .when(v.retry)(FocusStop(A11yRole.Button, SourcesText(SourcesTextId.RetryRead)))
-      .toVector ++
+    v.sources.flatMap(_.repair).map((text, _) => FocusStop(A11yRole.Button, text)) ++
+      Option
+        .when(v.retry)(FocusStop(A11yRole.Button, SourcesText(SourcesTextId.RetryRead)))
+        .toVector ++
       v.missing.toVector.flatMap(m =>
         Vector(FocusStop(A11yRole.Button, m.repair), FocusStop(A11yRole.Button, m.showTrials))
       )
@@ -192,7 +248,53 @@ final class SourcesPaneHost(
     effects.foreach {
       case SourcesEffect.ReadRegistry(spec, ask) =>
         displays.read(spec, r => later(SourcesIntent.RegistryRead(spec.id, ask, r)))
-      case SourcesEffect.App(intent)           => app(intent)
+      case SourcesEffect.App(intent) => app(intent)
+      case SourcesEffect.CheckInputs =>
+        project.foreach(
+          _.checkInputs {
+            case Right(Some(statuses)) =>
+              Platform.runLater(() => if !disposed then app(Intent.InputsChecked(statuses)))
+            case Right(None)  => ()
+            case Left(reason) => later(SourcesIntent.CheckFailed(reason))
+          }
+        )
+      case SourcesEffect.LocateSource(dataset, source) =>
+        project match
+          case None =>
+            dispatch(
+              SourcesIntent.SourceNotChosen(
+                source.role,
+                Some(SourcesText(SourcesTextId.RepairNeedsProject))
+              )
+            )
+          case Some(_) =>
+            files.locateSource(
+              source,
+              {
+                case Left(reason) =>
+                  later(SourcesIntent.SourceNotChosen(source.role, Some(reason)))
+                case Right(None)      => later(SourcesIntent.SourceNotChosen(source.role, None))
+                case Right(Some(raw)) =>
+                  later(SourcesIntent.SourceChosen(dataset, source.role, raw))
+              }
+            )
+      case SourcesEffect.Restore(dataset, source, bytes) =>
+        project.foreach(
+          _.restoreInput(
+            source,
+            bytes,
+            r => later(SourcesIntent.SourceRestored(dataset, source.role, r))
+          )
+        )
+      case SourcesEffect.Store(dataset, replacement, bytes) =>
+        project.foreach(
+          _.importInput(
+            InputKind.Source(replacement.role),
+            replacement.path.value.split('/').last,
+            bytes,
+            r => later(SourcesIntent.SourceStored(dataset, replacement, r))
+          )
+        )
       case SourcesEffect.Locate(dataset, file) =>
         project match
           case None =>
@@ -320,7 +422,12 @@ final class SourcesView(dispatch: SourcesIntent => Unit):
       val lines = s.count.toVector.map { c =>
         val l = label("sources-count", "mono", "t11"); l.setText(c); l
       } :+ { val l = label("sources-stored", "mono", "t11"); l.setText(s.stored); l }
-      val card = VBox((head +: lines)*)
+      // A source the project no longer holds as recorded, and its Repair… (S2.5).
+      val problem = s.problem.toVector.map { p =>
+        val l = label("sources-problem", "t11"); l.setText(p); l.setWrapText(true); l
+      }
+      val fix  = s.repair.toVector.map((text, intent) => button(text, intent))
+      val card = VBox((head +: (lines ++ problem ++ fix))*)
       card.getStyleClass.add("sources-card")
       card
     }*)

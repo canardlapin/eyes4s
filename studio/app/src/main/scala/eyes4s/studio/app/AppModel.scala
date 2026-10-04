@@ -22,7 +22,9 @@ import eyes4s.studio.app.jobs.JobBoard
 import eyes4s.studio.app.keys.{CommandId, CommandRegistry, KeyChord}
 import eyes4s.studio.app.layout.{LayoutId, PaneId, PerspectiveLayout, StudioLayouts}
 import eyes4s.studio.app.nav.{Location, Navigation, Place, Provenance}
-import eyes4s.studio.app.text.{Format, MessageId, Messages}
+import eyes4s.studio.app.text.{Format, MessageId, Messages, SourcesText}
+import eyes4s.studio.core.assets.{InputCheck, SourceCheck, SourceFinding}
+import eyes4s.studio.core.bundle.InputStatus
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId, TrialKey}
 import eyes4s.studio.core.execution.{
   ExecutionEffect,
@@ -170,6 +172,11 @@ enum Notice derives CanEqual:
   /** The platform's save of the project failed; the last save stands. */
   case SaveFailed(reason: String)
 
+  /** Save & run was refused: the sources of `dataset` that the project no
+    * longer holds as recorded (S2.5).
+    */
+  case SourcesBlocked(dataset: DatasetRevision, findings: Vector[SourceFinding])
+
   def message: String = message(Messages.english)
 
   /** The notice's words; a command is named by its label ("Undo"). */
@@ -188,6 +195,7 @@ enum Notice derives CanEqual:
     case LayoutsReset(ps, reason) =>
       messages(MessageId.NoticeLayoutsReset, ps.map(_.label).mkString(", "), reason)
     case SaveFailed(reason)                     => messages(MessageId.NoticeSaveFailed, reason)
+    case SourcesBlocked(dataset, findings)      => SourcesText.blocked(dataset, findings)
     case Outdated(Confirmation.DiscardDraft(d)) =>
       s"Draft ${d.label} is no longer the draft; nothing was discarded."
 
@@ -387,6 +395,9 @@ enum Intent derives CanEqual:
 
   /** Progress, outcomes and the latest draft check (freshness inputs). */
   case SessionChanged(facts: SessionFacts)
+
+  /** The project's stored inputs were checked against their digests (S2.5). */
+  case InputsChecked(statuses: Vector[InputStatus])
   case ItemsLoaded(items: TrialItems)
 
   /** The resolved-design pane counted a backend preview to the end (S7.5): a
@@ -471,7 +482,8 @@ final case class AppModel private (
     notice: Option[Notice],
     save: SaveState,
     prepared: Option[PreparedDesign],
-    appearance: AppearanceState
+    appearance: AppearanceState,
+    inputs: InputCheck
 ) derives CanEqual:
 
   def document: StudioDocument = history.document
@@ -482,6 +494,21 @@ final case class AppModel private (
   def theme: Theme             = appearance.effective(document.presentation.theme)
   def perspective: Perspective = document.presentation.perspective
   def location: Location       = navigation.at(perspective)
+
+  /** The stored state of every dataset source, as last checked (S2.5). */
+  lazy val sources: SourceCheck = SourceCheck.of(document, inputs)
+
+  /** The dataset revision Save & run would run, and its sources that block
+    * it: the draft's dataset, else its base's (the reducer's rule).
+    */
+  def runBlockers: Option[(DatasetRevision, Vector[SourceFinding])] =
+    for
+      draft <- document.draft
+      base  <- document.analysis(draft.base)
+      target   = draft.dataset.getOrElse(base.dataset)
+      blocking = sources.blocking(target)
+      if blocking.nonEmpty
+    yield (target, blocking)
 
   /** The derived freshness (S2.7). */
   lazy val freshness: Freshness = Freshness.of(document, session)
@@ -563,7 +590,8 @@ object AppModel:
       None,
       SaveState.never,
       None,
-      AppearanceState.initial
+      AppearanceState.initial,
+      InputCheck.Unchecked
     )
 
   /** The Analysis trail of the current draft, or of the latest revision. */
@@ -629,7 +657,11 @@ object AppModel:
       (m.copy(hover = next), none)
 
     case Intent.Dispatch(command) =>
-      applyHistory(m, JournalEntry.Apply(command), m.history.apply(command))
+      (command, m.runBlockers) match
+        // A source the project no longer holds as recorded blocks the run (S2.5).
+        case (_: Command.SaveAndRun, Some((dataset, findings))) =>
+          (m.copy(notice = Some(Notice.SourcesBlocked(dataset, findings))), none)
+        case _ => applyHistory(m, JournalEntry.Apply(command), m.history.apply(command))
     case Intent.Undo(stack) => applyHistory(m, undoEntry(stack), m.history.undoOn(stack))
     case Intent.Redo(stack) => applyHistory(m, redoEntry(stack), m.history.redoOn(stack))
 
@@ -719,8 +751,10 @@ object AppModel:
       outcomeOf(received.document, event).fold((received, none)) { command =>
         applyHistory(received, JournalEntry.Apply(command), received.history.apply(command))
       }
-    case Intent.JobsChanged(jobs)             => (m.copy(jobs = m.jobs.withJobs(jobs)), none)
-    case Intent.SessionChanged(f)             => (m.copy(session = f), none)
+    case Intent.JobsChanged(jobs)       => (m.copy(jobs = m.jobs.withJobs(jobs)), none)
+    case Intent.SessionChanged(f)       => (m.copy(session = f), none)
+    case Intent.InputsChecked(statuses) =>
+      (m.copy(inputs = InputCheck.Checked(statuses)), none)
     case Intent.ItemsLoaded(items)            => (m.copy(items = items), none)
     case Intent.DesignPrepared(r)             => (m.copy(prepared = Some(r)), none)
     case Intent.DesignWithdrawn               => (m.copy(prepared = None), none)
