@@ -133,9 +133,13 @@ reproduce those mechanisms.
 Measured agreements and divergences live in [PARITY.md](../PARITY.md). Migration documentation must
 point to these bounded cases and cannot convert an open gap into a supported claim.
 
-## Review before the remaining implementation work
+## Reference semantics that constrain parity
 
-The [2026-09-19 tracker review](TRACKER_REVIEW_2026-09-19.md) fixes ticket ownership,
-source-derived semantic traps, executable acceptance gates and completion dependencies.
-These metadata corrections are source inspection, not new conformance measurements;
-no baseline gap was promoted because its contract became more precise.
+The pinned reference has behaviours that a native method must reproduce deliberately or record
+as a divergence: nearest-cell density lookup with clamped outside queries, the fast and slow
+fixation-sampling policies, L1 similarity as 1 − total variation, distance correlation and
+extended Jaccard, strict overlap thresholds and their denominators, time-bin endpoints, and the
+averaging of available scales before comparisons. Each is recorded with its measured agreement or
+divergence in [PARITY.md](../PARITY.md), [map comparison](MAP_COMPARISON.md) and the per-ticket
+manifests under `tools/r-parity/manifest.d/`. These descriptions are source inspection; none
+promotes a baseline gap to a supported claim.

@@ -70,6 +70,17 @@ object StudioLayouts:
   val methods: PaneId     = new PaneId("figures.methods")
   val methodsDiff: PaneId = new PaneId("figures.methods-diff")
 
+  /** The panes that host Compare's Queries and Items navigators (S8.1). */
+  val compareQueries: PaneId = new PaneId("compare.queries")
+  val compareItems: PaneId   = new PaneId("compare.items")
+
+  /** The panes that host Compare's query and reference trial panels (S8.2). */
+  val queryTrial: PaneId     = new PaneId("compare.query-trial")
+  val referenceTrial: PaneId = new PaneId("compare.reference-trial")
+
+  /** The pane that hosts Compare's scale ladder and contrast readout (S8.3). */
+  val contrast: PaneId = new PaneId("compare.contrast")
+
   /** DataEmpty.dc.html: no dataset yet. */
   val dataFirstRun: PerspectiveLayout = layout(
     "data.first-run",
@@ -113,6 +124,10 @@ object StudioLayouts:
   /** The pane that hosts Explore's trial view (S6.2). */
   val trialView: PaneId = new PaneId("explore.trial-view")
 
+  /** The panes that host Explore's timeline and its table (S6.3). */
+  val timeline: PaneId      = new PaneId("explore.timeline")
+  val timelineTable: PaneId = new PaneId("explore.timeline.table")
+
   /** Explore.dc.html. */
   val explore: PerspectiveLayout = layout(
     "explore",
@@ -128,8 +143,11 @@ object StudioLayouts:
           PaneDecl(trialView, PaneTitle.Dynamic("Trial view"), Plot),
           table("explore.trial-view"),
           pane("explore.small-multiples", "Small multiples", Plot)
-        )                                                                            -> 0.55,
-        group(pane("explore.timeline", "Timeline", Plot), table("explore.timeline")) -> 0.2,
+        ) -> 0.55,
+        group(
+          PaneDecl(timeline, PaneTitle.Fixed("Timeline"), Plot),
+          PaneDecl(timelineTable, PaneTitle.Fixed("Table"), Table)
+        ) -> 0.2,
         group(
           pane("explore.source-records", "Source records", Table),
           dynamic("explore.trial-inventory", "Trial inventory", Table)

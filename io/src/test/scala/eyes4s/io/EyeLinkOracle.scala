@@ -16,6 +16,7 @@
 
 package eyes4s.io
 
+import eyes4s.plan.{Diagnose, Locus}
 import cats.data.NonEmptyVector
 
 /** Independent implementation that produced an EyeLink oracle. */
@@ -745,3 +746,27 @@ enum EyeLinkOracleError derives CanEqual:
       s"EyeLink oracle='$oracleId' declares ordering unavailable but records=${recordOrdinals.mkString(",")} lack an omitted oracle.source-order fact."
 
 end EyeLinkOracleError
+
+// Test-scope evidence apparatus (CR9): its codes stay in IoDiagnosticCatalog,
+// which only ever appends, and its Diagnose instance lives with the enum.
+object EyeLinkOracleError:
+  given Diagnose[EyeLinkOracleError, Nothing] =
+    Diagnose.derived[EyeLinkOracleError, Nothing](IoDiagnosticCatalog.eyeLinkOracle, lines)(
+      _.message
+    )
+
+  private def line(source: String, number: Long): Vector[Locus[Nothing]] =
+    Vector(Locus.Line(source, number))
+
+  private def lines(error: EyeLinkOracleError): Vector[Locus[Nothing]] =
+    error match
+      case InvalidHeader(source, number, _, _)    => line(source, number)
+      case WrongFieldCount(source, number, _, _)  => line(source, number)
+      case InvalidEscape(source, number, _, _, _) => line(source, number)
+      case InvalidValue(source, number, _, _, _)  => line(source, number)
+      case InvalidDigest(source, number, _, _)    => line(source, number)
+      case InvalidPreamble(_, _) | InvalidDescriptor(_, _, _, _) | InvalidFact(_, _, _, _, _) |
+          EmptyManifest(_) | NonContiguousRecords(_, _, _) | NonContiguousFields(_, _, _, _) |
+          InconsistentRecordMetadata(_, _, _, _) | DuplicateFieldPath(_, _, _) |
+          OrderingConflict(_, _, _) | MissingOrderingDisclosure(_, _) =>
+        Vector.empty

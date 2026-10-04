@@ -28,34 +28,34 @@ The first two journeys must also run as saved plans; the third must be expressib
 same plan vocabulary or a demonstrated registered extension. Existing fixations and raw samples
 are equally legitimate starting points.
 
-## Current position — 2026-09-17
+## Current position
 
-The four active epics describe overlapping acceptance gates, not four independent frameworks.
-The [public guide](../site-docs/index.md) is the reader entry point; the baseline manifest remains the
-scientific inventory. Current source and tracker reconciliation distinguishes:
+The [public guide](../site-docs/index.md) is the reader entry point; the baseline manifest remains
+the scientific inventory, and `tools/r-parity/check_baseline.py` prints its current counts. The
+tracker, not this page, records each epic's live state:
 
-| Epic | Delivered foundation | Remaining acceptance |
+| Epic | State | Remaining acceptance |
 |---|---|---|
-| Relational analysis (`bd-01KYD6CFWNAN0Y3TR59FJV8VMG`) | Typed relations/designs, indexed equality joins, shared exhaustive between/within scheduling, keyed sampling, edge analyses, explicit reductions/contrasts, mutation coverage, a direct repetition facade and native OLS, NNLS and simplex surface decomposition with partial association | Broad parity and saved arbitrary within-design persistence |
-| Coherent roadmap (`bd-01M02N4AVNKKTEV3SA5PR0H4S8`) | Fixation, recording and temporal plan/codec routes; typed method descriptors, preflight, bounded study preview, two extension families and integrated packaged UI-G1 consumer proof | Complete baseline, long-recording responsiveness, operational and release gates |
-| Psychology-facing API/docs (`bd-01M02N4EKAEA6EBB3TE0G4TYMP`) | Nine-page public guide, executed first study and acquired-recording save/restore examples, migration coverage of all 36 required entry points, local mdoc/Laika build and generated CI checks | Remaining example migration, public API Scaladoc, rendered browser review and hosted CI evidence |
-| Complete baseline (`bd-01M214CX2CTADNR6Q9D032Y1FB`) | Pinned admission divergences, exhaustive matched/control route, bounded temporal/scale examples, repetition-cosine divergence native OLS surface fitting, serializable epoch binning, and a saved fixed-feature R route awaiting native replacement | Every implementation-gap case that `tools/r-parity/check_baseline.py` reports (it prints the current counts), including other comparison methods, KDE and trajectory sampling, learned template construction and replacing the old R-dependent template workflow |
+| Relational analysis (`bd-01KYD6CFWNAN0Y3TR59FJV8VMG`) | Closed | — Typed relations and designs, shared between/within scheduling, keyed sampling, explicit reductions and contrasts, repetition, and native OLS, NNLS, simplex and partial-association surface models are delivered. |
+| Complete baseline (`bd-01M214CX2CTADNR6Q9D032Y1FB`) | Closed | — `check_baseline.py` reports no implementation gap; the remaining cases are verified equivalences or recorded intentional divergences ([PARITY.md](../PARITY.md)). |
+| Psychology-facing API and docs (`bd-01M02N4EKAEA6EBB3TE0G4TYMP`) | Open | Fresh-consumer proof across all journeys, Scaladoc invariant coverage, rendered-browser review and hosted CI evidence. |
+| Core readiness for the desktop app (`bd-01M3DH0R9WB8P7HYVSYMJEQJYG`) | Open | The analysis families and contracts in [the core readiness plan](plans/CORE_READINESS_PLAN.md). |
+| Coherent roadmap (`bd-01M02N4AVNKKTEV3SA5PR0H4S8`) | Open | Foundation acceptance (M6, `bd-01M214CXGNS6HJQG8AM4EQXXF8`): documentation completeness, the downstream consumer, recording workload limits and supported-runtime release evidence. |
 
-`PsychologyWorkflow` and `RecordingPlan` already retain synchronization, angle conversion,
-preprocessing, detection and AOI operations; recording persistence is not future work wholesale.
-`TemporalStudyPlan` and its codec retain explicit windows and clipped duration support. Their
-bounded operation sets are not generic archives or proof that every method is serializable.
-Surface totality and scalar/structured contrast contracts are implemented. General template
-workflows and complete `Session` integration remain open.
+`PsychologyWorkflow` and `RecordingPlan` retain synchronization, angle conversion, preprocessing,
+detection and AOI operations; `TemporalStudyPlan` retains explicit windows and clipped duration
+support. Their bounded operation sets are not generic archives or proof that every method is
+serializable. Template fitting runs natively on the shared QR solver; R is an offline parity
+oracle only, never a workflow step. [`Session`](SESSION.md) is a checked container with total
+accessors.
 
-`RepetitionDesign` is a thin constructor over the existing pair/evaluate/reduce machinery.
-Its explicit within-participant estimand differs from eyesim's measured phase-only grouping.
-The saved guide uses the existing exhaustive two-phase `StudyPlan`; arbitrary all-occasion
-projections and finite-cap repetition persistence remain gaps. Do not conflate these routes.
+`RepetitionDesign` is a thin constructor over the existing pair/evaluate/reduce machinery. Its
+explicit within-participant estimand differs from eyesim's measured phase-only grouping, which
+PARITY.md records as a divergence.
 
-Licensed EyeLink verification remains a separate programme with external inputs, not a prerequisite
-for pure core work. Each implementation slice must establish current test evidence; this roadmap
-does not turn historical test counts or symbol presence into release acceptance.
+Licensed EyeLink verification remains a separate programme with external inputs, not a
+prerequisite for pure core work. Each implementation slice must establish current test evidence;
+this roadmap does not turn historical test counts or symbol presence into release acceptance.
 
 ## Milestones and acceptance
 
@@ -159,19 +159,16 @@ produce actionable typed failures. A changed plan produces a meaningful structur
 
 ### M5 — Prove modular development and application consumption
 
-Status (2026-09-19): closed on the integrated UI-G0/UI-G1 consumer evidence.
-Long-recording responsiveness remains explicitly tracked under `app-progress`.
+Status: closed on the integrated UI-G0/UI-G1 consumer evidence. Long-recording responsiveness
+is measured in [execution responsiveness](EXECUTION_RESPONSIVENESS.md).
 
-The [UI-consumer infrastructure plan](UI_FOUNDATION_PLAN.md), lodged on 2026-09-16
-and revised on 2026-09-17, breaks the execution, scientific serialization, and
-method/preflight boundary into 18 scoped implementation tickets under the existing
-Mote owners. X1's shared work/pair schedule, S1's domain codecs and M1's typed
-descriptors closed on 2026-09-16 (commit `34f234c`); preflight and bounded preview
-are now implemented too. Follow the live tracker for X3, S2 and the remaining consumer work.
-A fixation-only gate (G0) proves the first app journey before
-the external-consumer gate (G1) covers the bounded shipped study, recording, and
-temporal routes; neither closes the broader baseline, Session, or all-method
-coverage requirements in this development plan.
+The [UI-consumer infrastructure plan](UI_FOUNDATION_PLAN.md) breaks the execution, scientific
+serialization and method/preflight boundary into scoped tickets under the existing Mote owners;
+the shared work/pair schedule, domain codecs, typed descriptors, preflight and bounded preview are
+implemented. A fixation-only gate (G0) proved the first app journey before the external-consumer
+gate (G1) covered the bounded shipped study, recording and temporal routes; neither closes the
+broader baseline, Session or all-method coverage requirements in this plan. Follow the live
+tracker for the remaining consumer work.
 
 Use `bd-01M214CXBZN8R7R4P0M5ACY25H`, the application-boundary integration work
 `bd-01M02N4GM03BF98C3PSJS6D4WA`, and `app-progress`/`app-measureinfo`/`app-errors`.
@@ -219,31 +216,25 @@ M1 starts first. M2 and M3 advance together; M4 begins with its seam design duri
 follows concrete workflow contracts. M5 consumes the completed persistence boundary. M6 requires
 all preceding acceptance evidence. Documentation and error quality are part of each slice.
 
-The initial contrast, fixation-table, saved-study and multiscale-extension slices are delivered
-within the boundaries recorded in [saved studies](SAVED_STUDIES.md),
-[fixation studies](FIXATION_STUDIES.md), [extending studies](EXTENDING_STUDIES.md) and
-[PARITY.md](../PARITY.md). The [repetition slice](REPETITION_STUDIES.md) now connects direct
-relations, bounded controls, pinned reference semantics and saved/exported phase contrasts.
+The contrast, fixation-table, saved-study, multiscale-extension, repetition and template slices
+are delivered within the boundaries recorded in [saved studies](SAVED_STUDIES.md),
+[fixation studies](FIXATION_STUDIES.md), [extending studies](EXTENDING_STUDIES.md),
+[repetition studies](REPETITION_STUDIES.md), [template fitting](TEMPLATE_FITTING.md) and
+[PARITY.md](../PARITY.md).
 
 The next coherent slices are:
 
-1. **Learned template and surface-model bridge:** the basic fixed-feature training-only
-   export/R-QR/import route is now [executable](TEMPLATE_FITTING.md), with a versioned recipe,
-   independent rational targets and held-out leakage controls. Continue `eyesim-template` and
-   surface decomposition with training-only learned feature construction, actual cross-fitted
-   similarity and representation-correct map fits. Do not treat fixed features as proof of
-   learned-template leakage safety or coefficient normalization as a mixture model.
-2. **Repetition and comparison breadth:** extend `eyesim-repetition` and `eyesim-compare` with
-   pinned remaining-method and multiscale mean/none cases. Persist arbitrary all-occasion and
-   finite-cap designs only with named projections and direct-versus-restored pair identity proof.
-3. **Consumer and docs proof:** finish the existing bounded UI-foundation consumer gates;
-   the second extension family already has bounded evidence. The task-first site now builds
-   locally and has generated CI checks; its migration table names every required entry point,
-   including unsupported methods. Complete public-example migration and API Scaladoc, obtain
-   rendered browser review, and distinguish configured CI from a passing hosted run.
+1. **Core readiness for the desktop app:** the analysis families, descriptors and contracts the
+   application needs, in the order of [the core readiness plan](plans/CORE_READINESS_PLAN.md).
+2. **Consumer and docs proof:** complete public-example migration and API Scaladoc, obtain
+   rendered browser review, run the fresh-consumer proof across all journeys, and distinguish
+   configured CI from a passing hosted run.
+3. **Foundation acceptance:** capture a representative recording workload with practical time
+   and memory limits ([execution responsiveness](EXECUTION_RESPONSIVENESS.md)) and the
+   supported-runtime evidence M6 requires.
 
-These slices advance M2–M5 without closing them wholesale. Reuse live task ownership and attach
-any genuinely new gap to the existing baseline/consumer gates rather than creating another roadmap.
+Reuse live task ownership and attach any genuinely new gap to the existing consumer and acceptance
+gates rather than creating another roadmap.
 
 ## Scope discipline
 
@@ -256,8 +247,8 @@ implementation into the kernel.
 Maintain I/O correctness and the real ASC support requirement. The licensed EDF programme and
 new vendor formats do not gate pure plans, codecs, or usability work. Preserve their existing
 issues and evidence instead of declaring unfinished verification complete. General model fitting
-and visualization stay in optional integrations or consumers. A missing basic template workflow
-still blocks the baseline even if its solver runs outside core.
+and visualization stay in optional integrations or consumers; the basic template workflow is
+native, so no baseline workflow depends on an external solver.
 
 ## Tracker reconciliation
 

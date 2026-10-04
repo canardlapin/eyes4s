@@ -147,7 +147,7 @@ jobs:
       - name: Run functional JavaFX tests (no goldens)
         env:
           EYES4S_STUDIO_SMALL_DISPLAY: skip
-        run: sbt -J-Xmx4g -Djavafx.platform=mac-aarch64 studioDesktop/test
+        run: sbt -J-Xmx4g -Djavafx.platform=mac-aarch64 -Deyes4s.studio.fx.visible=true studioDesktop/test
 
   studio-clean-clone:
     name: Studio pins from a clean clone

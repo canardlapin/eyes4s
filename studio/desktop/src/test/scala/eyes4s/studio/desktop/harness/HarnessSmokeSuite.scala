@@ -20,6 +20,7 @@ import java.nio.file.Files
 import javafx.scene.control.{Button, Label, TextField}
 import javafx.scene.input.KeyCode
 import javafx.scene.layout.{Pane, StackPane, VBox}
+import javafx.stage.Screen
 import javax.imageio.ImageIO
 
 /** The harness itself: a board-sized stage, robot input and 1x/2x snapshots. */
@@ -61,6 +62,20 @@ class HarnessSmokeSuite extends StudioFxSuite:
       (image.getWidth, image.getHeight)
     }
     assertEquals(sizes, List((1440, 900), (2880, 1800)))
+  }
+
+  fxStage.test("a headless run draws on Monocle's virtual screen, not the display") { fx =>
+    assume(StudioFxSuite.headless, "the build asked for visible FX tests")
+    assertEquals(StudioFxSuite.glassApplication, "com.sun.glass.ui.monocle.MonocleApplication")
+    val screen = fx.runOnFx(Screen.getPrimary)
+    assertEquals(
+      fx.runOnFx(
+        (screen.getBounds.getWidth, screen.getBounds.getHeight, screen.getOutputScaleX)
+      ),
+      (1920.0, 1200.0, 1.0)
+    )
+    assertEquals(fx.runOnFx(fx.stage.getOutputScaleX), 1.0)
+    assertEquals(sys.props.get("java.awt.headless"), Some("true"))
   }
 
   fxStage.test("keys reach the focus owner") { fx =>

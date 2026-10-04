@@ -16,6 +16,7 @@
 
 package eyes4s.io
 
+import eyes4s.plan.{Diagnose, Locus}
 import cats.data.NonEmptyVector
 
 /** Scientific origin of an EyeLink conformance fixture. */
@@ -1069,3 +1070,29 @@ enum EyeLinkCorpusError derives CanEqual:
       s"EyeLink corpus source='$source' contains no fixture rows."
 
 end EyeLinkCorpusError
+
+// Test-scope evidence apparatus (CR9): its codes stay in IoDiagnosticCatalog,
+// which only ever appends, and its Diagnose instance lives with the enum.
+object EyeLinkCorpusError:
+  given Diagnose[EyeLinkCorpusError, Nothing] =
+    Diagnose.derived[EyeLinkCorpusError, Nothing](IoDiagnosticCatalog.eyeLinkCorpus, lines)(
+      _.message
+    )
+
+  private def line(source: String, number: Long): Vector[Locus[Nothing]] =
+    Vector(Locus.Line(source, number))
+
+  private def lines(error: EyeLinkCorpusError): Vector[Locus[Nothing]] =
+    error match
+      case InvalidHeader(source, number, _, _)         => line(source, number)
+      case WrongFieldCount(source, number, _, _)       => line(source, number)
+      case InvalidEscape(source, number, _, _, _)      => line(source, number)
+      case InvalidValue(source, number, _, _, _)       => line(source, number)
+      case InvalidDigest(source, number, _, _)         => line(source, number)
+      case PartialConverterEvidence(source, number)    => line(source, number)
+      case InvalidConverterEvidence(source, number, _) => line(source, number)
+      case InvalidFixture(source, number, _, _)        => line(source, number)
+      case UnsafeLocalPath(source, number, _, _)       => line(source, number)
+      case DuplicateFixtureId(source, _, numbers)      => numbers.flatMap(line(source, _))
+      case InvalidPreamble(_, _) | DuplicateLocalPath(_, _, _) | EmptyManifest(_) =>
+        Vector.empty

@@ -25,9 +25,9 @@ import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{ClockTime, ProjectName}
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.admission.{AdmissionLedgerHost, LedgerInputs}
-import eyes4s.studio.desktop.compare.{CompareSummaryHost, SummaryInputs}
-import eyes4s.studio.desktop.figures.{FigureInputs, FiguresHost}
+import eyes4s.studio.desktop.compare.{CompareSummaryHost, PanelSources, SummaryInputs}
 import eyes4s.studio.desktop.explore.{
+  ExploreTimelineHost,
   ExploreTrialViewHost,
   NavigatorDisplays,
   NavigatorInputs,
@@ -35,6 +35,7 @@ import eyes4s.studio.desktop.explore.{
   TrialsNavigatorHost
 }
 import eyes4s.studio.desktop.trial.StimulusSource
+import eyes4s.studio.desktop.figures.{FigureInputs, FiguresHost}
 import eyes4s.studio.desktop.dock.{DockGesture, PerspectiveHost}
 import eyes4s.studio.desktop.runtime.{
   DesktopEffects,
@@ -78,6 +79,8 @@ final class StudioWindow private (
     navigatorListener: AppModel => Unit,
     val explore: ExploreTrialViewHost,
     exploreListener: AppModel => Unit,
+    val timeline: ExploreTimelineHost,
+    timelineListener: AppModel => Unit,
     val resolvedDesign: ResolvedDesignHost,
     designListener: AppModel => Unit,
     val figures: FiguresHost,
@@ -93,9 +96,17 @@ final class StudioWindow private (
   def paneStops(pane: PaneId): Vector[FocusStop] =
     if pane == StudioLayouts.columnMapping then columnMapping.focusStops
     else if pane == StudioLayouts.admission then admission.focusStops
+    else if pane == StudioLayouts.compareQueries || pane == StudioLayouts.compareItems then
+      eyes4s.studio.app.compare.QueriesNavigator.focusStops(summary.navigatorVM)
+    else if pane == StudioLayouts.queryTrial then
+      eyes4s.studio.app.compare.TrialPanels.queryStops(summary.panelsVM)
+    else if pane == StudioLayouts.referenceTrial then
+      eyes4s.studio.app.compare.TrialPanels.referenceStops(summary.panelsVM)
+    else if pane == StudioLayouts.contrast then summary.contrastStops
     else if pane == StudioLayouts.trials then navigator.trialsStops
     else if pane == StudioLayouts.items then navigator.itemsStops
     else if pane == StudioLayouts.trialView then explore.focusStops
+    else if pane == StudioLayouts.timeline then timeline.focusStops
     else if pane == StudioLayouts.resolvedDesign then resolvedDesign.focusStops
     else
       pane.value match
@@ -117,7 +128,9 @@ final class StudioWindow private (
     runtime.unlisten(summaryListener)
     runtime.unlisten(navigatorListener)
     runtime.unlisten(exploreListener)
+    runtime.unlisten(timelineListener)
     explore.dispose()
+    timeline.dispose()
     runtime.unlisten(designListener)
     runtime.unlisten(figuresListener)
     summary.dispose()
@@ -209,7 +222,8 @@ object StudioWindow:
       project: Option[ProjectPort] = None,
       clock: () => Option[ClockTime] = DesktopEffects.wallClock,
       nativeMenu: Boolean = AppShell.systemMenuBar,
-      presets: FilePresetStore = FilePresetStore.userDefault
+      presets: FilePresetStore = FilePresetStore.userDefault,
+      panels: PanelSources = PanelSources.notServed
   )(using IORuntime): Either[WindowError, StudioWindow] =
     for
       sheets <- StudioStyles.stylesheets(theme).left.map(WindowError.Styles(_))
@@ -225,7 +239,8 @@ object StudioWindow:
         project,
         clock,
         nativeMenu,
-        presets
+        presets,
+        panels
       )
     yield
       window.root.getStylesheets.setAll(sheets*)
@@ -242,7 +257,8 @@ object StudioWindow:
       project: Option[ProjectPort],
       clock: () => Option[ClockTime],
       nativeMenu: Boolean,
-      presets: FilePresetStore
+      presets: FilePresetStore,
+      panels: PanelSources
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None
@@ -323,14 +339,22 @@ object StudioWindow:
     host.host(StudioLayouts.admission, admission.node)
     r.listen(admission.sync)
     // Compare's summary layout (Results board): the shown run's summary.
-    val summary = CompareSummaryHost(() => r.model, dispatch, SummaryInputs.of(session))
+    val summary =
+      CompareSummaryHost(() => r.model, dispatch, SummaryInputs.of(session), panels)
     Vector(
       "compare.participant-plot"       -> summary.participantPlot.plotNode,
       "compare.participant-plot.table" -> summary.participantPlot.tableNode,
       "compare.scale-profile"          -> summary.scaleProfile.plotNode,
       "compare.scale-profile.table"    -> summary.scaleProfile.tableNode,
       "compare.participant-table"      -> summary.participantNode,
-      "compare.query-table"            -> summary.queryTable
+      "compare.query-table"            -> summary.queryTable,
+      "compare.queries"                -> summary.queries.node,
+      "compare.query-trial"            -> summary.panels.queryNode,
+      "compare.reference-trial"        -> summary.panels.referenceNode,
+      "compare.contrast"               -> summary.contrastNode,
+      "compare.query-trial.table"      -> summary.queryTrialTable,
+      "compare.reference-trial.table"  -> summary.referenceTrialTable,
+      "compare.items"                  -> summary.items.node
     ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
     val summaryListener: AppModel => Unit = summary.sync
     r.listen(summaryListener)
@@ -347,6 +371,13 @@ object StudioWindow:
     host.host(StudioLayouts.trialView, explore.node)
     val exploreListener: AppModel => Unit = explore.sync
     r.listen(exploreListener)
+    // Explore's timeline: the trial view's fixations, the playhead and the brush.
+    val timeline = ExploreTimelineHost(() => r.model, dispatch, () => explore.state)
+    host.host(StudioLayouts.timeline, timeline.node)
+    host.host(StudioLayouts.timelineTable, timeline.tableNode)
+    explore.onChange(() => timeline.refresh())
+    val timelineListener: AppModel => Unit = timeline.sync
+    r.listen(timelineListener)
     // The resolved-design table (Analysis): the backend's preview of the
     // target revision, prepared once the perspective is shown.
     val design = ResolvedDesignHost(dispatch, DesignInputs.of(session))
@@ -393,6 +424,8 @@ object StudioWindow:
         navigatorListener,
         explore,
         exploreListener,
+        timeline,
+        timelineListener,
         design,
         designListener,
         figures,
