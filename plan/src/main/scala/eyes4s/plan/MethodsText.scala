@@ -696,15 +696,17 @@ private final class FactText(facts: MethodsFacts):
       val counts = f.value match
         case FactValue.Controls(cs) => cs.sortBy(-_.controls)
         case _                      => Vector.empty
+      val most  = counts.map(_.controls).maxOption.getOrElse(0)
       val items = counts.map { c =>
         Vector(
           part(f, FactPart.Queries, FactValue.Count(c.queries)),
           w(" had "),
           part(f, FactPart.Controls, FactValue.Count(c.controls.toLong)),
           w(if c.controls == 1 then " control" else " controls")
-        ) ++ c.loss.toVector.flatMap(l =>
-          Vector(w(" ("), part(f, FactPart.Loss, FactValue.Label(l.label)), w(")"))
-        )
+        ) ++ c.loss.toVector.flatMap { l =>
+          val lost = if most - c.controls == 1 then " (one lost to " else " (others lost to "
+          Vector(w(lost), part(f, FactPart.Loss, FactValue.Label(l.label)), w(")"))
+        }
       }
       Clause(
         ClauseTopic.Design,
@@ -768,7 +770,7 @@ private final class FactText(facts: MethodsFacts):
     )
     val minimum = at(FactSlot.MinimumQueries).map(m =>
       Vector(
-        w("groups with fewer than "),
+        w("participant-group cells with fewer than "),
         m,
         w(noun(FactSlot.MinimumQueries, " query were left out", " queries were left out"))
       )

@@ -541,7 +541,8 @@ class StudyFormSuite extends munit.FunSuite:
       Vector(
         "Of 480 requested queries, 457 were eligible; 454 contributed, 3 failed (off-window 3), " +
           "9 had no admitted matched trial and 14 were not admitted.",
-        "Of the compared queries, 286 had 19 controls and 171 had 18 controls (overlap)."
+        "Of the compared queries, 286 had 19 controls and 171 had 18 controls (one lost to " +
+          "overlap)."
       )
     )
     assertEquals(
@@ -549,7 +550,8 @@ class StudyFormSuite extends munit.FunSuite:
       Vector(
         "Results were reported by retrieval response; n = 24 Remembered and 23 Forgotten; " +
           "the paired contrast held 24.",
-        "Per participant, groups held 2–17 queries; groups with fewer than 3 queries were left out.",
+        "Per participant, groups held 2–17 queries; participant-group cells with fewer than 3 " +
+          "queries were left out.",
         "1 participant-group cell had fewer queries than the minimum (P05 · Forgotten · 1 query).",
         "2 participant-group cells had the fewest queries (P17 · Forgotten · 2 queries, " +
           "P21 · Forgotten · 2 queries)."
@@ -617,6 +619,12 @@ class StudyFormSuite extends munit.FunSuite:
     )
     val digits = text.tokens.collect { case Token.Words(w) if w.exists(_.isDigit) => w }
     assertEquals(digits, Vector.empty, "fixed wording states no number")
+    // Each fact's value is stated exactly once; a controls fact states its
+    // counts instead of its range.
+    fixtureFacts.facts.foreach { f =>
+      val values = tokens.count(t => t.slot == f.slot && t.part == FactPart.Value)
+      assertEquals(values, if f.slot == FactSlot.ControlsPerQuery then 0 else 1, f.slot.slotId)
+    }
   }
 
   test("CR6d: facts not given are not stated; no facts states the plan alone") {
@@ -740,7 +748,7 @@ class StudyFormSuite extends munit.FunSuite:
     )
     assertEquals(
       topic(ClauseTopic.Reporting, fixturePlan, only(FactSlot.MinimumQueries)),
-      Vector("Groups with fewer than 3 queries were left out.")
+      Vector("Participant-group cells with fewer than 3 queries were left out.")
     )
   }
 
@@ -883,7 +891,40 @@ class StudyFormSuite extends munit.FunSuite:
       )
     )
     assertEquals(
-      MethodsFacts.of(replaced(FactSlot.FailedQueries, 4)),
+      MethodsFacts.of(replaced(FactSlot.EligibleQueries, 458)),
+      Left(
+        FactError.Inconsistent(
+          "eligibleQueries",
+          458,
+          Vector("contributingQueries", "failedQueries"),
+          457
+        )
+      )
+    )
+    assertEquals(
+      MethodsFacts.of(replaced(FactSlot.RequestedQueries, 479)),
+      Left(
+        FactError.Inconsistent(
+          "requestedQueries",
+          479,
+          Vector("eligibleQueries", "unmatchedQueries", "notAdmittedQueries"),
+          480
+        )
+      )
+    )
+    // Without the unmatched count the requested queries are not checked.
+    assert(
+      MethodsFacts
+        .of(
+          replaced(FactSlot.RequestedQueries, 479)
+            .filterNot(_.slot == FactSlot.UnmatchedQueries)
+        )
+        .isRight
+    )
+    assertEquals(
+      MethodsFacts.of(
+        replaced(FactSlot.FailedQueries, 4).filterNot(_.slot == FactSlot.EligibleQueries)
+      ),
       Left(
         FactError.Inconsistent(
           "failedQueries",

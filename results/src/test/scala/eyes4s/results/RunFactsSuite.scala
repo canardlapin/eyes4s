@@ -49,7 +49,8 @@ class RunFactsSuite extends munit.FunSuite:
   private val scored                       = RoleOutcome.Scored(Vector(0.5))
   private def failed(code: DiagnosticCode) = RoleOutcome.Failed(code, "failed")
 
-  // Three scored, two arithmetic failures, one off-window, one without a row.
+  // Three scored, two arithmetic failures, one off-window, one without a row,
+  // and one unmatched query whose control reduction gave it a failed row.
   private val table = get(
     QueryTable.of(
       0,
@@ -62,10 +63,12 @@ class RunFactsSuite extends munit.FunSuite:
         query("d", failed(arithmetic)),
         query("e", failed(offWindow)),
         query("f", failed(arithmetic)),
-        query("g", RoleOutcome.NotStored)
+        query("g", RoleOutcome.NotStored),
+        query("h", failed(DiagnosticCode("contrast-row", "reduction-failures")))
       )
     )
   )
+  private val unmatched = (k: StudyKey) => k.stimulus == "h"
 
   private def run(slot: FactSlot, total: QueryTotal, n: Long) =
     get(Fact.of(slot, FactSource.Run(total), FactValue.Count(n)))
@@ -73,18 +76,18 @@ class RunFactsSuite extends munit.FunSuite:
 
   test("a query table's totals: eligible, contributing, failed by code, unmatched") {
     assertEquals(
-      get(RunFacts.of(table)),
+      get(RunFacts.of(table, unmatched)),
       Vector(
         run(FactSlot.EligibleQueries, QueryTotal.Eligible, 6),
         run(FactSlot.ContributingQueries, QueryTotal.Contributing, 3),
         run(FactSlot.FailedQueries, QueryTotal.Failed, 3),
         run(FactSlot.FailureCause(code(arithmetic)), QueryTotal.Failure(code(arithmetic)), 2),
         run(FactSlot.FailureCause(code(offWindow)), QueryTotal.Failure(code(offWindow)), 1),
-        run(FactSlot.UnmatchedQueries, QueryTotal.Unmatched, 1)
+        run(FactSlot.UnmatchedQueries, QueryTotal.Unmatched, 2)
       )
     )
     // The failures sum to the failed queries, so the totals make methods facts.
-    assert(MethodsFacts.of(get(RunFacts.of(table))).isRight)
+    assert(MethodsFacts.of(get(RunFacts.of(table, unmatched))).isRight)
     assertEquals(code(offWindow).label, "off-window")
   }
 
@@ -93,7 +96,13 @@ class RunFactsSuite extends munit.FunSuite:
   ) {
     val selected = Map("a" -> 19, "b" -> 19, "c" -> 18, "d" -> 19, "e" -> 18)
     assertEquals(
-      get(RunFacts.controls(table, k => selected.get(k.stimulus))),
+      get(
+        RunFacts.controls(
+          table,
+          unmatched,
+          k => selected.get(k.stimulus) orElse Option.when(k.stimulus == "h")(7)
+        )
+      ),
       Some(
         get(
           Fact.of(
@@ -118,7 +127,31 @@ class RunFactsSuite extends munit.FunSuite:
         Vector(query("g", RoleOutcome.NotStored))
       )
     )
-    assertEquals(get(RunFacts.controls(none, _ => Some(3))), None)
+    assertEquals(get(RunFacts.controls(none, _ => false, _ => Some(3))), None)
+  }
+
+  test(
+    "when the whole contrast fails, every matched query fails and unmatched ones stay unmatched"
+  ) {
+    val whole = DiagnosticCode("study-contrast", "missing-operands")
+    val all   = get(
+      QueryTable.of(
+        0,
+        Vector("value"),
+        CovariateSchema.empty,
+        Vector("a", "b", "c").map(query(_, failed(whole)))
+      )
+    )
+    assertEquals(
+      get(RunFacts.of(all, _.stimulus == "c")).map(f => (f.slot.slotId, f.value)),
+      Vector(
+        "eligibleQueries"                              -> FactValue.Count(2),
+        "contributingQueries"                          -> FactValue.Count(0),
+        "failedQueries"                                -> FactValue.Count(2),
+        "failureCause.study-contrast.missing-operands" -> FactValue.Count(2),
+        "unmatchedQueries"                             -> FactValue.Count(1)
+      )
+    )
   }
 
   // ---------------------------------------------------------------- a stored study
@@ -187,6 +220,41 @@ class RunFactsSuite extends munit.FunSuite:
         FactSlot.ContributingQueries -> FactValue.Count(5),
         FactSlot.FailedQueries       -> FactValue.Count(0),
         FactSlot.UnmatchedQueries    -> FactValue.Count(0),
+        FactSlot.ControlsPerQuery    -> FactValue.Controls(
+          Vector(ControlCount(2, 3, None), ControlCount(1, 2, None))
+        )
+      )
+    )
+  }
+
+  test(
+    "a recall trial without its encoding trial is unmatched, and has no place among the controls"
+  ) {
+    // p2 recalls c but never encoded it.
+    val more = StudyInput(
+      Trials(input.trials.rows :+ trial(StudyKey("p2", "c", "recall"), Vector(0.5 -> 0.5)))
+    )
+    val unmatchedPlan = get(
+      StudyPlan.cosine(
+        more.reference,
+        grid,
+        "recall",
+        "encode",
+        Weight.Duration,
+        Vector(StudyEstimate.Binned()),
+        FailurePolicy.RequireAll
+      )
+    )
+    val run    = get(unmatchedPlan.run(more))
+    val source = get(ReportSource.study(unmatchedPlan, more, run, None, binding))
+    val facts  = get(RunFacts.study(run, get(source.queries(0))))
+    assertEquals(
+      facts.map(f => (f.slot, f.value)),
+      Vector(
+        FactSlot.EligibleQueries     -> FactValue.Count(5),
+        FactSlot.ContributingQueries -> FactValue.Count(5),
+        FactSlot.FailedQueries       -> FactValue.Count(0),
+        FactSlot.UnmatchedQueries    -> FactValue.Count(1),
         FactSlot.ControlsPerQuery    -> FactValue.Controls(
           Vector(ControlCount(2, 3, None), ControlCount(1, 2, None))
         )

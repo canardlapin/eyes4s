@@ -31,35 +31,35 @@ import eyes4s.plan.{
 }
 
 /** The design facts of a run's methods text (CR6d), read from one scale's
-  * query table and, for the controls, the run's control reductions. Each
-  * fact's source is the run total it states (`FactSource.Run`).
+  * query table, the focal trials its matched pairing left unmatched and, for
+  * the controls, the run's control reductions. Each fact's source is the run
+  * total it states (`FactSource.Run`).
   */
 object RunFacts:
-  /** The query totals of `table`, by each query's stored contrast row:
+  /** The query totals of `table`, given which of its queries the matched
+    * pairing left `unmatched`:
     *
-    *   - `ContributingQueries`: a scored difference;
-    *   - `FailedQueries`, and `FailureCause(code)` for each failure code: a
-    *     stored failure;
-    *   - `EligibleQueries`: the compared queries, contributing or failed;
-    *   - `UnmatchedQueries`: no stored contrast row, because the pairing found
-    *     no matched reference.
+    *   - `UnmatchedQueries`: an unmatched query, or one without a stored
+    *     contrast row; an unmatched query may still have a contrast row (from
+    *     its control reduction, or a failed contrast), and is still unmatched;
+    *   - `ContributingQueries`: any other query with a scored difference;
+    *   - `FailedQueries`, and `FailureCause(code)` for each failure code: any
+    *     other query with a stored failure;
+    *   - `EligibleQueries`: the compared queries, contributing or failed.
     *
     * The requested and not-admitted queries are counted against the trial
     * inventory, which a query table does not hold; a host states them.
     */
-  def of[K](table: QueryTable[K]): Either[FactError, Vector[Fact]] =
-    val outcomes = table.queries.map(_.difference)
-    val failures = outcomes.collect { case RoleOutcome.Failed(code, _) => code.render }
-    val scored   = outcomes.count {
-      case RoleOutcome.Scored(_) => true
-      case _                     => false
-    }
+  def of[K](table: QueryTable[K], unmatched: K => Boolean): Either[FactError, Vector[Fact]] =
+    val compared = comparedQueries(table, unmatched).map(_.difference)
+    val failures = compared.collect { case RoleOutcome.Failed(code, _) => code.render }
+    val scored   = compared.size - failures.size
     def total(slot: FactSlot, kind: QueryTotal, n: Long) =
       Fact.of(slot, FactSource.Run(kind), FactValue.Count(n))
     for
       codes <- failures.distinct.sorted.traverse(FactCode.of)
       head  <- Vector(
-        total(FactSlot.EligibleQueries, QueryTotal.Eligible, (scored + failures.size).toLong),
+        total(FactSlot.EligibleQueries, QueryTotal.Eligible, compared.size.toLong),
         total(FactSlot.ContributingQueries, QueryTotal.Contributing, scored.toLong),
         total(FactSlot.FailedQueries, QueryTotal.Failed, failures.size.toLong)
       ).sequence
@@ -70,27 +70,33 @@ object RunFacts:
           failures.count(_ == code.value).toLong
         )
       )
-      unmatched <- total(
+      left <- total(
         FactSlot.UnmatchedQueries,
         QueryTotal.Unmatched,
-        (outcomes.size - scored - failures.size).toLong
+        (table.queries.size - compared.size).toLong
       )
-    yield head ++ causes :+ unmatched
+    yield head ++ causes :+ left
 
-  /** The controls of the compared queries of `table` (contributing or
-    * failed): how many queries had each number of controls, from `selected`,
-    * the control pairs each query's control reduction selected (none when it
-    * has no reduction). Why a query had fewer is not known here. No compared
-    * query, no fact.
+  /** The compared queries: matched, with a stored contrast row. */
+  private def comparedQueries[K](table: QueryTable[K], unmatched: K => Boolean) =
+    table.queries.filter(q =>
+      !unmatched(q.key) && (q.difference match
+        case RoleOutcome.NotStored => false
+        case _                     => true)
+    )
+
+  /** The controls of the compared queries of `table` (matched, contributing
+    * or failed): how many queries had each number of controls, from
+    * `selected`, the control pairs each query's control reduction selected
+    * (none when it has no reduction). Why a query had fewer is not known
+    * here. No compared query, no fact.
     */
   def controls[K](
       table: QueryTable[K],
+      unmatched: K => Boolean,
       selected: K => Option[Int]
   ): Either[FactError, Option[Fact]] =
-    val compared = table.queries.filter(_.difference match
-      case RoleOutcome.NotStored => false
-      case _                     => true)
-    val counts = compared
+    val counts = comparedQueries(table, unmatched)
       .groupMapReduce(q => selected(q.key).getOrElse(0))(_ => 1L)(_ + _)
       .toVector
       .sortBy(-_._1)
@@ -105,17 +111,20 @@ object RunFacts:
         )
       )
 
-  /** The facts of `table` ([[of]]) and its controls ([[controls]]) from the
-    * control reductions of the same scale of `result`.
+  /** The facts of `table` ([[of]]) and its controls ([[controls]]), with the
+    * unmatched focal trials of the matched pairing and the control
+    * reductions of the same scale of `result`.
     */
   def study[K, U <: Unit2D, S, D](
       result: StudyResult[K, U, S, D],
       table: QueryTable[K]
   ): Either[FactError, Vector[Fact]] =
-    val selected = result.scales
-      .lift(table.scale)
+    val scale     = result.scales.lift(table.scale)
+    val unmatched =
+      scale.fold(Set.empty[K])(_.analyses.matchedSource.diagnostics.unmatchedLeft.toSet)
+    val selected = scale
       .fold(Map.empty[K, Int])(_.analyses.control.entries.map(r => r.key -> r.selected).toMap)
     for
-      totals   <- of(table)
-      controls <- controls(table, selected.get)
+      totals   <- of(table, unmatched)
+      controls <- controls(table, unmatched, selected.get)
     yield totals ++ controls.toVector

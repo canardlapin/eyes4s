@@ -219,9 +219,12 @@ linking and diffing, and `FactSlot.fromSlotId` reads one back.
 share outside [0, 1], a blank label or level, and a controls fact with no
 counts, a repeated control count or a loss at the most controls.
 `MethodsFacts.of` refuses the first slot given twice, in input order, and
-totals that disagree with their parts when all are given: the inventory with
-the admitted, quarantined, no-fixation and absent trials, the quarantined
-trials with their causes, and the failed queries with their failure codes.
+totals that disagree with their parts: when all are given, the inventory with
+the admitted, quarantined, no-fixation and absent trials, the eligible queries
+with the contributing and failed ones, and the requested queries with the
+eligible, unmatched and not-admitted ones; and, when any cause is given, the
+quarantined trials with their causes and the failed queries with their failure
+codes (the causes given must account for every one).
 These are the `methods-fact` diagnostics. Every fact given is stated, even
 without its companions; a fact not given, such as an undefined share, is not
 stated, and `methods(plan)` states the plan alone. The text also states the
@@ -245,11 +248,14 @@ from an `AdmissionLedger` and the plan's window tallies
 inventory trial's disposition (without one, the trials the records name, and no
 absent count); the tallied records, the records and trials outside the window
 and the screen, and the outside-window share of fixation duration when it is
-defined; and the off-screen policy. `eyes4s.results.RunFacts.of(table)` reads a
-run's query totals from one scale's `QueryTable` by each query's stored contrast
-row (eligible, contributing, failed by failure code, unmatched), and
-`RunFacts.study(result, table)` adds the controls of the compared queries from
-the run's control reductions. The requested and not-admitted queries are
+defined; and the off-screen policy. `eyes4s.results.RunFacts.of(table,
+unmatched)` reads a run's query totals from one scale's `QueryTable`: a query
+the matched pairing left unmatched (or with no stored contrast row) is
+unmatched even when its control reduction gave it a contrast row; any other is
+contributing or failed by failure code, and those are the eligible queries.
+`RunFacts.study(result, table)` takes the unmatched queries from the run's
+matched pairing and adds the controls of the compared queries from its control
+reductions. The requested and not-admitted queries are
 counted against the trial inventory and are the host's to state. A host joins
 these with its own facts (the dataset revision) in `MethodsFacts.of`, which
 checks that the totals agree.

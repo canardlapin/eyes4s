@@ -394,10 +394,15 @@ object MethodsFacts:
   val empty: MethodsFacts = new MethodsFacts(Vector.empty)
 
   /** The facts, each slot once (the first repeated slot, in input order, is
-    * refused), whose totals agree with their parts when all are given: the
-    * inventory trials are the admitted, quarantined, no-fixation and absent
-    * trials; the quarantined trials are the sum of their causes; the failed
-    * queries are the sum of their failure causes.
+    * refused), whose totals agree with their parts:
+    *
+    *   - when the total and all its parts are given: the inventory trials are
+    *     the admitted, quarantined, no-fixation and absent trials; the
+    *     eligible queries are the contributing and failed ones; the requested
+    *     queries are the eligible, unmatched and not-admitted ones;
+    *   - when the total and any cause is given, the causes given must account
+    *     for every quarantined trial, and the failure codes given for every
+    *     failed query.
     */
   def of(facts: Vector[Fact]): Either[FactError, MethodsFacts] =
     val ids      = facts.map(_.slot.slotId)
@@ -415,13 +420,23 @@ object MethodsFacts:
         case Some(t) if parts.nonEmpty && parts.map(_._2).sum != t =>
           Left(FactError.Inconsistent(total.slotId, t, parts.map(_._1), parts.map(_._2).sum))
         case _ => Right(())
-    val dispositions =
-      Vector(FactSlot.Admitted, FactSlot.Quarantined, FactSlot.NoFixations, FactSlot.Absent)
-    val trials =
-      if dispositions.forall(n(_).isDefined) then
-        agree(FactSlot.InventoryTrials, dispositions.map(s => (s.slotId, n(s).getOrElse(0L))))
+    def whole(total: FactSlot, parts: Vector[FactSlot]) =
+      if parts.forall(n(_).isDefined) then
+        agree(total, parts.map(s => (s.slotId, n(s).getOrElse(0L))))
       else Right(())
-    repeated.toLeft(()) *> trials *>
+    repeated.toLeft(()) *>
+      whole(
+        FactSlot.InventoryTrials,
+        Vector(FactSlot.Admitted, FactSlot.Quarantined, FactSlot.NoFixations, FactSlot.Absent)
+      ) *>
+      whole(
+        FactSlot.EligibleQueries,
+        Vector(FactSlot.ContributingQueries, FactSlot.FailedQueries)
+      ) *>
+      whole(
+        FactSlot.RequestedQueries,
+        Vector(FactSlot.EligibleQueries, FactSlot.UnmatchedQueries, FactSlot.NotAdmittedQueries)
+      ) *>
       agree(
         FactSlot.Quarantined,
         counts {
