@@ -170,3 +170,74 @@ class TimelineFxSuite extends ShellFxSuite:
     runOnFx(h.stepBack.fire())
     assert(runOnFx(h.timeline.playheadMs) < held)
   }
+
+  private def drag(w: StudioWindow, t: PlotTargets, from: Double, to: Double): Unit =
+    fireAt(w, t, from, true, MouseEvent.MOUSE_PRESSED)
+    fireAt(w, t, (from + to) / 2.0, false, MouseEvent.MOUSE_DRAGGED)
+    fireAt(w, t, to, false, MouseEvent.MOUSE_RELEASED)
+
+  fxStage.test(
+    "the brush ends when the selection moves on: another view's selection, and Escape"
+  ) { fx =>
+    val (w, t) = ready(fx)
+    val h      = w.timeline
+    drag(w, t, 1200.0, 2800.0)
+    eventually(fx, "the brush")(h.timeline.brush.isDefined && h.brush.span.isDefined)
+    // Another view selects fixation 1: the span and its status go.
+    dispatch(fx, w, StoryModels.select(w.runtime.model, "explore.trial-view", ref(1)))
+    eventually(fx, "the brush cleared")(h.timeline.brush.isEmpty && h.brush.span.isEmpty)
+    assertEquals(runOnFx(h.status.getText), "playhead 0.00 s")
+    // Brush again; Escape on the plot clears the selection, and with it the brush.
+    val t2 = runOnFx(h.twin.input.targets).get
+    drag(w, t2, 1200.0, 2800.0)
+    eventually(fx, "the second brush")(h.timeline.brush.isDefined)
+    runOnFx(h.twin.plotHost.requestFocus())
+    fx.awaitLayout()
+    fx.robot.press(javafx.scene.input.KeyCode.ESCAPE)
+    eventually(fx, "Escape's clear")(
+      w.runtime.model.selection.selected.isEmpty && h.timeline.brush.isEmpty
+    )
+    assertEquals(runOnFx(h.brush.span), None)
+  }
+
+  fxStage.test("playback stops at the trial's end; a trial change or dispose stops the clock") {
+    fx =>
+      val (w, _) = ready(fx)
+      val h      = w.timeline
+      // To the last onset (4,688 ms), then play at 2×: 350 ms of trial remain.
+      runOnFx {
+        (1 to 13).foreach(_ => h.stepForward.fire())
+        h.speeds(PlaybackSpeed.Two).fire()
+        h.play.fire()
+      }
+      assert(runOnFx(h.clockRunning))
+      eventually(fx, "the end")(!h.timeline.playing)
+      assertEquals(runOnFx((h.timeline.playheadMs, h.play.getText)), (5038.0, "Play"))
+      eventually(fx, "the clock to stop")(!h.clockRunning)
+      // Playing, then another trial: paused at its start, the clock stopped.
+      runOnFx(h.play.fire())
+      assertEquals(runOnFx(h.timeline.playheadMs), 0.0)
+      assert(runOnFx(h.timeline.playing))
+      val enc04 = enc03.copy(trial = "enc_04")
+      dispatch(
+        fx,
+        w,
+        eyes4s.studio.app.Intent.Navigate(
+          eyes4s.studio.app.nav.Location(
+            eyes4s.studio.core.document.Perspective.Explore,
+            Vector(eyes4s.studio.app.nav.Place.At(StudioRef.Trial(enc04)))
+          )
+        )
+      )
+      eventually(fx, "the new trial")(h.timeline.trial.contains(enc04))
+      assertEquals(runOnFx((h.timeline.playing, h.timeline.playheadMs)), (false, 0.0))
+      eventually(fx, "the clock to stop")(!h.clockRunning)
+      // Disposed while playing: the clock stops, and a button no longer starts it.
+      eventually(fx, "enc_04's bars")(h.vm.enabled)
+      runOnFx(h.play.fire())
+      assert(runOnFx(h.clockRunning))
+      runOnFx(h.dispose())
+      assert(!runOnFx(h.clockRunning))
+      runOnFx(h.play.fire())
+      assert(!runOnFx(h.clockRunning))
+  }

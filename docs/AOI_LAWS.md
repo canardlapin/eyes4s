@@ -33,12 +33,11 @@ For `RejectOverlap`, supply successful non-overlapping assignments to this suite
 `AoiLawsSuite` also pins an analytic eight-sample example and checks zero
 denominators. It runs on JVM and Scala.js.
 
-## Mutation receipts (2026-09-17)
+## Mutation evidence
 
-Each mutant below was temporarily applied to the actual `Aoi.scala`
-implementation, tested with
-`sbt 'lawsJVM/testOnly eyes4s.laws.AoiLawsSuite'`, and reverted before the next
-mutation. These are source mutations, not edited expected values.
+The suite rejects each mutant below. Each was applied to the actual `Aoi.scala`
+implementation, tested with `sbt 'lawsJVM/testOnly eyes4s.laws.AoiLawsSuite'`, and
+reverted before the next one; they are source mutations, not edited expected values.
 
 | Mutant | Production expression changed | Observed rejection |
 |---|---|---|
@@ -46,7 +45,8 @@ mutation. These are source mutations, not edited expected values.
 | Drop background | Return zero `backgroundTime` from `AoiAssignment.report` | Conservation, independent totals and proportion laws; analytic example |
 | Collapse higher overlap | Add only one extra duration whenever membership exceeds one, instead of `duration * (ids.length - 1)` | Independent overlap totals and dwell partition laws; analytic three-way example |
 
-This closes the published-law and mutation-evidence residual of bead `aoi-set`.
-It does not implement or certify the deferred entity-trace API, generic entity
-keys, or public pairwise-overlap and multiplicity tables required by the broader
-relational-attention design (PRD RA-1/RA-6).
+## Scope
+
+The laws cover the static sample-time API. They do not cover the deferred entity-trace
+API, generic entity keys, or the public pairwise-overlap and multiplicity tables that the
+broader relational-attention design requires (PRD RA-1/RA-6).

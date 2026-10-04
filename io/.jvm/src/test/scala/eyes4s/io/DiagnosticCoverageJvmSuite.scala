@@ -40,7 +40,10 @@ object ArrowDiagnosticSamples:
   * `Diagnostic[Any]`.
   */
 class DiagnosticCoverageJvmSuite extends munit.FunSuite:
-  private val all = IoDiagnosticSamples.all ++ ArrowDiagnosticSamples.all
+  // The evidence apparatus is test code: its enums are sampled by the catalog
+  // suite but are not public API of a shipped module.
+  private val all = (IoDiagnosticSamples.all ++ ArrowDiagnosticSamples.all)
+    .filterNot(f => IoDiagnosticSamples.evidence(f.enumName))
 
   private val inventory: Map[String, Vector[String]] =
     val relative   = Paths.get("tools/api-audit/inventory.json")
@@ -92,6 +95,11 @@ class DiagnosticCoverageJvmSuite extends munit.FunSuite:
       .foreach(module =>
         assert(errorEnums.exists(_.startsWith(s"eyes4s.$module.")), s"no enum in $module")
       )
+  }
+
+  test("the retired EyeLink evidence apparatus is not public API of eyes4s-io") {
+    val published = errorEnums.map(_.stripPrefix("eyes4s.io.")).toSet
+    assertEquals(IoDiagnosticSamples.evidence.intersect(published), Set.empty[String])
   }
 
   test("every public error enum has a Diagnose instance and a sampled family") {

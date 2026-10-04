@@ -42,13 +42,18 @@ final class ExploreTimelineHost(
     app: Intent => Unit,
     trialView: () => ExploreTrialView
 ):
-  private var state = ExploreTimeline.empty
+  private var state    = ExploreTimeline.empty
+  private var disposed = false
+
+  // The trial view's fixations as a timeline, read again only when the trial
+  // view changes (not on every frame of playback).
+  private var shownRead: Either[String, Option[TimelineRead]] = Right(None)
 
   private val columns: TimelineColumns =
     ExploreTimeline.columns.fold(e => throw IllegalStateException(e.message), identity)
 
   private def builder(brush: Option[HalfOpenSpan]): TimelinePlot =
-    TimelinePlot(columns, brush, ExploreTimelineVM.of(state, shown).playheadMs)
+    TimelinePlot(columns, brush, ExploreTimelineVM.of(state, shownRead).playheadMs)
 
   private def view(id: String): ViewId =
     ViewId.of(id).fold(e => throw IllegalStateException(e.toString), identity)
@@ -67,7 +72,7 @@ final class ExploreTimelineHost(
     twin,
     TimelineColumns.brushRule(columns),
     builder,
-    span => dispatch(TimelineIntent.Brushed(span))
+    span => brushed(span)
   )
 
   // --- the toolbar ----------------------------------------------------------------
@@ -109,24 +114,34 @@ final class ExploreTimelineHost(
 
   private var shownSource: Option[PlotSource]                       = None
   private var drawn: Option[(Option[Double], Option[HalfOpenSpan])] = None
+  private var drawnTheme: Option[eyes4s.studio.app.tokens.Theme]    = None
 
   // A playing timeline is advanced by the frames' elapsed time.
-  private val clock = new AnimationTimer:
+  private var running = false
+  private val clock   = new AnimationTimer:
     private var last            = -1L
     def handle(now: Long): Unit =
       if last >= 0 then dispatch(TimelineIntent.Tick((now - last) / 1e6))
       last = now
       if !state.playing then
         last = -1L
-        stop()
+        halt()
+
+  private def halt(): Unit =
+    clock.stop()
+    running = false
+
+  /** Whether the playback clock is running. */
+  def clockRunning: Boolean = running
 
   /** The timeline's state now. */
   def timeline: ExploreTimeline = state
 
   /** The view-model now shown. */
-  def vm: ExploreTimelineVM = ExploreTimelineVM.of(state, shown)
+  def vm: ExploreTimelineVM = ExploreTimelineVM.of(state, shownRead)
 
-  private def shown = ExploreTimeline.shown(trialView())
+  private def shown: Option[eyes4s.studio.app.plot.Timeline] =
+    shownRead.toOption.flatten.map(_.timeline)
 
   /** The toolbar's focus stops after the pane's: its buttons, the selected
     * speed (Tab visits a toggle group's selected choice only), then the plot,
@@ -149,23 +164,51 @@ final class ExploreTimelineHost(
     * fixations).
     */
   def sync(m: AppModel): Unit =
-    twin.project(m.selection)
-    refresh()
+    if !disposed then
+      twin.project(m.selection)
+      // A brush lasts while the selection is what it selected: a click, a
+      // clear (Escape) or another view's selection ends it.
+      if state.brush.isDefined && m.selection.selected != brushedRefs then
+        dispatch(TimelineIntent.Brushed(None))
+      render()
 
   /** The trial view changed: its trial or its fixations. */
   def refresh(): Unit =
-    state = ExploreTimeline.sync(state, trialView().trial)
-    render()
+    if !disposed then
+      shownRead = ExploreTimeline.shown(trialView())
+      state = ExploreTimeline.sync(state, trialView().trial)
+      render()
 
   def dispatch(intent: TimelineIntent): Unit =
-    state = ExploreTimeline.update(state, shown.toOption.flatten, intent)
-    if state.playing then clock.start()
-    render()
+    if !disposed then
+      state = ExploreTimeline.update(state, shown, intent)
+      if state.playing && !running then
+        running = true
+        clock.start()
+      render()
 
   def dispose(): Unit =
-    clock.stop()
-    brush.dispose()
-    twin.dispose()
+    if !disposed then
+      disposed = true
+      state = state.copy(playing = false)
+      halt()
+      brush.dispose()
+      twin.dispose()
+
+  // The adapter has drawn the span it brushed: keep it, without drawing again.
+  private def brushed(span: Option[HalfOpenSpan]): Unit =
+    if !disposed then
+      state = ExploreTimeline.update(state, shown, TimelineIntent.Brushed(span))
+      drawn = Some((ExploreTimelineVM.of(state, shownRead).playheadMs, span))
+      render()
+
+  /** The fixations the kept brush selects. */
+  private def brushedRefs: Vector[eyes4s.studio.core.selection.StudioRef] =
+    (for
+      span <- state.brush
+      src  <- shownSource
+    yield eyes4s.studio.app.plot.PlotBrush.rows(src, TimelineColumns.brushRule(columns), span))
+      .getOrElse(Vector.empty)
 
   private def render(): Unit =
     val v = vm
@@ -185,17 +228,21 @@ final class ExploreTimelineHost(
     speeds.values.foreach(_.setDisable(!v.enabled))
     status.setText(v.status)
     disclaimer.setText(v.disclaimer)
-    note.setText(v.note.getOrElse(""))
-    note.setVisible(v.note.isDefined)
-    note.setManaged(v.note.isDefined)
-    if v.source != shownSource then
+    val notes = v.note.toVector ++ v.skipped
+    note.setText(notes.mkString("\n"))
+    note.setVisible(notes.nonEmpty)
+    note.setManaged(notes.nonEmpty)
+    val theme = ExploreTimelineHost.theme(model())
+    if v.source != shownSource || (v.source.isDefined && !drawnTheme.contains(theme)) then
       shownSource = v.source
-      drawn = None
+      drawnTheme = Some(theme)
       v.source match
         case Some(src) =>
-          twin.rebuild(builder(v.brush))
-          twin.show(src, ExploreTimelineHost.theme(model()))
+          // One build: clear, set the builder (the brush and the playhead)
+          // on nothing, then show the source with it.
+          twin.clear()
           brush.restore(v.brush)
+          twin.show(src, theme)
         case None => twin.clear()
     else if v.source.isDefined && drawn != Some((v.playheadMs, v.brush)) then
       brush.restore(v.brush)

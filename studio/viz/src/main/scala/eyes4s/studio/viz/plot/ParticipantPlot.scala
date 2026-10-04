@@ -19,6 +19,7 @@ package eyes4s.studio.viz.plot
 import eyes4s.studio.app.plot.{
   ColumnId,
   ParticipantColumns,
+  ParticipantLines,
   PlotSource,
   PlotText,
   PlotTextId,
@@ -80,7 +81,10 @@ import intaglio.{
   * Marks are ordered, and drawn, column by column: the participants in row
   * order, then the grand mean on top.
   */
-final case class ParticipantPlot(columns: ParticipantColumns) extends PlotBuilder:
+final case class ParticipantPlot(
+    columns: ParticipantColumns,
+    lines: ParticipantLines = ParticipantLines.Shown
+) extends PlotBuilder:
 
   def kind: String = "participant-plot"
 
@@ -306,7 +310,7 @@ final case class ParticipantPlot(columns: ParticipantColumns) extends PlotBuilde
         yield (pa, pb)
       )
       linked <-
-        if linkPoints.isEmpty then Right(Vector.empty)
+        if linkPoints.isEmpty || lines == ParticipantLines.Hidden then Right(Vector.empty)
         else Grob.segments(linkPoints, gp = linkGp).map(Vector(_))
       solidDotGp  <- GraphicParams.checked(stroke = None, fill = Some(colour(ThemedToken.Ink)))
       hollowDotGp <- GraphicParams.checked(
