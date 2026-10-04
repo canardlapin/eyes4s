@@ -153,7 +153,8 @@ final class DesktopEffects(
     case e: AppEffect.Journal =>
       project.fold(report(EffectProblem.NotWired(e, "S2.9")))(_.journal(e.entry))
     case AppEffect.RequestAdmission(dataset, content) =>
-      session.run(session.backend.admission(dataset)) { result =>
+      // The backend verifies the content it is asked to admit (protocol 1.9).
+      session.run(session.backend.verify(dataset, content)) { result =>
         ui(() => verified(dataset, content, LedgerInputs.answer(result)))
       }
 

@@ -27,6 +27,10 @@ object ProtocolPins:
       """{"UnknownScale":{"run":8,"scale":4,"scales":["0.5°","1°","2°","4°"]}}""",
     "error.SourceRecordsRefused" ->
       """{"SourceRecordsRefused":{"revision":4,"error":{"RangeInvalid":{"from":0,"count":501,"limit":500}}}}""",
+    "error.ContentMismatch" ->
+      """{"ContentMismatch":{"dataset":3,"requested":"abababababababababababababababababababababababababababababababab","held":"cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"}}""",
+    "request.Verify" ->
+      """{"Verify":{"dataset":3,"content":"abababababababababababababababababababababababababababababababab"}}""",
     "request.SourceRecordsOf" ->
       """{"SourceRecordsOf":{"revision":4,"from":7214,"count":60}}""",
     "response.SourceRecordsOf" ->
@@ -112,9 +116,9 @@ object ProtocolPins:
     "disposition.NoFixations" ->
       """{"NoFixations":{}}""",
     "envelope.frame" ->
-      """{"version":{"major":1,"minor":10},"id":41,"body":{"Event":{"event":{"Finished":{"outcome":{"Completed":{"job":1,"run":8,"last":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}}}}""",
+      """{"version":{"major":1,"minor":11},"id":41,"body":{"Event":{"event":{"Finished":{"outcome":{"Completed":{"job":1,"run":8,"last":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}}}}""",
     "envelope.request" ->
-      """{"version":{"major":1,"minor":10},"id":41,"body":{"Subscribe":{"id":1}}}""",
+      """{"version":{"major":1,"minor":11},"id":41,"body":{"Subscribe":{"id":1}}}""",
     "error.AlreadyRunning" ->
       """{"AlreadyRunning":{"revision":5,"job":1}}""",
     "error.NoResult" ->

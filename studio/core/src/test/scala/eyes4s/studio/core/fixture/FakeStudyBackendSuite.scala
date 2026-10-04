@@ -519,3 +519,30 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       // A scenario is per dataset; r2 is still answered as before.
       assertEquals(other, Left(BackendError.Unavailable(DiagnosticLocus.Dataset(r2))))
   }
+
+  test(
+    "verify answers the admission for the content asked; held content refuses other content (S5.6)"
+  ) {
+    import eyes4s.studio.core.backend.ProtocolSamples.content
+    val r3 = DatasetRevision(3)
+    for
+      fake    <- FakeStudyBackend.create[IO](StoryMoment.T2)
+      counts  <- ok(fake.admission(r3))
+      unheld  <- ok(fake.verify(r3, content("ab")))
+      _       <- fake.holdContent(r3, content("ab"))
+      same    <- ok(fake.verify(r3, content("ab")))
+      other   <- fake.verify(r3, content("cd"))
+      unknown <- fake.verify(DatasetRevision(9999), content("ab"))
+    yield
+      // With nothing held the fake cannot disagree; the counts are admission's.
+      assertEquals(unheld, counts)
+      assertEquals(same, counts)
+      assertEquals(other, Left(BackendError.ContentMismatch(r3, content("cd"), content("ab"))))
+      assertEquals(
+        other.left.map(_.message),
+        Left(
+          s"Dataset r3 holds content ${content("ab").display}; the request verifies ${content("cd").display}."
+        )
+      )
+      assert(unknown.left.exists(_.isInstanceOf[BackendError.UnknownDataset]), unknown)
+  }

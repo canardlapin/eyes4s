@@ -213,8 +213,17 @@ object ProtocolSamples:
       AnalysisRevision(4),
       SourceRecordsError.RangeInvalid(0, 501, SourceRecordPage.Limit)
     ),
-    BackendError.UnknownScale(run, 4, Vector("0.5°", "1°", "2°", "4°"))
+    BackendError.UnknownScale(run, 4, Vector("0.5°", "1°", "2°", "4°")),
+    BackendError.ContentMismatch(DatasetRevision(3), content("ab"), content("cd"))
   )
+
+  /** A dataset revision's content digest: `pair` repeated to 64 digits. */
+  def content(
+      pair: String
+  ): eyes4s.codec.CanonicalDigest[eyes4s.studio.core.document.DatasetRevisionSpec] =
+    eyes4s.codec.CanonicalDigest
+      .parse[eyes4s.studio.core.document.DatasetRevisionSpec](pair * 32)
+      .fold(e => throw AssertionError(e.message), identity)
 
   val runStates: Vector[RunState] = Vector(
     RunState.Current,
@@ -502,7 +511,8 @@ object ProtocolSamples:
     BackendRequest.TrialFixationsOf(AnalysisRevision(4), query),
     BackendRequest.TrialPreviewOf(AnalysisRevision(4), query),
     BackendRequest.SourceRecordsOf(AnalysisRevision(4), 7214, 60),
-    BackendRequest.PairRowsOf(run, 2, page)
+    BackendRequest.PairRowsOf(run, 2, page),
+    BackendRequest.Verify(DatasetRevision(3), content("ab"))
   )
 
   val responses: Vector[BackendResponse] = Vector(

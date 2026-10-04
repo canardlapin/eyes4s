@@ -234,8 +234,8 @@ object StudioDriver:
             d.record(DriverRecord.Refused(effect, ServiceError.Execution(error)))
           case Right(()) => done
         }
-      case AppEffect.RequestAdmission(dataset, _) =>
-        services.admission(dataset).map {
+      case AppEffect.RequestAdmission(dataset, content) =>
+        services.verify(dataset, content).map {
           case Left(error) =>
             d.record(DriverRecord.Refused(effect, ServiceError.Backend(error)))
           case Right(summary) => done.record(DriverRecord.Admission(summary))

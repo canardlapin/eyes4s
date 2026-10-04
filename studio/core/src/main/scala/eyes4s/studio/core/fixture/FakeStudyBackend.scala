@@ -19,7 +19,9 @@ package eyes4s.studio.core.fixture
 import cats.Eq
 import cats.effect.Concurrent
 import cats.syntax.all.*
+import eyes4s.codec.CanonicalDigest
 import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.document.DatasetRevisionSpec
 import eyes4s.studio.core.execution.RunStamp
 import eyes4s.studio.core.navigation.StudyNavigator
 import eyes4s.studio.core.preview.*
@@ -208,6 +210,22 @@ final class FakeStudyBackend[F[_]] private[fixture] (
           case _ => Right((st, scenario))
       }
     }
+
+  /** The admission of `d`, verified for `content`: refused when this backend
+    * holds other content for `d` ([[holdContent]]). The fake has no stored
+    * revisions, so it holds content only once told; the real backend reads
+    * its own (S3.7).
+    */
+  def verify(
+      d: DatasetRevision,
+      content: CanonicalDigest[DatasetRevisionSpec]
+  ): F[Either[BackendError, AdmissionSummary]] =
+    state.get.flatMap(s =>
+      s.contents.get(d).filter(_ != content) match
+        case Some(held) =>
+          Concurrent[F].pure(Left(BackendError.ContentMismatch(d, content, held)))
+        case None => admission(d)
+    )
 
   def admission(d: DatasetRevision): F[Either[BackendError, AdmissionSummary]] =
     inventoried(d).map(_.map { (st, scenario) =>
@@ -755,6 +773,15 @@ final class FakeStudyBackend[F[_]] private[fixture] (
   def serveInventory(dataset: DatasetRevision, scenario: InventoryScenario): F[Unit] =
     state.update(s => s.copy(inventories = s.inventories.updated(dataset, scenario)))
 
+  /** Hold `content` for `dataset` from now on, as a backend that stored the
+    * revision would: [[verify]] then refuses any other content (S5.6).
+    */
+  def holdContent(
+      dataset: DatasetRevision,
+      content: CanonicalDigest[DatasetRevisionSpec]
+  ): F[Unit] =
+    state.update(s => s.copy(contents = s.contents.updated(dataset, content)))
+
   /** Finish a job with diagnostics; its run becomes `Failed`. */
   def fail(
       id: JobId,
@@ -1013,7 +1040,8 @@ object FakeStudyBackend:
       jobs: Vector[JobStatus],
       previews: Map[PreviewId, RetainedPreview],
       jobSnapshots: Map[JobId, FakePreparedSnapshot],
-      inventories: Map[DatasetRevision, InventoryScenario] = Map.empty
+      inventories: Map[DatasetRevision, InventoryScenario] = Map.empty,
+      contents: Map[DatasetRevision, CanonicalDigest[DatasetRevisionSpec]] = Map.empty
   ):
     def job(id: JobId): Option[JobStatus] = jobs.find(_.job == id)
 

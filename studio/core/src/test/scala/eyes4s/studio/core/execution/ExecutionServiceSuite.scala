@@ -435,6 +435,7 @@ class ExecutionServiceSuite extends CatsEffectSuite:
 private final class Silent(fake: FakeStudyBackend[IO]) extends StudyBackend[IO]:
   export fake.{
     admission,
+    verify,
     cancel,
     inspect,
     job,
@@ -470,6 +471,7 @@ private final class Gated(
 ) extends StudyBackend[IO]:
   export fake.{
     admission,
+    verify,
     cancel,
     inspect,
     job,

@@ -16,6 +16,9 @@
 
 package eyes4s.studio.core.backend
 
+import eyes4s.codec.CanonicalDigest
+import eyes4s.studio.core.document.DatasetRevisionSpec
+import eyes4s.studio.core.document.DigestJson.given
 import ProtocolCodecs.portableLong
 
 import cats.Functor
@@ -84,6 +87,14 @@ enum BackendError derives CanEqual, Codec.AsObject:
 
   /** `run` has no scale index `scale`; it computes `scales` (protocol 1.9). */
   case UnknownScale(run: RunId, scale: Int, scales: Vector[String])
+  /** The backend holds other content for `dataset` than the client asked to
+    * verify (protocol 1.11, S5.6): both digests are named.
+    */
+  case ContentMismatch(
+      dataset: DatasetRevision,
+      requested: CanonicalDigest[DatasetRevisionSpec],
+      held: CanonicalDigest[DatasetRevisionSpec]
+  )
 
   def code: String = this match
     case UnknownDataset(_, _)       => "studio-backend.unknown-dataset"
@@ -106,8 +117,11 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case Malformed(_, _)            => "studio-backend.malformed-request"
     case DuplicateSubscription(_)   => "studio-backend.duplicate-subscription"
     case InventoryRefused(_, _)     => "studio-backend.inventory-refused"
+    case ContentMismatch(_, _, _)   => "studio-backend.content-mismatch"
 
   def message: String = this match
+    case ContentMismatch(d, requested, held) =>
+      s"Dataset ${d.label} holds content ${held.display}; the request verifies ${requested.display}."
     case UnknownDataset(d, known) =>
       s"No dataset ${d.label}; the backend has ${known.map(_.label).mkString(", ")}."
     case UnknownRevision(r, known) =>
@@ -164,6 +178,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
       case TrialViewRefused(e) => Vector(DiagnosticLocus.Trial(e.trial))
       case SourceRecordsRefused(r, _) => Vector(DiagnosticLocus.Revision(r))
       case UnknownScale(r, i, _) => Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Scale(i))
+      case ContentMismatch(d, _, _)   => Vector(DiagnosticLocus.Dataset(d))
     StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
 
 /** Everything Eyes Studio asks of eyes4s (DESIGN_SPEC section 13, S3.0): the
@@ -182,6 +197,18 @@ enum BackendError derives CanEqual, Codec.AsObject:
 trait StudyBackend[F[_]]:
 
   def admission(dataset: DatasetRevision): F[Either[BackendError, AdmissionSummary]]
+
+  /** `dataset`'s admission summary, verified for `content` (protocol 1.11,
+    * S5.6): the CR3 digest of the revision the client asks eyes4s to admit
+    * ([[eyes4s.studio.core.document.DatasetRevisionSpec.contentDigest]]). A
+    * backend that holds other content for `dataset` refuses with
+    * [[BackendError.ContentMismatch]], so an answer is never for content the
+    * client did not ask about. [[admission]] stays the counts-only read.
+    */
+  def verify(
+      dataset: DatasetRevision,
+      content: CanonicalDigest[DatasetRevisionSpec]
+  ): F[Either[BackendError, AdmissionSummary]]
 
   /** Every inventory trial's disposition, in inventory order. */
   def ledger(dataset: DatasetRevision, page: PageRequest): F[Either[BackendError, LedgerPage]]
@@ -320,6 +347,9 @@ enum BackendRequest derives CanEqual, Codec.AsObject:
   /** Protocol 1.9. */
   case PairRowsOf(run: RunId, scale: Int, page: PageRequest)
 
+  /** Protocol 1.11; answered by [[BackendResponse.Admission]]. */
+  case Verify(dataset: DatasetRevision, content: CanonicalDigest[DatasetRevisionSpec])
+
 /** A response of the [[StudyBackend]] protocol. */
 enum BackendResponse derives CanEqual, Codec.AsObject:
   case Refused(error: BackendError)
@@ -393,10 +423,11 @@ object ProtocolVersion:
     * `UnknownScale`, and refuses any other version before reading a frame's
     * body. 1.10 adds the `TrialFailed` map placement, with its window
     * tally: a fixation in the window of a trial the study fails (eyes4s
-    * UI-G G3); `InWindow` keeps its wire name `InMap`. Deploy client and
-    * backend together.
+    * UI-G G3); `InWindow` keeps its wire name `InMap`. 1.11 adds `Verify`,
+    * the admission request that carries the verified content digest, and
+    * `ContentMismatch` (S5.6). Deploy client and backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 10)
+  val Current: ProtocolVersion = ProtocolVersion(1, 11)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual
@@ -448,6 +479,7 @@ object StudyBackend:
     def always(result: F[BackendResponse]) = Stream.eval(result.map(ServerFrame.Response(_)))
     request match
       case Q.Admission(d)          => answer(backend.admission(d))(A.Admission(_))
+      case Q.Verify(d, c)          => answer(backend.verify(d, c))(A.Admission(_))
       case Q.Ledger(d, p)          => answer(backend.ledger(d, p))(A.Ledger(_))
       case Q.Preview(r)            => answer(backend.preview(r))(A.Preview(_))
       case Q.PreviewRows(r, p)     => answer(backend.previewRows(r, p))(A.PreviewRows(_))
