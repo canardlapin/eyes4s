@@ -16,10 +16,19 @@
 
 package eyes4s.studio.desktop.trial
 
+import eyes4s.studio.app.maps.{MapGrid, MapOpacity, MapStyle, RasterKey}
 import eyes4s.studio.app.tokens.{StageToken, Tokens}
 import eyes4s.studio.core.assets.{AssetLink, AssetRef}
+import eyes4s.studio.desktop.maps.{MapRasterStore, RasterRefusal}
 import eyes4s.studio.desktop.plot.CanvasPlotHost
-import eyes4s.studio.viz.trial.{StimulusRaster, TrialScene, TrialSceneError, TrialSceneInput}
+import eyes4s.studio.viz.trial.{
+  RememberedImage,
+  StimulusRaster,
+  TrialMap,
+  TrialScene,
+  TrialSceneError,
+  TrialSceneInput
+}
 import javafx.application.Platform
 import javafx.beans.property.{ReadOnlyObjectProperty, ReadOnlyObjectWrapper}
 import javafx.scene.layout.Region
@@ -38,6 +47,16 @@ enum TrialViewStatus derives CanEqual:
 
   case Disposed
 
+/** A result map to draw over a trial (ticket S4.3b): the run's grid, the
+  * style it is coloured in and the global opacity.
+  */
+final case class MapRequest(
+    grid: MapGrid,
+    style: MapStyle,
+    opacity: MapOpacity = MapOpacity.Default
+) derives CanEqual:
+  def key: RasterKey = RasterKey(grid.map, style)
+
 /** A trial on its stage (ticket S4.3a): the trial scene of studio-viz on a
   * [[CanvasPlotHost]], with the stimulus read through the asset registry.
   *
@@ -53,11 +72,21 @@ enum TrialViewStatus derives CanEqual:
   * of the view is the stage colour. The view handles no input itself:
   * [[TrialInputAdapter]] adds picking, the roving cursor and the selection
   * overlay (S4.2). It is used on the FX thread only.
+  *
+  * A result map ([[showMap]], S4.3b) is drawn from its raster in `maps`,
+  * the map raster cache, rendered off the FX thread; until the raster
+  * arrives the trial shows without it. A remembered image shown as an
+  * underlay is read like the display's own image.
   */
-final class TrialView(source: StimulusSource, loader: Executor) extends Region:
+final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterStore)
+    extends Region:
 
-  /** A view reading `source` on the shared stimulus loader. */
-  def this(source: StimulusSource) = this(source, TrialView.sharedLoader)
+  /** A view reading `source` on the shared stimulus loader and map store. */
+  def this(source: StimulusSource) = this(source, TrialView.sharedLoader, TrialView.sharedMaps)
+
+  /** A view reading `source` on `loader`, with the shared map store. */
+  def this(source: StimulusSource, loader: Executor) =
+    this(source, loader, TrialView.sharedMaps)
 
   private val host = CanvasPlotHost()
   getChildren.add(host)
@@ -71,6 +100,9 @@ final class TrialView(source: StimulusSource, loader: Executor) extends Region:
   private var requested: Set[AssetRef]               = Set.empty
   private var aspect: Option[Double]                 = None
   private var disposed: Boolean                      = false
+  private var mapRequest: Option[MapRequest]         = None
+  private var mapLayer: Option[TrialMap]             = None
+  private var mapRefusal: Option[RasterRefusal]      = None
 
   /** What the view shows. */
   def status: ReadOnlyObjectProperty[TrialViewStatus] = statusWrapper.getReadOnlyProperty
@@ -93,7 +125,41 @@ final class TrialView(source: StimulusSource, loader: Executor) extends Region:
         case AssetLink.Present(asset) => request(asset)
         case AssetLink.Missing(_)     => ()
       }
+      input.remembered match
+        case RememberedImage.Shown(asset) => request(asset)
+        case _                            => ()
       render()
+
+  /** Draws `map` over the trial, or no map. The raster comes from the map
+    * store; the trial is drawn again when it arrives.
+    */
+  def showMap(map: Option[MapRequest]): Unit =
+    onFxThread("showMap")
+    if !disposed && map != mapRequest then
+      mapRequest = map
+      mapLayer = None
+      mapRefusal = None
+      map match
+        case None    => render()
+        case Some(m) =>
+          maps.request(m.grid, m.style)(answer => mapArrived(m, answer)) match
+            case Left(refusal) => mapRefusal = Some(refusal)
+            case Right(())     => ()
+          render()
+
+  /** Why the map asked for could not be drawn, if it could not. */
+  def mapRefused: Option[RasterRefusal] = mapRefusal
+
+  private def mapArrived(
+      m: MapRequest,
+      answer: Either[RasterRefusal, eyes4s.studio.app.maps.MapRaster]
+  ): Unit =
+    if !disposed && mapRequest.contains(m) then
+      answer match
+        case Right(raster) =>
+          mapLayer = Some(TrialMap(m.grid, raster, m.opacity))
+          render()
+        case Left(refusal) => mapRefusal = Some(refusal)
 
   /** Removes the trial. */
   def clear(): Unit =
@@ -111,6 +177,8 @@ final class TrialView(source: StimulusSource, loader: Executor) extends Region:
       disposed = true
       current = None
       rasters = Map.empty
+      mapRequest = None
+      mapLayer = None
       host.dispose()
       getChildren.clear()
       statusWrapper.set(TrialViewStatus.Disposed)
@@ -130,11 +198,15 @@ final class TrialView(source: StimulusSource, loader: Executor) extends Region:
   private def deliver(asset: AssetRef, raster: StimulusRaster): Unit =
     if !disposed then
       rasters += asset -> raster
-      if current.exists(_.display.asset.contains(AssetLink.Present(asset))) then render()
+      if current.exists(i =>
+          i.display.asset.contains(AssetLink.Present(asset)) ||
+            i.remembered == RememberedImage.Shown(asset)
+        )
+      then render()
 
   private def render(): Unit =
     current.foreach { input =>
-      TrialScene(input.copy(rasters = rasters)) match
+      TrialScene(input.copy(rasters = rasters, map = mapLayer)) match
         case Right(scene) =>
           if !aspect.contains(scene.aspect) then
             aspect = Some(scene.aspect)
@@ -169,6 +241,9 @@ final class TrialView(source: StimulusSource, loader: Executor) extends Region:
       )
 
 object TrialView:
+
+  /** The map raster store every view draws maps from. */
+  lazy val sharedMaps: MapRasterStore = MapRasterStore()
 
   /** One daemon thread that reads and decodes stimuli for every view. */
   lazy val sharedLoader: ExecutorService =

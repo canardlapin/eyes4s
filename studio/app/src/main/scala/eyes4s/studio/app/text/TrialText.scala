@@ -49,6 +49,11 @@ enum TrialTextId derives CanEqual:
   /** The accessible text of the trial view and of its focused mark (S4.2). */
   case PlotRole, PlotKeys, MarkFocus, MarkSelected
 
+  /** The remembered image of a retrieval trial: shown as an underlay, with
+    * its disclosure, or not shown (S4.3b).
+    */
+  case RememberedShown, RememberedHidden
+
 /** The trial view's strings in the boards' wording. */
 object TrialText:
 
@@ -79,8 +84,10 @@ object TrialText:
       case PlotKeys        =>
         "Fixations of {0}. Arrow keys move to the nearest fixation, Page Up and Page Down " +
           "step in order, Enter selects, Escape clears the selection."
-      case MarkFocus    => "Fixation {0} of {1}"
-      case MarkSelected => "{0}, selected"
+      case MarkFocus        => "Fixation {0} of {1}"
+      case MarkSelected     => "{0}, selected"
+      case RememberedShown  => "Reference image — not displayed during this trial"
+      case RememberedHidden => "Remembered image not shown"
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: TrialTextId, args: String*): String =
