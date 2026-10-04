@@ -20,7 +20,9 @@ import cats.syntax.all.*
 import eyes4s.io.csv
 import eyes4s.studio.app.figures.{BundleItem, BundleRequest, FigureBundle}
 import eyes4s.studio.core.backend.{QueryRow, ResultSummary}
+import eyes4s.studio.core.assets.AssetRef
 import eyes4s.studio.core.figures.BundleTables
+import eyes4s.studio.viz.trial.StimulusRaster
 
 import java.nio.charset.StandardCharsets.UTF_8
 
@@ -35,7 +37,8 @@ object BundleFiles:
   def assemble(
       request: BundleRequest,
       summary: ResultSummary,
-      rows: Vector[QueryRow]
+      rows: Vector[QueryRow],
+      rasters: Map[AssetRef, StimulusRaster] = Map.empty
   ): Either[String, Vector[(String, IArray[Byte])]] =
     def utf8(text: String) = IArray.unsafeFromArray(text.getBytes(UTF_8))
     request.items
@@ -43,7 +46,7 @@ object BundleFiles:
       .traverse { item =>
         val name = FigureBundle.file(item, request.page, request.format)
         val bytes: Either[String, IArray[Byte]] = item match
-          case BundleItem.Figure  => FigureExport.render(request.format, request.page)
+          case BundleItem.Figure  => FigureExport.render(request.format, request.page, rasters)
           case BundleItem.Results =>
             BundleTables
               .results(request.source, summary, rows)

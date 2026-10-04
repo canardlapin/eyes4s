@@ -23,7 +23,13 @@ import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.plot.{ParticipantLines, PlotSource}
 import eyes4s.studio.app.text.Format
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.backend.{DatasetRevision, RunId, TrialKey}
+import eyes4s.studio.core.backend.{
+  AnalysisRevision,
+  DatasetRevision,
+  RunId,
+  TrialFixations,
+  TrialKey
+}
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.figures.{FigureSource, RebindProposal, ReferenceScores}
@@ -112,6 +118,13 @@ enum ComposerIntent derives CanEqual:
   )
   case DisplaysRead(dataset: DatasetRevision, answer: Either[String, DisplaySource])
 
+  /** A gaze panel's fixations (S6.2 trialFixations). */
+  case FixationsRead(
+      revision: AnalysisRevision,
+      trial: TrialKey,
+      answer: Either[String, TrialFixations]
+  )
+
   /** The methods.md pane (S9.4). */
   case Methods(intent: MethodsIntent)
 
@@ -136,6 +149,9 @@ enum ComposerEffect derives CanEqual:
   /** What each trial of the revision displayed (panels A and B). */
   case RequestDisplays(dataset: DatasetRevisionSpec)
 
+  /** Read a gaze panel's fixations under the bound analysis revision. */
+  case RequestFixations(revision: AnalysisRevision, trial: TrialKey)
+
   /** Export `page` as `format` under the suggested file name `name`. */
   case ExportFigure(format: ExportFormat, page: PageVM, name: String)
 
@@ -150,6 +166,7 @@ enum ComposerRead derives CanEqual:
   case Summary(run: RunId)
   case References(run: RunId, scale: ScaleIndex, query: TrialKey)
   case Displays(dataset: DatasetRevision)
+  case Fixations(revision: AnalysisRevision, trial: TrialKey)
   case Methods(run: RunId)
 
 /** One panel on the page. */
@@ -238,7 +255,8 @@ final case class FigureComposer private (
     exported: Option[String],
     methods: FigureMethods,
     bundle: Set[BundleItem],
-    bundled: Option[String]
+    bundled: Option[String],
+    fixations: Map[(AnalysisRevision, TrialKey), Either[String, TrialFixations]]
 ) derives CanEqual:
   def appearanceOf(figure: FigureId): FigureAppearance =
     appearance.getOrElse(figure, FigureAppearance.default)
@@ -264,7 +282,8 @@ object FigureComposer:
     None,
     FigureMethods.empty,
     BundleItem.Default,
-    None
+    None,
+    Map.empty
   )
 
   private val none: Vector[ComposerEffect] = Vector.empty
@@ -320,10 +339,13 @@ object FigureComposer:
                       ComposerEffect.RequestReferences(run, i, query)
                   )
                   .toVector
-              case PanelTemplate.Gaze(_) =>
+              case PanelTemplate.Gaze(trial) =>
+                val revision = s.bound.analysis.id
                 Vector(
                   ComposerRead.Displays(s.bound.dataset.id) ->
-                    ComposerEffect.RequestDisplays(s.bound.dataset)
+                    ComposerEffect.RequestDisplays(s.bound.dataset),
+                  ComposerRead.Fixations(revision, trial) ->
+                    ComposerEffect.RequestFixations(revision, trial)
                 )
               case _ => Vector.empty
           }
@@ -399,6 +421,12 @@ object FigureComposer:
         (
           c.copy(references = c.references.updated((r, s, q), a))
             .retrying(ComposerRead.References(r, s, q), a.isLeft),
+          none
+        )
+      case FixationsRead(r, t, a) =>
+        (
+          c.copy(fixations = c.fixations.updated((r, t), a))
+            .retrying(ComposerRead.Fixations(r, t), a.isLeft),
           none
         )
       case DisplaysRead(d, a) =>
@@ -680,7 +708,18 @@ object FigureComposer:
               case DisplaySource.Served(r) => Some(r)
               case DisplaySource.NotServed => None
             }
-            PanelBody.Gaze(FigurePanels.gaze(trial, registry))
+            val role =
+              if trial.phase == s.bound.analysis.recipe.phases.focal then GazeRole.Query
+              else GazeRole.Matched
+            PanelBody.Gaze(
+              FigurePanels.gaze(
+                trial,
+                registry,
+                c.fixations.get((s.bound.analysis.id, trial)),
+                s.bound.dataset.geometry.screen,
+                role
+              )
+            )
       case PanelTemplate.NoTemplate(scale, selection) =>
         PanelBody.Unavailable(ComposerText.noTemplate(scale, selection))
 

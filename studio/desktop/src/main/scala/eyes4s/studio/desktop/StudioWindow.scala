@@ -362,7 +362,8 @@ object StudioWindow:
         session,
         displays,
         () => Option(shell.root.getScene).map(_.getWindow),
-        project
+        project,
+        stimuli
       )
     )
     Vector(

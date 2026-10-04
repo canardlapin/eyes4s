@@ -23,7 +23,14 @@ import eyes4s.studio.app.figures.*
 import eyes4s.studio.app.plot.{ParticipantColumns, PlotSource, ProfileColumns}
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.backend.{DatasetRevision, LedgerPages, RunId, TrialKey}
+import eyes4s.studio.core.backend.{
+  AnalysisRevision,
+  DatasetRevision,
+  LedgerPages,
+  RunId,
+  TrialFixations,
+  TrialKey
+}
 import eyes4s.studio.core.diff.{LedgerUnavailable, StatusChanges, StatusDiff}
 import eyes4s.studio.core.document.{DatasetRevisionSpec, FigureId, PanelLetter}
 import eyes4s.studio.core.figures.{MethodsFacts, MethodsReads, ReferenceReads, ReferenceScores}
@@ -32,7 +39,8 @@ import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.plot.{PlotTwin, TableTwinView}
 import eyes4s.studio.desktop.runtime.{ProjectPort, StudioSession}
 import eyes4s.studio.desktop.tokens.TokenFiles
-import eyes4s.studio.viz.figure.PlotGeometry
+import eyes4s.studio.viz.figure.{FigureGaze, PlotGeometry}
+import eyes4s.studio.desktop.trial.{StimulusError, StimulusSource, TrialView}
 import eyes4s.studio.viz.plot.{ParticipantPlot, PlotBuilder, ScaleProfilePlot}
 import javafx.application.Platform
 import javafx.geometry.Pos
@@ -58,6 +66,16 @@ import javafx.scene.layout.{FlowPane, HBox, Priority, Region, VBox}
   * called on any thread.
   */
 trait FigureInputs:
+  /** Where the gaze panels' stimulus images are read. */
+  def stimuli: StimulusSource
+
+  /** A gaze panel's fixations under `revision` (S6.2 trialFixations). */
+  def fixations(
+      revision: AnalysisRevision,
+      trial: TrialKey,
+      done: Either[String, TrialFixations] => Unit
+  ): Unit
+
   def summary(run: RunId, done: SummaryAnswer => Unit): Unit
   def references(
       run: RunId,
@@ -94,14 +112,29 @@ trait FigureInputs:
 
 object FigureInputs:
 
+  /** A window with no stimulus store: every image is "not stored". */
+  val NoStimuli: StimulusSource =
+    asset => Left(StimulusError.NotStored(asset.file, "this window"))
+
   /** The window's backend and navigator, and `displays` for what trials showed. */
   def of(
       session: StudioSession,
       source: NavigatorDisplays,
       owner: () => Option[Window],
-      project: Option[ProjectPort] = None
+      project: Option[ProjectPort] = None,
+      images: StimulusSource = FigureInputs.NoStimuli
   ): FigureInputs =
     new FigureInputs:
+      def stimuli: StimulusSource = images
+      def fixations(
+          revision: AnalysisRevision,
+          trial: TrialKey,
+          done: Either[String, TrialFixations] => Unit
+      ): Unit =
+        session.run(session.backend.trialFixations(revision, trial)) {
+          case Left(e)  => done(Left(reason(e)))
+          case Right(a) => done(a.left.map(_.message))
+        }
       def summary(run: RunId, done: SummaryAnswer => Unit): Unit =
         session.run(session.backend.result(run)) {
           case Left(e)          => done(SummaryAnswer.Failed(reason(e)))
@@ -198,7 +231,9 @@ object FigureInputs:
               case Right((Left(why), _))                => done(Left(why))
               case Right((_, Left(why)))                => done(Left(why))
               case Right((Right(summary), Right(rows))) =>
-                BundleFiles.assemble(request, summary, rows).flatMap(write(target, _)) match
+                BundleFiles
+                  .assemble(request, summary, rows, FigureExport.rasters(request.page, images))
+                  .flatMap(write(target, _)) match
                   case Left(why) => done(Left(why))
                   case Right(()) =>
                     if !request.items.contains(BundleItem.Snapshot) then
@@ -474,6 +509,12 @@ final class FiguresHost(
           dataset,
           a => later(ComposerIntent.Methods(MethodsIntent.FactsRead(run, a)))
         )
+      case ComposerEffect.RequestFixations(revision, trial) =>
+        inputs.fixations(
+          revision,
+          trial,
+          a => later(ComposerIntent.FixationsRead(revision, trial, a))
+        )
       case ComposerEffect.RequestDisplays(dataset) =>
         inputs.displays(dataset, a => later(ComposerIntent.DisplaysRead(dataset.id, a)))
       case ComposerEffect.Binding(FigureEffect.RequestStatus(from, to)) =>
@@ -484,7 +525,7 @@ final class FiguresHost(
         )
       case ComposerEffect.Binding(FigureEffect.App(i))     => app(i)
       case ComposerEffect.ExportFigure(format, page, name) =>
-        FigureExport.render(format, page) match
+        FigureExport.render(format, page, FigureExport.rasters(page, inputs.stimuli)) match
           case Left(why)   => dispatch(ComposerIntent.Exported(Left(why)))
           case Right(file) =>
             inputs.save(name, format, file, a => later(ComposerIntent.Exported(a)))
@@ -657,7 +698,12 @@ final class FiguresHost(
         val heading = paperLabel(g.heading, text)
         val shown   = paperLabel(g.displayed, text)
         val gaze    = paperLabel(g.gaze, text); gaze.getStyleClass.add("figures-note")
-        VBox(2.0, heading, shown, gaze)
+        val drawing = g.drawn.toVector.map { d =>
+          val view = gazeFor(figure, p, d)
+          view.setPrefSize(w, w * FigureGaze.heightRatio(d))
+          view
+        }
+        VBox(2.0, (drawing ++ Vector(heading, shown, gaze))*)
       case PanelBody.Waiting(why) =>
         val l = paperLabel(why, text); l.getStyleClass.add("figures-note"); l
       case PanelBody.Unavailable(why) =>
@@ -715,10 +761,36 @@ final class FiguresHost(
     drawn.twin
 
   /** Disposes the plots of panels no longer shown. */
+  /** Panels A and B: one trial view per panel, kept while the panel is
+    * shown; it reads the display's image itself.
+    */
+  private var gazes: Map[(FigureId, PanelLetter), TrialView] = Map.empty
+
+  private def gazeFor(figure: FigureId, p: PanelVM, d: GazeTrialVM): TrialView =
+    val key  = (figure, p.letter)
+    val view = gazes.getOrElse(
+      key, {
+        val made = TrialView(inputs.stimuli)
+        gazes = gazes.updated(key, made)
+        made
+      }
+    )
+    view.setAccessibleText(FiguresHost.gazeName(p, d))
+    val input = FigureGaze.input(d, Map.empty)
+    if !view.input.exists(_.copy(rasters = Map.empty) == input) then view.show(input)
+    view
+
+  /** The trial view of panel `letter` of `figure`, while it is shown. */
+  def gaze(figure: FigureId, letter: PanelLetter): Option[TrialView] =
+    gazes.get((figure, letter))
+
   private def retire(keep: Set[(FigureId, PanelLetter)]): Unit =
     val (kept, gone) = twins.partition((k, _) => keep.contains(k))
     gone.values.foreach(_.twin.dispose())
     twins = kept
+    val (keptGaze, goneGaze) = gazes.partition((k, _) => keep.contains(k))
+    goneGaze.values.foreach(_.dispose())
+    gazes = keptGaze
 
   private def renderInspector(v: ComposerVM): Unit =
     binding.getChildren.setAll(v.figures.binding.toVector.flatMap { b =>
@@ -976,6 +1048,10 @@ final class FiguresHost(
     val r = Region(); HBox.setHgrow(r, Priority.ALWAYS); r
 
 object FiguresHost:
+  /** A gaze panel drawing's accessible name. */
+  def gazeName(p: PanelVM, d: GazeTrialVM): String =
+    s"Panel ${p.letter.value} trial ${d.trial.label}: ${d.marks.size} fixations"
+
   /** A bundle row as drawn: "results.csv · 480 queries × 4 σ". */
   def bundleText(r: BundleRowVM): String =
     if r.detail.isEmpty then r.file else s"${r.file} · ${r.detail}"

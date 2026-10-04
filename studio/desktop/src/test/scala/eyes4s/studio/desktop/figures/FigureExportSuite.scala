@@ -25,6 +25,7 @@ import eyes4s.studio.core.figures.ReferenceReads
 import eyes4s.studio.core.fixture.{GoldenAssets, MockStudy, StoryMoment, StoryMoments}
 import eyes4s.studio.core.headless.HeadlessSession
 import eyes4s.studio.core.selection.ScaleIndex
+import eyes4s.studio.desktop.trial.StimulusSource
 import eyes4s.studio.viz.figure.FigureSvg
 
 import org.apache.pdfbox.Loader
@@ -64,6 +65,7 @@ class FigureExportSuite extends munit.FunSuite:
   private def page(c: FigureComposer => FigureComposer = identity): Future[PageVM] =
     val scale2   = ok(ScaleIndex.of(2))
     val p17ret07 = MockStudy.key("P17", "ret_07")
+    val p17enc03 = MockStudy.key("P17", "enc_03")
     for
       session <- HeadlessSession.open(StoryMoment.T2)
       summary <- session.result(run7)
@@ -74,20 +76,28 @@ class FigureExportSuite extends munit.FunSuite:
         scale2,
         p17ret07
       )
-      _ <- session.close
+      enc <- session.trialFixations(StoryMoments.rev4, p17enc03)
+      ret <- session.trialFixations(StoryMoments.rev4, p17ret07)
+      _   <- session.close
     yield
       val registry = t2.document.dataset(r3).map(GoldenAssets.registry).getOrElse(Left("no r3"))
       val loaded   = Vector(
         ComposerIntent.SummaryRead(run7, SummaryAnswer.Answered(ok(summary))),
         ComposerIntent.ReferencesRead(run7, scale2, p17ret07, Right(ok(scores))),
-        ComposerIntent.DisplaysRead(r3, registry.map(DisplaySource.Served(_)))
+        ComposerIntent.DisplaysRead(r3, registry.map(DisplaySource.Served(_))),
+        ComposerIntent.FixationsRead(StoryMoments.rev4, p17enc03, enc.left.map(_.message)),
+        ComposerIntent.FixationsRead(StoryMoments.rev4, p17ret07, ret.left.map(_.message))
       ).foldLeft(FigureComposer.sync(FigureComposer.empty, t2)._1)((x, i) =>
         FigureComposer.update(x, t2, i)._1
       )
       FigureComposer.view(c(loaded), t2).page.getOrElse(fail("no page"))
 
+  /** The golden fixture's stimuli, which the gaze panels display. */
+  private val stimuli =
+    StimulusSource.directory(buildRoot.resolve("fixtures/studio-golden/stimuli"))
+
   private def svgOf(p: PageVM): String =
-    ok(FigureSvg.render(p, ok(FigureFonts.bundled)))
+    ok(FigureSvg.render(p, ok(FigureFonts.bundled), FigureExport.rasters(p, stimuli)))
 
   /** The SVG without its embedded font data, for a golden that stays readable. */
   private def withoutFonts(svg: String): String =
@@ -144,6 +154,19 @@ class FigureExportSuite extends munit.FunSuite:
     }
   }
 
+  test("panels A and B are drawn from trialFixations: every fixation, A over its image") {
+    page().map { p =>
+      val svg   = svgOf(p)
+      val marks = """data-name="trial-fixation-(\d+)"""".r.findAllMatchIn(svg).size
+      assertEquals(marks, 13 + 12)
+      // Panel A displayed beach-042: its pixels are in the file, not linked.
+      val image = """<image data-name="trial-stimulus"[^>]*href="data:image/png;base64,""".r
+      assertEquals(image.findAllMatchIn(svg).size, 1)
+      // Panel B displayed a blank screen with a cross: no image is drawn.
+      assert(!svg.contains("Loading "), "an image was still loading")
+    }
+  }
+
   test("every font the SVG names is embedded, byte for byte the bundled face") {
     page().map { p =>
       val svg      = svgOf(p)
@@ -167,7 +190,9 @@ class FigureExportSuite extends munit.FunSuite:
   // --- PDF and PNG ------------------------------------------------------------------
 
   private def bytesOf(format: ExportFormat, p: PageVM): Array[Byte] =
-    val bytes: IArray[Byte] = ok(FigureExport.render(format, p))
+    val bytes: IArray[Byte] = ok(
+      FigureExport.render(format, p, FigureExport.rasters(p, stimuli))
+    )
     Array.from(bytes)
 
   /** A PDF as text: its page size in millimetres, its fonts without their

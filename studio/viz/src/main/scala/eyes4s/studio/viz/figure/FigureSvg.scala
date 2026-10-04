@@ -17,6 +17,8 @@
 package eyes4s.studio.viz.figure
 
 import eyes4s.studio.app.figures.PageVM
+import eyes4s.studio.core.assets.AssetRef
+import eyes4s.studio.viz.trial.StimulusRaster
 import intaglio.svg.SvgRenderer
 
 import java.util.Base64
@@ -69,9 +71,13 @@ object FigureSvg:
       doc  <- SvgRenderer.render(plan, None).left.map(e => FigureSvgError.Render(e.message))
     yield families(doc.value)
 
-  def render(page: PageVM, fonts: Vector[EmbeddedFont]): Either[FigureSvgError, String] =
+  def render(
+      page: PageVM,
+      fonts: Vector[EmbeddedFont],
+      rasters: Map[AssetRef, StimulusRaster] = Map.empty
+  ): Either[FigureSvgError, String] =
     for
-      built <- FigurePage.build(page).left.map(FigureSvgError.Page(_))
+      built <- FigurePage.build(page, rasters).left.map(FigureSvgError.Page(_))
       plan  <- built.plan(PixelsPerInch).left.map(FigureSvgError.Page(_))
       doc   <- SvgRenderer
         .render(plan, Some(page.title))

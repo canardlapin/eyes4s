@@ -20,7 +20,10 @@ import eyes4s.studio.app.figures.{ExportFormat, PageVM}
 import eyes4s.studio.app.tokens.FontFace
 import eyes4s.studio.desktop.typography.StudioFonts
 import cats.syntax.all.*
-import eyes4s.studio.viz.figure.{EmbeddedFont, FigurePage, FigureSvg}
+import eyes4s.studio.core.assets.AssetRef
+import eyes4s.studio.desktop.trial.{StimulusSource, Stimuli}
+import eyes4s.studio.viz.figure.{EmbeddedFont, FigureGaze, FigurePage, FigureSvg}
+import eyes4s.studio.viz.trial.StimulusRaster
 import intaglio.Rgba
 import intaglio.java2d.{Java2DBackground, Java2DExportOptions, Java2DRenderer}
 import intaglio.pdf.{PdfFont, PdfFontCatalog, PdfOptions, PdfRenderer}
@@ -56,7 +59,11 @@ object FigurePdf:
     */
   val PixelsPerInch: Double = 720.0
 
-  def render(page: PageVM, fonts: Vector[EmbeddedFont]): Either[String, Array[Byte]] =
+  def render(
+      page: PageVM,
+      fonts: Vector[EmbeddedFont],
+      rasters: Map[AssetRef, StimulusRaster]
+  ): Either[String, Array[Byte]] =
     for
       faces <- fonts
         .traverse(f => PdfFont.fromBytes(f.family, Array.from(f.bytes)))
@@ -65,7 +72,7 @@ object FigurePdf:
       catalog <- faces match
         case first +: rest => PdfFontCatalog.from(first, rest*).left.map(_.message)
         case _             => Left("A PDF needs at least one font to embed.")
-      built <- FigurePage.build(page).left.map(_.message)
+      built <- FigurePage.build(page, rasters).left.map(_.message)
       plan  <- built.plan(PixelsPerInch).left.map(_.message)
       doc   <- PdfRenderer
         .render(plan, catalog, PdfOptions(title = Some(page.title)))
@@ -95,10 +102,13 @@ object FigurePng:
       catch case NonFatal(e) => Left(s"The font ${f.family} could not be read: ${e.getMessage}")
     }.map(_.flatten.toSet))
 
-  def render(page: PageVM): Either[String, Array[Byte]] =
+  def render(
+      page: PageVM,
+      rasters: Map[AssetRef, StimulusRaster]
+  ): Either[String, Array[Byte]] =
     for
       names <- registered
-      built <- FigurePage.build(page).left.map(_.message)
+      built <- FigurePage.build(page, rasters).left.map(_.message)
       plan  <- built.plan(PixelsPerInch).left.map(_.message)
       // A family AWT does not know would be drawn in a fallback face, silently.
       used <- FigureSvg.families(built).left.map(_.message)
@@ -117,16 +127,27 @@ object FigurePng:
 /** A figure page written as a file of one format (ticket S9.3). */
 object FigureExport:
 
-  /** The bytes of `page` as `format`, with the bundled fonts embedded. */
-  def render(format: ExportFormat, page: PageVM): Either[String, IArray[Byte]] =
+  /** The bytes of `page` as `format`, with the bundled fonts embedded and
+    * the gaze panels' displays drawn from `rasters`.
+    */
+  def render(
+      format: ExportFormat,
+      page: PageVM,
+      rasters: Map[AssetRef, StimulusRaster] = Map.empty
+  ): Either[String, IArray[Byte]] =
     FigureFonts.bundled.flatMap { fonts =>
       format match
         case ExportFormat.Svg =>
           FigureSvg
-            .render(page, fonts)
+            .render(page, fonts, rasters)
             .left
             .map(_.message)
             .map(s => IArray.unsafeFromArray(s.getBytes(UTF_8)))
-        case ExportFormat.Pdf => FigurePdf.render(page, fonts).map(IArray.unsafeFromArray)
-        case ExportFormat.Png => FigurePng.render(page).map(IArray.unsafeFromArray)
+        case ExportFormat.Pdf =>
+          FigurePdf.render(page, fonts, rasters).map(IArray.unsafeFromArray)
+        case ExportFormat.Png => FigurePng.render(page, rasters).map(IArray.unsafeFromArray)
     }
+
+  /** The decoded images of the stored assets `page`'s gaze panels display. */
+  def rasters(page: PageVM, stimuli: StimulusSource): Map[AssetRef, StimulusRaster] =
+    FigureGaze.assets(page).map(a => a -> Stimuli.load(stimuli, a)).toMap

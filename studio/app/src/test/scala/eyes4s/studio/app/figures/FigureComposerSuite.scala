@@ -50,6 +50,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
   private val sigma2            = ok(Sigma.of(2.0))
   private val scale2            = ok(ScaleIndex.of(2))
   private val p17ret07          = MockStudy.key("P17", "ret_07")
+  private val p17enc03          = MockStudy.key("P17", "enc_03")
 
   private def t2: AppModel = StoryModels.t2Figures
 
@@ -105,6 +106,64 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
   private def panel(vm: ComposerVM, l: String): PanelVM =
     vm.page.flatMap(_.panels.find(_.letter == letter(l))).getOrElse(fail(s"no panel $l"))
 
+  /** `c` with both gaze panels' fixations as the fake serves them. */
+  private def withGaze(c: FigureComposer, model: AppModel): Future[FigureComposer] =
+    for
+      session <- HeadlessSession.open(StoryMoment.T2)
+      enc     <- session.trialFixations(StoryMoments.rev4, p17enc03)
+      ret     <- session.trialFixations(StoryMoments.rev4, p17ret07)
+      _       <- session.close
+    yield Vector(
+      ComposerIntent.FixationsRead(StoryMoments.rev4, p17enc03, enc.left.map(_.message)),
+      ComposerIntent.FixationsRead(StoryMoments.rev4, p17ret07, ret.left.map(_.message))
+    ).foldLeft(c)((c, i) => FigureComposer.update(c, model, i)._1)
+
+  test("panels A and B draw the trials' fixations from trialFixations, by role") {
+    for
+      answers <- served
+      c       <- withGaze(loaded(t2, answers), t2)
+    yield
+      val vm              = FigureComposer.view(c, t2)
+      def gaze(l: String) = panel(vm, l).body match
+        case PanelBody.Gaze(g) => g
+        case other             => fail(other.toString)
+      val a = gaze("A").drawn.getOrElse(fail("A is not drawn"))
+      val b = gaze("B").drawn.getOrElse(fail("B is not drawn"))
+      assertEquals((a.trial, a.role, a.marks.size), (p17enc03, GazeRole.Matched, 13))
+      assertEquals((b.trial, b.role, b.marks.size), (p17ret07, GazeRole.Query, 12))
+      assertEquals(
+        gaze("A").gaze,
+        "13 fixations in scanpath order; marker area shows duration."
+      )
+      assertEquals(a.screen, t2.document.dataset(r3).get.geometry.screen)
+      // In scanpath order, from position 1.
+      assertEquals(a.marks.map(_.index.value), (1 to 13).toVector)
+  }
+
+  test("a gaze panel whose fixations could not be read says why, and asks again") {
+    val synced = FigureComposer.sync(FigureComposer.empty, t2)._1
+    val failed = FigureComposer
+      .update(
+        synced,
+        t2,
+        ComposerIntent.FixationsRead(StoryMoments.rev4, p17ret07, Left("gone"))
+      )
+      ._1
+    val registry =
+      t2.document.dataset(r3).map(GoldenAssets.registry).get.map(DisplaySource.Served(_))
+    val shown = FigureComposer.update(failed, t2, ComposerIntent.DisplaysRead(r3, registry))._1
+    panel(FigureComposer.view(shown, t2), "B").body match
+      case PanelBody.Gaze(g) =>
+        assertEquals((g.gaze, g.drawn), ("The fixations could not be read: gone", None))
+      case other => fail(other.toString)
+    assert(
+      FigureComposer
+        .sync(failed, t2)
+        ._2
+        .contains(ComposerEffect.RequestFixations(StoryMoments.rev4, p17ret07))
+    )
+  }
+
   // --- Templates and reads ----------------------------------------------------------
 
   test("Figure 1's panels are the board's templates A–E") {
@@ -122,8 +181,8 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
   }
 
   test(
-    "the composer reads the bound run once: its summary, its methods facts, panel C's " +
-      "references, the displays"
+    "the composer reads the bound run once: its summary, its methods facts, the displays, " +
+      "the gaze panels' fixations, panel C's references"
   ) {
     val (synced, effects) = FigureComposer.sync(FigureComposer.empty, t2)
     assertEquals(
@@ -132,6 +191,8 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
         ComposerEffect.RequestSummary(run7),
         ComposerEffect.RequestMethods(run7, r3),
         ComposerEffect.RequestDisplays(t2.document.dataset(r3).get),
+        ComposerEffect.RequestFixations(StoryMoments.rev4, p17enc03),
+        ComposerEffect.RequestFixations(StoryMoments.rev4, p17ret07),
         ComposerEffect.RequestReferences(run7, scale2, p17ret07)
       )
     )
@@ -283,7 +344,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
 
   // --- Panels A and B --------------------------------------------------------------
 
-  test("panels A and B say what the screen displayed, and that the gaze is not served") {
+  test("panels A and B say what the screen displayed, and read the gaze") {
     served.map { answers =>
       val vm              = FigureComposer.view(loaded(t2, answers), t2)
       def gaze(l: String) = panel(vm, l).body match
@@ -300,11 +361,9 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
           "Displayed: blank + fixation cross. The remembered image was not shown."
         )
       )
-      // Each empty drawing area names the follow-up that fills it.
-      assertEquals(
-        gaze("A").gaze,
-        "No gaze yet: fixations are drawn when the backend serves the trial-fixations view (S6.2)."
-      )
+      // Until trialFixations answers, the panel says it is reading.
+      assertEquals(gaze("A").gaze, "Reading the fixations of P17 · enc_03…")
+      assertEquals(gaze("A").drawn, None)
       panel(vm, "C").body match
         case PanelBody.Maps(maps) =>
           assertEquals(

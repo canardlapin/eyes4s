@@ -18,7 +18,10 @@ package eyes4s.studio.viz.figure
 
 import eyes4s.studio.app.figures.*
 import eyes4s.studio.app.plot.{ParticipantColumns, PlotSourceError, ProfileColumns}
+import cats.syntax.all.*
 import eyes4s.studio.app.tokens.{FontFace, PaletteToken, Theme, Tokens}
+import eyes4s.studio.core.assets.AssetRef
+import eyes4s.studio.viz.trial.{StimulusRaster, TrialScene, TrialSceneError}
 import eyes4s.studio.viz.plot.{
   IntaglioColours,
   ParticipantPlot,
@@ -56,12 +59,16 @@ enum FigurePageError derives CanEqual:
   /** Panel `panel`'s plot could not be built. */
   case Plot(panel: String, error: PlotBuildError)
 
+  /** Panel `panel`'s trial could not be drawn. */
+  case Trial(panel: String, error: TrialSceneError)
+
   /** Intaglio refused a value while `during`. */
   case Graphics(during: String, error: GraphicsError)
 
   def message: String = this match
     case Columns(e)          => e.message
     case Plot(panel, e)      => s"Panel $panel could not be drawn: ${e.message}"
+    case Trial(panel, e)     => s"Panel $panel's trial could not be drawn: ${e.message}"
     case Graphics(during, e) => s"Intaglio refused $during: ${e.message}"
 
 /** A figure page laid out for a target (ticket S9.3): one Intaglio scene of
@@ -120,14 +127,18 @@ object FigurePage:
 
   private def plotHeight(widthMm: Double): Double = widthMm * PlotGeometry.Aspect
 
+  private def gazeHeight(vm: GazePanelVM, widthMm: Double): Double =
+    vm.drawn.fold(0.0)(d => widthMm * FigureGaze.heightRatio(d))
+
   private def bodyHeight(panel: PanelVM, pt: Double): Double =
     val w                            = panel.widthMm.toDouble
     def lines(texts: Vector[String]) = texts.map(wrap(_, w, pt).size).sum * lineMm(pt)
     panel.body match
-      case PanelBody.Plot(vm)     => plotHeight(w) + lines(vm.notes)
-      case PanelBody.Maps(vm)     => tileHeight(vm, w, pt) + lines(Vector(vm.caption, vm.maps))
-      case PanelBody.Gaze(vm)     => lines(Vector(vm.heading, vm.displayed, vm.gaze))
-      case PanelBody.Waiting(why) => lines(Vector(why))
+      case PanelBody.Plot(vm) => plotHeight(w) + lines(vm.notes)
+      case PanelBody.Maps(vm) => tileHeight(vm, w, pt) + lines(Vector(vm.caption, vm.maps))
+      case PanelBody.Gaze(vm) =>
+        gazeHeight(vm, w) + lines(Vector(vm.heading, vm.displayed, vm.gaze))
+      case PanelBody.Waiting(why)     => lines(Vector(why))
       case PanelBody.Unavailable(why) => lines(Vector(why))
 
   /** Panel C's tiles share the panel's width; each tile's title wraps inside it. */
@@ -185,7 +196,10 @@ object FigurePage:
     * figure caption and the provenance stamp below the panels, all in the
     * figure typography on paper.
     */
-  def build(page: PageVM): Either[FigurePageError, FigurePage] =
+  def build(
+      page: PageVM,
+      rasters: Map[AssetRef, StimulusRaster] = Map.empty
+  ): Either[FigurePageError, FigurePage] =
     val pt                = page.textPt.toDouble
     val widthMm           = page.width.mm.toDouble
     val (placed, panelsH) = layout(page)
@@ -254,6 +268,22 @@ object FigurePage:
             .checked(origin = at(p.x, top + h), size = Size.fromExtents(extent(w), extent(h)))
         )
       yield Grob.group(built.plot.scene.grobs, viewport = Some(port))
+    def trial(p: Placed, vm: GazeTrialVM, top: Double): Either[FigurePageError, Grob] =
+      val w = p.panel.widthMm.toDouble
+      val h = w * FigureGaze.heightRatio(vm)
+      // The trial panel fills all but the scene's caption band, which is
+      // left empty below the drawing.
+      val whole = h / (1.0 - TrialScene.CaptionFraction)
+      for
+        built <- TrialScene(FigureGaze.input(vm, rasters)).left
+          .map(FigurePageError.Trial(p.panel.letter.value, _))
+        port <- g("the trial's viewport")(
+          Viewport.checked(
+            origin = at(p.x, top + whole),
+            size = Size.fromExtents(extent(w), extent(whole))
+          )
+        )
+      yield Grob.group(FigureGaze.panelOnly(built), viewport = Some(port))
     def tiles(
         p: Placed,
         vm: DensityMapsVM,
@@ -343,14 +373,16 @@ object FigurePage:
               )
             yield boxes ++ text
           case PanelBody.Gaze(vm) =>
-            paragraphs(
-              Vector(vm.heading, vm.displayed, vm.gaze),
-              p.x,
-              body,
-              w,
-              PaletteToken.PaperInk2
-            )
-              .map(_._1)
+            for
+              drawing   <- vm.drawn.toVector.traverse(trial(p, _, body))
+              (text, _) <- paragraphs(
+                Vector(vm.heading, vm.displayed, vm.gaze),
+                p.x,
+                body + gazeHeight(vm, w),
+                w,
+                PaletteToken.PaperInk2
+              )
+            yield drawing ++ text
           case PanelBody.Waiting(why) =>
             paragraph(why, p.x, body, w, PaletteToken.PaperInk2).map(_._1)
           case PanelBody.Unavailable(why) =>
