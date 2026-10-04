@@ -7,7 +7,9 @@ MODULES = ('kernel','core','detect','surface','aoi','compare','design','plan','r
 PROJECTS = {m: ('fs2Module' if m == 'fs2' else m) for m in MODULES}
 
 def fingerprint():
-    files = {ROOT / 'build.sbt', ROOT / 'project/ApiAudit.scala', ROOT / 'README.md', ROOT / 'docs/formats/eyelink-asc.md'}
+    files = {ROOT / 'project/ApiAudit.scala', ROOT / 'README.md', ROOT / 'docs/formats/eyelink-asc.md'}
+    # sbt loads every root .sbt file, including worktree-local source/generator settings.
+    files.update(ROOT.glob('*.sbt'))
     for module in MODULES:
         for base in ('src', '.jvm/src', '.js/src'):
             directory = ROOT / module / base
