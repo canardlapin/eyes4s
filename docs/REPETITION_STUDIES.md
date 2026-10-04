@@ -126,7 +126,11 @@ case runs the complete save, fresh-registration reopen and rerun workflow on bot
 4. Construct with `RepetitionPlan.of`. Every map must agree with the declared nominal grid.
    Empty input and duplicate full keys remain admitted source data so the ordinary pairing
    diagnostics can report them. `run` returns matched/control edge analyses; `contrasts`
-   derives per-focal means and differences under the declared failure policy.
+   derives per-focal means and differences under the declared failure policy. `work` is the
+   same run as a `RepetitionCursor`: it makes both pairings, then compares the matched pairs
+   and the control pairs at most `quanta.pairs` per step (`RepetitionStage.Matched`, then
+   `Control`), and `Stepwise.complete(plan.work, quanta)` equals `run` at any quanta. The
+   pairing itself is not bounded; only the comparisons are.
 5. Create `RepetitionPlanCodec.of` with a distinct recipe schema, typed key codec and
    `RepetitionRegistry`. Save its versioned JSON. A fresh registry with the declared layout
    reconstructs the same keys, eligible/selected directed endpoints, seed, cap, input and plan

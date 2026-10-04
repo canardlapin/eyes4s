@@ -210,6 +210,29 @@ final class RepetitionPlan[K, U <: Unit2D] private (
       planHash
     )
 
+  /** The same run as resumable work: both pairings are made here, and the
+    * cursor evaluates the matched pairs, then the control pairs, at most a pair
+    * quantum of comparisons per step. `Stepwise.complete` at any quanta equals
+    * [[run]].
+    */
+  def work: RepetitionCursor[K] =
+    given KeyDigest[K] = layout.digest
+    given Ordering[K]  = layout.ordering
+    val comparison     = method.similarity[U]
+    val info           = EvaluationInfo.comparison(comparison, specification)
+    def evaluation(rules: Vector[RepetitionRule], selection: Selection) =
+      PairedEvaluation.start(pair(trials, layout.design(rules, selection)), inputHash, info)(
+        comparison.compare
+      )
+    new RepetitionCursor(
+      RepetitionPhase.Matched(
+        evaluation(relations.matched, Selection.All),
+        evaluation(relations.controls, controls)
+      ),
+      policy,
+      planHash
+    )
+
 object RepetitionPlan:
   def of[K, U <: Unit2D: UnitLabel](
       layout: RepetitionLayout[K],
@@ -318,3 +341,78 @@ final class RepetitionPlanResult[K] private[plan] (
 )(using Ordering[K]):
   def contrasts: Either[ContrastError[K], Contrast[K, Similarity, SignedDifference]] =
     contrast(matched.meanByLeft(policy), controls.meanByLeft(policy))
+
+/** The stage a repetition cursor's next step works on. */
+enum RepetitionStage derives CanEqual:
+  /** Comparing the matched pairs. */
+  case Matched
+
+  /** Comparing the control pairs. */
+  case Control
+
+/** Where a repetition run stands: the matched pairs in progress with the
+  * control pairs waiting, or the matched analysis done and the control pairs
+  * in progress.
+  */
+private[plan] enum RepetitionPhase[K]:
+  case Matched(
+      matched: PairedEvaluation[K, K, CompareError, Similarity],
+      control: PairedEvaluation[K, K, CompareError, Similarity]
+  )
+  case Control(
+      matched: DirectedPairwiseAnalysis[K, K, CompareError, Similarity],
+      control: PairedEvaluation[K, K, CompareError, Similarity]
+  )
+
+/** An immutable position inside a [[RepetitionPlan]] run
+  * ([[RepetitionPlan.work]]): each `advance` evaluates at most `quanta.pairs`
+  * pairs of the current stage. It never fails.
+  */
+final class RepetitionCursor[K] private[plan] (
+    private val phase: RepetitionPhase[K],
+    private val policy: FailurePolicy,
+    private val planHash: ContentHash
+)(using Ordering[K]):
+  def stage: RepetitionStage = phase match
+    case RepetitionPhase.Matched(_, _) => RepetitionStage.Matched
+    case RepetitionPhase.Control(_, _) => RepetitionStage.Control
+
+  def advance(
+      quanta: WorkQuanta
+  ): Either[Nothing, WorkStep[RepetitionStage, RepetitionCursor[K], RepetitionPlanResult[K]]] =
+    def next(p: RepetitionPhase[K]) = new RepetitionCursor(p, policy, planHash)
+    Right(phase match
+      case RepetitionPhase.Matched(matched, control) =>
+        matched.advance(quanta.pairs) match
+          case PairedPage.More(units, more) =>
+            WorkStep.More(
+              RepetitionStage.Matched,
+              units,
+              next(RepetitionPhase.Matched(more, control))
+            )
+          case PairedPage.Done(units, analysis) =>
+            WorkStep.More(
+              RepetitionStage.Matched,
+              units,
+              next(RepetitionPhase.Control(analysis, control))
+            )
+      case RepetitionPhase.Control(matched, control) =>
+        control.advance(quanta.pairs) match
+          case PairedPage.More(units, more) =>
+            WorkStep.More(
+              RepetitionStage.Control,
+              units,
+              next(RepetitionPhase.Control(matched, more))
+            )
+          case PairedPage.Done(units, analysis) =>
+            WorkStep.Done(units, new RepetitionPlanResult(matched, analysis, policy, planHash)))
+
+object RepetitionCursor:
+  given stepwise[K]: Stepwise[
+    RepetitionCursor[K],
+    RepetitionStage,
+    Nothing,
+    RepetitionPlanResult[K]
+  ] with
+    def stage(cursor: RepetitionCursor[K]): RepetitionStage      = cursor.stage
+    def advance(cursor: RepetitionCursor[K], quanta: WorkQuanta) = cursor.advance(quanta)

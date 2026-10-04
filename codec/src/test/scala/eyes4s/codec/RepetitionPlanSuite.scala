@@ -310,6 +310,38 @@ class RepetitionPlanSuite extends munit.FunSuite:
     assert(codec.parse(SavedStudyFixtures.versionOne).isLeft)
   }
 
+  test("the repetition cursor equals run at every quanta, matched pairs first, then controls") {
+    def quanta(pairs: Int) = WorkQuanta(get(PairQuantum.of(pairs)), ComparisonQuantum.default)
+    Vector(plan(), plan(sel = Selection.All)).foreach { p =>
+      val expected = p.run
+      Vector(quanta(1), quanta(3), WorkQuanta.default).foreach { q =>
+        val stepped = get(Stepwise.complete(p.work, q))
+        assertEquals(stepped.matched, expected.matched, q)
+        assertEquals(stepped.controls, expected.controls, q)
+        // The contrasts are a function of these two analyses and the policy.
+        assertEquals(stepped.policy, expected.policy)
+        assertEquals(stepped.planHash, expected.planHash)
+      }
+      // One pair per step at the finest quantum: each stage's steps are its pairs,
+      // and the stages run matched, then control.
+      @annotation.tailrec
+      def trace(
+          c: RepetitionCursor[Key],
+          seen: Vector[(RepetitionStage, Int)]
+      ): Vector[(RepetitionStage, Int)] =
+        get(c.advance(quanta(1))) match
+          case WorkStep.More(stage, units, next) => trace(next, seen :+ (stage -> units))
+          case WorkStep.Done(units, _)           => seen :+ (RepetitionStage.Control -> units)
+      val steps = trace(p.work, Vector.empty)
+      assertEquals(
+        steps,
+        Vector.fill(expected.matched.rows.size)(RepetitionStage.Matched -> 1) ++
+          Vector.fill(expected.controls.rows.size)(RepetitionStage.Control -> 1)
+      )
+      assertEquals(p.work.stage, RepetitionStage.Matched)
+    }
+  }
+
   test("condition grouping names its estimand and requires an explicit participant scope") {
     // The old unscoped name reproduced eyesim issue #28's inverted contrast silently.
     assert(typeCheckErrors("eyes4s.plan.RepetitionRelations.conditionGroups").nonEmpty)

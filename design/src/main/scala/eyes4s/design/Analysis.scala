@@ -284,6 +284,81 @@ def evaluatePairs[KL, ML, KR, MR, A, B, E, S](
     info
   )
 
+/** One step of evaluating the pairs of a completed pairing: `workUnits`
+  * pairs evaluated, and the evaluation to continue or the finished analysis.
+  */
+enum PairedPage[KL, KR, E, S]:
+  case More(workUnits: Int, next: PairedEvaluation[KL, KR, E, S])
+  case Done(workUnits: Int, analysis: DirectedPairwiseAnalysis[KL, KR, E, S])
+
+/** An immutable position inside the evaluation of an already-paired design,
+  * at most a pair quantum of whole evaluations per step, in pair order. The
+  * finished analysis is exactly [[evaluatePairs]] on the same pairing, at any
+  * quanta. The pairing itself is not bounded here: it was completed before.
+  */
+final class PairedEvaluation[KL, KR, E, S] private (
+    private val count: Int,
+    private val score: Int => PairScore[KL, KR, E, S],
+    private val diagnostics: PairingReport[KL, KR],
+    private val inputs: ContentHash,
+    private val info: EvaluationInfo,
+    private val rows: Vector[PairScore[KL, KR, E, S]]
+):
+  /** Pairs evaluated so far, and pairs in all. */
+  def completedPairs: Int = rows.size
+  def totalPairs: Int     = count
+
+  def advance(quantum: PairQuantum): PairedPage[KL, KR, E, S] =
+    val n    = math.min(quantum.value, count - rows.size)
+    val done = rows ++ (rows.size until rows.size + n).map(score)
+    if done.size < count then
+      PairedPage.More(
+        n,
+        new PairedEvaluation(count, score, diagnostics, inputs, info, done)
+      )
+    else
+      PairedPage.Done(
+        n,
+        DirectedPairwiseAnalysis(
+          done,
+          diagnostics,
+          EvaluationProvenance(inputs, info, diagnostics, done),
+          info
+        )
+      )
+
+object PairedEvaluation:
+  /** Begin evaluating every pair of `paired`; no pair is evaluated here. */
+  def start[KL, ML, KR, MR, A, B, E, S](
+      paired: DirectedPaired[KL, ML, KR, MR, A, B],
+      inputs: ContentHash,
+      info: EvaluationInfo
+  )(evaluator: (A, B) => Either[E, S]): PairedEvaluation[KL, KR, E, S] =
+    val pairs = paired.pairs
+    new PairedEvaluation(
+      pairs.size,
+      i =>
+        val (left, right) = pairs(i)
+        PairScore(left.key, right.key, evaluator(left.value, right.value))
+      ,
+      paired.diagnostics,
+      inputs,
+      info,
+      Vector.empty
+    )
+
+  /** Drive an evaluation to completion with a fixed quantum. */
+  def complete[KL, KR, E, S](
+      evaluation: PairedEvaluation[KL, KR, E, S],
+      quantum: PairQuantum
+  ): DirectedPairwiseAnalysis[KL, KR, E, S] =
+    @annotation.tailrec
+    def loop(e: PairedEvaluation[KL, KR, E, S]): DirectedPairwiseAnalysis[KL, KR, E, S] =
+      e.advance(quantum) match
+        case PairedPage.More(_, next)     => loop(next)
+        case PairedPage.Done(_, analysis) => analysis
+    loop(evaluation)
+
 /** Maximum recording samples one bounded preprocessing or detection step may
   * feed to its machine. One sample is one unit; a machine whose per-sample
   * `step` is itself unbounded is not made bounded by this quantum.

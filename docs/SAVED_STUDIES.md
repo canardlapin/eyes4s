@@ -230,8 +230,10 @@ The three shipped plan families share one execution contract. In `eyes4s-plan`,
 `Stepwise[C, Stage, E, R]` is the step shape a runner interprets: a pure,
 immutable cursor that names the stage its next `advance(quanta)` works on and
 returns `WorkStep.More(stage, units, next)`, `WorkStep.Done(units, result)` or a
-typed error. `StudyCursor` satisfies it as it is; `RecordingCursor` and
-`TemporalCursor` are written to it, and `Stepwise.complete` drives any of them.
+typed error. `StudyCursor` satisfies it as it is; `RecordingCursor`,
+`TemporalCursor` and `RepetitionCursor` are written to it, and `Stepwise.complete`
+drives any of them. `eyes4s-design`'s `PairedEvaluation` evaluates the pairs of a
+completed pairing a page at a time, finishing exactly as `evaluatePairs` does.
 The counted vocabulary is also pure: `SegmentTotal`, `StudySegment`,
 `RecordingSegment` and `TemporalSegment` live in `eyes4s-plan` with the totals
 each family states (`StudySegment.total` and so on), and `eyes4s-fs2` keeps the
