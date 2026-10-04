@@ -172,6 +172,16 @@ class ExploreLinkedSuite extends munit.FunSuite:
       val explained = AppModel.update(m8, Intent.Explain(Place.At(record(8))))._1
       assertEquals(explained.location, moved.location)
       assertEquals(AppModel.update(explained, Intent.Back)._1.location, m8.location)
+      // A follow keeps the Forward history: Back from an explained trail,
+      // then a follow, and Forward still goes where it went.
+      val back = AppModel.update(explained, Intent.Back)._1
+      assert(back.navigation.canGoForward)
+      val followed = AppModel.update(back, follow)._1
+      assertEquals(followed.navigation.canGoForward, true)
+      assertEquals(
+        AppModel.update(followed, Intent.Forward)._1.location,
+        AppModel.update(back, Intent.Forward)._1.location
+      )
       // A follow never switches perspective.
       val compare = AppModel
         .update(m8, Intent.Navigate(Location(Perspective.Compare, StoryModels.queryTrail)))

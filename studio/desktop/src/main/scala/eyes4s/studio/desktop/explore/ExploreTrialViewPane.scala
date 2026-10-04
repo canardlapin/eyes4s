@@ -155,12 +155,18 @@ object ExploreTrialViewPane:
 
   /** Call `f` on each action of `b` with what pressed it: a pointer, a key
     * (Space or Enter), or neither (a programmatic `fire`). The press that
-    * leads to an action names its cause; the action consumes it.
+    * leads to an action names its cause; the action consumes it, and the
+    * release forgets it once its own action (if any) has run, so a press
+    * dragged off the button or a Tab that only moves focus names nothing.
     */
   def onPress(b: ButtonBase)(f: InputCause => Unit): Unit =
-    var cause = InputCause.Programmatic
+    var cause          = InputCause.Programmatic
+    def forget(): Unit =
+      javafx.application.Platform.runLater(() => cause = InputCause.Programmatic)
     b.addEventFilter(MouseEvent.MOUSE_PRESSED, _ => cause = InputCause.Pointer)
     b.addEventFilter(KeyEvent.KEY_PRESSED, _ => cause = InputCause.Keyboard)
+    b.addEventFilter(MouseEvent.MOUSE_RELEASED, _ => forget())
+    b.addEventFilter(KeyEvent.KEY_RELEASED, _ => forget())
     b.setOnAction { _ =>
       val pressed = cause
       cause = InputCause.Programmatic

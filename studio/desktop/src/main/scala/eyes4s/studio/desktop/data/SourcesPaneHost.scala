@@ -62,13 +62,20 @@ object AssetFiles:
   /** The largest image Repair… stores (64 MiB). */
   val MaxBytes: Long = 64L * 1024 * 1024
 
+  /** Whether ImageIO decodes `bytes` to an image with an area. */
+  def decodes(bytes: Array[Byte]): Boolean =
+    Option(javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(bytes)))
+      .exists(i => i.getWidth > 0 && i.getHeight > 0)
+
   /** `bytes`, named `name`, as a display image: a single path segment, at
-    * most [[MaxBytes]], and decodable as an image (ImageIO).
+    * most [[MaxBytes]], and decodable as an image (`decode`, ImageIO). A
+    * decoder that fails, with any non-fatal exception, is a typed refusal.
     */
   def check(
       name: String,
       bytes: IArray[Byte],
-      limit: Long = MaxBytes
+      limit: Long = MaxBytes,
+      decode: Array[Byte] => Boolean = decodes
   ): Either[AssetFileRefusal, (AssetFile, IArray[Byte])] =
     for
       file <- AssetFile.of(name).left.map(e => AssetFileRefusal.BadName(name, e.message))
@@ -77,14 +84,14 @@ object AssetFiles:
         (),
         AssetFileRefusal.TooLarge(name, bytes.length.toLong, limit)
       )
-      decoded =
-        try Option(javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(Array.from(bytes))))
-        catch case _: java.io.IOException => None
-      _ <- Either.cond(
-        decoded.exists(i => i.getWidth > 0 && i.getHeight > 0),
-        (),
-        AssetFileRefusal.NotAnImage(name)
-      )
+      decoded <-
+        try Right(decode(Array.from(bytes)))
+        catch
+          case _: java.io.IOException => Right(false)
+          // Some ImageIO readers throw runtime exceptions on malformed input.
+          case scala.util.control.NonFatal(e) =>
+            Left(AssetFileRefusal.Unreadable(name, Option(e.getMessage).getOrElse(e.toString)))
+      _ <- Either.cond(decoded, (), AssetFileRefusal.NotAnImage(name))
     yield (file, bytes)
 
   /** A file chooser titled for the missing file, over images. The file is

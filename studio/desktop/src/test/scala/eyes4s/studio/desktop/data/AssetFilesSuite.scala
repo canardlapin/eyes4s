@@ -50,3 +50,16 @@ class AssetFilesSuite extends munit.FunSuite:
     })
     assertEquals(AssetFiles.MaxBytes, 64L * 1024 * 1024)
   }
+
+  test("a decoder that throws is a typed refusal naming the file, not a dead thread") {
+    val throwing: Array[Byte] => Boolean = _ => throw IllegalStateException("bad GIF block")
+    assertEquals(
+      AssetFiles.check("odd.gif", png, decode = throwing),
+      Left(AssetFileRefusal.Unreadable("odd.gif", "bad GIF block"))
+    )
+    val io: Array[Byte] => Boolean = _ => throw java.io.IOException("truncated")
+    assertEquals(
+      AssetFiles.check("odd.gif", png, decode = io),
+      Left(AssetFileRefusal.NotAnImage("odd.gif"))
+    )
+  }

@@ -206,4 +206,43 @@ class ExploreLinkedSelectionFxSuite extends ShellFxSuite:
       b.fire()
     }
     assertEquals(seen, Vector(InputCause.Keyboard, InputCause.Pointer, InputCause.Programmatic))
+    // A press dragged off the button, or a Tab that only moves focus, is
+    // forgotten on its release: a later fire() names no cause.
+    def mouse(kind: javafx.event.EventType[MouseEvent]) = MouseEvent(
+      kind,
+      1,
+      1,
+      1,
+      1,
+      MouseButton.PRIMARY,
+      1,
+      false,
+      false,
+      false,
+      false,
+      kind == MouseEvent.MOUSE_PRESSED,
+      false,
+      false,
+      true,
+      false,
+      true,
+      null
+    )
+    runOnFx {
+      Event.fireEvent(b, mouse(MouseEvent.MOUSE_PRESSED))
+      Event.fireEvent(b, mouse(MouseEvent.MOUSE_RELEASED))
+    }
+    runOnFx(b.fire())
+    runOnFx {
+      Event.fireEvent(
+        b,
+        KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.TAB, false, false, false, false)
+      )
+      Event.fireEvent(
+        b,
+        KeyEvent(KeyEvent.KEY_RELEASED, "", "", KeyCode.TAB, false, false, false, false)
+      )
+    }
+    runOnFx(b.fire())
+    assertEquals(seen.drop(3), Vector(InputCause.Programmatic, InputCause.Programmatic))
   }
