@@ -54,6 +54,11 @@ enum TrialTextId derives CanEqual:
   case MarkInMap, MarkDroppedInitial, MarkOutsideScreen, MarkOutsideWindowExcluded,
     MarkOutsideWindowFailsTrial
 
+  /** The remembered image of a retrieval trial: shown as an underlay, with
+    * its disclosure, or not shown (S4.3b).
+    */
+  case RememberedShown, RememberedHidden
+
 /** The trial view's strings in the boards' wording. */
 object TrialText:
 
@@ -91,6 +96,8 @@ object TrialText:
       case MarkOutsideScreen           => "{0} · outside screen"
       case MarkOutsideWindowExcluded   => "{0} · outside window, excluded from map"
       case MarkOutsideWindowFailsTrial => "{0} · outside window, trial fails"
+      case RememberedShown             => "Reference image — not displayed during this trial"
+      case RememberedHidden            => "Remembered image not shown"
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: TrialTextId, args: String*): String =

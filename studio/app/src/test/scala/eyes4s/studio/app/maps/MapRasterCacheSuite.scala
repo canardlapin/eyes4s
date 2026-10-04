@@ -50,6 +50,32 @@ class MapRasterCacheSuite extends munit.FunSuite:
     assertEquals(r.bytes, Columns * Rows * 4L)
   }
 
+  test("a raster puts the map's top row first, whatever the grid's stored order") {
+    // An off-centre bump in both axes, stored top-first and bottom-first.
+    val cells = Vector.tabulate(Columns * Rows) { i =>
+      val (x, y) = (i % Columns, i / Columns)
+      Some(math.exp(-(math.pow((x - 20.0) / 8.0, 2) + math.pow((y - 12.0) / 6.0, 2)) / 2.0))
+    }
+    val flipped = cells.grouped(Columns).toVector.reverse.flatten
+    val top     = grid(id("ret_01", 2), cells, order = RowOrder.TopFirst)
+    val bottom  = grid(id("ret_01", 2), flipped, order = RowOrder.BottomFirst)
+    assertEquals(
+      MapRaster.render(bottom, massStyle).argb.toVector,
+      MapRaster.render(top, massStyle).argb.toVector
+    )
+    // Stored row 0 of the bottom-first grid is the map's bottom row.
+    assertEquals(bottom.atTop(20, Rows - 1), bottom.at(20, 0))
+    assertEquals(bottom.atTop(20, 12), top.at(20, 12))
+    // The order is part of the stored values: the same cells read the other way are another grid.
+    assertNotEquals(
+      grid(id("ret_01", 2), flipped, order = RowOrder.TopFirst).contentHash,
+      bottom.contentHash
+    )
+    // And the raster is not a mirror image: the bump is in the top half.
+    val r = MapRaster.render(bottom, massStyle)
+    assertNotEquals(r.pixel(20, 12), r.pixel(20, Rows - 1 - 12))
+  }
+
   test("isoline levels are kept exactly as served and never change a raster") {
     val levels = Vector(0.4124, 0.0871)
     val with_  = grid(id("ret_01", 2), bump, levels)
@@ -65,23 +91,30 @@ class MapRasterCacheSuite extends munit.FunSuite:
   test("a grid refuses an empty shape, a wrong cell count and a non-finite value or level") {
     val m = id("ret_01", 2)
     assertEquals(
-      MapGrid.of(m, 0, 2, Vector.empty, Vector.empty),
+      MapGrid.of(m, 0, 2, RowOrder.TopFirst, Vector.empty, Vector.empty),
       Left(MapGridError.Empty(m, 0, 2))
     )
     assertEquals(
-      MapGrid.of(m, 2, 2, Vector.fill(3)(Some(1.0)), Vector.empty),
+      MapGrid.of(m, 2, 2, RowOrder.TopFirst, Vector.fill(3)(Some(1.0)), Vector.empty),
       Left(MapGridError.CellCount(m, 2, 2, 3))
     )
     assertEquals(
       MapGrid
-        .of(m, 2, 1, Vector(Some(1.0), Some(Double.NaN)), Vector.empty)
+        .of(m, 2, 1, RowOrder.TopFirst, Vector(Some(1.0), Some(Double.NaN)), Vector.empty)
         .left
         .map(_.productPrefix),
       Left("NotFinite")
     )
     assertEquals(
       MapGrid
-        .of(m, 2, 1, Vector(Some(1.0), None), Vector(Double.PositiveInfinity))
+        .of(
+          m,
+          2,
+          1,
+          RowOrder.TopFirst,
+          Vector(Some(1.0), None),
+          Vector(Double.PositiveInfinity)
+        )
         .left
         .map(_.productPrefix),
       Left("Level")

@@ -24,7 +24,9 @@ import scala.collection.immutable.TreeMap
   */
 final case class RasterKey(map: MapId, style: MapStyle) derives CanEqual
 
-/** A map's cells as ARGB pixels, one per cell, x fastest, top row first. */
+/** A map's cells as ARGB pixels, one per cell, x fastest, the map's top
+  * row first whatever its grid's [[RowOrder]].
+  */
 final case class MapRaster private (key: RasterKey, width: Int, height: Int, argb: IArray[Int]):
 
   /** The ARGB of the cell at column `x` and row `y`. */
@@ -48,7 +50,9 @@ object MapRaster:
       RasterKey(grid.map, style),
       grid.columns,
       grid.rows,
-      IArray.from(grid.cells.iterator.map(MapColours.argb(style, _)))
+      IArray.tabulate(grid.columns * grid.rows) { i =>
+        MapColours.argb(style, grid.atTop(i % grid.columns, i / grid.columns))
+      }
     )
 
 /** A byte budget for cached rasters, at least one byte. */

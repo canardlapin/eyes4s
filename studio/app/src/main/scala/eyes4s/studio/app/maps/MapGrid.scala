@@ -50,8 +50,22 @@ final case class MapId(run: RunId, trial: TrialKey, scale: ScaleIndex) derives C
   /** The map's result address in its run. */
   def address: ResultAddress = ResultAddress.Estimation(scale.value, trial)
 
+/** Which stored row of a grid is at the top of the map: the convention is
+  * part of the grid, never assumed by its readers.
+  */
+enum RowOrder derives CanEqual:
+
+  /** Row 0 is the top edge, rows run downward (screen y down). */
+  case TopFirst
+
+  /** Row 0 is the bottom edge, rows run upward, as an eyes4s kernel grid on
+    * a frame whose y axis points up.
+    */
+  case BottomFirst
+
 /** One map's values as the backend serves them (ticket S4.4; UI-E):
-  * `columns × rows` cells, x fastest, each a density value or missing.
+  * `columns × rows` cells, x fastest, rows in `order`, each a density value
+  * or missing.
   * Missing is not zero: a cell without a value is drawn as nothing.
   * `levels` are the isoline levels the backend supplies (UI-E: 50% and 90%
   * of mass), kept exactly as served; studio never derives a level, it only
@@ -61,13 +75,22 @@ final case class MapGrid private (
     map: MapId,
     columns: Int,
     rows: Int,
+    order: RowOrder,
     cells: Vector[Option[Double]],
     levels: Vector[Double]
 ) derives CanEqual:
 
-  /** The value of the cell at column `x` and row `y`, if it has one. */
+  /** The value of the cell at column `x` and stored row `y`, if it has one. */
   def at(x: Int, y: Int): Option[Double] =
     if x < 0 || y < 0 || x >= columns || y >= rows then None else cells(y * columns + x)
+
+  /** The value of the cell at column `x` and the `fromTop`-th row counted
+    * down from the map's top edge, whatever the stored order: what every
+    * drawing reads.
+    */
+  def atTop(x: Int, fromTop: Int): Option[Double] = order match
+    case RowOrder.TopFirst    => at(x, fromTop)
+    case RowOrder.BottomFirst => at(x, rows - 1 - fromTop)
 
   /** A digest of the grid's identity, shape, values and levels: the same
     * for the same stored values, whatever palette or opacity draws them.
@@ -77,7 +100,8 @@ final case class MapGrid private (
     val prime                       = 0x100000001b3L
     def mix(h: Long, v: Long): Long =
       (0 until 8).foldLeft(h)((acc, k) => (acc ^ ((v >>> (8 * k)) & 0xffL)) * prime)
-    val shaped = mix(mix(0xcbf29ce484222325L, columns.toLong), rows.toLong)
+    val shaped =
+      mix(mix(mix(0xcbf29ce484222325L, columns.toLong), rows.toLong), order.ordinal.toLong)
     val valued = cells.foldLeft(shaped) {
       case (h, Some(v)) => mix(mix(h, 1L), java.lang.Double.doubleToLongBits(v))
       case (h, None)    => mix(h, 0L)
@@ -88,13 +112,14 @@ final case class MapGrid private (
 
 object MapGrid:
 
-  /** A grid of `columns × rows` cells of `map`, refusing an empty shape, a
+  /** A grid of `columns × rows` cells of `map`, rows in `order`, refusing an empty shape, a
     * wrong number of cells, and a non-finite value or level.
     */
   def of(
       map: MapId,
       columns: Int,
       rows: Int,
+      order: RowOrder,
       cells: Vector[Option[Double]],
       levels: Vector[Double]
   ): Either[MapGridError, MapGrid] =
@@ -109,4 +134,4 @@ object MapGrid:
             case (l, i) if !l.isFinite => MapGridError.Level(map, i, l)
           }
         )
-        .toLeft(MapGrid(map, columns, rows, cells, levels))
+        .toLeft(MapGrid(map, columns, rows, order, cells, levels))
