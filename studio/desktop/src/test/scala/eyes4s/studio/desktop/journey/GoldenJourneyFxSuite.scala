@@ -182,7 +182,27 @@ class GoldenJourneyFxSuite extends ShellFxSuite:
         StoryMoment.T1,
         dialogs = dialogs,
         project = Some(port),
-        chooseFolder = (_, _) => Some(exportDir)
+        chooseFolder = (_, _) => Some(exportDir),
+        // Repair…'s file chooser answers as the headless route does: the
+        // missing file's restored stand-in, another stimulus's bytes.
+        assetFiles = (file, done) =>
+          done(
+            Right(
+              Some(
+                (
+                  ok(
+                    eyes4s.studio.core.assets.AssetFile
+                      .of(file.value.stripSuffix(".png") + "_restored.png")
+                  ),
+                  IArray.unsafeFromArray(
+                    Files.readAllBytes(
+                      FixtureDoc.root.resolve("fixtures/studio-golden/stimuli/beach-042.png")
+                    )
+                  )
+                )
+              )
+            )
+          )
       )
 
       // Import: File › Import sources…, answered as the dialog answers it.
@@ -232,6 +252,32 @@ class GoldenJourneyFxSuite extends ShellFxSuite:
         w.runtime.model.document.dataset(r3).exists(_.decision.isAdmitted)
       )
       assert(shown(w).exists(_.contains("937")), "the admission pane shows 937 admitted")
+
+      // Repair the two missing images in Data › Sources: Repair…, twice.
+      dispatch(
+        fx,
+        w,
+        Intent.Navigate(
+          Location(
+            Perspective.Data,
+            Vector(Place.Dataset(r3), Place.DataView(DataSection.Sources))
+          )
+        )
+      )
+      eventually(fx, "two missing images")(
+        nodes(w.root).exists {
+          case l: Labeled => l.getText == "257 of 259 images found"; case _ => false
+        }
+      )
+      press(fx, w, "Repair")
+      eventually(fx, "one image repaired")(w.runtime.model.document.relinks.of(r3).size == 1)
+      press(fx, w, "Repair")
+      eventually(fx, "both images repaired")(w.runtime.model.document.relinks.of(r3).size == 2)
+      eventually(fx, "every image found")(
+        nodes(w.root).exists {
+          case l: Labeled => l.getText == "259 of 259 images found"; case _ => false
+        }
+      )
 
       // Explore P17 enc_03.
       dispatch(fx, w, Intent.Explain(Place.At(StudioRef.Trial(p17enc03))))

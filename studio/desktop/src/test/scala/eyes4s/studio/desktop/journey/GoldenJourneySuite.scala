@@ -51,9 +51,10 @@ import scala.concurrent.ExecutionContext
   * holds, and the two folders are byte-identical; the driver reopens the
   * document read from the folder.
   *
-  * Pending, each a named stub in the driver's record:
-  *  - [[Pending.Repair]]: S5.7's Repair of the two missing images;
-  *  - [[Pending.LinkedSelection]]: S6.6's linked selection in Explore;
+  * The two missing images are repaired in Data › Sources (S5.7), and the
+  * trail follows the selected fixation and Next in Explore (S6.6).
+  *
+  * Pending, a named stub in the driver's record:
   *  - [[Pending.LibraryScores]]: what only the run decides, from eyes4s
   *    itself (M, B and D by query and scale, contributing 454 / failed 3, the
   *    group n range, every participant and group mean). The fake serves
@@ -83,8 +84,6 @@ class GoldenJourneySuite extends munit.FunSuite:
                 end.records.collect { case DriverRecord.Stubbed(step, _) => step },
                 Vector(
                   "import dialog",
-                  GoldenRoute.Pending.Repair._1,
-                  GoldenRoute.Pending.LinkedSelection._1,
                   GoldenRoute.Pending.LibraryScores._1
                 )
               )

@@ -53,14 +53,6 @@ object GoldenRoute:
 
   /** The steps a later ticket implements, by name, and why. */
   object Pending:
-    val Repair: (String, String) = (
-      "repair the missing images",
-      "pending S5.7 (Assets in Data: Repair), not on main"
-    )
-    val LinkedSelection: (String, String) = (
-      "linked selection: fixation 6 ↔ record 7,214 ↔ timeline",
-      "pending S6.6 (Linked selection in Explore), not on main"
-    )
     val LibraryScores: (String, String) = (
       "direct-library scores",
       "pending S0.7b (SCORES.json from eyes4s) and S3.7 (real backend): M, B and D by " +
@@ -853,13 +845,159 @@ object GoldenRoute:
     )
 
     // -------------------------------------------------------------------------
+    // Repair (S5.7) and linked selection (S6.6)
+    // -------------------------------------------------------------------------
+
+    /** Data › r3 › Sources: Repair… for each missing image, the located file
+      * answered as the platform answers it (a stored file and its bytes'
+      * digest), the relink the pane asks for dispatched; then every image of
+      * the 259 is found.
+      */
+    private val repair: S = Step(
+      "repair the missing images",
+      d =>
+        import eyes4s.studio.app.data.{SourcesEffect, SourcesIntent, SourcesPane, SourcesVM}
+        import eyes4s.studio.app.explore.DisplaySource
+        import eyes4s.studio.app.nav.{DataSection, Location, Place}
+        import eyes4s.studio.core.assets.AssetFile
+        val r3 = StoryMoments.r3
+        val at = d.dispatch(
+          Intent.Navigate(
+            Location(
+              Perspective.Data,
+              Vector(Place.Dataset(r3), Place.DataView(DataSection.Sources))
+            )
+          )
+        )
+        val spec     = at.model.document.dataset(r3).get
+        val (p0, e0) = SourcesPane.sync(SourcesPane.empty, at.model)
+        val ask      = e0.collectFirst { case SourcesEffect.ReadRegistry(`spec`, n) => n }
+        val served   =
+          GoldenAssets.registry(spec).map(eyes4s.studio.app.explore.DisplaySource.Served(_))
+        // A stand-in image the author picks: another stimulus's bytes.
+        val bytes = IArray.unsafeFromArray(
+          Files.readAllBytes(doc.root.resolve("fixtures/studio-golden/stimuli/beach-042.png"))
+        )
+        val sha = eyes4s.codec.ByteDigest.sha256(bytes)
+        // Repair… until nothing is missing: each asks to locate one file.
+        def loop(
+            p: SourcesPane,
+            d: StudioDriver,
+            n: Int
+        ): Either[DriverError, (SourcesPane, StudioDriver)] =
+          if n > 3 then GoldenJourney.fail("repair", "at most 2 files", "more")
+          else
+            SourcesVM.of(p, d.model).missing match
+              case None    => Right((p, d))
+              case Some(_) =>
+                val (asked, effects) = SourcesPane.update(p, d.model, SourcesIntent.Repair)
+                effects.collectFirst { case SourcesEffect.Locate(`r3`, file) => file } match
+                  case None       => GoldenJourney.fail("repair", "a file to locate", effects)
+                  case Some(file) =>
+                    val restored =
+                      ok(AssetFile.of(file.value.stripSuffix(".png") + "_restored.png"))
+                    val (located, more) =
+                      SourcesPane.update(
+                        asked,
+                        d.model,
+                        SourcesIntent.Located(r3, file, restored, sha)
+                      )
+                    more
+                      .collect { case SourcesEffect.App(i) => i }
+                      .foldLeft(Right(d): Either[DriverError, StudioDriver])((acc, i) =>
+                        acc.flatMap(_.perform(s"relink ${file.value}", i))
+                      )
+                      .flatMap(next => loop(located, next, n + 1))
+        Future.successful(for
+          n <- ask.toRight(DriverError.Expectation("registry", "a read", e0.toString))
+          before = SourcesPane
+            .update(p0, at.model, SourcesIntent.RegistryRead(r3, n, served))
+            ._1
+          _ <- expect(
+            "before",
+            Some(s"${library.imagesFound} of ${library.items} images found"),
+            SourcesVM.of(before, at.model).sources.lift(2).flatMap(_.count)
+          )
+          (after, repaired) <- loop(before, at, 0)
+          vm = SourcesVM.of(after, repaired.model)
+          _ <- all(
+            expect(
+              "after",
+              Some("259 of 259 images found"),
+              vm.sources.lift(2).flatMap(_.count)
+            ),
+            expect("relinks", 2, repaired.model.document.relinks.of(r3).size),
+            expect("missing", None, vm.missing.map(_.title))
+          )
+        yield repaired)
+    )
+
+    /** Explore P17 enc_03 under run 6: selecting fixation 6 brings the trail
+      * to it and its record 7,214, and Next selects fixation 7, record 7,215.
+      */
+    private val linked: S = Step(
+      "linked selection: fixation 6 ↔ record 7,214 ↔ timeline",
+      d =>
+        import eyes4s.studio.app.explore.{
+          ExploreLinked,
+          ExploreTrialView,
+          TrialViewEffect,
+          TrialViewIntent,
+          BackendAnswer
+        }
+        import eyes4s.studio.core.selection.FixationIndex
+        val at =
+          d.dispatch(Intent.Explain(eyes4s.studio.app.nav.Place.At(StudioRef.Trial(p17enc03))))
+        val (synced, effects) = ExploreTrialView.sync(ExploreTrialView.empty, at.model)
+        effects.collectFirst { case TrialViewEffect.RequestFixations(r, t, n) =>
+          (r, t, n)
+        } match
+          case None =>
+            Future.successful(GoldenJourney.fail("trial view", "a fixations read", effects))
+          case Some((r, t, n)) =>
+            views.trialFixations(r, t).map { a =>
+              val answer =
+                Right(a.fold(e => BackendAnswer.Refused(e.message), BackendAnswer.Answered(_)))
+              val view = ExploreTrialView
+                .update(synced, TrialViewIntent.FixationsRead(r, t, n, answer))
+                ._1
+              def fixation(i: Int) = StudioRef.Fixation(p17enc03, ok(FixationIndex.of(i)))
+              def follow(d: StudioDriver) =
+                ExploreLinked.follow(view, d.model).fold(Right(d))(i => d.perform("follow", i))
+              for
+                _  <- expect("revision", rev4, r)
+                d1 <- at.perform(
+                  "select fixation 6",
+                  StoryModels.select(at.model, "explore.trial-view", fixation(6))
+                )
+                d2 <- follow(d1)
+                _  <- stated(
+                  "trail at fixation 6",
+                  "P17 enc_03 fixation 6 = fixations.csv record 7,214",
+                  Vector("enc_03 · fixation 6", "fixations.csv record 7,214"),
+                  d2.crumbs.takeRight(2)
+                )
+                _    <- expect("eyes4s: record", library.focus.record, 7214)
+                next <- ExploreLinked
+                  .step(view, d2.model, 1)
+                  .toRight(DriverError.Expectation("Next", "a fixation", "none"))
+                _  <- expect("Next", fixation(7), next)
+                d3 <- d2
+                  .perform("Next", StoryModels.select(d2.model, "explore.trial-view", next))
+                d4 <- follow(d3)
+                _ <- expect("trail at fixation 7", "fixations.csv record 7,215", d4.crumbs.last)
+              yield d4
+            }
+    )
+
+    // -------------------------------------------------------------------------
 
     val scenario: Scenario[Future] =
       val g = GoldenJourney.stages(s)
       g.newProject ++
-        g.importAndAdmit ++ Scenario.of(admission, pending(Pending.Repair)) ++
-        g.explore ++ Scenario.of(pending(Pending.LinkedSelection)) ++
-        g.analysisAndRun ++ Scenario.of(design, focus) ++
+        g.importAndAdmit ++ Scenario.of(admission, repair) ++
+        g.explore ++
+        g.analysisAndRun ++ Scenario.of(design, focus, linked) ++
         g.compare ++ Scenario.of(query, controls) ++
         g.summary ++ Scenario.of(summary) ++
         rev5 ++
