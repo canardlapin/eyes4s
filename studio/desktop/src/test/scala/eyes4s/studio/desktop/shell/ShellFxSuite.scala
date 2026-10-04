@@ -85,7 +85,10 @@ abstract class ShellFxSuite extends StudioFxSuite:
       // No saved import presets unless a suite brings its own.
       presets: FilePresetStore = noPresets(),
       // The story sessions' display kinds (fixtures/studio-golden).
-      displays: NavigatorDisplays = NavigatorDisplays.golden
+      displays: NavigatorDisplays = NavigatorDisplays.golden,
+      // Compare's trial panels: none unless a suite brings its own.
+      panels: eyes4s.studio.desktop.compare.PanelSources =
+        eyes4s.studio.desktop.compare.PanelSources.notServed
   ): StudioWindow =
     val w = runOnFx(
       StudioWindow
@@ -98,7 +101,8 @@ abstract class ShellFxSuite extends StudioFxSuite:
           project = project,
           clock = clock,
           nativeMenu = nativeMenu,
-          presets = presets
+          presets = presets,
+          panels = panels
         )
         .fold(e => fail(e.message), identity)
     )

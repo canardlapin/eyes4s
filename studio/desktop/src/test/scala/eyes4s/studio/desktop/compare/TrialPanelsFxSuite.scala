@@ -23,7 +23,10 @@ import eyes4s.studio.core.fixture.{MockStudy, StoryMoment, StoryMoments}
 import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
+import eyes4s.studio.desktop.plot.PlotHostStatus
 import eyes4s.studio.desktop.shell.ShellFxSuite
+import eyes4s.studio.desktop.trial.{GoldenTrials, StimulusSource, TrialView, TrialViewStatus}
+import eyes4s.studio.viz.trial.{MarkStyle, TrialRole, TrialScene}
 
 import scala.concurrent.duration.Duration
 
@@ -91,4 +94,82 @@ class TrialPanelsFxSuite extends ShellFxSuite:
       scored(fx, w, "P17 · enc_03 · beach-042")
       assertEquals(runOnFx(w.summary.panels.shown)(1), before(1))
       assertEquals(runOnFx(w.runtime.model.location.trail.last), Place.At(StoryModels.pair))
+  }
+
+  // --- The stages, with fixtures/studio-golden behind the content port -------------
+
+  private val golden = PanelSources(
+    GoldenTrials.contentSource,
+    StimulusSource.directory(GoldenTrials.stimuli)
+  )
+
+  private def scene(v: TrialView): Option[TrialScene] = v.status.get match
+    case TrialViewStatus.Shown(s) => Some(s)
+    case _                        => None
+
+  fxStage.test("the stages draw the query and its reference in their roles, with captions") {
+    fx =>
+      val w = boot(fx, StoryModels.t2Compare, StoryMoment.T2, panels = golden)
+      scored(fx, w, "P17 · enc_03 · beach-042")
+      def painted(v: TrialView) =
+        scene(v).nonEmpty && (v.plotHost.status.get match
+          case PlotHostStatus.Drawn(_) => true
+          case _                       => false)
+      eventually(fx, "both stages are drawn") {
+        painted(w.summary.panels.queryView) && painted(w.summary.panels.referenceView)
+      }
+      val q = runOnFx(scene(w.summary.panels.queryView)).get
+      val r = runOnFx(scene(w.summary.panels.referenceView)).get
+      assertEquals(q.marks.size, GoldenTrials.fixations("P17", "ret_07").size)
+      assertEquals(r.marks.size, GoldenTrials.fixations("P17", "enc_03").size)
+      assert(q.caption.startsWith("Displayed: blank + fixation cross"), q.caption)
+      assert(r.caption.startsWith("Displayed: image"), r.caption)
+      // The query's remembered image is not shown until the user asks.
+      assertEquals(q.disclosure, Some("Remembered image not shown"))
+      assertEquals(
+        runOnFx(w.summary.panels.queryView.input.map(_.marks)),
+        Some(MarkStyle.Role(TrialRole.Query))
+      )
+      assertEquals(
+        runOnFx(w.summary.panels.referenceView.input.map(_.marks)),
+        Some(MarkStyle.Role(TrialRole.Matched))
+      )
+      val counts = runOnFx(w.summary.panels.counts)
+      assertEquals(counts._1, s"${q.marks.size} fix")
+      // The Table tabs list each trial's fixations, one row per mark.
+      eventually(fx, "the Table tabs are filled") {
+        w.summary.queryTrialTable.source.exists(_.rows.size == q.marks.size) &&
+        w.summary.referenceTrialTable.source.exists(_.rows.size == r.marks.size)
+      }
+      fx.snapshot(StudioTheme.Light)
+      // Underlay on: the query's scene underlays the matched image and says so.
+      runOnFx(w.summary.panels.toggleUnderlay())
+      eventually(fx, "the underlay is disclosed") {
+        scene(w.summary.panels.queryView)
+          .flatMap(_.disclosure)
+          .contains("Reference image — not displayed during this trial")
+      }
+      // A control: the reference stage redraws in the control role.
+      runOnFx(w.runtime.dispatch(Intent.Explain(Place.At(control))))
+      eventually(fx, "the reference stage shows enc_08 as a control") {
+        w.summary.panels.referenceView.input.exists(i =>
+          i.display.trial == MockStudy.key("P17", "enc_08") &&
+            i.marks == MarkStyle.Role(TrialRole.Control)
+        ) && scene(w.summary.panels.referenceView).nonEmpty
+      }
+  }
+
+  fxStage.test("with no content served, each stage says so and draws nothing") { fx =>
+    val w = boot(fx, StoryModels.t2Compare, StoryMoment.T2)
+    eventually(fx, "the stages say why they are empty") {
+      w.summary.panels.stageNotes._1.nonEmpty && w.summary.panels.stageNotes._2.nonEmpty
+    }
+    assertEquals(
+      runOnFx(w.summary.panels.stageNotes),
+      (
+        "The content of P17 · ret_07 is not served.",
+        "The content of P17 · enc_03 is not served."
+      )
+    )
+    assertEquals(runOnFx(scene(w.summary.panels.queryView)), None)
   }
