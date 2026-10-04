@@ -85,6 +85,9 @@ object StudioLayouts:
   /** The pane that hosts Compare's why-this-reference inspector (S8.4). */
   val compareInspector: PaneId = new PaneId("compare.inspector")
 
+  /** The pane that hosts Compare's reporting editor (S8.7). */
+  val compareReporting: PaneId = new PaneId("compare.reporting")
+
   /** DataEmpty.dc.html: no dataset yet. */
   val dataFirstRun: PerspectiveLayout = layout(
     "data.first-run",

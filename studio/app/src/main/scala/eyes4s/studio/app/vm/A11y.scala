@@ -55,6 +55,9 @@ enum A11yRole derives CanEqual:
   /** A continuous value (the Compare inspector's map opacity). */
   case Slider
 
+  /** A box that turns an option on or off (the reporting editor's filters). */
+  case CheckBox
+
   /** The role as the committed tab-order files spell it. */
   def id: String = this match
     case Button       => "button"
@@ -70,6 +73,7 @@ enum A11yRole derives CanEqual:
     case RadioButton  => "radio-button"
     case Link         => "hyperlink"
     case Slider       => "slider"
+    case CheckBox     => "check-box"
 
 /** One stop of the Tab order: its role and its accessible name. */
 final case class FocusStop(role: A11yRole, name: String) derives CanEqual:

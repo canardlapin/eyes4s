@@ -237,7 +237,7 @@ final class CompareSummaryHost(
   def inspectorInputs: InspectorInputs =
     InspectorInputs(panelState, shownRun, state.answered, state.reporting)
 
-  // Called after each render, so the inspector follows the panels' answers.
+  // Called after each render, so panes beside these views follow their answers.
   private var rendered: Vector[() => Unit] = Vector.empty
 
   /** Calls `f` after every render of these views. */

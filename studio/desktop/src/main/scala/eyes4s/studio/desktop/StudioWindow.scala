@@ -30,6 +30,7 @@ import eyes4s.studio.desktop.compare.{
   CompareSummaryHost,
   LedgerSource,
   PanelSources,
+  ReportingEditorHost,
   SummaryInputs
 }
 import eyes4s.studio.desktop.explore.{
@@ -86,6 +87,7 @@ final class StudioWindow private (
     val summary: CompareSummaryHost,
     summaryListener: AppModel => Unit,
     val compareInspector: CompareInspectorHost,
+    val reporting: ReportingEditorHost,
     val navigator: TrialsNavigatorHost,
     navigatorListener: AppModel => Unit,
     val explore: ExploreTrialViewHost,
@@ -121,6 +123,7 @@ final class StudioWindow private (
       eyes4s.studio.app.compare.TrialPanels.referenceStops(summary.panelsVM)
     else if pane == StudioLayouts.contrast then summary.contrastStops
     else if pane == StudioLayouts.compareInspector then compareInspector.focusStops
+    else if pane == StudioLayouts.compareReporting then reporting.focusStops
     else if pane == StudioLayouts.trials then navigator.trialsStops
     else if pane == StudioLayouts.items then navigator.itemsStops
     else if pane == StudioLayouts.trialView then explore.focusStops
@@ -161,6 +164,7 @@ final class StudioWindow private (
     runtime.unlisten(figuresListener)
     summary.dispose()
     compareInspector.dispose()
+    reporting.dispose()
     figures.dispose()
     project.foreach(_.close())
     session.close()
@@ -396,9 +400,14 @@ object StudioWindow:
     )
     host.host(StudioLayouts.compareInspector, compareInspector.node)
     summary.onRendered(() => compareInspector.refresh())
+    // Compare's reporting editor (S8.7), beside the summary.
+    val reporting = ReportingEditorHost(() => r.model, dispatch, () => summary.summary)
+    host.host(StudioLayouts.compareReporting, reporting.node)
+    summary.onRendered(() => reporting.render())
     val summaryListener: AppModel => Unit = m =>
       summary.sync(m)
       compareInspector.sync(m)
+      reporting.render()
     r.listen(summaryListener)
     // The trials navigator (Explore): the latest admitted revision's trials.
     val navigator =
@@ -490,6 +499,7 @@ object StudioWindow:
         summary,
         summaryListener,
         compareInspector,
+        reporting,
         navigator,
         navigatorListener,
         explore,
