@@ -1,0 +1,58 @@
+pages 1
+page 183.02 × 179.18 mm
+fonts IBMPlexMono, IBMPlexMono-Medm, IBMPlexSans, IBMPlexSans-SmBld
+
+A Encoding gaze
+Encoding · enc_03 · beach-042
+Displayed: image.
+No gaze yet: fixations are drawn when the backend serves the
+trial-fixations view (S6.2).
+B Retrieval gaze
+Retrieval · ret_07
+Displayed: blank + fixation cross. The remembered image was not
+shown.
+No gaze yet: fixations are drawn when the backend serves the
+trial-fixations view (S6.2).
+C Density maps
+Query ret_07
+P17 · σ 2°
+Matched enc_03
+0.73
+Highest of 19
+controls · street-112
+0.61
+Matched 0.73 · highest of 19 controls street-112 0.61 · control mean
+B 0.35 · D +0.38
+No density maps yet: they are drawn when the backend serves density
+grids (UI-E). The tiles show their scores.
+D Participant D by response
++0.30
++0.15
+Remembered
+n = 24 participants
+Forgotten
+n = 24 participants
+0
+D (Δ cosine), participant mean
+n = 24 each · paired n = 24
+bars: grand mean of participant means, equal weight
+Each pair of dots is one participant; per participant, 2–17 queries
+per group. Descriptive only: no intervals or tests.
+E Scale profile by response
++0.15
++0.24
++0.30
++0.19
++0.07
++0.12
++0.15
++0.09
+0.5° 1° 2° 4°
+0
+D (Δ cosine)
+Gaussian σ (log spacing)
+n = 24 each · paired n = 24
+Each scale computed separately.
+Figure 1. Matched-minus-control spatial similarity of retrieval gaze (dataset r3, analysis rev 4, run 7). Spatial correspondence, not
+sequential replay.
+Analysis rev 4 · run 7 (archive unbound) · data r3 · reporting “By retrieval response” (by-retrieval-response) · studio build eyes4s 0.1
