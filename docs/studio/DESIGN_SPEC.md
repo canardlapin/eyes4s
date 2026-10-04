@@ -81,7 +81,9 @@ Forgotten): solid ink vs dashed --ink-3, plus labels.
 
 ## 6. Maps and plots
 Mass-map ramp (sequential, opaque per cell, one global opacity): #F9D9EA → #E58FB9 → #B83F86 →
-#6B0F4F, plus isolines at 50% and 90% of mass (1px, ink @.6 on light stage, #FFFFFF @.8 on dark).
+#6B0F4F, plus isolines at 50% and 90% of mass: 2 units of ink rgba(28,30,33,.9) over a 4-unit
+casing #FFFFFF @.9, on every stage (bead S4.3b bd-01M3DPFM4ZG9GV0RTYWWA1M2P9, isoline-contrast
+decision of 2026-10-04: at least 3:1 against the ground over any ramp colour at map opacity 0.6).
 Maps are drawn on the --stage surround. Label the map units: "fixation duration mass per cell".
 Difference maps only: diverging BlueRust #2E5A9C ← neutral → #B4442F, zero pinned.
 Scale ladder (Compare): per scale row: control dots (hollow, 9px, beeswarm dodge ±4px),
