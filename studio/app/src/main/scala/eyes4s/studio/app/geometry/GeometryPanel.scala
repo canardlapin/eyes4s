@@ -341,7 +341,10 @@ object GeometryPanel:
           case _                            => Right(())
         checked.flatMap(_ => commands(spec, c)) match
           case Left(GeometryRefusal.NoChange(_)) => (panel.copy(problem = None), none)
-          case Left(refusal @ GeometryRefusal.Overlaps(_, _)) =>
+          case Left(
+                refusal @ (GeometryRefusal.Overlaps(_, _) |
+                GeometryRefusal.Invalid(_: DocumentError.CorrectionsOverlap))
+              ) =>
             val text = GeometryText(GeometryTextId.RuleOverlaps, refusal.message)
             (panel.copy(problem = Some(text)), none)
           case Left(refusal) => (panel.copy(problem = Some(refusal.message)), none)
@@ -368,9 +371,19 @@ object GeometryPanel:
           positions.toOption.fold(Vector.empty[TrialKey])(_.trials) ++ (rule.target match
             case CorrectionTarget.Trial(k) => Vector(k)
             case _                         => Vector.empty)
+        // A trial of the source both rules cover is named; without one (the
+        // positions not yet read, or no such trial in this source), the
+        // reducer's own check (AdmissionChoice.overlap) still refuses it.
         trials.iterator
           .map(t => t -> policy.correctionFor(t, _.participant))
           .collectFirst { case (t, Left((a, _))) => GeometryRefusal.Overlaps(t, a) }
+          .orElse(
+            AdmissionChoice
+              .overlap(choice)
+              .map((a, b) =>
+                GeometryRefusal.Invalid(DocumentError.CorrectionsOverlap(spec.id, a, b))
+              )
+          )
 
   /** The document command that makes `c` to `spec`: a pending revision is
     * edited in place; a verifying or admitted one is re-imported as the next

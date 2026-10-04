@@ -59,6 +59,11 @@ enum DocumentError derives CanEqual:
   /** `dataset` maps a trial inventory but has no trials source. */
   case InventoryWithoutTrials(dataset: DatasetRevision)
 
+  /** Rules `first` and `second` (0-based) of `dataset`'s corrections both
+    * cover some trial; eyes4s refuses a policy in which they do (S5.5).
+    */
+  case CorrectionsOverlap(dataset: DatasetRevision, first: Int, second: Int)
+
   /** `dataset` has a trials source whose columns are not mapped. */
   case InventoryUnmapped(dataset: DatasetRevision, path: String)
 
@@ -163,6 +168,9 @@ enum DocumentError derives CanEqual:
       s"Trial inventory column $column is both an attribute and the ${role.label} column."
     case InventoryWithoutTrials(dataset) =>
       s"Dataset ${dataset.label} maps a trial inventory but has no trial inventory source."
+    case CorrectionsOverlap(dataset, first, second) =>
+      s"Dataset ${dataset.label}: correction rules ${first + 1} and ${second + 1} both cover " +
+        "a trial; at most one rule may cover a trial."
     case InventoryUnmapped(dataset, path) =>
       s"Dataset ${dataset.label}: the columns of trial inventory $path are not mapped."
     case InventoryKeyDisagrees(dataset, role, mappedIn, notIn) =>

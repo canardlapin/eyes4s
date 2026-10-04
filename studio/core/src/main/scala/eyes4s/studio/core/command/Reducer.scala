@@ -91,6 +91,7 @@ object Reducer:
           attributes,
           inventory
         )
+        _    <- correctionsApart(d, c, id, spec.admission)
         next <- rebuild(d, c)(datasets = d.datasets :+ spec)
       yield reversible(next, DiscardDataset(id))
 
@@ -188,11 +189,9 @@ object Reducer:
           (),
           CorrectionIndex(id, index, rules.size)
         )
-        next <- replaceDataset(d, c)(
-          spec.copy(admission =
-            spec.admission.copy(corrections = rules.patch(index, Vector(rule), 0))
-          )
-        )
+        added = spec.admission.copy(corrections = rules.patch(index, Vector(rule), 0))
+        _    <- correctionsApart(d, c, id, added)
+        next <- replaceDataset(d, c)(spec.copy(admission = added))
       yield reversible(next, RemoveCorrection(id, index))
 
     case RemoveCorrection(id, index) =>
@@ -557,6 +556,22 @@ object Reducer:
         .inventoryMapped(id, sources, inventory)
         .left
         .map(Refused(c.name, targetOf(d, c), _))
+
+  /** At most one correction rule covers a trial (eyes4s's own check, S5.5):
+    * refused whatever the rule, since an overlapping policy is never admitted.
+    */
+  private def correctionsApart(
+      d: StudioDocument,
+      c: Command,
+      id: DatasetRevision,
+      choice: AdmissionChoice
+  ): Either[CommandError, Unit] =
+    AdmissionChoice
+      .overlap(choice)
+      .map((a, b) =>
+        Refused(c.name, targetOf(d, c), DocumentError.CorrectionsOverlap(id, a, b))
+      )
+      .toLeft(())
 
   /** The fixations and the inventory name a trial by the same key, at commit. */
   private def keysAgree(
