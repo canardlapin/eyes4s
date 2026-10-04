@@ -97,7 +97,7 @@ final case class StatusChange(trial: TrialKey, from: TrialStatus, to: TrialStatu
 /** The trials that went from one status to another. */
 final case class Transition(from: TrialStatus, to: TrialStatus, trials: Vector[TrialKey])
     derives CanEqual:
-  def count: Int             = trials.size
+  def count: Int              = trials.size
   def refs: Vector[StudioRef] = trials.map(StudioRef.Trial(_))
 
 /** The trials whose admission status differs between the ledgers of two
@@ -165,7 +165,7 @@ enum LedgerUnavailable derives CanEqual:
   case Failed(reason: String)
 
   def message: String = this match
-    case Refused(error)  => error.message
+    case Refused(error) => error.message
     case Failed(reason) => reason
 
 /** Whether the trial statuses of two revisions were compared. */
