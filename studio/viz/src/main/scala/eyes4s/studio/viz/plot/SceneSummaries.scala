@@ -51,7 +51,16 @@ object SceneSummaries:
       Vector.empty
     )
 
-  /** Every named grob of `scene`, depth first, each name once. */
+  /** Every named grob of `scene`, depth first, a name once for each grob
+    * that bears it.
+    */
   def namedGrobs(scene: Scene): Vector[GraphicsName] =
     def walk(g: Grob): Vector[GraphicsName] = g.name.toVector ++ g.children.flatMap(walk)
-    scene.grobs.flatMap(walk).distinct
+    scene.grobs.flatMap(walk)
+
+  /** Names that more than one grob of `scene` bears: each must be drawn once,
+    * so a pick of it resolves to one mark.
+    */
+  def duplicateNames(scene: Scene): Vector[GraphicsName] =
+    val names = namedGrobs(scene)
+    names.diff(names.distinct).distinct

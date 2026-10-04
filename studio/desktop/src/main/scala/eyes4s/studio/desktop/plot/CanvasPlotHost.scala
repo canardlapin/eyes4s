@@ -237,11 +237,11 @@ final class CanvasPlotHost private[plot] (
           case (Some(x), _) => Right(Some(x.doubleValue))
           case (None, _)    => Right(None)
 
-  /** Shows `scene`, replacing the current one. */
   /** The text summary `scene` carries (S4.6), if it carries one. */
   def summaryOf(scene: PlotScene): Option[String] =
     scene.scene.semantics.plots.headOption.flatMap(_.description)
 
+  /** Shows `scene`, replacing the current one. */
   def show(scene: PlotScene): Unit =
     onFxThread("show")
     if !disposed then

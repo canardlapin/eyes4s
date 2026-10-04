@@ -66,14 +66,57 @@ class SemanticBindingSuite extends ScalaCheckSuite:
     val timelines = TimelineSamples.genTimeline.map(t =>
       (TimelineSamples.source(t), TimelinePlot(TimelineSamples.columns): PlotBuilder)
     )
+    // The edge cases, forced: no data at all, every participant mean
+    // missing, and a ladder whose many controls have no cosine (undrawn).
+    val edges: Gen[(eyes4s.studio.app.plot.PlotSource, PlotBuilder)] = Gen.oneOf(
+      (
+        TimelineSamples.source(TimelineSamples.timeline(Vector.empty)),
+        TimelinePlot(TimelineSamples.columns): PlotBuilder
+      ),
+      (
+        ParticipantSamples.source(ParticipantSamples.zeroAndMissing),
+        ParticipantPlot(ParticipantSamples.columns): PlotBuilder
+      ),
+      (
+        ParticipantSamples.source(
+          ParticipantSamples.means(
+            Vector(("Remembered", 0.1, 0)),
+            Vector("P01" -> Vector(None), "P02" -> Vector(None))
+          )
+        ),
+        ParticipantPlot(ParticipantSamples.columns): PlotBuilder
+      ),
+      (
+        ProfileSamples.source(
+          ProfileSamples.profile(ProfileSamples.protocol, Vector.empty, Vector.empty)
+        ),
+        ScaleProfilePlot(ProfileSamples.columns): PlotBuilder
+      ),
+      (
+        LadderSamples.source(manyUndrawn),
+        ScaleLadderPlot(LadderSamples.columns, None): PlotBuilder
+      )
+    )
     for
-      (source, builder) <- Gen.oneOf(ladder, participants, profiles, timelines)
-      theme             <- Gen.oneOf(Theme.values.toSeq)
+      (source, builder) <- Gen.frequency(
+        3 -> ladder,
+        3 -> participants,
+        3 -> profiles,
+        3 -> timelines,
+        2 -> edges
+      )
+      theme <- Gen.oneOf(Theme.values.toSeq)
     yield right(builder.build(source, theme))
+
+  /** One scale with 300 controls, none of them with a served cosine. */
+  private lazy val manyUndrawn: eyes4s.studio.app.plot.ScaleLadder =
+    LadderSamples.ladder(LadderSamples.Spec("2°", 0.73, 0.35, 0.38, Vector.fill(300)(None)))
 
   property("every named grob of a plot is a mark, and resolves to its StudioRefs") {
     Prop.forAll(genBuilt) { plot =>
       val named = SceneSummaries.namedGrobs(plot.plot.scene)
+      // Each mark is drawn once: no name is borne by two grobs.
+      assertEquals(SceneSummaries.duplicateNames(plot.plot.scene), Vector.empty)
       named.foreach(n =>
         assert(plot.refsNamed(n).exists(_.nonEmpty), s"${n.value} resolves to no StudioRef")
       )
@@ -94,12 +137,21 @@ class SemanticBindingSuite extends ScalaCheckSuite:
       val picking = right(NamedPicking.compile(plot.plot.scene, transform.renderContext))
       val targets = right(PlotTargets.resolve(plot, transform, picking))
       plot.marks.foreach { m =>
-        targets.target(m.ref).foreach { t =>
-          // A pick names a mark of the plot, whose refs are its identity.
-          right(targets.pick(t.anchor, 0.5 * scale)).foreach(hit =>
-            assert(plot.markOf(hit.ref).exists(_.refs.contains(hit.ref)), hit.ref.toString)
+        // Every drawn mark is a target, and a pick at its anchor hits a mark:
+        // this one, or one drawn over the same point (marks may overlap).
+        val t   = targets.target(m.ref).getOrElse(fail(s"mark ${m.ref} is no target"))
+        val hit = right(targets.pick(t.anchor, 0.5 * scale))
+          .getOrElse(fail(s"a pick at the anchor of ${m.ref} hits nothing"))
+        if hit.mark != m then
+          val other = targets.target(hit.ref).getOrElse(fail(s"${hit.ref} is no target"))
+          val dx    = other.anchor.x - t.anchor.x
+          val dy    = other.anchor.y - t.anchor.y
+          assert(
+            math.sqrt(dx * dx + dy * dy) <= (hit.mark.reachPx + 0.5) * scale + 1e-6,
+            s"a pick at ${m.ref} hit ${hit.ref}, which is not under that point"
           )
-        }
+        // The pick is scientific identity: the refs of the mark it names.
+        assertEquals(plot.markOf(hit.ref).map(_.refs), Some(hit.mark.refs))
       }
     }
   }
@@ -124,10 +176,38 @@ class SemanticBindingSuite extends ScalaCheckSuite:
       )
       if plot.unplotted.isEmpty then assert(plot.textSummary.endsWith("Every row is drawn."))
       else
-        plot.unplotted
-          .flatMap(plot.unplottedText)
-          .foreach(t => assert(plot.textSummary.contains(t), t))
+        assert(
+          plot.textSummary.contains(s"${plot.unplotted.size} rows not drawn: "),
+          plot.textSummary
+        )
+      // Bounded whatever the number of rows: three labels at most, then a count.
+      assert(plot.textSummary.length <= plot.title.length + 400, plot.textSummary)
     }
+  }
+
+  test("many undrawn rows: counted, grouped by reason, three named, and how many more") {
+    val plot = right(
+      ScaleLadderPlot(LadderSamples.columns, None)
+        .build(LadderSamples.source(manyUndrawn), Theme.Light)
+    )
+    assertEquals(plot.unplotted.size, 300)
+    val summary = plot.textSummary
+    assert(summary.contains("300 rows not drawn: no "), summary)
+    assert(summary.contains("(300)"), summary)
+    assert(summary.endsWith("and 297 more."), summary)
+    assert(summary.length < 400, s"${summary.length}: $summary")
+  }
+
+  test("a name two grobs bear is a duplicate: a mark is drawn once") {
+    val name  = right(intaglio.GraphicsName("dot-0", "test"))
+    val twice = intaglio.Scene(
+      Vector(
+        intaglio.Grob.group(Vector.empty, name = Some(name)),
+        intaglio.Grob.group(Vector.empty, name = Some(name))
+      )
+    )
+    assertEquals(SceneSummaries.duplicateNames(twice), Vector(name))
+    assertEquals(SceneSummaries.namedGrobs(twice), Vector(name, name))
   }
 
   test("a semantic id keeps only Intaglio's portable characters") {
@@ -179,7 +259,7 @@ class SemanticBindingSuite extends ScalaCheckSuite:
     "every fixation mark of a trial scene resolves to its fixation; the scene is summarised"
   ) {
     Prop.forAll(
-      genFixations,
+      Gen.frequency(5 -> genFixations, 1 -> Gen.const(Vector.empty[TrialFixation])),
       Gen.oneOf(MarkStyle.Neutral +: TrialRole.values.toList.map(MarkStyle.Role(_))),
       Gen.oneOf(Theme.values.toSeq)
     ) { (fs, role, theme) =>
