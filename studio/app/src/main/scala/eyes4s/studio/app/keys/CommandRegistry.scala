@@ -36,7 +36,7 @@ object CommandId:
   * order. macOS adds the application menu itself.
   */
 enum MenuSection derives CanEqual:
-  case File, Edit, View, Go, Run, Window
+  case File, Edit, View, Go, Run, Window, Help
 
   def title: MessageId = this match
     case File   => MessageId.MenuFile
@@ -45,6 +45,7 @@ enum MenuSection derives CanEqual:
     case Go     => MessageId.MenuGo
     case Run    => MessageId.MenuRun
     case Window => MessageId.MenuWindow
+    case Help   => MessageId.MenuHelp
 
 /** A user action as data: its id, label, shortcut, and the intent it stands
   * for in a given model. It is enabled exactly when that intent exists
@@ -270,6 +271,15 @@ object CommandRegistry:
     always(Intent.ResetPerspective)
   )
 
+  /** Help › About Eyes Studio (S1.14): the build and its components. */
+  val about: AppCommand = AppCommand(
+    CommandId.declared("help.about"),
+    MessageId.CommandAbout,
+    MenuSection.Help,
+    None,
+    always(Intent.ShowAbout)
+  )
+
   /** Every command, in menu order. */
   val all: Vector[AppCommand] = Vector(
     data,
@@ -296,7 +306,8 @@ object CommandRegistry:
     renameProject,
     revealProject,
     projectInfo,
-    resetPerspective
+    resetPerspective,
+    about
   )
 
   def find(id: CommandId): Option[AppCommand] = all.find(_.id == id)

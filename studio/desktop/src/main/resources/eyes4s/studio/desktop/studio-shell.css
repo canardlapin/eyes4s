@@ -440,3 +440,9 @@
   -fx-max-height: 18px;
   -fx-padding: 0 6 0 6;
 }
+
+/* ---- The About box (S1.14) ---------------------------------------------------------- */
+
+.about-box {
+  -fx-background-color: -es-surface;
+}

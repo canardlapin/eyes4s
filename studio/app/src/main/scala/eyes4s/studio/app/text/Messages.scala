@@ -75,6 +75,7 @@ enum MessageId derives CanEqual:
   case CommandDiscardDraft, CommandImport
   case CommandRenameProject, CommandRevealProject, CommandProjectInfo
   case CommandResetPerspective, MenuView, WindowEdited
+  case MenuHelp, CommandAbout
 
   // --- Notices ---------------------------------------------------------------------
   case NoticeUnavailable, NoticeBlocked, NoticeLayoutsReset, Dismiss
@@ -273,6 +274,8 @@ object Catalogue:
       case MenuGo                 => "Go"
       case MenuRun                => "Run"
       case MenuWindow             => "Window"
+      case MenuHelp               => "Help"
+      case CommandAbout           => "About Eyes Studio"
       case PerspectiveAccessible  => "{0} ({1})"
       case ProjectAccessible      => "Project {0}"
       case CrumbCurrentAccessible => "{0}, current location"

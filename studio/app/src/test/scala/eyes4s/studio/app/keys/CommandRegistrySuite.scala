@@ -92,7 +92,8 @@ class CommandRegistrySuite extends munit.ScalaCheckSuite:
         MenuSection.View,
         MenuSection.Go,
         MenuSection.Run,
-        MenuSection.Window
+        MenuSection.Window,
+        MenuSection.Help
       )
     )
     // The keyboard model's commands sit where a Mac user looks for them.
@@ -104,6 +105,7 @@ class CommandRegistrySuite extends munit.ScalaCheckSuite:
     assertEquals(sectionOf(CommandRegistry.undo), Some(MenuSection.Edit))
     assertEquals(sectionOf(CommandRegistry.nextPane), Some(MenuSection.Window))
     assertEquals(sectionOf(CommandRegistry.maximize), Some(MenuSection.Window))
+    assertEquals(sectionOf(CommandRegistry.about), Some(MenuSection.Help))
   }
 
   test("S1.9: with a native menu bar the window skips exactly the chords of enabled items") {
@@ -148,7 +150,8 @@ class CommandRegistrySuite extends munit.ScalaCheckSuite:
       "| Window | Maximize the focused group | `⌘⇧↩` | `pane.maximize` |",
       "| Edit | Undo | `⌘Z` | `edit.undo` |",
       "| Edit | Redo | `⌘⇧Z` | `edit.redo` |",
-      "| File | Rename… | — | `project.rename` |"
+      "| File | Rename… | — | `project.rename` |",
+      "| Help | About Eyes Studio | — | `help.about` |"
     ).foreach(row => assert(rows.contains(row), s"$row\n$table"))
     assert(table.endsWith("\n") && !table.contains("{"), table)
   }

@@ -69,7 +69,7 @@ class KeymapFxSuite extends ShellFxSuite:
       val menus = runOnFx(w.shell.menus)
       assertEquals(
         runOnFx(menus.map(_.getText)),
-        Vector("File", "Edit", "View", "Go", "Run", "Window")
+        Vector("File", "Edit", "View", "Go", "Run", "Window", "Help")
       )
       val items = runOnFx(menus.flatMap(_.getItems.asScala))
       assertEquals(items.map(_.getId), CommandRegistry.menus.flatMap(_._2.map(_.id.value)))

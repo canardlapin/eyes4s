@@ -1,0 +1,43 @@
+# Eyes Studio licence table (ticket S1.14). Reviewed by hand; the notices are
+# generated from it and the resolved studio-desktop runtime graph by the sbt
+# build (project/StudioNotices.scala). checkStudioNotices fails when a resolved
+# module matches no dependency rule, or a licence id has no text in
+# studio/desktop/src/main/resources/eyes4s/studio/desktop/notices/licences/.
+#
+# kind	group	artifact glob or name	version	SPDX licence	copyright holder
+#
+# Licences are as each artifact's POM declares them (OpenJFX and SLF4J declare
+# none in their POMs; theirs are from the projects' own LICENSE files).
+
+# --- the shell and its graphics -------------------------------------------------
+dependency	org.openjfx	javafx-*	*	GPL-2.0-only WITH Classpath-exception-2.0	Oracle and/or its affiliates
+dependency	io.github.canardlapin	scaladock-*	*	Apache-2.0	canardlapin
+dependency	io.github.canardlapin	intaglio-*	*	Apache-2.0	canardlapin
+dependency	org.apache.pdfbox	*	*	Apache-2.0	The Apache Software Foundation
+dependency	commons-logging	commons-logging	*	Apache-2.0	The Apache Software Foundation
+
+# --- logging (S1.12) ------------------------------------------------------------
+dependency	org.slf4j	slf4j-api	*	MIT	QOS.ch Sarl
+dependency	ch.qos.logback	logback-*	*	EPL-1.0 OR LGPL-2.1-only	QOS.ch Sarl
+
+# --- Scala and the Typelevel stack ----------------------------------------------
+dependency	org.scala-lang	scala*-library*	*	Apache-2.0	EPFL and Lightbend, Inc.
+dependency	org.typelevel	cats-core_*	*	MIT	Cats contributors
+dependency	org.typelevel	cats-kernel_*	*	MIT	Cats contributors
+dependency	org.typelevel	algebra_*	*	MIT	Cats contributors
+dependency	org.typelevel	cats-collections-*	*	MIT AND BSD-3-Clause	Typelevel
+dependency	org.typelevel	cats-effect*	*	Apache-2.0	Typelevel
+dependency	org.typelevel	cats-mtl_*	*	Apache-2.0	Typelevel
+dependency	org.typelevel	literally_*	*	Apache-2.0	Typelevel
+dependency	org.typelevel	idna4s-*	*	MIT	Typelevel
+dependency	org.typelevel	jawn-*	*	MIT	Erik Osheim
+dependency	co.fs2	fs2-*	*	MIT	Paul Chiusano and respective contributors
+dependency	com.comcast	ip4s-*	*	Apache-2.0	Comcast Cable Communications Management, LLC
+dependency	org.scodec	scodec-bits_*	*	BSD-3-Clause	Michael Pilquist and Paul Chiusano
+dependency	io.circe	circe-*	*	Apache-2.0	Travis Brown and circe contributors
+dependency	com.lihaoyi	*	*	MIT	Li Haoyi
+
+# --- bundled files no resolver sees -----------------------------------------------
+bundled	font	IBM Plex Sans	1.1.0	OFL-1.1	IBM Corp.
+bundled	font	IBM Plex Mono	2.5.0	OFL-1.1	IBM Corp.
+bundled	font	Source Serif 4	4.005	OFL-1.1	Adobe
