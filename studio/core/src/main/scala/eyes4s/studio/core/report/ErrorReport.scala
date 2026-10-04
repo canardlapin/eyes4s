@@ -85,16 +85,23 @@ object FailureTrace:
     */
   private val JsCode = "<jscode>"
 
+  /** The extensions of compiled or source code: a frame in any other file
+    * (`fixations.csv`) is a message line that only looks like a frame, as
+    * Scala.js reads `at $c_Lsecret_P17.prototype.ret07__V (file:///…/x.csv:1:2)`.
+    */
+  private val CodeFiles = Vector(".scala", ".java", ".kt", ".js", ".mjs", ".cjs")
+
   private def of(error: Throwable, causes: Int, seen: Set[Throwable]): FailureTrace =
-    // Only frames of code with a source file are code locations: on Scala.js
-    // lines of the message arrive as pseudo-frames, file-less or `<jscode>`.
+    // Only frames in a code file are code locations: on Scala.js lines of the
+    // message arrive as pseudo-frames, file-less, `<jscode>` or decoded from a
+    // mangled name in a data file.
     // A file is kept by name, never by its path. Reading a throwable may
     // itself throw; what cannot be read is left out.
     val raw = Try(Option(error.getStackTrace).fold(Vector.empty[StackTraceElement])(_.toVector))
       .getOrElse(Vector.empty)
     val all = raw.flatMap(f =>
       Option(f.getFileName)
-        .filter(_.nonEmpty)
+        .filter(file => file.nonEmpty && CodeFiles.exists(file.toLowerCase.endsWith))
         .filter(_ => Option(f.getClassName).exists(c => c.nonEmpty && c != JsCode))
         .map(f -> fileName(_))
     )

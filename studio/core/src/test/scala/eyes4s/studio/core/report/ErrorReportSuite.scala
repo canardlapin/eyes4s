@@ -122,6 +122,32 @@ class ErrorReportSuite extends munit.FunSuite:
     )
   }
 
+  test("a Scala.js-mangled frame line in a message is no frame, on either platform") {
+    val planted = "boom\n    at $c_Lsecret_P17.prototype.ret07__V " +
+      "(file:///Users/someone/study/fixations.csv:11:22)"
+    val t = FailureTrace.of(
+      try throw IllegalStateException(planted)
+      catch case e: Throwable => e
+    )
+    val text = t.lines.mkString("\n")
+    Vector("P17", "secret", "ret07", "fixations.csv", "/Users/someone").foreach(s =>
+      assert(!text.contains(s), s"trace holds $s:\n$text")
+    )
+    // The same shape as a decoded frame: kept only in a code file.
+    val e = RuntimeException("x")
+    e.setStackTrace(
+      Array(
+        StackTraceElement("secret.P17", "ret07", "fixations.csv", 11),
+        StackTraceElement("a.B", "run", "main.js", 3),
+        StackTraceElement("a.C", "call", "C.scala", 4)
+      )
+    )
+    assertEquals(
+      FailureTrace.of(e).frames.map(_.file),
+      Vector(Some("main.js"), Some("C.scala"))
+    )
+  }
+
   test("a throwable whose stack cannot be read still yields a trace") {
     val broken = new RuntimeException("P17"):
       override def getStackTrace: Array[StackTraceElement] = throw IllegalStateException("no")
