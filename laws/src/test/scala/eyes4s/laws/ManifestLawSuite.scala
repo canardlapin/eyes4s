@@ -229,7 +229,17 @@ class ManifestLawSuite extends munit.DisciplineSuite:
     packed   <- StoredArtifact.packedRecording("recording", g.recording)
     counted  <- StoredArtifact.analysisPlan("count-plan", AnalysisFixtures.plans, countPlan)
     count    <- StoredArtifact.analysisResult("count", AnalysisFixtures.results, counts(g))
-    saved    <- SavedManifest.of(
+    carrying <- StoredArtifact.analysisPlan(
+      "embedded-plan",
+      AnalysisFixtures.embeddedPlans,
+      AnalysisFixtures.EmbeddedPlan(countPlan.phase, g.base.hash)
+    )
+    carried <- StoredArtifact.analysisResult(
+      "embedded-count",
+      AnalysisFixtures.embeddedResults,
+      AnalysisFixtures.run(countPlan, g.base, _.phase)
+    )
+    saved <- SavedManifest.of(
       Vector(
         plan,
         input,
@@ -240,7 +250,9 @@ class ManifestLawSuite extends munit.DisciplineSuite:
         recorded,
         packed.recording,
         counted,
-        count
+        count,
+        carrying,
+        carried
       ) ++ packed.payloads,
       Vector(
         ManifestRelation.PlanInput(plan.name, input.name),
@@ -248,7 +260,13 @@ class ManifestLawSuite extends munit.DisciplineSuite:
         ManifestRelation.LedgerOf(ledger.name, input.name),
         ManifestRelation.TemporalBase(temporal.name, base.name),
         ManifestRelation.RecordingOf(recorded.name, packed.recording.name),
-        ManifestRelation.AnalysisResultOf(count.name, counted.name, Vector(input.name))
+        ManifestRelation
+          .AnalysisResultOf(count.name, counted.name, AnalysisFixtures.entries(input.name)),
+        ManifestRelation.AnalysisResultOf(
+          carried.name,
+          carrying.name,
+          AnalysisInputs.EmbeddedInPlan
+        )
       ) ++ packed.relations
     )
   yield StoredGraph.of(saved)
@@ -265,7 +283,11 @@ class ManifestLawSuite extends munit.DisciplineSuite:
       r.analysisResults.map(_._2).collect { case c: AnalysisFixtures.LoadedResult =>
         c.result
       } ==
-      Vector(counts(g))
+      Vector(counts(g)) &&
+      r.analysisResults.map(_._2).collect { case c: AnalysisFixtures.LoadedEmbeddedResult =>
+        c.result
+      } ==
+      Vector(AnalysisFixtures.run(countPlan, g.base, _.phase))
 
   private val laws = ManifestLaws.verifiedResolution(graphs, write, decoders, reproduces)
 
@@ -393,13 +415,30 @@ class ManifestLawSuite extends munit.DisciplineSuite:
       ScientificManifest.of(
         graph.manifest.entries,
         graph.manifest.relations.map {
-          case ManifestRelation.AnalysisResultOf(result, plan, _) =>
-            ManifestRelation.AnalysisResultOf(result, plan, Vector(name("base")))
+          case ManifestRelation.AnalysisResultOf(result, plan, AnalysisInputs.Entries(_)) =>
+            ManifestRelation.AnalysisResultOf(
+              result,
+              plan,
+              AnalysisFixtures.entries(name("base"))
+            )
           case other => other
         }
       )
     )
     assert(killed(wrongAnalysisInput))
+
+    // The count family's result claims an input its plan does not embed.
+    val undeclaredEmbedding = mutant(graph =>
+      ScientificManifest.of(
+        graph.manifest.entries,
+        graph.manifest.relations.map {
+          case ManifestRelation.AnalysisResultOf(result, plan, AnalysisInputs.Entries(_)) =>
+            ManifestRelation.AnalysisResultOf(result, plan, AnalysisInputs.EmbeddedInPlan)
+          case other => other
+        }
+      )
+    )
+    assert(killed(undeclaredEmbedding))
   }
 
   test(

@@ -537,7 +537,7 @@ object ArtifactCodecLawSuite:
     * recording inputs with or without their optional relation; standalone
     * and packed recordings; payloads owned by one or more packed recordings;
     * recording and temporal plans with their input, and their results of a
-    * plan on an input; analysis plans, and analysis results of a plan on zero
+    * plan on an input; analysis plans, and analysis results of a plan on one
     * or more identity-bearing inputs.
     */
   val manifests: Gen[ScientificManifest] = for
@@ -643,7 +643,8 @@ object ArtifactCodecLawSuite:
         yield ManifestRelation.TemporalResultOf(r, p, i)
       )
     )
-    // An analysis result cites zero or more distinct identity-bearing inputs.
+    // An analysis result cites one or more distinct identity-bearing inputs, or an
+    // input its plan embeds.
     identified = entries.filter(_.role.identityBearing).map(_.name)
     analyses <- Gen.sequence[Vector[ManifestRelation], ManifestRelation](
       byRole(ArtifactRole.AnalysisResult).map(r =>
@@ -651,7 +652,13 @@ object ArtifactCodecLawSuite:
           p  <- Gen.oneOf(byRole(ArtifactRole.AnalysisPlan))
           n  <- Gen.choose(0, identified.size)
           on <- Gen.pick(n, identified)
-        yield ManifestRelation.AnalysisResultOf(r, p, on.toVector)
+        yield ManifestRelation.AnalysisResultOf(
+          r,
+          p,
+          cats.data.NonEmptyVector
+            .fromVector(on.toVector)
+            .fold(AnalysisInputs.EmbeddedInPlan)(AnalysisInputs.Entries(_))
+        )
       )
     )
     relations =

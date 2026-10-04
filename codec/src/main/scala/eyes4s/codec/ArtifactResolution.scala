@@ -176,11 +176,26 @@ enum RelationMismatch derives CanEqual:
   case RunPlan(reported: ByteDigest, current: ByteDigest, changes: Vector[PlanChange])
   case RunInput(reported: ByteDigest, current: ByteDigest)
 
+  /** The analysis result's family pairs it with plans of schema `expected`,
+    * but the related plan is of schema `plan`.
+    */
+  case AnalysisFamily(result: DefinitionId, plan: DefinitionId, expected: DefinitionId)
+
+  /** The relation says the plan embeds its input, but the family of plan
+    * schema `plan` does not declare that it does.
+    */
+  case UndeclaredEmbedding(plan: DefinitionId)
+
   def message: String = this match
     case RunPlan(reported, current, changes) =>
       s"Run plan ${reported.hex} differs from current ${current.hex}; changes ${changes.map(_.field).mkString(", ")}."
     case RunInput(reported, current) =>
       s"Run input ${reported.hex} differs from current ${current.hex}."
+    case AnalysisFamily(result, plan, expected) =>
+      s"The ${result.name}@${result.version} result belongs with ${expected.name}@${expected.version} " +
+        s"plans, not ${plan.name}@${plan.version}."
+    case UndeclaredEmbedding(plan) =>
+      s"The ${plan.name}@${plan.version} family does not declare that its plan embeds its input."
     case SourceBinding(field, expected, found) =>
       s"Source binding $field declares $found; expected $expected."
     case Prerequisites(errors)        => errors.map(_.message).mkString(" ")
@@ -1259,19 +1274,40 @@ object ArtifactResolver:
               ManifestRelation.AnalysisResultOf(_, _, inputs),
               Vector(Some(Decoded.AnalysisResult(result)), Some(Decoded.AnalysisPlan(plan)))
             ) =>
-          // Each input's semantic identity is its entry's, checked on decoding.
-          val expected =
-            inputs.map(name => manifest.entry(name).flatMap(_.identity).fold("")(_.render))
-          val found = result.inputs.map(_.render)
-          if found != expected then
-            fail(RelationMismatch.ResultInput(expected.mkString(","), found.mkString(",")))
-          else if result.description != plan.description then
-            fail(
-              RelationMismatch.Description(
-                PlanChange.between(plan.description, result.description)
+          // Decoding found both families; the result's registration names its plan's.
+          val family = decoders.analyses.forResult(result.schema)
+          val placed = inputs match
+            case AnalysisInputs.Entries(names) =>
+              // Each input's semantic identity is its entry's, checked on decoding.
+              Right(
+                names.toVector.map(n =>
+                  manifest.entry(n).flatMap(_.identity).fold("")(_.render)
+                )
               )
-            )
-          else None
+            case AnalysisInputs.EmbeddedInPlan =>
+              Either.cond(
+                family.exists(_.embedsInput),
+                plan.embeddedInputs.map(_.render),
+                RelationMismatch.UndeclaredEmbedding(plan.schema)
+              )
+          val found = result.inputs.map(_.render)
+          family.filter(_.plan != plan.schema) match
+            case Some(f) =>
+              fail(RelationMismatch.AnalysisFamily(result.schema, plan.schema, f.plan))
+            case None =>
+              placed match
+                case Left(mismatch)                       => fail(mismatch)
+                case Right(expected) if found != expected =>
+                  fail(
+                    RelationMismatch.ResultInput(expected.mkString(","), found.mkString(","))
+                  )
+                case Right(_) if result.description != plan.description =>
+                  fail(
+                    RelationMismatch.Description(
+                      PlanChange.between(plan.description, result.description)
+                    )
+                  )
+                case Right(_) => None
         case (ManifestRelation.ReportOf(report, spec, result, input, ledger), _) =>
           (
             decoded.get(report),

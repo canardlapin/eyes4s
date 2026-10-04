@@ -195,7 +195,10 @@ object CodecDiagnosticSamples:
         b,
         Vector(PlanChange("choice", Vector.empty, Vector(Provenance.Param.Text("changed"))))
       ),
-      RelationMismatch.RunInput(a, b)
+      RelationMismatch.RunInput(a, b),
+      RelationMismatch
+        .AnalysisFamily(DefinitionId.study, DefinitionId.manifest, DefinitionId.similarity),
+      RelationMismatch.UndeclaredEmbedding(DefinitionId.temporalStudyInput)
     ),
     family[ManifestError]("ManifestError")(
       ManifestError.InvalidName(" padded"),
@@ -217,7 +220,12 @@ object CodecDiagnosticSamples:
       ManifestError.DuplicateRelation(resultOf),
       ManifestError.RelationCount(plan, "plan-input", 2, "exactly one"),
       ManifestError.AnalysisInput(
-        ManifestRelation.AnalysisResultOf(result, plan, Vector(input)),
+        ManifestRelation
+          .AnalysisResultOf(
+            result,
+            plan,
+            AnalysisInputs.Entries(cats.data.NonEmptyVector.one(input))
+          ),
         input,
         ArtifactRole.Report
       )
