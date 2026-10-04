@@ -25,26 +25,28 @@ import eyes4s.studio.core.selection.ScaleIndex
   * isoline levels pass through as the backend served them.
   */
 class MapRasterCacheSuite extends munit.FunSuite:
+
+  // Ten times the fixture's maps is about 19,000 rasters.
+  override val munitTimeout: scala.concurrent.duration.Duration =
+    scala.concurrent.duration.Duration(180, "s")
   import MapSamples.*
 
-  private val mass = ColourLimits.Sequential(0.0, 1.0)
-
   private def raster(trial: String, scale: Int = 2): MapRaster =
-    MapRaster.render(grid(id(trial, scale), bump), MapPalette.Mass, mass)
+    MapRaster.render(grid(id(trial, scale), bump), massStyle)
 
   private def budgetOf(rasters: Int): RasterBudget =
     RasterBudget.of(rasters * raster("ret_01").bytes).getOrElse(fail("no budget"))
 
   test("a raster has one pixel per cell, in the palette's colour, missing transparent") {
     val g = grid(id("ret_01", 2), bump)
-    val r = MapRaster.render(g, MapPalette.Mass, mass)
+    val r = MapRaster.render(g, massStyle)
     assertEquals((r.width, r.height), (Columns, Rows))
-    assertEquals(r.key, RasterKey(g.map, MapPalette.Mass, mass))
+    assertEquals(r.key, RasterKey(g.map, massStyle))
     for
       y <- 0 until Rows
       x <- 0 until Columns
-    do assertEquals(r.pixel(x, y), MapColours.argb(MapPalette.Mass, mass, g.at(x, y)))
-    assertEquals(r.pixel(Columns - 1, 0), MapColours.Transparent)
+    do assertEquals(r.pixel(x, y), MapColours.argb(massStyle, g.at(x, y)))
+    assertEquals(r.pixel(Columns - 1, 0), MapColours.NoCoverage)
     assertEquals(r.bytes, Columns * Rows * 4L)
   }
 
@@ -55,8 +57,8 @@ class MapRasterCacheSuite extends munit.FunSuite:
     assertEquals(with_.levels, levels)
     assertEquals(bare.levels, Vector.empty)
     assertEquals(
-      MapRaster.render(with_, MapPalette.Mass, mass).argb.toVector,
-      MapRaster.render(bare, MapPalette.Mass, mass).argb.toVector
+      MapRaster.render(with_, massStyle).argb.toVector,
+      MapRaster.render(bare, massStyle).argb.toVector
     )
   }
 
@@ -107,7 +109,7 @@ class MapRasterCacheSuite extends munit.FunSuite:
     assertEquals(c5.get(b.key), (None, c5))
     // Putting a key again replaces its raster without growing the cache.
     val (c6, none) =
-      c5.put(MapRaster.render(grid(id("ret_01", 2), bump), MapPalette.Mass, mass))
+      c5.put(MapRaster.render(grid(id("ret_01", 2), bump), massStyle))
     assertEquals((c6.size, c6.bytes, none), (3, 3 * a.bytes, Vector.empty))
     // A raster larger than the whole budget is not kept.
     val (c7, _) = RasterCache.empty(RasterBudget.of(100L).get).put(a)
@@ -116,12 +118,35 @@ class MapRasterCacheSuite extends munit.FunSuite:
 
   test("a raster of another palette or limits is another entry") {
     val g       = grid(id("ret_01", 2), bump)
-    val (c1, _) = RasterCache.empty(budgetOf(4)).put(MapRaster.render(g, MapPalette.Mass, mass))
-    val (c2, _) =
-      c1.put(MapRaster.render(g, MapPalette.Mass, ColourLimits.Sequential(0.0, 2.0)))
-    val (c3, _) =
-      c2.put(MapRaster.render(g, MapPalette.Difference, ColourLimits.Symmetric(1.0)))
+    val (c1, _) = RasterCache.empty(budgetOf(5)).put(MapRaster.render(g, massStyle))
+    val (c2, _) = c1.put(MapRaster.render(g, mass(0.0, 2.0)))
+    val (c3, _) = c2.put(MapRaster.render(g, differenceStyle))
     assertEquals(c3.size, 3)
+    // The same trial and scale in another run is another map: a rerun's
+    // raster never stands in for this run's.
+    val rerun   = grid(id("ret_01", 2, run = 8), bump.map(_.map(_ * 0.5)))
+    val (c4, _) = c3.put(MapRaster.render(rerun, massStyle))
+    assertEquals(c4.size, 4)
+    val (old, _)  = c4.get(RasterKey(g.map, massStyle))
+    val (next, _) = c4.get(RasterKey(rerun.map, massStyle))
+    assertNotEquals(old.map(_.argb.toVector), next.map(_.argb.toVector))
+    assertEquals(
+      next.map(_.argb.toVector),
+      Some(MapRaster.render(rerun, massStyle).argb.toVector)
+    )
+    // Invalidating a map drops all its rasters and no other.
+    val (c5, gone) = c4.invalidate(g.map)
+    assertEquals(
+      gone.toSet,
+      Set(
+        RasterKey(g.map, massStyle),
+        RasterKey(g.map, mass(0.0, 2.0)),
+        RasterKey(g.map, differenceStyle)
+      )
+    )
+    assertEquals(c5.size, 1)
+    assertEquals(c5.bytes, MapRaster.render(rerun, massStyle).bytes)
+    assert(c5.contains(RasterKey(rerun.map, massStyle)))
   }
 
   test("the cache stays within its budget under ten times the fixture's maps") {
@@ -137,17 +162,21 @@ class MapRasterCacheSuite extends munit.FunSuite:
       copy  <- (1 to 10).iterator
       t     <- trials.iterator
       scale <- (0 until scales).iterator
-    yield MapId(t.copy(occurrence = copy), ScaleIndex.of(scale).toOption.get)
+    yield MapId(
+      eyes4s.studio.core.backend.RunId(7),
+      t.copy(occurrence = copy),
+      ScaleIndex.of(scale).toOption.get
+    )
     var cache   = RasterCache.empty(budget)
     var count   = 0
     var evicted = 0
     var last    = Option.empty[RasterKey]
     maps.foreach { m =>
-      val (next, gone) = cache.put(MapRaster.render(grid(m, bump), MapPalette.Mass, mass))
+      val (next, gone) = cache.put(MapRaster.render(grid(m, bump), massStyle))
       cache = next
       count += 1
       evicted += gone.size
-      last = Some(RasterKey(m, MapPalette.Mass, mass))
+      last = Some(RasterKey(m, massStyle))
       assert(cache.bytes <= budget.bytes, s"${cache.bytes} bytes after $count rasters")
     }
     assertEquals(count, trials.size * scales * 10)

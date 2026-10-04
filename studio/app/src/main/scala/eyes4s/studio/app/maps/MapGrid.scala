@@ -16,7 +16,7 @@
 
 package eyes4s.studio.app.maps
 
-import eyes4s.studio.core.backend.TrialKey
+import eyes4s.studio.core.backend.{ResultAddress, RunId, TrialKey}
 import eyes4s.studio.core.selection.ScaleIndex
 
 /** Why a map grid was refused. Every case names the map and what failed. */
@@ -40,9 +40,15 @@ enum MapGridError derives CanEqual:
     case NotFinite(m, i, v)    => s"Map ${m.label}: cell $i holds $v, which is not finite."
     case Level(m, i, l) => s"Map ${m.label}: isoline level $i is $l, which is not finite."
 
-/** Which map a grid is: one trial's density at one scale of a run. */
-final case class MapId(trial: TrialKey, scale: ScaleIndex) derives CanEqual:
-  def label: String = s"${trial.label} at scale ${scale.value}"
+/** Which map a grid is: the density estimate of one trial at one scale in
+  * one run, the eyes4s result at [[address]]. The run is part of the
+  * identity: a rerun's map is another map, never a stale copy of this one.
+  */
+final case class MapId(run: RunId, trial: TrialKey, scale: ScaleIndex) derives CanEqual:
+  def label: String = s"${trial.label} at scale ${scale.value} in run ${run.number}"
+
+  /** The map's result address in its run. */
+  def address: ResultAddress = ResultAddress.Estimation(scale.value, trial)
 
 /** One map's values as the backend serves them (ticket S4.4; UI-E):
   * `columns × rows` cells, x fastest, each a density value or missing.

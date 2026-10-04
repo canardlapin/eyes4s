@@ -18,12 +18,11 @@ package eyes4s.studio.app.maps
 
 import scala.collection.immutable.TreeMap
 
-/** What a raster is of: a map drawn in a palette between limits (ticket
-  * S4.4). The map's opacity is not part of it: one global opacity is
-  * applied when the raster is drawn.
+/** What a raster is of: a map, by its run's result identity, drawn in a
+  * style (ticket S4.4). The map's opacity is not part of it: one global
+  * opacity is applied when the raster is drawn ([[MapRaster.drawn]]).
   */
-final case class RasterKey(map: MapId, palette: MapPalette, limits: ColourLimits)
-    derives CanEqual
+final case class RasterKey(map: MapId, style: MapStyle) derives CanEqual
 
 /** A map's cells as ARGB pixels, one per cell, x fastest, top row first. */
 final case class MapRaster private (key: RasterKey, width: Int, height: Int, argb: IArray[Int]):
@@ -31,20 +30,25 @@ final case class MapRaster private (key: RasterKey, width: Int, height: Int, arg
   /** The ARGB of the cell at column `x` and row `y`. */
   def pixel(x: Int, y: Int): Int = argb(y * width + x)
 
+  /** The pixels as drawn at `opacity`: each stored pixel's alpha scaled
+    * ([[MapOpacity.over]]). The raster itself is unchanged.
+    */
+  def drawn(opacity: MapOpacity): IArray[Int] = argb.map(opacity.over)
+
   /** What the raster holds in memory: four bytes a pixel. */
   def bytes: Long = argb.length.toLong * 4L
 
 object MapRaster:
 
-  /** The raster of `grid` under `palette` and `limits`: each cell's colour
+  /** The raster of `grid` in `style`: each cell's colour
     * ([[MapColours.argb]]). Nothing in the grid changes.
     */
-  def render(grid: MapGrid, palette: MapPalette, limits: ColourLimits): MapRaster =
+  def render(grid: MapGrid, style: MapStyle): MapRaster =
     MapRaster(
-      RasterKey(grid.map, palette, limits),
+      RasterKey(grid.map, style),
       grid.columns,
       grid.rows,
-      IArray.from(grid.cells.iterator.map(MapColours.argb(palette, limits, _)))
+      IArray.from(grid.cells.iterator.map(MapColours.argb(style, _)))
     )
 
 /** A byte budget for cached rasters, at least one byte. */
@@ -73,6 +77,21 @@ final case class RasterCache private (
 
   /** How many rasters the cache holds. */
   def size: Int = entries.size
+
+  /** The cache without any raster of `map`, as when its run's result is
+    * dropped, and the keys it removed.
+    */
+  def invalidate(map: MapId): (RasterCache, Vector[RasterKey]) =
+    val gone = entries.keys.filter(_.map == map).toVector
+    val next = gone.foldLeft(this) { (c, k) =>
+      val (raster, used) = c.entries(k)
+      c.copy(
+        entries = c.entries.removed(k),
+        order = c.order.removed(used),
+        bytes = c.bytes - raster.bytes
+      )
+    }
+    (next, gone)
 
   /** Whether the cache holds the raster of `key`, without touching it. */
   def contains(key: RasterKey): Boolean = entries.contains(key)
