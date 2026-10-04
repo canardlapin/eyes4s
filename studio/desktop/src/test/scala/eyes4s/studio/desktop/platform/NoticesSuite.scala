@@ -137,3 +137,19 @@ class NoticesSuite extends munit.FunSuite:
     )
     assertEquals(unlisted, Set.empty[String])
   }
+
+  test("each library's copied LICENSE and NOTICE is of the version the list resolves") {
+    val copies = Vector("pdfbox", "pdfbox-io", "fontbox", "commons-logging")
+    copies.foreach { artifact =>
+      val version = libraries
+        .find(_.name == artifact)
+        .getOrElse(fail(s"$artifact is not listed"))
+        .version
+      Vector("LICENSE", "NOTICE").foreach(kind =>
+        assert(
+          resource(s"$artifact-$version-$kind.txt").nonEmpty,
+          s"$artifact-$version-$kind.txt"
+        )
+      )
+    }
+  }

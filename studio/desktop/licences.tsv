@@ -1,43 +1,71 @@
 # Eyes Studio licence table (ticket S1.14). Reviewed by hand; the notices are
 # generated from it and the resolved studio-desktop runtime graph by the sbt
-# build (project/StudioNotices.scala). checkStudioNotices fails when a resolved
-# module matches no dependency rule, or a licence id has no text in
+# build (project/StudioNotices.scala). The build fails (generating the notices
+# and in checkStudioNotices) when a resolved module matches no dependency rule,
+# or a licence id has no text in
 # studio/desktop/src/main/resources/eyes4s/studio/desktop/notices/licences/.
 #
-# kind	group	artifact glob or name	version	SPDX licence	copyright holder
+# Every rule names one artifact exactly, so a new artifact of a known group
+# needs a reviewed row of its own.
+#
+# kind	group	artifact or name	version	SPDX licence	copyright holder
 #
 # Licences are as each artifact's POM declares them (OpenJFX and SLF4J declare
 # none in their POMs; theirs are from the projects' own LICENSE files).
 
-# --- the shell and its graphics -------------------------------------------------
-dependency	org.openjfx	javafx-*	*	GPL-2.0-only WITH Classpath-exception-2.0	Oracle and/or its affiliates
-dependency	io.github.canardlapin	scaladock-*	*	Apache-2.0	canardlapin
-dependency	io.github.canardlapin	intaglio-*	*	Apache-2.0	canardlapin
-dependency	org.apache.pdfbox	*	*	Apache-2.0	The Apache Software Foundation
+# --- shell and its graphics
+dependency	org.openjfx	javafx-base	*	GPL-2.0-only WITH Classpath-exception-2.0	Oracle and/or its affiliates
+dependency	org.openjfx	javafx-controls	*	GPL-2.0-only WITH Classpath-exception-2.0	Oracle and/or its affiliates
+dependency	org.openjfx	javafx-graphics	*	GPL-2.0-only WITH Classpath-exception-2.0	Oracle and/or its affiliates
+dependency	io.github.canardlapin	scaladock-core_3	*	Apache-2.0	canardlapin
+dependency	io.github.canardlapin	scaladock-fx_3	*	Apache-2.0	canardlapin
+dependency	io.github.canardlapin	intaglio-core_3	*	Apache-2.0	canardlapin
+dependency	io.github.canardlapin	intaglio-interaction_3	*	Apache-2.0	canardlapin
+dependency	io.github.canardlapin	intaglio-java2d_3	*	Apache-2.0	canardlapin
+dependency	io.github.canardlapin	intaglio-javafx_3	*	Apache-2.0	canardlapin
+dependency	io.github.canardlapin	intaglio-pdf_3	*	Apache-2.0	canardlapin
+dependency	io.github.canardlapin	intaglio-svg_3	*	Apache-2.0	canardlapin
+dependency	org.apache.pdfbox	pdfbox	*	Apache-2.0	The Apache Software Foundation
+dependency	org.apache.pdfbox	pdfbox-io	*	Apache-2.0	The Apache Software Foundation
+dependency	org.apache.pdfbox	fontbox	*	Apache-2.0	The Apache Software Foundation
 dependency	commons-logging	commons-logging	*	Apache-2.0	The Apache Software Foundation
 
-# --- logging (S1.12) ------------------------------------------------------------
+# --- logging (S1.12). These two rules match no module until S1.12 (p0-s112) adds
+# SLF4J and Logback; checkStudioNotices logs them as unused until then.
 dependency	org.slf4j	slf4j-api	*	MIT	QOS.ch Sarl
-dependency	ch.qos.logback	logback-*	*	EPL-1.0 OR LGPL-2.1-only	QOS.ch Sarl
+dependency	ch.qos.logback	logback-classic	*	EPL-1.0 OR LGPL-2.1-only	QOS.ch Sarl
+dependency	ch.qos.logback	logback-core	*	EPL-1.0 OR LGPL-2.1-only	QOS.ch Sarl
 
-# --- Scala and the Typelevel stack ----------------------------------------------
-dependency	org.scala-lang	scala*-library*	*	Apache-2.0	EPFL and Lightbend, Inc.
-dependency	org.typelevel	cats-core_*	*	MIT	Cats contributors
-dependency	org.typelevel	cats-kernel_*	*	MIT	Cats contributors
-dependency	org.typelevel	algebra_*	*	MIT	Cats contributors
-dependency	org.typelevel	cats-collections-*	*	MIT AND BSD-3-Clause	Typelevel
-dependency	org.typelevel	cats-effect*	*	Apache-2.0	Typelevel
-dependency	org.typelevel	cats-mtl_*	*	Apache-2.0	Typelevel
-dependency	org.typelevel	literally_*	*	Apache-2.0	Typelevel
-dependency	org.typelevel	idna4s-*	*	MIT	Typelevel
-dependency	org.typelevel	jawn-*	*	MIT	Erik Osheim
-dependency	co.fs2	fs2-*	*	MIT	Paul Chiusano and respective contributors
-dependency	com.comcast	ip4s-*	*	Apache-2.0	Comcast Cable Communications Management, LLC
-dependency	org.scodec	scodec-bits_*	*	BSD-3-Clause	Michael Pilquist and Paul Chiusano
-dependency	io.circe	circe-*	*	Apache-2.0	Travis Brown and circe contributors
-dependency	com.lihaoyi	*	*	MIT	Li Haoyi
+# --- Scala and the Typelevel stack
+dependency	org.scala-lang	scala-library	*	Apache-2.0	EPFL and Lightbend, Inc.
+dependency	org.scala-lang	scala3-library_3	*	Apache-2.0	EPFL and Lightbend, Inc.
+dependency	org.typelevel	cats-core_3	*	MIT	Cats contributors
+dependency	org.typelevel	cats-kernel_3	*	MIT	Cats contributors
+dependency	org.typelevel	algebra_3	*	MIT	Cats contributors
+dependency	org.typelevel	cats-collections-core_3	*	MIT AND BSD-3-Clause	Typelevel
+dependency	org.typelevel	cats-effect_3	*	Apache-2.0	Typelevel
+dependency	org.typelevel	cats-effect-kernel_3	*	Apache-2.0	Typelevel
+dependency	org.typelevel	cats-effect-std_3	*	Apache-2.0	Typelevel
+dependency	org.typelevel	cats-mtl_3	*	Apache-2.0	Typelevel
+dependency	org.typelevel	literally_3	*	Apache-2.0	Typelevel
+dependency	org.typelevel	idna4s-core_3	*	MIT	Typelevel
+dependency	org.typelevel	jawn-parser_3	*	MIT	Erik Osheim
+dependency	co.fs2	fs2-core_3	*	MIT	Paul Chiusano and respective contributors
+dependency	co.fs2	fs2-io_3	*	MIT	Paul Chiusano and respective contributors
+dependency	com.comcast	ip4s-core_3	*	Apache-2.0	Comcast Cable Communications Management, LLC
+dependency	org.scodec	scodec-bits_3	*	BSD-3-Clause	Michael Pilquist and Paul Chiusano
+dependency	io.circe	circe-core_3	*	Apache-2.0	Travis Brown and circe contributors
+dependency	io.circe	circe-jawn_3	*	Apache-2.0	Travis Brown and circe contributors
+dependency	io.circe	circe-numbers_3	*	Apache-2.0	Travis Brown and circe contributors
+dependency	io.circe	circe-parser_3	*	Apache-2.0	Travis Brown and circe contributors
+dependency	com.lihaoyi	geny_3	*	MIT	Li Haoyi
+dependency	com.lihaoyi	ujson_3	*	MIT	Li Haoyi
+dependency	com.lihaoyi	upack_3	*	MIT	Li Haoyi
+dependency	com.lihaoyi	upickle_3	*	MIT	Li Haoyi
+dependency	com.lihaoyi	upickle-core_3	*	MIT	Li Haoyi
+dependency	com.lihaoyi	upickle-implicits_3	*	MIT	Li Haoyi
 
-# --- bundled files no resolver sees -----------------------------------------------
+# --- bundled files no resolver sees
 bundled	font	IBM Plex Sans	1.1.0	OFL-1.1	IBM Corp.
 bundled	font	IBM Plex Mono	2.5.0	OFL-1.1	IBM Corp.
 bundled	font	Source Serif 4	4.005	OFL-1.1	Adobe

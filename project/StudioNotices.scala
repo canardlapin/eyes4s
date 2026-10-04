@@ -25,12 +25,12 @@ import java.nio.file.Files
   * The table has one row per rule, tab-separated:
   *
   * {{{
-  * dependency  <group>  <artifact glob>  *          <SPDX expression>  <copyright>
+  * dependency  <group>  <artifact>       *          <SPDX expression>  <copyright>
   * bundled     <kind>   <name>           <version>  <SPDX expression>  <copyright>
   * }}}
   *
-  * A dependency rule matches every resolved module of `group` whose name
-  * matches the glob (`*` any run of characters). A bundled row names a file
+  * A dependency rule names one artifact exactly (no glob), so a new
+  * artifact of a known group needs a reviewed row. A bundled row names a file
   * Studio ships that no resolver sees (the fonts). Every SPDX licence id an
   * expression names must have its text in `notices/licences/<id>.txt`.
   */
@@ -49,7 +49,7 @@ object StudioNotices {
       copyright: String
   ) {
     def matches(m: Module): Boolean =
-      kind == "dependency" && group == m.group && StudioNotices.glob(pattern, m.name)
+      kind == "dependency" && group == m.group && pattern == m.name
   }
 
   /** One component the notices list: a resolved module or a bundled file. */
@@ -62,9 +62,6 @@ object StudioNotices {
       copyright: String
   )
 
-  def glob(pattern: String, name: String): Boolean =
-    ("\\Q" + pattern.replace("*", "\\E.*\\Q") + "\\E").r.pattern.matcher(name).matches()
-
   /** The table's rules, or why a line is not one. */
   def parse(text: String): Either[String, Vector[Rule]] = {
     val rows = text.linesIterator.zipWithIndex
@@ -73,6 +70,8 @@ object StudioNotices {
       .toVector
     val parsed = rows.map { case (line, n) =>
       line.split("\t", -1).toVector.map(_.trim) match {
+        case Vector("dependency", _, p, _, _, _) if p.contains("*") =>
+          Left(s"licences.tsv line $n names artifacts by a glob ($p); name each one")
         case Vector(kind, g, p, v, l, c)
             if Set("dependency", "bundled")(kind) && Seq(g, p, v, l, c).forall(_.nonEmpty) =>
           Right(Rule(kind, g, p, v, l, c))
@@ -153,37 +152,75 @@ object StudioNotices {
   final case class Findings(
       unlicensed: Vector[Module],
       missingTexts: Vector[String],
-      unused: Vector[Rule]
+      unused: Vector[Rule],
+      staleCopies: Vector[String]
   )
+
+  private val Copy = "(.+)-(\\d[^-]*)-(LICENSE|NOTICE)\\.txt".r
+
+  /** Library LICENSE/NOTICE copies named `<artifact>-<version>-…txt` whose
+    * artifact is not resolved at that version: a bump left them stale.
+    */
+  def staleCopies(files: Seq[String], modules: Seq[Module]): Vector[String] =
+    files.sorted.toVector.collect {
+      case f @ Copy(artifact, version, _)
+          if !modules.exists(m => m.name == artifact && m.version == version) =>
+        val resolved = modules.filter(_.name == artifact).map(_.version).distinct
+        if (resolved.isEmpty) s"$f: $artifact is not resolved"
+        else s"$f: $artifact resolves at ${resolved.mkString(", ")}"
+    }
 
   def check(
       modules: Seq[Module],
       rules: Vector[Rule],
-      texts: Set[String]
+      texts: Set[String],
+      copies: Seq[String]
   ): Findings = {
     val (cs, missing) = components(modules, rules)
     val ids           = cs.flatMap(c => licenceIds(c.licence)).distinct.sorted
     val unused        = rules.filter(r => r.kind == "dependency" && !modules.exists(r.matches))
-    Findings(missing, ids.filterNot(texts), unused)
+    Findings(missing, ids.filterNot(texts), unused, staleCopies(copies, modules))
   }
 
   /** The check's self-test: a planted module without a rule, and a licence
     * without a text, are found; a covered graph passes.
     */
   def selfTest: Vector[String] = {
-    val rules = Vector(Rule("dependency", "org.example", "lib-*", "*", "MIT", "Example"))
-    val ok    = check(Seq(Module("org.example", "lib-a", "1")), rules, Set("MIT"))
-    val bad   = check(
-      Seq(Module("org.example", "lib-a", "1"), Module("org.other", "x", "2")),
+    val rules = Vector(Rule("dependency", "org.example", "lib-a", "*", "MIT", "Example"))
+    val ok    =
+      check(
+        Seq(Module("org.example", "lib-a", "1")),
+        rules,
+        Set("MIT"),
+        Seq("lib-a-1-LICENSE.txt")
+      )
+    val bad = check(
+      Seq(
+        Module("org.example", "lib-a", "1"),
+        Module("org.example", "lib-b", "1"),
+        Module("org.other", "x", "2")
+      ),
       rules,
-      Set.empty
+      Set.empty,
+      Seq("lib-a-0.9-NOTICE.txt")
     )
     def unless(ok: Boolean, problem: String) = if (ok) None else Some(problem)
     Vector(
-      unless(ok.unlicensed.isEmpty && ok.missingTexts.isEmpty, "a covered graph fails"),
       unless(
-        bad.unlicensed == Vector(Module("org.other", "x", "2")),
-        "a module without a rule is not found"
+        ok.unlicensed.isEmpty && ok.missingTexts.isEmpty && ok.staleCopies.isEmpty,
+        "a covered graph fails"
+      ),
+      unless(
+        bad.unlicensed == Vector(
+          Module("org.example", "lib-b", "1"),
+          Module("org.other", "x", "2")
+        ),
+        "a module without a rule (even of a known group) is not found"
+      ),
+      unless(bad.staleCopies.size == 1, "a stale LICENSE/NOTICE copy is not found"),
+      unless(
+        parse("dependency\torg.example\tlib-*\t*\tMIT\tExample").isLeft,
+        "a glob rule is accepted"
       ),
       unless(bad.missingTexts == Vector("MIT"), "a licence without a text is not found"),
       unless(

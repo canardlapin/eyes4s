@@ -1123,7 +1123,9 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
       val file   = (Compile / sourceManaged).value / "eyes4s" / "studio" / "StudioBuild.scala"
       val commit = com.github.sbt.git.SbtGit.git.gitHeadCommit.value
         .fold("None")(c => s"""Some("$c")""")
-      val text =
+      val dirty   = com.github.sbt.git.SbtGit.git.gitUncommittedChanges.value
+      val licence = licenses.value.headOption.fold("unknown")(_._1)
+      val text    =
         s"""package eyes4s.studio.core.engine
            |
            |/** The studio build (generated from the sbt build). */
@@ -1133,6 +1135,12 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
            |
            |  /** The commit the build was made from, when it is a Git checkout. */
            |  val commit: Option[String] = $commit
+           |
+           |  /** Whether the checkout had uncommitted changes when it was built. */
+           |  val dirty: Boolean = $dirty
+           |
+           |  /** The licence of studio and eyes4s (an SPDX identifier). */
+           |  val licence: String = "$licence"
            |
            |  /** The OpenJFX the desktop shell is compiled against. */
            |  val javaFxVersion: String = "$javaFxV"
@@ -1297,8 +1305,15 @@ lazy val checkStudioNotices =
 
 lazy val studioNoticeSettings = Seq(
   Compile / resourceGenerators += Def.task {
-    val (components, _) =
+    val (components, missing) =
       StudioNotices.components(studioNoticeModules.value, studioNoticeRules.value)
+    // The notices ship in the jar: never with a library left out.
+    if (missing.nonEmpty)
+      sys.error(
+        "Third-party notices (S1.14): resolved modules without a rule in " +
+          "studio/desktop/licences.tsv: " +
+          missing.map(m => s"${m.coordinates}:${m.version}").mkString(", ")
+      )
     StudioNotices.write(
       (Compile / resourceManaged).value / "eyes4s" / "studio" / "desktop" / "notices",
       components
@@ -1315,14 +1330,23 @@ lazy val studioNoticeSettings = Seq(
       .filter(_.endsWith(".txt"))
       .map(_.stripSuffix(".txt"))
       .toSet
+    // Library LICENSE/NOTICE copies, named <artifact>-<version>-LICENSE.txt.
+    val copies = (baseDirectory.value / "src" / "main" / "resources" / "eyes4s" / "studio" /
+      "desktop" / "notices").listFiles
+      .map(_.getName)
+      .filter(n => n.endsWith("-LICENSE.txt") || n.endsWith("-NOTICE.txt"))
+      .toSeq
     val modules  = studioNoticeModules.value
-    val findings = StudioNotices.check(modules, studioNoticeRules.value, texts)
+    val findings = StudioNotices.check(modules, studioNoticeRules.value, texts, copies)
     findings.unused.foreach(r =>
       log.info(
         s"licences.tsv: ${r.group}:${r.pattern} matches no resolved module (kept for later)"
       )
     )
-    if (findings.unlicensed.nonEmpty || findings.missingTexts.nonEmpty)
+    if (
+      findings.unlicensed.nonEmpty || findings.missingTexts.nonEmpty ||
+      findings.staleCopies.nonEmpty
+    )
       sys.error(
         s"""|Third-party notices are incomplete (S1.14).
             |Resolved modules without a rule in studio/desktop/licences.tsv:
@@ -1330,7 +1354,9 @@ lazy val studioNoticeSettings = Seq(
              .map(m => s"  - ${m.coordinates}:${m.version}")
              .mkString("\n")}
             |Licence ids without a text in notices/licences/:
-            |${findings.missingTexts.map("  - " + _).mkString("\n")}""".stripMargin
+            |${findings.missingTexts.map("  - " + _).mkString("\n")}
+            |Library LICENSE/NOTICE copies not at the resolved version:
+            |${findings.staleCopies.map("  - " + _).mkString("\n")}""".stripMargin
       )
     log.info(
       s"studio notices OK: ${modules.size} resolved modules, each with a licence and its text"

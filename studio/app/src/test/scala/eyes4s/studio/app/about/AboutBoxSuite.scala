@@ -70,8 +70,8 @@ class AboutBoxSuite extends munit.FunSuite:
     assertEquals(
       vm.lines.map(l => l.label -> l.value),
       Vector(
-        "Version" -> s"eyes4s ${StudioBuild.eyes4sBaseVersion}",
-        "Commit"  -> StudioBuild.commit.fold("not built from a Git checkout")(_.take(12)),
+        "Version"          -> s"eyes4s ${StudioBuild.eyes4sBaseVersion}",
+        "Commit"           -> AboutBox.commitLine(StudioBuild.commit, StudioBuild.dirty),
         "Backend protocol" -> ProtocolVersion.Current.render,
         "Java"             -> "25.0.1 (Eclipse Adoptium)",
         "JavaFX"           -> s"24.0.1+3 (built against ${StudioBuild.javaFxVersion})"
@@ -88,12 +88,14 @@ class AboutBoxSuite extends munit.FunSuite:
 
   test("every component is listed with its version and licence, after Eyes Studio itself") {
     val vm = AboutBox.vm(facts(AboutBox.parse(tsv)))
-    assertEquals(vm.componentsTitle, "Bundled components (3)")
+    // The count is the rows shown: the components and Eyes Studio itself.
+    assertEquals(vm.componentsTitle, "Components (4, Eyes Studio included)")
+    assertEquals(vm.components.size, 4)
     assertEquals(
       vm.components,
       Vector(
         ComponentRow(
-          "Eyes Studio and eyes4s (Apache-2.0)",
+          "Eyes Studio and eyes4s",
           StudioBuild.eyes4sBaseVersion,
           "Apache-2.0"
         ),
@@ -125,4 +127,16 @@ class AboutBoxSuite extends munit.FunSuite:
     val (after, effects) = AppModel.update(m, Intent.ShowAbout)
     assertEquals(effects, Vector(AppEffect.OpenDialog(PlatformDialog.About)))
     assertEquals(after.document, m.document)
+  }
+
+  test("a dirty build says so; a clean one shows its commit; no Git says that") {
+    val c = "0123456789abcdef0123456789abcdef01234567"
+    assertEquals(AboutBox.commitLine(Some(c), dirty = false), "0123456789ab")
+    assertEquals(
+      AboutBox.commitLine(Some(c), dirty = true),
+      "0123456789ab with uncommitted changes"
+    )
+    assertEquals(AboutBox.commitLine(None, dirty = true), "not built from a Git checkout")
+    // The build's own licence, from the sbt build, not a literal.
+    assertEquals(StudioBuild.licence, "Apache-2.0")
   }

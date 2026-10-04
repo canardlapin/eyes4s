@@ -71,7 +71,7 @@ final case class AboutVM(
 enum AboutTextId derives CanEqual:
   case Title, Version, VersionValue, Commit, NotGit, Protocol, Java, JavaValue, JavaFx
   case JavaFxValue, JavaFxNotRunning, Components, ComponentsOf, Unlisted, Notices, Close
-  case FirstParty
+  case FirstParty, Dirty
 
 object AboutText:
   import AboutTextId.*
@@ -89,13 +89,14 @@ object AboutText:
     case JavaFxValue      => "{0} (built against {1})"
     case JavaFxNotRunning => "not running (built against {0})"
     case Components       => "Bundled components"
-    case ComponentsOf     => "Bundled components ({0})"
+    case ComponentsOf     => "Components ({0}, Eyes Studio included)"
     case Unlisted         => "The component list could not be read: {0}"
     case Notices          =>
       "Licences and notices: THIRD-PARTY.txt, THIRD-PARTY-COMPONENTS.txt and licences/ " +
         "in the application's notices folder."
     case Close      => "Close"
-    case FirstParty => "Eyes Studio and eyes4s (Apache-2.0)"
+    case FirstParty => "Eyes Studio and eyes4s"
+    case Dirty      => "{0} with uncommitted changes"
 
   def apply(id: AboutTextId, args: String*): String = Messages.fill(english(id), args.toVector)
 
@@ -125,11 +126,20 @@ object AboutBox:
         val all = rows.collect { case Right(c) => c }
         if all.isEmpty then Left("it lists no component") else Right(all)
 
+  /** The commit line: the first 12 characters of the commit, and a dirty
+    * build said so, never shown as the commit it is not.
+    */
+  def commitLine(commit: Option[String], dirty: Boolean): String =
+    commit.fold(AboutText(NotGit)) { c =>
+      val short = c.take(12)
+      if dirty then AboutText(Dirty, short) else short
+    }
+
   /** The About box for `facts`, with the generated build's version, commit
     * and protocol.
     */
   def vm(facts: AboutFacts): AboutVM =
-    val commit = StudioBuild.commit.fold(AboutText(NotGit))(_.take(12))
+    val commit = commitLine(StudioBuild.commit, StudioBuild.dirty)
     val javaFx =
       facts.javaFxVersion.fold(AboutText(JavaFxNotRunning, StudioBuild.javaFxVersion))(v =>
         AboutText(JavaFxValue, v, StudioBuild.javaFxVersion)
@@ -146,8 +156,8 @@ object AboutBox:
         AboutLine(AboutText(JavaFx), javaFx)
       ),
       if listed.isEmpty then AboutText(Components)
-      else AboutText(ComponentsOf, listed.size.toString),
-      ComponentRow(AboutText(FirstParty), StudioBuild.eyes4sBaseVersion, "Apache-2.0") +:
+      else AboutText(ComponentsOf, (listed.size + 1).toString),
+      ComponentRow(AboutText(FirstParty), StudioBuild.eyes4sBaseVersion, StudioBuild.licence) +:
         ordered.map(c =>
           ComponentRow(
             c.kind match
