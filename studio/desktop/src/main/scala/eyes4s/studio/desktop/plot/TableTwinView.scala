@@ -93,7 +93,7 @@ final class TableTwinView private (initial: TableTwinState, dispatch: Intent => 
   def vm: Option[TableTwinVM] = shown.map(current.vm)
 
   /** The row nodes, in source order. */
-  private[plot] def rowNodes: Vector[HBox] = rows
+  private[desktop] def rowNodes: Vector[HBox] = rows
 
   /** Lists `source`; a cursor on a row it lacks is dropped. */
   def show(source: PlotSource): Unit =

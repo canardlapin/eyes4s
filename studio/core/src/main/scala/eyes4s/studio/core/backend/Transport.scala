@@ -347,6 +347,13 @@ object RemoteStudyBackend:
     ): F[Either[BackendError, TrialPreview]] =
       ask(Q.TrialPreviewOf(revision, trial)) { case A.TrialPreviewOf(p) => p }
 
+    def sourceRecords(
+        revision: AnalysisRevision,
+        from: Int,
+        count: Int
+    ): F[Either[BackendError, SourceRecordPage]] =
+      ask(Q.SourceRecordsOf(revision, from, count)) { case A.SourceRecordsOf(p) => p }
+
     def previewRows(
         revision: AnalysisRevision,
         page: PageRequest
