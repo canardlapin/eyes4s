@@ -52,6 +52,9 @@ enum A11yRole derives CanEqual:
   /** A link that navigates (the fixation inspector's used-by links). */
   case Link
 
+  /** A continuous value (the Compare inspector's map opacity). */
+  case Slider
+
   /** The role as the committed tab-order files spell it. */
   def id: String = this match
     case Button       => "button"
@@ -66,6 +69,7 @@ enum A11yRole derives CanEqual:
     case TextArea     => "text-area"
     case RadioButton  => "radio-button"
     case Link         => "hyperlink"
+    case Slider       => "slider"
 
 /** One stop of the Tab order: its role and its accessible name. */
 final case class FocusStop(role: A11yRole, name: String) derives CanEqual:
