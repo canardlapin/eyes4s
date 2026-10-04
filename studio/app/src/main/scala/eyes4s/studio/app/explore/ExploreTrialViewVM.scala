@@ -122,7 +122,7 @@ object ExploreTrialViewVM:
 
   /** The document's theme and stage as the renderer's tokens. */
   def appearance(model: AppModel): (Theme, StageVariant) =
-    val theme = model.document.presentation.theme match
+    val theme = model.theme match
       case eyes4s.studio.core.document.Theme.Light => Theme.Light
       case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
     val stage = model.document.presentation.stage match

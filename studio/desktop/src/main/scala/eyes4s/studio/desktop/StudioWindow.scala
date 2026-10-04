@@ -97,7 +97,9 @@ final class StudioWindow private (
     val preflight: PreflightHost,
     preflightListener: AppModel => Unit,
     val figures: FiguresHost,
-    figuresListener: AppModel => Unit
+    figuresListener: AppModel => Unit,
+    val themes: ThemeHost,
+    themeListener: AppModel => Unit
 ):
   /** The window content, with the studio stylesheets. */
   def root: javafx.scene.Parent = shell.root
@@ -159,20 +161,12 @@ final class StudioWindow private (
     runtime.unlisten(figuresListener)
     summary.dispose()
     figures.dispose()
+    runtime.unlisten(themeListener)
+    themes.dispose()
     project.foreach(_.close())
     session.close()
 
 object StudioWindow:
-
-  /** The studio's dock theme: `studio-dock.css`, which maps scaladock's
-    * variables onto the studio tokens.
-    */
-  val dockThemeResource: String = s"${tokens.TokenFiles.resourceDirectory}/studio-dock.css"
-
-  def dockTheme: Either[MissingStylesheet, DockTheme] =
-    Option(getClass.getClassLoader.getResource(dockThemeResource))
-      .toRight(MissingStylesheet(dockThemeResource))
-      .map(url => DockTheme.Custom(url.toExternalForm))
 
   /** The answer to Rename…: the typed name, or why it was refused. */
   def renameAnswer(text: String): Intent =
@@ -199,7 +193,8 @@ object StudioWindow:
       model: () => AppModel,
       messages: Messages,
       project: Option[ProjectPort] = None,
-      presets: FilePresetStore = FilePresetStore.userDefault
+      presets: FilePresetStore = FilePresetStore.userDefault,
+      themed: javafx.scene.Scene => Unit = _ => ()
   ): PlatformDialogs =
     (dialog: PlatformDialog, dispatch: Intent => Unit) =>
       dialog match
@@ -216,17 +211,19 @@ object StudioWindow:
           a.show()
         case PlatformDialog.ImportSources =>
           // The import wizard (S5.2): its commands come back as intents.
-          val theme = model().document.presentation.theme match
+          val theme = model().theme match
             case eyes4s.studio.core.document.Theme.Light => Theme.Light
             case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
-          val sheets = StudioStyles.stylesheets(theme).getOrElse(Nil)
-          ImportWizardHost.openWindow(
+          val sheets     = StudioStyles.stylesheets(theme).getOrElse(Nil)
+          val (stage, _) = ImportWizardHost.openWindow(
             () => model().document,
             dispatch,
             presets,
             sheets,
             project
-          ): Unit
+          )
+          // The wizard follows later theme changes too (S1.10).
+          themed(stage.getScene)
         case PlatformDialog.OpenProject =>
           System.err.println(s"$dialog is not available until S2.9.")
 
@@ -240,7 +237,6 @@ object StudioWindow:
       moment: StoryMoment,
       displays: NavigatorDisplays,
       stimuli: StimulusSource,
-      theme: Theme = Theme.Light,
       dialogs: Option[PlatformDialogs] = None,
       messages: Messages = Messages.english,
       project: Option[ProjectPort] = None,
@@ -252,9 +248,11 @@ object StudioWindow:
       assetFiles: Option[AssetFiles] = None,
       panels: PanelSources = PanelSources.notServed
   )(using IORuntime): Either[WindowError, StudioWindow] =
+    // The window starts in the document's theme and follows it (S1.10).
+    val theme = initial.theme
     for
-      sheets <- StudioStyles.stylesheets(theme).left.map(WindowError.Styles(_))
-      dock   <- dockTheme.left.map(WindowError.Styles(_))
+      _      <- ThemeHost.sheets(theme).left.map(WindowError.Styles(_))
+      dock   <- ThemeHost.dockTheme(theme).left.map(WindowError.Styles(_))
       window <- build(
         initial,
         moment,
@@ -271,9 +269,7 @@ object StudioWindow:
         assetFiles,
         panels
       )
-    yield
-      window.root.getStylesheets.setAll(sheets*)
-      window
+    yield window
 
   private def build(
       initial: AppModel,
@@ -309,12 +305,20 @@ object StudioWindow:
         }
     )
     dockOf = () => host.dock.state.maximized.isDefined
+    // Late-bound too: a dialog's window follows the window's theme.
+    var themed: Option[ThemeHost] = None
     // Late-bound too: a verification's answer goes to the admission ledger.
     var ledger: Option[AdmissionLedgerHost] = None
     val effects                             = DesktopEffects(
       session,
       dialogs.getOrElse(
-        fxDialogs(() => runtime.fold(initial)(_.model), messages, project, presets)
+        fxDialogs(
+          () => runtime.fold(initial)(_.model),
+          messages,
+          project,
+          presets,
+          scene => themed.foreach(_.register(scene))
+        )
       ),
       p =>
         host.reset(p)
@@ -341,6 +345,14 @@ object StudioWindow:
         )
       )
     r.listen(shell.render)
+    // The window's theme: the document's, applied to the window, its dock and
+    // its floating windows; the platform's scheme reported for System (S1.10).
+    val themes = ThemeHost(shell.root, host.dock, dispatch)
+    themed = Some(themes)
+    val themeListener: AppModel => Unit = themes.sync
+    r.listen(themeListener)
+    themes.sync(r.model)
+    themes.start()
     // The column-mapping pane (Data): the import wizard on the selected
     // revision. Saved presets are read once, off the JavaFX thread.
     val mapping = ColumnMappingPaneHost(
@@ -514,6 +526,8 @@ object StudioWindow:
         preflight,
         preflightListener,
         figures,
-        figuresListener
+        figuresListener,
+        themes,
+        themeListener
       )
     )

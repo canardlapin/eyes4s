@@ -19,9 +19,16 @@ package eyes4s.studio.desktop.shell
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.app.keys.CommandRegistry
 import eyes4s.studio.app.text.Messages
-import eyes4s.studio.app.vm.{BarMenuVM, Menus, Shell}
+import eyes4s.studio.app.vm.{BarMenuVM, MenuItemVM, Menus, Shell}
 import eyes4s.studio.desktop.dock.PerspectiveHost
-import javafx.scene.control.{Menu, MenuBar, MenuItem, SeparatorMenuItem}
+import javafx.scene.control.{
+  Menu,
+  MenuBar,
+  MenuItem,
+  RadioMenuItem,
+  SeparatorMenuItem,
+  ToggleGroup
+}
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.{Priority, StackPane, VBox}
 
@@ -120,6 +127,20 @@ final class AppShell(
     renderMenus(Menus.bar(model, messages))
     host.sync(model)
 
+  private def menuItem(i: MenuItemVM): MenuItem =
+    val item = i.checked match
+      case Some(on) =>
+        val r = RadioMenuItem(i.label)
+        r.setSelected(on)
+        r.setMnemonicParsing(false)
+        r.setDisable(!i.enabled)
+        r.setOnAction(_ => dispatch(i.intent))
+        r
+      case None => AppShell.item(i.label, i.enabled, () => dispatch(i.intent))
+    item.setId(i.command.value)
+    i.shortcut.map(ShellKeys.combination).foreach(item.setAccelerator)
+    item
+
   private var shownMenus: Vector[BarMenuVM] = Vector.empty
 
   /** The menus as drawn, by title, for tests. */
@@ -140,15 +161,38 @@ final class AppShell(
         if !before.lift(i).contains(vm) then
           menu.setText(vm.title)
           menu.setMnemonicParsing(false)
-          menu.getItems.setAll(vm.items.map { i =>
-            val item = AppShell.item(i.label, i.enabled, () => dispatch(i.intent))
-            item.setId(i.command.value)
-            i.shortcut.map(ShellKeys.combination).foreach(item.setAccelerator)
-            item
-          }*): Unit
+          menu.getItems.setAll(
+            AppShell
+              .grouped(vm.items)
+              .map {
+                case (None, items)        => items.map(menuItem)
+                case (Some(title), items) =>
+                  // A submenu of choices (View › Appearance): radio items, the
+                  // current one selected.
+                  val sub   = Menu(title)
+                  val group = ToggleGroup()
+                  sub.setMnemonicParsing(false)
+                  sub.getItems.setAll(items.map(menuItem)*)
+                  sub.getItems.forEach {
+                    case r: RadioMenuItem => r.setToggleGroup(group)
+                    case _                => ()
+                  }
+                  Vector(sub)
+              }
+              .flatten*
+          ): Unit
       }
 
 object AppShell:
+
+  /** A menu's items, runs of one submenu together, in order. */
+  def grouped(items: Vector[MenuItemVM]): Vector[(Option[String], Vector[MenuItemVM])] =
+    items.foldLeft(Vector.empty[(Option[String], Vector[MenuItemVM])]) { (acc, i) =>
+      acc.lastOption match
+        case Some((sub, run)) if sub == i.submenu => acc.init :+ (sub  -> (run :+ i))
+        case _                                    => acc :+ (i.submenu -> Vector(i))
+    }
+
   /** Whether JavaFX draws the menu bar in the platform's own place. */
   val systemMenuBar: Boolean =
     sys.props.get("os.name").exists(_.toLowerCase.contains("mac"))

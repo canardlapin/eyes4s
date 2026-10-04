@@ -17,6 +17,7 @@
 package eyes4s.studio.app
 
 import eyes4s.codec.CanonicalDigest
+import eyes4s.studio.app.appearance.{Appearance, AppearanceState}
 import eyes4s.studio.app.jobs.JobBoard
 import eyes4s.studio.app.keys.{CommandId, CommandRegistry, KeyChord}
 import eyes4s.studio.app.layout.{LayoutId, PaneId, PerspectiveLayout, StudioLayouts}
@@ -49,7 +50,8 @@ import eyes4s.studio.core.document.{
   PresentationState,
   Recipe,
   RunLifecycle,
-  StudioDocument
+  StudioDocument,
+  Theme
 }
 import eyes4s.studio.core.freshness.{Freshness, SessionFacts}
 import eyes4s.studio.core.preview.PreviewReady
@@ -424,6 +426,14 @@ enum Intent derives CanEqual:
   /** View › Reset perspective: the current perspective's layouts. */
   case ResetPerspective
 
+  /** View › Appearance (S1.10): Light and Dark set the document's theme;
+    * System follows the platform's.
+    */
+  case SetAppearance(appearance: Appearance)
+
+  /** The platform's theme, as it reports it (at start and on each change). */
+  case SystemTheme(theme: Theme)
+
   /** The shell's current arrangement of each perspective, `None` where it
     * is the default. Only those that differ from the document's are saved
     * (a view-only [[Command.SaveLayout]] each).
@@ -454,10 +464,16 @@ final case class AppModel private (
     pending: Option[Confirmation],
     notice: Option[Notice],
     save: SaveState,
-    prepared: Option[PreparedDesign]
+    prepared: Option[PreparedDesign],
+    appearance: AppearanceState
 ) derives CanEqual:
 
   def document: StudioDocument = history.document
+
+  /** The theme the studio shows (S1.10): the platform's while View ›
+    * Appearance › System is chosen, else the document's.
+    */
+  def theme: Theme             = appearance.effective(document.presentation.theme)
   def perspective: Perspective = document.presentation.perspective
   def location: Location       = navigation.at(perspective)
 
@@ -540,7 +556,8 @@ object AppModel:
       None,
       None,
       SaveState.never,
-      None
+      None,
+      AppearanceState.initial
     )
 
   /** The Analysis trail of the current draft, or of the latest revision. */
@@ -561,6 +578,12 @@ object AppModel:
   /** The Elm-style update: pure and total. A refused command, undo or
     * selection changes nothing but the notice and emits no effect.
     */
+  // The document's theme set to `theme` (a view-only SetTheme), unless it
+  // already is: switching theme changes nothing else.
+  private def followTheme(m: AppModel, theme: Theme): (AppModel, Vector[AppEffect]) =
+    if m.document.presentation.theme == theme then (m, Vector.empty)
+    else update(m, Intent.Dispatch(Command.SetTheme(theme)))
+
   def update(m: AppModel, intent: Intent): (AppModel, Vector[AppEffect]) = intent match
     case Intent.SwitchPerspective(p) => navigate(m, m.navigation.at(p))
     case Intent.Navigate(to)         => navigate(m, to)
@@ -716,6 +739,17 @@ object AppModel:
     case Intent.RevealProject =>
       (m, m.project.fold(none)(_ => Vector(AppEffect.RevealProject)))
     case Intent.ShowProjectInfo => (m, Vector(AppEffect.OpenDialog(PlatformDialog.ProjectInfo)))
+    // Light and Dark are the user's choice, recorded in the document (a
+    // view-only SetTheme); System records nothing: the platform's theme is
+    // shown while it is chosen, and a platform change is no edit.
+    case Intent.SetAppearance(Appearance.System) =>
+      (m.copy(appearance = m.appearance.copy(followSystem = true)), none)
+    case Intent.SetAppearance(a) =>
+      val next = m.copy(appearance = m.appearance.copy(followSystem = false))
+      followTheme(next, next.appearance.themeFor(a))
+    case Intent.SystemTheme(t) =>
+      (m.copy(appearance = m.appearance.copy(system = t)), none)
+
     case Intent.ResetPerspective =>
       // The default arrangement: its default focus, nothing maximized.
       val p       = m.perspective
