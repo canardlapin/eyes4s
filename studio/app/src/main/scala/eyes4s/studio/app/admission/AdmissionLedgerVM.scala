@@ -30,6 +30,7 @@ import eyes4s.studio.core.backend.{
   TrialDisposition,
   TrialKey
 }
+import eyes4s.studio.core.diff.{DatasetDiff, DatasetDiffText}
 import eyes4s.studio.core.document.{DatasetRevisionSpec, OffScreenChoice}
 import eyes4s.studio.core.freshness.{RunFreshness, RunStanding, StaleReason}
 import eyes4s.studio.core.selection.{InventoryKind, LedgerCounts, StudioRef, TallyRegion}
@@ -233,10 +234,12 @@ object AdmissionLedgerVM:
       decisions = decisions(ledger, spec, label, summary),
       canDecide = spec.exists(s => !s.decision.isAdmitted) && ledger.admitting.isEmpty,
       changes = for
-        s      <- summary
-        parent <- spec.flatMap(_.parent)
-        if s.history.nonEmpty
-      yield t(Changes, parent.label, s.history),
+        to   <- spec
+        from <- to.parent.flatMap(model.document.dataset)
+        diff <- DatasetDiff.of(from, to, ledger.status).toOption
+        text = DatasetDiffText.summary(diff)
+        if text.nonEmpty
+      yield t(Changes, from.id.label, text),
       consequence = spec.filter(!_.decision.isAdmitted).map(s => consequence(model, s.id)),
       admit = t(Admit, label),
       canAdmit = spec.exists(s => AdmissionLedger.blocked(ledger, s).isEmpty),

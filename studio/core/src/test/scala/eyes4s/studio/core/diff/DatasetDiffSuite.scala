@@ -21,6 +21,7 @@ import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.DocumentSamples.t2
 import eyes4s.studio.core.fixture.StoryMoments.{r2, r3}
+import eyes4s.studio.core.selection.StudioRef
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 
@@ -134,7 +135,16 @@ class DatasetDiffSuite extends munit.ScalaCheckSuite:
 
   test("a ledger that cannot be read is said, not hidden") {
     val diff = right(
-      DatasetDiff.fromParent(t2, r3, StatusDiff.Unavailable(r2, "data r2 is not served"))
+      DatasetDiff.fromParent(
+        t2,
+        r3,
+        StatusDiff.Unavailable(
+          r2,
+          LedgerUnavailable.Refused(
+            LedgerReadError.Refused(BackendError.Unavailable(DiagnosticLocus.Dataset(r2)))
+          )
+        )
+      )
     )
     assertEquals(
       DatasetDiffText.summary(diff),
@@ -160,6 +170,12 @@ class DatasetDiffSuite extends munit.ScalaCheckSuite:
       DatasetDiffText.transitions(changes),
       "not listed → absent 1, admitted → not listed 1"
     )
+    // Every changed trial is a ref the count leads to.
+    assertEquals(
+      changes.transitions.flatMap(_.refs),
+      Vector(StudioRef.Trial(key("c")), StudioRef.Trial(key("b")))
+    )
+    assertEquals(changes.changes.map(_.ref), changes.transitions.flatMap(_.refs))
     assertEquals(DatasetDiffText.statusCount(1), "1 trial changes status")
   }
 

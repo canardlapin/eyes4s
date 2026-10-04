@@ -26,6 +26,7 @@ import eyes4s.studio.core.backend.{
   LedgerEntry,
   LedgerPages
 }
+import eyes4s.studio.core.diff.LedgerUnavailable
 import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective}
 import eyes4s.studio.desktop.runtime.StudioSession
 import javafx.application.Platform
@@ -36,6 +37,12 @@ import javafx.application.Platform
 trait LedgerInputs:
   def admission(dataset: DatasetRevision, done: AdmissionAnswer => Unit): Unit
   def ledger(dataset: DatasetRevision, done: Either[String, Vector[LedgerEntry]] => Unit): Unit
+
+  /** `dataset`'s whole ledger for a comparison (S5.8), or why it is not there. */
+  def compared(
+      dataset: DatasetRevision,
+      done: Either[LedgerUnavailable, Vector[LedgerEntry]] => Unit
+  ): Unit
 
 object LedgerInputs:
   /** The window's backend. */
@@ -50,6 +57,15 @@ object LedgerInputs:
         session.run(LedgerPages.all(session.backend.ledger(dataset, _))) {
           case Left(e)          => done(Left(reason(e)))
           case Right(Left(err)) => done(Left(err.message))
+          case Right(Right(es)) => done(Right(es))
+        }
+      def compared(
+          dataset: DatasetRevision,
+          done: Either[LedgerUnavailable, Vector[LedgerEntry]] => Unit
+      ): Unit =
+        session.run(LedgerPages.all(session.backend.ledger(dataset, _))) {
+          case Left(e)          => done(Left(LedgerUnavailable.Failed(reason(e))))
+          case Right(Left(err)) => done(Left(LedgerUnavailable.Refused(err)))
           case Right(Right(es)) => done(Right(es))
         }
 
@@ -128,6 +144,11 @@ final class AdmissionLedgerHost(
         inputs.ledger(
           d,
           r => Platform.runLater(() => dispatch(LedgerIntent.LedgerRead(d, ask, r)))
+        )
+      case LedgerEffect.RequestParentLedger(d, ask) =>
+        inputs.compared(
+          d,
+          r => Platform.runLater(() => dispatch(LedgerIntent.ParentLedgerRead(d, ask, r)))
         )
     }
 

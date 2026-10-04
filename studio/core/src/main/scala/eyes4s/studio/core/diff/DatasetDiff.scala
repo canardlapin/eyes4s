@@ -16,8 +16,15 @@
 
 package eyes4s.studio.core.diff
 
-import eyes4s.studio.core.backend.{DatasetRevision, LedgerEntry, TrialDisposition, TrialKey}
+import eyes4s.studio.core.backend.{
+  DatasetRevision,
+  LedgerEntry,
+  LedgerReadError,
+  TrialDisposition,
+  TrialKey
+}
 import eyes4s.studio.core.document.*
+import eyes4s.studio.core.selection.StudioRef
 
 /** Which of a dataset revision's column mappings a change is in. */
 enum MappedSource derives CanEqual:
@@ -83,12 +90,15 @@ object TrialStatus:
 
 /** One trial whose status differs between two ledgers. */
 final case class StatusChange(trial: TrialKey, from: TrialStatus, to: TrialStatus)
-    derives CanEqual
+    derives CanEqual:
+  /** The trial, where the diff's counts lead. */
+  def ref: StudioRef = StudioRef.Trial(trial)
 
 /** The trials that went from one status to another. */
 final case class Transition(from: TrialStatus, to: TrialStatus, trials: Vector[TrialKey])
     derives CanEqual:
-  def count: Int = trials.size
+  def count: Int             = trials.size
+  def refs: Vector[StudioRef] = trials.map(StudioRef.Trial(_))
 
 /** The trials whose admission status differs between the ledgers of two
   * dataset revisions, joined by trial key. Studio compares the statuses
@@ -144,12 +154,26 @@ object StatusChanges:
       }
       StatusChanges(from, to, later ++ dropped)
 
+/** Why a revision's ledger is not there to compare. */
+enum LedgerUnavailable derives CanEqual:
+  /** The backend answered, and its answer was no (the fake backend serves
+    * no ledger for data r2).
+    */
+  case Refused(error: LedgerReadError)
+
+  /** The call itself failed; `reason` names what failed. */
+  case Failed(reason: String)
+
+  def message: String = this match
+    case Refused(error)  => error.message
+    case Failed(reason) => reason
+
 /** Whether the trial statuses of two revisions were compared. */
 enum StatusDiff derives CanEqual:
   case Compared(changes: StatusChanges)
 
-  /** A ledger could not be read: `dataset`'s, for `reason`. */
-  case Unavailable(dataset: DatasetRevision, reason: String)
+  /** `dataset`'s ledger could not be read. */
+  case Unavailable(dataset: DatasetRevision, error: LedgerUnavailable)
 
   /** The ledgers have not been read yet. */
   case NotRead
