@@ -1,21 +1,21 @@
-Eyes Studio desktop: third-party libraries used by figure export (S9.3)
+Eyes Studio desktop: third-party notices
 
-Figure export writes PDF through Intaglio's PDF renderer, which uses Apache
-PDFBox, and PNG through Intaglio's Java2D renderer. These libraries are used
-by the desktop application only (studio-desktop); the portable studio modules
-do not depend on them (enforced by checkStudioBoundaries).
+THIRD-PARTY-COMPONENTS.txt, beside this file, lists every library on the
+studio-desktop runtime classpath and every bundled file, with its version,
+licence (an SPDX expression) and copyright holder. The sbt build generates it
+from the resolved dependency graph and the reviewed licence table
+studio/desktop/licences.tsv (ticket S1.14); the build fails when a resolved
+library has no entry (checkStudioNotices). components.tsv is the same list
+for the About box.
 
-Library                                   Version  Licence
-org.apache.pdfbox:pdfbox                  3.0.8    Apache License 2.0
-org.apache.pdfbox:pdfbox-io               3.0.8    Apache License 2.0
-org.apache.pdfbox:fontbox                 3.0.8    Apache License 2.0
-commons-logging:commons-logging           1.4.0    Apache License 2.0
-io.github.canardlapin:intaglio-pdf        pinned   Apache License 2.0
-io.github.canardlapin:intaglio-java2d     pinned   Apache License 2.0 (studio/pins.properties)
+licences/<SPDX id>.txt holds the text of every licence the list names
+(licences/SOURCES.md gives their source and checksums).
 
-Each library's LICENSE and NOTICE, as shipped in its jar's META-INF, is in
-this directory as <artifact>-<version>-LICENSE.txt and -NOTICE.txt. PDFBox's
-LICENSE also carries the licences of the third-party material it contains.
+Libraries that ship their own LICENSE and NOTICE files in their jar's
+META-INF have them here too, as <artifact>-<version>-LICENSE.txt and
+-NOTICE.txt: Apache PDFBox, PDFBox IO, FontBox and Commons Logging, which
+figure export (S9.3) uses through Intaglio's PDF renderer. PDFBox's LICENSE
+also carries the licences of the third-party material it contains.
 
-The figure fonts embedded in exported files are under the SIL Open Font
-License 1.1 (../fonts/OFL-*.txt), which permits embedding them in documents.
+The fonts embedded in exported figures are under the SIL Open Font License
+1.1 (../fonts/OFL-*.txt), which permits embedding them in documents.

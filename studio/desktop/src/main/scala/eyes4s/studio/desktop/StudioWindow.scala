@@ -224,6 +224,23 @@ object StudioWindow:
           )
           // The wizard follows later theme changes too (S1.10).
           themed(stage.getScene)
+        case PlatformDialog.About =>
+          // The About box (S1.14), in its own window with the studio's styles.
+          val theme = model().theme match
+            case eyes4s.studio.core.document.Theme.Light => Theme.Light
+            case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
+          val stage = javafx.stage.Stage()
+          val view  = eyes4s.studio.desktop.shell.AboutView(
+            eyes4s.studio.app.about.AboutBox.vm(eyes4s.studio.desktop.shell.DesktopAbout.facts),
+            () => stage.close()
+          )
+          val scene = javafx.scene.Scene(view.node, 560, 560)
+          scene.getStylesheets.setAll(StudioStyles.stylesheets(theme).getOrElse(Nil)*)
+          stage.setTitle(messages(MessageId.CommandAbout))
+          stage.setScene(scene)
+          // The About box follows later theme changes too (S1.10).
+          themed(scene)
+          stage.show()
         case PlatformDialog.OpenProject =>
           System.err.println(s"$dialog is not available until S2.9.")
 

@@ -224,6 +224,9 @@ enum PlatformDialog derives CanEqual:
   /** The project's location, size and format version (S1.4). */
   case ProjectInfo
 
+  /** The About box: the build and its components (S1.14). */
+  case About
+
 /** What the application must do after an update: data, performed by the
   * shell and services, never by [[AppModel.update]] (DESIGN_SPEC section 13).
   */
@@ -422,6 +425,9 @@ enum Intent derives CanEqual:
   case LayoutsUnreadable(perspectives: Vector[Perspective], reason: String)
   case RevealProject
   case ShowProjectInfo
+
+  /** Help › About Eyes Studio (S1.14). */
+  case ShowAbout
 
   /** View › Reset perspective: the current perspective's layouts. */
   case ResetPerspective
@@ -739,6 +745,7 @@ object AppModel:
     case Intent.RevealProject =>
       (m, m.project.fold(none)(_ => Vector(AppEffect.RevealProject)))
     case Intent.ShowProjectInfo => (m, Vector(AppEffect.OpenDialog(PlatformDialog.ProjectInfo)))
+    case Intent.ShowAbout       => (m, Vector(AppEffect.OpenDialog(PlatformDialog.About)))
     // Light and Dark are the user's choice, recorded in the document (a
     // view-only SetTheme); System records nothing: the platform's theme is
     // shown while it is chosen, and a platform change is no edit.

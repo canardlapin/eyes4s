@@ -69,7 +69,7 @@ class KeymapFxSuite extends ShellFxSuite:
       val menus = runOnFx(w.shell.menus)
       assertEquals(
         runOnFx(menus.map(_.getText)),
-        Vector("File", "Edit", "View", "Go", "Run", "Window")
+        Vector("File", "Edit", "View", "Go", "Run", "Window", "Help")
       )
       // A submenu (View › Appearance) lists its commands in place.
       def flat(i: javafx.scene.control.MenuItem): Vector[javafx.scene.control.MenuItem] =
