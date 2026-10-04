@@ -25,6 +25,7 @@ import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{ClockTime, ProjectName}
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.admission.{AdmissionLedgerHost, LedgerInputs}
+import eyes4s.studio.desktop.compare.{CompareSummaryHost, SummaryInputs}
 import eyes4s.studio.desktop.dock.{DockGesture, PerspectiveHost}
 import eyes4s.studio.desktop.runtime.{
   DesktopEffects,
@@ -60,7 +61,8 @@ final class StudioWindow private (
     val effects: DesktopEffects,
     val project: Option[ProjectPort],
     val columnMapping: ColumnMappingPaneHost,
-    val admission: AdmissionLedgerHost
+    val admission: AdmissionLedgerHost,
+    val summary: CompareSummaryHost
 ):
   /** The window content, with the studio stylesheets. */
   def root: javafx.scene.Parent = shell.root
@@ -81,6 +83,7 @@ final class StudioWindow private (
   def bind(stage: javafx.stage.Stage): Unit = runtime.listen(_ => stage.setTitle(title))
 
   def close(): Unit =
+    summary.dispose()
     project.foreach(_.close())
     session.close()
 
@@ -275,4 +278,15 @@ object StudioWindow:
     ledger = Some(admission)
     host.host(StudioLayouts.admission, admission.node)
     r.listen(admission.sync)
-    Right(StudioWindow(session, r, host, shell, effects, project, mapping, admission))
+    // Compare's summary layout (Results board): the shown run's summary.
+    val summary = CompareSummaryHost(() => r.model, dispatch, SummaryInputs.of(session))
+    Vector(
+      "compare.participant-plot"       -> summary.participantPlot.plotNode,
+      "compare.participant-plot.table" -> summary.participantPlot.tableNode,
+      "compare.scale-profile"          -> summary.scaleProfile.plotNode,
+      "compare.scale-profile.table"    -> summary.scaleProfile.tableNode,
+      "compare.participant-table"      -> summary.participantNode,
+      "compare.query-table"            -> summary.queryTable
+    ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
+    r.listen(summary.sync)
+    Right(StudioWindow(session, r, host, shell, effects, project, mapping, admission, summary))
