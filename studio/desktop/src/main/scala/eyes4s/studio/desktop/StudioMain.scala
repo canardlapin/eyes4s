@@ -23,6 +23,8 @@ import javafx.application.{Application, Platform}
 import javafx.scene.Scene
 import javafx.scene.control.Label
 import eyes4s.studio.desktop.explore.{NavigatorDisplays, SessionBackend}
+import eyes4s.studio.app.report.LogState
+import eyes4s.studio.desktop.report.{ErrorDialogView, ErrorReporter, StudioLog}
 import eyes4s.studio.desktop.trial.StimulusSource
 import javafx.stage.Stage
 
@@ -45,9 +47,27 @@ final class StudioApplication extends Application:
 
   override def start(stage: Stage): Unit =
     stage.setTitle(StudioMain.title)
+    // S1.12: the log, then the error reporter, before anything can fail.
+    val log = StudioLog.open()
+    log.left.foreach(e => System.err.println(e.message))
+    val reporter = ErrorReporter(
+      ErrorReporter.facts,
+      () => window.flatMap(w => ErrorReporter.digestOf(w.runtime.model)),
+      log.toOption.map(_.logger("eyes4s.studio")),
+      log.fold(e => LogState.Unavailable(e.message), _.state),
+      (vm, closed) =>
+        ErrorDialogView.show(vm, closed, Option(stage.getScene).map(_.getWindow)): Unit
+    )
+    reporter.install(): Unit
     StudioMain.initialModel.flatMap(
       StudioWindow
-        .open(_, StoryMoment.T2, StudioMain.displays, StudioMain.stimuli)
+        .open(
+          _,
+          StoryMoment.T2,
+          StudioMain.displays,
+          StudioMain.stimuli,
+          defect = reporter.jobFailed
+        )
         .left
         .map(_.message)
     ) match

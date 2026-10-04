@@ -69,7 +69,8 @@ final class DesktopEffects(
     project: Option[ProjectPort] = None,
     clock: () => Option[ClockTime] = DesktopEffects.wallClock,
     verified: (DatasetRevision, CanonicalDigest[DatasetRevisionSpec], AdmissionAnswer) => Unit =
-      (_, _, _) => ()
+      (_, _, _) => (),
+    defect: (String, Throwable) => Unit = (_, _) => ()
 ) extends EffectPerformer:
 
   private val found = mutable.ArrayBuffer.empty[EffectProblem]
@@ -77,14 +78,14 @@ final class DesktopEffects(
   /** Every effect not carried out, in order. Read on the UI thread. */
   def problems: Vector[EffectProblem] = found.toVector
 
-  /** Refusals and failures also go to stderr until S1.12's log exists;
-    * effects not wired yet are only recorded (every view change journals).
+  /** Refusals and failures also go to the studio log (S1.12); effects not
+    * wired yet are only recorded (every view change journals).
     */
   private def report(problem: EffectProblem): Unit =
     found += problem
     problem match
       case _: EffectProblem.NotWired => ()
-      case _                         => System.err.println(problem.message)
+      case _                         => DesktopEffects.log.warn(problem.message)
 
   def perform(effect: AppEffect, dispatch: Intent => Unit): Unit = effect match
     case AppEffect.Execution(e) =>
@@ -99,8 +100,12 @@ final class DesktopEffects(
                 dispatch(Intent.PreparedRefused(ready, error))
               case _ => ()
           }
-        case Left(defect) =>
-          ui(() => report(EffectProblem.Failed(e, String.valueOf(defect.getMessage))))
+        case Left(failure) =>
+          ui { () =>
+            report(EffectProblem.Failed(e, String.valueOf(failure.getMessage)))
+            // A job's defect opens the error report (S1.12).
+            defect(e.productPrefix, failure)
+          }
       }
     case AppEffect.OpenDialog(d)     => dialogs.open(d, dispatch)
     case AppEffect.ResetLayouts(p)   => resetLayouts(p)
@@ -124,6 +129,8 @@ final class DesktopEffects(
       }
 
 object DesktopEffects:
+  private val log = org.slf4j.LoggerFactory.getLogger("eyes4s.studio.effects")
+
   /** The local wall-clock time now, as the status bar shows it. */
   val wallClock: () => Option[ClockTime] = () =>
     val now = java.time.LocalTime.now()

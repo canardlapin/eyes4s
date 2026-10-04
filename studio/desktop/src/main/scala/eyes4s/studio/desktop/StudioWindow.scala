@@ -243,7 +243,9 @@ object StudioWindow:
       presets: FilePresetStore = FilePresetStore.userDefault,
       // The window's backend serves the source records unless one is given.
       records: Option[eyes4s.studio.app.explore.SourceRecordsSource] = None,
-      panels: PanelSources = PanelSources.notServed
+      panels: PanelSources = PanelSources.notServed,
+      // S1.12: a job's defect, by the kind of effect that failed.
+      defect: (String, Throwable) => Unit = (_, _) => ()
   )(using IORuntime): Either[WindowError, StudioWindow] =
     for
       sheets <- StudioStyles.stylesheets(theme).left.map(WindowError.Styles(_))
@@ -261,7 +263,8 @@ object StudioWindow:
         nativeMenu,
         presets,
         records,
-        panels
+        panels,
+        defect
       )
     yield
       window.root.getStylesheets.setAll(sheets*)
@@ -280,7 +283,8 @@ object StudioWindow:
       nativeMenu: Boolean,
       presets: FilePresetStore,
       records: Option[eyes4s.studio.app.explore.SourceRecordsSource],
-      panels: PanelSources
+      panels: PanelSources,
+      defect: (String, Throwable) => Unit
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None
@@ -315,7 +319,8 @@ object StudioWindow:
       f => Platform.runLater(() => f()),
       project,
       clock,
-      (dataset, content, answer) => ledger.foreach(_.verified(dataset, content, answer))
+      (dataset, content, answer) => ledger.foreach(_.verified(dataset, content, answer)),
+      defect
     )
     val adopted = session.adopt(initial.document)
     adopted.collect { case Left(e) => e }.foreach(e => System.err.println(e.message))
