@@ -135,6 +135,16 @@ class GeometryPanelSuite extends munit.FunSuite:
     assertEquals(GeometryPanelVM.of(panel, t1, None).outsideWindow.ref, None)
   }
 
+  test("a count opens the eyes4s tally it shows, as the admission ledger's counts do") {
+    val (panel, _)      = synced(t1)
+    val ref             = StudioRef.WindowTally(r3, TallyRegion.OutsideWindow)
+    val (same, effects) = GeometryPanel.update(panel, t1, GeometryIntent.OpenCount(ref))
+    assertEquals(same, panel)
+    assertEquals(effects, Vector(GeometryEffect.App(Intent.Explain(Place.At(ref)))))
+    val opened = perform(t1, effects)
+    assertEquals(opened.location.trail.lastOption, Some(Place.At(ref)))
+  }
+
   test("switching the off-screen policy edits the pending draft r3 in one undoable step") {
     val (panel, _)       = synced(t1)
     val (after, effects) =
@@ -515,4 +525,26 @@ class GeometryPanelSuite extends munit.FunSuite:
       panel.positions.toOption.get.position(3).map(p => (p.x, p.y)),
       Some((260.0, 120.0))
     )
+  }
+
+  test("without its trial in the records read, an overlap is still refused, by the rules") {
+    val p05 = CorrectionRule(
+      CorrectionTarget.Participant(ok(ParticipantId.of("P05"))),
+      CoordinateCorrection.FlipY
+    )
+    val model =
+      perform(
+        t1,
+        Vector(GeometryEffect.App(Intent.Dispatch(Command.AddCorrection(r3, 0, p05))))
+      )
+    // The records are not read: no trial of the source is known.
+    val (panel, _) = synced(model)
+    val form       = Vector(
+      GeometryIntent.MarkTrial(p05ret04),
+      GeometryIntent.OpenOrientation,
+      GeometryIntent.ChooseScope(OrientationScope.ThisParticipant)
+    ).foldLeft(panel)((p, i) => GeometryPanel.update(p, model, i)._1)
+    val (after, effects) = GeometryPanel.update(form, model, GeometryIntent.RecordOrientation)
+    assertEquals(effects, Vector.empty)
+    assert(after.problem.exists(_.contains("rules 1 and 2 both cover a trial")), after.problem)
   }

@@ -118,6 +118,11 @@ enum GeometryIntent derives CanEqual:
 
   /** A thumbnail was chosen: the trial "Mark trial as wrong orientation…" acts on. */
   case MarkTrial(trial: TrialKey)
+
+  /** Open a count's records (S5.5 follow-up): explain `ref`, the eyes4s
+    * tally it shows, as the admission ledger's counts do.
+    */
+  case OpenCount(ref: StudioRef)
   case OpenOrientation
   case ChooseFix(fix: OrientationFix)
   case ChooseScope(scope: OrientationScope)
@@ -274,7 +279,9 @@ object GeometryPanel:
             if panel.shown.exists(_.geometry == g) then (panel.copy(problem = None), none)
             else change(panel, model, GeometryChange.SetGeometry(g))
       case ChooseOffScreen(policy) => change(panel, model, GeometryChange.SetOffScreen(policy))
-      case MarkTrial(trial)        =>
+      case OpenCount(ref)          =>
+        (panel, Vector(GeometryEffect.App(Intent.Explain(Place.At(ref)))))
+      case MarkTrial(trial) =>
         (
           panel.copy(
             marked = Some(trial),

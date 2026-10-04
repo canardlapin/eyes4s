@@ -19,6 +19,7 @@ package eyes4s.studio.desktop.geometry
 import eyes4s.studio.app.geometry.*
 import eyes4s.studio.core.document.OffScreenChoice
 import eyes4s.studio.core.importing.GeometryField
+import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.desktop.plot.{CanvasPlotHost, PlotHostStatus}
 import eyes4s.studio.desktop.tokens.TokenFiles
 import eyes4s.studio.viz.plot.PlotScene
@@ -193,8 +194,8 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
   policyNote.setWrapText(true)
 
   // --- counts ------------------------------------------------------------------------------------
-  val outsideWindow: CountView = CountView()
-  val outsideScreen: CountView = CountView()
+  val outsideWindow: CountView = CountView(fire)
+  val outsideScreen: CountView = CountView(fire)
   val countsSource: Label      = label("geometry-note", "t11")
   countsSource.setWrapText(true)
 
@@ -476,10 +477,15 @@ object GeometryPanelView:
       node.setVisible(vm.isDefined)
 
   /** A count of records outside a frame, with what it means. */
-  final class CountView:
+  final class CountView(fire: GeometryIntent => Unit):
     val title: Label = label("geometry-strong", "t12")
-    val value: Label = label("geometry-count", "mono", "t12")
+    // The count opens the eyes4s tally it shows (S5.5 follow-up).
+    val value: Button = Button()
+    value.getStyleClass.addAll("geometry-count", "mono", "t12")
+    value.setMnemonicParsing(false)
     value.setMinWidth(Region.USE_PREF_SIZE)
+    private var ref: Option[StudioRef] = None
+    value.setOnAction(_ => ref.foreach(r => fire(GeometryIntent.OpenCount(r))))
     val note: Label = label("geometry-note", "t11")
     note.setWrapText(true)
     private val head = HBox(title, spacer(), value)
@@ -491,4 +497,6 @@ object GeometryPanelView:
       title.setText(vm.title)
       value.setText(vm.value.getOrElse("—"))
       value.setAccessibleText(s"${vm.title}: ${vm.value.getOrElse("—")}")
+      ref = vm.ref
+      value.setDisable(vm.ref.isEmpty)
       note.setText(vm.note)
