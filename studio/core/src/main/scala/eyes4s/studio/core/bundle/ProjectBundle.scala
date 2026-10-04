@@ -352,6 +352,18 @@ object ProjectBundle:
                       .MalformedPart(d.dataset.path, "a dataset's relinks are an array")
                   )
                 )
+                // A part's repairs are its own revision's, never another's.
+                .flatMap(relinks =>
+                  relinks
+                    .find(r => r.hcursor.downField("dataset").focus != obj("id"))
+                    .map(_ =>
+                      BundleError.MalformedPart(
+                        d.dataset.path,
+                        "a dataset's relinks name another dataset revision"
+                      )
+                    )
+                    .toLeft(relinks)
+                )
                 .map(relinks =>
                   (Json.fromJsonObject(obj.remove("relinks").add("mapping", mapping)), relinks)
                 )

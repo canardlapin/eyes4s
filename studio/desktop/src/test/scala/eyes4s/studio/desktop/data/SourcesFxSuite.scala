@@ -61,16 +61,14 @@ class SourcesFxSuite extends ShellFxSuite:
       stored += ((kind, name, bytes.length))
       done(Right(()))
 
-  private val chosen: AssetFiles = (_, done) =>
-    done(
-      Right(
-        Some(
-          AssetFile.of("forest_044_found.png").toOption.get -> IArray.from(
-            "png".getBytes(UTF_8)
-          )
-        )
-      )
+  /** A real image's bytes, chosen as forest_044_found.png. */
+  private val png: IArray[Byte] = IArray.unsafeFromArray(
+    java.nio.file.Files.readAllBytes(
+      eyes4s.studio.desktop.trial.GoldenTrials.stimuli.resolve("beach-042.png")
     )
+  )
+  private val chosen: AssetFiles = (_, done) =>
+    done(Right(Some(AssetFile.of("forest_044_found.png").toOption.get -> png)))
 
   private def ready(
       fx: FxStage,
@@ -134,7 +132,7 @@ class SourcesFxSuite extends ShellFxSuite:
       )
       assertEquals(
         project.stored.toVector,
-        Vector((InputKind.StimulusImage, "forest_044_found.png", 3))
+        Vector((InputKind.StimulusImage, "forest_044_found.png", png.length))
       )
       val relink = runOnFx(w.runtime.model.document.relinks.of(StoryMoments.r3)).head
       assertEquals(
@@ -147,6 +145,13 @@ class SourcesFxSuite extends ShellFxSuite:
       assertEquals(runOnFx(v.missingTitle.getText), "1 image file missing")
       assertEquals(runOnFx(v.sourceLines(2)(2)), "258 of 259 images found")
       assertEquals(runOnFx(v.note.getText), "forest-044.png repaired with forest_044_found.png")
+      // The repair is shown with its bytes' digest (provenance).
+      assertEquals(
+        runOnFx(v.repairLines),
+        Vector(
+          s"forest-044.png ← forest_044_found.png · sha256:${eyes4s.codec.ByteDigest.sha256(png).hex.take(12)}"
+        )
+      )
       // Show 2 trials opens the first in Explore.
       runOnFx(v.showTrials.fire())
       fx.awaitLayout()
@@ -155,4 +160,25 @@ class SourcesFxSuite extends ShellFxSuite:
         runOnFx(w.runtime.model.location.trail.last),
         Place.At(StudioRef.Trial(TrialKey("P01", Phase.Encoding, "enc_15", 1)))
       )
+  }
+
+  fxStage.test("Repair… refuses a file that is not an image, naming it") { fx =>
+    val project          = Stores()
+    val text: AssetFiles = (_, done) =>
+      done(
+        Right(
+          Some(
+            AssetFile.of("notes.png").toOption.get -> IArray.from(
+              "not an image".getBytes(UTF_8)
+            )
+          )
+        )
+      )
+    val w = ready(fx, Some(project), text)
+    runOnFx(w.sources.view.repair.fire())
+    eventually(fx, "the refusal")(
+      w.sources.view.note.getText.contains("notes.png is not an image")
+    )
+    assertEquals(project.stored.toVector, Vector.empty)
+    assertEquals(runOnFx(w.runtime.model.document.relinks.of(StoryMoments.r3)), Vector.empty)
   }

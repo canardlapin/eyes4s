@@ -26,7 +26,9 @@ import eyes4s.studio.core.backend.{Phase, TrialKey}
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.core.fixture.{GoldenAssets, StoryMoments}
-import eyes4s.studio.core.selection.{DisplayCount, InventoryKind, StudioRef}
+import eyes4s.studio.core.selection.{DisplayCount, StudioRef}
+import eyes4s.studio.app.text.SourcesText
+import eyes4s.studio.core.backend.DatasetRevision
 
 /** The Data perspective's Sources pane, headless (ticket S5.7; Data.dc.html,
   * left), on t2's r3 with the golden registry: 960 trials, 257 of 259 images
@@ -65,10 +67,10 @@ class SourcesPaneSuite extends munit.FunSuite:
         ("stimuli/", "Images", Some("257 of 259 images found"))
       )
     )
-    assertEquals(
-      vm.sources(1).refs,
-      Vector(StudioRef.InventoryCount(r3, InventoryKind.Inventory))
-    )
+    // The inventory row's count is the registry's trials, and its ref names that count.
+    assertEquals(vm.sources(1).refs, Vector(tally(DisplayCount.Trials)))
+    assertEquals(SourcesText.tally(r3, DisplayCount.Trials), "r3 · trials with a display")
+    assertEquals((vm.repairsTitle, vm.repairs), ("Repaired images", Vector.empty))
     assertEquals(
       vm.sources(2).refs,
       Vector(tally(DisplayCount.ImagesFound), tally(DisplayCount.ImagesNamed))
@@ -119,10 +121,29 @@ class SourcesPaneSuite extends munit.FunSuite:
     val repaired = AppModel.update(model, Intent.Dispatch(command))._1
     assertEquals(repaired.document.relinks.of(r3).size, 1)
     val vm = SourcesVM.of(located, repaired)
+    // Each repair is shown with its bytes' digest.
+    assertEquals(
+      vm.repairs,
+      Vector(s"forest-044.png ← forest_044_restored.png · sha256:${sha.hex.take(12)}")
+    )
     assertEquals(vm.sources(2).count, Some("258 of 259 images found"))
     assertEquals(vm.displays.head.count, "478")
     assertEquals(vm.missing.map(_.title), Some("1 image file missing"))
     assertEquals(vm.missing.map(_.files), Some(Vector(file("kitchen-081.png"))))
+    // A file located for a revision no longer shown is said, not dropped silently.
+    val (orphaned, none) =
+      SourcesPane.update(
+        asked,
+        model,
+        SourcesIntent.Located(DatasetRevision(9), forest, restored, sha)
+      )
+    assertEquals(none, Vector.empty)
+    assertEquals(
+      orphaned.note,
+      Some(
+        "forest_044_restored.png was stored, but the revision changed before it could be repaired; repair it again."
+      )
+    )
     // A failure is said, naming the file.
     val failed =
       SourcesPane.update(asked, model, SourcesIntent.NotLocated(forest, "cancelled"))._1

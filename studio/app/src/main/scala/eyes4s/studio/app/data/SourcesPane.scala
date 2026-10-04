@@ -26,7 +26,7 @@ import eyes4s.studio.core.assets.{AssetFile, AssetRef, AssetRegistry, DisplayKin
 import eyes4s.studio.core.backend.DatasetRevision
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective, SourceRole}
-import eyes4s.studio.core.selection.{DisplayCount, InventoryKind, StudioRef}
+import eyes4s.studio.core.selection.{DisplayCount, StudioRef}
 
 /** A user action or platform fact of the Sources pane. */
 enum SourcesIntent derives CanEqual:
@@ -139,7 +139,9 @@ object SourcesPane:
         yield SourcesEffect.Locate(spec.id, m.file)
         (pane.copy(note = None), target.toVector)
       case Located(d, file, name, sha) =>
-        if !pane.dataset.exists(_.id == d) then (pane, none)
+        // The revision changed while the file was chosen: say so, never drop it silently.
+        if !pane.dataset.exists(_.id == d) then
+          (pane.copy(note = Some(SourcesText(SourcesTextId.RepairOrphaned, name.value))), none)
         else
           (
             pane.copy(note = Some(t(SourcesTextId.Repaired, file.value, name.value))),
@@ -207,6 +209,8 @@ final case class SourcesVM(
     status: Option[String],
     retry: Boolean,
     missing: Option[MissingVM],
+    repairsTitle: String,
+    repairs: Vector[String],
     note: Option[String]
 ) derives CanEqual
 
@@ -228,6 +232,8 @@ object SourcesVM:
           None,
           false,
           None,
+          t(RepairsTitle),
+          Vector.empty,
           None
         )
       case Some(spec) =>
@@ -246,9 +252,7 @@ object SourcesVM:
                 t(KindInventory),
                 t(Stored),
                 registry.map(r => t(InventoryTrials, count(r.trials.size))),
-                registry.toVector.map(_ =>
-                  StudioRef.InventoryCount(id, InventoryKind.Inventory)
-                )
+                registry.toVector.map(_ => StudioRef.DisplayTally(id, DisplayCount.Trials))
               )
         }
         val stimuli = SourceRowVM(
@@ -334,5 +338,12 @@ object SourcesVM:
             case Loading.Failed(_) => true
             case _                 => false,
           missing,
+          t(RepairsTitle),
+          // Each repair with its bytes' digest: provenance, never silent.
+          model.document.relinks
+            .of(id)
+            .map(r =>
+              t(RepairLine, r.file.value, r.asset.file.value, r.asset.sha256.hex.take(12))
+            ),
           pane.note
         )

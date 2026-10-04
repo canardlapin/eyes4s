@@ -18,7 +18,7 @@ package eyes4s.studio.core.assets
 
 import eyes4s.codec.{ByteDigest, CodecError}
 import eyes4s.studio.core.backend.DatasetRevision
-import eyes4s.studio.core.bundle.{BundleSamples, ProjectBundle, SharingOptions}
+import eyes4s.studio.core.bundle.{BundleError, BundleSamples, ProjectBundle, SharingOptions}
 import eyes4s.studio.core.command.{Command, CommandError, Reducer}
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.fixture.StoryMoments
@@ -178,6 +178,57 @@ class AssetRepairSuite extends munit.FunSuite:
       ok(ProjectBundle.assemble(encoded.manifest, p => parts.get(p).toRight(fail(s"no $p"))))
     assertEquals(assembled.document, repaired)
     // t2 without repairs keeps its pinned bundle (ProjectBundleSuite).
+  }
+
+  test("the bundle reader refuses a dataset part whose repairs name another revision") {
+    val repaired = ok(Reducer.step(t2, relink))._1
+    val encoded  =
+      ok(
+        ProjectBundle.encode(
+          repaired,
+          SharingOptions.complete,
+          BundleSamples.inputsFor(repaired)
+        )
+      )
+    val parts         = encoded.parts.toMap
+    val (path, bytes) =
+      parts.find(_._1.value.startsWith("datasets/r3")).getOrElse(fail("no r3 part"))
+    val text     = new String(Array.from(bytes), UTF_8)
+    val tampered = IArray.from(
+      text
+        .replace(
+          "\"dataset\":3,\"file\":\"forest-044.png\"",
+          "\"dataset\":2,\"file\":\"forest-044.png\""
+        )
+        .getBytes(UTF_8)
+    )
+    assert(
+      tampered.toVector != bytes.toVector,
+      text.drop(text.indexOf("relinks") - 20).take(200)
+    )
+    val oldEntry = s"\"path\":\"${path.value}\",\"sha256\":\"${ByteDigest.sha256(bytes).hex}\""
+    val manifestText = new String(Array.from(encoded.manifestBytes), UTF_8)
+    assert(manifestText.contains(oldEntry), manifestText)
+    val manifest = ok(
+      ProjectBundle.readManifest(
+        IArray.from(
+          manifestText
+            .replace(
+              oldEntry,
+              s"\"path\":\"${path.value}\",\"sha256\":\"${ByteDigest.sha256(tampered).hex}\""
+            )
+            .getBytes(UTF_8)
+        )
+      )
+    )
+    val read = ProjectBundle.assemble(
+      manifest,
+      p => (if p == path then Some(tampered) else parts.get(p)).toRight(fail(s"no $p"))
+    )
+    assertEquals(
+      read.map(_ => ()),
+      Left(BundleError.MalformedPart(path, "a dataset's relinks name another dataset revision"))
+    )
   }
 
   test("a pending revision with a repair can be discarded; its undo puts the repair back") {

@@ -34,6 +34,19 @@ import javafx.stage.{FileChooser, Window}
 
 import java.nio.file.Files
 
+/** Why a file chosen for Repair… is refused. Each names the file. */
+enum AssetFileRefusal derives CanEqual:
+  case TooLarge(name: String, bytes: Long, limit: Long)
+  case NotAnImage(name: String)
+  case Unreadable(name: String, reason: String)
+  case BadName(name: String, reason: String)
+
+  def message: String = this match
+    case TooLarge(n, b, l)  => s"$n has $b bytes; a display image may have at most $l."
+    case NotAnImage(n)      => s"$n is not an image this platform can decode."
+    case Unreadable(n, why) => s"$n cannot be read: $why"
+    case BadName(n, why)    => s"$n cannot be stored: $why"
+
 /** Where Repair… finds the image to show for a missing file: its name and
   * bytes, or `None` when the user cancelled. `done` may be called on any
   * thread.
@@ -41,11 +54,43 @@ import java.nio.file.Files
 trait AssetFiles:
   def locate(
       file: AssetFile,
-      done: Either[String, Option[(AssetFile, IArray[Byte])]] => Unit
+      done: Either[AssetFileRefusal, Option[(AssetFile, IArray[Byte])]] => Unit
   ): Unit
 
 object AssetFiles:
-  /** A file chooser titled for the missing file, over images. */
+
+  /** The largest image Repair… stores (64 MiB). */
+  val MaxBytes: Long = 64L * 1024 * 1024
+
+  /** `bytes`, named `name`, as a display image: a single path segment, at
+    * most [[MaxBytes]], and decodable as an image (ImageIO).
+    */
+  def check(
+      name: String,
+      bytes: IArray[Byte],
+      limit: Long = MaxBytes
+  ): Either[AssetFileRefusal, (AssetFile, IArray[Byte])] =
+    for
+      file <- AssetFile.of(name).left.map(e => AssetFileRefusal.BadName(name, e.message))
+      _    <- Either.cond(
+        bytes.length.toLong <= limit,
+        (),
+        AssetFileRefusal.TooLarge(name, bytes.length.toLong, limit)
+      )
+      decoded =
+        try Option(javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(Array.from(bytes))))
+        catch case _: java.io.IOException => None
+      _ <- Either.cond(
+        decoded.exists(i => i.getWidth > 0 && i.getHeight > 0),
+        (),
+        AssetFileRefusal.NotAnImage(name)
+      )
+    yield (file, bytes)
+
+  /** A file chooser titled for the missing file, over images. The file is
+    * chosen on the JavaFX thread and read off it, a too large file refused
+    * before it is read; the host checks what was read ([[check]]).
+    */
   def chooser(owner: () => Window): AssetFiles =
     (file, done) =>
       val chooser = FileChooser()
@@ -56,16 +101,31 @@ object AssetFiles:
       Option(chooser.showOpenDialog(owner())) match
         case None    => done(Right(None))
         case Some(f) =>
-          val read =
-            try
-              AssetFile
-                .of(f.getName)
-                .left
-                .map(_.message)
-                .map(n => Some(n -> IArray.unsafeFromArray(Files.readAllBytes(f.toPath))))
-            catch
-              case e: java.io.IOException => Left(Option(e.getMessage).getOrElse(e.toString))
-          done(read)
+          val reader = Thread(() =>
+            val name = f.getName
+            val read =
+              try
+                if f.length > MaxBytes then
+                  Left(AssetFileRefusal.TooLarge(name, f.length, MaxBytes))
+                else
+                  AssetFile
+                    .of(name)
+                    .left
+                    .map(e => AssetFileRefusal.BadName(name, e.message))
+                    .map(n => Some(n -> IArray.unsafeFromArray(Files.readAllBytes(f.toPath))))
+              catch
+                case e: java.io.IOException =>
+                  Left(
+                    AssetFileRefusal.Unreadable(
+                      name,
+                      Option(e.getMessage).getOrElse(e.toString)
+                    )
+                  )
+            done(read)
+          )
+          reader.setDaemon(true)
+          reader.setName(s"repair ${file.value}")
+          reader.start()
 
 /** The Data perspective's Sources pane on the desktop (ticket S5.7;
   * Data.dc.html, left): it binds a [[SourcesVM]] and performs the pane's
@@ -136,21 +196,30 @@ final class SourcesPaneHost(
             files.locate(
               file,
               {
-                case Left(reason)               => later(SourcesIntent.NotLocated(file, reason))
-                case Right(None)                => ()
-                case Right(Some((name, bytes))) =>
-                  port.importInput(
-                    InputKind.StimulusImage,
-                    name.value,
-                    bytes,
-                    {
-                      case Left(reason) => later(SourcesIntent.NotLocated(file, reason))
-                      case Right(())    =>
-                        later(
-                          SourcesIntent.Located(dataset, file, name, ByteDigest.sha256(bytes))
-                        )
-                    }
-                  )
+                case Left(refusal) => later(SourcesIntent.NotLocated(file, refusal.message))
+                case Right(None)   => ()
+                case Right(Some((chosen, raw))) =>
+                  // Checked where the locate answers, off the JavaFX thread.
+                  AssetFiles.check(chosen.value, raw) match
+                    case Left(refusal) => later(SourcesIntent.NotLocated(file, refusal.message))
+                    case Right((name, bytes)) =>
+                      port.importInput(
+                        InputKind.StimulusImage,
+                        name.value,
+                        bytes,
+                        {
+                          case Left(reason) => later(SourcesIntent.NotLocated(file, reason))
+                          case Right(())    =>
+                            later(
+                              SourcesIntent.Located(
+                                dataset,
+                                file,
+                                name,
+                                ByteDigest.sha256(bytes)
+                              )
+                            )
+                        }
+                      )
               }
             )
     }
@@ -197,8 +266,12 @@ final class SourcesView(dispatch: SourcesIntent => Unit):
   missing.getStyleClass.add("sources-missing")
   val note: Label = label("sources-note", "t11")
   note.setWrapText(true)
+  val repairsTitle: Label = label("sources-title", "lbl")
+  val repairs: VBox       = VBox(3.0)
+  repairs.getStyleClass.add("sources-repairs")
 
-  val node: VBox = VBox(empty, sources, title, kinds, status, retry, missing, note)
+  val node: VBox =
+    VBox(empty, sources, title, kinds, status, retry, missing, repairsTitle, repairs, note)
   node.getStyleClass.add("sources-panel")
   Option(getClass.getClassLoader.getResource(SourcesPaneHost.stylesheetResource))
     .foreach(url => node.getStylesheets.add(url.toExternalForm))
@@ -211,6 +284,11 @@ final class SourcesView(dispatch: SourcesIntent => Unit):
       .grouped(2)
       .collect { case Vector(a, b) => (a, b) }
       .toVector
+
+  /** The repaired images, as shown: file, replacement and digest. */
+  def repairLines: Vector[String] =
+    import scala.jdk.CollectionConverters.*
+    repairs.getChildren.asScala.toVector.collect { case l: Label => l.getText }
 
   /** The source cards' lines, as shown. */
   def sourceLines: Vector[Vector[String]] =
@@ -269,6 +347,15 @@ final class SourcesView(dispatch: SourcesIntent => Unit):
       case None =>
         missing.setVisible(false)
         missing.setManaged(false)
+    show(repairsTitle, Option.when(vm.repairs.nonEmpty)(vm.repairsTitle))
+    repairs.getChildren.setAll(vm.repairs.map { line =>
+      val l = label("sources-repair", "mono", "t11")
+      l.setText(line)
+      l.setWrapText(true)
+      l
+    }*)
+    repairs.setVisible(vm.repairs.nonEmpty)
+    repairs.setManaged(vm.repairs.nonEmpty)
     show(note, vm.note)
 
   private def show(l: Label, text: Option[String]): Unit =

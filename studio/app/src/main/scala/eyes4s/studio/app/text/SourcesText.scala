@@ -40,7 +40,8 @@ enum SourcesTextId derives CanEqual:
   case RepairNeedsProject, RepairFailed, Repaired
 
   // --- Tallies as paths -------------------------------------------------------------------
-  case TallyShown, TallyNamed, TallyFound, TallyMissingFiles, TallyMissingTrials
+  case TallyShown, TallyNamed, TallyFound, TallyMissingFiles, TallyMissingTrials, TallyTrials
+  case RepairsTitle, RepairLine, RepairOrphaned
 
 /** The Sources pane's strings in the board's wording. */
 object SourcesText:
@@ -88,6 +89,11 @@ object SourcesText:
     case TallyFound         => "{0} · image files found"
     case TallyMissingFiles  => "{0} · image files missing"
     case TallyMissingTrials => "{0} · trials with a missing image"
+    case TallyTrials        => "{0} · trials with a display"
+    case RepairsTitle       => "Repaired images"
+    case RepairLine         => "{0} ← {1} · sha256:{2}"
+    case RepairOrphaned     =>
+      "{0} was stored, but the revision changed before it could be repaired; repair it again."
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: SourcesTextId, args: String*): String =
@@ -108,3 +114,4 @@ object SourcesText:
     case DisplayCount.ImagesFound     => apply(TallyFound, dataset.label)
     case DisplayCount.MissingFiles    => apply(TallyMissingFiles, dataset.label)
     case DisplayCount.MissingTrials   => apply(TallyMissingTrials, dataset.label)
+    case DisplayCount.Trials          => apply(TallyTrials, dataset.label)

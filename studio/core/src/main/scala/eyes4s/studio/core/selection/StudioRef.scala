@@ -265,6 +265,9 @@ enum DisplayCount derives CanEqual, Codec.AsObject:
   case Shown(kind: DisplayKind, phase: Phase)
   case ImagesNamed, ImagesFound, MissingFiles, MissingTrials
 
+  /** The trials the registry lists, each with its display. */
+  case Trials
+
 /** Which count of a run's query contrasts a [[StudioRef.QueryTally]] names:
   * every requested query, or those with one outcome (each is within the
   * requested).
