@@ -95,7 +95,7 @@ object FigureInputs:
       def displays(
           dataset: DatasetRevisionSpec,
           done: Either[String, DisplaySource] => Unit
-      ): Unit = done(source.displays(dataset))
+      ): Unit = source.read(dataset, done)
       def status(from: DatasetRevision, to: DatasetRevision, done: StatusDiff => Unit): Unit =
         def whole(d: DatasetRevision) =
           LedgerPages

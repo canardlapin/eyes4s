@@ -160,11 +160,22 @@ object ExploreTrialViewVM:
   /** The display of `trial`: the served registry's, else an unknown display
     * on the dataset's screen at its image placement.
     */
+  private def repaired(
+      view: ExploreTrialView,
+      model: AppModel
+  ): Option[Either[String, eyes4s.studio.core.assets.AssetRegistry]] =
+    view.displays.toOption.collect { case DisplaySource.Served(r) =>
+      r.withRelinks(model.document.relinks.of(r.dataset)).left.map(_.message)
+    }
+
   private def displayOf(
       view: ExploreTrialView,
+      model: AppModel,
       trial: TrialKey
   ): Option[(TrialDisplay, ScreenSize)] =
-    view.displays.toOption.collect { case DisplaySource.Served(r) => r } match
+    // The document's repairs apply (S5.7); one that cannot be applied is said in
+    // the note (repairError) and the display is drawn unknown, never as served.
+    repaired(view, model).flatMap(_.toOption) match
       case Some(registry) => registry.display(trial).map(_ -> registry.screen)
       case None           =>
         view.dataset.map(d =>
@@ -222,7 +233,7 @@ object ExploreTrialViewVM:
     val preview   = answered(view.preview)
     val fixations = answered(view.fixations)
     val title     = trial.fold("")(k =>
-      displayOf(view, k).flatMap(_._1.item) match
+      displayOf(view, model, k).flatMap(_._1.item) match
         case Some(item) => t(Title, k.participant, k.trial, item.value)
         case None       => t(TitleNoItem, k.participant, k.trial)
     )
@@ -233,7 +244,7 @@ object ExploreTrialViewVM:
     val shown = for
       k                 <- trial
       _                 <- fixations
-      (display, screen) <- displayOf(view, k)
+      (display, screen) <- displayOf(view, model, k)
     yield ShownTrialVM(
       k,
       display,
@@ -256,7 +267,10 @@ object ExploreTrialViewVM:
             Some(t(ReadFailed, label, reason))
           case _ => None
         val shownDisplay = view.displays match
-          case Loading.Failed(why)                    => Some(t(DisplaysFailed, label, why))
+          case Loading.Failed(why) => Some(t(DisplaysFailed, label, why))
+          case Loading.Ready(DisplaySource.Served(_))
+              if repaired(view, model).exists(_.isLeft) =>
+            repaired(view, model).flatMap(_.left.toOption).map(t(DisplaysFailed, label, _))
           case Loading.Ready(DisplaySource.NotServed) =>
             Some(t(DisplaysNotServed, view.dataset.fold("")(_.id.label)))
           case _ => None

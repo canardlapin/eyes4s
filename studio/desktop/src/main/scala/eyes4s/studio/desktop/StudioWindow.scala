@@ -26,6 +26,7 @@ import eyes4s.studio.app.{ClockTime, ProjectName}
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.admission.{AdmissionLedgerHost, LedgerInputs}
 import eyes4s.studio.desktop.compare.{CompareSummaryHost, PanelSources, SummaryInputs}
+import eyes4s.studio.desktop.data.{AssetFiles, SourcesPaneHost}
 import eyes4s.studio.desktop.explore.{
   ExploreTimelineHost,
   ExploreTrialViewHost,
@@ -81,6 +82,8 @@ final class StudioWindow private (
     summaryListener: AppModel => Unit,
     val navigator: TrialsNavigatorHost,
     navigatorListener: AppModel => Unit,
+    val sources: SourcesPaneHost,
+    sourcesListener: AppModel => Unit,
     val explore: ExploreTrialViewHost,
     exploreListener: AppModel => Unit,
     val timeline: ExploreTimelineHost,
@@ -106,6 +109,7 @@ final class StudioWindow private (
   def paneStops(pane: PaneId): Vector[FocusStop] =
     if pane == StudioLayouts.columnMapping then columnMapping.focusStops
     else if pane == StudioLayouts.admission then admission.focusStops
+    else if pane == StudioLayouts.sources then sources.focusStops
     else if pane == StudioLayouts.compareQueries || pane == StudioLayouts.compareItems then
       eyes4s.studio.app.compare.QueriesNavigator.focusStops(summary.navigatorVM)
     else if pane == StudioLayouts.queryTrial then
@@ -138,6 +142,8 @@ final class StudioWindow private (
   def close(): Unit =
     runtime.unlisten(summaryListener)
     runtime.unlisten(navigatorListener)
+    runtime.unlisten(sourcesListener)
+    sources.dispose()
     runtime.unlisten(exploreListener)
     runtime.unlisten(timelineListener)
     explore.dispose()
@@ -241,6 +247,7 @@ object StudioWindow:
       presets: FilePresetStore = FilePresetStore.userDefault,
       // The window's backend serves the source records unless one is given.
       records: Option[eyes4s.studio.app.explore.SourceRecordsSource] = None,
+      assetFiles: Option[AssetFiles] = None,
       panels: PanelSources = PanelSources.notServed
   )(using IORuntime): Either[WindowError, StudioWindow] =
     for
@@ -259,6 +266,7 @@ object StudioWindow:
         nativeMenu,
         presets,
         records,
+        assetFiles,
         panels
       )
     yield
@@ -278,6 +286,7 @@ object StudioWindow:
       nativeMenu: Boolean,
       presets: FilePresetStore,
       records: Option[eyes4s.studio.app.explore.SourceRecordsSource],
+      assetFiles: Option[AssetFiles],
       panels: PanelSources
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
@@ -385,6 +394,20 @@ object StudioWindow:
     host.host(StudioLayouts.items, navigator.items.node)
     val navigatorListener: AppModel => Unit = navigator.sync
     r.listen(navigatorListener)
+    // The Sources pane (Data): the selected revision's sources, displays and repairs.
+    val sources = SourcesPaneHost(
+      () => r.model,
+      dispatch,
+      displays,
+      assetFiles.getOrElse(
+        AssetFiles.chooser(() => Option(shell.root.getScene).map(_.getWindow).orNull)
+      ),
+      project
+    )
+    host.host(StudioLayouts.sources, sources.node)
+    val sourcesListener: AppModel => Unit = sources.sync
+    r.listen(sourcesListener)
+    sources.sync(r.model)
     // Explore's trial view: the explored trial under the shown run's revision.
     val explore =
       ExploreTrialViewHost(() => r.model, TrialViewInputs.of(session, displays), stimuli)
@@ -457,6 +480,8 @@ object StudioWindow:
         summaryListener,
         navigator,
         navigatorListener,
+        sources,
+        sourcesListener,
         explore,
         exploreListener,
         timeline,

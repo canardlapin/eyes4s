@@ -93,6 +93,8 @@ abstract class ShellFxSuite extends StudioFxSuite:
       // Explore's source records: the window's backend's unless a suite
       // brings its own.
       records: Option[eyes4s.studio.app.explore.SourceRecordsSource] = None,
+      // Repair… opens no chooser in a test unless a suite brings its files.
+      assetFiles: eyes4s.studio.desktop.data.AssetFiles = (_, done) => done(Right(None)),
       // Compare's trial panels: none unless a suite brings its own.
       panels: eyes4s.studio.desktop.compare.PanelSources =
         eyes4s.studio.desktop.compare.PanelSources.notServed
@@ -111,6 +113,7 @@ abstract class ShellFxSuite extends StudioFxSuite:
           nativeMenu = nativeMenu,
           presets = presets,
           records = records,
+          assetFiles = Some(assetFiles),
           panels = panels
         )
         .fold(e => fail(e.message), identity)

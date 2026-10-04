@@ -95,6 +95,11 @@ final class ProjectSession[F[_]: Concurrent] private (
 ):
   import ProjectSession.*
 
+  /** The inputs the bundle stores: those its manifest lists and those
+    * imported since, which the next save lists.
+    */
+  def inputs: F[Vector[InputEntry]] = state.get.map(_.inputs)
+
   /** The document as edited, saved or not. */
   def document: F[StudioDocument] = state.get.map(_.history.document)
 
