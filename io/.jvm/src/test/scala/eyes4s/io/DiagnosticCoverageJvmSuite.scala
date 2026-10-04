@@ -71,7 +71,6 @@ class DiagnosticCoverageJvmSuite extends munit.FunSuite:
           key.stripPrefix("class ")
       }
       .filter(name => name.endsWith("Error") || name.endsWith("Failure"))
-      .filterNot(name => IoDiagnosticSamples.evidence(name.stripPrefix("eyes4s.io.")))
       .sorted
 
   /** The enum each sampled family belongs to, from its runtime class. */
@@ -96,6 +95,11 @@ class DiagnosticCoverageJvmSuite extends munit.FunSuite:
       .foreach(module =>
         assert(errorEnums.exists(_.startsWith(s"eyes4s.$module.")), s"no enum in $module")
       )
+  }
+
+  test("the retired EyeLink evidence apparatus is not public API of eyes4s-io") {
+    val published = errorEnums.map(_.stripPrefix("eyes4s.io.")).toSet
+    assertEquals(IoDiagnosticSamples.evidence.intersect(published), Set.empty[String])
   }
 
   test("every public error enum has a Diagnose instance and a sampled family") {

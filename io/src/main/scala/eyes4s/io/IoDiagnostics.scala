@@ -20,8 +20,8 @@ import eyes4s.plan.*
 
 /** The code table of io's error families: fixation and result CSV import and
   * export, delimited sample schemas, the psychology workflow, EyeLink ASC
-  * import and conversion evidence, and the EyeLink oracle, conformance and
-  * corpus manifests. Codes are unique across this table, [[DiagnosticCatalog]]
+  * import and conversion evidence, and the retired EyeLink evidence families
+  * ([[retired]]). Codes are unique across this table, [[DiagnosticCatalog]]
   * and `CodecDiagnosticCatalog`, and codes are only ever appended.
   */
 object IoDiagnosticCatalog:
@@ -257,7 +257,6 @@ object IoDiagnosticCatalog:
     "EmptyManifest"
   )
 
-  /** Every family, in the order documented. */
   // ---------------------------------------------------------------- appended by UI-G
   val csvLayout: DiagnosticFamily  = error("csv-layout")("Csv", "Layout")
   val sourceText: DiagnosticFamily = error("source-text")(
@@ -270,7 +269,19 @@ object IoDiagnosticCatalog:
     "Provenance"
   )
 
-  val families: Vector[DiagnosticFamily] = Vector(
+  /** Families whose error type is no longer part of eyes4s-io: the EyeLink
+    * evidence apparatus (performance validation, oracle, conformance, corpus)
+    * moved to io's test scope (CR9). Their codes stay issued, in their original
+    * place in [[issuedFamilies]], so a retired code is never reused with another
+    * meaning; no published error projects to one.
+    */
+  val retired: Vector[DiagnosticFamily] =
+    Vector(ascPerformanceValidation, eyeLinkOracle, eyeLinkConformance, eyeLinkCorpus)
+
+  /** Every family ever issued, in issue order: families are only appended, and
+    * a retired family keeps its place.
+    */
+  val issuedFamilies: Vector[DiagnosticFamily] = Vector(
     fixationImport,
     fixationRow,
     tidyCsv,
@@ -297,8 +308,15 @@ object IoDiagnosticCatalog:
     ledgerVerification
   )
 
-  /** Every stable code, in catalog order. */
+  /** Every live family, in the order documented. */
+  val families: Vector[DiagnosticFamily] =
+    issuedFamilies.filterNot(family => retired.exists(_ eq family))
+
+  /** Every live code, in catalog order. */
   val codes: Vector[DiagnosticCode] = families.flatMap(_.codes)
+
+  /** Every code ever issued, live or retired, in issue order. */
+  val issued: Vector[DiagnosticCode] = issuedFamilies.flatMap(_.codes)
 
 /** io's [[Diagnose]] instances. Import `IoDiagnostics.given` for
   * `Diagnostic.of` over io's families. Each field becomes a typed operand

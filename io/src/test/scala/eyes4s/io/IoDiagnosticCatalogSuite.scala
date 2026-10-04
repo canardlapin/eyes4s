@@ -76,22 +76,50 @@ class IoDiagnosticCatalogSuite extends munit.FunSuite:
   }
 
   test("each family's labels are the compiler's cases, and every case projects its own code") {
-    (IoDiagnosticSamples.io ++ IoDiagnosticSamples.laws).foreach { family =>
-      assertEquals(family.family.labels, family.labels, family.enumName)
-      assertEquals(
-        family.samples.map(_._1.ordinal),
-        family.labels.indices.toVector,
-        family.enumName
-      )
-      family.samples.foreach { (sample, diagnostic) =>
-        assertEquals(diagnostic.code, family.family.codes(sample.ordinal), s"$sample")
-        assertEquals(diagnostic.source, DiagnosticSource.EyesCore)
+    (IoDiagnosticSamples.io ++ IoDiagnosticSamples.laws ++ IoDiagnosticSamples.retired)
+      .foreach { family =>
+        assertEquals(family.family.labels, family.labels, family.enumName)
+        assertEquals(
+          family.samples.map(_._1.ordinal),
+          family.labels.indices.toVector,
+          family.enumName
+        )
+        family.samples.foreach { (sample, diagnostic) =>
+          assertEquals(diagnostic.code, family.family.codes(sample.ordinal), s"$sample")
+          assertEquals(diagnostic.source, DiagnosticSource.EyesCore)
+        }
       }
+  }
+
+  test("retired io families keep their codes issued and project from no published error") {
+    val retired = IoDiagnosticCatalog.retired.flatMap(_.codes)
+    assertEquals(
+      IoDiagnosticCatalog.retired.map(_.name),
+      Vector(
+        "asc-performance-validation",
+        "eyelink-oracle",
+        "eyelink-conformance",
+        "eyelink-corpus"
+      )
+    )
+    IoDiagnosticSamples.retired.zip(IoDiagnosticCatalog.retired).foreach { (sampled, family) =>
+      assert(sampled.family eq family, sampled.enumName)
+    }
+    assert(retired.forall(IoDiagnosticCatalog.issued.contains))
+    assert(retired.forall(code => !IoDiagnosticCatalog.codes.contains(code)))
+    assertEquals(
+      IoDiagnosticCatalog.issued.filterNot(retired.contains),
+      IoDiagnosticCatalog.codes
+    )
+    assertEquals(IoDiagnosticCatalog.issued.distinct.size, IoDiagnosticCatalog.issued.size)
+    all.flatMap(_.samples).foreach { case (_, d) =>
+      assert(!retired.contains(d.code), d.code.render)
     }
   }
 
   test("codes and family names are unique across every catalog") {
-    val families = all.map(_.family)
+    // Retired families stay issued, so their codes and names stay reserved.
+    val families = all.map(_.family) ++ IoDiagnosticCatalog.retired
     val codes    = families.flatMap(_.codes).map(_.render)
     assertEquals(codes.distinct.size, codes.size)
     assertEquals(families.map(_.name).distinct.size, families.size)
@@ -120,7 +148,8 @@ class IoDiagnosticCatalogSuite extends munit.FunSuite:
   }
 
   test("the io and laws code tables are pinned and so identical on the JVM and Scala.js") {
-    val io = IoDiagnosticCatalog.codes.map(_.render)
+    // The issued table, live and retired: codes are only ever appended.
+    val io = IoDiagnosticCatalog.issued.map(_.render)
     assertEquals(io.size, IoCount)
     assertEquals(ContentHash.ofString(io.mkString("\n")).render, IoDigest)
     assertEquals(io.head, "fixation-import.csv")
@@ -172,21 +201,22 @@ class IoDiagnosticCatalogSuite extends munit.FunSuite:
   }
 
   test("every sampled case that names a source and a line has that line as its subject") {
-    val lined = IoDiagnosticSamples.io.flatMap(_.samples).collect {
-      case (sample, diagnostic)
-          if sample.productElementNames.contains("source") &&
-            sample.productElementNames.contains("line") =>
-        val fields = sample.productElementNames.zip(sample.productIterator).toMap
-        val line   = fields("line") match
-          case n: Int  => n.toLong
-          case n: Long => n
-          case other   => fail(s"line $other")
-        assert(
-          diagnostic.subject.contains(Locus.Line(fields("source").toString, line)),
-          s"$sample has subject ${diagnostic.subject}"
-        )
-        sample
-    }
+    val lined =
+      (IoDiagnosticSamples.io ++ IoDiagnosticSamples.retired).flatMap(_.samples).collect {
+        case (sample, diagnostic)
+            if sample.productElementNames.contains("source") &&
+              sample.productElementNames.contains("line") =>
+          val fields = sample.productElementNames.zip(sample.productIterator).toMap
+          val line   = fields("line") match
+            case n: Int  => n.toLong
+            case n: Long => n
+            case other   => fail(s"line $other")
+          assert(
+            diagnostic.subject.contains(Locus.Line(fields("source").toString, line)),
+            s"$sample has subject ${diagnostic.subject}"
+          )
+          sample
+      }
     assert(lined.size >= 12, lined.size)
     val records = IoDiagnosticSamples.io
       .filter(_.family eq IoDiagnosticCatalog.tidyCsv)
