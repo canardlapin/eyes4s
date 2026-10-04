@@ -7,5 +7,10 @@ button: Draft rev 5, current location
 button: Draft rev 5 · 1 change · ready; review in Analysis
 list: Analyses
 region: Recipe
-plot: Resolved design
+region: Resolved design
+toggle-button: All requested
+toggle-button: Eligible
+toggle-button: No match
+toggle-button: Query not admitted
+table: Resolved design, rev 5; arrow keys move the row cursor
 region: Preflight

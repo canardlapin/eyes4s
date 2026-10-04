@@ -231,6 +231,11 @@ final case class WindowTotals(
   * counts `Quarantined(cause)` trials by cause code; `noFixations` is a
   * disposition of its own, and so is absent, which only an inventory can
   * count ([[InventoryJoin]], S5.4).
+  *
+  * `history` is deprecated: free text the backend wrote for the dataset's
+  * changes, which studio no longer reads. The Data history line is the
+  * typed dataset diff (S5.8, `eyes4s.studio.core.diff.DatasetDiff`). The
+  * field stays on the wire until its retirement is scheduled.
   */
 final case class AdmissionSummary(
     dataset: DatasetRevision,

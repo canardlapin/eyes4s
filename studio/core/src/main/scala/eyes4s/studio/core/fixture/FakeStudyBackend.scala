@@ -334,6 +334,7 @@ final class FakeStudyBackend[F[_]] private[fixture] (
       PreviewCounts.of(
         summary.pairRowsPerScale,
         pairRowsOf(r),
+        summary.eligibleQueries,
         summary.contrasts.noMatch,
         ambiguousMatches = 0
       )
@@ -342,10 +343,16 @@ final class FakeStudyBackend[F[_]] private[fixture] (
         study.queries.size,
         study.inventory.count(_.trial.phase == Phase.Encoding),
         study.queries.map(_.key.participant).distinct.size,
-        summary.candidatePairsPerScale
+        summary.candidatePairsPerScale,
+        summary.contrasts.requested,
+        summary.contrasts.queryNotAdmitted,
+        // Enc→Ret has no reference-less category; a recognition recipe does.
+        byDesignQueries = None
       )
       allScales <- counts(scoredRevision)
       rev5      <- counts(AnalysisRevision(5))
+      _         <- PreviewReady.partition(candidates, allScales)
+      _         <- PreviewReady.partition(candidates, rev5)
     yield FakePreviewFacts(candidates, allScales, rev5)
 
   private def previewDiagnostics: Vector[StudioDiagnostic] =
@@ -378,24 +385,30 @@ final class FakeStudyBackend[F[_]] private[fixture] (
             Stream.eval(state.modify { s =>
               val id = PreviewId(s.previews.keys.map(_.value).maxOption.getOrElse(0L) + 1L)
               val snapshot = prepared(r, d)
-              val retained = RetainedPreview(
-                snapshot,
-                PreviewReady(
+              val ready    =
+                PreviewReady.of(
                   id,
                   snapshot.stamp,
                   facts.candidates,
                   facts.counts(r),
                   previewDiagnostics
-                ),
-                PreviewProgress.start(facts.candidates)
-              )
-              (
-                s.copy(previews = s.previews.updated(id, retained)),
-                retained
-              )
+                )
+              ready match
+                case Left(e)        => (s, Left(e))
+                case Right(receipt) =>
+                  val retained =
+                    RetainedPreview(snapshot, receipt, PreviewProgress.start(facts.candidates))
+                  (s.copy(previews = s.previews.updated(id, retained)), Right(retained))
             })
           )
-          .flatMap(retained => page(retained, budget, initial = true).map(Right(_)))
+          .flatMap {
+            // create refuses a fixture whose counts do not partition.
+            case Left(e) =>
+              Stream.raiseError[F](
+                new IllegalStateException(s"FakeStudyBackend preview: ${e.message}")
+              )
+            case Right(retained) => page(retained, budget, initial = true).map(Right(_))
+          }
     }
 
   def continuePreview(

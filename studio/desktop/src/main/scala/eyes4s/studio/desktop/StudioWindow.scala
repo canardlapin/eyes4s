@@ -26,6 +26,7 @@ import eyes4s.studio.app.{ClockTime, ProjectName}
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.admission.{AdmissionLedgerHost, LedgerInputs}
 import eyes4s.studio.desktop.compare.{CompareSummaryHost, SummaryInputs}
+import eyes4s.studio.desktop.explore.{NavigatorDisplays, NavigatorInputs, TrialsNavigatorHost}
 import eyes4s.studio.desktop.dock.{DockGesture, PerspectiveHost}
 import eyes4s.studio.desktop.runtime.{
   DesktopEffects,
@@ -34,6 +35,7 @@ import eyes4s.studio.desktop.runtime.{
   StudioRuntime,
   StudioSession
 }
+import eyes4s.studio.desktop.analysis.{DesignInputs, ResolvedDesignHost}
 import eyes4s.studio.desktop.importing.{ColumnMappingPaneHost, ImportWizardHost}
 import eyes4s.studio.desktop.platform.FilePresetStore
 import eyes4s.studio.desktop.shell.AppShell
@@ -63,7 +65,11 @@ final class StudioWindow private (
     val columnMapping: ColumnMappingPaneHost,
     val admission: AdmissionLedgerHost,
     val summary: CompareSummaryHost,
-    summaryListener: AppModel => Unit
+    summaryListener: AppModel => Unit,
+    val navigator: TrialsNavigatorHost,
+    navigatorListener: AppModel => Unit,
+    val resolvedDesign: ResolvedDesignHost,
+    designListener: AppModel => Unit
 ):
   /** The window content, with the studio stylesheets. */
   def root: javafx.scene.Parent = shell.root
@@ -75,12 +81,15 @@ final class StudioWindow private (
   def paneStops(pane: PaneId): Vector[FocusStop] =
     if pane == StudioLayouts.columnMapping then columnMapping.focusStops
     else if pane == StudioLayouts.admission then admission.focusStops
-    else if pane == StudioLayouts.queries || pane == StudioLayouts.items then
+    else if pane == StudioLayouts.compareQueries || pane == StudioLayouts.compareItems then
       eyes4s.studio.app.compare.QueriesNavigator.focusStops(summary.navigatorVM)
     else if pane == StudioLayouts.queryTrial then
       eyes4s.studio.app.compare.TrialPanels.queryStops(summary.panelsVM)
     else if pane == StudioLayouts.referenceTrial then
       eyes4s.studio.app.compare.TrialPanels.referenceStops(summary.panelsVM)
+    else if pane == StudioLayouts.trials then navigator.trialsStops
+    else if pane == StudioLayouts.items then navigator.itemsStops
+    else if pane == StudioLayouts.resolvedDesign then resolvedDesign.focusStops
     else Vector.empty
 
   /** Store each perspective's arrangement in the document (view-only). */
@@ -91,6 +100,8 @@ final class StudioWindow private (
 
   def close(): Unit =
     runtime.unlisten(summaryListener)
+    runtime.unlisten(navigatorListener)
+    runtime.unlisten(designListener)
     summary.dispose()
     project.foreach(_.close())
     session.close()
@@ -171,6 +182,7 @@ object StudioWindow:
   def open(
       initial: AppModel,
       moment: StoryMoment,
+      displays: NavigatorDisplays,
       theme: Theme = Theme.Light,
       dialogs: Option[PlatformDialogs] = None,
       messages: Messages = Messages.english,
@@ -185,6 +197,7 @@ object StudioWindow:
       window <- build(
         initial,
         moment,
+        displays,
         dock,
         dialogs,
         messages,
@@ -200,6 +213,7 @@ object StudioWindow:
   private def build(
       initial: AppModel,
       moment: StoryMoment,
+      displays: NavigatorDisplays,
       dockTheme: DockTheme,
       dialogs: Option[PlatformDialogs],
       messages: Messages,
@@ -302,6 +316,20 @@ object StudioWindow:
     ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
     val summaryListener: AppModel => Unit = summary.sync
     r.listen(summaryListener)
+    // The trials navigator (Explore): the latest admitted revision's trials.
+    val navigator =
+      TrialsNavigatorHost(() => r.model, dispatch, NavigatorInputs.of(session, displays))
+    host.host(StudioLayouts.trials, navigator.trials.node)
+    host.host(StudioLayouts.items, navigator.items.node)
+    val navigatorListener: AppModel => Unit = navigator.sync
+    r.listen(navigatorListener)
+    // The resolved-design table (Analysis): the backend's preview of the
+    // target revision, prepared once the perspective is shown.
+    val design = ResolvedDesignHost(dispatch, DesignInputs.of(session))
+    host.host(StudioLayouts.resolvedDesign, design.node)
+    val designListener: AppModel => Unit = design.sync
+    r.listen(designListener)
+    design.sync(r.model)
     Right(
       StudioWindow(
         session,
@@ -313,6 +341,10 @@ object StudioWindow:
         mapping,
         admission,
         summary,
-        summaryListener
+        summaryListener,
+        navigator,
+        navigatorListener,
+        design,
+        designListener
       )
     )

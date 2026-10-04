@@ -9,6 +9,8 @@ button: pair ret_07 × enc_03, opens in Compare
 button: enc_03 · fixation 6
 button: fixations.csv record 7,214, current location
 list: Trials
+text-field: Filter trials
+list: Trials of r3
 plot: Trial view
 plot: Timeline
 table: Source records

@@ -89,7 +89,17 @@ object SelectionGen:
           InventoryKind.Absent
         )
       )
-      .map((d, k) => StudioRef.InventoryCount(DatasetRevision(d), k))
+      .map((d, k) => StudioRef.InventoryCount(DatasetRevision(d), k)),
+    Gen
+      .zip(
+        Gen.choose(2, 3),
+        Gen.oneOf(
+          TrialGrouping.PhaseOf("P17", Phase.Retrieval),
+          TrialGrouping.PhaseOf("P11", Phase.Encoding),
+          TrialGrouping.MatchedOn("beach-042")
+        )
+      )
+      .map((d, g) => StudioRef.TrialGroup(DatasetRevision(d), g))
   )
 
   val ref: Gen[StudioRef] =
